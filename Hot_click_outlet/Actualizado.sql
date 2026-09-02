@@ -3575,7 +3575,7 @@ SET visible_catalogo = FALSE
 WHERE visible_catalogo = TRUE
   AND (fk_id_empresa = 1 OR fk_id_empresa IS NULL);
 
--- V121: empresa afectada en auditor�a admin + �ndices de listado
+-- V121: empresa afectada en auditor?a admin + ?ndices de listado
 CREATE TABLE IF NOT EXISTS hot_click_auditoria_admin_tb (
     id_auditoria BIGSERIAL PRIMARY KEY,
     admin_id     BIGINT,
@@ -3656,8 +3656,30 @@ ALTER TABLE hot_click_plan_tb ADD COLUMN IF NOT EXISTS tiene_gift_cards BOOLEAN 
 
 UPDATE hot_click_plan_tb SET tiene_gift_cards = true WHERE nombre IN ('PYME', 'NEGOCIO_PLUS');
 
--- V122: corrige la descripcion del flag split_payments — Gift Cards ya tiene su
+-- V122: corrige la descripcion del flag split_payments ? Gift Cards ya tiene su
 -- propio gate real por plan (tieneGiftCards, V121), este flag nunca lo controlo.
 UPDATE hot_click_feature_flag_tb
 SET descripcion = 'Pagos divididos en una misma venta'
 WHERE nombre = 'split_payments';
+
+-- V127: cupo historico de 70 altas gratis al plan Emprendedor
+CREATE TABLE IF NOT EXISTS hot_click_cupo_emprendedor_tb (
+    id     SMALLINT PRIMARY KEY,
+    limite INTEGER NOT NULL DEFAULT 70,
+    usados INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT cupo_emprendedor_unica CHECK (id = 1),
+    CONSTRAINT cupo_emprendedor_rango CHECK (usados >= 0 AND limite > 0)
+);
+
+INSERT INTO hot_click_cupo_emprendedor_tb (id, limite, usados)
+VALUES (1, 70, 0)
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE hot_click_cupo_emprendedor_tb
+SET usados = (
+    SELECT COUNT(*)
+    FROM hot_click_empresa_tb
+    WHERE correo_empresa NOT ILIKE '%@hotclick.test'
+)
+WHERE id = 1 AND usados = 0;
+

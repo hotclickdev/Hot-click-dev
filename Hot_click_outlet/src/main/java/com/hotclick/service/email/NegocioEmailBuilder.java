@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import com.hotclick.dto.CupoEmprendedorEstado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -111,6 +112,27 @@ public class NegocioEmailBuilder {
             + credencialesBlock
             + layout.cta("https://hotclick.lat/login", "Ingresar al panel")
             + layout.footer("¿Tenés alguna pregunta?");
+    }
+
+    public String buildAltaEmprendedorAdmin(String nombreEmpresa, String correo,
+                                           boolean cupoGratis, CupoEmprendedorEstado estado) {
+        String estadoCupo = cupoGratis
+            ? "Entró con cupo gratis."
+            : "Sin cupo gratis. Requiere membresía PYME o Negocio Plus.";
+        if (cupoGratis && estado.usados() >= estado.limite()) {
+            estadoCupo = "Se ocupó el último cupo gratis. A partir de ahora la membresía tiene costo.";
+        }
+        return layout.abrirHtml()
+            + layout.header("Nueva alta de emprendimiento", estadoCupo)
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 12px;color:#14171C;font-size:16px'><strong>"
+            + layout.esc(nombreEmpresa) + "</strong></p>"
+            + "<p style='margin:0 0 8px;color:#4D5560;font-size:14px'>Correo: "
+            + layout.esc(correo) + "</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px'>Cupos: "
+            + estado.usados() + " / " + estado.limite()
+            + " (quedan " + estado.cuposGratisDisponibles() + ")</p>"
+            + layout.footer("Alerta automática de HotClick");
     }
 
     public String buildModeracionAprobada(String nombre, String tipoLabel, String nombreItem) {
