@@ -26,6 +26,9 @@ public class Sucursal extends BaseEntity {
     @Column(name = "nombre", nullable = false, length = 120)
     private String nombre;
 
+    @Column(name = "ubicacion", length = 255)
+    private String ubicacion;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_empresa", nullable = false)
@@ -46,6 +49,9 @@ public class Sucursal extends BaseEntity {
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getUbicacion() { return ubicacion; }
+    public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
 
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }

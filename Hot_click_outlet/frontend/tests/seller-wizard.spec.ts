@@ -1,3 +1,11 @@
+/**
+ * Smoke checklist PYME + Negocio Plus (local Playwright):
+ * - Ambos: /productos/nuevo (Paso 1/5), /bodegas/nueva, /plan (1/3),
+ *   /cobro/nuevo, /negocio, /perfil
+ * - Solo PYME: /pyme/equipo → Invitar miembro (wizard)
+ * - Solo Plus: /negocio-plus/sucursales → Agregar sucursal (Paso 1/3)
+ * Run: pnpm exec playwright test tests/seller-wizard.spec.ts
+ */
 import { test, expect, type Page, type Route } from '@playwright/test'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
@@ -30,6 +38,19 @@ function payloadAuth() {
 
 function prefijoPorPlan(plan: PlanVendedor) {
   return plan === 'NEGOCIO_PLUS' ? '/negocio-plus' : '/pyme'
+}
+
+/** Assert wizard step label + heading after goto (shared cobro/negocio/perfil). */
+async function expectPaso(
+  page: Page,
+  path: string,
+  progreso: string,
+  heading: string | RegExp,
+  timeout = 15_000,
+) {
+  await page.goto(path, { waitUntil: 'domcontentloaded' })
+  await expect(page.getByText(progreso)).toBeVisible({ timeout })
+  await expect(page.getByRole('heading', { name: heading })).toBeVisible({ timeout })
 }
 
 async function entrarSeller(
@@ -73,6 +94,39 @@ async function entrarSeller(
       })
       return
     }
+    if (path.includes('/empresa/perfil')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 1,
+            nombreComercial: 'Demo',
+            nombreEmpresa: 'Demo',
+            numeroWhatsapp: '88880000',
+            descripcion: '',
+          },
+        }),
+      })
+      return
+    }
+    if (path.includes('/empresa/equipo')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      })
+      return
+    }
+    if (path.includes('/sucursales')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+      return
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -96,24 +150,46 @@ async function entrarSeller(
 test.describe('Wizard conversacional PYME', () => {
   test('agregar producto: ve Paso 1 de 5', async ({ page }) => {
     await entrarSeller(page, 'PYME')
-    await page.goto('/pyme/productos/nuevo', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 5')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Tipo de producto' })).toBeVisible()
+    await expectPaso(page, '/pyme/productos/nuevo', 'Paso 1 de 5', 'Tipo de producto')
   })
 
   test('nueva bodega: ve progreso Paso 1 de 3', async ({ page }) => {
     await entrarSeller(page, 'PYME')
-    await page.goto('/pyme/bodegas/nueva', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 3')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Nombre de la bodega' })).toBeVisible()
+    await expectPaso(page, '/pyme/bodegas/nueva', 'Paso 1 de 3', 'Nombre de la bodega')
   })
 
   test('comparar planes: ve Paso 1 de 3', async ({ page }) => {
     await entrarSeller(page, 'PYME', { billingPlanes: true })
-    await page.goto('/pyme/plan', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 3')).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByRole('heading', { name: 'Elegí tu plan' })).toBeVisible()
+    await expectPaso(page, '/pyme/plan', 'Paso 1 de 3', 'Elegí tu plan', 20_000)
     await expect(page.getByRole('button', { name: 'Mejorar a Negocio Plus' })).toBeVisible()
+  })
+
+  test('cobro/nuevo: ve Paso 1 de 3', async ({ page }) => {
+    await entrarSeller(page, 'PYME')
+    await expectPaso(page, '/pyme/cobro/nuevo', 'Paso 1 de 3', 'Tipo de cuenta')
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
+  })
+
+  test('negocio: ve Paso 1 de 3', async ({ page }) => {
+    await entrarSeller(page, 'PYME')
+    await expectPaso(page, '/pyme/negocio', 'Paso 1 de 3', 'Identidad del negocio', 20_000)
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
+  })
+
+  test('perfil: ve Paso 1 de 3', async ({ page }) => {
+    await entrarSeller(page, 'PYME')
+    await expectPaso(page, '/pyme/perfil', 'Paso 1 de 3', 'Tu nombre', 20_000)
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
+  })
+
+  test('equipo: invite form wizard Paso 1 de 4', async ({ page }) => {
+    await entrarSeller(page, 'PYME')
+    await page.goto('/pyme/equipo', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Mi Equipo' })).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: '+ Invitar miembro' }).click()
+    await expect(page.getByText('Paso 1 de 4')).toBeVisible()
+    await expect(page.getByRole('heading', { name: '¿Cómo se llama?' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
   })
 
   test('PlanPathGate redirige /emprendedor → /pyme según tenant', async ({ page }) => {
@@ -125,18 +201,52 @@ test.describe('Wizard conversacional PYME', () => {
 })
 
 test.describe('Wizard conversacional Negocio Plus', () => {
-  test('rutas planas con prefijo correcto', async ({ page }) => {
+  test('agregar producto: ve Paso 1 de 5', async ({ page }) => {
+    const base = prefijoPorPlan('NEGOCIO_PLUS')
+    await entrarSeller(page, 'NEGOCIO_PLUS')
+    await expectPaso(page, `${base}/productos/nuevo`, 'Paso 1 de 5', 'Tipo de producto')
+  })
+
+  test('nueva bodega: ve Paso 1 de 3', async ({ page }) => {
+    const base = prefijoPorPlan('NEGOCIO_PLUS')
+    await entrarSeller(page, 'NEGOCIO_PLUS')
+    await expectPaso(page, `${base}/bodegas/nueva`, 'Paso 1 de 3', 'Nombre de la bodega')
+  })
+
+  test('comparar planes: ve Paso 1 de 3', async ({ page }) => {
     const base = prefijoPorPlan('NEGOCIO_PLUS')
     await entrarSeller(page, 'NEGOCIO_PLUS', { billingPlanes: true })
+    await expectPaso(page, `${base}/plan`, 'Paso 1 de 3', 'Elegí tu plan', 20_000)
+  })
 
-    await page.goto(`${base}/productos/nuevo`, { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 5')).toBeVisible()
+  test('cobro/nuevo: ve Paso 1 de 3', async ({ page }) => {
+    const base = prefijoPorPlan('NEGOCIO_PLUS')
+    await entrarSeller(page, 'NEGOCIO_PLUS')
+    await expectPaso(page, `${base}/cobro/nuevo`, 'Paso 1 de 3', 'Tipo de cuenta')
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
+  })
 
-    await page.goto(`${base}/bodegas/nueva`, { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 3')).toBeVisible()
+  test('negocio: ve Paso 1 de 3', async ({ page }) => {
+    const base = prefijoPorPlan('NEGOCIO_PLUS')
+    await entrarSeller(page, 'NEGOCIO_PLUS')
+    await expectPaso(page, `${base}/negocio`, 'Paso 1 de 3', 'Identidad del negocio', 20_000)
+  })
 
-    await page.goto(`${base}/plan`, { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 3')).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByRole('heading', { name: 'Elegí tu plan' })).toBeVisible()
+  test('perfil: ve Paso 1 de 3', async ({ page }) => {
+    const base = prefijoPorPlan('NEGOCIO_PLUS')
+    await entrarSeller(page, 'NEGOCIO_PLUS')
+    await expectPaso(page, `${base}/perfil`, 'Paso 1 de 3', 'Tu nombre', 20_000)
+  })
+
+  test('sucursales: create wizard Paso 1 de 3', async ({ page }) => {
+    await entrarSeller(page, 'NEGOCIO_PLUS')
+    await page.goto('/negocio-plus/sucursales', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Mis Sucursales' })).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: '+ Agregar sucursal' }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText('Paso 1 de 3')).toBeVisible()
+    await expect(dialog.getByRole('heading', { name: 'Nombre de la sucursal' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Continuar' })).toBeVisible()
   })
 })

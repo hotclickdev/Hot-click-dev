@@ -18,11 +18,21 @@ const PASOS: readonly PasoFormulario[] = [
   { id: 'contacto', titulo: 'Contacto' },
 ]
 
+type Props = Readonly<{
+  volverA: string
+  rutaExito?: string
+  /** Solo wizard (sin main/encabezado/avatar); para shell Emprendedor. */
+  soloFormulario?: boolean
+}>
+
 /**
  * Editar perfil (Figma 64:476) — wizard conversacional.
  */
-export default function PerfilPage() {
-  const ruta = useSellerRuta()
+export function PerfilPage({
+  volverA,
+  rutaExito,
+  soloFormulario = false,
+}: Props) {
   const navigate = useNavigate()
   const toast = useToast()
   const cuenta = useCuentaVendedor()
@@ -35,6 +45,7 @@ export default function PerfilPage() {
   const [telefono, setTelefono] = useState('')
   const [guardando, setGuardando] = useState(false)
   const idPaso = PASOS[paso]?.id
+  const destino = rutaExito ?? volverA
 
   useEffect(() => {
     if (cuenta.cargando) return
@@ -61,7 +72,7 @@ export default function PerfilPage() {
         setUserName(nombre.trim())
       }
       toast({ message: 'Perfil actualizado', type: 'success' })
-      navigate(ruta('opciones'))
+      navigate(destino)
     } catch (err: unknown) {
       toast({ message: mensajeErrorEmpresa(err, 'No se pudo guardar el perfil'), type: 'error' })
     } finally {
@@ -69,17 +80,8 @@ export default function PerfilPage() {
     }
   }
 
-  return (
-    <main className="px-5 pb-8 pt-[60px]">
-      <EncabezadoPagina titulo="Editar Perfil" volverA={ruta('opciones')} />
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex size-14 items-center justify-center rounded-full bg-hc-primary text-xl font-bold text-white">
-          {cuenta.inicial}
-        </div>
-        <button type="button" className="text-sm text-hc-accent">
-          Cambiar foto de perfil
-        </button>
-      </div>
+  const wizard = (
+    <>
       {cuenta.cargando ? <p className="text-sm text-hc-muted">Cargando perfil…</p> : null}
       {!cuenta.cargando ? (
         <FormularioPorPasos
@@ -105,6 +107,29 @@ export default function PerfilPage() {
           ) : null}
         </FormularioPorPasos>
       ) : null}
+    </>
+  )
+
+  if (soloFormulario) return wizard
+
+  return (
+    <main className="px-5 pb-8 pt-[60px]">
+      <EncabezadoPagina titulo="Editar Perfil" volverA={volverA} />
+      <div className="mb-6 flex items-center gap-4">
+        <div className="flex size-14 items-center justify-center rounded-full bg-hc-primary text-xl font-bold text-white">
+          {cuenta.inicial}
+        </div>
+        <button type="button" className="text-sm text-hc-accent">
+          Cambiar foto de perfil
+        </button>
+      </div>
+      {wizard}
     </main>
   )
+}
+
+/** Default para SellerRoutes: resuelve rutas con useSellerRuta. */
+export default function PerfilSellerPage() {
+  const ruta = useSellerRuta()
+  return <PerfilPage volverA={ruta('opciones')} rutaExito={ruta('opciones')} />
 }

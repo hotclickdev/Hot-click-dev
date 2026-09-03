@@ -141,4 +141,117 @@ class MetodoCobroServiceTest {
         assertThat(lista).hasSize(1);
         assertThat(lista.get(0).getNombre()).isEqualTo("SINPE Móvil");
     }
+
+    @Test
+    @DisplayName("crear segundo método no queda predeterminado")
+    void crear_segundo_no_predeterminado() {
+        stubCrearOk();
+        when(repo.countByEmpresa_IdAndActivoTrue(9L)).thenReturn(1L);
+
+        MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
+        req.setTipo("iban");
+        req.setDato("CR21 0000 1234 4521");
+
+        var dto = service.crear(req);
+
+        assertThat(dto.isPredeterminado()).isFalse();
+        ArgumentCaptor<MetodoCobro> cap = ArgumentCaptor.forClass(MetodoCobro.class);
+        verify(repo).save(cap.capture());
+        assertThat(cap.getValue().getTipo()).isEqualTo(MetodoCobro.TIPO_IBAN);
+        assertThat(cap.getValue().getDestino()).isEqualTo("CR21000012344521");
+        assertThat(cap.getValue().getMascara()).isEqualTo("CR21 **** 4521");
+    }
+
+    @Test
+    @DisplayName("crear sin negocio asociado falla")
+    void crear_sin_empresa_falla() {
+        when(companyScope.getCurrentEmpresaIdOrOwn()).thenReturn(null);
+
+        MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
+        req.setTipo("sinpe");
+        req.setDato("88880000");
+
+        assertThatThrownBy(() -> service.crear(req))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("negocio");
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("crear falla si la empresa del scope no existe")
+    void crear_empresa_inexistente() {
+        when(companyScope.getCurrentEmpresaIdOrOwn()).thenReturn(9L);
+        when(empresaRepo.findById(9L)).thenReturn(Optional.empty());
+
+        MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
+        req.setTipo("sinpe");
+        req.setDato("88880000");
+
+        assertThatThrownBy(() -> service.crear(req))
+                .isInstanceOf(RecursoNoEncontradoException.class)
+                .hasMessageContaining("Empresa");
+    }
+
+    @Test
+    @DisplayName("crear tipo inválido rechaza antes de guardar")
+    void crear_tipo_invalido() {
+        when(companyScope.getCurrentEmpresaIdOrOwn()).thenReturn(9L);
+        when(empresaRepo.findById(9L)).thenReturn(Optional.of(empresa));
+
+        MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
+        req.setTipo("paypal");
+        req.setDato("x");
+
+        assertThatThrownBy(() -> service.crear(req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Tipo no válido");
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("marcar predeterminado de otra empresa lo bloquea el scope")
+    void marcar_predeterminado_tenant_ajeno() {
+        MetodoCobro m = metodoActivo(2L, MetodoCobro.TIPO_SINPE, "88880000", "8888-0000");
+        when(repo.findActivoById(2L)).thenReturn(Optional.of(m));
+        doThrow(new TenantAccessDeniedException("Sin acceso a esta empresa"))
+                .when(companyScope).assertCanAccess(9L);
+
+        assertThatThrownBy(() -> service.marcarPredeterminado(2L))
+                .isInstanceOf(TenantAccessDeniedException.class);
+        verify(repo, never()).clearPredeterminado(any());
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("marcar predeterminado inexistente falla")
+    void marcar_predeterminado_inexistente() {
+        when(repo.findActivoById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.marcarPredeterminado(99L))
+                .isInstanceOf(RecursoNoEncontradoException.class)
+                .hasMessageContaining("Método de cobro");
+        verify(companyScope, never()).assertCanAccess(any());
+    }
+
+    private void stubCrearOk() {
+        when(sanitizer.cleanWithLimit(any(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        when(companyScope.getCurrentEmpresaIdOrOwn()).thenReturn(9L);
+        when(empresaRepo.findById(9L)).thenReturn(Optional.of(empresa));
+        when(repo.save(any())).thenAnswer(inv -> {
+            MetodoCobro m = inv.getArgument(0);
+            m.setId(3L);
+            return m;
+        });
+    }
+
+    private MetodoCobro metodoActivo(Long id, String tipo, String destino, String mascara) {
+        MetodoCobro m = new MetodoCobro();
+        m.setId(id);
+        m.setEmpresa(empresa);
+        m.setTipo(tipo);
+        m.setDestino(destino);
+        m.setMascara(mascara);
+        m.setActivo(true);
+        return m;
+    }
 }

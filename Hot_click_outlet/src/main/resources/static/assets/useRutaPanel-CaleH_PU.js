@@ -1,1 +1,0 @@
-import{a as e}from"./api-Bqdr3-50.js";import{u as t}from"./planPaths-CzbDXQ_Q.js";import{t as n}from"./tenantStore-DeLp2iGg.js";function r(){return t(e(e=>e.userRole),n(e=>e.planNombre))}export{r as t};

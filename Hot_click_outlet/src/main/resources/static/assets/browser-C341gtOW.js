@@ -1,1 +1,0 @@
-var e=globalThis.window!==void 0;export{e as t};

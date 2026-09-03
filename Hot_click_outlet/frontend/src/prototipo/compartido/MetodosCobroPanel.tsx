@@ -39,6 +39,7 @@ type Props = {
 export default function MetodosCobroPanel({ agregarTo }: Props) {
   const toast = useToast()
   const [metodos, setMetodos] = useState<MetodoCobro[]>([])
+  const [modoDemo, setModoDemo] = useState(false)
   const [predeterminadoId, setPredeterminadoId] = useState('')
   const [cargando, setCargando] = useState(true)
   const [guardandoId, setGuardandoId] = useState<string | null>(null)
@@ -48,17 +49,21 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
     let vivo = true
     setCargando(true)
     cargarMetodosCobro()
-      .then((lista) => {
+      .then((carga) => {
         if (!vivo) return
-        setMetodos(lista)
-        const pred = lista.find((m) => m.predeterminado) ?? lista[0]
+        setMetodos(carga.metodos)
+        setModoDemo(carga.fuente === 'demo')
+        const pred = carga.metodos.find((m) => m.predeterminado) ?? carga.metodos[0]
         setPredeterminadoId(pred?.id ?? '')
+        if (carga.fuente === 'demo') {
+          toast({ message: 'Modo demo: métodos de ejemplo (API no disponible)', type: 'info' })
+        }
       })
       .finally(() => {
         if (vivo) setCargando(false)
       })
     return () => { vivo = false }
-  }, [])
+  }, [toast])
 
   function pedirConfirmacion(id: string) {
     if (id === predeterminadoId) return
@@ -68,7 +73,7 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
   async function confirmarPredeterminado() {
     if (!pendienteId) return
     const id = pendienteId
-    if (id.startsWith('demo-')) {
+    if (modoDemo || id.startsWith('demo-')) {
       setPredeterminadoId(id)
       setPendienteId(null)
       return
@@ -102,6 +107,14 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
       <p className="rounded-xl bg-[var(--hc-info-bg)] px-4 py-3 text-[13px] leading-5 text-[var(--hc-info)]">
         El cliente paga en la tienda. Acá elegís a qué cuenta te llega el ingreso.
       </p>
+      {modoDemo ? (
+        <p
+          role="status"
+          className="rounded-xl bg-[var(--hc-n-50)] px-4 py-3 text-[13px] leading-5 text-hc-muted"
+        >
+          Modo demo: la API de cobro no está disponible. Los datos son de ejemplo y no se guardan.
+        </p>
+      ) : null}
       {pendiente ? (
         <ConfirmacionPredeterminado
           metodo={pendiente}

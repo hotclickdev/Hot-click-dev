@@ -95,6 +95,16 @@ export function validarDatoMetodo(tipo: TipoMetodoCobro, dato: string): string |
   return null
 }
 
+/** Clave legacy del prototipo; nunca es fuente de verdad si la API responde. */
+export const CLAVE_LOCAL_METODOS_COBRO = 'hotclick-metodos-cobro-vendedor'
+
+export type FuenteMetodosCobro = 'api' | 'demo'
+
+export type CargaMetodosCobro = {
+  fuente: FuenteMetodosCobro
+  metodos: MetodoCobro[]
+}
+
 function esMetodoApi(v: unknown): v is MetodoCobroApi {
   if (!v || typeof v !== 'object') return false
   const m = v as Record<string, unknown>
@@ -108,23 +118,52 @@ function esMetodoApi(v: unknown): v is MetodoCobroApi {
 }
 
 /**
- * Lista cuentas de cobro del negocio vía API.
- * Fallback a METODOS_COBRO_DEMO solo si la petición falla (prototipo / offline).
+ * Decide API vs demo a partir del resultado del listado (puro; testeable).
+ * Demo solo si la petición falló — nunca si la API respondió (aunque venga vacía).
  */
-export async function cargarMetodosCobro(): Promise<MetodoCobro[]> {
+export function decidirFuenteMetodosCobro(
+  intento: { ok: true; data: unknown } | { ok: false },
+): CargaMetodosCobro {
+  if (!intento.ok) {
+    return { fuente: 'demo', metodos: [...METODOS_COBRO_DEMO] }
+  }
+  if (!Array.isArray(intento.data)) {
+    return { fuente: 'api', metodos: [] }
+  }
+  return {
+    fuente: 'api',
+    metodos: intento.data.filter(esMetodoApi).map(mapMetodoCobroApi),
+  }
+}
+
+/** Borra cache local legacy para que no compita con la API. */
+export function limpiarMetodosCobroLocalLegacy(): void {
+  try {
+    localStorage.removeItem(CLAVE_LOCAL_METODOS_COBRO)
+  } catch {
+    // private mode / sin storage
+  }
+}
+
+/**
+ * Lista cuentas de cobro del negocio vía API.
+ * Fallback demo solo si la petición falla (offline / sin sesión); flag `fuente` explícito.
+ */
+export async function cargarMetodosCobro(): Promise<CargaMetodosCobro> {
   try {
     const { data } = await metodosCobroService.listar()
-    if (!Array.isArray(data)) return []
-    return data.filter(esMetodoApi).map(mapMetodoCobroApi)
+    const carga = decidirFuenteMetodosCobro({ ok: true, data })
+    if (carga.fuente === 'api') limpiarMetodosCobroLocalLegacy()
+    return carga
   } catch {
-    // Fallback demo: no bloquear UI del prototipo si API/auth no está disponible.
-    return [...METODOS_COBRO_DEMO]
+    return decidirFuenteMetodosCobro({ ok: false })
   }
 }
 
 export async function crearMetodoCobro(tipo: TipoMetodoCobro, dato: string): Promise<MetodoCobro> {
   const { data } = await metodosCobroService.crear(tipo, dato)
   if (!esMetodoApi(data)) throw new Error('Respuesta inválida al crear método de cobro')
+  limpiarMetodosCobroLocalLegacy()
   return mapMetodoCobroApi(data)
 }
 

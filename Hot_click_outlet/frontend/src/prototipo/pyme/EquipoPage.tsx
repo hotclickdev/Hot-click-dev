@@ -16,6 +16,11 @@ import {
   type MiembroEquipo,
 } from '@/pages/admin/equipo/equipoHelpers'
 import { PASOS_INVITAR_EQUIPO, validarPasoInvitarEquipo } from './equipoPasos'
+import {
+  esMiembroVisibleEnLista,
+  nombreVisibleMiembro,
+  puedeQuitarMiembro,
+} from './equipoConfirmacionHelpers'
 
 /**
  * Mi Equipo — PLAN PYME (Figma 305:339 / 352:9116) con API `/empresa/equipo`.
@@ -27,6 +32,8 @@ export default function EquipoPage() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [pendiente, setPendiente] = useState<MiembroEquipo | null>(null)
+  const [quitando, setQuitando] = useState(false)
 
   useEffect(() => {
     let vivo = true
@@ -48,7 +55,22 @@ export default function EquipoPage() {
     return () => { vivo = false }
   }, [])
 
-  const visibles = miembros.filter((m) => m.estado === 1 || m.estado === 5)
+  async function confirmarQuitar() {
+    if (!pendiente) return
+    setQuitando(true)
+    try {
+      await equipoService.eliminar(pendiente.id)
+      setMiembros((prev) => prev.filter((m) => m.id !== pendiente.id))
+      setPendiente(null)
+      toast({ message: 'Miembro quitado del equipo', type: 'success' })
+    } catch (err: unknown) {
+      toast({ message: mensajeErrorEquipo(err, 'No se pudo quitar al miembro'), type: 'error' })
+    } finally {
+      setQuitando(false)
+    }
+  }
+
+  const visibles = miembros.filter(esMiembroVisibleEnLista)
 
   return (
     <main className="px-5 pb-10 pt-8 md:px-12 md:py-12" data-mm="seller-equipo">
@@ -60,35 +82,57 @@ export default function EquipoPage() {
           <h1 className="font-display text-[22px] font-bold md:text-[28px]">Mi Equipo</h1>
           <p className="mt-1 text-xs text-hc-muted md:text-sm">Miembros con acceso a esta tienda</p>
         </div>
-        <Boton onClick={() => setMostrarForm(true)}>+ Invitar miembro</Boton>
+        {!pendiente ? (
+          <Boton onClick={() => setMostrarForm(true)}>+ Invitar miembro</Boton>
+        ) : null}
       </div>
 
-      {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando equipo…</p> : null}
-      {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
-      {!cargando && visibles.length === 0 ? (
-        <p className="mt-6 text-sm text-hc-muted">Todavía no hay miembros invitados.</p>
-      ) : null}
+      {pendiente ? (
+        <div className="mt-6 md:max-w-lg">
+          <ConfirmacionQuitarMiembro
+            miembro={pendiente}
+            guardando={quitando}
+            onConfirmar={() => void confirmarQuitar()}
+            onCancelar={() => setPendiente(null)}
+          />
+        </div>
+      ) : (
+        <>
+          {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando equipo…</p> : null}
+          {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
+          {!cargando && visibles.length === 0 ? (
+            <p className="mt-6 text-sm text-hc-muted">Todavía no hay miembros invitados.</p>
+          ) : null}
 
-      <ul className="mt-6 flex flex-col gap-3">
-        {visibles.map((item) => (
-          <FilaMiembro key={String(item.id)} miembro={item} />
-        ))}
-      </ul>
+          <ul className="mt-6 flex flex-col gap-3">
+            {visibles.map((item) => (
+              <FilaMiembro
+                key={String(item.id)}
+                miembro={item}
+                onPedirQuitar={() => {
+                  setMostrarForm(false)
+                  setPendiente(item)
+                }}
+              />
+            ))}
+          </ul>
 
-      {mostrarForm ? (
-        <FormularioInvitar
-          onCerrar={() => setMostrarForm(false)}
-          onInvitado={(nuevo) => {
-            setMiembros((prev) => [...prev, nuevo])
-            setMostrarForm(false)
-            toast({ message: 'Miembro invitado', type: 'success' })
-          }}
-        />
-      ) : null}
+          {mostrarForm ? (
+            <FormularioInvitar
+              onCerrar={() => setMostrarForm(false)}
+              onInvitado={(nuevo) => {
+                setMiembros((prev) => [...prev, nuevo])
+                setMostrarForm(false)
+                toast({ message: 'Miembro invitado', type: 'success' })
+              }}
+            />
+          ) : null}
 
-      <p className="mt-6 hidden text-xs text-hc-muted md:block">
-        También desde <a className="font-medium text-hc-primary" href={ruta('opciones')}>Opciones</a>.
-      </p>
+          <p className="mt-6 hidden text-xs text-hc-muted md:block">
+            También desde <a className="font-medium text-hc-primary" href={ruta('opciones')}>Opciones</a>.
+          </p>
+        </>
+      )}
     </main>
   )
 }
@@ -98,12 +142,46 @@ function listaMiembros(data: unknown): MiembroEquipo[] {
   return wrapped?.data ?? (Array.isArray(data) ? data as MiembroEquipo[] : [])
 }
 
-function FilaMiembro({ miembro }: { miembro: MiembroEquipo }) {
-  const nombre = miembro.nombre ?? miembro.correo ?? 'Miembro'
+type ConfirmacionQuitarProps = Readonly<{
+  miembro: MiembroEquipo
+  guardando: boolean
+  onConfirmar: () => void
+  onCancelar: () => void
+}>
+
+function ConfirmacionQuitarMiembro({ miembro, guardando, onConfirmar, onCancelar }: ConfirmacionQuitarProps) {
+  const nombre = nombreVisibleMiembro(miembro)
+  const rol = ROL_CONFIG[miembro.rolEnEmpresa ?? '']?.label ?? miembro.rolEnEmpresa ?? '—'
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-hc-border bg-hc-surface p-4">
+      <p className="text-sm font-semibold text-hc-text">{nombre}</p>
+      <p className="text-[13px] text-hc-muted">{rol}</p>
+      <p className="text-sm text-hc-muted">
+        ¿Quitás a esta persona del equipo? Ya no podrá entrar a esta tienda.
+      </p>
+      <Boton variante="peligro" disabled={guardando} onClick={onConfirmar}>
+        {guardando ? 'Quitando…' : 'Sí, quitar del equipo'}
+      </Boton>
+      <Boton variante="contorno" disabled={guardando} onClick={onCancelar}>
+        Cancelar
+      </Boton>
+    </div>
+  )
+}
+
+function FilaMiembro({
+  miembro,
+  onPedirQuitar,
+}: {
+  miembro: MiembroEquipo
+  onPedirQuitar: () => void
+}) {
+  const nombre = nombreVisibleMiembro(miembro)
   const letra = nombre.slice(0, 1).toUpperCase()
   const rol = ROL_CONFIG[miembro.rolEnEmpresa ?? '']?.label ?? miembro.rolEnEmpresa ?? '—'
   const estado = ESTADO_LABEL[miembro.estado ?? 1] ?? 'Activo'
   const activo = miembro.estado === 1
+  const quitable = puedeQuitarMiembro(miembro)
   return (
     <li className="flex items-center gap-3 rounded-[10px] border border-hc-border bg-hc-surface p-3.5 md:px-4 md:py-3">
       <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--hc-n-100)] text-sm font-bold text-hc-muted md:size-12 md:text-base">
@@ -122,6 +200,15 @@ function FilaMiembro({ miembro }: { miembro: MiembroEquipo }) {
       >
         {estado}
       </span>
+      {quitable ? (
+        <button
+          type="button"
+          onClick={onPedirQuitar}
+          className="min-h-11 shrink-0 px-2 text-xs font-semibold text-hc-danger"
+        >
+          Quitar
+        </button>
+      ) : null}
     </li>
   )
 }

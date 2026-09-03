@@ -93,19 +93,30 @@ type CampoProps = {
   onChange?: (valor: string) => void
   placeholder?: string
   type?: string
+  readOnly?: boolean
 }
 
-export function Campo({ etiqueta, defaultValue, value, onChange, placeholder, type = 'text' }: CampoProps) {
+export function Campo({
+  etiqueta,
+  defaultValue,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  readOnly = false,
+}: CampoProps) {
+  const controlado = Boolean(onChange) || readOnly
   return (
     <label className="mb-4 block">
       <span className="mb-2 block text-xs font-medium text-hc-muted">{etiqueta}</span>
       <input
         type={type}
-        defaultValue={onChange ? undefined : defaultValue}
-        value={onChange ? value : undefined}
-        onChange={onChange ? (evento) => onChange(evento.target.value) : undefined}
+        defaultValue={controlado ? undefined : defaultValue}
+        value={controlado ? value : undefined}
+        onChange={onChange && !readOnly ? (evento) => onChange(evento.target.value) : undefined}
         placeholder={placeholder}
-        className="min-h-12 w-full rounded-xl bg-hc-surface-2 px-3.5 text-sm text-hc-text placeholder:text-hc-muted"
+        readOnly={readOnly}
+        className="min-h-12 w-full rounded-xl bg-hc-surface-2 px-3.5 text-sm text-hc-text placeholder:text-hc-muted read-only:opacity-80"
       />
     </label>
   )

@@ -12,11 +12,21 @@ const PASOS: readonly PasoFormulario[] = [
   { id: 'encargado', titulo: 'Encargado', opcional: true },
 ]
 
+type Props = Readonly<{
+  volverA: string
+  rutaExito?: string
+  /** Solo wizard (sin main/encabezado); para shell Emprendedor. */
+  soloFormulario?: boolean
+}>
+
 /**
  * Alta de bodega (Figma 78:325) — wizard conversacional.
  */
-export default function NuevaBodegaPage() {
-  const ruta = useSellerRuta()
+export function NuevaBodegaPage({
+  volverA,
+  rutaExito,
+  soloFormulario = false,
+}: Props) {
   const navigate = useNavigate()
   const [paso, setPaso] = useState(0)
   const [nombre, setNombre] = useState('')
@@ -25,6 +35,7 @@ export default function NuevaBodegaPage() {
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const idPaso = PASOS[paso]?.id
+  const destino = rutaExito ?? volverA
 
   function validar(i: number): string | null {
     const id = PASOS[i]?.id
@@ -38,7 +49,7 @@ export default function NuevaBodegaPage() {
     setError(null)
     try {
       await crearBodegaVendedor(nombre, ubicacion, encargado)
-      navigate(ruta('bodegas'))
+      navigate(destino)
     } catch (err: unknown) {
       console.error('[NuevaBodega]', err)
       setError('No se pudo guardar la bodega.')
@@ -47,44 +58,56 @@ export default function NuevaBodegaPage() {
     }
   }
 
+  const wizard = (
+    <FormularioPorPasos
+      pasos={PASOS}
+      pasoActual={paso}
+      onPasoChange={setPaso}
+      validarPaso={validar}
+      onFinalizar={guardar}
+      etiquetaFinal="Guardar bodega"
+      enviando={guardando}
+    >
+      {idPaso === 'nombre' ? (
+        <Campo
+          etiqueta="Nombre de la bodega"
+          value={nombre}
+          onChange={setNombre}
+          placeholder="Ej: Bodega Central"
+        />
+      ) : null}
+      {idPaso === 'ubicacion' ? (
+        <Campo
+          etiqueta="Ubicación"
+          value={ubicacion}
+          onChange={setUbicacion}
+          placeholder="Ej: San José, Costa Rica"
+        />
+      ) : null}
+      {idPaso === 'encargado' ? (
+        <Campo
+          etiqueta="Encargado (opcional)"
+          value={encargado}
+          onChange={setEncargado}
+          placeholder="Ej: Sofía Vargas"
+        />
+      ) : null}
+      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+    </FormularioPorPasos>
+  )
+
+  if (soloFormulario) return wizard
+
   return (
     <main className="px-5 pb-8 pt-[60px]">
-      <EncabezadoPagina titulo="Nueva Bodega" volverA={ruta('bodegas')} />
-      <FormularioPorPasos
-        pasos={PASOS}
-        pasoActual={paso}
-        onPasoChange={setPaso}
-        validarPaso={validar}
-        onFinalizar={guardar}
-        etiquetaFinal="Guardar bodega"
-        enviando={guardando}
-      >
-        {idPaso === 'nombre' ? (
-          <Campo
-            etiqueta="Nombre de la bodega"
-            value={nombre}
-            onChange={setNombre}
-            placeholder="Ej: Bodega Central"
-          />
-        ) : null}
-        {idPaso === 'ubicacion' ? (
-          <Campo
-            etiqueta="Ubicación"
-            value={ubicacion}
-            onChange={setUbicacion}
-            placeholder="Ej: San José, Costa Rica"
-          />
-        ) : null}
-        {idPaso === 'encargado' ? (
-          <Campo
-            etiqueta="Encargado (opcional)"
-            value={encargado}
-            onChange={setEncargado}
-            placeholder="Ej: Sofía Vargas"
-          />
-        ) : null}
-        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-      </FormularioPorPasos>
+      <EncabezadoPagina titulo="Nueva Bodega" volverA={volverA} />
+      {wizard}
     </main>
   )
+}
+
+/** Default para SellerRoutes: resuelve rutas con useSellerRuta. */
+export default function NuevaBodegaSellerPage() {
+  const ruta = useSellerRuta()
+  return <NuevaBodegaPage volverA={ruta('bodegas')} rutaExito={ruta('bodegas')} />
 }

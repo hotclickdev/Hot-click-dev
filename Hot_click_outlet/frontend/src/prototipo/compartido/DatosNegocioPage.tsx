@@ -2,39 +2,21 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { empresaService } from '@/services/empresaService'
-import {
-  descripcionSinTagFotos,
-  descripcionVisible,
-  fotosDesdeDescripcion,
-  unwrapEmpresa,
-  type EmpresaPerfil,
-} from '@/pages/admin/mi-empresa/miEmpresaHelpers'
-import { leerExtrasLocal, limpiarExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
+import { unwrapEmpresa } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
+import { limpiarExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
 import FormularioPorPasos from './FormularioPorPasos'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
 import { Campo, Chip, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import iconCamara from './assets/icon-camara.svg'
-
-const CATEGORIAS = ['Tecnología', 'Ropa', 'Hogar'] as const
-
-type FormNegocio = {
-  nombre: string
-  descripcion: string
-  categoria: string
-  whatsapp: string
-  instagram: string
-  zona: string
-}
-
-const FORM_INICIAL: FormNegocio = {
-  nombre: '',
-  descripcion: '',
-  categoria: CATEGORIAS[0],
-  whatsapp: '',
-  instagram: '',
-  zona: '',
-}
+import {
+  CATEGORIAS_NEGOCIO,
+  FORM_NEGOCIO_INICIAL,
+  type FormNegocio,
+  armarDescripcion,
+  extrasDesdeApiOLocal,
+  formDesdeEmpresa,
+} from './datosNegocioHelpers'
 
 const PASOS: readonly PasoFormulario[] = [
   { id: 'identidad', titulo: 'Identidad del negocio' },
@@ -42,19 +24,30 @@ const PASOS: readonly PasoFormulario[] = [
   { id: 'publico', titulo: 'Cómo te ven los compradores' },
 ]
 
+type Props = Readonly<{
+  volverA: string
+  rutaExito?: string
+  /** Solo wizard (sin main/encabezado); para shell Emprendedor. */
+  soloFormulario?: boolean
+}>
+
 /**
  * Datos públicos del negocio (Figma 136:408) — wizard con persistencia en API.
  */
-export default function DatosNegocioPage() {
-  const ruta = useSellerRuta()
+export function DatosNegocioPage({
+  volverA,
+  rutaExito,
+  soloFormulario = false,
+}: Props) {
   const navigate = useNavigate()
   const toast = useToast()
   const [paso, setPaso] = useState(0)
-  const [form, setForm] = useState<FormNegocio>(FORM_INICIAL)
+  const [form, setForm] = useState<FormNegocio>(FORM_NEGOCIO_INICIAL)
   const [descRaw, setDescRaw] = useState('')
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const idPaso = PASOS[paso]?.id
+  const destino = rutaExito ?? volverA
 
   useEffect(() => {
     void cargarPerfil(setForm, setDescRaw, setCargando, toast)
@@ -83,7 +76,7 @@ export default function DatosNegocioPage() {
       })
       limpiarExtrasLocal()
       toast({ message: 'Datos del negocio guardados', type: 'success' })
-      navigate(ruta('opciones'))
+      navigate(destino)
     } catch {
       toast({ message: 'No se pudieron guardar los datos', type: 'error' })
     } finally {
@@ -91,9 +84,8 @@ export default function DatosNegocioPage() {
     }
   }
 
-  return (
-    <main className="px-5 pb-8 pt-[60px] md:max-w-[760px] md:px-12 md:py-12 md:pt-12">
-      <EncabezadoPagina titulo="Datos de tu Negocio" volverA={ruta('opciones')} />
+  const wizard = (
+    <>
       <p className="mb-4 text-sm text-hc-muted">
         Esta información es la que ven los compradores en tu perfil público. Mantenela actualizada.
       </p>
@@ -113,7 +105,7 @@ export default function DatosNegocioPage() {
               <Campo etiqueta="Nombre del negocio" value={form.nombre} onChange={setCampo('nombre')} />
               <p className="mb-2 text-xs font-medium text-hc-muted">Categoría principal</p>
               <div className="mb-4 flex flex-wrap gap-2">
-                {CATEGORIAS.map((item) => (
+                {CATEGORIAS_NEGOCIO.map((item) => (
                   <Chip
                     key={item}
                     activo={form.categoria === item}
@@ -154,8 +146,23 @@ export default function DatosNegocioPage() {
           ) : null}
         </FormularioPorPasos>
       ) : null}
+    </>
+  )
+
+  if (soloFormulario) return wizard
+
+  return (
+    <main className="px-5 pb-8 pt-[60px] md:max-w-[760px] md:px-12 md:py-12 md:pt-12">
+      <EncabezadoPagina titulo="Datos de tu Negocio" volverA={volverA} />
+      {wizard}
     </main>
   )
+}
+
+/** Default para SellerRoutes: resuelve rutas con useSellerRuta. */
+export default function DatosNegocioSellerPage() {
+  const ruta = useSellerRuta()
+  return <DatosNegocioPage volverA={ruta('opciones')} rutaExito={ruta('opciones')} />
 }
 
 function Archivo({ etiqueta, nombre }: { etiqueta: string; nombre: string }) {
@@ -172,13 +179,6 @@ function Archivo({ etiqueta, nombre }: { etiqueta: string; nombre: string }) {
   )
 }
 
-function armarDescripcion(visible: string, rawAnterior: string): string {
-  const fotos = fotosDesdeDescripcion(rawAnterior)
-  const limpia = descripcionSinTagFotos(visible)
-  if (fotos.length === 0) return limpia
-  return `${limpia}\n[FOTOS]${JSON.stringify(fotos)}[/FOTOS]`
-}
-
 async function cargarPerfil(
   setForm: (f: FormNegocio) => void,
   setDescRaw: (v: string) => void,
@@ -189,47 +189,15 @@ async function cargarPerfil(
     const { data } = await empresaService.getPerfil()
     const empresa = unwrapEmpresa(data)
     if (!empresa?.id) {
-      setForm({ ...FORM_INICIAL, ...extrasDesdeApiOLocal(null) })
+      setForm({ ...FORM_NEGOCIO_INICIAL, ...extrasDesdeApiOLocal(null) })
       return
     }
     setDescRaw(empresa.descripcion ?? '')
     setForm(formDesdeEmpresa(empresa))
   } catch {
-    setForm({ ...FORM_INICIAL, ...extrasDesdeApiOLocal(null) })
+    setForm({ ...FORM_NEGOCIO_INICIAL, ...extrasDesdeApiOLocal(null) })
     toast({ message: 'No se pudo cargar el perfil del negocio', type: 'error' })
   } finally {
     setCargando(false)
-  }
-}
-
-function formDesdeEmpresa(empresa: EmpresaPerfil): FormNegocio {
-  const extras = extrasDesdeApiOLocal(empresa)
-  return {
-    nombre: empresa.nombreComercial ?? FORM_INICIAL.nombre,
-    descripcion: descripcionVisible(empresa.descripcion) || FORM_INICIAL.descripcion,
-    categoria: extras.categoria,
-    whatsapp: empresa.numeroWhatsapp || FORM_INICIAL.whatsapp,
-    instagram: extras.instagram,
-    zona: extras.zona,
-  }
-}
-
-/** Prefiere API; si vacío, usa localStorage legacy como seed temporal. */
-function extrasDesdeApiOLocal(empresa: EmpresaPerfil | null): Pick<FormNegocio, 'categoria' | 'instagram' | 'zona'> {
-  const apiCategoria = empresa?.categoriaNegocio?.trim() ?? ''
-  const apiInstagram = empresa?.instagram?.trim() ?? ''
-  const apiZona = empresa?.zonaEnvio?.trim() ?? ''
-  if (apiCategoria || apiInstagram || apiZona) {
-    return {
-      categoria: apiCategoria || FORM_INICIAL.categoria,
-      instagram: apiInstagram || FORM_INICIAL.instagram,
-      zona: apiZona || FORM_INICIAL.zona,
-    }
-  }
-  const local = leerExtrasLocal()
-  return {
-    categoria: local.categoria || FORM_INICIAL.categoria,
-    instagram: local.instagram || FORM_INICIAL.instagram,
-    zona: local.zona || FORM_INICIAL.zona,
   }
 }
