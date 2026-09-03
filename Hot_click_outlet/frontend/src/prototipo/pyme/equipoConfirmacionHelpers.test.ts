@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   esMiembroVisibleEnLista,
+  mensajeExitoInvitacion,
   nombreVisibleMiembro,
   puedeQuitarMiembro,
 } from './equipoConfirmacionHelpers'
@@ -23,5 +24,17 @@ describe('equipoConfirmacionHelpers', () => {
     expect(esMiembroVisibleEnLista({ estado: 5 })).toBe(true)
     expect(esMiembroVisibleEnLista({ estado: 2 })).toBe(false)
     expect(esMiembroVisibleEnLista({})).toBe(false)
+  })
+
+  it('mensajeExitoInvitacion usa el nombre o un fallback', () => {
+    expect(mensajeExitoInvitacion('María')).toBe(
+      'María ya puede entrar con la contraseña temporal.',
+    )
+    expect(mensajeExitoInvitacion('  ')).toBe(
+      'El miembro ya puede entrar con la contraseña temporal.',
+    )
+    expect(mensajeExitoInvitacion(null)).toBe(
+      'El miembro ya puede entrar con la contraseña temporal.',
+    )
   })
 })

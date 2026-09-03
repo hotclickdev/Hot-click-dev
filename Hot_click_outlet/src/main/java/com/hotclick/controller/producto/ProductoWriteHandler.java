@@ -73,6 +73,25 @@ public class ProductoWriteHandler {
         }
     }
 
+    public ResponseEntity<ResponseDTO> toggleVisibleCatalogo(Long id, Map<String, Boolean> body) {
+        try {
+            Boolean valor = body.get("visibleCatalogo");
+            if (valor == null) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Campo visibleCatalogo requerido"));
+            }
+            var existente = productoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
+            companyScope.assertCanAccessNullable(existente.getEmpresaId());
+            var producto = productoService.toggleVisibleCatalogo(id, valor);
+            String msg = valor ? "Producto publicado" : "Producto pausado";
+            return ResponseEntity.ok(ResponseDTO.success(msg, producto));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     public ResponseEntity<ResponseDTO> crearProducto(@Valid ProductoRequestDTO dto, String idempotencyKey) {
         return createHandler.crearProducto(dto, idempotencyKey);
     }

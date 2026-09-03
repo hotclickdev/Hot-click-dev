@@ -82,6 +82,16 @@ public class ProductoWriteOperations {
         return saved;
     }
 
+    @Transactional
+    public Producto toggleVisibleCatalogo(Long id, Boolean valor) {
+        Producto p = productoRepository.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
+        p.setVisibleCatalogo(valor);
+        Producto saved = productoRepository.save(p);
+        cacheEvictor.evictProductosPublicos();
+        return saved;
+    }
+
     /**
      * Aplica o quita oferta a un producto. Si enOferta=true, calcula precioOferta
      * a partir de porcentajeDescuento (o viceversa) según cuál venga informado.

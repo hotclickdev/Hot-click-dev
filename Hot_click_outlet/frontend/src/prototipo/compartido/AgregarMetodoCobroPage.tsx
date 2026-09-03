@@ -13,6 +13,9 @@ import {
 } from './metodosCobroDatos'
 import { Campo, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
+import TarjetaOpcion from './motion/TarjetaOpcion'
+import { motion } from 'framer-motion'
+import { EASE_PREMIUM } from './motion/formularioMotionTokens'
 
 const PASOS: readonly PasoFormulario[] = [
   { id: 'tipo', titulo: 'Tipo de cuenta' },
@@ -76,26 +79,35 @@ export function AgregarMetodoCobroPage({
       enviando={guardando}
     >
       {idPaso === 'tipo' ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Tipo de método">
-          {TIPOS_METODO_COBRO.map((opcion) => {
-            const seleccionada = tipo === opcion.tipo
-            return (
-              <button
-                key={opcion.tipo}
-                type="button"
-                role="radio"
-                aria-checked={seleccionada}
-                onClick={() => setTipo(opcion.tipo)}
-                className={`rounded-2xl border p-4 text-left transition ${
-                  seleccionada ? 'border-hc-primary bg-[var(--hc-red-50)]' : 'border-hc-border bg-hc-surface'
-                }`}
-              >
-                <span className="block text-[15px] font-bold text-hc-text">{opcion.titulo}</span>
-                <span className="mt-1 block text-xs text-hc-muted">{opcion.ayuda}</span>
-              </button>
-            )
-          })}
-        </div>
+        <motion.div
+          className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+          role="radiogroup"
+          aria-label="Tipo de método"
+          initial="hidden"
+          animate="show"
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.05 } },
+          }}
+        >
+          {TIPOS_METODO_COBRO.map((opcion) => (
+            <motion.div
+              key={opcion.tipo}
+              variants={{
+                hidden: { opacity: 0, y: 8 },
+                show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: EASE_PREMIUM } },
+              }}
+            >
+              <TarjetaOpcion
+                titulo={opcion.titulo}
+                ayuda={opcion.ayuda}
+                seleccionado={tipo === opcion.tipo}
+                atenuar={tipo != null && tipo !== opcion.tipo}
+                onSelect={() => setTipo(opcion.tipo)}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
       ) : null}
       {idPaso === 'datos' && tipo ? (
         <Campo

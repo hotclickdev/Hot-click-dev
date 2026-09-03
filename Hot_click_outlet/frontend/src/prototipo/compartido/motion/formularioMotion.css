@@ -1,0 +1,132 @@
+/* Motion wizards vendedor — shimmer, shake, pulse, floating label */
+
+@keyframes hc-wizard-shimmer {
+  0% { background-position: -120% 0; }
+  100% { background-position: 220% 0; }
+}
+
+@keyframes hc-wizard-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@keyframes hc-wizard-pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--hc-primary) 45%, transparent); }
+  70% { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes hc-wizard-float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes hc-wizard-success-flash {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15); }
+}
+
+.hc-wizard-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 35%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: hc-wizard-shimmer 1.4s ease-in-out infinite;
+}
+
+.hc-wizard-shake {
+  animation: hc-wizard-shake 0.35s ease-out;
+}
+
+.hc-wizard-pulse-cta {
+  animation: hc-wizard-pulse-ring 1.8s ease-out infinite;
+}
+
+.hc-wizard-float {
+  animation: hc-wizard-float-y 3s ease-in-out infinite;
+}
+
+.hc-wizard-success-flash {
+  animation: hc-wizard-success-flash 0.45s ease-out;
+}
+
+/* Oculta spinners nativos en inputs type=number del wizard */
+.hc-wizard-input-numero::-webkit-outer-spin-button,
+.hc-wizard-input-numero::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hc-wizard-input-numero {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.hc-wizard-campo {
+  position: relative;
+}
+
+.hc-wizard-campo input {
+  caret-color: var(--hc-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.hc-wizard-campo::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--hc-primary);
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+}
+
+.hc-wizard-campo:focus-within::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.hc-wizard-campo--ok input {
+  border-color: var(--hc-success);
+}
+
+.hc-wizard-campo--error input {
+  border-color: var(--hc-danger);
+}
+
+.hc-wizard-campo--ok .hc-wizard-campo-label {
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-wizard-shimmer,
+  .hc-wizard-shake,
+  .hc-wizard-pulse-cta,
+  .hc-wizard-float,
+  .hc-wizard-success-flash {
+    animation: none !important;
+  }
+
+  .hc-wizard-campo::after {
+    transition: none;
+  }
+}
+
+@media (hover: hover) {
+  .hc-wizard-cta-continuar .hc-wizard-flecha {
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .hc-wizard-cta-continuar:hover .hc-wizard-flecha {
+    transform: translateX(4px);
+  }
+}

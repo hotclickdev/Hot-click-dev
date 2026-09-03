@@ -20,7 +20,7 @@ public class EmailLayoutHelper {
     public String wordmark(boolean sobreOscuro) {
         String hot   = sobreOscuro ? "#F0524A" : "#E73B33";
         String click = sobreOscuro ? "#FFFFFF" : "#1747A8";
-        return "<img src='https://hotclick.lat/brand/hotclick-isotipo.png' alt='HotClick' width='36' height='29'"
+        return "<img src='https://hotclick.lat/brand/hotclick-isotipo.png' alt='HotClick' width='44' height='35'"
              + " style='display:inline-block;vertical-align:middle;margin-right:8px'>"
              + "<span style=\"font-family:" + F_DISPLAY + ";font-weight:800;font-size:20px;letter-spacing:-0.5px;"
              + "vertical-align:middle\">"

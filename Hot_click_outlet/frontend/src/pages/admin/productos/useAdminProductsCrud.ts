@@ -137,7 +137,7 @@ export function useAdminProductsCrud(deps: Pick<AdminProductsActionsDeps,
   const handleOcultar = useCallback(async (producto: ProductoAdmin) => {
     const visible = producto.visibleCatalogo !== false
     try {
-      await productService.update(producto.id, { visibleCatalogo: !visible })
+      await productService.toggleVisibleCatalogo(producto.id, !visible)
       setProducts((prev) => prev.map((p) => (
         p.id === producto.id ? { ...p, visibleCatalogo: !visible } : p
       )))

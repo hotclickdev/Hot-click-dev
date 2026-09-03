@@ -1,9 +1,8 @@
 import { formatDateShort, formatPrice } from '@/utils/format'
 import { EyeIcon, EyeOffIcon } from './empresasIcons'
 import Row from './Row'
+import EstadoEmpresaChips from './EstadoEmpresaChips'
 import {
-  ESTADOS,
-  ESTADO_COLOR,
   PLAN_COLOR,
   PLANES,
   formatNumero,
@@ -76,18 +75,7 @@ function PlanEstadoActions({ selected, saving, onCambiarPlan, onCambiarEstado }:
         ))}
       </div>
       <p className="text-xs font-semibold uppercase tracking-wider pt-1" style={{ color: 'var(--hc-muted)' }}>Cambiar estado</p>
-      <div className="flex flex-wrap gap-2">
-        {ESTADOS.map((s) => (
-          <button type="button"
-            key={s}
-            onClick={() => onCambiarEstado(selected.id, s)}
-            disabled={saving || selected.estadoEmpresa === s}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-opacity disabled:opacity-40 ${selected.estadoEmpresa === s ? 'ring-2 ring-offset-1 ring-[var(--hc-accent)]' : ''} ${ESTADO_COLOR[s]}`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      <EstadoEmpresaChips selected={selected} saving={saving} onCambiarEstado={onCambiarEstado} />
     </div>
   )
 }

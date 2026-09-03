@@ -54,6 +54,10 @@ public class ProductoService {
         return writeOperations.toggleDestacado(id, valor);
     }
 
+    public Producto toggleVisibleCatalogo(Long id, Boolean valor) {
+        return writeOperations.toggleVisibleCatalogo(id, valor);
+    }
+
     public Producto aplicarOferta(Long id, boolean enOferta, Integer porcentajeDescuento, Integer precioOferta) {
         return writeOperations.aplicarOferta(id, enOferta, porcentajeDescuento, precioOferta);
     }

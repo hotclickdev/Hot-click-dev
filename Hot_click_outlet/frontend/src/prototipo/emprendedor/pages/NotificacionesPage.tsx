@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { RUTA_EMPRENDEDOR } from '../constants'
 
 type TonoNotif = 'alerta' | 'aviso' | 'exito' | 'info'
@@ -85,46 +87,48 @@ export default function NotificacionesPage() {
         ) : null
       }
     >
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-hc-muted">Avisos de cobro, stock y ventas</p>
-        {haySinLeer ? (
-          <button
-            type="button"
-            className="hidden min-h-11 text-[13px] font-medium text-hc-primary md:inline"
-            onClick={() => setItems((prev) => prev.map((n) => ({ ...n, leida: true })))}
-          >
-            Marcar leídas
-          </button>
-        ) : null}
-      </div>
-      <ul className="flex flex-col gap-3">
-        {items.map((item) => (
-          <li key={item.id}>
-            <article
-              className={`flex gap-3 rounded-xl p-3.5 md:p-4 ${
-                item.leida ? 'border border-hc-border bg-hc-surface' : 'bg-[var(--hc-n-50)]'
-              }`}
+      <EntradaPagina className="flex flex-col gap-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-hc-muted">Avisos de cobro, stock y ventas</p>
+          {haySinLeer ? (
+            <button
+              type="button"
+              className="hidden min-h-11 text-[13px] font-medium text-hc-primary md:inline"
+              onClick={() => setItems((prev) => prev.map((n) => ({ ...n, leida: true })))}
             >
-              <div
-                className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${ESTILO_TONO[item.tono]}`}
-                aria-hidden
+              Marcar leídas
+            </button>
+          ) : null}
+        </div>
+        <ListaStagger className="flex flex-col gap-3">
+          {items.map((item) => (
+            <ItemListaStagger key={item.id}>
+              <article
+                className={`flex gap-3 rounded-xl p-3.5 md:p-4 ${
+                  item.leida ? 'border border-hc-border bg-hc-surface' : 'bg-[var(--hc-n-50)]'
+                }`}
               >
-                {GLIFO_TONO[item.tono]}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 text-[13px] font-bold md:text-[15px]">
-                  {item.titulo}
-                  {!item.leida ? (
-                    <span className="size-1.5 shrink-0 rounded-full bg-hc-primary" aria-label="Sin leer" />
-                  ) : null}
-                </p>
-                <p className="mt-0.5 text-[11px] text-hc-muted md:text-[13px]">{item.detalle}</p>
-                <p className="mt-1 text-[10px] text-hc-muted md:text-xs">{item.hace}</p>
-              </div>
-            </article>
-          </li>
-        ))}
-      </ul>
+                <div
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${ESTILO_TONO[item.tono]}`}
+                  aria-hidden
+                >
+                  {GLIFO_TONO[item.tono]}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 text-[13px] font-bold md:text-[15px]">
+                    {item.titulo}
+                    {!item.leida ? (
+                      <span className="size-1.5 shrink-0 rounded-full bg-hc-primary" aria-label="Sin leer" />
+                    ) : null}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-hc-muted md:text-[13px]">{item.detalle}</p>
+                  <p className="mt-1 text-[10px] text-hc-muted md:text-xs">{item.hace}</p>
+                </div>
+              </article>
+            </ItemListaStagger>
+          ))}
+        </ListaStagger>
+      </EntradaPagina>
     </EmprendedorPageFrame>
   )
 }

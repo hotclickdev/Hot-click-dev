@@ -51,7 +51,7 @@ export default function AdminMobileHeader({
           <TrustGlyph tipo="atras" className="w-5 h-5" />
         </button>
       )}
-      <HotClickMark size={22} className="shrink-0" />
+      <HotClickMark size={28} className="shrink-0" />
       <div className="hc-wordmark text-sm"><span className="hot">Hot</span><span className="click">Click</span></div>
       <span
         className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"

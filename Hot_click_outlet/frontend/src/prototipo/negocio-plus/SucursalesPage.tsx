@@ -1,8 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Boton, Campo } from '../compartido/ui'
 import { useSellerRuta } from '../compartido/SellerPlanContext'
 import FormularioPorPasos from '../compartido/FormularioPorPasos'
+import PantallaExitoWizard, {
+  navegarConTransicion,
+} from '../compartido/motion/PantallaExitoWizard'
+import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
 import { formatoColon } from '@/theme/formatoColon'
 import { useToast } from '@/components/ui/Toast'
 import { sucursalService, type SucursalDto } from '@/services/sucursalService'
@@ -13,6 +18,9 @@ import {
   validarPasoSucursal,
 } from './sucursalPasos'
 import type { AxiosError } from 'axios'
+
+/** Auto-cierra la pantalla de éxito y vuelve a la lista. */
+const MS_AUTO_DISMISS_EXITO = 4500
 
 type EstadoSucursal = 'Al día' | 'Inactiva'
 
@@ -118,8 +126,6 @@ export default function SucursalesPage() {
           onCerrar={() => setAccion(null)}
           onCreada={(nueva) => {
             setSucursales((prev) => [...prev, aUnaVista(nueva)])
-            setAccion(null)
-            toast({ message: 'Sucursal creada', type: 'success' })
           }}
         />
       ) : null}
@@ -252,17 +258,17 @@ function ConfirmacionDesactivar({
   const [enviando, setEnviando] = useState(false)
 
   async function confirmar() {
+    if (enviando) return
     setEnviando(true)
     try {
       await sucursalService.desactivar(sucursal.id)
-      onDesactivada()
+      navegarConTransicion(onDesactivada)
     } catch (err: unknown) {
       console.error('[SucursalesPage] desactivar', err)
       toast({
         message: mensajeErrorApi(err, 'No se pudo desactivar la sucursal'),
         type: 'error',
       })
-    } finally {
       setEnviando(false)
     }
   }
@@ -282,14 +288,68 @@ function ConfirmacionDesactivar({
         Dejará de aparecer en la lista. Podés crear otra después si la necesitás.
       </p>
       <div className="mt-4 flex flex-col gap-2">
-        <Boton disabled={enviando} onClick={() => void confirmar()}>
-          {enviando ? 'Desactivando…' : 'Sí, desactivar'}
-        </Boton>
-        <Boton variante="contorno" disabled={enviando} onClick={onCancelar}>
+        <CtaConCarga
+          enviando={enviando}
+          etiqueta="Sí, desactivar"
+          etiquetaCarga="Desactivando…"
+          onClick={() => void confirmar()}
+        />
+        <button
+          type="button"
+          disabled={enviando}
+          onClick={onCancelar}
+          className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface py-3 text-sm font-bold text-hc-text transition-opacity duration-200 disabled:pointer-events-none disabled:opacity-40"
+        >
           Cancelar
-        </Boton>
+        </button>
       </div>
     </div>
+  )
+}
+
+/** CTA primario con label animado y spinner; bloquea doble submit vía disabled. */
+function CtaConCarga({
+  enviando,
+  etiqueta,
+  etiquetaCarga,
+  onClick,
+  variante = 'primario',
+}: {
+  enviando: boolean
+  etiqueta: string
+  etiquetaCarga: string
+  onClick: () => void
+  variante?: 'primario' | 'exito'
+}) {
+  const reduced = useReducedMotion() ?? false
+  const label = enviando ? etiquetaCarga : etiqueta
+  const fondo = variante === 'exito' ? 'bg-[var(--hc-success)]' : 'bg-hc-primary'
+  return (
+    <button
+      type="button"
+      disabled={enviando}
+      onClick={onClick}
+      className={`flex min-h-11 w-full items-center justify-center overflow-hidden rounded-[14px] px-4 py-3 text-sm font-bold text-white transition-[background-color,opacity] duration-200 disabled:pointer-events-none disabled:opacity-60 ${fondo}`}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={label}
+          className="inline-flex items-center gap-2"
+          initial={reduced ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: EASE_PREMIUM }}
+        >
+          {enviando ? (
+            <span
+              className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+              aria-hidden
+            />
+          ) : null}
+          {label}
+        </motion.span>
+      </AnimatePresence>
+    </button>
   )
 }
 
@@ -305,16 +365,30 @@ function FormularioSucursal({
   const [nombre, setNombre] = useState('')
   const [ubicacion, setUbicacion] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [exito, setExito] = useState<{ nombre: string; ubicacion: string } | null>(null)
   const idPaso = PASOS_SUCURSAL[paso]?.id
+  const onCerrarRef = useRef(onCerrar)
+  onCerrarRef.current = onCerrar
+
+  useEffect(() => {
+    if (!exito) return
+    const timer = window.setTimeout(() => {
+      navegarConTransicion(() => onCerrarRef.current())
+    }, MS_AUTO_DISMISS_EXITO)
+    return () => window.clearTimeout(timer)
+  }, [exito])
 
   async function crear() {
+    if (enviando) return
     setEnviando(true)
     try {
       const { data } = await sucursalService.create({
         nombre: nombre.trim(),
         ubicacion: ubicacion.trim(),
       })
+      const ubicacionFinal = (data.ubicacion ?? ubicacion).trim()
       onCreada(data)
+      setExito({ nombre: data.nombre, ubicacion: ubicacionFinal })
     } catch (err: unknown) {
       console.error('[SucursalesPage] create', err)
       toast({
@@ -324,6 +398,28 @@ function FormularioSucursal({
     } finally {
       setEnviando(false)
     }
+  }
+
+  if (exito) {
+    return (
+      <ModalSucursal
+        titulo="Sucursal creada"
+        tituloId="sucursal-modal-titulo"
+        onCerrar={onCerrar}
+        enviando={false}
+        ocultarCancelar
+      >
+        <PantallaExitoWizard
+          titulo="Sucursal creada"
+          mensaje={`${exito.nombre} · ${exito.ubicacion}`}
+          accion={
+            <Boton onClick={() => navegarConTransicion(onCerrar)}>
+              Ver sucursales
+            </Boton>
+          }
+        />
+      </ModalSucursal>
+    )
   }
 
   return (
@@ -377,17 +473,17 @@ function FormularioRenombrar({
   const idPaso = PASOS_RENOMBRAR_SUCURSAL[paso]?.id
 
   async function guardar() {
+    if (enviando) return
     setEnviando(true)
     try {
       const { data } = await sucursalService.renombrar(sucursal.id, nombre.trim())
-      onRenombrada(data)
+      navegarConTransicion(() => onRenombrada(data))
     } catch (err: unknown) {
       console.error('[SucursalesPage] renombrar', err)
       toast({
         message: mensajeErrorApi(err, 'No se pudo renombrar la sucursal'),
         type: 'error',
       })
-    } finally {
       setEnviando(false)
     }
   }
@@ -424,12 +520,14 @@ function ModalSucursal({
   tituloId,
   onCerrar,
   enviando,
+  ocultarCancelar = false,
   children,
 }: {
   titulo: string
   tituloId: string
   onCerrar: () => void
   enviando: boolean
+  ocultarCancelar?: boolean
   children: ReactNode
 }) {
   return (
@@ -439,18 +537,26 @@ function ModalSucursal({
         role="dialog"
         aria-labelledby={tituloId}
       >
-        <h2 id={tituloId} className="font-display text-lg font-bold">
-          {titulo}
-        </h2>
-        <div className="mt-4">{children}</div>
-        <button
-          type="button"
-          className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[14px] py-3 text-[13px] font-medium text-hc-muted disabled:opacity-40"
-          onClick={onCerrar}
-          disabled={enviando}
-        >
-          Cancelar
-        </button>
+        {!ocultarCancelar ? (
+          <h2 id={tituloId} className="font-display text-lg font-bold">
+            {titulo}
+          </h2>
+        ) : (
+          <h2 id={tituloId} className="sr-only">
+            {titulo}
+          </h2>
+        )}
+        <div className={ocultarCancelar ? undefined : 'mt-4'}>{children}</div>
+        {!ocultarCancelar ? (
+          <button
+            type="button"
+            className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[14px] py-3 text-[13px] font-medium text-hc-muted transition-opacity duration-200 disabled:opacity-40"
+            onClick={onCerrar}
+            disabled={enviando}
+          >
+            Cancelar
+          </button>
+        ) : null}
       </div>
     </div>
   )

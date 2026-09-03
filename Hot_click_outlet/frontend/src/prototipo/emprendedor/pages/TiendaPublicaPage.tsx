@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatoColon } from '@/theme/formatoColon'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import iconOjo from '../assets/icon-ojo.svg'
 import iconBuscar from '../assets/icon-buscar.svg'
 import BadgeEstado from '../ui/BadgeEstado'
@@ -38,33 +41,51 @@ export default function TiendaPublicaPage() {
         </span>
         <p className="text-[10px] font-medium text-white">Así te ven los compradores</p>
       </div>
-      <div className="h-24 bg-gradient-to-r from-hc-primary to-[var(--hc-red-700)]" />
-      <CabeceraTienda tienda={tienda} inicial={inicial} seguir={seguir} onSeguir={() => setSeguir((v) => !v)} />
-      <div className="flex flex-col gap-[18px] px-5 pb-10 pt-2">
-        <div className="flex items-center gap-2 rounded-xl bg-[var(--hc-n-50)] px-3.5 py-3">
-          <span className="size-3.5 overflow-hidden">
-            <img src={iconBuscar} alt="" width={14} height={14} className="size-full" />
-          </span>
-          <span className="text-[13px] text-hc-muted">Buscar en esta tienda</span>
+      <EntradaPagina>
+        <div className="h-24 bg-gradient-to-r from-hc-primary to-[var(--hc-red-700)]" />
+        <CabeceraTienda tienda={tienda} inicial={inicial} seguir={seguir} onSeguir={() => setSeguir((v) => !v)} />
+        <div className="flex flex-col gap-[18px] px-5 pb-10 pt-2">
+          <div className="flex items-center gap-2 rounded-xl bg-[var(--hc-n-50)] px-3.5 py-3">
+            <span className="size-3.5 overflow-hidden">
+              <img src={iconBuscar} alt="" width={14} height={14} className="size-full" />
+            </span>
+            <span className="text-[13px] text-hc-muted">Buscar en esta tienda</span>
+          </div>
+          <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
+          <h2 className="text-[15px] font-bold">Productos de esta tienda</h2>
+          {cargando ? <p className="text-sm text-hc-muted">Cargando productos…</p> : null}
+          {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+          {!cargando && publicados.length === 0 ? (
+            <EstadoVacioConversacional
+              titulo="Tu vitrina está vacía"
+              mensaje="Todavía no tenés productos publicados. Agregá uno desde Mis Productos."
+              accion={
+                <Link
+                  to={`${RUTA_EMPRENDEDOR}/productos`}
+                  className="inline-flex min-h-11 items-center rounded-full bg-hc-primary px-5 text-sm font-semibold text-white"
+                >
+                  Ir a Mis Productos
+                </Link>
+              }
+            />
+          ) : null}
+          {!cargando && publicados.length > 0 && visibles.length === 0 ? (
+            <EstadoVacioConversacional
+              titulo="Sin productos en este filtro"
+              mensaje="Probá con otra categoría o volvé a Todos."
+            />
+          ) : null}
+          {!cargando && visibles.length > 0 ? (
+            <ListaStagger className="grid grid-cols-2 gap-3">
+              {visibles.map((producto) => (
+                <ItemListaStagger key={producto.id}>
+                  <TarjetaTienda producto={producto} />
+                </ItemListaStagger>
+              ))}
+            </ListaStagger>
+          ) : null}
         </div>
-        <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
-        <h2 className="text-[15px] font-bold">Productos de esta tienda</h2>
-        {cargando ? <p className="text-sm text-hc-muted">Cargando productos…</p> : null}
-        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        {!cargando && publicados.length === 0 ? (
-          <p className="rounded-xl border border-hc-border bg-hc-surface px-4 py-8 text-center text-sm text-hc-muted">
-            Todavía no tenés productos publicados. Agregá uno desde Mis Productos.
-          </p>
-        ) : null}
-        {!cargando && publicados.length > 0 && visibles.length === 0 ? (
-          <p className="text-sm text-hc-muted">No hay productos en este filtro.</p>
-        ) : null}
-        <ul className="grid grid-cols-2 gap-3">
-          {visibles.map((producto) => (
-            <TarjetaTienda key={producto.id} producto={producto} />
-          ))}
-        </ul>
-      </div>
+      </EntradaPagina>
     </main>
   )
 }
@@ -106,13 +127,11 @@ function CabeceraTienda({
 
 function TarjetaTienda({ producto }: { producto: ProductoEmprendedor }) {
   return (
-    <li>
-      <Link to={`${RUTA_EMPRENDEDOR}/tienda/${producto.id}`} className="flex flex-col gap-2">
-        <Miniatura src={producto.imagenUrl} alt="" size="lg" />
-        <BadgeEstado>Disponible</BadgeEstado>
-        <p className="text-xs font-medium">{producto.nombre}</p>
-        <p className="text-[13px] font-bold text-hc-primary">{formatoColon(producto.precio)}</p>
-      </Link>
-    </li>
+    <Link to={`${RUTA_EMPRENDEDOR}/tienda/${producto.id}`} className="flex flex-col gap-2">
+      <Miniatura src={producto.imagenUrl} alt="" size="lg" />
+      <BadgeEstado>Disponible</BadgeEstado>
+      <p className="text-xs font-medium">{producto.nombre}</p>
+      <p className="text-[13px] font-bold text-hc-primary">{formatoColon(producto.precio)}</p>
+    </Link>
   )
 }

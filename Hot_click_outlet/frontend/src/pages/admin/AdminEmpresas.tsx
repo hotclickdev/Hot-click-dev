@@ -116,7 +116,7 @@ export default function AdminEmpresas() {
     const visible = esProductoVisibleEnCatalogo(producto.visibleCatalogo)
     setSavingProductoId(producto.id)
     try {
-      await productService.update(producto.id, { visibleCatalogo: !visible })
+      await productService.toggleVisibleCatalogo(producto.id, !visible)
       setTabProductos((prev) => prev?.map((p) => (
         p.id === producto.id ? { ...p, visibleCatalogo: !visible } : p
       )) ?? null)

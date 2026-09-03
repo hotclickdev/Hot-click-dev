@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import TarjetaOpcion from './motion/TarjetaOpcion'
+import { EASE_PREMIUM } from './motion/formularioMotionTokens'
 
 const OPCIONES = [
   {
@@ -27,19 +29,32 @@ export default function ElegirTipoProductoMenu({ baseNuevo, cabecera }: Props) {
     <div className="flex flex-col gap-4">
       {cabecera}
       <p className="text-sm text-hc-muted">Elegí una opción para continuar.</p>
-      <div className="flex flex-col gap-3">
+      <motion.div
+        className="flex flex-col gap-3"
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.05 } },
+        }}
+      >
         {OPCIONES.map((opcion) => (
-          <Link
+          <motion.div
             key={opcion.path}
-            to={`${baseNuevo}/${opcion.path}`}
-            className="rounded-2xl border border-hc-border bg-hc-surface px-4 py-4 text-left transition hover:border-hc-primary"
-            data-mm="seller-elegir-tipo-producto"
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_PREMIUM } },
+            }}
           >
-            <span className="block text-[15px] font-bold text-hc-text">{opcion.titulo}</span>
-            <span className="mt-1 block text-xs text-hc-muted">{opcion.ayuda}</span>
-          </Link>
+            <TarjetaOpcion
+              to={`${baseNuevo}/${opcion.path}`}
+              titulo={opcion.titulo}
+              ayuda={opcion.ayuda}
+              data-mm="seller-elegir-tipo-producto"
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   )
 }

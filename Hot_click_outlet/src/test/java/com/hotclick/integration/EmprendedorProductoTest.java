@@ -284,6 +284,50 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @DisplayName("ADMIN pausa producto de un emprendedor vía visibilidad-catalogo")
+    void toggleVisibleCatalogo_adminPausa_200() throws Exception {
+        mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/visibilidad-catalogo")
+                .header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibleCatalogo\":false}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.visibleCatalogo").value(false));
+    }
+
+    @Test
+    @DisplayName("Emprendedor publica de nuevo su producto pausado")
+    void toggleVisibleCatalogo_emprendedorPublica_200() throws Exception {
+        productoPropio.setVisibleCatalogo(false);
+        productoRepository.saveAndFlush(productoPropio);
+        mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/visibilidad-catalogo")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibleCatalogo\":true}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.visibleCatalogo").value(true));
+    }
+
+    @Test
+    @DisplayName("Emprendedor no puede cambiar visibilidad de producto de otra empresa")
+    void toggleVisibleCatalogo_otraEmpresa_403() throws Exception {
+        mockMvc.perform(patch("/api/productos/" + productoOtro.getId() + "/visibilidad-catalogo")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibleCatalogo\":false}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PATCH visibilidad-catalogo sin campo → 400")
+    void toggleVisibleCatalogo_sinCampo_400() throws Exception {
+        mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/visibilidad-catalogo")
+                .header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest());
+    }
+
     // ── T-PROD-021: Destacados públicos sin token → 200 ──────────────────────
     @Test
     @DisplayName("T-PROD-021 | NORMAL — Listar destacados sin token → 200")

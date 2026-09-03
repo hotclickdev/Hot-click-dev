@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
 import BotonesAgregarProducto from '@/prototipo/compartido/BotonesAgregarProducto'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import FilaChips from '../ui/FilaChips'
 import FilaProducto from '../ui/FilaProducto'
@@ -18,26 +21,37 @@ export default function ProductosPage() {
   const [filtro, setFiltro] = useState<string>('Todos')
   const visibles = useMemo(() => filtrarProductos(productos, filtro), [productos, filtro])
   const vacio = !cargando && productos.length === 0
+  const baseNuevo = `${RUTA_EMPRENDEDOR}/productos/nuevo`
 
   return (
     <main className="flex flex-col gap-6 px-5 py-8 md:max-w-[760px] md:gap-6 md:px-16 md:py-12">
-      <header>
-        <h1 className="font-display text-[22px] font-bold md:text-[28px]">Mis Productos</h1>
-        <p className="text-xs text-hc-muted md:hidden">Outlet · {usuario}</p>
-      </header>
+      <EntradaPagina className="flex flex-col gap-6">
+        <header>
+          <h1 className="font-display text-[22px] font-bold md:text-[28px]">Mis Productos</h1>
+          <p className="text-xs text-hc-muted md:hidden">Outlet · {usuario}</p>
+        </header>
 
-      <BotonesAgregarProducto baseNuevo={`${RUTA_EMPRENDEDOR}/productos/nuevo`} />
+        {vacio ? (
+          <div data-mm="seller-lista-productos">
+            <EstadoVacioConversacional
+              titulo="Todavía no subiste productos"
+              mensaje="Agregá tu primer producto para empezar a vender"
+              accion={<BotonesAgregarProducto baseNuevo={baseNuevo} />}
+            />
+          </div>
+        ) : (
+          <BotonesAgregarProducto baseNuevo={baseNuevo} />
+        )}
 
-      {vacio ? <VacioProductos /> : null}
+        {!vacio ? <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} /> : null}
 
-      {!vacio ? <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} /> : null}
-
-      {cargando ? <p className="text-sm text-hc-muted">Cargando catálogo…</p> : null}
-      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-      {!cargando && productos.length > 0 && visibles.length === 0 ? (
-        <p className="text-sm text-hc-muted">No hay productos en este filtro.</p>
-      ) : null}
-      {visibles.length > 0 ? <ListadoGrupos productos={visibles} filtro={filtro} /> : null}
+        {cargando ? <p className="text-sm text-hc-muted">Cargando catálogo…</p> : null}
+        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+        {!cargando && productos.length > 0 && visibles.length === 0 ? (
+          <p className="text-sm text-hc-muted">No hay productos en este filtro.</p>
+        ) : null}
+        {visibles.length > 0 ? <ListadoGrupos productos={visibles} filtro={filtro} /> : null}
+      </EntradaPagina>
     </main>
   )
 }
@@ -55,9 +69,13 @@ function ListadoGrupos({ productos, filtro }: { productos: ProductoEmprendedor[]
       {grupos.map((grupo) => (
         <section key={grupo.titulo} className="flex flex-col gap-4">
           <h2 className="text-[15px] font-bold">{grupo.titulo}</h2>
-          {grupo.items.map((producto) => (
-            <FilaProducto key={producto.id} producto={producto} />
-          ))}
+          <ListaStagger className="flex flex-col gap-4">
+            {grupo.items.map((producto) => (
+              <ItemListaStagger key={producto.id}>
+                <FilaProducto producto={producto} />
+              </ItemListaStagger>
+            ))}
+          </ListaStagger>
         </section>
       ))}
     </div>
@@ -71,16 +89,4 @@ function gruposVisibles(productos: ProductoEmprendedor[], filtro: string) {
     { titulo: 'Tecnología', items: productos.filter((p) => p.categoria === 'Tecnología' && !p.recienAgregado) },
     { titulo: 'Ropa', items: productos.filter((p) => p.categoria === 'Ropa' && !p.recienAgregado) },
   ].filter((grupo) => grupo.items.length > 0)
-}
-
-function VacioProductos() {
-  return (
-    <div
-      className="flex flex-col items-center gap-4 rounded-xl border border-hc-border bg-hc-surface px-6 py-16 text-center md:px-6 md:py-16"
-      data-mm="seller-lista-productos"
-    >
-      <p className="font-display text-[15px] font-bold md:text-lg">Todavía no subiste productos</p>
-      <p className="text-xs text-hc-muted md:text-sm">Usá los botones de arriba para publicar catálogo o personalizado.</p>
-    </div>
-  )
 }

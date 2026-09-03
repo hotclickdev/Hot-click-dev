@@ -1,4 +1,5 @@
 import { CloseIcon, EyeIcon, EyeOffIcon } from './empresasIcons'
+import EstadoEmpresaChips from './EstadoEmpresaChips'
 import { ESTADO_COLOR, PLAN_COLOR, nombreVisibleEmpresa, tabsDetalle, type EmpresaDetalle, type EmpresaLista, type EmpresaMiembroTab, type EmpresaPedidoTab, type EmpresaProductoTab } from './empresasHelpers'
 import TabEquipo from './TabEquipo'
 import TabPedidos from './TabPedidos'
@@ -6,7 +7,17 @@ import TabProductos from './TabProductos'
 import TabResumen from './TabResumen'
 import type { Id } from '@/types/api'
 
-function DetailHeader({ selected, onClose }: { selected: EmpresaLista; onClose: () => void }) {
+function DetailHeader({
+  selected,
+  saving,
+  onClose,
+  onCambiarEstado,
+}: {
+  selected: EmpresaLista
+  saving: boolean
+  onClose: () => void
+  onCambiarEstado: (id: Id, estadoEmpresa: string) => void
+}) {
   const visible = selected.visibilidadPublica
   return (
     <div className="flex items-start justify-between gap-3 mb-4">
@@ -21,6 +32,10 @@ function DetailHeader({ selected, onClose }: { selected: EmpresaLista; onClose: 
           <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${visible ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
             {visible ? <><EyeIcon /> Visible</> : <><EyeOffIcon /> Oculto</>}
           </span>
+        </div>
+        <div className="mt-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--hc-muted)' }}>Estado del negocio</p>
+          <EstadoEmpresaChips selected={selected} saving={saving} onCambiarEstado={onCambiarEstado} />
         </div>
       </div>
       <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] shrink-0" style={{ color: 'var(--hc-muted)' }}>
@@ -95,7 +110,12 @@ export default function EmpresaDetail({
       <button type="button" className="absolute inset-0 bg-black/60" aria-label="Cerrar" onClick={onClose} />
       <div className="relative z-10 w-full max-w-2xl flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', borderLeft: '1px solid var(--hc-border)' }}>
         <div className="px-5 pt-5 pb-0 shrink-0">
-          <DetailHeader selected={selected} onClose={onClose} />
+          <DetailHeader
+            selected={selected}
+            saving={saving}
+            onClose={onClose}
+            onCambiarEstado={onCambiarEstado}
+          />
           <DetailTabs tab={tab} detail={detail} onTab={onTab} />
         </div>
 

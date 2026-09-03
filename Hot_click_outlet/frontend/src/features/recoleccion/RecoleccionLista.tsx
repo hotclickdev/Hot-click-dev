@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
+import { EASE_PREMIUM } from '@/prototipo/compartido/motion/formularioMotionTokens'
 import { ETIQUETA_ESTADO, type SolicitudRecoleccion } from './recoleccionTipos'
 import { formatoTarifa } from './recoleccionHelpers'
 
@@ -38,16 +42,23 @@ function AccionesCancelar({
   onConfirmar,
   onVolver,
 }: CancelarProps) {
+  const reduced = useReducedMotion() ?? false
+  const tap = reduced || cancelando ? undefined : { scale: 0.98 }
+  const hover = reduced || cancelando ? undefined : { y: -2 }
+
   if (!confirmando) {
     return (
-      <button
+      <motion.button
         type="button"
         disabled={cancelando}
         onClick={onPedirConfirmacion}
         className={CLASE_CANCELAR_INICIAL}
+        whileHover={hover}
+        whileTap={tap}
+        transition={{ duration: 0.2, ease: EASE_PREMIUM }}
       >
         Cancelar solicitud
-      </button>
+      </motion.button>
     )
   }
 
@@ -56,12 +67,28 @@ function AccionesCancelar({
       <p className="text-sm font-medium text-hc-text">¿Cancelar esta solicitud de recolección?</p>
       <p className="mt-1 text-xs text-hc-muted">{resumirDireccion(solicitud.direccionRecoleccion)}</p>
       <div className="mt-3 flex flex-col gap-2">
-        <button type="button" disabled={cancelando} onClick={onConfirmar} className={CLASE_CTA_PRIMARIO}>
+        <motion.button
+          type="button"
+          disabled={cancelando}
+          onClick={onConfirmar}
+          className={CLASE_CTA_PRIMARIO}
+          whileHover={hover}
+          whileTap={tap}
+          transition={{ duration: 0.2, ease: EASE_PREMIUM }}
+        >
           {cancelando ? 'Cancelando…' : 'Sí, cancelar solicitud'}
-        </button>
-        <button type="button" disabled={cancelando} onClick={onVolver} className={CLASE_CTA_SECUNDARIO}>
+        </motion.button>
+        <motion.button
+          type="button"
+          disabled={cancelando}
+          onClick={onVolver}
+          className={CLASE_CTA_SECUNDARIO}
+          whileHover={hover}
+          whileTap={tap}
+          transition={{ duration: 0.2, ease: EASE_PREMIUM }}
+        >
           No, volver
-        </button>
+        </motion.button>
       </div>
     </div>
   )
@@ -77,13 +104,18 @@ export default function RecoleccionLista({ solicitudes, onCancelar, cancelandoId
   }, [solicitudes, confirmandoId])
 
   if (solicitudes.length === 0) {
-    return <p className="text-sm text-hc-muted">Todavía no pediste recolección.</p>
+    return (
+      <EstadoVacioConversacional
+        titulo="Todavía no pediste recolección"
+        mensaje="Cuando necesites que HOTCLICK pase a buscar y entregue a tu cliente, armá una solicitud arriba."
+      />
+    )
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ListaStagger className="flex flex-col gap-3">
       {solicitudes.map((s) => (
-        <li key={s.id} className="rounded-xl border border-hc-border bg-hc-surface p-4">
+        <ItemListaStagger key={s.id} className="rounded-xl border border-hc-border bg-hc-surface p-4">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-semibold">{ETIQUETA_ESTADO[s.estado] ?? s.estado}</p>
             <p className="text-sm font-bold text-hc-primary">{formatoTarifa(s.tarifaColones)}</p>
@@ -101,8 +133,8 @@ export default function RecoleccionLista({ solicitudes, onCancelar, cancelandoId
               onVolver={() => setConfirmandoId(null)}
             />
           ) : null}
-        </li>
+        </ItemListaStagger>
       ))}
-    </ul>
+    </ListaStagger>
   )
 }

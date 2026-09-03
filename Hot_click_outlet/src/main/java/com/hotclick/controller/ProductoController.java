@@ -83,6 +83,14 @@ public class ProductoController {
         return writeHandler.toggleDestacado(id, body);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PatchMapping("/{id}/visibilidad-catalogo")
+    public ResponseEntity<ResponseDTO> toggleVisibleCatalogo(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> body) {
+        return writeHandler.toggleVisibleCatalogo(id, body);
+    }
+
     @GetMapping("/{id}/recomendaciones")
     public ResponseEntity<ResponseDTO> recomendaciones(
             @PathVariable Long id,

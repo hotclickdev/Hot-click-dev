@@ -72,7 +72,7 @@ export default function SidebarContent({ sidebarLinks, roleBadge, t, userName, e
     <>
       <div className="flex items-center justify-between gap-2 px-3 pt-[18px] pb-3 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <HotClickMark size={22} className="shrink-0" />
+          <HotClickMark size={28} className="shrink-0" />
           <div className="hc-wordmark text-sm leading-none"><span className="hot">Hot</span><span className="click">Click</span></div>
           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)' }}>
             {etiqueta}

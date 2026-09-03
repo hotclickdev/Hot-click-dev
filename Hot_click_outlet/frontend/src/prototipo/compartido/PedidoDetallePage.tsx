@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { formatoColon } from '@/theme/formatoColon'
-import { Boton, EncabezadoPagina, Miniatura } from './ui'
+import { EncabezadoPagina, Miniatura } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
 import { marcarPedidoEnviadoApi } from './pedidosVendedorApi'
 import type { PlanConfig } from './plan'
 import type { PedidoMock } from './mock'
+import EntradaPagina from './motion/EntradaPagina'
+import { EASE_PREMIUM } from './motion/formularioMotionTokens'
 
 /**
  * Detalle de pedido (Figma 127:290 / 126:297) — API real.
@@ -67,30 +70,32 @@ export default function PedidoDetallePage() {
 
   return (
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12 md:pt-12">
-      <div className="md:hidden">
-        <EncabezadoPagina titulo={`Pedido #${pedido.id}`} volverA={ruta('pedidos')} />
-      </div>
-      <header className="mb-5 hidden md:block">
-        <h1 className="font-display text-[28px] font-bold">Pedido #{pedido.id}</h1>
-        {plan.id === 'negocioPlus' || pedido.sucursal ? (
-          <p className="mt-1 text-sm text-hc-muted">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
-        ) : null}
-      </header>
-      {confirmando && pedido.estado === 'Pendiente' ? (
-        <ConfirmacionEnvio
-          pedido={pedido}
-          errorMarca={errorMarca}
-          marcando={marcando}
-          onConfirmar={() => void marcarEnviado()}
-          onCancelar={cancelarConfirmacion}
-        />
-      ) : (
-        <DetallePedidoContenido
-          pedido={pedido}
-          plan={plan}
-          onConfirmarEnvio={abrirConfirmacion}
-        />
-      )}
+      <EntradaPagina>
+        <div className="md:hidden">
+          <EncabezadoPagina titulo={`Pedido #${pedido.id}`} volverA={ruta('pedidos')} />
+        </div>
+        <header className="mb-5 hidden md:block">
+          <h1 className="font-display text-[28px] font-bold">Pedido #{pedido.id}</h1>
+          {plan.id === 'negocioPlus' || pedido.sucursal ? (
+            <p className="mt-1 text-sm text-hc-muted">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
+          ) : null}
+        </header>
+        {confirmando && pedido.estado === 'Pendiente' ? (
+          <ConfirmacionEnvio
+            pedido={pedido}
+            errorMarca={errorMarca}
+            marcando={marcando}
+            onConfirmar={() => void marcarEnviado()}
+            onCancelar={cancelarConfirmacion}
+          />
+        ) : (
+          <DetallePedidoContenido
+            pedido={pedido}
+            plan={plan}
+            onConfirmarEnvio={abrirConfirmacion}
+          />
+        )}
+      </EntradaPagina>
     </main>
   )
 }
@@ -113,8 +118,12 @@ function ConfirmacionEnvio({ pedido, errorMarca, marcando, onConfirmar, onCancel
       <p className="mt-5 text-[15px] font-semibold text-hc-text">¿Confirmás que ya enviaste este pedido?</p>
       {errorMarca ? <p className="mt-3 text-sm text-hc-danger">{errorMarca}</p> : null}
       <div className="mt-4 flex flex-col gap-2">
-        <Boton onClick={onConfirmar}>{marcando ? 'Guardando…' : 'Sí, confirmar envío'}</Boton>
-        <Boton variante="contorno" onClick={onCancelar}>Cancelar</Boton>
+        <CtaEnvio variante="primario" disabled={marcando} onClick={onConfirmar}>
+          {marcando ? 'Guardando…' : 'Sí, confirmar envío'}
+        </CtaEnvio>
+        <CtaEnvio variante="contorno" disabled={marcando} onClick={onCancelar}>
+          Cancelar
+        </CtaEnvio>
       </div>
     </div>
   )
@@ -162,11 +171,41 @@ function DetallePedidoContenido({
         </div>
         {pedido.estado === 'Pendiente' ? (
           <div className="mt-6">
-            <Boton onClick={onConfirmarEnvio}>Confirmar envío</Boton>
+            <CtaEnvio variante="primario" onClick={onConfirmarEnvio}>
+              Confirmar envío
+            </CtaEnvio>
           </div>
         ) : null}
       </div>
     </>
+  )
+}
+
+type CtaEnvioProps = Readonly<{
+  children: ReactNode
+  variante: 'primario' | 'contorno'
+  disabled?: boolean
+  onClick: () => void
+}>
+
+function CtaEnvio({ children, variante, disabled = false, onClick }: CtaEnvioProps) {
+  const reduced = useReducedMotion() ?? false
+  const estilos =
+    variante === 'primario'
+      ? 'bg-hc-primary text-white disabled:opacity-60'
+      : 'border border-hc-border bg-hc-surface text-hc-text disabled:opacity-40'
+  return (
+    <motion.button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex min-h-11 w-full items-center justify-center rounded-[14px] px-4 py-3 text-sm font-bold disabled:pointer-events-none ${estilos}`}
+      whileHover={reduced || disabled ? undefined : { y: -2 }}
+      whileTap={reduced || disabled ? undefined : { scale: 0.98 }}
+      transition={{ duration: 0.2, ease: EASE_PREMIUM }}
+    >
+      {children}
+    </motion.button>
   )
 }
 

@@ -1,5 +1,9 @@
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import CampoAnimado, { type EstadoCampo } from './motion/CampoAnimado'
+import { EASE_PREMIUM } from './motion/formularioMotionTokens'
+import './motion/formularioMotion.css'
 
 type ChipProps = {
   activo?: boolean
@@ -8,14 +12,23 @@ type ChipProps = {
 }
 
 export function Chip({ activo = false, children, onClick }: ChipProps) {
-  const base = 'min-h-8 shrink-0 rounded-full px-3.5 py-2 text-[11px] font-medium'
+  const reduced = useReducedMotion() ?? false
+  const base = 'min-h-8 shrink-0 rounded-full px-3.5 py-2 text-[11px] font-medium transition-colors duration-200'
   const estilo = activo
     ? 'bg-hc-primary text-white'
     : 'border border-hc-border bg-hc-surface text-hc-text'
   return (
-    <button type="button" onClick={onClick} className={`${base} ${estilo}`}>
+    <motion.button
+      type="button"
+      onClick={onClick}
+      className={`${base} ${estilo}`}
+      whileHover={reduced ? undefined : { y: -2 }}
+      whileTap={reduced ? undefined : { scale: 0.96 }}
+      transition={{ duration: 0.18, ease: EASE_PREMIUM }}
+      animate={activo && !reduced ? { scale: [1, 1.06, 1] } : undefined}
+    >
       {children}
-    </button>
+    </motion.button>
   )
 }
 
@@ -94,32 +107,15 @@ type CampoProps = {
   placeholder?: string
   type?: string
   readOnly?: boolean
+  estado?: EstadoCampo
+  errorMensaje?: string | null
+  maxLength?: number
+  clearable?: boolean
+  loading?: boolean
 }
 
-export function Campo({
-  etiqueta,
-  defaultValue,
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-  readOnly = false,
-}: CampoProps) {
-  const controlado = Boolean(onChange) || readOnly
-  return (
-    <label className="mb-4 block">
-      <span className="mb-2 block text-xs font-medium text-hc-muted">{etiqueta}</span>
-      <input
-        type={type}
-        defaultValue={controlado ? undefined : defaultValue}
-        value={controlado ? value : undefined}
-        onChange={onChange && !readOnly ? (evento) => onChange(evento.target.value) : undefined}
-        placeholder={placeholder}
-        readOnly={readOnly}
-        className="min-h-12 w-full rounded-xl bg-hc-surface-2 px-3.5 text-sm text-hc-text placeholder:text-hc-muted read-only:opacity-80"
-      />
-    </label>
-  )
+export function Campo(props: CampoProps) {
+  return <CampoAnimado {...props} />
 }
 
 export function Miniatura({ className = 'size-14' }: { className?: string }) {

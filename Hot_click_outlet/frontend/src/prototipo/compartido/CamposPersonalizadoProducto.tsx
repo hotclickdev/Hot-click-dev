@@ -1,3 +1,4 @@
+import StepperNumero from './motion/StepperNumero'
 import type { ModoPrecioPersonalizado } from './personalizadoProductoHelpers'
 import { MODOS_PRECIO_PERSONALIZADO } from './personalizadoProductoHelpers'
 
@@ -55,14 +56,14 @@ export default function CamposPersonalizadoProducto({
       </div>
       {modoPrecio === 'FIJO' && onCompraChange && onVentaChange ? (
         <div className="grid grid-cols-2 gap-2">
-          <CampoNumero etiqueta="Precio compra" value={compra} onChange={onCompraChange} placeholder="₡ 0" />
-          <CampoNumero etiqueta="Precio venta" value={venta} onChange={onVentaChange} placeholder="₡ 0" />
+          <StepperNumero etiqueta="Precio compra" value={compra} onChange={onCompraChange} placeholder="₡ 0" />
+          <StepperNumero etiqueta="Precio venta" value={venta} onChange={onVentaChange} placeholder="₡ 0" />
         </div>
       ) : null}
       {modoPrecio === 'RANGO' && onPrecioMinChange && onPrecioMaxChange ? (
         <div className="grid grid-cols-2 gap-2">
-          <CampoNumero etiqueta="Precio mínimo" value={precioMin} onChange={onPrecioMinChange} placeholder="₡ 5.000" />
-          <CampoNumero etiqueta="Precio máximo" value={precioMax} onChange={onPrecioMaxChange} placeholder="₡ 25.000" />
+          <StepperNumero etiqueta="Precio mínimo" value={precioMin} onChange={onPrecioMinChange} placeholder="₡ 5.000" />
+          <StepperNumero etiqueta="Precio máximo" value={precioMax} onChange={onPrecioMaxChange} placeholder="₡ 25.000" />
         </div>
       ) : null}
       {modoPrecio === 'COTIZACION' ? (
@@ -110,29 +111,5 @@ function OpcionFormaCobro({
         <span className="block text-xs text-hc-muted">{ayuda}</span>
       </span>
     </label>
-  )
-}
-
-function CampoNumero({
-  etiqueta, value, onChange, placeholder,
-}: Readonly<{
-  etiqueta: string
-  value: string
-  onChange: (v: string) => void
-  placeholder: string
-}>) {
-  const id = `campo-${etiqueta.replace(/\s+/g, '-').toLowerCase()}`
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-hc-muted">{etiqueta}</label>
-      <input
-        id={id}
-        type="number"
-        className="w-full rounded-xl border border-hc-border px-3 py-2 text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-      />
-    </div>
   )
 }

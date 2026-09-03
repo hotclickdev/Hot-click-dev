@@ -36,7 +36,7 @@ public class ProductoRequestDTO {
     @Size(max = 1000, message = "La URL de imagen no puede superar 1000 caracteres")
     private String imagenPrincipalUrl;
 
-    private Boolean visibleCatalogo = true;
+    private Boolean visibleCatalogo;
     private Boolean destacado = false;
     private Long categoriaId;
     private Long bodegaId;

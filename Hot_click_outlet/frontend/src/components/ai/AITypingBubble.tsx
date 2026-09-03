@@ -27,7 +27,7 @@ export function AIAvatar() {
       style={{ background: '#fff', border: '1.5px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
       aria-hidden
     >
-      <img src="/brand/hotclick-isotipo.png" alt="" width={20} height={16} decoding="async" />
+      <img src="/brand/hotclick-isotipo.png" alt="" width={24} height={19} decoding="async" />
     </div>
   )
 }

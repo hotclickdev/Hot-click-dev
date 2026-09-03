@@ -1,7 +1,9 @@
-import { useCallback, useId, useRef, useState } from 'react'
+import { useCallback, useId, useRef, useState, type DragEvent } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { useToast } from '@/components/ui/Toast'
 import { mensajeErrorProducto } from './catalogoVendedorApi'
 import { ACCEPT_FOTO_PRODUCTO, errorValidacionFoto, subirFotoProducto } from './subirFotoProducto'
+import { clasesZonaFotoDrag } from './zonaFotoProductoDrag'
 import iconCamara from './assets/icon-camara.svg'
 
 type Props = Readonly<{
@@ -22,8 +24,11 @@ export default function ZonaFotoProducto({
 }: Props) {
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  const profundidadDrag = useRef(0)
   const toast = useToast()
+  const reducedMotion = useReducedMotion() ?? false
   const [subiendo, setSubiendo] = useState(false)
+  const [arrastrando, setArrastrando] = useState(false)
 
   const abrirPicker = useCallback(() => {
     if (subiendo) return
@@ -50,12 +55,50 @@ export default function ZonaFotoProducto({
     }
   }, [onImagenChange, toast])
 
-  const baseClass = bordeDiscontinuo
-    ? 'flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-hc-border bg-[var(--hc-n-50)] py-8'
-    : 'mb-6 flex min-h-[118px] flex-col items-center justify-center rounded-xl bg-hc-surface-2 px-4 py-6'
+  const resetDrag = () => {
+    profundidadDrag.current = 0
+    setArrastrando(false)
+  }
+
+  const alEntrarDrag = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    if (subiendo) return
+    profundidadDrag.current += 1
+    setArrastrando(true)
+  }
+
+  const alSobreDrag = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    if (subiendo) return
+    e.dataTransfer.dropEffect = 'copy'
+  }
+
+  const alSalirDrag = () => {
+    profundidadDrag.current = Math.max(0, profundidadDrag.current - 1)
+    if (profundidadDrag.current === 0) setArrastrando(false)
+  }
+
+  const alSoltar = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    resetDrag()
+    if (subiendo) return
+    void subir(e.dataTransfer.files?.[0])
+  }
+
+  const layout = bordeDiscontinuo
+    ? 'flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed py-8'
+    : 'mb-6 flex min-h-[118px] flex-col items-center justify-center rounded-xl px-4 py-6'
+
+  const dragClass = clasesZonaFotoDrag({ arrastrando, reducedMotion, bordeDiscontinuo })
 
   return (
-    <div className={`${baseClass} ${className}`.trim()}>
+    <div
+      className={`${layout} ${dragClass} ${className}`.trim()}
+      onDragEnter={alEntrarDrag}
+      onDragOver={alSobreDrag}
+      onDragLeave={alSalirDrag}
+      onDrop={alSoltar}
+    >
       <input
         id={inputId}
         ref={inputRef}

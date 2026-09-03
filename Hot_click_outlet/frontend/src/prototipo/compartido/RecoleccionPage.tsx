@@ -1,4 +1,5 @@
 import RecoleccionPanel from '@/features/recoleccion/RecoleccionPanel'
+import EntradaPagina from './motion/EntradaPagina'
 import { EncabezadoPagina } from './ui'
 
 type Props = Readonly<{ volverA: string }>
@@ -9,11 +10,13 @@ type Props = Readonly<{ volverA: string }>
 export default function RecoleccionPage({ volverA }: Props) {
   return (
     <main className="px-5 pb-10 pt-8 md:max-w-[760px] md:px-16 md:py-12">
-      <EncabezadoPagina
-        titulo="Recolección y entrega"
-        subtitulo="HOTCLICK pasa a buscar y entrega a tu cliente. Solo GAM por ahora."
-        volverA={volverA}
-      />
+      <EntradaPagina>
+        <EncabezadoPagina
+          titulo="Recolección y entrega"
+          subtitulo="HOTCLICK pasa a buscar y entrega a tu cliente. Solo GAM por ahora."
+          volverA={volverA}
+        />
+      </EntradaPagina>
       <RecoleccionPanel />
     </main>
   )

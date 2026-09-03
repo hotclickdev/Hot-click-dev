@@ -4,6 +4,9 @@ import { formatoColon } from '@/theme/formatoColon'
 import { type CategoriaProducto, type ProductoMock } from './mock'
 import { Chip, EncabezadoPagina, Miniatura } from './ui'
 import BotonesAgregarProducto from './BotonesAgregarProducto'
+import EntradaPagina from './motion/EntradaPagina'
+import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
+import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 
@@ -18,24 +21,30 @@ export default function ProductosPage() {
   const { seller, cargando, error } = useCatalogoVendedor()
   const [filtro, setFiltro] = useState<Filtro>('Todos')
   const visibles = filtrarProductos(seller, filtro)
+  const vacio = !cargando && seller.length === 0
   return (
     <main className="px-5 pb-8 pt-[60px]">
-      <EncabezadoPagina titulo="Mis Productos" subtitulo={`Outlet · ${plan.usuario}`} />
-      <BotonesAgregarProducto baseNuevo={ruta('productos/nuevo')} />
-      <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
-        {(['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const).map((item) => (
-          <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
-        ))}
-      </div>
-      {cargando ? <p className="mt-6 text-sm text-hc-muted">Cargando catálogo…</p> : null}
-      {error ? <p className="mt-6 text-sm text-hc-danger">{error}</p> : null}
-      <div data-mm="seller-lista-productos">
-        {!cargando && seller.length === 0 ? (
-          <p className="mt-8 text-center text-sm text-hc-muted">Todavía no subiste productos</p>
-        ) : (
-          <SeccionesProductos filtro={filtro} productos={visibles} ruta={ruta} />
-        )}
-      </div>
+      <EntradaPagina>
+        <EncabezadoPagina titulo="Mis Productos" subtitulo={`Outlet · ${plan.usuario}`} />
+        <BotonesAgregarProducto baseNuevo={ruta('productos/nuevo')} />
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
+          {(['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const).map((item) => (
+            <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
+          ))}
+        </div>
+        {cargando ? <p className="mt-6 text-sm text-hc-muted">Cargando catálogo…</p> : null}
+        {error ? <p className="mt-6 text-sm text-hc-danger">{error}</p> : null}
+        <div data-mm="seller-lista-productos">
+          {vacio ? (
+            <EstadoVacioConversacional
+              titulo="Todavía no subiste productos"
+              mensaje="Usá los botones de arriba para publicar catálogo o personalizado."
+            />
+          ) : (
+            <SeccionesProductos filtro={filtro} productos={visibles} ruta={ruta} />
+          )}
+        </div>
+      </EntradaPagina>
     </main>
   )
 }
@@ -79,12 +88,13 @@ function SeccionesProductos({
 }
 
 function Grupo({ titulo, items, ruta }: { titulo: string; items: ProductoMock[]; ruta: (s?: string) => string }) {
+  if (items.length === 0) return null
   return (
     <section>
       <h2 className="mb-3 text-[15px] font-bold">{titulo}</h2>
-      <ul className="space-y-4">
+      <ListaStagger className="space-y-4">
         {items.map((item) => (
-          <li key={item.id}>
+          <ItemListaStagger key={item.id}>
             <Link to={ruta(`productos/${item.id}/editar`)} className="flex items-center gap-3">
               <Miniatura />
               <div className="min-w-0">
@@ -96,9 +106,9 @@ function Grupo({ titulo, items, ruta }: { titulo: string; items: ProductoMock[];
                 </div>
               </div>
             </Link>
-          </li>
+          </ItemListaStagger>
         ))}
-      </ul>
+      </ListaStagger>
     </section>
   )
 }

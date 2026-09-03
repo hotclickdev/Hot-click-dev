@@ -6,6 +6,8 @@ import {
   encargoService,
   type Encargo,
 } from '@/services/encargoService'
+import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { useEncargos, useEncargosKpis } from './useEncargos'
 import EncargoDetalle from './EncargoDetalle'
 
@@ -148,34 +150,38 @@ export default function EncargosPanel({
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : lista.length === 0 ? (
-        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>No hay encargos en este filtro.</p>
+        <EstadoVacioConversacional
+          titulo="No hay encargos en este filtro"
+          mensaje="Cuando un cliente pida algo personalizado, aparece acá para cotizar."
+        />
       ) : (
-        <div className="space-y-2">
+        <ListaStagger className="space-y-2">
           {lista.map((e) => (
-            <button
-              key={e.id}
-              type="button"
-              onClick={() => abrir(e)}
-              className="w-full text-left rounded-xl border p-3 hover:bg-black/5 transition"
-              style={{ borderColor: 'var(--hc-border)' }}
-            >
-              <div className="flex justify-between gap-3">
-                <div>
-                  <p className="font-medium text-sm">{e.productoNombre || `Producto #${e.productoId}`}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                    {e.nombreCliente} · {e.estado}
-                    {e.estadoFulfillment ? ` · ${e.estadoFulfillment}` : ''}
-                  </p>
+            <ItemListaStagger key={e.id}>
+              <button
+                type="button"
+                onClick={() => abrir(e)}
+                className="w-full text-left rounded-xl border p-3 hover:bg-black/5 transition"
+                style={{ borderColor: 'var(--hc-border)' }}
+              >
+                <div className="flex justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-sm">{e.productoNombre || `Producto #${e.productoId}`}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                      {e.nombreCliente} · {e.estado}
+                      {e.estadoFulfillment ? ` · ${e.estadoFulfillment}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    {[e.imagenUrl1, e.imagenUrl2, e.imagenUrl3].filter(Boolean).slice(0, 3).map((url) => (
+                      <img key={url as string} src={url as string} alt="" className="w-10 h-10 rounded object-cover" />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  {[e.imagenUrl1, e.imagenUrl2, e.imagenUrl3].filter(Boolean).slice(0, 3).map((url) => (
-                    <img key={url as string} src={url as string} alt="" className="w-10 h-10 rounded object-cover" />
-                  ))}
-                </div>
-              </div>
-            </button>
+              </button>
+            </ItemListaStagger>
           ))}
-        </div>
+        </ListaStagger>
       )}
 
       {selected ? (

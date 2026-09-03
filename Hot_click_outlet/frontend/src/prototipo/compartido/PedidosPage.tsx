@@ -5,6 +5,8 @@ import { Chip, EncabezadoPagina } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
 import type { PedidoMock } from './mock'
+import EntradaPagina from './motion/EntradaPagina'
+import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
 
 const FILTROS = ['Todos', 'Pendientes', 'Enviados', 'Entregados'] as const
 
@@ -20,45 +22,49 @@ export default function PedidosPage() {
 
   return (
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12 md:pt-12">
-      <div className="md:hidden">
-        <EncabezadoPagina titulo="Pedidos" subtitulo={plan.pedidosSubtitulo} volverA={ruta()} />
-      </div>
-      <header className="mb-5 hidden md:block">
-        <h1 className="font-display text-[28px] font-bold">Pedidos</h1>
-        <p className="mt-1 text-sm text-hc-muted">{plan.pedidosSubtitulo}</p>
-      </header>
-      <div className="mb-4 flex gap-2 overflow-x-auto" data-mm="seller-filtro-pedidos">
-        {FILTROS.map((item) => (
-          <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
-        ))}
-      </div>
-      {cargando ? <p className="text-sm text-hc-muted">Cargando pedidos…</p> : null}
-      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-      {!cargando && lista.length === 0 ? <p className="text-sm text-hc-muted">No hay pedidos en este filtro.</p> : null}
-      <ul className="space-y-3 md:max-w-[760px]" data-mm="seller-lista-pedidos">
-        {lista.map((pedido) => (
-          <li key={pedido.id}>
-            <Link
-              to={ruta(`pedidos/${pedido.id}`)}
-              className="block rounded-xl border border-hc-border bg-hc-surface p-3.5"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Pedido #{pedido.id}</p>
-                <EstadoPedidoBadge estado={pedido.estado} />
-              </div>
-              <p className="mt-2 text-xs text-hc-muted">{pedido.cliente}</p>
-              {plan.id === 'negocioPlus' ? (
-                <p className="mt-1 text-xs text-hc-muted">
-                  Sucursal: {pedido.sucursal ?? '—'}
-                </p>
-              ) : pedido.sucursal ? (
-                <p className="mt-1 text-xs text-hc-muted">Sucursal: {pedido.sucursal}</p>
-              ) : null}
-              <p className="mt-1 text-sm font-bold text-hc-primary">{formatoColon(pedido.total)}</p>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <EntradaPagina>
+        <div className="md:hidden">
+          <EncabezadoPagina titulo="Pedidos" subtitulo={plan.pedidosSubtitulo} volverA={ruta()} />
+        </div>
+        <header className="mb-5 hidden md:block">
+          <h1 className="font-display text-[28px] font-bold">Pedidos</h1>
+          <p className="mt-1 text-sm text-hc-muted">{plan.pedidosSubtitulo}</p>
+        </header>
+        <div className="mb-4 flex gap-2 overflow-x-auto" data-mm="seller-filtro-pedidos">
+          {FILTROS.map((item) => (
+            <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
+          ))}
+        </div>
+        {cargando ? <p className="text-sm text-hc-muted">Cargando pedidos…</p> : null}
+        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+        {!cargando && lista.length === 0 ? <p className="text-sm text-hc-muted">No hay pedidos en este filtro.</p> : null}
+        <div data-mm="seller-lista-pedidos">
+          <ListaStagger className="space-y-3 md:max-w-[760px]">
+            {lista.map((pedido) => (
+              <ItemListaStagger key={pedido.id}>
+                <Link
+                  to={ruta(`pedidos/${pedido.id}`)}
+                  className="block rounded-xl border border-hc-border bg-hc-surface p-3.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Pedido #{pedido.id}</p>
+                    <EstadoPedidoBadge estado={pedido.estado} />
+                  </div>
+                  <p className="mt-2 text-xs text-hc-muted">{pedido.cliente}</p>
+                  {plan.id === 'negocioPlus' ? (
+                    <p className="mt-1 text-xs text-hc-muted">
+                      Sucursal: {pedido.sucursal ?? '—'}
+                    </p>
+                  ) : pedido.sucursal ? (
+                    <p className="mt-1 text-xs text-hc-muted">Sucursal: {pedido.sucursal}</p>
+                  ) : null}
+                  <p className="mt-1 text-sm font-bold text-hc-primary">{formatoColon(pedido.total)}</p>
+                </Link>
+              </ItemListaStagger>
+            ))}
+          </ListaStagger>
+        </div>
+      </EntradaPagina>
     </main>
   )
 }

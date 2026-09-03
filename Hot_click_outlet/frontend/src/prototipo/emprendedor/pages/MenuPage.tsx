@@ -1,9 +1,14 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
+import { EASE_PREMIUM } from '@/prototipo/compartido/motion/formularioMotionTokens'
 
 const ACCIONES_BASE = [
   { to: `${RUTA_EMPRENDEDOR}/productos`, etiqueta: 'PRODUCTOS SUBIDOS' },
@@ -21,34 +26,59 @@ export default function MenuPage() {
 
   return (
     <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16 md:max-w-[480px] md:items-stretch md:px-16 md:py-12">
-      <HeroMarca />
-      <OnboardingPrimeraVez rol="emprendedor" />
-      {ACCIONES_BASE.map((accion) => (
-        <Link
-          key={accion.to}
-          to={accion.to}
-          data-mm={accion.to.includes('/productos') ? 'seller-menu-productos' : undefined}
-          className="relative flex h-[54px] w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface text-sm font-bold"
-        >
-          {accion.etiqueta}
-          {'conBadge' in accion && accion.conBadge && pendientesEncargos > 0 ? (
-            <span className="absolute right-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
-              {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
-            </span>
-          ) : null}
-        </Link>
-      ))}
-      <EnlacePrimario to="/admin/pos" variante="oscuro" dataMm="seller-menu-pos">
-        Abrí la Caja (POS)
-      </EnlacePrimario>
-      <Link
-        to={`${RUTA_EMPRENDEDOR}/pedidos`}
-        data-mm="seller-menu-pedidos"
-        className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border py-4 text-sm font-bold"
-      >
-        Mirá los pedidos
-      </Link>
+      <EntradaPagina className="flex w-full flex-col items-center gap-2 md:items-stretch">
+        <HeroMarca />
+        <OnboardingPrimeraVez rol="emprendedor" />
+        <ListaStagger className="flex w-full flex-col gap-2">
+          {ACCIONES_BASE.map((accion) => (
+            <ItemMenu key={accion.to}>
+              <Link
+                to={accion.to}
+                data-mm={accion.to.includes('/productos') ? 'seller-menu-productos' : undefined}
+                className="relative flex h-[54px] w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface text-sm font-bold"
+              >
+                {accion.etiqueta}
+                {'conBadge' in accion && accion.conBadge && pendientesEncargos > 0 ? (
+                  <span className="absolute right-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
+                    {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
+                  </span>
+                ) : null}
+              </Link>
+            </ItemMenu>
+          ))}
+          <ItemMenu>
+            <EnlacePrimario to="/admin/pos" variante="oscuro" dataMm="seller-menu-pos">
+              Abrí la Caja (POS)
+            </EnlacePrimario>
+          </ItemMenu>
+          <ItemMenu>
+            <Link
+              to={`${RUTA_EMPRENDEDOR}/pedidos`}
+              data-mm="seller-menu-pedidos"
+              className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border py-4 text-sm font-bold"
+            >
+              Mirá los pedidos
+            </Link>
+          </ItemMenu>
+        </ListaStagger>
+      </EntradaPagina>
     </main>
+  )
+}
+
+function ItemMenu({ children }: { children: ReactNode }) {
+  const reduced = useReducedMotion() ?? false
+  return (
+    <ItemListaStagger className="w-full">
+      <motion.div
+        className="w-full"
+        whileHover={reduced ? undefined : { y: -2 }}
+        whileTap={reduced ? undefined : { scale: 0.98 }}
+        transition={{ duration: 0.18, ease: EASE_PREMIUM }}
+      >
+        {children}
+      </motion.div>
+    </ItemListaStagger>
   )
 }
 

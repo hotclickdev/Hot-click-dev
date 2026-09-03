@@ -1,5 +1,6 @@
-import { useEffect, useState, type ComponentType, type SVGProps } from 'react'
+import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import {
   BuildingLibraryIcon,
   CreditCardIcon,
@@ -8,6 +9,9 @@ import {
 } from '@heroicons/react/24/outline'
 import { useToast } from '@/components/ui/Toast'
 import { Boton } from './ui'
+import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
+import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
+import { DURACION_ENTRADA_S, DURACION_REDUCED_S, EASE_ENTRADA, EASE_PREMIUM } from './motion/formularioMotionTokens'
 import {
   cargarMetodosCobro,
   marcarMetodoPredeterminado,
@@ -123,30 +127,69 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
           onCancelar={() => setPendienteId(null)}
         />
       ) : metodos.length === 0 ? (
-        <p className="text-[13px] text-hc-muted">Todavía no tenés una cuenta para recibir ingresos.</p>
+        <EstadoVacioConversacional
+          titulo="Todavía no tenés una cuenta para recibir ingresos"
+          mensaje="Agregá SINPE, IBAN o tarjeta para que te llegue el dinero de tus ventas."
+          accion={<CtaAgregarMetodo to={agregarTo} />}
+        />
       ) : (
-        <div role="radiogroup" aria-label="Cuenta predeterminada para recibir ingresos" className="flex flex-col gap-3">
-          {metodos.map((metodo) => (
-            <MetodoCobroFila
-              key={metodo.id}
-              metodo={metodo}
-              predeterminado={metodo.id === predeterminadoId}
-              disabled={guardandoId !== null}
-              onElegir={() => pedirConfirmacion(metodo.id)}
-            />
-          ))}
-        </div>
+        <>
+          <div role="radiogroup" aria-label="Cuenta predeterminada para recibir ingresos">
+            <ListaStagger className="flex flex-col gap-3">
+              {metodos.map((metodo) => (
+                <ItemListaStagger key={metodo.id}>
+                  <MetodoCobroFila
+                    metodo={metodo}
+                    predeterminado={metodo.id === predeterminadoId}
+                    disabled={guardandoId !== null}
+                    onElegir={() => pedirConfirmacion(metodo.id)}
+                  />
+                </ItemListaStagger>
+              ))}
+            </ListaStagger>
+          </div>
+          <CtaAgregarEntrada>
+            <CtaAgregarMetodo to={agregarTo} variante="dashed" />
+          </CtaAgregarEntrada>
+        </>
       )}
-      {!pendiente ? (
-        <Link
-          to={agregarTo}
-          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-hc-border py-3.5 text-[13px] font-medium text-hc-text"
-        >
-          <PlusIcon className="size-4" aria-hidden />
-          Agregar método de cobro
-        </Link>
-      ) : null}
     </div>
+  )
+}
+
+type CtaProps = Readonly<{
+  to: string
+  variante?: 'primario' | 'dashed'
+}>
+
+function CtaAgregarMetodo({ to, variante = 'primario' }: CtaProps) {
+  const clase =
+    variante === 'dashed'
+      ? 'flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-hc-border py-3.5 text-[13px] font-medium text-hc-text'
+      : 'flex min-h-11 items-center justify-center gap-2 rounded-[14px] bg-hc-primary px-5 py-3 text-sm font-bold text-white'
+  return (
+    <Link to={to} className={clase}>
+      <PlusIcon className="size-4" aria-hidden />
+      Agregar método de cobro
+    </Link>
+  )
+}
+
+/** Entrada suave del CTA inferior (fuera del radiogroup). */
+function CtaAgregarEntrada({ children }: Readonly<{ children: ReactNode }>) {
+  const reduced = useReducedMotion() ?? false
+  return (
+    <motion.div
+      initial={reduced ? false : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        delay: reduced ? 0 : 0.12,
+        duration: reduced ? DURACION_REDUCED_S : DURACION_ENTRADA_S,
+        ease: EASE_ENTRADA,
+      }}
+    >
+      {children}
+    </motion.div>
   )
 }
 
@@ -158,18 +201,28 @@ type ConfirmacionProps = Readonly<{
 }>
 
 function ConfirmacionPredeterminado({ metodo, guardando, onConfirmar, onCancelar }: ConfirmacionProps) {
+  const reduced = useReducedMotion() ?? false
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-hc-border bg-hc-surface p-4">
+    <motion.div
+      className="flex flex-col gap-3 rounded-xl border border-hc-border bg-hc-surface p-4"
+      initial={reduced ? false : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduced ? DURACION_REDUCED_S : DURACION_ENTRADA_S, ease: EASE_PREMIUM }}
+    >
       <p className="text-sm font-semibold text-hc-text">{metodo.nombre}</p>
       <p className="font-mono text-[13px] text-hc-text">{metodo.mascara}</p>
       <p className="text-sm text-hc-muted">¿Usar esta cuenta para recibir ingresos?</p>
-      <Boton disabled={guardando} onClick={onConfirmar}>
-        {guardando ? 'Guardando…' : 'Sí, usar esta cuenta'}
-      </Boton>
-      <Boton variante="contorno" disabled={guardando} onClick={onCancelar}>
-        Cancelar
-      </Boton>
-    </div>
+      <motion.div whileTap={reduced || guardando ? undefined : { scale: 0.98 }}>
+        <Boton disabled={guardando} onClick={onConfirmar}>
+          {guardando ? 'Guardando…' : 'Sí, usar esta cuenta'}
+        </Boton>
+      </motion.div>
+      <motion.div whileTap={reduced || guardando ? undefined : { scale: 0.98 }}>
+        <Boton variante="contorno" disabled={guardando} onClick={onCancelar}>
+          Cancelar
+        </Boton>
+      </motion.div>
+    </motion.div>
   )
 }
 

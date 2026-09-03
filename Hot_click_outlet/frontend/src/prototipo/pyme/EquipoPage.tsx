@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Boton, Campo } from '../compartido/ui'
 import FormularioPorPasos from '../compartido/FormularioPorPasos'
 import { useSellerRuta } from '../compartido/SellerPlanContext'
+import TarjetaOpcion from '../compartido/motion/TarjetaOpcion'
+import PantallaExitoWizard from '../compartido/motion/PantallaExitoWizard'
+import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
 import { equipoService } from '@/services/equipoService'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -18,6 +22,7 @@ import {
 import { PASOS_INVITAR_EQUIPO, validarPasoInvitarEquipo } from './equipoPasos'
 import {
   esMiembroVisibleEnLista,
+  mensajeExitoInvitacion,
   nombreVisibleMiembro,
   puedeQuitarMiembro,
 } from './equipoConfirmacionHelpers'
@@ -123,7 +128,6 @@ export default function EquipoPage() {
               onInvitado={(nuevo) => {
                 setMiembros((prev) => [...prev, nuevo])
                 setMostrarForm(false)
-                toast({ message: 'Miembro invitado', type: 'success' })
               }}
             />
           ) : null}
@@ -159,13 +163,49 @@ function ConfirmacionQuitarMiembro({ miembro, guardando, onConfirmar, onCancelar
       <p className="text-sm text-hc-muted">
         ¿Quitás a esta persona del equipo? Ya no podrá entrar a esta tienda.
       </p>
-      <Boton variante="peligro" disabled={guardando} onClick={onConfirmar}>
+      <CtaConfirmacion
+        variante="peligro"
+        disabled={guardando}
+        onClick={onConfirmar}
+      >
         {guardando ? 'Quitando…' : 'Sí, quitar del equipo'}
-      </Boton>
-      <Boton variante="contorno" disabled={guardando} onClick={onCancelar}>
+      </CtaConfirmacion>
+      <CtaConfirmacion
+        variante="contorno"
+        disabled={guardando}
+        onClick={onCancelar}
+      >
         Cancelar
-      </Boton>
+      </CtaConfirmacion>
     </div>
+  )
+}
+
+type CtaConfirmacionProps = Readonly<{
+  children: string
+  variante: 'peligro' | 'contorno'
+  disabled?: boolean
+  onClick: () => void
+}>
+
+function CtaConfirmacion({ children, variante, disabled = false, onClick }: CtaConfirmacionProps) {
+  const reduced = useReducedMotion() ?? false
+  const estilos =
+    variante === 'peligro'
+      ? 'bg-hc-primary text-white disabled:opacity-60'
+      : 'border border-hc-border bg-hc-surface text-hc-text disabled:opacity-40'
+  return (
+    <motion.button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex min-h-11 w-full items-center justify-center rounded-[14px] px-4 py-3 text-sm font-bold transition-[transform,box-shadow,opacity] duration-200 disabled:pointer-events-none hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${estilos}`}
+      whileHover={reduced || disabled ? undefined : { y: -2 }}
+      whileTap={reduced || disabled ? undefined : { scale: 0.98 }}
+      transition={{ duration: 0.2, ease: EASE_PREMIUM }}
+    >
+      {children}
+    </motion.button>
   )
 }
 
@@ -224,10 +264,25 @@ function FormularioInvitar({
   const [paso, setPaso] = useState(0)
   const [form, setForm] = useState<FormularioEquipo>(FORMULARIO_EQUIPO_VACIO)
   const [guardando, setGuardando] = useState(false)
+  const [miembroCreado, setMiembroCreado] = useState<MiembroEquipo | null>(null)
   const idPaso = PASOS_INVITAR_EQUIPO[paso]?.id
 
   function setCampo<K extends keyof FormularioEquipo>(clave: K, valor: FormularioEquipo[K]) {
     setForm((prev) => ({ ...prev, [clave]: valor }))
+  }
+
+  function resetearFormulario() {
+    setPaso(0)
+    setForm(FORMULARIO_EQUIPO_VACIO)
+    setGuardando(false)
+    setMiembroCreado(null)
+  }
+
+  function cerrarTrasExito() {
+    if (!miembroCreado) return
+    const creado = miembroCreado
+    resetearFormulario()
+    onInvitado(creado)
   }
 
   async function enviar() {
@@ -240,19 +295,36 @@ function FormularioInvitar({
         ...(form.telefono.trim() && { telefono: form.telefono.trim() }),
         rolEnEmpresa: form.rolEnEmpresa,
       })
-      const creado = (data as { data?: MiembroEquipo })?.data ?? {
+      const envoltorio = data as { data?: MiembroEquipo } | null
+      const creado = envoltorio?.data ?? {
         id: Date.now(),
         nombre: form.nombre.trim(),
         correo: form.correo.trim(),
         rolEnEmpresa: form.rolEnEmpresa,
         estado: 1,
       }
-      onInvitado(creado)
+      setMiembroCreado(creado)
     } catch (err: unknown) {
       toast({ message: mensajeErrorEquipo(err, 'Error al agregar miembro'), type: 'error' })
     } finally {
       setGuardando(false)
     }
+  }
+
+  if (miembroCreado) {
+    return (
+      <div className="mt-6 rounded-xl border border-hc-border bg-hc-surface p-4 md:max-w-lg">
+        <PantallaExitoWizard
+          titulo="Invitación enviada"
+          mensaje={mensajeExitoInvitacion(miembroCreado.nombre)}
+          accion={
+            <Boton onClick={cerrarTrasExito}>
+              Volver a la lista
+            </Boton>
+          }
+        />
+      </div>
+    )
   }
 
   return (
@@ -313,19 +385,14 @@ function FormularioInvitar({
               const config = ROL_CONFIG[rol]
               const seleccionado = form.rolEnEmpresa === rol
               return (
-                <button
+                <TarjetaOpcion
                   key={rol}
-                  type="button"
-                  role="radio"
-                  aria-checked={seleccionado}
-                  onClick={() => setCampo('rolEnEmpresa', rol)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    seleccionado ? 'border-hc-primary bg-[var(--hc-red-50)]' : 'border-hc-border bg-hc-surface'
-                  }`}
-                >
-                  <span className="block text-[15px] font-bold text-hc-text">{config?.label ?? rol}</span>
-                  <span className="mt-1 block text-xs text-hc-muted">{config?.desc ?? ''}</span>
-                </button>
+                  titulo={config?.label ?? rol}
+                  ayuda={config?.desc ?? ''}
+                  seleccionado={seleccionado}
+                  atenuar={!seleccionado}
+                  onSelect={() => setCampo('rolEnEmpresa', rol)}
+                />
               )
             })}
           </div>
@@ -336,7 +403,7 @@ function FormularioInvitar({
       </FormularioPorPasos>
       <button
         type="button"
-        className="mt-3 min-h-11 w-full text-sm font-semibold text-hc-muted"
+        className="mt-3 min-h-11 w-full text-sm font-semibold text-hc-muted transition-opacity hover:opacity-80"
         onClick={onCerrar}
         disabled={guardando}
       >

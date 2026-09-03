@@ -63,7 +63,7 @@ export default function Navbar() {
             </button>
 
             <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label={t('footer.inicioAria')}>
-              <HotClickMark size={40} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
+              <HotClickMark size={48} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
               <span className="hc-wordmark hidden sm:inline text-[18px] leading-none transition-opacity duration-200 group-hover:opacity-80">
                 <span className="hot">Hot</span><span className="click">Click</span>
               </span>

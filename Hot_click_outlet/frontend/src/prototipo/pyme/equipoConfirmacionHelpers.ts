@@ -15,3 +15,8 @@ export function puedeQuitarMiembro(m: Pick<MiembroEquipo, 'rolEnEmpresa'>): bool
 export function esMiembroVisibleEnLista(m: Pick<MiembroEquipo, 'estado'>): boolean {
   return m.estado === 1 || m.estado === 5
 }
+
+export function mensajeExitoInvitacion(nombre?: string | null): string {
+  const quien = nombre?.trim() || 'El miembro'
+  return `${quien} ya puede entrar con la contraseña temporal.`
+}

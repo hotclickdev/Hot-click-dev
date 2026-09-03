@@ -183,6 +183,9 @@ export const productService = {
   toggleDestacado: (id: Id, valor: boolean) =>
     api.patch(`/productos/${id}/destacado`, { destacado: valor }),
 
+  toggleVisibleCatalogo: (id: Id, valor: boolean) =>
+    api.patch(`/productos/${id}/visibilidad-catalogo`, { visibleCatalogo: valor }),
+
   getCarrusel: () =>
     api.get('/productos/carrusel')
        .then((r) => {

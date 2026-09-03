@@ -2,6 +2,7 @@ import CampoTexto from '@/prototipo/emprendedor/ui/CampoTexto'
 import FilaChips from '@/prototipo/emprendedor/ui/FilaChips'
 import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
 import ChipsCategoriaVendedor from './ChipsCategoriaVendedor'
+import StepperNumero from './motion/StepperNumero'
 import ZonaFotoProducto from './ZonaFotoProducto'
 import type { ModoPrecioPersonalizado } from './personalizadoProductoHelpers'
 
@@ -93,22 +94,20 @@ export default function PasosProductoVendedor({
         </>
       ) : null}
       {idPaso === 'precios' ? (
-        <>
-          <CampoTexto
+        <div className="flex flex-col gap-3">
+          <StepperNumero
             etiqueta="Precio de compra"
             value={compra}
             onChange={onCompraChange}
-            type="number"
             placeholder={editar ? undefined : '₡ 0'}
           />
-          <CampoTexto
+          <StepperNumero
             etiqueta="Precio de venta"
             value={venta}
             onChange={onVentaChange}
-            type="number"
             placeholder={editar ? undefined : '₡ 0'}
           />
-        </>
+        </div>
       ) : null}
       {idPaso === 'cobro' ? (
         <CamposPersonalizadoProducto

@@ -1,5 +1,7 @@
 import { EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
+import EntradaPagina from './motion/EntradaPagina'
+import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
 
 const NOTIFS = [
   { id: 'cobro', titulo: 'Falló tu cobro mensual', detalle: 'Tu método de pago fue rechazado. Actualizalo para no perder tu plan.', cuando: 'Hace 1 hora', noLeida: true, tono: 'alerta' },
@@ -14,33 +16,35 @@ const NOTIFS = [
 export default function NotificacionesPage() {
   const ruta = useSellerRuta()
   return (
-    <main className="px-5 pb-8 pt-[60px]">
-      <EncabezadoPagina
-        titulo="Notificaciones"
-        volverA={ruta('opciones')}
-        extra={<button type="button" className="text-xs text-hc-accent">Marcar leídas</button>}
-      />
-      <ul className="space-y-3">
-        {NOTIFS.map((item) => (
-          <li key={item.id} className="flex gap-3 rounded-xl bg-hc-surface-2 p-3">
-            <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-              style={{ background: fondoTono(item.tono), color: colorTono(item.tono) }}
-            >
-              {item.tono === 'ok' ? '✓' : item.tono === 'alerta' ? '!' : 'i'}
-            </span>
-            <div>
-              <p className="text-sm font-medium">
-                {item.titulo}
-                {item.noLeida ? <span className="ml-1 inline-block size-1.5 rounded-full bg-hc-primary" /> : null}
-              </p>
-              <p className="mt-1 text-xs text-hc-muted">{item.detalle}</p>
-              <p className="mt-1 text-[11px] text-hc-muted">{item.cuando}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <EntradaPagina>
+      <main className="px-5 pb-8 pt-[60px]">
+        <EncabezadoPagina
+          titulo="Notificaciones"
+          volverA={ruta('opciones')}
+          extra={<button type="button" className="text-xs text-hc-accent">Marcar leídas</button>}
+        />
+        <ListaStagger className="space-y-3">
+          {NOTIFS.map((item) => (
+            <ItemListaStagger key={item.id} className="flex gap-3 rounded-xl bg-hc-surface-2 p-3">
+              <span
+                className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                style={{ background: fondoTono(item.tono), color: colorTono(item.tono) }}
+              >
+                {item.tono === 'ok' ? '✓' : item.tono === 'alerta' ? '!' : 'i'}
+              </span>
+              <div>
+                <p className="text-sm font-medium">
+                  {item.titulo}
+                  {item.noLeida ? <span className="ml-1 inline-block size-1.5 rounded-full bg-hc-primary" /> : null}
+                </p>
+                <p className="mt-1 text-xs text-hc-muted">{item.detalle}</p>
+                <p className="mt-1 text-[11px] text-hc-muted">{item.cuando}</p>
+              </div>
+            </ItemListaStagger>
+          ))}
+        </ListaStagger>
+      </main>
+    </EntradaPagina>
   )
 }
 

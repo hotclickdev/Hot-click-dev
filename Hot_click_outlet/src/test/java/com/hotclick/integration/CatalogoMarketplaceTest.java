@@ -167,6 +167,36 @@ class CatalogoMarketplaceTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Alta Directa')]").exists());
     }
 
+    @Test
+    @DisplayName("ADMIN pausa un producto de empresa ACTIVA y deja de verse; Publicar lo restaura")
+    void adminPausaYPublicaProducto_catalogoSigueLaDecision() throws Exception {
+        Empresa activa = crearEmpresa("Tienda Pausa Admin", "mkt-pausa-adm", "mkt-pausa-adm@test.cr",
+            "ACTIVO", true);
+        Producto pausable = crearProducto("Prod Pausable Admin", "SKU-MKT-PA1", activa, true);
+
+        mockMvc.perform(patch("/api/productos/" + pausable.getId() + "/visibilidad-catalogo")
+                .header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibleCatalogo\":false}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.visibleCatalogo").value(false));
+
+        mockMvc.perform(get("/api/productos?size=50"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Pausable Admin')]").doesNotExist());
+
+        mockMvc.perform(patch("/api/productos/" + pausable.getId() + "/visibilidad-catalogo")
+                .header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibleCatalogo\":true}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.visibleCatalogo").value(true));
+
+        mockMvc.perform(get("/api/productos?size=50"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Pausable Admin')]").exists());
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private Empresa crearEmpresa(String nombre, String slug, String correo,
