@@ -2,6 +2,7 @@ import { useMemo, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { buildCategoryTree } from './catalogoHelpers'
+import { SORT_OPTIONS } from './catalogoFiltros'
 import CatIcon from './CatIcon'
 import CloseIcon from '@/components/ui/CloseIcon'
 import type { CatalogCategoria, CatalogCounts } from './catalogoTipos'
@@ -23,6 +24,7 @@ type CatalogFilterBarProps = {
 // ── Barra de filtros completa ─────────────────────────────────────────────────
 export default function CatalogFilterBar({
   search, setSearch,
+  sort, setSort,
   categories, categoryTotalCount,
   category, setCategory,
   hasFilters, clearFilters,
@@ -60,6 +62,24 @@ export default function CatalogFilterBar({
 
           {/* Botones de filtro */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5 sm:pb-0">
+            {sort != null && setSort && (
+              <select
+                id="catalog-sort"
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value)
+                  try { localStorage.setItem('hc-products-sort', e.target.value) } catch { /* noop */ }
+                }}
+                aria-label="Ordenar productos"
+                className="h-9 max-w-[10.5rem] rounded-xl px-2.5 text-xs font-semibold border shrink-0 outline-none"
+                style={{ color: 'var(--hc-text)', borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+                ))}
+              </select>
+            )}
+
             {/* Entrada a la experiencia Descubrí */}
             <Link
               to="/descubri"

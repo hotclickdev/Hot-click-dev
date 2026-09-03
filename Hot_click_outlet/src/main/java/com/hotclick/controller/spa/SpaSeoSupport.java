@@ -168,6 +168,25 @@ public class SpaSeoSupport {
         return replaceSeoBlock(html, seoBlock);
     }
 
+    /** Meta noindex para PDP inexistente (acompaña HTTP 404). */
+    public String injectProductNotFoundMeta(String html, String id) {
+        String url = appUrl + "/productos/" + (id != null ? id : "");
+        String title = "Producto no encontrado | HOTCLICK";
+        String desc = "Este producto no está disponible en HotClick.";
+        String imagen = appUrl + "/og-image.png";
+        String seoBlock = SEO_START + "\n" +
+            "    <title>" + xe(title) + "</title>\n" +
+            "    <meta name=\"description\" content=\"" + xa(desc) + "\" />\n" +
+            "    <meta name=\"robots\" content=\"noindex, follow\" />\n" +
+            "    <link rel=\"canonical\" href=\"" + xa(url) + "\" />\n" +
+            "    <meta property=\"og:title\" content=\"" + xa(title) + "\" />\n" +
+            "    <meta property=\"og:description\" content=\"" + xa(desc) + "\" />\n" +
+            "    <meta property=\"og:url\" content=\"" + xa(url) + "\" />\n" +
+            "    <meta property=\"og:image\" content=\"" + xa(imagen) + "\" />\n" +
+            "    " + SEO_END;
+        return replaceSeoBlock(html, seoBlock);
+    }
+
     public static String escJson(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"");

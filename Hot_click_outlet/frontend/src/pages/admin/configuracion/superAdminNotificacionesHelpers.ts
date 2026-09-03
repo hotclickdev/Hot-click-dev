@@ -9,20 +9,15 @@ export type AlertaSistema = {
   tono: 'danger' | 'warn' | 'muted'
 }
 
-export function alertasDesdeColas(productosData: unknown, empresasData: unknown): AlertaSistema[] {
-  const productos = listaDesdeRespuesta(productosData).length
+/**
+ * Alertas de moderación para el panel de sistema.
+ * No incluye cola PRODUCTO: ya no hay revisión ítem por ítem;
+ * Pausado se gestiona en Empresas y el catálogo se abre al aprobar el negocio.
+ */
+export function alertasDesdeColas(empresasData: unknown, ofertasCount = 0): AlertaSistema[] {
   const tiendas = listaDesdeRespuesta<EmpresaSolicitud>(empresasData)
     .filter((empresa) => empresa.estadoEmpresa === ESTADO_PENDIENTE).length
   const alertas: AlertaSistema[] = []
-  if (productos > 0) {
-    alertas.push({
-      id: 'productos',
-      titulo: `${productos} productos esperando revisión`,
-      cuerpo: 'Hay publicaciones pendientes de moderación.',
-      to: '/admin/aprobaciones',
-      tono: 'warn',
-    })
-  }
   if (tiendas > 0) {
     alertas.push({
       id: 'tiendas',
@@ -30,6 +25,15 @@ export function alertasDesdeColas(productosData: unknown, empresasData: unknown)
       cuerpo: 'Hay negocios nuevos esperando activarse en la plataforma.',
       to: '/admin/aprobaciones',
       tono: 'danger',
+    })
+  }
+  if (ofertasCount > 0) {
+    alertas.push({
+      id: 'ofertas',
+      titulo: `${ofertasCount} promociones esperando revisión`,
+      cuerpo: 'Hay ofertas de vendedores pendientes de aprobación.',
+      to: '/admin/aprobaciones',
+      tono: 'warn',
     })
   }
   return alertas

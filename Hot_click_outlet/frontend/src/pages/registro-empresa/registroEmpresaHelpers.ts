@@ -16,9 +16,9 @@ export type StatRegistro = { n: string; s: string }
  * Cifras destacadas del panel izquierdo.
  */
 export const STATS: StatRegistro[] = [
-  { n: '100%', s: 'Gratis para empezar' },
-  { n: '24h', s: 'Tienda activa' },
-  { n: '10K+', s: 'Compradores activos' },
+  { n: '0 ₡', s: 'Alta del plan Emprendedor' },
+  { n: 'SINPE', s: 'Y tarjeta en checkout' },
+  { n: 'CR', s: 'Envío a todo el país' },
 ]
 
 /** Longitud mínima de la contraseña de administrador. */

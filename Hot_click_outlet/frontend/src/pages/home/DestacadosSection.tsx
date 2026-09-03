@@ -8,7 +8,8 @@ import type { Producto } from '@/types/producto'
  */
 export default function DestacadosSection({ destacados = [] }: { destacados?: Producto[] }) {
   const { t } = useTranslation()
-  if (destacados.length === 0) return null
+  const conStock = destacados.filter((p) => (p.stock ?? 0) > 0)
+  if (conStock.length === 0) return null
   return (
     <Section
       title={`${t('home.destacados')}.`}
@@ -16,7 +17,7 @@ export default function DestacadosSection({ destacados = [] }: { destacados?: Pr
       action={{ label: t('home.verTodos'), to: '/productos' }}
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {destacados.map((product, i) => (
+        {conStock.map((product, i) => (
           <ProductCard key={product.id} product={product} priority={i < 2} index={i} />
         ))}
       </div>

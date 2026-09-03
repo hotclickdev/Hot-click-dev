@@ -8,6 +8,8 @@ export type SidebarLink = {
   /** Stable section ID (not a display label). */
   section?: string
   feature?: string
+  /** Contador opcional (ej. pendientes de moderación). */
+  badge?: number
 }
 
 /**
@@ -128,6 +130,7 @@ function seccionVentas(t: TFunction): SidebarLink[] {
     { to: '/admin/ventas', label: t('admin.sidebar.nuevaVenta'), icon: 'plus' },
     { to: '/admin/clientes', label: t('admin.sidebar.misClientes'), icon: 'users' },
     { to: '/admin/asignar-compra', label: t('admin.sidebar.registrarCompraExterna'), icon: 'assign' },
+    { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard' },
     { to: '/admin/cotizaciones', label: t('admin.sidebar.cotizacionesB2B'), icon: 'doc' },
     { to: '/admin/gift-cards', label: t('admin.sidebar.giftCards'), icon: 'gift' },
   ]
@@ -155,6 +158,7 @@ function seccionFinanzas(t: TFunction): SidebarLink[] {
   return [
     { section: ADMIN_IT_SECCION.FINANZAS },
     { to: '/admin/finanzas', label: t('admin.sidebar.finanzas'), icon: 'chart' },
+    { to: '/admin/payouts', label: 'Retiros billetera', icon: 'card' },
     { to: '/admin/reportes', label: t('admin.sidebar.reportes'), icon: 'bar' },
   ]
 }

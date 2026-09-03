@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import PhoneField from '@/components/ui/PhoneField'
 import SmartField from './SmartField'
 import TextoFlecha from '@/components/ui/TextoFlecha'
-import { validateGuestEmail } from './checkoutHelpers'
+import { rutaLoginConRetorno } from '@/utils/authRedirect'
+import { validateGuestEmail, validatePhone } from './checkoutHelpers'
 import type { Dispatch, SetStateAction } from 'react'
 
 type GuestContactSectionProps = {
@@ -16,6 +17,11 @@ type GuestContactSectionProps = {
   setGuestEmailDirty: Dispatch<SetStateAction<boolean>>
   guestPhone: string
   setGuestPhone: Dispatch<SetStateAction<string>>
+  guestPhoneError: string
+  setGuestPhoneError: Dispatch<SetStateAction<string>>
+  guestPhoneDirty: boolean
+  setGuestPhoneDirty: Dispatch<SetStateAction<boolean>>
+  metodoEnvio: string
 }
 
 export default function GuestContactSection({
@@ -27,8 +33,15 @@ export default function GuestContactSection({
   setGuestEmailDirty,
   guestPhone,
   setGuestPhone,
+  guestPhoneError,
+  setGuestPhoneError,
+  guestPhoneDirty,
+  setGuestPhoneDirty,
+  metodoEnvio,
 }: GuestContactSectionProps) {
   const { t } = useTranslation()
+  const telefonoRequerido = metodoEnvio !== 'RETIRO_EN_TIENDA'
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -42,7 +55,7 @@ export default function GuestContactSection({
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('checkout.guestSectionSub')}</p>
         </div>
         <Link
-          to="/login"
+          to={rutaLoginConRetorno('/checkout')}
           className="text-xs font-medium hover:underline shrink-0 ml-4"
           style={{ color: 'var(--hc-link)' }}
         >
@@ -66,10 +79,16 @@ export default function GuestContactSection({
       />
 
       <PhoneField
-        label={t('checkout.guestPhone')}
+        label={telefonoRequerido ? t('checkout.guestPhoneRequired') : t('checkout.guestPhone')}
         value={guestPhone}
-        onChange={setGuestPhone}
+        required={telefonoRequerido}
+        error={guestPhoneDirty && telefonoRequerido ? guestPhoneError : ''}
         hint={t('checkout.guestPhoneHelp')}
+        onChange={(val) => {
+          setGuestPhone(val)
+          setGuestPhoneDirty(true)
+          if (telefonoRequerido) setGuestPhoneError(validatePhone(val, t))
+        }}
       />
     </motion.div>
   )

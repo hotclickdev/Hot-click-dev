@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { cotizacionService, formatMonto } from '@/services/cotizacionService'
 
 type ClienteCotizacion = {
@@ -73,9 +73,16 @@ export default function CotizacionPublicaPage() {
 
   if (error || !cot) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fb' }}>
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-4 px-4">
         <p className="text-lg font-semibold text-gray-700">Cotización no encontrada</p>
         <p className="text-sm text-gray-400">El enlace puede haber expirado o ser inválido.</p>
+        <Link
+          to="/productos"
+          className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+          style={{ background: 'var(--hc-accent, #E73B33)' }}
+        >
+          Ir al catálogo
+        </Link>
       </div>
     </div>
   )

@@ -35,7 +35,7 @@ export default function StickyCartBar({
     >
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/8">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-hc-surface-2 overflow-hidden shrink-0 border border-hc-border">
             {product.imagenUrl ? (
               <img src={getOptimizedUrl(product.imagenUrl, { width: 44 })} alt={product.nombre} width={44} height={44} className="w-full h-full object-cover" loading="lazy" />
             ) : (
@@ -58,7 +58,7 @@ export default function StickyCartBar({
             onClick={onDecrease}
             disabled={quantity <= 1}
             aria-label={t('common.previous')}
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
+            className="w-11 h-11 flex items-center justify-center text-hc-muted hover:text-hc-accent disabled:opacity-25 transition-colors select-none text-lg"
           >
             −
           </button>
@@ -69,7 +69,7 @@ export default function StickyCartBar({
             onClick={onIncrease}
             disabled={atMax}
             aria-label={t('common.next')}
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
+            className="w-11 h-11 flex items-center justify-center text-hc-muted hover:text-hc-accent disabled:opacity-25 transition-colors select-none text-lg"
           >
             +
           </button>

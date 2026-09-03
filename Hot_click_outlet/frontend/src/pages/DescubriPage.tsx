@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
+import Seo from '@/components/seo/Seo'
 import { productService, normalizeProduct } from '@/services/productService'
 import { analytics } from '@/utils/analytics'
 import {
@@ -143,10 +143,11 @@ export default function DescubriPage() {
 
   return (
     <MainLayout>
-      <Helmet>
-        <title>{t('descubri.metaTitle')}</title>
-        <meta name="description" content={t('descubri.metaDescription')} />
-      </Helmet>
+      <Seo
+        title={t('descubri.metaTitle')}
+        description={t('descubri.metaDescription')}
+        url="https://hotclick.lat/descubri"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-10 sm:pt-8">
         <DescubriHeader

@@ -31,8 +31,12 @@ export const sections = [
     title: '1. Resumen de la Política',
     content: (
       <>
-        <p>En HotClick queremos que tu experiencia de compra sea 100% satisfactoria. Si por alguna razón no estás conforme con tu pedido, tenés <strong>7 días hábiles</strong> desde la fecha de recepción para solicitar un cambio o devolución.</p>
-        <p>Dado que HotClick es un marketplace que conecta compradores con emprendedores costarricenses, el proceso de devolución se coordina directamente con el emprendedor vendedor.</p>
+        <p>En HotClick distinguimos dos protecciones:</p>
+        <ul>
+          <li><strong>Derecho de retracto / devolución:</strong> <strong>7 días hábiles</strong> desde la recepción (Ley N.° 7472). HotClick coordina con el emprendedor vendedor para tramitar la solicitud.</li>
+          <li><strong>Garantía del producto:</strong> hasta <strong>40 días</strong> desde la recepción por defectos de fabricación o fallos de funcionamiento.</li>
+        </ul>
+        <p>Dado que HotClick es un marketplace que conecta compradores con emprendedores costarricenses, el proceso se coordina con el vendedor; HotClick media si hace falta.</p>
       </>
     ),
   },
@@ -47,6 +51,7 @@ export const sections = [
           <li><strong>Producto incorrecto:</strong> recibiste un artículo diferente al que compraste (modelo, color, talla u otro).</li>
           <li><strong>Producto incompleto:</strong> faltaron partes, accesorios o piezas que se anunciaban incluidas.</li>
           <li><strong>Producto no conforme:</strong> el artículo difiere significativamente de la descripción o imágenes del anuncio.</li>
+          <li><strong>Derecho de retracto (Ley N.° 7472):</strong> arrepentimiento de compra dentro de los 7 días hábiles desde la recepción. HotClick coordina con el vendedor para tramitar la solicitud.</li>
         </ul>
       </>
     ),
@@ -63,7 +68,6 @@ export const sections = [
           <li>Productos personalizados o hechos a medida.</li>
           <li>Artículos de higiene personal (ropa interior, trajes de baño, etc.) por razones sanitarias.</li>
           <li>Productos digitales o servicios ya entregados.</li>
-          <li>Cuando el motivo es simplemente "arrepentimiento de compra" sin defecto alguno (queda a criterio del emprendedor).</li>
         </ul>
       </>
     ),
@@ -126,7 +130,7 @@ export const sections = [
         <ul>
           <li><strong>Correo:</strong> <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a></li>
           <li><strong>WhatsApp:</strong> <a href="https://wa.me/50686667888" style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">+506 8666-7888</a></li>
-          <li><strong>Horario:</strong> Lunes a Sábado, 8:00 am – 7:00 pm</li>
+          <li><strong>Horario:</strong> Lun–Sáb 8:00–19:00</li>
         </ul>
       </>
     ),

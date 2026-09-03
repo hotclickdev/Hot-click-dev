@@ -32,6 +32,7 @@ public class EmprendedorRegistroService {
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private InputSanitizer           sanitizer;
+    @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
 
     @Transactional
     public Usuario registrar(RegistroEmpresaDTO dto) {
@@ -82,6 +83,9 @@ public class EmprendedorRegistroService {
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         empresa = empresaRepository.save(empresa);
+        moderacionAdminAvisoService.avisarEmpresaPendiente(
+            empresa.getId(),
+            empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
 
         // 2. Crear usuario EMPRENDEDOR
         Usuario usuario = new Usuario();
@@ -176,6 +180,9 @@ public class EmprendedorRegistroService {
             }
         }
         empresa = empresaRepository.save(empresa);
+        moderacionAdminAvisoService.avisarEmpresaPendiente(
+            empresa.getId(),
+            empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
 
         // 2. Cambiar rol a EMPRENDEDOR
         var rolEmprendedor = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)

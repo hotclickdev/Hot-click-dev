@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fmt, type ProductoSugerido } from './cartAssistantHelpers'
+import { etiquetaPrecioChat, requiereFichaEncargo } from '../chatProductoPrecio'
+import { type ProductoSugerido } from './cartAssistantHelpers'
 
 export function CartAssistantProductCard({ producto, onAdd }: {
   producto: ProductoSugerido
   onAdd: (producto: ProductoSugerido) => void
 }) {
   const [added, setAdded] = useState(false)
+  const encargo = requiereFichaEncargo(producto)
+  const precioTxt = etiquetaPrecioChat(producto)
+
   function handleAdd() {
-    if (added) return
+    if (added || encargo) return
     onAdd(producto)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
@@ -32,19 +36,28 @@ export function CartAssistantProductCard({ producto, onAdd }: {
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold line-clamp-2 leading-snug" style={{ color: 'var(--hc-text)' }}>{producto.nombre}</p>
           {producto.sku && <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--hc-muted)' }}>SKU {producto.sku}</p>}
-          <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>₡{fmt(producto.precio)}</p>
+          <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>{precioTxt}</p>
         </div>
       </Link>
       <div className="px-3 pb-3">
-        <button
-          type="button"
-          onClick={handleAdd}
-          className={added
-            ? 'hc-btn w-full min-h-9 text-xs bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-            : 'hc-btn hc-btn-primary w-full min-h-9 text-xs'}
-        >
-          {added ? 'Agregado' : 'Agregar al pedido'}
-        </button>
+        {encargo ? (
+          <Link
+            to={`/productos/${producto.id}`}
+            className="hc-btn hc-btn-primary w-full min-h-9 text-xs inline-flex items-center justify-center"
+          >
+            Pedir cotización
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={handleAdd}
+            className={added
+              ? 'hc-btn w-full min-h-9 text-xs bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+              : 'hc-btn hc-btn-primary w-full min-h-9 text-xs'}
+          >
+            {added ? 'Agregado' : 'Agregar al pedido'}
+          </button>
+        )}
       </div>
     </div>
   )

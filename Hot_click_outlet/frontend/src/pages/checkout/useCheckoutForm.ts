@@ -65,6 +65,10 @@ export type CheckoutFormState = {
   setGuestEmailDirty: Dispatch<SetStateAction<boolean>>
   guestPhone: string
   setGuestPhone: Dispatch<SetStateAction<string>>
+  guestPhoneError: string
+  setGuestPhoneError: Dispatch<SetStateAction<string>>
+  guestPhoneDirty: boolean
+  setGuestPhoneDirty: Dispatch<SetStateAction<boolean>>
   cuponInput: string
   setCuponInput: Dispatch<SetStateAction<string>>
   cuponEstado: string
@@ -151,6 +155,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [guestEmailError, setGuestEmailError] = useState('')
   const [guestEmailDirty, setGuestEmailDirty] = useState(false)
   const [guestPhone, setGuestPhone] = useState('')
+  const [guestPhoneError, setGuestPhoneError] = useState('')
+  const [guestPhoneDirty, setGuestPhoneDirty] = useState(false)
 
   const [cuponInput, setCuponInput] = useState('')
   const [cuponEstado, setCuponEstado] = useState('idle')
@@ -221,6 +227,10 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setGuestEmailDirty,
     guestPhone,
     setGuestPhone,
+    guestPhoneError,
+    setGuestPhoneError,
+    guestPhoneDirty,
+    setGuestPhoneDirty,
     cuponInput,
     setCuponInput,
     cuponEstado,

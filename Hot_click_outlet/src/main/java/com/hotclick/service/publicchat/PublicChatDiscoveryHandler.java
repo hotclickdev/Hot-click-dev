@@ -53,7 +53,8 @@ public class PublicChatDiscoveryHandler {
         boolean mostrarFichas = fichasEnPantalla(context, showAll, showOffers, tieneTerminos);
 
         List<Map<String, Object>> page = pagina(empresaId, marketplace, userMessage, offset,
-            history, focusIds, showAll, showOffers, maxBudget, negations);
+            history, focusIds, showAll, showOffers, maxBudget, negations,
+            intentHelper.isPersonalizedIntent(userMessage));
         enviarProductos(emitter, mostrarFichas ? page : List.of(), mostrarFichas && page.size() >= productSearch.getPageSize(), userMessage);
         logChat(empresaId, userMessage, intent, isEnglish, maxBudget, afterHours, page.size(),
             showAll || showOffers ? "" : intentHelper.buildTsQuery(userMessage));
@@ -62,7 +63,7 @@ public class PublicChatDiscoveryHandler {
             enviarSinResultado(emitter, isEnglish);
             return;
         }
-        streamVenta(emitter, userMessage, page, history, empresaId, context,
+        streamVenta(emitter, userMessage, page, history, empresaId, marketplace, context,
             isEnglish, isGift, maxBudget, negations, afterHours, mostrarFichas);
     }
 
@@ -74,27 +75,30 @@ public class PublicChatDiscoveryHandler {
 
     private List<Map<String, Object>> pagina(Long empresaId, boolean marketplace, String userMessage,
                                              int offset, List<Map<String, Object>> history, List<Long> focusIds,
-                                             boolean showAll, boolean showOffers, Long maxBudget, Set<String> negations) {
+                                             boolean showAll, boolean showOffers, Long maxBudget, Set<String> negations,
+                                             boolean preferirPersonalizado) {
         boolean isFaqFollowUp = !showAll && !showOffers && history != null && !history.isEmpty()
             && focusIds != null && !focusIds.isEmpty() && intentHelper.isProductFaqFollowUp(userMessage);
         String tsQuery = (showAll || showOffers || isFaqFollowUp) ? "" : intentHelper.buildTsQuery(userMessage);
         List<Map<String, Object>> productos = buscar(empresaId, marketplace, userMessage, offset,
-            focusIds, showAll, showOffers, isFaqFollowUp, tsQuery, maxBudget, negations);
+            focusIds, showAll, showOffers, isFaqFollowUp, tsQuery, maxBudget, negations, preferirPersonalizado);
         if (isFaqFollowUp && productos.isEmpty()) {
             productos = productSearch.buscarProductos(
                 empresaId, marketplace, intentHelper.buildTsQuery(userMessage),
-                userMessage, offset, maxBudget, negations);
+                userMessage, offset, maxBudget, negations, preferirPersonalizado);
         }
         return productos.stream().limit(productSearch.getPageSize()).toList();
     }
 
     private List<Map<String, Object>> buscar(Long empresaId, boolean marketplace, String userMessage,
                                              int offset, List<Long> focusIds, boolean showAll, boolean showOffers,
-                                             boolean isFaqFollowUp, String tsQuery, Long maxBudget, Set<String> negations) {
+                                             boolean isFaqFollowUp, String tsQuery, Long maxBudget, Set<String> negations,
+                                             boolean preferirPersonalizado) {
         if (isFaqFollowUp) return productSearch.buscarPorIds(empresaId, marketplace, focusIds);
         if (showAll) return productSearch.buscarPopulares(empresaId, marketplace, offset);
         if (showOffers) return productSearch.buscarEnOferta(empresaId, marketplace, offset);
-        return productSearch.buscarProductos(empresaId, marketplace, tsQuery, userMessage, offset, maxBudget, negations);
+        return productSearch.buscarProductos(empresaId, marketplace, tsQuery, userMessage, offset,
+            maxBudget, negations, preferirPersonalizado);
     }
 
     private void enviarProductos(SseEmitter emitter, List<Map<String, Object>> page,
@@ -133,14 +137,14 @@ public class PublicChatDiscoveryHandler {
     }
 
     private void streamVenta(SseEmitter emitter, String userMessage, List<Map<String, Object>> page,
-                             List<Map<String, Object>> history, Long empresaId, String context,
+                             List<Map<String, Object>> history, Long empresaId, boolean marketplace, String context,
                              boolean isEnglish, boolean isGift, Long maxBudget, Set<String> negations,
                              boolean afterHours, boolean mostrarFichas) throws Exception {
         List<String> smartOpts = mostrarFichas
             ? claudeClient.generateOpts(context, page, userMessage, isEnglish, afterHours)
             : List.of();
         if (claudeClient.hasApiKey()) {
-            claudeClient.streamClaudeResponse(emitter, userMessage, page, history, empresaId, context,
+            claudeClient.streamClaudeResponse(emitter, userMessage, page, history, empresaId, marketplace, context,
                 isEnglish, isGift, maxBudget, negations, afterHours, smartOpts, mostrarFichas);
             return;
         }

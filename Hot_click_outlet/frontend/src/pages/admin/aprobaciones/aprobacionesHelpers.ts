@@ -50,7 +50,7 @@ export const ESTADO_COLOR: Record<string, string> = {
 
 export const SUBTITULO_TAB: Record<TabAprobacion, string> = {
   empresas: 'Negocios nuevos esperando tu aprobación para activarse en la plataforma',
-  productos: 'El catálogo se abre al aprobar el negocio. Los productos nuevos de un negocio activo no esperan revisión acá.',
+  productos: 'No hay revisión producto por producto. Pausado se gestiona en Empresas; el catálogo se abre al aprobar el negocio.',
   ofertas: 'Promociones esperando tu aprobación para aplicarse',
 }
 
@@ -83,11 +83,15 @@ export function tabsAprobacion({ pendientes, productos, ofertas }: {
   productos: number
   ofertas: number
 }): { id: TabAprobacion; count: number }[] {
-  return [
+  const tabs: { id: TabAprobacion; count: number }[] = [
     { id: 'empresas', count: pendientes ?? 0 },
-    { id: 'productos', count: productos },
     { id: 'ofertas', count: ofertas },
   ]
+  // Tab Productos solo si hay filas legacy; no es el gate del marketplace.
+  if (productos > 0) {
+    tabs.splice(1, 0, { id: 'productos', count: productos })
+  }
+  return tabs
 }
 
 export function fechaSolicitud(date?: string | number | Date | null): string {
@@ -106,7 +110,11 @@ export function subtituloModeracion(
   empresas: number,
   ofertas: number,
 ): string {
-  if (tab === 'productos') return `${productos} productos esperando revisión`
+  if (tab === 'productos') {
+    return productos > 0
+      ? `${productos} solicitudes legacy de producto`
+      : 'Sin cola de productos: el gate es el negocio'
+  }
   if (tab === 'ofertas') return `${ofertas} promociones esperando revisión`
   return `${empresas} tiendas esperando revisión`
 }

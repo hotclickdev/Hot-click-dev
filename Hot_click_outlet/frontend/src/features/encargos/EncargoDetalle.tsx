@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { formatPrice } from '@/utils/format'
-import { etiquetaPresupuestoCliente, linkWhatsAppCotizacion, type Encargo } from '@/services/encargoService'
+import { etiquetaPresupuestoCliente, type Encargo } from '@/services/encargoService'
+import EncargoRespuestaPasos from './EncargoRespuestaPasos'
 
 type Props = Readonly<{
   encargo: Encargo
@@ -17,15 +19,84 @@ type Props = Readonly<{
 }>
 
 const FULFILLMENT = ['EN_PRODUCCION', 'LISTO', 'ENTREGADO'] as const
+type FulfillmentEstado = (typeof FULFILLMENT)[number]
+
+function etiquetaFulfillment(est: FulfillmentEstado): string {
+  return est.replaceAll('_', ' ')
+}
+
+type FulfillmentProps = Readonly<{
+  encargo: Encargo
+  busy: boolean
+  onFulfillment: (estado: string) => void
+}>
+
+function FulfillmentEstadoProduccion({ encargo, busy, onFulfillment }: FulfillmentProps) {
+  const [pendiente, setPendiente] = useState<FulfillmentEstado | null>(null)
+
+  useEffect(() => {
+    if (pendiente && encargo.estadoFulfillment === pendiente) {
+      setPendiente(null)
+    }
+  }, [encargo.estadoFulfillment, pendiente])
+
+  const confirmar = () => {
+    if (!pendiente) return
+    onFulfillment(pendiente)
+  }
+
+  return (
+    <div className="space-y-2 pt-2 border-t" style={{ borderColor: 'var(--hc-border)' }}>
+      <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Estado de producción</p>
+      <p className="text-sm">Actual: <strong>{encargo.estadoFulfillment ?? 'EN_PRODUCCION'}</strong></p>
+      {pendiente ? (
+        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface-2, rgba(0,0,0,0.02))' }}>
+          <p className="text-sm font-medium">¿Marcar como {etiquetaFulfillment(pendiente)}?</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={confirmar}
+              className="text-xs px-4 py-2 rounded-full font-semibold text-white disabled:opacity-60"
+              style={{ backgroundColor: 'var(--hc-primary)' }}
+            >
+              {busy ? 'Guardando…' : 'Sí'}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setPendiente(null)}
+              className="text-xs px-4 py-2 rounded-full border disabled:opacity-60"
+              style={{ borderColor: 'var(--hc-border)' }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {FULFILLMENT.map((est) => (
+            <button
+              key={est}
+              type="button"
+              disabled={busy || encargo.estadoFulfillment === est}
+              onClick={() => setPendiente(est)}
+              className="text-xs px-3 py-1.5 rounded-full border disabled:opacity-60"
+              style={{ borderColor: 'var(--hc-border)' }}
+            >
+              {etiquetaFulfillment(est)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function EncargoDetalle({
   encargo, precio, onPrecioChange, mensaje, onMensajeChange,
   motivo, onMotivoChange, busy, onAprobar, onRechazar, onFulfillment, onCerrar,
 }: Props) {
-  const waLink = precio && Number(precio) > 0
-    ? linkWhatsAppCotizacion(encargo, Number(precio))
-    : null
-
   return (
     <div className="bg-white dark:bg-[#111114] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4">
       <div className="flex justify-between items-start gap-3">
@@ -61,58 +132,18 @@ export default function EncargoDetalle({
       ) : null}
 
       {encargo.estado === 'PENDIENTE' ? (
-        <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-          <div>
-            <label htmlFor="encargo-precio-aprobar" className="text-xs">Precio a cobrar (₡)</label>
-            <input
-              id="encargo-precio-aprobar"
-              type="number"
-              min={1}
-              className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--hc-border)' }}
-              value={precio}
-              onChange={(e) => onPrecioChange(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="encargo-mensaje-vendedor" className="text-xs">Mensaje para el cliente (opcional)</label>
-            <textarea
-              id="encargo-mensaje-vendedor"
-              className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--hc-border)', minHeight: 56 }}
-              value={mensaje}
-              onChange={(e) => onMensajeChange(e.target.value)}
-              maxLength={500}
-            />
-          </div>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onAprobar}
-            className="w-full rounded-xl py-3 text-sm font-bold text-white"
-            style={{ backgroundColor: 'var(--hc-primary)' }}
-          >
-            Aprobar y enviar link de pago
-          </button>
-          {waLink ? (
-            <a href={waLink} target="_blank" rel="noopener noreferrer" className="block text-center text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}>
-              Enviar cotización por WhatsApp
-            </a>
-          ) : null}
-          <div>
-            <label htmlFor="encargo-motivo-rechazo" className="text-xs">O rechazar con motivo</label>
-            <textarea
-              id="encargo-motivo-rechazo"
-              className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--hc-border)', minHeight: 64 }}
-              value={motivo}
-              onChange={(e) => onMotivoChange(e.target.value)}
-            />
-            <button type="button" disabled={busy} onClick={onRechazar} className="w-full mt-2 rounded-xl border py-2 text-sm">
-              Rechazar
-            </button>
-          </div>
-        </div>
+        <EncargoRespuestaPasos
+          encargo={encargo}
+          precio={precio}
+          onPrecioChange={onPrecioChange}
+          mensaje={mensaje}
+          onMensajeChange={onMensajeChange}
+          motivo={motivo}
+          onMotivoChange={onMotivoChange}
+          busy={busy}
+          onAprobar={onAprobar}
+          onRechazar={onRechazar}
+        />
       ) : null}
 
       {encargo.precioCotizado != null && encargo.estado !== 'PENDIENTE' ? (
@@ -120,24 +151,7 @@ export default function EncargoDetalle({
       ) : null}
 
       {encargo.estado === 'PAGADO' && onFulfillment ? (
-        <div className="space-y-2 pt-2 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-          <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Estado de producción</p>
-          <p className="text-sm">Actual: <strong>{encargo.estadoFulfillment ?? 'EN_PRODUCCION'}</strong></p>
-          <div className="flex flex-wrap gap-2">
-            {FULFILLMENT.map((est) => (
-              <button
-                key={est}
-                type="button"
-                disabled={busy || encargo.estadoFulfillment === est}
-                onClick={() => onFulfillment(est)}
-                className="text-xs px-3 py-1.5 rounded-full border"
-                style={{ borderColor: 'var(--hc-border)' }}
-              >
-                {est.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
-        </div>
+        <FulfillmentEstadoProduccion encargo={encargo} busy={busy} onFulfillment={onFulfillment} />
       ) : null}
     </div>
   )

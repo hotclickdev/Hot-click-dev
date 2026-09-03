@@ -5,7 +5,8 @@ import type { Id } from '@/types/api'
 export const aprobacionService = {
   listEmpresas: () => api.get('/admin/solicitudes-aprobacion'),
   aprobarEmpresa: (id: Id) => api.put(`/admin/solicitudes-aprobacion/${id}/aprobar`),
-  rechazarEmpresa: (id: Id) => api.put(`/admin/solicitudes-aprobacion/${id}/rechazar`),
+  rechazarEmpresa: (id: Id, comentario?: string) =>
+    api.put(`/admin/solicitudes-aprobacion/${id}/rechazar`, { comentario: comentario || '' }),
 
   listProductos: () => api.get('/admin/solicitudes-aprobacion/productos'),
   aprobarProducto: (id: Id) => api.put(`/admin/solicitudes-aprobacion/productos/${id}/aprobar`),

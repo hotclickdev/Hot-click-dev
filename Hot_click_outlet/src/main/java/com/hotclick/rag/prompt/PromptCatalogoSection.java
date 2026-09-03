@@ -39,15 +39,32 @@ final class PromptCatalogoSection {
                 sb.append("  <producto>\n");
                 sb.append("    <nombre>").append(PromptBuilderSupport.xmlEscape(p.nombre())).append("</nombre>\n");
                 sb.append("    <sku>").append(PromptBuilderSupport.xmlEscape(p.sku())).append("</sku>\n");
-                sb.append("    <precio>₡").append(PromptBuilderSupport.PRECIO_FORMAT.format(p.precio())).append("</precio>\n");
+                String precioTxt = p.precioEtiqueta() != null && !p.precioEtiqueta().isBlank()
+                    ? p.precioEtiqueta()
+                    : (p.precio() != null ? "₡" + PromptBuilderSupport.PRECIO_FORMAT.format(p.precio()) : "A cotizar");
+                sb.append("    <precio>").append(PromptBuilderSupport.xmlEscape(precioTxt)).append("</precio>\n");
+                if (Boolean.TRUE.equals(p.esPersonalizado())) {
+                    sb.append("    <personalizado>sí</personalizado>\n");
+                    if (p.modoPrecioPersonalizado() != null) {
+                        sb.append("    <modo_precio>")
+                            .append(PromptBuilderSupport.xmlEscape(p.modoPrecioPersonalizado()))
+                            .append("</modo_precio>\n");
+                    }
+                    appendOpcional(sb, "instrucciones_personalizacion", p.instruccionesPersonalizacion());
+                    sb.append("    <disponibilidad>por encargo (no uses stock de inventario)</disponibilidad>\n");
+                } else if (p.stock() != null) {
+                    if (p.stock() <= 0) {
+                        sb.append("    <disponibilidad>agotado</disponibilidad>\n");
+                    } else {
+                        sb.append("    <stock_disponible>").append(p.stock()).append("</stock_disponible>\n");
+                    }
+                }
                 appendOpcional(sb, "descripcion", p.descripcionCorta());
+                appendOpcional(sb, "descripcion_larga", p.descripcionLarga());
                 appendOpcional(sb, "tags", p.tags());
                 appendOpcional(sb, "categoria", p.categoria());
                 appendOpcional(sb, "especificaciones", p.especificaciones());
                 appendOpcional(sb, "como_usar", p.comoUsar());
-                if (p.stock() != null) {
-                    sb.append("    <stock_disponible>").append(p.stock()).append("</stock_disponible>\n");
-                }
                 sb.append("  </producto>\n");
             }
             sb.append("</catalogo_disponible>\n");

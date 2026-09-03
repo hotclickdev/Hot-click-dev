@@ -55,15 +55,21 @@ export default function HomePage() {
   const toast = useToast()
 
   useEffect(() => {
+    let toastMostrado = false
+    const avisarError = (mensaje: string) => {
+      if (toastMostrado) return
+      toastMostrado = true
+      toast({ message: mensaje, type: 'error' })
+    }
     productService.getDestacados()
       .then(({ data }) => setDestacados(Array.isArray(data) ? data.slice(0, 8) : []))
-      .catch(() => toast({ message: t('home.errorFeatured'), type: 'error' }))
+      .catch(() => avisarError(t('home.errorFeatured')))
     marcaService.getPublicas()
       .then(({ data }) => setMarcas(listaMarcas(data)))
-      .catch(() => toast({ message: t('home.errorBrands'), type: 'error' }))
+      .catch(() => avisarError(t('home.errorBrands')))
     productService.getCategories()
       .then(({ data }) => setCategorias(listaCategorias(data)))
-      .catch(() => toast({ message: t('home.errorCategories'), type: 'error' }))
+      .catch(() => avisarError(t('home.errorCategories')))
     productService.getAll(0, 60)
       .then(({ data }) => {
         const content = contenidoProductos(data)
@@ -74,7 +80,7 @@ export default function HomePage() {
           nombre: p.nombreProducto ?? p.nombre ?? p.titulo,
         })))
       })
-      .catch(() => toast({ message: t('home.errorProducts'), type: 'error' }))
+      .catch(() => avisarError(t('home.errorProducts')))
   }, [toast, t])
 
   return (

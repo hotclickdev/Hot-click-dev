@@ -82,6 +82,9 @@ const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizaci
 const CotizacionPublicaPage = lazy(() => import('@/pages/CotizacionPublicaPage'))
 const EncargoPublicPage = lazy(() => import('@/pages/EncargoPublicPage'))
 const AdminEncargos = lazy(() => import('@/pages/admin/AdminEncargos'))
+const AdminRecolecciones = lazy(() => import('@/pages/admin/AdminRecolecciones'))
+const AdminPayouts = lazy(() => import('@/pages/admin/AdminPayouts'))
+const AdminReportesProducto = lazy(() => import('@/pages/admin/AdminReportesProducto'))
 const AdminAiControl = lazy(() => import('@/pages/admin/AdminAiControl'))
 const AdminFacturas = lazy(() => import('@/pages/admin/AdminFacturas'))
 const AdminConfigFiscal = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
@@ -247,6 +250,9 @@ export default function AppRoutes() {
           <Route path="cotizaciones/:id" element={<AdminNuevaCotizacion />} />
           <Route path="pagos" element={<AdminPagos />} />
           <Route path="servicios" element={<AdminSolicitudesServicio />} />
+          <Route path="recolecciones" element={<AdminRecolecciones />} />
+          <Route path="payouts" element={<AdminPayouts />} />
+          <Route path="reportes-producto" element={<AdminReportesProducto />} />
           <Route path="testimonios" element={<AdminTestimonios />} />
           <Route path="empresas" element={<AdminEmpresas />} />
           <Route path="aprobaciones" element={<AdminAprobaciones />} />

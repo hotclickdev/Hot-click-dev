@@ -52,8 +52,9 @@ public class SolicitudAprobacionController {
     }
 
     @PutMapping("/{id}/rechazar")
-    public ResponseEntity<ResponseDTO> rechazar(@PathVariable Long id) {
-        return solicitudEmpresaHandler.rechazar(id);
+    public ResponseEntity<ResponseDTO> rechazar(@PathVariable Long id,
+                                                 @RequestBody(required = false) Map<String, String> body) {
+        return solicitudEmpresaHandler.rechazar(id, body);
     }
 
     // ── Productos ────────────────────────────────────────────────────────────

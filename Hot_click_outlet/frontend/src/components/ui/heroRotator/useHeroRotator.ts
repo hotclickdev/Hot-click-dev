@@ -42,6 +42,12 @@ export function useHeroRotator() {
     pausedRef.current = false
     if (progressRef.current != null) clearInterval(progressRef.current)
 
+    const reduceMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) {
+      setProgress(100)
+      return
+    }
+
     const step = 80
     const increment = (step / phase.duration) * 100
 

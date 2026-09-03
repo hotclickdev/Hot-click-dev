@@ -111,7 +111,7 @@ export default function FooterColumns() {
         <ul className="space-y-0.5">
           <FooterLink to="/nosotros">{t('footer.nosotros')}</FooterLink>
           <FooterLink to="/contacto">{t('footer.contacto')}</FooterLink>
-          <FooterLink to="/registro-empresa" highlight>{t('footer.vendeConNosotros')}</FooterLink>
+          <FooterLink to="/emprende" highlight>{t('footer.vendeConNosotros')}</FooterLink>
           <FooterLink to="/emprende">{t('nav.emprender')}</FooterLink>
           <FooterLink to="/emprendimientos">{t('footer.emprendimientos')}</FooterLink>
           <FooterLink to="/blog">{t('footer.blog')}</FooterLink>

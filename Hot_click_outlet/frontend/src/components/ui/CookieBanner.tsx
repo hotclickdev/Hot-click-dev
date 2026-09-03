@@ -58,7 +58,8 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 120, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="pointer-events-none fixed bottom-0 left-0 right-0 z-[9999] p-3 sm:p-4"
+          className="pointer-events-none fixed left-0 right-0 z-[9999] p-3 sm:p-4"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
           <CuerpoBanner onSoloEsenciales={() => accept(false)} onAceptarTodo={() => accept(true)} />
         </motion.div>
@@ -108,7 +109,7 @@ function CuerpoBanner({
         </p>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
           {t('cookies.body')}{' '}
-          <Link to="/informacion" className="underline underline-offset-2 transition-opacity hover:opacity-80" style={{ color: 'var(--hc-accent)' }}>
+          <Link to="/cookies" className="underline underline-offset-2 transition-opacity hover:opacity-80" style={{ color: 'var(--hc-accent)' }}>
             {t('cookies.moreInfo')}
           </Link>
         </p>

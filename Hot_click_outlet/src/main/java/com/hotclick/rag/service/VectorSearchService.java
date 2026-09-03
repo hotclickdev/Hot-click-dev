@@ -3,6 +3,7 @@ package com.hotclick.rag.service;
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.service.catalogo.CatalogoChatSql;
 import com.hotclick.service.catalogo.ChatKeywordRankSql;
+import com.hotclick.service.catalogo.ChatPrecioPersonalizado;
 import com.hotclick.service.catalogo.ChatProductoMatchSql;
 import com.hotclick.service.catalogo.ChatRankingConstants;
 import com.hotclick.service.catalogo.ChatSearchTerms;
@@ -37,13 +38,14 @@ public class VectorSearchService {
                p.sku,
                p.precio_venta,
                p.descripcion_corta,
+               LEFT(COALESCE(p.descripcion_larga, ''), 400) AS descripcion_larga,
                p.imagen_principal_url,
                (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
                p.tags,
                c.nombre_categoria AS nombre_categoria,
-               LEFT(COALESCE(p.especificaciones, ''), 280) AS especificaciones,
-               LEFT(COALESCE(p.como_usar, ''), 160) AS como_usar
-        """;
+               LEFT(COALESCE(p.especificaciones, ''), 600) AS especificaciones,
+               LEFT(COALESCE(p.como_usar, ''), 400) AS como_usar
+        """ + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private static final String SELECT_ASESOR = """
         SELECT p.id_producto,
@@ -51,13 +53,14 @@ public class VectorSearchService {
                p.sku,
                p.precio_venta,
                LEFT(COALESCE(p.descripcion_corta, ''), 400) AS descripcion_corta,
+               LEFT(COALESCE(p.descripcion_larga, ''), 800) AS descripcion_larga,
                p.imagen_principal_url,
                (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
                p.tags,
                c.nombre_categoria AS nombre_categoria,
                LEFT(COALESCE(p.especificaciones, ''), 1500) AS especificaciones,
                LEFT(COALESCE(p.como_usar, ''), 800) AS como_usar
-        """;
+        """ + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private final EmbeddingService embeddingService;
     private final JdbcTemplate jdbc;
@@ -76,15 +79,21 @@ public class VectorSearchService {
 
     public List<ProductoContexto> buscarSimilares(Long empresaId, String query, int limit,
                                                   boolean marketplace) {
-        List<ProductoContexto> semanticos = buscarPorEmbedding(empresaId, query, limit, marketplace);
-        List<ProductoContexto> keywords = buscarPorKeywords(empresaId, query, limit, marketplace);
+        boolean preferirPersonalizado = intentHelper.isPersonalizedIntent(query);
+        List<ProductoContexto> semanticos = buscarPorEmbedding(
+            empresaId, query, limit, marketplace, preferirPersonalizado);
+        List<ProductoContexto> keywords = buscarPorKeywords(
+            empresaId, query, limit, marketplace, preferirPersonalizado);
         if (semanticos.isEmpty()) return keywords;
         if (keywords.isEmpty()) return semanticos;
-        return fusionRrf(semanticos, keywords, limit);
+        List<ProductoContexto> fused = fusionRrf(semanticos, keywords, limit);
+        if (!preferirPersonalizado) return fused;
+        return priorizarPersonalizados(fused, limit);
     }
 
     private List<ProductoContexto> buscarPorEmbedding(Long empresaId, String query, int limit,
-                                                      boolean marketplace) {
+                                                      boolean marketplace,
+                                                      boolean preferirPersonalizado) {
         try {
             float[] vector = embeddingService.generarEmbedding(query);
             String vectorStr = toVectorString(vector);
@@ -97,6 +106,7 @@ public class VectorSearchService {
             params.add(vectorStr); // ORDER BY
             params.add(limit);
 
+            String boostPers = ChatPrecioPersonalizado.orderBoostPersonalizado(preferirPersonalizado);
             String sql = SELECT_FICHA
                 + ", (emb.embedding <=> ?::vector) AS distancia"
                 + " FROM hot_click_producto_embedding_tb emb"
@@ -105,6 +115,7 @@ public class VectorSearchService {
                 + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
                 + " AND (emb.embedding <=> ?::vector) <= ?"
                 + " ORDER BY "
+                + boostPers
                 + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
                 + "emb.embedding <=> ?::vector"
                 + " LIMIT ?";
@@ -120,14 +131,16 @@ public class VectorSearchService {
     }
 
     private List<ProductoContexto> buscarPorKeywords(Long empresaId, String query, int limit,
-                                                     boolean marketplace) {
+                                                     boolean marketplace,
+                                                     boolean preferirPersonalizado) {
         try {
             List<String> userTerms = intentHelper.userTerms(query);
             if (userTerms.isEmpty()) return Collections.emptyList();
             List<String> synonymBoost = intentHelper.expandSynonyms(userTerms);
 
             List<ProductoContexto> porTs = buscarPorTsvector(
-                empresaId, marketplace, ChatSearchTerms.websearchQuery(userTerms), limit, synonymBoost);
+                empresaId, marketplace, ChatSearchTerms.websearchQuery(userTerms), limit,
+                synonymBoost, preferirPersonalizado);
             if (!porTs.isEmpty()) return porTs;
 
             List<Object> params = new ArrayList<>();
@@ -139,12 +152,22 @@ public class VectorSearchService {
             ChatKeywordRankSql.bindScoreTerminos(params, synonymBoost);
             params.add(limit);
 
+            String boostPers = ChatPrecioPersonalizado.orderBoostPersonalizado(preferirPersonalizado);
+            String order = preferirPersonalizado
+                ? " ORDER BY " + boostPers
+                    + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' "
+                    + "THEN 0 ELSE 1 END, "
+                    + ChatKeywordRankSql.scoreExpr(userTerms.size(), 4, 3, 3, 1) + " DESC, "
+                    + (synonymBoost.isEmpty() ? "" : ChatKeywordRankSql.scoreExpr(synonymBoost.size(), 1, 1, 1, 0) + " DESC, ")
+                    + "p.id_producto DESC"
+                : ChatKeywordRankSql.orderByRelevancia(userTerms.size(), synonymBoost.size());
+
             String sql = SELECT_FICHA
                 + " FROM hot_click_producto_tb p"
                 + CatalogoChatSql.joins(marketplace)
                 + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
                 + " AND (" + ChatProductoMatchSql.orDeTerminos(userTerms.size()) + ")"
-                + ChatKeywordRankSql.orderByRelevancia(userTerms.size(), synonymBoost.size())
+                + order
                 + " LIMIT ?";
 
             List<ProductoContexto> resultados = jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
@@ -159,7 +182,8 @@ public class VectorSearchService {
 
     private List<ProductoContexto> buscarPorTsvector(Long empresaId, boolean marketplace,
                                                      String webQuery, int limit,
-                                                     List<String> synonymBoost) {
+                                                     List<String> synonymBoost,
+                                                     boolean preferirPersonalizado) {
         if (webQuery == null || webQuery.isBlank()) return List.of();
         try {
             List<Object> params = new ArrayList<>();
@@ -169,6 +193,7 @@ public class VectorSearchService {
             ChatKeywordRankSql.bindScoreTerminos(params, synonymBoost);
             params.add(limit);
             int synCount = synonymBoost == null ? 0 : synonymBoost.size();
+            String boostPers = ChatPrecioPersonalizado.orderBoostPersonalizado(preferirPersonalizado);
             String sql = SELECT_FICHA
                 + ", ts_rank(p.search_vector, websearch_to_tsquery('spanish', ?)) AS rank"
                 + " FROM hot_click_producto_tb p"
@@ -176,6 +201,7 @@ public class VectorSearchService {
                 + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
                 + " AND p.search_vector @@ websearch_to_tsquery('spanish', ?)"
                 + " ORDER BY "
+                + boostPers
                 + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
                 + "rank DESC"
                 + (synCount > 0 ? ", " + ChatKeywordRankSql.scoreExpr(synCount, 1, 1, 1, 0) + " DESC" : "")
@@ -227,19 +253,58 @@ public class VectorSearchService {
     }
 
     private static ProductoContexto mapProducto(java.sql.ResultSet rs) throws java.sql.SQLException {
+        boolean personalizado = rs.getBoolean("es_personalizado");
+        String modo = rs.getString("modo_precio_personalizado");
+        Integer precioVenta = (Integer) rs.getObject("precio_venta");
+        Integer min = (Integer) rs.getObject("precio_personalizado_min");
+        Integer max = (Integer) rs.getObject("precio_personalizado_max");
+        String instrucciones = rs.getString("instrucciones_personalizacion");
+        Integer precioNum = ChatPrecioPersonalizado.precioNumerico(
+            personalizado, ChatPrecioPersonalizado.modo(modo), precioVenta, null, min);
+        String etiqueta = ChatPrecioPersonalizado.etiqueta(
+            personalizado, ChatPrecioPersonalizado.modo(modo), precioVenta, null, min, max);
         return new ProductoContexto(
             rs.getLong("id_producto"),
             rs.getString("nombre_producto"),
             rs.getString("sku"),
-            rs.getInt("precio_venta"),
+            precioNum,
             rs.getString("descripcion_corta"),
             rs.getString("imagen_principal_url"),
             rs.getInt("stock_disponible"),
             rs.getString("tags"),
             rs.getString("nombre_categoria"),
             rs.getString("especificaciones"),
-            rs.getString("como_usar")
+            rs.getString("como_usar"),
+            personalizado,
+            ChatPrecioPersonalizado.modo(modo),
+            min,
+            max,
+            instrucciones == null || instrucciones.isBlank() ? null : instrucciones,
+            etiqueta,
+            columnaOpcional(rs, "descripcion_larga")
         );
+    }
+
+    private static String columnaOpcional(java.sql.ResultSet rs, String columna) {
+        try {
+            String v = rs.getString(columna);
+            return v == null || v.isBlank() ? null : v;
+        } catch (java.sql.SQLException e) {
+            return null;
+        }
+    }
+
+    private static List<ProductoContexto> priorizarPersonalizados(List<ProductoContexto> lista, int limit) {
+        List<ProductoContexto> personalizados = lista.stream()
+            .filter(p -> Boolean.TRUE.equals(p.esPersonalizado()))
+            .toList();
+        if (personalizados.isEmpty()) return lista.stream().limit(limit).toList();
+        List<ProductoContexto> out = new ArrayList<>(personalizados);
+        for (ProductoContexto p : lista) {
+            if (out.size() >= limit) break;
+            if (!Boolean.TRUE.equals(p.esPersonalizado())) out.add(p);
+        }
+        return out.stream().limit(limit).toList();
     }
 
     static String toVectorString(float[] vector) {

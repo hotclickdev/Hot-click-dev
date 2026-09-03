@@ -118,9 +118,9 @@ export const MM_GUIAS: readonly MmGuia[] = [
     roles: ['ADMIN'],
     pasos: [
       {
-        ancla: 'tab-productos',
+        ancla: 'tab-empresas',
         titulo: 'Cola de moderación',
-        texto: 'Cambiá entre empresas, productos y promociones pendientes.',
+        texto: 'Empezá por negocios nuevos y promociones. El catálogo se abre al aprobar el negocio.',
       },
       {
         ancla: 'aprobar-primero',

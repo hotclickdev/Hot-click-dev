@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -16,6 +16,7 @@ import RecommendationsRow from './producto/RecommendationsRow'
 import RecentlyViewedGrid from './producto/RecentlyViewedGrid'
 import ProductDetailSeo from './producto/ProductDetailSeo'
 import { useProductDetail } from './producto/useProductDetail'
+import { Helmet } from 'react-helmet-async'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -37,8 +38,31 @@ export default function ProductDetailPage() {
     )
   }
 
-  if (!product) return null
-
+  if (!product) {
+    return (
+      <MainLayout>
+        <Helmet>
+          <title>{t('product.notFound')} | HotClick</title>
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
+        <div className="max-w-lg mx-auto px-4 py-24 text-center space-y-4">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>
+            {t('product.notFound')}
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
+            {t('notFound.subtitle')}
+          </p>
+          <Link
+            to="/productos"
+            className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: 'var(--hc-accent)' }}
+          >
+            {t('notFound.comprarHint')}
+          </Link>
+        </div>
+      </MainLayout>
+    )
+  }
   const tabs = tabsDesdeProducto(product, t)
   const userLang = (navigator.language || 'es').split('-')[0].toLowerCase()
   const { seoTitle, seoDescription } = seoDesdeProducto(product, userLang)

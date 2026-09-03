@@ -18,7 +18,7 @@ import { esRutaClaudeclick, esRutaPrototipo, esRutaVendedorFigma, esRutaVisitant
 import ChatModal from '@/components/ai/ChatModal'
 import type { Producto } from '@/types/producto'
 
-const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/tienda', '/prototipo', '/emprendedor', '/pyme', '/negocio-plus', '/visitante']
+const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/pos', '/tienda', '/prototipo', '/emprendedor', '/pyme', '/negocio-plus', '/visitante']
 const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
 
 /**
@@ -29,7 +29,7 @@ export function ScrollToTop() {
   useEffect(() => {
     globalThis.scrollTo(0, 0)
     trackPageView(pathname)
-    if (pathname.startsWith('/admin') || esRutaClaudeclick(pathname)) return
+    if (pathname.startsWith('/admin') || pathname.startsWith('/pos') || esRutaClaudeclick(pathname)) return
     const ficha = pathname.match(/^\/productos\/([^/]+)/)
     trackAiPage(surfaceFromPath(pathname), ficha?.[1])
   }, [pathname])
@@ -50,20 +50,22 @@ export function PageFade({ children }: { children: ReactNode }) {
 }
 
 /**
- * WhatsApp FAB oculto en auth, admin, checkout, pago y prototipo.
+ * WhatsApp FAB oculto en auth, admin, checkout, pago POS y prototipo.
  */
 export function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.has(pathname)) return null
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
+  if (pathname.startsWith('/pos')) return null
   if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
   return <WhatsAppFab />
 }
 
-/** Asistente del marketplace: no encima de tienda vendedor, prototipo ni ficha de producto. */
+/** Asistente del marketplace: no encima de tienda vendedor, prototipo, ficha ni pago POS. */
 export function ConditionalChatModal() {
   const { pathname } = useLocation()
   if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
+  if (pathname.startsWith('/pos')) return null
   if (/^\/productos\/[^/]+/.test(pathname)) return null
   return <ChatModal />
 }

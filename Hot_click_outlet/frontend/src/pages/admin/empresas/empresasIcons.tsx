@@ -17,6 +17,14 @@ export function EyeOffIcon({ className = 'w-3 h-3' }) {
 
 export { default as CloseIcon } from '@/components/ui/CloseIcon'
 
+export function PencilIcon({ className = 'w-3.5 h-3.5' }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.1 2.1 0 113 3L7.5 18.85 3 19.5l.65-4.5 13.212-11.513z" />
+    </svg>
+  )
+}
+
 export function PackageIcon() {
   return (
     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--hc-muted)' }}>

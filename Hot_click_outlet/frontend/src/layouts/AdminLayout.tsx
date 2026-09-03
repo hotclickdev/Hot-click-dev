@@ -18,6 +18,8 @@ import SidebarContent, { type RoleBadge } from './admin/SidebarContent'
 import AdminMobileHeader from './admin/AdminMobileHeader'
 import AdminBottomNav from '@/prototipo/admin/AdminBottomNav'
 import { etiquetaChromeAdmin } from './admin/adminChrome'
+import { moderacionService } from '@/services/moderacionService'
+import type { SidebarLink } from './admin/adminItJobs'
 
 const ROLE_BADGES: Record<string, RoleBadge> = {
   ADMIN:       { label: 'Admin',       color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
@@ -41,6 +43,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   const visibilidadPublica = useTenantStore((s) => s.visibilidadPublica)
   const [drawerOpen,    setDrawerOpen]    = useState(false)
   const [searchOpen,    setSearchOpen]    = useState(false)
+  const [moderacionTotal, setModeracionTotal] = useState(0)
 
   // Cargar info del tenant (plan, límites, features) al montar el panel admin
   useEffect(() => {
@@ -49,6 +52,15 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     loadTenantUso()
     return () => clearTenant()
   }, [empresaId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (userRole !== 'ADMIN') return
+    let cancelado = false
+    moderacionService.resumen()
+      .then((r) => { if (!cancelado) setModeracionTotal(r.total) })
+      .catch(() => { if (!cancelado) setModeracionTotal(0) })
+    return () => { cancelado = true }
+  }, [userRole, location.pathname])
 
   // Atajo global Cmd+K / Ctrl+K
   useEffect(() => {
@@ -59,7 +71,11 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     return () => globalThis.removeEventListener('keydown', handler)
   }, [])
 
-  const sidebarLinks = buildSidebarLinks(t, userRole)
+  const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole).map((link) =>
+    link.to === '/admin/aprobaciones' && moderacionTotal > 0
+      ? { ...link, badge: moderacionTotal }
+      : link,
+  )
   const handleLogout = () => { logout(); navigate('/') }
 
   // Cargar estado de empresa para mostrar banners de aprobación / visibilidad

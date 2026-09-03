@@ -6,8 +6,8 @@ import com.hotclick.model.SolicitudAprobacion;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.SolicitudAprobacionRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.ModeracionAvisoService;
 import com.hotclick.service.ProductoService;
-import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.utils.Constants;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -31,7 +31,7 @@ public class SolicitudOfertaHandler {
     private final SolicitudLookupHelper            solicitudLookupHelper;
     private final SolicitudOfertaSnapshotReader    solicitudOfertaSnapshotReader;
     private final ProductoService                    productoService;
-    private final TelegramNotificacionClienteService telegramNotificacionClienteService;
+    private final ModeracionAvisoService             moderacionAvisoService;
 
     SolicitudOfertaHandler(SolicitudAprobacionRepository solicitudAprobacionRepository,
                            ProductoRepository productoRepository,
@@ -41,7 +41,7 @@ public class SolicitudOfertaHandler {
                            SolicitudLookupHelper solicitudLookupHelper,
                            SolicitudOfertaSnapshotReader solicitudOfertaSnapshotReader,
                            ProductoService productoService,
-                           TelegramNotificacionClienteService telegramNotificacionClienteService) {
+                           ModeracionAvisoService moderacionAvisoService) {
         this.solicitudAprobacionRepository    = solicitudAprobacionRepository;
         this.productoRepository               = productoRepository;
         this.companyScope                     = companyScope;
@@ -50,7 +50,7 @@ public class SolicitudOfertaHandler {
         this.solicitudLookupHelper            = solicitudLookupHelper;
         this.solicitudOfertaSnapshotReader    = solicitudOfertaSnapshotReader;
         this.productoService                  = productoService;
-        this.telegramNotificacionClienteService = telegramNotificacionClienteService;
+        this.moderacionAvisoService           = moderacionAvisoService;
     }
 
     public ResponseEntity<ResponseDTO> listarOfertas() {
@@ -90,7 +90,7 @@ public class SolicitudOfertaHandler {
         sol.setUsuarioResuelve(companyScope.getCurrentUser());
         solicitudAprobacionRepository.save(sol);
         if (sol.getEmpresa() != null && producto != null) {
-            telegramNotificacionClienteService.notificarSolicitudAprobada(
+            moderacionAvisoService.avisarAprobado(
                 sol.getEmpresa().getId(), "Tu promoción", producto.getNombreProducto());
         }
         return ResponseEntity.ok(ResponseDTO.success("Promoción aprobada y aplicada", null));
@@ -111,7 +111,7 @@ public class SolicitudOfertaHandler {
         solicitudAprobacionRepository.save(sol);
         Producto producto = productoRepository.findById(sol.getIdEntidad()).orElse(null);
         if (sol.getEmpresa() != null && producto != null) {
-            telegramNotificacionClienteService.notificarSolicitudRevision(
+            moderacionAvisoService.avisarRechazado(
                 sol.getEmpresa().getId(), "Tu promoción", producto.getNombreProducto(),
                 sol.getComentarioRevisor());
         }

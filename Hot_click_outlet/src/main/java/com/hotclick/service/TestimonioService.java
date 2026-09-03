@@ -29,6 +29,7 @@ public class TestimonioService {
     @Autowired private InputSanitizer sanitizer;
     @Autowired private TestimonioDtoMapper dtoMapper;
     @Autowired private TestimonioResenaSupport resenaSupport;
+    @Autowired private ModeracionAvisoService moderacionAvisoService;
 
     /**
      * Crea un testimonio general sobre la web/servicio.
@@ -147,20 +148,36 @@ public class TestimonioService {
     }
 
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
+    @Transactional
     public Testimonio aprobar(Long id) {
         Testimonio t = repo.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Testimonio no encontrado"));
         t.setEstado("APROBADO");
         t.setFechaAprobacion(LocalDateTime.now(Constants.ZONA_CR));
-        return repo.save(t);
+        Testimonio guardado = repo.save(t);
+        avisarAutor(guardado, true);
+        return guardado;
     }
 
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
+    @Transactional
     public Testimonio rechazar(Long id) {
         Testimonio t = repo.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Testimonio no encontrado"));
         t.setEstado("RECHAZADO");
-        return repo.save(t);
+        Testimonio guardado = repo.save(t);
+        avisarAutor(guardado, false);
+        return guardado;
+    }
+
+    private void avisarAutor(Testimonio t, boolean aprobada) {
+        if (t.getUsuario() == null || t.getUsuario().getCorreo() == null) return;
+        String productoNombre = t.getProducto() != null ? t.getProducto().getNombreProducto() : null;
+        moderacionAvisoService.avisarResena(
+            t.getUsuario().getCorreo(),
+            t.getUsuario().getNombre(),
+            aprobada,
+            productoNombre);
     }
 
     public Map<String, Object> getRatingStats(Long productoId) {

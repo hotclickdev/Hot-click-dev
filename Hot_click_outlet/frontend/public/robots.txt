@@ -25,6 +25,11 @@ Disallow: /registrar-negocio
 Disallow: /sso-callback
 Disallow: /sso-complete
 Disallow: /mode-select
+Disallow: /visitante
+Disallow: /prototipo
+Disallow: /emprendedor
+Disallow: /pyme
+Disallow: /negocio-plus
 
 Sitemap: https://hotclick.lat/sitemap.xml
 

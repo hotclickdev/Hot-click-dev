@@ -232,6 +232,13 @@ export default function CheckoutSummary({
         <span className="text-lg" style={{ color: 'var(--hc-accent)' }}>{formatPrice(totalFinal)}</span>
       </div>
 
+      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+        Precios en colones (₡). Incluyen impuestos aplicables.
+      </p>
+      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+        Pago procesado por HotClick / el vendedor según el pedido.
+      </p>
+
       {metodoPago === 'SINPE' && (
         <div className="text-[10px] leading-relaxed rounded-lg p-2.5 space-y-0.5" style={{ background: 'color-mix(in srgb, #10b981 8%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)', color: 'var(--hc-muted)' }}>
           <p>SINPE: <strong className="text-emerald-400">{SINPE_NUMERO}</strong></p>

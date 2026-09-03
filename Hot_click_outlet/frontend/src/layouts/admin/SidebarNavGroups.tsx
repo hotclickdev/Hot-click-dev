@@ -131,6 +131,7 @@ export default function SidebarNavGroups({
                             muted={muted}
                             icon={link.icon ?? 'box'}
                             label={link.label ?? ''}
+                            badge={link.badge}
                             feature={link.feature}
                             tenantLoaded={tenantLoaded}
                             hasFeature={hasFeature}
@@ -143,6 +144,7 @@ export default function SidebarNavGroups({
                             color={color}
                             icon={link.icon ?? 'box'}
                             label={link.label ?? ''}
+                            badge={link.badge}
                             feature={link.feature}
                             tenantLoaded={tenantLoaded}
                             hasFeature={hasFeature}
@@ -174,13 +176,14 @@ function CandadoPlan({ color }: { color: string }) {
 }
 
 function ItemSistema({
-  isActive, hoverBg, muted, icon, label, feature, tenantLoaded, hasFeature,
+  isActive, hoverBg, muted, icon, label, badge, feature, tenantLoaded, hasFeature,
 }: {
   isActive: boolean
   hoverBg: string
   muted: string
   icon: string
   label: string
+  badge?: number
   feature?: string
   tenantLoaded: boolean
   hasFeature: (feature: string) => boolean
@@ -201,6 +204,11 @@ function ItemSistema({
       </span>
       <span className="relative flex min-w-0 flex-1 items-center gap-1.5 text-sm leading-tight">
         <span className="truncate">{label}</span>
+        {badge != null && badge > 0 && (
+          <span className="shrink-0 rounded-full bg-[var(--hc-warning-bg)] px-1.5 text-[10px] font-bold text-hc-warning">
+            {badge}
+          </span>
+        )}
         {feature && tenantLoaded && !hasFeature(feature) && <CandadoPlan color={muted} />}
       </span>
     </>
@@ -208,7 +216,7 @@ function ItemSistema({
 }
 
 function ItemIt({
-  isActive, hoverBg, faint, color, icon, label, feature, tenantLoaded, hasFeature,
+  isActive, hoverBg, faint, color, icon, label, badge, feature, tenantLoaded, hasFeature,
 }: {
   isActive: boolean
   hoverBg: string
@@ -216,6 +224,7 @@ function ItemIt({
   color: string | null
   icon: string
   label: string
+  badge?: number
   feature?: string
   tenantLoaded: boolean
   hasFeature: (feature: string) => boolean
@@ -250,6 +259,11 @@ function ItemIt({
         transition={{ duration: 0.15 }}
       >
         {label}
+        {badge != null && badge > 0 && (
+          <span className="shrink-0 rounded-full bg-[var(--hc-warning-bg)] px-1.5 text-[10px] font-bold text-hc-warning">
+            {badge}
+          </span>
+        )}
         {feature && tenantLoaded && !hasFeature(feature) && <CandadoPlan color={faint} />}
       </motion.span>
       {isActive && (

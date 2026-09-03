@@ -54,6 +54,8 @@ type CheckoutActionsDeps = {
   setTelefonoDirty: Dispatch<SetStateAction<boolean>>
   setGuestEmailError: Dispatch<SetStateAction<string>>
   setGuestEmailDirty: Dispatch<SetStateAction<boolean>>
+  setGuestPhoneError: Dispatch<SetStateAction<string>>
+  setGuestPhoneDirty: Dispatch<SetStateAction<boolean>>
   setSinpeNombreErr: Dispatch<SetStateAction<string>>
   setSinpeCedulaErr: Dispatch<SetStateAction<string>>
   setSinpeImagenErr: Dispatch<SetStateAction<string>>
@@ -107,6 +109,8 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setTelefonoDirty,
     setGuestEmailError,
     setGuestEmailDirty,
+    setGuestPhoneError,
+    setGuestPhoneDirty,
     setSinpeNombreErr,
     setSinpeCedulaErr,
     setSinpeImagenErr,
@@ -144,9 +148,10 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
 
   const handlePagar = useCallback(() => {
     ejecutarPagarCheckout({
-      aceptaDatos, validateDomicilio, token, validateGuestEmail, guestEmail,
-      setGuestEmailError, setGuestEmailDirty, metodoPago, sinpeNombre, sinpeCedula,
-      setSinpeNombreErr, setSinpeCedulaErr, telefono, guestPhone, SHIPPING_OPTIONS,
+      aceptaDatos, validateDomicilio, token, validateGuestEmail, validatePhone, guestEmail,
+      setGuestEmailError, setGuestEmailDirty, guestPhone, setGuestPhoneError, setGuestPhoneDirty,
+      metodoPago, sinpeNombre, sinpeCedula,
+      setSinpeNombreErr, setSinpeCedulaErr, telefono, SHIPPING_OPTIONS,
       metodoEnvio, notas, direccion, sinpeEmail, totalFinal, items, bodegaRetiro,
       cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago,
     })
@@ -155,16 +160,19 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     validateDomicilio,
     token,
     validateGuestEmail,
+    validatePhone,
     guestEmail,
     setGuestEmailError,
     setGuestEmailDirty,
+    guestPhone,
+    setGuestPhoneError,
+    setGuestPhoneDirty,
     metodoPago,
     sinpeNombre,
     sinpeCedula,
     setSinpeNombreErr,
     setSinpeCedulaErr,
     telefono,
-    guestPhone,
     SHIPPING_OPTIONS,
     metodoEnvio,
     notas,

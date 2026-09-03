@@ -75,6 +75,12 @@ public class PublicChatIntentHelper {
         return PublicChatBudgetExtractor.extractMaxBudget(msg);
     }
 
+    public boolean isPersonalizedIntent(String msg) {
+        if (msg == null || msg.isBlank()) return false;
+        String n = normalize(msg);
+        return PublicChatIntentLexicon.PERSONALIZED_INTENT_PHRASES.stream().anyMatch(n::contains);
+    }
+
     public boolean isGiftIntent(String msg) {
         String lower = msg.toLowerCase();
         return lower.contains("regalar") || lower.contains("regalo") || lower.contains("obsequio")
@@ -105,6 +111,7 @@ public class PublicChatIntentHelper {
     }
 
     public String classifyIntent(String msg, boolean isGift, Long budget) {
+        if (isPersonalizedIntent(msg)) return "PERSONALIZADO";
         if (isGift) return "REGALO";
         if (budget != null) return "PRESUPUESTO";
         String lower = msg.toLowerCase();

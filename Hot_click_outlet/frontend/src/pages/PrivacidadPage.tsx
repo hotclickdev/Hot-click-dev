@@ -40,6 +40,7 @@ const secciones = [
           <li>Gestionar el registro de usuarios y la personalización de la experiencia en la Plataforma.</li>
           <li>Procesar, validar y facturar las transacciones comerciales.</li>
           <li>Notificar los estados de envío y gestionar la logística inversa (devoluciones).</li>
+          <li>Responder consultas del asistente de chat con IA: los mensajes pueden procesarse para generar la respuesta y conservarse en registros operativos el tiempo necesario para soporte y mejora del servicio.</li>
         </ul>
       </>
     ),
@@ -84,7 +85,7 @@ const secciones = [
     title: 'Cookies y Tecnologías Similares',
     content: (
       <>
-        <p><strong>Google Analytics 4:</strong> Cookies de análisis estadístico activadas únicamente con consentimiento expreso del titular a través del banner de cookies de la Plataforma.</p>
+        <p><strong>Google Analytics 4, PostHog y Microsoft Clarity:</strong> Cookies o tecnologías de análisis estadístico activadas únicamente con consentimiento expreso del titular a través del banner de cookies de la Plataforma.</p>
         <p><strong>Almacenamiento local (localStorage):</strong> Utilizado para conservar en el dispositivo del titular su carrito de compras y preferencias de interfaz. Este almacenamiento no implica transferencia de datos a servidores externos y es estrictamente necesario para el funcionamiento básico de la Plataforma.</p>
       </>
     ),
@@ -120,7 +121,6 @@ export default function PrivacidadPage() {
         <meta name="description" content="Política de privacidad de HotClick. Protección de datos personales conforme a la Ley N.° 8968 de Costa Rica. Conocé cómo usamos tu información." />
         <link rel="canonical" href={`${SITE_URL}/privacidad`} />
         <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/privacidad`} />
-        <link rel="alternate" hrefLang="es" href={`${SITE_URL}/privacidad`} />
         <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta name="robots" content="noindex, follow" />
         <meta property="og:type" content="website" />

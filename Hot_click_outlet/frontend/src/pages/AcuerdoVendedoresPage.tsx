@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import Seo from '@/components/seo/Seo'
 
 const LAST_UPDATED = '5 de junio de 2025'
 
@@ -77,6 +78,11 @@ const clausulas = [
 export default function AcuerdoVendedoresPage() {
   return (
     <MainLayout>
+      <Seo
+        title="Acuerdo de Vendedores — HotClick Costa Rica"
+        description="Obligaciones de los vendedores HotClick sobre datos personales de clientes: Encargado de Tratamiento, prohibiciones y deberes conforme a la Ley N.° 8968."
+        url="https://hotclick.lat/acuerdo-vendedores"
+      />
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
 
         {/* Hero */}

@@ -39,18 +39,27 @@ public class PublicChatClaudeClient {
     }
 
     public String getEmpresaWhatsapp(Long empresaId) {
+        return getEmpresaChatInfo(empresaId).whatsapp();
+    }
+
+    public EmpresaChatInfo getEmpresaChatInfo(Long empresaId) {
         try {
-            return (String) jdbc.queryForMap(
-                "SELECT COALESCE(numero_whatsapp, telefono_empresa, '50686667888') AS wa " +
-                    "FROM hot_click_empresa_tb WHERE id_empresa = ?", empresaId).get("wa");
+            Map<String, Object> row = jdbc.queryForMap(
+                "SELECT COALESCE(numero_whatsapp, telefono_empresa, '50686667888') AS wa, "
+                    + "COALESCE(NULLIF(TRIM(nombre_comercial), ''), 'la tienda') AS nombre "
+                    + "FROM hot_click_empresa_tb WHERE id_empresa = ?", empresaId);
+            return new EmpresaChatInfo(
+                String.valueOf(row.get("wa")),
+                String.valueOf(row.get("nombre")));
         } catch (Exception e) {
-            return "50686667888";
+            log.debug("[Chat] Empresa info fallback: {}", e.getMessage());
+            return new EmpresaChatInfo("50686667888", "la tienda");
         }
     }
 
-    public String businessInfoText(Long empresaId, boolean isEnglish) {
-        String wa = getEmpresaWhatsapp(empresaId);
-        return promptBuilder.businessInfoText(wa, isEnglish);
+    public String businessInfoText(Long empresaId, boolean marketplace, boolean isEnglish) {
+        EmpresaChatInfo info = getEmpresaChatInfo(empresaId);
+        return promptBuilder.businessInfoText(info.whatsapp(), info.nombre(), marketplace, isEnglish);
     }
 
     public String whatsappContactText(Long empresaId, boolean isEnglish) {
@@ -58,35 +67,28 @@ public class PublicChatClaudeClient {
         return promptBuilder.whatsappContactText(wa, isEnglish);
     }
 
-    public String buildSalesSystemPrompt(Long empresaId, String context,
-                                         List<Map<String, Object>> productos,
-                                         boolean isEnglish, boolean isGift,
-                                         Long maxBudget, Set<String> negations,
-                                         boolean afterHours) {
-        String wa = getEmpresaWhatsapp(empresaId);
-        return promptBuilder.buildSalesSystemPrompt(wa, context, productos,
-            isEnglish, isGift, maxBudget, negations, afterHours, true);
-    }
-
     public void streamClaudeResponse(SseEmitter emitter, String userMessage,
                                      List<Map<String, Object>> productos,
                                      List<Map<String, Object>> history,
-                                     Long empresaId, String context,
+                                     Long empresaId, boolean marketplace, String context,
                                      boolean isEnglish, boolean isGift,
                                      Long maxBudget, Set<String> negations,
                                      boolean afterHours, List<String> smartOpts, boolean mostrarFichas) {
-        String wa = getEmpresaWhatsapp(empresaId);
-        streamer.streamClaudeResponse(log, emitter, userMessage, productos, history, wa, context,
+        EmpresaChatInfo info = getEmpresaChatInfo(empresaId);
+        streamer.streamClaudeResponse(log, emitter, userMessage, productos, history,
+            info.whatsapp(), info.nombre(), marketplace, context,
             isEnglish, isGift, maxBudget, negations, afterHours, smartOpts, mostrarFichas);
     }
 
     public void streamAdvisorResponse(SseEmitter emitter, String userMessage,
                                       Map<String, Object> ficha,
                                       List<Map<String, Object>> history,
-                                      Long empresaId, boolean isEnglish, boolean afterHours,
+                                      Long empresaId, boolean marketplace,
+                                      boolean isEnglish, boolean afterHours,
                                       List<String> smartOpts) {
-        String wa = getEmpresaWhatsapp(empresaId);
-        streamer.streamAdvisor(log, emitter, userMessage, ficha, history, wa, isEnglish, afterHours, smartOpts);
+        EmpresaChatInfo info = getEmpresaChatInfo(empresaId);
+        streamer.streamAdvisor(log, emitter, userMessage, ficha, history,
+            info.whatsapp(), info.nombre(), marketplace, isEnglish, afterHours, smartOpts);
     }
 
     public String generarRespuestaMock(List<Map<String, Object>> productos,
@@ -107,4 +109,7 @@ public class PublicChatClaudeClient {
     public String generarRespuestaAsesor(Map<String, Object> ficha, boolean isEnglish) {
         return mockResponses.generarRespuestaAsesor(ficha, isEnglish);
     }
+
+    /** Datos mínimos de tienda para el prompt público. */
+    public record EmpresaChatInfo(String whatsapp, String nombre) {}
 }

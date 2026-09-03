@@ -6,8 +6,8 @@ import PosPagoEstado from '@/features/pos-pago/PosPagoEstado'
 import PosPagoSinpe from '@/features/pos-pago/PosPagoSinpe'
 import PosPagoOnvoEmbed from '@/features/pos-pago/PosPagoOnvoEmbed'
 import PosPagoReporteModal from '@/features/pos-pago/PosPagoReporteModal'
+import PosPagoCta from '@/features/pos-pago/PosPagoCta'
 import { usePosPagoQr } from '@/features/pos-pago/usePosPagoQr'
-import { formatColones } from '@/features/pos-pago/posPagoFormat'
 
 /** Token legacy del flujo carrito; ya no se escribe desde esta página. */
 export const POS_QR_TOKEN_KEY = 'hc-pos-qr-token'
@@ -32,16 +32,22 @@ export default function POSPagoPage() {
 
   const shell = (children: ReactNode) => (
     <div
-      className="hc-sistema-theme min-h-screen flex flex-col items-center justify-center p-6"
-      style={{ backgroundColor: 'var(--hc-bg)' }}
+      className="hc-sistema-theme min-h-dvh flex flex-col items-center justify-center px-5 py-8 sm:py-12"
+      style={{
+        backgroundColor: 'var(--hc-bg)',
+        backgroundImage:
+          'radial-gradient(ellipse 90% 40% at 50% -8%, color-mix(in srgb, var(--hc-primary) 10%, transparent), transparent 60%)',
+      }}
     >
-      {children}
+      <main className="w-full">{children}</main>
     </div>
   )
 
   if (vista === 'cargando') {
     return shell(
-      <p className="text-sm text-[var(--hc-muted)] animate-pulse">{t('pos.pago.cargando')}</p>,
+      <p className="text-sm text-[var(--hc-muted)] animate-pulse" role="status">
+        {t('pos.pago.cargando')}
+      </p>,
     )
   }
 
@@ -79,27 +85,21 @@ export default function POSPagoPage() {
       ) : null}
 
       {esTarjeta && !modoEmbed ? (
-        <div className="w-full max-w-md mx-auto space-y-2">
+        <div className="w-full max-w-md mx-auto space-y-3">
           {mensajeError === 'pago_fallido' ? (
             <p className="text-sm text-center text-red-500">{t('pos.pago.errorPagoDesc')}</p>
           ) : null}
-          <button
-            type="button"
-            disabled={iniciandoPago}
+          <PosPagoCta
+            monto={info.total ?? 0}
+            cargando={iniciandoPago}
             onClick={() => void pagarHosted()}
-            className="w-full rounded-[14px] py-4 text-[15px] font-bold text-white disabled:opacity-50"
-            style={{ background: 'var(--hc-primary)' }}
-          >
-            {iniciandoPago
-              ? t('pos.pago.procesando')
-              : t('pos.pago.pagar', { monto: formatColones(info.total) })}
-          </button>
-          <p className="text-xs text-center text-[var(--hc-muted)]">{t('pos.pago.hostedAviso')}</p>
+            avisoKey="pos.pago.hostedAviso"
+          />
           {mensajeError === 'pago_fallido' ? (
             <button
               type="button"
               onClick={() => setReporteAbierto(true)}
-              className="w-full rounded-[14px] border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
+              className="w-full min-h-11 rounded-2xl border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
               style={{ background: 'var(--hc-surface)' }}
             >
               {t('pos.pago.reportarError')}

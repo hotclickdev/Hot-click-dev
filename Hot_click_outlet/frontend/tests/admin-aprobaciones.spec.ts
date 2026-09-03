@@ -28,6 +28,21 @@ function payloadAuth() {
 
 async function entrarAprobaciones(page: Page) {
   await page.route('**/api/**', async (route) => {
+    const url = route.request().url()
+    if (url.includes('/admin/moderacion/resumen')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            empresas: 0, ofertas: 0, recolecciones: 0, sinpe: 0,
+            testimonios: 0, payouts: 0, reportesProducto: 0, total: 0,
+          },
+        }),
+      })
+      return
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -45,13 +60,12 @@ async function entrarAprobaciones(page: Page) {
 }
 
 test.describe('Aprobaciones IT — el gate es el negocio', () => {
-  test('la pestaña Productos no enseña revisión ítem por ítem', async ({ page }) => {
+  test('sin cola legacy no muestra pestaña Productos ni copy de revisión ítem a ítem', async ({ page }) => {
     await entrarAprobaciones(page)
 
-    await expect(page.getByRole('heading', { name: 'Moderación' })).toBeVisible()
-    await page.getByRole('button', { name: /productos/i }).click()
-
-    await expect(page.getByText(/no hay revisión producto por producto/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Moderación', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Bandeja de moderación', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^productos/i })).toHaveCount(0)
     await expect(page.getByText('Productos nuevos esperando tu aprobación para publicarse en el catálogo')).toHaveCount(0)
   })
 })

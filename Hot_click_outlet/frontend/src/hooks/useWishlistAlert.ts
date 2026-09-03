@@ -13,7 +13,7 @@ const findById = (list: ItemWishlist[], id: Id | undefined) => list.find((i) => 
 const LOW_STOCK = 3
 const CHECK_KEY = 'hc-wishlist-alert-ts'
 const INTERVAL_MS = 4 * 60 * 60 * 1000  // re-check every 4 h
-const BLOCKED_PATHS = ['/checkout', '/pago/', '/carrito', '/login', '/registro']
+const BLOCKED_PATHS = ['/checkout', '/pago/', '/pos/', '/carrito', '/login', '/registro']
 
 export function useWishlistAlert() {
   const items = useWishlistStore((s) => s.items)

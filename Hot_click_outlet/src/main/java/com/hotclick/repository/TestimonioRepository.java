@@ -10,6 +10,8 @@ public interface TestimonioRepository extends JpaRepository<Testimonio, Long> {
 
     List<Testimonio> findByEstadoAndTipoOrderByFechaAprobacionDesc(String estado, String tipo);
 
+    long countByEstado(String estado);
+
     List<Testimonio> findAllByOrderByFechaCreacionDesc();
 
     List<Testimonio> findByUsuarioIdOrderByFechaCreacionDesc(Long usuarioId);

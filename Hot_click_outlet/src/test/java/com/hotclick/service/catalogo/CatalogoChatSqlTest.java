@@ -50,6 +50,15 @@ class CatalogoChatSqlTest {
     }
 
     @Test
+    @DisplayName("Personalizados visibles aunque stock sea 0")
+    void personalizados_sinStockSiguenVisibles() {
+        String where = CatalogoChatSql.whereVisible(false, false);
+        assertThat(where).contains("es_personalizado");
+        assertThat(where).contains("stock_actual > 0");
+        assertThat(where).contains("OR");
+    }
+
+    @Test
     @DisplayName("ILIKE usa OR de ficha, no AND de toda la frase")
     void matchSql_esOrPorTermino() {
         String sql = ChatProductoMatchSql.orDeTerminos(2);

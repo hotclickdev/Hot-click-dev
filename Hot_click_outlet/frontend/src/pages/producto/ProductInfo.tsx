@@ -15,6 +15,7 @@ import QuantitySelector from './QuantitySelector'
 import ProductBuyActions from './ProductBuyActions'
 import TrustBadges from './TrustBadges'
 import PersonalizacionPanel from './PersonalizacionPanel'
+import ReportarProductoButton from './ReportarProductoButton'
 import useAuthStore from '@/store/authStore'
 
 type ProductInfoProps = {
@@ -88,7 +89,7 @@ export default function ProductInfo({
       <SocialProof productId={product.id} />
 
       {product.descripcion && (
-        <p className="text-sm text-[#8e8e9a] leading-relaxed">{product.descripcion}</p>
+        <p className="text-sm text-hc-muted leading-relaxed">{product.descripcion}</p>
       )}
 
       {product.esPersonalizado && (
@@ -141,6 +142,7 @@ export default function ProductInfo({
       )}
 
       <TrustBadges />
+      {product.id != null && <ReportarProductoButton productoId={product.id} />}
     </motion.div>
   )
 }

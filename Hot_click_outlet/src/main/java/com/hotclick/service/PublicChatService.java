@@ -53,9 +53,10 @@ public class PublicChatService {
 
             if (productoId == null && intentHelper.isGreeting(userMessage)) {
                 boolean en = intentHelper.isEnglish(userMessage);
+                String nombre = claudeClient.getEmpresaChatInfo(empresaId).nombre();
                 String greeting = en
-                    ? "Hello! I'm the HOTCLICK virtual assistant. What product are you looking for today?"
-                    : "¡Hola! Soy el asistente de HOTCLICK. ¿Qué producto estás buscando hoy?";
+                    ? "Hello! I'm the " + nombre + " virtual assistant. What product are you looking for today?"
+                    : "¡Hola! Soy el asistente de " + nombre + ". ¿Qué producto estás buscando hoy?";
                 emitter.send(SseEmitter.event().name("products")
                     .data(objectMapper.writeValueAsString(Map.of("productos", List.of(), "hasMore", false, "query", userMessage))));
                 emitter.send(SseEmitter.event().name("delta")
@@ -77,7 +78,7 @@ public class PublicChatService {
                         "Solo puedo ayudarte con los productos de la tienda. ¿Hay algo que estés buscando comprar?"))));
                 emitter.send(SseEmitter.event().name("done")
                     .data(objectMapper.writeValueAsString(Map.of("opts",
-                        List.of("Ver productos populares", "¿Qué es HOTCLICK?")))));
+                        List.of("Ver productos populares", "Contactar por WhatsApp")))));
                 emitter.complete();
                 return;
             }
@@ -87,7 +88,7 @@ public class PublicChatService {
                 emitter.send(SseEmitter.event().name("products")
                     .data(objectMapper.writeValueAsString(Map.of("productos", List.of(), "hasMore", false, "query", userMessage))));
                 emitter.send(SseEmitter.event().name("delta")
-                    .data(objectMapper.writeValueAsString(Map.of("text", claudeClient.businessInfoText(empresaId, en)))));
+                    .data(objectMapper.writeValueAsString(Map.of("text", claudeClient.businessInfoText(empresaId, marketplace, en)))));
                 List<String> infoOpts = en
                     ? List.of("Show me popular products", "What's on sale?")
                     : List.of("Ver productos populares", "¿Qué hay en oferta?");

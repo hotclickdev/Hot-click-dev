@@ -6,7 +6,7 @@ const EMPR = { color: '#0ea5e9', glow: 'rgba(14,165,233,0.22)', bg: 'rgba(14,165
 
 const VENTAJAS = [
   { text: 'Tu tienda en línea propia', icon: IconTienda },
-  { text: 'Llegá a miles de compradores', icon: IconPersonas },
+  { text: 'Vendé a compradores en Costa Rica', icon: IconPersonas },
   { text: 'Panel de ventas y pedidos', icon: IconPanel },
   { text: 'Pagos SINPE y tarjeta incluidos', icon: IconPago },
   { text: 'Logística Correos CR integrada', icon: IconEnvio },

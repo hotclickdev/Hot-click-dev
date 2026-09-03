@@ -116,7 +116,7 @@ function SeccionPersonalizado({ form, setForm }: {
         <>
           <div>
             <p className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }} id="modo-precio-wizard">
-              Cómo se define el precio
+              Forma de cobro
             </p>
             <div className="grid gap-2 mt-1" role="radiogroup" aria-labelledby="modo-precio-wizard">
               {([

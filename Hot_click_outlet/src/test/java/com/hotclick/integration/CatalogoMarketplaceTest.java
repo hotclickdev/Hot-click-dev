@@ -158,6 +158,10 @@ class CatalogoMarketplaceTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.message").value("Producto creado"))
             .andExpect(jsonPath("$.data.visibleCatalogo").value(true));
 
+        assertEquals(0,
+            solicitudAprobacionRepository.countByEstadoSolicitudAndTipoEntidad("PENDIENTE", "PRODUCTO"),
+            "Alta de producto no debe crear cola PRODUCTO — el gate es el negocio");
+
         mockMvc.perform(get("/api/productos?size=50"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Alta Directa')]").exists());

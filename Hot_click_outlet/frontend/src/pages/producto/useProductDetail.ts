@@ -69,7 +69,10 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
         else if (p.comoUsar?.trim()) setActiveTab('como-usar')
       })
-      .catch((err: unknown) => { if (nombreError(err) !== 'CanceledError') navigate('/productos') })
+      .catch((err: unknown) => {
+        if (nombreError(err) === 'CanceledError') return
+        setProduct(null)
+      })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recarga solo al cambiar el id de ruta

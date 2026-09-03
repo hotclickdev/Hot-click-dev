@@ -22,20 +22,20 @@ export default function CartSummary({ items, total, onCheckout, onWhatsApp }: Ca
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="sticky top-24 bg-[#111114] border border-white/8 rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
+      className="sticky top-24 bg-hc-surface border border-hc-border rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
     >
-      <h2 className="font-semibold text-[#e8e8ed]">{t('cart.summary')}</h2>
+      <h2 className="font-semibold text-hc-text">{t('cart.summary')}</h2>
 
       <div className="space-y-2 text-sm">
         {items.map((item) => (
-          <div key={item.id} className="flex justify-between text-[#8e8e9a]">
+          <div key={item.id} className="flex justify-between text-hc-muted">
             <span className="truncate mr-2">{item.nombre} ×{item.cantidad}</span>
             <span className="shrink-0">{formatPrice(subtotalItem(item))}</span>
           </div>
         ))}
       </div>
 
-      <div className="pt-3 border-t border-white/8 flex justify-between font-bold text-[#e8e8ed]">
+      <div className="pt-3 border-t border-hc-border flex justify-between font-bold text-hc-text">
         <span>{t('cart.total')}</span>
         <span className="text-lg">{formatPrice(total)}</span>
       </div>
@@ -68,7 +68,7 @@ export default function CartSummary({ items, total, onCheckout, onWhatsApp }: Ca
         </Link>
       </div>
 
-      <p className="text-xs text-[#8e8e9a] text-center leading-relaxed">
+      <p className="text-xs text-hc-muted text-center leading-relaxed">
         {t('cart.shipping')}<br />
         <span className="text-[10px]">{t('cart.shippingSub')}</span>
       </p>

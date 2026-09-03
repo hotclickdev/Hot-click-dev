@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import Seo from '@/components/seo/Seo'
 
 const LAST_UPDATED = '5 de junio de 2025'
 
@@ -9,6 +10,8 @@ const COOKIES_TABLE = [
   { nombre: 'hotclick-auth (localStorage)', categoria: 'Técnica', finalidad: 'Token JWT de autenticación', duracion: 'Hasta logout' },
   { nombre: 'cookie-consent (localStorage)', categoria: 'Técnica', finalidad: 'Preferencias de consentimiento del usuario', duracion: '1 año' },
   { nombre: '_ga, _ga_*', categoria: 'Analítica', finalidad: 'Google Analytics 4 — estadísticas agregadas', duracion: '2 años' },
+  { nombre: 'ph_*, __ph_*', categoria: 'Analítica', finalidad: 'PostHog — analítica de producto y embudos', duracion: '1 año' },
+  { nombre: '_clck, _clsk, CLID', categoria: 'Analítica', finalidad: 'Microsoft Clarity — mapas de calor y sesión (anonimizada)', duracion: '1 año' },
   { nombre: '__clerk_*', categoria: 'Técnica', finalidad: 'Autenticación social (Clerk)', duracion: 'Sesión' },
 ]
 
@@ -30,7 +33,7 @@ const clausulas = [
         <p>La Plataforma emplea las siguientes categorías de Cookies:</p>
         <ul>
           <li><strong>a) Técnicas u Obligatorias:</strong> Esenciales para el correcto funcionamiento del sitio, la autenticación de usuarios y la seguridad de las transacciones. No pueden ser desactivadas.</li>
-          <li><strong>b) De Rendimiento y Analítica:</strong> Administradas por terceros (Google Analytics 4) que recopilan información estadística anónima para evaluar el rendimiento de la Plataforma y corregir errores. Se activan únicamente con consentimiento expreso.</li>
+          <li><strong>b) De Rendimiento y Analítica:</strong> Administradas por terceros (Google Analytics 4, PostHog, Microsoft Clarity) que recopilan información estadística anónima o agregada para evaluar el rendimiento de la Plataforma y corregir errores. Se activan únicamente con consentimiento expreso.</li>
           <li><strong>c) De Publicidad Comportamental:</strong> Utilizadas para segmentar perfiles de interés y desplegar anuncios publicitarios personalizados. Requieren consentimiento explícito independiente.</li>
         </ul>
       </>
@@ -65,6 +68,11 @@ const clausulas = [
 export default function CookiesPage() {
   return (
     <MainLayout>
+      <Seo
+        title="Política de Cookies — HotClick Costa Rica"
+        description="Cookies y tecnologías de seguimiento en HotClick: técnicas, analítica (GA4, PostHog, Clarity) y cómo gestionar tu consentimiento conforme a la Ley 8968."
+        url="https://hotclick.lat/cookies"
+      />
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
 
         {/* Hero */}

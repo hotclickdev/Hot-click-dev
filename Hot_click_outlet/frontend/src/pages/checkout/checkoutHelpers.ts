@@ -6,6 +6,16 @@ export const SINPE_NUMERO = '8666-7888'
 export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 export const BODEGA_DEFAULT = 1
 
+/** Copia el número SINPE (solo dígitos) al portapapeles. */
+export async function copiarNumeroSinpe(): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(SINPE_NUMERO.replace(/\D/g, ''))
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const SHIPPING_COSTS: Record<string, number> = {
   RETIRO_EN_TIENDA:       0,
   ENCOMIENDA_PROPIA:   2500,
@@ -134,4 +144,14 @@ export function validateGuestEmail(v: string, t: (key: string) => string): strin
   if (!v.trim()) return t('checkout.guestEmailRequired')
   if (!isValidEmail(v)) return t('checkout.guestEmailInvalid')
   return ''
+}
+
+/** Teléfono invitado: obligatorio para envío (no retiro). */
+export function validateGuestPhone(
+  v: string,
+  metodoEnvio: string,
+  t: (key: string) => string,
+): string {
+  if (metodoEnvio === 'RETIRO_EN_TIENDA') return ''
+  return validatePhone(v, t)
 }

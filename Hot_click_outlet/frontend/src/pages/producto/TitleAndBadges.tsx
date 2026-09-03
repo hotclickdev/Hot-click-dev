@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Badge from '@/components/ui/Badge'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import { conditionLabel, conditionVariant } from '@/utils/format'
@@ -56,12 +57,13 @@ export default function TitleAndBadges({
           </Badge>
         )}
       </div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed] leading-tight">
+      <h1 className="text-2xl sm:text-3xl font-bold text-hc-text leading-tight">
         {product.titulo || product.nombre}
       </h1>
       {product.titulo && product.titulo !== product.nombre && (
-        <p className="text-sm text-[#8e8e9a]">{product.nombre}</p>
+        <p className="text-sm text-hc-muted">{product.nombre}</p>
       )}
+      <VendidoPor product={product} t={t} />
       <div className="flex items-center gap-2 flex-wrap">
         <Badge variant={stockBadge}>{stockLabel}</Badge>
       </div>
@@ -79,5 +81,27 @@ export default function TitleAndBadges({
         {t('socialProof.warranty')}
       </span>
     </div>
+  )
+}
+
+function VendidoPor({ product, t }: { product: Producto; t: TFunction }) {
+  if (!product.empresaNombre) return null
+  if (product.empresaSlug) {
+    return (
+      <p className="text-sm text-hc-muted">
+        {t('product.vendidoPor')}{' '}
+        <Link
+          to={`/tienda/${product.empresaSlug}`}
+          className="font-medium text-hc-accent hover:underline"
+        >
+          {product.empresaNombre}
+        </Link>
+      </p>
+    )
+  }
+  return (
+    <p className="text-sm text-hc-muted">
+      {t('product.vendidoPor')} <span className="font-medium text-hc-accent">{product.empresaNombre}</span>
+    </p>
   )
 }

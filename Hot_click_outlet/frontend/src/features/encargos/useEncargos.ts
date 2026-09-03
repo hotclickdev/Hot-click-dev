@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { encargoService, listaEncargosDesdeRespuesta } from '@/services/encargoService'
+﻿import { useQuery } from '@tanstack/react-query'
+import { encargoService, kpisDesdeRespuesta, listaEncargosDesdeRespuesta } from '@/services/encargoService'
 
 export function useEncargos(filtro: string) {
   return useQuery({
@@ -12,10 +12,7 @@ export function useEncargos(filtro: string) {
 export function useEncargosKpis() {
   return useQuery({
     queryKey: ['encargos', 'kpis'],
-    queryFn: () => encargoService.kpis().then((r) => {
-      const body = r.data as { data?: Record<string, number> }
-      return body.data ?? (r.data as Record<string, number>)
-    }),
+    queryFn: () => encargoService.kpis().then((r) => kpisDesdeRespuesta(r.data)),
   })
 }
 
@@ -23,9 +20,8 @@ export function useEncargosPendientesCount() {
   return useQuery({
     queryKey: ['encargos', 'kpis', 'pendientes'],
     queryFn: () => encargoService.kpis().then((r) => {
-      const body = r.data as { data?: { pendientes?: number } }
-      const kpis = body.data ?? (r.data as { pendientes?: number })
-      return Number(kpis.pendientes ?? 0)
+      const kpis = kpisDesdeRespuesta(r.data)
+      return Number(kpis?.pendientes ?? 0)
     }),
     staleTime: 60_000,
   })

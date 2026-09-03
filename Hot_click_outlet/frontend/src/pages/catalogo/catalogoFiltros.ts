@@ -154,7 +154,7 @@ export function filtrarCatalogo({
 
     .filter(p => {
 
-      if (filterStock === 'ok')  return p.stock > 3
+      if (filterStock === 'ok')  return p.stock > 0
 
       if (filterStock === 'low') return p.stock > 0 && p.stock <= 3
 

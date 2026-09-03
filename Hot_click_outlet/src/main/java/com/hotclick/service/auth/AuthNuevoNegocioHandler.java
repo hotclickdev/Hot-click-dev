@@ -11,6 +11,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.security.JwtUtil;
+import com.hotclick.service.ModeracionAdminAvisoService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
@@ -37,6 +38,7 @@ public class AuthNuevoNegocioHandler {
     @Autowired private RefreshTokenService      refreshTokenService;
     @Autowired private UsuarioService           usuarioService;
     @Autowired private AuthSupport              authSupport;
+    @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
 
     public ResponseEntity<?> nuevoNegocio(RegistroEmpresaDTO dto, HttpServletRequest request) {
         try {
@@ -97,7 +99,11 @@ public class AuthNuevoNegocioHandler {
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
-        return empresaRepository.save(empresa);
+        Empresa guardada = empresaRepository.save(empresa);
+        moderacionAdminAvisoService.avisarEmpresaPendiente(
+            guardada.getId(),
+            guardada.getNombreComercial() != null ? guardada.getNombreComercial() : guardada.getNombreEmpresa());
+        return guardada;
     }
 
     private void asegurarRolEmprendedor(Usuario currentUser) {

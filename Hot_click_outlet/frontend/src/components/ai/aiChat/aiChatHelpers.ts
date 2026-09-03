@@ -18,10 +18,25 @@ export type AiProductPayload = {
   stock_actual?: number
   stock?: number
   similarity?: number
+  es_personalizado?: boolean
+  esPersonalizado?: boolean
+  modo_precio_personalizado?: string
+  modoPrecioPersonalizado?: string
+  precio_personalizado_min?: number
+  precioPersonalizadoMin?: number
+  precio_personalizado_max?: number
+  precioPersonalizadoMax?: number
+  instrucciones_personalizacion?: string
+  instruccionesPersonalizacion?: string
+  precio_etiqueta?: string
+  precioEtiqueta?: string
 }
 
 /** Producto canónico más el score de similitud del chat. */
-export type AiChatProducto = Producto & { similarity?: number }
+export type AiChatProducto = Producto & {
+  similarity?: number
+  precioEtiqueta?: string | null
+}
 
 export type AiChatMensaje = {
   rol?: string
@@ -35,16 +50,36 @@ export type AiChatMensaje = {
 }
 
 export function normalizeProduct(p: AiProductPayload): AiChatProducto {
+  const esPersonalizado = p.es_personalizado ?? p.esPersonalizado ?? false
+  const modo = p.modo_precio_personalizado ?? p.modoPrecioPersonalizado ?? null
+  const min = p.precio_personalizado_min ?? p.precioPersonalizadoMin ?? null
+  const max = p.precio_personalizado_max ?? p.precioPersonalizadoMax ?? null
+  const precioRaw = p.precio_venta ?? p.precio
+  const precioOferta = p.precio_oferta ?? p.precioOferta ?? null
+  const precioEtiqueta = p.precio_etiqueta ?? p.precioEtiqueta ?? null
+  const precio =
+    esPersonalizado && modo === 'COTIZACION'
+      ? 0
+      : esPersonalizado && modo === 'RANGO' && min != null
+        ? min
+        : (precioRaw ?? 0)
+
   return {
     id:             p.id_producto    ?? p.id,
     nombre:         p.nombre_producto ?? p.nombre,
     descripcionCorta: p.descripcion_corta ?? p.descripcionCorta,
-    precio:         p.precio_venta   ?? p.precio,
-    precioOferta:   p.precio_oferta  ?? p.precioOferta ?? null,
+    precio,
+    precioOferta:   esPersonalizado && modo !== 'FIJO' ? null : precioOferta,
     imagenUrl:      p.imagen_principal_url ?? p.imagenUrl,
     sku:            p.sku            ?? '',
     stock:          p.stock_actual   ?? p.stock ?? 99,
     similarity:     p.similarity,
+    esPersonalizado,
+    modoPrecioPersonalizado: modo,
+    precioPersonalizadoMin: min,
+    precioPersonalizadoMax: max,
+    instruccionesPersonalizacion: p.instrucciones_personalizacion ?? p.instruccionesPersonalizacion ?? null,
+    precioEtiqueta,
   } as unknown as AiChatProducto
 }
 

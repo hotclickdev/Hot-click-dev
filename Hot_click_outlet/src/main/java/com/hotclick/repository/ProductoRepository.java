@@ -96,7 +96,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado " +
+        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
         "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
     List<Producto> findDestacadosPublicos(@Param("estado") Integer estado);
 
@@ -168,8 +168,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p LEFT JOIN FETCH p.marca WHERE p.estado = 1 AND p.stockActual > 0 AND p.visibleCatalogo = true ORDER BY p.id ASC")
     List<Producto> findParaFeed();
 
-    /** Productos activos y visibles en catálogo (sin filtro de stock) — para sitemap */
-    @Query("SELECT p FROM Producto p LEFT JOIN FETCH p.categoria WHERE p.estado = 1 AND p.visibleCatalogo = true ORDER BY p.id ASC")
+    /**
+     * Productos activos y visibles para sitemap.
+     * Sin JOIN FETCH: evita EntityNotFoundException por FKs rotas y carga más liviana;
+     * el sitemap solo necesita id, título, imagen y fechas.
+     */
+    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND p.visibleCatalogo = true ORDER BY p.id ASC")
     List<Producto> findActivosVisibles();
 
     /** Productos activos sin publicación en Facebook — para el scheduler, paginado */

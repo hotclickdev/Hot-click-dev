@@ -53,5 +53,12 @@ final class PublicChatIntentLexicon {
         "hora abren", "dejo mi pedido"
     );
 
+    static final List<String> PERSONALIZED_INTENT_PHRASES = List.of(
+        "personalizado", "personalizada", "personalizar", "a medida", "por encargo",
+        "encargo", "cotizar", "cotizacion", "cotizame", "cotiza", "cotizas",
+        "con mi logo", "con logo", "con mi foto", "con foto", "grabado", "grabar",
+        "custom", "customized", "made to order", "quote me"
+    );
+
     private PublicChatIntentLexicon() {}
 }

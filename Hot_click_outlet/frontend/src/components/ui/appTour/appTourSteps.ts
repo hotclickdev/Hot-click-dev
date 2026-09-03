@@ -52,7 +52,7 @@ export const STEPS_SUPER_ADMIN: TourStep[] = [
     icono: 'lista',
     title: 'Moderación',
     subtitle: 'Cola de revisión',
-    desc: 'Aprobá o rechazá productos, promociones y solicitudes de tienda.',
+    desc: 'Aprobá negocios y promociones. Pausado de productos se gestiona en Empresas.',
     color: COLOR,
   },
   {

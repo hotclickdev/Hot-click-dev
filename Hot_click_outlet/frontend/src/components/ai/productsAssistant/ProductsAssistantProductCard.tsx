@@ -1,15 +1,21 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fmt, type ProductoSugerido } from './productsAssistantHelpers'
+import { useState } from 'react'
+import {
+  etiquetaPrecioChat,
+  requiereFichaEncargo,
+  type ProductoSugerido,
+} from './productsAssistantHelpers'
 
 export function ProductsAssistantProductCard({ producto, onAdd }: {
   producto: ProductoSugerido
   onAdd: (producto: ProductoSugerido) => void
 }) {
   const [added, setAdded] = useState(false)
+  const encargo = requiereFichaEncargo(producto)
+  const precioTxt = etiquetaPrecioChat(producto)
 
   function handleAdd() {
-    if (added) return
+    if (added || encargo) return
     onAdd(producto)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
@@ -43,20 +49,29 @@ export function ProductsAssistantProductCard({ producto, onAdd }: {
             </p>
           )}
           <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>
-            ₡{fmt(producto.precio)}
+            {precioTxt}
           </p>
         </div>
       </Link>
       <div className="px-3 pb-3">
-        <button
-          type="button"
-          onClick={handleAdd}
-          className={added
-            ? 'hc-btn w-full min-h-9 text-xs bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-            : 'hc-btn hc-btn-primary w-full min-h-9 text-xs'}
-        >
-          {added ? 'Agregado' : 'Agregar al pedido'}
-        </button>
+        {encargo ? (
+          <Link
+            to={`/productos/${producto.id}`}
+            className="hc-btn hc-btn-primary w-full min-h-9 text-xs inline-flex items-center justify-center"
+          >
+            Pedir cotización
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={handleAdd}
+            className={added
+              ? 'hc-btn w-full min-h-9 text-xs bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+              : 'hc-btn hc-btn-primary w-full min-h-9 text-xs'}
+          >
+            {added ? 'Agregado' : 'Agregar al pedido'}
+          </button>
+        )}
       </div>
     </div>
   )

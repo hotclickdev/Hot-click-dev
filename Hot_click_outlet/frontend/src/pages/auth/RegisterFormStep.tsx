@@ -9,7 +9,7 @@ import EmprendimientoForm from './EmprendimientoForm'
 import RegisterHeader from './RegisterHeader'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { TFunction } from 'i18next'
-import type { Dispatch, FormEvent, SetStateAction, ChangeEvent } from 'react'
+import { useState, type Dispatch, type FormEvent, type SetStateAction, type ChangeEvent } from 'react'
 import type { RegistroCompradorForm } from './useRegisterFlow'
 import type { CarritoRecuperable } from './CartModal'
 import type { Producto } from '@/types/producto'
@@ -46,6 +46,7 @@ export default function RegisterFormStep({
   onCloseCart: () => void
   onDoneCart: () => void
 }) {
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden" style={{ background: 'var(--hc-bg)' }}>
 
@@ -152,7 +153,33 @@ export default function RegisterFormStep({
                             {error}
                           </motion.div>
                         )}
-                        <button type="submit" disabled={loading}
+                        <label
+                          className="flex items-start gap-2.5 cursor-pointer rounded-xl p-3"
+                          style={{
+                            border: `1px solid ${aceptaTerminos ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+                            background: aceptaTerminos ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'transparent',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            required
+                            checked={aceptaTerminos}
+                            onChange={(e) => setAceptaTerminos(e.target.checked)}
+                            className="mt-0.5 shrink-0"
+                            style={{ accentColor: 'var(--hc-accent)', width: 15, height: 15 }}
+                          />
+                          <span className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                            {t('register.terms')}{' '}
+                            <Link to="/terminos" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: BUYER.color }}>
+                              {t('register.termsLink')}
+                            </Link>
+                            {' '}{t('register.termsAnd')}{' '}
+                            <Link to="/privacidad" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: BUYER.color }}>
+                              {t('register.privacyLink')}
+                            </Link>.
+                          </span>
+                        </label>
+                        <button type="submit" disabled={loading || !aceptaTerminos}
                           className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
                           style={{ background: BUYER.color, boxShadow: `0 0 32px ${BUYER.ring}` }}>
                           {loading ? 'Enviando código…' : (

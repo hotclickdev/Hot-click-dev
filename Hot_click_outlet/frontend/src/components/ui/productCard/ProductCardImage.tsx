@@ -2,6 +2,7 @@ import type { CSSProperties, Dispatch, SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
 import { conditionLabel } from '@/utils/format'
 import OptimizedImage from '@/components/ui/OptimizedImage'
+import { tieneOfertaActiva } from '@/utils/precioProducto'
 import type { Producto } from '@/types/producto'
 
 const CONDICION_STYLES: Record<string, CSSProperties> = {
@@ -31,6 +32,7 @@ export default function ProductCardImage({
 }: ProductCardImageProps) {
   const { t } = useTranslation()
   const condicionStyle = CONDICION_STYLES[product.condicion as string] ?? CONDICION_DEFAULT
+  const enOferta = tieneOfertaActiva(product)
 
   return (
     <div className="hc-product-img relative aspect-square flex items-center justify-center overflow-hidden">
@@ -81,6 +83,14 @@ export default function ProductCardImage({
             {hotTag}
           </span>
         )}
+        {!hotTag && enOferta && (
+          <span
+            className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
+            style={{ background: 'var(--hc-red-500)', color: '#FFFFFF', fontFamily: 'var(--font-display)' }}
+          >
+            {t('products.saleBadge', 'Oferta')}
+          </span>
+        )}
         {product.condicion && (
           <span
             className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
@@ -93,7 +103,7 @@ export default function ProductCardImage({
 
       <button type="button"
         onClick={(e) => { e.stopPropagation(); onToggleWishlist(product) }}
-        className="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+        className="absolute top-2.5 right-2.5 z-10 min-w-11 min-h-11 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
         style={{
           background: liked ? 'rgba(239,68,68,0.22)' : 'rgba(0,0,0,0.42)',
           border: liked ? '1px solid rgba(239,68,68,0.48)' : '1px solid rgba(255,255,255,0.18)',

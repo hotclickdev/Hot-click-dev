@@ -4,6 +4,7 @@ import Spinner from '@/components/ui/Spinner'
 import AdminPageHeader from '@/prototipo/admin/AdminPageHeader'
 import { AdminMenuRow } from '@/prototipo/admin/AdminUi'
 import { aprobacionService } from '@/services/aprobacionService'
+import { listaDesdeRespuesta } from '../aprobaciones/aprobacionesHelpers'
 import { alertasDesdeColas, type AlertaSistema } from './superAdminNotificacionesHelpers'
 
 /**
@@ -16,16 +17,18 @@ export default function SuperAdminNotificaciones() {
   useEffect(() => {
     let cancelado = false
     Promise.all([
-      aprobacionService.listProductos().catch((err: unknown) => {
-        console.error(err)
-        return { data: [] }
-      }),
       aprobacionService.listEmpresas().catch((err: unknown) => {
         console.error(err)
         return { data: [] }
       }),
-    ]).then(([{ data: productos }, { data: empresas }]) => {
-      if (!cancelado) setAlertas(alertasDesdeColas(productos, empresas))
+      aprobacionService.listOfertas().catch((err: unknown) => {
+        console.error(err)
+        return { data: [] }
+      }),
+    ]).then(([{ data: empresas }, { data: ofertas }]) => {
+      if (!cancelado) {
+        setAlertas(alertasDesdeColas(empresas, listaDesdeRespuesta(ofertas).length))
+      }
     }).finally(() => {
       if (!cancelado) setLoading(false)
     })

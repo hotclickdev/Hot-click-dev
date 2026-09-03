@@ -45,7 +45,10 @@ export default function Navbar() {
             : 'bg-transparent'
           }
         `}
-        style={scrolled ? { borderBottomColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' } : {}}
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          ...(scrolled ? { borderBottomColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' } : {}),
+        }}
       >
         <nav className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 hc-nav-inner ${scrolled ? 'h-12' : 'h-14'}`}>
           <div className="flex items-center gap-1">

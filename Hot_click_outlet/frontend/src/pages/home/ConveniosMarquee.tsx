@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { convenioService, listaConvenios } from '@/services/convenioService'
 
@@ -12,6 +12,7 @@ export type ConvenioMarquee = {
 // ─── Marquee de emprendimientos con convenio ──────────────────────────────────
 export default function ConveniosMarquee() {
   const { t } = useTranslation()
+  const reduceMotion = useReducedMotion()
   const [items, setItems] = useState<ConvenioMarquee[]>([])
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export default function ConveniosMarquee() {
 
   if (items.length === 0) return null
 
-  const repeated = [...items, ...items, ...items]
+  const repeated = reduceMotion ? items : [...items, ...items, ...items]
 
   return (
     <section style={{ padding: '20px 0', overflow: 'hidden', borderTop: '1px solid var(--hc-border)', borderBottom: '1px solid var(--hc-border)', background: 'var(--hc-surface)' }}>
@@ -34,9 +35,9 @@ export default function ConveniosMarquee() {
       </div>
       <div style={{ display: 'flex', gap: 0, width: '100%', overflow: 'hidden' }}>
         <motion.div
-          animate={{ x: ['0%', '-33.33%'] }}
-          transition={{ duration: items.length * 4, repeat: Infinity, ease: 'linear' }}
-          style={{ display: 'flex', gap: 32, paddingLeft: 24, whiteSpace: 'nowrap', flexShrink: 0 }}
+          animate={reduceMotion ? undefined : { x: ['0%', '-33.33%'] }}
+          transition={reduceMotion ? undefined : { duration: items.length * 4, repeat: Infinity, ease: 'linear' }}
+          style={{ display: 'flex', gap: 32, paddingLeft: 24, whiteSpace: 'nowrap', flexShrink: 0, overflowX: reduceMotion ? 'auto' : undefined }}
         >
           {repeated.map((c, i) => (
             <div key={`${c.id}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>

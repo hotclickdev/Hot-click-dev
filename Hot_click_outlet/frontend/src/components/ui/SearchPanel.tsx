@@ -52,6 +52,7 @@ export default function SearchPanel() {
                   onChange={(e) => panel.setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') panel.viewAll() }}
                   placeholder={t('search.placeholder')}
+                  aria-label="Buscar productos"
                   className="flex-1 bg-transparent text-base outline-none placeholder:opacity-40"
                   style={{ color: 'var(--hc-text)' }}
                   autoComplete="off"

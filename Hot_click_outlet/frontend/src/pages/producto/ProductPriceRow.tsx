@@ -17,7 +17,7 @@ export default function ProductPriceRow({ product, t }: ProductPriceRowProps) {
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <span className="text-3xl sm:text-4xl font-bold text-[#e8e8ed]">
+      <span className="text-3xl sm:text-4xl font-bold text-hc-text">
         {textoPrecioProducto(product)}
       </span>
       <motion.button
@@ -27,7 +27,7 @@ export default function ProductPriceRow({ product, t }: ProductPriceRowProps) {
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all duration-200 ${
           isLiked(product.id as Id)
             ? 'bg-red-500/10 border-red-500/30 text-red-400'
-            : 'border-white/10 text-[#8e8e9a] hover:text-white hover:border-white/25'
+            : 'border-hc-border text-hc-muted hover:text-hc-accent hover:border-[color:var(--hc-border-strong)]'
         }`}
       >
         <HeartDetailIcon filled={isLiked(product.id as Id)} />

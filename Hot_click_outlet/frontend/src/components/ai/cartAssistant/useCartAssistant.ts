@@ -6,6 +6,7 @@ import { getOrCreateVisitorId } from '@/utils/visitorId'
 import type { ItemCarrito } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { MensajeAsistenteCarrito, ProductoSugerido } from './cartAssistantHelpers'
+import { requiereFichaEncargo } from '../chatProductoPrecio'
 
 type RespuestaChatCarrito = {
   respuesta?: string
@@ -63,6 +64,7 @@ export function useCartAssistant({ cartItems, cartTotal }: { cartItems: ItemCarr
   }, [mensajes])
 
   const addCartItem = useCallback((p: ProductoSugerido) => {
+    if (requiereFichaEncargo(p)) return
     addItem({ id: p.id, nombre: p.nombre, sku: p.sku ?? '', precio: p.precio,
       precioVenta: p.precio, imagenPrincipalUrl: p.imagenUrl ?? null, stock: 99 } as unknown as Producto, 1)
   }, [addItem])

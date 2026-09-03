@@ -30,7 +30,7 @@ export default function PosPagoSinpe({ info, token }: Props) {
 
   return (
     <div
-      className="w-full max-w-md mx-auto rounded-2xl border p-4 space-y-3"
+      className="w-full max-w-md mx-auto rounded-[22px] border p-5 space-y-3 shadow-[var(--hc-shadow-2)]"
       style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
     >
       <h2 className="font-display font-bold text-[var(--hc-text)]">

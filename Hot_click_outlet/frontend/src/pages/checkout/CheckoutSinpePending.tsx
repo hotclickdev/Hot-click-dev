@@ -3,10 +3,11 @@ import { motion } from 'framer-motion'
 import CheckoutStepper from '@/components/ui/CheckoutStepper'
 import { formatPrice } from '@/utils/format'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import { useToast } from '@/components/ui/Toast'
 import CheckoutChrome from './CheckoutChrome'
 import { hrefPedidosCheckout, usaSkinVisitanteCheckout } from './checkoutVisitanteSkin'
 import { WhatsAppIcon } from './checkoutIcons'
-import { SINPE_NUMERO, SINPE_TITULAR } from './checkoutHelpers'
+import { SINPE_NUMERO, SINPE_TITULAR, copiarNumeroSinpe } from './checkoutHelpers'
 import type { Dispatch, SetStateAction, ReactNode, RefObject } from 'react'
 
 type PagoDataSinpe = {
@@ -270,6 +271,24 @@ function FilaDato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   )
 }
 
+function BotonCopiarSinpe() {
+  const { showToast } = useToast()
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        const ok = await copiarNumeroSinpe()
+        if (ok) showToast('Número SINPE copiado', 'success')
+        else showToast('No se pudo copiar el número', 'error')
+      }}
+      className="min-h-11 px-2.5 rounded-lg text-[11px] font-semibold transition-opacity hover:opacity-80 shrink-0"
+      style={{ color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}
+    >
+      Copiar
+    </button>
+  )
+}
+
 function TarjetaTransferencia({
   skinVisitante,
   totalFinal,
@@ -288,7 +307,13 @@ function TarjetaTransferencia({
         <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--hc-success)' }}>
           Realizá la transferencia a:
         </p>
-        <FilaTransferencia etiqueta="Número SINPE" valor={SINPE_NUMERO} />
+        <div className="flex items-start justify-between gap-3 text-xs">
+          <span className="text-hc-muted">Número SINPE</span>
+          <div className="flex items-center gap-2">
+            <span className="text-right text-[13px] font-bold text-hc-text">{SINPE_NUMERO}</span>
+            <BotonCopiarSinpe />
+          </div>
+        </div>
         <FilaTransferencia etiqueta="Titular" valor={SINPE_TITULAR} />
         {numeroPedido ? <FilaTransferencia etiqueta="Referencia" valor={numeroPedido} mono /> : null}
         <FilaTransferencia etiqueta="Monto EXACTO" valor={formatPrice(totalFinal)} />
@@ -302,9 +327,12 @@ function TarjetaTransferencia({
       style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 25%, transparent)' }}
     >
       <p className="text-xs font-semibold text-emerald-400">REALIZÁ LA TRANSFERENCIA A:</p>
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between gap-2 text-sm">
         <span style={{ color: 'var(--hc-muted)' }}>Número SINPE</span>
-        <span className="text-xl font-bold tracking-widest text-emerald-300">{SINPE_NUMERO}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold tracking-widest text-emerald-300">{SINPE_NUMERO}</span>
+          <BotonCopiarSinpe />
+        </div>
       </div>
       <div className="flex items-center justify-between text-sm">
         <span style={{ color: 'var(--hc-muted)' }}>Titular</span>

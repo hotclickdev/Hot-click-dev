@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Aprobación / rechazo de solicitudes de producto.
- * Extraído bit-idéntico de SolicitudAprobacionController — no cambia comportamiento.
+ * LEGACY drain only: lista/aprueba/rechaza filas {@code PRODUCTO} ya existentes en BD.
+ * No crear nuevas solicitudes PRODUCTO — el gate es el negocio, no el producto.
  */
 @Component
 public class SolicitudProductoHandler {

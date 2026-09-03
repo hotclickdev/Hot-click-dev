@@ -4,6 +4,7 @@ import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
 import type { Producto } from '@/types/producto'
 import type { MensajeAsistenteProductos, ProductoSugerido } from './productsAssistantHelpers'
+import { requiereFichaEncargo } from '../chatProductoPrecio'
 
 type RespuestaChatProductos = {
   respuesta?: string
@@ -53,6 +54,7 @@ export function useProductsAssistant({ isOpen, initialQuery = '' }: { isOpen: bo
   }, [mensajes])
 
   const addCartItem = useCallback((producto: ProductoSugerido) => {
+    if (requiereFichaEncargo(producto)) return
     addItem({
       id: producto.id,
       nombre: producto.nombre,

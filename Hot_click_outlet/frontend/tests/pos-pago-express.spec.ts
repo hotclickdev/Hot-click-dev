@@ -7,12 +7,25 @@ const ITEMS_QR = [
   { productoId: 11, nombre: 'Teclado mecánico', cantidad: 1, precioUnitario: 12000, imagen: null },
 ]
 
-async function mockPagoExpress(page: Page) {
+async function mockPagoExpress(page: Page, opts?: { intentOk?: boolean }) {
+  const intentOk = opts?.intentOk === true
+
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const method = route.request().method()
 
     if (path.includes('/pos/qr/pago/tokencarrito01/intent') && method === 'POST') {
+      if (intentOk) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            paymentIntentId: 'pi_mock_pos_01',
+            publishableKey: 'onvo_pk_test_mock',
+          }),
+        })
+        return
+      }
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
@@ -70,10 +83,23 @@ test.describe('POS pago express', () => {
     await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
 
     await expect(page).toHaveURL(/\/pos\/pago\/tokencarrito01/)
+    expect(page.url()).not.toContain('/carrito')
     await expect(page.getByText('Demo POS')).toBeVisible()
     await expect(page.getByText('Mouse gamer')).toBeVisible()
     await expect(page.getByText('Teclado mecánico')).toBeVisible()
     await expect(page.getByRole('button', { name: /Pagar/i })).toBeVisible()
+    expect(page.url()).not.toContain('/carrito')
+  })
+
+  test('intent ok sin SDK cae a hosted y no navega al carrito', async ({ page }) => {
+    await mockPagoExpress(page, { intentOk: true })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
+
+    await expect(page).toHaveURL(/\/pos\/pago\/tokencarrito01/)
+    await expect(page.getByText('Demo POS')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Pagar/i })).toBeVisible()
+    expect(page.url()).not.toContain('/carrito')
   })
 
   test('al pulsar pagar llama al endpoint hosted', async ({ page }) => {
@@ -93,6 +119,7 @@ test.describe('POS pago express', () => {
     await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
     await page.getByRole('button', { name: /Pagar/i }).click()
     await expect.poll(() => stripeLlamado).toBe(true)
+    expect(page.url()).not.toContain('/carrito')
   })
 
   test('QR inválido muestra botón reportar problema', async ({ page }) => {
@@ -127,5 +154,6 @@ test.describe('POS pago express', () => {
     await expect(
       page.getByRole('button', { name: /Reportar|reportar|problema/i }),
     ).toBeVisible()
+    expect(page.url()).not.toContain('/carrito')
   })
 })

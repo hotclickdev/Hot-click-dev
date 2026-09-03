@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/Toast'
 import { CardIcon, EfectivoIcon, SinpeIcon } from './checkoutIcons'
-import { SINPE_NUMERO, SINPE_TITULAR } from './checkoutHelpers'
+import { SINPE_NUMERO, SINPE_TITULAR, copiarNumeroSinpe } from './checkoutHelpers'
 import type { Dispatch, SetStateAction } from 'react'
 
 function metodosPago(metodoEnvio: string) {
@@ -75,7 +76,15 @@ export default function PaymentMethods({
   setSinpeEmail,
 }: PaymentMethodsProps) {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const METODOS_PAGO = metodosPago(metodoEnvio)
+
+  async function onCopiarSinpe() {
+    const ok = await copiarNumeroSinpe()
+    if (ok) showToast('Número SINPE copiado', 'success')
+    else showToast('No se pudo copiar el número', 'error')
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -220,9 +229,19 @@ export default function PaymentMethods({
               {/* Preview destino SINPE */}
               <div className="rounded-xl p-3.5 space-y-1.5" style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
                 <p className="text-[10px] font-semibold text-emerald-400 mb-1.5">DESTINO DEL SINPE</p>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between items-center gap-2 text-xs">
                   <span style={{ color: 'var(--hc-muted)' }}>Número</span>
-                  <span className="font-bold tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
+                    <button
+                      type="button"
+                      onClick={onCopiarSinpe}
+                      className="min-h-11 px-2.5 rounded-lg text-[11px] font-semibold transition-opacity hover:opacity-80"
+                      style={{ color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}
+                    >
+                      Copiar
+                    </button>
+                  </div>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span style={{ color: 'var(--hc-muted)' }}>Titular</span>

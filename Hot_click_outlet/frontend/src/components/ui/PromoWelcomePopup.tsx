@@ -9,7 +9,7 @@ import CloseIcon from '@/components/ui/CloseIcon'
 
 const LS_KEY = 'hc-promo-seen'
 const COOLDOWN_DAYS = 7
-const DELAY_MS = 2500
+const DELAY_MS = 8000
 
 function shouldShow() {
   try {

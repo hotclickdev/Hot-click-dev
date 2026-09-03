@@ -20,6 +20,8 @@ public interface ComprobanteSinpeRepository extends JpaRepository<ComprobanteSin
     @Query("SELECT c FROM ComprobanteSinpe c WHERE (:estado IS NULL OR c.estado = :estado) ORDER BY c.fechaSubida DESC")
     Page<ComprobanteSinpe> buscarPorEstado(@Param("estado") String estado, Pageable pageable);
 
+    long countByEstado(String estado);
+
     @Query("SELECT c FROM ComprobanteSinpe c WHERE c.estado = 'PENDIENTE' AND c.fechaSubida < :corte")
     List<ComprobanteSinpe> findPendientesExpirados(@Param("corte") LocalDateTime corte);
 

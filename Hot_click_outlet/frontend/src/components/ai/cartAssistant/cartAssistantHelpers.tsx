@@ -1,10 +1,10 @@
 import type { Id } from '@/types/api'
+import type { ProductoPrecioChat } from '../chatProductoPrecio'
 
-export type ProductoSugerido = {
+export type ProductoSugerido = ProductoPrecioChat & {
   id?: Id
   nombre?: string
   sku?: string | null
-  precio?: number
   imagenUrl?: string | null
 }
 

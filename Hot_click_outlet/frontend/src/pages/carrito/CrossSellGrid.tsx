@@ -22,7 +22,7 @@ function CrossSellCard({
     >
       <Link
         to={`/productos/${product.id}`}
-        className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden block"
+        className="h-28 bg-hc-surface-2 flex items-center justify-center overflow-hidden block"
       >
         {product.imagenUrl ? (
           <img
@@ -74,8 +74,8 @@ function EncabezadoVacio() {
 function EncabezadoLleno() {
   return (
     <div className="flex items-center gap-3 mb-5">
-      <h2 className="text-lg font-semibold text-[#e8e8ed]">Completa tu compra</h2>
-      <span className="text-xs text-[#8e8e9a]">Productos que podrían interesarte</span>
+      <h2 className="text-lg font-semibold text-hc-text">Completa tu compra</h2>
+      <span className="text-xs text-hc-muted">Productos que podrían interesarte</span>
     </div>
   )
 }

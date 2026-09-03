@@ -10,8 +10,8 @@ function EmailGuardado() {
         </svg>
       </div>
       <div>
-        <p className="text-sm font-semibold text-[#e8e8ed]">¡Listo!</p>
-        <p className="text-xs text-[#8e8e9a]">Te avisamos si tu carrito sigue aquí.</p>
+        <p className="text-sm font-semibold text-hc-text">¡Listo!</p>
+        <p className="text-xs text-hc-muted">Te avisamos si tu carrito sigue aquí.</p>
       </div>
     </div>
   )
@@ -26,8 +26,8 @@ function EmailForm({
 }) {
   return (
     <>
-      <p className="text-sm font-semibold text-[#e8e8ed] mb-1">¿Te vas? Guarda tu carrito</p>
-      <p className="text-xs text-[#8e8e9a] mb-3">
+      <p className="text-sm font-semibold text-hc-text mb-1">¿Te vas? Guarda tu carrito</p>
+      <p className="text-xs text-hc-muted mb-3">
         Déjanos tu email y te enviamos un link para continuar cuando quieras.
       </p>
       <div className="flex gap-2">
@@ -73,7 +73,8 @@ export default function AbandonedEmailPrompt({
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4"
+      className="fixed left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4"
+      style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <div
         className="rounded-2xl px-5 py-4 shadow-2xl relative"
@@ -86,7 +87,7 @@ export default function AbandonedEmailPrompt({
       >
         <button type="button"
           onClick={onDismiss}
-          className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-lg text-[#8e8e9a] hover:text-white transition-colors hover:bg-white/8"
+          className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-lg text-hc-muted hover:text-hc-accent transition-colors hover:bg-hc-surface-2"
           aria-label="Cerrar"
         >
           <CloseIcon />

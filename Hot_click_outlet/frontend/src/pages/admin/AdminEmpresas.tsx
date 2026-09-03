@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react'
 import { adminService } from '@/services/orderService'
+import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
+import { mensajeErrorProducto } from './productos/productosHelpers'
 import EmpresaDetail from './empresas/EmpresaDetail'
 import EmpresaList from './empresas/EmpresaList'
 import {
   detalleEmpresaDesdeRespuesta,
   listaEmpresasDesdeRespuesta,
   listaTabDesdeRespuesta,
+  esProductoVisibleEnCatalogo,
   type EmpresaDetalle,
   type EmpresaLista,
   type EmpresaMiembroTab,
@@ -32,6 +35,7 @@ export default function AdminEmpresas() {
   const [tabPedidos, setTabPedidos] = useState<EmpresaPedidoTab[] | null>(null)
   const [tabEquipo, setTabEquipo] = useState<EmpresaMiembroTab[] | null>(null)
   const [tabLoading, setTabLoading] = useState(false)
+  const [savingProductoId, setSavingProductoId] = useState<Id | null>(null)
 
   useEffect(() => {
     let cancelado = false
@@ -108,6 +112,22 @@ export default function AdminEmpresas() {
     }
   }
 
+  async function toggleVisibilidadProducto(producto: EmpresaProductoTab) {
+    const visible = esProductoVisibleEnCatalogo(producto.visibleCatalogo)
+    setSavingProductoId(producto.id)
+    try {
+      await productService.update(producto.id, { visibleCatalogo: !visible })
+      setTabProductos((prev) => prev?.map((p) => (
+        p.id === producto.id ? { ...p, visibleCatalogo: !visible } : p
+      )) ?? null)
+      toast({ message: visible ? 'Producto pausado' : 'Producto publicado de nuevo', type: 'success' })
+    } catch (err: unknown) {
+      toast({ message: mensajeErrorProducto(err, 'No se pudo cambiar la visibilidad'), type: 'error' })
+    } finally {
+      setSavingProductoId(null)
+    }
+  }
+
   async function toggleVisibilidad(id: Id, visibilidadPublica: boolean) {
     setSaving(true)
     try {
@@ -146,6 +166,8 @@ export default function AdminEmpresas() {
           onCambiarPlan={cambiarPlan}
           onCambiarEstado={cambiarEstado}
           onToggleVisibilidad={toggleVisibilidad}
+          savingProductoId={savingProductoId}
+          onToggleVisibilidadProducto={toggleVisibilidadProducto}
         />
       )}
     </>

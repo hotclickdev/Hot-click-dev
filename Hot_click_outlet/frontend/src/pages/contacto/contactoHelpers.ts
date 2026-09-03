@@ -12,7 +12,7 @@ export const contactPageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'ContactPage',
   name: 'Contacto HotClick — Soporte al cliente en Costa Rica',
-  description: 'Contactá al equipo de HotClick por WhatsApp, email o formulario. Atención en horario extendido de lunes a sábado.',
+  description: 'Contactá al equipo de HotClick por WhatsApp, email o formulario. Atención Lun–Sáb 8:00–19:00.',
   url: `${SITE_URL}/contacto`,
   inLanguage: 'es-CR',
   mainEntity: {

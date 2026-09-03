@@ -44,22 +44,22 @@ public class DataSeeder implements ApplicationRunner {
     private void seedPlanesSaas() {
         seedPlan(
             "EMPRENDEDOR",
-            "Plan gratuito. Modelo basado en comisión por venta.",
-            BigDecimal.ZERO, new BigDecimal("1.50"),
+            "Plan gratuito. Comisión 8% por venta (mín. ₡400), cubre pasarela y plataforma.",
+            BigDecimal.ZERO, new BigDecimal("8.00"), 0,
             2, 50, 1, 1,
             false, false, false, true, false, false, 0
         );
         seedPlan(
             "PYME",
-            "Plan para negocios en crecimiento. Incluye IA y reportes.",
-            new BigDecimal("11.99"), BigDecimal.ZERO,
+            "Plan para negocios en crecimiento. ₡9.900/mes + 4% por venta (cubre pasarela).",
+            new BigDecimal("11.99"), new BigDecimal("4.00"), 9900,
             5, 500, 2, 2,
             true, false, true, true, true, false, 80
         );
         seedPlan(
             "NEGOCIO_PLUS",
-            "Plan completo. Usuarios ilimitados, IA sin límite.",
-            new BigDecimal("19.99"), BigDecimal.ZERO,
+            "Plan completo. ₡24.900/mes + 4% por venta (cubre pasarela).",
+            new BigDecimal("19.99"), new BigDecimal("4.00"), 24900,
             -1, -1, -1, -1,
             true, true, true, true, true, false, -1
         );
@@ -68,7 +68,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private void seedPlan(
         String nombre, String descripcion,
-        BigDecimal precioUsd, BigDecimal comision,
+        BigDecimal precioUsd, BigDecimal comision, int precioMensualCrc,
         int maxUsuarios, int maxProductos, int maxBodegas, int maxCajas,
         boolean pos, boolean crm, boolean compras, boolean reportes,
         boolean ai, boolean api, int creditosAi
@@ -76,8 +76,25 @@ public class DataSeeder implements ApplicationRunner {
         var existente = planRepository.findByNombre(nombre);
         if (existente.isPresent()) {
             Plan p = existente.get();
+            boolean dirty = false;
             if (!Boolean.TRUE.equals(p.getActivo())) {
                 p.setActivo(true);
+                dirty = true;
+            }
+            if (p.getComisionPorcentaje() == null
+                    || p.getComisionPorcentaje().compareTo(comision) != 0) {
+                p.setComisionPorcentaje(comision);
+                dirty = true;
+            }
+            if (p.getPrecioMensual() == null || p.getPrecioMensual() != precioMensualCrc) {
+                p.setPrecioMensual(precioMensualCrc);
+                dirty = true;
+            }
+            if (descripcion != null && !descripcion.equals(p.getDescripcion())) {
+                p.setDescripcion(descripcion);
+                dirty = true;
+            }
+            if (dirty) {
                 planRepository.save(p);
             }
             return;
@@ -85,7 +102,7 @@ public class DataSeeder implements ApplicationRunner {
         Plan plan = new Plan();
         plan.setNombre(nombre);
         plan.setDescripcion(descripcion);
-        plan.setPrecioMensual(0);
+        plan.setPrecioMensual(precioMensualCrc);
         plan.setPrecioUsd(precioUsd);
         plan.setComisionPorcentaje(comision);
         plan.setMaxUsuarios(maxUsuarios);

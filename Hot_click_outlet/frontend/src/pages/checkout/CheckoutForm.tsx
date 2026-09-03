@@ -90,6 +90,11 @@ export default function CheckoutForm({
           setGuestEmailDirty={setGuestEmailDirty}
           guestPhone={guestPhone}
           setGuestPhone={setGuestPhone}
+          guestPhoneError={form.guestPhoneError}
+          setGuestPhoneError={form.setGuestPhoneError}
+          guestPhoneDirty={form.guestPhoneDirty}
+          setGuestPhoneDirty={form.setGuestPhoneDirty}
+          metodoEnvio={metodoEnvio}
         />
       )}
 

@@ -1,8 +1,8 @@
 {
-  "name": "HotClick Admin",
+  "name": "HotClick",
   "short_name": "HotClick",
-  "description": "Panel de administración HotClick — POS, ventas, inventario",
-  "start_url": "/admin",
+  "description": "Marketplace costarricense — comprá y vendé en un solo lugar",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
@@ -10,12 +10,24 @@
   "theme_color": "#E73B33",
   "icons": [
     {
-      "src": "/brand/app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/brand/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["business", "productivity"],
+  "categories": ["shopping", "business"],
   "lang": "es-CR"
 }

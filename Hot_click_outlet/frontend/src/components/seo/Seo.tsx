@@ -3,7 +3,7 @@ import { isBrowser } from '@/utils/browser'
 
 const SITE_NAME = 'HOTCLICK'
 const SITE_URL = 'https://hotclick.lat'
-const DEFAULT_IMAGE = '/assets/og-default.png'
+const DEFAULT_IMAGE = '/og-image.png'
 
 export type SeoProps = {
   title: string
@@ -29,7 +29,6 @@ export default function Seo({ title, description, image, url, type = 'website', 
       {noindex && <meta name="robots" content="noindex, follow" />}
 
       <link rel="alternate" hrefLang="es-CR" href={canonical} />
-      <link rel="alternate" hrefLang="es"    href={canonical} />
       <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
 
       <meta property="og:site_name" content={SITE_NAME} />

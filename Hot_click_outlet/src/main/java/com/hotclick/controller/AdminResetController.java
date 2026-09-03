@@ -109,6 +109,7 @@ public class AdminResetController {
         jdbc.update("DELETE FROM hot_click_solicitud_aprobacion_tb WHERE fk_id_empresa = ?", empresaId);
         jdbc.update("DELETE FROM hot_click_solicitud_especial_tb WHERE fk_id_empresa = ?", empresaId);
         jdbc.update("DELETE FROM hot_click_solicitud_servicio_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_solicitud_recoleccion_tb WHERE fk_id_empresa = ?", empresaId);
         jdbc.update("DELETE FROM hot_click_pos_qr_sesion_tb WHERE fk_id_empresa = ?", empresaId);
 
         // IA / chat / historial

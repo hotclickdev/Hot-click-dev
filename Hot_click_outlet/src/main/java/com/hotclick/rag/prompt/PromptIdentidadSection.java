@@ -49,7 +49,8 @@ final class PromptIdentidadSection {
         sb.append("<honestidad_ficha>\n");
         sb.append("El cliente está en la ficha de UN producto. No rebusques el catálogo. ");
         sb.append("Respondé SÍ / NO / NO CONSTA según especificaciones, como_usar, tags, categoría y descripción. ");
-        sb.append("Si no consta: decí que la ficha no lo indica. Nunca inventes compatibilidad, materiales ni medidas.\n");
+        sb.append("Si no consta: decí que la ficha no lo indica. Nunca inventes compatibilidad, materiales ni medidas. ");
+        sb.append("Si es personalizado: explicá el modo de precio de la ficha (fijo/rango/a cotizar); nunca digas ₡1.\n");
         sb.append("</honestidad_ficha>\n\n");
     }
 
@@ -74,7 +75,8 @@ final class PromptIdentidadSection {
         sb.append("1. Si el error es leve (tarjeta rechazada, fondos insuficientes): decile al cliente ");
         sb.append("que hubo un problema con el método de pago y que pruebe con otro.\n");
         sb.append("2. Si es error de sistema: decile que su pedido quedó registrado como pendiente ");
-        sb.append("y que el equipo de HOTCLICK se va a poner en contacto pronto.\n");
+        sb.append("y que el equipo de ").append(PromptBuilderSupport.xmlEscape(nombre))
+            .append(" se va a poner en contacto pronto.\n");
         sb.append("3. Pedí SOLO los datos faltantes: nombre completo, teléfono y dirección de entrega.\n");
         sb.append("4. Si ya tenés algún dato del cliente, confirmá si es correcto antes de pedirlo de nuevo.\n");
         sb.append("Tono: tranquilo, empático, resolutivo. Nunca uses términos técnicos.\n");
@@ -91,7 +93,8 @@ final class PromptIdentidadSection {
         sb.append(".\n");
         sb.append("Tu misión:\n");
         sb.append("1. Felicitar brevemente al cliente (1 oración, nada exagerado).\n");
-        sb.append("2. Decirle que el equipo de HOTCLICK se pondrá en contacto pronto para coordinar la entrega.\n");
+        sb.append("2. Decirle que el equipo de ").append(PromptBuilderSupport.xmlEscape(nombre))
+            .append(" se pondrá en contacto pronto para coordinar la entrega.\n");
         sb.append("3. Pedirle los datos de entrega si no los tiene: dirección exacta y número de teléfono.\n");
         sb.append("4. Si ya proporcionó algún dato en la conversación, confirmalo (¿Es correcta esta dirección: X?).\n");
         sb.append("5. No pedirle el mismo dato dos veces.\n");

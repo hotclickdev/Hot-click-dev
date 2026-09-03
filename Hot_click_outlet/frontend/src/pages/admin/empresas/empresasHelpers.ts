@@ -33,6 +33,14 @@ export type EmpresaProductoTab = {
   categoria?: string | null
 }
 
+export function esProductoVisibleEnCatalogo(visible?: boolean): boolean {
+  return visible !== false
+}
+
+export function etiquetaPublicacionProducto(visible?: boolean): 'Publicado' | 'Pausado' {
+  return esProductoVisibleEnCatalogo(visible) ? 'Publicado' : 'Pausado'
+}
+
 export type EmpresaPedidoTab = {
   id: Id
   fecha?: string

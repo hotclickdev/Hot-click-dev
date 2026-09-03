@@ -17,25 +17,25 @@ function seccionJobs(page: Page) {
 }
 
 test.describe('Home — Compra · Vende · Emprende', () => {
-  test('tres puertas visibles arriba del fold en móvil', async ({ page }) => {
+  test('CTA comprar dominante y copy buy-first en móvil', async ({ page }) => {
     await mockHomeApis(page)
     await page.setViewportSize({ width: 375, height: 700 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     const jobs = seccionJobs(page)
-    await expect(page.getByRole('heading', { level: 1, name: 'Compra · Vende · Emprende' })).toBeVisible()
-    await expect(jobs.getByText('Todo empieza con un click.')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Comprá en Costa Rica' })).toBeVisible()
+    await expect(jobs.getByText(/Catálogo de emprendedores/)).toBeVisible()
     await expect(jobs.getByRole('link', { name: 'Comprar' })).toBeVisible()
     await expect(jobs.getByRole('link', { name: 'Vender' })).toBeVisible()
     await expect(jobs.getByRole('link', { name: 'Emprender' })).toBeVisible()
 
-    const vender = jobs.getByRole('link', { name: 'Vender' })
-    const box = await vender.boundingBox()
-    expect(box, 'Vender debe estar en el fold').toBeTruthy()
+    const comprar = jobs.getByRole('link', { name: 'Comprar' })
+    const box = await comprar.boundingBox()
+    expect(box, 'Comprar debe estar en el fold').toBeTruthy()
     expect(box!.y + box!.height).toBeLessThan(700)
   })
 
-  test('Comprar, Vender y Emprender llegan a su job', async ({ page }) => {
+  test('Comprar va a catálogo; Vender y Emprender a /emprende', async ({ page }) => {
     await mockHomeApis(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
@@ -46,7 +46,7 @@ test.describe('Home — Compra · Vende · Emprende', () => {
 
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await seccionJobs(page).getByRole('link', { name: 'Vender' }).click()
-    await expect(page).toHaveURL(/\/registro-empresa/)
+    await expect(page).toHaveURL(/\/emprende$/)
 
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await seccionJobs(page).getByRole('link', { name: 'Emprender' }).click()
@@ -81,17 +81,6 @@ test.describe('Home — Compra · Vende · Emprende', () => {
     await mockHomeApis(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-
-    await expect(page.getByText('Mandanos la foto del producto por WhatsApp')).toBeVisible()
-    await expect(page.getByText('📷')).toHaveCount(0)
-    await expect(page.getByText('🔍')).toHaveCount(0)
-
-    await page.getByText('Pagos 100% seguros').scrollIntoViewIfNeeded()
-    await expect(page.getByText('Pagos 100% seguros')).toBeVisible()
-    await expect(page.getByText('Tienda costarricense')).toBeVisible()
-    await expect(page.getByText('Hecho en Costa Rica')).toBeVisible()
-    await expect(page.getByText('🔒')).toHaveCount(0)
-    await expect(page.getByText('🇨🇷')).toHaveCount(0)
-    await expect(page.getByText('📦')).toHaveCount(0)
+    await expect(page.getByText('✦')).toHaveCount(0)
   })
 })

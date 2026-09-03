@@ -25,6 +25,8 @@ public interface SolicitudAprobacionRepository extends JpaRepository<SolicitudAp
 
     long countByEmpresa_IdAndEstadoSolicitud(Long empresaId, String estadoSolicitud);
 
+    long countByEstadoSolicitudAndTipoEntidad(String estadoSolicitud, String tipoEntidad);
+
     /** Cierra las solicitudes de producto pendientes al aprobar la empresa (la aprobación del negocio las publica en bloque). */
     @Modifying
     @Query("UPDATE SolicitudAprobacion s SET s.estadoSolicitud = 'APROBADO', s.fechaResolucion = :ahora " +

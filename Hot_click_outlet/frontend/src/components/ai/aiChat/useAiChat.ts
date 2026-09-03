@@ -11,6 +11,7 @@ import { trackAiUserMsg } from './aiChatBehavior'
 import { surfaceFromSessionKey } from './chatSurface'
 import type { AIChatProps } from '../AIChat'
 import type { Producto } from '@/types/producto'
+import { requiereFichaEncargo } from '../chatProductoPrecio'
 
 type UseAiChatArgs = Pick<AIChatProps,
   | 'empresaSlug'
@@ -83,6 +84,7 @@ export function useAiChat({
   })
 
   const handleAdd = useCallback((producto: Producto) => {
+    if (requiereFichaEncargo(producto)) return
     addItem({
       id: producto.id, nombre: producto.nombre, sku: producto.sku ?? '',
       precio: producto.precio, precioVenta: producto.precio,

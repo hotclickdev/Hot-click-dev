@@ -16,6 +16,7 @@ export type FormSistemaProducto = {
   sku: string
   imagenUrl: string
   bodegaId: string | number
+  visibleCatalogo: boolean
 }
 
 export type FiltrosSistemaProductos = {
@@ -107,4 +108,5 @@ export const FORM_VACIO: FormSistemaProducto = {
   sku: '',
   imagenUrl: '',
   bodegaId: '',
+  visibleCatalogo: true,
 }

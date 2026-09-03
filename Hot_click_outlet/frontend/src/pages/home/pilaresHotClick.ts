@@ -1,7 +1,9 @@
 export type VariantePilar = 'primary' | 'ghost' | 'outline'
 
+export type PilarId = 'comprar' | 'vender' | 'emprender'
+
 export type PilarHotClick = {
-  id: string
+  id: PilarId
   to: string
   labelKey: string
   hintKey: string
@@ -18,7 +20,7 @@ export const PILARES_HOTCLICK: PilarHotClick[] = [
   },
   {
     id: 'vender',
-    to: '/registro-empresa',
+    to: '/emprende',
     labelKey: 'home.jobsVender',
     hintKey: 'home.jobsVenderHint',
     variant: 'ghost',

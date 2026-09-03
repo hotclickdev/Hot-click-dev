@@ -48,7 +48,7 @@ const clausulas = [
     num: 'CLÁUSULA TERCERA',
     title: 'Condiciones Económicas y Comisiones (Vendedores)',
     content: (
-      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva, cuyo porcentaje será fijado en el respectivo acuerdo comercial particular. HotClick gestionará la pasarela de pagos y retendrá los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
+      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva según el plan contratado: plan Emprendedor (sin membresía) 8% del total bruto del pedido con un mínimo de ₡400; planes PYME y Negocio Plus 4% del total bruto además de la mensualidad publicada. HotClick gestiona la pasarela de pagos (incluidos los costos de ONVO) y retiene los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
     ),
   },
   {

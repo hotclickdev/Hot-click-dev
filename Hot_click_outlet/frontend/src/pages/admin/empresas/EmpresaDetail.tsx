@@ -69,6 +69,8 @@ export type EmpresaDetailProps = {
   onCambiarPlan: (id: Id, plan: string) => void
   onCambiarEstado: (id: Id, estadoEmpresa: string) => void
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
+  savingProductoId: Id | null
+  onToggleVisibilidadProducto: (producto: EmpresaProductoTab) => void
 }
 
 export default function EmpresaDetail({
@@ -85,6 +87,8 @@ export default function EmpresaDetail({
   onCambiarPlan,
   onCambiarEstado,
   onToggleVisibilidad,
+  savingProductoId,
+  onToggleVisibilidadProducto,
 }: EmpresaDetailProps) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -106,7 +110,14 @@ export default function EmpresaDetail({
               onCambiarEstado={onCambiarEstado}
             />
           )}
-          {tab === 'productos' && <TabProductos loading={tabLoading} productos={tabProductos} />}
+          {tab === 'productos' && (
+            <TabProductos
+              loading={tabLoading}
+              productos={tabProductos}
+              savingId={savingProductoId}
+              onToggleVisibilidad={onToggleVisibilidadProducto}
+            />
+          )}
           {tab === 'pedidos' && <TabPedidos loading={tabLoading} pedidos={tabPedidos} />}
           {tab === 'equipo' && <TabEquipo loading={tabLoading} equipo={tabEquipo} />}
         </div>

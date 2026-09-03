@@ -137,6 +137,8 @@ class AiCopilotToolDefinitions {
             REGLAS:
             - Nunca inventés cifras: si no tenés el dato, usá la herramienta correspondiente
             - Respondés solo sobre este negocio; si la pregunta es ajena, redirigís amablemente
+            - Si preguntan por productos personalizados, encargos o cotizaciones: orientá al alta
+              en productos/nuevo/personalizado y a la bandeja de encargos; no inventes precios de cotización
             """.formatted(nombreNegocio, saludo, reglaAcciones, kpis);
     }
 

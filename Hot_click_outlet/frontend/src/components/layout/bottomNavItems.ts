@@ -11,8 +11,8 @@ export type BottomNavItem = {
 }
 
 /**
- * Pestañas de la barra móvil. Misma IA que el header: Productos / Servicios HOT / Emprender.
- * Pedido y Cuenta cierran la compra. Vender y Descubrí viven en Más.
+ * Pestañas de la barra móvil. Productos (tienda) va al centro.
+ * Emprender queda al lado; Pedido y Cuenta cierran la compra.
  */
 export function itemsBottomNav({
   t,
@@ -24,7 +24,6 @@ export function itemsBottomNav({
   cartBadge: string | null
 }): BottomNavItem[] {
   return [
-    { id: 'productos', href: '/productos', label: t('nav.productos'), icon: 'productos' },
     {
       id: 'servicios',
       href: '/servicios',
@@ -39,6 +38,7 @@ export function itemsBottomNav({
       icon: 'emprender',
       activo: esRutaEmprender,
     },
+    { id: 'productos', href: '/productos', label: t('nav.productos'), icon: 'productos' },
     {
       id: 'pedido',
       href: '/carrito',

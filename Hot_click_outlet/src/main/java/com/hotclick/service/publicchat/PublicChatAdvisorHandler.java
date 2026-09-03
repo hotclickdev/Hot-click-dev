@@ -66,7 +66,7 @@ public class PublicChatAdvisorHandler {
         List<String> opts = claudeClient.generateAdvisorOpts(isEnglish);
         if (claudeClient.hasApiKey()) {
             claudeClient.streamAdvisorResponse(emitter, userMessage, ficha, history, empresaId,
-                isEnglish, afterHours, opts);
+                marketplace, isEnglish, afterHours, opts);
             return;
         }
         enviarTextoYCerrar(emitter, claudeClient.generarRespuestaAsesor(ficha, isEnglish), opts);

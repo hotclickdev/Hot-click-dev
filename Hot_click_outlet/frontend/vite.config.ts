@@ -37,10 +37,10 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: null,
       manifest: {
-        name: 'HotClick Admin',
+        name: 'HotClick',
         short_name: 'HotClick',
-        description: 'Panel de administración HotClick — POS, ventas, inventario',
-        start_url: '/admin',
+        description: 'Marketplace costarricense — comprá y vendé en un solo lugar',
+        start_url: '/',
         scope: '/',
         display: 'standalone',
         orientation: 'any',

@@ -45,16 +45,19 @@ type PagarCheckoutDeps = {
   validateDomicilio: () => boolean
   token: string | null
   validateGuestEmail: (v: string) => string
+  validatePhone: (v: string) => string
   guestEmail: string
   setGuestEmailError: (v: string) => void
   setGuestEmailDirty: (v: boolean) => void
+  guestPhone: string
+  setGuestPhoneError: (v: string) => void
+  setGuestPhoneDirty: (v: boolean) => void
   metodoPago: string
   sinpeNombre: string
   sinpeCedula: string
   setSinpeNombreErr: (v: string) => void
   setSinpeCedulaErr: (v: string) => void
   telefono: string
-  guestPhone: string
   SHIPPING_OPTIONS: OpcionEnvio[]
   metodoEnvio: string
   notas: string
@@ -78,16 +81,19 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     validateDomicilio,
     token,
     validateGuestEmail,
+    validatePhone,
     guestEmail,
     setGuestEmailError,
     setGuestEmailDirty,
+    guestPhone,
+    setGuestPhoneError,
+    setGuestPhoneDirty,
     metodoPago,
     sinpeNombre,
     sinpeCedula,
     setSinpeNombreErr,
     setSinpeCedulaErr,
     telefono,
-    guestPhone,
     SHIPPING_OPTIONS,
     metodoEnvio,
     notas,
@@ -110,6 +116,15 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     setGuestEmailError(eErr)
     setGuestEmailDirty(true)
     if (eErr) return
+
+    if (metodoEnvio !== 'RETIRO_EN_TIENDA') {
+      const pErr = validatePhone(guestPhone)
+      setGuestPhoneError(pErr)
+      setGuestPhoneDirty(true)
+      if (pErr) return
+    } else {
+      setGuestPhoneError('')
+    }
   }
 
   if (metodoPago === 'SINPE') {

@@ -1,49 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
-import { formatColones } from './posPagoFormat'
+import { cargarSdkOnvo, type OnvoPayInstance } from '@/features/billing/onvoSdk'
+import PosPagoCta from './PosPagoCta'
 import PosPagoReporteModal from './PosPagoReporteModal'
-
-const ONVO_SDK_URL = 'https://sdk.onvopay.com/sdk.js'
-
-type OnvoPayInstance = {
-  render: (selector: string) => void
-  submitPayment: () => void
-}
-
-type OnvoGlobal = {
-  pay: (opts: {
-    publicKey: string
-    paymentIntentId: string
-    paymentType: 'one_time'
-    locale?: string
-    manualSubmit?: boolean
-    onSuccess: (data: unknown) => void
-    onError: (data: { message?: string }) => void
-  }) => OnvoPayInstance
-}
-
-declare global {
-  interface Window {
-    onvo?: OnvoGlobal
-  }
-}
-
-let sdkPromise: Promise<void> | null = null
-
-function cargarSdkOnvo(): Promise<void> {
-  if (window.onvo) return Promise.resolve()
-  if (sdkPromise) return sdkPromise
-  sdkPromise = new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = ONVO_SDK_URL
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('onvo_sdk'))
-    document.head.appendChild(script)
-  })
-  return sdkPromise
-}
 
 const PUBLISHABLE_ENV = import.meta.env.VITE_ONVO_PUBLISHABLE_KEY as string | undefined
 
@@ -99,7 +59,6 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
         if (activo) setCargando(false)
       }
     }
-
     void iniciar()
     return () => { activo = false }
   }, [token, onSuccess, onFallback])
@@ -119,7 +78,7 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
       <div
         id="onvo-pos-pago-container"
         ref={containerRef}
-        className="min-h-[120px] rounded-2xl border p-3"
+        className="min-h-[120px] rounded-[22px] border p-3 shadow-[var(--hc-shadow-1)]"
         style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
       />
       {error ? (
@@ -128,22 +87,18 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
           <button
             type="button"
             onClick={() => setReporteAbierto(true)}
-            className="w-full rounded-[14px] border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
+            className="w-full min-h-11 rounded-2xl border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
             style={{ background: 'var(--hc-surface)' }}
           >
             {t('pos.pago.reportarError')}
           </button>
         </div>
       ) : null}
-      <button
-        type="button"
+      <PosPagoCta
+        monto={total}
         onClick={() => instanciaRef.current?.submitPayment()}
-        className="w-full rounded-[14px] py-4 text-[15px] font-bold text-white"
-        style={{ background: 'var(--hc-primary)' }}
-      >
-        {t('pos.pago.pagar', { monto: formatColones(total) })}
-      </button>
-      <p className="text-xs text-center text-[var(--hc-muted)]">{t('pos.pago.walletsAviso')}</p>
+        avisoKey="pos.pago.walletsAviso"
+      />
       <PosPagoReporteModal
         open={reporteAbierto}
         onClose={() => setReporteAbierto(false)}

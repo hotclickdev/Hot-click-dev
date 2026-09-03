@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import VisitanteBottomNav from './VisitanteBottomNav'
 
@@ -29,6 +30,9 @@ export default function VisitanteShell() {
   const conNav = muestraNav(pathname)
   return (
     <div className={`min-h-dvh bg-hc-bg text-hc-text ${conNav ? 'pb-16' : ''}`}>
+      <Helmet>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       <Outlet />
       {conNav ? <VisitanteBottomNav /> : null}
       <MentalModelCoach />

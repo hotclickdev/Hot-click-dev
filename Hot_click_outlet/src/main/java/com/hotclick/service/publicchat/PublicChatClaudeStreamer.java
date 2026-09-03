@@ -47,11 +47,11 @@ class PublicChatClaudeStreamer {
     public void streamClaudeResponse(Logger log, SseEmitter emitter, String userMessage,
                                      List<Map<String, Object>> productos,
                                      List<Map<String, Object>> history,
-                                     String wa, String context,
+                                     String wa, String nombreTienda, boolean marketplace, String context,
                                      boolean isEnglish, boolean isGift,
                                      Long maxBudget, Set<String> negations,
                                      boolean afterHours, List<String> smartOpts, boolean mostrarFichas) {
-        String systemPrompt = promptBuilder.buildSalesSystemPrompt(wa, context, productos,
+        String systemPrompt = promptBuilder.buildSalesSystemPrompt(wa, nombreTienda, marketplace, context, productos,
             isEnglish, isGift, maxBudget, negations, afterHours, mostrarFichas);
         String fallback = mockResponses.generarRespuestaMock(productos, history, isEnglish);
         streamWithSystemPrompt(log, emitter, userMessage, history, systemPrompt, fallback, smartOpts);
@@ -59,8 +59,10 @@ class PublicChatClaudeStreamer {
 
     public void streamAdvisor(Logger log, SseEmitter emitter, String userMessage,
                               Map<String, Object> ficha, List<Map<String, Object>> history,
-                              String wa, boolean isEnglish, boolean afterHours, List<String> smartOpts) {
-        String systemPrompt = promptBuilder.buildAdvisorSystemPrompt(wa, ficha, isEnglish, afterHours);
+                              String wa, String nombreTienda, boolean marketplace,
+                              boolean isEnglish, boolean afterHours, List<String> smartOpts) {
+        String systemPrompt = promptBuilder.buildAdvisorSystemPrompt(
+            wa, nombreTienda, marketplace, ficha, isEnglish, afterHours);
         String fallback = mockResponses.generarRespuestaAsesor(ficha, isEnglish);
         streamWithSystemPrompt(log, emitter, userMessage, history, systemPrompt, fallback, smartOpts);
     }

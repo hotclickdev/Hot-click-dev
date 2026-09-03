@@ -1,10 +1,10 @@
 import type { Id } from '@/types/api'
+import { etiquetaPrecioChat, requiereFichaEncargo, type ProductoPrecioChat } from '../chatProductoPrecio'
 
-export type ProductoSugerido = {
+export type ProductoSugerido = ProductoPrecioChat & {
   id?: Id
   nombre?: string
   sku?: string | null
-  precio?: number
   imagenUrl?: string | null
 }
 
@@ -15,6 +15,8 @@ export type MensajeAsistenteProductos = {
   productos?: ProductoSugerido[]
   categorias?: string[]
 }
+
+export { etiquetaPrecioChat, requiereFichaEncargo }
 
 export const fmt = (n?: number | null) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 

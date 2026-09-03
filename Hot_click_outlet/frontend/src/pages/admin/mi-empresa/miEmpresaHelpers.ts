@@ -21,6 +21,9 @@ export type EmpresaPerfil = {
   telefonoEmpresa?: string
   correoEmpresa?: string
   numeroWhatsapp?: string
+  categoriaNegocio?: string | null
+  instagram?: string | null
+  zonaEnvio?: string | null
   colorPrimario?: string
   colorSecundario?: string
   logoUrl?: string | null

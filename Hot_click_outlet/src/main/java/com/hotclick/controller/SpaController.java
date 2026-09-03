@@ -61,9 +61,9 @@ public class SpaController {
                 .map(p -> ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
                     .body(spaSeoSupport.injectProductMeta(indexHtmlContent, p)))
-                .orElseGet(this::serveSpa);
+                .orElseGet(() -> serveNotFound(id));
         } catch (NumberFormatException e) {
-            return serveSpa();
+            return serveNotFound(id);
         }
     }
 
@@ -120,6 +120,12 @@ public class SpaController {
         "/nosotros",
         "/contacto",
         "/informacion",
+        "/privacidad",
+        "/terminos",
+        "/cookies",
+        "/envios",
+        "/devoluciones",
+        "/acuerdo-vendedores",
         "/servicios",
         "/blog",
         "/emprende",
@@ -166,5 +172,12 @@ public class SpaController {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
             .body(indexHtmlContent);
+    }
+
+    /** Soft-404 de producto: HTTP 404 + SPA con noindex para que el cliente muestre UI. */
+    private ResponseEntity<String> serveNotFound(String id) {
+        return ResponseEntity.status(404)
+            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+            .body(spaSeoSupport.injectProductNotFoundMeta(indexHtmlContent, id));
     }
 }

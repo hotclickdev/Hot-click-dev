@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -6,22 +6,31 @@ import useUiStore from '@/store/uiStore'
 import useCartStore from '@/store/cartStore'
 import CloseIcon from '@/components/ui/CloseIcon'
 
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
 export default function AuthPromptModal() {
   const { t } = useTranslation()
   const { authPromptOpen, setAuthPromptOpen } = useUiStore()
   const toWhatsAppMessage = useCartStore((s) => s.toWhatsAppMessage)
   const navigate = useNavigate()
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!authPromptOpen) return
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setAuthPromptOpen(false) }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [authPromptOpen])
+  }, [authPromptOpen, setAuthPromptOpen])
 
   useEffect(() => {
     document.body.style.overflow = authPromptOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
+  }, [authPromptOpen])
+
+  useEffect(() => {
+    if (!authPromptOpen) return
+    const first = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE)
+    first?.focus()
   }, [authPromptOpen])
 
   const go = (path: string) => {
@@ -54,6 +63,10 @@ export default function AuthPromptModal() {
             className="fixed z-[61] inset-0 flex items-center justify-center p-4 pointer-events-none"
           >
             <div
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="auth-prompt-title"
               className="pointer-events-auto w-full max-w-sm rounded-3xl p-7 relative"
               style={{
                 background: 'var(--hc-surface)',
@@ -87,7 +100,7 @@ export default function AuthPromptModal() {
               </div>
 
               {/* Copy */}
-              <h2 className="text-xl font-bold text-center mb-2" style={{ color: 'var(--hc-text)' }}>
+              <h2 id="auth-prompt-title" className="text-xl font-bold text-center mb-2" style={{ color: 'var(--hc-text)' }}>
                 {t('authPrompt.title')}
               </h2>
               <p className="text-sm text-center leading-relaxed mb-6" style={{ color: 'var(--hc-muted)' }}>

@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 import { aprobacionService } from '@/services/aprobacionService'
+import { moderacionService, type ModeracionResumen } from '@/services/moderacionService'
 import { adminService } from '@/services/orderService'
 import type { Id } from '@/types/api'
 import EmpresasPendientes from './aprobaciones/EmpresasPendientes'
 import OfertasPendientes from './aprobaciones/OfertasPendientes'
 import ProductosPendientes from './aprobaciones/ProductosPendientes'
+import BandejaModeracion from './aprobaciones/BandejaModeracion'
 import { AdminFilterChip } from '@/prototipo/admin/AdminUi'
 import {
   listaDesdeRespuesta,
@@ -26,6 +29,11 @@ const TAB_LABEL_KEY: Record<TabAprobacion, string> = {
   ofertas: 'adminAprobaciones.tabOfertas',
 }
 
+function tabDesdeQuery(raw: string | null): TabAprobacion {
+  if (raw === 'productos' || raw === 'ofertas' || raw === 'empresas') return raw
+  return 'empresas'
+}
+
 function subtituloModeracionI18n(
   t: (key: string, opts?: { count: number }) => string,
   tab: TabAprobacion,
@@ -33,7 +41,11 @@ function subtituloModeracionI18n(
   empresas: number,
   ofertas: number,
 ): string {
-  if (tab === 'productos') return t('adminAprobaciones.waitingProducts', { count: productos })
+  if (tab === 'productos') {
+    return productos > 0
+      ? t('adminAprobaciones.waitingProducts', { count: productos })
+      : t('adminAprobaciones.waitingProductsZero')
+  }
   if (tab === 'ofertas') return t('adminAprobaciones.waitingOffers', { count: ofertas })
   return t('adminAprobaciones.waitingStores', { count: empresas })
 }
@@ -41,7 +53,8 @@ function subtituloModeracionI18n(
 export default function AdminAprobaciones() {
   const { t } = useTranslation()
   const toast = useToast()
-  const [tab, setTab] = useState<TabAprobacion>('productos')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [tab, setTab] = useState<TabAprobacion>(() => tabDesdeQuery(searchParams.get('tab')))
   const [solicitudes, setSolicitudes] = useState<EmpresaSolicitud[]>([])
   const [stats, setStats] = useState<StatsAprobacion>({})
   const [loading, setLoading] = useState(true)
@@ -49,13 +62,38 @@ export default function AdminAprobaciones() {
   const [loadingProductos, setLoadingProductos] = useState(true)
   const [ofertas, setOfertas] = useState<OfertaPendiente[]>([])
   const [loadingOfertas, setLoadingOfertas] = useState(true)
+  const [resumen, setResumen] = useState<ModeracionResumen | null>(null)
+  const [loadingResumen, setLoadingResumen] = useState(true)
+
+  useEffect(() => {
+    setTab(tabDesdeQuery(searchParams.get('tab')))
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!loadingProductos && productos.length === 0 && tab === 'productos') {
+      setTab('empresas')
+      setSearchParams({})
+    }
+  }, [loadingProductos, productos.length, tab, setSearchParams])
 
   useEffect(() => {
     cargar()
     cargarProductos()
     cargarOfertas()
+    cargarResumen()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- montaje único
   }, [])
+
+  async function cargarResumen() {
+    try {
+      setLoadingResumen(true)
+      setResumen(await moderacionService.resumen())
+    } catch {
+      setResumen(null)
+    } finally {
+      setLoadingResumen(false)
+    }
+  }
 
   async function cargarProductos() {
     try {
@@ -74,6 +112,7 @@ export default function AdminAprobaciones() {
       await aprobacionService.aprobarProducto(id)
       toast({ message: t('adminAprobaciones.productApproved'), type: 'success' })
       cargarProductos()
+      cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorApproveProduct'), type: 'error' })
       throw new Error('aprobar-producto-failed')
@@ -85,6 +124,7 @@ export default function AdminAprobaciones() {
       await aprobacionService.rechazarProducto(id, comentario)
       toast({ message: t('adminAprobaciones.productRejected'), type: 'success' })
       cargarProductos()
+      cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorRejectProduct'), type: 'error' })
       throw new Error('rechazar-producto-failed')
@@ -108,6 +148,7 @@ export default function AdminAprobaciones() {
       await aprobacionService.aprobarOferta(id)
       toast({ message: t('adminAprobaciones.offerApproved'), type: 'success' })
       cargarOfertas()
+      cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorApproveOffer'), type: 'error' })
       throw new Error('aprobar-oferta-failed')
@@ -119,6 +160,7 @@ export default function AdminAprobaciones() {
       await aprobacionService.rechazarOferta(id, comentario)
       toast({ message: t('adminAprobaciones.offerRejected'), type: 'success' })
       cargarOfertas()
+      cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorRejectOffer'), type: 'error' })
       throw new Error('rechazar-oferta-failed')
@@ -144,21 +186,28 @@ export default function AdminAprobaciones() {
       await aprobacionService.aprobarEmpresa(id)
       toast({ message: t('adminAprobaciones.companyApproved'), type: 'success' })
       cargar()
+      cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorApprove'), type: 'error' })
       throw new Error('aprobar-empresa-failed')
     }
   }
 
-  async function rechazarEmpresa(id: Id) {
+  async function rechazarEmpresa(id: Id, comentario: string) {
     try {
-      await aprobacionService.rechazarEmpresa(id)
+      await aprobacionService.rechazarEmpresa(id, comentario)
       toast({ message: t('adminAprobaciones.requestRejected'), type: 'success' })
       cargar()
+      cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorReject'), type: 'error' })
       throw new Error('rechazar-empresa-failed')
     }
+  }
+
+  function cambiarTab(next: TabAprobacion) {
+    setTab(next)
+    setSearchParams(next === 'empresas' ? {} : { tab: next })
   }
 
   const tabs = tabsAprobacion({
@@ -176,15 +225,17 @@ export default function AdminAprobaciones() {
         </p>
       </div>
 
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
+      <BandejaModeracion resumen={resumen} loading={loadingResumen} />
+
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1" data-mm="tab-empresas">
         {tabs.map((item) => {
           const label = t(TAB_LABEL_KEY[item.id])
           return (
             <AdminFilterChip
               key={item.id}
               activo={tab === item.id}
-              onClick={() => setTab(item.id)}
-              dataMm={item.id === 'productos' ? 'tab-productos' : undefined}
+              onClick={() => cambiarTab(item.id)}
+              dataMm={item.id === 'empresas' ? 'tab-empresas' : item.id === 'productos' ? 'tab-productos' : undefined}
             >
               {item.count > 0 ? `${label} (${item.count})` : label}
             </AdminFilterChip>

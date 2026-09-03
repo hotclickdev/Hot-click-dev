@@ -1,0 +1,58 @@
+# Lightsail 4 GB (Ohio) — app + Postgres en Docker.
+# NO usar en el EC2 actual: producción sigue con docker-compose.prod.yml + RDS.
+#
+# RAM aproximada: Postgres 768 MB + JVM 1.5 GB + OS/Nginx/Docker ~1.5 GB.
+# Sin sidecar de guardrails (el copilot ya no lo usa).
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: hotclick-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hotclick}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - hotclick_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    mem_limit: 768m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    build: .
+    image: hot_click_outlet-app
+    container_name: hotclick
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+      - java
+      - -Xms512m
+      - -Xmx1536m
+      - -XX:+UseG1GC
+      - -jar
+      - app.jar
+    restart: unless-stopped
+    mem_limit: 2g
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  hotclick_pgdata:
+    name: hotclick_pgdata

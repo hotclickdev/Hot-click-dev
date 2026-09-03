@@ -32,7 +32,7 @@ export function useCatalogoFiltros(searchParams: URLSearchParams, setSearchParam
   const gustosPerfil = sort === 'para_vos' ? gustosPerfilHook : null
   const gustosScores = gustosPerfil?.scores ?? null
   const tieneGustos = sort === 'para_vos' && !gustosLoading && hasGustos(gustosPerfil ?? undefined)
-  const [filterStock, setFilterStock] = useState('')
+  const [filterStock, setFilterStock] = useState('ok')
   const [filterCond, setFilterCond] = useState('')
   const [filterTalla, setFilterTalla] = useState('')
   const [priceMin, setPriceMin] = useState('')

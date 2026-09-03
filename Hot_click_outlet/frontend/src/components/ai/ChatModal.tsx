@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,8 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import CloseIcon from '@/components/ui/CloseIcon'
 import { useVisualViewportBox } from '@/hooks/useVisualViewportBox'
 import { sessionKeyFromPath } from './aiChat/chatSurface'
+
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
 export default function ChatModal() {
   const { t } = useTranslation()
@@ -21,6 +23,7 @@ export default function ChatModal() {
   const chips = [t('chat.chipOffer'), t('chat.chipSala'), t('chat.chipShipping')]
   const viewport = useVisualViewportBox(isOpen)
   const sessionKey = sessionKeyFromPath(pathname)
+  const panelRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const { startExpiryTimer, stopExpiryTimer } = useChatStore.getState()
@@ -39,6 +42,12 @@ export default function ChatModal() {
     return () => globalThis.removeEventListener('keydown', onKey)
   }, [isOpen, close])
 
+  useEffect(() => {
+    if (!isOpen) return
+    const first = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE)
+    first?.focus()
+  }, [isOpen])
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -56,7 +65,9 @@ export default function ChatModal() {
           />
           <motion.aside
             key={`chat-drawer-${sessionKey}`}
+            ref={panelRef}
             role="dialog"
+            aria-modal="true"
             aria-label={t('chat.title')}
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}

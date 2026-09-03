@@ -16,6 +16,9 @@ import {
   type MarcaBusqueda,
 } from './searchPanelHelpers'
 
+const SEARCH_PAGE_SIZE = 48
+const FILTER_DEBOUNCE_MS = 300
+
 function productosDesdeRespuesta(data: unknown): Producto[] {
   const pagina = data as { content?: unknown }
   const fuente = pagina.content ?? data ?? []
@@ -37,6 +40,7 @@ export function useSearchPanel() {
   const location = useLocation()
 
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [allProducts, setAllProducts] = useState<Producto[]>(getProductCache() ?? [])
   const [allBrands, setAllBrands] = useState<MarcaBusqueda[]>(getBrandCache() ?? [])
   const [loading, setLoading] = useState(false)
@@ -47,11 +51,21 @@ export function useSearchPanel() {
   useEffect(() => { setSearchOpen(false) }, [location.pathname])
 
   useEffect(() => {
-    if (!searchOpen) { setQuery(''); return }
+    const timer = setTimeout(() => setDebouncedQuery(query), FILTER_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [query])
+
+  useEffect(() => {
+    if (!searchOpen) { setQuery(''); setDebouncedQuery(''); return }
     setRecent(getRecent())
 
-    const needsProducts = !getProductCache()
-    const needsBrands = !getBrandCache()
+    const cachedProducts = getProductCache()
+    const cachedBrands = getBrandCache()
+    const needsProducts = !cachedProducts
+    const needsBrands = !cachedBrands
+
+    if (cachedProducts) setAllProducts(cachedProducts)
+    if (cachedBrands) setAllBrands(cachedBrands)
 
     if (!needsProducts && !needsBrands) {
       setTimeout(() => inputRef.current?.focus(), 60)
@@ -60,7 +74,7 @@ export function useSearchPanel() {
 
     setLoading(true)
     Promise.all([
-      needsProducts ? productService.getAll(0, 200).then(({ data }) => {
+      needsProducts ? productService.getAll(0, SEARCH_PAGE_SIZE).then(({ data }) => {
         const products = productosDesdeRespuesta(data)
         setProductCache(products)
         setAllProducts(products)
@@ -85,7 +99,7 @@ export function useSearchPanel() {
     return () => document.removeEventListener('keydown', handler)
   }, [searchOpen, setSearchOpen])
 
-  const q = query.trim().toLowerCase()
+  const q = debouncedQuery.trim().toLowerCase()
 
   const brandResults = useMemo(() => {
     if (!q) return []
@@ -106,13 +120,13 @@ export function useSearchPanel() {
 
   useEffect(() => {
     clearTimeout(analyticsTimer.current ?? undefined)
-    if (query.trim().length > 1) {
+    if (debouncedQuery.trim().length > 1) {
       analyticsTimer.current = setTimeout(() => {
-        analytics.searchQuery(query.trim(), productResults.length)
+        analytics.searchQuery(debouncedQuery.trim(), productResults.length)
       }, 900)
     }
     return () => clearTimeout(analyticsTimer.current ?? undefined)
-  }, [query, productResults.length])
+  }, [debouncedQuery, productResults.length])
 
   const brandProductCount = useMemo(() => {
     if (!brandResults.length) return {} as Record<string, number>

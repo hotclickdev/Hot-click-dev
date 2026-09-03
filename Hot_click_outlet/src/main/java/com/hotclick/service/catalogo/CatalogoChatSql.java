@@ -18,11 +18,14 @@ public final class CatalogoChatSql {
 
     /**
      * @param usarStockReservado true en RAG (stock disponible); false en chat SSE (stock_actual).
+     * Productos personalizados quedan visibles aunque el stock sea 0 (se fabrican/cotizan por encargo).
      */
     public static String whereVisible(boolean marketplace, boolean usarStockReservado) {
-        String stock = usarStockReservado
+        String stockCatalogo = usarStockReservado
             ? "(p.stock_actual - COALESCE(p.stock_reservado, 0)) > 0"
             : "p.stock_actual > 0";
+        String stock = "(" + stockCatalogo
+            + " OR COALESCE(p.es_personalizado, FALSE) = TRUE)";
         return "p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE AND "
             + stock + " AND " + filtroEmpresa(marketplace);
     }

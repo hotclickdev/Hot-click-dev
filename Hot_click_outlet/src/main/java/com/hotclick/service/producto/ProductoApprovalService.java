@@ -15,6 +15,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Reglas de publicación al crear/editar producto.
+ * PROHIBIDO crear {@code SolicitudAprobacion} tipo PRODUCTO: el gate del marketplace
+ * es aprobar el negocio ({@code EmpresaAprobacionService.aprobarYPublicar}).
+ * Solo se crean solicitudes tipo OFERTA.
+ */
 @Service
 public class ProductoApprovalService {
 

@@ -8,27 +8,38 @@ import AIPostPaySection from '@/components/ai/AIPostPaySection'
 import type { PagoResumen } from './pagoHelpers'
 import type { TFunction } from 'i18next'
 
-function PagoExitoResumen({ pagoData, t }: { pagoData: PagoResumen | null; t: TFunction }) {
-  if (!pagoData) return null
+function PagoExitoResumen({
+  pagoData,
+  numeroPedido,
+  t,
+}: {
+  pagoData: PagoResumen | null
+  numeroPedido: string | null
+  t: TFunction
+}) {
+  const pedidoVisible = pagoData?.numeroPedido || numeroPedido
+  if (!pedidoVisible && !pagoData) return null
   return (
     <div className="bg-white/5 rounded-xl p-4 text-sm text-left space-y-2 mb-6">
-      <div className="flex justify-between">
-        <span className="text-[#8e8e9a]">{t('payment.orderNumber')}</span>
-        <span className="text-[#e8e8ed] font-mono font-medium">{pagoData.numeroPedido}</span>
-      </div>
-      {pagoData.total && (
+      {pedidoVisible && (
+        <div className="flex justify-between">
+          <span className="text-[#8e8e9a]">{t('payment.orderNumber')}</span>
+          <span className="text-[#e8e8ed] font-mono font-medium">{pedidoVisible}</span>
+        </div>
+      )}
+      {pagoData?.total && (
         <div className="flex justify-between">
           <span className="text-[#8e8e9a]">Total pagado</span>
           <span className="font-bold" style={{ color: 'var(--hc-primary)' }}>{formatPrice(pagoData.total)}</span>
         </div>
       )}
-      {pagoData.metodoPago && (
+      {pagoData?.metodoPago && (
         <div className="flex justify-between">
           <span className="text-[#8e8e9a]">Método</span>
           <span className="text-[#e8e8ed]">{pagoData.metodoPago}</span>
         </div>
       )}
-      {pagoData.cardLast4 && (
+      {pagoData?.cardLast4 && (
         <div className="flex justify-between">
           <span className="text-[#8e8e9a]">Tarjeta</span>
           <span className="text-[#e8e8ed]">{pagoData.cardBrand} •••• {pagoData.cardLast4}</span>
@@ -38,9 +49,22 @@ function PagoExitoResumen({ pagoData, t }: { pagoData: PagoResumen | null; t: TF
   )
 }
 
-function PagoExitoAcciones({ token, t }: { token: string | null; t: TFunction }) {
+function PagoExitoAcciones({
+  token,
+  t,
+}: {
+  token: string | null
+  t: TFunction
+}) {
   return (
     <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        onClick={() => window.print()}
+        className="hc-btn w-full min-h-11 border border-white/15 text-[#e8e8ed] hover:border-white/30"
+      >
+        {t('payment.print', 'Imprimir')}
+      </button>
       {token ? (
         <Link to="/mis-pedidos" className="hc-btn hc-btn-primary w-full min-h-11">
           Ver mis pedidos
@@ -110,7 +134,7 @@ export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoPr
           <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">{t('payment.success')}</h1>
           <p className="text-[#8e8e9a] text-sm mb-6">{t('payment.successSub')}</p>
 
-          <PagoExitoResumen pagoData={pagoData} t={t} />
+          <PagoExitoResumen pagoData={pagoData} numeroPedido={numeroPedido} t={t} />
 
           <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-3 text-sm text-center mb-4">
             <span className="text-emerald-400 font-medium inline-flex items-center justify-center gap-1.5">

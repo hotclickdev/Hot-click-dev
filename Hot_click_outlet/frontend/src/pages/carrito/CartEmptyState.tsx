@@ -32,7 +32,7 @@ export default function CartEmptyState() {
         </Link>
         <Link
           to="/wishlist"
-          className="px-6 py-2.5 rounded-xl border text-sm font-medium transition-all hover:bg-white/5"
+          className="px-6 py-2.5 rounded-xl border text-sm font-medium transition-all hover:bg-hc-surface-2"
           style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
         >
           {t('nav.wishlist')}

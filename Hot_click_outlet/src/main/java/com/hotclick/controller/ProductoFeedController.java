@@ -1,14 +1,15 @@
 package com.hotclick.controller;
 
 import com.hotclick.model.BlogEntrada;
-import com.hotclick.model.Categoria;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.BlogEntradaRepository;
-import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,8 +22,9 @@ import java.util.List;
 @RestController
 public class ProductoFeedController {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductoFeedController.class);
+
     @Autowired private ProductoRepository    productoRepository;
-    @Autowired private CategoriaRepository   categoriaRepository;
     @Autowired private BlogEntradaRepository blogEntradaRepository;
 
     @Value("${app.url:https://hotclick.lat}")
@@ -80,32 +82,47 @@ public class ProductoFeedController {
 
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemap() {
-        List<Producto>    productos  = productoRepository.findActivosVisibles();
-        List<Categoria>   categorias = categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO);
-        List<BlogEntrada> articulos  = blogEntradaRepository.findByPublicadoTrueAndEstadoOrderByFechaPublicacionDesc(1);
+        try {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("application/xml;charset=UTF-8"))
+                    .body(buildSitemapXml());
+        } catch (Exception e) {
+            log.error("Error generando sitemap.xml", e);
+            String hoy = LocalDate.now(Constants.ZONA_CR).toString();
+            StringBuilder fallback = new StringBuilder(512);
+            fallback.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            fallback.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+            sitemapUrl(fallback, appUrl + "/", "1.0", "daily", hoy);
+            sitemapUrl(fallback, appUrl + "/productos", "0.9", "daily", hoy);
+            fallback.append("</urlset>");
+            return ResponseEntity.status(HttpStatus.OK)
+                    .contentType(MediaType.parseMediaType("application/xml;charset=UTF-8"))
+                    .body(fallback.toString());
+        }
+    }
+
+    private String buildSitemapXml() {
+        List<Producto> productos = productoRepository.findActivosVisibles();
+        List<BlogEntrada> articulos = blogEntradaRepository
+                .findByPublicadoTrueAndEstadoOrderByFechaPublicacionDesc(1);
         String hoy = LocalDate.now(Constants.ZONA_CR).toString();
 
-        StringBuilder xml = new StringBuilder(2048 + (productos.size() + categorias.size()) * 200);
+        StringBuilder xml = new StringBuilder(2048 + productos.size() * 200);
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"\n");
         xml.append("        xmlns:image=\"http://www.google.com/schemas/sitemap-image/1.1\">\n");
 
-        // Páginas principales
-        sitemapUrl(xml, appUrl + "/",              "1.0", "daily",   hoy);
-        sitemapUrl(xml, appUrl + "/productos",     "0.9", "daily",   hoy);
+        sitemapUrl(xml, appUrl + "/", "1.0", "daily", hoy);
+        sitemapUrl(xml, appUrl + "/productos", "0.9", "daily", hoy);
         sitemapUrl(xml, appUrl + "/emprende", "0.8", "weekly", hoy);
         sitemapUrl(xml, appUrl + "/emprendimientos", "0.6", "weekly", hoy);
-        sitemapUrl(xml, appUrl + "/nosotros",      "0.5", "monthly", hoy);
-        sitemapUrl(xml, appUrl + "/contacto",      "0.5", "monthly", hoy);
-        sitemapUrl(xml, appUrl + "/servicios",     "0.5", "monthly", hoy);
-        sitemapUrl(xml, appUrl + "/blog",          "0.6", "weekly",  hoy);
+        sitemapUrl(xml, appUrl + "/nosotros", "0.5", "monthly", hoy);
+        sitemapUrl(xml, appUrl + "/contacto", "0.5", "monthly", hoy);
+        sitemapUrl(xml, appUrl + "/servicios", "0.5", "monthly", hoy);
+        sitemapUrl(xml, appUrl + "/blog", "0.6", "weekly", hoy);
 
-        // Páginas de categoría
-        for (Categoria c : categorias) {
-            sitemapUrl(xml, appUrl + "/productos?cat=" + c.getId(), "0.7", "weekly", hoy);
-        }
+        // Sin ?cat= — el canonical del catálogo es /productos (evita URLs facetadas duplicadas)
 
-        // Páginas de producto individuales — con imagen para Google Images
         for (Producto p : productos) {
             String lastmod = lastmodProducto(p, hoy);
             String imagen = p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "";
@@ -126,7 +143,6 @@ public class ProductoFeedController {
             xml.append("  </url>\n");
         }
 
-        // Artículos del blog — con fecha de publicación real como lastmod
         for (BlogEntrada a : articulos) {
             String lastmod = a.getFechaPublicacion() != null
                 ? a.getFechaPublicacion().toLocalDate().toString() : hoy;
@@ -136,10 +152,7 @@ public class ProductoFeedController {
         }
 
         xml.append("</urlset>");
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("application/xml;charset=UTF-8"))
-                .body(xml.toString());
+        return xml.toString();
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -173,12 +186,20 @@ public class ProductoFeedController {
         return s.replaceAll("<[^>]+>", "").replace("&nbsp;", " ").trim();
     }
 
-    /** Escapa los 4 caracteres reservados de XML en contenido de elemento. */
+    /** Escapa caracteres reservados de XML y elimina controles ilegales. */
     private static String xe(String s) {
         if (s == null) return "";
-        return s.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;");
+        StringBuilder out = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '&') { out.append("&amp;"); continue; }
+            if (c == '<') { out.append("&lt;"); continue; }
+            if (c == '>') { out.append("&gt;"); continue; }
+            if (c == '"') { out.append("&quot;"); continue; }
+            if (c == 0x9 || c == 0xA || c == 0xD || (c >= 0x20 && c != 0xFFFE && c != 0xFFFF)) {
+                out.append(c);
+            }
+        }
+        return out.toString();
     }
 }

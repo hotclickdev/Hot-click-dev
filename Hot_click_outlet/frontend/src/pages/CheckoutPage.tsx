@@ -88,6 +88,8 @@ export default function CheckoutPage() {
     setTelefonoDirty: form.setTelefonoDirty,
     setGuestEmailError: form.setGuestEmailError,
     setGuestEmailDirty: form.setGuestEmailDirty,
+    setGuestPhoneError: form.setGuestPhoneError,
+    setGuestPhoneDirty: form.setGuestPhoneDirty,
     setSinpeNombreErr: form.setSinpeNombreErr,
     setSinpeCedulaErr: form.setSinpeCedulaErr,
     setSinpeImagenErr: form.setSinpeImagenErr,

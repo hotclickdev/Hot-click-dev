@@ -74,7 +74,7 @@ export default function RegistroEmpresaAside() {
             color: 'var(--hc-blue-200)', fontSize: '0.9rem',
             marginTop: '1.1rem', lineHeight: 1.65, marginBottom: '2.5rem', maxWidth: 320,
           }}>
-            Registrá tu negocio en HotClick y llegá a miles de compradores en Costa Rica.
+            Registrá tu negocio en HotClick y vendé a compradores en Costa Rica.
           </motion.p>
 
           <motion.div {...stagger(6)} className="grid grid-cols-2 gap-3 mb-10">

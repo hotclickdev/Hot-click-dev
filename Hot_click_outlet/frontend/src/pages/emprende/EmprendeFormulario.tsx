@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import EmprendeFoto from './EmprendeFoto'
 import EmprendeSeccion from './EmprendeSeccion'
@@ -31,6 +32,13 @@ export default function EmprendeFormulario() {
       <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
         {t('emprende.formNota')}
       </p>
+      <Link
+        to="/registro-empresa"
+        className="mt-4 inline-flex items-center justify-center px-5 py-3 rounded-xl text-sm font-semibold min-h-[44px]"
+        style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
+      >
+        {t('emprende.ctaCrear')}
+      </Link>
     </EmprendeSeccion>
   )
 }

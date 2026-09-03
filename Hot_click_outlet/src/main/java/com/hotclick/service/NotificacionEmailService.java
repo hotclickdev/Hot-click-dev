@@ -183,9 +183,11 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarRechazoNegocio(String correo, String nombre, String nombreEmpresa) {
+        enviarRechazoNegocio(correo, nombre, nombreEmpresa, null);
+    }
 
-        negocioEmailSender.enviarRechazoNegocio(correo, nombre, nombreEmpresa);
-
+    public void enviarRechazoNegocio(String correo, String nombre, String nombreEmpresa, String motivo) {
+        negocioEmailSender.enviarRechazoNegocio(correo, nombre, nombreEmpresa, motivo);
     }
 
 

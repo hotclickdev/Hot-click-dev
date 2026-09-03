@@ -91,6 +91,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/servicios/fotos",                             new Limit(10,  60)),
         Map.entry("/api/public/encargos/imagenes",                    new Limit(10,  60)),
         Map.entry("/api/public/encargos",                             new Limit(5,   60)),
+        Map.entry("/api/recolecciones",                               new Limit(10,  60)),
         // AI — IP level (per-empresa burst handled in controller)
         Map.entry("/api/public/chat",                                 new Limit(10,  60)),
         Map.entry("/api/public/shopping-assistant/chat",              new Limit(10,  60)),

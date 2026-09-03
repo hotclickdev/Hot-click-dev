@@ -156,6 +156,7 @@ function formDesdeApi(p: Producto, bodegaFallback: Id | ''): FormSistemaProducto
     sku: p.sku ?? '',
     imagenUrl: p.imagenUrl ?? '',
     bodegaId: p.bodegaId ?? bodegaFallback ?? '',
+    visibleCatalogo: p.visibleCatalogo !== false,
   }
 }
 
@@ -176,6 +177,7 @@ function dtoDesdeForm(form: FormSistemaProducto, bodegaId: Id | '') {
     imagenes: form.imagenUrl ? [form.imagenUrl] : [],
   }
   const dto = denormalizeProduct(payload)
+  dto.visibleCatalogo = form.visibleCatalogo
   if (form.imagenUrl) dto.imagenPrincipalUrl = form.imagenUrl
   return dto
 }

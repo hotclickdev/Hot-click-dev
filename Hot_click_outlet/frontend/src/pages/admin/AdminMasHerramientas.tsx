@@ -7,7 +7,10 @@ const HERRAMIENTAS = [
   { to: '/admin/clientes', label: 'Clientes' },
   { to: '/admin/observabilidad', label: 'Auditorías y Actividad' },
   { to: '/admin/servicios', label: 'Servicios Hot' },
+  { to: '/admin/recolecciones', label: 'Recolección y entrega' },
   { to: '/admin/aprobaciones', label: 'Aprobaciones' },
+  { to: '/admin/payouts', label: 'Retiros de billetera' },
+  { to: '/admin/reportes-producto', label: 'Productos reportados' },
   { to: '/admin/testimonios', label: 'Testimonios' },
 ] as const
 

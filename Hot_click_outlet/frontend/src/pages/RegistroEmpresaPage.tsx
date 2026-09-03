@@ -139,7 +139,7 @@ export default function RegistroEmpresaPage() {
     <>
     <Seo
       title="Registrá tu emprendimiento — Vendé en HOTCLICK Costa Rica"
-      description="Creá tu tienda gratis en HOTCLICK. Sin comisiones el primer mes, tienda activa en 24 horas y acceso a miles de compradores en todo Costa Rica."
+      description="Creá tu tienda en HOTCLICK. Empezás con el plan Emprendedor sin costo de alta; comisiones y planes se ven al registrarte."
       url="https://hotclick.lat/registro-empresa"
     />
     <div className="min-h-screen flex" style={{ fontFamily: 'var(--hc-font-text)' }}>

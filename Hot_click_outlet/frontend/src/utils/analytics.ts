@@ -123,4 +123,5 @@ export const analytics = {
   descubriResultsView: (categories: number) => track('descubri_results_view', {
     category_count: categories,
   }),
+  homePillar: (pilar: 'comprar' | 'vender' | 'emprender') => track('home_pillar_click', { pilar }),
 }

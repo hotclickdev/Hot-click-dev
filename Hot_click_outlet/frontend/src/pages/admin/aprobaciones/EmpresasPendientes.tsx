@@ -21,18 +21,20 @@ export default function EmpresasPendientes({ solicitudes, loading, stats, aproba
   loading: boolean
   stats: StatsAprobacion
   aprobar: (id: Id) => Promise<void>
-  rechazar: (id: Id) => Promise<void>
+  rechazar: (id: Id, comentario: string) => Promise<void>
 }) {
   const { t } = useTranslation()
   const [saving, setSaving] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmAprobacion | null>(null)
+  const [comentario, setComentario] = useState('')
 
   async function ejecutar(id: Id, action: AccionAprobacion) {
     setSaving(`${id}_${action}`)
     try {
       if (action === 'aprobar') await aprobar(id)
-      else await rechazar(id)
+      else await rechazar(id, comentario)
       setConfirm(null)
+      setComentario('')
     } catch {
       // el toast de error ya lo mostró el padre; dejamos el confirm abierto para reintentar
     } finally {
@@ -54,19 +56,23 @@ export default function EmpresasPendientes({ solicitudes, loading, stats, aproba
         loading={loading}
         solicitudes={solicitudes}
         confirm={confirm}
+        comentario={comentario}
+        onComentarioChange={setComentario}
         saving={saving}
         onEjecutar={ejecutar}
         onConfirm={setConfirm}
-        onCancel={() => setConfirm(null)}
+        onCancel={() => { setConfirm(null); setComentario('') }}
       />
     </>
   )
 }
 
-function ListaEmpresas({ loading, solicitudes, confirm, saving, onEjecutar, onConfirm, onCancel }: {
+function ListaEmpresas({ loading, solicitudes, confirm, comentario, onComentarioChange, saving, onEjecutar, onConfirm, onCancel }: {
   loading: boolean
   solicitudes: EmpresaSolicitud[]
   confirm: ConfirmAprobacion | null
+  comentario: string
+  onComentarioChange: (v: string) => void
   saving: string | null
   onEjecutar: (id: Id, action: AccionAprobacion) => Promise<void>
   onConfirm: (confirm: ConfirmAprobacion) => void
@@ -87,6 +93,8 @@ function ListaEmpresas({ loading, solicitudes, confirm, saving, onEjecutar, onCo
           key={sol.id}
           sol={sol}
           confirm={confirm}
+          comentario={comentario}
+          onComentarioChange={onComentarioChange}
           ocupado={ocupado}
           onEjecutar={onEjecutar}
           onConfirm={onConfirm}
@@ -97,9 +105,11 @@ function ListaEmpresas({ loading, solicitudes, confirm, saving, onEjecutar, onCo
   )
 }
 
-function TarjetaEmpresa({ sol, confirm, ocupado, onEjecutar, onConfirm, onCancel }: {
+function TarjetaEmpresa({ sol, confirm, comentario, onComentarioChange, ocupado, onEjecutar, onConfirm, onCancel }: {
   sol: EmpresaSolicitud
   confirm: ConfirmAprobacion | null
+  comentario: string
+  onComentarioChange: (v: string) => void
   ocupado: boolean
   onEjecutar: (id: Id, action: AccionAprobacion) => Promise<void>
   onConfirm: (confirm: ConfirmAprobacion) => void
@@ -134,6 +144,9 @@ function TarjetaEmpresa({ sol, confirm, ocupado, onEjecutar, onConfirm, onCancel
               action={confirm.action}
               titulo={confirm.action === 'aprobar' ? '¿Confirmar aprobación?' : '¿Confirmar rechazo?'}
               detalle={confirm.nombre}
+              comentario={comentario}
+              onComentarioChange={onComentarioChange}
+              mostrarComentario={confirm.action === 'rechazar'}
               onConfirm={() => onEjecutar(sol.id, confirm.action)}
               onCancel={onCancel}
               saving={ocupado}
@@ -142,7 +155,7 @@ function TarjetaEmpresa({ sol, confirm, ocupado, onEjecutar, onConfirm, onCancel
             <BotonesAprobarRechazar
               disabled={ocupado}
               onAprobar={() => onConfirm({ id: sol.id, action: 'aprobar', nombre })}
-              onRechazar={() => onConfirm({ id: sol.id, action: 'rechazar', nombre })}
+              onRechazar={() => { onConfirm({ id: sol.id, action: 'rechazar', nombre }); onComentarioChange('') }}
             />
           )}
         </div>

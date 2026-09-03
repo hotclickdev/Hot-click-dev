@@ -154,14 +154,14 @@ export default function CartPage() {
         <CheckoutStepper activeStep="cart" />
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed]">{t('cart.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-hc-text">{t('cart.title')}</h1>
+            <p className="text-sm text-hc-muted mt-1">
               {items.length} {items.length === 1 ? t('cart.product') : t('cart.products')}
             </p>
           </div>
           <button type="button"
             onClick={vaciarCarrito}
-            className="text-sm text-[#8e8e9a] hover:text-red-400 transition-colors"
+            className="text-sm text-hc-muted hover:text-red-400 transition-colors"
           >
             {t('cart.clear')}
           </button>
