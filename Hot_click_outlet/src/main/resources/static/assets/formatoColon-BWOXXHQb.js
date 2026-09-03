@@ -1,0 +1,1 @@
+var e=new Intl.NumberFormat(`es-CR`);function t(t){return`₡${e.format(Math.round(t??0))}`}export{t};

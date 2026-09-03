@@ -1,0 +1,1 @@
+var e=`https://sdk.onvopay.com/sdk.js`,t=null;function n(){return window.onvo?Promise.resolve():t||(t=new Promise((t,n)=>{let r=document.createElement(`script`);r.src=e,r.async=!0,r.onload=()=>t(),r.onerror=()=>n(Error(`onvo_sdk`)),document.head.appendChild(r)}),t)}export{n as t};

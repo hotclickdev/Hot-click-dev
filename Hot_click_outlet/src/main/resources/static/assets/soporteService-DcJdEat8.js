@@ -1,0 +1,1 @@
+import{t as e}from"./api-BddxlLjf.js";var t={subirFoto:t=>e.post(`/soporte/tickets/fotos`,t,{headers:{"Content-Type":void 0}}),crearTicket:({titulo:t,descripcion:n,fotoUrl:r})=>e.post(`/soporte/tickets`,{titulo:t,descripcion:n,fotoUrl:r})};export{t};
