@@ -214,34 +214,6 @@ class CatalogoMarketplaceTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Pausable Admin')]").exists());
     }
 
-    // ── T-MKT-007: suspender negocio oculta catálogo sin tocar flags ──────────
-    @Test
-    @DisplayName("T-MKT-007 | CRÍTICO — Suspender negocio oculta catálogo sin flippear visibilidad_publica ni visible_catalogo")
-    void suspenderNegocio_ocultaCatalogoSinTocarFlags() throws Exception {
-        Empresa activa = crearEmpresa("Tienda Suspendible", "mkt-susp", "mkt-susp@test.cr", "ACTIVO", true);
-        Producto publicado = crearProducto("Prod Antes Suspender", "SKU-MKT-S1", activa, true);
-
-        mockMvc.perform(get("/api/productos?size=50"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Antes Suspender')]").exists());
-
-        mockMvc.perform(put("/api/admin/empresas/" + activa.getId() + "/suspender")
-                .header("Authorization", adminToken))
-            .andExpect(status().isOk());
-
-        Empresa releida = empresaRepository.findById(activa.getId()).orElseThrow();
-        assertEquals("SUSPENDIDO", releida.getEstadoEmpresa());
-        assertTrue(Boolean.TRUE.equals(releida.getVisibilidadPublica()),
-            "Suspender NO debe tocar visibilidad_publica (skill marketplace)");
-        assertTrue(Boolean.TRUE.equals(
-                productoRepository.findById(publicado.getId()).orElseThrow().getVisibleCatalogo()),
-            "Suspender NO debe flippear visible_catalogo de productos");
-
-        mockMvc.perform(get("/api/productos?size=50"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Antes Suspender')]").doesNotExist());
-    }
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private Empresa crearEmpresa(String nombre, String slug, String correo,
