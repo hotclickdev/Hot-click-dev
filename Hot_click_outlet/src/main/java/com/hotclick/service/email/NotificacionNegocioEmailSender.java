@@ -49,9 +49,13 @@ public class NotificacionNegocioEmailSender {
     }
 
     public void enviarRechazoNegocio(String correo, String nombre, String nombreEmpresa) {
+        enviarRechazoNegocio(correo, nombre, nombreEmpresa, null);
+    }
+
+    public void enviarRechazoNegocio(String correo, String nombre, String nombreEmpresa, String motivo) {
         try {
             resendEmailService.send(correo, "Actualización sobre tu solicitud — " + emailLayoutHelper.esc(nombreEmpresa),
-                negocioEmailBuilder.buildRechazoNegocio(nombre, nombreEmpresa));
+                negocioEmailBuilder.buildRechazoNegocio(nombre, nombreEmpresa, motivo));
             log.info("Email rechazo enviado a {}", correo);
         } catch (Exception e) {
             log.error("No se pudo enviar email de rechazo a {}: {}", correo, e.getMessage());
@@ -72,6 +76,52 @@ public class NotificacionNegocioEmailSender {
             log.info("Email invitación miembro enviado a {}", correo);
         } catch (Exception e) {
             log.error("No se pudo enviar email de invitación a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    public void enviarModeracionAprobada(String correo, String nombre, String tipoLabel, String nombreItem) {
+        try {
+            resendEmailService.send(correo,
+                tipoLabel + " aprobado — HotClick",
+                negocioEmailBuilder.buildModeracionAprobada(nombre, tipoLabel, nombreItem));
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de moderación aprobada a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    public void enviarModeracionRechazada(String correo, String nombre, String tipoLabel,
+                                          String nombreItem, String motivo) {
+        try {
+            resendEmailService.send(correo,
+                "Actualización sobre " + tipoLabel.toLowerCase() + " — HotClick",
+                negocioEmailBuilder.buildModeracionRechazada(nombre, tipoLabel, nombreItem, motivo));
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de moderación rechazada a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    public void enviarResenaResultado(String correo, String nombre, boolean aprobada, String productoNombre) {
+        try {
+            String asunto = aprobada
+                ? "Tu reseña ya está publicada — HotClick"
+                : "Actualización sobre tu reseña — HotClick";
+            resendEmailService.send(correo, asunto,
+                negocioEmailBuilder.buildResenaResultado(nombre, aprobada, productoNombre));
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de reseña a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    public void enviarProductoModerado(String correo, String nombre, String productoNombre,
+                                       boolean pausado, String notas) {
+        try {
+            String asunto = pausado
+                ? "Producto pausado — HotClick"
+                : "Aviso sobre tu producto — HotClick";
+            resendEmailService.send(correo, asunto,
+                negocioEmailBuilder.buildProductoModerado(nombre, productoNombre, pausado, notas));
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de producto moderado a {}: {}", correo, e.getMessage());
         }
     }
 }

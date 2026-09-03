@@ -54,12 +54,22 @@ public class NegocioEmailBuilder {
     }
 
     public String buildRechazoNegocio(String nombre, String nombreEmpresa) {
+        return buildRechazoNegocio(nombre, nombreEmpresa, null);
+    }
+
+    public String buildRechazoNegocio(String nombre, String nombreEmpresa, String motivo) {
+        String motivoHtml = (motivo != null && !motivo.isBlank())
+            ? "<div style='background:#FEF2F1;border:1px solid #F5C2BE;border-radius:12px;padding:16px;margin:0 0 24px'>"
+              + "<p style='margin:0 0 6px;font-weight:700;color:#14171C'>Motivo</p>"
+              + "<p style='margin:0;color:#4D5560;font-size:14px;line-height:1.6'>" + layout.esc(motivo) + "</p></div>"
+            : "";
         return layout.abrirHtml()
             + layout.header("Actualización sobre tu solicitud", null)
             + layout.abrirCuerpo()
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
             + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos tu solicitud para <strong style='color:#14171C'>" + layout.esc(nombreEmpresa) + "</strong> y en esta ocasión no fue aprobada.</p>"
-            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Esto no cierra la puerta: si tenés dudas o querés saber qué ajustar para volver a aplicar, escribinos a <a href='mailto:soporte@hotclick.cr' style='color:#1747A8'>soporte@hotclick.cr</a> o por WhatsApp.</p>"
+            + motivoHtml
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Esto no cierra la puerta: corregí lo indicado y volvé a aplicar, o escribinos a <a href='mailto:soporte@hotclick.cr' style='color:#1747A8'>soporte@hotclick.cr</a> o por WhatsApp.</p>"
             + layout.footer("¿Querés que lo revisemos juntos?");
     }
 
@@ -101,5 +111,77 @@ public class NegocioEmailBuilder {
             + credencialesBlock
             + layout.cta("https://hotclick.lat/login", "Ingresar al panel")
             + layout.footer("¿Tenés alguna pregunta?");
+    }
+
+    public String buildModeracionAprobada(String nombre, String tipoLabel, String nombreItem) {
+        return layout.abrirHtml()
+            + layout.header(layout.esc(tipoLabel) + " aprobado", "Ya está activo en HotClick")
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos <strong style='color:#14171C'>"
+            + layout.esc(nombreItem) + "</strong> y quedó aprobado.</p>"
+            + layout.cta("https://hotclick.lat/admin", "Ver mi panel")
+            + layout.footer("¿Tenés alguna pregunta?");
+    }
+
+    public String buildModeracionRechazada(String nombre, String tipoLabel, String nombreItem, String motivo) {
+        String motivoHtml = (motivo != null && !motivo.isBlank())
+            ? "<div style='background:#FEF2F1;border:1px solid #F5C2BE;border-radius:12px;padding:16px;margin-bottom:24px'>"
+              + "<p style='margin:0 0 6px;font-weight:700;color:#14171C'>Motivo</p>"
+              + "<p style='margin:0;color:#4D5560;font-size:14px;line-height:1.6'>" + layout.esc(motivo) + "</p></div>"
+            : "";
+        return layout.abrirHtml()
+            + layout.header("Actualización sobre " + layout.esc(tipoLabel.toLowerCase()), null)
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
+            + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos <strong style='color:#14171C'>"
+            + layout.esc(nombreItem) + "</strong> y por ahora no quedó aprobado.</p>"
+            + motivoHtml
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Podés corregirlo y volver a enviarlo, o escribirnos si tenés dudas.</p>"
+            + layout.cta("https://hotclick.lat/admin", "Ir al panel")
+            + layout.footer("¿Querés que lo revisemos juntos?");
+    }
+
+    public String buildResenaResultado(String nombre, boolean aprobada, String productoNombre) {
+        if (aprobada) {
+            return layout.abrirHtml()
+                + layout.header("Tu reseña ya está publicada", null)
+                + layout.abrirCuerpo()
+                + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
+                + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Publicamos tu reseña"
+                + (productoNombre != null ? " de <strong style='color:#14171C'>" + layout.esc(productoNombre) + "</strong>" : "")
+                + ". Gracias por ayudar a otros compradores.</p>"
+                + layout.cta("https://hotclick.lat/productos", "Seguir comprando")
+                + layout.footer("¿Tenés alguna pregunta?");
+        }
+        return layout.abrirHtml()
+            + layout.header("Actualización sobre tu reseña", null)
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos tu reseña"
+            + (productoNombre != null ? " de <strong style='color:#14171C'>" + layout.esc(productoNombre) + "</strong>" : "")
+            + " y en esta ocasión no la publicamos. Si creés que fue un error, escribinos.</p>"
+            + layout.footer("¿Querés que lo revisemos juntos?");
+    }
+
+    public String buildProductoModerado(String nombre, String productoNombre, boolean pausado, String notas) {
+        String notasHtml = (notas != null && !notas.isBlank())
+            ? "<div style='background:#F8F9FB;border:1px solid #E4E7EC;border-radius:12px;padding:16px;margin:0 0 24px'>"
+              + "<p style='margin:0 0 6px;font-weight:700;color:#14171C'>Comentario</p>"
+              + "<p style='margin:0;color:#4D5560;font-size:14px;line-height:1.6'>" + layout.esc(notas) + "</p></div>"
+            : "";
+        String cuerpo = pausado
+            ? "Pausamos <strong style='color:#14171C'>" + layout.esc(productoNombre)
+              + "</strong> del catálogo. Pausado no es rechazo de tu negocio: podés corregirlo y publicarlo de nuevo."
+            : "Revisamos <strong style='color:#14171C'>" + layout.esc(productoNombre)
+              + "</strong>. Revisá el comentario y ajustá si hace falta.";
+        return layout.abrirHtml()
+            + layout.header(pausado ? "Producto pausado" : "Aviso sobre tu producto", null)
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
+            + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>" + cuerpo + "</p>"
+            + notasHtml
+            + layout.cta("https://hotclick.lat/admin", "Ir al panel")
+            + layout.footer("¿Querés que lo revisemos juntos?");
     }
 }

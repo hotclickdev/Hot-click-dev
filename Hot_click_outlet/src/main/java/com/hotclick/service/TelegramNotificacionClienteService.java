@@ -101,6 +101,28 @@ public class TelegramNotificacionClienteService {
         }
     }
 
+    @Async
+    public void notificarProductoModerado(Long empresaId, String nombreProducto, boolean pausado, String notas) {
+        if (!bot.isConfigured() || empresaId == null) return;
+        try {
+            StringBuilder texto = new StringBuilder();
+            if (pausado) {
+                texto.append("⏸ *Producto pausado*\n\n")
+                    .append("*").append(esc(nombreProducto)).append("* quedó oculto del catálogo.");
+            } else {
+                texto.append("👁 *Aviso sobre tu producto*\n\n")
+                    .append("*").append(esc(nombreProducto)).append("*");
+            }
+            if (notas != null && !notas.isBlank()) {
+                texto.append("\n\n").append(esc(notas));
+            }
+            texto.append("\n\nPausado no es rechazo del negocio. Revisá el producto en tu panel.");
+            enviarATodos(empresaId, texto.toString());
+        } catch (Exception e) {
+            log.error("[telegram-notif] fallo notificando producto moderado {} — {}", nombreProducto, e.getMessage());
+        }
+    }
+
     // ── Stock bajo / agotado (post-commit del cambio de stock) ────────────────
 
     @Async
