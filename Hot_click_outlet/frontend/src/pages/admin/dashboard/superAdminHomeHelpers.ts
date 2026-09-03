@@ -1,6 +1,7 @@
 import type { TonoBadge } from '@/prototipo/admin/adminData'
 import {
   etiquetaEstadoTienda,
+  empresasOperables,
   tonoEstadoTiendaLista,
   type EmpresaLista,
 } from '../empresas/empresasHelpers'
@@ -23,9 +24,10 @@ export function kpisPanelAdmin(
   stats: DashboardStats,
   users: UsuarioAdmin[],
 ): KpisPanelAdmin {
+  const operables = empresasOperables(empresas)
   const vendedores = users.filter((u) => ROLES_VENDEDOR.has(getRolStr(u))).length
   return {
-    tiendasActivas: empresas.filter((e) => e.estadoEmpresa === 'ACTIVO').length,
+    tiendasActivas: operables.filter((e) => e.estadoEmpresa === 'ACTIVO').length,
     vendedores: vendedores || stats.totalUsuarios || 0,
     productos: stats.totalProductos ?? 0,
     ventas: stats.totalVentas ?? 0,

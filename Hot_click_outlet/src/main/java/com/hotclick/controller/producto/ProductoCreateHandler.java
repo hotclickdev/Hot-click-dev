@@ -42,15 +42,18 @@ public class ProductoCreateHandler {
             return ResponseEntity.status(409)
                 .body(ResponseDTO.error("Este producto ya fue publicado. Actualizá la página."));
         }
-        // Verificación de límite de plan — propaga PlanLimitException → GlobalExceptionHandler (HTTP 403)
         Long eid = companyScope.getCurrentEmpresaIdOrOwn();
-        if (eid != null) tenantService.verificarLimiteProductos(eid);
+        if (eid == null) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(
+                "El administrador de plataforma no opera un negocio propio"));
+        }
+        tenantService.verificarLimiteProductos(eid);
 
         productoRequestSanitizer.restringirCamposSoloAdmin(dto, productoAccessGuard.hasRole("ADMIN"));
         try {
             if (!productoModerationFacade.isTextoPermitido(dto))
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
+            Empresa empresa = empresaRepository.findById(eid).orElse(null);
             var producto = productoService.crearProducto(dto, currentUserName(), empresa);
             productoIdempotencyService.remember(idempotencyKey);
             var creationResult = productoApprovalService.aplicarReglasPublicacion(producto, empresa);

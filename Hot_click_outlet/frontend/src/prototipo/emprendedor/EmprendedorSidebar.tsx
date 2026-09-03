@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import useAuthStore from '@/store/authStore'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from '@/prototipo/compartido/PrototipoSidebarNav'
+import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { RUTA_EMPRENDEDOR } from './constants'
 
@@ -86,6 +87,7 @@ export default function EmprendedorSidebar() {
       <div className="mb-2 flex items-center gap-2 px-2 pb-5 pt-1">
         <BrandLogo size={20} wordmarkSize={16} />
       </div>
+      <NegocioPertenenciaChip variante="card" className="mb-4" />
       <PrototipoSidebarNav
         grupos={grupos}
         cuenta={CUENTA}

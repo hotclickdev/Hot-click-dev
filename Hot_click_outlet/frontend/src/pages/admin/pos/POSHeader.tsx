@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import useRutaPanel from '@/app/useRutaPanel'
+import useAuthStore from '@/store/authStore'
 import type { PosStep, PosTurno } from './posHelpers'
 import { posUi } from './posApariencia'
 import PosReporteModal from './PosReporteModal'
@@ -19,6 +20,7 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
 }) {
   const { t } = useTranslation()
   const rutaPanel = useRutaPanel()
+  const empresaNombre = useAuthStore((s) => s.empresaNombre)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const enVenta = step === 'venta'
   const labels: Record<string, string> = {
@@ -94,7 +96,12 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
         >
           {userName?.[0]?.toUpperCase() ?? 'C'}
         </div>
-        <span className="hidden text-xs lg:block" style={{ color: posUi.muted }}>{userName}</span>
+        <div className="hidden min-w-0 lg:block">
+          <p className="truncate text-xs" style={{ color: posUi.muted }}>{userName}</p>
+          {empresaNombre ? (
+            <p className="truncate text-[10px]" style={{ color: posUi.muted }}>{empresaNombre}</p>
+          ) : null}
+        </div>
       </div>
 
       <PosReporteModal

@@ -3495,7 +3495,7 @@ UPDATE hot_click_plan_tb SET precio_mensual = 0 WHERE nombre = 'EMPRENDEDOR';
 -- V115: comisiones alineadas a ONVO (Emprendedor 8%, PYME/Plus 4% + mensualidad)
 UPDATE hot_click_plan_tb
 SET comision_porcentaje = 8.00,
-    descripcion = 'Plan gratuito. Comisiùn 8% por venta (mùn. ?400), cubre pasarela y plataforma.'
+    descripcion = 'Plan gratuito. Comisi?n 8% por venta (m?n. ?400), cubre pasarela y plataforma.'
 WHERE nombre = 'EMPRENDEDOR';
 
 UPDATE hot_click_plan_tb
@@ -3529,12 +3529,124 @@ CREATE INDEX IF NOT EXISTS idx_metodo_cobro_predeterminado
     ON hot_click_metodo_cobro_tb (fk_id_empresa)
     WHERE predeterminado = TRUE AND activo = TRUE;
 
--- V117: extras de negocio en perfil empresa (categorùa, Instagram, zona de envùo)
+-- V117: extras de negocio en perfil empresa (categor?a, Instagram, zona de env?o)
 ALTER TABLE hot_click_empresa_tb
     ADD COLUMN IF NOT EXISTS categoria_negocio VARCHAR(100),
     ADD COLUMN IF NOT EXISTS instagram         VARCHAR(100),
     ADD COLUMN IF NOT EXISTS zona_envio        VARCHAR(100);
 
--- V118: ubicaciÛn / direcciÛn de sucursal (Negocio Plus)
+-- V118: ubicaci?n / direcci?n de sucursal (Negocio Plus)
 ALTER TABLE hot_click_sucursal_tb
     ADD COLUMN IF NOT EXISTS ubicacion VARCHAR(255);
+
+-- V119: ADMIN de plataforma sin empresa propia
+-- El staff de HotClick modera negocios ajenos; no opera la tienda HOTCLICK (empresa 1).
+
+UPDATE hot_click_usuario_tb u
+SET fk_id_empresa = NULL
+WHERE EXISTS (
+    SELECT 1
+    FROM hot_click_usuario_rol_tb ur
+    JOIN hot_click_rol_tb r ON r.id_rol = ur.fk_id_rol
+    WHERE ur.fk_id_usuario = u.id_usuario
+      AND r.nombre_rol = 'ADMIN'
+);
+
+DELETE FROM hot_click_miembro_empresa_tb m
+WHERE m.fk_id_empresa = 1
+  AND EXISTS (
+    SELECT 1
+    FROM hot_click_usuario_rol_tb ur
+    JOIN hot_click_rol_tb r ON r.id_rol = ur.fk_id_rol
+    WHERE ur.fk_id_usuario = m.fk_id_usuario
+      AND r.nombre_rol = 'ADMIN'
+  );
+
+-- V120: marketplace sin tienda propia de plataforma
+UPDATE hot_click_empresa_tb
+SET estado_empresa = 'INACTIVO',
+    visibilidad_publica = FALSE
+WHERE id_empresa = 1
+  AND (estado_empresa IS DISTINCT FROM 'INACTIVO'
+       OR visibilidad_publica IS DISTINCT FROM FALSE);
+
+UPDATE hot_click_producto_tb
+SET visible_catalogo = FALSE
+WHERE visible_catalogo = TRUE
+  AND (fk_id_empresa = 1 OR fk_id_empresa IS NULL);
+
+-- V121: empresa afectada en auditorÌa admin + Ìndices de listado
+CREATE TABLE IF NOT EXISTS hot_click_auditoria_admin_tb (
+    id_auditoria BIGSERIAL PRIMARY KEY,
+    admin_id     BIGINT,
+    admin_email  VARCHAR(150),
+    accion       VARCHAR(50)  NOT NULL,
+    entidad      VARCHAR(50)  NOT NULL,
+    entidad_id   BIGINT,
+    detalle      VARCHAR(500),
+    fecha        TIMESTAMP    NOT NULL,
+    fk_id_empresa BIGINT REFERENCES hot_click_empresa_tb(id_empresa)
+);
+
+ALTER TABLE hot_click_auditoria_admin_tb
+  ADD COLUMN IF NOT EXISTS fk_id_empresa BIGINT REFERENCES hot_click_empresa_tb(id_empresa);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_fecha
+  ON hot_click_auditoria_admin_tb (fecha DESC);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_accion
+  ON hot_click_auditoria_admin_tb (accion);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_email
+  ON hot_click_auditoria_admin_tb (admin_email);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_empresa
+  ON hot_click_auditoria_admin_tb (fk_id_empresa);
+
+-- V121: Roles de staff de plataforma (SUPPORT / FINANCE / TRUST)
+INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
+SELECT 'SUPPORT', 'Staff plataforma ? tickets y ver tiendas', 80, 1
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'SUPPORT');
+
+INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
+SELECT 'FINANCE', 'Staff plataforma ? payouts, billing y pagos', 80, 1
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'FINANCE');
+
+INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
+SELECT 'TRUST', 'Staff plataforma ? moderaci?n y suspensiones', 80, 1
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'TRUST');
+
+INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM hot_click_rol_tb r
+CROSS JOIN hot_click_permiso_tb p
+WHERE r.nombre_rol = 'SUPPORT'
+  AND p.nombre_permiso = 'global.companies'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM hot_click_rol_tb r
+CROSS JOIN hot_click_permiso_tb p
+WHERE r.nombre_rol = 'FINANCE'
+  AND p.nombre_permiso = 'global.metrics'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM hot_click_rol_tb r
+CROSS JOIN hot_click_permiso_tb p
+WHERE r.nombre_rol = 'TRUST'
+  AND p.nombre_permiso = 'global.approvals'
+ON CONFLICT DO NOTHING;
+
+UPDATE hot_click_usuario_tb u
+SET fk_id_empresa = NULL
+WHERE EXISTS (
+    SELECT 1
+    FROM hot_click_usuario_rol_tb ur
+    JOIN hot_click_rol_tb r ON r.id_rol = ur.fk_id_rol
+    WHERE ur.fk_id_usuario = u.id_usuario
+      AND r.nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
+);
+

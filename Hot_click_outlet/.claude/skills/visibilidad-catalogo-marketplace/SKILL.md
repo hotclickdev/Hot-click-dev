@@ -24,18 +24,25 @@ del dueño del proyecto**.
 
 ## El gate del catálogo público (condiciones exactas)
 
-Un producto CON empresa aparece en `GET /api/productos` solo si cumple TODAS
+Un producto aparece en `GET /api/productos` solo si cumple TODAS
 (`ProductoRepository.findByEstadoAndEmpresaAprobada` y sus variantes de
-destacados/carrusel/marca/categoría/búsqueda/ofertas):
+destacados/carrusel/marca/categoría/búsqueda/ofertas). Las queries usan
+`INNER JOIN` a empresa — sin bypass por `fk_id_empresa IS NULL`:
 
 1. `producto.fk_id_estado = 1` (activo)
 2. `producto.visible_catalogo = TRUE`
 3. `producto.vendido = FALSE` (solo la query principal)
-4. `empresa.estado_empresa = 'ACTIVO'`
-5. `empresa.visibilidad_publica = TRUE`
+4. `producto.fk_id_empresa` NOT NULL (INNER JOIN)
+5. `empresa.estado_empresa = 'ACTIVO'`
+6. `empresa.visibilidad_publica = TRUE`
 
-Productos con `fk_id_empresa IS NULL` (catálogo propio HOTCLICK) saltan 4 y 5.
-El storefront `/api/tienda/{slug}` exige además 4 y 5 en `SlugTenantInterceptor`.
+HOTCLICK no opera tienda propia: empresa 1 (seed) queda `INACTIVO` /
+`visibilidad_publica=false` y sus productos / huérfanos con
+`visible_catalogo=false` (migración V120). El storefront
+`/api/tienda/{slug}` exige 5 y 6 en `SlugTenantInterceptor`.
+
+**No confundir** con Marca/Categoría globales (`fk_id_empresa IS NULL` ahí
+sigue siendo taxonomía de plataforma, no catálogo de productos).
 
 ## Invariantes del flujo de aprobación
 
@@ -78,3 +85,10 @@ de HOTCLICK (empresa 1). Se detectó en producción como problema legal con los
 emprendedores pagantes. Fix: `EmpresaAprobacionService` + migración `V100` +
 el test `CatalogoMarketplaceTest`. Si un cambio tuyo hace fallar ese test,
 NO lo "arregles" tocando el test: estás repitiendo este incidente.
+
+## Sin tienda propia de plataforma (2026-09)
+
+Decisión de producto: el marketplace no vende como HOTCLICK. El admin es
+operador de plataforma. No reintroducir `OR p.fk_id_empresa IS NULL` en
+queries públicas de productos ni reactivar empresa 1 en el listado de tiendas
+sin decisión explícita del dueño.

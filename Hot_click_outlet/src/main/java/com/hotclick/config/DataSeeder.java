@@ -36,6 +36,9 @@ public class DataSeeder implements ApplicationRunner {
         seedRol(Constants.ROL_ADMIN,         "Administrador del sistema HotClick", 100);
         seedRol(Constants.ROL_EMPRENDEDOR,   "Dueño de empresa",                   7);
         seedRol(Constants.ROL_USUARIO_FINAL, "Cliente final",                       1);
+        seedRol(Constants.ROL_SUPPORT, "Staff plataforma — tickets y ver tiendas", 80);
+        seedRol(Constants.ROL_FINANCE, "Staff plataforma — payouts, billing y pagos", 80);
+        seedRol(Constants.ROL_TRUST,   "Staff plataforma — moderación y suspensiones", 80);
         seedAdminUser();
         seedPlanesSaas();
         asignarPlanesDemo();
@@ -199,6 +202,8 @@ public class DataSeeder implements ApplicationRunner {
             admin.setEstado(Constants.ESTADO_ACTIVO);
             admin.setIntentosFallidos(0);
             admin.setBloqueadoHasta(null);
+            // ADMIN es staff de plataforma: sin empresa propia.
+            admin.setEmpresa(null);
             boolean tieneAdmin = admin.getRoles().stream()
                 .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN));
             if (!tieneAdmin) {
@@ -216,6 +221,7 @@ public class DataSeeder implements ApplicationRunner {
             admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
             admin.setEstado(Constants.ESTADO_ACTIVO);
             admin.setIntentosFallidos(0);
+            admin.setEmpresa(null);
             rolRepository.findByNombreRol(Constants.ROL_ADMIN)
                 .ifPresent(rol -> admin.getRoles().add(rol));
             usuarioRepository.save(admin);
@@ -228,6 +234,7 @@ public class DataSeeder implements ApplicationRunner {
                 u.setEstado(Constants.ESTADO_ACTIVO);
                 u.setIntentosFallidos(0);
                 u.setBloqueadoHasta(null);
+                u.setEmpresa(null);
                 boolean tieneAdmin = u.getRoles().stream()
                     .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN));
                 if (!tieneAdmin) {

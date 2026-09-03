@@ -25,6 +25,7 @@ function EmpresaCard({ empresaNombre, empresaSlug }: { empresaNombre: string; em
           <EmpresaIcon />
         </div>
         <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Tu negocio</p>
           <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{empresaNombre}</p>
           {empresaSlug && <p className="text-xs font-mono mt-0.5" style={{ color: 'var(--hc-muted)' }}>/{empresaSlug}</p>}
         </div>
@@ -42,7 +43,7 @@ function EmpresaCard({ empresaNombre, empresaSlug }: { empresaNombre: string; em
           className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
           style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
         >
-          Panel admin
+          Ir al panel
         </Link>
       </div>
     </motion.div>

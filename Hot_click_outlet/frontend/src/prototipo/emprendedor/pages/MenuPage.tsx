@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import { RUTA_EMPRENDEDOR } from '../constants'
+import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
@@ -94,6 +95,9 @@ function HeroMarca() {
       <p className="mt-1 text-center text-[9px] font-medium tracking-[0.2em] text-hc-muted">
         OUTLET & MARKETPLACE
       </p>
+      <div className="mt-3 hidden w-full max-w-xs md:block">
+        <NegocioPertenenciaChip variante="card" />
+      </div>
     </div>
   )
 }

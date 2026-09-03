@@ -64,7 +64,7 @@ export default function SidebarUserFooter({
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
-            Ver tienda como cliente
+            Ver marketplace
           </NavLink>
           <button type="button"
             onClick={() => globalThis.dispatchEvent(new Event('hc-open-tour'))}
@@ -97,7 +97,9 @@ export default function SidebarUserFooter({
         </motion.div>
         <div className="min-w-0">
           <div className="truncate text-[13px] font-semibold" style={{ color: 'var(--hc-text)' }}>{userName || 'Admin'}</div>
-          {esSistema && tenantLoaded ? (
+          {userRole === 'ADMIN' ? (
+            <div className="truncate text-xs" style={{ color: muted }}>Plataforma</div>
+          ) : esSistema && tenantLoaded ? (
             <div className="truncate text-xs" style={{ color: muted }}>
               Plan {PLAN_LABELS[planNombre] ?? planNombre}
             </div>

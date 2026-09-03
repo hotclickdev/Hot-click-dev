@@ -9,7 +9,7 @@ import UsuariosHeader from './usuarios/UsuariosHeader'
 import UsuariosTable from './usuarios/UsuariosTable'
 import UsuarioEditModal from './usuarios/UsuarioEditModal'
 import UsuariosConfirmModals from './usuarios/UsuariosConfirmModals'
-import { getEstadoStr, getRolStr, type UsuarioAdmin } from './usuarios/usuarioHelpers'
+import { getEstadoStr, getRolStr, type EmpresasNombreMap, type UsuarioAdmin } from './usuarios/usuarioHelpers'
 import { obtenerUsuarios, useAdminUsersActions } from './usuarios/useAdminUsersActions'
 import type { ClienteCrm } from './clientes/clientesHelpers'
 import type { Id } from '@/types/api'
@@ -21,6 +21,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UsuarioAdmin[]>([])
   const [pending, setPending] = useState<UsuarioAdmin[]>([])
   const [empresasPlan, setEmpresasPlan] = useState<Record<string, string | undefined>>({})
+  const [empresasNombre, setEmpresasNombre] = useState<EmpresasNombreMap>({})
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -45,10 +46,11 @@ export default function AdminUsers() {
   function load() {
     setLoading(true)
     obtenerUsuarios()
-      .then(({ users: lista, pending: pend, empresasPlan: planes }) => {
+      .then(({ users: lista, pending: pend, empresasPlan: planes, empresasNombre: nombres }) => {
         setUsers(lista)
         setPending(pend)
         setEmpresasPlan(planes)
+        setEmpresasNombre(nombres)
       })
       .catch((err: unknown) => { console.error(err); toast({ message: 'Error al cargar usuarios', type: 'error' }) })
       .finally(() => setLoading(false))
@@ -57,11 +59,12 @@ export default function AdminUsers() {
   useEffect(() => {
     let cancelado = false
     obtenerUsuarios()
-      .then(({ users: lista, pending: pend, empresasPlan: planes }) => {
+      .then(({ users: lista, pending: pend, empresasPlan: planes, empresasNombre: nombres }) => {
         if (cancelado) return
         setUsers(lista)
         setPending(pend)
         setEmpresasPlan(planes)
+        setEmpresasNombre(nombres)
       })
       .catch((err: unknown) => { if (!cancelado) { console.error(err); toast({ message: 'Error al cargar usuarios', type: 'error' }) } })
       .finally(() => { if (!cancelado) setLoading(false) })
@@ -87,6 +90,7 @@ export default function AdminUsers() {
 
   const {
     getPlanStr,
+    getEmpresaNombre,
     approve,
     reject,
     handleDelete,
@@ -98,6 +102,7 @@ export default function AdminUsers() {
   } = useAdminUsersActions({
     toast,
     empresasPlan,
+    empresasNombre,
     editUser,
     editRol,
     editEstado,
@@ -110,6 +115,7 @@ export default function AdminUsers() {
     setUsers,
     setPending,
     setEmpresasPlan,
+    setEmpresasNombre,
     setEditUser,
     setEditRol,
     setEditEstado,
@@ -162,7 +168,7 @@ export default function AdminUsers() {
 
         {cuerpoAdminUsers({
           tab, clientes, crmSearch, setCrmSearch, setSelectedCliente, crmLoading,
-          loading, displayed, getPlanStr, t, approve, reject, openEdit,
+          loading, displayed, getPlanStr, getEmpresaNombre, t, approve, reject, openEdit,
           setBlockUser, setUnblockUser, setDeleteUser, setRestoreUser,
         })}
       </div>
@@ -222,7 +228,7 @@ function usuariosDeTab(tab: string, pending: UsuarioAdmin[], deletedUsers: Usuar
 
 function cuerpoAdminUsers({
   tab, clientes, crmSearch, setCrmSearch, setSelectedCliente, crmLoading,
-  loading, displayed, getPlanStr, t, approve, reject, openEdit,
+  loading, displayed, getPlanStr, getEmpresaNombre, t, approve, reject, openEdit,
   setBlockUser, setUnblockUser, setDeleteUser, setRestoreUser,
 }: {
   tab: string
@@ -234,6 +240,7 @@ function cuerpoAdminUsers({
   loading: boolean
   displayed: UsuarioAdmin[]
   getPlanStr: (u: UsuarioAdmin) => string | null | undefined
+  getEmpresaNombre: (u: UsuarioAdmin) => string | null | undefined
   t: TFunction
   approve: (id: Id) => void
   reject: (id: Id) => void
@@ -261,6 +268,7 @@ function cuerpoAdminUsers({
     <UsuariosTable
       displayed={displayed}
       getPlanStr={getPlanStr}
+      getEmpresaNombre={getEmpresaNombre}
       columnLabels={[
         t('admin.users.name'),
         t('admin.users.email'),

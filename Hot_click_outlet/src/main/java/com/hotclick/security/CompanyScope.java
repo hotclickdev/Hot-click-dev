@@ -30,7 +30,7 @@ public class CompanyScope {
     /**
      * Retorna el empresa_id del usuario autenticado.
      * Lee primero del JWT (claim empresaId) para soportar multi-negocio.
-     * Retorna null si es ADMIN (puede ver todo).
+     * Retorna null si es ADMIN (operador de plataforma, sin empresa).
      */
     public Long getCurrentEmpresaId() {
         Usuario user = getCurrentUser();
@@ -40,7 +40,6 @@ public class CompanyScope {
             return TenantContext.get();
         }
         if (isAdminIT(user)) return null;
-        // JWT claim tiene precedencia — soporta multi-negocio activo
         Long fromJwt = extractEmpresaIdFromJwt();
         return fromJwt != null ? fromJwt : user.getEmpresaId();
     }
@@ -121,10 +120,11 @@ public class CompanyScope {
     }
 
     /**
-     * Like getCurrentEmpresaId() but for ADMIN falls back to their own fk_id_empresa.
-     * Use when creating resources that require a non-null fk_id_empresa.
+     * Empresa para crear recursos de tenant.
+     * ADMIN (plataforma) → siempre null: no crea en HOTCLICK ni en ningún negocio.
      */
     public Long getCurrentEmpresaIdOrOwn() {
+        if (isAdminIT()) return null;
         Long id = getCurrentEmpresaId();
         if (id != null) return id;
         Usuario user = getCurrentUser();

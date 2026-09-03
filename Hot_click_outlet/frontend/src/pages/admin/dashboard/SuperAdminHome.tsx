@@ -11,7 +11,12 @@ import {
 } from '@/prototipo/admin/AdminUi'
 import { adminService } from '@/services/orderService'
 import { formatPrice } from '@/utils/format'
-import { listaEmpresasDesdeRespuesta, nombreVisibleEmpresa, type EmpresaLista } from '../empresas/empresasHelpers'
+import {
+  empresasOperables,
+  listaEmpresasDesdeRespuesta,
+  nombreVisibleEmpresa,
+  type EmpresaLista,
+} from '../empresas/empresasHelpers'
 import { listaUsuariosDesdeRespuesta, type UsuarioAdmin } from '../usuarios/usuarioHelpers'
 import {
   etiquetaEstadoTienda,
@@ -59,21 +64,22 @@ export default function SuperAdminHome() {
   }
 
   const kpis = kpisPanelAdmin(empresas, stats, users)
-  const recientes = empresas.slice(0, 3)
+  const operables = empresasOperables(empresas)
+  const recientes = operables.slice(0, 3)
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-[22px] pb-8 md:max-w-4xl">
       <CabeceraPanel />
       <KpisPanel kpis={kpis} />
       <div className="flex flex-col gap-3 md:flex-row md:max-w-2xl">
-        <AdminDarkButton to="/admin/productos/carga-masiva" dataMm="carga-masiva">
-          Carga masiva de productos
+        <AdminDarkButton to="/admin/empresas" dataMm="ver-tiendas">
+          Ver tiendas
         </AdminDarkButton>
-        <AdminSecondaryButton to="/admin/herramientas" dataMm="mas-herramientas">
-          Más herramientas
+        <AdminSecondaryButton to="/admin/aprobaciones" dataMm="moderacion">
+          Moderación
         </AdminSecondaryButton>
       </div>
-      <TiendasRecientes empresas={recientes} total={empresas.length} />
+      <TiendasRecientes empresas={recientes} total={operables.length} />
     </div>
   )
 }
@@ -83,8 +89,8 @@ function CabeceraPanel() {
     <header className="flex items-center gap-2">
       <HotClickMark size={30} className="hidden shrink-0 md:block" />
       <div>
-        <h1 className="font-display text-[22px] font-bold text-hc-text">Panel Admin</h1>
-        <p className="text-xs text-hc-muted">Vista general de HotClick</p>
+        <h1 className="font-display text-[22px] font-bold text-hc-text">Panel de plataforma</h1>
+        <p className="text-xs text-hc-muted">Moderá y gestioná los negocios de HotClick</p>
       </div>
     </header>
   )

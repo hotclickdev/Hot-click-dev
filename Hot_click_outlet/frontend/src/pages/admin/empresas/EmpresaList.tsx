@@ -11,6 +11,8 @@ import {
   CHIPS_ESTADO_TIENDA,
   PAGE_SIZE,
   PLANES,
+  empresasOperables,
+  esEmpresaInternaPlataforma,
   etiquetaEstadoTienda,
   filtrarEmpresas,
   indicesPagina,
@@ -128,6 +130,7 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
   const [filtroPlan, setFiltroPlan] = useState('ALL')
   const [page, setPage] = useState(0)
 
+  const internas = empresas.filter((e) => esEmpresaInternaPlataforma(e)).length
   const filtered = filtrarEmpresas(empresas, { search, filtroEstado, filtroPlan })
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -141,7 +144,8 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
       <header>
         <h1 className="font-display text-[22px] font-bold">Tiendas</h1>
         <p className="mt-0.5 text-xs text-hc-muted">
-          {empresas.length} tiendas registradas en HotClick
+          {empresasOperables(empresas).length} tiendas en el marketplace
+          {internas > 0 ? ` · ${internas} interna de plataforma oculta` : ''}
         </p>
       </header>
       <AdminSearchField

@@ -5,6 +5,7 @@ import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.security.JwtUtil;
+import com.hotclick.security.PlatformStaff;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,18 +29,26 @@ public class AuthSupport {
     @Autowired private PermisoRepository   permisoRepository;
 
     public AuthResponse buildAuthResponse(Usuario usuario) {
-        String rol          = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-        String empresaSlug  = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug()         : null;
-        String empresaNombre= usuario.getEmpresa() != null ? usuario.getEmpresa().getNombreEmpresa() : null;
+        List<String> nombresRol = usuario.getRoles().stream()
+            .map(r -> r.getNombreRol())
+            .toList();
+        String rol = PlatformStaff.rolPrincipal(nombresRol);
+        // Staff de plataforma (ADMIN + SUPPORT/FINANCE/TRUST): sin tenant en JWT.
+        boolean sinTenant = PlatformStaff.esSinTenant(rol);
+        Long empresaId = sinTenant ? null : usuario.getEmpresaId();
+        String empresaSlug = (!sinTenant && usuario.getEmpresa() != null)
+            ? usuario.getEmpresa().getSlug() : null;
+        String empresaNombre = (!sinTenant && usuario.getEmpresa() != null)
+            ? usuario.getEmpresa().getNombreEmpresa() : null;
         List<String> permisos = permisosDe(usuario.getId());
         String accessToken  = jwtUtil.generateTokenFull(
             usuario.getCorreo(), usuario.getId(), rol,
-            usuario.getEmpresaId(), empresaSlug, permisos
+            empresaId, empresaSlug, permisos
         );
         RefreshToken rt     = refreshTokenService.crear(usuario);
         String nombre       = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
         AuthResponse resp   = new AuthResponse(accessToken, rt.getToken(), usuario.getId(), usuario.getCorreo(), rol, nombre);
-        resp.setEmpresaId(usuario.getEmpresaId());
+        resp.setEmpresaId(empresaId);
         resp.setEmpresaSlug(empresaSlug);
         resp.setEmpresaNombre(empresaNombre);
         resp.setPermisos(permisos);

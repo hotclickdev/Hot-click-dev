@@ -45,24 +45,22 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Page<Producto> findByEstado(Integer estado, Pageable pageable);
 
-    /** Catálogo público: solo negocios aprobados y con visibilidad activada */
+    /** Catálogo público: solo negocios aprobados y visibles (sin tienda propia de plataforma). */
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_estado = :estado " +
         "AND p.visible_catalogo = TRUE " +
         "AND p.vendido = FALSE " +
-        "AND (p.fk_id_empresa IS NULL " +
-        "     OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE)) " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
         "ORDER BY p.id_producto DESC",
         countQuery =
         "SELECT COUNT(*) FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_estado = :estado " +
         "AND p.visible_catalogo = TRUE " +
         "AND p.vendido = FALSE " +
-        "AND (p.fk_id_empresa IS NULL " +
-        "     OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
     Page<Producto> findByEstadoAndEmpresaAprobada(@Param("estado") Integer estado, Pageable pageable);
 
     Page<Producto> findByEstadoAndStockActualGreaterThan(Integer estado, Integer stock, Pageable pageable);
@@ -95,53 +93,53 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
     List<Producto> findDestacadosPublicos(@Param("estado") Integer estado);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE)) " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
         "ORDER BY p.orden_carrusel ASC NULLS LAST")
     List<Producto> findCarruselPublico(@Param("estado") Integer estado);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_marca = :marcaId AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))",
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE",
         countQuery =
         "SELECT COUNT(*) FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_marca = :marcaId AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
     Page<Producto> findByMarcaPublico(@Param("marcaId") Long marcaId, @Param("estado") Integer estado, Pageable pageable);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_categoria = :catId AND p.fk_id_estado = :estado " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))",
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE",
         countQuery =
         "SELECT COUNT(*) FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_categoria = :catId AND p.fk_id_estado = :estado " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
     Page<Producto> findByCategoriaPublico(@Param("catId") Long catId, @Param("estado") Integer estado, Pageable pageable);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE LOWER(p.nombre_producto) LIKE LOWER(CONCAT('%', REPLACE(REPLACE(:q, '%', ''), '_', ''), '%')) AND p.fk_id_estado = :estado " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))",
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE",
         countQuery =
         "SELECT COUNT(*) FROM hot_click_producto_tb p " +
-        "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE LOWER(p.nombre_producto) LIKE LOWER(CONCAT('%', REPLACE(REPLACE(:q, '%', ''), '_', ''), '%')) AND p.fk_id_estado = :estado " +
-        "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
     Page<Producto> findByNombrePublico(@Param("q") String q, @Param("estado") Integer estado, Pageable pageable);
 
     List<Producto> findByVisibleCatalogoTrueAndEstado(Integer estado, Pageable pageable);
@@ -239,6 +237,6 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.enOferta = true AND p.visibleCatalogo = true AND p.empresa.id = :empId AND p.estado = 1")
     List<Producto> findByEnOfertaTrueAndEmpresaIdAndVisibleCatalogoTrue(@Param("empId") Long empId);
 
-    @Query("SELECT p FROM Producto p LEFT JOIN p.empresa e WHERE p.enOferta = true AND p.visibleCatalogo = true AND p.estado = 1 AND (p.empresa IS NULL OR (e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true))")
+    @Query("SELECT p FROM Producto p JOIN p.empresa e WHERE p.enOferta = true AND p.visibleCatalogo = true AND p.estado = 1 AND e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true")
     List<Producto> findByEnOfertaTrueAndVisibleCatalogoTrue();
 }

@@ -1,7 +1,9 @@
 package com.hotclick.service.auth;
 
 import com.hotclick.dto.AuthResponse;
+import com.hotclick.model.Empresa;
 import com.hotclick.model.RefreshToken;
+import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.security.JwtUtil;
@@ -36,6 +38,69 @@ class AuthSupportPermisosTest {
     @Mock PermisoRepository permisoRepository;
 
     @InjectMocks AuthSupport authSupport;
+
+    @Test
+    @DisplayName("ADMIN de plataforma emite JWT sin empresaId")
+    void adminSinEmpresaEnAuthResponse() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setCorreo("admin@hotclick.com");
+        usuario.setNombre("Admin");
+        Rol rol = new Rol();
+        rol.setNombreRol("ADMIN");
+        usuario.setRoles(List.of(rol));
+        Empresa emp = new Empresa();
+        emp.setId(1L);
+        emp.setNombreEmpresa("HOTCLICK");
+        emp.setSlug("hotclick");
+        usuario.setEmpresa(emp);
+
+        when(permisoRepository.findPermisosByUsuarioId(1L)).thenReturn(List.of());
+        when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), isNull(), isNull(), anyList()))
+            .thenReturn("access-token");
+        RefreshToken refresh = new RefreshToken();
+        refresh.setToken("refresh-token");
+        when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
+
+        AuthResponse resp = authSupport.buildAuthResponse(usuario);
+
+        assertThat(resp.getRol()).isEqualTo("ADMIN");
+        assertThat(resp.getEmpresaId()).isNull();
+        assertThat(resp.getEmpresaSlug()).isNull();
+        assertThat(resp.getEmpresaNombre()).isNull();
+    }
+
+    @Test
+    @DisplayName("SUPPORT de plataforma emite JWT sin empresaId y con rol SUPPORT")
+    void supportSinEmpresaEnAuthResponse() {
+        Usuario usuario = new Usuario();
+        usuario.setId(2L);
+        usuario.setCorreo("support@hotclick.com");
+        usuario.setNombre("Soporte");
+        Rol rol = new Rol();
+        rol.setNombreRol("SUPPORT");
+        usuario.setRoles(List.of(rol));
+        Empresa emp = new Empresa();
+        emp.setId(1L);
+        emp.setNombreEmpresa("HOTCLICK");
+        emp.setSlug("hotclick");
+        usuario.setEmpresa(emp);
+
+        when(permisoRepository.findPermisosByUsuarioId(2L))
+            .thenReturn(List.of("global.companies"));
+        when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), isNull(), isNull(), anyList()))
+            .thenReturn("access-token");
+        RefreshToken refresh = new RefreshToken();
+        refresh.setToken("refresh-token");
+        when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
+
+        AuthResponse resp = authSupport.buildAuthResponse(usuario);
+
+        assertThat(resp.getRol()).isEqualTo("SUPPORT");
+        assertThat(resp.getEmpresaId()).isNull();
+        assertThat(resp.getEmpresaSlug()).isNull();
+        assertThat(resp.getPermisos()).containsExactly("global.companies");
+    }
 
     @Test
     @DisplayName("Si falta la tabla de permisos, el login igual emite tokens")

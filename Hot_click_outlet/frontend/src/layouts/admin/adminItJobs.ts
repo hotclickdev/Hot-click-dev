@@ -10,14 +10,19 @@ export type SidebarLink = {
   feature?: string
   /** Contador opcional (ej. pendientes de moderación). */
   badge?: number
+  /** Permiso global.* requerido para staff (ADMIN ve todo). */
+  permiso?: string
 }
 
 /**
- * Jobs del sidebar Admin IT. No mezclar con Sistema (EMPRENDEDOR).
- * Valores = IDs estables (localStorage / colores); labels vía i18n.
- * IA y Fiscal arrancan colapsados (disclosure progresivo).
+ * Jobs del sidebar Admin IT (operador de plataforma).
+ * No mezclar con Sistema (EMPRENDEDOR) ni con ops de tienda propia.
  */
 export const ADMIN_IT_SECCION = {
+  OPERAR: 'operarPlataforma',
+  MARKETPLACE: 'marketplaceCms',
+  SISTEMA: 'sistemaPlataforma',
+  /** Legacy IDs — se migran en leerSeccionesColapsadas. */
   CATALOGO: 'catalogo',
   VENTAS: 'ventas',
   ABASTECIMIENTO: 'abastecimiento',
@@ -63,11 +68,14 @@ export const LEGACY_SECTION_ID: Record<string, string> = {
   'Más': 'mas',
   'Catálogo e inventario': 'catalogoInventario',
   'Sistema': 'sistema',
+  'Operar plataforma': 'operarPlataforma',
+  'Marketplace': 'marketplaceCms',
 }
 
+/** Secciones secundarias colapsadas por defecto. */
 export const ADMIN_IT_SECCIONES_COLAPSADAS_POR_DEFECTO = [
-  ADMIN_IT_SECCION.IA,
-  ADMIN_IT_SECCION.FISCAL,
+  ADMIN_IT_SECCION.MARKETPLACE,
+  ADMIN_IT_SECCION.SISTEMA,
 ]
 
 export const CLAVE_SIDEBAR_COLAPSADO = 'hc-sidebar-collapsed'
@@ -84,14 +92,17 @@ function migrarIdsSeccion(raw: string): string[] {
 
 /**
  * Preferencia de secciones colapsadas. Sin valor guardado, Admin IT
- * oculta IA y Fiscal; Sistema y el resto arrancan abiertos.
- * Migra IDs legacy en español → IDs estables y reescribe localStorage.
+ * colapsa Marketplace CMS y Sistema; el núcleo y Operar quedan abiertos.
  */
 export function leerSeccionesColapsadas(userRole?: string | null): Set<string> {
   try {
     const raw = localStorage.getItem(CLAVE_SIDEBAR_COLAPSADO)
     if (raw == null) {
-      return new Set<string>(userRole === 'ADMIN' ? ADMIN_IT_SECCIONES_COLAPSADAS_POR_DEFECTO : [])
+      return new Set<string>(
+        userRole === 'ADMIN' || userRole === 'SUPPORT' || userRole === 'FINANCE' || userRole === 'TRUST'
+          ? ADMIN_IT_SECCIONES_COLAPSADAS_POR_DEFECTO
+          : [],
+      )
     }
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return new Set<string>()
@@ -111,142 +122,142 @@ export function leerSeccionesColapsadas(userRole?: string | null): Set<string> {
   }
 }
 
-function seccionCatalogo(t: TFunction): SidebarLink[] {
+function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
   return [
-    { section: ADMIN_IT_SECCION.CATALOGO },
-    { to: '/admin/productos', label: t('admin.sidebar.productos'), icon: 'box' },
-    { to: '/admin/productos/carga-masiva', label: t('admin.sidebar.cargaMasiva'), icon: 'upload' },
-    { to: '/admin/productos/importar', label: t('admin.sidebar.importarCatalogoIA'), icon: 'import' },
-    { to: '/admin/categorias', label: t('admin.sidebar.categorias'), icon: 'tag' },
-    { to: '/admin/marcas', label: t('admin.sidebar.marcas'), icon: 'marca' },
-    { to: '/admin/garantias', label: t('admin.sidebar.garantias'), icon: 'shield' },
+    { section: ADMIN_IT_SECCION.OPERAR },
+    { to: '/admin/payouts', label: t('admin.sidebar.retirosBilletera'), icon: 'card', permiso: 'global.metrics' },
+    { to: '/admin/pagos', label: t('admin.sidebar.pagosWebhooks'), icon: 'card', permiso: 'global.metrics' },
+    { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard', permiso: 'global.companies' },
+    { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },
+    { to: '/admin/testimonios', label: t('admin.sidebar.testimonios'), icon: 'star', permiso: 'global.approvals' },
+    { to: '/admin/servicios', label: t('admin.sidebar.serviciosHot'), icon: 'wrench', permiso: 'global.companies' },
   ]
 }
 
-function seccionVentas(t: TFunction): SidebarLink[] {
+function seccionMarketplaceCms(t: TFunction): SidebarLink[] {
   return [
-    { section: ADMIN_IT_SECCION.VENTAS },
-    { to: '/admin/pedidos', label: t('admin.sidebar.pedidos'), icon: 'clipboard' },
-    { to: '/admin/ventas', label: t('admin.sidebar.nuevaVenta'), icon: 'plus' },
-    { to: '/admin/clientes', label: t('admin.sidebar.misClientes'), icon: 'users' },
-    { to: '/admin/asignar-compra', label: t('admin.sidebar.registrarCompraExterna'), icon: 'assign' },
-    { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard' },
-    { to: '/admin/cotizaciones', label: t('admin.sidebar.cotizacionesB2B'), icon: 'doc' },
-    { to: '/admin/gift-cards', label: t('admin.sidebar.giftCards'), icon: 'gift' },
-  ]
-}
-
-function seccionAbastecimiento(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.ABASTECIMIENTO },
-    { to: '/admin/bodegas', label: t('admin.sidebar.bodegas'), icon: 'building' },
-    { to: '/admin/compras', label: t('admin.sidebar.compras'), icon: 'compra' },
-    { to: '/admin/proveedores', label: t('admin.sidebar.proveedores'), icon: 'proveedor' },
-  ]
-}
-
-function seccionPos(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.POS },
-    { to: '/admin/pos', label: t('admin.sidebar.cajaRegistradora'), icon: 'pos' },
-    { to: '/admin/pos/caja', label: t('admin.sidebar.cuadreCaja'), icon: 'chart' },
-    { to: '/admin/pos/historial', label: t('admin.sidebar.historialVentas'), icon: 'clipboard' },
-  ]
-}
-
-function seccionFinanzas(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.FINANZAS },
-    { to: '/admin/finanzas', label: t('admin.sidebar.finanzas'), icon: 'chart' },
-    { to: '/admin/payouts', label: 'Retiros billetera', icon: 'card' },
-    { to: '/admin/reportes', label: t('admin.sidebar.reportes'), icon: 'bar' },
-  ]
-}
-
-function seccionMarketing(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.MARKETING },
-    { to: '/admin/ofertas', label: t('admin.sidebar.ofertas'), icon: 'tag' },
-    { to: '/admin/cupones', label: t('admin.sidebar.descuentos'), icon: 'coupon' },
-    { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'), icon: 'camera' },
-    { to: '/admin/publicaciones', label: t('admin.sidebar.publicarFB'), icon: 'share' },
-    { to: '/admin/blog', label: t('admin.sidebar.blog'), icon: 'blog' },
-    { to: '/admin/convenios', label: t('admin.sidebar.emprendimientos'), icon: 'heart' },
-    { to: '/admin/servicios', label: t('admin.sidebar.serviciosHot'), icon: 'wrench' },
-    { to: '/admin/testimonios', label: t('admin.sidebar.testimonios'), icon: 'star' },
-  ]
-}
-
-function seccionPlataforma(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.PLATAFORMA },
+    { section: ADMIN_IT_SECCION.MARKETPLACE },
     { to: '/admin/homepage', label: t('admin.sidebar.homepageCarousel'), icon: 'home' },
     { to: '/admin/branding', label: t('admin.sidebar.branding'), icon: 'brand' },
-    { to: '/admin/multipais', label: t('admin.sidebar.multipais'), icon: 'globe' },
-    { to: '/admin/plugins', label: t('admin.sidebar.plugins'), icon: 'plugin' },
-    { to: '/admin/pagos', label: t('admin.sidebar.pagosWebhooks'), icon: 'card' },
-    { to: '/admin/usuarios', label: t('admin.sidebar.usuarios'), icon: 'users' },
-    { to: '/admin/empresas', label: t('admin.sidebar.empresas'), icon: 'empresa' },
-    { to: '/admin/aprobaciones', label: t('admin.sidebar.aprobaciones'), icon: 'check' },
+    { to: '/admin/categorias', label: t('admin.sidebar.categorias'), icon: 'tag' },
+    { to: '/admin/marcas', label: t('admin.sidebar.marcas'), icon: 'marca' },
+    { to: '/admin/convenios', label: t('admin.sidebar.emprendimientos'), icon: 'heart' },
+    { to: '/admin/cupones', label: t('admin.sidebar.descuentos'), icon: 'coupon' },
+  ]
+}
+
+function seccionSistemaPlataforma(t: TFunction): SidebarLink[] {
+  return [
+    { section: ADMIN_IT_SECCION.SISTEMA },
     { to: '/admin/security', label: t('admin.sidebar.securityCenter'), icon: 'shield' },
-    { to: '/admin/observabilidad', label: t('admin.sidebar.observabilidad'), icon: 'chart' },
+    { to: '/admin/auditorias', label: t('admin.sidebar.auditorias'), icon: 'clipboard' },
     { to: '/admin/superadmin', label: t('admin.sidebar.featureFlags'), icon: 'config' },
-    { to: '/admin/billing/planes', label: t('admin.sidebar.planesBilling'), icon: 'card' },
-    { to: '/admin/configuracion', label: t('admin.sidebar.configuracion'), icon: 'config' },
-  ]
-}
-
-function seccionIa(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.IA },
-    { to: '/admin/inventario', label: t('admin.sidebar.aiInventario'), icon: 'ai' },
-    { to: '/admin/copilot', label: t('admin.sidebar.aiCopilot'), icon: 'copilot' },
-    { to: '/admin/forecast', label: t('admin.sidebar.aiForecast'), icon: 'forecast' },
-    { to: '/admin/executive', label: t('admin.sidebar.executiveBi'), icon: 'exec' },
+    { to: '/admin/observabilidad', label: t('admin.sidebar.observabilidad'), icon: 'chart' },
     { to: '/admin/ai-control', label: t('admin.sidebar.controlIa'), icon: 'ai' },
-  ]
-}
-
-function seccionFiscal(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.FISCAL },
-    { to: '/admin/facturas', label: t('admin.sidebar.comprobantesElectronicos'), icon: 'card' },
-    { to: '/admin/config-fiscal', label: t('admin.sidebar.configFiscal'), icon: 'config' },
+    { to: '/admin/plugins', label: t('admin.sidebar.plugins'), icon: 'plugin' },
+    { to: '/admin/multipais', label: t('admin.sidebar.multipais'), icon: 'globe' },
   ]
 }
 
 /**
- * Núcleo Figma Super Admin (41:128 / bottom nav 43:150):
- * Inicio · Tiendas · Usuarios · Moderación · Config.
- * El resto de jobs IT va debajo en "Más herramientas".
+ * Núcleo Figma Super Admin:
+ * Inicio · Tiendas · Usuarios · Moderación · Config · Más herramientas.
  */
 function seccionNucleoFigma(t: TFunction): SidebarLink[] {
   return [
     { to: '/admin', label: t('admin.sidebar.inicio'), icon: 'home', exact: true },
-    { to: '/admin/empresas', label: t('admin.sidebar.tiendas'), icon: 'empresa' },
+    { to: '/admin/empresas', label: t('admin.sidebar.tiendas'), icon: 'empresa', permiso: 'global.companies' },
     { to: '/admin/usuarios', label: t('admin.sidebar.usuarios'), icon: 'users' },
-    { to: '/admin/aprobaciones', label: t('admin.sidebar.moderacion'), icon: 'check' },
+    { to: '/admin/aprobaciones', label: t('admin.sidebar.moderacion'), icon: 'check', permiso: 'global.approvals' },
     { to: '/admin/configuracion', label: t('admin.sidebar.config'), icon: 'config' },
     { to: '/admin/herramientas', label: t('admin.sidebar.masHerramientas'), icon: 'wrench' },
   ]
 }
 
 /**
- * Sidebar Admin IT: primero los 4 destinos Figma, luego jobs IT restantes.
- * @param {Function} t i18n translate
+ * Sidebar Admin IT: operador de plataforma (sin ops de tienda propia).
+ * Staff se filtra con {@link filtrarLinksPorPermiso}.
  */
 export function buildAdminItLinks(t: TFunction): SidebarLink[] {
-  const nucleo = new Set(['/admin', '/admin/empresas', '/admin/usuarios', '/admin/aprobaciones', '/admin/configuracion', '/admin/herramientas'])
-  const resto = [
-    ...seccionCatalogo(t),
-    ...seccionVentas(t),
-    ...seccionAbastecimiento(t),
-    ...seccionPos(t),
-    ...seccionFinanzas(t),
-    ...seccionMarketing(t),
-    ...seccionPlataforma(t).filter((l) => !l.to || !nucleo.has(l.to)),
-    ...seccionIa(t),
-    ...seccionFiscal(t),
+  return [
+    ...seccionNucleoFigma(t),
+    ...seccionOperarPlataforma(t),
+    ...seccionMarketplaceCms(t),
+    ...seccionSistemaPlataforma(t),
   ]
-  return [...seccionNucleoFigma(t), ...resto]
+}
+
+/**
+ * Filtra el menú Admin IT por permisos del JWT.
+ * ADMIN ve todo. Staff solo ítems con su global.* (+ Inicio siempre).
+ */
+export function filtrarLinksPorPermiso(
+  links: SidebarLink[],
+  permissions: string[],
+  userRole?: string | null,
+): SidebarLink[] {
+  if (userRole === 'ADMIN') return links
+  const tiene = (p?: string) => p != null && permissions.includes(p)
+  const out: SidebarLink[] = []
+  let pendienteSeccion: SidebarLink | null = null
+
+  for (const link of links) {
+    if (link.section != null && link.to == null) {
+      pendienteSeccion = link
+      continue
+    }
+    const esInicio = link.to === '/admin' && link.exact === true
+    if (!esInicio && !tiene(link.permiso)) continue
+    if (pendienteSeccion != null) {
+      out.push(pendienteSeccion)
+      pendienteSeccion = null
+    }
+    out.push(link)
+  }
+  return out
+}
+
+/**
+ * Rutas de ops de un negocio (POS, catálogo, finanzas, etc.).
+ * El rol ADMIN de plataforma no debe operarlas como si fueran su tienda.
+ */
+const PREFIJOS_TENANT_OPS = [
+  '/admin/pos',
+  '/admin/productos',
+  '/admin/nuevo-producto',
+  '/admin/finanzas',
+  '/admin/mi-empresa',
+  '/admin/bodegas',
+  '/admin/compras',
+  '/admin/proveedores',
+  '/admin/ventas',
+  '/admin/gift-cards',
+  '/admin/cotizaciones',
+  '/admin/clientes',
+  '/admin/asignar-compra',
+  '/admin/encargos',
+  '/admin/billetera',
+  '/admin/reportes',
+  '/admin/forecast',
+  '/admin/executive',
+  '/admin/inventario',
+  '/admin/copilot',
+  '/admin/equipo',
+  '/admin/billing',
+  '/admin/facturas',
+  '/admin/config-fiscal',
+  '/admin/blog',
+  '/admin/publicaciones',
+  '/admin/ofertas',
+  '/admin/offline',
+  '/admin/garantias',
+  '/admin/ayuda',
+] as const
+
+/** True si un ADMIN de plataforma no debe quedarse en esta ruta. */
+export function esRutaTenantOpsParaAdmin(pathname: string): boolean {
+  if (pathname.startsWith('/admin/reportes-producto')) return false
+  return PREFIJOS_TENANT_OPS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  )
 }

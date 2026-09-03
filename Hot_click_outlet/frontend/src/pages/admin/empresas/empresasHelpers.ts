@@ -157,9 +157,25 @@ export function nombreVisibleEmpresa(emp: Pick<EmpresaLista, 'nombreComercial' |
   return emp.nombreComercial || emp.nombreEmpresa
 }
 
+/** Empresa 1 / slug hotclick: seed histórico, no es un tenant del marketplace. */
+export const EMPRESA_PLATAFORMA_ID = 1
+export const EMPRESA_PLATAFORMA_SLUG = 'hotclick'
+
+export function esEmpresaInternaPlataforma(
+  emp: Pick<EmpresaLista, 'id' | 'slug'>,
+): boolean {
+  return Number(emp.id) === EMPRESA_PLATAFORMA_ID
+    || (emp.slug?.toLowerCase() === EMPRESA_PLATAFORMA_SLUG)
+}
+
+/** Tiendas que el admin opera (excluye la cuenta interna de plataforma). */
+export function empresasOperables(empresas: EmpresaLista[]): EmpresaLista[] {
+  return empresas.filter((e) => !esEmpresaInternaPlataforma(e))
+}
+
 export function filtrarEmpresas(empresas: EmpresaLista[], { search, filtroEstado, filtroPlan }: FiltrosEmpresas): EmpresaLista[] {
   const q = search.toLowerCase()
-  return empresas.filter((e) => {
+  return empresasOperables(empresas).filter((e) => {
     const matchQ = !q
       || e.nombreEmpresa?.toLowerCase().includes(q)
       || e.slug?.toLowerCase().includes(q)
@@ -176,11 +192,12 @@ export function kpisEmpresas(empresas: EmpresaLista[]): {
   suspendidas: number
   pro: number
 } {
+  const operables = empresasOperables(empresas)
   return {
-    total: empresas.length,
-    activas: empresas.filter((e) => e.estadoEmpresa === 'ACTIVO').length,
-    suspendidas: empresas.filter((e) => e.estadoEmpresa === 'SUSPENDIDO').length,
-    pro: empresas.filter((e) => PLANES_PRO.has(e.plan ?? '')).length,
+    total: operables.length,
+    activas: operables.filter((e) => e.estadoEmpresa === 'ACTIVO').length,
+    suspendidas: operables.filter((e) => e.estadoEmpresa === 'SUSPENDIDO').length,
+    pro: operables.filter((e) => PLANES_PRO.has(e.plan ?? '')).length,
   }
 }
 
@@ -191,6 +208,7 @@ export function tabsDetalle(detail: EmpresaDetalle | null): { id: string; label:
     { id: 'productos', label: `Productos${n(detail?.totalProductos)}` },
     { id: 'pedidos', label: `Pedidos${n(detail?.totalPedidos)}` },
     { id: 'equipo', label: `Equipo${n(detail?.totalUsuarios)}` },
+    { id: 'uso', label: 'Uso' },
   ]
 }
 

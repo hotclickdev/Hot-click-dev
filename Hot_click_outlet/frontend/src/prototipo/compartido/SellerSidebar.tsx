@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import useAuthStore from '@/store/authStore'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
+import NegocioPertenenciaChip from './NegocioPertenenciaChip'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from './PrototipoSidebarNav'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 
@@ -76,6 +77,7 @@ export default function SellerSidebar() {
       <span className="mb-5 ml-2 inline-flex w-fit rounded-[5px] bg-[var(--hc-danger-bg)] px-2.5 py-1 text-[10px] font-bold text-hc-primary">
         {plan.badge}
       </span>
+      <NegocioPertenenciaChip variante="card" className="mb-4" />
       <PrototipoSidebarNav grupos={grupos} ariaLabel="Navegación vendedor" />
       <div className="mt-4 border-t border-hc-border pt-4">
         <div className="flex items-center gap-2 px-1">

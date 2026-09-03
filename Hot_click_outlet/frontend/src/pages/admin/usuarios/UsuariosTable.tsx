@@ -13,6 +13,7 @@ import type { Id } from '@/types/api'
 export type UsuariosTableProps = {
   displayed: UsuarioAdmin[]
   getPlanStr: (u: UsuarioAdmin) => string | null | undefined
+  getEmpresaNombre: (u: UsuarioAdmin) => string | null | undefined
   columnLabels: string[]
   emptyLabel: string
   approveLabel: string
@@ -39,6 +40,7 @@ const BTN_DANGER = `${BTN} bg-[var(--hc-danger-bg)] text-hc-danger hover:opacity
 export default function UsuariosTable({
   displayed,
   getPlanStr,
+  getEmpresaNombre,
   emptyLabel,
   approveLabel,
   rejectLabel,
@@ -65,6 +67,7 @@ export default function UsuariosTable({
         const estadoStr = getEstadoStr(u)
         const rolStr = getRolStr(u)
         const planStr = getPlanStr(u)
+        const negocio = getEmpresaNombre(u)
         const isSuspended = estadoStr === 'SUSPENDIDO'
         const isDeleted = estadoStr === 'ELIMINADO'
         const pill = tonoRolFigma(rolStr, estadoStr)
@@ -78,6 +81,9 @@ export default function UsuariosTable({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-hc-text">{u.nombre ?? '—'}</p>
                 <p className="truncate text-[11px] text-hc-muted">{u.correo}</p>
+                {negocio ? (
+                  <p className="truncate text-[10px] text-hc-muted">{negocio}</p>
+                ) : null}
               </div>
               <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${pill.clase}`}>
                 {pill.label}

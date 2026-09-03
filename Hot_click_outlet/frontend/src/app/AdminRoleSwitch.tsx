@@ -5,9 +5,10 @@ import POSShell from '@/layouts/POSShell'
 import AdminErrorBoundary from '@/app/AdminErrorBoundary'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
-import { ROLES_POS, esUsuarioSistema } from '@/utils/sistemaUser'
+import { ROLES_POS, esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
 import { adminAVendedor, vendedorSeQuedaEnAdmin } from '@/app/rolPaths'
 import { useTenantPlanListo } from '@/app/useTenantPlanListo'
+import { esRutaTenantOpsParaAdmin } from '@/layouts/admin/adminItJobs'
 
 function SpinnerRuta() {
   return (
@@ -21,8 +22,9 @@ function SpinnerRuta() {
 }
 
 /**
- * `/admin/*`: Super Admin (IT) en AdminLayout. El vendedor va al prefijo de su plan,
- * salvo POS / configuración / billing / copilot (herramientas reales).
+ * `/admin/*`: Super Admin (plataforma) en AdminLayout.
+ * El vendedor va al prefijo de su plan, salvo POS / config / billing / copilot.
+ * ADMIN no opera rutas de tienda propia (POS, catálogo, finanzas…).
  */
 export default function AdminRoleSwitch() {
   const { token, userRole } = useAuthStore()
@@ -36,6 +38,11 @@ export default function AdminRoleSwitch() {
   const isAdmin = ADMIN_ROLES.has(rol)
   const isPOS = ROLES_POS.has(rol)
   if (!isAdmin && !isPOS) return <Navigate to="/" replace />
+
+  // Plataforma (ADMIN + staff): fuera de ops de negocio (antes del POSShell).
+  if (esStaffPlataforma(rol) && esRutaTenantOpsParaAdmin(pathname)) {
+    return <Navigate to="/admin" replace />
+  }
 
   if (pathname.startsWith('/admin/pos')) {
     return (
