@@ -36,6 +36,9 @@ public final class MetodoCobroFormato {
     }
 
     public static String mascara(String tipo, String destino) {
+        if (tipo == null || destino == null) {
+            return destino == null ? "" : destino;
+        }
         return switch (tipo) {
             case MetodoCobro.TIPO_SINPE -> destino.length() >= 8
                     ? destino.substring(0, 4) + "-" + destino.substring(4, 8)
@@ -49,6 +52,9 @@ public final class MetodoCobroFormato {
     }
 
     public static String nombre(String tipo) {
+        if (tipo == null) {
+            return "";
+        }
         return switch (tipo) {
             case MetodoCobro.TIPO_SINPE -> "SINPE Móvil";
             case MetodoCobro.TIPO_IBAN -> "Cuenta IBAN";
@@ -58,6 +64,9 @@ public final class MetodoCobroFormato {
     }
 
     public static String nota(String tipo) {
+        if (tipo == null) {
+            return "";
+        }
         return switch (tipo) {
             case MetodoCobro.TIPO_SINPE -> "Ingreso al instante en Costa Rica";
             case MetodoCobro.TIPO_IBAN -> "Transferencia a tu banco";

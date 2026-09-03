@@ -67,6 +67,7 @@ regexes = [
   '''sk_test_placeholder''',
   '''hck_live_TESTKEY''',
   '''emprende\.paso\d(?:hint)?''',
+  '''emprende\.foto\w+Alt''',
   '''emprende\.pasoOwner\d(?:hint)?''',
   '''a11y\.filtro\w+''',
   '''a11y\.filtro\w+Desc''',

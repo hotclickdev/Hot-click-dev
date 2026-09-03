@@ -113,4 +113,12 @@ class MetodoCobroFormatoTest {
         assertThat(MetodoCobroFormato.tipoApi("SINPE")).isEqualTo("sinpe");
         assertThat(MetodoCobroFormato.tipoApi(null)).isEmpty();
     }
+
+    @Test
+    void nombre_nota_y_mascara_sin_tipo_no_npe() {
+        assertThat(MetodoCobroFormato.nombre(null)).isEmpty();
+        assertThat(MetodoCobroFormato.nota(null)).isEmpty();
+        assertThat(MetodoCobroFormato.mascara(null, "88880000")).isEqualTo("88880000");
+        assertThat(MetodoCobroFormato.mascara(MetodoCobro.TIPO_SINPE, null)).isEmpty();
+    }
 }
