@@ -10,14 +10,14 @@ type Props = Readonly<{ volverA: string }>
 export default function RecoleccionPage({ volverA }: Props) {
   return (
     <main className="px-5 pb-10 pt-8 md:max-w-[760px] md:px-16 md:py-12">
-      <EntradaPagina>
+      <EntradaPagina className="flex flex-col gap-8">
         <EncabezadoPagina
           titulo="Recolección y entrega"
           subtitulo="HOTCLICK pasa a buscar y entrega a tu cliente. Solo GAM por ahora."
           volverA={volverA}
         />
+        <RecoleccionPanel />
       </EntradaPagina>
-      <RecoleccionPanel />
     </main>
   )
 }

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { formatoColon } from '@/theme/formatoColon'
 import { marcarPedidoEnviadoApi } from '@/prototipo/compartido/pedidosVendedorApi'
-import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { EASE_PREMIUM } from '@/prototipo/compartido/motion/formularioMotionTokens'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import EmprendedorPageFrame, { EmprendedorCard, EmprendedorFilaLista } from '../ui/EmprendedorPageFrame'
@@ -67,19 +66,17 @@ export default function DetallePedidoPage() {
 
   return (
     <EmprendedorPageFrame titulo={`Pedido #${pedido.id}`} volverA={`${RUTA_EMPRENDEDOR}/pedidos`}>
-      <EntradaPagina className="flex flex-col gap-5 md:gap-6">
-        {confirmando && pedido.estado === 'Pendiente' ? (
-          <ConfirmacionEnvio
-            pedido={pedido}
-            errorMarca={errorMarca}
-            marcando={marcando}
-            onConfirmar={() => void marcarEnviado()}
-            onCancelar={cancelarConfirmacion}
-          />
-        ) : (
-          <DetallePedidoContenido pedido={pedido} onConfirmarEnvio={abrirConfirmacion} />
-        )}
-      </EntradaPagina>
+      {confirmando && pedido.estado === 'Pendiente' ? (
+        <ConfirmacionEnvio
+          pedido={pedido}
+          errorMarca={errorMarca}
+          marcando={marcando}
+          onConfirmar={() => void marcarEnviado()}
+          onCancelar={cancelarConfirmacion}
+        />
+      ) : (
+        <DetallePedidoContenido pedido={pedido} onConfirmarEnvio={abrirConfirmacion} />
+      )}
     </EmprendedorPageFrame>
   )
 }

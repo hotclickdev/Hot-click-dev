@@ -14,10 +14,12 @@ import useFormProductoVendedor from './useFormProductoVendedor'
 import type { ModoPrecioPersonalizado } from './personalizadoProductoHelpers'
 import { tituloFormProducto } from './personalizadoProductoHelpers'
 import { pasosProducto, validarPasoProducto } from './productoVendedorPasos'
+import PantallaExitoWizard, { navegarConTransicion } from './motion/PantallaExitoWizard'
 
 type Props = Readonly<{ personalizado?: boolean }>
 
 const TOTAL_FLUJO_NUEVO = 5
+const AUTO_CIERRE_EXITO_MS = 2200
 
 /**
  * Alta / edición de producto (PYME / Negocio Plus) — mismo wizard que Emprendedor.
@@ -35,9 +37,20 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
   const form = useFormProductoVendedor(esPersonalizado)
   const { cargarDesde } = form
   const [iniciado, setIniciado] = useState(false)
+  const [exito, setExito] = useState(false)
   const pasos = useMemo(() => pasosProducto(esPersonalizado, editar), [esPersonalizado, editar])
   const idPaso = pasos[form.paso]?.id
   const volverA = editar ? ruta('productos') : ruta('productos/nuevo')
+
+  function irAProductos() {
+    navegarConTransicion(() => navigate(ruta('productos')))
+  }
+
+  useEffect(() => {
+    if (!exito) return
+    const t = window.setTimeout(irAProductos, AUTO_CIERRE_EXITO_MS)
+    return () => window.clearTimeout(t)
+  }, [exito])
 
   useEffect(() => {
     if (!existente || iniciado) return
@@ -84,12 +97,28 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
       const datos = form.payloadPublicacion()
       if (id) await guardarProductoVendedor(id, datos)
       else await publicarProductoVendedor(datos)
-      navigate(ruta('productos'))
+      setExito(true)
     } catch (err: unknown) {
       form.setErrorSubmit(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
     } finally {
       form.setGuardando(false)
     }
+  }
+
+  if (exito) {
+    return (
+      <main className="flex flex-col gap-[22px] px-5 pb-8 pt-[60px]">
+        <PantallaExitoWizard
+          titulo={editar ? 'Cambios guardados' : 'Producto publicado'}
+          mensaje={
+            editar
+              ? 'Tu producto quedó actualizado en el catálogo.'
+              : 'Ya está en tu catálogo. Podés seguir editándolo cuando quieras.'
+          }
+          accion={<Boton onClick={irAProductos}>Ver productos</Boton>}
+        />
+      </main>
+    )
   }
 
   return (

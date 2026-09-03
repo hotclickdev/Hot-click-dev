@@ -54,11 +54,11 @@ export default function CampoAnimado({
   return (
     <div className="mb-4">
       <label
-        className={`hc-wizard-campo relative block rounded-xl border border-transparent bg-hc-surface-2 px-3.5 pt-5 pb-2 transition-[box-shadow] duration-200 focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--hc-primary)_20%,transparent)] ${
+        className={`hc-wizard-campo group relative block rounded-xl border border-transparent bg-hc-surface-2 px-3.5 pt-5 pb-2 transition-[box-shadow] duration-200 focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--hc-primary)_20%,transparent)] ${
           estado === 'ok' ? 'hc-wizard-campo--ok' : ''
         } ${estado === 'error' ? 'hc-wizard-campo--error' : ''}`}
       >
-        <span className="hc-wizard-campo-label pointer-events-none absolute left-3.5 top-2 text-[10px] font-medium text-hc-muted transition-opacity">
+        <span className="hc-wizard-campo-label pointer-events-none absolute left-3.5 top-2 text-[10px] font-medium text-hc-muted transition-colors duration-200 group-focus-within:text-hc-primary">
           {etiqueta}
         </span>
         <div className="relative flex items-center gap-2">

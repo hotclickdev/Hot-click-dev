@@ -267,6 +267,7 @@ function ConfirmacionDesactivar({
 }) {
   const toast = useToast()
   const [enviando, setEnviando] = useState(false)
+  const reduced = useReducedMotion() ?? false
 
   async function confirmar() {
     if (enviando) return
@@ -305,14 +306,17 @@ function ConfirmacionDesactivar({
           etiquetaCarga="Desactivando…"
           onClick={() => void confirmar()}
         />
-        <button
+        <motion.button
           type="button"
           disabled={enviando}
           onClick={onCancelar}
           className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface py-3 text-sm font-bold text-hc-text transition-opacity duration-200 disabled:pointer-events-none disabled:opacity-40"
+          whileHover={reduced || enviando ? undefined : { y: -2 }}
+          whileTap={reduced || enviando ? undefined : { scale: 0.98 }}
+          transition={{ duration: 0.2, ease: EASE_PREMIUM }}
         >
           Cancelar
-        </button>
+        </motion.button>
       </div>
     </div>
   )
@@ -336,11 +340,14 @@ function CtaConCarga({
   const label = enviando ? etiquetaCarga : etiqueta
   const fondo = variante === 'exito' ? 'bg-[var(--hc-success)]' : 'bg-hc-primary'
   return (
-    <button
+    <motion.button
       type="button"
       disabled={enviando}
       onClick={onClick}
       className={`flex min-h-11 w-full items-center justify-center overflow-hidden rounded-[14px] px-4 py-3 text-sm font-bold text-white transition-[background-color,opacity] duration-200 disabled:pointer-events-none disabled:opacity-60 ${fondo}`}
+      whileHover={reduced || enviando ? undefined : { y: -2 }}
+      whileTap={reduced || enviando ? undefined : { scale: 0.98 }}
+      transition={{ duration: 0.2, ease: EASE_PREMIUM }}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
@@ -360,7 +367,7 @@ function CtaConCarga({
           {label}
         </motion.span>
       </AnimatePresence>
-    </button>
+    </motion.button>
   )
 }
 

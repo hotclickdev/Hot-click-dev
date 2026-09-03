@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { EASE_PREMIUM } from './formularioMotionTokens'
+import { SPRING_POP, EASE_PREMIUM } from './formularioMotionTokens'
 import './formularioMotion.css'
 
 type Props = Readonly<{
@@ -11,7 +11,8 @@ type Props = Readonly<{
 }>
 
 /**
- * Pantalla de éxito del wizard: check elástico + texto en stagger.
+ * Pantalla de éxito del wizard: check spring + texto en stagger.
+ * Float CSS va en wrapper interno para no pelear con scale de Framer.
  */
 export default function PantallaExitoWizard({
   titulo,
@@ -24,20 +25,24 @@ export default function PantallaExitoWizard({
     <div className="relative overflow-hidden px-2 py-8 text-center">
       {confeti && !reduced ? <ConfetiLigero /> : null}
       <motion.div
-        className="hc-wizard-float mx-auto mb-6 flex size-20 items-center justify-center rounded-full text-3xl font-bold text-[var(--hc-success)]"
-        style={{ background: 'var(--hc-success-bg)' }}
+        className="mx-auto mb-6 flex size-20 items-center justify-center"
         initial={reduced ? false : { scale: 0 }}
-        animate={{ scale: [0, 1.2, 1] }}
-        transition={{ duration: 0.45, ease: EASE_PREMIUM }}
+        animate={{ scale: 1 }}
+        transition={reduced ? { duration: 0.15 } : SPRING_POP}
         aria-hidden
       >
-        ✓
+        <div
+          className={`flex size-20 items-center justify-center rounded-full text-3xl font-bold text-[var(--hc-success)] ${reduced ? '' : 'hc-wizard-float'}`}
+          style={{ background: 'var(--hc-success-bg)' }}
+        >
+          ✓
+        </div>
       </motion.div>
       <motion.h1
         className="font-display text-xl font-bold text-hc-text"
         initial={reduced ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: reduced ? 0 : 0.12, duration: 0.28, ease: EASE_PREMIUM }}
+        transition={{ delay: reduced ? 0 : 0.12, duration: 0.35, ease: EASE_PREMIUM }}
       >
         {titulo}
       </motion.h1>
@@ -46,7 +51,7 @@ export default function PantallaExitoWizard({
           className="mt-2 text-sm text-hc-muted"
           initial={reduced ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: reduced ? 0 : 0.2, duration: 0.28, ease: EASE_PREMIUM }}
+          transition={{ delay: reduced ? 0 : 0.22, duration: 0.35, ease: EASE_PREMIUM }}
         >
           {mensaje}
         </motion.p>
@@ -54,9 +59,9 @@ export default function PantallaExitoWizard({
       {accion ? (
         <motion.div
           className="mt-8"
-          initial={reduced ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: reduced ? 0 : 1, duration: 0.25 }}
+          initial={reduced ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: reduced ? 0 : 0.9, duration: 0.3, ease: EASE_PREMIUM }}
         >
           {accion}
         </motion.div>
@@ -66,20 +71,20 @@ export default function PantallaExitoWizard({
 }
 
 function ConfetiLigero() {
-  const piezas = Array.from({ length: 14 }, (_, i) => i)
+  const piezas = Array.from({ length: 18 }, (_, i) => i)
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden>
       {piezas.map((i) => (
         <motion.span
           key={i}
-          className="absolute top-0 size-1.5 rounded-sm"
+          className="absolute top-0 size-2 rounded-sm"
           style={{
-            left: `${8 + ((i * 7) % 84)}%`,
+            left: `${6 + ((i * 5.5) % 88)}%`,
             background: i % 3 === 0 ? 'var(--hc-primary)' : i % 3 === 1 ? 'var(--hc-accent)' : 'var(--hc-success)',
           }}
-          initial={{ y: -8, opacity: 0, rotate: 0 }}
-          animate={{ y: 180, opacity: [0, 1, 0], rotate: 180 }}
-          transition={{ duration: 1.1, delay: i * 0.04, ease: 'easeOut' }}
+          initial={{ y: -12, opacity: 0, rotate: 0 }}
+          animate={{ y: 200, opacity: [0, 1, 0], rotate: 220 }}
+          transition={{ duration: 1.25, delay: i * 0.035, ease: 'easeOut' }}
         />
       ))}
     </div>

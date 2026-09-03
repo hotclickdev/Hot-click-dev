@@ -15,7 +15,7 @@ export default function EntradaPagina({ children, className }: Props) {
   return (
     <motion.div
       className={className}
-      initial={reduced ? false : { opacity: 0, y: 12 }}
+      initial={reduced ? false : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: reduced ? DURACION_REDUCED_S : DURACION_ENTRADA_S,

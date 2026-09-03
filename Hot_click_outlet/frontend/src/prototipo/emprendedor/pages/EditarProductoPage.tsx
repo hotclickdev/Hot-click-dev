@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import BotonPrimario from '../ui/BotonPrimario'
 import BotonSecundario from '../ui/BotonSecundario'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import { RUTA_EMPRENDEDOR } from '../constants'
@@ -10,6 +11,11 @@ import PasosProductoVendedor from '@/prototipo/compartido/PasosProductoVendedor'
 import useFormProductoVendedor from '@/prototipo/compartido/useFormProductoVendedor'
 import type { ModoPrecioPersonalizado } from '@/prototipo/compartido/personalizadoProductoHelpers'
 import { pasosProducto, validarPasoProducto } from '@/prototipo/compartido/productoVendedorPasos'
+import PantallaExitoWizard, {
+  navegarConTransicion,
+} from '@/prototipo/compartido/motion/PantallaExitoWizard'
+
+const AUTO_CIERRE_EXITO_MS = 2200
 
 /**
  * Editar producto — catálogo o personalizado según el producto cargado (wizard).
@@ -23,8 +29,19 @@ export default function EditarProductoPage() {
   const form = useFormProductoVendedor(esPersonalizado)
   const { cargarDesde } = form
   const [iniciado, setIniciado] = useState(false)
+  const [exito, setExito] = useState(false)
   const pasos = useMemo(() => pasosProducto(esPersonalizado, true), [esPersonalizado])
   const idPaso = pasos[form.paso]?.id
+
+  function irAProductos() {
+    navegarConTransicion(() => navigate(`${RUTA_EMPRENDEDOR}/productos`))
+  }
+
+  useEffect(() => {
+    if (!exito) return
+    const t = window.setTimeout(irAProductos, AUTO_CIERRE_EXITO_MS)
+    return () => window.clearTimeout(t)
+  }, [exito])
 
   useEffect(() => {
     if (!original || iniciado) return
@@ -69,12 +86,24 @@ export default function EditarProductoPage() {
     form.setErrorSubmit(null)
     try {
       await guardarProductoVendedor(id, form.payloadPublicacion())
-      navigate(`${RUTA_EMPRENDEDOR}/productos`)
+      setExito(true)
     } catch (err: unknown) {
       form.setErrorSubmit(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
     } finally {
       form.setGuardando(false)
     }
+  }
+
+  if (exito) {
+    return (
+      <main className="flex flex-col gap-[22px] px-5 py-8">
+        <PantallaExitoWizard
+          titulo="Cambios guardados"
+          mensaje="Tu producto quedó actualizado en el catálogo."
+          accion={<BotonPrimario onClick={irAProductos}>Ver productos</BotonPrimario>}
+        />
+      </main>
+    )
   }
 
   return (

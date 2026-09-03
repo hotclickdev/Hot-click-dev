@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { DELAY_SELECCION_MS, EASE_PREMIUM } from './formularioMotionTokens'
+import { DELAY_SELECCION_MS, EASE_PREMIUM, SPRING_POP } from './formularioMotionTokens'
 
 type Props = Readonly<{
   titulo: string
@@ -17,8 +17,11 @@ type Props = Readonly<{
   'data-mm'?: string
 }>
 
+const CLASE_BASE =
+  'group relative block w-full rounded-2xl border bg-hc-surface px-4 py-4 text-left transition-[border-color,box-shadow,opacity,filter] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hc-primary/40'
+
 /**
- * Tarjeta de opción con elevación, press y check animado.
+ * Tarjeta de opción con elevación Framer (sin pelea CSS translate), press y check layoutId.
  */
 export default function TarjetaOpcion({
   titulo,
@@ -43,9 +46,8 @@ export default function TarjetaOpcion({
     }
   }
 
-  // Blur solo md+: en móvil `max-md:blur-none` evita el filtro (costoso / menos legible).
   const atenuada = atenuar && !seleccionado
-  const clase = `group relative block w-full rounded-2xl border bg-hc-surface px-4 py-4 text-left transition-[border-color,box-shadow,opacity,transform,filter] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hc-primary/40 hover:-translate-y-1 hover:shadow-md active:scale-[0.98] ${
+  const clase = `${CLASE_BASE} ${
     seleccionado
       ? 'border-hc-primary shadow-[0_0_0_3px_color-mix(in_srgb,var(--hc-primary)_25%,transparent)]'
       : 'border-hc-border'
@@ -63,7 +65,7 @@ export default function TarjetaOpcion({
           {children}
         </div>
         <span
-          className={`mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
+          className={`relative mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
             seleccionado ? 'border-hc-primary bg-hc-primary' : 'border-hc-border'
           }`}
           aria-hidden
@@ -72,7 +74,7 @@ export default function TarjetaOpcion({
             className="size-2 rounded-full bg-white"
             initial={false}
             animate={{ scale: seleccionado ? 1 : 0 }}
-            transition={{ duration: reduced ? 0 : 0.18, ease: EASE_PREMIUM }}
+            transition={reduced ? { duration: 0 } : SPRING_POP}
           />
         </span>
       </div>
@@ -82,11 +84,16 @@ export default function TarjetaOpcion({
     </>
   )
 
+  const hoverTap = reduced || disabled ? undefined : { y: -4 }
+  const tap = reduced || disabled ? undefined : { scale: 0.98 }
+
   if (to) {
     return (
-      <Link to={to} data-mm={dataMm} className={clase} aria-disabled={disabled || undefined}>
-        {cuerpo}
-      </Link>
+      <motion.div whileHover={hoverTap} whileTap={tap} transition={{ duration: 0.2, ease: EASE_PREMIUM }}>
+        <Link to={to} data-mm={dataMm} className={clase} aria-disabled={disabled || undefined}>
+          {cuerpo}
+        </Link>
+      </motion.div>
     )
   }
 
@@ -97,8 +104,8 @@ export default function TarjetaOpcion({
       disabled={disabled}
       onClick={() => void elegir()}
       className={clase}
-      whileHover={reduced || disabled ? undefined : { y: -4 }}
-      whileTap={reduced || disabled ? undefined : { scale: 0.98 }}
+      whileHover={hoverTap}
+      whileTap={tap}
       transition={{ duration: 0.2, ease: EASE_PREMIUM }}
     >
       {cuerpo}

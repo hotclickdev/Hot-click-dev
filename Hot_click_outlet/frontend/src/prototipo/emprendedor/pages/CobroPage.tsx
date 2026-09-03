@@ -1,5 +1,4 @@
 import MetodosCobroPanel from '@/prototipo/compartido/MetodosCobroPanel'
-import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
 
@@ -13,9 +12,7 @@ export default function CobroPage() {
       subtitulo="Cuentas donde te llega el dinero de tus ventas"
       volverA={`${RUTA_EMPRENDEDOR}/opciones`}
     >
-      <EntradaPagina>
-        <MetodosCobroPanel agregarTo={`${RUTA_EMPRENDEDOR}/opciones/cobro/nuevo`} />
-      </EntradaPagina>
+      <MetodosCobroPanel agregarTo={`${RUTA_EMPRENDEDOR}/opciones/cobro/nuevo`} />
     </EmprendedorPageFrame>
   )
 }

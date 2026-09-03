@@ -1,4 +1,4 @@
-import CampoTexto from '@/prototipo/emprendedor/ui/CampoTexto'
+import { Campo } from './ui'
 import FilaChips from '@/prototipo/emprendedor/ui/FilaChips'
 import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
 import ChipsCategoriaVendedor from './ChipsCategoriaVendedor'
@@ -81,11 +81,13 @@ export default function PasosProductoVendedor({
       ) : null}
       {idPaso === 'identidad' ? (
         <>
-          <CampoTexto
+          <Campo
             etiqueta="Nombre del producto"
             value={nombre}
             onChange={onNombreChange}
             placeholder={editar ? undefined : 'Ej: Camiseta Oversize Negra'}
+            estado={nombre.trim() ? 'ok' : 'idle'}
+            clearable
           />
           <div>
             <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
@@ -128,19 +130,21 @@ export default function PasosProductoVendedor({
       ) : null}
       {idPaso === 'detalle' ? (
         <>
-          <CampoTexto
+          <Campo
             etiqueta="Descripción"
             value={descripcion}
             onChange={onDescripcionChange}
             placeholder={editar ? undefined : 'Ej: Auriculares con estuche de carga…'}
+            clearable
           />
           {!personalizado ? (
-            <CampoTexto
+            <Campo
               etiqueta="Stock disponible"
               value={stock}
               onChange={onStockChange}
               type="number"
               placeholder={editar ? undefined : 'Ej: 10'}
+              estado={stock.trim() ? 'ok' : 'idle'}
             />
           ) : (
             !editar ? (

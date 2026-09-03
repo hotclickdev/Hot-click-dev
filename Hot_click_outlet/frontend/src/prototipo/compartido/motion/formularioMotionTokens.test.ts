@@ -3,14 +3,25 @@ import {
   DESPLAZAMIENTO_PASO_PX,
   DURACION_ENTRADA_S,
   DURACION_SALIDA_S,
+  SPRING_ENTRADA,
   variantesPaso,
 } from './formularioMotionTokens'
 import { direccionDesdeIndices } from './useDireccionPaso'
 
 describe('formularioMotionTokens', () => {
-  it('usa duraciones cortas de UI', () => {
-    expect(DURACION_ENTRADA_S).toBeLessThanOrEqual(0.3)
-    expect(DURACION_SALIDA_S).toBeLessThanOrEqual(0.3)
+  it('usa duraciones de UI más cálidas (aún cortas)', () => {
+    expect(DURACION_ENTRADA_S).toBeGreaterThan(0.3)
+    expect(DURACION_ENTRADA_S).toBeLessThanOrEqual(0.5)
+    expect(DURACION_SALIDA_S).toBeLessThanOrEqual(0.35)
+  })
+
+  it('entrada de paso usa spring', () => {
+    const v = variantesPaso('forward', false)
+    expect(v.animate).toMatchObject({
+      opacity: 1,
+      x: 0,
+      transition: SPRING_ENTRADA,
+    })
   })
 
   it('forward sale a la izquierda y entra desde la derecha', () => {

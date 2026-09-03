@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
-import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { RUTA_EMPRENDEDOR } from '../constants'
 
@@ -87,7 +86,7 @@ export default function NotificacionesPage() {
         ) : null
       }
     >
-      <EntradaPagina className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-hc-muted">Avisos de cobro, stock y ventas</p>
           {haySinLeer ? (
@@ -128,7 +127,7 @@ export default function NotificacionesPage() {
             </ItemListaStagger>
           ))}
         </ListaStagger>
-      </EntradaPagina>
+      </div>
     </EmprendedorPageFrame>
   )
 }

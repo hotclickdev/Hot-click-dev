@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/Toast'
-import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { recoleccionService } from '@/services/recoleccionService'
 import RecoleccionFormulario from './RecoleccionFormulario'
 import RecoleccionLista from './RecoleccionLista'
@@ -44,7 +43,7 @@ export default function RecoleccionPanel() {
   }
 
   return (
-    <EntradaPagina className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8">
       <section>
         <h2 className="mb-1 text-base font-bold">Nueva solicitud</h2>
         <p className="mb-4 text-xs text-hc-muted">
@@ -54,10 +53,12 @@ export default function RecoleccionPanel() {
       </section>
       <section>
         <h2 className="mb-3 text-base font-bold">Tus solicitudes</h2>
-        {isLoading ? <p className="text-sm text-hc-muted">Cargando…</p> : (
+        {isLoading ? (
+          <p className="text-sm text-hc-muted">Cargando…</p>
+        ) : (
           <RecoleccionLista solicitudes={solicitudes} onCancelar={cancelar} cancelandoId={cancelandoId} />
         )}
       </section>
-    </EntradaPagina>
+    </div>
   )
 }

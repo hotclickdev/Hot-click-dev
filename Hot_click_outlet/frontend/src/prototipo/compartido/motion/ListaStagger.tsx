@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { DURACION_ENTRADA_S, DURACION_REDUCED_S, EASE_ENTRADA } from './formularioMotionTokens'
-
-const STAGGER_S = 0.045
-const DELAY_HIJOS_S = 0.06
+import {
+  DELAY_HIJOS_S,
+  DESPLAZAMIENTO_ITEM_PX,
+  DURACION_ENTRADA_S,
+  DURACION_REDUCED_S,
+  EASE_ENTRADA,
+  SPRING_ENTRADA,
+  STAGGER_HIJOS_S,
+} from './formularioMotionTokens'
 
 type ListaProps = Readonly<{
   children: ReactNode
@@ -16,7 +21,7 @@ type ItemProps = Readonly<{
 }>
 
 /**
- * Contenedor stagger para filas/cards de listados Capa C.
+ * Contenedor stagger para filas/cards de listados Capa C y stacks de wizard.
  */
 export function ListaStagger({ children, className }: ListaProps) {
   const reduced = useReducedMotion() ?? false
@@ -28,7 +33,9 @@ export function ListaStagger({ children, className }: ListaProps) {
       variants={{
         oculto: {},
         visible: {
-          transition: reduced ? undefined : { staggerChildren: STAGGER_S, delayChildren: DELAY_HIJOS_S },
+          transition: reduced
+            ? undefined
+            : { staggerChildren: STAGGER_HIJOS_S, delayChildren: DELAY_HIJOS_S },
         },
       }}
     >
@@ -43,14 +50,13 @@ export function ItemListaStagger({ children, className }: ItemProps) {
     <motion.div
       className={className}
       variants={{
-        oculto: reduced ? { opacity: 0 } : { opacity: 0, y: 10 },
+        oculto: reduced ? { opacity: 0 } : { opacity: 0, y: DESPLAZAMIENTO_ITEM_PX },
         visible: {
           opacity: 1,
           y: 0,
-          transition: {
-            duration: reduced ? DURACION_REDUCED_S : DURACION_ENTRADA_S,
-            ease: EASE_ENTRADA,
-          },
+          transition: reduced
+            ? { duration: DURACION_REDUCED_S }
+            : { ...SPRING_ENTRADA, duration: DURACION_ENTRADA_S, ease: EASE_ENTRADA },
         },
       }}
     >
