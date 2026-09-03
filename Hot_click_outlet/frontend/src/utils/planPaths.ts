@@ -65,6 +65,20 @@ export function rutaSellerDesdeAdmin(
   return `${dest}${search}`
 }
 
+/**
+ * Cuenta / settings: Emp anida bajo `opciones/*`; PYME y Plus usan paths planos.
+ */
+export function rutaCuentaSeller(
+  planNombre: string | null | undefined,
+  segmento: string,
+): string {
+  const limpio = segmento.replace(/^\//, '').replace(/\/$/, '')
+  if (prefijoPorPlan(planNombre) === RUTA_EMPRENDEDOR) {
+    return limpio ? `opciones/${limpio}` : 'opciones'
+  }
+  return limpio
+}
+
 function mapearSegmentoAdmin(
   rest: string,
   search: string,
@@ -75,25 +89,28 @@ function mapearSegmentoAdmin(
   if (limpio === 'nuevo-producto') return 'productos/nuevo'
   if (limpio.startsWith('productos') || limpio.startsWith('pedidos')) return limpio
   if (limpio.startsWith('reportes')) return 'reportes'
-  if (limpio.startsWith('configuracion')) return mapearConfiguracion(search)
-  if (limpio === 'mi-empresa') return 'opciones/negocio'
-  if (limpio.startsWith('billing')) return 'opciones/plan'
-  if (limpio.startsWith('copilot')) return 'opciones/consultas'
-  if (limpio.startsWith('ayuda') || limpio.startsWith('garantias')) return 'opciones/ayuda'
+  if (limpio.startsWith('configuracion')) return mapearConfiguracion(search, planNombre)
+  if (limpio === 'mi-empresa') return rutaCuentaSeller(planNombre, 'negocio')
+  if (limpio.startsWith('billing')) return rutaCuentaSeller(planNombre, 'plan')
+  if (limpio.startsWith('copilot')) return rutaCuentaSeller(planNombre, 'consultas')
+  if (limpio.startsWith('ayuda') || limpio.startsWith('garantias')) {
+    return rutaCuentaSeller(planNombre, 'ayuda')
+  }
   if (limpio.startsWith('bodegas')) {
-    return limpio === 'bodegas' ? 'opciones/bodegas' : `opciones/${limpio}`
+    const resto = limpio === 'bodegas' ? 'bodegas' : limpio
+    return rutaCuentaSeller(planNombre, resto)
   }
   if (limpio === 'equipo' || limpio.startsWith('equipo/')) {
-    return prefijoPorPlan(planNombre) === RUTA_PYME ? limpio : 'opciones'
+    return prefijoPorPlan(planNombre) === RUTA_PYME ? limpio : rutaCuentaSeller(planNombre, '')
   }
-  if (limpio === 'marcas') return 'opciones'
+  if (limpio === 'marcas') return rutaCuentaSeller(planNombre, '')
   return limpio
 }
 
-function mapearConfiguracion(search: string): string {
-  if (search.includes('seccion=marca')) return 'opciones/negocio'
-  if (search.includes('seccion=bodega')) return 'opciones/bodegas'
-  return 'opciones'
+function mapearConfiguracion(search: string, planNombre: string | null | undefined): string {
+  if (search.includes('seccion=marca')) return rutaCuentaSeller(planNombre, 'negocio')
+  if (search.includes('seccion=bodega')) return rutaCuentaSeller(planNombre, 'bodegas')
+  return rutaCuentaSeller(planNombre, '')
 }
 
 const MAPA_PROTOTIPO: ReadonlyArray<readonly [string, string]> = [

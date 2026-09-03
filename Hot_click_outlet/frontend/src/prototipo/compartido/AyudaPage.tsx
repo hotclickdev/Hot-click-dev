@@ -27,6 +27,7 @@ export default function AyudaPage() {
               <button
                 type="button"
                 className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-sm font-medium"
+                aria-expanded={abierta === item.q}
                 onClick={() => setAbierta(abierta === item.q ? null : item.q)}
               >
                 {item.q}

@@ -41,6 +41,17 @@ export default function EmprendedorRoutes() {
       <Route path="registro" element={<Navigate to="/registro" replace />} />
       <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
       <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
+      {/* Alias planos → nested opciones (misma estrategia que PYME/Plus flat + Emp nested). */}
+      <Route path="bodegas" element={<Navigate to="opciones/bodegas" replace />} />
+      <Route path="bodegas/nueva" element={<Navigate to="opciones/bodegas/nueva" replace />} />
+      <Route path="negocio" element={<Navigate to="opciones/negocio" replace />} />
+      <Route path="plan" element={<Navigate to="opciones/plan" replace />} />
+      <Route path="plan/actualizado" element={<Navigate to="opciones/plan/actualizado" replace />} />
+      <Route path="ayuda" element={<Navigate to="opciones/ayuda" replace />} />
+      <Route path="consultas" element={<Navigate to="opciones/consultas" replace />} />
+      <Route path="perfil" element={<Navigate to="opciones/perfil" replace />} />
+      <Route path="cobro" element={<Navigate to="opciones/cobro" replace />} />
+      <Route path="cobro/nuevo" element={<Navigate to="opciones/cobro/nuevo" replace />} />
       <Route element={<EmprendedorShell conNav />}>
         <Route index element={<MenuPage />} />
         <Route path="productos" element={<ProductosPage />} />

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
-import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { RUTA_EMPRENDEDOR, WHATSAPP_SOPORTE } from '../constants'
 
@@ -25,51 +24,50 @@ const PREGUNTAS = [
 
 /**
  * Ayuda y soporte — Figma móvil 64:220 (acordeón FAQ + WhatsApp).
+ * Sin EntradaPagina extra: EmprendedorPageFrame ya anima la página.
  */
 export default function AyudaPage() {
   const [abierta, setAbierta] = useState<string | null>(null)
 
   return (
     <EmprendedorPageFrame titulo="Ayuda y Soporte" volverA={`${RUTA_EMPRENDEDOR}/opciones`}>
-      <EntradaPagina className="flex flex-col gap-5">
-        <p className="text-sm text-hc-muted">Preguntas frecuentes sobre tu tienda</p>
-        <ListaStagger className="overflow-hidden rounded-xl border border-hc-border bg-hc-surface">
-          {PREGUNTAS.map((item, indice) => {
-            const abiertaEsta = abierta === item.q
-            return (
-              <ItemListaStagger
-                key={item.q}
-                className={indice < PREGUNTAS.length - 1 ? 'border-b border-hc-border' : ''}
+      <p className="text-sm text-hc-muted">Preguntas frecuentes sobre tu tienda</p>
+      <ListaStagger className="overflow-hidden rounded-xl border border-hc-border bg-hc-surface">
+        {PREGUNTAS.map((item, indice) => {
+          const abiertaEsta = abierta === item.q
+          return (
+            <ItemListaStagger
+              key={item.q}
+              className={indice < PREGUNTAS.length - 1 ? 'border-b border-hc-border' : ''}
+            >
+              <button
+                type="button"
+                className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-4 text-left text-[13px] font-medium md:px-5 md:text-[15px]"
+                aria-expanded={abiertaEsta}
+                onClick={() => setAbierta((actual) => (actual === item.q ? null : item.q))}
               >
-                <button
-                  type="button"
-                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-4 text-left text-[13px] font-medium md:px-5 md:text-[15px]"
-                  aria-expanded={abiertaEsta}
-                  onClick={() => setAbierta((actual) => (actual === item.q ? null : item.q))}
-                >
-                  <span>{item.q}</span>
-                  <span className="shrink-0 text-base font-bold text-hc-muted" aria-hidden>
-                    {abiertaEsta ? '–' : '+'}
-                  </span>
-                </button>
-                {abiertaEsta ? (
-                  <p className="px-4 pb-4 text-xs leading-relaxed text-hc-muted md:px-5 md:text-[13px]">
-                    {item.a}
-                  </p>
-                ) : null}
-              </ItemListaStagger>
-            )
-          })}
-        </ListaStagger>
-        <a
-          href={`https://wa.me/${WHATSAPP_SOPORTE}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex min-h-11 w-full items-center justify-center rounded-[14px] bg-hc-primary px-5 py-4 text-[14px] font-bold text-white md:text-[15px]"
-        >
-          Escribinos por WhatsApp
-        </a>
-      </EntradaPagina>
+                <span>{item.q}</span>
+                <span className="shrink-0 text-base font-bold text-hc-muted" aria-hidden>
+                  {abiertaEsta ? '–' : '+'}
+                </span>
+              </button>
+              {abiertaEsta ? (
+                <p className="px-4 pb-4 text-xs leading-relaxed text-hc-muted md:px-5 md:text-[13px]">
+                  {item.a}
+                </p>
+              ) : null}
+            </ItemListaStagger>
+          )
+        })}
+      </ListaStagger>
+      <a
+        href={`https://wa.me/${WHATSAPP_SOPORTE}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex min-h-11 w-full items-center justify-center rounded-[14px] bg-hc-primary px-5 py-4 text-[14px] font-bold text-white md:text-[15px]"
+      >
+        Escribinos por WhatsApp
+      </a>
     </EmprendedorPageFrame>
   )
 }

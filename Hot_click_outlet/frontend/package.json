@@ -18,7 +18,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/smoke.spec.ts",
-    "test:e2e:ci": "playwright test tests/pos-pago-express.spec.ts tests/descubri-pago.spec.ts"
+    "test:e2e:ci": "playwright test tests/pos-pago-express.spec.ts tests/descubri-pago.spec.ts tests/seller-wizard.spec.ts tests/emprendedor-wizard.spec.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.7.2",

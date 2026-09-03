@@ -42,7 +42,7 @@ cd Hot_click_outlet/frontend && pnpm install
 
 El frontend compilado se sirve desde Spring Boot en producción. `SpaController.java` redirige rutas SPA a `index.html`.
 
-**IMPORTANTE:** Siempre correr `pnpm build` antes de hacer commit. Los archivos compilados en `src/main/resources/static/` son los que se despliegan en Render.
+**IMPORTANTE:** Siempre correr `pnpm build` antes de hacer commit **y antes de `docker build` del app**. Los archivos en `src/main/resources/static/` son los que sirve Spring/Docker (la imagen **no** compila el frontend). Si omitís el build, producción queda con JS viejo aunque el backend sea nuevo.
 
 ## Regla obligatoria: cambios de esquema DB
 

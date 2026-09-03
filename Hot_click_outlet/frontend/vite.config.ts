@@ -54,7 +54,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        skipWaiting: true,
+        // false: el usuario confirma update (banner). Evita reload mid-wizard.
+        skipWaiting: false,
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png}', '*.svg'],
         globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**'],

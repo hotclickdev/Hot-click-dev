@@ -1,0 +1,88 @@
+---
+description: Arquitectura y rutas del frontend seller (Emprendedor / PYME / Negocio Plus)
+globs: "**/prototipo/**"
+alwaysApply: false
+---
+
+# Seller prototipo
+
+Aplica al UI Figma seller bajo `src/prototipo/`. No confundir con marketplace ni admin (salvo redirects documentados).
+
+## Rutas seller
+
+Prefijos oficiales (únicos):
+
+- `/emprendedor`
+- `/pyme`
+- `/negocio-plus`
+
+Respetar `PlanPathGate`, `FigmaSellerGate` y `planPaths`. **No inventar** prefijos nuevos ni rutas “paralelas” fuera de esos bases.
+
+## Emprendedor
+
+Mantener la estructura actual anidada:
+
+- Settings y afines bajo `/emprendedor/opciones/*`
+
+**No** aplanar arbitrariamente a la forma de PYME/Plus (`/cobro`, `/perfil`, etc.).
+
+## PYME / Negocio Plus
+
+Usar la infraestructura compartida:
+
+- `SellerRoutes`
+- `SellerShell`
+- `prototipo/compartido/`
+
+Extras de plan: Equipo (PYME), Sucursales (Negocio Plus). **No** crear forks innecesarios de páginas ya resueltas en `compartido/`.
+
+## Arquitectura de capas
+
+```text
+Page → hooks / state → services → API
+```
+
+- Las páginas **no** hacen HTTP directo ni importan `axios` si ya hay capa en `src/services/`.
+- Stores (Zustand) **no** hacen HTTP.
+- TypeScript: sin `any`; usar `unknown` + narrowing. `any` solo con justificación técnica excepcional.
+
+## Reutilización
+
+Antes de crear un componente o página nueva:
+
+1. Buscar equivalente existente.
+2. Buscar en `prototipo/compartido/`.
+3. Buscar en el kit UI (`compartido/ui.tsx` y motion compartido).
+4. Crear nuevo **solo** si no existe.
+
+Prioridad:
+
+```text
+compartido/  >  wrapper específico del plan  >  componente solo de un plan
+```
+
+Evitar duplicar Productos, Pedidos, Bodegas, Cobro, Perfil, Plan y flujos equivalentes entre Emprendedor y `SellerRoutes`.
+
+## Regla principal multi-plan
+
+Si la funcionalidad puede compartirse entre planes:
+
+```text
+compartido/ → wrapper específico → configuración según plan
+```
+
+**No** duplicar la lógica en tres árboles.
+
+## POS
+
+Las rutas seller `/…/pos` siguen redirigiendo a `/admin/pos`. **No** crear un POS paralelo dentro del prototipo seller.
+
+## Marketplace vs seller
+
+No confundir:
+
+| Público | Seller |
+|---------|--------|
+| `/productos` (marketplace) | `/emprendedor/productos`, `/pyme/productos`, `/negocio-plus/productos` |
+
+El trabajo de wizards/listados seller **no** vive en el catálogo público.

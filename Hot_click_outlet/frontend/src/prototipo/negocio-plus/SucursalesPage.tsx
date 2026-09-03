@@ -549,11 +549,27 @@ function ModalSucursal({
   children: ReactNode
 }) {
   const reduced = useReducedMotion() ?? false
+  const panelRef = useRef<HTMLDivElement>(null)
+  const onCerrarRef = useRef(onCerrar)
+  onCerrarRef.current = onCerrar
+
+  useEffect(() => {
+    panelRef.current?.focus()
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !enviando) onCerrarRef.current()
+    }
+    globalThis.addEventListener('keydown', onKey)
+    return () => globalThis.removeEventListener('keydown', onKey)
+  }, [enviando])
+
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-4 md:items-center">
       <motion.div
-        className="w-full max-w-md rounded-2xl border border-hc-border bg-hc-surface p-5 shadow-lg"
+        ref={panelRef}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-2xl border border-hc-border bg-hc-surface p-5 shadow-lg outline-none"
         role="dialog"
+        aria-modal="true"
         aria-labelledby={tituloId}
         initial={reduced ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

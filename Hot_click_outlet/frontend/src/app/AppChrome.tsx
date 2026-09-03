@@ -131,16 +131,46 @@ function BrandingFetch() {
   return null
 }
 
-/** Recarga la app cuando el service worker instala una versión nueva (PWA). */
+/** Banner para aplicar update del SW sin reload silencioso mid-wizard. */
 export function ServiceWorkerRefresh() {
+  const [disponible, setDisponible] = useState(false)
+
   useEffect(() => {
-    function recargar() {
-      globalThis.location.reload()
+    function avisar() {
+      setDisponible(true)
     }
-    globalThis.addEventListener('sw-update-available', recargar)
-    return () => globalThis.removeEventListener('sw-update-available', recargar)
+    globalThis.addEventListener('sw-update-available', avisar)
+    return () => globalThis.removeEventListener('sw-update-available', avisar)
   }, [])
-  return null
+
+  if (!disponible) return null
+
+  return (
+    <div
+      className="fixed bottom-20 left-1/2 z-[60] flex w-[min(92vw,24rem)] -translate-x-1/2 flex-col gap-2 rounded-xl border border-hc-border bg-hc-surface p-3 shadow-lg md:bottom-6"
+      role="status"
+    >
+      <p className="text-sm font-medium text-hc-text">Hay una versión nueva de HotClick.</p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="min-h-11 flex-1 rounded-[14px] bg-hc-primary px-3 text-sm font-bold text-white"
+          onClick={() => {
+            void import('@/app/swUpdate').then(({ aplicarSwUpdate }) => aplicarSwUpdate(true))
+          }}
+        >
+          Actualizar
+        </button>
+        <button
+          type="button"
+          className="min-h-11 flex-1 rounded-[14px] border border-hc-border px-3 text-sm font-medium text-hc-muted"
+          onClick={() => setDisponible(false)}
+        >
+          Ahora no
+        </button>
+      </div>
+    </div>
+  )
 }
 
 /** Inicializa GA4 / PostHog / Clarity una vez al montar si hay consentimiento. */

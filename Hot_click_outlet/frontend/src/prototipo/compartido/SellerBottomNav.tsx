@@ -29,7 +29,7 @@ export default function SellerBottomNav() {
   const ruta = useSellerRuta()
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-md border-t border-hc-border bg-hc-surface"
+      className="fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-md border-t border-hc-border bg-hc-surface pb-[env(safe-area-inset-bottom)]"
       aria-label="Navegación del vendedor"
     >
       <ul className="grid grid-cols-5 px-1 py-2">
@@ -44,7 +44,7 @@ export default function SellerBottomNav() {
                 <>
                   <IconoTab tab={tab} activo={isActive} />
                   <span
-                    className={`max-w-full px-0.5 text-center text-[8px] leading-tight ${
+                    className={`max-w-full px-0.5 text-center text-[11px] leading-tight ${
                       isActive ? 'font-bold text-hc-primary' : 'font-medium text-hc-muted'
                     }`}
                   >

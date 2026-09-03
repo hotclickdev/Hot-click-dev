@@ -1,4 +1,7 @@
 # Frontend pre-compilado localmente y committeado en src/main/resources/static/
+# OBLIGATORIO antes de build/deploy de esta imagen:
+#   cd Hot_click_outlet/frontend && pnpm build
+# Sin eso, Docker sirve un bundle JS viejo (no hay Node en esta imagen).
 # Render solo necesita compilar Java — sin Node/pnpm en el build.
 FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /build

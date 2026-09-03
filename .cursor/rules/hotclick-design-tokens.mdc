@@ -1,0 +1,65 @@
+---
+description: Design system HotClick para seller — tokens, UI compartida, responsive y anti AI-slop
+globs: "**/prototipo/**,**/styles/hotclick-tokens.css"
+alwaysApply: false
+---
+
+# HotClick design tokens (seller)
+
+Fuente de verdad de color/tipo/espacio: `Hot_click_outlet/frontend/src/styles/hotclick-tokens.css`.
+**No** introducir hex sueltos si ya existe un token `hc-*` equivalente.
+
+## Identidad (usar CSS vars)
+
+| Rol | Token canónico | Ejemplo actual |
+|-----|----------------|----------------|
+| Primario (Rojo Hot) | `--hc-red-500` | `#E73B33` |
+| Secundario (Azul Click) | `--hc-blue-600` | `#1747A8` |
+| Neutros / navy | `--hc-n-*` | texto `--hc-n-900` |
+
+Consultar el archivo de tokens antes de añadir valores nuevos. No hardcodear marcas de marketing obsoletas como canónicas.
+
+## Tipografía
+
+Respetar:
+
+- `--hc-font-display`: Sora
+- `--hc-font-text`: Public Sans
+
+**No** sustituir por Inter, Roboto, Arial u otras stacks genéricas de IA.
+
+## UI compartida
+
+Priorizar primitivas en `prototipo/compartido/ui.tsx`:
+
+- `Boton`, `Campo` (CampoAnimado), `Chip`, y el resto del kit
+
+**No** crear equivalentes nuevos (`BotonPrimario`, `CampoTexto`, etc.) si la primitiva compartida cubre el caso. El kit `emprendedor/ui` legacy no se amplía.
+
+## Responsive (mobile-first)
+
+- Columna seller: `max-w-md` y breakpoints existentes (`md` para sidebar).
+- Bottom navigation: respetar **safe-area** (`env(safe-area-inset-*)`); no tapar el home indicator.
+- Targets táctiles utilizables; labels de nav legibles (evitar tipografía microscópica).
+- No diseñar solo para desktop.
+
+## Accesibilidad visual
+
+- Contraste adecuado, `:focus-visible`, labels claros.
+- No usar el color como único indicador de estado.
+
+## Motion
+
+- No animaciones arbitrarias; seguir el kit seller (`formularioMotionTokens` / `compartido/motion`).
+- **No** mezclar Tailwind `translate`/`scale` con Framer `whileHover`/`animate` transform en el **mismo** nodo.
+
+## Anti AI-slop / UI genérica
+
+Prohibido si no es identidad HotClick:
+
+- Purple gradients / indigo SaaS
+- Cream AI cards
+- Glassmorphism genérico
+- Plantillas “dashboard AI” sin marca
+
+La UI debe sentirse HotClick (rojo Hot + azul Click + tokens), no una plantilla genérica.
