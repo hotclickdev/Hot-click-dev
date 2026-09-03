@@ -6,6 +6,7 @@ import {
   getRolStr,
   mensajeErrorUsuario,
   usuariosDesdeRespuestas,
+  type EmpresasNombreMap,
   type EmpresasPlanMap,
   type UsuarioAdmin,
 } from './usuarioHelpers'
@@ -20,6 +21,7 @@ export type ToastAdminUsers = (opts: {
 export type AdminUsersActionsDeps = {
   toast: ToastAdminUsers
   empresasPlan: EmpresasPlanMap
+  empresasNombre: EmpresasNombreMap
   editUser: UsuarioAdmin | null
   editRol: string
   editEstado: string
@@ -32,6 +34,7 @@ export type AdminUsersActionsDeps = {
   setUsers: Dispatch<SetStateAction<UsuarioAdmin[]>>
   setPending: Dispatch<SetStateAction<UsuarioAdmin[]>>
   setEmpresasPlan: Dispatch<SetStateAction<EmpresasPlanMap>>
+  setEmpresasNombre: Dispatch<SetStateAction<EmpresasNombreMap>>
   setEditUser: Dispatch<SetStateAction<UsuarioAdmin | null>>
   setEditRol: Dispatch<SetStateAction<string>>
   setEditEstado: Dispatch<SetStateAction<string>>
@@ -52,6 +55,7 @@ export function useAdminUsersActions(deps: AdminUsersActionsDeps) {
   const {
     toast,
     empresasPlan,
+    empresasNombre,
     editUser,
     editRol,
     editEstado,
@@ -74,6 +78,10 @@ export function useAdminUsersActions(deps: AdminUsersActionsDeps) {
   } = deps
 
   const getPlanStr = useCallback((u: UsuarioAdmin) => (u.empresaId ? empresasPlan[String(u.empresaId)] : null), [empresasPlan])
+  const getEmpresaNombre = useCallback(
+    (u: UsuarioAdmin) => (u.empresaId ? empresasNombre[String(u.empresaId)] : null),
+    [empresasNombre],
+  )
 
   const approve = useCallback(async (id: Id) => {
     try {
@@ -198,6 +206,7 @@ export function useAdminUsersActions(deps: AdminUsersActionsDeps) {
 
   return {
     getPlanStr,
+    getEmpresaNombre,
     approve,
     reject,
     handleDelete,

@@ -13,6 +13,7 @@ export type UsuarioAdmin = {
 }
 
 export type EmpresasPlanMap = Record<string, string | undefined>
+export type EmpresasNombreMap = Record<string, string | undefined>
 
 export const ESTADO_NUM: Record<number, string> = {
   1: 'ACTIVO',
@@ -105,15 +106,31 @@ export function empresasPlanDesdeRespuesta(empresas: unknown): EmpresasPlanMap {
   return Object.fromEntries(filas.map((e) => [e.id, e.plan]))
 }
 
+export function empresasNombreDesdeRespuesta(empresas: unknown): EmpresasNombreMap {
+  const empresasList = Array.isArray(empresas)
+    ? empresas
+    : ((empresas as { data?: unknown; content?: unknown } | null)?.data
+      ?? (empresas as { content?: unknown } | null)?.content
+      ?? [])
+  const filas = Array.isArray(empresasList)
+    ? empresasList as { id: Id; nombreComercial?: string; nombreEmpresa?: string }[]
+    : []
+  return Object.fromEntries(
+    filas.map((e) => [e.id, e.nombreComercial || e.nombreEmpresa]),
+  )
+}
+
 export function usuariosDesdeRespuestas(all: unknown, pend: unknown, empresas: unknown): {
   users: UsuarioAdmin[]
   pending: UsuarioAdmin[]
   empresasPlan: EmpresasPlanMap
+  empresasNombre: EmpresasNombreMap
 } {
   return {
     users: listaUsuariosDesdeRespuesta(all),
     pending: listaUsuariosDesdeRespuesta(pend),
     empresasPlan: empresasPlanDesdeRespuesta(empresas),
+    empresasNombre: empresasNombreDesdeRespuesta(empresas),
   }
 }
 

@@ -1,7 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import VendedorAvisos from '@/app/VendedorAvisos'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
-import ImpersonacionBanner from './ImpersonacionBanner'
 import NegocioPertenenciaChip from './NegocioPertenenciaChip'
 import SellerBottomNav from './SellerBottomNav'
 import SellerSidebar from './SellerSidebar'
@@ -16,7 +15,6 @@ type Props = {
 export default function SellerShell({ sinNav = false }: Props) {
   return (
     <div className="min-h-dvh bg-[#F8F9FB] text-hc-text">
-      <ImpersonacionBanner />
       <div className="md:flex md:min-h-dvh">
         <SellerSidebar />
         <div className={`min-w-0 flex-1 ${sinNav ? '' : 'pb-16 md:pb-0'}`}>
