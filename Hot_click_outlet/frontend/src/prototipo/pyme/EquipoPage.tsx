@@ -6,6 +6,9 @@ import FormularioPorPasos from '../compartido/FormularioPorPasos'
 import { useSellerRuta } from '../compartido/SellerPlanContext'
 import TarjetaOpcion from '../compartido/motion/TarjetaOpcion'
 import PantallaExitoWizard from '../compartido/motion/PantallaExitoWizard'
+import EntradaPagina from '../compartido/motion/EntradaPagina'
+import EstadoVacioConversacional from '../compartido/motion/EstadoVacioConversacional'
+import { ListaStagger, ItemListaStagger } from '../compartido/motion/ListaStagger'
 import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
 import { equipoService } from '@/services/equipoService'
 import { useToast } from '@/components/ui/Toast'
@@ -79,64 +82,72 @@ export default function EquipoPage() {
 
   return (
     <main className="px-5 pb-10 pt-8 md:px-12 md:py-12" data-mm="seller-equipo">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <Link to={ruta('opciones')} className="mb-2 inline-block text-sm font-medium text-hc-primary md:hidden">
-            ← Volver
-          </Link>
-          <h1 className="font-display text-[22px] font-bold md:text-[28px]">Mi Equipo</h1>
-          <p className="mt-1 text-xs text-hc-muted md:text-sm">Miembros con acceso a esta tienda</p>
-        </div>
-        {!pendiente ? (
-          <Boton onClick={() => setMostrarForm(true)}>+ Invitar miembro</Boton>
-        ) : null}
-      </div>
-
-      {pendiente ? (
-        <div className="mt-6 md:max-w-lg">
-          <ConfirmacionQuitarMiembro
-            miembro={pendiente}
-            guardando={quitando}
-            onConfirmar={() => void confirmarQuitar()}
-            onCancelar={() => setPendiente(null)}
-          />
-        </div>
-      ) : (
-        <>
-          {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando equipo…</p> : null}
-          {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
-          {!cargando && visibles.length === 0 ? (
-            <p className="mt-6 text-sm text-hc-muted">Todavía no hay miembros invitados.</p>
+      <EntradaPagina>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <Link to={ruta('opciones')} className="mb-2 inline-block text-sm font-medium text-hc-primary md:hidden">
+              ← Volver
+            </Link>
+            <h1 className="font-display text-[22px] font-bold md:text-[28px]">Mi Equipo</h1>
+            <p className="mt-1 text-xs text-hc-muted md:text-sm">Miembros con acceso a esta tienda</p>
+          </div>
+          {!pendiente ? (
+            <Boton onClick={() => setMostrarForm(true)}>+ Invitar miembro</Boton>
           ) : null}
+        </div>
 
-          <ul className="mt-6 flex flex-col gap-3">
-            {visibles.map((item) => (
-              <FilaMiembro
-                key={String(item.id)}
-                miembro={item}
-                onPedirQuitar={() => {
+        {pendiente ? (
+          <div className="mt-6 md:max-w-lg">
+            <ConfirmacionQuitarMiembro
+              miembro={pendiente}
+              guardando={quitando}
+              onConfirmar={() => void confirmarQuitar()}
+              onCancelar={() => setPendiente(null)}
+            />
+          </div>
+        ) : (
+          <>
+            {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando equipo…</p> : null}
+            {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
+            {!cargando && visibles.length === 0 && !error ? (
+              <EstadoVacioConversacional
+                titulo="Todavía no hay miembros"
+                mensaje="Invitá a tu equipo para que entren a esta tienda."
+              />
+            ) : null}
+
+            {visibles.length > 0 ? (
+              <ListaStagger className="mt-6 flex flex-col gap-3">
+                {visibles.map((item) => (
+                  <ItemListaStagger key={String(item.id)}>
+                    <FilaMiembro
+                      miembro={item}
+                      onPedirQuitar={() => {
+                        setMostrarForm(false)
+                        setPendiente(item)
+                      }}
+                    />
+                  </ItemListaStagger>
+                ))}
+              </ListaStagger>
+            ) : null}
+
+            {mostrarForm ? (
+              <FormularioInvitar
+                onCerrar={() => setMostrarForm(false)}
+                onInvitado={(nuevo) => {
+                  setMiembros((prev) => [...prev, nuevo])
                   setMostrarForm(false)
-                  setPendiente(item)
                 }}
               />
-            ))}
-          </ul>
+            ) : null}
 
-          {mostrarForm ? (
-            <FormularioInvitar
-              onCerrar={() => setMostrarForm(false)}
-              onInvitado={(nuevo) => {
-                setMiembros((prev) => [...prev, nuevo])
-                setMostrarForm(false)
-              }}
-            />
-          ) : null}
-
-          <p className="mt-6 hidden text-xs text-hc-muted md:block">
-            También desde <a className="font-medium text-hc-primary" href={ruta('opciones')}>Opciones</a>.
-          </p>
-        </>
-      )}
+            <p className="mt-6 hidden text-xs text-hc-muted md:block">
+              También desde <a className="font-medium text-hc-primary" href={ruta('opciones')}>Opciones</a>.
+            </p>
+          </>
+        )}
+      </EntradaPagina>
     </main>
   )
 }
@@ -223,7 +234,7 @@ function FilaMiembro({
   const activo = miembro.estado === 1
   const quitable = puedeQuitarMiembro(miembro)
   return (
-    <li className="flex items-center gap-3 rounded-[10px] border border-hc-border bg-hc-surface p-3.5 md:px-4 md:py-3">
+    <article className="flex items-center gap-3 rounded-[10px] border border-hc-border bg-hc-surface p-3.5 md:px-4 md:py-3">
       <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--hc-n-100)] text-sm font-bold text-hc-muted md:size-12 md:text-base">
         {letra}
       </span>
@@ -249,7 +260,7 @@ function FilaMiembro({
           Quitar
         </button>
       ) : null}
-    </li>
+    </article>
   )
 }
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import CabeceraAtras from './CabeceraAtras'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 
 type Props = {
   titulo: string
@@ -14,16 +15,18 @@ type Props = {
  */
 export default function EmprendedorPageFrame({ titulo, volverA, children, subtitulo, extraMovil }: Props) {
   return (
-    <main className="flex flex-col gap-5 px-5 pb-10 pt-8 md:max-w-[760px] md:gap-6 md:px-16 md:py-12">
-      <div className="md:hidden">
-        <CabeceraAtras titulo={titulo} to={volverA} extra={extraMovil} />
-        {subtitulo ? <p className="text-xs text-hc-muted">{subtitulo}</p> : null}
-      </div>
-      <header className="hidden md:block">
-        <h1 className="font-display text-[28px] font-bold">{titulo}</h1>
-        {subtitulo ? <p className="mt-1 text-sm text-hc-muted">{subtitulo}</p> : null}
-      </header>
-      {children}
+    <main className="px-5 pb-10 pt-8 md:max-w-[760px] md:px-16 md:py-12">
+      <EntradaPagina className="flex flex-col gap-5 md:gap-6">
+        <div className="md:hidden">
+          <CabeceraAtras titulo={titulo} to={volverA} extra={extraMovil} />
+          {subtitulo ? <p className="text-xs text-hc-muted">{subtitulo}</p> : null}
+        </div>
+        <header className="hidden md:block">
+          <h1 className="font-display text-[28px] font-bold">{titulo}</h1>
+          {subtitulo ? <p className="mt-1 text-sm text-hc-muted">{subtitulo}</p> : null}
+        </header>
+        {children}
+      </EntradaPagina>
     </main>
   )
 }

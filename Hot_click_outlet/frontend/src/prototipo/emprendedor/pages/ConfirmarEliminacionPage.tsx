@@ -5,6 +5,7 @@ import BotonSecundario from '../ui/BotonSecundario'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 import { borrarProductoVendedor, mensajeErrorProducto } from '@/prototipo/compartido/catalogoVendedorApi'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 
 /**
  * Paso 13 Confirmar eliminación (Figma 37:178).
@@ -32,7 +33,8 @@ export default function ConfirmarEliminacionPage() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col items-center gap-4 px-5 pb-16 pt-36 text-center">
+    <main className="flex min-h-dvh flex-col items-center px-5 pb-16 pt-36 text-center">
+      <EntradaPagina className="flex w-full max-w-sm flex-col items-center gap-4">
       <div className="flex size-20 items-center justify-center rounded-full bg-[var(--hc-danger-bg)] text-3xl font-bold text-hc-primary">
         !
       </div>
@@ -41,7 +43,7 @@ export default function ConfirmarEliminacionPage() {
         {cargando ? 'Cargando…' : `${nombre} se va a eliminar de tu catálogo. Esta acción no se puede deshacer.`}
       </p>
       {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-      <div className="flex w-full max-w-sm flex-col gap-2">
+      <div className="flex w-full flex-col gap-2">
         <BotonPrimario disabled={eliminando || cargando} onClick={() => void eliminar()}>
           {eliminando ? 'Eliminando…' : 'Sí, eliminar'}
         </BotonPrimario>
@@ -49,7 +51,8 @@ export default function ConfirmarEliminacionPage() {
           Cancelar
         </BotonSecundario>
       </div>
+      </EntradaPagina>
     </main>
   )
 }
-
+

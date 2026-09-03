@@ -6,6 +6,8 @@ import CabeceraAtras from '../ui/CabeceraAtras'
 import ChipFiltro from '../ui/ChipFiltro'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { leerTicket, totalTicket } from '../ticketPos'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 
 const METODOS = ['Efectivo', 'SINPE', 'Tarjeta'] as const
 
@@ -20,15 +22,20 @@ export default function CobrarPage() {
 
   return (
     <main className="flex flex-col gap-5 px-5 pb-10 pt-8">
+      <EntradaPagina className="flex flex-col gap-5">
       <CabeceraAtras titulo="Cobrar" to={`${RUTA_EMPRENDEDOR}/pos`} />
+      <ListaStagger className="flex flex-col gap-2">
       {ticket.map((linea) => (
-        <div key={linea.id} className="flex justify-between text-[13px]">
+        <ItemListaStagger key={linea.id}>
+        <div className="flex justify-between text-[13px]">
           <span>
             {linea.nombre}  x{linea.cantidad}
           </span>
           <span className="font-medium">{formatoColon(linea.precio * linea.cantidad)}</span>
         </div>
+        </ItemListaStagger>
       ))}
+      </ListaStagger>
       <hr className="border-hc-border" />
       <div className="flex items-center justify-between">
         <span className="text-[15px] font-bold">Total a cobrar</span>
@@ -43,6 +50,7 @@ export default function CobrarPage() {
         ))}
       </div>
       <BotonPrimario onClick={confirmar}>Confirmar cobro</BotonPrimario>
+      </EntradaPagina>
     </main>
   )
 

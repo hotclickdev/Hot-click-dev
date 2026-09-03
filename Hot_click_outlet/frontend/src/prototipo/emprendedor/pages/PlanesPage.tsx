@@ -14,6 +14,8 @@ import {
   validarPasoElegirPlan,
   type PlanUi,
 } from '@/prototipo/compartido/planesPageHelpers'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 
 /**
  * Comparar planes — wizard conversacional: elegir → confirmar → pago ONVO.
@@ -116,17 +118,18 @@ export default function PlanesPage() {
           totalProgreso={TOTAL_PASOS_PLAN}
         >
           {idPaso === 'elegir' ? (
-            <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:gap-5">
+            <ListaStagger className="flex flex-col gap-4 md:flex-row md:items-stretch md:gap-5">
               {planes.map((plan) => (
-                <TarjetaPlan
-                  key={String(plan.id)}
-                  plan={plan}
-                  actual={plan.nombreApi === actual}
-                  seleccionado={planElegido?.id === plan.id}
-                  onSelect={() => setPlanElegido(plan)}
-                />
+                <ItemListaStagger key={String(plan.id)} className="flex-1">
+                  <TarjetaPlan
+                    plan={plan}
+                    actual={plan.nombreApi === actual}
+                    seleccionado={planElegido?.id === plan.id}
+                    onSelect={() => setPlanElegido(plan)}
+                  />
+                </ItemListaStagger>
               ))}
-            </div>
+            </ListaStagger>
           ) : null}
           {idPaso === 'confirmar' && planElegido ? (
             <ResumenPlan plan={planElegido} />
@@ -139,17 +142,19 @@ export default function PlanesPage() {
 
 function ShellPlanes({ children, error }: { children: ReactNode; error: string | null }) {
   return (
-    <main className="flex flex-col gap-[18px] px-5 pb-10 pt-8 md:gap-6 md:px-16 md:py-12">
-      <div className="md:hidden">
-        <CabeceraAtras titulo="Tu Plan" to={`${RUTA_EMPRENDEDOR}/opciones`} />
-        <p className="text-xs text-hc-muted">Elegí el plan que mejor se ajuste a tu negocio</p>
-      </div>
-      <header className="hidden md:block">
-        <h1 className="font-display text-[28px] font-bold">Tu Plan</h1>
-        <p className="mt-1 text-sm text-hc-muted">Elegí el plan que mejor se ajuste a tu negocio</p>
-      </header>
-      {error ? <p className="text-sm text-red-500">{error}</p> : null}
-      {children}
+    <main className="px-5 pb-10 pt-8 md:px-16 md:py-12">
+      <EntradaPagina className="flex flex-col gap-[18px] md:gap-6">
+        <div className="md:hidden">
+          <CabeceraAtras titulo="Tu Plan" to={`${RUTA_EMPRENDEDOR}/opciones`} />
+          <p className="text-xs text-hc-muted">Elegí el plan que mejor se ajuste a tu negocio</p>
+        </div>
+        <header className="hidden md:block">
+          <h1 className="font-display text-[28px] font-bold">Tu Plan</h1>
+          <p className="mt-1 text-sm text-hc-muted">Elegí el plan que mejor se ajuste a tu negocio</p>
+        </header>
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+        {children}
+      </EntradaPagina>
     </main>
   )
 }

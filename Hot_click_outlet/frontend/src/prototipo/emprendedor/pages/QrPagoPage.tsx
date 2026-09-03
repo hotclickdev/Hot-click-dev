@@ -5,6 +5,7 @@ import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { totalTicket } from '../ticketPos'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 
 /**
  * Pagar con QR (Figma 94:128). QR real via react-qr-code, no recuadros falsos.
@@ -16,6 +17,7 @@ export default function QrPagoPage() {
 
   return (
     <main className="flex flex-col items-center gap-5 px-5 pb-10 pt-8">
+      <EntradaPagina className="flex w-full flex-col items-center gap-5">
       <div className="w-full">
         <CabeceraAtras titulo="Pagar con Tarjeta" to={`${RUTA_EMPRENDEDOR}/pos/cobrar`} />
       </div>
@@ -40,6 +42,7 @@ export default function QrPagoPage() {
       >
         Cancelar y volver
       </button>
+      </EntradaPagina>
     </main>
   )
 }

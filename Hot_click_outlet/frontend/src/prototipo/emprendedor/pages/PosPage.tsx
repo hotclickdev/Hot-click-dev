@@ -8,6 +8,9 @@ import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 import { agregarAlTicket, cantidadTicket, leerTicket, totalTicket } from '../ticketPos'
 import type { LineaTicket, ProductoEmprendedor } from '../types'
+import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
+import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 
 const FILTROS = ['Todos', 'Tecnología', 'Ropa'] as const
 
@@ -26,24 +29,34 @@ export default function PosPage() {
 
   return (
     <main className="flex flex-col gap-[18px] px-5 pb-28 pt-8">
-      <div>
-        <CabeceraAtras titulo="Caja (POS)" to={RUTA_EMPRENDEDOR} />
-        <p className="text-xs text-hc-muted">Registrá una venta en persona</p>
-      </div>
-      <p className="rounded-xl bg-[var(--hc-n-50)] px-3.5 py-3 text-[13px] text-hc-muted">
-        Buscar producto o escanear código
-      </p>
-      <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
-      <div className="grid grid-cols-2 gap-3">
-        {visibles.map((producto) => (
-          <TarjetaPos
-            key={producto.id}
-            producto={producto}
-            cantidad={ticket.find((l) => l.id === producto.id)?.cantidad ?? 0}
-            onAgregar={() => setTicket(agregarAlTicket({ id: producto.id, nombre: producto.nombre, precio: producto.precio }))}
+      <EntradaPagina className="flex flex-col gap-[18px]">
+        <div>
+          <CabeceraAtras titulo="Caja (POS)" to={RUTA_EMPRENDEDOR} />
+          <p className="text-xs text-hc-muted">Registrá una venta en persona</p>
+        </div>
+        <p className="rounded-xl bg-[var(--hc-n-50)] px-3.5 py-3 text-[13px] text-hc-muted">
+          Buscar producto o escanear código
+        </p>
+        <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
+        {visibles.length === 0 ? (
+          <EstadoVacioConversacional
+            titulo="No hay productos en este filtro"
+            mensaje="Cambiá el filtro o agregá productos al catálogo."
           />
-        ))}
-      </div>
+        ) : (
+          <ListaStagger className="grid grid-cols-2 gap-3">
+            {visibles.map((producto) => (
+              <ItemListaStagger key={producto.id}>
+                <TarjetaPos
+                  producto={producto}
+                  cantidad={ticket.find((l) => l.id === producto.id)?.cantidad ?? 0}
+                  onAgregar={() => setTicket(agregarAlTicket({ id: producto.id, nombre: producto.nombre, precio: producto.precio }))}
+                />
+              </ItemListaStagger>
+            ))}
+          </ListaStagger>
+        )}
+      </EntradaPagina>
       <div className="fixed bottom-0 left-0 right-0 mx-auto max-w-md p-5">
         <div className="flex items-center justify-between rounded-2xl bg-hc-text p-4">
           <div>

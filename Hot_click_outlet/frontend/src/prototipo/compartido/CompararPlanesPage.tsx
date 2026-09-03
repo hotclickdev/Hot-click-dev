@@ -14,6 +14,8 @@ import {
   validarPasoElegirPlan,
   type PlanUi,
 } from './planesPageHelpers'
+import EntradaPagina from './motion/EntradaPagina'
+import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
 
 /**
  * Comparar planes — wizard: elegir → confirmar → pago ONVO.
@@ -107,17 +109,18 @@ export default function CompararPlanesPage() {
           totalProgreso={TOTAL_PASOS_PLAN}
         >
           {idPaso === 'elegir' ? (
-            <ul className="space-y-4">
+            <ListaStagger className="flex flex-col gap-4">
               {planes.map((item) => (
-                <TarjetaPlan
-                  key={String(item.id)}
-                  plan={item}
-                  actual={item.nombreApi === actual}
-                  seleccionado={planElegido?.id === item.id}
-                  onSelect={() => setPlanElegido(item)}
-                />
+                <ItemListaStagger key={String(item.id)}>
+                  <TarjetaPlan
+                    plan={item}
+                    actual={item.nombreApi === actual}
+                    seleccionado={planElegido?.id === item.id}
+                    onSelect={() => setPlanElegido(item)}
+                  />
+                </ItemListaStagger>
               ))}
-            </ul>
+            </ListaStagger>
           ) : null}
           {idPaso === 'confirmar' && planElegido ? (
             <ResumenPlan plan={planElegido} />
@@ -139,6 +142,7 @@ function ShellPlanes({
 }) {
   return (
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12 md:pt-12">
+      <EntradaPagina>
       <div className="md:hidden">
         <EncabezadoPagina
           titulo="Tu Plan"
@@ -152,6 +156,7 @@ function ShellPlanes({
       </header>
       {error ? <p className="mb-4 text-sm text-red-500">{error}</p> : null}
       {children}
+      </EntradaPagina>
     </main>
   )
 }
@@ -191,7 +196,7 @@ function TarjetaPlan({
     : 'border border-hc-border'
 
   return (
-    <li className={`rounded-xl p-4 ${borde}`}>
+    <article className={`rounded-xl p-4 ${borde}`}>
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
           <p className="font-display text-lg font-bold">{plan.nombre}</p>
@@ -229,6 +234,6 @@ function TarjetaPlan({
           </button>
         </div>
       ) : null}
-    </li>
+    </article>
   )
 }

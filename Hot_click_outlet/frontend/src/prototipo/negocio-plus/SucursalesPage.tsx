@@ -7,6 +7,9 @@ import FormularioPorPasos from '../compartido/FormularioPorPasos'
 import PantallaExitoWizard, {
   navegarConTransicion,
 } from '../compartido/motion/PantallaExitoWizard'
+import EntradaPagina from '../compartido/motion/EntradaPagina'
+import EstadoVacioConversacional from '../compartido/motion/EstadoVacioConversacional'
+import { ListaStagger, ItemListaStagger } from '../compartido/motion/ListaStagger'
 import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
 import { formatoColon } from '@/theme/formatoColon'
 import { useToast } from '@/components/ui/Toast'
@@ -73,76 +76,84 @@ export default function SucursalesPage() {
 
   return (
     <main className="px-5 pb-10 pt-8 md:px-12 md:py-12" data-mm="seller-sucursales">
-      <CabeceraSucursales
-        rutaOpciones={ruta('opciones')}
-        onAgregar={() => setAccion({ tipo: 'crear' })}
-        ocultarAgregar={pendienteDesactivar != null}
-      />
-
-      <div className="mt-5 grid grid-cols-2 gap-3 md:max-w-[480px]">
-        <StatCard etiqueta="Sucursales" valor={String(sucursales.length)} />
-        <StatCard etiqueta="Ventas totales" valor={formatoColon(totalVentas)} />
-      </div>
-
-      {!pendienteDesactivar ? (
-        <div className="mt-4 md:hidden">
-          <Boton onClick={() => setAccion({ tipo: 'crear' })}>+ Agregar sucursal</Boton>
-        </div>
-      ) : null}
-
-      {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando sucursales…</p> : null}
-      {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
-      {!cargando && !error && sucursales.length === 0 ? (
-        <p className="mt-6 text-sm text-hc-muted md:max-w-[760px]">
-          Todavía no hay sucursales. Agregá la primera para empezar.
-        </p>
-      ) : null}
-
-      {pendienteDesactivar ? (
-        <ConfirmacionDesactivar
-          sucursal={pendienteDesactivar}
-          onCancelar={() => setAccion(null)}
-          onDesactivada={() => {
-            setSucursales((prev) => prev.filter((s) => s.id !== pendienteDesactivar.id))
-            setAccion(null)
-            toast({ message: 'Sucursal desactivada', type: 'success' })
-          }}
+      <EntradaPagina>
+        <CabeceraSucursales
+          rutaOpciones={ruta('opciones')}
+          onAgregar={() => setAccion({ tipo: 'crear' })}
+          ocultarAgregar={pendienteDesactivar != null}
         />
-      ) : (
-        <ul className="mt-6 flex flex-col gap-3 md:max-w-[760px]">
-          {sucursales.map((sucursal) => (
-            <FilaSucursal
-              key={sucursal.id}
-              sucursal={sucursal}
-              onRenombrar={() => setAccion({ tipo: 'renombrar', sucursal })}
-              onDesactivar={() => setAccion({ tipo: 'desactivar', sucursal })}
-            />
-          ))}
-        </ul>
-      )}
 
-      {accion?.tipo === 'crear' ? (
-        <FormularioSucursal
-          onCerrar={() => setAccion(null)}
-          onCreada={(nueva) => {
-            setSucursales((prev) => [...prev, aUnaVista(nueva)])
-          }}
-        />
-      ) : null}
+        <ListaStagger className="mt-5 grid grid-cols-2 gap-3 md:max-w-[480px]">
+          <ItemListaStagger>
+            <StatCard etiqueta="Sucursales" valor={String(sucursales.length)} />
+          </ItemListaStagger>
+          <ItemListaStagger>
+            <StatCard etiqueta="Ventas totales" valor={formatoColon(totalVentas)} />
+          </ItemListaStagger>
+        </ListaStagger>
 
-      {accion?.tipo === 'renombrar' ? (
-        <FormularioRenombrar
-          sucursal={accion.sucursal}
-          onCerrar={() => setAccion(null)}
-          onRenombrada={(actualizada) => {
-            setSucursales((prev) =>
-              prev.map((s) => (s.id === String(actualizada.id) ? aUnaVista(actualizada) : s)),
-            )
-            setAccion(null)
-            toast({ message: 'Sucursal actualizada', type: 'success' })
-          }}
-        />
-      ) : null}
+        {!pendienteDesactivar ? (
+          <div className="mt-4 md:hidden">
+            <Boton onClick={() => setAccion({ tipo: 'crear' })}>+ Agregar sucursal</Boton>
+          </div>
+        ) : null}
+
+        {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando sucursales…</p> : null}
+        {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
+        {!cargando && !error && sucursales.length === 0 ? (
+          <EstadoVacioConversacional
+            titulo="Todavía no hay sucursales"
+            mensaje="Agregá la primera para consolidar ventas e inventario."
+          />
+        ) : null}
+
+        {pendienteDesactivar ? (
+          <ConfirmacionDesactivar
+            sucursal={pendienteDesactivar}
+            onCancelar={() => setAccion(null)}
+            onDesactivada={() => {
+              setSucursales((prev) => prev.filter((s) => s.id !== pendienteDesactivar.id))
+              setAccion(null)
+              toast({ message: 'Sucursal desactivada', type: 'success' })
+            }}
+          />
+        ) : sucursales.length > 0 ? (
+          <ListaStagger className="mt-6 flex flex-col gap-3 md:max-w-[760px]">
+            {sucursales.map((sucursal) => (
+              <ItemListaStagger key={sucursal.id}>
+                <FilaSucursal
+                  sucursal={sucursal}
+                  onRenombrar={() => setAccion({ tipo: 'renombrar', sucursal })}
+                  onDesactivar={() => setAccion({ tipo: 'desactivar', sucursal })}
+                />
+              </ItemListaStagger>
+            ))}
+          </ListaStagger>
+        ) : null}
+
+        {accion?.tipo === 'crear' ? (
+          <FormularioSucursal
+            onCerrar={() => setAccion(null)}
+            onCreada={(nueva) => {
+              setSucursales((prev) => [...prev, aUnaVista(nueva)])
+            }}
+          />
+        ) : null}
+
+        {accion?.tipo === 'renombrar' ? (
+          <FormularioRenombrar
+            sucursal={accion.sucursal}
+            onCerrar={() => setAccion(null)}
+            onRenombrada={(actualizada) => {
+              setSucursales((prev) =>
+                prev.map((s) => (s.id === String(actualizada.id) ? aUnaVista(actualizada) : s)),
+              )
+              setAccion(null)
+              toast({ message: 'Sucursal actualizada', type: 'success' })
+            }}
+          />
+        ) : null}
+      </EntradaPagina>
     </main>
   )
 }
@@ -216,7 +227,7 @@ function FilaSucursal({
   const letra = sucursal.nombre.slice(0, 1).toUpperCase()
   const alDia = sucursal.estado === 'Al día'
   return (
-    <li className="flex flex-col gap-3 rounded-[10px] border border-hc-border bg-hc-surface p-3.5 md:flex-row md:items-center md:px-4 md:py-3">
+    <article className="flex flex-col gap-3 rounded-[10px] border border-hc-border bg-hc-surface p-3.5 md:flex-row md:items-center md:px-4 md:py-3">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--hc-n-100)] text-[15px] font-bold text-hc-muted md:size-12">
           {letra}
@@ -241,7 +252,7 @@ function FilaSucursal({
         <Boton variante="contorno" onClick={onRenombrar}>Renombrar</Boton>
         <Boton variante="contorno" onClick={onDesactivar}>Desactivar</Boton>
       </div>
-    </li>
+    </article>
   )
 }
 
@@ -530,12 +541,16 @@ function ModalSucursal({
   ocultarCancelar?: boolean
   children: ReactNode
 }) {
+  const reduced = useReducedMotion() ?? false
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-4 md:items-center">
-      <div
+      <motion.div
         className="w-full max-w-md rounded-2xl border border-hc-border bg-hc-surface p-5 shadow-lg"
         role="dialog"
         aria-labelledby={tituloId}
+        initial={reduced ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: EASE_PREMIUM }}
       >
         {!ocultarCancelar ? (
           <h2 id={tituloId} className="font-display text-lg font-bold">
@@ -557,7 +572,7 @@ function ModalSucursal({
             Cancelar
           </button>
         ) : null}
-      </div>
+      </motion.div>
     </div>
   )
 }
