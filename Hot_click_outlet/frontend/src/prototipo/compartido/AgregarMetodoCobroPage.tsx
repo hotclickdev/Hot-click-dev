@@ -7,15 +7,13 @@ import {
   TIPOS_METODO_COBRO,
   type TipoMetodoCobro,
   crearMetodoCobro,
-  mascaraDesdeDato,
-  nombrePorTipo,
   validarDatoMetodo,
 } from './metodosCobroDatos'
 import { Campo, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import TarjetaOpcion from './motion/TarjetaOpcion'
-import { motion } from 'framer-motion'
-import { EASE_PREMIUM } from './motion/formularioMotionTokens'
+import RevisionMetodoCobro from './motion/RevisionMetodoCobro'
+import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 
 const PASOS: readonly PasoFormulario[] = [
   { id: 'tipo', titulo: 'Tipo de cuenta' },
@@ -79,35 +77,22 @@ export function AgregarMetodoCobroPage({
       enviando={guardando}
     >
       {idPaso === 'tipo' ? (
-        <motion.div
-          className="grid grid-cols-1 gap-3 sm:grid-cols-3"
-          role="radiogroup"
-          aria-label="Tipo de método"
-          initial="hidden"
-          animate="show"
-          variants={{
-            hidden: {},
-            show: { transition: { staggerChildren: 0.05 } },
-          }}
-        >
-          {TIPOS_METODO_COBRO.map((opcion) => (
-            <motion.div
-              key={opcion.tipo}
-              variants={{
-                hidden: { opacity: 0, y: 8 },
-                show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: EASE_PREMIUM } },
-              }}
-            >
-              <TarjetaOpcion
-                titulo={opcion.titulo}
-                ayuda={opcion.ayuda}
-                seleccionado={tipo === opcion.tipo}
-                atenuar={tipo != null && tipo !== opcion.tipo}
-                onSelect={() => setTipo(opcion.tipo)}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
+        <div role="radiogroup" aria-label="Tipo de método">
+          <ListaStagger className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {TIPOS_METODO_COBRO.map((opcion) => (
+              <ItemListaStagger key={opcion.tipo}>
+                <TarjetaOpcion
+                  titulo={opcion.titulo}
+                  ayuda={opcion.ayuda}
+                  seleccionado={tipo === opcion.tipo}
+                  atenuar={tipo != null && tipo !== opcion.tipo}
+                  checkLayoutId="cobro-tipo-check"
+                  onSelect={() => setTipo(opcion.tipo)}
+                />
+              </ItemListaStagger>
+            ))}
+          </ListaStagger>
+        </div>
       ) : null}
       {idPaso === 'datos' && tipo ? (
         <Campo
@@ -118,11 +103,7 @@ export function AgregarMetodoCobroPage({
         />
       ) : null}
       {idPaso === 'confirmar' && tipo ? (
-        <div className="rounded-xl border border-hc-border bg-hc-surface p-4">
-          <p className="text-sm font-semibold text-hc-text">{nombrePorTipo(tipo)}</p>
-          <p className="mt-1 font-mono text-[13px] text-hc-text">{mascaraDesdeDato(tipo, dato)}</p>
-          <p className="mt-2 text-xs text-hc-muted">Se guarda en tu negocio para recibir ingresos de ventas.</p>
-        </div>
+        <RevisionMetodoCobro tipo={tipo} dato={dato} />
       ) : null}
     </FormularioPorPasos>
   )

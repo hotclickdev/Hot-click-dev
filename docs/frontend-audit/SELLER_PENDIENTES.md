@@ -20,7 +20,7 @@
 
 | ID | Pendiente |
 |----|-----------|
-| F6 | Motion polish: `RevisionMetodoCobro`; claim `layoutId` en TarjetaOpcion (doc o borrar) |
+| F6 | ~~Motion polish: `RevisionMetodoCobro`; claim `layoutId` en TarjetaOpcion~~ — hecho |
 | P2 | Pedidos empty → `EstadoVacioConversacional` donde falte |
 | P2 | NetworkFirst `/api/productos` TTL 30m — revisar si conviene |
 | P3 | MenuPage dual Entrada mobile/desktop; copy; icon maskable PWA |
