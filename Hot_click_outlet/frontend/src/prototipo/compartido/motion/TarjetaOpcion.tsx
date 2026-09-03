@@ -14,14 +14,19 @@ type Props = Readonly<{
   onSelect?: () => void
   to?: string
   children?: ReactNode
+  /** layoutId del check compartido entre opciones del mismo grupo. */
+  checkLayoutId?: string
   'data-mm'?: string
 }>
 
 const CLASE_BASE =
   'group relative block w-full rounded-2xl border bg-hc-surface px-4 py-4 text-left transition-[border-color,box-shadow,opacity,filter] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hc-primary/40'
 
+const CHECK_LAYOUT_DEFAULT = 'tarjeta-opcion-check'
+
 /**
- * Tarjeta de opción con elevación Framer (sin pelea CSS translate), press y check layoutId.
+ * Tarjeta de opción con elevación Framer (sin pelea CSS translate), press y
+ * check con layoutId compartido entre opciones del mismo radiogroup.
  */
 export default function TarjetaOpcion({
   titulo,
@@ -34,6 +39,7 @@ export default function TarjetaOpcion({
   onSelect,
   to,
   children,
+  checkLayoutId = CHECK_LAYOUT_DEFAULT,
   'data-mm': dataMm,
 }: Props) {
   const reduced = useReducedMotion() ?? false
@@ -66,12 +72,19 @@ export default function TarjetaOpcion({
         </div>
         <span
           className={`relative mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
-            seleccionado ? 'border-hc-primary bg-hc-primary' : 'border-hc-border'
+            seleccionado ? 'border-hc-primary' : 'border-hc-border'
           }`}
           aria-hidden
         >
+          {seleccionado ? (
+            <motion.span
+              layoutId={reduced ? undefined : checkLayoutId}
+              className="absolute inset-0 rounded-full bg-hc-primary"
+              transition={reduced ? { duration: 0 } : SPRING_POP}
+            />
+          ) : null}
           <motion.span
-            className="size-2 rounded-full bg-white"
+            className="relative z-[1] size-2 rounded-full bg-white"
             initial={false}
             animate={{ scale: seleccionado ? 1 : 0 }}
             transition={reduced ? { duration: 0 } : SPRING_POP}

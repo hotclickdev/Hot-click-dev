@@ -402,6 +402,7 @@ function FormularioInvitar({
                   ayuda={config?.desc ?? ''}
                   seleccionado={seleccionado}
                   atenuar={!seleccionado}
+                  checkLayoutId="equipo-rol-check"
                   onSelect={() => setCampo('rolEnEmpresa', rol)}
                 />
               )
