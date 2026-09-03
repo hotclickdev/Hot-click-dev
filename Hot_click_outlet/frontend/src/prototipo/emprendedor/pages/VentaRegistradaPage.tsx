@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatoColon } from '@/theme/formatoColon'
-import EnlacePrimario from '../ui/EnlacePrimario'
+import { Boton } from '@/prototipo/compartido/ui'
 import { restaurarTicketDemo, totalTicket, vaciarTicket } from '../ticketPos'
 import PantallaExitoWizard from '@/prototipo/compartido/motion/PantallaExitoWizard'
 import { RUTA_EMPRENDEDOR } from '../constants'
@@ -23,10 +23,10 @@ export default function VentaRegistradaPage() {
         mensaje={`Cobraste ${formatoColon(total)} en efectivo. El ticket ya se descontó de tu inventario.`}
         accion={
           <div className="flex w-full max-w-sm flex-col gap-2">
-            <EnlacePrimario to={`${RUTA_EMPRENDEDOR}/pos`}>Nueva venta</EnlacePrimario>
-            <EnlacePrimario to={`${RUTA_EMPRENDEDOR}/reportes`} variante="texto">
+            <Boton to={`${RUTA_EMPRENDEDOR}/pos`}>Nueva venta</Boton>
+            <Boton variante="contorno" to={`${RUTA_EMPRENDEDOR}/reportes`}>
               Ver en Reportes
-            </EnlacePrimario>
+            </Boton>
           </div>
         }
       />

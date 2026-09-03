@@ -1,4 +1,4 @@
-import EnlacePrimario from '../ui/EnlacePrimario'
+import { Boton } from '@/prototipo/compartido/ui'
 import EmprendedorPageFrame, { EmprendedorCard, EmprendedorFilaLista } from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useBodegasEmprendedor } from '../hooks/useBodegasEmprendedor'
@@ -26,7 +26,7 @@ export default function BodegasPage() {
         <EstadoVacioConversacional
           titulo="Todavía no tenés bodegas"
           mensaje="Creá la primera para saber dónde guardás tu inventario."
-          accion={<EnlacePrimario to={RUTA_NUEVA_BODEGA}>+ Nueva bodega</EnlacePrimario>}
+          accion={<Boton to={RUTA_NUEVA_BODEGA}>+ Nueva bodega</Boton>}
         />
       ) : null}
       {bodegas.length > 0 ? (
@@ -43,7 +43,7 @@ export default function BodegasPage() {
           ))}
         </ListaStagger>
       ) : null}
-      {!vacio ? <EnlacePrimario to={RUTA_NUEVA_BODEGA}>+ Nueva bodega</EnlacePrimario> : null}
+      {!vacio ? <Boton to={RUTA_NUEVA_BODEGA}>+ Nueva bodega</Boton> : null}
     </EmprendedorPageFrame>
   )
 }

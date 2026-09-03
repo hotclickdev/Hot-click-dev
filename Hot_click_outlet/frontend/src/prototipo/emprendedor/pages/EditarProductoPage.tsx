@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import BotonPrimario from '../ui/BotonPrimario'
-import BotonSecundario from '../ui/BotonSecundario'
+import { Boton } from '@/prototipo/compartido/ui'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
@@ -100,7 +99,7 @@ export default function EditarProductoPage() {
         <PantallaExitoWizard
           titulo="Cambios guardados"
           mensaje="Tu producto quedó actualizado en el catálogo."
-          accion={<BotonPrimario onClick={irAProductos}>Ver productos</BotonPrimario>}
+          accion={<Boton onClick={irAProductos}>Ver productos</Boton>}
         />
       </main>
     )
@@ -153,9 +152,9 @@ export default function EditarProductoPage() {
           errorSubmit={form.errorSubmit}
         />
       </FormularioPorPasos>
-      <BotonSecundario tono="peligro" onClick={() => navigate(`${RUTA_EMPRENDEDOR}/productos/${id}/eliminar`)}>
+      <Boton variante="suave" to={`${RUTA_EMPRENDEDOR}/productos/${id}/eliminar`}>
         Eliminar producto
-      </BotonSecundario>
+      </Boton>
     </main>
   )
 }

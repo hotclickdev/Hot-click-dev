@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { HotClickMark } from '@/components/ui/BrandLogo'
-import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
-import CampoTexto from '../ui/CampoTexto'
+import { Boton, Campo } from '@/prototipo/compartido/ui'
 import { RUTA_EMPRENDEDOR } from '../constants'
 
 /**
@@ -30,10 +29,10 @@ export default function RegistroPage() {
           navigate(RUTA_EMPRENDEDOR)
         }}
       >
-        <CampoTexto etiqueta="Nombre de tu tienda" value={tienda} onChange={setTienda} placeholder="Ej: TechZone CR" />
-        <CampoTexto etiqueta="Correo" value={correo} onChange={setCorreo} type="email" placeholder="vos@ejemplo.com" />
-        <CampoTexto etiqueta="Contraseña" value={clave} onChange={setClave} type="password" />
-        <BotonPrimario type="submit">Crear cuenta</BotonPrimario>
+        <Campo etiqueta="Nombre de tu tienda" value={tienda} onChange={setTienda} placeholder="Ej: TechZone CR" />
+        <Campo etiqueta="Correo" value={correo} onChange={setCorreo} type="email" placeholder="vos@ejemplo.com" />
+        <Campo etiqueta="Contraseña" value={clave} onChange={setClave} type="password" />
+        <Boton type="submit">Crear cuenta</Boton>
       </form>
     </main>
   )

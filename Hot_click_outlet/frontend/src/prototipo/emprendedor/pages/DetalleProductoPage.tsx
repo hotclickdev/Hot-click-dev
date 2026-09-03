@@ -4,7 +4,7 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import { formatoColon } from '@/theme/formatoColon'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import BadgeEstado from '../ui/BadgeEstado'
-import BotonPrimario from '../ui/BotonPrimario'
+import { Boton } from '@/prototipo/compartido/ui'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 import { useCuentaVendedor } from '../hooks/useCuentaVendedor'
@@ -63,9 +63,9 @@ export default function DetalleProductoPage() {
           </p>
           <h2 className="text-sm font-bold">Descripción</h2>
           <p className="text-xs text-hc-muted">{producto.descripcion || 'Sin descripción.'}</p>
-          <BotonPrimario onClick={() => navigate('/carrito')}>
+          <Boton onClick={() => navigate('/carrito')}>
             Comprar ahora
-          </BotonPrimario>
+          </Boton>
         </div>
       </EntradaPagina>
     </main>

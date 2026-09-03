@@ -9,8 +9,8 @@ type Props = {
 }
 
 /**
+ * @deprecated Usar `Boton` de `@/prototipo/compartido/ui` (variante primario|oscuro).
  * CTA principal rojo (o negro POS) del prototipo Emprendedor.
- * Mismo look que Continuar/Guardar del wizard conversacional.
  */
 export default function BotonPrimario({
   children,

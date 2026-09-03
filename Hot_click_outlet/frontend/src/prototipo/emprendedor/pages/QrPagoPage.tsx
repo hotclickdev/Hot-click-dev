@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import { formatoColon } from '@/theme/formatoColon'
-import BotonPrimario from '../ui/BotonPrimario'
+import { Boton } from '@/prototipo/compartido/ui'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { totalTicket } from '../ticketPos'
@@ -34,7 +34,7 @@ export default function QrPagoPage() {
       <p className="rounded-full bg-[var(--hc-warning-bg)] px-3.5 py-2 text-[11px] font-medium text-hc-warning">
         Esperando confirmación de pago...
       </p>
-      <BotonPrimario onClick={() => navigate(`${RUTA_EMPRENDEDOR}/pos/venta`)}>Pago confirmado</BotonPrimario>
+      <Boton onClick={() => navigate(`${RUTA_EMPRENDEDOR}/pos/venta`)}>Pago confirmado</Boton>
       <button
         type="button"
         onClick={() => navigate(`${RUTA_EMPRENDEDOR}/pos/cobrar`)}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import EnlacePrimario from '../ui/EnlacePrimario'
+import { Boton } from '@/prototipo/compartido/ui'
 import { EmprendedorCard } from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { billingService } from '@/services/billingService'
@@ -68,7 +68,7 @@ export default function PlanActualizadoPage() {
               ? error
               : `Plan activo: ${planNombre || '—'}. Ya podés usar las funciones nuevas.`
           }
-          accion={<EnlacePrimario to={`${RUTA_EMPRENDEDOR}/opciones`}>Volver a Opciones</EnlacePrimario>}
+          accion={<Boton to={`${RUTA_EMPRENDEDOR}/opciones`}>Volver a Opciones</Boton>}
         />
       </EmprendedorCard>
     </main>

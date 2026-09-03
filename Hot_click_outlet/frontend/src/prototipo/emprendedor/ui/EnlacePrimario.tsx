@@ -14,6 +14,7 @@ function destinoEmprendedor(to: string): string {
 }
 
 /**
+ * @deprecated Usar `Boton` de `@/prototipo/compartido/ui` (con prop `to`).
  * Link con look de botón primario (navegación del prototipo).
  */
 export default function EnlacePrimario({ to, children, variante = 'lleno', dataMm }: Props) {

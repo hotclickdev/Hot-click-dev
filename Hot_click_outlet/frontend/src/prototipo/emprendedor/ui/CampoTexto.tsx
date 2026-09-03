@@ -9,6 +9,7 @@ type Props = {
 }
 
 /**
+ * @deprecated Usar `Campo` de `@/prototipo/compartido/ui`.
  * Campo de formulario Figma: label + input fondo neutro.
  */
 export default function CampoTexto({
@@ -32,7 +33,7 @@ export default function CampoTexto({
         autoComplete={autoComplete}
         readOnly={readOnly}
         onChange={(evento) => onChange(evento.target.value)}
-        className="min-h-11 w-full rounded-lg border border-hc-border bg-[#F8F9FB] px-3.5 py-3 text-sm font-normal text-hc-text outline-none placeholder:text-hc-muted"
+        className="min-h-11 w-full rounded-lg border border-hc-border bg-hc-surface-2 px-3.5 py-3 text-sm font-normal text-hc-text outline-none placeholder:text-hc-muted"
       />
     </label>
   )

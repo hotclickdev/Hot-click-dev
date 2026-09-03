@@ -8,8 +8,8 @@ type Props = {
 }
 
 /**
+ * @deprecated Usar `Boton` de `@/prototipo/compartido/ui` (variante contorno|suave|peligro).
  * Botón bordeado (eliminar, cancelar, agregar método).
- * Misma área de clic generosa que Atrás del wizard.
  */
 export default function BotonSecundario({ children, onClick, tono = 'neutro', disabled = false }: Props) {
   const clases =

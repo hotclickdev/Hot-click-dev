@@ -1,4 +1,4 @@
-import ChipFiltro from './ChipFiltro'
+import { Chip } from '@/prototipo/compartido/ui'
 
 type Props<T extends string> = {
   valor: T
@@ -7,15 +7,15 @@ type Props<T extends string> = {
 }
 
 /**
- * Fila horizontal de chips de filtro.
+ * Fila horizontal de chips de filtro (usa Chip de compartido/ui).
  */
 export default function FilaChips<T extends string>({ valor, opciones, onChange }: Props<T>) {
   return (
     <div className="flex gap-2 overflow-x-auto">
       {opciones.map((opcion) => (
-        <ChipFiltro key={opcion} activo={valor === opcion} onClick={() => onChange(opcion)}>
+        <Chip key={opcion} activo={valor === opcion} onClick={() => onChange(opcion)}>
           {opcion}
-        </ChipFiltro>
+        </Chip>
       ))}
     </div>
   )

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
-import EnlacePrimario from '../ui/EnlacePrimario'
+import { Boton } from '@/prototipo/compartido/ui'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
@@ -48,9 +48,9 @@ export default function MenuPage() {
             </ItemMenu>
           ))}
           <ItemMenu>
-            <EnlacePrimario to="/admin/pos" variante="oscuro" dataMm="seller-menu-pos">
+            <Boton to="/admin/pos" variante="oscuro" dataMm="seller-menu-pos">
               Abrí la Caja (POS)
-            </EnlacePrimario>
+            </Boton>
           </ItemMenu>
           <ItemMenu>
             <Link

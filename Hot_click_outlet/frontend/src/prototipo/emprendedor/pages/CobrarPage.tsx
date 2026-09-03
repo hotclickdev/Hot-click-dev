@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatoColon } from '@/theme/formatoColon'
-import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
-import ChipFiltro from '../ui/ChipFiltro'
+import { Boton, Chip } from '@/prototipo/compartido/ui'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { leerTicket, totalTicket } from '../ticketPos'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
@@ -44,12 +43,12 @@ export default function CobrarPage() {
       <p className="text-xs font-medium text-hc-muted">Método de pago</p>
       <div className="flex gap-2">
         {METODOS.map((opcion) => (
-          <ChipFiltro key={opcion} activo={metodo === opcion} onClick={() => setMetodo(opcion)}>
+          <Chip key={opcion} activo={metodo === opcion} onClick={() => setMetodo(opcion)}>
             {opcion}
-          </ChipFiltro>
+          </Chip>
         ))}
       </div>
-      <BotonPrimario onClick={confirmar}>Confirmar cobro</BotonPrimario>
+      <Boton onClick={confirmar}>Confirmar cobro</Boton>
       </EntradaPagina>
     </main>
   )

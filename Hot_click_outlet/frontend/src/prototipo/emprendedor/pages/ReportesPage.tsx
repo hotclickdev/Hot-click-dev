@@ -1,5 +1,5 @@
 import { formatoColon } from '@/theme/formatoColon'
-import ChipFiltro from '../ui/ChipFiltro'
+import { Chip } from '@/prototipo/compartido/ui'
 import Miniatura from '../ui/Miniatura'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -32,9 +32,9 @@ export default function ReportesPage() {
         <ListaStagger className="flex gap-2 overflow-x-auto">
           {PERIODOS.map((opcion) => (
             <ItemListaStagger key={opcion}>
-              <ChipFiltro activo={periodo === opcion} onClick={() => setPeriodo(opcion)}>
+              <Chip activo={periodo === opcion} onClick={() => setPeriodo(opcion)}>
                 {opcion}
-              </ChipFiltro>
+              </Chip>
             </ItemListaStagger>
           ))}
         </ListaStagger>

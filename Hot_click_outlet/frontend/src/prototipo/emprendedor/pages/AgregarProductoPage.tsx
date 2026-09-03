@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CabeceraAtras from '../ui/CabeceraAtras'
-import BotonPrimario from '../ui/BotonPrimario'
+import { Boton } from '@/prototipo/compartido/ui'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { mensajeErrorProducto, publicarProductoVendedor } from '@/prototipo/compartido/catalogoVendedorApi'
 import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
@@ -57,7 +57,7 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
         <PantallaExitoWizard
           titulo="Producto publicado"
           mensaje="Ya está en tu catálogo. Podés seguir editándolo cuando quieras."
-          accion={<BotonPrimario onClick={irAProductos}>Ver productos</BotonPrimario>}
+          accion={<Boton onClick={irAProductos}>Ver productos</Boton>}
         />
       </main>
     )

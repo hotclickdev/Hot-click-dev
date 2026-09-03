@@ -7,6 +7,7 @@ type Props = {
 }
 
 /**
+ * @deprecated Usar `Chip` de `@/prototipo/compartido/ui`.
  * Chip de filtro (Todos / categoría / período).
  */
 export default function ChipFiltro({ activo, children, onClick }: Props) {
