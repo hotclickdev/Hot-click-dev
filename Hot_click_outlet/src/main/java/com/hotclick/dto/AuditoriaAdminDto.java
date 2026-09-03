@@ -1,41 +1,20 @@
-package com.hotclick.model;
+package com.hotclick.dto;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "hot_click_auditoria_admin_tb")
-public class AuditoriaAdmin {
+/** Evento de auditoría admin (solo lectura). */
+public class AuditoriaAdminDto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_auditoria")
     private Long id;
-
-    @Column(name = "admin_id")
     private Long adminId;
-
-    @Column(name = "admin_email", length = 150)
     private String adminEmail;
-
-    @Column(name = "accion", nullable = false, length = 50)
     private String accion;
-
-    @Column(name = "entidad", nullable = false, length = 50)
     private String entidad;
-
-    @Column(name = "entidad_id")
     private Long entidadId;
-
-    @Column(name = "detalle", length = 500)
     private String detalle;
-
-    @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha;
-
-    /** Negocio afectado por la acción (nullable en filas históricas). */
-    @Column(name = "fk_id_empresa")
     private Long empresaId;
+    private String empresaNombre;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -63,4 +42,7 @@ public class AuditoriaAdmin {
 
     public Long getEmpresaId() { return empresaId; }
     public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
+
+    public String getEmpresaNombre() { return empresaNombre; }
+    public void setEmpresaNombre(String empresaNombre) { this.empresaNombre = empresaNombre; }
 }

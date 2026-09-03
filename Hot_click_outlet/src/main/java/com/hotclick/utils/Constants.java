@@ -87,6 +87,9 @@ public class Constants {
     public static final String AUDITORIA_RECHAZAR_SINPE     = "RECHAZAR_SINPE";
     public static final String AUDITORIA_AUTO_APROBAR_SINPE = "AUTO_APROBAR_SINPE";
 
+    /** Retención de hot_click_auditoria_admin_tb (DataRetentionScheduler). */
+    public static final int DIAS_RETENCION_AUDITORIA_ADMIN = 90;
+
     // 2FA — métodos disponibles
     public static final String METODO_2FA_TOTP      = "TOTP";
     public static final String METODO_2FA_EMAIL_OTP = "EMAIL_OTP";

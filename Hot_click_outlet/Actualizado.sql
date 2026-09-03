@@ -3575,7 +3575,7 @@ SET visible_catalogo = FALSE
 WHERE visible_catalogo = TRUE
   AND (fk_id_empresa = 1 OR fk_id_empresa IS NULL);
 
--- V121: empresa afectada en auditor�a admin + �ndices de listado
+-- V123: empresa afectada en auditoria admin + indices de listado
 CREATE TABLE IF NOT EXISTS hot_click_auditoria_admin_tb (
     id_auditoria BIGSERIAL PRIMARY KEY,
     admin_id     BIGINT,

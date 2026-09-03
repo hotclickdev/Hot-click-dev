@@ -73,7 +73,8 @@ public class DataRetentionScheduler {
 
     private int limpiarAuditoriaSeguridad() {
         try {
-            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR)
+                    .minusDays(Constants.DIAS_RETENCION_AUDITORIA_ADMIN);
             int n = jdbc.update(
                 "DELETE FROM hot_click_auditoria_admin_tb " +
                 "WHERE ctid IN (SELECT ctid FROM hot_click_auditoria_admin_tb WHERE fecha < ? LIMIT 500)",

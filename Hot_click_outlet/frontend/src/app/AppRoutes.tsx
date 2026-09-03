@@ -76,6 +76,7 @@ const AdminMiEmpresa = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
 const AdminSecurityCenter = lazy(() => import('@/pages/admin/AdminSecurityCenter'))
 const AdminSuperAdmin = lazy(() => import('@/pages/admin/AdminSuperAdmin'))
 const AdminObservabilidad = lazy(() => import('@/pages/admin/AdminObservabilidad'))
+const AdminAuditorias = lazy(() => import('@/pages/admin/AdminAuditorias'))
 const AdminCotizaciones = lazy(() => import('@/pages/admin/AdminCotizaciones'))
 const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
 const CotizacionPublicaPage = lazy(() => import('@/pages/CotizacionPublicaPage'))
@@ -207,7 +208,7 @@ export default function AppRoutes() {
         <Route path="herramientas/marcas" element={<Navigate to="/admin/marcas" replace />} />
         <Route path="herramientas/garantias" element={<Navigate to="/admin/garantias" replace />} />
         <Route path="herramientas/clientes" element={<Navigate to="/admin/clientes" replace />} />
-        <Route path="herramientas/auditorias" element={<Navigate to="/admin" replace />} />
+        <Route path="herramientas/auditorias" element={<Navigate to="/admin/auditorias" replace />} />
         <Route path="herramientas/servicios" element={<Navigate to="/admin/servicios" replace />} />
         <Route path="herramientas/aprobaciones" element={<Navigate to="/admin/aprobaciones" replace />} />
         <Route path="proximamente" element={<Navigate to="/admin" replace />} />
@@ -253,6 +254,7 @@ export default function AppRoutes() {
           <Route path="security" element={<AdminSecurityCenter />} />
           <Route path="superadmin" element={<AdminSuperAdmin />} />
           <Route path="observabilidad" element={<AdminObservabilidad />} />
+          <Route path="auditorias" element={<AdminAuditorias />} />
           <Route path="ai-control" element={<AdminAiControl />} />
           <Route path="facturas" element={<AdminFacturas />} />
           <Route path="config-fiscal" element={<AdminConfigFiscal />} />

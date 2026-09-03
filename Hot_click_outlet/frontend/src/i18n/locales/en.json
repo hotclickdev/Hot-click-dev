@@ -1040,6 +1040,7 @@
       "aprobaciones": "Approvals",
       "moderacion": "Moderation",
       "securityCenter": "Security Center",
+      "auditorias": "Audits",
       "observabilidad": "Observability",
       "featureFlags": "Feature Flags / SaaS",
       "planesBilling": "Plans / Billing",
