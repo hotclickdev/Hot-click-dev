@@ -8,7 +8,9 @@ import { RUTA_EMPRENDEDOR } from '../constants'
 import { usePedidosEmprendedor } from '../hooks/usePedidosEmprendedor'
 import type { PedidoEmprendedor } from '../types'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
+import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
 import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
+import SkeletonLista from '@/prototipo/compartido/motion/SkeletonLista'
 
 const FILTROS = ['Todos', 'Pendientes', 'Enviados', 'Entregados'] as const
 
@@ -34,9 +36,17 @@ export default function PedidosPage() {
         <div data-mm="seller-filtro-pedidos">
           <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
         </div>
-        {cargando ? <p className="text-sm text-hc-muted">Cargando pedidos…</p> : null}
+        {cargando ? <SkeletonLista filas={4} /> : null}
         {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        {!cargando && visibles.length === 0 ? <p className="text-sm text-hc-muted">No hay pedidos en este filtro.</p> : null}
+        {!cargando && !error && pedidos.length === 0 ? (
+          <EstadoVacioConversacional
+            titulo="Todavía no tenés pedidos"
+            mensaje="Cuando vendas, van a aparecer acá con su estado de envío."
+          />
+        ) : null}
+        {!cargando && pedidos.length > 0 && visibles.length === 0 ? (
+          <p className="text-sm text-hc-muted">No hay pedidos en este filtro.</p>
+        ) : null}
         <div data-mm="seller-lista-pedidos">
           <ListaStagger className="flex flex-col gap-[18px]">
             {visibles.map((pedido) => (

@@ -4,6 +4,7 @@ import { RUTA_EMPRENDEDOR } from '../constants'
 import { useBodegasEmprendedor } from '../hooks/useBodegasEmprendedor'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
+import SkeletonLista from '@/prototipo/compartido/motion/SkeletonLista'
 
 const RUTA_NUEVA_BODEGA = `${RUTA_EMPRENDEDOR}/opciones/bodegas/nueva`
 
@@ -20,7 +21,7 @@ export default function BodegasPage() {
       volverA={`${RUTA_EMPRENDEDOR}/opciones`}
       subtitulo="Dónde guardás tu inventario"
     >
-      {cargando ? <p className="text-sm text-hc-muted">Cargando bodegas…</p> : null}
+      {cargando ? <SkeletonLista filas={3} /> : null}
       {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
       {vacio ? (
         <EstadoVacioConversacional

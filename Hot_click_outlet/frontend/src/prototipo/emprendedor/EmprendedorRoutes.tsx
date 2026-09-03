@@ -1,35 +1,60 @@
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import EmprendedorShell from './EmprendedorShell'
-import MenuPage from './pages/MenuPage'
-import ProductosPage from './pages/ProductosPage'
-import ProductosVacioPage from './pages/ProductosVacioPage'
-import AgregarProductoPage from './pages/AgregarProductoPage'
-import ElegirTipoProductoPage from './pages/ElegirTipoProductoPage'
-import EncargosPage from './pages/EncargosPage'
-import RecoleccionPage from './pages/RecoleccionPage'
-import EditarProductoPage from './pages/EditarProductoPage'
-import ConfirmarEliminacionPage from './pages/ConfirmarEliminacionPage'
-import ReportesPage from './pages/ReportesPage'
-import TiendaPublicaPage from './pages/TiendaPublicaPage'
-import DetalleProductoPage from './pages/DetalleProductoPage'
-import CarritoPage from './pages/CarritoPage'
-import CompraConfirmadaPage from './pages/CompraConfirmadaPage'
-import OpcionesPage from './pages/OpcionesPage'
-import PerfilPage from './pages/PerfilPage'
-import NotificacionesPage from './pages/NotificacionesPage'
-import CobroPage from './pages/CobroPage'
-import AgregarMetodoCobroPage from './pages/AgregarMetodoCobroPage'
-import AyudaPage from './pages/AyudaPage'
-import ConsultasHotPage from './pages/ConsultasHotPage'
-import ProximamentePage from './pages/ProximamentePage'
-import BodegasPage from './pages/BodegasPage'
-import NuevaBodegaPage from './pages/NuevaBodegaPage'
-import PedidosPage from './pages/PedidosPage'
-import DetallePedidoPage from './pages/DetallePedidoPage'
-import DatosNegocioPage from './pages/DatosNegocioPage'
-import PlanesPage from './pages/PlanesPage'
-import PlanActualizadoPage from './pages/PlanActualizadoPage'
 import { RUTA_EMPRENDEDOR } from './constants'
+
+const MenuPage = lazy(() => import('./pages/MenuPage'))
+const ProductosPage = lazy(() => import('./pages/ProductosPage'))
+const ProductosVacioPage = lazy(() => import('./pages/ProductosVacioPage'))
+const AgregarProductoPage = lazy(() => import('./pages/AgregarProductoPage'))
+const ElegirTipoProductoPage = lazy(() => import('./pages/ElegirTipoProductoPage'))
+const EncargosPage = lazy(() => import('./pages/EncargosPage'))
+const RecoleccionPage = lazy(() => import('./pages/RecoleccionPage'))
+const EditarProductoPage = lazy(() => import('./pages/EditarProductoPage'))
+const ConfirmarEliminacionPage = lazy(() => import('./pages/ConfirmarEliminacionPage'))
+const ReportesPage = lazy(() => import('./pages/ReportesPage'))
+const TiendaPublicaPage = lazy(() => import('./pages/TiendaPublicaPage'))
+const DetalleProductoPage = lazy(() => import('./pages/DetalleProductoPage'))
+const CarritoPage = lazy(() => import('./pages/CarritoPage'))
+const CompraConfirmadaPage = lazy(() => import('./pages/CompraConfirmadaPage'))
+const OpcionesPage = lazy(() => import('./pages/OpcionesPage'))
+const PerfilPage = lazy(() => import('./pages/PerfilPage'))
+const NotificacionesPage = lazy(() => import('./pages/NotificacionesPage'))
+const CobroPage = lazy(() => import('./pages/CobroPage'))
+const AgregarMetodoCobroPage = lazy(() => import('./pages/AgregarMetodoCobroPage'))
+const AyudaPage = lazy(() => import('./pages/AyudaPage'))
+const ConsultasHotPage = lazy(() => import('./pages/ConsultasHotPage'))
+const ProximamentePage = lazy(() => import('./pages/ProximamentePage'))
+const BodegasPage = lazy(() => import('./pages/BodegasPage'))
+const NuevaBodegaPage = lazy(() => import('./pages/NuevaBodegaPage'))
+const PedidosPage = lazy(() => import('./pages/PedidosPage'))
+const DetallePedidoPage = lazy(() => import('./pages/DetallePedidoPage'))
+const DatosNegocioPage = lazy(() => import('./pages/DatosNegocioPage'))
+const PlanesPage = lazy(() => import('./pages/PlanesPage'))
+const PlanActualizadoPage = lazy(() => import('./pages/PlanActualizadoPage'))
+
+function SpinnerRuta() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <div
+        className="size-8 animate-spin rounded-full border-2"
+        style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }}
+      />
+    </div>
+  )
+}
+
+function LazyPage({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<SpinnerRuta />}>{children}</Suspense>
+}
+
+function page(Comp: ComponentType) {
+  return (
+    <LazyPage>
+      <Comp />
+    </LazyPage>
+  )
+}
 
 /**
  * Rutas del prototipo Emprendedor (Figma Page 1, iPhone 11).
@@ -41,7 +66,6 @@ export default function EmprendedorRoutes() {
       <Route path="registro" element={<Navigate to="/registro" replace />} />
       <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
       <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
-      {/* Alias planos → nested opciones (misma estrategia que PYME/Plus flat + Emp nested). */}
       <Route path="bodegas" element={<Navigate to="opciones/bodegas" replace />} />
       <Route path="bodegas/nueva" element={<Navigate to="opciones/bodegas/nueva" replace />} />
       <Route path="negocio" element={<Navigate to="opciones/negocio" replace />} />
@@ -53,43 +77,43 @@ export default function EmprendedorRoutes() {
       <Route path="cobro" element={<Navigate to="opciones/cobro" replace />} />
       <Route path="cobro/nuevo" element={<Navigate to="opciones/cobro/nuevo" replace />} />
       <Route element={<EmprendedorShell conNav />}>
-        <Route index element={<MenuPage />} />
-        <Route path="productos" element={<ProductosPage />} />
-        <Route path="encargos" element={<EncargosPage />} />
-        <Route path="recoleccion" element={<RecoleccionPage />} />
-        <Route path="productos/vacio" element={<ProductosVacioPage />} />
-        <Route path="productos/nuevo" element={<ElegirTipoProductoPage />} />
-        <Route path="productos/nuevo/catalogo" element={<AgregarProductoPage />} />
-        <Route path="productos/nuevo/personalizado" element={<AgregarProductoPage personalizado />} />
-        <Route path="tienda" element={<TiendaPublicaPage />} />
-        <Route path="reportes" element={<ReportesPage />} />
-        <Route path="opciones" element={<OpcionesPage />} />
+        <Route index element={page(MenuPage)} />
+        <Route path="productos" element={page(ProductosPage)} />
+        <Route path="encargos" element={page(EncargosPage)} />
+        <Route path="recoleccion" element={page(RecoleccionPage)} />
+        <Route path="productos/vacio" element={page(ProductosVacioPage)} />
+        <Route path="productos/nuevo" element={page(ElegirTipoProductoPage)} />
+        <Route path="productos/nuevo/catalogo" element={page(AgregarProductoPage)} />
+        <Route path="productos/nuevo/personalizado" element={<LazyPage><AgregarProductoPage personalizado /></LazyPage>} />
+        <Route path="tienda" element={page(TiendaPublicaPage)} />
+        <Route path="reportes" element={page(ReportesPage)} />
+        <Route path="opciones" element={page(OpcionesPage)} />
       </Route>
       <Route element={<EmprendedorShell />}>
-        <Route path="productos/:id/editar" element={<EditarProductoPage />} />
-        <Route path="productos/:id/eliminar" element={<ConfirmarEliminacionPage />} />
-        <Route path="tienda/carrito" element={<CarritoPage />} />
-        <Route path="tienda/compra-confirmada" element={<CompraConfirmadaPage />} />
-        <Route path="tienda/:id" element={<DetalleProductoPage />} />
-        <Route path="opciones/perfil" element={<PerfilPage />} />
-        <Route path="opciones/notificaciones" element={<NotificacionesPage />} />
-        <Route path="opciones/cobro" element={<CobroPage />} />
-        <Route path="opciones/cobro/nuevo" element={<AgregarMetodoCobroPage />} />
-        <Route path="opciones/ayuda" element={<AyudaPage />} />
-        <Route path="opciones/consultas" element={<ConsultasHotPage />} />
-        <Route path="opciones/bodegas" element={<BodegasPage />} />
-        <Route path="opciones/bodegas/nueva" element={<NuevaBodegaPage />} />
-        <Route path="opciones/negocio" element={<DatosNegocioPage />} />
-        <Route path="opciones/plan" element={<PlanesPage />} />
-        <Route path="opciones/plan/actualizado" element={<PlanActualizadoPage />} />
+        <Route path="productos/:id/editar" element={page(EditarProductoPage)} />
+        <Route path="productos/:id/eliminar" element={page(ConfirmarEliminacionPage)} />
+        <Route path="tienda/carrito" element={page(CarritoPage)} />
+        <Route path="tienda/compra-confirmada" element={page(CompraConfirmadaPage)} />
+        <Route path="tienda/:id" element={page(DetalleProductoPage)} />
+        <Route path="opciones/perfil" element={page(PerfilPage)} />
+        <Route path="opciones/notificaciones" element={page(NotificacionesPage)} />
+        <Route path="opciones/cobro" element={page(CobroPage)} />
+        <Route path="opciones/cobro/nuevo" element={page(AgregarMetodoCobroPage)} />
+        <Route path="opciones/ayuda" element={page(AyudaPage)} />
+        <Route path="opciones/consultas" element={page(ConsultasHotPage)} />
+        <Route path="opciones/bodegas" element={page(BodegasPage)} />
+        <Route path="opciones/bodegas/nueva" element={page(NuevaBodegaPage)} />
+        <Route path="opciones/negocio" element={page(DatosNegocioPage)} />
+        <Route path="opciones/plan" element={page(PlanesPage)} />
+        <Route path="opciones/plan/actualizado" element={page(PlanActualizadoPage)} />
         <Route path="proximamente/pedidos" element={<Navigate to={`${RUTA_EMPRENDEDOR}/pedidos`} replace />} />
         <Route path="proximamente/bodegas" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/bodegas`} replace />} />
         <Route path="proximamente/productos" element={<Navigate to={`${RUTA_EMPRENDEDOR}/productos`} replace />} />
         <Route path="proximamente/reportes" element={<Navigate to={`${RUTA_EMPRENDEDOR}/reportes`} replace />} />
         <Route path="proximamente/negocio" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/negocio`} replace />} />
-        <Route path="proximamente" element={<ProximamentePage />} />
-        <Route path="pedidos" element={<PedidosPage />} />
-        <Route path="pedidos/:id" element={<DetallePedidoPage />} />
+        <Route path="proximamente" element={page(ProximamentePage)} />
+        <Route path="pedidos" element={page(PedidosPage)} />
+        <Route path="pedidos/:id" element={page(DetallePedidoPage)} />
       </Route>
     </Routes>
   )

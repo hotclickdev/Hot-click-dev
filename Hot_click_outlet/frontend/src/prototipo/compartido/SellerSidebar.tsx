@@ -4,8 +4,10 @@ import {
   ChartBarIcon,
   ClipboardDocumentListIcon,
   Cog6ToothIcon,
+  ComputerDesktopIcon,
   CubeIcon,
   TruckIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -16,14 +18,24 @@ import NegocioPertenenciaChip from './NegocioPertenenciaChip'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from './PrototipoSidebarNav'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 
-function gruposSeller(ruta: (segmento?: string) => string, conSucursales: boolean, pendientesEncargos: number): GrupoNav[] {
+function gruposSeller(
+  ruta: (segmento?: string) => string,
+  conSucursales: boolean,
+  pendientesEncargos: number,
+  conEquipo: boolean,
+): GrupoNav[] {
   const sucursales: ItemNav[] = conSucursales
     ? [{ to: ruta('sucursales'), etiqueta: 'Sucursales', Icono: BuildingOffice2Icon }]
+    : []
+  const equipo: ItemNav[] = conEquipo
+    ? [{ to: ruta('equipo'), etiqueta: 'Equipo', Icono: UserGroupIcon }]
     : []
   return [
     {
       titulo: 'Operar',
       items: [
+        { to: '/admin/pos', etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
+        { to: ruta('pedidos'), etiqueta: 'Pedidos', Icono: ClipboardDocumentListIcon },
         { to: ruta('productos'), etiqueta: 'Productos', Icono: CubeIcon },
         { to: ruta('tienda'), etiqueta: 'Tienda', Icono: BuildingStorefrontIcon },
         { to: ruta('recoleccion'), etiqueta: 'Recolección', Icono: TruckIcon },
@@ -37,18 +49,25 @@ function gruposSeller(ruta: (segmento?: string) => string, conSucursales: boolea
       ],
     },
     {
+      titulo: 'Inventario',
+      items: [
+        { to: ruta('bodegas'), etiqueta: 'Mis Bodegas', Icono: BuildingStorefrontIcon },
+        { to: ruta('productos'), etiqueta: 'Mis Productos', Icono: CubeIcon },
+      ],
+    },
+    {
       titulo: 'Negocio',
       items: [
         { to: ruta('reportes'), etiqueta: 'Reportes', Icono: ChartBarIcon },
         { to: ruta('opciones'), etiqueta: 'Opciones', Icono: Cog6ToothIcon },
+        ...equipo,
       ],
     },
   ]
 }
 
 /**
- * Sidebar desktop PYME / Negocio Plus. Mismo lenguaje visual que Emprendedor.
- * Negocio Plus agrega Sucursales en Operar.
+ * Sidebar desktop PYME / Negocio Plus. Alineado con Emp: POS, Pedidos, Bodegas.
  */
 export default function SellerSidebar() {
   const plan = useSellerPlan()
@@ -58,7 +77,7 @@ export default function SellerSidebar() {
   const logout = useAuthStore((s) => s.logout)
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
   const grupos = useMemo(
-    () => gruposSeller(ruta, plan.id === 'negocioPlus', pendientesEncargos),
+    () => gruposSeller(ruta, plan.id === 'negocioPlus', pendientesEncargos, plan.id === 'pyme'),
     [ruta, plan.id, pendientesEncargos],
   )
 

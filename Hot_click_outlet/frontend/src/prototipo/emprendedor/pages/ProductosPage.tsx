@@ -3,6 +3,7 @@ import BotonesAgregarProducto from '@/prototipo/compartido/BotonesAgregarProduct
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
 import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
+import SkeletonLista from '@/prototipo/compartido/motion/SkeletonLista'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import FilaChips from '../ui/FilaChips'
 import FilaProducto from '../ui/FilaProducto'
@@ -45,7 +46,7 @@ export default function ProductosPage() {
 
         {!vacio ? <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} /> : null}
 
-        {cargando ? <p className="text-sm text-hc-muted">Cargando catálogo…</p> : null}
+        {cargando ? <SkeletonLista filas={4} /> : null}
         {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
         {!cargando && productos.length > 0 && visibles.length === 0 ? (
           <p className="text-sm text-hc-muted">No hay productos en este filtro.</p>

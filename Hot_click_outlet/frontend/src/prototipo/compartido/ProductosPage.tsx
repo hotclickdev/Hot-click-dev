@@ -7,6 +7,7 @@ import BotonesAgregarProducto from './BotonesAgregarProducto'
 import EntradaPagina from './motion/EntradaPagina'
 import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
+import SkeletonLista from './motion/SkeletonLista'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 
@@ -32,7 +33,7 @@ export default function ProductosPage() {
             <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
           ))}
         </div>
-        {cargando ? <p className="mt-6 text-sm text-hc-muted">Cargando catálogo…</p> : null}
+        {cargando ? <SkeletonLista className="mt-6" filas={4} /> : null}
         {error ? <p className="mt-6 text-sm text-hc-danger">{error}</p> : null}
         <div data-mm="seller-lista-productos">
           {vacio ? (

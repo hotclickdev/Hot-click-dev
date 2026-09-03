@@ -6,7 +6,9 @@ import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
 import type { PedidoMock } from './mock'
 import EntradaPagina from './motion/EntradaPagina'
+import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
+import SkeletonLista from './motion/SkeletonLista'
 
 const FILTROS = ['Todos', 'Pendientes', 'Enviados', 'Entregados'] as const
 
@@ -35,9 +37,17 @@ export default function PedidosPage() {
             <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
           ))}
         </div>
-        {cargando ? <p className="text-sm text-hc-muted">Cargando pedidos…</p> : null}
+        {cargando ? <SkeletonLista className="mt-2" filas={4} /> : null}
         {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        {!cargando && lista.length === 0 ? <p className="text-sm text-hc-muted">No hay pedidos en este filtro.</p> : null}
+        {!cargando && !error && seller.length === 0 ? (
+          <EstadoVacioConversacional
+            titulo="Todavía no tenés pedidos"
+            mensaje="Cuando vendas, van a aparecer acá con su estado de envío."
+          />
+        ) : null}
+        {!cargando && seller.length > 0 && lista.length === 0 ? (
+          <p className="text-sm text-hc-muted">No hay pedidos en este filtro.</p>
+        ) : null}
         <div data-mm="seller-lista-pedidos">
           <ListaStagger className="space-y-3 md:max-w-[760px]">
             {lista.map((pedido) => (

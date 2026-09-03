@@ -4,6 +4,7 @@ import { useBodegasEmprendedor } from '@/prototipo/emprendedor/hooks/useBodegasE
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
+import SkeletonLista from './motion/SkeletonLista'
 
 /**
  * Mis bodegas (Figma 78:303) — API real.
@@ -18,7 +19,7 @@ export default function BodegasPage() {
     <EntradaPagina>
       <main className="px-5 pb-8 pt-[60px]">
         <EncabezadoPagina titulo="Mis Bodegas" subtitulo="Dónde guardás tu inventario" volverA={ruta('opciones')} />
-        {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando bodegas…</p> : null}
+        {cargando ? <SkeletonLista className="mt-4" filas={3} /> : null}
         {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
         {vacio ? (
           <EstadoVacioConversacional

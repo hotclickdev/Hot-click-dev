@@ -1,45 +1,34 @@
-# Seller frontend — pendientes (post Paso 3)
+# Seller frontend — pendientes (post merge P1)
 
 **Fecha:** 2026-09-03  
-**Hecho en este commit:** Fase 0 (PWA/deploy), Fase 1 (paths/remap), Fase 2 parcial (eliminar producto), quick wins a11y/nav/Equipo/FAQ/e2e:ci, rules/skills/docs audit.
+**Rama:** `feat/seller-roadmap-p1`
 
----
+## Hecho en esta rama
 
-## P0 / P1 abiertos
+| Ítem | Estado |
+|------|--------|
+| F3 kit UI → `compartido/ui` | Hecho (merge agente) |
+| F6 motion cobro + TarjetaOpcion | Hecho (merge agente) |
+| F5 skeletons listados | Hecho (`SkeletonLista`) |
+| Empty Pedidos | Hecho |
+| F7 lazy routes Emp + Seller | Hecho |
+| F9 sidebars POS/Pedidos/Bodegas | Hecho (SellerSidebar) |
+| F8 Escape modal + remap assert | Hecho (spec + unit in e2e file) |
+| Dead Pos/Cobrar/Login prototipo | Eliminados |
+| P0 PWA + paths (master `dc152a0c`) | Previo |
 
-| ID | Pendiente | Notas |
-|----|-----------|--------|
-| F3 | Design kit único | Deprecar usos nuevos de `emprendedor/ui` (`BotonPrimario`); preferir `compartido/ui` + tokens |
-| F2b | Consolidar páginas Emp → compartido | Productos, Pedidos, Bodegas, Planes (wrappers thin); Eliminar ya hecho |
-| F5 | Estados UX | Skeletons en listados; contrato toast + error inline consistente |
-| F7 | Perf seller | Lazy de páginas dentro del área seller (hoy eager en chunk) |
-| P1-08 | Sidebars asimétricas | Emp tiene Pedidos/POS/Bodegas; Seller (PYME/Plus) no — alinear descubribilidad |
-| F8+ | E2E smoke | Correr Playwright wizards en CI/local; specs Escape modal / remap admin por plan |
+## Todavía pendiente
 
-## P2 / P3
+| # | Qué | Notas |
+|---|-----|--------|
+| 1 | **F2b wrappers Productos/Planes** | Pedidos/Bodegas chrome distinto; Productos Emp vs compartido siguen forkeados (hooks distintos). Extraer vista compartida con props. |
+| 2 | **Focus trap modal Sucursales** | Escape + aria-modal listos; falta trap completo de foco. |
+| 3 | **E2E verde CI** | Correr `pnpm exec playwright test tests/seller-*.spec.ts` en máquina con Chrome. |
+| 4 | **Menu dual EntradaPagina** | Mobile/desktop siguen con dos `EntradaPagina` (P3). |
+| 5 | **Icon maskable dedicado** | Manifest ya marca `purpose: maskable` con `app-icon.png`; ideal asset con safe-zone. |
+| 6 | **CRM/Marketing/Inventario seller** | Fuera de alcance sin decisión producto. |
 
-| ID | Pendiente |
-|----|-----------|
-| F6 | ~~Motion polish: `RevisionMetodoCobro`; claim `layoutId` en TarjetaOpcion~~ — hecho |
-| P2 | Pedidos empty → `EstadoVacioConversacional` donde falte |
-| P2 | NetworkFirst `/api/productos` TTL 30m — revisar si conviene |
-| P3 | MenuPage dual Entrada mobile/desktop; copy; icon maskable PWA |
-| Dead code | Páginas Pos/Cobrar/Login emp unmounted — borrar o no montar |
+## Orden merge recomendado hacia master
 
-## Fuera de alcance (no inventar)
-
-- Módulos seller CRM / Marketing / Inventario / Ventas (solo admin hoy) — requiere decisión de producto.
-
-## DoD roadmap (checklist)
-
-- [x] P0 PWA/deploy mitigados
-- [x] Path strategy + remap admin por plan
-- [x] Eliminar producto compartido + QWs a11y/nav
-- [ ] Páginas core en `compartido/` + wrappers thin (resto)
-- [ ] Un kit botones/campos
-- [ ] Skeletons + feedback consistente
-- [ ] Lazy routes seller
-- [ ] E2E seller verde en CI
-- [ ] Sidebars alineadas (opcional Fase 9)
-
-**Siguiente recomendado:** Fase 2b (Productos/Pedidos wrappers) o Fase 3 (kit UI).
+1. Merge `feat/seller-roadmap-p1` → `master` tras typecheck + vitest.
+2. Luego F2b Productos/Planes en PR aparte.
