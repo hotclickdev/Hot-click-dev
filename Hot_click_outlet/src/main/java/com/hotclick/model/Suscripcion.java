@@ -31,6 +31,15 @@ public class Suscripcion {
     @Column(name = "stripe_price_id", length = 100)
     private String stripePriceId;
 
+    @Column(name = "onvo_customer_id", length = 100)
+    private String onvoCustomerId;
+
+    @Column(name = "onvo_subscription_id", length = 100)
+    private String onvoSubscriptionId;
+
+    @Column(name = "onvo_price_id", length = 100)
+    private String onvoPriceId;
+
     /** TRIAL | ACTIVO | CANCELADO | VENCIDO | PAST_DUE */
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = "TRIAL";
@@ -70,6 +79,12 @@ public class Suscripcion {
     public void setStripeSubscriptionId(String v) { this.stripeSubscriptionId = v; }
     public String getStripePriceId() { return stripePriceId; }
     public void setStripePriceId(String v) { this.stripePriceId = v; }
+    public String getOnvoCustomerId() { return onvoCustomerId; }
+    public void setOnvoCustomerId(String v) { this.onvoCustomerId = v; }
+    public String getOnvoSubscriptionId() { return onvoSubscriptionId; }
+    public void setOnvoSubscriptionId(String v) { this.onvoSubscriptionId = v; }
+    public String getOnvoPriceId() { return onvoPriceId; }
+    public void setOnvoPriceId(String v) { this.onvoPriceId = v; }
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
     public LocalDate getFechaInicio() { return fechaInicio; }

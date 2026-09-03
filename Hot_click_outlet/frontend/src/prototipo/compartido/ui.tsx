@@ -25,9 +25,18 @@ type BotonProps = {
   onClick?: () => void
   variante?: 'primario' | 'oscuro' | 'contorno' | 'peligro' | 'suave'
   type?: 'button' | 'submit'
+  disabled?: boolean
 }
 
-export function Boton({ children, to, onClick, variante = 'primario', type = 'button', dataMm }: BotonProps & { dataMm?: string }) {
+export function Boton({
+  children,
+  to,
+  onClick,
+  variante = 'primario',
+  type = 'button',
+  disabled = false,
+  dataMm,
+}: BotonProps & { dataMm?: string }) {
   const estilos: Record<NonNullable<BotonProps['variante']>, string> = {
     primario: 'bg-hc-primary text-white',
     oscuro: 'bg-hc-text text-white',
@@ -35,16 +44,17 @@ export function Boton({ children, to, onClick, variante = 'primario', type = 'bu
     peligro: 'bg-hc-primary text-white',
     suave: 'border border-hc-border text-hc-text',
   }
-  const clase = `flex min-h-11 w-full items-center justify-center rounded-[14px] px-4 py-3 text-sm font-bold ${estilos[variante]}`
+  const opacidadDeshabilitado = variante === 'contorno' || variante === 'suave' ? 'disabled:opacity-40' : 'disabled:opacity-60'
+  const clase = `flex min-h-11 w-full items-center justify-center rounded-[14px] px-4 py-3 text-sm font-bold disabled:pointer-events-none ${opacidadDeshabilitado} ${estilos[variante]}`
   const attrs = dataMm ? { 'data-mm': dataMm } : {}
   if (to?.startsWith('http')) {
     return <a href={to} className={clase} target="_blank" rel="noreferrer" {...attrs}>{children}</a>
   }
-  if (to) {
+  if (to && !disabled) {
     return <Link to={to} className={clase} {...attrs}>{children}</Link>
   }
   return (
-    <button type={type} onClick={onClick} className={clase} {...attrs}>
+    <button type={type} onClick={onClick} disabled={disabled} className={clase} {...attrs}>
       {children}
     </button>
   )

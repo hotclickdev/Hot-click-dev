@@ -4,6 +4,10 @@ import { useSellerRuta } from './SellerPlanContext'
 
 /**
  * Registro de vendedor (Figma 154:265 / 154:416).
+ *
+ * CÓDIGO MUERTO: no importado ni montado en ningún Route. `SellerRoutes` y
+ * `EmprendedorRoutes` redirigen `{base}/registro` → `/registro` (auth real).
+ * Conservado como referencia Figma; no añadir wizard aquí salvo que vuelva a montarse.
  */
 export default function RegistroPage() {
   const ruta = useSellerRuta()

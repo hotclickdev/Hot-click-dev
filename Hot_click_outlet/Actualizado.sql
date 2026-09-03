@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS "HOT_CLICK_USUARIO_DIRECCION_TB" (
 CREATE TABLE IF NOT EXISTS "HOT_CLICK_CONFIGURACION_MONEDA_TB" (
   "ID_CONFIG_MONEDA" SERIAL PRIMARY KEY,
   "MONEDA_DEFECTO" varchar(3) DEFAULT 'CRC',
-  "SIMBOLO_MONEDA" varchar(5) DEFAULT '₡',
+  "SIMBOLO_MONEDA" varchar(5) DEFAULT '?',
   "DECIMALES" integer DEFAULT 0,
   "SEPARADOR_MILES" varchar(1) DEFAULT ',',
   "PRECIO_MINIMO" integer DEFAULT 0,
@@ -1226,7 +1226,7 @@ BEGIN
     WHERE id_producto = NEW.fk_id_producto;
 
     IF v_es_unico AND v_vendido THEN
-        RAISE EXCEPTION 'Este artículo único ya fue vendido';
+        RAISE EXCEPTION 'Este art?culo ?nico ya fue vendido';
     END IF;
 
     IF NEW.cantidad > v_stock_actual THEN
@@ -1368,7 +1368,7 @@ ON CONFLICT ("FK_ID_USUARIO", "FK_ID_ROL") DO NOTHING;
 COMMIT;
 
 -- ============================================================
--- MÓDULO PUBLICACIÓN AUTOMATIZADA (incremental 2026-05-13)
+-- M?DULO PUBLICACI?N AUTOMATIZADA (incremental 2026-05-13)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_precio_sugerido_tb (
@@ -1413,12 +1413,12 @@ ALTER TABLE hot_click_producto_tb
     ALTER COLUMN especificaciones   TYPE TEXT,
     ALTER COLUMN como_usar          TYPE TEXT;
 
--- 2026-05-14: Columnas 2FA para autenticación de dos factores (Google Authenticator)
+-- 2026-05-14: Columnas 2FA para autenticaci?n de dos factores (Google Authenticator)
 ALTER TABLE HOT_CLICK_USUARIO_TB
     ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS two_factor_secret   VARCHAR(100);
 
--- 2026-05-15: Fecha de agotado para ocultar productos automáticamente tras 3 meses sin stock
+-- 2026-05-15: Fecha de agotado para ocultar productos autom?ticamente tras 3 meses sin stock
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS fecha_agotado TIMESTAMP;
 
@@ -1435,7 +1435,7 @@ CREATE TABLE IF NOT EXISTS hot_click_tipo_otp_tb (
     fk_id_estado         INTEGER      NOT NULL DEFAULT 1
 );
 
--- Tabla de códigos OTP
+-- Tabla de c?digos OTP
 CREATE TABLE IF NOT EXISTS hot_click_codigo_otp_tb (
     id_otp_code     BIGSERIAL PRIMARY KEY,
     codigo_hash     VARCHAR(255) NOT NULL,
@@ -1450,17 +1450,17 @@ CREATE TABLE IF NOT EXISTS hot_click_codigo_otp_tb (
 
 -- Estado PENDIENTE para usuarios que no han verificado su correo
 INSERT INTO "HOT_CLICK_ESTADO_TB" ("ID_ESTADO","NOMBRE_ESTADO","DESCRIPCION","CODIGO_COLOR")
-VALUES (5,'PENDIENTE','Pendiente de verificación de correo electrónico','#9CA3AF')
+VALUES (5,'PENDIENTE','Pendiente de verificaci?n de correo electr?nico','#9CA3AF')
 ON CONFLICT ("ID_ESTADO") DO NOTHING;
 
--- Tipos de OTP con expiración de 5 minutos
+-- Tipos de OTP con expiraci?n de 5 minutos
 INSERT INTO "HOT_CLICK_TIPO_OTP_TB" ("NOMBRE","TIEMPO_EXPIRACION_SEG","LONGITUD_CODIGO","FK_ID_ESTADO")
 VALUES
   ('REGISTRO',       300, 6, 1),
   ('RESET_PASSWORD', 300, 6, 1)
 ON CONFLICT DO NOTHING;
 
--- Índices para consultas frecuentes sobre OTPs
+-- ?ndices para consultas frecuentes sobre OTPs
 CREATE INDEX IF NOT EXISTS idx_otp_usuario ON "HOT_CLICK_CODIGO_OTP_TB"("FK_ID_USUARIO");
 CREATE INDEX IF NOT EXISTS idx_otp_expires ON "HOT_CLICK_CODIGO_OTP_TB"("EXPIRES_AT");
 CREATE INDEX IF NOT EXISTS idx_otp_tipo    ON "HOT_CLICK_CODIGO_OTP_TB"("FK_ID_TIPO_OTP");
@@ -1468,7 +1468,7 @@ CREATE INDEX IF NOT EXISTS idx_otp_tipo    ON "HOT_CLICK_CODIGO_OTP_TB"("FK_ID_T
 -- ============================================================
 -- 2026-05-15: Evitar duplicados en cola FB por producto
 -- ============================================================
--- PASO 1 (correr primero): Eliminar duplicados dejando solo el más reciente
+-- PASO 1 (correr primero): Eliminar duplicados dejando solo el m?s reciente
 DELETE FROM hot_click_publicacion_fb_tb
 WHERE id_publicacion_fb IN (
     SELECT id_publicacion_fb FROM (
@@ -1496,36 +1496,36 @@ CREATE TABLE IF NOT EXISTS hot_click_refresh_token_tb (
 CREATE INDEX IF NOT EXISTS idx_refresh_token ON hot_click_refresh_token_tb(token);
 
 -- ============================================================
--- MIGRACIÓN: SISTEMA MULTI-PASARELA DE PAGO
+-- MIGRACI?N: SISTEMA MULTI-PASARELA DE PAGO
 -- ============================================================
 
 -- Agrega columna proveedor a la tabla de pagos
--- Identifica qué gateway procesó cada pago (PAYXPERT, PAYPAL, STRIPE, SINPE...)
+-- Identifica qu? gateway proces? cada pago (PAYXPERT, PAYPAL, STRIPE, SINPE...)
 ALTER TABLE hot_click_pago_tb
     ADD COLUMN IF NOT EXISTS proveedor VARCHAR(20) NOT NULL DEFAULT 'PAYXPERT';
 
--- Índice para consultas por proveedor (reportes, reconciliación)
+-- ?ndice para consultas por proveedor (reportes, reconciliaci?n)
 CREATE INDEX IF NOT EXISTS idx_pago_proveedor
     ON hot_click_pago_tb(proveedor);
 
--- Índice para el cleanup de pagos expirados PENDIENTE (cancelarExpirados scheduler)
+-- ?ndice para el cleanup de pagos expirados PENDIENTE (cancelarExpirados scheduler)
 CREATE INDEX IF NOT EXISTS idx_pago_estado_fecha
     ON hot_click_pago_tb(estado_pago, fecha_creacion)
     WHERE estado_pago = 'PENDIENTE';
 
 -- ============================================================
--- MIGRACIÓN: CARRUSEL DEL INICIO
+-- MIGRACI?N: CARRUSEL DEL INICIO
 -- ============================================================
 
 -- Marca si el producto aparece en el carrusel hero de la tienda
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS en_carrusel BOOLEAN NOT NULL DEFAULT false;
 
--- Posición en el carrusel (1–5, menor = primero)
+-- Posici?n en el carrusel (1?5, menor = primero)
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS orden_carrusel INTEGER NOT NULL DEFAULT 0;
 
--- Índice para consultas de carrusel (GET /api/productos/carrusel)
+-- ?ndice para consultas de carrusel (GET /api/productos/carrusel)
 CREATE INDEX IF NOT EXISTS idx_producto_carrusel
     ON hot_click_producto_tb(en_carrusel, orden_carrusel)
     WHERE en_carrusel = true;
@@ -1573,23 +1573,23 @@ ALTER TABLE hot_click_pedido_tb
     ADD COLUMN IF NOT EXISTS notificaciones TEXT DEFAULT '[]';
 
 -- ============================================================
--- ÍNDICES DE PERFORMANCE (agregar en Supabase SQL Editor)
+-- ?NDICES DE PERFORMANCE (agregar en Supabase SQL Editor)
 -- ============================================================
 
--- Búsqueda por nombre con ILIKE '%...%' — requiere extensión pg_trgm
+-- B?squeda por nombre con ILIKE '%...%' ? requiere extensi?n pg_trgm
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS idx_producto_nombre_trgm
     ON "HOT_CLICK_PRODUCTO_TB" USING gin ("NOMBRE_PRODUCTO" gin_trgm_ops);
 
--- Hot path del catálogo público: WHERE estado=1 AND visible_catalogo=true
+-- Hot path del cat?logo p?blico: WHERE estado=1 AND visible_catalogo=true
 CREATE INDEX IF NOT EXISTS idx_producto_estado_visible
     ON "HOT_CLICK_PRODUCTO_TB" ("FK_ID_ESTADO", "VISIBLE_CATALOGO");
 
--- FK bodega — queries admin filtradas por bodega
+-- FK bodega ? queries admin filtradas por bodega
 CREATE INDEX IF NOT EXISTS idx_producto_bodega
     ON "HOT_CLICK_PRODUCTO_TB" ("FK_ID_BODEGA");
 
--- FK marca — queries admin/feed filtradas por marca
+-- FK marca ? queries admin/feed filtradas por marca
 CREATE INDEX IF NOT EXISTS idx_producto_marca
     ON "HOT_CLICK_PRODUCTO_TB" ("FK_ID_MARCA");
 
@@ -1598,7 +1598,7 @@ CREATE INDEX IF NOT EXISTS idx_pago_fecha_estado
     ON "hot_click_pago_tb" ("fecha_creacion", "estado_pago");
 
 -- ============================================================
--- SERVICIOS HOT — búsqueda de productos por foto
+-- SERVICIOS HOT ? b?squeda de productos por foto
 -- ============================================================
 CREATE TABLE IF NOT EXISTS hot_click_solicitud_servicio_tb (
     id_solicitud_servicio SERIAL PRIMARY KEY,
@@ -1664,11 +1664,11 @@ CREATE TABLE IF NOT EXISTS hot_click_testimonio_tb (
     fecha_aprobacion TIMESTAMP
 );
 
--- Si la tabla ya existía, agregar columna producto (idempotente)
+-- Si la tabla ya exist?a, agregar columna producto (idempotente)
 ALTER TABLE hot_click_testimonio_tb
     ADD COLUMN IF NOT EXISTS fk_id_producto INTEGER REFERENCES hot_click_producto_tb(id_producto);
 
--- Restricción única: un testimonio por usuario por producto
+-- Restricci?n ?nica: un testimonio por usuario por producto
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -1695,7 +1695,7 @@ CREATE INDEX IF NOT EXISTS idx_testimonio_producto
 -- MARCAS: asegurar tabla y FK en producto (idempotente)
 -- ============================================================
 
--- Tabla de marcas (si no existe aún en producción)
+-- Tabla de marcas (si no existe a?n en producci?n)
 CREATE TABLE IF NOT EXISTS hot_click_marca_tb (
     id_marca             SERIAL PRIMARY KEY,
     nombre_marca         VARCHAR(100) UNIQUE NOT NULL,
@@ -1706,12 +1706,12 @@ CREATE TABLE IF NOT EXISTS hot_click_marca_tb (
 
 CREATE INDEX IF NOT EXISTS idx_marca_estado ON hot_click_marca_tb(fk_id_estado);
 
--- FK en producto hacia marca (si no existe aún)
+-- FK en producto hacia marca (si no existe a?n)
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS fk_id_marca INTEGER;
 
 -- ============================================================
--- V4: stock_reservado y tabla de imágenes de producto
+-- V4: stock_reservado y tabla de im?genes de producto
 -- ============================================================
 
 ALTER TABLE hot_click_producto_tb
@@ -1731,7 +1731,7 @@ CREATE TABLE IF NOT EXISTS hot_click_producto_imagen_tb (
 CREATE INDEX IF NOT EXISTS idx_producto_imagen_producto
     ON hot_click_producto_imagen_tb (fk_id_producto, posicion);
 
--- ── V5: Índice único parcial en marcas (solo activas) ─────────
+-- ?? V5: ?ndice ?nico parcial en marcas (solo activas) ?????????
 ALTER TABLE hot_click_marca_tb
     DROP CONSTRAINT IF EXISTS hot_click_marca_tb_nombre_marca_key;
 
@@ -1739,16 +1739,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_marca_nombre_activo
     ON hot_click_marca_tb (nombre_marca)
     WHERE fk_id_estado = 1;
 
--- ── V7: Talla en producto ─────────────────────────────────────
+-- ?? V7: Talla en producto ?????????????????????????????????????
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS talla VARCHAR(20);
 
--- ── V12: Días de garantía en producto ────────────────────────
+-- ?? V12: D?as de garant?a en producto ????????????????????????
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS garantia_dias INTEGER DEFAULT 0;
 
 -- ============================================================
--- V13: SEED CATÁLOGO — BODEGA + CATEGORÍAS + 100 PRODUCTOS
+-- V13: SEED CAT?LOGO ? BODEGA + CATEGOR?AS + 100 PRODUCTOS
 -- ============================================================
 
 ALTER TABLE "HOT_CLICK_PRODUCTO_TB"
@@ -1757,29 +1757,29 @@ ALTER TABLE "HOT_CLICK_PRODUCTO_TB"
 INSERT INTO "HOT_CLICK_BODEGA_TB"
     ("ID_BODEGA","NOMBRE_BODEGA","DIRECCION_EXACTA","TELEFONO","FK_ID_ADMIN_CLIENTE","FK_ID_ESTADO",fk_id_empresa)
 VALUES
-    (1,'Bodega Central HOTCLICK','San José, Costa Rica','88888888',1,1,1)
+    (1,'Bodega Central HOTCLICK','San Jos?, Costa Rica','88888888',1,1,1)
 ON CONFLICT ("ID_BODEGA") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_CATEGORIA_TB"
     ("NOMBRE_CATEGORIA","DESCRIPCION","FK_ID_ADMIN_CLIENTE","FK_ID_ESTADO",fk_id_empresa)
 VALUES
-    ('Electrónica',          'Celulares, laptops, audio y más',               1,1,1),
+    ('Electr?nica',          'Celulares, laptops, audio y m?s',               1,1,1),
     ('Ropa y Accesorios',    'Moda para hombre y mujer',                      1,1,1),
-    ('Hogar y Jardín',       'Muebles, decoración y jardín',                  1,1,1),
+    ('Hogar y Jard?n',       'Muebles, decoraci?n y jard?n',                  1,1,1),
     ('Deportes y Fitness',   'Equipos y ropa deportiva',                      1,1,1),
     ('Belleza y Cuidado',    'Skincare, maquillaje y perfumes',                1,1,1),
-    ('Juguetes y Juegos',    'Para niños y adultos',                          1,1,1),
-    ('Herramientas',         'Ferretería y construcción',                     1,1,1),
-    ('Libros y Papelería',   'Libros, útiles escolares y oficina',            1,1,1),
+    ('Juguetes y Juegos',    'Para ni?os y adultos',                          1,1,1),
+    ('Herramientas',         'Ferreter?a y construcci?n',                     1,1,1),
+    ('Libros y Papeler?a',   'Libros, ?tiles escolares y oficina',            1,1,1),
     ('Mascotas',             'Alimento, accesorios y juguetes para mascotas', 1,1,1),
-    ('Cocina y Alimentos',   'Electrodomésticos y artículos de cocina',       1,1,1)
+    ('Cocina y Alimentos',   'Electrodom?sticos y art?culos de cocina',       1,1,1)
 ON CONFLICT DO NOTHING;
 
--- ── V12: Días de garantía en producto ────────────────────────
+-- ?? V12: D?as de garant?a en producto ????????????????????????
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS garantia_dias INTEGER DEFAULT 0;
 
--- ── V13: Solicitudes de garantía ─────────────────────────────
+-- ?? V13: Solicitudes de garant?a ?????????????????????????????
 CREATE TABLE IF NOT EXISTS hot_click_solicitud_garantia_tb (
     id_solicitud_garantia BIGSERIAL PRIMARY KEY,
     fk_id_usuario         BIGINT NOT NULL REFERENCES hot_click_usuario_tb(id_usuario),
@@ -1792,7 +1792,7 @@ CREATE TABLE IF NOT EXISTS hot_click_solicitud_garantia_tb (
     estado_registro       INTEGER NOT NULL DEFAULT 1
 );
 
--- ── V3: Índice único parcial en correo/identificacion ────────
+-- ?? V3: ?ndice ?nico parcial en correo/identificacion ????????
 -- Permite reusar el correo/identificacion de usuarios eliminados (estado=3)
 ALTER TABLE hot_click_usuario_tb DROP CONSTRAINT IF EXISTS "hot_click_usuario_tb_CORREO_key";
 ALTER TABLE hot_click_usuario_tb DROP CONSTRAINT IF EXISTS hot_click_usuario_tb_correo_key;
@@ -1809,7 +1809,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_usuario_identificacion_no_eliminado
     WHERE estado <> 3;
 
 -- ============================================================
--- V16: MEMBRESÍAS USUARIO-EMPRESA (MULTI-NEGOCIO)
+-- V16: MEMBRES?AS USUARIO-EMPRESA (MULTI-NEGOCIO)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_miembro_empresa_tb (
@@ -1825,7 +1825,7 @@ CREATE TABLE IF NOT EXISTS hot_click_miembro_empresa_tb (
 CREATE INDEX IF NOT EXISTS idx_miembro_usuario ON hot_click_miembro_empresa_tb(fk_id_usuario);
 CREATE INDEX IF NOT EXISTS idx_miembro_empresa ON hot_click_miembro_empresa_tb(fk_id_empresa);
 
--- Migrar membresías existentes
+-- Migrar membres?as existentes
 INSERT INTO hot_click_miembro_empresa_tb (fk_id_usuario, fk_id_empresa, rol_en_empresa, estado, fecha_ingreso)
 SELECT u.id_usuario, u.fk_id_empresa, 'PROPIETARIO', COALESCE(u.fk_id_estado, 1), COALESCE(u.fecha_registro, NOW())
 FROM hot_click_usuario_tb u
@@ -1833,7 +1833,7 @@ WHERE u.fk_id_empresa IS NOT NULL
 ON CONFLICT (fk_id_usuario, fk_id_empresa) DO NOTHING;
 
 -- ============================================================
--- V17: VISIBILIDAD PÚBLICA DE EMPRESA
+-- V17: VISIBILIDAD P?BLICA DE EMPRESA
 -- ============================================================
 ALTER TABLE hot_click_empresa_tb
     ADD COLUMN IF NOT EXISTS visibilidad_publica BOOLEAN NOT NULL DEFAULT TRUE;
@@ -1866,7 +1866,7 @@ WHERE  NOT EXISTS (
 -- ============================================================
 
 -- ============================================================
--- V20: Security Operations — Audit Log + Alert tables
+-- V20: Security Operations ? Audit Log + Alert tables
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_security_audit_log_tb (
@@ -1960,7 +1960,7 @@ CREATE TABLE IF NOT EXISTS hot_click_blog_entrada_tb (
 CREATE INDEX IF NOT EXISTS idx_blog_publicado ON hot_click_blog_entrada_tb (publicado, fecha_publicacion DESC);
 
 -- ============================================================
--- V23: Soporte de subcategorías (árbol ilimitado)
+-- V23: Soporte de subcategor?as (?rbol ilimitado)
 -- ============================================================
 
 ALTER TABLE hot_click_categoria_tb
@@ -1971,17 +1971,17 @@ CREATE INDEX IF NOT EXISTS idx_categoria_padre
   ON hot_click_categoria_tb (fk_id_categoria_padre);
 
 -- ============================================================
--- V24: Nuevos roles empresariales + permisos del módulo POS
+-- V24: Nuevos roles empresariales + permisos del m?dulo POS
 -- ============================================================
 
 INSERT INTO hot_click_rol_tb (id_rol, nombre_rol, descripcion, nivel_acceso) VALUES
-  (5,  'CAJERO',        'Operador de caja — acceso solo al POS',         3),
-  (6,  'INVENTARIO',    'Gestión de productos, stock y bodegas',         4),
+  (5,  'CAJERO',        'Operador de caja ? acceso solo al POS',         3),
+  (6,  'INVENTARIO',    'Gesti?n de productos, stock y bodegas',         4),
   (7,  'CONTABILIDAD',  'Acceso a finanzas y reportes',                  4),
   (8,  'GERENTE',       'Supervisor general de operaciones',             6),
-  (9,  'SUPERVISOR',    'Supervisión de turnos y caja POS',              5),
-  (10, 'MARKETING',     'Gestión de contenido y publicaciones',          3),
-  (11, 'SOPORTE',       'Atención al cliente y gestión de pedidos',      2)
+  (9,  'SUPERVISOR',    'Supervisi?n de turnos y caja POS',              5),
+  (10, 'MARKETING',     'Gesti?n de contenido y publicaciones',          3),
+  (11, 'SOPORTE',       'Atenci?n al cliente y gesti?n de pedidos',      2)
 ON CONFLICT (id_rol) DO NOTHING;
 
 SELECT setval(
@@ -1990,11 +1990,11 @@ SELECT setval(
 );
 
 INSERT INTO hot_click_permiso_tb (nombre_permiso, descripcion, modulo) VALUES
-  ('pos.usar',        'Operar el POS — pantalla de caja',       'POS'),
+  ('pos.usar',        'Operar el POS ? pantalla de caja',       'POS'),
   ('pos.caja.abrir',  'Abrir turno de caja',                    'POS'),
   ('pos.caja.cerrar', 'Cerrar turno de caja y cuadre',          'POS'),
   ('pos.anular',      'Anular una venta POS ya registrada',     'POS'),
-  ('pos.devolucion',  'Procesar devolución desde el POS',       'POS'),
+  ('pos.devolucion',  'Procesar devoluci?n desde el POS',       'POS'),
   ('pos.descuento',   'Aplicar descuento manual en caja',       'POS')
 ON CONFLICT (nombre_permiso) DO NOTHING;
 
@@ -2034,7 +2034,7 @@ WHERE nombre_permiso IN ('orders.view','users.view')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
--- V25: POS base — origen en pedido, turno de caja, cliente mostrador
+-- V25: POS base ? origen en pedido, turno de caja, cliente mostrador
 -- ============================================================
 
 INSERT INTO hot_click_usuario_tb (
@@ -2087,7 +2087,7 @@ CREATE INDEX IF NOT EXISTS idx_turno_empresa ON hot_click_turno_caja_tb (fk_id_e
 CREATE INDEX IF NOT EXISTS idx_turno_usuario ON hot_click_turno_caja_tb (fk_id_usuario);
 CREATE INDEX IF NOT EXISTS idx_turno_estado  ON hot_click_turno_caja_tb (estado) WHERE estado = 'ABIERTO';
 
--- ── V26: Barcode + trazabilidad kardex ───────────────────────
+-- ?? V26: Barcode + trazabilidad kardex ???????????????????????
 ALTER TABLE hot_click_producto_tb
   ADD COLUMN IF NOT EXISTS barcode VARCHAR(50);
 
@@ -2099,7 +2099,7 @@ ALTER TABLE hot_click_movimiento_stock_tb
   ADD COLUMN IF NOT EXISTS referencia_id    BIGINT,
   ADD COLUMN IF NOT EXISTS referencia_tipo  VARCHAR(30);
 
--- ── V27: Proveedores y Órdenes de Compra ─────────────────────
+-- ?? V27: Proveedores y ?rdenes de Compra ?????????????????????
 CREATE TABLE IF NOT EXISTS hot_click_proveedor_tb (
   id_proveedor  BIGSERIAL    PRIMARY KEY,
   nombre        VARCHAR(200) NOT NULL,
@@ -2139,7 +2139,7 @@ CREATE TABLE IF NOT EXISTS hot_click_orden_compra_item_tb (
   cantidad_recibida INTEGER   NOT NULL DEFAULT 0
 );
 
--- ── V28: CRM campos de fidelidad ─────────────────────────────
+-- ?? V28: CRM campos de fidelidad ?????????????????????????????
 ALTER TABLE hot_click_usuario_tb
   ADD COLUMN IF NOT EXISTS puntos_fidelidad   INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS limite_credito     INTEGER NOT NULL DEFAULT 0,
@@ -2149,7 +2149,7 @@ ALTER TABLE hot_click_usuario_tb
   ADD COLUMN IF NOT EXISTS total_compras_hist INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS num_pedidos_hist   INTEGER NOT NULL DEFAULT 0;
 
--- ── V29: Gastos / egresos ─────────────────────────────────────
+-- ?? V29: Gastos / egresos ?????????????????????????????????????
 CREATE TABLE IF NOT EXISTS hot_click_gasto_tb (
   id_gasto        BIGSERIAL    PRIMARY KEY,
   concepto        VARCHAR(200) NOT NULL,
@@ -2169,7 +2169,7 @@ CREATE INDEX IF NOT EXISTS idx_gasto_fecha   ON hot_click_gasto_tb (fecha);
 -- V30: F0 Infrastructure Hardening (2026-06-01)
 -- ============================================================
 
--- ShedLock — distributed lock para @Scheduled en multi-pod
+-- ShedLock ? distributed lock para @Scheduled en multi-pod
 CREATE TABLE IF NOT EXISTS shedlock (
     name       VARCHAR(64)  NOT NULL,
     lock_until TIMESTAMP    NOT NULL,
@@ -2185,7 +2185,7 @@ ALTER TABLE hot_click_producto_tb
 UPDATE hot_click_producto_tb SET version = 0 WHERE version IS NULL;
 
 -- ============================================================
--- V31: F10 Multi-tenant SaaS — Plan system (2026-06-01)
+-- V31: F10 Multi-tenant SaaS ? Plan system (2026-06-01)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_plan_tb (
@@ -2231,7 +2231,7 @@ WHERE fk_id_plan IS NULL;
 CREATE INDEX IF NOT EXISTS idx_empresa_plan ON hot_click_empresa_tb (fk_id_plan);
 
 -- ============================================================
--- V32: F11 Feature Flags — overrides por empresa (2026-06-02)
+-- V32: F11 Feature Flags ? overrides por empresa (2026-06-02)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_feature_flag_tb (
@@ -2252,10 +2252,10 @@ CREATE TABLE IF NOT EXISTS hot_click_empresa_feature_tb (
 CREATE INDEX IF NOT EXISTS idx_empresa_feature_empresa ON hot_click_empresa_feature_tb (fk_id_empresa);
 
 INSERT INTO hot_click_feature_flag_tb (nombre, descripcion, activo_defecto) VALUES
-    ('facturacion_electronica', 'Integración Hacienda CR — XML 4.3 + firma digital',   false),
+    ('facturacion_electronica', 'Integraci?n Hacienda CR ? XML 4.3 + firma digital',   false),
     ('ai_copilot',              'Asistente AI de negocio (Claude API)',                  false),
-    ('ai_forecast',             'Predicción de demanda y stock (Holt-Winters)',          false),
-    ('mobile_pos',              'Modo POS optimizado para tablet/móvil (PWA offline)',   false),
+    ('ai_forecast',             'Predicci?n de demanda y stock (Holt-Winters)',          false),
+    ('mobile_pos',              'Modo POS optimizado para tablet/m?vil (PWA offline)',   false),
     ('self_checkout',           'Terminal de autoservicio con QR',                       false),
     ('split_payments',          'Pagos divididos y gift cards',                          false),
     ('marketplace_plugins',     'Marketplace de plugins de terceros',                    false),
@@ -2264,7 +2264,7 @@ INSERT INTO hot_click_feature_flag_tb (nombre, descripcion, activo_defecto) VALU
 ON CONFLICT (nombre) DO NOTHING;
 
 -- ============================================================
--- V33: F12 Facturación Electrónica CR (2026-06-02)
+-- V33: F12 Facturaci?n Electr?nica CR (2026-06-02)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_consecutivo_fiscal_tb (
@@ -2323,7 +2323,7 @@ ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS codigo_tarifa_iva VARCHAR(2)   DEFAULT '08';
 
 -- ============================================================
--- V34: F14 Billing Engine — Suscripciones Stripe + Facturas SaaS + Idempotency
+-- V34: F14 Billing Engine ? Suscripciones Stripe + Facturas SaaS + Idempotency
 -- ============================================================
 CREATE TABLE IF NOT EXISTS hot_click_suscripcion_tb (
     id_suscripcion          BIGSERIAL    PRIMARY KEY,
@@ -2598,11 +2598,11 @@ ALTER TABLE hot_click_producto_tb
 
 CREATE INDEX IF NOT EXISTS idx_producto_fts ON hot_click_producto_tb USING GIN(search_vector);
 
--- V48: Índice compuesto para dashboard admin
+-- V48: ?ndice compuesto para dashboard admin
 CREATE INDEX IF NOT EXISTS idx_pedido_empresa_estado_fecha
     ON hot_click_pedido_tb (fk_id_empresa, estado_pedido, fecha_pedido DESC);
 
--- V50: Índices de escala para consultas de alto volumen por tenant
+-- V50: ?ndices de escala para consultas de alto volumen por tenant
 CREATE INDEX IF NOT EXISTS idx_producto_empresa_estado
     ON hot_click_producto_tb (fk_id_empresa, fk_id_estado)
     WHERE fk_id_estado = 1;
@@ -2642,7 +2642,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_usuario_clerk_id
     ON hot_click_usuario_tb(clerk_user_id)
     WHERE clerk_user_id IS NOT NULL;
 
--- V56: Bitácora de consentimiento informado (Ley N.° 8968)
+-- V56: Bit?cora de consentimiento informado (Ley N.? 8968)
 CREATE TABLE IF NOT EXISTS hot_click_consentimiento_log_tb (
     id                   BIGSERIAL PRIMARY KEY,
     usuario_id           BIGINT,
@@ -2667,7 +2667,7 @@ ALTER TABLE hot_click_testimonio_tb
 ALTER TABLE hot_click_testimonio_tb
   ADD CONSTRAINT chk_testimonio_calificacion CHECK (calificacion BETWEEN 1 AND 5);
 
--- V69: Divide en TESTIMONIO (comentario web) y RESENA (reseña de producto, máx 3 por usuario)
+-- V69: Divide en TESTIMONIO (comentario web) y RESENA (rese?a de producto, m?x 3 por usuario)
 ALTER TABLE hot_click_testimonio_tb
     DROP CONSTRAINT IF EXISTS uq_testimonio_usuario_producto;
 
@@ -2686,12 +2686,12 @@ CREATE INDEX IF NOT EXISTS idx_testimonio_usuario_producto_tipo
 -- V58: Row Level Security en tablas con datos sensibles
 --
 -- ESTRATEGIA:
---   • Spring Boot se conecta como service_role → bypass RLS automático.
---   • anon / authenticated (Supabase SDK, dashboard, SQL editor con
---     clave pública) quedan BLOQUEADOS al activar RLS sin políticas
+--   ? Spring Boot se conecta como service_role ? bypass RLS autom?tico.
+--   ? anon / authenticated (Supabase SDK, dashboard, SQL editor con
+--     clave p?blica) quedan BLOQUEADOS al activar RLS sin pol?ticas
 --     permisivas para esos roles.
---   • PgBouncer transaction mode: NO se usa set_config(). Las políticas
---     se basan únicamente en el rol PostgreSQL activo (current_user).
+--   ? PgBouncer transaction mode: NO se usa set_config(). Las pol?ticas
+--     se basan ?nicamente en el rol PostgreSQL activo (current_user).
 -- ============================================================
 
 ALTER TABLE hot_click_usuario_tb            ENABLE ROW LEVEL SECURITY;
@@ -2750,7 +2750,7 @@ ALTER TABLE hot_click_cupon_tb
   ALTER COLUMN descuento_porcentaje SET DEFAULT 13;
 
 -- ============================================================
--- V60: Control de uso en cupones — max_usos + usos_actuales
+-- V60: Control de uso en cupones ? max_usos + usos_actuales
 -- ============================================================
 ALTER TABLE hot_click_cupon_tb
   ADD COLUMN IF NOT EXISTS max_usos      INTEGER NOT NULL DEFAULT 1,
@@ -2762,7 +2762,7 @@ ALTER TABLE hot_click_cupon_tb
   ADD CONSTRAINT chk_cupon_usos CHECK (usos_actuales <= max_usos);
 
 -- ============================================================
--- V62: RAG — pgvector extension + product semantic embeddings
+-- V62: RAG ? pgvector extension + product semantic embeddings
 -- ============================================================
 CREATE EXTENSION IF NOT EXISTS vector;
 
@@ -2794,7 +2794,7 @@ CREATE INDEX IF NOT EXISTS idx_producto_emb_stale
     ON hot_click_producto_embedding_tb (fk_id_empresa, actualizado_en);
 
 -- ============================================================
--- V63: RAG — Shopping assistant sessions + conversation messages
+-- V63: RAG ? Shopping assistant sessions + conversation messages
 -- ============================================================
 CREATE TABLE IF NOT EXISTS hot_click_chat_sesion_tb (
     id_sesion         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -2847,7 +2847,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_msg_empresa_fecha
     ON hot_click_chat_mensaje_shopping_tb (fk_id_empresa, fecha_creacion DESC);
 
 
--- V65: Memoria persistente de visitante anónimo
+-- V65: Memoria persistente de visitante an?nimo
 CREATE TABLE IF NOT EXISTS customer_memory (
     id               BIGSERIAL    PRIMARY KEY,
     visitor_id       VARCHAR(36)  NOT NULL,
@@ -2863,7 +2863,7 @@ CREATE TABLE IF NOT EXISTS customer_memory (
 CREATE INDEX IF NOT EXISTS idx_customer_memory_visitor ON customer_memory (visitor_id);
 
 
--- V66: Solicitudes especiales de productos no encontrados en catálogo
+-- V66: Solicitudes especiales de productos no encontrados en cat?logo
 CREATE TABLE IF NOT EXISTS hot_click_solicitud_especial_tb (
     id              BIGSERIAL    PRIMARY KEY,
     nombre          VARCHAR(100) NOT NULL,
@@ -2926,7 +2926,7 @@ CREATE INDEX IF NOT EXISTS idx_cupon_tenant
 CREATE INDEX IF NOT EXISTS idx_solicitud_especial_empresa ON hot_click_solicitud_especial_tb (fk_id_empresa);
 
 -- ============================================================
--- V78: Cola de contingencia para facturación electrónica Hacienda CR
+-- V78: Cola de contingencia para facturaci?n electr?nica Hacienda CR
 -- ============================================================
 CREATE TABLE IF NOT EXISTS hot_click_cola_facturacion_offline_tb (
     id_cola_offline       BIGSERIAL     PRIMARY KEY,
@@ -2948,35 +2948,35 @@ CREATE INDEX IF NOT EXISTS idx_cola_offline_pendientes
 
 CREATE INDEX IF NOT EXISTS idx_cola_offline_empresa
     ON hot_click_cola_facturacion_offline_tb (fk_id_empresa);
--- V50: Módulo Agregador — Billetera Virtual + Comisiones + Payouts
+-- V50: M?dulo Agregador ? Billetera Virtual + Comisiones + Payouts
 -- Modelo: la plataforma recibe el dinero primero y acredita el neto al emprendedor.
 -- Compatible con PgBouncer transaction mode (sin advisory locks ni session vars).
 
 -- ============================================================
--- Billetera por empresa (saldo neto acumulado en ₡ enteros)
+-- Billetera por empresa (saldo neto acumulado en ? enteros)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS hot_click_wallet_tb (
     fk_id_empresa       BIGINT  NOT NULL PRIMARY KEY
         REFERENCES hot_click_empresa_tb(id_empresa),
     saldo_disponible    BIGINT  NOT NULL DEFAULT 0,  -- listo para retirar
     saldo_retenido      BIGINT  NOT NULL DEFAULT 0,  -- en proceso de payout
-    total_acreditado    BIGINT  NOT NULL DEFAULT 0,  -- histórico de ventas netas
-    total_retirado      BIGINT  NOT NULL DEFAULT 0,  -- histórico de payouts pagados
+    total_acreditado    BIGINT  NOT NULL DEFAULT 0,  -- hist?rico de ventas netas
+    total_retirado      BIGINT  NOT NULL DEFAULT 0,  -- hist?rico de payouts pagados
     ultima_actualizacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
--- Ledger inmutable — cada movimiento queda registrado para siempre
+-- Ledger inmutable ? cada movimiento queda registrado para siempre
 -- ============================================================
 CREATE TABLE IF NOT EXISTS hot_click_wallet_transaccion_tb (
     id_transaccion      BIGSERIAL   PRIMARY KEY,
     fk_id_empresa       BIGINT      NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
     tipo                VARCHAR(25) NOT NULL,
     -- CREDITO_VENTA | DEBITO_PAYOUT | RETENCION_PAYOUT | LIBERACION_PAYOUT | DEVOLUCION | AJUSTE_MANUAL
-    monto               BIGINT      NOT NULL,   -- positivo = crédito, negativo = débito
+    monto               BIGINT      NOT NULL,   -- positivo = cr?dito, negativo = d?bito
     saldo_tras_movimiento BIGINT    NOT NULL DEFAULT 0,
     -- Desglose de la venta (solo para CREDITO_VENTA)
-    total_bruto         BIGINT,     -- lo que pagó el cliente (precio incluye IVA)
+    total_bruto         BIGINT,     -- lo que pag? el cliente (precio incluye IVA)
     comision_saas       BIGINT,     -- 2% del bruto retenido por la plataforma
     comision_gw         BIGINT,     -- 3% estimado de la pasarela (Stripe / SINPE)
     -- Referencia al origen
@@ -2999,9 +2999,9 @@ CREATE TABLE IF NOT EXISTS hot_click_payout_request_tb (
     fk_id_empresa       BIGINT      NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
     monto               BIGINT      NOT NULL CHECK (monto > 0),
     estado              VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
-    -- PENDIENTE → EN_PROCESO → PAGADO | RECHAZADO
+    -- PENDIENTE ? EN_PROCESO ? PAGADO | RECHAZADO
     metodo              VARCHAR(20) NOT NULL DEFAULT 'SINPE',  -- SINPE | TRANSFERENCIA | OTRO
-    destino_sinpe       VARCHAR(20),     -- número SINPE móvil (8 dígitos CR)
+    destino_sinpe       VARCHAR(20),     -- n?mero SINPE m?vil (8 d?gitos CR)
     destino_iban        VARCHAR(30),     -- IBAN para transferencia bancaria
     nombre_titular      VARCHAR(200),
     banco_destino       VARCHAR(100),
@@ -3022,25 +3022,25 @@ CREATE INDEX IF NOT EXISTS idx_payout_estado  ON hot_click_payout_request_tb (es
 INSERT INTO hot_click_wallet_tb (fk_id_empresa, saldo_disponible, saldo_retenido)
 VALUES (1, 0, 0)
 ON CONFLICT DO NOTHING;
--- V81: Hardening transaccional del módulo Agregador
--- Cierra tres clases de vulnerabilidades identificadas en auditoría:
---   1. TOCTOU en acreditarVenta   → unique partial index en ledger
---   2. Saldos negativos           → CHECK constraints en wallet
---   3. Race condition en payouts  → unique partial index + DLQ table
+-- V81: Hardening transaccional del m?dulo Agregador
+-- Cierra tres clases de vulnerabilidades identificadas en auditor?a:
+--   1. TOCTOU en acreditarVenta   ? unique partial index en ledger
+--   2. Saldos negativos           ? CHECK constraints en wallet
+--   3. Race condition en payouts  ? unique partial index + DLQ table
 
 -- ============================================================
--- FIX-1: Constraint único en ledger para CREDITO_VENTA por pedido
--- Garantiza que aunque dos webhooks simultáneos pasen el SELECT check,
+-- FIX-1: Constraint ?nico en ledger para CREDITO_VENTA por pedido
+-- Garantiza que aunque dos webhooks simult?neos pasen el SELECT check,
 -- solo un INSERT de CREDITO_VENTA para el mismo pedido pueda persistir.
--- Es el guard real de idempotencia, no la comprobación SELECT previa.
+-- Es el guard real de idempotencia, no la comprobaci?n SELECT previa.
 -- ============================================================
 CREATE UNIQUE INDEX IF NOT EXISTS uq_wallet_tx_credito_por_pedido
     ON hot_click_wallet_transaccion_tb (referencia_id)
     WHERE referencia_tipo = 'PEDIDO' AND tipo = 'CREDITO_VENTA';
 
 -- ============================================================
--- FIX-2a: CHECK constraints — ningún saldo puede volverse negativo
--- Si la lógica de aplicación falla, la BD actúa como última línea de defensa.
+-- FIX-2a: CHECK constraints ? ning?n saldo puede volverse negativo
+-- Si la l?gica de aplicaci?n falla, la BD act?a como ?ltima l?nea de defensa.
 -- ============================================================
 ALTER TABLE hot_click_wallet_tb
     ADD CONSTRAINT chk_wallet_saldo_disponible_positivo
@@ -3059,8 +3059,8 @@ ALTER TABLE hot_click_wallet_tb
 
 -- ============================================================
 -- FIX-3: Solo puede existir UN payout PENDIENTE o EN_PROCESO por empresa.
--- Si dos solicitudes simultáneas pasan el SELECT check, solo una INSERT
--- puede persistir; la segunda recibirá un error de constraint.
+-- Si dos solicitudes simult?neas pasan el SELECT check, solo una INSERT
+-- puede persistir; la segunda recibir? un error de constraint.
 -- ============================================================
 CREATE UNIQUE INDEX IF NOT EXISTS uq_payout_activo_por_empresa
     ON hot_click_payout_request_tb (fk_id_empresa)
@@ -3068,20 +3068,20 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_payout_activo_por_empresa
 
 -- ============================================================
 -- DLQ (Dead-Letter Queue) para acreditaciones fallidas
--- Si @Async falla por BD caída o error de red, el dinero queda
--- aquí para ser reintentado por WalletReconciliacionScheduler
+-- Si @Async falla por BD ca?da o error de red, el dinero queda
+-- aqu? para ser reintentado por WalletReconciliacionScheduler
 -- con backoff exponencial hasta MAX_INTENTOS.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS hot_click_wallet_dlq_tb (
     id_dlq              BIGSERIAL   PRIMARY KEY,
     fk_id_empresa       BIGINT      NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
-    fk_id_pedido        BIGINT      NOT NULL UNIQUE,   -- idempotencia: un pedido → una entrada DLQ
+    fk_id_pedido        BIGINT      NOT NULL UNIQUE,   -- idempotencia: un pedido ? una entrada DLQ
     total_bruto         BIGINT      NOT NULL,
     com_saas            BIGINT      NOT NULL,
     com_gw              BIGINT      NOT NULL,
     monto_neto          BIGINT      NOT NULL,
     estado              VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE_REINTENTO',
-    -- PENDIENTE_REINTENTO → PROCESADO | AGOTADO
+    -- PENDIENTE_REINTENTO ? PROCESADO | AGOTADO
     intentos            INTEGER     NOT NULL DEFAULT 0,
     max_intentos        INTEGER     NOT NULL DEFAULT 10,
     ultimo_error        TEXT,
@@ -3095,14 +3095,14 @@ CREATE INDEX IF NOT EXISTS idx_wallet_dlq_estado
     WHERE estado = 'PENDIENTE_REINTENTO';
 
 -- V82: Ajusta max_productos de los 4 planes comerciales
--- Inicio Ferial: 10 | Emprendedor Pro: 50 | Comercio Expansión: 250 | Personalizado: -1 (ilimitado)
+-- Inicio Ferial: 10 | Emprendedor Pro: 50 | Comercio Expansi?n: 250 | Personalizado: -1 (ilimitado)
 UPDATE hot_click_plan_tb SET max_productos = 10  WHERE nombre = 'Inicio Ferial';
 UPDATE hot_click_plan_tb SET max_productos = 50  WHERE nombre = 'Emprendedor Pro';
-UPDATE hot_click_plan_tb SET max_productos = 250 WHERE nombre = 'Comercio Expansión';
+UPDATE hot_click_plan_tb SET max_productos = 250 WHERE nombre = 'Comercio Expansi?n';
 
 
--- V83: Reemplaza el índice único global de marcas (V5) por uno con scope de empresa.
--- El índice anterior impedía que dos empresas distintas usaran el mismo nombre de marca.
+-- V83: Reemplaza el ?ndice ?nico global de marcas (V5) por uno con scope de empresa.
+-- El ?ndice anterior imped?a que dos empresas distintas usaran el mismo nombre de marca.
 DROP INDEX IF EXISTS idx_marca_nombre_activo;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_marca_nombre_empresa_activo
@@ -3115,18 +3115,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_marca_nombre_global_activo
     WHERE fk_id_estado = 1
       AND fk_id_empresa IS NULL;
 
--- V91: Otorga créditos de IA limitados al plan EMPRENDEDOR (gratuito).
--- Antes tenía max_creditos_ai = 0 (V89) — el Copilot no era usable en el plan gratuito.
--- Decisión: darle acceso limitado por ahora; el día que se quiera reservar el
+-- V91: Otorga cr?ditos de IA limitados al plan EMPRENDEDOR (gratuito).
+-- Antes ten?a max_creditos_ai = 0 (V89) ? el Copilot no era usable en el plan gratuito.
+-- Decisi?n: darle acceso limitado por ahora; el d?a que se quiera reservar el
 -- Copilot solo para planes pagos, basta con desactivar el feature flag
--- 'copilot_emprendedor' (V47) — AiQuotaService.resolverLimite() lo respeta
+-- 'copilot_emprendedor' (V47) ? AiQuotaService.resolverLimite() lo respeta
 -- sin necesidad de un nuevo deploy.
 UPDATE hot_click_plan_tb
 SET max_creditos_ai = 10
 WHERE nombre = 'EMPRENDEDOR';
 
 -- V92: permite que un emprendedor registre manualmente un cliente (contacto)
--- sin que exista todavía un pedido que lo vincule a la empresa.
+-- sin que exista todav?a un pedido que lo vincule a la empresa.
 ALTER TABLE hot_click_usuario_tb
     ADD COLUMN IF NOT EXISTS fk_id_empresa_registro BIGINT NULL
     REFERENCES hot_click_empresa_tb(id_empresa);
@@ -3141,23 +3141,23 @@ ALTER TABLE hot_click_producto_tb ADD COLUMN IF NOT EXISTS color_variante VARCHA
 
 CREATE INDEX IF NOT EXISTS idx_producto_grupo_variante ON hot_click_producto_tb(grupo_variante_id) WHERE grupo_variante_id IS NOT NULL;
 
--- V94: las categorías pasan a ser gestión exclusiva de ADMIN. Las que crea ADMIN
+-- V94: las categor?as pasan a ser gesti?n exclusiva de ADMIN. Las que crea ADMIN
 -- quedan globales (fk_id_empresa = NULL) para que las vea y use todo negocio.
 ALTER TABLE hot_click_categoria_tb
     ALTER COLUMN fk_id_empresa DROP NOT NULL;
 
--- V95: tipo de proveedor — distingue proveedores de materia prima de los de
+-- V95: tipo de proveedor ? distingue proveedores de materia prima de los de
 -- producto terminado. Default PRODUCTO_TERMINADO preserva el comportamiento
 -- actual de los proveedores existentes.
 ALTER TABLE hot_click_proveedor_tb ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) NOT NULL DEFAULT 'PRODUCTO_TERMINADO';
 
 -- V96: permite que un negocio marque una bodega como punto de retiro para
 -- clientes finales. El checkout solo ofrece "Retiro en tienda" cuando el
--- carrito completo pertenece a una única bodega con este flag en true.
+-- carrito completo pertenece a una ?nica bodega con este flag en true.
 ALTER TABLE hot_click_bodega_tb ADD COLUMN IF NOT EXISTS permite_retiro_cliente BOOLEAN NOT NULL DEFAULT false;
 
 -- ============================================================
--- V97: vinculación de Telegram por usuario — bot de clientes
+-- V97: vinculaci?n de Telegram por usuario ? bot de clientes
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_telegram_vinculacion_tb (
@@ -3179,13 +3179,13 @@ CREATE INDEX IF NOT EXISTS idx_tg_vinc_chat    ON hot_click_telegram_vinculacion
 CREATE INDEX IF NOT EXISTS idx_tg_vinc_codigo  ON hot_click_telegram_vinculacion_tb(codigo);
 CREATE INDEX IF NOT EXISTS idx_tg_vinc_empresa ON hot_click_telegram_vinculacion_tb(fk_id_empresa_activa);
 
--- ═══ V98: contexto de Telegram a TEXT (borradores JSON de flujos multi-paso del bot) ═══
+-- ??? V98: contexto de Telegram a TEXT (borradores JSON de flujos multi-paso del bot) ???
 ALTER TABLE hot_click_telegram_vinculacion_tb ALTER COLUMN contexto TYPE TEXT;
 
 -- ============================================================
--- V99: tickets de soporte — un EMPRENDEDOR reporta un problema a HotClick
--- (foto + título + descripción). Se notifica por correo al equipo; sin
--- panel de gestión todavía (se revisan por correo/BD).
+-- V99: tickets de soporte ? un EMPRENDEDOR reporta un problema a HotClick
+-- (foto + t?tulo + descripci?n). Se notifica por correo al equipo; sin
+-- panel de gesti?n todav?a (se revisan por correo/BD).
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS hot_click_ticket_soporte_tb (
@@ -3263,26 +3263,26 @@ SET tiene_reportes = TRUE
 WHERE nombre = 'EMPRENDEDOR';
 
 -- V103: categoria.icono deja de ser emoji y pasa a clave estable.
-UPDATE hot_click_categoria_tb SET icono = 'ropa'    WHERE icono = '👕';
-UPDATE hot_click_categoria_tb SET icono = 'calzad'  WHERE icono = '👟';
-UPDATE hot_click_categoria_tb SET icono = 'videoj'  WHERE icono = '🎮';
-UPDATE hot_click_categoria_tb SET icono = 'tecnol'  WHERE icono = '📱';
-UPDATE hot_click_categoria_tb SET icono = 'comput'  WHERE icono IN ('🖥️', '🖥');
-UPDATE hot_click_categoria_tb SET icono = 'mueble'  WHERE icono = '🪑';
-UPDATE hot_click_categoria_tb SET icono = 'deport'  WHERE icono IN ('🏋️', '🏋');
-UPDATE hot_click_categoria_tb SET icono = 'juguet'  WHERE icono = '🧸';
-UPDATE hot_click_categoria_tb SET icono = 'auto'    WHERE icono = '🚗';
-UPDATE hot_click_categoria_tb SET icono = 'belleza' WHERE icono = '💄';
-UPDATE hot_click_categoria_tb SET icono = 'hogar'   WHERE icono IN ('🍽️', '🍽');
-UPDATE hot_click_categoria_tb SET icono = 'libros'  WHERE icono = '📚';
-UPDATE hot_click_categoria_tb SET icono = 'musica'  WHERE icono = '🎵';
-UPDATE hot_click_categoria_tb SET icono = 'jardin'  WHERE icono = '🌿';
-UPDATE hot_click_categoria_tb SET icono = 'mascot'  WHERE icono = '🐾';
-UPDATE hot_click_categoria_tb SET icono = 'arte'    WHERE icono = '🎨';
-UPDATE hot_click_categoria_tb SET icono = 'joyería' WHERE icono = '💍';
-UPDATE hot_click_categoria_tb SET icono = 'herram'  WHERE icono = '🔧';
-UPDATE hot_click_categoria_tb SET icono = 'regal'   WHERE icono = '🎁';
-UPDATE hot_click_categoria_tb SET icono = 'cuidado' WHERE icono = '🧴';
+UPDATE hot_click_categoria_tb SET icono = 'ropa'    WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'calzad'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'videoj'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'tecnol'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'comput'  WHERE icono IN ('???', '??');
+UPDATE hot_click_categoria_tb SET icono = 'mueble'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'deport'  WHERE icono IN ('???', '??');
+UPDATE hot_click_categoria_tb SET icono = 'juguet'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'auto'    WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'belleza' WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'hogar'   WHERE icono IN ('???', '??');
+UPDATE hot_click_categoria_tb SET icono = 'libros'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'musica'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'jardin'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'mascot'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'arte'    WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'joyer?a' WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'herram'  WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'regal'   WHERE icono = '??';
+UPDATE hot_click_categoria_tb SET icono = 'cuidado' WHERE icono = '??';
 
 -- V107 (Flyway): token opaco para recuperar carrito abandonado
 ALTER TABLE hot_click_carrito_abandonado_tb
@@ -3302,9 +3302,9 @@ INSERT INTO hot_click_plan_tb
      tiene_pos, tiene_crm, tiene_compras, tiene_reportes, tiene_ai, tiene_api,
      max_creditos_ai, activo)
 VALUES
-    ('EMPRENDEDOR', 'Plan gratuito. Modelo basado en comisión por venta.', 0, 0.00, 1.50, 2, 50, 1, 1, false, false, false, true, false, false, 0, true),
+    ('EMPRENDEDOR', 'Plan gratuito. Modelo basado en comisi?n por venta.', 0, 0.00, 1.50, 2, 50, 1, 1, false, false, false, true, false, false, 0, true),
     ('PYME', 'Plan para negocios en crecimiento. Incluye IA y reportes.', 0, 11.99, 0.00, 5, 500, 2, 2, true, false, true, true, true, false, 80, true),
-    ('NEGOCIO_PLUS', 'Plan completo. Usuarios ilimitados, IA sin límite.', 0, 19.99, 0.00, -1, -1, -1, -1, true, true, true, true, true, false, -1, true)
+    ('NEGOCIO_PLUS', 'Plan completo. Usuarios ilimitados, IA sin l?mite.', 0, 19.99, 0.00, -1, -1, -1, -1, true, true, true, true, true, false, -1, true)
 ON CONFLICT (nombre) DO UPDATE SET activo = true;
 
 UPDATE hot_click_empresa_tb e
@@ -3326,7 +3326,7 @@ WHERE p.nombre = 'NEGOCIO_PLUS'
   AND (e.correo_empresa = 'qa.negocioplus.demo@hotclick.test'
     OR e.id_empresa IN (SELECT u.fk_id_empresa FROM hot_click_usuario_tb u WHERE u.correo = 'qa.negocioplus.demo@hotclick.test' AND u.fk_id_empresa IS NOT NULL));
 
--- V106: sucursales por empresa (Negocio Plus — multi-sucursal)
+-- V106: sucursales por empresa (Negocio Plus ? multi-sucursal)
 CREATE TABLE IF NOT EXISTS hot_click_sucursal_tb (
     id_sucursal    BIGSERIAL PRIMARY KEY,
     nombre         VARCHAR(120) NOT NULL,
@@ -3349,7 +3349,7 @@ ALTER TABLE hot_click_pos_qr_sesion_tb
     ADD COLUMN IF NOT EXISTS fk_id_bodega BIGINT;
 
 
--- V109: productos personalizados (encargos con im�genes de referencia)
+-- V109: productos personalizados (encargos con im?genes de referencia)
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS es_personalizado BOOLEAN NOT NULL DEFAULT FALSE;
 
@@ -3412,7 +3412,7 @@ ALTER TABLE hot_click_encargo_tb
 ALTER TABLE hot_click_encargo_tb
     ADD COLUMN IF NOT EXISTS mensaje_vendedor TEXT;
 
--- V111: fulfillment post-pago y auditor�a de transiciones
+-- V111: fulfillment post-pago y auditor?a de transiciones
 ALTER TABLE hot_click_encargo_tb
     ADD COLUMN IF NOT EXISTS estado_fulfillment VARCHAR(20);
 
@@ -3428,3 +3428,113 @@ CREATE TABLE IF NOT EXISTS hot_click_encargo_evento_tb (
 
 CREATE INDEX IF NOT EXISTS idx_encargo_evento_encargo
     ON hot_click_encargo_evento_tb (fk_id_encargo, fecha_evento DESC);
+
+-- V112: solicitudes de recolecci?n y entrega (mensajer?a HOTCLICK, solo GAM por ahora)
+CREATE TABLE IF NOT EXISTS hot_click_solicitud_recoleccion_tb (
+    id_solicitud_recoleccion BIGSERIAL PRIMARY KEY,
+    fk_id_empresa            BIGINT NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
+    fk_id_usuario            BIGINT REFERENCES hot_click_usuario_tb(id_usuario),
+    zona                     VARCHAR(20) NOT NULL,
+    direccion_recoleccion    TEXT NOT NULL,
+    contacto_recoleccion     VARCHAR(120) NOT NULL,
+    telefono_recoleccion     VARCHAR(30) NOT NULL,
+    direccion_entrega        TEXT NOT NULL,
+    contacto_entrega         VARCHAR(120) NOT NULL,
+    telefono_entrega         VARCHAR(30) NOT NULL,
+    notas                    TEXT,
+    estado                   VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    tarifa_colones           INTEGER,
+    notas_admin              TEXT,
+    fecha_creacion           TIMESTAMP NOT NULL DEFAULT NOW(),
+    fecha_cotizacion         TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_recoleccion_empresa
+    ON hot_click_solicitud_recoleccion_tb (fk_id_empresa, fecha_creacion DESC);
+
+CREATE INDEX IF NOT EXISTS idx_recoleccion_estado
+    ON hot_click_solicitud_recoleccion_tb (estado);
+
+-- V113: reportes de producto por clientes (moderaci?n marketplace)
+CREATE TABLE IF NOT EXISTS hot_click_reporte_producto_tb (
+    id_reporte_producto BIGSERIAL PRIMARY KEY,
+    fk_id_producto      BIGINT NOT NULL REFERENCES hot_click_producto_tb(id_producto),
+    fk_id_usuario       BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL,
+    motivo              VARCHAR(80) NOT NULL,
+    detalle             TEXT,
+    estado              VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    notas_admin         TEXT,
+    fecha_creacion      TIMESTAMP NOT NULL DEFAULT NOW(),
+    fecha_resolucion    TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_reporte_producto_estado
+    ON hot_click_reporte_producto_tb (estado, fecha_creacion DESC);
+
+CREATE INDEX IF NOT EXISTS idx_reporte_producto_producto
+    ON hot_click_reporte_producto_tb (fk_id_producto);
+
+-- V114: Billing SaaS con ONVO ? columnas de suscripci?n + precios CRC
+ALTER TABLE hot_click_suscripcion_tb
+    ADD COLUMN IF NOT EXISTS onvo_customer_id     VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS onvo_subscription_id VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS onvo_price_id        VARCHAR(100);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_suscripcion_onvo_sub
+    ON hot_click_suscripcion_tb (onvo_subscription_id)
+    WHERE onvo_subscription_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_suscripcion_onvo_customer
+    ON hot_click_suscripcion_tb (onvo_customer_id)
+    WHERE onvo_customer_id IS NOT NULL;
+
+UPDATE hot_click_plan_tb SET precio_mensual = 9900 WHERE nombre = 'PYME';
+UPDATE hot_click_plan_tb SET precio_mensual = 24900 WHERE nombre = 'NEGOCIO_PLUS';
+UPDATE hot_click_plan_tb SET precio_mensual = 0 WHERE nombre = 'EMPRENDEDOR';
+
+-- V115: comisiones alineadas a ONVO (Emprendedor 8%, PYME/Plus 4% + mensualidad)
+UPDATE hot_click_plan_tb
+SET comision_porcentaje = 8.00,
+    descripcion = 'Plan gratuito. Comisi�n 8% por venta (m�n. ?400), cubre pasarela y plataforma.'
+WHERE nombre = 'EMPRENDEDOR';
+
+UPDATE hot_click_plan_tb
+SET comision_porcentaje = 4.00,
+    precio_mensual = 9900,
+    descripcion = 'Plan para negocios en crecimiento. ?9.900/mes + 4% por venta (cubre pasarela).'
+WHERE nombre = 'PYME';
+
+UPDATE hot_click_plan_tb
+SET comision_porcentaje = 4.00,
+    precio_mensual = 24900,
+    descripcion = 'Plan completo. ?24.900/mes + 4% por venta (cubre pasarela).'
+WHERE nombre = 'NEGOCIO_PLUS';
+
+-- V116: cuentas donde el vendedor recibe ingresos (SINPE / IBAN / tarjeta referencia)
+CREATE TABLE IF NOT EXISTS hot_click_metodo_cobro_tb (
+    id_metodo_cobro BIGSERIAL PRIMARY KEY,
+    fk_id_empresa   BIGINT NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
+    tipo            VARCHAR(20) NOT NULL,
+    destino         VARCHAR(80) NOT NULL,
+    mascara         VARCHAR(60) NOT NULL,
+    predeterminado  BOOLEAN NOT NULL DEFAULT FALSE,
+    activo          BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_creacion  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_metodo_cobro_empresa
+    ON hot_click_metodo_cobro_tb (fk_id_empresa, activo, fecha_creacion DESC);
+
+CREATE INDEX IF NOT EXISTS idx_metodo_cobro_predeterminado
+    ON hot_click_metodo_cobro_tb (fk_id_empresa)
+    WHERE predeterminado = TRUE AND activo = TRUE;
+
+-- V117: extras de negocio en perfil empresa (categor�a, Instagram, zona de env�o)
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS categoria_negocio VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS instagram         VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS zona_envio        VARCHAR(100);
+
+-- V118: ubicaci�n / direcci�n de sucursal (Negocio Plus)
+ALTER TABLE hot_click_sucursal_tb
+    ADD COLUMN IF NOT EXISTS ubicacion VARCHAR(255);

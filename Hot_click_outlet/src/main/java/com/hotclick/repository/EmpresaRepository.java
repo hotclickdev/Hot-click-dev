@@ -19,6 +19,9 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     Optional<Empresa> findBySlug(String slug);
 
+    @Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.plan WHERE e.id = :id")
+    Optional<Empresa> findByIdWithPlan(@Param("id") Long id);
+
     Optional<Empresa> findByCorreoEmpresa(String correoEmpresa);
 
     boolean existsBySlug(String slug);

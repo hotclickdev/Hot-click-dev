@@ -7,12 +7,16 @@ import { esUsuarioSistema } from '@/utils/sistemaUser'
 import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
+import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
+import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
 
 type PlanSaas = {
   id: Id
   nombre: string
   precioUsd?: number | string
+  precioMensual?: number
+  comisionPorcentaje?: number | string
   descripcion?: string
   maxProductos?: number
   maxUsuarios?: number
@@ -22,14 +26,15 @@ type PlanSaas = {
   tieneApi?: boolean
 }
 
-function mensajeErrorPlan(err: unknown, fallback: string): string {
-  if (typeof err !== 'object' || err === null || !('response' in err)) return fallback
-  const error = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error
-  return typeof error === 'string' && error ? error : fallback
-}
-
 function listaPlanes(data: unknown): PlanSaas[] {
   return Array.isArray(data) ? data as PlanSaas[] : []
+}
+
+function etiquetaComision(plan: PlanSaas): string {
+  const pct = Number(plan.comisionPorcentaje ?? 0)
+  const base = Number.isFinite(pct) && pct > 0 ? `${pct}% por venta` : 'Sin comisión por venta'
+  if (plan.nombre === 'EMPRENDEDOR') return `${base} (mín. ₡400)`
+  return base
 }
 
 function Feature({ ok, label }: { ok?: boolean; label: string }) {
@@ -51,6 +56,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
 }) {
   const esEnterprise = plan.nombre === 'NEGOCIO_PLUS'
   const esFree = plan.nombre === 'EMPRENDEDOR'
+  const precioCrc = Number(plan.precioMensual ?? 0)
 
   return (
     <div
@@ -69,7 +75,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
           Plan actual
         </span>
       )}
-      {esEnterprise && (
+      {esEnterprise && !esCurrent && (
         <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full"
           style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: '#fff' }}>
           Popular
@@ -80,9 +86,9 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
         <p className="text-xs font-semibold uppercase tracking-wider opacity-70">{plan.nombre}</p>
         <div className="flex items-end gap-1 mt-1">
           <span className="text-3xl font-bold">
-            {Number(plan.precioUsd) === 0 ? 'Gratis' : `$${Number(plan.precioUsd).toFixed(2)}`}
+            {precioCrc === 0 ? 'Gratis' : `₡${precioCrc.toLocaleString('es-CR')}`}
           </span>
-          {Number(plan.precioUsd) > 0 && (
+          {precioCrc > 0 && (
             <span className="text-sm opacity-60 mb-1">/mes</span>
           )}
         </div>
@@ -90,13 +96,10 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
       </div>
 
       <div className="flex flex-col gap-2 flex-1">
+        <Feature ok label={etiquetaComision(plan)} />
         <Feature ok label={`${plan.maxProductos === -1 ? 'Ilimitados' : plan.maxProductos} productos`} />
         <Feature ok label={`${plan.maxUsuarios} usuario${(plan.maxUsuarios ?? 0) > 1 ? 's' : ''}`} />
-        {/* Caja en todos los planes (jul 2026). tienePos del API no debe
-            pintar la cruz: el dueño ya entra a /admin/pos sin PlanGate. */}
         <Feature ok label="POS / Caja registradora" />
-        {/* CRM básico es gratis en todo plan; tieneCrm del plan ahora solo refleja
-            la futura función de IA de comportamiento, no el acceso al CRM en sí. */}
         <Feature ok label="CRM / Clientes" />
         <Feature ok={plan.tieneCompras}  label="Módulo de compras" />
         <Feature ok={plan.tieneReportes} label="Reportes avanzados" />
@@ -104,7 +107,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
         <Feature ok={plan.tieneApi}      label="API Keys / Webhooks" />
       </div>
 
-      {!esCurrent && !esFree && (
+      {!esCurrent && (
         <button type="button"
           onClick={() => onSelect(plan.id)}
           disabled={loading}
@@ -115,7 +118,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
             border: esEnterprise ? '2px solid var(--hc-accent)' : 'none',
           }}
         >
-          {loading ? 'Redirigiendo…' : `Suscribirse al ${plan.nombre}`}
+          {loading ? 'Procesando…' : esFree ? `Bajar a ${plan.nombre}` : `Cambiar a ${plan.nombre}`}
         </button>
       )}
       {esCurrent && !esFree && (
@@ -128,11 +131,18 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
 export default function AdminPlanes() {
   const [planes, setPlanes] = useState<PlanSaas[]>([])
   const [cargando, setCargando] = useState(true)
-  const [loadingPlan, setLoadingPlan] = useState<Id | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const { planNombre, estadoPlan, trialDias } = useTenantStore()
   const { logout } = useAuthStore()
   const navigate = useNavigate()
+  const {
+    loadingPlan,
+    error,
+    setError,
+    pagoPendiente,
+    seleccionarPlan,
+    irAExito,
+    cancelarPago,
+  } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion' })
 
   function handleLogout() {
     logout()
@@ -144,22 +154,7 @@ export default function AdminPlanes() {
       .then(({ data }) => setPlanes(listaPlanes(data)))
       .catch(() => setError('No se pudieron cargar los planes'))
       .finally(() => setCargando(false))
-  }, [])
-
-  async function seleccionarPlan(planId: Id) {
-    setLoadingPlan(planId)
-    setError(null)
-    try {
-      const { data } = await billingService.crearCheckout(planId)
-      const checkout = data as { checkoutUrl?: string }
-      if (checkout.checkoutUrl) {
-        globalThis.location.href = checkout.checkoutUrl
-      }
-    } catch (e: unknown) {
-      setError(mensajeErrorPlan(e, 'Error al iniciar el pago'))
-      setLoadingPlan(null)
-    }
-  }
+  }, [setError])
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -188,6 +183,26 @@ export default function AdminPlanes() {
         </div>
       )}
 
+      {pagoPendiente && (
+        <div className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+              Pagar plan {pagoPendiente.planNombre ?? ''}
+            </p>
+            <button type="button" onClick={cancelarPago} className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+              Cancelar
+            </button>
+          </div>
+          <OnvoSuscripcionEmbed
+            subscriptionId={pagoPendiente.subscriptionId}
+            customerId={pagoPendiente.customerId}
+            publishableKey={pagoPendiente.publishableKey}
+            onSuccess={() => { void irAExito() }}
+            onError={(msg) => setError(msg)}
+          />
+        </div>
+      )}
+
       {cargando ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
@@ -200,20 +215,17 @@ export default function AdminPlanes() {
               plan={plan}
               esCurrent={plan.nombre === planNombre}
               loading={loadingPlan === plan.id}
-              onSelect={seleccionarPlan}
+              onSelect={(id) => { void seleccionarPlan(id) }}
             />
           ))}
         </div>
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los precios están en USD. El cobro se procesa mensualmente mediante Stripe.
+        Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
         Podés cancelar en cualquier momento desde la sección de suscripción.
       </p>
 
-      {/* Ver tienda / Tour / Cerrar sesión — viven acá y no en el sidebar de
-          Sistema, siguiendo el mockup aprobado (Sistema - Configuracion.dc.html),
-          que ubica "Cerrá sesión" al pie de esta misma pantalla. */}
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold pt-2">
         <EnlaceTiendaCliente />
         <button

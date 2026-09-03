@@ -1,5 +1,5 @@
 import type { ModoPrecioPersonalizado } from './personalizadoProductoHelpers'
-import { MODOS_PRECIO_PERSONALIZADO, modosPrecioPersonalizadoHabilitados } from './personalizadoProductoHelpers'
+import { MODOS_PRECIO_PERSONALIZADO } from './personalizadoProductoHelpers'
 
 type Props = Readonly<{
   instrucciones: string
@@ -18,7 +18,7 @@ type Props = Readonly<{
 }>
 
 /**
- * Campos para producto personalizado (fase 1: cotización; fase 3: modos con flag).
+ * Campos para producto personalizado: forma de cobro + instrucciones al cliente.
  */
 export default function CamposPersonalizadoProducto({
   instrucciones,
@@ -36,48 +36,40 @@ export default function CamposPersonalizadoProducto({
   onVentaChange,
 }: Props) {
   const instruccionesId = `${idPrefijo}-instrucciones`
-  const modosOn = modosPrecioPersonalizadoHabilitados()
-  const labelId = `${idPrefijo}-modo-precio`
+  const labelId = `${idPrefijo}-forma-cobro`
 
   return (
     <div className="mb-4 flex flex-col gap-3 rounded-xl border border-hc-border p-3">
-      {!modosOn ? (
+      <p className="text-xs font-medium text-hc-muted" id={labelId}>Forma de cobro</p>
+      <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby={labelId}>
+        {MODOS_PRECIO_PERSONALIZADO.map((modo) => (
+          <OpcionFormaCobro
+            key={modo.valor}
+            name={`${idPrefijo}-modoPrecio`}
+            titulo={modo.titulo}
+            ayuda={modo.ayuda}
+            seleccionada={modoPrecio === modo.valor}
+            onSeleccionar={() => onModoChange?.(modo.valor)}
+          />
+        ))}
+      </div>
+      {modoPrecio === 'FIJO' && onCompraChange && onVentaChange ? (
+        <div className="grid grid-cols-2 gap-2">
+          <CampoNumero etiqueta="Precio compra" value={compra} onChange={onCompraChange} placeholder="₡ 0" />
+          <CampoNumero etiqueta="Precio venta" value={venta} onChange={onVentaChange} placeholder="₡ 0" />
+        </div>
+      ) : null}
+      {modoPrecio === 'RANGO' && onPrecioMinChange && onPrecioMaxChange ? (
+        <div className="grid grid-cols-2 gap-2">
+          <CampoNumero etiqueta="Precio mínimo" value={precioMin} onChange={onPrecioMinChange} placeholder="₡ 5.000" />
+          <CampoNumero etiqueta="Precio máximo" value={precioMax} onChange={onPrecioMaxChange} placeholder="₡ 25.000" />
+        </div>
+      ) : null}
+      {modoPrecio === 'COTIZACION' ? (
         <p className="text-sm text-hc-muted">
-          Por ahora no llevás precio acá: el cliente envía fotos y notas, y vos cotizás cuando revisés el encargo.
+          El cliente envía fotos y notas; vos cotizás cuando revisés el encargo.
         </p>
-      ) : (
-        <>
-          <p className="text-xs font-medium text-hc-muted" id={labelId}>Cómo se define el precio</p>
-          <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby={labelId}>
-            {MODOS_PRECIO_PERSONALIZADO.map((modo) => (
-              <label key={modo.valor} className="flex cursor-pointer items-start gap-2 rounded-xl border border-hc-border px-3 py-2">
-                <input
-                  type="radio"
-                  name={`${idPrefijo}-modoPrecio`}
-                  checked={modoPrecio === modo.valor}
-                  onChange={() => onModoChange?.(modo.valor)}
-                />
-                <span>
-                  <span className="block text-sm font-medium text-hc-text">{modo.titulo}</span>
-                  <span className="block text-xs text-hc-muted">{modo.ayuda}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-          {modoPrecio === 'FIJO' && onCompraChange && onVentaChange ? (
-            <div className="grid grid-cols-2 gap-2">
-              <CampoNumero etiqueta="Precio compra" value={compra} onChange={onCompraChange} placeholder="₡ 0" />
-              <CampoNumero etiqueta="Precio venta" value={venta} onChange={onVentaChange} placeholder="₡ 0" />
-            </div>
-          ) : null}
-          {modoPrecio === 'RANGO' && onPrecioMinChange && onPrecioMaxChange ? (
-            <div className="grid grid-cols-2 gap-2">
-              <CampoNumero etiqueta="Precio mínimo" value={precioMin} onChange={onPrecioMinChange} placeholder="₡ 5.000" />
-              <CampoNumero etiqueta="Precio máximo" value={precioMax} onChange={onPrecioMaxChange} placeholder="₡ 25.000" />
-            </div>
-          ) : null}
-        </>
-      )}
+      ) : null}
       <label htmlFor={instruccionesId} className="text-xs font-medium text-hc-muted">
         Instrucciones para el cliente
       </label>
@@ -90,6 +82,34 @@ export default function CamposPersonalizadoProducto({
         maxLength={3000}
       />
     </div>
+  )
+}
+
+function OpcionFormaCobro({
+  name, titulo, ayuda, seleccionada, onSeleccionar,
+}: Readonly<{
+  name: string
+  titulo: string
+  ayuda: string
+  seleccionada: boolean
+  onSeleccionar: () => void
+}>) {
+  const clase = seleccionada
+    ? 'flex cursor-pointer items-start gap-2 rounded-xl border border-hc-primary bg-hc-primary/5 px-3 py-2'
+    : 'flex cursor-pointer items-start gap-2 rounded-xl border border-hc-border px-3 py-2'
+  return (
+    <label className={clase} aria-label={titulo}>
+      <input
+        type="radio"
+        name={name}
+        checked={seleccionada}
+        onChange={onSeleccionar}
+      />
+      <span>
+        <span className="block text-sm font-medium text-hc-text">{titulo}</span>
+        <span className="block text-xs text-hc-muted">{ayuda}</span>
+      </span>
+    </label>
   )
 }
 

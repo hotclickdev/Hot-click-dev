@@ -2,16 +2,20 @@ import {
   BuildingOffice2Icon,
   BuildingStorefrontIcon,
   ChartBarIcon,
+  ClipboardDocumentListIcon,
   Cog6ToothIcon,
   CubeIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import useAuthStore from '@/store/authStore'
+import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from './PrototipoSidebarNav'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 
-function gruposSeller(ruta: (segmento?: string) => string, conSucursales: boolean): GrupoNav[] {
+function gruposSeller(ruta: (segmento?: string) => string, conSucursales: boolean, pendientesEncargos: number): GrupoNav[] {
   const sucursales: ItemNav[] = conSucursales
     ? [{ to: ruta('sucursales'), etiqueta: 'Sucursales', Icono: BuildingOffice2Icon }]
     : []
@@ -21,6 +25,13 @@ function gruposSeller(ruta: (segmento?: string) => string, conSucursales: boolea
       items: [
         { to: ruta('productos'), etiqueta: 'Productos', Icono: CubeIcon },
         { to: ruta('tienda'), etiqueta: 'Tienda', Icono: BuildingStorefrontIcon },
+        { to: ruta('recoleccion'), etiqueta: 'Recolección', Icono: TruckIcon },
+        {
+          to: ruta('encargos'),
+          etiqueta: 'Encargos',
+          Icono: ClipboardDocumentListIcon,
+          badge: pendientesEncargos,
+        },
         ...sucursales,
       ],
     },
@@ -44,7 +55,11 @@ export default function SellerSidebar() {
   const navigate = useNavigate()
   const userName = useAuthStore((s) => s.userName) ?? plan.usuario
   const logout = useAuthStore((s) => s.logout)
-  const grupos = gruposSeller(ruta, plan.id === 'negocioPlus')
+  const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
+  const grupos = useMemo(
+    () => gruposSeller(ruta, plan.id === 'negocioPlus', pendientesEncargos),
+    [ruta, plan.id, pendientesEncargos],
+  )
 
   function cerrarSesion() {
     logout()

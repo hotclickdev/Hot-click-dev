@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.payment.OnvoPaymentProvider;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.pos.PosQrVentaService;
+import com.hotclick.service.suscripcion.OnvoBillingWebhookHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,14 +29,16 @@ class OnvoWebhookPosQrTest {
     @Mock OnvoService onvoService;
     @Mock OnvoPaymentProvider onvoPaymentProvider;
     @Mock PosQrVentaService posQrVentaService;
+    @Mock OnvoBillingWebhookHandler billingWebhookHandler;
 
     private OnvoWebhookController controller;
 
     @BeforeEach
     void armar() {
         controller = new OnvoWebhookController(
-            onvoService, onvoPaymentProvider, posQrVentaService, new ObjectMapper());
+            onvoService, onvoPaymentProvider, posQrVentaService, billingWebhookHandler, new ObjectMapper());
         when(onvoService.getWebhookSecret()).thenReturn("secret-onvo");
+        when(billingWebhookHandler.manejarSiBilling(any(), any(), any())).thenReturn(false);
     }
 
     @Test
@@ -75,5 +78,20 @@ class OnvoWebhookPosQrTest {
 
         assertThat(res.getStatusCode().value()).isEqualTo(200);
         verify(onvoPaymentProvider).procesarPagoExitoso(eq("sess_tienda"), any(), eq("webhook"));
+    }
+
+    @Test
+    @DisplayName("Evento de billing SaaS no pasa por POS ni tienda")
+    void billingNoPasaPorPosNiTienda() {
+        when(billingWebhookHandler.manejarSiBilling(any(), any(), any())).thenReturn(true);
+
+        ResponseEntity<Map<String, String>> res = controller.recibirWebhookOnvo(
+            "{\"id\":\"evt_1\",\"type\":\"subscription.renewal.succeeded\",\"data\":{\"id\":\"sub_1\"}}",
+            "secret-onvo");
+
+        assertThat(res.getStatusCode().value()).isEqualTo(200);
+        assertThat(res.getBody()).containsEntry("scope", "billing");
+        verify(posQrVentaService, never()).completarSiPagoPasarela(any());
+        verify(onvoPaymentProvider, never()).procesarPagoExitoso(any(), any(), any());
     }
 }

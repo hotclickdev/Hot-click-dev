@@ -5,6 +5,7 @@ import { Boton, EncabezadoPagina, Miniatura } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
 import { marcarPedidoEnviadoApi } from './pedidosVendedorApi'
+import type { PlanConfig } from './plan'
 import type { PedidoMock } from './mock'
 
 /**
@@ -18,11 +19,13 @@ export default function PedidoDetallePage() {
   const { seller, cargando, error } = usePedidosEmprendedor()
   const [marcando, setMarcando] = useState(false)
   const [errorMarca, setErrorMarca] = useState<string | null>(null)
+  const [confirmando, setConfirmando] = useState(false)
   const pedido = id ? seller.find((item) => item.id === id) : undefined
 
   async function marcarEnviado() {
     if (!id) return
     setMarcando(true)
+    setErrorMarca(null)
     try {
       await marcarPedidoEnviadoApi(id)
       navigate(ruta('pedidos'))
@@ -32,6 +35,16 @@ export default function PedidoDetallePage() {
     } finally {
       setMarcando(false)
     }
+  }
+
+  function abrirConfirmacion() {
+    setErrorMarca(null)
+    setConfirmando(true)
+  }
+
+  function cancelarConfirmacion() {
+    setErrorMarca(null)
+    setConfirmando(false)
   }
 
   if (cargando) {
@@ -51,6 +64,7 @@ export default function PedidoDetallePage() {
       </main>
     )
   }
+
   return (
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12 md:pt-12">
       <div className="md:hidden">
@@ -62,6 +76,61 @@ export default function PedidoDetallePage() {
           <p className="mt-1 text-sm text-hc-muted">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
         ) : null}
       </header>
+      {confirmando && pedido.estado === 'Pendiente' ? (
+        <ConfirmacionEnvio
+          pedido={pedido}
+          errorMarca={errorMarca}
+          marcando={marcando}
+          onConfirmar={() => void marcarEnviado()}
+          onCancelar={cancelarConfirmacion}
+        />
+      ) : (
+        <DetallePedidoContenido
+          pedido={pedido}
+          plan={plan}
+          onConfirmarEnvio={abrirConfirmacion}
+        />
+      )}
+    </main>
+  )
+}
+
+type ConfirmacionProps = {
+  pedido: PedidoMock
+  errorMarca: string | null
+  marcando: boolean
+  onConfirmar: () => void
+  onCancelar: () => void
+}
+
+function ConfirmacionEnvio({ pedido, errorMarca, marcando, onConfirmar, onCancelar }: ConfirmacionProps) {
+  return (
+    <div className="md:max-w-[760px]">
+      <div className="rounded-xl border border-hc-border p-4 space-y-3">
+        <FilaDato label="Cliente" valor={pedido.cliente} />
+        <FilaDato label="Total" valor={formatoColon(pedido.total)} />
+      </div>
+      <p className="mt-5 text-[15px] font-semibold text-hc-text">¿Confirmás que ya enviaste este pedido?</p>
+      {errorMarca ? <p className="mt-3 text-sm text-hc-danger">{errorMarca}</p> : null}
+      <div className="mt-4 flex flex-col gap-2">
+        <Boton onClick={onConfirmar}>{marcando ? 'Guardando…' : 'Sí, confirmar envío'}</Boton>
+        <Boton variante="contorno" onClick={onCancelar}>Cancelar</Boton>
+      </div>
+    </div>
+  )
+}
+
+function DetallePedidoContenido({
+  pedido,
+  plan,
+  onConfirmarEnvio,
+}: {
+  pedido: PedidoMock
+  plan: PlanConfig
+  onConfirmarEnvio: () => void
+}) {
+  return (
+    <>
       {plan.id === 'negocioPlus' ? (
         <p className="mb-2 text-xs text-hc-muted md:hidden">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
       ) : null}
@@ -91,14 +160,13 @@ export default function PedidoDetallePage() {
           <span>Total</span>
           <span>{formatoColon(pedido.total)}</span>
         </div>
-        {errorMarca ? <p className="mt-3 text-sm text-hc-danger">{errorMarca}</p> : null}
         {pedido.estado === 'Pendiente' ? (
           <div className="mt-6">
-            <Boton onClick={() => void marcarEnviado()}>{marcando ? 'Guardando…' : 'Marcar como enviado'}</Boton>
+            <Boton onClick={onConfirmarEnvio}>Confirmar envío</Boton>
           </div>
         ) : null}
       </div>
-    </main>
+    </>
   )
 }
 

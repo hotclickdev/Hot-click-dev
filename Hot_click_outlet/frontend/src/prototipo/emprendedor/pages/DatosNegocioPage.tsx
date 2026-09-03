@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { empresaService } from '@/services/empresaService'
@@ -7,12 +7,14 @@ import {
   descripcionVisible,
   fotosDesdeDescripcion,
   unwrapEmpresa,
+  type EmpresaPerfil,
 } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
-import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import CampoTexto from '../ui/CampoTexto'
 import { RUTA_EMPRENDEDOR } from '../constants'
-import { leerExtrasNegocio, guardarExtrasNegocio } from '../data/negocioExtras'
+import { leerExtrasLocal, limpiarExtrasLocal } from '../data/negocioExtras'
+import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
+import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 
 type FormNegocio = {
   nombre: string
@@ -32,40 +34,52 @@ const FORM_INICIAL: FormNegocio = {
   zona: '',
 }
 
+const PASOS: readonly PasoFormulario[] = [
+  { id: 'identidad', titulo: 'Identidad del negocio' },
+  { id: 'contacto', titulo: 'Contacto' },
+  { id: 'publico', titulo: 'Cómo te ven los compradores' },
+]
+
 /**
- * Datos de tu negocio (Figma 136:128 / 352:12071).
- * Persiste nombre/descripcion/WhatsApp en API; categoría/IG/zona en local.
+ * Datos de tu negocio (wizard). Persiste nombre, descripción, WhatsApp,
+ * categoría, Instagram y zona vía API de perfil empresa.
  */
 export default function DatosNegocioPage() {
   const navigate = useNavigate()
   const toast = useToast()
+  const [paso, setPaso] = useState(0)
   const [form, setForm] = useState<FormNegocio>(FORM_INICIAL)
   const [descRaw, setDescRaw] = useState('')
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
+  const idPaso = PASOS[paso]?.id
 
   useEffect(() => {
     void cargarPerfil(setForm, setDescRaw, setCargando, toast)
   }, [toast])
 
-  async function onSubmit(evento: FormEvent) {
-    evento.preventDefault()
-    if (!form.nombre.trim()) {
-      toast({ message: 'El nombre del negocio es requerido', type: 'error' })
-      return
-    }
+  function setCampo(campo: keyof FormNegocio) {
+    return (valor: string) => setForm((prev) => ({ ...prev, [campo]: valor }))
+  }
+
+  function validar(i: number): string | null {
+    const id = PASOS[i]?.id
+    if (id === 'identidad' && !form.nombre.trim()) return 'El nombre del negocio es requerido'
+    return null
+  }
+
+  async function guardar() {
     setGuardando(true)
     try {
       await empresaService.updatePerfil({
         nombreComercial: form.nombre.trim(),
         descripcion: armarDescripcion(form.descripcion, descRaw),
         numeroWhatsapp: form.whatsapp.trim(),
-      })
-      guardarExtrasNegocio({
-        categoria: form.categoria.trim(),
+        categoriaNegocio: form.categoria.trim(),
         instagram: form.instagram.trim(),
-        zona: form.zona.trim(),
+        zonaEnvio: form.zona.trim(),
       })
+      limpiarExtrasLocal()
       toast({ message: 'Datos del negocio guardados', type: 'success' })
       navigate(`${RUTA_EMPRENDEDOR}/opciones`)
     } catch {
@@ -73,10 +87,6 @@ export default function DatosNegocioPage() {
     } finally {
       setGuardando(false)
     }
-  }
-
-  function setCampo(campo: keyof FormNegocio) {
-    return (valor: string) => setForm((prev) => ({ ...prev, [campo]: valor }))
   }
 
   return (
@@ -92,22 +102,39 @@ export default function DatosNegocioPage() {
       </p>
       {cargando ? <p className="text-sm text-hc-muted">Cargando datos…</p> : null}
       {!cargando ? (
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-          <div className="flex flex-col gap-4 rounded-xl border border-hc-border bg-hc-surface p-4 md:p-6">
-            <CampoTexto etiqueta="Nombre del negocio" value={form.nombre} onChange={setCampo('nombre')} />
-            <CampoTexto etiqueta="Descripción corta" value={form.descripcion} onChange={setCampo('descripcion')} />
-            <CampoTexto etiqueta="Categoría principal" value={form.categoria} onChange={setCampo('categoria')} />
-            <CampoTexto
-              etiqueta="WhatsApp de contacto"
-              value={form.whatsapp}
-              onChange={setCampo('whatsapp')}
-              type="tel"
-            />
-            <CampoTexto etiqueta="Instagram (opcional)" value={form.instagram} onChange={setCampo('instagram')} />
-            <CampoTexto etiqueta="Zona de envío" value={form.zona} onChange={setCampo('zona')} />
-          </div>
-          <BotonPrimario type="submit">{guardando ? 'Guardando…' : 'Guardar datos'}</BotonPrimario>
-        </form>
+        <FormularioPorPasos
+          pasos={PASOS}
+          pasoActual={paso}
+          onPasoChange={setPaso}
+          validarPaso={validar}
+          onFinalizar={guardar}
+          etiquetaFinal="Guardar datos"
+          enviando={guardando}
+        >
+          {idPaso === 'identidad' ? (
+            <>
+              <CampoTexto etiqueta="Nombre del negocio" value={form.nombre} onChange={setCampo('nombre')} />
+              <CampoTexto etiqueta="Categoría principal" value={form.categoria} onChange={setCampo('categoria')} />
+            </>
+          ) : null}
+          {idPaso === 'contacto' ? (
+            <>
+              <CampoTexto
+                etiqueta="WhatsApp de contacto"
+                value={form.whatsapp}
+                onChange={setCampo('whatsapp')}
+                type="tel"
+              />
+              <CampoTexto etiqueta="Instagram (opcional)" value={form.instagram} onChange={setCampo('instagram')} />
+            </>
+          ) : null}
+          {idPaso === 'publico' ? (
+            <>
+              <CampoTexto etiqueta="Descripción corta" value={form.descripcion} onChange={setCampo('descripcion')} />
+              <CampoTexto etiqueta="Zona de envío" value={form.zona} onChange={setCampo('zona')} />
+            </>
+          ) : null}
+        </FormularioPorPasos>
       ) : null}
     </main>
   )
@@ -126,35 +153,51 @@ async function cargarPerfil(
   setCargando: (v: boolean) => void,
   toast: ReturnType<typeof useToast>,
 ) {
-  const extras = leerExtrasNegocio()
   try {
     const { data } = await empresaService.getPerfil()
     const empresa = unwrapEmpresa(data)
     if (!empresa?.id) {
-      setForm({ ...FORM_INICIAL, ...mergeExtras(extras) })
+      setForm({ ...FORM_INICIAL, ...extrasDesdeApiOLocal(null) })
       return
     }
     setDescRaw(empresa.descripcion ?? '')
-    setForm({
-      nombre: empresa.nombreComercial ?? FORM_INICIAL.nombre,
-      descripcion: descripcionVisible(empresa.descripcion) || FORM_INICIAL.descripcion,
-      categoria: extras.categoria || FORM_INICIAL.categoria,
-      whatsapp: empresa.numeroWhatsapp || FORM_INICIAL.whatsapp,
-      instagram: extras.instagram || FORM_INICIAL.instagram,
-      zona: extras.zona || FORM_INICIAL.zona,
-    })
+    setForm(formDesdeEmpresa(empresa))
   } catch {
-    setForm({ ...FORM_INICIAL, ...mergeExtras(extras) })
-    toast({ message: 'Usando datos locales: no se pudo cargar el perfil', type: 'error' })
+    setForm({ ...FORM_INICIAL, ...extrasDesdeApiOLocal(null) })
+    toast({ message: 'No se pudo cargar el perfil del negocio', type: 'error' })
   } finally {
     setCargando(false)
   }
 }
 
-function mergeExtras(extras: ReturnType<typeof leerExtrasNegocio>): Partial<FormNegocio> {
+function formDesdeEmpresa(empresa: EmpresaPerfil): FormNegocio {
+  const extras = extrasDesdeApiOLocal(empresa)
   return {
-    categoria: extras.categoria || undefined,
-    instagram: extras.instagram || undefined,
-    zona: extras.zona || undefined,
+    nombre: empresa.nombreComercial ?? FORM_INICIAL.nombre,
+    descripcion: descripcionVisible(empresa.descripcion) || FORM_INICIAL.descripcion,
+    categoria: extras.categoria,
+    whatsapp: empresa.numeroWhatsapp || FORM_INICIAL.whatsapp,
+    instagram: extras.instagram,
+    zona: extras.zona,
+  }
+}
+
+/** Prefiere API; si vacío, usa localStorage legacy como seed temporal. */
+function extrasDesdeApiOLocal(empresa: EmpresaPerfil | null): Pick<FormNegocio, 'categoria' | 'instagram' | 'zona'> {
+  const apiCategoria = empresa?.categoriaNegocio?.trim() ?? ''
+  const apiInstagram = empresa?.instagram?.trim() ?? ''
+  const apiZona = empresa?.zonaEnvio?.trim() ?? ''
+  if (apiCategoria || apiInstagram || apiZona) {
+    return {
+      categoria: apiCategoria || FORM_INICIAL.categoria,
+      instagram: apiInstagram || FORM_INICIAL.instagram,
+      zona: apiZona || FORM_INICIAL.zona,
+    }
+  }
+  const local = leerExtrasLocal()
+  return {
+    categoria: local.categoria || FORM_INICIAL.categoria,
+    instagram: local.instagram || FORM_INICIAL.instagram,
+    zona: local.zona || FORM_INICIAL.zona,
   }
 }

@@ -1,6 +1,9 @@
 package com.hotclick.service;
 
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
+import com.hotclick.model.Plan;
+import com.hotclick.repository.EmpresaRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -10,24 +13,15 @@ import org.mockito.quality.Strictness;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
  * [IDEMPOTENCIA] AggregatorService — Deduplicación de Webhooks y Resiliencia DLQ.
- *
- * Verifica las garantías de [BUG-1 CORREGIDO] y [BUG-2 CORREGIDO] documentadas
- * en AggregatorService: el unique constraint de WalletService funciona como
- * guard de idempotencia para webhooks duplicados, y los fallos transitorios
- * van a DLQ sin propagarse al llamador.
- *
- * Escenarios cubiertos:
- *   IDEM-01  Primera acreditación exitosa → wallet acreditado, no DLQ
- *   IDEM-02  Webhook duplicado lanza DIV → capturado como benigno, NO a DLQ
- *   IDEM-03  Fallo transitorio → se encola en DLQ
- *   IDEM-04  DLQ.encolar también falla → excepción absorbida, no propaga
- *   IDEM-05  Pedido sin empresa → no acredita, no DLQ (early return)
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -37,35 +31,41 @@ class WebhookIdempotencyTest {
     @InjectMocks private AggregatorService service;
     @Mock        private WalletService     walletService;
     @Mock        private WalletDlqTxOps    dlqTxOps;
+    @Mock        private EmpresaRepository empresaRepo;
 
     private Pedido pedido;
 
     @BeforeEach
     void setUp() {
-        // @Value no se inyecta en tests Mockito puros — establecer explícitamente
-        ReflectionTestUtils.setField(service, "pctSaas",    2);
-        ReflectionTestUtils.setField(service, "pctGateway", 3);
+        ReflectionTestUtils.setField(service, "pctGateway", 4);
+        ReflectionTestUtils.setField(service, "pctFallback", new BigDecimal("8"));
+        ReflectionTestUtils.setField(service, "minimoEmprendedorCrc", 400L);
+
+        Plan plan = new Plan();
+        plan.setNombre("EMPRENDEDOR");
+        plan.setComisionPorcentaje(new BigDecimal("8.00"));
+        Empresa empresa = new Empresa();
+        empresa.setPlan(plan);
+        empresa.setPlanSaas("EMPRENDEDOR");
+        when(empresaRepo.findByIdWithPlan(99L)).thenReturn(Optional.of(empresa));
 
         pedido = mock(Pedido.class);
         when(pedido.getId()).thenReturn(101L);
         when(pedido.getEmpresaId()).thenReturn(99L);
-        when(pedido.getTotalPedido()).thenReturn(50000); // Integer — totalPedido es Integer en Pedido.java
+        when(pedido.getTotalPedido()).thenReturn(50000);
     }
-
-    // ── IDEM-01: primera acreditación exitosa ────────────────────────────────
 
     @Test
     @DisplayName("IDEM-01 | CRÍTICO — Primera acreditación exitosa → wallet acreditado, no DLQ")
     void primeraAcreditacion_exitosa_walletLlamado_noDlq() {
         service.acreditarVentaAsync(pedido);
 
+        // 8% de 50000 = 4000; gw 4% = 2000; saas = 2000; neto = 46000
         verify(walletService, times(1))
-            .acreditarVenta(eq(99L), anyLong(), anyLong(), anyLong(), anyLong(), eq(101L));
+            .acreditarVenta(eq(99L), eq(46_000L), eq(50_000L), eq(2_000L), eq(2_000L), eq(101L));
         verify(dlqTxOps, never())
             .encolar(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyString());
     }
-
-    // ── IDEM-02: webhook duplicado (DIV) → NO a DLQ ─────────────────────────
 
     @Test
     @DisplayName("IDEM-02 | CRÍTICO — Webhook duplicado lanza DIV → capturado como benigno, NO va a DLQ")
@@ -75,7 +75,6 @@ class WebhookIdempotencyTest {
             .when(walletService)
             .acreditarVenta(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong());
 
-        // El segundo webhook para el mismo pedido no debe tirar error ni ir a DLQ
         assertThatNoException().isThrownBy(() -> service.acreditarVentaAsync(pedido));
 
         verify(walletService, times(1))
@@ -83,8 +82,6 @@ class WebhookIdempotencyTest {
         verify(dlqTxOps, never())
             .encolar(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyString());
     }
-
-    // ── IDEM-03: fallo transitorio → va a DLQ ───────────────────────────────
 
     @Test
     @DisplayName("IDEM-03 | HIGH — Fallo transitorio (RuntimeException) → se encola en DLQ")
@@ -100,8 +97,6 @@ class WebhookIdempotencyTest {
                      contains("BD connection timeout"));
     }
 
-    // ── IDEM-04: DLQ también falla → excepción absorbida ────────────────────
-
     @Test
     @DisplayName("IDEM-04 | HIGH — DLQ.encolar también falla → excepción absorbida, no propaga al llamador")
     void falloTransitorio_dlqTambienFalla_noPropaga() {
@@ -112,11 +107,8 @@ class WebhookIdempotencyTest {
             .when(dlqTxOps)
             .encolar(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyString());
 
-        // CRÍTICO: los fallos en cadena no deben propagarse hacia PaymentService/webhook handler
         assertThatNoException().isThrownBy(() -> service.acreditarVentaAsync(pedido));
     }
-
-    // ── IDEM-05: pedido sin empresa → early return silencioso ────────────────
 
     @Test
     @DisplayName("IDEM-05 | MEDIUM — Pedido sin empresa → no acredita wallet, no DLQ, no excepción")

@@ -8,6 +8,7 @@ import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 const ACCIONES_BASE = [
   { to: `${RUTA_EMPRENDEDOR}/productos`, etiqueta: 'PRODUCTOS SUBIDOS' },
   { to: `${RUTA_EMPRENDEDOR}/encargos`, etiqueta: 'ENCARGOS', conBadge: true },
+  { to: `${RUTA_EMPRENDEDOR}/recoleccion`, etiqueta: 'RECOLECCIÓN Y ENTREGA' },
   { to: `${RUTA_EMPRENDEDOR}/reportes`, etiqueta: 'VER REPORTES' },
   { to: `${RUTA_EMPRENDEDOR}/opciones`, etiqueta: 'OPCIONES' },
 ] as const

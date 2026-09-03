@@ -56,6 +56,21 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
             .andExpect(status().isUnauthorized()); // 401 por credenciales, no por auth filter
     }
 
+    @Test
+    @DisplayName("POST /api/pos/qr/pago/{token}/intent → público, sin token (no 401)")
+    void posQrPaymentIntent_public_noAuth() throws Exception {
+        // Token inexistente: negocio responde 404; Spring Security no debe bloquear con 401
+        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/intent"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST /api/pos/qr/pago/{token}/stripe → público, sin token (no 401)")
+    void posQrStripeCheckout_public_noAuth() throws Exception {
+        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/stripe"))
+            .andExpect(status().isNotFound());
+    }
+
     // ── Endpoints autenticados — requieren JWT válido ─────────────────────────
 
     @Test

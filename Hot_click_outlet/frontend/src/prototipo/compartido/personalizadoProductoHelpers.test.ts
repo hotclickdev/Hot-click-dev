@@ -19,11 +19,37 @@ describe('preciosAlPublicar', () => {
       precioVenta: '5000',
     })
   })
+
+  it('guarda venta y compra en precio fijo', () => {
+    expect(preciosAlPublicar(true, '2000', '8000', { modoPrecio: 'FIJO' })).toEqual({
+      precioCompra: '2000',
+      precioVenta: '8000',
+      modoPrecioPersonalizado: 'FIJO',
+    })
+  })
+
+  it('guarda mínimo y máximo en rango', () => {
+    const precios = preciosAlPublicar(true, '', '', {
+      modoPrecio: 'RANGO',
+      precioMin: '5000',
+      precioMax: '25000',
+    })
+    expect(precios.modoPrecioPersonalizado).toBe('RANGO')
+    expect(precios.precioPersonalizadoMin).toBe('5000')
+    expect(precios.precioPersonalizadoMax).toBe('25000')
+    expect(precios.precioVenta).toBe('5000')
+  })
 })
 
 describe('errorPreciosPersonalizado', () => {
-  it('no valida rango si el flag de modos está apagado', () => {
-    expect(errorPreciosPersonalizado(true, 'RANGO', '', '', '')).toBeNull()
+  it('exige mínimo y máximo en rango', () => {
+    expect(errorPreciosPersonalizado(true, 'RANGO', '', '', '')).toBe(
+      'Indicá el rango de precio (mínimo y máximo).',
+    )
+  })
+
+  it('exige precio de venta en fijo', () => {
+    expect(errorPreciosPersonalizado(true, 'FIJO', '0', '', '')).toBe('Indicá el precio de venta.')
   })
 })
 

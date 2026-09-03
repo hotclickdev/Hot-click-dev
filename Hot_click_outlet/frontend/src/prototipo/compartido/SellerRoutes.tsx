@@ -13,6 +13,7 @@ import OpcionesPage from './OpcionesPage'
 import PerfilPage from './PerfilPage'
 import NotificacionesPage from './NotificacionesPage'
 import CobroPage from './CobroPage'
+import AgregarMetodoCobroPage from './AgregarMetodoCobroPage'
 import AyudaPage from './AyudaPage'
 import ConsultasPage from './ConsultasPage'
 import ProximamentePage from './ProximamentePage'
@@ -25,6 +26,8 @@ import CompararPlanesPage from './CompararPlanesPage'
 import PlanActualizadoPage from './PlanActualizadoPage'
 import PedidosPage from './PedidosPage'
 import PedidoDetallePage from './PedidoDetallePage'
+import RecoleccionSellerPage from './RecoleccionSellerPage'
+import EncargosSellerPage from './EncargosSellerPage'
 
 /**
  * Rutas compartidas PYME / Negocio Plus. `extra` cuelga Equipo o Sucursales.
@@ -41,6 +44,8 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="reportes" element={<ReportesPage />} />
         <Route path="tienda" element={<TiendaPublicaPage />} />
         <Route path="opciones" element={<OpcionesPage />} />
+        <Route path="recoleccion" element={<RecoleccionSellerPage />} />
+        <Route path="encargos" element={<EncargosSellerPage />} />
       </Route>
       <Route path="login" element={<Navigate to="/login" replace />} />
       <Route path="registro" element={<Navigate to="/registro" replace />} />
@@ -55,6 +60,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="perfil" element={<PerfilPage />} />
         <Route path="notificaciones" element={<NotificacionesPage />} />
         <Route path="cobro" element={<CobroPage />} />
+        <Route path="cobro/nuevo" element={<AgregarMetodoCobroPage />} />
         <Route path="ayuda" element={<AyudaPage />} />
         <Route path="consultas" element={<ConsultasPage />} />
         <Route path="proximamente" element={<ProximamentePage />} />

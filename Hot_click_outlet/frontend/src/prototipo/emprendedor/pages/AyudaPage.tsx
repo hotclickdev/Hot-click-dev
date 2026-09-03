@@ -9,11 +9,11 @@ const PREGUNTAS = [
   },
   {
     q: '¿Cuánto tarda en verse en el marketplace?',
-    a: 'Si el producto queda Publicado, aparece en tu tienda de inmediato. Algunos ítems pueden requerir revisión.',
+    a: 'Si el producto queda Publicado, aparece en tu tienda cuando tu negocio esté aprobado. Pausado lo controlás vos desde el catálogo.',
   },
   {
     q: '¿Cómo cambio mi método de cobro?',
-    a: 'En Métodos de cobro podés ver SINPE, IBAN y tarjeta. Agregar uno nuevo está en camino.',
+    a: 'En Métodos de cobro podés ver SINPE, IBAN y tarjeta, y agregar una cuenta nueva paso a paso.',
   },
   {
     q: '¿Qué pasa si un producto es rechazado?',

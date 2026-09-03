@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.payment.OnvoPaymentProvider;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.pos.PosQrVentaService;
+import com.hotclick.service.suscripcion.OnvoBillingWebhookHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -32,15 +33,18 @@ public class OnvoWebhookController {
     private final OnvoService onvoService;
     private final OnvoPaymentProvider onvoPaymentProvider;
     private final PosQrVentaService posQrVentaService;
+    private final OnvoBillingWebhookHandler billingWebhookHandler;
     private final ObjectMapper objectMapper;
 
     public OnvoWebhookController(OnvoService onvoService,
                                   OnvoPaymentProvider onvoPaymentProvider,
                                   PosQrVentaService posQrVentaService,
+                                  OnvoBillingWebhookHandler billingWebhookHandler,
                                   ObjectMapper objectMapper) {
         this.onvoService = onvoService;
         this.onvoPaymentProvider = onvoPaymentProvider;
         this.posQrVentaService = posQrVentaService;
+        this.billingWebhookHandler = billingWebhookHandler;
         this.objectMapper = objectMapper;
     }
 
@@ -64,8 +68,12 @@ public class OnvoWebhookController {
 
         String type = root.path("type").asText("");
         JsonNode data = root.path("data");
+        String eventId = root.path("id").asText(null);
 
         try {
+            if (billingWebhookHandler.manejarSiBilling(type, data, eventId)) {
+                return ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "billing"));
+            }
             switch (type) {
                 case "checkout-session.succeeded" -> {
                     String sessionId = data.path("id").asText(null);

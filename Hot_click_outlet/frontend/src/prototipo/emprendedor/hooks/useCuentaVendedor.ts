@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { unwrapEmpresa } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
 import { empresaService } from '@/services/empresaService'
 import useAuthStore from '@/store/authStore'
-import { leerExtrasNegocio } from '../data/negocioExtras'
 
 export type CuentaVendedor = {
   usuario: string
@@ -23,6 +22,7 @@ export function useCuentaVendedor() {
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
   const [tiendaApi, setTiendaApi] = useState<string | null>(null)
   const [telefonoApi, setTelefonoApi] = useState<string | null>(null)
+  const [instagramApi, setInstagramApi] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
@@ -34,6 +34,7 @@ export function useCuentaVendedor() {
         if (!empresa) return
         setTiendaApi(empresa.nombreComercial ?? empresa.nombreEmpresa ?? null)
         setTelefonoApi(empresa.numeroWhatsapp ?? empresa.telefonoEmpresa ?? null)
+        setInstagramApi(empresa.instagram?.trim() || null)
       })
       .catch((err: unknown) => {
         console.error('[cuentaVendedor]', err)
@@ -50,8 +51,8 @@ export function useCuentaVendedor() {
     const usuario = correo.split('@')[0] || nombre.toLowerCase().replace(/\s+/g, '.') || 'vendedor'
     const tienda = tiendaApi ?? empresaNombre ?? (nombre || 'Mi tienda')
     const telefono = telefonoApi ?? ''
-    const instagram = leerExtrasNegocio().instagram
+    const instagram = instagramApi ?? ''
     const inicial = (tienda || nombre || 'T').slice(0, 1).toUpperCase()
     return { usuario, nombre, tienda, correo, telefono, instagram, inicial, cargando } satisfies CuentaVendedor & { cargando: boolean }
-  }, [cargando, empresaNombre, telefonoApi, tiendaApi, userEmail, userName])
+  }, [cargando, empresaNombre, instagramApi, telefonoApi, tiendaApi, userEmail, userName])
 }

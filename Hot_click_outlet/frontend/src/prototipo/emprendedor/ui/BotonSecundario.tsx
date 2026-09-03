@@ -4,12 +4,14 @@ type Props = {
   children: ReactNode
   onClick?: () => void
   tono?: 'neutro' | 'peligro'
+  disabled?: boolean
 }
 
 /**
  * Botón bordeado (eliminar, cancelar, agregar método).
+ * Misma área de clic generosa que Atrás del wizard.
  */
-export default function BotonSecundario({ children, onClick, tono = 'neutro' }: Props) {
+export default function BotonSecundario({ children, onClick, tono = 'neutro', disabled = false }: Props) {
   const clases =
     tono === 'peligro'
       ? 'border-hc-primary text-hc-primary'
@@ -18,7 +20,8 @@ export default function BotonSecundario({ children, onClick, tono = 'neutro' }: 
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-11 w-full items-center justify-center rounded-[14px] border py-3.5 text-[13px] font-medium ${clases}`}
+      disabled={disabled}
+      className={`flex min-h-11 w-full items-center justify-center rounded-[14px] border py-3.5 text-[13px] font-medium disabled:opacity-40 ${clases}`}
     >
       {children}
     </button>

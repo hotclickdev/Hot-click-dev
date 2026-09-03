@@ -62,6 +62,16 @@ public class Empresa {
     @Column(name = "numero_whatsapp", length = 30)
     private String numeroWhatsapp;
 
+    /** Categoría principal del negocio (perfil público / wizard). */
+    @Column(name = "categoria_negocio", length = 100)
+    private String categoriaNegocio;
+
+    @Column(name = "instagram", length = 100)
+    private String instagram;
+
+    @Column(name = "zona_envio", length = 100)
+    private String zonaEnvio;
+
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
@@ -235,6 +245,15 @@ public class Empresa {
 
     public String getNumeroWhatsapp() { return numeroWhatsapp; }
     public void setNumeroWhatsapp(String numeroWhatsapp) { this.numeroWhatsapp = numeroWhatsapp; }
+
+    public String getCategoriaNegocio() { return categoriaNegocio; }
+    public void setCategoriaNegocio(String categoriaNegocio) { this.categoriaNegocio = categoriaNegocio; }
+
+    public String getInstagram() { return instagram; }
+    public void setInstagram(String instagram) { this.instagram = instagram; }
+
+    public String getZonaEnvio() { return zonaEnvio; }
+    public void setZonaEnvio(String zonaEnvio) { this.zonaEnvio = zonaEnvio; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

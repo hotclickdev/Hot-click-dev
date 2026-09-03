@@ -1,15 +1,10 @@
 export type ModoPrecioPersonalizado = 'FIJO' | 'RANGO' | 'COTIZACION'
 
-/** Fase 1 default: todo personalizado se publica sin precio público; se cotiza después. */
+/** Default al crear: cotización hasta que el vendedor elija otra forma de cobro. */
 export const MODO_PRECIO_PERSONALIZADO_FASE1: ModoPrecioPersonalizado = 'COTIZACION'
 
 /** El API exige precioVenta ≥ 1. Cotización usa ₡1 de placeholder (igual que el wizard admin). */
 export const PRECIO_VENTA_PLACEHOLDER_COTIZACION = '1'
-
-/** Feature flag: habilita selector FIJO/RANGO/COTIZACION en formularios seller. */
-export function modosPrecioPersonalizadoHabilitados(): boolean {
-  return import.meta.env.VITE_PERSONALIZADO_MODOS_PRECIO === 'true'
-}
 
 export const MODOS_PRECIO_PERSONALIZADO: ReadonlyArray<{
   valor: ModoPrecioPersonalizado
@@ -17,8 +12,8 @@ export const MODOS_PRECIO_PERSONALIZADO: ReadonlyArray<{
   ayuda: string
 }> = [
   { valor: 'FIJO', titulo: 'Precio fijo', ayuda: 'El cliente paga de una vez.' },
-  { valor: 'RANGO', titulo: 'Rango', ayuda: 'Mostrás desde–hasta y cotizás dentro del rango.' },
   { valor: 'COTIZACION', titulo: 'Cotización', ayuda: 'Sin precio público: revisás y cotizás después.' },
+  { valor: 'RANGO', titulo: 'Rango de precio', ayuda: 'Mostrás desde–hasta y cotizás dentro del rango.' },
 ]
 
 type PreciosPublicacion = Readonly<{
@@ -44,13 +39,6 @@ export function preciosAlPublicar(
 ): PreciosPublicacion {
   if (!personalizado) {
     return { precioCompra: compraCatalogo, precioVenta: ventaCatalogo }
-  }
-  if (!modosPrecioPersonalizadoHabilitados()) {
-    return {
-      precioCompra: '0',
-      precioVenta: PRECIO_VENTA_PLACEHOLDER_COTIZACION,
-      modoPrecioPersonalizado: MODO_PRECIO_PERSONALIZADO_FASE1,
-    }
   }
   const modo = opciones.modoPrecio ?? MODO_PRECIO_PERSONALIZADO_FASE1
   if (modo === 'FIJO') {
@@ -88,7 +76,7 @@ export function errorPreciosPersonalizado(
   precioMin: string,
   precioMax: string,
 ): string | null {
-  if (!personalizado || !modosPrecioPersonalizadoHabilitados()) return null
+  if (!personalizado) return null
   if (modo === 'RANGO' && (!precioMin || !precioMax)) {
     return 'Indicá el rango de precio (mínimo y máximo).'
   }

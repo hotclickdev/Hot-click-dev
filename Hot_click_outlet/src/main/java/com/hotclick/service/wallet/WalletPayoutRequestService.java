@@ -5,6 +5,7 @@ import com.hotclick.model.WalletTransaccion;
 import com.hotclick.repository.PayoutRequestRepository;
 import com.hotclick.repository.WalletRepository;
 import com.hotclick.repository.WalletTransaccionRepository;
+import com.hotclick.service.ModeracionAdminAvisoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,13 +21,16 @@ public class WalletPayoutRequestService {
     private final WalletRepository walletRepo;
     private final WalletTransaccionRepository txRepo;
     private final PayoutRequestRepository payoutRepo;
+    private final ModeracionAdminAvisoService moderacionAdminAvisoService;
 
     public WalletPayoutRequestService(WalletRepository walletRepo,
                                       WalletTransaccionRepository txRepo,
-                                      PayoutRequestRepository payoutRepo) {
+                                      PayoutRequestRepository payoutRepo,
+                                      ModeracionAdminAvisoService moderacionAdminAvisoService) {
         this.walletRepo = walletRepo;
         this.txRepo     = txRepo;
         this.payoutRepo = payoutRepo;
+        this.moderacionAdminAvisoService = moderacionAdminAvisoService;
     }
 
     @Transactional
@@ -74,6 +78,7 @@ public class WalletPayoutRequestService {
 
         log.info("[wallet] Payout #{} solicitado empresa={} monto=₡{} metodo={}",
             pr.getId(), empresaId, monto, pr.getMetodo());
+        moderacionAdminAvisoService.avisarPayout(pr.getId(), empresaId, monto);
         return pr;
     }
 }

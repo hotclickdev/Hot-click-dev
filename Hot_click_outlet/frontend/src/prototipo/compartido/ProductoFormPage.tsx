@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Boton, Campo, Chip, EncabezadoPagina } from './ui'
+import { Boton, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 import {
@@ -8,182 +8,139 @@ import {
   mensajeErrorProducto,
   publicarProductoVendedor,
 } from './catalogoVendedorApi'
-import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
-import ChipsCategoriaVendedor from './ChipsCategoriaVendedor'
-import ZonaFotoProducto from './ZonaFotoProducto'
-import { idCategoriaValido } from './categoriaVendedor'
-import {
-  type ModoPrecioPersonalizado,
-  errorCatalogoProducto,
-  errorPreciosPersonalizado,
-  preciosAlPublicar,
-  tituloFormProducto,
-} from './personalizadoProductoHelpers'
+import FormularioPorPasos from './FormularioPorPasos'
+import PasosProductoVendedor from './PasosProductoVendedor'
+import useFormProductoVendedor from './useFormProductoVendedor'
+import type { ModoPrecioPersonalizado } from './personalizadoProductoHelpers'
+import { tituloFormProducto } from './personalizadoProductoHelpers'
+import { pasosProducto, validarPasoProducto } from './productoVendedorPasos'
 
 type Props = Readonly<{ personalizado?: boolean }>
 
+const TOTAL_FLUJO_NUEVO = 5
+
 /**
- * Alta / edición de producto (Figma 61:231 / 61:422) con API real.
+ * Alta / edición de producto (PYME / Negocio Plus) — mismo wizard que Emprendedor.
  */
 export default function ProductoFormPage({ personalizado = false }: Props) {
   const { id } = useParams()
   const ruta = useSellerRuta()
   const navigate = useNavigate()
   const { seller, cargando } = useCatalogoVendedor()
-  const existente = id ? seller.find((p) => p.id === id) : undefined
-  const [nombre, setNombre] = useState('')
-  const [compra, setCompra] = useState('')
-  const [venta, setVenta] = useState('')
-  const [descripcion, setDescripcion] = useState('')
-  const [stock, setStock] = useState('')
-  const [categoria, setCategoria] = useState('')
-  const [categoriaId, setCategoriaId] = useState('')
-  const [estado, setEstado] = useState<'Publicado' | 'Pausado'>('Publicado')
-  const [instrucciones, setInstrucciones] = useState('')
-  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('COTIZACION')
-  const [precioMin, setPrecioMin] = useState('')
-  const [precioMax, setPrecioMax] = useState('')
-  const [imagenUrl, setImagenUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [iniciado, setIniciado] = useState(false)
-  const [guardando, setGuardando] = useState(false)
   const editar = Boolean(id)
+  const existente = id ? seller.find((p) => p.id === id) : undefined
   const esPersonalizado = personalizado && !editar
     ? true
     : existente?.esPersonalizado === true
+  const form = useFormProductoVendedor(esPersonalizado)
+  const { cargarDesde } = form
+  const [iniciado, setIniciado] = useState(false)
+  const pasos = useMemo(() => pasosProducto(esPersonalizado, editar), [esPersonalizado, editar])
+  const idPaso = pasos[form.paso]?.id
+  const volverA = editar ? ruta('productos') : ruta('productos/nuevo')
 
   useEffect(() => {
     if (!existente || iniciado) return
-    setNombre(existente.nombre)
-    setCompra(String(existente.precioCompra))
-    setVenta(String(existente.precio))
-    setDescripcion(existente.descripcion)
-    setStock(String(existente.stock))
-    setCategoria(existente.categoria)
-    setCategoriaId(existente.categoriaId ?? '')
-    setEstado(existente.estado)
-    setInstrucciones(existente.instruccionesPersonalizacion ?? '')
-    setModoPrecio((existente.modoPrecioPersonalizado as ModoPrecioPersonalizado) || 'COTIZACION')
-    setPrecioMin(existente.precioPersonalizadoMin != null ? String(existente.precioPersonalizadoMin) : '')
-    setPrecioMax(existente.precioPersonalizadoMax != null ? String(existente.precioPersonalizadoMax) : '')
-    setImagenUrl(existente.imagenUrl ?? '')
-    setIniciado(true)
-  }, [existente, iniciado])
-
-  const elegirCategoria = useCallback((idCat: string, nombreCat: string) => {
-    setCategoriaId(idCat)
-    setCategoria(nombreCat)
-  }, [])
-
-  async function enviar(evento: FormEvent) {
-    evento.preventDefault()
-    if (guardando) return
-    if (!nombre.trim()) {
-      setError('Escribí el nombre del producto.')
-      return
-    }
-    if (!idCategoriaValido(categoriaId)) {
-      setError('Seleccioná una categoría.')
-      return
-    }
-    const errorCatalogo = errorCatalogoProducto(esPersonalizado, venta, stock)
-    if (errorCatalogo) {
-      setError(errorCatalogo)
-      return
-    }
-    const errorPrecios = errorPreciosPersonalizado(esPersonalizado, modoPrecio, venta, precioMin, precioMax)
-    if (errorPrecios) {
-      setError(errorPrecios)
-      return
-    }
-    const precios = preciosAlPublicar(esPersonalizado, compra, venta, {
-      modoPrecio: esPersonalizado ? modoPrecio : undefined,
-      precioMin,
-      precioMax,
+    cargarDesde({
+      nombre: existente.nombre,
+      compra: String(existente.precioCompra),
+      venta: String(existente.precio),
+      descripcion: existente.descripcion,
+      stock: String(existente.stock),
+      categoria: existente.categoria,
+      categoriaId: existente.categoriaId ?? '',
+      estado: existente.estado,
+      instrucciones: existente.instruccionesPersonalizacion ?? '',
+      modoPrecio: (existente.modoPrecioPersonalizado as ModoPrecioPersonalizado) || 'COTIZACION',
+      precioMin: existente.precioPersonalizadoMin != null ? String(existente.precioPersonalizadoMin) : '',
+      precioMax: existente.precioPersonalizadoMax != null ? String(existente.precioPersonalizadoMax) : '',
+      imagenUrl: existente.imagenUrl ?? '',
     })
-    const datos = {
-      nombre,
-      precioCompra: precios.precioCompra,
-      precioVenta: precios.precioVenta,
-      descripcion,
-      stock,
-      categoria,
-      categoriaId,
-      estado,
-      esPersonalizado: esPersonalizado || undefined,
-      modoPrecioPersonalizado: precios.modoPrecioPersonalizado,
-      precioPersonalizadoMin: precios.precioPersonalizadoMin,
-      precioPersonalizadoMax: precios.precioPersonalizadoMax,
-      instruccionesPersonalizacion: esPersonalizado ? instrucciones : undefined,
-      imagenUrl: imagenUrl || undefined,
-    }
-    setGuardando(true)
-    setError(null)
+    setIniciado(true)
+  }, [existente, iniciado, cargarDesde])
+
+  if (editar && cargando && !existente) {
+    return (
+      <main className="px-5 pb-8 pt-[60px]">
+        <EncabezadoPagina titulo={tituloFormProducto(true, false)} volverA={volverA} />
+        <p className="text-sm text-hc-muted">Cargando…</p>
+      </main>
+    )
+  }
+
+  if (editar && !cargando && !existente) {
+    return (
+      <main className="px-5 pb-8 pt-[60px]">
+        <EncabezadoPagina titulo={tituloFormProducto(true, false)} volverA={volverA} />
+        <p className="text-sm text-hc-muted">No encontramos ese producto.</p>
+      </main>
+    )
+  }
+
+  async function finalizar() {
+    form.setGuardando(true)
+    form.setErrorSubmit(null)
     try {
+      const datos = form.payloadPublicacion()
       if (id) await guardarProductoVendedor(id, datos)
       else await publicarProductoVendedor(datos)
       navigate(ruta('productos'))
     } catch (err: unknown) {
-      setError(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
+      form.setErrorSubmit(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
     } finally {
-      setGuardando(false)
+      form.setGuardando(false)
     }
   }
 
-  const volverA = editar ? ruta('productos') : ruta('productos/nuevo')
-
   return (
-    <main className="px-5 pb-8 pt-[60px]">
+    <main className="flex flex-col gap-[22px] px-5 pb-8 pt-[60px]">
       <EncabezadoPagina titulo={tituloFormProducto(editar, esPersonalizado)} volverA={volverA} />
-      {cargando && editar && !existente ? <p className="text-sm text-hc-muted">Cargando…</p> : null}
-      <form onSubmit={(e) => void enviar(e)}>
-        <ZonaFotoProducto imagenUrl={imagenUrl} onImagenChange={setImagenUrl} />
-        <Campo etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
-        {!esPersonalizado ? (
-          <>
-            <Campo etiqueta="Precio de compra" value={compra} onChange={setCompra} placeholder="₡ 0.00" type="number" />
-            <Campo etiqueta="Precio de venta" value={venta} onChange={setVenta} placeholder="₡ 0.00" type="number" />
-          </>
-        ) : (
-          <CamposPersonalizadoProducto
-            idPrefijo="pyme"
-            instrucciones={instrucciones}
-            onInstruccionesChange={setInstrucciones}
-            modoPrecio={modoPrecio}
-            onModoChange={setModoPrecio}
-            precioMin={precioMin}
-            onPrecioMinChange={setPrecioMin}
-            precioMax={precioMax}
-            onPrecioMaxChange={setPrecioMax}
-            compra={compra}
-            onCompraChange={setCompra}
-            venta={venta}
-            onVentaChange={setVenta}
-          />
-        )}
-        <Campo etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga..." />
-        <Campo etiqueta="Stock disponible" value={stock} onChange={setStock} placeholder="Ej: 10" type="number" />
-        <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
-        <div className="mb-4">
-          <ChipsCategoriaVendedor categoriaId={categoriaId} onChange={elegirCategoria} />
-        </div>
-        {editar ? (
-          <>
-            <p className="mb-2 text-xs font-medium text-hc-muted">Estado</p>
-            <div className="mb-6 flex gap-2">
-              <Chip activo={estado === 'Publicado'} onClick={() => setEstado('Publicado')}>Publicado</Chip>
-              <Chip activo={estado === 'Pausado'} onClick={() => setEstado('Pausado')}>Pausado</Chip>
-            </div>
-          </>
-        ) : null}
-        {error ? <p className="mb-3 text-sm text-hc-danger">{error}</p> : null}
-        <Boton type="submit">{guardando ? (editar ? 'Guardando…' : 'Publicando…') : (editar ? 'Guardar cambios' : 'Publicar producto')}</Boton>
-        {editar && id ? (
-          <div className="mt-3">
-            <Boton variante="suave" to={ruta(`productos/${id}/eliminar`)}>Eliminar producto</Boton>
-          </div>
-        ) : null}
-      </form>
+      <FormularioPorPasos
+        pasos={pasos}
+        pasoActual={form.paso}
+        onPasoChange={form.setPaso}
+        validarPaso={(i) => validarPasoProducto(i, form.datos, editar)}
+        onFinalizar={finalizar}
+        etiquetaFinal={editar ? 'Guardar cambios' : 'Publicar producto'}
+        enviando={form.guardando}
+        progresoOffset={editar ? 0 : 1}
+        totalProgreso={editar ? undefined : TOTAL_FLUJO_NUEVO}
+      >
+        <PasosProductoVendedor
+          idPaso={idPaso}
+          personalizado={esPersonalizado}
+          editar={editar}
+          idPrefijo={editar ? 'pyme-edit' : 'pyme'}
+          nombre={form.nombre}
+          onNombreChange={form.setNombre}
+          compra={form.compra}
+          onCompraChange={form.setCompra}
+          venta={form.venta}
+          onVentaChange={form.setVenta}
+          descripcion={form.descripcion}
+          onDescripcionChange={form.setDescripcion}
+          stock={form.stock}
+          onStockChange={form.setStock}
+          categoriaId={form.categoriaId}
+          onCategoriaChange={form.elegirCategoria}
+          estado={form.estado}
+          onEstadoChange={form.setEstado}
+          instrucciones={form.instrucciones}
+          onInstruccionesChange={form.setInstrucciones}
+          modoPrecio={form.modoPrecio}
+          onModoChange={form.setModoPrecio}
+          precioMin={form.precioMin}
+          onPrecioMinChange={form.setPrecioMin}
+          precioMax={form.precioMax}
+          onPrecioMaxChange={form.setPrecioMax}
+          imagenUrl={form.imagenUrl}
+          onImagenChange={form.setImagenUrl}
+          errorSubmit={form.errorSubmit}
+        />
+      </FormularioPorPasos>
+      {editar && id ? (
+        <Boton variante="suave" to={ruta(`productos/${id}/eliminar`)}>Eliminar producto</Boton>
+      ) : null}
     </main>
   )
 }

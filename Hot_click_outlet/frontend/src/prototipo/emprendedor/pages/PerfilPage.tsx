@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { mensajeErrorEmpresa } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
@@ -6,14 +6,21 @@ import { adminService } from '@/services/orderService'
 import { empresaService } from '@/services/empresaService'
 import useAuthStore from '@/store/authStore'
 import type { Id } from '@/types/api'
-import BotonPrimario from '../ui/BotonPrimario'
 import CampoTexto from '../ui/CampoTexto'
-import EmprendedorPageFrame, { EmprendedorCard } from '../ui/EmprendedorPageFrame'
+import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCuentaVendedor } from '../hooks/useCuentaVendedor'
+import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
+import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
+
+const PASOS: readonly PasoFormulario[] = [
+  { id: 'persona', titulo: 'Tu nombre' },
+  { id: 'tienda', titulo: 'Tu tienda' },
+  { id: 'contacto', titulo: 'Contacto' },
+]
 
 /**
- * Editar Perfil (Figma 64:128 / 352:4626).
+ * Editar Perfil (wizard).
  */
 export default function PerfilPage() {
   const navigate = useNavigate()
@@ -21,11 +28,13 @@ export default function PerfilPage() {
   const cuenta = useCuentaVendedor()
   const userId = useAuthStore((s) => s.userId)
   const setUserName = useAuthStore((s) => s.setUserName)
+  const [paso, setPaso] = useState(0)
   const [nombre, setNombre] = useState('')
   const [tienda, setTienda] = useState('')
   const [correo, setCorreo] = useState('')
   const [telefono, setTelefono] = useState('')
   const [guardando, setGuardando] = useState(false)
+  const idPaso = PASOS[paso]?.id
 
   useEffect(() => {
     if (cuenta.cargando) return
@@ -35,12 +44,12 @@ export default function PerfilPage() {
     setTelefono(cuenta.telefono)
   }, [cuenta])
 
-  async function onSubmit(evento: FormEvent) {
-    evento.preventDefault()
-    if (!nombre.trim()) {
-      toast({ message: 'El nombre es requerido', type: 'error' })
-      return
-    }
+  function validar(i: number): string | null {
+    if (PASOS[i]?.id === 'persona' && !nombre.trim()) return 'El nombre es requerido'
+    return null
+  }
+
+  async function guardar() {
     setGuardando(true)
     try {
       await empresaService.updatePerfil({
@@ -64,15 +73,28 @@ export default function PerfilPage() {
     <EmprendedorPageFrame titulo="Editar Perfil" volverA={`${RUTA_EMPRENDEDOR}/opciones`}>
       {cuenta.cargando ? <p className="text-sm text-hc-muted">Cargando perfil…</p> : null}
       {!cuenta.cargando ? (
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-          <EmprendedorCard className="flex flex-col gap-4">
+        <FormularioPorPasos
+          pasos={PASOS}
+          pasoActual={paso}
+          onPasoChange={setPaso}
+          validarPaso={validar}
+          onFinalizar={guardar}
+          etiquetaFinal="Guardar cambios"
+          enviando={guardando}
+        >
+          {idPaso === 'persona' ? (
             <CampoTexto etiqueta="Nombre completo" value={nombre} onChange={setNombre} />
+          ) : null}
+          {idPaso === 'tienda' ? (
             <CampoTexto etiqueta="Nombre de tu tienda" value={tienda} onChange={setTienda} />
-            <CampoTexto etiqueta="Correo" value={correo} onChange={setCorreo} type="email" readOnly />
-            <CampoTexto etiqueta="Teléfono" value={telefono} onChange={setTelefono} type="tel" />
-          </EmprendedorCard>
-          <BotonPrimario type="submit">{guardando ? 'Guardando…' : 'Guardar cambios'}</BotonPrimario>
-        </form>
+          ) : null}
+          {idPaso === 'contacto' ? (
+            <>
+              <CampoTexto etiqueta="Correo" value={correo} onChange={setCorreo} type="email" readOnly />
+              <CampoTexto etiqueta="Teléfono" value={telefono} onChange={setTelefono} type="tel" />
+            </>
+          ) : null}
+        </FormularioPorPasos>
       ) : null}
     </EmprendedorPageFrame>
   )

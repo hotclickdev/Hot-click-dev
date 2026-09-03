@@ -26,7 +26,7 @@ export default function ElegirTipoProductoMenu({ baseNuevo, cabecera }: Props) {
   return (
     <div className="flex flex-col gap-4">
       {cabecera}
-      <p className="text-sm text-hc-muted">¿Qué tipo de producto querés publicar?</p>
+      <p className="text-sm text-hc-muted">Elegí una opción para continuar.</p>
       <div className="flex flex-col gap-3">
         {OPCIONES.map((opcion) => (
           <Link

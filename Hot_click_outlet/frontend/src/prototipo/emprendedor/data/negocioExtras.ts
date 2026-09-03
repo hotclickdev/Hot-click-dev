@@ -8,8 +8,8 @@ export type ExtrasNegocio = {
 
 const VACIO: ExtrasNegocio = { categoria: '', instagram: '', zona: '' }
 
-/** Campos de negocio sin columna API aún (categoría / IG / zona). */
-export function leerExtrasNegocio(): ExtrasNegocio {
+/** Lee cache legacy sin borrarlo (fallback offline / error de red). */
+export function leerExtrasLocal(): ExtrasNegocio {
   try {
     const raw = localStorage.getItem(CLAVE)
     if (!raw) return { ...VACIO }
@@ -24,6 +24,7 @@ export function leerExtrasNegocio(): ExtrasNegocio {
   }
 }
 
-export function guardarExtrasNegocio(extras: ExtrasNegocio): void {
-  localStorage.setItem(CLAVE, JSON.stringify(extras))
+/** Borra el cache legacy tras migrar a API o guardar en servidor. */
+export function limpiarExtrasLocal(): void {
+  localStorage.removeItem(CLAVE)
 }

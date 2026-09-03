@@ -5,7 +5,7 @@ const NOTIFS = [
   { id: 'cobro', titulo: 'Falló tu cobro mensual', detalle: 'Tu método de pago fue rechazado. Actualizalo para no perder tu plan.', cuando: 'Hace 1 hora', noLeida: true, tono: 'alerta' },
   { id: 'stock', titulo: 'Stock por agotarse', detalle: 'Auriculares Bluetooth X200 y 3 productos más están por agotarse.', cuando: 'Hace 3 horas', noLeida: true, tono: 'alerta' },
   { id: 'venta', titulo: 'Nueva venta', detalle: 'Vendiste 2 unidades de Camiseta Oversize Negra por ₡19.800.', cuando: 'Hoy, 10:20 a.m.', noLeida: false, tono: 'ok' },
-  { id: 'aprobado', titulo: 'Tu producto fue aprobado', detalle: 'Cargador USB-C 30W ya está visible en el marketplace.', cuando: 'Ayer', noLeida: false, tono: 'info' },
+  { id: 'aprobado', titulo: 'Tu negocio fue aprobado', detalle: 'Tu catálogo ya puede verse en el marketplace.', cuando: 'Ayer', noLeida: false, tono: 'info' },
 ] as const
 
 /**

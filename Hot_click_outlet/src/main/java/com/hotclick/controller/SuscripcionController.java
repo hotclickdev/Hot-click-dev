@@ -41,8 +41,7 @@ public class SuscripcionController {
             m.put("id", p.getId());
             m.put("nombre", p.getNombre());
             m.put("descripcion", p.getDescripcion());
-            // precioMensual es un campo legado en colones que quedó en 0 para los 3 planes
-            // actuales (V89); el precio real que se cobra vía Stripe es precioUsd.
+            // precioMensual en colones (UI / cobro ONVO). precioUsd es legado.
             m.put("precioMensual", p.getPrecioMensual());
             m.put("precioUsd", p.getPrecioUsd());
             m.put("comisionPorcentaje", p.getComisionPorcentaje());
@@ -140,6 +139,25 @@ public class SuscripcionController {
             return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe"));
         } catch (NoSuchElementException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Cambia el plan SaaS vía ONVO (self-service).
+     * No activa el plan local hasta el webhook (salvo mock).
+     */
+    @PostMapping("/cambiar-plan/{planId}")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> cambiarPlan(@PathVariable Long planId) {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        try {
+            return ResponseEntity.ok(suscripcionService.cambiarPlanOnvo(empresaId, planId));
+        } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("[billing] Error cambiando plan empresa={}: {}", empresaId, e.getMessage());
+            return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
         }
     }
 }

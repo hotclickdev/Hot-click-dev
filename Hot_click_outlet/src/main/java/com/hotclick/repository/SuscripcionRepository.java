@@ -23,6 +23,8 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     Optional<Suscripcion> findByStripeSubscriptionId(String stripeSubscriptionId);
 
+    Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
+
     /** Trials vencidos que aún están en estado TRIAL */
     @Query("SELECT s FROM Suscripcion s WHERE s.estado = 'TRIAL' AND s.trialEnd < :hoy")
     List<Suscripcion> findTrialsVencidos(@Param("hoy") LocalDate hoy);

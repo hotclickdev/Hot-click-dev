@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.model.Suscripcion;
 import com.hotclick.service.suscripcion.SuscripcionBillingService;
+import com.hotclick.service.suscripcion.SuscripcionOnvoChangeService;
 import com.hotclick.service.suscripcion.SuscripcionQueryService;
 import com.hotclick.service.suscripcion.SuscripcionRenewalService;
 import com.hotclick.service.suscripcion.SuscripcionWebhookService;
@@ -21,6 +22,7 @@ public class SuscripcionService {
     @Autowired private SuscripcionWebhookService  webhookService;
     @Autowired private SuscripcionQueryService  queryService;
     @Autowired private SuscripcionRenewalService renewalService;
+    @Autowired private SuscripcionOnvoChangeService onvoChangeService;
 
     @Transactional
     public Suscripcion iniciarTrial(Long empresaId) {
@@ -107,5 +109,21 @@ public class SuscripcionService {
     @Transactional
     public int expirarPastDueVencidos() {
         return renewalService.expirarPastDueVencidos();
+    }
+
+    public Map<String, Object> cambiarPlanOnvo(Long empresaId, Long planId) {
+        return onvoChangeService.cambiarPlan(empresaId, planId);
+    }
+
+    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
+        onvoChangeService.procesarPagoOnvoExitoso(empresaId, onvoSubId, planId);
+    }
+
+    public void procesarRenovacionOnvoFallida(String onvoSubId) {
+        onvoChangeService.procesarRenovacionFallida(onvoSubId);
+    }
+
+    public void procesarSuscripcionOnvoEliminada(String onvoSubId) {
+        onvoChangeService.procesarSuscripcionEliminada(onvoSubId);
     }
 }

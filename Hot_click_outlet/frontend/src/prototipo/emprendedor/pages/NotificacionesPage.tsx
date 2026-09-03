@@ -40,7 +40,7 @@ const INICIALES: Notif[] = [
   },
   {
     id: 'aprobado',
-    titulo: 'Tu producto fue aprobado',
+    titulo: 'Tu negocio fue aprobado',
     detalle: 'Cargador USB-C 30W ya está visible en el marketplace.',
     hace: 'Ayer',
     tono: 'info',

@@ -9,4 +9,9 @@ export const walletService = {
   getPayouts: (page = 0, size = 50) =>
     api.get(`/wallet/payouts?page=${page}&size=${size}`),
   solicitarPayout: (body: JsonBody) => api.post('/wallet/payout', body),
+  adminPendientes: () => api.get('/admin/payouts/pendientes'),
+  adminAprobar: (id: number | string, notas?: string) =>
+    api.patch(`/admin/payouts/${id}/aprobar`, { notas: notas || null }),
+  adminRechazar: (id: number | string, notas?: string) =>
+    api.patch(`/admin/payouts/${id}/rechazar`, { notas: notas || null }),
 }

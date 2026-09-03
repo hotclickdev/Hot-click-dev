@@ -1,29 +1,41 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { crearBodegaVendedor } from '@/prototipo/compartido/bodegasVendedorApi'
-import BotonPrimario from '../ui/BotonPrimario'
 import CampoTexto from '../ui/CampoTexto'
-import EmprendedorPageFrame, { EmprendedorCard } from '../ui/EmprendedorPageFrame'
+import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
+import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
+import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
+
+const PASOS: readonly PasoFormulario[] = [
+  { id: 'nombre', titulo: 'Nombre de la bodega' },
+  { id: 'ubicacion', titulo: 'Ubicación' },
+  { id: 'encargado', titulo: 'Encargado', opcional: true },
+]
 
 /**
- * Nueva bodega (Figma 78:150 / 352:10492).
+ * Nueva bodega (wizard).
  */
 export default function NuevaBodegaPage() {
   const navigate = useNavigate()
+  const [paso, setPaso] = useState(0)
   const [nombre, setNombre] = useState('')
   const [ubicacion, setUbicacion] = useState('')
   const [encargado, setEncargado] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
+  const idPaso = PASOS[paso]?.id
 
-  async function guardar(evento: FormEvent) {
-    evento.preventDefault()
-    if (!nombre.trim() || !ubicacion.trim()) {
-      setError('Nombre y ubicación son obligatorios.')
-      return
-    }
+  function validar(i: number): string | null {
+    const id = PASOS[i]?.id
+    if (id === 'nombre' && !nombre.trim()) return 'El nombre es obligatorio.'
+    if (id === 'ubicacion' && !ubicacion.trim()) return 'La ubicación es obligatoria.'
+    return null
+  }
+
+  async function guardar() {
     setGuardando(true)
+    setError(null)
     try {
       await crearBodegaVendedor(nombre, ubicacion, encargado)
       navigate(`${RUTA_EMPRENDEDOR}/opciones/bodegas`)
@@ -37,30 +49,41 @@ export default function NuevaBodegaPage() {
 
   return (
     <EmprendedorPageFrame titulo="Nueva Bodega" volverA={`${RUTA_EMPRENDEDOR}/opciones/bodegas`}>
-      <form className="flex flex-col gap-4" onSubmit={(e) => void guardar(e)}>
-        <EmprendedorCard className="flex flex-col gap-4">
+      <FormularioPorPasos
+        pasos={PASOS}
+        pasoActual={paso}
+        onPasoChange={setPaso}
+        validarPaso={validar}
+        onFinalizar={guardar}
+        etiquetaFinal="Guardar bodega"
+        enviando={guardando}
+      >
+        {idPaso === 'nombre' ? (
           <CampoTexto
             etiqueta="Nombre de la bodega"
             value={nombre}
             onChange={setNombre}
             placeholder="Ej: Bodega Central"
           />
+        ) : null}
+        {idPaso === 'ubicacion' ? (
           <CampoTexto
             etiqueta="Ubicación"
             value={ubicacion}
             onChange={setUbicacion}
             placeholder="Ej: San José, Costa Rica"
           />
+        ) : null}
+        {idPaso === 'encargado' ? (
           <CampoTexto
             etiqueta="Encargado (opcional)"
             value={encargado}
             onChange={setEncargado}
             placeholder="Ej: Sofía Vargas"
           />
-        </EmprendedorCard>
+        ) : null}
         {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        <BotonPrimario type="submit">{guardando ? 'Guardando…' : 'Guardar bodega'}</BotonPrimario>
-      </form>
+      </FormularioPorPasos>
     </EmprendedorPageFrame>
   )
 }

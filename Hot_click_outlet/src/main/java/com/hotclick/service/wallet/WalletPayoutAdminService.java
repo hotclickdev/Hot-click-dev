@@ -5,6 +5,7 @@ import com.hotclick.model.WalletTransaccion;
 import com.hotclick.repository.PayoutRequestRepository;
 import com.hotclick.repository.WalletRepository;
 import com.hotclick.repository.WalletTransaccionRepository;
+import com.hotclick.service.ModeracionAvisoService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +22,16 @@ public class WalletPayoutAdminService {
     private final WalletRepository walletRepo;
     private final WalletTransaccionRepository txRepo;
     private final PayoutRequestRepository payoutRepo;
+    private final ModeracionAvisoService moderacionAvisoService;
 
     public WalletPayoutAdminService(WalletRepository walletRepo,
                                     WalletTransaccionRepository txRepo,
-                                    PayoutRequestRepository payoutRepo) {
+                                    PayoutRequestRepository payoutRepo,
+                                    ModeracionAvisoService moderacionAvisoService) {
         this.walletRepo = walletRepo;
         this.txRepo     = txRepo;
         this.payoutRepo = payoutRepo;
+        this.moderacionAvisoService = moderacionAvisoService;
     }
 
     @Transactional
@@ -66,6 +70,8 @@ public class WalletPayoutAdminService {
 
         log.info("[wallet] Payout #{} APROBADO empresa={} monto=₡{}",
             payoutId, pr.getEmpresaId(), pr.getMonto());
+        moderacionAvisoService.avisarAprobado(
+            pr.getEmpresaId(), "Tu retiro", "Retiro #" + pr.getId() + " · ₡" + pr.getMonto());
         return pr;
     }
 
@@ -97,6 +103,8 @@ public class WalletPayoutAdminService {
         pr = payoutRepo.save(pr);
 
         log.info("[wallet] Payout #{} RECHAZADO empresa={} — fondos liberados", payoutId, pr.getEmpresaId());
+        moderacionAvisoService.avisarRechazado(
+            pr.getEmpresaId(), "Tu retiro", "Retiro #" + pr.getId(), notasAdmin);
         return pr;
     }
 }

@@ -59,4 +59,28 @@ class EmpresaPerfilServiceTest {
         assertThat(out.get("footerTexto")).isEqualTo("Hecho en Pérez Zeledón");
         assertThat(out.get("colorAcento")).isEqualTo("#0EA5E9");
     }
+
+    @Test
+    @DisplayName("update persiste categoría, Instagram y zona de envío")
+    void updatePersisteExtrasNegocio() {
+        Empresa e = new Empresa();
+        e.setId(2L);
+        e.setNombreComercial("Negocio");
+        when(empresaRepository.findById(2L)).thenReturn(Optional.of(e));
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("categoriaNegocio", "Ropa");
+        body.put("instagram", "@hotclick.cr");
+        body.put("zonaEnvio", "GAM");
+
+        Map<String, Object> out = service.update(2L, body);
+
+        assertThat(e.getCategoriaNegocio()).isEqualTo("Ropa");
+        assertThat(e.getInstagram()).isEqualTo("@hotclick.cr");
+        assertThat(e.getZonaEnvio()).isEqualTo("GAM");
+        assertThat(out.get("categoriaNegocio")).isEqualTo("Ropa");
+        assertThat(out.get("instagram")).isEqualTo("@hotclick.cr");
+        assertThat(out.get("zonaEnvio")).isEqualTo("GAM");
+    }
 }

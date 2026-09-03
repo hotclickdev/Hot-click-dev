@@ -16,6 +16,8 @@ public interface PayoutRequestRepository extends JpaRepository<PayoutRequest, Lo
 
     List<PayoutRequest> findByEstadoOrderByFechaSolicitudAsc(String estado);
 
+    long countByEstado(String estado);
+
     boolean existsByEmpresaIdAndEstadoIn(Long empresaId, List<String> estados);
 
     /**

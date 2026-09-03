@@ -58,6 +58,9 @@ public class EmpresaPerfilService {
         if (body.containsKey("telefonoEmpresa")) e.setTelefonoEmpresa(body.get("telefonoEmpresa"));
         if (body.containsKey("correoEmpresa")) e.setCorreoEmpresa(body.get("correoEmpresa"));
         if (body.containsKey("numeroWhatsapp")) e.setNumeroWhatsapp(body.get("numeroWhatsapp"));
+        if (body.containsKey("categoriaNegocio")) e.setCategoriaNegocio(body.get("categoriaNegocio"));
+        if (body.containsKey("instagram")) e.setInstagram(body.get("instagram"));
+        if (body.containsKey("zonaEnvio")) e.setZonaEnvio(body.get("zonaEnvio"));
         if (body.containsKey("colorPrimario")) e.setColorPrimario(body.get("colorPrimario"));
         if (body.containsKey("colorSecundario")) e.setColorSecundario(body.get("colorSecundario"));
         if (body.containsKey("colorAcento")) e.setColorAcento(body.get("colorAcento"));
@@ -145,6 +148,9 @@ public class EmpresaPerfilService {
         m.put("colorSecundario", e.getColorSecundario());
         m.put("colorAcento", e.getColorAcento());
         m.put("numeroWhatsapp", e.getNumeroWhatsapp());
+        m.put("categoriaNegocio", e.getCategoriaNegocio());
+        m.put("instagram", e.getInstagram());
+        m.put("zonaEnvio", e.getZonaEnvio());
         m.put("tagline", e.getTagline());
         m.put("footerTexto", e.getFooterTexto());
         m.put("visibilidadPublica", Boolean.TRUE.equals(e.getVisibilidadPublica()));

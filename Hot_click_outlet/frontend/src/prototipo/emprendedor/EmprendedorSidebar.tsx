@@ -9,6 +9,7 @@ import {
   HomeIcon,
   QuestionMarkCircleIcon,
   SparklesIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -26,6 +27,11 @@ function gruposNav(pendientesEncargos: number): readonly GrupoNav[] {
       { to: RUTA_EMPRENDEDOR, etiqueta: 'Inicio', Icono: HomeIcon, end: true },
       { to: '/admin/pos', etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
       { to: `${RUTA_EMPRENDEDOR}/pedidos`, etiqueta: 'Pedidos', Icono: ClipboardDocumentListIcon },
+      {
+        to: `${RUTA_EMPRENDEDOR}/recoleccion`,
+        etiqueta: 'Recolección',
+        Icono: TruckIcon,
+      },
       {
         to: `${RUTA_EMPRENDEDOR}/encargos`,
         etiqueta: 'Encargos',

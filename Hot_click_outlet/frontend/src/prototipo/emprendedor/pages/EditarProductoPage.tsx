@@ -1,29 +1,18 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import BotonPrimario from '../ui/BotonPrimario'
 import BotonSecundario from '../ui/BotonSecundario'
 import CabeceraAtras from '../ui/CabeceraAtras'
-import CampoTexto from '../ui/CampoTexto'
-import FilaChips from '../ui/FilaChips'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 import { guardarProductoVendedor, mensajeErrorProducto } from '@/prototipo/compartido/catalogoVendedorApi'
-import CamposPersonalizadoProducto from '@/prototipo/compartido/CamposPersonalizadoProducto'
-import ChipsCategoriaVendedor from '@/prototipo/compartido/ChipsCategoriaVendedor'
-import ZonaFotoProducto from '@/prototipo/compartido/ZonaFotoProducto'
-import { idCategoriaValido } from '@/prototipo/compartido/categoriaVendedor'
-import {
-  type ModoPrecioPersonalizado,
-  errorCatalogoProducto,
-  errorPreciosPersonalizado,
-  preciosAlPublicar,
-} from '@/prototipo/compartido/personalizadoProductoHelpers'
-import type { EstadoPublicacion } from '../types'
-
-const ESTADOS = ['Publicado', 'Pausado'] as const
+import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
+import PasosProductoVendedor from '@/prototipo/compartido/PasosProductoVendedor'
+import useFormProductoVendedor from '@/prototipo/compartido/useFormProductoVendedor'
+import type { ModoPrecioPersonalizado } from '@/prototipo/compartido/personalizadoProductoHelpers'
+import { pasosProducto, validarPasoProducto } from '@/prototipo/compartido/productoVendedorPasos'
 
 /**
- * Editar producto — catálogo o personalizado según el producto cargado.
+ * Editar producto — catálogo o personalizado según el producto cargado (wizard).
  */
 export default function EditarProductoPage() {
   const { id = '' } = useParams()
@@ -31,44 +20,31 @@ export default function EditarProductoPage() {
   const { productos, cargando } = useCatalogoEmprendedor()
   const original = useMemo(() => productos.find((p) => p.id === id), [productos, id])
   const esPersonalizado = original?.esPersonalizado === true
-  const [nombre, setNombre] = useState('')
-  const [compra, setCompra] = useState('')
-  const [venta, setVenta] = useState('')
-  const [descripcion, setDescripcion] = useState('')
-  const [stock, setStock] = useState('')
-  const [categoria, setCategoria] = useState('')
-  const [categoriaId, setCategoriaId] = useState('')
-  const [estado, setEstado] = useState('Publicado')
-  const [instrucciones, setInstrucciones] = useState('')
-  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('COTIZACION')
-  const [precioMin, setPrecioMin] = useState('')
-  const [precioMax, setPrecioMax] = useState('')
-  const [imagenUrl, setImagenUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const form = useFormProductoVendedor(esPersonalizado)
+  const { cargarDesde } = form
   const [iniciado, setIniciado] = useState(false)
+  const pasos = useMemo(() => pasosProducto(esPersonalizado, true), [esPersonalizado])
+  const idPaso = pasos[form.paso]?.id
 
   useEffect(() => {
     if (!original || iniciado) return
-    setNombre(original.nombre)
-    setCompra(String(original.precioCompra))
-    setVenta(String(original.precio))
-    setDescripcion(original.descripcion)
-    setStock(String(original.stock))
-    setCategoria(original.categoria)
-    setCategoriaId(original.categoriaId ?? '')
-    setEstado(original.estado)
-    setInstrucciones(original.instruccionesPersonalizacion ?? '')
-    setModoPrecio((original.modoPrecioPersonalizado as ModoPrecioPersonalizado) || 'COTIZACION')
-    setPrecioMin(original.precioPersonalizadoMin != null ? String(original.precioPersonalizadoMin) : '')
-    setPrecioMax(original.precioPersonalizadoMax != null ? String(original.precioPersonalizadoMax) : '')
-    setImagenUrl(original.imagenUrl ?? '')
+    cargarDesde({
+      nombre: original.nombre,
+      compra: String(original.precioCompra),
+      venta: String(original.precio),
+      descripcion: original.descripcion,
+      stock: String(original.stock),
+      categoria: original.categoria,
+      categoriaId: original.categoriaId ?? '',
+      estado: original.estado,
+      instrucciones: original.instruccionesPersonalizacion ?? '',
+      modoPrecio: (original.modoPrecioPersonalizado as ModoPrecioPersonalizado) || 'COTIZACION',
+      precioMin: original.precioPersonalizadoMin != null ? String(original.precioPersonalizadoMin) : '',
+      precioMax: original.precioPersonalizadoMax != null ? String(original.precioPersonalizadoMax) : '',
+      imagenUrl: original.imagenUrl ?? '',
+    })
     setIniciado(true)
-  }, [original, iniciado])
-
-  const elegirCategoria = useCallback((idCat: string, nombreCat: string) => {
-    setCategoriaId(idCat)
-    setCategoria(nombreCat)
-  }, [])
+  }, [original, iniciado, cargarDesde])
 
   if (cargando) {
     return (
@@ -88,48 +64,16 @@ export default function EditarProductoPage() {
     )
   }
 
-  async function guardar(evento: FormEvent) {
-    evento.preventDefault()
-    if (!idCategoriaValido(categoriaId)) {
-      setError('Seleccioná una categoría.')
-      return
-    }
-    const errorCatalogo = errorCatalogoProducto(esPersonalizado, venta, stock)
-    if (errorCatalogo) {
-      setError(errorCatalogo)
-      return
-    }
-    const errorPrecios = errorPreciosPersonalizado(esPersonalizado, modoPrecio, venta, precioMin, precioMax)
-    if (errorPrecios) {
-      setError(errorPrecios)
-      return
-    }
-    const precios = preciosAlPublicar(esPersonalizado, compra, venta, {
-      modoPrecio: esPersonalizado ? modoPrecio : undefined,
-      precioMin,
-      precioMax,
-    })
-    setError(null)
+  async function guardar() {
+    form.setGuardando(true)
+    form.setErrorSubmit(null)
     try {
-      await guardarProductoVendedor(id, {
-        nombre,
-        precioCompra: precios.precioCompra,
-        precioVenta: precios.precioVenta,
-        descripcion,
-        stock,
-        categoria,
-        categoriaId,
-        estado: estado as EstadoPublicacion,
-        esPersonalizado,
-        modoPrecioPersonalizado: precios.modoPrecioPersonalizado,
-        precioPersonalizadoMin: precios.precioPersonalizadoMin,
-        precioPersonalizadoMax: precios.precioPersonalizadoMax,
-        instruccionesPersonalizacion: esPersonalizado ? instrucciones : undefined,
-        imagenUrl: imagenUrl || undefined,
-      })
+      await guardarProductoVendedor(id, form.payloadPublicacion())
       navigate(`${RUTA_EMPRENDEDOR}/productos`)
     } catch (err: unknown) {
-      setError(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
+      form.setErrorSubmit(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
+    } finally {
+      form.setGuardando(false)
     }
   }
 
@@ -139,47 +83,50 @@ export default function EditarProductoPage() {
         titulo={esPersonalizado ? 'Editar personalizado' : 'Editar Producto'}
         to={`${RUTA_EMPRENDEDOR}/productos`}
       />
-      <form className="flex flex-col gap-5" onSubmit={(e) => void guardar(e)}>
-        <ZonaFotoProducto imagenUrl={imagenUrl} onImagenChange={setImagenUrl} bordeDiscontinuo />
-        <CampoTexto etiqueta="Nombre del producto" value={nombre} onChange={setNombre} />
-        {!esPersonalizado ? (
-          <>
-            <CampoTexto etiqueta="Precio de compra" value={compra} onChange={setCompra} type="number" />
-            <CampoTexto etiqueta="Precio de venta" value={venta} onChange={setVenta} type="number" />
-          </>
-        ) : (
-          <CamposPersonalizadoProducto
-            idPrefijo="emp-edit"
-            instrucciones={instrucciones}
-            onInstruccionesChange={setInstrucciones}
-            modoPrecio={modoPrecio}
-            onModoChange={setModoPrecio}
-            precioMin={precioMin}
-            onPrecioMinChange={setPrecioMin}
-            precioMax={precioMax}
-            onPrecioMaxChange={setPrecioMax}
-            compra={compra}
-            onCompraChange={setCompra}
-            venta={venta}
-            onVentaChange={setVenta}
-          />
-        )}
-        <CampoTexto etiqueta="Descripción" value={descripcion} onChange={setDescripcion} />
-        <CampoTexto etiqueta="Stock disponible" value={stock} onChange={setStock} type="number" />
-        <div>
-          <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
-          <ChipsCategoriaVendedor categoriaId={categoriaId} onChange={elegirCategoria} />
-        </div>
-        <div>
-          <p className="mb-2 text-xs font-medium text-hc-muted">Estado</p>
-          <FilaChips valor={estado} opciones={ESTADOS} onChange={setEstado} />
-        </div>
-        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        <BotonPrimario type="submit">Guardar cambios</BotonPrimario>
-        <BotonSecundario tono="peligro" onClick={() => navigate(`${RUTA_EMPRENDEDOR}/productos/${id}/eliminar`)}>
-          Eliminar producto
-        </BotonSecundario>
-      </form>
+      <FormularioPorPasos
+        pasos={pasos}
+        pasoActual={form.paso}
+        onPasoChange={form.setPaso}
+        validarPaso={(i) => validarPasoProducto(i, form.datos, true)}
+        onFinalizar={guardar}
+        etiquetaFinal="Guardar cambios"
+        enviando={form.guardando}
+      >
+        <PasosProductoVendedor
+          idPaso={idPaso}
+          personalizado={esPersonalizado}
+          editar
+          idPrefijo="emp-edit"
+          nombre={form.nombre}
+          onNombreChange={form.setNombre}
+          compra={form.compra}
+          onCompraChange={form.setCompra}
+          venta={form.venta}
+          onVentaChange={form.setVenta}
+          descripcion={form.descripcion}
+          onDescripcionChange={form.setDescripcion}
+          stock={form.stock}
+          onStockChange={form.setStock}
+          categoriaId={form.categoriaId}
+          onCategoriaChange={form.elegirCategoria}
+          estado={form.estado}
+          onEstadoChange={form.setEstado}
+          instrucciones={form.instrucciones}
+          onInstruccionesChange={form.setInstrucciones}
+          modoPrecio={form.modoPrecio}
+          onModoChange={form.setModoPrecio}
+          precioMin={form.precioMin}
+          onPrecioMinChange={form.setPrecioMin}
+          precioMax={form.precioMax}
+          onPrecioMaxChange={form.setPrecioMax}
+          imagenUrl={form.imagenUrl}
+          onImagenChange={form.setImagenUrl}
+          errorSubmit={form.errorSubmit}
+        />
+      </FormularioPorPasos>
+      <BotonSecundario tono="peligro" onClick={() => navigate(`${RUTA_EMPRENDEDOR}/productos/${id}/eliminar`)}>
+        Eliminar producto
+      </BotonSecundario>
     </main>
   )
 }

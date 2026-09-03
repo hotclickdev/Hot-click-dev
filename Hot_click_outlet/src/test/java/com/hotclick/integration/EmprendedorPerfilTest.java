@@ -277,6 +277,27 @@ class EmprendedorPerfilTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.colorSecundario").value("#1A1A2E"));
     }
 
+    // ── T-PF-021: Extras de negocio (categoría / IG / zona) → 200 y persisten ─
+    @Test
+    @DisplayName("T-PF-021 | LEVE — Emprendedor actualiza categoría, Instagram y zonaEnvio → 200")
+    void emprendedor_updateExtrasNegocio_200() throws Exception {
+        mockMvc.perform(put("/api/empresa/perfil")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"categoriaNegocio\":\"Tecnología\",\"instagram\":\"@perfil.test\",\"zonaEnvio\":\"GAM\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.categoriaNegocio").value("Tecnología"))
+            .andExpect(jsonPath("$.data.instagram").value("@perfil.test"))
+            .andExpect(jsonPath("$.data.zonaEnvio").value("GAM"));
+
+        mockMvc.perform(get("/api/empresa/perfil")
+                .header("Authorization", tokenEmp))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.categoriaNegocio").value("Tecnología"))
+            .andExpect(jsonPath("$.data.instagram").value("@perfil.test"))
+            .andExpect(jsonPath("$.data.zonaEnvio").value("GAM"));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private Empresa crearEmpresa(String nombre, String slug, String correo) {

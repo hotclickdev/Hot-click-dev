@@ -5,6 +5,10 @@ import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 
 /**
  * Login de vendedor (Figma 151:576 / 151:663).
+ *
+ * CÓDIGO MUERTO: no importado ni montado en ningún Route. `SellerRoutes` y
+ * `EmprendedorRoutes` redirigen `{base}/login` → `/login` (auth real).
+ * Conservado como referencia Figma; no añadir wizard aquí salvo que vuelva a montarse.
  */
 export default function LoginPage() {
   const plan = useSellerPlan()

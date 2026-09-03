@@ -6,6 +6,7 @@ import ProductosVacioPage from './pages/ProductosVacioPage'
 import AgregarProductoPage from './pages/AgregarProductoPage'
 import ElegirTipoProductoPage from './pages/ElegirTipoProductoPage'
 import EncargosPage from './pages/EncargosPage'
+import RecoleccionPage from './pages/RecoleccionPage'
 import EditarProductoPage from './pages/EditarProductoPage'
 import ConfirmarEliminacionPage from './pages/ConfirmarEliminacionPage'
 import ReportesPage from './pages/ReportesPage'
@@ -17,6 +18,7 @@ import OpcionesPage from './pages/OpcionesPage'
 import PerfilPage from './pages/PerfilPage'
 import NotificacionesPage from './pages/NotificacionesPage'
 import CobroPage from './pages/CobroPage'
+import AgregarMetodoCobroPage from './pages/AgregarMetodoCobroPage'
 import AyudaPage from './pages/AyudaPage'
 import ConsultasHotPage from './pages/ConsultasHotPage'
 import ProximamentePage from './pages/ProximamentePage'
@@ -43,6 +45,7 @@ export default function EmprendedorRoutes() {
         <Route index element={<MenuPage />} />
         <Route path="productos" element={<ProductosPage />} />
         <Route path="encargos" element={<EncargosPage />} />
+        <Route path="recoleccion" element={<RecoleccionPage />} />
         <Route path="productos/vacio" element={<ProductosVacioPage />} />
         <Route path="productos/nuevo" element={<ElegirTipoProductoPage />} />
         <Route path="productos/nuevo/catalogo" element={<AgregarProductoPage />} />
@@ -60,6 +63,7 @@ export default function EmprendedorRoutes() {
         <Route path="opciones/perfil" element={<PerfilPage />} />
         <Route path="opciones/notificaciones" element={<NotificacionesPage />} />
         <Route path="opciones/cobro" element={<CobroPage />} />
+        <Route path="opciones/cobro/nuevo" element={<AgregarMetodoCobroPage />} />
         <Route path="opciones/ayuda" element={<AyudaPage />} />
         <Route path="opciones/consultas" element={<ConsultasHotPage />} />
         <Route path="opciones/bodegas" element={<BodegasPage />} />

@@ -1,10 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Boton } from '../compartido/ui'
+import { Boton, Campo } from '../compartido/ui'
 import { useSellerRuta } from '../compartido/SellerPlanContext'
+import FormularioPorPasos from '../compartido/FormularioPorPasos'
 import { formatoColon } from '@/theme/formatoColon'
 import { useToast } from '@/components/ui/Toast'
 import { sucursalService, type SucursalDto } from '@/services/sucursalService'
+import { PASOS_SUCURSAL, validarPasoSucursal } from './sucursalPasos'
 import type { AxiosError } from 'axios'
 
 type EstadoSucursal = 'Al día' | 'Inactiva'
@@ -162,16 +164,13 @@ function FormularioSucursal({
   onCreada: (s: SucursalDto) => void
 }) {
   const toast = useToast()
+  const [paso, setPaso] = useState(0)
   const [nombre, setNombre] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const idPaso = PASOS_SUCURSAL[paso]?.id
 
-  async function enviar(e: FormEvent) {
-    e.preventDefault()
+  async function crear() {
     const valor = nombre.trim()
-    if (!valor) {
-      toast({ message: 'Escribí el nombre de la sucursal', type: 'error' })
-      return
-    }
     setEnviando(true)
     try {
       const { data } = await sucursalService.create(valor)
@@ -190,35 +189,64 @@ function FormularioSucursal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-4 md:items-center">
-      <form
-        onSubmit={enviar}
+      <div
         className="w-full max-w-md rounded-2xl border border-hc-border bg-hc-surface p-5 shadow-lg"
+        role="dialog"
+        aria-labelledby="sucursal-modal-titulo"
       >
-        <h2 className="font-display text-lg font-bold">Agregar sucursal</h2>
-        <label className="mt-4 block text-xs font-medium text-hc-muted" htmlFor="sucursal-nombre">
-          Nombre
-        </label>
-        <input
-          id="sucursal-nombre"
-          className="mt-1 w-full rounded-lg border border-hc-border bg-hc-surface-2 px-3 py-2.5 text-sm outline-none focus:border-hc-primary"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          placeholder="Ej. San José Centro"
-          maxLength={120}
-          disabled={enviando}
-        />
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Boton type="submit">{enviando ? 'Guardando…' : 'Crear'}</Boton>
-          <button
-            type="button"
-            className="min-h-11 px-3 text-sm font-semibold text-hc-muted"
-            onClick={onCerrar}
-            disabled={enviando}
+        <h2 id="sucursal-modal-titulo" className="font-display text-lg font-bold">
+          Agregar sucursal
+        </h2>
+        <div className="mt-4">
+          <FormularioPorPasos
+            pasos={PASOS_SUCURSAL}
+            pasoActual={paso}
+            onPasoChange={setPaso}
+            validarPaso={(i) => validarPasoSucursal(i, nombre)}
+            onFinalizar={crear}
+            etiquetaFinal="Crear sucursal"
+            enviando={enviando}
           >
-            Cancelar
-          </button>
+            {idPaso === 'nombre' ? (
+              <Campo
+                etiqueta="Nombre"
+                value={nombre}
+                onChange={setNombre}
+                placeholder="Ej. San José Centro"
+              />
+            ) : null}
+            {idPaso === 'confirmar' ? (
+              <ResumenSucursal nombre={nombre.trim()} />
+            ) : null}
+          </FormularioPorPasos>
         </div>
-      </form>
+        <button
+          type="button"
+          className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[14px] py-3 text-[13px] font-medium text-hc-muted disabled:opacity-40"
+          onClick={onCerrar}
+          disabled={enviando}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ResumenSucursal({ nombre }: { nombre: string }) {
+  const letra = nombre.slice(0, 1).toUpperCase()
+  return (
+    <div className="rounded-xl border border-hc-border bg-hc-surface-2 p-4">
+      <p className="text-xs text-hc-muted">Vas a crear esta sucursal:</p>
+      <div className="mt-3 flex items-center gap-3">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--hc-n-100)] text-[15px] font-bold text-hc-muted">
+          {letra}
+        </span>
+        <p className="text-[15px] font-semibold text-hc-text">{nombre}</p>
+      </div>
+      <p className="mt-3 text-xs text-hc-muted">
+        Podés agregar más sucursales después para consolidar ventas e inventario.
+      </p>
     </div>
   )
 }

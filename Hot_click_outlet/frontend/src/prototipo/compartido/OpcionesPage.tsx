@@ -43,6 +43,7 @@ export default function OpcionesPage() {
         <FilaOpcion to={ruta('consultas')} label="Consultas con Hot" />
         <FilaOpcion to={ruta(plan.extraOpcion.to)} label={plan.extraOpcion.label} />
         <FilaOpcion to={ruta('bodegas')} label="Mis bodegas" />
+        <FilaOpcion to={ruta('recoleccion')} label="Recolección y entrega" />
         <FilaOpcion to={ruta('negocio')} label="Datos de tu negocio" dataMm="seller-opciones-negocio" />
         <FilaOpcion to={ruta('plan')} label="Tu plan" />
         <FilaOpcion label="Cerrar sesión" peligro onClick={cerrarSesion} />

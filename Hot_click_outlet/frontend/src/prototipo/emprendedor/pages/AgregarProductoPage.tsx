@@ -1,97 +1,37 @@
-import { useCallback, useState, type FormEvent } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
-import CampoTexto from '../ui/CampoTexto'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { mensajeErrorProducto, publicarProductoVendedor } from '@/prototipo/compartido/catalogoVendedorApi'
-import CamposPersonalizadoProducto from '@/prototipo/compartido/CamposPersonalizadoProducto'
-import ChipsCategoriaVendedor from '@/prototipo/compartido/ChipsCategoriaVendedor'
-import ZonaFotoProducto from '@/prototipo/compartido/ZonaFotoProducto'
-import { idCategoriaValido } from '@/prototipo/compartido/categoriaVendedor'
-import {
-  type ModoPrecioPersonalizado,
-  errorCatalogoProducto,
-  errorPreciosPersonalizado,
-  preciosAlPublicar,
-  tituloFormProducto,
-} from '@/prototipo/compartido/personalizadoProductoHelpers'
+import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
+import PasosProductoVendedor from '@/prototipo/compartido/PasosProductoVendedor'
+import useFormProductoVendedor from '@/prototipo/compartido/useFormProductoVendedor'
+import { tituloFormProducto } from '@/prototipo/compartido/personalizadoProductoHelpers'
+import { pasosProducto, validarPasoProducto } from '@/prototipo/compartido/productoVendedorPasos'
 
 type Props = Readonly<{ personalizado?: boolean }>
 
+const TOTAL_FLUJO_NUEVO = 5
+
 /**
- * Paso agregar producto — catálogo o personalizado según `personalizado`.
+ * Paso agregar producto — catálogo o personalizado según `personalizado` (wizard).
  */
 export default function AgregarProductoPage({ personalizado = false }: Props) {
   const navigate = useNavigate()
-  const [nombre, setNombre] = useState('')
-  const [compra, setCompra] = useState('')
-  const [venta, setVenta] = useState('')
-  const [descripcion, setDescripcion] = useState('')
-  const [stock, setStock] = useState('')
-  const [categoria, setCategoria] = useState('')
-  const [categoriaId, setCategoriaId] = useState('')
-  const [instrucciones, setInstrucciones] = useState('')
-  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('COTIZACION')
-  const [precioMin, setPrecioMin] = useState('')
-  const [precioMax, setPrecioMax] = useState('')
-  const [imagenUrl, setImagenUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [guardando, setGuardando] = useState(false)
+  const form = useFormProductoVendedor(personalizado)
+  const pasos = useMemo(() => pasosProducto(personalizado, false), [personalizado])
+  const idPaso = pasos[form.paso]?.id
 
-  const elegirCategoria = useCallback((id: string, nombreCat: string) => {
-    setCategoriaId(id)
-    setCategoria(nombreCat)
-  }, [])
-
-  async function publicar(evento: FormEvent) {
-    evento.preventDefault()
-    if (!nombre.trim()) {
-      setError('Escribí el nombre del producto.')
-      return
-    }
-    if (!idCategoriaValido(categoriaId)) {
-      setError('Seleccioná una categoría.')
-      return
-    }
-    const errorCatalogo = errorCatalogoProducto(personalizado, venta, stock)
-    if (errorCatalogo) {
-      setError(errorCatalogo)
-      return
-    }
-    const errorPrecios = errorPreciosPersonalizado(personalizado, modoPrecio, venta, precioMin, precioMax)
-    if (errorPrecios) {
-      setError(errorPrecios)
-      return
-    }
-    const precios = preciosAlPublicar(personalizado, compra, venta, {
-      modoPrecio: personalizado ? modoPrecio : undefined,
-      precioMin,
-      precioMax,
-    })
-    setGuardando(true)
-    setError(null)
+  async function publicar() {
+    form.setGuardando(true)
+    form.setErrorSubmit(null)
     try {
-      await publicarProductoVendedor({
-        nombre,
-        precioCompra: precios.precioCompra,
-        precioVenta: precios.precioVenta,
-        descripcion,
-        stock,
-        categoria,
-        categoriaId,
-        esPersonalizado: personalizado,
-        modoPrecioPersonalizado: precios.modoPrecioPersonalizado,
-        precioPersonalizadoMin: precios.precioPersonalizadoMin,
-        precioPersonalizadoMax: precios.precioPersonalizadoMax,
-        instruccionesPersonalizacion: personalizado ? instrucciones : undefined,
-        imagenUrl: imagenUrl || undefined,
-      })
+      await publicarProductoVendedor(form.payloadPublicacion())
       navigate(`${RUTA_EMPRENDEDOR}/productos`)
     } catch (err: unknown) {
-      setError(mensajeErrorProducto(err, 'No se pudo publicar el producto.'))
+      form.setErrorSubmit(mensajeErrorProducto(err, 'No se pudo publicar el producto.'))
     } finally {
-      setGuardando(false)
+      form.setGuardando(false)
     }
   }
 
@@ -101,44 +41,49 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
         titulo={tituloFormProducto(false, personalizado)}
         to={`${RUTA_EMPRENDEDOR}/productos/nuevo`}
       />
-      <form className="flex flex-col gap-5" onSubmit={publicar}>
-        <ZonaFotoProducto
-          imagenUrl={imagenUrl}
-          onImagenChange={setImagenUrl}
-          bordeDiscontinuo
+      <FormularioPorPasos
+        pasos={pasos}
+        pasoActual={form.paso}
+        onPasoChange={form.setPaso}
+        validarPaso={(i) => validarPasoProducto(i, form.datos, false)}
+        onFinalizar={publicar}
+        etiquetaFinal="Publicar producto"
+        enviando={form.guardando}
+        progresoOffset={1}
+        totalProgreso={TOTAL_FLUJO_NUEVO}
+      >
+        <PasosProductoVendedor
+          idPaso={idPaso}
+          personalizado={personalizado}
+          editar={false}
+          idPrefijo="emp"
+          nombre={form.nombre}
+          onNombreChange={form.setNombre}
+          compra={form.compra}
+          onCompraChange={form.setCompra}
+          venta={form.venta}
+          onVentaChange={form.setVenta}
+          descripcion={form.descripcion}
+          onDescripcionChange={form.setDescripcion}
+          stock={form.stock}
+          onStockChange={form.setStock}
+          categoriaId={form.categoriaId}
+          onCategoriaChange={form.elegirCategoria}
+          estado={form.estado}
+          onEstadoChange={form.setEstado}
+          instrucciones={form.instrucciones}
+          onInstruccionesChange={form.setInstrucciones}
+          modoPrecio={form.modoPrecio}
+          onModoChange={form.setModoPrecio}
+          precioMin={form.precioMin}
+          onPrecioMinChange={form.setPrecioMin}
+          precioMax={form.precioMax}
+          onPrecioMaxChange={form.setPrecioMax}
+          imagenUrl={form.imagenUrl}
+          onImagenChange={form.setImagenUrl}
+          errorSubmit={form.errorSubmit}
         />
-        <CampoTexto etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
-        {!personalizado ? (
-          <>
-            <CampoTexto etiqueta="Precio de compra" value={compra} onChange={setCompra} type="number" placeholder="₡ 0" />
-            <CampoTexto etiqueta="Precio de venta" value={venta} onChange={setVenta} type="number" placeholder="₡ 0" />
-          </>
-        ) : (
-          <CamposPersonalizadoProducto
-            idPrefijo="emp"
-            instrucciones={instrucciones}
-            onInstruccionesChange={setInstrucciones}
-            modoPrecio={modoPrecio}
-            onModoChange={setModoPrecio}
-            precioMin={precioMin}
-            onPrecioMinChange={setPrecioMin}
-            precioMax={precioMax}
-            onPrecioMaxChange={setPrecioMax}
-            compra={compra}
-            onCompraChange={setCompra}
-            venta={venta}
-            onVentaChange={setVenta}
-          />
-        )}
-        <CampoTexto etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga…" />
-        <CampoTexto etiqueta="Stock disponible" value={stock} onChange={setStock} type="number" placeholder="Ej: 10" />
-        <div>
-          <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
-          <ChipsCategoriaVendedor categoriaId={categoriaId} onChange={elegirCategoria} />
-        </div>
-        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        <BotonPrimario type="submit">{guardando ? 'Publicando…' : 'Publicar producto'}</BotonPrimario>
-      </form>
+      </FormularioPorPasos>
     </main>
   )
 }

@@ -5,7 +5,6 @@ import type { ProductoMock } from '@/prototipo/compartido/mock'
 import {
   MODO_PRECIO_PERSONALIZADO_FASE1,
   PRECIO_VENTA_PLACEHOLDER_COTIZACION,
-  modosPrecioPersonalizadoHabilitados,
 } from './personalizadoProductoHelpers'
 
 export type DatosProductoVendedor = {
@@ -107,11 +106,10 @@ function precioVentaPayload(
 
 export function cuerpoProductoVendedor(datos: DatosProductoVendedor) {
   const personalizado = datos.esPersonalizado === true
-  const modosOn = modosPrecioPersonalizadoHabilitados()
-  const modo = personalizado && modosOn
+  const modo = personalizado
     ? (datos.modoPrecioPersonalizado ?? MODO_PRECIO_PERSONALIZADO_FASE1)
     : MODO_PRECIO_PERSONALIZADO_FASE1
-  const dto = {
+  return {
     ...denormalizeProduct({
       nombre: datos.nombre.trim(),
       descripcion: datos.descripcion,
@@ -129,14 +127,6 @@ export function cuerpoProductoVendedor(datos: DatosProductoVendedor) {
     visibleCatalogo: datos.estado !== 'Pausado',
     tags: datos.categoria || null,
   }
-  if (personalizado && !modosOn) {
-    dto.modoPrecioPersonalizado = MODO_PRECIO_PERSONALIZADO_FASE1
-    dto.precioVenta = Number(PRECIO_VENTA_PLACEHOLDER_COTIZACION)
-    dto.precioCompra = 0
-    dto.precioPersonalizadoMin = null
-    dto.precioPersonalizadoMax = null
-  }
-  return dto
 }
 
 export async function publicarProductoVendedor(datos: DatosProductoVendedor) {

@@ -1,19 +1,21 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Boton } from '../compartido/ui'
+import { Boton, Campo } from '../compartido/ui'
+import FormularioPorPasos from '../compartido/FormularioPorPasos'
 import { useSellerRuta } from '../compartido/SellerPlanContext'
 import { equipoService } from '@/services/equipoService'
 import { useToast } from '@/components/ui/Toast'
-import { isValidEmail } from '@/utils/validators'
 import {
   ESTADO_LABEL,
   FORMULARIO_EQUIPO_VACIO,
   ROL_CONFIG,
   ROLES_ASIGNABLES,
+  generatePassword,
   mensajeErrorEquipo,
   type FormularioEquipo,
   type MiembroEquipo,
 } from '@/pages/admin/equipo/equipoHelpers'
+import { PASOS_INVITAR_EQUIPO, validarPasoInvitarEquipo } from './equipoPasos'
 
 /**
  * Mi Equipo — PLAN PYME (Figma 305:339 / 352:9116) con API `/empresa/equipo`.
@@ -132,15 +134,16 @@ function FormularioInvitar({
   onInvitado: (m: MiembroEquipo) => void
 }) {
   const toast = useToast()
+  const [paso, setPaso] = useState(0)
   const [form, setForm] = useState<FormularioEquipo>(FORMULARIO_EQUIPO_VACIO)
   const [guardando, setGuardando] = useState(false)
+  const idPaso = PASOS_INVITAR_EQUIPO[paso]?.id
 
-  async function enviar(evento: FormEvent) {
-    evento.preventDefault()
-    if (!form.nombre.trim() || !isValidEmail(form.correo) || form.password.length < 6) {
-      toast({ message: 'Nombre, correo válido y contraseña de 6+ caracteres', type: 'error' })
-      return
-    }
+  function setCampo<K extends keyof FormularioEquipo>(clave: K, valor: FormularioEquipo[K]) {
+    setForm((prev) => ({ ...prev, [clave]: valor }))
+  }
+
+  async function enviar() {
     setGuardando(true)
     try {
       const { data } = await equipoService.invitar({
@@ -166,46 +169,109 @@ function FormularioInvitar({
   }
 
   return (
-    <form
-      className="mt-6 space-y-3 rounded-xl border border-hc-border bg-hc-surface p-4 md:max-w-lg"
-      onSubmit={(e) => void enviar(e)}
-    >
-      <p className="text-sm font-semibold">Invitar miembro</p>
-      <input
-        className="min-h-11 w-full rounded-lg border border-hc-border bg-[#F8F9FB] px-3 text-sm"
-        placeholder="Nombre"
-        value={form.nombre}
-        onChange={(e) => setForm((s) => ({ ...s, nombre: e.target.value }))}
-      />
-      <input
-        className="min-h-11 w-full rounded-lg border border-hc-border bg-[#F8F9FB] px-3 text-sm"
-        placeholder="Correo"
-        type="email"
-        value={form.correo}
-        onChange={(e) => setForm((s) => ({ ...s, correo: e.target.value }))}
-      />
-      <input
-        className="min-h-11 w-full rounded-lg border border-hc-border bg-[#F8F9FB] px-3 text-sm"
-        placeholder="Contraseña temporal"
-        type="password"
-        value={form.password}
-        onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
-      />
-      <select
-        className="min-h-11 w-full rounded-lg border border-hc-border bg-[#F8F9FB] px-3 text-sm"
-        value={form.rolEnEmpresa}
-        onChange={(e) => setForm((s) => ({ ...s, rolEnEmpresa: e.target.value }))}
+    <div className="mt-6 rounded-xl border border-hc-border bg-hc-surface p-4 md:max-w-lg">
+      <p className="mb-4 text-sm font-semibold">Invitar miembro</p>
+      <FormularioPorPasos
+        pasos={PASOS_INVITAR_EQUIPO}
+        pasoActual={paso}
+        onPasoChange={setPaso}
+        validarPaso={(i) => validarPasoInvitarEquipo(i, form)}
+        onFinalizar={enviar}
+        etiquetaFinal="Enviar invitación"
+        enviando={guardando}
       >
-        {ROLES_ASIGNABLES.map((rol) => (
-          <option key={rol} value={rol}>{ROL_CONFIG[rol]?.label ?? rol}</option>
-        ))}
-      </select>
-      <div className="flex flex-wrap gap-2">
-        <Boton type="submit">{guardando ? 'Enviando…' : 'Enviar invitación'}</Boton>
-        <button type="button" className="min-h-11 px-3 text-sm font-semibold text-hc-muted" onClick={onCerrar}>
-          Cancelar
-        </button>
-      </div>
-    </form>
+        {idPaso === 'persona' ? (
+          <Campo
+            etiqueta="Nombre completo"
+            value={form.nombre}
+            onChange={(v) => setCampo('nombre', v)}
+            placeholder="Ej. María González"
+          />
+        ) : null}
+        {idPaso === 'contacto' ? (
+          <>
+            <Campo
+              etiqueta="Correo"
+              type="email"
+              value={form.correo}
+              onChange={(v) => setCampo('correo', v)}
+              placeholder="correo@ejemplo.com"
+            />
+            <Campo
+              etiqueta="Teléfono (opcional)"
+              type="tel"
+              value={form.telefono}
+              onChange={(v) => setCampo('telefono', v)}
+              placeholder="8888-0000"
+            />
+            <Campo
+              etiqueta="Contraseña temporal"
+              type="password"
+              value={form.password}
+              onChange={(v) => setCampo('password', v)}
+              placeholder="Mínimo 6 caracteres"
+            />
+            <button
+              type="button"
+              className="text-xs font-semibold text-hc-primary"
+              onClick={() => setCampo('password', generatePassword())}
+            >
+              Generar contraseña segura
+            </button>
+          </>
+        ) : null}
+        {idPaso === 'rol' ? (
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Rol en la tienda">
+            {ROLES_ASIGNABLES.map((rol) => {
+              const config = ROL_CONFIG[rol]
+              const seleccionado = form.rolEnEmpresa === rol
+              return (
+                <button
+                  key={rol}
+                  type="button"
+                  role="radio"
+                  aria-checked={seleccionado}
+                  onClick={() => setCampo('rolEnEmpresa', rol)}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    seleccionado ? 'border-hc-primary bg-[var(--hc-red-50)]' : 'border-hc-border bg-hc-surface'
+                  }`}
+                >
+                  <span className="block text-[15px] font-bold text-hc-text">{config?.label ?? rol}</span>
+                  <span className="mt-1 block text-xs text-hc-muted">{config?.desc ?? ''}</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+        {idPaso === 'confirmar' ? (
+          <ResumenInvitacion form={form} />
+        ) : null}
+      </FormularioPorPasos>
+      <button
+        type="button"
+        className="mt-3 min-h-11 w-full text-sm font-semibold text-hc-muted"
+        onClick={onCerrar}
+        disabled={guardando}
+      >
+        Cancelar
+      </button>
+    </div>
+  )
+}
+
+function ResumenInvitacion({ form }: { form: FormularioEquipo }) {
+  const rol = ROL_CONFIG[form.rolEnEmpresa]?.label ?? form.rolEnEmpresa
+  return (
+    <div className="rounded-xl border border-hc-border bg-[#F8F9FB] p-4 text-sm">
+      <p className="font-semibold text-hc-text">{form.nombre.trim()}</p>
+      <p className="mt-1 text-hc-muted">{form.correo.trim()}</p>
+      {form.telefono.trim() ? <p className="mt-1 text-hc-muted">{form.telefono.trim()}</p> : null}
+      <p className="mt-3 text-xs font-medium text-hc-muted">
+        Rol: <span className="text-hc-text">{rol}</span>
+      </p>
+      <p className="mt-2 text-xs text-hc-muted">
+        Recibirá acceso con la contraseña temporal que definiste.
+      </p>
+    </div>
   )
 }
