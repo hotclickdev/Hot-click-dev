@@ -17,6 +17,7 @@ import {
   filtrarEmpresas,
   indicesPagina,
   nombreVisibleEmpresa,
+  rutaEspacioEmpresa,
   tonoEstadoTiendaLista,
   type EmpresaLista,
 } from './empresasHelpers'
@@ -44,24 +45,24 @@ function VisibilidadToggle({ emp, saving, onToggle }: {
   )
 }
 
-function EmpresaFila({ emp, saving, onToggleVisibilidad, onAbrirDetalle }: {
+function EmpresaFila({ emp, saving, onToggleVisibilidad }: {
   emp: EmpresaLista
   saving: boolean
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
-  onAbrirDetalle: (emp: EmpresaLista) => void
 }) {
   const nombre = nombreVisibleEmpresa(emp) ?? 'Tienda'
   return (
     <li className="flex items-center gap-2">
-      <button type="button" onClick={() => onAbrirDetalle(emp)} className="min-w-0 flex-1 text-left">
+      <div className="min-w-0 flex-1">
         <AdminEntityRow
+          to={rutaEspacioEmpresa(emp.id)}
           letra={letraDe(nombre)}
           titulo={nombre}
           subtitulo={emp.slug ?? emp.correoEmpresa ?? ''}
           badge={etiquetaEstadoTienda(emp.estadoEmpresa)}
           badgeTono={tonoEstadoTiendaLista(emp.estadoEmpresa)}
         />
-      </button>
+      </div>
       <VisibilidadToggle emp={emp} saving={saving} onToggle={onToggleVisibilidad} />
     </li>
   )
@@ -118,13 +119,12 @@ export type EmpresaListProps = {
   loading: boolean
   saving: boolean
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
-  onAbrirDetalle: (emp: EmpresaLista) => void
 }
 
 /**
  * Lista de tiendas (Figma 42:128) con datos reales.
  */
-export default function EmpresaList({ empresas, loading, saving, onToggleVisibilidad, onAbrirDetalle }: EmpresaListProps) {
+export default function EmpresaList({ empresas, loading, saving, onToggleVisibilidad }: EmpresaListProps) {
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('ALL')
   const [filtroPlan, setFiltroPlan] = useState('ALL')
@@ -173,16 +173,15 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
           {PLANES.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
       </label>
-      {cuerpoLista(loading, paged, { saving, onToggleVisibilidad, onAbrirDetalle })}
+      {cuerpoLista(loading, paged, { saving, onToggleVisibilidad })}
       <Paginacion page={page} totalPages={totalPages} filteredCount={filtered.length} onPage={setPage} />
     </div>
   )
 }
 
-function cuerpoLista(loading: boolean, paged: EmpresaLista[], { saving, onToggleVisibilidad, onAbrirDetalle }: {
+function cuerpoLista(loading: boolean, paged: EmpresaLista[], { saving, onToggleVisibilidad }: {
   saving: boolean
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
-  onAbrirDetalle: (emp: EmpresaLista) => void
 }) {
   if (loading) {
     return <p className="py-8 text-center text-sm text-hc-muted">Cargando…</p>
@@ -198,7 +197,6 @@ function cuerpoLista(loading: boolean, paged: EmpresaLista[], { saving, onToggle
           emp={emp}
           saving={saving}
           onToggleVisibilidad={onToggleVisibilidad}
-          onAbrirDetalle={onAbrirDetalle}
         />
       ))}
     </ul>

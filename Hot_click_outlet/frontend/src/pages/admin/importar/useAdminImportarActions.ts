@@ -6,6 +6,7 @@ import { marcaService } from '@/services/marcaService'
 import { adminService, warehouseService } from '@/services/orderService'
 import { detectarColor } from '@/utils/colorDetector'
 import { fmtColones, innerData, mensajeErrorImportar } from '../importar/importarHelpers'
+import { rutaEspacioEmpresa } from '../empresas/empresasHelpers'
 import type {
   BodegaImportar,
   CategoriaImportar,
@@ -118,6 +119,10 @@ export function useAdminImportarActions(deps: {
   }, [addToast, setBodegaGlobal, setBodegas, setEmpresaSeleccionada])
 
   const extraer = useCallback(async () => {
+    if (esAdminIT && !empresaSeleccionada) {
+      addToast('Elegí la empresa a la que se van a asignar los productos', 'error')
+      return
+    }
     setCargando(true)
     try {
       let res
@@ -171,13 +176,14 @@ export function useAdminImportarActions(deps: {
       }))
 
       await cargarDatosFormulario()
+      if (esAdminIT && empresaSeleccionada) await onCambiarEmpresa(empresaSeleccionada)
       setPaso(2)
     } catch (err: unknown) {
       addToast(mensajeErrorImportar(err, 'Error al extraer productos'), 'error')
     } finally {
       setCargando(false)
     }
-  }, [addToast, archivo, cargarDatosFormulario, setCargando, setPaso, setProductos, tab, url])
+  }, [addToast, archivo, cargarDatosFormulario, empresaSeleccionada, esAdminIT, onCambiarEmpresa, setCargando, setPaso, setProductos, tab, url])
 
   const aplicarCategoriaATodos = useCallback(() => {
     if (!catGlobal) return
@@ -246,7 +252,7 @@ export function useAdminImportarActions(deps: {
       const { ok, errores } = resultado
       addToast(`${ok} producto(s) importado(s) correctamente`, 'success')
       if (errores?.length) addToast(`${errores.length} con errores`, 'warning')
-      navigate('/admin/productos')
+      navigate(empresaSeleccionada ? rutaEspacioEmpresa(empresaSeleccionada) : '/admin/productos')
     } catch (err: unknown) {
       addToast(mensajeErrorImportar(err, 'Error al importar'), 'error')
     } finally {

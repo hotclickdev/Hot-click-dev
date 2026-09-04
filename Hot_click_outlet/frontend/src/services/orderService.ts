@@ -35,7 +35,8 @@ export const adminService = {
   restoreUser: (id: Id) => api.put(`/admin/usuarios/${id}/restaurar`),
   getEmpresas: () => api.get('/admin/empresas'),
   getEmpresa: (id: Id) => api.get(`/admin/empresas/${id}`),
-  getEmpresaTab: (id: Id, tab: string) => api.get(`/admin/empresas/${id}/${tab}`),
+  getEmpresaTab: (id: Id, tab: string, params?: Record<string, unknown>) =>
+    api.get(`/admin/empresas/${id}/${tab}`, params ? { params } : undefined),
   setEmpresaPlan: (id: Id, plan: string) => api.put(`/admin/empresas/${id}/plan`, { plan }),
   setEmpresaEstado: (id: Id, estadoEmpresa: string) =>
     api.put(`/admin/empresas/${id}/estado`, { estadoEmpresa }),

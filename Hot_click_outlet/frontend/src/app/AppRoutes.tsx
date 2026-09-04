@@ -14,6 +14,7 @@ import {
   AdminBlogRoute,
   AdminCopilotRoute,
   RedirectSiSistema,
+  RedirectTiendaAEmpresa,
 } from '@/app/routeGuards'
 import AdminRoleSwitch from '@/app/AdminRoleSwitch'
 import PrototipoRedirect from '@/app/PrototipoRedirect'
@@ -70,6 +71,7 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const AdminSolicitudesServicio = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
 const AdminSolicitudesGarantia = lazy(() => import('@/pages/admin/AdminSolicitudesGarantia'))
 const AdminEmpresas = lazy(() => import('@/pages/admin/AdminEmpresas'))
+const AdminEmpresaWorkspace = lazy(() => import('@/pages/admin/AdminEmpresaWorkspace'))
 const AdminEquipo = lazy(() => import('@/pages/admin/AdminEquipo'))
 const AdminAprobaciones = lazy(() => import('@/pages/admin/AdminAprobaciones'))
 const AdminMiEmpresa = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
@@ -187,7 +189,7 @@ export default function AppRoutes() {
         <Route index element={<AdminHomeRoute />} />
         <Route path="dashboard" element={<Navigate to="/admin" replace />} />
         <Route path="tiendas" element={<Navigate to="/admin/empresas" replace />} />
-        <Route path="tiendas/:id" element={<Navigate to="/admin/empresas" replace />} />
+        <Route path="tiendas/:id" element={<RedirectTiendaAEmpresa />} />
         <Route path="tiendas/:id/preview" element={<Navigate to="/admin/empresas" replace />} />
         <Route path="tiendas/:id/suspender" element={<Navigate to="/admin/empresas" replace />} />
         <Route path="moderacion" element={<Navigate to="/admin/aprobaciones" replace />} />
@@ -249,6 +251,7 @@ export default function AppRoutes() {
           <Route path="payouts" element={<AdminPayouts />} />
           <Route path="reportes-producto" element={<AdminReportesProducto />} />
           <Route path="empresas" element={<AdminEmpresas />} />
+          <Route path="empresas/:id" element={<AdminEmpresaWorkspace />} />
           <Route path="aprobaciones" element={<AdminAprobaciones />} />
           <Route path="security" element={<AdminSecurityCenter />} />
           <Route path="superadmin" element={<AdminSuperAdmin />} />

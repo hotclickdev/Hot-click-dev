@@ -3,12 +3,13 @@ package com.hotclick.controller;
 import com.hotclick.dto.ProductoExtraidoDto;
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
-import com.hotclick.repository.EmpresaRepository;
-import com.hotclick.security.CompanyScope;
 import com.hotclick.service.CatalogoImportService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.TenantService;
+import com.hotclick.service.producto.EmpresaDestinoAlta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +32,7 @@ public class ImportController {
 
     @Autowired private CatalogoImportService importService;
     @Autowired private ProductoService       productoService;
-    @Autowired private CompanyScope          companyScope;
-    @Autowired private EmpresaRepository     empresaRepository;
+    @Autowired private EmpresaDestinoAlta    empresaDestinoAlta;
     @Autowired private TenantService         tenantService;
 
     // ── Paso 1: Extraer productos ─────────────────────────────────────────────
@@ -98,24 +98,8 @@ public class ImportController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Máximo 100 productos por importación."));
             }
 
-            Long empresaIdEfectivo = companyScope.getCurrentEmpresaId();
-            if (empresaIdEfectivo == null && companyScope.isAdminIT()) {
-                // IT Admin no tiene empresa propia — tiene que elegir a quién asignar el import.
-                if (empresaId == null) {
-                    return ResponseEntity.badRequest().body(ResponseDTO.error(
-                        "Elegí la empresa a la que se van a asignar los productos."));
-                }
-                empresaIdEfectivo = empresaId;
-            }
-
-            Empresa empresa = empresaIdEfectivo != null
-                ? empresaRepository.findById(empresaIdEfectivo).orElse(null)
-                : null;
-            if (empresaIdEfectivo != null && empresa == null) {
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa no encontrada."));
-            }
-
-            tenantService.verificarLimiteProductosBulk(empresaIdEfectivo, productos.size());
+            Empresa empresa = empresaDestinoAlta.resolver(empresaId);
+            tenantService.verificarLimiteProductosBulk(empresa.getId(), productos.size());
 
             String adminCorreo = currentUserName();
             int ok = 0;
@@ -163,6 +147,10 @@ public class ImportController {
 
         } catch (com.hotclick.exception.PlanLimitException e) {
             return ResponseEntity.status(402).body(ResponseDTO.error(e.getMessage()));
+        } catch (TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalArgumentException | RecursoNoEncontradoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             log.error("[import-confirmar] Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al importar: " + e.getMessage()));

@@ -2,11 +2,12 @@ package com.hotclick.controller.producto;
 
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
-import com.hotclick.repository.EmpresaRepository;
-import com.hotclick.security.CompanyScope;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.TenantService;
+import com.hotclick.service.producto.EmpresaDestinoAlta;
 import com.hotclick.service.producto.ProductoAccessGuard;
 import com.hotclick.service.producto.ProductoApprovalService;
 import com.hotclick.service.producto.ProductoIdempotencyService;
@@ -21,39 +22,46 @@ import static com.hotclick.controller.producto.ProductoControllerSupport.current
 
 /**
  * Creación de productos del REST API.
- * Extraído bit-idéntico de ProductoWriteHandler — no cambia comportamiento.
+ * ADMIN de plataforma debe indicar empresaId; el vendedor usa la de su sesión.
  */
 @Component
 public class ProductoCreateHandler {
 
     @Autowired private ProductoService    productoService;
-    @Autowired private EmpresaRepository  empresaRepository;
-    @Autowired private CompanyScope       companyScope;
     @Autowired private TenantService      tenantService;
     @Autowired private ProductoAccessGuard productoAccessGuard;
     @Autowired private ProductoModerationFacade productoModerationFacade;
     @Autowired private ProductoRequestSanitizer productoRequestSanitizer;
     @Autowired private ProductoApprovalService productoApprovalService;
     @Autowired private ProductoIdempotencyService productoIdempotencyService;
+    @Autowired private EmpresaDestinoAlta empresaDestinoAlta;
 
-    public ResponseEntity<ResponseDTO> crearProducto(@Valid ProductoRequestDTO dto, String idempotencyKey) {
-        // Idempotencia: misma clave = mismo tab o doble-clic → 409 en vez de duplicar (#17)
+    public ResponseEntity<ResponseDTO> crearProducto(
+            @Valid ProductoRequestDTO dto, String idempotencyKey, Long empresaId) {
         if (productoIdempotencyService.isDuplicate(idempotencyKey)) {
             return ResponseEntity.status(409)
                 .body(ResponseDTO.error("Este producto ya fue publicado. Actualizá la página."));
         }
-        Long eid = companyScope.getCurrentEmpresaIdOrOwn();
-        if (eid == null) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(
-                "El administrador de plataforma no opera un negocio propio"));
+        Empresa empresa;
+        try {
+            empresa = empresaDestinoAlta.resolver(empresaId);
+        } catch (TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalArgumentException | RecursoNoEncontradoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
-        tenantService.verificarLimiteProductos(eid);
+        tenantService.verificarLimiteProductos(empresa.getId());
+        return persistirAlta(dto, idempotencyKey, empresa);
+    }
 
+    private ResponseEntity<ResponseDTO> persistirAlta(
+            ProductoRequestDTO dto, String idempotencyKey, Empresa empresa) {
         productoRequestSanitizer.restringirCamposSoloAdmin(dto, productoAccessGuard.hasRole("ADMIN"));
         try {
-            if (!productoModerationFacade.isTextoPermitido(dto))
-                return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            Empresa empresa = empresaRepository.findById(eid).orElse(null);
+            if (!productoModerationFacade.isTextoPermitido(dto)) {
+                return ResponseEntity.badRequest()
+                    .body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
+            }
             var producto = productoService.crearProducto(dto, currentUserName(), empresa);
             productoIdempotencyService.remember(idempotencyKey);
             var creationResult = productoApprovalService.aplicarReglasPublicacion(producto, empresa);

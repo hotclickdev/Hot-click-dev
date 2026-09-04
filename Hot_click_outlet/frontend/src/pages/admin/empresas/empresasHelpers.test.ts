@@ -3,12 +3,18 @@ import {
   EMPRESA_PLATAFORMA_ID,
   ESTADOS,
   empresasOperables,
+  empresaIdDesdeParam,
   esEmpresaInternaPlataforma,
   esProductoVisibleEnCatalogo,
   etiquetaPublicacionProducto,
   filtrarEmpresas,
+  filtrarProductosTab,
   kpisEmpresas,
+  rutaCargaMasivaEmpresa,
+  rutaEspacioEmpresa,
+  rutaImportarEmpresa,
   type EmpresaLista,
+  type EmpresaProductoTab,
 } from './empresasHelpers'
 
 function emp(partial: Partial<EmpresaLista> & Pick<EmpresaLista, 'id'>): EmpresaLista {
@@ -53,5 +59,29 @@ describe('empresa interna de plataforma', () => {
     expect(empresasOperables(lista)).toHaveLength(2)
     expect(filtrarEmpresas(lista, { search: '', filtroEstado: 'ALL', filtroPlan: 'ALL' })).toHaveLength(2)
     expect(kpisEmpresas(lista)).toEqual({ total: 2, activas: 1, suspendidas: 1, pro: 0 })
+  })
+})
+
+describe('espacio de un negocio', () => {
+  it('arma las rutas del workspace y la carga', () => {
+    expect(rutaEspacioEmpresa(22)).toBe('/admin/empresas/22')
+    expect(rutaCargaMasivaEmpresa(22)).toBe('/admin/productos/carga-masiva?empresaId=22')
+    expect(rutaImportarEmpresa(22)).toBe('/admin/productos/importar?empresaId=22')
+  })
+
+  it('solo acepta un id numérico en el query', () => {
+    expect(empresaIdDesdeParam('22')).toBe('22')
+    expect(empresaIdDesdeParam('abc')).toBe('')
+    expect(empresaIdDesdeParam(null)).toBe('')
+  })
+
+  it('filtra productos del tab por nombre o categoría', () => {
+    const productos: EmpresaProductoTab[] = [
+      { id: 1, nombre: 'Caja personalizada', categoria: 'arretes', stock: 2 },
+      { id: 2, nombre: 'Vela de soya', categoria: 'hogar', stock: 1 },
+    ]
+    expect(filtrarProductosTab(productos, 'caja')).toHaveLength(1)
+    expect(filtrarProductosTab(productos, 'hogar')).toEqual([productos[1]])
+    expect(filtrarProductosTab(productos, '')).toHaveLength(2)
   })
 })

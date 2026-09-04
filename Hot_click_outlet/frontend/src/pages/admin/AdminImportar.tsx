@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, type DragEvent } from 'react'
+import { useState, useRef, useCallback, useEffect, type DragEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import { IconCheck } from './importar/importarIcons'
@@ -7,6 +8,8 @@ import ImportarResultados from './importar/ImportarResultados'
 import ImportarTabs from './importar/ImportarTabs'
 import ImportarToolbar from './importar/ImportarToolbar'
 import { useAdminImportarActions } from './importar/useAdminImportarActions'
+import EmpresaDestinoSelect from './empresas/EmpresaDestinoSelect'
+import { empresaIdDesdeParam } from './empresas/empresasHelpers'
 import type {
   BodegaImportar,
   CategoriaImportar,
@@ -19,6 +22,8 @@ import type {
 export default function AdminImportar() {
   const { showToast: addToast } = useToast()
   const esAdminIT = useAuthStore(st => st.userRole === 'ADMIN')
+  const [searchParams] = useSearchParams()
+  const empresaQuery = searchParams.get('empresaId')
 
   const [paso, setPaso] = useState(1)
   const [tab,  setTab]  = useState<ImportarTabId>('url')
@@ -36,7 +41,7 @@ export default function AdminImportar() {
   const [bodegas,      setBodegas]      = useState<BodegaImportar[]>([])
 
   const [empresas,            setEmpresas]            = useState<EmpresaImportar[]>([])
-  const [empresaSeleccionada, setEmpresaSeleccionada] = useState('')
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState(() => empresaIdDesdeParam(empresaQuery))
 
   const [bodegaGlobal,    setBodegaGlobal]    = useState('')
   const [catGlobal,       setCatGlobal]       = useState('')
@@ -56,6 +61,7 @@ export default function AdminImportar() {
   const algunoInvalido = seleccionados.some(p => !p.nombreProducto?.trim() || !p.categoriaId)
 
   const {
+    cargarDatosFormulario,
     onCambiarEmpresa,
     extraer,
     aplicarCategoriaATodos,
@@ -96,6 +102,14 @@ export default function AdminImportar() {
     stockGlobal,
   })
 
+  useEffect(() => {
+    if (!esAdminIT) return
+    void cargarDatosFormulario()
+    const id = empresaIdDesdeParam(empresaQuery)
+    if (id) void onCambiarEmpresa(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- query inicial al montar
+  }, [])
+
   const onDrop      = useCallback((e: DragEvent<HTMLButtonElement>) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) setArchivoState(f) }, [])
   const onDragOver  = (e: DragEvent<HTMLButtonElement>) => { e.preventDefault(); setDragging(true) }
   const onDragLeave = ()  => setDragging(false)
@@ -131,6 +145,13 @@ export default function AdminImportar() {
             className="rounded-2xl p-6 space-y-5"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
           >
+            {esAdminIT && (
+              <EmpresaDestinoSelect
+                empresas={empresas}
+                value={empresaSeleccionada}
+                onChange={(id) => { void onCambiarEmpresa(id) }}
+              />
+            )}
             <ImportarTabs
               tab={tab}
               onTab={(id) => { setTab(id); setArchivoState(null) }}

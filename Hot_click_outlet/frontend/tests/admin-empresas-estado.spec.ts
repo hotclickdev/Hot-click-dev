@@ -136,12 +136,13 @@ async function entrarEmpresas(page: Page, estado: { empresa: string; visibleCata
 }
 
 test.describe('Admin IT — estado de tienda y producto', () => {
-  test('activa la tienda INACTIVA desde el encabezado del drawer', async ({ page }) => {
+  test('activa la tienda INACTIVA desde el encabezado del negocio', async ({ page }) => {
     const estado = { empresa: 'INACTIVO', visibleCatalogo: false }
     await entrarEmpresas(page, estado)
 
     await expect(page.getByRole('heading', { name: 'Tiendas' })).toBeVisible()
-    await page.getByRole('button', { name: /QA Emprendedor Test 2/ }).click()
+    await page.getByRole('link', { name: /QA Emprendedor Test 2/ }).click()
+    await expect(page).toHaveURL(/\/admin\/empresas\/22/)
 
     const activar = page.getByRole('button', { name: 'ACTIVO', exact: true }).first()
     await expect(activar).toBeEnabled()
@@ -157,7 +158,8 @@ test.describe('Admin IT — estado de tienda y producto', () => {
     const estado = { empresa: 'INACTIVO', visibleCatalogo: false }
     await entrarEmpresas(page, estado)
 
-    await page.getByRole('button', { name: /QA Emprendedor Test 2/ }).click()
+    await page.getByRole('link', { name: /QA Emprendedor Test 2/ }).click()
+    await expect(page).toHaveURL(/\/admin\/empresas\/22/)
     await page.getByRole('button', { name: /Productos/ }).click()
 
     await expect(page.getByText('Caja personalizada')).toBeVisible()
@@ -170,5 +172,21 @@ test.describe('Admin IT — estado de tienda y producto', () => {
     expect(req.postDataJSON()).toEqual({ visibleCatalogo: true })
     await expect(page.getByText('Producto publicado de nuevo')).toBeVisible()
     await expect(page.getByText('Publicado', { exact: true })).toBeVisible()
+  })
+
+  test('Carga masiva lleva el negocio destino en la URL', async ({ page }) => {
+    const estado = { empresa: 'INACTIVO', visibleCatalogo: false }
+    await entrarEmpresas(page, estado)
+
+    await page.getByRole('link', { name: /QA Emprendedor Test 2/ }).click()
+    const carga = page.getByRole('link', { name: 'Carga masiva' })
+    await expect(carga).toHaveAttribute('href', '/admin/productos/carga-masiva?empresaId=22')
+    await expect(page.getByRole('link', { name: 'Importar CSV' })).toHaveAttribute(
+      'href',
+      '/admin/productos/importar?empresaId=22',
+    )
+    await carga.click()
+    await expect(page).toHaveURL(/\/admin\/productos\/carga-masiva\?empresaId=22/)
+    await expect(page.getByLabel('Negocio destino')).toHaveValue('22')
   })
 })

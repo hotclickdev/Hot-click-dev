@@ -26,6 +26,7 @@ public class EmpresaAdminService {
 
     static final List<String> PLANES_VALIDOS = List.of("EMPRENDEDOR", "PYME", "NEGOCIO_PLUS");
     private static final List<String> ESTADOS_VALIDOS = List.of("ACTIVO", "SUSPENDIDO", "INACTIVO");
+    private static final int MAX_TAB_PRODUCTOS = 200;
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
@@ -89,10 +90,12 @@ public class EmpresaAdminService {
         return visible;
     }
 
-    public List<Map<String, Object>> productos(Long id) {
+    public List<Map<String, Object>> productos(Long id, int page, int size) {
         empresa(id);
-        var page = productoRepository.findByEmpresaIdAndEstado(id, Constants.ESTADO_ACTIVO, PageRequest.of(0, 30));
-        return page.getContent().stream().map(p -> {
+        int pageSize = Math.min(Math.max(size, 1), MAX_TAB_PRODUCTOS);
+        var pageable = PageRequest.of(Math.max(0, page), pageSize);
+        var pagina = productoRepository.findByEmpresaIdAndEstado(id, Constants.ESTADO_ACTIVO, pageable);
+        return pagina.getContent().stream().map(p -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", p.getId());
             m.put("nombre", p.getNombreProducto());
