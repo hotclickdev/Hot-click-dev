@@ -32,4 +32,5 @@
 
 ## Merge
 
-Merge `feat/seller-roadmap-p1` → `master` cuando Andres lo pida. Recordar `pnpm build` antes de commit/deploy Docker.
+`feat/seller-roadmap-p1` ya está en `master` (fast-forward → `fe98b57f`).  
+Recordar `pnpm build` antes de push/deploy Docker. No pushear a origin sin pedido explícito.

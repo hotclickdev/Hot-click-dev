@@ -1,0 +1,1 @@
+import{a as e}from"./rolldown-runtime-BYbx6iT9.js";import{r as t}from"./vendor-clerk-QdevMKxx.js";import{i as n}from"./vendor-react-BFl66Vpd.js";var r=e(t(),1);function i(){return(0,r.jsx)(n,{to:`/carrito`,replace:!0})}export{i as default};
