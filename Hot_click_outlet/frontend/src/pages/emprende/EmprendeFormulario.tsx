@@ -25,7 +25,7 @@ export default function EmprendeFormulario() {
         <EmprendeFoto
           src={FOTOS_EMPRENDE.mercado.local}
           fallback={FOTOS_EMPRENDE.mercado.fallback}
-          alt={t(FOTOS_EMPRENDE.mercado.altKey)}
+          alt={t(FOTOS_EMPRENDE.mercado.claveAlt)}
           className="w-full h-48 sm:h-full min-h-[180px] object-cover rounded-2xl"
         />
       </div>

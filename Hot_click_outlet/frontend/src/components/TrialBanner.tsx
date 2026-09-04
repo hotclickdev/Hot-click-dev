@@ -21,15 +21,18 @@ export default function TrialBanner() {
   const esVencido  = estadoPlan === 'VENCIDO' || estadoPlan === 'PAST_DUE'
   const esTrial    = estadoPlan === 'TRIAL'
   const pocosTrial = esTrial && trialDias >= 0 && trialDias <= 7
+  const requiereMembresia = estadoPlan === 'REQUIERE_MEMBRESIA'
 
-  if (!esVencido && !pocosTrial) return null
+  if (!esVencido && !pocosTrial && !requiereMembresia) return null
 
   const bg      = esVencido ? '#7f1d1d' : '#78350f'
   const border  = esVencido ? '#b91c1c' : '#d97706'
   const accent  = esVencido ? '#fca5a5' : '#fde68a'
 
   let mensaje = ''
-  if (estadoPlan === 'PAST_DUE') {
+  if (requiereMembresia) {
+    mensaje = 'Los cupos gratis se agotaron. Activá PYME o Negocio Plus para publicar en el catálogo.'
+  } else if (estadoPlan === 'PAST_DUE') {
     mensaje = 'Pago pendiente — actualiza tu método de pago para continuar usando el plan'
   } else if (esVencido) {
     mensaje = `Tu trial de ${planNombre} ha vencido. Suscríbete para seguir usando todas las funciones.`

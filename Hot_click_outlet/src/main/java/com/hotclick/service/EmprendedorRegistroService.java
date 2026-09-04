@@ -1,12 +1,12 @@
 package com.hotclick.service;
 
 import com.hotclick.dto.RegistroEmpresaDTO;
+import com.hotclick.dto.ResultadoAltaCupo;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
-import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
@@ -27,9 +27,10 @@ public class EmprendedorRegistroService {
     @Autowired private EmpresaRepository        empresaRepository;
     @Autowired private UsuarioRepository        usuarioRepository;
     @Autowired private RolRepository            rolRepository;
-    @Autowired private PlanRepository           planRepository;
     @Autowired private PasswordEncoder          passwordEncoder;
     @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private CupoEmprendedorService   cupoEmprendedorService;
+    @Autowired private AltaEmprendedorNotificador altaEmprendedorNotificador;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private InputSanitizer           sanitizer;
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
@@ -77,7 +78,7 @@ public class EmprendedorRegistroService {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
-        aplicarPlanInicial(empresa);
+        ResultadoAltaCupo alta = cupoEmprendedorService.aplicarAlta(empresa, correoEmpresa);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -123,11 +124,14 @@ public class EmprendedorRegistroService {
         MiembroEmpresa miembro = new MiembroEmpresa(saved, saved.getEmpresa(), "PROPIETARIO");
         miembroEmpresaRepository.save(miembro);
 
+        String nombreComercial = empresa.getNombreComercial() != null
+            ? empresa.getNombreComercial() : empresa.getNombreEmpresa();
         notificacionEmailService.enviarBienvenidaEmprendedor(
             saved.getCorreo(),
             saved.getNombre(),
-            empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa()
+            nombreComercial
         );
+        altaEmprendedorNotificador.notificar(nombreComercial, empresa.getCorreoEmpresa(), alta);
 
         return saved;
     }
@@ -165,7 +169,7 @@ public class EmprendedorRegistroService {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmp);
         empresa.setTelefonoEmpresa(telefonoEmpresa);
-        aplicarPlanInicial(empresa);
+        ResultadoAltaCupo alta = cupoEmprendedorService.aplicarAlta(empresa, correoEmp);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -209,16 +213,10 @@ public class EmprendedorRegistroService {
         notificacionEmailService.enviarBienvenidaEmprendedor(
             saved.getCorreo(), saved.getNombre(),
             empresa.getNombreComercial());
+        altaEmprendedorNotificador.notificar(
+            empresa.getNombreComercial(), empresa.getCorreoEmpresa(), alta);
 
         return saved;
-    }
-
-    /** Plan SaaS inicial: EMPRENDEDOR (fk + plan_saas). */
-    private void aplicarPlanInicial(Empresa empresa) {
-        planRepository.findByNombre("EMPRENDEDOR").ifPresentOrElse(plan -> {
-            empresa.setPlan(plan);
-            empresa.setPlanSaas("EMPRENDEDOR");
-        }, () -> empresa.setPlanSaas("EMPRENDEDOR"));
     }
 
     private String slugify(String text) {

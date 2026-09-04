@@ -16,6 +16,7 @@ import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
 import type { AuthResponse } from '@/types/auth'
+import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
 
 const STEP_TITLES = ['Requisito previo', 'Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
@@ -182,6 +183,9 @@ export default function RegistroEmpresaPage() {
             <p style={{ color: 'var(--hc-muted)', fontSize: '0.9rem' }}>
               Cuenta nueva acá. Si ya comprás en HotClick, iniciá sesión y registrá el negocio sin crear otra cuenta.
             </p>
+            <div className="mt-4 text-left">
+              <EmprendeCupoBanner compact />
+            </div>
           </div>
 
           <div className="w-full max-w-[460px]">
