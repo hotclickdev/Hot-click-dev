@@ -1,5 +1,4 @@
 import api from './api'
-import type { ResponseDTO } from '@/types/api'
 
 export type AuditoriaAdminEvento = {
   id: number
@@ -51,6 +50,6 @@ function paramsDe(filtros: AuditoriaAdminFiltros): Record<string, string | numbe
 /** Listado de auditoría admin (solo lectura). */
 export const auditoriaAdminService = {
   listar: (filtros: AuditoriaAdminFiltros = {}) =>
-    api.get<ResponseDTO>('/admin/auditorias', { params: paramsDe(filtros) }),
-  tipos: () => api.get<ResponseDTO>('/admin/auditorias/tipos'),
+    api.get<AuditoriaAdminPagina>('/admin/auditorias', { params: paramsDe(filtros) }),
+  tipos: () => api.get<string[]>('/admin/auditorias/tipos'),
 }
