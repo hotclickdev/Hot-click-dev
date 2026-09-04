@@ -65,7 +65,9 @@ public class ModeracionResumenService {
         data.put("testimonios", testimonios);
         data.put("payouts", payouts);
         data.put("reportesProducto", reportes);
-        data.put("total", empresas + ofertas + recolecciones + sinpe + testimonios + payouts + reportes);
+        long cuentasCobro = solicitudAprobacionRepository.countByEstadoSolicitudAndTipoEntidad("PENDIENTE", "METODO_COBRO");
+        data.put("cuentasCobro", cuentasCobro);
+        data.put("total", empresas + ofertas + recolecciones + sinpe + testimonios + payouts + reportes + cuentasCobro);
         return data;
     }
 }

@@ -92,6 +92,7 @@ public class ImpersonacionService {
         audit.setAccion(accion);
         audit.setEntidad("EMPRESA");
         audit.setEntidadId(empresaId);
+        audit.setEmpresaId(empresaId);
         audit.setDetalle(detalle);
         audit.setFecha(LocalDateTime.now(Constants.ZONA_CR));
         auditoriaAdminRepository.save(audit);

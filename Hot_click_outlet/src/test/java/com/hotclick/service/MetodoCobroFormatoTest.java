@@ -16,7 +16,7 @@ class MetodoCobroFormatoTest {
 
     @Test
     void mascara_sinpe_e_iban() {
-        assertThat(MetodoCobroFormato.mascara("SINPE", "88880000")).isEqualTo("8888-0000");
+        assertThat(MetodoCobroFormato.mascara("SINPE", "88880000")).isEqualTo("••••-0000");
         assertThat(MetodoCobroFormato.mascara("IBAN", "CR21000012344521")).contains("****");
         assertThat(MetodoCobroFormato.mascara("IBAN", "CR21000012344521")).isEqualTo("CR21 **** 4521");
     }
@@ -99,8 +99,17 @@ class MetodoCobroFormatoTest {
 
     @Test
     void mascara_destino_corto_sin_enmascarar() {
-        assertThat(MetodoCobroFormato.mascara(MetodoCobro.TIPO_SINPE, "8888")).isEqualTo("8888");
+        assertThat(MetodoCobroFormato.mascara(MetodoCobro.TIPO_SINPE, "888")).isEqualTo("888");
         assertThat(MetodoCobroFormato.mascara(MetodoCobro.TIPO_IBAN, "CR21")).isEqualTo("CR21");
+    }
+
+    @Test
+    void alta_rechaza_tarjeta() {
+        assertThatThrownBy(() -> MetodoCobroFormato.assertTipoAlta(MetodoCobro.TIPO_TARJETA))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("SINPE o IBAN");
+        MetodoCobroFormato.assertTipoAlta(MetodoCobro.TIPO_SINPE);
+        MetodoCobroFormato.assertTipoAlta(MetodoCobro.TIPO_IBAN);
     }
 
     @Test

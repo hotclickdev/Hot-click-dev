@@ -27,7 +27,7 @@ export default function OpcionesPage() {
   return (
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12">
       <EntradaPagina>
-        <h1 className="font-display text-[22px] font-bold md:text-[28px]">Opciones</h1>
+        <h1 className="font-display text-[22px] font-bold text-hc-text md:text-[28px]">Opciones</h1>
         <p className="mt-0.5 text-xs text-hc-muted md:text-sm">Configuración de tu cuenta</p>
         <div className="mt-6 flex items-center gap-3 rounded-[14px] bg-hc-surface-2 p-3.5 md:max-w-[760px]">
           <div className="flex size-11 items-center justify-center rounded-full bg-hc-primary text-base font-bold text-white">

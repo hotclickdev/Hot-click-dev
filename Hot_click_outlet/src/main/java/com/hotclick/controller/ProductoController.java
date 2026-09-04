@@ -120,8 +120,9 @@ public class ProductoController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crearProducto(
             @RequestBody @Valid ProductoRequestDTO dto,
-            @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey) {
-        return writeHandler.crearProducto(dto, idempotencyKey);
+            @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
+            @RequestParam(required = false) Long empresaId) {
+        return writeHandler.crearProducto(dto, idempotencyKey, empresaId);
     }
 
     @PutMapping("/{id}")

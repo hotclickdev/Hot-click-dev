@@ -7,7 +7,7 @@ export const ESTADO_PENDIENTE = 'PENDIENTE_APROBACION'
 export const ESTADO_ACTIVO = 'ACTIVO'
 export const ESTADO_SUSPENDIDO = 'SUSPENDIDO'
 
-export type TabAprobacion = 'empresas' | 'productos' | 'ofertas'
+export type TabAprobacion = 'empresas' | 'productos' | 'ofertas' | 'cobro'
 export type AccionAprobacion = 'aprobar' | 'rechazar'
 
 export type EmpresaSolicitud = EmpresaLista & {
@@ -35,6 +35,16 @@ export type OfertaPendiente = Pick<Producto, 'imagenUrl' | 'precioVenta' | 'empr
   usuarioPide?: string
 }
 
+export type CuentaCobroPendiente = {
+  id: Id
+  empresaNombre?: string
+  usuarioPide?: string
+  tipo?: string
+  mascaraActual?: string
+  mascaraNueva?: string
+  fechaSolicitud?: string
+}
+
 export type ConfirmAprobacion = {
   id: Id
   action: AccionAprobacion
@@ -52,6 +62,7 @@ export const SUBTITULO_TAB: Record<TabAprobacion, string> = {
   empresas: 'Negocios nuevos esperando tu aprobación para activarse en la plataforma',
   productos: 'No hay revisión producto por producto. Pausado se gestiona en Empresas; el catálogo se abre al aprobar el negocio.',
   ofertas: 'Promociones esperando tu aprobación para aplicarse',
+  cobro: 'Cambios de cuenta de cobro (SINPE/IBAN) esperando tu aprobación',
 }
 
 export function listaDesdeRespuesta<T>(data: unknown): T[] {
@@ -78,16 +89,17 @@ export function kpisAprobacion(stats: StatsAprobacion): { labelKey: string; valu
   ]
 }
 
-export function tabsAprobacion({ pendientes, productos, ofertas }: {
+export function tabsAprobacion({ pendientes, productos, ofertas, cobro }: {
   pendientes?: number
   productos: number
   ofertas: number
+  cobro: number
 }): { id: TabAprobacion; count: number }[] {
   const tabs: { id: TabAprobacion; count: number }[] = [
     { id: 'empresas', count: pendientes ?? 0 },
     { id: 'ofertas', count: ofertas },
+    { id: 'cobro', count: cobro },
   ]
-  // Tab Productos solo si hay filas legacy; no es el gate del marketplace.
   if (productos > 0) {
     tabs.splice(1, 0, { id: 'productos', count: productos })
   }
@@ -109,6 +121,7 @@ export function subtituloModeracion(
   productos: number,
   empresas: number,
   ofertas: number,
+  cobro = 0,
 ): string {
   if (tab === 'productos') {
     return productos > 0
@@ -116,5 +129,6 @@ export function subtituloModeracion(
       : 'Sin cola de productos: el gate es el negocio'
   }
   if (tab === 'ofertas') return `${ofertas} promociones esperando revisión`
+  if (tab === 'cobro') return `${cobro} cuentas de cobro esperando revisión`
   return `${empresas} tiendas esperando revisión`
 }

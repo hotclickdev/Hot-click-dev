@@ -131,6 +131,7 @@ export function tonoEstadoTiendaLista(estado?: string): 'ok' | 'warn' | 'danger'
 }
 
 export const PAGE_SIZE = 10
+export const TAB_PRODUCTOS_SIZE = 100
 export const COLUMNAS_TABLA = ['Empresa', 'Slug', 'Plan', 'Estado', 'Visible', 'Registro', 'Acciones']
 
 export function listaEmpresasDesdeRespuesta(data: unknown): EmpresaLista[] {
@@ -169,7 +170,7 @@ export function esEmpresaInternaPlataforma(
 }
 
 /** Tiendas que el admin opera (excluye la cuenta interna de plataforma). */
-export function empresasOperables(empresas: EmpresaLista[]): EmpresaLista[] {
+export function empresasOperables<T extends Pick<EmpresaLista, 'id' | 'slug'>>(empresas: T[]): T[] {
   return empresas.filter((e) => !esEmpresaInternaPlataforma(e))
 }
 
@@ -217,4 +218,29 @@ export function indicesPagina(page: number, totalPages: number, maxVisible = 7):
     if (totalPages <= maxVisible) return i
     return Math.max(0, Math.min(page - 3, totalPages - maxVisible)) + i
   })
+}
+
+export function rutaEspacioEmpresa(id: Id): string {
+  return `/admin/empresas/${id}`
+}
+
+export function rutaCargaMasivaEmpresa(id: Id): string {
+  return `/admin/productos/carga-masiva?empresaId=${id}`
+}
+
+export function rutaImportarEmpresa(id: Id): string {
+  return `/admin/productos/importar?empresaId=${id}`
+}
+
+export function empresaIdDesdeParam(raw: string | null | undefined): string {
+  if (!raw || !/^\d+$/.test(raw)) return ''
+  return raw
+}
+
+export function filtrarProductosTab(productos: EmpresaProductoTab[], q: string): EmpresaProductoTab[] {
+  const n = q.trim().toLowerCase()
+  if (!n) return productos
+  return productos.filter((p) => (
+    p.nombre?.toLowerCase().includes(n) || p.categoria?.toLowerCase().includes(n)
+  ))
 }

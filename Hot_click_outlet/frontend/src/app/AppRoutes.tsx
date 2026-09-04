@@ -4,6 +4,8 @@ import PlanGate from '@/components/ui/PlanGate'
 import {
   ProtectedRoute,
   ITOnlyGuard,
+  PermisoGuard,
+  SuperAdminGuard,
   AdminHomeRoute,
   AdminPedidosRoute,
   AdminReportesRoute,
@@ -14,6 +16,7 @@ import {
   AdminBlogRoute,
   AdminCopilotRoute,
   RedirectSiSistema,
+  RedirectTiendaAEmpresa,
 } from '@/app/routeGuards'
 import AdminRoleSwitch from '@/app/AdminRoleSwitch'
 import PrototipoRedirect from '@/app/PrototipoRedirect'
@@ -70,12 +73,14 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const AdminSolicitudesServicio = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
 const AdminSolicitudesGarantia = lazy(() => import('@/pages/admin/AdminSolicitudesGarantia'))
 const AdminEmpresas = lazy(() => import('@/pages/admin/AdminEmpresas'))
+const AdminEmpresaWorkspace = lazy(() => import('@/pages/admin/AdminEmpresaWorkspace'))
 const AdminEquipo = lazy(() => import('@/pages/admin/AdminEquipo'))
 const AdminAprobaciones = lazy(() => import('@/pages/admin/AdminAprobaciones'))
 const AdminMiEmpresa = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
 const AdminSecurityCenter = lazy(() => import('@/pages/admin/AdminSecurityCenter'))
 const AdminSuperAdmin = lazy(() => import('@/pages/admin/AdminSuperAdmin'))
 const AdminObservabilidad = lazy(() => import('@/pages/admin/AdminObservabilidad'))
+const AdminAuditorias = lazy(() => import('@/pages/admin/AdminAuditorias'))
 const AdminCotizaciones = lazy(() => import('@/pages/admin/AdminCotizaciones'))
 const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
 const CotizacionPublicaPage = lazy(() => import('@/pages/CotizacionPublicaPage'))
@@ -83,7 +88,10 @@ const EncargoPublicPage = lazy(() => import('@/pages/EncargoPublicPage'))
 const AdminEncargos = lazy(() => import('@/pages/admin/AdminEncargos'))
 const AdminRecolecciones = lazy(() => import('@/pages/admin/AdminRecolecciones'))
 const AdminPayouts = lazy(() => import('@/pages/admin/AdminPayouts'))
+const AdminBillingPlataforma = lazy(() => import('@/pages/admin/saas-billing/AdminBillingPlataforma'))
+const AdminBillingEmpresa = lazy(() => import('@/pages/admin/saas-billing/AdminBillingEmpresa'))
 const AdminReportesProducto = lazy(() => import('@/pages/admin/AdminReportesProducto'))
+const AdminSoporteTickets = lazy(() => import('@/pages/admin/AdminSoporteTickets'))
 const AdminAiControl = lazy(() => import('@/pages/admin/AdminAiControl'))
 const AdminFacturas = lazy(() => import('@/pages/admin/AdminFacturas'))
 const AdminConfigFiscal = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
@@ -187,7 +195,7 @@ export default function AppRoutes() {
         <Route index element={<AdminHomeRoute />} />
         <Route path="dashboard" element={<Navigate to="/admin" replace />} />
         <Route path="tiendas" element={<Navigate to="/admin/empresas" replace />} />
-        <Route path="tiendas/:id" element={<Navigate to="/admin/empresas" replace />} />
+        <Route path="tiendas/:id" element={<RedirectTiendaAEmpresa />} />
         <Route path="tiendas/:id/preview" element={<Navigate to="/admin/empresas" replace />} />
         <Route path="tiendas/:id/suspender" element={<Navigate to="/admin/empresas" replace />} />
         <Route path="moderacion" element={<Navigate to="/admin/aprobaciones" replace />} />
@@ -207,7 +215,7 @@ export default function AppRoutes() {
         <Route path="herramientas/marcas" element={<Navigate to="/admin/marcas" replace />} />
         <Route path="herramientas/garantias" element={<Navigate to="/admin/garantias" replace />} />
         <Route path="herramientas/clientes" element={<Navigate to="/admin/clientes" replace />} />
-        <Route path="herramientas/auditorias" element={<Navigate to="/admin" replace />} />
+        <Route path="herramientas/auditorias" element={<Navigate to="/admin/auditorias" replace />} />
         <Route path="herramientas/servicios" element={<Navigate to="/admin/servicios" replace />} />
         <Route path="herramientas/aprobaciones" element={<Navigate to="/admin/aprobaciones" replace />} />
         <Route path="proximamente" element={<Navigate to="/admin" replace />} />
@@ -237,29 +245,42 @@ export default function AppRoutes() {
         <Route path="opciones" element={<Navigate to="/admin/configuracion" replace />} />
         <Route path="opciones/*" element={<Navigate to="/admin/configuracion" replace />} />
         <Route element={<ITOnlyGuard />}>
-          <Route path="usuarios" element={<AdminUsers />} />
-          <Route path="usuarios/:id" element={<Navigate to="/admin/usuarios" replace />} />
-          <Route path="usuarios/:id/suspender" element={<Navigate to="/admin/usuarios" replace />} />
-          <Route path="cotizaciones" element={<AdminCotizaciones />} />
-          <Route path="cotizaciones/nueva" element={<AdminNuevaCotizacion />} />
-          <Route path="cotizaciones/:id" element={<AdminNuevaCotizacion />} />
-          <Route path="pagos" element={<AdminPagos />} />
-          <Route path="servicios" element={<AdminSolicitudesServicio />} />
-          <Route path="recolecciones" element={<AdminRecolecciones />} />
-          <Route path="payouts" element={<AdminPayouts />} />
-          <Route path="reportes-producto" element={<AdminReportesProducto />} />
-          <Route path="empresas" element={<AdminEmpresas />} />
-          <Route path="aprobaciones" element={<AdminAprobaciones />} />
-          <Route path="security" element={<AdminSecurityCenter />} />
-          <Route path="superadmin" element={<AdminSuperAdmin />} />
-          <Route path="observabilidad" element={<AdminObservabilidad />} />
-          <Route path="ai-control" element={<AdminAiControl />} />
-          <Route path="facturas" element={<AdminFacturas />} />
-          <Route path="config-fiscal" element={<AdminConfigFiscal />} />
-          <Route path="homepage" element={<AdminHomepage />} />
-          <Route path="cupones" element={<AdminCupones />} />
-          <Route path="publicaciones" element={<AdminPublicaciones />} />
-          <Route path="multipais" element={<AdminMultipais />} />
+          <Route element={<PermisoGuard permiso="global.companies" />}>
+            <Route path="empresas" element={<AdminEmpresas />} />
+            <Route path="empresas/:id" element={<AdminEmpresaWorkspace />} />
+            <Route path="servicios" element={<AdminSolicitudesServicio />} />
+            <Route path="recolecciones" element={<AdminRecolecciones />} />
+          </Route>
+          <Route element={<PermisoGuard permiso="global.metrics" />}>
+            <Route path="pagos" element={<AdminPagos />} />
+            <Route path="payouts" element={<AdminPayouts />} />
+            <Route path="facturas" element={<AdminFacturas />} />
+            <Route path="config-fiscal" element={<AdminConfigFiscal />} />
+            <Route path="saas-billing" element={<AdminBillingPlataforma />} />
+            <Route path="saas-billing/:id" element={<AdminBillingEmpresa />} />
+          </Route>
+          <Route element={<PermisoGuard permiso="global.approvals" />}>
+            <Route path="aprobaciones" element={<AdminAprobaciones />} />
+            <Route path="reportes-producto" element={<AdminReportesProducto />} />
+          </Route>
+          <Route element={<SuperAdminGuard />}>
+            <Route path="usuarios" element={<AdminUsers />} />
+            <Route path="usuarios/:id" element={<Navigate to="/admin/usuarios" replace />} />
+            <Route path="usuarios/:id/suspender" element={<Navigate to="/admin/usuarios" replace />} />
+            <Route path="cotizaciones" element={<AdminCotizaciones />} />
+            <Route path="cotizaciones/nueva" element={<AdminNuevaCotizacion />} />
+            <Route path="cotizaciones/:id" element={<AdminNuevaCotizacion />} />
+            <Route path="security" element={<AdminSecurityCenter />} />
+            <Route path="superadmin" element={<AdminSuperAdmin />} />
+            <Route path="observabilidad" element={<AdminObservabilidad />} />
+            <Route path="auditorias" element={<AdminAuditorias />} />
+            <Route path="soporte" element={<AdminSoporteTickets />} />
+            <Route path="ai-control" element={<AdminAiControl />} />
+            <Route path="homepage" element={<AdminHomepage />} />
+            <Route path="cupones" element={<AdminCupones />} />
+            <Route path="publicaciones" element={<AdminPublicaciones />} />
+            <Route path="multipais" element={<AdminMultipais />} />
+          </Route>
         </Route>
         <Route path="planes" element={<Navigate to="/admin/billing/planes" replace />} />
         <Route path="billing/planes" element={<AdminPlanes />} />

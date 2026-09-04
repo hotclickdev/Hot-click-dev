@@ -5,6 +5,7 @@ import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.security.JwtUtil;
+import com.hotclick.security.PlatformStaff;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,15 +29,14 @@ public class AuthSupport {
     @Autowired private PermisoRepository   permisoRepository;
 
     public AuthResponse buildAuthResponse(Usuario usuario) {
-        String rol = usuario.getRoles().isEmpty()
-            ? "USUARIO_FINAL"
-            : usuario.getRoles().get(0).getNombreRol();
-        // ADMIN es staff de plataforma: JWT y response sin tenant.
-        boolean esAdmin = "ADMIN".equals(rol);
-        Long empresaId = esAdmin ? null : usuario.getEmpresaId();
-        String empresaSlug = (!esAdmin && usuario.getEmpresa() != null)
+        String rol = PlatformStaff.rolPrincipal(
+            usuario.getRoles().stream().map(r -> r.getNombreRol()).toList());
+        // ADMIN y staff de plataforma: JWT y response sin tenant (V119 + V126).
+        boolean sinTenant = PlatformStaff.esSinTenant(rol);
+        Long empresaId = sinTenant ? null : usuario.getEmpresaId();
+        String empresaSlug = (!sinTenant && usuario.getEmpresa() != null)
             ? usuario.getEmpresa().getSlug() : null;
-        String empresaNombre = (!esAdmin && usuario.getEmpresa() != null)
+        String empresaNombre = (!sinTenant && usuario.getEmpresa() != null)
             ? usuario.getEmpresa().getNombreEmpresa() : null;
         List<String> permisos = permisosDe(usuario.getId());
         String accessToken  = jwtUtil.generateTokenFull(

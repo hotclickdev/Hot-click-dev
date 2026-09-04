@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import com.hotclick.dto.CupoEmprendedorEstado;
 import com.hotclick.service.ResendEmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +80,18 @@ public class NotificacionNegocioEmailSender {
         }
     }
 
+    public void enviarAltaEmprendedorAdmin(String correoAdmin, String nombreEmpresa, String correo,
+                                          boolean cupoGratis, CupoEmprendedorEstado estado) {
+        try {
+            resendEmailService.send(correoAdmin,
+                "Nueva alta de emprendimiento — " + emailLayoutHelper.esc(nombreEmpresa),
+                negocioEmailBuilder.buildAltaEmprendedorAdmin(nombreEmpresa, correo, cupoGratis, estado));
+            log.info("Email alta emprendedor enviado a admin {}", correoAdmin);
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de alta emprendedor a {}: {}", correoAdmin, e.getMessage());
+        }
+    }
+
     public void enviarModeracionAprobada(String correo, String nombre, String tipoLabel, String nombreItem) {
         try {
             resendEmailService.send(correo,
@@ -122,6 +135,15 @@ public class NotificacionNegocioEmailSender {
                 negocioEmailBuilder.buildProductoModerado(nombre, productoNombre, pausado, notas));
         } catch (Exception e) {
             log.error("No se pudo enviar email de producto moderado a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    public void enviarCambioCobroPendiente(String correo, String nombre, String tipoCuenta, String mascaraNueva) {
+        try {
+            resendEmailService.send(correo, "Cambio de cuenta de cobro en revisión — HotClick",
+                negocioEmailBuilder.buildCambioCobroPendiente(nombre, tipoCuenta, mascaraNueva));
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de cambio de cobro a {}: {}", correo, e.getMessage());
         }
     }
 }

@@ -10,7 +10,7 @@ function fondoZonaFoto(arrastrando: boolean, bordeDiscontinuo: boolean): string 
   if (arrastrando) {
     return bordeDiscontinuo ? 'border-hc-accent bg-hc-accent/10' : 'bg-hc-accent/10'
   }
-  return bordeDiscontinuo ? 'border-hc-border bg-[var(--hc-n-50)]' : 'bg-hc-surface-2'
+  return bordeDiscontinuo ? 'border-hc-border bg-hc-surface-2' : 'bg-hc-surface-2'
 }
 
 /**

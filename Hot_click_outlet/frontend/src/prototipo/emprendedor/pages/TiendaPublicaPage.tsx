@@ -35,7 +35,7 @@ export default function TiendaPublicaPage() {
 
   return (
     <main>
-      <div className="flex items-center justify-center gap-1.5 bg-hc-text py-2">
+      <div className="flex items-center justify-center gap-1.5 bg-[var(--hc-n-900)] py-2">
         <span className="h-3.5 w-[18px] overflow-hidden">
           <img src={iconOjo} alt="" width={18} height={14} className="size-full" />
         </span>
@@ -45,7 +45,7 @@ export default function TiendaPublicaPage() {
         <div className="h-24 bg-gradient-to-r from-hc-primary to-[var(--hc-red-700)]" />
         <CabeceraTienda tienda={tienda} inicial={inicial} seguir={seguir} onSeguir={() => setSeguir((v) => !v)} />
         <div className="flex flex-col gap-[18px] px-5 pb-10 pt-2">
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--hc-n-50)] px-3.5 py-3">
+          <div className="flex items-center gap-2 rounded-xl bg-hc-surface-2 px-3.5 py-3">
             <span className="size-3.5 overflow-hidden">
               <img src={iconBuscar} alt="" width={14} height={14} className="size-full" />
             </span>

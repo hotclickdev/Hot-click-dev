@@ -31,7 +31,10 @@ public final class WhatsAppHelpers {
     }
 
     /** Costa Rica: 8 dígitos → prefijo 506. Números ya con 506 se dejan igual. */
-    static String normalizarTelefono(String tel) {
+    public static String normalizarTelefono(String tel) {
+        if (tel == null || tel.isBlank()) {
+            return "";
+        }
         String limpio = tel.replaceAll("[^0-9]", "");
         if (limpio.startsWith("506")) return limpio;
         if (limpio.length() == 8) return "506" + limpio;

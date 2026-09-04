@@ -33,6 +33,10 @@ public class AuditoriaAdmin {
     @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha;
 
+    /** Negocio afectado por la acción (nullable en filas históricas). */
+    @Column(name = "fk_id_empresa")
+    private Long empresaId;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -56,4 +60,7 @@ public class AuditoriaAdmin {
 
     public LocalDateTime getFecha() { return fecha; }
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+
+    public Long getEmpresaId() { return empresaId; }
+    public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
 }

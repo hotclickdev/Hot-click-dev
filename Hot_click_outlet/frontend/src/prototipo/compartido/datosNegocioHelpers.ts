@@ -17,6 +17,8 @@ export type FormNegocio = {
   zona: string
 }
 
+export type ExtrasFormNegocio = Pick<FormNegocio, 'categoria' | 'instagram' | 'zona'>
+
 export const FORM_NEGOCIO_INICIAL: FormNegocio = {
   nombre: '',
   descripcion: '',
@@ -34,20 +36,17 @@ export function armarDescripcion(visible: string, rawAnterior: string): string {
   return `${limpia}\n[FOTOS]${JSON.stringify(fotos)}[/FOTOS]`
 }
 
-/** Prefiere API; si vacío, usa localStorage legacy como seed temporal. */
-export function extrasDesdeApiOLocal(
-  empresa: EmpresaPerfil | null,
-): Pick<FormNegocio, 'categoria' | 'instagram' | 'zona'> {
-  const apiCategoria = empresa?.categoriaNegocio?.trim() ?? ''
-  const apiInstagram = empresa?.instagram?.trim() ?? ''
-  const apiZona = empresa?.zonaEnvio?.trim() ?? ''
-  if (apiCategoria || apiInstagram || apiZona) {
-    return {
-      categoria: apiCategoria || FORM_NEGOCIO_INICIAL.categoria,
-      instagram: apiInstagram || FORM_NEGOCIO_INICIAL.instagram,
-      zona: apiZona || FORM_NEGOCIO_INICIAL.zona,
-    }
+/** Fuente de verdad: GET /empresa/perfil. No lee localStorage. */
+export function extrasDesdeApi(empresa: EmpresaPerfil): ExtrasFormNegocio {
+  return {
+    categoria: empresa.categoriaNegocio?.trim() || FORM_NEGOCIO_INICIAL.categoria,
+    instagram: empresa.instagram?.trim() || FORM_NEGOCIO_INICIAL.instagram,
+    zona: empresa.zonaEnvio?.trim() || FORM_NEGOCIO_INICIAL.zona,
   }
+}
+
+/** Cache local solo si falló la red (GET/PUT). */
+export function extrasOffline(): ExtrasFormNegocio {
   const local = leerExtrasLocal()
   return {
     categoria: local.categoria || FORM_NEGOCIO_INICIAL.categoria,
@@ -56,8 +55,16 @@ export function extrasDesdeApiOLocal(
   }
 }
 
+export function extrasDesdeForm(form: FormNegocio): ExtrasFormNegocio {
+  return { categoria: form.categoria, instagram: form.instagram, zona: form.zona }
+}
+
+export function formConExtrasOffline(): FormNegocio {
+  return { ...FORM_NEGOCIO_INICIAL, ...extrasOffline() }
+}
+
 export function formDesdeEmpresa(empresa: EmpresaPerfil): FormNegocio {
-  const extras = extrasDesdeApiOLocal(empresa)
+  const extras = extrasDesdeApi(empresa)
   return {
     nombre: empresa.nombreComercial ?? FORM_NEGOCIO_INICIAL.nombre,
     descripcion: descripcionVisible(empresa.descripcion) || FORM_NEGOCIO_INICIAL.descripcion,
@@ -65,5 +72,17 @@ export function formDesdeEmpresa(empresa: EmpresaPerfil): FormNegocio {
     whatsapp: empresa.numeroWhatsapp || FORM_NEGOCIO_INICIAL.whatsapp,
     instagram: extras.instagram,
     zona: extras.zona,
+  }
+}
+
+/** Body de PUT /api/empresa/perfil (mismos campos que T-PF-021). */
+export function bodyPerfilDesdeForm(form: FormNegocio, descRaw: string) {
+  return {
+    nombreComercial: form.nombre.trim(),
+    descripcion: armarDescripcion(form.descripcion, descRaw),
+    numeroWhatsapp: form.whatsapp.trim(),
+    categoriaNegocio: form.categoria.trim(),
+    instagram: form.instagram.trim(),
+    zonaEnvio: form.zona.trim(),
   }
 }

@@ -8,11 +8,12 @@ import EmprendedorSidebar from './EmprendedorSidebar'
 type Props = { conNav?: boolean }
 
 /**
- * Shell Emprendedor: móvil max-w-md + bottom nav; desktop sidebar Figma (#F8F9FB).
+ * Shell Emprendedor: móvil max-w-md + bottom nav; desktop sidebar.
+ * `.hc-seller-theme` sigue html.dark (tokens semánticos).
  */
 export default function EmprendedorShell({ conNav = false }: Props) {
   return (
-    <div className="min-h-dvh bg-[#F8F9FB] text-hc-text">
+    <div className="hc-seller-theme min-h-dvh bg-hc-bg text-hc-text">
       <div className="md:flex md:min-h-dvh">
         <EmprendedorSidebar />
         <div className={`min-w-0 flex-1 ${conNav ? 'pb-16 md:pb-0' : ''}`}>

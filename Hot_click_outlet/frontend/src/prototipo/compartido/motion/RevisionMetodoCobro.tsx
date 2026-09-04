@@ -16,13 +16,13 @@ import {
 type Props = Readonly<{
   tipo: TipoMetodoCobro
   dato: string
+  onEditar?: () => void
 }>
 
 /**
- * Paso de confirmación del wizard de cobro: entrada spring + stagger de líneas
- * (misma familia que PantallaExitoWizard / CampoAnimado).
+ * Paso "Revisá los datos": máscara ••••-0000 y volver a editar.
  */
-export default function RevisionMetodoCobro({ tipo, dato }: Props) {
+export default function RevisionMetodoCobro({ tipo, dato, onEditar }: Props) {
   const reduced = useReducedMotion() ?? false
   const delay = (segundos: number) => (reduced ? 0 : segundos)
 
@@ -52,13 +52,21 @@ export default function RevisionMetodoCobro({ tipo, dato }: Props) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: delay(0.08), duration: DURACION_ENTRADA_S, ease: EASE_PREMIUM }}
       >
+        Revisá los datos
+      </motion.p>
+      <motion.p
+        className="mt-1 text-sm text-hc-text"
+        initial={reduced ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: delay(0.12), duration: DURACION_ENTRADA_S, ease: EASE_PREMIUM }}
+      >
         {nombrePorTipo(tipo)}
       </motion.p>
       <motion.p
         className="mt-1 font-mono text-[13px] text-hc-text"
         initial={reduced ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: delay(0.14), duration: DURACION_ENTRADA_S, ease: EASE_PREMIUM }}
+        transition={{ delay: delay(0.16), duration: DURACION_ENTRADA_S, ease: EASE_PREMIUM }}
       >
         {mascaraDesdeDato(tipo, dato)}
       </motion.p>
@@ -70,6 +78,15 @@ export default function RevisionMetodoCobro({ tipo, dato }: Props) {
       >
         Se guarda en tu negocio para recibir ingresos de ventas.
       </motion.p>
+      {onEditar ? (
+        <button
+          type="button"
+          onClick={onEditar}
+          className="mt-3 text-[13px] font-medium text-[var(--hc-info)]"
+        >
+          Editar datos
+        </button>
+      ) : null}
     </motion.div>
   )
 }

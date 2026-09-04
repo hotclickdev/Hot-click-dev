@@ -69,7 +69,7 @@ class MetodoCobroServiceTest {
         var dto = service.crear(req);
 
         assertThat(dto.getTipo()).isEqualTo("sinpe");
-        assertThat(dto.getMascara()).isEqualTo("8888-0000");
+        assertThat(dto.getMascara()).isEqualTo("••••-0000");
         assertThat(dto.isPredeterminado()).isTrue();
         ArgumentCaptor<MetodoCobro> cap = ArgumentCaptor.forClass(MetodoCobro.class);
         verify(repo).save(cap.capture());
@@ -132,7 +132,7 @@ class MetodoCobroServiceTest {
         m.setEmpresa(empresa);
         m.setTipo(MetodoCobro.TIPO_SINPE);
         m.setDestino("88880000");
-        m.setMascara("8888-0000");
+        m.setMascara("••••-0000");
         m.setPredeterminado(true);
         when(repo.findActivosByEmpresaId(9L)).thenReturn(List.of(m));
 
@@ -205,6 +205,22 @@ class MetodoCobroServiceTest {
         assertThatThrownBy(() -> service.crear(req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Tipo no válido");
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("crear tipo tarjeta se rechaza")
+    void crear_tarjeta_rechaza() {
+        when(companyScope.getCurrentEmpresaIdOrOwn()).thenReturn(9L);
+        when(empresaRepo.findById(9L)).thenReturn(Optional.of(empresa));
+
+        MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
+        req.setTipo("tarjeta");
+        req.setDato("4111111111114412");
+
+        assertThatThrownBy(() -> service.crear(req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("SINPE o IBAN");
         verify(repo, never()).save(any());
     }
 

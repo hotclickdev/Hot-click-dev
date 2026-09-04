@@ -1,8 +1,8 @@
 import { lazy, type ReactNode } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation, useParams } from 'react-router-dom'
 import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
 import useTenantStore from '@/store/tenantStore'
-import { esUsuarioSistema } from '@/utils/sistemaUser'
+import { esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
 import { rutaNuevoProductoSeller } from '@/prototipo/compartido/rutaNuevoProductoSeller'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
@@ -39,7 +39,7 @@ export function ProtectedRoute({ children }: ConHijos) {
 }
 
 /**
- * Exige rol admin. Con `itOnly`, además exige `ADMIN` (no EMPRENDEDOR).
+ * Exige rol admin. Con `itOnly`, además exige operador de plataforma (ADMIN + staff).
  */
 export function AdminRoute({ children, itOnly = false }: ConHijos & { itOnly?: boolean }) {
   const { token, userRole } = useAuthStore()
@@ -49,14 +49,32 @@ export function AdminRoute({ children, itOnly = false }: ConHijos & { itOnly?: b
   }
   const isAdmin = ADMIN_ROLES.has(userRole ?? '')
   if (!isAdmin) return <Navigate to="/" replace />
-  if (itOnly && userRole !== 'ADMIN') return <Navigate to="/admin" replace />
+  if (itOnly && !esStaffPlataforma(userRole)) return <Navigate to="/admin" replace />
   return children
 }
 
 /**
- * Outlet solo para `ADMIN` de plataforma; el resto vuelve a `/admin`.
+ * Outlet para operadores de plataforma (ADMIN + staff con global.*).
+ * El resto vuelve a `/admin`.
  */
 export function ITOnlyGuard() {
+  const userRole = useAuthStore((s) => s.userRole)
+  if (!esStaffPlataforma(userRole)) return <Navigate to="/admin" replace />
+  return <Outlet />
+}
+
+/**
+ * Rutas IT gated por un permiso global.*. ADMIN pasa siempre.
+ */
+export function PermisoGuard({ permiso }: { permiso: string }) {
+  const userRole = useAuthStore((s) => s.userRole)
+  const permissions = useAuthStore((s) => s.permissions)
+  if (userRole === 'ADMIN' || permissions.includes(permiso)) return <Outlet />
+  return <Navigate to="/admin" replace />
+}
+
+/** Rutas IT exclusivas de superadmin (security, flags, usuarios…). */
+export function SuperAdminGuard() {
   const userRole = useAuthStore((s) => s.userRole)
   if (userRole !== 'ADMIN') return <Navigate to="/admin" replace />
   return <Outlet />
@@ -118,4 +136,9 @@ export function RedirectSiSistema({ to, children }: { to: string; children: Reac
   const userRole = useAuthStore((s) => s.userRole)
   if (esUsuarioSistema(userRole)) return <Navigate to={to} replace />
   return children
+}
+
+export function RedirectTiendaAEmpresa() {
+  const { id } = useParams()
+  return <Navigate to={id ? `/admin/empresas/${id}` : '/admin/empresas'} replace />
 }

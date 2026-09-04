@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import com.hotclick.dto.CupoEmprendedorEstado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -113,6 +114,27 @@ public class NegocioEmailBuilder {
             + layout.footer("¿Tenés alguna pregunta?");
     }
 
+    public String buildAltaEmprendedorAdmin(String nombreEmpresa, String correo,
+                                           boolean cupoGratis, CupoEmprendedorEstado estado) {
+        String estadoCupo = cupoGratis
+            ? "Entró con cupo gratis."
+            : "Sin cupo gratis. Requiere membresía PYME o Negocio Plus.";
+        if (cupoGratis && estado.usados() >= estado.limite()) {
+            estadoCupo = "Se ocupó el último cupo gratis. A partir de ahora la membresía tiene costo.";
+        }
+        return layout.abrirHtml()
+            + layout.header("Nueva alta de emprendimiento", estadoCupo)
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 12px;color:#14171C;font-size:16px'><strong>"
+            + layout.esc(nombreEmpresa) + "</strong></p>"
+            + "<p style='margin:0 0 8px;color:#4D5560;font-size:14px'>Correo: "
+            + layout.esc(correo) + "</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px'>Cupos: "
+            + estado.usados() + " / " + estado.limite()
+            + " (quedan " + estado.cuposGratisDisponibles() + ")</p>"
+            + layout.footer("Alerta automática de HotClick");
+    }
+
     public String buildModeracionAprobada(String nombre, String tipoLabel, String nombreItem) {
         return layout.abrirHtml()
             + layout.header(layout.esc(tipoLabel) + " aprobado", "Ya está activo en HotClick")
@@ -183,5 +205,17 @@ public class NegocioEmailBuilder {
             + notasHtml
             + layout.cta("https://hotclick.lat/admin", "Ir al panel")
             + layout.footer("¿Querés que lo revisemos juntos?");
+    }
+
+    public String buildCambioCobroPendiente(String nombre, String tipoCuenta, String mascaraNueva) {
+        return layout.abrirHtml()
+            + layout.header("Cambio de cuenta de cobro", "Quedó en revisión")
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
+            + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>"
+            + "Pediste cambiar tu " + layout.esc(tipoCuenta) + " a <strong style='color:#14171C'>"
+            + layout.esc(mascaraNueva) + "</strong>. La cuenta vigente no cambia hasta que HotClick lo apruebe.</p>"
+            + layout.cta("https://hotclick.lat/admin", "Ver métodos de cobro")
+            + layout.footer("Si no fuiste vos, escribinos ya.");
     }
 }

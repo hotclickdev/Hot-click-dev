@@ -37,7 +37,7 @@ async function entrarAprobaciones(page: Page) {
           success: true,
           data: {
             empresas: 0, ofertas: 0, recolecciones: 0, sinpe: 0,
-            testimonios: 0, payouts: 0, reportesProducto: 0, total: 0,
+            testimonios: 0, payouts: 0, reportesProducto: 0, cuentasCobro: 0, total: 0,
           },
         }),
       })

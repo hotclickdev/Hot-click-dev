@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin/moderacion")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('ADMIN') or hasAuthority('global.approvals')")
 public class ModeracionResumenController {
 
     private final ModeracionResumenService moderacionResumenService;

@@ -42,11 +42,7 @@ export default function POSProductSearch({
           onChange={handleChange}
           onKeyDown={(e) => handleKeyDown(e, onAdd)}
           placeholder="Buscar producto o escanear código"
-          className="w-full rounded-xl border px-3.5 py-3 text-[13px] text-hc-text outline-none placeholder:text-hc-muted"
-          style={{
-            borderColor: 'var(--hc-border, #E5E7EC)',
-            backgroundColor: 'rgba(248, 249, 251, 0.65)',
-          }}
+          className="w-full rounded-xl border border-hc-border bg-hc-surface-2 px-3.5 py-3 text-[13px] text-hc-text outline-none placeholder:text-hc-muted"
         />
         {(searchLoading || loadingProd) && (
           <div

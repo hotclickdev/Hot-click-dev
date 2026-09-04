@@ -19,7 +19,7 @@ export default function BotonPrimario({
   variante = 'lleno',
   disabled = false,
 }: Props) {
-  const fondo = variante === 'oscuro' ? 'bg-hc-text' : 'bg-hc-primary'
+  const fondo = variante === 'oscuro' ? 'bg-[var(--hc-n-900)]' : 'bg-hc-primary'
   return (
     <button
       type={type}

@@ -92,8 +92,9 @@ public class ProductoWriteHandler {
         }
     }
 
-    public ResponseEntity<ResponseDTO> crearProducto(@Valid ProductoRequestDTO dto, String idempotencyKey) {
-        return createHandler.crearProducto(dto, idempotencyKey);
+    public ResponseEntity<ResponseDTO> crearProducto(
+            @Valid ProductoRequestDTO dto, String idempotencyKey, Long empresaId) {
+        return createHandler.crearProducto(dto, idempotencyKey, empresaId);
     }
 
     public ResponseEntity<ResponseDTO> actualizarProducto(Long id, ProductoRequestDTO dto) {

@@ -36,10 +36,10 @@ export default function OpcionesPage() {
     <main className="flex flex-col gap-[22px] px-5 pt-8 md:max-w-[760px] md:px-16 md:py-12">
       <EntradaPagina className="flex flex-col gap-[22px]">
         <header>
-          <h1 className="font-display text-[22px] font-bold md:text-[28px]">Opciones</h1>
+          <h1 className="font-display text-[22px] font-bold text-hc-text md:text-[28px]">Opciones</h1>
           <p className="text-xs text-hc-muted">Configuración de tu cuenta</p>
         </header>
-        <div className="flex items-center gap-3 rounded-[14px] bg-[var(--hc-n-50)] p-3.5">
+        <div className="flex items-center gap-3 rounded-[14px] bg-hc-surface-2 p-3.5">
           <div className="flex size-11 items-center justify-center rounded-full bg-hc-primary text-base font-bold text-white">
             {userName.slice(0, 1).toUpperCase()}
           </div>

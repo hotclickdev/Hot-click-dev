@@ -431,7 +431,7 @@ function FormularioInvitar({
 function ResumenInvitacion({ form }: { form: FormularioEquipo }) {
   const rol = ROL_CONFIG[form.rolEnEmpresa]?.label ?? form.rolEnEmpresa
   return (
-    <div className="rounded-xl border border-hc-border bg-[#F8F9FB] p-4 text-sm">
+    <div className="rounded-xl border border-hc-border bg-hc-surface-2 p-4 text-sm">
       <p className="font-semibold text-hc-text">{form.nombre.trim()}</p>
       <p className="mt-1 text-hc-muted">{form.correo.trim()}</p>
       {form.telefono.trim() ? <p className="mt-1 text-hc-muted">{form.telefono.trim()}</p> : null}

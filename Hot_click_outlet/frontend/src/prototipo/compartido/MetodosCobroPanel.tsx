@@ -14,6 +14,7 @@ import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import { DURACION_ENTRADA_S, DURACION_REDUCED_S, EASE_ENTRADA, EASE_PREMIUM } from './motion/formularioMotionTokens'
 import {
   cargarMetodosCobro,
+  cuentaCobroEditable,
   marcarMetodoPredeterminado,
   type MetodoCobro,
   type TipoMetodoCobro,
@@ -114,7 +115,7 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
       {modoDemo ? (
         <p
           role="status"
-          className="rounded-xl bg-[var(--hc-n-50)] px-4 py-3 text-[13px] leading-5 text-hc-muted"
+          className="rounded-xl bg-hc-surface-2 px-4 py-3 text-[13px] leading-5 text-hc-muted"
         >
           Modo demo: la API de cobro no está disponible. Los datos son de ejemplo y no se guardan.
         </p>
@@ -129,7 +130,7 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
       ) : metodos.length === 0 ? (
         <EstadoVacioConversacional
           titulo="Todavía no tenés una cuenta para recibir ingresos"
-          mensaje="Agregá SINPE, IBAN o tarjeta para que te llegue el dinero de tus ventas."
+          mensaje="Agregá SINPE o IBAN para que te llegue el dinero de tus ventas."
           accion={<CtaAgregarMetodo to={agregarTo} />}
         />
       ) : (
@@ -142,6 +143,7 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
                     metodo={metodo}
                     predeterminado={metodo.id === predeterminadoId}
                     disabled={guardandoId !== null}
+                    editarTo={rutaEditarCuenta(agregarTo, metodo)}
                     onElegir={() => pedirConfirmacion(metodo.id)}
                   />
                 </ItemListaStagger>
@@ -155,6 +157,14 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
       )}
     </div>
   )
+}
+
+function rutaEditarCuenta(agregarTo: string, metodo: MetodoCobro): string | null {
+  if (metodo.enRevision || !cuentaCobroEditable(metodo.tipo) || metodo.id.startsWith('demo-')) {
+    return null
+  }
+  const sep = agregarTo.includes('?') ? '&' : '?'
+  return `${agregarTo}${sep}editar=${encodeURIComponent(metodo.id)}`
 }
 
 type CtaProps = Readonly<{
@@ -230,47 +240,66 @@ type FilaProps = {
   metodo: MetodoCobro
   predeterminado: boolean
   disabled: boolean
+  editarTo: string | null
   onElegir: () => void
 }
 
-function MetodoCobroFila({ metodo, predeterminado, disabled, onElegir }: FilaProps) {
+function MetodoCobroFila({ metodo, predeterminado, disabled, editarTo, onElegir }: FilaProps) {
   const Icono = ICONO[metodo.tipo]
   const marco = predeterminado
     ? 'border-[var(--hc-blue-300)] bg-[var(--hc-blue-50)]'
     : 'border-hc-border bg-hc-surface hover:border-[var(--hc-border-strong)]'
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={predeterminado}
-      disabled={disabled}
-      onClick={onElegir}
-      className={`flex min-h-11 w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-info)] disabled:opacity-60 ${marco}`}
-    >
-      <span className={`mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl ${POZO[metodo.tipo]}`}>
-        <Icono className="size-5" aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="text-[15px] font-semibold text-hc-text">{metodo.nombre}</span>
-          {predeterminado ? (
-            <span className="rounded-full bg-[var(--hc-success-bg)] px-2 py-0.5 text-[10px] font-medium text-hc-success">
-              Predeterminado
-            </span>
+    <div className={`rounded-xl border ${marco}`}>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={predeterminado}
+        disabled={disabled}
+        onClick={onElegir}
+        className="flex min-h-11 w-full items-start gap-3 p-3.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-info)] disabled:opacity-60"
+      >
+        <span className={`mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl ${POZO[metodo.tipo]}`}>
+          <Icono className="size-5" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-[15px] font-semibold text-hc-text">{metodo.nombre}</span>
+            {predeterminado ? (
+              <span className="rounded-full bg-[var(--hc-success-bg)] px-2 py-0.5 text-[10px] font-medium text-hc-success">
+                Predeterminado
+              </span>
+            ) : null}
+            {metodo.enRevision ? (
+              <span className="rounded-full bg-[var(--hc-warning-bg)] px-2 py-0.5 text-[10px] font-medium text-hc-warning">
+                En revisión
+              </span>
+            ) : null}
+          </span>
+          <span className="mt-0.5 block font-mono text-[13px] tracking-wide text-hc-text">{metodo.mascara}</span>
+          <span className="mt-1 block text-[12px] text-hc-muted">{metodo.nota}</span>
+          {!predeterminado ? (
+            <span className="mt-2 block text-[12px] font-medium text-[var(--hc-info)]">Usar para recibir ingresos</span>
           ) : null}
         </span>
-        <span className="mt-0.5 block font-mono text-[13px] tracking-wide text-hc-text">{metodo.mascara}</span>
-        <span className="mt-1 block text-[12px] text-hc-muted">{metodo.nota}</span>
-        {!predeterminado ? (
-          <span className="mt-2 block text-[12px] font-medium text-[var(--hc-info)]">Usar para recibir ingresos</span>
-        ) : null}
-      </span>
-      <span
-        className={`mt-1 size-4 shrink-0 rounded-full border-2 ${
-          predeterminado ? 'border-[var(--hc-info)] bg-[var(--hc-info)]' : 'border-hc-border bg-hc-surface'
-        }`}
-        aria-hidden
-      />
-    </button>
+        <span
+          className={`mt-1 size-4 shrink-0 rounded-full border-2 ${
+            predeterminado ? 'border-[var(--hc-info)] bg-[var(--hc-info)]' : 'border-hc-border bg-hc-surface'
+          }`}
+          aria-hidden
+        />
+      </button>
+      {editarTo ? (
+        <div className="border-t border-hc-border px-3.5 py-2">
+          <Link to={editarTo} className="text-[12px] font-medium text-[var(--hc-info)]">
+            Editar cuenta
+          </Link>
+        </div>
+      ) : metodo.tipo === 'tarjeta' ? (
+        <p className="border-t border-hc-border px-3.5 py-2 text-[12px] text-hc-muted">
+          Las cuentas tarjeta no se editan. Agregá SINPE o IBAN.
+        </p>
+      ) : null}
+    </div>
   )
 }

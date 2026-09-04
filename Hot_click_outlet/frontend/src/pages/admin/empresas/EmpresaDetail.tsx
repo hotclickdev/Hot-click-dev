@@ -1,24 +1,34 @@
-import { CloseIcon, EyeIcon, EyeOffIcon, ImpersonarIcon } from './empresasIcons'
+import { Link } from 'react-router-dom'
+import { EyeIcon, EyeOffIcon, ImpersonarIcon } from './empresasIcons'
 import EstadoEmpresaChips from './EstadoEmpresaChips'
-import { ESTADO_COLOR, PLAN_COLOR, nombreVisibleEmpresa, tabsDetalle, type EmpresaDetalle, type EmpresaLista, type EmpresaMiembroTab, type EmpresaPedidoTab, type EmpresaProductoTab } from './empresasHelpers'
+import {
+  ESTADO_COLOR,
+  PLAN_COLOR,
+  nombreVisibleEmpresa,
+  tabsDetalle,
+  type EmpresaDetalle,
+  type EmpresaLista,
+  type EmpresaMiembroTab,
+  type EmpresaPedidoTab,
+  type EmpresaProductoTab,
+} from './empresasHelpers'
 import TabEquipo from './TabEquipo'
 import TabPedidos from './TabPedidos'
-import TabProductos from './TabProductos'
+import TabProductos, { TabProductosToolbar } from './TabProductos'
 import TabResumen from './TabResumen'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { Id } from '@/types/api'
 
 function DetailHeader({
   selected,
   saving,
   impersonarLoading,
-  onClose,
   onCambiarEstado,
   onImpersonar,
 }: {
   selected: EmpresaLista
   saving: boolean
   impersonarLoading: boolean
-  onClose: () => void
   onCambiarEstado: (id: Id, estadoEmpresa: string) => void
   onImpersonar: (id: Id) => void
 }) {
@@ -26,9 +36,9 @@ function DetailHeader({
   return (
     <div className="flex items-start justify-between gap-3 mb-4">
       <div className="min-w-0">
-        <h2 className="font-bold text-lg truncate" style={{ color: 'var(--hc-text)' }}>
+        <h1 className="font-display font-bold text-lg truncate" style={{ color: 'var(--hc-text)' }}>
           {nombreVisibleEmpresa(selected)}
-        </h2>
+        </h1>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <span className="font-mono text-xs" style={{ color: 'var(--hc-muted)' }}>{selected.slug}</span>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PLAN_COLOR[selected.plan as string] ?? ''}`}>{selected.plan || 'Sin plan'}</span>
@@ -51,9 +61,6 @@ function DetailHeader({
           {impersonarLoading ? 'Ingresando…' : 'Ver como esta empresa'}
         </button>
       </div>
-      <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] shrink-0" style={{ color: 'var(--hc-muted)' }}>
-        <CloseIcon />
-      </button>
     </div>
   )
 }
@@ -64,12 +71,12 @@ function DetailTabs({ tab, detail, onTab }: {
   onTab: (id: string) => void
 }) {
   return (
-    <div className="flex gap-1" style={{ borderBottom: '1px solid var(--hc-border)' }}>
-      {tabsDetalle(detail).map((t) => (
+    <div className="flex gap-1 overflow-x-auto" style={{ borderBottom: '1px solid var(--hc-border)' }}>
+      {tabsDetalle(detail).filter((t) => t.id !== 'uso').map((t) => (
         <button type="button"
           key={t.id}
           onClick={() => onTab(t.id)}
-          className="px-4 py-2.5 text-sm font-medium transition-colors relative"
+          className="px-4 py-2.5 text-sm font-medium transition-colors relative shrink-0"
           style={{
             color: tab === t.id ? 'var(--hc-accent)' : 'var(--hc-muted)',
             borderBottom: tab === t.id ? '2px solid var(--hc-accent)' : '2px solid transparent',
@@ -93,7 +100,8 @@ export type EmpresaDetailProps = {
   tabPedidos: EmpresaPedidoTab[] | null
   tabEquipo: EmpresaMiembroTab[] | null
   tabLoading: boolean
-  onClose: () => void
+  busquedaProducto: string
+  onBusquedaProducto: (valor: string) => void
   onTab: (t: string) => void
   onCambiarPlan: (id: Id, plan: string) => void
   onCambiarEstado: (id: Id, estadoEmpresa: string) => void
@@ -101,6 +109,8 @@ export type EmpresaDetailProps = {
   onImpersonar: (id: Id) => void
   savingProductoId: Id | null
   onToggleVisibilidadProducto: (producto: EmpresaProductoTab) => void
+  onEditarProducto: (producto: EmpresaProductoTab) => void
+  onNuevoProducto: () => void
 }
 
 export default function EmpresaDetail({
@@ -113,7 +123,8 @@ export default function EmpresaDetail({
   tabPedidos,
   tabEquipo,
   tabLoading,
-  onClose,
+  busquedaProducto,
+  onBusquedaProducto,
   onTab,
   onCambiarPlan,
   onCambiarEstado,
@@ -121,45 +132,54 @@ export default function EmpresaDetail({
   onImpersonar,
   savingProductoId,
   onToggleVisibilidadProducto,
+  onEditarProducto,
+  onNuevoProducto,
 }: EmpresaDetailProps) {
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <button type="button" className="absolute inset-0 bg-black/60" aria-label="Cerrar" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', borderLeft: '1px solid var(--hc-border)' }}>
-        <div className="px-5 pt-5 pb-0 shrink-0">
-          <DetailHeader
-            selected={selected}
-            saving={saving}
-            impersonarLoading={impersonarLoading}
-            onClose={onClose}
-            onCambiarEstado={onCambiarEstado}
-            onImpersonar={onImpersonar}
-          />
-          <DetailTabs tab={tab} detail={detail} onTab={onTab} />
-        </div>
+    <div className="mx-auto flex max-w-5xl flex-col gap-4 pb-8">
+      <Link to="/admin/empresas" className="text-sm font-semibold w-fit" style={{ color: 'var(--hc-accent)' }}>
+        <TextoFlecha dir="atras">Volvé a tiendas</TextoFlecha>
+      </Link>
+      <DetailHeader
+        selected={selected}
+        saving={saving}
+        impersonarLoading={impersonarLoading}
+        onCambiarEstado={onCambiarEstado}
+        onImpersonar={onImpersonar}
+      />
+      <DetailTabs tab={tab} detail={detail} onTab={onTab} />
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {tab === 'resumen' && (
-            <TabResumen
-              selected={selected}
-              detail={detail}
-              saving={saving}
-              onToggleVisibilidad={onToggleVisibilidad}
-              onCambiarPlan={onCambiarPlan}
-              onCambiarEstado={onCambiarEstado}
+      <div className="space-y-4">
+        {tab === 'resumen' && (
+          <TabResumen
+            selected={selected}
+            detail={detail}
+            saving={saving}
+            onToggleVisibilidad={onToggleVisibilidad}
+            onCambiarPlan={onCambiarPlan}
+            onCambiarEstado={onCambiarEstado}
+          />
+        )}
+        {tab === 'productos' && (
+          <>
+            <TabProductosToolbar
+              empresaId={selected.id}
+              busqueda={busquedaProducto}
+              onBusqueda={onBusquedaProducto}
+              onNuevo={onNuevoProducto}
             />
-          )}
-          {tab === 'productos' && (
             <TabProductos
               loading={tabLoading}
               productos={tabProductos}
               savingId={savingProductoId}
+              busqueda={busquedaProducto}
+              onEditar={onEditarProducto}
               onToggleVisibilidad={onToggleVisibilidadProducto}
             />
-          )}
-          {tab === 'pedidos' && <TabPedidos loading={tabLoading} pedidos={tabPedidos} />}
-          {tab === 'equipo' && <TabEquipo loading={tabLoading} equipo={tabEquipo} />}
-        </div>
+          </>
+        )}
+        {tab === 'pedidos' && <TabPedidos loading={tabLoading} pedidos={tabPedidos} />}
+        {tab === 'equipo' && <TabEquipo loading={tabLoading} equipo={tabEquipo} />}
       </div>
     </div>
   )

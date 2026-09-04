@@ -79,13 +79,13 @@ public class WalletController {
     // ── Admin: ver y resolver todos los payouts pendientes ──────────────────
 
     @GetMapping("/admin/payouts/pendientes")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('global.metrics')")
     public ResponseEntity<List<PayoutRequest>> payoutsPendientes() {
         return ResponseEntity.ok(walletService.payoutsPendientes());
     }
 
     @PatchMapping("/admin/payouts/{id}/aprobar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('global.metrics')")
     public ResponseEntity<PayoutRequest> aprobar(@PathVariable Long id,
                                                  @RequestBody(required = false) Map<String, String> body) {
         String notas = body != null ? body.get("notas") : null;
@@ -93,9 +93,9 @@ public class WalletController {
     }
 
     @PatchMapping("/admin/payouts/{id}/rechazar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('global.metrics')")
     public ResponseEntity<PayoutRequest> rechazar(@PathVariable Long id,
-                                                  @RequestBody(required = false) Map<String, String> body) {
+                                                    @RequestBody(required = false) Map<String, String> body) {
         String notas = body != null ? body.get("notas") : null;
         return ResponseEntity.ok(walletService.rechazarPayout(id, notas));
     }

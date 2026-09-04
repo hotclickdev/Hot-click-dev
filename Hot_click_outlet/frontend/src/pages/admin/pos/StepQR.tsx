@@ -2,10 +2,12 @@ import { useState, useEffect, useRef, type MutableRefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
 import { formatMontoPos, enlacePagoPosQr, type PosQrData } from './posHelpers'
-import { MetodoPagoIcon } from './posIcons'
+import { QrCodeIcon, SinpeIcon } from './posIcons'
 import PosQrImagen from './PosQrImagen'
 import PosReporteModal from './PosReporteModal'
 import { posUi } from './posApariencia'
+
+const QR_LADO_PX = 232
 
 function esSesionCerrada(estado: string | undefined): boolean {
   return estado === 'EXPIRADO' || estado === 'CANCELADO'
@@ -31,6 +33,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
   const [sesionCerrada, setSesionCerrada] = useState(false)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const tokenFaltante = !token
+  const esSinpe = metodoPago === 'SINPE'
 
   useEffect(() => {
     if (metodoPago !== 'TARJETA' || tokenFaltante) return
@@ -53,118 +56,197 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
 
   useEffect(() => { if (paid) onConfirmSinpe(null, true) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const filasSinpe: { id: string; label: string; value: string; highlight: boolean }[] = [
-    {
-      id: 'sinpe',
-      label: t('pos.qr.sinpeA'),
-      value: sinpeNumero || t('pos.qr.configWhatsapp'),
-      highlight: false,
-    },
-    {
-      id: 'ref',
-      label: t('pos.qr.referencia'),
-      value: (token ?? '').substring(0, 8).toUpperCase(),
-      highlight: false,
-    },
-    {
-      id: 'monto',
-      label: t('pos.qr.montoExacto'),
-      value: `₡${formatMontoPos(total)}`,
-      highlight: true,
-    },
-  ]
-
-  const estiloSecundario = {
-    backgroundColor: posUi.panel,
-    color: posUi.texto,
-    border: `1px solid ${posUi.borde}`,
-  }
-
   return (
-    <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="w-full max-w-sm space-y-5">
-        <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5"
-            style={{ color: metodoPago === 'SINPE' ? '#6490EA' : '#7aa3ff' }}>
-            <MetodoPagoIcon iconId={metodoPago === 'SINPE' ? 'sinpe' : 'tarjeta'} className="w-4 h-4" />
-            {metodoPago === 'SINPE' ? t('pos.qr.pagoSinpe') : t('pos.qr.pagoTarjeta')}
-          </p>
-          <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--hc-text)', letterSpacing: '-1px' }}>
-            ₡{formatMontoPos(total)}
-          </p>
-        </div>
-
-        <div className="flex justify-center">
-          <div className="rounded-2xl p-4 shadow-2xl" style={{ backgroundColor: '#ffffff' }}>
-            {token ? (
-              <PosQrImagen value={qrUrl} size={200} alt={t('pos.qr.imagenAlt')} />
-            ) : (
-              <p className="w-[200px] text-center text-sm" style={{ color: '#b91c1c' }}>
-                {t('pos.qr.tokenFaltante')}
-              </p>
-            )}
-          </div>
-        </div>
-        {token ? (
-          <p className="break-all text-center text-[11px] font-mono" style={{ color: 'var(--hc-muted)' }}>
-            {qrUrl}
-          </p>
+    <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
+        <EncabezadoQr esSinpe={esSinpe} />
+        <MarcoQr
+          token={token}
+          qrUrl={qrUrl}
+          alt={t('pos.qr.imagenAlt')}
+          errorMsg={t('pos.qr.tokenFaltante')}
+        />
+        <MontoACobrar total={total} />
+        {esSinpe ? (
+          <DetalleSinpe
+            sinpeNumero={sinpeNumero || t('pos.qr.configWhatsapp')}
+            referencia={(token ?? '').substring(0, 8).toUpperCase()}
+            monto={`₡${formatMontoPos(total)}`}
+          />
         ) : null}
-
-        {metodoPago === 'SINPE' && (
-          <div className="rounded-2xl p-4 space-y-2"
-            style={{ backgroundColor: 'rgba(100,144,234,0.08)', border: '1px solid rgba(100,144,234,0.2)' }}>
-            {filasSinpe.map((fila) => (
-              <div key={fila.id} className="flex justify-between text-sm">
-                <span style={{ color: 'var(--hc-muted)' }}>{fila.label}</span>
-                <span className="font-bold font-mono" style={{ color: fila.highlight ? '#34d399' : '#6490EA' }}>{fila.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {metodoPago === 'TARJETA' && !paid && !sesionCerrada && (
-          <p className="text-center text-xs animate-pulse" style={{ color: '#7aa3ff' }}>
-            {t('pos.qr.esperandoConfirmacion')}
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" onClick={onCancelar}
-            className="py-3 rounded-2xl text-sm font-semibold"
-            style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
-            {t('pos.qr.cancelar')}
-          </button>
-          {metodoPago === 'SINPE' ? (
-            <button type="button" onClick={() => onConfirmSinpe(token, false)} disabled={loadingConfirm}
-              className="py-3 rounded-2xl text-sm font-black disabled:opacity-40"
-              style={{ background: 'var(--hc-accent)', color: '#fff' }}>
-              {loadingConfirm ? t('pos.qr.confirmando') : t('pos.qr.sinpeRecibido')}
-            </button>
-          ) : (
-            <div className="py-3 rounded-2xl text-xs text-center"
-              style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
-              {t('pos.qr.autoDetecta')}
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setReporteAbierto(true)}
-          className="w-full py-3 rounded-2xl text-sm font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
-          style={estiloSecundario}
-          aria-label={t('pos.reporte.botonAria')}
-        >
-          {t('pos.header.reportar')}
-        </button>
-
-        <PosReporteModal
-          open={reporteAbierto}
-          onClose={() => setReporteAbierto(false)}
-          pasoActual="qr"
+        <EstadoEspera visible={!esSinpe && !paid && !sesionCerrada} />
+        <AccionesQr
+          esSinpe={esSinpe}
+          loadingConfirm={loadingConfirm}
+          onCancelar={onCancelar}
+          onConfirmarSinpe={() => onConfirmSinpe(token, false)}
+          onReportar={() => setReporteAbierto(true)}
         />
       </div>
+      <PosReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        pasoActual="qr"
+      />
+    </div>
+  )
+}
+
+function EncabezadoQr({ esSinpe }: { esSinpe: boolean }) {
+  const { t } = useTranslation()
+  const Icono = esSinpe ? SinpeIcon : QrCodeIcon
+  return (
+    <div className="mb-6 space-y-2">
+      <p
+        className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em]"
+        style={{ color: 'var(--hc-blue-600)' }}
+      >
+        <Icono className="h-4 w-4" />
+        {esSinpe ? t('pos.qr.pagoSinpe') : t('pos.qr.pagoTarjeta')}
+      </p>
+      <p className="text-pretty text-sm" style={{ color: posUi.muted }}>
+        {esSinpe ? t('pos.qr.instruccionSinpe') : t('pos.qr.instruccionTarjeta')}
+      </p>
+    </div>
+  )
+}
+
+function MarcoQr({ token, qrUrl, alt, errorMsg }: {
+  token: string | null
+  qrUrl: string
+  alt: string
+  errorMsg: string
+}) {
+  return (
+    <div
+      className="rounded-2xl p-5"
+      style={{ backgroundColor: posUi.panel, border: `1px solid ${posUi.borde}` }}
+    >
+      {token ? (
+        <PosQrImagen value={qrUrl} size={QR_LADO_PX} alt={alt} />
+      ) : (
+        <p className="w-[232px] text-center text-sm" style={{ color: 'var(--hc-danger)' }}>
+          {errorMsg}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function MontoACobrar({ total }: { total: number }) {
+  const { t } = useTranslation()
+  return (
+    <div className="mt-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: posUi.muted }}>
+        {t('pos.cobro.totalACobrar')}
+      </p>
+      <p
+        className="mt-1 font-display text-[2.5rem] font-bold tabular-nums leading-none"
+        style={{ color: posUi.texto }}
+      >
+        ₡{formatMontoPos(total)}
+      </p>
+    </div>
+  )
+}
+
+function DetalleSinpe({ sinpeNumero, referencia, monto }: {
+  sinpeNumero: string
+  referencia: string
+  monto: string
+}) {
+  const { t } = useTranslation()
+  const filas = [
+    { id: 'sinpe', label: t('pos.qr.sinpeA'), value: sinpeNumero, resalte: false },
+    { id: 'ref', label: t('pos.qr.referencia'), value: referencia, resalte: false },
+    { id: 'monto', label: t('pos.qr.montoExacto'), value: monto, resalte: true },
+  ]
+  return (
+    <div
+      className="mt-5 w-full space-y-2 rounded-2xl p-4 text-left"
+      style={{ backgroundColor: 'var(--hc-info-bg)', border: '1px solid color-mix(in srgb, var(--hc-blue-600) 22%, transparent)' }}
+    >
+      {filas.map((fila) => (
+        <div key={fila.id} className="flex justify-between gap-3 text-sm">
+          <span style={{ color: posUi.muted }}>{fila.label}</span>
+          <span
+            className="font-mono font-bold"
+            style={{ color: fila.resalte ? 'var(--hc-success)' : 'var(--hc-blue-600)' }}
+          >
+            {fila.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function EstadoEspera({ visible }: { visible: boolean }) {
+  const { t } = useTranslation()
+  if (!visible) return null
+  return (
+    <p
+      className="mt-5 flex items-center justify-center gap-2 text-sm"
+      style={{ color: posUi.muted }}
+      role="status"
+    >
+      <span
+        className="size-2 shrink-0 animate-pulse rounded-full"
+        style={{ backgroundColor: 'var(--hc-warning)' }}
+        aria-hidden
+      />
+      {t('pos.qr.esperandoConfirmacion')}
+    </p>
+  )
+}
+
+function AccionesQr({ esSinpe, loadingConfirm, onCancelar, onConfirmarSinpe, onReportar }: {
+  esSinpe: boolean
+  loadingConfirm: boolean
+  onCancelar: () => void
+  onConfirmarSinpe: () => void
+  onReportar: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="mt-6 w-full space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={onCancelar}
+          className="min-h-11 rounded-2xl py-3 text-sm font-semibold"
+          style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}
+        >
+          {t('pos.qr.cancelar')}
+        </button>
+        {esSinpe ? (
+          <button
+            type="button"
+            onClick={onConfirmarSinpe}
+            disabled={loadingConfirm}
+            className="min-h-11 rounded-2xl py-3 text-sm font-bold disabled:opacity-40"
+            style={{ background: 'var(--hc-primary)', color: '#fff' }}
+          >
+            {loadingConfirm ? t('pos.qr.confirmando') : t('pos.qr.sinpeRecibido')}
+          </button>
+        ) : (
+          <p
+            className="flex min-h-11 items-center justify-center rounded-2xl px-2 text-center text-xs"
+            style={{ backgroundColor: posUi.panel, color: posUi.muted }}
+          >
+            {t('pos.qr.autoDetecta')}
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onReportar}
+        className="min-h-11 w-full rounded-2xl py-3 text-sm font-semibold transition-colors hover:bg-hc-surface-2"
+        style={{ backgroundColor: posUi.fondo, color: posUi.texto, border: `1px solid ${posUi.borde}` }}
+        aria-label={t('pos.reporte.botonAria')}
+      >
+        {t('pos.header.reportar')}
+      </button>
     </div>
   )
 }

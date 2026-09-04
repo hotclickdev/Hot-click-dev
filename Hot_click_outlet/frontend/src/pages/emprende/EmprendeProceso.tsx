@@ -20,7 +20,7 @@ export default function EmprendeProceso() {
             key={foto.local}
             src={foto.local}
             fallback={foto.fallback}
-            alt={t(foto.altKey)}
+            alt={t(foto.claveAlt)}
             className="w-full h-24 sm:h-32 object-cover rounded-2xl"
           />
         ))}
