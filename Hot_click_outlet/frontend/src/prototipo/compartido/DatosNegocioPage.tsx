@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { empresaService } from '@/services/empresaService'
 import { unwrapEmpresa } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
-import { limpiarExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
+import { guardarExtrasLocal, limpiarExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
 import FormularioPorPasos from './FormularioPorPasos'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
 import { Campo, Chip, EncabezadoPagina } from './ui'
@@ -13,8 +13,9 @@ import {
   CATEGORIAS_NEGOCIO,
   FORM_NEGOCIO_INICIAL,
   type FormNegocio,
-  armarDescripcion,
-  extrasDesdeApiOLocal,
+  bodyPerfilDesdeForm,
+  extrasDesdeForm,
+  formConExtrasOffline,
   formDesdeEmpresa,
 } from './datosNegocioHelpers'
 
@@ -66,19 +67,16 @@ export function DatosNegocioPage({
   async function guardar() {
     setGuardando(true)
     try {
-      await empresaService.updatePerfil({
-        nombreComercial: form.nombre.trim(),
-        descripcion: armarDescripcion(form.descripcion, descRaw),
-        numeroWhatsapp: form.whatsapp.trim(),
-        categoriaNegocio: form.categoria.trim(),
-        instagram: form.instagram.trim(),
-        zonaEnvio: form.zona.trim(),
-      })
+      await empresaService.updatePerfil(bodyPerfilDesdeForm(form, descRaw))
       limpiarExtrasLocal()
       toast({ message: 'Datos del negocio guardados', type: 'success' })
       navigate(destino)
     } catch {
-      toast({ message: 'No se pudieron guardar los datos', type: 'error' })
+      guardarExtrasLocal(extrasDesdeForm(form))
+      toast({
+        message: 'No se pudieron guardar los datos. Quedaron en este dispositivo para reintentar.',
+        type: 'error',
+      })
     } finally {
       setGuardando(false)
     }
@@ -189,13 +187,13 @@ async function cargarPerfil(
     const { data } = await empresaService.getPerfil()
     const empresa = unwrapEmpresa(data)
     if (!empresa?.id) {
-      setForm({ ...FORM_NEGOCIO_INICIAL, ...extrasDesdeApiOLocal(null) })
+      setForm(FORM_NEGOCIO_INICIAL)
       return
     }
     setDescRaw(empresa.descripcion ?? '')
     setForm(formDesdeEmpresa(empresa))
   } catch {
-    setForm({ ...FORM_NEGOCIO_INICIAL, ...extrasDesdeApiOLocal(null) })
+    setForm(formConExtrasOffline())
     toast({ message: 'No se pudo cargar el perfil del negocio', type: 'error' })
   } finally {
     setCargando(false)
