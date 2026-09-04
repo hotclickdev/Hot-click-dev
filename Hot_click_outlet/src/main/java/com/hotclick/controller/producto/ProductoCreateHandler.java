@@ -5,6 +5,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.producto.EmpresaDestinoAlta;
@@ -35,6 +36,7 @@ public class ProductoCreateHandler {
     @Autowired private ProductoApprovalService productoApprovalService;
     @Autowired private ProductoIdempotencyService productoIdempotencyService;
     @Autowired private EmpresaDestinoAlta empresaDestinoAlta;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
 
     public ResponseEntity<ResponseDTO> crearProducto(
             @Valid ProductoRequestDTO dto, String idempotencyKey, Long empresaId) {
@@ -65,6 +67,8 @@ public class ProductoCreateHandler {
             var producto = productoService.crearProducto(dto, currentUserName(), empresa);
             productoIdempotencyService.remember(idempotencyKey);
             var creationResult = productoApprovalService.aplicarReglasPublicacion(producto, empresa);
+            auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
+                producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
             return ResponseEntity.ok(ResponseDTO.success(creationResult.mensaje(), creationResult.producto()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(productoRequestSanitizer.mensajeAmigable(e)));

@@ -17,9 +17,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class EmpresaAdminService {
@@ -27,6 +29,13 @@ public class EmpresaAdminService {
     static final List<String> PLANES_VALIDOS = List.of("EMPRENDEDOR", "PYME", "NEGOCIO_PLUS");
     private static final List<String> ESTADOS_VALIDOS = List.of("ACTIVO", "SUSPENDIDO", "INACTIVO");
     private static final int MAX_TAB_PRODUCTOS = 200;
+    // Mismo set que EquipoController.ROLES_PERMITIDOS (equipo propio) — se
+    // duplica acá porque ese campo es privado y este es un camino distinto
+    // (ADMIN operando sobre una empresa ajena, sin impersonar).
+    private static final Set<String> ROLES_EQUIPO_VALIDOS = Set.of("EDITOR", "LECTOR", "ADMIN");
+    private static final String ALFABETO_PASSWORD_TEMPORAL =
+        "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    private static final SecureRandom RNG = new SecureRandom();
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
@@ -35,6 +44,8 @@ public class EmpresaAdminService {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private PlanRepository planRepository;
     @Autowired private EmpresaAprobacionService empresaAprobacionService;
+    @Autowired private EquipoService equipoService;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listar(int page, int size) {
@@ -120,6 +131,56 @@ public class EmpresaAdminService {
         return miembroEmpresaRepository.findByEmpresaIdAndEstado(id, 1).stream()
             .map(this::filaEquipo)
             .toList();
+    }
+
+    /**
+     * ADMIN invita a un miembro a nombre de una empresa ajena, sin impersonar.
+     * La contraseña se genera acá (nunca la ve/tipea el ADMIN) y viaja por
+     * correo al invitado vía el mismo flujo que ya usa EquipoService para
+     * altas nuevas — enviarInvitacionMiembro() ya adjunta la clave cuando
+     * el usuario es nuevo.
+     */
+    public void invitarMiembro(Long id, String nombre, String correo, String telefono, String rolEnEmpresa) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre es requerido");
+        }
+        if (correo == null || correo.isBlank()) {
+            throw new IllegalArgumentException("El correo es requerido");
+        }
+        if (rolEnEmpresa == null || !ROLES_EQUIPO_VALIDOS.contains(rolEnEmpresa)) {
+            throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
+        }
+        Empresa empresa = empresa(id);
+        String correoNorm = correo.trim().toLowerCase();
+        String telefonoNorm = (telefono != null && !telefono.isBlank()) ? telefono : "00000000";
+        equipoService.invitar(empresa, id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
+        auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_INVITAR", "MIEMBRO_EMPRESA", null, id,
+            "Invitación a " + correoNorm + " como " + rolEnEmpresa);
+    }
+
+    public Map<String, Object> cambiarRolMiembro(Long id, Long miembroId, String nuevoRol) {
+        if (nuevoRol == null || !ROLES_EQUIPO_VALIDOS.contains(nuevoRol)) {
+            throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
+        }
+        empresa(id);
+        Map<String, Object> resultado = equipoService.cambiarRol(miembroId, id, nuevoRol);
+        auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_CAMBIO_ROL", "MIEMBRO_EMPRESA", miembroId, id,
+            "Rol cambiado a " + nuevoRol);
+        return resultado;
+    }
+
+    public void eliminarMiembro(Long id, Long miembroId, Long actorUserId) {
+        empresa(id);
+        equipoService.eliminar(miembroId, id, actorUserId);
+        auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_ELIMINAR", "MIEMBRO_EMPRESA", miembroId, id, null);
+    }
+
+    private String generarPasswordTemporal() {
+        StringBuilder sb = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) {
+            sb.append(ALFABETO_PASSWORD_TEMPORAL.charAt(RNG.nextInt(ALFABETO_PASSWORD_TEMPORAL.length())));
+        }
+        return sb.toString();
     }
 
     private Empresa empresa(Long id) {

@@ -1,6 +1,8 @@
 package com.hotclick.controller.producto;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.model.Producto;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.service.producto.ProductoAccessGuard;
@@ -27,6 +29,7 @@ public class ProductoDeleteImagenHandler {
     @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private ProductoAccessGuard productoAccessGuard;
     @Autowired private ProductoModerationFacade productoModerationFacade;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
 
     public ResponseEntity<ResponseDTO> subirImagen(MultipartFile file) {
         if (file == null || file.isEmpty())
@@ -47,8 +50,10 @@ public class ProductoDeleteImagenHandler {
 
     public ResponseEntity<ResponseDTO> eliminarProducto(Long id) {
         try {
-            productoAccessGuard.assertCanAccessProducto(id);
+            Producto existente = productoAccessGuard.getAccessibleProducto(id);
             productoService.eliminarProducto(id);
+            auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_ELIMINADO", "PRODUCTO",
+                id, existente.getEmpresaId(), "Producto eliminado: " + existente.getNombreProducto());
             return ResponseEntity.ok(ResponseDTO.success("Producto eliminado", null));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

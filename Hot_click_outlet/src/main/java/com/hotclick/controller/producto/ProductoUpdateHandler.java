@@ -2,6 +2,8 @@ package com.hotclick.controller.producto;
 
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.model.Producto;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.producto.ProductoAccessGuard;
 import com.hotclick.service.producto.ProductoModerationFacade;
@@ -23,14 +25,17 @@ public class ProductoUpdateHandler {
     @Autowired private ProductoAccessGuard productoAccessGuard;
     @Autowired private ProductoModerationFacade productoModerationFacade;
     @Autowired private ProductoRequestSanitizer productoRequestSanitizer;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
 
     public ResponseEntity<ResponseDTO> actualizarProducto(Long id, ProductoRequestDTO dto) {
         try {
-            productoAccessGuard.assertCanAccessProducto(id);
+            Producto existente = productoAccessGuard.getAccessibleProducto(id);
             productoRequestSanitizer.restringirCamposSoloAdmin(dto, productoAccessGuard.hasRole("ADMIN"));
             if (!productoModerationFacade.isTextoPermitido(dto))
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
             var producto = productoService.actualizarProducto(id, dto, currentUserName());
+            auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_EDITADO", "PRODUCTO",
+                id, existente.getEmpresaId(), "Producto editado: " + existente.getNombreProducto());
             return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", producto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(productoRequestSanitizer.mensajeAmigable(e)));

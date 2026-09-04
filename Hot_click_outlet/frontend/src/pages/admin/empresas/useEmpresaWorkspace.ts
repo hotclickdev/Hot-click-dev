@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { adminService } from '@/services/orderService'
+import { adminService, orderService } from '@/services/orderService'
 import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
@@ -38,6 +38,9 @@ export function useEmpresaWorkspace() {
   const [tabEquipo, setTabEquipo] = useState<EmpresaMiembroTab[] | null>(null)
   const [tabLoading, setTabLoading] = useState(false)
   const [savingProductoId, setSavingProductoId] = useState<Id | null>(null)
+  const [savingPedidoId, setSavingPedidoId] = useState<Id | null>(null)
+  const [savingMiembroId, setSavingMiembroId] = useState<Id | null>(null)
+  const [invitandoMiembro, setInvitandoMiembro] = useState(false)
   const [busquedaProducto, setBusquedaProducto] = useState('')
 
   const recargarProductos = useCallback(async (empresaId: Id) => {
@@ -46,6 +49,11 @@ export function useEmpresaWorkspace() {
       size: TAB_PRODUCTOS_SIZE,
     })
     setTabProductos(listaTabDesdeRespuesta(data) as EmpresaProductoTab[])
+  }, [])
+
+  const recargarEquipo = useCallback(async (empresaId: Id) => {
+    const { data } = await adminService.getEmpresaTab(empresaId, 'equipo')
+    setTabEquipo(listaTabDesdeRespuesta(data) as EmpresaMiembroTab[])
   }, [])
 
   useEffect(() => {
@@ -167,6 +175,79 @@ export function useEmpresaWorkspace() {
     }
   }
 
+  async function cambiarEstadoPedido(pedidoId: Id, estado: string) {
+    setSavingPedidoId(pedidoId)
+    try {
+      await orderService.updateStatus(pedidoId, estado)
+      setTabPedidos((prev) => prev?.map((p) => (
+        p.id === pedidoId ? { ...p, estado } : p
+      )) ?? null)
+      toast({ message: `Estado del pedido actualizado a ${estado}`, type: 'success' })
+    } catch {
+      toast({ message: 'No se pudo actualizar el estado del pedido', type: 'error' })
+    } finally {
+      setSavingPedidoId(null)
+    }
+  }
+
+  async function asignarGuiaPedido(pedidoId: Id, numeroGuia: string) {
+    setSavingPedidoId(pedidoId)
+    try {
+      await orderService.asignarGuia(pedidoId, numeroGuia)
+      toast({ message: 'Guía asignada y cliente notificado', type: 'success' })
+    } catch {
+      toast({ message: 'No se pudo asignar la guía', type: 'error' })
+    } finally {
+      setSavingPedidoId(null)
+    }
+  }
+
+  async function invitarMiembro(datos: { nombre: string; correo: string; telefono: string; rolEnEmpresa: string }) {
+    if (!selected) return false
+    setInvitandoMiembro(true)
+    try {
+      await adminService.invitarMiembroEmpresa(selected.id, datos)
+      toast({ message: 'Invitación enviada — el nuevo miembro recibió su contraseña temporal por correo', type: 'success' })
+      await recargarEquipo(selected.id)
+      return true
+    } catch {
+      toast({ message: 'No se pudo enviar la invitación', type: 'error' })
+      return false
+    } finally {
+      setInvitandoMiembro(false)
+    }
+  }
+
+  async function cambiarRolMiembro(miembroId: Id, rolEnEmpresa: string) {
+    if (!selected) return
+    setSavingMiembroId(miembroId)
+    try {
+      await adminService.cambiarRolMiembroEmpresa(selected.id, miembroId, rolEnEmpresa)
+      setTabEquipo((prev) => prev?.map((m) => (
+        m.id === miembroId ? { ...m, rol: rolEnEmpresa } : m
+      )) ?? null)
+      toast({ message: `Rol actualizado a ${rolEnEmpresa}`, type: 'success' })
+    } catch {
+      toast({ message: 'No se pudo actualizar el rol', type: 'error' })
+    } finally {
+      setSavingMiembroId(null)
+    }
+  }
+
+  async function eliminarMiembro(miembroId: Id) {
+    if (!selected) return
+    setSavingMiembroId(miembroId)
+    try {
+      await adminService.eliminarMiembroEmpresa(selected.id, miembroId)
+      setTabEquipo((prev) => prev?.filter((m) => m.id !== miembroId) ?? null)
+      toast({ message: 'Miembro eliminado del equipo', type: 'success' })
+    } catch {
+      toast({ message: 'No se pudo eliminar al miembro', type: 'error' })
+    } finally {
+      setSavingMiembroId(null)
+    }
+  }
+
   return {
     selected,
     detail,
@@ -179,6 +260,9 @@ export function useEmpresaWorkspace() {
     tabEquipo,
     tabLoading,
     savingProductoId,
+    savingPedidoId,
+    savingMiembroId,
+    invitandoMiembro,
     busquedaProducto,
     setBusquedaProducto,
     recargarProductos: () => selected ? recargarProductos(selected.id) : Promise.resolve(),
@@ -192,5 +276,10 @@ export function useEmpresaWorkspace() {
     toggleVisibilidad,
     impersonar,
     toggleVisibilidadProducto,
+    cambiarEstadoPedido,
+    asignarGuiaPedido,
+    invitarMiembro,
+    cambiarRolMiembro,
+    eliminarMiembro,
   }
 }
