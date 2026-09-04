@@ -129,20 +129,18 @@ public class AuditoriaAdminConsultaService {
     }
 
     private static AuditoriaAdminDto toDto(AuditoriaAdmin a, Map<Long, String> nombres) {
-        AuditoriaAdminDto dto = new AuditoriaAdminDto();
-        dto.setId(a.getId());
-        dto.setAdminId(a.getAdminId());
-        dto.setAdminEmail(a.getAdminEmail());
-        dto.setAccion(a.getAccion());
-        dto.setEntidad(a.getEntidad());
-        dto.setEntidadId(a.getEntidadId());
-        dto.setDetalle(a.getDetalle());
-        dto.setFecha(a.getFecha());
-        dto.setEmpresaId(a.getEmpresaId());
-        if (a.getEmpresaId() != null) {
-            dto.setEmpresaNombre(nombres.get(a.getEmpresaId()));
-        }
-        return dto;
+        String nombreEmpresa = a.getEmpresaId() == null ? null : nombres.get(a.getEmpresaId());
+        return new AuditoriaAdminDto(
+                a.getId(),
+                a.getAdminId(),
+                a.getAdminEmail(),
+                a.getAccion(),
+                a.getEntidad(),
+                a.getEntidadId(),
+                a.getDetalle(),
+                a.getFecha(),
+                a.getEmpresaId(),
+                nombreEmpresa);
     }
 
     private static String blankToNull(String value) {
