@@ -27,14 +27,14 @@ public class ReporteProductoController {
     }
 
     @GetMapping("/admin/reportes-producto")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('global.approvals')")
     public ResponseEntity<ResponseDTO> listarPendientes() {
         return ResponseEntity.ok(ResponseDTO.success(
             "Reportes pendientes", reporteProductoService.listarPendientes()));
     }
 
     @PutMapping("/admin/reportes-producto/{id}/resolver")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('global.approvals')")
     public ResponseEntity<ResponseDTO> resolver(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {

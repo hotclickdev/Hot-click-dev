@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { esStaffPlataforma } from '@/utils/sistemaUser'
 
 export type SidebarLink = {
   to?: string
@@ -99,7 +100,7 @@ export function leerSeccionesColapsadas(userRole?: string | null): Set<string> {
     const raw = localStorage.getItem(CLAVE_SIDEBAR_COLAPSADO)
     if (raw == null) {
       return new Set<string>(
-        userRole === 'ADMIN'
+        userRole != null && esStaffPlataforma(userRole)
           ? ADMIN_IT_SECCIONES_COLAPSADAS_POR_DEFECTO
           : [],
       )

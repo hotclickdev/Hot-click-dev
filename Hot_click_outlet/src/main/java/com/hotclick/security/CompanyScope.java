@@ -5,6 +5,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -30,7 +31,7 @@ public class CompanyScope {
     /**
      * Retorna el empresa_id del usuario autenticado.
      * Lee primero del JWT (claim empresaId) para soportar multi-negocio.
-     * Retorna null si es ADMIN (operador de plataforma, sin empresa).
+     * Retorna null si es ADMIN o staff de plataforma (sin tenant).
      */
     public Long getCurrentEmpresaId() {
         Usuario user = getCurrentUser();
@@ -39,7 +40,7 @@ public class CompanyScope {
             // TenantFilter ya cargó el empresaId correcto en TenantContext.
             return TenantContext.get();
         }
-        if (isAdminIT(user)) return null;
+        if (isAdminIT(user) || isPlatformStaff(user)) return null;
         Long fromJwt = extractEmpresaIdFromJwt();
         return fromJwt != null ? fromJwt : user.getEmpresaId();
     }
@@ -59,7 +60,8 @@ public class CompanyScope {
 
     /**
      * Verifica que el usuario autenticado puede acceder al recurso de la empresa indicada.
-     * ADMIN pasa siempre. Cualquier otro rol lanza 403 si la empresa no coincide.
+     * Solo ADMIN pasa siempre (bypass). Staff SUPPORT/FINANCE/TRUST no tiene bypass:
+     * operan por endpoints con {@code global.*}, no como dueños del tenant.
      */
     public void assertCanAccess(Long resourceEmpresaId) {
         if (isAdminIT()) return;
@@ -103,6 +105,16 @@ public class CompanyScope {
             .anyMatch(r -> rolNombre.equals(r.getNombreRol()));
     }
 
+    /** True si el SecurityContext tiene la authority (ROLE_* o permiso granular). */
+    public boolean hasAuthority(String authority) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        for (GrantedAuthority a : auth.getAuthorities()) {
+            if (authority.equals(a.getAuthority())) return true;
+        }
+        return false;
+    }
+
     public Usuario getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) return null;
@@ -121,10 +133,10 @@ public class CompanyScope {
 
     /**
      * Empresa para crear recursos de tenant.
-     * ADMIN (plataforma) → siempre null: no crea en HOTCLICK ni en ningún negocio.
+     * ADMIN y staff de plataforma → siempre null: no crean en un negocio ajeno.
      */
     public Long getCurrentEmpresaIdOrOwn() {
-        if (isAdminIT()) return null;
+        if (isAdminIT() || isPlatformStaff()) return null;
         Long id = getCurrentEmpresaId();
         if (id != null) return id;
         Usuario user = getCurrentUser();
@@ -134,5 +146,15 @@ public class CompanyScope {
     private boolean isAdminIT(Usuario user) {
         return user.getRoles().stream()
             .anyMatch(r -> "ADMIN".equals(r.getNombreRol()));
+    }
+
+    public boolean isPlatformStaff() {
+        Usuario user = getCurrentUser();
+        return user != null && isPlatformStaff(user);
+    }
+
+    private boolean isPlatformStaff(Usuario user) {
+        return user.getRoles().stream()
+            .anyMatch(r -> PlatformStaff.esStaff(r.getNombreRol()));
     }
 }

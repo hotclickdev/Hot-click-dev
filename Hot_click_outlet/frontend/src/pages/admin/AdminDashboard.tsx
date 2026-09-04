@@ -37,6 +37,7 @@ import {
 } from './dashboard/dashboardHelpers'
 import type { DashboardStats, UsuarioDashboard, VentaDashboard } from './dashboard/dashboardHelpers'
 import SuperAdminHome from './dashboard/SuperAdminHome'
+import { esStaffPlataforma } from '@/utils/sistemaUser'
 import {
   metricasDecision,
   textoCambioDelta,
@@ -66,7 +67,7 @@ function statsDesdeRespuesta(data: unknown): DashboardStats {
 
 export default function AdminDashboard() {
   const userRole = useAuthStore((s) => s.userRole)
-  if (userRole === 'ADMIN') return <SuperAdminHome />
+  if (esStaffPlataforma(userRole)) return <SuperAdminHome />
   return <DashboardDecision />
 }
 

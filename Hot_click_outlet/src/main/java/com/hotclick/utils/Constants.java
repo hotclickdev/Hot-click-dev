@@ -37,6 +37,17 @@ public class Constants {
     public static final String ROL_ADMIN        = "ADMIN";
     public static final String ROL_EMPRENDEDOR  = "EMPRENDEDOR";
     public static final String ROL_USUARIO_FINAL = "USUARIO_FINAL";
+    /** Staff plataforma: tickets / ver tiendas (sin bypass CompanyScope). */
+    public static final String ROL_SUPPORT = "SUPPORT";
+    /** Staff plataforma: payouts, billing, pagos. */
+    public static final String ROL_FINANCE = "FINANCE";
+    /** Staff plataforma: moderación y suspensiones. */
+    public static final String ROL_TRUST = "TRUST";
+
+    // Permisos globales (V8) — base de la matriz staff
+    public static final String PERM_GLOBAL_COMPANIES = "global.companies";
+    public static final String PERM_GLOBAL_APPROVALS = "global.approvals";
+    public static final String PERM_GLOBAL_METRICS   = "global.metrics";
 
     // Estados de pedido
     public static final String PEDIDO_PENDIENTE = "PENDIENTE";
