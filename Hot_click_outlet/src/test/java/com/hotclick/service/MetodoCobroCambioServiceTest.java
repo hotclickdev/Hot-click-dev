@@ -151,7 +151,10 @@ class MetodoCobroCambioServiceTest {
         assertThat(metodo.getMascara()).isEqualTo("••••-1111");
         assertThat(metodo.isEnRevision()).isFalse();
         assertThat(sol.getEstadoSolicitud()).isEqualTo("APROBADO");
-        verify(companyScope).assertCanAccess(9L);
+        // aprobar() ya no llama assertCanAccess: SolicitudAdminGuard (ADMIN o TRUST vía
+        // global.approvals) ya autorizó antes de llegar acá — llamarlo de nuevo bloqueaba
+        // a TRUST, que no pertenece al tenant. Ver comentario en MetodoCobroCambioService.
+        verify(companyScope, never()).assertCanAccess(9L);
     }
 
     @Test
