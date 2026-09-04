@@ -1,1 +1,0 @@
-var e=new Set([`EMPRENDEDOR`,`PROPIETARIO`,`EDITOR`,`LECTOR`]),t=new Set([`CAJERO`,`GERENTE`,`SUPERVISOR`]),n=new Set([`ADMIN`,...e]);function r(t){return e.has(t??``)}export{r as i,t as n,e as r,n as t};

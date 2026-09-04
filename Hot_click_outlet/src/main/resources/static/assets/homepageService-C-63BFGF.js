@@ -1,1 +1,0 @@
-import{t as e}from"./api-BH-nI94x.js";function t(e){return e?e.split(`,`).map(e=>e.trim()).filter(Boolean):[]}var n={getPublico:()=>e.get(`/homepage/publico`),getAdmin:()=>e.get(`/homepage`),actualizar:t=>e.put(`/homepage`,t)};export{n,t};

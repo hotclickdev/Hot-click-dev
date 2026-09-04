@@ -42,6 +42,9 @@ public class GiftCardController {
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body) {
         try {
             Long empresaId = TenantContext.get();
+            if (empresaId == null) {
+                return ResponseEntity.status(403).build();
+            }
             tenantLimitChecker.verificarFeature(empresaId, "giftCards");
             Integer monto = ((Number) body.get("monto")).intValue();
             String vencimientoStr = (String) body.get("fechaVencimiento");
