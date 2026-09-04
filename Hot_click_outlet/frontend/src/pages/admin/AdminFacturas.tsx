@@ -20,12 +20,13 @@ type EmpresaFiscal = {
   cedulaJuridica?: string | null
 }
 
-const ESTADO_COLORS: Record<string, string> = {
-  PENDIENTE:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-  ENVIADO:    'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  ACEPTADO:   'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  RECHAZADO:  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-  ERROR:      'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+/** Par de tokens semánticos (--hc-*) por estado — reemplaza los colores Tailwind sueltos. */
+const ESTADO_TOKENS: Record<string, { color: string; bg: string }> = {
+  PENDIENTE: { color: 'var(--hc-warning)', bg: 'var(--hc-warning-bg)' },
+  ENVIADO:   { color: 'var(--hc-accent)',  bg: '#EFF4FE' },
+  ACEPTADO:  { color: 'var(--hc-success)', bg: 'var(--hc-success-bg)' },
+  RECHAZADO: { color: 'var(--hc-danger)',  bg: 'var(--hc-danger-bg)' },
+  ERROR:     { color: 'var(--hc-danger)',  bg: 'var(--hc-danger-bg)' },
 }
 
 const TIPO_LABELS: Record<string, string> = { '01': 'Factura', '04': 'Tiquete', '02': 'N.Débito', '03': 'N.Crédito' }
@@ -130,91 +131,101 @@ export default function AdminFacturas() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl p-4"
+        style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', boxShadow: 'var(--hc-shadow-1)' }}>
         <div>
-          <label htmlFor="facturas-estado" className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Estado</label>
+          <label htmlFor="facturas-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Estado</label>
           <select id="facturas-estado" value={estado} onChange={(e) => setEstado(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800">
+            className="rounded-lg px-3 py-1.5 text-sm"
+            style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', color: 'var(--hc-text)', fontFamily: 'var(--hc-font-text)' }}>
             <option value="">Todos</option>
-            {Object.keys(ESTADO_COLORS).map((e) => <option key={e} value={e}>{e}</option>)}
+            {Object.keys(ESTADO_TOKENS).map((e) => <option key={e} value={e}>{e}</option>)}
           </select>
         </div>
         <div>
-          <label htmlFor="facturas-desde" className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Desde</label>
+          <label htmlFor="facturas-desde" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Desde</label>
           <input id="facturas-desde" type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800" />
+            className="rounded-lg px-3 py-1.5 text-sm"
+            style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', color: 'var(--hc-text)', fontFamily: 'var(--hc-font-text)' }} />
         </div>
         <div>
-          <label htmlFor="facturas-hasta" className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Hasta</label>
+          <label htmlFor="facturas-hasta" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Hasta</label>
           <input id="facturas-hasta" type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800" />
+            className="rounded-lg px-3 py-1.5 text-sm"
+            style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', color: 'var(--hc-text)', fontFamily: 'var(--hc-font-text)' }} />
         </div>
         <button type="button" onClick={aplicarFiltros}
-          className="rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"
-          style={{ backgroundColor: 'var(--hc-accent, #2563eb)' }}
+          className="rounded-lg px-4 py-1.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+          style={{ backgroundColor: 'var(--hc-primary)', fontFamily: 'var(--hc-font-text)' }}
         >Filtrar</button>
         {hayFiltrosActivos && (
           <button type="button" onClick={limpiarFiltros}
-            className="rounded-lg border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="rounded-lg px-3 py-1.5 text-sm font-semibold hover:opacity-80"
+            style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', fontFamily: 'var(--hc-font-text)' }}
           >Limpiar</button>
         )}
       </div>
 
       {/* Tabla */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+      <div className="overflow-hidden rounded-2xl" style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', boxShadow: 'var(--hc-shadow-1)' }}>
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-sm text-gray-400">Cargando…</div>
+          <div className="flex items-center justify-center py-16 text-sm" style={{ color: 'var(--hc-text-disabled)' }}>Cargando…</div>
         ) : comprobantes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-gray-500 dark:text-gray-400">No hay comprobantes emitidos</p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p style={{ color: 'var(--hc-muted)' }}>No hay comprobantes emitidos</p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--hc-text-disabled)' }}>
               Usa el botón "Emitir" en un pedido entregado para comenzar.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[580px] text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              <thead style={{ borderBottom: '1px solid var(--hc-border)', background: 'var(--hc-surface-2)' }}>
                 <tr>
-                  <th className="px-4 py-3 text-left">Fecha</th>
-                  <th className="px-4 py-3 text-left">Tipo</th>
-                  <th className="px-4 py-3 text-left">Clave</th>
-                  <th className="px-4 py-3 text-left">Estado</th>
-                  <th className="px-4 py-3 text-left">Ambiente</th>
-                  <th className="px-4 py-3 text-right">Total</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Fecha</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Tipo</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Clave</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Estado</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Ambiente</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {comprobantes.map(cf => (
-                  <tr key={cf.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {fmtDate(cf.fechaEmision)}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
-                      {TIPO_LABELS[cf.tipo ?? ''] ?? cf.tipo}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
-                      {cf.claveNumerica?.substring(0, 20)}…
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ESTADO_COLORS[cf.estado ?? ''] ?? ''}`}>
-                        {cf.estado}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${
-                        cf.ambiente === 'PROD'
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                          : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                      }`}>
-                        {cf.ambiente}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-800 dark:text-gray-200">
-                      {fmt(cf.totalFactura)}
-                    </td>
-                  </tr>
-                ))}
+              <tbody>
+                {comprobantes.map(cf => {
+                  const estadoTok = ESTADO_TOKENS[cf.estado ?? '']
+                  const prod = cf.ambiente === 'PROD'
+                  return (
+                    <tr key={cf.id} style={{ borderTop: '1px solid var(--hc-border)' }}>
+                      <td className="px-4 py-3" style={{ color: 'var(--hc-muted)' }}>
+                        {fmtDate(cf.fechaEmision)}
+                      </td>
+                      <td className="px-4 py-3 font-medium" style={{ color: 'var(--hc-text)' }}>
+                        {TIPO_LABELS[cf.tipo ?? ''] ?? cf.tipo}
+                      </td>
+                      <td className="px-4 py-3 text-xs" style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-muted)' }}>
+                        {cf.claveNumerica?.substring(0, 20)}…
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                          style={{ color: estadoTok?.color ?? 'var(--hc-muted)', background: estadoTok?.bg ?? 'var(--hc-surface-2)' }}>
+                          {cf.estado}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded px-1.5 py-0.5 text-xs font-semibold"
+                          style={{
+                            color: prod ? 'var(--hc-success)' : 'var(--hc-muted)',
+                            background: prod ? 'var(--hc-success-bg)' : 'var(--hc-surface-2)',
+                          }}>
+                          {cf.ambiente}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold" style={{ color: 'var(--hc-text)', fontVariantNumeric: 'tabular-nums' }}>
+                        {fmt(cf.totalFactura)}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -222,20 +233,22 @@ export default function AdminFacturas() {
 
         {/* Paginación */}
         {total > 20 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3 dark:border-gray-700">
-            <p className="text-xs text-gray-500">
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--hc-border)' }}>
+            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
               Página {page + 1} de {Math.ceil(total / 20)}
             </p>
             <div className="flex gap-2">
               <button type="button"
                 onClick={() => cargar(page - 1, filtrosActuales())}
                 disabled={page === 0}
-                className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="rounded-lg px-3 py-1 text-xs disabled:opacity-40 hover:opacity-80"
+                style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
               >Anterior</button>
               <button type="button"
                 onClick={() => cargar(page + 1, filtrosActuales())}
                 disabled={(page + 1) * 20 >= total}
-                className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="rounded-lg px-3 py-1 text-xs disabled:opacity-40 hover:opacity-80"
+                style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
               >Siguiente</button>
             </div>
           </div>

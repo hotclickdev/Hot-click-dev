@@ -89,7 +89,7 @@ export default function AdminMultipais() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+        <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}>
           {error}
         </div>
       )}

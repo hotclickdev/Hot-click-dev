@@ -69,14 +69,14 @@ export default function AdminConfigFiscal() {
   })
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20 text-sm text-gray-400">Cargando…</div>
+    <div className="flex items-center justify-center py-20 text-sm" style={{ color: 'var(--hc-text-disabled)' }}>Cargando…</div>
   )
 
   // La config fiscal es por empresa; un ADMIN sin empresa asociada solo puede
   // editarla impersonando al propietario del negocio (ver Tiendas → "Ver como esta empresa").
   if (isAdmin && !empresaId) return (
     <div className="mx-auto max-w-2xl p-6">
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+      <div className="rounded-xl p-4 text-sm" style={{ border: '1px solid #F6E3AA', background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)' }}>
         Necesitás estar viendo como una empresa para configurar sus datos fiscales.
         Andá a <strong>Tiendas</strong> y usá <strong>"Ver como esta empresa"</strong>.
       </div>
@@ -86,16 +86,16 @@ export default function AdminConfigFiscal() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="font-[var(--hc-font-display)] text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>
           Configuración Fiscal — Hacienda CR
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
           Datos necesarios para emitir comprobantes electrónicos (XML 4.3).
         </p>
       </div>
 
       {hasDraft && (
-        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+        <div className="flex items-center justify-between rounded-xl px-4 py-3 text-sm" style={{ border: '1px solid #F6E3AA', background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)' }}>
           <span>Hay un borrador guardado. Podés continuar desde donde lo dejaste.</span>
           <button
             type="button"
@@ -108,7 +108,7 @@ export default function AdminConfigFiscal() {
       )}
 
       {form.ambienteHacienda === 'PROD' && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+        <div className="rounded-xl p-4 text-sm" style={{ border: '1px solid #F6C1BD', background: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}>
           <strong>Ambiente PRODUCCIÓN activo.</strong> Los comprobantes emitidos son fiscalmente válidos
           y se envían a Hacienda CR. Asegurate de que el certificado y las credenciales sean los de producción.
         </div>
@@ -127,9 +127,9 @@ export default function AdminConfigFiscal() {
         onP12File={setP12File}
       />
 
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Pasos para activar facturación</p>
-        <ol className="space-y-1 text-sm text-gray-600 dark:text-gray-400 list-decimal list-inside">
+      <div className="rounded-xl p-4" style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface-2)' }}>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-text-disabled)' }}>Pasos para activar facturación</p>
+        <ol className="space-y-1 text-sm list-decimal list-inside" style={{ color: 'var(--hc-muted)' }}>
           <li>Obtener usuario y clave en el portal ATV de Hacienda CR</li>
           <li>Solicitar el certificado PKCS#12 a SINPE o Bansaseguros</li>
           <li>Completar este formulario con el ambiente STAG (sandbox) primero</li>

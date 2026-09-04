@@ -3,12 +3,13 @@ import type { Id } from '@/types/api'
 export const ESTADOS = ['PENDIENTE', 'EN_BUSQUEDA', 'ENCONTRADO', 'NO_ENCONTRADO', 'CANCELADO'] as const
 export type EstadoServicio = (typeof ESTADOS)[number]
 
+/** Tokens de marca (hotclick-tokens.css) — no colores Tailwind sueltos. */
 export const ESTADO_STYLES: Record<string, { color: string; bg: string }> = {
-  PENDIENTE:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  EN_BUSQUEDA:   { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  ENCONTRADO:    { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  NO_ENCONTRADO: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  CANCELADO:     { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+  PENDIENTE:     { color: 'var(--hc-warning)', bg: 'var(--hc-warning-bg)' },
+  EN_BUSQUEDA:   { color: 'var(--hc-accent)',  bg: '#EFF4FE' },
+  ENCONTRADO:    { color: 'var(--hc-success)', bg: 'var(--hc-success-bg)' },
+  NO_ENCONTRADO: { color: 'var(--hc-danger)',  bg: 'var(--hc-danger-bg)' },
+  CANCELADO:     { color: 'var(--hc-muted)',   bg: 'var(--hc-surface-2)' },
 }
 
 export type UsuarioServicio = {
