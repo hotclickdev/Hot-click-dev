@@ -33,11 +33,7 @@ export default function POSPagoPage() {
   const shell = (children: ReactNode) => (
     <div
       className="hc-sistema-theme min-h-dvh flex flex-col items-center justify-center px-5 py-8 sm:py-12"
-      style={{
-        backgroundColor: 'var(--hc-bg)',
-        backgroundImage:
-          'radial-gradient(ellipse 90% 40% at 50% -8%, color-mix(in srgb, var(--hc-primary) 10%, transparent), transparent 60%)',
-      }}
+      style={{ backgroundColor: 'var(--hc-bg)' }}
     >
       <main className="w-full">{children}</main>
     </div>

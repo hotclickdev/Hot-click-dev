@@ -1,1 +1,0 @@
-import{t as e}from"./api-DJGyt-0t.js";var t={vincular:()=>e.post(`/telegram/vincular`),estado:()=>e.get(`/telegram/estado`),desvincular:()=>e.delete(`/telegram/vincular`),equipo:()=>e.get(`/telegram/equipo`),revocarMiembro:t=>e.delete(`/telegram/equipo/${t}`)};export{t};

@@ -7,25 +7,29 @@ const CATEGORIAS = [
   { id: 8, nombreCategoria: 'Hogar', padreId: null, icono: 'hogar' },
 ]
 
-const PRODUCTOS = [
-  {
-    id: 1,
-    nombreProducto: 'Mouse gamer RGB',
-    precioVenta: 8000,
+function producto(id: number, nombre: string, categoriaId: number, precio: number, empresa?: { nombre: string; slug: string }) {
+  return {
+    id,
+    nombreProducto: nombre,
+    precioVenta: precio,
     stockActual: 4,
-    categoriaId: 7,
-    imagenPrincipalUrl: 'https://example.com/mouse.jpg',
-    categoria: { id: 7, nombreCategoria: 'Tecnología' },
-  },
-  {
-    id: 2,
-    nombreProducto: 'Silla de comedor',
-    precioVenta: 45000,
-    stockActual: 2,
-    categoriaId: 8,
-    imagenPrincipalUrl: 'https://example.com/silla.jpg',
-    categoria: { id: 8, nombreCategoria: 'Hogar' },
-  },
+    categoriaId,
+    imagenPrincipalUrl: `https://example.com/p${id}.jpg`,
+    categoria: { id: categoriaId, nombreCategoria: categoriaId === 7 ? 'Tecnología' : 'Hogar' },
+    empresaNombre: empresa?.nombre ?? null,
+    empresaSlug: empresa?.slug ?? null,
+  }
+}
+
+const PRODUCTOS = [
+  producto(1, 'Mouse gamer RGB', 7, 8000, { nombre: 'Tech CR', slug: 'tech-cr' }),
+  producto(2, 'Teclado mecánico', 7, 22000, { nombre: 'Tech CR', slug: 'tech-cr' }),
+  producto(3, 'Auriculares BT', 7, 15000),
+  producto(4, 'Silla de comedor', 8, 45000, { nombre: 'Hogar Tico', slug: 'hogar-tico' }),
+  producto(5, 'Lámpara LED', 8, 12000),
+  producto(6, 'Monitor 24"', 7, 95000),
+  producto(7, 'USB-C hub', 7, 9000),
+  producto(8, 'Mousepad XL', 7, 6000),
 ]
 
 async function mockDescubriApis(page: Page) {
@@ -72,52 +76,53 @@ async function mockDescubriApis(page: Page) {
   })
 }
 
-test.describe('Descubrí chips', () => {
+async function dismissOverlays(page: Page) {
+  const accept = page.getByRole('button', { name: /aceptar todo|accept all|aceitar tudo/i })
+  if (await accept.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await accept.click()
+  }
+  const noThanks = page.getByRole('button', { name: /no gracias|no thanks|não, obrigado/i })
+  if (await noThanks.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await noThanks.click()
+  }
+}
+
+test.describe('Descubrí mazo', () => {
   test.beforeEach(async ({ page }) => {
     await mockDescubriApis(page)
     await page.addInitScript(() => {
       localStorage.removeItem('hotclick-descubri-gustos')
+      localStorage.removeItem('hotclick-wishlist')
     })
   })
 
-  test('CTA deshabilitado sin categoría; tras guardar muestra resultados', async ({ page }) => {
+  test('muestra carta al entrar; 3 likes revelan resultados', async ({ page }) => {
     await page.goto('/descubri', { waitUntil: 'domcontentloaded' })
-
-    const accept = page.getByRole('button', { name: /aceptar todo|accept all|aceitar tudo/i })
-    if (await accept.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await accept.click()
-    }
+    await dismissOverlays(page)
 
     await expect(page.getByRole('heading', { name: /descubr|discover|descubra/i })).toBeVisible({ timeout: 20000 })
+    await expect(page.getByTestId('descubri-mazo')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Mouse gamer RGB')).toBeVisible()
+    await expect(page.getByText(/₡\s*8[\s.]?000|₡8,000/)).toBeVisible()
 
-    const cta = page.getByRole('button', { name: /ver productos para mí|show products for me|ver produtos para mim/i })
-    await expect(cta).toBeDisabled({ timeout: 20000 })
+    for (let i = 0; i < 3; i++) {
+      await page.getByTestId('descubri-like').click()
+    }
 
-    const categoryGroup = page.getByRole('group', { name: /categorías|categories|categorias/i })
-    const chips = categoryGroup.getByRole('button')
-    await expect(chips.first()).toBeVisible({ timeout: 20000 })
-    await chips.first().click()
-    await expect(chips.first()).toHaveAttribute('aria-pressed', 'true')
-
-    await expect(cta).toBeEnabled()
-    await cta.click()
-
-    await expect(
-      page.getByRole('button', { name: /cambiar gustos|change preferences|mudar preferências/i }),
-    ).toBeVisible({ timeout: 15000 })
+    await expect(page.getByTestId('descubri-revelacion').or(page.getByText(/productos para vos|products for you|produtos para você/i))).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/productos para vos|products for you|produtos para você/i)).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('button', { name: /seguir descubriendo|keep discovering|continuar descobrindo/i })).toBeVisible()
 
     const stored = await page.evaluate(() => localStorage.getItem('hotclick-descubri-gustos'))
     expect(stored).toBeTruthy()
-    const parsed = JSON.parse(stored!) as { selectedCategoryIds?: string[] }
+    const parsed = JSON.parse(stored!) as { selectedCategoryIds?: string[]; scores?: Record<string, number> }
     expect(parsed.selectedCategoryIds?.length).toBeGreaterThan(0)
+    expect(Object.keys(parsed.scores ?? {}).some((k) => k.startsWith('c:'))).toBe(true)
   })
 
   test('sin gustos, según tus gustos pide ir a Descubrí', async ({ page }) => {
     await page.goto('/productos?sort=para_vos', { waitUntil: 'domcontentloaded' })
-    const accept = page.getByRole('button', { name: /aceptar todo|accept all|aceitar tudo/i })
-    if (await accept.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await accept.click()
-    }
+    await dismissOverlays(page)
     await expect(
       page.getByRole('link', { name: /ir a descubr|go to discover/i }),
     ).toBeVisible({ timeout: 20000 })
