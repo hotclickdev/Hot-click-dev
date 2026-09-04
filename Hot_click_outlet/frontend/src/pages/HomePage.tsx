@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
+import { homepageService, csvALista, type HomepageConfigApi } from '@/services/homepageService'
 import { useToast } from '@/components/ui/Toast'
 import HeroRotator from '@/components/ui/HeroRotator'
 import DescubriBanner from './home/DescubriBanner'
@@ -52,7 +53,14 @@ export default function HomePage() {
   const [marcas, setMarcas] = useState<MarcaHome[]>([])
   const [categorias, setCategorias] = useState<CategoriaBrowse[]>([])
   const [productsMuestra, setProductsMuestra] = useState<ProductoMuestraCategoria[]>([])
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfigApi | null>(null)
   const toast = useToast()
+
+  useEffect(() => {
+    homepageService.getPublico()
+      .then(({ data }) => setHomepageConfig(data as HomepageConfigApi))
+      .catch((err: unknown) => { console.error('[HomePage] homepage config', err) })
+  }, [])
 
   useEffect(() => {
     let toastMostrado = false
@@ -87,11 +95,19 @@ export default function HomePage() {
     <MainLayout>
       <HomeSeo destacados={destacados} />
       <HomeJobsHero />
-      <HeroRotator destacados={destacados.slice(0, 3)} />
+      <HeroRotator
+        destacados={destacados.slice(0, 3)}
+        heroSections={homepageConfig ? csvALista(homepageConfig.heroSections) : undefined}
+      />
       <TrustStrip />
       <DestacadosSection destacados={destacados} />
       <DescubriBanner />
-      <CategoryBrowse products={productsMuestra} categories={categorias} />
+      <CategoryBrowse
+        products={productsMuestra}
+        categories={categorias}
+        visibleCategoryIds={homepageConfig ? csvALista(homepageConfig.visibleCategoriaIds) : undefined}
+        maxCategories={homepageConfig?.maxCategorias}
+      />
       <RecentlyViewedSection />
       <ConveniosMarquee />
       <HomeMarcas marcas={marcas} />

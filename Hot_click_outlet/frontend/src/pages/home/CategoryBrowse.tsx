@@ -31,12 +31,18 @@ type CatGroup = {
 export default function CategoryBrowse({
   products,
   categories,
+  visibleCategoryIds,
+  maxCategories = 8,
 }: {
   products: ProductoMuestraCategoria[]
   categories: CategoriaBrowse[]
+  /** IDs fijados desde la config del homepage. Vacío/ausente = automático por cantidad de productos. */
+  visibleCategoryIds?: string[]
+  maxCategories?: number
 }) {
   const { t } = useTranslation()
-  // Agrupar productos por categoría y tomar las 8 categorías con más productos
+  const fijadas = visibleCategoryIds && visibleCategoryIds.length > 0 ? new Set(visibleCategoryIds) : null
+
   const catGroups = useMemo(() => {
     const map: Record<string, { products: ProductoMuestraCategoria[]; catId: string }> = {}
     products.forEach(p => {
@@ -46,15 +52,17 @@ export default function CategoryBrowse({
       map[catId].products.push(p)
     })
     // Enriquecer con nombre de categoría
-    return Object.values(map)
+    let grupos = Object.values(map)
       .map((g): CatGroup => {
         const cat = categories.find(c => String(c.id ?? c.idCategoria) === g.catId)
         return { ...g, nombre: cat?.nombreCategoria ?? cat?.nombre ?? t('home.unnamedCategory') }
       })
       .filter(g => g.products.length >= 1)
       .sort((a, b) => b.products.length - a.products.length)
-      .slice(0, 8)
-  }, [products, categories, t])
+
+    if (fijadas) grupos = grupos.filter(g => fijadas.has(g.catId))
+    return grupos.slice(0, maxCategories)
+  }, [products, categories, t, fijadas, maxCategories])
 
   if (catGroups.length === 0) return null
 

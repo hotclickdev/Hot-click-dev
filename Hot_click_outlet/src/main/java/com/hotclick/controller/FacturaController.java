@@ -8,9 +8,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -49,16 +52,23 @@ public class FacturaController {
 
     /**
      * Lista comprobantes de la empresa autenticada con paginación.
+     * Filtros opcionales por estado y rango de fecha de emisión (fechaDesde/fechaHasta
+     * son solo fecha; fechaHasta se extiende a fin de día para incluir todo el día).
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','CONTABILIDAD')")
     public ResponseEntity<Page<ComprobanteFiscal>> listar(
             @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
 
         Long empresaId = companyScope.getCurrentEmpresaId();
-        Page<ComprobanteFiscal> pagina = comprobanteRepo.findByEmpresaIdOrderByFechaEmisionDesc(
-            empresaId,
+        LocalDateTime desde = fechaDesde != null ? fechaDesde.atStartOfDay() : null;
+        LocalDateTime hasta = fechaHasta != null ? fechaHasta.atTime(23, 59, 59) : null;
+        Page<ComprobanteFiscal> pagina = comprobanteRepo.findByEmpresaIdConFiltros(
+            empresaId, estado, desde, hasta,
             PageRequest.of(page, size, Sort.by("fechaEmision").descending())
         );
         return ResponseEntity.ok(pagina);

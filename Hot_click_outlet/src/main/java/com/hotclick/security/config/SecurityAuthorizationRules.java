@@ -76,6 +76,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, "/api/categorias").permitAll()
             .requestMatchers(GET, "/api/categorias/**").permitAll()
             .requestMatchers(GET, "/api/convenios/publicos").permitAll()
+            .requestMatchers(GET, "/api/homepage/publico").permitAll()
             .requestMatchers(GET, "/api/marcas/publicas").permitAll()
             .requestMatchers(GET, "/api/planes").permitAll()
             .requestMatchers(GET, "/api/billing/planes").permitAll()

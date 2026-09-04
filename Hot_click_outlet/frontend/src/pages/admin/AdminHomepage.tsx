@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/Toast'
 import { categoriaService } from '@/services/orderService'
+import { homepageService, csvALista, type HomepageConfigApi } from '@/services/homepageService'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoCamino from '@/components/ui/TextoCamino'
-import type { Id } from '@/types/api'
-
-const STORAGE_KEY = 'hc-homepage-config'
+import type { Id, JsonBody } from '@/types/api'
 
 type HomepageConfig = {
   heroSections: string[]
@@ -26,21 +25,20 @@ const DEFAULT_CONFIG: HomepageConfig = {
   maxCategories: 8,
 }
 
-function loadConfig(): HomepageConfig {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw)
-      if (parsed && typeof parsed === 'object') {
-        return { ...DEFAULT_CONFIG, ...(parsed as Partial<HomepageConfig>) }
-      }
-    }
-  } catch { /* ignore */ }
-  return { ...DEFAULT_CONFIG }
+function apiAConfig(api: HomepageConfigApi): HomepageConfig {
+  return {
+    heroSections: csvALista(api.heroSections),
+    visibleCategoryIds: csvALista(api.visibleCategoriaIds),
+    maxCategories: api.maxCategorias,
+  }
 }
 
-function saveConfig(cfg: HomepageConfig) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg))
+function configAApi(cfg: HomepageConfig): HomepageConfigApi {
+  return {
+    heroSections: cfg.heroSections.join(','),
+    visibleCategoriaIds: cfg.visibleCategoryIds.join(','),
+    maxCategorias: cfg.maxCategories,
+  }
 }
 
 const HERO_OPTIONS = [
@@ -51,9 +49,11 @@ const HERO_OPTIONS = [
 
 export default function AdminHomepage() {
   const toast = useToast()
-  const [config, setConfig] = useState<HomepageConfig>(loadConfig)
+  const [config, setConfig] = useState<HomepageConfig>(DEFAULT_CONFIG)
   const [categories, setCategories] = useState<CategoriaHomepage[]>([])
   const [loadingCats, setLoadingCats] = useState(true)
+  const [loadingConfig, setLoadingConfig] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     categoriaService.getAll()
@@ -63,6 +63,14 @@ export default function AdminHomepage() {
       })
       .catch(() => toast({ message: 'Error al cargar categorías', type: 'error' }))
       .finally(() => setLoadingCats(false))
+
+    homepageService.getAdmin()
+      .then(r => {
+        const data = r.data as HomepageConfigApi | undefined
+        if (data) setConfig(apiAConfig(data))
+      })
+      .catch(() => toast({ message: 'Error al cargar la configuración del homepage', type: 'error' }))
+      .finally(() => setLoadingConfig(false))
   }, [toast])
 
   function toggleHeroSection(id: string) {
@@ -88,14 +96,22 @@ export default function AdminHomepage() {
   }
 
   function handleSave() {
-    saveConfig(config)
-    toast({ message: 'Configuración del homepage guardada', type: 'success' })
+    setSaving(true)
+    homepageService.actualizar(configAApi(config) as unknown as JsonBody)
+      .then(() => toast({ message: 'Configuración del homepage guardada', type: 'success' }))
+      .catch(() => toast({ message: 'Error al guardar la configuración', type: 'error' }))
+      .finally(() => setSaving(false))
   }
 
   function handleReset() {
-    setConfig({ ...DEFAULT_CONFIG })
-    localStorage.removeItem(STORAGE_KEY)
-    toast({ message: 'Configuración restablecida a valores por defecto', type: 'success' })
+    setSaving(true)
+    homepageService.actualizar(configAApi(DEFAULT_CONFIG) as unknown as JsonBody)
+      .then(() => {
+        setConfig({ ...DEFAULT_CONFIG })
+        toast({ message: 'Configuración restablecida a valores por defecto', type: 'success' })
+      })
+      .catch(() => toast({ message: 'Error al restablecer la configuración', type: 'error' }))
+      .finally(() => setSaving(false))
   }
 
   return (
@@ -112,15 +128,17 @@ export default function AdminHomepage() {
         <div className="flex gap-2">
           <button type="button"
             onClick={handleReset}
+            disabled={saving || loadingConfig}
             className="hc-btn hc-btn-outline hc-btn-sm"
           >
             Restablecer
           </button>
           <button type="button"
             onClick={handleSave}
+            disabled={saving || loadingConfig}
             className="hc-btn hc-btn-primary hc-btn-sm"
           >
-            Guardar cambios
+            {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
         </div>
       </div>
@@ -239,7 +257,7 @@ export default function AdminHomepage() {
 
       {/* Nota implementación */}
       <div className="rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ background: 'color-mix(in srgb, var(--hc-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)', color: 'var(--hc-muted)' }}>
-        <strong style={{ color: 'var(--hc-accent)' }}>Nota:</strong> Los cambios se guardan localmente en este dispositivo. La configuración se aplica al recargar el homepage.
+        <strong style={{ color: 'var(--hc-accent)' }}>Nota:</strong> Los cambios se aplican a todos los visitantes de la página principal al recargarla — no son solo para este dispositivo.
       </div>
 
     </div>

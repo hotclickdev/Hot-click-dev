@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import facturaService from '@/services/facturaService'
+import type { FacturaFiltros } from '@/services/facturaService'
 import { empresaService } from '@/services/empresaService'
 import { useToast } from '@/components/ui/Toast'
 import type { Pagina } from '@/types/api'
@@ -44,11 +45,14 @@ export default function AdminFacturas() {
   const [page, setPage]                 = useState(0)
   const [loading, setLoading]           = useState(true)
   const [empresa, setEmpresa]           = useState<EmpresaFiscal | null>(null)
+  const [estado, setEstado]             = useState('')
+  const [fechaDesde, setFechaDesde]     = useState('')
+  const [fechaHasta, setFechaHasta]     = useState('')
 
-  const cargar = async (p = 0) => {
+  const cargar = async (p = 0, filtros: FacturaFiltros = {}) => {
     setLoading(true)
     try {
-      const { data } = await facturaService.listar(p, 20)
+      const { data } = await facturaService.listar(p, 20, filtros)
       const pagina = data as Pagina<ComprobanteAdmin>
       setComprobantes(pagina.content ?? [])
       setTotal(pagina.totalElements ?? 0)
@@ -57,6 +61,12 @@ export default function AdminFacturas() {
     finally { setLoading(false) }
   }
 
+  const filtrosActuales = (): FacturaFiltros => ({
+    estado: estado || undefined,
+    fechaDesde: fechaDesde || undefined,
+    fechaHasta: fechaHasta || undefined,
+  })
+
   useEffect(() => {
     cargar(0) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
     empresaService.getPerfil().then(r => {
@@ -64,6 +74,13 @@ export default function AdminFacturas() {
       setEmpresa(payload as EmpresaFiscal)
     }).catch(() => { /* ok */ })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- carga al montar
+
+  const aplicarFiltros = () => { cargar(0, filtrosActuales()) }
+  const limpiarFiltros = () => {
+    setEstado(''); setFechaDesde(''); setFechaHasta('')
+    cargar(0)
+  }
+  const hayFiltrosActivos = !!(estado || fechaDesde || fechaHasta)
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-6">
@@ -110,6 +127,37 @@ export default function AdminFacturas() {
             para activar el modo producción.
           </p>
         </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <div>
+          <label htmlFor="facturas-estado" className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Estado</label>
+          <select id="facturas-estado" value={estado} onChange={(e) => setEstado(e.target.value)}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800">
+            <option value="">Todos</option>
+            {Object.keys(ESTADO_COLORS).map((e) => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="facturas-desde" className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Desde</label>
+          <input id="facturas-desde" type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800" />
+        </div>
+        <div>
+          <label htmlFor="facturas-hasta" className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Hasta</label>
+          <input id="facturas-hasta" type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800" />
+        </div>
+        <button type="button" onClick={aplicarFiltros}
+          className="rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-80"
+          style={{ backgroundColor: 'var(--hc-accent, #2563eb)' }}
+        >Filtrar</button>
+        {hayFiltrosActivos && (
+          <button type="button" onClick={limpiarFiltros}
+            className="rounded-lg border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >Limpiar</button>
+        )}
       </div>
 
       {/* Tabla */}
@@ -180,12 +228,12 @@ export default function AdminFacturas() {
             </p>
             <div className="flex gap-2">
               <button type="button"
-                onClick={() => cargar(page - 1)}
+                onClick={() => cargar(page - 1, filtrosActuales())}
                 disabled={page === 0}
                 className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800"
               >Anterior</button>
               <button type="button"
-                onClick={() => cargar(page + 1)}
+                onClick={() => cargar(page + 1, filtrosActuales())}
                 disabled={(page + 1) * 20 >= total}
                 className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800"
               >Siguiente</button>
