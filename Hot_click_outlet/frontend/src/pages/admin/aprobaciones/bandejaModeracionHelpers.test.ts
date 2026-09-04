@@ -14,10 +14,11 @@ describe('bandejaModeracionHelpers', () => {
       reportesProducto: 1,
       total: 16,
     })
-    expect(colas).toHaveLength(7)
+    expect(colas).toHaveLength(8)
     expect(colas.find((c) => c.id === 'empresas')?.count).toBe(2)
     expect(colas.find((c) => c.id === 'payouts')?.to).toBe('/admin/payouts')
     expect(colas.find((c) => c.id === 'reportes')?.to).toBe('/admin/reportes-producto')
+    expect(colas.find((c) => c.id === 'cobro')?.to).toBe('/admin/aprobaciones?tab=cobro')
   })
 
   it('formatea montos en colones CR', () => {

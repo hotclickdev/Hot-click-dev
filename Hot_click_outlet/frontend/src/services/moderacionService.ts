@@ -9,6 +9,7 @@ export type ModeracionResumen = {
   testimonios: number
   payouts: number
   reportesProducto: number
+  cuentasCobro: number
   total: number
 }
 
@@ -36,6 +37,7 @@ function cuerpoResumen(data: unknown): ModeracionResumen {
     testimonios: Number(inner?.testimonios) || 0,
     payouts: Number(inner?.payouts) || 0,
     reportesProducto: Number(inner?.reportesProducto) || 0,
+    cuentasCobro: Number(inner?.cuentasCobro) || 0,
     total: Number(inner?.total) || 0,
   }
 }

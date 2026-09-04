@@ -11,15 +11,17 @@ public class MetodoCobroDto {
     private String mascara;
     private String nota;
     private boolean predeterminado;
+    private boolean enRevision;
 
     public static MetodoCobroDto from(MetodoCobro m) {
         MetodoCobroDto dto = new MetodoCobroDto();
         dto.id = m.getId();
         dto.tipo = MetodoCobroFormato.tipoApi(m.getTipo());
         dto.nombre = MetodoCobroFormato.nombre(m.getTipo());
-        dto.mascara = m.getMascara();
+        dto.mascara = MetodoCobroFormato.mascara(m.getTipo(), m.getDestino());
         dto.nota = MetodoCobroFormato.nota(m.getTipo());
         dto.predeterminado = m.isPredeterminado();
+        dto.enRevision = m.isEnRevision();
         return dto;
     }
 
@@ -29,4 +31,5 @@ public class MetodoCobroDto {
     public String getMascara() { return mascara; }
     public String getNota() { return nota; }
     public boolean isPredeterminado() { return predeterminado; }
+    public boolean isEnRevision() { return enRevision; }
 }

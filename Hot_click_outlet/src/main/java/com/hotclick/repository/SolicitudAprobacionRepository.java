@@ -27,6 +27,19 @@ public interface SolicitudAprobacionRepository extends JpaRepository<SolicitudAp
 
     long countByEstadoSolicitudAndTipoEntidad(String estadoSolicitud, String tipoEntidad);
 
+    boolean existsByTipoEntidadAndIdEntidadAndEstadoSolicitud(
+            String tipoEntidad, Long idEntidad, String estadoSolicitud);
+
+    @Query("""
+        SELECT s FROM SolicitudAprobacion s
+        JOIN FETCH s.empresa
+        LEFT JOIN FETCH s.usuarioPide
+        WHERE s.estadoSolicitud = :estado AND s.tipoEntidad = :tipo
+        ORDER BY s.fechaSolicitud DESC
+        """)
+    List<SolicitudAprobacion> findPendientesConEmpresa(
+            @Param("estado") String estado, @Param("tipo") String tipo);
+
     /** Cierra las solicitudes de producto pendientes al aprobar la empresa (la aprobación del negocio las publica en bloque). */
     @Modifying
     @Query("UPDATE SolicitudAprobacion s SET s.estadoSolicitud = 'APROBADO', s.fechaResolucion = :ahora " +

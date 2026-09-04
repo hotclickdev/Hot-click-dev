@@ -1,35 +1,43 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import FormularioPorPasos from './FormularioPorPasos'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
+import CampoDatoCobro from './CampoDatoCobro'
 import {
   TIPOS_METODO_COBRO,
-  type TipoMetodoCobro,
+  cargarMetodosCobro,
+  cuentaCobroEditable,
   crearMetodoCobro,
+  solicitarCambioMetodoCobro,
+  type TipoMetodoCobro,
   validarDatoMetodo,
 } from './metodosCobroDatos'
-import { Campo, EncabezadoPagina } from './ui'
+import { EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import TarjetaOpcion from './motion/TarjetaOpcion'
 import RevisionMetodoCobro from './motion/RevisionMetodoCobro'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 
-const PASOS: readonly PasoFormulario[] = [
+const PASOS_ALTA: readonly PasoFormulario[] = [
   { id: 'tipo', titulo: 'Tipo de cuenta' },
   { id: 'datos', titulo: 'Datos de la cuenta' },
-  { id: 'confirmar', titulo: 'Confirmá' },
+  { id: 'confirmar', titulo: 'Revisá los datos' },
+]
+
+const PASOS_EDIT: readonly PasoFormulario[] = [
+  { id: 'datos', titulo: 'Datos de la cuenta' },
+  { id: 'confirmar', titulo: 'Revisá los datos' },
 ]
 
 type Props = Readonly<{
   volverA: string
   rutaExito?: string
-  /** Solo wizard (sin main/encabezado); para shell Emprendedor. */
   soloFormulario?: boolean
 }>
 
 /**
- * Wizard único de método de cobro (API /metodos-cobro).
+ * Wizard de método de cobro: alta inmediata (SINPE/IBAN) o cambio en revisión.
  */
 export function AgregarMetodoCobroPage({
   volverA,
@@ -38,15 +46,48 @@ export function AgregarMetodoCobroPage({
 }: Props) {
   const navigate = useNavigate()
   const toast = useToast()
+  const [params] = useSearchParams()
+  const idEditar = params.get('editar')
+  const editando = Boolean(idEditar)
+  const pasos = editando ? PASOS_EDIT : PASOS_ALTA
   const [paso, setPaso] = useState(0)
   const [tipo, setTipo] = useState<TipoMetodoCobro | null>(null)
   const [dato, setDato] = useState('')
   const [guardando, setGuardando] = useState(false)
-  const idPaso = PASOS[paso]?.id
+  const [cargandoEdit, setCargandoEdit] = useState(editando)
+  const [bloqueado, setBloqueado] = useState<string | null>(null)
+  const idPaso = pasos[paso]?.id
   const destino = rutaExito ?? volverA
 
+  useEffect(() => {
+    if (!idEditar) return
+    let vivo = true
+    cargarMetodosCobro()
+      .then((carga) => {
+        if (!vivo) return
+        const actual = carga.metodos.find((m) => m.id === idEditar)
+        if (!actual) {
+          setBloqueado('No encontramos esa cuenta.')
+          return
+        }
+        if (!cuentaCobroEditable(actual.tipo) || actual.enRevision) {
+          setBloqueado(
+            actual.enRevision
+              ? 'Este método ya está en revisión.'
+              : 'Las cuentas tarjeta no se editan. Agregá SINPE o IBAN.',
+          )
+          return
+        }
+        setTipo(actual.tipo)
+      })
+      .finally(() => {
+        if (vivo) setCargandoEdit(false)
+      })
+    return () => { vivo = false }
+  }, [idEditar])
+
   function validar(i: number): string | null {
-    const id = PASOS[i]?.id
+    const id = pasos[i]?.id
     if (id === 'tipo' && !tipo) return 'Elegí un tipo de cuenta.'
     if (id === 'datos' && tipo) return validarDatoMetodo(tipo, dato)
     return null
@@ -56,29 +97,46 @@ export function AgregarMetodoCobroPage({
     if (!tipo) return
     setGuardando(true)
     try {
-      await crearMetodoCobro(tipo, dato)
-      toast({ message: 'Método de cobro guardado', type: 'success' })
+      if (idEditar) {
+        await solicitarCambioMetodoCobro(idEditar, tipo, dato)
+        toast({ message: 'Cambio enviado a revisión', type: 'success' })
+      } else {
+        await crearMetodoCobro(tipo, dato)
+        toast({ message: 'Método de cobro guardado', type: 'success' })
+      }
       navigate(destino)
     } catch {
-      toast({ message: 'No se pudo guardar el método de cobro', type: 'error' })
+      toast({
+        message: idEditar ? 'No se pudo enviar el cambio' : 'No se pudo guardar el método de cobro',
+        type: 'error',
+      })
     } finally {
       setGuardando(false)
     }
   }
 
+  const indiceDatos = pasos.findIndex((p) => p.id === 'datos')
+
+  if (cargandoEdit) {
+    return <p className="text-[13px] text-hc-muted">Cargando cuenta…</p>
+  }
+  if (bloqueado) {
+    return <p className="text-sm text-hc-muted">{bloqueado}</p>
+  }
+
   const wizard = (
     <FormularioPorPasos
-      pasos={PASOS}
+      pasos={pasos}
       pasoActual={paso}
       onPasoChange={setPaso}
       validarPaso={validar}
       onFinalizar={guardar}
-      etiquetaFinal="Guardar método"
+      etiquetaFinal={editando ? 'Enviar a revisión' : 'Guardar método'}
       enviando={guardando}
     >
       {idPaso === 'tipo' ? (
         <div role="radiogroup" aria-label="Tipo de método">
-          <ListaStagger className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <ListaStagger className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {TIPOS_METODO_COBRO.map((opcion) => (
               <ItemListaStagger key={opcion.tipo}>
                 <TarjetaOpcion
@@ -95,15 +153,14 @@ export function AgregarMetodoCobroPage({
         </div>
       ) : null}
       {idPaso === 'datos' && tipo ? (
-        <Campo
-          etiqueta={etiquetaDato(tipo)}
-          value={dato}
-          onChange={setDato}
-          placeholder={placeholderDato(tipo)}
-        />
+        <CampoDatoCobro tipo={tipo} value={dato} onChange={setDato} />
       ) : null}
       {idPaso === 'confirmar' && tipo ? (
-        <RevisionMetodoCobro tipo={tipo} dato={dato} />
+        <RevisionMetodoCobro
+          tipo={tipo}
+          dato={dato}
+          onEditar={() => setPaso(indiceDatos < 0 ? 0 : indiceDatos)}
+        />
       ) : null}
     </FormularioPorPasos>
   )
@@ -112,26 +169,16 @@ export function AgregarMetodoCobroPage({
 
   return (
     <main className="px-5 pb-8 pt-[60px] md:max-w-[760px] md:px-12 md:py-12 md:pt-12">
-      <EncabezadoPagina titulo="Agregar método de cobro" volverA={volverA} />
+      <EncabezadoPagina
+        titulo={editando ? 'Editar método de cobro' : 'Agregar método de cobro'}
+        volverA={volverA}
+      />
       {wizard}
     </main>
   )
 }
 
-/** Default para SellerRoutes: resuelve rutas con useSellerRuta. */
 export default function AgregarMetodoCobroSellerPage() {
   const ruta = useSellerRuta()
   return <AgregarMetodoCobroPage volverA={ruta('cobro')} rutaExito={ruta('cobro')} />
-}
-
-function etiquetaDato(tipo: TipoMetodoCobro): string {
-  if (tipo === 'sinpe') return 'Número SINPE'
-  if (tipo === 'iban') return 'IBAN'
-  return 'Número de tarjeta (referencia)'
-}
-
-function placeholderDato(tipo: TipoMetodoCobro): string {
-  if (tipo === 'sinpe') return '8888-0000'
-  if (tipo === 'iban') return 'CR21 0000…'
-  return '•••• 4412'
 }

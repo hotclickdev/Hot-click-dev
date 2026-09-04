@@ -9,6 +9,7 @@ import type { Id } from '@/types/api'
 import EmpresasPendientes from './aprobaciones/EmpresasPendientes'
 import OfertasPendientes from './aprobaciones/OfertasPendientes'
 import ProductosPendientes from './aprobaciones/ProductosPendientes'
+import CuentasCobroPendientes from './aprobaciones/CuentasCobroPendientes'
 import BandejaModeracion from './aprobaciones/BandejaModeracion'
 import { AdminFilterChip } from '@/prototipo/admin/AdminUi'
 import {
@@ -19,6 +20,7 @@ import {
   type EmpresaSolicitud,
   type OfertaPendiente,
   type ProductoPendiente,
+  type CuentaCobroPendiente,
   type StatsAprobacion,
   type TabAprobacion,
 } from './aprobaciones/aprobacionesHelpers'
@@ -27,10 +29,11 @@ const TAB_LABEL_KEY: Record<TabAprobacion, string> = {
   empresas: 'adminAprobaciones.tabEmpresas',
   productos: 'adminAprobaciones.tabProductos',
   ofertas: 'adminAprobaciones.tabOfertas',
+  cobro: 'adminAprobaciones.tabCobro',
 }
 
 function tabDesdeQuery(raw: string | null): TabAprobacion {
-  if (raw === 'productos' || raw === 'ofertas' || raw === 'empresas') return raw
+  if (raw === 'productos' || raw === 'ofertas' || raw === 'empresas' || raw === 'cobro') return raw
   return 'empresas'
 }
 
@@ -40,6 +43,7 @@ function subtituloModeracionI18n(
   productos: number,
   empresas: number,
   ofertas: number,
+  cobro: number,
 ): string {
   if (tab === 'productos') {
     return productos > 0
@@ -47,6 +51,7 @@ function subtituloModeracionI18n(
       : t('adminAprobaciones.waitingProductsZero')
   }
   if (tab === 'ofertas') return t('adminAprobaciones.waitingOffers', { count: ofertas })
+  if (tab === 'cobro') return t('adminAprobaciones.waitingCobro', { count: cobro })
   return t('adminAprobaciones.waitingStores', { count: empresas })
 }
 
@@ -62,6 +67,8 @@ export default function AdminAprobaciones() {
   const [loadingProductos, setLoadingProductos] = useState(true)
   const [ofertas, setOfertas] = useState<OfertaPendiente[]>([])
   const [loadingOfertas, setLoadingOfertas] = useState(true)
+  const [cuentasCobro, setCuentasCobro] = useState<CuentaCobroPendiente[]>([])
+  const [loadingCobro, setLoadingCobro] = useState(true)
   const [resumen, setResumen] = useState<ModeracionResumen | null>(null)
   const [loadingResumen, setLoadingResumen] = useState(true)
 
@@ -80,6 +87,7 @@ export default function AdminAprobaciones() {
     cargar()
     cargarProductos()
     cargarOfertas()
+    cargarCobro()
     cargarResumen()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- montaje único
   }, [])
@@ -167,6 +175,42 @@ export default function AdminAprobaciones() {
     }
   }
 
+  async function cargarCobro() {
+    try {
+      setLoadingCobro(true)
+      const { data } = await aprobacionService.listMetodosCobro()
+      setCuentasCobro(listaDesdeRespuesta<CuentaCobroPendiente>(data))
+    } catch {
+      toast({ message: t('adminAprobaciones.errorLoadCobro'), type: 'error' })
+    } finally {
+      setLoadingCobro(false)
+    }
+  }
+
+  async function aprobarCobro(id: Id) {
+    try {
+      await aprobacionService.aprobarMetodoCobro(id)
+      toast({ message: t('adminAprobaciones.cobroApproved'), type: 'success' })
+      cargarCobro()
+      cargarResumen()
+    } catch {
+      toast({ message: t('adminAprobaciones.errorApproveCobro'), type: 'error' })
+      throw new Error('aprobar-cobro-failed')
+    }
+  }
+
+  async function rechazarCobro(id: Id, comentario: string) {
+    try {
+      await aprobacionService.rechazarMetodoCobro(id, comentario)
+      toast({ message: t('adminAprobaciones.cobroRejected'), type: 'success' })
+      cargarCobro()
+      cargarResumen()
+    } catch {
+      toast({ message: t('adminAprobaciones.errorRejectCobro'), type: 'error' })
+      throw new Error('rechazar-cobro-failed')
+    }
+  }
+
   async function cargar() {
     try {
       setLoading(true)
@@ -214,6 +258,7 @@ export default function AdminAprobaciones() {
     pendientes: stats.pendientes,
     productos: productos.length,
     ofertas: ofertas.length,
+    cobro: cuentasCobro.length,
   })
 
   return (
@@ -221,7 +266,9 @@ export default function AdminAprobaciones() {
       <div>
         <h1 className="font-display text-[22px] font-bold text-hc-text">{t('adminAprobaciones.title')}</h1>
         <p className="mt-0.5 text-xs text-hc-muted">
-          {subtituloModeracionI18n(t, tab, productos.length, solicitudes.length, ofertas.length)}
+          {subtituloModeracionI18n(
+            t, tab, productos.length, solicitudes.length, ofertas.length, cuentasCobro.length,
+          )}
         </p>
       </div>
 
@@ -256,6 +303,13 @@ export default function AdminAprobaciones() {
           loading={loadingOfertas}
           aprobar={aprobarOferta}
           rechazar={rechazarOferta}
+        />
+      ) : tab === 'cobro' ? (
+        <CuentasCobroPendientes
+          cuentas={cuentasCobro}
+          loading={loadingCobro}
+          aprobar={aprobarCobro}
+          rechazar={rechazarCobro}
         />
       ) : (
         <EmpresasPendientes

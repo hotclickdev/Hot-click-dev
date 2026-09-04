@@ -3661,3 +3661,18 @@ UPDATE hot_click_plan_tb SET tiene_gift_cards = true WHERE nombre IN ('PYME', 'N
 UPDATE hot_click_feature_flag_tb
 SET descripcion = 'Pagos divididos en una misma venta'
 WHERE nombre = 'split_payments';
+
+-- V123: cambio de cuenta de cobro queda en revisión hasta admin.
+ALTER TABLE hot_click_metodo_cobro_tb
+    ADD COLUMN IF NOT EXISTS en_revision BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE hot_click_metodo_cobro_tb
+SET mascara = '••••-' || RIGHT(destino, 4)
+WHERE tipo = 'SINPE'
+  AND destino IS NOT NULL
+  AND length(destino) >= 4;
+
+CREATE INDEX IF NOT EXISTS idx_solicitud_metodo_cobro_pendiente
+    ON hot_click_solicitud_aprobacion_tb (tipo_entidad, estado_solicitud, fecha_solicitud DESC)
+    WHERE tipo_entidad = 'METODO_COBRO';
+

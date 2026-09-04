@@ -131,6 +131,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/metodos-cobro").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/metodos-cobro").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/metodos-cobro/*/predeterminado").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,  "/api/metodos-cobro/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Bot Telegram del negocio: vincular / estado / equipo. Webhook admin IT aparte.
             .requestMatchers("/api/telegram/admin/**").hasRole(Constants.ROL_ADMIN)
             .requestMatchers("/api/telegram/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
