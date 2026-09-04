@@ -12,6 +12,7 @@ const HERRAMIENTAS = [
   { to: '/admin/aprobaciones', label: 'Aprobaciones' },
   { to: '/admin/payouts', label: 'Retiros de billetera' },
   { to: '/admin/reportes-producto', label: 'Productos reportados' },
+  { to: '/admin/soporte', label: 'Inbox de soporte' },
 ] as const
 
 /**

@@ -87,6 +87,7 @@ const AdminEncargos = lazy(() => import('@/pages/admin/AdminEncargos'))
 const AdminRecolecciones = lazy(() => import('@/pages/admin/AdminRecolecciones'))
 const AdminPayouts = lazy(() => import('@/pages/admin/AdminPayouts'))
 const AdminReportesProducto = lazy(() => import('@/pages/admin/AdminReportesProducto'))
+const AdminSoporteTickets = lazy(() => import('@/pages/admin/AdminSoporteTickets'))
 const AdminAiControl = lazy(() => import('@/pages/admin/AdminAiControl'))
 const AdminFacturas = lazy(() => import('@/pages/admin/AdminFacturas'))
 const AdminConfigFiscal = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
@@ -251,6 +252,7 @@ export default function AppRoutes() {
           <Route path="recolecciones" element={<AdminRecolecciones />} />
           <Route path="payouts" element={<AdminPayouts />} />
           <Route path="reportes-producto" element={<AdminReportesProducto />} />
+          <Route path="soporte" element={<AdminSoporteTickets />} />
           <Route path="empresas" element={<AdminEmpresas />} />
           <Route path="empresas/:id" element={<AdminEmpresaWorkspace />} />
           <Route path="aprobaciones" element={<AdminAprobaciones />} />

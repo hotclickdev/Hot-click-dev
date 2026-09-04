@@ -129,6 +129,7 @@ function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
     { to: '/admin/pagos', label: t('admin.sidebar.pagosWebhooks'), icon: 'card', permiso: 'global.metrics' },
     { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard', permiso: 'global.companies' },
     { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },
+    { to: '/admin/soporte', label: t('admin.sidebar.inboxSoporte'), icon: 'help' },
     { to: '/admin/servicios', label: t('admin.sidebar.serviciosHot'), icon: 'wrench', permiso: 'global.companies' },
     { to: '/admin/facturas', label: t('admin.sidebar.comprobantesElectronicos'), icon: 'clipboard', permiso: 'global.metrics' },
     { to: '/admin/config-fiscal', label: t('admin.sidebar.configFiscal'), icon: 'config', permiso: 'global.metrics' },

@@ -1,6 +1,7 @@
--- V123: empresa afectada en auditoría admin + índices para listado filtrado
+-- V129: empresa afectada en auditoría admin + índices para listado filtrado
 -- La tabla hot_click_auditoria_admin_tb ya existe (baseline / RLS en V58).
 -- Solo se agrega fk_id_empresa (nullable en filas históricas) e índices de consulta.
+-- V123 en master es homepage_config.
 
 ALTER TABLE hot_click_auditoria_admin_tb
   ADD COLUMN IF NOT EXISTS fk_id_empresa BIGINT REFERENCES hot_click_empresa_tb(id_empresa);
