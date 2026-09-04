@@ -313,7 +313,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByText('Paso 2 de 3')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Confirmá el cambio' })).toBeVisible()
-    await expect(page.getByText('₡9 900/mes')).toBeVisible()
+    await expect(page.getByText('₡9 900/mes').first()).toBeVisible()
   })
 
   test('encargos: cotizar abre pasos de respuesta', async ({ page }) => {

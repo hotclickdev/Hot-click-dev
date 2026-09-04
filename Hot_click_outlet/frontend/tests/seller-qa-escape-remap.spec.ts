@@ -11,7 +11,7 @@ test.describe('Seller QA — Escape modal Sucursales', () => {
 
     await entrarSeller(page, 'NEGOCIO_PLUS')
     await page.goto('/negocio-plus/sucursales', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: /sucursales/i })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Mis Sucursales' })).toBeVisible({ timeout: 15_000 })
 
     await page.getByRole('button', { name: /agregar sucursal/i }).first().click()
     const dialog = page.getByRole('dialog')

@@ -113,6 +113,8 @@ export default function TarjetaOpcion({
   return (
     <motion.button
       type="button"
+      role="radio"
+      aria-checked={seleccionado}
       data-mm={dataMm}
       disabled={disabled}
       onClick={() => void elegir()}

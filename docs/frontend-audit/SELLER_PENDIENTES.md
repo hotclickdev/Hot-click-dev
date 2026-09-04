@@ -16,10 +16,14 @@
 
 | # | Ítem |
 |---|------|
-| 1 | QA visual Emp Productos (`FilaProductoLista` vs Figma) |
-| 2 | Playwright seller verde en CI (Chrome) — specs ya en `test:e2e:ci` |
-| 3 | Asset maskable PWA con safe-zone |
-| 4 | CRM/Marketing seller — decisión producto (no inventar módulos) |
+| 1 | Asset maskable PWA con safe-zone |
+| 2 | CRM/Marketing seller — decisión producto (no inventar módulos) |
+
+## Verificado (2026-09-04)
+
+- Playwright seller suite local: **32/32** (wizards Emp/PYME/Plus, Escape, remap, sidebar)
+- QA visual Emp `/productos`: chrome Emp + `FilaProductoLista` + empty conversacional OK
+- Fix a11y: `TarjetaOpcion` como `role="radio"` dentro de radiogroups
 
 ## Deuda aparte (no bloquea merge P1)
 
@@ -28,4 +32,4 @@
 
 ## Merge
 
-Tras smoke visual Productos + Playwright seller: merge `feat/seller-roadmap-p1` → `master` cuando Andres lo pida. Recordar `pnpm build` antes de commit/deploy Docker.
+Merge `feat/seller-roadmap-p1` → `master` cuando Andres lo pida. Recordar `pnpm build` antes de commit/deploy Docker.
