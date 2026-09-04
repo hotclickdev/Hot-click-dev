@@ -75,6 +75,41 @@ public class TenantLimitChecker {
     }
 
     /**
+     * Verifica que el plan de la empresa tenga habilitada una feature booleana
+     * (ej. "giftCards"). Lanza PlanLimitException (HTTP 403) si no la tiene.
+     */
+    @Transactional(readOnly = true)
+    public void verificarFeature(Long empresaId, String feature) {
+        if (empresaId == null) return;
+        Empresa empresa = empresaRepo.findById(empresaId).orElse(null);
+        if (empresa == null || empresa.getPlan() == null) return;
+
+        Plan plan = empresa.getPlan();
+        boolean habilitada = switch (feature) {
+            case "pos"        -> Boolean.TRUE.equals(plan.getTienePos());
+            case "crm"        -> Boolean.TRUE.equals(plan.getTieneCrm());
+            case "compras"    -> Boolean.TRUE.equals(plan.getTieneCompras());
+            case "reportes"   -> Boolean.TRUE.equals(plan.getTieneReportes());
+            case "ai"         -> Boolean.TRUE.equals(plan.getTieneAi());
+            case "api"        -> Boolean.TRUE.equals(plan.getTieneApi());
+            case "giftCards"  -> Boolean.TRUE.equals(plan.getTieneGiftCards());
+            default           -> true;
+        };
+        if (habilitada) return;
+
+        String label = switch (feature) {
+            case "giftCards" -> "Gift Cards";
+            default -> feature;
+        };
+        String mensaje = "Tu plan actual no incluye " + label + ".";
+        String upgrade = "Plan actual: «" + plan.getNombre() + "». "
+            + "Ve a Configuración → Suscripción para ampliar tu capacidad.";
+
+        log.warn("[plan-feature] empresa={} feature={} plan={}", empresaId, feature, plan.getNombre());
+        throw new PlanLimitException(mensaje, feature, upgrade);
+    }
+
+    /**
      * Núcleo del chequeo: lee el Plan, obtiene el límite de la entidad,
      * y lanza PlanLimitException si {@code usoActual + cantidad > limite}.
      *

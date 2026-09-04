@@ -3575,7 +3575,7 @@ SET visible_catalogo = FALSE
 WHERE visible_catalogo = TRUE
   AND (fk_id_empresa = 1 OR fk_id_empresa IS NULL);
 
--- V121: empresa afectada en auditoría admin + índices de listado
+-- V121: empresa afectada en auditorï¿½a admin + ï¿½ndices de listado
 CREATE TABLE IF NOT EXISTS hot_click_auditoria_admin_tb (
     id_auditoria BIGSERIAL PRIMARY KEY,
     admin_id     BIGINT,
@@ -3650,3 +3650,14 @@ WHERE EXISTS (
       AND r.nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
 );
 
+
+-- V121: gate de Gift Cards por plan (PYME y NEGOCIO_PLUS, no EMPRENDEDOR)
+ALTER TABLE hot_click_plan_tb ADD COLUMN IF NOT EXISTS tiene_gift_cards BOOLEAN NOT NULL DEFAULT false;
+
+UPDATE hot_click_plan_tb SET tiene_gift_cards = true WHERE nombre IN ('PYME', 'NEGOCIO_PLUS');
+
+-- V122: corrige la descripcion del flag split_payments â€” Gift Cards ya tiene su
+-- propio gate real por plan (tieneGiftCards, V121), este flag nunca lo controlo.
+UPDATE hot_click_feature_flag_tb
+SET descripcion = 'Pagos divididos en una misma venta'
+WHERE nombre = 'split_payments';

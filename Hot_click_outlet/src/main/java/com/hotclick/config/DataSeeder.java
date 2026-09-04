@@ -47,21 +47,21 @@ public class DataSeeder implements ApplicationRunner {
             "Plan gratuito. Comisión 8% por venta (mín. ₡400), cubre pasarela y plataforma.",
             BigDecimal.ZERO, new BigDecimal("8.00"), 0,
             2, 50, 1, 1,
-            false, false, false, true, false, false, 0
+            false, false, false, true, false, false, 0, false
         );
         seedPlan(
             "PYME",
             "Plan para negocios en crecimiento. ₡9.900/mes + 4% por venta (cubre pasarela).",
             new BigDecimal("11.99"), new BigDecimal("4.00"), 9900,
             5, 500, 2, 2,
-            true, false, true, true, true, false, 80
+            true, false, true, true, true, false, 80, true
         );
         seedPlan(
             "NEGOCIO_PLUS",
             "Plan completo. ₡24.900/mes + 4% por venta (cubre pasarela).",
             new BigDecimal("19.99"), new BigDecimal("4.00"), 24900,
             -1, -1, -1, -1,
-            true, true, true, true, true, false, -1
+            true, true, true, true, true, false, -1, true
         );
         backfillSinPlan();
     }
@@ -71,7 +71,7 @@ public class DataSeeder implements ApplicationRunner {
         BigDecimal precioUsd, BigDecimal comision, int precioMensualCrc,
         int maxUsuarios, int maxProductos, int maxBodegas, int maxCajas,
         boolean pos, boolean crm, boolean compras, boolean reportes,
-        boolean ai, boolean api, int creditosAi
+        boolean ai, boolean api, int creditosAi, boolean giftCards
     ) {
         var existente = planRepository.findByNombre(nombre);
         if (existente.isPresent()) {
@@ -115,6 +115,7 @@ public class DataSeeder implements ApplicationRunner {
         plan.setTieneReportes(reportes);
         plan.setTieneAi(ai);
         plan.setTieneApi(api);
+        plan.setTieneGiftCards(giftCards);
         plan.setMaxCreditosAi(creditosAi);
         plan.setActivo(true);
         planRepository.save(plan);

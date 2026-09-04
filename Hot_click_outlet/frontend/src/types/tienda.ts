@@ -17,6 +17,7 @@ export type TenantFeatures = {
   reportes?: boolean
   ai?: boolean
   api?: boolean
+  giftCards?: boolean
   [key: string]: boolean | undefined
 }
 

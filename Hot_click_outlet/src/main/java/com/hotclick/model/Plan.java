@@ -51,6 +51,9 @@ public class Plan {
     @Column(name = "tiene_api", nullable = false)
     private Boolean tieneApi = false;
 
+    @Column(name = "tiene_gift_cards", nullable = false)
+    private Boolean tieneGiftCards = false;
+
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
 
@@ -107,6 +110,9 @@ public class Plan {
 
     public Boolean getTieneApi() { return tieneApi; }
     public void setTieneApi(Boolean tieneApi) { this.tieneApi = tieneApi; }
+
+    public Boolean getTieneGiftCards() { return tieneGiftCards; }
+    public void setTieneGiftCards(Boolean tieneGiftCards) { this.tieneGiftCards = tieneGiftCards; }
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }

@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.hotclick.model.GiftCard;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.GiftCardService;
+import com.hotclick.service.tenant.TenantLimitChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class GiftCardController {
 
     @Autowired private GiftCardService giftCardService;
+    @Autowired private TenantLimitChecker tenantLimitChecker;
 
     // ── Admin: listar gift cards de la empresa ────────────────────────────────
     @GetMapping("/admin/gift-cards")
@@ -28,6 +30,7 @@ public class GiftCardController {
         if (empresaId == null) {
             return ResponseEntity.status(403).build();
         }
+        tenantLimitChecker.verificarFeature(empresaId, "giftCards");
         List<Map<String, Object>> result = giftCardService.listarPorEmpresa(empresaId)
             .stream().map(giftCardService::toMap).collect(Collectors.toList());
         return ResponseEntity.ok(result);
@@ -39,6 +42,7 @@ public class GiftCardController {
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body) {
         try {
             Long empresaId = TenantContext.get();
+            tenantLimitChecker.verificarFeature(empresaId, "giftCards");
             Integer monto = ((Number) body.get("monto")).intValue();
             String vencimientoStr = (String) body.get("fechaVencimiento");
             String codigoManual   = (String) body.get("codigo");

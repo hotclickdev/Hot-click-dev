@@ -29,7 +29,7 @@ const FLAG_LABELS: Record<string, string> = {
   ai_forecast:             'AI Forecast de demanda',
   mobile_pos:              'Mobile POS (PWA offline)',
   self_checkout:           'Self-Checkout QR',
-  split_payments:          'Pagos divididos / Gift Cards',
+  split_payments:          'Pagos divididos',
   marketplace_plugins:     'Marketplace de Plugins',
   white_label:             'White Label (branding custom)',
 }
