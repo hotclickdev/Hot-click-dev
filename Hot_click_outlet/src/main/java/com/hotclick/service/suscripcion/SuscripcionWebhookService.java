@@ -2,6 +2,7 @@ package com.hotclick.service.suscripcion;
 
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
+import com.hotclick.service.billing.BillingLedgerWriter;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ public class SuscripcionWebhookService {
     @Autowired private StripeEventoRepository  eventoRepo;
     @Autowired private EmpresaRepository       empresaRepo;
     @Autowired private SuscripcionPlanSupport  planSupport;
+    @Autowired private BillingLedgerWriter     ledgerWriter;
 
     /**
      * Idempotencia: retorna true si el evento ya fue procesado.
@@ -113,6 +115,12 @@ public class SuscripcionWebhookService {
         }
         facturaRepo.save(factura);
 
+        if (sub != null) {
+            ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_COBRO_OK,
+                BillingLedger.PROVEEDOR_STRIPE, stripeInvoiceId, montoCentavos, moneda,
+                "Factura Stripe pagada");
+        }
+
         log.info("[billing] Factura pagada stripeInvoiceId={} monto={} {}", stripeInvoiceId, montoCentavos, moneda);
     }
 
@@ -128,6 +136,9 @@ public class SuscripcionWebhookService {
             Empresa empresa = sub.getEmpresa();
             empresa.setEstadoPlan("PAST_DUE");
             empresaRepo.save(empresa);
+            ledgerWriter.registrar(empresa, sub, BillingLedger.TIPO_COBRO_FALLIDO,
+                BillingLedger.PROVEEDOR_STRIPE, stripeInvoiceId, null, null,
+                "Pago Stripe fallido");
             log.warn("[billing] Pago fallido empresa={} stripeSubId={}", empresa.getId(), stripeSubId);
         });
 
@@ -147,6 +158,9 @@ public class SuscripcionWebhookService {
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
             suscripcionRepo.save(sub);
             planSupport.degradarAFree(sub.getEmpresa());
+            ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_CANCELACION,
+                BillingLedger.PROVEEDOR_STRIPE, stripeSubId, null, null,
+                "Suscripción Stripe cancelada");
             log.info("[billing] Suscripción eliminada empresa={}", sub.getEmpresa().getId());
         });
     }

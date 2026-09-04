@@ -83,6 +83,8 @@ const EncargoPublicPage = lazy(() => import('@/pages/EncargoPublicPage'))
 const AdminEncargos = lazy(() => import('@/pages/admin/AdminEncargos'))
 const AdminRecolecciones = lazy(() => import('@/pages/admin/AdminRecolecciones'))
 const AdminPayouts = lazy(() => import('@/pages/admin/AdminPayouts'))
+const AdminBillingPlataforma = lazy(() => import('@/pages/admin/saas-billing/AdminBillingPlataforma'))
+const AdminBillingEmpresa = lazy(() => import('@/pages/admin/saas-billing/AdminBillingEmpresa'))
 const AdminReportesProducto = lazy(() => import('@/pages/admin/AdminReportesProducto'))
 const AdminAiControl = lazy(() => import('@/pages/admin/AdminAiControl'))
 const AdminFacturas = lazy(() => import('@/pages/admin/AdminFacturas'))
@@ -247,6 +249,8 @@ export default function AppRoutes() {
           <Route path="servicios" element={<AdminSolicitudesServicio />} />
           <Route path="recolecciones" element={<AdminRecolecciones />} />
           <Route path="payouts" element={<AdminPayouts />} />
+          <Route path="saas-billing" element={<AdminBillingPlataforma />} />
+          <Route path="saas-billing/:id" element={<AdminBillingEmpresa />} />
           <Route path="reportes-producto" element={<AdminReportesProducto />} />
           <Route path="empresas" element={<AdminEmpresas />} />
           <Route path="aprobaciones" element={<AdminAprobaciones />} />
