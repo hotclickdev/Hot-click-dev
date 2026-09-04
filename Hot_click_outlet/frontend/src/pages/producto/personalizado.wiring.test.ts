@@ -51,8 +51,10 @@ describe('productos personalizados — wiring estático', () => {
     const botones = readFileSync(resolve(root, 'src/prototipo/compartido/BotonesAgregarProducto.tsx'), 'utf8')
     expect(botones).toContain('Producto de catálogo')
     expect(botones).toContain('Producto personalizado')
-    const listado = readFileSync(resolve(root, 'src/prototipo/emprendedor/pages/ProductosPage.tsx'), 'utf8')
-    expect(listado).toContain('BotonesAgregarProducto')
+    const page = readFileSync(resolve(root, 'src/prototipo/emprendedor/pages/ProductosPage.tsx'), 'utf8')
+    expect(page).toContain('ProductosListaVista')
+    const vista = readFileSync(resolve(root, 'src/prototipo/compartido/ProductosListaVista.tsx'), 'utf8')
+    expect(vista).toContain('BotonesAgregarProducto')
   })
 
   it('panel de encargo compartido y presupuesto del cliente', () => {
