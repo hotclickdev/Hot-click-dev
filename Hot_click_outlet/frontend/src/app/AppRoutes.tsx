@@ -69,7 +69,6 @@ const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const AdminSolicitudesServicio = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
 const AdminSolicitudesGarantia = lazy(() => import('@/pages/admin/AdminSolicitudesGarantia'))
-const AdminTestimonios = lazy(() => import('@/pages/admin/AdminTestimonios'))
 const AdminEmpresas = lazy(() => import('@/pages/admin/AdminEmpresas'))
 const AdminEquipo = lazy(() => import('@/pages/admin/AdminEquipo'))
 const AdminAprobaciones = lazy(() => import('@/pages/admin/AdminAprobaciones'))
@@ -93,7 +92,6 @@ const BlogPage = lazy(() => import('@/pages/BlogPage'))
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage = lazy(() => import('@/pages/EmprendimientosPage'))
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
-const AdminConvenios = lazy(() => import('@/pages/admin/AdminConvenios'))
 const AdminPOS = lazy(() => import('@/pages/admin/pos/AdminPOS'))
 const AdminPOSCaja = lazy(() => import('@/pages/admin/pos/AdminPOSCaja'))
 const AdminPOSHistorial = lazy(() => import('@/pages/admin/pos/AdminPOSHistorial'))
@@ -107,9 +105,7 @@ const AdminOfflineCola = lazy(() => import('@/pages/admin/AdminOfflineCola'))
 const AdminGiftCards = lazy(() => import('@/pages/admin/AdminGiftCards'))
 const AdminAsignarProducto = lazy(() => import('@/pages/admin/AdminAsignarProducto'))
 const AdminCupones = lazy(() => import('@/pages/admin/AdminCupones'))
-const AdminBranding = lazy(() => import('@/pages/admin/AdminBranding'))
 const AdminHomepage = lazy(() => import('@/pages/admin/AdminHomepage'))
-const AdminPlugins = lazy(() => import('@/pages/admin/AdminPlugins'))
 const AdminInventario = lazy(() => import('@/pages/admin/AdminInventario'))
 const AdminAyuda = lazy(() => import('@/pages/admin/AdminAyuda'))
 const AdminForecast = lazy(() => import('@/pages/admin/AdminForecast'))
@@ -214,7 +210,6 @@ export default function AppRoutes() {
         <Route path="herramientas/auditorias" element={<Navigate to="/admin" replace />} />
         <Route path="herramientas/servicios" element={<Navigate to="/admin/servicios" replace />} />
         <Route path="herramientas/aprobaciones" element={<Navigate to="/admin/aprobaciones" replace />} />
-        <Route path="herramientas/testimonios" element={<Navigate to="/admin/testimonios" replace />} />
         <Route path="proximamente" element={<Navigate to="/admin" replace />} />
         <Route path="productos" element={<AdminProductosRoute />} />
         <Route path="productos/nuevo" element={<SistemaProductoFormRoute />} />
@@ -253,7 +248,6 @@ export default function AppRoutes() {
           <Route path="recolecciones" element={<AdminRecolecciones />} />
           <Route path="payouts" element={<AdminPayouts />} />
           <Route path="reportes-producto" element={<AdminReportesProducto />} />
-          <Route path="testimonios" element={<AdminTestimonios />} />
           <Route path="empresas" element={<AdminEmpresas />} />
           <Route path="aprobaciones" element={<AdminAprobaciones />} />
           <Route path="security" element={<AdminSecurityCenter />} />
@@ -265,10 +259,7 @@ export default function AppRoutes() {
           <Route path="homepage" element={<AdminHomepage />} />
           <Route path="cupones" element={<AdminCupones />} />
           <Route path="publicaciones" element={<AdminPublicaciones />} />
-          <Route path="branding" element={<AdminBranding />} />
-          <Route path="plugins" element={<AdminPlugins />} />
           <Route path="multipais" element={<AdminMultipais />} />
-          <Route path="convenios" element={<AdminConvenios />} />
         </Route>
         <Route path="planes" element={<Navigate to="/admin/billing/planes" replace />} />
         <Route path="billing/planes" element={<AdminPlanes />} />
