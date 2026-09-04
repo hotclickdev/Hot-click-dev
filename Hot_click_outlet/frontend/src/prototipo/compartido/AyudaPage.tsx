@@ -8,6 +8,7 @@ const FAQS = [
   { q: '¿Cómo publico un producto nuevo?', a: 'Entrá a Productos, tocá Agregar producto, completá nombre, precios, stock y categoría, y publicá.' },
   { q: '¿Cuánto tarda en verse en el marketplace?', a: 'Si el producto queda Publicado, aparece de inmediato en tu tienda y en el catálogo.' },
   { q: '¿Cómo cambio mi método de cobro?', a: 'En Opciones → Métodos de cobro podés ver SINPE, IBAN y tarjeta, y agregar otro método.' },
+  { q: '¿Cómo vinculo Telegram?', a: 'En Opciones → Telegram generás un enlace, lo abrís en el celular y tocás Iniciar. Los avisos de este negocio llegan a ese chat.' },
   { q: '¿Qué pasa si un producto es rechazado?', a: 'Te llega una notificación. Corregí la ficha y volvé a publicarlo.' },
 ] as const
 

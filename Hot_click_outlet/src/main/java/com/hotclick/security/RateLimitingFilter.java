@@ -85,6 +85,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
         // General
         Map.entry("/api/contacto",                new Limit(5,    60)),
+        Map.entry("/api/telegram/vincular",       new Limit(5,    60)),
         Map.entry("/api/pedidos",                 new Limit(15,   60)),
         Map.entry("/api/payment/checkout",        new Limit(3,    60)),
         // Uploads públicos — limitar para evitar abuso de almacenamiento y costos S3

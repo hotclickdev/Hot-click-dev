@@ -13,6 +13,7 @@ const TiendaPublicaPage = lazy(() => import('./TiendaPublicaPage'))
 const OpcionesPage = lazy(() => import('./OpcionesPage'))
 const PerfilPage = lazy(() => import('./PerfilPage'))
 const NotificacionesPage = lazy(() => import('./NotificacionesPage'))
+const TelegramVincularPage = lazy(() => import('./TelegramVincularPage'))
 const CobroPage = lazy(() => import('./CobroPage'))
 const AgregarMetodoCobroPage = lazy(() => import('./AgregarMetodoCobroPage'))
 const AyudaPage = lazy(() => import('./AyudaPage'))
@@ -83,6 +84,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="compra-ok" element={page(CompraOkPage)} />
         <Route path="perfil" element={page(PerfilPage)} />
         <Route path="notificaciones" element={page(NotificacionesPage)} />
+        <Route path="telegram" element={page(TelegramVincularPage)} />
         <Route path="cobro" element={page(CobroPage)} />
         <Route path="cobro/nuevo" element={page(AgregarMetodoCobroPage)} />
         <Route path="ayuda" element={page(AyudaPage)} />

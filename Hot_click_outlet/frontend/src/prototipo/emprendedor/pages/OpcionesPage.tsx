@@ -10,6 +10,7 @@ const OPCIONES = [
   { to: '/opciones/perfil', etiqueta: 'Editar perfil' },
   { to: '/opciones/notificaciones', etiqueta: 'Notificaciones' },
   { to: '/opciones/cobro', etiqueta: 'Métodos de cobro' },
+  { to: '/opciones/telegram', etiqueta: 'Telegram' },
   { to: '/opciones/ayuda', etiqueta: 'Ayuda y soporte' },
   { to: '/opciones/consultas', etiqueta: 'Consultas con Hot' },
   { to: '/opciones/bodegas', etiqueta: 'Mis bodegas' },

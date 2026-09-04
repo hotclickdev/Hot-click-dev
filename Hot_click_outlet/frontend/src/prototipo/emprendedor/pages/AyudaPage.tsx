@@ -17,6 +17,10 @@ const PREGUNTAS = [
     a: 'En Métodos de cobro podés ver SINPE, IBAN y tarjeta, y agregar una cuenta nueva paso a paso.',
   },
   {
+    q: '¿Cómo vinculo Telegram?',
+    a: 'En Opciones → Telegram generás un enlace, lo abrís en el celular y tocás Iniciar. Los avisos de este negocio llegan a ese chat.',
+  },
+  {
     q: '¿Qué pasa si un producto es rechazado?',
     a: 'Te llega una notificación. Editá el producto y volvé a publicarlo cuando esté listo.',
   },

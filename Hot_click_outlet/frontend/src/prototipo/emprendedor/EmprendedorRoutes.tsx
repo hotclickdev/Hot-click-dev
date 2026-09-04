@@ -20,6 +20,7 @@ const CompraConfirmadaPage = lazy(() => import('./pages/CompraConfirmadaPage'))
 const OpcionesPage = lazy(() => import('./pages/OpcionesPage'))
 const PerfilPage = lazy(() => import('./pages/PerfilPage'))
 const NotificacionesPage = lazy(() => import('./pages/NotificacionesPage'))
+const TelegramPage = lazy(() => import('./pages/TelegramPage'))
 const CobroPage = lazy(() => import('./pages/CobroPage'))
 const AgregarMetodoCobroPage = lazy(() => import('./pages/AgregarMetodoCobroPage'))
 const AyudaPage = lazy(() => import('./pages/AyudaPage'))
@@ -76,6 +77,7 @@ export default function EmprendedorRoutes() {
       <Route path="perfil" element={<Navigate to="opciones/perfil" replace />} />
       <Route path="cobro" element={<Navigate to="opciones/cobro" replace />} />
       <Route path="cobro/nuevo" element={<Navigate to="opciones/cobro/nuevo" replace />} />
+      <Route path="telegram" element={<Navigate to="opciones/telegram" replace />} />
       <Route element={<EmprendedorShell conNav />}>
         <Route index element={page(MenuPage)} />
         <Route path="productos" element={page(ProductosPage)} />
@@ -97,6 +99,7 @@ export default function EmprendedorRoutes() {
         <Route path="tienda/:id" element={page(DetalleProductoPage)} />
         <Route path="opciones/perfil" element={page(PerfilPage)} />
         <Route path="opciones/notificaciones" element={page(NotificacionesPage)} />
+        <Route path="opciones/telegram" element={page(TelegramPage)} />
         <Route path="opciones/cobro" element={page(CobroPage)} />
         <Route path="opciones/cobro/nuevo" element={page(AgregarMetodoCobroPage)} />
         <Route path="opciones/ayuda" element={page(AyudaPage)} />
