@@ -43,7 +43,7 @@ export default function SistemaTab() {
     <div className="space-y-6">
       {serverStatus?.whatsappModo === 'SIMULADO' && (
         <Card className="p-4">
-          <div className="rounded-lg p-3" style={{ outline: '1px solid rgba(234,179,8,0.45)' }}>
+          <div className="rounded-lg p-3" style={{ outline: '1px solid color-mix(in srgb, var(--hc-warning) 45%, transparent)' }}>
           <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
             WhatsApp en modo SIMULADO
           </p>
@@ -88,9 +88,9 @@ export default function SistemaTab() {
 }
 
 function clasePuntoServidor(serverStatus: EstadoServidor | null) {
-  if (serverStatus === null) return 'bg-amber-400 animate-pulse'
-  if (serverStatus.up) return 'bg-emerald-400'
-  return 'bg-red-400 animate-pulse'
+  if (serverStatus === null) return 'bg-hc-warning animate-pulse'
+  if (serverStatus.up) return 'bg-hc-success'
+  return 'bg-hc-danger animate-pulse'
 }
 
 function textoEstadoServidor(serverStatus: EstadoServidor | null) {

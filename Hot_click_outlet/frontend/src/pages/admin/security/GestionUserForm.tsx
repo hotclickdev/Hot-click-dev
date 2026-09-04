@@ -80,8 +80,8 @@ export default function GestionUserForm({
             <div className="space-y-2">
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Estado</p>
               <div className="grid grid-cols-2 gap-2">
-                {[['ACTIVO', '#4ade80', 'rgba(34,197,94,0.15)', 'rgba(34,197,94,0.4)'],
-                  ['INACTIVO', '#f87171', 'rgba(239,68,68,0.15)', 'rgba(239,68,68,0.4)']].map(([val, color, bg, border]) => (
+                {[['ACTIVO', 'var(--hc-success)', 'var(--hc-success-bg)', 'color-mix(in srgb, var(--hc-success) 40%, transparent)'],
+                  ['INACTIVO', 'var(--hc-danger)', 'var(--hc-danger-bg)', 'color-mix(in srgb, var(--hc-danger) 40%, transparent)']].map(([val, color, bg, border]) => (
                   <button type="button" key={val} onClick={() => onEditEstado(val)}
                     className="px-2 py-2 rounded-xl text-xs font-medium border transition-all"
                     style={{
@@ -135,8 +135,8 @@ export default function GestionUserForm({
               <button type="button" onClick={onConfirmAction} disabled={actionLoading}
                 className="flex-1 h-9 rounded-xl text-sm font-semibold disabled:opacity-50"
                 style={{
-                  backgroundColor: actionType === 'block' || actionType === 'delete' ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
-                  color: actionType === 'block' || actionType === 'delete' ? '#f87171' : '#4ade80',
+                  backgroundColor: actionType === 'block' || actionType === 'delete' ? 'var(--hc-danger-bg)' : 'var(--hc-success-bg)',
+                  color: actionType === 'block' || actionType === 'delete' ? 'var(--hc-danger)' : 'var(--hc-success)',
                 }}>
                 {actionLoading ? '...' : 'Confirmar'}
               </button>

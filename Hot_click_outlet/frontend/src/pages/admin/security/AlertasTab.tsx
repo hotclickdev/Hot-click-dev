@@ -63,7 +63,7 @@ export default function AlertasTab() {
               {!alert.resolved && (
                 <button type="button" onClick={() => handleResolve(alert.id)} disabled={resolving === alert.id}
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 disabled:opacity-40"
-                  style={{ backgroundColor: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>
+                  style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
                   {resolving === alert.id ? '...' : 'Resolver'}
                 </button>
               )}

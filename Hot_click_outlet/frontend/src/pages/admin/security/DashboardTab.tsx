@@ -42,12 +42,12 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <KpiCard label="Eventos totales"    value={summary.totalEvents} />
-        <KpiCard label="Logins fallidos"    value={summary.failedLogins}    accent="#E5A93D" />
-        <KpiCard label="Tokens rechazados"  value={summary.tokenRejections}  accent="#facc15" />
-        <KpiCard label="Rate limits"        value={summary.rateLimitEvents}  accent="#E5A93D" />
+        <KpiCard label="Logins fallidos"    value={summary.failedLogins}    accent="var(--hc-warning)" />
+        <KpiCard label="Tokens rechazados"  value={summary.tokenRejections}  accent="var(--hc-warning)" />
+        <KpiCard label="Rate limits"        value={summary.rateLimitEvents}  accent="var(--hc-warning)" />
         <KpiCard label="Alertas activas"    value={summary.activeAlerts}
-          accent={(summary.activeAlerts ?? 0) > 0 ? '#f87171' : undefined} />
-        <KpiCard label="Sesiones (30 min)"  value={sesiones?.activas30min ?? '—'} accent="#4ade80"
+          accent={(summary.activeAlerts ?? 0) > 0 ? 'var(--hc-danger)' : undefined} />
+        <KpiCard label="Sesiones (30 min)"  value={sesiones?.activas30min ?? '—'} accent="var(--hc-success)"
           sub={`${sesiones?.activas24h ?? '—'} en 24h`} />
       </div>
 
@@ -56,7 +56,7 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
         <Card className="p-5 space-y-3">
           <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Adopción 2FA</p>
           <div className="flex items-end gap-3">
-            <span className="text-4xl font-bold tabular-nums" style={{ color: '#4ade80' }}>
+            <span className="text-4xl font-bold tabular-nums" style={{ color: 'var(--hc-success)' }}>
               {twoFactorAdoption.adoptionPercent ?? 0}%
             </span>
             <span className="text-sm mb-1" style={{ color: 'var(--hc-muted)' }}>
@@ -65,7 +65,7 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
           </div>
           <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--hc-border)' }}>
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${twoFactorAdoption.adoptionPercent ?? 0}%`, backgroundColor: '#4ade80' }} />
+              style={{ width: `${twoFactorAdoption.adoptionPercent ?? 0}%`, backgroundColor: 'var(--hc-success)' }} />
           </div>
         </Card>
 
@@ -105,12 +105,12 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
       {/* Alertas activas */}
       {activeAlerts.length > 0 && (
         <div className="rounded-2xl overflow-hidden"
-          style={{ border: '1px solid rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.05)' }}>
-          <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <p className="text-sm font-semibold text-red-400">Alertas activas ({activeAlerts.length})</p>
+          style={{ border: '1px solid color-mix(in srgb, var(--hc-danger) 30%, transparent)', backgroundColor: 'color-mix(in srgb, var(--hc-danger) 5%, transparent)' }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid color-mix(in srgb, var(--hc-danger) 20%, transparent)' }}>
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--hc-danger)' }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--hc-danger)' }}>Alertas activas ({activeAlerts.length})</p>
           </div>
-          <div className="divide-y" style={{ borderColor: 'rgba(239,68,68,0.15)' }}>
+          <div className="divide-y" style={{ borderColor: 'color-mix(in srgb, var(--hc-danger) 15%, transparent)' }}>
             {activeAlerts.map(alert => (
               <div key={alert.id} className="px-5 py-3 flex items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
@@ -124,7 +124,7 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
                 </div>
                 <button type="button" onClick={() => handleResolve(alert.id)} disabled={resolving === alert.id}
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 disabled:opacity-40"
-                  style={{ backgroundColor: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>
+                  style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
                   {resolving === alert.id ? '...' : 'Resolver'}
                 </button>
               </div>

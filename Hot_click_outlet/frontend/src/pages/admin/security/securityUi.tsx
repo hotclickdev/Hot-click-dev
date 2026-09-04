@@ -51,7 +51,7 @@ export function TabBtn({ active, onClick, children, badge }: {
       {children}
       {(badge ?? 0) > 0 && (
         <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
-          style={{ backgroundColor: '#ef4444', color: '#fff' }}>{badge}</span>
+          style={{ backgroundColor: 'var(--hc-danger)', color: '#fff' }}>{badge}</span>
       )}
     </button>
   )
