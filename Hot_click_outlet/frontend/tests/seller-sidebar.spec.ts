@@ -63,26 +63,45 @@ function sidebar(page: Page) {
 }
 
 test.describe('Sidebar PYME y Negocio Plus', () => {
-  test('PYME agrupa Operar y Negocio, sin Sucursales', async ({ page }) => {
+  test('PYME alinea Operar/Inventario/Negocio con Emp; Equipo sin Sucursales', async ({ page }) => {
     await entrarVendedor(page, 'PYME', '/pyme')
     const nav = sidebar(page)
 
     await expect(nav.getByRole('group', { name: 'Operar' })).toBeVisible()
+    await expect(nav.getByRole('group', { name: 'Inventario' })).toBeVisible()
     await expect(nav.getByRole('group', { name: 'Negocio' })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'Productos' })).toBeVisible()
+
+    await expect(nav.getByRole('link', { name: 'Caja (POS)' })).toHaveAttribute('href', '/admin/pos')
+    await expect(nav.getByRole('link', { name: 'Pedidos' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Tienda' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Mis Bodegas' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Mis Productos' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Reportes' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Opciones' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Equipo' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Sucursales' })).toHaveCount(0)
-    await expect(nav.getByRole('link', { name: 'Productos' }).locator('svg')).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Mis Productos' }).locator('svg')).toBeVisible()
   })
 
-  test('Negocio Plus agrega Sucursales en Operar', async ({ page }) => {
+  test('Negocio Plus agrega Sucursales y no Equipo', async ({ page }) => {
     await entrarVendedor(page, 'NEGOCIO_PLUS', '/negocio-plus')
     const nav = sidebar(page)
 
+    await expect(nav.getByRole('link', { name: 'Caja (POS)' })).toHaveAttribute('href', '/admin/pos')
+    await expect(nav.getByRole('link', { name: 'Pedidos' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Mis Bodegas' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Sucursales' })).toBeVisible()
     await expect(nav.getByRole('group', { name: 'Operar' }).getByRole('link', { name: 'Sucursales' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Equipo' })).toHaveCount(0)
+  })
+
+  test('al ir a Pedidos, ese ítem queda como página actual', async ({ page }) => {
+    await entrarVendedor(page, 'PYME', '/pyme')
+    const nav = sidebar(page)
+
+    await nav.getByRole('link', { name: 'Pedidos' }).click()
+    await expect(page).toHaveURL(/\/pyme\/pedidos/)
+    await expect(nav.getByRole('link', { name: 'Pedidos' })).toHaveAttribute('aria-current', 'page')
   })
 
   test('al ir a Reportes, ese ítem queda como página actual', async ({ page }) => {

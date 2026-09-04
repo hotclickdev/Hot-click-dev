@@ -46,7 +46,10 @@ export default function PedidosPage() {
           />
         ) : null}
         {!cargando && seller.length > 0 && lista.length === 0 ? (
-          <p className="text-sm text-hc-muted">No hay pedidos en este filtro.</p>
+          <EstadoVacioConversacional
+            titulo="Nada en este filtro"
+            mensaje="Probá con otro estado o volvé a Todos para ver todos los pedidos."
+          />
         ) : null}
         <div data-mm="seller-lista-pedidos">
           <ListaStagger className="space-y-3 md:max-w-[760px]">
