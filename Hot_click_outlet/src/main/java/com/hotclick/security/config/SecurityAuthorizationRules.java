@@ -189,6 +189,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/observabilidad/**").hasRole(Constants.ROL_ADMIN)
             // Auditoría admin (solo lectura) — ADMIN only
             .requestMatchers("/api/admin/auditorias/**").hasRole(Constants.ROL_ADMIN)
+            // Billing de plataforma — ADMIN only (distinto de /api/billing self-serve)
+            .requestMatchers("/api/admin/billing/**").hasRole(Constants.ROL_ADMIN)
             // Admin-only routes — ADMIN only (superadmin exclusivos)
             .requestMatchers("/api/admin/empresas/**").hasRole(Constants.ROL_ADMIN)
             .requestMatchers("/api/auth/seleccionar-empresa").permitAll()

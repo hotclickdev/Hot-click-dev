@@ -126,6 +126,7 @@ function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
   return [
     { section: ADMIN_IT_SECCION.OPERAR },
     { to: '/admin/payouts', label: t('admin.sidebar.retirosBilletera'), icon: 'card', permiso: 'global.metrics' },
+    { to: '/admin/saas-billing', label: t('admin.sidebar.billingPlataforma'), icon: 'card', permiso: 'global.metrics' },
     { to: '/admin/pagos', label: t('admin.sidebar.pagosWebhooks'), icon: 'card', permiso: 'global.metrics' },
     { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard', permiso: 'global.companies' },
     { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },

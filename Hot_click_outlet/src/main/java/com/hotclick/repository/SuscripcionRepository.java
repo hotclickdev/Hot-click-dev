@@ -25,6 +25,15 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
 
+    /** Suscripciones vigentes (no canceladas/vencidas) con plan cargado — consola billing. */
+    @Query("""
+        SELECT s FROM Suscripcion s
+        JOIN FETCH s.plan
+        JOIN FETCH s.empresa
+        WHERE s.estado NOT IN ('CANCELADO', 'VENCIDO')
+        """)
+    List<Suscripcion> findVigentesConPlanYEmpresa();
+
     /** Trials vencidos que aún están en estado TRIAL */
     @Query("SELECT s FROM Suscripcion s WHERE s.estado = 'TRIAL' AND s.trialEnd < :hoy")
     List<Suscripcion> findTrialsVencidos(@Param("hoy") LocalDate hoy);
