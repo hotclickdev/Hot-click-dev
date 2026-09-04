@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
-  METODOS_COBRO,
   METODOS_COBRO_DEMO,
+  TIPOS_METODO_COBRO,
   decidirFuenteMetodosCobro,
   mascaraDesdeDato,
   validarDatoMetodo,
 } from './metodosCobroDatos'
 
-describe('METODOS_COBRO', () => {
-  it('incluye SINPE, IBAN y tarjeta para recibir ingresos', () => {
-    expect(METODOS_COBRO.map((m) => m.tipo)).toEqual(['sinpe', 'iban', 'tarjeta'])
+describe('TIPOS_METODO_COBRO', () => {
+  it('el alta solo ofrece SINPE e IBAN', () => {
+    expect(TIPOS_METODO_COBRO.map((t) => t.tipo)).toEqual(['sinpe', 'iban'])
   })
 })
 
@@ -28,7 +28,7 @@ describe('decidirFuenteMetodosCobro', () => {
           id: 7,
           tipo: 'sinpe',
           nombre: 'SINPE Móvil',
-          mascara: '8888-0000',
+          mascara: '••••-0000',
           nota: 'ok',
           predeterminado: true,
         },
@@ -64,8 +64,8 @@ describe('validarDatoMetodo', () => {
 })
 
 describe('mascaraDesdeDato', () => {
-  it('enmascara SINPE e IBAN', () => {
-    expect(mascaraDesdeDato('sinpe', '88880000')).toBe('8888-0000')
+  it('enmascara SINPE e IBAN sin mostrar el número completo', () => {
+    expect(mascaraDesdeDato('sinpe', '88880000')).toBe('••••-0000')
     expect(mascaraDesdeDato('iban', 'CR21000012344521')).toContain('****')
   })
 })

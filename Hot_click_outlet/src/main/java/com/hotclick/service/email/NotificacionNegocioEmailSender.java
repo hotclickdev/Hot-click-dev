@@ -124,4 +124,13 @@ public class NotificacionNegocioEmailSender {
             log.error("No se pudo enviar email de producto moderado a {}: {}", correo, e.getMessage());
         }
     }
+
+    public void enviarCambioCobroPendiente(String correo, String nombre, String tipoCuenta, String mascaraNueva) {
+        try {
+            resendEmailService.send(correo, "Cambio de cuenta de cobro en revisión — HotClick",
+                negocioEmailBuilder.buildCambioCobroPendiente(nombre, tipoCuenta, mascaraNueva));
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de cambio de cobro a {}: {}", correo, e.getMessage());
+        }
+    }
 }

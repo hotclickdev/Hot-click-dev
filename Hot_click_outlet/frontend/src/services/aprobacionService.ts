@@ -17,4 +17,9 @@ export const aprobacionService = {
   aprobarOferta: (id: Id) => api.put(`/admin/solicitudes-aprobacion/ofertas/${id}/aprobar`),
   rechazarOferta: (id: Id, comentario: string) =>
     api.put(`/admin/solicitudes-aprobacion/ofertas/${id}/rechazar`, { comentario }),
+
+  listMetodosCobro: () => api.get('/admin/solicitudes-aprobacion/metodos-cobro'),
+  aprobarMetodoCobro: (id: Id) => api.put(`/admin/solicitudes-aprobacion/metodos-cobro/${id}/aprobar`),
+  rechazarMetodoCobro: (id: Id, comentario: string) =>
+    api.put(`/admin/solicitudes-aprobacion/metodos-cobro/${id}/rechazar`, { comentario }),
 }

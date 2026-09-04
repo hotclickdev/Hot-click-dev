@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.controller.aprobacion.SolicitudAprobacionMapper;
 import com.hotclick.controller.aprobacion.SolicitudEmpresaHandler;
+import com.hotclick.controller.aprobacion.SolicitudMetodoCobroHandler;
 import com.hotclick.controller.aprobacion.SolicitudOfertaHandler;
 import com.hotclick.controller.aprobacion.SolicitudProductoHandler;
 import com.hotclick.dto.ResponseDTO;
@@ -25,6 +26,7 @@ public class SolicitudAprobacionController {
     @Autowired private SolicitudEmpresaHandler  solicitudEmpresaHandler;
     @Autowired private SolicitudProductoHandler solicitudProductoHandler;
     @Autowired private SolicitudOfertaHandler   solicitudOfertaHandler;
+    @Autowired private SolicitudMetodoCobroHandler solicitudMetodoCobroHandler;
 
     // toMap() resuelve e.getPlan().getNombre() (relación LAZY); con open-in-view=false
     // hace falta una transacción activa para que el proxy se pueda inicializar.
@@ -91,5 +93,21 @@ public class SolicitudAprobacionController {
     public ResponseEntity<ResponseDTO> rechazarOferta(@PathVariable Long id,
                                                        @RequestBody(required = false) Map<String, String> body) {
         return solicitudOfertaHandler.rechazarOferta(id, body);
+    }
+
+    @GetMapping("/metodos-cobro")
+    public ResponseEntity<ResponseDTO> listarMetodosCobro() {
+        return solicitudMetodoCobroHandler.listar();
+    }
+
+    @PutMapping("/metodos-cobro/{id}/aprobar")
+    public ResponseEntity<ResponseDTO> aprobarMetodoCobro(@PathVariable Long id) {
+        return solicitudMetodoCobroHandler.aprobar(id);
+    }
+
+    @PutMapping("/metodos-cobro/{id}/rechazar")
+    public ResponseEntity<ResponseDTO> rechazarMetodoCobro(@PathVariable Long id,
+                                                           @RequestBody(required = false) Map<String, String> body) {
+        return solicitudMetodoCobroHandler.rechazar(id, body);
     }
 }

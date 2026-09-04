@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.MetodoCobroCreateRequest;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.service.MetodoCobroCambioService;
 import com.hotclick.service.MetodoCobroService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -13,9 +14,13 @@ import org.springframework.web.bind.annotation.*;
 public class MetodoCobroController {
 
     private final MetodoCobroService metodoCobroService;
+    private final MetodoCobroCambioService metodoCobroCambioService;
 
-    public MetodoCobroController(MetodoCobroService metodoCobroService) {
+    public MetodoCobroController(
+            MetodoCobroService metodoCobroService,
+            MetodoCobroCambioService metodoCobroCambioService) {
         this.metodoCobroService = metodoCobroService;
+        this.metodoCobroCambioService = metodoCobroCambioService;
     }
 
     @GetMapping
@@ -33,5 +38,13 @@ public class MetodoCobroController {
     public ResponseEntity<ResponseDTO> marcarPredeterminado(@PathVariable Long id) {
         return ResponseEntity.ok(
                 ResponseDTO.success("Método predeterminado actualizado", metodoCobroService.marcarPredeterminado(id)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ResponseDTO> solicitarCambio(
+            @PathVariable Long id,
+            @Valid @RequestBody MetodoCobroCreateRequest req) {
+        return ResponseEntity.ok(ResponseDTO.success(
+                "Cambio enviado a revisión", metodoCobroCambioService.solicitarCambio(id, req)));
     }
 }

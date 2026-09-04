@@ -3732,3 +3732,18 @@ CREATE INDEX IF NOT EXISTS idx_billing_ledger_tipo
 CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_ledger_ref_tipo
     ON hot_click_billing_ledger_tb (referencia_externa, tipo)
     WHERE referencia_externa IS NOT NULL;
+
+-- V128: cambio de cuenta de cobro queda en revisión hasta admin.
+ALTER TABLE hot_click_metodo_cobro_tb
+    ADD COLUMN IF NOT EXISTS en_revision BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE hot_click_metodo_cobro_tb
+SET mascara = '••••-' || RIGHT(destino, 4)
+WHERE tipo = 'SINPE'
+  AND destino IS NOT NULL
+  AND length(destino) >= 4;
+
+CREATE INDEX IF NOT EXISTS idx_solicitud_metodo_cobro_pendiente
+    ON hot_click_solicitud_aprobacion_tb (tipo_entidad, estado_solicitud, fecha_solicitud DESC)
+    WHERE tipo_entidad = 'METODO_COBRO';
+

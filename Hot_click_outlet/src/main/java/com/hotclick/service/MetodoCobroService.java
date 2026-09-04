@@ -48,6 +48,7 @@ public class MetodoCobroService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
 
         String tipo = MetodoCobroFormato.normalizarTipo(req.getTipo());
+        MetodoCobroFormato.assertTipoAlta(tipo);
         String datoLimpio = sanitizer.cleanWithLimit(req.getDato(), 80);
         String destino = MetodoCobroFormato.limpiarDestino(tipo, datoLimpio);
 

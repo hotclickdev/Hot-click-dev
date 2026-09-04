@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public class MetodoCobroCreateRequest {
 
-    /** sinpe | iban | tarjeta (también acepta SINPE / IBAN / TARJETA). */
+    /** sinpe | iban (tarjeta se rechaza en el alta). */
     @NotBlank(message = "El tipo es requerido")
     @Size(max = 20)
     private String tipo;

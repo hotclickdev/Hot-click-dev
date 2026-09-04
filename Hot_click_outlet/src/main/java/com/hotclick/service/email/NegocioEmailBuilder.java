@@ -184,4 +184,16 @@ public class NegocioEmailBuilder {
             + layout.cta("https://hotclick.lat/admin", "Ir al panel")
             + layout.footer("¿Querés que lo revisemos juntos?");
     }
+
+    public String buildCambioCobroPendiente(String nombre, String tipoCuenta, String mascaraNueva) {
+        return layout.abrirHtml()
+            + layout.header("Cambio de cuenta de cobro", "Quedó en revisión")
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
+            + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>"
+            + "Pediste cambiar tu " + layout.esc(tipoCuenta) + " a <strong style='color:#14171C'>"
+            + layout.esc(mascaraNueva) + "</strong>. La cuenta vigente no cambia hasta que HotClick lo apruebe.</p>"
+            + layout.cta("https://hotclick.lat/admin", "Ver métodos de cobro")
+            + layout.footer("Si no fuiste vos, escribinos ya.");
+    }
 }

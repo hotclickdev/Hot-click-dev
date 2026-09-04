@@ -13,6 +13,7 @@ export type MetodoCobro = {
   mascara: string
   nota: string
   predeterminado?: boolean
+  enRevision?: boolean
 }
 
 /** Demo solo si falla la carga API (offline / sin sesión). */
@@ -21,7 +22,7 @@ export const METODOS_COBRO_DEMO: readonly MetodoCobro[] = [
     id: 'demo-sinpe',
     tipo: 'sinpe',
     nombre: 'SINPE Móvil',
-    mascara: '8888-0000',
+    mascara: '••••-0000',
     nota: 'Ingreso al instante en Costa Rica',
     predeterminado: true,
   },
@@ -51,14 +52,14 @@ export const TIPOS_METODO_COBRO: ReadonlyArray<{
 }> = [
   { tipo: 'sinpe', titulo: 'SINPE Móvil', ayuda: 'Número de 8 dígitos en Costa Rica' },
   { tipo: 'iban', titulo: 'Cuenta IBAN', ayuda: 'Cuenta bancaria CR…' },
-  { tipo: 'tarjeta', titulo: 'Tarjeta', ayuda: 'Últimos 4 dígitos para referencia' },
 ]
 
 export function mascaraDesdeDato(tipo: TipoMetodoCobro, dato: string): string {
   const limpio = dato.replace(/\s+/g, '')
   if (tipo === 'sinpe') {
-    if (limpio.length < 4) return limpio || '••••'
-    return `${limpio.slice(0, 4)}-${limpio.slice(4, 8) || '••••'}`
+    const digitos = limpio.replace(/\D/g, '')
+    if (digitos.length < 4) return '••••'
+    return `••••-${digitos.slice(-4)}`
   }
   if (tipo === 'iban') {
     if (limpio.length < 8) return limpio.toUpperCase()
@@ -160,10 +161,24 @@ export async function cargarMetodosCobro(): Promise<CargaMetodosCobro> {
   }
 }
 
+export function cuentaCobroEditable(tipo: TipoMetodoCobro): boolean {
+  return tipo === 'sinpe' || tipo === 'iban'
+}
+
 export async function crearMetodoCobro(tipo: TipoMetodoCobro, dato: string): Promise<MetodoCobro> {
   const { data } = await metodosCobroService.crear(tipo, dato)
   if (!esMetodoApi(data)) throw new Error('Respuesta inválida al crear método de cobro')
   limpiarMetodosCobroLocalLegacy()
+  return mapMetodoCobroApi(data)
+}
+
+export async function solicitarCambioMetodoCobro(
+  id: string,
+  tipo: TipoMetodoCobro,
+  dato: string,
+): Promise<MetodoCobro> {
+  const { data } = await metodosCobroService.solicitarCambio(id, tipo, dato)
+  if (!esMetodoApi(data)) throw new Error('Respuesta inválida al pedir el cambio')
   return mapMetodoCobroApi(data)
 }
 
