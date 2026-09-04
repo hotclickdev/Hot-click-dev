@@ -108,7 +108,7 @@ export default function AdminSoporteTickets() {
         {ESTADOS_TICKET_FILTRO.map((f) => (
           <AdminFilterChip
             key={f.id}
-            active={estadoParam === f.id}
+            activo={estadoParam === f.id}
             onClick={() => setEstado(f.id)}
           >
             {f.label}
