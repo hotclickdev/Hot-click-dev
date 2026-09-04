@@ -5,6 +5,8 @@ import { isValidEmail } from '@/utils/validators'
 import EquipoInviteForm from './equipo/EquipoInviteForm'
 import EquipoMembersTable from './equipo/EquipoMembersTable'
 import TextoMas from '@/components/ui/TextoMas'
+import CuotaBar from '@/components/ui/CuotaBar'
+import useTenantStore from '@/store/tenantStore'
 import {
   FORMULARIO_EQUIPO_VACIO,
   ROL_CONFIG,
@@ -16,6 +18,7 @@ import type { Id } from '@/types/api'
 
 export default function AdminEquipo() {
   const toast = useToast()
+  const maxUsuarios = useTenantStore((s) => s.maxUsuarios)
   const [miembros, setMiembros] = useState<MiembroEquipo[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(FORMULARIO_EQUIPO_VACIO)
@@ -162,6 +165,8 @@ export default function AdminEquipo() {
           {showForm ? 'Cancelar' : <TextoMas>Agregar miembro</TextoMas>}
         </button>
       </div>
+
+      <CuotaBar uso={activos.length} max={maxUsuarios} etiqueta="cupos usados" />
 
       {showForm && (
         <EquipoInviteForm

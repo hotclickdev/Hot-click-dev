@@ -13,6 +13,8 @@ type TenantState = {
   maxProductos: number
   maxBodegas: number
   maxCajas: number
+  comisionPorcentaje: number
+  comisionMinimaCrc: number
   features: TenantFeatures
   usoProductos: number
   usoUsuarios: number
@@ -52,6 +54,8 @@ const useTenantStore = create<TenantState>((set, get) => ({
   maxProductos: 50,
   maxBodegas:   1,
   maxCajas:     1,
+  comisionPorcentaje: 0,
+  comisionMinimaCrc:  0,
 
   // Features habilitadas para este plan
   features: {
@@ -91,6 +95,8 @@ const useTenantStore = create<TenantState>((set, get) => ({
         maxProductos: data.maxProductos ?? 50,
         maxBodegas:   data.maxBodegas   ?? 1,
         maxCajas:     data.maxCajas     ?? 1,
+        comisionPorcentaje: data.comisionPorcentaje ?? 0,
+        comisionMinimaCrc:  data.comisionMinimaCrc  ?? 0,
         features:     data.features     ?? {},
         loaded: true,
         loading: false,

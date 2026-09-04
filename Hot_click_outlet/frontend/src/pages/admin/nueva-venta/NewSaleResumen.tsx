@@ -1,8 +1,16 @@
 import Button from '@/components/ui/Button'
 import { formatPrice } from '@/utils/format'
 import { BoltIcon, WhatsAppIcon } from './nuevaVentaIcons'
+import useTenantStore from '@/store/tenantStore'
 import type { TFunction } from 'i18next'
 import type { TabVentaId } from './nuevaVentaHelpers'
+
+/** Misma fórmula que AggregatorCommissionMath.calcular (backend): % HALF_UP sobre el bruto, con piso ₡ para EMPRENDEDOR. */
+function estimarComision(bruto: number, pct: number, minimoCrc: number): number {
+  if (bruto <= 0 || pct <= 0) return 0
+  const total = Math.round((bruto * pct) / 100)
+  return minimoCrc > 0 ? Math.max(total, minimoCrc) : total
+}
 
 /**
  * Envío, totales y botones de acción de nueva venta.
@@ -24,6 +32,11 @@ export default function NewSaleResumen({
   onSaveRapida: () => void
   onCotizar: () => void
 }) {
+  const comisionPorcentaje = useTenantStore((s) => s.comisionPorcentaje)
+  const comisionMinimaCrc = useTenantStore((s) => s.comisionMinimaCrc)
+  const comision = estimarComision(total, comisionPorcentaje, comisionMinimaCrc)
+  const neto = Math.max(0, total - comision)
+
   return (
     <>
       <div className="flex flex-col gap-1.5">
@@ -58,6 +71,18 @@ export default function NewSaleResumen({
           <span className="text-sm">{t('admin.sales.total')}</span>
           <span className="text-xl">{formatPrice(total)}</span>
         </div>
+        {comisionPorcentaje > 0 && total > 0 && (
+          <>
+            <div className="flex justify-between items-center text-sm text-[#8e8e9a]">
+              <span>Comisión HotClick ({comisionPorcentaje}%)</span>
+              <span>-{formatPrice(comision)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-[#8e8e9a]">
+              <span>Recibís aprox.</span>
+              <span>{formatPrice(neto)}</span>
+            </div>
+          </>
+        )}
       </div>
 
       {tab === 'cliente' && (

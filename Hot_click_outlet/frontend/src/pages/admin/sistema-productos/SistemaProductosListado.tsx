@@ -8,6 +8,7 @@ import type { SistemaProductosPage } from './useSistemaProductos'
 import type { CategoriaAdmin } from '../productos/productosHelpers'
 import type { Producto } from '@/types/producto'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import CuotaBar from '@/components/ui/CuotaBar'
 
 const CHIPS: [string, string][] = [
   ['todos', 'Todos'],
@@ -36,6 +37,7 @@ export default function SistemaProductosListado({
 
   return (
     <>
+      <CuotaProductos />
       <FiltrosBar
         search={search}
         onSearch={onSearch}
@@ -57,6 +59,16 @@ export default function SistemaProductosListado({
         </>
       )}
     </>
+  )
+}
+
+function CuotaProductos() {
+  const usoProductos = useTenantStore((s) => s.usoProductos)
+  const maxProductos = useTenantStore((s) => s.maxProductos)
+  return (
+    <div className="mb-4">
+      <CuotaBar uso={usoProductos} max={maxProductos} etiqueta="productos" />
+    </div>
   )
 }
 

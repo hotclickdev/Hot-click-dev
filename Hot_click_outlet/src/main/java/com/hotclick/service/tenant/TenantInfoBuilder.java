@@ -4,6 +4,8 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.service.FeatureFlagService;
+import com.hotclick.service.wallet.AggregatorCommissionMath;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,10 @@ public class TenantInfoBuilder {
 
     private final EmpresaRepository empresaRepo;
     private final FeatureFlagService flagService;
+
+    /** Mismo mínimo que AggregatorService aplica al liquidar EMPRENDEDOR — se expone para que el frontend pueda estimar la comisión antes de confirmar una venta. */
+    @Value("${hotclick.comision.emprendedor.min.crc:400}")
+    private long minimoEmprendedorCrc;
 
     public TenantInfoBuilder(EmpresaRepository empresaRepo, FeatureFlagService flagService) {
         this.empresaRepo = empresaRepo;
@@ -45,6 +51,9 @@ public class TenantInfoBuilder {
             info.put("maxBodegas",     plan.getMaxBodegas());
             info.put("maxCajas",       plan.getMaxCajas());
             info.put("maxCreditosAi",  plan.getMaxCreditosAi());
+            info.put("comisionPorcentaje", plan.getComisionPorcentaje());
+            info.put("comisionMinimaCrc",
+                AggregatorCommissionMath.aplicaMinimoEmprendedor(plan.getNombre()) ? minimoEmprendedorCrc : 0L);
         }
 
         java.util.Set<String> flagsEmpresa = flagService.getFlagsActivosParaEmpresa(empresaId);

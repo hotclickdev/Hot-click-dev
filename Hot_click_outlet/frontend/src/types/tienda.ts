@@ -31,6 +31,8 @@ export type TenantInfo = {
   maxProductos?: number
   maxBodegas?: number
   maxCajas?: number
+  comisionPorcentaje?: number
+  comisionMinimaCrc?: number
   features?: TenantFeatures
 }
 

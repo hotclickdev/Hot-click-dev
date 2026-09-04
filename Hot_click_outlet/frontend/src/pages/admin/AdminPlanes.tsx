@@ -20,6 +20,8 @@ type PlanSaas = {
   descripcion?: string
   maxProductos?: number
   maxUsuarios?: number
+  tienePos?: boolean
+  tieneCrm?: boolean
   tieneCompras?: boolean
   tieneReportes?: boolean
   tieneAi?: boolean
@@ -99,8 +101,8 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
         <Feature ok label={etiquetaComision(plan)} />
         <Feature ok label={`${plan.maxProductos === -1 ? 'Ilimitados' : plan.maxProductos} productos`} />
         <Feature ok label={`${plan.maxUsuarios} usuario${(plan.maxUsuarios ?? 0) > 1 ? 's' : ''}`} />
-        <Feature ok label="POS / Caja registradora" />
-        <Feature ok label="CRM / Clientes" />
+        <Feature ok={plan.tienePos} label="POS / Caja registradora" />
+        <Feature ok={plan.tieneCrm} label="CRM / Clientes" />
         <Feature ok={plan.tieneCompras}  label="Módulo de compras" />
         <Feature ok={plan.tieneReportes} label="Reportes avanzados" />
         <Feature ok={plan.tieneAi}       label="Consultas con Hot" />
