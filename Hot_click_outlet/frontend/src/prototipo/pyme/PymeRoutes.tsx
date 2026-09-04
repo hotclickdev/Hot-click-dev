@@ -1,8 +1,10 @@
+import { lazy } from 'react'
 import { Route } from 'react-router-dom'
 import { PLAN_PYME } from '../compartido/plan'
 import { SellerPlanProvider } from '../compartido/SellerPlanContext'
 import SellerRoutes from '../compartido/SellerRoutes'
-import EquipoPage from './EquipoPage'
+
+const EquipoPage = lazy(() => import('./EquipoPage'))
 
 /**
  * Prototipo PLAN PYME (Figma page 60:128).

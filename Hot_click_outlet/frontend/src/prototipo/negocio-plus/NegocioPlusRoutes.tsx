@@ -1,8 +1,10 @@
+import { lazy } from 'react'
 import { Route } from 'react-router-dom'
 import { PLAN_NEGOCIO_PLUS } from '../compartido/plan'
 import { SellerPlanProvider } from '../compartido/SellerPlanContext'
 import SellerRoutes from '../compartido/SellerRoutes'
-import SucursalesPage from './SucursalesPage'
+
+const SucursalesPage = lazy(() => import('./SucursalesPage'))
 
 /**
  * Negocio Plus (Figma Planes — Negocio Plus / 305:636+).
