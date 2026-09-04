@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { observabilidadService } from '@/services/observabilidadService'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import UsoTenantsPanel from './observabilidad/UsoTenantsPanel'
 
 type ColorKpi = 'green' | 'red' | 'amber' | 'blue' | 'purple' | 'gray'
 
@@ -113,7 +114,6 @@ export default function AdminObservabilidad() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -137,7 +137,6 @@ export default function AdminObservabilidad() {
         </div>
       </div>
 
-      {/* Empresas */}
       <Section title="Empresas">
         <KpiCard label="Total"    value={d.empresas?.total}    icono="edificio" color="gray" />
         <KpiCard label="Activas"  value={d.empresas?.activas}  icono="check" color="green" />
@@ -145,7 +144,6 @@ export default function AdminObservabilidad() {
         <KpiCard label="Vencidas" value={d.empresas?.vencidas} icono="error" color="red" />
       </Section>
 
-      {/* Pedidos */}
       <Section title="Pedidos">
         <KpiCard label="Total histórico"  value={d.pedidos?.total}         icono="paquete" color="gray" />
         <KpiCard label="Pendientes"       value={d.pedidos?.pendientes}     icono="reloj" color="amber" />
@@ -153,7 +151,6 @@ export default function AdminObservabilidad() {
         <KpiCard label="Enviados"         value={d.pedidos?.enviados}       icono="envio" color="green" />
       </Section>
 
-      {/* Pagos */}
       <Section title="Pagos">
         <KpiCard label="Capturados"  value={d.pagos?.capturados} icono="tarjeta" color="green" />
         <KpiCard label="Pendientes"  value={d.pagos?.pendientes} icono="reloj" color="amber" />
@@ -161,13 +158,11 @@ export default function AdminObservabilidad() {
         <KpiCard label="Productos"   value={d.productos?.total}  icono="bolsa" color="gray" />
       </Section>
 
-      {/* Usuarios */}
       <Section title="Usuarios">
         <KpiCard label="Activos"    value={d.usuarios?.activos}    icono="clientes" color="green" />
         <KpiCard label="Pendientes" value={d.usuarios?.pendientes} icono="reloj" color="amber" />
       </Section>
 
-      {/* Seguridad */}
       <Section title="Seguridad (últimas 24h)">
         <KpiCard
           label="Eventos totales"
@@ -208,7 +203,6 @@ export default function AdminObservabilidad() {
         />
       </Section>
 
-      {/* IA */}
       <Section title={`Consumo IA — ${d.ia?.mes}/${d.ia?.anio}`}>
         <KpiCard
           label="Tokens del mes"
@@ -225,7 +219,8 @@ export default function AdminObservabilidad() {
         />
       </Section>
 
-      {/* Base de datos */}
+      <UsoTenantsPanel />
+
       <Section title="Infraestructura">
         <KpiCard
           label="Tamaño BD"
@@ -238,7 +233,6 @@ export default function AdminObservabilidad() {
         />
       </Section>
 
-      {/* Footer */}
       <p className="text-right text-xs text-gray-300 dark:text-gray-600">
         Generado: {d.generadoEn ? new Date(d.generadoEn).toLocaleString('es-CR') : '—'}
       </p>
