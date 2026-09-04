@@ -1,5 +1,5 @@
 import { lazy, type ReactNode } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation, useParams } from 'react-router-dom'
 import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
 import useTenantStore from '@/store/tenantStore'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
@@ -118,4 +118,9 @@ export function RedirectSiSistema({ to, children }: { to: string; children: Reac
   const userRole = useAuthStore((s) => s.userRole)
   if (esUsuarioSistema(userRole)) return <Navigate to={to} replace />
   return children
+}
+
+export function RedirectTiendaAEmpresa() {
+  const { id } = useParams()
+  return <Navigate to={id ? `/admin/empresas/${id}` : '/admin/empresas'} replace />
 }

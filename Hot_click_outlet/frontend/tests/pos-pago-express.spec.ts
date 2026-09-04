@@ -85,6 +85,7 @@ test.describe('POS pago express', () => {
     await expect(page).toHaveURL(/\/pos\/pago\/tokencarrito01/)
     expect(page.url()).not.toContain('/carrito')
     await expect(page.getByText('Demo POS')).toBeVisible()
+    await expect(page.getByText('Total a pagar')).toBeVisible()
     await expect(page.getByText('Mouse gamer')).toBeVisible()
     await expect(page.getByText('Teclado mecánico')).toBeVisible()
     await expect(page.getByRole('button', { name: /Pagar/i })).toBeVisible()

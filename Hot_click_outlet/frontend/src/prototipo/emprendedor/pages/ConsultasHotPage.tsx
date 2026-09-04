@@ -69,7 +69,7 @@ export default function ConsultasHotPage() {
             value={texto}
             onChange={(evento) => setTexto(evento.target.value)}
             placeholder="Escribí tu consulta..."
-            className="min-h-11 flex-1 rounded-full bg-[var(--hc-n-50)] px-3.5 py-3 text-[13px] outline-none"
+            className="min-h-11 flex-1 rounded-full bg-hc-surface-2 px-3.5 py-3 text-[13px] outline-none"
           />
           <button type="submit" className="flex size-10 items-center justify-center rounded-full bg-hc-primary text-white" aria-label="Enviar">
             <PaperAirplaneIcon className="size-4" />

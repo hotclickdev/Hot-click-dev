@@ -104,7 +104,7 @@ export default function NotificacionesPage() {
             <ItemListaStagger key={item.id}>
               <article
                 className={`flex gap-3 rounded-xl p-3.5 md:p-4 ${
-                  item.leida ? 'border border-hc-border bg-hc-surface' : 'bg-[var(--hc-n-50)]'
+                  item.leida ? 'border border-hc-border bg-hc-surface' : 'bg-hc-surface-2'
                 }`}
               >
                 <div

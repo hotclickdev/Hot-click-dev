@@ -93,7 +93,7 @@ export default function ReportesPage() {
 
 function Kpi({ etiqueta, valor, destacado = false }: { etiqueta: string; valor: string; destacado?: boolean }) {
   return (
-    <div className={`rounded-[14px] px-3.5 py-4 ${destacado ? 'bg-[var(--hc-red-50)]' : 'bg-[var(--hc-n-50)]'}`}>
+    <div className={`rounded-[14px] px-3.5 py-4 ${destacado ? 'bg-[var(--hc-red-50)]' : 'bg-hc-surface-2'}`}>
       <p className="text-[11px] font-medium text-hc-muted">{etiqueta}</p>
       <p className={`mt-1.5 text-[19px] font-bold ${destacado ? 'text-hc-primary' : ''}`}>{valor}</p>
     </div>

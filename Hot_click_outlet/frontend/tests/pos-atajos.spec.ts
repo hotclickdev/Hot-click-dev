@@ -236,8 +236,10 @@ test.describe('POS — QR de tarjeta', () => {
     await page.getByRole('button', { name: 'Generar QR de pago' }).click()
 
     await expect(page.getByText('Pago con tarjeta')).toBeVisible()
-    await expect(page.getByText('/pos/pago/tokentarjetaqr01')).toBeVisible()
+    await expect(page.getByText(/escanee el código/i)).toBeVisible()
+    await expect(page.getByText('Total a cobrar')).toBeVisible()
     await expect(page.getByRole('img', { name: 'Código QR de pago' })).toBeVisible()
+    await expect(page.getByText('/pos/pago/tokentarjetaqr01')).toHaveCount(0)
     await expect(page.getByText(/Esperando confirmación del pago del cliente/i)).toBeVisible()
     await expect(page.getByText(/carrito/i)).toHaveCount(0)
   })

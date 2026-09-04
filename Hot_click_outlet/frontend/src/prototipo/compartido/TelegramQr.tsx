@@ -22,7 +22,7 @@ export default function TelegramQr({ value }: { value: string }) {
       alt="Código QR para abrir el bot de Telegram"
       width={140}
       height={140}
-      className="rounded-xl border border-hc-border bg-white p-1.5"
+      className="rounded-xl border border-hc-border bg-hc-surface p-1.5"
     />
   )
 }

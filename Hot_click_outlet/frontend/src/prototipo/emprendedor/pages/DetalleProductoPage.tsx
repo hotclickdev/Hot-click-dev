@@ -57,7 +57,7 @@ export default function DetalleProductoPage() {
           <BadgeEstado>{producto.categoria}</BadgeEstado>
           <h1 className="font-display text-xl font-bold">{producto.nombre}</h1>
           <p className="text-2xl font-bold text-hc-primary">{formatoColon(producto.precio)}</p>
-          <p className="rounded-xl bg-[var(--hc-n-50)] px-3 py-2.5 text-xs">
+          <p className="rounded-xl bg-hc-surface-2 px-3 py-2.5 text-xs">
             <span className="text-hc-muted">Vendido por </span>
             <span className="font-bold">Tienda {tienda}</span>
           </p>

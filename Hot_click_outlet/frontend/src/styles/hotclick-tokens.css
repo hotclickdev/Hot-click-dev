@@ -194,6 +194,27 @@ html.dark,
   --hc-shadow-3: 0 12px 32px rgba(0,0,0,.55);
 }
 
+/* ---------- Seller (Emprendedor / PYME / Plus / POS) ----------
+   Sigue html.dark (a diferencia de .hc-sistema-theme, que fuerza claro).
+   Rebind de --color-hc-*: en :root Tailwind resuelve var(--hc-text) a un
+   color concreto; sin esto, text-hc-text no ve overrides del subárbol. */
+.hc-seller-theme {
+  --color-hc-bg: var(--hc-bg);
+  --color-hc-surface: var(--hc-surface);
+  --color-hc-surface-2: var(--hc-surface-2);
+  --color-hc-border: var(--hc-border);
+  --color-hc-text: var(--hc-text);
+  --color-hc-muted: var(--hc-muted);
+  --color-hc-primary: var(--hc-primary);
+  --color-hc-accent: var(--hc-accent);
+  --color-hc-accent-hover: var(--hc-accent-hover);
+  --color-hc-success: var(--hc-success);
+  --color-hc-danger: var(--hc-danger);
+  --color-hc-warning: var(--hc-warning);
+  color: var(--hc-text);
+  background-color: var(--hc-bg);
+}
+
 /* Tienda pública /tienda/:slug — theme propio, no gray-50 de Tailwind.
    Neutros = storefront (:root). Primario/acento los pinta TiendaLayout
    desde el branding del vendedor (--t-primary, --t-secondary, --t-accent). */

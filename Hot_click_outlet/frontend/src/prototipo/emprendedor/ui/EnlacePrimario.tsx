@@ -27,7 +27,7 @@ export default function EnlacePrimario({ to, children, variante = 'lleno', dataM
       </Link>
     )
   }
-  const fondo = variante === 'oscuro' ? 'bg-hc-text' : 'bg-hc-primary'
+  const fondo = variante === 'oscuro' ? 'bg-[var(--hc-n-900)]' : 'bg-hc-primary'
   return (
     <Link
       to={destino}

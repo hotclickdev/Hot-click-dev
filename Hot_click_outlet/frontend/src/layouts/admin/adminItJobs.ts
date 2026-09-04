@@ -252,7 +252,14 @@ const PREFIJOS_TENANT_OPS = [
 /** True si un ADMIN de plataforma no debe quedarse en esta ruta. */
 export function esRutaTenantOpsParaAdmin(pathname: string): boolean {
   if (pathname.startsWith('/admin/reportes-producto')) return false
+  if (esAltaCatalogoParaAdmin(pathname)) return false
   return PREFIJOS_TENANT_OPS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   )
+}
+
+/** Carga masiva / importar CSV: el ADMIN elige el negocio destino, no opera tienda propia. */
+function esAltaCatalogoParaAdmin(pathname: string): boolean {
+  return pathname.startsWith('/admin/productos/carga-masiva')
+    || pathname.startsWith('/admin/productos/importar')
 }

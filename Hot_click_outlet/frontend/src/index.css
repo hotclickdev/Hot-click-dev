@@ -880,6 +880,27 @@ html.dark .hc-sistema-theme th,
 html.dark .hc-sistema-theme td { color: var(--hc-text) !important; }
 html.dark .hc-sistema-theme tr:hover { background-color: var(--hc-surface-2) !important; }
 
+/* ── Seller theme: restaura surfaces que html.dark unsetea ──
+   Sin esto, aside/header pierden bg-hc-surface y el texto claro
+   queda sobre el canvas claro → contraste roto. */
+html.dark .hc-seller-theme header,
+html.dark .hc-seller-theme aside,
+html.dark .hc-seller-theme footer {
+  background-color: var(--hc-surface) !important;
+  border-color: var(--hc-border) !important;
+  color: var(--hc-text);
+}
+html.dark .hc-seller-theme input:not([type="checkbox"]):not([type="radio"]),
+html.dark .hc-seller-theme textarea,
+html.dark .hc-seller-theme select {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text) !important;
+  border-color: var(--hc-border) !important;
+}
+html.dark .hc-seller-theme th,
+html.dark .hc-seller-theme td { color: var(--hc-text) !important; }
+html.dark .hc-seller-theme tr:hover { background-color: var(--hc-surface-2) !important; }
+
 /* ═══════════════════════════════════════════════════════
    SCROLL PROGRESS BAR — Rojo Hot sólido
    ═══════════════════════════════════════════════════════ */

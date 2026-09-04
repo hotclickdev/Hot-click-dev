@@ -2250,6 +2250,8 @@
     "qr": {
       "pagoSinpe": "Pago SINPE Móvil",
       "pagoTarjeta": "Pago con tarjeta",
+      "instruccionTarjeta": "Pedile al cliente que escanee el código con la cámara del celular",
+      "instruccionSinpe": "Pedile al cliente que escanee y envíe el monto exacto por SINPE Móvil",
       "sinpeA": "SINPE Móvil a:",
       "configWhatsapp": "Configurá el WhatsApp del negocio",
       "referencia": "Referencia:",
@@ -2264,6 +2266,7 @@
     },
     "pago": {
       "subtitulo": "Pago en tienda",
+      "totalAPagar": "Total a pagar",
       "nItems_one": "{{count}} producto",
       "nItems_other": "{{count}} productos",
       "pagoSeguro": "Pago seguro",

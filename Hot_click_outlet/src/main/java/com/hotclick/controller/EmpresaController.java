@@ -64,9 +64,12 @@ public class EmpresaController {
     }
 
     @GetMapping("/{id}/productos")
-    public ResponseEntity<ResponseDTO> productos(@PathVariable Long id) {
+    public ResponseEntity<ResponseDTO> productos(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
         companyScope.assertCanAccess(id);
-        return ResponseEntity.ok(ResponseDTO.success("Productos", empresaAdminService.productos(id)));
+        return ResponseEntity.ok(ResponseDTO.success("Productos", empresaAdminService.productos(id, page, size)));
     }
 
     @GetMapping("/{id}/pedidos")

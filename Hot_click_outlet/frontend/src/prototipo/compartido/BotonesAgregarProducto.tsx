@@ -21,7 +21,7 @@ export default function BotonesAgregarProducto({ baseNuevo, layout = 'stack' }: 
       </Link>
       <Link
         to={`${baseNuevo}/personalizado`}
-        className="flex min-h-11 w-full items-center justify-center rounded-[14px] bg-hc-text px-5 py-4 text-center text-[15px] font-bold text-white"
+        className="flex min-h-11 w-full items-center justify-center rounded-[14px] bg-[var(--hc-n-900)] px-5 py-4 text-center text-[15px] font-bold text-white"
         data-mm="seller-agregar-producto-personalizado"
       >
         + Producto personalizado

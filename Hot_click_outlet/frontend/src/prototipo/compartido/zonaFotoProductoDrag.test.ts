@@ -8,7 +8,7 @@ describe('clasesZonaFotoDrag', () => {
       reducedMotion: false,
       bordeDiscontinuo: true,
     })
-    expect(c).toContain('bg-[var(--hc-n-50)]')
+    expect(c).toContain('bg-hc-surface-2')
     expect(c).toContain('border-hc-border')
     expect(c).toContain('scale-100')
     expect(c).not.toContain('scale-[1.03]')

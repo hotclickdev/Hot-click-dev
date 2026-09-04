@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { createDraft, IMAGE_MAX_BYTES, type ProductoDraft } from './cargaMasivaHelpers'
 import { IconUpload, IconX, IconPlus } from './cargaMasivaIcons'
 
-export default function StepSubida({ onContinuar, limit }: {
+export default function StepSubida({ onContinuar, limit, importarCsvTo = '/admin/productos/importar' }: {
   onContinuar: (drafts: ProductoDraft[]) => void
   limit: number
+  importarCsvTo?: string
 }) {
   const [drafts, setDrafts] = useState<ProductoDraft[]>([])
   const [dragging, setDragging] = useState(false)
@@ -77,7 +78,7 @@ export default function StepSubida({ onContinuar, limit }: {
         </div>
       </button>
 
-      <Link to="/admin/productos/importar" className="block text-xs font-bold text-hc-primary">
+      <Link to={importarCsvTo} className="block text-xs font-bold text-hc-primary">
         Importar catálogo CSV
       </Link>
 

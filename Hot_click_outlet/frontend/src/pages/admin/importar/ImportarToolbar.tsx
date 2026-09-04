@@ -1,6 +1,7 @@
 import { CONDICIONES } from './importarHelpers'
 import type { BodegaImportar, CategoriaImportar, EmpresaImportar, MarcaImportar, ProductoImportado } from './importarHelpers'
 import { IconApply } from './importarIcons'
+import { empresasOperables } from '../empresas/empresasHelpers'
 import type { Dispatch, SetStateAction } from 'react'
 
 export default function ImportarToolbar({
@@ -78,7 +79,7 @@ export default function ImportarToolbar({
                 border: `1px solid ${empresaSeleccionada ? 'var(--hc-border)' : 'rgba(239,68,68,0.4)'}`,
               }}>
               <option value="">Seleccionar…</option>
-              {empresas.map(e => <option key={e.id} value={e.id}>{e.nombreComercial || e.nombreEmpresa}</option>)}
+              {empresasOperables(empresas).map(e => <option key={e.id} value={e.id}>{e.nombreComercial || e.nombreEmpresa}</option>)}
             </select>
           </div>
           <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
