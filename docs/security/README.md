@@ -23,6 +23,7 @@
 | [audit-logging.md](./audit-logging.md) | SecurityAuditService, 32 event types, esquema DB |
 | [security-center.md](./security-center.md) | Security Center UI, SecurityController API |
 | [security-headers.md](./security-headers.md) | HTTP security headers, CSP, HSTS |
+| [university-network-block.md](./university-network-block.md) | Bloqueo en red universitaria, whitelist IT, recategorización |
 | [production-hardening.md](./production-hardening.md) | ProductionConfigValidator, env vars, checklist |
 | [incident-response.md](./incident-response.md) | Runbooks para incidentes de seguridad |
 | [future-improvements.md](./future-improvements.md) | Backlog priorizado de mejoras de seguridad |

@@ -3,8 +3,9 @@ services:
     build: .
     container_name: hotclick
     env_file: .env
+    # Solo localhost — tráfico público entra por Nginx :443 (ver deploy/ec2/security-group-hardening.md)
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     # Sin "dns:" propio — el DNS por defecto de Docker reenvía al resolver de
     # la VPC (Amazon-provided DNS), que es el único que resuelve el hostname
     # de RDS a su IP privada. Forzar 8.8.8.8/8.8.4.4 acá rompe la conexión a
