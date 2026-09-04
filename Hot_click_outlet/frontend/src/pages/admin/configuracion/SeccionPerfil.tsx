@@ -7,6 +7,7 @@ import { authService } from '@/services/authService'
 import { adminService } from '@/services/orderService'
 import useAuthStore from '@/store/authStore'
 import SeccionNotificaciones from './SeccionNotificaciones'
+import SeccionGuiasAyuda from './SeccionGuiasAyuda'
 import {
   F, Block, FormGroup, StyledInput, SaveButton, LoadingSkeleton, SectionHeader, MailIcon, CheckIcon, mensajeErrorConfig,
 } from './configUi'
@@ -232,6 +233,7 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
       {/* Notificaciones fusionadas acá para EMPRENDEDOR — el mockup aprobado
           (Front para cliente EPN/) no tiene una pestaña propia para esto. */}
       {isEmprendedor && <SeccionNotificaciones toast={toast} soloVentas />}
+      {isEmprendedor && <SeccionGuiasAyuda />}
     </div>
   )
 }

@@ -5,13 +5,16 @@ import CloseIcon from './CloseIcon'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
 
+type ToastAccion = { label: string; onClick: () => void }
+
 type ToastItem = {
   id: number
   message: string
   type: ToastType
+  accion?: ToastAccion
 }
 
-type ShowToastFn = (opts: { message: string; type?: ToastType; duration?: number }) => void
+type ShowToastFn = (opts: { message: string; type?: ToastType; duration?: number; accion?: ToastAccion }) => void
 
 function tipoGlifoToast(type: ToastType) {
   if (type === 'success') return 'check'
@@ -33,10 +36,10 @@ let toastId = 0
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const toast = useCallback<ShowToastFn>(({ message, type = 'info', duration = 5000 }) => {
+  const toast = useCallback<ShowToastFn>(({ message, type = 'info', duration = 5000, accion }) => {
     const id = ++toastId
-    setToasts((prev) => [...prev, { id, message, type }].slice(-3))
-    if (type !== 'error') {
+    setToasts((prev) => [...prev, { id, message, type, accion }].slice(-3))
+    if (type !== 'error' && !accion) {
       const filterOut = (prev: ToastItem[]) => prev.filter((t) => t.id !== id)
       setTimeout(() => setToasts(filterOut), duration)
     }
@@ -84,6 +87,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <TrustGlyph tipo={tipoGlifoToast(t.type)} className="w-3 h-3" />
               </span>
               <p className="text-sm leading-snug flex-1">{t.message}</p>
+              {t.accion && (
+                <button type="button"
+                  onClick={() => { t.accion?.onClick(); remove(t.id) }}
+                  className="shrink-0 text-sm font-semibold underline hover:no-underline"
+                  style={{ marginTop: 1 }}
+                >
+                  {t.accion.label}
+                </button>
+              )}
               <button type="button"
                 onClick={() => remove(t.id)}
                 aria-label="Cerrar notificación"

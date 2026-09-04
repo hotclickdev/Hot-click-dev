@@ -58,6 +58,7 @@ export default function SistemaClientes() {
           <p className="text-[15px] m-0 mt-1" style={{ color: '#6b6459' }}>{t('adminClientes.count', { count: clientes.length })}</p>
         </div>
         <button
+          data-mm="seller-clientes-nuevo"
           type="button"
           onClick={() => setShowNuevo((v) => !v)}
           className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[10px] text-[15px] font-bold"
@@ -70,6 +71,7 @@ export default function SistemaClientes() {
       {showNuevo && <FormNuevoCliente onCreado={() => { setShowNuevo(false); cargar() }} />}
 
       <input
+        data-mm="seller-clientes-buscar"
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}

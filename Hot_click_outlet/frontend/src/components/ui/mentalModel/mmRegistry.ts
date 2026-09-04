@@ -141,6 +141,44 @@ export const MM_GUIAS: readonly MmGuia[] = [
     ],
   },
   {
+    path: '/admin/configuracion',
+    roles: ['EMPRENDEDOR', 'PROPIETARIO', 'EDITOR', 'LECTOR'],
+    pasos: [
+      {
+        ancla: 'seller-opciones-guia',
+        titulo: 'Guías al entrar',
+        texto: 'Podés apagar o volver a encender estas explicaciones cuando quieras.',
+      },
+    ],
+  },
+  {
+    path: '/admin/reportes',
+    roles: ['EMPRENDEDOR', 'PROPIETARIO', 'EDITOR', 'LECTOR'],
+    pasos: [
+      {
+        ancla: 'seller-reportes-tabs',
+        titulo: 'Finanzas, análisis y alertas',
+        texto: 'Cambiá de pestaña para ver ventas, lo que más se vende y el stock en riesgo.',
+      },
+    ],
+  },
+  {
+    path: '/admin/clientes',
+    roles: ['EMPRENDEDOR', 'PROPIETARIO', 'EDITOR', 'LECTOR'],
+    pasos: [
+      {
+        ancla: 'seller-clientes-nuevo',
+        titulo: 'Agregar cliente',
+        texto: 'Registrá un cliente nuevo con sus datos de contacto.',
+      },
+      {
+        ancla: 'seller-clientes-buscar',
+        titulo: 'Buscar clientes',
+        texto: 'Encontrá un cliente por nombre, correo o teléfono.',
+      },
+    ],
+  },
+  {
     path: '/admin/pos',
     roles: ['ADMIN', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'],
     pasos: [

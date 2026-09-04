@@ -1,10 +1,12 @@
 import { useCallback, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { productService, denormalizeProduct } from '@/services/productService'
 import { ofertaService } from '@/services/ofertaService'
 import {
   PCT_OFERTA_RAPIDA,
   idDesdeRespuestaProducto,
   mensajeErrorProducto,
+  accionErrorProducto,
 } from './productosHelpers'
 import type { AdminProductsActionsDeps, ProductoAdmin } from './productosHelpers'
 
@@ -33,6 +35,7 @@ export function useAdminProductsCrud(deps: Pick<AdminProductsActionsDeps,
     setSaving,
     setDeleteTarget,
   } = deps
+  const navigate = useNavigate()
 
   const handleSave = useCallback(async (e: FormEvent) => {
     e.preventDefault()
@@ -80,7 +83,12 @@ export function useAdminProductsCrud(deps: Pick<AdminProductsActionsDeps,
       load()
     } catch (err: unknown) {
       const msg = mensajeErrorProducto(err, 'Error al guardar')
-      toast({ message: msg, type: 'error' })
+      const accion = accionErrorProducto(err)
+      toast({
+        message: msg,
+        type: accion ? 'warning' : 'error',
+        accion: accion && { label: accion.label, onClick: () => navigate(accion.ruta) },
+      })
     } finally {
       setSaving(false)
     }
@@ -90,6 +98,7 @@ export function useAdminProductsCrud(deps: Pick<AdminProductsActionsDeps,
     editInitialFormRef,
     form,
     load,
+    navigate,
     setModalOpen,
     setSaving,
     toast,

@@ -93,7 +93,7 @@ export default function SistemaReportes() {
 
       {vistaPrevia && <BannerVistaPrevia />}
 
-      <div className="inline-flex gap-1 rounded-xl p-1 w-fit flex-wrap" style={{ backgroundColor: 'var(--hc-surface)' }}>
+      <div data-mm="seller-reportes-tabs" className="inline-flex gap-1 rounded-xl p-1 w-fit flex-wrap" style={{ backgroundColor: 'var(--hc-surface)' }}>
         {TABS_SISTEMA.map(({ key, label }) => (
           <button type="button" key={key} onClick={() => setTab(key)}
             className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"

@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
 import type { Id } from '@/types/api'
 import type { Producto, ProductoForm } from '@/types/producto'
+import { mapearErrorBackend, type AccionError } from '@/services/errorMapper'
 
 export type ProductoAdmin = Producto & { id: number }
 
@@ -51,6 +52,7 @@ export type ToastAdminProductos = (opts: {
   message: string
   type?: 'success' | 'error' | 'warning' | 'info'
   duration?: number
+  accion?: { label: string; onClick: () => void }
 }) => void
 
 export type AdminProductsActionsDeps = {
@@ -269,9 +271,12 @@ export function margenForm(precioCompra: string | number, precioVenta: string | 
 }
 
 export function mensajeErrorProducto(err: unknown, fallback: string): string {
-  if (!err || typeof err !== 'object') return fallback
-  const message = (err as { response?: { data?: { message?: unknown } } }).response?.data?.message
-  return typeof message === 'string' ? message : fallback
+  return mapearErrorBackend(err, fallback).mensaje
+}
+
+/** Acción de upgrade (ej. al chocar con un límite de plan) para ofrecer un CTA en el toast de error. */
+export function accionErrorProducto(err: unknown): AccionError | undefined {
+  return mapearErrorBackend(err, '').accion
 }
 
 export function idDesdeRespuestaProducto(data: unknown): Id | undefined {
