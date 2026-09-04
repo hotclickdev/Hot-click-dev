@@ -10,22 +10,24 @@ const LINKS: SidebarLink[] = [
   { to: '/admin/usuarios', label: 'Usuarios' },
 ]
 
+function clavesVisibles(permisos: string[], rol: string): Array<string | undefined> {
+  return filtrarLinksPorPermiso(LINKS, permisos, rol).map((l) => l.to ?? l.section)
+}
+
 describe('filtrarLinksPorPermiso', () => {
   it('ADMIN ve todos los links', () => {
     expect(filtrarLinksPorPermiso(LINKS, [], 'ADMIN')).toHaveLength(LINKS.length)
   })
 
-  it('SUPPORT solo inicio + global.companies (+ sección si aplica)', () => {
-    const out = filtrarLinksPorPermiso(LINKS, ['global.companies'], 'SUPPORT')
-    expect(out.map((l) => l.to ?? l.section)).toEqual([
+  it('SUPPORT solo inicio + global.companies', () => {
+    expect(clavesVisibles(['global.companies'], 'SUPPORT')).toEqual([
       '/admin',
       '/admin/empresas',
     ])
   })
 
   it('FINANCE solo inicio + payouts', () => {
-    const out = filtrarLinksPorPermiso(LINKS, ['global.metrics'], 'FINANCE')
-    expect(out.map((l) => l.to ?? l.section)).toEqual([
+    expect(clavesVisibles(['global.metrics'], 'FINANCE')).toEqual([
       '/admin',
       'operarPlataforma',
       '/admin/payouts',
@@ -33,8 +35,7 @@ describe('filtrarLinksPorPermiso', () => {
   })
 
   it('TRUST solo inicio + moderación', () => {
-    const out = filtrarLinksPorPermiso(LINKS, ['global.approvals'], 'TRUST')
-    expect(out.map((l) => l.to ?? l.section)).toEqual([
+    expect(clavesVisibles(['global.approvals'], 'TRUST')).toEqual([
       '/admin',
       'operarPlataforma',
       '/admin/aprobaciones',
