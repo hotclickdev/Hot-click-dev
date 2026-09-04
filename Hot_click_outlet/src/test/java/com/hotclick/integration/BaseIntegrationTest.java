@@ -18,6 +18,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,9 +38,12 @@ import java.util.List;
  *
  * Mockea todos los servicios con I/O externos para que el contexto
  * Spring arranque sin conexiones reales (email, storage, pagos).
+ *
+ * print=NONE: el printer por defecto recorre headers mientras un SseEmitter
+ * (p.ej. POST /api/public/chat) los muta → ConcurrentModificationException.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
 

@@ -198,9 +198,10 @@ class F28TenantIsolationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("F28-T13 | MEDIUM — Chat público sin token → 200 (endpoint público)")
     void publicChat_sinToken_isPublic() throws Exception {
+        // Mensaje vacío: cierra el SSE en el hilo HTTP; un mensaje real lanza sseExecutor.
         mockMvc.perform(post("/api/public/chat?slug=f28-alpha")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"message\":\"sofá\"}"))
+                .content("{\"message\":\"\"}"))
             .andExpect(status().isOk());
     }
 
