@@ -1,21 +1,24 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { guardarExtrasLocal, leerExtrasLocal, limpiarExtrasLocal } from './negocioExtras'
 
 const CLAVE = 'hc-emp-negocio-extras-v1'
-const store = new Map<string, string>()
-const memoryStorage: Storage = {
-  get length() { return store.size },
-  clear: () => store.clear(),
-  getItem: (k) => store.get(k) ?? null,
-  key: (i) => [...store.keys()][i] ?? null,
-  removeItem: (k) => { store.delete(k) },
-  setItem: (k, v) => { store.set(k, String(v)) },
-}
-Object.defineProperty(globalThis, 'localStorage', { value: memoryStorage, configurable: true })
+const cache = new Map<string, string>()
 
-beforeEach(() => {
-  store.clear()
-})
+function instalarCacheLocal() {
+  cache.clear()
+  vi.stubGlobal('localStorage', {
+    getItem: (clave: string) => cache.get(clave) ?? null,
+    setItem: (clave: string, valor: string) => {
+      cache.set(clave, valor)
+    },
+    removeItem: (clave: string) => {
+      cache.delete(clave)
+    },
+    clear: () => cache.clear(),
+  })
+}
+
+beforeEach(instalarCacheLocal)
 
 describe('negocioExtras localStorage', () => {
   it('leerExtrasLocal devuelve vacío si no hay cache', () => {
