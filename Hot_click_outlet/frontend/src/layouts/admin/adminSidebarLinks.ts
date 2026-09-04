@@ -78,36 +78,8 @@ export function buildSidebarLinks(t: TFunction, userRole?: string | null): Sideb
     ]
   }
 
-  // EMPRENDEDOR
-  return [
-    { to: '/admin', label: t('admin.sidebar.inicio'), icon: 'home', exact: true },
-    { section: SISTEMA_SECCION.PUNTO_VENTA },
-    ...linksPos(t),
-    // { to: '/admin/mesas', label: 'Mesas / QR', icon: 'qr' },  // futuro
-    { section: SISTEMA_SECCION.CATALOGO_INVENTARIO },
-    { to: '/admin/productos', label: t('admin.sidebar.productos'), icon: 'box' },
-    { to: '/admin/productos/carga-masiva', label: t('admin.sidebar.cargaMasiva'), icon: 'upload' },
-    { to: '/admin/productos/importar', label: t('admin.sidebar.importarCatalogoIA'), icon: 'import' },
-    { to: '/admin/nuevo-producto', label: t('admin.sidebar.generarProductoRapido'), icon: 'camera' },
-    { to: '/admin/categorias', label: t('admin.sidebar.categorias'), icon: 'tag' },
-    { to: '/admin/marcas', label: t('admin.sidebar.marcas'), icon: 'marca' },
-    { to: '/admin/bodegas', label: t('admin.sidebar.bodegas'), icon: 'building' },
-    { to: '/admin/inventario', label: t('admin.sidebar.inventarioIa'), icon: 'ai' },
-    { to: '/admin/compras', label: t('admin.sidebar.compras'), icon: 'compra' },
-    { to: '/admin/proveedores', label: t('admin.sidebar.proveedores'), icon: 'proveedor' },
-    { section: ADMIN_IT_SECCION.VENTAS },
-    { to: '/admin/pedidos', label: t('admin.sidebar.pedidos'), icon: 'clipboard' },
-    { to: '/admin/encargos', label: 'Encargos', icon: 'clipboard' },
-    { to: '/admin/ventas', label: t('admin.sidebar.nuevaVenta'), icon: 'plus' },
-    { to: '/admin/asignar-compra', label: t('admin.sidebar.registrarCompraExterna'), icon: 'assign' },
-    { to: '/admin/finanzas', label: t('admin.sidebar.finanzas'), icon: 'chart' },
-    { to: '/admin/billetera', label: t('admin.sidebar.miBilletera'), icon: 'wallet' },
-    { to: '/admin/reportes', label: t('admin.sidebar.reportes'), icon: 'bar' },
-    { section: ADMIN_IT_SECCION.MARKETING },
-    { to: '/admin/ofertas', label: t('admin.sidebar.ofertas'), icon: 'tag' },
-    { to: '/admin/blog', label: t('admin.sidebar.blog'), icon: 'blog' },
-    { section: SISTEMA_SECCION.MI_NEGOCIO },
-    { to: '/admin/mi-empresa', label: t('admin.sidebar.miNegocio'), icon: 'empresa' },
-    { to: '/admin/configuracion', label: t('admin.sidebar.configuracion'), icon: 'config' },
-  ]
+  // AdminRoleSwitch ya redirige a '/' cualquier rol fuera de ADMIN_ROLES ∪ ROLES_POS
+  // (los únicos con acceso a AdminLayout), y esos roles están todos cubiertos arriba —
+  // no hay caso borde real que llegue hasta acá.
+  return buildSistemaLinks(t)
 }
