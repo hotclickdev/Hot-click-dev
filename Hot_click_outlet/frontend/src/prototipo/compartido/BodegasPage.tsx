@@ -4,7 +4,7 @@ import { useBodegasEmprendedor } from '@/prototipo/emprendedor/hooks/useBodegasE
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
-import SkeletonLista from './motion/SkeletonLista'
+import ListadoFeedback from './ListadoFeedback'
 
 /**
  * Mis bodegas (Figma 78:303) — API real.
@@ -12,24 +12,27 @@ import SkeletonLista from './motion/SkeletonLista'
 export default function BodegasPage() {
   const ruta = useSellerRuta()
   const { bodegas, cargando, error } = useBodegasEmprendedor()
-  const vacio = !cargando && bodegas.length === 0
   const rutaNueva = ruta('bodegas/nueva')
+  const botonNueva = <Boton to={rutaNueva}>+ Nueva bodega</Boton>
 
   return (
     <EntradaPagina>
       <main className="px-5 pb-8 pt-[60px]">
         <EncabezadoPagina titulo="Mis Bodegas" subtitulo="Dónde guardás tu inventario" volverA={ruta('opciones')} />
-        {cargando ? <SkeletonLista className="mt-4" filas={3} /> : null}
-        {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
-        {vacio ? (
-          <EstadoVacioConversacional
-            titulo="Todavía no tenés bodegas"
-            mensaje="Creá la primera para saber dónde guardás tu inventario."
-            accion={<Boton to={rutaNueva}>+ Nueva bodega</Boton>}
-          />
-        ) : null}
-        {!vacio ? <Boton to={rutaNueva}>+ Nueva bodega</Boton> : null}
-        {bodegas.length > 0 ? (
+        <ListadoFeedback
+          cargando={cargando}
+          error={error}
+          cantidad={bodegas.length}
+          skeletonLabel="Cargando bodegas"
+          empty={(
+            <EstadoVacioConversacional
+              titulo="Todavía no tenés bodegas"
+              mensaje="Creá la primera para saber dónde guardás tu inventario."
+              accion={botonNueva}
+            />
+          )}
+        >
+          {botonNueva}
           <ListaStagger className="mt-5 space-y-3">
             {bodegas.map((item) => (
               <ItemListaStagger key={item.id}>
@@ -53,7 +56,7 @@ export default function BodegasPage() {
               </ItemListaStagger>
             ))}
           </ListaStagger>
-        ) : null}
+        </ListadoFeedback>
       </main>
     </EntradaPagina>
   )

@@ -10,7 +10,7 @@ import type { PedidoEmprendedor } from '../types'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
 import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
-import SkeletonLista from '@/prototipo/compartido/motion/SkeletonLista'
+import ListadoFeedback from '@/prototipo/compartido/ListadoFeedback'
 
 const FILTROS = ['Todos', 'Pendientes', 'Enviados', 'Entregados'] as const
 
@@ -36,38 +36,46 @@ export default function PedidosPage() {
         <div data-mm="seller-filtro-pedidos">
           <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
         </div>
-        {cargando ? <SkeletonLista filas={4} /> : null}
-        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        {!cargando && !error && pedidos.length === 0 ? (
-          <EstadoVacioConversacional
-            titulo="Todavía no tenés pedidos"
-            mensaje="Cuando vendas, van a aparecer acá con su estado de envío."
-          />
-        ) : null}
-        {!cargando && pedidos.length > 0 && visibles.length === 0 ? (
-          <EstadoVacioConversacional
-            titulo="Nada en este filtro"
-            mensaje="Probá con otro estado o volvé a Todos para ver todos los pedidos."
-          />
-        ) : null}
         <div data-mm="seller-lista-pedidos">
-          <ListaStagger className="flex flex-col gap-[18px]">
-            {visibles.map((pedido) => (
-              <ItemListaStagger key={pedido.id}>
-                <Link
-                  to={`${RUTA_EMPRENDEDOR}/pedidos/${pedido.id}`}
-                  className="flex flex-col gap-2 rounded-[14px] border border-hc-border bg-hc-surface p-3.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-[13px] font-bold">Pedido #{pedido.id}</p>
-                    <BadgeEstado tono={tonoEstado(pedido.estado)}>{pedido.estado}</BadgeEstado>
-                  </div>
-                  <p className="text-[11px] text-hc-muted">{pedido.cliente}</p>
-                  <p className="text-[13px] font-bold text-hc-primary">{formatoColon(pedido.total)}</p>
-                </Link>
-              </ItemListaStagger>
-            ))}
-          </ListaStagger>
+          <ListadoFeedback
+            cargando={cargando}
+            error={error}
+            cantidad={pedidos.length}
+            skeletonVariante="tarjeta"
+            skeletonLabel="Cargando pedidos"
+            className="flex flex-col gap-[18px]"
+            empty={(
+              <EstadoVacioConversacional
+                titulo="Todavía no tenés pedidos"
+                mensaje="Cuando vendas, van a aparecer acá con su estado de envío."
+              />
+            )}
+          >
+            {visibles.length === 0 ? (
+              <EstadoVacioConversacional
+                titulo="Nada en este filtro"
+                mensaje="Probá con otro estado o volvé a Todos para ver todos los pedidos."
+              />
+            ) : (
+              <ListaStagger className="flex flex-col gap-[18px]">
+                {visibles.map((pedido) => (
+                  <ItemListaStagger key={pedido.id}>
+                    <Link
+                      to={`${RUTA_EMPRENDEDOR}/pedidos/${pedido.id}`}
+                      className="flex flex-col gap-2 rounded-[14px] border border-hc-border bg-hc-surface p-3.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-[13px] font-bold">Pedido #{pedido.id}</p>
+                        <BadgeEstado tono={tonoEstado(pedido.estado)}>{pedido.estado}</BadgeEstado>
+                      </div>
+                      <p className="text-[11px] text-hc-muted">{pedido.cliente}</p>
+                      <p className="text-[13px] font-bold text-hc-primary">{formatoColon(pedido.total)}</p>
+                    </Link>
+                  </ItemListaStagger>
+                ))}
+              </ListaStagger>
+            )}
+          </ListadoFeedback>
         </div>
       </EntradaPagina>
     </main>

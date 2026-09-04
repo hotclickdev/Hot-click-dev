@@ -10,6 +10,7 @@ import PantallaExitoWizard, {
 import EntradaPagina from '../compartido/motion/EntradaPagina'
 import EstadoVacioConversacional from '../compartido/motion/EstadoVacioConversacional'
 import { ListaStagger, ItemListaStagger } from '../compartido/motion/ListaStagger'
+import ListadoFeedback from '../compartido/ListadoFeedback'
 import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
 import { formatoColon } from '@/theme/formatoColon'
 import { useToast } from '@/components/ui/Toast'
@@ -98,15 +99,6 @@ export default function SucursalesPage() {
           </div>
         ) : null}
 
-        {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando sucursales…</p> : null}
-        {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
-        {!cargando && !error && sucursales.length === 0 ? (
-          <EstadoVacioConversacional
-            titulo="Todavía no hay sucursales"
-            mensaje="Agregá la primera para consolidar ventas e inventario."
-          />
-        ) : null}
-
         {pendienteDesactivar ? (
           <ConfirmacionDesactivar
             sucursal={pendienteDesactivar}
@@ -117,19 +109,33 @@ export default function SucursalesPage() {
               toast({ message: 'Sucursal desactivada', type: 'success' })
             }}
           />
-        ) : sucursales.length > 0 ? (
-          <ListaStagger className="mt-6 flex flex-col gap-3 md:max-w-[760px]">
-            {sucursales.map((sucursal) => (
-              <ItemListaStagger key={sucursal.id}>
-                <FilaSucursal
-                  sucursal={sucursal}
-                  onRenombrar={() => setAccion({ tipo: 'renombrar', sucursal })}
-                  onDesactivar={() => setAccion({ tipo: 'desactivar', sucursal })}
-                />
-              </ItemListaStagger>
-            ))}
-          </ListaStagger>
-        ) : null}
+        ) : (
+          <ListadoFeedback
+            cargando={cargando}
+            error={error}
+            cantidad={sucursales.length}
+            skeletonVariante="tarjeta"
+            skeletonLabel="Cargando sucursales"
+            empty={(
+              <EstadoVacioConversacional
+                titulo="Todavía no hay sucursales"
+                mensaje="Agregá la primera para consolidar ventas e inventario."
+              />
+            )}
+          >
+            <ListaStagger className="mt-6 flex flex-col gap-3 md:max-w-[760px]">
+              {sucursales.map((sucursal) => (
+                <ItemListaStagger key={sucursal.id}>
+                  <FilaSucursal
+                    sucursal={sucursal}
+                    onRenombrar={() => setAccion({ tipo: 'renombrar', sucursal })}
+                    onDesactivar={() => setAccion({ tipo: 'desactivar', sucursal })}
+                  />
+                </ItemListaStagger>
+              ))}
+            </ListaStagger>
+          </ListadoFeedback>
+        )}
 
         {accion?.tipo === 'crear' ? (
           <FormularioSucursal

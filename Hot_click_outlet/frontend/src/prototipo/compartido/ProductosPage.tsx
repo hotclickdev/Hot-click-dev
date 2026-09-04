@@ -7,7 +7,7 @@ import BotonesAgregarProducto from './BotonesAgregarProducto'
 import EntradaPagina from './motion/EntradaPagina'
 import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
-import SkeletonLista from './motion/SkeletonLista'
+import ListadoFeedback from './ListadoFeedback'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 
@@ -22,28 +22,37 @@ export default function ProductosPage() {
   const { seller, cargando, error } = useCatalogoVendedor()
   const [filtro, setFiltro] = useState<Filtro>('Todos')
   const visibles = filtrarProductos(seller, filtro)
-  const vacio = !cargando && seller.length === 0
+  const baseNuevo = ruta('productos/nuevo')
+
   return (
     <main className="px-5 pb-8 pt-[60px]">
       <EntradaPagina>
         <EncabezadoPagina titulo="Mis Productos" subtitulo={`Outlet · ${plan.usuario}`} />
-        <BotonesAgregarProducto baseNuevo={ruta('productos/nuevo')} />
+        <BotonesAgregarProducto baseNuevo={baseNuevo} />
         <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
           {(['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const).map((item) => (
             <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
           ))}
         </div>
-        {cargando ? <SkeletonLista className="mt-6" filas={4} /> : null}
-        {error ? <p className="mt-6 text-sm text-hc-danger">{error}</p> : null}
         <div data-mm="seller-lista-productos">
-          {vacio ? (
-            <EstadoVacioConversacional
-              titulo="Todavía no subiste productos"
-              mensaje="Usá los botones de arriba para publicar catálogo o personalizado."
-            />
-          ) : (
-            <SeccionesProductos filtro={filtro} productos={visibles} ruta={ruta} />
-          )}
+          <ListadoFeedback
+            cargando={cargando}
+            error={error}
+            cantidad={seller.length}
+            skeletonLabel="Cargando catálogo"
+            empty={(
+              <EstadoVacioConversacional
+                titulo="Todavía no subiste productos"
+                mensaje="Usá los botones de arriba para publicar catálogo o personalizado."
+              />
+            )}
+          >
+            {visibles.length === 0 ? (
+              <p className="mt-6 text-sm text-hc-muted">No hay productos en este filtro.</p>
+            ) : (
+              <SeccionesProductos filtro={filtro} productos={visibles} ruta={ruta} />
+            )}
+          </ListadoFeedback>
         </div>
       </EntradaPagina>
     </main>

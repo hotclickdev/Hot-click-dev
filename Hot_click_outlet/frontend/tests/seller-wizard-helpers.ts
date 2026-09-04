@@ -3,7 +3,7 @@
  */
 import { expect, type Page, type Route } from '@playwright/test'
 
-export type PlanVendedor = 'PYME' | 'NEGOCIO_PLUS'
+export type PlanVendedor = 'EMPRENDEDOR' | 'PYME' | 'NEGOCIO_PLUS'
 
 export function jwtSinFirmar(claims: Record<string, unknown>) {
   const enc = (obj: unknown) => Buffer.from(JSON.stringify(obj)).toString('base64')
@@ -30,7 +30,15 @@ export function payloadAuth() {
 }
 
 export function prefijoPorPlan(plan: PlanVendedor) {
-  return plan === 'NEGOCIO_PLUS' ? '/negocio-plus' : '/pyme'
+  if (plan === 'NEGOCIO_PLUS') return '/negocio-plus'
+  if (plan === 'PYME') return '/pyme'
+  return '/emprendedor'
+}
+
+/** Destino seller tras visitar `/admin/bodegas` (AdminRoleSwitch → rutaSellerDesdeAdmin). */
+export function rutaBodegasDesdeAdmin(plan: PlanVendedor) {
+  if (plan === 'EMPRENDEDOR') return '/emprendedor/opciones/bodegas'
+  return `${prefijoPorPlan(plan)}/bodegas`
 }
 
 /** Assert wizard step label + heading after goto (shared cobro/negocio/perfil). */

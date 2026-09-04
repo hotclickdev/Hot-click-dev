@@ -39,8 +39,9 @@ export default function AdminRoleSwitch() {
   const isPOS = ROLES_POS.has(rol)
   if (!isAdmin && !isPOS) return <Navigate to="/" replace />
 
-  // ADMIN plataforma: fuera de ops de negocio (antes del POSShell).
-  if (isAdmin && esRutaTenantOpsParaAdmin(pathname)) {
+  // Solo ADMIN de plataforma: fuera de ops de negocio (antes del POSShell).
+  // No usar `isAdmin`/`ADMIN_ROLES` — incluye vendedores y rompería el remap a seller.
+  if (rol === 'ADMIN' && esRutaTenantOpsParaAdmin(pathname)) {
     return <Navigate to="/admin" replace />
   }
 

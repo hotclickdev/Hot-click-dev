@@ -9,6 +9,7 @@ import PantallaExitoWizard from '../compartido/motion/PantallaExitoWizard'
 import EntradaPagina from '../compartido/motion/EntradaPagina'
 import EstadoVacioConversacional from '../compartido/motion/EstadoVacioConversacional'
 import { ListaStagger, ItemListaStagger } from '../compartido/motion/ListaStagger'
+import ListadoFeedback from '../compartido/ListadoFeedback'
 import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
 import { equipoService } from '@/services/equipoService'
 import { useToast } from '@/components/ui/Toast'
@@ -107,16 +108,18 @@ export default function EquipoPage() {
           </div>
         ) : (
           <>
-            {cargando ? <p className="mt-4 text-sm text-hc-muted">Cargando equipo…</p> : null}
-            {error ? <p className="mt-4 text-sm text-hc-danger">{error}</p> : null}
-            {!cargando && visibles.length === 0 && !error ? (
-              <EstadoVacioConversacional
-                titulo="Todavía no hay miembros"
-                mensaje="Invitá a tu equipo para que entren a esta tienda."
-              />
-            ) : null}
-
-            {visibles.length > 0 ? (
+            <ListadoFeedback
+              cargando={cargando}
+              error={error}
+              cantidad={visibles.length}
+              skeletonLabel="Cargando equipo"
+              empty={(
+                <EstadoVacioConversacional
+                  titulo="Todavía no hay miembros"
+                  mensaje="Invitá a tu equipo para que entren a esta tienda."
+                />
+              )}
+            >
               <ListaStagger className="mt-6 flex flex-col gap-3">
                 {visibles.map((item) => (
                   <ItemListaStagger key={String(item.id)}>
@@ -130,7 +133,7 @@ export default function EquipoPage() {
                   </ItemListaStagger>
                 ))}
               </ListaStagger>
-            ) : null}
+            </ListadoFeedback>
 
             {mostrarForm ? (
               <FormularioInvitar

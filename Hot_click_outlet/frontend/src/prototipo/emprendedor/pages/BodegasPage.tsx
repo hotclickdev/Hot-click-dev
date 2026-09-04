@@ -4,7 +4,7 @@ import { RUTA_EMPRENDEDOR } from '../constants'
 import { useBodegasEmprendedor } from '../hooks/useBodegasEmprendedor'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
-import SkeletonLista from '@/prototipo/compartido/motion/SkeletonLista'
+import ListadoFeedback from '@/prototipo/compartido/ListadoFeedback'
 
 const RUTA_NUEVA_BODEGA = `${RUTA_EMPRENDEDOR}/opciones/bodegas/nueva`
 
@@ -13,7 +13,7 @@ const RUTA_NUEVA_BODEGA = `${RUTA_EMPRENDEDOR}/opciones/bodegas/nueva`
  */
 export default function BodegasPage() {
   const { bodegas, cargando, error } = useBodegasEmprendedor()
-  const vacio = !cargando && bodegas.length === 0
+  const botonNueva = <Boton to={RUTA_NUEVA_BODEGA}>+ Nueva bodega</Boton>
 
   return (
     <EmprendedorPageFrame
@@ -21,16 +21,20 @@ export default function BodegasPage() {
       volverA={`${RUTA_EMPRENDEDOR}/opciones`}
       subtitulo="Dónde guardás tu inventario"
     >
-      {cargando ? <SkeletonLista filas={3} /> : null}
-      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-      {vacio ? (
-        <EstadoVacioConversacional
-          titulo="Todavía no tenés bodegas"
-          mensaje="Creá la primera para saber dónde guardás tu inventario."
-          accion={<Boton to={RUTA_NUEVA_BODEGA}>+ Nueva bodega</Boton>}
-        />
-      ) : null}
-      {bodegas.length > 0 ? (
+      <ListadoFeedback
+        cargando={cargando}
+        error={error}
+        cantidad={bodegas.length}
+        skeletonLabel="Cargando bodegas"
+        className="space-y-3"
+        empty={(
+          <EstadoVacioConversacional
+            titulo="Todavía no tenés bodegas"
+            mensaje="Creá la primera para saber dónde guardás tu inventario."
+            accion={botonNueva}
+          />
+        )}
+      >
         <ListaStagger className="flex flex-col gap-4">
           {bodegas.map((bodega) => (
             <ItemListaStagger key={bodega.id}>
@@ -43,8 +47,8 @@ export default function BodegasPage() {
             </ItemListaStagger>
           ))}
         </ListaStagger>
-      ) : null}
-      {!vacio ? <Boton to={RUTA_NUEVA_BODEGA}>+ Nueva bodega</Boton> : null}
+        {botonNueva}
+      </ListadoFeedback>
     </EmprendedorPageFrame>
   )
 }
