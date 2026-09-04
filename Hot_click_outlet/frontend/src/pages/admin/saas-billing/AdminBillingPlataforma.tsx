@@ -24,27 +24,44 @@ const KPIS_VACIOS: BillingKpis = {
   total: 0, pastDue: 0, conAlertaCobro: 0, conOnvo: 0, conStripe: 0,
 }
 
+const TAMANO_PAGINA = 100
+
 export default function AdminBillingPlataforma() {
   const [filas, setFilas] = useState<BillingFila[]>([])
   const [kpis, setKpis] = useState<BillingKpis>(KPIS_VACIOS)
+  const [totalPlataforma, setTotalPlataforma] = useState(0)
   const [filtro, setFiltro] = useState<FiltroBilling>('TODAS')
   const [loading, setLoading] = useState(true)
+  const [cargandoMas, setCargandoMas] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   function cargar() {
     setLoading(true)
     setError(null)
-    adminBillingService.listar()
+    adminBillingService.listar(0, TAMANO_PAGINA)
       .then(({ data }) => {
         const parsed = parsearConsola(data)
         setFilas(parsed.empresas)
         setKpis(parsed.kpis)
+        setTotalPlataforma(parsed.total)
       })
       .catch(() => {
         setError('No se pudo cargar el billing de los negocios.')
         setFilas([])
       })
       .finally(() => setLoading(false))
+  }
+
+  function cargarMas() {
+    setCargandoMas(true)
+    const siguientePagina = Math.floor(filas.length / TAMANO_PAGINA)
+    adminBillingService.listar(siguientePagina, TAMANO_PAGINA)
+      .then(({ data }) => {
+        const parsed = parsearConsola(data)
+        setFilas((prev) => [...prev, ...parsed.empresas])
+      })
+      .catch(() => setError('No se pudieron cargar más negocios.'))
+      .finally(() => setCargandoMas(false))
   }
 
   useEffect(() => { cargar() }, [])
@@ -116,6 +133,15 @@ export default function AdminBillingPlataforma() {
             </li>
           ))}
         </ul>
+      )}
+      {!loading && !error && filas.length < totalPlataforma && (
+        <div className="mt-4 flex justify-center">
+          <button type="button" onClick={cargarMas} disabled={cargandoMas}
+            className="min-h-11 rounded-xl border border-hc-border px-4 text-sm font-semibold disabled:opacity-60"
+          >
+            {cargandoMas ? 'Cargando…' : `Cargar más (${filas.length} de ${totalPlataforma})`}
+          </button>
+        </div>
       )}
     </div>
   )

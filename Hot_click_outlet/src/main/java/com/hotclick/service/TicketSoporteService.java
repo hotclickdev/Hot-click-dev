@@ -9,6 +9,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.TicketSoporteRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.email.EmailLayoutHelper;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class TicketSoporteService {
     private final CompanyScope companyScope;
     private final InputSanitizer sanitizer;
     private final ResendEmailService emailService;
+    private final EmailLayoutHelper layout;
 
     @Value("${soporte.tickets.email:hotclick.cr@gmail.com}")
     private String soporteTicketsEmail;
@@ -47,12 +49,14 @@ public class TicketSoporteService {
             EmpresaRepository empresaRepo,
             CompanyScope companyScope,
             InputSanitizer sanitizer,
-            ResendEmailService emailService) {
+            ResendEmailService emailService,
+            EmailLayoutHelper layout) {
         this.ticketRepo = ticketRepo;
         this.empresaRepo = empresaRepo;
         this.companyScope = companyScope;
         this.sanitizer = sanitizer;
         this.emailService = emailService;
+        this.layout = layout;
     }
 
     @Transactional
@@ -153,7 +157,7 @@ public class TicketSoporteService {
     }
 
     private void assertAdminInbox() {
-        if (!companyScope.isAdminIT()) {
+        if (!companyScope.isAdminIT() && !companyScope.hasAuthority(Constants.PERM_GLOBAL_COMPANIES)) {
             throw new TenantAccessDeniedException("Solo el staff de plataforma puede gestionar tickets");
         }
     }
@@ -205,21 +209,21 @@ public class TicketSoporteService {
     private void notificarPorEmail(TicketSoporte t, Empresa empresa, Usuario usuario) {
         Thread.ofVirtual().start(() -> {
             try {
-                String asunto = "[HOTCLICK SOPORTE] " + t.getTitulo() + " — " + empresa.getNombreEmpresa();
+                String asunto = "[HOTCLICK SOPORTE] " + layout.esc(t.getTitulo()) + " — " + layout.esc(empresa.getNombreEmpresa());
                 String html = "<div style='font-family:sans-serif;max-width:600px'>" +
                     "<h2 style='color:#1747A8'>Nuevo ticket de soporte</h2>" +
                     "<table style='border-collapse:collapse;width:100%'>" +
                     "<tr><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Negocio</td>" +
-                    "<td style='padding:6px 12px'>" + empresa.getNombreEmpresa() + "</td></tr>" +
+                    "<td style='padding:6px 12px'>" + layout.esc(empresa.getNombreEmpresa()) + "</td></tr>" +
                     "<tr style='background:#f9fafb'><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Usuario</td>" +
-                    "<td style='padding:6px 12px'>" + (usuario != null ? usuario.getNombre() + " (" + usuario.getCorreo() + ")" : "—") + "</td></tr>" +
+                    "<td style='padding:6px 12px'>" + (usuario != null ? layout.esc(usuario.getNombre()) + " (" + layout.esc(usuario.getCorreo()) + ")" : "—") + "</td></tr>" +
                     "<tr><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Título</td>" +
-                    "<td style='padding:6px 12px'>" + t.getTitulo() + "</td></tr>" +
+                    "<td style='padding:6px 12px'>" + layout.esc(t.getTitulo()) + "</td></tr>" +
                     "<tr style='background:#f9fafb'><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Descripción</td>" +
-                    "<td style='padding:6px 12px'>" + t.getDescripcion() + "</td></tr>" +
+                    "<td style='padding:6px 12px'>" + layout.esc(t.getDescripcion()) + "</td></tr>" +
                     (t.getFotoUrl() != null
                         ? "<tr><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Foto</td>" +
-                          "<td style='padding:6px 12px'><a href='" + t.getFotoUrl() + "'>" + t.getFotoUrl() + "</a></td></tr>"
+                          "<td style='padding:6px 12px'><a href='" + layout.esc(t.getFotoUrl()) + "'>" + layout.esc(t.getFotoUrl()) + "</a></td></tr>"
                         : "") +
                     "</table>" +
                     "</div>";

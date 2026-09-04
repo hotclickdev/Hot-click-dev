@@ -32,13 +32,6 @@ class SecurityAuthorizationRulesTest {
             Constants.ROL_SUPPORT, Constants.ROL_FINANCE, Constants.ROL_TRUST);
     }
 
-    @Test
-    @DisplayName("catch-all /api/admin/** incluye staff además de ADMIN y EMPRENDEDOR")
-    void catchAllIncluyeStaff() {
-        // Documenta la lista esperada por SecurityAuthorizationRules.configure()
-        assertThat(new String[] {
-            Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR,
-            Constants.ROL_SUPPORT, Constants.ROL_FINANCE, Constants.ROL_TRUST
-        }).contains(Constants.ROL_SUPPORT, Constants.ROL_FINANCE, Constants.ROL_TRUST);
-    }
+    // catch-all /api/admin/** incluye staff además de ADMIN y EMPRENDEDOR:
+    // ver SecurityAuthorizationRulesCatchAllTest (integration, golpea el filtro real).
 }

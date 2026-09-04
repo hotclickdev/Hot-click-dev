@@ -96,7 +96,7 @@ export function parsearFila(raw: unknown): BillingFila | null {
   }
 }
 
-export function parsearConsola(raw: unknown): { empresas: BillingFila[]; kpis: BillingKpis } {
+export function parsearConsola(raw: unknown): { empresas: BillingFila[]; kpis: BillingKpis; total: number } {
   const body = esRecord(raw) ? raw : {}
   const lista = Array.isArray(body.empresas) ? body.empresas : []
   const k = esRecord(body.kpis) ? body.kpis : {}
@@ -109,6 +109,8 @@ export function parsearConsola(raw: unknown): { empresas: BillingFila[]; kpis: B
       conOnvo: numero(k.conOnvo),
       conStripe: numero(k.conStripe),
     },
+    // Total de negocios en la plataforma (no de la pagina cargada) — para saber si falta "Cargar mas".
+    total: numero(body.total),
   }
 }
 

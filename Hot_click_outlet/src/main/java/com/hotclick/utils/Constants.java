@@ -8,6 +8,17 @@ public class Constants {
     public static final ZoneId ZONA_CR = ZoneId.of("America/Costa_Rica");
 
     /**
+     * Empresa seed interna de plataforma (no es tenant del marketplace).
+     * Fuente unica: AdminBillingMapper y TenantUsoAgregacion antes tenian
+     * cada uno su propia copia de este ID, con logica ya divergente entre si.
+     */
+    public static final long EMPRESA_PLATAFORMA_ID = 1L;
+
+    public static boolean esEmpresaPlataforma(long empresaId) {
+        return empresaId == EMPRESA_PLATAFORMA_ID;
+    }
+
+    /**
      * Genera un número de pedido único con el prefijo dado.
      * Usa UUID aleatorio (12 hex chars = 48 bits) para evitar colisiones
      * bajo carga concurrente. System.currentTimeMillis() colisionaba cuando

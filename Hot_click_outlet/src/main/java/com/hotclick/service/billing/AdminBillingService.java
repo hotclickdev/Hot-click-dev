@@ -41,7 +41,7 @@ public class AdminBillingService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> listarConsola() {
+    public Map<String, Object> listarConsola(int page, int size) {
         List<Empresa> empresas = empresasDeTenants();
         Map<Long, Suscripcion> subPorEmpresa = suscripcionesVigentes();
         Map<Long, Long> fallos = fallosPorEmpresa();
@@ -52,10 +52,21 @@ public class AdminBillingService {
             filas.add(AdminBillingMapper.filaLista(e, subPorEmpresa.get(e.getId()), nFallos));
         }
 
+        // Los KPIs se calculan sobre las filas completas (totales de plataforma, no de una
+        // pagina) — solo la lista que se manda al navegador se recorta, para no mandar un
+        // JSON sin limite a medida que crece la base de tenants.
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("empresas", filas);
+        out.put("empresas", paginar(filas, page, size));
+        out.put("total", filas.size());
         out.put("kpis", AdminBillingMapper.kpisDeFilas(filas));
         return out;
+    }
+
+    private static <T> List<T> paginar(List<T> lista, int page, int size) {
+        int desde = Math.max(0, page) * Math.max(1, size);
+        if (desde >= lista.size()) return List.of();
+        int hasta = Math.min(lista.size(), desde + Math.max(1, size));
+        return lista.subList(desde, hasta);
     }
 
     @Transactional(readOnly = true)

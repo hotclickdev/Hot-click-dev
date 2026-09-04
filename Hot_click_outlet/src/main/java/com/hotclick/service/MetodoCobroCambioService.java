@@ -18,6 +18,8 @@ import com.hotclick.utils.EmpresaNombre;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -66,11 +68,26 @@ public class MetodoCobroCambioService {
         guardarSolicitud(metodo, destinoNuevo);
         metodo.setEnRevision(true);
         metodoRepo.save(metodo);
-        notificacionService.avisarCambioPendiente(
-                metodo.getEmpresa(),
-                companyScope.getCurrentUser(),
-                MetodoCobroFormato.nombre(metodo.getTipo()),
-                MetodoCobroFormato.mascara(metodo.getTipo(), destinoNuevo));
+        // Las llamadas HTTP de avisarCambioPendiente (SMS/WhatsApp/email) van fuera de la
+        // transaccion: con PgBouncer en modo transaccion, retener la conexion durante 3
+        // llamadas de red bloqueantes puede agotar el pool compartido bajo carga.
+        var empresa = metodo.getEmpresa();
+        var usuarioActual = companyScope.getCurrentUser();
+        var nombreTipo = MetodoCobroFormato.nombre(metodo.getTipo());
+        var mascaraNueva = MetodoCobroFormato.mascara(metodo.getTipo(), destinoNuevo);
+        Runnable notificar = () ->
+            notificacionService.avisarCambioPendiente(empresa, usuarioActual, nombreTipo, mascaraNueva);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificar.run();
+                }
+            });
+        } else {
+            // Sin transaccion activa (ej. tests unitarios sin contexto Spring) — llamar directo.
+            notificar.run();
+        }
         return MetodoCobroDto.from(metodo);
     }
 
@@ -85,9 +102,11 @@ public class MetodoCobroCambioService {
 
     @Transactional
     public void aprobar(Long solicitudId) {
+        // Sin assertCanAccess a propósito: quien llega acá ya fue autorizado por
+        // SolicitudAdminGuard (ADMIN o TRUST vía global.approvals) — es una operación
+        // de staff de plataforma sobre un tenant ajeno, no un acceso propio.
         SolicitudAprobacion sol = cargarPendiente(solicitudId);
         MetodoCobro metodo = cargarMetodo(sol.getIdEntidad());
-        companyScope.assertCanAccess(metodo.getEmpresa().getId());
         MetodoCobroCambioSnapshot snap = leerSnapshot(sol);
         metodo.setDestino(snap.getDestinoNuevo());
         metodo.setMascara(MetodoCobroFormato.mascara(metodo.getTipo(), snap.getDestinoNuevo()));
@@ -101,9 +120,9 @@ public class MetodoCobroCambioService {
     @Transactional
     public void rechazar(Long solicitudId, String comentario) {
         SolicitudAprobacion sol = cargarPendiente(solicitudId);
+        // Sin assertCanAccess a propósito: ver comentario en aprobar().
         MetodoCobro metodo = metodoRepo.findActivoById(sol.getIdEntidad()).orElse(null);
         if (metodo != null) {
-            companyScope.assertCanAccess(metodo.getEmpresa().getId());
             metodo.setEnRevision(false);
             metodoRepo.save(metodo);
         }

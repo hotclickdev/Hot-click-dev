@@ -57,7 +57,7 @@ class AdminBillingServiceTest {
         when(ledgerRepo.countPorEmpresaAndTipo(BillingLedger.TIPO_COBRO_FALLIDO))
             .thenReturn(Collections.singletonList(new Object[]{10L, 1L}));
 
-        Map<String, Object> out = service.listarConsola();
+        Map<String, Object> out = service.listarConsola(0, 100);
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> filas = (List<Map<String, Object>>) out.get("empresas");
@@ -93,7 +93,7 @@ class AdminBillingServiceTest {
         when(facturaRepo.countPorEmpresaAndEstado("FALLIDO")).thenReturn(List.of());
         when(ledgerRepo.countPorEmpresaAndTipo(BillingLedger.TIPO_COBRO_FALLIDO)).thenReturn(List.of());
 
-        Map<String, Object> out = service.listarConsola();
+        Map<String, Object> out = service.listarConsola(0, 100);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> filas = (List<Map<String, Object>>) out.get("empresas");
         assertThat(filas.get(0).get("alertaCobro")).isEqualTo(true);

@@ -5,6 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.FacturaSaas;
 import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
+import com.hotclick.utils.Constants;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -16,7 +17,8 @@ import java.util.Map;
  */
 public final class AdminBillingMapper {
 
-    public static final long EMPRESA_PLATAFORMA_ID = 1L;
+    /** Fuente unica: {@link Constants#EMPRESA_PLATAFORMA_ID}. */
+    public static final long EMPRESA_PLATAFORMA_ID = Constants.EMPRESA_PLATAFORMA_ID;
     public static final String PROVEEDOR_NINGUNO = "NINGUNO";
     public static final String PROVEEDOR_ONVO = "ONVO";
     public static final String PROVEEDOR_STRIPE = "STRIPE";

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/admin/soporte/tickets")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('ADMIN') or hasAuthority('global.companies')")
 public class AdminTicketSoporteController {
 
     private final TicketSoporteService ticketSoporteService;

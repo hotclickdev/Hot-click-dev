@@ -18,8 +18,8 @@ public final class TenantUsoAgregacion {
     public static final double PRECIO_INPUT_POR_M = 0.80;
     public static final double PRECIO_OUTPUT_POR_M = 4.00;
 
-    /** Empresa seed interna de plataforma — no es tenant del marketplace. */
-    public static final long EMPRESA_PLATAFORMA_ID = 1L;
+    /** Empresa seed interna de plataforma — no es tenant del marketplace. Fuente unica: {@link Constants#EMPRESA_PLATAFORMA_ID}. */
+    public static final long EMPRESA_PLATAFORMA_ID = Constants.EMPRESA_PLATAFORMA_ID;
 
     public static final String NOTA_ALMACENAMIENTO =
         "Proxy: productos activos + imágenes de catálogo (no hay bytes por tenant en BD).";
@@ -122,7 +122,7 @@ public final class TenantUsoAgregacion {
     }
 
     public static boolean esEmpresaPlataforma(long empresaId) {
-        return empresaId == EMPRESA_PLATAFORMA_ID;
+        return Constants.esEmpresaPlataforma(empresaId);
     }
 
     /** Mapa base de fila de uso (sin I/O). */
