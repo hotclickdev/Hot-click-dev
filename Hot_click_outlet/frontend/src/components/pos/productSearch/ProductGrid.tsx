@@ -59,7 +59,7 @@ function TarjetaPos({ producto, qty, onAdd }: { producto: ProductoPos; qty: numb
         <span className="text-xs font-bold text-hc-primary">₡{fmt(producto.precioEfectivo ?? producto.precioVenta ?? producto.precio)}</span>
         <span
           className={`flex size-[26px] items-center justify-center rounded-full text-sm font-bold ${
-            seleccionado ? 'text-hc-success' : 'bg-hc-text text-white'
+            seleccionado ? 'text-hc-success' : 'bg-[var(--hc-n-900)] text-white'
           }`}
           style={seleccionado ? { background: 'var(--hc-success-bg)' } : undefined}
           aria-hidden

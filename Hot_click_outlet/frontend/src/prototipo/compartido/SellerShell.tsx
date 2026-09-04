@@ -10,11 +10,12 @@ type Props = {
 }
 
 /**
- * Shell PYME / Negocio Plus: móvil bottom nav; desktop sidebar Figma (#F8F9FB).
+ * Shell PYME / Negocio Plus: móvil bottom nav; desktop sidebar.
+ * `.hc-seller-theme` sigue html.dark (tokens semánticos).
  */
 export default function SellerShell({ sinNav = false }: Props) {
   return (
-    <div className="min-h-dvh bg-[#F8F9FB] text-hc-text">
+    <div className="hc-seller-theme min-h-dvh bg-hc-bg text-hc-text">
       <div className="md:flex md:min-h-dvh">
         <SellerSidebar />
         <div className={`min-w-0 flex-1 ${sinNav ? '' : 'pb-16 md:pb-0'}`}>

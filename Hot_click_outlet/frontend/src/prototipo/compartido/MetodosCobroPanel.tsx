@@ -114,7 +114,7 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
       {modoDemo ? (
         <p
           role="status"
-          className="rounded-xl bg-[var(--hc-n-50)] px-4 py-3 text-[13px] leading-5 text-hc-muted"
+          className="rounded-xl bg-hc-surface-2 px-4 py-3 text-[13px] leading-5 text-hc-muted"
         >
           Modo demo: la API de cobro no está disponible. Los datos son de ejemplo y no se guardan.
         </p>

@@ -63,7 +63,7 @@ export default function StepVenta({
     <div className="relative flex flex-1 flex-col overflow-hidden" style={{ backgroundColor: 'var(--hc-surface-2, #F8F9FB)' }}>
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 overflow-hidden p-3 pb-28 md:flex-row md:gap-5 md:p-5 md:pb-5">
         <section
-          className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 rounded-2xl border bg-white p-4 md:p-5"
+          className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 rounded-2xl border bg-hc-surface p-4 md:p-5"
           style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
         >
           <CabeceraCaja />
@@ -152,7 +152,7 @@ function TicketBarPos({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-hc-text p-4 text-white shadow-lg">
+    <div className="flex items-center justify-between rounded-2xl bg-[var(--hc-n-900)] p-4 text-white shadow-lg">
       <button type="button" onClick={onAbrirTicket} className="min-w-0 text-left" data-pos-ticket-open>
         <p className="text-[11px] text-white/70">{t('pos.venta.productosEnFactura', { count: numItems })}</p>
         <p className="font-display text-lg font-bold">{formatoColon(total)}</p>
@@ -203,7 +203,7 @@ function PanelTicket(props: TicketProps) {
   const { t } = useTranslation()
   return (
     <div
-      className="flex h-full flex-col rounded-2xl border-2 bg-white p-5 md:p-6"
+      className="flex h-full flex-col rounded-2xl border-2 bg-hc-surface p-5 md:p-6"
       style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
     >
       <div
@@ -244,7 +244,7 @@ function TicketDrawer(props: TicketProps & { onClose: () => void }) {
     <div className="fixed inset-0 z-20 md:hidden" role="dialog" aria-modal="true" aria-label={t('pos.venta.facturaAria')}>
       <button type="button" className="absolute inset-0 bg-[rgba(20,23,28,0.45)]" aria-label={t('pos.common.cerrar')} onClick={props.onClose} />
       <div
-        className="absolute inset-x-0 bottom-0 max-h-[85vh] space-y-3 overflow-y-auto rounded-t-2xl border bg-white p-4 shadow-xl"
+        className="absolute inset-x-0 bottom-0 max-h-[85vh] space-y-3 overflow-y-auto rounded-t-2xl border bg-hc-surface p-4 shadow-xl"
         style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
       >
         <div className="flex items-center justify-between gap-2 border-b pb-3" style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}>

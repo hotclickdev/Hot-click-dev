@@ -20,7 +20,7 @@ export default function TiendaPublicaPage() {
   const visibles = filtro === 'Todos' ? publicados : publicados.filter((item) => item.categoria === filtro)
   return (
     <main className="pb-8">
-      <div className="flex items-center justify-center gap-2 bg-hc-text py-2 text-[12px] text-white">
+      <div className="flex items-center justify-center gap-2 bg-[var(--hc-n-900)] py-2 text-[12px] text-white">
         <span className="relative block size-[18px] overflow-clip">
           <img src={iconOjo} alt="" width={18} height={14} className="size-full object-contain" />
         </span>

@@ -28,7 +28,7 @@ function clasesItem(activo: boolean) {
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]',
     activo
       ? 'bg-[var(--hc-blue-50)] font-semibold text-[var(--hc-link)]'
-      : 'font-medium text-hc-text hover:bg-[var(--hc-n-50)]',
+      : 'font-medium text-hc-text hover:bg-hc-surface-2',
   ].join(' ')
 }
 

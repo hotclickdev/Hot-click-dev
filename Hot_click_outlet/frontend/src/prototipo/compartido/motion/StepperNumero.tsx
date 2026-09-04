@@ -38,7 +38,7 @@ export default function StepperNumero({
       <label htmlFor={inputId} className="text-xs font-medium text-hc-muted">
         {etiqueta}
       </label>
-      <div className="flex min-h-11 items-stretch overflow-hidden rounded-lg border border-hc-border bg-[#F8F9FB]">
+      <div className="flex min-h-11 items-stretch overflow-hidden rounded-lg border border-hc-border bg-hc-surface-2">
         <BotonStepper
           etiqueta={`Disminuir ${etiqueta}`}
           signo="−"

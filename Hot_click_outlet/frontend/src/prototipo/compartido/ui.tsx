@@ -52,7 +52,7 @@ export function Boton({
 }: BotonProps & { dataMm?: string }) {
   const estilos: Record<NonNullable<BotonProps['variante']>, string> = {
     primario: 'bg-hc-primary text-white',
-    oscuro: 'bg-hc-text text-white',
+    oscuro: 'bg-[var(--hc-n-900)] text-white',
     contorno: 'border border-hc-border bg-hc-surface text-hc-text',
     peligro: 'bg-hc-primary text-white',
     suave: 'border border-hc-border text-hc-text',
@@ -90,7 +90,7 @@ export function EncabezadoPagina({ titulo, subtitulo, volverA, extra }: Encabeza
               ←
             </Link>
           ) : null}
-          {titulo ? <h1 className="font-display text-[22px] font-bold leading-tight">{titulo}</h1> : null}
+          {titulo ? <h1 className="font-display text-[22px] font-bold leading-tight text-hc-text">{titulo}</h1> : null}
         </div>
         {subtitulo ? <p className="mt-0.5 text-xs text-hc-muted">{subtitulo}</p> : null}
       </div>

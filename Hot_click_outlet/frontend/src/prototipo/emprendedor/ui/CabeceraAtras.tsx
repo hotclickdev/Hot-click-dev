@@ -15,10 +15,10 @@ export default function CabeceraAtras({ titulo, to, extra }: Props) {
   return (
     <header className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2.5">
-        <Link to={to} className="flex size-11 shrink-0 items-center justify-center" aria-label="Volver">
+        <Link to={to} className="flex size-11 shrink-0 items-center justify-center text-hc-text" aria-label="Volver">
           <ChevronLeftIcon className="size-5" />
         </Link>
-        <h1 className="truncate font-display text-xl font-bold">{titulo}</h1>
+        <h1 className="truncate font-display text-xl font-bold text-hc-text">{titulo}</h1>
       </div>
       {extra}
     </header>
