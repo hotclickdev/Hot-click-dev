@@ -1,6 +1,6 @@
 # Seller frontend — pendientes
 
-**Rama:** `feat/seller-roadmap-p1`
+**Rama:** `master` (P1 seller mergeado)
 
 ## Hecho
 
@@ -9,28 +9,22 @@
 - F9 sidebars, empty Pedidos/detalle, dead Emp orphans (Pos/Cobrar/Login/Registro…)
 - F2b vistas compartidas: Productos / Pedidos / Bodegas / Planes (chrome Emp vs Seller)
 - Focus trap Tab+Escape en modal Sucursales
-- PWA favicon-192 en manifest/vite
 - Telegram en Opciones (Emp + Seller) + security/rate-limit
+- PWA: favicon-192 + **maskable 512** (`/brand/app-icon-maskable-512.png`, safe-zone)
+- Wiring test Mis Productos alineado a `ProductosListaVista`
+- Deploy EC2 + CI verde (Build React / Java / Sonar / gitleaks)
 
-## Pendiente
+## Pendiente (producto)
 
 | # | Ítem |
 |---|------|
-| 1 | Asset maskable PWA con safe-zone |
-| 2 | CRM/Marketing seller — decisión producto (no inventar módulos) |
+| 1 | CRM/Marketing seller — decisión producto (no inventar módulos) |
 
-## Verificado (2026-09-04)
+## Deuda aparte (bajo impacto)
 
-- Playwright seller suite local: **32/32** (wizards Emp/PYME/Plus, Escape, remap, sidebar)
-- QA visual Emp `/productos`: chrome Emp + `FilaProductoLista` + empty conversacional OK
-- Fix a11y: `TarjetaOpcion` como `role="radio"` dentro de radiogroups
-
-## Deuda aparte (no bloquea merge P1)
-
-- Métodos de cobro: restos `localStorage` / API payouts
+- Métodos de cobro: API es fuente de verdad; `CLAVE_LOCAL_*` solo limpia legacy
 - Extras negocio (categoría/IG/zona) aún parcial en cliente
 
-## Merge
+## Ops
 
-`feat/seller-roadmap-p1` ya está en `master` (fast-forward → `fe98b57f`).  
-Recordar `pnpm build` antes de push/deploy Docker. No pushear a origin sin pedido explícito.
+Push/deploy ya hechos para P1. Tras cambios PWA: `pnpm build` + commit static si va a Docker.
