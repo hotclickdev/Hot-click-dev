@@ -39,13 +39,6 @@ export type BodegaEmprendedor = {
   principal: boolean
 }
 
-export type LineaTicket = {
-  id: string
-  nombre: string
-  precio: number
-  cantidad: number
-}
-
 export type FormProducto = {
   nombre: string
   precioCompra: string
