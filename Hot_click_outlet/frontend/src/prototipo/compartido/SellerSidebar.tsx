@@ -17,26 +17,29 @@ import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import NegocioPertenenciaChip from './NegocioPertenenciaChip'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from './PrototipoSidebarNav'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
+import type { PlanConfig } from './plan'
+
+function itemPlanExtra(ruta: (segmento?: string) => string, plan: PlanConfig): ItemNav {
+  const esPlus = plan.id === 'negocioPlus'
+  return {
+    to: ruta(plan.extraOpcion.to),
+    etiqueta: esPlus ? 'Sucursales' : 'Equipo',
+    Icono: esPlus ? BuildingOffice2Icon : UserGroupIcon,
+  }
+}
 
 function gruposSeller(
   ruta: (segmento?: string) => string,
-  conSucursales: boolean,
+  plan: PlanConfig,
   pendientesEncargos: number,
-  conEquipo: boolean,
 ): GrupoNav[] {
-  const sucursales: ItemNav[] = conSucursales
-    ? [{ to: ruta('sucursales'), etiqueta: 'Sucursales', Icono: BuildingOffice2Icon }]
-    : []
-  const equipo: ItemNav[] = conEquipo
-    ? [{ to: ruta('equipo'), etiqueta: 'Equipo', Icono: UserGroupIcon }]
-    : []
+  const extra = plan.id === 'emprendedor' ? [] : [itemPlanExtra(ruta, plan)]
   return [
     {
       titulo: 'Operar',
       items: [
         { to: '/admin/pos', etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
         { to: ruta('pedidos'), etiqueta: 'Pedidos', Icono: ClipboardDocumentListIcon },
-        { to: ruta('productos'), etiqueta: 'Productos', Icono: CubeIcon },
         { to: ruta('tienda'), etiqueta: 'Tienda', Icono: BuildingStorefrontIcon },
         { to: ruta('recoleccion'), etiqueta: 'Recolección', Icono: TruckIcon },
         {
@@ -45,7 +48,7 @@ function gruposSeller(
           Icono: ClipboardDocumentListIcon,
           badge: pendientesEncargos,
         },
-        ...sucursales,
+        ...extra,
       ],
     },
     {
@@ -60,14 +63,14 @@ function gruposSeller(
       items: [
         { to: ruta('reportes'), etiqueta: 'Reportes', Icono: ChartBarIcon },
         { to: ruta('opciones'), etiqueta: 'Opciones', Icono: Cog6ToothIcon },
-        ...equipo,
       ],
     },
   ]
 }
 
 /**
- * Sidebar desktop PYME / Negocio Plus. Alineado con Emp: POS, Pedidos, Bodegas.
+ * Sidebar desktop PYME / Negocio Plus. Misma descubribilidad base que Emp
+ * (POS, Pedidos, Bodegas); extras de plan: Equipo (PYME) / Sucursales (Plus).
  */
 export default function SellerSidebar() {
   const plan = useSellerPlan()
@@ -77,8 +80,8 @@ export default function SellerSidebar() {
   const logout = useAuthStore((s) => s.logout)
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
   const grupos = useMemo(
-    () => gruposSeller(ruta, plan.id === 'negocioPlus', pendientesEncargos, plan.id === 'pyme'),
-    [ruta, plan.id, pendientesEncargos],
+    () => gruposSeller(ruta, plan, pendientesEncargos),
+    [ruta, plan, pendientesEncargos],
   )
 
   function cerrarSesion() {

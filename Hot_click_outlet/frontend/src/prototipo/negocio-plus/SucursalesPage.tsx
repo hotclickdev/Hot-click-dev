@@ -554,12 +554,50 @@ function ModalSucursal({
   onCerrarRef.current = onCerrar
 
   useEffect(() => {
-    panelRef.current?.focus()
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !enviando) onCerrarRef.current()
+    const panel = panelRef.current
+    if (!panel) return
+    const previo = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    panel.focus()
+
+    function elementosFoco(): HTMLElement[] {
+      if (!panel) return []
+      return Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        ),
+      )
     }
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !enviando) {
+        onCerrarRef.current()
+        return
+      }
+      if (e.key !== 'Tab') return
+      const lista = elementosFoco()
+      if (lista.length === 0) {
+        e.preventDefault()
+        panel?.focus()
+        return
+      }
+      const primero = lista[0]
+      const ultimo = lista[lista.length - 1]
+      if (e.shiftKey && document.activeElement === primero) {
+        e.preventDefault()
+        ultimo.focus()
+        return
+      }
+      if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault()
+        primero.focus()
+      }
+    }
+
     globalThis.addEventListener('keydown', onKey)
-    return () => globalThis.removeEventListener('keydown', onKey)
+    return () => {
+      globalThis.removeEventListener('keydown', onKey)
+      previo?.focus()
+    }
   }, [enviando])
 
   return (

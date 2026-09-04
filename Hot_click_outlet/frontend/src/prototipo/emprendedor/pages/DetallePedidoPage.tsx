@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { formatoColon } from '@/theme/formatoColon'
 import { marcarPedidoEnviadoApi } from '@/prototipo/compartido/pedidosVendedorApi'
+import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
 import { EASE_PREMIUM } from '@/prototipo/compartido/motion/formularioMotionTokens'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import EmprendedorPageFrame, { EmprendedorCard, EmprendedorFilaLista } from '../ui/EmprendedorPageFrame'
@@ -59,7 +60,10 @@ export default function DetallePedidoPage() {
     return (
       <main className="px-5 py-8 md:px-16 md:py-12">
         <CabeceraAtras titulo="Pedido" to={`${RUTA_EMPRENDEDOR}/pedidos`} />
-        <p className="mt-4 text-sm text-hc-muted">{error ?? 'No encontramos ese pedido.'}</p>
+        <EstadoVacioConversacional
+          titulo={error ? 'No pudimos cargar el pedido' : 'No encontramos ese pedido'}
+          mensaje={error ?? 'Puede que el enlace ya no valga. Volvé al listado e intentá de nuevo.'}
+        />
       </main>
     )
   }

@@ -1,6 +1,6 @@
-import { RUTA_NEGOCIO_PLUS, RUTA_PYME } from '@/utils/planPaths'
+import { RUTA_EMPRENDEDOR, RUTA_NEGOCIO_PLUS, RUTA_PYME } from '@/utils/planPaths'
 
-export type PlanId = 'pyme' | 'negocioPlus'
+export type PlanId = 'emprendedor' | 'pyme' | 'negocioPlus'
 
 export type ExtraOpcion = {
   label: string
@@ -15,6 +15,16 @@ export type PlanConfig = {
   extraOpcion: ExtraOpcion
   pedidosSubtitulo: string
   usuario: string
+}
+
+export const PLAN_EMPRENDEDOR: PlanConfig = {
+  id: 'emprendedor',
+  badge: 'EMPRENDEDOR',
+  planLabel: 'Plan Emprendedor',
+  basePath: RUTA_EMPRENDEDOR,
+  extraOpcion: { label: 'Opciones', to: 'opciones' },
+  pedidosSubtitulo: 'Tus ventas y su estado de envío',
+  usuario: 'Emprendedor',
 }
 
 export const PLAN_PYME: PlanConfig = {

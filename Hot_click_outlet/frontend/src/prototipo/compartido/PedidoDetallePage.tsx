@@ -9,6 +9,7 @@ import { marcarPedidoEnviadoApi } from './pedidosVendedorApi'
 import type { PlanConfig } from './plan'
 import type { PedidoMock } from './mock'
 import EntradaPagina from './motion/EntradaPagina'
+import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
 import { EASE_PREMIUM } from './motion/formularioMotionTokens'
 
 /**
@@ -60,10 +61,19 @@ export default function PedidoDetallePage() {
   if (error || !pedido) {
     return (
       <main className="px-5 py-16">
-        <p className="text-sm text-hc-muted">{error ?? 'No encontramos ese pedido.'}</p>
-        <button type="button" onClick={() => navigate(ruta('pedidos'))} className="mt-4 inline-flex min-h-11 text-sm font-semibold text-hc-accent">
-          Volver a pedidos
-        </button>
+        <EstadoVacioConversacional
+          titulo={error ? 'No pudimos cargar el pedido' : 'No encontramos ese pedido'}
+          mensaje={error ?? 'Puede que el enlace ya no valga. Volvé al listado e intentá de nuevo.'}
+          accion={
+            <button
+              type="button"
+              onClick={() => navigate(ruta('pedidos'))}
+              className="inline-flex min-h-11 text-sm font-semibold text-hc-accent"
+            >
+              Volver a pedidos
+            </button>
+          }
+        />
       </main>
     )
   }
