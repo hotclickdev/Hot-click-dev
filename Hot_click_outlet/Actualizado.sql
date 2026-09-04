@@ -3662,7 +3662,7 @@ UPDATE hot_click_feature_flag_tb
 SET descripcion = 'Pagos divididos en una misma venta'
 WHERE nombre = 'split_payments';
 
--- V123: cambio de cuenta de cobro queda en revisión hasta admin.
+-- V128: cambio de cuenta de cobro queda en revisión hasta admin.
 ALTER TABLE hot_click_metodo_cobro_tb
     ADD COLUMN IF NOT EXISTS en_revision BOOLEAN NOT NULL DEFAULT FALSE;
 
