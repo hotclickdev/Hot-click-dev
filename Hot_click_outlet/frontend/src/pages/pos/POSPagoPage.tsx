@@ -66,7 +66,7 @@ export default function POSPagoPage() {
   const esSinpe = info.metodoPago === 'SINPE'
 
   return shell(
-    <div className="w-full space-y-5">
+    <div className="mx-auto w-full max-w-md space-y-6">
       <PosPagoResumen info={info} />
 
       {esSinpe ? <PosPagoSinpe info={info} token={token} /> : null}
