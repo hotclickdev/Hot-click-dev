@@ -25,10 +25,12 @@ export function buildSistemaLinks(t: TFunction): SidebarLink[] {
     { to: '/admin/ofertas', label: t('admin.sidebar.promociones'), icon: 'tag' },
     { section: SISTEMA_SECCION.MI_NEGOCIO },
     { to: '/admin/clientes', label: t('admin.sidebar.clientes'), icon: 'users' },
+    { to: '/admin/gift-cards', label: t('admin.sidebar.giftCards'), icon: 'card' },
     { to: '/admin/blog', label: t('admin.sidebar.posts'), icon: 'blog' },
     { to: '/admin/reportes', label: t('admin.sidebar.reportes'), icon: 'bar', feature: 'reportes' },
     { to: '/admin/copilot', label: t('admin.sidebar.consultasConHot'), icon: 'copilot' },
     { section: SISTEMA_SECCION.MAS },
+    { to: '/admin/offline/cola', label: t('admin.sidebar.colaOffline'), icon: 'sync' },
     { to: '/admin/configuracion', label: t('admin.sidebar.configuracion'), icon: 'config' },
     { to: '/admin/ayuda', label: t('admin.sidebar.ayuda'), icon: 'help' },
   ]

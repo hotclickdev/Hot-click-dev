@@ -273,8 +273,8 @@ export default function AppRoutes() {
         <Route path="planes" element={<Navigate to="/admin/billing/planes" replace />} />
         <Route path="billing/planes" element={<AdminPlanes />} />
         <Route path="billing/suscripcion" element={<AdminSuscripcion />} />
-        <Route path="offline/cola" element={<RedirectSiSistema to="/admin"><AdminOfflineCola /></RedirectSiSistema>} />
-        <Route path="gift-cards" element={<RedirectSiSistema to="/admin"><AdminGiftCards /></RedirectSiSistema>} />
+        <Route path="offline/cola" element={<AdminOfflineCola />} />
+        <Route path="gift-cards" element={<AdminGiftCards />} />
         <Route path="inventario" element={<RedirectSiSistema to="/admin/copilot"><PlanGate feature="ai" planRequerido="PYME"><AdminInventario /></PlanGate></RedirectSiSistema>} />
         <Route path="copilot" element={<AdminCopilotRoute />} />
         <Route path="ayuda" element={<AdminAyuda />} />

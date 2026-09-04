@@ -163,4 +163,46 @@ public class JwtUtil {
         Object raw = extractAllClaims(token).get("rol");
         return raw != null ? raw.toString() : null;
     }
+
+    private static final long IMPERSONATION_EXPIRATION = 1_800_000L; // 30 minutos
+
+    /**
+     * Token de impersonación: autentica como el usuario objetivo (dueño de la
+     * empresa) para que el tenant scoping funcione igual que un login real,
+     * pero marcado con claims extra para el banner y la auditoría de soporte.
+     */
+    public String generateImpersonationToken(String correoObjetivo, Long userIdObjetivo, String rol,
+                                              Long empresaId, String empresaSlug,
+                                              Long adminOriginalId, String adminOriginalCorreo) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userIdObjetivo);
+        claims.put("rol", rol);
+        if (empresaId != null)   claims.put("empresaId", empresaId);
+        if (empresaSlug != null) claims.put("empresaSlug", empresaSlug);
+        claims.put("impersonando", true);
+        claims.put("adminOriginalId", adminOriginalId);
+        claims.put("adminOriginalCorreo", adminOriginalCorreo);
+        return createToken(claims, correoObjetivo, IMPERSONATION_EXPIRATION);
+    }
+
+    public boolean isImpersonationToken(String token) {
+        try {
+            return Boolean.TRUE.equals(extractAllClaims(token).get("impersonando"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public Long extractAdminOriginalId(String token) {
+        Object raw = extractAllClaims(token).get("adminOriginalId");
+        if (raw == null) return null;
+        if (raw instanceof Long l)    return l;
+        if (raw instanceof Integer i) return i.longValue();
+        return Long.parseLong(raw.toString());
+    }
+
+    public String extractAdminOriginalCorreo(String token) {
+        Object raw = extractAllClaims(token).get("adminOriginalCorreo");
+        return raw != null ? raw.toString() : null;
+    }
 }

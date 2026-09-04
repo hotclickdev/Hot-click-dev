@@ -3,10 +3,13 @@ package com.hotclick.controller;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.EmpresaAdminService;
+import com.hotclick.service.ImpersonacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +24,7 @@ public class EmpresaController {
 
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaAdminService empresaAdminService;
+    @Autowired private ImpersonacionService impersonacionService;
 
     @GetMapping
     public ResponseDTO listar(@RequestParam(defaultValue = "0") int page,
@@ -75,5 +79,17 @@ public class EmpresaController {
     public ResponseEntity<ResponseDTO> equipo(@PathVariable Long id) {
         companyScope.assertCanAccess(id);
         return ResponseEntity.ok(ResponseDTO.success("Equipo", empresaAdminService.equipo(id)));
+    }
+
+    /**
+     * Soporte: iniciar sesión de impersonación como el propietario de la empresa. Solo ADMIN.
+     * El "finalizar" vive en ImpersonacionController bajo /api/impersonacion (no /api/admin/**),
+     * porque SecurityAuthorizationRules exige rol ADMIN en todo /api/admin/empresas/** y quien
+     * cierra la sesión ya está autenticado como el usuario impersonado, no como ADMIN.
+     */
+    @PostMapping("/{id}/impersonar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO> impersonar(@PathVariable Long id) {
+        return ResponseEntity.ok(ResponseDTO.success("Sesión de impersonación iniciada", impersonacionService.iniciar(id)));
     }
 }

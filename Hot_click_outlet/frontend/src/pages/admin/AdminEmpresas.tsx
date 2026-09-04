@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { adminService } from '@/services/orderService'
 import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
+import useAuthStore from '@/store/authStore'
 import { mensajeErrorProducto } from './productos/productosHelpers'
 import EmpresaDetail from './empresas/EmpresaDetail'
 import EmpresaList from './empresas/EmpresaList'
@@ -25,11 +27,13 @@ async function obtenerListaEmpresas() {
 
 export default function AdminEmpresas() {
   const toast = useToast()
+  const navigate = useNavigate()
   const [empresas, setEmpresas] = useState<EmpresaLista[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<EmpresaLista | null>(null)
   const [detail, setDetail] = useState<EmpresaDetalle | null>(null)
   const [saving, setSaving] = useState(false)
+  const [impersonarLoading, setImpersonarLoading] = useState(false)
   const [tab, setTab] = useState('resumen')
   const [tabProductos, setTabProductos] = useState<EmpresaProductoTab[] | null>(null)
   const [tabPedidos, setTabPedidos] = useState<EmpresaPedidoTab[] | null>(null)
@@ -128,6 +132,20 @@ export default function AdminEmpresas() {
     }
   }
 
+  async function impersonar(id: Id) {
+    setImpersonarLoading(true)
+    try {
+      const { data } = await adminService.impersonarEmpresa(id)
+      useAuthStore.getState().impersonar(data)
+      setSelected(null)
+      navigate('/admin')
+    } catch {
+      toast({ message: 'No se pudo iniciar la sesión de soporte', type: 'error' })
+    } finally {
+      setImpersonarLoading(false)
+    }
+  }
+
   async function toggleVisibilidad(id: Id, visibilidadPublica: boolean) {
     setSaving(true)
     try {
@@ -156,6 +174,7 @@ export default function AdminEmpresas() {
           selected={selected}
           detail={detail}
           saving={saving}
+          impersonarLoading={impersonarLoading}
           tab={tab}
           tabProductos={tabProductos}
           tabPedidos={tabPedidos}
@@ -166,6 +185,7 @@ export default function AdminEmpresas() {
           onCambiarPlan={cambiarPlan}
           onCambiarEstado={cambiarEstado}
           onToggleVisibilidad={toggleVisibilidad}
+          onImpersonar={impersonar}
           savingProductoId={savingProductoId}
           onToggleVisibilidadProducto={toggleVisibilidadProducto}
         />

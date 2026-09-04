@@ -9,6 +9,7 @@ import useTenantStore from '@/store/tenantStore'
 import GlobalSearch from '@/components/admin/GlobalSearch'
 import TrialBanner from '@/components/TrialBanner'
 import OfflineBanner from '@/components/OfflineBanner'
+import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import AppTour from '@/components/ui/AppTour'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
@@ -160,6 +161,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
 
       {/* ── Content ── */}
       <div className={`h-screen overflow-hidden flex flex-col pt-14 md:pt-0 ${margenSidebar}`}>
+        <ImpersonacionBanner />
         <OfflineBanner />
         <TrialBanner />
         <motion.main

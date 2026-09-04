@@ -8,6 +8,20 @@ import type { Id } from '@/types/api'
 
 export { ADMIN_ROLES } from '@/utils/sistemaUser'
 
+type SesionGuardada = {
+  token: string | null
+  refreshToken: string | null
+  userId: Id | null
+  userEmail: string | null
+  userRole: RolUsuario | null
+  userName: string | null
+  empresaId: number | null
+  empresaSlug: string | null
+  empresaNombre: string | null
+  permissions: string[]
+  roles: string[]
+}
+
 type AuthState = {
   token: string | null
   refreshToken: string | null
@@ -20,6 +34,8 @@ type AuthState = {
   empresaNombre: string | null
   permissions: string[]
   roles: string[]
+  impersonando: boolean
+  adminOriginal: SesionGuardada | null
   isAuthenticated: () => boolean
   isAdmin: () => boolean
   isEmprendedor: () => boolean
@@ -30,6 +46,8 @@ type AuthState = {
   updateAccessToken: (accessToken: string) => void
   setUserName: (nombre: string) => void
   logout: () => void
+  impersonar: (data: AuthResponse) => void
+  salirImpersonacion: () => void
 }
 
 // Extrae los claims del JWT sin verificar firma (solo lectura en cliente)
@@ -57,6 +75,8 @@ const useAuthStore = create<AuthState>()(
       empresaNombre: null,
       permissions:   [],    // permisos granulares: ['pos.usar', 'products.view', ...]
       roles:         [],    // roles: ['CAJERO', 'EMPRENDEDOR', ...]
+      impersonando:  false,
+      adminOriginal: null,
 
       isAuthenticated: () => !!get().token,
       isAdmin:         () => ADMIN_ROLES.has(get().userRole ?? ''),
@@ -126,6 +146,43 @@ const useAuthStore = create<AuthState>()(
           permissions:  [],
           roles:        [],
         })
+      },
+
+      // Guarda la sesión ADMIN actual y adopta la del usuario objetivo.
+      impersonar: (data) => {
+        const state = get()
+        const adminOriginal: SesionGuardada = {
+          token: state.token, refreshToken: state.refreshToken, userId: state.userId,
+          userEmail: state.userEmail, userRole: state.userRole, userName: state.userName,
+          empresaId: state.empresaId, empresaSlug: state.empresaSlug, empresaNombre: state.empresaNombre,
+          permissions: state.permissions, roles: state.roles,
+        }
+        const permissions = data.permisos ?? []
+        set({
+          adminOriginal,
+          impersonando:  true,
+          token:         data.accessToken,
+          // Sin refresh token propio: el token de impersonación expira solo (30 min) y
+          // no debe poder renovarse con el refresh token del ADMIN guardado en adminOriginal
+          // (si no, un 401 durante la impersonación revertiría la sesión en silencio).
+          refreshToken:  null,
+          userId:        data.id ?? null,
+          userEmail:     data.correo ?? null,
+          userRole:      data.rol ?? null,
+          userName:      data.nombre ?? data.correo?.split('@')[0] ?? null,
+          empresaId:     data.empresaId   ? Number(data.empresaId)   : null,
+          empresaSlug:   data.empresaSlug || null,
+          empresaNombre: data.empresaNombre ?? null,
+          permissions:   Array.isArray(permissions) ? permissions : [],
+          roles:         data.rol ? [data.rol] : [],
+        })
+      },
+
+      // Restaura la sesión ADMIN guardada antes de impersonar.
+      salirImpersonacion: () => {
+        const original = get().adminOriginal
+        if (!original) return
+        set({ ...original, impersonando: false, adminOriginal: null })
       },
     }),
     { name: 'hotclick-auth' }

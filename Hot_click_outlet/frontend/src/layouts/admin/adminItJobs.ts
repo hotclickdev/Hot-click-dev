@@ -99,7 +99,7 @@ export function leerSeccionesColapsadas(userRole?: string | null): Set<string> {
     const raw = localStorage.getItem(CLAVE_SIDEBAR_COLAPSADO)
     if (raw == null) {
       return new Set<string>(
-        userRole === 'ADMIN' || userRole === 'SUPPORT' || userRole === 'FINANCE' || userRole === 'TRUST'
+        userRole === 'ADMIN'
           ? ADMIN_IT_SECCIONES_COLAPSADAS_POR_DEFECTO
           : [],
       )
@@ -131,6 +131,8 @@ function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
     { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },
     { to: '/admin/testimonios', label: t('admin.sidebar.testimonios'), icon: 'star', permiso: 'global.approvals' },
     { to: '/admin/servicios', label: t('admin.sidebar.serviciosHot'), icon: 'wrench', permiso: 'global.companies' },
+    { to: '/admin/facturas', label: t('admin.sidebar.comprobantesElectronicos'), icon: 'clipboard', permiso: 'global.metrics' },
+    { to: '/admin/config-fiscal', label: t('admin.sidebar.configFiscal'), icon: 'config', permiso: 'global.metrics' },
   ]
 }
 
@@ -243,8 +245,6 @@ const PREFIJOS_TENANT_OPS = [
   '/admin/copilot',
   '/admin/equipo',
   '/admin/billing',
-  '/admin/facturas',
-  '/admin/config-fiscal',
   '/admin/blog',
   '/admin/publicaciones',
   '/admin/ofertas',

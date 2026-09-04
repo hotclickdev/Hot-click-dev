@@ -1,4 +1,4 @@
-import { CloseIcon, EyeIcon, EyeOffIcon } from './empresasIcons'
+import { CloseIcon, EyeIcon, EyeOffIcon, ImpersonarIcon } from './empresasIcons'
 import EstadoEmpresaChips from './EstadoEmpresaChips'
 import { ESTADO_COLOR, PLAN_COLOR, nombreVisibleEmpresa, tabsDetalle, type EmpresaDetalle, type EmpresaLista, type EmpresaMiembroTab, type EmpresaPedidoTab, type EmpresaProductoTab } from './empresasHelpers'
 import TabEquipo from './TabEquipo'
@@ -10,13 +10,17 @@ import type { Id } from '@/types/api'
 function DetailHeader({
   selected,
   saving,
+  impersonarLoading,
   onClose,
   onCambiarEstado,
+  onImpersonar,
 }: {
   selected: EmpresaLista
   saving: boolean
+  impersonarLoading: boolean
   onClose: () => void
   onCambiarEstado: (id: Id, estadoEmpresa: string) => void
+  onImpersonar: (id: Id) => void
 }) {
   const visible = selected.visibilidadPublica
   return (
@@ -37,6 +41,15 @@ function DetailHeader({
           <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--hc-muted)' }}>Estado del negocio</p>
           <EstadoEmpresaChips selected={selected} saving={saving} onCambiarEstado={onCambiarEstado} />
         </div>
+        <button type="button"
+          onClick={() => onImpersonar(selected.id)}
+          disabled={impersonarLoading}
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-60"
+          style={{ color: 'var(--hc-accent)', border: '1px solid var(--hc-border)' }}
+        >
+          <ImpersonarIcon />
+          {impersonarLoading ? 'Ingresando…' : 'Ver como esta empresa'}
+        </button>
       </div>
       <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] shrink-0" style={{ color: 'var(--hc-muted)' }}>
         <CloseIcon />
@@ -74,6 +87,7 @@ export type EmpresaDetailProps = {
   selected: EmpresaLista
   detail: EmpresaDetalle | null
   saving: boolean
+  impersonarLoading: boolean
   tab: string
   tabProductos: EmpresaProductoTab[] | null
   tabPedidos: EmpresaPedidoTab[] | null
@@ -84,6 +98,7 @@ export type EmpresaDetailProps = {
   onCambiarPlan: (id: Id, plan: string) => void
   onCambiarEstado: (id: Id, estadoEmpresa: string) => void
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
+  onImpersonar: (id: Id) => void
   savingProductoId: Id | null
   onToggleVisibilidadProducto: (producto: EmpresaProductoTab) => void
 }
@@ -92,6 +107,7 @@ export default function EmpresaDetail({
   selected,
   detail,
   saving,
+  impersonarLoading,
   tab,
   tabProductos,
   tabPedidos,
@@ -102,6 +118,7 @@ export default function EmpresaDetail({
   onCambiarPlan,
   onCambiarEstado,
   onToggleVisibilidad,
+  onImpersonar,
   savingProductoId,
   onToggleVisibilidadProducto,
 }: EmpresaDetailProps) {
@@ -113,8 +130,10 @@ export default function EmpresaDetail({
           <DetailHeader
             selected={selected}
             saving={saving}
+            impersonarLoading={impersonarLoading}
             onClose={onClose}
             onCambiarEstado={onCambiarEstado}
+            onImpersonar={onImpersonar}
           />
           <DetailTabs tab={tab} detail={detail} onTab={onTab} />
         </div>

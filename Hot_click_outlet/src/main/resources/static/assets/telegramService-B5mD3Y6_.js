@@ -1,0 +1,1 @@
+import{t as e}from"./api-BH-nI94x.js";var t={vincular:()=>e.post(`/telegram/vincular`),estado:()=>e.get(`/telegram/estado`),desvincular:()=>e.delete(`/telegram/vincular`),equipo:()=>e.get(`/telegram/equipo`),revocarMiembro:t=>e.delete(`/telegram/equipo/${t}`)};export{t};
