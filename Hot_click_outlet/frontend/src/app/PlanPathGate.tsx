@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import useAuthStore from '@/store/authStore'
-import { ROLES_POS, esUsuarioSistema } from '@/utils/sistemaUser'
+import { ROLES_POS, esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import {
@@ -40,7 +40,7 @@ export default function PlanPathGate({
   if (!isTokenAlive(token)) {
     return <Navigate to={rutaLoginConRetorno(`${pathname}${search}`)} replace />
   }
-  if (userRole === 'ADMIN') return <Navigate to="/admin" replace />
+  if (esStaffPlataforma(userRole)) return <Navigate to="/admin" replace />
   if (ROLES_POS.has(userRole ?? '') && !esUsuarioSistema(userRole)) {
     return <Navigate to="/admin/pos" replace />
   }

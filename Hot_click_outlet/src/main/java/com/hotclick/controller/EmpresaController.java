@@ -34,7 +34,6 @@ public class EmpresaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> detalle(@PathVariable Long id) {
-        companyScope.assertCanAccess(id);
         return ResponseEntity.ok(ResponseDTO.success("Empresa", empresaAdminService.detalle(id)));
     }
 
@@ -74,13 +73,11 @@ public class EmpresaController {
 
     @GetMapping("/{id}/pedidos")
     public ResponseEntity<ResponseDTO> pedidos(@PathVariable Long id) {
-        companyScope.assertCanAccess(id);
         return ResponseEntity.ok(ResponseDTO.success("Pedidos", empresaAdminService.pedidos(id)));
     }
 
     @GetMapping("/{id}/equipo")
     public ResponseEntity<ResponseDTO> equipo(@PathVariable Long id) {
-        companyScope.assertCanAccess(id);
         return ResponseEntity.ok(ResponseDTO.success("Equipo", empresaAdminService.equipo(id)));
     }
 

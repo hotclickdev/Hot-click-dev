@@ -5,7 +5,7 @@ import POSShell from '@/layouts/POSShell'
 import AdminErrorBoundary from '@/app/AdminErrorBoundary'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
-import { ROLES_POS, esUsuarioSistema } from '@/utils/sistemaUser'
+import { ROLES_POS, esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
 import { adminAVendedor, vendedorSeQuedaEnAdmin } from '@/app/rolPaths'
 import { useTenantPlanListo } from '@/app/useTenantPlanListo'
 import { esRutaTenantOpsParaAdmin } from '@/layouts/admin/adminItJobs'
@@ -39,9 +39,9 @@ export default function AdminRoleSwitch() {
   const isPOS = ROLES_POS.has(rol)
   if (!isAdmin && !isPOS) return <Navigate to="/" replace />
 
-  // Solo ADMIN de plataforma: fuera de ops de negocio (antes del POSShell).
+  // Operador de plataforma (ADMIN + staff): fuera de ops de negocio (antes del POSShell).
   // No usar `isAdmin`/`ADMIN_ROLES` — incluye vendedores y rompería el remap a seller.
-  if (rol === 'ADMIN' && esRutaTenantOpsParaAdmin(pathname)) {
+  if (esStaffPlataforma(rol) && esRutaTenantOpsParaAdmin(pathname)) {
     return <Navigate to="/admin" replace />
   }
 

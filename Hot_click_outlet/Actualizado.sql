@@ -3603,17 +3603,17 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_admin_email
 CREATE INDEX IF NOT EXISTS idx_auditoria_admin_empresa
   ON hot_click_auditoria_admin_tb (fk_id_empresa);
 
--- V121: Roles de staff de plataforma (SUPPORT / FINANCE / TRUST)
+-- V126: Roles de staff de plataforma (SUPPORT / FINANCE / TRUST)
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'SUPPORT', 'Staff plataforma ? tickets y ver tiendas', 80, 1
+SELECT 'SUPPORT', 'Staff plataforma — tickets y ver tiendas', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'SUPPORT');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'FINANCE', 'Staff plataforma ? payouts, billing y pagos', 80, 1
+SELECT 'FINANCE', 'Staff plataforma — payouts, billing y pagos', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'FINANCE');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'TRUST', 'Staff plataforma ? moderaci?n y suspensiones', 80, 1
+SELECT 'TRUST', 'Staff plataforma — moderación y suspensiones', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'TRUST');
 
 INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)

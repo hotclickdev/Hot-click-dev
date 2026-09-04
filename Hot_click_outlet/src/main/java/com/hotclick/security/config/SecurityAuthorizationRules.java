@@ -149,9 +149,11 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/reportes-producto").authenticated()
-            .requestMatchers("/api/admin/reportes-producto/**").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers("/api/admin/reportes-producto/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_APPROVALS)
             .requestMatchers("/api/admin/soporte/**").hasRole(Constants.ROL_ADMIN)
-            .requestMatchers(GET, "/api/admin/moderacion/**").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers(GET, "/api/admin/moderacion/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_APPROVALS)
             // Carrito abandonado — público (incluye DELETE; el controller valida sessionId)
             .requestMatchers(POST, "/api/cart/abandoned").permitAll()
             .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
@@ -191,14 +193,24 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/auditorias/**").hasRole(Constants.ROL_ADMIN)
             // Billing de plataforma — ADMIN only (distinto de /api/billing self-serve)
             .requestMatchers("/api/admin/billing/**").hasRole(Constants.ROL_ADMIN)
-            // Admin-only routes — ADMIN only (superadmin exclusivos)
-            .requestMatchers("/api/admin/empresas/**").hasRole(Constants.ROL_ADMIN)
+            // Staff por permiso global.* (ADMIN tiene todos; SUPPORT/FINANCE/TRUST el suyo)
+            .requestMatchers("/api/admin/empresas/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_COMPANIES)
+            .requestMatchers("/api/admin/solicitudes-aprobacion/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_APPROVALS)
+            .requestMatchers("/api/admin/payouts/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_METRICS)
+            .requestMatchers("/api/admin/pagos/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, "ROLE_" + Constants.ROL_EMPRENDEDOR,
+                Constants.PERM_GLOBAL_METRICS)
             .requestMatchers("/api/auth/seleccionar-empresa").permitAll()
             .requestMatchers("/api/auth/mis-negocios").authenticated()
             .requestMatchers("/api/auth/cambiar-negocio").authenticated()
             .requestMatchers("/api/auth/nuevo-negocio").authenticated()
-            // Dashboard y KPIs — ADMIN, EMPRENDEDOR
-            .requestMatchers("/api/admin/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Dashboard y KPIs — ADMIN, EMPRENDEDOR y staff de plataforma
+            .requestMatchers("/api/admin/**").hasAnyRole(
+                Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR,
+                Constants.ROL_SUPPORT, Constants.ROL_FINANCE, Constants.ROL_TRUST)
             // Pedidos admin — ADMIN, EMPRENDEDOR
             // Pedidos — roles de empresa + API keys con scope read:pedidos o write:pedidos
             .requestMatchers(GET,    "/api/pedidos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

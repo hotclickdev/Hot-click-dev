@@ -1,6 +1,7 @@
-import { esUsuarioSistema } from '@/utils/sistemaUser'
+import { esUsuarioSistema, ROLES_STAFF } from '@/utils/sistemaUser'
 import {
   buildAdminItLinks,
+  filtrarLinksPorPermiso,
   SISTEMA_SECCION,
   ADMIN_IT_SECCION,
   type SidebarLink,
@@ -48,10 +49,15 @@ function linksPos(t: TFunction): SidebarLink[] {
  * Devuelve los links del sidebar con secciones según el rol activo.
  * @param {Function} t i18n translate
  * @param {string} userRole
+ * @param {string[]} permissions permisos del JWT (staff)
  */
-export function buildSidebarLinks(t: TFunction, userRole?: string | null): SidebarLink[] {
-  if (userRole === 'ADMIN') {
-    return buildAdminItLinks(t)
+export function buildSidebarLinks(
+  t: TFunction,
+  userRole?: string | null,
+  permissions: string[] = [],
+): SidebarLink[] {
+  if (userRole === 'ADMIN' || ROLES_STAFF.has(userRole ?? '')) {
+    return filtrarLinksPorPermiso(buildAdminItLinks(t), permissions, userRole)
   }
 
   // Dueño (planes EMPRENDEDOR / PYME / NEGOCIO_PLUS): menú Sistema.
