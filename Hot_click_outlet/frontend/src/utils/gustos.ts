@@ -1,5 +1,5 @@
-// Perfil de gustos del visitante, elegido en Descubrí (chips) y persistido por navegador.
-// Lo consumen la grilla de Descubrí y el orden/filtro "Según tus gustos" del catálogo.
+// Perfil de gustos del visitante (likes en Descubrí / chips legacy) persistido por navegador.
+// Lo consumen el mazo de Descubrí y el orden/filtro "Según tus gustos" del catálogo.
 
 import type { Producto } from '@/types/producto'
 import { categoryScopeIds } from '@/pages/catalogo/catalogoFiltros'
@@ -10,6 +10,20 @@ export const LS_KEY = 'hotclick-descubri-gustos'
 export const CHIP_CAT_SCORE = 10
 /** Peso al guardar una banda de precio seleccionada. */
 export const CHIP_BAND_SCORE = 5
+
+/** Likes acumulados para pasar a revelación animada. */
+export const LIKES_PARA_REVELAR = 3
+/** Swipes totales (like + skip) para revelar aunque haya pocos likes. */
+export const SWIPES_PARA_REVELAR = 8
+/** Desplazamiento horizontal (px) para confirmar like/skip en drag. */
+export const UMBRAL_ARRASTRE_PX = 100
+/** Duración del overlay de revelación (ms). */
+export const DURACION_REVELACION_MS = 1000
+
+/** Delta al dar like a un producto en el mazo (crea perfil si no existía). */
+export const LIKE_CAT_DELTA = 4
+export const LIKE_MARCA_DELTA = 2
+export const LIKE_BAND_DELTA = 2
 
 export type PriceBandId = 'b1' | 'b2' | 'b3' | 'b4'
 
@@ -265,15 +279,84 @@ export function bumpGustosDesdeVista(
   }
   if (p.marcaId != null) bumpScore(scores, `m:${p.marcaId}`, BUMP_VISTA.marca)
   bumpScore(scores, `b:${priceBand(p.precio ?? 0)}`, BUMP_VISTA.band)
+  persistPerfil(scores, perfil.seen, positiveCategoryIds(scores), positivePriceBands(scores))
+}
+
+function persistPerfil(
+  scores: GustosScores,
+  seen: GustosSeen,
+  selectedCategoryIds: string[],
+  selectedPriceBands: PriceBandId[],
+) {
   try {
+    const ids = Object.keys(seen)
+    if (ids.length > 500) {
+      for (const id of ids.slice(0, ids.length - 500)) delete seen[id]
+    }
     localStorage.setItem(LS_KEY, JSON.stringify({
       scores: Object.fromEntries(scores),
-      seen: perfil.seen,
-      selectedCategoryIds: perfil.selectedCategoryIds,
-      selectedPriceBands: perfil.selectedPriceBands,
+      seen,
+      selectedCategoryIds,
+      selectedPriceBands,
       updatedAt: Date.now(),
     }))
   } catch { /* almacenamiento lleno o bloqueado */ }
+}
+
+/**
+ * Like en el mazo: crea o refuerza el perfil (categoría, marca, banda de precio)
+ * y marca el producto como visto. Puede crear perfil desde el primer like.
+ */
+export function aplicarLikeProducto(
+  p: Pick<Producto, 'id' | 'categoriaId' | 'marcaId' | 'precio'>,
+): GustosPerfil {
+  const perfil = loadGustos()
+  const scores = new Map(perfil.scores)
+  const seen = { ...perfil.seen }
+
+  if (p.categoriaId != null && String(p.categoriaId) !== '') {
+    bumpScore(scores, `c:${p.categoriaId}`, LIKE_CAT_DELTA)
+  }
+  if (p.marcaId != null) bumpScore(scores, `m:${p.marcaId}`, LIKE_MARCA_DELTA)
+  bumpScore(scores, `b:${priceBand(p.precio ?? 0)}`, LIKE_BAND_DELTA)
+
+  if (p.id != null) seen[String(p.id)] = Date.now()
+
+  const selectedCategoryIds = positiveCategoryIds(scores)
+  const selectedPriceBands = positivePriceBands(scores)
+  persistPerfil(scores, seen, selectedCategoryIds, selectedPriceBands)
+  return { scores, seen, selectedCategoryIds, selectedPriceBands }
+}
+
+/** Marca un producto como visto sin cambiar scores (skip). */
+export function marcarProductoVisto(productoId: string | number | null | undefined): GustosPerfil {
+  const perfil = loadGustos()
+  if (productoId == null) return perfil
+  const seen = { ...perfil.seen, [String(productoId)]: Date.now() }
+  persistPerfil(
+    perfil.scores,
+    seen,
+    perfil.selectedCategoryIds,
+    perfil.selectedPriceBands,
+  )
+  return { ...perfil, seen }
+}
+
+/** true si el producto ya se swipeó en este navegador. */
+export function productoYaVisto(
+  productoId: string | number | null | undefined,
+  perfil?: GustosPerfil,
+): boolean {
+  if (productoId == null) return false
+  const p = perfil ?? loadGustos()
+  return String(productoId) in p.seen
+}
+
+/** true si conviene pasar a revelación (likes / swipes / mazo vacío). */
+export function debeRevelar(likes: number, swipes: number, mazoVacio: boolean): boolean {
+  if (mazoVacio) return true
+  if (likes >= LIKES_PARA_REVELAR) return true
+  return swipes >= SWIPES_PARA_REVELAR
 }
 
 /** true si hay scores útiles en la respuesta del backend. */

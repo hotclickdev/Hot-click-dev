@@ -123,5 +123,15 @@ export const analytics = {
   descubriResultsView: (categories: number) => track('descubri_results_view', {
     category_count: categories,
   }),
+  descubriInicio: (deckSize: number) => track('descubri_inicio', { deck_size: deckSize }),
+  descubriLike: (productoId?: string | number | null) => track('descubri_like', {
+    producto_id: productoId ?? null,
+  }),
+  descubriDescarte: (productoId?: string | number | null) => track('descubri_descarte', {
+    producto_id: productoId ?? null,
+  }),
+  descubriRevelacion: (likes: number, negocios: number) => track('descubri_revelacion', {
+    like_count: likes, negocio_count: negocios,
+  }),
   homePillar: (pilar: 'comprar' | 'vender' | 'emprender') => track('home_pillar_click', { pilar }),
 }

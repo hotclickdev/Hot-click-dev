@@ -39,6 +39,20 @@ export function TarjetaIcon({ className = ic }: IconProps) {
   )
 }
 
+export function QrCodeIcon({ className = ic }: IconProps) {
+  return (
+    <svg className={className} {...s}>
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+      <rect x="14" y="14" width="3" height="3" />
+      <rect x="18" y="14" width="3" height="3" />
+      <rect x="14" y="18" width="3" height="3" />
+      <rect x="19" y="19" width="2" height="2" />
+    </svg>
+  )
+}
+
 export function TransferenciaIcon({ className = ic }: IconProps) {
   return (
     <svg className={className} {...s}>
