@@ -149,6 +149,7 @@ function seccionSistemaPlataforma(t: TFunction): SidebarLink[] {
   return [
     { section: ADMIN_IT_SECCION.SISTEMA },
     { to: '/admin/security', label: t('admin.sidebar.securityCenter'), icon: 'shield' },
+    { to: '/admin/auditorias', label: t('admin.sidebar.auditorias'), icon: 'clipboard' },
     { to: '/admin/superadmin', label: t('admin.sidebar.featureFlags'), icon: 'config' },
     { to: '/admin/observabilidad', label: t('admin.sidebar.observabilidad'), icon: 'chart' },
     { to: '/admin/ai-control', label: t('admin.sidebar.controlIa'), icon: 'ai' },
