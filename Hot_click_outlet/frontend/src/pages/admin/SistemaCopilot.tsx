@@ -55,16 +55,18 @@ export default function SistemaCopilot() {
       </div>
 
       <div className="pt-3 space-y-3">
-        <CopilotFixedChips
-          chips={chat.chipsFijos}
-          onPick={chat.enviarTexto}
-          disabled={deshabilitado}
-          pills
-        />
+        <div data-mm="seller-copilot-chips">
+          <CopilotFixedChips
+            chips={chat.chipsFijos}
+            onPick={chat.enviarTexto}
+            disabled={deshabilitado}
+            pills
+          />
+        </div>
         {chat.sugerencias.length > 0 && (
           <CopilotFixedChips chips={chat.sugerencias} onPick={chat.enviarTexto} disabled={deshabilitado} pills />
         )}
-        <form onSubmit={chat.enviar} className="flex gap-2.5">
+        <form onSubmit={chat.enviar} className="flex gap-2.5" data-mm="seller-copilot-input">
           <textarea
             ref={chat.textareaRef}
             value={chat.input}

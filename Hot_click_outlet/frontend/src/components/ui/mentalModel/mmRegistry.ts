@@ -179,6 +179,54 @@ export const MM_GUIAS: readonly MmGuia[] = [
     ],
   },
   {
+    path: '/admin/encargos',
+    roles: ['EMPRENDEDOR', 'PROPIETARIO', 'EDITOR', 'LECTOR'],
+    pasos: [
+      {
+        ancla: 'seller-encargos-filtros',
+        titulo: 'Filtros de encargos',
+        texto: 'Separá pendientes, aprobados y pagados para saber qué cotizar primero.',
+      },
+      {
+        ancla: 'seller-encargos-lista',
+        titulo: 'Cotizar un encargo',
+        texto: 'Tocá uno para poner precio y enviarle el link de pago al cliente.',
+      },
+    ],
+  },
+  {
+    path: '/admin/copilot',
+    roles: ['EMPRENDEDOR', 'PROPIETARIO', 'EDITOR', 'LECTOR'],
+    pasos: [
+      {
+        ancla: 'seller-copilot-chips',
+        titulo: 'Preguntas rápidas',
+        texto: 'Tocá un chip para empezar sin escribir, o hacé tu propia consulta abajo.',
+      },
+      {
+        ancla: 'seller-copilot-input',
+        titulo: 'Escribí tu consulta',
+        texto: 'Preguntale a Hot por tus ventas, productos o stock. Conoce tu negocio.',
+      },
+    ],
+  },
+  {
+    path: '/admin/gift-cards',
+    roles: ['EMPRENDEDOR', 'PROPIETARIO', 'EDITOR', 'LECTOR'],
+    pasos: [
+      {
+        ancla: 'seller-giftcards-nueva',
+        titulo: 'Emitir gift card',
+        texto: 'Creá una tarjeta de regalo con monto y código para que tu cliente la use en el checkout.',
+      },
+      {
+        ancla: 'seller-giftcards-lista',
+        titulo: 'Tus gift cards',
+        texto: 'Acá ves el saldo y estado de cada una, y podés cancelarlas si hace falta.',
+      },
+    ],
+  },
+  {
     path: '/admin/pos',
     roles: ['ADMIN', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'],
     pasos: [

@@ -130,7 +130,7 @@ export default function EncargosPanel({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div data-mm="seller-encargos-filtros" className="flex flex-wrap gap-2">
         {FILTROS.map((f) => (
           <button
             key={f}
@@ -155,33 +155,35 @@ export default function EncargosPanel({
           mensaje="Cuando un cliente pida algo personalizado, aparece acá para cotizar."
         />
       ) : (
-        <ListaStagger className="space-y-2">
-          {lista.map((e) => (
-            <ItemListaStagger key={e.id}>
-              <button
-                type="button"
-                onClick={() => abrir(e)}
-                className="w-full text-left rounded-xl border p-3 hover:bg-black/5 transition"
-                style={{ borderColor: 'var(--hc-border)' }}
-              >
-                <div className="flex justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-sm">{e.productoNombre || `Producto #${e.productoId}`}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                      {e.nombreCliente} · {e.estado}
-                      {e.estadoFulfillment ? ` · ${e.estadoFulfillment}` : ''}
-                    </p>
+        <div data-mm="seller-encargos-lista">
+          <ListaStagger className="space-y-2">
+            {lista.map((e) => (
+              <ItemListaStagger key={e.id}>
+                <button
+                  type="button"
+                  onClick={() => abrir(e)}
+                  className="w-full text-left rounded-xl border p-3 hover:bg-black/5 transition"
+                  style={{ borderColor: 'var(--hc-border)' }}
+                >
+                  <div className="flex justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-sm">{e.productoNombre || `Producto #${e.productoId}`}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                        {e.nombreCliente} · {e.estado}
+                        {e.estadoFulfillment ? ` · ${e.estadoFulfillment}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      {[e.imagenUrl1, e.imagenUrl2, e.imagenUrl3].filter(Boolean).slice(0, 3).map((url) => (
+                        <img key={url as string} src={url as string} alt="" className="w-10 h-10 rounded object-cover" />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    {[e.imagenUrl1, e.imagenUrl2, e.imagenUrl3].filter(Boolean).slice(0, 3).map((url) => (
-                      <img key={url as string} src={url as string} alt="" className="w-10 h-10 rounded object-cover" />
-                    ))}
-                  </div>
-                </div>
-              </button>
-            </ItemListaStagger>
-          ))}
-        </ListaStagger>
+                </button>
+              </ItemListaStagger>
+            ))}
+          </ListaStagger>
+        </div>
       )}
 
       {selected ? (

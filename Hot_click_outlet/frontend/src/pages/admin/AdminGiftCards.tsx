@@ -85,6 +85,7 @@ export default function AdminGiftCards() {
           </p>
         </div>
         <button type="button" onClick={() => setMostrarForm(v => !v)}
+          data-mm="seller-giftcards-nueva"
           className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80 inline-flex items-center gap-1.5"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           <TextoMas>Nueva gift card</TextoMas>
@@ -157,7 +158,7 @@ export default function AdminGiftCards() {
           <p className="text-sm mt-1">Crea una gift card para que tus clientes la usen en el checkout</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+        <div data-mm="seller-giftcards-lista" className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
             <thead>

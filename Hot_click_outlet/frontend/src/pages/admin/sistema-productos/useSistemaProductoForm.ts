@@ -8,7 +8,7 @@ import { FORM_VACIO, type FormSistemaProducto } from './sistemaProductosHelpers'
 import useAuthStore from '@/store/authStore'
 import useTenantStore from '@/store/tenantStore'
 import { tiendaEsPublica } from '@/utils/rutaTienda'
-import { mensajeErrorProducto } from '../productos/productosHelpers'
+import { mensajeErrorProducto, accionErrorProducto } from '../productos/productosHelpers'
 import type { CategoriaAdmin, BodegaAdmin } from '../productos/productosHelpers'
 import type { Id } from '@/types/api'
 import type { Producto } from '@/types/producto'
@@ -110,7 +110,13 @@ export function useSistemaProductoForm() {
         tiendaPublica: await resolverTiendaPublica(),
       })
     } catch (err: unknown) {
-      toast({ message: mensajeErrorProducto(err, 'Error al guardar'), type: 'error' })
+      const msg = mensajeErrorProducto(err, 'Error al guardar')
+      const accion = accionErrorProducto(err)
+      toast({
+        message: msg,
+        type: accion ? 'warning' : 'error',
+        accion: accion && { label: accion.label, onClick: () => navigate(accion.ruta) },
+      })
     } finally {
       setSaving(false)
     }

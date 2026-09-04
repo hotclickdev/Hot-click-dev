@@ -72,6 +72,17 @@ export default function AdminConfigFiscal() {
     <div className="flex items-center justify-center py-20 text-sm text-gray-400">Cargando…</div>
   )
 
+  // La config fiscal es por empresa; un ADMIN sin empresa asociada solo puede
+  // editarla impersonando al propietario del negocio (ver Tiendas → "Ver como esta empresa").
+  if (isAdmin && !empresaId) return (
+    <div className="mx-auto max-w-2xl p-6">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+        Necesitás estar viendo como una empresa para configurar sus datos fiscales.
+        Andá a <strong>Tiendas</strong> y usá <strong>"Ver como esta empresa"</strong>.
+      </div>
+    </div>
+  )
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
       <div>
