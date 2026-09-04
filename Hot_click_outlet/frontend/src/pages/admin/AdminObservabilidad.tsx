@@ -233,7 +233,8 @@ export default function AdminObservabilidad() {
         />
       </Section>
 
-      <p className="text-right text-xs text-gray-300 dark:text-gray-600">
+      {/* Footer */}
+      <p className="text-right text-xs text-[var(--hc-text-disabled)]">
         Generado: {d.generadoEn ? new Date(d.generadoEn).toLocaleString('es-CR') : '—'}
       </p>
     </div>
