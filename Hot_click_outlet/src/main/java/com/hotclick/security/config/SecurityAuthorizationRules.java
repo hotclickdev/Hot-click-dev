@@ -149,6 +149,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/reportes-producto").authenticated()
             .requestMatchers("/api/admin/reportes-producto/**").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers("/api/admin/soporte/**").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(GET, "/api/admin/moderacion/**").hasRole(Constants.ROL_ADMIN)
             // Carrito abandonado — público (incluye DELETE; el controller valida sessionId)
             .requestMatchers(POST, "/api/cart/abandoned").permitAll()
