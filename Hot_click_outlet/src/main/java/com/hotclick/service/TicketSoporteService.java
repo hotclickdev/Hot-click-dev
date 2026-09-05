@@ -80,7 +80,7 @@ public class TicketSoporteService {
         t.setUsuario(usuario);
         t.setTitulo(sanitizer.cleanWithLimit(titulo.trim(), 150));
         t.setDescripcion(sanitizer.cleanWithLimit(descripcion.trim(), 4000));
-        t.setPrioridad(prioridadPorPlan(empresa));
+        t.setPrioridad(TicketSoporte.PRIORIDAD_BAJA);
         if (fotoUrl != null && !fotoUrl.isBlank()) {
             t.setFotoUrl(sanitizer.cleanWithLimit(fotoUrl.trim(), 500));
         }
@@ -147,16 +147,6 @@ public class TicketSoporteService {
             t.setNotasAdmin(sanitizer.cleanWithLimit(notasAdmin.trim(), 2000));
         }
         return toMap(ticketRepo.save(t));
-    }
-
-    // Los tickets de planes superiores tienen SLA de soporte más exigente —
-    // se auto-priorizan al crear para que el inbox admin no dependa de que
-    // alguien los reordene a mano.
-    private String prioridadPorPlan(Empresa empresa) {
-        String plan = empresa.getPlan() != null ? empresa.getPlan().getNombre() : null;
-        if ("NEGOCIO_PLUS".equals(plan)) return TicketSoporte.PRIORIDAD_ALTA;
-        if ("EMPRENDEDOR".equals(plan)) return TicketSoporte.PRIORIDAD_BAJA;
-        return TicketSoporte.PRIORIDAD_MEDIA;
     }
 
     private TicketSoporte buscar(Long id) {
