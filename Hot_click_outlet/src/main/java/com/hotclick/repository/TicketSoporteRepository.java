@@ -20,7 +20,9 @@ public interface TicketSoporteRepository extends JpaRepository<TicketSoporte, Lo
         LEFT JOIN FETCH t.asignado
         WHERE (:empresaId IS NULL OR t.empresa.id = :empresaId)
           AND (:estado IS NULL OR t.estado = :estado)
-        ORDER BY t.fechaCreacion DESC
+        ORDER BY
+          CASE t.prioridad WHEN 'ALTA' THEN 0 WHEN 'MEDIA' THEN 1 WHEN 'BAJA' THEN 2 ELSE 3 END,
+          t.fechaCreacion ASC
         """)
     List<TicketSoporte> findAdminFiltrado(
         @Param("empresaId") Long empresaId,

@@ -21,6 +21,21 @@ export function tonoEstadoTicket(estado?: string): string {
   return 'bg-hc-surface-2 text-hc-muted'
 }
 
+export function etiquetaPrioridadTicket(prioridad?: string): string {
+  if (prioridad === 'ALTA') return 'Prioridad alta'
+  if (prioridad === 'BAJA') return 'Prioridad baja'
+  return 'Prioridad media'
+}
+
+// ALTA usa el mismo tono de urgencia que CRITICAL en el Security Center
+// (securityHelpers.SEVERITY_COLOR); BAJA queda silenciada a propósito para
+// no competir visualmente con los tickets que sí necesitan atención.
+export function tonoPrioridadTicket(prioridad?: string): string {
+  if (prioridad === 'ALTA') return 'bg-[var(--hc-danger-bg)] text-[var(--hc-danger)]'
+  if (prioridad === 'BAJA') return 'bg-hc-surface-2 text-hc-muted'
+  return 'bg-[var(--hc-warning-bg)] text-[var(--hc-warning)]'
+}
+
 export function puedeAsignarTicket(estado?: string): boolean {
   return estado === 'ABIERTO' || estado === 'ASIGNADO'
 }

@@ -3,9 +3,11 @@ import type { Id } from '@/types/api'
 import type { TicketSoporteItem } from '@/services/soporteService'
 import {
   etiquetaEstadoTicket,
+  etiquetaPrioridadTicket,
   puedeAsignarTicket,
   puedeResolverTicket,
   tonoEstadoTicket,
+  tonoPrioridadTicket,
 } from './soporteInboxHelpers'
 import { formatDateShort } from '@/utils/format'
 
@@ -53,9 +55,14 @@ export default function TicketSoporteCard({
             <p className="mt-2 text-xs text-hc-muted">Notas: {ticket.notasAdmin}</p>
           )}
         </div>
-        <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${tonoEstadoTicket(ticket.estado)}`}>
-          {etiquetaEstadoTicket(ticket.estado)}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${tonoEstadoTicket(ticket.estado)}`}>
+            {etiquetaEstadoTicket(ticket.estado)}
+          </span>
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${tonoPrioridadTicket(ticket.prioridad)}`}>
+            {etiquetaPrioridadTicket(ticket.prioridad)}
+          </span>
+        </div>
       </div>
       {ticket.fotoUrl && (
         <a href={ticket.fotoUrl} target="_blank" rel="noreferrer" className="block">

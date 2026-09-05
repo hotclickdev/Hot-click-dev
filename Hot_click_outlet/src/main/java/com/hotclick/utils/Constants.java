@@ -112,6 +112,13 @@ public class Constants {
     /** Retención de hot_click_auditoria_admin_tb (DataRetentionScheduler). */
     public static final int DIAS_RETENCION_AUDITORIA_ADMIN = 90;
 
+    /**
+     * Umbral de auto-aprobación de payouts (PayoutAutoApprovalScheduler) — decisión
+     * de negocio explícita: retiros de bajo monto no requieren revisión manual de
+     * FINANCE/ADMIN.
+     */
+    public static final long UMBRAL_AUTO_APROBACION_PAYOUT = 50_000L;
+
     // 2FA — métodos disponibles
     public static final String METODO_2FA_TOTP      = "TOTP";
     public static final String METODO_2FA_EMAIL_OTP = "EMAIL_OTP";

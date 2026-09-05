@@ -2,6 +2,7 @@ import api from './api'
 import type { Id } from '@/types/api'
 
 export type TicketSoporteEstado = 'ABIERTO' | 'ASIGNADO' | 'RESUELTO'
+export type TicketSoportePrioridad = 'ALTA' | 'MEDIA' | 'BAJA'
 
 export type TicketSoporteItem = {
   id: Id
@@ -9,6 +10,7 @@ export type TicketSoporteItem = {
   descripcion: string
   fotoUrl?: string | null
   estado: TicketSoporteEstado | string
+  prioridad?: TicketSoportePrioridad | string
   notasAdmin?: string | null
   fechaCreacion?: string
   fechaAsignacion?: string | null

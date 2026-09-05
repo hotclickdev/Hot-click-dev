@@ -11,6 +11,8 @@ public interface ReporteProductoRepository extends JpaRepository<ReporteProducto
 
     long countByEstado(String estado);
 
+    long countByProducto_IdAndEstado(Long productoId, String estado);
+
     @Query("""
         SELECT r FROM ReporteProducto r
         LEFT JOIN FETCH r.producto p

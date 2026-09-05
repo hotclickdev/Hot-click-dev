@@ -13,6 +13,10 @@ public class TicketSoporte {
     public static final String ASIGNADO = "ASIGNADO";
     public static final String RESUELTO = "RESUELTO";
 
+    public static final String PRIORIDAD_ALTA = "ALTA";
+    public static final String PRIORIDAD_MEDIA = "MEDIA";
+    public static final String PRIORIDAD_BAJA = "BAJA";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_ticket_soporte")
@@ -43,6 +47,9 @@ public class TicketSoporte {
 
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = ABIERTO;
+
+    @Column(name = "prioridad", nullable = false, length = 10)
+    private String prioridad = PRIORIDAD_MEDIA;
 
     @Column(name = "notas_admin", columnDefinition = "TEXT")
     private String notasAdmin;
@@ -79,6 +86,9 @@ public class TicketSoporte {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getPrioridad() { return prioridad; }
+    public void setPrioridad(String prioridad) { this.prioridad = prioridad; }
 
     public String getNotasAdmin() { return notasAdmin; }
     public void setNotasAdmin(String notasAdmin) { this.notasAdmin = notasAdmin; }
