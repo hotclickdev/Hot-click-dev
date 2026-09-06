@@ -55,7 +55,7 @@ public class PosQrVentaService {
 
         String successUrl = appUrl + "/pos/pago/" + token + "?resultado=exito";
         String cancelUrl  = appUrl + "/pos/pago/" + token + "?resultado=cancelado";
-        Long empresaId = sesion.getEmpresa().getId();
+        Long empresaId = empresaIdDe(sesion);
 
         try {
             List<Map<String, Object>> items = sessionService.getMapper().readValue(
@@ -98,9 +98,10 @@ public class PosQrVentaService {
             throw new IllegalStateException(
                 "ONVO_PUBLISHABLE_KEY no configurado para pago embebido en POS.");
         }
-        if (sesion.getStripeSessionId() != null && !sesion.getStripeSessionId().isBlank()) {
+        String intentExistente = sesion.getStripeSessionId();
+        if (intentExistente != null && !intentExistente.isBlank()) {
             return Map.of(
-                "paymentIntentId", sesion.getStripeSessionId(),
+                "paymentIntentId", intentExistente,
                 "publishableKey", publishableKey
             );
         }
@@ -148,7 +149,7 @@ public class PosQrVentaService {
             List<Map<String, Object>> items = sessionService.getMapper().readValue(
                 sesion.getItemsJson(), new TypeReference<>() {});
             String descripcion = descripcionCheckout(items);
-            Long empresaId = sesion.getEmpresa().getId();
+            Long empresaId = empresaIdDe(sesion);
             OnvoService.OnvoPaymentIntent intent = onvoService.crearPaymentIntent(
                 sesion.getTotal(), descripcion,
                 Map.of(
@@ -280,14 +281,14 @@ public class PosQrVentaService {
     }
 
     private boolean pagoPasarelaConfirmado(PosQrSesion sesion) {
-        if (!esMetodoPasarela(sesion) || sesion.getStripeSessionId() == null) return false;
+        if (sesion == null || !esMetodoPasarela(sesion)) return false;
         String pasarelaId = sesion.getStripeSessionId();
+        if (pasarelaId == null) return false;
         try {
-            String onvoStatus = pasarelaId.startsWith("cs_") ? "" : onvoService.paymentIntentStatus(pasarelaId);
-            boolean pagado = pasarelaId.startsWith("cs_")
-                ? stripeService.checkoutSessionPagada(pasarelaId)
-                : "succeeded".equalsIgnoreCase(onvoStatus);
-            return pagado;
+            if (pasarelaId.startsWith("cs_")) {
+                return stripeService.checkoutSessionPagada(pasarelaId);
+            }
+            return "succeeded".equalsIgnoreCase(onvoService.paymentIntentStatus(pasarelaId));
         } catch (Exception e) {
             log.warn("[POS-QR] Error verificando pasarela {}: {}", pasarelaId, e.getMessage());
             return false;
@@ -302,7 +303,7 @@ public class PosQrVentaService {
         if (!"PENDIENTE".equals(sesion.getEstado())) {
             throw new IllegalStateException("La sesión no está pendiente (estado: " + sesion.getEstado() + ")");
         }
-        if (!sesion.getEmpresa().getId().equals(empresaId)) {
+        if (!empresaIdDe(sesion).equals(empresaId)) {
             throw new SecurityException("No autorizado");
         }
 
@@ -326,9 +327,20 @@ public class PosQrVentaService {
     }
 
     static void exigirMetodoPasarela(PosQrSesion sesion) {
-        if (!esMetodoPasarela(sesion)) {
+        if (sesion == null || !esMetodoPasarela(sesion)) {
             throw new IllegalStateException("Esta sesión no es de pago con pasarela");
         }
+    }
+
+    static Long empresaIdDe(PosQrSesion sesion) {
+        if (sesion == null) {
+            throw new IllegalStateException("La sesión POS no tiene empresa");
+        }
+        var empresa = sesion.getEmpresa();
+        if (empresa == null || empresa.getId() == null) {
+            throw new IllegalStateException("La sesión POS no tiene empresa");
+        }
+        return empresa.getId();
     }
 
     static String correoCheckout(PosQrSesion sesion) {

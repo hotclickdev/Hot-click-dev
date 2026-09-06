@@ -71,6 +71,19 @@ class PosQrVentaServiceTest {
     }
 
     @Test
+    @DisplayName("Checkout sin empresa no hace NPE")
+    void checkoutSinEmpresaFallaClaro() {
+        PosQrSesion sesion = sesionTarjeta();
+        sesion.setEmpresa(null);
+        when(sessionService.findSesionActiva("tokentarjetaqr01")).thenReturn(sesion);
+        when(onvoService.isMockMode()).thenReturn(false);
+
+        assertThatThrownBy(() -> service.crearStripeCheckout("tokentarjetaqr01"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("empresa");
+    }
+
+    @Test
     @DisplayName("Sin ONVO configurado no inventa un checkout mock")
     void sinOnvoNoUsaMock() {
         when(sessionService.findSesionActiva("tokentarjetaqr01")).thenReturn(sesionTarjeta());

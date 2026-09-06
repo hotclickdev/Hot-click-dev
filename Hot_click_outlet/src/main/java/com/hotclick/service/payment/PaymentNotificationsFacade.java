@@ -28,6 +28,7 @@ public class PaymentNotificationsFacade {
     @Autowired(required = false) private PostHogCaptureService postHogCaptureService;
 
     public void onPedidoCreado(Pedido pedido, String provider) {
+        if (pedido == null) return;
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.creado", Map.of(
             "numeroPedido", pedido.getNumeroPedido(),
             "total",        pedido.getTotalPedido(),
@@ -37,6 +38,7 @@ public class PaymentNotificationsFacade {
     }
 
     public void onGiftCardFullPayment(Pedido pedido, String gcCodigo) {
+        if (pedido == null) return;
         ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
         capturarPedidoPagado(pedido, null);
@@ -44,6 +46,7 @@ public class PaymentNotificationsFacade {
     }
 
     public void onPedidoConfirmado(Pedido pedido, Pago pago) {
+        if (pedido == null || pago == null) return;
         touchUsuarioFinalForAsync(pedido);
         ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
@@ -64,6 +67,7 @@ public class PaymentNotificationsFacade {
     }
 
     public void onPagoFallido(Pedido pedido, String motivo) {
+        if (pedido == null) return;
         touchUsuarioFinalForAsync(pedido);
         notificacionEmailService.enviarPagoFallido(pedido, motivo);
     }
@@ -73,8 +77,9 @@ public class PaymentNotificationsFacade {
      * thread no encuentre el proxy sin sesión → LazyInitializationException.
      */
     public void touchUsuarioFinalForAsync(Pedido pedido) {
-        if (pedido.getUsuarioFinal() != null) {
-            pedido.getUsuarioFinal().getCorreo(); // touch dentro de la transacción
+        if (pedido == null || pedido.getUsuarioFinal() == null) {
+            return;
         }
+        pedido.getUsuarioFinal().getCorreo(); // touch dentro de la transacción
     }
 }

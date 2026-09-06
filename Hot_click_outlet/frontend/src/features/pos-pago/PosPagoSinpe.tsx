@@ -5,11 +5,11 @@ import { formatColones } from './posPagoFormat'
 import type { QrPagoInfo } from './posPagoTypes'
 import PosPagoReporteModal from './PosPagoReporteModal'
 
-type Props = {
+type Props = Readonly<{
   info: QrPagoInfo
   token?: string
   onPagado: () => void
-}
+}>
 
 export default function PosPagoSinpe({ info, token, onPagado }: Props) {
   const { t } = useTranslation()
@@ -70,9 +70,9 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
         </div>
       ))}
       {esperando ? (
-        <p className="text-sm text-center text-[var(--hc-muted)]" role="status">
+        <output className="block text-sm text-center text-[var(--hc-muted)]">
           {t('pos.pago.sinpeEsperando')}
-        </p>
+        </output>
       ) : (
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void enviar() }}>
           <CampoSinpe id="pos-sinpe-nombre" label={t('pos.pago.sinpeNombre')} value={nombre} onChange={setNombre} />
@@ -108,15 +108,17 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
   )
 }
 
-function CampoSinpe({
-  id, label, value, onChange, inputMode,
-}: {
+type CampoSinpeProps = Readonly<{
   id: string
   label: string
   value: string
   onChange: (v: string) => void
   inputMode?: 'numeric' | 'tel'
-}) {
+}>
+
+function CampoSinpe({
+  id, label, value, onChange, inputMode,
+}: CampoSinpeProps) {
   return (
     <div className="space-y-1">
       <label htmlFor={id} className="text-xs text-[var(--hc-muted)]">{label}</label>

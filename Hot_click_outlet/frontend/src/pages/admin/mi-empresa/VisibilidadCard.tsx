@@ -14,7 +14,7 @@ export default function VisibilidadCard({
   onChange,
   puedePublicar = true,
   motivoBloqueo,
-}: VisibilidadCardProps) {
+}: Readonly<VisibilidadCardProps>) {
   const [loading, setLoading] = useState(false)
   const bloqueado = !puedePublicar
   const publicado = puedePublicar && visible
@@ -97,7 +97,7 @@ function colorSwitch(publicado: boolean, bloqueado: boolean) {
   return publicado ? '#22c55e' : '#6366f1'
 }
 
-function IconoEstado({ publicado, bloqueado }: { publicado: boolean; bloqueado: boolean }) {
+function IconoEstado({ publicado, bloqueado }: Readonly<{ publicado: boolean; bloqueado: boolean }>) {
   if (bloqueado) {
     return (
       <svg className="w-5 h-5" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
