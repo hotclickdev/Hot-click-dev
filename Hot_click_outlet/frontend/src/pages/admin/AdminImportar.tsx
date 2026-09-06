@@ -10,13 +10,14 @@ import ImportarToolbar from './importar/ImportarToolbar'
 import { useAdminImportarActions } from './importar/useAdminImportarActions'
 import EmpresaDestinoSelect from './empresas/EmpresaDestinoSelect'
 import { empresaIdDesdeParam } from './empresas/empresasHelpers'
-import type {
-  BodegaImportar,
-  CategoriaImportar,
-  EmpresaImportar,
-  ImportarTabId,
-  MarcaImportar,
-  ProductoImportado,
+import {
+  fuenteDesdeParam,
+  type BodegaImportar,
+  type CategoriaImportar,
+  type EmpresaImportar,
+  type ImportarTabId,
+  type MarcaImportar,
+  type ProductoImportado,
 } from './importar/importarHelpers'
 
 export default function AdminImportar() {
@@ -24,9 +25,10 @@ export default function AdminImportar() {
   const esAdminIT = useAuthStore(st => st.userRole === 'ADMIN')
   const [searchParams] = useSearchParams()
   const empresaQuery = searchParams.get('empresaId')
+  const fuenteQuery = searchParams.get('fuente')
 
   const [paso, setPaso] = useState(1)
-  const [tab,  setTab]  = useState<ImportarTabId>('url')
+  const [tab,  setTab]  = useState<ImportarTabId>(() => fuenteDesdeParam(fuenteQuery))
   const [url,  setUrl]  = useState('')
   const [archivo, setArchivoState] = useState<File | null>(null)
   const [dragging, setDragging]    = useState(false)
@@ -59,6 +61,8 @@ export default function AdminImportar() {
   const seleccionados  = productos.filter(p => p._sel)
   const todosSelec     = seleccionados.length === productos.length && productos.length > 0
   const algunoInvalido = seleccionados.some(p => !p.nombreProducto?.trim() || !p.categoriaId)
+
+  const empresaActiva = empresas.find((e) => String(e.id) === empresaSeleccionada) ?? null
 
   const {
     cargarDatosFormulario,
@@ -207,6 +211,7 @@ export default function AdminImportar() {
             />
 
             <ImportarResultados
+              empresa={empresaActiva}
               productos={productos}
               setProductos={setProductos}
               categorias={categorias}

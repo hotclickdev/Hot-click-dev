@@ -34,6 +34,8 @@ export type EmpresaImportar = {
   id: Id
   nombreComercial?: string
   nombreEmpresa?: string
+  slug?: string
+  logoUrl?: string | null
 }
 
 export type ProductoImportado = {
@@ -58,7 +60,89 @@ export type ProductoImportado = {
   colorVariante?: string | null
 }
 
+export type ChipCategoriaImportar = {
+  id: string
+  label: string
+  cantidad: number
+}
+
+export type GrupoCategoriaImportar = {
+  categoriaId: number | null
+  label: string
+  productos: ProductoImportado[]
+}
+
 export type ToastImportar = (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void
+
+export function fuenteDesdeParam(raw: string | null | undefined): ImportarTabId {
+  if (raw === 'url' || raw === 'pdf' || raw === 'csv') return raw
+  return 'url'
+}
+
+export function nombreCategoriaImportar(
+  categorias: CategoriaImportar[],
+  categoriaId: number | null | undefined,
+): string {
+  if (categoriaId == null) return 'Sin categoría'
+  const cat = categorias.find((c) => Number(c.id) === Number(categoriaId))
+  return cat?.nombreCategoria?.trim() || `Categoría ${categoriaId}`
+}
+
+/** Agrupa productos por categoría para la vista de revisión del catálogo. */
+export function agruparProductosPorCategoria(
+  productos: ProductoImportado[],
+  categorias: CategoriaImportar[],
+): GrupoCategoriaImportar[] {
+  const mapa = new Map<string, GrupoCategoriaImportar>()
+  for (const p of productos) {
+    const categoriaId = p.categoriaId ?? null
+    const key = categoriaId == null ? 'sin' : String(categoriaId)
+    const existente = mapa.get(key)
+    if (existente) {
+      existente.productos.push(p)
+      continue
+    }
+    mapa.set(key, {
+      categoriaId,
+      label: nombreCategoriaImportar(categorias, categoriaId),
+      productos: [p],
+    })
+  }
+  return [...mapa.values()].sort((a, b) => {
+    if (a.categoriaId == null) return 1
+    if (b.categoriaId == null) return -1
+    return a.label.localeCompare(b.label, 'es')
+  })
+}
+
+/** Chips de filtro: Todas + categorías presentes en los productos. */
+export function chipsCategoriaImportar(
+  productos: ProductoImportado[],
+  categorias: CategoriaImportar[],
+): ChipCategoriaImportar[] {
+  const chips: ChipCategoriaImportar[] = [
+    { id: 'todas', label: 'Todas', cantidad: productos.length },
+  ]
+  const grupos = agruparProductosPorCategoria(productos, categorias)
+  for (const g of grupos) {
+    chips.push({
+      id: g.categoriaId == null ? 'sin' : String(g.categoriaId),
+      label: g.label,
+      cantidad: g.productos.length,
+    })
+  }
+  return chips
+}
+
+export function filtrarProductosPorChip(
+  productos: ProductoImportado[],
+  chipId: string,
+): ProductoImportado[] {
+  if (chipId === 'todas') return productos
+  if (chipId === 'sin') return productos.filter((p) => p.categoriaId == null)
+  const id = Number(chipId)
+  return productos.filter((p) => Number(p.categoriaId) === id)
+}
 
 export function fmtColones(v: number | string | null | undefined): string {
   return (v || v === 0) ? Number(v).toLocaleString('es-CR') : ''

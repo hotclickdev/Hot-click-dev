@@ -54,8 +54,19 @@ public class PosQrService {
     }
 
     @Transactional
+    public Map<String, String> iniciarSinpeOnvo(String token, String telefono, String cedula,
+                                               String nombre, String email) {
+        return ventaService.iniciarSinpeOnvo(token, telefono, cedula, nombre, email);
+    }
+
+    @Transactional
     public String verificarEstado(String token) {
         return ventaService.verificarEstado(token);
+    }
+
+    @Transactional
+    public Map<String, Object> consultarEstado(String token) {
+        return ventaService.consultarEstado(token);
     }
 
     @Transactional

@@ -153,7 +153,7 @@ export default function AdminMiEmpresa() {
       const { data } = await empresaService.setVisibilidad(val)
       const updated = unwrapEmpresa(data)
       setEmpresa(e => ({ ...e!, visibilidadPublica: val }))
-      toast({ message: val ? 'Negocio visible al público' : 'Negocio en modo invisible', type: 'success' })
+      toast({ message: val ? 'Tu tienda ya aparece en el catálogo' : 'Tu tienda quedó pausada en el catálogo', type: 'success' })
       // Refrescar el estado global del layout
       if (updated) setEmpresa(e => ({ ...e!, ...updated }))
     } catch (err: unknown) {
@@ -197,12 +197,12 @@ export default function AdminMiEmpresa() {
     <>
       <div className="max-w-2xl space-y-6">
         <EmpresaHeader empresa={empresa} isDirty={isDirty} canEdit={canEdit} form={form} />
-        {empresa.estadoEmpresa === 'ACTIVO' && (
-          <VisibilidadCard
-            visible={empresa.visibilidadPublica !== false}
-            onChange={cambiarVisibilidad}
-          />
-        )}
+        <VisibilidadCard
+          visible={empresa.estadoEmpresa === 'ACTIVO' && empresa.visibilidadPublica !== false}
+          onChange={cambiarVisibilidad}
+          puedePublicar={empresa.estadoEmpresa === 'ACTIVO'}
+          motivoBloqueo={motivoBloqueoCuentaMiEmpresa(empresa.estadoEmpresa)}
+        />
         <PerfilForm
           form={form}
           setForm={setForm}
@@ -225,4 +225,20 @@ export default function AdminMiEmpresa() {
       </div>
     </>
   )
+}
+
+function motivoBloqueoCuentaMiEmpresa(estado?: string): string | undefined {
+  if (estado === 'PENDIENTE_APROBACION') {
+    return 'HotClick todavía no aprobó el negocio. La tienda no se puede publicar todavía.'
+  }
+  if (estado === 'SUSPENDIDO') {
+    return 'HotClick suspendió la cuenta. No podés publicar la tienda desde acá.'
+  }
+  if (estado === 'INACTIVO') {
+    return 'HotClick desactivó la cuenta. No podés publicar la tienda desde acá.'
+  }
+  if (estado && estado !== 'ACTIVO') {
+    return 'HotClick apagó la cuenta de este negocio. No podés publicar la tienda desde acá.'
+  }
+  return undefined
 }

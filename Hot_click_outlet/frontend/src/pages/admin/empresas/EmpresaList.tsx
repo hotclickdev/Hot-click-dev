@@ -33,14 +33,14 @@ function VisibilidadToggle({ emp, saving, onToggle }: {
     <button type="button"
       onClick={(e) => { e.stopPropagation(); onToggle(emp.id, !visible) }}
       disabled={saving}
-      title={visible ? 'Ocultar negocio' : 'Hacer visible'}
+      title={visible ? 'Ocultar del catálogo (el dueño puede republicar)' : 'Mostrar en catálogo'}
       className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-opacity disabled:opacity-40"
       style={{
         background: visible ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
         color: visible ? 'var(--hc-success)' : 'var(--hc-danger)',
       }}
     >
-      {visible ? <><EyeIcon />Visible</> : <><EyeOffIcon />Oculto</>}
+      {visible ? <><EyeIcon />Catálogo: visible</> : <><EyeOffIcon />Catálogo: oculto</>}
     </button>
   )
 }

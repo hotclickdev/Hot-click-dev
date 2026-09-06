@@ -1,5 +1,7 @@
 package com.hotclick.service;
 
+import com.hotclick.model.Empresa;
+import com.hotclick.model.Pedido;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +25,23 @@ class ModeracionAdminAvisoServiceTest {
     void avisarEmpresa_enviaTelegram() {
         service.avisarEmpresaPendiente(7L, "Tienda Test");
         verify(telegramService).enviar(contains("Negocio pendiente"));
+    }
+
+    @Test
+    void avisarNuevaVenta_enviaTelegram() {
+        Pedido pedido = new Pedido();
+        pedido.setNumeroPedido("ORD-99");
+        pedido.setTotalPedido(3500);
+        pedido.setMetodoPago("TARJETA");
+        pedido.setOrigen("WEB");
+        Empresa empresa = new Empresa();
+        empresa.setNombreComercial("Cafe CR");
+        pedido.setEmpresa(empresa);
+
+        service.avisarNuevaVenta(pedido);
+
+        verify(telegramService).enviar(contains("NUEVA VENTA"));
+        verify(telegramService).enviar(contains("ORD-99"));
     }
 
     @Test

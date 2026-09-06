@@ -135,7 +135,7 @@ export function useEmpresaWorkspace() {
     try {
       await adminService.setEmpresaVisibilidad(empresaId, visibilidadPublica)
       toast({
-        message: visibilidadPublica ? 'Negocio visible al público' : 'Negocio oculto — catálogo invisible',
+        message: visibilidadPublica ? 'Catálogo visible — el dueño puede pausarlo' : 'Catálogo oculto — si la cuenta está ACTIVA el dueño puede republicarlo',
         type: 'success',
       })
       setSelected((s) => (s ? { ...s, visibilidadPublica } : s))

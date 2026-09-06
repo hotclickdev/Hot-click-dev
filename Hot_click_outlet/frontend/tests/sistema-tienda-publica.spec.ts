@@ -76,15 +76,38 @@ test.describe('Sistema — publicar la tienda', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/emprendedor\/?$/)
-    await expect(page.getByText('Tu tienda está oculta')).toBeVisible()
+    await expect(page.getByText('Tu tienda está pausada en el catálogo')).toBeVisible()
 
     await page.goto('/admin/configuracion?seccion=marca', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/admin\/configuracion\?seccion=marca/)
-    const interruptor = page.getByRole('switch', { name: 'Visibilidad pública' })
+    const interruptor = page.getByRole('switch', { name: 'Publicar mi tienda' })
     await expect(interruptor).toHaveAttribute('aria-checked', 'false')
     await interruptor.click()
     await expect(interruptor).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByText('Tu tienda ya es visible al público')).toBeVisible()
+    await expect(page.getByText('Tu tienda ya aparece en el catálogo')).toBeVisible()
+  })
+
+  test('cuenta SUSPENDIDO: interruptor bloqueado y no llama PUT visibilidad', async ({ page }) => {
+    await sesionDueño(page, { estadoEmpresa: 'SUSPENDIDO', visibilidadPublica: false })
+    await page.setViewportSize({ width: 1280, height: 800 })
+
+    let putVisibilidad = 0
+    await page.route('**/api/empresa/perfil/visibilidad', async (route) => {
+      putVisibilidad += 1
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, message: 'HotClick apagó la cuenta' }),
+      })
+    })
+
+    await page.goto('/admin/configuracion?seccion=marca', { waitUntil: 'domcontentloaded' })
+    const interruptor = page.getByRole('switch', { name: 'Publicar mi tienda' })
+    await expect(interruptor).toBeVisible()
+    await expect(interruptor).toBeDisabled()
+    await expect(page.getByText(/HotClick suspendió la cuenta/)).toBeVisible()
+    await interruptor.click({ force: true }).catch(() => undefined)
+    expect(putVisibilidad).toBe(0)
   })
 
   test('si HotClick aún no aprobó, /admin no deja al dueño en Sistema', async ({ page }) => {

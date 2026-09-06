@@ -21,7 +21,7 @@ export const DENOM: DenominacionPos[] = [
 
 export const METODOS = [
   { id: 'EFECTIVO', label: 'Efectivo',    iconId: 'efectivo', color: '#34d399', desc: 'Pago en mano' },
-  { id: 'SINPE',    label: 'SINPE Móvil', iconId: 'sinpe',    color: '#6490EA', desc: 'Al número del negocio' },
+  { id: 'SINPE',    label: 'SINPE Móvil', iconId: 'sinpe',    color: '#6490EA', desc: 'Vía ONVO' },
   { id: 'TARJETA',  label: 'Tarjeta',     iconId: 'tarjeta',  color: '#7aa3ff', desc: 'QR a la pasarela' },
 ]
 

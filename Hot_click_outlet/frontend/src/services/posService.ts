@@ -23,4 +23,6 @@ export const posService = {
   estadoQrSesion: (token: string)          => publicApi.get(`/pos/qr/pago/${token}/estado`).then(r => r.data),
   iniciarStripeQr: (token: string)         => publicApi.post(`/pos/qr/pago/${token}/stripe`).then(r => r.data),
   iniciarPaymentIntentQr: (token: string)  => publicApi.post(`/pos/qr/pago/${token}/intent`).then(r => r.data),
+  iniciarSinpeOnvoQr: (token: string, dto: JsonBody) =>
+    publicApi.post(`/pos/qr/pago/${token}/sinpe-onvo`, dto).then(r => r.data),
 }

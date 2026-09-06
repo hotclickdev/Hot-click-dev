@@ -5,6 +5,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.service.AggregatorService;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
+import com.hotclick.service.VentaAvisoService;
 import com.hotclick.service.WebhookDispatcherService;
 import com.hotclick.service.analytics.PostHogCaptureService;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ public class PaymentNotificationsFacade {
     private static final Logger log = LoggerFactory.getLogger(PaymentNotificationsFacade.class);
 
     @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private VentaAvisoService        ventaAvisoService;
     @Autowired private N8nWebhookService        n8nWebhookService;
     @Autowired private WebhookDispatcherService webhookDispatcher;
     @Autowired private AggregatorService        aggregatorService;
@@ -35,7 +37,7 @@ public class PaymentNotificationsFacade {
     }
 
     public void onGiftCardFullPayment(Pedido pedido, String gcCodigo) {
-        notificacionEmailService.enviarConfirmacionPedido(pedido);
+        ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
         capturarPedidoPagado(pedido, null);
         log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), gcCodigo);
@@ -43,7 +45,7 @@ public class PaymentNotificationsFacade {
 
     public void onPedidoConfirmado(Pedido pedido, Pago pago) {
         touchUsuarioFinalForAsync(pedido);
-        notificacionEmailService.enviarConfirmacionPedido(pedido);
+        ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
             "numeroPedido", pedido.getNumeroPedido(),

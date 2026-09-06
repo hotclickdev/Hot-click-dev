@@ -49,6 +49,7 @@ class PaymentServiceF37Test {
     @Mock TransaccionPagoRepository transaccionPagoRepository;
     @Mock EmpresaRepository         empresaRepository;
     @Mock NotificacionEmailService  notificacionEmailService;
+    @Mock VentaAvisoService         ventaAvisoService;
     @Mock CuponService              cuponService;
     @Mock GiftCardService           giftCardService;
     @Mock WebhookDispatcherService  webhookDispatcher;
@@ -198,7 +199,7 @@ class PaymentServiceF37Test {
         service.confirmarPedido(pago);
 
         // El email @Async fue llamado — el proxy estaba inicializado (no LazyInitializationException)
-        verify(notificacionEmailService, times(1)).enviarConfirmacionPedido(pedido);
+        verify(ventaAvisoService, times(1)).avisarVentaConfirmada(pedido);
         // El estado fue actualizado a PAGADO
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
     }

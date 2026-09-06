@@ -6,6 +6,7 @@ import com.hotclick.security.JwtUtil;
 import com.hotclick.service.PosQrService;
 import com.hotclick.service.TurnoCajaService;
 import com.hotclick.service.pos.PosQrSessionService;
+import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,9 +111,13 @@ public class PosQrController {
             return ResponseEntity.ok(Map.of("checkoutUrl", checkoutUrl));
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
+        } catch (IllegalStateException e) {
+            log.warn("[POS-QR] Pago tarjeta no iniciado token={}: {}", token, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
         } catch (Exception e) {
             log.error("[POS-QR] Error iniciando pago tarjeta token={}: {}", token, e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago: " + e.getMessage()));
+            Sentry.captureException(e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago"));
         }
     }
 
@@ -124,10 +129,37 @@ public class PosQrController {
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            log.warn("[POS-QR] Payment intent no iniciado token={}: {}", token, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
         } catch (Exception e) {
             log.error("[POS-QR] Error iniciando payment intent token={}: {}", token, e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago: " + e.getMessage()));
+            Sentry.captureException(e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago"));
+        }
+    }
+
+    /** Cliente registra SINPE Móvil en ONVO (número destino de la pasarela). */
+    @PostMapping("/pago/{token}/sinpe-onvo")
+    public ResponseEntity<?> iniciarSinpeOnvo(@PathVariable String token,
+                                              @RequestBody(required = false) Map<String, String> body) {
+        try {
+            Map<String, String> datos = body != null ? body : Map.of();
+            return ResponseEntity.ok(posQrService.iniciarSinpeOnvo(
+                token,
+                datos.get("telefono"),
+                datos.get("cedula"),
+                datos.get("nombre"),
+                datos.get("email")));
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            log.warn("[POS-QR] SINPE ONVO no iniciado token={}: {}", token, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error",
+                e.getMessage() != null ? e.getMessage() : "No se pudo iniciar el SINPE"));
+        } catch (Exception e) {
+            log.error("[POS-QR] Error iniciando SINPE ONVO token={}: {}", token, e.getMessage(), e);
+            Sentry.captureException(e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago"));
         }
     }
 
@@ -135,8 +167,7 @@ public class PosQrController {
     @GetMapping("/pago/{token}/estado")
     public ResponseEntity<?> estado(@PathVariable String token) {
         try {
-            String estado = posQrService.verificarEstado(token);
-            return ResponseEntity.ok(Map.of("estado", estado));
+            return ResponseEntity.ok(posQrService.consultarEstado(token));
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Sesión no encontrada"));
         }
@@ -152,5 +183,12 @@ public class PosQrController {
         Long id = jwtUtil.extractEmpresaId(req.getHeader("Authorization").substring(7));
         if (id == null) throw new IllegalStateException("No hay empresa en el token");
         return id;
+    }
+
+    static String mensajePagoTarjeta(IllegalStateException e) {
+        String detalle = e.getMessage();
+        return detalle != null && !detalle.isBlank()
+            ? detalle
+            : "No se pudo iniciar el pago con tarjeta";
     }
 }

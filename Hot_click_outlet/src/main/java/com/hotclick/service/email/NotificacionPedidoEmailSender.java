@@ -26,10 +26,18 @@ public class NotificacionPedidoEmailSender {
     @Autowired private PedidoEmailBuilder pedidoEmailBuilder;
 
     public void enviarConfirmacionPedido(Pedido pedido, String adminItEmail, String adminItTelefono) {
+        enviarConfirmacionAlCliente(pedido);
+        // Vendedor y admin siempre; no dependen de que haya usuarioFinal
+        enviarNuevoPedidoAEmprendedor(pedido);
+        whatsAppService.enviarNuevoPedidoAEmprendedor(pedido);
+        enviarNuevoPedidoAAdminIT(pedido, adminItEmail);
+        whatsAppService.enviarNuevoPedidoAAdminIT(pedido, adminItTelefono);
+    }
+
+    private void enviarConfirmacionAlCliente(Pedido pedido) {
         Usuario cliente = pedido.getUsuarioFinal();
         if (cliente == null) return;
-        // Email
-        if (cliente.getCorreo() != null) {
+        if (cliente.getCorreo() != null && !cliente.getCorreo().isBlank()) {
             try {
                 resendEmailService.send(
                     cliente.getCorreo(),
@@ -41,16 +49,7 @@ public class NotificacionPedidoEmailSender {
                 log.error("No se pudo enviar email de confirmación para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
             }
         }
-        // WhatsApp al cliente — en paralelo, falla silenciosamente
         whatsAppService.enviarConfirmacionPedido(pedido);
-
-        // Notificaciones al emprendedor (email + WhatsApp)
-        enviarNuevoPedidoAEmprendedor(pedido);
-        whatsAppService.enviarNuevoPedidoAEmprendedor(pedido);
-
-        // Notificaciones al admin IT (email + WhatsApp)
-        enviarNuevoPedidoAAdminIT(pedido, adminItEmail);
-        whatsAppService.enviarNuevoPedidoAAdminIT(pedido, adminItTelefono);
     }
 
     public void enviarNotificacionGuia(Pedido pedido) {

@@ -16,6 +16,7 @@ import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,9 @@ public class PosQrSessionService {
     @Autowired private TurnoCajaRepository   turnoCajaRepo;
 
     private final ObjectMapper mapper = new ObjectMapper();
+
+    @Value("${onvo.sinpe-destino:+50670196686}")
+    private String onvoSinpeDestino;
 
     @Transactional
     public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
@@ -103,8 +107,6 @@ public class PosQrSessionService {
             items = List.of();
         }
 
-        String sinpeNumero = numeroSinpe(empresa);
-
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("token",        sesion.getToken());
         r.put("estado",       sesion.getEstado());
@@ -117,7 +119,7 @@ public class PosQrSessionService {
         r.put("logoUrl",      empresa.getLogoUrl());
         r.put("colorPrimario", empresa.getColorPrimario());
         // SINPE: número de teléfono y referencia (primeros 8 chars del token)
-        r.put("sinpeNumero",  sinpeNumero);
+        r.put("sinpeNumero",  destinoSinpe(sesion, empresa));
         r.put("sinpeRef",     sesion.getToken().substring(0, 8).toUpperCase());
         return r;
     }
@@ -128,7 +130,7 @@ public class PosQrSessionService {
         r.put("total", sesion.getTotal());
         r.put("metodoPago", sesion.getMetodoPago());
         r.put("expiracion", sesion.getFechaExpiracion().toString());
-        r.put("sinpeNumero", numeroSinpe(exigirEmpresa(sesion)));
+        r.put("sinpeNumero", destinoSinpe(sesion, exigirEmpresa(sesion)));
         return r;
     }
 
@@ -138,6 +140,16 @@ public class PosQrSessionService {
             throw new RecursoNoEncontradoException("Empresa de la sesión QR", sesion.getToken());
         }
         return empresa;
+    }
+
+    String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
+        if (sesion != null && "SINPE".equals(sesion.getMetodoPago())) {
+            if (onvoSinpeDestino != null && !onvoSinpeDestino.isBlank()) {
+                return onvoSinpeDestino;
+            }
+            return "+50670196686";
+        }
+        return numeroSinpe(empresa);
     }
 
     static String numeroSinpe(Empresa empresa) {

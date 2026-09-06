@@ -146,6 +146,8 @@ test.describe('Admin IT — estado de tienda y producto', () => {
 
     const activar = page.getByRole('button', { name: 'ACTIVO', exact: true }).first()
     await expect(activar).toBeEnabled()
+    await expect(page.getByText('Cuenta HotClick')).toBeVisible()
+    await expect(page.getByText(/el dueño no puede volver a ACTIVO/i)).toBeVisible()
     const putEstado = page.waitForRequest((req) =>
       req.method() === 'PUT' && req.url().includes('/admin/empresas/22/estado'))
     await activar.click()
@@ -181,9 +183,13 @@ test.describe('Admin IT — estado de tienda y producto', () => {
     await page.getByRole('link', { name: /QA Emprendedor Test 2/ }).click()
     const carga = page.getByRole('link', { name: 'Carga masiva' })
     await expect(carga).toHaveAttribute('href', '/admin/productos/carga-masiva?empresaId=22')
+    await expect(page.getByRole('link', { name: 'Enlace o PDF' })).toHaveAttribute(
+      'href',
+      '/admin/productos/importar?empresaId=22&fuente=url',
+    )
     await expect(page.getByRole('link', { name: 'Importar CSV' })).toHaveAttribute(
       'href',
-      '/admin/productos/importar?empresaId=22',
+      '/admin/productos/importar?empresaId=22&fuente=csv',
     )
     await carga.click()
     await expect(page).toHaveURL(/\/admin\/productos\/carga-masiva\?empresaId=22/)

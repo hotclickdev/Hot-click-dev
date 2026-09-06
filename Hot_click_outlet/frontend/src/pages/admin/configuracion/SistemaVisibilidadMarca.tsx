@@ -4,21 +4,15 @@ import useTenantStore from '@/store/tenantStore'
 import VisibilidadCard from '@/pages/admin/mi-empresa/VisibilidadCard'
 import { mensajeErrorConfig } from './configUi'
 
-/** Interruptor de tienda pública en Configuración → Marca (Sistema). */
+/** Interruptor de catálogo en Configuración → Marca (Sistema). No reactiva la cuenta HotClick. */
 export default function SistemaVisibilidadMarca() {
   const toast = useToast()
   const estadoEmpresa = useTenantStore((s) => s.estadoEmpresa)
   const visibilidadPublica = useTenantStore((s) => s.visibilidadPublica)
   const setEmpresaStatus = useTenantStore((s) => s.setEmpresaStatus)
 
-  if (estadoEmpresa === 'PENDIENTE_APROBACION') {
-    return (
-      <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>
-        HotClick todavía no aprobó el negocio. La tienda no se puede publicar todavía.
-      </p>
-    )
-  }
-  if (estadoEmpresa !== 'ACTIVO') return null
+  const cuentaActiva = estadoEmpresa === 'ACTIVO'
+  const motivoBloqueo = motivoBloqueoCuenta(estadoEmpresa)
 
   async function cambiar(val: boolean) {
     try {
@@ -30,13 +24,13 @@ export default function SistemaVisibilidadMarca() {
         visibilidadPublica: actual?.visibilidadPublica ?? val,
       })
       toast({
-        message: val ? 'Tu tienda ya es visible al público' : 'Tu tienda quedó oculta',
+        message: val ? 'Tu tienda ya aparece en el catálogo' : 'Tu tienda quedó pausada en el catálogo',
         type: 'success',
       })
     } catch (err: unknown) {
       console.error('[SistemaVisibilidadMarca]', err)
       toast({
-        message: mensajeErrorConfig(err, 'No se pudo cambiar la visibilidad'),
+        message: mensajeErrorConfig(err, 'No se pudo cambiar la publicación de la tienda'),
         type: 'error',
       })
       throw err
@@ -45,7 +39,28 @@ export default function SistemaVisibilidadMarca() {
 
   return (
     <div className="mb-4">
-      <VisibilidadCard visible={visibilidadPublica === true} onChange={cambiar} />
+      <VisibilidadCard
+        visible={cuentaActiva && visibilidadPublica === true}
+        onChange={cambiar}
+        puedePublicar={cuentaActiva}
+        motivoBloqueo={motivoBloqueo}
+      />
     </div>
   )
+}
+
+function motivoBloqueoCuenta(estado: string | null): string | undefined {
+  if (estado === 'PENDIENTE_APROBACION') {
+    return 'HotClick todavía no aprobó el negocio. La tienda no se puede publicar todavía.'
+  }
+  if (estado === 'SUSPENDIDO') {
+    return 'HotClick suspendió la cuenta. No podés publicar la tienda desde acá.'
+  }
+  if (estado === 'INACTIVO') {
+    return 'HotClick desactivó la cuenta. No podés publicar la tienda desde acá.'
+  }
+  if (estado && estado !== 'ACTIVO') {
+    return 'HotClick apagó la cuenta de este negocio. No podés publicar la tienda desde acá.'
+  }
+  return undefined
 }

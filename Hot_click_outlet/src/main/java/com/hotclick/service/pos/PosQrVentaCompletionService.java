@@ -12,7 +12,8 @@ public class PosQrVentaCompletionService {
 
     @Transactional
     public void completarVentaTarjeta(PosQrSesion sesion) {
-        pedidoFactory.crearPedidoPOS(sesion, "TARJETA");
+        String metodo = sesion.getMetodoPago() == null ? "TARJETA" : sesion.getMetodoPago();
+        pedidoFactory.crearPedidoPOS(sesion, metodo);
     }
 
     @Transactional

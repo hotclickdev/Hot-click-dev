@@ -14,6 +14,7 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.StockService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.service.TurnoCajaService;
+import com.hotclick.service.VentaAvisoService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ class PosQrPedidoClienteTest {
     @Mock TurnoCajaService turnoCajaService;
     @Mock TelegramNotificacionClienteService telegramNotificacionClienteService;
     @Mock PosQrSessionService sessionService;
+    @Mock VentaAvisoService ventaAvisoService;
     @InjectMocks PosQrPedidoFactory factory;
 
     @Test
