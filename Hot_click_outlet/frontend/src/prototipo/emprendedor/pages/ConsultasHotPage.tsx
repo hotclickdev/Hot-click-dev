@@ -86,7 +86,7 @@ function Burbuja({ de, texto }: { de: 'bot' | 'user'; texto: string }) {
     <div className={`flex ${propia ? 'justify-end' : 'justify-start'}`}>
       <p
         className={`max-w-[280px] rounded-[14px] px-3.5 py-3 text-[13px] ${
-          propia ? 'bg-hc-primary text-white' : 'bg-[var(--hc-n-100)] text-hc-text'
+          propia ? 'bg-hc-primary text-white' : 'bg-[var(--hc-surface-2)] text-hc-text'
         }`}
       >
         {texto}

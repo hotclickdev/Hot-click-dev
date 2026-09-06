@@ -20,7 +20,7 @@ export default function AppTour() {
             onClick={isSpecial ? dismiss : undefined}
             className="fixed inset-0 z-[90]"
             style={{
-              backgroundColor: isSpecial ? 'rgba(20,23,28,0.45)' : 'rgba(20,23,28,0.18)',
+              backgroundColor: isSpecial ? 'var(--hc-overlay)' : 'var(--hc-overlay-soft)',
               backdropFilter: isSpecial ? 'blur(4px)' : 'none',
               pointerEvents: isSpecial ? 'auto' : 'none',
             }}
@@ -45,7 +45,7 @@ export default function AppTour() {
                 maxWidth: isSpecial ? undefined : '27rem',
                 backgroundColor: 'var(--hc-surface)',
                 border: '1px solid var(--hc-border)',
-                boxShadow: '0 28px 72px rgba(20,23,28,0.18), 0 4px 20px rgba(20,23,28,0.08)',
+                boxShadow: 'var(--hc-shadow-3)',
               }}
             >
               <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${current.color}, ${current.color}99)` }} />

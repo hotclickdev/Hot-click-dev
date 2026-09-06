@@ -1,25 +1,22 @@
 import { NavLink } from 'react-router-dom'
 import { useSellerRuta } from './SellerPlanContext'
-import iconProductos from './assets/icon-productos.svg'
-import iconProductosActivo from './assets/icon-productos-activo.svg'
-import iconTienda from './assets/icon-tienda.svg'
-import iconTiendaActivo from './assets/icon-tienda-activo.svg'
-import iconOpciones from './assets/icon-opciones.svg'
-import iconOpcionesActivo from './assets/icon-opciones-activo.svg'
+import iconProductos from './assets/icon-productos.svg?raw'
+import iconTienda from './assets/icon-tienda.svg?raw'
+import iconOpciones from './assets/icon-opciones.svg?raw'
 
 type Tab =
   | { segmento: ''; label: 'Menú Principal'; tipo: 'menu' }
-  | { segmento: 'productos'; label: 'Productos'; tipo: 'img'; idle: string; activo: string }
-  | { segmento: 'tienda'; label: 'Tienda'; tipo: 'img'; idle: string; activo: string }
+  | { segmento: 'productos'; label: 'Productos'; tipo: 'img'; icon: string }
+  | { segmento: 'tienda'; label: 'Tienda'; tipo: 'img'; icon: string }
   | { segmento: 'reportes'; label: 'Reportes'; tipo: 'reportes' }
-  | { segmento: 'opciones'; label: 'Opciones'; tipo: 'img'; idle: string; activo: string }
+  | { segmento: 'opciones'; label: 'Opciones'; tipo: 'img'; icon: string }
 
 const TABS: Tab[] = [
-  { segmento: 'productos', label: 'Productos', tipo: 'img', idle: iconProductos, activo: iconProductosActivo },
-  { segmento: 'tienda', label: 'Tienda', tipo: 'img', idle: iconTienda, activo: iconTiendaActivo },
+  { segmento: 'productos', label: 'Productos', tipo: 'img', icon: iconProductos },
+  { segmento: 'tienda', label: 'Tienda', tipo: 'img', icon: iconTienda },
   { segmento: '', label: 'Menú Principal', tipo: 'menu' },
   { segmento: 'reportes', label: 'Reportes', tipo: 'reportes' },
-  { segmento: 'opciones', label: 'Opciones', tipo: 'img', idle: iconOpciones, activo: iconOpcionesActivo },
+  { segmento: 'opciones', label: 'Opciones', tipo: 'img', icon: iconOpciones },
 ]
 
 /**
@@ -63,16 +60,19 @@ export default function SellerBottomNav() {
 function IconoTab({ tab, activo }: { tab: Tab; activo: boolean }) {
   if (tab.tipo === 'menu') return <IconoMenu activo={activo} />
   if (tab.tipo === 'reportes') return <IconoReportes activo={activo} />
-  const src = activo ? tab.activo : tab.idle
   return (
-    <span className="relative block size-[22px] overflow-clip">
-      <img src={src} alt="" width={22} height={22} className="size-full" />
-    </span>
+    <span
+      className={`relative block size-[22px] overflow-clip [&_svg]:size-full ${
+        activo ? 'text-hc-primary' : 'text-hc-muted'
+      }`}
+      aria-hidden
+      dangerouslySetInnerHTML={{ __html: tab.icon }}
+    />
   )
 }
 
 function IconoMenu({ activo }: { activo: boolean }) {
-  const color = activo ? 'bg-hc-primary' : 'bg-[#8C8C8C]'
+  const color = activo ? 'bg-hc-primary' : 'bg-hc-muted'
   return (
     <span className="relative block size-[22px]" aria-hidden>
       <span className={`absolute left-1/2 top-[3px] size-[8px] -translate-x-1/2 rounded-full ${color}`} />
@@ -82,7 +82,7 @@ function IconoMenu({ activo }: { activo: boolean }) {
 }
 
 function IconoReportes({ activo }: { activo: boolean }) {
-  const color = activo ? 'bg-hc-primary' : 'bg-[#8C8C8C]'
+  const color = activo ? 'bg-hc-primary' : 'bg-hc-muted'
   return (
     <span className="relative block size-[22px] overflow-clip" aria-hidden>
       <span className={`absolute left-[3px] top-[12px] h-[7px] w-1 rounded-[1px] ${color}`} />

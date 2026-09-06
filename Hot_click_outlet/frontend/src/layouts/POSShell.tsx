@@ -8,7 +8,10 @@ import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
  */
 export default function POSShell({ children }: { children?: ReactNode }) {
   return (
-    <div className="hc-seller-theme min-h-screen bg-hc-bg text-hc-text">
+    <div
+      className="hc-seller-theme min-h-screen bg-hc-bg text-hc-text"
+      style={{ backgroundColor: 'var(--hc-bg)' }}
+    >
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>

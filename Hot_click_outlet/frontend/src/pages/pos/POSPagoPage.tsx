@@ -32,7 +32,7 @@ export default function POSPagoPage() {
 
   const shell = (children: ReactNode) => (
     <div
-      className="hc-sistema-theme min-h-dvh flex flex-col items-center justify-center px-5 py-8 sm:py-12"
+      className="hc-seller-theme min-h-dvh flex flex-col items-center justify-center px-5 py-8 sm:py-12"
       style={{ backgroundColor: 'var(--hc-bg)' }}
     >
       <main className="w-full">{children}</main>
@@ -69,7 +69,7 @@ export default function POSPagoPage() {
     <div className="mx-auto w-full max-w-md space-y-6">
       <PosPagoResumen info={info} />
 
-      {esSinpe ? <PosPagoSinpe info={info} token={token} /> : null}
+      {esSinpe ? <PosPagoSinpe info={info} token={token} onPagado={marcarExitoEmbed} /> : null}
 
       {esTarjeta && modoEmbed ? (
         <PosPagoOnvoEmbed

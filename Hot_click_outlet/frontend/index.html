@@ -2,6 +2,26 @@
 <html lang="es-CR">
   <head>
     <meta charset="UTF-8" />
+    <meta name="theme-color" content="#F8F9FB" />
+    <script>
+      /* Evita FOUC: dark solo en panel; marketplace/auth arrancan claros. */
+      (function () {
+        try {
+          var path = location.pathname || '/'
+          var panel =
+            path === '/admin' || path.indexOf('/admin/') === 0 ||
+            path === '/emprendedor' || path.indexOf('/emprendedor/') === 0 ||
+            path === '/pyme' || path.indexOf('/pyme/') === 0 ||
+            path === '/negocio-plus' || path.indexOf('/negocio-plus/') === 0
+          var saved = JSON.parse(localStorage.getItem('hotclick-ui') || '{}')
+          var theme = saved.state && saved.state.theme
+          var dark = panel && theme === 'dark'
+          document.documentElement.classList.add(dark ? 'dark' : 'light')
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute('content', dark ? '#0E1116' : '#F8F9FB')
+        } catch (_) { /* ignore */ }
+      })()
+    </script>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
@@ -47,7 +67,6 @@
     <!-- HC_SEO_BLOCK_END -->
     <meta name="keywords" content="tienda en línea Costa Rica, marketplace Costa Rica, compras online CR, emprendedores costarricenses, envío Costa Rica, tecnología CR, ropa Costa Rica" />
     <meta name="author" content="HOTCLICK" />
-    <meta name="theme-color" content="#E73B33" />
     <meta name="geo.region" content="CR" />
     <meta name="geo.placename" content="Costa Rica" />
     <meta name="geo.position" content="9.748917;-83.753428" />

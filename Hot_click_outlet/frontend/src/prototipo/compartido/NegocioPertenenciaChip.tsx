@@ -39,7 +39,7 @@ export default function NegocioPertenenciaChip({ variante = 'compact', className
             <span className="truncate font-mono text-[11px] text-hc-muted">/{empresaSlug}</span>
           ) : null}
           {planNombre ? (
-            <span className="rounded-full bg-[var(--hc-blue-50)] px-2 py-0.5 text-[10px] font-semibold text-[var(--hc-link)]">
+            <span className="rounded-full bg-[var(--hc-info-bg)] px-2 py-0.5 text-[10px] font-semibold text-[var(--hc-link)]">
               {planLabel}
             </span>
           ) : null}

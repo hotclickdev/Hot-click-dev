@@ -14,6 +14,7 @@ import {
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import useAuthStore from '@/store/authStore'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from '@/prototipo/compartido/PrototipoSidebarNav'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
@@ -82,10 +83,12 @@ export default function EmprendedorSidebar() {
   return (
     <aside
       className="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col border-r border-hc-border bg-hc-surface px-3 py-6 md:flex"
+      style={{ backgroundColor: 'var(--hc-surface)' }}
       data-mm="emp-sidebar"
     >
-      <div className="mb-2 flex items-center gap-2 px-2 pb-5 pt-1">
+      <div className="mb-2 flex items-center justify-between gap-2 px-2 pb-5 pt-1">
         <BrandLogo size={20} wordmarkSize={16} />
+        <ThemeToggle className="min-h-11 min-w-11 flex items-center justify-center" />
       </div>
       <NegocioPertenenciaChip variante="card" className="mb-4" />
       <PrototipoSidebarNav

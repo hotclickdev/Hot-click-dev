@@ -38,11 +38,11 @@ export default function MmGuiaToggle({ dataMm = 'seller-opciones-guia' }: { data
           aria-checked={activo}
           onClick={() => cambiar(!activo)}
           className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-            activo ? 'bg-hc-primary' : 'bg-[var(--hc-n-200)]'
+            activo ? 'bg-hc-primary' : 'bg-[var(--hc-border-strong)]'
           }`}
         >
           <span
-            className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform ${
+            className={`absolute top-0.5 size-6 rounded-full bg-white hc-papel-blanco shadow transition-transform ${
               activo ? 'left-5' : 'left-0.5'
             }`}
           />

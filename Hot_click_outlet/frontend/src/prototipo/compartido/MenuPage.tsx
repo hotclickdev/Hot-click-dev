@@ -162,7 +162,7 @@ function HeroMenu({ badge }: { badge: string }) {
     <div className="relative flex w-full flex-col items-center">
       <div
         className="pointer-events-none absolute left-1/2 top-6 size-[120px] -translate-x-1/2 rounded-full opacity-70"
-        style={{ background: 'radial-gradient(circle, var(--hc-red-50), transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, var(--hc-danger-bg), transparent 70%)' }}
         aria-hidden
       />
       <BrandLogo size={45} wordmarkSize={30} />

@@ -1,25 +1,22 @@
-import iconProductos from './assets/icon-productos.svg'
-import iconProductosActivo from './assets/icon-productos-activo.svg'
-import iconTienda from './assets/icon-tienda.svg'
-import iconTiendaActivo from './assets/icon-tienda-activo.svg'
-import iconOpciones from './assets/icon-opciones.svg'
-import iconOpcionesActivo from './assets/icon-opciones-activo.svg'
+import iconProductos from './assets/icon-productos.svg?raw'
+import iconTienda from './assets/icon-tienda.svg?raw'
+import iconOpciones from './assets/icon-opciones.svg?raw'
 import { NavLink } from 'react-router-dom'
 import { RUTA_EMPRENDEDOR } from './constants'
 
 type Item =
   | { to: string; label: 'Menú Principal'; tipo: 'menu'; end: true }
-  | { to: string; label: 'Productos'; tipo: 'img'; icon: string; iconActivo: string; end?: false }
-  | { to: string; label: 'Tienda'; tipo: 'img'; icon: string; iconActivo: string; end?: false }
+  | { to: string; label: 'Productos'; tipo: 'img'; icon: string; end?: false }
+  | { to: string; label: 'Tienda'; tipo: 'img'; icon: string; end?: false }
   | { to: string; label: 'Reportes'; tipo: 'reportes'; end?: false }
-  | { to: string; label: 'Opciones'; tipo: 'img'; icon: string; iconActivo: string; end?: false }
+  | { to: string; label: 'Opciones'; tipo: 'img'; icon: string; end?: false }
 
 const ITEMS: Item[] = [
-  { to: `${RUTA_EMPRENDEDOR}/productos`, label: 'Productos', tipo: 'img', icon: iconProductos, iconActivo: iconProductosActivo },
-  { to: `${RUTA_EMPRENDEDOR}/tienda`, label: 'Tienda', tipo: 'img', icon: iconTienda, iconActivo: iconTiendaActivo },
+  { to: `${RUTA_EMPRENDEDOR}/productos`, label: 'Productos', tipo: 'img', icon: iconProductos },
+  { to: `${RUTA_EMPRENDEDOR}/tienda`, label: 'Tienda', tipo: 'img', icon: iconTienda },
   { to: RUTA_EMPRENDEDOR, label: 'Menú Principal', tipo: 'menu', end: true },
   { to: `${RUTA_EMPRENDEDOR}/reportes`, label: 'Reportes', tipo: 'reportes' },
-  { to: `${RUTA_EMPRENDEDOR}/opciones`, label: 'Opciones', tipo: 'img', icon: iconOpciones, iconActivo: iconOpcionesActivo },
+  { to: `${RUTA_EMPRENDEDOR}/opciones`, label: 'Opciones', tipo: 'img', icon: iconOpciones },
 ]
 
 /**
@@ -62,16 +59,19 @@ export default function EmprendedorBottomNav() {
 function IconoTab({ item, activo }: { item: Item; activo: boolean }) {
   if (item.tipo === 'menu') return <IconoMenu activo={activo} />
   if (item.tipo === 'reportes') return <IconReportes activo={activo} />
-  const src = activo ? item.iconActivo : item.icon
   return (
-    <span className="size-[22px] overflow-hidden">
-      <img src={src} alt="" width={22} height={22} className="size-full" />
-    </span>
+    <span
+      className={`size-[22px] overflow-hidden [&_svg]:size-full ${
+        activo ? 'text-hc-primary' : 'text-hc-muted'
+      }`}
+      aria-hidden
+      dangerouslySetInnerHTML={{ __html: item.icon }}
+    />
   )
 }
 
 function IconoMenu({ activo }: { activo: boolean }) {
-  const color = activo ? 'bg-hc-primary' : 'bg-[var(--hc-n-400)]'
+  const color = activo ? 'bg-hc-primary' : 'bg-hc-muted'
   return (
     <span className="relative block size-[22px]" aria-hidden>
       <span className={`absolute left-1/2 top-[3px] size-[8px] -translate-x-1/2 rounded-full ${color}`} />
@@ -81,7 +81,7 @@ function IconoMenu({ activo }: { activo: boolean }) {
 }
 
 function IconReportes({ activo }: { activo: boolean }) {
-  const color = activo ? 'bg-hc-primary' : 'bg-[var(--hc-n-400)]'
+  const color = activo ? 'bg-hc-primary' : 'bg-hc-muted'
   return (
     <span className="relative block size-[22px] overflow-hidden" aria-hidden>
       <span className={`absolute left-[3px] top-3 h-[7px] w-1 rounded-sm ${color}`} />

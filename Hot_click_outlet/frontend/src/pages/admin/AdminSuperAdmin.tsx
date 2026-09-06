@@ -165,7 +165,7 @@ export default function AdminSuperAdmin() {
                           ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title={activo ? 'Desactivar' : 'Activar'}
                       >
-                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white hc-papel-blanco shadow ring-0
                           transition duration-200 ${activo ? 'translate-x-5' : 'translate-x-0'}`} />
                       </button>
                     </li>

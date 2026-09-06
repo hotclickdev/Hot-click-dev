@@ -101,7 +101,7 @@ export default function ProductoFormModal({
             className="relative w-11 h-6 rounded-full transition-colors duration-200"
             style={{ backgroundColor: form.destacado ? '#f59e0b' : 'var(--hc-border)' }}
           >
-            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${form.destacado ? 'translate-x-5' : 'translate-x-0'}`} />
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white hc-papel-blanco shadow transition-transform duration-200 ${form.destacado ? 'translate-x-5' : 'translate-x-0'}`} />
           </button>
         </div>
 

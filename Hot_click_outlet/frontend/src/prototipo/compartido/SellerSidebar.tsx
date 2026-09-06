@@ -12,6 +12,7 @@ import {
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import useAuthStore from '@/store/authStore'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import NegocioPertenenciaChip from './NegocioPertenenciaChip'
@@ -92,9 +93,11 @@ export default function SellerSidebar() {
   return (
     <aside
       className="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col border-r border-hc-border bg-hc-surface px-3 py-6 md:flex"
+      style={{ backgroundColor: 'var(--hc-surface)' }}
     >
-      <div className="mb-3 flex items-center gap-2 px-2">
+      <div className="mb-3 flex items-center justify-between gap-2 px-2">
         <BrandLogo size={22} wordmarkSize={17} />
+        <ThemeToggle className="min-h-11 min-w-11 flex items-center justify-center" />
       </div>
       <span className="mb-5 ml-2 inline-flex w-fit rounded-[5px] bg-[var(--hc-danger-bg)] px-2.5 py-1 text-[10px] font-bold text-hc-primary">
         {plan.badge}

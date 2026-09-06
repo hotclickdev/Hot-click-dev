@@ -90,7 +90,7 @@ function TarjetaSeller({ bodega }: { bodega: BodegaListaItem }) {
       {bodega.principal ? (
         <span
           className="rounded-full px-2.5 py-1 text-[10px]"
-          style={{ background: 'var(--hc-blue-50)', color: 'var(--hc-blue-700)' }}
+          style={{ background: 'var(--hc-info-bg)', color: 'var(--hc-info)' }}
         >
           Principal
         </span>

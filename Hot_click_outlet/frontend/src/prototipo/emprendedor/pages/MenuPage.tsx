@@ -88,7 +88,7 @@ function HeroMarca() {
     <div className="relative mb-4 flex w-full flex-col items-center pb-5 pt-10">
       <div
         className="pointer-events-none absolute top-8 size-28 rounded-full opacity-40"
-        style={{ background: 'radial-gradient(circle, var(--hc-red-50), transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, var(--hc-danger-bg), transparent 70%)' }}
         aria-hidden
       />
       <BrandLogo size={45} wordmarkSize={30} />

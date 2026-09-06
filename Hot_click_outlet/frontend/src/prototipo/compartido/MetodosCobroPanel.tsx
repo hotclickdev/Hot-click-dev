@@ -29,8 +29,8 @@ const ICONO: Record<TipoMetodoCobro, IconoHero> = {
 
 const POZO: Record<TipoMetodoCobro, string> = {
   sinpe: 'bg-[var(--hc-info-bg)] text-[var(--hc-info)]',
-  iban: 'bg-[var(--hc-n-100)] text-hc-text',
-  tarjeta: 'bg-[var(--hc-red-50)] text-hc-primary',
+  iban: 'bg-[var(--hc-surface-2)] text-hc-text',
+  tarjeta: 'bg-[var(--hc-danger-bg)] text-hc-primary',
 }
 
 type Props = {
@@ -236,7 +236,7 @@ type FilaProps = {
 function MetodoCobroFila({ metodo, predeterminado, disabled, onElegir }: FilaProps) {
   const Icono = ICONO[metodo.tipo]
   const marco = predeterminado
-    ? 'border-[var(--hc-blue-300)] bg-[var(--hc-blue-50)]'
+    ? 'border-[var(--hc-blue-300)] bg-[var(--hc-info-bg)]'
     : 'border-hc-border bg-hc-surface hover:border-[var(--hc-border-strong)]'
   return (
     <button

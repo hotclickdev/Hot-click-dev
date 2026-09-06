@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   cargarSdkOnvo,
+  ESTILO_PAD_ONVO,
   ONVO_PUBLISHABLE_ENV,
   type OnvoPayInstance,
 } from './onvoSdk'
@@ -81,7 +82,7 @@ export default function OnvoSuscripcionEmbed({
         id="onvo-billing-sub-container"
         ref={containerRef}
         className="min-h-[120px] rounded-2xl border p-3"
-        style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
+        style={ESTILO_PAD_ONVO}
       />
       {error ? (
         <p className="text-sm text-center text-red-500">{error}</p>

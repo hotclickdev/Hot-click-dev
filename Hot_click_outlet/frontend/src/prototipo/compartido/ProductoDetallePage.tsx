@@ -37,7 +37,7 @@ export default function ProductoDetallePage() {
           </Link>
         </div>
         <div className="px-5 py-6">
-          <span className="rounded-full px-2.5 py-1 text-[10px] font-medium" style={{ background: 'var(--hc-red-50)', color: 'var(--hc-primary)' }}>
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-medium" style={{ background: 'var(--hc-danger-bg)', color: 'var(--hc-primary)' }}>
             {producto.categoria}
           </span>
           <h1 className="mt-3 font-display text-xl font-bold">{producto.nombre}</h1>

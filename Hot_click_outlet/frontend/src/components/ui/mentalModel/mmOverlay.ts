@@ -29,9 +29,10 @@ export function rectDeAncla(ancla: string): MmRect | null {
 
 /**
  * Box-shadow que oscurece toda la pantalla excepto el hueco del target.
+ * Usa --hc-overlay (claro/oscuro) para contraste del spotlight.
  */
 export function sombraSpotlight(): string {
-  return '0 0 0 9999px rgba(20, 23, 28, 0.45)'
+  return '0 0 0 9999px var(--hc-overlay)'
 }
 
 export function estiloHueco(rect: MmRect | null): CSSProperties {

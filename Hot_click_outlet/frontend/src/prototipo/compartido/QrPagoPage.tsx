@@ -14,7 +14,7 @@ export default function QrPagoPage() {
       <p className="text-sm text-hc-muted">
         Pedile al cliente que escanee el código con la app de su banco o tarjeta contactless
       </p>
-      <div className="mx-auto my-8 w-[220px] bg-hc-surface p-4">
+      <div className="mx-auto my-8 w-[220px] rounded-xl bg-white hc-papel-blanco p-4">
         <QRCode value="https://hotclick.lat/pos/pago/prototipo" size={188} />
       </div>
       <p className="text-xs text-hc-muted">Total a cobrar</p>

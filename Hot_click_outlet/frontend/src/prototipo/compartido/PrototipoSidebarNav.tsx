@@ -27,7 +27,7 @@ function clasesItem(activo: boolean) {
     'flex items-center gap-2.5 rounded-[var(--hc-r-md)] px-3 py-2 text-sm',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]',
     activo
-      ? 'bg-[var(--hc-blue-50)] font-semibold text-[var(--hc-link)]'
+      ? 'bg-hc-surface-2 font-semibold text-[var(--hc-link)]'
       : 'font-medium text-hc-text hover:bg-hc-surface-2',
   ].join(' ')
 }
@@ -39,7 +39,7 @@ function ItemNavLink({ item }: { item: ItemNav }) {
       {({ isActive }) => (
         <>
           <Icono
-            className={`size-4 shrink-0 ${isActive ? '' : 'text-[var(--hc-n-500)]'}`}
+            className={`size-4 shrink-0 ${isActive ? '' : 'text-hc-muted'}`}
             aria-hidden
           />
           <span className="min-w-0 flex-1 truncate" title={item.etiqueta}>

@@ -86,6 +86,10 @@
   --hc-shadow-3: 0 12px 32px rgba(20,23,28,.14);
   --hc-shadow-cta: 0 -6px 16px rgba(15,23,42,.06);
 
+  /* ---------- Overlays (tour / spotlight / modales) ---------- */
+  --hc-overlay: rgba(20, 23, 28, 0.45);
+  --hc-overlay-soft: rgba(20, 23, 28, 0.18);
+
   /* ---------- Movimiento ---------- */
   --hc-ease: cubic-bezier(.2,.8,.2,1);
   --hc-dur-fast: 120ms;
@@ -96,7 +100,7 @@
 /* ---------- Super Admin (rol ADMIN · Figma CLAUDECLICK 41:128) ----------
    Manual de Marca: rojo #E31E24, azul #0D47A1, navy #0B132B.
    Fondo blanco / n-50 — NUNCA la paleta crema de .hc-sistema-theme.
-   Scoped: no hereda html.dark (el panel Admin es siempre modo claro). */
+   Modo oscuro: html.dark .hc-superadmin-theme más abajo. */
 .hc-superadmin-theme {
   /* Figma 41:128: canvas blanco; KPI/search #F8F9FB; avatares un tono más. */
   --hc-bg:             #FFFFFF;
@@ -146,11 +150,8 @@
   color: var(--hc-text);
 
   /* El resto de las variables de rol semántico también se fijan acá —
-     "Sistema" es un único prototipo de color, nunca debe heredar
-     html.dark / html.high-contrast (que solo tocan `html`, mientras esta
-     clase vive en un <div> descendiente — sin esto, cualquier variable no
-     redeclarada acá se filtra desde arriba). Mismos valores que el bloque
-     :root de más arriba, nunca los de html.dark. */
+     "Sistema" en claro no hereda html.dark (que solo toca `html`).
+     El modo oscuro se reaplica en html.dark .hc-sistema-theme. */
   --hc-surface:        var(--hc-n-0);
   --hc-surface-raised: var(--hc-n-0);
   --hc-text-secondary: var(--hc-n-600);
@@ -192,13 +193,54 @@ html.dark,
   --hc-shadow-1: 0 1px 2px rgba(0,0,0,.4);
   --hc-shadow-2: 0 2px 8px rgba(0,0,0,.45);
   --hc-shadow-3: 0 12px 32px rgba(0,0,0,.55);
+  /* Scrim más opaco: rgba(20,23,28,.45) casi no se ve sobre --hc-bg */
+  --hc-overlay: rgba(0, 0, 0, 0.72);
+  --hc-overlay-soft: rgba(0, 0, 0, 0.50);
 }
 
-/* ---------- Seller (Emprendedor / PYME / Plus / POS) ----------
-   Sigue html.dark (a diferencia de .hc-sistema-theme, que fuerza claro).
+/* Paneles admin + seller: gana a locks claros / hereda dark en el subárbol. */
+html.dark .hc-superadmin-theme,
+html.dark .hc-sistema-theme,
+html.dark .hc-seller-theme,
+[data-theme="dark"] .hc-superadmin-theme,
+[data-theme="dark"] .hc-sistema-theme,
+[data-theme="dark"] .hc-seller-theme {
+  --hc-bg:             #0E1116;
+  --hc-surface:        #161B22;
+  --hc-surface-raised: #1E242E;
+  --hc-surface-2:      #1E242E;
+  --hc-surface-3:      #262D38;
+  --hc-text:           #F4F6F9;
+  --hc-text-secondary: #A7B0BC;
+  --hc-text-disabled:  #5C6571;
+  --hc-muted:          #A7B0BC;
+  --hc-border:         #262D38;
+  --hc-border-strong:  #333B48;
+  --hc-primary:        #F0524A;
+  --hc-primary-hover:  #F3766F;
+  --hc-primary-press:  #E73B33;
+  --hc-link:           #7AA3F2;
+  --hc-accent:         #7AA3F2;
+  --hc-accent-hover:   #97B7F3;
+  --hc-focus-ring:     #6490EA;
+  --hc-success: #3DCB82;  --hc-success-bg: #10301F;
+  --hc-warning: #E5A93D;  --hc-warning-bg: #33270D;
+  --hc-danger:  #F0524A;  --hc-danger-bg:  #3A1513;
+  --hc-info:    #7AA3F2;  --hc-info-bg:    #13203A;
+  --hc-shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --hc-shadow-2: 0 2px 8px rgba(0,0,0,.45);
+  --hc-shadow-3: 0 12px 32px rgba(0,0,0,.55);
+  color: var(--hc-text);
+  background-color: var(--hc-bg);
+  color-scheme: dark;
+}
+
+/* ---------- Seller + paneles admin ----------
    Rebind de --color-hc-*: en :root Tailwind resuelve var(--hc-text) a un
    color concreto; sin esto, text-hc-text no ve overrides del subárbol. */
-.hc-seller-theme {
+.hc-seller-theme,
+.hc-superadmin-theme,
+.hc-sistema-theme {
   --color-hc-bg: var(--hc-bg);
   --color-hc-surface: var(--hc-surface);
   --color-hc-surface-2: var(--hc-surface-2);

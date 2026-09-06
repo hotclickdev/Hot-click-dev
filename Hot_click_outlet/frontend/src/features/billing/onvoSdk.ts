@@ -1,8 +1,20 @@
+import type { CSSProperties } from 'react'
+
 const ONVO_SDK_URL = 'https://sdk.onvopay.com/sdk.js'
 
 export type OnvoPayInstance = {
   render: (selector: string) => void
   submitPayment: () => void
+}
+
+/**
+ * El Web SDK de ONVO renderiza un iframe siempre claro (sin theme/dark en la API).
+ * Pad claro alrededor para que no choque con shells html.dark.
+ */
+export const ESTILO_PAD_ONVO: CSSProperties = {
+  borderColor: '#e5e7eb',
+  background: '#ffffff',
+  colorScheme: 'light',
 }
 
 type OnvoGlobal = {

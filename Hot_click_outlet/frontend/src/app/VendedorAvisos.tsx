@@ -26,16 +26,37 @@ export default function VendedorAvisos() {
 
   if (estadoEmpresa === 'PENDIENTE_APROBACION') {
     return (
-      <div className="mx-5 mb-4 rounded-xl px-4 py-3 text-sm" style={{ background: '#f7ead2', color: '#8a5a00' }}>
+      <div
+        className="mx-5 mb-4 rounded-xl px-4 py-3 text-sm"
+        style={{ background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)', border: '1px solid var(--hc-border)' }}
+      >
         <p className="font-semibold">Tu negocio está pendiente de aprobación</p>
         <AccesoTiendaPublica variante="muted" conCopiar={false} />
       </div>
     )
   }
+  if (estadoEmpresa === 'SUSPENDIDO' || estadoEmpresa === 'INACTIVO') {
+    return (
+      <div
+        className="mx-5 mb-4 rounded-xl px-4 py-3 text-sm"
+        style={{ background: 'var(--hc-danger-bg)', color: 'var(--hc-danger)', border: '1px solid var(--hc-border)' }}
+      >
+        <p className="font-semibold">
+          {estadoEmpresa === 'SUSPENDIDO' ? 'Tu cuenta está suspendida' : 'Tu cuenta está desactivada'}
+        </p>
+        <p className="mt-1 text-xs opacity-90">
+          HotClick apagó la cuenta de este negocio. No podés publicar la tienda desde acá.
+        </p>
+      </div>
+    )
+  }
   if (estadoEmpresa === 'ACTIVO' && visibilidadPublica === false) {
     return (
-      <div className="mx-5 mb-4 rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--hc-blue-50)', color: 'var(--hc-blue-700)' }}>
-        <p className="font-semibold">Tu tienda está oculta</p>
+      <div
+        className="mx-5 mb-4 rounded-xl px-4 py-3 text-sm"
+        style={{ background: 'var(--hc-info-bg)', color: 'var(--hc-info)', border: '1px solid var(--hc-border)' }}
+      >
+        <p className="font-semibold">Tu tienda está pausada en el catálogo</p>
         <Link to={RUTA_SISTEMA_VISIBILIDAD} className="mt-1 inline-flex min-h-11 items-center font-semibold underline">
           Configuración
         </Link>

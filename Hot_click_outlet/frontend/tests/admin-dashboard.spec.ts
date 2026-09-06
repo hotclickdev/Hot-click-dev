@@ -101,6 +101,24 @@ test.describe('Admin IT — Panel Admin Figma', () => {
     await expect(page).toHaveURL(/\/admin\/productos\/carga-masiva/)
   })
 
+  test('alterna modo oscuro desde el sidebar', async ({ page }) => {
+    await entrarDashboard(page)
+    const toggle = page.locator('aside.hc-admin-sidebar').filter({ visible: true }).getByRole('button', { name: 'Cambiar tema' })
+    await expect(toggle).toBeVisible()
+
+    const panel = page.locator('.hc-superadmin-theme')
+    const bgClaro = await panel.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
+    expect(bgClaro.toUpperCase()).toBe('#FFFFFF')
+
+    await toggle.click()
+    await expect(page.locator('html')).toHaveClass(/dark/)
+    const bgOscuro = await panel.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
+    expect(bgOscuro.toUpperCase()).toBe('#0E1116')
+
+    const texto = await panel.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-text').trim())
+    expect(texto.toUpperCase()).toBe('#F4F6F9')
+  })
+
   test('dashboard usa tarjetas claras', async ({ page }) => {
     await entrarDashboard(page)
     await expect(page.getByText('Tiendas activas')).toBeVisible()

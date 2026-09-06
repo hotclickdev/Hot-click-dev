@@ -3,6 +3,7 @@ import { NavLink, type Location, type NavigateFunction } from 'react-router-dom'
 import type { TFunction } from 'i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export type AdminMobileHeaderProps = {
@@ -63,6 +64,7 @@ export default function AdminMobileHeader({
         {etiquetaChrome}
       </span>
       <div className="flex-1" />
+      <ThemeToggle className="min-h-11 min-w-11 flex items-center justify-center shrink-0" />
       {mostrarCaja && (
         <NavLink to="/admin/pos"
           className="text-[13px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0 transition-colors hover:bg-[var(--hc-surface-2)]"

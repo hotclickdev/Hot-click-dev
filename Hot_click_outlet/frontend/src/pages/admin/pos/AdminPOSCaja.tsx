@@ -9,6 +9,7 @@ import PosReporteModal from './PosReporteModal'
 import { formatMontoPos, mensajeErrorPos, type PosCierre, type PosTurno } from './posHelpers'
 import { CheckIcon, TransferenciaIcon } from './posIcons'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { JsonBody } from '@/types/api'
 
@@ -60,6 +61,9 @@ export default function AdminPOSCaja() {
     const diff = cerrado.diferencia ?? 0
     return (
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
+        <div className="flex justify-end">
+          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
+        </div>
         <div className="rounded-3xl p-6 text-center space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
@@ -101,6 +105,9 @@ export default function AdminPOSCaja() {
   if (!turno) {
     return (
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6 text-center">
+        <div className="flex justify-end">
+          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
+        </div>
         <div className="rounded-2xl p-8"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center" style={{ color: 'var(--hc-muted)' }}>
@@ -138,6 +145,7 @@ export default function AdminPOSCaja() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
           <button
             type="button"
             onClick={() => setReporteAbierto(true)}

@@ -239,7 +239,10 @@ test.describe('POS — QR de tarjeta', () => {
     await expect(page.getByText(/escanee el código/i)).toBeVisible()
     await expect(page.getByText('Total a cobrar')).toBeVisible()
     await expect(page.getByRole('img', { name: 'Código QR de pago' })).toBeVisible()
-    await expect(page.getByText('/pos/pago/tokentarjetaqr01')).toHaveCount(0)
+    const enlace = page.getByRole('link', { name: /Abrir enlace de pago/i })
+    await expect(enlace).toBeVisible()
+    await expect(enlace).toHaveAttribute('href', /\/pos\/pago\/tokentarjetaqr01$/)
+    await expect(page.getByText('/pos/pago/tokentarjetaqr01')).toBeVisible()
     await expect(page.getByText(/Esperando confirmación del pago del cliente/i)).toBeVisible()
     await expect(page.getByText(/carrito/i)).toHaveCount(0)
   })
@@ -265,4 +268,15 @@ test('StepQR no monta react-qr-code (CJS + React 19 → error #130)', () => {
   expect(stepQr).toContain('PosQrImagen')
   expect(imagen).toContain("from 'qrcode'")
   expect(imagen).toContain('toDataURL')
+})
+
+test('historial y caja auxiliar incluyen ThemeToggle como el POS principal', () => {
+  const raiz = dirname(fileURLToPath(import.meta.url))
+  const header = readFileSync(join(raiz, '../src/pages/admin/pos/POSHeader.tsx'), 'utf8')
+  const historial = readFileSync(join(raiz, '../src/pages/admin/pos/AdminPOSHistorial.tsx'), 'utf8')
+  const caja = readFileSync(join(raiz, '../src/pages/admin/pos/AdminPOSCaja.tsx'), 'utf8')
+  for (const src of [header, historial, caja]) {
+    expect(src).toContain("from '@/components/ui/ThemeToggle'")
+    expect(src).toContain('<ThemeToggle')
+  }
 })

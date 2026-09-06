@@ -80,7 +80,7 @@ export default function ReportesPage() {
                 <p className="truncate text-[13px] font-medium">{item.nombre}</p>
                 <p className="text-[11px] text-hc-muted">{item.vendidos} vendidos</p>
               </div>
-              <span className="rounded-full bg-[var(--hc-red-50)] px-2.5 py-1 text-[11px] font-bold text-hc-primary">
+              <span className="rounded-full bg-[var(--hc-danger-bg)] px-2.5 py-1 text-[11px] font-bold text-hc-primary">
                 {formatoColon(item.total)}
               </span>
             </ItemListaStagger>
@@ -93,7 +93,7 @@ export default function ReportesPage() {
 
 function Kpi({ etiqueta, valor, destacado = false }: { etiqueta: string; valor: string; destacado?: boolean }) {
   return (
-    <div className={`rounded-[14px] px-3.5 py-4 ${destacado ? 'bg-[var(--hc-red-50)]' : 'bg-hc-surface-2'}`}>
+    <div className={`rounded-[14px] px-3.5 py-4 ${destacado ? 'bg-[var(--hc-danger-bg)]' : 'bg-hc-surface-2'}`}>
       <p className="text-[11px] font-medium text-hc-muted">{etiqueta}</p>
       <p className={`mt-1.5 text-[19px] font-bold ${destacado ? 'text-hc-primary' : ''}`}>{valor}</p>
     </div>

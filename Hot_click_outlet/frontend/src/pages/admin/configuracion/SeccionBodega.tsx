@@ -192,22 +192,22 @@ function FormBodega({ form, setForm, saving, onCancel, onSave }: {
 
 function TarjetaBodega({ bodega, onEdit, onDelete }: { bodega: Bodega; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: '#fff', boxShadow: CARD_SHADOW }}>
+    <div className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: CARD_SHADOW }}>
       <div className="flex items-center justify-between gap-2">
         <span className="font-bold text-[16px]" style={{ fontFamily: F.display }}>{bodega.nombreBodega}</span>
         <div className="flex gap-2">
-          <button type="button" onClick={onEdit} className="text-sm font-semibold" style={{ color: '#1747A8' }}>Editá</button>
+          <button type="button" onClick={onEdit} className="text-sm font-semibold" style={{ color: 'var(--hc-link)' }}>Editá</button>
           <button type="button" onClick={onDelete} className="text-sm font-semibold" style={{ color: 'var(--hc-danger)' }}>Eliminá</button>
         </div>
       </div>
       {bodega.encargadoNombre && (
-        <p className="m-0 text-[13px]" style={{ color: '#6b6459' }}>Encargado: <span style={{ color: 'var(--hc-text)', fontWeight: 600 }}>{bodega.encargadoNombre}</span></p>
+        <p className="m-0 text-[13px]" style={{ color: 'var(--hc-muted)' }}>Encargado: <span style={{ color: 'var(--hc-text)', fontWeight: 600 }}>{bodega.encargadoNombre}</span></p>
       )}
       {bodega.direccionExacta && (
-        <p className="m-0 text-[13px]" style={{ color: '#6b6459' }}>{bodega.direccionExacta}</p>
+        <p className="m-0 text-[13px]" style={{ color: 'var(--hc-muted)' }}>{bodega.direccionExacta}</p>
       )}
       {bodega.telefono && (
-        <p className="m-0 text-[13px]" style={{ color: '#6b6459' }}>{bodega.telefono}</p>
+        <p className="m-0 text-[13px]" style={{ color: 'var(--hc-muted)' }}>{bodega.telefono}</p>
       )}
     </div>
   )

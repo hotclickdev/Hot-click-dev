@@ -221,7 +221,7 @@ function BotonesMontoSugerido({
             aria-label={exacto ? `${t('pos.cobro.pagoExacto')} ₡${formatMontoPos(monto)}` : undefined}
             className="rounded-xl px-3 py-2 text-sm font-bold text-hc-text"
             style={{
-              backgroundColor: activo ? 'var(--hc-red-50)' : 'var(--hc-surface-2)',
+              backgroundColor: activo ? 'var(--hc-danger-bg)' : 'var(--hc-surface-2)',
               border: `1px solid ${activo ? 'var(--hc-primary)' : 'var(--hc-border)'}`,
             }}
           >

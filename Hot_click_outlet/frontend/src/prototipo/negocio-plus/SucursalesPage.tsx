@@ -235,7 +235,7 @@ function FilaSucursal({
   return (
     <article className="flex flex-col gap-3 rounded-[10px] border border-hc-border bg-hc-surface p-3.5 md:flex-row md:items-center md:px-4 md:py-3">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--hc-n-100)] text-[15px] font-bold text-hc-muted md:size-12">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--hc-surface-2)] text-[15px] font-bold text-hc-muted md:size-12">
           {letra}
         </span>
         <div className="min-w-0 flex-1">
@@ -247,8 +247,8 @@ function FilaSucursal({
         <span
           className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium md:text-xs"
           style={{
-            background: alDia ? 'var(--hc-warning-bg)' : '#FFE5D9',
-            color: alDia ? 'var(--hc-warning)' : '#BF590D',
+            background: alDia ? 'var(--hc-warning-bg)' : 'var(--hc-danger-bg)',
+            color: alDia ? 'var(--hc-warning)' : 'var(--hc-danger)',
           }}
         >
           {sucursal.estado}
@@ -650,7 +650,7 @@ function ResumenSucursal({ nombre, ubicacion }: { nombre: string; ubicacion: str
     <div className="rounded-xl border border-hc-border bg-hc-surface-2 p-4">
       <p className="text-xs text-hc-muted">Vas a crear esta sucursal:</p>
       <div className="mt-3 flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--hc-n-100)] text-[15px] font-bold text-hc-muted">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--hc-surface-2)] text-[15px] font-bold text-hc-muted">
           {letra}
         </span>
         <div className="min-w-0">

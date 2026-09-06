@@ -82,20 +82,36 @@ html.dark {
   color-scheme: dark;
 }
 
-/* ── High contrast ── */
+/* ── High contrast ──
+   Valores en --hc-a11y-*: los paneles (.hc-*-theme) redefinen --hc-text /
+   --hc-border / --hc-muted para el brand lock; más abajo se re-aplican desde
+   estas vars para que alto contraste gane también dentro del panel.
+   Ortogonal a html.dark: la ruta puede forzar light y high-contrast sigue. */
 html.high-contrast {
-  --hc-border: rgba(0, 0, 0, 0.35);
-  --hc-border-strong: rgba(0, 0, 0, 0.6);
-  --hc-muted: var(--hc-n-700);
-  --hc-text: #000000;
-  --hc-glass-border: rgba(0, 0, 0, 0.35);
+  --hc-a11y-border: rgba(0, 0, 0, 0.35);
+  --hc-a11y-border-strong: rgba(0, 0, 0, 0.6);
+  --hc-a11y-muted: var(--hc-n-700);
+  --hc-a11y-text: #000000;
+  --hc-a11y-glass-border: rgba(0, 0, 0, 0.35);
+
+  --hc-border: var(--hc-a11y-border);
+  --hc-border-strong: var(--hc-a11y-border-strong);
+  --hc-muted: var(--hc-a11y-muted);
+  --hc-text: var(--hc-a11y-text);
+  --hc-glass-border: var(--hc-a11y-glass-border);
 }
 html.dark.high-contrast {
-  --hc-border: rgba(255, 255, 255, 0.3);
-  --hc-border-strong: rgba(255, 255, 255, 0.5);
-  --hc-muted: #c0c0cc;
-  --hc-text: #ffffff;
-  --hc-glass-border: rgba(255, 255, 255, 0.3);
+  --hc-a11y-border: rgba(255, 255, 255, 0.3);
+  --hc-a11y-border-strong: rgba(255, 255, 255, 0.5);
+  --hc-a11y-muted: #c0c0cc;
+  --hc-a11y-text: #ffffff;
+  --hc-a11y-glass-border: rgba(255, 255, 255, 0.3);
+
+  --hc-border: var(--hc-a11y-border);
+  --hc-border-strong: var(--hc-a11y-border-strong);
+  --hc-muted: var(--hc-a11y-muted);
+  --hc-text: var(--hc-a11y-text);
+  --hc-glass-border: var(--hc-a11y-glass-border);
 }
 
 /* ── Font size ── */
@@ -131,7 +147,7 @@ html.reduce-motion *::after {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
-    transition: background-color 0.25s ease, color 0.2s ease;
+    transition: none;
     overflow-x: hidden;
   }
 
@@ -713,10 +729,7 @@ html.dark .hc-isotipo-placa {
 .hc-sistema-theme [class*="hover:bg-white/"]:hover { background-color: var(--hc-surface-2) !important; }
 .hc-sistema-theme [class*="divide-white/"] > * + * { border-color: var(--hc-border) !important; }
 
-/* "Sistema" (EMPRENDEDOR) es un único prototipo de color — nunca debe
-   heredar modo oscuro / alto contraste (ver bloque equivalente en
-   hotclick-tokens.css para los tokens base). Estos son los alias que solo
-   viven en este archivo. */
+/* Alias de "Sistema" (claro). Oscuro: html.dark .hc-sistema-theme. */
 .hc-sistema-theme {
   --hc-surface-2: #f6f1e9;
   --hc-surface-3: var(--hc-n-200);
@@ -735,7 +748,7 @@ html.dark .hc-isotipo-placa {
   color-scheme: light;
 }
 
-/* Super Admin (rol ADMIN · Figma 41:128): Manual de Marca, siempre claro. */
+/* Super Admin (rol ADMIN · Figma 41:128): Manual de Marca en claro. */
 .hc-superadmin-theme {
   --hc-surface-2: #F8F9FB;
   --hc-surface-3: #F1F3F6;
@@ -752,6 +765,26 @@ html.dark .hc-isotipo-placa {
   --hc-wordmark-hot: #E31E24;
   --hc-wordmark-click: #0D47A1;
   color-scheme: light;
+}
+
+html.dark .hc-sistema-theme,
+html.dark .hc-superadmin-theme {
+  --hc-surface-2: #1E242E;
+  --hc-surface-3: #262D38;
+  --hc-text-2:    #A7B0BC;
+  --hc-muted:     #A7B0BC;
+  --hc-accent:       #7AA3F2;
+  --hc-accent-hover: #97B7F3;
+  --hc-shadow: rgba(0, 0, 0, 0.55);
+  --hc-glass-bg: rgba(22, 27, 34, 0.70);
+  --hc-glass-border: rgba(244, 246, 249, 0.08);
+  --hc-glass-strong-bg: rgba(22, 27, 34, 0.86);
+  --hc-glass-strong-border: rgba(244, 246, 249, 0.12);
+  --hc-scrollbar: rgba(244, 246, 249, 0.14);
+  --hc-scrollbar-hover: rgba(244, 246, 249, 0.28);
+  --hc-wordmark-hot: #F0524A;
+  --hc-wordmark-click: #FFFFFF;
+  color-scheme: dark;
 }
 
 /* — Drawers/paneles flotantes: el reset genérico "html.dark aside" (más abajo)
@@ -812,9 +845,15 @@ html.dark [class*="border-[#4f7cff]"] { border-color: rgba(122,163,242,0.40) !im
 html.dark [class*="bg-[#4f7cff]/"]    { background-color: rgba(122,163,242,0.12) !important; }
 html.dark [class*="hover:text-white"]:hover { color: #ffffff !important; }
 
-html.dark header,
-html.dark aside,
-html.dark footer { background-color: unset !important; border-color: unset !important; }
+/* No unsetear chrome dentro de paneles con tema propio (seller / admin /
+   drawers). Sin exclusión, aside/header pierden bg-hc-surface y el texto
+   claro queda sobre canvas claro. */
+html.dark header:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *)),
+html.dark aside:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *)),
+html.dark footer:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *)) {
+  background-color: unset !important;
+  border-color: unset !important;
+}
 html.dark .hc-navbar-scrolled { background-color: rgba(14,17,22,0.95) !important; }
 html.dark .hc-mobile-menu     { background-color: var(--hc-bg) !important; }
 html.dark .hc-bottom-nav      { background-color: rgba(14,17,22,0.97) !important; border-top-color: var(--hc-border) !important; }
@@ -824,32 +863,29 @@ html.dark select { background-color: unset !important; color: unset !important; 
 html.dark th, html.dark td { color: unset !important; }
 html.dark tr:hover { background-color: unset !important; }
 
-/* ── El panel "Sistema" (EMPRENDEDOR) es SIEMPRE claro ──
-   Dentro de .hc-sistema-theme vuelven a regir los valores de modo claro
-   aunque <html> tenga la clase dark: sin esto, los resets html.dark de
-   arriba (unset !important en inputs/th/td) hacían que el contenido
-   heredara el texto casi blanco del body sobre el fondo crema del panel
-   → texto invisible. Estas reglas ganan por especificidad y orden. */
+/* ── Paneles admin: restauran surfaces que html.dark unsetea ──
+   Los tokens del panel ya siguen html.dark; estas reglas evitan que
+   los resets globales dejen inputs/aside sin fondo. */
 html.dark .hc-sistema-theme [class*="bg-[#0a0a0b]"]   { background-color: var(--hc-bg) !important; }
 html.dark .hc-sistema-theme [class*="bg-[#111114]"]   { background-color: var(--hc-surface) !important; }
 html.dark .hc-sistema-theme [class*="bg-[#1a1a1f]"]   { background-color: var(--hc-surface-2) !important; }
 html.dark .hc-sistema-theme [class*="text-[#e8e8ed]"] { color: var(--hc-text) !important; }
 html.dark .hc-sistema-theme [class*="text-[#8e8e9a]"] { color: var(--hc-muted) !important; }
 html.dark .hc-sistema-theme [class*="text-[#c8c8d4]"] { color: var(--hc-muted) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/2"]  { background-color: rgba(20,23,28,0.02) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/3"]  { background-color: rgba(20,23,28,0.03) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/4"]  { background-color: rgba(20,23,28,0.04) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/5"]  { background-color: rgba(20,23,28,0.05) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/6"]  { background-color: rgba(20,23,28,0.06) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/7"]  { background-color: rgba(20,23,28,0.07) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/8"]  { background-color: rgba(20,23,28,0.08) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/10"] { background-color: rgba(20,23,28,0.10) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/12"] { background-color: rgba(20,23,28,0.12) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/15"] { background-color: rgba(20,23,28,0.15) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/20"] { background-color: rgba(20,23,28,0.20) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/25"] { background-color: rgba(20,23,28,0.25) !important; }
-html.dark .hc-sistema-theme [class~="bg-white/30"] { background-color: rgba(20,23,28,0.30) !important; }
-html.dark .hc-sistema-theme [class*="hover:bg-white/"]:hover { background-color: rgba(20,23,28,0.08) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/2"]  { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/3"]  { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/4"]  { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/5"]  { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/6"]  { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/7"]  { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/8"]  { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/10"] { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/12"] { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/15"] { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/20"] { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/25"] { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/30"] { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class*="hover:bg-white/"]:hover { background-color: var(--hc-surface-3) !important; }
 html.dark .hc-sistema-theme [class*="hover:border-white/"]:hover { border-color: var(--hc-border-strong) !important; }
 html.dark .hc-sistema-theme [class*="divide-white/"] > * + * { border-color: var(--hc-border) !important; }
 html.dark .hc-sistema-theme .group:hover [class*="group-hover:text-white"] { color: var(--hc-accent) !important; }
@@ -857,11 +893,7 @@ html.dark .hc-sistema-theme [class*="hover:bg-[#1a1a1f]"]:hover { background-col
 html.dark .hc-sistema-theme [class*="hover:text-white"]:hover { color: var(--hc-accent) !important; }
 html.dark .hc-sistema-theme header,
 html.dark .hc-sistema-theme aside,
-html.dark .hc-sistema-theme footer {
-  background-color: var(--hc-surface) !important;
-  border-color: var(--hc-border) !important;
-  color: var(--hc-text);
-}
+html.dark .hc-sistema-theme footer,
 html.dark .hc-superadmin-theme header,
 html.dark .hc-superadmin-theme aside,
 html.dark .hc-superadmin-theme footer {
@@ -871,18 +903,28 @@ html.dark .hc-superadmin-theme footer {
 }
 html.dark .hc-sistema-theme input:not([type="checkbox"]):not([type="radio"]),
 html.dark .hc-sistema-theme textarea,
-html.dark .hc-sistema-theme select {
+html.dark .hc-sistema-theme select,
+html.dark .hc-superadmin-theme input:not([type="checkbox"]):not([type="radio"]),
+html.dark .hc-superadmin-theme textarea,
+html.dark .hc-superadmin-theme select {
   background-color: var(--hc-surface) !important;
   color: var(--hc-text) !important;
   border-color: var(--hc-border) !important;
 }
 html.dark .hc-sistema-theme th,
-html.dark .hc-sistema-theme td { color: var(--hc-text) !important; }
-html.dark .hc-sistema-theme tr:hover { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme td,
+html.dark .hc-superadmin-theme th,
+html.dark .hc-superadmin-theme td { color: var(--hc-text) !important; }
+html.dark .hc-sistema-theme tr:hover,
+html.dark .hc-superadmin-theme tr:hover { background-color: var(--hc-surface-2) !important; }
 
-/* ── Seller theme: restaura surfaces que html.dark unsetea ──
-   Sin esto, aside/header pierden bg-hc-surface y el texto claro
-   queda sobre el canvas claro → contraste roto. */
+/* ── Seller theme: canvas + chrome en dark ──
+   Fuerza fondo del shell; restaura aside/header por si el unset global
+   vuelve a aplicarse. Sin esto, texto claro sobre canvas claro. */
+html.dark .hc-seller-theme {
+  background-color: var(--hc-bg) !important;
+  color: var(--hc-text);
+}
 html.dark .hc-seller-theme header,
 html.dark .hc-seller-theme aside,
 html.dark .hc-seller-theme footer {
@@ -900,6 +942,24 @@ html.dark .hc-seller-theme select {
 html.dark .hc-seller-theme th,
 html.dark .hc-seller-theme td { color: var(--hc-text) !important; }
 html.dark .hc-seller-theme tr:hover { background-color: var(--hc-surface-2) !important; }
+
+/* Superficies Tailwind `bg-white` dentro del panel: siguen el canvas oscuro.
+   QR / preview Google: marcar `.hc-papel-blanco` (el código tiene que ir sobre blanco). */
+html.dark .hc-superadmin-theme [class~="bg-white"]:not(.hc-papel-blanco),
+html.dark .hc-sistema-theme [class~="bg-white"]:not(.hc-papel-blanco),
+html.dark .hc-seller-theme [class~="bg-white"]:not(.hc-papel-blanco) {
+  background-color: var(--hc-surface) !important;
+}
+
+/* Alto contraste dentro de paneles: después de remaps de .hc-*-theme /
+   html.dark .hc-*-theme (tokens.css + bloques arriba). */
+html.high-contrast :is(.hc-sistema-theme, .hc-superadmin-theme, .hc-seller-theme) {
+  --hc-border: var(--hc-a11y-border);
+  --hc-border-strong: var(--hc-a11y-border-strong);
+  --hc-muted: var(--hc-a11y-muted);
+  --hc-text: var(--hc-a11y-text);
+  --hc-glass-border: var(--hc-a11y-glass-border);
+}
 
 /* ═══════════════════════════════════════════════════════
    SCROLL PROGRESS BAR — Rojo Hot sólido
@@ -1064,6 +1124,18 @@ html.dark .hc-modal-bg {
   background-color: var(--hc-surface-raised);
   border-color: var(--hc-border);
   box-shadow: var(--hc-shadow-3);
+}
+
+/* Autofill de Chrome: evita mancha amarilla/blanca sobre inputs oscuros. */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark textarea:-webkit-autofill,
+html.dark select:-webkit-autofill {
+  -webkit-text-fill-color: var(--hc-text);
+  caret-color: var(--hc-text);
+  box-shadow: 0 0 0 1000px var(--hc-surface) inset;
+  transition: background-color 99999s ease-in-out 0s;
 }
 
 /* ── Product name — hover link azul (cap. 3.5) ── */

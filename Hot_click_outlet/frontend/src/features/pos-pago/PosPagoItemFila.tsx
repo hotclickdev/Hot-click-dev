@@ -32,7 +32,7 @@ function Miniatura({ nombre, imagen }: { nombre: string; imagen?: string | null 
       <img
         src={imagen}
         alt=""
-        className="size-10 shrink-0 rounded-lg object-cover bg-[var(--hc-n-50)]"
+        className="size-10 shrink-0 rounded-lg object-cover bg-[var(--hc-surface-2)]"
       />
     )
   }
@@ -40,7 +40,7 @@ function Miniatura({ nombre, imagen }: { nombre: string; imagen?: string | null 
   return (
     <span
       className="size-10 shrink-0 rounded-lg grid place-items-center text-xs font-bold tracking-wide"
-      style={{ background: 'var(--hc-n-50)', color: 'var(--hc-muted)' }}
+      style={{ background: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
       aria-hidden="true"
     >
       {inicialesProducto(nombre)}
