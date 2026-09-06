@@ -29,7 +29,7 @@ export default function SeccionTotales({ form, setF, subtotal, montoIva, total, 
             onClick={() => setF('aplicaIva', !form.aplicaIva)}
             className="relative w-11 h-6 rounded-full transition-colors"
             style={{ background: form.aplicaIva ? 'var(--hc-accent)' : 'var(--hc-border)' }}>
-            <span className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform"
+            <span className="absolute top-1 left-1 w-4 h-4 bg-white hc-papel-blanco rounded-full shadow transition-transform"
               style={{ transform: form.aplicaIva ? 'translateX(20px)' : 'translateX(0)' }} />
           </button>
         </div>

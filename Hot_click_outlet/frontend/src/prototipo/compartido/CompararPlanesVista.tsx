@@ -216,7 +216,7 @@ function TarjetaPlan({
               onClick={onSelect}
               className={`flex min-h-11 w-full items-center justify-center rounded-[10px] text-[15px] font-bold ${
                 seleccionado
-                  ? 'border-2 border-hc-primary bg-[var(--hc-red-50)] text-hc-primary'
+                  ? 'border-2 border-hc-primary bg-[var(--hc-danger-bg)] text-hc-primary'
                   : 'bg-hc-primary text-white'
               }`}
             >
@@ -242,7 +242,7 @@ function TarjetaPlan({
         {actual ? (
           <span
             className="rounded-full px-2.5 py-1 text-[10px] font-bold"
-            style={{ background: 'var(--hc-blue-50)', color: 'var(--hc-blue-700)' }}
+            style={{ background: 'var(--hc-info-bg)', color: 'var(--hc-info)' }}
           >
             TU PLAN ACTUAL
           </span>
@@ -263,7 +263,7 @@ function TarjetaPlan({
             onClick={onSelect}
             className={`flex min-h-11 w-full items-center justify-center rounded-[10px] text-[15px] font-bold ${
               seleccionado
-                ? 'border-2 border-hc-primary bg-[var(--hc-red-50)] text-hc-primary'
+                ? 'border-2 border-hc-primary bg-[var(--hc-danger-bg)] text-hc-primary'
                 : 'bg-hc-primary text-white'
             }`}
           >

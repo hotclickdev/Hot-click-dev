@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useState, useRef, useLayoutEffect } from 'react'
 import type { TFunction } from 'i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import useTenantStore from '@/store/tenantStore'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
 import { etiquetaChromeAdmin } from './adminChrome'
@@ -78,13 +79,16 @@ export default function SidebarContent({ sidebarLinks, roleBadge, t, userName, e
             {etiqueta}
           </span>
         </div>
-        {onClose && (
+        <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle className="min-h-11 min-w-11 flex items-center justify-center" />
+          {onClose && (
           <button type="button" onClick={onClose} aria-label="Cerrar menú" className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-[var(--hc-surface-2)]" style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-        )}
+          )}
+        </div>
       </div>
 
       {!esSistema && (

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
-import { cargarSdkOnvo, type OnvoPayInstance } from '@/features/billing/onvoSdk'
+import { cargarSdkOnvo, ESTILO_PAD_ONVO, type OnvoPayInstance } from '@/features/billing/onvoSdk'
 import PosPagoCta from './PosPagoCta'
 import PosPagoReporteModal from './PosPagoReporteModal'
 
@@ -79,7 +79,7 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
         id="onvo-pos-pago-container"
         ref={containerRef}
         className="min-h-[120px] rounded-[22px] border p-3 shadow-[var(--hc-shadow-1)]"
-        style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
+        style={ESTILO_PAD_ONVO}
       />
       {error ? (
         <div className="space-y-2">

@@ -69,7 +69,7 @@ function Toggle({ checked, onChange, 'aria-label': ariaLabel }: ToggleProps) {
       style={{ backgroundColor: checked ? 'var(--hc-accent)' : 'var(--hc-border)' }}
     >
       <span
-        className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+        className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white hc-papel-blanco shadow transition-transform duration-200"
         style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }}
       />
     </button>

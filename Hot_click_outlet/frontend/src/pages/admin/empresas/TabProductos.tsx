@@ -6,6 +6,7 @@ import {
   etiquetaPublicacionProducto,
   filtrarProductosTab,
   rutaCargaMasivaEmpresa,
+  rutaEnlacePdfEmpresa,
   rutaImportarEmpresa,
   type EmpresaProductoTab,
 } from './empresasHelpers'
@@ -117,7 +118,14 @@ export function TabProductosToolbar({
           Carga masiva
         </Link>
         <Link
-          to={rutaImportarEmpresa(empresaId)}
+          to={rutaEnlacePdfEmpresa(empresaId)}
+          className={linkCls}
+          style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
+        >
+          Enlace o PDF
+        </Link>
+        <Link
+          to={rutaImportarEmpresa(empresaId, 'csv')}
           className={linkCls}
           style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
         >

@@ -256,7 +256,7 @@ function WelcomeModal({
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(20, 23, 28, 0.45)', backdropFilter: 'blur(4px)' }}
+      style={{ backgroundColor: 'var(--hc-overlay)', backdropFilter: 'blur(4px)' }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mm-welcome-title"

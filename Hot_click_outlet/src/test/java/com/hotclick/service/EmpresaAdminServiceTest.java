@@ -40,16 +40,33 @@ class EmpresaAdminServiceTest {
     }
 
     @Test
-    @DisplayName("INACTIVO persiste el estado sin publicar el catálogo")
+    @DisplayName("INACTIVO persiste el estado y apaga el catálogo")
     void inactivoSoloGuardaEstado() {
         Empresa e = empresa(3L, "ACTIVO");
+        e.setVisibilidadPublica(true);
         when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
 
         service.cambiarEstado(3L, "INACTIVO");
 
         assertThat(e.getEstadoEmpresa()).isEqualTo("INACTIVO");
+        assertThat(e.getVisibilidadPublica()).isFalse();
         verify(empresaRepository).save(e);
         verify(empresaAprobacionService, never()).aprobarYPublicar(3L);
+    }
+
+    @Test
+    @DisplayName("SUSPENDIDO apaga visibilidad_publica junto con la cuenta")
+    void suspendidoApagaCatalogo() {
+        Empresa e = empresa(4L, "ACTIVO");
+        e.setVisibilidadPublica(true);
+        when(empresaRepository.findById(4L)).thenReturn(Optional.of(e));
+
+        service.cambiarEstado(4L, "SUSPENDIDO");
+
+        assertThat(e.getEstadoEmpresa()).isEqualTo("SUSPENDIDO");
+        assertThat(e.getVisibilidadPublica()).isFalse();
+        verify(empresaRepository).save(e);
+        verify(empresaAprobacionService, never()).aprobarYPublicar(4L);
     }
 
     @Test

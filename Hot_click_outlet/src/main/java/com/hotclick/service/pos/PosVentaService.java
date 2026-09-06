@@ -17,6 +17,7 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.StockService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.service.TurnoCajaService;
+import com.hotclick.service.VentaAvisoService;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
@@ -47,13 +48,14 @@ public class PosVentaService {
     @Autowired private TurnoCajaService turnoCajaService;
     @Autowired private CacheManager cacheManager;
     @Autowired private TelegramNotificacionClienteService telegramNotificacionClienteService;
+    @Autowired private VentaAvisoService ventaAvisoService;
 
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
         Usuario cliente = resolverCliente(dto.getClienteId());
-        Bodega bodega = resolverBodega(dto.getBodegaId());
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
+        Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
 
         Pedido pedido = armarPedido(dto, cliente, bodega, empresa);
         TotalesPos totales = cargarItemsYStock(dto, pedido, correo);
@@ -65,6 +67,7 @@ public class PosVentaService {
         actualizarTurno(usuarioId, saved, totales.totalPedido());
         telegramNotificacionClienteService.notificarVenta(empresaId, saved.getNumeroPedido(),
             totales.totalPedido(), saved.getMetodoPago(), cliente.getNombre(), "POS");
+        ventaAvisoService.avisarVentaConfirmada(saved);
         log.info("[POS] Venta {} creada por usuario {} — total ₡{}", saved.getNumeroPedido(), usuarioId, totales.totalPedido());
         return saved;
     }
@@ -80,10 +83,17 @@ public class PosVentaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario mostrador (id=999) no encontrado")));
     }
 
-    private Bodega resolverBodega(Long bodegaId) {
-        Long id = bodegaId != null ? bodegaId : 1L;
-        return bodegaRepository.findById(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", id));
+    private Bodega resolverBodega(Long bodegaId, Long empresaId) {
+        Bodega bodega = bodegaId != null
+            ? bodegaRepository.findById(bodegaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId))
+            : bodegaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO).stream().findFirst()
+                .orElseThrow(() -> new IllegalStateException("No hay bodega configurada"));
+        Long empresaBodega = bodega.getEmpresaId();
+        if (empresaBodega == null || !empresaBodega.equals(empresaId)) {
+            throw new IllegalArgumentException("La bodega no pertenece a este negocio");
+        }
+        return bodega;
     }
 
     private Pedido armarPedido(PosVentaDTO dto, Usuario cliente, Bodega bodega, Empresa empresa) {

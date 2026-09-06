@@ -83,4 +83,19 @@ test.describe('Sidebar emprendedor', () => {
     await expect(nav.getByRole('link', { name: 'Pedidos' })).toHaveAttribute('aria-current', 'page')
     await expect(nav.getByRole('link', { name: 'Inicio' })).not.toHaveAttribute('aria-current', 'page')
   })
+
+  test('alterna modo oscuro desde el sidebar', async ({ page }) => {
+    await entrarEmprendedor(page)
+    const shell = page.locator('.hc-seller-theme')
+    const toggle = page.locator('aside').filter({ visible: true }).getByRole('button', { name: 'Cambiar tema' })
+    await expect(toggle).toBeVisible()
+
+    const bgClaro = await shell.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
+    expect(bgClaro.toUpperCase()).not.toBe('#0E1116')
+
+    await toggle.click()
+    await expect(page.locator('html')).toHaveClass(/dark/)
+    const bgOscuro = await shell.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
+    expect(bgOscuro.toUpperCase()).toBe('#0E1116')
+  })
 })

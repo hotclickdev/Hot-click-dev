@@ -74,10 +74,7 @@ public class EmpresaPerfilService {
     @CacheEvict(value = {"marcas-publicas", "categorias", "categorias-publicas"}, allEntries = true)
     public Map<String, Object> toggleVisibilidad(Long empresaId, Object val) {
         Empresa e = empresa(empresaId);
-        if ("PENDIENTE_APROBACION".equals(e.getEstadoEmpresa())) {
-            throw new IllegalArgumentException(
-                "No podés cambiar la visibilidad mientras el negocio está pendiente de aprobación");
-        }
+        asegurarCuentaActivaParaCatalogo(e);
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
         e.setVisibilidadPublica(Boolean.parseBoolean(val.toString()));
         empresaRepository.save(e);
@@ -85,6 +82,22 @@ public class EmpresaPerfilService {
         data.put("visibilidadPublica", e.getVisibilidadPublica());
         data.put("estadoEmpresa", e.getEstadoEmpresa());
         return data;
+    }
+
+    /** Solo una cuenta ACTIVA puede publicar o pausar el catálogo; el dueño no reactiva SUSPENDIDO/INACTIVO. */
+    private void asegurarCuentaActivaParaCatalogo(Empresa e) {
+        String estado = e.getEstadoEmpresa();
+        if ("ACTIVO".equals(estado)) return;
+        if ("PENDIENTE_APROBACION".equals(estado)) {
+            throw new IllegalArgumentException(
+                "No podés cambiar la visibilidad mientras el negocio está pendiente de aprobación");
+        }
+        if ("SUSPENDIDO".equals(estado) || "INACTIVO".equals(estado)) {
+            throw new IllegalArgumentException(
+                "HotClick apagó la cuenta de este negocio. No podés publicar la tienda desde acá.");
+        }
+        throw new IllegalArgumentException(
+            "No podés cambiar la visibilidad con el estado actual de la cuenta");
     }
 
     public String subirLogo(Long empresaId, MultipartFile file) throws java.io.IOException {

@@ -48,6 +48,7 @@ class PaymentServiceTest {
     @Mock private TransaccionPagoRepository transaccionPagoRepository;
     @Mock private EmpresaRepository         empresaRepository;
     @Mock private NotificacionEmailService  notificacionEmailService;
+    @Mock private VentaAvisoService         ventaAvisoService;
     @Mock private N8nWebhookService         n8nWebhookService;
     @Mock private AggregatorService         aggregatorService;
     @Mock private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
@@ -284,7 +285,7 @@ class PaymentServiceTest {
         assertThat(captor.getValue().getStockReservado()).isEqualTo(0); // 2 - 2 = 0
 
         verify(pedidoRepository).save(argThat(p -> Constants.PEDIDO_PAGADO.equals(p.getEstadoPedido())));
-        verify(notificacionEmailService).enviarConfirmacionPedido(any(Pedido.class));
+        verify(ventaAvisoService).avisarVentaConfirmada(any(Pedido.class));
     }
 
     @Test
@@ -296,7 +297,7 @@ class PaymentServiceTest {
         service.confirmarPedido(pago);
 
         verify(pedidoRepository, never()).save(any());
-        verify(notificacionEmailService, never()).enviarConfirmacionPedido(any());
+        verify(ventaAvisoService, never()).avisarVentaConfirmada(any());
     }
 
     @Test

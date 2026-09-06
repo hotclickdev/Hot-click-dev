@@ -5,6 +5,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.service.AggregatorService;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
+import com.hotclick.service.VentaAvisoService;
 import com.hotclick.service.WebhookDispatcherService;
 import com.hotclick.service.analytics.PostHogCaptureService;
 import org.slf4j.Logger;
@@ -20,12 +21,14 @@ public class PaymentNotificationsFacade {
     private static final Logger log = LoggerFactory.getLogger(PaymentNotificationsFacade.class);
 
     @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private VentaAvisoService        ventaAvisoService;
     @Autowired private N8nWebhookService        n8nWebhookService;
     @Autowired private WebhookDispatcherService webhookDispatcher;
     @Autowired private AggregatorService        aggregatorService;
     @Autowired(required = false) private PostHogCaptureService postHogCaptureService;
 
     public void onPedidoCreado(Pedido pedido, String provider) {
+        if (pedido == null) return;
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.creado", Map.of(
             "numeroPedido", pedido.getNumeroPedido(),
             "total",        pedido.getTotalPedido(),
@@ -35,15 +38,17 @@ public class PaymentNotificationsFacade {
     }
 
     public void onGiftCardFullPayment(Pedido pedido, String gcCodigo) {
-        notificacionEmailService.enviarConfirmacionPedido(pedido);
+        if (pedido == null) return;
+        ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
         capturarPedidoPagado(pedido, null);
         log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), gcCodigo);
     }
 
     public void onPedidoConfirmado(Pedido pedido, Pago pago) {
+        if (pedido == null || pago == null) return;
         touchUsuarioFinalForAsync(pedido);
-        notificacionEmailService.enviarConfirmacionPedido(pedido);
+        ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
             "numeroPedido", pedido.getNumeroPedido(),
@@ -62,6 +67,7 @@ public class PaymentNotificationsFacade {
     }
 
     public void onPagoFallido(Pedido pedido, String motivo) {
+        if (pedido == null) return;
         touchUsuarioFinalForAsync(pedido);
         notificacionEmailService.enviarPagoFallido(pedido, motivo);
     }
@@ -71,8 +77,9 @@ public class PaymentNotificationsFacade {
      * thread no encuentre el proxy sin sesión → LazyInitializationException.
      */
     public void touchUsuarioFinalForAsync(Pedido pedido) {
-        if (pedido.getUsuarioFinal() != null) {
-            pedido.getUsuarioFinal().getCorreo(); // touch dentro de la transacción
+        if (pedido == null || pedido.getUsuarioFinal() == null) {
+            return;
         }
+        pedido.getUsuarioFinal().getCorreo(); // touch dentro de la transacción
     }
 }

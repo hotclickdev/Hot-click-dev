@@ -1,0 +1,23 @@
+---
+description: Antes de cualquier git commit, diagnósticos y pruebas del cambio deben pasar
+alwaysApply: true
+---
+
+# Gate de commit
+
+Si el usuario pide commit (o el agente está a punto de `git commit`):
+
+1. **Invocar el subagente `commit-gate`** (`.cursor/agents/commit-gate.md`) o seguir su checklist.
+2. **No commitear** si lints, typecheck o tests del área tocada fallan.
+3. **No commitear** instrumentación de debug (`#region agent log`, `debug-*.log`, `catch (Exception ignored)` de NDJSON local).
+4. **No commitear** secretos, `.env`, reportes Playwright, `node_modules`, ni `results.json` de Vitest.
+
+## Qué correr (según archivos en el diff)
+
+| Área | Comando |
+|------|---------|
+| Frontend `.ts`/`.tsx` | `ReadLints` en archivos tocados + `pnpm test` (Vitest) en `Hot_click_outlet/frontend`. Si cambió tipos/imports: `pnpm typecheck`. |
+| Backend `.java` | `.\maven\bin\mvn -pl Hot_click_outlet test` o `-Dtest=Clase1,Clase2` de las clases tocadas. |
+| Ambos | los dos. E2E Playwright solo si el usuario lo pide o el diff toca specs en `frontend/tests/`. |
+
+Si algo falla: arreglar, re-correr, **recién entonces** `git add` + `git commit`. Nunca `--no-verify`.

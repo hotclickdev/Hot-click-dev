@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import type { Id } from '@/types/api'
 import type { PosVenta } from './posHelpers'
 import PosReporteModal from './PosReporteModal'
@@ -89,6 +90,7 @@ export default function AdminPOSHistorial() {
           <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>{t('pos.historial.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
           <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
             {FILTROS.map(f => (
               <button type="button" key={f.key} onClick={() => setFiltro(f.key)}

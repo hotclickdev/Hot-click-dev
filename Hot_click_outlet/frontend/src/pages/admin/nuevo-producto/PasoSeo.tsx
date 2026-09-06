@@ -96,7 +96,7 @@ export default function PasoSeo({ form, setForm, seoLang, setSeoLang, seoAuto, s
       )}
       <div>
         <p className="text-xs mb-1.5" style={{ color: 'var(--hc-muted)' }}>Vista previa Google · {langMeta?.label} {langMeta?.name}</p>
-        <div className="rounded-xl bg-white px-4 py-3 space-y-0.5">
+        <div className="rounded-xl bg-white hc-papel-blanco px-4 py-3 space-y-0.5">
           <p className="text-xs text-green-700 truncate">
             <TextoCamino
               partes={['hotclick.com', 'productos', form.nombre ? toSlug(form.nombre) : '…']}

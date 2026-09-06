@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import { HotClickMark } from '@/components/ui/BrandLogo'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import useRutaPanel from '@/app/useRutaPanel'
 import useAuthStore from '@/store/authStore'
 import type { PosStep, PosTurno } from './posHelpers'
@@ -70,6 +71,8 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
       ) : null}
 
       <div className="flex-1" />
+
+      <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
 
       <Link
         to="/admin/pos/historial"

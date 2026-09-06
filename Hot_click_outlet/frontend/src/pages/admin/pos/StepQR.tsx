@@ -19,9 +19,9 @@ function limpiarPoll(pollRef: MutableRefObject<ReturnType<typeof setInterval> | 
   pollRef.current = null
 }
 
-export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }: {
+export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm: _loadingConfirm }: {
   qrData: PosQrData
-  onConfirmSinpe: (token: string | null, autoConfirmed: boolean) => void
+  onConfirmSinpe: (token: string | null, autoConfirmed: boolean, numeroPedido?: string) => void
   onCancelar: () => void
   loadingConfirm: boolean
 }) {
@@ -30,17 +30,20 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
   const qrUrl = enlacePagoPosQr(token)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [paid, setPaid] = useState(false)
+  const ticketPagadoRef = useRef('—')
   const [sesionCerrada, setSesionCerrada] = useState(false)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const tokenFaltante = !token
   const esSinpe = metodoPago === 'SINPE'
 
   useEffect(() => {
-    if (metodoPago !== 'TARJETA' || tokenFaltante) return
+    if ((metodoPago !== 'TARJETA' && metodoPago !== 'SINPE') || tokenFaltante) return
     pollRef.current = setInterval(async () => {
       try {
-        const res = await posService.estadoQrSesion(token) as { estado?: string }
+        const res = await posService.estadoQrSesion(token) as { estado?: string, pedidoId?: number, numeroPedido?: string }
         if (res?.estado === 'PAGADO') {
+          ticketPagadoRef.current = res.numeroPedido
+            ?? (res.pedidoId != null ? String(res.pedidoId) : '—')
           limpiarPoll(pollRef)
           setPaid(true)
           return
@@ -54,7 +57,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
     return () => limpiarPoll(pollRef)
   }, [token, metodoPago, tokenFaltante])
 
-  useEffect(() => { if (paid) onConfirmSinpe(null, true) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (paid) onConfirmSinpe(null, true, ticketPagadoRef.current) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6">
@@ -66,6 +69,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
           alt={t('pos.qr.imagenAlt')}
           errorMsg={t('pos.qr.tokenFaltante')}
         />
+        {token ? <EnlacePagoQr url={qrUrl} /> : null}
         <MontoACobrar total={total} />
         {esSinpe ? (
           <DetalleSinpe
@@ -74,12 +78,9 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
             monto={`₡${formatMontoPos(total)}`}
           />
         ) : null}
-        <EstadoEspera visible={!esSinpe && !paid && !sesionCerrada} />
+        <EstadoEspera visible={!paid && !sesionCerrada} />
         <AccionesQr
-          esSinpe={esSinpe}
-          loadingConfirm={loadingConfirm}
           onCancelar={onCancelar}
-          onConfirmarSinpe={() => onConfirmSinpe(token, false)}
           onReportar={() => setReporteAbierto(true)}
         />
       </div>
@@ -130,6 +131,24 @@ function MarcoQr({ token, qrUrl, alt, errorMsg }: {
         </p>
       )}
     </div>
+  )
+}
+
+function EnlacePagoQr({ url }: { url: string }) {
+  const { t } = useTranslation()
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-3 max-w-full break-all px-1 text-xs font-medium underline underline-offset-2"
+      style={{ color: 'var(--hc-blue-600)' }}
+    >
+      {t('pos.qr.abrirEnlacePago')}
+      <span className="mt-1 block font-mono text-[11px] no-underline" style={{ color: posUi.muted }}>
+        {url}
+      </span>
+    </a>
   )
 }
 
@@ -200,11 +219,8 @@ function EstadoEspera({ visible }: { visible: boolean }) {
   )
 }
 
-function AccionesQr({ esSinpe, loadingConfirm, onCancelar, onConfirmarSinpe, onReportar }: {
-  esSinpe: boolean
-  loadingConfirm: boolean
+function AccionesQr({ onCancelar, onReportar }: {
   onCancelar: () => void
-  onConfirmarSinpe: () => void
   onReportar: () => void
 }) {
   const { t } = useTranslation()
@@ -219,24 +235,12 @@ function AccionesQr({ esSinpe, loadingConfirm, onCancelar, onConfirmarSinpe, onR
         >
           {t('pos.qr.cancelar')}
         </button>
-        {esSinpe ? (
-          <button
-            type="button"
-            onClick={onConfirmarSinpe}
-            disabled={loadingConfirm}
-            className="min-h-11 rounded-2xl py-3 text-sm font-bold disabled:opacity-40"
-            style={{ background: 'var(--hc-primary)', color: '#fff' }}
-          >
-            {loadingConfirm ? t('pos.qr.confirmando') : t('pos.qr.sinpeRecibido')}
-          </button>
-        ) : (
-          <p
-            className="flex min-h-11 items-center justify-center rounded-2xl px-2 text-center text-xs"
-            style={{ backgroundColor: posUi.panel, color: posUi.muted }}
-          >
-            {t('pos.qr.autoDetecta')}
-          </p>
-        )}
+        <p
+          className="flex min-h-11 items-center justify-center rounded-2xl px-2 text-center text-xs"
+          style={{ backgroundColor: posUi.panel, color: posUi.muted }}
+        >
+          {t('pos.qr.autoDetecta')}
+        </p>
       </div>
       <button
         type="button"

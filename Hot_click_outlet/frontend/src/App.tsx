@@ -41,8 +41,8 @@ export default function App() {
         <AnalyticsInit />
         <ServiceWorkerRefresh />
         <SiteVerification />
-        <HtmlClassManager />
         <BrowserRouter>
+          <HtmlClassManager />
           <BrandingInit />
           <PageProgressBar />
           <ScrollToTop />

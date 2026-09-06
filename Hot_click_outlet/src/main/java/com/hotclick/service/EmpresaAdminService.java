@@ -75,6 +75,8 @@ public class EmpresaAdminService {
         }
         Empresa empresa = empresa(id);
         empresa.setEstadoEmpresa(nuevoEstado);
+        // Al apagar la cuenta, el catálogo también queda oculto (el dueño no puede republicarlo).
+        empresa.setVisibilidadPublica(false);
         empresaRepository.save(empresa);
     }
 

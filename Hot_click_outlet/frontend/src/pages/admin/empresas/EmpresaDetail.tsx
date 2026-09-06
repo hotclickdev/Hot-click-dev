@@ -44,11 +44,14 @@ function DetailHeader({
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PLAN_COLOR[selected.plan as string] ?? ''}`}>{selected.plan || 'Sin plan'}</span>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_COLOR[selected.estadoEmpresa as string] ?? ''}`}>{selected.estadoEmpresa}</span>
           <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${visible ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
-            {visible ? <><EyeIcon /> Visible</> : <><EyeOffIcon /> Oculto</>}
+            {visible ? <><EyeIcon /> Catálogo: visible</> : <><EyeOffIcon /> Catálogo: oculto</>}
           </span>
         </div>
         <div className="mt-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--hc-muted)' }}>Estado del negocio</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--hc-muted)' }}>Cuenta HotClick</p>
+          <p className="text-[11px] mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+            Solo HotClick puede cambiar esto. El dueño no puede volver a ACTIVO.
+          </p>
           <EstadoEmpresaChips selected={selected} saving={saving} onCambiarEstado={onCambiarEstado} />
         </div>
         <button type="button"

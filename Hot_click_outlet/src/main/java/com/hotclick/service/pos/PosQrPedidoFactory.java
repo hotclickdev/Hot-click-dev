@@ -18,6 +18,7 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.StockService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.service.TurnoCajaService;
+import com.hotclick.service.VentaAvisoService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,7 @@ public class PosQrPedidoFactory {
     @Autowired private TurnoCajaService                   turnoCajaService;
     @Autowired private TelegramNotificacionClienteService telegramNotificacionClienteService;
     @Autowired private PosQrSessionService                sessionService;
+    @Autowired private VentaAvisoService                  ventaAvisoService;
 
     public void crearPedidoPOS(PosQrSesion sesion, String metodoPago) {
         try {
@@ -67,6 +69,7 @@ public class PosQrPedidoFactory {
                 idCajero(cajero), cliente.getId());
             telegramNotificacionClienteService.notificarVenta(empresa.getId(), saved.getNumeroPedido(),
                 totales.totalPedido(), metodoPago, cliente.getNombre(), "POS");
+            ventaAvisoService.avisarVentaConfirmada(saved);
         } catch (RuntimeException e) {
             log.error("[POS-QR] Error creando pedido POS: {}", e.getMessage(), e);
             throw e;

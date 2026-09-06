@@ -134,7 +134,7 @@ class EmpresaPerfilServiceTest {
     @DisplayName("toggleVisibilidad exige el campo")
     void toggle_sin_valor() {
         Empresa e = empresaBase(3L);
-        e.setEstadoEmpresa("ACTIVA");
+        e.setEstadoEmpresa("ACTIVO");
         when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, null))
@@ -143,10 +143,10 @@ class EmpresaPerfilServiceTest {
     }
 
     @Test
-    @DisplayName("toggleVisibilidad persiste el flag")
+    @DisplayName("toggleVisibilidad persiste el flag solo con cuenta ACTIVA")
     void toggle_ok() {
         Empresa e = empresaBase(3L);
-        e.setEstadoEmpresa("ACTIVA");
+        e.setEstadoEmpresa("ACTIVO");
         e.setVisibilidadPublica(false);
         when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -155,7 +155,35 @@ class EmpresaPerfilServiceTest {
 
         assertThat(e.getVisibilidadPublica()).isTrue();
         assertThat(out.get("visibilidadPublica")).isEqualTo(true);
-        assertThat(out.get("estadoEmpresa")).isEqualTo("ACTIVA");
+        assertThat(out.get("estadoEmpresa")).isEqualTo("ACTIVO");
+    }
+
+    @Test
+    @DisplayName("toggleVisibilidad bloquea cuenta SUSPENDIDO")
+    void toggle_suspendido() {
+        Empresa e = empresaBase(3L);
+        e.setEstadoEmpresa("SUSPENDIDO");
+        e.setVisibilidadPublica(false);
+        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+
+        assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HotClick apagó la cuenta");
+        verify(empresaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("toggleVisibilidad bloquea cuenta INACTIVO")
+    void toggle_inactivo() {
+        Empresa e = empresaBase(3L);
+        e.setEstadoEmpresa("INACTIVO");
+        e.setVisibilidadPublica(false);
+        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+
+        assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HotClick apagó la cuenta");
+        verify(empresaRepository, never()).save(any());
     }
 
     @Test

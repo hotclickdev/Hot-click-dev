@@ -64,7 +64,7 @@ function MarcaEmpresa({ logoUrl, nombre }: { logoUrl?: string | null; nombre: st
   return (
     <span
       className="grid size-11 shrink-0 place-items-center rounded-xl font-display text-sm font-bold"
-      style={{ background: 'var(--hc-n-50)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
+      style={{ background: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
       aria-hidden="true"
     >
       {inicialesProducto(nombre)}

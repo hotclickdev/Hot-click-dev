@@ -40,7 +40,7 @@ export default function DetalleProductoPage() {
   return (
     <main>
       <EntradaPagina>
-        <div className="relative h-[280px] bg-[var(--hc-n-100)]">
+        <div className="relative h-[280px] bg-[var(--hc-surface-2)]">
           {producto.imagenUrl ? (
             <img src={producto.imagenUrl} alt="" className="size-full object-cover" />
           ) : null}

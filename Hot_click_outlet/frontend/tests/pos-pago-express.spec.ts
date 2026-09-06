@@ -123,6 +123,23 @@ test.describe('POS pago express', () => {
     expect(page.url()).not.toContain('/carrito')
   })
 
+  test('si hosted falla, muestra error y reportar problema', async ({ page }) => {
+    await mockPagoExpress(page)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.route('**/api/pos/qr/pago/tokencarrito01/stripe', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'ONVO no está configurado' }),
+      })
+    })
+
+    await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: /Pagar/i }).click()
+    await expect(page.getByText(/No se pudo iniciar el cobro con tarjeta|Card payment could not/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: /Reportar|reportar|problema/i })).toBeVisible()
+  })
+
   test('QR inválido muestra botón reportar problema', async ({ page }) => {
     await page.route('**/api/**', async (route) => {
       const path = new URL(route.request().url()).pathname

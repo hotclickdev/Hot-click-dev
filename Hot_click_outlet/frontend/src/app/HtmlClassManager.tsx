@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
 import i18n from '@/i18n'
+import { aplicarClasesTemaHtml, colorChromeParaTema } from '@/utils/temaPorRuta'
+
+function aplicarMetaThemeColor(tema: 'dark' | 'light') {
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (!meta) return
+  meta.setAttribute('content', colorChromeParaTema(tema))
+}
 
 const COLOR_FILTERS: Record<string, string> = {
   none: '',
@@ -12,22 +20,22 @@ const COLOR_FILTERS: Record<string, string> = {
 
 /**
  * Aplica tema, tipografía, contraste, motion e idioma al `<html>`.
+ * Marketplace / auth / tienda pública / pago QR fuerzan claro; el panel sigue la preferencia.
  */
 export default function HtmlClassManager() {
+  const { pathname } = useLocation()
   const { theme, fontSize, highContrast, reduceMotion, language, colorFilter } = useUiStore()
   const [liveMessage, setLiveMessage] = useState('')
   const primed = useRef(false)
-
   useEffect(() => {
     const html = document.documentElement
-    html.classList.remove('dark', 'light')
-    html.classList.add(theme)
+    const temaHtml = aplicarClasesTemaHtml(html.classList, pathname, theme, highContrast)
+    aplicarMetaThemeColor(temaHtml)
     html.classList.toggle('fs-lg', fontSize === 'lg')
     html.classList.toggle('fs-xl', fontSize === 'xl')
-    html.classList.toggle('high-contrast', highContrast)
     html.classList.toggle('reduce-motion', reduceMotion)
     html.style.filter = COLOR_FILTERS[colorFilter] || ''
-  }, [theme, fontSize, highContrast, reduceMotion, colorFilter])
+  }, [pathname, theme, fontSize, highContrast, reduceMotion, colorFilter])
 
   useEffect(() => {
     document.documentElement.lang = language

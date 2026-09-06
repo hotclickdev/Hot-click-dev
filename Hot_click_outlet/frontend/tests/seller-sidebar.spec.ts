@@ -112,4 +112,19 @@ test.describe('Sidebar PYME y Negocio Plus', () => {
     await expect(page).toHaveURL(/\/pyme\/reportes/)
     await expect(nav.getByRole('link', { name: 'Reportes' })).toHaveAttribute('aria-current', 'page')
   })
+
+  test('alterna modo oscuro desde el sidebar PYME', async ({ page }) => {
+    await entrarVendedor(page, 'PYME', '/pyme')
+    const shell = page.locator('.hc-seller-theme')
+    const toggle = page.locator('aside').filter({ visible: true }).getByRole('button', { name: 'Cambiar tema' })
+    await expect(toggle).toBeVisible()
+
+    const bgClaro = await shell.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
+    expect(bgClaro.toUpperCase()).not.toBe('#0E1116')
+
+    await toggle.click()
+    await expect(page.locator('html')).toHaveClass(/dark/)
+    const bgOscuro = await shell.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
+    expect(bgOscuro.toUpperCase()).toBe('#0E1116')
+  })
 })

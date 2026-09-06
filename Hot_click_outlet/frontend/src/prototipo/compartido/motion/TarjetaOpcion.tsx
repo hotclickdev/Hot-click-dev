@@ -84,7 +84,7 @@ export default function TarjetaOpcion({
             />
           ) : null}
           <motion.span
-            className="relative z-[1] size-2 rounded-full bg-white"
+            className="relative z-[1] size-2 rounded-full bg-white hc-papel-blanco"
             initial={false}
             animate={{ scale: seleccionado ? 1 : 0 }}
             transition={reduced ? { duration: 0 } : SPRING_POP}

@@ -14,7 +14,7 @@ const TAMANOS = {
  * Miniatura de producto. Sin foto de catálogo en Figma: placeholder gris.
  */
 export default function Miniatura({ src, alt, size = 'md' }: Props) {
-  const caja = `shrink-0 overflow-hidden rounded-xl bg-[var(--hc-n-100)] ${TAMANOS[size]}`
+  const caja = `shrink-0 overflow-hidden rounded-xl bg-[var(--hc-surface-2)] ${TAMANOS[size]}`
   if (!src) return <div className={caja} aria-hidden />
   return (
     <div className={caja}>

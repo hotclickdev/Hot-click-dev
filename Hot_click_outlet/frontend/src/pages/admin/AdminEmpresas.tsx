@@ -33,7 +33,7 @@ export default function AdminEmpresas() {
     setSaving(true)
     try {
       await adminService.setEmpresaVisibilidad(id, visibilidadPublica)
-      toast({ message: visibilidadPublica ? 'Negocio visible al público' : 'Negocio oculto — catálogo invisible', type: 'success' })
+      toast({ message: visibilidadPublica ? 'Catálogo visible — el dueño puede pausarlo' : 'Catálogo oculto — si la cuenta está ACTIVA el dueño puede republicarlo', type: 'success' })
       setEmpresas((prev) => prev.map((e) => e.id === id ? { ...e, visibilidadPublica } : e))
     } catch {
       toast({ message: 'Error al cambiar visibilidad', type: 'error' })

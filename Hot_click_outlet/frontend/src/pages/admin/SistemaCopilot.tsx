@@ -7,7 +7,7 @@ import { textoConsultasRestantes, type CopilotUso } from './copilot/copilotChatH
 import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const AZUL = '#1747A8'
-const MUTED = '#6b6459'
+const MUTED = 'var(--hc-muted)'
 
 /**
  * Consultas con Hot para el dueño (rol EMPRENDEDOR). Mockup Sistema - Hot.
@@ -76,7 +76,7 @@ export default function SistemaCopilot() {
             disabled={deshabilitado}
             rows={1}
             className="flex-1 px-[18px] py-[15px] rounded-[10px] text-[15px] outline-none resize-none disabled:opacity-50"
-            style={{ backgroundColor: '#fff', border: '1px solid #d8cfc0', color: 'var(--hc-text)' }}
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
           />
           <button
             type="submit"
@@ -126,7 +126,7 @@ function SistemaCopilotHeader({ uso, onLimpiar }: { uso: CopilotUso | null; onLi
         type="button"
         onClick={onLimpiar}
         className="text-sm font-semibold px-3 py-2 min-h-[44px] rounded-[10px]"
-        style={{ border: '1px solid #e3dacb', color: MUTED }}
+        style={{ border: '1px solid var(--hc-border)', color: MUTED }}
       >
         Limpiar
       </button>
@@ -155,7 +155,7 @@ function SistemaBurbuja({ rol, contenido, streaming }: { rol: string; contenido:
         H
       </div>
       <div
-        className="px-[18px] py-3.5 text-[15px] leading-relaxed whitespace-pre-wrap bg-white"
+        className="px-[18px] py-3.5 text-[15px] leading-relaxed whitespace-pre-wrap bg-hc-surface-2"
         style={{ borderRadius: '4px 16px 16px 16px' }}
       >
         {contenido}

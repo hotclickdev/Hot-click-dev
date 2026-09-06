@@ -5,6 +5,7 @@ import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.repository.PosQrSesionRepository;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.OnvoSinpeSupport;
 import com.hotclick.service.StripeService;
 import com.hotclick.service.TurnoCajaService;
 import com.hotclick.utils.Constants;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -35,6 +37,9 @@ public class PosQrVentaService {
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
 
+    @Value("${onvo.sinpe-destino:+50670196686}")
+    private String onvoSinpeDestino;
+
     /**
      * Crea el checkout de tarjeta (ONVO, igual que la tienda).
      * La ruta HTTP sigue llamándose /stripe por compatibilidad con el front.
@@ -42,9 +47,7 @@ public class PosQrVentaService {
     @Transactional
     public String crearStripeCheckout(String token) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
-        if (!"TARJETA".equals(sesion.getMetodoPago())) {
-            throw new IllegalStateException("Esta sesión no es de pago con tarjeta");
-        }
+        exigirMetodoPasarela(sesion);
         if (onvoService.isMockMode()) {
             throw new IllegalStateException(
                 "ONVO no está configurado. Añade ONVO_SECRET_KEY para cobrar con tarjeta en el POS.");
@@ -52,7 +55,7 @@ public class PosQrVentaService {
 
         String successUrl = appUrl + "/pos/pago/" + token + "?resultado=exito";
         String cancelUrl  = appUrl + "/pos/pago/" + token + "?resultado=cancelado";
-        Long empresaId = sesion.getEmpresa().getId();
+        Long empresaId = empresaIdDe(sesion);
 
         try {
             List<Map<String, Object>> items = sessionService.getMapper().readValue(
@@ -60,7 +63,7 @@ public class PosQrVentaService {
             String descripcion = descripcionCheckout(items);
 
             OnvoService.OnvoCheckoutSession checkout = onvoService.crearCheckoutSession(
-                sesion.getTotal(), descripcion, successUrl, cancelUrl, null,
+                sesion.getTotal(), descripcion, successUrl, cancelUrl, correoCheckout(sesion),
                 Map.of(
                     "pos_qr_token", token,
                     "origen", "POS",
@@ -85,9 +88,7 @@ public class PosQrVentaService {
     @Transactional
     public Map<String, String> crearPaymentIntent(String token) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
-        if (!"TARJETA".equals(sesion.getMetodoPago())) {
-            throw new IllegalStateException("Esta sesión no es de pago con tarjeta");
-        }
+        exigirMetodoPasarela(sesion);
         if (onvoService.isMockMode()) {
             throw new IllegalStateException(
                 "ONVO no está configurado. Añade ONVO_SECRET_KEY para cobrar con tarjeta en el POS.");
@@ -97,32 +98,72 @@ public class PosQrVentaService {
             throw new IllegalStateException(
                 "ONVO_PUBLISHABLE_KEY no configurado para pago embebido en POS.");
         }
+        String intentExistente = sesion.getStripeSessionId();
+        if (intentExistente != null && !intentExistente.isBlank()) {
+            return Map.of(
+                "paymentIntentId", intentExistente,
+                "publishableKey", publishableKey
+            );
+        }
+        String intentId = asegurarPaymentIntent(sesion);
+        return Map.of("paymentIntentId", intentId, "publishableKey", publishableKey);
+    }
 
+    /**
+     * Confirma el payment intent ONVO con un método SINPE Móvil.
+     * El pedido se cierra con el webhook payment-intent.succeeded.
+     */
+    @Transactional
+    public Map<String, String> iniciarSinpeOnvo(String token, String telefono, String cedula,
+                                               String nombre, String email) {
+        PosQrSesion sesion = sessionService.findSesionActiva(token);
+        if (!"SINPE".equals(sesion.getMetodoPago())) {
+            throw new IllegalStateException("Esta sesión no es de SINPE");
+        }
+        if ("PAGADO".equals(sesion.getEstado())) {
+            return respuestaSinpeOnvo("PAGADO", sesion.getStripeSessionId());
+        }
+        String intentId = asegurarPaymentIntent(sesion);
+        if (onvoService.paymentIntentPagado(intentId)) {
+            return respuestaSinpeOnvo("PROCESSING", intentId);
+        }
+        String correo = (email == null || email.isBlank()) ? correoCheckout(sesion) : email.trim();
+        OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpe(
+            OnvoSinpeSupport.cedula(cedula),
+            OnvoSinpeSupport.telefonoE164(telefono),
+            OnvoSinpeSupport.nombre(nombre),
+            correo);
+        onvoService.confirmarPaymentIntent(intentId, metodo.id());
+        return respuestaSinpeOnvo("PROCESSING", intentId);
+    }
+
+    private String asegurarPaymentIntent(PosQrSesion sesion) {
+        if (onvoService.isMockMode()) {
+            throw new IllegalStateException(
+                "ONVO no está configurado. Añade ONVO_SECRET_KEY para cobrar en el POS.");
+        }
+        if (sesion.getStripeSessionId() != null && !sesion.getStripeSessionId().isBlank()) {
+            return sesion.getStripeSessionId();
+        }
         try {
             List<Map<String, Object>> items = sessionService.getMapper().readValue(
                 sesion.getItemsJson(), new TypeReference<>() {});
             String descripcion = descripcionCheckout(items);
-            Long empresaId = sesion.getEmpresa().getId();
-
+            Long empresaId = empresaIdDe(sesion);
             OnvoService.OnvoPaymentIntent intent = onvoService.crearPaymentIntent(
                 sesion.getTotal(), descripcion,
                 Map.of(
-                    "pos_qr_token", token,
+                    "pos_qr_token", sesion.getToken(),
                     "origen", "POS",
                     "empresa_id", String.valueOf(empresaId)
                 ));
-
             sesion.setStripeSessionId(intent.id());
             posQrRepo.save(sesion);
-
-            return Map.of(
-                "paymentIntentId", intent.id(),
-                "publishableKey", publishableKey
-            );
+            return intent.id();
         } catch (IllegalStateException e) {
             throw e;
         } catch (Exception e) {
-            log.error("[POS-QR] Error creando payment intent token={}: {}", token, e.getMessage());
+            log.error("[POS-QR] Error creando payment intent token={}: {}", sesion.getToken(), e.getMessage());
             throw new IntegracionExternaException("onvo", IntegracionExternaException.Tipo.IO_ERROR,
                 "Error al crear intención de pago: " + e.getMessage(), e);
         }
@@ -211,20 +252,47 @@ public class PosQrVentaService {
             return "EXPIRADO";
         }
 
-        if ("TARJETA".equals(sesion.getMetodoPago()) && sesion.getStripeSessionId() != null
-                && sesion.getStripeSessionId().startsWith("cs_")) {
-            try {
-                boolean pagado = stripeService.checkoutSessionPagada(sesion.getStripeSessionId());
-                if (pagado) {
-                    completionService.completarVentaTarjeta(sesion);
-                    return "PAGADO";
-                }
-            } catch (Exception e) {
-                log.warn("[POS-QR] Error verificando Stripe session {}: {}", sesion.getStripeSessionId(), e.getMessage());
-            }
+        if (pagoPasarelaConfirmado(sesion)) {
+            completionService.completarVentaTarjeta(sesion);
+            return "PAGADO";
         }
 
         return sesion.getEstado();
+    }
+
+    @Transactional
+    public Map<String, Object> consultarEstado(String token) {
+        String estado = verificarEstado(token);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("estado", estado);
+        posQrRepo.findByToken(token).ifPresent(s -> {
+            if (s.getPedidoId() != null) body.put("pedidoId", s.getPedidoId());
+        });
+        return body;
+    }
+
+    private Map<String, String> respuestaSinpeOnvo(String estado, String intentId) {
+        String destino = (onvoSinpeDestino == null || onvoSinpeDestino.isBlank())
+            ? "+50670196686" : onvoSinpeDestino;
+        if (intentId == null || intentId.isBlank()) {
+            return Map.of("estado", estado, "destino", destino);
+        }
+        return Map.of("estado", estado, "destino", destino, "paymentIntentId", intentId);
+    }
+
+    private boolean pagoPasarelaConfirmado(PosQrSesion sesion) {
+        if (sesion == null || !esMetodoPasarela(sesion)) return false;
+        String pasarelaId = sesion.getStripeSessionId();
+        if (pasarelaId == null) return false;
+        try {
+            if (pasarelaId.startsWith("cs_")) {
+                return stripeService.checkoutSessionPagada(pasarelaId);
+            }
+            return "succeeded".equalsIgnoreCase(onvoService.paymentIntentStatus(pasarelaId));
+        } catch (Exception e) {
+            log.warn("[POS-QR] Error verificando pasarela {}: {}", pasarelaId, e.getMessage());
+            return false;
+        }
     }
 
     @Transactional
@@ -235,7 +303,7 @@ public class PosQrVentaService {
         if (!"PENDIENTE".equals(sesion.getEstado())) {
             throw new IllegalStateException("La sesión no está pendiente (estado: " + sesion.getEstado() + ")");
         }
-        if (!sesion.getEmpresa().getId().equals(empresaId)) {
+        if (!empresaIdDe(sesion).equals(empresaId)) {
             throw new SecurityException("No autorizado");
         }
 
@@ -251,6 +319,34 @@ public class PosQrVentaService {
     @Transactional
     protected void completarVentaSinpe(PosQrSesion sesion, Long usuarioId, String notas) {
         completionService.completarVentaSinpe(sesion, usuarioId, notas);
+    }
+
+    static boolean esMetodoPasarela(PosQrSesion sesion) {
+        String metodo = sesion == null ? null : sesion.getMetodoPago();
+        return "TARJETA".equals(metodo) || "SINPE".equals(metodo);
+    }
+
+    static void exigirMetodoPasarela(PosQrSesion sesion) {
+        if (sesion == null || !esMetodoPasarela(sesion)) {
+            throw new IllegalStateException("Esta sesión no es de pago con pasarela");
+        }
+    }
+
+    static Long empresaIdDe(PosQrSesion sesion) {
+        if (sesion == null) {
+            throw new IllegalStateException("La sesión POS no tiene empresa");
+        }
+        var empresa = sesion.getEmpresa();
+        if (empresa == null || empresa.getId() == null) {
+            throw new IllegalStateException("La sesión POS no tiene empresa");
+        }
+        return empresa.getId();
+    }
+
+    static String correoCheckout(PosQrSesion sesion) {
+        if (sesion.getEmpresa() == null) return null;
+        String correo = sesion.getEmpresa().getCorreoEmpresa();
+        return correo == null || correo.isBlank() ? null : correo;
     }
 
     static String descripcionCheckout(List<Map<String, Object>> items) {

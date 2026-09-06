@@ -125,11 +125,11 @@ export const CHIPS_ESTADO_TIENDA: { id: string; label: string }[] = [
 ]
 
 export function etiquetaEstadoTienda(estado?: string): string {
-  if (estado === 'ACTIVO') return 'Activa'
-  if (estado === 'PENDIENTE_APROBACION') return 'Pendiente'
-  if (estado === 'SUSPENDIDO') return 'Suspendida'
-  if (estado === 'INACTIVO') return 'Inactiva'
-  return estado || '—'
+  if (estado === 'ACTIVO') return 'Cuenta: activa'
+  if (estado === 'PENDIENTE_APROBACION') return 'Cuenta: pendiente'
+  if (estado === 'SUSPENDIDO') return 'Cuenta: suspendida'
+  if (estado === 'INACTIVO') return 'Cuenta: inactiva'
+  return estado ? `Cuenta: ${estado}` : 'Cuenta: —'
 }
 
 export function tonoEstadoTiendaLista(estado?: string): 'ok' | 'warn' | 'danger' | 'muted' {
@@ -237,8 +237,12 @@ export function rutaCargaMasivaEmpresa(id: Id): string {
   return `/admin/productos/carga-masiva?empresaId=${id}`
 }
 
-export function rutaImportarEmpresa(id: Id): string {
-  return `/admin/productos/importar?empresaId=${id}`
+export function rutaImportarEmpresa(id: Id, fuente: 'url' | 'pdf' | 'csv' = 'csv'): string {
+  return `/admin/productos/importar?empresaId=${id}&fuente=${fuente}`
+}
+
+export function rutaEnlacePdfEmpresa(id: Id): string {
+  return rutaImportarEmpresa(id, 'url')
 }
 
 export function empresaIdDesdeParam(raw: string | null | undefined): string {

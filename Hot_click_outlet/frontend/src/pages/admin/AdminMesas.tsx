@@ -67,7 +67,7 @@ function QrModal({ mesa, onClose }: { mesa: MesaAdmin; onClose: () => void }) {
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>{mesa.nombre}</h3>
-        <div ref={svgRef} className="p-4 rounded-xl bg-white">
+        <div ref={svgRef} className="p-4 rounded-xl bg-white hc-papel-blanco">
           <QRCode value={url} size={220} />
         </div>
         <p className="text-xs text-center break-all" style={{ color: 'var(--hc-muted)' }}>{url}</p>
@@ -228,7 +228,7 @@ export default function AdminMesas() {
                 </span>
               </div>
 
-              <div className="flex items-center justify-center p-3 rounded-xl bg-white">
+              <div className="flex items-center justify-center p-3 rounded-xl bg-white hc-papel-blanco">
                 <QRCode value={qrUrl(m.qrToken)} size={120} />
               </div>
 

@@ -19,11 +19,16 @@ import {
   type ProductoEntradaCarrito,
 } from './posHelpers'
 
-function armarReceiptQr(qrData: PosQrData | null, cartItems: ItemCarritoPos[], autoConfirmed: boolean): PosVenta {
+function armarReceiptQr(
+  qrData: PosQrData | null,
+  cartItems: ItemCarritoPos[],
+  autoConfirmed: boolean,
+  numeroPedido = '—',
+): PosVenta {
   return {
     totalPedido:  qrData?.total,
     metodoPago:   autoConfirmed ? qrData?.metodoPago : 'SINPE',
-    numeroPedido: '—',
+    numeroPedido,
     items: cartItems.map(i => ({
       producto: { nombreProducto: i.nombre },
       cantidad: i.cantidad,
@@ -191,8 +196,12 @@ export function useAdminPOS() {
     }
   }
 
-  const handleQrConfirmSinpe = async (token: string | null, autoConfirmed: boolean) => {
-    const receiptBase = armarReceiptQr(qrData, cartItems, autoConfirmed)
+  const handleQrConfirmSinpe = async (
+    token: string | null,
+    autoConfirmed: boolean,
+    numeroPedido = '—',
+  ) => {
+    const receiptBase = armarReceiptQr(qrData, cartItems, autoConfirmed, numeroPedido)
 
     if (autoConfirmed) {
       setReceipt(receiptBase)
@@ -200,7 +209,11 @@ export function useAdminPOS() {
       setCartItems([])
       setDescuento(0)
       setStep('recibo')
-      showToast('Pago con tarjeta confirmado', 'success')
+      const metodo = qrData?.metodoPago
+      showToast(
+        metodo === 'SINPE' ? 'SINPE confirmado' : 'Pago con tarjeta confirmado',
+        'success',
+      )
       return
     }
 

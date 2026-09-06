@@ -30,7 +30,7 @@ export default function FilaProductoLista({ producto, to }: Props) {
     >
       <Link to={to} className="flex items-center gap-3">
         {producto.imagenUrl ? (
-          <span className="size-14 shrink-0 overflow-hidden rounded-xl bg-[var(--hc-n-100)]">
+          <span className="size-14 shrink-0 overflow-hidden rounded-xl bg-[var(--hc-surface-2)]">
             <img
               src={producto.imagenUrl}
               alt=""
@@ -61,7 +61,7 @@ function Tag({ children }: { children: string }) {
   return (
     <span
       className="rounded-full px-2 py-0.5 text-[9px] font-medium"
-      style={{ background: 'var(--hc-red-50)', color: 'var(--hc-primary)' }}
+      style={{ background: 'var(--hc-danger-bg)', color: 'var(--hc-primary)' }}
     >
       {children}
     </span>

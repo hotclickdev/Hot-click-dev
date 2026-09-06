@@ -126,7 +126,7 @@ export function BadgePlan({ texto }: { texto: string }) {
   return (
     <span
       className="rounded-full px-2.5 py-1 text-[9px] font-bold"
-      style={{ background: 'var(--hc-blue-50)', color: 'var(--hc-blue-700)' }}
+      style={{ background: 'var(--hc-info-bg)', color: 'var(--hc-info)' }}
     >
       {texto}
     </span>
@@ -166,7 +166,7 @@ export function FilaOpcion({
 }
 
 export function IconoEstado({ variante }: { variante: 'ok' | 'alerta' | 'espera' }) {
-  const fondo = variante === 'ok' ? 'var(--hc-success-bg)' : variante === 'alerta' ? 'var(--hc-danger-bg)' : 'var(--hc-n-100)'
+  const fondo = variante === 'ok' ? 'var(--hc-success-bg)' : variante === 'alerta' ? 'var(--hc-danger-bg)' : 'var(--hc-surface-2)'
   const marca = variante === 'ok' ? '✓' : variante === 'alerta' ? '!' : ''
   return (
     <div

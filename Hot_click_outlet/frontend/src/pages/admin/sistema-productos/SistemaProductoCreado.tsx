@@ -73,7 +73,7 @@ function HintPublicacion({ slug, rutaTienda }: { slug: string | null; rutaTienda
   if (estadoEmpresa === 'ACTIVO') {
     return (
       <p className="text-sm mt-4" style={{ color: '#6b6459' }}>
-        Tu tienda está oculta.{' '}
+        Tu tienda está pausada en el catálogo.{' '}
         <Link to={RUTA_SISTEMA_VISIBILIDAD} className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
           Publicála
         </Link>

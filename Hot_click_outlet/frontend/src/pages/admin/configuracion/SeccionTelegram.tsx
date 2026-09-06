@@ -133,7 +133,9 @@ export default function SeccionTelegram({ toast }: { toast: ToastFn }) {
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
               {qr && (
                 <img src={qr} alt="QR para abrir el bot de Telegram"
-                  style={{ width: '140px', height: '140px', borderRadius: '12px', border: '1px solid var(--hc-border)', background: '#fff', padding: '6px' }} />
+                  className="hc-papel-blanco"
+                  style={{ width: '140px', height: '140px', borderRadius: '12px', border: '1px solid var(--hc-border)', background: '#fff', padding: '6px' }}
+                />
               )}
               <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <p style={{ fontSize: '13px', color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>

@@ -43,6 +43,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/pos/qr/pago/**").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/stripe").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/intent").permitAll()
+            .requestMatchers(POST, "/api/pos/qr/pago/*/sinpe-onvo").permitAll()
             // Compra sin registro (invitados)
             .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()

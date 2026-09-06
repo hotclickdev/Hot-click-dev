@@ -6,6 +6,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.service.AggregatorService;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
+import com.hotclick.service.VentaAvisoService;
 import com.hotclick.service.WebhookDispatcherService;
 import com.hotclick.service.analytics.PostHogCaptureService;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.verify;
 class PaymentNotificationsFacadeTest {
 
     @Mock NotificacionEmailService notificacionEmailService;
+    @Mock VentaAvisoService ventaAvisoService;
     @Mock N8nWebhookService n8nWebhookService;
     @Mock WebhookDispatcherService webhookDispatcher;
     @Mock AggregatorService aggregatorService;
@@ -36,7 +38,7 @@ class PaymentNotificationsFacadeTest {
     @InjectMocks PaymentNotificationsFacade facade;
 
     @Test
-    @DisplayName("pedido confirmado captura pedido_pagado")
+    @DisplayName("pedido confirmado captura pedido_pagado y avisa venta")
     void confirmadoCapturaPostHog() {
         Pedido pedido = pedidoPagado();
         Pago pago = pagoStripe();
@@ -44,18 +46,18 @@ class PaymentNotificationsFacadeTest {
         facade.onPedidoConfirmado(pedido, pago);
 
         verify(postHogCaptureService).capturarPedidoPagado(pedido, pago);
-        verify(notificacionEmailService).enviarConfirmacionPedido(pedido);
+        verify(ventaAvisoService).avisarVentaConfirmada(pedido);
     }
 
     @Test
-    @DisplayName("pago 100% gift card captura pedido_pagado")
+    @DisplayName("pago 100% gift card captura pedido_pagado y avisa venta")
     void giftCardCompletaCapturaPostHog() {
         Pedido pedido = pedidoPagado();
 
         facade.onGiftCardFullPayment(pedido, "GC-TEST");
 
         verify(postHogCaptureService).capturarPedidoPagado(eq(pedido), isNull());
-        verify(notificacionEmailService).enviarConfirmacionPedido(pedido);
+        verify(ventaAvisoService).avisarVentaConfirmada(pedido);
     }
 
     @Test
@@ -67,6 +69,7 @@ class PaymentNotificationsFacadeTest {
 
         verify(postHogCaptureService, never()).capturarPedidoPagado(any(), any());
         verify(notificacionEmailService).enviarPagoFallido(pedido, "tarjeta rechazada");
+        verify(ventaAvisoService, never()).avisarVentaConfirmada(any());
     }
 
     @Test
@@ -78,7 +81,7 @@ class PaymentNotificationsFacadeTest {
         facade.onPedidoConfirmado(pedido, pagoStripe());
         facade.onGiftCardFullPayment(pedido, "GC-TEST");
 
-        verify(notificacionEmailService, times(2)).enviarConfirmacionPedido(pedido);
+        verify(ventaAvisoService, times(2)).avisarVentaConfirmada(pedido);
     }
 
     private static Pedido pedidoPagado() {

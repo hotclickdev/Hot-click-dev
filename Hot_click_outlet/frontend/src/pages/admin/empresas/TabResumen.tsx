@@ -1,7 +1,6 @@
 import { formatDateShort, formatPrice } from '@/utils/format'
 import { EyeIcon, EyeOffIcon } from './empresasIcons'
 import Row from './Row'
-import EstadoEmpresaChips from './EstadoEmpresaChips'
 import {
   PLAN_COLOR,
   PLANES,
@@ -38,8 +37,13 @@ function VisibilidadPanel({ selected, saving, onToggleVisibilidad }: {
   const visible = selected.visibilidadPublica
   return (
     <div className="rounded-xl p-4 space-y-2" style={{ background: visible ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)', border: `1px solid ${visible ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}` }}>
+      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
+        Catálogo (el dueño puede volver a publicarlo)
+      </p>
       <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
-        {visible ? 'Negocio visible al público — productos en catálogo.' : 'Negocio oculto — no aparece en catálogo.'}
+        {visible
+          ? 'Tienda en el catálogo público. Para apagar la cuenta usá Cuenta HotClick arriba.'
+          : 'Catálogo oculto. Si la cuenta sigue ACTIVA, el dueño puede volver a publicarlo.'}
       </p>
       <button type="button"
         onClick={() => onToggleVisibilidad(selected.id, !visible)}
@@ -47,17 +51,16 @@ function VisibilidadPanel({ selected, saving, onToggleVisibilidad }: {
         className="w-full text-xs font-bold px-3 py-2 rounded-lg transition-opacity disabled:opacity-40 inline-flex items-center justify-center gap-1.5"
         style={{ background: visible ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)', color: visible ? '#f87171' : '#4ade80' }}
       >
-        {visible ? <><EyeOffIcon /> Ocultar del catálogo</> : <><EyeIcon /> Hacer visible en catálogo</>}
+        {visible ? <><EyeOffIcon /> Ocultar del catálogo</> : <><EyeIcon /> Mostrar en catálogo</>}
       </button>
     </div>
   )
 }
 
-function PlanEstadoActions({ selected, saving, onCambiarPlan, onCambiarEstado }: {
+function PlanEstadoActions({ selected, saving, onCambiarPlan }: {
   selected: EmpresaLista
   saving: boolean
   onCambiarPlan: (id: Id, plan: string) => void
-  onCambiarEstado: (id: Id, estadoEmpresa: string) => void
 }) {
   return (
     <div className="space-y-2">
@@ -74,8 +77,6 @@ function PlanEstadoActions({ selected, saving, onCambiarPlan, onCambiarEstado }:
           </button>
         ))}
       </div>
-      <p className="text-xs font-semibold uppercase tracking-wider pt-1" style={{ color: 'var(--hc-muted)' }}>Cambiar estado</p>
-      <EstadoEmpresaChips selected={selected} saving={saving} onCambiarEstado={onCambiarEstado} />
     </div>
   )
 }
@@ -89,7 +90,7 @@ export type TabResumenProps = {
   onCambiarEstado: (id: Id, estadoEmpresa: string) => void
 }
 
-export default function TabResumen({ selected, detail, saving, onToggleVisibilidad, onCambiarPlan, onCambiarEstado }: TabResumenProps) {
+export default function TabResumen({ selected, detail, saving, onToggleVisibilidad, onCambiarPlan }: TabResumenProps) {
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
@@ -110,7 +111,6 @@ export default function TabResumen({ selected, detail, saving, onToggleVisibilid
         selected={selected}
         saving={saving}
         onCambiarPlan={onCambiarPlan}
-        onCambiarEstado={onCambiarEstado}
       />
     </>
   )

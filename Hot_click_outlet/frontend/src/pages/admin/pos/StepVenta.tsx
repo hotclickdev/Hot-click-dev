@@ -176,7 +176,7 @@ function TicketBarPos({
 
 function claseBotonCobrar(disabled: boolean, extra: string): string {
   if (disabled) {
-    return `${extra} cursor-not-allowed bg-[var(--hc-n-200,#D1D5DB)] text-white/80 pointer-events-none`
+    return `${extra} cursor-not-allowed bg-[var(--hc-surface-3)] text-[var(--hc-text-disabled)] pointer-events-none`
   }
   return `${extra} bg-hc-primary text-white`
 }

@@ -15,7 +15,7 @@ export default function ProximamentePage() {
             <ChevronLeftIcon className="size-5" />
           </Link>
         </div>
-        <div className="mt-16 flex size-[72px] items-center justify-center rounded-full bg-[var(--hc-red-50)]">
+        <div className="mt-16 flex size-[72px] items-center justify-center rounded-full bg-[var(--hc-danger-bg)]">
           <ClockIcon className="size-8 text-hc-primary" />
         </div>
         <h1 className="font-display text-lg font-bold">Próximamente</h1>

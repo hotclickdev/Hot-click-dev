@@ -3,7 +3,7 @@ type Tono = 'exito' | 'alerta' | 'marca' | 'info'
 const TONOS: Record<Tono, string> = {
   exito: 'bg-[var(--hc-success-bg)] text-hc-success',
   alerta: 'bg-[var(--hc-warning-bg)] text-hc-warning',
-  marca: 'bg-[var(--hc-red-50)] text-hc-primary',
+  marca: 'bg-[var(--hc-danger-bg)] text-hc-primary',
   info: 'bg-[var(--hc-info-bg)] text-hc-accent',
 }
 

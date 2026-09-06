@@ -11,6 +11,7 @@ import {
   filtrarProductosTab,
   kpisEmpresas,
   rutaCargaMasivaEmpresa,
+  rutaEnlacePdfEmpresa,
   rutaEspacioEmpresa,
   rutaImportarEmpresa,
   type EmpresaLista,
@@ -66,7 +67,9 @@ describe('espacio de un negocio', () => {
   it('arma las rutas del workspace y la carga', () => {
     expect(rutaEspacioEmpresa(22)).toBe('/admin/empresas/22')
     expect(rutaCargaMasivaEmpresa(22)).toBe('/admin/productos/carga-masiva?empresaId=22')
-    expect(rutaImportarEmpresa(22)).toBe('/admin/productos/importar?empresaId=22')
+    expect(rutaImportarEmpresa(22)).toBe('/admin/productos/importar?empresaId=22&fuente=csv')
+    expect(rutaImportarEmpresa(22, 'csv')).toBe('/admin/productos/importar?empresaId=22&fuente=csv')
+    expect(rutaEnlacePdfEmpresa(22)).toBe('/admin/productos/importar?empresaId=22&fuente=url')
   })
 
   it('solo acepta un id numérico en el query', () => {
