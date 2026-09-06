@@ -78,6 +78,10 @@ export const ESTADO_COLOR_USUARIO: Record<number, string> = {
   4: 'bg-yellow-500/15 text-yellow-400',
 }
 
+export const ESTADOS_PEDIDO = [
+  'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO',
+]
+
 export const ESTADO_PEDIDO_STYLE: Record<string, { bg: string; text: string }> = {
   PENDIENTE: { bg: 'rgba(212,177,6,0.15)', text: '#d4b106' },
   PAGADO: { bg: 'rgba(23,71,168,0.14)', text: 'var(--hc-accent)' },
@@ -94,6 +98,11 @@ export const ROL_CONFIG: Record<string, { label: string; color: string }> = {
   EDITOR: { label: 'Editor', color: 'bg-blue-500/15 text-blue-400' },
   LECTOR: { label: 'Lector', color: 'bg-gray-500/15 text-gray-400' },
 }
+
+// Roles asignables al invitar o cambiar rol — coincide con
+// EmpresaAdminService.ROLES_EQUIPO_VALIDOS en el backend (excluye
+// PROPIETARIO, que no se asigna ni se cambia por acá).
+export const ROLES_EQUIPO_EDITABLE = ['EDITOR', 'LECTOR', 'ADMIN']
 
 export const PLAN_COLOR: Record<string, string> = {
   EMPRENDEDOR: 'bg-gray-500/15 text-gray-400',

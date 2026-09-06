@@ -5,12 +5,15 @@ const HERRAMIENTAS = [
   { to: '/admin/marcas', label: 'Marcas' },
   { to: '/admin/garantias', label: 'Garantías' },
   { to: '/admin/clientes', label: 'Clientes' },
-  { to: '/admin/observabilidad', label: 'Auditorías y Actividad' },
+  { to: '/admin/auditorias', label: 'Auditorías' },
+  { to: '/admin/observabilidad', label: 'Observabilidad' },
   { to: '/admin/servicios', label: 'Servicios Hot' },
   { to: '/admin/recolecciones', label: 'Recolección y entrega' },
   { to: '/admin/aprobaciones', label: 'Aprobaciones' },
   { to: '/admin/payouts', label: 'Retiros de billetera' },
+  { to: '/admin/saas-billing', label: 'Billing de plataforma' },
   { to: '/admin/reportes-producto', label: 'Productos reportados' },
+  { to: '/admin/soporte', label: 'Inbox de soporte' },
 ] as const
 
 /**

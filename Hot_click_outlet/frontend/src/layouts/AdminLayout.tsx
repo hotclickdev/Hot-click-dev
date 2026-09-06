@@ -12,7 +12,7 @@ import OfflineBanner from '@/components/OfflineBanner'
 import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import AppTour from '@/components/ui/AppTour'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
-import { esUsuarioSistema } from '@/utils/sistemaUser'
+import { esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
 import { RUTA_SISTEMA_VISIBILIDAD } from '@/utils/rutaTienda'
 import { buildSidebarLinks } from './admin/adminSidebarLinks'
 import SidebarContent, { type RoleBadge } from './admin/SidebarContent'
@@ -24,6 +24,9 @@ import type { SidebarLink } from './admin/adminItJobs'
 
 const ROLE_BADGES: Record<string, RoleBadge> = {
   ADMIN:       { label: 'Admin',       color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
+  SUPPORT:     { label: 'Support',     color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
+  FINANCE:     { label: 'Finance',     color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
+  TRUST:       { label: 'Trust',       color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
   EMPRENDEDOR: { label: 'Emprendedor', color: 'bg-[rgba(245,158,11,0.12)] text-amber-800 dark:text-amber-200' },
 }
 
@@ -34,6 +37,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   const location = useLocation()
   const userName = useAuthStore((s) => s.userName)
   const userRole = useAuthStore((s) => s.userRole)
+  const permissions = useAuthStore((s) => s.permissions)
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
   const empresaId = useAuthStore((s) => s.empresaId)
   const logout = useAuthStore((s) => s.logout)
@@ -55,7 +59,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   }, [empresaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (userRole !== 'ADMIN') return
+    if (userRole !== 'ADMIN' && userRole !== 'TRUST') return
     let cancelado = false
     moderacionService.resumen()
       .then((r) => { if (!cancelado) setModeracionTotal(r.total) })
@@ -72,7 +76,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     return () => globalThis.removeEventListener('keydown', handler)
   }, [])
 
-  const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole).map((link) =>
+  const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole, permissions).map((link) =>
     link.to === '/admin/aprobaciones' && moderacionTotal > 0
       ? { ...link, badge: moderacionTotal }
       : link,
@@ -103,7 +107,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
 
   const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, userRole, handleLogout, onSearch: () => setSearchOpen(true) }
   const esSistema = esUsuarioSistema(userRole)
-  const esSuperAdmin = userRole === 'ADMIN'
+  const esSuperAdmin = esStaffPlataforma(userRole)
   const temaPanel = esSuperAdmin ? 'hc-superadmin-theme' : 'hc-sistema-theme'
   const anchoSidebar = esSistema || esSuperAdmin ? 'w-[230px]' : 'w-60'
   const margenSidebar = esSistema || esSuperAdmin ? 'md:ml-[230px]' : 'md:ml-60'

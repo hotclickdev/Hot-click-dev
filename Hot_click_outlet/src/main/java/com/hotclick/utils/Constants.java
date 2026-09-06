@@ -8,6 +8,17 @@ public class Constants {
     public static final ZoneId ZONA_CR = ZoneId.of("America/Costa_Rica");
 
     /**
+     * Empresa seed interna de plataforma (no es tenant del marketplace).
+     * Fuente unica: AdminBillingMapper y TenantUsoAgregacion antes tenian
+     * cada uno su propia copia de este ID, con logica ya divergente entre si.
+     */
+    public static final long EMPRESA_PLATAFORMA_ID = 1L;
+
+    public static boolean esEmpresaPlataforma(long empresaId) {
+        return empresaId == EMPRESA_PLATAFORMA_ID;
+    }
+
+    /**
      * Genera un número de pedido único con el prefijo dado.
      * Usa UUID aleatorio (12 hex chars = 48 bits) para evitar colisiones
      * bajo carga concurrente. System.currentTimeMillis() colisionaba cuando
@@ -37,6 +48,17 @@ public class Constants {
     public static final String ROL_ADMIN        = "ADMIN";
     public static final String ROL_EMPRENDEDOR  = "EMPRENDEDOR";
     public static final String ROL_USUARIO_FINAL = "USUARIO_FINAL";
+    /** Staff plataforma: tickets / ver tiendas (sin bypass CompanyScope). */
+    public static final String ROL_SUPPORT = "SUPPORT";
+    /** Staff plataforma: payouts, billing, pagos. */
+    public static final String ROL_FINANCE = "FINANCE";
+    /** Staff plataforma: moderación y suspensiones. */
+    public static final String ROL_TRUST = "TRUST";
+
+    // Permisos globales (V8) — base de la matriz staff
+    public static final String PERM_GLOBAL_COMPANIES = "global.companies";
+    public static final String PERM_GLOBAL_APPROVALS = "global.approvals";
+    public static final String PERM_GLOBAL_METRICS   = "global.metrics";
 
     // Estados de pedido
     public static final String PEDIDO_PENDIENTE = "PENDIENTE";
@@ -87,6 +109,16 @@ public class Constants {
     public static final String AUDITORIA_RECHAZAR_SINPE     = "RECHAZAR_SINPE";
     public static final String AUDITORIA_AUTO_APROBAR_SINPE = "AUTO_APROBAR_SINPE";
 
+    /** Retención de hot_click_auditoria_admin_tb (DataRetentionScheduler). */
+    public static final int DIAS_RETENCION_AUDITORIA_ADMIN = 90;
+
+    /**
+     * Umbral de auto-aprobación de payouts (PayoutAutoApprovalScheduler) — decisión
+     * de negocio explícita: retiros de bajo monto no requieren revisión manual de
+     * FINANCE/ADMIN.
+     */
+    public static final long UMBRAL_AUTO_APROBACION_PAYOUT = 50_000L;
+
     // 2FA — métodos disponibles
     public static final String METODO_2FA_TOTP      = "TOTP";
     public static final String METODO_2FA_EMAIL_OTP = "EMAIL_OTP";
@@ -99,4 +131,11 @@ public class Constants {
 
     /** Cliente genérico de ventas de mostrador (POS sin cliente elegido). */
     public static final Long ID_USUARIO_MOSTRADOR = 999L;
+
+    /** Primeros cupos de plan Emprendedor sin membresía de pago. */
+    public static final int CUPO_EMPRENDEDORES_GRATIS = 70;
+
+    public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
+
+    public static final String CORREO_DEMO_EMPRESA_SUFIJO = "@hotclick.test";
 }

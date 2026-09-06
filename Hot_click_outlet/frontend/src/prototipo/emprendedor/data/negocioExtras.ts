@@ -8,7 +8,7 @@ export type ExtrasNegocio = {
 
 const VACIO: ExtrasNegocio = { categoria: '', instagram: '', zona: '' }
 
-/** Lee cache legacy sin borrarlo (fallback offline / error de red). */
+/** Lee cache local (solo fallback si GET /empresa/perfil falló). */
 export function leerExtrasLocal(): ExtrasNegocio {
   try {
     const raw = localStorage.getItem(CLAVE)
@@ -24,7 +24,20 @@ export function leerExtrasLocal(): ExtrasNegocio {
   }
 }
 
-/** Borra el cache legacy tras migrar a API o guardar en servidor. */
+/** Borrador offline si el PUT a /empresa/perfil no llegó al servidor. */
+export function guardarExtrasLocal(extras: ExtrasNegocio): void {
+  try {
+    localStorage.setItem(CLAVE, JSON.stringify({
+      categoria: extras.categoria ?? '',
+      instagram: extras.instagram ?? '',
+      zona: extras.zona ?? '',
+    }))
+  } catch (err) {
+    console.warn('[negocioExtras] no se pudo cachear offline', err)
+  }
+}
+
+/** Borra el cache tras un PUT exitoso. */
 export function limpiarExtrasLocal(): void {
   localStorage.removeItem(CLAVE)
 }

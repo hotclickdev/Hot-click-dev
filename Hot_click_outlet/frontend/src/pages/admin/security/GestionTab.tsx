@@ -111,9 +111,9 @@ export default function GestionTab() {
 
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl text-sm font-medium shadow-xl"
-          style={{ backgroundColor: toast.ok ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                   color: toast.ok ? '#4ade80' : '#f87171',
-                   border: `1px solid ${toast.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+          style={{ backgroundColor: toast.ok ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
+                   color: toast.ok ? 'var(--hc-success)' : 'var(--hc-danger)',
+                   border: `1px solid color-mix(in srgb, ${toast.ok ? 'var(--hc-success)' : 'var(--hc-danger)'} 30%, transparent)` }}>
           {toast.msg}
         </div>
       )}

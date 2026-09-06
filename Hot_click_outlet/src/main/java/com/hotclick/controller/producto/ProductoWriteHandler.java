@@ -6,6 +6,7 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.producto.ProductoAccessGuard;
 import com.hotclick.service.producto.ProductoApprovalService;
@@ -38,6 +39,7 @@ public class ProductoWriteHandler {
     @Autowired private ProductoAccessGuard productoAccessGuard;
     @Autowired private ProductoApprovalService productoApprovalService;
     @Autowired private ProductoBulkOperationsService productoBulkOperationsService;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
 
     public ResponseEntity<ResponseDTO> toggleCarrusel(Long id, Map<String, Object> body) {
         try {
@@ -84,6 +86,8 @@ public class ProductoWriteHandler {
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             var producto = productoService.toggleVisibleCatalogo(id, valor);
             String msg = valor ? "Producto publicado" : "Producto pausado";
+            auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_VISIBILIDAD", "PRODUCTO",
+                id, existente.getEmpresaId(), valor ? "Producto publicado" : "Producto pausado");
             return ResponseEntity.ok(ResponseDTO.success(msg, producto));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));

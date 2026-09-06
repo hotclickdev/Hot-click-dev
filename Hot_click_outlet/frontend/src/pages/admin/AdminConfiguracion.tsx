@@ -200,7 +200,7 @@ export default function AdminConfiguracion() {
                           {label}
                         </span>
                         {badge && (
-                          <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: active ? 'rgba(255,255,255,0.9)' : '#f59e0b', fontSize: '9px', fontWeight: 700, color: active ? '#f59e0b' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: active ? 'rgba(255,255,255,0.9)' : 'var(--hc-warning)', fontSize: '9px', fontWeight: 700, color: active ? 'var(--hc-warning)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {badge}
                           </span>
                         )}
@@ -236,7 +236,7 @@ export default function AdminConfiguracion() {
                   }}>
                   <Icon style={{ width: '13px', height: '13px' }} />
                   {label}
-                  {badge && <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '14px', height: '14px', borderRadius: '50%', background: '#f59e0b', fontSize: '8px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badge}</span>}
+                  {badge && <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '14px', height: '14px', borderRadius: '50%', background: 'var(--hc-warning)', fontSize: '8px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badge}</span>}
                 </button>
               )
             })}

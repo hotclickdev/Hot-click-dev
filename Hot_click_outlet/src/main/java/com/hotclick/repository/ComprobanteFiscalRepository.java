@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,17 @@ public interface ComprobanteFiscalRepository extends JpaRepository<ComprobanteFi
 
     Optional<ComprobanteFiscal> findByPedidoId(Long pedidoId);
 
-    Page<ComprobanteFiscal> findByEmpresaIdOrderByFechaEmisionDesc(Long empresaId, Pageable pageable);
+    /** Listado admin con filtros opcionales por estado y rango de fecha de emisión. */
+    @Query("SELECT c FROM ComprobanteFiscal c WHERE c.empresa.id = :empresaId " +
+           "AND (:estado IS NULL OR c.estado = :estado) " +
+           "AND (:desde IS NULL OR c.fechaEmision >= :desde) " +
+           "AND (:hasta IS NULL OR c.fechaEmision <= :hasta)")
+    Page<ComprobanteFiscal> findByEmpresaIdConFiltros(
+        @Param("empresaId") Long empresaId,
+        @Param("estado") String estado,
+        @Param("desde") LocalDateTime desde,
+        @Param("hasta") LocalDateTime hasta,
+        Pageable pageable);
 
     /** Comprobantes pendientes de consulta a Hacienda (retry job). */
     @Query("SELECT c FROM ComprobanteFiscal c WHERE c.empresa.id = :empresaId " +

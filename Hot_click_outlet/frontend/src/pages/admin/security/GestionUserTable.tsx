@@ -109,8 +109,8 @@ export default function GestionUserTable({
                       <div>
                         <p className="font-medium truncate max-w-[140px]" style={{ color: 'var(--hc-text)' }}>{empresa.nombreEmpresa}</p>
                         <span className="text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ backgroundColor: empresa.estadoEmpresa === 'ACTIVO' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                                   color: empresa.estadoEmpresa === 'ACTIVO' ? '#4ade80' : '#f87171' }}>
+                          style={{ backgroundColor: empresa.estadoEmpresa === 'ACTIVO' ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
+                                   color: empresa.estadoEmpresa === 'ACTIVO' ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
                           {empresa.estadoEmpresa} · {empresa.planSaas ?? '—'}
                         </span>
                       </div>
@@ -122,19 +122,19 @@ export default function GestionUserTable({
                   <td className="px-4 py-3">
                     {sec ? (
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold"
-                        style={{ backgroundColor: sec.twoFactorEnabled ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.08)',
-                                 color: sec.twoFactorEnabled ? '#4ade80' : '#f87171' }}>
+                        style={{ backgroundColor: sec.twoFactorEnabled ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
+                                 color: sec.twoFactorEnabled ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
                         {sec.twoFactorEnabled ? 'Activo' : 'Inactivo'}
                       </span>
                     ) : <span style={{ color: 'var(--hc-muted)' }}>—</span>}
                   </td>
 
-                  <td className="px-4 py-3 text-center font-bold tabular-nums" style={{ color: '#4ade80' }}>
+                  <td className="px-4 py-3 text-center font-bold tabular-nums" style={{ color: 'var(--hc-success)' }}>
                     {sec?.loginsExitosos ?? '—'}
                   </td>
 
                   <td className="px-4 py-3 text-center font-bold tabular-nums"
-                    style={{ color: (sec?.loginsFallidos ?? 0) > 0 ? '#f87171' : 'var(--hc-muted)' }}>
+                    style={{ color: (sec?.loginsFallidos ?? 0) > 0 ? 'var(--hc-danger)' : 'var(--hc-muted)' }}>
                     {sec?.loginsFallidos ?? '—'}
                   </td>
 
@@ -150,21 +150,21 @@ export default function GestionUserTable({
                       {estado !== 'ELIMINADO' && estado !== 'SUSPENDIDO' && estado !== 'PENDIENTE' && (
                         <button type="button" onClick={() => onAction(u, 'block')}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
-                          style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                          style={{ backgroundColor: 'var(--hc-warning-bg)', color: 'var(--hc-warning)' }}>
                           Bloquear
                         </button>
                       )}
                       {estado === 'SUSPENDIDO' && (
                         <button type="button" onClick={() => onAction(u, 'unblock')}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
-                          style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#4ade80' }}>
+                          style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>
                           Desbloquear
                         </button>
                       )}
                       {estado === 'ELIMINADO' && (
                         <button type="button" onClick={() => onAction(u, 'restore')}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
-                          style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#4ade80' }}>
+                          style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>
                           Restaurar
                         </button>
                       )}
@@ -195,10 +195,10 @@ export default function GestionUserTable({
                               <p><span style={{ color: 'var(--hc-muted)' }}>IPs distintas: </span>{sec.ipsDistintas ?? '—'}</p>
                               <p><span style={{ color: 'var(--hc-muted)' }}>Último acceso: </span>{sec.fechaUltimoAcceso ? new Date(sec.fechaUltimoAcceso).toLocaleString('es-CR') : '—'}</p>
                               {sec.bloqueadoHasta && (
-                                <p className="text-red-400">Bloqueado hasta: {new Date(sec.bloqueadoHasta).toLocaleString('es-CR')}</p>
+                                <p className="text-hc-danger">Bloqueado hasta: {new Date(sec.bloqueadoHasta).toLocaleString('es-CR')}</p>
                               )}
                               {(sec.intentosFallidos ?? 0) > 0 && (
-                                <p className="text-amber-400">Intentos fallidos acum.: {sec.intentosFallidos}</p>
+                                <p className="text-hc-warning">Intentos fallidos acum.: {sec.intentosFallidos}</p>
                               )}
                             </div>
                           </div>
@@ -213,7 +213,7 @@ export default function GestionUserTable({
                               <p><span style={{ color: 'var(--hc-muted)' }}>Plan: </span>{empresa.planSaas ?? '—'}</p>
                               <p><span style={{ color: 'var(--hc-muted)' }}>Estado empresa: </span>{empresa.estadoEmpresa}</p>
                               {empresa.visibilidadPublica === false && (
-                                <p className="text-amber-400">Tienda invisible al público</p>
+                                <p className="text-hc-warning">Tienda invisible al público</p>
                               )}
                             </div>
                           </div>

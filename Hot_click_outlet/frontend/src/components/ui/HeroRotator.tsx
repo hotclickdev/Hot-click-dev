@@ -6,9 +6,11 @@ import type { Producto } from '@/types/producto'
 
 export type HeroRotatorProps = {
   destacados: Producto[]
+  /** IDs de fase habilitadas, en orden, desde la config del homepage. Vacío = todas. */
+  heroSections?: string[]
 }
 
-export default function HeroRotator({ destacados }: HeroRotatorProps) {
+export default function HeroRotator({ destacados, heroSections }: HeroRotatorProps) {
   const {
     phase,
     phases,
@@ -19,7 +21,7 @@ export default function HeroRotator({ destacados }: HeroRotatorProps) {
     resumeTimer,
     handleChatSubmit,
     goTo,
-  } = useHeroRotator()
+  } = useHeroRotator(heroSections)
 
   return (
     <section

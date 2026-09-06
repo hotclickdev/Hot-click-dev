@@ -114,6 +114,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await expect(page.getByText('Paso 1 de 3')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Tipo de cuenta' })).toBeVisible()
     await page.getByRole('radio', { name: /SINPE Móvil/i }).click()
+    await expect(page.getByRole('radio', { name: /Tarjeta/i })).toHaveCount(0)
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByRole('heading', { name: 'Datos de la cuenta' })).toBeVisible()
   })

@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-BPPDQ3Gw.js";function t(){return e()}export{t};

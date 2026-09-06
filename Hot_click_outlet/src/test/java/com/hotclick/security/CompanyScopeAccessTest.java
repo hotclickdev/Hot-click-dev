@@ -87,6 +87,32 @@ class CompanyScopeAccessTest {
         assertThat(companyScope.getCurrentEmpresaId()).isNull();
     }
 
+    @Test
+    @DisplayName("SUPPORT no tiene bypass de CompanyScope aunque sea staff de plataforma")
+    void supportSinBypassDeTenant() {
+        autenticar(usuarioConRol(Constants.ROL_SUPPORT, 1L));
+
+        assertThatThrownBy(() -> companyScope.assertCanAccess(99L))
+            .isInstanceOf(TenantAccessDeniedException.class)
+            .hasMessageContaining("otra empresa");
+        assertThat(companyScope.getCurrentEmpresaId()).isNull();
+        assertThat(companyScope.getCurrentEmpresaIdOrOwn()).isNull();
+    }
+
+    @Test
+    @DisplayName("hasAuthority reconoce permiso global del SecurityContext")
+    void hasAuthorityDePermisoGlobal() {
+        Usuario u = usuarioConRol(Constants.ROL_FINANCE, null);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+            u, null, List.of(
+                new SimpleGrantedAuthority("ROLE_" + Constants.ROL_FINANCE),
+                new SimpleGrantedAuthority(Constants.PERM_GLOBAL_METRICS)));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        assertThat(companyScope.hasAuthority(Constants.PERM_GLOBAL_METRICS)).isTrue();
+        assertThat(companyScope.hasAuthority(Constants.PERM_GLOBAL_COMPANIES)).isFalse();
+    }
+
     private static void autenticar(Usuario usuario) {
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
             usuario, null, List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRoles().get(0).getNombreRol())));

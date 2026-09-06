@@ -1,0 +1,1 @@
+import{u as e}from"./planPaths-BCLSm5MH.js";import{t}from"./authStore-BY8IbaBa.js";import{t as n}from"./tenantStore-DK0VAzVa.js";function r(){return e(t(e=>e.userRole),n(e=>e.planNombre))}export{r as t};

@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-BN5-OQue.js";function t(){return e()}export{t};

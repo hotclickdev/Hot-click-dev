@@ -5,11 +5,21 @@ import { esConvenio } from './heroRotatorHelpers'
 import { convenioService, listaConvenios } from '@/services/convenioService'
 import useChatStore from '@/store/chatStore'
 
+/** Filtra y reordena PHASES según la config del homepage. Vacío o inválido = todas, orden original. */
+function fasesActivas(heroSectionIds?: string[]): typeof PHASES {
+  if (!heroSectionIds || heroSectionIds.length === 0) return PHASES
+  const porId = new Map(PHASES.map((p) => [p.id, p]))
+  const filtradas = heroSectionIds
+    .map((id) => porId.get(id as HeroPhase['id']))
+    .filter((p): p is (typeof PHASES)[number] => p != null)
+  return filtradas.length > 0 ? filtradas : PHASES
+}
+
 /**
  * Estado y handlers del hero rotator.
  * El chat abre el drawer; el hero sigue rotando destacados y emprendimientos.
  */
-export function useHeroRotator() {
+export function useHeroRotator(heroSectionIds?: string[]) {
   const { t } = useTranslation()
   const [phaseIdx, setPhaseIdx] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -17,12 +27,14 @@ export function useHeroRotator() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pausedRef   = useRef(false)
 
+  const activePhases = useMemo(() => fasesActivas(heroSectionIds), [heroSectionIds])
+
   const phases: HeroPhase[] = useMemo(
-    () => PHASES.map((p) => ({ ...p, label: t(PHASE_LABEL_KEYS[p.id]) })),
-    [t],
+    () => activePhases.map((p) => ({ ...p, label: t(PHASE_LABEL_KEYS[p.id]) })),
+    [activePhases, t],
   )
 
-  const phase = phases[phaseIdx]!
+  const phase = phases[phaseIdx] ?? phases[0]!
 
   function pauseTimer()  { pausedRef.current = true }
   function resumeTimer() { pausedRef.current = false }
@@ -53,7 +65,7 @@ export function useHeroRotator() {
 
     const advancePhase = () => {
       if (progressRef.current != null) clearInterval(progressRef.current)
-      setTimeout(() => setPhaseIdx((i) => (i + 1) % PHASES.length), 0)
+      setTimeout(() => setPhaseIdx((i) => (i + 1) % phases.length), 0)
     }
 
     progressRef.current = setInterval(() => {
@@ -68,7 +80,7 @@ export function useHeroRotator() {
     return () => {
       if (progressRef.current != null) clearInterval(progressRef.current)
     }
-  }, [phaseIdx, phase.duration])
+  }, [phaseIdx, phase.duration, phases.length])
 
   function goTo(i: number) {
     if (progressRef.current != null) clearInterval(progressRef.current)

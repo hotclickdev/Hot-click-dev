@@ -32,6 +32,11 @@ if ('serviceWorker' in navigator) {
       if (swRegistration) {
         void swRegistration.update()
         setInterval(() => { void swRegistration.update() }, 60 * 60 * 1000)
+        // Pestañas de larga duración (ej. caja POS abierta todo el día) no
+        // esperan la hora completa: al volver a foco, chequean de una vez.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') void swRegistration.update()
+        })
       }
     },
     onRegisterError() {},

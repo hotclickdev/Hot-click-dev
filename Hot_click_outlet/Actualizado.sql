@@ -3575,7 +3575,7 @@ SET visible_catalogo = FALSE
 WHERE visible_catalogo = TRUE
   AND (fk_id_empresa = 1 OR fk_id_empresa IS NULL);
 
--- V121: empresa afectada en auditor�a admin + �ndices de listado
+-- auditoria admin + indices de listado
 CREATE TABLE IF NOT EXISTS hot_click_auditoria_admin_tb (
     id_auditoria BIGSERIAL PRIMARY KEY,
     admin_id     BIGINT,
@@ -3603,17 +3603,17 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_admin_email
 CREATE INDEX IF NOT EXISTS idx_auditoria_admin_empresa
   ON hot_click_auditoria_admin_tb (fk_id_empresa);
 
--- V121: Roles de staff de plataforma (SUPPORT / FINANCE / TRUST)
+-- V126: Roles de staff de plataforma (SUPPORT / FINANCE / TRUST)
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'SUPPORT', 'Staff plataforma ? tickets y ver tiendas', 80, 1
+SELECT 'SUPPORT', 'Staff plataforma — tickets y ver tiendas', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'SUPPORT');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'FINANCE', 'Staff plataforma ? payouts, billing y pagos', 80, 1
+SELECT 'FINANCE', 'Staff plataforma — payouts, billing y pagos', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'FINANCE');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'TRUST', 'Staff plataforma ? moderaci?n y suspensiones', 80, 1
+SELECT 'TRUST', 'Staff plataforma — moderación y suspensiones', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'TRUST');
 
 INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)
@@ -3656,8 +3656,123 @@ ALTER TABLE hot_click_plan_tb ADD COLUMN IF NOT EXISTS tiene_gift_cards BOOLEAN 
 
 UPDATE hot_click_plan_tb SET tiene_gift_cards = true WHERE nombre IN ('PYME', 'NEGOCIO_PLUS');
 
--- V122: corrige la descripcion del flag split_payments — Gift Cards ya tiene su
+-- V122: corrige la descripcion del flag split_payments ? Gift Cards ya tiene su
 -- propio gate real por plan (tieneGiftCards, V121), este flag nunca lo controlo.
 UPDATE hot_click_feature_flag_tb
 SET descripcion = 'Pagos divididos en una misma venta'
 WHERE nombre = 'split_payments';
+
+-- V123: config real del homepage publico (antes vivia solo en localStorage del admin, sin efecto real)
+CREATE TABLE IF NOT EXISTS hot_click_homepage_config_tb (
+    id BIGINT PRIMARY KEY,
+    hero_sections VARCHAR(100) NOT NULL DEFAULT 'chat,products,businesses',
+    visible_categoria_ids VARCHAR(1000) NOT NULL DEFAULT '',
+    max_categorias INTEGER NOT NULL DEFAULT 8
+);
+
+INSERT INTO hot_click_homepage_config_tb (id, hero_sections, visible_categoria_ids, max_categorias)
+VALUES (1, 'chat,products,businesses', '', 8)
+ON CONFLICT (id) DO NOTHING;
+
+-- V124: inbox de soporte — asignar / resolver tickets desde admin
+ALTER TABLE hot_click_ticket_soporte_tb
+    ADD COLUMN IF NOT EXISTS fk_id_asignado BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL;
+
+ALTER TABLE hot_click_ticket_soporte_tb
+    ADD COLUMN IF NOT EXISTS fecha_asignacion TIMESTAMP;
+
+ALTER TABLE hot_click_ticket_soporte_tb
+    ADD COLUMN IF NOT EXISTS fecha_resolucion TIMESTAMP;
+
+ALTER TABLE hot_click_ticket_soporte_tb
+    ADD COLUMN IF NOT EXISTS notas_admin TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_ticket_soporte_estado
+    ON hot_click_ticket_soporte_tb(estado);
+
+CREATE INDEX IF NOT EXISTS idx_ticket_soporte_asignado
+    ON hot_click_ticket_soporte_tb(fk_id_asignado);
+
+-- V129: empresa afectada en auditoria admin (V123 en master es homepage_config)
+ALTER TABLE hot_click_auditoria_admin_tb
+  ADD COLUMN IF NOT EXISTS fk_id_empresa BIGINT REFERENCES hot_click_empresa_tb(id_empresa);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_fecha
+  ON hot_click_auditoria_admin_tb (fecha DESC);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_accion
+  ON hot_click_auditoria_admin_tb (accion);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_email
+  ON hot_click_auditoria_admin_tb (admin_email);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_admin_empresa
+  ON hot_click_auditoria_admin_tb (fk_id_empresa);
+
+-- V125: Ledger de billing de plataforma (eventos por tenant).
+CREATE TABLE IF NOT EXISTS hot_click_billing_ledger_tb (
+    id_billing_ledger   BIGSERIAL    PRIMARY KEY,
+    fk_id_empresa       BIGINT       NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
+    fk_id_suscripcion   BIGINT       REFERENCES hot_click_suscripcion_tb(id_suscripcion),
+    tipo                VARCHAR(40)  NOT NULL,
+    proveedor           VARCHAR(20),
+    referencia_externa  VARCHAR(120),
+    monto_centavos      INTEGER,
+    moneda              VARCHAR(3)   NOT NULL DEFAULT 'crc',
+    detalle             VARCHAR(500),
+    fecha_evento        TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_billing_ledger_empresa_fecha
+    ON hot_click_billing_ledger_tb (fk_id_empresa, fecha_evento DESC);
+
+CREATE INDEX IF NOT EXISTS idx_billing_ledger_tipo
+    ON hot_click_billing_ledger_tb (tipo);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_ledger_ref_tipo
+    ON hot_click_billing_ledger_tb (referencia_externa, tipo)
+    WHERE referencia_externa IS NOT NULL;
+
+-- V128: cambio de cuenta de cobro queda en revisión hasta admin.
+ALTER TABLE hot_click_metodo_cobro_tb
+    ADD COLUMN IF NOT EXISTS en_revision BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE hot_click_metodo_cobro_tb
+SET mascara = '••••-' || RIGHT(destino, 4)
+WHERE tipo = 'SINPE'
+  AND destino IS NOT NULL
+  AND length(destino) >= 4;
+
+CREATE INDEX IF NOT EXISTS idx_solicitud_metodo_cobro_pendiente
+    ON hot_click_solicitud_aprobacion_tb (tipo_entidad, estado_solicitud, fecha_solicitud DESC)
+    WHERE tipo_entidad = 'METODO_COBRO';
+
+-- V127: cupo historico de 70 altas gratis al plan Emprendedor
+CREATE TABLE IF NOT EXISTS hot_click_cupo_emprendedor_tb (
+    id     SMALLINT PRIMARY KEY,
+    limite INTEGER NOT NULL DEFAULT 70,
+    usados INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT cupo_emprendedor_unica CHECK (id = 1),
+    CONSTRAINT cupo_emprendedor_rango CHECK (usados >= 0 AND limite > 0)
+);
+
+INSERT INTO hot_click_cupo_emprendedor_tb (id, limite, usados)
+VALUES (1, 70, 0)
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE hot_click_cupo_emprendedor_tb
+SET usados = (
+    SELECT COUNT(*)
+    FROM hot_click_empresa_tb
+    WHERE correo_empresa NOT ILIKE '%@hotclick.test'
+)
+WHERE id = 1 AND usados = 0;
+
+
+
+-- V130: prioridad automática en tickets de soporte, según el plan de la empresa
+
+ALTER TABLE hot_click_ticket_soporte_tb
+  ADD COLUMN IF NOT EXISTS prioridad VARCHAR(10) NOT NULL DEFAULT 'MEDIA';
+
+CREATE INDEX IF NOT EXISTS idx_ticket_soporte_prioridad ON hot_click_ticket_soporte_tb (prioridad);

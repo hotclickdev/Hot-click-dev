@@ -18,8 +18,22 @@ public final class MetodoCobroFormato {
             case "SINPE" -> MetodoCobro.TIPO_SINPE;
             case "IBAN" -> MetodoCobro.TIPO_IBAN;
             case "TARJETA" -> MetodoCobro.TIPO_TARJETA;
-            default -> throw new IllegalArgumentException("Tipo no válido: usá sinpe, iban o tarjeta");
+            default -> throw new IllegalArgumentException("Tipo no válido: usá sinpe o iban");
         };
+    }
+
+    /** El alta de cuentas nuevas no admite tarjeta (legacy se ve, no se crea ni edita). */
+    public static void assertTipoAlta(String tipo) {
+        if (MetodoCobro.TIPO_TARJETA.equals(tipo)) {
+            throw new IllegalArgumentException("El alta solo admite SINPE o IBAN.");
+        }
+        if (!MetodoCobro.TIPO_SINPE.equals(tipo) && !MetodoCobro.TIPO_IBAN.equals(tipo)) {
+            throw new IllegalArgumentException("Tipo no válido: usá sinpe o iban");
+        }
+    }
+
+    public static boolean esEditable(String tipo) {
+        return MetodoCobro.TIPO_SINPE.equals(tipo) || MetodoCobro.TIPO_IBAN.equals(tipo);
     }
 
     /** Limpia y valida el dato; lanza IllegalArgumentException si no sirve. */
@@ -40,8 +54,8 @@ public final class MetodoCobroFormato {
             return destino == null ? "" : destino;
         }
         return switch (tipo) {
-            case MetodoCobro.TIPO_SINPE -> destino.length() >= 8
-                    ? destino.substring(0, 4) + "-" + destino.substring(4, 8)
+            case MetodoCobro.TIPO_SINPE -> destino.length() >= 4
+                    ? "••••-" + destino.substring(destino.length() - 4)
                     : destino;
             case MetodoCobro.TIPO_IBAN -> destino.length() >= 8
                     ? destino.substring(0, 4) + " **** " + destino.substring(destino.length() - 4)

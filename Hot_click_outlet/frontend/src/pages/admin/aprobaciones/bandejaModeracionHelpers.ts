@@ -16,6 +16,7 @@ export const RESUMEN_VACIO: ModeracionResumen = {
   testimonios: 0,
   payouts: 0,
   reportesProducto: 0,
+  cuentasCobro: 0,
   total: 0,
 }
 
@@ -69,6 +70,13 @@ export function colasDesdeResumen(r: ModeracionResumen): ColaModeracion[] {
       count: r.reportesProducto,
       to: '/admin/reportes-producto',
       cuerpo: 'Productos reportados por clientes',
+    },
+    {
+      id: 'cobro',
+      label: 'Cuentas de cobro',
+      count: r.cuentasCobro,
+      to: '/admin/aprobaciones?tab=cobro',
+      cuerpo: 'Cambios de SINPE o IBAN en revisión',
     },
     // Garantías / Servicios HOT: operación, no van en esta bandeja.
   ]

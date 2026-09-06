@@ -8,6 +8,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
 import com.hotclick.utils.Constants;
@@ -42,6 +43,7 @@ public class PedidoController {
     @Autowired private InputSanitizer sanitizer;
     @Autowired private PedidoAccessGuard pedidoAccessGuard;
     @Autowired private PedidoTenantResponder pedidoTenantResponder;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
 
     @PostMapping("/manual")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
@@ -109,7 +111,12 @@ public class PedidoController {
             }
             String nota = sanitizer.cleanWithLimit(body.get("nota"), 500);
             return pedidoTenantResponder.conAcceso(id, "Estado actualizado",
-                existente -> pedidoService.cambiarEstado(existente.getId(), estado, nota));
+                existente -> {
+                    Object resultado = pedidoService.cambiarEstado(existente.getId(), estado, nota);
+                    auditoriaAdminRegistroService.registrarSiAdmin("PEDIDO_CAMBIO_ESTADO", "PEDIDO",
+                        existente.getId(), existente.getEmpresaId(), "Estado cambiado a " + estado);
+                    return resultado;
+                });
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -125,7 +132,12 @@ public class PedidoController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Número de guía requerido"));
             }
             return pedidoTenantResponder.conAcceso(id, "Guía asignada y cliente notificado",
-                existente -> pedidoService.asignarGuia(existente.getId(), guia));
+                existente -> {
+                    Object resultado = pedidoService.asignarGuia(existente.getId(), guia);
+                    auditoriaAdminRegistroService.registrarSiAdmin("PEDIDO_ASIGNAR_GUIA", "PEDIDO",
+                        existente.getId(), existente.getEmpresaId(), "Guía asignada: " + guia);
+                    return resultado;
+                });
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -143,7 +155,13 @@ public class PedidoController {
             Integer costoEnvio = body.get("costoEnvio") != null
                 ? ((Number) body.get("costoEnvio")).intValue() : null;
             return pedidoTenantResponder.conAcceso(id, "Envío procesado y cliente notificado",
-                existente -> pedidoService.procesarEnvio(existente.getId(), guia, costoEnvio));
+                existente -> {
+                    Object resultado = pedidoService.procesarEnvio(existente.getId(), guia, costoEnvio);
+                    auditoriaAdminRegistroService.registrarSiAdmin("PEDIDO_PROCESAR_ENVIO", "PEDIDO",
+                        existente.getId(), existente.getEmpresaId(),
+                        "Envío procesado, guía: " + guia + (costoEnvio != null ? ", costo: " + costoEnvio : ""));
+                    return resultado;
+                });
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

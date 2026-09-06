@@ -36,6 +36,9 @@ public class DataSeeder implements ApplicationRunner {
         seedRol(Constants.ROL_ADMIN,         "Administrador del sistema HotClick", 100);
         seedRol(Constants.ROL_EMPRENDEDOR,   "Dueño de empresa",                   7);
         seedRol(Constants.ROL_USUARIO_FINAL, "Cliente final",                       1);
+        seedRol(Constants.ROL_SUPPORT, "Staff plataforma — tickets y ver tiendas", 80);
+        seedRol(Constants.ROL_FINANCE, "Staff plataforma — payouts, billing y pagos", 80);
+        seedRol(Constants.ROL_TRUST,   "Staff plataforma — moderación y suspensiones", 80);
         seedAdminUser();
         seedPlanesSaas();
         asignarPlanesDemo();

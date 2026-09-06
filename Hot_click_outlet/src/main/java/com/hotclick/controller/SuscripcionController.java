@@ -55,6 +55,7 @@ public class SuscripcionController {
             m.put("tieneReportes", p.getTieneReportes());
             m.put("tieneAi", p.getTieneAi());
             m.put("tieneApi", p.getTieneApi());
+            m.put("tieneGiftCards", p.getTieneGiftCards());
             return m;
         }).toList();
         return ResponseEntity.ok(result);

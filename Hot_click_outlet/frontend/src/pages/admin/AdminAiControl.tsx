@@ -56,7 +56,7 @@ export default function AdminAiControl() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+        <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}>
           {error}
         </div>
       )}
@@ -65,8 +65,8 @@ export default function AdminAiControl() {
         {[
           { label: 'Cuentas activas', value: empresas.length, color: 'var(--hc-text)' },
           { label: 'Llamadas totales/mes', value: fmt(totalLlamadas), color: 'var(--hc-accent)' },
-          { label: 'Costo estimado USD', value: `$${costoTotal.toFixed(4)}`, color: '#34d399' },
-          { label: 'Alertas activas', value: alertas.length, color: alertas.length > 0 ? '#f87171' : '#34d399' },
+          { label: 'Costo estimado USD', value: `$${costoTotal.toFixed(4)}`, color: 'var(--hc-success)' },
+          { label: 'Alertas activas', value: alertas.length, color: alertas.length > 0 ? 'var(--hc-danger)' : 'var(--hc-success)' },
         ].map((k) => (
           <div key={k.label} className="rounded-2xl p-4"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>

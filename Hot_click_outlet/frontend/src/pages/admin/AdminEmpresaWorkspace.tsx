@@ -35,6 +35,14 @@ export default function AdminEmpresaWorkspace() {
         onToggleVisibilidadProducto={w.toggleVisibilidadProducto}
         onEditarProducto={(p) => { void editor.openEdit(p) }}
         onNuevoProducto={editor.openNew}
+        savingPedidoId={w.savingPedidoId}
+        onCambiarEstadoPedido={w.cambiarEstadoPedido}
+        onAsignarGuiaPedido={w.asignarGuiaPedido}
+        savingMiembroId={w.savingMiembroId}
+        invitandoMiembro={w.invitandoMiembro}
+        onInvitarMiembro={w.invitarMiembro}
+        onCambiarRolMiembro={w.cambiarRolMiembro}
+        onEliminarMiembro={w.eliminarMiembro}
       />
       <ProductoFormModal
         open={editor.modalOpen}

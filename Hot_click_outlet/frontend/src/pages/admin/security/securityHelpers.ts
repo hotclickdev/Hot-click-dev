@@ -11,11 +11,14 @@ export type SecuritySeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string
 
 export type SeverityStyle = { bg: string; text: string; border: string }
 
+// MEDIUM y HIGH comparten el mismo tono (warning): la marca solo define 3 pares
+// semánticos (success/warning/danger), no hay un 4to tono propio — decisión del
+// dueño del producto, no un descuido.
 export const SEVERITY_COLOR: Record<string, SeverityStyle> = {
-  LOW:      { bg: 'rgba(34,197,94,0.12)',   text: '#4ade80', border: 'rgba(34,197,94,0.25)'  },
-  MEDIUM:   { bg: 'rgba(234,179,8,0.12)',   text: '#facc15', border: 'rgba(234,179,8,0.25)'  },
-  HIGH:     { bg: 'rgba(229,169,61,0.12)',  text: '#E5A93D', border: 'rgba(229,169,61,0.25)' },
-  CRITICAL: { bg: 'rgba(239,68,68,0.12)',   text: '#f87171', border: 'rgba(239,68,68,0.25)'  },
+  LOW:      { bg: 'var(--hc-success-bg)', text: 'var(--hc-success)', border: 'color-mix(in srgb, var(--hc-success) 30%, transparent)' },
+  MEDIUM:   { bg: 'var(--hc-warning-bg)', text: 'var(--hc-warning)', border: 'color-mix(in srgb, var(--hc-warning) 30%, transparent)' },
+  HIGH:     { bg: 'var(--hc-warning-bg)', text: 'var(--hc-warning)', border: 'color-mix(in srgb, var(--hc-warning) 30%, transparent)' },
+  CRITICAL: { bg: 'var(--hc-danger-bg)',  text: 'var(--hc-danger)',  border: 'color-mix(in srgb, var(--hc-danger) 30%, transparent)'  },
 }
 
 export const EVENT_LABEL: Record<string, string> = {

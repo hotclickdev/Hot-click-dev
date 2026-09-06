@@ -10,6 +10,8 @@ import com.hotclick.repository.ReporteProductoRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,9 @@ import java.util.Set;
 
 @Service
 public class ReporteProductoService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReporteProductoService.class);
+    private static final int UMBRAL_AUTO_PAUSA = 3;
 
     private static final Set<String> MOTIVOS = Set.of(
         "CONTENIDO_INAPROPIADO",
@@ -69,7 +74,23 @@ public class ReporteProductoService {
         ReporteProducto guardado = repo.save(r);
         moderacionAdminAvisoService.avisarReporteProducto(
             guardado.getId(), producto.getNombreProducto());
+        autoPausarSiCorresponde(producto);
         return toMap(guardado);
+    }
+
+    private void autoPausarSiCorresponde(Producto producto) {
+        long pendientes = repo.countByProducto_IdAndEstado(producto.getId(), ReporteProducto.PENDIENTE);
+        boolean visible = !Boolean.FALSE.equals(producto.getVisibleCatalogo());
+        if (pendientes < UMBRAL_AUTO_PAUSA || !visible) {
+            return;
+        }
+        producto.setVisibleCatalogo(false);
+        productoRepository.save(producto);
+        log.info("[moderacion] Producto {} pausado automáticamente — {} reportes pendientes",
+            producto.getId(), pendientes);
+        moderacionAvisoService.avisarProductoModerado(
+            producto.getEmpresaId(), producto.getNombreProducto(), true,
+            "Pausado automáticamente: " + pendientes + " reportes pendientes");
     }
 
     @Transactional(readOnly = true)

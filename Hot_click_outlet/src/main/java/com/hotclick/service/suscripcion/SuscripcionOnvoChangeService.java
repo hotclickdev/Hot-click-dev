@@ -1,6 +1,7 @@
 package com.hotclick.service.suscripcion;
 
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.model.BillingLedger;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
@@ -8,10 +9,12 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.billing.BillingLedgerWriter;
 import com.hotclick.service.onvo.OnvoBillingClient;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -41,6 +44,9 @@ public class SuscripcionOnvoChangeService {
     private final OnvoService onvoService;
     private final SuscripcionPlanSupport planSupport;
     private final SuscripcionOnvoChangeService self;
+
+    @Autowired(required = false)
+    private BillingLedgerWriter ledgerWriter;
 
     public SuscripcionOnvoChangeService(SuscripcionRepository suscripcionRepo,
                                         EmpresaRepository empresaRepo,
@@ -262,6 +268,7 @@ public class SuscripcionOnvoChangeService {
         empresa.setEstadoPlan("ACTIVO");
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
+        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO confirmado");
         log.info("[billing-onvo] Webhook activó empresa={} plan={}", empresa.getId(), plan.getNombre());
     }
 
@@ -273,6 +280,7 @@ public class SuscripcionOnvoChangeService {
             Empresa empresa = sub.getEmpresa();
             empresa.setEstadoPlan("PAST_DUE");
             empresaRepo.save(empresa);
+            anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_FALLIDO, onvoSubId, "Renovación ONVO fallida");
             log.warn("[billing-onvo] Renovación fallida empresa={} sub={}", empresa.getId(), onvoSubId);
         });
     }
@@ -290,8 +298,15 @@ public class SuscripcionOnvoChangeService {
                 e.setPlanSaas(PLAN_GRATIS);
                 empresaRepo.save(e);
             });
+            anotarLedger(sub.getEmpresa(), sub, BillingLedger.TIPO_CANCELACION, onvoSubId,
+                "Suscripción ONVO cancelada");
             log.info("[billing-onvo] Suscripción eliminada empresa={}", sub.getEmpresa().getId());
         });
+    }
+
+    private void anotarLedger(Empresa empresa, Suscripcion sub, String tipo, String ref, String detalle) {
+        if (ledgerWriter == null) return;
+        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, "crc", detalle);
     }
 
     private static String nombrePlanActual(Empresa empresa) {

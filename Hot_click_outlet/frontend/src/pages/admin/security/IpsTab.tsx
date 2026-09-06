@@ -82,25 +82,25 @@ export default function IpsTab() {
                           <td className="px-4 py-2.5 font-mono font-semibold" style={{ color: 'var(--hc-text)' }}>{ip.ip}</td>
                           <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: 'var(--hc-text)' }}>{ip.totalRequests}</td>
                           <td className="px-4 py-2.5 text-center font-bold tabular-nums"
-                            style={{ color: (ip.loginsFallidos ?? 0) > 0 ? '#f87171' : 'var(--hc-muted)' }}>
+                            style={{ color: (ip.loginsFallidos ?? 0) > 0 ? 'var(--hc-danger)' : 'var(--hc-muted)' }}>
                             {ip.loginsFallidos}
                           </td>
                           <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--hc-muted)' }}>{timeAgo(ip.ultimoEvento)}</td>
                           <td className="px-4 py-2.5">
                             {ip.bloqueada
-                              ? <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>Bloqueada</span>
-                              : <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(74,222,128,0.1)', color: '#4ade80' }}>Libre</span>}
+                              ? <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}>Bloqueada</span>
+                              : <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>Libre</span>}
                           </td>
                           <td className="px-4 py-2.5">
                             {ip.bloqueada
                               ? <button type="button" onClick={() => desbloquear(ip.ip)} disabled={blocking === ip.ip}
                                   className="px-2.5 py-1 rounded-lg text-xs hover:opacity-80 disabled:opacity-40"
-                                  style={{ backgroundColor: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>
+                                  style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
                                   {blocking === ip.ip ? '...' : 'Desbloquear'}
                                 </button>
                               : <button type="button" onClick={() => bloquear(ip.ip)} disabled={blocking === ip.ip}
                                   className="px-2.5 py-1 rounded-lg text-xs hover:opacity-80 disabled:opacity-40"
-                                  style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
+                                  style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)', border: '1px solid color-mix(in srgb, var(--hc-danger) 30%, transparent)' }}>
                                   {blocking === ip.ip ? '...' : 'Bloquear'}
                                 </button>}
                           </td>
@@ -131,7 +131,7 @@ export default function IpsTab() {
                 style={{ backgroundColor: 'var(--hc-bg)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
               <button type="button" onClick={bloquearManual} disabled={!ipInput.trim() || !!blocking}
                 className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
-                style={{ backgroundColor: '#ef4444', color: '#fff' }}>
+                style={{ backgroundColor: 'var(--hc-danger)', color: '#fff' }}>
                 Bloquear
               </button>
             </div>
@@ -158,14 +158,14 @@ export default function IpsTab() {
                           <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--hc-muted)' }}>{fmtDate(b.fechaBloqueo)}</td>
                           <td className="px-4 py-2.5">
                             {b.activa
-                              ? <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>Activa</span>
+                              ? <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}>Activa</span>
                               : <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--hc-border)', color: 'var(--hc-muted)' }}>Inactiva</span>}
                           </td>
                           <td className="px-4 py-2.5">
                             {b.activa && (
                               <button type="button" onClick={() => desbloquear(b.ipAddress)} disabled={blocking === b.ipAddress}
                                 className="px-2.5 py-1 rounded-lg text-xs hover:opacity-80 disabled:opacity-40"
-                                style={{ backgroundColor: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>
+                                style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
                                 {blocking === b.ipAddress ? '...' : 'Desbloquear'}
                               </button>
                             )}

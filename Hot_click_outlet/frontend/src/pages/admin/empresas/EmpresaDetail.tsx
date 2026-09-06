@@ -111,6 +111,14 @@ export type EmpresaDetailProps = {
   onToggleVisibilidadProducto: (producto: EmpresaProductoTab) => void
   onEditarProducto: (producto: EmpresaProductoTab) => void
   onNuevoProducto: () => void
+  savingPedidoId: Id | null
+  onCambiarEstadoPedido: (id: Id, estado: string) => void
+  onAsignarGuiaPedido: (id: Id, numeroGuia: string) => void
+  savingMiembroId: Id | null
+  invitandoMiembro: boolean
+  onInvitarMiembro: (datos: { nombre: string; correo: string; telefono: string; rolEnEmpresa: string }) => Promise<boolean>
+  onCambiarRolMiembro: (id: Id, rolEnEmpresa: string) => void
+  onEliminarMiembro: (id: Id) => void
 }
 
 export default function EmpresaDetail({
@@ -134,6 +142,14 @@ export default function EmpresaDetail({
   onToggleVisibilidadProducto,
   onEditarProducto,
   onNuevoProducto,
+  savingPedidoId,
+  onCambiarEstadoPedido,
+  onAsignarGuiaPedido,
+  savingMiembroId,
+  invitandoMiembro,
+  onInvitarMiembro,
+  onCambiarRolMiembro,
+  onEliminarMiembro,
 }: EmpresaDetailProps) {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 pb-8">
@@ -178,8 +194,26 @@ export default function EmpresaDetail({
             />
           </>
         )}
-        {tab === 'pedidos' && <TabPedidos loading={tabLoading} pedidos={tabPedidos} />}
-        {tab === 'equipo' && <TabEquipo loading={tabLoading} equipo={tabEquipo} />}
+        {tab === 'pedidos' && (
+          <TabPedidos
+            loading={tabLoading}
+            pedidos={tabPedidos}
+            savingPedidoId={savingPedidoId}
+            onCambiarEstadoPedido={onCambiarEstadoPedido}
+            onAsignarGuiaPedido={onAsignarGuiaPedido}
+          />
+        )}
+        {tab === 'equipo' && (
+          <TabEquipo
+            loading={tabLoading}
+            equipo={tabEquipo}
+            savingMiembroId={savingMiembroId}
+            invitando={invitandoMiembro}
+            onInvitarMiembro={onInvitarMiembro}
+            onCambiarRolMiembro={onCambiarRolMiembro}
+            onEliminarMiembro={onEliminarMiembro}
+          />
+        )}
       </div>
     </div>
   )

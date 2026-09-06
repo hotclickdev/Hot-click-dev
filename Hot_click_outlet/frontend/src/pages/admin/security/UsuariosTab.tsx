@@ -54,11 +54,11 @@ export default function UsuariosTab() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
           {([
-            ['Logins exitosos', selected.loginsExitosos, '#4ade80'],
-            ['Logins fallidos', selected.loginsFallidos, '#f87171'],
+            ['Logins exitosos', selected.loginsExitosos, 'var(--hc-success)'],
+            ['Logins fallidos', selected.loginsFallidos, 'var(--hc-danger)'],
             ['IPs distintas',   selected.ipsDistintas,  'var(--hc-text)'],
             ['2FA',             selected.twoFactorEnabled ? 'Activo' : 'Inactivo',
-              selected.twoFactorEnabled ? '#4ade80' : '#f87171'],
+              selected.twoFactorEnabled ? 'var(--hc-success)' : 'var(--hc-danger)'],
           ] as [string, string | number | undefined, string][]).map(([label, val, color]) => (
             <div key={label} className="rounded-xl p-3 text-center"
               style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
@@ -70,8 +70,8 @@ export default function UsuariosTab() {
         <div className="text-xs space-y-1 pt-1" style={{ color: 'var(--hc-muted)' }}>
           <p>Registrado: {fmtDate(selected.fechaRegistro)}</p>
           <p>Último acceso: {fmtDate(selected.fechaUltimoAcceso)}</p>
-          {selected.bloqueadoHasta && <p className="text-red-400">Bloqueado hasta: {fmtDate(selected.bloqueadoHasta)}</p>}
-          {(selected.intentosFallidos ?? 0) > 0 && <p className="text-yellow-400">Intentos fallidos acumulados: {selected.intentosFallidos}</p>}
+          {selected.bloqueadoHasta && <p className="text-hc-danger">Bloqueado hasta: {fmtDate(selected.bloqueadoHasta)}</p>}
+          {(selected.intentosFallidos ?? 0) > 0 && <p className="text-hc-warning">Intentos fallidos acumulados: {selected.intentosFallidos}</p>}
         </div>
       </Card>
 
@@ -150,17 +150,17 @@ export default function UsuariosTab() {
                       <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--hc-muted)' }}>{timeAgo(u.fechaUltimoAcceso)}</td>
                       <td className="px-4 py-2.5">
                         <span className="px-2 py-0.5 rounded text-xs font-semibold"
-                          style={{ backgroundColor: u.twoFactorEnabled ? 'rgba(74,222,128,0.12)' : 'rgba(239,68,68,0.1)',
-                                   color: u.twoFactorEnabled ? '#4ade80' : '#f87171' }}>
+                          style={{ backgroundColor: u.twoFactorEnabled ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
+                                   color: u.twoFactorEnabled ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
                           {u.twoFactorEnabled ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: '#4ade80' }}>{u.loginsExitosos}</td>
-                      <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: (u.loginsFallidos ?? 0) > 0 ? '#f87171' : 'var(--hc-muted)' }}>{u.loginsFallidos}</td>
+                      <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: 'var(--hc-success)' }}>{u.loginsExitosos}</td>
+                      <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: (u.loginsFallidos ?? 0) > 0 ? 'var(--hc-danger)' : 'var(--hc-muted)' }}>{u.loginsFallidos}</td>
                       <td className="px-4 py-2.5 text-center" style={{ color: 'var(--hc-muted)' }}>{u.ipsDistintas}</td>
                       <td className="px-4 py-2.5">
                         {u.bloqueadoHasta
-                          ? <span className="text-red-400 text-xs">Bloqueado</span>
+                          ? <span className="text-hc-danger text-xs">Bloqueado</span>
                           : <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>Normal</span>}
                       </td>
                       <td className="px-4 py-2.5">

@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { esStaffPlataforma } from '@/utils/sistemaUser'
 
 export type SidebarLink = {
   to?: string
@@ -99,7 +100,7 @@ export function leerSeccionesColapsadas(userRole?: string | null): Set<string> {
     const raw = localStorage.getItem(CLAVE_SIDEBAR_COLAPSADO)
     if (raw == null) {
       return new Set<string>(
-        userRole === 'ADMIN'
+        userRole != null && esStaffPlataforma(userRole)
           ? ADMIN_IT_SECCIONES_COLAPSADAS_POR_DEFECTO
           : [],
       )
@@ -126,9 +127,11 @@ function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
   return [
     { section: ADMIN_IT_SECCION.OPERAR },
     { to: '/admin/payouts', label: t('admin.sidebar.retirosBilletera'), icon: 'card', permiso: 'global.metrics' },
+    { to: '/admin/saas-billing', label: t('admin.sidebar.billingPlataforma'), icon: 'card', permiso: 'global.metrics' },
     { to: '/admin/pagos', label: t('admin.sidebar.pagosWebhooks'), icon: 'card', permiso: 'global.metrics' },
     { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard', permiso: 'global.companies' },
     { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },
+    { to: '/admin/soporte', label: t('admin.sidebar.inboxSoporte'), icon: 'help', permiso: 'global.companies' },
     { to: '/admin/servicios', label: t('admin.sidebar.serviciosHot'), icon: 'wrench', permiso: 'global.companies' },
     { to: '/admin/facturas', label: t('admin.sidebar.comprobantesElectronicos'), icon: 'clipboard', permiso: 'global.metrics' },
     { to: '/admin/config-fiscal', label: t('admin.sidebar.configFiscal'), icon: 'config', permiso: 'global.metrics' },
@@ -149,6 +152,7 @@ function seccionSistemaPlataforma(t: TFunction): SidebarLink[] {
   return [
     { section: ADMIN_IT_SECCION.SISTEMA },
     { to: '/admin/security', label: t('admin.sidebar.securityCenter'), icon: 'shield' },
+    { to: '/admin/auditorias', label: t('admin.sidebar.auditorias'), icon: 'clipboard' },
     { to: '/admin/superadmin', label: t('admin.sidebar.featureFlags'), icon: 'config' },
     { to: '/admin/observabilidad', label: t('admin.sidebar.observabilidad'), icon: 'chart' },
     { to: '/admin/ai-control', label: t('admin.sidebar.controlIa'), icon: 'ai' },

@@ -7,6 +7,7 @@ import com.hotclick.service.ImpersonacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -82,6 +83,36 @@ public class EmpresaController {
     public ResponseEntity<ResponseDTO> equipo(@PathVariable Long id) {
         companyScope.assertCanAccess(id);
         return ResponseEntity.ok(ResponseDTO.success("Equipo", empresaAdminService.equipo(id)));
+    }
+
+    /**
+     * Edición directa de equipo sin impersonar. Todo /api/admin/empresas/**
+     * ya exige rol ADMIN (ver SecurityAuthorizationRules), así que
+     * assertCanAccess acá solo repite el patrón del resto del controller,
+     * pero siempre bypasea. La contraseña del invitado se genera server-side
+     * y viaja por correo — ver EmpresaAdminService.invitarMiembro().
+     */
+    @PostMapping("/{id}/equipo")
+    public ResponseEntity<ResponseDTO> invitarMiembro(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        companyScope.assertCanAccess(id);
+        empresaAdminService.invitarMiembro(id, body.get("nombre"), body.get("correo"),
+            body.get("telefono"), body.getOrDefault("rolEnEmpresa", "EDITOR"));
+        return ResponseEntity.ok(ResponseDTO.success("Invitación enviada por correo", null));
+    }
+
+    @PutMapping("/{id}/equipo/{miembroId}/rol")
+    public ResponseEntity<ResponseDTO> cambiarRolMiembro(@PathVariable Long id, @PathVariable Long miembroId,
+                                                          @RequestBody Map<String, String> body) {
+        companyScope.assertCanAccess(id);
+        Map<String, Object> resultado = empresaAdminService.cambiarRolMiembro(id, miembroId, body.get("rolEnEmpresa"));
+        return ResponseEntity.ok(ResponseDTO.success("Rol actualizado", resultado));
+    }
+
+    @DeleteMapping("/{id}/equipo/{miembroId}")
+    public ResponseEntity<ResponseDTO> eliminarMiembro(@PathVariable Long id, @PathVariable Long miembroId) {
+        companyScope.assertCanAccess(id);
+        empresaAdminService.eliminarMiembro(id, miembroId, companyScope.getCurrentUserId());
+        return ResponseEntity.ok(ResponseDTO.success("Miembro eliminado del equipo", null));
     }
 
     /**

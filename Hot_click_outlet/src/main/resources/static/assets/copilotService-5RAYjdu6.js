@@ -1,1 +1,0 @@
-import{t as e}from"./api-BH-nI94x.js";var t={getHistorial:()=>e.get(`/admin/ai/historial`),getUso:()=>e.get(`/admin/ai/uso`),getSugerencias:()=>e.get(`/admin/ai/sugerencias`),getProductosSinVenta:()=>e.get(`/admin/ai/productos-sin-venta`),getInsights:()=>e.get(`/admin/ai/insights`),deleteHistorial:()=>e.delete(`/admin/ai/historial`)};export{t};

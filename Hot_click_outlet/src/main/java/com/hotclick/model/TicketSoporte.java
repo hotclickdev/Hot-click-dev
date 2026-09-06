@@ -9,6 +9,14 @@ import java.time.LocalDateTime;
 @Table(name = "hot_click_ticket_soporte_tb")
 public class TicketSoporte {
 
+    public static final String ABIERTO = "ABIERTO";
+    public static final String ASIGNADO = "ASIGNADO";
+    public static final String RESUELTO = "RESUELTO";
+
+    public static final String PRIORIDAD_ALTA = "ALTA";
+    public static final String PRIORIDAD_MEDIA = "MEDIA";
+    public static final String PRIORIDAD_BAJA = "BAJA";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_ticket_soporte")
@@ -23,6 +31,11 @@ public class TicketSoporte {
     @JoinColumn(name = "fk_id_usuario")
     private Usuario usuario;
 
+    @JsonIgnoreProperties({"contrasenaHash", "roles", "pedidos", "carritos"})
+    @ManyToOne
+    @JoinColumn(name = "fk_id_asignado")
+    private Usuario asignado;
+
     @Column(name = "titulo", nullable = false, length = 150)
     private String titulo;
 
@@ -33,10 +46,22 @@ public class TicketSoporte {
     private String fotoUrl;
 
     @Column(name = "estado", nullable = false, length = 20)
-    private String estado = "ABIERTO";
+    private String estado = ABIERTO;
+
+    @Column(name = "prioridad", nullable = false, length = 10)
+    private String prioridad = PRIORIDAD_MEDIA;
+
+    @Column(name = "notas_admin", columnDefinition = "TEXT")
+    private String notasAdmin;
 
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
+
+    @Column(name = "fecha_asignacion")
+    private LocalDateTime fechaAsignacion;
+
+    @Column(name = "fecha_resolucion")
+    private LocalDateTime fechaResolucion;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -46,6 +71,9 @@ public class TicketSoporte {
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+
+    public Usuario getAsignado() { return asignado; }
+    public void setAsignado(Usuario asignado) { this.asignado = asignado; }
 
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
@@ -59,6 +87,18 @@ public class TicketSoporte {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
+    public String getPrioridad() { return prioridad; }
+    public void setPrioridad(String prioridad) { this.prioridad = prioridad; }
+
+    public String getNotasAdmin() { return notasAdmin; }
+    public void setNotasAdmin(String notasAdmin) { this.notasAdmin = notasAdmin; }
+
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    public LocalDateTime getFechaAsignacion() { return fechaAsignacion; }
+    public void setFechaAsignacion(LocalDateTime fechaAsignacion) { this.fechaAsignacion = fechaAsignacion; }
+
+    public LocalDateTime getFechaResolucion() { return fechaResolucion; }
+    public void setFechaResolucion(LocalDateTime fechaResolucion) { this.fechaResolucion = fechaResolucion; }
 }

@@ -43,6 +43,10 @@ export const adminService = {
   setEmpresaVisibilidad: (id: Id, visibilidadPublica: boolean) =>
     api.put(`/admin/empresas/${id}/visibilidad`, { visibilidadPublica }),
   impersonarEmpresa: (id: Id) => api.post(`/admin/empresas/${id}/impersonar`),
+  invitarMiembroEmpresa: (id: Id, body: JsonBody) => api.post(`/admin/empresas/${id}/equipo`, body),
+  cambiarRolMiembroEmpresa: (id: Id, miembroId: Id, rolEnEmpresa: string) =>
+    api.put(`/admin/empresas/${id}/equipo/${miembroId}/rol`, { rolEnEmpresa }),
+  eliminarMiembroEmpresa: (id: Id, miembroId: Id) => api.delete(`/admin/empresas/${id}/equipo/${miembroId}`),
   // Fuera de /admin/** a propósito: quien cierra la sesión está autenticado como
   // el usuario impersonado, no como ADMIN (ver ImpersonacionController en el backend).
   finalizarImpersonacion: (id: Id) => api.post(`/impersonacion/${id}/finalizar`),
