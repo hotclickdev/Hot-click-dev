@@ -214,11 +214,25 @@ Ver reporte completo en [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ---
 
+## PR gates (ola 1)
+
+Además de `ci.yml` (Maven + Vitest/Playwright) y `security.yml` (gitleaks), los PRs a `master` pueden disparar:
+
+- **E1 Flyway** — entidad JPA con cambio de esquema ⇒ debe haber `V*__.sql` (no se aplica SQL a prod).
+- **E2 Tenant** — diff de controllers/services/repos: IDOR `findById`, `@Async` sin `TenantContext`, PgBouncer (`SET`/`LISTEN`/`pg_advisory`).
+- **E3 SPA** — cambios en `frontend/src` ⇒ `static/` actualizado o `pnpm build` en CI (Docker no buildea React).
+- **E6 Dependabot** — labels; majors de Spring Boot / jjwt / stripe-java y Spring Boot 4.x ⇒ `needs-human`, sin auto-merge.
+- **E11 Sensibles** — `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` ⇒ debe existir un `*Test*` nominal.
+- **D5** — el backup diario falla el job (e issue) si el dump no existe o está vacío.
+
+Skip **solo** con labels explícitos (`skip-flyway-gate`, `skip-tenant-gate`, `skip-spa-gate`, `skip-sensitive-gate`, `skip-dependabot-gate`). Detalle: [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md).
+
 ## Documentación
 
 | Carpeta / Archivo | Contenido |
 | --- | --- |
 | [CLAUDE.md](CLAUDE.md) | Guía de desarrollo para Claude Code |
+| [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md) | PR gates E1/E2/E3/E6/E11 + D5 backup |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Cumplimiento legal, SEO, plataformas externas |
 | [docs/legal/](docs/legal/) | 8 documentos legales en formato `.md` |
 | [docs/security/](docs/security/) | 16 documentos de arquitectura de seguridad |

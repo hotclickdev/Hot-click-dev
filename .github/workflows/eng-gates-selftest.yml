@@ -1,0 +1,30 @@
+name: Eng gates — selftest
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'scripts/eng-gates/**'
+      - '.github/workflows/gate-*.yml'
+      - '.github/workflows/dependabot-triage.yml'
+      - '.github/workflows/eng-gates-selftest.yml'
+      - 'docs/AGENTES_ENG_GATES.md'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: node --test scripts/eng-gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Unit tests de los gates
+        run: node --test scripts/eng-gates/eng-gates.test.mjs
