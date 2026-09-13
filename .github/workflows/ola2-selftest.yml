@@ -1,0 +1,41 @@
+name: Ola 2 — selftest
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/eng-gates/ola2*'
+      - 'scripts/eng-gates/hunter-idor.mjs'
+      - 'scripts/eng-gates/sonar-batch.mjs'
+      - 'scripts/eng-gates/e2e-gap-map.mjs'
+      - 'scripts/eng-gates/gate-authz.mjs'
+      - 'scripts/eng-gates/restore-drill*'
+      - 'scripts/eng-gates/fetch-backup-dump.sh'
+      - 'scripts/eng-gates/fixtures/**'
+      - '.github/workflows/hunter-idor.yml'
+      - '.github/workflows/sonar-batch.yml'
+      - '.github/workflows/e2e-gap-map.yml'
+      - '.github/workflows/gate-authz.yml'
+      - '.github/workflows/restore-drill.yml'
+      - '.github/workflows/ola2-selftest.yml'
+      - 'docs/AGENTES_OLA2.md'
+      - 'Hot_click_outlet/frontend/tests/pending/**'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: node --test ola 2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Selftests
+        run: node --test scripts/eng-gates/ola2.test.mjs

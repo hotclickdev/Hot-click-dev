@@ -1,0 +1,42 @@
+name: D2 — Daily IDOR findById hunter
+
+on:
+  schedule:
+    # 04:00 America/Costa_Rica (UTC-6, sin DST) = 10:00 UTC
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_mode:
+        description: 'recent (24h) | full | auto'
+        type: choice
+        default: auto
+        options: [auto, recent, full]
+
+concurrency:
+  group: hunter-idor
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  hunt:
+    name: D2 IDOR hunter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Escanear findById y upsert Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCAN_MODE: ${{ github.event.inputs.scan_mode || 'auto' }}
+        run: node scripts/eng-gates/hunter-idor.mjs

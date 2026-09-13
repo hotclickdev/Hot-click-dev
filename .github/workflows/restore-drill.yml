@@ -1,0 +1,79 @@
+name: S8 — Weekly restore drill
+
+on:
+  schedule:
+    # Domingo 01:00 America/Costa_Rica = 07:00 UTC (después del backup 06:00 UTC)
+    - cron: '0 7 * * 0'
+  workflow_dispatch:
+    inputs:
+      use_fixture:
+        description: 'Usar fixture sintético del repo (no prod). Para probar el mecanismo.'
+        type: boolean
+        default: false
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+jobs:
+  restore-drill:
+    name: S8 Restore throwaway Postgres
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: drill
+          POSTGRES_PASSWORD: drill_local_only
+          POSTGRES_DB: restore_drill
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U drill -d restore_drill"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      # Destino SOLO local. Nunca SUPABASE_BACKUP_URL.
+      DATABASE_URL: postgresql://drill:drill_local_only@127.0.0.1:5432/restore_drill
+      DRILL_ALLOW_RESTORE: '1'
+      PGPASSWORD: drill_local_only
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install postgresql-client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client --quiet
+
+      - name: Obtener dump (artifact o fixture)
+        id: dump
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USE_FIXTURE: ${{ github.event.inputs.use_fixture || 'false' }}
+        run: bash scripts/eng-gates/fetch-backup-dump.sh
+
+      - name: Restore drill (throwaway)
+        run: bash scripts/eng-gates/restore-drill.sh drill "${{ steps.dump.outputs.file }}"
+
+  open-p0:
+    name: S8 Issue P0 si el restore falla
+    if: failure()
+    needs: [restore-drill]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Abrir / actualizar Issue P0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/eng-gates/restore-drill-issue.mjs

@@ -1,0 +1,33 @@
+name: S3 — Weekly E2E gap map
+
+on:
+  schedule:
+    # Martes 08:00 America/Costa_Rica = 14:00 UTC
+    - cron: '0 14 * * 2'
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-gap-map
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  map:
+    name: S3 E2E gap map
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Mapear huecos y upsert Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/e2e-gap-map.mjs
