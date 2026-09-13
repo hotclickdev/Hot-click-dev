@@ -51,6 +51,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
 
+      - name: Esperar 90s antes del retry (503 de sonarcloud.io)
+        if: steps.sonar.outcome == 'failure'
+        run: sleep 90
+
       - name: SonarCloud Scan (retry)
         if: steps.sonar.outcome == 'failure'
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
