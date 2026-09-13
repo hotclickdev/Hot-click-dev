@@ -91,6 +91,37 @@ export function enableSquashAutoMerge() {
   }
 }
 
+export function upsertIssue({ title, marker, body }) {
+  const repo = process.env.GITHUB_REPOSITORY;
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+  if (!repo || !token) {
+    console.log(`[eng-gates] skip issue (${marker}): no gh context`);
+    return false;
+  }
+  const stamped = `${body.trim()}\n\n<!-- ${marker} -->\n`;
+  try {
+    const raw = gh([
+      'issue', 'list',
+      '--repo', repo,
+      '--state', 'open',
+      '--search', title,
+      '--json', 'number,title,body',
+    ]);
+    const issues = JSON.parse(raw || '[]');
+    const existing = issues.find((item) => String(item.body || '').includes(`<!-- ${marker} -->`) || item.title === title);
+    if (existing) {
+      gh(['api', '-X', 'PATCH', `repos/${repo}/issues/${existing.number}`, '--input', '-'], JSON.stringify({ body: stamped }));
+      console.log(`Issue #${existing.number} actualizado`);
+      return true;
+    }
+    gh(['issue', 'create', '--repo', repo, '--title', title, '--body', stamped]);
+    return true;
+  } catch (error) {
+    console.warn(`[eng-gates] no se pudo upsert issue: ${error.message}`);
+    return false;
+  }
+}
+
 export function permalink(path, line) {
   const repo = process.env.GITHUB_REPOSITORY || 'hotclickdev/Hot-click-dev';
   const sha = process.env.HEAD_SHA || 'HEAD';

@@ -1,0 +1,66 @@
+name: SCALE1 — Escalabilidad
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'Hot_click_outlet/src/main/java/**'
+      - 'Hot_click_outlet/frontend/src/**'
+      - 'Hot_click_outlet/src/main/resources/static/**'
+      - 'scripts/eng-gates/**'
+      - '.github/workflows/gate-scale.yml'
+  schedule:
+    - cron: '0 12 * * 1' # lunes 12:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: gate-scale-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    name: SCALE1 Diff review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Escanear diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/gate-scale.mjs
+
+  weekly:
+    name: SCALE1 Hotspots semanales
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Issue de hotspots
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/scale-weekly.mjs

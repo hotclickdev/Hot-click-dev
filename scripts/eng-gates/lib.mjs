@@ -12,6 +12,7 @@ export const SKIP_LABELS = {
   spa: 'skip-spa-gate',
   sensitive: 'skip-sensitive-gate',
   dependabot: 'skip-dependabot-gate',
+  scale: 'skip-scale-gate',
 };
 
 export const ALLOWED_ASYNC_EXECUTORS = new Set([

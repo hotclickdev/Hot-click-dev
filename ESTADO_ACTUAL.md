@@ -27,7 +27,7 @@
 
 | Capa | Tecnología |
 |------|-----------|
-| Backend | Spring Boot 3.4.4 / Java 24 |
+| Backend | Spring Boot 3.4.4 / Java 21 |
 | Seguridad | Spring Security + JWT (stateless, 15 min) + TOTP 2FA |
 | BD | Supabase PostgreSQL (Transaction Pooler) |
 | Cache | Caffeine in-process (L1, 200 items, TTL 120s) |

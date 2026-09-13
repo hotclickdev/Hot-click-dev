@@ -7,8 +7,11 @@ on:
       - 'scripts/eng-gates/**'
       - '.github/workflows/gate-*.yml'
       - '.github/workflows/dependabot-triage.yml'
+      - '.github/workflows/docs-stack.yml'
+      - '.github/workflows/gate-scale.yml'
       - '.github/workflows/eng-gates-selftest.yml'
       - 'docs/AGENTES_ENG_GATES.md'
+      - 'scripts/generate-stack-docs.sh'
 
 permissions:
   contents: read

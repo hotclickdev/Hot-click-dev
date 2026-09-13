@@ -219,3 +219,59 @@ test('E6 classifies dependabot and blocks Spring Boot 4 / critical majors', () =
   assert.equal(patch.ok, true);
   assert.ok(patch.labels.includes('automerge-candidate'));
 });
+
+import { applyPatches, collectStackFacts, plannedSafeDocPatches, renderGeneratedStack } from './stack-docs.mjs';
+import { evaluateScale, scanScaleDiff, scanScaleHotspots } from './scale.mjs';
+
+test('DOC1 collects java 21 and flyway >= 130 from this repo', () => {
+  const facts = collectStackFacts('.');
+  assert.equal(facts.javaVersion, '21');
+  assert.equal(facts.springBoot, '3.4.4');
+  assert.ok(facts.flywayMax >= 130);
+  assert.ok(facts.flywayCount >= 100);
+  assert.match(facts.react, /^19\./);
+  const md = renderGeneratedStack(facts, '2026-09-13');
+  assert.match(md, /Java \| \*\*21\*\*/);
+  const patches = plannedSafeDocPatches(facts, {
+    readme: 'Backend | Spring Boot 3.4.4 · Java 24\nFlyway (56 versiones, V1–V56)\nReact 18',
+    estado: '| Backend | Spring Boot 3.4.4 / Java 24 |',
+  });
+  assert.ok(patches.some((item) => item.from === 'Java 24'));
+  assert.ok(patches.some((item) => item.file === 'ESTADO_ACTUAL.md'));
+  let readme = 'Java 24\nFlyway (56 versiones, V1–V56)\nReact 18';
+  applyPatches(patches.filter((item) => item.file === 'README.md'), { 'README.md': readme }, {
+    'README.md': (text) => { readme = text; },
+  });
+  assert.equal(readme.includes('Java 21'), true);
+  assert.equal(readme.includes('React 19'), true);
+  assert.equal(readme.includes('V1–V56'), false);
+});
+
+test('SCALE1 fails unbounded findAll and N+1 in controllers', () => {
+  const findings = scanScaleDiff(parseUnifiedDiff([
+    '--- a/Hot_click_outlet/src/main/java/com/hotclick/controller/FooController.java',
+    '+++ b/Hot_click_outlet/src/main/java/com/hotclick/controller/FooController.java',
+    '@@ -1,4 +1,8 @@',
+    '     @GetMapping("/items")',
+    '+    public List<Item> list() {',
+    '+        return repo.findAll();',
+    '+        for (Item i : items) { repo.findById(i.getId()); }',
+    '+        new RestTemplate().getForObject(url, String.class);',
+    '     }',
+    '',
+  ].join('\n')));
+  const rules = new Set(findings.map((item) => item.rule));
+  assert.ok(rules.has('p1-findall-controller') || rules.has('p1-list-no-page'));
+  assert.ok(rules.has('p1-nplus1'));
+  assert.ok(rules.has('p1-blocking-controller'));
+  assert.equal(evaluateScale({ findings, skip: false }).ok, false);
+});
+
+test('SCALE1 weekly ranks findAll-heavy files', () => {
+  const rows = scanScaleHotspots([
+    { path: 'Small.java', text: 'class Small {}\n' },
+    { path: 'Fat.java', text: `${'x\n'.repeat(300)} repo.findAll(); repo.findAll();\n` },
+  ]);
+  assert.equal(rows[0].path, 'Fat.java');
+  assert.equal(rows[0].findAll, 2);
+});

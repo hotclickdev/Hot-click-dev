@@ -13,6 +13,8 @@ Los scripts viven en `scripts/eng-gates/` (Node 22, sin dependencias). Tests: `n
 | E3 | `gate-spa.yml` | PR que toca `Hot_click_outlet/frontend/src/**` o `static/` | Si `frontend/src` cambió y `static/` también → PASS. Si `static/` no vino en el PR → `pnpm build` y FAIL si el bundle queda stale. Docker **no** buildea React. | `skip-spa-gate` |
 | E6 | `dependabot-triage.yml` | Todo PR a `master` (no-op si no es Dependabot) | Auto-label. Patch/minor no críticos → `automerge-candidate`. Majors de `spring-boot*`, `jjwt-*`, `stripe-java` y **cualquier Spring Boot 4.x** → `needs-human`, corta auto-merge, comenta riesgo. | `skip-dependabot-gate` |
 | E11 | `gate-sensitive.yml` | PR que toca `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` en `src/main/java` | Liviano: exige que exista un test nominal (`*Payment*Test*.java`, etc.). No corre Maven. | `skip-sensitive-gate` |
+| DOC1 | `docs-stack.yml` | Semanal (lunes) + `workflow_dispatch` | Regenera `docs/GENERATED_STACK.md` (Java/Flyway/React/módulos), artifact, issue semanal, PR si el fingerprint cambió. Parches seguros de README/ESTADO_ACTUAL solo con `--apply-safe-docs`. | — |
+| SCALE1 | `gate-scale.yml` | PR Java/TS/static + semanal | Diff: `findAll`/listas sin Pageable, N+1, I/O bloqueante en controllers (FAIL P1); `@Transactional` gordo / imports pesados (WARN). Semanal: issue de hotspots por tamaño + `findAll`. | `skip-scale-gate` |
 | D5 | `backup.yml` → job `verify-backup` | Schedule / `workflow_dispatch` (igual que el dump) | Tras el artifact de `pg_dump`, falla si el dump no existe o pesa &lt; 1 KB. Abre/comenta issue `[D5] Backup diario…`. | — |
 | — | `eng-gates-selftest.yml` | PR que toca scripts/workflows de gates | `node --test` de los gates | — |
 
@@ -35,7 +37,7 @@ E6 opt-in de squash: además de `automerge-candidate`, un humano pone `safe-to-a
 
 ## Secretos
 
-Estos gates **no piden secretos nuevos**. `GITHUB_TOKEN` (automático) alcanza para comentarios, labels e issues.
+Estos gates **no piden secretos nuevos**. `GITHUB_TOKEN` (automático) alcanza para comentarios, labels, issues y el PR semanal de DOC1 (`docs/generated-stack`).
 
 Secretos que **ya** usa el repo y siguen igual:
 
@@ -59,6 +61,7 @@ En `master`, marcar como required cuando quieras bloquear merge:
 - `E3 Artefactos static/ vs frontend/src`
 - `E11 Tests nominales Payment/Auth/Pos/Sinpe/Wallet`
 - `E6 Labels y bloqueo de majors críticos` (este job siempre reporta: PASS en PRs no-Dependabot)
+- `SCALE1 Diff review`
 
 Los workflows E1/E2/E3/E11 usan *path filters*. Un check required que **no llega a correr** puede quedar en pending. Si eso molesta, quitá el `paths:` del YAML (los scripts ya hacen no-op si el diff no aplica) o usá “required only when the workflow runs” según la UI de GitHub.
 
@@ -78,6 +81,13 @@ PR_TITLE='Bump axios from 1.7.0 to 1.7.1' node scripts/eng-gates/dependabot-tria
 bash scripts/eng-gates/verify-backup.sh /tmp/backup-artifact 1024
 
 node --test scripts/eng-gates/eng-gates.test.mjs
+
+# DOC1
+scripts/generate-stack-docs.sh
+scripts/generate-stack-docs.sh --apply-safe-docs
+
+# SCALE1 (mismo BASE_SHA/HEAD_SHA)
+node scripts/eng-gates/gate-scale.mjs
 ```
 
 E2 y E1 comentan el PR solo si hay `GH_TOKEN`, `GITHUB_REPOSITORY` y `PR_NUMBER`.
