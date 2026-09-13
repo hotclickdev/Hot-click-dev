@@ -46,7 +46,7 @@ Secretos que **ya** usa el repo y siguen igual:
 | `GITHUB_TOKEN` | todos | Automático. Comentarios de PR / issues D5 / labels |
 | `SUPABASE_BACKUP_URL` | `backup.yml` | URL de `pg_dump`. D5 no inventa credenciales: si falta, el dump (y D5) fallan |
 | `SUPABASE_DB_PASSWORD` | `backup.yml` | `PGPASSWORD` del dump |
-| `SONAR_TOKEN` | `sonarcloud.yml` | Sin esto Sonar no publica; no lo usan los gates ola 1 |
+| `SONAR_TOKEN` | `sonarcloud.yml` | Sin esto Sonar no publica; no lo usan los gates ola 1. El job reintenta 1 vez si sonarcloud.io responde 503 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | `ci.yml` | Notificaciones de CI; no los usan los gates |
 | `SENTRY_DSN` / `VITE_SENTRY_DSN` | app / `ci.yml` | El gate E3 pone `VITE_SENTRY_DSN=""` a propósito (bundle determinista). No commitear el DSN |
 

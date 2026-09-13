@@ -41,8 +41,18 @@ jobs:
           JWT_SECRET: test-secret-for-ci-only-not-production
           SENTRY_DSN: ""
 
-      # 5. Escaneo SonarCloud (action unificada; la anterior está archivada)
+      # 5. Escaneo SonarCloud (un reintento: sonarcloud.io a veces responde 503)
       - name: SonarCloud Scan
+        id: sonar
+        continue-on-error: true
+        uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+
+      - name: SonarCloud Scan (retry)
+        if: steps.sonar.outcome == 'failure'
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
