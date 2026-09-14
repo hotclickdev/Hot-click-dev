@@ -318,6 +318,24 @@ describe('E4 commit-gate', () => {
     });
     assert.equal(skipMentions.filter((item) => item.id === 'playwright-report').length, 0);
 
+    const spaBundle = scanCommitBlockers({
+      changedFiles: ['Hot_click_outlet/src/main/resources/static/assets/LoginPage-abc.js'],
+      diffText: [
+        '+++ b/Hot_click_outlet/src/main/resources/static/assets/LoginPage-abc.js',
+        '+import{d as t}from"./vendor-clerk-QdevMKxx.js";token: abcdefghijklmnop',
+      ].join('\n'),
+    });
+    assert.equal(spaBundle.filter((item) => item.id === 'secret').length, 0);
+
+    const sourceSecret = scanCommitBlockers({
+      changedFiles: ['Hot_click_outlet/frontend/src/services/api.ts'],
+      diffText: [
+        '+++ b/Hot_click_outlet/frontend/src/services/api.ts',
+        '+const token = "abcdefghijklmnop"',
+      ].join('\n'),
+    });
+    assert.ok(sourceSecret.some((item) => item.id === 'secret'));
+
     const realReport = scanCommitBlockers({
       changedFiles: ['Hot_click_outlet/frontend/playwright-report/index.html'],
       diffText: [
