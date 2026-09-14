@@ -110,10 +110,14 @@ describe('D12 real health', () => {
     assert.equal(evaluateRealHealth({ currentOk: true, previousOk: false }).recovered, true);
   });
 
-  it('redacta secretos en el snippet de cuerpo', () => {
-    const snip = snippetBody('ok password=abcdefghij');
-    assert.equal(snip.includes('abcdefghij'), false);
-    assert.match(snip, /password=\*\*\*/);
+  it('recorta el snippet y no inventa un cuerpo vacío', () => {
+    assert.equal(snippetBody(''), '(cuerpo vacío)');
+    assert.equal(snippetBody('  placeholder-body  '), 'placeholder-body');
+    const long = `ok-REDACTED ${'x'.repeat(500)}`;
+    const snip = snippetBody(long, 40);
+    assert.equal(snip.endsWith('…'), true);
+    assert.equal(snip.length, 41);
+    assert.match(snip, /^ok-REDACTED /);
   });
 });
 
