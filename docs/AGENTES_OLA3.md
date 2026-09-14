@@ -31,6 +31,8 @@ Scripts: `scripts/eng-gates/` (`flyway-jpa-drift`, `spa-stale`, `sentry-digest`,
 | `keep-alive.yml` ping cada 10 min | **E9** racha de 2 fallos → Issue outage |
 | **D2** hunter IDOR diario | sin cambio (no se reimplementa) |
 
+Ola 4 (D6/D7/D8/D11/S4/E5): [AGENTES_OLA4.md](AGENTES_OLA4.md). No reimplementa D1–D4/E4/E7/E9.
+
 ## Secretos
 
 Ningún secreto va en git. `GITHUB_TOKEN` automático alcanza para Issues/comentarios.

@@ -1,0 +1,43 @@
+name: D6 — Daily CI flake hunter
+
+on:
+  schedule:
+    # 03:30 America/Costa_Rica (UTC-6, sin DST) = 09:30 UTC
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+    inputs:
+      lookback_hours:
+        description: 'Ventana en horas (24–48)'
+        required: false
+        default: '48'
+
+concurrency:
+  group: flake-hunter
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  hunt:
+    name: D6 flake hunter
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Leer runs de ci.yml y upsert Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          FLAKE_LOOKBACK_HOURS: ${{ github.event.inputs.lookback_hours || '48' }}
+          CI_WORKFLOW: ci.yml
+        run: node scripts/eng-gates/flake-hunter.mjs

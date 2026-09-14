@@ -30,6 +30,8 @@ Cuando #55 aterrice, se pueden unificar docs; **no** hace falta rebase de esta r
 
 Ola 3 (D1/D3/D4+E8/S2/E4/E7/E9): [AGENTES_OLA3.md](AGENTES_OLA3.md). No reimplementa D2/S1/S3/E10/S8.
 
+Ola 4 (D6/D7/D8/D11/S4/E5): [AGENTES_OLA4.md](AGENTES_OLA4.md).
+
 ## Secretos
 
 | Secreto | ¿Lo pide ola 2? | Notas |
