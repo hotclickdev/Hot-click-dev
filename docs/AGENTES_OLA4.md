@@ -28,6 +28,8 @@ Scripts: `scripts/eng-gates/` (`flake-hunter`, `i18n-drift`, `secrets-in-docs`, 
 | `security.yml` Gitleaks (git history) | **D8** prosa de docs / `txt/` / `api_cloud_google` (redact) |
 | — | **D7** i18n ES/EN/PT · **D11** contrato API FE↔BE |
 
+Ola 5 (D9/D10/S5/S7/E12/E14/E18): [AGENTES_OLA5.md](AGENTES_OLA5.md). En PRs, Gitleaks usa `gitleaks-scan.sh` (`base..head` + árbol HEAD, no `--all`).
+
 ## Secretos
 
 Ningún secreto va en git. `GITHUB_TOKEN` automático alcanza.

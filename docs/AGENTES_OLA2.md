@@ -32,6 +32,8 @@ Ola 3 (D1/D3/D4+E8/S2/E4/E7/E9): [AGENTES_OLA3.md](AGENTES_OLA3.md). No reimplem
 
 Ola 4 (D6/D7/D8/D11/S4/E5): [AGENTES_OLA4.md](AGENTES_OLA4.md).
 
+Ola 5 (D9/D10/S5/S7/E12/E14/E18): [AGENTES_OLA5.md](AGENTES_OLA5.md).
+
 ## Secretos
 
 | Secreto | ¿Lo pide ola 2? | Notas |

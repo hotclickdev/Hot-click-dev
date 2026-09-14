@@ -1,10 +1,10 @@
 # Agentes de ingeniería — ola 5
 
-Checks de GitHub Actions **independientes** de la ola 4 (PR #58: D6/D7/D8/D11/S4/E5, **abierto — no mergear ni depender de esos archivos**). Complementan olas 1–3 en `master`.
+Checks de GitHub Actions **independientes** de la ola 4 (ya en `master` vía PR #58: D6/D7/D8/D11/S4/E5). Complementan olas 1–4; **no** las reimplementan.
 
 No toca lógica de pago/auth ni schedulers de negocio (`DataRetentionScheduler`, Hacienda, wallet, RAG). **Nunca** aplica SQL de escritura a producción.
 
-Scripts: `scripts/eng-gates/` (`ola5-lib`, `ai-quota-alert`, `issues-hygiene`, `design-tokens-drift`, `ley8968-checklist`, `seller-qa-remap`, `hotfix-gate`, `pgbouncer-migration`). Tests: `node --test scripts/eng-gates/ola5.test.mjs` o `bash scripts/eng-gates/ola5-selftest.sh`.
+Scripts: `scripts/eng-gates/` (`ola5-lib`, `ai-quota-alert`, `issues-hygiene`, `design-tokens-drift`, `ley8968-checklist`, `seller-qa-remap`, `hotfix-gate`, `pgbouncer-migration`, `gitleaks-scan.sh`). Tests: `node --test scripts/eng-gates/ola5.test.mjs` o `bash scripts/eng-gates/ola5-selftest.sh`.
 
 ## Resumen
 
@@ -21,14 +21,15 @@ Scripts: `scripts/eng-gates/` (`ola5-lib`, `ai-quota-alert`, `issues-hygiene`, `
 
 ## Relación con olas 1–4 (no duplicar)
 
-| Ya en master / #58 | Ola 5 |
+| Ya en master | Ola 5 |
 | --- | --- |
 | **E6** triage al abrir un PR Dependabot | **D10** barrido **diario** de abiertos + stale; labels extra `deps-*` |
 | **S2** weekly Dependabot | D10 no mergea; no quita `needs-human` |
 | **E2** PgBouncer en **Java** del diff | **E18** PgBouncer en **V*.sql** del PR |
 | **E9** health → Issue `outage` | **E14** hotfix exige ese Issue/label + gitleaks |
 | `ci.yml` auto-merge hotfix si backend+frontend verdes | E14 es check extra en el mismo workflow (`needs`) |
-| Ola 4 **E5** Playwright por área (#58, no mergeado) | **E12** solo seller remap; dry-run propio (no importa `playwright-area.mjs`) |
+| Ola 4 **E5** Playwright por área | **E12** seller remap (dry-run propio; no reemplaza `playwright-area.mjs`) |
+| Ola 4 **D8** secrets-in-docs | Gitleaks de PRs acotado (`gitleaks-scan.sh`); D8 sigue en prosa |
 
 ## Secretos
 
