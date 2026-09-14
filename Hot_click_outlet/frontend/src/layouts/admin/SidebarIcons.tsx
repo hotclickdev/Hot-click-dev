@@ -44,6 +44,7 @@ const SIDEBAR_ICONS: Record<string, ReactNode> = {
   upload:    <svg className={ic} {...s}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
   import:    <svg className={ic} {...s}><path d="M12 3v12M8 11l4 4 4-4"/><path d="M20 21H4a2 2 0 01-2-2V5a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z"/></svg>,
   help:      <svg className={ic} {...s}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  agents:    <svg className={ic} {...s}><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M8 7.5L10.5 10.5M16 7.5L13.5 10.5M8 16.5L10.5 13.5M16 16.5L13.5 13.5"/></svg>,
 }
 
 /** Icono SVG de un ítem del sidebar admin. */

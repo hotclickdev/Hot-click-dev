@@ -20,8 +20,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <p className="kicker">HotClick · ingeniería</p>
           <h1>Sala de agentes</h1>
           <p className="lede">
-            Registro durable de D1–D12, S1–S14, E1–E18, DOC1 y SCALE1. Vive en el repo
-            (`agentes-dashboard/`), no en el static de Spring. Abrilo en local (puerto 43127) o en Vercel.
+            Registro durable de D1–D12, S1–S14, E1–E18, DOC1 y SCALE1. El producto
+            canónico es el admin HotClick (`/admin/agentes`). Este Next es un espejo
+            local/Vercel (`agentes-dashboard/`).
           </p>
         </div>
         <nav className="tabs" aria-label="Secciones">

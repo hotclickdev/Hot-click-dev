@@ -191,6 +191,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/security/**").hasRole(Constants.ROL_ADMIN)
             // Observabilidad — ADMIN only
             .requestMatchers("/api/admin/observabilidad/**").hasRole(Constants.ROL_ADMIN)
+            // Agentes de ingeniería (I1) — ADMIN only; catálogo de plataforma, no tenant
+            .requestMatchers("/api/admin/agentes/**").hasRole(Constants.ROL_ADMIN)
             // Auditoría admin (solo lectura) — ADMIN only
             .requestMatchers("/api/admin/auditorias/**").hasRole(Constants.ROL_ADMIN)
             // Billing de plataforma — ADMIN only (distinto de /api/billing self-serve)

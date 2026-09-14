@@ -1,6 +1,6 @@
 # Agentes de ingeniería — PR gates (ola 1)
 
-Dashboard durable **I1** (registro + plan de olas + historial de inspecciones): [`agentes-dashboard/README.md`](../agentes-dashboard/README.md). Local: `cd agentes-dashboard && npm install && npm run dev` → [http://localhost:43127/agentes](http://localhost:43127/agentes). En Vercel, Root Directory = `agentes-dashboard`. Inspector: `npm run inspect` o workflow [`inspect-agents.yml`](../.github/workflows/inspect-agents.yml) (lunes 08:15 CR).
+Dashboard I1: **en el admin** [`/admin/agentes`](../Hot_click_outlet/frontend/src/pages/admin/AdminAgentes.tsx) (Spring sirve la SPA). Espejo opcional Next/Vercel: [`agentes-dashboard/README.md`](../agentes-dashboard/README.md). Inspector: `npm run inspect` en `agentes-dashboard/` o workflow [`inspect-agents.yml`](../.github/workflows/inspect-agents.yml) (lunes 08:15 CR); el JSON también se copia a `Hot_click_outlet/src/main/resources/agentes/`.
 
 Checks de GitHub Actions que corren **al lado** de `ci.yml`, `security.yml`, `sonarcloud.yml`, `backup.yml` y `keep-alive.yml`. No tocan schedulers de negocio (DataRetention, Hacienda, wallet, RAG) ni lógica de pago/auth.
 

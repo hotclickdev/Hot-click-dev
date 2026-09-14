@@ -1073,6 +1073,7 @@
       "securityCenter": "Security Center",
       "auditorias": "Auditorías",
       "observabilidad": "Observabilidad",
+      "agentes": "Agentes",
       "featureFlags": "Feature Flags / SaaS",
       "planesBilling": "Planes / Billing",
       "configuracion": "Configuración",
@@ -2505,5 +2506,15 @@
       "Una mesa de centro",
       "Remodelar el dormitorio"
     ]
-  }
+  },
+  "agentes": "Agentes",
+  "agentesTitulo": "Agentes de ingeniería",
+  "agentesSubtitulo": "Registro D1–D12, S1–S14, E1–E18, DOC1, SCALE1 e I1. Solo ADMIN. No toca pago, auth ni schedulers de negocio.",
+  "agentesCargando": "Cargando registro de agentes…",
+  "agentesReintentar": "Reintentar",
+  "agentesRegistro": "Registro",
+  "agentesPlan77": "Plan 7/7",
+  "agentesInspeccionesI1": "Inspecciones I1",
+  "agentesHallazgos": "Hallazgos",
+  "agentesTabsAria": "Secciones de agentes"
 }
