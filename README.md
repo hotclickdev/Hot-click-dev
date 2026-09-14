@@ -229,6 +229,10 @@ Además de `ci.yml` (Maven + Vitest/Playwright) y `security.yml` (gitleaks), los
 
 Skip **solo** con labels explícitos (`skip-flyway-gate`, `skip-tenant-gate`, `skip-spa-gate`, `skip-sensitive-gate`, `skip-dependabot-gate`, `skip-scale-gate`). Detalle: [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md).
 
+Ola 2 (D2 IDOR diario, S1 Sonar, S3 E2E gaps, E10 authz, S8 restore drill): [docs/AGENTES_OLA2.md](docs/AGENTES_OLA2.md).
+
+Ola 3 (D1 Flyway↔JPA diario, D3 SPA stale, D4/E8 Sentry digest, S2 Dependabot weekly, E4 commit-gate, E7 CI red, E9 health pager): [docs/AGENTES_OLA3.md](docs/AGENTES_OLA3.md).
+
 ## Documentación
 
 | Carpeta / Archivo | Contenido |
@@ -236,6 +240,8 @@ Skip **solo** con labels explícitos (`skip-flyway-gate`, `skip-tenant-gate`, `s
 | [CLAUDE.md](CLAUDE.md) | Guía de desarrollo para Claude Code |
 | [docs/GENERATED_STACK.md](docs/GENERATED_STACK.md) | Versiones reales (Java/Flyway/React) — DOC1 |
 | [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md) | PR gates E1/E2/E3/E6/E11 + DOC1/SCALE1 + D5 |
+| [docs/AGENTES_OLA2.md](docs/AGENTES_OLA2.md) | Agentes ola 2 (D2/S1/S3/E10/S8) |
+| [docs/AGENTES_OLA3.md](docs/AGENTES_OLA3.md) | Agentes ola 3 (D1/D3/D4+E8/S2/E4/E7/E9) |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Cumplimiento legal, SEO, plataformas externas |
 | [docs/legal/](docs/legal/) | 8 documentos legales en formato `.md` |
 | [docs/security/](docs/security/) | 16 documentos de arquitectura de seguridad |
