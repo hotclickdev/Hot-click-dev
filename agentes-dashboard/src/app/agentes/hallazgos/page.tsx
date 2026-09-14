@@ -40,9 +40,9 @@ const GROUPS = [
     q: 'is:issue label:prod-errors,sentry,outage',
   },
   {
-    label: 'i18n-drift',
-    hint: 'D7 keys ES/EN/PT',
-    q: 'is:issue label:i18n-drift',
+    label: 'a11y',
+    hint: 'S14 — teclado POS / focus trap vs specs en CI',
+    q: 'is:issue label:a11y',
   },
 ];
 

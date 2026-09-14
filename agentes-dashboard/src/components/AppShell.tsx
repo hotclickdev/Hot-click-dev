@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 
 const LINKS = [
   { href: '/agentes', label: 'Registro' },
-  { href: '/agentes/plan', label: 'Plan 6/7' },
+  { href: '/agentes/plan', label: 'Plan 7/7' },
   { href: '/agentes/inspecciones', label: 'Inspecciones I1' },
   { href: '/agentes/hallazgos', label: 'Hallazgos' },
 ];

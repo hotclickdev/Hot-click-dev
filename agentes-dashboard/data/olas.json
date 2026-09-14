@@ -1,8 +1,8 @@
 {
   "totalOlas": 7,
-  "onMaster": 6,
-  "headline": "6 de 7 olas están en master",
-  "note": "No hay docs/AGENTES_OLA7.md. Huecos del catálogo: D12, S13, S14, E16. I1 (este dashboard) inspecciona el registro cada lunes CR.",
+  "onMaster": 7,
+  "headline": "Las 7 olas están en master",
+  "note": "PRs #55–#61. S13 no forma parte del cierre (ola 7 documentó D12, S14 y E16). I1 inspecciona el registro cada lunes CR.",
   "olas": [
     {
       "n": 1,
@@ -60,12 +60,12 @@
     },
     {
       "n": 7,
-      "status": "pendiente",
-      "pr": null,
-      "doc": null,
-      "title": "Pendiente — no hay AGENTES_OLA7.md",
-      "ids": ["D12", "S13", "S14", "E16"],
-      "summary": "IDs reservados sin workflow ni doc. I1 (inspector + dashboard) vive en agentes-dashboard/ y corre semanal aparte de esta ola."
+      "status": "en_master",
+      "pr": 61,
+      "doc": "docs/AGENTES_OLA7.md",
+      "title": "Cierre de catálogo: health real, a11y POS, runtime",
+      "ids": ["D12", "S14", "E16"],
+      "summary": "Ping /api/health con cuerpo (no keep-alive), huecos a11y/teclado POS, y recorte Sentry de Payment/Webhook/Factura. S13 no se asignó."
     }
   ]
 }

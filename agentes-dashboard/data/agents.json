@@ -6,7 +6,8 @@
     "docs/AGENTES_OLA3.md",
     "docs/AGENTES_OLA4.md",
     "docs/AGENTES_OLA5.md",
-    "docs/AGENTES_OLA6.md"
+    "docs/AGENTES_OLA6.md",
+    "docs/AGENTES_OLA7.md"
   ],
   "agents": [
     {
@@ -132,14 +133,14 @@
     },
     {
       "id": "D12",
-      "name": "Pendiente (ola 7)",
+      "name": "Health real (cuerpo, no keep-alive)",
       "cadence": "daily",
       "ola": 7,
-      "workflow": null,
-      "script": null,
-      "doc": null,
-      "triggerHint": "Sin doc ni workflow en master",
-      "skipLabel": null
+      "workflow": "real-health.yml",
+      "script": "scripts/eng-gates/real-health.mjs",
+      "doc": "docs/AGENTES_OLA7.md",
+      "triggerHint": "Cron :07/:22/:37/:52 (offset vs E9) + dispatch",
+      "skipLabel": "skip-real-health"
     },
     {
       "id": "S1",
@@ -275,25 +276,25 @@
     },
     {
       "id": "S13",
-      "name": "Pendiente (ola 7)",
+      "name": "No asignado (fuera del cierre ola 7)",
       "cadence": "weekly",
       "ola": 7,
       "workflow": null,
       "script": null,
       "doc": null,
-      "triggerHint": "Sin doc ni workflow en master",
+      "triggerHint": "Ninguna ola documentó S13; el catálogo saltó a S14",
       "skipLabel": null
     },
     {
       "id": "S14",
-      "name": "Pendiente (ola 7)",
+      "name": "a11y + teclado POS",
       "cadence": "weekly",
       "ola": 7,
-      "workflow": null,
-      "script": null,
-      "doc": null,
-      "triggerHint": "Sin doc ni workflow en master",
-      "skipLabel": null
+      "workflow": "a11y-pos-keyboard.yml",
+      "script": "scripts/eng-gates/a11y-pos-keyboard.mjs",
+      "doc": "docs/AGENTES_OLA7.md",
+      "triggerHint": "Jueves 09:00 CR + dispatch",
+      "skipLabel": "skip-a11y-pos"
     },
     {
       "id": "E1",
@@ -462,14 +463,14 @@
     },
     {
       "id": "E16",
-      "name": "Pendiente (ola 7)",
+      "name": "Runtime Payment/Webhook/Factura → Issue",
       "cadence": "event",
       "ola": 7,
-      "workflow": null,
-      "script": null,
-      "doc": null,
-      "triggerHint": "Sin doc ni workflow en master",
-      "skipLabel": null
+      "workflow": "runtime-endpoint-issue.yml",
+      "script": "scripts/eng-gates/runtime-endpoint-issue.mjs",
+      "doc": "docs/AGENTES_OLA7.md",
+      "triggerHint": "Diario 04:15 CR + dispatch (Sentry; skip honesto sin token)",
+      "skipLabel": "skip-runtime-endpoint"
     },
     {
       "id": "E17",

@@ -19,8 +19,8 @@ export default function PlanPage() {
           <span className="fine">olas en master</span>
         </div>
         <div>
-          <b>PRs 55–60</b>
-          <span className="fine">olas 1 a 6 mergeadas</span>
+          <b>PRs 55–61</b>
+          <span className="fine">olas 1 a 7 mergeadas</span>
         </div>
       </div>
       <div className="grid-olas">

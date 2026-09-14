@@ -18,8 +18,7 @@ export default function AgentesPage() {
     <main>
       <h2>Registro</h2>
       <p className="lede">
-        Cada fila sale de los docs reales de olas 1–6. D12, S13, S14 y E16 no tienen
-        `AGENTES_OLA7.md`: I1 los marca <em>activar</em>.
+        Cada fila sale de los docs reales de olas 1–7 (PRs #55–#61). S13 no está asignado: I1 lo marca <em>activar</em>.
       </p>
       <div className="legend" aria-label="Leyenda de estados">
         <StatusBadge status="al_dia" />

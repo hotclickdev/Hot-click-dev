@@ -55,7 +55,7 @@ Para cada ID conocido el script busca el YAML en `.github/workflows/` y mencione
 | Estado | Significado |
 | --- | --- |
 | `al_dia` | Doc + workflow + script; trigger coherente con la cadencia |
-| `activar` | Hueco (ola 7: D12, S13, S14, E16) |
+| `activar` | Hueco real (hoy: S13, no asignado en ninguna ola) |
 | `actualizar` | El doc promete un workflow que no está, o al revés |
 | `mejorar` | Corre, pero falta el script referido |
 
