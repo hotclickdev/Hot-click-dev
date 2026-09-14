@@ -1,32 +1,36 @@
 name: Ola 6 — selftest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'scripts/eng-gates/ola6*'
-      - 'scripts/eng-gates/k6-hikari-regression.mjs'
-      - 'scripts/eng-gates/bundle-lint-ci.mjs'
-      - 'scripts/eng-gates/god-class-extract.mjs'
-      - 'scripts/eng-gates/hacienda-xml-drift.mjs'
-      - 'scripts/eng-gates/rag-embeddings-lag.mjs'
-      - 'scripts/eng-gates/spa-push-reminder.mjs'
-      - 'scripts/eng-gates/product-issue-spike.mjs'
-      - 'scripts/eng-gates/i18n-pr-gate.mjs'
-      - 'scripts/eng-gates/baselines/k6-hikari.json'
-      - 'scripts/eng-gates/fixtures/k6-smoke.js'
-      - '.github/workflows/k6-hikari-regression.yml'
-      - '.github/workflows/bundle-lint-ci.yml'
-      - '.github/workflows/god-class-extract.yml'
-      - '.github/workflows/hacienda-xml-drift.yml'
-      - '.github/workflows/rag-embeddings-lag.yml'
-      - '.github/workflows/spa-push-reminder.yml'
-      - '.github/workflows/product-issue-spike.yml'
-      - '.github/workflows/i18n-pr-gate.yml'
-      - '.github/workflows/ola6-selftest.yml'
-      - 'docs/AGENTES_OLA6.md'
-      - 'docs/AGENTES_ENG_GATES.md'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'scripts/eng-gates/ola6*'
+#       - 'scripts/eng-gates/k6-hikari-regression.mjs'
+#       - 'scripts/eng-gates/bundle-lint-ci.mjs'
+#       - 'scripts/eng-gates/god-class-extract.mjs'
+#       - 'scripts/eng-gates/hacienda-xml-drift.mjs'
+#       - 'scripts/eng-gates/rag-embeddings-lag.mjs'
+#       - 'scripts/eng-gates/spa-push-reminder.mjs'
+#       - 'scripts/eng-gates/product-issue-spike.mjs'
+#       - 'scripts/eng-gates/i18n-pr-gate.mjs'
+#       - 'scripts/eng-gates/baselines/k6-hikari.json'
+#       - 'scripts/eng-gates/fixtures/k6-smoke.js'
+#       - '.github/workflows/k6-hikari-regression.yml'
+#       - '.github/workflows/bundle-lint-ci.yml'
+#       - '.github/workflows/god-class-extract.yml'
+#       - '.github/workflows/hacienda-xml-drift.yml'
+#       - '.github/workflows/rag-embeddings-lag.yml'
+#       - '.github/workflows/spa-push-reminder.yml'
+#       - '.github/workflows/product-issue-spike.yml'
+#       - '.github/workflows/i18n-pr-gate.yml'
+#       - '.github/workflows/ola6-selftest.yml'
+#       - 'docs/AGENTES_OLA6.md'
+#       - 'docs/AGENTES_ENG_GATES.md'
+#   workflow_dispatch:
 
 permissions:
   contents: read

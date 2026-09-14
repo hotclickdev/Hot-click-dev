@@ -1,8 +1,12 @@
 name: E10 — Authorization catch-all
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
 
 concurrency:
   group: gate-authz-${{ github.event.pull_request.number }}

@@ -1,10 +1,14 @@
 name: D4 E8 — Sentry digest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # 03:00 America/Costa_Rica = 09:00 UTC
-    - cron: '0 9 * * *'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # 03:00 America/Costa_Rica = 09:00 UTC
+#     - cron: '0 9 * * *'
+#   workflow_dispatch:
 
 concurrency:
   group: sentry-digest

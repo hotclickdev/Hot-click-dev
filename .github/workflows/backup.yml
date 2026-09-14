@@ -38,7 +38,8 @@ jobs:
   verify-backup:
     name: D5 — Dump presente y no vacío
     needs: backup
-    if: always()
+    # DISABLED 2026-09-14 — awaiting reorg (keep dump job; this issue-opener is paused)
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read

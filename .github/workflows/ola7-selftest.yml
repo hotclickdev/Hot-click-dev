@@ -1,20 +1,24 @@
 name: Ola 7 — selftest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'scripts/eng-gates/ola7*'
-      - 'scripts/eng-gates/real-health.mjs'
-      - 'scripts/eng-gates/a11y-pos-keyboard.mjs'
-      - 'scripts/eng-gates/runtime-endpoint-issue.mjs'
-      - '.github/workflows/real-health.yml'
-      - '.github/workflows/a11y-pos-keyboard.yml'
-      - '.github/workflows/runtime-endpoint-issue.yml'
-      - '.github/workflows/ola7-selftest.yml'
-      - '.github/workflows/keep-alive.yml'
-      - 'docs/AGENTES_OLA7.md'
-      - 'docs/AGENTES_ENG_GATES.md'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'scripts/eng-gates/ola7*'
+#       - 'scripts/eng-gates/real-health.mjs'
+#       - 'scripts/eng-gates/a11y-pos-keyboard.mjs'
+#       - 'scripts/eng-gates/runtime-endpoint-issue.mjs'
+#       - '.github/workflows/real-health.yml'
+#       - '.github/workflows/a11y-pos-keyboard.yml'
+#       - '.github/workflows/runtime-endpoint-issue.yml'
+#       - '.github/workflows/ola7-selftest.yml'
+#       - '.github/workflows/keep-alive.yml'
+#       - 'docs/AGENTES_OLA7.md'
+#       - 'docs/AGENTES_ENG_GATES.md'
 
 permissions:
   contents: read

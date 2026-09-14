@@ -1,26 +1,30 @@
 name: E12 — Seller QA remap
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'Hot_click_outlet/frontend/src/prototipo/**'
-      - 'Hot_click_outlet/frontend/src/app/PlanPathGate.tsx'
-      - 'Hot_click_outlet/frontend/src/app/FigmaSellerGate.tsx'
-      - 'Hot_click_outlet/frontend/src/app/AppRoutes.tsx'
-      - 'Hot_click_outlet/frontend/src/utils/planPaths.ts'
-      - 'Hot_click_outlet/frontend/tests/seller-*.ts'
-      - 'Hot_click_outlet/frontend/tests/emprendedor-*.ts'
-      - 'scripts/eng-gates/seller-qa-remap.mjs'
-      - 'scripts/eng-gates/ola5-lib.mjs'
-      - '.github/workflows/seller-qa-remap.yml'
-      - '.cursor/skills/hotclick-seller-qa/SKILL.md'
   workflow_dispatch:
-    inputs:
-      run_smoke:
-        description: 'Correr smoke Playwright de specs seller (caro). Default dry-run.'
-        type: boolean
-        default: false
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'Hot_click_outlet/frontend/src/prototipo/**'
+#       - 'Hot_click_outlet/frontend/src/app/PlanPathGate.tsx'
+#       - 'Hot_click_outlet/frontend/src/app/FigmaSellerGate.tsx'
+#       - 'Hot_click_outlet/frontend/src/app/AppRoutes.tsx'
+#       - 'Hot_click_outlet/frontend/src/utils/planPaths.ts'
+#       - 'Hot_click_outlet/frontend/tests/seller-*.ts'
+#       - 'Hot_click_outlet/frontend/tests/emprendedor-*.ts'
+#       - 'scripts/eng-gates/seller-qa-remap.mjs'
+#       - 'scripts/eng-gates/ola5-lib.mjs'
+#       - '.github/workflows/seller-qa-remap.yml'
+#       - '.cursor/skills/hotclick-seller-qa/SKILL.md'
+#   workflow_dispatch:
+#     inputs:
+#       run_smoke:
+#         description: 'Correr smoke Playwright de specs seller (caro). Default dry-run.'
+#         type: boolean
+#         default: false
 
 concurrency:
   group: seller-qa-remap-${{ github.event.pull_request.number || github.ref }}

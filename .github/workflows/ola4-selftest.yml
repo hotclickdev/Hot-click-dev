@@ -1,25 +1,29 @@
 name: Ola 4 — selftest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'scripts/eng-gates/ola4*'
-      - 'scripts/eng-gates/flake-hunter.mjs'
-      - 'scripts/eng-gates/i18n-drift.mjs'
-      - 'scripts/eng-gates/secrets-in-docs.mjs'
-      - 'scripts/eng-gates/api-contract-drift.mjs'
-      - 'scripts/eng-gates/idor-suite-gap.mjs'
-      - 'scripts/eng-gates/playwright-area.mjs'
-      - '.github/workflows/flake-hunter.yml'
-      - '.github/workflows/i18n-drift.yml'
-      - '.github/workflows/secrets-in-docs.yml'
-      - '.github/workflows/api-contract-drift.yml'
-      - '.github/workflows/idor-suite-gap.yml'
-      - '.github/workflows/playwright-area.yml'
-      - '.github/workflows/ola4-selftest.yml'
-      - 'docs/AGENTES_OLA4.md'
-      - 'Hot_click_outlet/src/test/java/com/hotclick/pending/**'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'scripts/eng-gates/ola4*'
+#       - 'scripts/eng-gates/flake-hunter.mjs'
+#       - 'scripts/eng-gates/i18n-drift.mjs'
+#       - 'scripts/eng-gates/secrets-in-docs.mjs'
+#       - 'scripts/eng-gates/api-contract-drift.mjs'
+#       - 'scripts/eng-gates/idor-suite-gap.mjs'
+#       - 'scripts/eng-gates/playwright-area.mjs'
+#       - '.github/workflows/flake-hunter.yml'
+#       - '.github/workflows/i18n-drift.yml'
+#       - '.github/workflows/secrets-in-docs.yml'
+#       - '.github/workflows/api-contract-drift.yml'
+#       - '.github/workflows/idor-suite-gap.yml'
+#       - '.github/workflows/playwright-area.yml'
+#       - '.github/workflows/ola4-selftest.yml'
+#       - 'docs/AGENTES_OLA4.md'
+#       - 'Hot_click_outlet/src/test/java/com/hotclick/pending/**'
 
 permissions:
   contents: read

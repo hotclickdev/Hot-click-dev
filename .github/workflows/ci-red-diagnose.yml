@@ -1,14 +1,18 @@
 name: E7 — CI red diagnosis
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  workflow_run:
-    workflows: ['CI — Tests y Build']
-    types: [completed]
   workflow_dispatch:
-    inputs:
-      run_id:
-        description: 'ID del run de ci.yml a diagnosticar'
-        required: true
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   workflow_run:
+#     workflows: ['CI — Tests y Build']
+#     types: [completed]
+#   workflow_dispatch:
+#     inputs:
+#       run_id:
+#         description: 'ID del run de ci.yml a diagnosticar'
+#         required: true
 
 concurrency:
   group: ci-red-${{ github.event.workflow_run.id || inputs.run_id }}

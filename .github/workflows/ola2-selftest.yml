@@ -1,25 +1,29 @@
 name: Ola 2 — selftest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'scripts/eng-gates/ola2*'
-      - 'scripts/eng-gates/hunter-idor.mjs'
-      - 'scripts/eng-gates/sonar-batch.mjs'
-      - 'scripts/eng-gates/e2e-gap-map.mjs'
-      - 'scripts/eng-gates/gate-authz.mjs'
-      - 'scripts/eng-gates/restore-drill*'
-      - 'scripts/eng-gates/fetch-backup-dump.sh'
-      - 'scripts/eng-gates/fixtures/**'
-      - '.github/workflows/hunter-idor.yml'
-      - '.github/workflows/sonar-batch.yml'
-      - '.github/workflows/e2e-gap-map.yml'
-      - '.github/workflows/gate-authz.yml'
-      - '.github/workflows/restore-drill.yml'
-      - '.github/workflows/ola2-selftest.yml'
-      - 'docs/AGENTES_OLA2.md'
-      - 'Hot_click_outlet/frontend/tests/pending/**'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'scripts/eng-gates/ola2*'
+#       - 'scripts/eng-gates/hunter-idor.mjs'
+#       - 'scripts/eng-gates/sonar-batch.mjs'
+#       - 'scripts/eng-gates/e2e-gap-map.mjs'
+#       - 'scripts/eng-gates/gate-authz.mjs'
+#       - 'scripts/eng-gates/restore-drill*'
+#       - 'scripts/eng-gates/fetch-backup-dump.sh'
+#       - 'scripts/eng-gates/fixtures/**'
+#       - '.github/workflows/hunter-idor.yml'
+#       - '.github/workflows/sonar-batch.yml'
+#       - '.github/workflows/e2e-gap-map.yml'
+#       - '.github/workflows/gate-authz.yml'
+#       - '.github/workflows/restore-drill.yml'
+#       - '.github/workflows/ola2-selftest.yml'
+#       - 'docs/AGENTES_OLA2.md'
+#       - 'Hot_click_outlet/frontend/tests/pending/**'
 
 permissions:
   contents: read

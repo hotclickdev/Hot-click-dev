@@ -1,12 +1,16 @@
 name: D7 — Daily i18n drift ES/EN/PT
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Diario 02:45 America/Costa_Rica = 08:45 UTC
-    - cron: '45 8 * * *'
-    # Semanal lunes 08:00 CR = 14:00 UTC (mismo upsert)
-    - cron: '0 14 * * 1'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Diario 02:45 America/Costa_Rica = 08:45 UTC
+#     - cron: '45 8 * * *'
+#     # Semanal lunes 08:00 CR = 14:00 UTC (mismo upsert)
+#     - cron: '0 14 * * 1'
+#   workflow_dispatch:
 
 concurrency:
   group: i18n-drift

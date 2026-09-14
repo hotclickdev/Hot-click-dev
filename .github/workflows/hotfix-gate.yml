@@ -1,9 +1,13 @@
 name: E14 — Hotfix extra check
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#   workflow_dispatch:
 
 concurrency:
   group: hotfix-gate-${{ github.event.pull_request.number || github.ref }}

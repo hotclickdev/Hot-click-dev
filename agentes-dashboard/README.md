@@ -1,5 +1,7 @@
 # Dashboard de agentes de ingeniería (I1)
 
+> **Pausado — reorganización (2026-09-14).** Catálogo de solo lectura. Los workflows de agentes no disparan; ver [`docs/AGENTES_DISABLED.md`](../docs/AGENTES_DISABLED.md).
+
 App Next.js **aparte** de Spring Boot. No vive en `Hot_click_outlet/src/main/resources/static/`. Andrés la abre en el PC (local) o en Vercel para siempre; no depende de un preview efímero de una VM de Cursor.
 
 Rutas (UI en español):

@@ -1,30 +1,34 @@
 name: Ola 5 — selftest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'scripts/eng-gates/ola5*'
-      - 'scripts/eng-gates/ai-quota-alert.mjs'
-      - 'scripts/eng-gates/issues-hygiene.mjs'
-      - 'scripts/eng-gates/design-tokens-drift.mjs'
-      - 'scripts/eng-gates/ley8968-checklist.mjs'
-      - 'scripts/eng-gates/seller-qa-remap.mjs'
-      - 'scripts/eng-gates/hotfix-gate.mjs'
-      - 'scripts/eng-gates/pgbouncer-migration.mjs'
-      - 'scripts/eng-gates/gitleaks-scan.sh'
-      - '.github/workflows/ai-quota-alert.yml'
-      - '.github/workflows/issues-hygiene.yml'
-      - '.github/workflows/design-tokens-drift.yml'
-      - '.github/workflows/ley8968-checklist.yml'
-      - '.github/workflows/seller-qa-remap.yml'
-      - '.github/workflows/hotfix-gate.yml'
-      - '.github/workflows/pgbouncer-migration.yml'
-      - '.github/workflows/ola5-selftest.yml'
-      - '.github/workflows/ci.yml'
-      - '.github/workflows/security.yml'
-      - 'docs/AGENTES_OLA5.md'
-      - 'docs/AGENTES_ENG_GATES.md'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'scripts/eng-gates/ola5*'
+#       - 'scripts/eng-gates/ai-quota-alert.mjs'
+#       - 'scripts/eng-gates/issues-hygiene.mjs'
+#       - 'scripts/eng-gates/design-tokens-drift.mjs'
+#       - 'scripts/eng-gates/ley8968-checklist.mjs'
+#       - 'scripts/eng-gates/seller-qa-remap.mjs'
+#       - 'scripts/eng-gates/hotfix-gate.mjs'
+#       - 'scripts/eng-gates/pgbouncer-migration.mjs'
+#       - 'scripts/eng-gates/gitleaks-scan.sh'
+#       - '.github/workflows/ai-quota-alert.yml'
+#       - '.github/workflows/issues-hygiene.yml'
+#       - '.github/workflows/design-tokens-drift.yml'
+#       - '.github/workflows/ley8968-checklist.yml'
+#       - '.github/workflows/seller-qa-remap.yml'
+#       - '.github/workflows/hotfix-gate.yml'
+#       - '.github/workflows/pgbouncer-migration.yml'
+#       - '.github/workflows/ola5-selftest.yml'
+#       - '.github/workflows/ci.yml'
+#       - '.github/workflows/security.yml'
+#       - 'docs/AGENTES_OLA5.md'
+#       - 'docs/AGENTES_ENG_GATES.md'
 
 permissions:
   contents: read

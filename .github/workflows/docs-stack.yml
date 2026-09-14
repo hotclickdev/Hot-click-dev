@@ -1,9 +1,13 @@
 name: DOC1 — Stack docs
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    - cron: '0 13 * * 1' # lunes 13:00 UTC
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     - cron: '0 13 * * 1' # lunes 13:00 UTC
+#   workflow_dispatch:
 
 permissions:
   contents: write

@@ -1,15 +1,19 @@
 name: E1 — Gate Flyway
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [ master ]
-    paths:
-      - 'Hot_click_outlet/src/main/java/**/model/**/*.java'
-      - 'Hot_click_outlet/src/main/java/**/entity/**/*.java'
-      - 'Hot_click_outlet/src/main/resources/db/migration/**'
-      - 'Hot_click_outlet/Actualizado.sql'
-      - 'scripts/eng-gates/**'
-      - '.github/workflows/gate-flyway.yml'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [ master ]
+#     paths:
+#       - 'Hot_click_outlet/src/main/java/**/model/**/*.java'
+#       - 'Hot_click_outlet/src/main/java/**/entity/**/*.java'
+#       - 'Hot_click_outlet/src/main/resources/db/migration/**'
+#       - 'Hot_click_outlet/Actualizado.sql'
+#       - 'scripts/eng-gates/**'
+#       - '.github/workflows/gate-flyway.yml'
 
 concurrency:
   group: gate-flyway-${{ github.event.pull_request.number }}

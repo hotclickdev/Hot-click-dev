@@ -1,10 +1,14 @@
 name: S5 — Weekly design tokens drift
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Lunes 08:30 America/Costa_Rica = 14:30 UTC
-    - cron: '30 14 * * 1'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Lunes 08:30 America/Costa_Rica = 14:30 UTC
+#     - cron: '30 14 * * 1'
+#   workflow_dispatch:
 
 concurrency:
   group: design-tokens-drift

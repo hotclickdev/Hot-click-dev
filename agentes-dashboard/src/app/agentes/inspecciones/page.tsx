@@ -20,7 +20,7 @@ export default function InspeccionesPage() {
       <h2>Historial I1</h2>
       <p className="lede">
         El inspector (`scripts/inspect-agents.mjs`) mira workflows y docs por cada ID. Escribe
-        `data/inspections.json`. En CI corre los lunes 08:15 America/Costa_Rica.
+        `data/inspections.json`. El Action semanal está pausado (2026-09-14); corrida local a mano.
       </p>
       <InspectButton canRunLocal={repoFilesPresent()} />
       {latest ? (

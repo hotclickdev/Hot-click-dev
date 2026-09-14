@@ -32,9 +32,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       </header>
+      <aside className="pause-banner" role="status">
+        <strong>Pausado — reorganización.</strong> Agentes de ingeniería detenidos
+        (2026-09-14): no hay cron ni PR gates. Este catálogo es de solo lectura.
+        Ver <code>docs/AGENTES_DISABLED.md</code>.
+      </aside>
       {children}
       <footer className="colophon">
-        I1 no toca pago, auth ni schedulers de negocio. Semanal: workflow `inspect-agents.yml` (lunes 08:15 CR).
+        I1 no toca pago, auth ni schedulers de negocio. Workflows de agentes pausados
+        (solo <code>workflow_dispatch</code>).
       </footer>
     </div>
   );

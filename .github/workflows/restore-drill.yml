@@ -1,15 +1,19 @@
 name: S8 — Weekly restore drill
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Domingo 01:00 America/Costa_Rica = 07:00 UTC (después del backup 06:00 UTC)
-    - cron: '0 7 * * 0'
   workflow_dispatch:
-    inputs:
-      use_fixture:
-        description: 'Usar fixture sintético del repo (no prod). Para probar el mecanismo.'
-        type: boolean
-        default: false
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Domingo 01:00 America/Costa_Rica = 07:00 UTC (después del backup 06:00 UTC)
+#     - cron: '0 7 * * 0'
+#   workflow_dispatch:
+#     inputs:
+#       use_fixture:
+#         description: 'Usar fixture sintético del repo (no prod). Para probar el mecanismo.'
+#         type: boolean
+#         default: false
 
 concurrency:
   group: restore-drill

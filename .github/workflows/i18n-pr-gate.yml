@@ -1,16 +1,20 @@
 name: E17 — i18n PR es/en/pt
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'Hot_click_outlet/frontend/src/i18n/locales/**'
-      - 'Hot_click_outlet/frontend/src/**/*.tsx'
-      - 'Hot_click_outlet/frontend/src/**/*.jsx'
-      - 'scripts/eng-gates/i18n-pr-gate.mjs'
-      - 'scripts/eng-gates/ola6-lib.mjs'
-      - '.github/workflows/i18n-pr-gate.yml'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'Hot_click_outlet/frontend/src/i18n/locales/**'
+#       - 'Hot_click_outlet/frontend/src/**/*.tsx'
+#       - 'Hot_click_outlet/frontend/src/**/*.jsx'
+#       - 'scripts/eng-gates/i18n-pr-gate.mjs'
+#       - 'scripts/eng-gates/ola6-lib.mjs'
+#       - '.github/workflows/i18n-pr-gate.yml'
+#   workflow_dispatch:
 
 concurrency:
   group: i18n-pr-gate-${{ github.event.pull_request.number || github.ref }}
