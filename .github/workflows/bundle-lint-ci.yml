@@ -1,10 +1,14 @@
 name: S9 — Weekly bundle + lint:ci
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Lunes 09:15 America/Costa_Rica = 15:15 UTC
-    - cron: '15 15 * * 1'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Lunes 09:15 America/Costa_Rica = 15:15 UTC
+#     - cron: '15 15 * * 1'
+#   workflow_dispatch:
 
 concurrency:
   group: bundle-lint-ci

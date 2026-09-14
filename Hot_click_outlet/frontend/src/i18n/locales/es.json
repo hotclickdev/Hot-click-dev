@@ -2516,5 +2516,7 @@
   "agentesPlan77": "Plan 7/7",
   "agentesInspeccionesI1": "Inspecciones I1",
   "agentesHallazgos": "Hallazgos",
-  "agentesTabsAria": "Secciones de agentes"
+  "agentesTabsAria": "Secciones de agentes",
+  "agentesPausadoTitulo": "Pausado — reorganización.",
+  "agentesPausadoCuerpo": "Agentes de ingeniería detenidos (2026-09-14): no hay cron ni PR gates. Este catálogo es de solo lectura."
 }

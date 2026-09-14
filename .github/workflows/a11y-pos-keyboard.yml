@@ -1,15 +1,19 @@
 name: S14 — Weekly a11y + POS keyboard
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Jueves 09:00 America/Costa_Rica = 15:00 UTC
-    - cron: '0 15 * * 4'
   workflow_dispatch:
-    inputs:
-      run_smoke:
-        description: 'Correr smoke de specs ya en test:e2e:ci (no pos-atajos)'
-        type: boolean
-        default: false
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Jueves 09:00 America/Costa_Rica = 15:00 UTC
+#     - cron: '0 15 * * 4'
+#   workflow_dispatch:
+#     inputs:
+#       run_smoke:
+#         description: 'Correr smoke de specs ya en test:e2e:ci (no pos-atajos)'
+#         type: boolean
+#         default: false
 
 concurrency:
   group: a11y-pos-keyboard

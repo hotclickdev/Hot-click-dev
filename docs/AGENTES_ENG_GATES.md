@@ -1,6 +1,9 @@
 # Agentes de ingeniería — PR gates (ola 1)
 
-Dashboard I1: **en el admin** [`/admin/agentes`](../Hot_click_outlet/frontend/src/pages/admin/AdminAgentes.tsx) (Spring sirve la SPA). Espejo opcional Next/Vercel: [`agentes-dashboard/README.md`](../agentes-dashboard/README.md). Inspector: `npm run inspect` en `agentes-dashboard/` o workflow [`inspect-agents.yml`](../.github/workflows/inspect-agents.yml) (lunes 08:15 CR); el JSON también se copia a `Hot_click_outlet/src/main/resources/agentes/`.
+> **DISABLED 2026-09-14 — awaiting reorg.**  
+> Todos los workflows de esta suite son `workflow_dispatch` only (no `pull_request` / `schedule` / `push` / `workflow_run`). Cómo reactivar: [`AGENTES_DISABLED.md`](./AGENTES_DISABLED.md).
+
+Dashboard I1: **en el admin** [`/admin/agentes`](../Hot_click_outlet/frontend/src/pages/admin/AdminAgentes.tsx) (Spring sirve la SPA; catálogo de solo lectura mientras está pausado). Espejo opcional Next/Vercel: [`agentes-dashboard/README.md`](../agentes-dashboard/README.md). Inspector local: `npm run inspect` en `agentes-dashboard/`. El workflow [`inspect-agents.yml`](../.github/workflows/inspect-agents.yml) está pausado (solo `workflow_dispatch`). El JSON también vive en `Hot_click_outlet/src/main/resources/agentes/`.
 
 Checks de GitHub Actions que corren **al lado** de `ci.yml`, `security.yml`, `sonarcloud.yml`, `backup.yml` y `keep-alive.yml`. No tocan schedulers de negocio (DataRetention, Hacienda, wallet, RAG) ni lógica de pago/auth.
 

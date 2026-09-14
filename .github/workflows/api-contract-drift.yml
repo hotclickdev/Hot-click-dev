@@ -1,12 +1,16 @@
 name: D11 — Daily API contract drift
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Diario 04:15 America/Costa_Rica = 10:15 UTC
-    - cron: '15 10 * * *'
-    # Semanal martes 08:15 CR = 14:15 UTC
-    - cron: '15 14 * * 2'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Diario 04:15 America/Costa_Rica = 10:15 UTC
+#     - cron: '15 10 * * *'
+#     # Semanal martes 08:15 CR = 14:15 UTC
+#     - cron: '15 14 * * 2'
+#   workflow_dispatch:
 
 concurrency:
   group: api-contract-drift

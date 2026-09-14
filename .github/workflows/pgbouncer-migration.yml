@@ -1,13 +1,17 @@
 name: E18 — PgBouncer migration safety
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'Hot_click_outlet/src/main/resources/db/migration/**'
-      - 'scripts/eng-gates/pgbouncer-migration.mjs'
-      - 'scripts/eng-gates/ola5-lib.mjs'
-      - '.github/workflows/pgbouncer-migration.yml'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'Hot_click_outlet/src/main/resources/db/migration/**'
+#       - 'scripts/eng-gates/pgbouncer-migration.mjs'
+#       - 'scripts/eng-gates/ola5-lib.mjs'
+#       - '.github/workflows/pgbouncer-migration.yml'
 
 concurrency:
   group: pgbouncer-migration-${{ github.event.pull_request.number }}

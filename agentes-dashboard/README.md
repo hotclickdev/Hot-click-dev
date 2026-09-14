@@ -1,5 +1,7 @@
 # Dashboard de agentes de ingeniería (I1)
 
+> **Pausado — reorganización (2026-09-14).** Catálogo de solo lectura. Los workflows de agentes no disparan; ver [`docs/AGENTES_DISABLED.md`](../docs/AGENTES_DISABLED.md).
+
 El registro **vive en el admin HotClick**: [`/admin/agentes`](https://hotclick.lat/admin/agentes) (React + Spring, rol ADMIN). Esta carpeta `agentes-dashboard/` es un **espejo opcional** (local o Vercel) del mismo catálogo I1; no es el producto que sirve Spring.
 
 Rutas en el admin:
@@ -52,7 +54,7 @@ Tras el deploy: `https://<proyecto>.vercel.app/agentes`.
 En Vercel **no** está el repo completo (workflows/docs). `POST /api/inspect` responde 409 a propósito. La corrida durable es:
 
 - local `npm run inspect` + commit del JSON, o
-- GitHub Action `.github/workflows/inspect-agents.yml` (lunes 08:15 America/Costa_Rica) que actualiza el JSON (PR) y copia a `Hot_click_outlet/src/main/resources/agentes/` para el admin.
+- GitHub Action `.github/workflows/inspect-agents.yml` (**pausado** 2026-09-14; solo `workflow_dispatch`) que actualizaría el JSON (PR) y copiaría a `Hot_click_outlet/src/main/resources/agentes/` para el admin.
 
 ## I1 — qué marca
 

@@ -1,10 +1,14 @@
 name: S6 — Weekly k6 / Hikari regression
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Lunes 09:00 America/Costa_Rica = 15:00 UTC
-    - cron: '0 15 * * 1'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Lunes 09:00 America/Costa_Rica = 15:00 UTC
+#     - cron: '0 15 * * 1'
+#   workflow_dispatch:
 
 concurrency:
   group: k6-hikari-regression

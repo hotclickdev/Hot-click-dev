@@ -47,7 +47,7 @@ export function InspectButton({ canRunLocal }: Props) {
           {busy ? 'Inspeccionando…' : 'Correr I1 ahora'}
         </button>
         <a className="chip" href="https://github.com/hotclickdev/Hot-click-dev/actions/workflows/inspect-agents.yml">
-          Workflow semanal
+          Workflow (pausado)
         </a>
       </div>
       {!canRunLocal ? (

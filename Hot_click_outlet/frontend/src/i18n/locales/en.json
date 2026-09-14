@@ -2516,5 +2516,7 @@
   "agentesPlan77": "Plan 7/7",
   "agentesInspeccionesI1": "I1 inspections",
   "agentesHallazgos": "Findings",
-  "agentesTabsAria": "Agent sections"
+  "agentesTabsAria": "Agent sections",
+  "agentesPausadoTitulo": "Paused — reorganization.",
+  "agentesPausadoCuerpo": "Engineering agents stopped (2026-09-14): no cron or PR gates. This catalog is read-only."
 }

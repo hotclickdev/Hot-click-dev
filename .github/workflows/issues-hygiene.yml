@@ -1,19 +1,23 @@
 name: D10 — Daily Issues/PRs hygiene
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # 06:30 America/Costa_Rica = 12:30 UTC
-    - cron: '30 12 * * *'
   workflow_dispatch:
-    inputs:
-      stale_days:
-        description: 'Días sin movimiento para stale (default 14)'
-        required: false
-        default: '14'
-      close_after_days:
-        description: 'Días extra tras el ping antes de cerrar eng-agent (default 7)'
-        required: false
-        default: '7'
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # 06:30 America/Costa_Rica = 12:30 UTC
+#     - cron: '30 12 * * *'
+#   workflow_dispatch:
+#     inputs:
+#       stale_days:
+#         description: 'Días sin movimiento para stale (default 14)'
+#         required: false
+#         default: '14'
+#       close_after_days:
+#         description: 'Días extra tras el ping antes de cerrar eng-agent (default 7)'
+#         required: false
+#         default: '7'
 
 concurrency:
   group: issues-hygiene

@@ -1,14 +1,18 @@
 name: E2 — Reviewer de tenant
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [ master ]
-    paths:
-      - 'Hot_click_outlet/src/main/java/**/controller/**/*.java'
-      - 'Hot_click_outlet/src/main/java/**/service/**/*.java'
-      - 'Hot_click_outlet/src/main/java/**/repository/**/*.java'
-      - 'scripts/eng-gates/**'
-      - '.github/workflows/gate-tenant.yml'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [ master ]
+#     paths:
+#       - 'Hot_click_outlet/src/main/java/**/controller/**/*.java'
+#       - 'Hot_click_outlet/src/main/java/**/service/**/*.java'
+#       - 'Hot_click_outlet/src/main/java/**/repository/**/*.java'
+#       - 'scripts/eng-gates/**'
+#       - '.github/workflows/gate-tenant.yml'
 
 concurrency:
   group: gate-tenant-${{ github.event.pull_request.number }}

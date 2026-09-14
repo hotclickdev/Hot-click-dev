@@ -1,27 +1,31 @@
 name: Ola 3 — selftest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - 'scripts/eng-gates/ola3*'
-      - 'scripts/eng-gates/flyway-jpa-drift.mjs'
-      - 'scripts/eng-gates/spa-stale.mjs'
-      - 'scripts/eng-gates/sentry-digest.mjs'
-      - 'scripts/eng-gates/dependabot-weekly.mjs'
-      - 'scripts/eng-gates/commit-gate.mjs'
-      - 'scripts/eng-gates/ci-red-diagnose.mjs'
-      - 'scripts/eng-gates/health-pager.mjs'
-      - '.github/workflows/flyway-jpa-drift.yml'
-      - '.github/workflows/spa-stale.yml'
-      - '.github/workflows/sentry-digest.yml'
-      - '.github/workflows/dependabot-weekly.yml'
-      - '.github/workflows/commit-gate.yml'
-      - '.github/workflows/ci-red-diagnose.yml'
-      - '.github/workflows/health-pager.yml'
-      - '.github/workflows/keep-alive.yml'
-      - '.github/workflows/ola3-selftest.yml'
-      - 'docs/AGENTES_OLA3.md'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#     paths:
+#       - 'scripts/eng-gates/ola3*'
+#       - 'scripts/eng-gates/flyway-jpa-drift.mjs'
+#       - 'scripts/eng-gates/spa-stale.mjs'
+#       - 'scripts/eng-gates/sentry-digest.mjs'
+#       - 'scripts/eng-gates/dependabot-weekly.mjs'
+#       - 'scripts/eng-gates/commit-gate.mjs'
+#       - 'scripts/eng-gates/ci-red-diagnose.mjs'
+#       - 'scripts/eng-gates/health-pager.mjs'
+#       - '.github/workflows/flyway-jpa-drift.yml'
+#       - '.github/workflows/spa-stale.yml'
+#       - '.github/workflows/sentry-digest.yml'
+#       - '.github/workflows/dependabot-weekly.yml'
+#       - '.github/workflows/commit-gate.yml'
+#       - '.github/workflows/ci-red-diagnose.yml'
+#       - '.github/workflows/health-pager.yml'
+#       - '.github/workflows/keep-alive.yml'
+#       - '.github/workflows/ola3-selftest.yml'
+#       - 'docs/AGENTES_OLA3.md'
 
 permissions:
   contents: read

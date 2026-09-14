@@ -1,16 +1,20 @@
 name: E4 — Commit-gate
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [master]
   workflow_dispatch:
-    inputs:
-      base_sha:
-        description: 'BASE_SHA (default: origin/master)'
-        required: false
-      head_sha:
-        description: 'HEAD_SHA (default: HEAD)'
-        required: false
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [master]
+#   workflow_dispatch:
+#     inputs:
+#       base_sha:
+#         description: 'BASE_SHA (default: origin/master)'
+#         required: false
+#       head_sha:
+#         description: 'HEAD_SHA (default: HEAD)'
+#         required: false
 
 concurrency:
   group: commit-gate-${{ github.event.pull_request.number || github.ref }}

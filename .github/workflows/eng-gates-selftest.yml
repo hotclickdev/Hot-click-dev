@@ -1,17 +1,21 @@
 name: Eng gates — selftest
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [ master ]
-    paths:
-      - 'scripts/eng-gates/**'
-      - '.github/workflows/gate-*.yml'
-      - '.github/workflows/dependabot-triage.yml'
-      - '.github/workflows/docs-stack.yml'
-      - '.github/workflows/gate-scale.yml'
-      - '.github/workflows/eng-gates-selftest.yml'
-      - 'docs/AGENTES_ENG_GATES.md'
-      - 'scripts/generate-stack-docs.sh'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [ master ]
+#     paths:
+#       - 'scripts/eng-gates/**'
+#       - '.github/workflows/gate-*.yml'
+#       - '.github/workflows/dependabot-triage.yml'
+#       - '.github/workflows/docs-stack.yml'
+#       - '.github/workflows/gate-scale.yml'
+#       - '.github/workflows/eng-gates-selftest.yml'
+#       - 'docs/AGENTES_ENG_GATES.md'
+#       - 'scripts/generate-stack-docs.sh'
 
 permissions:
   contents: read

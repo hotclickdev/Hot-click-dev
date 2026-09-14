@@ -1,10 +1,14 @@
 name: D12 — Real health pager
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Offset vs E9 (*/10). Cada 15 min; no es keep-alive cosmético.
-    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Offset vs E9 (*/10). Cada 15 min; no es keep-alive cosmético.
+#     - cron: '7,22,37,52 * * * *'
+#   workflow_dispatch:
 
 concurrency:
   group: real-health

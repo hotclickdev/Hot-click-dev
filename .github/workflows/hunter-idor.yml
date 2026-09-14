@@ -1,16 +1,20 @@
 name: D2 — Daily IDOR findById hunter
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # 04:00 America/Costa_Rica (UTC-6, sin DST) = 10:00 UTC
-    - cron: '0 10 * * *'
   workflow_dispatch:
-    inputs:
-      scan_mode:
-        description: 'recent (24h) | full | auto'
-        type: choice
-        default: auto
-        options: [auto, recent, full]
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # 04:00 America/Costa_Rica (UTC-6, sin DST) = 10:00 UTC
+#     - cron: '0 10 * * *'
+#   workflow_dispatch:
+#     inputs:
+#       scan_mode:
+#         description: 'recent (24h) | full | auto'
+#         type: choice
+#         default: auto
+#         options: [auto, recent, full]
 
 concurrency:
   group: hunter-idor

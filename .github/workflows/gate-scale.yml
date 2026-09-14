@@ -1,17 +1,21 @@
 name: SCALE1 — Escalabilidad
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [ master ]
-    paths:
-      - 'Hot_click_outlet/src/main/java/**'
-      - 'Hot_click_outlet/frontend/src/**'
-      - 'Hot_click_outlet/src/main/resources/static/**'
-      - 'scripts/eng-gates/**'
-      - '.github/workflows/gate-scale.yml'
-  schedule:
-    - cron: '0 12 * * 1' # lunes 12:00 UTC
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [ master ]
+#     paths:
+#       - 'Hot_click_outlet/src/main/java/**'
+#       - 'Hot_click_outlet/frontend/src/**'
+#       - 'Hot_click_outlet/src/main/resources/static/**'
+#       - 'scripts/eng-gates/**'
+#       - '.github/workflows/gate-scale.yml'
+#   schedule:
+#     - cron: '0 12 * * 1' # lunes 12:00 UTC
+#   workflow_dispatch:
 
 concurrency:
   group: gate-scale-${{ github.event.pull_request.number || github.run_id }}

@@ -1,10 +1,14 @@
 name: S12 — Weekly RAG embeddings lag
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  schedule:
-    # Viernes 08:00 America/Costa_Rica = 14:00 UTC
-    - cron: '0 14 * * 5'
   workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   schedule:
+#     # Viernes 08:00 America/Costa_Rica = 14:00 UTC
+#     - cron: '0 14 * * 5'
+#   workflow_dispatch:
 
 concurrency:
   group: rag-embeddings-lag

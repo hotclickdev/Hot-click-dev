@@ -39,6 +39,13 @@ export default function AdminAgentes() {
         <h1 className="text-2xl font-bold text-hc-text">{t('agentesTitulo')}</h1>
         <p className="mt-1 text-sm text-hc-muted">{t('agentesSubtitulo')}</p>
       </header>
+      <aside
+        role="status"
+        className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-hc-text"
+      >
+        <strong className="font-semibold">{t('agentesPausadoTitulo')}</strong>{' '}
+        {t('agentesPausadoCuerpo')}
+      </aside>
       <AgentesTabs />
       <Outlet context={dash} />
     </div>

@@ -1,9 +1,13 @@
 name: E6 — Dependabot triage
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [ master ]
+#     types: [opened, synchronize, reopened, labeled, unlabeled]
 
 concurrency:
   group: dependabot-triage-${{ github.event.pull_request.number }}

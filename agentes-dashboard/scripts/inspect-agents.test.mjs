@@ -101,18 +101,18 @@ describe('I1 cadence', () => {
 });
 
 describe('I1 contra el repo real', () => {
-  test('D12/S14/E16 al día y S13 activar', () => {
+  test('pausados: daily/weekly actualizar; event al día; S13 activar', () => {
     const repoRoot = findRepoRoot();
     assert.ok(repoRoot, 'repo root');
     const run = inspectRepo({ repoRoot, source: 'test' });
     const byId = Object.fromEntries(run.agents.map((a) => [a.id, a]));
-    assert.equal(byId.D1.status, 'al_dia', JSON.stringify(byId.D1));
+    assert.equal(byId.D1.status, 'actualizar', JSON.stringify(byId.D1));
     assert.equal(byId.E1.status, 'al_dia', JSON.stringify(byId.E1));
-    assert.equal(byId.D12.status, 'al_dia', JSON.stringify(byId.D12));
-    assert.equal(byId.S14.status, 'al_dia', JSON.stringify(byId.S14));
+    assert.equal(byId.D12.status, 'actualizar', JSON.stringify(byId.D12));
+    assert.equal(byId.S14.status, 'actualizar', JSON.stringify(byId.S14));
     assert.equal(byId.E16.status, 'al_dia', JSON.stringify(byId.E16));
     assert.equal(byId.S13.status, 'activar', JSON.stringify(byId.S13));
-    assert.ok(run.summary.al_dia >= 43, `pocos al_dia: ${run.summary.al_dia}`);
+    assert.ok(run.summary.actualizar >= 20, `pocos actualizar: ${run.summary.actualizar}`);
     assert.equal(run.summary.activar, 1);
   });
 

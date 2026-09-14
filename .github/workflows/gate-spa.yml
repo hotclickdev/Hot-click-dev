@@ -1,13 +1,17 @@
 name: E3 — Gate SPA / pnpm build
 
+# DISABLED 2026-09-14 — awaiting reorg
 on:
-  pull_request:
-    branches: [ master ]
-    paths:
-      - 'Hot_click_outlet/frontend/src/**'
-      - 'Hot_click_outlet/src/main/resources/static/**'
-      - 'scripts/eng-gates/**'
-      - '.github/workflows/gate-spa.yml'
+  workflow_dispatch:
+# ORIGINAL TRIGGERS (restore to re-enable):
+# on:
+#   pull_request:
+#     branches: [ master ]
+#     paths:
+#       - 'Hot_click_outlet/frontend/src/**'
+#       - 'Hot_click_outlet/src/main/resources/static/**'
+#       - 'scripts/eng-gates/**'
+#       - '.github/workflows/gate-spa.yml'
 
 concurrency:
   group: gate-spa-${{ github.event.pull_request.number }}
