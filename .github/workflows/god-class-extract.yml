@@ -1,0 +1,34 @@
+name: S10 — Weekly god-class extract candidates
+
+on:
+  schedule:
+    # Miércoles 09:00 America/Costa_Rica = 15:00 UTC
+    - cron: '0 15 * * 3'
+  workflow_dispatch:
+
+concurrency:
+  group: god-class-extract
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  extract:
+    name: S10 god-class candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Top LOC + una propuesta move-only
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/god-class-extract.mjs

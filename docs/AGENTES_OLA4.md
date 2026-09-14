@@ -29,6 +29,7 @@ Scripts: `scripts/eng-gates/` (`flake-hunter`, `i18n-drift`, `secrets-in-docs`, 
 | — | **D7** i18n ES/EN/PT · **D11** contrato API FE↔BE |
 
 Ola 5 (D9/D10/S5/S7/E12/E14/E18): [AGENTES_OLA5.md](AGENTES_OLA5.md). En PRs, Gitleaks usa `gitleaks-scan.sh` (`base..head` + árbol HEAD, no `--all`).
+Ola 6 (S6/S9/S10/S11/S12/E13/E15/E17): [AGENTES_OLA6.md](AGENTES_OLA6.md).
 
 ## Secretos
 

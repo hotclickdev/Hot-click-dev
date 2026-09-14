@@ -1,0 +1,42 @@
+name: S12 — Weekly RAG embeddings lag
+
+on:
+  schedule:
+    # Viernes 08:00 America/Costa_Rica = 14:00 UTC
+    - cron: '0 14 * * 5'
+  workflow_dispatch:
+
+concurrency:
+  group: rag-embeddings-lag
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  lag:
+    name: S12 RAG lag
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Cliente psql (SELECT only)
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client --quiet
+
+      - name: Contar productos sin embedding (skip honesto sin secretos)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AI_USAGE_DATABASE_URL: ${{ secrets.AI_USAGE_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_BACKUP_URL: ${{ secrets.SUPABASE_BACKUP_URL }}
+          RAG_LAG_THRESHOLD: '50'
+        run: node scripts/eng-gates/rag-embeddings-lag.mjs

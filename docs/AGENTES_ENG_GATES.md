@@ -100,7 +100,9 @@ E2 y E1 comentan el PR solo si hay `GH_TOKEN`, `GITHUB_REPOSITORY` y `PR_NUMBER`
 | 3 | [AGENTES_OLA3.md](AGENTES_OLA3.md) | D1, D3, D4+E8, S2, E4, E7, E9 |
 | 4 | [AGENTES_OLA4.md](AGENTES_OLA4.md) | D6, D7, D8, D11, S4, E5 |
 | 5 | [AGENTES_OLA5.md](AGENTES_OLA5.md) | D9, D10, S5, S7, E12, E14, E18 |
+| 6 | [AGENTES_OLA6.md](AGENTES_OLA6.md) | S6, S9, S10, S11, S12, E13, E15, E17 |
 
 La ola 3 **no** reimplementa E1/E3/E6: D1/D3/S2 son heartbeats diarios/semanales sobre el mismo tema.
 La ola 4 **no** reimplementa E7/D2/S3/Gitleaks: D6/S4/E5/D8 son hunters o subsets al lado.
 La ola 5 complementa olas 1–4 (D9/D10/S5/S7/E12/E14/E18). Gitleaks en PRs usa rango `base..head` + árbol HEAD (`gitleaks-scan.sh`), no `--all`.
+La ola 6 complementa olas 1–5 (S6 k6/Hikari, S9 lint:ci+bundle, S10 god-class, S11 Hacienda XML, S12 RAG lag, E13 push SPA, E15 spike de Issue, E17 i18n PR vs D7).

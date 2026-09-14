@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "p95_ms": 1500,
+  "error_rate": 0.02,
+  "hikari_awaiting_max": 0,
+  "chunk_warn_bytes": 409600,
+  "source": "loadtest/k6-pos-checkout.js thresholds http_req_duration p(95)<1500 and http_req_failed rate<0.02",
+  "notes": "F29 performance/k6/checkout-concurrente.js is stricter (p95<500, rate<0.01). Smoke never hits hotclick.lat / 18.227.68.15 unless K6_ALLOW_PRODUCTION=1. Set K6_BASE_URL to a staging URL (e.g. Render). Mock is default."
+}
