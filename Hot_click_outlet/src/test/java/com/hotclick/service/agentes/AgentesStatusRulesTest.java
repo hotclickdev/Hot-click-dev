@@ -53,4 +53,25 @@ class AgentesStatusRulesTest {
         assertThat(AgentesStatusRules.cadenceMatches("daily", prOnly)).isFalse();
         assertThat(AgentesStatusRules.cadenceMatches("event", prOnly)).isTrue();
     }
+
+    @Test
+    @DisplayName("YAML pausado (dispatch + triggers originales comentados) no cuenta cron")
+    void detectTriggers_ignoraComentariosDePausa() {
+        String yaml = """
+                # DISABLED 2026-09-14 — awaiting reorg
+                on:
+                  workflow_dispatch:
+                # ORIGINAL TRIGGERS (restore to re-enable):
+                # on:
+                #   schedule:
+                #     - cron: '0 9 * * *'
+                #   pull_request:
+                """;
+        WorkflowTriggers triggers = AgentesStatusRules.detectTriggers(yaml);
+        assertThat(triggers.hasDispatch()).isTrue();
+        assertThat(triggers.hasSchedule()).isFalse();
+        assertThat(triggers.hasPr()).isFalse();
+        assertThat(AgentesStatusRules.cadenceMatches("daily", triggers)).isFalse();
+        assertThat(AgentesStatusRules.cadenceMatches("event", triggers)).isTrue();
+    }
 }

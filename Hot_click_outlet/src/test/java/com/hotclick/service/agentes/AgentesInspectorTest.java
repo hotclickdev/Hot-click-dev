@@ -68,7 +68,7 @@ class AgentesInspectorTest {
     }
 
     @Test
-    @DisplayName("contra el clone: D12/S14/E16 al día y S13 activar")
+    @DisplayName("contra el clone pausado: daily/weekly actualizar; event al día; S13 activar")
     void contraRepoReal() throws Exception {
         Path repoRoot = AgentesRepoLocator.findRepoRoot("", System.getProperty("user.dir"));
         if (repoRoot == null) {
@@ -87,13 +87,14 @@ class AgentesInspectorTest {
         var file = mapper.readValue(catalog.toFile(), com.hotclick.dto.agentes.CatalogFileDto.class);
         InspectionRunDto run = AgentesInspector.inspect(file.agentsOrEmpty(), repoRoot, "test");
         Map<String, AgentInspectionDto> byId = porId(run);
-        assertThat(byId.get("D1").status()).isEqualTo(AgentesStatusRules.AL_DIA);
-        assertThat(byId.get("D12").status()).isEqualTo(AgentesStatusRules.AL_DIA);
-        assertThat(byId.get("S14").status()).isEqualTo(AgentesStatusRules.AL_DIA);
+        // Olas 1–7 pausadas (solo workflow_dispatch): daily/weekly ya no calzan cron.
+        assertThat(byId.get("D1").status()).isEqualTo(AgentesStatusRules.ACTUALIZAR);
+        assertThat(byId.get("D12").status()).isEqualTo(AgentesStatusRules.ACTUALIZAR);
+        assertThat(byId.get("S14").status()).isEqualTo(AgentesStatusRules.ACTUALIZAR);
         assertThat(byId.get("E16").status()).isEqualTo(AgentesStatusRules.AL_DIA);
         assertThat(byId.get("S13").status()).isEqualTo(AgentesStatusRules.ACTIVAR);
         assertThat(run.summary().activar()).isEqualTo(1);
-        assertThat(run.summary().alDia()).isGreaterThanOrEqualTo(43);
+        assertThat(run.summary().actualizar()).isGreaterThanOrEqualTo(20);
     }
 
     private Path repoConDocsYWorkflows(String docBody, String yaml) throws Exception {
