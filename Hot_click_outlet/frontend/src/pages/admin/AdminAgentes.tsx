@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AgentesTabs from './agentes/AgentesTabs'
 import { useAgentesDashboard } from './agentes/useAgentesDashboard'
 
@@ -6,12 +7,13 @@ import { useAgentesDashboard } from './agentes/useAgentesDashboard'
  * Shell de /admin/agentes — registro I1 dentro del admin HotClick.
  */
 export default function AdminAgentes() {
+  const { t } = useTranslation()
   const dash = useAgentesDashboard()
 
   if (dash.loading && dash.data.catalogo.agents.length === 0) {
     return (
       <div className="flex items-center justify-center py-24 text-sm text-hc-muted">
-        Cargando registro de agentes…
+        {t('agentesCargando')}
       </div>
     )
   }
@@ -25,7 +27,7 @@ export default function AdminAgentes() {
           onClick={dash.recargar}
           className="mt-4 rounded-lg bg-[var(--hc-primary)] px-4 py-2 text-sm text-white hover:bg-[var(--hc-primary-hover)]"
         >
-          Reintentar
+          {t('agentesReintentar')}
         </button>
       </div>
     )
@@ -34,11 +36,8 @@ export default function AdminAgentes() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-bold text-hc-text">Agentes de ingeniería</h1>
-        <p className="mt-1 text-sm text-hc-muted">
-          Registro D1–D12, S1–S14, E1–E18, DOC1, SCALE1 e I1. Solo ADMIN.
-          No toca pago, auth ni schedulers de negocio.
-        </p>
+        <h1 className="text-2xl font-bold text-hc-text">{t('agentesTitulo')}</h1>
+        <p className="mt-1 text-sm text-hc-muted">{t('agentesSubtitulo')}</p>
       </header>
       <AgentesTabs />
       <Outlet context={dash} />

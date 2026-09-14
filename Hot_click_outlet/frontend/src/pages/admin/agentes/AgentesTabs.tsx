@@ -1,17 +1,19 @@
 import { NavLink } from 'react-router-dom'
-
-const TABS = [
-  { to: '/admin/agentes', label: 'Registro', end: true },
-  { to: '/admin/agentes/plan', label: 'Plan 7/7', end: false },
-  { to: '/admin/agentes/inspecciones', label: 'Inspecciones I1', end: false },
-  { to: '/admin/agentes/hallazgos', label: 'Hallazgos', end: false },
-] as const
+import { useTranslation } from 'react-i18next'
 
 /** Subnav del dashboard de agentes. */
 export default function AgentesTabs() {
+  const { t } = useTranslation()
+  const tabs = [
+    { to: '/admin/agentes', label: t('agentesRegistro'), end: true },
+    { to: '/admin/agentes/plan', label: t('agentesPlan77'), end: false },
+    { to: '/admin/agentes/inspecciones', label: t('agentesInspeccionesI1'), end: false },
+    { to: '/admin/agentes/hallazgos', label: t('agentesHallazgos'), end: false },
+  ]
+
   return (
-    <nav className="flex flex-wrap gap-1 border-b border-hc-border" aria-label="Secciones de agentes">
-      {TABS.map((tab) => (
+    <nav className="flex flex-wrap gap-1 border-b border-hc-border" aria-label={t('agentesTabsAria')}>
+      {tabs.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
