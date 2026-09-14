@@ -1,0 +1,71 @@
+{
+  "totalOlas": 7,
+  "onMaster": 6,
+  "headline": "6 de 7 olas están en master",
+  "note": "No hay docs/AGENTES_OLA7.md. Huecos del catálogo: D12, S13, S14, E16. I1 (este dashboard) inspecciona el registro cada lunes CR.",
+  "olas": [
+    {
+      "n": 1,
+      "status": "en_master",
+      "pr": 55,
+      "doc": "docs/AGENTES_ENG_GATES.md",
+      "title": "PR gates + DOC1 + SCALE1 + D5",
+      "ids": ["E1", "E2", "E3", "E6", "E11", "DOC1", "SCALE1", "D5"],
+      "summary": "Gates de PR (Flyway, tenant, SPA, Dependabot, paths sensibles), docs de stack semanales, review de escala y verificación del dump diario."
+    },
+    {
+      "n": 2,
+      "status": "en_master",
+      "pr": 56,
+      "doc": "docs/AGENTES_OLA2.md",
+      "title": "Hunters y restore",
+      "ids": ["D2", "S1", "S3", "E10", "S8"],
+      "summary": "IDOR diario, lote Sonar, mapa E2E, gate de authz y drill de restore del backup en Postgres throwaway."
+    },
+    {
+      "n": 3,
+      "status": "en_master",
+      "pr": 57,
+      "doc": "docs/AGENTES_OLA3.md",
+      "title": "Heartbeats y pager",
+      "ids": ["D1", "D3", "D4", "E8", "S2", "E4", "E7", "E9"],
+      "summary": "Drift Flyway↔JPA y SPA stale diarios, digest Sentry, Dependabot semanal, commit-gate, diagnóstico CI rojo y pager de /api/health."
+    },
+    {
+      "n": 4,
+      "status": "en_master",
+      "pr": 58,
+      "doc": "docs/AGENTES_OLA4.md",
+      "title": "Flake, i18n, contratos",
+      "ids": ["D6", "D7", "D8", "D11", "S4", "E5"],
+      "summary": "Hunter de flakes, drift i18n ES/EN/PT, secretos en docs, contrato API FE↔BE, huecos de suite IDOR y Playwright por área."
+    },
+    {
+      "n": 5,
+      "status": "en_master",
+      "pr": 59,
+      "doc": "docs/AGENTES_OLA5.md",
+      "title": "Cuota AI, higiene, tokens",
+      "ids": ["D9", "D10", "S5", "S7", "E12", "E14", "E18"],
+      "summary": "Alerta de cuota AI, higiene de issues/PRs, tokens de diseño, checklist Ley 8968, remap seller QA, hotfix gate y PgBouncer en SQL."
+    },
+    {
+      "n": 6,
+      "status": "en_master",
+      "pr": 60,
+      "doc": "docs/AGENTES_OLA6.md",
+      "title": "Perf, lint, Hacienda, RAG",
+      "ids": ["S6", "S9", "S10", "S11", "S12", "E13", "E15", "E17"],
+      "summary": "k6/Hikari, lint:ci + bundle, god-class, XML Hacienda, lag de embeddings, recordatorio SPA en push, spike de issues y gate i18n en PR."
+    },
+    {
+      "n": 7,
+      "status": "pendiente",
+      "pr": null,
+      "doc": null,
+      "title": "Pendiente — no hay AGENTES_OLA7.md",
+      "ids": ["D12", "S13", "S14", "E16"],
+      "summary": "IDs reservados sin workflow ni doc. I1 (inspector + dashboard) vive en agentes-dashboard/ y corre semanal aparte de esta ola."
+    }
+  ]
+}

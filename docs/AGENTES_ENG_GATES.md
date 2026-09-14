@@ -1,5 +1,7 @@
 # Agentes de ingeniería — PR gates (ola 1)
 
+Dashboard durable **I1** (registro + plan de olas + historial de inspecciones): [`agentes-dashboard/README.md`](../agentes-dashboard/README.md). Local: `cd agentes-dashboard && npm install && npm run dev` → [http://localhost:43127/agentes](http://localhost:43127/agentes). En Vercel, Root Directory = `agentes-dashboard`. Inspector: `npm run inspect` o workflow [`inspect-agents.yml`](../.github/workflows/inspect-agents.yml) (lunes 08:15 CR).
+
 Checks de GitHub Actions que corren **al lado** de `ci.yml`, `security.yml`, `sonarcloud.yml`, `backup.yml` y `keep-alive.yml`. No tocan schedulers de negocio (DataRetention, Hacienda, wallet, RAG) ni lógica de pago/auth.
 
 Los scripts viven en `scripts/eng-gates/` (Node 22, sin dependencias). Tests: `node --test scripts/eng-gates/eng-gates.test.mjs`.
@@ -106,3 +108,5 @@ La ola 3 **no** reimplementa E1/E3/E6: D1/D3/S2 son heartbeats diarios/semanales
 La ola 4 **no** reimplementa E7/D2/S3/Gitleaks: D6/S4/E5/D8 son hunters o subsets al lado.
 La ola 5 complementa olas 1–4 (D9/D10/S5/S7/E12/E14/E18). Gitleaks en PRs usa rango `base..head` + árbol HEAD (`gitleaks-scan.sh`), no `--all`.
 La ola 6 complementa olas 1–5 (S6 k6/Hikari, S9 lint:ci+bundle, S10 god-class, S11 Hacienda XML, S12 RAG lag, E13 push SPA, E15 spike de Issue, E17 i18n PR vs D7).
+
+I1 (inspector + dashboard) no es una ola de gates: mira D1–D12 / S1–S14 / E1–E18 + DOC1 + SCALE1 y escribe `agentes-dashboard/data/inspections.json`. Ola 7 aún no tiene `AGENTES_OLA7.md` (huecos D12, S13, S14, E16).
