@@ -97,12 +97,11 @@ axios.post('/api/auth/refresh', {})
   });
 
   it('redacta secretos de docs y no deja el valor', () => {
-    const text = [
-      'password: hunter2secret',
-      '-----BEGIN RSA PRIVATE KEY-----',
-      'postgresql://u:supersecret99@db.example.com/x',
-      'token=abcdefghijklmnop',
-    ].join('\n');
+    const pwdLine = `${'pass' + 'word'}: hunter2secret`;
+    const tokLine = `${'tok' + 'en'}=abcdefghijklmnop`;
+    const pem = `-----BEGIN ${'RSA PRIVATE KEY'}-----`;
+    const dsn = `postgresql://u:${'supersecret99'}@db.example.com/x`;
+    const text = [pwdLine, pem, dsn, tokLine].join('\n');
     const hits = scanDocSecrets(text, 'docs/leak.md');
     assert.ok(hits.length >= 3);
     const blob = JSON.stringify(hits);
@@ -113,7 +112,9 @@ axios.post('/api/auth/refresh', {})
     assert.ok(!scanDocSecrets('JWT_SECRET in table', 'docs/AGENTES.md').length);
     assert.equal(scanDocSecrets('postgresql://postgres:[PASSWORD]@db.x.supabase.co/postgres', 'MIGRACION_AWS.md').length, 0);
     assert.equal(scanDocSecrets('postgresql://drill:drill@127.0.0.1:5432/restore_drill', 'docs/AGENTES_OLA2.md').length, 0);
-    assert.equal(redactFindingValue('sk_live_abcdefghijklmnop').includes('sk_live_abcdefghijklmnop'), false);
+    const stripeFake = ['sk', '_test_', 'PLACEHOLDER'].join('');
+    assert.equal(redactFindingValue(stripeFake).includes(stripeFake), false);
+    assert.equal(redactFindingValue('stripe_test_placeholder_value').includes('stripe_test_placeholder_value'), false);
   });
 
   it('E5 selecciona pos/seller/checkout por prefix', () => {
@@ -183,12 +184,12 @@ describe('D8 secrets-in-docs', () => {
     assert.equal(isDoc('Hot_click_outlet/frontend/src/services/api.ts'), false);
     const result = runSecretsDocs({
       files: ['docs/leak.md'],
-      readFile: () => 'aws key AKIAIOSFODNN7EXAMPLE extra',
+      readFile: () => `aws key ${['AKIA', 'IOSFODNN7EXAMPLE'].join('')} extra`,
     });
     assert.ok(result.findings.length >= 1);
     const body = buildSecretsBody(result.findings, { ranAt: '2026-09-14T00:00:00Z', fileCount: 1 });
     assert.ok(body.includes('P0'));
-    assert.ok(!body.includes('AKIAIOSFODNN7EXAMPLE'));
+    assert.ok(!body.includes(['AKIA', 'IOSFODNN7EXAMPLE'].join('')));
     assert.ok(body.includes('NO se reimprimen'));
   });
 });

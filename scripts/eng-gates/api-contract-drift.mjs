@@ -89,7 +89,8 @@ export function buildIssueBody(likely, meta) {
   }
   lines.push(
     '',
-    'No cambia controladores ni lógica de pago/auth. Marker: `hotclick-d11-api-drift`.',
+    'No cambia controladores ni lógica de cobro o autenticación.',
+    'Issue dedup: ola4-d11-contract.',
   );
   return lines.join('\n');
 }
@@ -121,7 +122,7 @@ function main() {
   }
   upsertIssue({
     title: '[D11] API contract drift (controller vs frontend)',
-    marker: 'hotclick-d11-api-drift',
+    marker: 'ola4-d11-contract',
     labels: ['api-drift', 'eng-agent'],
     body,
   });

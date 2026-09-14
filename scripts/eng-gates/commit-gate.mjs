@@ -48,6 +48,8 @@ export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip }) {
       plan: planCommitChecks([]),
     };
   }
+  // Blockers: reportes reales (`**/playwright-report/**`), no menciones en skip-dir / artifacts YAML.
+  // Tests Java: omitir stubs `@Disabled` bajo `src/test/java/**/pending/`.
   const blockers = scanCommitBlockers({ changedFiles, diffText });
   const plan = planCommitChecks(changedFiles);
   const javaTests = pickJavaTests(changedFiles, testFiles);
