@@ -1,0 +1,60 @@
+name: S9 — Weekly bundle + lint:ci
+
+on:
+  schedule:
+    # Lunes 09:15 America/Costa_Rica = 15:15 UTC
+    - cron: '15 15 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: bundle-lint-ci
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  bundle:
+    name: S9 bundle / lint:ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.2
+
+      - name: Node cache pnpm
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: Hot_click_outlet/frontend/pnpm-lock.yaml
+
+      - name: Instalar frontend
+        id: install
+        continue-on-error: true
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: lint:ci (allowlist real)
+        id: lint
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm lint:ci
+
+      - name: Medir chunks + documentar allowlist (no mass-enable)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINT_CI_EXIT: ${{ steps.lint.outcome == 'success' && '0' || steps.lint.outcome == 'failure' && '1' || '' }}
+        run: node scripts/eng-gates/bundle-lint-ci.mjs
