@@ -1,0 +1,103 @@
+name: I1 — Inspect agentes
+
+on:
+  schedule:
+    # lunes 08:15 America/Costa_Rica (UTC-6, sin DST)
+    - cron: '15 14 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: inspect-agents
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  inspect:
+    name: I1 escanear workflows + docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Correr inspector
+        id: i1
+        run: |
+          set -euo pipefail
+          node agentes-dashboard/scripts/inspect-agents.mjs --source gha | tee /tmp/i1-summary.md
+          if git diff --quiet -- agentes-dashboard/data/inspections.json; then
+            echo "I1: inspections.json sin cambios de working tree."
+            echo "changed=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Subir artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: i1-inspections-${{ github.run_id }}
+          path: agentes-dashboard/data/inspections.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: PR con inspections.json
+        id: pr
+        continue-on-error: true
+        if: steps.i1.outputs.changed == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B bot/i1-inspect
+          git add agentes-dashboard/data/inspections.json
+          git commit -m "chore(i1): refresh inspections.json"
+          git push -u origin bot/i1-inspect --force
+          EXISTING=$(gh pr list --head bot/i1-inspect --base master --json number -q '.[0].number' || true)
+          BODY=$(printf '%s\n' \
+            "## I1" \
+            "" \
+            "Refresh automático de \`agentes-dashboard/data/inspections.json\`." \
+            "Sin secretos. Revisá el diff y mergeá para que Vercel muestre el historial." \
+            "" \
+            "Local: \`cd agentes-dashboard && npm run inspect\`")
+          if [[ -n "$EXISTING" ]]; then
+            echo "PR #$EXISTING ya existe."
+          else
+            gh pr create --base master --head bot/i1-inspect --title "chore(i1): refresh inspections.json" --body "$BODY"
+          fi
+
+      - name: Issue resumen (siempre)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TITLE='[I1] Inspección semanal de agentes'
+          BODY_FILE=/tmp/i1-issue.md
+          {
+            echo "## I1 inspector"
+            echo
+            echo "Run \`${{ github.run_id }}\`. Artifact: i1-inspections-${{ github.run_id }}."
+            echo "Si el JSON cambió y hay permisos, hay PR en \`bot/i1-inspect\`."
+            echo
+            echo '```'
+            cat /tmp/i1-summary.md
+            echo '```'
+          } > "$BODY_FILE"
+          EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number -q '.[0].number' || true)
+          if [[ -n "$EXISTING" ]]; then
+            gh issue comment "$EXISTING" --body-file "$BODY_FILE"
+          else
+            gh issue create --title "$TITLE" --body-file "$BODY_FILE" --label "eng-agent" || \
+              gh issue create --title "$TITLE" --body-file "$BODY_FILE"
+          fi
