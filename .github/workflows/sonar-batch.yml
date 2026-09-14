@@ -1,0 +1,36 @@
+name: S1 — Weekly Sonar batch
+
+on:
+  schedule:
+    # Lunes 08:00 America/Costa_Rica = 14:00 UTC
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: sonar-batch
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  batch:
+    name: S1 Sonar batch (Issue)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Armar lote y upsert Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+          SONAR_PROJECT_KEY: hotclickdev_Hot-click-dev
+        run: node scripts/eng-gates/sonar-batch.mjs
