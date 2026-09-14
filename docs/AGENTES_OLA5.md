@@ -33,6 +33,7 @@ Scripts: `scripts/eng-gates/` (`ola5-lib`, `ai-quota-alert`, `issues-hygiene`, `
 ## Secretos
 
 Ningún secreto va en git. Tests sin placeholders de API keys de pago (evita gitleaks / E4).
+En PRs, `security.yml` corre `scripts/eng-gates/gitleaks-scan.sh`: rango `base..head` **más** el árbol HEAD (`gitleaks dir`). No escanea historial de otras ramas abiertas (ola 4 / `35eb364`). Push a `master`: historial de HEAD, sin `--all`. Las reglas default no se relajan.
 
 | Secreto / var | ¿Ola 5 lo pide? | Notas |
 | --- | --- | --- |

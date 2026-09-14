@@ -120,7 +120,11 @@ jobs:
           echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
           chmod +x gitleaks
-          ./gitleaks detect --source . --config .gitleaks.toml --redact --exit-code 1 --verbose
+          export GITLEAKS_BIN=./gitleaks
+          export BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          export HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          export GITHUB_EVENT_NAME="${{ github.event_name }}"
+          bash scripts/eng-gates/gitleaks-scan.sh
 
       - name: Issue outage/prod-errors + bloquear auto-merge si falta
         if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/')

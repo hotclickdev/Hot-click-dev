@@ -33,7 +33,8 @@ import { runSellerQaRemap, buildSellerComment } from './seller-qa-remap.mjs';
 import { runHotfixGate } from './hotfix-gate.mjs';
 import { runPgbouncerMigration } from './pgbouncer-migration.mjs';
 import { runAiQuotaAlert, parsePsqlTuples as parseAlertRows } from './ai-quota-alert.mjs';
-import { D10_PING_MARKER, QUOTA_THRESHOLD } from './ola5-lib.mjs';
+import { readFileSync } from 'node:fs';
+import { D10_PING_MARKER, QUOTA_THRESHOLD, REPO_ROOT } from './ola5-lib.mjs';
 
 describe('D9 AI quota', () => {
   const heuristics = parseQuotaHeuristics(
@@ -403,6 +404,18 @@ ALTER TABLE hot_click_x_tb ADD COLUMN bar int;
     assert.equal(out.ok, false);
     assert.equal(out.findings[0].line, 1);
     assert.equal(out.findings[0].path, rel);
+  });
+});
+
+describe('gitleaks PR range (no other-branch history)', () => {
+  it('el script acota pull_request a base..head + dir HEAD', () => {
+    const sh = readFileSync(`${REPO_ROOT}/scripts/eng-gates/gitleaks-scan.sh`, 'utf8');
+    assert.match(sh, /log-opts="\$\{base\}\.\.\$\{head\}"/);
+    assert.match(sh, /gitleaks dir|dir "\$\{COMMON/);
+    assert.doesNotMatch(sh, /detect --source/);
+    const sec = readFileSync(`${REPO_ROOT}/.github/workflows/security.yml`, 'utf8');
+    assert.match(sec, /gitleaks-scan\.sh/);
+    assert.doesNotMatch(sec, /gitleaks detect --source/);
   });
 });
 

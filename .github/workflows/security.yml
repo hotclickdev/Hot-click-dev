@@ -25,5 +25,12 @@ jobs:
           tar -xzf gitleaks.tar.gz gitleaks
           chmod +x gitleaks
 
-      - name: gitleaks detect
-        run: ./gitleaks detect --source . --config .gitleaks.toml --redact --exit-code 1 --verbose
+      # PRs: solo commits del PR + árbol HEAD. fetch-depth:0 baja otras ramas
+      # (p. ej. ola 4 / 35eb364) y `detect` sin log-opts las escanea todas.
+      - name: gitleaks (rango PR o rama actual)
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITLEAKS_BIN: ./gitleaks
+        run: bash scripts/eng-gates/gitleaks-scan.sh

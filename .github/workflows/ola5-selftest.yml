@@ -12,6 +12,7 @@ on:
       - 'scripts/eng-gates/seller-qa-remap.mjs'
       - 'scripts/eng-gates/hotfix-gate.mjs'
       - 'scripts/eng-gates/pgbouncer-migration.mjs'
+      - 'scripts/eng-gates/gitleaks-scan.sh'
       - '.github/workflows/ai-quota-alert.yml'
       - '.github/workflows/issues-hygiene.yml'
       - '.github/workflows/design-tokens-drift.yml'
@@ -21,6 +22,7 @@ on:
       - '.github/workflows/pgbouncer-migration.yml'
       - '.github/workflows/ola5-selftest.yml'
       - '.github/workflows/ci.yml'
+      - '.github/workflows/security.yml'
       - 'docs/AGENTES_OLA5.md'
       - 'docs/AGENTES_ENG_GATES.md'
 
@@ -59,6 +61,7 @@ jobs:
             'pgbouncer-migration.yml',
             'ola5-selftest.yml',
             'ci.yml',
+            'security.yml',
           ]
           for name in files:
             yaml.safe_load((root / name).read_text())
