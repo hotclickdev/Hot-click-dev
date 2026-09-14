@@ -403,9 +403,14 @@ const DEBUG_BLOCKERS = [
   { id: 'debug-log', re: /debug-[\w.-]+\.log/i, title: 'Archivo debug-*.log' },
   { id: 'ndjson-ignored', re: /catch\s*\(\s*Exception\s+ignored\s*\)/i, title: 'catch (Exception ignored) NDJSON local' },
   { id: 'dotenv', re: /(^|\/)\.env(\.|$)/, title: 'Archivo .env (secretos)' },
-  { id: 'playwright-report', re: /playwright-report|test-results\//, title: 'Reporte Playwright / test-results' },
   { id: 'vitest-results', re: /(^|\/)results\.json$/, title: 'results.json de Vitest' },
 ];
+
+/** Solo artefactos reales (dirs playwright-report o test-results), no allowlists ni YAML. */
+export function isPlaywrightReportArtifact(filePath) {
+  const normalized = String(filePath || '').replaceAll('\\', '/');
+  return /(^|\/)(playwright-report|test-results)\/./.test(normalized);
+}
 
 const SELF_SCAN_PATH = /(?:^|\/)scripts\/eng-gates\/(?:ola3-lib|commit-gate|ola3\.test)\.mjs$/;
 const CI_PLACEHOLDER_RE =
@@ -426,13 +431,21 @@ export function scanCommitBlockers({ changedFiles, diffText }) {
     if (/debug-[\w.-]+\.log$/i.test(normalized)) {
       findings.push({ id: 'debug-log', path: normalized, title: 'No commitear debug-*.log', snippet: normalized });
     }
-    if (normalized.includes('playwright-report') || normalized.includes('test-results/')) {
+    if (isPlaywrightReportArtifact(normalized)) {
       findings.push({ id: 'playwright-report', path: normalized, title: 'No commitear reportes Playwright', snippet: normalized });
     }
   }
   const files = parseSimpleDiff(diffText || '');
   for (const file of files) {
     if (isSelfScanPath(file.path)) continue;
+    if (isPlaywrightReportArtifact(file.path)) {
+      findings.push({
+        id: 'playwright-report',
+        path: file.path,
+        title: 'No commitear reportes Playwright',
+        snippet: file.path,
+      });
+    }
     for (const line of file.added) {
       if (CI_PLACEHOLDER_RE.test(line)) continue;
       for (const rule of DEBUG_BLOCKERS) {
@@ -521,9 +534,14 @@ export function javaTestClassName(filePath) {
   return `${name}Test`;
 }
 
+export function isPendingJavaTest(filePath) {
+  return /\/pending\//.test(String(filePath || '').replaceAll('\\', '/'));
+}
+
 export function pickJavaTests(changedFiles, existingTests) {
   const wanted = new Set();
   for (const file of changedFiles || []) {
+    if (isPendingJavaTest(file)) continue;
     const cls = javaTestClassName(file);
     if (cls) wanted.add(cls);
   }

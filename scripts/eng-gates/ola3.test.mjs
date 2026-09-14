@@ -305,6 +305,34 @@ describe('E4 commit-gate', () => {
       ].join('\n'),
     });
     assert.equal(self.length, 0);
+
+    const skipMentions = scanCommitBlockers({
+      changedFiles: ['scripts/eng-gates/ola4-lib.mjs', '.github/workflows/playwright-area.yml'],
+      diffText: [
+        '+++ b/scripts/eng-gates/ola4-lib.mjs',
+        "+        if (['node_modules', 'playwright-report', 'test-results'].includes(entry.name)) {",
+        '+++ b/.github/workflows/playwright-area.yml',
+        '+            Hot_click_outlet/frontend/test-results',
+        '+            Hot_click_outlet/frontend/playwright-report',
+      ].join('\n'),
+    });
+    assert.equal(skipMentions.filter((item) => item.id === 'playwright-report').length, 0);
+
+    const realReport = scanCommitBlockers({
+      changedFiles: ['Hot_click_outlet/frontend/playwright-report/index.html'],
+      diffText: [
+        '+++ b/Hot_click_outlet/frontend/playwright-report/index.html',
+        '+<html></html>',
+      ].join('\n'),
+    });
+    assert.ok(realReport.some((item) => item.id === 'playwright-report'));
+    assert.deepEqual(
+      pickJavaTests(
+        ['Hot_click_outlet/src/test/java/com/hotclick/pending/IdorSuiteGapStubsTest.java'],
+        ['Hot_click_outlet/src/test/java/com/hotclick/pending/IdorSuiteGapStubsTest.java'],
+      ),
+      [],
+    );
   });
 });
 

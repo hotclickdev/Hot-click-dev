@@ -1,0 +1,36 @@
+name: D7 — Daily i18n drift ES/EN/PT
+
+on:
+  schedule:
+    # Diario 02:45 America/Costa_Rica = 08:45 UTC
+    - cron: '45 8 * * *'
+    # Semanal lunes 08:00 CR = 14:00 UTC (mismo upsert)
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: i18n-drift
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    name: D7 i18n drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Diff locales y upsert Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/i18n-drift.mjs
