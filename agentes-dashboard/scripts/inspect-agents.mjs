@@ -7,7 +7,7 @@
  *   node agentes-dashboard/scripts/inspect-agents.mjs
  *   node scripts/inspect-agents.mjs --source local
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -244,7 +244,7 @@ export function renderIssueMarkdown(run) {
   if (run.agents.every((a) => a.status === 'al_dia')) {
     lines.push('| — | al_dia | — | Todos los IDs conocidos están al día |');
   }
-  lines.push('', 'JSON: `agentes-dashboard/data/inspections.json`. Dashboard: `/agentes/inspecciones`.');
+  lines.push('', 'JSON: `agentes-dashboard/data/inspections.json` (espejo en `Hot_click_outlet/src/main/resources/agentes/`). Dashboard admin: `/admin/agentes/inspecciones`. Espejo Next: `/agentes/inspecciones`.');
   return `${lines.join('\n')}\n`;
 }
 
@@ -255,6 +255,15 @@ function persistRun(outPath, run) {
   const payload = { updatedAt: run.ranAt, runs };
   writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
   return payload;
+}
+
+function syncSpringResources(dashboardDir) {
+  const dest = join(resolve(dashboardDir, '..'), 'Hot_click_outlet', 'src', 'main', 'resources', 'agentes');
+  mkdirSync(dest, { recursive: true });
+  for (const name of ['agents.json', 'olas.json', 'inspections.json']) {
+    const src = join(dashboardDir, 'data', name);
+    if (existsSync(src)) copyFileSync(src, join(dest, name));
+  }
 }
 
 export function inspectRepo({ repoRoot, dashboardDir = DASHBOARD_DIR, source = 'local' }) {
@@ -272,7 +281,10 @@ function main() {
   const repoRoot = findRepoRoot();
   const run = inspectRepo({ repoRoot, source: args.source });
   const outPath = join(DASHBOARD_DIR, 'data', 'inspections.json');
-  if (args.write) persistRun(outPath, run);
+  if (args.write) {
+    persistRun(outPath, run);
+    syncSpringResources(DASHBOARD_DIR);
+  }
   const md = renderIssueMarkdown(run);
   if (args.stdout) {
     process.stdout.write(`${JSON.stringify(run, null, 2)}\n`);

@@ -80,6 +80,11 @@ const AdminMiEmpresa = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
 const AdminSecurityCenter = lazy(() => import('@/pages/admin/AdminSecurityCenter'))
 const AdminSuperAdmin = lazy(() => import('@/pages/admin/AdminSuperAdmin'))
 const AdminObservabilidad = lazy(() => import('@/pages/admin/AdminObservabilidad'))
+const AdminAgentes = lazy(() => import('@/pages/admin/AdminAgentes'))
+const AgentesRegistroPage = lazy(() => import('@/pages/admin/agentes/AgentesRegistroPage'))
+const AgentesPlanPage = lazy(() => import('@/pages/admin/agentes/AgentesPlanPage'))
+const AgentesInspeccionesPage = lazy(() => import('@/pages/admin/agentes/AgentesInspeccionesPage'))
+const AgentesHallazgosPage = lazy(() => import('@/pages/admin/agentes/AgentesHallazgosPage'))
 const AdminAuditorias = lazy(() => import('@/pages/admin/AdminAuditorias'))
 const AdminCotizaciones = lazy(() => import('@/pages/admin/AdminCotizaciones'))
 const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
@@ -273,6 +278,12 @@ export default function AppRoutes() {
             <Route path="security" element={<AdminSecurityCenter />} />
             <Route path="superadmin" element={<AdminSuperAdmin />} />
             <Route path="observabilidad" element={<AdminObservabilidad />} />
+            <Route path="agentes" element={<AdminAgentes />}>
+              <Route index element={<AgentesRegistroPage />} />
+              <Route path="plan" element={<AgentesPlanPage />} />
+              <Route path="inspecciones" element={<AgentesInspeccionesPage />} />
+              <Route path="hallazgos" element={<AgentesHallazgosPage />} />
+            </Route>
             <Route path="auditorias" element={<AdminAuditorias />} />
             <Route path="soporte" element={<AdminSoporteTickets />} />
             <Route path="ai-control" element={<AdminAiControl />} />

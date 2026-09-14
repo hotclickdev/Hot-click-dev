@@ -1073,6 +1073,7 @@
       "securityCenter": "Security Center",
       "auditorias": "Audits",
       "observabilidad": "Observability",
+      "agentes": "Agents",
       "featureFlags": "Feature Flags / SaaS",
       "planesBilling": "Plans / Billing",
       "configuracion": "Settings",
