@@ -1,0 +1,43 @@
+name: E18 — PgBouncer migration safety
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'Hot_click_outlet/src/main/resources/db/migration/**'
+      - 'scripts/eng-gates/pgbouncer-migration.mjs'
+      - 'scripts/eng-gates/ola5-lib.mjs'
+      - '.github/workflows/pgbouncer-migration.yml'
+
+concurrency:
+  group: pgbouncer-migration-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pgbouncer:
+    name: E18 PgBouncer V*.sql
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Escanear migraciones
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/pgbouncer-migration.mjs

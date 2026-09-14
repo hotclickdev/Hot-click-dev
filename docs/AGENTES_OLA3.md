@@ -33,6 +33,8 @@ Scripts: `scripts/eng-gates/` (`flyway-jpa-drift`, `spa-stale`, `sentry-digest`,
 
 Ola 4 (D6/D7/D8/D11/S4/E5): [AGENTES_OLA4.md](AGENTES_OLA4.md). No reimplementa D1–D4/E4/E7/E9.
 
+Ola 5 (D9/D10/S5/S7/E12/E14/E18): [AGENTES_OLA5.md](AGENTES_OLA5.md).
+
 ## Secretos
 
 Ningún secreto va en git. `GITHUB_TOKEN` automático alcanza para Issues/comentarios.
