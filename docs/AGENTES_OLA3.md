@@ -34,6 +34,8 @@ Scripts: `scripts/eng-gates/` (`flyway-jpa-drift`, `spa-stale`, `sentry-digest`,
 Ola 4 (D6/D7/D8/D11/S4/E5): [AGENTES_OLA4.md](AGENTES_OLA4.md). No reimplementa D1–D4/E4/E7/E9.
 
 Ola 5 (D9/D10/S5/S7/E12/E14/E18): [AGENTES_OLA5.md](AGENTES_OLA5.md).
+Ola 6 (S6/S9–S12/E13/E15/E17): [AGENTES_OLA6.md](AGENTES_OLA6.md).
+Ola 7 (D12/S14/E16): [AGENTES_OLA7.md](AGENTES_OLA7.md).
 
 ## Secretos
 

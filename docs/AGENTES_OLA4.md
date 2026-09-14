@@ -91,3 +91,6 @@ bash scripts/eng-gates/ola4-selftest.sh
 ```
 
 Issues solo se upsertan con `GH_TOKEN` + `GITHUB_REPOSITORY`.
+
+Ola 6 (S6/S9–S12/E13/E15/E17): [AGENTES_OLA6.md](AGENTES_OLA6.md).
+Ola 7 (D12/S14/E16): [AGENTES_OLA7.md](AGENTES_OLA7.md). Checklist de catálogo: [AGENTES_ENG_GATES.md](AGENTES_ENG_GATES.md).

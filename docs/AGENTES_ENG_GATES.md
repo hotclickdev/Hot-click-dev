@@ -92,17 +92,74 @@ node scripts/eng-gates/gate-scale.mjs
 
 E2 y E1 comentan el PR solo si hay `GH_TOKEN`, `GITHUB_REPOSITORY` y `PR_NUMBER`.
 
-## Olas siguientes (no viven en este archivo)
+## Olas siguientes (detalle en su doc)
 
-| Ola | Doc | IDs |
-| --- | --- | --- |
-| 2 (PR #56) | [AGENTES_OLA2.md](AGENTES_OLA2.md) | D2, S1, S3, E10, S8 |
-| 3 | [AGENTES_OLA3.md](AGENTES_OLA3.md) | D1, D3, D4+E8, S2, E4, E7, E9 |
-| 4 | [AGENTES_OLA4.md](AGENTES_OLA4.md) | D6, D7, D8, D11, S4, E5 |
-| 5 | [AGENTES_OLA5.md](AGENTES_OLA5.md) | D9, D10, S5, S7, E12, E14, E18 |
-| 6 | [AGENTES_OLA6.md](AGENTES_OLA6.md) | S6, S9, S10, S11, S12, E13, E15, E17 |
+| Ola | Doc | IDs | Estado |
+| --- | --- | --- | --- |
+| 2 (PR #56) | [AGENTES_OLA2.md](AGENTES_OLA2.md) | D2, S1, S3, E10, S8 | `master` |
+| 3 (PR #57) | [AGENTES_OLA3.md](AGENTES_OLA3.md) | D1, D3, D4+E8, S2, E4, E7, E9 | `master` |
+| 4 (PR #58) | [AGENTES_OLA4.md](AGENTES_OLA4.md) | D6, D7, D8, D11, S4, E5 | `master` |
+| 5 (PR #59) | [AGENTES_OLA5.md](AGENTES_OLA5.md) | D9, D10, S5, S7, E12, E14, E18 | `master` |
+| 6 (PR #60) | [AGENTES_OLA6.md](AGENTES_OLA6.md) | S6, S9, S10, S11, S12, E13, E15, E17 | `master` (`cf787a62`) |
+| 7 | [AGENTES_OLA7.md](AGENTES_OLA7.md) | D12, S14, E16 | **este PR** (cierre de catálogo eng-gates) |
 
 La ola 3 **no** reimplementa E1/E3/E6: D1/D3/S2 son heartbeats diarios/semanales sobre el mismo tema.
 La ola 4 **no** reimplementa E7/D2/S3/Gitleaks: D6/S4/E5/D8 son hunters o subsets al lado.
 La ola 5 complementa olas 1–4 (D9/D10/S5/S7/E12/E14/E18). Gitleaks en PRs usa rango `base..head` + árbol HEAD (`gitleaks-scan.sh`), no `--all`.
 La ola 6 complementa olas 1–5 (S6 k6/Hikari, S9 lint:ci+bundle, S10 god-class, S11 Hacienda XML, S12 RAG lag, E13 push SPA, E15 spike de Issue, E17 i18n PR vs D7).
+La ola 7 no reimplementa ola 6. El tablero UI `/agentes` está **fuera de alcance** (solo eng gates).
+
+## Cobertura del catálogo (eng gates)
+
+Checklist del menú original vs `master`. No incluye el tablero `/agentes`.
+
+| ID | Qué | Dónde | Estado |
+| --- | --- | --- | --- |
+| E1 | Flyway vs JPA (PR) | `gate-flyway.yml` | master (ola 1) |
+| E2 | Tenant / IDOR / PgBouncer (PR Java) | `gate-tenant.yml` | master (ola 1) |
+| E3 | SPA `static/` vs `frontend/src` | `gate-spa.yml` | master (ola 1) |
+| E4 | Commit-gate (debug/secretos/tests) | `commit-gate.yml` | master (ola 3) |
+| E5 | Playwright area (PR, dry-run) | `playwright-area.yml` | master (ola 4) |
+| E6 | Dependabot triage | `dependabot-triage.yml` | master (ola 1) |
+| E7 | CI red → comentario PR | `ci-red-diagnose.yml` | master (ola 3) |
+| E8 | Sentry prod-errors (con D4) | `sentry-digest.yml` | master (ola 3) |
+| E9 | Health status-only pager | `health-pager.yml` | master (ola 3) |
+| E10 | Authz catch-all vs mappings | `gate-authz.yml` | master (ola 2) |
+| E11 | Tests nominales Payment/Auth/Pos | `gate-sensitive.yml` | master (ola 1) |
+| E12 | Seller QA remap | `seller-qa-remap.yml` | master (ola 5) |
+| E13 | SPA reminder en push a master | `spa-push-reminder.yml` | master (ola 6) |
+| E14 | Hotfix gate + gitleaks | `hotfix-gate.yml` | master (ola 5) |
+| E15 | Spike en issues bug/pago/pos | `product-issue-spike.yml` | master (ola 6) |
+| E16 | Runtime Payment/Webhook/Factura → Issue | `runtime-endpoint-issue.yml` | **ola 7 (este PR)** |
+| E17 | i18n keys en el PR | `i18n-pr-gate.yml` | master (ola 6) |
+| E18 | PgBouncer en `V*.sql` | `pgbouncer-migration.yml` | master (ola 5) |
+| D1 | Flyway↔JPA diario | `flyway-jpa-drift.yml` | master (ola 3) |
+| D2 | Hunter IDOR diario | `hunter-idor.yml` | master (ola 2) |
+| D3 | SPA stale diario | `spa-stale.yml` | master (ola 3) |
+| D4 | Sentry digest | `sentry-digest.yml` | master (ola 3) |
+| D5 | Backup dump no vacío | `backup.yml` `verify-backup` | master (ola 1) |
+| D6 | Flake hunter CI | `flake-hunter.yml` | master (ola 4) |
+| D7 | i18n ES/EN/PT diario | `i18n-drift.yml` | master (ola 4) |
+| D8 | Secrets en docs | `secrets-in-docs.yml` | master (ola 4) |
+| D9 | AI quota 80% | `ai-quota-alert.yml` | master (ola 5) |
+| D10 | Hygiene issues/PRs | `issues-hygiene.yml` | master (ola 5) |
+| D11 | Contrato API FE↔BE | `api-contract-drift.yml` | master (ola 4) |
+| D12 | Health real (cuerpo, no keep-alive) | `real-health.yml` | **ola 7 (este PR)** |
+| S1 | Sonar batch semanal | `sonar-batch.yml` | master (ola 2) |
+| S2 | Dependabot weekly | `dependabot-weekly.yml` | master (ola 3) |
+| S3 | E2E gap map | `e2e-gap-map.yml` | master (ola 2) |
+| S4 | IDOR suite gaps | `idor-suite-gap.yml` | master (ola 4) |
+| S5 | Design tokens drift | `design-tokens-drift.yml` | master (ola 5) |
+| S6 | k6 / Hikari | `k6-hikari-regression.yml` | master (ola 6) |
+| S7 | Ley 8968 checklist | `ley8968-checklist.yml` | master (ola 5) |
+| S8 | Restore drill | `restore-drill.yml` | master (ola 2) |
+| S9 | lint:ci vs bundle | `bundle-lint-ci.yml` | master (ola 6) |
+| S10 | God-class extract proposal | `god-class-extract.yml` | master (ola 6) |
+| S11 | Hacienda XML drift | `hacienda-xml-drift.yml` | master (ola 6) |
+| S12 | RAG embeddings lag | `rag-embeddings-lag.yml` | master (ola 6) |
+| S14 | a11y + POS keyboard | `a11y-pos-keyboard.yml` | **ola 7 (este PR)** |
+| DOC1 | Stack docs | `docs-stack.yml` | master (ola 1) |
+| SCALE1 | Listas / N+1 | `gate-scale.yml` | master (ola 1) |
+| UI `/agentes` | Tablero | — | **fuera de alcance** (no eng-gate) |
+
+Restante después de mergear ola 7: el tablero UI `/agentes`. No reabrir pago/auth ni schedulers de negocio.

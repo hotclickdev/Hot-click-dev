@@ -233,6 +233,12 @@ Ola 2 (D2 IDOR diario, S1 Sonar, S3 E2E gaps, E10 authz, S8 restore drill): [doc
 
 Ola 3 (D1 Flyway↔JPA diario, D3 SPA stale, D4/E8 Sentry digest, S2 Dependabot weekly, E4 commit-gate, E7 CI red, E9 health pager): [docs/AGENTES_OLA3.md](docs/AGENTES_OLA3.md).
 
+Ola 4–5 (D6–D11, S4/S5/S7, E5/E12/E14/E18): [docs/AGENTES_OLA4.md](docs/AGENTES_OLA4.md), [docs/AGENTES_OLA5.md](docs/AGENTES_OLA5.md).
+
+Ola 6 (S6 k6/Hikari, S9 lint:ci, S10–S12, E13/E15/E17): [docs/AGENTES_OLA6.md](docs/AGENTES_OLA6.md).
+
+Ola 7 (D12 health real, S14 a11y+POS, E16 runtime endpoints): [docs/AGENTES_OLA7.md](docs/AGENTES_OLA7.md). Checklist olas 1–6 en master vs ola 7: sección *Cobertura del catálogo* en [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md).
+
 ## Documentación
 
 | Carpeta / Archivo | Contenido |
@@ -242,6 +248,10 @@ Ola 3 (D1 Flyway↔JPA diario, D3 SPA stale, D4/E8 Sentry digest, S2 Dependabot 
 | [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md) | PR gates E1/E2/E3/E6/E11 + DOC1/SCALE1 + D5 |
 | [docs/AGENTES_OLA2.md](docs/AGENTES_OLA2.md) | Agentes ola 2 (D2/S1/S3/E10/S8) |
 | [docs/AGENTES_OLA3.md](docs/AGENTES_OLA3.md) | Agentes ola 3 (D1/D3/D4+E8/S2/E4/E7/E9) |
+| [docs/AGENTES_OLA4.md](docs/AGENTES_OLA4.md) | Agentes ola 4 (D6/D7/D8/D11/S4/E5) |
+| [docs/AGENTES_OLA5.md](docs/AGENTES_OLA5.md) | Agentes ola 5 (D9/D10/S5/S7/E12/E14/E18) |
+| [docs/AGENTES_OLA6.md](docs/AGENTES_OLA6.md) | Agentes ola 6 (S6/S9–S12/E13/E15/E17) |
+| [docs/AGENTES_OLA7.md](docs/AGENTES_OLA7.md) | Agentes ola 7 (D12/S14/E16) — cierre catálogo eng-gates |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Cumplimiento legal, SEO, plataformas externas |
 | [docs/legal/](docs/legal/) | 8 documentos legales en formato `.md` |
 | [docs/security/](docs/security/) | 16 documentos de arquitectura de seguridad |
