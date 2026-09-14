@@ -1,0 +1,70 @@
+name: DOC1 — Stack docs
+
+on:
+  schedule:
+    - cron: '0 13 * * 1' # lunes 13:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  generate:
+    name: Regenerar GENERATED_STACK.md
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Generar reporte
+        id: gen
+        env:
+          DOC_GENERATED_ON: ${{ github.event_name == 'schedule' && github.run_started_at || '' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u +%F)
+          export DOC_GENERATED_ON="${DOC_GENERATED_ON:-$DATE}"
+          node scripts/eng-gates/generate-stack-docs.mjs --write --weekly-issue
+
+      - name: Subir artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: generated-stack-${{ github.run_id }}
+          path: docs/GENERATED_STACK.md
+          retention-days: 30
+
+      - name: PR si el reporte cambió (facts)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/GENERATED_STACK.md; then
+            echo "DOC1: GENERATED_STACK.md sin cambios de working tree."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B docs/generated-stack
+          git add docs/GENERATED_STACK.md
+          git commit -m "docs: refresh GENERATED_STACK.md (DOC1 weekly)"
+          git push -u origin docs/generated-stack --force
+          EXISTING=$(gh pr list --head docs/generated-stack --base master --json number -q '.[0].number' || true)
+          BODY=$(printf '%s\n' \
+            "## DOC1" \
+            "" \
+            "Refresh automático de \`docs/GENERATED_STACK.md\` (pom / Flyway / frontend)." \
+            "No incluye secretos. Revisá el diff y mergeá si los números son correctos." \
+            "" \
+            "Local: \`scripts/generate-stack-docs.sh --apply-safe-docs\`")
+          if [[ -n "$EXISTING" ]]; then
+            echo "PR #$EXISTING ya existe."
+          else
+            gh pr create --base master --head docs/generated-stack --title "docs: refresh GENERATED_STACK.md (DOC1)" --body "$BODY"
+          fi

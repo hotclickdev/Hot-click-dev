@@ -10,10 +10,10 @@ Plataforma SaaS de e-commerce B2C para el mercado costarricense con modelo híbr
 
 | Capa | Tecnología |
 | --- | --- |
-| Backend | Spring Boot 3.4.4 · Java 24 |
-| Frontend | React 18 · Vite 8 · Tailwind CSS · Zustand · Framer Motion |
+| Backend | Spring Boot 3.4.4 · Java 21 |
+| Frontend | React 19 · Vite 8 · Tailwind CSS · Zustand · Framer Motion |
 | Base de datos | PostgreSQL en Supabase (PgBouncer transaction mode) |
-| Migraciones | Flyway (56 versiones, V1–V56) |
+| Migraciones | Flyway (128 archivos, V1–V130) |
 | Almacenamiento | Supabase Storage (imágenes de productos, logos de marcas) |
 | Email | SendGrid (ResendEmailService) |
 | Pagos | Stripe (webhook) · SINPE Móvil |
@@ -28,7 +28,7 @@ Plataforma SaaS de e-commerce B2C para el mercado costarricense con modelo híbr
 ## Levantar el proyecto localmente
 
 ```bash
-# Backend — requiere Java 24
+# Backend — requiere Java 21
 .\maven\bin\mvn spring-boot:run
 # → http://localhost:8080
 
@@ -62,7 +62,7 @@ proyecto-2026/
 │   │   └── dto/             ← ResponseDTO + DTOs de entrada/salida
 │   ├── src/main/resources/
 │   │   ├── application.properties     ← Config (env vars)
-│   │   ├── db/migration/              ← Flyway V1–V56
+│   │   ├── db/migration/              ← Flyway V1–V130 (128 archivos)
 │   │   └── static/                    ← Frontend compilado (build output)
 │   ├── frontend/                      ← React SPA (Vite)
 │   │   ├── src/
@@ -180,7 +180,7 @@ whatsapp.phone-number-id=...
 
 **Nunca cambiar una entidad JPA sin migración Flyway.** Ver `CLAUDE.md` sección "Regla obligatoria: cambios de esquema DB".
 
-Última migración: `V56__consentimiento_log.sql` (bitácora de consentimiento Ley 8968).
+Última migración: `V130__ticket_soporte_prioridad.sql` (canónico: [docs/GENERATED_STACK.md](docs/GENERATED_STACK.md)). V56 consentimiento Ley 8968 sigue existiendo.
 
 ### PgBouncer transaction mode
 
@@ -214,11 +214,28 @@ Ver reporte completo en [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ---
 
+## PR gates (ola 1)
+
+Además de `ci.yml` (Maven + Vitest/Playwright) y `security.yml` (gitleaks), los PRs a `master` pueden disparar:
+
+- **E1 Flyway** — entidad JPA con cambio de esquema ⇒ debe haber `V*__.sql` (no se aplica SQL a prod).
+- **E2 Tenant** — diff de controllers/services/repos: IDOR `findById`, `@Async` sin `TenantContext`, PgBouncer (`SET`/`LISTEN`/`pg_advisory`).
+- **E3 SPA** — cambios en `frontend/src` ⇒ `static/` actualizado o `pnpm build` en CI (Docker no buildea React).
+- **E6 Dependabot** — labels; majors de Spring Boot / jjwt / stripe-java y Spring Boot 4.x ⇒ `needs-human`, sin auto-merge.
+- **E11 Sensibles** — `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` ⇒ debe existir un `*Test*` nominal.
+- **DOC1** — semanal: `docs/GENERATED_STACK.md` (Java 21 / Flyway real). Local: `scripts/generate-stack-docs.sh`.
+- **SCALE1** — PRs Java/TS: listas sin página, N+1, I/O bloqueante (FAIL P1); issue semanal de hotspots.
+- **D5** — el backup diario falla el job (e issue) si el dump no existe o está vacío.
+
+Skip **solo** con labels explícitos (`skip-flyway-gate`, `skip-tenant-gate`, `skip-spa-gate`, `skip-sensitive-gate`, `skip-dependabot-gate`, `skip-scale-gate`). Detalle: [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md).
+
 ## Documentación
 
 | Carpeta / Archivo | Contenido |
 | --- | --- |
 | [CLAUDE.md](CLAUDE.md) | Guía de desarrollo para Claude Code |
+| [docs/GENERATED_STACK.md](docs/GENERATED_STACK.md) | Versiones reales (Java/Flyway/React) — DOC1 |
+| [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md) | PR gates E1/E2/E3/E6/E11 + DOC1/SCALE1 + D5 |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Cumplimiento legal, SEO, plataformas externas |
 | [docs/legal/](docs/legal/) | 8 documentos legales en formato `.md` |
 | [docs/security/](docs/security/) | 16 documentos de arquitectura de seguridad |
