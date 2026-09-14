@@ -82,4 +82,7 @@ node scripts/eng-gates/pgbouncer-migration.mjs
 bash scripts/eng-gates/ola5-selftest.sh
 ```
 
+Issues solo se upsertan con `GH_TOKEN` + `GITHUB_REPOSITORY`.
+
 Ola 6 (S6/S9/S10/S11/S12/E13/E15/E17): [AGENTES_OLA6.md](AGENTES_OLA6.md). No reimplementa D9/D3/D7/S1/E3.
+Ola 7 (D12/S14/E16, cierre de catálogo): [AGENTES_OLA7.md](AGENTES_OLA7.md). No reimplementa D9–E18. Checklist: [AGENTES_ENG_GATES.md](AGENTES_ENG_GATES.md#cobertura-del-catálogo-eng-gates).

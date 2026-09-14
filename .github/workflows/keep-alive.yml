@@ -5,7 +5,8 @@ on:
     - cron: '*/10 * * * *'  # Cada 10 minutos — Render duerme tras 15 min sin tráfico
   workflow_dispatch:         # Permite ejecutarlo manualmente desde GitHub
 
-# E9 (outage Issue + Telegram) vive en health-pager.yml — mismo endpoint.
+# E9 (status-only pager) vive en health-pager.yml.
+# D12 (cuerpo + HTML-as-fail, Issue outage) vive en real-health.yml.
 # Este workflow solo pinea para que Render no duerma. No hace git push.
 
 jobs:

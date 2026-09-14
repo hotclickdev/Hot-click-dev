@@ -1,0 +1,44 @@
+name: E16 — Runtime endpoint Issue
+
+on:
+  schedule:
+    # 04:15 America/Costa_Rica = 10:15 UTC (después del digest D4)
+    - cron: '15 10 * * *'
+  workflow_dispatch:
+    inputs:
+      fingerprint_json:
+        description: 'JSON pegado (fingerprint, culprit, title, txnId, stripeEventId). Sin secretos.'
+        required: false
+        type: string
+
+concurrency:
+  group: runtime-endpoint-issue
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  runtime:
+    name: E16 Payment/Webhook/Factura
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Sentry o stub JSON (skip honesto sin token en cron)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENTRY_TOKEN: ${{ secrets.SENTRY_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || 'hotclick' }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'hot-click-dev' }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          FINGERPRINT_JSON: ${{ github.event.inputs.fingerprint_json || '' }}
+        run: node scripts/eng-gates/runtime-endpoint-issue.mjs
