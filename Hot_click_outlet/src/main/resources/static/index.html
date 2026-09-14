@@ -2,6 +2,26 @@
 <html lang="es-CR">
   <head>
     <meta charset="UTF-8" />
+    <meta name="theme-color" content="#F8F9FB" />
+    <script>
+      /* Evita FOUC: dark solo en panel; marketplace/auth arrancan claros. */
+      (function () {
+        try {
+          var path = location.pathname || '/'
+          var panel =
+            path === '/admin' || path.indexOf('/admin/') === 0 ||
+            path === '/emprendedor' || path.indexOf('/emprendedor/') === 0 ||
+            path === '/pyme' || path.indexOf('/pyme/') === 0 ||
+            path === '/negocio-plus' || path.indexOf('/negocio-plus/') === 0
+          var saved = JSON.parse(localStorage.getItem('hotclick-ui') || '{}')
+          var theme = saved.state && saved.state.theme
+          var dark = panel && theme === 'dark'
+          document.documentElement.classList.add(dark ? 'dark' : 'light')
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute('content', dark ? '#0E1116' : '#F8F9FB')
+        } catch (_) { /* ignore */ }
+      })()
+    </script>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
@@ -48,7 +68,6 @@
     <!-- HC_SEO_BLOCK_END -->
     <meta name="keywords" content="tienda en línea Costa Rica, marketplace Costa Rica, compras online CR, emprendedores costarricenses, envío Costa Rica, tecnología CR, ropa Costa Rica" />
     <meta name="author" content="HOTCLICK" />
-    <meta name="theme-color" content="#E73B33" />
     <meta name="geo.region" content="CR" />
     <meta name="geo.placename" content="Costa Rica" />
     <meta name="geo.position" content="9.748917;-83.753428" />
@@ -175,31 +194,32 @@
       ]
     }
     </script>
-    <script type="module" crossorigin src="/assets/index-Zk4MYBbR.js"></script>
+    <script type="module" crossorigin src="/assets/index-BwFlOEk6.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-BYbx6iT9.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-clerk-QdevMKxx.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-react-BFl66Vpd.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-query-CeuWegau.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-IuE8TF6G.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-BE34i7Nk.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-misc-DDiAvqgQ.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-CS4JY7a0.js">
-    <link rel="modulepreload" crossorigin href="/assets/index.esm-B-RR0uUh.js">
-    <link rel="modulepreload" crossorigin href="/assets/BrandLogo-CChq6rzl.js">
-    <link rel="modulepreload" crossorigin href="/assets/CloseIcon-B4m4sj2X.js">
-    <link rel="modulepreload" crossorigin href="/assets/TrustGlyph-BeeyyLPw.js">
-    <link rel="modulepreload" crossorigin href="/assets/TextoFlecha-BTkDFaE_.js">
-    <link rel="modulepreload" crossorigin href="/assets/mmRegistry-B2KqhnI-.js">
-    <link rel="modulepreload" crossorigin href="/assets/sistemaUser-ZPIIvWZ3.js">
-    <link rel="modulepreload" crossorigin href="/assets/authStore-BY8IbaBa.js">
-    <link rel="modulepreload" crossorigin href="/assets/api-CIv6ju-X.js">
-    <link rel="modulepreload" crossorigin href="/assets/abandonedCartService-DsmPLEat.js">
-    <link rel="modulepreload" crossorigin href="/assets/crmService-C80g-ugc.js">
-    <link rel="modulepreload" crossorigin href="/assets/productService-BPD-xyXJ.js">
-    <link rel="modulepreload" crossorigin href="/assets/cartStore-DRC3JpY7.js">
-    <link rel="modulepreload" crossorigin href="/assets/chatStore-BqO7EKJw.js">
-    <link rel="modulepreload" crossorigin href="/assets/tenantStore-DK0VAzVa.js">
-    <link rel="modulepreload" crossorigin href="/assets/planPaths-BCLSm5MH.js">
-    <link rel="modulepreload" crossorigin href="/assets/modes-Dbww7mbw.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-D7DGJews.css">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-DWGIW9UE.js">
+    <link rel="modulepreload" crossorigin href="/assets/index.esm-DnD8v1pq.js">
+    <link rel="modulepreload" crossorigin href="/assets/BrandLogo-DkQBRE8F.js">
+    <link rel="modulepreload" crossorigin href="/assets/CloseIcon-D2LZQivz.js">
+    <link rel="modulepreload" crossorigin href="/assets/TrustGlyph-mWnuj8kC.js">
+    <link rel="modulepreload" crossorigin href="/assets/TextoFlecha-quFVsrW5.js">
+    <link rel="modulepreload" crossorigin href="/assets/mmRegistry-YAEqaQ48.js">
+    <link rel="modulepreload" crossorigin href="/assets/uiStore-CWOlb04l.js">
+    <link rel="modulepreload" crossorigin href="/assets/sistemaUser-gBd1IYzg.js">
+    <link rel="modulepreload" crossorigin href="/assets/authStore-C6NUaAP9.js">
+    <link rel="modulepreload" crossorigin href="/assets/api-DrHK343R.js">
+    <link rel="modulepreload" crossorigin href="/assets/abandonedCartService-jK1ON7Ly.js">
+    <link rel="modulepreload" crossorigin href="/assets/crmService-DwHgCVuz.js">
+    <link rel="modulepreload" crossorigin href="/assets/productService-tu2hgEn-.js">
+    <link rel="modulepreload" crossorigin href="/assets/cartStore-DwupcEEU.js">
+    <link rel="modulepreload" crossorigin href="/assets/chatStore-DXrN1ZPU.js">
+    <link rel="modulepreload" crossorigin href="/assets/tenantStore-uzNSGcBf.js">
+    <link rel="modulepreload" crossorigin href="/assets/planPaths-deuednp4.js">
+    <link rel="modulepreload" crossorigin href="/assets/modes-BuKN3eDq.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-Dhlow2qe.css">
   <link rel="manifest" href="/manifest.webmanifest"></head>
   <body>
     <noscript>
@@ -265,6 +285,6 @@
         </ul>
       </main>
     </noscript>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>

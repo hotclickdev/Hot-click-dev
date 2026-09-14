@@ -1073,6 +1073,7 @@
       "securityCenter": "Security Center",
       "auditorias": "Audits",
       "observabilidad": "Observability",
+      "agentes": "Agents",
       "featureFlags": "Feature Flags / SaaS",
       "planesBilling": "Plans / Billing",
       "configuracion": "Settings",
@@ -2505,5 +2506,17 @@
       "A coffee table",
       "Remodel the bedroom"
     ]
-  }
+  },
+  "agentes": "Agents",
+  "agentesTitulo": "Engineering agents",
+  "agentesSubtitulo": "Registry D1–D12, S1–S14, E1–E18, DOC1, SCALE1 and I1. ADMIN only. Does not touch payments, auth, or business schedulers.",
+  "agentesCargando": "Loading agent registry…",
+  "agentesReintentar": "Retry",
+  "agentesRegistro": "Registry",
+  "agentesPlan77": "Plan 7/7",
+  "agentesInspeccionesI1": "I1 inspections",
+  "agentesHallazgos": "Findings",
+  "agentesTabsAria": "Agent sections",
+  "agentesPausadoTitulo": "Paused — reorganization.",
+  "agentesPausadoCuerpo": "Engineering agents stopped (2026-09-14): no cron or PR gates. This catalog is read-only."
 }

@@ -1073,6 +1073,7 @@
       "securityCenter": "Security Center",
       "auditorias": "Auditorias",
       "observabilidad": "Observabilidade",
+      "agentes": "Agentes",
       "featureFlags": "Feature Flags / SaaS",
       "planesBilling": "Planos / Billing",
       "configuracion": "Configuração",
@@ -2505,5 +2506,17 @@
       "Uma mesa de centro",
       "Reformar o quarto"
     ]
-  }
+  },
+  "agentes": "Agentes",
+  "agentesTitulo": "Agentes de engenharia",
+  "agentesSubtitulo": "Registro D1–D12, S1–S14, E1–E18, DOC1, SCALE1 e I1. Somente ADMIN. Não altera pagamento, auth nem schedulers de negócio.",
+  "agentesCargando": "Carregando registro de agentes…",
+  "agentesReintentar": "Tentar de novo",
+  "agentesRegistro": "Registro",
+  "agentesPlan77": "Plano 7/7",
+  "agentesInspeccionesI1": "Inspeções I1",
+  "agentesHallazgos": "Achados",
+  "agentesTabsAria": "Seções de agentes",
+  "agentesPausadoTitulo": "Pausado — reorganização.",
+  "agentesPausadoCuerpo": "Agentes de engenharia parados (2026-09-14): sem cron nem PR gates. Este catálogo é só leitura."
 }

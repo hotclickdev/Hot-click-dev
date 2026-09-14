@@ -15,9 +15,9 @@ Motivo: la suite no aporta productividad ahora. Se apaga todo; se vuelve a armar
 
 Los scripts en `scripts/eng-gates/` no se tocaron. Tests locales: `node --test scripts/eng-gates/*.test.mjs`.
 
-## UI `/agentes`
+## UI `/admin/agentes`
 
-El dashboard (`agentes-dashboard/`, rutas `/agentes`) queda como **catálogo de solo lectura**, con banner *Pausado — reorganización*. No se borraron páginas. El inspector I1 local (`npm run inspect`) sigue pudiendo correr a mano; el Action semanal no.
+El producto canónico es el admin Spring (`/admin/agentes`, PR #63). Páginas intactas + banner *Pausado — reorganización*. Catálogo de solo lectura. El espejo Next (`agentes-dashboard/`, rutas `/agentes`) lleva el mismo aviso. El inspector I1 local (`npm run inspect`) sigue pudiendo correr a mano; el Action semanal no.
 
 ## Qué quedó pausado (inerte, no borrado)
 

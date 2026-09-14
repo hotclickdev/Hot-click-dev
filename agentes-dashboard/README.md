@@ -2,18 +2,26 @@
 
 > **Pausado — reorganización (2026-09-14).** Catálogo de solo lectura. Los workflows de agentes no disparan; ver [`docs/AGENTES_DISABLED.md`](../docs/AGENTES_DISABLED.md).
 
-App Next.js **aparte** de Spring Boot. No vive en `Hot_click_outlet/src/main/resources/static/`. Andrés la abre en el PC (local) o en Vercel para siempre; no depende de un preview efímero de una VM de Cursor.
+El registro **vive en el admin HotClick**: [`/admin/agentes`](https://hotclick.lat/admin/agentes) (React + Spring, rol ADMIN). Esta carpeta `agentes-dashboard/` es un **espejo opcional** (local o Vercel) del mismo catálogo I1; no es el producto que sirve Spring.
 
-Rutas (UI en español):
+Rutas en el admin:
 
 | Ruta | Qué muestra |
 | --- | --- |
-| `/agentes` | Registro D1–D12, S1–S14, E1–E18, DOC1, SCALE1, I1 |
-| `/agentes/plan` | Resumen de olas 1–7 (qué hay en `master`) |
-| `/agentes/inspecciones` | Historial I1 (`data/inspections.json`) |
-| `/agentes/hallazgos` | Atajos a Issues (`eng-agent`, `flake`, `api-drift`, …) |
+| `/admin/agentes` | Registro D1–D12, S1–S14, E1–E18, DOC1, SCALE1, I1 |
+| `/admin/agentes/plan` | Resumen de olas 1–7 (qué hay en `master`) |
+| `/admin/agentes/inspecciones` | Historial I1 + botón «Correr inspector I1» |
+| `/admin/agentes/hallazgos` | Atajos a Issues (`eng-agent`, `flake`, `api-drift`, …) |
 
-## Local
+API (ADMIN): `GET /api/admin/agentes`, `POST /api/admin/agentes/inspecciones`. El JSON semilla está en `Hot_click_outlet/src/main/resources/agentes/` (copia de `data/` aquí).
+
+## Espejo Next.js (opcional)
+
+App Next.js **aparte** de Spring Boot. No vive en `Hot_click_outlet/src/main/resources/static/`. Útil en el PC o Vercel si no querés levantar el admin.
+
+Rutas del espejo: `/agentes`, `/agentes/plan`, `/agentes/inspecciones`, `/agentes/hallazgos`.
+
+## Local (espejo)
 
 Requisito: Node 22+. Desde la raíz del clone:
 
@@ -26,14 +34,14 @@ npm run dev
 Abrí [http://localhost:43127/agentes](http://localhost:43127/agentes).
 
 ```bash
-npm run inspect    # I1: escribe data/inspections.json
+npm run inspect    # I1: escribe data/inspections.json y copia al classpath Spring
 npm test           # node:test del inspector
 npm run build      # chequeo de producción
 ```
 
-`POST /api/inspect` (botón en `/agentes/inspecciones`) corre el mismo script en Node. En local tiene el árbol `.github/workflows` + `docs/`.
+`POST /api/inspect` (botón en el espejo) corre el mismo script en Node. En local tiene el árbol `.github/workflows` + `docs/`.
 
-## Vercel (durable)
+## Vercel (espejo durable)
 
 1. [vercel.com/new](https://vercel.com/new) → importar `hotclickdev/Hot-click-dev`.
 2. **Root Directory:** `agentes-dashboard` (no la raíz del monorepo).
@@ -46,9 +54,7 @@ Tras el deploy: `https://<proyecto>.vercel.app/agentes`.
 En Vercel **no** está el repo completo (workflows/docs). `POST /api/inspect` responde 409 a propósito. La corrida durable es:
 
 - local `npm run inspect` + commit del JSON, o
-- GitHub Action `.github/workflows/inspect-agents.yml` (lunes 08:15 America/Costa_Rica) que actualiza el JSON (PR) y, si no hay permisos de push, sube artifact + Issue.
-
-Si conectás Vercel a `master`, cada merge del PR de I1 redespliega el historial.
+- GitHub Action `.github/workflows/inspect-agents.yml` (**pausado** 2026-09-14; solo `workflow_dispatch`) que actualizaría el JSON (PR) y copiaría a `Hot_click_outlet/src/main/resources/agentes/` para el admin.
 
 ## I1 — qué marca
 
@@ -62,7 +68,3 @@ Para cada ID conocido el script busca el YAML en `.github/workflows/` y mencione
 | `mejorar` | Corre, pero falta el script referido |
 
 No toca schedulers de negocio (`DataRetentionScheduler`, Hacienda, wallet, RAG) ni lógica de pago/auth.
-
-## No servir desde Spring
-
-Docker / `pnpm build` del frontend de la tienda **no** empaquetan este dashboard. Si algún día se quisiera servir en `:8080/agentes`, habría que copiar el `next build` a static o un reverse proxy — hoy no está hecho; usá Vercel o `npm run dev`.

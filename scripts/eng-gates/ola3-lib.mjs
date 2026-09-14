@@ -420,6 +420,13 @@ export function isSelfScanPath(filePath) {
   return SELF_SCAN_PATH.test(String(filePath || '').replaceAll('\\', '/'));
 }
 
+/** Vite hashed bundles — `token:` / Clerk minificado no es un secreto del diff. */
+export function isBundledSpaAsset(filePath) {
+  return /(?:^|\/)src\/main\/resources\/static\//.test(
+    String(filePath || '').replaceAll('\\', '/'),
+  );
+}
+
 export function scanCommitBlockers({ changedFiles, diffText }) {
   const findings = [];
   for (const file of changedFiles || []) {
@@ -437,7 +444,7 @@ export function scanCommitBlockers({ changedFiles, diffText }) {
   }
   const files = parseSimpleDiff(diffText || '');
   for (const file of files) {
-    if (isSelfScanPath(file.path)) continue;
+    if (isSelfScanPath(file.path) || isBundledSpaAsset(file.path)) continue;
     if (isPlaywrightReportArtifact(file.path)) {
       findings.push({
         id: 'playwright-report',

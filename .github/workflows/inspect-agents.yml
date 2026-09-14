@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           node agentes-dashboard/scripts/inspect-agents.mjs --source gha | tee /tmp/i1-summary.md
-          if git diff --quiet -- agentes-dashboard/data/inspections.json; then
+          if git diff --quiet -- agentes-dashboard/data/inspections.json Hot_click_outlet/src/main/resources/agentes/inspections.json; then
             echo "I1: inspections.json sin cambios de working tree."
             echo "changed=0" >> "$GITHUB_OUTPUT"
           else
@@ -64,15 +64,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B bot/i1-inspect
-          git add agentes-dashboard/data/inspections.json
+          git add agentes-dashboard/data/inspections.json Hot_click_outlet/src/main/resources/agentes/
           git commit -m "chore(i1): refresh inspections.json"
           git push -u origin bot/i1-inspect --force
           EXISTING=$(gh pr list --head bot/i1-inspect --base master --json number -q '.[0].number' || true)
           BODY=$(printf '%s\n' \
             "## I1" \
             "" \
-            "Refresh automático de \`agentes-dashboard/data/inspections.json\`." \
-            "Sin secretos. Revisá el diff y mergeá para que Vercel muestre el historial." \
+            "Refresh automático de \`agentes-dashboard/data/inspections.json\` y del classpath Spring (\`Hot_click_outlet/src/main/resources/agentes/\`)." \
+            "El admin en \`/admin/agentes\` lee ese JSON. Sin secretos. Revisá el diff y mergeá." \
             "" \
             "Local: \`cd agentes-dashboard && npm run inspect\`")
           if [[ -n "$EXISTING" ]]; then

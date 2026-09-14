@@ -7,6 +7,7 @@ const HERRAMIENTAS = [
   { to: '/admin/clientes', label: 'Clientes' },
   { to: '/admin/auditorias', label: 'Auditorías' },
   { to: '/admin/observabilidad', label: 'Observabilidad' },
+  { to: '/admin/agentes', label: 'Agentes' },
   { to: '/admin/servicios', label: 'Servicios Hot' },
   { to: '/admin/recolecciones', label: 'Recolección y entrega' },
   { to: '/admin/aprobaciones', label: 'Aprobaciones' },
