@@ -1,0 +1,66 @@
+name: Ola 5 — selftest
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/eng-gates/ola5*'
+      - 'scripts/eng-gates/ai-quota-alert.mjs'
+      - 'scripts/eng-gates/issues-hygiene.mjs'
+      - 'scripts/eng-gates/design-tokens-drift.mjs'
+      - 'scripts/eng-gates/ley8968-checklist.mjs'
+      - 'scripts/eng-gates/seller-qa-remap.mjs'
+      - 'scripts/eng-gates/hotfix-gate.mjs'
+      - 'scripts/eng-gates/pgbouncer-migration.mjs'
+      - '.github/workflows/ai-quota-alert.yml'
+      - '.github/workflows/issues-hygiene.yml'
+      - '.github/workflows/design-tokens-drift.yml'
+      - '.github/workflows/ley8968-checklist.yml'
+      - '.github/workflows/seller-qa-remap.yml'
+      - '.github/workflows/hotfix-gate.yml'
+      - '.github/workflows/pgbouncer-migration.yml'
+      - '.github/workflows/ola5-selftest.yml'
+      - '.github/workflows/ci.yml'
+      - 'docs/AGENTES_OLA5.md'
+      - 'docs/AGENTES_ENG_GATES.md'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: node --test ola 5
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Selftests
+        run: bash scripts/eng-gates/ola5-selftest.sh
+
+      - name: YAML válido
+        run: |
+          python3 - <<'PY'
+          import pathlib, yaml
+          root = pathlib.Path('.github/workflows')
+          files = [
+            'ai-quota-alert.yml',
+            'issues-hygiene.yml',
+            'design-tokens-drift.yml',
+            'ley8968-checklist.yml',
+            'seller-qa-remap.yml',
+            'hotfix-gate.yml',
+            'pgbouncer-migration.yml',
+            'ola5-selftest.yml',
+            'ci.yml',
+          ]
+          for name in files:
+            yaml.safe_load((root / name).read_text())
+            print('ok', name)
+          PY

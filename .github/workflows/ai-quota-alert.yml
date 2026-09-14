@@ -1,0 +1,43 @@
+name: D9 — Daily AI quota alert
+
+on:
+  schedule:
+    # 05:00 America/Costa_Rica = 11:00 UTC
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ai-quota-alert
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  alert:
+    name: D9 AI quota / cost
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Cliente psql (SELECT only)
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client --quiet
+
+      - name: Evaluar cuota (skip honesto sin secretos)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AI_USAGE_DATABASE_URL: ${{ secrets.AI_USAGE_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_BACKUP_URL: ${{ secrets.SUPABASE_BACKUP_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node scripts/eng-gates/ai-quota-alert.mjs
