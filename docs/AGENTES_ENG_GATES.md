@@ -91,3 +91,12 @@ node scripts/eng-gates/gate-scale.mjs
 ```
 
 E2 y E1 comentan el PR solo si hay `GH_TOKEN`, `GITHUB_REPOSITORY` y `PR_NUMBER`.
+
+## Olas siguientes (no viven en este archivo)
+
+| Ola | Doc | IDs |
+| --- | --- | --- |
+| 2 (PR #56) | [AGENTES_OLA2.md](AGENTES_OLA2.md) | D2, S1, S3, E10, S8 |
+| 3 | [AGENTES_OLA3.md](AGENTES_OLA3.md) | D1, D3, D4+E8, S2, E4, E7, E9 |
+
+La ola 3 **no** reimplementa E1/E3/E6: D1/D3/S2 son heartbeats diarios/semanales sobre el mismo tema.

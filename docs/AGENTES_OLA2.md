@@ -28,6 +28,8 @@ Scripts: `scripts/eng-gates/` (`hunter-idor`, `sonar-batch`, `e2e-gap-map`, `gat
 
 Cuando #55 aterrice, se pueden unificar docs; **no** hace falta rebase de esta rama sobre `cursor/eng-ola1-pr-gates-780d`.
 
+Ola 3 (D1/D3/D4+E8/S2/E4/E7/E9): [AGENTES_OLA3.md](AGENTES_OLA3.md). No reimplementa D2/S1/S3/E10/S8.
+
 ## Secretos
 
 | Secreto | ¿Lo pide ola 2? | Notas |

@@ -1,0 +1,97 @@
+name: E4 — Commit-gate
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      base_sha:
+        description: 'BASE_SHA (default: origin/master)'
+        required: false
+      head_sha:
+        description: 'HEAD_SHA (default: HEAD)'
+        required: false
+
+concurrency:
+  group: commit-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    name: E4 Commit-gate VEREDICTO
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 21
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: ¿El diff toca frontend/src?
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || inputs.base_sha || 'origin/master' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || inputs.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          git rev-parse --verify "${BASE_SHA}" >/dev/null
+          if git diff --name-only "${BASE_SHA}...${HEAD_SHA}" | grep -q 'Hot_click_outlet/frontend/src/'; then
+            echo "fe=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fe=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup pnpm
+        if: steps.scope.outputs.fe == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.2
+
+      - name: Node cache pnpm
+        if: steps.scope.outputs.fe == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: Hot_click_outlet/frontend/pnpm-lock.yaml
+
+      - name: Instalar frontend
+        if: steps.scope.outputs.fe == 'true'
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Analizar diff y tests tocados
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || inputs.base_sha || github.event.before || 'origin/master' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || inputs.head_sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_GATE_RUN_TESTS: '1'
+          COMMIT_GATE_TYPECHECK: '0'
+          COMMIT_GATE_FE_TIMEOUT_MS: '480000'
+          COMMIT_GATE_BE_TIMEOUT_MS: '600000'
+          DB_URL: jdbc:h2:mem:testdb
+          DB_USERNAME: sa
+          DB_PASSWORD: ""
+          JWT_SECRET: test-secret-for-ci-only-not-production
+          SENTRY_DSN: ""
+          STRIPE_SECRET_KEY: ci-mock-not-a-stripe-key
+          STRIPE_WEBHOOK_SECRET: whsec_placeholder
+        run: node scripts/eng-gates/commit-gate.mjs
