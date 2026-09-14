@@ -323,6 +323,8 @@ describe('E4 commit-gate', () => {
       diffText: [
         '+++ b/Hot_click_outlet/src/main/resources/static/assets/LoginPage-abc.js',
         '+import{d as t}from"./vendor-clerk-QdevMKxx.js";token: abcdefghijklmnop',
+        '+++ b/other/src/main/resources/static/sw.js',
+        '+authorization: Bearer sk_live_abcdefghijklmnop',
       ].join('\n'),
     });
     assert.equal(spaBundle.filter((item) => item.id === 'secret').length, 0);

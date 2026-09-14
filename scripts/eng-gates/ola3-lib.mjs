@@ -422,7 +422,7 @@ export function isSelfScanPath(filePath) {
 
 /** Vite hashed bundles — `token:` / Clerk minificado no es un secreto del diff. */
 export function isBundledSpaAsset(filePath) {
-  return /(?:^|\/)Hot_click_outlet\/src\/main\/resources\/static\//.test(
+  return /(?:^|\/)src\/main\/resources\/static\//.test(
     String(filePath || '').replaceAll('\\', '/'),
   );
 }

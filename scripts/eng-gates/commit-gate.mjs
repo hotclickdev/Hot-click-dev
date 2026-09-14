@@ -50,6 +50,7 @@ export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip }) {
   }
   // Blockers: reportes reales (`**/playwright-report/**`), no menciones en skip-dir / artifacts YAML.
   // Tests Java: omitir stubs `@Disabled` bajo `src/test/java/**/pending/`.
+  // Secretos: heurística en source; no en `**/src/main/resources/static/**` (E3 cubre frescura SPA).
   const blockers = scanCommitBlockers({ changedFiles, diffText });
   const plan = planCommitChecks(changedFiles);
   const javaTests = pickJavaTests(changedFiles, testFiles);
