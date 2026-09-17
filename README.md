@@ -59,6 +59,8 @@ Reset destructivo de datos (conserva esas 4 cuentas): [`scripts/reset_qa_keep_ad
 
 SKU: cada negocio tiene numeración propia (`E{empresa}-0001`). El id global lo ve el admin. El comprador público no ve el SKU.
 
+Código de barras: opcional al registrar o editar un producto (EAN/UPC). Si no lo tenés en el momento, se puede agregar después.
+
 ---
 
 ## Estructura del proyecto

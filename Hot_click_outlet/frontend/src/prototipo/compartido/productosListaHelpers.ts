@@ -11,6 +11,7 @@ export type ProductoListaItem = {
   imagenUrl?: string
   sku?: string | null
   numeroLocal?: number | null
+  barcode?: string | null
   esPersonalizado?: boolean
   modoPrecioPersonalizado?: string
   precioPersonalizadoMin?: number
@@ -64,6 +65,7 @@ export function aProductoListaItem(p: {
   imagenUrl?: string
   sku?: string | null
   numeroLocal?: number | null
+  barcode?: string | null
   esPersonalizado?: boolean
   modoPrecioPersonalizado?: string
   precioPersonalizadoMin?: number
@@ -79,6 +81,7 @@ export function aProductoListaItem(p: {
     imagenUrl: p.imagenUrl,
     sku: p.sku,
     numeroLocal: p.numeroLocal,
+    barcode: p.barcode,
     esPersonalizado: p.esPersonalizado,
     modoPrecioPersonalizado: p.modoPrecioPersonalizado,
     precioPersonalizadoMin: p.precioPersonalizadoMin,

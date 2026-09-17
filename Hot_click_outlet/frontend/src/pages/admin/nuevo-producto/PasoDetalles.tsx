@@ -108,8 +108,17 @@ export default function PasoDetalles({ form, setCampo, setForm }: {
           />
         </div>
         <div>
-          <Label>Barcode <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(EAN / UPC)</span></Label>
-          <input className={inp} style={inpStyle} type="text" value={form.barcode ?? ''} onChange={setCampo('barcode')} placeholder="Ej: 7501234567890" />
+          <Label>Código de barras <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(opcional — EAN / UPC. Podés agregarlo después.)</span></Label>
+          <input
+            className={inp}
+            style={inpStyle}
+            type="text"
+            value={form.barcode ?? ''}
+            onChange={setCampo('barcode')}
+            placeholder="Ej: 7501234567890"
+            maxLength={50}
+            autoComplete="off"
+          />
         </div>
       </div>
     </div>

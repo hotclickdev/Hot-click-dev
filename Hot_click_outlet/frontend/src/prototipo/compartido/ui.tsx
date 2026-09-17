@@ -112,6 +112,7 @@ type CampoProps = {
   maxLength?: number
   clearable?: boolean
   loading?: boolean
+  help?: ReactNode
 }
 
 export function Campo(props: CampoProps) {

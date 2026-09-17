@@ -37,6 +37,8 @@ type Props = Readonly<{
   onPrecioMaxChange: (v: string) => void
   imagenUrl: string
   onImagenChange: (v: string) => void
+  barcode: string
+  onBarcodeChange: (v: string) => void
   errorSubmit: string | null
 }>
 
@@ -72,6 +74,8 @@ export default function PasosProductoVendedor({
   onPrecioMaxChange,
   imagenUrl,
   onImagenChange,
+  barcode,
+  onBarcodeChange,
   errorSubmit,
 }: Props) {
   return (
@@ -153,6 +157,15 @@ export default function PasosProductoVendedor({
               </p>
             ) : null
           )}
+          <Campo
+            etiqueta="Código de barras"
+            value={barcode}
+            onChange={onBarcodeChange}
+            placeholder="Ej: 7501234567890"
+            maxLength={50}
+            clearable
+            help="Opcional. Si lo tenés, ingresalo. Si no, lo podés agregar después."
+          />
         </>
       ) : null}
       {idPaso === 'estado' ? (
