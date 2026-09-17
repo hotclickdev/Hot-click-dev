@@ -85,4 +85,26 @@ test.describe('Carrito — checkout primero', () => {
     await expect(page.getByRole('heading', { name: 'Mouse' })).toBeVisible()
     await expect(page.getByText('📦')).toHaveCount(0)
   })
+
+  test('en celular, Eliminar quita el producto sin usar el menos', async ({ page }) => {
+    await mockApis(page)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.addInitScript(() => {
+      localStorage.setItem('hotclick-cart', JSON.stringify({
+        state: {
+          items: [{ id: 1, nombre: 'Mouse', precio: 15500, cantidad: 2, stock: 4 }],
+          cartUpdatedAt: Date.now(),
+        },
+        version: 0,
+      }))
+    })
+    await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
+
+    const eliminar = page.getByRole('button', { name: 'Eliminar Mouse' })
+    await expect(eliminar).toBeVisible()
+    await eliminar.click()
+
+    await expect(page.getByText('Tu pedido está vacío')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Mouse' })).toHaveCount(0)
+  })
 })

@@ -17,6 +17,7 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }: CartIt
   const imagen = imagenItemCarrito(item)
   const stockMax = item.stock ?? STOCK_MAX_VISIBLE
   const refs = item.personalizacion?.imagenes?.filter(Boolean) ?? []
+  const etiquetaEliminar = `${t('cart.remove')} ${item.nombre}`
 
   return (
     <motion.div
@@ -25,7 +26,7 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }: CartIt
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20, height: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex gap-4 p-4 bg-hc-surface border border-hc-border rounded-2xl"
+      className="flex gap-3 sm:gap-4 p-4 bg-hc-surface border border-hc-border rounded-2xl"
     >
       <div className="w-20 h-20 rounded-xl bg-hc-surface-2 flex items-center justify-center shrink-0 overflow-hidden">
         {imagen ? (
@@ -36,12 +37,17 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }: CartIt
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-hc-text text-sm leading-snug truncate">
-          {item.nombre}
-          {item.personalizacion ? (
-            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-hc-surface-2 text-hc-muted">Personalizado</span>
-          ) : null}
-        </h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-medium text-hc-text text-sm leading-snug truncate">
+            {item.nombre}
+            {item.personalizacion ? (
+              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-hc-surface-2 text-hc-muted">Personalizado</span>
+            ) : null}
+          </h3>
+          <p className="font-bold text-hc-text text-sm shrink-0 tabular-nums">
+            {formatPrice(subtotalItem(item))}
+          </p>
+        </div>
         <p className="text-sm font-semibold mt-1" style={{ color: 'var(--hc-accent)' }}>
           {formatPrice(item.precio)}
         </p>
@@ -55,12 +61,12 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }: CartIt
         {item.personalizacion?.notas && (
           <p className="text-[11px] text-hc-muted mt-1 line-clamp-2">{item.personalizacion.notas}</p>
         )}
-        <div className="flex items-center gap-3 mt-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
           <div className="flex items-center gap-1 bg-hc-surface-2 border border-hc-border rounded-lg p-1">
             <button type="button"
               onClick={() => onUpdateQuantity(item.id as Id, item.cantidad - 1, item.cartLineId)}
               aria-label={`Reducir cantidad de ${item.nombre}`}
-              className="w-11 h-11 flex items-center justify-center text-hc-muted hover:text-hc-accent hover:bg-hc-surface rounded-md transition-colors text-sm"
+              className="w-11 h-11 flex items-center justify-center text-hc-muted hover:text-hc-accent hover:bg-hc-surface rounded-md transition-colors text-sm touch-manipulation"
             >
               −
             </button>
@@ -71,24 +77,19 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }: CartIt
               onClick={() => onUpdateQuantity(item.id as Id, item.cantidad + 1, item.cartLineId)}
               disabled={item.cantidad >= stockMax}
               aria-label={`Aumentar cantidad de ${item.nombre}`}
-              className="w-11 h-11 flex items-center justify-center text-hc-muted hover:text-hc-accent hover:bg-hc-surface rounded-md transition-colors text-sm disabled:opacity-30"
+              className="w-11 h-11 flex items-center justify-center text-hc-muted hover:text-hc-accent hover:bg-hc-surface rounded-md transition-colors text-sm disabled:opacity-30 touch-manipulation"
             >
               +
             </button>
           </div>
           <button type="button"
             onClick={() => onRemove(item)}
-            className="text-xs text-hc-muted hover:text-red-400 transition-colors"
+            aria-label={etiquetaEliminar}
+            className="relative z-10 shrink-0 min-h-11 px-3 text-sm text-hc-muted hover:text-red-400 active:text-red-400 transition-colors touch-manipulation"
           >
             {t('cart.remove')}
           </button>
         </div>
-      </div>
-
-      <div className="text-right shrink-0">
-        <p className="font-bold text-hc-text text-sm">
-          {formatPrice(subtotalItem(item))}
-        </p>
       </div>
     </motion.div>
   )
