@@ -10,8 +10,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Una sola vez al arrancar (no test): vacía tiendas, usuarios y productos
- * y deja admin + 3 QA. DataSeeder corre después y crea las cuentas QA si faltan.
+ * Al arrancar (no test): vacía tiendas y productos sobrantes y deja admin + 3 QA.
+ * DataSeeder corre después y crea las 4 cuentas si faltan. Se reintenta si
+ * quedaron tiendas/productos de una corrida anterior incompleta.
  */
 @Component
 @Profile("!test")

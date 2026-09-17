@@ -55,6 +55,9 @@ SELECT pg_temp.safe_exec('DELETE FROM hot_click_publicacion_fb_tb');
 SELECT pg_temp.safe_exec('DELETE FROM hot_click_reporte_producto_tb');
 SELECT pg_temp.safe_exec('DELETE FROM hot_click_solicitud_garantia_tb');
 SELECT pg_temp.safe_exec('DELETE FROM hot_click_precio_sugerido_tb');
+SELECT pg_temp.safe_exec('DELETE FROM hot_click_encargo_evento_tb');
+SELECT pg_temp.safe_exec('DELETE FROM hot_click_encargo_tb');
+SELECT pg_temp.safe_exec('DELETE FROM hot_click_forecast_tb');
 SELECT pg_temp.safe_exec('DELETE FROM hot_click_producto_tb');
 
 -- Pedidos / carritos / pagos

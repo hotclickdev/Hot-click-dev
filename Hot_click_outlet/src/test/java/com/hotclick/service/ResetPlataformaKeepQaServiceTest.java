@@ -20,5 +20,12 @@ class ResetPlataformaKeepQaServiceTest {
             ResetPlataformaKeepQaService.CORREO_MOSTRADOR.toLowerCase()
         );
         assertThat(ResetPlataformaKeepQaService.CONFIRMACION).isEqualTo("ELIMINAR PLATAFORMA");
+        assertThat(ResetPlataformaKeepQaService.correosVisiblesAdmin()).containsExactly(
+            Constants.CORREO_ADMIN.toLowerCase(),
+            Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(),
+            Constants.CORREO_QA_PYME.toLowerCase(),
+            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase()
+        );
+        assertThat(ResetPlataformaKeepQaService.CLAVE_ONE_SHOT).contains("tiendas");
     }
 }
