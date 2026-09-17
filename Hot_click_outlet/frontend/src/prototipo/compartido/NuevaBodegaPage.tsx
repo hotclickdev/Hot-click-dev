@@ -9,6 +9,7 @@ import type { PasoFormulario } from './formularioPorPasosHelpers'
 const PASOS: readonly PasoFormulario[] = [
   { id: 'nombre', titulo: 'Nombre de la bodega' },
   { id: 'ubicacion', titulo: 'Ubicación' },
+  { id: 'telefono', titulo: 'Teléfono' },
   { id: 'encargado', titulo: 'Encargado', opcional: true },
 ]
 
@@ -31,6 +32,7 @@ export function NuevaBodegaPage({
   const [paso, setPaso] = useState(0)
   const [nombre, setNombre] = useState('')
   const [ubicacion, setUbicacion] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [encargado, setEncargado] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
@@ -41,6 +43,7 @@ export function NuevaBodegaPage({
     const id = PASOS[i]?.id
     if (id === 'nombre' && !nombre.trim()) return 'El nombre es obligatorio.'
     if (id === 'ubicacion' && !ubicacion.trim()) return 'La ubicación es obligatoria.'
+    if (id === 'telefono' && !telefono.trim()) return 'El teléfono es obligatorio.'
     return null
   }
 
@@ -48,7 +51,7 @@ export function NuevaBodegaPage({
     setGuardando(true)
     setError(null)
     try {
-      await crearBodegaVendedor(nombre, ubicacion, encargado)
+      await crearBodegaVendedor(nombre, ubicacion, telefono, encargado)
       navigate(destino)
     } catch (err: unknown) {
       console.error('[NuevaBodega]', err)
@@ -82,6 +85,15 @@ export function NuevaBodegaPage({
           value={ubicacion}
           onChange={setUbicacion}
           placeholder="Ej: San José, Costa Rica"
+        />
+      ) : null}
+      {idPaso === 'telefono' ? (
+        <Campo
+          etiqueta="Teléfono"
+          value={telefono}
+          onChange={setTelefono}
+          placeholder="Ej: 8888-8888"
+          type="tel"
         />
       ) : null}
       {idPaso === 'encargado' ? (

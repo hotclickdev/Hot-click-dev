@@ -122,11 +122,16 @@ export default function RegistroEmpresaPage() {
         telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
         inscritoTributacion:  true,
       })
+      // El interceptor de axios ya desenvuelve ResponseDTO cuando aplica; soporta
+      // ambas formas (con o sin el envoltorio anidado) para no depender de eso.
       const envelope = data as AuthResponse & { data?: AuthResponse }
-      if (envelope?.data) {
-        loginStore(envelope.data)
+      const authData = envelope?.data ?? (envelope?.accessToken ? envelope : undefined)
+      if (authData?.accessToken) {
+        loginStore(authData)
         toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
         navigate(RUTA_PANEL_VENDEDOR)
+      } else {
+        setError('La empresa se creó pero no se pudo iniciar sesión automáticamente. Iniciá sesión con tu correo y contraseña.')
       }
     } catch (err: unknown) {
       const msg = mensajeErrorAuth(err, '')

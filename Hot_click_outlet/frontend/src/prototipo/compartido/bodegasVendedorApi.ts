@@ -32,10 +32,11 @@ export async function cargarBodegasVendedor(): Promise<BodegaEmprendedor[]> {
   return listaBodegas(data).map((bodega, indice) => aBodegaEmprendedor(bodega, indice))
 }
 
-export async function crearBodegaVendedor(nombre: string, ubicacion: string, encargado: string) {
+export async function crearBodegaVendedor(nombre: string, ubicacion: string, telefono: string, encargado: string) {
   await warehouseService.create({
     nombreBodega: nombre.trim(),
     direccionExacta: ubicacion.trim(),
+    telefono: telefono.trim(),
     ...(encargado.trim() ? { encargadoNombre: encargado.trim() } : {}),
   })
 }
