@@ -7,8 +7,8 @@ import type { Id } from '@/types/api'
 
 type MiniCartItemsProps = {
   items: ItemCarrito[]
-  removeItem: (id: Id) => void
-  updateQuantity: (id: Id, cantidad: number) => void
+  removeItem: (id: Id, cartLineId?: string) => void
+  updateQuantity: (id: Id, cantidad: number, cartLineId?: string) => void
 }
 
 export default function MiniCartItems({ items, removeItem, updateQuantity }: MiniCartItemsProps) {
@@ -39,42 +39,44 @@ export default function MiniCartItems({ items, removeItem, updateQuantity }: Min
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate leading-snug" style={{ color: 'var(--hc-text)' }}>
-                {item.nombre}
-              </p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-medium truncate leading-snug" style={{ color: 'var(--hc-text)' }}>
+                  {item.nombre}
+                </p>
+                <p className="text-xs font-bold shrink-0 tabular-nums" style={{ color: 'var(--hc-text)' }}>
+                  {formatPrice(item.precio * item.cantidad)}
+                </p>
+              </div>
               <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--hc-accent)' }}>{formatPrice(item.precio)}</p>
 
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: 'var(--hc-border)' }}>
                   <button type="button"
-                    onClick={() => updateQuantity(item.id as Id, item.cantidad - 1)}
-                    className="w-7 h-7 flex items-center justify-center text-xs transition-colors"
+                    onClick={() => updateQuantity(item.id as Id, item.cantidad - 1, item.cartLineId)}
+                    className="w-11 h-11 flex items-center justify-center text-sm transition-colors touch-manipulation"
                     style={{ color: 'var(--hc-muted)' }}
+                    aria-label={`Reducir cantidad de ${item.nombre}`}
                   >−</button>
                   <span className="w-7 text-center text-xs font-bold" style={{ color: 'var(--hc-text)' }}>
                     {item.cantidad}
                   </span>
                   <button type="button"
-                    onClick={() => updateQuantity(item.id as Id, item.cantidad + 1)}
+                    onClick={() => updateQuantity(item.id as Id, item.cantidad + 1, item.cartLineId)}
                     disabled={item.cantidad >= (item.stock ?? 99)}
-                    className="w-7 h-7 flex items-center justify-center text-xs transition-colors disabled:opacity-25"
+                    className="w-11 h-11 flex items-center justify-center text-sm transition-colors disabled:opacity-25 touch-manipulation"
                     style={{ color: 'var(--hc-muted)' }}
+                    aria-label={`Aumentar cantidad de ${item.nombre}`}
                   >+</button>
                 </div>
                 <button type="button"
-                  onClick={() => removeItem(item.id as Id)}
-                  className="text-xs transition-colors hover:text-red-400"
+                  onClick={() => removeItem(item.id as Id, item.cartLineId)}
+                  aria-label={`${t('miniCart.remove')} ${item.nombre}`}
+                  className="relative z-10 shrink-0 min-h-11 px-3 text-sm transition-colors hover:text-red-400 active:text-red-400 touch-manipulation"
                   style={{ color: 'var(--hc-muted)' }}
                 >
                   {t('miniCart.remove')}
                 </button>
               </div>
-            </div>
-
-            <div className="text-right shrink-0 pt-0.5">
-              <p className="text-xs font-bold" style={{ color: 'var(--hc-text)' }}>
-                {formatPrice(item.precio * item.cantidad)}
-              </p>
             </div>
           </motion.div>
         ))}
