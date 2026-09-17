@@ -69,8 +69,8 @@ export function generateProductJsonLd(producto: ProductoJsonLd, urlBase: string)
     name: producto.nombre,
     description,
     image,
-    sku: producto.sku || String(producto.id),
-    mpn: producto.sku || String(producto.id),
+    sku: String(producto.id ?? ''),
+    mpn: String(producto.id ?? ''),
     brand: { '@type': 'Brand', name: brand },
     offers: {
       '@type': 'Offer',

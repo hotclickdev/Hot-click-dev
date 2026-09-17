@@ -19,6 +19,7 @@ export type ProductoBackend = {
   nombre?: string
   barcode?: string | null
   sku?: string | null
+  numeroLocal?: number | null
   precioVenta?: number
   precio?: number
   precioCompra?: number

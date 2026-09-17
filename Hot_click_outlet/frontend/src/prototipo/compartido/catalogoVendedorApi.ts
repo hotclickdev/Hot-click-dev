@@ -54,6 +54,8 @@ export function aProductoEmprendedor(p: Producto): ProductoEmprendedor {
     precioPersonalizadoMin: p.precioPersonalizadoMin ?? undefined,
     precioPersonalizadoMax: p.precioPersonalizadoMax ?? undefined,
     instruccionesPersonalizacion: p.instruccionesPersonalizacion ?? undefined,
+    sku: p.sku ?? null,
+    numeroLocal: p.numeroLocal ?? null,
   }
 }
 
@@ -77,6 +79,8 @@ export function aProductoSeller(p: Producto): ProductoMock {
     precioPersonalizadoMin: e.precioPersonalizadoMin,
     precioPersonalizadoMax: e.precioPersonalizadoMax,
     instruccionesPersonalizacion: e.instruccionesPersonalizacion,
+    sku: e.sku,
+    numeroLocal: e.numeroLocal,
   }
 }
 

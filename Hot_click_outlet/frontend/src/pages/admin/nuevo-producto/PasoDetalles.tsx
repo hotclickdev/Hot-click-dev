@@ -97,8 +97,15 @@ export default function PasoDetalles({ form, setCampo, setForm }: {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>SKU <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(código interno)</span></Label>
-          <input className={inp} style={inpStyle} type="text" value={form.sku ?? ''} onChange={setCampo('sku')} placeholder="Ej: HC-001" />
+          <Label>SKU <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(se asigna al guardar)</span></Label>
+          <input
+            className={inp}
+            style={{ ...inpStyle, opacity: 0.85 }}
+            type="text"
+            value={form.sku ? form.sku : ''}
+            readOnly
+            placeholder="Automático por negocio"
+          />
         </div>
         <div>
           <Label>Barcode <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(EAN / UPC)</span></Label>

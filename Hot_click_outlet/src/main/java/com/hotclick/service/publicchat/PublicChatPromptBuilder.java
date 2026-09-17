@@ -139,7 +139,6 @@ class PublicChatPromptBuilder {
         if (p == null || p.isEmpty()) return "(ficha vacía)";
         StringBuilder sb = new StringBuilder();
         linea(sb, "Nombre", texto(p.get("nombre_producto")));
-        linea(sb, "SKU", texto(p.get("sku")));
         linea(sb, "Categoría", texto(p.get("nombre_categoria")));
         linea(sb, "Tags", texto(p.get("tags")));
         linea(sb, "Precio", ChatPrecioPersonalizado.etiquetaDesdeMap(p));

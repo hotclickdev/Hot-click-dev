@@ -13,7 +13,7 @@ Plataforma SaaS de e-commerce B2C para el mercado costarricense con modelo híbr
 | Backend | Spring Boot 3.4.4 · Java 21 |
 | Frontend | React 19 · Vite 8 · Tailwind CSS · Zustand · Framer Motion |
 | Base de datos | PostgreSQL en Supabase (PgBouncer transaction mode) |
-| Migraciones | Flyway (128 archivos, V1–V130) |
+| Migraciones | Flyway (129 archivos, V1–V131) |
 | Almacenamiento | Supabase Storage (imágenes de productos, logos de marcas) |
 | Email | SendGrid (ResendEmailService) |
 | Pagos | Stripe (webhook) · SINPE Móvil |
@@ -44,6 +44,21 @@ pnpm build
 # → genera archivos en src/main/resources/static/
 ```
 
+### Cuentas QA (DataSeeder)
+
+Al arrancar el backend se aseguran estas cuentas (si no existen). Contraseña local por defecto: `QaDemo1234!` (o `QA_DEFAULT_PASSWORD`). Para reescribir la clave en una cuenta ya creada: `QA_RESET_PASSWORD=true`.
+
+| Rol | Correo | Plan |
+| --- | --- | --- |
+| Admin | `admin@hotclick.com` | — |
+| QA Emprendedor | `qa.emprendedor.demo@hotclick.test` | EMPRENDEDOR |
+| QA Pyme | `qa.pyme.demo@hotclick.test` | PYME |
+| QA Negocio Plus | `qa.negocioplus.demo@hotclick.test` | NEGOCIO_PLUS |
+
+Reset destructivo de datos (conserva esas 4 cuentas): [`scripts/reset_qa_keep_admin.sql`](scripts/reset_qa_keep_admin.sql). **No es Flyway.** Hacer backup antes. No borra Storage, embeddings RAG, Clerk/OAuth ni publicaciones externas. No correrlo si hay pedidos reales vivos.
+
+SKU: cada negocio tiene numeración propia (`E{empresa}-0001`). El id global lo ve el admin. El comprador público no ve el SKU.
+
 ---
 
 ## Estructura del proyecto
@@ -62,7 +77,7 @@ proyecto-2026/
 │   │   └── dto/             ← ResponseDTO + DTOs de entrada/salida
 │   ├── src/main/resources/
 │   │   ├── application.properties     ← Config (env vars)
-│   │   ├── db/migration/              ← Flyway V1–V130 (128 archivos)
+│   │   ├── db/migration/              ← Flyway V1–V131
 │   │   └── static/                    ← Frontend compilado (build output)
 │   ├── frontend/                      ← React SPA (Vite)
 │   │   ├── src/

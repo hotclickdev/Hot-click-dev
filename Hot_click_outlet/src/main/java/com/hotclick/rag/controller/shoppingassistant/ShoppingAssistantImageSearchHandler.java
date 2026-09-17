@@ -95,7 +95,6 @@ public class ShoppingAssistantImageSearchHandler {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id",              p.id());
                 m.put("nombre",          p.nombre());
-                m.put("sku",             p.sku());
                 m.put("precio",          p.precio());
                 m.put("descripcionCorta", p.descripcionCorta());
                 m.put("imagenUrl",       p.imagenUrl());

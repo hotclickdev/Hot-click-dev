@@ -115,8 +115,14 @@ function BloquePrecio({ form, setCampo }: { form: FormSistemaProducto; setCampo:
         </Campo>
       </div>
       <div className="max-w-xs">
-        <Campo label="Código / SKU" opcional>
-          <input value={form.sku} onChange={setCampo('sku')} placeholder="Ej: CAF-500" className={inputClass} style={inputStyle} />
+        <Campo label="SKU" hint={form.sku ? 'Asignado por el negocio.' : 'Se asigna al guardar.'}>
+          <input
+            value={form.sku}
+            readOnly
+            placeholder="Se asigna al guardar"
+            className={inputClass}
+            style={{ ...inputStyle, opacity: 0.85 }}
+          />
         </Campo>
       </div>
     </section>

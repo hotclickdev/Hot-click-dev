@@ -13,14 +13,14 @@ function TagIcon({ className = 'w-8 h-8' }: { className?: string }) {
   )
 }
 
-const INCLUSIONES = [
-  'Escaneo de productos con código de barras.',
-  'Registro manual de productos sin código.',
-  'Creación de SKU internos para productos sin código.',
-  'Generación e impresión de etiquetas con código de barras.',
-  'Registro de nombre, categoría, precio, cantidad y demás información necesaria.',
-  'Carga de los productos al catálogo de HOTCLICK.',
-  'Preparación del inventario para que el negocio pueda comenzar a vender en HOTCLICK.',
+const OBJETIVO =
+  'Digitalizar el inventario en tu local para que puedas vender en HOTCLICK, aunque no tengas códigos de barras ni catálogo digital.'
+
+const BENEFICIOS = [
+  'Escaneo de productos que ya tienen código de barras.',
+  'SKU interno y etiqueta para productos sin código.',
+  'Carga del inventario a tu catálogo HOTCLICK.',
+  'Quedás listo para vender desde el local y en línea.',
 ]
 
 type VistaDigitalizacionProps = Omit<FormularioBusquedaProps, 't'> & {
@@ -64,28 +64,28 @@ export default function VistaDigitalizacion({
             Digitalización y etiquetado de inventario
           </h2>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-            Llevamos el proceso a tu local para que puedas vender en HOTCLICK.
+            En tu local, con tu inventario real.
           </p>
         </div>
       </div>
 
-      <div className="rounded-3xl p-6 sm:p-8 mb-6 space-y-4"
+      <div className="rounded-3xl p-6 sm:p-8 mb-6 space-y-5"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-          ¿Tu negocio no tiene un inventario digital o algunos productos no tienen código de barras? No hay problema.
-          HOTCLICK puede ayudarte a digitalizar tu inventario directamente en tu local.
-        </p>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-          Nuestro equipo puede escanear los productos que ya cuentan con código de barras y registrar manualmente
-          aquellos que no tengan uno. Para los productos sin código, HOTCLICK puede generar un SKU interno único y
-          crear una etiqueta con código de barras utilizando una impresora portátil, permitiendo que esos productos
-          puedan ser escaneados posteriormente.
-        </p>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--hc-accent)' }}>
+            Objetivo
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-text)' }}>
+            {OBJETIVO}
+          </p>
+        </div>
 
         <div>
-          <p className="text-sm font-bold mb-2" style={{ color: 'var(--hc-text)' }}>El servicio puede incluir:</p>
+          <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--hc-accent)' }}>
+            Beneficios
+          </p>
           <ul className="space-y-1.5">
-            {INCLUSIONES.map(item => (
+            {BENEFICIOS.map(item => (
               <li key={item} className="text-sm flex gap-2 leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
                 <span className="shrink-0 font-bold" style={{ color: 'var(--hc-accent)' }}>·</span>
                 {item}
@@ -94,13 +94,9 @@ export default function VistaDigitalizacion({
           </ul>
         </div>
 
-        <div className="rounded-2xl p-4 text-xs leading-relaxed"
-          style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.15)', color: 'var(--hc-muted)' }}>
-          <strong style={{ color: 'var(--hc-text)' }}>Importante:</strong> los códigos de barras originales de los
-          fabricantes se conservan sin modificaciones. Para productos sin código usamos SKU internos HOTCLICK
-          (por ejemplo HC-000001, HC-000002). Estos identificadores no se presentan como códigos comerciales
-          oficiales del fabricante.
-        </div>
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+          No modificamos códigos de fabricante. Si un producto no tiene código, usamos un SKU interno HOTCLICK.
+        </p>
       </div>
 
       <FormularioBusqueda

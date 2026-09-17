@@ -16,6 +16,7 @@ export function normalizeProduct(p: ProductoBackend | null | undefined): Product
     nombre: p.nombreProducto ?? p.nombre ?? '',
     barcode: p.barcode ?? null,
     sku: p.sku ?? null,
+    numeroLocal: p.numeroLocal ?? null,
     precio: p.precioVenta ?? p.precio ?? 0,
     precioCompra: p.precioCompra ?? 0,
     precioVenta: p.precioVenta ?? p.precio ?? 0,
