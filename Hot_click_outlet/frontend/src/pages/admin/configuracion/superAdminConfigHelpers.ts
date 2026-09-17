@@ -3,6 +3,11 @@ export const LINKS_CONFIG_ADMIN = [
   { to: '/admin/configuracion?seccion=politica', label: 'Política de moderación' },
   { to: '/admin/configuracion?seccion=pagos-metodos', label: 'Métodos de pago aceptados' },
   { to: '/admin/configuracion?seccion=alertas', label: 'Notificaciones del sistema' },
+  {
+    to: '/admin/configuracion?seccion=vaciar',
+    label: 'Vaciar tiendas, usuarios y productos',
+    peligro: true,
+  },
 ] as const
 
 export function etiquetaComisionDesdePlanes(data: unknown): string {

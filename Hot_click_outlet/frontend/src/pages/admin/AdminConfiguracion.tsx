@@ -21,6 +21,7 @@ import SuperAdminConfig from './configuracion/SuperAdminConfig'
 import SuperAdminMetodosPago from './configuracion/SuperAdminMetodosPago'
 import SuperAdminNotificaciones from './configuracion/SuperAdminNotificaciones'
 import SuperAdminPolitica from './configuracion/SuperAdminPolitica'
+import SuperAdminVaciarPlataforma from './configuracion/SuperAdminVaciarPlataforma'
 import {
   F, UserIcon, StoreIcon, ShieldIcon, BellIcon, SendIcon, DatabaseIcon, PaletteIcon, CogIcon, CardIcon, BoxIcon,
 } from './configuracion/configUi'
@@ -85,6 +86,7 @@ export default function AdminConfiguracion() {
   if (userRole === 'ADMIN' && seccionFigma === 'politica') return <SuperAdminPolitica />
   if (userRole === 'ADMIN' && seccionFigma === 'pagos-metodos') return <SuperAdminMetodosPago />
   if (userRole === 'ADMIN' && seccionFigma === 'alertas') return <SuperAdminNotificaciones />
+  if (userRole === 'ADMIN' && seccionFigma === 'vaciar') return <SuperAdminVaciarPlataforma />
 
   return (
     <>

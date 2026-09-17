@@ -11,12 +11,18 @@ INSERT INTO keep_correo (correo) VALUES
     ('admin@hotclick.com'),
     ('qa.emprendedor.demo@hotclick.test'),
     ('qa.pyme.demo@hotclick.test'),
-    ('qa.negocioplus.demo@hotclick.test');
+    ('qa.negocioplus.demo@hotclick.test'),
+    ('mostrador@hotclick.internal');
 
 CREATE TEMP TABLE keep_usuario AS
 SELECT u.id_usuario
 FROM hot_click_usuario_tb u
-WHERE lower(u.correo) IN (SELECT correo FROM keep_correo);
+WHERE lower(u.correo) IN (SELECT correo FROM keep_correo)
+UNION
+SELECT ur.fk_id_usuario
+FROM hot_click_usuario_rol_tb ur
+JOIN hot_click_rol_tb r ON r.id_rol = ur.fk_id_rol
+WHERE r.nombre_rol = 'ADMIN';
 
 CREATE TEMP TABLE keep_empresa AS
 SELECT DISTINCT e.id_empresa

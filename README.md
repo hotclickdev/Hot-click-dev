@@ -55,7 +55,7 @@ Al arrancar el backend se aseguran estas cuentas (si no existen). Contraseña lo
 | QA Pyme | `qa.pyme.demo@hotclick.test` | PYME |
 | QA Negocio Plus | `qa.negocioplus.demo@hotclick.test` | NEGOCIO_PLUS |
 
-Reset destructivo de datos (conserva esas 4 cuentas): [`scripts/reset_qa_keep_admin.sql`](scripts/reset_qa_keep_admin.sql). **No es Flyway.** Hacer backup antes. No borra Storage, embeddings RAG, Clerk/OAuth ni publicaciones externas. No correrlo si hay pedidos reales vivos.
+Reset destructivo de datos (conserva admin + 3 cuentas QA + mostrador POS): al **arrancar el backend** se ejecuta una sola vez. También: Configuración admin → **Vaciar tiendas, usuarios y productos** (frase `ELIMINAR PLATAFORMA`), o [`scripts/reset_qa_keep_admin.sql`](scripts/reset_qa_keep_admin.sql) en PostgreSQL. **No es Flyway.** Hacer backup antes. No borra Storage, embeddings RAG, Clerk/OAuth ni publicaciones externas.
 
 SKU: cada negocio tiene numeración propia (`E{empresa}-0001`). El id global lo ve el admin. El comprador público no ve el SKU.
 
