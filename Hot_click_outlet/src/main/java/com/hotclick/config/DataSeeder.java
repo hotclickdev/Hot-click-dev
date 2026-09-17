@@ -6,6 +6,7 @@ import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ public class DataSeeder implements ApplicationRunner {
     @Autowired private PlanRepository planRepository;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private Environment environment;
 
     @Override
     @Transactional
@@ -39,8 +41,9 @@ public class DataSeeder implements ApplicationRunner {
         seedRol(Constants.ROL_TRUST,   "Staff plataforma — moderación y suspensiones", 80);
         seedAdminUser();
         seedPlanesSaas();
-        seedCategoriasDefault();
-        seedQaCuentas();
+        if (!environment.matchesProfiles("test")) {
+            seedQaCuentas();
+        }
     }
 
     private void seedPlanesSaas() {
@@ -246,8 +249,7 @@ public class DataSeeder implements ApplicationRunner {
             usuario.setIntentosFallidos(0);
             usuario.setEmpresa(empresa);
             usuario.setFechaRegistro(LocalDateTime.now());
-            rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
-                .ifPresent(rol -> usuario.getRoles().add(rol));
+            asignarRolEmprendedor(usuario);
             return usuarioRepository.save(usuario);
         }
         usuario.setEmpresa(empresa);
@@ -257,13 +259,17 @@ public class DataSeeder implements ApplicationRunner {
         boolean tieneEmprendedor = usuario.getRoles().stream()
             .anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
         if (!tieneEmprendedor) {
-            rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
-                .ifPresent(rol -> usuario.getRoles().add(rol));
+            asignarRolEmprendedor(usuario);
         }
         if ("true".equalsIgnoreCase(System.getenv("QA_RESET_PASSWORD"))) {
             usuario.setContrasenaHash(passwordEncoder.encode(password));
         }
         return usuarioRepository.save(usuario);
+    }
+
+    private void asignarRolEmprendedor(Usuario usuario) {
+        rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
+            .ifPresent(rol -> usuario.getRoles().add(rol));
     }
 
     private String slugDisponible(String base) {
