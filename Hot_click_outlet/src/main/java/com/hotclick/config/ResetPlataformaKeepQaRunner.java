@@ -30,7 +30,12 @@ public class ResetPlataformaKeepQaRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         LOG.warn("Comprobando vaciado de plataforma (conserva admin + QA)…");
-        var resultado = resetPlataformaKeepQaService.ejecutarSiPendiente();
-        LOG.warn("Vaciado plataforma: {}", resultado);
+        try {
+            var resultado = resetPlataformaKeepQaService.ejecutarSiPendiente();
+            LOG.warn("Vaciado plataforma: {}", resultado);
+        } catch (RuntimeException e) {
+            // No debe tumbar el arranque de producción por un fallo en esta limpieza one-shot.
+            LOG.error("Vaciado plataforma falló, se continúa el arranque sin aplicarlo: {}", e.getMessage(), e);
+        }
     }
 }

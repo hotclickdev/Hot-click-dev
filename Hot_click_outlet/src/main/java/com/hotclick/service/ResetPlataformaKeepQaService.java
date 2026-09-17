@@ -216,7 +216,6 @@ public class ResetPlataformaKeepQaService {
     }
 
     private void borrarUsuariosAjenos() {
-        exec("DELETE FROM hot_click_sesion_tb WHERE fk_id_usuario NOT IN (SELECT id_usuario FROM " + KEEP_USUARIO + ")");
         exec("DELETE FROM hot_click_refresh_token_tb WHERE fk_id_usuario NOT IN (SELECT id_usuario FROM " + KEEP_USUARIO + ")");
         exec("DELETE FROM hot_click_webauthn_credential_tb WHERE user_id NOT IN (SELECT id_usuario FROM " + KEEP_USUARIO + ")");
         exec("DELETE FROM hot_click_codigo_otp_tb WHERE fk_id_usuario NOT IN (SELECT id_usuario FROM " + KEEP_USUARIO + ")");
