@@ -1,9 +1,9 @@
 # Stack generado (DOC1)
 
 <!-- generated-by: scripts/eng-gates/stack-docs.mjs -->
-<!-- fingerprint: eyJqYXZhVmVyc2lvbiI6IjIxIiwic3ByaW5nQm9vdCI6IjMuNC40IiwicmVhY3QiOiIxOS4yLjUiLCJ2aXRlIjoiOC4wLjEwIiwiZmx5d2F5Q291bnQiOjEyOCwiZmx5d2F5TWF4IjoxMzAsImZseXdheUxhdGVzdCI6IlYxMzBfX3RpY2tldF9zb3BvcnRlX3ByaW9yaWRhZC5zcWwiLCJjb250cm9sbGVycyI6MTAzLCJzZXJ2aWNlcyI6MTU4LCJyZXBvc2l0b3JpZXMiOjgzLCJlbnRpdGllcyI6ODZ9 -->
+<!-- fingerprint: eyJqYXZhVmVyc2lvbiI6IjIxIiwic3ByaW5nQm9vdCI6IjMuNC40IiwicmVhY3QiOiIxOS4yLjUiLCJ2aXRlIjoiOC4wLjEwIiwiZmx5d2F5Q291bnQiOjEzMCwiZmx5d2F5TWF4IjoxMzIsImZseXdheUxhdGVzdCI6IlYxMzJfX2NhdGVnb3JpYXNfZW1wcmVuZGltaWVudG9zLnNxbCIsImNvbnRyb2xsZXJzIjoxMDQsInNlcnZpY2VzIjoxNjAsInJlcG9zaXRvcmllcyI6ODMsImVudGl0aWVzIjo4Nn0 -->
 
-> Autogenerado el **2026-09-13** desde `pom.xml`, Flyway, `frontend/package.json` y conteos de Java.
+> Autogenerado el **2026-09-21** desde `pom.xml`, Flyway, `frontend/package.json` y conteos de Java.
 > No editar a mano. Corré `scripts/generate-stack-docs.sh`. **No incluye secretos.**
 
 ## Runtime (fuente: repo, no marketing)
@@ -16,10 +16,10 @@
 | Vite | **8.0.10** | `frontend/package.json` |
 | Node (engines) | >=22.13.0 | `frontend/package.json` |
 | Package manager | pnpm@11.1.2 | `frontend/package.json` |
-| Flyway archivos | **128** (`V1`–`V130`) | `src/main/resources/db/migration/` |
-| Última migración | `V130__ticket_soporte_prioridad.sql` | mismo dir |
-| Controllers | 103 | `*Controller.java` |
-| Services | 158 | `*Service.java` |
+| Flyway archivos | **130** (`V1`–`V132`) | `src/main/resources/db/migration/` |
+| Última migración | `V132__categorias_emprendimientos.sql` | mismo dir |
+| Controllers | 104 | `*Controller.java` |
+| Services | 160 | `*Service.java` |
 | Repositories | 83 | `*Repository.java` |
 | Entidades `model/` | 86 | `com/hotclick/model` |
 
@@ -44,10 +44,10 @@
 | `src/main/java/com/hotclick/service/pos/PosQrVentaService.java` | 360 |
 | `src/main/java/com/hotclick/service/suscripcion/SuscripcionOnvoChangeService.java` | 326 |
 | `src/main/java/com/hotclick/rag/service/VectorSearchService.java` | 319 |
+| `src/main/java/com/hotclick/service/ResetPlataformaKeepQaService.java` | 287 |
 | `src/main/java/com/hotclick/service/OnvoService.java` | 280 |
+| `src/main/java/com/hotclick/service/EmprendedorRegistroService.java` | 258 |
 | `src/main/java/com/hotclick/service/MetodoCobroCambioService.java` | 251 |
-| `src/main/java/com/hotclick/service/pos/PosQrSessionService.java` | 243 |
-| `src/main/java/com/hotclick/service/EmpresaAdminService.java` | 242 |
 
 ## Docs que suelen quedar viejos
 
