@@ -82,16 +82,6 @@ export const ESTADOS_PEDIDO = [
   'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO',
 ]
 
-export const ESTADO_PEDIDO_STYLE: Record<string, { bg: string; text: string }> = {
-  PENDIENTE: { bg: 'rgba(212,177,6,0.15)', text: '#d4b106' },
-  PAGADO: { bg: 'rgba(23,71,168,0.14)', text: 'var(--hc-accent)' },
-  EN_PREPARACION: { bg: 'rgba(245,158,11,0.14)', text: '#f59e0b' },
-  ENVIADO: { bg: 'rgba(96,165,250,0.14)', text: '#6490EA' },
-  ENTREGADO: { bg: 'rgba(74,222,128,0.14)', text: '#4ade80' },
-  COMPLETADO: { bg: 'rgba(63,108,222,0.14)', text: 'var(--hc-blue-400)' },
-  CANCELADO: { bg: 'rgba(248,113,113,0.14)', text: '#f87171' },
-}
-
 export const ROL_CONFIG: Record<string, { label: string; color: string }> = {
   PROPIETARIO: { label: 'Propietario', color: 'bg-amber-500/15 text-amber-400' },
   ADMIN: { label: 'Admin', color: 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]' },

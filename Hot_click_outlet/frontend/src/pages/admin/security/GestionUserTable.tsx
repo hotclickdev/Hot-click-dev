@@ -62,7 +62,7 @@ export default function GestionUserTable({
           <thead>
             <tr style={{ borderBottom: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
               {['Usuario', 'Rol', 'Estado', 'Negocio', '2FA', 'Logins OK', 'Logins Fail', 'Acciones'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">{h}</th>
+                <th key={h} className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs">{h}</th>
               ))}
             </tr>
           </thead>
@@ -96,7 +96,7 @@ export default function GestionUserTable({
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium truncate max-w-[160px]" style={{ color: 'var(--hc-text)' }}>{u.nombre ?? '—'}</p>
-                        <p className="text-[10px] truncate max-w-[160px]" style={{ color: 'var(--hc-muted)' }}>{u.correo}</p>
+                        <p className="text-xs truncate max-w-[160px]" style={{ color: 'var(--hc-muted)' }}>{u.correo}</p>
                       </div>
                     </div>
                   </td>
@@ -108,7 +108,7 @@ export default function GestionUserTable({
                     {empresa ? (
                       <div>
                         <p className="font-medium truncate max-w-[140px]" style={{ color: 'var(--hc-text)' }}>{empresa.nombreEmpresa}</p>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded"
+                        <span className="text-xs px-1.5 py-0.5 rounded"
                           style={{ backgroundColor: empresa.estadoEmpresa === 'ACTIVO' ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
                                    color: empresa.estadoEmpresa === 'ACTIVO' ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
                           {empresa.estadoEmpresa} · {empresa.planSaas ?? '—'}
@@ -121,7 +121,7 @@ export default function GestionUserTable({
 
                   <td className="px-4 py-3">
                     {sec ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold"
                         style={{ backgroundColor: sec.twoFactorEnabled ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
                                  color: sec.twoFactorEnabled ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
                         {sec.twoFactorEnabled ? 'Activo' : 'Inactivo'}
@@ -142,28 +142,28 @@ export default function GestionUserTable({
                     <div className="flex items-center gap-1.5">
                       {estado !== 'ELIMINADO' && (
                         <button type="button" onClick={() => onEdit(u)}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-medium hover:opacity-80 transition-opacity"
+                          className="px-2.5 py-1 rounded-lg text-xs font-medium hover:opacity-80 transition-opacity"
                           style={{ backgroundColor: 'var(--hc-border)', color: 'var(--hc-text)' }}>
                           Editar
                         </button>
                       )}
                       {estado !== 'ELIMINADO' && estado !== 'SUSPENDIDO' && estado !== 'PENDIENTE' && (
                         <button type="button" onClick={() => onAction(u, 'block')}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
+                          className="px-2.5 py-1 rounded-lg text-xs font-medium"
                           style={{ backgroundColor: 'var(--hc-warning-bg)', color: 'var(--hc-warning)' }}>
                           Bloquear
                         </button>
                       )}
                       {estado === 'SUSPENDIDO' && (
                         <button type="button" onClick={() => onAction(u, 'unblock')}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
+                          className="px-2.5 py-1 rounded-lg text-xs font-medium"
                           style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>
                           Desbloquear
                         </button>
                       )}
                       {estado === 'ELIMINADO' && (
                         <button type="button" onClick={() => onAction(u, 'restore')}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
+                          className="px-2.5 py-1 rounded-lg text-xs font-medium"
                           style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>
                           Restaurar
                         </button>
@@ -179,7 +179,7 @@ export default function GestionUserTable({
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                         <div className="space-y-2">
-                          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Datos</p>
+                          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Datos</p>
                           <div className="space-y-1 text-xs" style={{ color: 'var(--hc-text)' }}>
                             <p><span style={{ color: 'var(--hc-muted)' }}>ID: </span>{u.id}</p>
                             <p><span style={{ color: 'var(--hc-muted)' }}>Correo: </span>{u.correo}</p>
@@ -190,7 +190,7 @@ export default function GestionUserTable({
 
                         {sec && (
                           <div className="space-y-2">
-                            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Seguridad</p>
+                            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Seguridad</p>
                             <div className="space-y-1 text-xs" style={{ color: 'var(--hc-text)' }}>
                               <p><span style={{ color: 'var(--hc-muted)' }}>IPs distintas: </span>{sec.ipsDistintas ?? '—'}</p>
                               <p><span style={{ color: 'var(--hc-muted)' }}>Último acceso: </span>{sec.fechaUltimoAcceso ? new Date(sec.fechaUltimoAcceso).toLocaleString('es-CR') : '—'}</p>
@@ -206,7 +206,7 @@ export default function GestionUserTable({
 
                         {empresa && (
                           <div className="space-y-2">
-                            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Negocio</p>
+                            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Negocio</p>
                             <div className="space-y-1 text-xs" style={{ color: 'var(--hc-text)' }}>
                               <p><span style={{ color: 'var(--hc-muted)' }}>Nombre: </span>{empresa.nombreEmpresa}</p>
                               <p><span style={{ color: 'var(--hc-muted)' }}>Slug: </span>{empresa.slug ?? '—'}</p>
