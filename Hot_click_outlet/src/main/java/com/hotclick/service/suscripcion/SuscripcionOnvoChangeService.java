@@ -291,7 +291,7 @@ public class SuscripcionOnvoChangeService {
             sub.setEstado("CANCELADO");
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
             suscripcionRepo.save(sub);
-            planSupport.degradarAFree(sub.getEmpresa());
+            planSupport.degradarAPlanBase(sub.getEmpresa());
             planRepo.findByNombre(PLAN_GRATIS).ifPresent(emprendedor -> {
                 Empresa e = sub.getEmpresa();
                 e.setPlan(emprendedor);

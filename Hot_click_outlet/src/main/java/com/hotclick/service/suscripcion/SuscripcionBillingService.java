@@ -159,7 +159,7 @@ public class SuscripcionBillingService {
         if (inmediata) {
             sub.setEstado("CANCELADO");
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
-            planSupport.degradarAFree(sub.getEmpresa());
+            planSupport.degradarAPlanBase(sub.getEmpresa());
         } else {
             sub.setCancelarAlVencer(true);
         }

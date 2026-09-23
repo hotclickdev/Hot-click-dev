@@ -1,11 +1,13 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.TurnoCaja;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.TurnoCajaService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +51,8 @@ public class TurnoCajaController {
             String notas = (String) body.get("notas");
             TurnoCaja turno = turnoCajaService.cerrarTurno(id, montoDeclarado, notas);
             return ResponseEntity.ok(ResponseDTO.success("Turno cerrado correctamente", turno));
+        } catch (TenantAccessDeniedException | SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

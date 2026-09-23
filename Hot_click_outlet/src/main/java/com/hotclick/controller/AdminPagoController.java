@@ -56,7 +56,7 @@ public class AdminPagoController {
     /**
      * Lista webhook events con filtro opcional de estado procesado.
      * GET /api/admin/webhooks?procesado=false&page=0&size=20
-     * Solo ADMIN — eventos son globales (sin empresaId en la tabla).
+     * Solo ADMIN o staff con global.metrics (FINANCE) — eventos son globales (sin empresaId en la tabla).
      */
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('global.metrics')")
     @GetMapping("/webhooks")

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import useTenantStore from '@/store/tenantStore'
 import UpgradePrompt from './UpgradePrompt'
+import PlanLoadError from './PlanLoadError'
 
 type PlanGateProps = {
   feature: string
@@ -24,6 +25,7 @@ export default function PlanGate({
   const hasFeature = useTenantStore((s) => s.hasFeature)
   const loaded = useTenantStore((s) => s.loaded)
   const loading = useTenantStore((s) => s.loading)
+  const loadError = useTenantStore((s) => s.loadError)
   const loadTenantInfo = useTenantStore((s) => s.loadTenantInfo)
   const attempted = useRef(false)
 
@@ -50,6 +52,12 @@ export default function PlanGate({
     if (silent) return null
     if (fallback) return fallback
     return <UpgradePrompt feature={feature} planRequerido={planRequerido} />
+  }
+
+  // Fail-closed también acá, pero sin decirle "subí de plan" a quien quizá ya lo pagó.
+  if (loadError) {
+    if (silent) return null
+    return <PlanLoadError onRetry={loadTenantInfo} />
   }
 
   if (hasFeature(feature)) return children

@@ -24,7 +24,7 @@ class SuscripcionPlanSupport {
     @Autowired private CacheManager      cacheManager;
 
     @CacheEvict(value = "tenantInfo", key = "#empresa.id")
-    void degradarAFree(Empresa empresa) {
+    void degradarAPlanBase(Empresa empresa) {
         planRepo.findByNombre(PLAN_BASE).ifPresent(plan -> {
             empresa.setPlan(plan);
             empresa.setPlanSaas(PLAN_BASE);

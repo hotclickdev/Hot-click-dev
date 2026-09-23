@@ -183,6 +183,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * el sitemap solo necesita id, título, imagen y fechas.
      */
     @Query("SELECT p FROM Producto p JOIN p.empresa e WHERE p.estado = 1 AND p.visibleCatalogo = true "
+        + "AND p.vendido = false "
         + "AND e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true ORDER BY p.id ASC")
     List<Producto> findActivosVisibles();
 

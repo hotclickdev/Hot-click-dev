@@ -20,6 +20,7 @@ type TenantState = {
   usoUsuarios: number
   loaded: boolean
   loading: boolean
+  loadError: boolean
   estadoEmpresa: string | null
   visibilidadPublica: boolean | null
   loadTenantInfo: () => Promise<void>
@@ -73,6 +74,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
 
   loaded: false,
   loading: false,
+  loadError: false,
 
   estadoEmpresa: null,
   visibilidadPublica: null,
@@ -100,9 +102,10 @@ const useTenantStore = create<TenantState>((set, get) => ({
         features:     data.features     ?? {},
         loaded: true,
         loading: false,
+        loadError: false,
       })
     } catch {
-      set({ loaded: true, loading: false })
+      set({ loaded: true, loading: false, loadError: true })
     }
   },
 
@@ -162,7 +165,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
     planNombre: 'FREE', planId: null, estadoPlan: 'ACTIVO',
     trialDias: -1, fechaVenc: null, features: {},
     usoProductos: 0, usoUsuarios: 0,
-    loaded: false, loading: false,
+    loaded: false, loading: false, loadError: false,
     estadoEmpresa: null, visibilidadPublica: null,
   }),
 }))

@@ -39,7 +39,7 @@ class SuscripcionPlanSupportDegradarTest {
     }
 
     @Test
-    @DisplayName("degradarAFree busca EMPRENDEDOR no FREE")
+    @DisplayName("degradarAPlanBase busca EMPRENDEDOR no FREE")
     void degradarUsaEmprendedor() {
         Plan plan = new Plan();
         plan.setNombre("EMPRENDEDOR");
@@ -48,7 +48,7 @@ class SuscripcionPlanSupportDegradarTest {
 
         Empresa empresa = new Empresa();
         empresa.setId(3L);
-        support.degradarAFree(empresa);
+        support.degradarAPlanBase(empresa);
 
         assertThat(empresa.getPlan()).isSameAs(plan);
         assertThat(empresa.getPlanSaas()).isEqualTo("EMPRENDEDOR");
