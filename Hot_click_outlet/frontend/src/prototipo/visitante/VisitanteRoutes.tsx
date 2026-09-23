@@ -22,6 +22,8 @@ import VisitanteShopPage from './VisitanteShopPage'
 
 /**
  * Rutas del prototipo Visitante (Figma 96:128).
+ * TODO(P1-08 opción A): huérfano — `/visitante/*` ya no monta este árbol,
+ * ver `visitanteDeprecado.tsx`. No se borra por ahora (bajo riesgo, no llamar).
  */
 export default function VisitanteRoutes() {
   return (

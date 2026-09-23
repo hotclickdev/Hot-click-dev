@@ -27,7 +27,7 @@ const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : 
 const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
-const VisitanteRoutes = lazy(() => import('@/prototipo/visitante/VisitanteRoutes'))
+const VisitanteDeprecatedRedirect = lazy(() => import('@/prototipo/visitante/visitanteDeprecado'))
 const EmprendedorArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.EmprendedorArea })))
 const PymeArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.PymeArea })))
 const NegocioPlusArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.NegocioPlusArea })))
@@ -66,6 +66,7 @@ const AdminConfiguracion = lazy(() => import('@/pages/admin/AdminConfiguracion')
 const AdminMasHerramientas = lazy(() => import('@/pages/admin/AdminMasHerramientas'))
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
+const TilopayRespuestaPage = lazy(() => import('@/pages/pago/TilopayRespuestaPage'))
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const RecuperarCarritoPage = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
@@ -115,6 +116,9 @@ const AdminAsignarProducto = lazy(() => import('@/pages/admin/AdminAsignarProduc
 const AdminCupones = lazy(() => import('@/pages/admin/AdminCupones'))
 const AdminHomepage = lazy(() => import('@/pages/admin/AdminHomepage'))
 const AdminInventario = lazy(() => import('@/pages/admin/AdminInventario'))
+const AdminInventarioCaptura = lazy(() => import('@/pages/admin/AdminInventarioCaptura'))
+const AdminInventarioPaquetes = lazy(() => import('@/pages/admin/AdminInventarioPaquetes'))
+const AdminInventarioPaqueteDetalle = lazy(() => import('@/pages/admin/AdminInventarioPaqueteDetalle'))
 const AdminAyuda = lazy(() => import('@/pages/admin/AdminAyuda'))
 const AdminForecast = lazy(() => import('@/pages/admin/AdminForecast'))
 const AdminExecutive = lazy(() => import('@/pages/admin/AdminExecutive'))
@@ -133,13 +137,15 @@ const TiendaSuccessPage = lazy(() => import('@/pages/tienda/TiendaSuccessPage'))
 
 /**
  * Home `/` = marketplace de producción (Compra · Vende · Emprende).
- * Figma Visitante vive en `/visitante/*`. `/prototipo/*` redirige a prefijos por rol.
+ * `/visitante/*` deprecado (P1-08 opción A): redirige al marketplace real.
+ * `/prototipo/*` redirige a prefijos por rol.
  */
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/visitante/*" element={<VisitanteRoutes />} />
+      <Route path="/visitante" element={<VisitanteDeprecatedRedirect />} />
+      <Route path="/visitante/*" element={<VisitanteDeprecatedRedirect />} />
       <Route path="/emprendedor/*" element={<EmprendedorArea />} />
       <Route path="/pyme/*" element={<PymeArea />} />
       <Route path="/negocio-plus/*" element={<NegocioPlusArea />} />
@@ -155,6 +161,7 @@ export default function AppRoutes() {
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/pago/exito" element={<PaymentStatusPage />} />
       <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
+      <Route path="/pago/tilopay/respuesta" element={<TilopayRespuestaPage />} />
 
       {CLERK_ENABLED && ClerkShell && SSOCallback && SSOComplete ? (
         <Route element={<ClerkShell />}>
@@ -280,6 +287,9 @@ export default function AppRoutes() {
             <Route path="cupones" element={<AdminCupones />} />
             <Route path="publicaciones" element={<AdminPublicaciones />} />
             <Route path="multipais" element={<AdminMultipais />} />
+            <Route path="inventario/captura" element={<AdminInventarioCaptura />} />
+            <Route path="inventario/paquetes" element={<AdminInventarioPaquetes />} />
+            <Route path="inventario/paquetes/:id" element={<AdminInventarioPaqueteDetalle />} />
           </Route>
         </Route>
         <Route path="planes" element={<Navigate to="/admin/billing/planes" replace />} />
