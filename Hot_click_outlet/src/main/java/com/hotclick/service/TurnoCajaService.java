@@ -8,6 +8,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.TurnoCajaRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class TurnoCajaService {
     @Autowired private TurnoCajaRepository turnoCajaRepository;
     @Autowired private UsuarioRepository   usuarioRepository;
     @Autowired private EmpresaRepository   empresaRepository;
+    @Autowired private CompanyScope        companyScope;
 
     @Transactional
     public TurnoCaja abrirTurno(Long usuarioId, Long empresaId, Integer montoInicial) {
@@ -48,6 +50,7 @@ public class TurnoCajaService {
     public TurnoCaja cerrarTurno(Long turnoId, Integer montoDeclarado, String notas) {
         TurnoCaja turno = turnoCajaRepository.findById(turnoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+        assertPuedeOperarTurno(turno);
         if (!"ABIERTO".equals(turno.getEstado())) {
             throw new IllegalStateException("El turno ya está cerrado");
         }
@@ -77,6 +80,7 @@ public class TurnoCajaService {
         if (metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
         TurnoCaja turno = turnoCajaRepository.findById(turnoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+        assertPuedeOperarTurno(turno);
 
         switch (metodoPago.toUpperCase()) {
             case "EFECTIVO"      -> turno.setTotalEfectivo(turno.getTotalEfectivo() + monto);
@@ -86,6 +90,19 @@ public class TurnoCajaService {
         }
         turno.setNumTransacciones(turno.getNumTransacciones() + 1);
         turnoCajaRepository.save(turno);
+    }
+
+    /** Tenant + dueño del turno (ADMIN_IT puede operar cualquiera de su scope). */
+    private void assertPuedeOperarTurno(TurnoCaja turno) {
+        Long empresaId = turno.getEmpresa() != null ? turno.getEmpresa().getId() : null;
+        companyScope.assertCanAccessNullable(empresaId);
+        if (companyScope.isAdminIT()) {
+            return;
+        }
+        Long uid = companyScope.getCurrentUserId();
+        if (uid == null || turno.getUsuario() == null || !uid.equals(turno.getUsuario().getId())) {
+            throw new SecurityException("Solo el cajero del turno puede operar este turno");
+        }
     }
 
     @Transactional(readOnly = true)

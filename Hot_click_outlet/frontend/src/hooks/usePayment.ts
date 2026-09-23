@@ -22,7 +22,19 @@ type PagoData = {
   redirectUrl?: string
   estadoPago?: string
   numeroPedido?: string
+  sdkToken?: string
+  orderNumber?: string
+  modoEmbebido?: boolean
+  monto?: number
   cancelToken?: string
+}
+
+export type TilopayCardPayload = {
+  numeroPedido: string
+  sdkToken: string
+  monto: number
+  redirectUrl?: string
+  orderNumber: string
 }
 
 function mensajeError(err: unknown, respaldo: string): string {
@@ -33,8 +45,25 @@ function mensajeError(err: unknown, respaldo: string): string {
   return respaldo
 }
 
+function esCheckoutTilopayEmbebido(data: PagoData): boolean {
+  if (data.proveedor !== 'TILOPAY') return false
+  return Boolean(data.modoEmbebido || data.sdkToken)
+}
+
+/** Payload tipado para el formulario embebido Tilopay. */
+export function tilopayCardDesdePago(data: PagoData | null): TilopayCardPayload | null {
+  if (!data?.sdkToken || !data.numeroPedido) return null
+  return {
+    numeroPedido: data.numeroPedido,
+    sdkToken: data.sdkToken,
+    monto: data.monto ?? data.total ?? 0,
+    redirectUrl: data.redirectUrl,
+    orderNumber: data.orderNumber || data.numeroPedido,
+  }
+}
+
 /**
- * Flujo de pago Stripe/SINPE/gift card. Mismo orden de llamadas que el hook original.
+ * Flujo de pago Tilopay/SINPE/gift card. Mismo orden de llamadas que el hook original.
  */
 export function usePayment() {
   const [estado, setEstado] = useState('idle')
@@ -67,7 +96,9 @@ export function usePayment() {
       }
       if (data.proveedor === 'GIFT_CARD') {
         setEstado('gift_card_paid')
-      } else if (!data.redirectUrl || data.proveedor === 'SINPE') {
+      } else if (esCheckoutTilopayEmbebido(data)) {
+        setEstado('tilopay_card')
+      } else if (!data.redirectUrl || data.proveedor === 'SINPE' || data.proveedor === 'EFECTIVO') {
         setEstado('sinpe_pendiente')
       } else {
         setEstado('redirecting')

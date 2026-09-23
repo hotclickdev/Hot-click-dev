@@ -1,6 +1,7 @@
 package com.hotclick.service.catalogo;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /** Términos de búsqueda del chat: parseo de tsquery e ILIKE seguro. */
@@ -20,6 +21,18 @@ public final class ChatSearchTerms {
     public static String websearchQuery(List<String> terms) {
         if (terms == null || terms.isEmpty()) return "";
         return String.join(" ", terms);
+    }
+
+    /** Une términos del usuario con sinónimos para el OR de ILIKE. */
+    public static List<String> unionIlike(List<String> userTerms, List<String> synonymBoost) {
+        LinkedHashSet<String> terms = new LinkedHashSet<>();
+        if (userTerms != null) terms.addAll(userTerms);
+        if (synonymBoost != null) {
+            for (String s : synonymBoost) {
+                if (s != null && !s.isBlank()) terms.add(s.toLowerCase());
+            }
+        }
+        return List.copyOf(terms);
     }
 
     public static String sanitizarLike(String termino) {

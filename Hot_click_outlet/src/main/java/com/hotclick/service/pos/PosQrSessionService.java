@@ -60,9 +60,16 @@ public class PosQrSessionService {
         Empresa empresa  = empresaRepo.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
 
-        int total = items.stream()
-            .mapToInt(i -> enteroDe(i, "precioUnitario", 0) * enteroDe(i, "cantidad", 1))
-            .sum();
+        int total = 0;
+        for (Map<String, Object> item : items) {
+            Long productoId = productoIdDe(item);
+            int cantidad = enteroDe(item, "cantidad", 1);
+            var producto = productoRepo.findById(productoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+            int precio = producto.getPrecioEfectivo();
+            item.put("precioUnitario", precio);
+            total += precio * cantidad;
+        }
 
         PosQrSesion sesion = new PosQrSesion();
         sesion.setToken(UUID.randomUUID().toString().replace("-", ""));

@@ -54,8 +54,6 @@ export const adminService = {
   updateUsuario: (id: Id, body: JsonBody) => api.put(`/usuarios/${id}`, body),
   health: () => api.get('/health'),
   resetDatos: () => api.post('/admin/reset-datos'),
-  resetPlataformaQa: (confirmacion: string) =>
-    api.post('/admin/reset-plataforma-qa', { confirmacion }),
   borrarPedidosCancelados: () => api.delete('/admin/pedidos/cancelados'),
 }
 

@@ -26,7 +26,6 @@ type CheckoutLayoutProps = {
   validarGiftCard: () => void
   validarCupon: () => void
   onPagar: () => void
-  onWhatsApp: () => void
 }
 
 /**
@@ -46,7 +45,6 @@ export default function CheckoutLayout({
   validarGiftCard,
   validarCupon,
   onPagar,
-  onWhatsApp,
 }: CheckoutLayoutProps) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
@@ -125,7 +123,6 @@ export default function CheckoutLayout({
           toWhatsAppMessage={toWhatsAppMessage}
           errorBannerRef={errorBannerRef}
           onPagar={onPagar}
-          onWhatsApp={onWhatsApp}
           rutaCarrito={linkCarrito}
         />
         <div className={skinVisitante ? undefined : 'lg:col-span-1'}>

@@ -1,9 +1,9 @@
 import CheckoutNotes from './CheckoutNotes'
 import CheckoutPayError from './CheckoutPayError'
-import ExpressCheckout from './ExpressCheckout'
 import GuestContactSection from './GuestContactSection'
 import PaymentMethods from './PaymentMethods'
 import ShippingSection from './ShippingSection'
+import { COMISION_GATEWAY_PCT_DEFAULT, descuentoSinpe } from '@/utils/comisionPrecio'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { RefObject } from 'react'
 
@@ -17,7 +17,6 @@ type CheckoutFormProps = {
   toWhatsAppMessage: () => string
   errorBannerRef: RefObject<HTMLDivElement | null>
   onPagar: () => void
-  onWhatsApp: () => void
   rutaCarrito?: string
 }
 
@@ -34,7 +33,6 @@ export default function CheckoutForm({
   toWhatsAppMessage,
   errorBannerRef,
   onPagar,
-  onWhatsApp,
   rutaCarrito = '/carrito',
 }: CheckoutFormProps) {
   const {
@@ -135,9 +133,8 @@ export default function CheckoutForm({
         setSinpeTelefono={setSinpeTelefono}
         sinpeEmail={sinpeEmail}
         setSinpeEmail={setSinpeEmail}
+        descuentoSinpeMonto={descuentoSinpe(form.totalFinal, COMISION_GATEWAY_PCT_DEFAULT)}
       />
-
-      <ExpressCheckout onWhatsApp={onWhatsApp} />
 
       <CheckoutNotes notas={notas} setNotas={setNotas} />
 

@@ -1,0 +1,1 @@
+function e(e,t){if(!e||typeof e!=`object`)return t;let n=e.response?.data?.message;return typeof n==`string`?n:t}function t(e){if(!(!e||typeof e!=`object`||!(`response`in e)))return e.response?.status}export{t as n,e as t};

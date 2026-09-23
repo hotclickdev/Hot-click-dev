@@ -105,6 +105,8 @@ const useAuthStore = create<AuthState>()(
           empresaNombre: data.empresaNombre ?? null,
           permissions:  Array.isArray(permissions) ? permissions : [],
           roles:        rol ? [rol] : [],
+          impersonando:  false,
+          adminOriginal: null,
         })
         syncSentryUser({
           userId: data.id,
@@ -145,10 +147,12 @@ const useAuthStore = create<AuthState>()(
           empresaNombre: null,
           permissions:  [],
           roles:        [],
+          impersonando:  false,
+          adminOriginal: null,
         })
       },
 
-      // Guarda la sesión ADMIN actual y adopta la del usuario objetivo.
+      // Guarda la sesión ADMIN y entra al tenant del negocio (identidad = admin).
       impersonar: (data) => {
         const state = get()
         const adminOriginal: SesionGuardada = {
@@ -158,23 +162,23 @@ const useAuthStore = create<AuthState>()(
           permissions: state.permissions, roles: state.roles,
         }
         const permissions = data.permisos ?? []
+        const rol = data.rol ?? 'EMPRENDEDOR'
         set({
           adminOriginal,
           impersonando:  true,
           token:         data.accessToken,
-          // Sin refresh token propio: el token de impersonación expira solo (30 min) y
-          // no debe poder renovarse con el refresh token del ADMIN guardado en adminOriginal
-          // (si no, un 401 durante la impersonación revertiría la sesión en silencio).
+          // Sin refresh: el token de soporte expira solo (30 min). No renovar con
+          // el refresh del ADMIN (evitar revertir la sesión en un 401).
           refreshToken:  null,
-          userId:        data.id ?? null,
-          userEmail:     data.correo ?? null,
-          userRole:      data.rol ?? null,
-          userName:      data.nombre ?? data.correo?.split('@')[0] ?? null,
+          userId:        state.userId,
+          userEmail:     state.userEmail,
+          userName:      state.userName,
+          userRole:      rol,
           empresaId:     data.empresaId   ? Number(data.empresaId)   : null,
           empresaSlug:   data.empresaSlug || null,
           empresaNombre: data.empresaNombre ?? null,
           permissions:   Array.isArray(permissions) ? permissions : [],
-          roles:         data.rol ? [data.rol] : [],
+          roles:         rol ? [rol] : [],
         })
       },
 

@@ -162,10 +162,10 @@ public class PosQrPedidoFactory {
     private PedidoItem lineaDeItem(Map<String, Object> itemMap, Pedido pedido, String correo) {
         Long productoId = PosQrSessionService.productoIdDe(itemMap);
         int cantidad    = PosQrSessionService.enteroDe(itemMap, "cantidad", 1);
-        int precio      = PosQrSessionService.enteroDe(itemMap, "precioUnitario", 0);
 
         Producto producto = productoRepo.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+        int precio = producto.getPrecioEfectivo();
         if (producto.getStockDisponible() < cantidad) {
             throw new StockInsuficienteException(producto.getNombreProducto(),
                 producto.getStockDisponible(), cantidad);

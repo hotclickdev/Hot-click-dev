@@ -119,7 +119,9 @@ class PublicChatPromptBuilder {
             %s
 
             REGLAS:
-            1. Vos costarricense. Máximo 1-2 oraciones cortas. Sin emojis.
+            1. Vos costarricense. Respondé exactamente lo que se pregunta en 2 a 4 oraciones,
+               usando descripción, especificaciones, cómo usar, medidas y garantía de la ficha.
+               Sin emojis.
             2. Si pregunta si SIRVE para un uso (madera, concreto, sala, etc.):
                - SÍ solo si nombre, tags, categoría, descripción, especificaciones o cómo usar lo respaldan.
                - NO si la ficha lo contradice.
@@ -139,6 +141,7 @@ class PublicChatPromptBuilder {
         if (p == null || p.isEmpty()) return "(ficha vacía)";
         StringBuilder sb = new StringBuilder();
         linea(sb, "Nombre", texto(p.get("nombre_producto")));
+        linea(sb, "SKU", texto(p.get("sku")));
         linea(sb, "Categoría", texto(p.get("nombre_categoria")));
         linea(sb, "Tags", texto(p.get("tags")));
         linea(sb, "Precio", ChatPrecioPersonalizado.etiquetaDesdeMap(p));

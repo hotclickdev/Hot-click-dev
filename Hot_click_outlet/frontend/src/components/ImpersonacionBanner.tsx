@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import { adminService } from '@/services/orderService'
 
-/** Banner persistente mientras un ADMIN está impersonando el negocio de otro usuario (soporte). */
+/** Banner persistente mientras un ADMIN ve un negocio en modo soporte. */
 export default function ImpersonacionBanner() {
   const impersonando = useAuthStore((s) => s.impersonando)
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
@@ -30,6 +30,7 @@ export default function ImpersonacionBanner() {
     <div
       className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
       style={{ backgroundColor: '#78350f', borderBottom: '1px solid #d97706' }}
+      data-mm="impersonacion-banner"
     >
       <div className="flex items-center gap-2 min-w-0">
         <svg className="w-4 h-4 shrink-0" style={{ color: '#fde68a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +47,7 @@ export default function ImpersonacionBanner() {
         className="shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
         style={{ backgroundColor: '#fde68a', color: '#1a1a1a' }}
       >
-        {saliendo ? 'Saliendo…' : 'Salir'}
+        {saliendo ? 'Volviendo…' : 'Volver a admin'}
       </button>
     </div>
   )

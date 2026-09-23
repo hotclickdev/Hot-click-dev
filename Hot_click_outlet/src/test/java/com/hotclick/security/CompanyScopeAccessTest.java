@@ -10,35 +10,44 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @DisplayName("CompanyScope — assertCanAccess entre empresas")
 class CompanyScopeAccessTest {
 
     private CompanyScope companyScope;
+    private JwtUtil jwtUtil;
 
     @BeforeEach
     void setUp() {
         companyScope = new CompanyScope();
+        jwtUtil = mock(JwtUtil.class);
         ReflectionTestUtils.setField(companyScope, "usuarioRepository", mock(UsuarioRepository.class));
-        ReflectionTestUtils.setField(companyScope, "jwtUtil", mock(JwtUtil.class));
+        ReflectionTestUtils.setField(companyScope, "jwtUtil", jwtUtil);
         TenantContext.clear();
+        RequestContextHolder.resetRequestAttributes();
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
         TenantContext.clear();
+        RequestContextHolder.resetRequestAttributes();
     }
 
     @Test
@@ -88,15 +97,16 @@ class CompanyScopeAccessTest {
     }
 
     @Test
-    @DisplayName("SUPPORT no tiene bypass de CompanyScope aunque sea staff de plataforma")
+    @DisplayName("SUPPORT legacy no tiene bypass de CompanyScope (V132)")
     void supportSinBypassDeTenant() {
         autenticar(usuarioConRol(Constants.ROL_SUPPORT, 1L));
 
         assertThatThrownBy(() -> companyScope.assertCanAccess(99L))
             .isInstanceOf(TenantAccessDeniedException.class)
             .hasMessageContaining("otra empresa");
-        assertThat(companyScope.getCurrentEmpresaId()).isNull();
-        assertThat(companyScope.getCurrentEmpresaIdOrOwn()).isNull();
+        // Tras V132 ya no es "sin tenant": usa la empresa del usuario.
+        assertThat(companyScope.getCurrentEmpresaId()).isEqualTo(1L);
+        assertThat(companyScope.getCurrentEmpresaIdOrOwn()).isEqualTo(1L);
     }
 
     @Test
@@ -111,6 +121,31 @@ class CompanyScopeAccessTest {
 
         assertThat(companyScope.hasAuthority(Constants.PERM_GLOBAL_METRICS)).isTrue();
         assertThat(companyScope.hasAuthority(Constants.PERM_GLOBAL_COMPANIES)).isFalse();
+    }
+
+    @Test
+    @DisplayName("ADMIN impersonando usa tenant del JWT, sin bypass global")
+    void adminImpersonandoUsaTenantDelJwt() {
+        autenticar(usuarioConRol(Constants.ROL_ADMIN, null));
+        mockImpersonationJwt(55L);
+
+        assertThat(companyScope.isImpersonating()).isTrue();
+        assertThat(companyScope.isAdminIT()).isFalse();
+        assertThat(companyScope.getCurrentEmpresaId()).isEqualTo(55L);
+        assertThat(companyScope.getCurrentEmpresaIdOrOwn()).isEqualTo(55L);
+        assertThatCode(() -> companyScope.assertCanAccess(55L)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> companyScope.assertCanAccess(99L))
+            .isInstanceOf(TenantAccessDeniedException.class);
+        assertThatThrownBy(() -> companyScope.assertCanAccessNullable(null))
+            .isInstanceOf(TenantAccessDeniedException.class);
+    }
+
+    private void mockImpersonationJwt(Long empresaId) {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer fake.impersonation.jwt");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        when(jwtUtil.isImpersonationToken(anyString())).thenReturn(true);
+        when(jwtUtil.extractEmpresaId(anyString())).thenReturn(empresaId);
     }
 
     private static void autenticar(Usuario usuario) {

@@ -116,10 +116,10 @@ public class EmpresaController {
     }
 
     /**
-     * Soporte: iniciar sesión de impersonación como el propietario de la empresa. Solo ADMIN.
-     * El "finalizar" vive en ImpersonacionController bajo /api/impersonacion (no /api/admin/**),
-     * porque SecurityAuthorizationRules exige rol ADMIN en todo /api/admin/empresas/** y quien
-     * cierra la sesión ya está autenticado como el usuario impersonado, no como ADMIN.
+     * Soporte: ver el negocio como vendedor sin perder la identidad ADMIN.
+     * Emite JWT de soporte (rol EMPRENDEDOR + empresaId). El "finalizar" vive en
+     * ImpersonacionController bajo /api/impersonacion (no /api/admin/**), porque
+     * el token de soporte no tiene ROLE_ADMIN.
      */
     @PostMapping("/{id}/impersonar")
     @PreAuthorize("hasRole('ADMIN')")

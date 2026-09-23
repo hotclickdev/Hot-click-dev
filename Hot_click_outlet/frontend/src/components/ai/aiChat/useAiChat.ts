@@ -70,9 +70,17 @@ export function useAiChat({
 
   async function enviarDirecto(msg?: string) {
     if (!msg?.trim() || cargRef.current) return
+    const texto = msg.trim()
     setLoading(true)
-    setMensajes(prev => [...prev, { rol: 'assistant', typing: true, texto: '', productos: [] }])
-    await streamChat({ empresaSlug, msg: msg.trim(), history: [], context, focusIds: [], productoId, setMensajes })
+    setSessionSearches(prev => {
+      const next = [texto, ...prev.filter(s => s !== texto)].slice(0, 6)
+      return next
+    })
+    setMensajes(prev => [...prev,
+      { rol: 'user', texto },
+      { rol: 'assistant', typing: true, texto: '', productos: [] },
+    ])
+    await streamChat({ empresaSlug, msg: texto, history: [], context, focusIds: [], productoId, setMensajes })
     setLoading(false)
   }
 

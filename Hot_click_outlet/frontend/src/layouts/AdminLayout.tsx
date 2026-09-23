@@ -13,6 +13,7 @@ import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import AppTour from '@/components/ui/AppTour'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import { esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
+import { esPwaStandalone } from '@/utils/pwaDisplay'
 import { RUTA_SISTEMA_VISIBILIDAD } from '@/utils/rutaTienda'
 import { buildSidebarLinks } from './admin/adminSidebarLinks'
 import SidebarContent, { type RoleBadge } from './admin/SidebarContent'
@@ -24,9 +25,6 @@ import type { SidebarLink } from './admin/adminItJobs'
 
 const ROLE_BADGES: Record<string, RoleBadge> = {
   ADMIN:       { label: 'Admin',       color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
-  SUPPORT:     { label: 'Support',     color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
-  FINANCE:     { label: 'Finance',     color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
-  TRUST:       { label: 'Trust',       color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
   EMPRENDEDOR: { label: 'Emprendedor', color: 'bg-[rgba(245,158,11,0.12)] text-amber-800 dark:text-amber-200' },
 }
 
@@ -59,7 +57,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   }, [empresaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (userRole !== 'ADMIN' && userRole !== 'TRUST') return
+    if (userRole !== 'ADMIN') return
     let cancelado = false
     moderacionService.resumen()
       .then((r) => { if (!cancelado) setModeracionTotal(r.total) })
@@ -108,9 +106,11 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, userRole, handleLogout, onSearch: () => setSearchOpen(true) }
   const esSistema = esUsuarioSistema(userRole)
   const esSuperAdmin = esStaffPlataforma(userRole)
+  const modoCaptura = location.pathname.startsWith('/admin/inventario/captura')
+    && (new URLSearchParams(location.search).get('modo') === 'captura' || esPwaStandalone())
   const temaPanel = esSuperAdmin ? 'hc-superadmin-theme' : 'hc-sistema-theme'
   const anchoSidebar = esSistema || esSuperAdmin ? 'w-[230px]' : 'w-60'
-  const margenSidebar = esSistema || esSuperAdmin ? 'md:ml-[230px]' : 'md:ml-60'
+  const margenSidebar = modoCaptura ? '' : (esSistema || esSuperAdmin ? 'md:ml-[230px]' : 'md:ml-60')
 
   return (
     <div className={`hc-admin-content ${temaPanel} min-h-screen`} style={{ backgroundColor: 'var(--hc-bg)' }}>
@@ -119,14 +119,17 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
       </Helmet>
 
       {/* ── Desktop sidebar ── */}
+      {!modoCaptura && (
       <aside
         className={`hc-admin-sidebar shrink-0 flex-col fixed inset-y-0 left-0 z-20 hidden md:flex ${anchoSidebar}`}
         style={{ backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }}
       >
         <SidebarContent {...sidebarProps} />
       </aside>
+      )}
 
       {/* ── Mobile: top header bar ── */}
+      {!modoCaptura && (
       <AdminMobileHeader
         etiquetaChrome={etiquetaChromeAdmin(userRole)}
         mostrarCaja={esSistema}
@@ -136,6 +139,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
         navigate={navigate}
         setDrawerOpen={setDrawerOpen}
       />
+      )}
 
       {/* ── Mobile: slide-in drawer ── */}
       <AnimatePresence>
@@ -164,16 +168,16 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
       </AnimatePresence>
 
       {/* ── Content ── */}
-      <div className={`h-screen overflow-hidden flex flex-col pt-14 md:pt-0 ${margenSidebar}`}>
-        <ImpersonacionBanner />
-        <OfflineBanner />
-        <TrialBanner />
+      <div className={`h-screen overflow-hidden flex flex-col ${modoCaptura ? 'pt-0' : 'pt-14'} md:pt-0 ${margenSidebar}`}>
+        {!modoCaptura && <ImpersonacionBanner />}
+        {!modoCaptura && <OfflineBanner />}
+        {!modoCaptura && <TrialBanner />}
         <motion.main
           key={location.pathname}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className={`flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8 ${esSuperAdmin ? 'pb-20 md:pb-6' : ''}`}
+          className={`flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8 ${esSuperAdmin && !modoCaptura ? 'pb-20 md:pb-6' : ''}`}
         >
           {/* Banner: negocio pendiente de aprobación */}
           {estadoEmpresa === 'PENDIENTE_APROBACION' && (

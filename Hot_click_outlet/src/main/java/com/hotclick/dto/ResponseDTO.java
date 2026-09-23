@@ -27,6 +27,10 @@ public class ResponseDTO {
         return new ResponseDTO(false, message, null, LocalDateTime.now(Constants.ZONA_CR).toString());
     }
 
+    public static ResponseDTO error(String message, Object data) {
+        return new ResponseDTO(false, message, data, LocalDateTime.now(Constants.ZONA_CR).toString());
+    }
+
     public boolean isSuccess() { return success; }
     public void setSuccess(boolean success) { this.success = success; }
 

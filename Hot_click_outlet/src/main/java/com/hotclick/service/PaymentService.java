@@ -106,6 +106,12 @@ public class PaymentService {
 
         paymentNotificationsFacade.onPedidoCreado(pedido, provider);
 
+        if (session.modoEmbebido()) {
+            return conCancelToken(PaymentCheckoutResponse.embebido(
+                pedido.getId(), pedido.getNumeroPedido(),
+                session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider,
+                session.sdkToken(), session.externalId()));
+        }
         return conCancelToken(new PaymentCheckoutResponse(
             pedido.getId(), pedido.getNumeroPedido(),
             session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider));

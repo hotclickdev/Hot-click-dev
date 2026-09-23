@@ -2,8 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
-import { EfectivoIcon, LockIcon, SinpeIcon } from './checkoutIcons'
-import { SINPE_NUMERO } from './checkoutHelpers'
+import { EfectivoIcon, LockIcon, SinpeIcon, CardIcon } from './checkoutIcons'
 import type { ItemCheckout } from './checkoutHelpers'
 import type { Dispatch, SetStateAction } from 'react'
 
@@ -84,9 +83,11 @@ export default function CheckoutSummary({
   const cuponInvalidBorder = cuponEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'
   const cuponBorderColor = cuponEstado === 'valid' ? '#10b981' : cuponInvalidBorder
   const payMethodIconFallback = metodoPago === 'EFECTIVO' ? <EfectivoIcon selected /> : <LockIcon />
-  const payMethodIcon = metodoPago === 'SINPE' ? <SinpeIcon selected /> : payMethodIconFallback
+  const payMethodIconSinpe = metodoPago === 'SINPE' ? <SinpeIcon selected /> : payMethodIconFallback
+  const payMethodIcon = metodoPago === 'TILOPAY' ? <CardIcon selected /> : payMethodIconSinpe
   const payEfectivoLabel = `Confirmar pedido · ${formatPrice(totalFinal)} en efectivo`
-  const payLabelFallback = metodoPago === 'EFECTIVO' ? payEfectivoLabel : `Pagá ${formatPrice(totalFinal)}`
+  const payLabelCard = `Pagá con tarjeta · ${formatPrice(totalFinal)}`
+  const payLabelFallback = metodoPago === 'EFECTIVO' ? payEfectivoLabel : payLabelCard
   const payLabel = metodoPago === 'SINPE' ? `Pagá con SINPE · ${formatPrice(totalFinal)}` : payLabelFallback
 
   return (
@@ -238,13 +239,6 @@ export default function CheckoutSummary({
       <p className="text-[11px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
         Pago procesado por HotClick / el vendedor según el pedido.
       </p>
-
-      {metodoPago === 'SINPE' && (
-        <div className="text-[10px] leading-relaxed rounded-lg p-2.5 space-y-0.5" style={{ background: 'color-mix(in srgb, #10b981 8%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)', color: 'var(--hc-muted)' }}>
-          <p>SINPE: <strong className="text-emerald-400">{SINPE_NUMERO}</strong></p>
-          <p>Monto: <strong style={{ color: 'var(--hc-text)' }}>{formatPrice(totalFinal)}</strong></p>
-        </div>
-      )}
 
       {/* Trust mini badges */}
       <div className="flex items-center justify-center gap-4 py-2.5 px-3 rounded-xl text-[11px]"

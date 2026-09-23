@@ -121,4 +121,33 @@ export const paymentService = {
   listarWebhooks(queryString: string) {
     return api.get(`/admin/webhooks?${queryString}`)
   },
+
+  // ── Tilopay ──────────────────────────────────────────────────────────────
+
+  /**
+   * Confirma el retorno de Tilopay (query params del redirect SDK).
+   * @param numeroPedido número de pedido HotClick
+   * @param queryParams code, order, description, etc.
+   */
+  confirmarTilopay(numeroPedido: string, queryParams: Record<string, string> = {}) {
+    return api.post(`/payments/tilopay/confirmar/${encodeURIComponent(numeroPedido)}`, queryParams)
+  },
+
+  /** Solicita un nuevo sdkToken para reintentar un pago Tilopay. */
+  reintentarTilopay(numeroPedido: string) {
+    return api.post(`/payments/tilopay/reintentar/${encodeURIComponent(numeroPedido)}`)
+  },
+
+  /** Comisión de pasarela (admin) — opcional; el UI tolera 404. */
+  getConfigComision() {
+    return api.get('/admin/configuracion/comision')
+  },
+
+  putConfigComision(body: {
+    pctComisionTarjeta?: number
+    montoFijoComisionCrc?: number
+    pctDescuentoSinpe?: number
+  }) {
+    return api.put('/admin/configuracion/comision', body)
+  },
 }

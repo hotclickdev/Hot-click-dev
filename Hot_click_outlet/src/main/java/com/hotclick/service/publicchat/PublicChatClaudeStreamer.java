@@ -89,7 +89,7 @@ class PublicChatClaudeStreamer {
                 .build();
 
             HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
-                .thenAccept(response -> enviarDeltas(log, emitter, response, smartOpts))
+                .thenAccept(response -> enviarDeltas(log, emitter, response, smartOpts, fallback))
                 .exceptionally(ex -> {
                     enviarFallback(log, emitter, fallback, smartOpts, ex);
                     return null;
@@ -120,9 +120,16 @@ class PublicChatClaudeStreamer {
     }
 
     private void enviarDeltas(Logger log, SseEmitter emitter, HttpResponse<Stream<String>> response,
-                              List<String> smartOpts) {
+                              List<String> smartOpts, String fallback) {
         try {
-            response.body().forEach(line -> enviarDeltaSiHay(log, emitter, line));
+            boolean[] huboDelta = { false };
+            response.body().forEach(line -> {
+                if (enviarDeltaSiHay(log, emitter, line)) huboDelta[0] = true;
+            });
+            if (!huboDelta[0] && fallback != null && !fallback.isBlank()) {
+                emitter.send(SseEmitter.event().name("delta")
+                    .data(objectMapper.writeValueAsString(Map.of("text", fallback))));
+            }
             emitter.send(SseEmitter.event().name("done")
                 .data(objectMapper.writeValueAsString(Map.of("opts", smartOpts))));
             emitter.complete();
@@ -132,16 +139,21 @@ class PublicChatClaudeStreamer {
         }
     }
 
-    private void enviarDeltaSiHay(Logger log, SseEmitter emitter, String line) {
-        if (!line.startsWith("data: ")) return;
+    /** @return true si se envió un delta con texto */
+    private boolean enviarDeltaSiHay(Logger log, SseEmitter emitter, String line) {
+        if (!line.startsWith("data: ")) return false;
         try {
             JsonNode node = objectMapper.readTree(line.substring(6).trim());
-            if (!"content_block_delta".equals(node.path("type").asText())) return;
+            if (!"content_block_delta".equals(node.path("type").asText())) return false;
             String text = node.path("delta").path("text").asText();
-            if (text.isEmpty()) return;
+            if (text.isEmpty()) return false;
             emitter.send(SseEmitter.event().name("delta")
                 .data(objectMapper.writeValueAsString(Map.of("text", text))));
-        } catch (Exception e) { log.debug("SSE delta error: {}", e.getMessage()); }
+            return true;
+        } catch (Exception e) {
+            log.debug("SSE delta error: {}", e.getMessage());
+            return false;
+        }
     }
 
     private void enviarFallback(Logger log, SseEmitter emitter, String fallback,

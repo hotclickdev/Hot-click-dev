@@ -75,6 +75,7 @@ public class SelfCheckoutService {
                 m.put("precio",         p.getPrecioVenta());
                 m.put("imagenUrl",      p.getImagenPrincipalUrl());
                 m.put("stock",          p.getStockActual());
+                m.put("sku",            p.getSku());
                 m.put("categoria",      p.getCategoria() != null ? p.getCategoria().getNombreCategoria() : null);
                 return m;
             }).toList();

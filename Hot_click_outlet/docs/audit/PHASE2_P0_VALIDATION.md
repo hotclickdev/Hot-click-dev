@@ -20,18 +20,18 @@ Leyenda de estado:
 
 | ID | Hallazgo | Severidad | Estado | Acción siguiente |
 |----|----------|-----------|--------|------------------|
-| P0-1 | Webhook Tilopay sin autenticación | Alta | ⏳ WIP local | Gate secret listo en WC; merge con stack Tilopay |
-| P0-2 | SINPE sin `pedido.empresa` → wallet/TTL | Crítica | ✅ FIX PR-A | `SinpeCheckoutService` setEmpresa |
-| P0-3 | Comentario TTL vs query real | Media | ✅ FIX PR-A | Query excluye `SINPE` + comentario alineado |
-| P0-4 | `guest/cancel` sin auth | Alta | ✅ FIX PR-A | `cancelToken` HMAC en checkout + body guest cancel |
-| P0-5 | Tilopay confirmar/reintentar públicos | Media-Alta | ✅ CONFIRMADO | PR-A: rate-limit + reconsulta-only (ya mitiga) |
-| P0-6 | POS `cerrarTurno` sin tenant/dueño | Crítica | ✅ CONFIRMADO | PR-B: CompanyScope + dueño |
-| P0-7 | POS precios/descuento del cliente | Alta | ✅ CONFIRMADO | PR-B: recalcular server-side |
-| P1-1 | Retención webhook `created_at` inexistente | Alta (job roto) | ✅ CONFIRMADO | PR-C: usar `fecha_recepcion` |
-| P1-2 | `PlanGate` fail-open | Media | ✅ CONFIRMADO | PR-D: fail-closed |
-| P1-3 | Feed/sitemap sin gate empresa | Alta | ✅ CONFIRMADO | PR-E: JOIN empresa aprobada |
-| P1-4 | Admin webhooks sin filtro tenant | Alta (impersonación) | ✅ CONFIRMADO | PR-B/F: solo ADMIN o filtrar |
-| P1-5 | Degradación a plan `"FREE"` | Media | ✅ CONFIRMADO | PR-G: degradar a EMPRENDEDOR |
+| P0-1 | Webhook Tilopay sin autenticación | Alta | ⏳ WIP Tilopay | Gate secret en WC; merge con stack Tilopay |
+| P0-2 | SINPE sin `pedido.empresa` → wallet/TTL | Crítica | ✅ FIX PR-A | Commiteado |
+| P0-3 | Comentario TTL vs query real | Media | ✅ FIX PR-A | Commiteado |
+| P0-4 | `guest/cancel` sin auth | Alta | ✅ FIX PR-A | Commiteado |
+| P0-5 | Tilopay confirmar/reintentar públicos | Media-Alta | ✅ FIX | Rate-limit 10/60s en `RateLimitingFilter` |
+| P0-6 | POS `cerrarTurno` sin tenant/dueño | Crítica | ✅ FIX PR-B | CompanyScope + dueño |
+| P0-7 | POS precios/descuento del cliente | Alta | ✅ FIX PR-B | `precioEfectivo` + `pos.descuento` |
+| P1-1 | Retención webhook `created_at` inexistente | Alta (job roto) | ✅ FIX PR-C | `fecha_recepcion` |
+| P1-2 | `PlanGate` fail-open | Media | ✅ FIX PR-D | Fail-closed |
+| P1-3 | Feed/sitemap sin gate empresa | Alta | ✅ FIX PR-E | JOIN empresa aprobada |
+| P1-4 | Admin webhooks sin filtro tenant | Alta (impersonación) | ✅ FIX PR-F | `@PreAuthorize ADMIN` |
+| P1-5 | Degradación a plan `"FREE"` | Media | ✅ FIX PR-G | Degradar a EMPRENDEDOR |
 | — | Tilopay MOCK en prod | Crítica si mal config | ⏳ RUNTIME | Checklist ops §4 |
 
 ---
@@ -169,13 +169,14 @@ No implementar aún; cuando digas “implementá PR-A”, se hace en Agent mode 
 
 | PR | Título | Incluye | Tests mínimos | Riesgo merge |
 |----|--------|---------|---------------|--------------|
-| **PR-A** | fix(pagos): SINPE empresa + guest cancel + TTL + Tilopay webhook gate | P0-1…P0-5 | ✅ implementado (unit tests pagos) | Alto (dinero) |
-| **PR-B** | fix(pos): tenant en cierre turno + precios server-side | P0-6, P0-7, P1-4 parcial | TurnoCaja*Test, PosVenta*Test | Alto |
-| **PR-C** | fix(ops): retención webhook `fecha_recepcion` | P1-1 | test SQL o scheduler unit | Bajo |
-| **PR-D** | fix(fe): PlanGate fail-closed | P1-2 | PlanGate test | Bajo |
-| **PR-E** | fix(catalogo): feed/sitemap gate empresa | P1-3 | CatalogoMarketplaceTest + feed | Medio |
-| **PR-F** | fix(admin): webhooks solo ADMIN | P1-4 | controller test | Bajo |
-| **PR-G** | fix(billing): degradar a EMPRENDEDOR | P1-5 | Suscripcion*Test | Medio |
+| **PR-A** | fix(pagos): SINPE empresa + guest cancel + TTL | P0-2…P0-4 | ✅ mergeado en rama | Alto |
+| **PR-B** | fix(pos): tenant en cierre turno + precios server-side | P0-6, P0-7 | ✅ tests TurnoCaja/PosVenta | Alto |
+| **PR-C** | fix(ops): retención webhook `fecha_recepcion` | P1-1 | ✅ | Bajo |
+| **PR-D** | fix(fe): PlanGate fail-closed | P1-2 | ✅ | Bajo |
+| **PR-E** | fix(catalogo): feed/sitemap gate empresa | P1-3 | ✅ | Medio |
+| **PR-F** | fix(admin): webhooks solo ADMIN | P1-4 | ✅ | Bajo |
+| **PR-G** | fix(billing): degradar a EMPRENDEDOR | P1-5 | ✅ test | Medio |
+| **P0-5** | rate-limit Tilopay confirmar/reintentar | P0-5 | ✅ RateLimitingFilter | Medio |
 
 **Orden de merge recomendado:** A → B → C → E → F → G → D (D puede ir en paralelo).
 
@@ -211,7 +212,8 @@ Dejar para Fase 3 (producto / deuda):
 - [x] Documento de validación con estados ✅/⚠️/⏳
 - [x] Orden de PRs definido
 - [ ] Runtime checklist ejecutado (humano / ops)
-- [x] PR-A implementado en working tree (pendiente commit/merge)
-- [ ] PR-B mergeado
+- [x] PR-A commiteado
+- [x] PR-B…G + P0-5 implementados (pendiente commit/push)
+- [ ] P0-1 webhook Tilopay mergeado con stack Tilopay
 
-**Ops post-deploy PR-A:** setear `TILOPAY_WEBHOOK_SECRET` en EC2 `.env` y configurar el mismo valor en Tilopay (header `X-Webhook-Secret`) cuando el proveedor lo soporte.
+**Ops post-deploy:** setear `TILOPAY_WEBHOOK_SECRET` en EC2 cuando el stack Tilopay + gate se mergeen.

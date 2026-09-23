@@ -133,6 +133,9 @@ function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
     { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },
     { to: '/admin/soporte', label: t('admin.sidebar.inboxSoporte'), icon: 'help', permiso: 'global.companies' },
     { to: '/admin/servicios', label: t('admin.sidebar.serviciosHot'), icon: 'wrench', permiso: 'global.companies' },
+    { to: '/admin/inventario/captura', label: 'Captura inventario', icon: 'box' },
+    { to: '/admin/inventario/paquetes', label: 'Paquetes inventario', icon: 'clipboard' },
+    { to: '/admin/offline/cola', label: t('admin.sidebar.colaOffline'), icon: 'clipboard' },
     { to: '/admin/facturas', label: t('admin.sidebar.comprobantesElectronicos'), icon: 'clipboard', permiso: 'global.metrics' },
     { to: '/admin/config-fiscal', label: t('admin.sidebar.configFiscal'), icon: 'config', permiso: 'global.metrics' },
   ]
@@ -155,7 +158,6 @@ function seccionSistemaPlataforma(t: TFunction): SidebarLink[] {
     { to: '/admin/auditorias', label: t('admin.sidebar.auditorias'), icon: 'clipboard' },
     { to: '/admin/superadmin', label: t('admin.sidebar.featureFlags'), icon: 'config' },
     { to: '/admin/observabilidad', label: t('admin.sidebar.observabilidad'), icon: 'chart' },
-    { to: '/admin/agentes', label: t('admin.sidebar.agentes'), icon: 'agents' },
     { to: '/admin/ai-control', label: t('admin.sidebar.controlIa'), icon: 'ai' },
     { to: '/admin/multipais', label: t('admin.sidebar.multipais'), icon: 'globe' },
   ]
@@ -258,6 +260,7 @@ const PREFIJOS_TENANT_OPS = [
 export function esRutaTenantOpsParaAdmin(pathname: string): boolean {
   if (pathname.startsWith('/admin/reportes-producto')) return false
   if (esAltaCatalogoParaAdmin(pathname)) return false
+  if (esDigitalizacionInventarioParaAdmin(pathname)) return false
   return PREFIJOS_TENANT_OPS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   )
@@ -267,4 +270,11 @@ export function esRutaTenantOpsParaAdmin(pathname: string): boolean {
 function esAltaCatalogoParaAdmin(pathname: string): boolean {
   return pathname.startsWith('/admin/productos/carga-masiva')
     || pathname.startsWith('/admin/productos/importar')
+}
+
+/** Captura y paquetes de digitalización: ops de plataforma, no tienda propia. */
+function esDigitalizacionInventarioParaAdmin(pathname: string): boolean {
+  return pathname.startsWith('/admin/inventario/captura')
+    || pathname.startsWith('/admin/inventario/paquetes')
+    || pathname.startsWith('/admin/offline')
 }

@@ -2,7 +2,7 @@ import type { Id } from '@/types/api'
 
 export const TAMANO_PAGINA = 20
 
-export const PROVEEDORES = ['', 'ONVO', 'STRIPE', 'SINPE']
+export const PROVEEDORES = ['', 'TILOPAY', 'ONVO', 'STRIPE', 'SINPE', 'EFECTIVO']
 export const ESTADOS_PAGO = ['', 'CAPTURADO', 'PENDIENTE', 'FALLIDO', 'CANCELADO']
 export const ESTADOS_COMPROBANTE = ['', 'PENDIENTE', 'APROBADO', 'RECHAZADO']
 

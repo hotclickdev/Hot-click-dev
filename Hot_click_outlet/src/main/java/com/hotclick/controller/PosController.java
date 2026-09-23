@@ -27,7 +27,7 @@ public class PosController {
     @Autowired private PosVentaService posVentaService;
 
     @PostMapping("/venta")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crearVenta(@RequestBody PosVentaDTO dto, HttpServletRequest request) {
         // El POS está disponible para todos los planes (decisión de negocio
         // jul 2026) — no se gatea por feature "pos".
@@ -47,7 +47,7 @@ public class PosController {
     }
 
     @GetMapping("/historial")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> historialVentas(HttpServletRequest request) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("OK", posVentaService.historial(extractEmpresaId(request))));

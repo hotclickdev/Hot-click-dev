@@ -38,7 +38,7 @@ public class OrdenCompraController {
     @Autowired private TenantService tenantService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> listar() {
         ResponseEntity<?> denegado = denegarSiSinCompras();
         if (denegado != null) return denegado;
@@ -50,7 +50,7 @@ public class OrdenCompraController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
             var orden = ordenCompraService.buscarConDetalles(id);
@@ -64,7 +64,7 @@ public class OrdenCompraController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crear(@RequestBody OrdenCompraDTO dto, HttpServletRequest request) {
         ResponseEntity<?> denegado = denegarSiSinCompras();
         if (denegado != null) return denegado;
@@ -88,7 +88,7 @@ public class OrdenCompraController {
     }
 
     @PutMapping("/{id}/recibir")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> recibirMercancia(@PathVariable Long id,
                                                @RequestBody Map<String, Object> body,
                                                HttpServletRequest request) {
@@ -111,7 +111,7 @@ public class OrdenCompraController {
     }
 
     @PutMapping("/{id}/cancelar")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> cancelar(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Orden cancelada", ordenCompraService.cancelar(id)));

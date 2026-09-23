@@ -1,8 +1,6 @@
 package com.hotclick.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.hotclick.service.producto.StaffOnlyValueSerializer;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -69,10 +67,6 @@ public class Producto extends BaseEntity {
     @Column(name = "sku", length = 50)
     private String sku;
 
-    /** Número correlativo del producto dentro del negocio (1..N de esa empresa). */
-    @Column(name = "numero_local")
-    private Integer numeroLocal;
-
     @Column(name = "barcode", length = 50)
     private String barcode;
 
@@ -118,6 +112,11 @@ public class Producto extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_empresa")
     private Empresa empresa;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_catalogo_maestro")
+    private CatalogoMaestro catalogoMaestro;
 
     // Poblados en ProductoService para el catálogo público (open-in-view=false
     // impide leer la relación lazy durante la serialización JSON).
@@ -332,13 +331,8 @@ public class Producto extends BaseEntity {
     public Integer getPesoEnGramos() { return pesoEnGramos; }
     public void setPesoEnGramos(Integer pesoEnGramos) { this.pesoEnGramos = pesoEnGramos; }
 
-    @JsonSerialize(using = StaffOnlyValueSerializer.class)
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
-
-    @JsonSerialize(using = StaffOnlyValueSerializer.class)
-    public Integer getNumeroLocal() { return numeroLocal; }
-    public void setNumeroLocal(Integer numeroLocal) { this.numeroLocal = numeroLocal; }
 
     public String getBarcode() { return barcode; }
     public void setBarcode(String barcode) { this.barcode = barcode; }
@@ -379,6 +373,10 @@ public class Producto extends BaseEntity {
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
+
+    public CatalogoMaestro getCatalogoMaestro() { return catalogoMaestro; }
+    public void setCatalogoMaestro(CatalogoMaestro catalogoMaestro) { this.catalogoMaestro = catalogoMaestro; }
+    public Long getCatalogoMaestroId() { return catalogoMaestro != null ? catalogoMaestro.getId() : null; }
 
     public String getEmpresaNombre() { return empresaNombre; }
     public void setEmpresaNombre(String empresaNombre) { this.empresaNombre = empresaNombre; }

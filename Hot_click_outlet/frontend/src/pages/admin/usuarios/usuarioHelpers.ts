@@ -84,10 +84,7 @@ export function getEstadoStr(u: Pick<UsuarioAdmin, 'estado'>): string {
 }
 
 export function getRolStr(u: Pick<UsuarioAdmin, 'roles'>): string {
-  const nombres = (u.roles ?? []).map((r) => r.nombreRol).filter(Boolean) as string[]
-  if (nombres.includes('ADMIN')) return 'ADMIN'
-  if (nombres.includes('EMPRENDEDOR')) return 'EMPRENDEDOR'
-  return nombres[0] ?? 'USUARIO_FINAL'
+  return u.roles?.[0]?.nombreRol ?? 'USUARIO_FINAL'
 }
 
 export function listaUsuariosDesdeRespuesta(data: unknown): UsuarioAdmin[] {

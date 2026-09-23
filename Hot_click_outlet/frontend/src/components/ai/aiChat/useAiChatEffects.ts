@@ -3,6 +3,12 @@ import useChatStore from '@/store/chatStore'
 import { persistMensajes, persistSessionSearches } from './aiChatStorage'
 import type { AiChatMensaje } from './aiChatHelpers'
 
+function esSessionKeyDeTienda(sessionKey: string) {
+  return sessionKey === 'hotclick'
+    || sessionKey === 'tienda-home'
+    || sessionKey === 'tienda-catalogo'
+}
+
 type UseAiChatEffectsArgs = {
   mensajes: AiChatMensaje[]
   storageKey: string
@@ -44,8 +50,13 @@ export function useAiChatEffects({
   }, [mensajes, storageKey])
 
   useEffect(() => {
-    if (sessionKey !== 'hotclick') return
-    useChatStore.getState().setMensajes(mensajes)
+    if (!esSessionKeyDeTienda(sessionKey)) return
+    if (mensajes.length > 0) {
+      useChatStore.getState().touchActivity()
+    }
+    if (sessionKey === 'hotclick') {
+      useChatStore.getState().setMensajes(mensajes)
+    }
   }, [mensajes, sessionKey])
 
   useEffect(() => {

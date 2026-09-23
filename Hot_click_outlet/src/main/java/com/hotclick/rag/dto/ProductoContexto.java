@@ -1,8 +1,6 @@
 package com.hotclick.rag.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.hotclick.service.producto.StaffOnlyValueSerializer;
 
 /**
  * Proyección de un producto recuperado por la búsqueda semántica.
@@ -13,7 +11,6 @@ import com.hotclick.service.producto.StaffOnlyValueSerializer;
 public record ProductoContexto(
     Long    id,
     String  nombre,
-    @JsonSerialize(using = StaffOnlyValueSerializer.class)
     String  sku,
     Integer precio,
     String  descripcionCorta,

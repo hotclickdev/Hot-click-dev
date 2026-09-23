@@ -42,6 +42,7 @@ import java.util.Map;
  *   /api/contacto                →  5 / 60s
  *   /api/pedidos                 → 15 / 60s
  *   /api/payment/checkout        →  3 / 60s
+ *   /api/payments/tilopay/**     → 10 / 60s (confirmar/reintentar públicos)
  *
  *   AI (IP-level; per-empresa burst in AiCopilotController)
  *   ────────────────────────────────────────────
@@ -106,7 +107,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     // Matched in order — first prefix wins. Keep this list short.
     private static final List<PrefixLimit> PREFIX_LIMITS = List.of(
         // Prevent admins from accidentally spamming customers with email notifications.
-        new PrefixLimit("/api/pedidos/", 5, 60)   // 5 notificar calls/min per IP
+        new PrefixLimit("/api/pedidos/", 5, 60),   // 5 notificar calls/min per IP
+        // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
+        new PrefixLimit("/api/payments/tilopay/", 10, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -142,9 +145,13 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
             // Exact-path check
             if (limit == null) {
-                // Prefix check — only for POST paths with ID segments (e.g. /notificar)
+                // Prefix check — paths with ID segments
                 for (PrefixLimit pl : PREFIX_LIMITS) {
-                    if (path.startsWith(pl.prefix()) && path.endsWith("/notificar")) {
+                    if (!path.startsWith(pl.prefix())) {
+                        continue;
+                    }
+                    if (pl.prefix().startsWith("/api/payments/tilopay/")
+                        || path.endsWith("/notificar")) {
                         limit = new Limit(pl.maxRequests(), pl.windowSeconds());
                         break;
                     }

@@ -28,14 +28,17 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Optional<Producto> findBySku(String sku);
 
-    @Query("SELECT COALESCE(MAX(p.numeroLocal), 0) FROM Producto p WHERE p.empresa.id = :empresaId")
-    int maxNumeroLocalByEmpresaId(@Param("empresaId") Long empresaId);
-
     /** Retorna fk_id_empresa sin cargar el objeto Producto completo. Safe con LAZY empresa. */
     @Query("SELECT p.empresa.id FROM Producto p WHERE p.id = :id")
     Optional<Long> findEmpresaIdById(@Param("id") Long id);
 
     Optional<Producto> findByBarcode(String barcode);
+
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.barcode = :barcode AND p.estado = 1")
+    Optional<Producto> findByEmpresaIdAndBarcode(@Param("empresaId") Long empresaId, @Param("barcode") String barcode);
+
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.barcode = :barcode")
+    Optional<Producto> findAnyByEmpresaIdAndBarcode(@Param("empresaId") Long empresaId, @Param("barcode") String barcode);
 
     /** Otras filas de producto (mismo modelo, distinto color) para mostrar como swatches. */
     List<Producto> findByGrupoVarianteIdAndEstadoAndVisibleCatalogo(
@@ -165,16 +168,19 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
            "WHERE p.empresa.id = :empresaId AND p.estado = 1 AND p.visibleCatalogo = false")
     int publicarProductosDeEmpresa(@Param("empresaId") Long empresaId);
 
-    /** Productos activos con stock > 0 y visibles en catálogo — para el feed de Google Shopping */
-    @Query("SELECT p FROM Producto p LEFT JOIN FETCH p.marca WHERE p.estado = 1 AND p.stockActual > 0 AND p.visibleCatalogo = true ORDER BY p.id ASC")
+    /** Productos activos con stock > 0 y visibles — feed Google Shopping (solo empresa aprobada). */
+    @Query("SELECT p FROM Producto p LEFT JOIN FETCH p.marca JOIN p.empresa e "
+        + "WHERE p.estado = 1 AND p.stockActual > 0 AND p.visibleCatalogo = true "
+        + "AND e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true ORDER BY p.id ASC")
     List<Producto> findParaFeed();
 
     /**
-     * Productos activos y visibles para sitemap.
+     * Productos activos y visibles para sitemap (solo empresa aprobada).
      * Sin JOIN FETCH: evita EntityNotFoundException por FKs rotas y carga más liviana;
      * el sitemap solo necesita id, título, imagen y fechas.
      */
-    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND p.visibleCatalogo = true ORDER BY p.id ASC")
+    @Query("SELECT p FROM Producto p JOIN p.empresa e WHERE p.estado = 1 AND p.visibleCatalogo = true "
+        + "AND e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true ORDER BY p.id ASC")
     List<Producto> findActivosVisibles();
 
     /** Productos activos sin publicación en Facebook — para el scheduler, paginado */

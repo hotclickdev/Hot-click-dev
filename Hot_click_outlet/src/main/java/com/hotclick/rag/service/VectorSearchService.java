@@ -143,9 +143,10 @@ public class VectorSearchService {
                 synonymBoost, preferirPersonalizado);
             if (!porTs.isEmpty()) return porTs;
 
+            List<String> likeTerms = ChatSearchTerms.unionIlike(userTerms, synonymBoost);
             List<Object> params = new ArrayList<>();
             CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
-            for (String term : userTerms) {
+            for (String term : likeTerms) {
                 ChatProductoMatchSql.bindTermino(params, term);
             }
             ChatKeywordRankSql.bindScoreTerminos(params, userTerms);
@@ -166,7 +167,7 @@ public class VectorSearchService {
                 + " FROM hot_click_producto_tb p"
                 + CatalogoChatSql.joins(marketplace)
                 + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
-                + " AND (" + ChatProductoMatchSql.orDeTerminos(userTerms.size()) + ")"
+                + " AND (" + ChatProductoMatchSql.orDeTerminos(likeTerms.size()) + ")"
                 + order
                 + " LIMIT ?";
 

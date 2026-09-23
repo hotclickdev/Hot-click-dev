@@ -1,24 +1,37 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Turnstile } from '@marsidev/react-turnstile'
 import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
 import ErrMsg from '../auth/ErrMsg'
 import { MIN_PASSWORD, STEP_MOTION } from './registroEmpresaHelpers'
 import TextoFlecha from '@/components/ui/TextoFlecha'
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent, RefObject } from 'react'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import type { RegistroEmpresaForm } from './registroEmpresaHelpers'
 
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined
+
 export default function StepDatosAdmin({
-  form, error, loading, onCampo, onTelefono, onSubmit, onAtras,
+  form, error, loading, aceptaTerminos, turnstileToken, turnstileRef,
+  onCampo, onTelefono, onAceptaChange, onTurnstileToken, onSubmit, onAtras,
 }: {
   form: RegistroEmpresaForm
   error: string
   loading: boolean
+  aceptaTerminos: boolean
+  turnstileToken: string
+  turnstileRef: RefObject<TurnstileInstance | null>
   onCampo: (campo: keyof RegistroEmpresaForm) => (evento: ChangeEvent<HTMLInputElement>) => void
   onTelefono: (val: string) => void
+  onAceptaChange: (acepta: boolean) => void
+  onTurnstileToken: (token: string) => void
   onSubmit: (e: FormEvent) => void
   onAtras: () => void
 }) {
+  const turnstileObligatorio = Boolean(TURNSTILE_SITE_KEY)
+  const submitDisabled = loading || !aceptaTerminos || (turnstileObligatorio && !turnstileToken)
+
   return (
     <motion.form key="s2" {...STEP_MOTION} onSubmit={onSubmit} className="space-y-4">
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-2"
@@ -28,19 +41,53 @@ export default function StepDatosAdmin({
         </span>
       </div>
       <Input label="Tu nombre completo" placeholder="Ana García"
-        value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} />
+        value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} maxLength={100} />
       <Input label="Tu correo *" type="email" placeholder="ana@miempresa.com"
-        value={form.correoAdmin} onChange={onCampo('correoAdmin')} required />
-      <Input label="Contraseña *" type="password" placeholder="Mínimo 6 caracteres"
-        value={form.passwordAdmin} onChange={onCampo('passwordAdmin')} required minLength={MIN_PASSWORD} />
+        value={form.correoAdmin} onChange={onCampo('correoAdmin')} required maxLength={150} />
+      <Input label="Contraseña *" type="password" placeholder={`Mínimo ${MIN_PASSWORD} caracteres`}
+        value={form.passwordAdmin} onChange={onCampo('passwordAdmin')} required minLength={MIN_PASSWORD} maxLength={128} />
       <PhoneField label="Teléfono personal"
         value={form.telefonoAdmin} onChange={onTelefono} />
       {error && <ErrMsg>{error}</ErrMsg>}
+
+      <label style={{
+        display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem',
+        borderRadius: 10,
+        border: `1px solid ${aceptaTerminos ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+        background: aceptaTerminos ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'var(--hc-surface-2)',
+        transition: 'all 0.15s',
+      }}>
+        <input
+          type="checkbox"
+          checked={aceptaTerminos}
+          onChange={(e) => onAceptaChange(e.target.checked)}
+          style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--hc-accent)', width: 16, height: 16, cursor: 'pointer' }}
+        />
+        <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
+          Al marcar esta casilla, manifiesto de forma libre, expresa, voluntaria e inequívoca que he leído y acepto la{' '}
+          <Link to="/privacidad" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer">Política de Privacidad</Link>{' '}
+          y los{' '}
+          <Link to="/terminos" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer">Términos y Condiciones</Link>{' '}
+          de HotClick.
+        </span>
+      </label>
+
+      {TURNSTILE_SITE_KEY && (
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={TURNSTILE_SITE_KEY}
+          onSuccess={onTurnstileToken}
+          onError={() => onTurnstileToken('')}
+          onExpire={() => onTurnstileToken('')}
+          options={{ appearance: 'invisible' as 'always' }}
+        />
+      )}
+
       <div className="flex gap-2.5">
         <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">
           <TextoFlecha dir="atras">Atrás</TextoFlecha>
         </button>
-        <button type="submit" disabled={loading}
+        <button type="submit" disabled={submitDisabled}
           className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
           style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
           {loading
@@ -56,10 +103,6 @@ export default function StepDatosAdmin({
             : '¡Crear mi empresa!'}
         </button>
       </div>
-      <p className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
-        Al registrarte aceptás los{' '}
-        <Link to="/informacion" className="underline hover:opacity-80" style={{ color: 'var(--hc-accent)' }}>términos y condiciones</Link>
-      </p>
     </motion.form>
   )
 }

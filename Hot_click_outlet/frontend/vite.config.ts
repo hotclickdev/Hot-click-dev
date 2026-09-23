@@ -59,6 +59,20 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
+        shortcuts: [
+          {
+            name: 'Captura inventario',
+            short_name: 'Captura',
+            url: '/admin/inventario/captura?modo=captura',
+            icons: [{ src: '/favicon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Paquetes inventario',
+            short_name: 'Paquetes',
+            url: '/admin/inventario/paquetes',
+            icons: [{ src: '/favicon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
       workbox: {
         // false: el usuario confirma update (banner). Evita reload mid-wizard.
@@ -67,6 +81,14 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png}', '*.svg'],
         globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**'],
         runtimeCaching: [
+          // /api/inventario → NetworkOnly: lookup de barcode y stock deben ser en vivo.
+          // Cachear aquí mostraría cantidades o matches obsoletos en captura offline.
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/inventario'),
+            handler: 'NetworkOnly',
+          },
+          // Catálogo público: NetworkFirst con cache corto. startsWith('/api/productos')
+          // no matchea /api/inventario (regla NetworkOnly arriba).
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/productos'),
             handler: 'NetworkFirst',

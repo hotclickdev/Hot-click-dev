@@ -111,7 +111,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const SHIPPING_OPTIONS = opcionesEnvio(bodegaRetiro)
 
   const [metodoEnvio, setMetodoEnvio] = useState(bodegaRetiro ? 'RETIRO_EN_TIENDA' : 'ENVIO_NORMAL_GAM')
-  const [metodoPago, setMetodoPago] = useState('SINPE')
+  const [metodoPago, setMetodoPago] = useState('TILOPAY')
 
   useEffect(() => {
     if (!SHIPPING_OPTIONS.some((o) => o.value === metodoEnvio)) {

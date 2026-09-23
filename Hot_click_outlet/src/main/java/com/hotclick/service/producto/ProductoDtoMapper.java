@@ -57,7 +57,9 @@ public class ProductoDtoMapper {
         if (dto.getGrupoVarianteId()    != null) p.setGrupoVarianteId(sanitizer.cleanWithLimit(dto.getGrupoVarianteId(), 64));
         if (dto.getColorVariante()      != null) p.setColorVariante(sanitizer.cleanWithLimit(dto.getColorVariante(), 50));
         if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(), 500));
-        aplicarBarcode(dto, p);
+        if (dto.getSku()                != null) p.setSku(sanitizer.cleanWithLimit(dto.getSku(), 50));
+        if (dto.getBarcode()            != null) p.setBarcode(sanitizer.cleanWithLimit(dto.getBarcode(), 50));
+        if (dto.getGarantiaDias()       != null) p.setGarantiaDias(dto.getGarantiaDias());
         if (dto.getEsPersonalizado()    != null) p.setEsPersonalizado(dto.getEsPersonalizado());
         if (Boolean.TRUE.equals(dto.getEsPersonalizado())) {
             if (dto.getModoPrecioPersonalizado() != null) {
@@ -80,18 +82,6 @@ public class ProductoDtoMapper {
             p.setMarca(marcaRepository.findById(mid)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Marca", mid)));
         }
-    }
-
-    /** Vacío borra el código; omitido (null) no cambia el valor guardado. */
-    private void aplicarBarcode(ProductoRequestDTO dto, Producto p) {
-        if (dto.getBarcode() == null) return;
-        String limpio = sanitizer.cleanWithLimit(dto.getBarcode(), 50);
-        if (limpio == null) {
-            p.setBarcode(null);
-            return;
-        }
-        String compacto = limpio.replace(" ", "").replace("-", "");
-        p.setBarcode(compacto.isBlank() ? null : compacto);
     }
 
     private void validarModoPersonalizado(ProductoRequestDTO dto, Producto p) {

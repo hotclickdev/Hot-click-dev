@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAdminItLinks, esRutaTenantOpsParaAdmin } from './adminItJobs'
-import type { TFunction } from 'i18next'
+import { esRutaTenantOpsParaAdmin } from './adminItJobs'
 
 describe('esRutaTenantOpsParaAdmin', () => {
   it('bloquea el catálogo de tienda propia', () => {
@@ -14,18 +13,16 @@ describe('esRutaTenantOpsParaAdmin', () => {
     expect(esRutaTenantOpsParaAdmin('/admin/productos/importar')).toBe(false)
   })
 
-  it('no bloquea tiendas, reportes de producto ni agentes', () => {
+  it('no bloquea tiendas ni reportes de producto', () => {
     expect(esRutaTenantOpsParaAdmin('/admin/empresas')).toBe(false)
     expect(esRutaTenantOpsParaAdmin('/admin/empresas/22')).toBe(false)
     expect(esRutaTenantOpsParaAdmin('/admin/reportes-producto')).toBe(false)
-    expect(esRutaTenantOpsParaAdmin('/admin/agentes')).toBe(false)
-    expect(esRutaTenantOpsParaAdmin('/admin/agentes/inspecciones')).toBe(false)
   })
-})
 
-describe('buildAdminItLinks', () => {
-  it('incluye Agentes en el menú Sistema', () => {
-    const t = ((k: string) => k) as TFunction
-    expect(buildAdminItLinks(t).some((l) => l.to === '/admin/agentes')).toBe(true)
+  it('deja pasar captura, paquetes y cola offline (ADMIN plataforma)', () => {
+    expect(esRutaTenantOpsParaAdmin('/admin/inventario/captura')).toBe(false)
+    expect(esRutaTenantOpsParaAdmin('/admin/inventario/paquetes')).toBe(false)
+    expect(esRutaTenantOpsParaAdmin('/admin/inventario/paquetes/42')).toBe(false)
+    expect(esRutaTenantOpsParaAdmin('/admin/offline/cola')).toBe(false)
   })
 })
