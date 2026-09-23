@@ -36,9 +36,13 @@ export const paymentService = {
     return api.post('/payments/guest-checkout', payload)
   },
 
-  /** Cancela pedido de invitado y libera stock. */
-  guestCancelarPedido(numeroPedido: string) {
-    return api.post(`/payments/guest/cancel/${numeroPedido}`)
+  /** Cancela pedido de invitado y libera stock. Requiere cancelToken del checkout. */
+  guestCancelarPedido(numeroPedido: string, cancelToken?: string | null) {
+    const token = cancelToken
+      ?? (typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem(`hc-cancel-token:${numeroPedido}`)
+        : null)
+    return api.post(`/payments/guest/cancel/${numeroPedido}`, { cancelToken: token })
   },
 
   // ── Admin SINPE (legacy, por pagoId) ─────────────────────────────────────

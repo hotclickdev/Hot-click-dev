@@ -22,6 +22,7 @@ type PagoData = {
   redirectUrl?: string
   estadoPago?: string
   numeroPedido?: string
+  cancelToken?: string
 }
 
 function mensajeError(err: unknown, respaldo: string): string {
@@ -58,6 +59,9 @@ export function usePayment() {
       }
       const { data } = await method(payloadConPosQr(checkoutPayload))
       setPagoData(data)
+      if (data.cancelToken && data.numeroPedido) {
+        sessionStorage.setItem(`hc-cancel-token:${data.numeroPedido}`, data.cancelToken)
+      }
       if (sessionStorage.getItem(POS_QR_TOKEN_KEY)) {
         sessionStorage.removeItem(POS_QR_TOKEN_KEY)
       }
@@ -87,7 +91,9 @@ export function usePayment() {
   const cancelarPedido = useCallback(async (numeroPedido: string) => {
     setEstado('polling')
     try {
-      await paymentService.guestCancelarPedido(numeroPedido)
+      const cancelToken = sessionStorage.getItem(`hc-cancel-token:${numeroPedido}`)
+      await paymentService.guestCancelarPedido(numeroPedido, cancelToken)
+      sessionStorage.removeItem(`hc-cancel-token:${numeroPedido}`)
     } catch {
       try {
         await paymentService.cancelarPedido(numeroPedido)

@@ -8,6 +8,8 @@ public class PaymentCheckoutResponse {
     private String estadoPago;
     private Integer total;
     private String proveedor;
+    /** HMAC para POST /payments/guest/cancel. */
+    private String cancelToken;
 
     public PaymentCheckoutResponse() {}
 
@@ -39,4 +41,7 @@ public class PaymentCheckoutResponse {
 
     public String getProveedor() { return proveedor; }
     public void setProveedor(String proveedor) { this.proveedor = proveedor; }
+
+    public String getCancelToken() { return cancelToken; }
+    public void setCancelToken(String cancelToken) { this.cancelToken = cancelToken; }
 }

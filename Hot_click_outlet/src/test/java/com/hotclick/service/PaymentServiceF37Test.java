@@ -127,6 +127,9 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
         ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
         ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
+        GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
+        ReflectionTestUtils.setField(guestCancelTokenService, "secret", "unit-test-jwt-secret-32chars!!!!");
+        ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
         ReflectionTestUtils.setField(checkoutOrderFactory, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
@@ -142,6 +145,7 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(userCancellationService, "guestCancelTokenService", guestCancelTokenService);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "orderConfirmationService", orderConfirmationService);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);

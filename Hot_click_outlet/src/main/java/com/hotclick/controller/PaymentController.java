@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -85,12 +87,17 @@ public class PaymentController {
         }
     }
 
-    /** Cancela un pedido pendiente sin autenticación (invitados). */
+    /** Cancela un pedido pendiente de invitado; requiere cancelToken del checkout. */
     @PostMapping("/guest/cancel/{numeroPedido}")
-    public ResponseEntity<ResponseDTO> guestCancelarPedido(@PathVariable String numeroPedido) {
+    public ResponseEntity<ResponseDTO> guestCancelarPedido(
+            @PathVariable String numeroPedido,
+            @RequestBody(required = false) Map<String, String> body) {
         try {
-            paymentService.cancelarAnon(numeroPedido);
+            String cancelToken = body != null ? body.get("cancelToken") : null;
+            paymentService.cancelarAnon(numeroPedido, cancelToken);
             return ResponseEntity.ok(ResponseDTO.success("Pedido cancelado", null));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
