@@ -1,5 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { ReactElement } from 'react'
 import useCartStore from '@/store/cartStore'
@@ -7,6 +6,7 @@ import useAuthStore from '@/store/authStore'
 import { itemsBottomNav, estaTabActiva } from './bottomNavItems'
 import { esRutaTienda } from '@/utils/rutaTienda'
 import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
+import BottomNavPrimitivo, { type ItemBottomNavPrimitivo } from './BottomNavPrimitivo'
 
 const ICONOS: Record<string, (props: { active: boolean }) => ReactElement> = {
   productos: ShopIcon,
@@ -25,67 +25,32 @@ export default function BottomNav() {
   if (location.pathname.startsWith('/admin') || esRutaTienda(location.pathname) || esRutaClaudeclick(location.pathname)) return null
 
   const cartBadge = cartCount > 9 ? '9+' : `${cartCount}`
-  const items = itemsBottomNav({
+  const itemsRaw = itemsBottomNav({
     t,
     token,
     cartBadge: cartCount > 0 ? cartBadge : null,
   })
 
+  const items: ItemBottomNavPrimitivo[] = itemsRaw.flatMap((item) => {
+    const Icon = ICONOS[item.icon]
+    if (!Icon) return []
+    return [{
+      key: item.id,
+      to: item.href,
+      label: item.label,
+      badge: item.badge,
+      renderIcon: ({ active }: { active: boolean }) => <Icon active={active} />,
+      activo: (pathname: string) => estaTabActiva(item, pathname),
+    }]
+  })
+
   return (
-    <nav
-      className="hc-bottom-nav fixed bottom-0 left-0 right-0 z-40 md:hidden backdrop-blur-xl"
-      aria-label={t('bnav.principal')}
-      style={{
-        backgroundColor: 'var(--hc-surface)',
-        borderTop: '1px solid var(--hc-border)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-      }}
-    >
-      <div className="flex items-stretch h-16">
-        {items.map((item) => {
-          const Icon = ICONOS[item.icon]
-          if (!Icon) return null
-          const isActive = estaTabActiva(item, location.pathname)
-          return (
-            <Link
-              key={item.id}
-              to={item.href}
-              aria-current={isActive ? 'page' : undefined}
-              className="flex flex-col items-center justify-center gap-1 flex-1 relative py-2 min-h-11 touch-manipulation"
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="bnav-bar"
-                  className="absolute top-0 left-3 right-3 h-0.5 rounded-full"
-                  style={{ backgroundColor: 'var(--hc-accent)' }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                />
-              )}
-              <div className="relative">
-                <Icon active={isActive} />
-                {item.badge && (
-                  <span
-                    className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
-                    style={{
-                      backgroundColor: 'var(--hc-accent)',
-                      boxShadow: '0 0 8px color-mix(in srgb, var(--hc-accent) 55%, transparent)',
-                    }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-              <span
-                className="text-[10px] font-medium leading-none transition-colors"
-                style={{ color: isActive ? 'var(--hc-accent)' : 'var(--hc-muted)' }}
-              >
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+    <BottomNavPrimitivo
+      items={items}
+      pathname={location.pathname}
+      ariaLabel={t('bnav.principal')}
+      variant="flex"
+    />
   )
 }
 
