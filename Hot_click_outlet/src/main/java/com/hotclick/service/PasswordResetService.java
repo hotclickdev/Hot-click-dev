@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -21,6 +22,7 @@ public class PasswordResetService {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private OtpService otpService;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private RefreshTokenService refreshTokenService;
 
     /** Paso 1: envía el código al correo si existe. Silencioso si no existe (anti-enumeración). */
     public void enviarCodigo(String correo) {
@@ -65,7 +67,10 @@ public class PasswordResetService {
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
         usuario.setBloqueadoHasta(null);
         usuario.setIntentosFallidos(0);
+        // Si alguien más tenía una sesión abierta (p.ej. cuenta comprometida), este reset la tumba.
+        usuario.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
         usuarioRepository.save(usuario);
+        refreshTokenService.revocarTodos(usuario);
         return true;
     }
 }

@@ -19,8 +19,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.hotclick.utils.Constants;
 
 import java.io.IOException;
+import java.time.Instant;
 
 public class JwtRequestFilter extends OncePerRequestFilter {
 
@@ -75,7 +77,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
                 UserDetails userDetails = userDetailsCache.get(username,
                         k -> userDetailsService.loadUserByUsername(k));
-                if (jwtUtil.validateToken(jwt, username)) {
+                if (jwtUtil.validateToken(jwt, username) && !fueInvalidadoPorCambioDeSesion(userDetails, jwt)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -87,5 +89,23 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Sin jti no se puede revocar un token puntual, pero un cambio/reset de
+     * contraseña marca sesionesInvalidadasEn: cualquier token emitido antes
+     * de ese instante se trata como revocado aunque no haya expirado.
+     */
+    private boolean fueInvalidadoPorCambioDeSesion(UserDetails userDetails, String jwt) {
+        if (!(userDetails instanceof HotclickUserDetails hud) || hud.getSesionesInvalidadasEn() == null) {
+            return false;
+        }
+        try {
+            Instant emitidoEn = jwtUtil.extractIssuedAt(jwt).toInstant();
+            Instant cortadoEn = hud.getSesionesInvalidadasEn().atZone(Constants.ZONA_CR).toInstant();
+            return emitidoEn.isBefore(cortadoEn);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

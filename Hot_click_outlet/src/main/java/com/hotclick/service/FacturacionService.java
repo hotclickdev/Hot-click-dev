@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.facturacion.FacturacionEmisionSupport;
 import com.hotclick.service.facturacion.FacturacionEnvioProcessor;
 import com.hotclick.service.facturacion.FacturacionPollingService;
@@ -33,21 +34,25 @@ public class FacturacionService {
     private final FacturacionEmisionSupport emisionSupport;
     private final FacturacionEnvioProcessor envioProcessor;
     private final FacturacionPollingService pollingService;
+    private final CompanyScope companyScope;
 
     public FacturacionService(PedidoRepository pedidoRepo,
                                FacturacionEmisionSupport emisionSupport,
                                FacturacionEnvioProcessor envioProcessor,
-                               FacturacionPollingService pollingService) {
+                               FacturacionPollingService pollingService,
+                               CompanyScope companyScope) {
         this.pedidoRepo       = pedidoRepo;
         this.emisionSupport   = emisionSupport;
         this.envioProcessor   = envioProcessor;
         this.pollingService   = pollingService;
+        this.companyScope     = companyScope;
     }
 
     @Transactional
     public ComprobanteFiscal emitir(Long pedidoId, String tipo) {
         Pedido pedido = pedidoRepo.findById(pedidoId)
             .orElseThrow(() -> new NoSuchElementException("Pedido no encontrado: " + pedidoId));
+        companyScope.assertCanAccessNullable(pedido.getEmpresaId());
 
         ComprobanteFiscal cf = emisionSupport.emitir(pedido, tipo);
 

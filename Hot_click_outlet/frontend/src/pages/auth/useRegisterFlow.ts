@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
@@ -9,6 +9,7 @@ import { abandonedCartService } from '@/services/abandonedCartService'
 import { mensajeErrorAuth } from './authHelpers'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 export type RegistroCompradorForm = {
   nombre: string
@@ -51,6 +52,8 @@ export function useRegisterFlow() {
   const addItem             = useCartStore((s) => s.addItem)
   const [correoRegistro,    setCorreoRegistro]    = useState('')
   const [codigo,            setCodigo]            = useState('')
+  const [turnstileToken,    setTurnstileToken]    = useState('')
+  const turnstileRef        = useRef<TurnstileInstance | null>(null)
   const [form, setForm] = useState<RegistroCompradorForm>({
     nombre: '', apellidoPaterno: '', apellidoMaterno: '',
     correo: '', telefono: '', identificacion: '', contrasenaHash: '',
@@ -72,11 +75,13 @@ export function useRegisterFlow() {
         telefono:        form.telefono.trim(),
         identificacion:  form.identificacion.trim(),
       }
-      await authService.sendVerification(trimmed)
+      await authService.sendVerification(trimmed, turnstileToken)
       setCorreoRegistro(form.correo)
       setStep('verify')
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, 'Error al enviar el código. Intentá de nuevo.') || 'Error al enviar el código. Intentá de nuevo.')
+      turnstileRef.current?.reset()
+      setTurnstileToken('')
     } finally { setLoading(false) }
   }
 
@@ -105,7 +110,7 @@ export function useRegisterFlow() {
   const handleReenviar = async () => {
     setError(''); setLoading(true)
     try {
-      await authService.sendVerification(form)
+      await authService.sendVerification(form, turnstileToken)
       toast({ message: t('register.resentSuccess'), type: 'success' })
       setCodigo('')
     } catch (err: unknown) {
@@ -119,6 +124,7 @@ export function useRegisterFlow() {
     modo, setModo, step, setStep, loading, error, setError,
     showCartRecovery, setShowCartRecovery, recoveryCart, addItem,
     correoRegistro, codigo, setCodigo, form, setForm,
+    turnstileToken, setTurnstileToken, turnstileRef,
     actualizarCampo, handleSubmit, handleVerify, handleReenviar,
   }
 }

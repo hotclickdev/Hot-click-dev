@@ -13,6 +13,7 @@ export default function RegisterPage() {
     modo, setModo, step, setStep, loading, error, setError,
     showCartRecovery, setShowCartRecovery, recoveryCart, addItem,
     correoRegistro, codigo, setCodigo, form, setForm,
+    turnstileToken, setTurnstileToken, turnstileRef,
     actualizarCampo, handleSubmit, handleVerify, handleReenviar,
   } = useRegisterFlow()
 
@@ -47,6 +48,7 @@ export default function RegisterPage() {
     <RegisterFormStep
       t={t} modo={modo} form={form} setForm={setForm}
       error={error} loading={loading} actualizarCampo={actualizarCampo}
+      turnstileToken={turnstileToken} setTurnstileToken={setTurnstileToken} turnstileRef={turnstileRef}
       onSubmit={handleSubmit}
       onVolver={() => { setModo('comprador'); setError('') }}
       {...cartProps}

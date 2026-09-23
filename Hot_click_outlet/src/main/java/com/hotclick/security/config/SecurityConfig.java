@@ -3,6 +3,7 @@ package com.hotclick.security.config;
 import com.hotclick.security.BlockedIpFilter;
 import com.hotclick.security.InternalSecretFilter;
 import com.hotclick.security.JwtRequestFilter;
+import com.hotclick.security.MaxRequestBodySizeFilter;
 import com.hotclick.security.RateLimitingFilter;
 import com.hotclick.security.TenantFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,9 @@ public class SecurityConfig {
     BlockedIpFilter blockedIpFilter() { return new BlockedIpFilter(); }
 
     @Bean
+    MaxRequestBodySizeFilter maxRequestBodySizeFilter() { return new MaxRequestBodySizeFilter(); }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -80,7 +84,7 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(
             "Authorization", "Content-Type", "Accept", "Origin",
-            "X-Requested-With", "X-Internal-Secret",
+            "X-Requested-With", "X-Internal-Secret", "X-Turnstile-Token",
             "Access-Control-Request-Method", "Access-Control-Request-Headers"
         ));
         config.setAllowCredentials(false);
@@ -95,7 +99,8 @@ public class SecurityConfig {
             RateLimitingFilter rateLimitingFilter,
             TenantFilter tenantFilter,
             InternalSecretFilter internalSecretFilter,
-            BlockedIpFilter blockedIpFilter) throws Exception {
+            BlockedIpFilter blockedIpFilter,
+            MaxRequestBodySizeFilter maxRequestBodySizeFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
@@ -114,8 +119,9 @@ public class SecurityConfig {
         http.exceptionHandling(ex -> ex
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
         );
-        // Orden: BlockedIp(~300) → Internal(~400) → RateLimiting(~500) → Jwt(~700) → Tenant(~900)
+        // Orden: BlockedIp(~300) → MaxBodySize(~350) → Internal(~400) → RateLimiting(~500) → Jwt(~700) → Tenant(~900)
         http.addFilterBefore(blockedIpFilter, CsrfFilter.class);
+        http.addFilterBefore(maxRequestBodySizeFilter, CsrfFilter.class);
         http.addFilterBefore(internalSecretFilter, CsrfFilter.class);
         http.addFilterBefore(rateLimitingFilter, CsrfFilter.class);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

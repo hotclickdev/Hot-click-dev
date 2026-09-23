@@ -23,6 +23,8 @@ public class RegisterRequest {
     @Pattern(regexp = "^[0-9+\\-\\s()]{7,20}$", message = "Teléfono inválido")
     private String telefono;
 
+    private String turnstileToken;
+
     public String getNombre()    { return nombre; }
     public void setNombre(String v)    { this.nombre = v; }
     public String getCorreo()    { return correo; }
@@ -31,4 +33,6 @@ public class RegisterRequest {
     public void setContrasena(String v) { this.contrasena = v; }
     public String getTelefono()  { return telefono; }
     public void setTelefono(String v)  { this.telefono = v; }
+    public String getTurnstileToken() { return turnstileToken; }
+    public void setTurnstileToken(String v) { this.turnstileToken = v; }
 }

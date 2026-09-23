@@ -26,8 +26,9 @@ public class AuthController {
     // ── Registro ──────────────────────────────────────────────────────────────
 
     @PostMapping("/register")
-    public ResponseEntity<ResponseDTO> register(@Valid @RequestBody RegisterRequest req) {
-        return authRegistrationService.register(req);
+    public ResponseEntity<ResponseDTO> register(@Valid @RequestBody RegisterRequest req,
+                                                HttpServletRequest httpRequest) {
+        return authRegistrationService.register(req, httpRequest);
     }
 
     /**
@@ -172,8 +173,11 @@ public class AuthController {
     // ── Verificación por correo ───────────────────────────────────────────────
 
     @PostMapping("/send-verification")
-    public ResponseEntity<ResponseDTO> sendVerification(@RequestBody Usuario usuario) {
-        return authLoginService.sendVerification(usuario);
+    public ResponseEntity<ResponseDTO> sendVerification(
+            @RequestBody Usuario usuario,
+            @RequestHeader(value = "X-Turnstile-Token", required = false) String turnstileToken,
+            HttpServletRequest httpRequest) {
+        return authLoginService.sendVerification(usuario, turnstileToken, httpRequest);
     }
 
     @PostMapping("/verify-registration")

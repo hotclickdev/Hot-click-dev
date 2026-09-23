@@ -129,6 +129,17 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    /**
+     * Tumba cualquier access token JWT ya emitido para este usuario, aunque no haya
+     * expirado — ver JwtRequestFilter.fueInvalidadoPorCambioDeSesion(). Llamar siempre
+     * junto a un cambio o reset de contraseña.
+     */
+    @Transactional
+    public void invalidarSesiones(Usuario usuario) {
+        usuario.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
+        usuarioRepository.save(usuario);
+    }
+
     /** Registro sin email: guarda con estado PENDIENTE, sin rol asignado. */
     @Transactional
     public Usuario registrarSolicitud(Usuario usuario) {

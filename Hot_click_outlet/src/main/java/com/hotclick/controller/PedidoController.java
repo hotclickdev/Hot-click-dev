@@ -4,9 +4,13 @@ import com.hotclick.controller.pedido.PedidoAccessGuard;
 import com.hotclick.controller.pedido.PedidoTenantResponder;
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
+import com.hotclick.model.PedidoItem;
+import com.hotclick.model.Producto;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.ProductoRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.NotificacionEmailService;
@@ -40,6 +44,7 @@ public class PedidoController {
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaRepository empresaRepository;
+    @Autowired private ProductoRepository productoRepository;
     @Autowired private InputSanitizer sanitizer;
     @Autowired private PedidoAccessGuard pedidoAccessGuard;
     @Autowired private PedidoTenantResponder pedidoTenantResponder;
@@ -56,15 +61,63 @@ public class PedidoController {
         }
     }
 
+    // Restringido a ADMIN/EMPRENDEDOR: el storefront público crea pedidos vía
+    // /api/tienda/{slug}/pedido y /api/qr/{token}/pedido, no por acá. Este endpoint
+    // quedaba abierto a cualquier usuario autenticado y aceptaba precios/empresa
+    // arbitrarios del cliente — ver recalcularDesdeCatalogo().
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crearPedido(@RequestBody Pedido pedido) {
-        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         try {
+            pedido.setEmpresa(empresaDelScope());
+            pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+            recalcularDesdeCatalogo(pedido);
             Pedido nuevo = pedidoService.crearPedido(pedido);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    /**
+     * Recalcula precios/totales desde el catálogo real: el cliente nunca decide
+     * cuánto vale un producto, aunque su rol tenga permiso para crear el pedido.
+     */
+    private void recalcularDesdeCatalogo(Pedido pedido) {
+        java.util.List<PedidoItem> items = pedido.getItems();
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("El pedido debe tener al menos un producto");
+        }
+        int subtotal = 0;
+        int costoTotalProductos = 0;
+        for (PedidoItem item : items) {
+            if (item.getProducto() == null || item.getProducto().getId() == null) {
+                throw new IllegalArgumentException("Cada item debe indicar un producto válido");
+            }
+            Producto producto = productoRepository.findById(item.getProducto().getId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProducto().getId()));
+            int cantidad = item.getCantidad() != null && item.getCantidad() > 0 ? item.getCantidad() : 1;
+            int precio = producto.getPrecioVenta()  != null ? producto.getPrecioVenta()  : 0;
+            int costo  = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
+
+            item.setPedido(pedido);
+            item.setProducto(producto);
+            item.setCantidad(cantidad);
+            item.setPrecioUnitarioMomento(precio);
+            item.setCostoUnitarioMomento(costo);
+            item.setDescuentoAplicado(0);
+            item.setSubtotalItem(precio * cantidad);
+            item.setUtilidadItem((precio - costo) * cantidad);
+            item.setEstado(Constants.ESTADO_ACTIVO);
+
+            subtotal             += precio * cantidad;
+            costoTotalProductos  += costo * cantidad;
+        }
+        int envio = pedido.getCostoEnvio() != null ? pedido.getCostoEnvio() : 0;
+        pedido.setSubtotal(subtotal);
+        pedido.setCostoTotalProductos(costoTotalProductos);
+        pedido.setUtilidadBruta(subtotal - costoTotalProductos);
+        pedido.setTotalPedido(subtotal + envio);
     }
 
     // noRollbackFor: si el pedido no existe, buscarPorId lanza RecursoNoEncontradoException.

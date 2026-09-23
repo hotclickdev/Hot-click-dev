@@ -3,13 +3,13 @@ package com.hotclick.service;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.HotclickUserDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -44,6 +44,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             log.warn("No se pudieron cargar permisos para {}: {}", correo, ex.getMessage());
         }
 
-        return new User(usuario.getCorreo(), usuario.getContrasenaHash(), authorities);
+        return new HotclickUserDetails(usuario.getCorreo(), usuario.getContrasenaHash(), authorities,
+            usuario.getSesionesInvalidadasEn());
     }
 }

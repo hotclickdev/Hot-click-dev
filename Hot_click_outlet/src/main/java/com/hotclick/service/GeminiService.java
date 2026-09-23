@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,9 @@ public class GeminiService {
 
     @Value("${anthropic.api-key:}")
     private String apiKey;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     public static class ProductoIA {
         public String nombre;
@@ -100,7 +104,7 @@ public class GeminiService {
             headers.set("x-api-key",         apiKey);
             headers.set("anthropic-version",  "2023-06-01");
 
-            ResponseEntity<Map> resp = new RestTemplate().exchange(
+            ResponseEntity<Map> resp = restTemplate.exchange(
                 java.net.URI.create(CLAUDE_URL),
                 HttpMethod.POST,
                 new HttpEntity<>(body, headers),

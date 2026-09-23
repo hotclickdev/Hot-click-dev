@@ -8,13 +8,16 @@ import EmprendimientoCloud from './EmprendimientoCloud'
 import EmprendimientoForm from './EmprendimientoForm'
 import RegisterHeader from './RegisterHeader'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import { Turnstile } from '@marsidev/react-turnstile'
 import type { TFunction } from 'i18next'
-import { useState, type Dispatch, type FormEvent, type SetStateAction, type ChangeEvent } from 'react'
+import { useState, type Dispatch, type FormEvent, type SetStateAction, type ChangeEvent, type RefObject } from 'react'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import type { RegistroCompradorForm } from './useRegisterFlow'
 import type { CarritoRecuperable } from './CartModal'
 import type { Producto } from '@/types/producto'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
 const BUYER = {
   color: 'var(--hc-accent)',
@@ -28,6 +31,7 @@ const BUYER = {
  */
 export default function RegisterFormStep({
   t, modo, form, setForm, error, loading, actualizarCampo,
+  turnstileToken, setTurnstileToken, turnstileRef,
   onSubmit, onVolver,
   showCartRecovery, recoveryCart, addItem, onCloseCart, onDoneCart,
 }: {
@@ -38,6 +42,9 @@ export default function RegisterFormStep({
   error: string
   loading: boolean
   actualizarCampo: (field: keyof RegistroCompradorForm) => (e: ChangeEvent<HTMLInputElement>) => void
+  turnstileToken: string
+  setTurnstileToken: Dispatch<SetStateAction<string>>
+  turnstileRef: RefObject<TurnstileInstance | null>
   onSubmit: (e: FormEvent) => void
   onVolver: () => void
   showCartRecovery: boolean
@@ -179,7 +186,17 @@ export default function RegisterFormStep({
                             </Link>.
                           </span>
                         </label>
-                        <button type="submit" disabled={loading || !aceptaTerminos}
+                        {TURNSTILE_SITE_KEY && (
+                          <Turnstile
+                            ref={turnstileRef}
+                            siteKey={TURNSTILE_SITE_KEY}
+                            onSuccess={setTurnstileToken}
+                            onError={() => setTurnstileToken('')}
+                            onExpire={() => setTurnstileToken('')}
+                            options={{ appearance: 'invisible' as 'always' }}
+                          />
+                        )}
+                        <button type="submit" disabled={loading || !aceptaTerminos || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
                           className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
                           style={{ background: BUYER.color, boxShadow: `0 0 32px ${BUYER.ring}` }}>
                           {loading ? 'Enviando código…' : (

@@ -3,6 +3,7 @@ import com.hotclick.utils.Constants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -25,6 +26,9 @@ public class BccrService {
     @Value("${app.tc.usd.fallback:530}")
     private int fallback;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     private final AtomicInteger cachedTc = new AtomicInteger(0);
     private final AtomicLong cacheTime = new AtomicLong(0);
     private static final long CACHE_TTL_MS = 60 * 60 * 1000L; // 1 hora
@@ -37,8 +41,7 @@ public class BccrService {
         try {
             String hoy = LocalDate.now(Constants.ZONA_CR).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String url = String.format(BCCR_URL, hoy, hoy);
-            RestTemplate rt = new RestTemplate();
-            String xml = rt.getForObject(url, String.class);
+            String xml = restTemplate.getForObject(url, String.class);
             int tc = parseTcFromXml(xml);
             if (tc > 0) {
                 cachedTc.set(tc);

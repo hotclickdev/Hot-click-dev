@@ -6,6 +6,7 @@ import com.hotclick.model.CarritoAbandonado;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.CarritoAbandonadoService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ public class CarritoAbandonadoController {
      */
     @PostMapping("/abandoned")
     public ResponseEntity<ResponseDTO> guardar(
-            @RequestBody CarritoAbandonadoRequestDTO dto,
+            @Valid @RequestBody CarritoAbandonadoRequestDTO dto,
             HttpServletRequest request) {
 
         if (dto.getSessionId() == null || dto.getSessionId().isBlank()) {

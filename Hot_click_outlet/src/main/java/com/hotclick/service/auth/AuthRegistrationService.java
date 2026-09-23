@@ -11,7 +11,9 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.EmprendedorRegistroService;
 import com.hotclick.service.OtpService;
+import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.TelegramService;
+import com.hotclick.service.TurnstileService;
 import com.hotclick.service.UsuarioService;
 import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,8 +40,13 @@ public class AuthRegistrationService {
     @Autowired private AuthSupport                  authSupport;
     @Autowired private AuthRegistroEmpresaHandler   registroEmpresaHandler;
     @Autowired private AuthNuevoNegocioHandler      nuevoNegocioHandler;
+    @Autowired private TurnstileService             turnstileService;
+    @Autowired private SecurityAuditService         securityAuditService;
 
-    public ResponseEntity<ResponseDTO> register(RegisterRequest req) {
+    public ResponseEntity<ResponseDTO> register(RegisterRequest req, HttpServletRequest httpRequest) {
+        if (!turnstileService.verify(req.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
+        }
         try {
             Usuario usuario = new Usuario();
             usuario.setNombre(req.getNombre().trim());

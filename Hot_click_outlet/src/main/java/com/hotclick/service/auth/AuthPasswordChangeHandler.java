@@ -40,8 +40,9 @@ public class AuthPasswordChangeHandler {
             }
             usuario.setContrasenaHash(passwordEncoder.encode(nueva));
             usuarioService.guardar(usuario);
-            // Revocar todos los refresh tokens para forzar re-login en otros dispositivos
-            refreshTokenService.revocar(body.getOrDefault("refreshToken", ""));
+            // Forzar re-login en otros dispositivos: tumba refresh tokens y access tokens ya emitidos
+            refreshTokenService.revocarTodos(usuario);
+            usuarioService.invalidarSesiones(usuario);
             AuthAuditSupport.run(log, () -> securityAuditService.logPasswordChanged(usuario.getId(), usuario.getCorreo(), request));
             return ResponseEntity.ok(ResponseDTO.success("Contraseña actualizada correctamente", null));
         } catch (SecurityException e) {

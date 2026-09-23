@@ -88,8 +88,8 @@ public class AuthLoginService {
         return totpHandler.status2FA(request);
     }
 
-    public ResponseEntity<ResponseDTO> sendVerification(Usuario usuario) {
-        return verificationHandler.sendVerification(usuario);
+    public ResponseEntity<ResponseDTO> sendVerification(Usuario usuario, String turnstileToken, HttpServletRequest httpRequest) {
+        return verificationHandler.sendVerification(usuario, turnstileToken, httpRequest);
     }
 
     public ResponseEntity<ResponseDTO> verifyRegistration(Map<String, String> body) {

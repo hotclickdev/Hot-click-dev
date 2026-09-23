@@ -4,6 +4,7 @@ import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.rag.service.EmbeddingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -35,7 +36,8 @@ public class VoyageEmbeddingService implements EmbeddingService {
     @Value("${voyage.api-key:}")
     private String apiKey;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    @Autowired
+    private RestTemplate restTemplate;
 
     @Override
     public float[] generarEmbedding(String texto) {

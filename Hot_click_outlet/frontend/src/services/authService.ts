@@ -21,8 +21,9 @@ export const authService = {
   register: (data: JsonBody) =>
     api.post('/auth/register', data),
 
-  sendVerification: (data: JsonBody) =>
-    api.post('/auth/send-verification', data),
+  sendVerification: (data: JsonBody, turnstileToken?: string) =>
+    api.post('/auth/send-verification', data,
+      turnstileToken ? { headers: { 'X-Turnstile-Token': turnstileToken } } : undefined),
 
   verifyRegistration: (correo: string, codigo: string) =>
     api.post('/auth/verify-registration', { correo, codigo }),

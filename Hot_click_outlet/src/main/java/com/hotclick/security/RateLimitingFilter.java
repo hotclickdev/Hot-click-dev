@@ -42,6 +42,7 @@ import java.util.Map;
  *   /api/contacto                →  5 / 60s
  *   /api/pedidos                 → 15 / 60s
  *   /api/payment/checkout        →  3 / 60s
+ *   /api/cart/abandoned          → 10 / 60s
  *
  *   AI (IP-level; per-empresa burst in AiCopilotController)
  *   ────────────────────────────────────────────
@@ -88,6 +89,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/telegram/vincular",       new Limit(5,    60)),
         Map.entry("/api/pedidos",                 new Limit(15,   60)),
         Map.entry("/api/payment/checkout",        new Limit(3,    60)),
+        Map.entry("/api/cart/abandoned",          new Limit(10,   60)),
         // Uploads públicos — limitar para evitar abuso de almacenamiento y costos S3
         Map.entry("/api/servicios/fotos",                             new Limit(10,  60)),
         Map.entry("/api/public/encargos/imagenes",                    new Limit(10,  60)),

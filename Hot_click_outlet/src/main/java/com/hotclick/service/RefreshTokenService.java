@@ -46,6 +46,12 @@ public class RefreshTokenService {
         });
     }
 
+    /** Revoca todas las sesiones (refresh tokens) del usuario — cambio/reset de contraseña. */
+    @Transactional
+    public void revocarTodos(Usuario usuario) {
+        repo.revokeAllByUsuario(usuario, LocalDateTime.now(Constants.ZONA_CR));
+    }
+
     // Limpia tokens expirados a las 3:15 AM — escalonado para no competir con BillingRenewal (3:00)
     @Scheduled(cron = "0 15 3 * * *")
     @SchedulerLock(name = "refresh_token_cleanup", lockAtMostFor = "PT10M", lockAtLeastFor = "PT5M")

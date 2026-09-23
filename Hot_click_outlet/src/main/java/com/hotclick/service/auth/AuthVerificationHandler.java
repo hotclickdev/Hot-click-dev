@@ -3,6 +3,9 @@ package com.hotclick.service.auth;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Usuario;
 import com.hotclick.service.EmailVerificationService;
+import com.hotclick.service.SecurityAuditService;
+import com.hotclick.service.TurnstileService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +23,13 @@ public class AuthVerificationHandler {
     @Autowired private PasswordEncoder             passwordEncoder;
     @Autowired private EmailVerificationService    emailVerificationService;
     @Autowired private AuthSupport                 authSupport;
+    @Autowired private TurnstileService            turnstileService;
+    @Autowired private SecurityAuditService        securityAuditService;
 
-    public ResponseEntity<ResponseDTO> sendVerification(Usuario usuario) {
+    public ResponseEntity<ResponseDTO> sendVerification(Usuario usuario, String turnstileToken, HttpServletRequest httpRequest) {
+        if (!turnstileService.verify(turnstileToken, securityAuditService.getIp(httpRequest))) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
+        }
         try {
             usuario.setContrasenaHash(passwordEncoder.encode(usuario.getContrasenaHash()));
             emailVerificationService.iniciarRegistro(usuario);

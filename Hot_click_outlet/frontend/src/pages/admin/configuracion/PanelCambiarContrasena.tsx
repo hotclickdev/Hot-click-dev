@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
+import useAuthStore from '@/store/authStore'
 import {
-  F, Block, FormGroup, PasswordInput, SaveButton, CheckIcon, passwordStrength, mensajeErrorConfig,
+  F, Block, FormGroup, PasswordInput, SaveButton, passwordStrength, mensajeErrorConfig,
 } from './configUi'
 
 type ToastFn = (opts: { message: string; type?: 'success' | 'error' | 'warning' | 'info' }) => void
@@ -14,9 +16,10 @@ export default function PanelCambiarContrasena({ refreshToken, toast }: {
   toast: ToastFn
 }) {
   const { t } = useTranslation()
+  const logout = useAuthStore((s) => s.logout)
+  const navigate = useNavigate()
   const [form, setForm] = useState({ contrasenaActual: '', nuevaContrasena: '', confirmar: '' })
   const [saving, setSaving] = useState(false)
-  const [saved,  setSaved]  = useState(false)
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
   const set = (f: CampoPwd) => (e: ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [f]: e.target.value }))
@@ -30,10 +33,11 @@ export default function PanelCambiarContrasena({ refreshToken, toast }: {
     setSaving(true)
     try {
       await authService.changePassword(form.contrasenaActual, form.nuevaContrasena, refreshToken ?? '')
-      setForm({ contrasenaActual: '', nuevaContrasena: '', confirmar: '' })
-      setSaved(true)
       toast({ message: t('adminConfig.pwdUpdated'), type: 'success' })
-      setTimeout(() => setSaved(false), 2500)
+      // El backend revoca la sesión actual al cambiar la contraseña (fuerza re-login
+      // en otros dispositivos) — hay que salir acá también, no solo en el modal de perfil.
+      logout()
+      navigate('/login')
     } catch (err: unknown) {
       toast({ message: mensajeErrorConfig(err, t('adminConfig.pwdError')), type: 'error' })
     } finally { setSaving(false) }
@@ -68,8 +72,7 @@ export default function PanelCambiarContrasena({ refreshToken, toast }: {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <SaveButton saving={saving} saved={saved} label={t('adminConfig.pwdUpdateBtn')} />
-          {saved && <span style={{ fontSize: '12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: F.body }}><CheckIcon style={{ width: '13px', height: '13px' }} />{t('adminConfig.pwdUpdatedLabel')}</span>}
+          <SaveButton saving={saving} saved={false} label={t('adminConfig.pwdUpdateBtn')} />
         </div>
       </form>
     </Block>

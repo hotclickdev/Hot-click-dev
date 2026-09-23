@@ -3808,3 +3808,7 @@ WHERE NOT EXISTS (
   SELECT 1 FROM hot_click_categoria_tb c
   WHERE lower(c.nombre_categoria) = lower(v.nombre) AND c.fk_id_empresa IS NULL
 );
+
+-- V133: timestamp de corte para invalidar access tokens JWT ya emitidos.
+ALTER TABLE hot_click_usuario_tb
+    ADD COLUMN IF NOT EXISTS sesiones_invalidadas_en TIMESTAMP;

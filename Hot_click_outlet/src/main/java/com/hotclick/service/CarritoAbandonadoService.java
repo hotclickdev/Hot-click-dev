@@ -22,6 +22,12 @@ public class CarritoAbandonadoService {
 
     private static final Logger log = LoggerFactory.getLogger(CarritoAbandonadoService.class);
 
+    // Tope de carritos distintos (sesiones) que pueden disparar un email de recuperación
+    // hacia la misma dirección en 24h. Sin esto, cualquiera puede crear N sessionId falsos
+    // con el email de un tercero y el scheduler le manda N emails — email bombing con
+    // la infraestructura de SendGrid del negocio.
+    private static final int MAX_CARRITOS_CON_EMAIL_POR_DIA = 3;
+
     @Autowired private CarritoAbandonadoRepository repo;
     @Autowired private ObjectMapper objectMapper;
 
@@ -42,11 +48,22 @@ public class CarritoAbandonadoService {
         if (carrito.getTokenRecuperacion() == null || carrito.getTokenRecuperacion().isBlank()) {
             carrito.setTokenRecuperacion(UUID.randomUUID().toString());
         }
-        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+        if (dto.getEmail() != null && !dto.getEmail().isBlank() && puedeAsociarEmail(dto.getEmail())) {
             carrito.setEmail(dto.getEmail());
         }
         carrito.setStatus("PENDIENTE");
         return repo.save(carrito);
+    }
+
+    /** True si esta dirección no superó el tope de carritos/emails en las últimas 24h. */
+    private boolean puedeAsociarEmail(String email) {
+        long recientes = repo.countByEmailAndCreatedAtAfter(
+            email, LocalDateTime.now(Constants.ZONA_CR).minusHours(24));
+        if (recientes >= MAX_CARRITOS_CON_EMAIL_POR_DIA) {
+            log.warn("Tope de carritos abandonados/día alcanzado para email={} — no se asocia, no se enviará recordatorio", email);
+            return false;
+        }
+        return true;
     }
 
     public Optional<CarritoAbandonado> findById(Long id) {
