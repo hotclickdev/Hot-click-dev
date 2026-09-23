@@ -2223,7 +2223,7 @@
       "subtitulo": "Marque o que falhou (pode escolher vários) e descreva o detalhe.",
       "tiposLabel": "O que aconteceu",
       "detalleLabel": "Detalhe específico",
-      "detallePlaceholder": "Ex.: o cliente escaneou e viu o carrinho, ou o ONVO não carregou…",
+      "detallePlaceholder": "Ex.: o cliente escaneou e viu o carrinho, ou o pagamento não carregou…",
       "detalleAyuda": "Mínimo 5 caracteres. Inclua o que viu na tela se puder.",
       "cancelar": "Cancelar",
       "enviar": "Enviar reporte",
@@ -2237,7 +2237,7 @@
       "tipos": {
         "qr_no_genera": "O QR não foi gerado",
         "cliente_no_paga": "O cliente não conseguiu pagar",
-        "pago_tarjeta": "Falha no pagamento com cartão / ONVO",
+        "pago_tarjeta": "Falha no pagamento com cartão",
         "sinpe": "Problema com SINPE",
         "total_incorrecto": "Total ou produtos incorretos",
         "pantalla_incorrecta": "Tela incorreta (ex. carrinho)",
@@ -2266,7 +2266,8 @@
       "vacio": "Toque em um produto para adicioná-lo à fatura",
       "descuentoColon": "Desconto ₡",
       "generandoQr": "Gerando QR…",
-      "qrTarjetaCliente": "QR pagamento com cartão (cliente)"
+      "qrTarjetaCliente": "QR pagamento com cartão (cliente)",
+      "carritoVacioAviso": "Adicione pelo menos um produto para cobrar"
     },
     "cobro": {
       "title": "Cobrar",
@@ -2282,7 +2283,7 @@
       "faltante": "Faltante",
       "vuelto": "Troco",
       "avisoSinpeTitle": "É gerado um QR de SINPE Móvil",
-      "avisoSinpeDesc": "O cliente paga SINPE Móvil via ONVO; confirma quando a ONVO receber o dinheiro",
+      "avisoSinpeDesc": "O cliente paga via SINPE Móvil; a confirmação é automática ao receber o pagamento",
       "avisoTarjetaTitle": "É gerado um QR de pagamento rápido",
       "avisoTarjetaDesc": "O cliente escaneia e paga em uma tela (cartão, Apple Pay ou Google Pay)",
       "procesando": "Processando…",
@@ -2293,9 +2294,9 @@
       "pagoSinpe": "Pagamento SINPE Móvil",
       "pagoTarjeta": "Pagamento com cartão",
       "instruccionTarjeta": "Peça ao cliente para escanear o código com a câmera do celular",
-      "instruccionSinpe": "Peça ao cliente para escanear e pagar SINPE Móvil pela ONVO",
+      "instruccionSinpe": "Peça ao cliente para escanear e pagar com SINPE Móvil",
       "sinpeA": "SINPE Móvil para:",
-      "configWhatsapp": "Número destino ONVO",
+      "configWhatsapp": "Número SINPE não configurado",
       "referencia": "Referência:",
       "montoExacto": "Valor exato:",
       "esperandoConfirmacion": "Aguardando o cliente pagar no carrinho…",
