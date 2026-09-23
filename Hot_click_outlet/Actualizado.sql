@@ -3605,15 +3605,15 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_admin_empresa
 
 -- V126: Roles de staff de plataforma (SUPPORT / FINANCE / TRUST)
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'SUPPORT', 'Staff plataforma ‚Äî tickets y ver tiendas', 80, 1
+SELECT 'SUPPORT', 'Staff plataforma ? tickets y ver tiendas', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'SUPPORT');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'FINANCE', 'Staff plataforma ‚Äî payouts, billing y pagos', 80, 1
+SELECT 'FINANCE', 'Staff plataforma ? payouts, billing y pagos', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'FINANCE');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'TRUST', 'Staff plataforma ‚Äî moderaci√≥n y suspensiones', 80, 1
+SELECT 'TRUST', 'Staff plataforma ? moderaciÛn y suspensiones', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'TRUST');
 
 INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)
@@ -3674,7 +3674,7 @@ INSERT INTO hot_click_homepage_config_tb (id, hero_sections, visible_categoria_i
 VALUES (1, 'chat,products,businesses', '', 8)
 ON CONFLICT (id) DO NOTHING;
 
--- V124: inbox de soporte ‚Äî asignar / resolver tickets desde admin
+-- V124: inbox de soporte ? asignar / resolver tickets desde admin
 ALTER TABLE hot_click_ticket_soporte_tb
     ADD COLUMN IF NOT EXISTS fk_id_asignado BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL;
 
@@ -3733,12 +3733,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_ledger_ref_tipo
     ON hot_click_billing_ledger_tb (referencia_externa, tipo)
     WHERE referencia_externa IS NOT NULL;
 
--- V128: cambio de cuenta de cobro queda en revisi√≥n hasta admin.
+-- V128: cambio de cuenta de cobro queda en revisiÛn hasta admin.
 ALTER TABLE hot_click_metodo_cobro_tb
     ADD COLUMN IF NOT EXISTS en_revision BOOLEAN NOT NULL DEFAULT FALSE;
 
 UPDATE hot_click_metodo_cobro_tb
-SET mascara = '‚Ä¢‚Ä¢‚Ä¢‚Ä¢-' || RIGHT(destino, 4)
+SET mascara = '????-' || RIGHT(destino, 4)
 WHERE tipo = 'SINPE'
   AND destino IS NOT NULL
   AND length(destino) >= 4;
@@ -3770,16 +3770,16 @@ WHERE id = 1 AND usados = 0;
 
 
 
--- V130: prioridad autom√°tica en tickets de soporte, seg√∫n el plan de la empresa
+-- V130: prioridad autom·tica en tickets de soporte, seg˙n el plan de la empresa
 
 ALTER TABLE hot_click_ticket_soporte_tb
   ADD COLUMN IF NOT EXISTS prioridad VARCHAR(10) NOT NULL DEFAULT 'MEDIA';
 
 CREATE INDEX IF NOT EXISTS idx_ticket_soporte_prioridad ON hot_click_ticket_soporte_tb (prioridad);
 
--- V131: paquetes de digitalizaciÛn de inventario + unique barcode por empresa
--- Paquete = sesiÛn de captura en campo (con o sin empresa asignada).
--- LÌneas viven en el paquete hasta ASIGNADO (entonces se crean/re˙san Producto).
+-- V131: paquetes de digitalizaci?n de inventario + unique barcode por empresa
+-- Paquete = sesi?n de captura en campo (con o sin empresa asignada).
+-- L?neas viven en el paquete hasta ASIGNADO (entonces se crean/re?san Producto).
 
 CREATE TABLE IF NOT EXISTS hot_click_paquete_inventario_tb (
     id_paquete               BIGSERIAL PRIMARY KEY,
@@ -3846,9 +3846,9 @@ BEGIN
 END $$;
 -- V132: limpiar roles JWT muertos (staff plataforma + POS)
 -- No edita V89/V126; inactiva SUPPORT/FINANCE/TRUST y remapea usuarios a ADMIN.
--- POS (CAJERO, GERENTE, √¢‚Ç¨¬¶) ya inactivos en V89 √¢‚Ç¨‚Äù se refuerza descripci√É¬≥n.
+-- POS (CAJERO, GERENTE, ‚?¶) ya inactivos en V89 ‚?? se refuerza descripci√≥n.
 
--- Remapear usuarios staff √¢‚Ä†‚Äô ADMIN (si tienen SUPPORT/FINANCE/TRUST)
+-- Remapear usuarios staff ‚?? ADMIN (si tienen SUPPORT/FINANCE/TRUST)
 INSERT INTO hot_click_usuario_rol_tb (fk_id_usuario, fk_id_rol)
 SELECT DISTINCT ur.fk_id_usuario,
        (SELECT id_rol FROM hot_click_rol_tb WHERE nombre_rol = 'ADMIN' LIMIT 1)
@@ -3876,17 +3876,17 @@ WHERE fk_id_rol IN (
 
 UPDATE hot_click_rol_tb
 SET fk_id_estado = 2,
-    descripcion = '[ELIMINADO √¢‚Ç¨‚Äù no usado; JWT vivos: ADMIN, EMPRENDEDOR, USUARIO_FINAL]'
+    descripcion = '[ELIMINADO ‚?? no usado; JWT vivos: ADMIN, EMPRENDEDOR, USUARIO_FINAL]'
 WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST');
 
 UPDATE hot_click_rol_tb
 SET fk_id_estado = 2,
-    descripcion = COALESCE(descripcion, '') || ' [ELIMINADO √¢‚Ç¨‚Äù POS/legacy]'
+    descripcion = COALESCE(descripcion, '') || ' [ELIMINADO ‚?? POS/legacy]'
 WHERE nombre_rol IN ('CAJERO', 'INVENTARIO', 'CONTABILIDAD', 'GERENTE', 'SUPERVISOR', 'MARKETING', 'SOPORTE')
   AND (descripcion IS NULL OR descripcion NOT LIKE '%ELIMINADO%');
 
 
--- V133: comisiÛn Tilopay absorbida en precio + descuento SINPE opcional por empresa
+-- V133: comisi?n Tilopay absorbida en precio + descuento SINPE opcional por empresa
 ALTER TABLE hot_click_empresa_tb
     ADD COLUMN IF NOT EXISTS pct_comision_tarjeta NUMERIC(5,2) NOT NULL DEFAULT 4.80;
 
@@ -3895,3 +3895,14 @@ ALTER TABLE hot_click_empresa_tb
 
 ALTER TABLE hot_click_empresa_tb
     ADD COLUMN IF NOT EXISTS pct_descuento_sinpe NUMERIC(5,2) NOT NULL DEFAULT 0;
+
+-- V137: refresh tokens como SHA-256 (hex). INVALIDA sesiones existentes.
+DELETE FROM hot_click_refresh_token_tb;
+COMMENT ON COLUMN hot_click_refresh_token_tb.token IS
+    'SHA-256 hex del refresh token opaco; el valor en claro solo viaja en cookie HttpOnly';
+
+-- V138: panel ˙nico del bot de clientes y pausa por sospecha
+ALTER TABLE hot_click_telegram_vinculacion_tb
+    ADD COLUMN IF NOT EXISTS panel_message_id BIGINT;
+ALTER TABLE hot_click_telegram_vinculacion_tb
+    ADD COLUMN IF NOT EXISTS pausado_hasta TIMESTAMP;

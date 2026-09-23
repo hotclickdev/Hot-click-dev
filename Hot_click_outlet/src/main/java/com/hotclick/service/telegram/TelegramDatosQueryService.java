@@ -23,6 +23,7 @@ public class TelegramDatosQueryService {
     @Autowired private JdbcTemplate                  jdbc;
     @Autowired private TelegramClienteBotService     bot;
     @Autowired private TelegramEmpresaContextService empresaContext;
+    @Autowired private TelegramAbusoService          abuso;
 
     public void responderConDatos(TelegramVinculacion v, Function<Long, String> generador) {
         Long empresaId = empresaContext.empresaValidada(v);
@@ -32,6 +33,7 @@ public class TelegramDatosQueryService {
         } catch (Exception e) {
             log.error("[telegram-bot] error consultando datos empresa {} — {}", empresaId, e.getMessage());
             bot.enviarMensaje(v.getChatId(), "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.");
+            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
         }
     }
 

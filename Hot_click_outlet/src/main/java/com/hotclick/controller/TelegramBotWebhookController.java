@@ -1,8 +1,11 @@
 package com.hotclick.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hotclick.security.ClientIpResolver;
 import com.hotclick.service.TelegramBotUpdateService;
 import com.hotclick.service.TelegramClienteBotService;
+import com.hotclick.service.telegram.TelegramAbusoService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,14 +36,18 @@ public class TelegramBotWebhookController {
 
     @Autowired private TelegramClienteBotService bot;
     @Autowired private TelegramBotUpdateService updateService;
+    @Autowired private TelegramAbusoService abuso;
+    @Autowired private ClientIpResolver clientIpResolver;
 
     @PostMapping("/telegram")
     public ResponseEntity<Void> recibirUpdate(
             @RequestHeader(value = "X-Telegram-Bot-Api-Secret-Token", required = false) String secret,
-            @RequestBody JsonNode update) {
+            @RequestBody JsonNode update,
+            HttpServletRequest request) {
 
         if (!bot.validarSecret(secret)) {
             log.warn("[telegram-webhook] update rechazado — secret token inválido o ausente");
+            abuso.secretoInvalido(clientIpResolver.resolve(request));
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

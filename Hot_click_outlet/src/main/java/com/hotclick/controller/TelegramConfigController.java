@@ -34,7 +34,7 @@ public class TelegramConfigController {
         if (usuario == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         if (!bot.isConfigured() || bot.getBotUsername() == null || bot.getBotUsername().isBlank()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(Map.of("error", "El bot de Telegram no está configurado en el servidor."));
+                .body(Map.of("error", "TELEGRAM_CLIENT_BOT_USERNAME no está configurado."));
         }
         return ResponseEntity.ok(telegramConfigService.generarCodigo(usuario));
     }

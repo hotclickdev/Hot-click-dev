@@ -44,6 +44,7 @@ class TelegramFlujoProductoConfirmHelper {
     @Autowired private ObjectMapper                  objectMapper;
     @Autowired private TelegramFlujoProductoUiHelper ui;
     @Autowired private TelegramFlujoProductoFotoHelper fotoHelper;
+    @Autowired private TelegramAbusoService          abuso;
 
     /**
      * Foto entrante — como foto comprimida (`photo`) o como archivo/documento de
@@ -137,8 +138,11 @@ class TelegramFlujoProductoConfirmHelper {
                 + d.getFotos().size() + " foto" + (d.getFotos().size() == 1 ? "" : "s") + ".\n\n"
                 + estadoPublicacion,
                 List.of(List.of(TelegramClienteBotService.boton("📋 Menú", "menu"))));
+        } catch (com.hotclick.exception.PlanLimitException ex) {
+            bot.enviarMensaje(v.getChatId(), esc(ex.getMessage()));
         } catch (Exception ex) {
             log.error("[telegram-flujo] fallo creando producto en chat {} — {}", v.getChatId(), ex.getMessage());
+            abuso.avisarErrorDeUsuario(v.getChatId(), ex.getMessage());
             bot.enviarMensaje(v.getChatId(), "No pude crear el producto: " + esc(ex.getMessage())
                 + "\nEl borrador sigue guardado — tocá *Publicar* para reintentar o /cancelar.",
                 List.of(List.of(TelegramClienteBotService.boton("✅ Publicar producto", "prd:ok"),

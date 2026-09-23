@@ -100,6 +100,7 @@ public class AdminUsuarioService {
             throw new IllegalArgumentException("El usuario no está bloqueado");
         }
         usuario.setEstado(Constants.ESTADO_ACTIVO);
+        usuario.setBloqueadoHasta(null);
         usuarioRepository.save(usuario);
     }
 

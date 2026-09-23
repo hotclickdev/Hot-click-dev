@@ -26,12 +26,13 @@ public class TelegramCallbackHandler {
     @Autowired private TelegramStockCheckService     stockCheck;
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TelegramFlujoService          telegramFlujoService;
+    @Autowired private TelegramAbusoService          abuso;
 
     public void procesarCallback(JsonNode cb) {
         long chatId = cb.path("message").path("chat").path("id").asLong(0);
         String data = cb.path("data").asText("");
         bot.responderCallback(cb.path("id").asText(null));
-        if (chatId == 0 || data.isEmpty()) return;
+        if (chatId == 0 || data.isEmpty() || data.length() > 64) return;
         if (!rateLimit.permitidoPorRateLimit(chatId)) return;
 
         Optional<TelegramVinculacion> opt = vinculacion.vinculacionActiva(chatId);
@@ -40,6 +41,12 @@ public class TelegramCallbackHandler {
             return;
         }
         TelegramVinculacion v = opt.get();
+        if (abuso.rechazarSiPausadoOBloqueado(v)) return;
+        long messageId = cb.path("message").path("message_id").asLong(0);
+        Long panel = messageId > 0 ? Long.valueOf(messageId) : v.getPanelMessageId();
+        if (messageId > 0) v.setPanelMessageId(messageId);
+        TelegramTurno.abrir(v, panel, null);
+        bot.enviarAccionEscribiendo(chatId);
 
         if (data.startsWith("emp:")) { empresaContext.seleccionarEmpresa(v, data.substring(4)); return; }
         if (data.startsWith("chk:")) { stockCheck.iniciarAjuste(v, data.substring(4)); return; }

@@ -338,13 +338,15 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     // ── Rate limiting ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Más de 20 mensajes por minuto → se bloquea con un solo aviso")
+    @DisplayName("Más de 3 mensajes por segundo → pausa por ráfaga")
     void rateLimit_porMinuto_bloquea() throws Exception {
         for (int i = 0; i < 25; i++) {
             postUpdate(mensajeTexto(CHAT_ID, "hola " + i));
         }
-        // 20 respuestas "no vinculado" + 1 aviso de límite = 21; los últimos 4 en silencio
-        verify(bot, times(21)).enviarMensaje(eq(CHAT_ID), anyString());
+        verify(bot, atLeastOnce()).enviarMensaje(eq(CHAT_ID), contains("Pausé este chat"));
+        ArgumentCaptor<String> textos = ArgumentCaptor.forClass(String.class);
+        verify(bot, atLeast(4)).enviarMensaje(eq(CHAT_ID), textos.capture());
+        assertThat(textos.getAllValues().size()).isLessThan(25);
     }
 
     // ── IA de texto libre ─────────────────────────────────────────────────────

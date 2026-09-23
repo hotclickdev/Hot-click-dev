@@ -22,6 +22,7 @@ class TelegramFlujoProductoTextoHelper {
     @Autowired private TelegramClienteBotService     bot;
     @Autowired private TextModerationService         textModerationService;
     @Autowired private TelegramFlujoProductoUiHelper ui;
+    @Autowired private TelegramFlujoProductoConfirmHelper confirm;
 
     void manejarPaso(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e, String texto) {
         TelegramFlujoEstado.ProductoBorrador d = e.getDraftSeguro();
@@ -35,9 +36,28 @@ class TelegramFlujoProductoTextoHelper {
                 d.setMarcaTxt(texto.length() > 100 ? texto.substring(0, 100) : texto);
                 ui.irAPasoFotos(v, e);
             }
+            case P_PRD_FOTOS -> manejarListo(v, empresaId, e, d, texto);
             default -> bot.enviarMensaje(v.getChatId(),
                 "Usá los botones del mensaje anterior para continuar, o /cancelar para salir.");
         }
+    }
+
+    private void manejarListo(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e,
+            TelegramFlujoEstado.ProductoBorrador d, String texto) {
+        if (!esListo(texto)) {
+            bot.enviarMensaje(v.getChatId(),
+                "Usá los botones del mensaje anterior para continuar, o /cancelar para salir.");
+            return;
+        }
+        if (d.getFotos().isEmpty()) {
+            bot.enviarMensaje(v.getChatId(), "Mandá al menos una foto del producto para continuar.");
+            return;
+        }
+        confirm.mostrarResumenProducto(v, empresaId, e);
+    }
+
+    static boolean esListo(String texto) {
+        return texto != null && "listo".equalsIgnoreCase(texto.trim());
     }
 
     private void manejarNombre(TelegramVinculacion v, TelegramFlujoEstado e,
