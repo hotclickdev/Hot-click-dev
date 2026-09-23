@@ -9,12 +9,12 @@ public final class BarcodeNormalizer {
 
     private BarcodeNormalizer() {}
 
-    /** {@code trim()}; null si vacío o longitud &lt; 4. */
+    /** Trim, quita espacios/guiones; null si vacío o longitud &lt; 4. */
     public static String normalize(String raw) {
         if (raw == null) {
             return null;
         }
-        String codigo = raw.trim();
+        String codigo = raw.trim().replace(" ", "").replace("-", "");
         if (codigo.isEmpty() || codigo.length() < MIN_LENGTH) {
             return null;
         }

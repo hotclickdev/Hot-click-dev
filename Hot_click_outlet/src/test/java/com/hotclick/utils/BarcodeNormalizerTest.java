@@ -11,11 +11,17 @@ class BarcodeNormalizerTest {
     @Test
     void aceptaCodigoValido() {
         assertThat(BarcodeNormalizer.normalize("7501234567890")).isEqualTo("7501234567890");
+        assertThat(BarcodeNormalizer.normalize("750 1234-567890")).isEqualTo("7501234567890");
     }
 
     @Test
     void recortaEspacios() {
         assertThat(BarcodeNormalizer.normalize("  7501234567890\n")).isEqualTo("7501234567890");
+    }
+
+    @Test
+    void compactaEspaciosYGuiones() {
+        assertThat(BarcodeNormalizer.normalize("750 1234-567890")).isEqualTo("7501234567890");
     }
 
     @Test

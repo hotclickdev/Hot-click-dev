@@ -165,7 +165,11 @@ public class PosQrPedidoFactory {
 
         Producto producto = productoRepo.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-        int precio = producto.getPrecioEfectivo();
+        Integer precioObj = producto.getPrecioEfectivo();
+        if (precioObj == null) {
+            throw new IllegalStateException("Producto sin precio de venta: " + productoId);
+        }
+        int precio = precioObj;
         if (producto.getStockDisponible() < cantidad) {
             throw new StockInsuficienteException(producto.getNombreProducto(),
                 producto.getStockDisponible(), cantidad);

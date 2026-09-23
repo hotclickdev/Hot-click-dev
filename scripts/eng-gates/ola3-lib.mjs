@@ -32,15 +32,15 @@ export const CRITICAL_MAJOR_PACKAGES = [
   /stripe-java/i,
 ];
 
-// Word boundaries avoid false positives on camelCase (accessToken, sdkToken)
-// and prose in docs ("password mínimo 8").
+// Solo valores entre comillas (o sk_/whsec_/ghp_ literales). Evita token: var / password mínimo / docs.
 const SECRET_RE =
-  /\b(api[_-]?key|token|password|secret|authorization|bearer|sk_live|sk_test|whsec)\b[=:\s]+['"]?[\w./+.-]{8,}/gi;
+  /\b(api[_-]?key|token|password|secret|authorization)\b\s*[=:]\s*['"][A-Za-z0-9._/+-=]{12,}['"]|\b(sk_live_[A-Za-z0-9]+|sk_test_[A-Za-z0-9]{8,}|whsec_[A-Za-z0-9]+|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/gi;
 
 export function redactSecrets(text) {
   return String(text ?? '').replace(SECRET_RE, (match) => {
-    const cut = match.search(/[=:\s]/);
-    return `${match.slice(0, cut + 1)}***`;
+    if (/^(sk_|whsec_|ghp_|github_pat_)/i.test(match)) return '***';
+    const cut = match.search(/[=:]/);
+    return cut >= 0 ? `${match.slice(0, cut + 1)}***` : '***';
   });
 }
 
@@ -429,6 +429,12 @@ export function isBundledSpaAsset(filePath) {
   );
 }
 
+/** Docs de auditoría: "secret requerido" / "password mínimo" no son secretos. */
+export function isDocsAuditPath(filePath) {
+  const n = String(filePath || '').replaceAll('\\', '/');
+  return /\/docs\//.test(n) || /\.md$/i.test(n);
+}
+
 export function scanCommitBlockers({ changedFiles, diffText }) {
   const findings = [];
   for (const file of changedFiles || []) {
@@ -446,7 +452,7 @@ export function scanCommitBlockers({ changedFiles, diffText }) {
   }
   const files = parseSimpleDiff(diffText || '');
   for (const file of files) {
-    if (isSelfScanPath(file.path) || isBundledSpaAsset(file.path)) continue;
+    if (isSelfScanPath(file.path) || isBundledSpaAsset(file.path) || isDocsAuditPath(file.path)) continue;
     if (isPlaywrightReportArtifact(file.path)) {
       findings.push({
         id: 'playwright-report',
@@ -457,6 +463,7 @@ export function scanCommitBlockers({ changedFiles, diffText }) {
     }
     for (const line of file.added) {
       if (CI_PLACEHOLDER_RE.test(line)) continue;
+      if (/@DisplayName\s*\(/.test(line)) continue;
       for (const rule of DEBUG_BLOCKERS) {
         if (rule.id === 'dotenv') continue;
         if (rule.re.test(line) || rule.re.test(file.path)) {

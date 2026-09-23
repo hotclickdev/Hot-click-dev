@@ -66,7 +66,11 @@ public class PosQrSessionService {
             int cantidad = enteroDe(item, "cantidad", 1);
             var producto = productoRepo.findById(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-            int precio = producto.getPrecioEfectivo();
+            Integer precioObj = producto.getPrecioEfectivo();
+            if (precioObj == null) {
+                throw new IllegalStateException("Producto sin precio de venta: " + productoId);
+            }
+            int precio = precioObj;
             item.put("precioUnitario", precio);
             total += precio * cantidad;
         }

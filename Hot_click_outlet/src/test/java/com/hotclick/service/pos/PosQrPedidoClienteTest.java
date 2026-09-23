@@ -129,6 +129,7 @@ class PosQrPedidoClienteTest {
         p.setStockActual(stock);
         p.setStockReservado(0);
         p.setPrecioCompra(costo);
+        p.setPrecioVenta(5_000);
         return p;
     }
 }

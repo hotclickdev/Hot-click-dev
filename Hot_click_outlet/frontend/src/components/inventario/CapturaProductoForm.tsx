@@ -15,7 +15,7 @@ function camposDesdeLookup(lookup: InventarioLookup | null, barcode: string) {
     nombre: prefill ? (lookup?.nombre ?? '') : '',
     precioVenta: lookup?.match === 'EN_EMPRESA' ? (lookup?.precioVenta ?? 1) : 1,
     precioCompra: 0,
-    stock: lookup?.match === 'EN_PAQUETE' ? 1 : 1,
+    stock: 1,
     marcaTexto: prefill ? (lookup?.marcaTexto ?? '') : '',
     categoriaTexto: '',
     imagenUrl: prefill ? (lookup?.imagenUrl ?? '') : '',

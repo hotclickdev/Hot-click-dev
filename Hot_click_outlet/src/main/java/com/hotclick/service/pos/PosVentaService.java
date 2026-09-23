@@ -128,8 +128,12 @@ public class PosVentaService {
             PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), pedido.getEmpresa().getId());
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
             // Precio siempre del catálogo — no confiar en el body del cliente.
-            int precio = producto.getPrecioEfectivo();
-            int costo = producto.getPrecioCompra();
+            Integer precioObj = producto.getPrecioEfectivo();
+            if (precioObj == null) {
+                throw new IllegalStateException("Producto sin precio de venta: " + itemDto.getProductoId());
+            }
+            int precio = precioObj;
+            int costo = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
             int disponible = producto.getStockDisponible();
             if (disponible < cantidad) {
                 throw new IllegalArgumentException(
