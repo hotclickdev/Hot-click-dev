@@ -1,1 +1,0 @@
-import{t as e}from"./api-Bf8fBuez.js";var t={aplicar:(t,n,r)=>e.patch(`/productos/${t}/oferta`,{enOferta:n,porcentajeDescuento:r}),misPendientes:()=>e.get(`/mis-solicitudes/ofertas`)};export{t};
