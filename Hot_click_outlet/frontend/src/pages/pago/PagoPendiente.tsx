@@ -7,12 +7,13 @@ import type { PagoResumen } from './pagoHelpers'
 type PagoPendienteProps = {
   pagoData: PagoResumen | null
   stripeApproved: boolean
+  token: string | null
 }
 
 /**
  * Timeout: el pago sigue en revisión (webhook lento o Stripe ya aprobado).
  */
-export default function PagoPendiente({ pagoData, stripeApproved }: PagoPendienteProps) {
+export default function PagoPendiente({ pagoData, stripeApproved, token }: PagoPendienteProps) {
   return (
     <MainLayout>
       <div className="max-w-lg mx-auto px-4 py-20">
@@ -45,9 +46,15 @@ export default function PagoPendiente({ pagoData, stripeApproved }: PagoPendient
           )}
 
           <div className="flex flex-col gap-3">
-            <Link to="/mis-pedidos" className="hc-btn hc-btn-primary w-full min-h-11">
-              Ver mis pedidos
-            </Link>
+            {token ? (
+              <Link to="/mis-pedidos" className="hc-btn hc-btn-primary w-full min-h-11">
+                Ver mis pedidos
+              </Link>
+            ) : (
+              <Link to="/productos" className="hc-btn hc-btn-primary w-full min-h-11">
+                Seguir comprando
+              </Link>
+            )}
             <a
               href="https://wa.me/50686667888"
               target="_blank"
@@ -58,6 +65,15 @@ export default function PagoPendiente({ pagoData, stripeApproved }: PagoPendient
             >
               Contactar soporte por WhatsApp
             </a>
+            {!token && (
+              <Link
+                to="/registro"
+                className="text-xs text-center hover:underline"
+                style={{ color: 'var(--hc-link)' }}
+              >
+                Crear cuenta para ver el historial de pedidos
+              </Link>
+            )}
           </div>
         </motion.div>
       </div>

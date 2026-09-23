@@ -621,7 +621,7 @@
     "passwordChanged": "Contraseña actualizada con éxito",
     "emailNotFound": "No encontramos ese correo registrado.",
     "badCode": "Código incorrecto.",
-    "minChars": "Mínimo 6 caracteres",
+    "minChars": "Mínimo 8 caracteres",
     "errorChange": "Error al cambiar la contraseña."
   },
   "register": {
@@ -634,7 +634,7 @@
     "phone": "Teléfono",
     "identification": "Identificación",
     "password": "Contraseña",
-    "minChars": "Mínimo 6 caracteres",
+    "minChars": "Mínimo 8 caracteres",
     "confirmPassword": "Confirmar contraseña",
     "submit": "Crear cuenta",
     "sendCode": "Enviar código de verificación",

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
+import useAuthStore from '@/store/authStore'
+import { adminService } from '@/services/orderService'
 import {
   SHIPPING_COSTS,
   bodegaRetiroDesdeItems,
@@ -150,6 +152,22 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [direccion, setDireccion] = useState('')
   const [direccionError, setDireccionError] = useState('')
   const [direccionDirty, setDireccionDirty] = useState(false)
+
+  const userId = useAuthStore((s) => s.userId)
+  const authToken = useAuthStore((s) => s.token)
+  useEffect(() => {
+    if (!authToken || !userId) return
+    let cancelado = false
+    adminService.getUsuario(userId).then(({ data }) => {
+      if (cancelado) return
+      const usuario = (data as { data?: { telefono?: string } })?.data
+      if (usuario?.telefono) {
+        // Solo completa si el usuario todavía no escribió nada (no pisa su input).
+        setTelefono((prev) => prev || usuario.telefono || '')
+      }
+    }).catch(() => { /* prellenado best-effort; el campo queda vacío y editable */ })
+    return () => { cancelado = true }
+  }, [authToken, userId])
 
   const [guestEmail, setGuestEmail] = useState('')
   const [guestEmailError, setGuestEmailError] = useState('')
