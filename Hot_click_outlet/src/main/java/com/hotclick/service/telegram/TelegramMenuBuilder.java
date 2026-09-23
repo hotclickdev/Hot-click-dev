@@ -42,7 +42,7 @@ public class TelegramMenuBuilder {
             TelegramClienteBotService.boton("💰 Ventas de hoy", "ventas")));
         teclado.add(List.of(
             TelegramClienteBotService.boton("🛒 Nueva venta", "vta:new"),
-            TelegramClienteBotService.boton("➕ Nuevo producto", "prd:new")));
-        return teclado;
+            TelegramClienteBotService.boton("➕ Producto", "prd:new")));
+        return TelegramTeclado.conMenu(teclado);
     }
 }

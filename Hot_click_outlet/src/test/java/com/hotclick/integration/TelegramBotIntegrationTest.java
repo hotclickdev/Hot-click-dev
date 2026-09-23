@@ -185,7 +185,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postUpdate(callback(CHAT_ID, "inv"));
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(bot).enviarMensaje(eq(CHAT_ID), captor.capture());
+        verify(bot).enviarMensaje(eq(CHAT_ID), captor.capture(), anyList());
         assertThat(captor.getValue()).contains("Inventario").contains("Mouse Pro");
         assertThat(captor.getValue()).doesNotContain("Audifonos Gamer"); // no está bajo
     }
@@ -197,7 +197,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
 
         postUpdate(callback(CHAT_ID, "ventas"));
 
-        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Ventas de hoy"));
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Ventas de hoy"), anyList());
     }
 
     // ── Aislamiento multi-tenant ──────────────────────────────────────────────
@@ -435,7 +435,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
 
         assertThat(pedidoRepository.findById(pedido.getId()).orElseThrow().getEstadoPedido()).isEqualTo("PENDIENTE");
         assertThat(vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto()).isNull();
-        verify(bot).enviarMensaje(eq(CHAT_ID), contains("cancelado"));
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("cancelado"), anyList());
     }
 
     @Test

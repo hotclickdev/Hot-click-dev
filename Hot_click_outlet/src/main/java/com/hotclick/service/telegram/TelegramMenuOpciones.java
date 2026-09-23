@@ -25,9 +25,10 @@ final class TelegramMenuOpciones {
             TelegramClienteBotService.boton("💰 Ventas de hoy", "ventas")));
         teclado.add(List.of(TelegramClienteBotService.boton("📊 Finanzas del mes", "fin")));
         if (gestiona) {
+            teclado.add(List.of(TelegramClienteBotService.boton("🛒 Nueva venta", "vta:new")));
             teclado.add(List.of(
-                TelegramClienteBotService.boton("🛒 Nueva venta", "vta:new"),
-                TelegramClienteBotService.boton("➕ Nuevo producto", "prd:new")));
+                TelegramClienteBotService.boton("➕ Producto", "prd:new"),
+                TelegramClienteBotService.boton("🎨 Personalizado", "prd:pers")));
         }
         if (crm) {
             teclado.add(List.of(TelegramClienteBotService.boton("👥 Clientes", "cli:pg:0")));

@@ -64,7 +64,8 @@ class TelegramMessageRoutingHelper {
             case "/cancelar"                -> {
                 v.setContexto(null);
                 vinculacionRepository.save(v);
-                bot.enviarMensaje(chatId, "Listo, cancelado. Escribí /menu cuando me necesités.");
+                bot.enviarMensaje(chatId, "Listo, cancelado. Escribí /menu cuando me necesités.",
+                    TelegramTeclado.soloMenu());
                 return true;
             }
             case "/desvincular"             -> { vinculacion.desvincular(v); return true; }

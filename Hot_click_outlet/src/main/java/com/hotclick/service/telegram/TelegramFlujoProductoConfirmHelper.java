@@ -92,17 +92,29 @@ class TelegramFlujoProductoConfirmHelper {
             ? categoriaRepository.findById(d.getCat()).map(Categoria::getNombreCategoria).orElse("—") : "—";
         String marca = marcaResumen(d);
 
+        String tipo = d.esPersonalizado()
+            ? "Tipo: *Personalizado* (" + esc(d.getModo() != null ? d.getModo() : "—") + ")\n"
+            : "Tipo: *Catálogo*\n";
+        String rango = "";
+        if (d.esPersonalizado() && "RANGO".equals(d.getModo())) {
+            rango = "Rango: *" + colones(d.getPmin()) + "* – *" + colones(d.getPmax()) + "*\n";
+        }
+        String instr = d.getInstr() != null ? "Instrucciones: " + esc(d.getInstr()) + "\n" : "";
+
         bot.enviarMensaje(v.getChatId(), "📦 *Revisá el producto:*\n\n"
+            + tipo
             + "Nombre: *" + esc(d.getNom()) + "*\n"
             + "Descripción: " + (d.getDesc() != null ? esc(d.getDesc()) : "—") + "\n"
             + "Precio venta: *" + colones(d.getPv()) + "*\n"
+            + rango
             + "Costo: " + colones(d.getPc()) + "\n"
+            + instr
             + "Stock: *" + d.getStk() + "*\n"
             + "Categoría: " + esc(categoria) + "\n"
             + "Marca: " + esc(marca) + "\n"
             + "Fotos: " + d.getFotos().size(),
             List.of(List.of(TelegramClienteBotService.boton("✅ Publicar producto", "prd:ok")),
-                    List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
+                    List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR), TelegramTeclado.botonMenu())));
     }
 
     private String marcaResumen(TelegramFlujoEstado.ProductoBorrador d) {
@@ -118,7 +130,21 @@ class TelegramFlujoProductoConfirmHelper {
         TelegramFlujoEstado.ProductoBorrador d = e.getDraftSeguro();
         if (d.getNom() == null || d.getPv() == null || d.getPc() == null || d.getCat() == null || d.getFotos().isEmpty()) {
             support.limpiar(v);
-            bot.enviarMensaje(v.getChatId(), "Al borrador le faltan datos. Escribí /menu y empezá de nuevo.");
+            bot.enviarMensaje(v.getChatId(), "Al borrador le faltan datos. Escribí /menu y empezá de nuevo.",
+                TelegramTeclado.soloMenu());
+            return;
+        }
+        if (d.esPersonalizado() && (d.getModo() == null || d.getModo().isBlank())) {
+            support.limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "Falta el modo de precio del personalizado. Empezá de nuevo con /menu.",
+                TelegramTeclado.soloMenu());
+            return;
+        }
+        if (d.esPersonalizado() && "RANGO".equals(d.getModo())
+                && (d.getPmin() == null || d.getPmax() == null || d.getPmax() < d.getPmin())) {
+            support.limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "El rango de precio quedó incompleto. Empezá de nuevo con /menu.",
+                TelegramTeclado.soloMenu());
             return;
         }
         if (!textModerationService.moderar(d.getNom(), d.getDesc()).safe()) {
@@ -136,17 +162,19 @@ class TelegramFlujoProductoConfirmHelper {
                 : "Se publicará en el catálogo cuando tu negocio sea *aprobado* por el equipo HotClick.";
             bot.enviarMensaje(v.getChatId(), "✅ Producto *" + esc(producto.getNombreProducto()) + "* creado con "
                 + d.getFotos().size() + " foto" + (d.getFotos().size() == 1 ? "" : "s") + ".\n\n"
+                + (d.esPersonalizado() ? "Es un producto *personalizado*.\n" : "")
                 + estadoPublicacion,
-                List.of(List.of(TelegramClienteBotService.boton("📋 Menú", "menu"))));
+                TelegramTeclado.soloMenu());
         } catch (com.hotclick.exception.PlanLimitException ex) {
-            bot.enviarMensaje(v.getChatId(), esc(ex.getMessage()));
+            bot.enviarMensaje(v.getChatId(), esc(ex.getMessage()), TelegramTeclado.soloMenu());
         } catch (Exception ex) {
             log.error("[telegram-flujo] fallo creando producto en chat {} — {}", v.getChatId(), ex.getMessage());
             abuso.avisarErrorDeUsuario(v.getChatId(), ex.getMessage());
             bot.enviarMensaje(v.getChatId(), "No pude crear el producto: " + esc(ex.getMessage())
                 + "\nEl borrador sigue guardado — tocá *Publicar* para reintentar o /cancelar.",
                 List.of(List.of(TelegramClienteBotService.boton("✅ Publicar producto", "prd:ok"),
-                                TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
+                                TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR)),
+                        List.of(TelegramTeclado.botonMenu())));
         }
     }
 }

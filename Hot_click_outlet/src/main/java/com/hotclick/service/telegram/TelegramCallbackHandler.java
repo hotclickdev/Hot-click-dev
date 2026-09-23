@@ -61,7 +61,11 @@ public class TelegramCallbackHandler {
         }
 
         switch (data) {
-            case "menu"     -> menuBuilder.mostrarMenu(v);
+            case "menu"     -> {
+                v.setContexto(null);
+                vinculacionRepository.save(v);
+                menuBuilder.mostrarMenu(v);
+            }
             case "selector" -> empresaContext.mostrarSelectorEmpresa(v);
             case "inv"      -> datosQuery.responderConDatos(v, datosQuery::mensajeInventario);
             case "ventas"   -> datosQuery.responderConDatos(v, datosQuery::mensajeVentasHoy);

@@ -29,10 +29,12 @@ public class TelegramDatosQueryService {
         Long empresaId = empresaContext.empresaValidada(v);
         if (empresaId == null) return;
         try {
-            bot.enviarMensaje(v.getChatId(), generador.apply(empresaId));
+            bot.enviarMensaje(v.getChatId(), generador.apply(empresaId), TelegramTeclado.soloMenu());
         } catch (Exception e) {
             log.error("[telegram-bot] error consultando datos empresa {} — {}", empresaId, e.getMessage());
-            bot.enviarMensaje(v.getChatId(), "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.");
+            bot.enviarMensaje(v.getChatId(),
+                "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
+                TelegramTeclado.soloMenu());
             abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
         }
     }
@@ -41,8 +43,11 @@ public class TelegramDatosQueryService {
         Integer total = jdbc.queryForObject(
             "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1",
             Integer.class, empresaId);
+        Integer personalizados = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND es_personalizado = true",
+            Integer.class, empresaId);
         Integer agotados = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND stock_actual <= 0",
+            "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND stock_actual <= 0 AND COALESCE(es_personalizado, false) = false",
             Integer.class, empresaId);
         List<Map<String, Object>> bajos = jdbc.queryForList("""
             SELECT nombre_producto, stock_actual
@@ -54,6 +59,7 @@ public class TelegramDatosQueryService {
 
         StringBuilder sb = new StringBuilder("📦 *Inventario*\n\n");
         sb.append("Productos activos: *").append(total).append("*\n");
+        sb.append("Personalizados: *").append(personalizados).append("*\n");
         sb.append("Agotados: *").append(agotados).append("*\n");
         if (bajos.isEmpty()) {
             sb.append("\nNingún producto con stock bajo. Todo en orden ✅");

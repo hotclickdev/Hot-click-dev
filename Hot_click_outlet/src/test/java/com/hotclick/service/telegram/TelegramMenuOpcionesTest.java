@@ -14,6 +14,7 @@ class TelegramMenuOpcionesTest {
         List<List<Map<String, Object>>> teclado = TelegramMenuOpciones.teclado(false, true, false);
         String datos = teclado.toString();
         assertThat(datos).doesNotContain("prd:new");
+        assertThat(datos).doesNotContain("prd:pers");
         assertThat(datos).doesNotContain("vta:new");
         assertThat(datos).contains("cli:pg:0");
     }
@@ -22,6 +23,7 @@ class TelegramMenuOpcionesTest {
     void sinCrmNoVeClientes() {
         String datos = TelegramMenuOpciones.teclado(true, false, false).toString();
         assertThat(datos).contains("prd:new");
+        assertThat(datos).contains("prd:pers");
         assertThat(datos).doesNotContain("cli:pg:0");
     }
 

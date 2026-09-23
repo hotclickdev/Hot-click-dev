@@ -28,22 +28,27 @@ public class TelegramFlujoProductoHandler {
             callbackHelper.manejarNuevo(v, empresaId);
             return;
         }
+        if ("pers".equals(sub)) {
+            callbackHelper.manejarPersonalizado(v, empresaId);
+            return;
+        }
 
         TelegramFlujoEstado e = support.estadoVigente(v);
         if (e == null || !FLUJO_PRODUCTO.equals(e.getF())) {
-            bot.enviarMensaje(v.getChatId(), "Ese botón ya no está vigente. Escribí /menu para empezar de nuevo.");
+            bot.enviarMensaje(v.getChatId(), "Ese botón ya no está vigente. Escribí /menu para empezar de nuevo.",
+                TelegramTeclado.soloMenu());
             return;
         }
 
         if ("skip".equals(sub) && P_PRD_DESCRIPCION.equals(e.getP())) {
-            e.setP(P_PRD_PRECIO_VENTA);
-            support.guardar(v, e);
-            bot.enviarMensaje(v.getChatId(), "¿Precio de venta al cliente? (en colones, solo el número — ej: 8500)");
+            textoHelper.despuesDeDescripcion(v, e);
+        } else if (sub.startsWith("modo")) {
+            callbackHelper.manejarModo(v, e, sub);
         } else if (sub.startsWith("cat")) {
             callbackHelper.manejarCategoria(v, empresaId, e, sub);
         } else if (sub.startsWith("mar") || "martxt".equals(sub) || "marno".equals(sub)) {
             callbackHelper.manejarMarca(v, empresaId, e, sub);
-        } else if ("fok".equals(sub) || "ok".equals(sub)) {
+        } else if ("fok".equals(sub) || "ok".equals(sub) || "skipinstr".equals(sub)) {
             callbackHelper.manejarConfirmacion(v, empresaId, e, sub);
         }
     }

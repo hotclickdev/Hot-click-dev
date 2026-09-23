@@ -33,7 +33,8 @@ class TelegramFlujoProductoUiHelper {
     void mostrarCategorias(TelegramVinculacion v, Long empresaId, int pagina) {
         List<Categoria> todas = categoriaRepository.findByEmpresaIdOrNoEmpresaAndEstado(empresaId, Constants.ESTADO_ACTIVO);
         if (todas.isEmpty()) {
-            bot.enviarMensaje(v.getChatId(), "No hay categorías disponibles. Creá una desde el panel primero.");
+            bot.enviarMensaje(v.getChatId(), "No hay categorías disponibles. Creá una desde el panel primero.",
+                TelegramTeclado.soloMenu());
             return;
         }
         int desde = Math.min(pagina * PAGINA, Math.max(0, todas.size() - 1));
@@ -53,7 +54,7 @@ class TelegramFlujoProductoUiHelper {
         if (pagina > 0)                                  nav.add(TelegramClienteBotService.boton("⬅️ Anterior", "prd:catpg:" + (pagina - 1)));
         if (desde + PAGINA < todas.size())               nav.add(TelegramClienteBotService.boton("Siguiente ➡️", "prd:catpg:" + (pagina + 1)));
         if (!nav.isEmpty()) teclado.add(nav);
-        teclado.add(List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR)));
+        teclado.add(List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR), TelegramTeclado.botonMenu()));
         bot.enviarMensaje(v.getChatId(), "¿En qué categoría va?", teclado);
     }
 
@@ -64,8 +65,18 @@ class TelegramFlujoProductoUiHelper {
             TelegramClienteBotService.boton(recortar(m.getNombreMarca(), 40), "prd:mar:" + m.getId()))));
         teclado.add(List.of(TelegramClienteBotService.boton("✏️ Escribir marca", "prd:martxt"),
                             TelegramClienteBotService.boton("🚫 Sin marca", "prd:marno")));
-        teclado.add(List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR)));
+        teclado.add(List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR), TelegramTeclado.botonMenu()));
         bot.enviarMensaje(v.getChatId(), "¿De qué marca es?", teclado);
+    }
+
+    void mostrarModosPrecio(TelegramVinculacion v) {
+        bot.enviarMensaje(v.getChatId(),
+            "¿Cómo se cobra este producto personalizado?",
+            List.of(
+                List.of(TelegramClienteBotService.boton("💰 Precio fijo", "prd:modofijo")),
+                List.of(TelegramClienteBotService.boton("📉 Rango de precio", "prd:modorango")),
+                List.of(TelegramClienteBotService.boton("📝 Cotización", "prd:modocot")),
+                List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR), TelegramTeclado.botonMenu())));
     }
 
     void irAPasoFotos(TelegramVinculacion v, TelegramFlujoEstado e) {
@@ -80,7 +91,7 @@ class TelegramFlujoProductoUiHelper {
     List<List<Map<String, Object>>> tecladoFotos(int cuantas) {
         List<List<Map<String, Object>>> teclado = new ArrayList<>();
         if (cuantas > 0) teclado.add(List.of(TelegramClienteBotService.boton("✅ Listo (" + cuantas + " foto" + (cuantas == 1 ? "" : "s") + ")", "prd:fok")));
-        teclado.add(List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR)));
+        teclado.add(List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR), TelegramTeclado.botonMenu()));
         return teclado;
     }
 }

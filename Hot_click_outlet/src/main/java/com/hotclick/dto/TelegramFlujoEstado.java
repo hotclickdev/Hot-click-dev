@@ -39,8 +39,12 @@ public class TelegramFlujoEstado {
     // Pasos del flujo PRODUCTO
     public static final String P_PRD_NOMBRE        = "NOMBRE";
     public static final String P_PRD_DESCRIPCION   = "DESC";
+    public static final String P_PRD_MODO          = "MODO";
+    public static final String P_PRD_PRECIO_MIN    = "PMIN";
+    public static final String P_PRD_PRECIO_MAX    = "PMAX";
     public static final String P_PRD_PRECIO_VENTA  = "PV";
     public static final String P_PRD_PRECIO_COMPRA = "PC";
+    public static final String P_PRD_INSTR         = "INSTR";
     public static final String P_PRD_STOCK         = "STOCK";
     public static final String P_PRD_CATEGORIA     = "CAT";
     public static final String P_PRD_MARCA         = "MARCA";
@@ -111,6 +115,11 @@ public class TelegramFlujoEstado {
         private Long marca;
         private String marcaTxt;
         private List<String> fotos;
+        private Boolean pers;
+        private String modo;
+        private Integer pmin;
+        private Integer pmax;
+        private String instr;
 
         public String getNom() { return nom; }
         public void setNom(String nom) { this.nom = nom; }
@@ -133,6 +142,17 @@ public class TelegramFlujoEstado {
             return fotos;
         }
         public void setFotos(List<String> fotos) { this.fotos = fotos; }
+        public Boolean getPers() { return pers; }
+        public void setPers(Boolean pers) { this.pers = pers; }
+        public boolean esPersonalizado() { return Boolean.TRUE.equals(pers); }
+        public String getModo() { return modo; }
+        public void setModo(String modo) { this.modo = modo; }
+        public Integer getPmin() { return pmin; }
+        public void setPmin(Integer pmin) { this.pmin = pmin; }
+        public Integer getPmax() { return pmax; }
+        public void setPmax(Integer pmax) { this.pmax = pmax; }
+        public String getInstr() { return instr; }
+        public void setInstr(String instr) { this.instr = instr; }
     }
 
     // ── Fábricas y (de)serialización ─────────────────────────────────────────
@@ -147,11 +167,16 @@ public class TelegramFlujoEstado {
     }
 
     public static TelegramFlujoEstado nuevoProducto(LocalDateTime ahora) {
+        return nuevoProducto(ahora, false);
+    }
+
+    public static TelegramFlujoEstado nuevoProducto(LocalDateTime ahora, boolean personalizado) {
         TelegramFlujoEstado e = new TelegramFlujoEstado();
         e.f = FLUJO_PRODUCTO;
         e.p = P_PRD_NOMBRE;
         e.ts = ahora;
         e.d = new ProductoBorrador();
+        e.d.setPers(personalizado);
         return e;
     }
 
