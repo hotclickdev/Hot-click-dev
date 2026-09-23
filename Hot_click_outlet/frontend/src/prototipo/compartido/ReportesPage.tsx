@@ -8,6 +8,7 @@ import { useSellerRuta } from './SellerPlanContext'
 import { useReportesVendedor } from './useReportesVendedor'
 import EntradaPagina from './motion/EntradaPagina'
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
+import ListadoFeedback from './ListadoFeedback'
 
 const PERIODOS = ['Hoy', 'Semana', 'Mes', 'Todo'] as const
 
@@ -31,8 +32,6 @@ export default function ReportesPage() {
             </ItemListaStagger>
           ))}
         </ListaStagger>
-        {cargando ? <p className="mb-3 text-sm text-hc-muted">Cargando reportes…</p> : null}
-        {error ? <p className="mb-3 text-sm text-hc-danger">{error}</p> : null}
         <div className="grid grid-cols-2 gap-3">
           <Kpi titulo="Productos publicados" valor={String(publicados)} />
           <Kpi titulo="Vendidos" valor={String(unidadesVendidas)} />
@@ -62,23 +61,28 @@ export default function ReportesPage() {
           </section>
         ) : null}
         <h2 className="mb-3 mt-6 text-[15px] font-bold">Más vendidos</h2>
-        {top.length === 0 && !cargando ? (
-          <p className="text-sm text-hc-muted">Todavía no hay ventas para mostrar.</p>
-        ) : null}
-        <ListaStagger className="space-y-4">
-          {top.map((item) => (
-            <ItemListaStagger key={item.nombre} className="flex items-center gap-3">
-              <Miniatura className="size-12" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{item.nombre}</p>
-                <p className="text-xs text-hc-muted">{item.vendidos} vendidos</p>
-              </div>
-              <span className="rounded-full px-2.5 py-1 text-xs font-medium" style={{ background: 'var(--hc-success-bg)' }}>
-                {formatoColon(item.total)}
-              </span>
-            </ItemListaStagger>
-          ))}
-        </ListaStagger>
+        <ListadoFeedback
+          cargando={cargando}
+          error={error}
+          cantidad={top.length}
+          skeletonLabel="Cargando reportes"
+          empty={<p className="text-sm text-hc-muted">Todavía no hay ventas para mostrar.</p>}
+        >
+          <ListaStagger className="space-y-4">
+            {top.map((item) => (
+              <ItemListaStagger key={item.nombre} className="flex items-center gap-3">
+                <Miniatura className="size-12" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{item.nombre}</p>
+                  <p className="text-xs text-hc-muted">{item.vendidos} vendidos</p>
+                </div>
+                <span className="rounded-full px-2.5 py-1 text-xs font-medium" style={{ background: 'var(--hc-success-bg)' }}>
+                  {formatoColon(item.total)}
+                </span>
+              </ItemListaStagger>
+            ))}
+          </ListaStagger>
+        </ListadoFeedback>
       </main>
     </EntradaPagina>
   )
