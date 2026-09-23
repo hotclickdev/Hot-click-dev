@@ -20,7 +20,7 @@ Leyenda de estado:
 
 | ID | Hallazgo | Severidad | Estado | Acción siguiente |
 |----|----------|-----------|--------|------------------|
-| P0-1 | Webhook Tilopay sin autenticación | Alta | ⏳ WIP Tilopay | Gate secret en WC; merge con stack Tilopay |
+| P0-1 | Webhook Tilopay sin autenticación | Alta | ✅ FIX | `TILOPAY_WEBHOOK_SECRET` + `X-Webhook-Secret` |
 | P0-2 | SINPE sin `pedido.empresa` → wallet/TTL | Crítica | ✅ FIX PR-A | Commiteado |
 | P0-3 | Comentario TTL vs query real | Media | ✅ FIX PR-A | Commiteado |
 | P0-4 | `guest/cancel` sin auth | Alta | ✅ FIX PR-A | Commiteado |
