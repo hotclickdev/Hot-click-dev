@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { ejecutarValidarGiftCard } from './ejecutarValidarGiftCard'
 import { ejecutarValidarCupon } from './ejecutarValidarCupon'
 import { ejecutarValidateDomicilio, ejecutarPagarCheckout } from './ejecutarPagarCheckout'
-import { ejecutarSubirComprobante, ejecutarSinpeWhatsApp, ejecutarCheckoutWhatsApp } from './ejecutarSubirComprobante'
+import { ejecutarSubirComprobante, ejecutarSinpeWhatsApp } from './ejecutarSubirComprobante'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio } from './checkoutHelpers'
 import type { CheckoutPayload } from '@/types/pedido'
 import type { Dispatch, SetStateAction } from 'react'
@@ -37,7 +37,6 @@ type CheckoutActionsDeps = {
   cuponInput: string
   SHIPPING_OPTIONS: OpcionEnvio[]
   iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
-  toWhatsAppMessage: () => string
   validatePhone: (v: string) => string
   validateAddress: (v: string) => string
   validateGuestEmail: (v: string) => string
@@ -92,7 +91,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     cuponInput,
     SHIPPING_OPTIONS,
     iniciarPago,
-    toWhatsAppMessage,
     validatePhone,
     validateAddress,
     validateGuestEmail,
@@ -211,10 +209,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setSinpeUploadError,
   ])
 
-  const handleWhatsApp = useCallback(() => {
-    ejecutarCheckoutWhatsApp({ totalFinal, items, toWhatsAppMessage })
-  }, [totalFinal, items, toWhatsAppMessage])
-
   return {
     validarGiftCard,
     validarCupon,
@@ -222,6 +216,5 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     handlePagar,
     handleSinpeWhatsApp,
     handleSubirComprobante,
-    handleWhatsApp,
   }
 }

@@ -56,8 +56,16 @@ export default function WizardStepSwitch({ wizard }: { wizard: WizardView }) {
       />
     )
   }
-  if (id === 'detalles') return <PasoDetalles form={form} setCampo={setCampo} setForm={setForm} />
-  if (id === 'contenido') return <PasoContenido form={form} setCampo={setCampo} setForm={setForm} />
+  if (id === 'detalles') {
+    return (
+      <div className="space-y-8">
+        <PasoDetalles form={form} setCampo={setCampo} setForm={setForm} />
+        <div className="pt-6" style={{ borderTop: '1px solid var(--hc-border)' }}>
+          <PasoContenido form={form} setCampo={setCampo} setForm={setForm} />
+        </div>
+      </div>
+    )
+  }
   if (id === 'seo') {
     return (
       <PasoSeo

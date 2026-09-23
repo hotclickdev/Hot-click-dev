@@ -46,7 +46,10 @@ export default function PlanGate({
         </div>
       )
     }
-    return children
+    // Load falló → fail-closed (no abrir la feature)
+    if (silent) return null
+    if (fallback) return fallback
+    return <UpgradePrompt feature={feature} planRequerido={planRequerido} />
   }
 
   if (hasFeature(feature)) return children

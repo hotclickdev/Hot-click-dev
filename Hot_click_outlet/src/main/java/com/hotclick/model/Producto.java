@@ -119,6 +119,11 @@ public class Producto extends BaseEntity {
     @JoinColumn(name = "fk_id_empresa")
     private Empresa empresa;
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_catalogo_maestro")
+    private CatalogoMaestro catalogoMaestro;
+
     // Poblados en ProductoService para el catálogo público (open-in-view=false
     // impide leer la relación lazy durante la serialización JSON).
     // Solo se llenan si el producto pertenece a un emprendimiento visible.
@@ -379,6 +384,10 @@ public class Producto extends BaseEntity {
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
+
+    public CatalogoMaestro getCatalogoMaestro() { return catalogoMaestro; }
+    public void setCatalogoMaestro(CatalogoMaestro catalogoMaestro) { this.catalogoMaestro = catalogoMaestro; }
+    public Long getCatalogoMaestroId() { return catalogoMaestro != null ? catalogoMaestro.getId() : null; }
 
     public String getEmpresaNombre() { return empresaNombre; }
     public void setEmpresaNombre(String empresaNombre) { this.empresaNombre = empresaNombre; }

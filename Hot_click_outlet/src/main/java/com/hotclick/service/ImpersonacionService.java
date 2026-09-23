@@ -20,10 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Impersonación de soporte: permite a un ADMIN de plataforma actuar
- * temporalmente como el propietario de una empresa para diagnosticar un
- * problema reportado, sin conocer su contraseña. Queda registrado en la
- * auditoría admin al iniciar y al salir.
+ * Vista de soporte: el ADMIN sigue siendo él (identidad en el JWT), pero opera
+ * acotado al tenant de la empresa elegida. Queda en auditoría al iniciar y al salir.
  */
 @Service
 public class ImpersonacionService {
@@ -45,21 +43,22 @@ public class ImpersonacionService {
 
         Usuario objetivo = propietario.getUsuario();
         Usuario admin = companyScope.getCurrentUser();
+        String nombreAdmin = admin.getNombre() != null ? admin.getNombre() : admin.getCorreo().split("@")[0];
 
         String token = jwtUtil.generateImpersonationToken(
-            objetivo.getCorreo(), objetivo.getId(), propietario.getRolEnEmpresa(),
+            admin.getCorreo(), admin.getId(), Constants.ROL_EMPRENDEDOR,
             empresaId, empresa.getSlug(), admin.getId(), admin.getCorreo());
 
         registrarAuditoria(admin.getId(), admin.getCorreo(), "IMPERSONACION_INICIO", empresaId,
-            "Admin " + admin.getCorreo() + " impersonó a " + objetivo.getCorreo()
+            "Admin " + admin.getCorreo() + " vio como negocio a " + objetivo.getCorreo()
                 + " (" + empresa.getNombreEmpresa() + ")");
 
         Map<String, Object> data = new HashMap<>();
         data.put("accessToken", token);
-        data.put("id", objetivo.getId());
-        data.put("correo", objetivo.getCorreo());
-        data.put("rol", propietario.getRolEnEmpresa());
-        data.put("nombre", objetivo.getNombre());
+        data.put("id", admin.getId());
+        data.put("correo", admin.getCorreo());
+        data.put("rol", Constants.ROL_EMPRENDEDOR);
+        data.put("nombre", nombreAdmin);
         data.put("empresaId", empresaId);
         data.put("empresaSlug", empresa.getSlug() != null ? empresa.getSlug() : "");
         data.put("empresaNombre",
@@ -69,11 +68,8 @@ public class ImpersonacionService {
     }
 
     /**
-     * Cierra la sesión de impersonación: no invalida el token (expira solo,
-     * 30 min) sino que deja el evento en auditoría. El admin identificado
-     * viene del propio token de impersonación (claims adminOriginalId/Correo),
-     * no de CompanyScope, porque en este punto el usuario autenticado es el
-     * objetivo impersonado, no el admin.
+     * Cierra la sesión de soporte: no invalida el token (expira solo, 30 min);
+     * deja el evento en auditoría. El admin sale de claims adminOriginal*.
      */
     public void finalizar(Long empresaId, String rawToken) {
         if (!jwtUtil.isImpersonationToken(rawToken)) {

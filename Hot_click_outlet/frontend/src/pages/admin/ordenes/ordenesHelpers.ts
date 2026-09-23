@@ -2,22 +2,26 @@ import type { CSSProperties } from 'react'
 import type { Id } from '@/types/api'
 import type { ItemPedido, Pedido } from '@/types/pedido'
 import type { ProductoBackend } from '@/types/producto'
+import type { EstadoTono } from '@/components/ui/EstadoBadge'
 
 export const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO']
 
 export const ORD_PAGE_SIZE = 20
 
-export type EstiloEstadoPedido = { bg: string; text: string; border: string }
-
-export const ESTADO_STYLE: Record<string, EstiloEstadoPedido> = {
-  PENDIENTE:      { bg: '#f7ead2',                text: '#8a5a00', border: 'rgba(138,90,0,0.3)' },
-  PAGADO:         { bg: 'rgba(23,71,168,0.14)',   text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
-  EN_PREPARACION: { bg: '#f7ead2',                text: '#8a5a00', border: 'rgba(138,90,0,0.3)' },
-  LISTO_RETIRO:   { bg: '#e2f1e8',                text: '#1E7F4F', border: 'rgba(30,127,79,0.35)' },
-  ENVIADO:        { bg: 'rgba(23,71,168,0.14)',   text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
-  ENTREGADO:      { bg: '#e2f1e8',                text: '#1E7F4F', border: 'rgba(30,127,79,0.35)' },
-  COMPLETADO:     { bg: 'rgba(23,71,168,0.14)',   text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
-  CANCELADO:      { bg: 'rgba(220,38,38,0.1)',    text: '#a8291f', border: 'rgba(220,38,38,0.3)' },
+/**
+ * Tono compartido para el estado de un pedido — un solo mapa de colores para
+ * este vocabulario (antes duplicado con paletas distintas en ordenesHelpers y
+ * empresasHelpers para los mismos estados).
+ */
+export const ESTADO_PEDIDO_TONO: Record<string, EstadoTono> = {
+  PENDIENTE: 'warning',
+  PAGADO: 'info',
+  EN_PREPARACION: 'warning',
+  LISTO_RETIRO: 'success',
+  ENVIADO: 'info',
+  ENTREGADO: 'success',
+  COMPLETADO: 'info',
+  CANCELADO: 'danger',
 }
 
 export const ETAPAS_RETIRO = [

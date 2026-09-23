@@ -11,6 +11,14 @@ function PeopleIcon() {
   )
 }
 
+function BoltIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 6 13.5h5.25L10.5 19.5 18 10.5h-5.25l.75-6Z" />
+    </svg>
+  )
+}
+
 type TabDef = {
   id: CatalogViewMode
   label: string
@@ -28,6 +36,14 @@ export default function CatalogViewTabs({
 }) {
   const { t } = useTranslation()
   const tabs: TabDef[] = [
+    {
+      id: 'ofertas',
+      label: t('products.tabOfertas'),
+      sub: t('products.tabOfertasSub'),
+      icon: <BoltIcon />,
+      accent: 'var(--hc-red-500)',
+      accentBg: 'rgba(231,59,51,0.12)',
+    },
     {
       id: 'emprendimientos',
       label: t('products.tabEmp'),

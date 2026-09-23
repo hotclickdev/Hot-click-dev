@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getColaCompleta, actualizarEstado, type SyncQueueItem } from '@/db/offlineDb'
+import { getCapturaColaCompleta, type CapturaQueueItem } from '@/db/capturaOffline'
 import { procesarCola, descartarItem } from '@/services/syncService'
+import { procesarColaCaptura } from '@/services/capturaSyncService'
 import { useOffline } from '@/hooks/useOffline'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { Id } from '@/types/api'
@@ -27,10 +29,14 @@ const TIPO_LABEL: Record<string, string> = {
   VENTA_POS:     'Venta POS',
   PEDIDO_MANUAL: 'Pedido manual',
   AJUSTE_STOCK:  'Ajuste de stock',
+  CAPTURA_LINEA: 'Captura inventario',
 }
+
+const MAX_INTENTOS_CAPTURA = 5
 
 export default function AdminOfflineCola() {
   const [cola, setCola]       = useState<SyncQueueItem[]>([])
+  const [captura, setCaptura] = useState<CapturaQueueItem[]>([])
   const [cargando, setCargando] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const { isOnline, pendientes } = useOffline()
@@ -38,6 +44,7 @@ export default function AdminOfflineCola() {
   const cargar = useCallback(async () => {
     setCargando(true)
     setCola(await getColaCompleta())
+    setCaptura(await getCapturaColaCompleta())
     setCargando(false)
   }, [])
 
@@ -46,6 +53,14 @@ export default function AdminOfflineCola() {
   async function sincronizar() {
     setSyncing(true)
     await procesarCola()
+    await procesarColaCaptura()
+    await cargar()
+    setSyncing(false)
+  }
+
+  async function sincronizarCaptura() {
+    setSyncing(true)
+    await procesarColaCaptura()
     await cargar()
     setSyncing(false)
   }
@@ -77,14 +92,14 @@ export default function AdminOfflineCola() {
             <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
             <span style={{ color: 'var(--hc-muted)' }}>{isOnline ? 'En línea' : 'Sin conexión'}</span>
           </div>
-          {pendientes > 0 && isOnline && (
+          {(pendientes > 0 || captura.some((c) => c.estado === 'PENDIENTE' || c.estado === 'ERROR')) && isOnline && (
             <button type="button"
               onClick={sincronizar}
               disabled={syncing}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
               style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
             >
-              {syncing ? 'Sincronizando…' : `Sincronizar (${pendientes})`}
+              {syncing ? 'Sincronizando…' : 'Sincronizar'}
             </button>
           )}
         </div>
@@ -95,59 +110,110 @@ export default function AdminOfflineCola() {
           <div className="w-8 h-8 border-2 rounded-full animate-spin"
             style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
         </div>
-      ) : cola.length === 0 ? (
+      ) : cola.length === 0 && captura.length === 0 ? (
         <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
           <TrustGlyph tipo="check" className="w-10 h-10 mx-auto mb-3 opacity-60" />
           <p className="font-medium">Cola vacía — todo sincronizado</p>
+          <p className="text-sm mt-1">No hay ventas, ajustes ni capturas de inventario pendientes.</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-          {cola.map((item) => (
-            <div key={item.id}
-              className="flex items-start gap-4 px-5 py-4 border-b last:border-0"
-              style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
-              <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <EstadoBadge estado={item.estado} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
-                    {TIPO_LABEL[item.tipo] ?? item.tipo}
-                  </span>
-                  <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    {item.method} {item.endpoint}
-                  </span>
+        <div className="space-y-4">
+          {cola.length > 0 && (
+            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+              {cola.map((item) => (
+                <div key={item.id}
+                  className="flex items-start gap-4 px-5 py-4 border-b last:border-0"
+                  style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <EstadoBadge estado={item.estado} />
+                      <span className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
+                        {TIPO_LABEL[item.tipo] ?? item.tipo}
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                        {item.method} {item.endpoint}
+                      </span>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                      Creado: {fmt(item.creadoAt)} · Intento {item.intentos} de {3}
+                    </p>
+                    {item.errorDetalle && (
+                      <p className="text-xs px-2 py-1 rounded-lg mt-1"
+                        style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171' }}>
+                        {item.errorDetalle}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    {(item.estado === 'ERROR' || item.estado === 'CONFLICTO') && (
+                      <button type="button"
+                        onClick={() => reintentar(item)}
+                        className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+                        style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                      >
+                        Reintentar
+                      </button>
+                    )}
+                    {item.estado !== 'OK' && (
+                      <button type="button"
+                        onClick={() => descartar(item.id)}
+                        className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}
+                      >
+                        Descartar
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                  Creado: {fmt(item.creadoAt)} · Intento {item.intentos} de {3}
-                </p>
-                {item.errorDetalle && (
-                  <p className="text-xs px-2 py-1 rounded-lg mt-1"
-                    style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171' }}>
-                    {item.errorDetalle}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2 shrink-0">
-                {(item.estado === 'ERROR' || item.estado === 'CONFLICTO') && (
-                  <button type="button"
-                    onClick={() => reintentar(item)}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-                    style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-                  >
-                    Reintentar
-                  </button>
-                )}
-                {item.estado !== 'OK' && (
-                  <button type="button"
-                    onClick={() => descartar(item.id)}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-                    style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}
-                  >
-                    Descartar
-                  </button>
-                )}
-              </div>
+              ))}
             </div>
-          ))}
+          )}
+          {captura.length > 0 && (
+            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+              <div className="flex items-center justify-between px-5 py-2"
+                style={{ backgroundColor: 'var(--hc-surface)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
+                  Captura de inventario
+                </p>
+                {isOnline && captura.some((c) => c.estado === 'PENDIENTE' || c.estado === 'ERROR') && (
+                  <button type="button"
+                    onClick={sincronizarCaptura}
+                    disabled={syncing}
+                    className="text-xs px-3 py-1 rounded-lg font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+                    style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
+                  >
+                    {syncing ? 'Sincronizando…' : 'Sincronizar'}
+                  </button>
+                )}
+              </div>
+              {captura.map((item) => (
+                <div key={item.id}
+                  className="flex items-start gap-4 px-5 py-4 border-b last:border-0"
+                  style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <EstadoBadge estado={item.estado} />
+                      <span className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
+                        {TIPO_LABEL[item.tipo] ?? item.tipo}
+                      </span>
+                      <span className="text-xs font-mono" style={{ color: 'var(--hc-muted)' }}>
+                        paquete {String(item.paqueteId)}
+                      </span>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                      Creado: {fmt(item.creadoAt)} · Intento {item.intentos} de {MAX_INTENTOS_CAPTURA}
+                    </p>
+                    {item.errorDetalle && (
+                      <p className="text-xs px-2 py-1 rounded-lg mt-1"
+                        style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171' }}>
+                        {item.errorDetalle}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

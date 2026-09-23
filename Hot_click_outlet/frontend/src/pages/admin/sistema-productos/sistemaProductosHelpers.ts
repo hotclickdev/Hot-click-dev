@@ -14,7 +14,6 @@ export type FormSistemaProducto = {
   stock: string | number
   categoriaId: string
   sku: string
-  barcode: string
   imagenUrl: string
   bodegaId: string | number
   visibleCatalogo: boolean
@@ -108,7 +107,6 @@ export const FORM_VACIO: FormSistemaProducto = {
   stock: '',
   categoriaId: '',
   sku: '',
-  barcode: '',
   imagenUrl: '',
   bodegaId: '',
   visibleCatalogo: true,

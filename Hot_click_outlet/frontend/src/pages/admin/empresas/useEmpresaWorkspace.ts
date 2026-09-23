@@ -4,6 +4,8 @@ import { adminService, orderService } from '@/services/orderService'
 import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
+import { prefijoPorPlan } from '@/utils/planPaths'
 import { mensajeErrorProducto } from '../productos/productosHelpers'
 import {
   TAB_PRODUCTOS_SIZE,
@@ -151,7 +153,8 @@ export function useEmpresaWorkspace() {
     try {
       const { data } = await adminService.impersonarEmpresa(empresaId)
       useAuthStore.getState().impersonar(data)
-      navigate('/admin')
+      await useTenantStore.getState().loadTenantInfo()
+      navigate(prefijoPorPlan(useTenantStore.getState().planNombre))
     } catch {
       toast({ message: 'No se pudo iniciar la sesión de soporte', type: 'error' })
     } finally {

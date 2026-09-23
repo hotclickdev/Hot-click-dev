@@ -35,7 +35,7 @@ public class PosQrController {
     // ── AUTH: cajero crea sesión ────────────────────────────────
 
     @PostMapping
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crearSesion(@RequestBody Map<String, Object> body,
                                           HttpServletRequest request) {
         try {
@@ -61,7 +61,7 @@ public class PosQrController {
     }
 
     @PutMapping("/{token}/confirmar-sinpe")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> confirmarSinpe(@PathVariable String token,
                                              @RequestBody(required = false) Map<String, Object> body,
                                              HttpServletRequest request) {
@@ -80,7 +80,7 @@ public class PosQrController {
     }
 
     @DeleteMapping("/{token}")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> cancelar(@PathVariable String token, HttpServletRequest request) {
         try {
             Long empresaId = extractEmpresaId(request);

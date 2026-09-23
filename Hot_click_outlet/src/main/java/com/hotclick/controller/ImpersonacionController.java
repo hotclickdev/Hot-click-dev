@@ -12,9 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Fuera de /api/admin/** a propósito: ese prefijo exige rol ADMIN en
- * SecurityAuthorizationRules, pero quien cierra una sesión de impersonación
- * está autenticado como el usuario impersonado (PROPIETARIO), no como ADMIN.
- * Solo requiere estar autenticado (cae en el matcher genérico /api/**).
+ * SecurityAuthorizationRules, pero el token de soporte lleva rol EMPRENDEDOR
+ * (vista de negocio). Solo requiere autenticación (matcher genérico /api/**).
  */
 @RestController
 @RequestMapping("/api/impersonacion")

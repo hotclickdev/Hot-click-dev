@@ -97,28 +97,12 @@ export default function PasoDetalles({ form, setCampo, setForm }: {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>SKU <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(se asigna al guardar)</span></Label>
-          <input
-            className={inp}
-            style={{ ...inpStyle, opacity: 0.85 }}
-            type="text"
-            value={form.sku ? form.sku : ''}
-            readOnly
-            placeholder="Automático por negocio"
-          />
+          <Label>SKU <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(código interno)</span></Label>
+          <input className={inp} style={inpStyle} type="text" value={form.sku ?? ''} onChange={setCampo('sku')} placeholder="Ej: HC-001" />
         </div>
         <div>
-          <Label>Código de barras <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(opcional — EAN / UPC. Podés agregarlo después.)</span></Label>
-          <input
-            className={inp}
-            style={inpStyle}
-            type="text"
-            value={form.barcode ?? ''}
-            onChange={setCampo('barcode')}
-            placeholder="Ej: 7501234567890"
-            maxLength={50}
-            autoComplete="off"
-          />
+          <Label>Barcode <span className="font-normal" style={{ color: 'var(--hc-muted)' }}>(EAN / UPC)</span></Label>
+          <input className={inp} style={inpStyle} type="text" value={form.barcode ?? ''} onChange={setCampo('barcode')} placeholder="Ej: 7501234567890" />
         </div>
       </div>
     </div>

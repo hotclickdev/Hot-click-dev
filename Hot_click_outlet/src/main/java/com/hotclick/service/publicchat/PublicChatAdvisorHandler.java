@@ -1,7 +1,6 @@
 package com.hotclick.service.publicchat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotclick.service.producto.SkuVisibility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -60,7 +59,7 @@ public class PublicChatAdvisorHandler {
                 List.of("Ver productos populares", "Contactar por WhatsApp"));
             return;
         }
-        enviarProductoFicha(emitter, ficha, userMessage);
+        enviarProductosVacios(emitter, userMessage);
         registrarAnalitica(empresaId, userMessage);
         boolean isEnglish = intentHelper.isEnglish(userMessage);
         boolean afterHours = intentHelper.isOutsideBusinessHours();
@@ -76,15 +75,6 @@ public class PublicChatAdvisorHandler {
     private void enviarProductosVacios(SseEmitter emitter, String query) throws Exception {
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("productos", List.of());
-        event.put("hasMore", false);
-        event.put("query", query);
-        emitter.send(SseEmitter.event().name("products")
-            .data(objectMapper.writeValueAsString(event)));
-    }
-
-    private void enviarProductoFicha(SseEmitter emitter, Map<String, Object> ficha, String query) throws Exception {
-        Map<String, Object> event = new LinkedHashMap<>();
-        event.put("productos", List.of(SkuVisibility.sinInternos(ficha)));
         event.put("hasMore", false);
         event.put("query", query);
         emitter.send(SseEmitter.event().name("products")

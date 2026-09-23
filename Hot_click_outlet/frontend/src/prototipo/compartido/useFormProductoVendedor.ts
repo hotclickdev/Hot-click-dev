@@ -18,7 +18,6 @@ export type ValoresInicialesProducto = Readonly<{
   precioMin?: string
   precioMax?: string
   imagenUrl?: string
-  barcode?: string
 }>
 
 /**
@@ -39,7 +38,6 @@ export default function useFormProductoVendedor(personalizado: boolean) {
   const [precioMin, setPrecioMin] = useState('')
   const [precioMax, setPrecioMax] = useState('')
   const [imagenUrl, setImagenUrl] = useState('')
-  const [barcode, setBarcode] = useState('')
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
@@ -76,7 +74,6 @@ export default function useFormProductoVendedor(personalizado: boolean) {
     setPrecioMin(valores.precioMin ?? '')
     setPrecioMax(valores.precioMax ?? '')
     setImagenUrl(valores.imagenUrl ?? '')
-    setBarcode(valores.barcode ?? '')
   }, [])
 
   function payloadPublicacion(): DatosProductoVendedor {
@@ -100,7 +97,6 @@ export default function useFormProductoVendedor(personalizado: boolean) {
       precioPersonalizadoMax: precios.precioPersonalizadoMax,
       instruccionesPersonalizacion: personalizado ? instrucciones : undefined,
       imagenUrl: imagenUrl || undefined,
-      barcode: barcode.trim(),
     }
   }
 
@@ -131,8 +127,6 @@ export default function useFormProductoVendedor(personalizado: boolean) {
     setPrecioMax,
     imagenUrl,
     setImagenUrl,
-    barcode,
-    setBarcode,
     errorSubmit,
     setErrorSubmit,
     guardando,

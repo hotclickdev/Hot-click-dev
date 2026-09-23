@@ -61,10 +61,7 @@ export function AIChatMessageList({
               >
                 {m.rol === 'user'
                   ? <span style={{ whiteSpace: 'pre-wrap' }}>{m.texto}</span>
-                  : <span
-                      className={m.productos && m.productos.length > 0 ? 'line-clamp-2' : undefined}
-                      style={{ whiteSpace: 'pre-wrap' }}
-                    >
+                  : <span style={{ whiteSpace: 'pre-wrap' }}>
                       <MarkdownSpan text={m.texto ?? ''} />
                       {m.typing && <span className="inline-block w-1.5 h-4 ml-0.5 align-middle animate-pulse rounded-sm bg-current opacity-70" />}
                     </span>

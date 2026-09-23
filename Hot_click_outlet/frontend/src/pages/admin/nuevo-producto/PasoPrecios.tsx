@@ -1,7 +1,15 @@
 import { inp, inpStyle } from './productFormUi'
 import Label from './Label'
+import { useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import type { SetCampo, WizardForm } from './wizardHelpers'
+import { paymentService } from '@/services/paymentService'
+import {
+  COMISION_GATEWAY_FIJO_DEFAULT,
+  COMISION_GATEWAY_PCT_DEFAULT,
+  parseConfigComision,
+  precioSugerido,
+} from '@/utils/comisionPrecio'
 
 function margenDePrecios(precioCompra: string, precioVenta: string) {
   const compra = Number(precioCompra)
@@ -20,6 +28,26 @@ export default function PasoPrecios({ form, setCampo, priceWarning, setPriceWarn
 }) {
   const { compra, venta, margen, margenPct } = margenDePrecios(form.precioCompra, form.precioVenta)
   const mostrarPrecioFijo = !form.esPersonalizado || form.modoPrecioPersonalizado === 'FIJO'
+  const [pctTarjeta, setPctTarjeta] = useState(COMISION_GATEWAY_PCT_DEFAULT)
+  const [fijoCrc, setFijoCrc] = useState(COMISION_GATEWAY_FIJO_DEFAULT)
+
+  useEffect(() => {
+    let cancelled = false
+    paymentService.getConfigComision()
+      .then(({ data }) => {
+        if (cancelled) return
+        const cfg = parseConfigComision(data)
+        setPctTarjeta(cfg.pctComisionTarjeta)
+        setFijoCrc(cfg.montoFijoComisionCrc)
+      })
+      .catch(() => { /* defaults locales */ })
+    return () => { cancelled = true }
+  }, [])
+
+  const baseNeto = venta > 0 ? venta : compra
+  const sugerido = baseNeto > 0
+    ? precioSugerido(baseNeto, pctTarjeta, fijoCrc)
+    : 0
 
   return (
     <div className="space-y-5">
@@ -41,6 +69,25 @@ export default function PasoPrecios({ form, setCampo, priceWarning, setPriceWarn
               onChange={e => { setCampo('precioVenta')(e); setPriceWarning(false) }}
               placeholder="0" min="0" />
             <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>Lo que paga el cliente</p>
+            {sugerido > 0 && sugerido !== venta && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                  Sugerido para netear ₡{baseNeto.toLocaleString('es-CR')} ({pctTarjeta}% + ₡{fijoCrc}):{' '}
+                  <strong style={{ color: 'var(--hc-text)' }}>₡{sugerido.toLocaleString('es-CR')}</strong>
+                </p>
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2.5 py-1 rounded-lg border"
+                  style={{ color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}
+                  onClick={() => {
+                    setForm(f => ({ ...f, precioVenta: String(sugerido) }))
+                    setPriceWarning(false)
+                  }}
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

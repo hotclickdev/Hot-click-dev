@@ -51,7 +51,6 @@ export default function StepVenta({
 
   usePosAtajos({
     activo: true,
-    hayItems: cartItems.length > 0,
     onCobrar,
     alBuscar: () => setTicketAbierto(false),
     alCantidad: () => {

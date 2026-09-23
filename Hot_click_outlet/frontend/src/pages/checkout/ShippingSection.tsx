@@ -94,7 +94,7 @@ export default function ShippingSection({
               checked={metodoEnvio === op.value}
               onChange={() => {
                 setMetodoEnvio(op.value)
-                if (op.value === 'ENVIO_RAPIDO' && metodoPago === 'EFECTIVO') setMetodoPago('SINPE')
+                if (op.value === 'ENVIO_RAPIDO' && metodoPago === 'EFECTIVO') setMetodoPago('TILOPAY')
               }}
               style={{ accentColor: 'var(--hc-accent)' }}
             />

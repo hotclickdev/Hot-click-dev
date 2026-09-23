@@ -57,8 +57,9 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     /** Batch UPDATE: degrada plan y estado de múltiples empresas en un solo statement. */
     @Modifying
     @Transactional
-    @Query("UPDATE Empresa e SET e.plan = :freePlan, e.estadoPlan = 'VENCIDO', e.fechaVencPlan = :hoy WHERE e.id IN :ids")
+    @Query("UPDATE Empresa e SET e.plan = :planBase, e.planSaas = :nombrePlan, e.estadoPlan = 'VENCIDO', e.fechaVencPlan = :hoy WHERE e.id IN :ids")
     int degradarPlanBatch(@Param("ids") List<Long> ids,
-                          @Param("freePlan") Plan freePlan,
+                          @Param("planBase") Plan planBase,
+                          @Param("nombrePlan") String nombrePlan,
                           @Param("hoy") LocalDate hoy);
 }

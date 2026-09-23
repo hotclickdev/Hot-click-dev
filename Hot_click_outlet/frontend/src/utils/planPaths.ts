@@ -67,6 +67,11 @@ export function rutaSellerDesdeAdmin(
 
 /**
  * Cuenta / settings: Emp anida bajo `opciones/*`; PYME y Plus usan paths planos.
+ *
+ * Contrato estable (audit P2-07, ver docs/visual-ux-audit/anexo-6-propuestas.md):
+ * la asimetría es intencional, no una inconsistencia a corregir de paso.
+ * NO unificar sin actualizar `planPaths.test.ts` y los specs Playwright que
+ * dependen de `opciones/*` (tests/emprendedor-wizard.spec.ts, tests/emprende.spec.ts).
  */
 export function rutaCuentaSeller(
   planNombre: string | null | undefined,

@@ -67,7 +67,7 @@ export default function AdminBilletera() {
         <button type="button"
           onClick={() => setShowModal(true)}
           disabled={hayPayoutActivo || !wallet?.saldoDisponible}
-          className="px-4 py-2 rounded-xl text-sm bg-[var(--color-accent)] text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-xl text-sm bg-[var(--color-hc-accent)] text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {t('adminBilletera.requestPayout')}
         </button>

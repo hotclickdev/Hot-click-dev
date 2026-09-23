@@ -6,18 +6,19 @@ import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.core.env.Environment;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Component
 @Order(100)
 public class DataSeeder implements ApplicationRunner {
+
+    private static final String DEMO_PYME = "qa.pyme.demo@hotclick.test";
+    private static final String DEMO_PLUS = "qa.negocioplus.demo@hotclick.test";
 
     @Autowired private RolRepository rolRepository;
     @Autowired private UsuarioRepository usuarioRepository;
@@ -27,7 +28,6 @@ public class DataSeeder implements ApplicationRunner {
     @Autowired private PlanRepository planRepository;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private PasswordEncoder passwordEncoder;
-    @Autowired private Environment environment;
 
     @Override
     @Transactional
@@ -36,35 +36,30 @@ public class DataSeeder implements ApplicationRunner {
         seedRol(Constants.ROL_ADMIN,         "Administrador del sistema HotClick", 100);
         seedRol(Constants.ROL_EMPRENDEDOR,   "Dueño de empresa",                   7);
         seedRol(Constants.ROL_USUARIO_FINAL, "Cliente final",                       1);
-        seedRol(Constants.ROL_SUPPORT, "Staff plataforma — tickets y ver tiendas", 80);
-        seedRol(Constants.ROL_FINANCE, "Staff plataforma — payouts, billing y pagos", 80);
-        seedRol(Constants.ROL_TRUST,   "Staff plataforma — moderación y suspensiones", 80);
         seedAdminUser();
         seedPlanesSaas();
-        if (!environment.matchesProfiles("test")) {
-            seedQaCuentas();
-        }
+        asignarPlanesDemo();
     }
 
     private void seedPlanesSaas() {
         seedPlan(
             "EMPRENDEDOR",
-            "Plan gratuito. Comisión 8% por venta (mín. ₡400), cubre pasarela y plataforma.",
-            BigDecimal.ZERO, new BigDecimal("8.00"), 0,
+            "Plan gratuito. Comisión 9% por venta (mín. ₡600), cubre pasarela Tilopay y plataforma.",
+            BigDecimal.ZERO, new BigDecimal("9.00"), 0,
             2, 50, 1, 1,
             false, false, false, true, false, false, 0, false
         );
         seedPlan(
             "PYME",
-            "Plan para negocios en crecimiento. ₡9.900/mes + 4% por venta (cubre pasarela).",
-            new BigDecimal("11.99"), new BigDecimal("4.00"), 9900,
+            "Plan para negocios en crecimiento. ₡9.900/mes + 6% por venta (cubre Tilopay).",
+            new BigDecimal("11.99"), new BigDecimal("6.00"), 9900,
             5, 500, 2, 2,
             true, false, true, true, true, false, 80, true
         );
         seedPlan(
             "NEGOCIO_PLUS",
-            "Plan completo. ₡24.900/mes + 4% por venta (cubre pasarela).",
-            new BigDecimal("19.99"), new BigDecimal("4.00"), 24900,
+            "Plan completo. ₡24.900/mes + 6% por venta (cubre Tilopay).",
+            new BigDecimal("19.99"), new BigDecimal("6.00"), 24900,
             -1, -1, -1, -1,
             true, true, true, true, true, false, -1, true
         );
@@ -138,148 +133,26 @@ public class DataSeeder implements ApplicationRunner {
         }
     }
 
-    private void seedQaCuentas() {
-        seedQaNegocio(
-            Constants.CORREO_QA_EMPRENDEDOR,
-            "QA Emprendedor",
-            "qa-emprendedor",
-            "QA Emprendedor Demo",
-            "EMPRENDEDOR",
-            "QA-EMP-0001",
-            "88881001"
-        );
-        seedQaNegocio(
-            Constants.CORREO_QA_PYME,
-            "QA Pyme",
-            "qa-pyme",
-            "QA Pyme Demo",
-            "PYME",
-            "QA-PYME-0002",
-            "88881002"
-        );
-        seedQaNegocio(
-            Constants.CORREO_QA_NEGOCIO_PLUS,
-            "QA Negocio Plus",
-            "qa-negocio-plus",
-            "QA Negocio Plus Demo",
-            "NEGOCIO_PLUS",
-            "QA-PLUS-0003",
-            "88881003"
-        );
+    private void asignarPlanesDemo() {
+        asignarPlanPorCorreo(DEMO_PYME, "PYME");
+        asignarPlanPorCorreo(DEMO_PLUS, "NEGOCIO_PLUS");
     }
 
-    private void seedQaNegocio(
-        String correo,
-        String nombrePersona,
-        String slug,
-        String nombreEmpresa,
-        String nombrePlan,
-        String identificacion,
-        String telefono
-    ) {
+    private void asignarPlanPorCorreo(String correo, String nombrePlan) {
         Plan plan = planRepository.findByNombre(nombrePlan).orElse(null);
         if (plan == null) return;
-
-        Empresa empresa = empresaRepository.findByCorreoEmpresa(correo).orElse(null);
-        if (empresa == null) {
-            empresa = usuarioRepository.findByCorreo(correo)
-                .map(Usuario::getEmpresa)
-                .orElse(null);
-        }
-        if (empresa == null) {
-            empresa = new Empresa();
-            empresa.setNombreEmpresa(nombreEmpresa);
-            empresa.setNombreComercial(nombreEmpresa);
-            empresa.setSlug(slugDisponible(slug));
-            empresa.setCorreoEmpresa(correo);
-            empresa.setTelefonoEmpresa(telefono);
-            empresa.setEstadoEmpresa("ACTIVO");
-            empresa.setVisibilidadPublica(true);
-            empresa.setFechaRegistro(LocalDateTime.now());
-            empresa.setFechaAprobacion(LocalDateTime.now());
-            empresa.setEstado(Constants.ESTADO_ACTIVO);
+        usuarioRepository.findByCorreo(correo).ifPresent(usuario -> {
+            Empresa empresa = usuario.getEmpresa();
+            if (empresa == null) return;
             empresa.setPlan(plan);
             empresa.setPlanSaas(nombrePlan);
-            empresa.setEstadoPlan("ACTIVO");
-            empresa = empresaRepository.save(empresa);
-        } else {
+            empresaRepository.save(empresa);
+        });
+        empresaRepository.findByCorreoEmpresa(correo).ifPresent(empresa -> {
             empresa.setPlan(plan);
             empresa.setPlanSaas(nombrePlan);
-            empresa.setEstadoEmpresa("ACTIVO");
-            empresa.setVisibilidadPublica(true);
-            empresa.setEstadoPlan("ACTIVO");
-            if (empresa.getFechaAprobacion() == null) {
-                empresa.setFechaAprobacion(LocalDateTime.now());
-            }
-            empresa = empresaRepository.save(empresa);
-        }
-
-        Usuario usuario = asegurarUsuarioQa(correo, nombrePersona, identificacion, telefono, empresa);
-        if (bodegaRepository.countByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO) == 0) {
-            Bodega bodega = new Bodega();
-            bodega.setNombreBodega("Bodega principal");
-            bodega.setDireccionExacta("San José, Costa Rica");
-            bodega.setTelefono(telefono);
-            bodega.setEstado(Constants.ESTADO_ACTIVO);
-            bodega.setAdminCliente(usuario);
-            bodega.setEmpresa(empresa);
-            bodega.setFechaCreacion(LocalDateTime.now());
-            bodegaRepository.save(bodega);
-        }
-    }
-
-    private Usuario asegurarUsuarioQa(
-        String correo,
-        String nombrePersona,
-        String identificacion,
-        String telefono,
-        Empresa empresa
-    ) {
-        String password = System.getenv().getOrDefault("QA_DEFAULT_PASSWORD", "QaDemo1234!");
-        Usuario usuario = usuarioRepository.findByCorreo(correo).orElse(null);
-        if (usuario == null) {
-            usuario = new Usuario();
-            usuario.setIdentificacion(identificacionUnica(identificacion));
-            usuario.setNombre(nombrePersona);
-            usuario.setApellidoPaterno("Demo");
-            usuario.setCorreo(correo);
-            usuario.setTelefono(telefono);
-            usuario.setContrasenaHash(passwordEncoder.encode(password));
-            usuario.setEstado(Constants.ESTADO_ACTIVO);
-            usuario.setIntentosFallidos(0);
-            usuario.setEmpresa(empresa);
-            usuario.setFechaRegistro(LocalDateTime.now());
-            asignarRolEmprendedor(usuario);
-            return usuarioRepository.save(usuario);
-        }
-        usuario.setEmpresa(empresa);
-        usuario.setEstado(Constants.ESTADO_ACTIVO);
-        usuario.setIntentosFallidos(0);
-        usuario.setBloqueadoHasta(null);
-        boolean tieneEmprendedor = usuario.getRoles().stream()
-            .anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
-        if (!tieneEmprendedor) {
-            asignarRolEmprendedor(usuario);
-        }
-        if ("true".equalsIgnoreCase(System.getenv("QA_RESET_PASSWORD"))) {
-            usuario.setContrasenaHash(passwordEncoder.encode(password));
-        }
-        return usuarioRepository.save(usuario);
-    }
-
-    private void asignarRolEmprendedor(Usuario usuario) {
-        rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
-            .ifPresent(rol -> usuario.getRoles().add(rol));
-    }
-
-    private String slugDisponible(String base) {
-        if (!empresaRepository.existsBySlug(base)) return base;
-        return base + "-qa";
-    }
-
-    private String identificacionUnica(String base) {
-        if (!usuarioRepository.existsByIdentificacion(base)) return base;
-        return base + "-QA";
+            empresaRepository.save(empresa);
+        });
     }
 
     private void seedEstados() {
@@ -313,7 +186,7 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private void seedAdminUser() {
-        String correo = Constants.CORREO_ADMIN;
+        String correo = "admin@hotclick.com";
         String defaultPassword = System.getenv().getOrDefault("ADMIN_DEFAULT_PASSWORD", "Admin1234!"); // NOSONAR — contraseña de seed, nunca usada en producción con valor por defecto
         if (usuarioRepository.existsByCorreo(correo)) {
             Usuario admin = usuarioRepository.findByCorreo(correo).orElseThrow();
@@ -373,7 +246,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private void seedBodegaDefault() {
         if (bodegaRepository.count() == 0) {
-            Usuario admin = usuarioRepository.findByCorreo(Constants.CORREO_ADMIN).orElse(null);
+            Usuario admin = usuarioRepository.findByCorreo("admin@hotclick.com").orElse(null);
             if (admin == null) return;
             Bodega bodega = new Bodega();
             bodega.setNombreBodega("Bodega Principal");
@@ -387,7 +260,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private void seedCategoriasDefault() {
         if (categoriaRepository.count() == 0) {
-            Usuario admin = usuarioRepository.findByCorreo(Constants.CORREO_ADMIN).orElse(null);
+            Usuario admin = usuarioRepository.findByCorreo("admin@hotclick.com").orElse(null);
             if (admin == null) return;
             String[] nombres = { "Electrónica", "Computación", "Hogar", "Accesorios", "Gaming", "Oficina" };
             for (String nombre : nombres) {

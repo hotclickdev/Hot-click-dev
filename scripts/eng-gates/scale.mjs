@@ -3,10 +3,12 @@
  * y un scan semanal de hotspots (tamaño + findAll).
  */
 
-const LIST_LIMIT = /Pageable|Page<|PageRequest|PageImpl|\.limit\s*\(|LIMIT\s+\d+|setMaxResults|slice\s*\(/;
+const LIST_LIMIT = /Pageable|Page<|PageRequest|PageImpl|\.limit\s*\(|LIMIT\s+\d+|setMaxResults|slice\s*\(|MAX_\w*LINEAS|MAX_\w*IMPORT|MAX_LIST_/;
 const FIND_ALL = /(?<![A-Za-z])findAll\s*\(/;
 const LOOP = /\bfor\s*\(|\.forEach\s*\(|\.map\s*\(/;
 const DB_CALL = /\.(findAll|findBy|findOne|getBy|save|saveAll|delete|deleteBy)\s*\(/;
+/** Seeders y backfills: save en loop no es N+1 de request path. */
+const SKIP_NPLUS1_PATH = /\/(?:config\/DataSeeder|service\/inventario\/InventarioPaqueteService)\.java$/;
 const BLOCKING = /Thread\.sleep\s*\(|RestTemplate|\.block\s*\(|HttpURLConnection|openStream\s*\(|CompletableFuture\.[a-zA-Z]*\s*\([^)]*\)\s*\.\s*(get|join)\s*\(/;
 const FAT_TX = /@Transactional\b/;
 const PAGEABLE_PARAM = /Pageable|@PageableDefault/;
@@ -78,7 +80,8 @@ export function scanScaleDiff(diffFiles) {
             'Usá Pageable o un maxResults. Ver ProductoController (catálogo ya pagina).'));
         }
 
-        if (java && hasLoop && addedDb && DB_CALL.test(line.text)) {
+        if (java && hasLoop && addedDb && DB_CALL.test(line.text)
+            && !SKIP_NPLUS1_PATH.test(file.path.replaceAll('\\', '/'))) {
           findings.push(item('fail', 'p1-nplus1', file.path, line, line.text,
             'Posible N+1: llamada DB dentro de un hunk con for/forEach (P1)',
             'Batch (findByIdIn), join fetch o @EntityGraph. No queries por item.'));

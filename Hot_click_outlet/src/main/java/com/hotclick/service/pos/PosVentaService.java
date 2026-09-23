@@ -18,6 +18,7 @@ import com.hotclick.service.StockService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.service.TurnoCajaService;
 import com.hotclick.service.VentaAvisoService;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
@@ -49,6 +50,7 @@ public class PosVentaService {
     @Autowired private CacheManager cacheManager;
     @Autowired private TelegramNotificacionClienteService telegramNotificacionClienteService;
     @Autowired private VentaAvisoService ventaAvisoService;
+    @Autowired private CompanyScope companyScope;
 
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
@@ -108,7 +110,7 @@ public class PosVentaService {
         pedido.setMetodoEnvio("RETIRO");
         pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
         pedido.setCostoEnvio(0);
-        pedido.setDescuentoTotal(dto.getDescuentoGlobal() != null ? dto.getDescuentoGlobal() : 0);
+        pedido.setDescuentoTotal(resolverDescuento(dto.getDescuentoGlobal()));
         pedido.setAplicaImpuesto(false);
         pedido.setMontoImpuesto(0);
         pedido.setEstado(Constants.ESTADO_ACTIVO);
@@ -125,9 +127,13 @@ public class PosVentaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
             PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), pedido.getEmpresa().getId());
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
-            int precio = itemDto.getPrecioUnitario() != null
-                ? itemDto.getPrecioUnitario() : producto.getPrecioEfectivo();
-            int costo = producto.getPrecioCompra();
+            // Precio siempre del catálogo — no confiar en el body del cliente.
+            Integer precioObj = producto.getPrecioEfectivo();
+            if (precioObj == null) {
+                throw new IllegalStateException("Producto sin precio de venta: " + itemDto.getProductoId());
+            }
+            int precio = precioObj;
+            int costo = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
             int disponible = producto.getStockDisponible();
             if (disponible < cantidad) {
                 throw new IllegalArgumentException(
@@ -140,7 +146,20 @@ public class PosVentaService {
             costoTotal += costo * cantidad;
         }
         pedido.setItems(items);
-        return new TotalesPos(subtotal, costoTotal, pedido.getDescuentoTotal());
+        int descuento = Math.min(Math.max(0, pedido.getDescuentoTotal()), subtotal);
+        pedido.setDescuentoTotal(descuento);
+        return new TotalesPos(subtotal, costoTotal, descuento);
+    }
+
+    /** Descuento manual solo con permiso pos.descuento (o ADMIN_IT). */
+    private int resolverDescuento(Integer solicitado) {
+        if (solicitado == null || solicitado <= 0) {
+            return 0;
+        }
+        if (!companyScope.hasAuthority("pos.descuento") && !companyScope.isAdminIT()) {
+            throw new SecurityException("Sin permiso para aplicar descuento en caja");
+        }
+        return solicitado;
     }
 
     private PedidoItem itemDeVenta(Pedido pedido, Producto producto, int cantidad, int precio, int costo) {

@@ -238,8 +238,6 @@ export function formDesdeProducto(p: ProductoAdmin, bodegas: BodegaAdmin[]): Adm
     metaDescription: p.metaDescription ?? '',
     metaKeywords: p.metaKeywords ?? '',
     videoUrl: p.videoUrl ?? '',
-    sku: p.sku ?? '',
-    barcode: p.barcode ?? '',
   }
 }
 

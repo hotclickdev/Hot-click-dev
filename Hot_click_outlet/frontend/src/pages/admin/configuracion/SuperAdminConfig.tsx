@@ -44,7 +44,7 @@ export default function SuperAdminConfig() {
       <ul data-mm="config-menu">
         {LINKS_CONFIG_ADMIN.map((item) => (
           <li key={item.to} className="border-b border-hc-border">
-            <AdminMenuRow to={item.to} label={item.label} peligro={'peligro' in item && item.peligro} />
+            <AdminMenuRow to={item.to} label={item.label} />
           </li>
         ))}
         <li className="border-b border-hc-border">

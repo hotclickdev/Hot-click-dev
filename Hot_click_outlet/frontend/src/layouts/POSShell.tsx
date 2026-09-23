@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Helmet } from 'react-helmet-async'
+import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 
 /**
@@ -15,6 +16,7 @@ export default function POSShell({ children }: { children?: ReactNode }) {
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
+      <ImpersonacionBanner />
       {children}
       <MentalModelCoach />
     </div>

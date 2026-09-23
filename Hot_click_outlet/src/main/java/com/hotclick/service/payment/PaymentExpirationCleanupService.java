@@ -24,12 +24,13 @@ public class PaymentExpirationCleanupService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentExpirationCleanupService.class);
 
-    @Autowired private EmpresaRepository         empresaRepository;
-    @Autowired private PagoRepository            pagoRepository;
-    @Autowired private PedidoRepository          pedidoRepository;
-    @Autowired private StockReservationService   stockReservationService;
+    @Autowired private EmpresaRepository          empresaRepository;
+    @Autowired private PagoRepository             pagoRepository;
+    @Autowired private PedidoRepository           pedidoRepository;
+    @Autowired private StockReservationService    stockReservationService;
+    @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
 
-    @Scheduled(fixedRate = 5 * 60 * 1000) // cada 5 minutos
+    @Scheduled(fixedRate = 5 * 60 * 1000)
     @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
     @Transactional
     public void cancelarExpirados() {
@@ -49,6 +50,19 @@ public class PaymentExpirationCleanupService {
         List<Pedido> pedidosActualizados = new ArrayList<>();
 
         for (Pago pago : expirados) {
+            if (Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
+                try {
+                    if (tilopayConfirmacionService.intentarConfirmarSiAprobado(pago)) {
+                        log.info("[payment-cleanup] Tilopay ya aprobado — confirmado: {}",
+                            pago.getMerchantToken());
+                        continue;
+                    }
+                } catch (Exception e) {
+                    log.warn("[payment-cleanup] Reconsulta Tilopay falló token={}: {}",
+                        pago.getMerchantToken(), e.getMessage());
+                }
+            }
+
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagosActualizados.add(pago);
@@ -65,7 +79,8 @@ public class PaymentExpirationCleanupService {
         if (!pagosActualizados.isEmpty()) {
             pagoRepository.saveAll(pagosActualizados);
             pedidoRepository.saveAll(pedidosActualizados);
-            log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados", empresaId, pagosActualizados.size());
+            log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados",
+                empresaId, pagosActualizados.size());
         }
     }
 }

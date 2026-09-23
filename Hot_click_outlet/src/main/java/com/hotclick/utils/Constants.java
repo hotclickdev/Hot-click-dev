@@ -91,9 +91,10 @@ public class Constants {
     public static final String ENVIO_RETIRO    = "RETIRO_EN_TIENDA";
 
     // Proveedores de pago
-    public static final String PROVEEDOR_STRIPE = "STRIPE";
-    public static final String PROVEEDOR_SINPE  = "SINPE";
-    public static final String PROVEEDOR_ONVO   = "ONVO";
+    public static final String PROVEEDOR_STRIPE  = "STRIPE";
+    public static final String PROVEEDOR_SINPE   = "SINPE";
+    public static final String PROVEEDOR_ONVO    = "ONVO";
+    public static final String PROVEEDOR_TILOPAY = "TILOPAY";
 
     // Estados de pedido SINPE
     public static final String PEDIDO_PENDIENTE_COMPROBANTE = "PENDIENTE_COMPROBANTE";

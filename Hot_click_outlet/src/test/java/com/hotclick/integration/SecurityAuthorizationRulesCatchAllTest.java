@@ -47,28 +47,30 @@ class SecurityAuthorizationRulesCatchAllTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("SUPPORT: pasa el catch-all")
-    void support_pasaElFiltro() throws Exception {
-        assertPasaElFiltro(Constants.ROL_SUPPORT, "supportstaff@hotclick.cr");
+    @DisplayName("SUPPORT legacy: denegado por el catch-all (V132)")
+    void support_denegado() throws Exception {
+        assertDenegado(Constants.ROL_SUPPORT, "supportstaff@hotclick.cr");
     }
 
     @Test
-    @DisplayName("FINANCE: pasa el catch-all")
-    void finance_pasaElFiltro() throws Exception {
-        assertPasaElFiltro(Constants.ROL_FINANCE, "financestaff@hotclick.cr");
+    @DisplayName("FINANCE legacy: denegado por el catch-all (V132)")
+    void finance_denegado() throws Exception {
+        assertDenegado(Constants.ROL_FINANCE, "financestaff@hotclick.cr");
     }
 
     @Test
-    @DisplayName("TRUST: pasa el catch-all")
-    void trust_pasaElFiltro() throws Exception {
-        assertPasaElFiltro(Constants.ROL_TRUST, "truststaff@hotclick.cr");
+    @DisplayName("TRUST legacy: denegado por el catch-all (V132)")
+    void trust_denegado() throws Exception {
+        assertDenegado(Constants.ROL_TRUST, "truststaff@hotclick.cr");
     }
 
-    private void assertPasaElFiltro(String rolNombre, String correo) throws Exception {
+    private void assertDenegado(String rolNombre, String correo) throws Exception {
         Rol rol = obtenerOCrearRol(rolNombre, 5);
         Usuario staff = crearUsuario(correo, "Staff " + rolNombre, rol);
         String token = tokenPara(staff, rolNombre);
         mockMvc.perform(get(RUTA_PROBE).header("Authorization", token))
-            .andExpect(status().isNotFound());
+            .andExpect(status().is4xxClientError())
+            .andExpect(result -> org.junit.jupiter.api.Assertions.assertNotEquals(
+                404, result.getResponse().getStatus(), rolNombre + " no debe pasar el catch-all"));
     }
 }

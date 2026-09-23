@@ -129,7 +129,7 @@ export function SaveButton({ saving, saved, label }: { saving?: boolean; saved?:
   const { t } = useTranslation()
   return (
     <button type="submit" disabled={saving || saved}
-      className={`cfg-btn ${saved ? 'cfg-btn-success' : 'cfg-btn-primary'}`}
+      className={`hc-btn ${saved ? 'hc-btn-success' : 'hc-btn-primary'}`}
       style={{ opacity: (saving || saved) ? 0.8 : 1 }}>
       {iconoBotonGuardar(saving, saved)}
       {saved ? t('adminConfig.savedLabel') : etiquetaGuardar(label, t)}

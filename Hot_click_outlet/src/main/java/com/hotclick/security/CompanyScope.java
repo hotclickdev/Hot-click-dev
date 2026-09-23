@@ -31,7 +31,8 @@ public class CompanyScope {
     /**
      * Retorna el empresa_id del usuario autenticado.
      * Lee primero del JWT (claim empresaId) para soportar multi-negocio.
-     * Retorna null si es ADMIN o staff de plataforma (sin tenant).
+     * Retorna null si es ADMIN o staff de plataforma (sin tenant), salvo
+     * sesión de soporte ({@code impersonando}), donde usa el tenant del JWT.
      */
     public Long getCurrentEmpresaId() {
         Usuario user = getCurrentUser();
@@ -40,30 +41,58 @@ public class CompanyScope {
             // TenantFilter ya cargó el empresaId correcto en TenantContext.
             return TenantContext.get();
         }
+        if (isImpersonating()) {
+            return extractEmpresaIdFromJwt();
+        }
         if (isAdminIT(user) || isPlatformStaff(user)) return null;
         Long fromJwt = extractEmpresaIdFromJwt();
         return fromJwt != null ? fromJwt : user.getEmpresaId();
     }
 
     private Long extractEmpresaIdFromJwt() {
+        String jwt = extractRawJwt();
+        if (jwt == null) return null;
+        try {
+            return jwtUtil.extractEmpresaId(jwt);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String extractRawJwt() {
         try {
             ServletRequestAttributes attrs =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attrs == null) return null;
             String auth = attrs.getRequest().getHeader("Authorization");
             if (auth == null || !auth.startsWith("Bearer ")) return null;
-            return jwtUtil.extractEmpresaId(auth.substring(7));
+            return auth.substring(7);
         } catch (Exception e) {
             return null;
         }
     }
 
+    /** True si el JWT actual es una sesión de soporte (ver como negocio). */
+    public boolean isImpersonating() {
+        String jwt = extractRawJwt();
+        return jwt != null && jwtUtil.isImpersonationToken(jwt);
+    }
+
     /**
      * Verifica que el usuario autenticado puede acceder al recurso de la empresa indicada.
-     * Solo ADMIN pasa siempre (bypass). Staff SUPPORT/FINANCE/TRUST no tiene bypass:
-     * operan por endpoints con {@code global.*}, no como dueños del tenant.
+     * Solo ADMIN pasa siempre (bypass), salvo en impersonación: ahí solo esa empresa.
+     * Staff SUPPORT/FINANCE/TRUST no tiene bypass.
      */
     public void assertCanAccess(Long resourceEmpresaId) {
+        if (isImpersonating()) {
+            Long scopeId = getCurrentEmpresaId();
+            if (scopeId == null || !scopeId.equals(resourceEmpresaId)) {
+                throw new TenantAccessDeniedException(
+                    "Acceso denegado: el recurso pertenece a otra empresa"
+                );
+            }
+            return;
+        }
         if (isAdminIT()) return;
         Long scopeId = getCurrentEmpresaId();
         if (scopeId == null || !scopeId.equals(resourceEmpresaId)) {
@@ -80,18 +109,22 @@ public class CompanyScope {
      */
     public void assertCanAccessNullable(Long resourceEmpresaId) {
         if (resourceEmpresaId == null) {
-            if (!isAdminIT()) throw new TenantAccessDeniedException("Acceso denegado: recurso sin empresa asignada");
+            if (!isAdminIT() || isImpersonating()) {
+                throw new TenantAccessDeniedException("Acceso denegado: recurso sin empresa asignada");
+            }
             return;
         }
         assertCanAccess(resourceEmpresaId);
     }
 
     public boolean isAdminIT() {
+        if (isImpersonating()) return false;
         Usuario user = getCurrentUser();
         return user != null && isAdminIT(user);
     }
 
     public boolean isEmprendedor() {
+        if (hasAuthority("ROLE_EMPRENDEDOR")) return true;
         Usuario user = getCurrentUser();
         if (user == null) return false;
         return user.getRoles().stream()
@@ -99,6 +132,7 @@ public class CompanyScope {
     }
 
     public boolean hasRole(String rolNombre) {
+        if (hasAuthority("ROLE_" + rolNombre)) return true;
         Usuario user = getCurrentUser();
         if (user == null) return false;
         return user.getRoles().stream()
@@ -134,8 +168,12 @@ public class CompanyScope {
     /**
      * Empresa para crear recursos de tenant.
      * ADMIN y staff de plataforma → siempre null: no crean en un negocio ajeno.
+     * Impersonación → tenant del JWT.
      */
     public Long getCurrentEmpresaIdOrOwn() {
+        if (isImpersonating()) {
+            return getCurrentEmpresaId();
+        }
         if (isAdminIT() || isPlatformStaff()) return null;
         Long id = getCurrentEmpresaId();
         if (id != null) return id;
@@ -149,6 +187,7 @@ public class CompanyScope {
     }
 
     public boolean isPlatformStaff() {
+        if (isImpersonating()) return false;
         Usuario user = getCurrentUser();
         return user != null && isPlatformStaff(user);
     }

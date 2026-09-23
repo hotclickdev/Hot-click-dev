@@ -88,7 +88,7 @@ export default function PaymentStatusPage() {
   }
 
   if (estado === 'timeout') {
-    return <PagoPendiente pagoData={pagoData as PagoResumen | null} stripeApproved={stripeApproved} />
+    return <PagoPendiente pagoData={pagoData as PagoResumen | null} stripeApproved={stripeApproved} token={token} />
   }
 
   return <PagoError error={error} numeroPedido={numeroPedido} />

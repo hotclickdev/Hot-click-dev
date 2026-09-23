@@ -330,6 +330,16 @@ describe('E17 i18n PR vs D7', () => {
     });
     assert.equal(hard.ok, true);
     assert.ok(hard.hardcodedCount >= 1);
+    // Leaf keys from JSON diffs deben resolver a paths anidados
+    const leaf = evaluateI18nPr({
+      locales: {
+        es: { adminConfig: { navComision: 'x' } },
+        en: { adminConfig: { navComision: 'y' } },
+        pt: { adminConfig: { navComision: 'z' } },
+      },
+      addedKeys: ['navComision'],
+    });
+    assert.equal(leaf.ok, true);
   });
 
   it('keysAddedInLocales solo mira el diff (no el backlog de D7)', () => {

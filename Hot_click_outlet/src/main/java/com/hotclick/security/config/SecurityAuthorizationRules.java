@@ -48,6 +48,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()
             .requestMatchers(GET,  "/api/payments/status/*").permitAll()
+            .requestMatchers(POST, "/api/payments/tilopay/confirmar/*").permitAll()
+            .requestMatchers(POST, "/api/payments/tilopay/reintentar/*").permitAll()
             // SINPE — invitados
             .requestMatchers(POST, "/api/sinpe/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/sinpe/guest/*/comprobante").permitAll()
@@ -187,12 +189,12 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/sucursales/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, "/api/sucursales/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Digitalización de inventario (paquetes) — ADMIN only
+            .requestMatchers("/api/inventario/**").hasRole(Constants.ROL_ADMIN)
             // Security Center — ADMIN only
             .requestMatchers("/api/security/**").hasRole(Constants.ROL_ADMIN)
             // Observabilidad — ADMIN only
             .requestMatchers("/api/admin/observabilidad/**").hasRole(Constants.ROL_ADMIN)
-            // Agentes de ingeniería (I1) — ADMIN only; catálogo de plataforma, no tenant
-            .requestMatchers("/api/admin/agentes/**").hasRole(Constants.ROL_ADMIN)
             // Auditoría admin (solo lectura) — ADMIN only
             .requestMatchers("/api/admin/auditorias/**").hasRole(Constants.ROL_ADMIN)
             // Billing de plataforma — ADMIN only (distinto de /api/billing self-serve)
@@ -211,10 +213,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/auth/mis-negocios").authenticated()
             .requestMatchers("/api/auth/cambiar-negocio").authenticated()
             .requestMatchers("/api/auth/nuevo-negocio").authenticated()
-            // Dashboard y KPIs — ADMIN, EMPRENDEDOR y staff de plataforma
+            // Dashboard y KPIs — ADMIN y EMPRENDEDOR
             .requestMatchers("/api/admin/**").hasAnyRole(
-                Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR,
-                Constants.ROL_SUPPORT, Constants.ROL_FINANCE, Constants.ROL_TRUST)
+                Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Pedidos admin — ADMIN, EMPRENDEDOR
             // Pedidos — roles de empresa + API keys con scope read:pedidos o write:pedidos
             .requestMatchers(GET,    "/api/pedidos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

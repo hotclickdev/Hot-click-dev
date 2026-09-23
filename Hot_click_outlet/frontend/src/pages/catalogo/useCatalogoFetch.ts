@@ -37,6 +37,7 @@ export function useCatalogoFetch(
   const [categories, setCategories] = useState<CatalogCategoria[]>([])
   const [marcas, setMarcas] = useState<CatalogMarca[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [, setTotalPages] = useState(1)
   const [convenios, setConvenios] = useState<CatalogConvenio[]>([])
   const paraVos = sort === 'para_vos'
@@ -54,6 +55,7 @@ export function useCatalogoFetch(
         : (pagina.totalPages ?? 1)
       const clampedTotal = Math.max(1, safeTotal)
 
+      setError(false)
       if (content.length === 0 && pageToFetch > 0) {
         const { data: d0 } = await productService.getAll(0, pageSize)
         const c0 = colapsarGruposVariante(listaDesdeRespuesta(d0).map(normalizeProduct) as Producto[])
@@ -67,6 +69,7 @@ export function useCatalogoFetch(
       }
     } catch {
       toast({ message: 'Error al cargar productos', type: 'error' })
+      setError(true)
       setProducts([])
     } finally {
       setLoading(false)
@@ -98,5 +101,7 @@ export function useCatalogoFetch(
       .catch(() => toast({ message: 'Error al cargar convenios', type: 'error' }))
   }, [toast])
 
-  return { products, categories, marcas, loading, convenios }
+  const retry = useCallback(() => fetchProducts(page), [fetchProducts, page])
+
+  return { products, categories, marcas, loading, error, retry, convenios }
 }

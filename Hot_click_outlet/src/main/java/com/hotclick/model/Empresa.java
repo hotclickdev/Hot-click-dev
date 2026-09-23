@@ -195,6 +195,20 @@ public class Empresa {
     @Column(name = "locale_codigo", length = 10)
     private String localeCodigo = "es-CR";
 
+    // ── Comisión Tilopay absorbida en precio (V133) ──────────────────────────
+
+    /** % estimado pasarela tarjeta (p.ej. 4.80 con IVA sobre comisión). */
+    @Column(name = "pct_comision_tarjeta", precision = 5, scale = 2, nullable = false)
+    private java.math.BigDecimal pctComisionTarjeta = java.math.BigDecimal.valueOf(4.80);
+
+    /** Cargo fijo Tilopay en CRC (aprox. US$0.35). */
+    @Column(name = "monto_fijo_comision_crc", nullable = false)
+    private Integer montoFijoComisionCrc = 200;
+
+    /** Descuento opcional al pagar SINPE/efectivo (0 = solo badge informativo). */
+    @Column(name = "pct_descuento_sinpe", precision = 5, scale = 2, nullable = false)
+    private java.math.BigDecimal pctDescuentoSinpe = java.math.BigDecimal.ZERO;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -359,6 +373,21 @@ public class Empresa {
 
     public String getLocaleCodigo() { return localeCodigo != null ? localeCodigo : "es-CR"; }
     public void setLocaleCodigo(String v) { this.localeCodigo = v; }
+
+    public java.math.BigDecimal getPctComisionTarjeta() {
+        return pctComisionTarjeta != null ? pctComisionTarjeta : java.math.BigDecimal.valueOf(4.80);
+    }
+    public void setPctComisionTarjeta(java.math.BigDecimal v) { this.pctComisionTarjeta = v; }
+
+    public Integer getMontoFijoComisionCrc() {
+        return montoFijoComisionCrc != null ? montoFijoComisionCrc : 200;
+    }
+    public void setMontoFijoComisionCrc(Integer v) { this.montoFijoComisionCrc = v; }
+
+    public java.math.BigDecimal getPctDescuentoSinpe() {
+        return pctDescuentoSinpe != null ? pctDescuentoSinpe : java.math.BigDecimal.ZERO;
+    }
+    public void setPctDescuentoSinpe(java.math.BigDecimal v) { this.pctDescuentoSinpe = v; }
 
     public Bodega getBodegaVentaOnline() { return bodegaVentaOnline; }
     public void setBodegaVentaOnline(Bodega bodegaVentaOnline) { this.bodegaVentaOnline = bodegaVentaOnline; }

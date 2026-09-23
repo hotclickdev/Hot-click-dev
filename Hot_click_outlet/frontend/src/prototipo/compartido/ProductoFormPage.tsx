@@ -68,7 +68,6 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
       precioMin: existente.precioPersonalizadoMin != null ? String(existente.precioPersonalizadoMin) : '',
       precioMax: existente.precioPersonalizadoMax != null ? String(existente.precioPersonalizadoMax) : '',
       imagenUrl: existente.imagenUrl ?? '',
-      barcode: existente.barcode ?? '',
     })
     setIniciado(true)
   }, [existente, iniciado, cargarDesde])
@@ -165,8 +164,6 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
           onPrecioMaxChange={form.setPrecioMax}
           imagenUrl={form.imagenUrl}
           onImagenChange={form.setImagenUrl}
-          barcode={form.barcode}
-          onBarcodeChange={form.setBarcode}
           errorSubmit={form.errorSubmit}
         />
       </FormularioPorPasos>

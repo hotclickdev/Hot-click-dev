@@ -49,7 +49,7 @@ export const serviciosJsonLd = {
       item: {
         '@type': 'Service',
         name: 'Digitalización y etiquetado de inventario',
-        description: 'Digitalizamos el inventario en tu local: objetivo, SKU internos, etiquetas y catálogo listo para vender en HOTCLICK.',
+        description: 'Digitalizamos el inventario de tu negocio en el local: escaneo de códigos de barras, registro manual, SKU internos HOTCLICK y etiquetas impresas para productos sin código.',
         provider: { '@type': 'Organization', name: 'HotClick', url: SITE_URL },
         areaServed: { '@type': 'Country', name: 'Costa Rica' },
         availableChannel: {

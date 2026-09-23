@@ -35,6 +35,7 @@ export function CartAssistantProductCard({ producto, onAdd }: {
         }
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold line-clamp-2 leading-snug" style={{ color: 'var(--hc-text)' }}>{producto.nombre}</p>
+          {producto.sku && <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--hc-muted)' }}>SKU {producto.sku}</p>}
           <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>{precioTxt}</p>
         </div>
       </Link>

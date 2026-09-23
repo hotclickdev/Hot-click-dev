@@ -30,7 +30,7 @@ public class ProveedorController {
     @Autowired private CompanyScope          companyScope;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> listar() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         var lista = empresaId != null
@@ -40,7 +40,7 @@ public class ProveedorController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body) {
         try {
             Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
@@ -68,7 +68,7 @@ public class ProveedorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Proveedor p = proveedorRepository.findById(id)
@@ -94,7 +94,7 @@ public class ProveedorController {
 
     /** Historial de precios pagados a este proveedor, a partir de sus órdenes de compra recibidas/pendientes. */
     @GetMapping("/{id}/historial-costos")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> historialCostos(@PathVariable Long id) {
         Proveedor p = proveedorRepository.findById(id)
@@ -118,7 +118,7 @@ public class ProveedorController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
             Proveedor p = proveedorRepository.findById(id)

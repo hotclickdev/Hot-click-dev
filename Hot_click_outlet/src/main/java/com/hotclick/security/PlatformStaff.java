@@ -5,35 +5,21 @@ import com.hotclick.utils.Constants;
 import java.util.Set;
 
 /**
- * Roles de staff de plataforma (HotClick IT) distintos de ADMIN.
- * Tienen permisos {@code global.*} pero <strong>no</strong> el bypass
- * de {@link CompanyScope} reservado a ADMIN.
+ * Roles sin tenant de plataforma. Tras V132 solo queda ADMIN
+ * (SUPPORT/FINANCE/TRUST inactivos).
  */
 public final class PlatformStaff {
 
-    public static final Set<String> ROLES = Set.of(
-        Constants.ROL_SUPPORT,
-        Constants.ROL_FINANCE,
-        Constants.ROL_TRUST
-    );
+    /** Staff legacy — vacío: ya no hay roles intermedios de plataforma. */
+    public static final Set<String> ROLES = Set.of();
 
-    /** ADMIN + staff: JWT sin empresaId (operan la plataforma, no un tenant). */
-    public static final Set<String> ROLES_SIN_TENANT = Set.of(
-        Constants.ROL_ADMIN,
-        Constants.ROL_SUPPORT,
-        Constants.ROL_FINANCE,
-        Constants.ROL_TRUST
-    );
+    /** Solo ADMIN opera la plataforma sin empresaId. */
+    public static final Set<String> ROLES_SIN_TENANT = Set.of(Constants.ROL_ADMIN);
 
     /**
-     * Matriz permiso → roles que lo reciben (además de ADMIN, que tiene todos).
-     * Fuente de verdad documentada; la BD se alinea en V126.
+     * Matriz permiso → roles staff (vacía: ADMIN tiene todos los global.*).
      */
-    public static final String[][] PERMISO_A_ROLES = {
-        { Constants.PERM_GLOBAL_COMPANIES, Constants.ROL_SUPPORT },
-        { Constants.PERM_GLOBAL_METRICS,   Constants.ROL_FINANCE },
-        { Constants.PERM_GLOBAL_APPROVALS, Constants.ROL_TRUST },
-    };
+    public static final String[][] PERMISO_A_ROLES = {};
 
     private PlatformStaff() {}
 
@@ -46,8 +32,7 @@ public final class PlatformStaff {
     }
 
     /**
-     * Rol principal para el JWT: ADMIN gana; si no, el primer staff presente;
-     * si no, el primer rol del usuario; vacío → USUARIO_FINAL.
+     * Rol principal para el JWT: ADMIN gana; si no, el primer rol; vacío → USUARIO_FINAL.
      */
     public static String rolPrincipal(java.util.List<String> nombresRol) {
         if (nombresRol == null || nombresRol.isEmpty()) {
@@ -55,13 +40,6 @@ public final class PlatformStaff {
         }
         if (nombresRol.contains(Constants.ROL_ADMIN)) {
             return Constants.ROL_ADMIN;
-        }
-        for (String staff : new String[] {
-            Constants.ROL_TRUST, Constants.ROL_FINANCE, Constants.ROL_SUPPORT
-        }) {
-            if (nombresRol.contains(staff)) {
-                return staff;
-            }
         }
         return nombresRol.get(0);
     }

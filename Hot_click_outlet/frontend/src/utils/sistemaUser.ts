@@ -12,14 +12,14 @@ export const ROLES_VENDEDOR = new Set<string>([
 /** Caja: POSShell en `/admin/pos`. No entran al shell Figma vendedor. */
 export const ROLES_POS = new Set<string>(['CAJERO', 'GERENTE', 'SUPERVISOR'])
 
-/** Staff de plataforma (sin bypass CompanyScope; menú por global.*). */
-export const ROLES_STAFF = new Set<string>(['SUPPORT', 'FINANCE', 'TRUST'])
+/** Staff de plataforma (sin bypass CompanyScope; menú por global.*). V132: vacío. */
+export const ROLES_STAFF = new Set<string>([])
 
-/** Operadores de la consola de plataforma (ADMIN + staff). */
-export const ROLES_PLATAFORMA = new Set<string>(['ADMIN', ...ROLES_STAFF])
+/** Operadores de la consola de plataforma (ADMIN). */
+export const ROLES_PLATAFORMA = new Set<string>(['ADMIN'])
 
 /** Acceso a /admin: plataforma + vendedor. */
-export const ADMIN_ROLES = new Set<string>(['ADMIN', ...ROLES_VENDEDOR, ...ROLES_STAFF])
+export const ADMIN_ROLES = new Set<string>(['ADMIN', ...ROLES_VENDEDOR])
 
 export function esUsuarioSistema(userRole: string | null | undefined): boolean {
   return ROLES_VENDEDOR.has(userRole ?? '')

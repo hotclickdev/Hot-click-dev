@@ -95,7 +95,7 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
             Cancelar
           </button>
           <button type="button" onClick={handleSave} disabled={saving}
-            className="px-4 py-2 rounded-xl text-sm bg-[var(--color-accent)] text-white font-medium disabled:opacity-50">
+            className="px-4 py-2 rounded-xl text-sm bg-[var(--color-hc-accent)] text-white font-medium disabled:opacity-50">
             {saving ? 'Enviando…' : 'Solicitar retiro'}
           </button>
         </div>

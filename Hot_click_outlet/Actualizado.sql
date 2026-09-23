@@ -3777,34 +3777,121 @@ ALTER TABLE hot_click_ticket_soporte_tb
 
 CREATE INDEX IF NOT EXISTS idx_ticket_soporte_prioridad ON hot_click_ticket_soporte_tb (prioridad);
 
--- V132: 20 categorías globales orientadas a emprendimientos/negocios del marketplace.
--- Idempotente: solo inserta las que no existan ya por nombre (case-insensitive).
-INSERT INTO hot_click_categoria_tb (nombre_categoria, descripcion, icono, orden_display, fk_id_admin_cliente, fk_id_empresa, fk_id_estado)
-SELECT v.nombre, v.descripcion, v.icono, v.orden, admin.id_usuario, NULL, 1
-FROM (VALUES
-  ('Ropa y Moda',                 'Prendas de vestir, moda urbana y streetwear',            'ropa',    100),
-  ('Calzado',                     'Zapatos, tenis y sandalias',                              'calzad',  101),
-  ('Accesorios y Bisutería',      'Bolsos, carteras, lentes y bisutería',                    'joyer?a', 102),
-  ('Joyería',                     'Joyas en plata, oro y piezas artesanales',                'joyer?a', 103),
-  ('Belleza y Cuidado Personal',  'Cosméticos, skincare y cuidado personal',                 'belleza', 104),
-  ('Artesanías',                  'Productos artesanales hechos a mano',                     'arte',    105),
-  ('Arte y Manualidades',         'Ilustraciones, pinturas y manualidades',                  'arte',    106),
-  ('Repostería y Panadería',      'Postres, pasteles y productos de panadería',              'regal',   107),
-  ('Comidas y Bebidas',           'Alimentos preparados, snacks y bebidas artesanales',      'regal',   108),
-  ('Decoración del Hogar',        'Artículos decorativos para el hogar',                     'hogar',   109),
-  ('Velas y Aromaterapia',        'Velas aromáticas, difusores e inciensos',                 'hogar',   110),
-  ('Papelería y Detalles',        'Papelería creativa, invitaciones y detalles para regalo', 'regal',   111),
-  ('Tecnología y Accesorios',     'Gadgets, accesorios y periféricos',                       'tecnol',  112),
-  ('Mascotas',                    'Alimento, accesorios y cuidado de mascotas',              'mascot',  113),
-  ('Deportes y Fitness',          'Ropa deportiva, suplementos y equipo de entrenamiento',   'deport',  114),
-  ('Juguetes y Niños',            'Juguetes, ropa y artículos para niños',                   'juguet',  115),
-  ('Salud y Bienestar',           'Suplementos, productos naturales y bienestar',            'cuidado', 116),
-  ('Jardinería y Plantas',        'Plantas, macetas y accesorios de jardín',                 'jardin',  117),
-  ('Servicios Profesionales',     'Servicios de emprendedores: diseño, consultoría, clases', 'herram',  118),
-  ('Libros y Papelería Escolar',  'Libros, útiles escolares y material educativo',           'libros',  119)
-) AS v(nombre, descripcion, icono, orden)
-CROSS JOIN (SELECT id_usuario FROM hot_click_usuario_tb WHERE correo = 'admin@hotclick.com' LIMIT 1) AS admin
-WHERE NOT EXISTS (
-  SELECT 1 FROM hot_click_categoria_tb c
-  WHERE lower(c.nombre_categoria) = lower(v.nombre) AND c.fk_id_empresa IS NULL
+-- V131: paquetes de digitalizaci�n de inventario + unique barcode por empresa
+-- Paquete = sesi�n de captura en campo (con o sin empresa asignada).
+-- L�neas viven en el paquete hasta ASIGNADO (entonces se crean/re�san Producto).
+
+CREATE TABLE IF NOT EXISTS hot_click_paquete_inventario_tb (
+    id_paquete               BIGSERIAL PRIMARY KEY,
+    codigo                   VARCHAR(40)  NOT NULL,
+    fk_id_empresa            BIGINT REFERENCES hot_click_empresa_tb(id_empresa) ON DELETE SET NULL,
+    nombre_negocio_temporal  VARCHAR(200),
+    estado                   VARCHAR(20)  NOT NULL DEFAULT 'ABIERTO',
+    notas                    TEXT,
+    fk_id_creado_por         BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL,
+    fecha_creacion           TIMESTAMP NOT NULL DEFAULT NOW(),
+    fecha_cierre             TIMESTAMP,
+    fecha_asignacion         TIMESTAMP,
+    CONSTRAINT uq_paquete_inventario_codigo UNIQUE (codigo),
+    CONSTRAINT chk_paquete_estado CHECK (estado IN ('ABIERTO', 'CERRADO', 'ASIGNADO'))
 );
+
+CREATE INDEX IF NOT EXISTS idx_paquete_inventario_estado
+    ON hot_click_paquete_inventario_tb (estado, fecha_creacion DESC);
+
+CREATE INDEX IF NOT EXISTS idx_paquete_inventario_empresa
+    ON hot_click_paquete_inventario_tb (fk_id_empresa)
+    WHERE fk_id_empresa IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS hot_click_paquete_linea_tb (
+    id_linea           BIGSERIAL PRIMARY KEY,
+    fk_id_paquete      BIGINT NOT NULL REFERENCES hot_click_paquete_inventario_tb(id_paquete) ON DELETE CASCADE,
+    barcode            VARCHAR(50),
+    sku                VARCHAR(50),
+    nombre             VARCHAR(200) NOT NULL,
+    precio_compra      INTEGER NOT NULL DEFAULT 0,
+    precio_venta       INTEGER NOT NULL DEFAULT 1,
+    stock              INTEGER NOT NULL DEFAULT 0,
+    marca_texto        VARCHAR(100),
+    categoria_texto    VARCHAR(100),
+    imagen_url         VARCHAR(500),
+    estado             VARCHAR(20) NOT NULL DEFAULT 'LISTO',
+    fk_id_producto     BIGINT REFERENCES hot_click_producto_tb(id_producto) ON DELETE SET NULL,
+    notas_conflicto    TEXT,
+    fecha_creacion     TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_paquete_linea_estado CHECK (estado IN ('LISTO', 'CONFLICTO'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_paquete_linea_paquete
+    ON hot_click_paquete_linea_tb (fk_id_paquete);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_paquete_linea_barcode_unico
+    ON hot_click_paquete_linea_tb (fk_id_paquete, barcode)
+    WHERE barcode IS NOT NULL;
+
+-- Unique barcode por empresa: solo si no hay duplicados previos.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM hot_click_producto_tb
+    WHERE barcode IS NOT NULL
+    GROUP BY fk_id_empresa, barcode
+    HAVING COUNT(*) > 1
+  ) THEN
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_producto_empresa_barcode
+      ON hot_click_producto_tb (fk_id_empresa, barcode)
+      WHERE barcode IS NOT NULL AND fk_id_empresa IS NOT NULL;
+  END IF;
+END $$;
+-- V132: limpiar roles JWT muertos (staff plataforma + POS)
+-- No edita V89/V126; inactiva SUPPORT/FINANCE/TRUST y remapea usuarios a ADMIN.
+-- POS (CAJERO, GERENTE, â€¦) ya inactivos en V89 â€” se refuerza descripciÃ³n.
+
+-- Remapear usuarios staff â†’ ADMIN (si tienen SUPPORT/FINANCE/TRUST)
+INSERT INTO hot_click_usuario_rol_tb (fk_id_usuario, fk_id_rol)
+SELECT DISTINCT ur.fk_id_usuario,
+       (SELECT id_rol FROM hot_click_rol_tb WHERE nombre_rol = 'ADMIN' LIMIT 1)
+FROM hot_click_usuario_rol_tb ur
+JOIN hot_click_rol_tb r ON r.id_rol = ur.fk_id_rol
+WHERE r.nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
+  AND NOT EXISTS (
+    SELECT 1 FROM hot_click_usuario_rol_tb ur2
+    JOIN hot_click_rol_tb r2 ON r2.id_rol = ur2.fk_id_rol
+    WHERE ur2.fk_id_usuario = ur.fk_id_usuario AND r2.nombre_rol = 'ADMIN'
+  )
+ON CONFLICT DO NOTHING;
+
+DELETE FROM hot_click_usuario_rol_tb
+WHERE fk_id_rol IN (
+  SELECT id_rol FROM hot_click_rol_tb
+  WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
+);
+
+DELETE FROM hot_click_rol_permiso_tb
+WHERE fk_id_rol IN (
+  SELECT id_rol FROM hot_click_rol_tb
+  WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
+);
+
+UPDATE hot_click_rol_tb
+SET fk_id_estado = 2,
+    descripcion = '[ELIMINADO â€” no usado; JWT vivos: ADMIN, EMPRENDEDOR, USUARIO_FINAL]'
+WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST');
+
+UPDATE hot_click_rol_tb
+SET fk_id_estado = 2,
+    descripcion = COALESCE(descripcion, '') || ' [ELIMINADO â€” POS/legacy]'
+WHERE nombre_rol IN ('CAJERO', 'INVENTARIO', 'CONTABILIDAD', 'GERENTE', 'SUPERVISOR', 'MARKETING', 'SOPORTE')
+  AND (descripcion IS NULL OR descripcion NOT LIKE '%ELIMINADO%');
+
+
+-- V133: comisi�n Tilopay absorbida en precio + descuento SINPE opcional por empresa
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS pct_comision_tarjeta NUMERIC(5,2) NOT NULL DEFAULT 4.80;
+
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS monto_fijo_comision_crc INTEGER NOT NULL DEFAULT 200;
+
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS pct_descuento_sinpe NUMERIC(5,2) NOT NULL DEFAULT 0;

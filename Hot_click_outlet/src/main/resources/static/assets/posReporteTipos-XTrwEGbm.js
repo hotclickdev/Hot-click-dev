@@ -1,0 +1,1 @@
+var e=[`qr_no_genera`,`cliente_no_paga`,`pago_tarjeta`,`sinpe`,`total_incorrecto`,`pantalla_incorrecta`,`turno_caja`,`otro`];function t(e,t){return t(`pos.reporte.tipos.${e}`)}export{t as n,e as t};
