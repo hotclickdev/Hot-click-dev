@@ -75,12 +75,16 @@ public class TurnoCajaService {
         return turnoCajaRepository.findByUsuario_IdAndEstado(usuarioId, "ABIERTO");
     }
 
+    /**
+     * Suma una venta al turno. Sin check de tenant/dueño a propósito: se invoca
+     * desde webhooks de pago y desde el polling del cliente en POS QR (sin JWT),
+     * y el turnoId ya viene de la sesión POS ligada a la empresa, no del body.
+     */
     @Transactional
     public void actualizarTotales(Long turnoId, String metodoPago, Integer monto) {
         if (metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
         TurnoCaja turno = turnoCajaRepository.findById(turnoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
-        assertPuedeOperarTurno(turno);
 
         switch (metodoPago.toUpperCase()) {
             case "EFECTIVO"      -> turno.setTotalEfectivo(turno.getTotalEfectivo() + monto);
@@ -92,7 +96,7 @@ public class TurnoCajaService {
         turnoCajaRepository.save(turno);
     }
 
-    /** Tenant + dueño del turno (ADMIN_IT puede operar cualquiera de su scope). */
+    /** Tenant + dueño del turno para el cierre (ADMIN_IT puede cerrar cualquiera de su scope). */
     private void assertPuedeOperarTurno(TurnoCaja turno) {
         Long empresaId = turno.getEmpresa() != null ? turno.getEmpresa().getId() : null;
         companyScope.assertCanAccessNullable(empresaId);

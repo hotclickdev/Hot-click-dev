@@ -25,6 +25,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,5 +96,18 @@ class TurnoCajaServiceCerrarTenantTest {
         assertThatThrownBy(() -> service.cerrarTurno(1L, 0, null))
             .isInstanceOf(SecurityException.class);
         verify(turnoCajaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("actualizarTotales sin usuario en contexto (webhook / QR) → suma igual")
+    void actualizarTotales_sinAuth_suma() {
+        when(turnoCajaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.actualizarTotales(1L, "TARJETA", 5000);
+
+        assertThat(turno.getTotalTarjeta()).isEqualTo(5000);
+        assertThat(turno.getNumTransacciones()).isEqualTo(1);
+        verify(turnoCajaRepository).save(turno);
+        verifyNoInteractions(companyScope);
     }
 }
