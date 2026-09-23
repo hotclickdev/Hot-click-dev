@@ -2,14 +2,18 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.ResetPlataformaKeepQaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 /**
  * Restablece los datos de negocio de la empresa del caller (pedidos, productos,
@@ -28,6 +32,21 @@ public class AdminResetController {
 
     @Autowired private JdbcTemplate  jdbc;
     @Autowired private CompanyScope  companyScope;
+    @Autowired private ResetPlataformaKeepQaService resetPlataformaKeepQaService;
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/reset-plataforma-qa")
+    public ResponseEntity<ResponseDTO> resetearPlataformaQa(@RequestBody(required = false) Map<String, String> body) {
+        String confirmacion = body == null ? null : body.get("confirmacion");
+        if (!ResetPlataformaKeepQaService.CONFIRMACION.equals(confirmacion)) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                "Para vaciar la plataforma escribí: " + ResetPlataformaKeepQaService.CONFIRMACION));
+        }
+        Map<String, Object> resumen = resetPlataformaKeepQaService.ejecutar();
+        return ResponseEntity.ok(ResponseDTO.success(
+            "Se borraron tiendas, usuarios y productos. Quedan admin, las 3 cuentas QA y el mostrador POS.",
+            resumen));
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping("/reset-datos")
@@ -35,6 +54,12 @@ public class AdminResetController {
     public ResponseEntity<ResponseDTO> resetearDatos() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) {
+            if (companyScope.isAdminIT()) {
+                Map<String, Object> resumen = resetPlataformaKeepQaService.ejecutar();
+                return ResponseEntity.ok(ResponseDTO.success(
+                    "Se borraron tiendas, usuarios y productos. Quedan admin, las 3 cuentas QA y el mostrador POS.",
+                    resumen));
+            }
             return ResponseEntity.badRequest().body(ResponseDTO.error(
                 "Esta acción requiere estar dentro del contexto de un negocio."));
         }

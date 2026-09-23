@@ -119,7 +119,7 @@ export default function ProductosTable({
 function encabezadosProductos(t: TFunction, isAdmin: boolean, vistaSimple?: boolean) {
   return [
     ...(isAdmin ? ['Dest.', 'Pos.'] : []),
-    ...(vistaSimple ? [] : ['ID']),
+    ...(vistaSimple ? [] : [isAdmin ? 'ID' : 'N.º']),
     t('admin.products.name'),
     t('admin.products.price'),
     t('admin.products.stock'),

@@ -1,0 +1,51 @@
+name: E9 — Health down pager
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: health-pager
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  pager:
+    name: E9 /api/health pager
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Restaurar estado previo (racha)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/health-pager-state.json
+          key: health-pager-state-${{ github.run_id }}
+          restore-keys: |
+            health-pager-state-
+
+      - name: Ping y paginar outage (sin git push)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+          HEALTH_STATE_FILE: /tmp/health-pager-state.json
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HEALTH_URL}" ]; then
+            export HEALTH_URL="https://hot-click-dev.onrender.com/api/health"
+          fi
+          node scripts/eng-gates/health-pager.mjs

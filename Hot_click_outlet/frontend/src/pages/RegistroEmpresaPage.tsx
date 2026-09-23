@@ -128,12 +128,24 @@ export default function RegistroEmpresaPage() {
         inscritoTributacion:  form.inscritoTributacion,
         ...(turnstileToken ? { turnstileToken } : {}),
       })
+<<<<<<< HEAD
       const authData = authDataRegistroEmpresa(data)
+=======
+      // El interceptor de axios ya desenvuelve ResponseDTO cuando aplica; soporta
+      // ambas formas (con o sin el envoltorio anidado) para no depender de eso.
+      const envelope = data as AuthResponse & { data?: AuthResponse }
+      const authData = envelope?.data ?? (envelope?.accessToken ? envelope : undefined)
+>>>>>>> origin/master
       if (authData?.accessToken) {
         loginStore(authData)
         toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
         navigate(RUTA_PANEL_VENDEDOR)
+<<<<<<< HEAD
         return
+=======
+      } else {
+        setError('La empresa se creó pero no se pudo iniciar sesión automáticamente. Iniciá sesión con tu correo y contraseña.')
+>>>>>>> origin/master
       }
       setError('Registro incompleto. Intentá de nuevo.')
       resetTurnstile()

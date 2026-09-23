@@ -155,6 +155,7 @@ function seccionSistemaPlataforma(t: TFunction): SidebarLink[] {
     { to: '/admin/auditorias', label: t('admin.sidebar.auditorias'), icon: 'clipboard' },
     { to: '/admin/superadmin', label: t('admin.sidebar.featureFlags'), icon: 'config' },
     { to: '/admin/observabilidad', label: t('admin.sidebar.observabilidad'), icon: 'chart' },
+    { to: '/admin/agentes', label: t('admin.sidebar.agentes'), icon: 'agents' },
     { to: '/admin/ai-control', label: t('admin.sidebar.controlIa'), icon: 'ai' },
     { to: '/admin/multipais', label: t('admin.sidebar.multipais'), icon: 'globe' },
   ]

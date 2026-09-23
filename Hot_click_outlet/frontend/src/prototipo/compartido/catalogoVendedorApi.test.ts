@@ -69,4 +69,30 @@ describe('cuerpoProductoVendedor', () => {
     })
     expect(dto.categoriaId).toBeNull()
   })
+
+  it('manda el código de barras si el vendedor lo ingresó', () => {
+    const dto = cuerpoProductoVendedor({
+      nombre: 'Café 500 g',
+      precioCompra: '2000',
+      precioVenta: '4500',
+      descripcion: '',
+      stock: '8',
+      categoria: 'Otro',
+      categoriaId: '2',
+      barcode: '7501234567890',
+    })
+    expect(dto.barcode).toBe('7501234567890')
+  })
+
+  it('manda código de barras vacío si no lo completó', () => {
+    const dto = cuerpoProductoVendedor({
+      nombre: 'Café 500 g',
+      precioCompra: '2000',
+      precioVenta: '4500',
+      descripcion: '',
+      stock: '8',
+      categoria: 'Otro',
+    })
+    expect(dto.barcode).toBe('')
+  })
 })

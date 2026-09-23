@@ -58,6 +58,7 @@ export default function EditarProductoPage() {
       precioMin: original.precioPersonalizadoMin != null ? String(original.precioPersonalizadoMin) : '',
       precioMax: original.precioPersonalizadoMax != null ? String(original.precioPersonalizadoMax) : '',
       imagenUrl: original.imagenUrl ?? '',
+      barcode: original.barcode ?? '',
     })
     setIniciado(true)
   }, [original, iniciado, cargarDesde])
@@ -149,6 +150,8 @@ export default function EditarProductoPage() {
           onPrecioMaxChange={form.setPrecioMax}
           imagenUrl={form.imagenUrl}
           onImagenChange={form.setImagenUrl}
+          barcode={form.barcode}
+          onBarcodeChange={form.setBarcode}
           errorSubmit={form.errorSubmit}
         />
       </FormularioPorPasos>

@@ -1,0 +1,44 @@
+name: E1 — Gate Flyway
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'Hot_click_outlet/src/main/java/**/model/**/*.java'
+      - 'Hot_click_outlet/src/main/java/**/entity/**/*.java'
+      - 'Hot_click_outlet/src/main/resources/db/migration/**'
+      - 'Hot_click_outlet/Actualizado.sql'
+      - 'scripts/eng-gates/**'
+      - '.github/workflows/gate-flyway.yml'
+
+concurrency:
+  group: gate-flyway-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  flyway:
+    name: E1 Flyway vs entidades JPA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: E1 evaluar migración
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/gate-flyway.mjs

@@ -45,6 +45,21 @@ export default function FilaProductoLista({ producto, to }: Props) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{producto.nombre}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {producto.numeroLocal != null && (
+              <span className="text-[11px] font-mono" style={{ color: 'var(--hc-muted)' }}>
+                N.º {producto.numeroLocal}
+              </span>
+            )}
+            {producto.sku && (
+              <span className="text-[11px] font-mono" style={{ color: 'var(--hc-muted)' }}>
+                {producto.sku}
+              </span>
+            )}
+            {producto.barcode && (
+              <span className="text-[11px] font-mono" style={{ color: 'var(--hc-muted)' }}>
+                BC {producto.barcode}
+              </span>
+            )}
             <Tag>{producto.categoria}</Tag>
             <span className="text-[13px] font-bold">
               {precioLabel ?? formatoColon(producto.precio)}

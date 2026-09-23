@@ -1,0 +1,92 @@
+name: E5 — Playwright area selection
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'Hot_click_outlet/frontend/**'
+  workflow_dispatch:
+    inputs:
+      run_smoke:
+        description: 'Instalar Chromium y correr smoke (caro)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: playwright-area-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  select:
+    name: E5 Playwright area
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Seleccionar specs y comentar dry-run
+        id: area
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || 'origin/master' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: node scripts/eng-gates/playwright-area.mjs
+
+      - name: Setup pnpm (solo smoke opt-in)
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.2
+
+      - name: Instalar frontend (solo smoke opt-in)
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright Chromium (solo smoke opt-in)
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Smoke subset
+        id: smoke
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        working-directory: Hot_click_outlet/frontend
+        timeout-minutes: 8
+        env:
+          CI: 'true'
+        run: pnpm test:e2e:smoke
+        continue-on-error: true
+
+      - name: Artifact screenshots / report
+        if: ${{ failure() || steps.smoke.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e5-playwright-${{ github.event.pull_request.number || github.run_id }}
+          path: |
+            Hot_click_outlet/frontend/test-results
+            Hot_click_outlet/frontend/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Comentar fallo smoke (soft)
+        if: ${{ steps.smoke.outcome == 'failure' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          E5_COMMENT_FAIL: '1'
+        run: node scripts/eng-gates/playwright-area.mjs

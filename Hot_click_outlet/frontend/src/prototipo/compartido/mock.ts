@@ -20,6 +20,9 @@ export type ProductoMock = {
   precioPersonalizadoMin?: number
   precioPersonalizadoMax?: number
   instruccionesPersonalizacion?: string
+  sku?: string | null
+  numeroLocal?: number | null
+  barcode?: string | null
 }
 
 export type EstadoPedido = 'Pendiente' | 'Enviado' | 'Entregado' | 'Cancelado'

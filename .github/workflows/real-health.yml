@@ -1,0 +1,53 @@
+name: D12 — Real health pager
+
+on:
+  schedule:
+    # Offset vs E9 (*/10). Cada 15 min; no es keep-alive cosmético.
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: real-health
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  pager:
+    name: D12 /api/health real
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Restaurar racha (cuerpo + HTTP)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/real-health-state.json
+          key: real-health-state-${{ github.run_id }}
+          restore-keys: |
+            real-health-state-
+
+      - name: Ping real (cuerpo) y paginar outage
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+          HEALTH_SECONDARY_URL: ${{ secrets.HEALTH_SECONDARY_URL }}
+          HEALTH_STATE_FILE: /tmp/real-health-state.json
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HEALTH_URL}" ]; then
+            export HEALTH_URL="https://hot-click-dev.onrender.com/api/health"
+          fi
+          node scripts/eng-gates/real-health.mjs

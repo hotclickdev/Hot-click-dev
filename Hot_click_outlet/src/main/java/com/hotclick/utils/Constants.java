@@ -138,4 +138,9 @@ public class Constants {
     public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
 
     public static final String CORREO_DEMO_EMPRESA_SUFIJO = "@hotclick.test";
+
+    public static final String CORREO_ADMIN = "admin@hotclick.com";
+    public static final String CORREO_QA_EMPRENDEDOR = "qa.emprendedor.demo@hotclick.test";
+    public static final String CORREO_QA_PYME = "qa.pyme.demo@hotclick.test";
+    public static final String CORREO_QA_NEGOCIO_PLUS = "qa.negocioplus.demo@hotclick.test";
 }

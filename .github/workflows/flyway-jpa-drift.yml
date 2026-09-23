@@ -1,0 +1,36 @@
+name: D1 — Daily Flyway ↔ JPA drift
+
+on:
+  schedule:
+    # 02:00 America/Costa_Rica (UTC-6, sin DST) = 08:00 UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: flyway-jpa-drift
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    name: D1 schema-drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Diff JPA vs Flyway (no SQL a prod)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/flyway-jpa-drift.mjs

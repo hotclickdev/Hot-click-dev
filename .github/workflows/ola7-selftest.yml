@@ -1,0 +1,54 @@
+name: Ola 7 — selftest
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/eng-gates/ola7*'
+      - 'scripts/eng-gates/real-health.mjs'
+      - 'scripts/eng-gates/a11y-pos-keyboard.mjs'
+      - 'scripts/eng-gates/runtime-endpoint-issue.mjs'
+      - '.github/workflows/real-health.yml'
+      - '.github/workflows/a11y-pos-keyboard.yml'
+      - '.github/workflows/runtime-endpoint-issue.yml'
+      - '.github/workflows/ola7-selftest.yml'
+      - '.github/workflows/keep-alive.yml'
+      - 'docs/AGENTES_OLA7.md'
+      - 'docs/AGENTES_ENG_GATES.md'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: node --test ola 7
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Selftests
+        run: bash scripts/eng-gates/ola7-selftest.sh
+
+      - name: YAML válido
+        run: |
+          python3 - <<'PY'
+          import pathlib, yaml
+          root = pathlib.Path('.github/workflows')
+          files = [
+            'real-health.yml',
+            'a11y-pos-keyboard.yml',
+            'runtime-endpoint-issue.yml',
+            'ola7-selftest.yml',
+            'keep-alive.yml',
+          ]
+          for name in files:
+            yaml.safe_load((root / name).read_text())
+            print('ok', name)
+          PY

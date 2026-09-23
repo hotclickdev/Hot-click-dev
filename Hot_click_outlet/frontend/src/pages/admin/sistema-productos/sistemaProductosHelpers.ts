@@ -14,6 +14,7 @@ export type FormSistemaProducto = {
   stock: string | number
   categoriaId: string
   sku: string
+  barcode: string
   imagenUrl: string
   bodegaId: string | number
   visibleCatalogo: boolean
@@ -43,7 +44,8 @@ export function codigoProducto(producto: Producto) {
   if (sku) return sku
   const barcode = producto.barcode?.trim()
   if (barcode) return barcode
-  return `P-${String(producto.id ?? '').padStart(4, '0')}`
+  if (producto.numeroLocal != null) return `#${producto.numeroLocal}`
+  return '—'
 }
 
 export function textoStock(stock: number | string | null | undefined) {
@@ -106,6 +108,7 @@ export const FORM_VACIO: FormSistemaProducto = {
   stock: '',
   categoriaId: '',
   sku: '',
+  barcode: '',
   imagenUrl: '',
   bodegaId: '',
   visibleCatalogo: true,

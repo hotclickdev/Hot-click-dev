@@ -1,0 +1,44 @@
+name: Ola 3 — selftest
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/eng-gates/ola3*'
+      - 'scripts/eng-gates/flyway-jpa-drift.mjs'
+      - 'scripts/eng-gates/spa-stale.mjs'
+      - 'scripts/eng-gates/sentry-digest.mjs'
+      - 'scripts/eng-gates/dependabot-weekly.mjs'
+      - 'scripts/eng-gates/commit-gate.mjs'
+      - 'scripts/eng-gates/ci-red-diagnose.mjs'
+      - 'scripts/eng-gates/health-pager.mjs'
+      - '.github/workflows/flyway-jpa-drift.yml'
+      - '.github/workflows/spa-stale.yml'
+      - '.github/workflows/sentry-digest.yml'
+      - '.github/workflows/dependabot-weekly.yml'
+      - '.github/workflows/commit-gate.yml'
+      - '.github/workflows/ci-red-diagnose.yml'
+      - '.github/workflows/health-pager.yml'
+      - '.github/workflows/keep-alive.yml'
+      - '.github/workflows/ola3-selftest.yml'
+      - 'docs/AGENTES_OLA3.md'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: node --test ola 3
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Selftests
+        run: bash scripts/eng-gates/ola3-selftest.sh

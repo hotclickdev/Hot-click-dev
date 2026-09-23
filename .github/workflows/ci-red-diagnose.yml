@@ -1,0 +1,46 @@
+name: E7 — CI red diagnosis
+
+on:
+  workflow_run:
+    workflows: ['CI — Tests y Build']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID del run de ci.yml a diagnosticar'
+        required: true
+
+concurrency:
+  group: ci-red-${{ github.event.workflow_run.id || inputs.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  diagnose:
+    name: E7 Diagnóstico CI rojo
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Comentar job + log (dedup)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          TARGET_CONCLUSION: ${{ github.event.workflow_run.conclusion || 'failure' }}
+          TARGET_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: node scripts/eng-gates/ci-red-diagnose.mjs

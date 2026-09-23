@@ -159,7 +159,9 @@ export default function FilaProducto({ producto, isAdmin, carruselSlots, t, onTo
         </td>
       )}
       {!vistaSimple && (
-        <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>#{producto.id}</td>
+        <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>
+          #{isAdmin ? producto.id : (producto.numeroLocal ?? '—')}
+        </td>
       )}
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
@@ -204,7 +206,7 @@ export function TarjetaProducto({ producto, t, onEdit, onKardex, onDelete, onOfe
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate" style={{ color: 'var(--hc-text)' }}>{producto.nombre}</p>
           <p className="text-xs truncate" style={{ color: 'var(--hc-muted)' }}>
-            {vistaSimple ? etiquetaMovimiento(producto) : (producto.sku ?? `#${producto.id}`)}
+            {vistaSimple ? etiquetaMovimiento(producto) : (producto.sku ?? (producto.numeroLocal != null ? `#${producto.numeroLocal}` : '—'))}
             {producto.categoriaNombre ? ` · ${producto.categoriaNombre}` : ''}
             {vistaSimple && !visible ? ' · Oculto' : ''}
           </p>

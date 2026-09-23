@@ -1,0 +1,70 @@
+name: Ola 6 — selftest
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/eng-gates/ola6*'
+      - 'scripts/eng-gates/k6-hikari-regression.mjs'
+      - 'scripts/eng-gates/bundle-lint-ci.mjs'
+      - 'scripts/eng-gates/god-class-extract.mjs'
+      - 'scripts/eng-gates/hacienda-xml-drift.mjs'
+      - 'scripts/eng-gates/rag-embeddings-lag.mjs'
+      - 'scripts/eng-gates/spa-push-reminder.mjs'
+      - 'scripts/eng-gates/product-issue-spike.mjs'
+      - 'scripts/eng-gates/i18n-pr-gate.mjs'
+      - 'scripts/eng-gates/baselines/k6-hikari.json'
+      - 'scripts/eng-gates/fixtures/k6-smoke.js'
+      - '.github/workflows/k6-hikari-regression.yml'
+      - '.github/workflows/bundle-lint-ci.yml'
+      - '.github/workflows/god-class-extract.yml'
+      - '.github/workflows/hacienda-xml-drift.yml'
+      - '.github/workflows/rag-embeddings-lag.yml'
+      - '.github/workflows/spa-push-reminder.yml'
+      - '.github/workflows/product-issue-spike.yml'
+      - '.github/workflows/i18n-pr-gate.yml'
+      - '.github/workflows/ola6-selftest.yml'
+      - 'docs/AGENTES_OLA6.md'
+      - 'docs/AGENTES_ENG_GATES.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: node --test ola 6
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Selftests
+        run: bash scripts/eng-gates/ola6-selftest.sh
+
+      - name: YAML válido
+        run: |
+          python3 - <<'PY'
+          import pathlib, yaml
+          root = pathlib.Path('.github/workflows')
+          files = [
+            'k6-hikari-regression.yml',
+            'bundle-lint-ci.yml',
+            'god-class-extract.yml',
+            'hacienda-xml-drift.yml',
+            'rag-embeddings-lag.yml',
+            'spa-push-reminder.yml',
+            'product-issue-spike.yml',
+            'i18n-pr-gate.yml',
+            'ola6-selftest.yml',
+          ]
+          for name in files:
+            yaml.safe_load((root / name).read_text())
+            print('ok', name)
+          PY

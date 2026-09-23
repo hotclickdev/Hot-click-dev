@@ -1,0 +1,46 @@
+name: S6 — Weekly k6 / Hikari regression
+
+on:
+  schedule:
+    # Lunes 09:00 America/Costa_Rica = 15:00 UTC
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: k6-hikari-regression
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  k6:
+    name: S6 k6 / Hikari
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Instalar k6 (opcional; fallback node-smoke)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/grafana/k6/releases/download/v0.54.0/k6-v0.54.0-linux-amd64.tar.gz \
+            | tar -xz
+          sudo mv k6-v0.54.0-linux-amd64/k6 /usr/local/bin/k6
+          k6 version
+
+      - name: Smoke mock o staging (nunca prod por default)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          K6_BASE_URL: ${{ secrets.K6_BASE_URL }}
+          K6_STAGING_URL: ${{ secrets.K6_STAGING_URL }}
+          K6_ALLOW_PRODUCTION: ${{ secrets.K6_ALLOW_PRODUCTION }}
+        run: node scripts/eng-gates/k6-hikari-regression.mjs

@@ -1,0 +1,43 @@
+name: E6 — Dependabot triage
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+concurrency:
+  group: dependabot-triage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  triage:
+    name: E6 Labels y bloqueo de majors críticos
+    runs-on: ubuntu-latest
+    steps:
+      - name: No aplica (no es Dependabot)
+        if: github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')
+        run: echo "E6 solo corre en PRs dependabot/* — PASS."
+
+      - name: Checkout
+        if: github.actor == 'dependabot[bot]' || startsWith(github.head_ref, 'dependabot/')
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        if: github.actor == 'dependabot[bot]' || startsWith(github.head_ref, 'dependabot/')
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Triage
+        if: github.actor == 'dependabot[bot]' || startsWith(github.head_ref, 'dependabot/')
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/dependabot-triage.mjs

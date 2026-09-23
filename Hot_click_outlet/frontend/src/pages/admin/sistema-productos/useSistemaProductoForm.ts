@@ -160,6 +160,7 @@ function formDesdeApi(p: Producto, bodegaFallback: Id | ''): FormSistemaProducto
     stock: p.stock ?? '',
     categoriaId: p.categoriaId != null ? String(p.categoriaId) : '',
     sku: p.sku ?? '',
+    barcode: p.barcode ?? '',
     imagenUrl: p.imagenUrl ?? '',
     bodegaId: p.bodegaId ?? bodegaFallback ?? '',
     visibleCatalogo: p.visibleCatalogo !== false,

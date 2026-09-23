@@ -1,0 +1,35 @@
+name: S2 — Weekly safe dependency upgrades
+
+on:
+  schedule:
+    # Lunes 09:00 America/Costa_Rica = 15:00 UTC (después de S1)
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: dependabot-weekly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  weekly:
+    name: S2 Dependabot weekly
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Clasificar PRs abiertos (sin mergear majors)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/dependabot-weekly.mjs

@@ -1,6 +1,7 @@
 package com.hotclick.service.publicchat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.service.producto.SkuVisibility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -104,7 +105,7 @@ public class PublicChatDiscoveryHandler {
     private void enviarProductos(SseEmitter emitter, List<Map<String, Object>> page,
                                  boolean hasMore, String userMessage) throws Exception {
         Map<String, Object> productEvent = new LinkedHashMap<>();
-        productEvent.put("productos", page);
+        productEvent.put("productos", SkuVisibility.sinInternos(page));
         productEvent.put("hasMore", hasMore);
         productEvent.put("query", userMessage);
         emitter.send(SseEmitter.event().name("products").data(objectMapper.writeValueAsString(productEvent)));

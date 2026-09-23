@@ -1,0 +1,36 @@
+name: S4 — Weekly anti-IDOR suite gap
+
+on:
+  schedule:
+    # Miércoles 08:30 America/Costa_Rica = 14:30 UTC
+    - cron: '30 14 * * 3'
+  workflow_dispatch:
+
+concurrency:
+  group: idor-suite-gap
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  gap:
+    name: S4 IDOR suite gap
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Cruzar path-id vs TenantIsolation/IDOR y upsert Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # No escribe stubs en cron (el PR de ola 4 ya commitea @Disabled).
+          S4_WRITE_STUBS: '0'
+        run: node scripts/eng-gates/idor-suite-gap.mjs

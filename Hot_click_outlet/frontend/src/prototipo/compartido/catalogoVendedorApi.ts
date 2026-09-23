@@ -22,6 +22,7 @@ export type DatosProductoVendedor = {
   precioPersonalizadoMax?: string
   instruccionesPersonalizacion?: string
   imagenUrl?: string
+  barcode?: string
 }
 
 function listaDesdeRespuesta(data: Producto[] | { content: Producto[] }): Producto[] {
@@ -54,6 +55,9 @@ export function aProductoEmprendedor(p: Producto): ProductoEmprendedor {
     precioPersonalizadoMin: p.precioPersonalizadoMin ?? undefined,
     precioPersonalizadoMax: p.precioPersonalizadoMax ?? undefined,
     instruccionesPersonalizacion: p.instruccionesPersonalizacion ?? undefined,
+    sku: p.sku ?? null,
+    numeroLocal: p.numeroLocal ?? null,
+    barcode: p.barcode ?? null,
   }
 }
 
@@ -77,6 +81,9 @@ export function aProductoSeller(p: Producto): ProductoMock {
     precioPersonalizadoMin: e.precioPersonalizadoMin,
     precioPersonalizadoMax: e.precioPersonalizadoMax,
     instruccionesPersonalizacion: e.instruccionesPersonalizacion,
+    sku: e.sku,
+    numeroLocal: e.numeroLocal,
+    barcode: e.barcode,
   }
 }
 
@@ -123,6 +130,7 @@ export function cuerpoProductoVendedor(datos: DatosProductoVendedor) {
       precioPersonalizadoMax: personalizado && modo === 'RANGO' ? datos.precioPersonalizadoMax : undefined,
       instruccionesPersonalizacion: datos.instruccionesPersonalizacion,
       imagenUrl: datos.imagenUrl ?? '',
+      barcode: datos.barcode ?? '',
     }),
     visibleCatalogo: datos.estado !== 'Pausado',
     tags: datos.categoria || null,

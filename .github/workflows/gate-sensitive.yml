@@ -1,0 +1,45 @@
+name: E11 — Paths sensibles
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'Hot_click_outlet/src/main/java/**/Payment*.java'
+      - 'Hot_click_outlet/src/main/java/**/Auth*.java'
+      - 'Hot_click_outlet/src/main/java/**/Pos*.java'
+      - 'Hot_click_outlet/src/main/java/**/Sinpe*.java'
+      - 'Hot_click_outlet/src/main/java/**/Wallet*.java'
+      - 'scripts/eng-gates/**'
+      - '.github/workflows/gate-sensitive.yml'
+
+concurrency:
+  group: gate-sensitive-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sensitive:
+    name: E11 Tests nominales Payment/Auth/Pos/Sinpe/Wallet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: E11 presencia de tests
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/gate-sensitive.mjs

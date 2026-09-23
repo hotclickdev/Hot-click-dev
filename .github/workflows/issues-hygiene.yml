@@ -1,0 +1,46 @@
+name: D10 — Daily Issues/PRs hygiene
+
+on:
+  schedule:
+    # 06:30 America/Costa_Rica = 12:30 UTC
+    - cron: '30 12 * * *'
+  workflow_dispatch:
+    inputs:
+      stale_days:
+        description: 'Días sin movimiento para stale (default 14)'
+        required: false
+        default: '14'
+      close_after_days:
+        description: 'Días extra tras el ping antes de cerrar eng-agent (default 7)'
+        required: false
+        default: '7'
+
+concurrency:
+  group: issues-hygiene
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  hygiene:
+    name: D10 hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Labels + stale eng-agent (comenta primero)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          D10_STALE_DAYS: ${{ github.event.inputs.stale_days || '14' }}
+          D10_CLOSE_AFTER_DAYS: ${{ github.event.inputs.close_after_days || '7' }}
+        run: node scripts/eng-gates/issues-hygiene.mjs

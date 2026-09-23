@@ -175,7 +175,7 @@ export default function ServiciosInicio({ irA }: { irA: (destino: VistaServicios
             Digitalización y etiquetado de inventario
           </h3>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-            Digitalizamos tu inventario en el local, aunque no tengas códigos de barras ni catálogo digital.
+            Inventario digital en tu local. SKU, etiquetas y catálogo listo para vender.
           </p>
         </div>
       </motion.button>

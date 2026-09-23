@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-49uTrg-O.js";function t(){return e()}export{t};

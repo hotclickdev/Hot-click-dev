@@ -1,0 +1,27 @@
+{
+  "name": "hotclick-agentes-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dashboard durable de agentes de ingeniería HotClick (I1)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev -p 43127",
+    "build": "next build",
+    "start": "next start -p 43127",
+    "inspect": "node scripts/inspect-agents.mjs --source local",
+    "test": "node --test scripts/inspect-agents.test.mjs"
+  },
+  "dependencies": {
+    "next": "^15.5.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.8.2"
+  }
+}

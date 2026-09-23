@@ -20,8 +20,13 @@ jobs:
           FILENAME="hotclick-backup-$(date +%Y%m%d-%H%M%S).sql.gz"
           pg_dump "$SUPABASE_BACKUP_URL" \
             --no-owner --no-acl --format=plain | gzip > "$FILENAME"
+          SIZE=$(stat -c%s "$FILENAME")
           echo "BACKUP_FILE=$FILENAME" >> $GITHUB_ENV
-          echo "Backup generado: $(du -sh $FILENAME)"
+          echo "Backup generado: $(du -sh $FILENAME) ($SIZE bytes)"
+          if [ "$SIZE" -lt 1024 ]; then
+            echo "::error::D5: dump vacío o demasiado chico ($SIZE bytes)"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -29,3 +34,28 @@ jobs:
           name: db-backup-${{ github.run_id }}
           path: ${{ env.BACKUP_FILE }}
           retention-days: 30
+
+  verify-backup:
+    name: D5 — Dump presente y no vacío
+    needs: backup
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Download dump
+        uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup-artifact
+
+      - name: Verificar dump
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/eng-gates/verify-backup.sh backup-artifact 1024

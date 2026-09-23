@@ -104,6 +104,9 @@ public class ProductoRequestDTO {
     @Size(max = 500, message = "Los tags no pueden superar 500 caracteres")
     private String tags;
 
+    @Size(max = 50, message = "El código de barras no puede superar 50 caracteres")
+    private String barcode;
+
     private Boolean esPersonalizado = false;
 
     @Pattern(regexp = "^(FIJO|RANGO|COTIZACION)?$", message = "Modo de precio inválido")
@@ -184,6 +187,8 @@ public class ProductoRequestDTO {
     public void setColorVariante(String v) { this.colorVariante = v; }
     public String getTags() { return tags; }
     public void setTags(String v) { this.tags = v; }
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String v) { this.barcode = v; }
     public Boolean getEsPersonalizado() { return esPersonalizado; }
     public void setEsPersonalizado(Boolean v) { this.esPersonalizado = v; }
     public String getModoPrecioPersonalizado() { return modoPrecioPersonalizado; }

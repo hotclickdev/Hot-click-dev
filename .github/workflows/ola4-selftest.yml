@@ -1,0 +1,42 @@
+name: Ola 4 — selftest
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/eng-gates/ola4*'
+      - 'scripts/eng-gates/flake-hunter.mjs'
+      - 'scripts/eng-gates/i18n-drift.mjs'
+      - 'scripts/eng-gates/secrets-in-docs.mjs'
+      - 'scripts/eng-gates/api-contract-drift.mjs'
+      - 'scripts/eng-gates/idor-suite-gap.mjs'
+      - 'scripts/eng-gates/playwright-area.mjs'
+      - '.github/workflows/flake-hunter.yml'
+      - '.github/workflows/i18n-drift.yml'
+      - '.github/workflows/secrets-in-docs.yml'
+      - '.github/workflows/api-contract-drift.yml'
+      - '.github/workflows/idor-suite-gap.yml'
+      - '.github/workflows/playwright-area.yml'
+      - '.github/workflows/ola4-selftest.yml'
+      - 'docs/AGENTES_OLA4.md'
+      - 'Hot_click_outlet/src/test/java/com/hotclick/pending/**'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: node --test ola 4
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Selftests
+        run: bash scripts/eng-gates/ola4-selftest.sh

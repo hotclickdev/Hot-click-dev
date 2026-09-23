@@ -1,0 +1,46 @@
+name: E17 — i18n PR es/en/pt
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'Hot_click_outlet/frontend/src/i18n/locales/**'
+      - 'Hot_click_outlet/frontend/src/**/*.tsx'
+      - 'Hot_click_outlet/frontend/src/**/*.jsx'
+      - 'scripts/eng-gates/i18n-pr-gate.mjs'
+      - 'scripts/eng-gates/ola6-lib.mjs'
+      - '.github/workflows/i18n-pr-gate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: i18n-pr-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  i18n:
+    name: E17 i18n keys es/en/pt
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Diff keys del PR (D7 es el Issue diario)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/master' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/i18n-pr-gate.mjs

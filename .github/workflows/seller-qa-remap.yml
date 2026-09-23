@@ -1,0 +1,77 @@
+name: E12 — Seller QA remap
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'Hot_click_outlet/frontend/src/prototipo/**'
+      - 'Hot_click_outlet/frontend/src/app/PlanPathGate.tsx'
+      - 'Hot_click_outlet/frontend/src/app/FigmaSellerGate.tsx'
+      - 'Hot_click_outlet/frontend/src/app/AppRoutes.tsx'
+      - 'Hot_click_outlet/frontend/src/utils/planPaths.ts'
+      - 'Hot_click_outlet/frontend/tests/seller-*.ts'
+      - 'Hot_click_outlet/frontend/tests/emprendedor-*.ts'
+      - 'scripts/eng-gates/seller-qa-remap.mjs'
+      - 'scripts/eng-gates/ola5-lib.mjs'
+      - '.github/workflows/seller-qa-remap.yml'
+      - '.cursor/skills/hotclick-seller-qa/SKILL.md'
+  workflow_dispatch:
+    inputs:
+      run_smoke:
+        description: 'Correr smoke Playwright de specs seller (caro). Default dry-run.'
+        type: boolean
+        default: false
+
+concurrency:
+  group: seller-qa-remap-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  remap:
+    name: E12 Seller QA remap
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Dry-run mapa de specs (default)
+        if: ${{ github.event.inputs.run_smoke != 'true' && github.event.inputs.run_smoke != true }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/master' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          E12_SMOKE: '0'
+        run: node scripts/eng-gates/seller-qa-remap.mjs
+
+      - name: Smoke seller acotado (opt-in)
+        if: ${{ github.event.inputs.run_smoke == 'true' || github.event.inputs.run_smoke == true }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/master' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          E12_SMOKE: '1'
+        run: |
+          set -euo pipefail
+          echo "Smoke opt-in: timeout acotado. No se publica artifact de e2e."
+          cd Hot_click_outlet/frontend
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install chromium --with-deps
+          cd ../../
+          node scripts/eng-gates/seller-qa-remap.mjs

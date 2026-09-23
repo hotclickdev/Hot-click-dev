@@ -1,0 +1,38 @@
+name: D4 E8 — Sentry digest
+
+on:
+  schedule:
+    # 03:00 America/Costa_Rica = 09:00 UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: sentry-digest
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  digest:
+    name: D4 Sentry / E8 prod-errors
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Digest Sentry o fallback health
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENTRY_TOKEN: ${{ secrets.SENTRY_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || 'hotclick' }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'hot-click-dev' }}
+        run: node scripts/eng-gates/sentry-digest.mjs

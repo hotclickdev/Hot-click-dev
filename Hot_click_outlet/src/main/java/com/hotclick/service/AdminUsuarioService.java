@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -23,7 +24,18 @@ public class AdminUsuarioService {
 
     @Transactional(readOnly = true)
     public List<Usuario> listarTodos() {
-        return usuarioRepository.findAllWithRolesOrderByIdDesc();
+        List<String> visibles = ResetPlataformaKeepQaService.correosVisiblesAdmin();
+        return usuarioRepository.findAllWithRolesOrderByIdDesc().stream()
+            .filter(u -> u.getCorreo() == null
+                || !ResetPlataformaKeepQaService.CORREO_MOSTRADOR.equalsIgnoreCase(u.getCorreo()))
+            .sorted(Comparator.comparingInt(u -> indiceCuentaEstablecida(u, visibles)))
+            .toList();
+    }
+
+    private static int indiceCuentaEstablecida(Usuario u, List<String> visibles) {
+        String correo = u.getCorreo() == null ? "" : u.getCorreo().toLowerCase();
+        int i = visibles.indexOf(correo);
+        return i < 0 ? visibles.size() + 1 : i;
     }
 
     @Transactional(readOnly = true)

@@ -1,0 +1,65 @@
+name: S14 — Weekly a11y + POS keyboard
+
+on:
+  schedule:
+    # Jueves 09:00 America/Costa_Rica = 15:00 UTC
+    - cron: '0 15 * * 4'
+  workflow_dispatch:
+    inputs:
+      run_smoke:
+        description: 'Correr smoke de specs ya en test:e2e:ci (no pos-atajos)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: a11y-pos-keyboard
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  map:
+    name: S14 a11y / POS keyboard
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Dry-run + Issue de huecos
+        if: ${{ !(inputs.run_smoke == true || inputs.run_smoke == 'true') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/eng-gates/a11y-pos-keyboard.mjs
+
+      - name: Setup pnpm (solo smoke opt-in)
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.2
+
+      - name: Instalar frontend (solo smoke opt-in)
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright Chromium (solo smoke opt-in)
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Smoke CI + Issue
+        if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          S14_RUN: '1'
+          CI: 'true'
+        run: node scripts/eng-gates/a11y-pos-keyboard.mjs
+        continue-on-error: true
