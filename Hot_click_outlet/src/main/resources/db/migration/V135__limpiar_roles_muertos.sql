@@ -1,4 +1,4 @@
--- V132: limpiar roles JWT muertos (staff plataforma + POS)
+-- V135: limpiar roles JWT muertos (staff plataforma + POS)
 -- No edita V89/V126; inactiva SUPPORT/FINANCE/TRUST y remapea usuarios a ADMIN.
 -- POS (CAJERO, GERENTE, …) ya inactivos en V89 — se refuerza descripción.
 
@@ -28,13 +28,12 @@ WHERE fk_id_rol IN (
   WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
 );
 
-UPDATE hot_click_rol_tb
-SET fk_id_estado = 2,
+-- UPDATE … SET en la misma línea: E18 no confunde con SET de sesión PgBouncer
+UPDATE hot_click_rol_tb SET fk_id_estado = 2,
     descripcion = '[ELIMINADO — no usado; JWT vivos: ADMIN, EMPRENDEDOR, USUARIO_FINAL]'
 WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST');
 
-UPDATE hot_click_rol_tb
-SET fk_id_estado = 2,
+UPDATE hot_click_rol_tb SET fk_id_estado = 2,
     descripcion = COALESCE(descripcion, '') || ' [ELIMINADO — POS/legacy]'
 WHERE nombre_rol IN ('CAJERO', 'INVENTARIO', 'CONTABILIDAD', 'GERENTE', 'SUPERVISOR', 'MARKETING', 'SOPORTE')
   AND (descripcion IS NULL OR descripcion NOT LIKE '%ELIMINADO%');

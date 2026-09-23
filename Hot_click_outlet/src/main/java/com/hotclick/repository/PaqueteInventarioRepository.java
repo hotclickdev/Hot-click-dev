@@ -3,6 +3,7 @@ package com.hotclick.repository;
 import com.hotclick.model.PaqueteInventario;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,7 @@ public interface PaqueteInventarioRepository extends JpaRepository<PaqueteInvent
 
     Optional<PaqueteInventario> findByCodigo(String codigo);
 
-    List<PaqueteInventario> findAllByOrderByFechaCreacionDesc();
+    List<PaqueteInventario> findAllByOrderByFechaCreacionDesc(Pageable pageable);
 
     @Query("SELECT p FROM PaqueteInventario p LEFT JOIN FETCH p.lineas WHERE p.id = :id")
     Optional<PaqueteInventario> findByIdWithLineas(@Param("id") Long id);

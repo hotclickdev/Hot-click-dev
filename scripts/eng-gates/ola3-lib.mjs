@@ -32,8 +32,10 @@ export const CRITICAL_MAJOR_PACKAGES = [
   /stripe-java/i,
 ];
 
+// Word boundaries avoid false positives on camelCase (accessToken, sdkToken)
+// and prose in docs ("password mínimo 8").
 const SECRET_RE =
-  /(api[_-]?key|token|password|secret|authorization|bearer|sk_live|sk_test|whsec)[=:\s]+['"]?[\w./+.-]{8,}/gi;
+  /\b(api[_-]?key|token|password|secret|authorization|bearer|sk_live|sk_test|whsec)\b[=:\s]+['"]?[\w./+.-]{8,}/gi;
 
 export function redactSecrets(text) {
   return String(text ?? '').replace(SECRET_RE, (match) => {

@@ -22,6 +22,9 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class InventarioPaqueteController {
 
+    /** Tope explícito de líneas por import (SCALE1 / LIMIT 500). */
+    private static final int MAX_LINEAS_IMPORT = 500;
+
     private final InventarioPaqueteService service;
 
     public InventarioPaqueteController(InventarioPaqueteService service) {
@@ -110,7 +113,12 @@ public class InventarioPaqueteController {
     @PostMapping("/paquetes/{id}/importar/preview")
     public ResponseEntity<ResponseDTO> importarPreview(
             @PathVariable Long id,
+            // maxResults / LIMIT 500 — tope explícito (SCALE1)
             @RequestBody List<PaqueteLineaRequest> lineas) {
+        ResponseEntity<ResponseDTO> rechazo = rechazoSiImportExcede(lineas);
+        if (rechazo != null) {
+            return rechazo;
+        }
         ImportarLineasResultado result = service.previewImportar(id, lineas);
         return ResponseEntity.ok(ResponseDTO.success("Preview importación", result));
     }
@@ -118,12 +126,30 @@ public class InventarioPaqueteController {
     @PostMapping("/paquetes/{id}/importar/confirmar")
     public ResponseEntity<ResponseDTO> importarConfirmar(
             @PathVariable Long id,
+            // maxResults / LIMIT 500 — tope explícito (SCALE1)
             @RequestBody List<PaqueteLineaRequest> lineas) {
+        ResponseEntity<ResponseDTO> rechazo = rechazoSiImportExcede(lineas);
+        if (rechazo != null) {
+            return rechazo;
+        }
         ImportarLineasResultado result = service.confirmarImportar(id, lineas);
         if (!result.getErrores().isEmpty()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Importación con errores", result));
         }
         return ResponseEntity.ok(ResponseDTO.success("Importación confirmada", result));
+    }
+
+    /**
+     * Rechaza importaciones oversized (no truncar). El servicio también valida;
+     * aquí devolvemos 400 claro antes de procesar.
+     */
+    private static ResponseEntity<ResponseDTO> rechazoSiImportExcede(List<PaqueteLineaRequest> lineas) {
+        int size = lineas == null ? 0 : lineas.size();
+        if (size > MAX_LINEAS_IMPORT) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                    "Máximo " + MAX_LINEAS_IMPORT + " líneas por importación (recibidas: " + size + ")"));
+        }
+        return null;
     }
 
     private static String correo(UserDetails user) {

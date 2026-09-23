@@ -28,6 +28,7 @@ import com.hotclick.utils.BarcodeNormalizer;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -35,7 +36,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,6 +46,8 @@ import java.util.UUID;
 public class InventarioPaqueteService {
 
     private static final int MAX_IMPORT_LINEAS = 500;
+    /** Tope de listado admin — evita findAll sin límite (SCALE1). */
+    private static final int MAX_LIST_PAQUETES = 100;
 
     private final PaqueteInventarioRepository paqueteRepo;
     private final PaqueteLineaRepository lineaRepo;
@@ -103,9 +108,24 @@ public class InventarioPaqueteService {
 
     @Transactional(readOnly = true)
     public List<PaqueteInventarioDTO> listar() {
-        return paqueteRepo.findAllByOrderByFechaCreacionDesc().stream()
-                .map(p -> InventarioPaqueteMapper.toSummary(p, (int) lineaRepo.countByPaqueteId(p.getId())))
+        List<PaqueteInventario> paquetes = paqueteRepo.findAllByOrderByFechaCreacionDesc(
+                PageRequest.of(0, MAX_LIST_PAQUETES));
+        if (paquetes.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Integer> conteos = conteosLineasPorPaquete(
+                paquetes.stream().map(PaqueteInventario::getId).toList());
+        return paquetes.stream()
+                .map(p -> InventarioPaqueteMapper.toSummary(p, conteos.getOrDefault(p.getId(), 0)))
                 .toList();
+    }
+
+    private Map<Long, Integer> conteosLineasPorPaquete(List<Long> paqueteIds) {
+        Map<Long, Integer> conteos = new HashMap<>();
+        for (Object[] row : lineaRepo.countGroupedByPaqueteIds(paqueteIds)) {
+            conteos.put((Long) row[0], ((Number) row[1]).intValue());
+        }
+        return conteos;
     }
 
     @Transactional(readOnly = true)

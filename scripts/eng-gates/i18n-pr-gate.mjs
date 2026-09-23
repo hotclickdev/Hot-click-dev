@@ -57,6 +57,8 @@ export function gitDiff(base, head, path, cwd = REPO_ROOT) {
 export function collectAddedKeys({ changed, locales, beforeLocales, diffFor }) {
   const beforeCount = ['es', 'en', 'pt']
     .reduce((n, code) => n + Object.keys(beforeLocales?.[code] || {}).length, 0);
+  // Prefer full-path keys from locale tree diff. Leaf names from JSON hunks
+  // (e.g. "comisionTitle") are not real i18n paths and false-fail E17.
   const added = new Set(
     beforeCount ? keysAddedInLocales(beforeLocales || {}, locales || {}) : [],
   );
@@ -64,7 +66,7 @@ export function collectAddedKeys({ changed, locales, beforeLocales, diffFor }) {
     const p = file.replaceAll('\\', '/');
     const diff = diffFor ? diffFor(file) : '';
     const lines = addedLinesFromDiff(diff);
-    if (/\/i18n\/locales\/(es|en|pt)\.json$/.test(p)) {
+    if (!beforeCount && /\/i18n\/locales\/(es|en|pt)\.json$/.test(p)) {
       for (const key of keysFromAddedJsonLines(lines)) added.add(key);
     }
     if (/\.(tsx|jsx)$/.test(p)) {

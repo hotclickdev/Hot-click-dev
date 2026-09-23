@@ -43,7 +43,8 @@ export function codigoProducto(producto: Producto) {
   if (sku) return sku
   const barcode = producto.barcode?.trim()
   if (barcode) return barcode
-  return `P-${String(producto.id ?? '').padStart(4, '0')}`
+  if (producto.numeroLocal != null) return `#${producto.numeroLocal}`
+  return '—'
 }
 
 export function textoStock(stock: number | string | null | undefined) {

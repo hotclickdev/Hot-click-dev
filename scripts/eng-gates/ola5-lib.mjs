@@ -680,10 +680,13 @@ export function lineIsSessionSet(line) {
 export function scanMigrationSql(relPath, sql) {
   const findings = [];
   const lines = String(sql).split(/\n/);
+  /** UPDATE/INSERT multi-línea: `SET col =` no es SET de sesión PgBouncer. */
+  let inDmlSet = false;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     const n = i + 1;
     const t = stripSqlComments(line);
+    if (/\b(update|insert)\b/i.test(t)) inDmlSet = true;
     const push = (id, title, severity = 'fail') => {
       findings.push({
         id, title, severity, path: relPath, line: n, snippet: line.trim().slice(0, 160),
@@ -692,9 +695,10 @@ export function scanMigrationSql(relPath, sql) {
     if (/pg_advisory_(?:xact_)?lock\s*\(/i.test(t)) {
       push('pg_advisory', 'pg_advisory_lock no funciona con PgBouncer transaction mode');
     }
-    if (lineIsSessionSet(line)) {
+    if (lineIsSessionSet(line) && !inDmlSet) {
       push('set', 'SET/set_config de sesión se pierde al devolver la conexión al pool');
     }
+    if (/;/.test(t)) inDmlSet = false;
     if (/\bLISTEN\s+\w+/i.test(t)) {
       push('listen', 'LISTEN requiere sesión persistente (PgBouncer transaction mode)');
     }

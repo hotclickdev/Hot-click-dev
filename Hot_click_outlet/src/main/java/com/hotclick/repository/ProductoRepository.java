@@ -28,6 +28,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Optional<Producto> findBySku(String sku);
 
+    @Query("SELECT COALESCE(MAX(p.numeroLocal), 0) FROM Producto p WHERE p.empresa.id = :empresaId")
+    int maxNumeroLocalByEmpresaId(@Param("empresaId") Long empresaId);
+
     /** Retorna fk_id_empresa sin cargar el objeto Producto completo. Safe con LAZY empresa. */
     @Query("SELECT p.empresa.id FROM Producto p WHERE p.id = :id")
     Optional<Long> findEmpresaIdById(@Param("id") Long id);

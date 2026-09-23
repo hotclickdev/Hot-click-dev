@@ -2,8 +2,10 @@ package com.hotclick.repository;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +20,10 @@ import java.util.Optional;
 public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     Optional<Empresa> findBySlug(String slug);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM Empresa e WHERE e.id = :id")
+    Optional<Empresa> findByIdForUpdate(@Param("id") Long id);
 
     @Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.plan WHERE e.id = :id")
     Optional<Empresa> findByIdWithPlan(@Param("id") Long id);

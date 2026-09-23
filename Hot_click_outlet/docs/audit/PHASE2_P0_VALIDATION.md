@@ -213,7 +213,8 @@ Dejar para Fase 3 (producto / deuda):
 - [x] Orden de PRs definido
 - [ ] Runtime checklist ejecutado (humano / ops)
 - [x] PR-A commiteado
-- [x] PR-B…G + P0-5 implementados (pendiente commit/push)
-- [ ] P0-1 webhook Tilopay mergeado con stack Tilopay
+- [x] PR-A commiteado (`ed844747`)
+- [x] PR-B…G + P0-5 + P0-1 en rama (`00da91f3` + docs)
+- [x] P0-1 webhook Tilopay mergeado con stack Tilopay
 
-**Ops post-deploy:** setear `TILOPAY_WEBHOOK_SECRET` en EC2 cuando el stack Tilopay + gate se mergeen.
+**Ops post-deploy:** setear `TILOPAY_WEBHOOK_SECRET` en EC2 `.env` y el mismo valor en Tilopay (header `X-Webhook-Secret`).
