@@ -32,6 +32,7 @@ export type RegistroEmpresaForm = {
   correoAdmin: string
   passwordAdmin: string
   telefonoAdmin: string
+  inscritoTributacion: boolean
 }
 
 /**

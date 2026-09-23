@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type CSSProperties, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import { AnimatePresence } from 'framer-motion'
@@ -6,54 +6,51 @@ import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import Seo from '@/components/seo/Seo'
-import { MIN_PASSWORD, type RegistroEmpresaForm } from './registro-empresa/registroEmpresaHelpers'
+import {
+  authDataRegistroEmpresa,
+  MIN_PASSWORD,
+  type RegistroEmpresaForm,
+} from './registro-empresa/registroEmpresaHelpers'
 import RegistroEmpresaAside from './registro-empresa/RegistroEmpresaAside'
-import StepTributacion from './registro-empresa/StepTributacion'
 import StepDatosEmpresa from './registro-empresa/StepDatosEmpresa'
 import StepDatosAdmin from './registro-empresa/StepDatosAdmin'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
-import type { AuthResponse } from '@/types/auth'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
 
-const STEP_TITLES = ['Requisito previo', 'Tu empresa', 'Tu cuenta de acceso']
+const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
-  'Debés estar inscrito en Tributación Directa para emitir facturas electrónicas.',
   'Datos básicos de tu negocio.',
   'Con estos datos iniciás sesión en el panel.',
 ]
-const STEP_LABELS = ['Tributación', 'Tu empresa', 'Tu cuenta']
+const STEP_LABELS = ['Tu empresa', 'Tu cuenta']
 
-function estiloPaso(indice: number, step: number, tributacion: boolean | null): CSSProperties {
-  const hasDanger = tributacion === false && indice === 0
+function estiloPaso(indice: number, step: number): CSSProperties {
   if (indice < step) {
     return { background: 'var(--hc-success, #22c55e)', color: '#fff' }
   }
   if (indice === step) {
-    return {
-      background: hasDanger ? 'var(--hc-danger)' : 'var(--hc-primary)',
-      color: '#fff',
-      boxShadow: hasDanger ? '0 0 12px rgba(239,68,68,0.4)' : '0 0 12px rgba(231,59,51,0.4)',
-    }
+    return { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px rgba(231,59,51,0.4)' }
   }
   return { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }
 }
 
-function BarraProgreso({ step, tributacion }: { step: number; tributacion: boolean | null }) {
+function BarraProgreso({ step }: { step: number }) {
   return (
     <div className="flex items-center gap-3 mb-6">
       {STEP_LABELS.map((label, i) => (
         <div key={label} className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
-            style={estiloPaso(i, step, tributacion)}>
+            style={estiloPaso(i, step)}>
             {i < step
               ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><polyline points="20 6 9 17 4 12" /></svg>
               : i + 1}
           </div>
           <span className="text-xs font-medium" style={{ color: i === step ? 'var(--hc-text)' : 'var(--hc-muted)' }}>{label}</span>
-          {i < 2 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
+          {i < 1 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
         </div>
       ))}
     </div>
@@ -69,12 +66,15 @@ export default function RegistroEmpresaPage() {
   const empresaId = useAuthStore((s) => s.empresaId)
 
   const [step, setStep] = useState(0)
-  const [tributacion, setTributacion] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileInstance | null>(null)
   const [form, setForm] = useState<RegistroEmpresaForm>({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
+    inscritoTributacion: true,
   })
 
   const destino = destinoVender({ tokenVivo: isTokenAlive(token), rol: userRole, empresaId })
@@ -84,11 +84,6 @@ export default function RegistroEmpresaPage() {
 
   const actualizarCampo = (campo: keyof RegistroEmpresaForm) => (evento: ChangeEvent<HTMLInputElement>) => setForm((prev) => ({ ...prev, [campo]: evento.target.value }))
 
-  const handleTributacion = (valor: boolean) => {
-    setTributacion(valor)
-    if (valor) setStep(1)
-  }
-
   const handleNext = (e: FormEvent) => {
     e.preventDefault()
     setError('')
@@ -96,21 +91,31 @@ export default function RegistroEmpresaPage() {
       setError('El nombre del negocio es requerido')
       return
     }
-    setStep(2)
+    setStep(1)
+  }
+
+  const resetTurnstile = () => {
+    turnstileRef.current?.reset()
+    setTurnstileToken('')
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    if (!aceptaTerminos) {
+      setError('Debés aceptar los términos para continuar')
+      return
+    }
     if (!form.correoAdmin.trim()) {
       setError('El correo es requerido')
       return
     }
     if (form.passwordAdmin.length < MIN_PASSWORD) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+      setError(`La contraseña debe tener al menos ${MIN_PASSWORD} caracteres`)
       return
     }
     setLoading(true)
+    authService.registrarConsentimiento('REGISTRO')
     try {
       const { data } = await authService.registroEmpresa({
         nombreEmpresa:        form.nombreEmpresa.trim(),
@@ -120,17 +125,22 @@ export default function RegistroEmpresaPage() {
         correoAdmin:          form.correoAdmin.trim().toLowerCase(),
         passwordAdmin:        form.passwordAdmin,
         telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
-        inscritoTributacion:  true,
+        inscritoTributacion:  form.inscritoTributacion,
+        ...(turnstileToken ? { turnstileToken } : {}),
       })
-      const envelope = data as AuthResponse & { data?: AuthResponse }
-      if (envelope?.data) {
-        loginStore(envelope.data)
+      const authData = authDataRegistroEmpresa(data)
+      if (authData?.accessToken) {
+        loginStore(authData)
         toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
         navigate(RUTA_PANEL_VENDEDOR)
+        return
       }
+      setError('Registro incompleto. Intentá de nuevo.')
+      resetTurnstile()
     } catch (err: unknown) {
       const msg = mensajeErrorAuth(err, '')
       setError(msg || 'Error al registrar. Intentá de nuevo.')
+      resetTurnstile()
     } finally {
       setLoading(false)
     }
@@ -211,39 +221,35 @@ export default function RegistroEmpresaPage() {
                   </p>
                 </div>
 
-                <BarraProgreso step={step} tributacion={tributacion} />
+                <BarraProgreso step={step} />
 
                 <AnimatePresence mode="wait">
                   {step === 0 && (
-                    <StepTributacion
-                      key={tributacion === false ? 's0-ayuda' : 's0'}
-                      tributacion={tributacion}
-                      onInscrito={() => handleTributacion(true)}
-                      onNoInscrito={() => handleTributacion(false)}
-                      onVolver={() => setTributacion(null)}
-                    />
-                  )}
-                  {step === 1 && (
                     <StepDatosEmpresa
-                      key="s1"
+                      key="s0"
                       form={form}
                       error={error}
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoEmpresa: val }))}
+                      onInscritoTributacionChange={(v) => setForm((p) => ({ ...p, inscritoTributacion: v }))}
                       onSubmit={handleNext}
-                      onAtras={() => { setStep(0); setTributacion(null); setError('') }}
                     />
                   )}
-                  {step === 2 && (
+                  {step === 1 && (
                     <StepDatosAdmin
-                      key="s2"
+                      key="s1"
                       form={form}
                       error={error}
                       loading={loading}
+                      aceptaTerminos={aceptaTerminos}
+                      turnstileToken={turnstileToken}
+                      turnstileRef={turnstileRef}
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoAdmin: val }))}
+                      onAceptaChange={setAceptaTerminos}
+                      onTurnstileToken={setTurnstileToken}
                       onSubmit={handleSubmit}
-                      onAtras={() => { setStep(1); setError('') }}
+                      onAtras={() => { setStep(0); setError('') }}
                     />
                   )}
                 </AnimatePresence>
