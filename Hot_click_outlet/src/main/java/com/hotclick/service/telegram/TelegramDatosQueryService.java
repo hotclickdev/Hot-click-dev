@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -24,6 +25,7 @@ public class TelegramDatosQueryService {
     @Autowired private TelegramClienteBotService     bot;
     @Autowired private TelegramEmpresaContextService empresaContext;
     @Autowired private TelegramAbusoService          abuso;
+    @Autowired private TelegramFlujoSupport          flujoSupport;
 
     public void responderConDatos(TelegramVinculacion v, Function<Long, String> generador) {
         Long empresaId = empresaContext.empresaValidada(v);
@@ -37,6 +39,29 @@ public class TelegramDatosQueryService {
                 TelegramTeclado.soloMenu());
             abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
         }
+    }
+
+    /** Resumen de inventario; si el usuario puede gestionar, ofrece modificar unidades. */
+    public void mostrarInventario(TelegramVinculacion v) {
+        Long empresaId = empresaContext.empresaValidada(v);
+        if (empresaId == null) return;
+        try {
+            bot.enviarMensaje(v.getChatId(), mensajeInventario(empresaId), tecladoInventario(v, empresaId));
+        } catch (Exception e) {
+            log.error("[telegram-bot] error consultando inventario empresa {} — {}", empresaId, e.getMessage());
+            bot.enviarMensaje(v.getChatId(),
+                "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
+                TelegramTeclado.soloMenu());
+            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
+        }
+    }
+
+    private List<List<Map<String, Object>>> tecladoInventario(TelegramVinculacion v, Long empresaId) {
+        List<List<Map<String, Object>>> teclado = new ArrayList<>();
+        if (flujoSupport.esPropietarioOAdmin(v.getUsuario(), empresaId)) {
+            teclado.add(List.of(TelegramClienteBotService.boton("✏️ Modificar unidades", "inv:mod")));
+        }
+        return TelegramTeclado.conMenu(teclado);
     }
 
     public String mensajeInventario(Long empresaId) {
