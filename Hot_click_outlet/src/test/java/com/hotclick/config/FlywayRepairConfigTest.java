@@ -1,8 +1,9 @@
 package com.hotclick.config;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.core.env.Environment;
 import org.springframework.mock.env.MockEnvironment;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -69,5 +70,40 @@ class FlywayRepairConfigTest {
         IllegalStateException ex = assertThrows(IllegalStateException.class, config::assertDevHostIsLocal);
         assertTrue(ex.getMessage().contains("Abortando"));
         assertTrue(ex.getMessage().contains("db.abcdefgh.supabase.co"));
+    }
+
+    @Test
+    void ultimaVersionMigracion_comparaComoEntero() {
+        assertEquals(140, FlywayRepairConfig.ultimaVersionMigracion(List.of(
+            "V13__solicitud_garantia.sql",
+            "V136__comision_tilopay_empresa.sql",
+            "V140__correo_verificado_usuario.sql"
+        )));
+    }
+
+    @Test
+    void ultimaVersionMigracion_ignoraNombresQueNoSonMigracion() {
+        assertEquals(137, FlywayRepairConfig.ultimaVersionMigracion(List.of(
+            "README.md",
+            "db/migration/V137__refresh_token_sha256.sql",
+            "nativas.sql"
+        )));
+    }
+
+    @Test
+    void ultimaVersionMigracion_sinMigraciones_falla() {
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class,
+            () -> FlywayRepairConfig.ultimaVersionMigracion(List.of("nativas.sql", "README.md"))
+        );
+        assertTrue(ex.getMessage().contains("No hay migraciones"));
+    }
+
+    @Test
+    void versionDesdeNombre_rutaYBasename() {
+        assertEquals(140, FlywayRepairConfig.versionDesdeNombre("V140__correo_verificado_usuario.sql"));
+        assertEquals(13, FlywayRepairConfig.versionDesdeNombre("db/migration/V13__solicitud_garantia.sql"));
+        assertNull(FlywayRepairConfig.versionDesdeNombre("nativas.sql"));
+        assertNull(FlywayRepairConfig.versionDesdeNombre(null));
     }
 }

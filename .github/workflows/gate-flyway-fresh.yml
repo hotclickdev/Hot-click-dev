@@ -1,8 +1,10 @@
 name: E1b — Gate Flyway fresh (Postgres)
 
 # Complemento de gate-flyway.yml: aquel verifica que exista la migración;
-# este arranca el perfil `dev` contra Postgres vacío (baseline V136 + Hibernate).
-# V1..V136 no son reproducibles en cadena (V1 era baseline legacy en prod).
+# este arranca el perfil `dev` contra Postgres vacío (baseline en la última V
+# del classpath + Hibernate ddl-auto=update). V1..VN no son reproducibles en
+# cadena (V1 era baseline legacy en prod); baselinar en 136 dejaba V137+
+# ejecutándose antes de que existieran las tablas.
 
 on:
   pull_request:
