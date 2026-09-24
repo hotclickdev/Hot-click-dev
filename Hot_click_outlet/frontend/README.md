@@ -1,82 +1,49 @@
-# HOTCLICK — Frontend React
+# HOTCLICK — Frontend
 
-Aplicación React para la tienda y panel admin de HOTCLICK.
+SPA de la tienda pública, las áreas de vendedor (`/emprendedor`, `/pyme`, `/negocio-plus`) y el panel `/admin`. En producción no hay servidor Node: Vite compila a `Hot_click_outlet/src/main/resources/static/` y lo sirve Spring Boot.
 
 ## Stack
 
-- **React 18** + **Vite**
-- **Tailwind CSS** (utility-first styling)
-- **Zustand** (estado global: auth, carrito, UI, wishlist)
-- **Framer Motion** (animaciones)
-- **Axios** (HTTP con interceptor JWT)
-- **React Router v6**
-- **i18next** (internacionalización)
-- **pnpm** (package manager)
+- React 19 + TypeScript + Vite 8
+- Tailwind CSS 4
+- Zustand (auth, carrito, wishlist, UI)
+- TanStack Query
+- Axios (`src/services/`; interceptor JWT y refresh)
+- React Router 7
+- i18next
+- Framer Motion
+- pnpm 11 · Node >= 22.13
 
 ## Comandos
 
 ```bash
-pnpm dev          # Dev server en http://localhost:3000
-pnpm build        # Build → ../src/main/resources/static/
-pnpm build:watch  # Build con watch
-pnpm lint         # ESLint
+pnpm dev          # http://localhost:3000  (proxy /api → :8080)
+pnpm build        # typecheck + build → ../src/main/resources/static/
+pnpm build:watch
+pnpm typecheck
+pnpm lint
+pnpm test         # Vitest
+pnpm test:e2e     # Playwright
 ```
+
+El build de producción hay que correrlo antes de commit y antes de `docker build`. La imagen de la app no compila este paquete.
 
 ## Estructura
 
-```
+```text
 src/
-├── pages/
-│   ├── HomePage.jsx
-│   ├── ProductsPage.jsx
-│   ├── ProductDetailPage.jsx
-│   ├── CartPage.jsx
-│   ├── CheckoutPage.jsx
-│   ├── MisPedidosPage.jsx
-│   ├── LoginPage.jsx
-│   ├── RegisterPage.jsx
-│   └── admin/
-│       ├── AdminDashboard.jsx
-│       ├── AdminProducts.jsx
-│       ├── AdminNuevoProducto.jsx
-│       ├── AdminOrders.jsx        ← tracker + notificaciones WA/email
-│       ├── AdminMarcas.jsx        ← CRUD marcas con logo
-│       ├── AdminFinanzas.jsx      ← desglose productos vs envío
-│       ├── AdminUsers.jsx
-│       ├── AdminReportes.jsx
-│       └── AdminPublicaciones.jsx
+├── app/            AppRoutes.tsx, chrome, rutas de vendedor
+├── pages/          Tienda, legales, admin/
 ├── components/
-│   ├── ui/                        ← Button, Input, Modal, Toast, Spinner...
-│   │   ├── AuthPromptModal.jsx    ← modal login para usuarios anónimos
-│   │   ├── MiniCartDrawer.jsx
-│   │   └── SearchPanel.jsx        ← búsqueda con marcas
-│   └── ProtectedRoute.jsx
-├── store/
-│   ├── authStore.js
-│   ├── cartStore.js               ← toWhatsAppMessage()
-│   ├── uiStore.js                 ← authPromptOpen
-│   └── wishlistStore.js
-├── services/
-│   ├── api.js                     ← Axios + interceptor JWT
-│   ├── authService.js
-│   ├── orderService.js            ← notificar(id)
-│   ├── marcaService.js            ← getPublicas() sin auth
-│   └── productService.js
+├── store/          Zustand
+├── services/       HTTP (api.ts y un servicio por dominio)
 ├── layouts/
-│   ├── AdminLayout.jsx
-│   ├── MainLayout.jsx
-│   └── AuthLayout.jsx
-└── utils/
-    ├── format.js                  ← formatPrice (₡), formatDate, formatDateTime
-    └── analytics.js
+└── utils/          format (₡), analytics, planes
 ```
 
-## Alias de importación
-
-`@/` apunta a `src/` (configurado en `vite.config.ts`).
+`@/` apunta a `src/` (`vite.config.ts`).
 
 ## Notas
 
-- El build de producción se sirve desde Spring Boot — **no hay servidor Node en producción**.
-- La API en dev se proxea a `http://localhost:8080` vía Vite.
-- Los montos siempre son enteros en colones (₡), sin decimales.
+- Montos en colones enteros, sin decimales (`Intl.NumberFormat('es-CR')`).
+- Clerk, GA4, Sentry, PostHog y Clarity respetan el consentimiento de cookies donde aplica.
