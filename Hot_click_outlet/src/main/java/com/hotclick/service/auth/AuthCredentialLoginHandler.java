@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -36,9 +37,12 @@ public class AuthCredentialLoginHandler {
     private static final String KEY_SUCCESS = "success";
     private static final String KEY_TEMP_TOKEN = "tempToken";
     private static final String KEY_MESSAGE = "message";
-    /** Hash bcrypt cost 12 fijo: iguala el timing cuando el correo no existe. */
-    private static final String DUMMY_PASSWORD_HASH =
-        "$2b$12$/r0/7yLCva0FfB27/Y82GugYgy4kzoYNUL452B2OBBqC3nyEYptKC";
+    /**
+     * Bcrypt cost 12 generado al cargar la clase (no es una credencial).
+     * Solo iguala el timing de {@code matches} cuando el correo no existe.
+     */
+    private static final String HASH_TIMING_DESCONOCIDO =
+        new BCryptPasswordEncoder(12).encode("timing-pad");
 
     @Autowired private UsuarioService              usuarioService;
     @Autowired private JwtUtil                     jwtUtil;
@@ -86,7 +90,7 @@ public class AuthCredentialLoginHandler {
     }
 
     private ResponseEntity<?> rechazarUsuarioDesconocido(JwtRequest request, HttpServletRequest httpRequest) {
-        passwordEncoder.matches(request.getContrasena(), DUMMY_PASSWORD_HASH);
+        passwordEncoder.matches(request.getContrasena(), HASH_TIMING_DESCONOCIDO);
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "user_not_found"));
         AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
         return respuestaCredencialesInvalidas();

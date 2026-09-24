@@ -109,7 +109,7 @@ public class AdsMetricasService {
         Integer roasUtilidad = gastoTotal > 0 ? ratio(utilidadAtribuida, gastoTotal) : null;
         Integer cac = (gastoTotal > 0 && !clientesPrimerPedido.isEmpty())
             ? gastoTotal / clientesPrimerPedido.size()
-            : (gastoTotal > 0 ? null : null);
+            : null;
 
         int ltv90 = calcularLtv90(clientesPrimerPedido, empresaId);
 
