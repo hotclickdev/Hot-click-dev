@@ -40,6 +40,7 @@ describe('productos personalizados — wiring estático', () => {
     expect(svc).toContain('/encargos/')
     expect(svc).toContain('aprobar')
     expect(svc).toContain('rechazar')
+    expect(svc).toContain('turnstileToken')
   })
 
   it('Mis Productos ofrece catálogo y personalizado al agregar', () => {

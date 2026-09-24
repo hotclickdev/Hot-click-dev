@@ -66,6 +66,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Autowired private SecurityAuditService auditService;
     @Autowired private RateLimiter          rateLimiter;
+    @Autowired private ClientIpResolver     clientIpResolver;
 
     private record Limit(int maxRequests, int windowSeconds) {}
     private record PrefixLimit(String prefix, int maxRequests, int windowSeconds) {}
@@ -140,7 +141,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         if ("POST".equalsIgnoreCase(method)) {
-            String ip    = resolveClientIp(request);
+            String ip    = clientIpResolver.resolve(request);
             Limit  limit = LIMITS.get(path);
 
             // Exact-path check
@@ -171,7 +172,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 }
             }
         } else if ("GET".equalsIgnoreCase(method)) {
-            String ip = resolveClientIp(request);
+            String ip = clientIpResolver.resolve(request);
             for (GetLimit gl : GET_LIMITS) {
                 if (path.startsWith(gl.prefix())) {
                     String key = "ip:" + ip + ":GET:" + gl.prefix();
@@ -190,23 +191,5 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
-    }
-
-    /**
-     * Extrae la IP real del cliente.
-     * X-Real-IP lo setea Nginx desde $remote_addr (no puede ser falsificado por el cliente).
-     * X-Forwarded-For puede contener IPs adicionales si hay múltiples proxies.
-     * Fallback a getRemoteAddr() para entornos locales sin proxy.
-     */
-    private String resolveClientIp(HttpServletRequest request) {
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) return realIp.trim();
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            // Tomar la última IP — la que añade el proxy de confianza (Nginx)
-            String[] parts = forwarded.split(",");
-            return parts[parts.length - 1].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

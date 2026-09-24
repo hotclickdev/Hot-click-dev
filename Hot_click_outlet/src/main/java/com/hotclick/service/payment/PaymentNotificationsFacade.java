@@ -26,6 +26,8 @@ public class PaymentNotificationsFacade {
     @Autowired private WebhookDispatcherService webhookDispatcher;
     @Autowired private AggregatorService        aggregatorService;
     @Autowired(required = false) private PostHogCaptureService postHogCaptureService;
+    @Autowired(required = false) private com.hotclick.service.analytics.MetaConversionApiService metaConversionApiService;
+    @Autowired(required = false) private com.hotclick.service.analytics.Ga4MeasurementProtocolService ga4MeasurementProtocolService;
 
     public void onPedidoCreado(Pedido pedido, String provider) {
         if (pedido == null) return;
@@ -62,8 +64,15 @@ public class PaymentNotificationsFacade {
     }
 
     private void capturarPedidoPagado(Pedido pedido, Pago pago) {
-        if (postHogCaptureService == null) return;
-        postHogCaptureService.capturarPedidoPagado(pedido, pago);
+        if (postHogCaptureService != null) {
+            postHogCaptureService.capturarPedidoPagado(pedido, pago);
+        }
+        if (metaConversionApiService != null) {
+            metaConversionApiService.enviarPurchase(pedido);
+        }
+        if (ga4MeasurementProtocolService != null) {
+            ga4MeasurementProtocolService.enviarPurchase(pedido);
+        }
     }
 
     public void onPagoFallido(Pedido pedido, String motivo) {

@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "descripcion": "Supresiones del gate osv-deps (HIGH/CRITICAL). Cada entrada necesita id OSV/GHSA/CVE, reason, acceptedAt (YYYY-MM-DD) y preferiblemente expiresOn. Sin expiresOn la excepción es permanente — solo para vulnerabilidades sin fix disponible y no explotables en nuestro uso. Al expirar, el ID vuelve a fallar el PR.",
+  "entries": []
+}

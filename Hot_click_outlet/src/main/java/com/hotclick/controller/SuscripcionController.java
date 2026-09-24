@@ -1,10 +1,13 @@
 package com.hotclick.controller;
 
 import com.hotclick.model.Plan;
+import com.hotclick.model.Usuario;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.SuscripcionService;
+import com.hotclick.service.auth.AuthSupport;
 import com.stripe.exception.StripeException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +28,14 @@ public class SuscripcionController {
 
     private final SuscripcionService suscripcionService;
     private final PlanRepository planRepo;
+    private final AuthSupport authSupport;
 
     public SuscripcionController(SuscripcionService suscripcionService,
-                                  PlanRepository planRepo) {
+                                  PlanRepository planRepo,
+                                  AuthSupport authSupport) {
         this.suscripcionService = suscripcionService;
         this.planRepo           = planRepo;
+        this.authSupport        = authSupport;
     }
 
     /** Lista todos los planes disponibles (públicos). */
@@ -149,13 +155,23 @@ public class SuscripcionController {
      */
     @PostMapping("/cambiar-plan/{planId}")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
-    public ResponseEntity<Map<String, Object>> cambiarPlan(@PathVariable Long planId) {
+    public ResponseEntity<Map<String, Object>> cambiarPlan(@PathVariable Long planId, HttpServletRequest request) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         try {
+            Plan plan = planRepo.findById(planId).orElse(null);
+            boolean planPago = plan != null && plan.getPrecioMensual() != null && plan.getPrecioMensual() > 0;
+            if (planPago) {
+                Usuario usuario = authSupport.usuarioFromRequest(request);
+                if (!Boolean.TRUE.equals(usuario.getCorreoVerificado())) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Verificá tu correo antes de activar un plan de pago"));
+                }
+            }
             return ResponseEntity.ok(suscripcionService.cambiarPlanOnvo(empresaId, planId));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("[billing] Error cambiando plan empresa={}: {}", empresaId, e.getMessage());
             return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));

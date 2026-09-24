@@ -138,10 +138,24 @@ public class Constants {
 
     public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
 
+    /** Prueba QA abierta. Cabe en estado_plan (varchar 20). */
+    public static final String ESTADO_PLAN_TRIAL = "TRIAL";
+
+    /** Prueba QA cerrada: el dueño tiene que pedir autorización. */
+    public static final String ESTADO_PLAN_PRUEBA_CERRADA = "PRUEBA_CERRADA";
+
+    /** Días que dura la prueba de las cuentas QA antes de pedir autorización. */
+    public static final int DIAS_PRUEBA_QA = 30;
+
     public static final String CORREO_DEMO_EMPRESA_SUFIJO = "@hotclick.test";
 
     public static final String CORREO_ADMIN = "admin@hotclick.com";
     public static final String CORREO_QA_EMPRENDEDOR = "qa.emprendedor.demo@hotclick.test";
     public static final String CORREO_QA_PYME = "qa.pyme.demo@hotclick.test";
     public static final String CORREO_QA_NEGOCIO_PLUS = "qa.negocioplus.demo@hotclick.test";
+
+    /** Cuentas de prueba permanentes: no vencen. */
+    public static final String CORREO_PRUEBA_EMPRENDEDOR = "emprendedor@hotclick.test";
+    public static final String CORREO_PRUEBA_PYME = "pyme@hotclick.test";
+    public static final String CORREO_PRUEBA_NEGOCIO_PLUS = "negocioplus@hotclick.test";
 }

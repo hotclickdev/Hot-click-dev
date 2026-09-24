@@ -41,7 +41,7 @@ public class PublicChatAdvisorHandler {
                              SseEmitter emitter) {
         if (productoId == null || productoId <= 0) return false;
         try {
-            asesorar(empresaId, marketplace, userMessage, history, productoId, emitter);
+            asesorar(empresaId, marketplace, userMessage, productoId, emitter);
         } catch (Exception e) {
             log.error("[Chat] Asesor ficha empresa={} producto={}: {}", empresaId, productoId, e.getMessage());
             enviarError(emitter);
@@ -50,8 +50,7 @@ public class PublicChatAdvisorHandler {
     }
 
     private void asesorar(Long empresaId, boolean marketplace, String userMessage,
-                          List<Map<String, Object>> history, Long productoId,
-                          SseEmitter emitter) throws Exception {
+                          Long productoId, SseEmitter emitter) throws Exception {
         Map<String, Object> ficha = productSearch.buscarFichaAsesor(empresaId, marketplace, productoId);
         if (ficha == null) {
             enviarProductosVacios(emitter, userMessage);
@@ -62,14 +61,8 @@ public class PublicChatAdvisorHandler {
         enviarProductosVacios(emitter, userMessage);
         registrarAnalitica(empresaId, userMessage);
         boolean isEnglish = intentHelper.isEnglish(userMessage);
-        boolean afterHours = intentHelper.isOutsideBusinessHours();
         List<String> opts = claudeClient.generateAdvisorOpts(isEnglish);
-        if (claudeClient.hasApiKey()) {
-            claudeClient.streamAdvisorResponse(emitter, userMessage, ficha, history, empresaId,
-                marketplace, isEnglish, afterHours, opts);
-            return;
-        }
-        enviarTextoYCerrar(emitter, claudeClient.generarRespuestaAsesor(ficha, isEnglish), opts);
+        enviarTextoYCerrar(emitter, claudeClient.generarRespuestaAsesor(ficha, userMessage, isEnglish), opts);
     }
 
     private void enviarProductosVacios(SseEmitter emitter, String query) throws Exception {

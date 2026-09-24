@@ -1,6 +1,8 @@
 package com.hotclick.controller;
 
 import com.hotclick.service.ResendEmailService;
+import com.hotclick.service.TurnstileFormGuard;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -15,12 +17,17 @@ public class ContactoController {
 
     @Autowired private ResendEmailService resendEmailService;
     @Autowired private com.hotclick.service.TextModerationService textModerationService;
+    @Autowired private TurnstileFormGuard turnstileFormGuard;
 
     @Value("${sendgrid.from-email}")
     private String fromEmail;
 
     @PostMapping("/contacto")
-    public ResponseEntity<?> enviarMensaje(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> enviarMensaje(@RequestBody Map<String, String> body,
+                                           HttpServletRequest httpRequest) {
+        if (!turnstileFormGuard.verificado(body.get("turnstileToken"), httpRequest)) {
+            return ResponseEntity.badRequest().body(Map.of("error", TurnstileFormGuard.MSG_ANTI_BOT));
+        }
         String nombre  = body.getOrDefault("nombre",  "").trim();
         String correo  = body.getOrDefault("correo",  "").trim();
         String mensaje = body.getOrDefault("mensaje", "").trim();

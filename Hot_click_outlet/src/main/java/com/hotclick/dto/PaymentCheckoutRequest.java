@@ -40,6 +40,9 @@ public class PaymentCheckoutRequest {
     /** Token del QR del POS — al confirmar el pago marca la sesión del cajero. */
     private String posQrToken;
 
+    /** First/last touch UTM + _fbp/_fbc para atribución y CAPI. */
+    private AtribucionSnapshotDTO atribucion;
+
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 
@@ -69,6 +72,9 @@ public class PaymentCheckoutRequest {
 
     public String getPosQrToken() { return posQrToken; }
     public void setPosQrToken(String posQrToken) { this.posQrToken = posQrToken; }
+
+    public AtribucionSnapshotDTO getAtribucion() { return atribucion; }
+    public void setAtribucion(AtribucionSnapshotDTO atribucion) { this.atribucion = atribucion; }
 
     public static class ItemDTO {
 

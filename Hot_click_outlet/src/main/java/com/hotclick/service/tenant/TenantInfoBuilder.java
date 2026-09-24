@@ -41,6 +41,7 @@ public class TenantInfoBuilder {
         info.put("planNombre",   plan != null ? plan.getNombre() : "Sin plan");
         info.put("planId",       plan != null ? plan.getId()     : null);
         info.put("estadoPlan",   empresa.getEstadoPlan());
+        info.put("estadoEmpresa", empresa.getEstadoEmpresa());
         info.put("trialDias",    empresa.getTrialDiasRestantes());
         info.put("fechaVenc",    empresa.getFechaVencPlan());
         info.put("timezone",     empresa.getTimezone());

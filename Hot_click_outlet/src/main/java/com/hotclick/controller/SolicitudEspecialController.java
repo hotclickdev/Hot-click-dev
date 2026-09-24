@@ -1,7 +1,9 @@
 package com.hotclick.controller;
 
 import com.hotclick.service.ResendEmailService;
+import com.hotclick.service.TurnstileFormGuard;
 import com.hotclick.utils.InputSanitizer;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -32,12 +34,14 @@ public class SolicitudEspecialController {
     private final JdbcTemplate jdbc;
     private final ResendEmailService emailService;
     private final InputSanitizer sanitizer;
+    private final TurnstileFormGuard turnstileFormGuard;
 
     public SolicitudEspecialController(JdbcTemplate jdbc, ResendEmailService emailService,
-                                       InputSanitizer sanitizer) {
+                                       InputSanitizer sanitizer, TurnstileFormGuard turnstileFormGuard) {
         this.jdbc = jdbc;
         this.emailService = emailService;
         this.sanitizer = sanitizer;
+        this.turnstileFormGuard = turnstileFormGuard;
     }
 
     @PostMapping
@@ -47,7 +51,13 @@ public class SolicitudEspecialController {
             @RequestParam(required = false) String correo,
             @RequestParam(required = false) String descripcion,
             @RequestParam(required = false) MultipartFile imagen,
-            @RequestParam(required = false) String empresaSlug) {
+            @RequestParam(required = false) String empresaSlug,
+            @RequestParam(required = false) String turnstileToken,
+            HttpServletRequest httpRequest) {
+
+        if (!turnstileFormGuard.verificado(turnstileToken, httpRequest)) {
+            return ResponseEntity.badRequest().body(Map.of("error", TurnstileFormGuard.MSG_ANTI_BOT));
+        }
 
         String nombreLimpio = sanitizer.cleanWithLimit(nombre, MAX_NOMBRE);
         if (nombreLimpio == null || nombreLimpio.isBlank()) {

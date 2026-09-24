@@ -90,6 +90,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
         planNombre:   data.planNombre   ?? 'FREE',
         planId:       data.planId       ?? null,
         estadoPlan:   data.estadoPlan   ?? 'ACTIVO',
+        estadoEmpresa: data.estadoEmpresa ?? get().estadoEmpresa,
         trialDias:    data.trialDias    ?? -1,
         fechaVenc:    data.fechaVenc    ?? null,
         timezone:     data.timezone     ?? 'America/Costa_Rica',

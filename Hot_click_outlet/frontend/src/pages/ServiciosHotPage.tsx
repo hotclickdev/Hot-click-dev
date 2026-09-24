@@ -8,6 +8,8 @@ import { servicioService } from '@/services/servicioService'
 import { garantiaService } from '@/services/garantiaService'
 import { testimonioService } from '@/services/testimonioService'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTurnstileForm } from '@/hooks/useTurnstileForm'
+import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 import ServiciosInicio, { ServiciosHero } from './servicios/ServiciosInicio'
 import VistaBusqueda from './servicios/VistaBusqueda'
 import VistaGarantia from './servicios/VistaGarantia'
@@ -49,6 +51,10 @@ export default function ServiciosHotPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [phone, setPhone] = useState('')
   const [form, setForm] = useState<FormBusqueda>({ descripcion: '', presupuesto: '', nombreContacto: '' })
+  const {
+    turnstileRef, turnstileToken, setTurnstileToken,
+    resetTurnstile, turnstileSiteKey, turnstileBloqueaSubmit,
+  } = useTurnstileForm()
 
   const { data: misSolicitudes, isLoading: loadingMias, refetch: refetchMias } = useQuery({
     queryKey: ['mis-solicitudes-servicio'],
@@ -117,11 +123,16 @@ export default function ServiciosHotPage() {
         descripcion,
         telefonoContacto: phone,
         fotosUrls: fotos.length ? JSON.stringify(fotos.map(f => f.url)) : null,
+        turnstileToken: turnstileToken || undefined,
       })
       setSuccess(true)
       setForm({ descripcion: '', presupuesto: '', nombreContacto: '' })
       setPhone(''); setFotos([])
-    } catch { setError(t('serviciosPage.sendErrorFull')) }
+      resetTurnstile()
+    } catch (err: unknown) {
+      setError(mensajeErrorApi(err, t('serviciosPage.sendErrorFull')))
+      resetTurnstile()
+    }
     finally { setSending(false) }
   }
 
@@ -172,6 +183,10 @@ export default function ServiciosHotPage() {
               misSolicitudes={misSolicitudes}
               loadingMias={loadingMias}
               refetchMias={refetchMias}
+              turnstileSiteKey={turnstileSiteKey}
+              turnstileRef={turnstileRef}
+              setTurnstileToken={setTurnstileToken}
+              turnstileBloqueaSubmit={turnstileBloqueaSubmit}
             />
           )}
           {vista === 'garantia' && (
@@ -211,6 +226,10 @@ export default function ServiciosHotPage() {
               handleEnviar={handleEnviar}
               handleFotoChange={handleFotoChange}
               volver={volver}
+              turnstileSiteKey={turnstileSiteKey}
+              turnstileRef={turnstileRef}
+              setTurnstileToken={setTurnstileToken}
+              turnstileBloqueaSubmit={turnstileBloqueaSubmit}
             />
           )}
         </AnimatePresence>

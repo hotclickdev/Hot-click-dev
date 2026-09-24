@@ -57,7 +57,7 @@ export default function AdminConfiguracion() {
   usePremiumFonts()
   const { t } = useTranslation()
   const toast = useToast()
-  const { userId, userEmail, userName, setUserName, refreshToken, userRole } = useAuthStore()
+  const { userId, userEmail, userName, setUserName, userRole } = useAuthStore()
   const [searchParams] = useSearchParams()
   const [section, setSection] = useState(() => searchParams.get('seccion') || 'perfil')
   const [twoFAOn, setTwoFAOn] = useState(false)
@@ -279,7 +279,7 @@ export default function AdminConfiguracion() {
               )}
               {section === 'bodega'         && <SeccionBodega />}
               {section === 'comision'       && <SeccionComision toast={toast} />}
-              {section === 'seguridad'      && <SeccionSeguridad refreshToken={refreshToken} toast={toast} onTwoFAChange={setTwoFAOn} />}
+              {section === 'seguridad'      && <SeccionSeguridad refreshToken={null} toast={toast} onTwoFAChange={setTwoFAOn} />}
               {section === 'notificaciones' && <SeccionNotificaciones toast={toast} soloVentas={isEmprendedor} />}
               {section === 'telegram'       && <SeccionTelegram toast={toast} />}
               {section === 'datos'          && <SeccionDatos toast={toast} isEmprendedor={isEmprendedor} />}

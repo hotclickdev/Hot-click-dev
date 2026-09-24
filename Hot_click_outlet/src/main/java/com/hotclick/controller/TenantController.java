@@ -4,6 +4,7 @@ import com.hotclick.model.Plan;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.TenantService;
+import com.hotclick.service.prueba.PruebaPlanService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +17,13 @@ public class TenantController {
 
     private final TenantService tenantService;
     private final PlanRepository planRepo;
+    private final PruebaPlanService pruebaPlanService;
 
-    public TenantController(TenantService tenantService, PlanRepository planRepo) {
+    public TenantController(TenantService tenantService, PlanRepository planRepo,
+                            PruebaPlanService pruebaPlanService) {
         this.tenantService = tenantService;
         this.planRepo = planRepo;
+        this.pruebaPlanService = pruebaPlanService;
     }
 
     /**
@@ -32,7 +36,22 @@ public class TenantController {
         if (empresaId == null) {
             return ResponseEntity.ok(Map.of("planNombre", "ADMIN", "features", Map.of()));
         }
+        pruebaPlanService.cerrarSiVencio(empresaId);
         return ResponseEntity.ok(tenantService.getTenantInfo(empresaId));
+    }
+
+    /** La prueba de un mes ya cerró: el dueño pide que un admin la reabra. */
+    @PostMapping("/tenant/solicitar-autorizacion")
+    public ResponseEntity<Map<String, String>> solicitarAutorizacion() {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) {
+            return ResponseEntity.status(403).body(Map.of("error", "Sin negocio activo"));
+        }
+        try {
+            return ResponseEntity.ok(pruebaPlanService.solicitarAutorizacion(empresaId));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(409).body(Map.of("error", ex.getMessage()));
+        }
     }
 
     /**

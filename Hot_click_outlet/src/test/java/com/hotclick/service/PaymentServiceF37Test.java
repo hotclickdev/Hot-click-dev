@@ -6,6 +6,7 @@ import com.hotclick.payment.PaymentProvider;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
+import com.hotclick.service.analytics.AtribucionPedidoService;
 import com.hotclick.service.payment.*;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
@@ -60,6 +61,7 @@ class PaymentServiceF37Test {
     @Mock ApplicationEventPublisher eventPublisher;
     @Mock PosQrVentaService          posQrVentaService;
     @Mock EncargoService             encargoService;
+    @Mock AtribucionPedidoService    atribucionPedidoService;
 
     @InjectMocks CheckoutValidator              checkoutValidator;
     @InjectMocks GuestUserResolver              guestUserResolver;
@@ -127,6 +129,7 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
         ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
         ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
+        ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
         GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
         ReflectionTestUtils.setField(guestCancelTokenService, "secret", "unit-test-jwt-secret-32chars!!!!");
         ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);

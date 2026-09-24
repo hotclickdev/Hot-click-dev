@@ -17,6 +17,9 @@ class ResetPlataformaKeepQaServiceTest {
             Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(),
             Constants.CORREO_QA_PYME.toLowerCase(),
             Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(),
+            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(),
+            Constants.CORREO_PRUEBA_PYME.toLowerCase(),
+            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase(),
             ResetPlataformaKeepQaService.CORREO_MOSTRADOR.toLowerCase()
         );
         assertThat(ResetPlataformaKeepQaService.CONFIRMACION).isEqualTo("ELIMINAR PLATAFORMA");
@@ -24,7 +27,10 @@ class ResetPlataformaKeepQaServiceTest {
             Constants.CORREO_ADMIN.toLowerCase(),
             Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(),
             Constants.CORREO_QA_PYME.toLowerCase(),
-            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase()
+            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(),
+            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(),
+            Constants.CORREO_PRUEBA_PYME.toLowerCase(),
+            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase()
         );
         assertThat(ResetPlataformaKeepQaService.CLAVE_ONE_SHOT).contains("tiendas");
     }

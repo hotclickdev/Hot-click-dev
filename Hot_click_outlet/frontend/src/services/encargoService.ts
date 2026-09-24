@@ -52,6 +52,7 @@ export type EncargoCreatePayload = {
   presupuestoTipo?: PresupuestoTipo
   presupuestoMin?: number
   presupuestoMax?: number
+  turnstileToken?: string
 }
 
 export const encargoService = {
@@ -65,8 +66,13 @@ export const encargoService = {
     )
   },
 
-  crear: (payload: EncargoCreatePayload) =>
-    api.post('/public/encargos', payload),
+  crear: (payload: EncargoCreatePayload) => {
+    const { turnstileToken, ...resto } = payload
+    return api.post('/public/encargos', {
+      ...resto,
+      ...(turnstileToken ? { turnstileToken } : {}),
+    })
+  },
 
   porToken: (token: string) =>
     api.get(`/public/encargos/${token}`),

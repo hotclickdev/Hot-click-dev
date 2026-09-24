@@ -1,0 +1,39 @@
+# Postgres local para desarrollo. NO usar en producción ni en EC2.
+# Credenciales literales a propósito: no hay secretos; evita heredar el .env de prod.
+#
+# Uso:
+#   docker compose -f docker-compose.dev.yml up -d
+#   .\maven\bin\mvn -pl Hot_click_outlet spring-boot:run "-Dspring-boot.run.profiles=dev"
+#
+# Si el puerto 5432 ya está ocupado en el host, cambiá "5432:5432" a "5433:5432"
+# y ajustá spring.datasource.url en application-dev.properties.
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: hotclick-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: hotclick_dev
+      POSTGRES_USER: hotclick_dev
+      POSTGRES_PASSWORD: hotclick_dev
+    volumes:
+      # Postgres 18+ espera el mount en /var/lib/postgresql (no .../data)
+      - hotclick_pgdata_dev:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotclick_dev -d hotclick_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    mem_limit: 768m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  hotclick_pgdata_dev:
+    name: hotclick_pgdata_dev

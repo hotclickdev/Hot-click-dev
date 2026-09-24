@@ -104,6 +104,7 @@ public class EmprendedorRegistroService {
         usuario.setEstado(Constants.ESTADO_ACTIVO);
         usuario.setIntentosFallidos(0);
         usuario.setEmpresa(empresa);
+        usuario.setCorreoVerificado(false);
 
         var rolEmprendedor = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
             .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado en la base de datos"));

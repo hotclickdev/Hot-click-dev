@@ -23,7 +23,6 @@ export default function ProfilePage() {
   const userId = useAuthStore((s) => s.userId)
   const userRole = useAuthStore((s) => s.userRole)
   const logout = useAuthStore((s) => s.logout)
-  const refreshToken = useAuthStore((s) => s.refreshToken)
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const [orders, setOrders] = useState<PedidoCliente[]>([])
   const [loading, setLoading] = useState(true)
@@ -46,7 +45,7 @@ export default function ProfilePage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- montaje único
 
   const handleLogout = () => {
-    if (refreshToken) authService.logout(refreshToken).catch(() => { /* ok */ })
+    authService.logout().catch(() => { /* ok */ })
     logout()
     toast({ message: t('profile.loggedOut'), type: 'info' })
     navigate('/')
@@ -70,7 +69,7 @@ export default function ProfilePage() {
       <ChangePasswordModal
         open={showChangePassword}
         onClose={() => setShowChangePassword(false)}
-        refreshToken={refreshToken}
+        refreshToken={null}
       />
       {isAdmin() && (
         <TwoFAModal

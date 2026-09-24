@@ -36,6 +36,7 @@ public class SinpeCheckoutService {
     @Autowired private CuponService               cuponService;
     @Autowired private PasswordEncoder            passwordEncoder;
     @Autowired private GuestCancelTokenService    guestCancelTokenService;
+    @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
@@ -126,6 +127,7 @@ public class SinpeCheckoutService {
         pedido.setEmpresa(bodega.getEmpresa());
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedidoRepository.save(pedido);
+        atribucionPedidoService.guardarSiPresente(pedido, req.getAtribucion());
 
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             Producto p = productoRepository.findById(item.getProductoId())

@@ -5,11 +5,11 @@ export const authService = {
   login: (correo: string, contrasena: string, turnstileToken?: string) =>
     api.post('/auth/login', { correo, contrasena, ...(turnstileToken ? { turnstileToken } : {}) }),
 
-  refresh: (refreshToken: string) =>
-    api.post('/auth/refresh', { refreshToken }),
+  refresh: () =>
+    api.post('/auth/refresh', {}),
 
-  logout: (refreshToken: string) =>
-    api.post('/auth/logout', { refreshToken }),
+  logout: (refreshToken?: string | null) =>
+    api.post('/auth/logout', refreshToken ? { refreshToken } : {}),
 
   verify2FA: (tempToken: string, code: string | undefined, recoveryCode: string | undefined, method = 'TOTP') => {
     const body: Record<string, string> = { tempToken, method }

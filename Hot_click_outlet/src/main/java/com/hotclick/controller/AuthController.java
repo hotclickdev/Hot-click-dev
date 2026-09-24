@@ -9,6 +9,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.service.auth.AuthLoginService;
 import com.hotclick.service.auth.AuthRegistrationService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -93,15 +94,19 @@ public class AuthController {
     // ── Refresh access token ──────────────────────────────────────────────────
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
-        return authLoginService.refresh(body);
+    public ResponseEntity<?> refresh(@RequestBody(required = false) Map<String, String> body,
+                                     HttpServletRequest request,
+                                     HttpServletResponse response) {
+        return authLoginService.refresh(body, request, response);
     }
 
     // ── Logout — revoca refresh token ─────────────────────────────────────────
 
     @PostMapping("/logout")
-    public ResponseEntity<ResponseDTO> logout(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
-        return authLoginService.logout(body, httpRequest);
+    public ResponseEntity<ResponseDTO> logout(@RequestBody(required = false) Map<String, String> body,
+                                              HttpServletRequest httpRequest,
+                                              HttpServletResponse response) {
+        return authLoginService.logout(body, httpRequest, response);
     }
 
     // ── Cambiar contraseña (autenticado) ──────────────────────────────────────

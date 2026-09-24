@@ -70,4 +70,8 @@ public class EncargoCreateRequest {
 
     public Integer getPresupuestoMax() { return presupuestoMax; }
     public void setPresupuestoMax(Integer presupuestoMax) { this.presupuestoMax = presupuestoMax; }
+
+    private String turnstileToken;
+    public String getTurnstileToken() { return turnstileToken; }
+    public void setTurnstileToken(String turnstileToken) { this.turnstileToken = turnstileToken; }
 }

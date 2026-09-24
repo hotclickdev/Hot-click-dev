@@ -52,6 +52,7 @@ public class PaymentService {
     @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
     @Autowired private PosQrVentaService                posQrVentaService;
     @Autowired private GuestCancelTokenService          guestCancelTokenService;
+    @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
@@ -73,6 +74,7 @@ public class PaymentService {
         Pedido pedido = checkoutOrderFactory.createPendingOrder(
             req, pricing, reservation.subtotal(), reservation.costoTotal(), provider, usuario, bodega);
         checkoutOrderFactory.addItemSnapshots(pedido, req.getItems(), reservation.productosMap());
+        atribucionPedidoService.guardarSiPresente(pedido, req.getAtribucion());
         posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), pedido.getId());
 
         if (pricing.pagoGC()) {

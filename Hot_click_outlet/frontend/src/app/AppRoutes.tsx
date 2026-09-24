@@ -54,6 +54,7 @@ const CookiesPage = lazy(() => import('@/pages/CookiesPage'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
 const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
+const AdminAdsMetricas = lazy(() => import('@/pages/admin/AdminAdsMetricas'))
 const AdminBilletera = lazy(() => import('@/pages/admin/AdminBilletera'))
 const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContador'))
 const AdminPublicaciones = lazy(() => import('@/pages/admin/AdminPublicaciones'))
@@ -101,6 +102,9 @@ const BlogPage = lazy(() => import('@/pages/BlogPage'))
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage = lazy(() => import('@/pages/EmprendimientosPage'))
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
+const EmprendedorLandingPage = lazy(() => import('@/pages/planes/EmprendedorLandingPage'))
+const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
+const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
 const AdminPOS = lazy(() => import('@/pages/admin/pos/AdminPOS'))
 const AdminPOSCaja = lazy(() => import('@/pages/admin/pos/AdminPOSCaja'))
 const AdminPOSHistorial = lazy(() => import('@/pages/admin/pos/AdminPOSHistorial'))
@@ -126,6 +130,7 @@ const AdminMultipais = lazy(() => import('@/pages/admin/AdminMultipais'))
 const POSPagoPage = lazy(() => import('@/pages/pos/POSPagoPage'))
 const RegistrarNegocioPage = lazy(() => import('@/pages/RegistrarNegocioPage'))
 const RegistroEmpresaPage = lazy(() => import('@/pages/RegistroEmpresaPage'))
+const ActivarPlanPage = lazy(() => import('@/pages/registro-empresa/ActivarPlanPage'))
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 
 const TiendaLayout = lazy(() => import('@/pages/tienda/TiendaLayout'))
@@ -177,6 +182,7 @@ export default function AppRoutes() {
         </>
       )}
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
+      <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
       <Route path="/mode-select" element={<ModeSelector />} />
       <Route path="/seleccionar-negocio" element={<EmpresaSelectionPage />} />
@@ -196,6 +202,9 @@ export default function AppRoutes() {
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route path="/emprende" element={<EmprendePage />} />
+      <Route path="/para-emprendedores" element={<EmprendedorLandingPage />} />
+      <Route path="/para-pymes" element={<PymeLandingPage />} />
+      <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
       <Route path="/emprendimientos" element={<EmprendimientosPage />} />
 
       <Route path="/admin/*" element={<AdminRoleSwitch />}>
@@ -235,6 +244,7 @@ export default function AppRoutes() {
         <Route path="ventas" element={<RedirectSiSistema to="/admin/pedidos"><AdminNewSale /></RedirectSiSistema>} />
         <Route path="clientes" element={<AdminClientesRoute />} />
         <Route path="finanzas" element={<RedirectSiSistema to="/admin/reportes"><AdminFinanzas /></RedirectSiSistema>} />
+        <Route path="ads" element={<AdminAdsMetricas />} />
         <Route path="finanzas/reporte-contador" element={<RedirectSiSistema to="/admin/reportes"><AdminReporteContador /></RedirectSiSistema>} />
         <Route path="billetera" element={<RedirectSiSistema to="/admin/reportes"><AdminBilletera /></RedirectSiSistema>} />
         <Route path="reportes" element={<AdminReportesRoute />} />

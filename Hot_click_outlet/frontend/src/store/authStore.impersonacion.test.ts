@@ -14,7 +14,6 @@ import type { AuthResponse } from '@/types/auth'
 function authData(overrides: Partial<AuthResponse> = {}): AuthResponse {
   return {
     accessToken: 'header.' + btoa(JSON.stringify({ rol: 'ADMIN', userId: 1 })) + '.sig',
-    refreshToken: 'refresh-admin',
     id: 1,
     correo: 'andres@hotclick.cr',
     rol: 'ADMIN',
@@ -31,7 +30,6 @@ describe('authStore impersonación', () => {
   beforeEach(() => {
     useAuthStore.setState({
       token: null,
-      refreshToken: null,
       userId: null,
       userEmail: null,
       userRole: null,
@@ -70,8 +68,7 @@ describe('authStore impersonación', () => {
     expect(s.empresaSlug).toBe('hotclick2')
     expect(s.empresaNombre).toBe('HotClick2')
     expect(s.adminOriginal?.userRole).toBe('ADMIN')
-    expect(s.adminOriginal?.refreshToken).toBe('refresh-admin')
-    expect(s.refreshToken).toBeNull()
+    expect(s.adminOriginal?.token).toBeTruthy()
   })
 
   it('salirImpersonacion restaura la sesión ADMIN', () => {
@@ -89,7 +86,6 @@ describe('authStore impersonación', () => {
     expect(s.impersonando).toBe(false)
     expect(s.adminOriginal).toBeNull()
     expect(s.userRole).toBe('ADMIN')
-    expect(s.refreshToken).toBe('refresh-admin')
     expect(s.empresaId).toBeNull()
   })
 
@@ -113,5 +109,10 @@ describe('authStore impersonación', () => {
     expect(useAuthStore.getState().impersonando).toBe(false)
     expect(useAuthStore.getState().adminOriginal).toBeNull()
     expect(useAuthStore.getState().token).toBeNull()
+  })
+
+  it('no persiste refreshToken en el estado (solo cookie HttpOnly)', () => {
+    useAuthStore.getState().login(authData({ refreshToken: 'should-not-store' }))
+    expect(useAuthStore.getState()).not.toHaveProperty('refreshToken')
   })
 })

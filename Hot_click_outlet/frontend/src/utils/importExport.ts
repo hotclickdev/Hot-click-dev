@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx'
+import { sanitizarFilaImportada } from './sanitizarFilaImportada'
 
 type FilaExport = Record<string, unknown>
 
@@ -61,13 +62,7 @@ export function parseFile(file: File): Promise<FilaExport[]> {
           reject(new Error('Error leyendo el archivo'))
           return
         }
-        const data = new Uint8Array(result)
-        const wb   = XLSX.read(data, { type: 'array' })
-        const ws   = wb.Sheets[wb.SheetNames[0]]
-        const rows = XLSX.utils.sheet_to_json<FilaExport>(ws, { defval: '' })
-        // Eliminar filas completamente vacías
-        const clean = rows.filter((r) => Object.values(r).some((v) => v !== '' && v != null))
-        resolve(clean)
+        resolve(leerFilasDelLibro(new Uint8Array(result)))
       } catch (err) {
         reject(err)
       }
@@ -75,6 +70,18 @@ export function parseFile(file: File): Promise<FilaExport[]> {
     reader.onerror = () => reject(new Error('Error leyendo el archivo'))
     reader.readAsArrayBuffer(file)
   })
+}
+
+/** Parsea la primera hoja del libro. Los encabezados vienen del archivo subido. */
+function leerFilasDelLibro(data: Uint8Array): FilaExport[] {
+  const wb = XLSX.read(data, { type: 'array' })
+  const nombreHoja = wb.SheetNames[0]
+  if (!nombreHoja) throw new Error('El archivo no contiene ninguna hoja')
+  const rows = XLSX.utils.sheet_to_json<FilaExport>(wb.Sheets[nombreHoja], { defval: '' })
+  return rows
+    .map(sanitizarFilaImportada)
+    // Eliminar filas completamente vacías
+    .filter((r) => Object.values(r).some((v) => v !== '' && v != null))
 }
 
 /**

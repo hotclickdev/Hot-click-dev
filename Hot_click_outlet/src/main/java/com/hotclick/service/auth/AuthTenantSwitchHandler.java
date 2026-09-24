@@ -5,7 +5,6 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
-import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
@@ -52,9 +51,9 @@ public class AuthTenantSwitchHandler {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             String rol = RolMembresia.paraJwt(membresia, currentUser);
             String accessToken = jwtUtil.generateToken(currentUser.getCorreo(), currentUser.getId(), rol, empresaId, empresa.getSlug());
-            RefreshToken rt = refreshTokenService.crear(currentUser);
+            refreshTokenService.crear(currentUser);
             String nombre = currentUser.getNombre() != null ? currentUser.getNombre() : currentUser.getCorreo().split("@")[0];
-            AuthResponse resp = new AuthResponse(accessToken, rt.getToken(), currentUser.getId(), currentUser.getCorreo(), rol, nombre);
+            AuthResponse resp = new AuthResponse(accessToken, null, currentUser.getId(), currentUser.getCorreo(), rol, nombre);
             resp.setEmpresaId(empresaId);
             resp.setEmpresaSlug(empresa.getSlug());
             resp.setEmpresaNombre(empresa.getNombreEmpresa());
@@ -113,9 +112,9 @@ public class AuthTenantSwitchHandler {
             // en esa empresa (no el rol global de la cuenta)
             String rol          = RolMembresia.paraJwt(membresia, usuario);
             String accessToken = jwtUtil.generateToken(usuario.getCorreo(), userId, rol, empresaId, empresa.getSlug());
-            RefreshToken rt    = refreshTokenService.crear(usuario);
+            refreshTokenService.crear(usuario);
             String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
-            AuthResponse resp  = new AuthResponse(accessToken, rt.getToken(), userId, usuario.getCorreo(), rol, nombre);
+            AuthResponse resp  = new AuthResponse(accessToken, null, userId, usuario.getCorreo(), rol, nombre);
             resp.setEmpresaId(empresaId);
             resp.setEmpresaSlug(empresa.getSlug());
             resp.setEmpresaNombre(empresa.getNombreEmpresa());

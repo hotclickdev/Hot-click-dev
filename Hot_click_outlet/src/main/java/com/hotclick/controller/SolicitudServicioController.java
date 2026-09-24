@@ -6,6 +6,8 @@ import com.hotclick.model.SolicitudServicio;
 import com.hotclick.repository.SolicitudServicioRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.SupabaseStorageService;
+import com.hotclick.service.TurnstileFormGuard;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,7 @@ public class SolicitudServicioController {
     @Autowired private SolicitudServicioRepository solicitudRepo;
     @Autowired private UsuarioRepository usuarioRepo;
     @Autowired private SupabaseStorageService supabaseStorageService;
+    @Autowired private TurnstileFormGuard turnstileFormGuard;
 
     /** Subir foto para una solicitud — devuelve la URL pública */
     @PostMapping("/fotos")
@@ -44,11 +47,15 @@ public class SolicitudServicioController {
         }
     }
 
-    /** Crear solicitud — requiere token JWT */
+    /** Crear solicitud — endpoint público (permitAll); el JWT es opcional */
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
             @RequestBody Map<String, String> body,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+        if (!turnstileFormGuard.verificado(body.get("turnstileToken"), httpRequest)) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(TurnstileFormGuard.MSG_ANTI_BOT));
+        }
         try {
             String descripcion = body.get("descripcion");
             if (descripcion == null || descripcion.isBlank())

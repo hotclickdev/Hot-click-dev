@@ -11,6 +11,7 @@ import { useBranding } from '@/hooks/useBranding'
 import { initAnalytics } from '@/utils/initAnalytics'
 import { identifyUser } from '@/utils/analytics'
 import { trackPageView } from '@/utils/ga4'
+import { captureAttributionFromLocation } from '@/utils/attribution'
 import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
 import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
@@ -25,14 +26,15 @@ const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'
  * Scroll al tope y envía pageview de GA4 en cada cambio de ruta.
  */
 export function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   useEffect(() => {
     globalThis.scrollTo(0, 0)
+    captureAttributionFromLocation(search, pathname)
     trackPageView(pathname)
     if (pathname.startsWith('/admin') || pathname.startsWith('/pos') || esRutaClaudeclick(pathname)) return
     const ficha = pathname.match(/^\/productos\/([^/]+)/)
     trackAiPage(surfaceFromPath(pathname), ficha?.[1])
-  }, [pathname])
+  }, [pathname, search])
   return null
 }
 

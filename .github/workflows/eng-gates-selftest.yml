@@ -30,4 +30,4 @@ jobs:
           node-version: '22'
 
       - name: Unit tests de los gates
-        run: node --test scripts/eng-gates/eng-gates.test.mjs
+        run: node --test scripts/eng-gates/*.test.mjs

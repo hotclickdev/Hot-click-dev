@@ -13,6 +13,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     // JOIN FETCH de roles/empresa evita LazyInitializationException en /api/auth/refresh
     // (open-in-view=false — la sesión Hibernate ya cerró cuando el controller lee usuario.getRoles()).
+    // :token debe ser el SHA-256 hex del valor en claro presentado por el cliente.
     @Query("SELECT r FROM RefreshToken r JOIN FETCH r.usuario u LEFT JOIN FETCH u.roles LEFT JOIN FETCH u.empresa WHERE r.token = :token")
     Optional<RefreshToken> findByToken(String token);
 

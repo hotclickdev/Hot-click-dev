@@ -24,12 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 /**
- * Siembra 1 producto visible para probar compra en H2 local.
- * No corre en producción: exige profile {@code test} y
+ * Siembra 1 producto visible para probar compra en H2 local o Postgres dev.
+ * No corre en producción: exige profile {@code test} o {@code dev} y
  * {@code hotclick.seed.catalogo-local=true}.
  */
 @Component
-@Profile("test")
+@Profile({"test", "dev"})
 @ConditionalOnProperty(name = "hotclick.seed.catalogo-local", havingValue = "true")
 @Order(200)
 public class CatalogoLocalSeeder implements ApplicationRunner {

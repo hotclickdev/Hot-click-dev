@@ -141,14 +141,14 @@ La salida queda en `Hot_click_outlet/src/main/resources/static/`.
 
 ### Cuentas de prueba
 
-Al arrancar, el sistema crea estas cuentas si no existen. Contraseña local: `QaDemo1234!`.
+Al arrancar con perfil `dev`, el sistema crea estas cuentas si no existen. No vencen. Contraseña: `Prueba1234`. La de administración sigue siendo `Admin1234!`.
 
 | Rol | Correo | Plan |
 | --- | --- | --- |
 | Administración | `admin@hotclick.com` | — |
-| Emprendedor | `qa.emprendedor.demo@hotclick.test` | EMPRENDEDOR |
-| PyME | `qa.pyme.demo@hotclick.test` | PYME |
-| Negocio Plus | `qa.negocioplus.demo@hotclick.test` | NEGOCIO_PLUS |
+| Emprendedor | `emprendedor@hotclick.test` | EMPRENDEDOR |
+| PyME | `pyme@hotclick.test` | PYME |
+| Negocio Plus | `negocioplus@hotclick.test` | NEGOCIO_PLUS |
 
 Fuera de las pruebas automatizadas, el arranque puede borrar tiendas y productos que no pertenezcan a estas cuentas. Conserva la administración, las cuentas de prueba y el mostrador del punto de venta. La misma acción está en Configuración, con la frase `ELIMINAR PLATAFORMA`, y en [`scripts/reset_qa_keep_admin.sql`](scripts/reset_qa_keep_admin.sql). Conviene respaldar antes. No elimina archivos, embeddings, identidades de Clerk ni publicaciones externas.
 

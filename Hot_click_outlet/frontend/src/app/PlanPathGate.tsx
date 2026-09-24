@@ -10,6 +10,7 @@ import {
   segmentoTrasPrefijo,
 } from '@/app/rolPaths'
 import { useTenantPlanListo } from '@/app/useTenantPlanListo'
+import VerificacionCorreoBanner from '@/components/ui/VerificacionCorreoBanner'
 
 function SpinnerRuta() {
   return (
@@ -52,5 +53,10 @@ export default function PlanPathGate({
     const resto = segmentoTrasPrefijo(pathname, prefijo)
     return <Navigate to={`${rutaConBase(correcto, resto)}${search}`} replace />
   }
-  return children
+  return (
+    <>
+      <VerificacionCorreoBanner />
+      {children}
+    </>
+  )
 }

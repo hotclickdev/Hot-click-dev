@@ -46,6 +46,10 @@ export default function VistaDigitalizacion({
   fileRef,
   handleEnviar,
   handleFotoChange,
+  turnstileSiteKey,
+  turnstileRef,
+  setTurnstileToken,
+  turnstileBloqueaSubmit,
 }: VistaDigitalizacionProps) {
   const { t } = useTranslation()
 
@@ -125,6 +129,10 @@ export default function VistaDigitalizacion({
         descLabel="Contanos sobre tu negocio e inventario"
         descPh="Ej: Tienda de abarrotes en San José, ~200 productos, la mitad sin código de barras. Queremos vender en HOTCLICK."
         ocultarPresupuesto
+        turnstileSiteKey={turnstileSiteKey}
+        turnstileRef={turnstileRef}
+        setTurnstileToken={setTurnstileToken}
+        turnstileBloqueaSubmit={turnstileBloqueaSubmit}
       />
     </motion.div>
   )

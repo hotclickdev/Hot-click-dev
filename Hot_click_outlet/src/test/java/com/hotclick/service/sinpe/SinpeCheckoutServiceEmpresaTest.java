@@ -5,6 +5,7 @@ import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.service.CuponService;
+import com.hotclick.service.analytics.AtribucionPedidoService;
 import com.hotclick.service.payment.GuestCancelTokenService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class SinpeCheckoutServiceEmpresaTest {
     @Mock private CuponService cuponService;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private GuestCancelTokenService guestCancelTokenService;
+    @Mock private AtribucionPedidoService atribucionPedidoService;
 
     @InjectMocks private SinpeCheckoutService service;
 

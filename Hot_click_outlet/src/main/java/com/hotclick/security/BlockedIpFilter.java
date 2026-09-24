@@ -25,11 +25,14 @@ public class BlockedIpFilter extends OncePerRequestFilter {
     @Autowired
     private IpBloqueadaRepository ipBloqueadaRepo;
 
+    @Autowired
+    private ClientIpResolver clientIpResolver;
+
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
-        String ip = resolveClientIp(request);
+        String ip = clientIpResolver.resolve(request);
         try {
             if (ip != null && ipBloqueadaRepo.existsByIpAddressAndActivaTrue(ip)) {
                 log.warn("[BLOCKED-IP] Request rechazada de IP bloqueada: {}", ip);
@@ -43,16 +46,5 @@ public class BlockedIpFilter extends OncePerRequestFilter {
             log.warn("[BLOCKED-IP] DB unavailable, fail-open: {}", e.getMessage());
         }
         chain.doFilter(request, response);
-    }
-
-    private String resolveClientIp(HttpServletRequest request) {
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) return realIp.trim();
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            String[] parts = forwarded.split(",");
-            return parts[parts.length - 1].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

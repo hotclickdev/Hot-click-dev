@@ -20,6 +20,8 @@ import type { VarianteProducto } from './productoHelpers'
 import type { PersonalizacionCarrito } from '@/types/carrito'
 import { encargoService, encargoDesdeRespuesta } from '@/services/encargoService'
 import useAuthStore from '@/store/authStore'
+import { useTurnstileForm } from '@/hooks/useTurnstileForm'
+import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 
 export function useProductDetail(id: string | undefined, t: TFunction) {
   const navigate = useNavigate()
@@ -41,6 +43,10 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   const [personalizacion, setPersonalizacion] = useState<PersonalizacionCarrito>({ imagenes: [], notas: '' })
   const [contactoEncargo, setContactoEncargo] = useState({ nombre: '', email: '', telefono: '' })
   const [enviandoEncargo, setEnviandoEncargo] = useState(false)
+  const {
+    turnstileRef, turnstileToken, setTurnstileToken,
+    resetTurnstile, turnstileSiteKey, turnstileBloqueaSubmit,
+  } = useTurnstileForm()
   const addTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mainCTARef = useRef<HTMLButtonElement>(null)
   const addRecentlyViewed = useRecentlyViewedStore((s) => s.addItem)
@@ -232,13 +238,14 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
         presupuestoTipo,
         presupuestoMin: presupuestoTipo === 'RANGO' ? Number(personalizacion.presupuestoMin) : undefined,
         presupuestoMax: presupuestoTipo === 'RANGO' ? Number(personalizacion.presupuestoMax) : undefined,
+        turnstileToken: turnstileToken || undefined,
       })
       const encargo = encargoDesdeRespuesta(data)
       toast({ message: 'Encargo enviado. Te avisaremos cuando el artista responda.', type: 'success' })
       if (encargo?.tokenPublico) navigate(`/encargo/${encargo.tokenPublico}`)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast({ message: msg || 'No se pudo enviar el encargo', type: 'error' })
+      toast({ message: mensajeErrorApi(err, 'No se pudo enviar el encargo'), type: 'error' })
+      resetTurnstile()
     } finally {
       setEnviandoEncargo(false)
     }
@@ -274,6 +281,7 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
     handleComprarAhora,
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
+    turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   }
 }
 

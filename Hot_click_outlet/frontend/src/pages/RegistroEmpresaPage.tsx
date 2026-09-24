@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import { AnimatePresence } from 'framer-motion'
 import { authService } from '@/services/authService'
@@ -20,6 +21,7 @@ import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTR
 import { mensajeErrorAuth } from './auth/authHelpers'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
+import { leerPlanQuery, esPlanPago } from './registro-empresa/planQueryParam'
 
 const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
@@ -60,6 +62,10 @@ function BarraProgreso({ step }: { step: number }) {
 export default function RegistroEmpresaPage() {
   const navigate = useNavigate()
   const toast = useToast()
+  const { t } = useTranslation()
+  const [searchParams] = useSearchParams()
+  const planQuery = leerPlanQuery(searchParams.toString())
+  const planPago = esPlanPago(planQuery)
   const loginStore = useAuthStore((s) => s.login)
   const token = useAuthStore((s) => s.token)
   const userRole = useAuthStore((s) => s.userRole)
@@ -131,6 +137,10 @@ export default function RegistroEmpresaPage() {
       const authData = authDataRegistroEmpresa(data)
       if (authData?.accessToken) {
         loginStore(authData)
+        if (planPago && planQuery) {
+          navigate(`/registro-empresa/activar-plan?plan=${planQuery}`)
+          return
+        }
         toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
         navigate(RUTA_PANEL_VENDEDOR)
         return
@@ -193,6 +203,12 @@ export default function RegistroEmpresaPage() {
             <p style={{ color: 'var(--hc-muted)', fontSize: '0.9rem' }}>
               Cuenta nueva acá. Si ya comprás en HotClick, iniciá sesión y registrá el negocio sin crear otra cuenta.
             </p>
+            {planQuery ? (
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{ background: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.22)', color: 'var(--hc-blue-600)' }}>
+                Plan elegido: {t(`emprende.plan${planQuery === 'negocio-plus' ? 'Plus' : planQuery === 'pyme' ? 'Pyme' : 'Emprendedor'}Title`)}
+              </div>
+            ) : null}
             <div className="mt-4 text-left">
               <EmprendeCupoBanner compact />
             </div>

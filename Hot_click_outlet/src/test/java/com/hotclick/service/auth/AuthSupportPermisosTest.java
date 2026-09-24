@@ -59,7 +59,8 @@ class AuthSupportPermisosTest {
         when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), isNull(), isNull(), anyList()))
             .thenReturn("access-token");
         RefreshToken refresh = new RefreshToken();
-        refresh.setToken("refresh-token");
+        refresh.setToken("hash-placeholder");
+        refresh.setRawToken("refresh-token");
         when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
 
         AuthResponse resp = authSupport.buildAuthResponse(usuario);
@@ -91,7 +92,8 @@ class AuthSupportPermisosTest {
         when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), anyLong(), anyString(), anyList()))
             .thenReturn("access-token");
         RefreshToken refresh = new RefreshToken();
-        refresh.setToken("refresh-token");
+        refresh.setToken("hash-placeholder");
+        refresh.setRawToken("refresh-token");
         when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
 
         AuthResponse resp = authSupport.buildAuthResponse(usuario);
@@ -114,7 +116,8 @@ class AuthSupportPermisosTest {
         when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), isNull(), isNull(), anyList()))
             .thenReturn("access-token");
         RefreshToken refresh = new RefreshToken();
-        refresh.setToken("refresh-token");
+        refresh.setToken("hash-placeholder");
+        refresh.setRawToken("refresh-token");
         when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
 
         AuthResponse resp = authSupport.buildAuthResponse(usuario);

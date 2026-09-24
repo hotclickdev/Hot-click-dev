@@ -1,7 +1,6 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.AuthResponse;
-import com.hotclick.model.RefreshToken;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.JwtUtil;
@@ -98,10 +97,10 @@ public class WebAuthnController {
 
             String accessToken = jwtUtil.generateTokenFull(
                 usuario.getCorreo(), usuario.getId(), rol, usuario.getEmpresaId(), empresaSlug, perms);
-            RefreshToken rt = refreshTokenService.crear(usuario);
+            refreshTokenService.crear(usuario);
 
             String nombre = usuario.getNombre() != null ? usuario.getNombre() : email.split("@")[0];
-            AuthResponse auth = new AuthResponse(accessToken, rt.getToken(), usuario.getId(), email, rol, nombre);
+            AuthResponse auth = new AuthResponse(accessToken, null, usuario.getId(), email, rol, nombre);
             auth.setEmpresaId(usuario.getEmpresaId());
             auth.setEmpresaSlug(empresaSlug);
             auth.setEmpresaNombre(empresaNom);

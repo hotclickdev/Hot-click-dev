@@ -169,4 +169,15 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Object[]> reporteIvaDetalle(@Param("empresaId") Long empresaId,
                                      @Param("desde") String desde,
                                      @Param("hasta") String hasta);
+    @Query("""
+        SELECT COALESCE(SUM(p.totalPedido), 0) FROM Pedido p
+        WHERE p.fechaPedido >= :desde AND p.fechaPedido < :hasta
+          AND p.estadoPedido IN :estados
+          AND (:empresaId IS NULL OR p.empresa.id = :empresaId)
+        """)
+    long sumTotalEnPeriodo(
+        @Param("empresaId") Long empresaId,
+        @Param("desde") java.time.LocalDateTime desde,
+        @Param("hasta") java.time.LocalDateTime hasta,
+        @Param("estados") java.util.Collection<String> estados);
 }
