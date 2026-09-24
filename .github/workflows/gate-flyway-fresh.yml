@@ -63,9 +63,11 @@ jobs:
       # Arranca con perfil dev: guardrail local, baseline V136, Hibernate update,
       # seeders. Matamos el proceso al ver "Started".
       - name: Boot perfil dev (Postgres vacío)
+        # SPRING_DATASOURCE_URL / DB_URL: no se fijan acá — application-dev.properties
+        # ya trae la URL literal para el Postgres del job (jdbc:postgresql://localhost:5432/hotclick_dev).
+        # Una var de entorno vacía tiene MÁS precedencia que el properties file en Spring
+        # y pisaría ese valor con "" (síntoma: "url attribute is not specified").
         env:
-          SPRING_DATASOURCE_URL: ""
-          DB_URL: ""
           SENTRY_DSN: ""
         run: |
           set -euo pipefail

@@ -1,5 +1,7 @@
 overrides:
   fflate: 0.4.9
+  postcss: 8.5.28
+  "nanoid@<4": 3.3.19
 
 allowBuilds:
   '@clerk/shared': false
