@@ -97,65 +97,64 @@ Admin sembrado: `admin@hotclick.com` / `Admin1234!` (o `ADMIN_DEFAULT_PASSWORD`)
 
 - Si el puerto 5432 ya está ocupado, mapeá `5433:5432` en el compose y ajustá la URL en `application-dev.properties`.
 - Postgres 18 monta el volumen en `/var/lib/postgresql` (no `.../data`).
-- `ResetPlataformaKeepQaRunner` (`@Profile("!test")`) corre en dev y puede vaciar tiendas/productos al reiniciar (conserva admin + cuentas QA). Los seeders vuelven a cargar datos demo después.
+- `ResetPlataformaKeepQaRunner` (`@Profile("dev")`) corre en dev y puede vaciar tiendas/productos al reiniciar (conserva admin + cuentas QA). Los seeders vuelven a cargar datos demo después. **Nunca cambiar este `@Profile` a algo más amplio** (p. ej. `!test`) — si el servidor de producción arranca sin perfil explícito (`default`), correría ahí también y vaciaría datos reales.
 - **No copiar datos de producción a dev** (Ley 8968 — datos personales de clientes).
 - No exportar `SPRING_DATASOURCE_URL` apuntando a prod con el perfil `dev`: el guardrail aborta el arranque antes de migrar.
 - Base a medio migrar: `docker compose -f docker-compose.dev.yml down -v` y volvé a subir.
 
 ## Infraestructura AWS (producción)
 
+**Producción vive en Lightsail desde 2026-09-25** (migrado desde EC2+RDS, ver
+`Hot_click_outlet/MIGRACION_LIGHTSAIL.md` para el detalle de la mudanza y el
+rollback). El EC2 viejo está **detenido** (no borrado, por si hace falta
+volver) — no lo uses para nada, `docker-compose.prod.yml` asume RDS y ya no
+es la config real.
+
 | Servicio | Recurso | Detalle |
 |----------|---------|---------|
-| **EC2** | `hotclick-app` t3.small | us-east-2, Elastic IP `18.227.68.15`, Docker + Nginx + Certbot |
-| **RDS** | `hotclick-db` db.t4g.micro | PostgreSQL 18.4, us-east-2, SSL requerido |
+| **Lightsail** | `hotclick-lightsail` (plan 4 GB) | us-east-2 (Ohio), IP estática `18.119.201.126`, Docker + Nginx + Certbot |
+| **Postgres** | Contenedor `hotclick-postgres` | Imagen `postgres:18-alpine`, **no RDS** — corre en el mismo compose que la app, volumen nombrado `hotclick_pgdata` |
 | **S3** | `hotclick-media` | us-east-2, imágenes y archivos públicos |
-| **IAM** | `hotclick-ec2-role` | Política `HotclickS3Access` — permisos S3 via Instance Profile |
-| **Dominio** | `hotclick.lat` | DNS en Spaceship → Elastic IP; HTTPS via Let's Encrypt |
+| **IAM** | Usuario IAM con política `HotclickS3Access` | Lightsail no tiene Instance Profile como EC2 — las credenciales S3 van en `.env` (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) |
+| **Dominio** | `hotclick.lat` | DNS en Spaceship → IP estática de Lightsail; HTTPS via Let's Encrypt |
+| ~~EC2~~ | ~~`hotclick-app` t3.small, Elastic IP `18.227.68.15`~~ | **Detenido**, ya no es producción. `hotclick-db` (RDS) también detenida. |
 
 ### Deploy en producción
 
-Desde que se agregó el sidecar de NeMo Guardrails (ver "Seguridad del AI Copilot"
-más abajo), el deploy usa docker-compose con 2 servicios (`app` + `guardrails`)
-en vez de un solo `docker run` manual.
+Sin sidecar de guardrails en Lightsail (el copilot ya no lo usa — ver
+"Seguridad del AI Copilot" más abajo). El compose es de un solo servicio
+`app` + `postgres`, con `docker compose` (plugin, con espacio) disponible.
 
-**Importante:** el EC2 tiene el binario standalone `docker-compose` (con guion,
-`/usr/local/bin/docker-compose`), no el plugin `docker compose` (con espacio) —
-no está instalado. Además el plugin `buildx` de esa instancia es viejo (0.12.1)
-y ese `docker-compose` exige buildx ≥0.17.0 para `--build`, así que hay que
-buildear las imágenes con `docker build` directo antes de levantar con compose:
+**Importante:** el frontend se sirve compilado desde
+`src/main/resources/static/` (commiteado a git, no se builda en el
+Dockerfile) — asegurate de que el último `pnpm build` local ya esté
+pusheado antes de desplegar.
 
 ```bash
-# 1. Conectarse al EC2
-ssh -i "C:\Users\pmdan\Downloads\hotclick-key.pem" ec2-user@18.227.68.15
+# 1. Conectarse a Lightsail
+ssh -i "C:\Users\pmdan\Downloads\hotclick-key.pem" ec2-user@18.119.201.126
 
-# 2. Actualizar código
+# 2. Actualizar código (el build del frontend ya viene commiteado)
 cd /home/ec2-user/app && git pull origin master
 
-# 3. Build de ambas imágenes (requiere t3.small — el t3.micro se queda sin RAM
-#    incluso para el build) y reemplazo de los contenedores
+# 3. Build de la imagen y reemplazo del contenedor
 cd Hot_click_outlet
 docker build -t hot_click_outlet-app .
-docker build -t hot_click_outlet-guardrails ../security-tools/guardrails
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.lightsail.yml up -d
 
-# 4. Verificar logs
+# 4. Verificar
 docker logs -f hotclick
-docker logs -f hotclick-guardrails
+curl -s https://hotclick.lat/api/health
 ```
 
-### Variables de entorno en EC2
+### Variables de entorno en Lightsail
 
-El archivo `/home/ec2-user/app/Hot_click_outlet/.env` contiene todas las variables
-(ambos servicios de compose lo comparten vía `env_file`). Para modificar una variable:
+El archivo `/home/ec2-user/app/Hot_click_outlet/.env` contiene todas las
+variables (compartido por `app` y `postgres` vía `env_file`). Para modificar
+una variable:
 ```bash
 nano /home/ec2-user/app/Hot_click_outlet/.env
-docker-compose -f docker-compose.prod.yml restart app
-```
-
-**Apagado de emergencia del sidecar de guardrails** (RAM en t3.small). El copilot
-de admin ya no pasa por NVIDIA; el sidecar solo consume RAM si sigue levantado:
-```bash
-docker-compose -f docker-compose.prod.yml stop guardrails
+docker compose -f docker-compose.lightsail.yml restart app
 ```
 
 ## Arquitectura
@@ -170,7 +169,7 @@ Proyecto Spring Boot 3.4.4 con Java 21 (`pom.xml` fija `java.version=21`; el JDK
 - **Repositorios**: `com.hotclick.repository`
 - **Seguridad**: `com.hotclick.security` (JWT)
 - **Configuración**: `Hot_click_outlet/src/main/resources/application.properties`
-- **Base de datos**: PostgreSQL en AWS RDS (`ddl-auto=none`, esquema en `Hot_click_outlet/Actualizado.sql`)
+- **Base de datos**: PostgreSQL en contenedor Docker dentro de Lightsail (`ddl-auto=none`, esquema en `Hot_click_outlet/Actualizado.sql`) — ver "Infraestructura AWS" más abajo
 
 ### Principales endpoints
 
@@ -269,7 +268,7 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 | **Local (backend)** | `Hot_click_outlet/.env` — en `.gitignore`, NUNCA a git |
 | **Local (frontend)** | `Hot_click_outlet/frontend/.env.local` — excluido por `*.local` |
 | **Templates** | `.env.example` y `frontend/.env.example` — SÍ van a git, sin valores reales |
-| **Producción (EC2)** | `/home/ec2-user/app/.env` en el servidor, fuera del repo |
+| **Producción (Lightsail)** | `/home/ec2-user/app/Hot_click_outlet/.env` en el servidor, fuera del repo |
 | **`application.properties`** | Solo referencias `${ENV_VAR:default}`, nunca valores reales |
 | **Pre-commit hook local** | `scripts/hooks/pre-commit` (versionado) — instalar una vez por clon con `sh scripts/install-git-hooks.sh` |
 | **CI (gate real)** | `.github/workflows/security.yml` — job `gitleaks`, bloquea el PR si detecta un secreto |
@@ -279,7 +278,7 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 
 1. **Agregar nueva variable** → agregarla en `.env` (local) + `.env.example` (template sin valor) + documentarla en esta sección si es crítica.
 2. **Nunca poner secrets en el frontend** — las variables `VITE_*` quedan expuestas en el bundle del navegador. Solo van ahí claves *publishable* (Clerk, GA4, Sentry DSN, PostHog token). Claves secretas solo en el backend.
-3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en EC2 (`nano /home/ec2-user/app/Hot_click_outlet/.env && docker-compose -f docker-compose.prod.yml restart app`).
+3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en Lightsail (`nano /home/ec2-user/app/Hot_click_outlet/.env && docker compose -f docker-compose.lightsail.yml restart app`).
 4. **Escaneo de secretos** corre en 2 capas: el hook local (`scripts/hooks/pre-commit`, patrones fijos + `gitleaks protect` si está instalado — feedback rápido, no es el gate real) y el job `gitleaks` en CI (`.github/workflows/security.yml`, ~150 reglas + detección de entropía — este sí bloquea el merge). Si un PR falla por esto, mover la credencial a `.env`. Falsos positivos conocidos van al allowlist de `.gitleaks.toml`, no se desactiva el job.
 5. **Escaneo de dependencias vulnerables** — `deps-vuln.yml` corre [osv-scanner](https://google.github.io/osv-scanner/) (sin API key de pago, sin `mvn`/`pnpm install`). Lee el **lockfile real** (`Hot_click_outlet/frontend/pnpm-lock.yaml`) y `Hot_click_outlet/pom.xml`. **HIGH/CRITICAL fallan el PR**; medium/low solo se reportan. Cómo leer un fallo y cómo suprimir: [`docs/security/dependency-scanning.md`](docs/security/dependency-scanning.md). Allowlist versionada: `scripts/eng-gates/osv-deps-allowlist.json` (exige `id`, `reason`, `acceptedAt`; preferí `expiresOn`). Dependabot no sustituye este gate.
 
