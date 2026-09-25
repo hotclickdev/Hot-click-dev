@@ -14,6 +14,8 @@ function BarraVentana() {
 
 const TARJETAS = ['pos', 'catalogo', 'telegram'] as const
 
+const ROTACION_TARJETA = ['rotate-[1deg]', 'rotate-[-1.5deg]', 'rotate-[1.5deg]'] as const
+
 /** Tres previews del panel: punto de venta, catálogo, avisos por Telegram. */
 export default function EmprendePanelPreview() {
   const { t } = useTranslation()
@@ -34,7 +36,7 @@ export default function EmprendePanelPreview() {
             className="flex flex-col gap-3.5"
           >
             <div
-              className={`rounded-[18px] border overflow-hidden shadow-lg ${i === 1 ? '-rotate-1' : i === 2 ? 'rotate-1' : 'rotate-1'}`}
+              className={`rounded-[18px] border-[1.2px] overflow-hidden shadow-[0px_10px_22px_0px_rgba(64,38,13,0.14)] ${ROTACION_TARJETA[i]}`}
               style={{ borderColor: '#e8dcc8', backgroundColor: tipo === 'telegram' ? '#eaf6fc' : '#fffbf5' }}
             >
               <BarraVentana />
@@ -66,7 +68,7 @@ function PreviewPos() {
     <div className="flex flex-col gap-2 text-[13px]" style={{ color: '#14171c' }}>
       <div className="flex justify-between"><span>Aretes de feria x2</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡7.000</span></div>
       <div className="flex justify-between"><span>Bolso tejido x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡12.000</span></div>
-      <div className="flex justify-between pt-2 border-t font-semibold" style={{ borderColor: '#e8dcc8' }}>
+      <div className="flex justify-between pt-[10px] border-t font-semibold" style={{ borderColor: '#e8dcc8' }}>
         <span>Total</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-primary)' }}>₡19.000</span>
       </div>
       <span className="mt-1 py-2.5 rounded-full text-center text-white text-[13px] font-semibold" style={{ backgroundColor: 'var(--hc-primary)' }}>Cobrar</span>
@@ -79,7 +81,7 @@ function PreviewCatalogo() {
     <div className="flex flex-col gap-2.5">
       <p className="text-[13px] font-semibold" style={{ color: '#14171c' }}>Publicar producto</p>
       <div className="flex items-center gap-2.5">
-        <span className="w-[52px] h-[52px] rounded-lg shrink-0" style={{ backgroundColor: '#eadfc9' }} />
+        <span className="w-[60px] h-[60px] rounded-lg shrink-0" style={{ backgroundColor: '#eadfc9' }} />
         <div className="text-[13px]">
           <p className="font-semibold" style={{ color: '#14171c' }}>Set de velas</p>
           <p style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.6)', fontSize: 11 }}>₡8.500 · Hogar</p>
@@ -93,11 +95,11 @@ function PreviewCatalogo() {
 function PreviewTelegram() {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-white text-xs" style={{ backgroundColor: '#229ed9' }}>
+      <div className="flex items-center gap-2 rounded-[10px] px-3 py-2.5 text-white text-xs" style={{ backgroundColor: '#229ed9' }}>
         <TrustGlyph tipo="tarjeta" className="w-3.5 h-3.5 shrink-0" />
         <span>Venta registrada: ₡7.000</span>
       </div>
-      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-white text-xs" style={{ backgroundColor: '#229ed9' }}>
+      <div className="flex items-center gap-2 rounded-[10px] px-3 py-2.5 text-white text-xs" style={{ backgroundColor: '#229ed9' }}>
         <TrustGlyph tipo="paquete" className="w-3.5 h-3.5 shrink-0" />
         <span>Publicaste: Set de velas</span>
       </div>
