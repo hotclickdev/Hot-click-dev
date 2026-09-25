@@ -27,7 +27,7 @@ const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : 
 const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
-const VisitanteRoutes = lazy(() => import('@/prototipo/visitante/VisitanteRoutes'))
+const VisitanteDeprecatedRedirect = lazy(() => import('@/prototipo/visitante/visitanteDeprecado'))
 const EmprendedorArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.EmprendedorArea })))
 const PymeArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.PymeArea })))
 const NegocioPlusArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.NegocioPlusArea })))
@@ -54,6 +54,7 @@ const CookiesPage = lazy(() => import('@/pages/CookiesPage'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
 const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
+const AdminAdsMetricas = lazy(() => import('@/pages/admin/AdminAdsMetricas'))
 const AdminBilletera = lazy(() => import('@/pages/admin/AdminBilletera'))
 const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContador'))
 const AdminPublicaciones = lazy(() => import('@/pages/admin/AdminPublicaciones'))
@@ -66,6 +67,7 @@ const AdminConfiguracion = lazy(() => import('@/pages/admin/AdminConfiguracion')
 const AdminMasHerramientas = lazy(() => import('@/pages/admin/AdminMasHerramientas'))
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
+const TilopayRespuestaPage = lazy(() => import('@/pages/pago/TilopayRespuestaPage'))
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const RecuperarCarritoPage = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
@@ -80,11 +82,6 @@ const AdminMiEmpresa = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
 const AdminSecurityCenter = lazy(() => import('@/pages/admin/AdminSecurityCenter'))
 const AdminSuperAdmin = lazy(() => import('@/pages/admin/AdminSuperAdmin'))
 const AdminObservabilidad = lazy(() => import('@/pages/admin/AdminObservabilidad'))
-const AdminAgentes = lazy(() => import('@/pages/admin/AdminAgentes'))
-const AgentesRegistroPage = lazy(() => import('@/pages/admin/agentes/AgentesRegistroPage'))
-const AgentesPlanPage = lazy(() => import('@/pages/admin/agentes/AgentesPlanPage'))
-const AgentesInspeccionesPage = lazy(() => import('@/pages/admin/agentes/AgentesInspeccionesPage'))
-const AgentesHallazgosPage = lazy(() => import('@/pages/admin/agentes/AgentesHallazgosPage'))
 const AdminAuditorias = lazy(() => import('@/pages/admin/AdminAuditorias'))
 const AdminCotizaciones = lazy(() => import('@/pages/admin/AdminCotizaciones'))
 const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
@@ -105,6 +102,9 @@ const BlogPage = lazy(() => import('@/pages/BlogPage'))
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage = lazy(() => import('@/pages/EmprendimientosPage'))
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
+const EmprendedorLandingPage = lazy(() => import('@/pages/planes/EmprendedorLandingPage'))
+const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
+const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
 const AdminPOS = lazy(() => import('@/pages/admin/pos/AdminPOS'))
 const AdminPOSCaja = lazy(() => import('@/pages/admin/pos/AdminPOSCaja'))
 const AdminPOSHistorial = lazy(() => import('@/pages/admin/pos/AdminPOSHistorial'))
@@ -120,6 +120,9 @@ const AdminAsignarProducto = lazy(() => import('@/pages/admin/AdminAsignarProduc
 const AdminCupones = lazy(() => import('@/pages/admin/AdminCupones'))
 const AdminHomepage = lazy(() => import('@/pages/admin/AdminHomepage'))
 const AdminInventario = lazy(() => import('@/pages/admin/AdminInventario'))
+const AdminInventarioCaptura = lazy(() => import('@/pages/admin/AdminInventarioCaptura'))
+const AdminInventarioPaquetes = lazy(() => import('@/pages/admin/AdminInventarioPaquetes'))
+const AdminInventarioPaqueteDetalle = lazy(() => import('@/pages/admin/AdminInventarioPaqueteDetalle'))
 const AdminAyuda = lazy(() => import('@/pages/admin/AdminAyuda'))
 const AdminForecast = lazy(() => import('@/pages/admin/AdminForecast'))
 const AdminExecutive = lazy(() => import('@/pages/admin/AdminExecutive'))
@@ -127,6 +130,7 @@ const AdminMultipais = lazy(() => import('@/pages/admin/AdminMultipais'))
 const POSPagoPage = lazy(() => import('@/pages/pos/POSPagoPage'))
 const RegistrarNegocioPage = lazy(() => import('@/pages/RegistrarNegocioPage'))
 const RegistroEmpresaPage = lazy(() => import('@/pages/RegistroEmpresaPage'))
+const ActivarPlanPage = lazy(() => import('@/pages/registro-empresa/ActivarPlanPage'))
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 
 const TiendaLayout = lazy(() => import('@/pages/tienda/TiendaLayout'))
@@ -138,13 +142,15 @@ const TiendaSuccessPage = lazy(() => import('@/pages/tienda/TiendaSuccessPage'))
 
 /**
  * Home `/` = marketplace de producción (Compra · Vende · Emprende).
- * Figma Visitante vive en `/visitante/*`. `/prototipo/*` redirige a prefijos por rol.
+ * `/visitante/*` deprecado (P1-08 opción A): redirige al marketplace real.
+ * `/prototipo/*` redirige a prefijos por rol.
  */
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/visitante/*" element={<VisitanteRoutes />} />
+      <Route path="/visitante" element={<VisitanteDeprecatedRedirect />} />
+      <Route path="/visitante/*" element={<VisitanteDeprecatedRedirect />} />
       <Route path="/emprendedor/*" element={<EmprendedorArea />} />
       <Route path="/pyme/*" element={<PymeArea />} />
       <Route path="/negocio-plus/*" element={<NegocioPlusArea />} />
@@ -160,6 +166,7 @@ export default function AppRoutes() {
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/pago/exito" element={<PaymentStatusPage />} />
       <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
+      <Route path="/pago/tilopay/respuesta" element={<TilopayRespuestaPage />} />
 
       {CLERK_ENABLED && ClerkShell && SSOCallback && SSOComplete ? (
         <Route element={<ClerkShell />}>
@@ -175,6 +182,7 @@ export default function AppRoutes() {
         </>
       )}
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
+      <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
       <Route path="/mode-select" element={<ModeSelector />} />
       <Route path="/seleccionar-negocio" element={<EmpresaSelectionPage />} />
@@ -194,8 +202,9 @@ export default function AppRoutes() {
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route path="/emprende" element={<EmprendePage />} />
-      {/* Alias de marketing: /para-emprendedores apunta a la misma landing, sin fragmentar SEO. */}
-      <Route path="/para-emprendedores" element={<Navigate to="/emprende" replace />} />
+      <Route path="/para-emprendedores" element={<EmprendedorLandingPage />} />
+      <Route path="/para-pymes" element={<PymeLandingPage />} />
+      <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
       <Route path="/emprendimientos" element={<EmprendimientosPage />} />
 
       <Route path="/admin/*" element={<AdminRoleSwitch />}>
@@ -235,6 +244,7 @@ export default function AppRoutes() {
         <Route path="ventas" element={<RedirectSiSistema to="/admin/pedidos"><AdminNewSale /></RedirectSiSistema>} />
         <Route path="clientes" element={<AdminClientesRoute />} />
         <Route path="finanzas" element={<RedirectSiSistema to="/admin/reportes"><AdminFinanzas /></RedirectSiSistema>} />
+        <Route path="ads" element={<AdminAdsMetricas />} />
         <Route path="finanzas/reporte-contador" element={<RedirectSiSistema to="/admin/reportes"><AdminReporteContador /></RedirectSiSistema>} />
         <Route path="billetera" element={<RedirectSiSistema to="/admin/reportes"><AdminBilletera /></RedirectSiSistema>} />
         <Route path="reportes" element={<AdminReportesRoute />} />
@@ -280,12 +290,6 @@ export default function AppRoutes() {
             <Route path="security" element={<AdminSecurityCenter />} />
             <Route path="superadmin" element={<AdminSuperAdmin />} />
             <Route path="observabilidad" element={<AdminObservabilidad />} />
-            <Route path="agentes" element={<AdminAgentes />}>
-              <Route index element={<AgentesRegistroPage />} />
-              <Route path="plan" element={<AgentesPlanPage />} />
-              <Route path="inspecciones" element={<AgentesInspeccionesPage />} />
-              <Route path="hallazgos" element={<AgentesHallazgosPage />} />
-            </Route>
             <Route path="auditorias" element={<AdminAuditorias />} />
             <Route path="soporte" element={<AdminSoporteTickets />} />
             <Route path="ai-control" element={<AdminAiControl />} />
@@ -293,6 +297,9 @@ export default function AppRoutes() {
             <Route path="cupones" element={<AdminCupones />} />
             <Route path="publicaciones" element={<AdminPublicaciones />} />
             <Route path="multipais" element={<AdminMultipais />} />
+            <Route path="inventario/captura" element={<AdminInventarioCaptura />} />
+            <Route path="inventario/paquetes" element={<AdminInventarioPaquetes />} />
+            <Route path="inventario/paquetes/:id" element={<AdminInventarioPaqueteDetalle />} />
           </Route>
         </Route>
         <Route path="planes" element={<Navigate to="/admin/billing/planes" replace />} />

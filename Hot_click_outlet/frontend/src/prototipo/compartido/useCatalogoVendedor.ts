@@ -21,8 +21,6 @@ function aSeller(p: ProductoEmprendedor): ProductoMock {
     precioPersonalizadoMin: p.precioPersonalizadoMin,
     precioPersonalizadoMax: p.precioPersonalizadoMax,
     instruccionesPersonalizacion: p.instruccionesPersonalizacion,
-    sku: p.sku,
-    numeroLocal: p.numeroLocal,
   }
 }
 

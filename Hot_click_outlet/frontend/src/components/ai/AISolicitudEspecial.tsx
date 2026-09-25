@@ -3,9 +3,12 @@
  * Aparece inline dentro de AIHeroSearch cuando la búsqueda por imagen no da resultados.
  */
 import { useState, type ChangeEvent, type FormEvent } from 'react'
-import api from '@/services/api'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import TurnstileCampo from '@/components/security/TurnstileCampo'
+import { useTurnstileForm } from '@/hooks/useTurnstileForm'
+import { enviarSolicitudEspecial } from '@/services/solicitudEspecialService'
+import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 import { Field, FotoReferencia, inputStyle } from './AISolicitudEspecialFields'
 
 const WA_REGEX = /^[2-9]\d{7}$/
@@ -41,6 +44,10 @@ export default function AISolicitudEspecial({
   const [enviando, setEnviando] = useState(false)
   const [imagenPreview, setImagenPreview] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
+  const {
+    turnstileRef, turnstileToken, setTurnstileToken,
+    resetTurnstile, turnstileSiteKey, turnstileBloqueaSubmit,
+  } = useTurnstileForm()
 
   function setCampo<K extends keyof FormSolicitud>(field: K, value: FormSolicitud[K]) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -70,23 +77,23 @@ export default function AISolicitudEspecial({
     if (Object.keys(e).length) { setErrors(e); return }
 
     setEnviando(true)
+    setErrors({})
     try {
-      const formData = new FormData()
-      formData.append('nombre', form.nombre.trim())
-      formData.append('whatsapp', form.whatsapp.replace(/\D/g, ''))
-      if (form.correo.trim()) formData.append('correo', form.correo.trim())
-      if (form.descripcion.trim()) formData.append('descripcion', form.descripcion.trim())
-      if (form.imagen) formData.append('imagen', form.imagen)
-      formData.append('empresaSlug', 'hotclick')
-
-      await api.post('/public/solicitud-especial', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      await enviarSolicitudEspecial({
+        nombre: form.nombre.trim(),
+        whatsapp: form.whatsapp.replace(/\D/g, ''),
+        correo: form.correo.trim() || undefined,
+        descripcion: form.descripcion.trim() || undefined,
+        imagen: form.imagen,
+        empresaSlug: 'hotclick',
+        turnstileToken: turnstileToken || undefined,
       })
       setEnviado(true)
       setTimeout(() => onSuccess?.(), 2500)
     } catch (err: unknown) {
       console.error('[solicitud-especial] no se pudo enviar', err)
-      setErrors({ submit: 'No se pudo enviar. Intentá de nuevo en un momento.' })
+      setErrors({ submit: mensajeErrorApi(err, 'No se pudo enviar. Intentá de nuevo en un momento.') })
+      resetTurnstile()
     } finally {
       setEnviando(false)
     }
@@ -183,13 +190,19 @@ export default function AISolicitudEspecial({
         onImageChange={onImageChange}
       />
 
+      <TurnstileCampo
+        siteKey={turnstileSiteKey}
+        turnstileRef={turnstileRef}
+        setTurnstileToken={setTurnstileToken}
+      />
+
       {errors.submit && (
         <p className="text-xs text-red-400">{errors.submit}</p>
       )}
 
       <button
         type="submit"
-        disabled={enviando}
+        disabled={enviando || turnstileBloqueaSubmit}
         className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-80 disabled:opacity-50"
         style={{ background: 'var(--hc-accent)', color: '#fff' }}
       >

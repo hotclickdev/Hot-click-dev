@@ -20,13 +20,18 @@ public class TelegramMessageHandler {
     @Autowired private TelegramEmpresaContextService empresaContext;
     @Autowired private TelegramFlujoService          telegramFlujoService;
     @Autowired private TelegramMessageRoutingHelper  routing;
+    @Autowired private TelegramAbusoService         abuso;
 
     public void procesarMensaje(JsonNode msg) {
         long chatId = msg.path("chat").path("id").asLong(0);
         if (chatId == 0 || !"private".equals(msg.path("chat").path("type").asText(""))) return;
         if (!rateLimit.permitidoPorRateLimit(chatId)) return;
 
+        Optional<TelegramVinculacion> previa = vinculacion.vinculacionActiva(chatId);
+        if (previa.isPresent() && abuso.rechazarSiPausadoOBloqueado(previa.get())) return;
+
         if (msg.has("photo") || esDocumentoImagen(msg)) {
+            abrirTurno(previa.orElse(null), idMensaje(msg), true);
             if (manejarFotoEntrante(chatId, msg)) return;
             bot.enviarMensaje(chatId, "Por seguridad solo acepto mensajes de texto y botones. No puedo procesar archivos, fotos ni audios.");
             return;
@@ -37,6 +42,7 @@ public class TelegramMessageHandler {
         String texto = msg.path("text").asText("").trim();
         if (texto.isEmpty()) return;
         if (texto.length() > MAX_TEXTO) texto = texto.substring(0, MAX_TEXTO);
+        if (abuso.rechazarSiInyeccion(chatId, texto)) return;
 
         if (routing.manejarStart(chatId, msg, texto)) return;
 
@@ -46,6 +52,9 @@ public class TelegramMessageHandler {
             return;
         }
         TelegramVinculacion v = opt.get();
+        boolean enPaso = v.getContexto() != null
+            && (v.getContexto().startsWith("{") || v.getContexto().startsWith("AJUSTE"));
+        abrirTurno(v, idMensaje(msg), enPaso);
 
         if (routing.manejarComandoSlash(v, chatId, texto)) return;
 
@@ -60,6 +69,18 @@ public class TelegramMessageHandler {
         return msg.path("document").path("mime_type").asText("").startsWith("image/");
     }
 
+    private void abrirTurno(TelegramVinculacion v, long messageId, boolean borrarEntrada) {
+        if (v == null) return;
+        Long panel = v.getPanelMessageId();
+        Long borrar = borrarEntrada && messageId > 0 ? messageId : null;
+        TelegramTurno.abrir(v, panel, borrar);
+        bot.enviarAccionEscribiendo(v.getChatId());
+    }
+
+    private long idMensaje(JsonNode msg) {
+        return msg.path("message_id").asLong(0);
+    }
+
     /** true si la foto se consumió como paso del alta de producto (TelegramFlujoService); false si no aplica. */
     private boolean manejarFotoEntrante(long chatId, JsonNode msg) {
         Optional<TelegramVinculacion> opt = vinculacion.vinculacionActiva(chatId);
@@ -70,4 +91,4 @@ public class TelegramMessageHandler {
         return telegramFlujoService.manejarFoto(v, empresaId, msg);
     }
 }
-
+

@@ -113,9 +113,8 @@ export function useLoginFlow() {
     } catch (err: unknown) {
       const msg = mensajeErrorAuth(err, t('login.badCredentials'))
       const status = statusErrorAuth(err)
-      if (status === 403 && msg.toLowerCase().includes('verificar')) {
-        setError(msg); setNeedsVerification(true)
-      } else if (status === 403 && msg.toLowerCase().includes('bloqueada')) {
+      // Solo lockout sigue en 403; verificación de correo se avisa por email.
+      if (status === 403 && msg.toLowerCase().includes('bloqueada')) {
         setNeedsVerification(false); setNeedsPasswordReset(true)
         setError(msg)
       } else {

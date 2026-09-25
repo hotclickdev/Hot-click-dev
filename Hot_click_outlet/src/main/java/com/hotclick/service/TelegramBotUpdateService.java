@@ -40,6 +40,7 @@ public class TelegramBotUpdateService {
     @Autowired private TelegramMenuBuilder         menuBuilder;
     @Autowired private TelegramDatosQueryService   datosQueryService;
     @Autowired private TelegramFlujoService        telegramFlujoService;
+    @Autowired private com.hotclick.service.telegram.TelegramAbusoService abuso;
 
     // ── Entrada única desde el webhook ────────────────────────────────────────
 
@@ -89,6 +90,7 @@ public class TelegramBotUpdateService {
         } catch (Exception e) {
             log.error("[telegram-bot] fallo respondiendo texto libre en chat {} — {}", chatId, e.getMessage());
             bot.enviarMensaje(chatId, "No pude procesar tu mensaje. Intentá de nuevo en unos minutos o escribí /menu.");
+            abuso.avisarErrorDeUsuario(chatId, e.getMessage());
         }
     }
 

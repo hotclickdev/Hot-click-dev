@@ -62,11 +62,8 @@ public class Usuario extends BaseEntity {
     @Column(name = "bloqueado_hasta")
     private LocalDateTime bloqueadoHasta;
 
-    // Access tokens JWT emitidos antes de este instante se tratan como revocados
-    // aunque no hayan expirado — ver JwtRequestFilter. Se actualiza al cambiar
-    // contraseña o resetearla.
-    @Column(name = "sesiones_invalidadas_en")
-    private LocalDateTime sesionesInvalidadasEn;
+    @Column(name = "correo_verificado")
+    private Boolean correoVerificado = true;
 
     @Column(name = "two_factor_enabled")
     private Boolean twoFactorEnabled = false;
@@ -214,6 +211,9 @@ public class Usuario extends BaseEntity {
 
     public List<Rol> getRoles() { return roles; }
     public void setRoles(List<Rol> roles) { this.roles = roles; }
+
+    public Boolean getCorreoVerificado() { return correoVerificado; }
+    public void setCorreoVerificado(Boolean correoVerificado) { this.correoVerificado = correoVerificado; }
 
     public Boolean getTwoFactorEnabled() { return twoFactorEnabled; }
     public void setTwoFactorEnabled(Boolean twoFactorEnabled) { this.twoFactorEnabled = twoFactorEnabled; }

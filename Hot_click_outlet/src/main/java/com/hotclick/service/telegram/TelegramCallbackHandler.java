@@ -26,12 +26,13 @@ public class TelegramCallbackHandler {
     @Autowired private TelegramStockCheckService     stockCheck;
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TelegramFlujoService          telegramFlujoService;
+    @Autowired private TelegramAbusoService          abuso;
 
     public void procesarCallback(JsonNode cb) {
         long chatId = cb.path("message").path("chat").path("id").asLong(0);
         String data = cb.path("data").asText("");
         bot.responderCallback(cb.path("id").asText(null));
-        if (chatId == 0 || data.isEmpty()) return;
+        if (chatId == 0 || data.isEmpty() || data.length() > 64) return;
         if (!rateLimit.permitidoPorRateLimit(chatId)) return;
 
         Optional<TelegramVinculacion> opt = vinculacion.vinculacionActiva(chatId);
@@ -40,9 +41,25 @@ public class TelegramCallbackHandler {
             return;
         }
         TelegramVinculacion v = opt.get();
+        if (abuso.rechazarSiPausadoOBloqueado(v)) return;
+        long messageId = cb.path("message").path("message_id").asLong(0);
+        Long panel = messageId > 0 ? Long.valueOf(messageId) : v.getPanelMessageId();
+        if (messageId > 0) v.setPanelMessageId(messageId);
+        TelegramTurno.abrir(v, panel, null);
+        bot.enviarAccionEscribiendo(chatId);
 
         if (data.startsWith("emp:")) { empresaContext.seleccionarEmpresa(v, data.substring(4)); return; }
+        if ("chk:x".equals(data)) {
+            v.setContexto(null);
+            vinculacionRepository.save(v);
+            bot.enviarMensaje(v.getChatId(), "Ajuste cancelado.", TelegramTeclado.soloMenu());
+            return;
+        }
         if (data.startsWith("chk:")) { stockCheck.iniciarAjuste(v, data.substring(4)); return; }
+        if (data.startsWith("inv:pg:")) {
+            stockCheck.mostrarListaModificar(v, parsePagina(data.substring(7)));
+            return;
+        }
 
         // Flujos guiados (venta rápida, alta de producto, clientes, confirmación de
         // acción propuesta por la IA) — TelegramFlujoService
@@ -54,17 +71,31 @@ public class TelegramCallbackHandler {
         }
 
         switch (data) {
-            case "menu"     -> menuBuilder.mostrarMenu(v);
+            case "menu"     -> {
+                v.setContexto(null);
+                vinculacionRepository.save(v);
+                menuBuilder.mostrarMenu(v);
+            }
             case "selector" -> empresaContext.mostrarSelectorEmpresa(v);
-            case "inv"      -> datosQuery.responderConDatos(v, datosQuery::mensajeInventario);
+            case "inv"      -> datosQuery.mostrarInventario(v);
+            case "inv:mod"  -> stockCheck.mostrarListaModificar(v, 0);
             case "ventas"   -> datosQuery.responderConDatos(v, datosQuery::mensajeVentasHoy);
             case "fin"      -> datosQuery.responderConDatos(v, datosQuery::mensajeFinanzasMes);
             case "chkok"    -> {
                 v.setContexto(null);
                 vinculacionRepository.save(v);
-                bot.enviarMensaje(v.getChatId(), "Perfecto, inventario confirmado. ¡Gracias!");
+                bot.enviarMensaje(v.getChatId(), "Perfecto, inventario confirmado. ¡Gracias!",
+                    TelegramTeclado.soloMenu());
             }
             default -> log.warn("[telegram-bot] callback desconocido '{}' de chat {}", data, chatId);
+        }
+    }
+
+    private static int parsePagina(String crudo) {
+        try {
+            return Math.max(0, Integer.parseInt(crudo));
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 }

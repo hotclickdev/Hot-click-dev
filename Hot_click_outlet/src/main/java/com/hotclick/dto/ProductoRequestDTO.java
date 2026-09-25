@@ -104,9 +104,6 @@ public class ProductoRequestDTO {
     @Size(max = 500, message = "Los tags no pueden superar 500 caracteres")
     private String tags;
 
-    @Size(max = 50, message = "El código de barras no puede superar 50 caracteres")
-    private String barcode;
-
     private Boolean esPersonalizado = false;
 
     @Pattern(regexp = "^(FIJO|RANGO|COTIZACION)?$", message = "Modo de precio inválido")
@@ -120,6 +117,15 @@ public class ProductoRequestDTO {
 
     @Size(max = 3000, message = "Las instrucciones no pueden superar 3000 caracteres")
     private String instruccionesPersonalizacion;
+
+    @Size(max = 50, message = "El SKU no puede superar 50 caracteres")
+    private String sku;
+
+    @Size(max = 50, message = "El código de barras no puede superar 50 caracteres")
+    private String barcode;
+
+    @Min(value = 0, message = "Los días de garantía no pueden ser negativos")
+    private Integer garantiaDias;
 
     public String getNombreProducto() { return nombreProducto; }
     public void setNombreProducto(String v) { this.nombreProducto = v; }
@@ -187,8 +193,6 @@ public class ProductoRequestDTO {
     public void setColorVariante(String v) { this.colorVariante = v; }
     public String getTags() { return tags; }
     public void setTags(String v) { this.tags = v; }
-    public String getBarcode() { return barcode; }
-    public void setBarcode(String v) { this.barcode = v; }
     public Boolean getEsPersonalizado() { return esPersonalizado; }
     public void setEsPersonalizado(Boolean v) { this.esPersonalizado = v; }
     public String getModoPrecioPersonalizado() { return modoPrecioPersonalizado; }
@@ -199,4 +203,10 @@ public class ProductoRequestDTO {
     public void setPrecioPersonalizadoMax(Integer v) { this.precioPersonalizadoMax = v; }
     public String getInstruccionesPersonalizacion() { return instruccionesPersonalizacion; }
     public void setInstruccionesPersonalizacion(String v) { this.instruccionesPersonalizacion = v; }
+    public String getSku() { return sku; }
+    public void setSku(String v) { this.sku = v; }
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String v) { this.barcode = v; }
+    public Integer getGarantiaDias() { return garantiaDias; }
+    public void setGarantiaDias(Integer v) { this.garantiaDias = v; }
 }

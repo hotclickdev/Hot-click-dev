@@ -161,6 +161,13 @@ public class TelegramFlujoService {
         dto.setMarcaTexto(d.getMarcaTxt());
         dto.setVisibleCatalogo(empresaPublicada);
         dto.setImagenPrincipalUrl(d.getFotos().isEmpty() ? null : d.getFotos().get(0));
+        if (d.esPersonalizado()) {
+            dto.setEsPersonalizado(true);
+            dto.setModoPrecioPersonalizado(d.getModo());
+            dto.setPrecioPersonalizadoMin(d.getPmin());
+            dto.setPrecioPersonalizadoMax(d.getPmax());
+            dto.setInstruccionesPersonalizacion(d.getInstr());
+        }
 
         Producto producto = productoService.crearProducto(dto, usuario.getCorreo(), empresa);
         productoImagenService.sincronizar(producto.getId(), d.getFotos());

@@ -185,9 +185,36 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postUpdate(callback(CHAT_ID, "inv"));
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(bot).enviarMensaje(eq(CHAT_ID), captor.capture());
+        verify(bot).enviarMensaje(eq(CHAT_ID), captor.capture(), anyList());
         assertThat(captor.getValue()).contains("Inventario").contains("Mouse Pro");
         assertThat(captor.getValue()).doesNotContain("Audifonos Gamer"); // no está bajo
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<List<Map<String, Object>>>> teclado =
+            ArgumentCaptor.forClass((Class) List.class);
+        verify(bot).enviarMensaje(eq(CHAT_ID), anyString(), teclado.capture());
+        assertThat(teclado.getValue().get(0).get(0).get("callback_data")).isEqualTo("inv:mod");
+    }
+
+    @Test
+    @DisplayName("Inventario → Modificar unidades lista productos y permite ajustar stock")
+    void callback_inventario_modificarUnidades() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Mouse Pro", 2, 3);
+
+        postUpdate(callback(CHAT_ID, "inv:mod"));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<List<Map<String, Object>>>> teclado =
+            ArgumentCaptor.forClass((Class) List.class);
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Modificar unidades"), teclado.capture());
+        assertThat(teclado.getValue().get(0).get(0).get("callback_data")).isEqualTo("chk:" + p.getId());
+
+        clearInvocations(bot);
+        postUpdate(callback(CHAT_ID, "chk:" + p.getId()));
+        postUpdate(mensajeTexto(CHAT_ID, "9"));
+
+        assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(9);
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("9"), anyList());
     }
 
     @Test
@@ -197,7 +224,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
 
         postUpdate(callback(CHAT_ID, "ventas"));
 
-        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Ventas de hoy"));
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Ventas de hoy"), anyList());
     }
 
     // ── Aislamiento multi-tenant ──────────────────────────────────────────────
@@ -316,7 +343,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         assertThat(movs.get(0).getCantidad()).isEqualTo(3);
 
         assertThat(vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto()).isNull();
-        verify(bot).enviarMensaje(eq(CHAT_ID), contains("7"));
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("7"), anyList());
     }
 
     @Test
@@ -332,19 +359,21 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
 
         assertThat(vinculacionRepository.findByUsuarioId(empleado.getId()).orElseThrow().getContexto()).isNull();
         assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(10);
-        verify(bot).enviarMensaje(eq(555_002L), contains("propietario o un administrador"));
+        verify(bot).enviarMensaje(eq(555_002L), contains("propietario o un administrador"), anyList());
     }
 
     // ── Rate limiting ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Más de 20 mensajes por minuto → se bloquea con un solo aviso")
+    @DisplayName("Más de 3 mensajes por segundo → pausa por ráfaga")
     void rateLimit_porMinuto_bloquea() throws Exception {
         for (int i = 0; i < 25; i++) {
             postUpdate(mensajeTexto(CHAT_ID, "hola " + i));
         }
-        // 20 respuestas "no vinculado" + 1 aviso de límite = 21; los últimos 4 en silencio
-        verify(bot, times(21)).enviarMensaje(eq(CHAT_ID), anyString());
+        verify(bot, atLeastOnce()).enviarMensaje(eq(CHAT_ID), contains("Pausé este chat"));
+        ArgumentCaptor<String> textos = ArgumentCaptor.forClass(String.class);
+        verify(bot, atLeast(4)).enviarMensaje(eq(CHAT_ID), textos.capture());
+        assertThat(textos.getAllValues().size()).isLessThan(25);
     }
 
     // ── IA de texto libre ─────────────────────────────────────────────────────
@@ -433,7 +462,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
 
         assertThat(pedidoRepository.findById(pedido.getId()).orElseThrow().getEstadoPedido()).isEqualTo("PENDIENTE");
         assertThat(vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto()).isNull();
-        verify(bot).enviarMensaje(eq(CHAT_ID), contains("cancelado"));
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("cancelado"), anyList());
     }
 
     @Test

@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -22,7 +24,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.hotclick.utils.Constants;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 
 public class JwtRequestFilter extends OncePerRequestFilter {
 
@@ -77,9 +80,17 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
                 UserDetails userDetails = userDetailsCache.get(username,
                         k -> userDetailsService.loadUserByUsername(k));
-                if (jwtUtil.validateToken(jwt, username) && !fueInvalidadoPorCambioDeSesion(userDetails, jwt)) {
+                if (jwtUtil.validateToken(jwt, username)) {
+                    // Soporte: authorities del claim rol (EMPRENDEDOR), no roles de BD del ADMIN.
+                    Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
+                    if (jwtUtil.isImpersonationToken(jwt)) {
+                        String rolJwt = jwtUtil.extractRol(jwt);
+                        if (rolJwt != null && !rolJwt.isBlank()) {
+                            authorities = List.of(new SimpleGrantedAuthority("ROLE_" + rolJwt));
+                        }
+                    }
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
+                            userDetails, null, authorities);
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }

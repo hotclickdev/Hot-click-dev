@@ -22,10 +22,8 @@ type UiState = {
   setColorFilter: (colorFilter: UiColorFilter) => void
   cartDrawerOpen: boolean
   searchOpen: boolean
-  authPromptOpen: boolean
   setCartDrawerOpen: (v: boolean) => void
   setSearchOpen: (v: boolean) => void
-  setAuthPromptOpen: (v: boolean) => void
 }
 
 const useUiStore = create<UiState>()(
@@ -49,11 +47,9 @@ const useUiStore = create<UiState>()(
       // ── Transient UI state (not persisted) ──────────────────────────────────
       cartDrawerOpen: false,
       searchOpen: false,
-      authPromptOpen: false,
 
       setCartDrawerOpen: (v) => set({ cartDrawerOpen: v }),
       setSearchOpen: (v) => set({ searchOpen: v }),
-      setAuthPromptOpen: (v) => set({ authPromptOpen: v }),
     }),
     {
       name: 'hotclick-ui',

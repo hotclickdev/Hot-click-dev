@@ -109,8 +109,6 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
           onPrecioMaxChange={form.setPrecioMax}
           imagenUrl={form.imagenUrl}
           onImagenChange={form.setImagenUrl}
-          barcode={form.barcode}
-          onBarcodeChange={form.setBarcode}
           errorSubmit={form.errorSubmit}
         />
       </FormularioPorPasos>

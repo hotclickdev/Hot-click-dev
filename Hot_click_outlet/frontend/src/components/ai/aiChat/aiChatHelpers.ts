@@ -71,7 +71,7 @@ export function normalizeProduct(p: AiProductPayload): AiChatProducto {
     precio,
     precioOferta:   esPersonalizado && modo !== 'FIJO' ? null : precioOferta,
     imagenUrl:      p.imagen_principal_url ?? p.imagenUrl,
-    sku:            null,
+    sku:            p.sku            ?? '',
     stock:          p.stock_actual   ?? p.stock ?? 99,
     similarity:     p.similarity,
     esPersonalizado,

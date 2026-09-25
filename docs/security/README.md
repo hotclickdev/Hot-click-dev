@@ -27,6 +27,7 @@
 | [incident-response.md](./incident-response.md) | Runbooks para incidentes de seguridad |
 | [future-improvements.md](./future-improvements.md) | Backlog priorizado de mejoras de seguridad |
 | [security-roadmap.md](./security-roadmap.md) | Roadmap estratégico de seguridad |
+| [dependency-scanning.md](./dependency-scanning.md) | Gate CI osv-scanner (Maven + pnpm): HIGH/CRITICAL, allowlist, cómo leer fallos |
 
 ---
 

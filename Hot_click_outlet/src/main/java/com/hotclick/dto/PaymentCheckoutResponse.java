@@ -8,6 +8,11 @@ public class PaymentCheckoutResponse {
     private String estadoPago;
     private Integer total;
     private String proveedor;
+    private String sdkToken;
+    private String orderNumber;
+    private Boolean modoEmbebido;
+    /** HMAC para POST /payments/guest/cancel — solo en checkout de invitado/sesión. */
+    private String cancelToken;
 
     public PaymentCheckoutResponse() {}
 
@@ -20,6 +25,19 @@ public class PaymentCheckoutResponse {
         this.estadoPago = estadoPago;
         this.total = total;
         this.proveedor = proveedor;
+        this.modoEmbebido = false;
+    }
+
+    public static PaymentCheckoutResponse embebido(Long pedidoId, String numeroPedido,
+                                                   String redirectUrl, String estadoPago,
+                                                   Integer total, String proveedor,
+                                                   String sdkToken, String orderNumber) {
+        PaymentCheckoutResponse r = new PaymentCheckoutResponse(
+            pedidoId, numeroPedido, redirectUrl, estadoPago, total, proveedor);
+        r.setSdkToken(sdkToken);
+        r.setOrderNumber(orderNumber);
+        r.setModoEmbebido(true);
+        return r;
     }
 
     public Long getPedidoId() { return pedidoId; }
@@ -39,4 +57,16 @@ public class PaymentCheckoutResponse {
 
     public String getProveedor() { return proveedor; }
     public void setProveedor(String proveedor) { this.proveedor = proveedor; }
+
+    public String getSdkToken() { return sdkToken; }
+    public void setSdkToken(String sdkToken) { this.sdkToken = sdkToken; }
+
+    public String getOrderNumber() { return orderNumber; }
+    public void setOrderNumber(String orderNumber) { this.orderNumber = orderNumber; }
+
+    public Boolean getModoEmbebido() { return modoEmbebido; }
+    public void setModoEmbebido(Boolean modoEmbebido) { this.modoEmbebido = modoEmbebido; }
+
+    public String getCancelToken() { return cancelToken; }
+    public void setCancelToken(String cancelToken) { this.cancelToken = cancelToken; }
 }

@@ -1,0 +1,6 @@
+/* Modo captura instalada: safe areas y altura útil en móvil */
+.hc-captura-standalone {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}

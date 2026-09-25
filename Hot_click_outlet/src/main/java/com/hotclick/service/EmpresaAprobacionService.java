@@ -6,6 +6,7 @@ import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.SolicitudAprobacionRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +34,18 @@ public class EmpresaAprobacionService {
     @Autowired private ProductoService               productoService;
 
     @Transactional
+    @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public Empresa aprobarYPublicar(Long empresaId) {
         Empresa e = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new IllegalStateException("Empresa no encontrada: " + empresaId));
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         e.setEstadoEmpresa("ACTIVO");
         e.setVisibilidadPublica(true);
+        if (Constants.ESTADO_PLAN_PRUEBA_CERRADA.equals(e.getEstadoPlan())) {
+            e.setEstadoPlan("ACTIVO");
+            e.setFechaVencPlan(null);
+            e.setTrialHasta(null);
+        }
         if (e.getFechaAprobacion() == null) e.setFechaAprobacion(ahora);
         empresaRepository.save(e);
         productoRepository.publicarProductosDeEmpresa(empresaId);

@@ -8,6 +8,12 @@ import java.util.Map;
 @Component
 class PublicChatMockResponses {
 
+    private final PublicChatAdvisorAnswers advisorAnswers;
+
+    PublicChatMockResponses(PublicChatAdvisorAnswers advisorAnswers) {
+        this.advisorAnswers = advisorAnswers;
+    }
+
     public String generarRespuestaMock(List<Map<String, Object>> productos,
                                        List<Map<String, Object>> history,
                                        boolean isEnglish) {
@@ -29,13 +35,8 @@ class PublicChatMockResponses {
             : "¡Te encontré " + productos.size() + " opciones! Por ejemplo tenemos " + nombre + ". ¿Lo agregamos al carrito?";
     }
 
-    public String generarRespuestaAsesor(Map<String, Object> ficha, boolean isEnglish) {
-        String nombre = ficha != null && ficha.get("nombre_producto") != null
-            ? ficha.get("nombre_producto").toString()
-            : (isEnglish ? "this product" : "este producto");
-        return isEnglish
-            ? "I can only go by the spec sheet for " + nombre + ". Ask about use, how it works, or warranty — I won't invent what's not listed."
-            : "Te oriento con la ficha de " + nombre + ". Preguntame para qué lo querés, cómo se usa o si tiene garantía. Si no consta en la ficha, te lo digo.";
+    public String generarRespuestaAsesor(Map<String, Object> ficha, String mensaje, boolean isEnglish) {
+        return advisorAnswers.responder(ficha, mensaje, isEnglish);
     }
 
     public List<String> generateAdvisorOpts(boolean isEnglish) {

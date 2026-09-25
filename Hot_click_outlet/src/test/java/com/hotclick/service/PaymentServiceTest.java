@@ -8,6 +8,7 @@ import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
 import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.service.analytics.AtribucionPedidoService;
 import com.hotclick.service.payment.*;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
@@ -59,6 +60,7 @@ class PaymentServiceTest {
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private PosQrVentaService          posQrVentaService;
     @Mock private EncargoService             encargoService;
+    @Mock private AtribucionPedidoService    atribucionPedidoService;
 
     @InjectMocks private CheckoutValidator              checkoutValidator;
     @InjectMocks private GuestUserResolver              guestUserResolver;
@@ -130,6 +132,10 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
         ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
         ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
+        ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
+        GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
+        ReflectionTestUtils.setField(guestCancelTokenService, "secret", "unit-test-jwt-secret-32chars!!!!");
+        ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
         ReflectionTestUtils.setField(checkoutOrderFactory, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
@@ -145,6 +151,7 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(userCancellationService, "guestCancelTokenService", guestCancelTokenService);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "orderConfirmationService", orderConfirmationService);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);

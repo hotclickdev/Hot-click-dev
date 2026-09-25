@@ -43,13 +43,16 @@ public class AuthSupport {
             usuario.getCorreo(), usuario.getId(), rol,
             empresaId, empresaSlug, permisos
         );
-        RefreshToken rt     = refreshTokenService.crear(usuario);
+        RefreshToken refreshToken = refreshTokenService.crear(usuario);
         String nombre       = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
-        AuthResponse resp   = new AuthResponse(accessToken, rt.getToken(), usuario.getId(), usuario.getCorreo(), rol, nombre);
+        // Cookie HttpOnly es el mecanismo real; el raw también va en el JSON por
+        // compat con clientes que no lo leen de la cookie (el FE no lo persiste).
+        AuthResponse resp   = new AuthResponse(accessToken, refreshToken.getRawToken(), usuario.getId(), usuario.getCorreo(), rol, nombre);
         resp.setEmpresaId(empresaId);
         resp.setEmpresaSlug(empresaSlug);
         resp.setEmpresaNombre(empresaNombre);
         resp.setPermisos(permisos);
+        resp.setCorreoVerificado(usuario.getCorreoVerificado());
         return resp;
     }
 

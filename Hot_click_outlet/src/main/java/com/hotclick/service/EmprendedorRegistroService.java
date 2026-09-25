@@ -2,11 +2,9 @@ package com.hotclick.service;
 
 import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.dto.ResultadoAltaCupo;
-import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
-import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
@@ -34,7 +32,6 @@ public class EmprendedorRegistroService {
     @Autowired private CupoEmprendedorService   cupoEmprendedorService;
     @Autowired private AltaEmprendedorNotificador altaEmprendedorNotificador;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
-    @Autowired private BodegaRepository         bodegaRepository;
     @Autowired private InputSanitizer           sanitizer;
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
 
@@ -107,6 +104,7 @@ public class EmprendedorRegistroService {
         usuario.setEstado(Constants.ESTADO_ACTIVO);
         usuario.setIntentosFallidos(0);
         usuario.setEmpresa(empresa);
+        usuario.setCorreoVerificado(false);
 
         var rolEmprendedor = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
             .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado en la base de datos"));
@@ -126,8 +124,6 @@ public class EmprendedorRegistroService {
         // Registrar membresía en junction table (PROPIETARIO del negocio)
         MiembroEmpresa miembro = new MiembroEmpresa(saved, saved.getEmpresa(), "PROPIETARIO");
         miembroEmpresaRepository.save(miembro);
-
-        crearBodegaPorDefecto(empresa, saved);
 
         String nombreComercial = empresa.getNombreComercial() != null
             ? empresa.getNombreComercial() : empresa.getNombreEmpresa();
@@ -222,21 +218,6 @@ public class EmprendedorRegistroService {
             empresa.getNombreComercial(), empresa.getCorreoEmpresa(), alta);
 
         return saved;
-    }
-
-    /** Bodega inicial "Prueba" para que el negocio pueda empezar a cargar productos sin pasos extra. */
-    private void crearBodegaPorDefecto(Empresa empresa, Usuario admin) {
-        Bodega bodega = new Bodega();
-        bodega.setNombreBodega("Prueba");
-        bodega.setDireccionExacta(
-            empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
-        bodega.setTelefono(
-            empresa.getTelefonoEmpresa() != null && !empresa.getTelefonoEmpresa().isBlank()
-                ? empresa.getTelefonoEmpresa() : "00000000");
-        bodega.setEstado(Constants.ESTADO_ACTIVO);
-        bodega.setEmpresa(empresa);
-        bodega.setAdminCliente(admin);
-        bodegaRepository.save(bodega);
     }
 
     private String slugify(String text) {

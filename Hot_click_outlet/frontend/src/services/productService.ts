@@ -16,7 +16,6 @@ export function normalizeProduct(p: ProductoBackend | null | undefined): Product
     nombre: p.nombreProducto ?? p.nombre ?? '',
     barcode: p.barcode ?? null,
     sku: p.sku ?? null,
-    numeroLocal: p.numeroLocal ?? null,
     precio: p.precioVenta ?? p.precio ?? 0,
     precioCompra: p.precioCompra ?? 0,
     precioVenta: p.precioVenta ?? p.precio ?? 0,
@@ -101,7 +100,7 @@ export function denormalizeProduct(form: ProductoForm) {
     talla: form.talla || null,
     garantiaDias: Number(form.garantiaDias) || 0,
     sku:     form.sku     || null,
-    barcode: form.barcode == null ? null : String(form.barcode).trim(),
+    barcode: form.barcode || null,
     tags:    form.tags    || null,
     esPersonalizado: form.esPersonalizado === true,
     modoPrecioPersonalizado: form.esPersonalizado

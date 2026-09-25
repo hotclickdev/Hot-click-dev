@@ -176,4 +176,30 @@ class JwtUtilTest {
         String token = jwtUtil.generateToken(EMAIL, 1L, "USUARIO_FINAL");
         assertThat(jwtUtil.extractEmpresaId(token)).isNull();
     }
+
+    // ── Impersonación (soporte: identidad ADMIN + tenant empresa) ────────────
+
+    @Test
+    @DisplayName("generateImpersonationToken → identidad admin, rol EMPRENDEDOR, tenant empresa")
+    void generateImpersonationToken_identidadAdminYTenant() {
+        String token = jwtUtil.generateImpersonationToken(
+            "admin@hotclick.cr", 7L, "EMPRENDEDOR",
+            55L, "hotclick2", 7L, "admin@hotclick.cr");
+
+        assertThat(jwtUtil.isImpersonationToken(token)).isTrue();
+        assertThat(jwtUtil.extractUsername(token)).isEqualTo("admin@hotclick.cr");
+        assertThat(jwtUtil.extractUserId(token)).isEqualTo(7L);
+        assertThat(jwtUtil.extractRol(token)).isEqualTo("EMPRENDEDOR");
+        assertThat(jwtUtil.extractEmpresaId(token)).isEqualTo(55L);
+        assertThat(jwtUtil.extractEmpresaSlug(token)).isEqualTo("hotclick2");
+        assertThat(jwtUtil.extractAdminOriginalId(token)).isEqualTo(7L);
+        assertThat(jwtUtil.extractAdminOriginalCorreo(token)).isEqualTo("admin@hotclick.cr");
+    }
+
+    @Test
+    @DisplayName("token normal → isImpersonationToken false")
+    void normalToken_isNotImpersonation() {
+        String token = jwtUtil.generateToken(EMAIL, 1L, "ADMIN");
+        assertThat(jwtUtil.isImpersonationToken(token)).isFalse();
+    }
 }

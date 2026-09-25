@@ -63,7 +63,7 @@ export function useRegisterFlow() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (form.contrasenaHash.length < 6) { setError(t('register.minChars')); return }
+    if (form.contrasenaHash.length < 8) { setError(t('register.minChars')); return }
     setError(''); setLoading(true)
     try {
       const trimmed = {

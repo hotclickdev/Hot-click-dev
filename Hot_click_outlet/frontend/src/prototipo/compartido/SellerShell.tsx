@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import VendedorAvisos from '@/app/VendedorAvisos'
+import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import NegocioPertenenciaChip from './NegocioPertenenciaChip'
@@ -20,6 +21,7 @@ export default function SellerShell({ sinNav = false }: Props) {
       className="hc-seller-theme min-h-dvh bg-hc-bg text-hc-text"
       style={{ backgroundColor: 'var(--hc-bg)' }}
     >
+      <ImpersonacionBanner />
       <div className="md:flex md:min-h-dvh">
         <SellerSidebar />
         <div className={`min-w-0 flex-1 ${sinNav ? '' : 'pb-16 md:pb-0'}`}>

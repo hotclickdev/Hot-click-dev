@@ -4,6 +4,7 @@ export type RolUsuario = 'ADMIN' | 'EMPRENDEDOR' | 'USUARIO_FINAL' | string
 
 export type AuthResponse = {
   accessToken: string
+  /** Puede venir en el body por compat; el FE no lo persiste (cookie HttpOnly). */
   refreshToken?: string | null
   tipo?: string
   id?: Id | null
@@ -14,6 +15,7 @@ export type AuthResponse = {
   empresaSlug?: string | null
   empresaNombre?: string | null
   permisos?: string[]
+  correoVerificado?: boolean
 }
 
 export type JwtClaims = {
@@ -30,7 +32,7 @@ export type RegistroPayload = {
   [key: string]: unknown
 }
 
+/** Solo lo que vive en localStorage (hotclick-auth). Sin refreshToken. */
 export type AuthPersistido = {
   token?: string | null
-  refreshToken?: string | null
 }

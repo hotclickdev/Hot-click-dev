@@ -98,7 +98,8 @@ public class TelegramFlujoSupport {
 
     public void cancelar(TelegramVinculacion v) {
         limpiar(v);
-        bot.enviarMensaje(v.getChatId(), "Listo, cancelado. Escribí /menu cuando me necesités.");
+        bot.enviarMensaje(v.getChatId(), "Listo, cancelado. Escribí /menu cuando me necesités.",
+            TelegramTeclado.soloMenu());
     }
 
     public LocalDateTime ahora() {

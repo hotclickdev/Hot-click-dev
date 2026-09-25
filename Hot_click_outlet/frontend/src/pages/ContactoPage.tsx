@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { useToast } from '@/components/ui/Toast'
 import { enviarContacto } from '@/services/contactoService'
+import { useTurnstileForm } from '@/hooks/useTurnstileForm'
+import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 import ContactoSeo from './contacto/ContactoSeo'
 import ContactoFormulario from './contacto/ContactoFormulario'
 import ContactoCanales from './contacto/ContactoCanales'
@@ -15,6 +17,10 @@ export default function ContactoPage() {
   const [form, setForm] = useState<FormContacto>(FORM_VACIO)
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const {
+    turnstileRef, turnstileToken, setTurnstileToken,
+    resetTurnstile, turnstileSiteKey, turnstileBloqueaSubmit,
+  } = useTurnstileForm()
 
   const setCampo = (campo: keyof FormContacto) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [campo]: e.target.value }))
@@ -23,12 +29,16 @@ export default function ContactoPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await enviarContacto(form)
+      await enviarContacto({
+        ...form,
+        turnstileToken: turnstileToken || undefined,
+      })
       setSent(true)
       toast({ message: t('contacto.successToast'), type: 'success' })
     } catch (err: unknown) {
       console.error('[ContactoPage] enviar', err)
-      toast({ message: t('contacto.errorToast'), type: 'error' })
+      toast({ message: mensajeErrorApi(err, t('contacto.errorToast')), type: 'error' })
+      resetTurnstile()
     } finally {
       setLoading(false)
     }
@@ -54,9 +64,13 @@ export default function ContactoPage() {
             form={form}
             sent={sent}
             loading={loading}
+            turnstileSiteKey={turnstileSiteKey}
+            turnstileRef={turnstileRef}
+            setTurnstileToken={setTurnstileToken}
+            turnstileBloqueaSubmit={turnstileBloqueaSubmit}
             onChange={setCampo}
             onSubmit={handleSubmit}
-            onReset={(vacio) => { setSent(false); setForm(vacio) }}
+            onReset={(vacio) => { setSent(false); setForm(vacio); resetTurnstile() }}
           />
           <ContactoCanales />
         </div>

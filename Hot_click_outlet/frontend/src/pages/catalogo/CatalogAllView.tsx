@@ -6,6 +6,7 @@ import CatalogHero from './CatalogHero'
 import ActiveFilterChips from './ActiveFilterChips'
 import CatalogProductGrid from './CatalogProductGrid'
 import CatalogMobileSidebar from './CatalogMobileSidebar'
+import { RetryBanner } from '@/components/ui/RetryBanner'
 import { useTranslation } from 'react-i18next'
 import type { CatalogoPageModel } from './useCatalogoPage'
 import type { RefObject } from 'react'
@@ -22,7 +23,7 @@ export default function CatalogAllView({
 }) {
   const { t } = useTranslation()
   const {
-    products, categories, marcas, loading, page, setViewMode,
+    products, categories, marcas, loading, error, retry, page, setViewMode,
     search, setSearch, category, setCategory, marcasFilter, sort, setSort,
     filterStock, setFilterStock, filterCond, setFilterCond, filterTalla, setFilterTalla,
     priceMin, setPriceMin, priceMax, setPriceMax, setQuickView,
@@ -113,29 +114,36 @@ export default function CatalogAllView({
               />
             )}
 
-            <CatalogProductGrid
-              gridRef={productGridRef}
-              shouldRender={shouldRenderGrid}
-              loading={loading}
-              filtered={filtered}
-              filteredSlice={filteredSlice}
-              filteredPages={filteredPages}
-              filterViewPage={filterViewPage}
-              onPageChange={setFilterViewPage}
-              hasFilters={hasFilters}
-              onClearFilters={clearFilters}
-              flatGrid={flatGrid}
-              animKey={gridAnimKey}
-              search={search}
-              products={products}
-              categories={categories}
-              convenioMarcaNames={convenioMarcaNames}
-              onVerMas={(catId) => { setCategory(String(catId)); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
-              onVerEmprendimientos={() => { setViewMode('emprendimientos'); clearFilters() }}
-              onQuickView={setQuickView}
-              page={page}
-              needsGustos={sort === 'para_vos' && !tieneGustos}
-            />
+            {error ? (
+              <RetryBanner
+                message="No pudimos cargar los productos. Verificá tu conexión."
+                onRetry={retry}
+              />
+            ) : (
+              <CatalogProductGrid
+                gridRef={productGridRef}
+                shouldRender={shouldRenderGrid}
+                loading={loading}
+                filtered={filtered}
+                filteredSlice={filteredSlice}
+                filteredPages={filteredPages}
+                filterViewPage={filterViewPage}
+                onPageChange={setFilterViewPage}
+                hasFilters={hasFilters}
+                onClearFilters={clearFilters}
+                flatGrid={flatGrid}
+                animKey={gridAnimKey}
+                search={search}
+                products={products}
+                categories={categories}
+                convenioMarcaNames={convenioMarcaNames}
+                onVerMas={(catId) => { setCategory(String(catId)); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                onVerEmprendimientos={() => { setViewMode('emprendimientos'); clearFilters() }}
+                onQuickView={setQuickView}
+                page={page}
+                needsGustos={sort === 'para_vos' && !tieneGustos}
+              />
+            )}
           </div>
         </div>
 

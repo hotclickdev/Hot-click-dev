@@ -31,14 +31,14 @@ public class CrmController {
     @Autowired private CrmClientesService crmClientesService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> listar() {
         return ResponseEntity.ok(ResponseDTO.success("OK",
             crmClientesService.listar(companyScope.getCurrentEmpresaId())));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CAJERO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
         String nombre = body.get("nombre");
         if (nombre == null || nombre.isBlank()) {
@@ -50,21 +50,21 @@ public class CrmController {
     }
 
     @GetMapping("/buscar")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CAJERO','SUPERVISOR','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> buscar(@RequestParam String q) {
         return ResponseEntity.ok(ResponseDTO.success("OK",
             crmClientesService.buscar(q, companyScope.getCurrentEmpresaId())));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ResponseDTO.success("OK",
             crmClientesService.detalle(id, companyScope.getCurrentEmpresaId())));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Cliente actualizado",
@@ -77,7 +77,7 @@ public class CrmController {
     }
 
     @PostMapping("/{id}/puntos")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> ajustarPuntos(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             int delta = Integer.parseInt(body.getOrDefault("delta", "0").toString());
@@ -91,7 +91,7 @@ public class CrmController {
     }
 
     @PostMapping("/{id}/wa")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> enviarWhatsApp(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         if (crmAccessGuard.sinAccesoCrm()) {
             return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
@@ -110,7 +110,7 @@ public class CrmController {
     }
 
     @GetMapping("/{id}/wa/historial")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> historialWa(@PathVariable Long id) {
         if (crmAccessGuard.sinAccesoCrm()) {
             return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));

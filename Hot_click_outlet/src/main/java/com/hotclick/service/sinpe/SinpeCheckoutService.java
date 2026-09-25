@@ -7,6 +7,7 @@ import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.service.CuponService;
+import com.hotclick.service.payment.GuestCancelTokenService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,8 @@ public class SinpeCheckoutService {
     @Autowired private PagoRepository             pagoRepository;
     @Autowired private CuponService               cuponService;
     @Autowired private PasswordEncoder            passwordEncoder;
+    @Autowired private GuestCancelTokenService    guestCancelTokenService;
+    @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
@@ -86,6 +89,14 @@ public class SinpeCheckoutService {
             }
         }
         int total = subtotal - descuento + costoEnvio;
+        if (bodega.getEmpresa() != null) {
+            var pct = bodega.getEmpresa().getPctDescuentoSinpe();
+            if (pct != null && pct.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                int extra = (int) com.hotclick.service.wallet.ComisionPrecioMath.descuentoSinpe(total, pct);
+                descuento += extra;
+                total = Math.max(0, subtotal - descuento + costoEnvio);
+            }
+        }
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
@@ -112,8 +123,11 @@ public class SinpeCheckoutService {
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
+        // Misma regla que CheckoutOrderFactory: sin empresa no hay wallet ni TTL por tenant.
+        pedido.setEmpresa(bodega.getEmpresa());
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedidoRepository.save(pedido);
+        atribucionPedidoService.guardarSiPresente(pedido, req.getAtribucion());
 
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             Producto p = productoRepository.findById(item.getProductoId())
@@ -132,7 +146,7 @@ public class SinpeCheckoutService {
         }
         pedidoRepository.save(pedido);
 
-        // Registro de pago sin fecha de expiración (SINPE es manual, no expira por TTL)
+        // SINPE es manual: no fechaExpiracion; el cleanup TTL excluye proveedor SINPE.
         Pago pago = new Pago();
         pago.setMerchantToken("SINPE-" + UUID.randomUUID());
         pago.setMonto(total);
@@ -141,7 +155,6 @@ public class SinpeCheckoutService {
         pago.setProveedor(Constants.PROVEEDOR_SINPE);
         pago.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        // Sin fecha de expiración: el TTL cleanup de PaymentService filtra por proveedor SINPE
         pago.setPedido(pedido);
         pago.setUsuario(usuario);
         pago.setEstado(Constants.ESTADO_ACTIVO);
@@ -149,9 +162,11 @@ public class SinpeCheckoutService {
 
         log.info("Checkout {} iniciado: pedido={} total={}", proveedorEfectivo, pedido.getNumeroPedido(), total);
 
-        return new PaymentCheckoutResponse(
+        PaymentCheckoutResponse response = new PaymentCheckoutResponse(
             pedido.getId(), pedido.getNumeroPedido(),
             null, Constants.PAGO_PENDIENTE, total, proveedorEfectivo);
+        response.setCancelToken(guestCancelTokenService.emitir(pedido.getNumeroPedido()));
+        return response;
     }
 
     private int calcularCostoEnvio(String metodoEnvio) {

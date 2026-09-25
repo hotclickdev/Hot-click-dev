@@ -40,6 +40,7 @@ class SecurityDetectionServiceTest {
     @Mock private SecurityAlertRepository alertRepo;
     @Mock private SecurityAuditService    auditService;
     @Mock private ResendEmailService      emailService;
+    @Mock private com.hotclick.service.TelegramService telegramService;
 
     private SecurityDetectionService detectionService;
 
@@ -47,7 +48,7 @@ class SecurityDetectionServiceTest {
     void setUp() {
         when(alertRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         SecurityRateWindowTracker tracker = new SecurityRateWindowTracker();
-        SecurityAlertNotifier alertNotifier = new SecurityAlertNotifier(alertRepo, emailService, tracker);
+        SecurityAlertNotifier alertNotifier = new SecurityAlertNotifier(alertRepo, emailService, tracker, telegramService);
         detectionService = new SecurityDetectionService(auditService, tracker, alertNotifier);
     }
 

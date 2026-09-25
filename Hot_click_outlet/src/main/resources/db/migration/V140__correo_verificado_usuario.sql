@@ -1,0 +1,1 @@
+ALTER TABLE hot_click_usuario_tb ADD COLUMN IF NOT EXISTS correo_verificado BOOLEAN NOT NULL DEFAULT TRUE;

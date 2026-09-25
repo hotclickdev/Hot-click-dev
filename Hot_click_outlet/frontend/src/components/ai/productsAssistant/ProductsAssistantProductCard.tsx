@@ -43,6 +43,11 @@ export function ProductsAssistantProductCard({ producto, onAdd }: {
           <p className="text-xs font-semibold leading-snug line-clamp-2" style={{ color: '#F4F6F9' }}>
             {producto.nombre}
           </p>
+          {producto.sku && (
+            <p className="text-[10px] mt-0.5 font-mono" style={{ color: 'rgba(255,255,255,0.32)' }}>
+              SKU {producto.sku}
+            </p>
+          )}
           <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>
             {precioTxt}
           </p>

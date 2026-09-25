@@ -23,13 +23,11 @@ class SecurityAuthorizationRulesTest {
     }
 
     @Test
-    @DisplayName("roles staff están en Constants y en PlatformStaff")
-    void rolesStaffEnConstants() {
+    @DisplayName("roles staff legacy inactivos; PlatformStaff.ROLES vacío (V132)")
+    void rolesStaffVaciosTrasV132() {
         assertThat(Constants.ROL_SUPPORT).isEqualTo("SUPPORT");
-        assertThat(Constants.ROL_FINANCE).isEqualTo("FINANCE");
-        assertThat(Constants.ROL_TRUST).isEqualTo("TRUST");
-        assertThat(PlatformStaff.ROLES).containsExactlyInAnyOrder(
-            Constants.ROL_SUPPORT, Constants.ROL_FINANCE, Constants.ROL_TRUST);
+        assertThat(PlatformStaff.ROLES).isEmpty();
+        assertThat(PlatformStaff.ROLES_SIN_TENANT).containsExactly(Constants.ROL_ADMIN);
     }
 
     // catch-all /api/admin/** incluye staff además de ADMIN y EMPRENDEDOR:

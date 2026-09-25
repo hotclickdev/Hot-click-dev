@@ -76,7 +76,6 @@ export type WizardStepId =
   | 'precios'
   | 'clasificacion'
   | 'detalles'
-  | 'contenido'
   | 'seo'
 
 export type WizardStep = {
@@ -222,8 +221,7 @@ export const ALL_STEPS: WizardStep[] = [
   { id: 'descripcion',   title: 'Describí el producto',         subtitle: 'Una frase corta que verán los clientes en la tienda', optional: true },
   { id: 'precios',       title: 'Precios y stock',              subtitle: null, validate: validarPasoPrecios, validateMsg: 'Completá el precio o la configuración personalizada' },
   { id: 'clasificacion', title: 'Clasificación',                subtitle: 'Categoría, marca, condición y bodega', validate: f => !!f.categoriaId, validateMsg: 'La categoría es obligatoria' },
-  { id: 'detalles',      title: 'Detalles del producto',        subtitle: 'Talla, garantía, SKU y código de barras', optional: true },
-  { id: 'contenido',     title: 'Especificaciones y tags',      subtitle: 'Información técnica y etiquetas de búsqueda', optional: true },
+  { id: 'detalles',      title: 'Más detalles',                 subtitle: 'Talla, garantía, SKU, especificaciones y tags — todo opcional', optional: true },
   { id: 'seo',           title: 'SEO',                          subtitle: 'Cómo aparece este producto en Google', optional: true },
 ]
 

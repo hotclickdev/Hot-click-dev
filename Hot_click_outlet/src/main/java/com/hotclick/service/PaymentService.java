@@ -51,6 +51,8 @@ public class PaymentService {
     @Autowired private PaymentUserCancellationService   userCancellationService;
     @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
     @Autowired private PosQrVentaService                posQrVentaService;
+    @Autowired private GuestCancelTokenService          guestCancelTokenService;
+    @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
@@ -72,6 +74,7 @@ public class PaymentService {
         Pedido pedido = checkoutOrderFactory.createPendingOrder(
             req, pricing, reservation.subtotal(), reservation.costoTotal(), provider, usuario, bodega);
         checkoutOrderFactory.addItemSnapshots(pedido, req.getItems(), reservation.productosMap());
+        atribucionPedidoService.guardarSiPresente(pedido, req.getAtribucion());
         posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), pedido.getId());
 
         if (pricing.pagoGC()) {
@@ -82,8 +85,8 @@ public class PaymentService {
             giftCardService.canjear(pricing.gcCodigo(), pedido, pricing.gcMonto());
             paymentNotificationsFacade.onGiftCardFullPayment(pedido, pricing.gcCodigo());
             posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
-            return new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
-                null, "PAGADO", 0, "GIFT_CARD");
+            return conCancelToken(new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
+                null, "PAGADO", 0, "GIFT_CARD"));
         }
 
         PaymentSession session;
@@ -105,9 +108,20 @@ public class PaymentService {
 
         paymentNotificationsFacade.onPedidoCreado(pedido, provider);
 
-        return new PaymentCheckoutResponse(
+        if (session.modoEmbebido()) {
+            return conCancelToken(PaymentCheckoutResponse.embebido(
+                pedido.getId(), pedido.getNumeroPedido(),
+                session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider,
+                session.sdkToken(), session.externalId()));
+        }
+        return conCancelToken(new PaymentCheckoutResponse(
             pedido.getId(), pedido.getNumeroPedido(),
-            session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider);
+            session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider));
+    }
+
+    private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response) {
+        response.setCancelToken(guestCancelTokenService.emitir(response.getNumeroPedido()));
+        return response;
     }
 
     @Transactional
@@ -150,8 +164,8 @@ public class PaymentService {
     }
 
     @Transactional
-    public void cancelarAnon(String numeroPedido) {
-        userCancellationService.cancelarAnon(numeroPedido);
+    public void cancelarAnon(String numeroPedido, String cancelToken) {
+        userCancellationService.cancelarAnon(numeroPedido, cancelToken);
     }
 
     public PaymentStatusResponse buildStatusResponse(Pago pago) {

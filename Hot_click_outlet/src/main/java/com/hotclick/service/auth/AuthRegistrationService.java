@@ -126,6 +126,8 @@ public class AuthRegistrationService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_REGISTRO, codigo.trim());
             otpService.marcarUsado(otp);
+            usuario.setCorreoVerificado(true);
+            usuarioRepository.save(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Correo verificado correctamente", null));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

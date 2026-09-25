@@ -157,7 +157,7 @@ public class SuscripcionWebhookService {
             sub.setEstado("CANCELADO");
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
             suscripcionRepo.save(sub);
-            planSupport.degradarAFree(sub.getEmpresa());
+            planSupport.degradarAPlanBase(sub.getEmpresa());
             ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_CANCELACION,
                 BillingLedger.PROVEEDOR_STRIPE, stripeSubId, null, null,
                 "Suscripción Stripe cancelada");

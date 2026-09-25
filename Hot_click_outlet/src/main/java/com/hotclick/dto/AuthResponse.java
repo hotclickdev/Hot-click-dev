@@ -15,6 +15,7 @@ public class AuthResponse {
     private String       empresaSlug;
     private String       empresaNombre;
     private List<String> permisos;
+    private Boolean      correoVerificado;
 
     public AuthResponse() {}
 
@@ -50,4 +51,6 @@ public class AuthResponse {
     public void setEmpresaNombre(String empresaNombre){ this.empresaNombre = empresaNombre; }
     public List<String> getPermisos()                 { return permisos; }
     public void setPermisos(List<String> permisos)    { this.permisos = permisos; }
+    public Boolean getCorreoVerificado()                        { return correoVerificado; }
+    public void setCorreoVerificado(Boolean correoVerificado)   { this.correoVerificado = correoVerificado; }
 }

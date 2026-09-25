@@ -2,7 +2,7 @@
 
 Dashboard I1: **en el admin** [`/admin/agentes`](../Hot_click_outlet/frontend/src/pages/admin/AdminAgentes.tsx) (Spring sirve la SPA). Espejo opcional Next/Vercel: [`agentes-dashboard/README.md`](../agentes-dashboard/README.md). Inspector: `npm run inspect` en `agentes-dashboard/` o workflow [`inspect-agents.yml`](../.github/workflows/inspect-agents.yml) (lunes 08:15 CR); el JSON también se copia a `Hot_click_outlet/src/main/resources/agentes/`.
 
-Checks de GitHub Actions que corren **al lado** de `ci.yml`, `security.yml`, `sonarcloud.yml`, `backup.yml` y `keep-alive.yml`. No tocan schedulers de negocio (DataRetention, Hacienda, wallet, RAG) ni lógica de pago/auth.
+Checks de GitHub Actions que corren **al lado** de `ci.yml`, `security.yml`, `deps-vuln.yml` (osv-scanner HIGH/CRITICAL), `sonarcloud.yml`, `backup.yml` y `keep-alive.yml`. No tocan schedulers de negocio (DataRetention, Hacienda, wallet, RAG) ni lógica de pago/auth. Detalle del gate de deps: [`docs/security/dependency-scanning.md`](./security/dependency-scanning.md).
 
 Los scripts viven en `scripts/eng-gates/` (Node 22, sin dependencias). Tests: `node --test scripts/eng-gates/eng-gates.test.mjs`.
 
@@ -14,6 +14,7 @@ Los scripts viven en `scripts/eng-gates/` (Node 22, sin dependencias). Tests: `n
 | E2 | `gate-tenant.yml` | PR que toca `controller` / `service` / `repository` Java | Escanea el **diff**: `findById(` de ids de cliente, `@Async`/threads que pierden `TenantContext`, `SET`/`LISTEN`/`pg_advisory_*` (PgBouncer). Comenta el PR con líneas. Falla en riesgos altos de endpoint/infra. | `skip-tenant-gate` |
 | E3 | `gate-spa.yml` | PR que toca `Hot_click_outlet/frontend/src/**` o `static/` | Si `frontend/src` cambió y `static/` también → PASS. Si `static/` no vino en el PR → `pnpm build` y FAIL si el bundle queda stale. Docker **no** buildea React. | `skip-spa-gate` |
 | E6 | `dependabot-triage.yml` | Todo PR a `master` (no-op si no es Dependabot) | Auto-label. Patch/minor no críticos → `automerge-candidate`. Majors de `spring-boot*`, `jjwt-*`, `stripe-java` y **cualquier Spring Boot 4.x** → `needs-human`, corta auto-merge, comenta riesgo. | `skip-dependabot-gate` |
+| DEP | `deps-vuln.yml` | push/PR `master` + `workflow_dispatch` | osv-scanner sobre `pom.xml` + `pnpm-lock.yaml`. **Falla en HIGH/CRITICAL**; medium/low solo informan. Allowlist: `scripts/eng-gates/osv-deps-allowlist.json`. | — |
 | E11 | `gate-sensitive.yml` | PR que toca `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` en `src/main/java` | Liviano: exige que exista un test nominal (`*Payment*Test*.java`, etc.). No corre Maven. | `skip-sensitive-gate` |
 | DOC1 | `docs-stack.yml` | Semanal (lunes) + `workflow_dispatch` | Regenera `docs/GENERATED_STACK.md` (Java/Flyway/React/módulos), artifact, issue semanal, PR si el fingerprint cambió. Parches seguros de README/ESTADO_ACTUAL solo con `--apply-safe-docs`. | — |
 | SCALE1 | `gate-scale.yml` | PR Java/TS/static + semanal | Diff: `findAll`/listas sin Pageable, N+1, I/O bloqueante en controllers (FAIL P1); `@Transactional` gordo / imports pesados (WARN). Semanal: issue de hotspots por tamaño + `findAll`. | `skip-scale-gate` |
@@ -63,6 +64,7 @@ En `master`, marcar como required cuando quieras bloquear merge:
 - `E3 Artefactos static/ vs frontend/src`
 - `E11 Tests nominales Payment/Auth/Pos/Sinpe/Wallet`
 - `E6 Labels y bloqueo de majors críticos` (este job siempre reporta: PASS en PRs no-Dependabot)
+- `osv-scanner (HIGH/CRITICAL)` (`deps-vuln.yml` — ver [`docs/security/dependency-scanning.md`](./security/dependency-scanning.md))
 - `SCALE1 Diff review`
 
 Los workflows E1/E2/E3/E11 usan *path filters*. Un check required que **no llega a correr** puede quedar en pending. Si eso molesta, quitá el `paths:` del YAML (los scripts ya hacen no-op si el diff no aplica) o usá “required only when the workflow runs” según la UI de GitHub.

@@ -3,6 +3,8 @@ package com.hotclick.controller;
 import com.hotclick.dto.*;
 import com.hotclick.model.EncargoPersonalizado;
 import com.hotclick.service.EncargoService;
+import com.hotclick.service.TurnstileFormGuard;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ public class EncargoPublicController {
     private static final Logger log = LoggerFactory.getLogger(EncargoPublicController.class);
 
     @Autowired private EncargoService encargoService;
+    @Autowired private TurnstileFormGuard turnstileFormGuard;
 
     @PostMapping("/imagenes")
     public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {
@@ -40,7 +43,11 @@ public class EncargoPublicController {
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
             @Valid @RequestBody EncargoCreateRequest req,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+        if (!turnstileFormGuard.verificado(req.getTurnstileToken(), httpRequest)) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(TurnstileFormGuard.MSG_ANTI_BOT));
+        }
         try {
             String correo = userDetails != null ? userDetails.getUsername() : null;
             EncargoPersonalizado encargo = encargoService.crear(req, correo);

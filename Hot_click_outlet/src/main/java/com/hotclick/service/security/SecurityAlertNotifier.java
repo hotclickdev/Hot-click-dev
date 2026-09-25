@@ -4,6 +4,7 @@ import com.hotclick.model.SecurityAlert;
 import com.hotclick.repository.SecurityAlertRepository;
 import com.hotclick.security.SecurityEventSeverity;
 import com.hotclick.service.ResendEmailService;
+import com.hotclick.service.TelegramService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,16 +24,19 @@ public class SecurityAlertNotifier {
     private final SecurityAlertRepository alertRepo;
     private final ResendEmailService emailService;
     private final SecurityRateWindowTracker tracker;
+    private final TelegramService telegramService;
 
     @Value("${security.alert.email:hotclick.cr@gmail.com}")
     private String securityAlertEmail;
 
     public SecurityAlertNotifier(SecurityAlertRepository alertRepo,
                                  ResendEmailService emailService,
-                                 SecurityRateWindowTracker tracker) {
+                                 SecurityRateWindowTracker tracker,
+                                 TelegramService telegramService) {
         this.alertRepo = alertRepo;
         this.emailService = emailService;
         this.tracker = tracker;
+        this.telegramService = telegramService;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -62,6 +66,7 @@ public class SecurityAlertNotifier {
 
             if (severity == SecurityEventSeverity.CRITICAL || severity == SecurityEventSeverity.HIGH) {
                 notificarPorEmail(alertType, severity, ip, message, details);
+                telegramService.enviar(severity + " " + alertType + "\n" + message);
             }
         } catch (Exception e) {
             log.error("[SEC-ALERT] Failed to persist alert type={}: {}", alertType, e.getMessage());

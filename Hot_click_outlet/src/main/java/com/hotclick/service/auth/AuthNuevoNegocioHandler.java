@@ -8,7 +8,6 @@ import com.hotclick.service.AltaEmprendedorNotificador;
 import com.hotclick.service.CupoEmprendedorService;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
-import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
@@ -130,9 +129,9 @@ public class AuthNuevoNegocioHandler {
     private AuthResponse buildAuthResponse(Usuario currentUser, Empresa empresa) {
         String rol         = Constants.ROL_EMPRENDEDOR;
         String accessToken = jwtUtil.generateToken(currentUser.getCorreo(), currentUser.getId(), rol, empresa.getId(), empresa.getSlug());
-        RefreshToken rt    = refreshTokenService.crear(currentUser);
+        refreshTokenService.crear(currentUser);
         String nombre      = currentUser.getNombre() != null ? currentUser.getNombre() : currentUser.getCorreo().split("@")[0];
-        AuthResponse resp  = new AuthResponse(accessToken, rt.getToken(), currentUser.getId(), currentUser.getCorreo(), rol, nombre);
+        AuthResponse resp  = new AuthResponse(accessToken, null, currentUser.getId(), currentUser.getCorreo(), rol, nombre);
         resp.setEmpresaId(empresa.getId());
         resp.setEmpresaSlug(empresa.getSlug());
         resp.setEmpresaNombre(empresa.getNombreEmpresa());

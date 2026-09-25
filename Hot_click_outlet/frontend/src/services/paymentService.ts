@@ -36,9 +36,13 @@ export const paymentService = {
     return api.post('/payments/guest-checkout', payload)
   },
 
-  /** Cancela pedido de invitado y libera stock. */
-  guestCancelarPedido(numeroPedido: string) {
-    return api.post(`/payments/guest/cancel/${numeroPedido}`)
+  /** Cancela pedido de invitado y libera stock. Requiere cancelToken del checkout. */
+  guestCancelarPedido(numeroPedido: string, cancelToken?: string | null) {
+    const token = cancelToken
+      ?? (typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem(`hc-cancel-token:${numeroPedido}`)
+        : null)
+    return api.post(`/payments/guest/cancel/${numeroPedido}`, { cancelToken: token })
   },
 
   // ── Admin SINPE (legacy, por pagoId) ─────────────────────────────────────
@@ -116,5 +120,34 @@ export const paymentService = {
 
   listarWebhooks(queryString: string) {
     return api.get(`/admin/webhooks?${queryString}`)
+  },
+
+  // ── Tilopay ──────────────────────────────────────────────────────────────
+
+  /**
+   * Confirma el retorno de Tilopay (query params del redirect SDK).
+   * @param numeroPedido número de pedido HotClick
+   * @param queryParams code, order, description, etc.
+   */
+  confirmarTilopay(numeroPedido: string, queryParams: Record<string, string> = {}) {
+    return api.post(`/payments/tilopay/confirmar/${encodeURIComponent(numeroPedido)}`, queryParams)
+  },
+
+  /** Solicita un nuevo sdkToken para reintentar un pago Tilopay. */
+  reintentarTilopay(numeroPedido: string) {
+    return api.post(`/payments/tilopay/reintentar/${encodeURIComponent(numeroPedido)}`)
+  },
+
+  /** Comisión de pasarela (admin) — opcional; el UI tolera 404. */
+  getConfigComision() {
+    return api.get('/admin/configuracion/comision')
+  },
+
+  putConfigComision(body: {
+    pctComisionTarjeta?: number
+    montoFijoComisionCrc?: number
+    pctDescuentoSinpe?: number
+  }) {
+    return api.put('/admin/configuracion/comision', body)
   },
 }

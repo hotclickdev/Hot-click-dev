@@ -63,8 +63,44 @@ Flyway ejecuta las migraciones automáticamente al arrancar. Sin migración → 
 
 Migraciones existentes:
 
-- `V1__initial_schema.sql` — baseline (no se ejecuta, ya estaba aplicado)
+- `V1__initial_schema.sql` — baseline en producción (no se re-ejecuta). En **dev** tampoco se rejuega en cadena: ver sección «Base de datos de desarrollo».
 - `V2__marcas_y_fk_producto.sql` — tabla marcas, fk_id_marca en producto, testimonio+producto
+
+## Base de datos de desarrollo (obligatoria para cambios de esquema)
+
+**Nunca apuntar el arranque local a Supabase/RDS de producción.** Usá Postgres en Docker con el perfil `dev`.
+
+```bash
+# 1. Levantar Postgres local (credenciales fijas; sin env_file de prod)
+cd Hot_click_outlet
+docker compose -f docker-compose.dev.yml up -d
+
+# 2. Arrancar Spring con perfil dev
+.\maven\bin\mvn -pl Hot_click_outlet spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+| Pieza | Detalle |
+|-------|---------|
+| Compose | [`Hot_click_outlet/docker-compose.dev.yml`](Hot_click_outlet/docker-compose.dev.yml) — solo Postgres 18, puerto 5432, DB `hotclick_dev` |
+| Perfil | [`application-dev.properties`](Hot_click_outlet/src/main/resources/application-dev.properties) — URL local, JWT de seed, Sentry vacío, `ddl-auto=update` |
+| Guardrail | [`FlywayRepairConfig`](Hot_click_outlet/src/main/java/com/hotclick/config/FlywayRepairConfig.java) — con perfil `dev`, aborta si el host JDBC no es `localhost` / `127.0.0.1` / `postgres` |
+| Bootstrap vacío | Tablas nativas en [`db/dev-bootstrap/nativas.sql`](Hot_click_outlet/src/main/resources/db/dev-bootstrap/nativas.sql) + Flyway **baseline en V136** (no rejuega V1..V136) |
+| CI | [`.github/workflows/gate-flyway-fresh.yml`](.github/workflows/gate-flyway-fresh.yml) — arranca con perfil `dev` contra Postgres vacío |
+
+Admin sembrado: `admin@hotclick.com` / `Admin1234!` (o `ADMIN_DEFAULT_PASSWORD`).
+
+**Por qué no se rejugan V1..V136 en base vacía:** `V1__initial_schema.sql` es un dump legacy que en producción se marcó como baseline (nunca se ejecutó). Si se ejecuta, choca con V2+ (tablas/columnas distintas). En `dev`, Flyway hace baseline en 136 y Hibernate arma el esquema; **las migraciones nuevas (V137+) sí se aplican** al reiniciar.
+
+**Flujo al tocar esquema:** entidad + migración `V{N}__...sql` (N > 136) → arrancar con perfil `dev` y verificar que Flyway aplica la nueva → recién entonces commit.
+
+**Advertencias:**
+
+- Si el puerto 5432 ya está ocupado, mapeá `5433:5432` en el compose y ajustá la URL en `application-dev.properties`.
+- Postgres 18 monta el volumen en `/var/lib/postgresql` (no `.../data`).
+- `ResetPlataformaKeepQaRunner` (`@Profile("!test")`) corre en dev y puede vaciar tiendas/productos al reiniciar (conserva admin + cuentas QA). Los seeders vuelven a cargar datos demo después.
+- **No copiar datos de producción a dev** (Ley 8968 — datos personales de clientes).
+- No exportar `SPRING_DATASOURCE_URL` apuntando a prod con el perfil `dev`: el guardrail aborta el arranque antes de migrar.
+- Base a medio migrar: `docker compose -f docker-compose.dev.yml down -v` y volvé a subir.
 
 ## Infraestructura AWS (producción)
 
@@ -237,6 +273,7 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 | **`application.properties`** | Solo referencias `${ENV_VAR:default}`, nunca valores reales |
 | **Pre-commit hook local** | `scripts/hooks/pre-commit` (versionado) — instalar una vez por clon con `sh scripts/install-git-hooks.sh` |
 | **CI (gate real)** | `.github/workflows/security.yml` — job `gitleaks`, bloquea el PR si detecta un secreto |
+| **CI (deps vulnerables)** | `.github/workflows/deps-vuln.yml` — osv-scanner sobre `pom.xml` + `pnpm-lock.yaml`; falla en HIGH/CRITICAL |
 
 ### Reglas concretas
 
@@ -244,6 +281,7 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 2. **Nunca poner secrets en el frontend** — las variables `VITE_*` quedan expuestas en el bundle del navegador. Solo van ahí claves *publishable* (Clerk, GA4, Sentry DSN, PostHog token). Claves secretas solo en el backend.
 3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en EC2 (`nano /home/ec2-user/app/Hot_click_outlet/.env && docker-compose -f docker-compose.prod.yml restart app`).
 4. **Escaneo de secretos** corre en 2 capas: el hook local (`scripts/hooks/pre-commit`, patrones fijos + `gitleaks protect` si está instalado — feedback rápido, no es el gate real) y el job `gitleaks` en CI (`.github/workflows/security.yml`, ~150 reglas + detección de entropía — este sí bloquea el merge). Si un PR falla por esto, mover la credencial a `.env`. Falsos positivos conocidos van al allowlist de `.gitleaks.toml`, no se desactiva el job.
+5. **Escaneo de dependencias vulnerables** — `deps-vuln.yml` corre [osv-scanner](https://google.github.io/osv-scanner/) (sin API key de pago, sin `mvn`/`pnpm install`). Lee el **lockfile real** (`Hot_click_outlet/frontend/pnpm-lock.yaml`) y `Hot_click_outlet/pom.xml`. **HIGH/CRITICAL fallan el PR**; medium/low solo se reportan. Cómo leer un fallo y cómo suprimir: [`docs/security/dependency-scanning.md`](docs/security/dependency-scanning.md). Allowlist versionada: `scripts/eng-gates/osv-deps-allowlist.json` (exige `id`, `reason`, `acceptedAt`; preferí `expiresOn`). Dependabot no sustituye este gate.
 
 ### Servicios y dónde rotar sus keys
 

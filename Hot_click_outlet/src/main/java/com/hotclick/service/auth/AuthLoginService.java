@@ -4,6 +4,7 @@ import com.hotclick.dto.JwtRequest;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Usuario;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -24,12 +25,16 @@ public class AuthLoginService {
         return loginHandler.login(request, httpRequest);
     }
 
-    public ResponseEntity<?> refresh(Map<String, String> body) {
-        return loginHandler.refresh(body);
+    public ResponseEntity<?> refresh(Map<String, String> body,
+                                     HttpServletRequest request,
+                                     HttpServletResponse response) {
+        return loginHandler.refresh(body, request, response);
     }
 
-    public ResponseEntity<ResponseDTO> logout(Map<String, String> body, HttpServletRequest httpRequest) {
-        return loginHandler.logout(body, httpRequest);
+    public ResponseEntity<ResponseDTO> logout(Map<String, String> body,
+                                              HttpServletRequest httpRequest,
+                                              HttpServletResponse response) {
+        return loginHandler.logout(body, httpRequest, response);
     }
 
     public ResponseEntity<ResponseDTO> changePassword(Map<String, String> body, HttpServletRequest request) {

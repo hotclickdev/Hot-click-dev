@@ -1,0 +1,49 @@
+name: Security — Dependencias vulnerables
+
+# Escanea Maven (pom.xml) y pnpm (pnpm-lock.yaml) con Google osv-scanner.
+# Falla el PR solo en HIGH/CRITICAL. Medium/low se reportan sin bloquear.
+# No compila ni corre Maven/pnpm install: lee lockfiles/manifiestos + API osv.dev.
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  osv-deps:
+    name: osv-scanner (HIGH/CRITICAL)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+
+      - name: Descargar osv-scanner
+        run: |
+          VERSION=v2.5.1
+          curl -sSL "https://github.com/google/osv-scanner/releases/download/${VERSION}/osv-scanner_linux_amd64" -o osv-scanner
+          echo "f9f25499a2c8cc367b3af45df2ea7eeca7fbccceab9c35079968f4b3652194be  osv-scanner" | sha256sum -c -
+          chmod +x osv-scanner
+
+      - name: Escanear dependencias (Maven + pnpm)
+        env:
+          OSV_SCANNER_BIN: ./osv-scanner
+        run: bash scripts/eng-gates/osv-deps-scan.sh
+
+      - name: Subir reporte JSON
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: osv-deps-report
+          path: |
+            osv-deps-report.json
+            osv-deps-scan.stderr
+          if-no-files-found: ignore
+          retention-days: 14

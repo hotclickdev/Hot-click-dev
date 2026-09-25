@@ -25,6 +25,7 @@ export type TenantInfo = {
   planNombre?: string
   planId?: number | null
   estadoPlan?: string
+  estadoEmpresa?: string
   trialDias?: number
   fechaVenc?: string | null
   timezone?: string

@@ -10,7 +10,6 @@ export { ADMIN_ROLES } from '@/utils/sistemaUser'
 
 type SesionGuardada = {
   token: string | null
-  refreshToken: string | null
   userId: Id | null
   userEmail: string | null
   userRole: RolUsuario | null
@@ -20,11 +19,11 @@ type SesionGuardada = {
   empresaNombre: string | null
   permissions: string[]
   roles: string[]
+  correoVerificado: boolean
 }
 
 type AuthState = {
   token: string | null
-  refreshToken: string | null
   userId: Id | null
   userEmail: string | null
   userRole: RolUsuario | null
@@ -34,6 +33,7 @@ type AuthState = {
   empresaNombre: string | null
   permissions: string[]
   roles: string[]
+  correoVerificado: boolean
   impersonando: boolean
   adminOriginal: SesionGuardada | null
   isAuthenticated: () => boolean
@@ -45,12 +45,12 @@ type AuthState = {
   login: (data: AuthResponse) => void
   updateAccessToken: (accessToken: string) => void
   setUserName: (nombre: string) => void
+  setCorreoVerificado: (verificado: boolean) => void
   logout: () => void
   impersonar: (data: AuthResponse) => void
   salirImpersonacion: () => void
 }
 
-// Extrae los claims del JWT sin verificar firma (solo lectura en cliente)
 function parseJwtClaims(token: string): JwtClaims {
   try {
     const payload = token.split('.')[1]
@@ -60,12 +60,11 @@ function parseJwtClaims(token: string): JwtClaims {
   }
 }
 
-// AuthResponse: { accessToken, refreshToken, tipo, id, correo, rol, nombre, empresaId, empresaSlug, permisos }
+// Access JWT (15 min) en localStorage; refresh token solo en cookie HttpOnly.
 const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      token:        null,   // access token (15 min)
-      refreshToken: null,   // refresh token (30 días)
+      token:        null,
       userId:       null,
       userEmail:    null,
       userRole:     null,
@@ -73,8 +72,9 @@ const useAuthStore = create<AuthState>()(
       empresaId:     null,
       empresaSlug:   null,
       empresaNombre: null,
-      permissions:   [],    // permisos granulares: ['pos.usar', 'products.view', ...]
-      roles:         [],    // roles: ['CAJERO', 'EMPRENDEDOR', ...]
+      permissions:   [],
+      roles:         [],
+      correoVerificado: true,
       impersonando:  false,
       adminOriginal: null,
 
@@ -89,13 +89,11 @@ const useAuthStore = create<AuthState>()(
         const claims      = parseJwtClaims(data.accessToken)
         const empresaId   = data.empresaId   ?? claims.empresaId   ?? null
         const empresaSlug = data.empresaSlug ?? claims.empresaSlug ?? null
-        // Permisos: primero del response body, luego del JWT como fallback
         const permissions = data.permisos ?? claims.permisos ?? []
         const rol         = data.rol ?? claims.rol ?? null
 
         set({
           token:        data.accessToken,
-          refreshToken: data.refreshToken ?? null,
           userId:       data.id ?? null,
           userEmail:    data.correo ?? null,
           userRole:     rol,
@@ -105,6 +103,9 @@ const useAuthStore = create<AuthState>()(
           empresaNombre: data.empresaNombre ?? null,
           permissions:  Array.isArray(permissions) ? permissions : [],
           roles:        rol ? [rol] : [],
+          correoVerificado: data.correoVerificado ?? true,
+          impersonando:  false,
+          adminOriginal: null,
         })
         syncSentryUser({
           userId: data.id,
@@ -130,12 +131,13 @@ const useAuthStore = create<AuthState>()(
 
       setUserName: (nombre) => set({ userName: nombre }),
 
+      setCorreoVerificado: (verificado) => set({ correoVerificado: verificado }),
+
       logout: () => {
         resetAnalyticsUser()
         syncSentryUser()
         set({
           token:        null,
-          refreshToken: null,
           userId:       null,
           userEmail:    null,
           userRole:     null,
@@ -145,47 +147,63 @@ const useAuthStore = create<AuthState>()(
           empresaNombre: null,
           permissions:  [],
           roles:        [],
+          correoVerificado: true,
+          impersonando:  false,
+          adminOriginal: null,
         })
       },
 
-      // Guarda la sesión ADMIN actual y adopta la del usuario objetivo.
       impersonar: (data) => {
         const state = get()
         const adminOriginal: SesionGuardada = {
-          token: state.token, refreshToken: state.refreshToken, userId: state.userId,
+          token: state.token, userId: state.userId,
           userEmail: state.userEmail, userRole: state.userRole, userName: state.userName,
           empresaId: state.empresaId, empresaSlug: state.empresaSlug, empresaNombre: state.empresaNombre,
           permissions: state.permissions, roles: state.roles,
+          correoVerificado: state.correoVerificado,
         }
         const permissions = data.permisos ?? []
+        const rol = data.rol ?? 'EMPRENDEDOR'
         set({
           adminOriginal,
           impersonando:  true,
           token:         data.accessToken,
-          // Sin refresh token propio: el token de impersonación expira solo (30 min) y
-          // no debe poder renovarse con el refresh token del ADMIN guardado en adminOriginal
-          // (si no, un 401 durante la impersonación revertiría la sesión en silencio).
-          refreshToken:  null,
-          userId:        data.id ?? null,
-          userEmail:     data.correo ?? null,
-          userRole:      data.rol ?? null,
-          userName:      data.nombre ?? data.correo?.split('@')[0] ?? null,
+          userId:        state.userId,
+          userEmail:     state.userEmail,
+          userName:      state.userName,
+          userRole:      rol,
           empresaId:     data.empresaId   ? Number(data.empresaId)   : null,
           empresaSlug:   data.empresaSlug || null,
           empresaNombre: data.empresaNombre ?? null,
           permissions:   Array.isArray(permissions) ? permissions : [],
-          roles:         data.rol ? [data.rol] : [],
+          roles:         rol ? [rol] : [],
         })
       },
 
-      // Restaura la sesión ADMIN guardada antes de impersonar.
       salirImpersonacion: () => {
         const original = get().adminOriginal
         if (!original) return
         set({ ...original, impersonando: false, adminOriginal: null })
       },
     }),
-    { name: 'hotclick-auth' }
+    {
+      name: 'hotclick-auth',
+      partialize: (state) => ({
+        token: state.token,
+        userId: state.userId,
+        userEmail: state.userEmail,
+        userRole: state.userRole,
+        userName: state.userName,
+        empresaId: state.empresaId,
+        empresaSlug: state.empresaSlug,
+        empresaNombre: state.empresaNombre,
+        permissions: state.permissions,
+        roles: state.roles,
+        correoVerificado: state.correoVerificado,
+        impersonando: state.impersonando,
+        adminOriginal: state.adminOriginal,
+      }),
+    }
   )
 )
 

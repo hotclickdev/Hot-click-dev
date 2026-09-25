@@ -1,8 +1,6 @@
 import { paymentService } from '@/services/paymentService'
 import { formatPrice } from '@/utils/format'
-import { analytics } from '@/utils/analytics'
 import { WHATSAPP } from './checkoutHelpers'
-import type { ItemCheckout } from './checkoutHelpers'
 
 type PagoDataSinpe = {
   numeroPedido?: string
@@ -91,20 +89,5 @@ export function ejecutarSinpeWhatsApp({ pagoData, sinpeNombre, sinpeCedula, sinp
       `Monto: ${formatPrice(totalFinal)}\n\n` +
       `_Ya subí el comprobante en la web. ¡Gracias!_`,
   )
-  globalThis.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
-}
-
-type CheckoutWhatsAppDeps = {
-  totalFinal: number
-  items: ItemCheckout[]
-  toWhatsAppMessage: () => string
-}
-
-/**
- * Abre WhatsApp con el mensaje del carrito.
- */
-export function ejecutarCheckoutWhatsApp({ totalFinal, items, toWhatsAppMessage }: CheckoutWhatsAppDeps) {
-  analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + (i.cantidad as number), 0))
-  const msg = toWhatsAppMessage()
   globalThis.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
 }

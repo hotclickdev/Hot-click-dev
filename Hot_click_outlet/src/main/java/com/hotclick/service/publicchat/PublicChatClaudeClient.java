@@ -106,8 +106,8 @@ public class PublicChatClaudeClient {
         return mockResponses.generateAdvisorOpts(isEnglish);
     }
 
-    public String generarRespuestaAsesor(Map<String, Object> ficha, boolean isEnglish) {
-        return mockResponses.generarRespuestaAsesor(ficha, isEnglish);
+    public String generarRespuestaAsesor(Map<String, Object> ficha, String mensaje, boolean isEnglish) {
+        return mockResponses.generarRespuestaAsesor(ficha, mensaje, isEnglish);
     }
 
     /** Datos mínimos de tienda para el prompt público. */

@@ -17,6 +17,8 @@ final class PublicChatIntentLexicon {
         "en","a","para","con","que","es","se","me","mi","al","le","lo","su",
         "por","como","más","pero","ya","hay","cuando","donde","cual",
         "quiero","busco","busca","necesito","ando","algo","ver","tengo",
+        "tienes","tenes","tienen","venden","vende","vendes",
+        "ofrecen","ofreces","ofrece","cuales",
         "puede","puedo","dame","dime","muestra","mostrame",
         "producto","productos","articulo","articulos","artículo","artículos",
         "item","items","cosas"

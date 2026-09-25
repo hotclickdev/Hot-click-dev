@@ -3605,15 +3605,15 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_admin_empresa
 
 -- V126: Roles de staff de plataforma (SUPPORT / FINANCE / TRUST)
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'SUPPORT', 'Staff plataforma — tickets y ver tiendas', 80, 1
+SELECT 'SUPPORT', 'Staff plataforma ? tickets y ver tiendas', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'SUPPORT');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'FINANCE', 'Staff plataforma — payouts, billing y pagos', 80, 1
+SELECT 'FINANCE', 'Staff plataforma ? payouts, billing y pagos', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'FINANCE');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'TRUST', 'Staff plataforma — moderación y suspensiones', 80, 1
+SELECT 'TRUST', 'Staff plataforma ? moderaci�n y suspensiones', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'TRUST');
 
 INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)
@@ -3674,7 +3674,7 @@ INSERT INTO hot_click_homepage_config_tb (id, hero_sections, visible_categoria_i
 VALUES (1, 'chat,products,businesses', '', 8)
 ON CONFLICT (id) DO NOTHING;
 
--- V124: inbox de soporte — asignar / resolver tickets desde admin
+-- V124: inbox de soporte ? asignar / resolver tickets desde admin
 ALTER TABLE hot_click_ticket_soporte_tb
     ADD COLUMN IF NOT EXISTS fk_id_asignado BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL;
 
@@ -3733,12 +3733,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_ledger_ref_tipo
     ON hot_click_billing_ledger_tb (referencia_externa, tipo)
     WHERE referencia_externa IS NOT NULL;
 
--- V128: cambio de cuenta de cobro queda en revisión hasta admin.
+-- V128: cambio de cuenta de cobro queda en revisi�n hasta admin.
 ALTER TABLE hot_click_metodo_cobro_tb
     ADD COLUMN IF NOT EXISTS en_revision BOOLEAN NOT NULL DEFAULT FALSE;
 
 UPDATE hot_click_metodo_cobro_tb
-SET mascara = '••••-' || RIGHT(destino, 4)
+SET mascara = '????-' || RIGHT(destino, 4)
 WHERE tipo = 'SINPE'
   AND destino IS NOT NULL
   AND length(destino) >= 4;
@@ -3770,45 +3770,208 @@ WHERE id = 1 AND usados = 0;
 
 
 
--- V130: prioridad automática en tickets de soporte, según el plan de la empresa
+-- V130: prioridad autom�tica en tickets de soporte, seg�n el plan de la empresa
 
 ALTER TABLE hot_click_ticket_soporte_tb
   ADD COLUMN IF NOT EXISTS prioridad VARCHAR(10) NOT NULL DEFAULT 'MEDIA';
 
 CREATE INDEX IF NOT EXISTS idx_ticket_soporte_prioridad ON hot_click_ticket_soporte_tb (prioridad);
 
--- V132: 20 categorías globales orientadas a emprendimientos/negocios del marketplace.
--- Idempotente: solo inserta las que no existan ya por nombre (case-insensitive).
-INSERT INTO hot_click_categoria_tb (nombre_categoria, descripcion, icono, orden_display, fk_id_admin_cliente, fk_id_empresa, fk_id_estado)
-SELECT v.nombre, v.descripcion, v.icono, v.orden, admin.id_usuario, NULL, 1
-FROM (VALUES
-  ('Ropa y Moda',                 'Prendas de vestir, moda urbana y streetwear',            'ropa',    100),
-  ('Calzado',                     'Zapatos, tenis y sandalias',                              'calzad',  101),
-  ('Accesorios y Bisutería',      'Bolsos, carteras, lentes y bisutería',                    'joyer?a', 102),
-  ('Joyería',                     'Joyas en plata, oro y piezas artesanales',                'joyer?a', 103),
-  ('Belleza y Cuidado Personal',  'Cosméticos, skincare y cuidado personal',                 'belleza', 104),
-  ('Artesanías',                  'Productos artesanales hechos a mano',                     'arte',    105),
-  ('Arte y Manualidades',         'Ilustraciones, pinturas y manualidades',                  'arte',    106),
-  ('Repostería y Panadería',      'Postres, pasteles y productos de panadería',              'regal',   107),
-  ('Comidas y Bebidas',           'Alimentos preparados, snacks y bebidas artesanales',      'regal',   108),
-  ('Decoración del Hogar',        'Artículos decorativos para el hogar',                     'hogar',   109),
-  ('Velas y Aromaterapia',        'Velas aromáticas, difusores e inciensos',                 'hogar',   110),
-  ('Papelería y Detalles',        'Papelería creativa, invitaciones y detalles para regalo', 'regal',   111),
-  ('Tecnología y Accesorios',     'Gadgets, accesorios y periféricos',                       'tecnol',  112),
-  ('Mascotas',                    'Alimento, accesorios y cuidado de mascotas',              'mascot',  113),
-  ('Deportes y Fitness',          'Ropa deportiva, suplementos y equipo de entrenamiento',   'deport',  114),
-  ('Juguetes y Niños',            'Juguetes, ropa y artículos para niños',                   'juguet',  115),
-  ('Salud y Bienestar',           'Suplementos, productos naturales y bienestar',            'cuidado', 116),
-  ('Jardinería y Plantas',        'Plantas, macetas y accesorios de jardín',                 'jardin',  117),
-  ('Servicios Profesionales',     'Servicios de emprendedores: diseño, consultoría, clases', 'herram',  118),
-  ('Libros y Papelería Escolar',  'Libros, útiles escolares y material educativo',           'libros',  119)
-) AS v(nombre, descripcion, icono, orden)
-CROSS JOIN (SELECT id_usuario FROM hot_click_usuario_tb WHERE correo = 'admin@hotclick.com' LIMIT 1) AS admin
-WHERE NOT EXISTS (
-  SELECT 1 FROM hot_click_categoria_tb c
-  WHERE lower(c.nombre_categoria) = lower(v.nombre) AND c.fk_id_empresa IS NULL
+-- V131: paquetes de digitalizaci?n de inventario + unique barcode por empresa
+-- Paquete = sesi?n de captura en campo (con o sin empresa asignada).
+-- L?neas viven en el paquete hasta ASIGNADO (entonces se crean/re?san Producto).
+
+CREATE TABLE IF NOT EXISTS hot_click_paquete_inventario_tb (
+    id_paquete               BIGSERIAL PRIMARY KEY,
+    codigo                   VARCHAR(40)  NOT NULL,
+    fk_id_empresa            BIGINT REFERENCES hot_click_empresa_tb(id_empresa) ON DELETE SET NULL,
+    nombre_negocio_temporal  VARCHAR(200),
+    estado                   VARCHAR(20)  NOT NULL DEFAULT 'ABIERTO',
+    notas                    TEXT,
+    fk_id_creado_por         BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL,
+    fecha_creacion           TIMESTAMP NOT NULL DEFAULT NOW(),
+    fecha_cierre             TIMESTAMP,
+    fecha_asignacion         TIMESTAMP,
+    CONSTRAINT uq_paquete_inventario_codigo UNIQUE (codigo),
+    CONSTRAINT chk_paquete_estado CHECK (estado IN ('ABIERTO', 'CERRADO', 'ASIGNADO'))
 );
 
--- V133: timestamp de corte para invalidar access tokens JWT ya emitidos.
-ALTER TABLE hot_click_usuario_tb
-    ADD COLUMN IF NOT EXISTS sesiones_invalidadas_en TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_paquete_inventario_estado
+    ON hot_click_paquete_inventario_tb (estado, fecha_creacion DESC);
+
+CREATE INDEX IF NOT EXISTS idx_paquete_inventario_empresa
+    ON hot_click_paquete_inventario_tb (fk_id_empresa)
+    WHERE fk_id_empresa IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS hot_click_paquete_linea_tb (
+    id_linea           BIGSERIAL PRIMARY KEY,
+    fk_id_paquete      BIGINT NOT NULL REFERENCES hot_click_paquete_inventario_tb(id_paquete) ON DELETE CASCADE,
+    barcode            VARCHAR(50),
+    sku                VARCHAR(50),
+    nombre             VARCHAR(200) NOT NULL,
+    precio_compra      INTEGER NOT NULL DEFAULT 0,
+    precio_venta       INTEGER NOT NULL DEFAULT 1,
+    stock              INTEGER NOT NULL DEFAULT 0,
+    marca_texto        VARCHAR(100),
+    categoria_texto    VARCHAR(100),
+    imagen_url         VARCHAR(500),
+    estado             VARCHAR(20) NOT NULL DEFAULT 'LISTO',
+    fk_id_producto     BIGINT REFERENCES hot_click_producto_tb(id_producto) ON DELETE SET NULL,
+    notas_conflicto    TEXT,
+    fecha_creacion     TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_paquete_linea_estado CHECK (estado IN ('LISTO', 'CONFLICTO'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_paquete_linea_paquete
+    ON hot_click_paquete_linea_tb (fk_id_paquete);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_paquete_linea_barcode_unico
+    ON hot_click_paquete_linea_tb (fk_id_paquete, barcode)
+    WHERE barcode IS NOT NULL;
+
+-- Unique barcode por empresa: solo si no hay duplicados previos.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM hot_click_producto_tb
+    WHERE barcode IS NOT NULL
+    GROUP BY fk_id_empresa, barcode
+    HAVING COUNT(*) > 1
+  ) THEN
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_producto_empresa_barcode
+      ON hot_click_producto_tb (fk_id_empresa, barcode)
+      WHERE barcode IS NOT NULL AND fk_id_empresa IS NOT NULL;
+  END IF;
+END $$;
+-- V132: limpiar roles JWT muertos (staff plataforma + POS)
+-- No edita V89/V126; inactiva SUPPORT/FINANCE/TRUST y remapea usuarios a ADMIN.
+-- POS (CAJERO, GERENTE, �?�) ya inactivos en V89 �?? se refuerza descripción.
+
+-- Remapear usuarios staff �?? ADMIN (si tienen SUPPORT/FINANCE/TRUST)
+INSERT INTO hot_click_usuario_rol_tb (fk_id_usuario, fk_id_rol)
+SELECT DISTINCT ur.fk_id_usuario,
+       (SELECT id_rol FROM hot_click_rol_tb WHERE nombre_rol = 'ADMIN' LIMIT 1)
+FROM hot_click_usuario_rol_tb ur
+JOIN hot_click_rol_tb r ON r.id_rol = ur.fk_id_rol
+WHERE r.nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
+  AND NOT EXISTS (
+    SELECT 1 FROM hot_click_usuario_rol_tb ur2
+    JOIN hot_click_rol_tb r2 ON r2.id_rol = ur2.fk_id_rol
+    WHERE ur2.fk_id_usuario = ur.fk_id_usuario AND r2.nombre_rol = 'ADMIN'
+  )
+ON CONFLICT DO NOTHING;
+
+DELETE FROM hot_click_usuario_rol_tb
+WHERE fk_id_rol IN (
+  SELECT id_rol FROM hot_click_rol_tb
+  WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
+);
+
+DELETE FROM hot_click_rol_permiso_tb
+WHERE fk_id_rol IN (
+  SELECT id_rol FROM hot_click_rol_tb
+  WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST')
+);
+
+UPDATE hot_click_rol_tb
+SET fk_id_estado = 2,
+    descripcion = '[ELIMINADO �?? no usado; JWT vivos: ADMIN, EMPRENDEDOR, USUARIO_FINAL]'
+WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST');
+
+UPDATE hot_click_rol_tb
+SET fk_id_estado = 2,
+    descripcion = COALESCE(descripcion, '') || ' [ELIMINADO �?? POS/legacy]'
+WHERE nombre_rol IN ('CAJERO', 'INVENTARIO', 'CONTABILIDAD', 'GERENTE', 'SUPERVISOR', 'MARKETING', 'SOPORTE')
+  AND (descripcion IS NULL OR descripcion NOT LIKE '%ELIMINADO%');
+
+
+-- V133: comisi?n Tilopay absorbida en precio + descuento SINPE opcional por empresa
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS pct_comision_tarjeta NUMERIC(5,2) NOT NULL DEFAULT 4.80;
+
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS monto_fijo_comision_crc INTEGER NOT NULL DEFAULT 200;
+
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS pct_descuento_sinpe NUMERIC(5,2) NOT NULL DEFAULT 0;
+
+-- V137: refresh tokens como SHA-256 (hex). INVALIDA sesiones existentes.
+DELETE FROM hot_click_refresh_token_tb;
+COMMENT ON COLUMN hot_click_refresh_token_tb.token IS
+    'SHA-256 hex del refresh token opaco; el valor en claro solo viaja en cookie HttpOnly';
+
+-- V138: panel �nico del bot de clientes y pausa por sospecha
+ALTER TABLE hot_click_telegram_vinculacion_tb
+    ADD COLUMN IF NOT EXISTS panel_message_id BIGINT;
+ALTER TABLE hot_click_telegram_vinculacion_tb
+    ADD COLUMN IF NOT EXISTS pausado_hasta TIMESTAMP;
+
+-- V139: atribucion de pedidos + gasto diario ads + insights Meta
+CREATE TABLE IF NOT EXISTS hot_click_atribucion_pedido_tb (
+    id_atribucion       BIGSERIAL PRIMARY KEY,
+    fk_id_pedido        BIGINT NOT NULL UNIQUE
+        REFERENCES hot_click_pedido_tb(id_pedido) ON DELETE CASCADE,
+    fk_id_empresa       BIGINT
+        REFERENCES hot_click_empresa_tb(id_empresa),
+    first_utm_source    VARCHAR(120),
+    first_utm_medium    VARCHAR(120),
+    first_utm_campaign  VARCHAR(255),
+    first_utm_content   VARCHAR(255),
+    first_utm_term      VARCHAR(255),
+    first_fbclid        VARCHAR(255),
+    first_gclid         VARCHAR(255),
+    first_landing_path  VARCHAR(500),
+    first_touched_at    TIMESTAMP,
+    last_utm_source     VARCHAR(120),
+    last_utm_medium     VARCHAR(120),
+    last_utm_campaign   VARCHAR(255),
+    last_utm_content    VARCHAR(255),
+    last_utm_term       VARCHAR(255),
+    last_fbclid         VARCHAR(255),
+    last_gclid          VARCHAR(255),
+    last_landing_path   VARCHAR(500),
+    last_touched_at     TIMESTAMP,
+    event_id_purchase   VARCHAR(100),
+    fbp                 VARCHAR(255),
+    fbc                 VARCHAR(255),
+    fecha_creacion      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_atribucion_empresa ON hot_click_atribucion_pedido_tb (fk_id_empresa);
+CREATE INDEX IF NOT EXISTS idx_atribucion_last_campaign ON hot_click_atribucion_pedido_tb (last_utm_campaign);
+CREATE INDEX IF NOT EXISTS idx_atribucion_first_campaign ON hot_click_atribucion_pedido_tb (first_utm_campaign);
+CREATE INDEX IF NOT EXISTS idx_atribucion_last_touched ON hot_click_atribucion_pedido_tb (last_touched_at);
+
+CREATE TABLE IF NOT EXISTS hot_click_ads_gasto_diario_tb (
+    id_gasto_ads        BIGSERIAL PRIMARY KEY,
+    fk_id_empresa       BIGINT REFERENCES hot_click_empresa_tb(id_empresa),
+    fecha               DATE NOT NULL,
+    canal               VARCHAR(40) NOT NULL DEFAULT 'meta',
+    campana             VARCHAR(255) NOT NULL,
+    monto_crc           INTEGER NOT NULL DEFAULT 0,
+    notas               TEXT,
+    fuente              VARCHAR(40) NOT NULL DEFAULT 'manual',
+    fecha_creacion      TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_ads_gasto_empresa_fecha_canal_campana UNIQUE (fk_id_empresa, fecha, canal, campana)
+);
+CREATE INDEX IF NOT EXISTS idx_ads_gasto_fecha ON hot_click_ads_gasto_diario_tb (fecha);
+CREATE INDEX IF NOT EXISTS idx_ads_gasto_empresa_fecha ON hot_click_ads_gasto_diario_tb (fk_id_empresa, fecha);
+
+CREATE TABLE IF NOT EXISTS hot_click_ads_insight_diario_tb (
+    id_insight          BIGSERIAL PRIMARY KEY,
+    fk_id_empresa       BIGINT REFERENCES hot_click_empresa_tb(id_empresa),
+    fecha               DATE NOT NULL,
+    canal               VARCHAR(40) NOT NULL DEFAULT 'meta',
+    campana             VARCHAR(255) NOT NULL,
+    anuncio_id          VARCHAR(80),
+    anuncio_nombre      VARCHAR(255),
+    gasto_crc           INTEGER NOT NULL DEFAULT 0,
+    impresiones         BIGINT NOT NULL DEFAULT 0,
+    clics               BIGINT NOT NULL DEFAULT 0,
+    frecuencia          NUMERIC(8, 4),
+    ctr                 NUMERIC(8, 6),
+    fecha_creacion      TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_ads_insight_dia UNIQUE (fk_id_empresa, fecha, canal, campana, anuncio_id)
+);
+CREATE INDEX IF NOT EXISTS idx_ads_insight_fecha ON hot_click_ads_insight_diario_tb (fecha);
+CREATE INDEX IF NOT EXISTS idx_ads_insight_empresa_fecha ON hot_click_ads_insight_diario_tb (fk_id_empresa, fecha);

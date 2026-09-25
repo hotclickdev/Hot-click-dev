@@ -156,6 +156,44 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
             .andExpect(status().isForbidden());
     }
 
+    @Test
+    @DisplayName("GET /api/inventario/paquetes sin token → 401")
+    void inventarioPaquetes_noToken_returns401() throws Exception {
+        mockMvc.perform(get("/api/inventario/paquetes"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /api/inventario/paquetes con token user → 403")
+    void inventarioPaquetes_userToken_returns403() throws Exception {
+        mockMvc.perform(get("/api/inventario/paquetes")
+                .header("Authorization", userToken))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /api/inventario/paquetes con token admin → 200")
+    void inventarioPaquetes_adminToken_returns200() throws Exception {
+        mockMvc.perform(get("/api/inventario/paquetes")
+                .header("Authorization", adminToken))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/inventario/paquetes/{id}/reabrir sin token → 401")
+    void inventarioPaquetesReabrir_noToken_returns401() throws Exception {
+        mockMvc.perform(post("/api/inventario/paquetes/1/reabrir"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("POST /api/inventario/paquetes/{id}/reabrir con token user → 403")
+    void inventarioPaquetesReabrir_userToken_returns403() throws Exception {
+        mockMvc.perform(post("/api/inventario/paquetes/1/reabrir")
+                .header("Authorization", userToken))
+            .andExpect(status().isForbidden());
+    }
+
     // ── Cross-user access ─────────────────────────────────────────────────────
 
     @Test

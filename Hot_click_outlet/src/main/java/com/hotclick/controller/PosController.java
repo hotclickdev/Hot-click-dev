@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.PosVentaDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Pedido;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.pos.PosVentaService;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +29,7 @@ public class PosController {
     @Autowired private PosVentaService posVentaService;
 
     @PostMapping("/venta")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crearVenta(@RequestBody PosVentaDTO dto, HttpServletRequest request) {
         // El POS está disponible para todos los planes (decisión de negocio
         // jul 2026) — no se gatea por feature "pos".
@@ -38,6 +40,8 @@ public class PosController {
             Pedido saved = posVentaService.crearVenta(
                 dto, extractUserId(request), extractEmpresaId(request), extractCorreo(request));
             return ResponseEntity.ok(ResponseDTO.success("Venta registrada", saved));
+        } catch (TenantAccessDeniedException | SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -47,7 +51,7 @@ public class PosController {
     }
 
     @GetMapping("/historial")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> historialVentas(HttpServletRequest request) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("OK", posVentaService.historial(extractEmpresaId(request))));

@@ -11,20 +11,35 @@ import java.util.regex.Pattern;
 public class PublicChatIntentHelper {
 
     public boolean isOffTopic(String message) {
-        String lower = message.toLowerCase().replaceAll("[^a-záéíóúüñ\\s]", " ");
+        if (message == null || message.isBlank()) return false;
+        Set<String> tokens = tokensNormalizados(message);
         for (String trigger : PublicChatIntentLexicon.OFF_TOPIC_TRIGGERS) {
-            if (lower.contains(trigger)) return true;
+            if (tokens.contains(normalize(trigger))) return true;
         }
         return false;
     }
 
     public boolean isGreeting(String message) {
-        String lower = message.toLowerCase().trim();
+        if (message == null || message.isBlank()) return false;
+        String n = normalize(message.trim());
         for (String g : PublicChatIntentLexicon.GREETINGS) {
-            if (lower.equals(g) || lower.startsWith(g + " ") || lower.startsWith(g + ",")
-                || lower.startsWith(g + "!") || lower.startsWith(g + "?")) return true;
+            String gn = normalize(g);
+            if (n.equals(gn) || n.startsWith(gn + " ") || n.startsWith(gn + ",")
+                || n.startsWith(gn + "!") || n.startsWith(gn + "?")) return true;
         }
-        return lower.length() < 8 && lower.matches("[a-záéíóúüñ!¡]+");
+        return false;
+    }
+
+    private Set<String> tokensNormalizados(String message) {
+        String[] words = message.toLowerCase()
+            .replaceAll("[^a-záéíóúüñ\\s]", " ")
+            .split("\\s+");
+        Set<String> tokens = new LinkedHashSet<>();
+        for (String w : words) {
+            if (w.isBlank()) continue;
+            tokens.add(normalize(w));
+        }
+        return tokens;
     }
 
     public String normalize(String s) {
@@ -49,6 +64,15 @@ public class PublicChatIntentHelper {
         return n.contains("todos los productos") || n.contains("productos populares")
             || n.contains("lo mas popular") || n.contains("mas popular")
             || n.contains("popular products") || n.contains("all products");
+    }
+
+    /**
+     * Catálogo a mostrar: “populares / todos”, o el mensaje no dejó categoría
+     * (“qué productos tenés”, “qué venden”).
+     */
+    public boolean isCatalogBrowseQuery(String message) {
+        if (isShowAllOrPopularQuery(message)) return true;
+        return userTerms(message).isEmpty();
     }
 
     public boolean isOfferQuery(String message) {
@@ -132,7 +156,10 @@ public class PublicChatIntentHelper {
             .replaceAll("[^a-záéíóúüñ\\s]", " ")
             .split("\\s+");
         return Arrays.stream(words)
-            .filter(w -> w.length() > 2 && !PublicChatIntentLexicon.STOP.contains(w))
+            .filter(w -> {
+                String n = normalize(w);
+                return n.length() > 2 && !PublicChatIntentLexicon.STOP.contains(n);
+            })
             .distinct()
             .toList();
     }

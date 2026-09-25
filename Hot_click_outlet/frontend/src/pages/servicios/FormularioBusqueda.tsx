@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion'
 import PhoneField from '@/components/ui/PhoneField'
 import Field from './Field'
+import TurnstileCampo from '@/components/security/TurnstileCampo'
 import { MAX_FOTOS, inputStyle, type FormBusqueda, type FotoSolicitud, type TabBusqueda } from './serviciosHelpers'
 import CloseIcon from '@/components/ui/CloseIcon'
 import type { ChangeEvent, Dispatch, FormEvent, RefObject, SetStateAction } from 'react'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import type { TFunction } from 'i18next'
 
 function CheckIcon({ className = 'w-14 h-14' }: { className?: string }) {
@@ -65,6 +67,10 @@ export type FormularioBusquedaProps = {
   descLabel?: string
   descPh?: string
   ocultarPresupuesto?: boolean
+  turnstileSiteKey?: string
+  turnstileRef?: RefObject<TurnstileInstance | null>
+  setTurnstileToken?: Dispatch<SetStateAction<string>>
+  turnstileBloqueaSubmit?: boolean
 }
 
 /** Formulario de solicitud de búsqueda de producto (éxito o campos). */
@@ -72,6 +78,7 @@ export default function FormularioBusqueda({
   token, success, setSuccess, setTabBusqueda, form, setForm, phone, setPhone,
   fotos, setFotos, uploading, sending, error, fileRef, handleEnviar, handleFotoChange, t,
   etiquetaEnviar, descLabel, descPh, ocultarPresupuesto = false,
+  turnstileSiteKey, turnstileRef, setTurnstileToken, turnstileBloqueaSubmit = false,
 }: FormularioBusquedaProps) {
   const labelDesc = descLabel ?? t('serviciosPage.descLabelFull')
   const placeholderDesc = descPh ?? t('serviciosPage.descPhFull')
@@ -165,7 +172,15 @@ export default function FormularioBusqueda({
         </p>
       )}
 
-      <motion.button type="submit" disabled={sending || uploading}
+      {turnstileSiteKey && turnstileRef && setTurnstileToken && (
+        <TurnstileCampo
+          siteKey={turnstileSiteKey}
+          turnstileRef={turnstileRef}
+          setTurnstileToken={setTurnstileToken}
+        />
+      )}
+
+      <motion.button type="submit" disabled={sending || uploading || turnstileBloqueaSubmit}
         whileHover={{ scale: sending ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
         className="w-full py-4 rounded-2xl font-black text-base disabled:opacity-50"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>

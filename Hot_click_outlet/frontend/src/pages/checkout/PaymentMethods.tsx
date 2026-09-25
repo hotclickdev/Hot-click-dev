@@ -1,20 +1,34 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { useToast } from '@/components/ui/Toast'
 import { CardIcon, EfectivoIcon, SinpeIcon } from './checkoutIcons'
-import { SINPE_NUMERO, SINPE_TITULAR, copiarNumeroSinpe } from './checkoutHelpers'
+import { formatPrice } from '@/utils/format'
 import type { Dispatch, SetStateAction } from 'react'
 
-function metodosPago(metodoEnvio: string) {
+function metodosPago(metodoEnvio: string, descuentoSinpeMonto: number) {
+  const badgeSinpe = descuentoSinpeMonto > 0
+    ? `Ahorrás ${formatPrice(descuentoSinpeMonto)}`
+    : 'Sin costo de pasarela'
+
   return [
+    {
+      id: 'TILOPAY',
+      label: 'Visa / Mastercard',
+      descripcion: 'Pago con tarjeta · Confirmación inmediata',
+      badge: 'Pago inmediato',
+      badgeColor: 'bg-[var(--hc-blue-500)]/20 text-[var(--hc-blue-400)] border-[var(--hc-blue-500)]/30',
+      icon: CardIcon,
+      disabled: false,
+      disabledReason: '',
+    },
     {
       id: 'SINPE',
       label: 'SINPE Móvil',
       descripcion: 'Transferencia directa · Se verifica en minutos',
-      badge: 'Sin comisión',
+      badge: badgeSinpe,
       badgeColor: 'bg-[var(--hc-success)]/15 text-[var(--hc-success)] border-[var(--hc-success)]/30',
       icon: SinpeIcon,
       disabled: false,
+      disabledReason: '',
     },
     {
       id: 'EFECTIVO',
@@ -25,15 +39,6 @@ function metodosPago(metodoEnvio: string) {
       icon: EfectivoIcon,
       disabled: metodoEnvio === 'ENVIO_RAPIDO',
       disabledReason: 'El envío rápido requiere pago previo',
-    },
-    {
-      id: 'ONVO',
-      label: 'Visa / Mastercard',
-      descripcion: 'Pagos con tarjeta · 100% seguro',
-      badge: 'Nuevo',
-      badgeColor: 'bg-[var(--hc-blue-500)]/20 text-[var(--hc-blue-400)] border-[var(--hc-blue-500)]/30',
-      icon: CardIcon,
-      disabled: false,
     },
   ]
 }
@@ -55,6 +60,8 @@ type PaymentMethodsProps = {
   setSinpeTelefono: Dispatch<SetStateAction<string>>
   sinpeEmail: string
   setSinpeEmail: Dispatch<SetStateAction<string>>
+  /** Ahorro estimado vs pasarela; si > 0 muestra "Ahorrás ₡X". */
+  descuentoSinpeMonto?: number
 }
 
 export default function PaymentMethods({
@@ -74,16 +81,10 @@ export default function PaymentMethods({
   setSinpeTelefono,
   sinpeEmail,
   setSinpeEmail,
+  descuentoSinpeMonto = 0,
 }: PaymentMethodsProps) {
   const { t } = useTranslation()
-  const { showToast } = useToast()
-  const METODOS_PAGO = metodosPago(metodoEnvio)
-
-  async function onCopiarSinpe() {
-    const ok = await copiarNumeroSinpe()
-    if (ok) showToast('Número SINPE copiado', 'success')
-    else showToast('No se pudo copiar el número', 'error')
-  }
+  const METODOS_PAGO = metodosPago(metodoEnvio, descuentoSinpeMonto)
 
   return (
     <motion.div
@@ -105,7 +106,6 @@ export default function PaymentMethods({
               style={selected && !mp.disabled
                 ? { borderColor: 'var(--hc-accent)', boxShadow: 'inset 0 0 0 1px var(--hc-accent)', background: 'var(--hc-info-bg)' }
                 : { borderColor: 'var(--hc-border)' }}
-              title={mp.disabled ? mp.disabledReason : undefined}
             >
               <input
                 type="radio" name="pago" value={mp.id}
@@ -120,13 +120,16 @@ export default function PaymentMethods({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-medium text-sm" style={{ color: 'var(--hc-text)' }}>{mp.label}</p>
-                  {mp.badge && (
+                  {mp.badge && !mp.disabled && (
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${mp.badgeColor}`}>
                       {mp.badge}
                     </span>
                   )}
                 </div>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{mp.descripcion}</p>
+                {mp.disabled && mp.disabledReason && (
+                  <p className="text-xs mt-1 text-amber-400/90">{mp.disabledReason}</p>
+                )}
               </div>
               {selected && !mp.disabled && (
                 <div className="w-4 h-4 rounded-full bg-[var(--hc-accent)] flex items-center justify-center shrink-0">
@@ -148,7 +151,6 @@ export default function PaymentMethods({
         </div>
       )}
 
-
       <AnimatePresence>
         {metodoPago === 'SINPE' && (
           <motion.div
@@ -159,11 +161,9 @@ export default function PaymentMethods({
             className="overflow-hidden"
           >
             <div className="space-y-4 pt-1">
-              {/* Datos del remitente — requeridos antes de pagar */}
               <div className="rounded-xl p-4 space-y-3" style={{ background: 'color-mix(in srgb, #10b981 5%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
                 <p className="text-xs font-semibold text-emerald-400">DATOS DEL REMITENTE <span className="text-red-400 font-normal">(requerido)</span></p>
 
-                {/* Nombre completo */}
                 <div className="space-y-1">
                   <label htmlFor="sinpe-nombre" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre completo <span className="text-red-400">*</span></label>
                   <input
@@ -178,7 +178,6 @@ export default function PaymentMethods({
                   {sinpeNombreErr && <p className="text-xs text-red-400">{sinpeNombreErr}</p>}
                 </div>
 
-                {/* Cédula */}
                 <div className="space-y-1">
                   <label htmlFor="sinpe-cedula" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Número de cédula <span className="text-red-400">*</span></label>
                   <input
@@ -194,7 +193,6 @@ export default function PaymentMethods({
                   {sinpeCedulaErr && <p className="text-xs text-red-400">{sinpeCedulaErr}</p>}
                 </div>
 
-                {/* Teléfono del remitente */}
                 <div className="space-y-1">
                   <label htmlFor="sinpe-telefono" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Teléfono del SINPE</label>
                   <input
@@ -209,7 +207,6 @@ export default function PaymentMethods({
                   />
                 </div>
 
-                {/* Correo (siempre requerido para SINPE, incluso autenticado) */}
                 {!token && (
                   <div className="space-y-1">
                     <label htmlFor="sinpe-email" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Correo electrónico</label>
@@ -226,31 +223,9 @@ export default function PaymentMethods({
                 )}
               </div>
 
-              {/* Preview destino SINPE */}
-              <div className="rounded-xl p-3.5 space-y-1.5" style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
-                <p className="text-[10px] font-semibold text-emerald-400 mb-1.5">DESTINO DEL SINPE</p>
-                <div className="flex justify-between items-center gap-2 text-xs">
-                  <span style={{ color: 'var(--hc-muted)' }}>Número</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
-                    <button
-                      type="button"
-                      onClick={onCopiarSinpe}
-                      className="min-h-11 px-2.5 rounded-lg text-[11px] font-semibold transition-opacity hover:opacity-80"
-                      style={{ color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}
-                    >
-                      Copiar
-                    </button>
-                  </div>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span style={{ color: 'var(--hc-muted)' }}>Titular</span>
-                  <span style={{ color: 'var(--hc-text)' }}>{SINPE_TITULAR}</span>
-                </div>
-                <p className="text-[10px] pt-1" style={{ color: 'var(--hc-muted)' }}>
-                  Al confirmar, deberás subir una foto del comprobante.
-                </p>
-              </div>
+              <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
+                Al confirmar vas a ver el número destino y podés subir el comprobante.
+              </p>
             </div>
           </motion.div>
         )}

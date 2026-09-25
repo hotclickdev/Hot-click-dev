@@ -1,281 +1,228 @@
-# HOTCLICK — Marketplace de Emprendedores · Costa Rica
+# HOTCLICK
 
-Plataforma SaaS de e-commerce B2C para el mercado costarricense con modelo híbrido: HotClick vende directamente productos de outlets y liquidación, y además opera un marketplace donde emprendedores y negocios publican sus productos con su propia marca. Incluye POS, CRM, analítica y cumplimiento legal completo (Ley N.° 8968).
+Marketplace y operación comercial para Costa Rica. HOTCLICK vende su propio catálogo de outlets y liquidación, y al mismo tiempo da a emprendedores y negocios una tienda con marca, plan y herramientas de venta.
 
-**URL producción:** <https://hotclick.lat/>
+Producción: <https://hotclick.lat/>
+
+Este documento está escrito para dos lecturas. Quien dirige el producto puede quedarse en las primeras secciones. Quien desarrolla o mantiene el sistema continúa con el entorno local, la arquitectura y las reglas de cambio.
 
 ---
 
-## Stack tecnológico
+## El producto
+
+HOTCLICK es un SaaS multi-tenant. Cada negocio opera aislado del resto. La plataforma conserva el catálogo propio y, además, publica las tiendas de terceros en el mismo marketplace.
+
+El comprador recorre el catálogo, arma el carrito y paga con tarjeta (Tilopay), SINPE Móvil o continúa la compra por WhatsApp. El vendedor administra productos, inventario, pedidos, caja y su marca. La operación de plataforma aprueba negocios, liquida pagos, factura y supervisa la seguridad.
+
+| Plan | Espacio del vendedor | Alcance |
+| --- | --- | --- |
+| Emprendedor | `/emprendedor` | Plan de entrada. Comisión de HOTCLICK sobre la venta y cupo de productos. |
+| PyME | `/pyme` | Reportes, compras, tarjetas de regalo y herramientas de inteligencia artificial, según el plan. |
+| Negocio Plus | `/negocio-plus` | Operación más amplia: sucursales, bodegas y el resto de capacidades del catálogo de planes. |
+
+La suscripción de los planes de pago se cobra con ONVO. El checkout de la tienda no usa ONVO: ahí el cobro es Tilopay, SINPE Móvil o WhatsApp. Stripe permanece en el backend para cobros y precios recurrentes anteriores.
+
+Cada negocio numera sus SKU con el formato `E{empresa}-0001`. El identificador global lo ve la administración. El comprador no ve el SKU. El código de barras (EAN/UPC) es opcional al crear o editar un producto.
+
+---
+
+## Qué incluye
+
+**Compra.** Inicio, catálogo, ficha con variantes y reseñas, descubrimiento, carrito, checkout, pedidos, perfil, lista de deseos y tienda de cada vendedor en `/tienda/:slug`. También hay recuperación de carrito abandonado, cotización B2B y encargos por enlace, sin entrar al panel.
+
+**Venta en el local.** Punto de venta con turno de caja, historial y cobro por código QR. Inventario con kardex, códigos de barra, captura offline y paquetes. Compras a proveedores en los planes que lo incluyen.
+
+**Administración del negocio.** Productos (alta asistida, carga masiva e importación), pedidos con guía de Correos de Costa Rica, finanzas, billetera, reportes, clientes, equipo, marcas, categorías, promociones, cupones, garantías y tickets de soporte.
+
+**Plataforma.** Empresas, usuarios, aprobaciones, pagos, liquidaciones, facturas electrónicas de Hacienda, planes, seguridad, observabilidad y atribución de anuncios.
+
+**Acompañamiento.** Copiloto con Claude para el negocio, pronóstico, chat de tienda y bot de Telegram con menú según rol y plan: alta de productos personalizados y ajuste de unidades desde inventario.
+
+**Presencia.** Blog, directorio de emprendimientos, páginas institucionales y feed de Google Merchant en `https://hotclick.lat/api/public/feed/shopping.xml`.
+
+---
+
+## Superficies principales
+
+| Superficie | Ruta | Uso |
+| --- | --- | --- |
+| Tienda | `/`, `/productos`, `/checkout` | Compra pública |
+| Tienda del vendedor | `/tienda/:slug` | Marca, catálogo y checkout propios |
+| Cuenta del comprador | `/mis-pedidos`, `/perfil`, `/wishlist` | Historial y lista de deseos |
+| Vendedor | `/emprendedor`, `/pyme`, `/negocio-plus` | Operación según el plan |
+| Administración | `/admin` | Panel. El menú cambia según el rol de plataforma o el plan del negocio |
+| Cobro de caja | `/pos/pago/:token` | Pago del código QR, sin sesión de cajero |
+| Alta | `/registro`, `/registro-empresa`, `/login` | Cuenta de comprador, negocio e inicio de sesión |
+
+`/visitante` redirige al marketplace. `/prototipo/*` redirige al área del plan correspondiente.
+
+El panel de administración agrupa, entre otras, estas áreas: inicio, catálogo, inventario, pedidos, encargos, punto de venta, compras, finanzas, clientes, marca, contenido comercial, soporte, copiloto, empresas, facturación, planes, seguridad y configuración.
+
+---
+
+## Cumplimiento
+
+HOTCLICK publica las políticas que exige la operación en Costa Rica y registra el consentimiento del usuario.
+
+| Documento | Ruta |
+| --- | --- |
+| Privacidad (Ley N.° 8968, derechos ARCO) | `/privacidad` |
+| Términos y condiciones | `/terminos` |
+| Devoluciones (Ley N.° 7472) | `/devoluciones` |
+| Envíos | `/envios` |
+| Cookies | `/cookies` |
+| Acuerdo de vendedores | `/acuerdo-vendedores` |
+
+El registro, el checkout y el alta de vendedor exigen consentimiento. La bitácora, con dirección IP, queda en `hot_click_consentimiento_log_tb`. El canal ARCO es <hotclick.cr@gmail.com>. El detalle está en [docs/COMPLIANCE.md](docs/COMPLIANCE.md) y los textos en [docs/legal/](docs/legal/).
+
+---
+
+## Stack
 
 | Capa | Tecnología |
 | --- | --- |
-| Backend | Spring Boot 3.4.4 · Java 21 |
-| Frontend | React 19 · Vite 8 · Tailwind CSS · Zustand · Framer Motion |
-| Base de datos | PostgreSQL en Supabase (PgBouncer transaction mode) |
-| Migraciones | Flyway (129 archivos, V1–V131) |
-| Almacenamiento | Supabase Storage (imágenes de productos, logos de marcas) |
-| Email | SendGrid (ResendEmailService) |
-| Pagos | Stripe (webhook) · SINPE Móvil |
-| Auth / OAuth | JWT + 2FA TOTP · Clerk (Google, Microsoft, Apple, GitHub) |
-| Analytics | Google Analytics 4 (consentimiento previo) |
-| WhatsApp | Meta Cloud API (WaMensajeLog) |
-| Scheduler | ShedLock (jobs distribuidos anti-duplicación) |
-| Package manager | pnpm (frontend) · Maven local `maven/bin/` (backend) |
+| Backend | Spring Boot 3.4.4, Java 21 |
+| Frontend | React 19.2, TypeScript, Vite 8, Tailwind CSS 4, Zustand 5, TanStack Query, React Router 7 |
+| Base de datos | PostgreSQL 18. Producción en Amazon RDS, con el esquema bajo Flyway. Local en Docker, perfil `dev` |
+| Migraciones | Flyway. 136 archivos. La más reciente es `V139__atribucion_ads_metricas.sql` |
+| Archivos | Amazon S3, bucket `hotclick-media` (us-east-2) |
+| Correo | SendGrid |
+| Identidad | JWT con refresh, 2FA TOTP, passkeys, Clerk (Google, Microsoft, Apple, GitHub) y Cloudflare Turnstile |
+| Inteligencia artificial | Claude para el chat de tienda, el copiloto y Telegram. Embeddings con Voyage. El sidecar NVIDIA no atiende el copiloto |
+| Mensajería | WhatsApp (Meta Cloud API), Telegram y SMS opcional al cambiar la cuenta de cobro |
+| Medición | Google Analytics 4 con consentimiento, PostHog, Microsoft Clarity, Meta Pixel y Sentry |
+| Trabajos programados | ShedLock en cada job |
+| Construcción | Maven en `maven/bin/`. Frontend con pnpm 11 y Node 22.13 o superior |
+
+Las versiones contadas desde el repositorio están en [docs/GENERATED_STACK.md](docs/GENERATED_STACK.md). Si ese archivo y este README no coinciden en Flyway, prevalece el directorio `Hot_click_outlet/src/main/resources/db/migration/`.
 
 ---
 
-## Levantar el proyecto localmente
+## Entorno local
+
+El desarrollo no se conecta a la base de producción. El perfil `dev` detiene el arranque si el host de la base no es local.
 
 ```bash
-# Backend — requiere Java 21
-.\maven\bin\mvn spring-boot:run
-# → http://localhost:8080
+cd Hot_click_outlet
+docker compose -f docker-compose.dev.yml up -d
 
-# Frontend — dev server con proxy /api → 8080
+cd ..
+.\maven\bin\mvn -pl Hot_click_outlet spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+La API queda en `http://localhost:8080`.
+
+```bash
 cd Hot_click_outlet/frontend
 pnpm install
 pnpm dev
-# → http://localhost:3000
-
-# Build de producción
-cd Hot_click_outlet/frontend
-pnpm build
-# → genera archivos en src/main/resources/static/
 ```
 
-### Cuentas QA (DataSeeder)
+La interfaz queda en `http://localhost:3000` y envía `/api` al puerto 8080.
 
-Al arrancar el backend se aseguran estas cuentas (si no existen). Contraseña local por defecto: `QaDemo1234!` (o `QA_DEFAULT_PASSWORD`). Para reescribir la clave en una cuenta ya creada: `QA_RESET_PASSWORD=true`.
+Cuenta de administración inicial: `admin@hotclick.com` / `Admin1234!`.
+
+En una base vacía, Flyway marca como aplicadas las migraciones hasta V136 y no las vuelve a ejecutar. V1 es un volcado heredado y no se puede reaplicar en cadena. Hibernate completa el esquema de las entidades. Las migraciones nuevas, de V137 en adelante, sí se aplican al reiniciar. Si la base local queda inconsistente:
+
+```bash
+cd Hot_click_outlet
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d
+```
+
+El build de la interfaz es obligatorio antes de integrar cambios y antes de construir la imagen. Docker no compila React. Sin ese build, producción sigue sirviendo la interfaz anterior.
+
+```bash
+cd Hot_click_outlet/frontend
+pnpm build
+```
+
+La salida queda en `Hot_click_outlet/src/main/resources/static/`.
+
+### Cuentas de prueba
+
+Al arrancar con perfil `dev`, el sistema crea estas cuentas si no existen. No vencen. Contraseña: `Prueba1234`. La de administración sigue siendo `Admin1234!`.
 
 | Rol | Correo | Plan |
 | --- | --- | --- |
-| Admin | `admin@hotclick.com` | — |
-| QA Emprendedor | `qa.emprendedor.demo@hotclick.test` | EMPRENDEDOR |
-| QA Pyme | `qa.pyme.demo@hotclick.test` | PYME |
-| QA Negocio Plus | `qa.negocioplus.demo@hotclick.test` | NEGOCIO_PLUS |
+| Administración | `admin@hotclick.com` | — |
+| Emprendedor | `emprendedor@hotclick.test` | EMPRENDEDOR |
+| PyME | `pyme@hotclick.test` | PYME |
+| Negocio Plus | `negocioplus@hotclick.test` | NEGOCIO_PLUS |
 
-Reset destructivo de datos (conserva admin + 3 cuentas QA + mostrador POS): al **arrancar el backend** borra tiendas y productos que no sean de esas cuentas. Si una corrida anterior dejó tiendas/productos, el siguiente arranque lo reintenta. En **Usuarios** del admin deben verse las 4 cuentas (admin + QA); el mostrador POS no se lista. También: Configuración admin → **Vaciar tiendas, usuarios y productos** (frase `ELIMINAR PLATAFORMA`), o [`scripts/reset_qa_keep_admin.sql`](scripts/reset_qa_keep_admin.sql) en PostgreSQL. **No es Flyway.** Hacer backup antes. No borra Storage, embeddings RAG, Clerk/OAuth ni publicaciones externas.
-
-SKU: cada negocio tiene numeración propia (`E{empresa}-0001`). El id global lo ve el admin. El comprador público no ve el SKU.
-
-Código de barras: opcional al registrar o editar un producto (EAN/UPC). Si no lo tenés en el momento, se puede agregar después.
+Fuera de las pruebas automatizadas, el arranque puede borrar tiendas y productos que no pertenezcan a estas cuentas. Conserva la administración, las cuentas de prueba y el mostrador del punto de venta. La misma acción está en Configuración, con la frase `ELIMINAR PLATAFORMA`, y en [`scripts/reset_qa_keep_admin.sql`](scripts/reset_qa_keep_admin.sql). Conviene respaldar antes. No elimina archivos, embeddings, identidades de Clerk ni publicaciones externas.
 
 ---
 
-## Estructura del proyecto
+## Producción
+
+| Pieza | Ubicación |
+| --- | --- |
+| Aplicación | EC2 en us-east-2, con Docker, Nginx y certificado |
+| Base de datos | Amazon RDS, PostgreSQL 18, conexión cifrada |
+| Imágenes y archivos | Amazon S3, bucket `hotclick-media` |
+| Dominio | `hotclick.lat` |
+| Despliegue | `Hot_click_outlet/docker-compose.prod.yml` |
+
+El procedimiento de despliegue está en [CLAUDE.md](CLAUDE.md). Existe un compose alterno para Lightsail, `docker-compose.lightsail.yml`, con PostgreSQL en el mismo host.
+
+---
+
+## Estructura del repositorio
 
 ```text
-proyecto-2026/
+Hot-click-dev/
 ├── Hot_click_outlet/
-│   ├── src/main/java/com/hotclick/
-│   │   ├── config/          ← SecurityConfig, DataSeeder, CacheConfig
-│   │   ├── controller/      ← REST controllers (/api/**)
-│   │   ├── model/           ← Entidades JPA (~60 modelos)
-│   │   ├── service/         ← Lógica de negocio
-│   │   ├── repository/      ← Spring Data JPA
-│   │   ├── security/        ← JWT, JwtUtil, CompanyScope, JwtRequestFilter
-│   │   ├── scheduler/       ← DataRetentionScheduler, jobs ShedLock
-│   │   └── dto/             ← ResponseDTO + DTOs de entrada/salida
-│   ├── src/main/resources/
-│   │   ├── application.properties     ← Config (env vars)
-│   │   ├── db/migration/              ← Flyway V1–V131
-│   │   └── static/                    ← Frontend compilado (build output)
-│   ├── frontend/                      ← React SPA (Vite)
-│   │   ├── src/
-│   │   │   ├── pages/                 ← Páginas cliente + admin
-│   │   │   ├── components/            ← UI reutilizable
-│   │   │   ├── store/                 ← Zustand (auth, cart, wishlist, chat, ui)
-│   │   │   ├── services/              ← Axios services + api.js
-│   │   │   ├── layouts/               ← MainLayout, AdminLayout
-│   │   │   └── utils/                 ← format.js, analytics.js, ga4.js
-│   │   └── public/                    ← robots.txt, sitemap.xml, manifest
-│   ├── Actualizado.sql                ← Schema PostgreSQL completo
-│   └── Dockerfile
-├── docs/
-│   ├── legal/                         ← 8 documentos legales (.md)
-│   ├── security/                      ← 16 documentos de seguridad
-│   └── COMPLIANCE.md                  ← Informe de cumplimiento legal y SEO
-├── CLAUDE.md                          ← Guía para Claude Code
-└── README.md                          ← Este archivo
+│   ├── src/main/java/com/hotclick/   API, dominio, seguridad y jobs
+│   ├── src/main/resources/           configuración, Flyway y la interfaz compilada
+│   ├── frontend/                     React y TypeScript
+│   ├── Actualizado.sql               referencia del esquema
+│   └── docker-compose.*.yml
+├── docs/                             legal, seguridad y controles de ingeniería
+├── security-tools/                   revisión de prompts; no atiende el copiloto
+├── CLAUDE.md                         operación del repositorio
+└── README.md
 ```
 
+En el frontend, las páginas no llaman a la red por su cuenta. Esa responsabilidad está en `frontend/src/services/`. El estado de sesión, carrito y lista de deseos está en `frontend/src/store/`. Las rutas están en `frontend/src/app/AppRoutes.tsx`.
+
 ---
 
-## Módulos implementados
+## Reglas de cambio
 
-### Tienda pública (clientes)
+Estas reglas evitan fallos que el compilador no detecta.
 
-| Módulo | Ruta | Descripción |
-| --- | --- | --- |
-| Home | `/` | Hero, destacados, rotador, retorno |
-| Catálogo | `/productos` | Filtros por categoría, marca, precio, condición |
-| Detalle | `/productos/:id` | Galería, tallas, recomendaciones |
-| Carrito | `/carrito` | Persistido en localStorage |
-| Checkout | `/checkout` | Stripe · SINPE · WhatsApp |
-| Mis pedidos | `/mis-pedidos` | Historial del cliente |
-| Lista de deseos | `/wishlist` | Alertas de bajada de precio |
-| Blog | `/blog` | Publicaciones del marketplace |
-| Emprendimientos | `/emprendimientos` | Directorio de vendedores |
-| Self-checkout QR | `/checkout/qr/:token` | Pago sin registrarse vía QR |
+**Esquema.** Un cambio de entidad en `com.hotclick.model` lleva su migración `V{N}__descripcion.sql`, con un número mayor que 136, escrita para poder ejecutarse más de una vez, y el mismo SQL al final de `Hot_click_outlet/Actualizado.sql`. En local se verifica con el perfil `dev`. En producción el esquema no lo modifica el ORM.
 
-### Panel Admin (`/admin`)
+**Aislamiento y base de datos.** Cada recurso identificado por id comprueba que pertenece al negocio de la sesión. No se usan bloqueos de sesión de PostgreSQL, variables de sesión, `LISTEN`/`NOTIFY` ni sentencias preparadas que sobrevivan al request. Los jobs se coordinan con ShedLock. Los consecutivos, como los de Hacienda, se reservan con un `UPDATE … RETURNING` en una transacción corta, sin llamadas externas dentro de ella.
 
-| Módulo | Descripción |
+**Dinero.** Los montos son enteros en colones, sin decimales. En la interfaz se formatean con `Intl.NumberFormat('es-CR')`.
+
+**Interfaz.** TypeScript, sin `any`. La compilación con `pnpm build` forma parte del cambio, no de un paso posterior.
+
+**Credenciales.** No se escriben llaves en el código. El control de secretos y el análisis de dependencias forman parte de la integración continua. El detalle operativo queda fuera de este documento.
+
+**Retención.** La auditoría de administración se conserva 90 días. Los carritos abandonados ya vencidos, 30 días.
+
+En cada pull request, además de las pruebas de backend y de interfaz, se exige migración cuando cambia el esquema, aislamiento entre negocios, interfaz compilada al día, pruebas en pago, identidad, caja y billetera, y un respaldo diario que exista y no esté vacío. El catálogo de controles está en [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md).
+
+---
+
+## Documentación de apoyo
+
+| Documento | Para qué sirve |
 | --- | --- |
-| Dashboard | KPIs: ventas, pedidos, usuarios, tendencias |
-| Productos | CRUD con imágenes múltiples, tallas, bodegas, variantes |
-| Pedidos | Tracker de estados, email + WhatsApp al cliente, guía Correos CR |
-| POS | Sistema de punto de venta con turnos de caja y historial |
-| Inventario | Kardex, barcodes, conteo de stock |
-| Finanzas | Desglose de pedidos entregados: productos vs costos de envío |
-| CRM | Clientes, historial de pedidos por persona |
-| Marcas | CRUD con logo (Supabase Storage), soft delete |
-| Categorías | Árbol de categorías y subcategorías |
-| Blog | Publicaciones del marketplace |
-| Ofertas | Descuentos y cupones |
-| Garantías | Solicitudes de garantía por producto |
-| WhatsApp | Plantillas, logs de mensajes (WaMensajeLog) |
-| Mi Empresa | Perfil del negocio, branding white-label |
-| Observabilidad | Logs, métricas, alertas |
-| Security Center | Auditoría de accesos, alertas de seguridad (32 tipos de eventos) |
-| AI Copilot | Asistente de inventario y análisis |
-| Reportes | Gráficos de ventas, forecast |
-| Configuración | Ajustes globales, fiscal (Hacienda CR), API keys |
-
-### Páginas legales
-
-| Ruta | Descripción |
-| --- | --- |
-| `/privacidad` | Política de Privacidad — Ley N.° 8968, ARCO |
-| `/terminos` | Términos y Condiciones — Contrato de Adhesión (10 cláusulas) |
-| `/devoluciones` | Política de Devoluciones — Ley 7472 |
-| `/envios` | Política de Envíos — Correos CR, entrega directa |
-| `/cookies` | Política de Cookies — PRODHAB, tabla por categoría |
-| `/acuerdo-vendedores` | Acuerdo para Vendedores — Encargado de Tratamiento |
-
----
-
-## Variables de entorno
-
-```properties
-# Base de datos (Supabase)
-spring.datasource.url=jdbc:postgresql://...supabase.com:6543/postgres
-spring.datasource.username=postgres
-spring.datasource.password=...
-
-# JWT
-jwt.secret=...
-
-# SendGrid (email transaccional)
-resend.api-key=...
-
-# Supabase Storage (imágenes)
-supabase.url=https://...supabase.co
-supabase.key=...
-supabase.bucket=hotclick-images
-
-# Pagos
-stripe.secret-key=...
-stripe.webhook-secret=...
-payxpert.api-key=...
-
-# Clerk (OAuth social login)
-clerk.secret-key=...
-clerk.publishable-key=...   # → VITE_CLERK_PUBLISHABLE_KEY en frontend
-
-# WhatsApp (Meta Cloud API)
-whatsapp.token=...
-whatsapp.phone-number-id=...
-```
-
----
-
-## Reglas críticas de desarrollo
-
-### Cambios de esquema DB
-
-**Nunca cambiar una entidad JPA sin migración Flyway.** Ver `CLAUDE.md` sección "Regla obligatoria: cambios de esquema DB".
-
-Última migración: `V130__ticket_soporte_prioridad.sql` (canónico: [docs/GENERATED_STACK.md](docs/GENERATED_STACK.md)). V56 consentimiento Ley 8968 sigue existiendo.
-
-### PgBouncer transaction mode
-
-Supabase usa PgBouncer en transaction mode. **No usar:** `pg_advisory_lock`, `SET session variables`, `LISTEN/NOTIFY`, ni prepared statements persistentes. Ver `CLAUDE.md` sección "Constraints de infraestructura".
-
-### Build antes de commit
-
-```bash
-cd Hot_click_outlet/frontend && pnpm build
-```
-
-Los archivos compilados en `src/main/resources/static/` son los que se despliegan.
-
----
-
-## Cumplimiento legal (Ley N.° 8968 — Costa Rica)
-
-| Requisito | Estado |
-| --- | --- |
-| Política de Privacidad pública | ✅ `/privacidad` |
-| Términos y Condiciones públicos | ✅ `/terminos` |
-| Política de Cookies | ✅ `/cookies` |
-| Consentimiento en registro | ✅ Checkbox obligatorio en `RegisterPage` |
-| Consentimiento en checkout | ✅ Checkbox obligatorio en `CheckoutPage` |
-| Consentimiento en registro de vendedor | ✅ Checkbox en `RegistrarNegocioPage` |
-| Bitácora de consentimiento con IP | ✅ Tabla `hot_click_consentimiento_log_tb` (V56) |
-| Acuerdo de Vendedores | ✅ `/acuerdo-vendedores` |
-| Canal ARCO | ✅ <hotclick.cr@gmail.com> |
-
-Ver reporte completo en [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
-
----
-
-## PR gates (ola 1)
-
-Además de `ci.yml` (Maven + Vitest/Playwright) y `security.yml` (gitleaks), los PRs a `master` pueden disparar:
-
-- **E1 Flyway** — entidad JPA con cambio de esquema ⇒ debe haber `V*__.sql` (no se aplica SQL a prod).
-- **E2 Tenant** — diff de controllers/services/repos: IDOR `findById`, `@Async` sin `TenantContext`, PgBouncer (`SET`/`LISTEN`/`pg_advisory`).
-- **E3 SPA** — cambios en `frontend/src` ⇒ `static/` actualizado o `pnpm build` en CI (Docker no buildea React).
-- **E6 Dependabot** — labels; majors de Spring Boot / jjwt / stripe-java y Spring Boot 4.x ⇒ `needs-human`, sin auto-merge.
-- **E11 Sensibles** — `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` ⇒ debe existir un `*Test*` nominal.
-- **DOC1** — semanal: `docs/GENERATED_STACK.md` (Java 21 / Flyway real). Local: `scripts/generate-stack-docs.sh`.
-- **SCALE1** — PRs Java/TS: listas sin página, N+1, I/O bloqueante (FAIL P1); issue semanal de hotspots.
-- **D5** — el backup diario falla el job (e issue) si el dump no existe o está vacío.
-
-Skip **solo** con labels explícitos (`skip-flyway-gate`, `skip-tenant-gate`, `skip-spa-gate`, `skip-sensitive-gate`, `skip-dependabot-gate`, `skip-scale-gate`). Detalle: [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md).
-
-Ola 2 (D2 IDOR diario, S1 Sonar, S3 E2E gaps, E10 authz, S8 restore drill): [docs/AGENTES_OLA2.md](docs/AGENTES_OLA2.md).
-
-Ola 3 (D1 Flyway↔JPA diario, D3 SPA stale, D4/E8 Sentry digest, S2 Dependabot weekly, E4 commit-gate, E7 CI red, E9 health pager): [docs/AGENTES_OLA3.md](docs/AGENTES_OLA3.md).
-
-Ola 4–5 (D6–D11, S4/S5/S7, E5/E12/E14/E18): [docs/AGENTES_OLA4.md](docs/AGENTES_OLA4.md), [docs/AGENTES_OLA5.md](docs/AGENTES_OLA5.md).
-
-Ola 6 (S6 k6/Hikari, S9 lint:ci, S10–S12, E13/E15/E17): [docs/AGENTES_OLA6.md](docs/AGENTES_OLA6.md).
-
-Ola 7 (D12 health real, S14 a11y+POS, E16 runtime endpoints): [docs/AGENTES_OLA7.md](docs/AGENTES_OLA7.md). Checklist olas 1–6 en master vs ola 7: sección *Cobertura del catálogo* en [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md).
-
-## Documentación
-
-| Carpeta / Archivo | Contenido |
-| --- | --- |
-| [CLAUDE.md](CLAUDE.md) | Guía de desarrollo para Claude Code |
-| [docs/GENERATED_STACK.md](docs/GENERATED_STACK.md) | Versiones reales (Java/Flyway/React) — DOC1 |
-| [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md) | PR gates E1/E2/E3/E6/E11 + DOC1/SCALE1 + D5 |
-| [docs/AGENTES_OLA2.md](docs/AGENTES_OLA2.md) | Agentes ola 2 (D2/S1/S3/E10/S8) |
-| [docs/AGENTES_OLA3.md](docs/AGENTES_OLA3.md) | Agentes ola 3 (D1/D3/D4+E8/S2/E4/E7/E9) |
-| [docs/AGENTES_OLA4.md](docs/AGENTES_OLA4.md) | Agentes ola 4 (D6/D7/D8/D11/S4/E5) |
-| [docs/AGENTES_OLA5.md](docs/AGENTES_OLA5.md) | Agentes ola 5 (D9/D10/S5/S7/E12/E14/E18) |
-| [docs/AGENTES_OLA6.md](docs/AGENTES_OLA6.md) | Agentes ola 6 (S6/S9–S12/E13/E15/E17) |
-| [docs/AGENTES_OLA7.md](docs/AGENTES_OLA7.md) | Agentes ola 7 (D12/S14/E16) — cierre catálogo eng-gates |
-| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Cumplimiento legal, SEO, plataformas externas |
-| [docs/legal/](docs/legal/) | 8 documentos legales en formato `.md` |
-| [docs/security/](docs/security/) | 16 documentos de arquitectura de seguridad |
-| [DOCUMENTACION.md](DOCUMENTACION.md) | Documentación técnica detallada |
+| [CLAUDE.md](CLAUDE.md) | Comandos, despliegue y restricciones de infraestructura |
+| [Hot_click_outlet/frontend/README.md](Hot_click_outlet/frontend/README.md) | Scripts y build de la interfaz |
+| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Cumplimiento, SEO y plataformas externas |
+| [docs/security/](docs/security/) | Identidad, permisos, segundo factor y respuesta a incidentes |
+| [docs/GENERATED_STACK.md](docs/GENERATED_STACK.md) | Versiones leídas del repositorio |
+| [docs/AGENTES_ENG_GATES.md](docs/AGENTES_ENG_GATES.md) | Controles de cada pull request |
+| [DOCUMENTACION.md](DOCUMENTACION.md) | Documento técnico extenso. Si contradice este README o `CLAUDE.md`, prevalecen estos dos |
 
 ---
 
 ## Contacto
 
-HOTCLICK · Costa Rica · <hotclick.cr@gmail.com> · WhatsApp: +506 8974-5370 (Andrés Zúñiga)
+HOTCLICK · Costa Rica  
+<hotclick.cr@gmail.com> · WhatsApp +506 8666-7888

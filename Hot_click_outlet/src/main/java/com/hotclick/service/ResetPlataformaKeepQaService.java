@@ -44,6 +44,9 @@ public class ResetPlataformaKeepQaService {
             Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(),
             Constants.CORREO_QA_PYME.toLowerCase(),
             Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(),
+            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(),
+            Constants.CORREO_PRUEBA_PYME.toLowerCase(),
+            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase(),
             CORREO_MOSTRADOR.toLowerCase()
         );
     }
@@ -53,7 +56,10 @@ public class ResetPlataformaKeepQaService {
             Constants.CORREO_ADMIN.toLowerCase(),
             Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(),
             Constants.CORREO_QA_PYME.toLowerCase(),
-            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase()
+            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(),
+            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(),
+            Constants.CORREO_PRUEBA_PYME.toLowerCase(),
+            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase()
         );
     }
 

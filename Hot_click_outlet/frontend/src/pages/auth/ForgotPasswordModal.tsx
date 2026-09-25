@@ -39,7 +39,7 @@ export default function ForgotPasswordModal({ open, onClose }: { open: boolean; 
 
   const handlePassword = async (e: FormEvent) => {
     e.preventDefault()
-    if (nueva.length < 6) { setError(t('forgot.minChars')); return }
+    if (nueva.length < 8) { setError(t('forgot.minChars')); return }
     setError(''); setLoading(true)
     try {
       await authService.resetPassword(correo, nueva)
@@ -74,7 +74,7 @@ export default function ForgotPasswordModal({ open, onClose }: { open: boolean; 
       {step === 'password' && (
         <form onSubmit={handlePassword} className="space-y-4">
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('forgot.passwordStep')}</p>
-          <Input label={t('forgot.newPassword')} type="password" value={nueva} onChange={e => setNueva(e.target.value)} required minLength={6} />
+          <Input label={t('forgot.newPassword')} type="password" value={nueva} onChange={e => setNueva(e.target.value)} required minLength={8} />
           {error && <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p>}
           <button type="submit" disabled={loading} className="hc-btn hc-btn-primary hc-btn-lg w-full disabled:opacity-60">
             {loading ? 'Guardando…' : t('forgot.changePassword')}

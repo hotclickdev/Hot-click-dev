@@ -49,6 +49,7 @@ public class TelegramVinculacionService {
 
         TelegramVinculacion v = opt.get();
 
+        avisarChatReemplazado(v.getChatId(), chatId);
         postLink.revocarVinculacionesPrevias(chatId, v.getUsuario().getId());
 
         v.setChatId(chatId);
@@ -64,6 +65,12 @@ public class TelegramVinculacionService {
 
         List<MiembroEmpresa> membresias = postLink.membresiasActivas(v);
         postLink.enviarBienvenidaYMenu(chatId, v, membresias);
+    }
+
+    private void avisarChatReemplazado(Long chatAnterior, long chatNuevo) {
+        if (chatAnterior == null || chatAnterior == chatNuevo) return;
+        bot.enviarMensaje(chatAnterior,
+            "Esta cuenta de HotClick se vinculó a otro Telegram. Este chat ya no tiene acceso.");
     }
 
     public void desvincular(TelegramVinculacion v) {

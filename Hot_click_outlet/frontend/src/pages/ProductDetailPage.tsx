@@ -28,6 +28,7 @@ export default function ProductDetailPage() {
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
     handleComprarAhora,
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
+    turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   } = useProductDetail(id, t)
 
   if (loading) {
@@ -100,6 +101,10 @@ export default function ProductDetailPage() {
             contactoEncargo={contactoEncargo}
             onContactoEncargoChange={setContactoEncargo}
             enviandoEncargo={enviandoEncargo}
+            turnstileSiteKey={turnstileSiteKey}
+            turnstileRef={turnstileRef}
+            setTurnstileToken={setTurnstileToken}
+            turnstileBloqueaSubmit={turnstileBloqueaSubmit}
           />
         </div>
 

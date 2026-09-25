@@ -52,6 +52,10 @@
   --hc-bg:            var(--hc-n-50);
   --hc-surface:       var(--hc-n-0);
   --hc-surface-raised:var(--hc-n-0);
+  /* Fondo de tarjeta/panel; alias de --hc-surface-raised para que se
+     resuelva por rol dentro de .hc-superadmin-theme / .hc-sistema-theme /
+     html.dark sin duplicar el valor en cada bloque de tema (P0-01). */
+  --hc-card:          var(--hc-surface-raised);
   --hc-text:          var(--hc-n-900);
   --hc-text-secondary:var(--hc-n-600);
   --hc-text-disabled: var(--hc-n-400);

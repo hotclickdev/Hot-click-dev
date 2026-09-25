@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.model.SecurityAuditLog;
 import com.hotclick.repository.SecurityAuditLogRepository;
+import com.hotclick.security.ClientIpResolver;
 import com.hotclick.security.SecurityEventSeverity;
 import com.hotclick.security.SecurityEventType;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +40,7 @@ public class SecurityAuditService {
     private final SecurityAuditLogRepository auditRepo;
     private final ObjectMapper               objectMapper;
     @Lazy @Autowired private GeoIpService    geoIpService;
+    @Autowired private ClientIpResolver      clientIpResolver;
 
     public SecurityAuditService(SecurityAuditLogRepository auditRepo,
                                 ObjectMapper objectMapper) {
@@ -190,9 +192,10 @@ public class SecurityAuditService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /** Misma resolución que usan RateLimitingFilter y BlockedIpFilter — ver ClientIpResolver. */
     public String getIp(HttpServletRequest request) {
         if (request == null) return null;
-        return request.getRemoteAddr();
+        return clientIpResolver.resolve(request);
     }
 
     public String getUa(HttpServletRequest request) {

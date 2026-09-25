@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.4</version>
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
 
@@ -21,17 +21,31 @@
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+
+        <!-- Overrides sobre lo gestionado por spring-boot-starter-parent:3.5.16
+             (osv-scanner HIGH/CRITICAL, ver docs/security/dependency-scanning.md). -->
+        <netty.version>4.1.137.Final</netty.version>
+        <!-- 10.1.58 no se publicó (changelog: not released). El arreglo sale en 10.1.59+. -->
+        <tomcat.version>10.1.60</tomcat.version>
+        <httpcore5.version>5.4.3</httpcore5.version>
+        <postgresql.version>42.7.12</postgresql.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- sendgrid-java:4.10.2 trae bcprov-jdk18on:1.76 (3 CVEs, ver osv-scanner). -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.85</version>
+            </dependency>
             <!-- webauthn-server-core:2.5.4 pulls jackson-dataformat-cbor:2.18.5
                  which has a broken SNAPSHOT dep on jackson-databind:2.19.5-SNAPSHOT.
-                 Pin to Spring Boot's managed version (2.18.3) to fix Docker build. -->
+                 Pin to Spring Boot 3.5.16 managed Jackson (2.21.4) to fix Docker build. -->
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-cbor</artifactId>
-                <version>2.18.3</version>
+                <version>2.21.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -95,7 +109,9 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.6.0</version>
+            <!-- 2.6.0 rompe al arrancar con Boot 3.5 (HateoasProperties getter rename).
+                 2.8.9+ arregla con reflection; 2.8.17 alineado a Boot 3.5.13. -->
+            <version>2.8.17</version>
         </dependency>
 
 
@@ -117,7 +133,9 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
+            <!-- CVE-2026-71497 (XSS con Safelist custom + tag malformado); fix ≥1.23.1.
+                 Built-in Safelists (none/basic) no son explotables; bump por scanner + defensa. -->
+            <version>1.23.2</version>
         </dependency>
 
         <!-- PDFBox — extracción de texto de catálogos PDF (import IA) -->
@@ -244,7 +262,7 @@
             <exclusions>
                 <!-- yubico-util:2.5.4 tira jackson-dataformat-cbor:2.18.5 cuyo POM
                      tiene una dep SNAPSHOT rota (jackson-databind:2.19.5-SNAPSHOT).
-                     Se excluye y se agrega abajo a 2.18.3 (versión de Spring Boot). -->
+                     Se excluye y se agrega abajo a 2.21.4 (BOM Spring Boot 3.5.16). -->
                 <exclusion>
                     <groupId>com.fasterxml.jackson.dataformat</groupId>
                     <artifactId>jackson-dataformat-cbor</artifactId>
@@ -254,7 +272,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>
-            <version>2.18.3</version>
+            <version>2.21.4</version>
         </dependency>
 
         <!-- H2 para pruebas -->

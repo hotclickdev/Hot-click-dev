@@ -33,6 +33,11 @@ public class RegistroEmpresaDTO {
     @Size(max = 150, message = "El correo del administrador no puede superar 150 caracteres")
     private String correoAdmin;
 
+    // Mismo criterio que RegisterRequest.contrasena: bcrypt solo usa los primeros
+    // 72 bytes, el 128 es tope de request (docs/plan-argon2id-hashing-contrasenas.md).
+    // OJO: /auth/registro-empresa y /auth/nuevo-negocio reciben este DTO sin @Valid,
+    // así que hoy estas restricciones no se aplican; el único chequeo real es el
+    // "length() < 8" de EmprendedorRegistroService.registrar().
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 8, max = 128, message = "La contraseña debe tener entre 8 y 128 caracteres")
     private String passwordAdmin;

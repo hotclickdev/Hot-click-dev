@@ -12,6 +12,8 @@ import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 import static com.hotclick.dto.TelegramFlujoEstado.*;
 import static com.hotclick.service.telegram.TelegramFlujoSupport.*;
 
@@ -32,20 +34,73 @@ class TelegramFlujoProductoCallbackHelper {
 
     /** @return true si el callback fue consumido. */
     boolean manejarNuevo(TelegramVinculacion v, Long empresaId) {
+        return iniciarAlta(v, empresaId, false);
+    }
+
+    boolean manejarPersonalizado(TelegramVinculacion v, Long empresaId) {
+        return iniciarAlta(v, empresaId, true);
+    }
+
+    private boolean iniciarAlta(TelegramVinculacion v, Long empresaId, boolean personalizado) {
         if (support.denegarSiNoGestiona(v, empresaId)) return true;
         if (bodegaRepository.findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresaId, Constants.ESTADO_ACTIVO).isEmpty()) {
-            bot.enviarMensaje(v.getChatId(), "Tu negocio no tiene bodegas activas. Creá una desde el panel antes de publicar productos.");
+            bot.enviarMensaje(v.getChatId(),
+                "Tu negocio no tiene bodegas activas. Creá una desde el panel antes de publicar productos.",
+                TelegramTeclado.soloMenu());
             return true;
         }
         try {
             tenantService.verificarLimiteProductos(empresaId);
         } catch (RuntimeException ex) {
-            bot.enviarMensaje(v.getChatId(), esc(ex.getMessage()));
+            bot.enviarMensaje(v.getChatId(), esc(ex.getMessage()), TelegramTeclado.soloMenu());
             return true;
         }
-        support.guardar(v, TelegramFlujoEstado.nuevoProducto(support.ahora()));
-        bot.enviarMensaje(v.getChatId(), "➕ *Nuevo producto*\n\n¿Cómo se llama? (3 a 200 caracteres)\n\nEscribí /cancelar en cualquier momento para salir.");
+        support.guardar(v, TelegramFlujoEstado.nuevoProducto(support.ahora(), personalizado));
+        String titulo = personalizado ? "🎨 *Producto personalizado*" : "➕ *Nuevo producto*";
+        bot.enviarMensaje(v.getChatId(),
+            titulo + "\n\n¿Cómo se llama? (3 a 200 caracteres)\n\nEscribí /cancelar en cualquier momento para salir.",
+            TelegramTeclado.cancelarYMenu(BTN_CANCELAR));
         return true;
+    }
+
+    void manejarModo(TelegramVinculacion v, TelegramFlujoEstado e, String sub) {
+        TelegramFlujoEstado.ProductoBorrador d = e.getDraftSeguro();
+        String modo = switch (sub) {
+            case "modofijo" -> "FIJO";
+            case "modorango" -> "RANGO";
+            case "modocot" -> "COTIZACION";
+            default -> null;
+        };
+        if (modo == null) {
+            ui.mostrarModosPrecio(v);
+            return;
+        }
+        d.setModo(modo);
+        if ("COTIZACION".equals(modo)) {
+            d.setPv(1);
+            d.setPc(0);
+            e.setP(P_PRD_INSTR);
+            support.guardar(v, e);
+            bot.enviarMensaje(v.getChatId(),
+                "Instrucciones para el cliente (cómo personalizar). Máx 3000 caracteres, o tocá *Omitir*.",
+                List.of(
+                    List.of(TelegramClienteBotService.boton("⏭ Omitir", "prd:skipinstr")),
+                    List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR), TelegramTeclado.botonMenu())));
+            return;
+        }
+        if ("RANGO".equals(modo)) {
+            e.setP(P_PRD_PRECIO_MIN);
+            support.guardar(v, e);
+            bot.enviarMensaje(v.getChatId(),
+                "¿Precio mínimo del rango? (colones, solo el número)",
+                TelegramTeclado.cancelarYMenu(BTN_CANCELAR));
+            return;
+        }
+        e.setP(P_PRD_PRECIO_VENTA);
+        support.guardar(v, e);
+        bot.enviarMensaje(v.getChatId(),
+            "¿Precio de venta al cliente? (en colones, solo el número — ej: 8500)",
+            TelegramTeclado.cancelarYMenu(BTN_CANCELAR));
     }
 
     void manejarCategoria(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e, String sub) {
@@ -86,7 +141,8 @@ class TelegramFlujoProductoCallbackHelper {
         } else if ("martxt".equals(sub)) {
             e.setP(P_PRD_MARCA_TEXTO);
             support.guardar(v, e);
-            bot.enviarMensaje(v.getChatId(), "Escribí el nombre de la marca:");
+            bot.enviarMensaje(v.getChatId(), "Escribí el nombre de la marca:",
+                TelegramTeclado.cancelarYMenu(BTN_CANCELAR));
         } else if ("marno".equals(sub)) {
             d.setMarca(null);
             d.setMarcaTxt(null);
@@ -98,12 +154,19 @@ class TelegramFlujoProductoCallbackHelper {
         TelegramFlujoEstado.ProductoBorrador d = e.getDraftSeguro();
         if ("fok".equals(sub)) {
             if (d.getFotos().isEmpty()) {
-                bot.enviarMensaje(v.getChatId(), "Mandá al menos una foto del producto para continuar.");
+                bot.enviarMensaje(v.getChatId(), "Mandá al menos una foto del producto para continuar.",
+                    TelegramTeclado.conMenu(ui.tecladoFotos(0)));
                 return;
             }
             confirm.mostrarResumenProducto(v, empresaId, e);
         } else if ("ok".equals(sub)) {
             confirm.confirmarProducto(v, empresaId, e);
+        } else if ("skipinstr".equals(sub)) {
+            d.setInstr(null);
+            e.setP(P_PRD_STOCK);
+            support.guardar(v, e);
+            bot.enviarMensaje(v.getChatId(), "¿Cuántas unidades tenés en stock? (para personalizado puede ser 0)",
+                TelegramTeclado.cancelarYMenu(BTN_CANCELAR));
         }
     }
 }

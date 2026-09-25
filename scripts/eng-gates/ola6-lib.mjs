@@ -652,6 +652,17 @@ export function keysAddedInLocales(before = {}, after = {}) {
   return [...added].sort();
 }
 
+/** Leaf keys from JSON diffs (e.g. `navComision`) match nested paths (`adminConfig.navComision`). */
+export function localeHasI18nKey(set, key) {
+  if (set.has(key)) return true;
+  if (!key || String(key).includes('.')) return false;
+  const suffix = `.${key}`;
+  for (const full of set) {
+    if (full.endsWith(suffix)) return true;
+  }
+  return false;
+}
+
 export function evaluateI18nPr({ locales = { es: {}, en: {}, pt: {} }, addedKeys = [], hardcoded = [] }) {
   const sets = {
     es: new Set(flattenJsonKeys(locales.es || {})),
@@ -660,7 +671,7 @@ export function evaluateI18nPr({ locales = { es: {}, en: {}, pt: {} }, addedKeys
   };
   const missing = [];
   for (const key of [...new Set(addedKeys)].sort()) {
-    const absent = ['es', 'en', 'pt'].filter((code) => !sets[code].has(key));
+    const absent = ['es', 'en', 'pt'].filter((code) => !localeHasI18nKey(sets[code], key));
     if (absent.length) missing.push({ key, absent });
   }
   return {

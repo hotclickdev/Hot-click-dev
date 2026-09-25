@@ -171,22 +171,22 @@ public class JwtUtil {
     private static final long IMPERSONATION_EXPIRATION = 1_800_000L; // 30 minutos
 
     /**
-     * Token de impersonación: autentica como el usuario objetivo (dueño de la
-     * empresa) para que el tenant scoping funcione igual que un login real,
-     * pero marcado con claims extra para el banner y la auditoría de soporte.
+     * Token de soporte: identidad = el ADMIN (subject/userId), tenant = la
+     * empresa vista. El claim {@code rol} es EMPRENDEDOR para el SPA y
+     * {@code hasRole}; {@code impersonando} + adminOriginal* para banner y auditoría.
      */
-    public String generateImpersonationToken(String correoObjetivo, Long userIdObjetivo, String rol,
+    public String generateImpersonationToken(String correoAdmin, Long userIdAdmin, String rol,
                                               Long empresaId, String empresaSlug,
                                               Long adminOriginalId, String adminOriginalCorreo) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userIdObjetivo);
+        claims.put("userId", userIdAdmin);
         claims.put("rol", rol);
         if (empresaId != null)   claims.put("empresaId", empresaId);
         if (empresaSlug != null) claims.put("empresaSlug", empresaSlug);
         claims.put("impersonando", true);
         claims.put("adminOriginalId", adminOriginalId);
         claims.put("adminOriginalCorreo", adminOriginalCorreo);
-        return createToken(claims, correoObjetivo, IMPERSONATION_EXPIRATION);
+        return createToken(claims, correoAdmin, IMPERSONATION_EXPIRATION);
     }
 
     public boolean isImpersonationToken(String token) {

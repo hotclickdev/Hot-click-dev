@@ -130,7 +130,8 @@ public class PublicChatProductSearch {
         if (!filtrados.isEmpty()) return filtrados;
 
         List<Map<String, Object>> porLike = buscarPorIlike(
-            empresaId, marketplace, userTerms, synonymBoost, offset, maxBudget, preferirPersonalizado);
+            empresaId, marketplace, ChatSearchTerms.unionIlike(userTerms, synonymBoost), synonymBoost,
+            offset, maxBudget, preferirPersonalizado);
         return applyNegationFilter(porLike, negations);
     }
 

@@ -30,6 +30,7 @@ class TelegramMessageRoutingHelper {
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TelegramFlujoService          telegramFlujoService;
     @Autowired @Lazy private TelegramBotUpdateService self;
+    @Autowired private TelegramPlanConsulta planConsulta;
 
     boolean rechazarMediaNoTexto(long chatId, JsonNode msg) {
         for (String campo : CAMPOS_NO_TEXTO) {
@@ -63,7 +64,8 @@ class TelegramMessageRoutingHelper {
             case "/cancelar"                -> {
                 v.setContexto(null);
                 vinculacionRepository.save(v);
-                bot.enviarMensaje(chatId, "Listo, cancelado. Escribí /menu cuando me necesités.");
+                bot.enviarMensaje(chatId, "Listo, cancelado. Escribí /menu cuando me necesités.",
+                    TelegramTeclado.soloMenu());
                 return true;
             }
             case "/desvincular"             -> { vinculacion.desvincular(v); return true; }
@@ -88,6 +90,11 @@ class TelegramMessageRoutingHelper {
     void despacharIa(TelegramVinculacion v, long chatId, String texto) {
         Long empresaId = empresaContext.empresaValidada(v);
         if (empresaId == null) return;
+        if (!planConsulta.tieneIa(empresaId)) {
+            bot.enviarMensaje(chatId, "Tu plan no incluye preguntas libres. Usá los botones del menú.");
+            menuBuilder.mostrarMenu(v);
+            return;
+        }
         bot.enviarAccionEscribiendo(chatId);
         String nombreUsuario = v.getUsuario() != null ? v.getUsuario().getNombre() : null;
         boolean puedeGestionar = telegramFlujoService.esPropietarioOAdmin(v.getUsuario(), empresaId);

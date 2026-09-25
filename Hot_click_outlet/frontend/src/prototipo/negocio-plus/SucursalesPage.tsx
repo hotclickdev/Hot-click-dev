@@ -560,6 +560,11 @@ function ModalSucursal({
   onCerrarRef.current = onCerrar
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  useEffect(() => {
     const panel = panelRef.current
     if (!panel) return
     const previo = document.activeElement instanceof HTMLElement ? document.activeElement : null

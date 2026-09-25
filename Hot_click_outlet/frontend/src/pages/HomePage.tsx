@@ -94,20 +94,21 @@ export default function HomePage() {
   return (
     <MainLayout>
       <HomeSeo destacados={destacados} />
+      {/* Above-the-fold: 1 hero + destacados + CTA catálogo (P2-01, anexo-2 §3). Resto de bloques más abajo. */}
       <HomeJobsHero />
-      <HeroRotator
-        destacados={destacados.slice(0, 3)}
-        heroSections={homepageConfig ? csvALista(homepageConfig.heroSections) : undefined}
-      />
       <TrustStrip />
       <DestacadosSection destacados={destacados} />
-      <DescubriBanner />
       <CategoryBrowse
         products={productsMuestra}
         categories={categorias}
         visibleCategoryIds={homepageConfig ? csvALista(homepageConfig.visibleCategoriaIds) : undefined}
         maxCategories={homepageConfig?.maxCategorias}
       />
+      <HeroRotator
+        destacados={destacados.slice(0, 3)}
+        heroSections={homepageConfig ? csvALista(homepageConfig.heroSections) : undefined}
+      />
+      <DescubriBanner />
       <RecentlyViewedSection />
       <ConveniosMarquee />
       <HomeMarcas marcas={marcas} />

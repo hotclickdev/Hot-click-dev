@@ -10,6 +10,7 @@ import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -21,6 +22,9 @@ public class CheckoutValidator {
 
     @Autowired private BodegaRepository bodegaRepository;
 
+    @Value("${payments.onvo.enabled:false}")
+    private boolean onvoEnabled;
+
     public void validateCartNotEmpty(PaymentCheckoutRequest req) {
         if (req.getItems() == null || req.getItems().isEmpty()) {
             throw new IllegalArgumentException("El carrito no tiene productos");
@@ -29,6 +33,10 @@ public class CheckoutValidator {
 
     public String resolveProvider(PaymentCheckoutRequest req, PaymentProviderFactory providerFactory) {
         String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "STRIPE";
+        if (Constants.PROVEEDOR_ONVO.equals(provider) && !onvoEnabled) {
+            throw new IllegalArgumentException(
+                "ONVO no está habilitado. Usá TILOPAY para pagos con tarjeta.");
+        }
         if (!providerFactory.soporta(provider)) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);
         }

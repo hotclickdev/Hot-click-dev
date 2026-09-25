@@ -14,16 +14,6 @@ export default function BloqueInventario({ form, setForm }: BloqueFormProps) {
           <option value="USADO">Usado</option>
         </select>
       </div>
-      <div className="col-span-2">
-        <Input
-          label="Código de barras"
-          value={form.barcode ?? ''}
-          onChange={setCampo(setForm, 'barcode')}
-          placeholder="Ej: 7501234567890"
-          maxLength={50}
-          hint="Opcional. Si no lo tenés ahora, lo podés agregar después."
-        />
-      </div>
     </div>
   )
 }

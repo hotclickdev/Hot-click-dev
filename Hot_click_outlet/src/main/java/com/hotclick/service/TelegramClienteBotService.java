@@ -10,6 +10,11 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.service.telegram.TelegramPublicacion;
+import com.hotclick.service.telegram.TelegramTurno;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +52,7 @@ public class TelegramClienteBotService {
     private static final Duration TIMEOUT_CONEXION = Duration.ofSeconds(5);
     private static final Duration TIMEOUT_LECTURA = Duration.ofSeconds(10);
     private static final Duration TIMEOUT_DESCARGA = Duration.ofSeconds(20);
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final RestTemplate restTemplate;
     private final RestTemplate descargaTemplate;
@@ -94,16 +100,77 @@ public class TelegramClienteBotService {
     public void enviarMensaje(Long chatId, String texto, List<List<Map<String, Object>>> inlineKeyboard, boolean markdown) {
         if (!isConfigured() || chatId == null) return;
         try {
-            Map<String, Object> body = new HashMap<>();
-            body.put("chat_id", chatId);
-            body.put("text", texto);
-            if (markdown) body.put("parse_mode", "Markdown");
-            if (inlineKeyboard != null && !inlineKeyboard.isEmpty()) {
-                body.put("reply_markup", Map.of("inline_keyboard", inlineKeyboard));
-            }
-            post("sendMessage", body);
+            if (editarPanelSiCorresponde(chatId, texto, inlineKeyboard, markdown)) return;
+            Long nuevo = publicarNuevo(chatId, texto, inlineKeyboard, markdown);
+            recordarPanel(chatId, nuevo);
+            borrarEntradaDelTurno(chatId);
         } catch (Exception e) {
             log.error("[telegram-cliente] error enviando a chat {} — {}", chatId, e.getMessage());
+        }
+    }
+
+    private boolean editarPanelSiCorresponde(Long chatId, String texto,
+            List<List<Map<String, Object>>> teclado, boolean markdown) {
+        TelegramTurno turno = TelegramTurno.actual();
+        if (turno == null || !chatId.equals(turno.chatId())) return false;
+        boolean edito = TelegramPublicacion.editar(turno.panelId(), editar(chatId, turno.panelId(), texto, teclado, markdown));
+        if (!edito) return false;
+        borrarEntradaDelTurno(chatId);
+        return true;
+    }
+
+    private Long publicarNuevo(Long chatId, String texto, List<List<Map<String, Object>>> teclado, boolean markdown) {
+        return idDeRespuesta(post("sendMessage", cuerpo(chatId, texto, teclado, markdown)));
+    }
+
+    private boolean editar(Long chatId, Long messageId, String texto,
+            List<List<Map<String, Object>>> teclado, boolean markdown) {
+        if (messageId == null) return false;
+        Map<String, Object> body = cuerpo(chatId, texto, teclado, markdown);
+        body.put("message_id", messageId);
+        String respuesta = post("editMessageText", body);
+        return respuesta != null && respuesta.contains("\"ok\":true");
+    }
+
+    private void recordarPanel(Long chatId, Long nuevo) {
+        TelegramTurno turno = TelegramTurno.actual();
+        if (turno == null || nuevo == null || !chatId.equals(turno.chatId())) return;
+        turno.reemplazarPanel(nuevo);
+    }
+
+    private void borrarEntradaDelTurno(Long chatId) {
+        TelegramTurno turno = TelegramTurno.actual();
+        if (turno == null || !chatId.equals(turno.chatId())) return;
+        Long borrar = turno.tomarBorrar();
+        if (borrar == null) return;
+        try {
+            post("deleteMessage", Map.of("chat_id", chatId, "message_id", borrar));
+        } catch (Exception e) {
+            log.debug("[telegram-cliente] no se pudo borrar el mensaje {} — {}", borrar, e.getMessage());
+        }
+    }
+
+    private Map<String, Object> cuerpo(Long chatId, String texto,
+            List<List<Map<String, Object>>> teclado, boolean markdown) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("chat_id", chatId);
+        body.put("text", texto);
+        if (markdown) body.put("parse_mode", "Markdown");
+        if (teclado != null && !teclado.isEmpty()) {
+            body.put("reply_markup", Map.of("inline_keyboard", teclado));
+        }
+        return body;
+    }
+
+    private Long idDeRespuesta(String json) {
+        if (json == null) return null;
+        try {
+            JsonNode nodo = JSON.readTree(json);
+            if (!nodo.path("ok").asBoolean(false)) return null;
+            long id = nodo.path("result").path("message_id").asLong(0);
+            return id > 0 ? id : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 

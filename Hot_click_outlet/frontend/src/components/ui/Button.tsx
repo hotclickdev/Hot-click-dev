@@ -1,6 +1,14 @@
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import { forwardRef, type ReactNode } from 'react'
 
+/**
+ * Botón canónico de HotClick (Brand Book v1.1 / audit visual-ux P1-01).
+ * Toda superficie nueva debería usar este componente o las clases CSS
+ * `.hc-btn-*` que consume, en vez de crear otro sistema de botón
+ * (`Boton` del prototipo seller, `cfg-btn-*` de config, `AdminPrimaryButton`…
+ * ver anexo-1-sistema-visual.md §3 para el inventario y el plan de migración).
+ */
+
 const variantClass = {
   primary: 'hc-btn-primary',
   secondary: 'hc-btn-outline',

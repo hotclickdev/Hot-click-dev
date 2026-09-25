@@ -1,0 +1,99 @@
+name: E1b — Gate Flyway fresh (Postgres)
+
+# Complemento de gate-flyway.yml: aquel verifica que exista la migración;
+# este arranca el perfil `dev` contra Postgres vacío (baseline en la última V
+# del classpath + Hibernate ddl-auto=update). V1..VN no son reproducibles en
+# cadena (V1 era baseline legacy en prod); baselinar en 136 dejaba V137+
+# ejecutándose antes de que existieran las tablas.
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'Hot_click_outlet/src/main/resources/db/migration/**'
+      - 'Hot_click_outlet/src/main/resources/db/dev-bootstrap/**'
+      - 'Hot_click_outlet/src/main/resources/application-dev.properties'
+      - 'Hot_click_outlet/src/main/java/com/hotclick/config/FlywayRepairConfig.java'
+      - 'Hot_click_outlet/docker-compose.dev.yml'
+      - '.github/workflows/gate-flyway-fresh.yml'
+  push:
+    branches: [ master ]
+    paths:
+      - 'Hot_click_outlet/src/main/resources/db/migration/**'
+      - 'Hot_click_outlet/src/main/resources/db/dev-bootstrap/**'
+      - '.github/workflows/gate-flyway-fresh.yml'
+
+concurrency:
+  group: gate-flyway-fresh-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  flyway-fresh:
+    name: E1b Boot perfil dev (Postgres 18 vacío)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: hotclick_dev
+          POSTGRES_USER: hotclick_dev
+          POSTGRES_PASSWORD: hotclick_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hotclick_dev -d hotclick_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Maven
+        run: sudo apt-get install -y maven --quiet
+
+      # Arranca con perfil dev: guardrail local, baseline V136, Hibernate update,
+      # seeders. Matamos el proceso al ver "Started".
+      - name: Boot perfil dev (Postgres vacío)
+        # SPRING_DATASOURCE_URL / DB_URL: no se fijan acá — application-dev.properties
+        # ya trae la URL literal para el Postgres del job (jdbc:postgresql://localhost:5432/hotclick_dev).
+        # Una var de entorno vacía tiene MÁS precedencia que el properties file en Spring
+        # y pisaría ese valor con "" (síntoma: "url attribute is not specified").
+        env:
+          SENTRY_DSN: ""
+        run: |
+          set -euo pipefail
+          mvn -f Hot_click_outlet/pom.xml spring-boot:run \
+            -Dspring-boot.run.profiles=dev \
+            --no-transfer-progress \
+            > /tmp/boot-dev.log 2>&1 &
+          echo $! > /tmp/boot-dev.pid
+          for i in $(seq 1 120); do
+            if grep -q "Started HotclickApplication" /tmp/boot-dev.log; then
+              echo "OK — arranque con perfil dev (baseline + Hibernate)"
+              grep -E "Guardrail dev OK|Baseline dev|Successfully applied" /tmp/boot-dev.log || true
+              kill "$(cat /tmp/boot-dev.pid)" 2>/dev/null || true
+              wait "$(cat /tmp/boot-dev.pid)" 2>/dev/null || true
+              exit 0
+            fi
+            if ! kill -0 "$(cat /tmp/boot-dev.pid)" 2>/dev/null; then
+              echo "FAIL — el proceso murió antes de Started"
+              tail -n 200 /tmp/boot-dev.log
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "FAIL — timeout esperando Started HotclickApplication"
+          tail -n 200 /tmp/boot-dev.log
+          kill "$(cat /tmp/boot-dev.pid)" 2>/dev/null || true
+          exit 1

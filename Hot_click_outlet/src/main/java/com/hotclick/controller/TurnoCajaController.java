@@ -1,11 +1,13 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.TurnoCaja;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.TurnoCajaService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +26,7 @@ public class TurnoCajaController {
     // (maxCajas) siguen vigentes en TenantService.
 
     @PostMapping("/abrir")
-    @PreAuthorize("hasAuthority('pos.caja.abrir') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.caja.abrir') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> abrir(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
             Long usuarioId  = extractUserId(request);
@@ -41,7 +43,7 @@ public class TurnoCajaController {
     }
 
     @PutMapping("/{id}/cerrar")
-    @PreAuthorize("hasAuthority('pos.caja.cerrar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.caja.cerrar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> cerrar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Integer montoDeclarado = body.containsKey("montoDeclarado")
@@ -49,6 +51,8 @@ public class TurnoCajaController {
             String notas = (String) body.get("notas");
             TurnoCaja turno = turnoCajaService.cerrarTurno(id, montoDeclarado, notas);
             return ResponseEntity.ok(ResponseDTO.success("Turno cerrado correctamente", turno));
+        } catch (TenantAccessDeniedException | SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -57,7 +61,7 @@ public class TurnoCajaController {
     }
 
     @GetMapping("/activo")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getActivo(HttpServletRequest request) {
         try {
             Long usuarioId = extractUserId(request);
@@ -70,7 +74,7 @@ public class TurnoCajaController {
     }
 
     @GetMapping("/historial")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR','CAJERO','GERENTE','SUPERVISOR')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getHistorial(HttpServletRequest request) {
         try {
             Long empresaId = extractEmpresaId(request);

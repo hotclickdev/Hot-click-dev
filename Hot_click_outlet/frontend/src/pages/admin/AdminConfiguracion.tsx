@@ -17,25 +17,30 @@ import SeccionTelegram from './configuracion/SeccionTelegram'
 import SeccionDatos from './configuracion/SeccionDatos'
 import SeccionApariencia from './configuracion/SeccionApariencia'
 import SeccionSistema from './configuracion/SeccionSistema'
+import SeccionComision from './configuracion/SeccionComision'
 import SuperAdminConfig from './configuracion/SuperAdminConfig'
 import SuperAdminMetodosPago from './configuracion/SuperAdminMetodosPago'
 import SuperAdminNotificaciones from './configuracion/SuperAdminNotificaciones'
 import SuperAdminPolitica from './configuracion/SuperAdminPolitica'
-import SuperAdminVaciarPlataforma from './configuracion/SuperAdminVaciarPlataforma'
 import {
   F, UserIcon, StoreIcon, ShieldIcon, BellIcon, SendIcon, DatabaseIcon, PaletteIcon, CogIcon, CardIcon, BoxIcon,
 } from './configuracion/configUi'
 
 type IconoNav = ComponentType<SVGProps<SVGSVGElement>>
+type GrupoNav = 'cuenta' | 'tienda' | 'avanzado'
 type NavItem = {
   id: string
   label: string
   icon: IconoNav
   desc: string
+  grupo: GrupoNav
   soloEmprendedor?: boolean
   emprendedor?: boolean
   badge?: string | null
 }
+
+const GRUPOS_ORDEN: GrupoNav[] = ['cuenta', 'tienda', 'avanzado']
+const GRUPO_LABEL: Record<GrupoNav, string> = { cuenta: 'Cuenta', tienda: 'Tienda', avanzado: 'Avanzado' }
 
 function usePremiumFonts() {
   useEffect(() => {
@@ -52,7 +57,7 @@ export default function AdminConfiguracion() {
   usePremiumFonts()
   const { t } = useTranslation()
   const toast = useToast()
-  const { userId, userEmail, userName, setUserName, refreshToken, userRole } = useAuthStore()
+  const { userId, userEmail, userName, setUserName, userRole } = useAuthStore()
   const [searchParams] = useSearchParams()
   const [section, setSection] = useState(() => searchParams.get('seccion') || 'perfil')
   const [twoFAOn, setTwoFAOn] = useState(false)
@@ -60,16 +65,17 @@ export default function AdminConfiguracion() {
   const isEmprendedor = esUsuarioSistema(userRole)
 
   const allNav: NavItem[] = [
-    { id: 'plan',           label: t('adminConfig.navPlan'),           icon: CardIcon,     desc: t('adminConfig.descPlan'),           soloEmprendedor: true },
-    { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon,     desc: t('adminConfig.descPerfil') },
-    { id: 'marca',          label: isEmprendedor ? t('adminConfig.navMarca') : t('adminConfig.navTienda'), icon: StoreIcon, desc: isEmprendedor ? t('adminConfig.descMarca') : t('adminConfig.descTienda') },
-    { id: 'bodega',         label: t('adminConfig.navBodega'),         icon: BoxIcon,      desc: t('adminConfig.descBodega'),         soloEmprendedor: true },
-    { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: t('adminConfig.descSeguridad'),      badge: !twoFAOn ? '!' : null },
-    { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: t('adminConfig.descNotificaciones'), emprendedor: false },
-    { id: 'telegram',       label: t('adminConfig.navTelegram'),       icon: SendIcon,     desc: t('adminConfig.descTelegram') },
-    { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: t('adminConfig.descDatos'),          emprendedor: false },
-    { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: t('adminConfig.descApariencia'),     emprendedor: false },
-    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: t('adminConfig.descSistema'),        emprendedor: false },
+    { id: 'plan',           label: t('adminConfig.navPlan'),           icon: CardIcon,     desc: t('adminConfig.descPlan'),           grupo: 'cuenta',   soloEmprendedor: true },
+    { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon,     desc: t('adminConfig.descPerfil'),         grupo: 'cuenta' },
+    { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: t('adminConfig.descSeguridad'),      grupo: 'cuenta',   badge: !twoFAOn ? '!' : null },
+    { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: t('adminConfig.descNotificaciones'), grupo: 'cuenta',   emprendedor: false },
+    { id: 'marca',          label: isEmprendedor ? t('adminConfig.navMarca') : t('adminConfig.navTienda'), icon: StoreIcon, desc: isEmprendedor ? t('adminConfig.descMarca') : t('adminConfig.descTienda'), grupo: 'tienda' },
+    { id: 'bodega',         label: t('adminConfig.navBodega'),         icon: BoxIcon,      desc: t('adminConfig.descBodega'),         grupo: 'tienda',   soloEmprendedor: true },
+    { id: 'comision',       label: t('adminConfig.navComision'),       icon: CardIcon,     desc: t('adminConfig.descComision'),       grupo: 'tienda',   soloEmprendedor: true },
+    { id: 'telegram',       label: t('adminConfig.navTelegram'),       icon: SendIcon,     desc: t('adminConfig.descTelegram'),       grupo: 'avanzado' },
+    { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: t('adminConfig.descDatos'),          grupo: 'avanzado', emprendedor: false },
+    { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: t('adminConfig.descApariencia'),     grupo: 'avanzado', emprendedor: false },
+    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: t('adminConfig.descSistema'),        grupo: 'avanzado', emprendedor: false },
   ]
   // EMPRENDEDOR: ocultar tabs marcados con emprendedor: false — "notificaciones"
   // se fusiona dentro de "perfil" (ver SeccionPerfil), "datos"/"apariencia"/
@@ -86,7 +92,6 @@ export default function AdminConfiguracion() {
   if (userRole === 'ADMIN' && seccionFigma === 'politica') return <SuperAdminPolitica />
   if (userRole === 'ADMIN' && seccionFigma === 'pagos-metodos') return <SuperAdminMetodosPago />
   if (userRole === 'ADMIN' && seccionFigma === 'alertas') return <SuperAdminNotificaciones />
-  if (userRole === 'ADMIN' && seccionFigma === 'vaciar') return <SuperAdminVaciarPlataforma />
 
   return (
     <>
@@ -120,8 +125,8 @@ export default function AdminConfiguracion() {
           font-family:var(--hc-font-text);
           transition:all .15s ease;
         }
-        .cfg-btn-primary { background:var(--hc-accent); color:#fff; box-shadow:0 1px 12px var(--hc-shadow); }
-        .cfg-btn-primary:hover:not(:disabled) { background:var(--hc-accent-hover); box-shadow:0 3px 18px var(--hc-shadow); transform:translateY(-1px); }
+        .cfg-btn-primary { background:var(--hc-primary); color:#fff; box-shadow:0 1px 12px var(--hc-shadow); }
+        .cfg-btn-primary:hover:not(:disabled) { background:var(--hc-primary-hover); box-shadow:0 3px 18px var(--hc-shadow); transform:translateY(-1px); }
         .cfg-btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
         .cfg-btn-success { background:var(--hc-glass-bg); color:var(--hc-success); border:1px solid var(--hc-glass-border); }
         .cfg-btn-ghost { background:var(--hc-surface-2); color:var(--hc-muted); border:1px solid var(--hc-border); }
@@ -179,39 +184,52 @@ export default function AdminConfiguracion() {
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Desktop sidebar */}
           <aside style={{ width: '200px', flexShrink: 0 }} className="hidden md:block">
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {nav.map(({ id, label, icon: Icon, badge, desc }) => {
-                const active = section === id
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {GRUPOS_ORDEN.map((grupo) => {
+                const items = nav.filter(n => n.grupo === grupo)
+                if (items.length === 0) return null
                 return (
-                  <button type="button" key={id} className={`cfg-nav-btn ${active ? 'cfg-nav-active' : ''}`}
-                    style={{ alignItems: 'flex-start' }}
-                    onClick={() => go(id)}>
-                    {/* Icon box */}
-                    <span style={{
-                      width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0, marginTop: '1px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: active ? 'rgba(255,255,255,0.22)' : 'var(--hc-surface-2)',
-                      transition: 'background .15s',
-                    }}>
-                      <Icon style={{ width: '15px', height: '15px', color: active ? '#fff' : 'var(--hc-accent)' }} />
-                    </span>
-                    {/* Text */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: active ? '#fff' : 'var(--hc-text)', fontFamily: F.body, lineHeight: 1.3 }}>
-                          {label}
-                        </span>
-                        {badge && (
-                          <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: active ? 'rgba(255,255,255,0.9)' : 'var(--hc-warning)', fontSize: '9px', fontWeight: 700, color: active ? 'var(--hc-warning)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            {badge}
-                          </span>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '10.5px', color: active ? 'rgba(255,255,255,0.75)' : 'var(--hc-muted)', marginTop: '2px', display: 'block', lineHeight: 1.3, fontFamily: F.body }}>
-                        {desc}
-                      </span>
+                  <div key={grupo}>
+                    <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--hc-muted)', opacity: 0.7, margin: '0 0 6px 4px', fontFamily: F.body }}>
+                      {GRUPO_LABEL[grupo]}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {items.map(({ id, label, icon: Icon, badge, desc }) => {
+                        const active = section === id
+                        return (
+                          <button type="button" key={id} className={`cfg-nav-btn ${active ? 'cfg-nav-active' : ''}`}
+                            style={{ alignItems: 'flex-start' }}
+                            onClick={() => go(id)}>
+                            {/* Icon box */}
+                            <span style={{
+                              width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0, marginTop: '1px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: active ? 'rgba(255,255,255,0.22)' : 'var(--hc-surface-2)',
+                              transition: 'background .15s',
+                            }}>
+                              <Icon style={{ width: '15px', height: '15px', color: active ? '#fff' : 'var(--hc-accent)' }} />
+                            </span>
+                            {/* Text */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: active ? '#fff' : 'var(--hc-text)', fontFamily: F.body, lineHeight: 1.3 }}>
+                                  {label}
+                                </span>
+                                {badge && (
+                                  <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: active ? 'rgba(255,255,255,0.9)' : 'var(--hc-warning)', fontSize: '9px', fontWeight: 700, color: active ? 'var(--hc-warning)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    {badge}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: '10.5px', color: active ? 'rgba(255,255,255,0.75)' : 'var(--hc-muted)', marginTop: '2px', display: 'block', lineHeight: 1.3, fontFamily: F.body }}>
+                                {desc}
+                              </span>
+                            </div>
+                          </button>
+                        )
+                      })}
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </nav>
@@ -260,7 +278,8 @@ export default function AdminConfiguracion() {
                 )
               )}
               {section === 'bodega'         && <SeccionBodega />}
-              {section === 'seguridad'      && <SeccionSeguridad refreshToken={refreshToken} toast={toast} onTwoFAChange={setTwoFAOn} />}
+              {section === 'comision'       && <SeccionComision toast={toast} />}
+              {section === 'seguridad'      && <SeccionSeguridad refreshToken={null} toast={toast} onTwoFAChange={setTwoFAOn} />}
               {section === 'notificaciones' && <SeccionNotificaciones toast={toast} soloVentas={isEmprendedor} />}
               {section === 'telegram'       && <SeccionTelegram toast={toast} />}
               {section === 'datos'          && <SeccionDatos toast={toast} isEmprendedor={isEmprendedor} />}

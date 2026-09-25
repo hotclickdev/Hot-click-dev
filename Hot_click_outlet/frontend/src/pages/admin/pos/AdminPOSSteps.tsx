@@ -1,11 +1,15 @@
+import { useTranslation } from 'react-i18next'
 import StepApertura from './StepApertura'
 import StepVenta from './StepVenta'
 import StepCobro from './StepCobro'
 import StepQR from './StepQR'
 import StepRecibo from './StepRecibo'
+import { useToast } from '@/components/ui/Toast'
 import type { AdminPOSController } from './useAdminPOS'
 
 export default function AdminPOSSteps({ pos }: { pos: AdminPOSController }) {
+  const { t } = useTranslation()
+  const toast = useToast()
   return (
     <>
       {pos.step === 'apertura' && <StepApertura onAbrir={pos.handleAbrir} loading={pos.saving} />}
@@ -23,7 +27,10 @@ export default function AdminPOSSteps({ pos }: { pos: AdminPOSController }) {
           total={pos.total}
           onNueva={pos.nuevaVenta}
           onCobrar={() => {
-            if (pos.cartItems.length === 0) return
+            if (pos.cartItems.length === 0) {
+              toast({ message: t('pos.venta.carritoVacioAviso'), type: 'warning' })
+              return
+            }
             pos.setStep('cobro')
           }}
           onQrCliente={pos.handleQrCliente}

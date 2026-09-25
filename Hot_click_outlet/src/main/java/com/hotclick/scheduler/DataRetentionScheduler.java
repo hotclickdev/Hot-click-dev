@@ -122,7 +122,7 @@ public class DataRetentionScheduler {
         int n = jdbc.update(
             "DELETE FROM hot_click_webhook_event_tb WHERE ctid IN (" +
             "  SELECT ctid FROM hot_click_webhook_event_tb " +
-            "  WHERE procesado = true AND created_at < ? LIMIT 500" +
+            "  WHERE procesado = true AND fecha_recepcion < ? LIMIT 500" +
             ")",
             corte);
         if (n > 0) log.info("[retention] webhook_events: {} eliminados (> 90 días, procesados)", n);

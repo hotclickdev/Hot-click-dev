@@ -50,6 +50,12 @@ public class TelegramVinculacion {
     @Column(name = "contexto", columnDefinition = "TEXT")
     private String contexto;
 
+    @Column(name = "panel_message_id")
+    private Long panelMessageId;
+
+    @Column(name = "pausado_hasta")
+    private LocalDateTime pausadoHasta;
+
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = PENDIENTE;
 
@@ -82,6 +88,12 @@ public class TelegramVinculacion {
 
     public String getContexto() { return contexto; }
     public void setContexto(String contexto) { this.contexto = contexto; }
+
+    public Long getPanelMessageId() { return panelMessageId; }
+    public void setPanelMessageId(Long panelMessageId) { this.panelMessageId = panelMessageId; }
+
+    public LocalDateTime getPausadoHasta() { return pausadoHasta; }
+    public void setPausadoHasta(LocalDateTime pausadoHasta) { this.pausadoHasta = pausadoHasta; }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

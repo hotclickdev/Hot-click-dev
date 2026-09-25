@@ -42,7 +42,7 @@ import java.util.Map;
  *   /api/contacto                →  5 / 60s
  *   /api/pedidos                 → 15 / 60s
  *   /api/payment/checkout        →  3 / 60s
- *   /api/cart/abandoned          → 10 / 60s
+ *   /api/payments/tilopay/**     → 10 / 60s (confirmar/reintentar públicos)
  *
  *   AI (IP-level; per-empresa burst in AiCopilotController)
  *   ────────────────────────────────────────────
@@ -66,6 +66,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Autowired private SecurityAuditService auditService;
     @Autowired private RateLimiter          rateLimiter;
+    @Autowired private ClientIpResolver     clientIpResolver;
 
     private record Limit(int maxRequests, int windowSeconds) {}
     private record PrefixLimit(String prefix, int maxRequests, int windowSeconds) {}
@@ -108,7 +109,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     // Matched in order — first prefix wins. Keep this list short.
     private static final List<PrefixLimit> PREFIX_LIMITS = List.of(
         // Prevent admins from accidentally spamming customers with email notifications.
-        new PrefixLimit("/api/pedidos/", 5, 60)   // 5 notificar calls/min per IP
+        new PrefixLimit("/api/pedidos/", 5, 60),   // 5 notificar calls/min per IP
+        // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
+        new PrefixLimit("/api/payments/tilopay/", 10, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -139,14 +142,18 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         if ("POST".equalsIgnoreCase(method)) {
-            String ip    = resolveClientIp(request);
+            String ip    = clientIpResolver.resolve(request);
             Limit  limit = LIMITS.get(path);
 
             // Exact-path check
             if (limit == null) {
-                // Prefix check — only for POST paths with ID segments (e.g. /notificar)
+                // Prefix check — paths with ID segments
                 for (PrefixLimit pl : PREFIX_LIMITS) {
-                    if (path.startsWith(pl.prefix()) && path.endsWith("/notificar")) {
+                    if (!path.startsWith(pl.prefix())) {
+                        continue;
+                    }
+                    if (pl.prefix().startsWith("/api/payments/tilopay/")
+                        || path.endsWith("/notificar")) {
                         limit = new Limit(pl.maxRequests(), pl.windowSeconds());
                         break;
                     }
@@ -166,7 +173,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 }
             }
         } else if ("GET".equalsIgnoreCase(method)) {
-            String ip = resolveClientIp(request);
+            String ip = clientIpResolver.resolve(request);
             for (GetLimit gl : GET_LIMITS) {
                 if (path.startsWith(gl.prefix())) {
                     String key = "ip:" + ip + ":GET:" + gl.prefix();
@@ -185,23 +192,5 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
-    }
-
-    /**
-     * Extrae la IP real del cliente.
-     * X-Real-IP lo setea Nginx desde $remote_addr (no puede ser falsificado por el cliente).
-     * X-Forwarded-For puede contener IPs adicionales si hay múltiples proxies.
-     * Fallback a getRemoteAddr() para entornos locales sin proxy.
-     */
-    private String resolveClientIp(HttpServletRequest request) {
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) return realIp.trim();
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            // Tomar la última IP — la que añade el proxy de confianza (Nginx)
-            String[] parts = forwarded.split(",");
-            return parts[parts.length - 1].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

@@ -2,10 +2,15 @@ package com.hotclick.service.payment;
 
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.model.Bodega;
+import com.hotclick.model.Empresa;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.GiftCardService;
+import com.hotclick.service.wallet.ComisionPrecioMath;
+import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 public class OrderPricingService {
@@ -16,7 +21,6 @@ public class OrderPricingService {
     public OrderPricingResult calculate(PaymentCheckoutRequest req, Bodega bodega, int subtotal) {
         int costoEnvio = calcularCostoEnvio(req.getMetodoEnvio());
 
-        // ── Validar y aplicar cupón de descuento ────────────────────────
         int descuento = 0;
         String codigoCuponAplicado = null;
         String codigoCupon = req.getCodigoCupon();
@@ -30,9 +34,11 @@ public class OrderPricingService {
                 codigoCuponAplicado = cuponOpt.get().getCodigo();
             }
         }
-        int total = subtotal - descuento + costoEnvio;
 
-        // ── Validar gift card (sin canjear aún) ─────────────────────────
+        int base = subtotal - descuento + costoEnvio;
+        descuento += descuentoSinpeSiAplica(req.getProvider(), bodega, base);
+        int total = Math.max(0, subtotal - descuento + costoEnvio);
+
         int    gcMonto  = 0;
         String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase() : null;
         if (gcCodigo != null && !gcCodigo.isBlank() && bodega.getEmpresa() != null) {
@@ -46,6 +52,19 @@ public class OrderPricingService {
 
         return new OrderPricingResult(
             costoEnvio, descuento, codigoCuponAplicado, gcMonto, gcCodigo, total, totalConGC, pagoGC);
+    }
+
+    private int descuentoSinpeSiAplica(String provider, Bodega bodega, int base) {
+        if (provider == null || bodega == null || bodega.getEmpresa() == null) {
+            return 0;
+        }
+        String p = provider.toUpperCase();
+        if (!Constants.PROVEEDOR_SINPE.equals(p) && !"EFECTIVO".equals(p)) {
+            return 0;
+        }
+        Empresa empresa = bodega.getEmpresa();
+        BigDecimal pct = empresa.getPctDescuentoSinpe();
+        return (int) ComisionPrecioMath.descuentoSinpe(base, pct);
     }
 
     public int calcularCostoEnvio(String metodoEnvio) {

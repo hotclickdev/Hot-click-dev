@@ -33,6 +33,7 @@ export default function VistaBusqueda({
   uploading, sending, error, fileRef,
   handleEnviar, handleFotoChange, volver,
   misSolicitudes, loadingMias, refetchMias,
+  turnstileSiteKey, turnstileRef, setTurnstileToken, turnstileBloqueaSubmit,
 }: VistaBusquedaProps) {
   const { t } = useTranslation()
 
@@ -75,6 +76,10 @@ export default function VistaBusqueda({
               form={form} setForm={setForm} phone={phone} setPhone={setPhone}
               fotos={fotos} setFotos={setFotos} uploading={uploading} sending={sending} error={error}
               fileRef={fileRef} handleEnviar={handleEnviar} handleFotoChange={handleFotoChange} t={t}
+              turnstileSiteKey={turnstileSiteKey}
+              turnstileRef={turnstileRef}
+              setTurnstileToken={setTurnstileToken}
+              turnstileBloqueaSubmit={turnstileBloqueaSubmit}
             />
           </motion.div>
         )}

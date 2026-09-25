@@ -1,5 +1,7 @@
 import { authService } from '@/services/authService'
 import { analytics } from '@/utils/analytics'
+import { attributionForCheckout } from '@/utils/attribution'
+import { readMetaCookies } from '@/utils/metaPixel'
 import { BODEGA_DEFAULT } from './checkoutHelpers'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio } from './checkoutHelpers'
 import type { CheckoutPayload } from '@/types/pedido'
@@ -158,6 +160,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
 
   const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
   analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + (i.cantidad as number), 0))
+  const atrib = attributionForCheckout()
+  const metaCookies = readMetaCookies()
   iniciarPago(
     {
       bodegaId: metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaRetiro.id as number : BODEGA_DEFAULT,
@@ -180,6 +184,17 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       })),
       codigoCupon: cuponCodigo || null,
       codigoGiftCard: gcCodigo || null,
+      ...(atrib
+        ? {
+            atribucion: {
+              first: atrib.first,
+              last: atrib.last,
+              ...metaCookies,
+            },
+          }
+        : metaCookies.fbp || metaCookies.fbc
+          ? { atribucion: { first: null, last: null, ...metaCookies } }
+          : {}),
       ...(token
         ? {}
         : {

@@ -6,6 +6,7 @@ import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.security.JwtUtil;
+import com.hotclick.service.OtpService;
 import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.SecurityDetectionService;
 import com.hotclick.service.TurnstileService;
@@ -18,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +37,12 @@ public class AuthCredentialLoginHandler {
     private static final String KEY_SUCCESS = "success";
     private static final String KEY_TEMP_TOKEN = "tempToken";
     private static final String KEY_MESSAGE = "message";
+    /**
+     * Bcrypt cost 12 generado al cargar la clase (no es una credencial).
+     * Solo iguala el timing de {@code matches} cuando el correo no existe.
+     */
+    private static final String HASH_TIMING_DESCONOCIDO =
+        new BCryptPasswordEncoder(12).encode("timing-pad");
 
     @Autowired private UsuarioService              usuarioService;
     @Autowired private JwtUtil                     jwtUtil;
@@ -45,6 +53,7 @@ public class AuthCredentialLoginHandler {
     @Autowired private SecurityDetectionService    securityDetectionService;
     @Autowired private TurnstileService            turnstileService;
     @Autowired private AuthSupport                 authSupport;
+    @Autowired private OtpService                  otpService;
 
     public ResponseEntity<?> login(JwtRequest request, HttpServletRequest httpRequest) {
         if (!turnstileService.verify(request.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
@@ -81,9 +90,10 @@ public class AuthCredentialLoginHandler {
     }
 
     private ResponseEntity<?> rechazarUsuarioDesconocido(JwtRequest request, HttpServletRequest httpRequest) {
+        passwordEncoder.matches(request.getContrasena(), HASH_TIMING_DESCONOCIDO);
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "user_not_found"));
         AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
-        return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CREDENCIALES));
+        return respuestaCredencialesInvalidas();
     }
 
     private ResponseEntity<?> rechazarSiBloqueado(Usuario usuario, JwtRequest request, HttpServletRequest httpRequest) {
@@ -101,23 +111,38 @@ public class AuthCredentialLoginHandler {
         usuarioService.incrementarIntentosFallidos(usuario.getId());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "wrong_password"));
         AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
-        return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CREDENCIALES));
+        return respuestaCredencialesInvalidas();
     }
 
     private ResponseEntity<?> rechazarSiEstadoInvalido(Usuario usuario) {
         int estado = usuario.getEstado() == null ? 0 : usuario.getEstado();
         if (estado == Constants.ESTADO_PENDIENTE) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(
-                "Debes verificar tu correo antes de iniciar sesión. Revisá tu bandeja de entrada."));
+            avisarVerificacionPorEmail(usuario);
+            return respuestaCuentaBloqueada("Verificá tu correo para activar la cuenta.");
         }
-        if (estado == Constants.ESTADO_INACTIVO || estado == Constants.ESTADO_SUSPENDIDO) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(
-                "Tu cuenta no está activa. Contactá al administrador."));
-        }
-        if (estado == Constants.ESTADO_ELIMINADO) {
-            return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CREDENCIALES));
+        if (estado == Constants.ESTADO_INACTIVO
+                || estado == Constants.ESTADO_SUSPENDIDO
+                || estado == Constants.ESTADO_ELIMINADO) {
+            return respuestaCuentaBloqueada(MSG_CREDENCIALES);
         }
         return null;
+    }
+
+    private void avisarVerificacionPorEmail(Usuario usuario) {
+        try {
+            otpService.enviarOtp(usuario, Constants.OTP_TIPO_REGISTRO);
+        } catch (Exception e) {
+            log.error("[login] No se pudo reenviar verificación a {}: {}",
+                usuario.getCorreo(), e.getMessage(), e);
+        }
+    }
+
+    private static ResponseEntity<?> respuestaCredencialesInvalidas() {
+        return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CREDENCIALES));
+    }
+
+    private static ResponseEntity<?> respuestaCuentaBloqueada(String mensaje) {
+        return ResponseEntity.status(403).body(ResponseDTO.error(mensaje));
     }
 
     private ResponseEntity<?> respuestaWebauthn(Usuario usuario) {

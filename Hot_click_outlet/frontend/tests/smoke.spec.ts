@@ -157,39 +157,32 @@ test.describe('Smoke público', () => {
     guards.assertClean()
   })
 
-  test('Prototipo visitante shop no vende SKUs mock', async ({ page }) => {
+  // P1-08 (anexo-6) opción A: `/visitante` quedó deprecado como marketplace
+  // paralelo — `/prototipo/visitante/*` ahora redirige al marketplace real
+  // en vez de montar el shell Figma. Ver visitante-compra.spec.ts para el
+  // detalle de cada mapeo de rutas.
+  test('Prototipo visitante redirige al marketplace real, sin SKUs mock', async ({ page }) => {
     const guards = attachGuards(page)
     await page.goto('/prototipo/visitante/shop', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/productos$/)
     await cerrarOverlays(page)
     await assertNotBlank(page)
-    await expect(page.getByRole('heading', { name: 'Shop' })).toBeVisible({ timeout: 20_000 })
-    await expect(
-      page.getByText(/Cargando productos|Catálogo no disponible|No encontramos productos|₡/i).first(),
-    ).toBeVisible({ timeout: 20_000 })
     await assertSinSkusMock(page)
     guards.assertClean()
   })
 
-  test('Prototipo discover, negocio y favoritos no venden SKUs mock', async ({ page }) => {
+  test('Prototipo discover, negocio y favoritos redirigen al marketplace real', async ({ page }) => {
     const guards = attachGuards(page)
     await page.goto('/prototipo/visitante/discover', { waitUntil: 'domcontentloaded' })
-    await cerrarOverlays(page)
-    await expect(page.getByRole('heading', { name: 'Discover' })).toBeVisible({ timeout: 20_000 })
-    await expect(
-      page.getByText(/Cargando productos|Catálogo no disponible|No hay productos para descubrir|Café de especialidad/i).first(),
-    ).toBeVisible({ timeout: 20_000 })
+    await expect(page).toHaveURL(/\/descubri$/)
     await assertSinSkusMock(page)
 
     await page.goto('/prototipo/visitante/negocio/qa2', { waitUntil: 'domcontentloaded' })
-    await cerrarOverlays(page)
-    await expect(
-      page.getByText(/Cargando tienda|Tienda no disponible|Negocio no encontrado/i).first(),
-    ).toBeVisible({ timeout: 20_000 })
+    await expect(page).toHaveURL(/\/productos$/)
     await assertSinSkusMock(page)
 
     await page.goto('/prototipo/visitante/favoritos', { waitUntil: 'domcontentloaded' })
-    await cerrarOverlays(page)
-    await expect(page.getByRole('heading', { name: 'Favoritos' })).toBeVisible({ timeout: 20_000 })
+    await expect(page).toHaveURL(/\/wishlist$/)
     await assertSinSkusMock(page)
     guards.assertClean()
   })
@@ -197,11 +190,10 @@ test.describe('Smoke público', () => {
   test('Prototipo checkout y confirmación van al pago real', async ({ page }) => {
     const guards = attachGuards(page)
     await page.goto('/prototipo/visitante/checkout', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/checkout/)
+    await expect(page).toHaveURL(/\/checkout$/)
     await page.goto('/prototipo/visitante/compra-confirmada', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/pago\/exito/)
     await expect(page.locator('body')).not.toContainText(/pedido\s*#4021/i)
-    await expect(page.getByRole('heading', { name: 'Pago no completado' })).toBeVisible({ timeout: 20_000 })
     await page.goto('/prototipo/visitante/pago-fallido', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/pago\/cancelado/)
     guards.assertClean()
@@ -210,20 +202,15 @@ test.describe('Smoke público', () => {
   test('Prototipo visitante no finge carrito, pedidos ni conteos', async ({ page }) => {
     const guards = attachGuards(page)
     await page.goto('/prototipo/visitante', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/$/)
     await cerrarOverlays(page)
-    await expect(page.getByRole('heading', { name: /Qué estás buscando hoy/i })).toBeVisible({ timeout: 20_000 })
-    await expect(page.locator('body')).not.toContainText('Ver 7 productos')
-    await expect(page.locator('body')).not.toContainText('Tenés productos en el carrito')
     await assertSinSkusMock(page)
 
     await page.goto('/prototipo/visitante/notificaciones', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Notificaciones' })).toBeVisible({ timeout: 20_000 })
-    await expect(page.locator('body')).not.toContainText(/pedido\s*#4021/i)
-    await assertSinSkusMock(page)
+    await expect(page).toHaveURL(/\/login\?redirect=/)
 
     await page.goto('/prototipo/visitante/asistente', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/productos\?ai=1/)
-    await assertSinSkusMock(page)
+    await expect(page).toHaveURL(/\/$/)
     guards.assertClean()
   })
 

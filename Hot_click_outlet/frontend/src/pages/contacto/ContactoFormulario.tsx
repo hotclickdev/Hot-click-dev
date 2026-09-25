@@ -2,14 +2,20 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import TurnstileCampo from '@/components/security/TurnstileCampo'
 import { fadeUp, FORM_VACIO, type FormContacto } from './contactoHelpers'
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, Dispatch, FormEvent, RefObject, SetStateAction } from 'react'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import type { TFunction } from 'i18next'
 
 export type ContactoFormularioProps = {
   form: FormContacto
   sent: boolean
   loading: boolean
+  turnstileSiteKey: string | undefined
+  turnstileRef: RefObject<TurnstileInstance | null>
+  setTurnstileToken: Dispatch<SetStateAction<string>>
+  turnstileBloqueaSubmit: boolean
   onChange: (campo: keyof FormContacto) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   onSubmit: (e: FormEvent<HTMLFormElement>) => void
   onReset: (vacio: FormContacto) => void
@@ -19,6 +25,10 @@ export default function ContactoFormulario({
   form,
   sent,
   loading,
+  turnstileSiteKey,
+  turnstileRef,
+  setTurnstileToken,
+  turnstileBloqueaSubmit,
   onChange,
   onSubmit,
   onReset,
@@ -61,9 +71,14 @@ export default function ContactoFormulario({
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/60 focus:outline-none focus:border-[#4f7cff]/60 resize-none transition-colors"
             />
           </div>
+          <TurnstileCampo
+            siteKey={turnstileSiteKey}
+            turnstileRef={turnstileRef}
+            setTurnstileToken={setTurnstileToken}
+          />
           <Button
             type="submit"
-            disabled={loading}
+            disabled={loading || turnstileBloqueaSubmit}
             className="w-full"
             style={{ backgroundColor: 'var(--hc-accent)', borderColor: 'var(--hc-accent)', opacity: loading ? 0.7 : 1 }}
           >

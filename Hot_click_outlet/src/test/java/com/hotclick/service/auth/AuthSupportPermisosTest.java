@@ -59,7 +59,8 @@ class AuthSupportPermisosTest {
         when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), isNull(), isNull(), anyList()))
             .thenReturn("access-token");
         RefreshToken refresh = new RefreshToken();
-        refresh.setToken("refresh-token");
+        refresh.setToken("hash-placeholder");
+        refresh.setRawToken("refresh-token");
         when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
 
         AuthResponse resp = authSupport.buildAuthResponse(usuario);
@@ -71,8 +72,8 @@ class AuthSupportPermisosTest {
     }
 
     @Test
-    @DisplayName("SUPPORT de plataforma emite JWT sin empresaId y con rol SUPPORT")
-    void supportSinEmpresaEnAuthResponse() {
+    @DisplayName("SUPPORT legacy ya no es sin-tenant: lleva empresa del usuario (V132)")
+    void supportLegacyConEmpresaEnAuthResponse() {
         Usuario usuario = new Usuario();
         usuario.setId(2L);
         usuario.setCorreo("support@hotclick.com");
@@ -88,17 +89,17 @@ class AuthSupportPermisosTest {
 
         when(permisoRepository.findPermisosByUsuarioId(2L))
             .thenReturn(List.of("global.companies"));
-        when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), isNull(), isNull(), anyList()))
+        when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), anyLong(), anyString(), anyList()))
             .thenReturn("access-token");
         RefreshToken refresh = new RefreshToken();
-        refresh.setToken("refresh-token");
+        refresh.setToken("hash-placeholder");
+        refresh.setRawToken("refresh-token");
         when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
 
         AuthResponse resp = authSupport.buildAuthResponse(usuario);
 
         assertThat(resp.getRol()).isEqualTo("SUPPORT");
-        assertThat(resp.getEmpresaId()).isNull();
-        assertThat(resp.getEmpresaSlug()).isNull();
+        assertThat(resp.getEmpresaId()).isEqualTo(1L);
         assertThat(resp.getPermisos()).containsExactly("global.companies");
     }
 
@@ -115,7 +116,8 @@ class AuthSupportPermisosTest {
         when(jwtUtil.generateTokenFull(anyString(), anyLong(), anyString(), isNull(), isNull(), anyList()))
             .thenReturn("access-token");
         RefreshToken refresh = new RefreshToken();
-        refresh.setToken("refresh-token");
+        refresh.setToken("hash-placeholder");
+        refresh.setRawToken("refresh-token");
         when(refreshTokenService.crear(any(Usuario.class))).thenReturn(refresh);
 
         AuthResponse resp = authSupport.buildAuthResponse(usuario);

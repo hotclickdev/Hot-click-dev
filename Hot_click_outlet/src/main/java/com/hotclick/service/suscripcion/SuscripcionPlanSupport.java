@@ -16,14 +16,18 @@ import java.util.List;
 @Component
 class SuscripcionPlanSupport {
 
+    /** Plan base activo post-V89 (FREE quedó inactivo). */
+    private static final String PLAN_BASE = "EMPRENDEDOR";
+
     @Autowired private PlanRepository    planRepo;
     @Autowired private EmpresaRepository empresaRepo;
     @Autowired private CacheManager      cacheManager;
 
     @CacheEvict(value = "tenantInfo", key = "#empresa.id")
-    void degradarAFree(Empresa empresa) {
-        planRepo.findByNombre("FREE").ifPresent(free -> {
-            empresa.setPlan(free);
+    void degradarAPlanBase(Empresa empresa) {
+        planRepo.findByNombre(PLAN_BASE).ifPresent(plan -> {
+            empresa.setPlan(plan);
+            empresa.setPlanSaas(PLAN_BASE);
             empresa.setEstadoPlan("VENCIDO");
             empresa.setFechaVencPlan(LocalDate.now(Constants.ZONA_CR));
             empresaRepo.save(empresa);
@@ -31,8 +35,8 @@ class SuscripcionPlanSupport {
     }
 
     void degradarPlanBatchConCache(List<Long> empresaIds, LocalDate hoy) {
-        planRepo.findByNombre("FREE").ifPresent(free -> {
-            empresaRepo.degradarPlanBatch(empresaIds, free, hoy);
+        planRepo.findByNombre(PLAN_BASE).ifPresent(plan -> {
+            empresaRepo.degradarPlanBatch(empresaIds, plan, PLAN_BASE, hoy);
             // Evicción programática: @CacheEvict no soporta colecciones de claves
             Cache tenantCache = cacheManager.getCache("tenantInfo");
             if (tenantCache != null) {

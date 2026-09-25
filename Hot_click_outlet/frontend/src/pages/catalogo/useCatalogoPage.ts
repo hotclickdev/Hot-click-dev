@@ -49,6 +49,8 @@ export function useCatalogoPage() {
     categories: data.categories,
     marcas: data.marcas,
     loading: data.loading,
+    error: data.error,
+    retry: data.retry,
     page: filtros.page,
     viewMode,
     setViewMode,

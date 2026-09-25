@@ -12,6 +12,9 @@ INSERT INTO keep_correo (correo) VALUES
     ('qa.emprendedor.demo@hotclick.test'),
     ('qa.pyme.demo@hotclick.test'),
     ('qa.negocioplus.demo@hotclick.test'),
+    ('emprendedor@hotclick.test'),
+    ('pyme@hotclick.test'),
+    ('negocioplus@hotclick.test'),
     ('mostrador@hotclick.internal');
 
 CREATE TEMP TABLE keep_usuario AS

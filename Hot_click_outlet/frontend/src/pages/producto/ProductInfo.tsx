@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import type { RefObject } from 'react'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import SocialProof from '@/components/ui/SocialProof'
 import Button from '@/components/ui/Button'
+import TurnstileCampo from '@/components/security/TurnstileCampo'
 import type { Producto } from '@/types/producto'
 import type { PersonalizacionCarrito } from '@/types/carrito'
 import { stockDesdeProducto } from './productoHelpers'
@@ -37,6 +39,10 @@ type ProductInfoProps = {
   contactoEncargo: { nombre: string; email: string; telefono: string }
   onContactoEncargoChange: (c: { nombre: string; email: string; telefono: string }) => void
   enviandoEncargo: boolean
+  turnstileSiteKey?: string
+  turnstileRef?: RefObject<TurnstileInstance | null>
+  setTurnstileToken?: Dispatch<SetStateAction<string>>
+  turnstileBloqueaSubmit?: boolean
 }
 
 export default function ProductInfo({
@@ -58,6 +64,10 @@ export default function ProductInfo({
   contactoEncargo,
   onContactoEncargoChange,
   enviandoEncargo,
+  turnstileSiteKey,
+  turnstileRef,
+  setTurnstileToken,
+  turnstileBloqueaSubmit = false,
 }: ProductInfoProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -120,16 +130,25 @@ export default function ProductInfo({
       )}
 
       {esCotizable ? (
-        <Button
-          ref={mainCTARef}
-          variant="primary"
-          size="xl"
-          className="w-full h-14 rounded-2xl text-sm font-semibold"
-          disabled={enviandoEncargo}
-          onClick={onAdd}
-        >
-          {enviandoEncargo ? 'Enviando…' : 'Solicitar encargo'}
-        </Button>
+        <>
+          {turnstileSiteKey && turnstileRef && setTurnstileToken && (
+            <TurnstileCampo
+              siteKey={turnstileSiteKey}
+              turnstileRef={turnstileRef}
+              setTurnstileToken={setTurnstileToken}
+            />
+          )}
+          <Button
+            ref={mainCTARef}
+            variant="primary"
+            size="xl"
+            className="w-full h-14 rounded-2xl text-sm font-semibold"
+            disabled={enviandoEncargo || turnstileBloqueaSubmit}
+            onClick={onAdd}
+          >
+            {enviandoEncargo ? 'Enviando…' : 'Solicitar encargo'}
+          </Button>
+        </>
       ) : (
         <ProductBuyActions
           mainCTARef={mainCTARef}

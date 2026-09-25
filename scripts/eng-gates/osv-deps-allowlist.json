@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "descripcion": "Supresiones del gate osv-deps (HIGH/CRITICAL). Cada entrada necesita id OSV/GHSA/CVE, reason, acceptedAt (YYYY-MM-DD) y preferiblemente expiresOn. Sin expiresOn la excepción es permanente — solo para vulnerabilidades sin fix disponible y no explotables en nuestro uso. Al expirar, el ID vuelve a fallar el PR.",
+  "entries": [
+    {
+      "id": "GHSA-4r6h-8v6p-xvw6",
+      "reason": "xlsx se instala desde cdn.sheetjs.com/xlsx-0.20.3 (no vía npm registry, ver frontend/package.json). El rango vulnerable de este advisory es '< 0.19.3'; 0.20.3 ya lo excede. osv-scanner no resuelve versiones semver de tarballs CDN y marca la última version conocida por npm como vulnerable; no aplica a nuestra instalación real.",
+      "acceptedAt": "2026-09-24",
+      "expiresOn": "2026-12-31"
+    },
+    {
+      "id": "GHSA-5pgg-2g8v-p4x9",
+      "reason": "Mismo caso que GHSA-4r6h-8v6p-xvw6: rango vulnerable '< 0.20.2', instalamos 0.20.3 desde cdn.sheetjs.com.",
+      "acceptedAt": "2026-09-24",
+      "expiresOn": "2026-12-31"
+    }
+  ]
+}

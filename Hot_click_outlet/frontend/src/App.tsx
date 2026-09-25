@@ -6,7 +6,6 @@ import { ToastProvider } from '@/components/ui/Toast'
 import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
-import AuthPromptModal from '@/components/ui/AuthPromptModal'
 import CookieBanner from '@/components/ui/CookieBanner'
 import { setAnalyticsConsent, identifyUser } from '@/utils/analytics'
 import { initAnalytics } from '@/utils/initAnalytics'
@@ -59,7 +58,6 @@ export default function App() {
           </Suspense>
           <ConditionalWhatsAppFab />
           <AccessibilityPanel />
-          <AuthPromptModal />
           <ConditionalChatModal />
           <SocialProofController />
           <AbandonedCartWatcher />

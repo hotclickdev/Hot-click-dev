@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -23,24 +24,55 @@ public class TelegramDatosQueryService {
     @Autowired private JdbcTemplate                  jdbc;
     @Autowired private TelegramClienteBotService     bot;
     @Autowired private TelegramEmpresaContextService empresaContext;
+    @Autowired private TelegramAbusoService          abuso;
+    @Autowired private TelegramFlujoSupport          flujoSupport;
 
     public void responderConDatos(TelegramVinculacion v, Function<Long, String> generador) {
         Long empresaId = empresaContext.empresaValidada(v);
         if (empresaId == null) return;
         try {
-            bot.enviarMensaje(v.getChatId(), generador.apply(empresaId));
+            bot.enviarMensaje(v.getChatId(), generador.apply(empresaId), TelegramTeclado.soloMenu());
         } catch (Exception e) {
             log.error("[telegram-bot] error consultando datos empresa {} — {}", empresaId, e.getMessage());
-            bot.enviarMensaje(v.getChatId(), "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.");
+            bot.enviarMensaje(v.getChatId(),
+                "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
+                TelegramTeclado.soloMenu());
+            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
         }
+    }
+
+    /** Resumen de inventario; si el usuario puede gestionar, ofrece modificar unidades. */
+    public void mostrarInventario(TelegramVinculacion v) {
+        Long empresaId = empresaContext.empresaValidada(v);
+        if (empresaId == null) return;
+        try {
+            bot.enviarMensaje(v.getChatId(), mensajeInventario(empresaId), tecladoInventario(v, empresaId));
+        } catch (Exception e) {
+            log.error("[telegram-bot] error consultando inventario empresa {} — {}", empresaId, e.getMessage());
+            bot.enviarMensaje(v.getChatId(),
+                "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
+                TelegramTeclado.soloMenu());
+            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
+        }
+    }
+
+    private List<List<Map<String, Object>>> tecladoInventario(TelegramVinculacion v, Long empresaId) {
+        List<List<Map<String, Object>>> teclado = new ArrayList<>();
+        if (flujoSupport.esPropietarioOAdmin(v.getUsuario(), empresaId)) {
+            teclado.add(List.of(TelegramClienteBotService.boton("✏️ Modificar unidades", "inv:mod")));
+        }
+        return TelegramTeclado.conMenu(teclado);
     }
 
     public String mensajeInventario(Long empresaId) {
         Integer total = jdbc.queryForObject(
             "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1",
             Integer.class, empresaId);
+        Integer personalizados = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND es_personalizado = true",
+            Integer.class, empresaId);
         Integer agotados = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND stock_actual <= 0",
+            "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND stock_actual <= 0 AND COALESCE(es_personalizado, false) = false",
             Integer.class, empresaId);
         List<Map<String, Object>> bajos = jdbc.queryForList("""
             SELECT nombre_producto, stock_actual
@@ -52,6 +84,7 @@ public class TelegramDatosQueryService {
 
         StringBuilder sb = new StringBuilder("📦 *Inventario*\n\n");
         sb.append("Productos activos: *").append(total).append("*\n");
+        sb.append("Personalizados: *").append(personalizados).append("*\n");
         sb.append("Agotados: *").append(agotados).append("*\n");
         if (bajos.isEmpty()) {
             sb.append("\nNingún producto con stock bajo. Todo en orden ✅");

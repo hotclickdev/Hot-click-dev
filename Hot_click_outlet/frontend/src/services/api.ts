@@ -11,6 +11,7 @@ const api = axios.create({
   baseURL: '/api',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // cookie HttpOnly hotclick_refresh en /api/auth/refresh
 })
 
 const getStored = (): AuthPersistido => {
@@ -46,24 +47,25 @@ api.interceptors.response.use(
     const status   = error.response?.status
     const original = error.config as RetryConfig | undefined
 
-    // Intenta renovar el access token con el refresh token antes de redirigir
+    // Renueva el access token con la cookie HttpOnly (no localStorage)
     if (status === 401 && original && !original._retry) {
       original._retry = true
       const stored = getStored()
-      const hadSession = !!stored.token || !!stored.refreshToken
+      const hadSession = !!stored.token
 
-      if (stored.refreshToken) {
-        try {
-          const { data } = await axios.post<{ accessToken?: string }>('/api/auth/refresh', { refreshToken: stored.refreshToken })
-          if (data?.accessToken) {
-            // Sync Zustand in-memory state first, then let persist middleware update localStorage
-            useAuthStore.getState().updateAccessToken(data.accessToken)
-            original.headers.Authorization = `Bearer ${data.accessToken}`
-            return api(original) // reintentar request original
-          }
-        } catch {
-          // Refresh falló → logout completo
+      try {
+        const { data } = await axios.post<{ accessToken?: string }>(
+          '/api/auth/refresh',
+          {},
+          { withCredentials: true },
+        )
+        if (data?.accessToken) {
+          useAuthStore.getState().updateAccessToken(data.accessToken)
+          original.headers.Authorization = `Bearer ${data.accessToken}`
+          return api(original)
         }
+      } catch {
+        // Refresh falló → logout completo
       }
 
       localStorage.removeItem('hotclick-auth')

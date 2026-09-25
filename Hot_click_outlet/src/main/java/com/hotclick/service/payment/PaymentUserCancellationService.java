@@ -20,6 +20,7 @@ public class PaymentUserCancellationService {
     @Autowired private PedidoRepository       pedidoRepository;
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private PaymentFailureHandler paymentFailureHandler;
+    @Autowired private GuestCancelTokenService guestCancelTokenService;
 
     @Transactional
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
@@ -47,7 +48,11 @@ public class PaymentUserCancellationService {
     }
 
     @Transactional
-    public void cancelarAnon(String numeroPedido) {
+    public void cancelarAnon(String numeroPedido, String cancelToken) {
+        if (!guestCancelTokenService.esValido(numeroPedido, cancelToken)) {
+            throw new SecurityException("Token de cancelación inválido o ausente");
+        }
+
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
 

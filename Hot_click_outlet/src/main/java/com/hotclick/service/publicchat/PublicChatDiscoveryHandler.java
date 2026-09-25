@@ -1,7 +1,6 @@
 package com.hotclick.service.publicchat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotclick.service.producto.SkuVisibility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -48,7 +47,7 @@ public class PublicChatDiscoveryHandler {
         boolean afterHours = intentHelper.isOutsideBusinessHours();
         String intent = intentHelper.classifyIntent(userMessage, isGift, maxBudget);
 
-        boolean showAll = intentHelper.isShowAllOrPopularQuery(userMessage);
+        boolean showAll = intentHelper.isCatalogBrowseQuery(userMessage);
         boolean showOffers = !showAll && intentHelper.isOfferQuery(userMessage);
         boolean tieneTerminos = !intentHelper.userTerms(userMessage).isEmpty();
         boolean mostrarFichas = fichasEnPantalla(context, showAll, showOffers, tieneTerminos);
@@ -105,7 +104,7 @@ public class PublicChatDiscoveryHandler {
     private void enviarProductos(SseEmitter emitter, List<Map<String, Object>> page,
                                  boolean hasMore, String userMessage) throws Exception {
         Map<String, Object> productEvent = new LinkedHashMap<>();
-        productEvent.put("productos", SkuVisibility.sinInternos(page));
+        productEvent.put("productos", page);
         productEvent.put("hasMore", hasMore);
         productEvent.put("query", userMessage);
         emitter.send(SseEmitter.event().name("products").data(objectMapper.writeValueAsString(productEvent)));

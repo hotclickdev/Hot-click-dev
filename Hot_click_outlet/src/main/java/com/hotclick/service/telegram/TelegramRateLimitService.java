@@ -8,13 +8,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class TelegramRateLimitService {
 
+    static final int RATE_POR_SEGUNDO = 3;
     private static final int RATE_POR_MINUTO = 20;
     private static final int RATE_POR_DIA    = 300;
 
     @Autowired private RateLimiter               rateLimiter;
     @Autowired private TelegramClienteBotService bot;
+    @Autowired private TelegramAbusoService      abuso;
 
     public boolean permitidoPorRateLimit(long chatId) {
+        if (!rateLimiter.tryAcquire("tg:" + chatId + ":seg", RATE_POR_SEGUNDO, 1)) {
+            abuso.registrarRafaga(chatId);
+            return false;
+        }
         if (!rateLimiter.tryAcquire("tg:" + chatId + ":dia", RATE_POR_DIA, 86_400)) {
             if (rateLimiter.tryAcquire("tg:" + chatId + ":aviso", 1, 3_600)) {
                 bot.enviarMensaje(chatId, "Alcanzaste el límite diario de consultas por Telegram. Volvé a intentarlo mañana o usá el panel web.");

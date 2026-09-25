@@ -4,6 +4,7 @@ import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.MarcaRepository;
+import com.hotclick.utils.BarcodeNormalizer;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.stereotype.Component;
 
@@ -57,7 +58,9 @@ public class ProductoDtoMapper {
         if (dto.getGrupoVarianteId()    != null) p.setGrupoVarianteId(sanitizer.cleanWithLimit(dto.getGrupoVarianteId(), 64));
         if (dto.getColorVariante()      != null) p.setColorVariante(sanitizer.cleanWithLimit(dto.getColorVariante(), 50));
         if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(), 500));
+        if (dto.getSku()                != null) p.setSku(sanitizer.cleanWithLimit(dto.getSku(), 50));
         aplicarBarcode(dto, p);
+        if (dto.getGarantiaDias()       != null) p.setGarantiaDias(dto.getGarantiaDias());
         if (dto.getEsPersonalizado()    != null) p.setEsPersonalizado(dto.getEsPersonalizado());
         if (Boolean.TRUE.equals(dto.getEsPersonalizado())) {
             if (dto.getModoPrecioPersonalizado() != null) {
@@ -85,13 +88,7 @@ public class ProductoDtoMapper {
     /** Vacío borra el código; omitido (null) no cambia el valor guardado. */
     private void aplicarBarcode(ProductoRequestDTO dto, Producto p) {
         if (dto.getBarcode() == null) return;
-        String limpio = sanitizer.cleanWithLimit(dto.getBarcode(), 50);
-        if (limpio == null) {
-            p.setBarcode(null);
-            return;
-        }
-        String compacto = limpio.replace(" ", "").replace("-", "");
-        p.setBarcode(compacto.isBlank() ? null : compacto);
+        p.setBarcode(BarcodeNormalizer.normalize(sanitizer.cleanWithLimit(dto.getBarcode(), 50)));
     }
 
     private void validarModoPersonalizado(ProductoRequestDTO dto, Producto p) {

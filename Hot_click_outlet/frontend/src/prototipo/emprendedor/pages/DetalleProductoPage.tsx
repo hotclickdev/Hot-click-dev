@@ -56,13 +56,6 @@ export default function DetalleProductoPage() {
         <div className="flex flex-col gap-4 px-5 pb-10 pt-[22px]">
           <BadgeEstado>{producto.categoria}</BadgeEstado>
           <h1 className="font-display text-xl font-bold">{producto.nombre}</h1>
-          {(producto.numeroLocal != null || producto.sku) && (
-            <p className="text-xs font-mono text-hc-muted">
-              {producto.numeroLocal != null ? `N.º ${producto.numeroLocal}` : ''}
-              {producto.numeroLocal != null && producto.sku ? ' · ' : ''}
-              {producto.sku ?? ''}
-            </p>
-          )}
           <p className="text-2xl font-bold text-hc-primary">{formatoColon(producto.precio)}</p>
           <p className="rounded-xl bg-hc-surface-2 px-3 py-2.5 text-xs">
             <span className="text-hc-muted">Vendido por </span>

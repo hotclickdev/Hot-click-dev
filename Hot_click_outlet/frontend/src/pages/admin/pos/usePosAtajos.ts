@@ -17,11 +17,12 @@ function enfocarCantidad() {
 
 /**
  * Atajos de caja: F2 buscar, F4 cantidad del último ítem, F8 cobrar.
- * F8 llama el mismo onCobrar del botón; no confirma el pago.
+ * F8 llama el mismo onCobrar del botón; no confirma el pago. onCobrar
+ * decide qué hacer con carrito vacío (toast), F8 ya no lo filtra en
+ * silencio para que el cajero reciba el mismo feedback que con el botón.
  */
-export function usePosAtajos({ activo, hayItems, onCobrar, alBuscar, alCantidad }: {
+export function usePosAtajos({ activo, onCobrar, alBuscar, alCantidad }: {
   activo: boolean
-  hayItems: boolean
   onCobrar: () => void
   alBuscar?: () => void
   alCantidad?: () => void
@@ -43,7 +44,7 @@ export function usePosAtajos({ activo, hayItems, onCobrar, alBuscar, alCantidad 
         setTimeout(enfocarCantidad, 50)
         return
       }
-      if (event.key === 'F8' && hayItems) {
+      if (event.key === 'F8') {
         event.preventDefault()
         onCobrar()
       }
@@ -51,5 +52,5 @@ export function usePosAtajos({ activo, hayItems, onCobrar, alBuscar, alCantidad 
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [activo, hayItems, onCobrar, alBuscar, alCantidad])
+  }, [activo, onCobrar, alBuscar, alCantidad])
 }

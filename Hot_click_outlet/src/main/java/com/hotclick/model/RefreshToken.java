@@ -13,8 +13,13 @@ public class RefreshToken {
     @Column(name = "id")
     private Long id;
 
+    /** SHA-256 hex del token opaco. Nunca guardar el valor en claro. */
     @Column(nullable = false, unique = true, length = 255)
     private String token;
+
+    /** Valor en claro recién emitido; no se persiste (solo para Set-Cookie / AuthResponse). */
+    @Transient
+    private String rawToken;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_usuario", nullable = false)
@@ -34,6 +39,8 @@ public class RefreshToken {
     public void setId(Long id)                   { this.id = id; }
     public String getToken()                     { return token; }
     public void setToken(String token)           { this.token = token; }
+    public String getRawToken()                  { return rawToken; }
+    public void setRawToken(String rawToken)     { this.rawToken = rawToken; }
     public Usuario getUsuario()                  { return usuario; }
     public void setUsuario(Usuario usuario)      { this.usuario = usuario; }
     public LocalDateTime getExpiresAt()          { return expiresAt; }

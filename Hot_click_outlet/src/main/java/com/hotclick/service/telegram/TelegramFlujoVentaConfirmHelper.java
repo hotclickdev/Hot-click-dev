@@ -35,6 +35,7 @@ class TelegramFlujoVentaConfirmHelper {
     @Autowired private TelegramClienteBotService      bot;
     @Autowired private UsuarioRepository              usuarioRepository;
     @Autowired private TelegramFlujoVentaCatalogHelper catalog;
+    @Autowired private TelegramAbusoService           abuso;
 
     void mostrarResumenVenta(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {
         e.setP(P_VTA_CONFIRMAR);
@@ -95,6 +96,7 @@ class TelegramFlujoVentaConfirmHelper {
                         TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
         } catch (Exception ex) {
             log.error("[telegram-flujo] fallo confirmando venta en chat {} — {}", v.getChatId(), ex.getMessage());
+            abuso.avisarErrorDeUsuario(v.getChatId(), ex.getMessage());
             bot.enviarMensaje(v.getChatId(), "No pude registrar la venta: " + esc(ex.getMessage())
                 + "\nProbá de nuevo en unos minutos o registrala desde el panel.");
         }

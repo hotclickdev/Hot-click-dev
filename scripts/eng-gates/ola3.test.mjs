@@ -92,7 +92,7 @@ ALTER TABLE hot_click_bodega_tb
     assert.equal(evaluateHealth({ currentStatus: 500, previousStatus: 200 }).openOutage, false);
     assert.equal(evaluateHealth({ currentStatus: 503, previousStatus: 500 }).openOutage, true);
     assert.equal(evaluateHealth({ currentStatus: 200, previousStatus: 500 }).recovered, true);
-    const red = redactSecrets('Authorization: Bearer sk_live_abcdefgh token=supersecret99');
+    const red = redactSecrets('Authorization: Bearer sk_live_abcdefgh token="supersecret99"');
     assert.ok(!red.includes('sk_live_abcdefgh'));
     assert.ok(red.includes('***'));
   });
