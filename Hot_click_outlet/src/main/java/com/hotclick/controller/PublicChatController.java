@@ -3,16 +3,19 @@ package com.hotclick.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.PublicChatRequest;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.security.ClientIpResolver;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.PublicChatService;
 import com.hotclick.service.TextModerationService;
 import com.hotclick.service.catalogo.MarketplaceCatalogo;
 import com.hotclick.service.publicchat.PublicChatRequestParser;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,12 +39,19 @@ import java.util.concurrent.Executor;
 public class PublicChatController {
 
     private static final Logger log = LoggerFactory.getLogger(PublicChatController.class);
-    private static final int DAILY_MAX = 300;
     private static final int DAILY_WINDOW = 86_400;
+
+    @Value("${chat.publico.max-diario-visitante:60}")
+    private int maxDiarioVisitante;
+
+    /** Tope de costo del modelo. Al superarlo el chat sigue con búsqueda sin IA, no se corta. */
+    @Value("${chat.publico.max-diario-empresa:3000}")
+    private int maxDiarioEmpresa;
 
     @Autowired private PublicChatService chatService;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private RateLimiter rateLimiter;
+    @Autowired private ClientIpResolver clientIpResolver;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
     @Autowired private TextModerationService textModerationService;
     @Autowired private ObjectMapper objectMapper;
@@ -49,7 +59,8 @@ public class PublicChatController {
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
             @RequestParam(required = false) String slug,
-            @Valid @RequestBody PublicChatRequest body) {
+            @Valid @RequestBody PublicChatRequest body,
+            HttpServletRequest request) {
 
         SseEmitter emitter = new SseEmitter(60_000L);
         String message = PublicChatRequestParser.mensaje(body);
@@ -67,12 +78,18 @@ public class PublicChatController {
             return errorEmitter(emitter, "Tienda no encontrada");
         }
 
-        String dailyKey = "empresa:" + empresaId + ":public_chat:day";
-        if (!rateLimiter.tryAcquire(dailyKey, DAILY_MAX, DAILY_WINDOW)) {
-            return errorEmitter(emitter, "Límite diario del chat alcanzado. Volvé mañana.");
+        String visitanteKey = "public_chat:ip:" + clientIpResolver.resolve(request) + ":day";
+        if (!rateLimiter.tryAcquire(visitanteKey, maxDiarioVisitante, DAILY_WINDOW)) {
+            return errorEmitter(emitter, "Llegaste al límite de mensajes de hoy. Podés seguir buscando en el catálogo.");
         }
 
-        lanzarChat(emitter, empresaId, slug, message, body);
+        String empresaKey = "empresa:" + empresaId + ":public_chat:day";
+        boolean conModelo = rateLimiter.tryAcquire(empresaKey, maxDiarioEmpresa, DAILY_WINDOW);
+        if (!conModelo) {
+            log.warn("[Chat] Tope diario del modelo alcanzado empresa={}: respondiendo sin IA", empresaId);
+        }
+
+        lanzarChat(emitter, empresaId, slug, message, body, conModelo);
         return emitter;
     }
 
@@ -85,7 +102,7 @@ public class PublicChatController {
     }
 
     private void lanzarChat(SseEmitter emitter, Long empresaId, String slug,
-                            String message, PublicChatRequest body) {
+                            String message, PublicChatRequest body, boolean conModelo) {
         int offset = PublicChatRequestParser.offset(body);
         List<Map<String, Object>> history = PublicChatRequestParser.history(body);
         String context = PublicChatRequestParser.contexto(body);
@@ -95,7 +112,7 @@ public class PublicChatController {
         emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
         sseExecutor.execute(() -> chatService.chat(
-            empresaId, marketplace, message, offset, history, context, focusIds, productoId, emitter));
+            empresaId, marketplace, message, offset, history, context, focusIds, productoId, conModelo, emitter));
     }
 
     private SseEmitter doneEmitter(SseEmitter emitter) {

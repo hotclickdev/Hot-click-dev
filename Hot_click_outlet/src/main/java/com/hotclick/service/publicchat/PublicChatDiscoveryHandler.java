@@ -39,7 +39,7 @@ public class PublicChatDiscoveryHandler {
 
     public void responder(Long empresaId, boolean marketplace, String userMessage, int offset,
                           List<Map<String, Object>> history, String context,
-                          List<Long> focusIds, SseEmitter emitter) throws Exception {
+                          List<Long> focusIds, boolean conModelo, SseEmitter emitter) throws Exception {
         boolean isEnglish = intentHelper.isEnglish(userMessage);
         Long maxBudget = intentHelper.extractMaxBudget(userMessage);
         boolean isGift = intentHelper.isGiftIntent(userMessage);
@@ -64,7 +64,7 @@ public class PublicChatDiscoveryHandler {
             return;
         }
         streamVenta(emitter, userMessage, page, history, empresaId, marketplace, context,
-            isEnglish, isGift, maxBudget, negations, afterHours, mostrarFichas);
+            isEnglish, isGift, maxBudget, negations, afterHours, mostrarFichas, conModelo);
     }
 
     static boolean fichasEnPantalla(String context, boolean showAll, boolean showOffers,
@@ -139,11 +139,11 @@ public class PublicChatDiscoveryHandler {
     private void streamVenta(SseEmitter emitter, String userMessage, List<Map<String, Object>> page,
                              List<Map<String, Object>> history, Long empresaId, boolean marketplace, String context,
                              boolean isEnglish, boolean isGift, Long maxBudget, Set<String> negations,
-                             boolean afterHours, boolean mostrarFichas) throws Exception {
+                             boolean afterHours, boolean mostrarFichas, boolean conModelo) throws Exception {
         List<String> smartOpts = mostrarFichas
             ? claudeClient.generateOpts(context, page, userMessage, isEnglish, afterHours)
             : List.of();
-        if (claudeClient.hasApiKey()) {
+        if (conModelo && claudeClient.hasApiKey()) {
             claudeClient.streamClaudeResponse(emitter, userMessage, page, history, empresaId, marketplace, context,
                 isEnglish, isGift, maxBudget, negations, afterHours, smartOpts, mostrarFichas);
             return;

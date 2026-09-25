@@ -1,22 +1,30 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '@/services/api'
 import PromoWelcomeForm, { type PromoWelcomeStatus } from '@/components/ui/promoWelcome/PromoWelcomeForm'
 import PromoWelcomeSuccess from '@/components/ui/promoWelcome/PromoWelcomeSuccess'
 import CloseIcon from '@/components/ui/CloseIcon'
+import { debeMostrarPromo } from '@/components/ui/promoWelcome/promoWelcomeReglas'
 
 const LS_KEY = 'hc-promo-seen'
-const COOLDOWN_DAYS = 7
-const DELAY_MS = 8000
+const SS_PAGINAS = 'hc-paginas-sesion'
+const DELAY_MS = 2000
 
-function shouldShow() {
+function registrarPagina(): number {
+  try {
+    const paginas = Number(sessionStorage.getItem(SS_PAGINAS) ?? '0') + 1
+    sessionStorage.setItem(SS_PAGINAS, String(paginas))
+    return paginas
+  } catch { return 0 }
+}
+
+function ultimaVezVisto(): number | null {
   try {
     const raw = localStorage.getItem(LS_KEY)
-    if (!raw) return true
-    return (Date.now() - Number(raw)) / (1000 * 60 * 60 * 24) >= COOLDOWN_DAYS
-  } catch { return true }
+    return raw ? Number(raw) : null
+  } catch { return null }
 }
 
 function markSeen() {
@@ -42,12 +50,19 @@ export default function PromoWelcomePopup() {
   const [status, setStatus]     = useState<PromoWelcomeStatus>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const navigate = useNavigate()
+  const { pathname } = useLocation()
 
   useEffect(() => {
-    if (!shouldShow()) return
-    const t = setTimeout(() => setVisible(true), DELAY_MS)
-    return () => clearTimeout(t)
-  }, [])
+    const mostrar = debeMostrarPromo({
+      paginasVistas: registrarPagina(),
+      pathname,
+      ultimaVezVisto: ultimaVezVisto(),
+      ahora: Date.now(),
+    })
+    if (!mostrar) return
+    const timer = setTimeout(() => setVisible(true), DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [pathname])
 
   const dismiss = useCallback(() => {
     setVisible(false)
@@ -59,7 +74,7 @@ export default function PromoWelcomePopup() {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') dismiss() }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [visible])
+  }, [visible, dismiss])
 
   const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()

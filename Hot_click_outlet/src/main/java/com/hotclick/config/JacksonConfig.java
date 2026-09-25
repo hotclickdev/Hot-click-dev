@@ -1,7 +1,11 @@
 package com.hotclick.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.hotclick.security.VisibilidadCamposInternos;
 import org.hibernate.proxy.HibernateProxy;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,5 +27,14 @@ public class JacksonConfig {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer hibernateProxyMixinCustomizer() {
         return builder -> builder.mixIn(HibernateProxy.class, HibernateProxyMixin.class);
+    }
+
+    /** Lazy: CompanyScope depende de beans que a su vez usan el ObjectMapper. */
+    @Bean
+    public Module camposInternosModule(ObjectProvider<VisibilidadCamposInternos> visibilidad) {
+        SimpleModule modulo = new SimpleModule("camposInternos");
+        modulo.setSerializerModifier(new CamposInternosSerializerModifier(
+            empresaId -> visibilidad.getObject().puedeVer(empresaId)));
+        return modulo;
     }
 }

@@ -5,27 +5,7 @@ import { useTranslation } from 'react-i18next'
 import Section from '@/components/ui/Section'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoFlecha from '@/components/ui/TextoFlecha'
-import type { Id } from '@/types/api'
-
-export type ProductoMuestraCategoria = {
-  id?: number | string
-  categoriaId?: Id | ''
-  imagenUrl?: string
-  nombre?: string | null
-}
-
-export type CategoriaBrowse = {
-  id?: number | string
-  idCategoria?: number | string
-  nombreCategoria?: string
-  nombre?: string
-}
-
-type CatGroup = {
-  products: ProductoMuestraCategoria[]
-  catId: string
-  nombre: string
-}
+import { agruparPorCategoria, type CategoriaBrowse, type ProductoMuestraCategoria } from './categoryBrowseGrupos'
 
 // ─── Sección "Explorar por categoría" estilo Amazon ──────────────────────────
 export default function CategoryBrowse({
@@ -41,28 +21,10 @@ export default function CategoryBrowse({
   maxCategories?: number
 }) {
   const { t } = useTranslation()
-  const fijadas = visibleCategoryIds && visibleCategoryIds.length > 0 ? new Set(visibleCategoryIds) : null
-
-  const catGroups = useMemo(() => {
-    const map: Record<string, { products: ProductoMuestraCategoria[]; catId: string }> = {}
-    products.forEach(p => {
-      const catId = String(p.categoriaId ?? '')
-      if (!catId) return
-      if (!map[catId]) map[catId] = { products: [], catId }
-      map[catId].products.push(p)
-    })
-    // Enriquecer con nombre de categoría
-    let grupos = Object.values(map)
-      .map((g): CatGroup => {
-        const cat = categories.find(c => String(c.id ?? c.idCategoria) === g.catId)
-        return { ...g, nombre: cat?.nombreCategoria ?? cat?.nombre ?? t('home.unnamedCategory') }
-      })
-      .filter(g => g.products.length >= 1)
-      .sort((a, b) => b.products.length - a.products.length)
-
-    if (fijadas) grupos = grupos.filter(g => fijadas.has(g.catId))
-    return grupos.slice(0, maxCategories)
-  }, [products, categories, t, fijadas, maxCategories])
+  const catGroups = useMemo(
+    () => agruparPorCategoria(products, categories, visibleCategoryIds, maxCategories),
+    [products, categories, visibleCategoryIds, maxCategories],
+  )
 
   if (catGroups.length === 0) return null
 

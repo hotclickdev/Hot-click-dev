@@ -9,7 +9,8 @@ import HeroRotator from '@/components/ui/HeroRotator'
 import DescubriBanner from './home/DescubriBanner'
 import TrustStrip from './home/TrustStrip'
 import ConveniosMarquee from './home/ConveniosMarquee'
-import CategoryBrowse, { type CategoriaBrowse, type ProductoMuestraCategoria } from './home/CategoryBrowse'
+import CategoryBrowse from './home/CategoryBrowse'
+import type { CategoriaBrowse, ProductoMuestraCategoria } from './home/categoryBrowseGrupos'
 import ShippingSection from './home/ShippingSection'
 import TestimonialsCarousel from './home/TestimonialsCarousel'
 import HomeSeo from './home/HomeSeo'
@@ -84,6 +85,7 @@ export default function HomePage() {
         setProductsMuestra(content.map(p => ({
           id: p.id ?? p.idProducto,
           categoriaId: p.categoriaId ?? p.idCategoria ?? p.categoria?.id,
+          categoriaNombre: p.categoriaNombre || p.categoria?.nombreCategoria || p.categoria?.nombre,
           imagenUrl: p.imagenPrincipalUrl ?? p.imagenUrl ?? p.imagen,
           nombre: p.nombreProducto ?? p.nombre ?? p.titulo,
         })))

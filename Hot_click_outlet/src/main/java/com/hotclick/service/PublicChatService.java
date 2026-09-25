@@ -41,7 +41,7 @@ public class PublicChatService {
 
     public void chat(Long empresaId, boolean marketplace, String userMessage, int offset,
                      List<Map<String, Object>> history, String context,
-                     List<Long> focusIds, Long productoId, SseEmitter emitter) {
+                     List<Long> focusIds, Long productoId, boolean conModelo, SseEmitter emitter) {
         try {
             String msg = sanitizer.cleanWithLimit(userMessage == null ? "" : userMessage, MAX_MSG_LENGTH);
             if (msg.isBlank()) {
@@ -117,7 +117,8 @@ public class PublicChatService {
                 return;
             }
 
-            discoveryHandler.responder(empresaId, marketplace, userMessage, offset, history, context, focusIds, emitter);
+            discoveryHandler.responder(empresaId, marketplace, userMessage, offset, history, context, focusIds,
+                conModelo, emitter);
 
         } catch (Exception e) {
             log.error("[Chat] Error empresa={}: {}", empresaId, e.getMessage());
