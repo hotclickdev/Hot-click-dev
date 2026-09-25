@@ -10,12 +10,13 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Al arrancar (no test): vacía tiendas y productos sobrantes y deja admin + 3 QA.
+ * Al arrancar en dev: vacía tiendas y productos sobrantes y deja admin + 3 QA.
  * DataSeeder corre después y crea las 4 cuentas si faltan. Se reintenta si
  * quedaron tiendas/productos de una corrida anterior incompleta.
+ * NUNCA activar fuera de dev — vacía datos reales de tiendas/productos.
  */
 @Component
-@Profile("!test")
+@Profile("dev")
 @Order(90)
 public class ResetPlataformaKeepQaRunner implements ApplicationRunner {
 
