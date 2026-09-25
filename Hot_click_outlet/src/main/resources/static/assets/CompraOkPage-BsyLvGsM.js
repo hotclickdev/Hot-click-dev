@@ -1,0 +1,1 @@
+import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-tNi8W4aA.js";import{i as n}from"./vendor-react-6PAeCmqN.js";var r=e(t(),1);function i(){return(0,r.jsx)(n,{to:`/pago/exito`,replace:!0})}export{i as default};
