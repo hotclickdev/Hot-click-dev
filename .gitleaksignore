@@ -17,3 +17,5 @@ a790924b6a8c88d29abc457269d97ae22cfedd71:Hot_click_outlet/frontend/src/pages/emp
 35eb364360bb026fbe89b96ad705f16dfab96d7e:scripts/eng-gates/ola4.test.mjs:stripe-access-token:116
 # E4 spa-bundle test used a stripe-shaped literal; HEAD already rewritten
 f5030362b43a0b9fa2498ae1318544c5d7d62824:scripts/eng-gates/ola3.test.mjs:stripe-access-token:327
+# File key de Figma (identificador publico en la URL del diseno, no un secreto)
+7628431baeebd305c4535f913d4321639003345a:Hot_click_outlet/docs/landing-pages.md:generic-api-key:25

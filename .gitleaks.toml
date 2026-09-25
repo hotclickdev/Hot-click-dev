@@ -73,4 +73,5 @@ regexes = [
   '''a11y\.filtro\w+''',
   '''a11y\.filtro\w+Desc''',
   '''token-prueba-qr-pos-\d+''',
+  '''NIPdnghS5wMAbYoH0hIEyp''', # Figma file key (id publico en la URL del diseno, no es secreto)
 ]
