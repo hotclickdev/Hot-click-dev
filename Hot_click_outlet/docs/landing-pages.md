@@ -1,8 +1,8 @@
 # Landing pages de planes — estado y contexto (para retomar en otra sesión/LLM)
 
-Fecha de este documento: 2026-09-25. Escrito a mitad de una tarea en curso —
-revisar la sección "Estado al momento de escribir esto" antes de asumir que
-algo ya terminó.
+Fecha de este documento: 2026-09-25. Actualizado al cierre de la tarea — las
+3 landings quedaron reconstruidas, integradas, verificadas y desplegadas
+(ver "Estado al momento de escribir esto").
 
 ## Qué son estas landings
 
@@ -12,8 +12,8 @@ HotClick tiene 3 landings públicas de venta de planes para emprendedores/PYMEs:
 |------|------|--------------------|
 | `/emprende` | Emprendedor | `frontend/src/pages/emprende/EmprendeLanding.tsx` (implementación rica, a medida) |
 | `/para-emprendedores` | Emprendedor (alias) | `Navigate to="/emprende"` en `frontend/src/app/AppRoutes.tsx` |
-| `/para-pymes` | PYME | `frontend/src/pages/planes/PymeLandingPage.tsx` |
-| `/negocio-plus-plan` | Negocio Plus | `frontend/src/pages/planes/NegocioPlusLandingPage.tsx` |
+| `/para-pymes` | PYME | `frontend/src/pages/planes/PymeLandingPage.tsx` → `<PymeLanding />` de `frontend/src/pages/pyme/` |
+| `/negocio-plus-plan` | Negocio Plus | `frontend/src/pages/planes/NegocioPlusLandingPage.tsx` → `<NegocioPlusLanding />` de `frontend/src/pages/negocioplus/` |
 
 Precios/comisión (ya correctos en `frontend/src/pages/planes/planLandingCopy.ts`,
 NO tocar sin que el usuario lo pida): Emprendedor 9% por venta (mín. ₡700,
@@ -85,31 +85,40 @@ fixes que ya se habían hecho, todos corregidos ya en esta sesión:
    de seguridad/operación, no de diseño — cualquier LLM que retome este
    proyecto debe saber que ya está resuelto y NUNCA debe volver a ampliar
    ese `@Profile`.
+7. **La más grande:** `EmprendeLanding.tsx` (el orquestador de `/emprende`)
+   había sido reescrito por el commit `1325a672` para armar la landing rica
+   (Hero, Vitrina, ComoFunciona, NegociosReales, ParaVos, QueIncluye,
+   PanelPreview, PagoFlexible, ComoEntras, PrecioDestacado, Faq, CtaFinal),
+   pero el merge lo revirtió a la versión vieja "puerta corta" (3 tarjetas de
+   enlace a los planes). Los ~12 componentes ricos seguían en el repo pero
+   quedaron huérfanos — ningún route los importaba. `/emprende` en
+   producción mostraba la puerta corta, NO el diseño aprobado, a pesar de
+   que ya existía el código fiel a Figma. — **Corregido restaurando el
+   orquestador verbatim del commit `1325a672`**, commit `d9f0e9d6`.
 
 Además, producción migró de EC2 a **Lightsail** (`18.119.201.126`) el
 2026-09-25 — ver `Hot_click_outlet/MIGRACION_LIGHTSAIL.md` y la sección
 "Infraestructura AWS" de `CLAUDE.md` (ya actualizada, commit `a53dc65d`).
 El EC2 viejo (`18.227.68.15`) está detenido, no se usa.
 
-## Estado al momento de escribir esto (2026-09-25, sesión en curso)
+## Estado al momento de escribir esto (2026-09-25, actualizado — tarea completa)
 
-- ✅ `/emprende` — fiel a Figma, verificado.
+- ✅ `/emprende` — fiel a Figma (frame `40:21`), orquestador restaurado y
+  desplegado. Verificado: `tsc`, `pnpm build`, `vitest`, backend `mvn test`.
 - ✅ `/para-emprendedores` — redirige a `/emprende`, verificado y desplegado.
-- 🔄 `/para-pymes` — **en construcción por un agente en paralelo** (worktree
-  aislado), reemplazando `PlanLandingLayout` por una implementación a medida
-  del frame `7:42`, siguiendo el patrón de `/emprende`. Carpeta nueva
-  esperada: `frontend/src/pages/pyme/`.
-- 🔄 `/negocio-plus-plan` — **en construcción por otro agente en paralelo**
-  (worktree aislado), frame `37:24`. Carpeta nueva esperada:
-  `frontend/src/pages/negocioplus/`.
+- ✅ `/para-pymes` — reconstruida por un agente en worktree aislado, fiel al
+  frame `7:42`, siguiendo el patrón de `/emprende`. Carpeta nueva:
+  `frontend/src/pages/pyme/` (14 componentes). Namespace i18n `"pyme"`.
+  Integrada, verificada y desplegada — commit `1d8f8db5` → merge `master`.
+- ✅ `/negocio-plus-plan` — reconstruida por otro agente en worktree aislado,
+  fiel al frame `37:24`. Carpeta nueva: `frontend/src/pages/negocioplus/`
+  (13 componentes). Namespace i18n `"negocioPlus"`. Integrada, verificada y
+  desplegada — commit `adbcfcee`.
 
-**Si estás retomando esto y los dos puntos de arriba ya no dicen "en
-construcción"**, significa que en algún momento se integraron (o se
-abandonaron) esos cambios — revisá `git log --oneline` buscando commits
-`feat(landings)` o similares para PYME/Negocio Plus, y el estado real de
-`frontend/src/pages/planes/PymeLandingPage.tsx` /
-`NegocioPlusLandingPage.tsx` (si siguen usando `<PlanLandingLayout .../>`,
-la tarea NO se completó).
+Las 3 landings están desplegadas en producción (`https://hotclick.lat`) y
+verificadas contra `/api/health`. Si estás retomando esto y algo de lo de
+arriba ya no aplica (alguien deshizo el cambio, rehicieron el diseño, etc.),
+confiá en `git log` y en el estado real del código, no en este documento.
 
 ## Cómo verificar que una landing está bien hecha
 
