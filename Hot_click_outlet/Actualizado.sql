@@ -3613,7 +3613,7 @@ SELECT 'FINANCE', 'Staff plataforma ? payouts, billing y pagos', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'FINANCE');
 
 INSERT INTO hot_click_rol_tb (nombre_rol, descripcion, nivel_acceso, fk_id_estado)
-SELECT 'TRUST', 'Staff plataforma ? moderación y suspensiones', 80, 1
+SELECT 'TRUST', 'Staff plataforma ? moderaciï¿½n y suspensiones', 80, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_rol_tb WHERE nombre_rol = 'TRUST');
 
 INSERT INTO hot_click_rol_permiso_tb (fk_id_rol, fk_id_permiso)
@@ -3733,7 +3733,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_ledger_ref_tipo
     ON hot_click_billing_ledger_tb (referencia_externa, tipo)
     WHERE referencia_externa IS NOT NULL;
 
--- V128: cambio de cuenta de cobro queda en revisión hasta admin.
+-- V128: cambio de cuenta de cobro queda en revisiï¿½n hasta admin.
 ALTER TABLE hot_click_metodo_cobro_tb
     ADD COLUMN IF NOT EXISTS en_revision BOOLEAN NOT NULL DEFAULT FALSE;
 
@@ -3770,7 +3770,7 @@ WHERE id = 1 AND usados = 0;
 
 
 
--- V130: prioridad automática en tickets de soporte, según el plan de la empresa
+-- V130: prioridad automï¿½tica en tickets de soporte, segï¿½n el plan de la empresa
 
 ALTER TABLE hot_click_ticket_soporte_tb
   ADD COLUMN IF NOT EXISTS prioridad VARCHAR(10) NOT NULL DEFAULT 'MEDIA';
@@ -3846,9 +3846,9 @@ BEGIN
 END $$;
 -- V132: limpiar roles JWT muertos (staff plataforma + POS)
 -- No edita V89/V126; inactiva SUPPORT/FINANCE/TRUST y remapea usuarios a ADMIN.
--- POS (CAJERO, GERENTE, â?¦) ya inactivos en V89 â?? se refuerza descripciÃ³n.
+-- POS (CAJERO, GERENTE, ï¿½?ï¿½) ya inactivos en V89 ï¿½?? se refuerza descripciÃ³n.
 
--- Remapear usuarios staff â?? ADMIN (si tienen SUPPORT/FINANCE/TRUST)
+-- Remapear usuarios staff ï¿½?? ADMIN (si tienen SUPPORT/FINANCE/TRUST)
 INSERT INTO hot_click_usuario_rol_tb (fk_id_usuario, fk_id_rol)
 SELECT DISTINCT ur.fk_id_usuario,
        (SELECT id_rol FROM hot_click_rol_tb WHERE nombre_rol = 'ADMIN' LIMIT 1)
@@ -3876,12 +3876,12 @@ WHERE fk_id_rol IN (
 
 UPDATE hot_click_rol_tb
 SET fk_id_estado = 2,
-    descripcion = '[ELIMINADO â?? no usado; JWT vivos: ADMIN, EMPRENDEDOR, USUARIO_FINAL]'
+    descripcion = '[ELIMINADO ï¿½?? no usado; JWT vivos: ADMIN, EMPRENDEDOR, USUARIO_FINAL]'
 WHERE nombre_rol IN ('SUPPORT', 'FINANCE', 'TRUST');
 
 UPDATE hot_click_rol_tb
 SET fk_id_estado = 2,
-    descripcion = COALESCE(descripcion, '') || ' [ELIMINADO â?? POS/legacy]'
+    descripcion = COALESCE(descripcion, '') || ' [ELIMINADO ï¿½?? POS/legacy]'
 WHERE nombre_rol IN ('CAJERO', 'INVENTARIO', 'CONTABILIDAD', 'GERENTE', 'SUPERVISOR', 'MARKETING', 'SOPORTE')
   AND (descripcion IS NULL OR descripcion NOT LIKE '%ELIMINADO%');
 
@@ -3901,7 +3901,7 @@ DELETE FROM hot_click_refresh_token_tb;
 COMMENT ON COLUMN hot_click_refresh_token_tb.token IS
     'SHA-256 hex del refresh token opaco; el valor en claro solo viaja en cookie HttpOnly';
 
--- V138: panel único del bot de clientes y pausa por sospecha
+-- V138: panel ï¿½nico del bot de clientes y pausa por sospecha
 ALTER TABLE hot_click_telegram_vinculacion_tb
     ADD COLUMN IF NOT EXISTS panel_message_id BIGINT;
 ALTER TABLE hot_click_telegram_vinculacion_tb
@@ -3975,3 +3975,9 @@ CREATE TABLE IF NOT EXISTS hot_click_ads_insight_diario_tb (
 );
 CREATE INDEX IF NOT EXISTS idx_ads_insight_fecha ON hot_click_ads_insight_diario_tb (fecha);
 CREATE INDEX IF NOT EXISTS idx_ads_insight_empresa_fecha ON hot_click_ads_insight_diario_tb (fk_id_empresa, fecha);
+
+-- V141: Sube comisiÃ³n del plan EMPRENDEDOR de 8% (mÃ­n. â‚¡400) a 9% (mÃ­n. â‚¡700), all-in.
+UPDATE hot_click_plan_tb
+SET comision_porcentaje = 9.00,
+    descripcion = 'Plan gratuito. ComisiÃ³n 9% por venta (mÃ­n. â‚¡700), cubre pasarela y plataforma.'
+WHERE nombre = 'EMPRENDEDOR';

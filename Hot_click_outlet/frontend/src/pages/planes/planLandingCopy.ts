@@ -23,7 +23,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     eyebrow: 'Para empezar',
     headline: 'Publicá y cobrá en HotClick',
     subheadline: 'Sin mensualidad: solo una comisión cuando vendés.',
-    precio: '₡0/mes · comisión 8% por venta (mín. ₡400)',
+    precio: '₡0/mes · comisión 9% por venta (mín. ₡700, incluye la pasarela de pago)',
     ctaLabel: 'Crear mi negocio',
     paraQuienSi: [
       'Vendés en feria, Instagram o WhatsApp',
@@ -34,7 +34,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Ya tenés equipo y varias bodegas — mirá PYME',
     ],
     faq: [
-      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: 'No. La membresía es ₡0. HotClick se queda un 8% de cada venta (mínimo ₡400), que cubre pasarela y plataforma.' },
+      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: 'No. La membresía es ₡0. HotClick se queda un 9% de cada venta (mínimo ₡700), un porcentaje que ya incluye el costo de la pasarela de pago. Estos montos pueden cambiar; siempre los vas a ver actualizados acá.' },
       { pregunta: '¿Hay cupo limitado?', respuesta: 'Sí, los primeros 70 registros del mes entran gratis. Si se llena, podés seguir con PYME.' },
     ],
   },
