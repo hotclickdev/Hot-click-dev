@@ -70,7 +70,7 @@ public class PasswordResetService {
         // Si alguien más tenía una sesión abierta (p.ej. cuenta comprometida), este reset la tumba.
         usuario.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
         usuarioRepository.save(usuario);
-        refreshTokenService.revocarTodos(usuario);
+        refreshTokenService.revocarTodosDeUsuario(usuario);
         return true;
     }
 }
