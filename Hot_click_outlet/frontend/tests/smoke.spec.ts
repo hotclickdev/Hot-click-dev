@@ -252,7 +252,7 @@ test.describe('Smoke público', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await page.getByRole('link', { name: 'Emprender' }).first().click()
     await expect(page).toHaveURL(/\/emprende$/)
-    await expect(page.getByRole('heading', { name: /Crecé tu negocio|Grow your business|Cresça seu negócio/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Publicá y cobrá en HotClick|Publish and get paid on HotClick|Publique e receba no HotClick/ })).toBeVisible()
     await page.getByRole('link', { name: /Crear mi negocio|Create my business|Criar meu negócio/ }).first().click()
     await expect(page).toHaveURL(/\/registro-empresa/)
     await page.goto('/emprendimientos', { waitUntil: 'domcontentloaded' })

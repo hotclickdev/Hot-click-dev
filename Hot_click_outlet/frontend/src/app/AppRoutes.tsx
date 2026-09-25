@@ -194,6 +194,8 @@ export default function AppRoutes() {
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route path="/emprende" element={<EmprendePage />} />
+      {/* Alias de marketing: /para-emprendedores apunta a la misma landing, sin fragmentar SEO. */}
+      <Route path="/para-emprendedores" element={<Navigate to="/emprende" replace />} />
       <Route path="/emprendimientos" element={<EmprendimientosPage />} />
 
       <Route path="/admin/*" element={<AdminRoleSwitch />}>

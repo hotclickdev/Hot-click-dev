@@ -81,6 +81,8 @@ const TRAZOS = {
   ],
   guardar: ['M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7z', 'M7 3v5h8V3', 'M7 13h10'],
   papelera: ['M3 6h18', 'M8 6V4h8v2', 'M19 6l-1 14H6L5 6'],
+  reproducir: ['M8 5v14l11-7z'],
+  telefono: ['M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0122 16.92z'],
 }
 
 /** Ícono de trazo para sellos de confianza y pasos. Sin caracteres decorativos. */
