@@ -62,3 +62,6 @@ security-tools/**/.env
 Hot_click_outlet/.local-*
 Hot_click_outlet/.local-migrations/
 
+# Worktrees de agentes (Claude Code) — no subir a git
+.claude/worktrees/
+
