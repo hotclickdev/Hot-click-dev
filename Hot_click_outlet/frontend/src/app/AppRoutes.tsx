@@ -102,7 +102,6 @@ const BlogPage = lazy(() => import('@/pages/BlogPage'))
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage = lazy(() => import('@/pages/EmprendimientosPage'))
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
-const EmprendedorLandingPage = lazy(() => import('@/pages/planes/EmprendedorLandingPage'))
 const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
 const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
 const AdminPOS = lazy(() => import('@/pages/admin/pos/AdminPOS'))
@@ -202,7 +201,8 @@ export default function AppRoutes() {
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route path="/emprende" element={<EmprendePage />} />
-      <Route path="/para-emprendedores" element={<EmprendedorLandingPage />} />
+      {/* Alias de marketing: /para-emprendedores apunta a la misma landing, sin fragmentar SEO. */}
+      <Route path="/para-emprendedores" element={<Navigate to="/emprende" replace />} />
       <Route path="/para-pymes" element={<PymeLandingPage />} />
       <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
       <Route path="/emprendimientos" element={<EmprendimientosPage />} />
