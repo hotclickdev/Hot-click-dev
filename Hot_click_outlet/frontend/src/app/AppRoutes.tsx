@@ -127,6 +127,7 @@ const AdminForecast = lazy(() => import('@/pages/admin/AdminForecast'))
 const AdminExecutive = lazy(() => import('@/pages/admin/AdminExecutive'))
 const AdminMultipais = lazy(() => import('@/pages/admin/AdminMultipais'))
 const POSPagoPage = lazy(() => import('@/pages/pos/POSPagoPage'))
+const SelfCheckoutPage = lazy(() => import('@/pages/SelfCheckoutPage'))
 const RegistrarNegocioPage = lazy(() => import('@/pages/RegistrarNegocioPage'))
 const RegistroEmpresaPage = lazy(() => import('@/pages/RegistroEmpresaPage'))
 const ActivarPlanPage = lazy(() => import('@/pages/registro-empresa/ActivarPlanPage'))
@@ -324,6 +325,7 @@ export default function AppRoutes() {
       </Route>
 
       <Route path="/pos/pago/:token" element={<POSPagoPage />} />
+      <Route path="/checkout/qr/:token" element={<SelfCheckoutPage />} />
       <Route path="/tienda/:slug" element={<TiendaLayout />}>
         <Route index element={<TiendaHomePage />} />
         <Route path="producto/:productoId" element={<TiendaProductoPage />} />
