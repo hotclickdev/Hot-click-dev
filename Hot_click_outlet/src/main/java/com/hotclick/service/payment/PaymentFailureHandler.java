@@ -27,8 +27,13 @@ public class PaymentFailureHandler {
     public void marcarFallido(Pago pago, String motivo) {
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return; // ya confirmado, no revertir
 
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        if (pagoRepository.marcarFallidoSiPendiente(pago.getId(), ahora) == 0) {
+            log.info("Pago {} ya no está PENDIENTE; no se libera stock otra vez", pago.getPedido().getNumeroPedido());
+            return;
+        }
         pago.setEstadoPago(Constants.PAGO_FALLIDO);
-        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        pago.setFechaActualizacion(ahora);
         pagoRepository.save(pago);
 
         for (Pedido pedido : CompraPaquetes.paquetesDe(pago.getPedido(), pedidoRepository)) {

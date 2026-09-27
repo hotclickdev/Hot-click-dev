@@ -109,6 +109,8 @@ class PaymentServiceTest {
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
         testProducto.setBodega(testBodega);
 
+        when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
+        when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
         when(providerFactory.soporta("STRIPE")).thenReturn(true);
         when(providerFactory.get("STRIPE")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))

@@ -4,6 +4,7 @@ import com.hotclick.model.Pedido;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,6 +16,14 @@ import java.util.Optional;
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Optional<Pedido> findByNumeroPedido(String numeroPedido);
+
+    /**
+     * Reclama el paquete para confirmar su pago: devuelve 1 solo a la primera confirmación
+     * (webhook, retorno del navegador, admin o scheduler); las demás esperan el lock y ven 0.
+     */
+    @Modifying
+    @Query("UPDATE Pedido p SET p.estadoPedido = 'PAGADO' WHERE p.id = :id AND p.estadoPedido NOT IN :yaConfirmados")
+    int reclamarParaConfirmar(@Param("id") Long id, @Param("yaConfirmados") Collection<String> yaConfirmados);
 
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
 

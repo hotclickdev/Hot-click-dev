@@ -17,10 +17,17 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Service
 public class PaymentOrderConfirmationService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentOrderConfirmationService.class);
+
+    /** Estados posteriores al pago: confirmar de nuevo descontaría stock y cupones otra vez. */
+    static final Set<String> YA_CONFIRMADOS = Set.of(
+        Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
+        Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
 
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private CuponService               cuponService;
@@ -42,9 +49,10 @@ public class PaymentOrderConfirmationService {
                                   ApplicationEventPublisher eventPublisher) {
         Hibernate.initialize(pedido.getItems());
 
-        // Verificar que no esté ya confirmado (idempotencia)
-        if (Constants.PEDIDO_PAGADO.equals(pedido.getEstadoPedido())) {
-            log.info("confirmarPedido ignorado — pedido {} ya está PAGADO", pedido.getNumeroPedido());
+        // Idempotencia atómica: dos confirmaciones simultáneas leen el mismo estado viejo, solo una gana el UPDATE.
+        if (YA_CONFIRMADOS.contains(pedido.getEstadoPedido())
+            || pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0) {
+            log.info("confirmarPedido ignorado — pedido {} ya está confirmado", pedido.getNumeroPedido());
             return;
         }
 

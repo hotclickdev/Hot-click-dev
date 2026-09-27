@@ -103,6 +103,8 @@ class CompraMultiNegocioTest {
         when(pagoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> guardarPedido(inv.getArgument(0)));
         when(pedidoRepository.findByCompra_IdOrderByNumeroPaqueteAsc(any())).thenAnswer(inv -> pedidosGuardados);
+        when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
+        when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
 
         armarServicio();
     }
@@ -173,6 +175,36 @@ class CompraMultiNegocioTest {
 
         assertThat(pedidosGuardados).allMatch(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()));
         verify(notificacionEmailService, times(1)).enviarPagoFallido(any(), eq("Tarjeta rechazada"));
+    }
+
+    @Test
+    @DisplayName("confirmación concurrente: si otro hilo ya reclamó el paquete, no se acredita ni se consume stock otra vez")
+    void confirmar_reclamoPerdido_noDuplicaEfectos() {
+        service.checkout(requestTresNegocios(), CORREO);
+        Pago pago = pagoCreado();
+        when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(0);
+        clearInvocations(productoRepository);
+
+        service.confirmarPedido(pago);
+
+        verify(aggregatorService, never()).acreditarVentaAsync(any());
+        verify(ventaAvisoService, never()).avisarVentaConfirmada(any());
+        verify(productoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("fallo repetido: si el pago ya no está PENDIENTE, no se liberan reservas ni se reenvía el correo")
+    void fallido_repetido_noLiberaDosVeces() {
+        service.checkout(requestTresNegocios(), CORREO);
+        Pago pago = pagoCreado();
+        when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(0);
+        clearInvocations(productoRepository);
+
+        service.marcarFallido(pago, "Tarjeta rechazada");
+
+        assertThat(pedidosGuardados).noneMatch(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()));
+        verify(notificacionEmailService, never()).enviarPagoFallido(any(), any());
+        verify(productoRepository, never()).save(any());
     }
 
     @Test

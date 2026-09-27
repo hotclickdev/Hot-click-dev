@@ -85,6 +85,8 @@ class PaymentServiceF37Test {
 
     @BeforeEach
     void setUp() throws Exception {
+        when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
+        when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
         testUser = new Usuario();
         testUser.setId(1L);
         testUser.setCorreo("buyer@test.cr");
