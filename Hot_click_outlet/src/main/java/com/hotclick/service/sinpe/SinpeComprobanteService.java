@@ -11,6 +11,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.SupabaseStorageService;
+import com.hotclick.service.payment.CompraPaquetes;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,8 +79,10 @@ public class SinpeComprobanteService {
         comprobante.setFechaSubida(LocalDateTime.now(Constants.ZONA_CR));
         comprobanteRepository.save(comprobante);
 
-        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
-        pedidoRepository.save(pedido);
+        for (Pedido paquete : CompraPaquetes.paquetesDe(pedido, pedidoRepository)) {
+            paquete.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
+            pedidoRepository.save(paquete);
+        }
 
         log.info("Comprobante SINPE subido: pedido={} remitente={} cedula={}", numeroPedido, nombreRemitente, cedulaRemitente);
     }
@@ -98,7 +101,7 @@ public class SinpeComprobanteService {
             throw new IllegalStateException("El pedido no está en estado PENDIENTE_APROBACION");
         }
 
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
+        Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
@@ -138,17 +141,18 @@ public class SinpeComprobanteService {
         comprobante.setAdminEmail(adminEmail);
         comprobanteRepository.save(comprobante);
 
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId()).orElse(null);
+        Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
         if (pago != null) {
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagoRepository.save(pago);
         }
 
-        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-        pedidoRepository.save(pedido);
-
-        paymentService.liberarReservas(pedido);
+        for (Pedido paquete : CompraPaquetes.paquetesDe(pedido, pedidoRepository)) {
+            paquete.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+            pedidoRepository.save(paquete);
+            paymentService.liberarReservas(paquete);
+        }
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         notificacionEmailService.enviarPagoFallido(pedido,
             "Comprobante SINPE rechazado" + (motivo != null ? ": " + motivo : ""));

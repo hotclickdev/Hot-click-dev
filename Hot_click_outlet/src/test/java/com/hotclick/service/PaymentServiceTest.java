@@ -61,6 +61,7 @@ class PaymentServiceTest {
     @Mock private PosQrVentaService          posQrVentaService;
     @Mock private EncargoService             encargoService;
     @Mock private AtribucionPedidoService    atribucionPedidoService;
+    @Mock private CompraRepository           compraRepository;
 
     @InjectMocks private CheckoutValidator              checkoutValidator;
     @InjectMocks private GuestUserResolver              guestUserResolver;
@@ -117,13 +118,13 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
-        ReflectionTestUtils.setField(service, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
-        ReflectionTestUtils.setField(service, "orderPricingService", orderPricingService);
-        ReflectionTestUtils.setField(service, "checkoutOrderFactory", checkoutOrderFactory);
+        CompraCheckoutTestWiring.conectar(service, new CompraCheckoutTestWiring.Piezas(
+            checkoutValidator, stockReservationService, orderPricingService, checkoutOrderFactory,
+            paymentNotificationsFacade, compraRepository, pedidoRepository, giftCardService, posQrVentaService));
         ReflectionTestUtils.setField(service, "paymentRecordFactory", paymentRecordFactory);
         ReflectionTestUtils.setField(service, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(service, "paymentNotificationsFacade", paymentNotificationsFacade);

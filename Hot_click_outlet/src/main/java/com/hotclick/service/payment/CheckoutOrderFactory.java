@@ -21,11 +21,15 @@ public class CheckoutOrderFactory {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired @Lazy private EncargoService encargoService;
 
-    public Pedido createPendingOrder(PaymentCheckoutRequest req, OrderPricingResult pricing,
-                                     int subtotal, int costoTotal, String provider,
-                                     Usuario usuario, Bodega bodega) {
+    public Pedido createPendingOrder(CompraContexto ctx, PaqueteCheckout paquete, OrderPricingResult pricing) {
+        PaymentCheckoutRequest req = ctx.req();
+        int subtotal = paquete.subtotal();
+        int costoTotal = paquete.costoTotal();
+        Bodega bodega = paquete.origen();
         Pedido pedido = new Pedido();
-        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
+        pedido.setNumeroPedido(ctx.numeroPedido(paquete.numero()));
+        pedido.setCompra(ctx.compra());
+        pedido.setNumeroPaquete(paquete.numero());
         pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(pricing.totalConGC());
@@ -44,11 +48,11 @@ public class CheckoutOrderFactory {
                     .divide(BigDecimal.valueOf(subtotal), 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100)));
         }
-        pedido.setMetodoPago(provider);
-        pedido.setMetodoEnvio(req.getMetodoEnvio() != null ? req.getMetodoEnvio() : "RETIRO_EN_TIENDA");
+        pedido.setMetodoPago(ctx.provider());
+        pedido.setMetodoEnvio(paquete.metodoEnvio() != null ? paquete.metodoEnvio() : Constants.ENVIO_RETIRO);
         pedido.setNotas(req.getNotas());
-        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
-        pedido.setUsuarioFinal(usuario);
+        pedido.setEstadoPedido(ctx.estadoInicial());
+        pedido.setUsuarioFinal(ctx.usuario());
         pedido.setBodega(bodega);
         pedido.setEmpresa(bodega.getEmpresa());
         pedido.setEstado(Constants.ESTADO_ACTIVO);

@@ -23,6 +23,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("SELECT p FROM Pago p WHERE p.pedido.id = :pedidoId ORDER BY p.fechaCreacion DESC")
     Optional<Pago> findTopByPedidoId(Long pedidoId);
 
+    Optional<Pago> findFirstByCompra_IdOrderByFechaCreacionDesc(Long compraId);
+
     @Query("SELECT p FROM Pago p WHERE p.estadoPago = 'PENDIENTE' AND p.fechaCreacion < :corte")
     List<Pago> findExpiradosPendientes(LocalDateTime corte);
 

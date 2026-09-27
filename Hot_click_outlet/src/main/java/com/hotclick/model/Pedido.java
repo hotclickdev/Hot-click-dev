@@ -134,6 +134,15 @@ public class Pedido extends BaseEntity {
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
     private List<PedidoItem> items = new ArrayList<>();
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_compra")
+    private Compra compra;
+
+    /** Posición del paquete dentro de la compra (1..n). Null en pedidos previos a V142. */
+    @Column(name = "numero_paquete")
+    private Integer numeroPaquete;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -218,6 +227,13 @@ public class Pedido extends BaseEntity {
 
     public List<PedidoItem> getItems() { return items; }
     public void setItems(List<PedidoItem> items) { this.items = items; }
+
+    public Compra getCompra() { return compra; }
+    public void setCompra(Compra compra) { this.compra = compra; }
+    public Long getCompraId() { return compra != null ? compra.getId() : null; }
+
+    public Integer getNumeroPaquete() { return numeroPaquete; }
+    public void setNumeroPaquete(Integer numeroPaquete) { this.numeroPaquete = numeroPaquete; }
 
     @JsonRawValue
     public String getNotificaciones() { return notificaciones != null ? notificaciones : "[]"; }

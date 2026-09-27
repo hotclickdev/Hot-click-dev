@@ -67,13 +67,7 @@ public class PaymentExpirationCleanupService {
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagosActualizados.add(pago);
 
-            Pedido pedido = pago.getPedido();
-            if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-                pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                pedidosActualizados.add(pedido);
-                stockReservationService.liberarReservas(pedido);
-                log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
-            }
+            cancelarPaquetesPendientes(pago, pedidosActualizados);
         }
 
         if (!pagosActualizados.isEmpty()) {
@@ -81,6 +75,16 @@ public class PaymentExpirationCleanupService {
             pedidoRepository.saveAll(pedidosActualizados);
             log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados",
                 empresaId, pagosActualizados.size());
+        }
+    }
+
+    private void cancelarPaquetesPendientes(Pago pago, List<Pedido> pedidosActualizados) {
+        for (Pedido pedido : CompraPaquetes.paquetesDe(pago.getPedido(), pedidoRepository)) {
+            if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) continue;
+            pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+            pedidosActualizados.add(pedido);
+            stockReservationService.liberarReservas(pedido);
+            log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
         }
     }
 }

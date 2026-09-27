@@ -7,6 +7,7 @@ import com.hotclick.repository.ComprobanteSinpeRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.service.PaymentService;
+import com.hotclick.service.payment.CompraPaquetes;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ public class SinpeAutoApprovalService {
                 Pedido pedido = comprobante.getPedido();
                 if (!Constants.PEDIDO_PENDIENTE_APROBACION.equals(pedido.getEstadoPedido())) continue;
 
-                Pago pago = pagoRepository.findTopByPedidoId(pedido.getId()).orElse(null);
+                Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
                 if (pago == null) continue;
 
                 pago.setEstadoPago(Constants.PAGO_CAPTURADO);

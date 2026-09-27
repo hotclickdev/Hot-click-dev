@@ -10,8 +10,15 @@ import java.util.List;
 
 public class PaymentCheckoutRequest {
 
-    @NotNull(message = "La bodega es requerida")
+    /**
+     * Bodega elegida por el cliente (retiro o tienda propia). Solo se respeta si
+     * pertenece al negocio del paquete; si no, el origen es la bodega del negocio.
+     */
     private Long bodegaId;
+
+    /** Entrega por negocio. Si falta un negocio, su paquete usa {@link #metodoEnvio}. */
+    @Valid
+    private List<PaqueteEntregaDTO> paquetes;
 
     @NotBlank(message = "El método de envío es requerido")
     private String metodoEnvio;
@@ -45,6 +52,9 @@ public class PaymentCheckoutRequest {
 
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
+
+    public List<PaqueteEntregaDTO> getPaquetes() { return paquetes; }
+    public void setPaquetes(List<PaqueteEntregaDTO> paquetes) { this.paquetes = paquetes; }
 
     public String getMetodoEnvio() { return metodoEnvio; }
     public void setMetodoEnvio(String metodoEnvio) { this.metodoEnvio = metodoEnvio; }
@@ -105,6 +115,27 @@ public class PaymentCheckoutRequest {
         public void setPersonalizacion(PersonalizacionDTO personalizacion) {
             this.personalizacion = personalizacion;
         }
+    }
+
+    public static class PaqueteEntregaDTO {
+
+        @NotNull(message = "El negocio del paquete es requerido")
+        private Long empresaId;
+
+        @NotBlank(message = "El método de envío del paquete es requerido")
+        private String metodoEnvio;
+
+        /** Bodega de retiro elegida para este paquete (opcional). */
+        private Long bodegaId;
+
+        public Long getEmpresaId() { return empresaId; }
+        public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
+
+        public String getMetodoEnvio() { return metodoEnvio; }
+        public void setMetodoEnvio(String metodoEnvio) { this.metodoEnvio = metodoEnvio; }
+
+        public Long getBodegaId() { return bodegaId; }
+        public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
     }
 
     public static class PersonalizacionDTO {

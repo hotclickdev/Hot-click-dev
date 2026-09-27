@@ -19,7 +19,12 @@ public class OrderPricingService {
     @Autowired private GiftCardService giftCardService;
 
     public OrderPricingResult calculate(PaymentCheckoutRequest req, Bodega bodega, int subtotal) {
-        int costoEnvio = calcularCostoEnvio(req.getMetodoEnvio());
+        return calculate(req, req.getMetodoEnvio(), bodega, subtotal);
+    }
+
+    /** Precio de un paquete: cupón, descuento SINPE y tarjeta de regalo del negocio de {@code bodega}. */
+    public OrderPricingResult calculate(PaymentCheckoutRequest req, String metodoEnvio, Bodega bodega, int subtotal) {
+        int costoEnvio = calcularCostoEnvio(metodoEnvio);
 
         int descuento = 0;
         String codigoCuponAplicado = null;
@@ -73,7 +78,7 @@ public class OrderPricingService {
             case "ENVIO_RAPIDO"            -> 5000;
             case "ENVIO_NORMAL_GAM"        -> 4000;
             case "ENVIO_NORMAL_FUERA_GAM"  -> 4000;
-            case "ENCOMIENDA_PROPIA"       -> 2500;
+            case Constants.ENVIO_ENCOMIENDA -> 0;
             case "ENVIO_A_DOMICILIO"       -> 2000;
             default                        -> 0;
         };

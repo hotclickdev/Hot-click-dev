@@ -15,6 +15,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Optional<Pedido> findByNumeroPedido(String numeroPedido);
 
+    List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
+
     /** Detalle completo — evita LazyInitializationException al serializar empresa/usuarioFinal/bodega/items. */
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.empresa " +

@@ -50,6 +50,12 @@ public class Pago extends BaseEntity {
     @JoinColumn(name = "fk_id_usuario", nullable = false)
     private Usuario usuario;
 
+    /** Compra cobrada por este pago; {@link #pedido} es el paquete 1 de esa compra. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_compra")
+    private Compra compra;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -88,4 +94,7 @@ public class Pago extends BaseEntity {
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+
+    public Compra getCompra() { return compra; }
+    public void setCompra(Compra compra) { this.compra = compra; }
 }

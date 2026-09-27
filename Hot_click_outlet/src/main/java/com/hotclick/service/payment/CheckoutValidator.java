@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class CheckoutValidator {
@@ -56,6 +57,10 @@ public class CheckoutValidator {
     public Bodega loadBodega(Long bodegaId) {
         return bodegaRepository.findById(bodegaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
+    }
+
+    public Optional<Bodega> findBodega(Long bodegaId) {
+        return bodegaRepository.findById(bodegaId);
     }
 
     public void assertBodegaTenant(Bodega bodega, Long bodegaId) {

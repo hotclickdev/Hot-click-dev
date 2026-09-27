@@ -30,9 +30,16 @@ public class PaymentOrderConfirmationService {
     @Autowired private PosQrVentaService          posQrVentaService;
     @Autowired @Lazy private EncargoService       encargoService;
 
+    /** Confirma todos los paquetes de la compra cobrada por {@code pago}. */
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
-        Pedido pedido = pago.getPedido();
+        for (Pedido pedido : CompraPaquetes.paquetesDe(pago.getPedido(), pedidoRepository)) {
+            confirmarPaquete(pedido, pago, paymentServiceSelf, eventPublisher);
+        }
+    }
+
+    private void confirmarPaquete(Pedido pedido, Pago pago, Object paymentServiceSelf,
+                                  ApplicationEventPublisher eventPublisher) {
         Hibernate.initialize(pedido.getItems());
 
         // Verificar que no esté ya confirmado (idempotencia)

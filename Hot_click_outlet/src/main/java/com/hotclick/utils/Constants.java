@@ -89,6 +89,8 @@ public class Constants {
     // Métodos de envío
     public static final String ENVIO_DOMICILIO = "ENVIO_A_DOMICILIO";
     public static final String ENVIO_RETIRO    = "RETIRO_EN_TIENDA";
+    /** Encomienda: el monto varía y se paga al retirar, no en el checkout. */
+    public static final String ENVIO_ENCOMIENDA = "ENCOMIENDA_PROPIA";
 
     // Proveedores de pago
     public static final String PROVEEDOR_STRIPE  = "STRIPE";

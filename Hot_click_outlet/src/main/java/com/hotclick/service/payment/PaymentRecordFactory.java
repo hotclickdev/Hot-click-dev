@@ -33,6 +33,7 @@ public class PaymentRecordFactory {
             ? LocalDateTime.now(Constants.ZONA_CR).plusHours(24)
             : LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
         pago.setPedido(pedido);
+        pago.setCompra(pedido.getCompra());
         pago.setUsuario(usuario);
         pago.setEstado(Constants.ESTADO_ACTIVO);
         return pagoRepository.save(pago);

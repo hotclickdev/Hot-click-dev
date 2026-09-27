@@ -31,14 +31,18 @@ public class PaymentFailureHandler {
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
 
-        Pedido pedido = pago.getPedido();
+        for (Pedido pedido : CompraPaquetes.paquetesDe(pago.getPedido(), pedidoRepository)) {
+            cancelarPaquete(pedido);
+        }
+        paymentNotificationsFacade.onPagoFallido(pago.getPedido(), motivo);
+        log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);
+    }
+
+    private void cancelarPaquete(Pedido pedido) {
         if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
             pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
             pedidoRepository.save(pedido);
         }
-
         stockReservationService.liberarReservas(pedido);
-        paymentNotificationsFacade.onPagoFallido(pedido, motivo);
-        log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);
     }
 }
