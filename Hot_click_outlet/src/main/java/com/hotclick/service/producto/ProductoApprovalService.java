@@ -9,6 +9,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.SolicitudAprobacionRepository;
 import com.hotclick.service.TelegramNotificacionClienteService;
+import com.hotclick.service.UbicacionDespachoService;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -30,19 +31,22 @@ public class ProductoApprovalService {
     private final TelegramNotificacionClienteService telegramNotificacionClienteService;
     private final ObjectMapper objectMapper;
     private final ProductoAccessGuard productoAccessGuard;
+    private final UbicacionDespachoService ubicacionDespachoService;
 
     public ProductoApprovalService(ProductoRepository productoRepository,
                                    EmpresaRepository empresaRepository,
                                    SolicitudAprobacionRepository solicitudAprobacionRepository,
                                    TelegramNotificacionClienteService telegramNotificacionClienteService,
                                    ObjectMapper objectMapper,
-                                   ProductoAccessGuard productoAccessGuard) {
+                                   ProductoAccessGuard productoAccessGuard,
+                                   UbicacionDespachoService ubicacionDespachoService) {
         this.productoRepository = productoRepository;
         this.empresaRepository = empresaRepository;
         this.solicitudAprobacionRepository = solicitudAprobacionRepository;
         this.telegramNotificacionClienteService = telegramNotificacionClienteService;
         this.objectMapper = objectMapper;
         this.productoAccessGuard = productoAccessGuard;
+        this.ubicacionDespachoService = ubicacionDespachoService;
     }
 
     public ProductoCreationResult aplicarReglasPublicacion(Producto producto, Empresa empresa) {
@@ -54,6 +58,10 @@ public class ProductoApprovalService {
             producto.setVisibleCatalogo(false);
             producto = productoRepository.save(producto);
             mensaje = "Producto creado — se publicará en el catálogo cuando tu negocio sea aprobado";
+        } else if (empresa != null && ubicacionDespachoService.bloqueaPublicacion(empresa.getId())) {
+            producto.setVisibleCatalogo(false);
+            producto = productoRepository.save(producto);
+            mensaje = "Producto creado — " + UbicacionDespachoService.MENSAJE_FALTA_UBICACION;
         }
         return new ProductoCreationResult(mensaje, producto);
     }

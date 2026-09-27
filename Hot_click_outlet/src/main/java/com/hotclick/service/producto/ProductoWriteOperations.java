@@ -9,6 +9,7 @@ import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.service.UbicacionDespachoService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ public class ProductoWriteOperations {
     @Autowired private ProductoDtoMapper dtoMapper;
     @Autowired private ProductoCacheEvictor cacheEvictor;
     @Autowired private ProductoGuardadoNotifier guardadoNotifier;
+    @Autowired private UbicacionDespachoService ubicacionDespachoService;
 
     @Transactional
     public Producto crearProducto(Object source, ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
@@ -86,6 +88,9 @@ public class ProductoWriteOperations {
     public Producto toggleVisibleCatalogo(Long id, Boolean valor) {
         Producto p = productoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
+        if (Boolean.TRUE.equals(valor)) {
+            ubicacionDespachoService.exigirParaPublicar(p.getEmpresaId());
+        }
         p.setVisibleCatalogo(valor);
         Producto saved = productoRepository.save(p);
         cacheEvictor.evictProductosPublicos();

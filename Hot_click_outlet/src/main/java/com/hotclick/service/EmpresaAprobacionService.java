@@ -32,12 +32,14 @@ public class EmpresaAprobacionService {
     @Autowired private ProductoRepository            productoRepository;
     @Autowired private SolicitudAprobacionRepository solicitudAprobacionRepository;
     @Autowired private ProductoService               productoService;
+    @Autowired private UbicacionDespachoService      ubicacionDespachoService;
 
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public Empresa aprobarYPublicar(Long empresaId) {
         Empresa e = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new IllegalStateException("Empresa no encontrada: " + empresaId));
+        ubicacionDespachoService.exigirParaPublicar(empresaId);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         e.setEstadoEmpresa("ACTIVO");
         e.setVisibilidadPublica(true);

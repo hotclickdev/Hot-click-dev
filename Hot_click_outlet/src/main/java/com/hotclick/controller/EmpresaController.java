@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.EmpresaAdminService;
 import com.hotclick.service.ImpersonacionService;
+import com.hotclick.service.UbicacionDespachoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,11 +27,19 @@ public class EmpresaController {
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaAdminService empresaAdminService;
     @Autowired private ImpersonacionService impersonacionService;
+    @Autowired private UbicacionDespachoService ubicacionDespachoService;
 
     @GetMapping
     public ResponseDTO listar(@RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "100") int size) {
         return ResponseDTO.success("Empresas", empresaAdminService.listar(page, size));
+    }
+
+    @GetMapping("/sin-ubicacion")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseDTO sinUbicacion() {
+        return ResponseDTO.success("Negocios sin ubicación de despacho",
+            ubicacionDespachoService.activosSinUbicacion());
     }
 
     @GetMapping("/{id}")

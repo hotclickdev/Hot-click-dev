@@ -3,6 +3,7 @@ package com.hotclick.service.producto;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.service.UbicacionDespachoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,7 @@ class ProductoWriteOperationsVisibleCatalogoTest {
 
     @Mock ProductoRepository productoRepository;
     @Mock ProductoCacheEvictor cacheEvictor;
+    @Mock UbicacionDespachoService ubicacionDespachoService;
 
     @InjectMocks ProductoWriteOperations operations;
 
