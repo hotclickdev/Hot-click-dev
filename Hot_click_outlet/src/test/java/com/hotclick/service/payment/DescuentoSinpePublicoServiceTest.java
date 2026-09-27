@@ -26,16 +26,19 @@ class DescuentoSinpePublicoServiceTest {
     private static Empresa empresa(long id, String pct) {
         Empresa e = new Empresa();
         e.setId(id);
+        e.setEstadoEmpresa("ACTIVO");
         e.setPctDescuentoSinpe(pct == null ? null : new BigDecimal(pct));
         return e;
     }
 
     @Test
-    void soloDevuelveNegociosConDescuento() {
-        when(repo.findAllById(List.of(7L, 8L, 9L)))
-            .thenReturn(List.of(empresa(7, "5.00"), empresa(8, "0"), empresa(9, null)));
+    void soloDevuelveNegociosActivosConDescuento() {
+        Empresa suspendida = empresa(10, "8");
+        suspendida.setEstadoEmpresa("SUSPENDIDO");
+        when(repo.findAllById(List.of(7L, 8L, 9L, 10L)))
+            .thenReturn(List.of(empresa(7, "5.00"), empresa(8, "0"), empresa(9, null), suspendida));
 
-        Map<Long, BigDecimal> resultado = service.porEmpresa(List.of(7L, 8L, 9L));
+        Map<Long, BigDecimal> resultado = service.porEmpresa(List.of(7L, 8L, 9L, 10L));
 
         assertThat(resultado).containsOnlyKeys(7L);
         assertThat(resultado.get(7L)).isEqualByComparingTo("5");

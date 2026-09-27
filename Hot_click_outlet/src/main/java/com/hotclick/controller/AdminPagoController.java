@@ -23,6 +23,8 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 public class AdminPagoController {
 
+    static final String SOLO_PLATAFORMA = "hasRole('ADMIN') or hasAuthority('global.metrics')";
+
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private PaymentService         paymentService;
@@ -58,7 +60,7 @@ public class AdminPagoController {
      * GET /api/admin/webhooks?procesado=false&page=0&size=20
      * Solo ADMIN o staff con global.metrics (FINANCE) — eventos son globales (sin empresaId en la tabla).
      */
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('global.metrics')")
+    @PreAuthorize(SOLO_PLATAFORMA)
     @GetMapping("/webhooks")
     public ResponseEntity<ResponseDTO> listarWebhooks(
             @RequestParam(required = false) Boolean procesado,
@@ -114,7 +116,9 @@ public class AdminPagoController {
     /**
      * Confirma un pago SINPE pendiente (admin revisó el comprobante).
      * POST /api/admin/pagos/{pagoId}/confirmar-sinpe
+     * Solo plataforma: el SINPE entra a la cuenta de HotClick y la compra puede traer paquetes de varios negocios.
      */
+    @PreAuthorize(SOLO_PLATAFORMA)
     @PostMapping("/pagos/{pagoId}/confirmar-sinpe")
     public ResponseEntity<ResponseDTO> confirmarSinpe(@PathVariable Long pagoId) {
         var resultado = paymentService.confirmarSinpe(pagoId);
@@ -125,6 +129,7 @@ public class AdminPagoController {
      * Rechaza un pago SINPE pendiente (comprobante inválido o monto incorrecto).
      * POST /api/admin/pagos/{pagoId}/rechazar-sinpe?motivo=...
      */
+    @PreAuthorize(SOLO_PLATAFORMA)
     @PostMapping("/pagos/{pagoId}/rechazar-sinpe")
     public ResponseEntity<ResponseDTO> rechazarSinpe(
             @PathVariable Long pagoId,

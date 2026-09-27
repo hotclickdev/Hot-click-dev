@@ -20,6 +20,12 @@ import java.util.Map;
 @RequestMapping("/api/sinpe")
 public class SinpeController {
 
+    /**
+     * El SINPE entra a la cuenta de HotClick, la compra puede traer paquetes de varios negocios y la lista
+     * no se filtra por empresa (datos personales del remitente): revisar comprobantes es solo de plataforma.
+     */
+    static final String SOLO_PLATAFORMA = "hasRole('ADMIN') or hasAuthority('global.metrics')";
+
     @Autowired
     private SinpeService sinpeService;
 
@@ -95,7 +101,7 @@ public class SinpeController {
     }
 
     // ── Admin: listar comprobantes ─────────────────────────────────────────────
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize(SOLO_PLATAFORMA)
     @GetMapping("/admin/comprobantes")
     public ResponseEntity<ResponseDTO> listarComprobantes(
             @RequestParam(required = false)            String estado,
@@ -112,7 +118,7 @@ public class SinpeController {
     }
 
     // ── Admin: aprobar comprobante ─────────────────────────────────────────────
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize(SOLO_PLATAFORMA)
     @PostMapping("/admin/comprobantes/{id}/aprobar")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id) {
         try {
@@ -127,7 +133,7 @@ public class SinpeController {
     }
 
     // ── Admin: rechazar comprobante ────────────────────────────────────────────
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize(SOLO_PLATAFORMA)
     @PostMapping("/admin/comprobantes/{id}/rechazar")
     public ResponseEntity<ResponseDTO> rechazar(
             @PathVariable Long id,
