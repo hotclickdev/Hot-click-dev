@@ -2984,6 +2984,7 @@
       "envio_one": "Shipping ({{count}} package)",
       "envio_other": "Shipping ({{count}} packages)",
       "descuento": "Coupon {{codigo}}",
+      "descuentoSinpe": "Discount for paying with SINPE or cash",
       "giftCard": "Gift card",
       "totalEstimado": "Estimated total",
       "notaMovil": "You pay everything together to HotClick. Each store ships its package. VAT included in each product's price.",

@@ -138,6 +138,13 @@ export const paymentService = {
     return api.post(`/payments/tilopay/reintentar/${encodeURIComponent(numeroPedido)}`)
   },
 
+  /** Público: `{ "7": 5 }` = el negocio 7 descuenta 5% al pagar con SINPE o efectivo. */
+  getDescuentosSinpe(empresaIds: number[]) {
+    return api.get<Record<string, number>>('/public/descuentos-sinpe', {
+      params: { empresas: empresaIds.join(',') },
+    })
+  },
+
   /** Comisión de pasarela (admin) — opcional; el UI tolera 404. */
   getConfigComision() {
     return api.get('/admin/configuracion/comision')

@@ -6,6 +6,7 @@ import type { ItemCarrito } from '@/types/carrito'
 import type { Id } from '@/types/api'
 import { agruparPaquetes, enviosVigentes, requiereDireccion, totalesCompra } from './paquetesCompra'
 import { useCupon } from './useCupon'
+import { useDescuentosSinpe } from './useDescuentosSinpe'
 import { useGiftCardCompra } from './useGiftCardCompra'
 import {
   erroresDatos,
@@ -58,7 +59,8 @@ export function useFormularioCompra(items: ItemCarrito[]) {
   const envios = useMemo(() => enviosVigentes(paquetes, elegidos), [paquetes, elegidos])
   const efectivoDisponible = !requiereDireccion(envios)
   const metodoVigente: MetodoPago = metodoPago === 'EFECTIVO' && !efectivoDisponible ? 'SINPE' : metodoPago
-  const totales = totalesCompra(paquetes, envios, cupon.cupon, giftCard.aplicada)
+  const descuentosSinpe = useDescuentosSinpe(paquetes, metodoVigente)
+  const totales = totalesCompra(paquetes, envios, cupon.cupon, giftCard.aplicada, descuentosSinpe)
 
   function limpiarError(campo: CampoCompra) {
     setErrores((previos) => (previos[campo] ? { ...previos, [campo]: undefined } : previos))

@@ -2984,6 +2984,7 @@
       "envio_one": "Envío ({{count}} paquete)",
       "envio_other": "Envío ({{count}} paquetes)",
       "descuento": "Cupón {{codigo}}",
+      "descuentoSinpe": "Descuento por pagar con SINPE o efectivo",
       "giftCard": "Tarjeta de regalo",
       "totalEstimado": "Total estimado",
       "notaMovil": "Pagás todo junto a HotClick. Cada tienda despacha su paquete. IVA incluido en el precio de cada producto.",

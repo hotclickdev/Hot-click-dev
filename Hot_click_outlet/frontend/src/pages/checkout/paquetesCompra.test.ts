@@ -121,4 +121,25 @@ describe('totalesCompra', () => {
     expect(totales.giftCard).toBe(14000)
     expect(totales.total).toBe(25000)
   })
+
+  it('el descuento SINPE va por negocio sobre productos − cupón + envío', () => {
+    const cupon = { codigo: 'LUNA10', descuento: 10, empresaId: 8 }
+    const totales = totalesCompra(paquetes, envios, cupon, null, { 8: 5 })
+    expect(totales).toMatchObject({ descuento: 2000, descuentoSinpe: 1150, total: 35850 })
+  })
+
+  it('redondea el descuento SINPE como el backend (mitad hacia arriba)', () => {
+    expect(totalesCompra(paquetes, envios, null, null, { 7: 0.025 }).descuentoSinpe).toBe(4)
+  })
+
+  it('sin descuentos SINPE (tarjeta) el total no cambia', () => {
+    expect(totalesCompra(paquetes, envios, null, null, {})).toMatchObject({ descuentoSinpe: 0, total: 39000 })
+  })
+
+  it('la tarjeta de regalo cubre el paquete ya con el descuento SINPE', () => {
+    const giftCard = { codigo: 'GC1', saldo: 50000, empresaId: 7 }
+    const totales = totalesCompra(paquetes, envios, null, giftCard, { 7: 5 })
+    expect(totales.giftCard).toBe(13300)
+    expect(totales.total).toBe(25000)
+  })
 })

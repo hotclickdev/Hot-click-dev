@@ -2984,6 +2984,7 @@
       "envio_one": "Frete ({{count}} pacote)",
       "envio_other": "Frete ({{count}} pacotes)",
       "descuento": "Cupom {{codigo}}",
+      "descuentoSinpe": "Desconto por pagar com SINPE ou dinheiro",
       "giftCard": "Cartão-presente",
       "totalEstimado": "Total estimado",
       "notaMovil": "Você paga tudo junto à HotClick. Cada loja despacha seu pacote. IVA incluído no preço de cada produto.",

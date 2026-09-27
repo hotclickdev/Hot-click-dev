@@ -46,6 +46,9 @@ export default function ResumenLateral({
           monto={`−${formatPrice(totales.descuento)}`}
         />
       ) : null}
+      {totales.descuentoSinpe > 0 ? (
+        <LineaMonto etiqueta={t('compra.resumen.descuentoSinpe')} monto={`−${formatPrice(totales.descuentoSinpe)}`} />
+      ) : null}
       {totales.giftCard > 0 ? (
         <LineaMonto etiqueta={t('compra.resumen.giftCard')} monto={`−${formatPrice(totales.giftCard)}`} />
       ) : null}
