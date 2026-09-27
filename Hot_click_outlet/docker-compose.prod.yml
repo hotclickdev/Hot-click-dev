@@ -1,3 +1,5 @@
+# Stack de la EC2 hotclick-app (Stopped desde el 24 sep 2026) + RDS.
+# Producción viva: docker-compose.lightsail.yml en 18.119.201.126. No levantar este archivo ahí.
 services:
   app:
     build: .

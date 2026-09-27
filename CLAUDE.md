@@ -104,26 +104,23 @@ Admin sembrado: `admin@hotclick.com` / `Admin1234!` (o `ADMIN_DEFAULT_PASSWORD`)
 
 ## Infraestructura AWS (producción)
 
-**Producción vive en Lightsail desde 2026-09-25** (migrado desde EC2+RDS, ver
-`Hot_click_outlet/MIGRACION_LIGHTSAIL.md` para el detalle de la mudanza y el
-rollback). El EC2 viejo está **detenido** (no borrado, por si hace falta
-volver) — no lo uses para nada, `docker-compose.prod.yml` asume RDS y ya no
-es la config real.
+Desde el **24 sep 2026** el sitio lo atiende Lightsail. La EC2 está apagada y RDS no es la base viva. El registro de lo hecho y lo pendiente está en [`Hot_click_outlet/MIGRACION_LIGHTSAIL.md`](Hot_click_outlet/MIGRACION_LIGHTSAIL.md).
 
 | Servicio | Recurso | Detalle |
 |----------|---------|---------|
-| **Lightsail** | `hotclick-lightsail` (plan 4 GB) | us-east-2 (Ohio), IP estática `18.119.201.126`, Docker + Nginx + Certbot |
-| **Postgres** | Contenedor `hotclick-postgres` | Imagen `postgres:18-alpine`, **no RDS** — corre en el mismo compose que la app, volumen nombrado `hotclick_pgdata` |
+| **Lightsail** | `hotclick-lightsail`, IP `18.119.201.126` | us-east-2, 4 GB. App + Postgres en Docker. Nginx y Certbot en el host. SSH: `ec2-user`, la misma key del EC2. |
+| **Base viva** | contenedor `hotclick-postgres` | Imagen `postgres:18-alpine`, volumen `hotclick_pgdata`. `DB_URL` con host `postgres`. No apuntar esta app a RDS. |
 | **S3** | `hotclick-media` | us-east-2, imágenes y archivos públicos |
-| **IAM** | Usuario IAM con política `HotclickS3Access` | Lightsail no tiene Instance Profile como EC2 — las credenciales S3 van en `.env` (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) |
-| **Dominio** | `hotclick.lat` | DNS en Spaceship → IP estática de Lightsail; HTTPS via Let's Encrypt |
-| ~~EC2~~ | ~~`hotclick-app` t3.small, Elastic IP `18.227.68.15`~~ | **Detenido**, ya no es producción. `hotclick-db` (RDS) también detenida. |
+| **IAM** | Política `HotclickS3Access` | Solo S3. Lightsail no tiene Instance Profile: las credenciales S3 van en `.env` (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`). El rol de Lightsail tampoco puede parar RDS. |
+| **Dominio** | `hotclick.lat` y `www` | DNS en Spaceship → `18.119.201.126`, HTTPS con Let's Encrypt |
+| **EC2** | `hotclick-app` t3.small | **Stopped** el 24 sep 2026. Elastic IP `18.227.68.15` (se cobra con la instancia apagada). No está terminada. |
+| **RDS** | `hotclick-db` db.t4g.micro | **Pendiente de snapshot y Stop.** No borrala el mismo día. Un Stop dura como máximo 7 días; después AWS la enciende sola. |
 
 ### Deploy en producción
 
-Sin sidecar de guardrails en Lightsail (el copilot ya no lo usa — ver
-"Seguridad del AI Copilot" más abajo). El compose es de un solo servicio
-`app` + `postgres`, con `docker compose` (plugin, con espacio) disponible.
+En el host hay `/usr/local/bin/docker-compose` y también `docker compose` v2.29.7. El compose de la app viva es `docker-compose.lightsail.yml` (app + Postgres). **No uses** `docker-compose.prod.yml` aquí: ese archivo es el stack EC2 + RDS + guardrails.
+
+No desplegar en `18.227.68.15`. Esa EC2 está apagada y su `.env` apunta a RDS.
 
 **Importante:** el frontend se sirve compilado desde
 `src/main/resources/static/` (commiteado a git, no se builda en el
@@ -156,6 +153,14 @@ una variable:
 nano /home/ec2-user/app/Hot_click_outlet/.env
 docker compose -f docker-compose.lightsail.yml restart app
 ```
+
+`DB_URL` tiene que seguir en el host `postgres`.
+
+El 24 sep 2026 también corría `hotclick-guardrails` en esta máquina, fuera de ese compose. El copilot ya no lo necesita. Para apagarlo: `docker stop hotclick-guardrails`.
+
+### Volver a la EC2
+
+Solo si Lightsail falla. Orden: encender `hotclick-app`, confirmar que RDS `hotclick-db` está available, y pasar el DNS a `18.227.68.15`. En esa instancia el binario es `docker-compose` (con guion); buildx 0.12.1 no alcanza para `docker-compose --build`, así que las imágenes se buildean con `docker build` y después `docker-compose -f docker-compose.prod.yml up -d`.
 
 ## Arquitectura
 

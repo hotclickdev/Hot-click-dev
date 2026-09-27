@@ -1,9 +1,32 @@
-# Mudanza a Lightsail 4 GB (Ohio) — sin apagar producción todavía
+# Mudanza a Lightsail 4 GB (Ohio)
 
 Objetivo: app + Postgres en Docker, fotos en S3 (`hotclick-media`, us-east-2).
-El EC2 `hotclick-app` y RDS **siguen prendidos** hasta que Lightsail responda 24 h.
+Costo del plan: ~USD 20/mes. Compose de la app: `docker-compose.lightsail.yml`.
 
-Costo: ~USD 20/mes. Compose: `docker-compose.lightsail.yml`.
+## Estado al 24 sep 2026
+
+Producción es Lightsail. No desplegar en la EC2 ni apuntar la app viva a RDS.
+
+| Pieza | Estado |
+| --- | --- |
+| DNS `hotclick.lat` y `www` | `18.119.201.126` (Lightsail, us-east-2). Nginx 1.30.4. |
+| App | Contenedor `hotclick`. `https://hotclick.lat/api/health` respondió 200 después de apagar la EC2. |
+| Base viva | Contenedor `hotclick-postgres` (sano). `DB_URL` del `.env` en Lightsail usa el host `postgres`, no RDS. |
+| Guardrails | El contenedor `hotclick-guardrails` estaba corriendo en Lightsail. No forma parte de `docker-compose.lightsail.yml`. |
+| EC2 `hotclick-app` | **Stopped** el 24 sep 2026 (~20:31, hora de Costa Rica), con `sudo shutdown -h now` en `18.227.68.15` (hostname `ip-172-31-37-118`). No es Terminate: el disco queda. Tras el apagado, 22/80/443/8080 de esa IP no respondían. |
+| Elastic IP `18.227.68.15` | Sigue asignada. Con la instancia apagada, AWS la cobra. Dejarla mientras exista chance de rollback. |
+| RDS `hotclick-db` | **Pendiente.** Sigue existiendo. La EC2 apuntaba a ese host; el sitio no. No se pudo parar: el rol de Lightsail no tiene `rds:*` y en la PC no había credenciales de AWS. |
+
+### Pendiente, en este orden
+
+1. Consola RDS, región us-east-2, cuenta `343781770975`, instancia `hotclick-db`.
+2. Snapshot manual `hotclick-db-prestop-2026-09-24`. Esperar a que quede available.
+3. **Stop**. No borrar la instancia el mismo día.
+4. Un Stop de RDS dura como máximo 7 días: AWS la enciende sola. El disco y el snapshot se siguen cobrando; las horas de la instancia, no.
+
+### Rollback
+
+La EC2 solo vuelve a servir el sitio si está encendida **y** RDS está available (su `.env` sigue en RDS). Después, DNS de `hotclick.lat` y `www` otra vez a `18.227.68.15`. Lightsail se queda prendida hasta confirmar ese corte.
 
 ## 0. Antes
 
@@ -91,15 +114,15 @@ Igual que el EC2: proxy a `127.0.0.1:8080`, `certbot` para `hotclick.lat`.
 
 ## 8. Cortar a Lightsail
 
-1. Spaceship: `hotclick.lat` (y `www`) → **IP estática de Lightsail**.
-2. Esperá el TTL; `curl -sI https://hotclick.lat/api/health`.
-3. ONVO / webhooks: la URL pública sigue siendo `https://hotclick.lat` (no cambia si el dominio es el mismo).
-4. Dejá EC2+RDS **24 h** por si hay rollback (DNS atrás a la Elastic IP).
-5. Recién entonces: stop EC2 y **stop** RDS (snapshot RDS antes). No borres RDS el primer día.
+1. Spaceship: `hotclick.lat` (y `www`) → **IP estática de Lightsail**. Hecho: `18.119.201.126`.
+2. `https://hotclick.lat/api/health` en 200. Hecho el 24 sep 2026, también después de apagar la EC2.
+3. ONVO / webhooks: la URL pública sigue siendo `https://hotclick.lat`.
+4. EC2 apagada el 24 sep 2026 (Stop, no Terminate).
+5. RDS: snapshot y Stop **pendientes**. No borrar el mismo día. Ver el estado al inicio de este archivo.
 
 ## Rollback
 
-DNS otra vez a `18.227.68.15`. EC2 + RDS como estaban. Lightsail se puede apagar para no cobrar el mes completo.
+Encender la EC2, confirmar que RDS `hotclick-db` está available, y pasar el DNS otra vez a `18.227.68.15`. Lightsail no se apaga hasta que ese corte responda.
 
 ## Qué no hacer
 

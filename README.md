@@ -158,13 +158,13 @@ Fuera de las pruebas automatizadas, el arranque puede borrar tiendas y productos
 
 | Pieza | Ubicación |
 | --- | --- |
-| Aplicación | EC2 en us-east-2, con Docker, Nginx y certificado |
-| Base de datos | Amazon RDS, PostgreSQL 18, conexión cifrada |
+| Aplicación | Lightsail 4 GB en us-east-2 (`18.119.201.126`), Docker, Nginx y certificado |
+| Base de datos | PostgreSQL 18 en Docker, en el mismo host (`hotclick-postgres`) |
 | Imágenes y archivos | Amazon S3, bucket `hotclick-media` |
 | Dominio | `hotclick.lat` |
-| Despliegue | `Hot_click_outlet/docker-compose.prod.yml` |
+| Despliegue | `Hot_click_outlet/docker-compose.lightsail.yml` |
 
-El procedimiento de despliegue está en [CLAUDE.md](CLAUDE.md). Existe un compose alterno para Lightsail, `docker-compose.lightsail.yml`, con PostgreSQL en el mismo host.
+Desde el 24 sep 2026 la EC2 `hotclick-app` está apagada (Stop, no Terminate) y RDS `hotclick-db` sigue existiendo sin atender el sitio. Falta el snapshot y el Stop de RDS. El detalle está en [MIGRACION_LIGHTSAIL.md](Hot_click_outlet/MIGRACION_LIGHTSAIL.md) y el deploy en [CLAUDE.md](CLAUDE.md). `docker-compose.prod.yml` es el stack viejo (EC2 + RDS): no usarlo en Lightsail.
 
 ---
 
