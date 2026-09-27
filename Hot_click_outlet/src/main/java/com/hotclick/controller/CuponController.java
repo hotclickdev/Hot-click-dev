@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,10 +60,11 @@ public class CuponController {
         if (cupon.isEmpty()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Este cupón no está disponible."));
         }
-        return ResponseEntity.ok(ResponseDTO.success(
-            "Cupón válido",
-            Map.of("descuento", cupon.get().getDescuentoPorcentaje(), "codigo", cupon.get().getCodigo())
-        ));
+        Map<String, Object> datos = new HashMap<>();
+        datos.put("descuento", cupon.get().getDescuentoPorcentaje());
+        datos.put("codigo", cupon.get().getCodigo());
+        datos.put("empresaId", cupon.get().getEmpresa() != null ? cupon.get().getEmpresa().getId() : null);
+        return ResponseEntity.ok(ResponseDTO.success("Cupón válido", datos));
     }
 
     /** Lista todos los cupones — solo ADMIN. */

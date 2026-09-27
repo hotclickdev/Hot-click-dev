@@ -47,6 +47,7 @@ import static org.mockito.Mockito.*;
 class CompraMultiNegocioTest {
 
     private static final String CORREO = "buyer@hotclick.cr";
+    private static final String ENVIO_NORMAL = "ENVIO_NORMAL_GAM";
 
     @Mock private PaymentProviderFactory    providerFactory;
     @Mock private PaymentProvider           provider;
@@ -121,11 +122,11 @@ class CompraMultiNegocioTest {
         assertThat(pedidosGuardados).extracting(Pedido::getEmpresaId).containsExactly(7L, 8L, 9L);
         assertThat(pedidosGuardados).extracting(p -> p.getBodega().getId()).containsExactly(17L, 20L, 21L);
         assertThat(pedidosGuardados).extracting(Pedido::getMetodoEnvio).containsExactly(
-            Constants.ENVIO_DOMICILIO, "ENVIO_RAPIDO", Constants.ENVIO_ENCOMIENDA);
-        assertThat(pedidosGuardados).extracting(Pedido::getCostoEnvio).containsExactly(2000, 5000, 0);
+            ENVIO_NORMAL, "ENVIO_RAPIDO", Constants.ENVIO_ENCOMIENDA);
+        assertThat(pedidosGuardados).extracting(Pedido::getCostoEnvio).containsExactly(4000, 5000, 0);
         assertThat(pedidosGuardados).extracting(p -> p.getItems().size()).containsExactly(1, 1, 1);
 
-        int totalEsperado = 10000 + 2000 + 20000 + 5000 + 30000;
+        int totalEsperado = 10000 + 4000 + 20000 + 5000 + 30000;
         assertThat(compra.getTotalCompra()).isEqualTo(totalEsperado);
         assertThat(compra.getCantidadPaquetes()).isEqualTo(3);
         assertThat(resp.getNumeroPedido()).isEqualTo(compra.getNumeroCompra());
@@ -264,7 +265,7 @@ class CompraMultiNegocioTest {
     private PaymentCheckoutRequest requestTresNegocios() {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setProvider("TILOPAY");
-        req.setMetodoEnvio(Constants.ENVIO_DOMICILIO);
+        req.setMetodoEnvio(ENVIO_NORMAL);
         req.setBodegaId(1L);
         req.setItems(List.of(item(10L), item(20L), item(30L)));
         req.setPaquetes(List.of(

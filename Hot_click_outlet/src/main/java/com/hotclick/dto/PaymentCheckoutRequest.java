@@ -1,5 +1,6 @@
 package com.hotclick.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -95,7 +96,8 @@ public class PaymentCheckoutRequest {
         @Min(value = 1, message = "La cantidad debe ser al menos 1")
         private Integer cantidad;
 
-        /** Precio unitario forzado (solo uso interno, p.ej. encargo cotizado). */
+        /** Precio unitario forzado (solo uso interno, p.ej. encargo cotizado). Nunca se acepta del JSON. */
+        @JsonIgnore
         private Integer precioUnitarioOverride;
 
         private PersonalizacionDTO personalizacion;

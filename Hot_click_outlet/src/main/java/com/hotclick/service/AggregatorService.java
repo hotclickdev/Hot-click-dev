@@ -79,17 +79,20 @@ public class AggregatorService {
             return;
         }
 
-        Resultado calc = calcularParaEmpresa(empresaId, bruto);
-        if (calc.neto() <= 0) {
+        long costoEnvio = pedido.getCostoEnvio() != null ? pedido.getCostoEnvio() : 0L;
+        Liquidacion liquidacion = liquidar(empresaId, bruto, costoEnvio);
+        Resultado calc = liquidacion.detalle().resultado();
+        long neto = liquidacion.neto();
+        if (neto <= 0) {
             log.warn("[aggregator] Neto ≤ 0 pedido={} — revisar tasas de comisión", pedido.getId());
             return;
         }
 
         try {
             walletService.acreditarVenta(
-                empresaId, calc.neto(), bruto, calc.comisionSaas(), calc.comisionGw(), pedido.getId());
-            log.info("[aggregator] Venta acreditada pedido={} empresa={} bruto=₡{} comSaas=₡{} comGw=₡{} neto=₡{}",
-                pedido.getId(), empresaId, bruto, calc.comisionSaas(), calc.comisionGw(), calc.neto());
+                empresaId, neto, bruto, calc.comisionSaas(), calc.comisionGw(), pedido.getId());
+            log.info("[aggregator] Venta acreditada pedido={} empresa={} bruto=₡{} envio=₡{} comSaas=₡{} comGw=₡{} neto=₡{}",
+                pedido.getId(), empresaId, bruto, liquidacion.envio(), calc.comisionSaas(), calc.comisionGw(), neto);
 
         } catch (DataIntegrityViolationException dup) {
             log.info("[aggregator] Acreditación duplicada ignorada (constraint) — pedido={} empresa={}",
@@ -100,16 +103,30 @@ public class AggregatorService {
                 pedido.getId(), empresaId, calc.neto(), e.getMessage());
             try {
                 dlqTxOps.encolar(empresaId, pedido.getId(), bruto,
-                    calc.comisionSaas(), calc.comisionGw(), calc.neto(), e.getMessage());
+                    calc.comisionSaas(), calc.comisionGw(), neto, e.getMessage());
             } catch (Exception dlqEx) {
                 log.error("[aggregator] CRÍTICO — No se pudo encolar en DLQ: pedido={} empresa={} neto=₡{}. "
                         + "REQUIERE RECONCILIACIÓN MANUAL. DLQ error: {}",
-                    pedido.getId(), empresaId, calc.neto(), dlqEx.getMessage());
+                    pedido.getId(), empresaId, neto, dlqEx.getMessage());
             }
         }
     }
 
-    Resultado calcularParaEmpresa(Long empresaId, long bruto) {
+    /** Comisión con los datos del plan que la explican (mínimo = 0 si el plan no lo aplica). */
+    public record DetalleComision(String plan, BigDecimal porcentaje, long minimo, Resultado resultado) {}
+
+    /** Lo que recibe el negocio por un pedido: {@code neto = productos - comisión + envío}. */
+    public record Liquidacion(long envio, DetalleComision detalle, long neto) {}
+
+    /** La comisión se cobra sobre los productos; el envío se le paga completo al negocio. */
+    public Liquidacion liquidar(Long empresaId, long bruto, long costoEnvio) {
+        long envio = Math.max(0L, Math.min(costoEnvio, bruto));
+        DetalleComision detalle = detalleParaEmpresa(empresaId, bruto - envio);
+        return new Liquidacion(envio, detalle, detalle.resultado().neto() + envio);
+    }
+
+    /** Mismo cálculo que acredita el wallet; solo lectura, para mostrarle al vendedor lo que va a recibir. */
+    public DetalleComision detalleParaEmpresa(Long empresaId, long bruto) {
         Empresa empresa = empresaRepo.findByIdWithPlan(empresaId).orElse(null);
         Plan plan = empresa != null ? empresa.getPlan() : null;
         String nombrePlan = nombrePlan(empresa, plan);
@@ -117,8 +134,9 @@ public class AggregatorService {
             ? plan.getComisionPorcentaje()
             : pctFallback;
         boolean min = AggregatorCommissionMath.aplicaMinimoEmprendedor(nombrePlan);
-        return AggregatorCommissionMath.calcular(
+        Resultado resultado = AggregatorCommissionMath.calcular(
             bruto, pct, min, minimoEmprendedorCrc, pctGateway);
+        return new DetalleComision(nombrePlan, pct, min ? minimoEmprendedorCrc : 0, resultado);
     }
 
     private static String nombrePlan(Empresa empresa, Plan plan) {

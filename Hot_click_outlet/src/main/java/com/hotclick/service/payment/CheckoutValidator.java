@@ -15,11 +15,17 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class CheckoutValidator {
 
     private static final Logger log = LoggerFactory.getLogger(CheckoutValidator.class);
+
+    /** Métodos que ofrece el checkout del comprador; el domicilio a ₡2000 es solo de pedidos manuales. */
+    private static final Set<String> METODOS_ENVIO_CHECKOUT = Set.of(
+        Constants.ENVIO_RETIRO, Constants.ENVIO_ENCOMIENDA,
+        "ENVIO_NORMAL_GAM", "ENVIO_NORMAL_FUERA_GAM", "ENVIO_RAPIDO");
 
     @Autowired private BodegaRepository bodegaRepository;
 
@@ -75,6 +81,17 @@ public class CheckoutValidator {
                     tenantId, bodegaId, bodegaEmpresaId);
                 throw new SecurityException("La bodega seleccionada no pertenece a este negocio");
             }
+        }
+    }
+
+    /**
+     * Un método desconocido no puede caer en envío ₡0. Sin método el pedido queda como
+     * retiro ({@code CheckoutOrderFactory}), igual que antes.
+     */
+    public static void assertMetodoEnvioValido(String metodoEnvio) {
+        if (metodoEnvio == null) return;
+        if (!METODOS_ENVIO_CHECKOUT.contains(metodoEnvio)) {
+            throw new IllegalArgumentException("Método de envío no válido: " + metodoEnvio);
         }
     }
 

@@ -68,6 +68,19 @@ class WebhookIdempotencyTest {
     }
 
     @Test
+    @DisplayName("IDEM-01b | CRÍTICO — Comisión solo sobre productos; el envío se acredita completo")
+    void conEnvio_comisionSobreProductos_envioCompletoAlNegocio() {
+        when(pedido.getTotalPedido()).thenReturn(33_400);
+        when(pedido.getCostoEnvio()).thenReturn(4_000);
+
+        service.acreditarVentaAsync(pedido);
+
+        // productos 29400: 8% = 2352 (gw 4% = 1176, saas 1176); neto = 29400 - 2352 + 4000 = 31048
+        verify(walletService, times(1))
+            .acreditarVenta(eq(99L), eq(31_048L), eq(33_400L), eq(1_176L), eq(1_176L), eq(101L));
+    }
+
+    @Test
     @DisplayName("IDEM-02 | CRÍTICO — Webhook duplicado lanza DIV → capturado como benigno, NO va a DLQ")
     void webhookDuplicado_divCapturadaSilenciosamente_noDlq() {
         doThrow(new DataIntegrityViolationException(

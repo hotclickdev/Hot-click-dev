@@ -51,6 +51,7 @@ public class PaquetesCheckoutBuilder {
         Map<Long, Producto> productos = productosDe(items, todos);
         PaqueteEntregaDTO entrega = entregaDe(req, empresaId);
         String metodoEnvio = entrega != null ? entrega.getMetodoEnvio() : req.getMetodoEnvio();
+        CheckoutValidator.assertMetodoEnvioValido(metodoEnvio);
         Long bodegaElegida = entrega != null && entrega.getBodegaId() != null
             ? entrega.getBodegaId()
             : (unicoPaquete ? req.getBodegaId() : null);

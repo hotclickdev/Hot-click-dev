@@ -118,7 +118,7 @@ class SinpeCheckoutServiceEmpresaTest {
     void checkout_asignaEmpresaDelProducto() {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setBodegaId(1L);
-        req.setMetodoEnvio(Constants.ENVIO_DOMICILIO);
+        req.setMetodoEnvio("ENVIO_NORMAL_GAM");
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(1);
@@ -131,7 +131,7 @@ class SinpeCheckoutServiceEmpresaTest {
         assertThat(captor.getAllValues()).allMatch(p -> p.getEmpresa() == empresa);
         assertThat(captor.getValue().getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         assertThat(captor.getValue().getBodega().getId()).isEqualTo(17L);
-        assertThat(resp.getTotal()).isEqualTo(5000 + 2000);
+        assertThat(resp.getTotal()).isEqualTo(5000 + 4000);
         assertThat(resp.getCancelToken()).isEqualTo("tok-test");
         assertThat(resp.getProveedor()).isEqualTo(Constants.PROVEEDOR_SINPE);
 

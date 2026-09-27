@@ -90,6 +90,7 @@ public class GiftCardController {
             "valida",           true,
             "codigo",           gc.getCodigo(),
             "saldoActual",      gc.getSaldoActual(),
+            "empresaId",        empresaId,
             "fechaVencimiento", gc.getFechaVencimiento() != null ? gc.getFechaVencimiento().toString() : ""
         ));
     }
