@@ -1,37 +1,37 @@
 import type { ReactNode } from 'react'
-import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
-import BottomNav from '@/components/layout/BottomNav'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import HeaderComprador from '@/components/comprador/header/HeaderComprador'
+import BarraInferior from '@/components/comprador/BarraInferior'
+import FooterComprador from '@/components/comprador/FooterComprador'
 import SearchPanel from '@/components/ui/SearchPanel'
 import MiniCartDrawer from '@/components/ui/MiniCartDrawer'
 import ExitIntentModal from '@/components/ui/ExitIntentModal'
 import PromoWelcomePopup from '@/components/ui/PromoWelcomePopup'
 import ReturnVisitorBanner from '@/components/ui/ReturnVisitorBanner'
-import { motion } from 'framer-motion'
+
+/** Hasta que exista la pantalla de búsqueda por foto, la foto se pide en Servicios HOT. */
+const RUTA_BUSCAR_CON_FOTO = '/servicios'
 
 export default function MainLayout({ children }: { children?: ReactNode }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
   return (
-    <div className="flex flex-col min-h-screen overflow-x-hidden" style={{ backgroundColor: 'var(--hc-bg)' }}>
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-hc-n-50">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--hc-accent)] focus:text-white focus:text-sm focus:font-semibold"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-hc-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-hc-n-0"
       >
-        Saltar al contenido
+        {t('nav.saltarContenido')}
       </a>
-      <Navbar />
-      <motion.main
-        id="main-content"
-        initial={{ opacity: 0, y: 12, scale: 0.995 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="flex-1 pt-16 pb-20 md:pb-0"
-        tabIndex={-1}
-      >
+      <HeaderComprador onBuscarConFoto={() => navigate(RUTA_BUSCAR_CON_FOTO)} />
+      <main id="main-content" className="flex-1" tabIndex={-1}>
         <ReturnVisitorBanner />
         {children}
-      </motion.main>
-      <Footer />
-      <BottomNav />
+      </main>
+      <FooterComprador />
+      <div className="h-[72px] lg:hidden" aria-hidden="true" />
+      <BarraInferior />
       <SearchPanel />
       <MiniCartDrawer />
       <ExitIntentModal />

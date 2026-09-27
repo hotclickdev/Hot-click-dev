@@ -17,7 +17,7 @@ type HeaderEscritorioProps = {
 /** Header desktop del comprador (Figma `9:172`). */
 export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
   const { t } = useTranslation()
-  const { cantidadPedido, conSesion, rutaCuenta, categorias } = useHeaderComprador()
+  const { cantidadPedido, conSesion, rutaCuenta, rutaPanel, categorias } = useHeaderComprador()
 
   return (
     <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 lg:flex xl:px-[120px]">
@@ -25,6 +25,11 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
         <MarcaComprador tamano="escritorio" />
         <BuscadorEscritorio onBuscarConFoto={onBuscarConFoto} />
         <div className="flex shrink-0 items-center gap-[22px] text-hc-n-900">
+          {rutaPanel && (
+            <Link to={rutaPanel} className="text-[14px] font-medium text-hc-n-600 hover:text-hc-n-900">
+              {t('comprador.header.panel')}
+            </Link>
+          )}
           <Link to={rutaCuenta} className="flex items-center gap-[6px] text-[14px] font-medium">
             <IconoFigma src={ICONOS_COMPRADOR.headerIngresar} size={20} />
             {conSesion ? t('comprador.header.miCuenta') : t('comprador.header.ingresar')}
