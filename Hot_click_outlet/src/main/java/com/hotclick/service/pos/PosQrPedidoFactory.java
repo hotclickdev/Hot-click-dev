@@ -161,7 +161,7 @@ public class PosQrPedidoFactory {
 
     private PedidoItem lineaDeItem(Map<String, Object> itemMap, Pedido pedido, String correo) {
         Long productoId = PosQrSessionService.productoIdDe(itemMap);
-        int cantidad    = PosQrSessionService.enteroDe(itemMap, "cantidad", 1);
+        int cantidad    = PosQrSessionService.cantidadDe(itemMap);
 
         Producto producto = productoRepo.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));

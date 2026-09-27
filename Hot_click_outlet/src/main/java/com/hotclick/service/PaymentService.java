@@ -64,7 +64,7 @@ public class PaymentService {
         CompraCheckoutResult compra = compraCheckoutService.crear(req, usuario, provider, Constants.PEDIDO_PENDIENTE);
         Pedido pedido = compra.principal();
         atribucionPedidoService.guardarSiPresente(pedido, req.getAtribucion());
-        posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), pedido.getId());
+        posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), compra);
 
         if (compraGiftCardService.liquidarSiCubreTodo(compra)) {
             return conCancelToken(new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),

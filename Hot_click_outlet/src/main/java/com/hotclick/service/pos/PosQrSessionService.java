@@ -63,7 +63,7 @@ public class PosQrSessionService {
         int total = 0;
         for (Map<String, Object> item : items) {
             Long productoId = productoIdDe(item);
-            int cantidad = enteroDe(item, "cantidad", 1);
+            int cantidad = cantidadDe(item);
             var producto = productoRepo.findById(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
             Integer precioObj = producto.getPrecioEfectivo();
@@ -72,7 +72,7 @@ public class PosQrSessionService {
             }
             int precio = precioObj;
             item.put("precioUnitario", precio);
-            total += precio * cantidad;
+            total = Math.addExact(total, Math.multiplyExact(precio, cantidad));
         }
 
         PosQrSesion sesion = new PosQrSesion();
@@ -190,6 +190,17 @@ public class PosQrSessionService {
             }
         }
         throw new IllegalArgumentException("Cada ítem necesita productoId");
+    }
+
+    /** Tope por línea: un cero o un negativo restaría del total del QR y sumaría stock al vender. */
+    static final int MAX_CANTIDAD_POS = 999;
+
+    static int cantidadDe(Map<String, Object> item) {
+        int cantidad = enteroDe(item, "cantidad", 1);
+        if (cantidad < 1 || cantidad > MAX_CANTIDAD_POS) {
+            throw new IllegalArgumentException("La cantidad debe estar entre 1 y " + MAX_CANTIDAD_POS);
+        }
+        return cantidad;
     }
 
     static int enteroDe(Map<String, Object> item, String clave, int defecto) {

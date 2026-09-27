@@ -2,12 +2,14 @@ package com.hotclick.service.pos;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.model.Pedido;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.repository.PosQrSesionRepository;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.OnvoSinpeSupport;
 import com.hotclick.service.StripeService;
 import com.hotclick.service.TurnoCajaService;
+import com.hotclick.service.payment.CompraCheckoutResult;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Service
 public class PosQrVentaService {
@@ -179,6 +182,7 @@ public class PosQrVentaService {
             log.warn("[POS-QR] Checkout {} en estado {}, no se completa", pasarelaSessionId, sesion.getEstado());
             return true;
         }
+        if (!reclamar(sesion)) return true;
         // Ya vinculado a un pedido de tienda: no crear segundo pedido POS.
         if (sesion.getPedidoId() != null) {
             marcarPagadoSinPedidoPos(sesion);
@@ -191,22 +195,41 @@ public class PosQrVentaService {
     /**
      * Al iniciar checkout de la tienda con el token del QR, guarda el pedido
      * sin marcar PAGADO todavía (eso ocurre al confirmar el pago).
+     * El token lo ve cualquiera que escanee el QR: solo se vincula una compra de un paquete,
+     * del mismo negocio y por los mismos productos que la sesión, y nunca se pisa un vínculo previo.
      */
     @Transactional
-    public void vincularPedidoTienda(String posQrToken, Long pedidoId) {
-        if (posQrToken == null || posQrToken.isBlank() || pedidoId == null) return;
+    public void vincularPedidoTienda(String posQrToken, CompraCheckoutResult compra) {
+        if (posQrToken == null || posQrToken.isBlank() || compra == null || compra.pedidos().isEmpty()) return;
+        Long pedidoId = compra.principal().getId();
         PosQrSesion sesion = posQrRepo.findByToken(posQrToken).orElse(null);
         if (sesion == null) {
             log.warn("[POS-QR] Token {} no encontrado al vincular pedido {}", posQrToken, pedidoId);
             return;
         }
-        if (!"PENDIENTE".equals(sesion.getEstado())) {
-            log.warn("[POS-QR] Sesión {} en estado {}, no se vincula pedido", posQrToken, sesion.getEstado());
+        String rechazo = motivoRechazoVinculo(sesion, compra);
+        if (rechazo != null) {
+            log.warn("[POS-QR] Sesión {} no se vincula a pedido {}: {}", posQrToken, pedidoId, rechazo);
             return;
         }
         sesion.setPedidoId(pedidoId);
         posQrRepo.save(sesion);
         log.info("[POS-QR] Sesión {} vinculada a pedido tienda {}", posQrToken, pedidoId);
+    }
+
+    static String motivoRechazoVinculo(PosQrSesion sesion, CompraCheckoutResult compra) {
+        if (!"PENDIENTE".equals(sesion.getEstado())) return "estado " + sesion.getEstado();
+        if (sesion.getPedidoId() != null) return "ya vinculada al pedido " + sesion.getPedidoId();
+        if (compra.pedidos().size() != 1) return "la compra trae paquetes de varios negocios";
+        Pedido pedido = compra.principal();
+        Long empresaPedido = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
+        if (sesion.getEmpresa() == null || !sesion.getEmpresa().getId().equals(empresaPedido)) {
+            return "el pedido es de otro negocio";
+        }
+        if (!Objects.equals(pedido.getSubtotal(), sesion.getTotal())) {
+            return "subtotal " + pedido.getSubtotal() + " distinto del QR " + sesion.getTotal();
+        }
+        return null;
     }
 
     /**
@@ -220,7 +243,15 @@ public class PosQrVentaService {
         if (sesion == null) return;
         if ("PAGADO".equals(sesion.getEstado())) return;
         if (!"PENDIENTE".equals(sesion.getEstado())) return;
+        if (!reclamar(sesion)) return;
         marcarPagadoSinPedidoPos(sesion);
+    }
+
+    /** Solo la primera transacción que reclama la sesión cierra la venta; evita dos pedidos y dos sumas al turno. */
+    private boolean reclamar(PosQrSesion sesion) {
+        if (posQrRepo.reclamarParaCompletar(sesion.getId()) == 1) return true;
+        log.info("[POS-QR] Sesión {} ya la está cerrando otra transacción", sesion.getToken());
+        return false;
     }
 
     private void marcarPagadoSinPedidoPos(PosQrSesion sesion) {
@@ -253,7 +284,7 @@ public class PosQrVentaService {
         }
 
         if (pagoPasarelaConfirmado(sesion)) {
-            completionService.completarVentaTarjeta(sesion);
+            if (reclamar(sesion)) completionService.completarVentaTarjeta(sesion);
             return "PAGADO";
         }
 
@@ -305,6 +336,9 @@ public class PosQrVentaService {
         }
         if (!empresaIdDe(sesion).equals(empresaId)) {
             throw new SecurityException("No autorizado");
+        }
+        if (!reclamar(sesion)) {
+            throw new IllegalStateException("La sesión ya se está confirmando");
         }
 
         completionService.completarVentaSinpe(sesion, usuarioId, notas);

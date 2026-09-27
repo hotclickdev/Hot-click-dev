@@ -192,6 +192,7 @@ class PosQrVentaServiceTest {
     void webhookCompletaVentaPendiente() {
         PosQrSesion sesion = sesionTarjeta();
         when(posQrRepo.findByStripeSessionId("onvo_cs_pos")).thenReturn(Optional.of(sesion));
+        when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(1);
 
         assertThat(service.completarSiPagoPasarela("onvo_cs_pos")).isTrue();
         verify(completionService).completarVentaTarjeta(sesion);
@@ -215,6 +216,7 @@ class PosQrVentaServiceTest {
         sesion.setFechaExpiracion(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));
         when(posQrRepo.findByToken("tokentarjetaqr01")).thenReturn(Optional.of(sesion));
         when(onvoService.paymentIntentStatus("onvo_pi_sinpe")).thenReturn("succeeded");
+        when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(1);
 
         assertThat(service.verificarEstado("tokentarjetaqr01")).isEqualTo("PAGADO");
         verify(completionService).completarVentaTarjeta(sesion);

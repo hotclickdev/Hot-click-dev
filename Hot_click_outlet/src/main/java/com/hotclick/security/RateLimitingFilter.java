@@ -69,7 +69,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     @Autowired private ClientIpResolver     clientIpResolver;
 
     private record Limit(int maxRequests, int windowSeconds) {}
-    private record PrefixLimit(String prefix, int maxRequests, int windowSeconds) {}
+    /** {@code sufijo} null = cualquier ruta bajo el prefijo. */
+    private record PrefixLimit(String prefix, String sufijo, int maxRequests, int windowSeconds) {
+        boolean aplica(String path) {
+            return path.startsWith(prefix) && (sufijo == null || path.endsWith(sufijo));
+        }
+    }
     private record GetLimit(String prefix, int maxRequests, int windowSeconds) {}
 
     // Exact-path limits (POST only)
@@ -109,15 +114,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     // Matched in order — first prefix wins. Keep this list short.
     private static final List<PrefixLimit> PREFIX_LIMITS = List.of(
         // Prevent admins from accidentally spamming customers with email notifications.
-        new PrefixLimit("/api/pedidos/", 5, 60),   // 5 notificar calls/min per IP
+        new PrefixLimit("/api/pedidos/", "/notificar", 5, 60),   // 5 notificar calls/min per IP
         // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
-        new PrefixLimit("/api/payments/tilopay/", 10, 60)
+        new PrefixLimit("/api/payments/tilopay/", null, 10, 60),
+        // QR de pago POS público: cada POST crea checkout o intento en ONVO/Stripe
+        new PrefixLimit("/api/pos/qr/pago/", null, 10, 60),
+        // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
+        new PrefixLimit("/api/qr/", null, 10, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
     // Matched in order — first prefix wins. Only covers unauthenticated-friendly routes.
     private static final List<GetLimit> GET_LIMITS = List.of(
         new GetLimit("/api/hacienda/contribuyente",      10,  60), // proxy a API Hacienda CR
+        // Estado del QR POS consulta ONVO en cada llamada; cajero (3 s) y cliente (2,5 s) suelen compartir IP
+        new GetLimit("/api/pos/qr/pago",               120,  60),
         new GetLimit("/api/img",                         60,  60),
         new GetLimit("/api/convenios/publicos",          60,  60),
         new GetLimit("/api/marcas/publicas",             60,  60),
@@ -149,11 +160,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             if (limit == null) {
                 // Prefix check — paths with ID segments
                 for (PrefixLimit pl : PREFIX_LIMITS) {
-                    if (!path.startsWith(pl.prefix())) {
-                        continue;
-                    }
-                    if (pl.prefix().startsWith("/api/payments/tilopay/")
-                        || path.endsWith("/notificar")) {
+                    if (pl.aplica(path)) {
                         limit = new Limit(pl.maxRequests(), pl.windowSeconds());
                         break;
                     }
