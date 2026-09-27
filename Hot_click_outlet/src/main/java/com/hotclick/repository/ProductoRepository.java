@@ -161,6 +161,21 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p.categoria.nombreCategoria, COUNT(p) FROM Producto p WHERE p.estado = 1 GROUP BY p.categoria.nombreCategoria ORDER BY COUNT(p) DESC")
     List<Object[]> countPorCategoria();
 
+    /** Categorías con productos en el catálogo público: mismo gate que findByEstadoAndEmpresaAprobada. */
+    @Query(nativeQuery = true, value =
+        "SELECT c.id_categoria, c.nombre_categoria, COUNT(p.id_producto), " +
+        "COALESCE(MAX(c.imagen_url), MAX(p.imagen_principal_url)) " +
+        "FROM hot_click_producto_tb p " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "INNER JOIN hot_click_categoria_tb c ON p.fk_id_categoria = c.id_categoria " +
+        "WHERE p.fk_id_estado = 1 " +
+        "AND p.visible_catalogo = TRUE " +
+        "AND p.vendido = FALSE " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+        "GROUP BY c.id_categoria, c.nombre_categoria " +
+        "ORDER BY COUNT(p.id_producto) DESC, c.nombre_categoria ASC")
+    List<Object[]> contarCatalogoPublicoPorCategoria();
+
     @Modifying
     @Query("UPDATE Producto p SET p.estado = 0 WHERE p.fechaAgotado IS NOT NULL AND p.fechaAgotado < :limite AND p.estado = 1")
     int inactivarProductosAgotadosAntesDe(@Param("limite") LocalDateTime limite);

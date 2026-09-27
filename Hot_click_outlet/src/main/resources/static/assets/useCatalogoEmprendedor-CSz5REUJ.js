@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-RJDF2Jh8.js";function t(){return e()}export{t};

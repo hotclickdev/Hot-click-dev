@@ -173,15 +173,36 @@
     "planEmprendedorBadge": "To start",
     "planEmprendedorTitle": "Emprendedor",
     "planEmprendedorDesc": "Publish and get paid. The starter plan for the first 70.",
-    "planEmprendedorPuntos": ["Up to 50 products", "Basic reports", "1 warehouse and 1 POS till", "Card and SINPE payments", "Shipping across Costa Rica", "8% sales fee (min ₡400)"],
+    "planEmprendedorPuntos": [
+      "Up to 50 products",
+      "Basic reports",
+      "1 warehouse and 1 POS till",
+      "Card and SINPE payments",
+      "Shipping across Costa Rica",
+      "9% sales fee (min ₡700)"
+    ],
     "planPymeBadge": "To grow",
     "planPymeTitle": "PYME",
     "planPymeDesc": "Team, more warehouses, and fuller reports.",
-    "planPymePuntos": ["Up to 500 products", "Team management (5 users)", "2 warehouses and 2 tills", "Purchasing and inventory", "AI and advanced reports", "₡9,900/mo + 4% per sale"],
+    "planPymePuntos": [
+      "Up to 500 products",
+      "Team management (5 users)",
+      "2 warehouses and 2 tills",
+      "Purchasing and inventory",
+      "AI and advanced reports",
+      "₡9,900/mo + 4% per sale"
+    ],
     "planPlusBadge": "To operate at scale",
     "planPlusTitle": "Negocio Plus",
     "planPlusDesc": "Several branches and orders per location.",
-    "planPlusPuntos": ["Everything in PYME", "Unlimited products and users", "Multi-branch and orders per location", "Customer CRM", "Unlimited AI", "₡24,900/mo + 4% per sale"],
+    "planPlusPuntos": [
+      "Everything in PYME",
+      "Unlimited products and users",
+      "Multi-branch and orders per location",
+      "Customer CRM",
+      "Unlimited AI",
+      "₡24,900/mo + 4% per sale"
+    ],
     "pymeCta": "Create my business",
     "plusCta": "Create my business",
     "faqTitle": "Frequently asked questions",
@@ -2740,5 +2761,79 @@
       "A coffee table",
       "Remodel the bedroom"
     ]
+  },
+  "comprador": {
+    "header": {
+      "marcaAria": "HotClick, go to home",
+      "buscadorMovil": "Search or describe what you need",
+      "buscadorDesktop": "Search products or describe what you need, for example “gift for mom under ₡20,000”",
+      "buscarConFoto": "Search with a photo",
+      "foto": "Photo",
+      "buscar": "Search",
+      "ingresar": "Sign in",
+      "miCuenta": "My account",
+      "favoritos": "Favorites",
+      "carrito": "Your order, {{count}} products",
+      "todasCategorias": "All categories",
+      "serviciosHot": "HOT Services",
+      "vende": "Sell on HotClick",
+      "categoriasAria": "Categories"
+    },
+    "nav": {
+      "aria": "Main navigation",
+      "inicio": "Home",
+      "buscar": "Search",
+      "categorias": "Categories",
+      "pedido": "Order",
+      "cuenta": "Account"
+    },
+    "footer": {
+      "aria": "HotClick links",
+      "sobre": "About HotClick",
+      "envios": "Shipping",
+      "devoluciones": "Returns",
+      "contacto": "Contact",
+      "terminos": "Terms",
+      "privacidad": "Privacy",
+      "derechos": "© {{anio}} HotClick · Costa Rica",
+      "bannerPregunta": "Do you have a business?",
+      "bannerTitulo": "Sell on HotClick",
+      "bannerTituloDesktop": "Sell on HotClick with no monthly fee",
+      "bannerCta": "See the plans"
+    },
+    "tarjeta": {
+      "quedan": "{{count}} left",
+      "agregar": "Add {{nombre}} to your order",
+      "agregado": "{{nombre}} was added to your order",
+      "favoritoAgregar": "Save {{nombre}} to favorites",
+      "favoritoQuitar": "Remove {{nombre}} from favorites",
+      "agotado": "Sold out"
+    },
+    "categoria": {
+      "productos_one": "{{count}} product",
+      "productos_other": "{{count}} products"
+    },
+    "consulta": {
+      "pregunta1": "What should I give my partner?",
+      "pregunta2": "An accessory for my phone",
+      "pregunta3": "Something for my dog or cat",
+      "pregunta4": "Something for my skin care",
+      "pregunta5": "Toys for young children",
+      "enfocada": "Type what you are looking for",
+      "enviar": "Send to the assistant",
+      "aria": "Ask the assistant"
+    },
+    "aviso": {
+      "titulo": "Your purchase includes {{count}} businesses",
+      "envioTitulo": "Shipping is separate for each business",
+      "envioTexto": "Each one ships from its own location, so shipping is charged per business.",
+      "domicilioTitulo": "We recommend home delivery",
+      "domicilioTexto": "Picking up at several stores means more travel and more time.",
+      "apoyoTitulo": "Your purchase helps {{count}} entrepreneurs grow",
+      "apoyoTexto": "We are working to lower shipping costs on purchases from several businesses."
+    },
+    "hoja": {
+      "cerrar": "Close"
+    }
   }
 }

@@ -26,6 +26,25 @@
   --color-hc-success: var(--hc-success);
   --color-hc-danger: var(--hc-danger);
   --color-hc-warning: var(--hc-warning);
+  --color-hc-warning-bg: var(--hc-warning-bg);
+
+  /* Escala de variables del Figma de compra (n/*, blue/*, red/*): tienda pública, solo modo claro. */
+  --color-hc-n-0: var(--hc-n-0);
+  --color-hc-n-50: var(--hc-n-50);
+  --color-hc-n-100: var(--hc-n-100);
+  --color-hc-n-200: var(--hc-n-200);
+  --color-hc-n-300: var(--hc-n-300);
+  --color-hc-n-500: var(--hc-n-500);
+  --color-hc-n-600: var(--hc-n-600);
+  --color-hc-n-900: var(--hc-n-900);
+  --color-hc-blue-50: var(--hc-blue-50);
+  --color-hc-blue-100: var(--hc-blue-100);
+  --color-hc-blue-600: var(--hc-blue-600);
+  --color-hc-blue-900: var(--hc-blue-900);
+  --color-hc-red-500: var(--hc-red-500);
+  --color-hc-red-600: var(--hc-red-600);
+  --color-hc-green-600: var(--hc-success);
+  --color-hc-green-50: var(--hc-success-bg);
 
   --font-sans: 'Public Sans', 'PublicSans-fallback', system-ui, -apple-system, sans-serif;
   --font-display: 'Sora', system-ui, sans-serif;
@@ -35,6 +54,21 @@
   --radius-md: var(--hc-r-md);
   --radius-lg: var(--hc-r-lg);
   --radius-xl: var(--hc-r-xl);
+}
+
+/* Consulta rotativa (Figma 23:846): cada palabra sube desde un escalón más bajo. */
+@keyframes hc-escalon {
+  from { opacity: 0; transform: translateY(var(--hc-escalon-desde, 12px)); }
+  to { opacity: 1; transform: none; }
+}
+.hc-escalon-palabra {
+  display: inline-block;
+  animation-name: hc-escalon;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-escalon-palabra { animation: none; }
 }
 
 /* ── Modo claro (default) — Brand Book cap. 3.4 ──

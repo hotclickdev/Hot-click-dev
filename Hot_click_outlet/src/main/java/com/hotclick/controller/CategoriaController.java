@@ -8,6 +8,7 @@ import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.producto.CategoriaCatalogoQueries;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ public class CategoriaController {
     @Autowired private UsuarioRepository   usuarioRepository;
     @Autowired private CompanyScope        companyScope;
     @Autowired private InputSanitizer      sanitizer;
+    @Autowired private CategoriaCatalogoQueries categoriaCatalogoQueries;
 
     // Sin @Cacheable: el resultado varía según el usuario autenticado (empresa) vs público.
     // Cachear con clave única causaría que un usuario contamine el caché del otro.
@@ -52,6 +54,12 @@ public class CategoriaController {
     public ResponseEntity<ResponseDTO> listarPublicas() {
         var cats = categoriaRepository.findPublicasByEstado(Constants.ESTADO_ACTIVO);
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
+    }
+
+    @GetMapping("/publicas/con-productos")
+    public ResponseEntity<ResponseDTO> listarConProductos() {
+        return ResponseEntity.ok(ResponseDTO.success("Categorías con productos",
+            categoriaCatalogoQueries.categoriasConProductos()));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPRENDEDOR')")

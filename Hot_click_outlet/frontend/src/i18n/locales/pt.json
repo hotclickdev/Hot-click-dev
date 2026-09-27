@@ -173,15 +173,36 @@
     "planEmprendedorBadge": "Para começar",
     "planEmprendedorTitle": "Emprendedor",
     "planEmprendedorDesc": "Publique e receba. O plano inicial dos primeiros 70.",
-    "planEmprendedorPuntos": ["Até 50 produtos", "Relatórios básicos", "1 depósito e 1 caixa POS", "Pagamentos com cartão e SINPE", "Envios na Costa Rica", "Comissão 8% por venda (mín. ₡400)"],
+    "planEmprendedorPuntos": [
+      "Até 50 produtos",
+      "Relatórios básicos",
+      "1 depósito e 1 caixa POS",
+      "Pagamentos com cartão e SINPE",
+      "Envios na Costa Rica",
+      "Comissão 9% por venda (mín. ₡700)"
+    ],
     "planPymeBadge": "Para crescer",
     "planPymeTitle": "PYME",
     "planPymeDesc": "Equipe, mais depósitos e relatórios mais completos.",
-    "planPymePuntos": ["Até 500 produtos", "Gestão de equipe (5 usuários)", "2 depósitos e 2 caixas", "Compras e estoque", "IA e relatórios avançados", "₡9.900/mês + 4% por venda"],
+    "planPymePuntos": [
+      "Até 500 produtos",
+      "Gestão de equipe (5 usuários)",
+      "2 depósitos e 2 caixas",
+      "Compras e estoque",
+      "IA e relatórios avançados",
+      "₡9.900/mês + 4% por venda"
+    ],
     "planPlusBadge": "Para operar de verdade",
     "planPlusTitle": "Negocio Plus",
     "planPlusDesc": "Várias filiais e pedidos por local.",
-    "planPlusPuntos": ["Tudo do PYME", "Produtos e usuários ilimitados", "Multi-filial e pedidos por local", "CRM de clientes", "IA sem limite", "₡24.900/mês + 4% por venda"],
+    "planPlusPuntos": [
+      "Tudo do PYME",
+      "Produtos e usuários ilimitados",
+      "Multi-filial e pedidos por local",
+      "CRM de clientes",
+      "IA sem limite",
+      "₡24.900/mês + 4% por venda"
+    ],
     "pymeCta": "Criar meu negócio",
     "plusCta": "Criar meu negócio",
     "faqTitle": "Perguntas frequentes",
@@ -2740,5 +2761,79 @@
       "Uma mesa de centro",
       "Reformar o quarto"
     ]
+  },
+  "comprador": {
+    "header": {
+      "marcaAria": "HotClick, ir para o início",
+      "buscadorMovil": "Busque ou descreva o que você precisa",
+      "buscadorDesktop": "Busque produtos ou descreva o que você precisa, por exemplo “presente para a mãe por menos de ₡20.000”",
+      "buscarConFoto": "Buscar com foto",
+      "foto": "Foto",
+      "buscar": "Buscar",
+      "ingresar": "Entrar",
+      "miCuenta": "Minha conta",
+      "favoritos": "Favoritos",
+      "carrito": "Seu pedido, {{count}} produtos",
+      "todasCategorias": "Todas as categorias",
+      "serviciosHot": "Serviços HOT",
+      "vende": "Venda na HotClick",
+      "categoriasAria": "Categorias"
+    },
+    "nav": {
+      "aria": "Navegação principal",
+      "inicio": "Início",
+      "buscar": "Buscar",
+      "categorias": "Categorias",
+      "pedido": "Pedido",
+      "cuenta": "Conta"
+    },
+    "footer": {
+      "aria": "Links da HotClick",
+      "sobre": "Sobre a HotClick",
+      "envios": "Envios",
+      "devoluciones": "Devoluções",
+      "contacto": "Contato",
+      "terminos": "Termos",
+      "privacidad": "Privacidade",
+      "derechos": "© {{anio}} HotClick · Costa Rica",
+      "bannerPregunta": "Você tem um negócio?",
+      "bannerTitulo": "Venda na HotClick",
+      "bannerTituloDesktop": "Venda na HotClick sem mensalidade",
+      "bannerCta": "Conheça os planos"
+    },
+    "tarjeta": {
+      "quedan": "Restam {{count}}",
+      "agregar": "Adicionar {{nombre}} ao seu pedido",
+      "agregado": "{{nombre}} foi adicionado ao seu pedido",
+      "favoritoAgregar": "Salvar {{nombre}} nos favoritos",
+      "favoritoQuitar": "Remover {{nombre}} dos favoritos",
+      "agotado": "Esgotado"
+    },
+    "categoria": {
+      "productos_one": "{{count}} produto",
+      "productos_other": "{{count}} produtos"
+    },
+    "consulta": {
+      "pregunta1": "O que dou de presente para meu par?",
+      "pregunta2": "Um acessório para meu celular",
+      "pregunta3": "Algo para meu cachorro ou gato",
+      "pregunta4": "Algo para cuidar da minha pele",
+      "pregunta5": "Brinquedos para crianças pequenas",
+      "enfocada": "Escreva o que você procura",
+      "enviar": "Enviar ao assistente",
+      "aria": "Pergunte ao assistente"
+    },
+    "aviso": {
+      "titulo": "Sua compra inclui {{count}} negócios",
+      "envioTitulo": "O envio é individual por negócio",
+      "envioTexto": "Cada um despacha da sua localização, por isso cobramos um envio por negócio.",
+      "domicilioTitulo": "Recomendamos entrega em domicílio",
+      "domicilioTexto": "Retirar em várias lojas significa percorrer distâncias e mais tempo.",
+      "apoyoTitulo": "Sua compra ajuda {{count}} empreendedores a crescer",
+      "apoyoTexto": "Estamos trabalhando para reduzir o custo de envio em compras de vários negócios."
+    },
+    "hoja": {
+      "cerrar": "Fechar"
+    }
   }
 }

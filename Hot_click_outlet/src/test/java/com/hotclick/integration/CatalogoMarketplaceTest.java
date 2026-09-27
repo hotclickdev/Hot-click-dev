@@ -184,6 +184,23 @@ class CatalogoMarketplaceTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Huerfano')]").doesNotExist());
     }
 
+    // ── T-MKT-007: el conteo por categoría usa el mismo gate que el catálogo ──
+    @Test
+    @DisplayName("T-MKT-007 | Categorías con productos cuentan solo lo que el catálogo público muestra")
+    void categoriasConProductos_cuentaConElGateDelCatalogo() throws Exception {
+        Empresa a = crearEmpresa("Conteo A", "mkt-conteo-a", "mkt-conteo-a@test.cr", "ACTIVO", true);
+        Empresa b = crearEmpresa("Conteo B", "mkt-conteo-b", "mkt-conteo-b@test.cr", "ACTIVO", true);
+        Empresa pendiente = crearEmpresa("Conteo P", "mkt-conteo-p", "mkt-conteo-p@test.cr",
+            "PENDIENTE_APROBACION", false);
+        crearProducto("Conteo A1", "SKU-MKT-CA1", a, true);
+        crearProducto("Conteo B1", "SKU-MKT-CB1", b, true);
+        crearProducto("Conteo P1", "SKU-MKT-CP1", pendiente, false);
+
+        mockMvc.perform(get("/api/categorias/publicas/con-productos"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[?(@.id == " + categoria.getId() + ")].cantidad").value(2));
+    }
+
     @Test
     @DisplayName("ADMIN pausa un producto de empresa ACTIVA y deja de verse; Publicar lo restaura")
     void adminPausaYPublicaProducto_catalogoSigueLaDecision() throws Exception {
