@@ -3,13 +3,19 @@ import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 import { orderService } from '@/services/orderService'
 import useAuthStore from '@/store/authStore'
+import type { Id } from '@/types/api'
+import { PAQUETES_POR_CONSULTA, cargarPaginasPedidos } from './cargarPaginasPedidos'
 import { agruparCompras, type CompraCliente } from './comprasCliente'
 import { pedidosDesdeRespuesta, type PedidoCliente } from './pedidoHelpers'
 
-/** Paquetes que se piden de una vez: sin paginación en el Figma, alcanza para agrupar las compras recientes. */
-export const PAQUETES_POR_CONSULTA = 50
-
 type ComprasCliente = { cargando: boolean; compras: CompraCliente[]; pedidos: PedidoCliente[] }
+
+function cargarPedidosComprador(userId: Id): Promise<PedidoCliente[]> {
+  return cargarPaginasPedidos(async (pagina) => {
+    const { data } = await orderService.getByUser(userId, pagina, PAQUETES_POR_CONSULTA)
+    return pedidosDesdeRespuesta(data)
+  })
+}
 
 /** Paquetes del comprador agrupados por compra (un pago, un paquete por negocio). */
 export function useComprasCliente(): ComprasCliente {
@@ -22,8 +28,8 @@ export function useComprasCliente(): ComprasCliente {
   useEffect(() => {
     if (!userId) return
     let cancelado = false
-    orderService.getByUser(userId, 0, PAQUETES_POR_CONSULTA)
-      .then(({ data }) => { if (!cancelado) setPedidos(pedidosDesdeRespuesta(data).pedidos) })
+    cargarPedidosComprador(userId)
+      .then((todos) => { if (!cancelado) setPedidos(todos) })
       .catch((error: unknown) => {
         if (cancelado) return
         console.error('No se pudieron cargar los pedidos del comprador', error)
