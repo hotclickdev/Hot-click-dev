@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.dto.ResultadoAltaCupo;
+import com.hotclick.dto.UbicacionDespachoAlta;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -34,6 +36,7 @@ public class EmprendedorRegistroService {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private InputSanitizer           sanitizer;
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
+    @Autowired private BodegaDespachoInicialService bodegaDespachoInicialService;
 
     @Transactional
     public Usuario registrar(RegistroEmpresaDTO dto) {
@@ -66,6 +69,8 @@ public class EmprendedorRegistroService {
             : dto.getCorreoAdmin().trim().toLowerCase();
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa))
             throw new IllegalArgumentException("Ya existe una empresa registrada con ese correo");
+
+        Optional<UbicacionDespachoAlta> ubicacion = bodegaDespachoInicialService.normalizar(dto.ubicacionDespacho());
 
         // 1. Crear empresa
         Empresa empresa = new Empresa();
@@ -125,6 +130,10 @@ public class EmprendedorRegistroService {
         MiembroEmpresa miembro = new MiembroEmpresa(saved, saved.getEmpresa(), "PROPIETARIO");
         miembroEmpresaRepository.save(miembro);
 
+        Usuario propietario = saved;
+        Empresa empresaCreada = empresa;
+        ubicacion.ifPresent(u -> bodegaDespachoInicialService.crear(empresaCreada, propietario, u));
+
         String nombreComercial = empresa.getNombreComercial() != null
             ? empresa.getNombreComercial() : empresa.getNombreEmpresa();
         notificacionEmailService.enviarBienvenidaEmprendedor(
@@ -146,7 +155,10 @@ public class EmprendedorRegistroService {
                                         String nombreComercial, String telefonoEmpresa,
                                         String correoEmpresa,
                                         String cedulaJuridica, Boolean inscritoHacienda,
-                                        String regimenTributario, String nombreHacienda) {
+                                        String regimenTributario, String nombreHacienda,
+                                        UbicacionDespachoAlta ubicacionDespacho) {
+        // Llega detached desde el request (open-in-view=false): sin recargar, getRoles() es lazy y falla.
+        usuario = usuarioRepository.findById(usuario.getId()).orElse(usuario);
         if (usuario.getEmpresa() != null) {
             throw new IllegalArgumentException("Este usuario ya tiene un negocio registrado");
         }
@@ -155,6 +167,7 @@ public class EmprendedorRegistroService {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del negocio es requerido");
         }
+        Optional<UbicacionDespachoAlta> ubicacion = bodegaDespachoInicialService.normalizar(ubicacionDespacho);
 
         String slug     = uniqueSlug(slugify(nombre));
         String correoEmp = (correoEmpresa != null && !correoEmpresa.isBlank())
@@ -202,6 +215,10 @@ public class EmprendedorRegistroService {
         // 3. Registrar membresía
         MiembroEmpresa miembro = new MiembroEmpresa(saved, empresa, "PROPIETARIO");
         miembroEmpresaRepository.save(miembro);
+
+        Usuario propietario = saved;
+        Empresa empresaCreada = empresa;
+        ubicacion.ifPresent(u -> bodegaDespachoInicialService.crear(empresaCreada, propietario, u));
 
         // Recargar para evitar LazyInitializationException
         saved = usuarioRepository.findById(saved.getId()).orElse(saved);

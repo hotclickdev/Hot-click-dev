@@ -3,15 +3,16 @@ import { useTranslation } from 'react-i18next'
 import isotipo from '@/assets/figma/comprador/isotipo.png'
 
 type MarcaCompradorProps = {
-  tamano: 'movil' | 'escritorio'
+  tamano: 'movil' | 'escritorio' | 'compra'
 }
 
 const MEDIDAS = {
   movil: { isotipo: 'size-[30px]', texto: 'text-[19px]' },
   escritorio: { isotipo: 'size-[34px]', texto: 'text-[22px]' },
+  compra: { isotipo: 'size-[26px]', texto: 'text-[17px]' },
 } as const
 
-/** Isotipo + wordmark bicolor del header (Figma `7:5` / `9:174`). */
+/** Isotipo + wordmark bicolor del header (Figma `7:5` / `9:174`; compra segura `28:1086`). */
 export default function MarcaComprador({ tamano }: MarcaCompradorProps) {
   const { t } = useTranslation()
   const medidas = MEDIDAS[tamano]

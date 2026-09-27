@@ -22,6 +22,11 @@ import { mensajeErrorAuth } from './auth/authHelpers'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
 import { leerPlanQuery, esPlanPago } from './registro-empresa/planQueryParam'
+import { useUbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
+import {
+  MENSAJE_UBICACION_INCOMPLETA,
+  payloadUbicacionRegistro,
+} from '@/prototipo/compartido/ubicacionDespachoHelpers'
 
 const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
@@ -82,6 +87,7 @@ export default function RegistroEmpresaPage() {
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
     inscritoTributacion: true,
   })
+  const ubicacion = useUbicacionDespachoForm()
 
   const destino = destinoVender({ tokenVivo: isTokenAlive(token), rol: userRole, empresaId })
   if (destino !== RUTA_REGISTRO_EMPRESA) {
@@ -95,6 +101,10 @@ export default function RegistroEmpresaPage() {
     setError('')
     if (!form.nombreEmpresa.trim()) {
       setError('El nombre del negocio es requerido')
+      return
+    }
+    if (!ubicacion.validar()) {
+      setError(MENSAJE_UBICACION_INCOMPLETA)
       return
     }
     setStep(1)
@@ -132,6 +142,7 @@ export default function RegistroEmpresaPage() {
         passwordAdmin:        form.passwordAdmin,
         telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
         inscritoTributacion:  form.inscritoTributacion,
+        ...payloadUbicacionRegistro(ubicacion.ubicacion),
         ...(turnstileToken ? { turnstileToken } : {}),
       })
       const authData = authDataRegistroEmpresa(data)
@@ -244,6 +255,7 @@ export default function RegistroEmpresaPage() {
                     <StepDatosEmpresa
                       key="s0"
                       form={form}
+                      ubicacion={ubicacion}
                       error={error}
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoEmpresa: val }))}

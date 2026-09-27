@@ -4,8 +4,10 @@ import PhoneField from '@/components/ui/PhoneField'
 import ErrMsg from '../auth/ErrMsg'
 import { STEP_MOTION } from './registroEmpresaHelpers'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import UbicacionDespachoFieldset from '@/components/registro/UbicacionDespachoFieldset'
 import { WHATSAPP_HOTCLICK, urlWhatsApp } from '@/pages/carrito/cartHelpers'
 import type { ChangeEvent, FormEvent } from 'react'
+import type { UbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
 import type { RegistroEmpresaForm } from './registroEmpresaHelpers'
 
 const MENSAJE_WA_TRIBUTACION =
@@ -52,9 +54,10 @@ function AvisoTributacion({ inscrito, onChange }: { inscrito: boolean; onChange:
 }
 
 export default function StepDatosEmpresa({
-  form, error, onCampo, onTelefono, onInscritoTributacionChange, onSubmit,
+  form, ubicacion, error, onCampo, onTelefono, onInscritoTributacionChange, onSubmit,
 }: {
   form: RegistroEmpresaForm
+  ubicacion: UbicacionDespachoForm
   error: string
   onCampo: (campo: keyof RegistroEmpresaForm) => (evento: ChangeEvent<HTMLInputElement>) => void
   onTelefono: (val: string) => void
@@ -69,6 +72,7 @@ export default function StepDatosEmpresa({
         value={form.correoEmpresa} onChange={onCampo('correoEmpresa')} hint="Opcional" />
       <PhoneField label="Teléfono del negocio"
         value={form.telefonoEmpresa} onChange={onTelefono} />
+      <UbicacionDespachoFieldset form={ubicacion} />
       <AvisoTributacion inscrito={form.inscritoTributacion} onChange={onInscritoTributacionChange} />
       {error && <ErrMsg>{error}</ErrMsg>}
       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"

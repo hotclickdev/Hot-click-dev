@@ -1,201 +1,116 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import MainLayout from '@/layouts/MainLayout'
-import Spinner from '@/components/ui/Spinner'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import useCartStore from '@/store/cartStore'
 import { formatPrice } from '@/utils/format'
-import { useToast } from '@/components/ui/Toast'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import TextoFlecha from '@/components/ui/TextoFlecha'
-import type { ItemCarritoAbandonado } from '@/types/carrito'
-import type { Producto } from '@/types/producto'
+import EncabezadoCompraSegura from '@/pages/checkout/EncabezadoCompraSegura'
+import { ICONOS_COMPRA } from '@/pages/checkout/iconosCompra'
+import ProductoRecuperado from '@/pages/carrito/ProductoRecuperado'
+import {
+  estaDisponible,
+  subtotalRecuperado,
+  unidadesPorAgregar,
+  useCarritoRecuperado,
+} from '@/pages/carrito/useCarritoRecuperado'
 
+/** Enlace del correo «Te guardamos tu pedido» (Figma `29:2036`). */
 export default function RecuperarCarritoPage() {
   const { t } = useTranslation()
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
-  const toast   = useToast()
+  const { showToast } = useToast()
+  const { lineas, estado } = useCarritoRecuperado(token)
+  const [retomando, setRetomando] = useState(false)
 
-  const [items,   setItems]   = useState<ItemCarritoAbandonado[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(false)
-  const [adding,  setAdding]  = useState(false)
-
-  useEffect(() => {
-    if (!token) {
-      setError(true)
-      setLoading(false)
-      return
-    }
-    abandonedCartService.getAbandonedCart(token)
-      .then(({ data }) => {
-        const body = data as { data?: { items?: ItemCarritoAbandonado[] } }
-        const list = body?.data?.items ?? []
-        setItems(list)
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
-  }, [token])
-
-  const total = items.reduce(
-    (sum, i) => sum + (i.precio ?? 0) * (i.cantidad ?? 1), 0
-  )
-
-  const handleRestore = async () => {
+  async function continuarCompra() {
     if (!token) return
-    setAdding(true)
-    items.forEach((item) =>
-      addItem({
-        id:        item.productoId,
-        nombre:    item.nombre,
-        precio:    item.precio,
-        imagenUrl: item.imagenUrl,
-        stock:     99,
-        cantidad:  item.cantidad,
-      } as unknown as Producto)
-    )
+    setRetomando(true)
+    const disponibles = lineas.filter(estaDisponible)
+    const enCarrito = useCartStore.getState().items
+    disponibles.forEach((l) => {
+      const actual = enCarrito.find((i) => String(i.id) === String(l.producto.id) && !i.personalizacion)
+      const faltan = unidadesPorAgregar(l, actual?.cantidad ?? 0)
+      if (faltan > 0) addItem(l.producto, faltan)
+    })
     try {
       await abandonedCartService.deleteAbandonedCartByToken(token)
     } catch (err) {
       console.error('[RecuperarCarrito] no se pudo descartar el carrito abandonado', err)
     }
-    toast({ message: t('recuperarCarrito.addedToast', { count: items.length }), type: 'success' })
+    showToast(t('compra.recuperar.agregados', { count: disponibles.length }), 'success')
     navigate('/carrito')
   }
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <Spinner size="lg" />
-        </div>
-      </MainLayout>
-    )
-  }
+  if (estado === 'cargando') return <EstadoRecuperar cargando />
+  if (estado === 'error') return <EstadoRecuperar />
 
-  if (error || items.length === 0) {
-    return (
-      <MainLayout>
-        <div className="max-w-md mx-auto px-4 py-20 text-center">
-          <span className="flex justify-center mb-4 opacity-40" style={{ color: 'var(--hc-muted)' }}>
-            <TrustGlyph tipo="bolsa" className="w-12 h-12" />
-          </span>
-          <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>
-            {t('recuperarCarrito.notAvailable')}
-          </h1>
-          <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
-            {t('recuperarCarrito.expired')}
-          </p>
-          <button type="button"
-            onClick={() => navigate('/productos')}
-            className="hc-btn hc-btn-primary"
-          >
-            {t('recuperarCarrito.viewProducts')}
-          </button>
-        </div>
-      </MainLayout>
-    )
-  }
-
+  const todosDisponibles = lineas.every(estaDisponible)
   return (
-    <MainLayout>
-      <div className="max-w-lg mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {/* Header */}
-          <div className="text-center mb-8">
-            <span className="flex justify-center opacity-40" style={{ color: 'var(--hc-muted)' }}>
-              <TrustGlyph tipo="bolsa" className="w-14 h-14" />
-            </span>
-            <h1 className="text-2xl font-bold mt-3 mb-1" style={{ color: 'var(--hc-text)' }}>
-              {t('recuperarCarrito.title')}
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-              {t('recuperarCarrito.subtitle')}
+    <div className="min-h-screen bg-hc-n-50">
+      <EncabezadoCompraSegura />
+      <main className="mx-auto flex w-full max-w-[480px] flex-col">
+        <div className="flex flex-col items-center gap-[8px] px-[16px] pb-[12px] pt-[28px] text-center">
+          <span className="flex size-[64px] items-center justify-center rounded-full bg-hc-blue-50 text-hc-blue-600">
+            <IconoFigma src={ICONOS_COMPRA.bolsa} size={30} />
+          </span>
+          <h1 className="font-display text-[20px] font-bold text-hc-n-900">{t('compra.recuperar.titulo')}</h1>
+          <p className="text-[14px] leading-[20px] text-hc-n-600">
+            {todosDisponibles ? t('compra.recuperar.texto') : t('compra.recuperar.textoParcial')}
+          </p>
+        </div>
+        <div className="px-[16px] pb-[8px] pt-[12px]">
+          <section className="flex flex-col gap-[12px] rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-[16px]">
+            <ul className="flex flex-col gap-[12px]">
+              {lineas.map((linea) => <ProductoRecuperado key={linea.clave} linea={linea} />)}
+            </ul>
+            <span className="h-px w-full bg-hc-n-200" />
+            <p className="flex items-center justify-between text-hc-n-900">
+              <span className="text-[15px] font-semibold">{t('compra.recuperar.subtotal')}</span>
+              <span className="font-display text-[17px] font-bold">{formatPrice(subtotalRecuperado(lineas))}</span>
             </p>
-          </div>
-
-          {/* Product list */}
-          <div
-            className="rounded-2xl overflow-hidden mb-6"
-            style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+          </section>
+        </div>
+        <div className="flex flex-col gap-[10px] px-[16px] pb-[24px] pt-[14px]">
+          <button
+            type="button"
+            onClick={() => void continuarCompra()}
+            disabled={retomando}
+            className="rounded-[12px] bg-hc-red-500 px-[16px] py-[14px] text-[15px] font-semibold text-hc-n-0 disabled:opacity-50"
           >
-            {items.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 px-4 py-3"
-                style={{ borderBottom: i < items.length - 1 ? '1px solid var(--hc-border)' : 'none' }}
-              >
-                {item.imagenUrl ? (
-                  <img
-                    src={item.imagenUrl}
-                    alt={item.nombre}
-                    width={52}
-                    height={52}
-                    loading="lazy"
-                    className="rounded-xl object-cover shrink-0"
-                    style={{ background: 'var(--hc-bg)' }}
-                  />
-                ) : (
-                  <div
-                    className="rounded-xl shrink-0 flex items-center justify-center opacity-30"
-                    style={{ background: 'var(--hc-bg)', width: 52, height: 52, color: 'var(--hc-muted)' }}
-                  >
-                    <TrustGlyph tipo="paquete" className="w-6 h-6" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>
-                    {item.nombre}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                    {t('recuperarCarrito.quantity')} {item.cantidad ?? 1}
-                  </p>
-                </div>
-                <span className="font-semibold text-sm shrink-0" style={{ color: 'var(--hc-text)' }}>
-                  {formatPrice((item.precio ?? 0) * (item.cantidad ?? 1))}
-                </span>
-              </div>
-            ))}
+            {t('compra.recuperar.continuar')}
+          </button>
+          <p className="text-center text-[12px] leading-[16px] text-hc-n-500">{t('compra.recuperar.origen')}</p>
+        </div>
+      </main>
+    </div>
+  )
+}
 
-            {/* Total */}
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ borderTop: '2px solid var(--hc-border)' }}
-            >
-              <span className="font-semibold text-sm" style={{ color: 'var(--hc-muted)' }}>{t('recuperarCarrito.total')}</span>
-              <span className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>
-                {formatPrice(total)}
-              </span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-3">
-            <button type="button"
-              onClick={handleRestore}
-              disabled={adding}
-              className="hc-btn hc-btn-primary w-full h-12 text-sm font-bold disabled:opacity-60"
-            >
-              {adding ? t('recuperarCarrito.adding') : <TextoFlecha>{t('recuperarCarrito.restore')}</TextoFlecha>}
-            </button>
-            <button type="button"
-              onClick={() => navigate('/productos')}
-              className="hc-btn hc-btn-ghost w-full h-10 text-sm"
-              style={{ color: 'var(--hc-muted)' }}
-            >
-              {t('recuperarCarrito.exploreNew')}
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </MainLayout>
+function EstadoRecuperar({ cargando = false }: { cargando?: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <div className="min-h-screen bg-hc-n-50">
+      <EncabezadoCompraSegura />
+      <main className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-[8px] px-[16px] pt-[28px] text-center">
+        <span className="flex size-[64px] items-center justify-center rounded-full bg-hc-blue-50 text-hc-blue-600" role={cargando ? 'status' : undefined}>
+          {cargando
+            ? <span className="size-[28px] animate-spin rounded-full border-[3px] border-hc-blue-100 border-t-hc-blue-600" />
+            : <IconoFigma src={ICONOS_COMPRA.bolsa} size={30} />}
+        </span>
+        {cargando ? null : (
+          <>
+            <h1 className="font-display text-[20px] font-bold text-hc-n-900">{t('recuperarCarrito.notAvailable')}</h1>
+            <p className="text-[14px] leading-[20px] text-hc-n-600">{t('recuperarCarrito.expired')}</p>
+            <Link to="/productos" className="mt-[14px] w-full rounded-[12px] bg-hc-red-500 px-[16px] py-[14px] text-[15px] font-semibold text-hc-n-0">
+              {t('recuperarCarrito.viewProducts')}
+            </Link>
+          </>
+        )}
+      </main>
+    </div>
   )
 }

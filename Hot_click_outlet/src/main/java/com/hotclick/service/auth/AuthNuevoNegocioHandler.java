@@ -4,7 +4,9 @@ import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.ResultadoAltaCupo;
+import com.hotclick.dto.UbicacionDespachoAlta;
 import com.hotclick.service.AltaEmprendedorNotificador;
+import com.hotclick.service.BodegaDespachoInicialService;
 import com.hotclick.service.CupoEmprendedorService;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class AuthNuevoNegocioHandler {
@@ -44,6 +47,7 @@ public class AuthNuevoNegocioHandler {
     @Autowired private UsuarioService           usuarioService;
     @Autowired private AuthSupport              authSupport;
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
+    @Autowired private BodegaDespachoInicialService bodegaDespachoInicialService;
 
     @Transactional
     public ResponseEntity<?> nuevoNegocio(RegistroEmpresaDTO dto, HttpServletRequest request) {
@@ -55,10 +59,12 @@ public class AuthNuevoNegocioHandler {
 
             ResponseEntity<?> validacion = validarDto(dto);
             if (validacion != null) return validacion;
+            Optional<UbicacionDespachoAlta> ubicacion = bodegaDespachoInicialService.normalizar(dto.ubicacionDespacho());
 
             AltaNegocio alta = crearEmpresa(dto);
             miembroEmpresaRepository.save(new MiembroEmpresa(currentUser, alta.empresa(), "PROPIETARIO"));
             asegurarRolEmprendedor(currentUser);
+            ubicacion.ifPresent(u -> bodegaDespachoInicialService.crear(alta.empresa(), currentUser, u));
 
             notificacionEmailService.enviarBienvenidaEmprendedor(
                 currentUser.getCorreo(), currentUser.getNombre(),
@@ -70,6 +76,8 @@ public class AuthNuevoNegocioHandler {
             return ResponseEntity.ok(ResponseDTO.success("Negocio creado exitosamente", buildAuthResponse(currentUser, alta.empresa())));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             log.error("[nuevo-negocio] {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al crear el negocio"));

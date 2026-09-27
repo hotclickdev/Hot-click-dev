@@ -18,10 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Pattern;
 
 @Service
 public class PedidoService {
+
+    private static final Pattern GUIA_VALIDA = Pattern.compile("[A-Z0-9-]{4,60}");
 
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
@@ -87,14 +92,36 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public Pedido buscarPorId(Long id) {
-        return pedidoRepository.findByIdWithDetails(id)
+        Pedido pedido = pedidoRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        Hibernate.initialize(pedido.getCompra());
+        return pedido;
+    }
+
+    /** Todos los paquetes de la compra del pedido (Detalle `29:1434`), solo los del mismo comprador. */
+    @Transactional(readOnly = true)
+    public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
+        if (pedido.getCompra() == null) return List.of(pedido);
+        Long compradorId = compradorDe(pedido);
+        List<Pedido> paquetes = pedidoRepository.findPaquetesDeCompra(pedido.getCompra().getId()).stream()
+            .filter(p -> Objects.equals(compradorId, compradorDe(p)))
+            .toList();
+        if (paquetes.isEmpty()) return List.of(pedido);
+        pedidoRepository.cargarItemsDe(paquetes.stream().map(Pedido::getId).toList());
+        return paquetes;
+    }
+
+    private static Long compradorDe(Pedido pedido) {
+        return pedido.getUsuarioFinal() != null ? pedido.getUsuarioFinal().getId() : null;
     }
 
     @Transactional(readOnly = true)
     public Page<Pedido> listarPorUsuario(Long usuarioId, Pageable pageable) {
-        // Usa fetch join en la query de count/sort paginada — la carga de items ocurre en una sola query adicional
-        return pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(usuarioId, pageable);
+        Page<Pedido> pagina = pedidoRepository.findPaginaDelComprador(usuarioId, pageable);
+        if (pagina.hasContent()) {
+            pedidoRepository.cargarItemsDe(pagina.map(Pedido::getId).getContent());
+        }
+        return pagina;
     }
 
     @Transactional(readOnly = true)
@@ -107,24 +134,33 @@ public class PedidoService {
         return pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
     }
 
+    /** La guía termina dentro del enlace del correo al cliente: solo letras, números y guiones. */
+    static String normalizarGuia(String numeroGuia) {
+        String guia = numeroGuia == null ? "" : numeroGuia.trim().toUpperCase(Locale.ROOT);
+        if (!GUIA_VALIDA.matcher(guia).matches()) {
+            throw new IllegalArgumentException("Número de guía no válido: usá solo letras, números y guiones.");
+        }
+        return guia;
+    }
+
     @Transactional
     public Pedido asignarGuia(Long id, String numeroGuia) {
+        String guia = normalizarGuia(numeroGuia);
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
-        pedido.setNumeroGuia(numeroGuia);
-        pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + numeroGuia);
+        pedido.setNumeroGuia(guia);
+        pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + guia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);
-        Hibernate.initialize(pedido.getItems());
-        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
-        if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
+        prepararParaEmailDeGuia(pedido);
         notificacionEmailService.enviarNotificacionGuia(pedido);
         return pedido;
     }
 
     @Transactional
-    public Pedido procesarEnvio(Long id, String guia, Integer costoEnvio) {
+    public Pedido procesarEnvio(Long id, String numeroGuia, Integer costoEnvio) {
+        String guia = normalizarGuia(numeroGuia);
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         pedido.setNumeroGuia(guia);
@@ -133,11 +169,17 @@ public class PedidoService {
         if (costoEnvio != null) pedido.setCostoEnvio(costoEnvio);
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);
+        prepararParaEmailDeGuia(pedido);
+        notificacionEmailService.enviarNotificacionGuia(pedido);
+        return pedido;
+    }
+
+    /** El email de guía es @Async: todo lo que lee tiene que quedar cargado antes de salir de la transacción. */
+    private static void prepararParaEmailDeGuia(Pedido pedido) {
         Hibernate.initialize(pedido.getItems());
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
-        notificacionEmailService.enviarNotificacionGuia(pedido);
-        return pedido;
+        Hibernate.initialize(pedido.getCompra());
     }
 
     @Transactional

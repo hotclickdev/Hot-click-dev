@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { adminService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import EmpresaList from './empresas/EmpresaList'
+import { useEmpresasSinUbicacion } from './empresas/useEmpresasSinUbicacion'
 import {
   listaEmpresasDesdeRespuesta,
   type EmpresaLista,
@@ -18,6 +19,7 @@ export default function AdminEmpresas() {
   const [empresas, setEmpresas] = useState<EmpresaLista[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const { empresas: sinUbicacion } = useEmpresasSinUbicacion()
 
   useEffect(() => {
     let cancelado = false
@@ -48,6 +50,7 @@ export default function AdminEmpresas() {
       loading={loading}
       saving={saving}
       onToggleVisibilidad={toggleVisibilidad}
+      sinUbicacion={sinUbicacion}
     />
   )
 }

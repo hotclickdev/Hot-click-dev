@@ -19,6 +19,13 @@ export type ItemCarrito = Producto & {
   personalizacion?: PersonalizacionCarrito
 }
 
+/** Cupón validado; solo descuenta el paquete de `empresaId`. */
+export type CuponCarrito = {
+  codigo: string
+  descuento: number
+  empresaId: number | null
+}
+
 export type ItemWishlist = {
   id: number
   nombre: string

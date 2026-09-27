@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import type { TFunction } from 'i18next'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
+import useHojaAgregadoStore from '@/store/hojaAgregadoStore'
+import { tienePaqueteDe } from '@/pages/checkout/paquetesCompra'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { analytics } from '@/utils/analytics'
@@ -26,6 +28,7 @@ import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 export function useProductDetail(id: string | undefined, t: TFunction) {
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
+  const mostrarAgregado = useHojaAgregadoStore((s) => s.mostrar)
   const toast = useToast()
 
   const [product, setProduct] = useState<Producto | null>(null)
@@ -259,17 +262,14 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
           tallaSeleccionada: tallaSeleccionada || personalizacion.tallaSeleccionada,
         }
       : undefined
+    const mismoPaquete = tienePaqueteDe(useCartStore.getState().items, productoActual)
     addItem({
       ...normalizeProduct(productoActual),
       tallaSeleccionada,
       personalizacion: pers,
     } as Producto, quantity)
     if (!conAviso) return
-    const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
-    toast({
-      message: t('product.added', { name: `${qtyPrefix}${productoActual.nombre}` }),
-      type: 'success',
-    })
+    mostrarAgregado({ producto: productoActual, cantidad: quantity, mismoPaquete })
     setJustAdded(true)
     addTimeout.current = setTimeout(() => setJustAdded(false), 1400)
   }

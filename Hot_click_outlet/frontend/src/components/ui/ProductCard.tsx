@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useWishlistStore from '@/store/wishlistStore'
-import useCartStore from '@/store/cartStore'
-import { useToast } from '@/components/ui/Toast'
+import { useAgregarConHoja } from '@/components/comprador/useAgregarConHoja'
 import ProductCardImage from '@/components/ui/productCard/ProductCardImage'
 import ProductCardBody from '@/components/ui/productCard/ProductCardBody'
 import type { Producto } from '@/types/producto'
@@ -21,8 +20,7 @@ type ProductCardProps = {
 function ProductCard({ product, priority = false, index = 0, hotTag = null }: ProductCardProps) {
   const navigate = useNavigate()
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
-  const addItem = useCartStore((s) => s.addItem)
-  const toast = useToast()
+  const agregarConHoja = useAgregarConHoja()
   const { t } = useTranslation()
   const [imgError, setImgError] = useState(false)
   const [added, setAdded] = useState(false)
@@ -42,9 +40,8 @@ function ProductCard({ product, priority = false, index = 0, hotTag = null }: Pr
       return
     }
     if (product.stock === 0) return
-    addItem(product)
+    agregarConHoja(product)
     setAdded(true)
-    toast({ message: t('product.added', { name: product.nombre }), type: 'success' })
     setTimeout(() => setAdded(false), 1500)
   }
 

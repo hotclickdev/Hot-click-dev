@@ -1,20 +1,30 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import MainLayout from '@/layouts/MainLayout'
+import IconoFigma from '@/components/comprador/IconoFigma'
 import { paymentService } from '@/services/paymentService'
 import { useToast } from '@/components/ui/Toast'
+import { formatPrice } from '@/utils/format'
 import CheckoutTilopayCard from '@/pages/checkout/CheckoutTilopayCard'
+import { WHATSAPP } from '@/pages/checkout/checkoutHelpers'
+import { leerCompra } from '@/pages/checkout/compraGuardada'
+import EncabezadoCompraSegura from '@/pages/checkout/EncabezadoCompraSegura'
+import { ICONOS_COMPRA } from '@/pages/checkout/iconosCompra'
+import { numeroCompraVisible } from '@/pages/checkout/validacionCompra'
 import type { TilopayCardPayload } from '@/hooks/usePayment'
 
-/** Pantalla cuando el usuario canceló el pago en el proveedor. */
-export default function PagoCancelado() {
+type PagoCanceladoProps = {
+  /** Razón ya conocida (p. ej. error del polling); si falta, se lee del enlace de retorno. */
+  motivoError?: string | null
+}
+
+/** Pago rechazado, fallido o cancelado en el proveedor (Figma `29:1999`). */
+export default function PagoCancelado({ motivoError }: PagoCanceladoProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { showToast } = useToast()
-  const motivo = (params.get('motivo') || params.get('description') || '').trim()
+  const motivo = (motivoError || params.get('motivo') || params.get('description') || '').trim()
   const numeroPedido = (params.get('order') || params.get('numeroPedido') || '').trim()
   const [reintentando, setReintentando] = useState(false)
   const [tilopayRetry, setTilopayRetry] = useState<TilopayCardPayload | null>(null)
@@ -50,50 +60,90 @@ export default function PagoCancelado() {
     )
   }
 
+  const mensajeSoporte = numeroPedido
+    ? t('compra.fallido.mensajeSoporte', { numero: numeroPedido })
+    : t('compra.fallido.mensajeSoporteSinNumero')
+
   return (
-    <MainLayout>
-      <div className="max-w-lg mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#111114] border border-white/8 rounded-2xl p-8 text-center"
-        >
-          <div className="w-16 h-16 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">{t('payment.cancelled')}</h1>
-          <p className="text-[#8e8e9a] text-sm mb-2">{t('payment.cancelledSub')}</p>
-          {motivo && (
-            <p className="text-amber-400/90 text-sm mb-6 rounded-xl px-3 py-2 border border-amber-500/25 bg-amber-500/10">
-              {motivo}
-            </p>
-          )}
-          {!motivo && <div className="mb-6" />}
-          <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => void onReintentar()}
-              disabled={reintentando}
-              className="hc-btn hc-btn-primary w-full min-h-11 disabled:opacity-50"
-            >
-              {reintentando ? t('payment.retrying') : t('payment.retryPayment')}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/checkout')}
-              className="w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all"
-            >
-              {t('payment.changeMethod')}
-            </button>
-            <Link to="/carrito" className="w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center">
-              {t('checkout.backToCart')}
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-    </MainLayout>
+    <div className="min-h-screen bg-hc-n-50">
+      <EncabezadoCompraSegura />
+      <main className="mx-auto flex w-full max-w-[480px] flex-col">
+        <div className="flex flex-col items-center gap-[10px] px-[16px] pb-[12px] pt-[32px] text-center">
+          <span className="flex size-[72px] items-center justify-center rounded-full bg-[#fef2f1] text-hc-red-600">
+            <IconoFigma src={ICONOS_COMPRA.fallido} size={34} />
+          </span>
+          <h1 className="font-display text-[19px] font-bold text-hc-n-900">{t('compra.fallido.titulo')}</h1>
+          <p className="text-[14px] leading-[20px] text-hc-n-600">
+            {[motivo, t('compra.fallido.texto')].filter(Boolean).join(' ')}
+          </p>
+        </div>
+        <div className="px-[16px] py-[8px]">
+          <ConsejosPagoFallido />
+        </div>
+        <div className="flex flex-col gap-[10px] px-[16px] pb-[10px] pt-[12px]">
+          <button
+            type="button"
+            onClick={() => void onReintentar()}
+            disabled={reintentando}
+            className="flex items-center justify-center gap-[8px] rounded-[12px] bg-hc-red-500 px-[16px] py-[14px] text-[15px] font-semibold text-hc-n-0 disabled:opacity-50"
+          >
+            <IconoFigma src={ICONOS_COMPRA.reintentar} size={18} />
+            {reintentando ? t('compra.fallido.reintentando') : t('compra.fallido.reintentar')}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/checkout')}
+            className="flex items-center justify-center gap-[8px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[16px] py-[14px] text-[15px] font-semibold text-hc-n-900"
+          >
+            <IconoFigma src={ICONOS_COMPRA.tarjeta} size={18} />
+            {t('compra.fallido.cambiarMetodo')}
+          </button>
+          <a
+            href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensajeSoporte)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-[8px] text-[14px] font-semibold text-hc-blue-600"
+          >
+            <IconoFigma src={ICONOS_COMPRA.whatsapp} size={16} />
+            {t('compra.fallido.soporte')}
+          </a>
+        </div>
+        <ResumenPedidoGuardado numeroPedido={numeroPedido} />
+      </main>
+    </div>
+  )
+}
+
+function ConsejosPagoFallido() {
+  const { t } = useTranslation()
+  const consejos = [t('compra.fallido.consejo1'), t('compra.fallido.consejo2'), t('compra.fallido.consejo3')]
+  return (
+    <section className="flex flex-col gap-[10px] rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-[16px]">
+      <h2 className="text-[15px] font-semibold text-hc-n-900">{t('compra.fallido.queHacer')}</h2>
+      <ul className="flex flex-col gap-[10px]">
+        {consejos.map((consejo) => (
+          <li key={consejo} className="text-[13px] leading-[19px] text-hc-n-600">• {consejo}</li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/** «Pedido #HC-10482 · 2 productos ₡33.400» (Figma `29:2032`), con lo guardado al pagar. */
+function ResumenPedidoGuardado({ numeroPedido }: { numeroPedido: string }) {
+  const { t } = useTranslation()
+  const [compra] = useState(leerCompra)
+  if (!numeroPedido || !compra) return null
+  const numero = numeroCompraVisible(numeroPedido, compra.paquetes.length)
+  return (
+    <div className="px-[16px] pb-[24px] pt-[10px]">
+      <p className="flex items-center justify-between gap-[12px] rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-[16px]">
+        <span className="text-[13px] text-hc-n-600">
+          {t('compra.fallido.resumen', { numero, productos: t('compra.resumen.cantidad', { count: compra.cantidadProductos }) })}
+        </span>
+        <span className="font-display text-[15px] font-bold text-hc-n-900">{formatPrice(compra.total)}</span>
+      </p>
+    </div>
   )
 }
 

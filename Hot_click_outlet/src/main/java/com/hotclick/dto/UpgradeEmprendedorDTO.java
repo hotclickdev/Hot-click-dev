@@ -13,6 +13,12 @@ public class UpgradeEmprendedorDTO {
     private String  regimenTributario;
     private String  nombreHacienda;
 
+    // Ubicación de despacho (opcional): crea la primera bodega del negocio
+    private String  provincia;
+    private String  canton;
+    private String  direccionExacta;
+    private Boolean permiteRetiroCliente;
+
     public String getNombreEmpresa()             { return nombreEmpresa; }
     public void setNombreEmpresa(String v)       { this.nombreEmpresa = v; }
     public String getNombreComercial()           { return nombreComercial; }
@@ -30,4 +36,17 @@ public class UpgradeEmprendedorDTO {
     public void setRegimenTributario(String v)   { this.regimenTributario = v; }
     public String getNombreHacienda()            { return nombreHacienda; }
     public void setNombreHacienda(String v)      { this.nombreHacienda = v; }
+
+    public String getProvincia()                 { return provincia; }
+    public void setProvincia(String v)           { this.provincia = v; }
+    public String getCanton()                    { return canton; }
+    public void setCanton(String v)              { this.canton = v; }
+    public String getDireccionExacta()           { return direccionExacta; }
+    public void setDireccionExacta(String v)     { this.direccionExacta = v; }
+    public Boolean getPermiteRetiroCliente()     { return permiteRetiroCliente; }
+    public void setPermiteRetiroCliente(Boolean v) { this.permiteRetiroCliente = v; }
+
+    public UbicacionDespachoAlta ubicacionDespacho() {
+        return new UbicacionDespachoAlta(provincia, canton, direccionExacta, permiteRetiroCliente);
+    }
 }

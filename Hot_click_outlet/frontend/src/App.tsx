@@ -7,6 +7,7 @@ import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import CookieBanner from '@/components/ui/CookieBanner'
+import HojaAgregado from '@/components/comprador/HojaAgregado'
 import { setAnalyticsConsent, identifyUser } from '@/utils/analytics'
 import { initAnalytics } from '@/utils/initAnalytics'
 import SiteVerification from '@/utils/siteVerification'
@@ -62,6 +63,7 @@ export default function App() {
           <SocialProofController />
           <AbandonedCartWatcher />
           <WishlistAlertWatcher />
+          <HojaAgregado />
           <CookieBanner onConsent={(c) => {
             setAnalyticsConsent(c.analytics)
             if (!c.analytics) return

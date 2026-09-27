@@ -1,8 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import useCartStore from '@/store/cartStore'
-import { useToast } from '@/components/ui/Toast'
 import { esProductoCotizable } from '@/utils/precioProducto'
+import { useAgregarConHoja } from './useAgregarConHoja'
 import type { Producto } from '@/types/producto'
 
 /**
@@ -11,9 +9,7 @@ import type { Producto } from '@/types/producto'
  */
 export function useAgregarAlPedido() {
   const navigate = useNavigate()
-  const addItem = useCartStore((s) => s.addItem)
-  const toast = useToast()
-  const { t } = useTranslation()
+  const agregarConHoja = useAgregarConHoja()
 
   return (product: Producto) => {
     if (esProductoCotizable(product)) {
@@ -21,7 +17,6 @@ export function useAgregarAlPedido() {
       return
     }
     if (product.stock === 0) return
-    addItem(product)
-    toast({ message: t('comprador.tarjeta.agregado', { nombre: product.nombre }), type: 'success' })
+    agregarConHoja(product)
   }
 }

@@ -14,6 +14,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -22,12 +25,15 @@ import java.util.Map;
 @RequestMapping("/api/bodegas")
 public class BodegaController {
 
+    private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm");
+
     @Autowired private BodegaRepository  bodegaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private CompanyScope      companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
     @Autowired private com.hotclick.service.TenantService         tenantService;
     @Autowired private InputSanitizer    sanitizer;
+    @Autowired private com.hotclick.service.UbicacionDespachoService ubicacionDespachoService;
 
     @Transactional(readOnly = true)
     @GetMapping
@@ -48,7 +54,11 @@ public class BodegaController {
             m.put("telefono", b.getTelefono());
             m.put("correoContacto", b.getCorreoContacto());
             m.put("encargadoNombre", b.getEncargadoNombre());
+            m.put("provincia", b.getProvincia());
+            m.put("canton", b.getCanton());
             m.put("permiteRetiroCliente", b.getPermiteRetiroCliente());
+            m.put("horarioApertura", horaTexto(b.getHorarioApertura()));
+            m.put("horarioCierre", horaTexto(b.getHorarioCierre()));
             m.put("estado", b.getEstado());
             if (b.getEmpresa() != null) {
                 m.put("empresaId", b.getEmpresa().getId());
@@ -58,6 +68,12 @@ public class BodegaController {
             return m;
         }).toList();
         return ResponseEntity.ok(ResponseDTO.success("Bodegas", dtos));
+    }
+
+    @GetMapping("/ubicacion-despacho")
+    public ResponseEntity<ResponseDTO> ubicacionDespacho() {
+        var estado = ubicacionDespachoService.estadoDe(companyScope.getCurrentEmpresaIdOrOwn());
+        return ResponseEntity.ok(ResponseDTO.success("Ubicación de despacho", estado));
     }
 
     @PostMapping
@@ -85,6 +101,8 @@ public class BodegaController {
             b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
             b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
             b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
+            b.setHorarioApertura(parseHora(body.get("horarioApertura"), "de apertura"));
+            b.setHorarioCierre(parseHora(body.get("horarioCierre"), "de cierre"));
             b.setEstado(Constants.ESTADO_ACTIVO);
             b.setEmpresa(empresa);
             b.setAdminCliente(
@@ -158,6 +176,10 @@ public class BodegaController {
                 b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
             if (body.containsKey("permiteRetiroCliente"))
                 b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
+            if (body.containsKey("horarioApertura"))
+                b.setHorarioApertura(parseHora(body.get("horarioApertura"), "de apertura"));
+            if (body.containsKey("horarioCierre"))
+                b.setHorarioCierre(parseHora(body.get("horarioCierre"), "de cierre"));
             return ResponseEntity.ok(ResponseDTO.success("Bodega actualizada", bodegaRepository.save(b)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
@@ -176,6 +198,20 @@ public class BodegaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    /** Acepta "HH:mm" o "HH:mm:ss"; vacío deja el horario sin definir. */
+    private static LocalTime parseHora(String valor, String cual) {
+        if (valor == null || valor.isBlank()) return null;
+        try {
+            return LocalTime.parse(valor.trim());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Horario " + cual + " inválido: usá el formato HH:mm");
+        }
+    }
+
+    private static String horaTexto(LocalTime hora) {
+        return hora != null ? hora.format(FORMATO_HORA) : null;
     }
 
     private Long empresaIdEfectivoBodegas(Long scopeEmpresaId, Long empresaId) {

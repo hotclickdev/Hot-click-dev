@@ -1532,6 +1532,100 @@
       "CANCELADO": "Cancelled"
     }
   },
+  "misPedidos": {
+    "titulo": "My orders",
+    "volver": "Back",
+    "filtrosAria": "Filter orders by status",
+    "filtro": {
+      "todos": "All",
+      "enCamino": "On the way",
+      "enPreparacion": "Being prepared",
+      "entregado": "Delivered",
+      "cancelado": "Cancelled"
+    },
+    "estadoCompra": {
+      "enCamino": "On the way",
+      "enPreparacion": "Being prepared",
+      "entregado": "Delivered",
+      "cancelado": "Cancelled",
+      "pendiente": "Payment pending"
+    },
+    "estadoPaquete": {
+      "pendiente": "Payment pending",
+      "enPreparacion": "Being prepared",
+      "listoRetiro": "Ready for pickup",
+      "enviado": "Shipped",
+      "entregado": "Delivered",
+      "cancelado": "Cancelled"
+    },
+    "paquetes_one": "{{count}} package",
+    "paquetes_other": "{{count}} packages",
+    "entregados_one": "{{count}} delivered",
+    "entregados_other": "{{count}} delivered",
+    "tarjeta": {
+      "titulo": "Order {{numero}}",
+      "productos_one": "{{count}} product",
+      "productos_other": "{{count}} products",
+      "tiendas_one": "{{count}} store",
+      "tiendas_other": "{{count}} stores",
+      "verDetalle": "View details"
+    },
+    "pie": {
+      "enPreparacion": "The store is preparing your order",
+      "enCamino": "Your order is on the way",
+      "entregado": "Delivered",
+      "entregadoEl": "Delivered on {{mes}} {{dia}}",
+      "cancelado": "Order cancelled",
+      "pendiente": "We're confirming your payment"
+    },
+    "sinResultados": "You have no orders with this status.",
+    "vacio": {
+      "titulo": "You don't have any orders yet",
+      "texto": "Once you buy, you'll see each package here with its status and its Correos tracking number.",
+      "empezar": "Start shopping",
+      "invitadoTitulo": "Bought without an account?",
+      "invitadoTexto": "Open the \"Track my order\" link in your confirmation email to see your packages."
+    },
+    "detalle": {
+      "titulo": "Order {{numero}}",
+      "pagadoCon": "{{fecha}} · paid with {{metodo}}",
+      "productos": "Products ({{count}})",
+      "envio": "Shipping",
+      "envioPorPaquete": "Shipping · {{paquetes}} × {{costo}}",
+      "envioPaquetes": "Shipping · {{paquetes}}",
+      "nota": "You paid HotClick only once. Each store ships its package separately, with its own tracking number.",
+      "pieAcciones": "Warranty and reviews unlock on each package once it's delivered.",
+      "noEncontrado": "We couldn't find this order."
+    },
+    "metodoPago": {
+      "SINPE": "SINPE Móvil",
+      "TARJETA": "card",
+      "STRIPE": "card",
+      "ONVO": "card",
+      "TILOPAY": "card",
+      "EFECTIVO": "cash",
+      "GIFT_CARD": "gift card"
+    },
+    "paquete": {
+      "numero": "Package {{numero}} of {{total}}",
+      "saleDe": "Ships from {{provincia}} · shipping {{costo}}",
+      "envio": "Shipping {{costo}}",
+      "guiaCorreos": "Correos de Costa Rica tracking number",
+      "guiaExpress": "HotClick Express tracking number",
+      "seguir": "Track",
+      "salio": "Shipped on {{fecha}}",
+      "llegaEntre": "arrives between {{desde}} and {{hasta}}",
+      "entregadoEl": "Delivered on {{fecha}}",
+      "guiaPendiente": "Tracking pending: {{tienda}} is preparing your package. We'll email you when it ships.",
+      "pagoPendiente": "Tracking pending: we're confirming your payment.",
+      "listoRetiro": "Your package is ready for pickup at {{tienda}}.",
+      "cancelado": "This package was cancelled.",
+      "whatsapp": "WhatsApp",
+      "garantia": "Warranty",
+      "opinar": "Review",
+      "mensajeWhatsapp": "Hi HotClick, I have a question about package {{paquete}} of {{total}} from order {{numero}} ({{tienda}})."
+    }
+  },
   "descubri": {
     "metaTitle": "Discover products | HotClick",
     "metaDescription": "Swipe products and in seconds we'll build a selection for you.",
@@ -2835,5 +2929,245 @@
     "hoja": {
       "cerrar": "Close"
     }
+  },
+  "compra": {
+    "volver": "Back",
+    "pasos": {
+      "aria": "Checkout steps",
+      "paso1": "1 · Details",
+      "paso2": "2 · Delivery",
+      "paso3": "3 · Payment"
+    },
+    "checkout": {
+      "titulo": "Complete your purchase",
+      "compraSegura": "Secure checkout",
+      "continuarEntrega": "Continue to delivery",
+      "continuarPago": "Continue to payment"
+    },
+    "carrito": {
+      "restar": "Remove one {{nombre}}",
+      "sumar": "Add one {{nombre}}",
+      "eliminarDe": "Remove {{nombre}}",
+      "moverFavoritos": "Move to favorites",
+      "eliminar": "Remove",
+      "sumaTitulo": "Add another product from {{tienda}}: shipping is already paid",
+      "agregar": "Add",
+      "unSoloEnvio_one": "{{count}} product · one shipment",
+      "unSoloEnvio_other": "{{count}} products · one shipment",
+      "paqueteTitulo": "Package {{numero}} · {{tienda}}",
+      "saleDe": "Ships from {{provincia}}",
+      "llegaEn_one": "Your order arrives in {{count}} package",
+      "llegaEn_other": "Your order arrives in {{count}} packages",
+      "cadaTiendaMovil": "Each store ships its package from its location. You pay everything together to HotClick.",
+      "cadaTiendaDesktop": "Each store ships its package from its location. You pay everything together to HotClick.",
+      "tituloMovil": "Your order ({{cantidad}})",
+      "titulo": "Your order",
+      "continuar": "Continue to checkout",
+      "continuarTotal": "Continue to checkout · {{total}}",
+      "movidoFavoritos": "{{nombre}} moved to favorites"
+    },
+    "cupon": {
+      "aplicado": "Coupon {{codigo}} applied",
+      "quitar": "Remove",
+      "placeholder": "Coupon code",
+      "validando": "Checking…",
+      "aplicar": "Apply",
+      "agregar": "Add coupon"
+    },
+    "giftCard": {
+      "placeholder": "Gift card code",
+      "aplicada": "Card {{codigo}} · balance {{saldo}}",
+      "invalida": "Invalid, expired or empty code"
+    },
+    "resumen": {
+      "productos": "Products ({{count}})",
+      "envio_one": "Shipping ({{count}} package)",
+      "envio_other": "Shipping ({{count}} packages)",
+      "descuento": "Coupon {{codigo}}",
+      "giftCard": "Gift card",
+      "totalEstimado": "Estimated total",
+      "notaMovil": "You pay everything together to HotClick. Each store ships its package. VAT included in each product's price.",
+      "titulo": "Summary",
+      "cantidad_one": "{{count}} product",
+      "cantidad_other": "{{count}} products",
+      "envioMonto": "Shipping {{monto}}",
+      "total": "Total",
+      "ivaIncluido": "VAT included",
+      "notaDesktop": "You pay everything together to HotClick. Each store ships its package.",
+      "pagoProtegido": "Protected payment · SINPE Móvil, card or cash"
+    },
+    "envio": {
+      "ENVIO_NORMAL_GAM": {
+        "titulo": "Standard shipping",
+        "detalle": "2 to 4 business days",
+        "corto": "Standard shipping"
+      },
+      "ENVIO_NORMAL_FUERA_GAM": {
+        "titulo": "Standard shipping",
+        "detalle": "3 to 4 business days · ships from outside the GAM",
+        "corto": "Outside the GAM"
+      },
+      "ENVIO_RAPIDO": {
+        "titulo": "Express shipping",
+        "detalle": "30 min to 2 hours · within the GAM",
+        "corto": "Express shipping"
+      },
+      "ENCOMIENDA_PROPIA": {
+        "titulo": "Parcel service",
+        "detalle": "Depends on carrier and destination",
+        "corto": "Parcel service"
+      },
+      "RETIRO_EN_TIENDA": {
+        "titulo": "Store pickup",
+        "detalle": "We coordinate it when we confirm",
+        "corto": "Store pickup"
+      }
+    },
+    "datos": {
+      "titulo": "Where should we send the confirmation?",
+      "subtitulo": "Buy without an account. We only need your email and phone to keep you posted on your order.",
+      "tituloDesktop": "Your details",
+      "sinCuentaCorto": "Buy without an account",
+      "yaTenesCuenta": "Already have an account?",
+      "ingresar": "Sign in",
+      "correo": "Email",
+      "correoPista": "We send you the receipt and the tracking number.",
+      "telefono": "Phone (WhatsApp)",
+      "nombre": "Full name",
+      "nombreRequerido": "Enter your full name"
+    },
+    "entrega": {
+      "tituloDesktop": "Delivery",
+      "direccionTitulo": "Delivery address",
+      "provincia": "Province",
+      "canton": "Canton",
+      "elegir": "Choose",
+      "senas": "Exact directions",
+      "senasPlaceholder": "200 m south of the park, green house",
+      "provinciaRequerida": "Choose the province",
+      "cantonRequerido": "Choose the canton",
+      "porPaqueteTitulo": "How does each package reach you?",
+      "porPaqueteSubtitulo_one": "Your order ships from {{count}} store. Choose how it reaches you.",
+      "porPaqueteSubtitulo_other": "Your order ships from {{count}} stores. Choose the delivery for each package.",
+      "varia": "Varies",
+      "gratis": "Free",
+      "notaDistancia": "Worth it if it's close to you. The other packages still arrive at your door.",
+      "notaRetiroMovil": "Store pickup appears on each package whose store allows it. You can pick up one package and get the others delivered.",
+      "notaRetiroDesktop": "Parcel service: depends on the bus or transport company and the destination; we confirm the amount on WhatsApp. Store pickup appears on each package whose store allows it.",
+      "envioTotal_one": "Total shipping ({{count}} package)",
+      "envioTotal_other": "Total shipping ({{count}} packages)"
+    },
+    "pago": {
+      "titulo": "How do you want to pay?",
+      "tituloDesktop": "Payment",
+      "sinpe": "SINPE Móvil",
+      "sinpeDetalle": "To 8666-7888 · you upload the receipt",
+      "masUsado": "Most used",
+      "tarjeta": "Credit or debit card",
+      "tarjetaDetalle": "Visa or Mastercard · protected payment",
+      "tarjetaCorto": "Card",
+      "tarjetaDetalleCorto": "Visa or Mastercard",
+      "efectivo": "Cash",
+      "efectivoDetalle": "When picking up in store",
+      "sinpePaso1": "1. Send {{monto}} to",
+      "sinpePasos23": "2. Put your order number in the description. 3. Upload the receipt and we confirm within minutes.",
+      "copiarNumero": "Copy SINPE number",
+      "numeroCopiado": "Number copied",
+      "numeroNoCopiado": "Couldn't copy the number",
+      "subirComprobante": "Upload receipt",
+      "comprobanteListo": "Receipt: {{nombre}}",
+      "comprobanteRequerido": "Upload the SINPE receipt to confirm your payment",
+      "resumenTitulo_one": "Summary · {{productos}} in {{count}} package",
+      "resumenTitulo_other": "Summary · {{productos}} in {{count}} packages",
+      "ocultar": "Hide",
+      "ver": "Show",
+      "productos": "Products",
+      "tenesCupon": "Have a coupon?",
+      "pagar": "Pay {{total}}",
+      "consentimiento": "I authorize the processing of my data and its transfer to the seller solely to coordinate the delivery of the order, in accordance with the",
+      "privacidad": "Privacy Policy",
+      "consentimientoY": "and the",
+      "cookies": "Cookie Policy"
+    },
+    "revisado": {
+      "titulo": "Your payment is being reviewed",
+      "texto": "We received your SINPE Móvil receipt. Confirmation may take a few more minutes; we'll email you once it's processed.",
+      "pedido": "Order:",
+      "recibido": "Receipt received",
+      "ahora": "Now",
+      "verificamos": "We verify your payment",
+      "unosMinutos": "A few minutes",
+      "confirmamos": "We confirm by email",
+      "cadaTienda": "And each store prepares its package",
+      "guias": "You get each package's tracking number",
+      "paquetes_one": "{{count}} package",
+      "paquetes_other": "{{count}} packages",
+      "nota": "If you don't get a confirmation within 15 minutes, message us on WhatsApp with your order number.",
+      "seguirComprando": "Keep shopping",
+      "soporte": "Contact support on WhatsApp",
+      "crearCuenta": "Create an account to see your order history",
+      "mensajeSoporte": "Hi HotClick, I uploaded the SINPE receipt for order {{numero}} and haven't received the confirmation yet."
+    },
+    "pendiente": {
+      "tituloAprobado": "Payment approved!",
+      "texto": "Your payment confirmation may take a few more minutes; we'll email you once it's processed.",
+      "textoAprobado": "Your bank already confirmed the payment. We're registering your order; you'll get an email in a few minutes.",
+      "enviado": "Payment sent to the bank"
+    },
+    "exito": {
+      "titulo": "All set, {{nombre}}! We got your order",
+      "tituloSinNombre": "All set! We got your order",
+      "pedido": "Order",
+      "copiar": "Copy order number",
+      "copiado": "Order number copied",
+      "noCopiado": "Couldn't copy the number",
+      "comprobanteA": "We sent the receipt to {{correo}}",
+      "llegaEn_one": "Your order {{numero}} arrives in {{count}} package",
+      "llegaEn_other": "Your order {{numero}} arrives in {{count}} packages",
+      "preparando": "Preparing",
+      "avisoGuias": "We'll send each package's tracking number by email and WhatsApp.",
+      "verPedido": "View my order",
+      "seguirComprando": "Keep shopping",
+      "guardarTitulo": "Save this order to your account",
+      "guardarTexto": "With one tap we create your account with this email: track shipping, reorder and save favorites.",
+      "crearCuenta": "Create my account in one tap"
+    },
+    "fallido": {
+      "titulo": "We couldn't process the payment",
+      "texto": "Nothing was charged and your order is still saved.",
+      "queHacer": "What you can do",
+      "consejo1": "Check that the card has online purchases enabled.",
+      "consejo2": "Try SINPE Móvil: it confirms within minutes.",
+      "consejo3": "If the problem continues, message us and we will help.",
+      "reintentar": "Retry payment",
+      "reintentando": "Retrying…",
+      "cambiarMetodo": "Change payment method",
+      "soporte": "Talk to support on WhatsApp",
+      "mensajeSoporte": "Hi HotClick, I couldn't pay for order {{numero}}.",
+      "mensajeSoporteSinNumero": "Hi HotClick, I couldn't complete the payment for my order.",
+      "resumen": "Order #{{numero}} · {{productos}}"
+    },
+    "recuperar": {
+      "titulo": "We saved your order",
+      "texto": "Your products are still available. Pick up where you left off.",
+      "textoParcial": "Some products are no longer available. The rest is still saved for you.",
+      "disponible": "Available · {{count}} left",
+      "agotado": "No longer available",
+      "subtotal": "Subtotal",
+      "continuar": "Continue shopping",
+      "origen": "You got here from the “We saved your order” email.",
+      "agregados_one": "We added {{count}} product to your cart",
+      "agregados_other": "We added {{count}} products to your cart"
+    },
+    "agregado": {
+      "titulo": "Added to your order",
+      "mismoPaquete": "{{tienda}} package · you're already paying shipping for this package, so this product adds no extra shipping.",
+      "tuPedido": "Your order · {{productos}}",
+      "seguir": "Keep shopping",
+      "verPedido": "View order",
+      "cerrar": "Close"
+    },
+    "unidades_one": "{{count}} unit",
+    "unidades_other": "{{count}} units"
   }
 }

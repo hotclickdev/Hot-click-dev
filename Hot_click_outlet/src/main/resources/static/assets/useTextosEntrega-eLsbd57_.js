@@ -1,0 +1,1 @@
+import{a as e}from"./vendor-misc-BfGoTOZ2.js";function t(){let{t}=e();function n(e){return t(`compra.envio.${e}.titulo`)}function r(e){return e.retiro?[e.retiro.direccion,e.retiro.horario].filter(Boolean).join(` · `):t(`compra.envio.${e.metodo}.detalle`)}function i(e){return t(`compra.envio.${e}.corto`)}return{titulo:n,detalle:r,corto:i}}export{t};

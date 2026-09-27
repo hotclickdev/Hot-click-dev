@@ -7,13 +7,17 @@ export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 export const BODEGA_DEFAULT = 1
 
 /** Copia el número SINPE (solo dígitos) al portapapeles. */
-export async function copiarNumeroSinpe(): Promise<boolean> {
+export async function copiarTexto(texto: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(SINPE_NUMERO.replace(/\D/g, ''))
+    await navigator.clipboard.writeText(texto)
     return true
   } catch {
     return false
   }
+}
+
+export function copiarNumeroSinpe(): Promise<boolean> {
+  return copiarTexto(SINPE_NUMERO.replace(/\D/g, ''))
 }
 
 export const SHIPPING_COSTS: Record<string, number> = {

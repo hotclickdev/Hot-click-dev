@@ -188,6 +188,27 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
             .andExpect(status().isForbidden());
     }
 
+    // ── GET /api/pedidos/{id}/despacho ───────────────────────────────────────
+
+    @Test
+    @DisplayName("Admin ve el paquete a despachar")
+    void admin_canReadDespacho() throws Exception {
+        mockMvc.perform(get("/api/pedidos/" + userPedido.getId() + "/despacho")
+                .header("Authorization", adminToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.numeroCompra").value("ORD-AUTH-001"))
+            .andExpect(jsonPath("$.data.cantidadPaquetes").value(1))
+            .andExpect(jsonPath("$.data.pago.venta").value(15000));
+    }
+
+    @Test
+    @DisplayName("El cliente no ve la vista de despacho (trae la dirección) → 403")
+    void user_cannotReadDespacho() throws Exception {
+        mockMvc.perform(get("/api/pedidos/" + userPedido.getId() + "/despacho")
+                .header("Authorization", userToken))
+            .andExpect(status().isForbidden());
+    }
+
     // ── DELETE /api/pedidos/{id} ──────────────────────────────────────────────
 
     @Test

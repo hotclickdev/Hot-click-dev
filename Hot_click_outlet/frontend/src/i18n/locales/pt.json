@@ -1532,6 +1532,100 @@
       "CANCELADO": "Cancelado"
     }
   },
+  "misPedidos": {
+    "titulo": "Meus pedidos",
+    "volver": "Voltar",
+    "filtrosAria": "Filtrar pedidos por status",
+    "filtro": {
+      "todos": "Todos",
+      "enCamino": "A caminho",
+      "enPreparacion": "Em preparação",
+      "entregado": "Entregues",
+      "cancelado": "Cancelados"
+    },
+    "estadoCompra": {
+      "enCamino": "A caminho",
+      "enPreparacion": "Em preparação",
+      "entregado": "Entregue",
+      "cancelado": "Cancelado",
+      "pendiente": "Pagamento pendente"
+    },
+    "estadoPaquete": {
+      "pendiente": "Pagamento pendente",
+      "enPreparacion": "Em preparação",
+      "listoRetiro": "Pronto para retirada",
+      "enviado": "Enviado",
+      "entregado": "Entregue",
+      "cancelado": "Cancelado"
+    },
+    "paquetes_one": "{{count}} pacote",
+    "paquetes_other": "{{count}} pacotes",
+    "entregados_one": "{{count}} entregue",
+    "entregados_other": "{{count}} entregues",
+    "tarjeta": {
+      "titulo": "Pedido {{numero}}",
+      "productos_one": "{{count}} produto",
+      "productos_other": "{{count}} produtos",
+      "tiendas_one": "{{count}} loja",
+      "tiendas_other": "{{count}} lojas",
+      "verDetalle": "Ver detalhes"
+    },
+    "pie": {
+      "enPreparacion": "A loja está preparando seu pedido",
+      "enCamino": "Seu pedido está a caminho",
+      "entregado": "Entregue",
+      "entregadoEl": "Entregue em {{dia}} de {{mes}}",
+      "cancelado": "Pedido cancelado",
+      "pendiente": "Estamos confirmando seu pagamento"
+    },
+    "sinResultados": "Você não tem pedidos com este status.",
+    "vacio": {
+      "titulo": "Você ainda não tem pedidos",
+      "texto": "Quando você comprar, verá aqui cada pacote com seu status e seu código de rastreio dos Correos.",
+      "empezar": "Começar a comprar",
+      "invitadoTitulo": "Comprou sem conta?",
+      "invitadoTexto": "Abra o link \"Acompanhar meu pedido\" do e-mail de confirmação para ver seus pacotes."
+    },
+    "detalle": {
+      "titulo": "Pedido {{numero}}",
+      "pagadoCon": "{{fecha}} · pago com {{metodo}}",
+      "productos": "Produtos ({{count}})",
+      "envio": "Frete",
+      "envioPorPaquete": "Frete · {{paquetes}} × {{costo}}",
+      "envioPaquetes": "Frete · {{paquetes}}",
+      "nota": "Você pagou uma única vez à HotClick. Cada loja envia seu pacote separadamente, com seu próprio código de rastreio.",
+      "pieAcciones": "Garantia e avaliação são liberadas em cada pacote quando ele é entregue.",
+      "noEncontrado": "Não encontramos este pedido."
+    },
+    "metodoPago": {
+      "SINPE": "SINPE Móvil",
+      "TARJETA": "cartão",
+      "STRIPE": "cartão",
+      "ONVO": "cartão",
+      "TILOPAY": "cartão",
+      "EFECTIVO": "dinheiro",
+      "GIFT_CARD": "vale-presente"
+    },
+    "paquete": {
+      "numero": "Pacote {{numero}} de {{total}}",
+      "saleDe": "Sai de {{provincia}} · frete {{costo}}",
+      "envio": "Frete {{costo}}",
+      "guiaCorreos": "Rastreio dos Correos de Costa Rica",
+      "guiaExpress": "Rastreio HotClick Express",
+      "seguir": "Rastrear",
+      "salio": "Saiu em {{fecha}}",
+      "llegaEntre": "chega entre {{desde}} e {{hasta}}",
+      "entregadoEl": "Entregue em {{fecha}}",
+      "guiaPendiente": "Rastreio pendente: {{tienda}} está preparando seu pacote. Avisaremos por e-mail quando for enviado.",
+      "pagoPendiente": "Rastreio pendente: estamos confirmando seu pagamento.",
+      "listoRetiro": "Seu pacote está pronto para retirada em {{tienda}}.",
+      "cancelado": "Este pacote foi cancelado.",
+      "whatsapp": "WhatsApp",
+      "garantia": "Garantia",
+      "opinar": "Avaliar",
+      "mensajeWhatsapp": "Olá HotClick, tenho uma dúvida sobre o pacote {{paquete}} de {{total}} do pedido {{numero}} ({{tienda}})."
+    }
+  },
   "descubri": {
     "metaTitle": "Descubra produtos | HotClick",
     "metaDescription": "Deslize entre produtos e em segundos montamos uma seleção para você.",
@@ -2835,5 +2929,245 @@
     "hoja": {
       "cerrar": "Fechar"
     }
+  },
+  "compra": {
+    "volver": "Voltar",
+    "pasos": {
+      "aria": "Etapas da compra",
+      "paso1": "1 · Dados",
+      "paso2": "2 · Entrega",
+      "paso3": "3 · Pagamento"
+    },
+    "checkout": {
+      "titulo": "Finalize sua compra",
+      "compraSegura": "Compra segura",
+      "continuarEntrega": "Continuar para entrega",
+      "continuarPago": "Continuar para pagamento"
+    },
+    "carrito": {
+      "restar": "Tirar um de {{nombre}}",
+      "sumar": "Somar um de {{nombre}}",
+      "eliminarDe": "Remover {{nombre}}",
+      "moverFavoritos": "Mover para favoritos",
+      "eliminar": "Remover",
+      "sumaTitulo": "Some outro produto de {{tienda}}: o frete já está pago",
+      "agregar": "Adicionar",
+      "unSoloEnvio_one": "{{count}} produto · um só envio",
+      "unSoloEnvio_other": "{{count}} produtos · um só envio",
+      "paqueteTitulo": "Pacote {{numero}} · {{tienda}}",
+      "saleDe": "Sai de {{provincia}}",
+      "llegaEn_one": "Seu pedido chega em {{count}} pacote",
+      "llegaEn_other": "Seu pedido chega em {{count}} pacotes",
+      "cadaTiendaMovil": "Cada loja despacha seu pacote a partir da sua localização. Você paga tudo junto à HotClick.",
+      "cadaTiendaDesktop": "Cada loja despacha seu pacote a partir da sua localização. Você paga tudo junto à HotClick.",
+      "tituloMovil": "Seu pedido ({{cantidad}})",
+      "titulo": "Seu pedido",
+      "continuar": "Continuar compra",
+      "continuarTotal": "Continuar compra · {{total}}",
+      "movidoFavoritos": "{{nombre}} foi para os favoritos"
+    },
+    "cupon": {
+      "aplicado": "Cupom {{codigo}} aplicado",
+      "quitar": "Remover",
+      "placeholder": "Código do cupom",
+      "validando": "Validando…",
+      "aplicar": "Aplicar",
+      "agregar": "Adicionar cupom"
+    },
+    "giftCard": {
+      "placeholder": "Código do cartão-presente",
+      "aplicada": "Cartão {{codigo}} · saldo {{saldo}}",
+      "invalida": "Código inválido, vencido ou sem saldo"
+    },
+    "resumen": {
+      "productos": "Produtos ({{count}})",
+      "envio_one": "Frete ({{count}} pacote)",
+      "envio_other": "Frete ({{count}} pacotes)",
+      "descuento": "Cupom {{codigo}}",
+      "giftCard": "Cartão-presente",
+      "totalEstimado": "Total estimado",
+      "notaMovil": "Você paga tudo junto à HotClick. Cada loja despacha seu pacote. IVA incluído no preço de cada produto.",
+      "titulo": "Resumo",
+      "cantidad_one": "{{count}} produto",
+      "cantidad_other": "{{count}} produtos",
+      "envioMonto": "Frete {{monto}}",
+      "total": "Total",
+      "ivaIncluido": "IVA incluído",
+      "notaDesktop": "Você paga tudo junto à HotClick. Cada loja despacha seu pacote.",
+      "pagoProtegido": "Pagamento protegido · SINPE Móvil, cartão ou dinheiro"
+    },
+    "envio": {
+      "ENVIO_NORMAL_GAM": {
+        "titulo": "Envio normal",
+        "detalle": "2 a 4 dias úteis",
+        "corto": "Envio normal"
+      },
+      "ENVIO_NORMAL_FUERA_GAM": {
+        "titulo": "Envio normal",
+        "detalle": "3 a 4 dias úteis · sai de fora da GAM",
+        "corto": "Fora da GAM"
+      },
+      "ENVIO_RAPIDO": {
+        "titulo": "Envio rápido",
+        "detalle": "30 min a 2 horas · dentro da GAM",
+        "corto": "Envio rápido"
+      },
+      "ENCOMIENDA_PROPIA": {
+        "titulo": "Encomenda",
+        "detalle": "Conforme transportadora e destino",
+        "corto": "Encomenda"
+      },
+      "RETIRO_EN_TIENDA": {
+        "titulo": "Retirada na loja",
+        "detalle": "Combinamos ao confirmar",
+        "corto": "Retirada na loja"
+      }
+    },
+    "datos": {
+      "titulo": "Para quem enviamos a confirmação?",
+      "subtitulo": "Compre sem criar conta. Só precisamos do seu e-mail e telefone para avisar como vai seu pedido.",
+      "tituloDesktop": "Seus dados",
+      "sinCuentaCorto": "Compre sem criar conta",
+      "yaTenesCuenta": "Já tem conta?",
+      "ingresar": "Entrar",
+      "correo": "E-mail",
+      "correoPista": "Enviamos o comprovante e o número de rastreio.",
+      "telefono": "Telefone (WhatsApp)",
+      "nombre": "Nome completo",
+      "nombreRequerido": "Escreva seu nome completo"
+    },
+    "entrega": {
+      "tituloDesktop": "Entrega",
+      "direccionTitulo": "Endereço de entrega",
+      "provincia": "Província",
+      "canton": "Cantão",
+      "elegir": "Escolha",
+      "senas": "Referências exatas",
+      "senasPlaceholder": "200 m ao sul do parque, casa verde",
+      "provinciaRequerida": "Escolha a província",
+      "cantonRequerido": "Escolha o cantão",
+      "porPaqueteTitulo": "Como chega cada pacote?",
+      "porPaqueteSubtitulo_one": "Seu pedido sai de {{count}} loja. Escolha como ele chega.",
+      "porPaqueteSubtitulo_other": "Seu pedido sai de {{count}} lojas. Escolha a entrega de cada pacote.",
+      "varia": "Varia",
+      "gratis": "Grátis",
+      "notaDistancia": "Vale a pena se ficar perto. Os outros pacotes chegam em casa do mesmo jeito.",
+      "notaRetiroMovil": "A retirada na loja aparece em cada pacote cuja loja permite. Você pode retirar um pacote e receber os outros por envio.",
+      "notaRetiroDesktop": "Encomenda: conforme a empresa de ônibus ou transporte e o destino; confirmamos o valor pelo WhatsApp. A retirada na loja aparece em cada pacote cuja loja permite.",
+      "envioTotal_one": "Frete total ({{count}} pacote)",
+      "envioTotal_other": "Frete total ({{count}} pacotes)"
+    },
+    "pago": {
+      "titulo": "Como você quer pagar?",
+      "tituloDesktop": "Pagamento",
+      "sinpe": "SINPE Móvil",
+      "sinpeDetalle": "Para 8666-7888 · você envia o comprovante",
+      "masUsado": "Mais usado",
+      "tarjeta": "Cartão de crédito ou débito",
+      "tarjetaDetalle": "Visa ou Mastercard · pagamento protegido",
+      "tarjetaCorto": "Cartão",
+      "tarjetaDetalleCorto": "Visa ou Mastercard",
+      "efectivo": "Dinheiro",
+      "efectivoDetalle": "Ao retirar na loja",
+      "sinpePaso1": "1. Envie {{monto}} para",
+      "sinpePasos23": "2. Na descrição, coloque o número do seu pedido. 3. Envie o comprovante e confirmamos em minutos.",
+      "copiarNumero": "Copiar número SINPE",
+      "numeroCopiado": "Número copiado",
+      "numeroNoCopiado": "Não foi possível copiar o número",
+      "subirComprobante": "Enviar comprovante",
+      "comprobanteListo": "Comprovante: {{nombre}}",
+      "comprobanteRequerido": "Envie o comprovante do SINPE para confirmar seu pagamento",
+      "resumenTitulo_one": "Resumo · {{productos}} em {{count}} pacote",
+      "resumenTitulo_other": "Resumo · {{productos}} em {{count}} pacotes",
+      "ocultar": "Ocultar",
+      "ver": "Ver",
+      "productos": "Produtos",
+      "tenesCupon": "Tem um cupom?",
+      "pagar": "Pagar {{total}}",
+      "consentimiento": "Autorizo o tratamento dos meus dados e sua transferência ao vendedor com o único fim de coordenar a entrega do pedido, conforme a",
+      "privacidad": "Política de Privacidade",
+      "consentimientoY": "e a",
+      "cookies": "Política de Cookies"
+    },
+    "revisado": {
+      "titulo": "Seu pagamento está em análise",
+      "texto": "Recebemos seu comprovante do SINPE Móvil. A confirmação pode levar mais alguns minutos; enviamos um e-mail quando for processada.",
+      "pedido": "Pedido:",
+      "recibido": "Comprovante recebido",
+      "ahora": "Agora",
+      "verificamos": "Verificamos seu pagamento",
+      "unosMinutos": "Alguns minutos",
+      "confirmamos": "Confirmamos por e-mail",
+      "cadaTienda": "E cada loja prepara seu pacote",
+      "guias": "Você recebe o rastreio de cada pacote",
+      "paquetes_one": "{{count}} pacote",
+      "paquetes_other": "{{count}} pacotes",
+      "nota": "Se não receber a confirmação em 15 minutos, escreva para nós no WhatsApp com o número do pedido.",
+      "seguirComprando": "Continuar comprando",
+      "soporte": "Falar com o suporte no WhatsApp",
+      "crearCuenta": "Criar conta para ver o histórico de pedidos",
+      "mensajeSoporte": "Olá HotClick, enviei o comprovante SINPE do pedido {{numero}} e ainda não recebi a confirmação."
+    },
+    "pendiente": {
+      "tituloAprobado": "Pagamento aprovado!",
+      "texto": "A confirmação do seu pagamento pode levar mais alguns minutos; enviaremos um e-mail quando for processado.",
+      "textoAprobado": "Seu banco já confirmou o pagamento. Estamos registrando seu pedido; você receberá um e-mail em alguns minutos.",
+      "enviado": "Pagamento enviado ao banco"
+    },
+    "exito": {
+      "titulo": "Pronto, {{nombre}}! Recebemos seu pedido",
+      "tituloSinNombre": "Pronto! Recebemos seu pedido",
+      "pedido": "Pedido",
+      "copiar": "Copiar número do pedido",
+      "copiado": "Número do pedido copiado",
+      "noCopiado": "Não foi possível copiar o número",
+      "comprobanteA": "Enviamos o comprovante para {{correo}}",
+      "llegaEn_one": "Seu pedido {{numero}} chega em {{count}} pacote",
+      "llegaEn_other": "Seu pedido {{numero}} chega em {{count}} pacotes",
+      "preparando": "Preparando",
+      "avisoGuias": "Avisamos o rastreio de cada pacote por e-mail e WhatsApp.",
+      "verPedido": "Ver meu pedido",
+      "seguirComprando": "Continuar comprando",
+      "guardarTitulo": "Salve este pedido na sua conta",
+      "guardarTexto": "Com um toque criamos sua conta com este e-mail: acompanhe o envio, repita compras e salve favoritos.",
+      "crearCuenta": "Criar minha conta com um toque"
+    },
+    "fallido": {
+      "titulo": "Não conseguimos processar o pagamento",
+      "texto": "Nada foi cobrado e seu pedido continua salvo.",
+      "queHacer": "O que você pode fazer",
+      "consejo1": "Verifique se o cartão tem compras online habilitadas.",
+      "consejo2": "Tente com SINPE Móvil: confirma em minutos.",
+      "consejo3": "Se o problema continuar, escreva para nós e ajudamos.",
+      "reintentar": "Tentar pagar de novo",
+      "reintentando": "Tentando de novo…",
+      "cambiarMetodo": "Mudar forma de pagamento",
+      "soporte": "Falar com o suporte no WhatsApp",
+      "mensajeSoporte": "Olá HotClick, não consegui pagar o pedido {{numero}}.",
+      "mensajeSoporteSinNumero": "Olá HotClick, não consegui concluir o pagamento do meu pedido.",
+      "resumen": "Pedido #{{numero}} · {{productos}}"
+    },
+    "recuperar": {
+      "titulo": "Guardamos seu pedido",
+      "texto": "Os produtos continuam disponíveis. Continue de onde parou.",
+      "textoParcial": "Alguns produtos não estão mais disponíveis. O restante continua guardado para você.",
+      "disponible": "Disponível · restam {{count}}",
+      "agotado": "Não está mais disponível",
+      "subtotal": "Subtotal",
+      "continuar": "Continuar compra",
+      "origen": "Você chegou aqui pelo e-mail “Guardamos seu pedido”.",
+      "agregados_one": "Adicionamos {{count}} produto ao seu carrinho",
+      "agregados_other": "Adicionamos {{count}} produtos ao seu carrinho"
+    },
+    "agregado": {
+      "titulo": "Adicionado ao seu pedido",
+      "mismoPaquete": "Pacote de {{tienda}} · você já paga o frete deste pacote, este produto não soma outro frete.",
+      "tuPedido": "Seu pedido · {{productos}}",
+      "seguir": "Continuar comprando",
+      "verPedido": "Ver pedido",
+      "cerrar": "Fechar"
+    },
+    "unidades_one": "{{count}} unidade",
+    "unidades_other": "{{count}} unidades"
   }
 }

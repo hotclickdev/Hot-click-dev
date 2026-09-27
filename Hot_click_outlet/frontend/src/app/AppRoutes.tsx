@@ -37,6 +37,7 @@ const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const CartPage = lazy(() => import('@/pages/CartPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const MisPedidosPage = lazy(() => import('@/pages/MisPedidosPage'))
+const DetallePedidoPage = lazy(() => import('@/pages/DetallePedidoPage'))
 const WishlistPage = lazy(() => import('@/pages/WishlistPage'))
 
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
@@ -162,6 +163,7 @@ export default function AppRoutes() {
       <Route path="/carrito" element={<CartPage />} />
       <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
+      <Route path="/mis-pedidos/:id" element={<ProtectedRoute><DetallePedidoPage /></ProtectedRoute>} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/pago/exito" element={<PaymentStatusPage />} />

@@ -7,7 +7,6 @@ import PagoLoading from './pago/PagoLoading'
 import PagoExito from './pago/PagoExito'
 import PagoCancelado from './pago/PagoCancelado'
 import PagoPendiente from './pago/PagoPendiente'
-import PagoError from './pago/PagoError'
 import { leerParamsPago, estaOcupado, pedidoDesdeBusqueda } from './pago/pagoHelpers'
 import type { PagoResumen } from './pago/pagoHelpers'
 import {
@@ -67,12 +66,7 @@ export default function PaymentStatusPage() {
   }
 
   if (!numeroPedido) {
-    return (
-      <PagoError
-        error="No encontramos el número de pedido en el enlace de retorno."
-        numeroPedido={numeroPedido}
-      />
-    )
+    return <PagoCancelado motivoError="No encontramos el número de pedido en el enlace de retorno." />
   }
 
   if (estaOcupado(estado)) {
@@ -88,8 +82,15 @@ export default function PaymentStatusPage() {
   }
 
   if (estado === 'timeout') {
-    return <PagoPendiente pagoData={pagoData as PagoResumen | null} stripeApproved={stripeApproved} token={token} />
+    return (
+      <PagoPendiente
+        pagoData={pagoData as PagoResumen | null}
+        numeroPedido={numeroPedido}
+        stripeApproved={stripeApproved}
+        token={token}
+      />
+    )
   }
 
-  return <PagoError error={error} numeroPedido={numeroPedido} />
+  return <PagoCancelado motivoError={error} />
 }

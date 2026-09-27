@@ -1,8 +1,6 @@
-export const formatPrice = (price: number | string | null | undefined) =>
-  `₡${new Intl.NumberFormat('es-CR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Number(price) || 0)}`
+import { formatoColon } from '@/theme/formatoColon'
+
+export const formatPrice = (price: number | string | null | undefined) => formatoColon(Number(price) || 0)
 
 export const formatDate = (date: string | number | Date) =>
   new Intl.DateTimeFormat('es-CR', {

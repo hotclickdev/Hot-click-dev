@@ -262,6 +262,76 @@ class PedidoServiceTest {
         verify(notificacionEmailService).enviarNotificacionGuia(any(Pedido.class));
     }
 
+    @Test
+    @DisplayName("asignarGuia → el email recibe el paquete con su compra («Paquete X de N»)")
+    void asignarGuia_emailRecibeCompraDelPaquete() {
+        Compra compra = new Compra();
+        compra.setNumeroCompra("ORD-10482");
+        compra.setCantidadPaquetes(3);
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
+        pedido.setCompra(compra);
+        pedido.setNumeroPaquete(2);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        service.asignarGuia(1L, "RR123456789CR");
+
+        verify(notificacionEmailService).enviarNotificacionGuia(argThat(p ->
+            "ORD-10482".equals(p.getNumeroCompra()) && Integer.valueOf(3).equals(p.getCantidadPaquetes())
+                && Integer.valueOf(2).equals(p.getNumeroPaquete())));
+    }
+
+    @Test
+    @DisplayName("asignarGuia → rechaza guías que podrían romper el enlace del correo, sin tocar el pedido")
+    void asignarGuia_rechazaCaracteresFueraDelPatron() {
+        assertThatThrownBy(() -> service.asignarGuia(1L, "x' onclick='alert(1)"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("guía no válido");
+        verify(pedidoRepository, never()).save(any());
+        verify(notificacionEmailService, never()).enviarNotificacionGuia(any());
+    }
+
+    @Test
+    @DisplayName("asignarGuia → normaliza espacios y minúsculas")
+    void asignarGuia_normalizaLaGuia() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        service.asignarGuia(1L, "  rr123456789cr ");
+
+        assertThat(pedido.getNumeroGuia()).isEqualTo("RR123456789CR");
+        assertThat(pedido.getUrlTracking()).endsWith("?codigo=RR123456789CR");
+    }
+
+    // ── listarPorUsuario ──────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("listarPorUsuario → lee la página del comprador y precarga los items de esos pedidos")
+    void listarPorUsuario_precargaItemsDeLaPagina() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
+        var pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(pedidoRepository.findPaginaDelComprador(1L, pageable))
+            .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(pedido), pageable, 1));
+
+        var pagina = service.listarPorUsuario(1L, pageable);
+
+        assertThat(pagina.getContent()).containsExactly(pedido);
+        verify(pedidoRepository).cargarItemsDe(List.of(1L));
+    }
+
+    @Test
+    @DisplayName("listarPorUsuario → página vacía no dispara la carga de items")
+    void listarPorUsuario_vacia_noCargaItems() {
+        var pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(pedidoRepository.findPaginaDelComprador(1L, pageable))
+            .thenReturn(org.springframework.data.domain.Page.empty(pageable));
+
+        service.listarPorUsuario(1L, pageable);
+
+        verify(pedidoRepository, never()).cargarItemsDe(any());
+    }
+
     // ── procesarEnvio ─────────────────────────────────────────────────────────
 
     @Test

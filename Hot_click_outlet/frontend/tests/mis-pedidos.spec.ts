@@ -36,12 +36,15 @@ const PEDIDO = {
   items: [{ cantidad: 1, nombreProducto: 'Mouse', precioUnitarioMomento: 8500 }],
 }
 
+function respuestaApi(path: string): unknown {
+  if (path.includes('/pedidos/usuario/')) return { content: [PEDIDO], totalPages: 1 }
+  if (path.endsWith(`/pedidos/${PEDIDO.id}`)) return PEDIDO
+  return []
+}
+
 async function sesionConPedido(page: Page) {
   await page.route('**/api/**', async (route) => {
-    const path = new URL(route.request().url()).pathname
-    const body = path.includes('/pedidos/usuario/')
-      ? { content: [PEDIDO], totalPages: 1 }
-      : []
+    const body = respuestaApi(new URL(route.request().url()).pathname)
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -60,13 +63,15 @@ test.describe('Mis pedidos — estados sin emoji', () => {
     await page.goto('/mis-pedidos', { waitUntil: 'domcontentloaded' })
 
     await expect(page.getByRole('heading', { name: 'Mis pedidos' })).toBeVisible()
-    await expect(page.getByText('ORD-1001')).toBeVisible()
-    await expect(page.getByText('Listo p/ retirar')).toBeVisible()
+    await expect(page.getByText('Pedido ORD-1001')).toBeVisible()
+    await expect(page.getByText('En preparación', { exact: true }).last()).toBeVisible()
     await expect(page.getByText('🏪')).toHaveCount(0)
     await expect(page.getByText('✅')).toHaveCount(0)
 
-    await page.getByRole('button', { name: /ORD-1001/ }).click()
-    await expect(page.getByText('Retiro en tienda')).toBeVisible()
+    await page.getByRole('link', { name: 'Ver detalle' }).click()
+    await expect(page.getByRole('heading', { name: 'Pedido ORD-1001' })).toBeVisible()
+    await expect(page.getByText('Listo para retirar', { exact: true })).toBeVisible()
+    await expect(page.getByText('Tu paquete está listo para retirar en HotClick.')).toBeVisible()
     await expect(page.getByText('✓')).toHaveCount(0)
   })
 })

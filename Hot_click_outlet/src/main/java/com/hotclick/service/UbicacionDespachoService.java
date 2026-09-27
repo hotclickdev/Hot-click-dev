@@ -48,6 +48,23 @@ public class UbicacionDespachoService {
             .anyMatch(UbicacionDespachoService::tieneUbicacion);
     }
 
+    public boolean isObligatoria() {
+        return obligatoria;
+    }
+
+    /** Estado que ve el panel del negocio para avisar que falta la ubicación. */
+    public record EstadoUbicacion(boolean tieneUbicacion, boolean obligatoria) {}
+
+    /**
+     * Sin negocio en el scope (admin de plataforma, staff o comprador) no hay
+     * nada que cargar: se responde {@code tieneUbicacion = true} para no avisar.
+     */
+    @Transactional(readOnly = true)
+    public EstadoUbicacion estadoDe(Long empresaId) {
+        boolean tiene = empresaId == null || empresaTieneUbicacion(empresaId);
+        return new EstadoUbicacion(tiene, obligatoria);
+    }
+
     /** True si la regla está encendida y al negocio le falta la ubicación. */
     public boolean bloqueaPublicacion(Long empresaId) {
         return obligatoria && empresaId != null && !empresaTieneUbicacion(empresaId);

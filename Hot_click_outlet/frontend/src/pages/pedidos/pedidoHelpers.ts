@@ -23,7 +23,7 @@ export type ColorEstadoPedido = {
 export type ItemPedidoCliente = {
   cantidad?: number
   nombreProducto?: string
-  producto?: { id?: number; nombreProducto?: string }
+  producto?: { id?: number; nombreProducto?: string; imagenPrincipalUrl?: string | null }
   productoId?: number
   precioUnitarioMomento?: number
   subtotalItem?: number
@@ -50,6 +50,16 @@ export type PedidoCliente = {
   notas?: string
   numeroGuia?: string
   urlTracking?: string
+  metodoPago?: string
+  fechaEnvio?: string | null
+  fechaEntregaReal?: string | null
+  /** Compra multi-negocio: un paquete (pedido) por negocio bajo un solo pago. */
+  compraId?: number | null
+  numeroCompra?: string | null
+  cantidadPaquetes?: number | null
+  numeroPaquete?: number | null
+  nombreNegocio?: string | null
+  bodega?: { provincia?: string | null } | null
 }
 
 export function colorEstadoPedido(estado: string): ColorEstadoPedido {
@@ -92,6 +102,14 @@ export function pedidosDesdeRespuesta(data: unknown): { pedidos: PedidoCliente[]
     return { pedidos: content, totalPages: pagina.totalPages ?? 1 }
   }
   return { pedidos: Array.isArray(envelope) ? envelope.filter(esPedidoCliente) : [], totalPages: 1 }
+}
+
+/** `GET /pedidos/{id}` responde `{ success, data: pedido }`. */
+export function pedidoDesdeRespuesta(data: unknown): PedidoCliente | null {
+  const pedido = data && typeof data === 'object' && 'data' in data
+    ? (data as { data: unknown }).data
+    : data
+  return esPedidoCliente(pedido) ? pedido : null
 }
 
 export { formatDateShort, formatPrice }

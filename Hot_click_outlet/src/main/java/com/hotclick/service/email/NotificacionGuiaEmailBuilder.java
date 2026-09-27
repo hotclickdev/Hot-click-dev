@@ -26,7 +26,7 @@ class NotificacionGuiaEmailBuilder {
             + layout.header("Tu pedido va en camino", "Ya salió de nuestras manos hacia las tuyas")
             + layout.abrirCuerpo()
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + nombre + "</strong>.</p>"
-            + "<p style='margin:0 0 28px;color:#4D5560;font-size:14px;line-height:1.6'>Tu pedido <strong style='color:#14171C'>" + layout.esc(pedido.getNumeroPedido()) + "</strong> fue enviado con <strong>" + courierNombre + "</strong>.</p>"
+            + "<p style='margin:0 0 28px;color:#4D5560;font-size:14px;line-height:1.6'>Tu pedido <strong style='color:#14171C'>" + layout.esc(numeroConPaquete(pedido)) + "</strong> fue enviado con <strong>" + courierNombre + "</strong>.</p>"
 
             // Número de guía en mono (cap. 4.1: datos en IBM Plex Mono)
             + "<div style='background:#E9F7F0;border:1px solid #BFE5D1;border-radius:16px;padding:24px;text-align:center;margin-bottom:24px'>"
@@ -41,5 +41,14 @@ class NotificacionGuiaEmailBuilder {
             + " La entrega tarda de 2 a 5 días hábiles.</p>"
             + "</div>"
             + layout.footer("¿Alguna pregunta sobre tu envío?");
+    }
+
+    /** «ORD-10482 · Paquete 2 de 3» si la compra tiene varios paquetes; si no, el número del pedido. */
+    static String numeroConPaquete(Pedido pedido) {
+        Integer total = pedido.getCantidadPaquetes();
+        Integer numero = pedido.getNumeroPaquete();
+        if (total == null || total <= 1 || numero == null) return pedido.getNumeroPedido();
+        String numeroCompra = pedido.getNumeroCompra() != null ? pedido.getNumeroCompra() : pedido.getNumeroPedido();
+        return numeroCompra + " · Paquete " + numero + " de " + total;
     }
 }

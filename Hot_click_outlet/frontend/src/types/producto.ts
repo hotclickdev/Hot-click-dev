@@ -8,6 +8,11 @@ export type ProductoRelacion = {
   permiteRetiroCliente?: boolean
   direccionExacta?: string
   telefono?: string
+  provincia?: string | null
+  canton?: string | null
+  empresaId?: number | null
+  horarioApertura?: string | null
+  horarioCierre?: string | null
   nombreMarca?: string
   logoUrl?: string
 }

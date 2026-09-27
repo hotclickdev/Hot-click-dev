@@ -2,207 +2,100 @@ import { authService } from '@/services/authService'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
-import { BODEGA_DEFAULT } from './checkoutHelpers'
-import type { BodegaRetiro, ItemCheckout, OpcionEnvio } from './checkoutHelpers'
 import type { CheckoutPayload } from '@/types/pedido'
+import type { ItemCarrito } from '@/types/carrito'
+import { BODEGA_DEFAULT } from './checkoutHelpers'
+import { ENVIO, payloadPaquetes, requiereDireccion, type PaqueteCompra } from './paquetesCompra'
+import { textoDireccion, type DatosCompra, type DireccionCompra, type MetodoPago } from './validacionCompra'
 
-type ValidateDomicilioDeps = {
-  SHIPPING_OPTIONS: OpcionEnvio[]
-  metodoEnvio: string
-  direccion: string
-  token: string | null
-  telefono: string
-  validateAddress: (v: string) => string
-  validatePhone: (v: string) => string
-  setDireccionError: (v: string) => void
-  setDireccionDirty: (v: boolean) => void
-  setTelefonoError: (v: string) => void
-  setTelefonoDirty: (v: boolean) => void
-}
-
-/**
- * Valida dirección/teléfono de domicilio — mismo orden que el original.
- */
-export function ejecutarValidateDomicilio({
-  SHIPPING_OPTIONS, metodoEnvio, direccion, token, telefono,
-  validateAddress, validatePhone,
-  setDireccionError, setDireccionDirty, setTelefonoError, setTelefonoDirty,
-}: ValidateDomicilioDeps): boolean {
-  const op = SHIPPING_OPTIONS.find((o) => o.value === metodoEnvio)
-  if (!op?.needsAddress) return true
-  const dErr = validateAddress(direccion)
-  setDireccionError(dErr)
-  setDireccionDirty(true)
-  if (token) {
-    const tErr = validatePhone(telefono)
-    setTelefonoError(tErr)
-    setTelefonoDirty(true)
-    return !tErr && !dErr
-  }
-  return !dErr
-}
-
-type PagarCheckoutDeps = {
+type PagarCompraDeps = {
   aceptaDatos: boolean
-  validateDomicilio: () => boolean
+  /** Revalida datos, dirección y comprobante; devuelve `false` si algo falta. */
+  validarTodo: () => boolean
   token: string | null
-  validateGuestEmail: (v: string) => string
-  validatePhone: (v: string) => string
-  guestEmail: string
-  setGuestEmailError: (v: string) => void
-  setGuestEmailDirty: (v: boolean) => void
-  guestPhone: string
-  setGuestPhoneError: (v: string) => void
-  setGuestPhoneDirty: (v: boolean) => void
-  metodoPago: string
-  sinpeNombre: string
-  sinpeCedula: string
-  setSinpeNombreErr: (v: string) => void
-  setSinpeCedulaErr: (v: string) => void
-  telefono: string
-  SHIPPING_OPTIONS: OpcionEnvio[]
-  metodoEnvio: string
-  notas: string
-  direccion: string
-  sinpeEmail: string
+  metodoPago: MetodoPago
+  datos: DatosCompra
+  direccion: DireccionCompra
+  paquetes: PaqueteCompra<ItemCarrito>[]
+  envios: Record<string, string>
+  items: ItemCarrito[]
   totalFinal: number
-  items: ItemCheckout[]
-  bodegaRetiro: BodegaRetiro | null
   cuponCodigo: string | null
   gcCodigo: string | null
-  sinpeTelefono: string
   iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
+}
+
+function notasCompra({ datos, direccion, envios }: PagarCompraDeps): string | null {
+  const conDireccion = requiereDireccion(envios)
+  const notas = [
+    datos.nombre.trim() ? `Nombre: ${datos.nombre.trim()}` : '',
+    datos.telefono ? `Teléfono: ${datos.telefono}` : '',
+    conDireccion ? `Dirección: ${textoDireccion(direccion)}` : '',
+  ].filter(Boolean).join(' | ')
+  return notas || null
+}
+
+function itemsPayload(items: ItemCarrito[]) {
+  return items.map((i) => ({
+    productoId: i.id,
+    cantidad: i.cantidad,
+    ...(i.personalizacion
+      ? {
+          personalizacion: {
+            imagenes: i.personalizacion.imagenes || [],
+            notas: i.personalizacion.notas || null,
+            tallaSeleccionada: i.personalizacion.tallaSeleccionada || null,
+            encargoToken: i.personalizacion.encargoToken || null,
+          },
+        }
+      : {}),
+  }))
+}
+
+function atribucionPayload(atrib: ReturnType<typeof attributionForCheckout>, metaCookies: ReturnType<typeof readMetaCookies>) {
+  if (atrib) return { atribucion: { first: atrib.first, last: atrib.last, ...metaCookies } }
+  if (metaCookies.fbp || metaCookies.fbc) return { atribucion: { first: null, last: null, ...metaCookies } }
+  return {}
+}
+
+/** Un solo paquete sin negocio usa la bodega de retiro o la bodega por defecto, como antes. */
+function bodegaPrincipal(paquetes: PaqueteCompra[], envios: Record<string, string>): number {
+  const [primero] = paquetes
+  if (paquetes.length === 1 && envios[primero.clave] === ENVIO.RETIRO && primero.retiro) return primero.retiro.bodegaId
+  return BODEGA_DEFAULT
 }
 
 /**
  * Inicia el pago — mismo orden de consentimiento, analytics e iniciarPago.
+ * Devuelve `true` si llegó a llamar a `iniciarPago`.
  */
-export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
-  const {
-    aceptaDatos,
-    validateDomicilio,
-    token,
-    validateGuestEmail,
-    validatePhone,
-    guestEmail,
-    setGuestEmailError,
-    setGuestEmailDirty,
-    guestPhone,
-    setGuestPhoneError,
-    setGuestPhoneDirty,
-    metodoPago,
-    sinpeNombre,
-    sinpeCedula,
-    setSinpeNombreErr,
-    setSinpeCedulaErr,
-    telefono,
-    SHIPPING_OPTIONS,
-    metodoEnvio,
-    notas,
-    direccion,
-    sinpeEmail,
-    totalFinal,
-    items,
-    bodegaRetiro,
-    cuponCodigo,
-    gcCodigo,
-    sinpeTelefono,
-    iniciarPago,
-  } = deps
-
-  if (!aceptaDatos) return
-  if (!validateDomicilio()) return
-
-  if (!token) {
-    const eErr = validateGuestEmail(guestEmail)
-    setGuestEmailError(eErr)
-    setGuestEmailDirty(true)
-    if (eErr) return
-
-    if (metodoEnvio !== 'RETIRO_EN_TIENDA') {
-      const pErr = validatePhone(guestPhone)
-      setGuestPhoneError(pErr)
-      setGuestPhoneDirty(true)
-      if (pErr) return
-    } else {
-      setGuestPhoneError('')
-    }
-  }
-
-  if (metodoPago === 'SINPE') {
-    let valid = true
-    if (sinpeNombre.trim()) {
-      setSinpeNombreErr('')
-    } else {
-      setSinpeNombreErr('El nombre completo es requerido')
-      valid = false
-    }
-    if (sinpeCedula.trim()) {
-      setSinpeCedulaErr('')
-    } else {
-      setSinpeCedulaErr('El número de cédula es requerido')
-      valid = false
-    }
-    if (!valid) return
-  }
+export function ejecutarPagarCheckout(deps: PagarCompraDeps): boolean {
+  const { aceptaDatos, validarTodo, token, metodoPago, datos, paquetes, envios, items, totalFinal, iniciarPago } = deps
+  if (!aceptaDatos) return false
+  if (!validarTodo()) return false
 
   authService.registrarConsentimiento('CHECKOUT')
 
-  const phoneEfectivo = token ? telefono : guestPhone
-  const opEnvio = SHIPPING_OPTIONS.find((o) => o.value === metodoEnvio)
-  const notasFull = [
-    notas.trim(),
-    opEnvio?.needsAddress && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
-    opEnvio?.needsAddress && direccion ? `Dirección: ${direccion}` : '',
-    metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
-    opEnvio ? `Envío: ${opEnvio.label}` : '',
-  ].filter(Boolean).join(' | ')
-
+  const notas = notasCompra(deps)
   const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
-  analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + (i.cantidad as number), 0))
+  analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
   const atrib = attributionForCheckout()
   const metaCookies = readMetaCookies()
   iniciarPago(
     {
-      bodegaId: metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaRetiro.id as number : BODEGA_DEFAULT,
-      metodoEnvio,
-      notas: notasFull || null,
+      bodegaId: bodegaPrincipal(paquetes, envios),
+      metodoEnvio: envios[paquetes[0].clave],
+      paquetes: payloadPaquetes(paquetes, envios),
+      notas,
       provider: metodoPago,
-      items: items.map((i) => ({
-        productoId: i.id,
-        cantidad: i.cantidad,
-        ...(i.personalizacion
-          ? {
-              personalizacion: {
-                imagenes: i.personalizacion.imagenes || [],
-                notas: i.personalizacion.notas || null,
-                tallaSeleccionada: i.personalizacion.tallaSeleccionada || null,
-                encargoToken: i.personalizacion.encargoToken || null,
-              },
-            }
-          : {}),
-      })),
-      codigoCupon: cuponCodigo || null,
-      codigoGiftCard: gcCodigo || null,
-      ...(atrib
-        ? {
-            atribucion: {
-              first: atrib.first,
-              last: atrib.last,
-              ...metaCookies,
-            },
-          }
-        : metaCookies.fbp || metaCookies.fbc
-          ? { atribucion: { first: null, last: null, ...metaCookies } }
-          : {}),
-      ...(token
-        ? {}
-        : {
-            guestEmail: metodoPago === 'SINPE' ? (sinpeEmail.trim() || guestEmail.trim()) : guestEmail.trim(),
-            guestPhone: guestPhone || sinpeTelefono || null,
-          }),
+      items: itemsPayload(items),
+      codigoCupon: deps.cuponCodigo || null,
+      codigoGiftCard: deps.gcCodigo || null,
+      ...atribucionPayload(atrib, metaCookies),
+      ...(token ? {} : { guestEmail: datos.correo.trim(), guestPhone: datos.telefono || null }),
     },
     !token,
     isManual,
   )
+  return true
 }

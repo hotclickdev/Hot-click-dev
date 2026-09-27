@@ -1,175 +1,67 @@
-import { useState, type ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { motion, useReducedMotion } from 'framer-motion'
-import { formatoColon } from '@/theme/formatoColon'
-import { marcarPedidoEnviadoApi } from '@/prototipo/compartido/pedidosVendedorApi'
+import type { ReactNode } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_COMPRA } from '@/pages/checkout/iconosCompra'
 import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
-import { EASE_PREMIUM } from '@/prototipo/compartido/motion/formularioMotionTokens'
-import CabeceraAtras from '../ui/CabeceraAtras'
-import EmprendedorPageFrame, { EmprendedorCard, EmprendedorFilaLista } from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
-import { usePedidosEmprendedor } from '../hooks/usePedidosEmprendedor'
-import type { PedidoEmprendedor } from '../types'
+import { etapaDespacho } from './despacho/despachoPaquete'
+import TarjetaEnviarA from './despacho/TarjetaEnviarA'
+import TarjetaGuia from './despacho/TarjetaGuia'
+import TarjetaPagoPaquete from './despacho/TarjetaPagoPaquete'
+import TarjetaSubpedido from './despacho/TarjetaSubpedido'
+import { useDespachoPaquete } from './despacho/useDespachoPaquete'
 
-/**
- * Detalle de pedido (Figma 128:157 / 352:10640).
- */
+const RUTA_PEDIDOS = `${RUTA_EMPRENDEDOR}/pedidos`
+
+function MarcoDespacho({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <main className="min-h-dvh w-full bg-hc-n-50">
+      <header className="border-b border-hc-n-200 bg-hc-n-0 px-[16px] py-[14px]">
+        <div className="mx-auto flex max-w-[560px] items-center gap-[12px]">
+          <Link to={RUTA_PEDIDOS} aria-label="Volver a pedidos" className="flex text-hc-n-900">
+            <IconoFigma src={ICONOS_COMPRA.volver} size={22} />
+          </Link>
+          <h1 className="flex-1 font-display text-[17px] font-bold text-hc-n-900">Despachar paquete</h1>
+        </div>
+      </header>
+      <div className="mx-auto flex max-w-[560px] flex-col gap-[14px] px-[16px] pb-[24px] pt-[16px]">{children}</div>
+    </main>
+  )
+}
+
+/** Despachar paquete del vendedor (Figma `37:1780`). */
 export default function DetallePedidoPage() {
   const { id = '' } = useParams()
-  const navigate = useNavigate()
-  const { pedidos, cargando, error } = usePedidosEmprendedor()
-  const [marcando, setMarcando] = useState(false)
-  const [errorMarca, setErrorMarca] = useState<string | null>(null)
-  const [confirmando, setConfirmando] = useState(false)
-  const pedido = pedidos.find((p) => p.id === id)
+  const { despacho, estado, despachar } = useDespachoPaquete(id)
 
-  async function marcarEnviado() {
-    setMarcando(true)
-    setErrorMarca(null)
-    try {
-      await marcarPedidoEnviadoApi(id)
-      navigate(`${RUTA_EMPRENDEDOR}/pedidos`)
-    } catch (err: unknown) {
-      console.error('[DetallePedido]', err)
-      setErrorMarca('No se pudo marcar el pedido como enviado.')
-    } finally {
-      setMarcando(false)
-    }
-  }
-
-  function abrirConfirmacion() {
-    setErrorMarca(null)
-    setConfirmando(true)
-  }
-
-  function cancelarConfirmacion() {
-    setErrorMarca(null)
-    setConfirmando(false)
-  }
-
-  if (cargando) {
+  if (estado === 'cargando') {
     return (
-      <main className="px-5 py-8 md:px-16 md:py-12">
-        <CabeceraAtras titulo="Pedido" to={`${RUTA_EMPRENDEDOR}/pedidos`} />
-        <p className="mt-4 text-sm text-hc-muted">Cargando pedido…</p>
-      </main>
+      <MarcoDespacho>
+        <p className="text-[13px] text-hc-n-500">Cargando paquete…</p>
+      </MarcoDespacho>
     )
   }
 
-  if (error || !pedido) {
+  if (estado === 'error' || !despacho) {
     return (
-      <main className="px-5 py-8 md:px-16 md:py-12">
-        <CabeceraAtras titulo="Pedido" to={`${RUTA_EMPRENDEDOR}/pedidos`} />
+      <MarcoDespacho>
         <EstadoVacioConversacional
-          titulo={error ? 'No pudimos cargar el pedido' : 'No encontramos ese pedido'}
-          mensaje={error ?? 'Puede que el enlace ya no valga. Volvé al listado e intentá de nuevo.'}
+          titulo="No pudimos cargar el paquete"
+          mensaje="Puede que el enlace ya no valga. Volvé al listado de pedidos e intentá de nuevo."
         />
-      </main>
+      </MarcoDespacho>
     )
   }
 
+  const etapa = etapaDespacho(despacho.estado)
   return (
-    <EmprendedorPageFrame titulo={`Pedido #${pedido.id}`} volverA={`${RUTA_EMPRENDEDOR}/pedidos`}>
-      {confirmando && pedido.estado === 'Pendiente' ? (
-        <ConfirmacionEnvio
-          pedido={pedido}
-          errorMarca={errorMarca}
-          marcando={marcando}
-          onConfirmar={() => void marcarEnviado()}
-          onCancelar={cancelarConfirmacion}
-        />
-      ) : (
-        <DetallePedidoContenido pedido={pedido} onConfirmarEnvio={abrirConfirmacion} />
+    <MarcoDespacho>
+      <TarjetaSubpedido despacho={despacho} etapa={etapa} />
+      <TarjetaEnviarA despacho={despacho} />
+      {etapa === 'cancelado' ? null : (
+        <TarjetaGuia despacho={despacho} despachado={etapa === 'despachado'} onDespachar={despachar} />
       )}
-    </EmprendedorPageFrame>
+      <TarjetaPagoPaquete despacho={despacho} />
+    </MarcoDespacho>
   )
-}
-
-type ConfirmacionProps = {
-  pedido: PedidoEmprendedor
-  errorMarca: string | null
-  marcando: boolean
-  onConfirmar: () => void
-  onCancelar: () => void
-}
-
-function ConfirmacionEnvio({ pedido, errorMarca, marcando, onConfirmar, onCancelar }: ConfirmacionProps) {
-  return (
-    <>
-      <EmprendedorCard className="flex flex-col gap-4">
-        <EmprendedorFilaLista titulo="Cliente" detalle={pedido.cliente} />
-        <EmprendedorFilaLista titulo="Total" detalle={formatoColon(pedido.total)} />
-      </EmprendedorCard>
-      <p className="text-[15px] font-semibold text-hc-text">¿Confirmás que ya enviaste este pedido?</p>
-      {errorMarca ? <p className="text-sm text-hc-danger">{errorMarca}</p> : null}
-      <div className="flex flex-col gap-2">
-        <CtaEnvio variante="primario" disabled={marcando} onClick={onConfirmar}>
-          {marcando ? 'Guardando…' : 'Sí, confirmar envío'}
-        </CtaEnvio>
-        <CtaEnvio variante="contorno" disabled={marcando} onClick={onCancelar}>
-          Cancelar
-        </CtaEnvio>
-      </div>
-    </>
-  )
-}
-
-function DetallePedidoContenido({
-  pedido,
-  onConfirmarEnvio,
-}: {
-  pedido: PedidoEmprendedor
-  onConfirmarEnvio: () => void
-}) {
-  return (
-    <>
-      <EmprendedorCard className="flex flex-col gap-4">
-        <EmprendedorFilaLista titulo="Cliente" detalle={pedido.cliente} />
-        <EmprendedorFilaLista titulo="Fecha" detalle={pedido.fecha || '—'} />
-        <EmprendedorFilaLista titulo="Dirección" detalle={pedido.direccion || '—'} />
-        <EmprendedorFilaLista titulo="Productos" detalle={resumenProductos(pedido)} />
-        <EmprendedorFilaLista titulo="Total" detalle={formatoColon(pedido.total)} />
-      </EmprendedorCard>
-      {pedido.estado === 'Pendiente' ? (
-        <CtaEnvio variante="primario" onClick={onConfirmarEnvio}>
-          Confirmar envío
-        </CtaEnvio>
-      ) : null}
-    </>
-  )
-}
-
-type CtaEnvioProps = Readonly<{
-  children: ReactNode
-  variante: 'primario' | 'contorno'
-  disabled?: boolean
-  onClick: () => void
-}>
-
-function CtaEnvio({ children, variante, disabled = false, onClick }: CtaEnvioProps) {
-  const reduced = useReducedMotion() ?? false
-  const estilos =
-    variante === 'primario'
-      ? 'bg-hc-primary px-5 py-4 text-[15px] font-bold text-white disabled:opacity-60'
-      : 'border border-hc-border py-3.5 text-[13px] font-medium text-hc-text disabled:opacity-40'
-  return (
-    <motion.button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={`flex min-h-11 w-full items-center justify-center rounded-[14px] disabled:pointer-events-none ${estilos}`}
-      whileHover={reduced || disabled ? undefined : { y: -2 }}
-      whileTap={reduced || disabled ? undefined : { scale: 0.98 }}
-      transition={{ duration: 0.2, ease: EASE_PREMIUM }}
-    >
-      {children}
-    </motion.button>
-  )
-}
-
-function resumenProductos(pedido: PedidoEmprendedor): string {
-  if (pedido.productos.length === 0) return '—'
-  return pedido.productos
-    .map((item) => `${item.nombre} x${item.cantidad} — ${formatoColon(item.precio)}`)
-    .join(' · ')
 }

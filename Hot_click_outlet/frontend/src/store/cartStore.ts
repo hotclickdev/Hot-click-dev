@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { analytics } from '@/utils/analytics'
-import type { ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
+import type { CuponCarrito, ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 
@@ -14,6 +14,8 @@ type ProductoConExtras = Producto & {
 type CartState = {
   items: ItemCarrito[]
   cartUpdatedAt: number | null
+  cupon: CuponCarrito | null
+  setCupon: (cupon: CuponCarrito | null) => void
   addItem: (product: ProductoConExtras, qty?: number) => void
   removeItem: (id: Id, cartLineId?: string) => void
   updateQuantity: (id: Id, cantidad: number, cartLineId?: string) => void
@@ -35,6 +37,9 @@ const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       cartUpdatedAt: null,
+      cupon: null,
+
+      setCupon: (cupon) => set({ cupon }),
 
       addItem: (product, qty = 1) => {
         const { items } = get()
@@ -98,7 +103,7 @@ const useCartStore = create<CartState>()(
         })
       },
 
-      clearCart: () => set({ items: [], cartUpdatedAt: null }),
+      clearCart: () => set({ items: [], cartUpdatedAt: null, cupon: null }),
 
       getCartItems: () => get().items,
 

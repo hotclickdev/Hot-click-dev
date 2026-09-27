@@ -5,9 +5,11 @@ export const orderService = {
   create: (data: JsonBody) => api.post('/pedidos', data),
   createManual: (data: JsonBody) => api.post('/pedidos/manual', data),
   getById: (id: Id) => api.get(`/pedidos/${id}`),
+  getCompra: (id: Id) => api.get(`/pedidos/${id}/compra`),
   getByUser: (userId: Id, page = 0, size = 20) => api.get(`/pedidos/usuario/${userId}?page=${page}&size=${size}`),
   getAll: () => api.get('/pedidos'),
   getPending: () => api.get('/pedidos/pendientes'),
+  getDespacho: (id: Id) => api.get(`/pedidos/${id}/despacho`),
   updateStatus: (id: Id, estado: string, nota?: string | null) => api.put(`/pedidos/${id}/estado`, { estado, nota: nota || null }),
   asignarGuia:  (id: Id, numeroGuia: string) => api.put(`/pedidos/${id}/guia`, { numeroGuia }),
   procesarEnvio:(id: Id, guia: string, costoEnvio: number) => api.put(`/pedidos/${id}/envio`, { guia, costoEnvio }),
@@ -34,6 +36,7 @@ export const adminService = {
   deleteUser: (id: Id) => api.delete(`/admin/usuarios/${id}`),
   restoreUser: (id: Id) => api.put(`/admin/usuarios/${id}/restaurar`),
   getEmpresas: () => api.get('/admin/empresas'),
+  getEmpresasSinUbicacion: () => api.get('/admin/empresas/sin-ubicacion'),
   getEmpresa: (id: Id) => api.get(`/admin/empresas/${id}`),
   getEmpresaTab: (id: Id, tab: string, params?: Record<string, unknown>) =>
     api.get(`/admin/empresas/${id}/${tab}`, params ? { params } : undefined),
@@ -65,6 +68,7 @@ export const warehouseService = {
   update: (id: Id, data: JsonBody) => api.put(`/bodegas/${id}`, data),
   delete: (id: Id) => api.delete(`/bodegas/${id}`),
   importBulk: (items: JsonBody[]) => api.post('/bodegas/bulk', items),
+  getUbicacionDespacho: () => api.get('/bodegas/ubicacion-despacho'),
   getStockMovements: (productoId: Id) => api.get(`/stock/movimientos/${productoId}`),
   adjustStock: (productoId: Id, data: JsonBody) => api.post(`/stock/ajuste-entrada/${productoId}`, data),
 }

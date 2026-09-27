@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
+import AvisoFaltaUbicacion from '../ui/AvisoFaltaUbicacion'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
@@ -29,6 +30,7 @@ export default function MenuPage() {
     <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16 md:max-w-[480px] md:items-stretch md:px-16 md:py-12">
       <EntradaPagina className="flex w-full flex-col items-center gap-2 md:items-stretch">
         <HeroMarca />
+        <AvisoFaltaUbicacion className="mb-2" />
         <OnboardingPrimeraVez rol="emprendedor" />
         <ListaStagger className="flex w-full flex-col gap-2">
           {ACCIONES_BASE.map((accion) => (

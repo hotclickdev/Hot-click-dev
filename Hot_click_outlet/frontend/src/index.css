@@ -172,6 +172,8 @@ html.reduce-motion *::after {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     overflow-x: hidden;
+    /* clip no crea contenedor de scroll: con hidden, position: sticky deja de funcionar en todo el sitio */
+    overflow-x: clip;
   }
 
   body {
@@ -183,6 +185,7 @@ html.reduce-motion *::after {
     line-height: 1.5;
     transition: none;
     overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Títulos en Sora (Brand Book cap. 4): tracking negativo y balance */

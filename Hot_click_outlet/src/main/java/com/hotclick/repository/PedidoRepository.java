@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,15 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Optional<Pedido> findByNumeroPedido(String numeroPedido);
 
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
+
+    /** Paquetes de una compra con lo que serializa el detalle del comprador; los items van con {@link #cargarItemsDe}. */
+    @Query("SELECT DISTINCT p FROM Pedido p " +
+           "LEFT JOIN FETCH p.empresa " +
+           "LEFT JOIN FETCH p.usuarioFinal " +
+           "LEFT JOIN FETCH p.bodega " +
+           "LEFT JOIN FETCH p.compra " +
+           "WHERE p.compra.id = :compraId ORDER BY p.numeroPaquete ASC")
+    List<Pedido> findPaquetesDeCompra(@Param("compraId") Long compraId);
 
     /** Detalle completo — evita LazyInitializationException al serializar empresa/usuarioFinal/bodega/items. */
     @Query("SELECT DISTINCT p FROM Pedido p " +
@@ -31,6 +41,21 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     boolean existsByUsuarioFinalIdAndEmpresaId(@Param("usuarioFinalId") Long usuarioFinalId, @Param("empresaId") Long empresaId);
 
     Page<Pedido> findByUsuarioFinalIdOrderByFechaPedidoDesc(Long usuarioId, Pageable pageable);
+
+    /** «Mis pedidos» del comprador: relaciones @ManyToOne precargadas para serializar sin sesión. */
+    @Query(value = "SELECT p FROM Pedido p " +
+                   "LEFT JOIN FETCH p.usuarioFinal " +
+                   "LEFT JOIN FETCH p.bodega " +
+                   "LEFT JOIN FETCH p.empresa " +
+                   "LEFT JOIN FETCH p.compra " +
+                   "WHERE p.usuarioFinal.id = :usuarioId " +
+                   "ORDER BY p.fechaPedido DESC, p.id ASC",
+           countQuery = "SELECT COUNT(p) FROM Pedido p WHERE p.usuarioFinal.id = :usuarioId")
+    Page<Pedido> findPaginaDelComprador(@Param("usuarioId") Long usuarioId, Pageable pageable);
+
+    /** Carga items + producto de una página ya leída (evita paginar en memoria con JOIN FETCH de colección). */
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items i LEFT JOIN FETCH i.producto WHERE p.id IN :ids")
+    List<Pedido> cargarItemsDe(@Param("ids") Collection<Long> ids);
 
     /** Con items precargados — evita N+1 al iterar items en listarPorUsuario. */
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items WHERE p.usuarioFinal.id = :usuarioId ORDER BY p.fechaPedido DESC")

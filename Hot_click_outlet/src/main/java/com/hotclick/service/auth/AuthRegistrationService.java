@@ -82,7 +82,8 @@ public class AuthRegistrationService {
                 dto.getCedulaJuridica(),
                 dto.getInscritoHacienda(),
                 dto.getRegimenTributario(),
-                dto.getNombreHacienda()
+                dto.getNombreHacienda(),
+                dto.ubicacionDespacho()
             );
             upgraded = usuarioRepository.findByCorreo(upgraded.getCorreo())
                 .orElse(upgraded);

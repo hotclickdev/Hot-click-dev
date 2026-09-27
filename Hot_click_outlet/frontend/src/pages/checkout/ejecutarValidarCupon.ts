@@ -1,17 +1,15 @@
 import { cuponService } from '@/services/cuponService'
+import type { CuponCarrito } from '@/types/carrito'
 
-type CuponValidacion = {
-  data?: { descuento?: number; codigo?: string }
-  descuento?: number
-  codigo?: string
-}
+type DatosCupon = { descuento?: number; codigo?: string; empresaId?: number | null }
+
+type CuponValidacion = DatosCupon & { data?: DatosCupon }
 
 type ValidarCuponDeps = {
   cuponInput: string
   setCuponEstado: (estado: string) => void
   setCuponError: (error: string) => void
-  setCuponDescuento: (descuento: number) => void
-  setCuponCodigo: (codigo: string | null) => void
+  setCupon: (cupon: CuponCarrito | null) => void
 }
 
 function mensajeErrorCupon(err: unknown): string {
@@ -24,11 +22,9 @@ function mensajeErrorCupon(err: unknown): string {
   return 'Código inválido o no disponible'
 }
 
-/**
- * Valida un cupón — mismo orden de setState que el original.
- */
+/** Valida un cupón y lo deja en el carrito con el negocio al que pertenece. */
 export async function ejecutarValidarCupon({
-  cuponInput, setCuponEstado, setCuponError, setCuponDescuento, setCuponCodigo,
+  cuponInput, setCuponEstado, setCuponError, setCupon,
 }: ValidarCuponDeps) {
   if (!cuponInput.trim()) return
   setCuponEstado('loading')
@@ -36,16 +32,16 @@ export async function ejecutarValidarCupon({
   try {
     const { data } = await cuponService.validar(cuponInput.trim())
     const resultado = data as CuponValidacion
-    const pct = resultado?.data?.descuento ?? resultado?.descuento ?? 0
-    const cod = resultado?.data?.codigo ?? resultado?.codigo ?? cuponInput.trim().toUpperCase()
-    setCuponDescuento(pct)
-    setCuponCodigo(cod)
+    const datos = resultado?.data ?? resultado
+    setCupon({
+      codigo: datos?.codigo ?? cuponInput.trim().toUpperCase(),
+      descuento: datos?.descuento ?? 0,
+      empresaId: datos?.empresaId ?? null,
+    })
     setCuponEstado('valid')
   } catch (err: unknown) {
-    const msg = mensajeErrorCupon(err)
-    setCuponDescuento(0)
-    setCuponCodigo(null)
-    setCuponError(msg)
+    setCupon(null)
+    setCuponError(mensajeErrorCupon(err))
     setCuponEstado('invalid')
   }
 }

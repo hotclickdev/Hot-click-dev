@@ -67,4 +67,30 @@ public class RegistroEmpresaDTO {
     private String turnstileToken;
     public String getTurnstileToken() { return turnstileToken; }
     public void setTurnstileToken(String v) { this.turnstileToken = v; }
+
+    // Ubicación de despacho (opcional): si viene, se crea la primera bodega del negocio.
+    // Mismos topes que la entidad Bodega; BodegaDespachoInicialService los hace cumplir.
+    @Size(max = 50, message = "La provincia no puede superar 50 caracteres")
+    private String provincia;
+
+    @Size(max = 100, message = "El cantón no puede superar 100 caracteres")
+    private String canton;
+
+    @Size(max = 255, message = "La dirección exacta no puede superar 255 caracteres")
+    private String direccionExacta;
+
+    private Boolean permiteRetiroCliente;
+
+    public String getProvincia()                   { return provincia; }
+    public void setProvincia(String v)             { this.provincia = v; }
+    public String getCanton()                      { return canton; }
+    public void setCanton(String v)                { this.canton = v; }
+    public String getDireccionExacta()             { return direccionExacta; }
+    public void setDireccionExacta(String v)       { this.direccionExacta = v; }
+    public Boolean getPermiteRetiroCliente()       { return permiteRetiroCliente; }
+    public void setPermiteRetiroCliente(Boolean v) { this.permiteRetiroCliente = v; }
+
+    public UbicacionDespachoAlta ubicacionDespacho() {
+        return new UbicacionDespachoAlta(provincia, canton, direccionExacta, permiteRetiroCliente);
+    }
 }

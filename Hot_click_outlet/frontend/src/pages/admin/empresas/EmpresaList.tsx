@@ -1,6 +1,7 @@
-import { useState, type Dispatch, type SetStateAction } from 'react'
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { letraDe } from '@/prototipo/admin/adminData'
 import {
+  AdminBadge,
   AdminEntityRow,
   AdminFilterChip,
   AdminSearchField,
@@ -21,6 +22,12 @@ import {
   tonoEstadoTiendaLista,
   type EmpresaLista,
 } from './empresasHelpers'
+import {
+  ETIQUETA_SIN_UBICACION,
+  idsSinUbicacion,
+  type EmpresaSinUbicacion,
+} from './empresasSinUbicacionHelpers'
+import AvisoEmpresasSinUbicacion from './AvisoEmpresasSinUbicacion'
 import type { Id } from '@/types/api'
 
 function VisibilidadToggle({ emp, saving, onToggle }: {
@@ -45,11 +52,13 @@ function VisibilidadToggle({ emp, saving, onToggle }: {
   )
 }
 
-function EmpresaFila({ emp, saving, onToggleVisibilidad }: {
-  emp: EmpresaLista
+type OpcionesFila = {
   saving: boolean
+  sinUbicacionIds: ReadonlySet<string>
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
-}) {
+}
+
+function EmpresaFila({ emp, saving, sinUbicacionIds, onToggleVisibilidad }: OpcionesFila & { emp: EmpresaLista }) {
   const nombre = nombreVisibleEmpresa(emp) ?? 'Tienda'
   return (
     <li className="flex items-center gap-2">
@@ -63,6 +72,7 @@ function EmpresaFila({ emp, saving, onToggleVisibilidad }: {
           badgeTono={tonoEstadoTiendaLista(emp.estadoEmpresa)}
         />
       </div>
+      {sinUbicacionIds.has(String(emp.id)) ? <AdminBadge tono="warn">{ETIQUETA_SIN_UBICACION}</AdminBadge> : null}
       <VisibilidadToggle emp={emp} saving={saving} onToggle={onToggleVisibilidad} />
     </li>
   )
@@ -114,17 +124,24 @@ function Paginacion({ page, totalPages, filteredCount, onPage }: {
   )
 }
 
+const SIN_UBICACION_VACIO: readonly EmpresaSinUbicacion[] = []
+
 export type EmpresaListProps = {
   empresas: EmpresaLista[]
   loading: boolean
   saving: boolean
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
+  /** Negocios activos sin ubicación de despacho: aviso arriba y badge en su fila. */
+  sinUbicacion?: readonly EmpresaSinUbicacion[]
 }
 
 /**
  * Lista de tiendas (Figma 42:128) con datos reales.
  */
-export default function EmpresaList({ empresas, loading, saving, onToggleVisibilidad }: EmpresaListProps) {
+export default function EmpresaList({
+  empresas, loading, saving, onToggleVisibilidad, sinUbicacion = SIN_UBICACION_VACIO,
+}: EmpresaListProps) {
+  const sinUbicacionIds = useMemo(() => idsSinUbicacion(sinUbicacion), [sinUbicacion])
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('ALL')
   const [filtroPlan, setFiltroPlan] = useState('ALL')
@@ -148,6 +165,7 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
           {internas > 0 ? ` · ${internas} interna de plataforma oculta` : ''}
         </p>
       </header>
+      <AvisoEmpresasSinUbicacion empresas={sinUbicacion} />
       <AdminSearchField
         value={search}
         onChange={cambiarFiltro(setSearch)}
@@ -173,16 +191,13 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
           {PLANES.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
       </label>
-      {cuerpoLista(loading, paged, { saving, onToggleVisibilidad })}
+      {cuerpoLista(loading, paged, { saving, sinUbicacionIds, onToggleVisibilidad })}
       <Paginacion page={page} totalPages={totalPages} filteredCount={filtered.length} onPage={setPage} />
     </div>
   )
 }
 
-function cuerpoLista(loading: boolean, paged: EmpresaLista[], { saving, onToggleVisibilidad }: {
-  saving: boolean
-  onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
-}) {
+function cuerpoLista(loading: boolean, paged: EmpresaLista[], opciones: OpcionesFila) {
   if (loading) {
     return <p className="py-8 text-center text-sm text-hc-muted">Cargando…</p>
   }
@@ -192,12 +207,7 @@ function cuerpoLista(loading: boolean, paged: EmpresaLista[], { saving, onToggle
   return (
     <ul className="flex flex-col gap-5">
       {paged.map((emp) => (
-        <EmpresaFila
-          key={String(emp.id)}
-          emp={emp}
-          saving={saving}
-          onToggleVisibilidad={onToggleVisibilidad}
-        />
+        <EmpresaFila key={String(emp.id)} emp={emp} {...opciones} />
       ))}
     </ul>
   )

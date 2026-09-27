@@ -1,14 +1,3 @@
-export type IconoBeneficioPago = 'garantia' | 'paquete' | 'envio' | 'whatsapp' | 'pago' | 'clientes'
-
-export const BENEFITS: { icono: IconoBeneficioPago; text: string }[] = [
-  { icono: 'garantia', text: 'Tu compra está protegida con garantía de 40 días' },
-  { icono: 'paquete', text: 'Tu pedido será preparado con cuidado' },
-  { icono: 'envio', text: 'Envíos rápidos a todo Costa Rica' },
-  { icono: 'whatsapp', text: 'Soporte por WhatsApp disponible 24/7' },
-  { icono: 'pago', text: 'Pago 100% seguro y encriptado' },
-  { icono: 'clientes', text: 'Miles de clientes satisfechos en Costa Rica' },
-]
-
 export type PagoResumen = {
   numeroPedido?: string
   total?: number

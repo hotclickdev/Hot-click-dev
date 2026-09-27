@@ -11,6 +11,12 @@ import RegistrarNegocioCard from './registrar-negocio/RegistrarNegocioCard'
 import DatosNegocioFields from './registrar-negocio/DatosNegocioFields'
 import HaciendaVerificacion from './registrar-negocio/HaciendaVerificacion'
 import AcuerdoYSubmit from './registrar-negocio/AcuerdoYSubmit'
+import UbicacionDespachoFieldset from '@/components/registro/UbicacionDespachoFieldset'
+import { useUbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
+import {
+  MENSAJE_UBICACION_INCOMPLETA,
+  payloadUbicacionRegistro,
+} from '@/prototipo/compartido/ubicacionDespachoHelpers'
 import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
 import type { AuthResponse } from '@/types/auth'
@@ -43,6 +49,7 @@ export default function RegistrarNegocioPage() {
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState('')
   const [aceptaAcuerdo, setAceptaAcuerdo] = useState(false)
+  const ubicacion = useUbicacionDespachoForm()
 
   const destino = destinoVender({ tokenVivo: true, rol: userRole, empresaId })
   if (destino !== RUTA_REGISTRAR_NEGOCIO) {
@@ -74,6 +81,7 @@ export default function RegistrarNegocioPage() {
     e.preventDefault()
     if (!aceptaAcuerdo) { setError('Debés aceptar el Acuerdo de Vendedores para continuar'); return }
     if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
+    if (!ubicacion.validar()) { setError(MENSAJE_UBICACION_INCOMPLETA); return }
     if (cedula && !haciendaValida) {
       setError('Verificá tu inscripción en Hacienda antes de continuar')
       return
@@ -83,6 +91,7 @@ export default function RegistrarNegocioPage() {
     try {
       const payload = {
         ...form,
+        ...payloadUbicacionRegistro(ubicacion.ubicacion),
         ...(haciendaValida && {
           cedulaJuridica:    cedula.trim(),
           inscritoHacienda:  true,
@@ -110,6 +119,7 @@ export default function RegistrarNegocioPage() {
               onCampo={set}
               onTelefono={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))}
             />
+            <UbicacionDespachoFieldset form={ubicacion} />
             <HaciendaVerificacion
               cedula={cedula}
               setCedula={setCedula}

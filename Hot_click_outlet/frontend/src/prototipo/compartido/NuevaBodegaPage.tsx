@@ -4,11 +4,14 @@ import { Campo, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import { crearBodegaVendedor } from './bodegasVendedorApi'
 import FormularioPorPasos from './FormularioPorPasos'
+import CamposUbicacion from './CamposUbicacion'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
+import { FORM_BODEGA_INICIAL, type FormBodega, type PasoBodega, validarPasoBodega } from './nuevaBodegaHelpers'
+import { erroresUbicacion, type UbicacionDespacho } from './ubicacionDespachoHelpers'
 
-const PASOS: readonly PasoFormulario[] = [
+const PASOS: readonly (PasoFormulario & { id: PasoBodega })[] = [
   { id: 'nombre', titulo: 'Nombre de la bodega' },
-  { id: 'ubicacion', titulo: 'Ubicación' },
+  { id: 'ubicacion', titulo: 'Ubicación de despacho' },
   { id: 'encargado', titulo: 'Encargado', opcional: true },
 ]
 
@@ -29,26 +32,32 @@ export function NuevaBodegaPage({
 }: Props) {
   const navigate = useNavigate()
   const [paso, setPaso] = useState(0)
-  const [nombre, setNombre] = useState('')
-  const [ubicacion, setUbicacion] = useState('')
-  const [encargado, setEncargado] = useState('')
+  const [form, setForm] = useState<FormBodega>(FORM_BODEGA_INICIAL)
+  const [intentoUbicacion, setIntentoUbicacion] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const idPaso = PASOS[paso]?.id
   const destino = rutaExito ?? volverA
 
+  function setCampo(campo: 'nombre' | 'telefono' | 'encargado') {
+    return (valor: string) => setForm((prev) => ({ ...prev, [campo]: valor }))
+  }
+
+  function setUbicacion(ubicacion: UbicacionDespacho) {
+    setForm((prev) => ({ ...prev, ubicacion }))
+  }
+
   function validar(i: number): string | null {
     const id = PASOS[i]?.id
-    if (id === 'nombre' && !nombre.trim()) return 'El nombre es obligatorio.'
-    if (id === 'ubicacion' && !ubicacion.trim()) return 'La ubicación es obligatoria.'
-    return null
+    if (id === 'ubicacion') setIntentoUbicacion(true)
+    return validarPasoBodega(id, form)
   }
 
   async function guardar() {
     setGuardando(true)
     setError(null)
     try {
-      await crearBodegaVendedor(nombre, ubicacion, encargado)
+      await crearBodegaVendedor(form)
       navigate(destino)
     } catch (err: unknown) {
       console.error('[NuevaBodega]', err)
@@ -69,26 +78,34 @@ export function NuevaBodegaPage({
       enviando={guardando}
     >
       {idPaso === 'nombre' ? (
-        <Campo
-          etiqueta="Nombre de la bodega"
-          value={nombre}
-          onChange={setNombre}
-          placeholder="Ej: Bodega Central"
-        />
+        <>
+          <Campo
+            etiqueta="Nombre de la bodega"
+            value={form.nombre}
+            onChange={setCampo('nombre')}
+            placeholder="Ej: Bodega Central"
+          />
+          <Campo
+            etiqueta="Teléfono de la bodega"
+            value={form.telefono}
+            onChange={setCampo('telefono')}
+            placeholder="Ej: 8888 8888"
+            type="tel"
+          />
+        </>
       ) : null}
       {idPaso === 'ubicacion' ? (
-        <Campo
-          etiqueta="Ubicación"
-          value={ubicacion}
+        <CamposUbicacion
+          ubicacion={form.ubicacion}
           onChange={setUbicacion}
-          placeholder="Ej: San José, Costa Rica"
+          errores={intentoUbicacion ? erroresUbicacion(form.ubicacion) : undefined}
         />
       ) : null}
       {idPaso === 'encargado' ? (
         <Campo
           etiqueta="Encargado (opcional)"
-          value={encargado}
-          onChange={setEncargado}
+          value={form.encargado}
+          onChange={setCampo('encargado')}
           placeholder="Ej: Sofía Vargas"
         />
       ) : null}

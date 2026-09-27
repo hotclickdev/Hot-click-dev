@@ -1,6 +1,8 @@
 import { warehouseService } from '@/services/orderService'
 import type { BodegaEmprendedor } from '@/prototipo/emprendedor/types'
 import type { Id } from '@/types/api'
+import { payloadCrearBodega, type FormBodega } from './nuevaBodegaHelpers'
+import { aEstadoUbicacionDespacho, type EstadoUbicacionDespacho } from './ubicacionDespachoEstado'
 
 type BodegaApi = {
   id?: Id
@@ -32,10 +34,11 @@ export async function cargarBodegasVendedor(): Promise<BodegaEmprendedor[]> {
   return listaBodegas(data).map((bodega, indice) => aBodegaEmprendedor(bodega, indice))
 }
 
-export async function crearBodegaVendedor(nombre: string, ubicacion: string, encargado: string) {
-  await warehouseService.create({
-    nombreBodega: nombre.trim(),
-    direccionExacta: ubicacion.trim(),
-    ...(encargado.trim() ? { encargadoNombre: encargado.trim() } : {}),
-  })
+export async function crearBodegaVendedor(form: FormBodega) {
+  await warehouseService.create(payloadCrearBodega(form))
+}
+
+export async function cargarEstadoUbicacionDespacho(): Promise<EstadoUbicacionDespacho> {
+  const { data } = await warehouseService.getUbicacionDespacho()
+  return aEstadoUbicacionDespacho(data)
 }

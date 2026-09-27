@@ -1,42 +1,42 @@
 import { giftCardService } from '@/services/giftCardService'
+import type { GiftCardAplicada } from './paquetesCompra'
 
 type GiftCardValidacion = {
   valida?: boolean
   saldoActual?: number
   codigo?: string
+  empresaId?: number | null
 }
 
 type ValidarGiftCardDeps = {
   gcInput: string
   token: string | null
   setGcEstado: (estado: string) => void
-  setGcSaldo: (saldo: number) => void
-  setGcCodigo: (codigo: string | null) => void
+  setGiftCard: (giftCard: GiftCardAplicada | null) => void
 }
 
 /**
- * Valida una gift card — mismo orden de setState que el original.
+ * Valida una tarjeta de regalo; guarda su negocio porque solo cubre el paquete de ese negocio.
  */
-export async function ejecutarValidarGiftCard({
-  gcInput, token, setGcEstado, setGcSaldo, setGcCodigo,
-}: ValidarGiftCardDeps) {
+export async function ejecutarValidarGiftCard({ gcInput, token, setGcEstado, setGiftCard }: ValidarGiftCardDeps) {
   if (!gcInput.trim() || !token) return
   setGcEstado('loading')
   try {
     const { data } = await giftCardService.validar(gcInput.trim().toUpperCase())
     const resultado = data as GiftCardValidacion
     if (resultado?.valida) {
-      setGcSaldo(resultado.saldoActual ?? 0)
-      setGcCodigo(resultado.codigo ?? gcInput.trim().toUpperCase())
+      setGiftCard({
+        codigo: resultado.codigo ?? gcInput.trim().toUpperCase(),
+        saldo: resultado.saldoActual ?? 0,
+        empresaId: resultado.empresaId ?? null,
+      })
       setGcEstado('valid')
     } else {
-      setGcSaldo(0)
-      setGcCodigo(null)
+      setGiftCard(null)
       setGcEstado('invalid')
     }
   } catch {
-    setGcSaldo(0)
-    setGcCodigo(null)
+    setGiftCard(null)
     setGcEstado('invalid')
   }
 }

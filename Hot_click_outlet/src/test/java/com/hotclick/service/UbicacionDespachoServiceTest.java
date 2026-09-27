@@ -75,4 +75,29 @@ class UbicacionDespachoServiceTest {
         assertThat(service.bloqueaPublicacion(7L)).isFalse();
         assertThat(service.activosSinUbicacion()).isEmpty();
     }
+
+    @Test
+    @DisplayName("estadoDe: negocio sin provincia ni cantón → tieneUbicacion false e informa la regla")
+    void estadoDe_sinUbicacion() {
+        ReflectionTestUtils.setField(service, "obligatoria", true);
+
+        assertThat(service.estadoDe(7L))
+            .isEqualTo(new UbicacionDespachoService.EstadoUbicacion(false, true));
+    }
+
+    @Test
+    @DisplayName("estadoDe: negocio con ubicación completa → tieneUbicacion true")
+    void estadoDe_conUbicacion() {
+        bodega.setProvincia("San José");
+        bodega.setCanton("Santa Ana");
+
+        assertThat(service.estadoDe(7L))
+            .isEqualTo(new UbicacionDespachoService.EstadoUbicacion(true, false));
+    }
+
+    @Test
+    @DisplayName("estadoDe: sin negocio en el scope → no avisa")
+    void estadoDe_sinEmpresa_noAvisa() {
+        assertThat(service.estadoDe(null).tieneUbicacion()).isTrue();
+    }
 }

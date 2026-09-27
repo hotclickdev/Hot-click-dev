@@ -41,6 +41,11 @@ public class PedidoAccessGuard {
             .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN));
     }
 
+    /** Un negocio solo ve su paquete; la compra completa es del comprador (o del staff). */
+    public boolean puedeVerCompraCompleta() {
+        return isAdmin() || companyScope.getCurrentEmpresaId() == null;
+    }
+
     public ResponseEntity<ResponseDTO> denyIfCannotView(Pedido pedido, HttpServletRequest request) {
         if (isAdmin()) return null;
         Long empresaId = companyScope.getCurrentEmpresaId();

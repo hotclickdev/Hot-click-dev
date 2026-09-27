@@ -68,8 +68,10 @@ public class EmailLayoutHelper {
              + "</div></body></html>";
     }
 
+    /** Seguro también dentro de atributos: los correos usan comillas simples en {@code href}. */
     public String esc(String s) {
         if (s == null) return "";
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace("\"", "&quot;").replace("'", "&#39;");
     }
 }

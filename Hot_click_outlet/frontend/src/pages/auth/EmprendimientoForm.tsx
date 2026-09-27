@@ -14,6 +14,11 @@ import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { AuthResponse } from '@/types/auth'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { RUTA_PANEL_VENDEDOR } from '@/utils/destinoVender'
+import { useUbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
+import {
+  MENSAJE_UBICACION_INCOMPLETA,
+  payloadUbicacionRegistro,
+} from '@/prototipo/compartido/ubicacionDespachoHelpers'
 
 export type FormEmprendimiento = {
   nombreEmpresa: string
@@ -50,11 +55,13 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
   })
+  const ubicacion = useUbicacionDespachoForm()
   const actualizarCampo = (field: keyof FormEmprendimiento) => (e: ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [field]: e.target.value }))
 
   const handleNext = (e: FormEvent) => {
     e.preventDefault(); setError('')
     if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
+    if (!ubicacion.validar()) { setError(MENSAJE_UBICACION_INCOMPLETA); return }
     setStep(1)
   }
 
@@ -73,6 +80,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
         correoAdmin:     form.correoAdmin.trim().toLowerCase(),
         passwordAdmin:   form.passwordAdmin,
         telefonoAdmin:   form.telefonoAdmin.trim() || undefined,
+        ...payloadUbicacionRegistro(ubicacion.ubicacion),
         ...(turnstileToken ? { turnstileToken } : {}),
       })
       const authData = authDataRegistro(data)
@@ -131,7 +139,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
           <AnimatePresence mode="wait">
             {step === 0 && (
               <EmprendimientoPasoNegocio
-                form={form} error={error} actualizarCampo={actualizarCampo}
+                form={form} ubicacion={ubicacion} error={error} actualizarCampo={actualizarCampo}
                 setForm={setForm} onSubmit={handleNext} />
             )}
             {step === 1 && (

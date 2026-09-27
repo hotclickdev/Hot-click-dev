@@ -3,6 +3,7 @@ import { listaPedidosDesdeRespuesta } from '@/pages/admin/ordenes/ordenesHelpers
 import type { Pedido, ItemPedido } from '@/types/pedido'
 import type { PedidoEmprendedor } from '@/prototipo/emprendedor/types'
 import type { PedidoMock } from '@/prototipo/compartido/mock'
+import type { DespachoPaquete } from '@/prototipo/emprendedor/pages/despacho/despachoPaquete'
 
 function estadoFigma(estado?: string): PedidoEmprendedor['estado'] {
   const e = (estado ?? '').toUpperCase()
@@ -62,4 +63,18 @@ export async function cargarPedidosVendedor(): Promise<Pedido[]> {
 
 export async function marcarPedidoEnviadoApi(id: string) {
   await orderService.updateStatus(id, 'ENVIADO')
+}
+
+export async function cargarDespachoPaquete(id: string): Promise<DespachoPaquete> {
+  const { data } = await orderService.getDespacho(id)
+  return data as DespachoPaquete
+}
+
+/** Con guía de Correos el backend guarda el seguimiento y le escribe al cliente; sin guía solo cambia el estado. */
+export async function despacharPaqueteApi(id: string, numeroGuia: string | null) {
+  if (numeroGuia) {
+    await orderService.asignarGuia(id, numeroGuia)
+    return
+  }
+  await marcarPedidoEnviadoApi(id)
 }

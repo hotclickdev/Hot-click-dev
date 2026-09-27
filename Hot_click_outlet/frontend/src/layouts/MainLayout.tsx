@@ -9,7 +9,15 @@ import PromoWelcomePopup from '@/components/ui/PromoWelcomePopup'
 import ReturnVisitorBanner from '@/components/ui/ReturnVisitorBanner'
 import { motion } from 'framer-motion'
 
-export default function MainLayout({ children }: { children?: ReactNode }) {
+type MainLayoutProps = {
+  children?: ReactNode
+  /** En móvil la página trae su propia barra (carrito y compra): sin header, barra inferior ni footer. */
+  barraMovilPropia?: boolean
+}
+
+export default function MainLayout({ children, barraMovilPropia = false }: MainLayoutProps) {
+  const soloDesktop = barraMovilPropia ? 'max-lg:hidden' : undefined
+  const espaciado = barraMovilPropia ? 'lg:pt-16' : 'pt-16 pb-20 md:pb-0'
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden" style={{ backgroundColor: 'var(--hc-bg)' }}>
       <a
@@ -18,20 +26,24 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
       >
         Saltar al contenido
       </a>
-      <Navbar />
+      <div className={soloDesktop}>
+        <Navbar />
+      </div>
       <motion.main
         id="main-content"
         initial={{ opacity: 0, y: 12, scale: 0.995 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="flex-1 pt-16 pb-20 md:pb-0"
+        className={`flex-1 ${espaciado}`}
         tabIndex={-1}
       >
         <ReturnVisitorBanner />
         {children}
       </motion.main>
-      <Footer />
-      <BottomNav />
+      <div className={soloDesktop}>
+        <Footer />
+        <BottomNav />
+      </div>
       <SearchPanel />
       <MiniCartDrawer />
       <ExitIntentModal />

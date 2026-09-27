@@ -12,6 +12,12 @@ import {
   F, Block, FormGroup, StyledInput, SaveButton, LoadingSkeleton, SectionHeader, MailIcon, CheckIcon, mensajeErrorConfig,
 } from './configUi'
 import TextoMas from '@/components/ui/TextoMas'
+import UbicacionDespachoFieldset from '@/components/registro/UbicacionDespachoFieldset'
+import { useUbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
+import {
+  MENSAJE_UBICACION_INCOMPLETA,
+  payloadUbicacionRegistro,
+} from '@/prototipo/compartido/ubicacionDespachoHelpers'
 import type { Id, JsonBody } from '@/types/api'
 import type { AuthResponse } from '@/types/auth'
 
@@ -38,6 +44,7 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
   const [negocioCorreo,    setNegocioCorreo]       = useState('')
   const [negocioTelefono,  setNegocioTelefono]     = useState('')
   const [savingNegocio,    setSavingNegocio]       = useState(false)
+  const negocioUbicacion = useUbicacionDespachoForm()
 
   useEffect(() => {
     if (!userId) return
@@ -57,24 +64,31 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
 
   const set = (f: CampoPerfil) => (e: ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [f]: e.target.value }))
 
+  const cerrarNuevoNegocio = () => {
+    setShowNuevoNegocio(false)
+    setNegocioNombre('')
+    setNegocioCorreo('')
+    setNegocioTelefono('')
+    negocioUbicacion.reiniciar()
+  }
+
   const handleCrearNegocio = async (e: FormEvent) => {
     e.preventDefault()
     if (!negocioNombre.trim()) return
     if (!negocioCorreo.trim()) { toast({ message: 'El correo oficial del negocio es requerido', type: 'error' }); return }
+    if (!negocioUbicacion.validar()) { toast({ message: MENSAJE_UBICACION_INCOMPLETA, type: 'error' }); return }
     setSavingNegocio(true)
     try {
       const { data } = await authService.nuevoNegocio({
         nombreEmpresa:   negocioNombre.trim(),
         correoEmpresa:   negocioCorreo.trim().toLowerCase(),
         telefonoEmpresa: negocioTelefono.trim() || undefined,
+        ...payloadUbicacionRegistro(negocioUbicacion.ubicacion),
       })
       const authData = (data as { data?: AuthResponse })?.data ?? (data as AuthResponse)
       storeLogin(authData as AuthResponse)
       toast({ message: '¡Negocio creado! Ahora estás trabajando en el nuevo negocio.', type: 'success' })
-      setShowNuevoNegocio(false)
-      setNegocioNombre('')
-      setNegocioCorreo('')
-      setNegocioTelefono('')
+      cerrarNuevoNegocio()
       navigate('/admin')
     } catch (err: unknown) {
       toast({ message: mensajeErrorConfig(err, 'Error al crear el negocio'), type: 'error' })
@@ -209,6 +223,7 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
                   />
                 </div>
               </div>
+              <UbicacionDespachoFieldset form={negocioUbicacion} />
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="submit"
@@ -219,7 +234,7 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowNuevoNegocio(false); setNegocioNombre(''); setNegocioCorreo(''); setNegocioTelefono('') }}
+                  onClick={cerrarNuevoNegocio}
                   style={{ padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontFamily: F.body, background: 'transparent', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', cursor: 'pointer' }}
                 >
                   Cancelar

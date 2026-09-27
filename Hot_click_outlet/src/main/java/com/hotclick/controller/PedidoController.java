@@ -13,6 +13,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.AuditoriaAdminRegistroService;
+import com.hotclick.service.DespachoPaqueteService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
 import com.hotclick.utils.Constants;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -49,6 +51,7 @@ public class PedidoController {
     @Autowired private PedidoAccessGuard pedidoAccessGuard;
     @Autowired private PedidoTenantResponder pedidoTenantResponder;
     @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
+    @Autowired private DespachoPaqueteService despachoPaqueteService;
 
     @PostMapping("/manual")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
@@ -139,6 +142,25 @@ public class PedidoController {
         }
     }
 
+    @Transactional(readOnly = true,
+        noRollbackFor = com.hotclick.exception.RecursoNoEncontradoException.class)
+    @GetMapping("/{id}/compra")
+    public ResponseEntity<ResponseDTO> paquetesDeLaCompra(@PathVariable Long id, HttpServletRequest request) {
+        try {
+            Pedido pedido = pedidoService.buscarPorId(id);
+            ResponseEntity<ResponseDTO> denied = pedidoAccessGuard.denyIfCannotView(pedido, request);
+            if (denied != null) return denied;
+            List<Pedido> paquetes = pedidoAccessGuard.puedeVerCompraCompleta()
+                ? pedidoService.paquetesDeLaCompra(pedido)
+                : List.of(pedido);
+            return ResponseEntity.ok(ResponseDTO.success("Paquetes de la compra", paquetes));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<ResponseDTO> pedidosPorUsuario(
             @PathVariable Long usuarioId,
@@ -173,6 +195,14 @@ public class PedidoController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    /** Vista «Despachar paquete»: solo el negocio dueño del paquete (o admin) ve la dirección del cliente. */
+    @GetMapping("/{id}/despacho")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    public ResponseEntity<ResponseDTO> despachoPaquete(@PathVariable Long id) {
+        return pedidoTenantResponder.conAcceso(id, "Paquete a despachar",
+            existente -> despachoPaqueteService.armar(existente.getId()));
     }
 
     @PutMapping("/{id}/guia")

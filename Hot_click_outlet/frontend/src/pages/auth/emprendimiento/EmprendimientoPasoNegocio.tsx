@@ -3,16 +3,19 @@ import PhoneField from '@/components/ui/PhoneField'
 import Input from '@/components/ui/Input'
 import ErrMsg from '../ErrMsg'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import UbicacionDespachoFieldset from '@/components/registro/UbicacionDespachoFieldset'
 import type { ChangeEvent, Dispatch, FormEvent, SetStateAction } from 'react'
+import type { UbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
 import type { FormEmprendimiento } from '../EmprendimientoForm'
 
 /**
  * Paso 0 — datos del negocio.
  */
 export default function EmprendimientoPasoNegocio({
-  form, error, actualizarCampo, setForm, onSubmit,
+  form, ubicacion, error, actualizarCampo, setForm, onSubmit,
 }: {
   form: FormEmprendimiento
+  ubicacion: UbicacionDespachoForm
   error: string
   actualizarCampo: (field: keyof FormEmprendimiento) => (e: ChangeEvent<HTMLInputElement>) => void
   setForm: Dispatch<SetStateAction<FormEmprendimiento>>
@@ -28,6 +31,7 @@ export default function EmprendimientoPasoNegocio({
         value={form.correoEmpresa} onChange={actualizarCampo('correoEmpresa')} hint="Opcional" maxLength={150} />
       <PhoneField label="Teléfono del negocio"
         value={form.telefonoEmpresa} onChange={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))} />
+      <UbicacionDespachoFieldset form={ubicacion} />
       {error && <ErrMsg>{error}</ErrMsg>}
       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
         style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>

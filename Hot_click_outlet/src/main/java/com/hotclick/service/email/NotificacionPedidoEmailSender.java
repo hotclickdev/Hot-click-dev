@@ -60,7 +60,7 @@ public class NotificacionPedidoEmailSender {
             try {
                 resendEmailService.send(
                     cliente.getCorreo(),
-                    "Tu pedido va en camino — " + pedido.getNumeroPedido(),
+                    "Tu pedido va en camino — " + NotificacionGuiaEmailBuilder.numeroConPaquete(pedido),
                     pedidoEmailBuilder.buildNotificacionGuia(pedido, cliente)
                 );
                 log.info("Email guía enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());

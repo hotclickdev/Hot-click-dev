@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.persistence.*;
+import org.hibernate.Hibernate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -231,6 +232,19 @@ public class Pedido extends BaseEntity {
     public Compra getCompra() { return compra; }
     public void setCompra(Compra compra) { this.compra = compra; }
     public Long getCompraId() { return compra != null ? compra.getId() : null; }
+
+    // Solo lectura: devuelven null si la relación LAZY no se cargó dentro de la transacción.
+    public String getNumeroCompra() { return cargado(compra) ? compra.getNumeroCompra() : null; }
+    public Integer getCantidadPaquetes() { return cargado(compra) ? compra.getCantidadPaquetes() : null; }
+    public String getNombreNegocio() {
+        if (!cargado(empresa)) return null;
+        String comercial = empresa.getNombreComercial();
+        return comercial != null && !comercial.isBlank() ? comercial : empresa.getNombreEmpresa();
+    }
+
+    private static boolean cargado(Object relacion) {
+        return relacion != null && Hibernate.isInitialized(relacion);
+    }
 
     public Integer getNumeroPaquete() { return numeroPaquete; }
     public void setNumeroPaquete(Integer numeroPaquete) { this.numeroPaquete = numeroPaquete; }
