@@ -76,6 +76,8 @@ export default function CheckoutLayout({
     totalFinal,
     aceptaDatos,
     setAceptaDatos,
+    paquetes,
+    envioVaria,
   } = form
 
   const body = (
@@ -128,6 +130,8 @@ export default function CheckoutLayout({
         <div className={skinVisitante ? undefined : 'lg:col-span-1'}>
           <CheckoutSummary
             items={items}
+            paquetes={paquetes}
+            envioVaria={envioVaria}
             token={token}
             gcInput={gcInput}
             setGcInput={setGcInput}

@@ -3,7 +3,6 @@ package com.hotclick.service.payment;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
-import com.hotclick.model.Producto;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.utils.Constants;
@@ -12,8 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 public class CheckoutValidator {
@@ -73,19 +70,12 @@ public class CheckoutValidator {
         }
     }
 
-    public void validateRetiroEnTienda(String metodoEnvio, Bodega bodega, Long bodegaId,
-                                       Map<Long, Producto> productosMap) {
-        // ── Retiro en tienda: solo si la bodega lo habilita y el carrito completo
-        //    pertenece a esa única bodega (evita "retiro gratis" en carritos multi-negocio).
-        if (Constants.ENVIO_RETIRO.equals(metodoEnvio)) {
-            if (!Boolean.TRUE.equals(bodega.getPermiteRetiroCliente())) {
-                throw new IllegalStateException("Esta bodega no tiene habilitado el retiro en tienda");
-            }
-            boolean todosMismaBodega = productosMap.values().stream()
-                .allMatch(p -> p.getBodega() != null && bodegaId.equals(p.getBodega().getId()));
-            if (!todosMismaBodega) {
-                throw new IllegalStateException("El retiro en tienda solo aplica cuando todos los productos son de la misma bodega");
-            }
+    /** El retiro en tienda es por paquete: lo decide la bodega de origen de ese paquete. */
+    public void validarRetiroPaquete(String metodoEnvio, Bodega bodega) {
+        if (Constants.ENVIO_RETIRO.equals(metodoEnvio) && !Boolean.TRUE.equals(bodega.getPermiteRetiroCliente())) {
+            String tienda = bodega.getEmpresa() != null && bodega.getEmpresa().getNombreEmpresa() != null
+                ? bodega.getEmpresa().getNombreEmpresa() : bodega.getNombreBodega();
+            throw new IllegalStateException(tienda + " no tiene habilitado el retiro en tienda");
         }
     }
 }

@@ -41,8 +41,8 @@ public class PaymentService {
     @Autowired private CheckoutValidator                checkoutValidator;
     @Autowired private GuestUserResolver                guestUserResolver;
     @Autowired private StockReservationService          stockReservationService;
-    @Autowired private OrderPricingService              orderPricingService;
-    @Autowired private CheckoutOrderFactory             checkoutOrderFactory;
+    @Autowired private CheckoutGrupoFactory             checkoutGrupoFactory;
+    @Autowired private PedidoGrupoService               pedidoGrupoService;
     @Autowired private PaymentRecordFactory             paymentRecordFactory;
     @Autowired private PaymentStatusAssembler           paymentStatusAssembler;
     @Autowired private PaymentNotificationsFacade       paymentNotificationsFacade;
@@ -63,64 +63,66 @@ public class PaymentService {
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
 
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
-        Bodega bodega = checkoutValidator.loadBodega(bodegaId);
-        checkoutValidator.assertBodegaTenant(bodega, bodegaId);
+        Bodega bodegaDefault = checkoutValidator.loadBodega(bodegaId);
 
         StockReservationResult reservation = stockReservationService.reserveForCheckout(req.getItems());
-        checkoutValidator.validateRetiroEnTienda(req.getMetodoEnvio(), bodega, bodegaId, reservation.productosMap());
+        CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
+            req, reservation, bodegaDefault, provider, usuario, Constants.PEDIDO_PENDIENTE);
+        Pedido principal = grupo.principal();
+        atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());
+        posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), principal.getId());
 
-        OrderPricingResult pricing = orderPricingService.calculate(req, bodega, reservation.subtotal());
-
-        Pedido pedido = checkoutOrderFactory.createPendingOrder(
-            req, pricing, reservation.subtotal(), reservation.costoTotal(), provider, usuario, bodega);
-        checkoutOrderFactory.addItemSnapshots(pedido, req.getItems(), reservation.productosMap());
-        atribucionPedidoService.guardarSiPresente(pedido, req.getAtribucion());
-        posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), pedido.getId());
-
-        if (pricing.pagoGC()) {
-            stockReservationService.consumeForGiftCard(pedido);
-            pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
-            pedido.setMetodoPago("GIFT_CARD");
-            pedidoRepository.save(pedido);
-            giftCardService.canjear(pricing.gcCodigo(), pedido, pricing.gcMonto());
-            paymentNotificationsFacade.onGiftCardFullPayment(pedido, pricing.gcCodigo());
-            posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
-            return conCancelToken(new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
-                null, "PAGADO", 0, "GIFT_CARD"));
+        if (grupo.cubiertoPorGiftCard()) {
+            for (CheckoutGrupoFactory.Subpedido s : grupo.subpedidos()) {
+                Pedido pedido = s.pedido();
+                stockReservationService.consumeForGiftCard(pedido);
+                pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+                pedido.setMetodoPago("GIFT_CARD");
+                pedidoRepository.save(pedido);
+                if (s.pricing().gcMonto() > 0) {
+                    giftCardService.canjear(s.pricing().gcCodigo(), pedido, s.pricing().gcMonto());
+                }
+                paymentNotificationsFacade.onGiftCardFullPayment(pedido, s.pricing().gcCodigo());
+            }
+            posQrVentaService.marcarPagadoPorPedidoTienda(principal.getId());
+            return conCancelToken(new PaymentCheckoutResponse(principal.getId(), principal.getNumeroPedido(),
+                null, "PAGADO", 0, "GIFT_CARD"), grupo);
         }
 
         PaymentSession session;
         try {
-            session = providerFactory.get(provider).crearSesion(pedido, usuario);
+            session = providerFactory.get(provider)
+                .crearSesion(CheckoutGrupoFactory.paraCobro(principal, grupo.totalCobro()), usuario);
         } catch (RuntimeException e) {
-            stockReservationService.liberarReservas(pedido);
+            grupo.pedidos().forEach(stockReservationService::liberarReservas);
             throw e;
         } catch (Exception e) {
-            stockReservationService.liberarReservas(pedido);
+            grupo.pedidos().forEach(stockReservationService::liberarReservas);
             throw new IntegracionExternaException(provider, IntegracionExternaException.Tipo.IO_ERROR,
                 "Error iniciando sesión de pago: " + e.getMessage(), e);
         }
 
-        paymentRecordFactory.createAndPersist(session, pedido, usuario, provider, pricing.total());
+        paymentRecordFactory.createAndPersist(session, principal, usuario, provider, grupo.totalCobro());
 
-        log.info("Checkout iniciado: provider={} pedido={} total={}",
-            provider, pedido.getNumeroPedido(), pricing.total());
+        log.info("Checkout iniciado: provider={} pedido={} paquetes={} total={}",
+            provider, principal.getNumeroPedido(), grupo.subpedidos().size(), grupo.totalCobro());
 
-        paymentNotificationsFacade.onPedidoCreado(pedido, provider);
+        grupo.pedidos().forEach(p -> paymentNotificationsFacade.onPedidoCreado(p, provider));
 
         if (session.modoEmbebido()) {
             return conCancelToken(PaymentCheckoutResponse.embebido(
-                pedido.getId(), pedido.getNumeroPedido(),
-                session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider,
-                session.sdkToken(), session.externalId()));
+                principal.getId(), principal.getNumeroPedido(),
+                session.redirectUrl(), Constants.PAGO_PENDIENTE, grupo.totalCobro(), provider,
+                session.sdkToken(), session.externalId()), grupo);
         }
         return conCancelToken(new PaymentCheckoutResponse(
-            pedido.getId(), pedido.getNumeroPedido(),
-            session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider));
+            principal.getId(), principal.getNumeroPedido(),
+            session.redirectUrl(), Constants.PAGO_PENDIENTE, grupo.totalCobro(), provider), grupo);
     }
 
-    private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response) {
+    private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response, CheckoutGrupoFactory.Grupo grupo) {
         response.setCancelToken(guestCancelTokenService.emitir(response.getNumeroPedido()));
+        response.setPaquetes(CheckoutGrupoFactory.resumen(grupo.pedidos()));
         return response;
     }
 
@@ -143,7 +145,7 @@ public class PaymentService {
     public PaymentStatusResponse consultarEstado(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
+        Pago pago = pedidoGrupoService.pagoDelGrupo(pedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
         return buildStatusResponse(pago);
     }

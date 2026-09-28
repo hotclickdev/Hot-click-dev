@@ -29,6 +29,7 @@ public class PaymentExpirationCleanupService {
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
+    @Autowired private PedidoGrupoService         pedidoGrupoService;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
@@ -67,12 +68,13 @@ public class PaymentExpirationCleanupService {
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagosActualizados.add(pago);
 
-            Pedido pedido = pago.getPedido();
-            if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-                pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                pedidosActualizados.add(pedido);
-                stockReservationService.liberarReservas(pedido);
-                log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
+            for (Pedido pedido : pedidoGrupoService.delGrupo(pago.getPedido())) {
+                if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
+                    pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+                    pedidosActualizados.add(pedido);
+                    stockReservationService.liberarReservas(pedido);
+                    log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
+                }
             }
         }
 
