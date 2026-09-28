@@ -13,6 +13,7 @@ import type { VarianteProducto } from './productoHelpers'
 import TitleAndBadges from './TitleAndBadges'
 import ProductPriceRow from './ProductPriceRow'
 import ProductLowStockAlert from './ProductLowStockAlert'
+import FormularioAvisoReposicion from './FormularioAvisoReposicion'
 import QuantitySelector from './QuantitySelector'
 import ProductBuyActions from './ProductBuyActions'
 import TrustBadges from './TrustBadges'
@@ -116,6 +117,10 @@ export default function ProductInfo({
 
       {inStock && product.stock <= 5 && !esCotizable && (
         <ProductLowStockAlert product={product} t={t} />
+      )}
+
+      {!inStock && !esCotizable && (
+        <FormularioAvisoReposicion product={product} t={t} />
       )}
 
       {inStock && !esCotizable && (

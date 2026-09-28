@@ -1,13 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import MainLayout from '@/layouts/MainLayout'
 import { convenioService, listaConvenios } from '@/services/convenioService'
 import EmprendimientosHero from './emprendimientos/EmprendimientosHero'
 import EmprendimientosVacio from './emprendimientos/EmprendimientosVacio'
+import BuscarNegocio from './emprendimientos/BuscarNegocio'
 import ConvenioCard, { type ConvenioPublico } from './emprendimientos/ConvenioCard'
+
+function coincide(convenio: ConvenioPublico, termino: string) {
+  const t = termino.trim().toLowerCase()
+  if (!t) return true
+  return (convenio.nombre ?? '').toLowerCase().includes(t)
+    || (convenio.descripcion ?? '').toLowerCase().includes(t)
+}
 
 export default function EmprendimientosPage() {
   const [lista, setLista] = useState<ConvenioPublico[]>([])
   const [loading, setLoading] = useState(true)
+  const [busqueda, setBusqueda] = useState('')
 
   useEffect(() => {
     convenioService.getPublicos()
@@ -16,11 +25,13 @@ export default function EmprendimientosPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const filtrada = useMemo(() => lista.filter((c) => coincide(c, busqueda)), [lista, busqueda])
+
   return (
     <MainLayout>
       <div style={{ minHeight: '60vh', background: 'var(--hc-bg)' }}>
         <EmprendimientosHero />
-        <div className="max-w-7xl mx-auto px-5 sm:px-8" style={{ paddingTop: 48, paddingBottom: 64 }}>
+        <div className="max-w-2xl mx-auto px-5 sm:px-8" style={{ paddingTop: 28, paddingBottom: 64 }}>
           {loading && (
             <div style={{ textAlign: 'center', padding: 80, color: 'var(--hc-muted)' }}>
               <div
@@ -35,17 +46,23 @@ export default function EmprendimientosPage() {
           )}
           {!loading && lista.length === 0 && <EmprendimientosVacio />}
           {!loading && lista.length > 0 && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                gap: 20,
-              }}
-            >
-              {lista.map((convenio, indice) => (
-                <ConvenioCard key={convenio.id} convenio={convenio} indice={indice} />
-              ))}
-            </div>
+            <>
+              <BuscarNegocio value={busqueda} onChange={setBusqueda} />
+              <p className="text-sm mt-5 mb-3" style={{ color: 'var(--hc-muted)' }}>
+                {filtrada.length} {filtrada.length === 1 ? 'negocio' : 'negocios'}
+              </p>
+              {filtrada.length === 0 ? (
+                <p className="text-sm text-center py-16" style={{ color: 'var(--hc-muted)' }}>
+                  Ningún negocio coincide con “{busqueda}”.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {filtrada.map((convenio, indice) => (
+                    <ConvenioCard key={convenio.id} convenio={convenio} indice={indice} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

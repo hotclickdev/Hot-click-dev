@@ -1,6 +1,7 @@
 package com.hotclick.model;
 import com.hotclick.utils.Constants;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -290,15 +291,19 @@ public class Empresa {
     public String getNombreComercialFe() { return nombreComercialFe != null ? nombreComercialFe : nombreComercial; }
     public void setNombreComercialFe(String v) { this.nombreComercialFe = v; }
 
+    @JsonIgnore
     public String getUsuarioHacienda() { return usuarioHacienda; }
     public void setUsuarioHacienda(String v) { this.usuarioHacienda = v; }
 
+    @JsonIgnore
     public String getClaveHaciendaEnc() { return claveHaciendaEnc; }
     public void setClaveHaciendaEnc(String v) { this.claveHaciendaEnc = v; }
 
+    @JsonIgnore
     public String getCertP12Path() { return certP12Path; }
     public void setCertP12Path(String v) { this.certP12Path = v; }
 
+    @JsonIgnore
     public String getPinCertEnc() { return pinCertEnc; }
     public void setPinCertEnc(String v) { this.pinCertEnc = v; }
 
@@ -314,6 +319,7 @@ public class Empresa {
             && pinCertEnc != null && !pinCertEnc.isBlank();
     }
 
+    @JsonIgnore
     public String getStripeCustomerId() { return stripeCustomerId; }
     public void setStripeCustomerId(String v) { this.stripeCustomerId = v; }
 

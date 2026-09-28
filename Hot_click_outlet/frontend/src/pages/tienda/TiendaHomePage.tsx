@@ -9,6 +9,7 @@ import EsqueletoCatalogo from './EsqueletoCatalogo'
 import TiendaCatalogoError from './TiendaCatalogoError'
 import TiendaCatalogoNuevo from './TiendaCatalogoNuevo'
 import TiendaCatalogoBusquedaVacia from './TiendaCatalogoBusquedaVacia'
+import TiendaSobreNosotros from './TiendaSobreNosotros'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 
@@ -90,6 +91,8 @@ export default function TiendaHomePage() {
       {empresa?.tagline && !catalogoNuevo && (
         <p className="text-center text-[var(--t-muted)] text-sm">{empresa.tagline}</p>
       )}
+
+      <TiendaSobreNosotros empresa={empresa} />
 
       {!catalogoNuevo && !loadError && (
         <BuscadorTienda busqueda={busqueda} onBusqueda={setBusqueda} onBuscar={buscar} />

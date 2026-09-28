@@ -199,6 +199,51 @@ export function generateOrganizationJsonLd(urlBase: string, socialUrls: string[]
   }
 }
 
+/** Tienda pública de un vendedor del marketplace (/tienda/:slug). */
+type TiendaJsonLd = {
+  slug?: string
+  nombreComercial?: string
+  descripcion?: string | null
+  logoUrl?: string | null
+  categoriaNegocio?: string | null
+  whatsapp?: string | null
+  retiro?: {
+    direccion?: string
+    provincia?: string
+    canton?: string
+  } | null
+}
+
+/**
+ * Schema.org LocalBusiness para el perfil público de un emprendedor.
+ * Se referencia como `member` de la Organization de HotClick.
+ */
+export function generateLocalBusinessJsonLd(tienda: TiendaJsonLd, urlBase: string = SITE_URL) {
+  const url = `${urlBase}/tienda/${tienda.slug ?? ''}`
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: tienda.nombreComercial,
+    description: tienda.descripcion || undefined,
+    url,
+    image: tienda.logoUrl || undefined,
+    telephone: tienda.whatsapp ? `+${tienda.whatsapp}` : undefined,
+    additionalType: tienda.categoriaNegocio || undefined,
+    address: tienda.retiro?.direccion ? {
+      '@type': 'PostalAddress',
+      streetAddress: tienda.retiro.direccion,
+      addressRegion: tienda.retiro.provincia,
+      addressLocality: tienda.retiro.canton,
+      addressCountry: 'CR',
+    } : undefined,
+    memberOf: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: urlBase,
+    },
+  }
+}
+
 /**
  * Schema.org FAQPage — enables rich FAQ snippets in Google search results.
  */

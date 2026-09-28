@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Outlet, useParams } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
+import Seo from '@/components/seo/Seo'
+import { generateLocalBusinessJsonLd } from '@/utils/jsonLd'
 import { estiloMarcaTienda } from './tiendaTheme'
 import TiendaHeader from './TiendaHeader'
 import TiendaFooter from './TiendaFooter'
@@ -47,9 +50,32 @@ export default function TiendaLayout() {
 
   const empresaVista = empresa as EmpresaTiendaLayout | null
   const nombre = empresaVista?.nombreComercial ?? (slug as string)
+  const descripcionSeo = empresaVista?.tagline || empresaVista?.descripcion
+    || `Comprá en la tienda de ${nombre} dentro de HotClick, el marketplace de emprendedores de Costa Rica.`
 
   return (
     <div className="hc-tenant-theme flex flex-col min-h-screen" style={estiloMarcaTienda(empresa)}>
+      <Seo
+        title={`${nombre} · HotClick`}
+        description={descripcionSeo}
+        image={empresaVista?.ogImagenUrl || empresaVista?.logoUrl || undefined}
+        url={`https://hotclick.lat/tienda/${slug}`}
+      />
+      {empresa && (
+        <Helmet>
+          <script type="application/ld+json">
+            {JSON.stringify(generateLocalBusinessJsonLd({
+              slug: slug as string,
+              nombreComercial: nombre,
+              descripcion: empresaVista?.descripcion,
+              logoUrl: empresaVista?.logoUrl,
+              categoriaNegocio: empresaVista?.categoriaNegocio,
+              whatsapp: empresaVista?.whatsapp,
+              retiro: empresaVista?.retiro,
+            }))}
+          </script>
+        </Helmet>
+      )}
       <TiendaHeader
         slug={slug as string}
         nombre={nombre}
