@@ -13,7 +13,7 @@ import type { VarianteProducto } from './productoHelpers'
 import TitleAndBadges from './TitleAndBadges'
 import ProductPriceRow from './ProductPriceRow'
 import ProductLowStockAlert from './ProductLowStockAlert'
-import NotifyRestockForm from './NotifyRestockForm'
+import FormularioAvisoReposicion from './FormularioAvisoReposicion'
 import QuantitySelector from './QuantitySelector'
 import ProductBuyActions from './ProductBuyActions'
 import TrustBadges from './TrustBadges'
@@ -120,7 +120,7 @@ export default function ProductInfo({
       )}
 
       {!inStock && !esCotizable && (
-        <NotifyRestockForm product={product} t={t} />
+        <FormularioAvisoReposicion product={product} t={t} />
       )}
 
       {inStock && !esCotizable && (

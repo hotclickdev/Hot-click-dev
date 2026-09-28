@@ -147,7 +147,7 @@ export default function ProductGalleryFullscreen({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
         className="fixed inset-0 z-[100] flex flex-col"
-        style={{ background: '#0a0a0c' }}
+        style={{ background: 'var(--hc-n-950)' }}
       >
         {/* Barra superior */}
         <div className="flex items-center justify-between px-2 h-14 shrink-0">
@@ -228,7 +228,7 @@ export default function ProductGalleryFullscreen({
                 aria-label={`Ver foto ${i + 1}`}
                 aria-current={i === activeImg}
                 className="shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-opacity"
-                style={{ borderColor: i === activeImg ? '#fff' : 'transparent', opacity: i === activeImg ? 1 : 0.5 }}
+                style={{ borderColor: i === activeImg ? 'var(--hc-accent)' : 'transparent', opacity: i === activeImg ? 1 : 0.5 }}
               >
                 <img
                   src={getOptimizedUrl(url, { width: 64 })}

@@ -29,7 +29,7 @@ export default function TiendaSobreNosotros({ empresa }: { empresa: EmpresaTiend
     <section className={`${CLASE_TARJETA_TIENDA} p-4 sm:p-5 space-y-3`}>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {categoriaNegocio && (
-          <span className="px-2.5 py-1 rounded-full font-medium" style={{ background: 'var(--t-surface-2, #F1F3F6)', color: 'var(--t-text)' }}>
+          <span className="px-2.5 py-1 rounded-full font-medium" style={{ background: 'var(--t-hover)', color: 'var(--t-text)' }}>
             {categoriaNegocio}
           </span>
         )}
@@ -37,7 +37,7 @@ export default function TiendaSobreNosotros({ empresa }: { empresa: EmpresaTiend
           <span className="text-[var(--t-muted)]">En HotClick desde {fechaLegible(enHotclickDesde)}</span>
         )}
         {facturaElectronica && (
-          <span className="px-2.5 py-1 rounded-full font-medium flex items-center gap-1" style={{ background: '#E9F7F0', color: '#178A50' }}>
+          <span className="px-2.5 py-1 rounded-full font-medium flex items-center gap-1" style={{ background: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>

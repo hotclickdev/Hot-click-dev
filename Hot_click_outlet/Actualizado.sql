@@ -3982,7 +3982,7 @@ SET comision_porcentaje = 9.00,
     descripcion = 'Plan gratuito. Comisión 9% por venta (mín. ₡700), cubre pasarela y plataforma.'
 WHERE nombre = 'EMPRENDEDOR';
 
--- V142: "Avisame cuando vuelva" — interés de clientes en un producto agotado.
+-- V143: "Avisame cuando vuelva" — interés de clientes en un producto agotado.
 -- Guarda el interés (email + usuario opcional si tenía sesión). El envío
 -- automático del correo cuando el producto vuelve a stock queda pendiente
 -- (NUEVO · por programar); esta tabla solo persiste la suscripción.

@@ -8,7 +8,7 @@ import type { Producto } from '@/types/producto'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-type NotifyRestockFormProps = {
+type FormularioAvisoReposicionProps = {
   product: Producto
   t: TFunction
 }
@@ -19,7 +19,7 @@ type NotifyRestockFormProps = {
  * el backend; el envío automático del correo al reponer stock es
  * NUEVO · por programar (todavía no hay disparador de reposición).
  */
-export default function NotifyRestockForm({ product, t }: NotifyRestockFormProps) {
+export default function FormularioAvisoReposicion({ product, t }: FormularioAvisoReposicionProps) {
   const userEmail = useAuthStore((s) => s.userEmail)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
   const [correo, setCorreo] = useState(userEmail || '')
