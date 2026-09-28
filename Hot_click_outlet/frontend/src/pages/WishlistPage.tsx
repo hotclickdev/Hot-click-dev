@@ -9,6 +9,8 @@ import useCartStore from '@/store/cartStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import { IconoCorazon } from '@/components/comprador/estados/iconosEstado'
 import type { ItemWishlist } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 
@@ -37,36 +39,13 @@ export default function WishlistPage() {
   if (items.length === 0) {
     return (
       <MainLayout>
-        <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center gap-5"
-          >
-            <div className="relative w-28 h-28 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-3xl" style={{ background: 'color-mix(in srgb, #ec4899 8%, transparent)', border: '1px solid color-mix(in srgb, #ec4899 18%, transparent)' }} />
-              <div className="absolute inset-0 rounded-3xl blur-2xl opacity-20" style={{ background: '#ec4899' }} />
-              <svg className="relative w-14 h-14 text-pink-400" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>{t('wishlist.empty')}</h1>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                {t('wishlist.emptySub')}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 mt-1">
-              <button type="button"
-                onClick={() => navigate('/productos')}
-                className="hc-btn hc-btn-primary min-h-11 px-6"
-              >
-                {t('wishlist.explore')}
-              </button>
-            </div>
-          </motion.div>
-        </div>
+        <EstadoVacio
+          nivel="h1"
+          icono={<IconoCorazon />}
+          titulo={t('wishlist.empty')}
+          texto={t('wishlist.emptySub')}
+          accion={{ texto: t('wishlist.explore'), onClick: () => navigate('/productos') }}
+        />
       </MainLayout>
     )
   }

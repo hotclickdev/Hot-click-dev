@@ -4,7 +4,7 @@ import { IconBadgeOfficial, IconBadgeSoon } from './enviosIcons'
 
 function PriceNote({ service }: { service: EnviosService }) {
   if (service.id === 'encomienda') {
-    return <span className="card-price-note">+ tarifa del mensajero</span>
+    return <span className="card-price-note">Te confirmamos el monto antes de despachar</span>
   }
   if (service.id === 'normal-gam' || service.id === 'fuera-gam') {
     return <span className="card-price-note">Precio estimado — puede variar</span>
