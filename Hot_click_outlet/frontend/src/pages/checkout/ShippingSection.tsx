@@ -149,7 +149,7 @@ function DomicilioFields({
 type ShippingSectionProps = {
   opciones: OpcionEnvio[]
   metodoEnvio: string
-  setMetodoEnvio: Dispatch<SetStateAction<string>>
+  setMetodoEnvio: (value: string) => void
   paquetes: PaqueteCheckout[]
   metodoEnvioPorPaquete: Record<string, string>
   setMetodoEnvioPaquete: (bodegaId: string, value: string) => void

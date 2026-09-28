@@ -175,6 +175,14 @@ export default function OrderCardExpanded({
         </div>
       )}
 
+      {order.grupoPago && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px dashed color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}>
+          <span style={{ color: 'var(--hc-accent)' }}>Pago agrupado (multivendedor)</span>
+          <span className="font-mono flex-1 truncate" style={{ color: 'var(--hc-muted)' }}>{order.grupoPago}</span>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {order.clienteCorreo && order.clienteCorreo !== '—' && (
           <button type="button"

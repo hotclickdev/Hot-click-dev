@@ -31,6 +31,8 @@ export type CheckoutFormState = {
   setMetodoEnvioPaquete: (bodegaId: string, value: string) => void
   /** true si algún paquete necesita dirección de entrega (no todos van a retiro en tienda). */
   necesitaDireccion: boolean
+  /** true si algún paquete usa un método cuyo costo no cobra HotClick (ej. encomienda) — el total mostrado no lo incluye. */
+  envioVaria: boolean
   metodoPago: string
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
@@ -154,6 +156,13 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     return opciones.find((o) => o.value === metodoEnvioPorPaquete[p.bodegaId])?.needsAddress ?? false
   })
 
+  // Encomienda cuesta 0 en el pago de HotClick (la empresa de transporte cobra directo al recibir) —
+  // el total del checkout no debe leerse como "envío gratis" cuando en realidad el costo varía y lo paga el cliente aparte.
+  const envioVaria = paquetes.some((p) => {
+    const opciones = opcionesEnvio(bodegaRetiroDePaquete(p))
+    return opciones.find((o) => o.value === metodoEnvioPorPaquete[p.bodegaId])?.varia ?? false
+  })
+
   function validatePhone(v: string) {
     return mensajeTelefono(v, t)
   }
@@ -237,6 +246,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     metodoEnvioPorPaquete,
     setMetodoEnvioPaquete,
     necesitaDireccion,
+    envioVaria,
     metodoPago,
     setMetodoPago,
     notas,

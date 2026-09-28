@@ -84,9 +84,18 @@ function PedidoRow({
     <div className="px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold" style={{ color: 'var(--hc-text)' }}>#{pedido.id}</span>
             <EstadoBadge estado={pedido.estado} />
+            {pedido.grupoPago && (
+              <span
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}
+                title="El cliente compró junto con otro(s) vendedor(es) — HotClick cobró todo en un solo pago y liquida cada parte por separado."
+              >
+                Parte de compra multivendedor
+              </span>
+            )}
           </div>
           <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--hc-muted)' }}>{pedido.cliente}</p>
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>{pedido.metodoPago} · {formatDateShort(pedido.fecha)}</p>

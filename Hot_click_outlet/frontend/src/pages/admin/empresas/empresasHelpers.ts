@@ -48,6 +48,8 @@ export type EmpresaPedidoTab = {
   estado?: string
   cliente?: string
   metodoPago?: string
+  /** Presente cuando este subpedido es parte de una compra con varios vendedores (un solo pago a HotClick). */
+  grupoPago?: string | null
 }
 
 export type EmpresaMiembroTab = {
