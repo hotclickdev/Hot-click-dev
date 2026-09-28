@@ -240,7 +240,7 @@ final class SecurityAuthorizationRules {
                 "/visitante", "/visitante/**", "/emprendedor", "/emprendedor/**",
                 "/pyme", "/pyme/**", "/negocio-plus", "/negocio-plus/**",
                 "/prototipo", "/prototipo/**",
-                "/nosotros", "/productos", "/productos/**", "/descubri", "/informacion", "/contacto",
+                "/nosotros", "/productos", "/productos/**", "/descubri", "/categorias", "/buscar/foto", "/informacion", "/contacto",
                 "/carrito", "/login", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan",

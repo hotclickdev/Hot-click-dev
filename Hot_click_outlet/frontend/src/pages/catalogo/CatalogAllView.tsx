@@ -8,6 +8,12 @@ import CatalogProductGrid from './CatalogProductGrid'
 import CatalogMobileSidebar from './CatalogMobileSidebar'
 import { RetryBanner } from '@/components/ui/RetryBanner'
 import { useTranslation } from 'react-i18next'
+import { useMemo } from 'react'
+import Chip from '@/components/comprador/Chip'
+import HojaInferior from '@/components/comprador/HojaInferior'
+import EntendiChips from './EntendiChips'
+import FiltrosPanel from './FiltrosPanel'
+import { busquedasRelacionadas, chipsEntendi, tiendasDelCatalogo, type ChipEntendi } from './buscarExplorar'
 import type { CatalogoPageModel } from './useCatalogoPage'
 import type { RefObject } from 'react'
 
@@ -32,8 +38,32 @@ export default function CatalogAllView({
     productCountByCat, categoryTotalCount, marcasCountInScope, marcasForCategoryScope,
     selectedParentNode, hasFilters, flatGrid, showSubcatGrid,
     filteredPages, filteredSlice, activeCatName, gridAnimKey, convenioMarcaNames,
-    tieneGustos,
+    tieneGustos, extras, setExtras, filtrosAbiertos, setFiltrosAbiertos,
   } = catalogo
+
+  const tiendas = useMemo(() => tiendasDelCatalogo(products), [products])
+  const hayRetiro = useMemo(() => products.some((p) => p.bodegaPermiteRetiro === true), [products])
+  const chips = chipsEntendi({ search, categoriaNombre: activeCatName ?? null, priceMin, priceMax, extra: extras })
+  const relacionadas = search && filtered.length > 0 ? busquedasRelacionadas(search, filtered) : []
+
+  const quitarChip = (chip: ChipEntendi) => {
+    if (chip.tipo === 'busqueda') setSearch('')
+    else if (chip.tipo === 'categoria') setCategory('')
+    else if (chip.tipo === 'precio') { setPriceMin(''); setPriceMax('') }
+    else if (chip.tipo === 'tienda') setExtras((prev) => ({ ...prev, tiendas: new Set([...prev.tiendas].filter((x) => x !== chip.valor)) }))
+    else if (chip.tipo === 'pedido') setExtras((prev) => ({ ...prev, hechoAPedido: false }))
+    else setExtras((prev) => ({ ...prev, retiroEnTienda: false }))
+  }
+
+  const panelFiltros = (
+    <FiltrosPanel
+      priceMin={priceMin} priceMax={priceMax} setPriceMin={setPriceMin} setPriceMax={setPriceMax}
+      categories={categories} categoryTotalCount={categoryTotalCount} category={category} setCategory={setCategory}
+      tiendas={tiendas} extras={extras} setExtras={setExtras}
+      soloConStock={filterStock === 'ok'} setSoloConStock={(v) => setFilterStock(v ? 'ok' : '')}
+      hayRetiro={hayRetiro}
+    />
+  )
 
   return (
     <>
@@ -74,21 +104,26 @@ export default function CatalogAllView({
                 categoryTotalCount={categoryTotalCount}
               />
             </div>
+            <div className="mt-4 rounded-[14px] border border-hc-n-200 bg-hc-n-0 px-4">
+              <h2 className="pb-1 pt-4 font-display text-[16px] font-bold text-hc-n-900">{t('products.filter')}</h2>
+              {panelFiltros}
+            </div>
           </aside>
 
           <div className="flex-1 min-w-0 space-y-4">
+            <EntendiChips chips={chips} onQuitar={quitarChip} onAbrirFiltros={() => setFiltrosAbiertos(true)} />
             <ActiveFilterChips
               marcas={marcas}
               marcasFilter={marcasFilter}
               toggleMarca={toggleMarca}
               filterCond={filterCond}
               setFilterCond={setFilterCond}
-              filterStock={filterStock}
+              filterStock=""
               setFilterStock={setFilterStock}
               filterTalla={filterTalla}
               setFilterTalla={setFilterTalla}
-              priceMin={priceMin}
-              priceMax={priceMax}
+              priceMin=""
+              priceMax=""
               setPriceMin={setPriceMin}
               setPriceMax={setPriceMax}
               clearFilters={clearFilters}
@@ -144,8 +179,37 @@ export default function CatalogAllView({
                 needsGustos={sort === 'para_vos' && !tieneGustos}
               />
             )}
+
+            {relacionadas.length > 0 && (
+              <section className="flex flex-col gap-[10px] pb-6 pt-[18px]">
+                <h2 className="text-[13px] font-semibold text-hc-n-600">{t('products.relatedSearches')}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {relacionadas.map((r) => <Chip key={r} texto={r} onClick={() => setSearch(r)} />)}
+                </div>
+              </section>
+            )}
           </div>
         </div>
+
+        <HojaInferior
+          abierta={filtrosAbiertos}
+          onCerrar={() => setFiltrosAbiertos(false)}
+          titulo={(
+            <div className="flex items-center justify-between">
+              <span className="font-display text-[18px] font-bold text-hc-n-900">{t('products.filter')}</span>
+              <button type="button" onClick={clearFilters} className="text-[13px] font-semibold text-hc-blue-600">{t('products.clearAll')}</button>
+            </div>
+          )}
+        >
+          {panelFiltros}
+          <button
+            type="button"
+            onClick={() => setFiltrosAbiertos(false)}
+            className="rounded-[12px] bg-hc-red-500 px-4 py-[14px] text-[15px] font-semibold text-hc-n-0"
+          >
+            {t('products.viewResults', { count: filtered.length })}
+          </button>
+        </HojaInferior>
 
         <CatalogMobileSidebar
           sidebarOpen={sidebarOpen}

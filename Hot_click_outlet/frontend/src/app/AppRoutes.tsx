@@ -33,6 +33,8 @@ const PymeArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ defau
 const NegocioPlusArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.NegocioPlusArea })))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const DescubriPage = lazy(() => import('@/pages/DescubriPage'))
+const CategoriasPage = lazy(() => import('@/pages/buscar/CategoriasPage'))
+const BusquedaFotoPage = lazy(() => import('@/pages/buscar/BusquedaFotoPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const CartPage = lazy(() => import('@/pages/CartPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
@@ -159,6 +161,8 @@ export default function AppRoutes() {
       <Route path="/prototipo/*" element={<PrototipoRedirect />} />
       <Route path="/productos" element={<ProductsPage />} />
       <Route path="/descubri" element={<DescubriPage />} />
+      <Route path="/categorias" element={<CategoriasPage />} />
+      <Route path="/buscar/foto" element={<BusquedaFotoPage />} />
       <Route path="/productos/:id" element={<ProductDetailPage />} />
       <Route path="/carrito" element={<CartPage />} />
       <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

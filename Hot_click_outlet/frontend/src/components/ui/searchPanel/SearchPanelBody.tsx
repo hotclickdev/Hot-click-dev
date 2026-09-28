@@ -1,209 +1,125 @@
-import { motion } from 'framer-motion'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
+import { fotoProducto, nombreVendedor } from '@/components/comprador/productCardHelpers'
 import { highlight } from './searchPanelHighlight'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { SearchPanelModel } from './useSearchPanel'
 
+function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-1">
+      <h2 className="text-[11px] font-semibold uppercase text-hc-n-500">{titulo}</h2>
+      {children}
+    </section>
+  )
+}
+
+/** Resultados en vivo del buscador híbrido (Figma `8:163`). */
 export function SearchPanelBody({
-  query,
-  loading,
-  recent,
-  brandResults,
-  productResults,
-  brandProductCount,
-  hasResults,
-  selectBrand,
-  selectProduct,
-  viewAll,
-  clearRecent,
-  setQuery,
+  query, loading, recent, productResults, sugerencias,
+  selectProduct, viewAll, clearRecent, setQuery,
+  preguntarAsistente, buscarConFoto, elegirSugerencia,
 }: SearchPanelModel) {
   const { t } = useTranslation()
+  const consulta = query.trim()
 
   return (
-    <div className="overflow-y-auto flex-1">
+    <div className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-4 pb-4 pt-1">
+      {consulta && (
+        <button
+          type="button"
+          onClick={preguntarAsistente}
+          className="flex items-center gap-3 rounded-[14px] border border-hc-blue-100 bg-hc-blue-50 px-[14px] py-[14px] text-left"
+        >
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-hc-blue-600 text-hc-n-0">
+            <IconoFigma src={ICONOS_COMPRADOR.asistente} size={18} />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
+            <span className="text-[14px] font-semibold text-hc-blue-600">{t('search.askAssistant')}</span>
+            <span className="text-[12px] leading-4 text-hc-n-600">{t('search.askAssistantSub', { q: consulta })}</span>
+          </span>
+          <IconoFigma src={ICONOS_COMPRADOR.verTodo} size={18} className="text-hc-blue-600" />
+        </button>
+      )}
 
-      {!query && recent.length > 0 && (
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-              {t('search.recent')}
-            </span>
-            <button type="button" onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">{t('search.clearRecent')}</button>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      {!consulta && recent.length > 0 && (
+        <Bloque titulo={t('search.recent')}>
+          <div className="flex flex-wrap gap-2 pt-1">
             {recent.map((s) => (
-              <button type="button"
+              <button
+                type="button"
                 key={s}
                 onClick={() => setQuery(s)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border transition-colors hover:bg-white/5"
-                style={{ color: 'var(--hc-text)', borderColor: 'var(--hc-border)' }}
+                className="rounded-full border border-hc-n-200 bg-hc-n-0 px-[14px] py-2 text-[13px] font-medium text-hc-n-900"
               >
-                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
-                  <polyline points="1 4 1 10 7 10" />
-                  <path d="M3.51 15a9 9 0 1 0 .49-3.46" />
-                </svg>
                 {s}
               </button>
             ))}
           </div>
-        </div>
+          <button type="button" onClick={clearRecent} className="self-start pt-1 text-[12px] font-semibold text-hc-blue-600">
+            {t('search.clearRecent')}
+          </button>
+        </Bloque>
       )}
 
-      {!query && recent.length === 0 && !loading && (
-        <div className="py-12 text-center">
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('search.typeToSearch')}</p>
-        </div>
+      {!consulta && recent.length === 0 && !loading && (
+        <p className="py-8 text-center text-[14px] text-hc-n-500">{t('search.typeToSearch')}</p>
       )}
 
-      {query.trim() && (
-        <>
-          {!hasResults && !loading && (
-            <div className="py-12 text-center px-6">
-              <p className="font-semibold text-sm mb-1" style={{ color: 'var(--hc-text)' }}>
-                {t('search.noResults')} "{query}"
-              </p>
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                {t('search.noResultsSub')}
-              </p>
-              <button type="button"
-                onClick={viewAll}
-                className="mt-4 px-5 py-2 rounded-xl text-sm border transition-colors hover:bg-white/5"
-                style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
-              >
-                {t('search.viewAll')}
-              </button>
-            </div>
-          )}
+      {consulta && sugerencias.length > 0 && (
+        <Bloque titulo={t('search.suggestions')}>
+          {sugerencias.map((s) => (
+            <button key={s} type="button" onClick={() => elegirSugerencia(s)} className="flex items-center gap-3 py-[9px] text-left text-[14px] text-hc-n-900">
+              <IconoFigma src={ICONOS_COMPRADOR.buscador} size={16} className="text-hc-n-500" />
+              <span className="font-normal">{highlight(s, consulta)}</span>
+            </button>
+          ))}
+        </Bloque>
+      )}
 
-          {brandResults.length > 0 && (
-            <div>
-              <div className="px-4 pt-4 pb-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                  {t('search.brandSection')}
+      {consulta && productResults.length > 0 && (
+        <Bloque titulo={t('search.productsSection')}>
+          {productResults.map((product) => {
+            const foto = fotoProducto(product)
+            return (
+              <button key={product.id} type="button" onClick={() => selectProduct(product)} className="flex items-center gap-3 py-[6px] text-left">
+                <span className="size-[52px] shrink-0 overflow-hidden rounded-[10px] bg-hc-n-100">
+                  {foto && <img src={foto} alt="" className="size-full object-cover" loading="lazy" />}
                 </span>
-              </div>
-              {brandResults.map((brand, i) => {
-                const count = brandProductCount[brand.id as string] ?? 0
-                return (
-                  <motion.button
-                    key={brand.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    onClick={() => selectBrand(brand)}
-                    className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/5 text-left"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                      {brand.logoUrl ? (
-                        <img src={brand.logoUrl} alt={brand.nombreMarca} className="w-full h-full object-contain p-1.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                      ) : (
-                        <span className="text-xs font-bold uppercase" style={{ color: 'var(--hc-accent)' }}>
-                          {brand.nombreMarca?.slice(0, 2)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
-                        {highlight(brand.nombreMarca, query.trim())}
-                      </p>
-                      {count > 0 && (
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                          {count} {t('search.item', { count })}
-                        </p>
-                      )}
-                    </div>
-                    <TrustGlyph tipo="adelante" className="w-4 h-4 shrink-0" />
-                  </motion.button>
-                )
-              })}
-            </div>
-          )}
-
-          {brandResults.length > 0 && productResults.length > 0 && (
-            <div className="mx-4 border-t" style={{ borderColor: 'var(--hc-border)' }} />
-          )}
-
-          {productResults.length > 0 && (
-            <div>
-              <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                  {t('search.productsSection')}
+                <span className="flex min-w-0 flex-1 flex-col gap-[1px]">
+                  <span className="truncate text-[14px] font-medium text-hc-n-900">{product.nombre}</span>
+                  <span className="truncate text-[12px] text-hc-n-500">{nombreVendedor(product)}</span>
                 </span>
-              </div>
-
-              {productResults.map((product, i) => (
-                <motion.button
-                  key={product.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (brandResults.length + i) * 0.035 }}
-                  onClick={() => selectProduct(product)}
-                  className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/5 text-left"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-[#1a1a1f] flex items-center justify-center overflow-hidden shrink-0 border border-white/8">
-                    {product.imagenUrl ? (
-                      <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <span className="opacity-30" style={{ color: 'var(--hc-muted)' }}>
-                        <TrustGlyph tipo="paquete" className="w-5 h-5" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>
-                      {highlight(product.nombre, query.trim())}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {product.marcaNombre && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(140,92,246,0.12)', color: 'var(--hc-accent)' }}>
-                          {product.marcaNombre}
-                        </span>
-                      )}
-                      {product.categoriaNombre && (
-                        <span className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
-                          {product.categoriaNombre}
-                        </span>
-                      )}
-                      <span className={`text-[10px] font-medium flex items-center gap-1 ${product.stock === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        <span className={`w-1 h-1 rounded-full ${product.stock === 0 ? 'bg-red-400' : 'bg-emerald-400'}`} />
-                        {product.stock === 0 ? t('search.outOfStock') : t('search.inStock')}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="font-bold text-sm text-[#4f7cff] shrink-0">
-                    {formatPrice(product.precio)}
-                  </span>
-                </motion.button>
-              ))}
-
-              <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-                <button type="button"
-                  onClick={viewAll}
-                  className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
-                  style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
-                >
-                  <TextoFlecha>{t('search.viewAllFor')} "{query}"</TextoFlecha>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {brandResults.length > 0 && productResults.length === 0 && (
-            <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-              <button type="button"
-                onClick={viewAll}
-                className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
-                style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
-              >
-                <TextoFlecha>{t('search.viewAll')}</TextoFlecha>
+                <span className="shrink-0 font-display text-[14px] font-bold text-hc-n-900">{formatPrice(product.precio)}</span>
               </button>
-            </div>
-          )}
-        </>
+            )
+          })}
+          <button type="button" onClick={viewAll} className="flex items-center gap-1 self-start pt-1 text-[13px] font-semibold text-hc-blue-600">
+            {t('search.viewAllFor')} “{consulta}”
+            <IconoFigma src={ICONOS_COMPRADOR.verTodo} size={14} />
+          </button>
+        </Bloque>
       )}
+
+      {consulta && productResults.length === 0 && !loading && (
+        <p className="text-[13px] text-hc-n-600">
+          {t('search.noResults')} “{consulta}”. {t('search.noResultsSub')}
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={buscarConFoto}
+        className="flex items-center gap-3 rounded-[12px] border border-dashed border-hc-n-200 bg-hc-n-50 px-[14px] py-3 text-left"
+      >
+        <IconoFigma src={ICONOS_COMPRADOR.buscarFoto} size={20} className="text-hc-blue-600" />
+        <span className="flex flex-col gap-[1px]">
+          <span className="text-[14px] font-semibold text-hc-n-900">{t('search.photoSearch')}</span>
+          <span className="text-[12px] text-hc-n-500">{t('search.photoSearchSub')}</span>
+        </span>
+      </button>
     </div>
   )
 }

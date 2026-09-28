@@ -7,6 +7,7 @@ import {
   filtrarCatalogo,
   sortCatalogo,
 } from './catalogoFiltros'
+import { filtrarExtras, hayFiltrosExtra, type FiltrosExtra } from './buscarExplorar'
 import type { Producto } from '@/types/producto'
 import type {
   CatalogCategoria,
@@ -35,6 +36,7 @@ type CatalogoDerivedArgs = {
   priceMin: string
   priceMax: string
   filterViewPage: number
+  extras: FiltrosExtra
 }
 
 /**
@@ -43,7 +45,7 @@ type CatalogoDerivedArgs = {
 export function useCatalogoDerived({
   products, categories, marcas, convenios, viewMode,
   search, category, marcasFilter, sort, gustosScores, gustosPerfil,
-  filterStock, filterCond, filterTalla, priceMin, priceMax, filterViewPage,
+  filterStock, filterCond, filterTalla, priceMin, priceMax, filterViewPage, extras,
 }: CatalogoDerivedArgs) {
   const convenioMarcaNames = useMemo(
     () => new Set(convenios.map((c) => c.nombre?.toLowerCase()).filter((n): n is string => Boolean(n))),
@@ -58,10 +60,10 @@ export function useCatalogoDerived({
   const filtered = useMemo(() => {
     const minPrice = priceMin !== '' ? Number(priceMin) : null
     const maxPrice = priceMax !== '' ? Number(priceMax) : null
-    let lista = filtrarCatalogo({
+    let lista = filtrarExtras(filtrarCatalogo({
       products, viewMode, convenioMarcaNames, search, categoryScope,
       marcasFilter, filterStock, filterCond, filterTalla, minPrice, maxPrice,
-    })
+    }), extras)
     // "Según tus gustos": oculta lo no relacionado (no solo reordena).
     if (sort === 'para_vos') {
       if (!gustosPerfil || !hasGustos(gustosPerfil)) return []
@@ -75,7 +77,7 @@ export function useCatalogoDerived({
     return sortCatalogo(lista, sort, gustosScores, (p, scores) => rankScoreParaVos(p, scores))
   }, [
     products, search, categoryScope, marcasFilter, sort, gustosScores, gustosPerfil,
-    categories, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla,
+    categories, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla, extras,
   ])
 
   const productCountByCat = useMemo(() => {
@@ -124,7 +126,7 @@ export function useCatalogoDerived({
     return (rootNode?.children?.length ?? 0) > 0 ? rootNode ?? null : null
   }, [category, categories])
 
-  const hasFilters = !!(category || marcasFilter.size || filterStock || filterCond || filterTalla || priceMin || priceMax || search)
+  const hasFilters = !!(category || marcasFilter.size || filterStock || filterCond || filterTalla || priceMin || priceMax || search || hayFiltrosExtra(extras))
   const flatGrid = hasFilters || sort === 'para_vos'
   const showSubcatGrid = !!(
     selectedParentNode &&

@@ -103,6 +103,8 @@ public class SpaController {
         "/",
         "/productos",
         "/descubri",
+        "/categorias",
+        "/buscar/foto",
         "/carrito",
         "/login",
         "/registrar-negocio",
