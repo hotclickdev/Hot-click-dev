@@ -25,7 +25,7 @@ export default function ProfileSecurityCard({
 
       <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
             <LockIcon />
           </div>
           <div>
@@ -41,7 +41,7 @@ export default function ProfileSecurityCard({
       {isAdmin && (
         <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
               <ShieldIcon />
             </div>
             <div>

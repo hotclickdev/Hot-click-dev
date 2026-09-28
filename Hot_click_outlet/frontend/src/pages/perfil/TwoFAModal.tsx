@@ -79,27 +79,27 @@ export default function TwoFAModal({
       <AnimatePresence mode="wait">
         {step === 'info' && (
           <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <p className="text-sm text-[#8e8e9a]">{t('profile.twoFASetupInfo')}</p>
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.twoFASetupInfo')}</p>
+            {error && <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p>}
             <Button className="w-full" loading={loading} onClick={handleSetup}>{t('profile.twoFASetupBtn')}</Button>
           </motion.div>
         )}
         {step === 'qr' && (
           <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <form onSubmit={handleActivate} className="space-y-4">
-              <p className="text-sm text-[#8e8e9a]">{t('profile.twoFAQrInfo')}</p>
+              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.twoFAQrInfo')}</p>
               {qrUri && (
                 <div className="flex justify-center py-3">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUri)}`}
-                    alt="QR 2FA" className="rounded-xl border border-white/10" width={180} height={180}
+                    alt="QR 2FA" className="rounded-xl border" style={{ borderColor: 'var(--hc-border)' }} width={180} height={180}
                   />
                 </div>
               )}
               <Input label={t('profile.twoFACodeLabel')} value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 maxLength={6} inputMode="numeric" placeholder="000000" required />
-              {error && <p className="text-sm text-red-400">{error}</p>}
+              {error && <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p>}
               <Button type="submit" loading={loading} className="w-full">{t('profile.twoFAActivateBtn')}</Button>
             </form>
           </motion.div>
@@ -107,13 +107,13 @@ export default function TwoFAModal({
         {step === 'disable' && (
           <motion.div key="disable" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <form onSubmit={handleDisable} className="space-y-4">
-              <p className="text-sm text-[#8e8e9a]">{t('profile.twoFADisableInfo')}</p>
+              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.twoFADisableInfo')}</p>
               <Input label={t('profile.passwordLabel')} type="password" value={contrasena}
                 onChange={(e) => setCont(e.target.value)} required autoFocus />
               <Input label={t('profile.twoFAAuthCode')} value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 maxLength={6} inputMode="numeric" placeholder="000000" required />
-              {error && <p className="text-sm text-red-400">{error}</p>}
+              {error && <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p>}
               <Button type="submit" loading={loading} variant="danger" className="w-full">
                 {t('profile.twoFADeactivateBtn')}
               </Button>

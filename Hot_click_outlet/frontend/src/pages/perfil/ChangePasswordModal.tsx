@@ -57,9 +57,12 @@ export default function ChangePasswordModal({
         <Input label={t('profile.confirmPassword')} type="password" value={confirm}
           onChange={(e) => setConfirm(e.target.value)} required />
         {error && (
-          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
+          <p className="text-sm rounded-lg px-3 py-2"
+            style={{ color: 'var(--hc-danger)', backgroundColor: 'color-mix(in srgb, var(--hc-danger) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-danger) 22%, transparent)' }}>
+            {error}
+          </p>
         )}
-        <p className="text-xs text-[#8e8e9a]">{t('profile.passwordWarning')}</p>
+        <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('profile.passwordWarning')}</p>
         <Button type="submit" loading={loading} className="w-full">{t('profile.updatePassword')}</Button>
       </form>
     </Modal>
