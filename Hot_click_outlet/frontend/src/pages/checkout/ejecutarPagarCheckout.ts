@@ -2,13 +2,19 @@ import { authService } from '@/services/authService'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
-import { BODEGA_DEFAULT } from './checkoutHelpers'
-import type { BodegaRetiro, ItemCheckout, OpcionEnvio } from './checkoutHelpers'
+import { BODEGA_DEFAULT, bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
+import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import type { CheckoutPayload } from '@/types/pedido'
 
+/** Etiqueta legible del método de envío elegido para un paquete, para el resumen en notas. */
+function opcionesParaLabel(p: PaqueteCheckout, metodo: string): string {
+  const opciones = opcionesEnvio(bodegaRetiroDePaquete(p))
+  const label = opciones.find((o) => o.value === metodo)?.label
+  return label ? `${p.bodegaNombre}: ${label}` : ''
+}
+
 type ValidateDomicilioDeps = {
-  SHIPPING_OPTIONS: OpcionEnvio[]
-  metodoEnvio: string
+  necesitaDireccion: boolean
   direccion: string
   token: string | null
   telefono: string
@@ -22,14 +28,14 @@ type ValidateDomicilioDeps = {
 
 /**
  * Valida dirección/teléfono de domicilio — mismo orden que el original.
+ * `necesitaDireccion` ya contempla los N paquetes del pedido (uno o varios vendedores).
  */
 export function ejecutarValidateDomicilio({
-  SHIPPING_OPTIONS, metodoEnvio, direccion, token, telefono,
+  necesitaDireccion, direccion, token, telefono,
   validateAddress, validatePhone,
   setDireccionError, setDireccionDirty, setTelefonoError, setTelefonoDirty,
 }: ValidateDomicilioDeps): boolean {
-  const op = SHIPPING_OPTIONS.find((o) => o.value === metodoEnvio)
-  if (!op?.needsAddress) return true
+  if (!necesitaDireccion) return true
   const dErr = validateAddress(direccion)
   setDireccionError(dErr)
   setDireccionDirty(true)
@@ -60,8 +66,10 @@ type PagarCheckoutDeps = {
   setSinpeNombreErr: (v: string) => void
   setSinpeCedulaErr: (v: string) => void
   telefono: string
-  SHIPPING_OPTIONS: OpcionEnvio[]
   metodoEnvio: string
+  paquetes: PaqueteCheckout[]
+  metodoEnvioPorPaquete: Record<string, string>
+  necesitaDireccion: boolean
   notas: string
   direccion: string
   sinpeEmail: string
@@ -96,8 +104,10 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     setSinpeNombreErr,
     setSinpeCedulaErr,
     telefono,
-    SHIPPING_OPTIONS,
     metodoEnvio,
+    paquetes,
+    metodoEnvioPorPaquete,
+    necesitaDireccion,
     notas,
     direccion,
     sinpeEmail,
@@ -113,13 +123,16 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   if (!aceptaDatos) return
   if (!validateDomicilio()) return
 
+  // Requiere teléfono de contacto si al menos un paquete se entrega (no todos van a retiro en tienda).
+  const requiereEntrega = paquetes.some((p) => metodoEnvioPorPaquete[p.bodegaId] !== 'RETIRO_EN_TIENDA')
+
   if (!token) {
     const eErr = validateGuestEmail(guestEmail)
     setGuestEmailError(eErr)
     setGuestEmailDirty(true)
     if (eErr) return
 
-    if (metodoEnvio !== 'RETIRO_EN_TIENDA') {
+    if (requiereEntrega) {
       const pErr = validatePhone(guestPhone)
       setGuestPhoneError(pErr)
       setGuestPhoneDirty(true)
@@ -149,13 +162,16 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   authService.registrarConsentimiento('CHECKOUT')
 
   const phoneEfectivo = token ? telefono : guestPhone
-  const opEnvio = SHIPPING_OPTIONS.find((o) => o.value === metodoEnvio)
+  const resumenEnvios = paquetes
+    .map((p) => opcionesParaLabel(p, metodoEnvioPorPaquete[p.bodegaId]))
+    .filter(Boolean)
+    .join('; ')
   const notasFull = [
     notas.trim(),
-    opEnvio?.needsAddress && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
-    opEnvio?.needsAddress && direccion ? `Dirección: ${direccion}` : '',
+    necesitaDireccion && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
+    necesitaDireccion && direccion ? `Dirección: ${direccion}` : '',
     metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
-    opEnvio ? `Envío: ${opEnvio.label}` : '',
+    resumenEnvios ? `Envío: ${resumenEnvios}` : '',
   ].filter(Boolean).join(' | ')
 
   const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
@@ -166,6 +182,10 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     {
       bodegaId: metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaRetiro.id as number : BODEGA_DEFAULT,
       metodoEnvio,
+      envios: paquetes.map((p) => ({
+        bodegaId: Number(p.bodegaId),
+        metodoEnvio: metodoEnvioPorPaquete[p.bodegaId],
+      })),
       notas: notasFull || null,
       provider: metodoPago,
       items: items.map((i) => ({

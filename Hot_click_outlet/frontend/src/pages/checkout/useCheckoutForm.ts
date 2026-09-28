@@ -1,16 +1,19 @@
-import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type RefObject } from 'react'
+import { useState, useRef, useMemo, useEffect, type Dispatch, type SetStateAction, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import { adminService } from '@/services/orderService'
 import {
+  BODEGA_DEFAULT,
   SHIPPING_COSTS,
+  bodegaRetiroDePaquete,
   bodegaRetiroDesdeItems,
   opcionesEnvio,
+  paquetesDesdeItems,
   validateAddress as mensajeDireccion,
   validateGuestEmail as mensajeEmailInvitado,
   validatePhone as mensajeTelefono,
 } from './checkoutHelpers'
-import type { BodegaRetiro, ItemCheckout, OpcionEnvio } from './checkoutHelpers'
+import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
   items: ItemCheckout[]
@@ -21,7 +24,13 @@ export type CheckoutFormState = {
   bodegaRetiro: BodegaRetiro | null
   SHIPPING_OPTIONS: OpcionEnvio[]
   metodoEnvio: string
-  setMetodoEnvio: Dispatch<SetStateAction<string>>
+  setMetodoEnvio: (value: string) => void
+  /** Un paquete = productos de una misma bodega/vendedor. Longitud 1 = carrito de un solo vendedor. */
+  paquetes: PaqueteCheckout[]
+  metodoEnvioPorPaquete: Record<string, string>
+  setMetodoEnvioPaquete: (bodegaId: string, value: string) => void
+  /** true si algún paquete necesita dirección de entrega (no todos van a retiro en tienda). */
+  necesitaDireccion: boolean
   metodoPago: string
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
@@ -107,19 +116,43 @@ export type CheckoutFormState = {
 export function useCheckoutForm({ items, total }: UseCheckoutFormParams): CheckoutFormState {
   const { t } = useTranslation()
 
-  const bodegaRetiro = bodegaRetiroDesdeItems(items)
+  const paquetes = useMemo(() => paquetesDesdeItems(items), [items])
+  // Único paquete: comportamiento idéntico al carrito de un solo vendedor de siempre.
+  const bodegaRetiro = paquetes.length === 1 ? bodegaRetiroDePaquete(paquetes[0]) : bodegaRetiroDesdeItems(items)
   const SHIPPING_OPTIONS = opcionesEnvio(bodegaRetiro)
 
-  const [metodoEnvio, setMetodoEnvio] = useState(bodegaRetiro ? 'RETIRO_EN_TIENDA' : 'ENVIO_NORMAL_GAM')
+  const [metodoEnvioPorPaquete, setMetodoEnvioPorPaqueteState] = useState<Record<string, string>>({})
   const [metodoPago, setMetodoPago] = useState('TILOPAY')
 
   useEffect(() => {
-    if (!SHIPPING_OPTIONS.some((o) => o.value === metodoEnvio)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMetodoEnvio(SHIPPING_OPTIONS[0]?.value ?? 'ENVIO_NORMAL_GAM')
-    }
+    setMetodoEnvioPorPaqueteState((prev) => {
+      const next: Record<string, string> = {}
+      for (const p of paquetes) {
+        const opciones = opcionesEnvio(bodegaRetiroDePaquete(p))
+        const actual = prev[p.bodegaId]
+        next[p.bodegaId] = actual && opciones.some((o) => o.value === actual)
+          ? actual
+          : (opciones[0]?.value ?? 'ENVIO_NORMAL_GAM')
+      }
+      return next
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items])
+
+  function setMetodoEnvioPaquete(bodegaId: string, value: string) {
+    setMetodoEnvioPorPaqueteState((prev) => ({ ...prev, [bodegaId]: value }))
+  }
+
+  const bodegaPrincipalId = paquetes[0]?.bodegaId ?? String(BODEGA_DEFAULT)
+  const metodoEnvio = metodoEnvioPorPaquete[bodegaPrincipalId] ?? (bodegaRetiro ? 'RETIRO_EN_TIENDA' : 'ENVIO_NORMAL_GAM')
+  function setMetodoEnvio(value: string) {
+    setMetodoEnvioPaquete(bodegaPrincipalId, value)
+  }
+
+  const necesitaDireccion = paquetes.some((p) => {
+    const opciones = opcionesEnvio(bodegaRetiroDePaquete(p))
+    return opciones.find((o) => o.value === metodoEnvioPorPaquete[p.bodegaId])?.needsAddress ?? false
+  })
 
   function validatePhone(v: string) {
     return mensajeTelefono(v, t)
@@ -188,7 +221,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [gcCodigo, setGcCodigo] = useState<string | null>(null)
   const [aceptaDatos, setAceptaDatos] = useState(false)
 
-  const costoEnvio = SHIPPING_COSTS[metodoEnvio] ?? 0
+  const costoEnvio = paquetes.reduce((sum, p) => sum + (SHIPPING_COSTS[metodoEnvioPorPaquete[p.bodegaId]] ?? 0), 0)
   const subtotalCart = total()
   const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
   const baseConCupon = subtotalCart - descuentoMonto + costoEnvio
@@ -200,6 +233,10 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     SHIPPING_OPTIONS,
     metodoEnvio,
     setMetodoEnvio,
+    paquetes,
+    metodoEnvioPorPaquete,
+    setMetodoEnvioPaquete,
+    necesitaDireccion,
     metodoPago,
     setMetodoPago,
     notas,

@@ -18,7 +18,8 @@ export async function copiarNumeroSinpe(): Promise<boolean> {
 
 export const SHIPPING_COSTS: Record<string, number> = {
   RETIRO_EN_TIENDA:       0,
-  ENCOMIENDA_PROPIA:   2500,
+  // La empresa de encomienda le cobra al cliente directo al recibir — HotClick no cobra este envío.
+  ENCOMIENDA_PROPIA:      0,
   ENVIO_NORMAL_GAM:    4000,
   ENVIO_NORMAL_FUERA_GAM: 4000,
   ENVIO_RAPIDO:        5000,
@@ -35,6 +36,7 @@ export type ItemCheckout = {
   bodegaNombre?: string
   bodegaDireccion?: string
   bodegaTelefono?: string
+  empresaNombre?: string | null
   personalizacion?: {
     imagenes?: string[]
     notas?: string
@@ -42,6 +44,18 @@ export type ItemCheckout = {
     encargoToken?: string
   }
   cartLineId?: string
+}
+
+/** Un paquete = los productos de una misma bodega de origen. Cada uno se despacha y cobra el envío por separado. */
+export type PaqueteCheckout = {
+  bodegaId: string
+  bodegaNombre: string
+  bodegaDireccion?: string
+  bodegaTelefono?: string
+  bodegaPermiteRetiro: boolean
+  empresaNombre?: string | null
+  items: ItemCheckout[]
+  subtotal: number
 }
 
 export type BodegaRetiro = {
@@ -56,6 +70,8 @@ export type OpcionEnvio = {
   label: string
   sub: string
   precio: number
+  /** true = el costo no lo cobra HotClick (ej. encomienda), se muestra "Varía" en vez de un monto. */
+  varia?: boolean
   badge: string | null
   badgeColor?: string
   needsAddress: boolean
@@ -81,6 +97,48 @@ export function bodegaRetiroDesdeItems(items: ItemCheckout[]): BodegaRetiro | nu
     : null
 }
 
+/**
+ * Agrupa el carrito en paquetes por bodega de origen — un paquete por vendedor,
+ * cada uno con su propio envío. Espeja `CheckoutPaquetesPlanner.bodegaDeOrigen` del backend.
+ */
+export function paquetesDesdeItems(items: ItemCheckout[]): PaqueteCheckout[] {
+  const grupos = new Map<string, PaqueteCheckout>()
+  for (const item of items) {
+    const key = item.bodegaId !== null && item.bodegaId !== undefined && item.bodegaId !== ''
+      ? String(item.bodegaId)
+      : String(BODEGA_DEFAULT)
+    let grupo = grupos.get(key)
+    if (!grupo) {
+      grupo = {
+        bodegaId: key,
+        bodegaNombre: item.bodegaNombre || 'HotClick',
+        bodegaDireccion: item.bodegaDireccion,
+        bodegaTelefono: item.bodegaTelefono,
+        bodegaPermiteRetiro: Boolean(item.bodegaPermiteRetiro),
+        empresaNombre: item.empresaNombre,
+        items: [],
+        subtotal: 0,
+      }
+      grupos.set(key, grupo)
+    }
+    grupo.items.push(item)
+    grupo.subtotal += (item.precio ?? item.precioVenta ?? 0) * (item.cantidad ?? 0)
+  }
+  return [...grupos.values()]
+}
+
+/** Cantidad de emprendimientos distintos representados en el carrito — dispara el aviso de varios vendedores. */
+export function cantidadEmprendimientos(items: ItemCheckout[]): number {
+  const nombres = new Set(items.map((i) => i.empresaNombre || i.bodegaNombre).filter(Boolean))
+  return nombres.size
+}
+
+export function bodegaRetiroDePaquete(paquete: PaqueteCheckout): BodegaRetiro | null {
+  return paquete.bodegaPermiteRetiro
+    ? { id: paquete.bodegaId, nombre: paquete.bodegaNombre, direccion: paquete.bodegaDireccion, telefono: paquete.bodegaTelefono }
+    : null
+}
+
 export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] {
   return [
     ...(bodegaRetiro ? [{
@@ -94,8 +152,9 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     {
       value: 'ENCOMIENDA_PROPIA',
       label: 'Tu encomienda preferida',
-      sub: 'Te entregamos en el punto de tu mensajero o encomienda favorita',
-      precio: 2500,
+      sub: 'Lo dejamos en el punto de tu mensajero o encomienda favorita — el costo lo cobra la empresa de transporte al recibir',
+      precio: 0,
+      varia: true,
       badge: null,
       needsAddress: true,
     },

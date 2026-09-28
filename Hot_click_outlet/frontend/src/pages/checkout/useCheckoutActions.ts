@@ -3,7 +3,7 @@ import { ejecutarValidarGiftCard } from './ejecutarValidarGiftCard'
 import { ejecutarValidarCupon } from './ejecutarValidarCupon'
 import { ejecutarValidateDomicilio, ejecutarPagarCheckout } from './ejecutarPagarCheckout'
 import { ejecutarSubirComprobante, ejecutarSinpeWhatsApp } from './ejecutarSubirComprobante'
-import type { BodegaRetiro, ItemCheckout, OpcionEnvio } from './checkoutHelpers'
+import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import type { CheckoutPayload } from '@/types/pedido'
 import type { Dispatch, SetStateAction } from 'react'
 
@@ -35,7 +35,9 @@ type CheckoutActionsDeps = {
   gcCodigo: string | null
   gcInput: string
   cuponInput: string
-  SHIPPING_OPTIONS: OpcionEnvio[]
+  paquetes: PaqueteCheckout[]
+  metodoEnvioPorPaquete: Record<string, string>
+  necesitaDireccion: boolean
   iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
   validatePhone: (v: string) => string
   validateAddress: (v: string) => string
@@ -89,7 +91,9 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     gcCodigo,
     gcInput,
     cuponInput,
-    SHIPPING_OPTIONS,
+    paquetes,
+    metodoEnvioPorPaquete,
+    necesitaDireccion,
     iniciarPago,
     validatePhone,
     validateAddress,
@@ -126,13 +130,12 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
 
   const validateDomicilio = useCallback(() => {
     return ejecutarValidateDomicilio({
-      SHIPPING_OPTIONS, metodoEnvio, direccion, token, telefono,
+      necesitaDireccion, direccion, token, telefono,
       validateAddress, validatePhone,
       setDireccionError, setDireccionDirty, setTelefonoError, setTelefonoDirty,
     })
   }, [
-    SHIPPING_OPTIONS,
-    metodoEnvio,
+    necesitaDireccion,
     direccion,
     token,
     telefono,
@@ -149,8 +152,9 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       aceptaDatos, validateDomicilio, token, validateGuestEmail, validatePhone, guestEmail,
       setGuestEmailError, setGuestEmailDirty, guestPhone, setGuestPhoneError, setGuestPhoneDirty,
       metodoPago, sinpeNombre, sinpeCedula,
-      setSinpeNombreErr, setSinpeCedulaErr, telefono, SHIPPING_OPTIONS,
-      metodoEnvio, notas, direccion, sinpeEmail, totalFinal, items, bodegaRetiro,
+      setSinpeNombreErr, setSinpeCedulaErr, telefono,
+      metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
+      notas, direccion, sinpeEmail, totalFinal, items, bodegaRetiro,
       cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago,
     })
   }, [
@@ -171,8 +175,10 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setSinpeNombreErr,
     setSinpeCedulaErr,
     telefono,
-    SHIPPING_OPTIONS,
     metodoEnvio,
+    paquetes,
+    metodoEnvioPorPaquete,
+    necesitaDireccion,
     notas,
     direccion,
     sinpeEmail,
