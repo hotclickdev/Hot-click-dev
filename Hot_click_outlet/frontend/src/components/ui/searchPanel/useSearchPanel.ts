@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
+import useChatStore from '@/store/chatStore'
+import { sugerenciasBusqueda } from '@/pages/catalogo/buscarExplorar'
+import { RUTA_BUSCAR_FOTO } from '@/pages/buscar/rutasBuscar'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import { analytics } from '@/utils/analytics'
@@ -32,7 +35,7 @@ function marcasDesdeRespuesta(data: unknown): MarcaBusqueda[] {
   return Array.isArray(brands) ? brands as MarcaBusqueda[] : []
 }
 
-/** Estado y handlers del panel de búsqueda — bit-idéntico al original. */
+/** Estado y handlers del panel de búsqueda híbrida: productos en vivo, sugerencias, asistente y foto. */
 export function useSearchPanel() {
   const searchOpen = useUiStore((s) => s.searchOpen)
   const setSearchOpen = useUiStore((s) => s.setSearchOpen)
@@ -135,9 +138,28 @@ export function useSearchPanel() {
     )
   }, [brandResults, allProducts])
 
+  const sugerencias = useMemo(() => sugerenciasBusqueda(debouncedQuery, allProducts), [debouncedQuery, allProducts])
+
   const hasResults = brandResults.length > 0 || productResults.length > 0
 
   const close = () => setSearchOpen(false)
+
+  const preguntarAsistente = () => {
+    const texto = query.trim()
+    close()
+    useChatStore.getState().open(texto || null)
+  }
+
+  const buscarConFoto = () => {
+    close()
+    navigate(RUTA_BUSCAR_FOTO)
+  }
+
+  const elegirSugerencia = (texto: string) => {
+    saveRecent(texto)
+    close()
+    navigate(`/productos?search=${encodeURIComponent(texto)}`)
+  }
 
   const selectBrand = (brand: MarcaBusqueda) => {
     saveRecent(brand.nombreMarca as string)
@@ -174,6 +196,10 @@ export function useSearchPanel() {
     productResults,
     brandProductCount,
     hasResults,
+    sugerencias,
+    preguntarAsistente,
+    buscarConFoto,
+    elegirSugerencia,
     close,
     selectBrand,
     selectProduct,
