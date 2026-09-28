@@ -27,7 +27,8 @@
     "explorar": "Explore",
     "todosProductos": "All products",
     "ayudaWa": "Need help? Message us",
-    "ayudaWaHorario": "+506 8666-7888 · Mon–Sat 8:00–19:00"
+    "ayudaWaHorario": "+506 8666-7888 · Mon–Sat 8:00–19:00",
+    "saltarContenido": "Skip to content"
   },
   "bnav": {
     "inicio": "Home",
@@ -604,6 +605,38 @@
       "pagoSinpe": "SINPE Móvil",
       "pagoEfectivo": "Cash",
       "pagoTarjeta": "Card"
+    },
+    "compra": {
+      "titulo": "What are you looking for today?",
+      "subtitulo": "Products from Costa Rican entrepreneurs. Pay with SINPE Móvil or card and get it anywhere in the country.",
+      "destacados": "Featured",
+      "verTodo": "See all",
+      "categorias": "Shop by category",
+      "todas": "All",
+      "nuevos": "New on HotClick",
+      "verCatalogo": "See the full catalog",
+      "seguirTitulo": "Pick up where you left off",
+      "seguirNota": "What you viewed last",
+      "asistenteTitulo": "Not sure what to give?",
+      "asistenteTexto": "Tell the assistant who it is for and how much you want to spend. It shows real products from the catalog, with price and availability.",
+      "asistenteHero": "Not sure what to choose? Ask the assistant",
+      "consulta1": "A gift for mom under ₡20,000",
+      "consulta2": "Something cozy for the living room",
+      "consulta3": "For someone who is starting to run",
+      "descubri": "Or swipe through products in Discover",
+      "confianzaTitulo": "Why shop on HotClick",
+      "noLoEncontras": "Can't find it? We'll get it for you.",
+      "pedilo": "Request it",
+      "promesa": {
+        "envioTitulo": "Shipping across Costa Rica",
+        "envioTexto": "From ₡4,000 with Correos de Costa Rica or by courier",
+        "pagoTitulo": "Pay your way",
+        "pagoTexto": "SINPE Móvil, card or cash",
+        "sinCuentaTitulo": "Buy without an account",
+        "sinCuentaTexto": "Just your email and phone",
+        "devolucionesTitulo": "Returns",
+        "devolucionesTexto": "Read the policy before you buy"
+      }
     }
   },
   "products": {
@@ -2777,7 +2810,8 @@
       "todasCategorias": "All categories",
       "serviciosHot": "HOT Services",
       "vende": "Sell on HotClick",
-      "categoriasAria": "Categories"
+      "categoriasAria": "Categories",
+      "panel": "My dashboard"
     },
     "nav": {
       "aria": "Main navigation",

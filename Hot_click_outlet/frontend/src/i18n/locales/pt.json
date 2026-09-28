@@ -27,7 +27,8 @@
     "explorar": "Explorar",
     "todosProductos": "Todos os produtos",
     "ayudaWa": "Precisa de ajuda? Fale conosco",
-    "ayudaWaHorario": "+506 8666-7888 · Seg–Sáb 8:00–19:00"
+    "ayudaWaHorario": "+506 8666-7888 · Seg–Sáb 8:00–19:00",
+    "saltarContenido": "Pular para o conteúdo"
   },
   "bnav": {
     "inicio": "Início",
@@ -604,6 +605,38 @@
       "pagoSinpe": "SINPE Móvil",
       "pagoEfectivo": "Dinheiro",
       "pagoTarjeta": "Cartão"
+    },
+    "compra": {
+      "titulo": "O que você está procurando hoje?",
+      "subtitulo": "Produtos de empreendedores da Costa Rica. Pague com SINPE Móvil ou cartão e receba em todo o país.",
+      "destacados": "Destaques",
+      "verTodo": "Ver tudo",
+      "categorias": "Explore por categoria",
+      "todas": "Todas",
+      "nuevos": "Novidades no HotClick",
+      "verCatalogo": "Ver todo o catálogo",
+      "seguirTitulo": "Continue de onde parou",
+      "seguirNota": "O que você viu por último",
+      "asistenteTitulo": "Não sabe o que dar de presente?",
+      "asistenteTexto": "Conte ao assistente para quem é e quanto quer gastar. Ele mostra produtos reais do catálogo, com preço e disponibilidade.",
+      "asistenteHero": "Não sabe o que escolher? Pergunte ao assistente",
+      "consulta1": "Presente para a mãe por menos de ₡20.000",
+      "consulta2": "Algo confortável para a sala",
+      "consulta3": "Para quem está começando a correr",
+      "descubri": "Ou deslize produtos em Descubra",
+      "confianzaTitulo": "Por que comprar no HotClick",
+      "noLoEncontras": "Não encontrou? Nós conseguimos para você.",
+      "pedilo": "Peça",
+      "promesa": {
+        "envioTitulo": "Envio para toda a Costa Rica",
+        "envioTexto": "A partir de ₡4.000 com Correos de Costa Rica ou por encomenda",
+        "pagoTitulo": "Pague como preferir",
+        "pagoTexto": "SINPE Móvil, cartão ou dinheiro",
+        "sinCuentaTitulo": "Compre sem criar conta",
+        "sinCuentaTexto": "Só seu e-mail e telefone",
+        "devolucionesTitulo": "Devoluções",
+        "devolucionesTexto": "Conheça a política antes de comprar"
+      }
     }
   },
   "products": {
@@ -2777,7 +2810,8 @@
       "todasCategorias": "Todas as categorias",
       "serviciosHot": "Serviços HOT",
       "vende": "Venda na HotClick",
-      "categoriasAria": "Categorias"
+      "categoriasAria": "Categorias",
+      "panel": "Meu painel"
     },
     "nav": {
       "aria": "Navegação principal",
