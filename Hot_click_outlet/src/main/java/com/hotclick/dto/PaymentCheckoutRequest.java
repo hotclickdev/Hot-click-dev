@@ -1,5 +1,6 @@
 package com.hotclick.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -43,6 +44,36 @@ public class PaymentCheckoutRequest {
     /** First/last touch UTM + _fbp/_fbc para atribución y CAPI. */
     private AtribucionSnapshotDTO atribucion;
 
+    /**
+     * Entrega elegida por paquete (una bodega de origen = un paquete). Sin esta lista,
+     * todos los paquetes usan {@code metodoEnvio}.
+     */
+    @Valid
+    private List<EnvioPaqueteDTO> envios;
+
+    public List<EnvioPaqueteDTO> getEnvios() { return envios; }
+    public void setEnvios(List<EnvioPaqueteDTO> envios) { this.envios = envios; }
+
+    public static class EnvioPaqueteDTO {
+        @NotNull(message = "La bodega del paquete es requerida")
+        private Long bodegaId;
+
+        @NotBlank(message = "El método de envío del paquete es requerido")
+        private String metodoEnvio;
+
+        /** Nota para la tienda de este paquete (opcional). */
+        private String notas;
+
+        public Long getBodegaId() { return bodegaId; }
+        public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
+
+        public String getMetodoEnvio() { return metodoEnvio; }
+        public void setMetodoEnvio(String metodoEnvio) { this.metodoEnvio = metodoEnvio; }
+
+        public String getNotas() { return notas; }
+        public void setNotas(String notas) { this.notas = notas; }
+    }
+
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 
@@ -85,7 +116,11 @@ public class PaymentCheckoutRequest {
         @Min(value = 1, message = "La cantidad debe ser al menos 1")
         private Integer cantidad;
 
-        /** Precio unitario forzado (solo uso interno, p.ej. encargo cotizado). */
+        /**
+         * Precio unitario forzado, solo para uso interno (encargo cotizado, asignado en Java).
+         * Ignorado en el JSON de entrada: si no, un checkout público podría fijar su propio precio.
+         */
+        @JsonIgnore
         private Integer precioUnitarioOverride;
 
         private PersonalizacionDTO personalizacion;

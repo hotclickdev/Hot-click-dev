@@ -13,6 +13,14 @@ public class PaymentCheckoutResponse {
     private Boolean modoEmbebido;
     /** HMAC para POST /payments/guest/cancel — solo en checkout de invitado/sesión. */
     private String cancelToken;
+    /** Un paquete por vendedor. {@code numeroPedido} es el del paquete principal, al que va asociado el pago. */
+    private java.util.List<Paquete> paquetes = java.util.List.of();
+
+    public record Paquete(String numeroPedido, String tienda, String origen,
+                          String metodoEnvio, Integer costoEnvio, Integer total) {}
+
+    public java.util.List<Paquete> getPaquetes() { return paquetes; }
+    public void setPaquetes(java.util.List<Paquete> paquetes) { this.paquetes = paquetes; }
 
     public PaymentCheckoutResponse() {}
 

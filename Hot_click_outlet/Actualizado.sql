@@ -3981,3 +3981,7 @@ UPDATE hot_click_plan_tb
 SET comision_porcentaje = 9.00,
     descripcion = 'Plan gratuito. Comisión 9% por venta (mín. ₡700), cubre pasarela y plataforma.'
 WHERE nombre = 'EMPRENDEDOR';
+
+-- V142: un checkout multivendedor crea un subpedido por bodega/vendedor bajo un mismo pago.
+ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS grupo_pago VARCHAR(40);
+CREATE INDEX IF NOT EXISTS idx_pedido_grupo_pago ON hot_click_pedido_tb (grupo_pago);

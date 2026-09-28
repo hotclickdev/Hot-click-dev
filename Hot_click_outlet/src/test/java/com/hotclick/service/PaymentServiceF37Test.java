@@ -110,6 +110,11 @@ class PaymentServiceF37Test {
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
         testProducto.setBodega(testBodega);
 
+        CheckoutPaquetesPlanner checkoutPaquetesPlanner = new CheckoutPaquetesPlanner();
+        CheckoutGrupoFactory checkoutGrupoFactory = new CheckoutGrupoFactory(
+            checkoutValidator, checkoutPaquetesPlanner, orderPricingService, checkoutOrderFactory, giftCardService);
+        PedidoGrupoService pedidoGrupoService = new PedidoGrupoService(pedidoRepository, pagoRepository);
+
         service = new PaymentService();
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
@@ -119,8 +124,8 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
-        ReflectionTestUtils.setField(service, "orderPricingService", orderPricingService);
-        ReflectionTestUtils.setField(service, "checkoutOrderFactory", checkoutOrderFactory);
+        ReflectionTestUtils.setField(service, "checkoutGrupoFactory", checkoutGrupoFactory);
+        ReflectionTestUtils.setField(service, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(service, "paymentRecordFactory", paymentRecordFactory);
         ReflectionTestUtils.setField(service, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(service, "paymentNotificationsFacade", paymentNotificationsFacade);
@@ -141,10 +146,12 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(orderConfirmationService, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(paymentFailureHandler, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(paymentFailureHandler, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
