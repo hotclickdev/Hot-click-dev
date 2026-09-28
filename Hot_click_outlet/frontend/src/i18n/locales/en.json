@@ -3,6 +3,7 @@
     "inicio": "Home",
     "productos": "Products",
     "informacion": "Information",
+    "ayuda": "Help",
     "nosotros": "About Us",
     "contacto": "Contact",
     "ingresar": "Sign In",
@@ -120,6 +121,20 @@
     "comprarHint": "Browse products",
     "venderHint": "List your business",
     "emprenderHint": "Grow with HotClick"
+  },
+  "ayudaPage": {
+    "title": "Help center",
+    "subtitle": "HOT Services, warranty, shipping and everything you need to shop with confidence.",
+    "serviciosTitle": "HOT Services",
+    "serviciosDetalle": "We search for your product, warranty and in-store requests",
+    "garantiaTitle": "Warranty and returns",
+    "garantiaDetalle": "Up to 40 days of warranty, 7 days to return",
+    "enviosTitle": "Shipping",
+    "enviosDetalle": "Coverage areas, times and rates",
+    "faqTitle": "Frequently asked questions",
+    "faqDetalle": "How to buy, pay and receive your order",
+    "contactoTitle": "Talk to HotClick",
+    "contactoDetalle": "WhatsApp, email or contact form"
   },
   "emprende": {
     "metaTitle": "Choose the plan for your business on HotClick",

@@ -42,6 +42,7 @@ const WishlistPage = lazy(() => import('@/pages/WishlistPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
 const NosotrosPage = lazy(() => import('@/pages/NosotrosPage'))
+const AyudaPage = lazy(() => import('@/pages/AyudaPage'))
 const ContactoPage = lazy(() => import('@/pages/ContactoPage'))
 const InformacionPage = lazy(() => import('@/pages/InformacionPage'))
 const PrivacidadPage = lazy(() => import('@/pages/PrivacidadPage'))
@@ -187,6 +188,7 @@ export default function AppRoutes() {
       <Route path="/mode-select" element={<ModeSelector />} />
       <Route path="/seleccionar-negocio" element={<EmpresaSelectionPage />} />
       <Route path="/nosotros" element={<NosotrosPage />} />
+      <Route path="/ayuda" element={<AyudaPage />} />
       <Route path="/contacto" element={<ContactoPage />} />
       <Route path="/informacion" element={<InformacionPage />} />
       <Route path="/privacidad" element={<PrivacidadPage />} />

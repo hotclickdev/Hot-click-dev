@@ -21,7 +21,7 @@ export default function FaqSection() {
   ]
 
   return (
-    <section>
+    <section id="faq">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('informacion.faqTitle')}</h2>
         <p className="text-[#8e8e9a] mt-1 text-sm">{t('informacion.faqSub')}</p>

@@ -69,15 +69,17 @@ export default function ProfileHeader({ twoFAEnabled, onLogout }: { twoFAEnabled
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[#111114] border border-white/8 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center gap-4"
+        className="rounded-2xl border p-6 flex flex-col sm:flex-row sm:items-center gap-4"
+        style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
       >
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-16 h-16 rounded-2xl bg-[#4f7cff]/20 flex items-center justify-center text-2xl font-bold text-[#4f7cff] shrink-0">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0"
+            style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 18%, transparent)', color: 'var(--hc-accent)' }}>
             {userName?.[0]?.toUpperCase() || '?'}
           </div>
           <div className="min-w-0">
-            <p className="text-xl font-bold text-[#e8e8ed] truncate">{userName || 'Usuario'}</p>
-            <p className="text-sm text-[#8e8e9a] truncate">{userEmail}</p>
+            <p className="text-xl font-bold truncate" style={{ color: 'var(--hc-text)' }}>{userName || 'Usuario'}</p>
+            <p className="text-sm truncate" style={{ color: 'var(--hc-muted)' }}>{userEmail}</p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="accent">{roleLabel(userRole)}</Badge>
               {twoFAEnabled && <Badge variant="success">{t('profile.twoFAActive')}</Badge>}

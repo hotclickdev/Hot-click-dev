@@ -13,7 +13,7 @@ export default function NotFoundPage() {
     { to: '/', texto: t('estadosComprador.irInicio'), icono: <AccesoInicio /> },
     { to: '/productos', texto: t('estadosComprador.verCategorias'), icono: <AccesoCategorias /> },
     { to: '/mis-pedidos', texto: t('estadosComprador.misPedidos'), icono: <AccesoPedidos /> },
-    { to: '/contacto', texto: t('estadosComprador.ayudaContacto'), icono: <AccesoAyuda /> },
+    { to: '/ayuda', texto: t('estadosComprador.ayudaContacto'), icono: <AccesoAyuda /> },
   ]
 
   return (

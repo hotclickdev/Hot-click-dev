@@ -21,3 +21,5 @@ export const AccesoFavoritos = () => (
 )
 export const AccesoOpiniones = () => <Trazo><path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.9-5.4 2.9 1-6L3.3 9.4l6-.9z" /></Trazo>
 export const AccesoSeguridad = () => <Trazo><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z" /><path d="m9 12 2 2 4-4" /></Trazo>
+export const AccesoGarantia = () => <Trazo><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z" /></Trazo>
+export const AccesoEnvios = () => <Trazo><rect x="1" y="3" width="15" height="13" rx="1.5" /><path d="M16 8h4l3 5v3h-7z" /><circle cx="5.5" cy="18.5" r="2" /><circle cx="18.5" cy="18.5" r="2" /></Trazo>

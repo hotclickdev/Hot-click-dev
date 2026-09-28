@@ -3,6 +3,7 @@
     "inicio": "Início",
     "productos": "Produtos",
     "informacion": "Informações",
+    "ayuda": "Ajuda",
     "nosotros": "Sobre nós",
     "contacto": "Contato",
     "ingresar": "Entrar",
@@ -120,6 +121,20 @@
     "comprarHint": "Ver produtos",
     "venderHint": "Publicar seu negócio",
     "emprenderHint": "Crescer com HotClick"
+  },
+  "ayudaPage": {
+    "title": "Central de ajuda",
+    "subtitle": "Serviços HOT, garantia, envios e tudo que você precisa para comprar tranquilo.",
+    "serviciosTitle": "Serviços HOT",
+    "serviciosDetalle": "Buscamos seu produto, garantia e encomenda na loja",
+    "garantiaTitle": "Garantia e devoluções",
+    "garantiaDetalle": "Até 40 dias de garantia, 7 dias para devolver",
+    "enviosTitle": "Envios",
+    "enviosDetalle": "Áreas de cobertura, prazos e tarifas",
+    "faqTitle": "Perguntas frequentes",
+    "faqDetalle": "Como comprar, pagar e receber seu pedido",
+    "contactoTitle": "Falar com a HotClick",
+    "contactoDetalle": "WhatsApp, e-mail ou formulário de contato"
   },
   "emprende": {
     "metaTitle": "Escolha o plano do seu negócio no HotClick",

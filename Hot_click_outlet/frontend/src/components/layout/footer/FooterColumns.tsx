@@ -110,6 +110,7 @@ export default function FooterColumns() {
         </h3>
         <ul className="space-y-0.5">
           <FooterLink to="/nosotros">{t('footer.nosotros')}</FooterLink>
+          <FooterLink to="/ayuda">{t('nav.ayuda')}</FooterLink>
           <FooterLink to="/contacto">{t('footer.contacto')}</FooterLink>
           <FooterLink to="/emprende" highlight>{t('footer.vendeConNosotros')}</FooterLink>
           <FooterLink to="/emprende">{t('nav.emprender')}</FooterLink>

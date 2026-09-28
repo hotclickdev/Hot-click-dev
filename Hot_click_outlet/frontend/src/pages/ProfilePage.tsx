@@ -19,7 +19,7 @@ import TwoFAModal from './perfil/TwoFAModal'
 import PedidoActivoCard from './perfil/PedidoActivoCard'
 import ActividadReciente from './perfil/ActividadReciente'
 import ListaAccesos from '@/components/comprador/estados/ListaAccesos'
-import { AccesoFavoritos, AccesoOpiniones, AccesoPedidos, AccesoSeguridad, AccesoSolicitudes } from '@/components/comprador/estados/iconosAcceso'
+import { AccesoAyuda, AccesoFavoritos, AccesoOpiniones, AccesoPedidos, AccesoSeguridad, AccesoSolicitudes } from '@/components/comprador/estados/iconosAcceso'
 import { listaPedidosDesdeRespuesta, flagCampoApi } from './perfil/perfilHelpers'
 import { pedidoActivo, construirActividad } from './perfil/actividadRecienteHelpers'
 import type { SolicitudBusqueda, ProductoParaResena } from './servicios/serviciosHelpers'
@@ -88,6 +88,7 @@ export default function ProfilePage() {
     { to: '/wishlist', texto: t('wishlist.title'), icono: <AccesoFavoritos /> },
     { to: '#opinion', texto: t('perfil.misOpiniones', 'Mis opiniones'), icono: <AccesoOpiniones /> },
     { to: '#seguridad', texto: t('profile.security'), icono: <AccesoSeguridad /> },
+    { to: '/ayuda', texto: t('nav.ayuda'), icono: <AccesoAyuda /> },
   ]
 
   return (
