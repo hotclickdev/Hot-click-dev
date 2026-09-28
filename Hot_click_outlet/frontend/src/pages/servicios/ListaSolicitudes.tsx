@@ -1,16 +1,9 @@
 import EstadoBadge from './EstadoBadge'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import { IconoBandeja } from '@/components/comprador/estados/iconosEstado'
 import type { SolicitudBusqueda, TabBusqueda } from './serviciosHelpers'
 import type { Dispatch, SetStateAction } from 'react'
 import type { TFunction } from 'i18next'
-
-function ClipboardIcon({ className = 'w-12 h-12' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-      <rect x="9" y="3" width="6" height="4" rx="1" />
-    </svg>
-  )
-}
 
 function ChatIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -65,19 +58,12 @@ export default function ListaSolicitudes({
 
   if (!solicitudes?.length) {
     return (
-      <div className="text-center py-16 rounded-3xl"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-        <div className="mb-4 flex justify-center" style={{ color: 'var(--hc-muted)' }}>
-          <ClipboardIcon />
-        </div>
-        <p className="font-bold text-lg mb-1" style={{ color: 'var(--hc-text)' }}>Sin solicitudes aún</p>
-        <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>Creá una solicitud y te buscamos el producto.</p>
-        <button type="button" onClick={() => setTabBusqueda('solicitar')}
-          className="px-6 py-3 rounded-2xl text-sm font-bold"
-          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          Nueva solicitud
-        </button>
-      </div>
+      <EstadoVacio
+        icono={<IconoBandeja />}
+        titulo={t('serviciosPage.noRequests')}
+        texto={t('serviciosPage.noRequestsSub')}
+        accion={{ texto: t('serviciosPage.formTitle'), onClick: () => setTabBusqueda('solicitar') }}
+      />
     )
   }
 

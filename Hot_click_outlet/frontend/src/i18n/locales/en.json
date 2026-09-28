@@ -1506,6 +1506,8 @@
     "empty": "You have no orders yet",
     "emptySub": "Explore the store and make your first purchase!",
     "viewProducts": "View products",
+    "groupTitle_one": "One payment · {{count}} package",
+    "groupTitle_other": "One payment · {{count}} packages",
     "products": "Products",
     "shipping": "Shipping",
     "totalPaid": "Total paid",

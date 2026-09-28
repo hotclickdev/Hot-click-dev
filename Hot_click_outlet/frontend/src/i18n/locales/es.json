@@ -1506,6 +1506,8 @@
     "empty": "Aún no tenés pedidos",
     "emptySub": "Explorá la tienda y hacé tu primera compra",
     "viewProducts": "Ver productos",
+    "groupTitle_one": "Un pago · {{count}} paquete",
+    "groupTitle_other": "Un pago · {{count}} paquetes",
     "products": "Productos",
     "shipping": "Envío",
     "totalPaid": "Total pagado",
