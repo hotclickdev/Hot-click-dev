@@ -1,9 +1,11 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
 import { EfectivoIcon, LockIcon, SinpeIcon, CardIcon } from './checkoutIcons'
 import type { ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
+import { CampoCodigo, LineaCodigo, TarjetaCodigos, TituloValido } from './CodigoDescuento'
+import { formatoRebaja, saldoRestanteGiftCard } from './codigoDescuentoHelpers'
 import type { Dispatch, SetStateAction } from 'react'
 
 function ItemFila({ item }: { item: ItemCheckout }) {
@@ -119,10 +121,6 @@ export default function CheckoutSummary({
   onPagar,
 }: CheckoutSummaryProps) {
   const { t } = useTranslation()
-  const gcInvalidBorder = gcEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'
-  const gcBorderColor = gcEstado === 'valid' ? '#10b981' : gcInvalidBorder
-  const cuponInvalidBorder = cuponEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'
-  const cuponBorderColor = cuponEstado === 'valid' ? '#10b981' : cuponInvalidBorder
   const payMethodIconFallback = metodoPago === 'EFECTIVO' ? <EfectivoIcon selected /> : <LockIcon />
   const payMethodIconSinpe = metodoPago === 'SINPE' ? <SinpeIcon selected /> : payMethodIconFallback
   const payMethodIcon = metodoPago === 'TILOPAY' ? <CardIcon selected /> : payMethodIconSinpe
@@ -143,99 +141,53 @@ export default function CheckoutSummary({
 
       <ListaItemsResumen items={items} paquetes={paquetes} />
 
-      {/* Gift card — solo para usuarios autenticados */}
-      {token && (
-        <div className="pt-2">
-          <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--hc-muted)' }}>¿Tenés una gift card?</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={gcInput}
-              onChange={(e) => { setGcInput(e.target.value.toUpperCase()); setGcEstado('idle'); setGcSaldo(0); setGcCodigo(null) }}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); validarGiftCard() } }}
-              placeholder="GC-XXXX-XXXX-XXXX"
-              maxLength={30}
-              className="flex-1 px-3 py-2 rounded-xl text-xs outline-none transition-all"
-              style={{
-                background: 'var(--hc-bg)',
-                border: `1.5px solid ${gcBorderColor}`,
-                color: 'var(--hc-text)',
-                letterSpacing: '0.04em',
-              }}
-            />
-            <button
-              type="button"
-              onClick={validarGiftCard}
-              disabled={gcEstado === 'loading' || !gcInput.trim()}
-              className="shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-40"
-              style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}
-            >
-              {gcEstado === 'loading' ? '...' : 'Aplicar'}
-            </button>
-          </div>
-          <AnimatePresence mode="wait">
-            {gcEstado === 'valid' && (
-              <motion.p key="gc-ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                Gift card válida · saldo {formatPrice(gcSaldo)}
-              </motion.p>
+      {/* Tarjeta de regalo (solo con sesión) y cupón — Figma 55:2220 / 55:2284 */}
+      <TarjetaCodigos titulo={t(token ? 'checkout.codigo.titulo' : 'checkout.codigo.cuponTitulo')}>
+        {token && (
+          <CampoCodigo
+            valor={gcInput}
+            estado={gcEstado}
+            placeholder={t('checkout.codigo.giftPlaceholder')}
+            ariaLabel={t('checkout.codigo.giftAria')}
+            maxLength={30}
+            onCambiar={(v) => { setGcInput(v); setGcEstado('idle'); setGcSaldo(0); setGcCodigo(null) }}
+            onAplicar={validarGiftCard}
+            onQuitar={() => { setGcInput(''); setGcEstado('idle'); setGcSaldo(0); setGcCodigo(null) }}
+            invalido={{ titulo: t('checkout.codigo.giftInvalidoTitulo'), ayuda: t('checkout.codigo.giftInvalidoAyuda') }}
+            detalleValido={(
+              <>
+                <TituloValido texto={t('checkout.codigo.giftValidoTitulo')} />
+                <LineaCodigo etiqueta={t('checkout.codigo.saldoDisponible')} valor={formatPrice(gcSaldo)} />
+                <LineaCodigo etiqueta={t('checkout.codigo.seAplica')} valor={formatoRebaja(gcAplicado)} rebaja />
+                <LineaCodigo etiqueta={t('checkout.codigo.saldoRestante')} valor={formatPrice(saldoRestanteGiftCard(gcSaldo, gcAplicado))} />
+              </>
             )}
-            {gcEstado === 'invalid' && (
-              <motion.p key="gc-err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="text-xs text-red-400 mt-1">
-                Código inválido, vencido o sin saldo
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Campo de cupón */}
-      <div className="pt-2">
-        <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--hc-muted)' }}>¿Tenés un cupón?</p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={cuponInput}
-            onChange={(e) => { setCuponInput(e.target.value.toUpperCase()); setCuponEstado('idle'); setCuponDescuento(0); setCuponCodigo(null); setCuponError('') }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); validarCupon() } }}
-            placeholder="Ej: ABCDEFGHIJ"
-            maxLength={20}
-            className="flex-1 px-3 py-2 rounded-xl text-xs outline-none transition-all"
-            style={{
-              background: 'var(--hc-bg)',
-              border: `1.5px solid ${cuponBorderColor}`,
-              color: 'var(--hc-text)',
-              letterSpacing: '0.05em',
-            }}
+            t={t}
           />
-          <button
-            type="button"
-            onClick={validarCupon}
-            disabled={cuponEstado === 'loading' || !cuponInput.trim()}
-            className="shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-40"
-            style={{ background: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}
-          >
-            {cuponEstado === 'loading' ? '...' : 'Aplicar'}
-          </button>
-        </div>
-        <AnimatePresence mode="wait">
-          {cuponEstado === 'valid' && (
-            <motion.p key="ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-              {cuponDescuento}% de descuento aplicado
-            </motion.p>
+        )}
+        <CampoCodigo
+          valor={cuponInput}
+          estado={cuponEstado}
+          placeholder={t('checkout.codigo.cuponPlaceholder')}
+          ariaLabel={t('checkout.codigo.cuponAria')}
+          maxLength={20}
+          onCambiar={(v) => { setCuponInput(v); setCuponEstado('idle'); setCuponDescuento(0); setCuponCodigo(null); setCuponError('') }}
+          onAplicar={validarCupon}
+          onQuitar={() => { setCuponInput(''); setCuponEstado('idle'); setCuponDescuento(0); setCuponCodigo(null); setCuponError('') }}
+          invalido={{ titulo: cuponError || t('checkout.codigo.cuponInvalidoTitulo') }}
+          detalleValido={(
+            <>
+              <TituloValido texto={t('checkout.codigo.cuponValidoTitulo')} />
+              <LineaCodigo
+                etiqueta={t('checkout.codigo.cuponDescuento', { porcentaje: cuponDescuento })}
+                valor={formatoRebaja(descuentoMonto)}
+                rebaja
+              />
+            </>
           )}
-          {cuponEstado === 'invalid' && (
-            <motion.p key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="text-xs text-red-400 mt-1">
-              {cuponError || 'Código inválido o no disponible'}
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </div>
+          t={t}
+        />
+      </TarjetaCodigos>
 
       <div className="pt-3 border-t space-y-2 text-sm" style={{ borderColor: 'var(--hc-border)' }}>
         <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
@@ -243,38 +195,43 @@ export default function CheckoutSummary({
           <span>{formatPrice(subtotalCart)}</span>
         </div>
         {descuentoMonto > 0 && (
-          <div className="flex justify-between text-emerald-400">
-            <span>Descuento ({cuponDescuento}%)</span>
-            <span>-{formatPrice(descuentoMonto)}</span>
+          <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
+            <span>{t('checkout.codigo.lineaDescuento', { porcentaje: cuponDescuento })}</span>
+            <span className="text-hc-success">{formatoRebaja(descuentoMonto)}</span>
           </div>
         )}
         {gcAplicado > 0 && (
-          <div className="flex justify-between text-emerald-400">
-            <span>Gift card ({gcCodigo})</span>
-            <span>-{formatPrice(gcAplicado)}</span>
+          <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
+            <span>{t('checkout.codigo.lineaGift', { codigo: gcCodigo ?? '' })}</span>
+            <span className="text-hc-success">{formatoRebaja(gcAplicado)}</span>
           </div>
         )}
         <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
           <span>{t('checkout.shippingCost')}</span>
           {envioVaria ? (
-            <span style={{ color: 'var(--hc-muted)' }}>Varía{costoEnvio > 0 ? ` + ${formatPrice(costoEnvio)}` : ''}</span>
+            <span style={{ color: 'var(--hc-muted)' }}>{t('checkout.shippingVaries')}{costoEnvio > 0 ? ` + ${formatPrice(costoEnvio)}` : ''}</span>
           ) : (
-            <span className={costoEnvio === 0 ? 'text-emerald-400 font-medium' : ''}>
+            <span className={costoEnvio === 0 ? 'text-hc-success font-medium' : ''}>
               {costoEnvio === 0 ? t('checkout.free') : formatPrice(costoEnvio)}
             </span>
           )}
         </div>
         {envioVaria && (
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-            El costo de encomienda no lo cobra HotClick — lo paga directo a la empresa de transporte al recibir.
+            {t('checkout.encomiendaNote')}
           </p>
         )}
       </div>
 
       <div className="pt-3 border-t flex justify-between font-bold" style={{ borderColor: 'var(--hc-border)', color: 'var(--hc-text)' }}>
-        <span>{t('checkout.total')}</span>
+        <span>{t(gcAplicado > 0 ? 'checkout.codigo.totalRestante' : 'checkout.total')}</span>
         <span className="text-lg" style={{ color: 'var(--hc-accent)' }}>{formatPrice(totalFinal)}</span>
       </div>
+      {gcAplicado > 0 && (
+        <p className="text-[12px] leading-4" style={{ color: 'var(--hc-muted)' }}>
+          {t('checkout.codigo.notaRestante')}
+        </p>
+      )}
 
       <p className="text-[11px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
         Precios en colones (₡). Incluyen impuestos aplicables.

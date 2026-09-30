@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +10,9 @@ import ProductCard from '@/components/comprador/ProductCard'
 import CategoryTile from '@/components/comprador/CategoryTile'
 import { useCategoriasCatalogo } from '@/components/comprador/useCategoriasCatalogo'
 import { rutaCategoria } from '@/components/comprador/header/useHeaderComprador'
+import PantallaFalloServidor from '@/components/comprador/estados/PantallaFalloServidor'
+import { esFalloServidor, referenciaDelError } from '@/components/comprador/estados/falloServidorHelpers'
+import TarjetaInstalarApp from '@/components/comprador/instalar/TarjetaInstalarApp'
 import type { Producto } from '@/types/producto'
 import HomeSeo from './home/HomeSeo'
 import EncabezadoSeccion from './home/compra/EncabezadoSeccion'
@@ -48,6 +52,13 @@ export default function HomePage() {
   const destacados = elegirDestacados(destacadosQuery.data ?? [], catalogo)
   const nuevos = elegirNuevos(catalogo, destacados, MAX_NUEVOS)
   const preguntar = (texto: string) => abrirChat(texto)
+  const referenciaFallo = useMemo(() => referenciaDelError(catalogoQuery.error), [catalogoQuery.error])
+
+  const falloServidor = esFalloServidor(catalogoQuery.error) && catalogo.length === 0 && destacados.length === 0
+  if (falloServidor) {
+    const reintentar = () => { void catalogoQuery.refetch(); void destacadosQuery.refetch() }
+    return <PantallaFalloServidor referencia={referenciaFallo} onReintentar={reintentar} />
+  }
 
   return (
     <MainLayout>
@@ -150,6 +161,7 @@ export default function HomePage() {
       )}
 
       <FranjaConfianza />
+      <TarjetaInstalarApp />
     </MainLayout>
   )
 }

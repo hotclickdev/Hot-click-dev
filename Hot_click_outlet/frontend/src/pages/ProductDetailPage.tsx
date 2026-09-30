@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
 import AIProductSection from '@/components/ai/AIProductSection'
-import { seoDesdeProducto, tabsDesdeProducto } from './producto/productoHelpers'
+import { esProductoCotizable, parecidosDisponibles, seoDesdeProducto, tabsDesdeProducto } from './producto/productoHelpers'
 import StickyCartBar from './producto/StickyCartBar'
 import ProductBreadcrumb from './producto/ProductBreadcrumb'
 import ProductGallery from './producto/ProductGallery'
@@ -67,6 +67,9 @@ export default function ProductDetailPage() {
   const tabs = tabsDesdeProducto(product, t)
   const userLang = (navigator.language || 'es').split('-')[0].toLowerCase()
   const { seoTitle, seoDescription } = seoDesdeProducto(product, userLang)
+  // Ficha agotada: las recomendaciones con stock suben a "Parecidos disponibles" (Figma 44:1965).
+  const agotado = !inStock && !esProductoCotizable(product)
+  const parecidos = agotado ? parecidosDisponibles(recommendations, product.id) : []
 
   return (
     <MainLayout>
@@ -105,6 +108,7 @@ export default function ProductDetailPage() {
             turnstileRef={turnstileRef}
             setTurnstileToken={setTurnstileToken}
             turnstileBloqueaSubmit={turnstileBloqueaSubmit}
+            parecidos={parecidos}
           />
         </div>
 
@@ -122,7 +126,7 @@ export default function ProductDetailPage() {
         </div>
 
         <BrandProductsRow product={product} brandProducts={brandProducts} />
-        <RecommendationsRow recommendations={recommendations} />
+        {parecidos.length === 0 && <RecommendationsRow recommendations={recommendations} />}
         <RecentlyViewedGrid items={recentlyViewed} currentProductId={product.id} />
 
       </div>

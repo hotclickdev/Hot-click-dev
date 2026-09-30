@@ -33,15 +33,16 @@ function EnvioInternacionalAtajo() {
 }
 
 function PrecioOpcion({ op }: { op: OpcionEnvio }) {
+  const { t } = useTranslation()
   if (op.varia) {
-    return <span className="font-semibold text-sm shrink-0" style={{ color: 'var(--hc-muted)' }}>Varía</span>
+    return <span className="font-semibold text-sm shrink-0" style={{ color: 'var(--hc-muted)' }}>{t('checkout.shippingVaries')}</span>
   }
   return (
     <span
       className="font-semibold text-sm shrink-0"
       style={{ color: op.precio === 0 ? 'var(--hc-accent)' : 'var(--hc-text)' }}
     >
-      {op.precio === 0 ? 'Gratis' : formatPrice(op.precio)}
+      {op.precio === 0 ? t('checkout.free') : formatPrice(op.precio)}
     </span>
   )
 }

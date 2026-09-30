@@ -15,6 +15,7 @@ import {
   variantesDesdeRespuesta,
   listaImagenesProducto,
   nombreError,
+  estaAgotado,
 } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
 import type { PersonalizacionCarrito } from '@/types/carrito'
@@ -158,7 +159,7 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
     return () => observer.disconnect()
   }, [loading])
 
-  const inStock = product ? product.stock > 0 : false
+  const inStock = product ? !estaAgotado(product) : false
   const atMax = product ? quantity >= product.stock : false
 
   const handleDecrease = () => setQuantity((q) => Math.max(1, q - 1))

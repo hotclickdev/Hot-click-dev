@@ -20,7 +20,7 @@ function ItemBarra({ icono, texto, activo, to, onClick }: ItemBarraProps) {
   const contenido: ReactNode = (
     <>
       <IconoFigma src={icono} size={22} />
-      <span className="whitespace-nowrap">{texto}</span>
+      <span className="whitespace-nowrap leading-[13px]">{texto}</span>
     </>
   )
   if (to) {
@@ -39,7 +39,7 @@ export default function BarraInferior() {
   return (
     <nav
       aria-label={t('comprador.nav.aria')}
-      className="fixed inset-x-0 bottom-0 z-50 flex items-start justify-between border-t border-hc-n-200 bg-hc-n-0 px-[22px] pb-5 pt-2 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 flex items-start justify-between border-t border-hc-n-200 bg-hc-n-0 px-[22px] pb-5 pt-2 leading-[normal] lg:hidden"
     >
       <ItemBarra icono={ICONOS_COMPRADOR.navInicio} texto={t('comprador.nav.inicio')} activo={activa === 'inicio'} to="/" />
       <ItemBarra icono={ICONOS_COMPRADOR.navBuscar} texto={t('comprador.nav.buscar')} activo={activa === 'buscar'} onClick={abrirBusqueda} />

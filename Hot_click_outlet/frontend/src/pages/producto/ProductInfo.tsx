@@ -8,12 +8,13 @@ import Button from '@/components/ui/Button'
 import TurnstileCampo from '@/components/security/TurnstileCampo'
 import type { Producto } from '@/types/producto'
 import type { PersonalizacionCarrito } from '@/types/carrito'
-import { stockDesdeProducto } from './productoHelpers'
+import { esProductoCotizable, stockDesdeProducto } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
 import TitleAndBadges from './TitleAndBadges'
 import ProductPriceRow from './ProductPriceRow'
 import ProductLowStockAlert from './ProductLowStockAlert'
 import FormularioAvisoReposicion from './FormularioAvisoReposicion'
+import { AlternativasAgotado, BotonAgotado } from './ProductAgotado'
 import QuantitySelector from './QuantitySelector'
 import ProductBuyActions from './ProductBuyActions'
 import TrustBadges from './TrustBadges'
@@ -44,6 +45,8 @@ type ProductInfoProps = {
   turnstileRef?: RefObject<TurnstileInstance | null>
   setTurnstileToken?: Dispatch<SetStateAction<string>>
   turnstileBloqueaSubmit?: boolean
+  /** Recomendaciones con stock para la ficha agotada ("Parecidos disponibles"). */
+  parecidos?: Producto[]
 }
 
 export default function ProductInfo({
@@ -69,13 +72,15 @@ export default function ProductInfo({
   turnstileRef,
   setTurnstileToken,
   turnstileBloqueaSubmit = false,
+  parecidos = [],
 }: ProductInfoProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { badge: stockBadge, label: stockLabel } = stockDesdeProducto(product, t)
   const token = useAuthStore(s => s.token)
-  const esCotizable = product.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO'
+  const esCotizable = esProductoCotizable(product)
   const requiereContacto = esCotizable && !token
+  const agotado = !inStock && !esCotizable
 
   return (
     <motion.div
@@ -91,6 +96,7 @@ export default function ProductInfo({
         onSelectTalla={onSelectTalla}
         stockBadge={stockBadge}
         stockLabel={stockLabel}
+        agotado={agotado}
         onNavigate={navigate}
         t={t}
       />
@@ -119,8 +125,11 @@ export default function ProductInfo({
         <ProductLowStockAlert product={product} t={t} />
       )}
 
-      {!inStock && !esCotizable && (
-        <FormularioAvisoReposicion product={product} t={t} />
+      {agotado && (
+        <>
+          <FormularioAvisoReposicion product={product} t={t} />
+          <AlternativasAgotado product={product} parecidos={parecidos} t={t} />
+        </>
       )}
 
       {inStock && !esCotizable && (
@@ -134,7 +143,7 @@ export default function ProductInfo({
         />
       )}
 
-      {esCotizable ? (
+      {esCotizable && (
         <>
           {turnstileSiteKey && turnstileRef && setTurnstileToken && (
             <TurnstileCampo
@@ -154,7 +163,11 @@ export default function ProductInfo({
             {enviandoEncargo ? 'Enviando…' : 'Solicitar encargo'}
           </Button>
         </>
-      ) : (
+      )}
+
+      {agotado && <BotonAgotado mainCTARef={mainCTARef} t={t} />}
+
+      {inStock && !esCotizable && (
         <ProductBuyActions
           mainCTARef={mainCTARef}
           inStock={inStock}

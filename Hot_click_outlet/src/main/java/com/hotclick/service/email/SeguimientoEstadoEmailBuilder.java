@@ -97,6 +97,7 @@ class SeguimientoEstadoEmailBuilder {
             + "<div style='background:#F8F9FB;border-radius:10px;padding:16px 20px;text-align:right'>"
             + "<span style=\"color:#14171C;font-weight:800;font-size:16px;font-family:" + EmailLayoutHelper.F_DISPLAY + "\">Total: ₡" + EmailLayoutHelper.CRC.format(pedido.getTotalPedido()) + "</span>"
             + "</div>"
+            + layout.enlaceSecundario(layout.urlSeguimiento(pedido), "Ver el estado de mi pedido")
             + layout.footer("¿Tenés alguna pregunta?");
     }
 }

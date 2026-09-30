@@ -32,7 +32,7 @@ class OtpServiceEmailTest {
     }
 
     @Test
-    @DisplayName("Incluye el código, el nombre y el tiempo de vencimiento")
+    @DisplayName("Incluye el código, el nombre y el tiempo de vencimiento — nunca el código en el asunto")
     void incluyeDatosClave() {
         ReflectionTestUtils.invokeMethod(service, "enviarEmail", "andrea@correo.com", "Andrea", "482913", 600);
 
@@ -40,7 +40,8 @@ class OtpServiceEmailTest {
         ArgumentCaptor<String> asuntoCaptor = ArgumentCaptor.forClass(String.class);
         verify(resendEmailService).send(org.mockito.ArgumentMatchers.eq("andrea@correo.com"), asuntoCaptor.capture(), htmlCaptor.capture());
 
-        assertThat(asuntoCaptor.getValue()).contains("482913");
+        // El asunto es visible en notificaciones/lockscreen sin abrir el correo: nunca lleva el codigo.
+        assertThat(asuntoCaptor.getValue()).doesNotContain("482913");
         assertThat(htmlCaptor.getValue())
             .contains("482913")
             .contains("Andrea")

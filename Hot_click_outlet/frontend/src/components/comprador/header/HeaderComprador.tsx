@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react'
+import BarraInterna from './BarraInterna'
+import BarraMarca from './BarraMarca'
 import HeaderEscritorio from './HeaderEscritorio'
+import HeaderEscritorioCompacto from './HeaderEscritorioCompacto'
+import HeaderEscritorioMinimo from './HeaderEscritorioMinimo'
 import HeaderMovil from './HeaderMovil'
+import type { DatosBarraInterna, EncabezadoEscritorio, EncabezadoMovil } from './tiposHeader'
 
 type HeaderCompradorProps = {
   onBuscarConFoto: () => void
+  /** Cromo móvil. Por defecto `global` (el Home). */
+  movil?: EncabezadoMovil
+  /** Header desktop. Por defecto `completo`. */
+  escritorio?: EncabezadoEscritorio
+  /** Datos de la barra cuando `movil` es `interno`. */
+  barraInterna?: DatosBarraInterna
+  /** Centra el logo cuando `movil` es `marca`. */
+  marcaCentrada?: boolean
 }
 
 /** Figma `12:809` / `12:551`: al scrollear el header gana una sombra suave. */
@@ -18,15 +31,38 @@ function useScrolleado(): boolean {
   return scrolleado
 }
 
-/** Header fijo de la tienda: versión móvil (`7:3`) bajo `lg`, desktop (`9:172`) desde `lg`. */
-export default function HeaderComprador({ onBuscarConFoto }: HeaderCompradorProps) {
+function CromoMovil({ movil, onBuscarConFoto, barraInterna, marcaCentrada }: Required<Pick<HeaderCompradorProps, 'movil'>> & Omit<HeaderCompradorProps, 'movil' | 'escritorio'>) {
+  if (movil === 'interno' && barraInterna) return <BarraInterna {...barraInterna} />
+  if (movil === 'marca') return <BarraMarca centrada={marcaCentrada} />
+  if (movil === 'global') return <HeaderMovil onBuscarConFoto={onBuscarConFoto} />
+  return null
+}
+
+function CromoEscritorio({ escritorio, onBuscarConFoto }: { escritorio: EncabezadoEscritorio; onBuscarConFoto: () => void }) {
+  if (escritorio === 'compacto') return <HeaderEscritorioCompacto />
+  if (escritorio === 'minimo') return <HeaderEscritorioMinimo />
+  return <HeaderEscritorio onBuscarConFoto={onBuscarConFoto} />
+}
+
+/**
+ * Header fijo de la tienda. El cromo móvil y el de desktop se eligen por separado porque en Figma
+ * una misma pantalla puede usar, por ejemplo, barra interna en móvil y header completo en desktop
+ * (ficha de producto `28:839` / `29:2072`).
+ */
+export default function HeaderComprador({
+  onBuscarConFoto,
+  movil = 'global',
+  escritorio = 'completo',
+  barraInterna,
+  marcaCentrada,
+}: HeaderCompradorProps) {
   const scrolleado = useScrolleado()
   return (
     <header
       className={`sticky top-0 z-50 transition-shadow ${scrolleado ? 'shadow-[0px_4px_12px_0px_rgba(20,23,28,0.1)]' : ''}`}
     >
-      <HeaderMovil onBuscarConFoto={onBuscarConFoto} />
-      <HeaderEscritorio onBuscarConFoto={onBuscarConFoto} />
+      <CromoMovil movil={movil} onBuscarConFoto={onBuscarConFoto} barraInterna={barraInterna} marcaCentrada={marcaCentrada} />
+      <CromoEscritorio escritorio={escritorio} onBuscarConFoto={onBuscarConFoto} />
     </header>
   )
 }
