@@ -13,6 +13,13 @@ export const CONSULTAS_ASISTENTE = [
   'home.compra.consulta3',
 ] as const
 
+/** Figma `12:353`: chips cortos del hero móvil (la tarjeta desktop usa el texto completo). */
+export const CHIPS_ASISTENTE = [
+  'home.compra.consultaChip1',
+  'home.compra.consultaChip2',
+  'home.compra.consultaChip3',
+] as const
+
 export function conStock(productos: Producto[]): Producto[] {
   return productos.filter((p) => (p.stock ?? 0) > 0)
 }
