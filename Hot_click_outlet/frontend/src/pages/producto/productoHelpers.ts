@@ -87,6 +87,32 @@ export function stockDesdeProducto(product: Producto, t: TFunction): { badge: No
   return { badge, label }
 }
 
+/** Producto personalizado con precio a cotizar: no se compra directo, se pide un encargo. */
+export function esProductoCotizable(product: Pick<Producto, 'esPersonalizado' | 'modoPrecioPersonalizado'>): boolean {
+  return Boolean(product.esPersonalizado) && product.modoPrecioPersonalizado !== 'FIJO'
+}
+
+/** Un producto está agotado cuando no tiene stock (`stock` 0, negativo o ausente). */
+export function estaAgotado(product: Pick<Producto, 'stock'>): boolean {
+  return !(Number(product.stock) > 0)
+}
+
+export const MAX_PARECIDOS_AGOTADO = 6
+
+/**
+ * "Parecidos disponibles" de la ficha agotada (Figma 44:1965): recomendaciones
+ * con stock, sin repetir el producto actual.
+ */
+export function parecidosDisponibles(
+  recomendaciones: Producto[],
+  idActual: Producto['id'],
+  max = MAX_PARECIDOS_AGOTADO,
+): Producto[] {
+  return recomendaciones
+    .filter((p) => p.id !== idActual && !estaAgotado(p))
+    .slice(0, max)
+}
+
 export function tallasDesdeProducto(
   product: Producto,
   variantes: VarianteProducto[],

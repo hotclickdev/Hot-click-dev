@@ -1,9 +1,10 @@
-import { useState, type CSSProperties, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import type { TFunction } from 'i18next'
 import { productService } from '@/services/productService'
 import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 import useAuthStore from '@/store/authStore'
-import { BellSVG } from './productIcons'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import type { Producto } from '@/types/producto'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -15,8 +16,8 @@ type FormularioAvisoReposicionProps = {
 
 /**
  * "Avisame cuando vuelva" — ficha de producto agotado (Figma 03 · Producto y
- * tiendas, frame 44:1917 "Ficha agotada"). Guarda el interés del cliente en
- * el backend; el envío automático del correo al reponer stock es
+ * tiendas, frame 44:1917 "Ficha agotada", nodo 44:1946). Guarda el interés del
+ * cliente en el backend; el envío automático del correo al reponer stock es
  * NUEVO · por programar (todavía no hay disparador de reposición).
  */
 export default function FormularioAvisoReposicion({ product, t }: FormularioAvisoReposicionProps) {
@@ -32,7 +33,7 @@ export default function FormularioAvisoReposicion({ product, t }: FormularioAvis
     if (enviando || enviado || product.id == null) return
     const limpio = correo.trim()
     if (!EMAIL_RE.test(limpio)) {
-      setError(t('product.restockInvalidEmail', 'Ingresá un correo válido'))
+      setError(t('product.restockInvalidEmail'))
       return
     }
     setError(null)
@@ -41,59 +42,56 @@ export default function FormularioAvisoReposicion({ product, t }: FormularioAvis
       await productService.avisarReposicion(product.id, limpio)
       setEnviado(true)
     } catch (err: unknown) {
-      setError(mensajeErrorApi(err, t('product.restockError', 'No se pudo guardar tu aviso')))
+      setError(mensajeErrorApi(err, t('product.restockError')))
     } finally {
       setEnviando(false)
     }
   }
 
   return (
-    <div className="rounded-2xl border border-hc-border bg-hc-surface p-4">
-      <div className="flex items-start gap-2.5 mb-3">
-        <span className="mt-0.5 shrink-0 text-hc-muted"><BellSVG /></span>
-        <h3 className="text-sm font-bold text-hc-text leading-snug flex-1">
-          {t('product.restockTitle', 'Te avisamos cuando vuelva')}
+    <div className="flex w-full flex-col gap-[10px] rounded-[14px] bg-hc-blue-50 p-[14px]">
+      <div className="flex w-full items-center gap-2">
+        <IconoFigma src={ICONOS_COMPRADOR.avisoCampana} size={18} className="text-hc-blue-600" />
+        <h3 className="min-w-0 flex-1 text-[14px] font-semibold text-hc-blue-600">
+          {t('product.restockTitle')}
         </h3>
-        <span
-          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap"
-          style={{ background: 'var(--hc-surface-3)', color: 'var(--hc-muted)' }}
-        >
-          {t('common.newComingSoon', 'NUEVO · por programar')}
+        <span className="shrink-0 whitespace-nowrap rounded-[6px] bg-hc-blue-900 px-2 py-[3px] font-mono text-[10px] font-medium text-hc-n-0">
+          {t('product.restockNuevo')}
         </span>
       </div>
 
       {enviado ? (
-        <p className="text-sm text-hc-text">
-          {t('product.restockSaved', 'Listo, te avisamos a {{correo}} en cuanto vuelva.', { correo })}
+        <p className="text-[14px] text-hc-n-900">
+          {t('product.restockSaved', { correo })}
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+        <form
+          onSubmit={handleSubmit}
+          className="flex w-full items-center gap-2 rounded-[10px] border border-hc-n-200 bg-hc-n-0 py-[6px] pl-3 pr-[6px] focus-within:border-hc-blue-600"
+        >
           <input
             type="email"
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
-            placeholder="tu@correo.com"
-            aria-label={t('product.restockEmailLabel', 'Tu correo para avisarte')}
-            className="flex-1 min-w-0 h-11 rounded-xl border border-hc-border bg-hc-bg px-3.5 text-sm text-hc-text placeholder:text-hc-muted focus:outline-none focus:ring-2"
-            style={{ '--tw-ring-color': 'var(--hc-accent)' } as CSSProperties}
+            placeholder={t('product.restockPlaceholder')}
+            aria-label={t('product.restockEmailLabel')}
+            aria-invalid={error != null}
+            className="min-w-0 flex-1 bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
             disabled={enviando}
           />
           <button
             type="submit"
             disabled={enviando}
-            className="h-11 shrink-0 rounded-xl px-4 text-sm font-semibold text-white disabled:opacity-60"
-            style={{ background: 'var(--hc-accent)' }}
+            className="shrink-0 whitespace-nowrap rounded-[8px] bg-hc-blue-600 px-[14px] py-[9px] text-[13px] font-semibold text-hc-n-0 disabled:opacity-60"
           >
-            {enviando ? t('common.sending', 'Enviando…') : t('product.restockCta', 'Avisame')}
+            {enviando ? t('product.restockSending') : t('product.restockCta')}
           </button>
         </form>
       )}
-      {error && <p className="text-xs mt-2" style={{ color: 'var(--hc-danger, #dc2626)' }}>{error}</p>}
+      {error && <p role="alert" className="text-[12px] text-hc-danger">{error}</p>}
       {!enviado && (
-        <p className="text-xs text-hc-muted mt-3">
-          {isAuthenticated
-            ? t('product.restockWhatsapp', 'Si ingresaste a tu cuenta, también te avisamos por WhatsApp.')
-            : t('product.restockNoAccount', 'También podés crear tu cuenta para que te avisemos por WhatsApp.')}
+        <p className="w-full text-[12px] leading-4 text-hc-n-600">
+          {isAuthenticated ? t('product.restockWhatsapp') : t('product.restockNoAccount')}
         </p>
       )}
     </div>
