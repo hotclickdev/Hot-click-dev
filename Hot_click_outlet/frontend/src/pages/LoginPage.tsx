@@ -15,7 +15,7 @@ export default function LoginPage() {
   const {
     step, setStep, loading, correo, setCorreo, contrasena, setContrasena,
     code2FA, setCode2FA, useRecovery, setUseRecovery, recoveryInput, setRecoveryInput,
-    setShowForgot, error, setError, needsVerification, needsPasswordReset,
+    navigate, error, setError, needsVerification, needsPasswordReset,
     resendLoading, refs2FA, turnstileRef, turnstileToken, setTurnstileToken,
     twoFaMethods, resendCooldown, handleLogin, handleResendVerification,
     sendEmailOtp, handlePickMethod, handle2FA, handleEmailOtp, handleLoginSuccess,
@@ -38,7 +38,7 @@ export default function LoginPage() {
             setTurnstileToken={setTurnstileToken}
             onSubmit={handleLogin}
             onResendVerification={handleResendVerification}
-            onForgot={() => setShowForgot(true)}
+            onForgot={() => navigate('/recuperar-contrasena', { state: { correo } })}
           />
         )}
 

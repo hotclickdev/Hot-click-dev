@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent } from 'react'
+import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,7 @@ import useTenantStore from '@/store/tenantStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
+import { correoDesdeEstado } from './recuperar/recuperarHelpers'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
@@ -38,7 +39,8 @@ function carritoDesdeRespuesta(res: unknown): CarritoRecuperable | null {
 }
 
 /**
- * Estado y handlers del flujo de login (credenciales, 2FA, webauthn, forgot).
+ * Estado y handlers del flujo de login (credenciales, 2FA, webauthn).
+ * Recuperar contraseña vive en /recuperar-contrasena (pages/auth/recuperar).
  * Side effects en el mismo orden que LoginPage original.
  */
 export function useLoginFlow() {
@@ -51,16 +53,20 @@ export function useLoginFlow() {
 
   const from = destinoPostLogin(params.get('redirect') ?? fromLocationState(location.state) ?? '/')
 
+  // `?recuperar=1` (desde el seguimiento de pedido sin cuenta): el invitado activa su cuenta poniéndole contraseña.
+  useEffect(() => {
+    if (params.get('recuperar') === '1') navigate('/recuperar-contrasena', { replace: true })
+  }, [params, navigate])
+
   const [step,              setStep]              = useState('login')
   const [loading,           setLoading]           = useState(false)
-  const [correo,            setCorreo]            = useState('')
+  // Viene prellenado al volver de /recuperar-contrasena.
+  const [correo,            setCorreo]            = useState(() => correoDesdeEstado(location.state))
   const [contrasena,        setContrasena]        = useState('')
   const [tempToken,         setTempToken]         = useState('')
   const [code2FA,           setCode2FA]           = useState(['', '', '', '', '', ''])
   const [useRecovery,       setUseRecovery]       = useState(false)
   const [recoveryInput,     setRecoveryInput]     = useState('')
-  // `?recuperar=1` (desde el seguimiento de pedido sin cuenta): el invitado activa su cuenta poniéndole contraseña.
-  const [showForgot,        setShowForgot]        = useState(() => params.get('recuperar') === '1')
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [showCartRecovery,  setShowCartRecovery]  = useState(false)
   const [recoveryCart,      setRecoveryCart]      = useState<CarritoRecuperable | null>(null)
@@ -257,7 +263,6 @@ export function useLoginFlow() {
     code2FA, setCode2FA,
     useRecovery, setUseRecovery,
     recoveryInput, setRecoveryInput,
-    showForgot, setShowForgot,
     showAdminModal, setShowAdminModal,
     showCartRecovery, setShowCartRecovery,
     recoveryCart,

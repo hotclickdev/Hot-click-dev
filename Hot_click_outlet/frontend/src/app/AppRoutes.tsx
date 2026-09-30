@@ -43,6 +43,7 @@ const WishlistPage = lazy(() => import('@/pages/WishlistPage'))
 
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
+const RecuperarContrasenaPage = lazy(() => import('@/pages/auth/recuperar/RecuperarContrasenaPage'))
 const NosotrosPage = lazy(() => import('@/pages/NosotrosPage'))
 const AyudaPage = lazy(() => import('@/pages/AyudaPage'))
 const ContactoPage = lazy(() => import('@/pages/ContactoPage'))
@@ -187,6 +188,7 @@ export default function AppRoutes() {
           <Route path="/registro" element={<RegisterPage />} />
         </>
       )}
+      <Route path="/recuperar-contrasena" element={<RecuperarContrasenaPage />} />
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
       <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
