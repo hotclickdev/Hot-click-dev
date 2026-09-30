@@ -59,7 +59,8 @@ export function useLoginFlow() {
   const [code2FA,           setCode2FA]           = useState(['', '', '', '', '', ''])
   const [useRecovery,       setUseRecovery]       = useState(false)
   const [recoveryInput,     setRecoveryInput]     = useState('')
-  const [showForgot,        setShowForgot]        = useState(false)
+  // `?recuperar=1` (desde el seguimiento de pedido sin cuenta): el invitado activa su cuenta poniéndole contraseña.
+  const [showForgot,        setShowForgot]        = useState(() => params.get('recuperar') === '1')
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [showCartRecovery,  setShowCartRecovery]  = useState(false)
   const [recoveryCart,      setRecoveryCart]      = useState<CarritoRecuperable | null>(null)

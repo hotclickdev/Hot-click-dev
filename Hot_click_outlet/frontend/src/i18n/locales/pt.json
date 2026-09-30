@@ -2934,6 +2934,50 @@
     },
     "hoja": {
       "cerrar": "Fechar"
+    },
+    "seguimiento": {
+      "tituloPagina": "Acompanhe seu pedido · HotClick",
+      "titulo": "Acompanhe seu pedido",
+      "paquetes_one": "{{count}} pacote",
+      "paquetes_other": "{{count}} pacotes",
+      "entregados_one": "{{count}} entregue",
+      "entregados_other": "{{count}} entregues",
+      "paquete": "Pacote {{numero}} · {{tienda}}",
+      "saleDe": "Sai de {{origen}}",
+      "estado": {
+        "PENDIENTE": "Aguardando pagamento",
+        "PENDIENTE_COMPROBANTE": "Verificando seu pagamento",
+        "PENDIENTE_APROBACION": "Verificando seu pagamento",
+        "PAGADO": "Pagamento confirmado",
+        "EN_PREPARACION": "Em preparação",
+        "LISTO_RETIRO": "Pronto para retirar",
+        "ENVIADO": "Enviado",
+        "ENTREGADO": "Entregue",
+        "CANCELADO": "Cancelado",
+        "otro": "Em andamento"
+      },
+      "guiaCorreos": "Rastreio Correos CR {{guia}}",
+      "guiaDirecta": "Rastreio entrega direta {{guia}}",
+      "entregadoElConGuia": "Entregue em {{fecha}} · Rastreio {{guia}}",
+      "entregadoEl": "Entregue em {{fecha}}",
+      "entregadoConGuia": "Entregue · Rastreio {{guia}}",
+      "entregado": "Entregue",
+      "sinGuia": "Avisaremos quando tiver código de rastreio",
+      "listoRetiro": "Você já pode retirar na loja",
+      "retiro": "Você retira na loja, avisaremos quando estiver pronto",
+      "cancelado": "Este pacote foi cancelado",
+      "rastrear": "Rastrear o pacote {{numero}} (abre em outra aba)",
+      "crearCuentaTitulo": "Crie sua conta com este e-mail",
+      "crearCuentaTexto": "Veja todos os seus pedidos, solicitações e rastreios em um só lugar. Só pedimos uma senha.",
+      "crearCuentaCta": "Criar minha conta",
+      "noEncontradoTitulo": "Não encontramos este pedido",
+      "noEncontradoTexto": "O link não é válido ou não está mais disponível. Confira o e-mail de confirmação ou fale conosco pelo WhatsApp.",
+      "irAlInicio": "Ir para o início",
+      "iniciarSesion": "Entrar",
+      "errorTitulo": "Não conseguimos carregar seu pedido",
+      "errorTexto": "Verifique sua conexão e tente novamente em instantes.",
+      "reintentar": "Tentar novamente",
+      "cargando": "Carregando seu pedido"
     }
   }
 }

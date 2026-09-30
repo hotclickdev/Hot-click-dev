@@ -2934,6 +2934,50 @@
     },
     "hoja": {
       "cerrar": "Close"
+    },
+    "seguimiento": {
+      "tituloPagina": "Track your order · HotClick",
+      "titulo": "Track your order",
+      "paquetes_one": "{{count}} package",
+      "paquetes_other": "{{count}} packages",
+      "entregados_one": "{{count}} delivered",
+      "entregados_other": "{{count}} delivered",
+      "paquete": "Package {{numero}} · {{tienda}}",
+      "saleDe": "Ships from {{origen}}",
+      "estado": {
+        "PENDIENTE": "Awaiting payment",
+        "PENDIENTE_COMPROBANTE": "Reviewing your payment",
+        "PENDIENTE_APROBACION": "Reviewing your payment",
+        "PAGADO": "Payment confirmed",
+        "EN_PREPARACION": "Being prepared",
+        "LISTO_RETIRO": "Ready for pickup",
+        "ENVIADO": "Shipped",
+        "ENTREGADO": "Delivered",
+        "CANCELADO": "Cancelled",
+        "otro": "In progress"
+      },
+      "guiaCorreos": "Correos CR tracking {{guia}}",
+      "guiaDirecta": "Direct delivery tracking {{guia}}",
+      "entregadoElConGuia": "Delivered on {{fecha}} · Tracking {{guia}}",
+      "entregadoEl": "Delivered on {{fecha}}",
+      "entregadoConGuia": "Delivered · Tracking {{guia}}",
+      "entregado": "Delivered",
+      "sinGuia": "We'll let you know when it has a tracking number",
+      "listoRetiro": "You can pick it up at the store now",
+      "retiro": "You'll pick it up at the store, we'll let you know when it's ready",
+      "cancelado": "This package was cancelled",
+      "rastrear": "Track package {{numero}} (opens in a new tab)",
+      "crearCuentaTitulo": "Create your account with this email",
+      "crearCuentaTexto": "See all your orders, requests and tracking numbers in one place. We only ask for a password.",
+      "crearCuentaCta": "Create my account",
+      "noEncontradoTitulo": "We couldn't find this order",
+      "noEncontradoTexto": "The link isn't valid or is no longer available. Check your confirmation email or message us on WhatsApp.",
+      "irAlInicio": "Go to home",
+      "iniciarSesion": "Log in",
+      "errorTitulo": "We couldn't load your order",
+      "errorTexto": "Check your connection and try again in a moment.",
+      "reintentar": "Try again",
+      "cargando": "Loading your order"
     }
   }
 }
