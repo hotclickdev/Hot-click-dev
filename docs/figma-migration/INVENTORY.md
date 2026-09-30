@@ -24,14 +24,15 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | Elemento | Rama | Estado |
 | --- | --- | --- |
 | Base: master + fase 2 (PR #93) | `feat/figma/base` | Integrada. Frontend: tsc limpio, 354 tests. Backend: ver PROGRESS.md |
-| SHELL: `MainLayout` con variantes `raiz`, `interna`, `marca`, `propia` y tres headers desktop | `feat/figma/shell` | Implementado y medido contra Figma (alturas 111, 79, 71, 160, 51, 53, 67). Falta QA independiente e integración |
-| Home | `feat/figma/home` | Commiteado sobre master. Falta integrar SHELL y volver a medir |
+| SHELL: `MainLayout` con variantes `raiz`, `interna`, `marca`, `propia` y tres headers desktop | `feat/figma/shell` | Integrado en `feat/figma/base` (merge `b3159c1e`). Medido contra Figma (alturas 111, 79, 71, 160, 51, 53, 67) y con QA independiente |
+| Home | `feat/figma/home` | Base integrada (merge `98ec9abc`), cuerpo remedido y corregido (`6d0de288`). tsc limpio, 358 tests, build OK. Los tres frames siguen en PARTIAL por diferencias fuera de HOME (ver filas) |
 
 ## Cómo leer la evidencia
 
 - **V**: comparado visualmente contra Figma en una auditoría (captura de la app vs captura del frame).
 - **C**: inferido por código y rutas; no comparado visualmente.
 - **H**: dato tomado de los HANDOFF_*.md del repo; no verificado.
+- **M**: medido en píxeles contra Figma con Playwright, fuentes reales cargadas y API simulada (sin backend real).
 - **B**: la pantalla ya está en `feat/figma/base` (recuperada del PR #93); solo falta compararla contra Figma.
 
 **UNKNOWN no significa correcto**: significa que aún no se comparó. Cada agente debe convertir sus UNKNOWN en PASS, PARTIAL u OLD_DESIGN antes de implementar. Muchas necesitan fixtures (carrito con productos, sesión iniciada, pedido con paquetes).
@@ -40,9 +41,9 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 
 | Sección | Pantalla | Frame Figma | Ruta | Estado | Evidencia | Desktop | Mobile | Agente |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 01 Inicio | Home · móvil 390 | `7:2` | / | PARTIAL | V visual. Medido en píxeles: el header mide 121 y Figma 111; corregido en feat/figma/shell, falta integrarlo y volver a medir el cuerpo | no | sí | HOME |
-| 01 Inicio | Home móvil · al scrollear | `12:346` | / | PARTIAL | V visual. Header móvil medido: 165 vs 160 de Figma; corregido en feat/figma/shell, falta integrarlo y volver a medir | no | sí | HOME |
-| 01 Inicio | Home · desktop 1440 | `9:171` | / | PARTIAL | V visual. Medido en píxeles: el header desktop mide 121 y Figma 111; corregido en feat/figma/shell, falta integrarlo y volver a medir el cuerpo. Fuente de verdad del Home desktop (decisión del usuario) | sí | no | HOME |
+| 01 Inicio | Home · móvil 390 | `7:2` | / | PARTIAL | M. Remedido en píxeles con fuentes reales y API simulada: header, hero, secciones, Seguí, categorías, asistente y confianza coinciden con Figma (±1 px); corregido en `6d0de288`. Pendiente fuera de HOME: ProductCard mide 278 y Figma 280 (CAT); `formatPrice` da "₡6 200" y Figma "₡6.200" (decisión); FAB y botón de WhatsApp flotantes no están en Figma (SYS). No verificado: fotos reales, badge "Quedan N", badge del carrito | no | sí | HOME |
+| 01 Inicio | Home móvil · al scrollear | `12:346` | / | PARTIAL | M. Header sticky en y=0, alto 160 y sombra `0 4px 12px rgba(20,23,28,.1)` idénticos a Figma; barra inferior y=777 alto 67. Mismas pendientes externas que `7:2` | no | sí | HOME |
+| 01 Inicio | Home · desktop 1440 | `9:171` | / | PARTIAL | M. Remedido: hero 572, título 420x84, chips 33, secciones en y=683/933/1128, confianza 208, altura total 1855 contra 1857 de Figma (los 2 px son del ProductCard). Fuente de verdad del Home desktop (decisión del usuario). Mismas pendientes externas que `7:2`, más copy "Solo aparece si ya visitaste productos" (¿anotación de diseño?) y orden de categorías (Figma fija uno, la app respeta el de la API) | sí | no | HOME |
 | 01 Inicio | Búsqueda activa · móvil | `8:163` | (overlay) SearchPanel | UNKNOWN | C. Sin comparar | no | sí | CAT |
 | 01 Inicio | Asistente · respuesta · móvil | `8:230` | (overlay) chat asistente | UNKNOWN | C. Sin comparar | no | sí | CAT |
 | 02 Buscar y explorar | Resultados de búsqueda · móvil | `26:722` | /productos?search= | PARTIAL | V. Sin query se ve el hero antiguo "Catálogo completo"; con query sin comparar | no | sí | CAT |
