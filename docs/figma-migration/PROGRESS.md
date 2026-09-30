@@ -10,7 +10,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Fase 1: auditoría e inventario | Hecha (90 pantallas) |
 | Fase 2a: recuperar PR #93 | Hecha en `feat/figma/base` |
 | Fase 2b: mover Home a su rama | Hecha en `feat/figma/home` |
-| Fase 2c: SHELL (variantes de `MainLayout`) | Implementado, con QA independiente y hallazgos corregidos. Pendiente de tu autorización para integrar |
+| Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | Agentes CAT, PROD, STORE, CHK, ACC, SRV, SYS, QR | **No lanzados**, como se pidió |
 
@@ -95,7 +95,7 @@ No-regresión: se midieron 34 rutas reales en móvil y desktop contra `base`: 0 
 
 Como `index.css` es global, el cambio a `clip` afecta a todo el sitio, incluidos los paneles admin. Las rutas probadas no mostraron regresión, pero la revisión visual del panel admin no se hizo.
 
-**Estado de SHELL: implementado, medido y con QA independiente hecho; hallazgos corregidos. Falta tu autorización para integrarlo en `feat/figma/base`.** Una segunda pasada del QA sobre `ac69ca69` no se ha hecho; las dos correcciones las verifiqué yo con mediciones.
+**Estado de SHELL: integrado en `feat/figma/base` (merge local `b3159c1e`, sin push), con el usuario autorizándolo.** Una segunda pasada del QA sobre `ac69ca69` no se ha hecho; las dos correcciones las verifiqué yo con mediciones.
 
 ## Archivos bloqueados ahora
 
@@ -118,7 +118,7 @@ base ──► shell ──► [QA independiente] ──► integrar en base ─
 
 ## Listo para comenzar
 
-Nada de la ola 1 empieza hasta que SHELL se integre en `base` (el QA ya pasó; falta tu autorización). Cuando eso ocurra, cada agente arranca con: rama `feat/figma/<agente>` desde `base`, su worktree propio, su lista de pantallas del inventario, y el compromiso de convertir sus UNKNOWN en estado real **antes** de escribir código.
+SHELL ya está en `base`. La ola 1 puede arrancar cuando el usuario lo indique; HOME necesita antes `git merge feat/figma/base`. Cuando eso ocurra, cada agente arranca con: rama `feat/figma/<agente>` desde `base`, su worktree propio, su lista de pantallas del inventario, y el compromiso de convertir sus UNKNOWN en estado real **antes** de escribir código.
 
 Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego PROD y CHK (la compra), ACC, y al final SRV, SYS, STORE y QR.
 
@@ -126,7 +126,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 
 | # | Decisión | Afecta a |
 | --- | --- | --- |
-| 1 | Autorizar integrar `feat/figma/shell` en `feat/figma/base` (merge local, sin push). El QA ya pasó | Todos |
+| 1 | ~~Integrar SHELL en base~~ Hecho | Todos |
 | 2 | Precio tachado y badge "Oferta" en la tarjeta nueva: ¿se conservan? | CAT |
 | 3 | Sección "Ofertas HOT" del catálogo: Figma no la tiene. ¿Se conserva? | CAT |
 | 4 | ¿Se elimina el Quick view (hoy no hace nada)? | CAT |
