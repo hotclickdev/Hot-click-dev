@@ -92,7 +92,7 @@ class ConfirmacionPedidoEmailBuilder {
             + "<p style='margin:0;font-size:13px;color:#14171C'>Si tenés cualquier problema con tu pedido, escribinos por WhatsApp y lo resolvemos.</p>"
             + "</div>"
 
-            + layout.cta("https://hotclick.lat/mis-pedidos", "Ver mi pedido")
+            + layout.cta(layout.urlSeguimiento(pedido), "Ver mi pedido")
             + layout.footer("¿Tenés alguna pregunta sobre tu pedido?");
     }
 }

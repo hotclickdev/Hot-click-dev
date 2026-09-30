@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.hotclick.utils.TokenSeguimientoPedido;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +27,14 @@ public class Pedido extends BaseEntity {
     /** Subpedidos de un mismo checkout (uno por vendedor) comparten este valor y un único Pago. */
     @Column(name = "grupo_pago", length = 40)
     private String grupoPago;
+
+    /**
+     * Token del enlace público de seguimiento (/seguimiento/{token}) que va en los correos al comprador.
+     * Nunca se serializa: un vendedor que ve su subpedido no debe poder abrir los paquetes de otros vendedores.
+     */
+    @JsonIgnore
+    @Column(name = "token_seguimiento", length = 64, unique = true)
+    private String tokenSeguimiento;
 
     @Column(name = "fecha_pedido")
     private LocalDateTime fechaPedido;
@@ -216,6 +225,15 @@ public class Pedido extends BaseEntity {
 
     public String getGrupoPago() { return grupoPago; }
     public void setGrupoPago(String grupoPago) { this.grupoPago = grupoPago; }
+
+    @JsonIgnore
+    public String getTokenSeguimiento() { return tokenSeguimiento; }
+    public void setTokenSeguimiento(String tokenSeguimiento) { this.tokenSeguimiento = tokenSeguimiento; }
+
+    @PrePersist
+    void asegurarTokenSeguimiento() {
+        if (tokenSeguimiento == null) tokenSeguimiento = TokenSeguimientoPedido.generar();
+    }
 
     public Usuario getUsuarioFinal() { return usuarioFinal; }
     public void setUsuarioFinal(Usuario usuarioFinal) { this.usuarioFinal = usuarioFinal; }
