@@ -15,7 +15,7 @@ export default function InformacionPage() {
     <MainLayout>
       <Seo
         title="Cómo comprar, envíos y garantía — HotClick"
-        description="Guía de compra en HotClick: envíos en Costa Rica, garantía de producto hasta 40 días por defectos y derecho de retracto de 7 días hábiles (Ley 7472)."
+        description="Guía de compra en HotClick: envíos en Costa Rica, garantía de producto hasta 40 días por defectos y derecho de retracto de 8 días hábiles desde la confirmación del pago (Ley 7472)."
         url="https://hotclick.lat/informacion"
       />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-20">

@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import Seo from '@/components/seo/Seo'
-
-const LAST_UPDATED = '5 de junio de 2025'
+import { IDENTIDAD_COMERCIANTE, POLITICAS_ACTUALIZADAS } from '@/legal/identidadComerciante'
 
 const COOKIES_TABLE = [
   { nombre: 'hotclick-cart (localStorage)', categoria: 'Técnica', finalidad: 'Carrito de compras persistido localmente', duracion: 'Sesión / manual' },
@@ -12,6 +11,7 @@ const COOKIES_TABLE = [
   { nombre: '_ga, _ga_*', categoria: 'Analítica', finalidad: 'Google Analytics 4 — estadísticas agregadas', duracion: '2 años' },
   { nombre: 'ph_*, __ph_*', categoria: 'Analítica', finalidad: 'PostHog — analítica de producto y embudos', duracion: '1 año' },
   { nombre: '_clck, _clsk, CLID', categoria: 'Analítica', finalidad: 'Microsoft Clarity — mapas de calor y sesión (anonimizada)', duracion: '1 año' },
+  { nombre: '_fbp, _fbc', categoria: 'Publicidad', finalidad: 'Meta — medición de anuncios, solo con consentimiento', duracion: '90 días' },
   { nombre: '__clerk_*', categoria: 'Técnica', finalidad: 'Autenticación social (Clerk)', duracion: 'Sesión' },
 ]
 
@@ -33,8 +33,8 @@ const clausulas = [
         <p>La Plataforma emplea las siguientes categorías de Cookies:</p>
         <ul>
           <li><strong>a) Técnicas u Obligatorias:</strong> Esenciales para el correcto funcionamiento del sitio, la autenticación de usuarios y la seguridad de las transacciones. No pueden ser desactivadas.</li>
-          <li><strong>b) De Rendimiento y Analítica:</strong> Administradas por terceros (Google Analytics 4, PostHog, Microsoft Clarity) que recopilan información estadística anónima o agregada para evaluar el rendimiento de la Plataforma y corregir errores. Se activan únicamente con consentimiento expreso.</li>
-          <li><strong>c) De Publicidad Comportamental:</strong> Utilizadas para segmentar perfiles de interés y desplegar anuncios publicitarios personalizados. Requieren consentimiento explícito independiente.</li>
+          <li><strong>b) De Rendimiento y Analítica:</strong> Administradas por terceros (Google Analytics 4, PostHog y Microsoft Clarity) para evaluar el rendimiento de la Plataforma. Se activan únicamente con consentimiento expreso.</li>
+          <li><strong>c) De Publicidad:</strong> Meta, para medir anuncios. Requiere el mismo consentimiento expreso del banner y no se activa sin él.</li>
         </ul>
       </>
     ),
@@ -59,7 +59,7 @@ const clausulas = [
           <li><strong>Decreto N.° 37554-JP</strong>, artículo 9: requisitos formales del consentimiento informado.</li>
           <li><strong>Principio de proporcionalidad</strong> reconocido por la PRODHAB: solo se recopilan datos estrictamente necesarios para cada finalidad.</li>
         </ul>
-        <p>Para ejercer derechos ARCO sobre datos de navegación, dirigir solicitud escrita a <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a>.</p>
+        <p>Para ejercer derechos ARCO sobre datos de navegación, dirigir solicitud escrita a <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a>.</p>
       </>
     ),
   },
@@ -70,7 +70,7 @@ export default function CookiesPage() {
     <MainLayout>
       <Seo
         title="Política de Cookies — HotClick Costa Rica"
-        description="Cookies y tecnologías de seguimiento en HotClick: técnicas, analítica (GA4, PostHog, Clarity) y cómo gestionar tu consentimiento conforme a la Ley 8968."
+        description="Cookies y tecnologías de seguimiento en HotClick: técnicas, analítica (GA4, PostHog, Clarity), publicidad (Meta) y cómo gestionar tu consentimiento conforme a la Ley 8968."
         url="https://hotclick.lat/cookies"
       />
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
@@ -99,7 +99,7 @@ export default function CookiesPage() {
                   Política de Cookies
                 </h1>
                 <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-                  HotClick · Última actualización: {LAST_UPDATED}
+                  HotClick · Última actualización: {POLITICAS_ACTUALIZADAS}
                 </p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function CookiesPage() {
           {/* CTA */}
           <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'color-mix(in srgb, var(--hc-accent) 6%, var(--hc-surface))', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)', borderRadius: 16, textAlign: 'center' }}>
             <p style={{ fontSize: 14, color: 'var(--hc-muted)', margin: '0 0 0.5rem' }}>¿Desea ejercer sus derechos ARCO sobre sus datos de navegación?</p>
-            <a href="mailto:hotclick.cr@gmail.com" style={{ fontSize: 15, fontWeight: 700, color: 'var(--hc-accent)', textDecoration: 'none' }}>hotclick.cr@gmail.com</a>
+            <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ fontSize: 15, fontWeight: 700, color: 'var(--hc-accent)', textDecoration: 'none' }}>{IDENTIDAD_COMERCIANTE.correo}</a>
             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <Link to="/privacidad" style={{ fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none' }}
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}

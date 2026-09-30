@@ -11,14 +11,14 @@ export default function DevolucionesPage() {
     <MainLayout>
       <Helmet>
         <title>Política de devoluciones — HotClick Costa Rica</title>
-        <meta name="description" content="Tenés 7 días hábiles para devolver cualquier producto. Conocé el proceso de devolución y cambio de HotClick Marketplace Costa Rica." />
+        <meta name="description" content="Tenés 8 días hábiles desde la confirmación del pago para ejercer el retracto. Conocé el proceso de devolución y cambio de HotClick." />
         <link rel="canonical" href={`${SITE_URL}/devoluciones`} />
         <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/devoluciones`} />
         <link rel="alternate" hrefLang="es" href={`${SITE_URL}/devoluciones`} />
         <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Política de devoluciones — HotClick Costa Rica" />
-        <meta property="og:description" content="7 días hábiles para cambios y devoluciones. Sin costo para el comprador." />
+        <meta property="og:description" content="8 días hábiles desde la confirmación del pago para el retracto. El reembolso vuelve por el mismo medio de pago." />
         <meta property="og:url" content={`${SITE_URL}/devoluciones`} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:locale" content="es_CR" />

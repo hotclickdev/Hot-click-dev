@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { LAST_UPDATED } from './devolucionesData'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 
-/** Hero: volver, título y resumen de 7 días hábiles. */
+/** Hero: volver, título y resumen del retracto. */
 export default function DevolucionesHero() {
   return (
     <div style={{
@@ -44,7 +44,7 @@ export default function DevolucionesHero() {
         </div>
 
         <p style={{ fontSize: 15, color: 'var(--hc-muted)', lineHeight: 1.6, margin: 0 }}>
-          Tu satisfacción es nuestra prioridad. Tenés <strong style={{ color: 'var(--hc-text)' }}>7 días hábiles</strong> desde la recepción para solicitar cambios o devoluciones. Leé los detalles a continuación.
+          Tenés <strong style={{ color: 'var(--hc-text)' }}>8 días hábiles</strong> desde la confirmación del pago para ejercer el retracto. La garantía por defectos sigue siendo de hasta 40 días desde la recepción.
         </p>
       </div>
     </div>

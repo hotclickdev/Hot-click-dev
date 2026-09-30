@@ -4,7 +4,7 @@ import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import { RUTA_VENDE } from './header/useHeaderComprador'
 
-type EnlaceFooter = { clave: string; to: string; soloEscritorio?: boolean }
+type EnlaceFooter = { clave: string; to: string }
 
 const ENLACES: EnlaceFooter[] = [
   { clave: 'sobre', to: '/nosotros' },
@@ -12,7 +12,8 @@ const ENLACES: EnlaceFooter[] = [
   { clave: 'devoluciones', to: '/devoluciones' },
   { clave: 'contacto', to: '/contacto' },
   { clave: 'terminos', to: '/terminos' },
-  { clave: 'privacidad', to: '/privacidad', soloEscritorio: true },
+  { clave: 'privacidad', to: '/privacidad' },
+  { clave: 'cookies', to: '/cookies' },
 ]
 
 function BannerVendedor() {
@@ -43,7 +44,7 @@ function EnlacesLegales() {
   return (
     <p className="text-[12px] leading-[18px] text-hc-n-600 lg:text-[13px] lg:leading-normal">
       {ENLACES.map((enlace, indice) => (
-        <span key={enlace.clave} className={enlace.soloEscritorio ? 'hidden lg:inline' : undefined}>
+        <span key={enlace.clave}>
           {indice > 0 && ' · '}
           <Link to={enlace.to} className="hover:text-hc-n-900">{t(`comprador.footer.${enlace.clave}`)}</Link>
         </span>

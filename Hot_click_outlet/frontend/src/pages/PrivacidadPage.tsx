@@ -3,9 +3,10 @@ import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import LegalMasLinks from '@/pages/legal/LegalMasLinks'
+import BloqueIdentidad from '@/legal/BloqueIdentidad'
+import { IDENTIDAD_COMERCIANTE, POLITICAS_ACTUALIZADAS, POLITICAS_ACTUALIZADAS_ISO } from '@/legal/identidadComerciante'
 
-const SITE_URL = 'https://hotclick.lat'
-const LAST_UPDATED = '5 de junio de 2025'
+const SITE_URL = IDENTIDAD_COMERCIANTE.sitio
 
 const privacyJsonLd = {
   '@context': 'https://schema.org',
@@ -16,7 +17,7 @@ const privacyJsonLd = {
   inLanguage: 'es-CR',
   isPartOf: { '@type': 'WebSite', name: 'HotClick', url: SITE_URL },
   about: { '@type': 'Thing', name: 'Protección de datos personales — Ley 8968 Costa Rica' },
-  dateModified: '2025-06-05',
+  dateModified: POLITICAS_ACTUALIZADAS_ISO,
 }
 
 const secciones = [
@@ -24,9 +25,7 @@ const secciones = [
     id: 'responsable',
     num: 'SECCIÓN I',
     title: 'Identidad del Responsable',
-    content: (
-      <p>El responsable de la base de datos automatizada es la administración de HotClick, con domicilio electrónico de contacto y atención al usuario fijado en la dirección: <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a>.</p>
-    ),
+    content: <BloqueIdentidad />,
   },
   {
     id: 'datos',
@@ -58,11 +57,15 @@ const secciones = [
         </ul>
         <p>Adicionalmente, HotClick utiliza los siguientes proveedores que actúan como encargados del tratamiento:</p>
         <ul>
-          <li><strong>Stripe:</strong> procesamiento seguro de transacciones (PCI-DSS).</li>
-          <li><strong>SendGrid:</strong> envío de notificaciones transaccionales por correo electrónico.</li>
-          <li><strong>Clerk:</strong> autenticación mediante proveedores sociales (Google, Microsoft, Apple).</li>
-          <li><strong>Correos de Costa Rica:</strong> entrega de envíos postales a nivel nacional.</li>
-          <li><strong>Google Analytics 4:</strong> análisis estadístico agregado y anónimo, con consentimiento previo del titular.</li>
+          <li><strong>Tilopay, Stripe y ONVO:</strong> cobro con tarjeta. HotClick no guarda el número de tarjeta ni el código de seguridad.</li>
+          <li><strong>SINPE Móvil:</strong> el comprobante que sube el cliente puede incluir nombre, teléfono y cédula del remitente, solo para verificar el pago.</li>
+          <li><strong>SendGrid:</strong> correos transaccionales del pedido.</li>
+          <li><strong>Clerk:</strong> inicio de sesión con Google, Microsoft o Apple.</li>
+          <li><strong>Correos de Costa Rica:</strong> entrega de envíos en el país.</li>
+          <li><strong>Amazon Web Services:</strong> almacenamiento de imágenes y archivos de la plataforma.</li>
+          <li><strong>Anthropic (Claude):</strong> mensajes del chat de la tienda, para generar la respuesta y dar soporte.</li>
+          <li><strong>Sentry:</strong> diagnóstico de errores técnicos. Puede recibir identificadores técnicos y no se usa para publicidad.</li>
+          <li><strong>Google Analytics 4, PostHog, Microsoft Clarity y Meta:</strong> medición y publicidad, solo con consentimiento previo en el banner de cookies.</li>
         </ul>
         <p><strong>HotClick no vende, cede a título oneroso ni comercializa los datos personales de sus usuarios con terceros bajo ninguna circunstancia.</strong></p>
       </>
@@ -74,7 +77,7 @@ const secciones = [
     title: 'Mecanismo de Ejercicio de Derechos ARCO',
     content: (
       <>
-        <p>Cualquier titular de datos personales podrá ejercer en cualquier momento sus derechos de <strong>Acceso, Rectificación, Cancelación y Oposición (ARCO)</strong>. Para tales efectos, deberá remitir una solicitud formal al correo electrónico <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a>.</p>
+        <p>Cualquier titular de datos personales podrá ejercer en cualquier momento sus derechos de <strong>Acceso, Rectificación, Cancelación y Oposición (ARCO)</strong>. Para tales efectos, deberá remitir una solicitud formal al correo electrónico <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a>.</p>
         <p>HotClick tramitará y resolverá dicha petición en un plazo perentorio que no excederá los diez (10) días hábiles, conforme lo dispone la normativa de la PRODHAB. El titular también tiene derecho a presentar reclamaciones directamente ante la <strong>Agencia de Protección de Datos de los Habitantes (PRODHAB)</strong>.</p>
       </>
     ),
@@ -85,7 +88,7 @@ const secciones = [
     title: 'Cookies y Tecnologías Similares',
     content: (
       <>
-        <p><strong>Google Analytics 4, PostHog y Microsoft Clarity:</strong> Cookies o tecnologías de análisis estadístico activadas únicamente con consentimiento expreso del titular a través del banner de cookies de la Plataforma.</p>
+        <p><strong>Google Analytics 4, PostHog, Microsoft Clarity y Meta:</strong> medición y publicidad activadas únicamente con consentimiento expreso del titular en el banner de cookies de la Plataforma.</p>
         <p><strong>Almacenamiento local (localStorage):</strong> Utilizado para conservar en el dispositivo del titular su carrito de compras y preferencias de interfaz. Este almacenamiento no implica transferencia de datos a servidores externos y es estrictamente necesario para el funcionamiento básico de la Plataforma.</p>
       </>
     ),
@@ -155,7 +158,7 @@ export default function PrivacidadPage() {
                   Política de Privacidad
                 </h1>
                 <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-                  HotClick · Última actualización: {LAST_UPDATED}
+                  HotClick · Última actualización: {POLITICAS_ACTUALIZADAS}
                 </p>
               </div>
             </div>
@@ -201,7 +204,7 @@ export default function PrivacidadPage() {
           {/* CTA */}
           <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'color-mix(in srgb, var(--hc-accent) 6%, var(--hc-surface))', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)', borderRadius: 16, textAlign: 'center' }}>
             <p style={{ fontSize: 14, color: 'var(--hc-muted)', margin: '0 0 0.5rem' }}>¿Desea ejercer sus derechos ARCO?</p>
-            <a href="mailto:hotclick.cr@gmail.com" style={{ fontSize: 15, fontWeight: 700, color: 'var(--hc-accent)', textDecoration: 'none' }}>hotclick.cr@gmail.com</a>
+            <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ fontSize: 15, fontWeight: 700, color: 'var(--hc-accent)', textDecoration: 'none' }}>{IDENTIDAD_COMERCIANTE.correo}</a>
             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <Link to="/terminos" style={{ fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none' }}
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}

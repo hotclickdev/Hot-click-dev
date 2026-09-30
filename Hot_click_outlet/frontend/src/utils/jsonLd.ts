@@ -244,7 +244,7 @@ export function generateFAQJsonLd() {
         name: '¿Puedo devolver un producto?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí, tenemos política de devoluciones. Si el producto llegó dañado o no coincide con la descripción, contáctanos por WhatsApp al +506 8666-7888 dentro de los 7 días después de recibir tu pedido.',
+          text: 'Sí. El retracto es de 8 días hábiles desde la confirmación del pago, por el mismo medio de la compra, y el reembolso vuelve por el mismo medio de pago. Si el producto llegó dañado, también aplica la garantía de hasta 40 días desde la recepción. Escribinos desde Mis pedidos o al +506 8666-7888.',
         },
       },
       {

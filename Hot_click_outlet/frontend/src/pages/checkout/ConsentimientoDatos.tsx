@@ -24,10 +24,14 @@ export default function ConsentimientoDatos({ acepta, onCambiar, className = '' 
         {t('compra.pago.consentimiento')}{' '}
         <Link to="/privacidad" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
           {t('compra.pago.privacidad')}
-        </Link>{' '}
-        {t('compra.pago.consentimientoY')}{' '}
+        </Link>
+        {t('compra.pago.consentimientoCookies')}{' '}
         <Link to="/cookies" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
           {t('compra.pago.cookies')}
+        </Link>{' '}
+        {t('compra.pago.consentimientoY')}{' '}
+        <Link to="/devoluciones" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
+          {t('compra.pago.devoluciones')}
         </Link>.
       </span>
     </label>

@@ -1,7 +1,7 @@
 import { badges } from './devolucionesData'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 
-/** Badges destacados de la política (7 días, proceso, reembolso). */
+/** Badges destacados de la política (retracto, proceso, reembolso). */
 export default function DevolucionesBadges() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>

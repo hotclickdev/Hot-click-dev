@@ -1,18 +1,20 @@
 import { Link } from 'react-router-dom'
+import BloqueIdentidad from '@/legal/BloqueIdentidad'
+import { IDENTIDAD_COMERCIANTE, POLITICAS_ACTUALIZADAS } from '@/legal/identidadComerciante'
 
-export const SITE_URL = 'https://hotclick.lat'
-export const LAST_UPDATED = '5 de junio de 2025'
+export const SITE_URL = IDENTIDAD_COMERCIANTE.sitio
+export const LAST_UPDATED = POLITICAS_ACTUALIZADAS
 
 export const returnPolicyJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'MerchantReturnPolicy',
   name: 'Política de devoluciones HotClick',
-  description: 'Tenés 7 días hábiles desde la recepción para solicitar cambio o devolución de cualquier producto comprado en HotClick.',
+  description: 'Tenés 8 días hábiles desde la confirmación del pago para ejercer el retracto en HotClick.',
   url: `${SITE_URL}/devoluciones`,
   inLanguage: 'es-CR',
   applicableCountry: 'CR',
   returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-  merchantReturnDays: 7,
+  merchantReturnDays: 8,
   returnMethod: 'https://schema.org/ReturnByMail',
   returnFees: 'https://schema.org/FreeReturn',
   merchantReturnLink: `${SITE_URL}/devoluciones`,
@@ -20,7 +22,7 @@ export const returnPolicyJsonLd = {
 }
 
 export const badges = [
-  { icono: 'paquete', title: '7 días hábiles', desc: 'Para solicitar devolución' },
+  { icono: 'paquete', title: '8 días hábiles', desc: 'Desde la confirmación del pago' },
   { icono: 'chat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
   { icono: 'tarjeta', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
 ]
@@ -33,7 +35,7 @@ export const sections = [
       <>
         <p>En HotClick distinguimos dos protecciones:</p>
         <ul>
-          <li><strong>Derecho de retracto / devolución:</strong> <strong>7 días hábiles</strong> desde la recepción (Ley N.° 7472). HotClick coordina con el emprendedor vendedor para tramitar la solicitud.</li>
+          <li><strong>Derecho de retracto:</strong> <strong>8 días hábiles</strong> desde la confirmación del pago (Ley N.° 7472). Se ejerce en la plataforma o por el mismo medio de la compra, y el reembolso vuelve por el mismo medio de pago.</li>
           <li><strong>Garantía del producto:</strong> hasta <strong>40 días</strong> desde la recepción por defectos de fabricación o fallos de funcionamiento.</li>
         </ul>
         <p>Dado que HotClick es un marketplace que conecta compradores con emprendedores costarricenses, el proceso se coordina con el vendedor; HotClick media si hace falta.</p>
@@ -51,7 +53,7 @@ export const sections = [
           <li><strong>Producto incorrecto:</strong> recibiste un artículo diferente al que compraste (modelo, color, talla u otro).</li>
           <li><strong>Producto incompleto:</strong> faltaron partes, accesorios o piezas que se anunciaban incluidas.</li>
           <li><strong>Producto no conforme:</strong> el artículo difiere significativamente de la descripción o imágenes del anuncio.</li>
-          <li><strong>Derecho de retracto (Ley N.° 7472):</strong> arrepentimiento de compra dentro de los 7 días hábiles desde la recepción. HotClick coordina con el vendedor para tramitar la solicitud.</li>
+          <li><strong>Derecho de retracto (Ley N.° 7472):</strong> arrepentimiento de compra dentro de los 8 días hábiles desde la confirmación del pago.</li>
         </ul>
       </>
     ),
@@ -63,7 +65,7 @@ export const sections = [
       <>
         <p>No se aceptan devoluciones en los siguientes casos:</p>
         <ul>
-          <li>Productos con más de 7 días hábiles desde la recepción.</li>
+          <li>Cuando ya pasaron 8 días hábiles desde la confirmación del pago, salvo que aplique la garantía por defecto.</li>
           <li>Artículos usados, dañados por el comprador o sin embalaje original.</li>
           <li>Productos personalizados o hechos a medida.</li>
           <li>Artículos de higiene personal (ropa interior, trajes de baño, etc.) por razones sanitarias.</li>
@@ -80,7 +82,7 @@ export const sections = [
         <p>Seguí estos pasos para iniciar una devolución:</p>
         <ul>
           <li>
-            <strong>Paso 1 — Contactar al emprendedor:</strong> escribí al vendedor dentro de los 7 días hábiles. Podés hacerlo vía WhatsApp desde la página de tu pedido en <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link>.
+            <strong>Paso 1 — Avisar en el mismo medio:</strong> dentro de los 8 días hábiles desde la confirmación del pago, escribí desde <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link> o al correo {IDENTIDAD_COMERCIANTE.correo}. WhatsApp sirve para consultas.
           </li>
           <li>
             <strong>Paso 2 — Describir el problema:</strong> indicá el número de pedido, el motivo de la devolución y adjuntá fotos o video que muestren el problema.
@@ -92,7 +94,7 @@ export const sections = [
             <strong>Paso 4 — Reembolso o reemplazo:</strong> una vez verificado el problema, el emprendedor procesará el reembolso o enviará el producto de reemplazo.
           </li>
         </ul>
-        <p>Si no lográs llegar a un acuerdo con el emprendedor, contactanos a <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a> para mediar en el proceso.</p>
+        <p>Si no lográs llegar a un acuerdo con el emprendedor, escribinos a <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a>. HotClick media el reclamo.</p>
       </>
     ),
   },
@@ -103,7 +105,7 @@ export const sections = [
       <>
         <p>Los reembolsos se procesan de la siguiente manera según el método de pago original:</p>
         <ul>
-          <li><strong>Tarjeta de crédito/débito (Stripe):</strong> el reembolso se acredita en 5 a 10 días hábiles dependiendo del banco emisor.</li>
+          <li><strong>Tarjeta (Tilopay, Stripe u ONVO):</strong> el reembolso vuelve a la misma tarjeta en 5 a 10 días hábiles, según el banco emisor.</li>
 
           <li><strong>SINPE Móvil:</strong> el reembolso se hace por SINPE al número registrado en un plazo de 1 a 3 días hábiles.</li>
         </ul>
@@ -128,10 +130,11 @@ export const sections = [
       <>
         <p>Si tenés dudas sobre tu devolución o necesitás que HotClick intervenga como mediador, contactanos:</p>
         <ul>
-          <li><strong>Correo:</strong> <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a></li>
-          <li><strong>WhatsApp:</strong> <a href="https://wa.me/50686667888" style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">+506 8666-7888</a></li>
+          <li><strong>Correo:</strong> <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a></li>
+          <li><strong>WhatsApp:</strong> <a href={`https://wa.me/${IDENTIDAD_COMERCIANTE.telefonoWa}`} style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">{IDENTIDAD_COMERCIANTE.telefono}</a></li>
           <li><strong>Horario:</strong> Lun–Sáb 8:00–19:00</li>
         </ul>
+        <BloqueIdentidad />
       </>
     ),
   },

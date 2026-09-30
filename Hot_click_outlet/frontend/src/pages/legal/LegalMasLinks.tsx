@@ -5,6 +5,7 @@ const LINKS = [
   { to: '/nosotros', label: 'Nosotros' },
   { to: '/terminos', label: 'Términos' },
   { to: '/privacidad', label: 'Privacidad' },
+  { to: '/cookies', label: 'Cookies' },
   { to: '/devoluciones', label: 'Devoluciones' },
 ] as const
 

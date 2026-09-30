@@ -13,7 +13,7 @@ test('devoluciones explica el proceso sin emojis', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/devoluciones', { waitUntil: 'domcontentloaded' })
 
-  await expect(page.getByText('7 días hábiles').first()).toBeVisible()
+  await expect(page.getByText('8 días hábiles').first()).toBeVisible()
   await expect(page.getByText('Proceso simple')).toBeVisible()
   await expect(page.getByText('📦')).toHaveCount(0)
   await expect(page.getByText('💬')).toHaveCount(0)
