@@ -42,7 +42,7 @@ export default function ForgotPasswordModal({ open, onClose }: { open: boolean; 
     if (nueva.length < 8) { setError(t('forgot.minChars')); return }
     setError(''); setLoading(true)
     try {
-      await authService.resetPassword(correo, nueva)
+      await authService.resetPassword(correo, codigo, nueva)
       toast({ message: t('forgot.passwordChanged'), type: 'success' })
       onClose(); setStep('email'); setCorreo(''); setCodigo(''); setNueva('')
     } catch { setError(t('forgot.errorChange')) }
