@@ -12,7 +12,7 @@ export default function SeguiDondeLoDejaste() {
   if (vistos.length === 0) return null
 
   return (
-    <section aria-labelledby="home-seguir" className="flex flex-col gap-3 px-4 pb-[6px] pt-[22px] lg:gap-4 lg:px-8 lg:pt-11 xl:px-[120px]">
+    <section aria-labelledby="home-seguir" className="flex flex-col gap-3 px-4 pb-[6px] pt-[22px] lg:gap-4 lg:px-8 lg:pb-2 lg:pt-11 xl:px-[120px]">
       <EncabezadoSeccion id="home-seguir" titulo={t('home.compra.seguirTitulo')} nota={t('home.compra.seguirNota')} />
       <ul className="grid grid-cols-4 gap-[10px] lg:gap-4">
         {vistos.map((item) => (
@@ -22,7 +22,7 @@ export default function SeguiDondeLoDejaste() {
               aria-label={t('home.viewProductAria', { name: item.nombre, price: formatPrice(item.precio) })}
               className="flex flex-col gap-[6px] lg:flex-row lg:items-center lg:gap-3 lg:rounded-[14px] lg:border lg:border-hc-n-200 lg:bg-hc-n-0 lg:py-2 lg:pl-2 lg:pr-4"
             >
-              <span className="block aspect-square w-full overflow-hidden rounded-[12px] bg-hc-n-100 lg:size-16 lg:shrink-0 lg:rounded-[10px]">
+              <span className="block h-20 w-full overflow-hidden rounded-[12px] bg-hc-n-100 lg:size-16 lg:shrink-0 lg:rounded-[10px]">
                 {item.imagenUrl && <img src={item.imagenUrl} alt="" className="size-full object-cover" loading="lazy" decoding="async" />}
               </span>
               <span className="flex min-w-0 flex-col gap-[2px]">

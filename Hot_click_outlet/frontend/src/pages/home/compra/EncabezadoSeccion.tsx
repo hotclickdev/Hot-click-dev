@@ -5,22 +5,39 @@ import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 type EncabezadoSeccionProps = {
   id: string
   titulo: string
+  /** Título propio de desktop (Figma `9:270`: "Destacados de la semana"). */
+  tituloDesktop?: string
   nota?: string
-  accion?: { texto: string; to: string }
+  accion?: { texto: string; textoDesktop?: string; to: string }
 }
 
-/** Título de sección del Home con enlace "Ver todo" (Figma `7:156`, `9:386`). */
-export default function EncabezadoSeccion({ id, titulo, nota, accion }: EncabezadoSeccionProps) {
+/** Texto que cambia entre móvil y desktop sin duplicar el nodo accesible. */
+function TextoResponsivo({ movil, desktop }: { movil: string; desktop?: string }) {
+  if (!desktop) return <>{movil}</>
   return (
-    <div className="flex items-end justify-between gap-4">
+    <>
+      <span className="lg:hidden">{movil}</span>
+      <span className="hidden lg:inline">{desktop}</span>
+    </>
+  )
+}
+
+/** Título de sección del Home con enlace "Ver todo" (Figma `12:358`, `9:268`). */
+export default function EncabezadoSeccion({ id, titulo, tituloDesktop, nota, accion }: EncabezadoSeccionProps) {
+  return (
+    <div className="flex items-center justify-between gap-4 lg:items-end">
       <div className="flex flex-col gap-[2px]">
-        <h2 id={id} className="font-display text-[18px] font-bold text-hc-n-900 lg:text-[22px]">{titulo}</h2>
+        <h2 id={id} className="font-display text-[18px] font-bold text-hc-n-900 lg:text-[22px]">
+          <TextoResponsivo movil={titulo} desktop={tituloDesktop} />
+        </h2>
         {nota && <p className="text-[12px] text-hc-n-500 lg:text-[13px]">{nota}</p>}
       </div>
       {accion && (
         <Link to={accion.to} className="flex shrink-0 items-center gap-[2px] text-[13px] font-semibold text-hc-blue-600 lg:text-[14px]">
-          {accion.texto}
-          <IconoFigma src={ICONOS_COMPRADOR.verTodo} size={14} />
+          <TextoResponsivo movil={accion.texto} desktop={accion.textoDesktop} />
+          <span className="flex size-[14px] lg:size-4">
+            <IconoFigma src={ICONOS_COMPRADOR.verTodo} size="100%" />
+          </span>
         </Link>
       )}
     </div>

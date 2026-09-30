@@ -21,7 +21,9 @@ export default function FranjaConfianza() {
           const contenido = (
             <>
               <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-hc-blue-50 text-hc-blue-600 lg:size-10">
-                <IconoFigma src={promesa.icono} size={18} />
+                <span className="flex size-[18px] lg:size-5">
+                  <IconoFigma src={promesa.icono} size="100%" />
+                </span>
               </span>
               <span className="flex flex-col gap-px">
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`home.compra.promesa.${promesa.clave}Titulo`)}</span>
@@ -39,8 +41,12 @@ export default function FranjaConfianza() {
       </ul>
       <p className="flex flex-wrap items-center gap-2 text-[13px] text-hc-n-600 lg:text-[14px]">
         <IconoFigma src={ICONOS_COMPRADOR.serviciosHot} size={18} className="text-hc-n-600" />
-        {t('home.compra.noLoEncontras')}
-        <Link to="/servicios" className="font-semibold text-hc-blue-600">{t('home.compra.pedilo')}</Link>
+        <span className="lg:hidden">{t('home.compra.noLoEncontras')}</span>
+        <span className="hidden lg:inline">{t('home.compra.noLoEncontrasDesktop')}</span>
+        <Link to="/servicios" className="font-semibold text-hc-blue-600">
+          <span className="lg:hidden">{t('home.compra.pedilo')}</span>
+          <span className="hidden lg:inline">{t('home.compra.pediloDesktop')}</span>
+        </Link>
       </p>
     </section>
   )
