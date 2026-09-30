@@ -16,7 +16,7 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
   const { cantidadPedido, categorias, abrirBusqueda } = useHeaderComprador()
 
   return (
-    <div className="flex flex-col gap-3 border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 lg:hidden">
+    <div className="flex flex-col gap-3 border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 leading-[normal] lg:hidden">
       <div className="flex items-center justify-between">
         <MarcaComprador tamano="movil" />
         <div className="flex items-center gap-[18px] text-hc-n-900">

@@ -2961,7 +2961,10 @@
       "serviciosHot": "Servicios HOT",
       "vende": "Vendé en HotClick",
       "categoriasAria": "Categorías",
-      "panel": "Mi panel"
+      "panel": "Mi panel",
+      "volver": "Volver",
+      "compraSegura": "Compra segura",
+      "buscadorCompacto": "Buscá productos o describí lo que necesitás"
     },
     "nav": {
       "aria": "Navegación principal",

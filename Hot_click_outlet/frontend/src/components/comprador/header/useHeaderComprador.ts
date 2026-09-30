@@ -16,6 +16,7 @@ export function rutaCategoria(id: number): string {
 export function useHeaderComprador() {
   const cantidadPedido = useCartStore((s) => s.count())
   const conSesion = useAuthStore((s) => Boolean(s.token))
+  const nombreUsuario = useAuthStore((s) => s.userName)
   const tienePanel = useAuthStore((s) => Boolean(s.token) && ADMIN_ROLES.has(s.userRole ?? ''))
   const rutaPanel = useRutaPanel()
   const setSearchOpen = useUiStore((s) => s.setSearchOpen)
@@ -24,6 +25,7 @@ export function useHeaderComprador() {
   return {
     cantidadPedido,
     conSesion,
+    nombreUsuario,
     rutaPanel: tienePanel ? rutaPanel : null,
     rutaCuenta: conSesion ? '/perfil' : '/login',
     categorias,
