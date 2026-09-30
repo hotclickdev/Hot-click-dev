@@ -19,7 +19,9 @@ const GA4_EVENT_MAP: Record<string, string> = {
   [EVENTO.CARRITO_QUITADO]: 'remove_from_cart',
   [EVENTO.WISHLIST_AGREGADO]: 'add_to_wishlist',
   [EVENTO.WISHLIST_QUITADO]: 'remove_from_wishlist',
+  [EVENTO.CHECKOUT_VISTO]: 'begin_checkout',
   [EVENTO.CHECKOUT_INICIADO]: 'begin_checkout',
+  [EVENTO.PAGO_INTENTADO]: 'add_payment_info',
   [EVENTO.BUSQUEDA]: 'search',
 }
 
@@ -57,7 +59,9 @@ function hcPayloadToGA4(event: string, data: PropsAnalitica): PropsAnalitica {
           quantity: data.cantidad ?? 1,
         }],
       }
+    case EVENTO.CHECKOUT_VISTO:
     case EVENTO.CHECKOUT_INICIADO:
+    case EVENTO.PAGO_INTENTADO:
       return { currency: 'CRC', value: data.monto, num_items: data.item_count }
     case EVENTO.BUSQUEDA:
       return { search_term: data.query }

@@ -20,4 +20,6 @@ public interface CarritoAbandonadoRepository extends JpaRepository<CarritoAbando
     void deleteBySessionId(String sessionId);
 
     long countByEmailAndCreatedAtAfter(String email, LocalDateTime fecha);
+
+    long countByStatusAndCreatedAtGreaterThanEqual(String status, LocalDateTime desde);
 }

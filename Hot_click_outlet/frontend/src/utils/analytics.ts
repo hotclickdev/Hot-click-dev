@@ -1,11 +1,20 @@
+import { reportarEmbudo } from '@/utils/embudoCliente'
+
 /** Capa de analítica por adapters. El tracking no debe romper la tienda. */
 
 export const EVENTO = {
+  VISITA: 'visita_tienda',
   PRODUCTO_VISTO: 'producto_visto',
   CARRITO_AGREGADO: 'carrito_agregado',
   CARRITO_QUITADO: 'carrito_quitado',
+  CHECKOUT_VISTO: 'checkout_visto',
   CHECKOUT_INICIADO: 'checkout_iniciado',
+  CHECKOUT_BLOQUEADO: 'checkout_bloqueado',
+  PAGO_INTENTADO: 'pago_intentado',
+  PAGO_FALLIDO: 'pago_fallido',
+  PAGO_CANCELADO: 'pago_cancelado',
   BUSQUEDA: 'busqueda_realizada',
+  BUSQUEDA_SIN_RESULTADOS: 'busqueda_sin_resultados',
   WISHLIST_AGREGADO: 'wishlist_agregado',
   WISHLIST_QUITADO: 'wishlist_quitado',
 } as const
@@ -69,6 +78,11 @@ function track(evento: string, payload: PropsAnalitica = {}) {
       console.error('[analytics]', err)
     }
   })
+  try {
+    reportarEmbudo(evento, data)
+  } catch (err) {
+    console.error('[embudo]', err)
+  }
 }
 
 /**
@@ -104,6 +118,7 @@ export function resetAnalyticsUser() {
 }
 
 export const analytics = {
+  visita: () => track(EVENTO.VISITA, {}),
   productView: (p: ItemAnalitica) => track(EVENTO.PRODUCTO_VISTO, {
     producto_id: p.id, monto: p.precio, categoria: p.categoriaNombre, origen: 'catalogo',
   }),
@@ -114,8 +129,15 @@ export const analytics = {
   wishlistAdd: (p: ItemAnalitica) => track(EVENTO.WISHLIST_AGREGADO, { producto_id: p.id, monto: p.precio }),
   wishlistRemove: (id: string | number) => track(EVENTO.WISHLIST_QUITADO, { producto_id: id }),
   quickViewOpen: (p: ItemAnalitica) => track('vista_rapida', { producto_id: p.id }),
-  searchQuery: (q: string, count: number) => track(EVENTO.BUSQUEDA, { query: q, results: count }),
-  checkoutStart: (total: number, n: number) => track(EVENTO.CHECKOUT_INICIADO, { monto: total, item_count: n }),
+  searchQuery: (q: string, count: number) => {
+    track(EVENTO.BUSQUEDA, { query: q, results: count })
+    if (count === 0) track(EVENTO.BUSQUEDA_SIN_RESULTADOS, { query: q, results: 0 })
+  },
+  checkoutView: (total: number, n: number) => track(EVENTO.CHECKOUT_VISTO, { monto: total, item_count: n }),
+  checkoutBloqueado: (motivo: string) => track(EVENTO.CHECKOUT_BLOQUEADO, { motivo }),
+  pagoIntentado: (total: number, n: number) => track(EVENTO.PAGO_INTENTADO, { monto: total, item_count: n }),
+  pagoFallido: () => track(EVENTO.PAGO_FALLIDO, {}),
+  pagoCancelado: () => track(EVENTO.PAGO_CANCELADO, {}),
   descubriChipsView: () => track('descubri_chips_view', {}),
   descubriChipsSave: (categories: number, bands: number) => track('descubri_chips_save', {
     category_count: categories, band_count: bands,

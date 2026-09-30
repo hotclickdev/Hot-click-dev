@@ -1,7 +1,8 @@
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
+import { analytics } from '@/utils/analytics'
 import { paymentService } from '@/services/paymentService'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
@@ -28,6 +29,10 @@ export default function PagoCancelado({ motivoError }: PagoCanceladoProps) {
   const numeroPedido = (params.get('order') || params.get('numeroPedido') || '').trim()
   const [reintentando, setReintentando] = useState(false)
   const [tilopayRetry, setTilopayRetry] = useState<TilopayCardPayload | null>(null)
+
+  useEffect(() => {
+    analytics.pagoCancelado()
+  }, [])
 
   async function onReintentar() {
     if (!numeroPedido) {

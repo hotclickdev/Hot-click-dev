@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { CheckoutPayload } from '@/types/pedido'
 import type { ItemCarrito } from '@/types/carrito'
+import { analytics } from '@/utils/analytics'
+import { motivoBloqueoCheckout } from '@/utils/embudoPayload'
 import { formatPrice } from '@/utils/format'
 import { guardarCompra } from './compraGuardada'
 import { ejecutarPagarCheckout } from './ejecutarPagarCheckout'
@@ -38,6 +40,7 @@ export function useNavegacionCompra({ form, items, estado, intentos, maxIntentos
   function validarTodo(): boolean {
     const pasoConError = form.validarPasos([1, 2, 3])
     if (pasoConError === null) return true
+    analytics.checkoutBloqueado(motivoBloqueoCheckout(pasoConError))
     setPaso(pasoConError)
     enfocarPrimerError()
     return false
@@ -76,6 +79,7 @@ export function useNavegacionCompra({ form, items, estado, intentos, maxIntentos
       return
     }
     if (form.validarPasos([paso]) !== null) {
+      analytics.checkoutBloqueado(motivoBloqueoCheckout(paso))
       enfocarPrimerError()
       return
     }

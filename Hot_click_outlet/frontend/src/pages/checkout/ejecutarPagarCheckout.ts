@@ -78,7 +78,7 @@ export function ejecutarPagarCheckout(deps: PagarCompraDeps): boolean {
 
   const notas = notasCompra(deps)
   const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
-  analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
+  analytics.pagoIntentado(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
   const atrib = attributionForCheckout()
   const metaCookies = readMetaCookies()
   iniciarPago(

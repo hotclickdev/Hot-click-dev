@@ -28,6 +28,8 @@ import java.time.LocalDateTime;
  *     └─ hot_click_chat_mensaje_shopping_tb:     cascada automática vía ON DELETE CASCADE
  *   - hot_click_cola_facturacion_offline_tb:     30 días (estado COMPLETADO o AGOTADO)
  *
+ *   - hot_click_embudo_sesion_tb:                90 días (sesión anónima del embudo)
+ *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
  */
@@ -64,6 +66,7 @@ public class DataRetentionScheduler {
         total += expirarIpsBloqueadas();
         total += marcarEncargosVencidos();
         total += limpiarEncargosViejos();
+        total += limpiarEmbudoSesiones();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -208,6 +211,22 @@ public class DataRetentionScheduler {
             return n;
         } catch (Exception e) {
             log.warn("[retention] encargos limpieza: {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    private int limpiarEmbudoSesiones() {
+        try {
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR)
+                    .minusDays(Constants.DIAS_RETENCION_EMBUDO_SESION);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_embudo_sesion_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_embudo_sesion_tb WHERE actualizado_en < ? LIMIT 500)",
+                corte);
+            if (n > 0) log.info("[retention] embudo_sesion: {} eliminados (> 90 días)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] embudo_sesion: tabla no disponible, omitiendo — {}", e.getMessage());
             return 0;
         }
     }

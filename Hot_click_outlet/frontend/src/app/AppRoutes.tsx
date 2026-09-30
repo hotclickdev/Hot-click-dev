@@ -56,6 +56,7 @@ const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
 const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
 const AdminAdsMetricas = lazy(() => import('@/pages/admin/AdminAdsMetricas'))
+const AdminEmbudo = lazy(() => import('@/pages/admin/AdminEmbudo'))
 const AdminBilletera = lazy(() => import('@/pages/admin/AdminBilletera'))
 const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContador'))
 const AdminPublicaciones = lazy(() => import('@/pages/admin/AdminPublicaciones'))
@@ -278,6 +279,7 @@ export default function AppRoutes() {
             <Route path="config-fiscal" element={<AdminConfigFiscal />} />
             <Route path="saas-billing" element={<AdminBillingPlataforma />} />
             <Route path="saas-billing/:id" element={<AdminBillingEmpresa />} />
+            <Route path="embudo" element={<AdminEmbudo />} />
           </Route>
           <Route element={<PermisoGuard permiso="global.approvals" />}>
             <Route path="aprobaciones" element={<AdminAprobaciones />} />

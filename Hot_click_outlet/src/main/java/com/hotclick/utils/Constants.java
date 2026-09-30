@@ -115,6 +115,9 @@ public class Constants {
     /** Retención de hot_click_auditoria_admin_tb (DataRetentionScheduler). */
     public static final int DIAS_RETENCION_AUDITORIA_ADMIN = 90;
 
+    /** Retención de hot_click_embudo_sesion_tb (DataRetentionScheduler). */
+    public static final int DIAS_RETENCION_EMBUDO_SESION = 90;
+
     /**
      * Umbral de auto-aprobación de payouts (PayoutAutoApprovalScheduler) — decisión
      * de negocio explícita: retiros de bajo monto no requieren revisión manual de

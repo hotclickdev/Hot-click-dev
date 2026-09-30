@@ -130,6 +130,7 @@ function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
     { to: '/admin/saas-billing', label: t('admin.sidebar.billingPlataforma'), icon: 'card', permiso: 'global.metrics' },
     { to: '/admin/pagos', label: t('admin.sidebar.pagosWebhooks'), icon: 'card', permiso: 'global.metrics' },
     { to: '/admin/ads', label: t('admin.sidebar.adsMetricas'), icon: 'chart', permiso: 'global.metrics' },
+    { to: '/admin/embudo', label: t('admin.sidebar.porQueNoCompran'), icon: 'chart', permiso: 'global.metrics' },
     { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard', permiso: 'global.companies' },
     { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },
     { to: '/admin/soporte', label: t('admin.sidebar.inboxSoporte'), icon: 'help', permiso: 'global.companies' },

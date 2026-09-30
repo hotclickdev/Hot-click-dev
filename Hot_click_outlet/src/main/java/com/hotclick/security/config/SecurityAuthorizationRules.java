@@ -90,6 +90,7 @@ final class SecurityAuthorizationRules {
             // White label branding y chat público — sin auth
             .requestMatchers(GET,  "/api/public/branding").permitAll()
             .requestMatchers(POST, "/api/public/chat").permitAll()
+            .requestMatchers(POST, "/api/public/embudo").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/chat").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/search-by-image").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/feedback").permitAll()
@@ -209,6 +210,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/pagos/**").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, "ROLE_" + Constants.ROL_EMPRENDEDOR,
                 Constants.PERM_GLOBAL_METRICS)
+            .requestMatchers(GET, "/api/admin/embudo").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_METRICS)
             .requestMatchers("/api/auth/seleccionar-empresa").permitAll()
             .requestMatchers("/api/auth/mis-negocios").authenticated()
             .requestMatchers("/api/auth/cambiar-negocio").authenticated()
