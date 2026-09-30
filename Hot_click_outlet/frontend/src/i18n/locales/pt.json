@@ -2040,6 +2040,8 @@
     "shipError": "Erro ao processar envio",
     "subtitle": "{{count}} pedidos no total",
     "newOrderBtn": "Novo pedido",
+    "multivendorPackage": "Pacote · compra em vários empreendimentos",
+    "multivendorPackageHint": "O cliente comprou em vários empreendimentos com um único pagamento. Cada empreendimento despacha seu pacote separadamente, com seu próprio código de rastreio.",
     "pickupBadge": "Retirada",
     "deliveryBadge": "Domicílio",
     "pickupStoreLabel": "Retirada na loja",

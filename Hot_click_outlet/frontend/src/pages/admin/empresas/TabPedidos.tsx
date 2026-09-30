@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatDateShort, formatPrice } from '@/utils/format'
 import { PencilIcon } from './empresasIcons'
 import EstadoBadge from './EstadoBadge'
@@ -79,6 +80,7 @@ function PedidoRow({
   onCambiarEstado: (id: Id, estado: string) => void
   onAsignarGuia: (id: Id, numeroGuia: string) => void
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   return (
     <div className="px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
@@ -88,12 +90,10 @@ function PedidoRow({
             <span className="text-xs font-bold" style={{ color: 'var(--hc-text)' }}>#{pedido.id}</span>
             <EstadoBadge estado={pedido.estado} />
             {pedido.grupoPago && (
-              <span
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}
-                title="El cliente compró junto con otro(s) vendedor(es) — HotClick cobró todo en un solo pago y liquida cada parte por separado."
-              >
-                Parte de compra multivendedor
+              // Figma 37:1791: el paquete de una compra multivendedor se marca con texto mono, sin píldora.
+              <span className="font-mono text-[11px] font-medium" style={{ color: 'var(--hc-muted)' }}
+                title={t('adminOrders.multivendorPackageHint')}>
+                {t('adminOrders.multivendorPackage')}
               </span>
             )}
           </div>

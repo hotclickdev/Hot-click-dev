@@ -87,12 +87,10 @@ export default function OrderCard({ order, onUpdate, onDelete }: {
               </span>
             )}
             {order.grupoPago && (
-              <span
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: 'rgba(23,71,168,0.08)', color: 'var(--hc-accent)', border: '1px dashed rgba(23,71,168,0.35)' }}
-                title="Este pedido es un paquete de una compra con varios vendedores — el cliente pagó todo en un solo pago."
-              >
-                Multivendedor
+              // Figma 37:1791: el paquete de una compra multivendedor se marca con texto mono, sin píldora.
+              <span className="font-mono text-[11px] font-medium text-[var(--hc-muted)]"
+                title={t('adminOrders.multivendorPackageHint')}>
+                {t('adminOrders.multivendorPackage')}
               </span>
             )}
           </div>

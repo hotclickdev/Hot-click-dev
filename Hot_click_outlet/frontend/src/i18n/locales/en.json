@@ -2040,6 +2040,8 @@
     "shipError": "Error processing shipment",
     "subtitle": "{{count}} orders total",
     "newOrderBtn": "New order",
+    "multivendorPackage": "Package · purchase from several businesses",
+    "multivendorPackageHint": "The customer bought from several businesses with a single payment. Each business ships its own package separately, with its own tracking number.",
     "pickupBadge": "Pickup",
     "deliveryBadge": "Delivery",
     "pickupStoreLabel": "Store pickup",
