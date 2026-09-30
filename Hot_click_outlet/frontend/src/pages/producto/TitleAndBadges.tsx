@@ -9,6 +9,7 @@ import type { BadgeProps } from '@/components/ui/Badge'
 import ColorSwatches from './ColorSwatches'
 import SizeSelector from './SizeSelector'
 import type { VarianteProducto } from './productoHelpers'
+import { EtiquetaAgotado } from './ProductAgotado'
 
 type TitleAndBadgesProps = {
   product: Producto
@@ -17,6 +18,8 @@ type TitleAndBadgesProps = {
   onSelectTalla: (talla: string) => void
   stockBadge: NonNullable<BadgeProps['variant']>
   stockLabel: string
+  /** Ficha agotada (Figma 44:1917): etiqueta neutra "Agotado" sobre el título. */
+  agotado?: boolean
   onNavigate: NavigateFunction
   t: TFunction
 }
@@ -31,7 +34,7 @@ function varianteCondicion(cond: string): NonNullable<BadgeProps['variant']> {
 }
 
 export default function TitleAndBadges({
-  product, variantes, tallaSeleccionada, onSelectTalla, stockBadge, stockLabel, onNavigate, t,
+  product, variantes, tallaSeleccionada, onSelectTalla, stockBadge, stockLabel, agotado = false, onNavigate, t,
 }: TitleAndBadgesProps) {
   const marcaHref = `/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`
 
@@ -57,6 +60,7 @@ export default function TitleAndBadges({
           </Badge>
         )}
       </div>
+      {agotado && <EtiquetaAgotado t={t} />}
       <h1 className="text-2xl sm:text-3xl font-bold text-hc-text leading-tight">
         {product.titulo || product.nombre}
       </h1>
@@ -64,9 +68,11 @@ export default function TitleAndBadges({
         <p className="text-sm text-hc-muted">{product.nombre}</p>
       )}
       <VendidoPor product={product} t={t} />
-      <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant={stockBadge}>{stockLabel}</Badge>
-      </div>
+      {!agotado && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant={stockBadge}>{stockLabel}</Badge>
+        </div>
+      )}
       <ColorSwatches product={product} variantes={variantes} onNavigate={onNavigate} t={t} />
       <SizeSelector
         product={product}
