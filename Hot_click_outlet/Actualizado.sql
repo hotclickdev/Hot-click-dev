@@ -4003,3 +4003,16 @@ CREATE INDEX IF NOT EXISTS idx_pedido_compra ON hot_click_pedido_tb (fk_id_compr
 
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS fk_id_compra BIGINT REFERENCES hot_click_compra_tb(id_compra);
 CREATE INDEX IF NOT EXISTS idx_pago_compra ON hot_click_pago_tb (fk_id_compra);
+
+-- V143: Embudo de visita anónima (sin correo, nombre ni IP). Una fila por sesión del navegador.
+CREATE TABLE IF NOT EXISTS hot_click_embudo_sesion_tb (
+    id_embudo_sesion BIGSERIAL PRIMARY KEY,
+    session_key      VARCHAR(36) NOT NULL UNIQUE,
+    paso             VARCHAR(20) NOT NULL,
+    motivo           VARCHAR(40),
+    monto_carrito    INTEGER,
+    actualizado_en   TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_embudo_sesion_actualizado
+    ON hot_click_embudo_sesion_tb (actualizado_en);

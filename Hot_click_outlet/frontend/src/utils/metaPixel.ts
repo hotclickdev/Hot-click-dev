@@ -60,6 +60,7 @@ function metaEventFromHotclick(event: string, data: PropsAnalitica): { name: str
           eventID: eventId,
         },
       }
+    case EVENTO.CHECKOUT_VISTO:
     case EVENTO.CHECKOUT_INICIADO:
       return {
         name: 'InitiateCheckout',

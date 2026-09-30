@@ -9,7 +9,7 @@ import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import { useBranding } from '@/hooks/useBranding'
 import { initAnalytics } from '@/utils/initAnalytics'
-import { identifyUser } from '@/utils/analytics'
+import { identifyUser, analytics } from '@/utils/analytics'
 import { trackPageView } from '@/utils/ga4'
 import { captureAttributionFromLocation } from '@/utils/attribution'
 import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
@@ -31,6 +31,7 @@ export function ScrollToTop() {
     globalThis.scrollTo(0, 0)
     captureAttributionFromLocation(search, pathname)
     trackPageView(pathname)
+    if (!pathname.startsWith('/admin') && !pathname.startsWith('/pos')) analytics.visita()
     if (pathname.startsWith('/admin') || pathname.startsWith('/pos') || esRutaClaudeclick(pathname)) return
     const ficha = pathname.match(/^\/productos\/([^/]+)/)
     trackAiPage(surfaceFromPath(pathname), ficha?.[1])

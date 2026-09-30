@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { analytics } from '@/utils/analytics'
 import useCartStore from '@/store/cartStore'
 import { usePayment, tilopayCardDesdePago } from '@/hooks/usePayment'
 import ResumenLateral from './carrito/ResumenLateral'
@@ -39,6 +40,20 @@ export default function CheckoutPage() {
   const comprobante = useComprobanteSinpe({
     estado, pagoData, token: form.token, datos: form.datos, comprobante: form.comprobante, total: totalPedido,
   })
+
+  const checkoutVisto = useRef(false)
+  const totalVista = form.totales.total
+  const unidades = items.reduce((s, i) => s + i.cantidad, 0)
+
+  useEffect(() => {
+    if (estado === 'failed') analytics.pagoFallido()
+  }, [estado])
+
+  useEffect(() => {
+    if (checkoutVisto.current || items.length === 0) return
+    checkoutVisto.current = true
+    analytics.checkoutView(totalVista, unidades)
+  }, [items.length, totalVista, unidades])
 
   useEffect(() => {
     if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCart()

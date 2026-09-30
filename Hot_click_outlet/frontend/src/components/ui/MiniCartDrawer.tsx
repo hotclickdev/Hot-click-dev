@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
 import useUiStore from '@/store/uiStore'
-import { analytics } from '@/utils/analytics'
 import { isBrowser } from '@/utils/browser'
 import MiniCartEmpty from '@/components/ui/miniCart/MiniCartEmpty'
 import MiniCartItems from '@/components/ui/miniCart/MiniCartItems'
@@ -50,7 +49,6 @@ export default function MiniCartDrawer() {
     : { initial: { y: '100%' }, animate: { y: 0 }, exit: { y: '100%' } }
 
   const handleCheckout = () => {
-    analytics.checkoutStart(total(), items.reduce((s, i) => s + i.cantidad, 0))
     setCartDrawerOpen(false)
     navigate('/checkout')
   }
