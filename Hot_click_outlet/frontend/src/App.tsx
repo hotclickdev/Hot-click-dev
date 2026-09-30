@@ -12,7 +12,7 @@ import { initAnalytics } from '@/utils/initAnalytics'
 import SiteVerification from '@/utils/siteVerification'
 import HtmlClassManager from '@/app/HtmlClassManager'
 import AppRoutes from '@/app/AppRoutes'
-import AdminErrorBoundary from '@/app/AdminErrorBoundary'
+import ErrorBoundaryPorArea from '@/app/ErrorBoundaryPorArea'
 import useAuthStore from '@/store/authStore'
 import {
   ScrollToTop,
@@ -47,13 +47,9 @@ export default function App() {
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <PageFade>
-            <AdminErrorBoundary
-              titulo="Error inesperado"
-              detalle="Algo salió mal. Recargá la página. Si el problema sigue, contactá soporte."
-              accion="Recargar"
-            >
+            <ErrorBoundaryPorArea>
               <AppRoutes />
-            </AdminErrorBoundary>
+            </ErrorBoundaryPorArea>
           </PageFade>
           </Suspense>
           <ConditionalWhatsAppFab />
