@@ -243,7 +243,7 @@ final class SecurityAuthorizationRules {
                 "/pyme", "/pyme/**", "/negocio-plus", "/negocio-plus/**",
                 "/prototipo", "/prototipo/**",
                 "/nosotros", "/productos", "/productos/**", "/descubri", "/categorias", "/buscar/foto", "/informacion", "/contacto",
-                "/carrito", "/login", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
+                "/carrito", "/login", "/recuperar-contrasena", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan",
                 "/emprendimientos",
