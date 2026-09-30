@@ -37,8 +37,14 @@ public class SinpeComprobanteService {
     @Autowired private PaymentService                paymentService;
     @Autowired private SinpeAuditSupport             auditSupport;
     @Autowired private com.hotclick.service.payment.PedidoGrupoService pedidoGrupoService;
+    @Autowired private SinpeComprobantePersistenceService persistenceService;
 
-    @Transactional
+    /**
+     * Sin @Transactional a proposito: el upload a S3 es I/O externo lento (con reintentos de
+     * SupabaseStorageService) y retenerlo dentro de una transaccion agota el pool de PgBouncer
+     * bajo carga (muchos comprobantes SINPE simultaneos). La persistencia corre aparte, en
+     * {@link SinpeComprobantePersistenceService#guardar}, en su propia transaccion corta.
+     */
     public void subirComprobante(String numeroPedido, MultipartFile archivo,
                           String nombreRemitente, String cedulaRemitente,
                           String telefonoRemitente, String correoUsuario) {
@@ -68,24 +74,7 @@ public class SinpeComprobanteService {
                 "Error al subir el comprobante: " + e.getMessage(), e);
         }
 
-        ComprobanteSinpe comprobante = new ComprobanteSinpe();
-        comprobante.setPedido(pedido);
-        comprobante.setUrlComprobante(url);
-        comprobante.setNombreRemitente(nombreRemitente.trim());
-        comprobante.setCedulaRemitente(cedulaRemitente != null ? cedulaRemitente.trim() : null);
-        comprobante.setTelefonoRemitente(telefonoRemitente != null ? telefonoRemitente.trim() : null);
-        comprobante.setCorreoRemitente(correoUsuario);
-        comprobante.setEstado(Constants.COMPROBANTE_PENDIENTE);
-        comprobante.setFechaSubida(LocalDateTime.now(Constants.ZONA_CR));
-        comprobanteRepository.save(comprobante);
-
-        // Un comprobante cubre el checkout entero: los N paquetes pasan a PENDIENTE_APROBACION juntos.
-        for (Pedido p : pedidoGrupoService.delGrupo(pedido)) {
-            p.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
-            pedidoRepository.save(p);
-        }
-
-        log.info("Comprobante SINPE subido: pedido={} remitente={} cedula={}", numeroPedido, nombreRemitente, cedulaRemitente);
+        persistenceService.guardar(numeroPedido, url, nombreRemitente, cedulaRemitente, telefonoRemitente, correoUsuario);
     }
 
     @Transactional
