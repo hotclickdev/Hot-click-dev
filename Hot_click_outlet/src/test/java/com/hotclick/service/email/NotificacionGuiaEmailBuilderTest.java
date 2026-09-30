@@ -44,6 +44,21 @@ class NotificacionGuiaEmailBuilderTest {
     }
 
     @Test
+    @DisplayName("Enlaza al seguimiento público con el token del pedido; sin token cae a Mis pedidos")
+    void enlazaSeguimientoPublico() {
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        String token = com.hotclick.utils.TokenSeguimientoPedido.generar();
+        p.setTokenSeguimiento(token);
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("https://hotclick.lat/seguimiento/" + token);
+
+        p.setTokenSeguimiento(null);
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("https://hotclick.lat/mis-pedidos")
+            .doesNotContain("/seguimiento/");
+    }
+
+    @Test
     @DisplayName("Escapa el número de guía")
     void escapaGuia() {
         Pedido p = pedido("<b>RR1</b>", null, "Ana");

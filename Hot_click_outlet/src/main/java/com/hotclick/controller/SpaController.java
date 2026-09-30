@@ -147,6 +147,7 @@ public class SpaController {
         "/recuperar-carrito/{id}",
         "/encargo/{token}",
         "/cotizacion/{token}",
+        "/seguimiento/{token}",
         "/admin",
         "/admin/{*path}",
         "/visitante",

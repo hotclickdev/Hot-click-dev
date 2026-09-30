@@ -17,6 +17,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByGrupoPagoOrderByIdAsc(String grupoPago);
 
+    /** Enlace público de seguimiento — token aleatorio de 64 hex, nunca el id numérico. */
+    Optional<Pedido> findByTokenSeguimiento(String tokenSeguimiento);
+
     /** Detalle completo — evita LazyInitializationException al serializar empresa/usuarioFinal/bodega/items. */
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.empresa " +

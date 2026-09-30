@@ -90,6 +90,7 @@ const AdminCotizaciones = lazy(() => import('@/pages/admin/AdminCotizaciones'))
 const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
 const CotizacionPublicaPage = lazy(() => import('@/pages/CotizacionPublicaPage'))
 const EncargoPublicPage = lazy(() => import('@/pages/EncargoPublicPage'))
+const SeguimientoPedidoPage = lazy(() => import('@/pages/SeguimientoPedidoPage'))
 const AdminEncargos = lazy(() => import('@/pages/admin/AdminEncargos'))
 const AdminRecolecciones = lazy(() => import('@/pages/admin/AdminRecolecciones'))
 const AdminPayouts = lazy(() => import('@/pages/admin/AdminPayouts'))
@@ -204,6 +205,7 @@ export default function AppRoutes() {
       <Route path="/recuperar-carrito/:token" element={<RecuperarCarritoPage />} />
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
       <Route path="/encargo/:token" element={<EncargoPublicPage />} />
+      <Route path="/seguimiento/:token" element={<SeguimientoPedidoPage />} />
       <Route path="/servicios" element={<ServiciosHotPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
