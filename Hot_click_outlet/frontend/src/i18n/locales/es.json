@@ -788,7 +788,8 @@
     "noResultsWeGetIt": "Te lo conseguimos",
     "noResultsWeGetItSub": "Servicios HOT: escribinos por WhatsApp, buscamos con nuestros proveedores y te cotizamos en minutos.",
     "noResultsWhatsApp": "Pedirlo por WhatsApp",
-    "meanwhile": "Mientras tanto"
+    "meanwhile": "Mientras tanto",
+    "viewResults": "Ver {{count}} resultados"
   },
   "product": {
     "addToCart": "Agregar al pedido",
@@ -820,7 +821,20 @@
     "videoTitle": "Video del producto",
     "moreFromBrand": "Más de {{brand}}",
     "youMayLike": "También te puede gustar",
-    "vendidoPor": "Vendido por"
+    "vendidoPor": "Vendido por",
+    "restockCta": "Avisame",
+    "restockEmailLabel": "Tu correo para avisarte",
+    "restockError": "No se pudo guardar tu aviso",
+    "restockInvalidEmail": "Ingresá un correo válido",
+    "restockNoAccount": "También podés crear tu cuenta para que te avisemos por WhatsApp.",
+    "restockSaved": "Listo, te avisamos a {{correo}} en cuanto vuelva.",
+    "restockTitle": "Te avisamos cuando vuelva",
+    "restockWhatsapp": "Si ingresaste a tu cuenta, también te avisamos por WhatsApp.",
+    "size": "Talla",
+    "sizeOutOfStock": "Talla {{talla}} agotada",
+    "sizeStock": "Quedan {{count}} en talla {{talla}}",
+    "sizeStock_one": "Queda {{count}} en talla {{talla}}",
+    "sizeStock_other": "Quedan {{count}} en talla {{talla}}"
   },
   "cart": {
     "title": "Pedido",
@@ -1319,7 +1333,9 @@
     "inStock": "En stock",
     "outOfStock": "Agotado",
     "whatsappConsult": "Consultar un producto por WhatsApp",
-    "whatsappGreeting": "Hola HotClick, consulto un producto."
+    "whatsappGreeting": "Hola HotClick, consulto un producto.",
+    "newComingSoon": "NUEVO · por programar",
+    "sending": "Enviando…"
   },
   "admin": {
     "sidebar": {
@@ -1613,7 +1629,8 @@
       "LISTO_RETIRO": "Listo p/ retirar",
       "ENTREGADO_RETIRO": "Retirado",
       "CANCELADO": "Cancelado"
-    }
+    },
+    "groupTitle": "Un pago · {{count}} paquetes"
   },
   "descubri": {
     "metaTitle": "Descubrí productos | HotClick",
@@ -1663,7 +1680,9 @@
     "emptyTitle": "Todavía no hay recomendaciones",
     "emptySub": "Dale me gusta a algunos productos o mirá el catálogo completo.",
     "swipeRightHint": "Deslizá a la derecha lo que te guste",
-    "selectionHint": "Con {{total}} elecciones te armamos una selección a tu gusto"
+    "selectionHint": "Con {{total}} elecciones te armamos una selección a tu gusto",
+    "likesCount": "{{count}} guardados",
+    "remaining": "{{count}} productos restantes"
   },
   "wishlist": {
     "title": "Wishlist",
@@ -1676,7 +1695,8 @@
     "outOfStock": "Sin stock",
     "addedFeedback": "Agregado",
     "addToCart": "Agregar al pedido",
-    "addedToCart": "{{name}} añadido al pedido"
+    "addedToCart": "{{name}} añadido al pedido",
+    "saved": "{{count}} productos guardados"
   },
   "miniCart": {
     "title": "Tu pedido",
@@ -2943,5 +2963,11 @@
     "hoja": {
       "cerrar": "Cerrar"
     }
+  },
+  "perfil": {
+    "accesosRapidos": "Accesos rápidos",
+    "actividadReciente": "Actividad reciente",
+    "misOpiniones": "Mis opiniones",
+    "pedidoEnCurso": "Tu pedido en curso"
   }
 }
