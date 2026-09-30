@@ -9,7 +9,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | --- | --- |
 | Fase 1: auditoría e inventario | Hecha (90 pantallas) |
 | Fase 2a: recuperar PR #93 | Hecha en `feat/figma/base` |
-| Fase 2b: mover Home a su rama | Hecha en `feat/figma/home` |
+| Fase 2b: Home | Rama `feat/figma/home` con la base integrada (`98ec9abc`) y el cuerpo remedido y corregido (`6d0de288`). Los tres frames siguen en PARTIAL (ver Fase 2b) |
+| Ola 0: docs en la base | Integrados (`62a631ac`) |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | Agentes CAT, PROD, STORE, CHK, ACC, SRV, SYS, QR | **No lanzados**, como se pidió |
@@ -19,18 +20,18 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Rama | Worktree | Parte de | Responsable | Commits propios | Estado |
 | --- | --- | --- | --- | --- | --- |
 | `feat/figma/base` | `.claude/worktrees/base` | `master` (`b355fd20`) | SUP | merge `8146495b` | Lista. No se edita: solo recibe merges del supervisor |
-| `feat/figma/shell` | `.claude/worktrees/shell` | `feat/figma/base` | SHELL | `197e87a0` (sombra/footer/ícono, cherry-pick de Home), `3b54150d` (variantes), `ac69ca69` (sticky y marca centrada) | Implementada y con QA independiente; pendiente de integrar |
-| `feat/figma/home` | `.claude/worktrees/home` | `master` | HOME | `bd50a1d5`, `8c6d1e53` | Commiteada. Falta integrar SHELL y volver a medir |
-| `feat/figma/supervisor` | `.claude/worktrees/supervisor` | `feat/figma/base` | SUP | (docs, por commitear) | Activa: documentación |
+| `feat/figma/shell` | `.claude/worktrees/shell` | `feat/figma/base` | SHELL | `197e87a0` (sombra/footer/ícono, cherry-pick de Home), `3b54150d` (variantes), `ac69ca69` (sticky y marca centrada) | Implementada, con QA independiente e integrada en `base` (`b3159c1e`) |
+| `feat/figma/home` | `.claude/worktrees/home` | `master` | HOME | `bd50a1d5`, `8c6d1e53`, merge `98ec9abc` (base), `6d0de288` (QA visual) | Base integrada y cuerpo remedido. Sin cambios sin commitear. Aún no se integra en `base` |
+| `feat/figma/supervisor` | `.claude/worktrees/supervisor` | `feat/figma/base` | SUP | docs (`e0533e5f` y anteriores) | Activa: documentación. Sus docs ya están en `base` (`62a631ac`) |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
 Topología:
 
 ```
 master b355fd20
-├─ feat/figma/home            (bd50a1d5, 8c6d1e53)
-└─ feat/figma/base            (merge 8146495b de fase2)
-   ├─ feat/figma/shell        (197e87a0, 3b54150d)
+├─ feat/figma/home            (bd50a1d5, 8c6d1e53, merge 98ec9abc de base, 6d0de288)
+└─ feat/figma/base            (merge 8146495b de fase2, b3159c1e de SHELL, 62a631ac de docs)
+   ├─ feat/figma/shell        (197e87a0, 3b54150d, ac69ca69)
    └─ feat/figma/supervisor   (documentación)
 ```
 
@@ -38,7 +39,14 @@ Ramas por crear cuando SHELL esté integrado, desde `feat/figma/base`: `feat/fig
 
 ### Worktrees viejos: no reutilizar
 
-Hay 13 worktrees de los agentes K a P y de épicas anteriores (`.claude/worktrees/agent-*`, `agent-n-multivendedor`), más dos carpetas `agent-a6697868…` y `agent-a8c5d035…` que **no están registradas en git** y `C:\Users\pmdan\hotclick-fase2-test`. Ninguno se ha tocado ni limpiado. No se reutilizan: los nuevos se llaman `home`, `shell`, `base`, `supervisor` y los siguientes usarán el nombre del agente. Limpiarlos queda a tu decisión.
+Hay 11 worktrees de los agentes K a P y de épicas anteriores (`.claude/worktrees/agent-*`, `agent-n-multivendedor`), más dos carpetas `agent-a6697868…` y `agent-a8c5d035…` que **no están registradas en git** y `C:\Users\pmdan\hotclick-fase2-test`. Revisión del 2026-09-30 (solo lectura):
+
+- Ninguno tiene cambios sin commitear.
+- Los 5 con commits que `master` no tiene (`a03737658`, `a389c1c53`, `a8dd1d9b6`, `add02d64e`, `aefe43907`) y `hotclick-fase2-test` tienen **0 commits que `feat/figma/base` no tenga**: su contenido ya está integrado.
+- `a43e1a7dd`, `a616fba9d`, `a788de4a2`, `ab89ab36a`, `feat/correos-transaccionales-figma` y `feat/checkout-multivendedor` ya están en `master`.
+- Las dos carpetas sin registrar solo ven los dos `HANDOFF_*.md` sin trackear de la raíz del repo.
+
+No se reutilizan: los nuevos se llaman `home`, `shell`, `base`, `supervisor` y los siguientes usarán el nombre del agente. No se ha borrado nada; limpiarlos queda a tu decisión.
 
 Hay además un stash ajeno en el repositorio (`wip-preexistente-no-mio-antes-del-rebase`). No es de este trabajo y no se tocó.
 
@@ -55,9 +63,45 @@ Hay además un stash ajeno en el repositorio (`wip-preexistente-no-mio-antes-del
 ## Fase 2b: Home
 
 - Verificados los 11 archivos modificados: 8 eran del Home y 3 del shell. Se separaron en dos commits para que SHELL pueda tomar los suyos sin conflicto.
-- `feat/figma/home` parte de `master`. Falta hacer `git merge feat/figma/shell` cuando SHELL esté integrado (el commit compartido es idéntico, no debería conflictuar).
-- **Corrección a mi informe anterior:** el Home no estaba en PASS. Al medir en píxeles, el header desktop medía 121 px y Figma dice 111. Lo corrigió SHELL; el cuerpo del Home debe volver a medirse.
+- `feat/figma/home` partía de `master`. Se mezcló `feat/figma/base` en Home (merge `98ec9abc`). Hubo un solo conflicto, en `HeaderComprador.tsx`: se tomó la versión de la base (refactor de SHELL, que reemplaza la versión simple de Home y conserva la sombra al scrollear).
+- **Corrección a mi informe anterior:** el Home no estaba en PASS. Al medir en píxeles, el header desktop medía 121 px y Figma dice 111. Lo corrigió SHELL.
 - **Decisión aplicada:** el frame `9:171` es la fuente de verdad del Home desktop. `12:610` ya no es objetivo y salió de las pantallas.
+
+### Re-medición del cuerpo de Home (commit `6d0de288`)
+
+Método: Playwright con fuentes reales (Sora y Public Sans), desktop 1440 y móvil 390, API simulada con `context.route` (6 categorías, 4 destacados, 14 productos, historial de 4 ítems) y fotos como placeholders de color. Scripts y capturas en `%TEMP%\home-qa`, fuera del repo.
+
+| Elemento | Figma | App antes | App ahora |
+| --- | --- | --- | --- |
+| Hero desktop (`9:218`), alto | 572 | 587 | **572** |
+| Título h1 desktop | 420x84 | partía "estás / buscando hoy?" | **420x84**, mismo corte que Figma |
+| Chips, alto | 33 | 37,5 | **33** |
+| Tarjeta asistente desktop | 420x246 | filas de 41 | **246** |
+| Categorías desktop (`9:340`) | h250 | h262 | **h250**; tiles 167x152 |
+| Seguí donde lo dejaste (`9:379`) | h195 | h204,5 | **h195** |
+| Confianza desktop (`9:510`) | h208 | h227 (texto en 3 líneas) | **h208**, cuatro columnas iguales |
+| Altura total desktop | 1857 | 1916 | **1855** (2 px del ProductCard) |
+| Categorías móvil | h559, tiles 152 | tiles 159 | **h559**, tiles 152 |
+| Tarjeta asistente móvil (`7:210`) | 358x380 | 368 | **380** |
+| Seguí móvil | h181 | h183 | **h181** |
+| Header móvil scrolleado (`12:346`) | y=0, h160, sombra | — | **idéntico** |
+
+Correcciones en archivos de Home: `HomePage.tsx`, `EncabezadoSeccion.tsx`, `TarjetaAsistente.tsx`, `FranjaConfianza.tsx`, `SeguiDondeLoDejaste.tsx`, `CategoryTile.tsx` y `Chip.tsx` (`line-height: normal`, tracking, gaps y `text-wrap`). **`Chip` también lo usan `CatalogAllView` y `ProductAgotado`**: ahora miden 33, como el componente de Figma; CAT y PROD deben tenerlo presente.
+
+Validación: `tsc` limpio · 81 archivos / 358 tests · eslint sin hallazgos en lo tocado · `vite build` compila (salida fuera del repo, `static/` intacto). Verificado aparte por el supervisor: commit presente, worktree limpio, `tsc` y tests repetidos.
+
+**Por qué los tres frames siguen en PARTIAL:** el código de Home mide igual que Figma, pero quedan diferencias que no son de Home:
+
+| Pendiente | Dueño | Acción |
+| --- | --- | --- |
+| ProductCard mide 278 y Figma 280; nombre con pastilla de marca y línea de tienda con otra tipografía; badge "Quedan 4" sin verificar | CAT | Paso C0 y siguientes |
+| `formatPrice` muestra "₡6 200" (Intl es-CR) y Figma "₡6.200" | Decisión del usuario | Cambiar `utils/format` o tolerar |
+| FAB con isotipo y botón verde de WhatsApp flotantes sobre Home, no están en Figma | SYS | Ya listado en el inventario |
+| Copy bajo "Seguí donde lo dejaste": Figma dice "Solo aparece si ya visitaste productos" (parece anotación de diseño); la app conserva "Lo último que miraste" | Decisión del usuario | Mantener el de la app salvo indicación |
+| Orden de categorías: Figma fija uno, la app respeta el de la API | Decisión del usuario | Tolerar o fijar orden |
+| "Desde ₡4.000 con Correos de Costa Rica…": Figma recorta en seco, la app usa puntos suspensivos con la misma geometría | Decisión menor | Dejar |
+
+**No verificado:** fotos reales de producto y categoría, badge "Quedan N", badge del carrito, hover, foco y animación de la pregunta rotativa. Sin backend real, solo datos simulados.
 
 ## Fase 2c: SHELL
 
@@ -118,7 +162,7 @@ base ──► shell ──► [QA independiente] ──► integrar en base ─
 
 ## Listo para comenzar
 
-SHELL ya está en `base`. La ola 1 puede arrancar cuando el usuario lo indique; HOME necesita antes `git merge feat/figma/base`. Cuando eso ocurra, cada agente arranca con: rama `feat/figma/<agente>` desde `base`, su worktree propio, su lista de pantallas del inventario, y el compromiso de convertir sus UNKNOWN en estado real **antes** de escribir código.
+SHELL y los docs ya están en `base`, y Home ya tiene la base mezclada y remedida. La ola 1 puede arrancar cuando el usuario lo indique. Cuando eso ocurra, cada agente arranca con: rama `feat/figma/<agente>` desde `base`, su worktree propio, su lista de pantallas del inventario, y el compromiso de convertir sus UNKNOWN en estado real **antes** de escribir código.
 
 Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego PROD y CHK (la compra), ACC, y al final SRV, SYS, STORE y QR.
 
@@ -131,7 +175,9 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 3 | ~~Ofertas HOT y pestaña Emprendimientos~~ **Resuelto: se eliminan** (ver `PRODUCTCARD_STRATEGY.md`) | CAT |
 | 4 | ~~Quick view~~ **Resuelto: se elimina** | CAT |
 | 5 | ~~Pastilla de marca, condición, punto de stock y línea de envío~~ **Resuelto: se descartan** | CAT |
-| 6 | Limpieza de los worktrees viejos | — |
+| 6 | Limpieza de los worktrees viejos (revisados, nada sin commitear; ver la sección de worktrees) | — |
+| 7 | Formato de precio: `₡6 200` (app) contra `₡6.200` (Figma) | Home, CAT, CHK |
+| 8 | Copy "Solo aparece si ya visitaste productos" y orden de categorías del Home | HOME |
 
 ## Riesgos abiertos
 
