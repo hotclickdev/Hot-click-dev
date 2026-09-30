@@ -209,7 +209,7 @@ export default function CheckoutSummary({
         <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
           <span>{t('checkout.shippingCost')}</span>
           {envioVaria ? (
-            <span style={{ color: 'var(--hc-muted)' }}>Varía{costoEnvio > 0 ? ` + ${formatPrice(costoEnvio)}` : ''}</span>
+            <span style={{ color: 'var(--hc-muted)' }}>{t('checkout.shippingVaries')}{costoEnvio > 0 ? ` + ${formatPrice(costoEnvio)}` : ''}</span>
           ) : (
             <span className={costoEnvio === 0 ? 'text-hc-success font-medium' : ''}>
               {costoEnvio === 0 ? t('checkout.free') : formatPrice(costoEnvio)}
@@ -218,7 +218,7 @@ export default function CheckoutSummary({
         </div>
         {envioVaria && (
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-            El costo de encomienda no lo cobra HotClick — lo paga directo a la empresa de transporte al recibir.
+            {t('checkout.encomiendaNote')}
           </p>
         )}
       </div>

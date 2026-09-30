@@ -1182,7 +1182,9 @@
       "lineaDescuento": "Discount ({{porcentaje}}%)",
       "totalRestante": "Remaining total to pay",
       "notaRestante": "Pay the rest with SINPE Móvil or card. If the gift card covers everything, the order is paid with no other method."
-    }
+    },
+    "shippingVaries": "Varies",
+    "encomiendaNote": "HotClick does not charge the shipping fee — you pay it directly to the courier on delivery."
   },
   "payment": {
     "success": "Payment successful!",

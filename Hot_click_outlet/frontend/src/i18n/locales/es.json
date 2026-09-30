@@ -1182,7 +1182,9 @@
       "lineaDescuento": "Descuento ({{porcentaje}}%)",
       "totalRestante": "Total restante a pagar",
       "notaRestante": "Pagás el resto con SINPE Móvil o tarjeta. Si la tarjeta de regalo cubre todo, el pedido queda pagado sin otro método."
-    }
+    },
+    "shippingVaries": "Varía",
+    "encomiendaNote": "El costo de encomienda no lo cobra HotClick — lo paga directo a la empresa de transporte al recibir."
   },
   "payment": {
     "success": "¡Pago exitoso!",

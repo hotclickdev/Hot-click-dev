@@ -1182,7 +1182,9 @@
       "lineaDescuento": "Desconto ({{porcentaje}}%)",
       "totalRestante": "Total restante a pagar",
       "notaRestante": "Pague o restante com SINPE Móvil ou cartão. Se o cartão-presente cobrir tudo, o pedido fica pago sem outro método."
-    }
+    },
+    "shippingVaries": "Varia",
+    "encomiendaNote": "A HotClick não cobra o frete — você paga diretamente à transportadora na entrega."
   },
   "payment": {
     "success": "Pagamento bem-sucedido!",
