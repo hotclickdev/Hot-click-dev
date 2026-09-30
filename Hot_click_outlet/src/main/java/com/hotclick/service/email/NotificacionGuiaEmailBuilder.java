@@ -40,6 +40,7 @@ class NotificacionGuiaEmailBuilder {
             + (isCorreos ? "<strong>rastreo.correos.go.cr</strong> ingresando tu número de guía." : "el enlace de arriba.")
             + " La entrega tarda de 2 a 5 días hábiles.</p>"
             + "</div>"
+            + layout.enlaceSecundario(layout.urlSeguimiento(pedido), "Ver el estado de todo mi pedido")
             + layout.footer("¿Alguna pregunta sobre tu envío?");
     }
 }

@@ -160,6 +160,7 @@ public class OtpService {
             + "Si no fuiste vos, ignorá este correo — tu cuenta sigue segura.</p></div>"
             + layout.footer("¿No pediste este código?");
 
-        resendEmailService.send(destinatario, "Tu código de verificación: " + codigo, html);
+        // El asunto NUNCA lleva el codigo: queda visible en notificaciones/lockscreen sin abrir el correo.
+        resendEmailService.send(destinatario, "Tu código de verificación — HotClick", html);
     }
 }

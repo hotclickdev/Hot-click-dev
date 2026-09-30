@@ -1,7 +1,10 @@
 package com.hotclick.service.email;
 
+import com.hotclick.model.Pedido;
+import com.hotclick.utils.TokenSeguimientoPedido;
 import java.text.NumberFormat;
 import java.util.Locale;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,6 +24,27 @@ public class EmailLayoutHelper {
     public static final String WHATSAPP_TEXTO = "8666-7888";
 
     private static final String BORDE = "#E4E7EC";
+    private static final String SITIO = "https://hotclick.lat";
+
+    /** Base de los enlaces al sitio. Inicializada para que los builders instanciados con {@code new} en tests también funcionen. */
+    @Value("${app.url:" + SITIO + "}")
+    private String appUrl = SITIO;
+
+    /**
+     * Enlace al seguimiento público del pedido (/seguimiento/{token}), válido con o sin cuenta.
+     * Un pedido sin token (no persistido) cae a «Mis pedidos».
+     */
+    public String urlSeguimiento(Pedido pedido) {
+        String base = appUrl == null || appUrl.isBlank() ? SITIO : appUrl.replaceAll("/+$", "");
+        String token = pedido != null ? pedido.getTokenSeguimiento() : null;
+        return TokenSeguimientoPedido.formatoValido(token) ? base + "/seguimiento/" + token : base + "/mis-pedidos";
+    }
+
+    /** Enlace de texto azul, para correos que ya tienen su botón principal. El label debe llegar ya escapado. */
+    public String enlaceSecundario(String url, String label) {
+        return "<p style=\"margin:16px 0 0;font-size:14px;font-family:" + F_TEXT + "\">"
+             + "<a href=\"" + esc(url) + "\" style=\"color:#1747A8;text-decoration:none;font-weight:700\">" + label + "</a></p>";
+    }
 
     /** Isotipo + wordmark bicolor. Sobre fondo oscuro el rojo sube un paso y «Click» pasa a blanco. */
     public String wordmark(boolean sobreOscuro) {
