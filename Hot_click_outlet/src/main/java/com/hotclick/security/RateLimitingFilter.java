@@ -114,7 +114,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // Prevent admins from accidentally spamming customers with email notifications.
         new PrefixLimit("/api/pedidos/", 5, 60),   // 5 notificar calls/min per IP
         // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
-        new PrefixLimit("/api/payments/tilopay/", 10, 60)
+        new PrefixLimit("/api/payments/tilopay/", 10, 60),
+        // "Avisame cuando vuelva" es publico (con o sin sesion) y solo pide un email valido —
+        // sin este limite se puede insertar filas sin fin en la tabla de suscripciones.
+        new PrefixLimit("/api/productos/", 5, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -158,7 +161,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                         continue;
                     }
                     if (pl.prefix().startsWith("/api/payments/tilopay/")
-                        || path.endsWith("/notificar")) {
+                        || path.endsWith("/notificar")
+                        || path.endsWith("/avisar-reposicion")) {
                         limit = new Limit(pl.maxRequests(), pl.windowSeconds());
                         break;
                     }
