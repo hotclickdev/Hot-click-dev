@@ -40,6 +40,10 @@ public class PaymentOrderConfirmationService {
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
         Pedido principal = pago.getPedido();
+        if (principal == null) {
+            log.warn("confirmarPedido ignorado — pago {} sin pedido asociado", pago.getId());
+            return;
+        }
         List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
 
         // Idempotencia: si el principal ya está pagado, el grupo entero ya se procesó.
