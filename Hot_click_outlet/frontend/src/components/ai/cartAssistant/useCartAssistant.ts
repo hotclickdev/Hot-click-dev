@@ -120,7 +120,7 @@ export function useCartAssistant({ cartItems, cartTotal }: { cartItems: ItemCarr
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar() }
   }
 
   return {

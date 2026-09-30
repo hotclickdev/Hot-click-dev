@@ -108,7 +108,7 @@ export function useLoginFlow() {
           state: { empresas: loginData.empresas, tempToken: loginData.tempToken },
         })
       } else {
-        handleLoginSuccess(loginData)
+        await handleLoginSuccess(loginData)
       }
     } catch (err: unknown) {
       const msg = mensajeErrorAuth(err, t('login.badCredentials'))
@@ -176,7 +176,7 @@ export function useLoginFlow() {
         // Pass the selected method so the backend validates the correct factor
         ;({ data } = await authService.verify2FA(tempToken, fullCode, null as unknown as undefined, 'TOTP'))
       }
-      handleLoginSuccess(data as LoginApiData)
+      await handleLoginSuccess(data as LoginApiData)
     } catch {
       setError(useRecovery ? t('login.invalidRecoveryCode') : t('login.error'))
       if (useRecovery) { setRecoveryInput('') }
@@ -190,7 +190,7 @@ export function useLoginFlow() {
       const fullCode = code2FA.join('')
       if (fullCode.length !== 6) { setError(t('login.code6digits')); setLoading(false); return }
       const { data } = await authService.verify2FA(tempToken, fullCode, null as unknown as undefined, 'EMAIL_OTP')
-      handleLoginSuccess(data as LoginApiData)
+      await handleLoginSuccess(data as LoginApiData)
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, t('login.error')))
       setCode2FA(['', '', '', '', '', '']); refs2FA.current[0]?.focus()

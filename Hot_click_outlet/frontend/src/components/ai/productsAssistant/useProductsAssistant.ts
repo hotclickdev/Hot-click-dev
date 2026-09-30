@@ -131,7 +131,7 @@ export function useProductsAssistant({ isOpen, initialQuery = '' }: { isOpen: bo
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar() }
   }
 
   return {

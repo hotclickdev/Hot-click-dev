@@ -89,7 +89,7 @@ export default function AdminForecast() {
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
+  useEffect(() => { void cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   async function generar() {
     setGenerando(true)

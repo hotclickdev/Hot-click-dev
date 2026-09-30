@@ -34,7 +34,7 @@ export default function AdminMiEmpresa() {
   // logoUrl se maneja separado del PUT — se actualiza via POST /logo directamente
   const [errors, setErrors] = useState<ErroresPerfil>({})
 
-  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/exhaustive-deps -- montaje único
+  useEffect(() => { void cargar() }, []) // eslint-disable-line react-hooks/exhaustive-deps -- montaje único
 
   async function cargar() {
     try {
@@ -94,7 +94,7 @@ export default function AdminMiEmpresa() {
       })
       savedFormRef.current = { ...form }
       toast({ message: 'Perfil del negocio actualizado', type: 'success' })
-      cargar()
+      void cargar()
     } catch {
       toast({ message: 'Error al guardar cambios', type: 'error' })
     } finally {

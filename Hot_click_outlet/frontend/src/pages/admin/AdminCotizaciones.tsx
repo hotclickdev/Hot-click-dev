@@ -228,7 +228,7 @@ export default function AdminCotizaciones() {
 
                     {/* Enlace público */}
                     <button type="button"
-                      onClick={() => { navigator.clipboard.writeText(`${globalThis.location.origin}/cotizacion/${c.tokenPublico}`); toast('Enlace copiado', 'success') }}
+                      onClick={() => { void navigator.clipboard.writeText(`${globalThis.location.origin}/cotizacion/${c.tokenPublico}`); toast('Enlace copiado', 'success') }}
                       title="Copiar enlace público"
                       className="p-1.5 rounded-lg transition-colors hover:bg-black/10 dark:hover:bg-white/10"
                       style={{ color: 'var(--hc-muted)' }}>

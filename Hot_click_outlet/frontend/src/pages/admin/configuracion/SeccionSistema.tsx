@@ -198,7 +198,7 @@ export default function SeccionSistema({ toast }: { toast: ToastFn }) {
             <div style={{ padding: '0 24px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label htmlFor="cfg-reset-confirm" className="cfg-label">{t('adminConfig.sysResetInputLabel')}</label>
               <StyledInput id="cfg-reset-confirm" value={resetInput} onChange={e => setResetInput(e.target.value)} placeholder="ELIMINAR" autoFocus
-                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter' && resetInput === 'ELIMINAR') handleReset() }}
+                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter' && resetInput === 'ELIMINAR') void handleReset() }}
                 style={{ textTransform: 'uppercase', letterSpacing: '0.08em', borderColor: resetInput === 'ELIMINAR' ? 'rgba(239,68,68,0.5)' : undefined }} />
             </div>
             <div style={{ padding: '0 24px 24px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>

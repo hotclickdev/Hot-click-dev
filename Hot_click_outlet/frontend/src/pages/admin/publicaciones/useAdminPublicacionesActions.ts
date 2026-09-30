@@ -238,7 +238,7 @@ async function generarSeleccionados({
   setSeleccionados(new Set())
   setModalProductos(false)
   setSearchProd('')
-  cargarCola()
+  void cargarCola()
   setTab('cola')
   setGenerando(false)
 }

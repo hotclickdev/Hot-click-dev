@@ -53,7 +53,7 @@ export default function MetodosCobroPanel({ agregarTo }: Props) {
   useEffect(() => {
     let vivo = true
     setCargando(true)
-    cargarMetodosCobro()
+    void cargarMetodosCobro()
       .then((carga) => {
         if (!vivo) return
         setMetodos(carga.metodos)

@@ -41,7 +41,7 @@ export default function SistemaReportes() {
 
   useEffect(() => {
     let fallos = 0
-    Promise.all([
+    void Promise.all([
       ventaService.getAll().catch((err: unknown) => {
         console.error('[SistemaReportes] ventas', err)
         fallos += 1

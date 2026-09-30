@@ -98,7 +98,7 @@ export default function SeccionDatos({ toast, isEmprendedor = false }: { toast: 
 
   useEffect(() => {
     // EMPRENDEDOR usa /admin/todos para productos de su empresa; ADMIN usa el catálogo global
-    Promise.allSettled([
+    void Promise.allSettled([
       isEmprendedor ? productService.adminGetAll(0, 1) : productService.getAll(0, 1),
       orderService.getAll(),
     ]).then(([p, o]) => {

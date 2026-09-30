@@ -95,7 +95,7 @@ export function useCheckoutAssistant({ tipo, numeroPedido = '', metodoPago = '',
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar() }
   }
 
   const isSuccess = tipo === 'success'

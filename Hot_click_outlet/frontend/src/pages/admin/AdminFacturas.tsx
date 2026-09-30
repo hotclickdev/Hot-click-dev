@@ -69,17 +69,17 @@ export default function AdminFacturas() {
   })
 
   useEffect(() => {
-    cargar(0) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
+    void cargar(0) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
     empresaService.getPerfil().then(r => {
       const payload: unknown = (r.data as { data?: unknown } | undefined)?.data ?? r.data
       setEmpresa(payload as EmpresaFiscal)
     }).catch(() => { /* ok */ })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- carga al montar
 
-  const aplicarFiltros = () => { cargar(0, filtrosActuales()) }
+  const aplicarFiltros = () => { void cargar(0, filtrosActuales()) }
   const limpiarFiltros = () => {
     setEstado(''); setFechaDesde(''); setFechaHasta('')
-    cargar(0)
+    void cargar(0)
   }
   const hayFiltrosActivos = !!(estado || fechaDesde || fechaHasta)
 

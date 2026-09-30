@@ -71,7 +71,7 @@ export default function SistemaInicio() {
   }
 
   useEffect(() => {
-    Promise.all([
+    void Promise.all([
       adminService.getDashboard().catch((err: unknown) => {
         console.error('[SistemaInicio] dashboard', err)
         return { data: {} }

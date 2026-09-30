@@ -38,7 +38,7 @@ export default function AdminSoporteTickets() {
   }
 
   useEffect(() => {
-    cargar()
+    void cargar()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- filtros en URL
   }, [empresaIdParam, estadoParam])
 
