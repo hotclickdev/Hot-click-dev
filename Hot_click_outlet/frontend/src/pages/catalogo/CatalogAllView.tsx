@@ -29,7 +29,7 @@ export default function CatalogAllView({
 }) {
   const { t } = useTranslation()
   const {
-    products, categories, marcas, loading, error, retry, page, setViewMode,
+    products, categories, marcas, loading, error, retry, page,
     search, setSearch, category, setCategory, marcasFilter, sort, setSort,
     filterStock, setFilterStock, filterCond, setFilterCond, filterTalla, setFilterTalla,
     priceMin, setPriceMin, priceMax, setPriceMax, setQuickView,
@@ -37,7 +37,7 @@ export default function CatalogAllView({
     toggleMarca, clearMarcas, clearFilters, filtered,
     productCountByCat, categoryTotalCount, marcasCountInScope, marcasForCategoryScope,
     selectedParentNode, hasFilters, flatGrid, showSubcatGrid,
-    filteredPages, filteredSlice, activeCatName, gridAnimKey, convenioMarcaNames,
+    filteredPages, filteredSlice, activeCatName, gridAnimKey,
     tieneGustos, extras, setExtras, filtrosAbiertos, setFiltrosAbiertos,
   } = catalogo
 
@@ -171,9 +171,7 @@ export default function CatalogAllView({
                 search={search}
                 products={products}
                 categories={categories}
-                convenioMarcaNames={convenioMarcaNames}
                 onVerMas={(catId) => { setCategory(String(catId)); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                onVerEmprendimientos={() => { setViewMode('emprendimientos'); clearFilters() }}
                 onQuickView={setQuickView}
                 page={page}
                 needsGustos={sort === 'para_vos' && !tieneGustos}

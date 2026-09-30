@@ -64,9 +64,6 @@ type FiltrarCatalogoArgs = {
 
   products: Producto[]
 
-  viewMode: string
-
-  convenioMarcaNames: Set<string>
 
   search: string
 
@@ -134,17 +131,13 @@ export function categoryScopeIds(
 
 export function filtrarCatalogo({
 
-  products, viewMode, convenioMarcaNames, search, categoryScope,
+  products, search, categoryScope,
 
   marcasFilter, filterStock, filterCond, filterTalla, minPrice, maxPrice,
 
 }: FiltrarCatalogoArgs): Producto[] {
 
   return products
-
-    .filter(p => viewMode !== 'ofertas' || p.enOferta)
-
-    .filter(p => viewMode !== 'emprendimientos' || convenioMarcaNames.has(p.marcaNombre?.toLowerCase()))
 
     .filter(p => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()) || p.marcaNombre?.toLowerCase().includes(search.toLowerCase()))
 

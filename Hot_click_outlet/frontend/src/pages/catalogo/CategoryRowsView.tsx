@@ -2,13 +2,11 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { buildCategoryTree } from './catalogoHelpers'
 import CategoryRow from './CategoryRow'
-import EmprendimientosRow from './EmprendimientosRow'
 import ParentCategoryRow from './ParentCategoryRow'
 import type { Producto } from '@/types/producto'
 import type {
   CatalogCategoria,
   CatalogChildItem,
-  CatalogEmpRow,
   CatalogLeafRow,
   CatalogParentRow,
   CatalogRow,
@@ -16,21 +14,14 @@ import type {
 
 // ── Vista por filas de categoría (modo exploración sin filtros) ───────────────
 export default function CategoryRowsView({
-  products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, onQuickView, page,
+  products, categories, onVerMas, onQuickView, page,
 }: {
   products: Producto[]
   categories: CatalogCategoria[]
-  convenioMarcaNames: Set<string>
   onVerMas: (catId: unknown) => void
-  onVerEmprendimientos: () => void
   onQuickView: (product: Producto) => void
   page: number
 }) {
-  const emprendimientosProducts = useMemo(
-    () => products.filter(p => convenioMarcaNames.has(p.marcaNombre?.toLowerCase())),
-    [products, convenioMarcaNames]
-  )
-
   const categoryRows = useMemo(() => {
     const tree = buildCategoryTree(categories)
     const result: (CatalogParentRow | CatalogLeafRow)[] = []
@@ -97,19 +88,7 @@ export default function CategoryRowsView({
     return result.sort((a, b) => b.totalCount - a.totalCount)
   }, [products, categories])
 
-  const rows = useMemo(() => {
-    const result: CatalogRow[] = []
-    categoryRows.forEach((row, idx) => {
-      result.push(row)
-      if (idx === 1 && emprendimientosProducts.length > 0) {
-        result.push({ type: 'emprendimientos' } satisfies CatalogEmpRow)
-      }
-    })
-    if (emprendimientosProducts.length > 0 && categoryRows.length <= 1) {
-      result.push({ type: 'emprendimientos' })
-    }
-    return result
-  }, [categoryRows, emprendimientosProducts])
+  const rows: CatalogRow[] = categoryRows
 
   if (rows.length === 0) return null
 
@@ -117,10 +96,8 @@ export default function CategoryRowsView({
     <motion.div key={`cat-rows-p${page}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
       {rows.map((row) => (
         <FilaCatalogo
-          key={row.type === 'emprendimientos' ? 'emp-row' : row.catId}
+          key={row.catId}
           row={row}
-          emprendimientosProducts={emprendimientosProducts}
-          onVerEmprendimientos={onVerEmprendimientos}
           onVerMas={onVerMas}
           onQuickView={onQuickView}
         />
@@ -130,22 +107,12 @@ export default function CategoryRowsView({
 }
 
 function FilaCatalogo({
-  row, emprendimientosProducts, onVerEmprendimientos, onVerMas, onQuickView,
+  row, onVerMas, onQuickView,
 }: {
   row: CatalogRow
-  emprendimientosProducts: Producto[]
-  onVerEmprendimientos: () => void
   onVerMas: (catId: unknown) => void
   onQuickView: (product: Producto) => void
 }) {
-  if (row.type === 'emprendimientos') {
-    return (
-      <EmprendimientosRow
-        products={emprendimientosProducts}
-        onVerEmprendimientos={onVerEmprendimientos}
-      />
-    )
-  }
   if (row.type === 'parent') {
     return (
       <ParentCategoryRow

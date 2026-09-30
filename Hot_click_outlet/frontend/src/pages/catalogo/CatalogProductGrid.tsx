@@ -260,7 +260,7 @@ function CatalogFlatGrid({
 function cuerpoCatalogo({
   shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
   animKey, search, filteredSlice, onQuickView,
-  products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, page,
+  products, categories, onVerMas, page,
   needsGustos,
 }: {
   shouldRender: boolean
@@ -275,9 +275,7 @@ function cuerpoCatalogo({
   onQuickView: (product: Producto) => void
   products: Producto[]
   categories: CatalogCategoria[]
-  convenioMarcaNames: Set<string>
   onVerMas: (catId: unknown) => void
-  onVerEmprendimientos: () => void
   page: number
   needsGustos?: boolean
 }) {
@@ -321,11 +319,7 @@ function cuerpoCatalogo({
 
       categories={categories}
 
-      convenioMarcaNames={convenioMarcaNames}
-
       onVerMas={onVerMas}
-
-      onVerEmprendimientos={onVerEmprendimientos}
 
       onQuickView={onQuickView}
 
@@ -343,8 +337,8 @@ export default function CatalogProductGrid({
   gridRef, shouldRender, loading,
   filtered, filteredSlice, filteredPages, filterViewPage, onPageChange,
   hasFilters, onClearFilters, flatGrid, animKey, search,
-  products, categories, convenioMarcaNames,
-  onVerMas, onVerEmprendimientos, onQuickView, page,
+  products, categories,
+  onVerMas, onQuickView, page,
   needsGustos = false,
 }: {
   gridRef: RefObject<Element | null>
@@ -362,9 +356,7 @@ export default function CatalogProductGrid({
   search: string
   products: Producto[]
   categories: CatalogCategoria[]
-  convenioMarcaNames: Set<string>
   onVerMas: (catId: unknown) => void
-  onVerEmprendimientos: () => void
   onQuickView: (product: Producto) => void
   page: number
   needsGustos?: boolean
@@ -374,7 +366,7 @@ export default function CatalogProductGrid({
       {cuerpoCatalogo({
         shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
         animKey, search, filteredSlice, onQuickView,
-        products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, page,
+        products, categories, onVerMas, page,
         needsGustos,
       })}
       {filteredPages > 1 && flatGrid && (
