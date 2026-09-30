@@ -64,18 +64,28 @@ Un solo agente (CAT) es dueño de ambos componentes hasta eliminar el antiguo. P
 | --- | --- | --- |
 | C0 | Extender `comprador/ProductCard` **sin romper a Home, SinResultados ni ProductAgotado**: prop opcional para la etiqueta "Hecho a pedido" (producto personalizado) y, según decisión, precio de lista tachado para ofertas. Tests de los helpers | Home sigue igual a 1440 y 390 |
 | C1 | Migrar `DescubriResultados` | Captura antes/después |
-| C2 | Migrar `EmprendimientosRow` | Captura antes/después |
-| C3 | Migrar `OfertasView` (o retirarla si se decide que Figma manda) | Captura antes/después |
+| C2 | **Eliminar** `EmprendimientosRow` (decisión del usuario 2026-09-30) y su uso en `CategoryRowsView` | `grep` sin referencias, catálogo intacto |
+| C3 | **Eliminar** `OfertasView` (decisión del usuario 2026-09-30) junto con las pestañas Ofertas y Emprendimientos (ver abajo) | `grep` sin referencias, typecheck, tests |
 | C4 | Migrar el wrapper del catálogo: `CatalogProductGrid`, `CategoryRow`, `ParentCategoryRow`. Quitar `onQuickView` del wrapper (prop muerta) | Captura antes/después, filtros y paginación intactos |
 | C5 | Borrar `ui/ProductCard.tsx`, `ui/productCard/*` y `catalogoProductCard.ts` cuando ya nadie los importe | `grep` sin resultados, typecheck, tests |
 
 Cada paso es un commit aparte, verificable y reversible. No se elimina nada hasta C5.
 
-## Decisiones que requieren al usuario
+## Decisiones tomadas por el usuario (2026-09-30)
+
+| Decisión | Alcance para CAT |
+| --- | --- |
+| Eliminar la sección **Ofertas HOT** del catálogo | Borrar `pages/catalogo/OfertasView.tsx`, el modo `ofertas` de `CatalogViewMode` (`catalogoTipos.ts`), su filtro en `catalogoFiltros.ts`, la pestaña en `CatalogViewTabs.tsx`, el caso en `CatalogSeoHelmet.tsx` y la clave `products.seoTitleOfertas`. **No tocar** el panel admin de promociones (`/admin/ofertas`): los vendedores siguen creando promociones |
+| Eliminar la pestaña **Emprendimientos** del catálogo | Borrar `EmprendimientosView.tsx`, `EmprendimientosRow.tsx` (y su uso en `CategoryRowsView`), el modo `emprendimientos` y su pestaña. **No tocar** la página pública `/emprendimientos` (la lleva STORE) |
+| Resultado | `CatalogViewTabs` queda sin pestañas alternativas: CAT decide con Figma `26:722` si el componente desaparece por completo |
+
+Riesgo a cuidar: enlaces externos o guardados con `?view=ofertas` o `?view=emprendimientos`. CAT debe hacer que caigan en la vista normal, sin 404.
+
+## Decisiones que siguen abiertas
 
 | # | Pregunta | Mi recomendación |
 | --- | --- | --- |
 | 1 | ¿Se conserva el **precio tachado y el badge "Oferta"** en la tarjeta nueva? Es una función real que Figma no dibuja | Conservarlo, discreto: precio de lista tachado pequeño junto al precio, sin alterar el tamaño de la tarjeta |
-| 2 | ¿Se conserva la sección **Ofertas HOT** del catálogo? Figma no la tiene | Preguntar al dueño del negocio: si hay ofertas activas, hay que mostrarlas en algún lado |
+| 2 | ~~Ofertas HOT~~ **Resuelto: se elimina** | — |
 | 3 | `onQuickView` no hace nada en la tarjeta hoy. ¿Se elimina el **Quick view**? | Eliminar: es código muerto y Figma no lo tiene |
 | 4 | Pastilla de marca, condición, punto de stock y línea de envío: ¿se descartan? | Descartar: no están en Figma, y esa información vive en la ficha |

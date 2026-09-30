@@ -128,7 +128,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | --- | --- | --- |
 | 1 | ~~Integrar SHELL en base~~ Hecho | Todos |
 | 2 | Precio tachado y badge "Oferta" en la tarjeta nueva: ¿se conservan? | CAT |
-| 3 | Sección "Ofertas HOT" del catálogo: Figma no la tiene. ¿Se conserva? | CAT |
+| 3 | ~~Ofertas HOT y pestaña Emprendimientos~~ **Resuelto: se eliminan** (ver `PRODUCTCARD_STRATEGY.md`) | CAT |
 | 4 | ¿Se elimina el Quick view (hoy no hace nada)? | CAT |
 | 5 | ¿Se eliminan la pastilla de marca, la condición, el punto de stock y la línea de envío de la tarjeta antigua? | CAT |
 | 6 | Limpieza de los worktrees viejos | — |
