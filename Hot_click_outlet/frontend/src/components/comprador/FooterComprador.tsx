@@ -23,8 +23,8 @@ function BannerVendedor() {
       className="flex flex-col gap-[2px] bg-hc-blue-900 p-4 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-[22px] xl:px-[120px]"
     >
       <span className="flex flex-col gap-[2px] whitespace-nowrap">
-        <span className="text-[12px] text-hc-blue-100 lg:text-[13px]">{t('comprador.footer.bannerPregunta')}</span>
-        <span className="flex items-center gap-1 font-display text-[15px] font-semibold text-hc-n-0 lg:text-[18px]">
+        <span className="text-[12px] leading-[14px] text-hc-blue-100 lg:text-[13px] lg:leading-[15px]">{t('comprador.footer.bannerPregunta')}</span>
+        <span className="flex items-center gap-1 font-display text-[15px] font-semibold leading-[19px] text-hc-n-0 lg:text-[18px] lg:leading-[23px]">
           <span className="lg:hidden">{t('comprador.footer.bannerTitulo')}</span>
           <span className="hidden lg:inline">{t('comprador.footer.bannerTituloDesktop')}</span>
           <IconoFigma src={ICONOS_COMPRADOR.bannerFlecha} size={16} className="lg:hidden" />
@@ -41,7 +41,7 @@ function BannerVendedor() {
 function EnlacesLegales() {
   const { t } = useTranslation()
   return (
-    <p className="text-[12px] leading-[18px] text-hc-n-600 lg:text-[13px] lg:leading-normal">
+    <p className="text-[12px] leading-[18px] text-hc-n-600 lg:text-[13px] lg:leading-[15px]">
       {ENLACES.map((enlace, indice) => (
         <span key={enlace.clave} className={enlace.soloEscritorio ? 'hidden lg:inline' : undefined}>
           {indice > 0 && ' · '}
@@ -56,11 +56,11 @@ function EnlacesLegales() {
 export default function FooterComprador() {
   const { t } = useTranslation()
   return (
-    <footer aria-label={t('comprador.footer.aria')} className="mt-auto">
+    <footer aria-label={t('comprador.footer.aria')} className="mt-auto leading-[normal]">
       <BannerVendedor />
       <div className="flex flex-col gap-[6px] bg-hc-n-100 px-4 pb-[18px] pt-4 lg:flex-row lg:items-start lg:justify-between lg:px-8 lg:pb-6 lg:pt-5 xl:px-[120px]">
         <EnlacesLegales />
-        <p className="whitespace-nowrap text-[11px] text-hc-n-500 lg:text-[12px]">
+        <p className="whitespace-nowrap text-[11px] leading-[13px] text-hc-n-500 lg:text-[12px] lg:leading-[14px]">
           {t('comprador.footer.derechos', { anio: new Date().getFullYear() })}
         </p>
       </div>

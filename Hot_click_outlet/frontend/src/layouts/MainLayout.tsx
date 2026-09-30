@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import HeaderComprador from '@/components/comprador/header/HeaderComprador'
+import type { DestinoAtras, EncabezadoEscritorio, EncabezadoMovil } from '@/components/comprador/header/tiposHeader'
 import BarraInferior from '@/components/comprador/BarraInferior'
 import FooterComprador from '@/components/comprador/FooterComprador'
 import SearchPanel from '@/components/ui/SearchPanel'
@@ -13,9 +14,44 @@ import ReturnVisitorBanner from '@/components/ui/ReturnVisitorBanner'
 /** Hasta que exista la pantalla de búsqueda por foto, la foto se pide en Servicios HOT. */
 const RUTA_BUSCAR_CON_FOTO = '/servicios'
 
-export default function MainLayout({ children }: { children?: ReactNode }) {
+type OpcionesComunes = {
+  children?: ReactNode
+  /** Header desktop. Por defecto `completo`. Es independiente de la variante móvil. */
+  encabezadoEscritorio?: EncabezadoEscritorio
+  /** Barra inferior móvil. Por defecto: sí, salvo en `interna`. */
+  barraInferior?: boolean
+  /** Footer con el banner de vendedor. Por defecto sí; fuera de `raiz` solo se ve en desktop. */
+  pie?: boolean
+}
+
+/**
+ * Tipo de pantalla según Figma:
+ * - `raiz` (por defecto): header global + barra inferior + footer. Home, catálogo.
+ * - `interna`: barra propia con flecha atrás y título, sin barra inferior. Ficha, carrito, login, Servicios HOT.
+ * - `marca`: barra con solo el logo. 404 y pago exitoso.
+ * - `propia`: sin barra superior móvil; la pantalla dibuja la suya (Categorías).
+ */
+export type MainLayoutProps = OpcionesComunes &
+  (
+    | { variante?: 'raiz' | 'propia' }
+    | { variante: 'interna'; titulo: string; atras?: DestinoAtras; acciones?: ReactNode }
+    | { variante: 'marca'; marcaCentrada?: boolean }
+  )
+
+const ENCABEZADO_MOVIL: Record<'raiz' | 'interna' | 'marca' | 'propia', EncabezadoMovil> = {
+  raiz: 'global',
+  interna: 'interno',
+  marca: 'marca',
+  propia: 'propio',
+}
+
+export default function MainLayout(props: MainLayoutProps) {
+  const { children, encabezadoEscritorio = 'completo', pie = true } = props
+  const variante = props.variante ?? 'raiz'
+  const barraInferior = props.barraInferior ?? variante !== 'interna'
   const { t } = useTranslation()
   const navigate = useNavigate()
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-hc-n-50">
       <a
@@ -24,14 +60,28 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
       >
         {t('nav.saltarContenido')}
       </a>
-      <HeaderComprador onBuscarConFoto={() => navigate(RUTA_BUSCAR_CON_FOTO)} />
+      <HeaderComprador
+        onBuscarConFoto={() => navigate(RUTA_BUSCAR_CON_FOTO)}
+        movil={ENCABEZADO_MOVIL[variante]}
+        escritorio={encabezadoEscritorio}
+        barraInterna={props.variante === 'interna' ? { titulo: props.titulo, atras: props.atras, acciones: props.acciones } : undefined}
+        marcaCentrada={props.variante === 'marca' ? props.marcaCentrada : undefined}
+      />
       <main id="main-content" className="flex-1" tabIndex={-1}>
         <ReturnVisitorBanner />
         {children}
       </main>
-      <FooterComprador />
-      <div className="h-[72px] lg:hidden" aria-hidden="true" />
-      <BarraInferior />
+      {pie && (
+        <div className={variante === 'raiz' ? 'mt-auto' : 'mt-auto max-lg:hidden'}>
+          <FooterComprador />
+        </div>
+      )}
+      {barraInferior && (
+        <>
+          <div className="h-[72px] lg:hidden" aria-hidden="true" />
+          <BarraInferior />
+        </>
+      )}
       <SearchPanel />
       <MiniCartDrawer />
       <ExitIntentModal />

@@ -2961,7 +2961,10 @@
       "serviciosHot": "HOT Services",
       "vende": "Sell on HotClick",
       "categoriasAria": "Categories",
-      "panel": "My dashboard"
+      "panel": "My dashboard",
+      "volver": "Back",
+      "compraSegura": "Secure checkout",
+      "buscadorCompacto": "Search products or describe what you need"
     },
     "nav": {
       "aria": "Main navigation",

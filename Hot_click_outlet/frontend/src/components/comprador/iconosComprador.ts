@@ -8,6 +8,7 @@ import avisoCorazon from '@/assets/figma/comprador/aviso-corazon.svg'
 import avisoEnvio from '@/assets/figma/comprador/aviso-envio.svg'
 import avisoTienda from '@/assets/figma/comprador/aviso-tienda.svg'
 import avisoUbicacion from '@/assets/figma/comprador/aviso-ubicacion.svg'
+import barraAtras from '@/assets/figma/comprador/barra-atras.svg'
 import bannerFlecha from '@/assets/figma/comprador/banner-flecha.svg'
 import buscador from '@/assets/figma/comprador/buscador.svg'
 import buscarFoto from '@/assets/figma/comprador/buscar-foto.svg'
@@ -19,6 +20,7 @@ import codigoCheck from '@/assets/figma/comprador/codigo-check.svg'
 import codigoError from '@/assets/figma/comprador/codigo-error.svg'
 import codigoRegalo from '@/assets/figma/comprador/codigo-regalo.svg'
 import codigoValidado from '@/assets/figma/comprador/codigo-validado.svg'
+import compraSeguraCandado from '@/assets/figma/comprador/compra-segura-candado.svg'
 import consultaDestello from '@/assets/figma/comprador/consulta-destello.svg'
 import consultaFlecha from '@/assets/figma/comprador/consulta-flecha.svg'
 import enviarFlecha from '@/assets/figma/comprador/enviar-flecha.svg'
@@ -60,6 +62,7 @@ export const ICONOS_COMPRADOR = {
   avisoTienda,
   avisoUbicacion,
   bannerFlecha,
+  barraAtras,
   buscador,
   buscarFoto,
   buscarFotoDesktop,
@@ -70,6 +73,7 @@ export const ICONOS_COMPRADOR = {
   codigoError,
   codigoRegalo,
   codigoValidado,
+  compraSeguraCandado,
   consultaDestello,
   consultaFlecha,
   enviarFlecha,

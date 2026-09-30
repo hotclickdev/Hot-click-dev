@@ -20,7 +20,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
   const { cantidadPedido, conSesion, rutaCuenta, rutaPanel, categorias } = useHeaderComprador()
 
   return (
-    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 lg:flex xl:px-[120px]">
+    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 leading-[normal] lg:flex xl:px-[120px]">
       <div className="flex items-center gap-8">
         <MarcaComprador tamano="escritorio" />
         <BuscadorEscritorio onBuscarConFoto={onBuscarConFoto} />
@@ -102,7 +102,7 @@ function BuscadorEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
         onChange={(e) => setConsulta(e.target.value)}
         placeholder={t('comprador.header.buscadorDesktop')}
         aria-label={t('comprador.header.buscar')}
-        className="min-w-px flex-1 truncate bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
+        className="hc-input-libre min-w-px flex-1 truncate bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
       />
       <button
         type="button"
