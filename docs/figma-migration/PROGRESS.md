@@ -10,7 +10,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Fase 1: auditoría e inventario | Hecha (90 pantallas) |
 | Fase 2a: recuperar PR #93 | Hecha en `feat/figma/base` |
 | Fase 2b: mover Home a su rama | Hecha en `feat/figma/home` |
-| Fase 2c: SHELL (variantes de `MainLayout`) | Implementado y autovalidado. **QA independiente: ver sección SHELL** |
+| Fase 2c: SHELL (variantes de `MainLayout`) | Implementado, con QA independiente y hallazgos corregidos. Pendiente de tu autorización para integrar |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | Agentes CAT, PROD, STORE, CHK, ACC, SRV, SYS, QR | **No lanzados**, como se pidió |
 
@@ -19,7 +19,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Rama | Worktree | Parte de | Responsable | Commits propios | Estado |
 | --- | --- | --- | --- | --- | --- |
 | `feat/figma/base` | `.claude/worktrees/base` | `master` (`b355fd20`) | SUP | merge `8146495b` | Lista. No se edita: solo recibe merges del supervisor |
-| `feat/figma/shell` | `.claude/worktrees/shell` | `feat/figma/base` | SHELL | `197e87a0` (sombra/footer/ícono, cherry-pick de Home), `3b54150d` (variantes) | Implementada, pendiente de QA independiente |
+| `feat/figma/shell` | `.claude/worktrees/shell` | `feat/figma/base` | SHELL | `197e87a0` (sombra/footer/ícono, cherry-pick de Home), `3b54150d` (variantes), `ac69ca69` (sticky y marca centrada) | Implementada y con QA independiente; pendiente de integrar |
 | `feat/figma/home` | `.claude/worktrees/home` | `master` | HOME | `bd50a1d5`, `8c6d1e53` | Commiteada. Falta integrar SHELL y volver a medir |
 | `feat/figma/supervisor` | `.claude/worktrees/supervisor` | `feat/figma/base` | SUP | (docs, por commitear) | Activa: documentación |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
@@ -85,7 +85,17 @@ Validación: `tsc` limpio · frontend 81 archivos / 358 tests (4 nuevos) · esli
 
 No-regresión: se midieron 34 rutas reales en móvil y desktop contra `base`: 0 errores de página, 0 desbordes horizontales, ninguna redirección nueva, misma presencia de barra inferior y footer. Las únicas diferencias son las alturas corregidas a Figma y el footer móvil, ahora más corto porque se quitó "Ayuda".
 
-**QA independiente:** _ver resultado al final de este documento._
+**QA independiente (agente distinto, sin confiar en mi informe):** 16 casos medidos con Playwright y fuentes reales contra metadata y capturas de Figma. 14 coinciden dentro de 1 px. Hallazgos:
+
+| # | Hallazgo | Acción | Estado |
+| --- | --- | --- | --- |
+| 1 | Barra de marca centrada (`29:1932`): Figma 55 / logo 26 / texto 80x21; app 53 / 28 / 84 | Variante de tamaño `centrada` y padding 14 | Corregido: 55 / 26 / 79x21 (commit `ac69ca69`) |
+| 2 | El header **no era sticky** en ninguna ruta (defecto previo): `overflow-x: hidden` en `html`, `body` y el wrapper creaba un contenedor de scroll. La sombra al scrollear nunca se veía | `overflow-x: clip` en los tres | Corregido y verificado en 21 rutas x 2 viewports, incluido `/admin`: header en y=0 tras scrollear, sin desborde ni errores |
+| 3 | Carrito vacío sin badge: el buscador desktop mide 822 y Figma 795 (con badge "2") | Ninguna: depende del dato | Sin acción |
+
+Como `index.css` es global, el cambio a `clip` afecta a todo el sitio, incluidos los paneles admin. Las rutas probadas no mostraron regresión, pero la revisión visual del panel admin no se hizo.
+
+**Estado de SHELL: implementado, medido y con QA independiente hecho; hallazgos corregidos. Falta tu autorización para integrarlo en `feat/figma/base`.** Una segunda pasada del QA sobre `ac69ca69` no se ha hecho; las dos correcciones las verifiqué yo con mediciones.
 
 ## Archivos bloqueados ahora
 
@@ -108,7 +118,7 @@ base ──► shell ──► [QA independiente] ──► integrar en base ─
 
 ## Listo para comenzar
 
-Nada de la ola 1 empieza hasta que SHELL pase el QA independiente y se integre en `base`. Cuando eso ocurra, cada agente arranca con: rama `feat/figma/<agente>` desde `base`, su worktree propio, su lista de pantallas del inventario, y el compromiso de convertir sus UNKNOWN en estado real **antes** de escribir código.
+Nada de la ola 1 empieza hasta que SHELL se integre en `base` (el QA ya pasó; falta tu autorización). Cuando eso ocurra, cada agente arranca con: rama `feat/figma/<agente>` desde `base`, su worktree propio, su lista de pantallas del inventario, y el compromiso de convertir sus UNKNOWN en estado real **antes** de escribir código.
 
 Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego PROD y CHK (la compra), ACC, y al final SRV, SYS, STORE y QR.
 
@@ -116,7 +126,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 
 | # | Decisión | Afecta a |
 | --- | --- | --- |
-| 1 | Autorizar integrar `feat/figma/shell` en `feat/figma/base` cuando el QA pase (merge local, sin push) | Todos |
+| 1 | Autorizar integrar `feat/figma/shell` en `feat/figma/base` (merge local, sin push). El QA ya pasó | Todos |
 | 2 | Precio tachado y badge "Oferta" en la tarjeta nueva: ¿se conservan? | CAT |
 | 3 | Sección "Ofertas HOT" del catálogo: Figma no la tiene. ¿Se conserva? | CAT |
 | 4 | ¿Se elimina el Quick view (hoy no hace nada)? | CAT |
