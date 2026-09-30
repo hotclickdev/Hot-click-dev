@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class OtpService {
@@ -92,12 +93,35 @@ public class OtpService {
     }
 
     /**
-     * Verifica que exista un OTP consumido recientemente (paso 2 completado).
-     * Impide saltar el verify-code e ir directo a reset-password.
+     * Canjea, una sola vez, un OTP ya verificado en el paso anterior (p. ej. reset-password
+     * después de verify-code). Exige el mismo código: haber verificado no alcanza, porque
+     * si no cualquiera que conociera el correo podría cambiar la contraseña en esa ventana.
+     *
+     * Reglas: verificado hace menos de {@link Constants#OTP_VENTANA_REENVIO_MIN} minutos,
+     * máx {@link Constants#OTP_MAX_INTENTOS} intentos, canje atómico y de un solo uso.
+     * Al canjear se dan de baja los demás OTP verificados del usuario.
      */
-    public boolean tieneOtpConsumidoReciente(Usuario usuario, String tipoNombre) {
+    @Transactional
+    public boolean canjearOtpVerificado(Usuario usuario, String tipoNombre, String codigoPlano) {
         LocalDateTime ventana = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
-        return codigoOtpRepository.countRecentlyConsumedOtps(usuario, tipoNombre, ventana) > 0;
+        List<CodigoOtp> verificados = codigoOtpRepository.findVerificadosSinCanjear(
+                usuario, tipoNombre, Constants.ESTADO_ACTIVO, ventana);
+        if (verificados.isEmpty()) return false;
+
+        CodigoOtp otp = verificados.get(0);
+        int intentos = otp.getAttempts() == null ? 0 : otp.getAttempts();
+        if (intentos >= Constants.OTP_MAX_INTENTOS) return false;
+
+        if (codigoPlano == null || !passwordEncoder.matches(codigoPlano, otp.getCodigoHash())) {
+            codigoOtpRepository.incrementarAttempts(otp.getIdOtpCode());
+            return false;
+        }
+
+        if (codigoOtpRepository.canjear(otp.getIdOtpCode(), Constants.ESTADO_ACTIVO, Constants.ESTADO_INACTIVO) == 0) {
+            return false;
+        }
+        codigoOtpRepository.darDeBajaVerificados(usuario, tipoNombre, Constants.ESTADO_ACTIVO, Constants.ESTADO_INACTIVO);
+        return true;
     }
 
     /**
