@@ -11,6 +11,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Fase 2a: recuperar PR #93 | Hecha en `feat/figma/base` |
 | Fase 2b: Home | Rama `feat/figma/home` con la base integrada (`98ec9abc`) y el cuerpo remedido y corregido (`6d0de288`). Los tres frames siguen en PARTIAL (ver Fase 2b) |
 | Ola 0: docs en la base | Integrados (`62a631ac`) |
+| Ola 1: ramas y worktrees | Creadas el 2026-09-30 desde la base: `feat/figma/{cat,prod,chk,acc,srv,sys,store,qr}`, cada una en `.claude/worktrees/<agente>` |
+| Ola 1, CAT C0 (ProductCard) | **Hecho**, integrado en `base` (`9f11c9a7`). `comprador/ProductCard` 167x280; `formatPrice` global con punto (`₡6.200`). C1 a C5 sin empezar. PROD, CHK, ACC, SRV, SYS, STORE y QR **no lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | Agentes CAT, PROD, STORE, CHK, ACC, SRV, SYS, QR | **No lanzados**, como se pidió |
@@ -22,7 +24,9 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | `feat/figma/base` | `.claude/worktrees/base` | `master` (`b355fd20`) | SUP | merge `8146495b` | Lista. No se edita: solo recibe merges del supervisor |
 | `feat/figma/shell` | `.claude/worktrees/shell` | `feat/figma/base` | SHELL | `197e87a0` (sombra/footer/ícono, cherry-pick de Home), `3b54150d` (variantes), `ac69ca69` (sticky y marca centrada) | Implementada, con QA independiente e integrada en `base` (`b3159c1e`) |
 | `feat/figma/home` | `.claude/worktrees/home` | `master` | HOME | `bd50a1d5`, `8c6d1e53`, merge `98ec9abc` (base), `6d0de288` (QA visual) | Base integrada y cuerpo remedido. Sin cambios sin commitear. Aún no se integra en `base` |
-| `feat/figma/supervisor` | `.claude/worktrees/supervisor` | `feat/figma/base` | SUP | docs (`e0533e5f` y anteriores) | Activa: documentación. Sus docs ya están en `base` (`62a631ac`) |
+| `feat/figma/supervisor` | `.claude/worktrees/supervisor` | `feat/figma/base` | SUP | docs | Activa: documentación. Sus docs se mezclan en `base` |
+| `feat/figma/cat` | `.claude/worktrees/cat` | `feat/figma/base` (`ba4a4171`) | CAT | `a2996613`, `579f01a7`, `9881860a` | C0 hecho e integrado en `base`. Sigue C1 a C5 |
+| `feat/figma/{prod,chk,acc,srv,sys,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
 Topología:
@@ -35,7 +39,7 @@ master b355fd20
    └─ feat/figma/supervisor   (documentación)
 ```
 
-Ramas por crear cuando SHELL esté integrado, desde `feat/figma/base`: `feat/figma/cat`, `prod`, `store`, `chk`, `acc`, `srv`, `sys`, `qr`, cada una en `.claude/worktrees/<agente>`.
+Las 8 ramas de la ola 1 ya existen (ver tabla). Al lanzar un agente, su rama debe tener la base actual: si no tiene commits propios se actualiza con `git merge --ff-only feat/figma/base`.
 
 ### Worktrees viejos: no reutilizar
 
@@ -94,8 +98,8 @@ Validación: `tsc` limpio · 81 archivos / 358 tests · eslint sin hallazgos en 
 
 | Pendiente | Dueño | Acción |
 | --- | --- | --- |
-| ProductCard mide 278 y Figma 280; nombre con pastilla de marca y línea de tienda con otra tipografía; badge "Quedan 4" sin verificar | CAT | Paso C0 y siguientes |
-| `formatPrice` muestra "₡6 200" (Intl es-CR) y Figma "₡6.200" | Decisión del usuario | Cambiar `utils/format` o tolerar |
+| ~~ProductCard mide 278 y Figma 280~~ | CAT | **Resuelto en C0** (`579f01a7`): 167x280. La pastilla de marca y la línea de tienda de Figma quedan descartadas por decisión del usuario. Badge "Quedan N" verificado con datos simulados; falta con datos reales |
+| ~~`formatPrice` muestra "₡6 200" y Figma "₡6.200"~~ | Decisión del usuario | **Resuelto** (`a2996613`): `formatMiles` con `Intl.NumberFormat('es-CR')` y separador de grupo cambiado a punto. Ver `CAT_C0.md` |
 | FAB con isotipo y botón verde de WhatsApp flotantes sobre Home, no están en Figma | SYS | Ya listado en el inventario |
 | Copy bajo "Seguí donde lo dejaste": Figma dice "Solo aparece si ya visitaste productos" (parece anotación de diseño); la app conserva "Lo último que miraste" | Decisión del usuario | Mantener el de la app salvo indicación |
 | Orden de categorías: Figma fija uno, la app respeta el de la API | Decisión del usuario | Tolerar o fijar orden |
@@ -146,7 +150,7 @@ Como `index.css` es global, el cambio a `clip` afecta a todo el sitio, incluidos
 | Archivo | Bloqueado por | Hasta |
 | --- | --- | --- |
 | `layouts/MainLayout.tsx` y `components/comprador/header/*` | SHELL | Integración de SHELL en `base` |
-| `components/comprador/ProductCard.tsx` | CAT (congelado) | Paso C0 |
+| `components/comprador/ProductCard.tsx` | CAT | C0 hecho. Cambios solo vía CAT |
 | `components/ui/ProductCard.tsx`, `ui/productCard/*`, `catalogoProductCard.ts` | CAT | Pasos C1 a C5 |
 | `app/AppRoutes.tsx`, `static/**`, `package.json`, `pnpm-lock.yaml` | SUP | Siempre |
 | `i18n/locales/*.json` | Por namespace (ver ownership) | Siempre |
@@ -176,8 +180,9 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 4 | ~~Quick view~~ **Resuelto: se elimina** | CAT |
 | 5 | ~~Pastilla de marca, condición, punto de stock y línea de envío~~ **Resuelto: se descartan** | CAT |
 | 6 | Limpieza de los worktrees viejos (revisados, nada sin commitear; ver la sección de worktrees) | — |
-| 7 | Formato de precio: `₡6 200` (app) contra `₡6.200` (Figma) | Home, CAT, CHK |
-| 8 | Copy "Solo aparece si ya visitaste productos" y orden de categorías del Home | HOME |
+| 7 | ~~Formato de precio~~ **Resuelto: `₡6.200` global** | Home, CAT, CHK |
+| 8 | ~~Copy "Solo aparece si ya visitaste productos"~~ **Resuelto: se mantiene "Lo último que miraste"**. Abierto: orden de categorías del Home | HOME |
+| 9 | Columnas fijas o fluidas en el catálogo (C4): investigar con todos los frames de catálogo | CAT |
 
 ## Riesgos abiertos
 

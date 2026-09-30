@@ -26,6 +26,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | Base: master + fase 2 (PR #93) | `feat/figma/base` | Integrada. Frontend: tsc limpio, 354 tests. Backend: ver PROGRESS.md |
 | SHELL: `MainLayout` con variantes `raiz`, `interna`, `marca`, `propia` y tres headers desktop | `feat/figma/shell` | Integrado en `feat/figma/base` (merge `b3159c1e`). Medido contra Figma (alturas 111, 79, 71, 160, 51, 53, 67) y con QA independiente |
 | Home | `feat/figma/home` | Base integrada (merge `98ec9abc`), cuerpo remedido y corregido (`6d0de288`). tsc limpio, 358 tests, build OK. Los tres frames siguen en PARTIAL por diferencias fuera de HOME (ver filas) |
+| CAT C0: `comprador/ProductCard` 167x280 y `formatPrice` con punto de miles | `feat/figma/cat` | Hecho y medido (commits `a2996613`, `579f01a7`, `9881860a`), integrado en `feat/figma/base` (merge `9f11c9a7`). Ver `CAT_C0.md`. C1 a C5 sin empezar |
 
 ## Cómo leer la evidencia
 
@@ -41,9 +42,9 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 
 | Sección | Pantalla | Frame Figma | Ruta | Estado | Evidencia | Desktop | Mobile | Agente |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 01 Inicio | Home · móvil 390 | `7:2` | / | PARTIAL | M. Remedido en píxeles con fuentes reales y API simulada: header, hero, secciones, Seguí, categorías, asistente y confianza coinciden con Figma (±1 px); corregido en `6d0de288`. Pendiente fuera de HOME: ProductCard mide 278 y Figma 280 (CAT); `formatPrice` da "₡6 200" y Figma "₡6.200" (decisión); FAB y botón de WhatsApp flotantes no están en Figma (SYS). No verificado: fotos reales, badge "Quedan N", badge del carrito | no | sí | HOME |
+| 01 Inicio | Home · móvil 390 | `7:2` | / | PARTIAL | M. Remedido en píxeles con fuentes reales y API simulada: header, hero, secciones, Seguí, categorías, asistente y confianza coinciden con Figma (±1 px); corregido en `6d0de288`. El ProductCard (C0) y el formato de precio `₡6.200` ya coinciden con Figma. Pendiente fuera de HOME: FAB y botón de WhatsApp flotantes no están en Figma (SYS). No verificado: fotos reales, badge "Quedan N", badge del carrito | no | sí | HOME |
 | 01 Inicio | Home móvil · al scrollear | `12:346` | / | PARTIAL | M. Header sticky en y=0, alto 160 y sombra `0 4px 12px rgba(20,23,28,.1)` idénticos a Figma; barra inferior y=777 alto 67. Mismas pendientes externas que `7:2` | no | sí | HOME |
-| 01 Inicio | Home · desktop 1440 | `9:171` | / | PARTIAL | M. Remedido: hero 572, título 420x84, chips 33, secciones en y=683/933/1128, confianza 208, altura total 1855 contra 1857 de Figma (los 2 px son del ProductCard). Fuente de verdad del Home desktop (decisión del usuario). Mismas pendientes externas que `7:2`, más copy "Solo aparece si ya visitaste productos" (¿anotación de diseño?) y orden de categorías (Figma fija uno, la app respeta el de la API) | sí | no | HOME |
+| 01 Inicio | Home · desktop 1440 | `9:171` | / | PARTIAL | M. Remedido: hero 572, título 420x84, chips 33, secciones en y=683/933/1128, confianza 208, altura total 1857, igual a Figma (con el ProductCard de C0; antes 1855). Fuente de verdad del Home desktop (decisión del usuario). Mismas pendientes externas que `7:2`. Copy resuelto por el usuario: "Solo aparece si ya visitaste productos" es anotación de diseño y se mantiene "Lo último que miraste". Abierto: orden de categorías (Figma fija uno, la app respeta el de la API) | sí | no | HOME |
 | 01 Inicio | Búsqueda activa · móvil | `8:163` | (overlay) SearchPanel | UNKNOWN | C. Sin comparar | no | sí | CAT |
 | 01 Inicio | Asistente · respuesta · móvil | `8:230` | (overlay) chat asistente | UNKNOWN | C. Sin comparar | no | sí | CAT |
 | 02 Buscar y explorar | Resultados de búsqueda · móvil | `26:722` | /productos?search= | PARTIAL | V. Sin query se ve el hero antiguo "Catálogo completo"; con query sin comparar | no | sí | CAT |
