@@ -2942,6 +2942,27 @@
     },
     "hoja": {
       "cerrar": "Cerrar"
+    },
+    "falloServidor": {
+      "marca": "HotClick",
+      "volver": "Volver",
+      "titulo": "Algo salió mal de nuestro lado",
+      "texto": "No es tu culpa. Probá de nuevo en unos segundos: tu carrito sigue guardado.",
+      "reintentar": "Reintentar",
+      "whatsapp": "Escribinos por WhatsApp · {{numero}}",
+      "referencia": "Referencia del error: {{referencia}} · compartila si nos escribís",
+      "mensajeWhatsapp": "Hola, tuve un error en HotClick. Referencia: {{referencia}}"
+    },
+    "instalarApp": {
+      "aria": "Instalar la app de HotClick",
+      "titulo": "Instalá HotClick",
+      "subtitulo": "Gratis · no ocupa casi espacio",
+      "cerrar": "Cerrar",
+      "beneficioAcceso": "Abrís la tienda con un toque desde tu pantalla",
+      "beneficioAvisos": "Te avisamos cuando tu paquete sale y llega",
+      "beneficioSinConexion": "Tus favoritos y lo que viste, aun sin conexión",
+      "ahoraNo": "Ahora no",
+      "instalar": "Instalar"
     }
   }
 }
