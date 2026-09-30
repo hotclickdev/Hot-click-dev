@@ -5,8 +5,10 @@ import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.service.CuponService;
+import com.hotclick.service.EncargoService;
+import com.hotclick.service.GiftCardService;
 import com.hotclick.service.analytics.AtribucionPedidoService;
-import com.hotclick.service.payment.GuestCancelTokenService;
+import com.hotclick.service.payment.*;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +18,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("SinpeCheckoutService — empresa en pedido")
 class SinpeCheckoutServiceEmpresaTest {
 
@@ -37,11 +43,19 @@ class SinpeCheckoutServiceEmpresaTest {
     @Mock private RolRepository rolRepository;
     @Mock private PagoRepository pagoRepository;
     @Mock private CuponService cuponService;
+    @Mock private GiftCardService giftCardService;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private GuestCancelTokenService guestCancelTokenService;
     @Mock private AtribucionPedidoService atribucionPedidoService;
+    @Mock private EncargoService encargoService;
 
-    @InjectMocks private SinpeCheckoutService service;
+    @InjectMocks private CheckoutValidator checkoutValidator;
+    @InjectMocks private GuestUserResolver guestUserResolver;
+    @InjectMocks private StockReservationService stockReservationService;
+    @InjectMocks private OrderPricingService orderPricingService;
+    @InjectMocks private CheckoutOrderFactory checkoutOrderFactory;
+
+    private SinpeCheckoutService service;
 
     private Empresa empresa;
     private Bodega bodega;
@@ -56,6 +70,7 @@ class SinpeCheckoutServiceEmpresaTest {
         bodega = new Bodega();
         bodega.setId(1L);
         bodega.setEmpresa(empresa);
+        bodega.setPermiteRetiroCliente(true);
 
         usuario = new Usuario();
         usuario.setId(3L);
@@ -70,8 +85,23 @@ class SinpeCheckoutServiceEmpresaTest {
         producto.setStockReservado(0);
         producto.setVisibleCatalogo(true);
         producto.setVendido(false);
+        producto.setBodega(bodega);
 
         when(guestCancelTokenService.emitir(any())).thenReturn("tok-test");
+
+        ReflectionTestUtils.setField(checkoutOrderFactory, "encargoService", encargoService);
+        CheckoutPaquetesPlanner planner = new CheckoutPaquetesPlanner();
+        CheckoutGrupoFactory checkoutGrupoFactory = new CheckoutGrupoFactory(
+            checkoutValidator, planner, orderPricingService, checkoutOrderFactory, giftCardService);
+
+        service = new SinpeCheckoutService();
+        ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
+        ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
+        ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(service, "checkoutGrupoFactory", checkoutGrupoFactory);
+        ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
+        ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
     }
 
     @Test
@@ -83,7 +113,7 @@ class SinpeCheckoutServiceEmpresaTest {
         when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
-            p.setId(100L);
+            if (p.getId() == null) p.setId(100L);
             return p;
         });
         when(pagoRepository.save(any(Pago.class))).thenAnswer(inv -> inv.getArgument(0));

@@ -17,6 +17,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+/**
+ * Confirma el pago de un checkout. Un checkout multivendedor tiene N subpedidos bajo un mismo
+ * Pago: todos se marcan PAGADO, cada uno consume su propio stock y acredita a su propia empresa.
+ */
 @Service
 public class PaymentOrderConfirmationService {
 
@@ -28,36 +34,57 @@ public class PaymentOrderConfirmationService {
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PaymentNotificationsFacade paymentNotificationsFacade;
     @Autowired private PosQrVentaService          posQrVentaService;
+    @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired @Lazy private EncargoService       encargoService;
 
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
-        Pedido pedido = pago.getPedido();
-        Hibernate.initialize(pedido.getItems());
+        Pedido principal = pago.getPedido();
+        if (principal == null) {
+            log.warn("confirmarPedido ignorado — pago {} sin pedido asociado", pago.getId());
+            return;
+        }
+        List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
 
-        // Verificar que no esté ya confirmado (idempotencia)
-        if (Constants.PEDIDO_PAGADO.equals(pedido.getEstadoPedido())) {
-            log.info("confirmarPedido ignorado — pedido {} ya está PAGADO", pedido.getNumeroPedido());
+        // Idempotencia: si el principal ya está pagado, el grupo entero ya se procesó.
+        if (Constants.PEDIDO_PAGADO.equals(principal.getEstadoPedido())) {
+            log.info("confirmarPedido ignorado — pedido {} ya está PAGADO", principal.getNumeroPedido());
             return;
         }
 
-        stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
+        marcarCuponUsadoUnaVez(grupo);
 
-        pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
-        pedidoRepository.save(pedido);
+        for (Pedido pedido : grupo) {
+            Hibernate.initialize(pedido.getItems());
+            stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
 
-        if (pedido.getCuponCodigo() != null) {
-            if (pedido.getEmpresa() != null) {
-                cuponService.marcarUsado(pedido.getCuponCodigo(), pedido.getEmpresa().getId());
-            } else {
-                cuponService.marcarUsado(pedido.getCuponCodigo());
+            pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+            pedidoRepository.save(pedido);
+
+            if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
+                giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
             }
+            encargoService.marcarPagadosPorPedido(pedido.getId());
+            paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
+            posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
         }
-        if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
-            giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
+    }
+
+    /**
+     * Un cupón se usa una sola vez por checkout, aunque su descuento se haya aplicado a varios
+     * paquetes (cupón de plataforma) — evita consumir el límite de usos N veces.
+     */
+    private void marcarCuponUsadoUnaVez(List<Pedido> grupo) {
+        for (Pedido pedido : grupo) {
+            String codigo = pedido.getCuponCodigo();
+            if (codigo == null) continue;
+            Long empresaId = pedido.getEmpresaId();
+            if (cuponService.esDeEmpresa(codigo, empresaId)) {
+                cuponService.marcarUsado(codigo, empresaId);
+            } else {
+                cuponService.marcarUsado(codigo);
+            }
+            return;
         }
-        encargoService.marcarPagadosPorPedido(pedido.getId());
-        paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
-        posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
     }
 }

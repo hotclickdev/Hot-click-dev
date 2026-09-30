@@ -36,6 +36,7 @@ public class SinpeComprobanteService {
     @Autowired private NotificacionEmailService       notificacionEmailService;
     @Autowired private PaymentService                paymentService;
     @Autowired private SinpeAuditSupport             auditSupport;
+    @Autowired private com.hotclick.service.payment.PedidoGrupoService pedidoGrupoService;
 
     @Transactional
     public void subirComprobante(String numeroPedido, MultipartFile archivo,
@@ -78,8 +79,11 @@ public class SinpeComprobanteService {
         comprobante.setFechaSubida(LocalDateTime.now(Constants.ZONA_CR));
         comprobanteRepository.save(comprobante);
 
-        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
-        pedidoRepository.save(pedido);
+        // Un comprobante cubre el checkout entero: los N paquetes pasan a PENDIENTE_APROBACION juntos.
+        for (Pedido p : pedidoGrupoService.delGrupo(pedido)) {
+            p.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
+            pedidoRepository.save(p);
+        }
 
         log.info("Comprobante SINPE subido: pedido={} remitente={} cedula={}", numeroPedido, nombreRemitente, cedulaRemitente);
     }
@@ -145,13 +149,14 @@ public class SinpeComprobanteService {
             pagoRepository.save(pago);
         }
 
-        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-        pedidoRepository.save(pedido);
-
-        paymentService.liberarReservas(pedido);
-        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
-        notificacionEmailService.enviarPagoFallido(pedido,
-            "Comprobante SINPE rechazado" + (motivo != null ? ": " + motivo : ""));
+        for (Pedido p : pedidoGrupoService.delGrupo(pedido)) {
+            p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+            pedidoRepository.save(p);
+            paymentService.liberarReservas(p);
+            if (p.getUsuarioFinal() != null) { p.getUsuarioFinal().getCorreo(); }
+            notificacionEmailService.enviarPagoFallido(p,
+                "Comprobante SINPE rechazado" + (motivo != null ? ": " + motivo : ""));
+        }
 
         auditSupport.registrarAuditoria(adminId, adminEmail,
             Constants.AUDITORIA_RECHAZAR_SINPE, "COMPROBANTE_SINPE", comprobanteId,

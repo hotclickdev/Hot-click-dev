@@ -1,0 +1,38 @@
+export type ResultadoFoto = {
+  id: number | string
+  nombre: string
+  precio: number
+  imagenUrl: string | null
+  similitud: number
+}
+
+export type RespuestaFoto = {
+  etiquetas: string[]
+  productos: ResultadoFoto[]
+}
+
+/** Desde este puntaje de similitud el resultado se marca como "Muy parecido". */
+export const SIMILITUD_ALTA = 80
+
+function texto(valor: unknown): string {
+  return typeof valor === 'string' ? valor.trim() : ''
+}
+
+/** Normaliza la respuesta de POST /public/shopping-assistant/search-by-image. */
+export function leerRespuestaFoto(data: unknown): RespuestaFoto {
+  const raiz = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
+  const analisis = (raiz.analisis && typeof raiz.analisis === 'object' ? raiz.analisis : {}) as Record<string, unknown>
+  const etiquetas = [texto(analisis.etiquetaPrincipal), texto(analisis.categoria)]
+    .filter((e, i, arr) => e !== '' && arr.findIndex((x) => x.toLowerCase() === e.toLowerCase()) === i)
+  const lista = Array.isArray(raiz.productos) ? raiz.productos : []
+  const productos = lista
+    .filter((p): p is Record<string, unknown> => Boolean(p) && typeof p === 'object' && (p as Record<string, unknown>).id != null)
+    .map((p) => ({
+      id: p.id as number | string,
+      nombre: texto(p.nombre),
+      precio: Number(p.precio) || 0,
+      imagenUrl: texto(p.imagenUrl) || null,
+      similitud: Number(p.similarity) || 0,
+    }))
+  return { etiquetas, productos }
+}

@@ -22,6 +22,7 @@ public class PaymentFailureHandler {
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PaymentNotificationsFacade paymentNotificationsFacade;
+    @Autowired private PedidoGrupoService         pedidoGrupoService;
 
     @Transactional
     public void marcarFallido(Pago pago, String motivo) {
@@ -31,14 +32,17 @@ public class PaymentFailureHandler {
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
 
-        Pedido pedido = pago.getPedido();
-        if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-            pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-            pedidoRepository.save(pedido);
+        for (Pedido pedido : pedidoGrupoService.delGrupo(pago.getPedido())) {
+            boolean pendiente = Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())
+                || Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(pedido.getEstadoPedido())
+                || Constants.PEDIDO_PENDIENTE_APROBACION.equals(pedido.getEstadoPedido());
+            if (pendiente) {
+                pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+                pedidoRepository.save(pedido);
+            }
+            stockReservationService.liberarReservas(pedido);
+            paymentNotificationsFacade.onPagoFallido(pedido, motivo);
         }
-
-        stockReservationService.liberarReservas(pedido);
-        paymentNotificationsFacade.onPagoFallido(pedido, motivo);
         log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);
     }
 }

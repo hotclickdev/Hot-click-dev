@@ -7,6 +7,7 @@ import { useCatalogoFetch } from './useCatalogoFetch'
 import { useCatalogoDerived } from './useCatalogoDerived'
 import type { Producto } from '@/types/producto'
 import type { CatalogViewMode } from './catalogoTipos'
+import { FILTROS_EXTRA_VACIOS, type FiltrosExtra } from './buscarExplorar'
 
 /**
  * Estado, sync URL ↔ filtros, fetch y derivados del catálogo.
@@ -28,9 +29,16 @@ export function useCatalogoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const [extras, setExtras] = useState<FiltrosExtra>(FILTROS_EXTRA_VACIOS)
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
   const filtros = useCatalogoFiltros(searchParams, setSearchParams)
   const data = useCatalogoFetch(toast, filtros.page, filtros.setPage, filtros.sort)
-  const derived = useCatalogoDerived({ ...data, ...filtros, viewMode })
+  const derived = useCatalogoDerived({ ...data, ...filtros, viewMode, extras })
+  const limpiarFiltrosBase = filtros.clearFilters
+  const clearFilters = useCallback(() => {
+    limpiarFiltrosBase()
+    setExtras(FILTROS_EXTRA_VACIOS)
+  }, [limpiarFiltrosBase])
   const { categories } = data
   const { setCategory } = filtros
 
@@ -80,7 +88,11 @@ export function useCatalogoPage() {
     setFilterViewPage: filtros.setFilterViewPage,
     toggleMarca: filtros.toggleMarca,
     clearMarcas: filtros.clearMarcas,
-    clearFilters: filtros.clearFilters,
+    clearFilters,
+    extras,
+    setExtras,
+    filtrosAbiertos,
+    setFiltrosAbiertos,
     filtered: derived.filtered,
     productCountByCat: derived.productCountByCat,
     categoryTotalCount: derived.categoryTotalCount,

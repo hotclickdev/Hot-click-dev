@@ -1,3 +1,12 @@
+export type RetiroTienda = {
+  nombre?: string
+  provincia?: string
+  canton?: string
+  direccion?: string
+  horarioApertura?: string
+  horarioCierre?: string
+}
+
 export type EmpresaTiendaPublica = {
   slug?: string
   nombreComercial?: string
@@ -6,8 +15,17 @@ export type EmpresaTiendaPublica = {
   colorSecundario?: string
   colorAcento?: string
   tagline?: string | null
+  footerTexto?: string | null
   whatsapp?: string | null
   moneda?: string
+  descripcion?: string | null
+  categoriaNegocio?: string | null
+  instagram?: string | null
+  zonaEnvio?: string | null
+  ogImagenUrl?: string | null
+  enHotclickDesde?: string | null
+  facturaElectronica?: boolean
+  retiro?: RetiroTienda | null
 }
 
 export type TenantFeatures = {

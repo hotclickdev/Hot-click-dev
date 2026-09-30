@@ -9,9 +9,10 @@ import useAuthStore from '@/store/authStore'
 import { orderService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import OrderCard from './pedidos/OrderCard'
+import PedidoGrupoCard from './pedidos/PedidoGrupoCard'
 import PedidosEmptyState from './pedidos/PedidosEmptyState'
 import TextoFlecha from '@/components/ui/TextoFlecha'
-import { pedidosDesdeRespuesta } from './pedidos/pedidoHelpers'
+import { agruparPedidosPorPaquete, pedidosDesdeRespuesta } from './pedidos/pedidoHelpers'
 import type { PedidoCliente } from './pedidos/pedidoHelpers'
 
 export default function MisPedidosPage() {
@@ -86,11 +87,14 @@ function PedidosContenido({
 }) {
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
   if (orders.length === 0) return <PedidosEmptyState onVerProductos={onVerProductos} />
+  const grupos = agruparPedidosPorPaquete(orders)
   return (
     <div className="space-y-3">
-      {orders.map((order, i) => (
-        <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-          <OrderCard order={order} />
+      {grupos.map((grupo, i) => (
+        <motion.div key={grupo.grupoPago ?? grupo.pedidos[0].id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+          {grupo.pedidos.length > 1
+            ? <PedidoGrupoCard pedidos={grupo.pedidos} />
+            : <OrderCard order={grupo.pedidos[0]} />}
         </motion.div>
       ))}
     </div>

@@ -113,6 +113,11 @@ class PaymentServiceTest {
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("TXN-123", REDIRECT));
 
+        CheckoutPaquetesPlanner checkoutPaquetesPlanner = new CheckoutPaquetesPlanner();
+        CheckoutGrupoFactory checkoutGrupoFactory = new CheckoutGrupoFactory(
+            checkoutValidator, checkoutPaquetesPlanner, orderPricingService, checkoutOrderFactory, giftCardService);
+        PedidoGrupoService pedidoGrupoService = new PedidoGrupoService(pedidoRepository, pagoRepository);
+
         service = new PaymentService();
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
@@ -122,8 +127,8 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
-        ReflectionTestUtils.setField(service, "orderPricingService", orderPricingService);
-        ReflectionTestUtils.setField(service, "checkoutOrderFactory", checkoutOrderFactory);
+        ReflectionTestUtils.setField(service, "checkoutGrupoFactory", checkoutGrupoFactory);
+        ReflectionTestUtils.setField(service, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(service, "paymentRecordFactory", paymentRecordFactory);
         ReflectionTestUtils.setField(service, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(service, "paymentNotificationsFacade", paymentNotificationsFacade);
@@ -144,10 +149,12 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(orderConfirmationService, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(paymentFailureHandler, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(paymentFailureHandler, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
@@ -157,6 +164,7 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(paymentExpirationCleanupService, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(paymentExpirationCleanupService, "pedidoGrupoService", pedidoGrupoService);
     }
 
     // ── checkout — camino feliz ───────────────────────────────────────────────

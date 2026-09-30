@@ -20,6 +20,7 @@ export type VarianteProducto = {
   colorVariante?: string | null
   nombreProducto?: string
   nombre?: string
+  stock?: number | null
 }
 
 export type ImagenProductoApi = {

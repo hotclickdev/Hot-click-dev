@@ -3,6 +3,7 @@
     "inicio": "Inicio",
     "productos": "Productos",
     "informacion": "Información",
+    "ayuda": "Ayuda",
     "nosotros": "Nosotros",
     "contacto": "Contacto",
     "ingresar": "Ingresar",
@@ -27,7 +28,8 @@
     "explorar": "Explorar",
     "todosProductos": "Todos los productos",
     "ayudaWa": "¿Necesitás ayuda? Escribinos",
-    "ayudaWaHorario": "+506 8666-7888 · Lun–Sáb 8:00–19:00"
+    "ayudaWaHorario": "+506 8666-7888 · Lun–Sáb 8:00–19:00",
+    "saltarContenido": "Saltar al contenido"
   },
   "bnav": {
     "inicio": "Inicio",
@@ -120,6 +122,28 @@
     "comprarHint": "Ver productos",
     "venderHint": "Publicar tu negocio",
     "emprenderHint": "Crecer con HotClick"
+  },
+  "estadosComprador": {
+    "irInicio": "Ir al inicio",
+    "verCategorias": "Ver categorías",
+    "misPedidos": "Mis pedidos",
+    "ayudaContacto": "Ayuda y contacto",
+    "buscarPlaceholder": "Buscá o describí lo que necesitás",
+    "accesos": "Accesos rápidos"
+  },
+  "ayudaPage": {
+    "title": "Centro de ayuda",
+    "subtitle": "Servicios HOT, garantía, envíos y todo lo que necesitás para comprar tranquilo.",
+    "serviciosTitle": "Servicios HOT",
+    "serviciosDetalle": "Buscamos tu producto, garantía y encargo en tienda",
+    "garantiaTitle": "Garantía y devoluciones",
+    "garantiaDetalle": "Hasta 40 días de garantía, 7 días para devolver",
+    "enviosTitle": "Envíos",
+    "enviosDetalle": "Zonas de cobertura, tiempos y tarifas",
+    "faqTitle": "Preguntas frecuentes",
+    "faqDetalle": "Cómo comprar, pagar y recibir tu pedido",
+    "contactoTitle": "Hablar con HotClick",
+    "contactoDetalle": "WhatsApp, correo o formulario de contacto"
   },
   "emprende": {
     "metaTitle": "Elegí el plan para tu negocio en HotClick",
@@ -604,6 +628,38 @@
       "pagoSinpe": "SINPE Móvil",
       "pagoEfectivo": "Efectivo",
       "pagoTarjeta": "Tarjeta"
+    },
+    "compra": {
+      "titulo": "¿Qué estás buscando hoy?",
+      "subtitulo": "Productos de emprendedores de Costa Rica. Pagás con SINPE Móvil o tarjeta y te llega a todo el país.",
+      "destacados": "Destacados",
+      "verTodo": "Ver todo",
+      "categorias": "Explorá por categoría",
+      "todas": "Todas",
+      "nuevos": "Nuevos en HotClick",
+      "verCatalogo": "Ver todo el catálogo",
+      "seguirTitulo": "Seguí donde lo dejaste",
+      "seguirNota": "Lo último que miraste",
+      "asistenteTitulo": "¿No sabés qué regalar?",
+      "asistenteTexto": "Contale al asistente para quién es y cuánto querés gastar. Te muestra productos reales del catálogo, con precio y disponibilidad.",
+      "asistenteHero": "¿No sabés qué elegir? Preguntale al asistente",
+      "consulta1": "Regalo para mamá por menos de ₡20.000",
+      "consulta2": "Algo cómodo para la sala",
+      "consulta3": "Para alguien que empieza a correr",
+      "descubri": "O deslizá productos en Descubrí",
+      "confianzaTitulo": "Por qué comprar en HotClick",
+      "noLoEncontras": "¿No lo encontrás? Te lo conseguimos.",
+      "pedilo": "Pedilo",
+      "promesa": {
+        "envioTitulo": "Envío a todo Costa Rica",
+        "envioTexto": "Desde ₡4.000 con Correos de Costa Rica o por encomienda",
+        "pagoTitulo": "Pagá como prefieras",
+        "pagoTexto": "SINPE Móvil, tarjeta o efectivo",
+        "sinCuentaTitulo": "Comprá sin crear cuenta",
+        "sinCuentaTexto": "Solo tu correo y teléfono",
+        "devolucionesTitulo": "Devoluciones",
+        "devolucionesTexto": "Conocé la política antes de comprar"
+      }
     }
   },
   "products": {
@@ -707,7 +763,33 @@
     "errorLoadProducts": "Error al cargar productos",
     "errorLoadCategories": "Error al cargar categorías",
     "errorLoadBrands": "Error al cargar marcas",
-    "errorLoadConvenios": "Error al cargar convenios"
+    "errorLoadConvenios": "Error al cargar convenios",
+    "categoriesTitle": "Categorías",
+    "categoriesSub": "Explorá los productos de HotClick por categoría.",
+    "categoriesSearch": "Buscar una categoría",
+    "categoriesEmpty": "No hay categorías con ese nombre.",
+    "understood": "Entendí:",
+    "removeFilter": "Quitar filtro {{filtro}}",
+    "priceUpTo": "Hasta {{precio}}",
+    "priceFrom": "Desde {{precio}}",
+    "madeToOrder": "Hecho a pedido",
+    "storePickup": "Retiro en tienda",
+    "store": "Tienda",
+    "availabilityDelivery": "Disponibilidad y entrega",
+    "onlyInStock": "Solo con stock",
+    "assistantTitle": "¿No te decidís?",
+    "assistantSub": "Contale al asistente qué buscás y te dice qué combina.",
+    "assistantCta": "Preguntar",
+    "relatedSearches": "Búsquedas relacionadas",
+    "noResultsFor": "No encontramos “{{q}}”",
+    "noResultsTwoWays": "Todavía no está en el catálogo, pero hay dos formas de conseguirlo.",
+    "noResultsAssistant": "Describí para qué lo querés y te propone alternativas que sí están en HotClick.",
+    "noResultsAssistantCta": "Preguntar al asistente",
+    "noResultsWeGetIt": "Te lo conseguimos",
+    "noResultsWeGetItSub": "Servicios HOT: escribinos por WhatsApp, buscamos con nuestros proveedores y te cotizamos en minutos.",
+    "noResultsWhatsApp": "Pedirlo por WhatsApp",
+    "meanwhile": "Mientras tanto",
+    "viewResults": "Ver {{count}} resultados"
   },
   "product": {
     "addToCart": "Agregar al pedido",
@@ -739,7 +821,20 @@
     "videoTitle": "Video del producto",
     "moreFromBrand": "Más de {{brand}}",
     "youMayLike": "También te puede gustar",
-    "vendidoPor": "Vendido por"
+    "vendidoPor": "Vendido por",
+    "restockCta": "Avisame",
+    "restockEmailLabel": "Tu correo para avisarte",
+    "restockError": "No se pudo guardar tu aviso",
+    "restockInvalidEmail": "Ingresá un correo válido",
+    "restockNoAccount": "También podés crear tu cuenta para que te avisemos por WhatsApp.",
+    "restockSaved": "Listo, te avisamos a {{correo}} en cuanto vuelva.",
+    "restockTitle": "Te avisamos cuando vuelva",
+    "restockWhatsapp": "Si ingresaste a tu cuenta, también te avisamos por WhatsApp.",
+    "size": "Talla",
+    "sizeOutOfStock": "Talla {{talla}} agotada",
+    "sizeStock": "Quedan {{count}} en talla {{talla}}",
+    "sizeStock_one": "Queda {{count}} en talla {{talla}}",
+    "sizeStock_other": "Quedan {{count}} en talla {{talla}}"
   },
   "cart": {
     "title": "Pedido",
@@ -1238,7 +1333,9 @@
     "inStock": "En stock",
     "outOfStock": "Agotado",
     "whatsappConsult": "Consultar un producto por WhatsApp",
-    "whatsappGreeting": "Hola HotClick, consulto un producto."
+    "whatsappGreeting": "Hola HotClick, consulto un producto.",
+    "newComingSoon": "NUEVO · por programar",
+    "sending": "Enviando…"
   },
   "admin": {
     "sidebar": {
@@ -1506,6 +1603,8 @@
     "empty": "Aún no tenés pedidos",
     "emptySub": "Explorá la tienda y hacé tu primera compra",
     "viewProducts": "Ver productos",
+    "groupTitle_one": "Un pago · {{count}} paquete",
+    "groupTitle_other": "Un pago · {{count}} paquetes",
     "products": "Productos",
     "shipping": "Envío",
     "totalPaid": "Total pagado",
@@ -1530,7 +1629,8 @@
       "LISTO_RETIRO": "Listo p/ retirar",
       "ENTREGADO_RETIRO": "Retirado",
       "CANCELADO": "Cancelado"
-    }
+    },
+    "groupTitle": "Un pago · {{count}} paquetes"
   },
   "descubri": {
     "metaTitle": "Descubrí productos | HotClick",
@@ -1578,7 +1678,11 @@
     "resultsCount_one": "{{count}} producto según tus gustos",
     "resultsCount_other": "{{count}} productos según tus gustos",
     "emptyTitle": "Todavía no hay recomendaciones",
-    "emptySub": "Dale me gusta a algunos productos o mirá el catálogo completo."
+    "emptySub": "Dale me gusta a algunos productos o mirá el catálogo completo.",
+    "swipeRightHint": "Deslizá a la derecha lo que te guste",
+    "selectionHint": "Con {{total}} elecciones te armamos una selección a tu gusto",
+    "likesCount": "{{count}} guardados",
+    "remaining": "{{count}} productos restantes"
   },
   "wishlist": {
     "title": "Wishlist",
@@ -1591,7 +1695,8 @@
     "outOfStock": "Sin stock",
     "addedFeedback": "Agregado",
     "addToCart": "Agregar al pedido",
-    "addedToCart": "{{name}} añadido al pedido"
+    "addedToCart": "{{name}} añadido al pedido",
+    "saved": "{{count}} productos guardados"
   },
   "miniCart": {
     "title": "Tu pedido",
@@ -1607,7 +1712,7 @@
     "viewCart": "Ver pedido"
   },
   "search": {
-    "placeholder": "Buscar productos, marcas, categorías...",
+    "placeholder": "Buscá o describí lo que necesitás",
     "cancel": "Cancelar",
     "clearSearch": "Limpiar búsqueda",
     "recent": "Búsquedas recientes",
@@ -1622,7 +1727,28 @@
     "inStock": "En stock",
     "outOfStock": "Sin stock",
     "item_one": "producto",
-    "item_other": "productos"
+    "item_other": "productos",
+    "dialogLabel": "Buscar en HotClick",
+    "inputLabel": "Buscar productos",
+    "back": "Volver",
+    "askAssistant": "Preguntale al asistente",
+    "askAssistantSub": "“{{q}}” · te recomienda productos reales según presupuesto y gustos",
+    "suggestions": "Sugerencias",
+    "photoSearch": "Buscar con una foto",
+    "photoSearchSub": "Subí una imagen y te mostramos productos parecidos",
+    "photoTitle": "Buscar con una foto",
+    "photoPreviewAlt": "Foto que subiste",
+    "photoDetected": "Detectamos:",
+    "photoRemoveTag": "Quitar {{tag}}",
+    "photoAnother": "Otra foto",
+    "photoTake": "Tomar foto",
+    "photoGallery": "Galería",
+    "photoSearching": "Buscando productos parecidos…",
+    "photoError": "No pudimos analizar la foto. Probá con otra imagen.",
+    "photoSimilar": "Parecidos en HotClick",
+    "photoNone": "No encontramos productos parecidos. Probá con otra foto o preguntale al asistente.",
+    "photoVerySimilar": "Muy parecido",
+    "photoRelated": "Relacionado"
   },
   "authPrompt": {
     "title": "¿Cómo querés continuar?",
@@ -2777,7 +2903,8 @@
       "todasCategorias": "Todas las categorías",
       "serviciosHot": "Servicios HOT",
       "vende": "Vendé en HotClick",
-      "categoriasAria": "Categorías"
+      "categoriasAria": "Categorías",
+      "panel": "Mi panel"
     },
     "nav": {
       "aria": "Navegación principal",
@@ -2793,6 +2920,7 @@
       "envios": "Envíos",
       "devoluciones": "Devoluciones",
       "contacto": "Contacto",
+      "ayuda": "Ayuda",
       "terminos": "Términos",
       "privacidad": "Privacidad",
       "derechos": "© {{anio}} HotClick · Costa Rica",
@@ -2835,5 +2963,11 @@
     "hoja": {
       "cerrar": "Cerrar"
     }
+  },
+  "perfil": {
+    "accesosRapidos": "Accesos rápidos",
+    "actividadReciente": "Actividad reciente",
+    "misOpiniones": "Mis opiniones",
+    "pedidoEnCurso": "Tu pedido en curso"
   }
 }

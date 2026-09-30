@@ -5,6 +5,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
 import ProductCard from './catalogoProductCard'
 import CategoryRowsView from './CategoryRowsView'
+import AsistenteEnGrilla from './AsistenteEnGrilla'
+import SinResultados from './SinResultados'
+import { Fragment } from 'react'
+
+/** El asistente aparece después de la segunda tarjeta, como en el Figma `26:722`. */
+const POSICION_ASISTENTE = 1
 import type { Producto } from '@/types/producto'
 import type { CatalogCategoria } from './catalogoTipos'
 
@@ -233,9 +239,10 @@ function CatalogFlatGrid({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
 
           {filteredSlice.map((product, i) => (
-
-            <ProductCard key={product.id} product={product} priority={i < 6} index={i} onQuickView={onQuickView} />
-
+            <Fragment key={product.id}>
+              <ProductCard product={product} priority={i < 6} index={i} onQuickView={onQuickView} />
+              {search && i === POSICION_ASISTENTE && <AsistenteEnGrilla consulta={search} />}
+            </Fragment>
           ))}
 
         </div>
@@ -279,6 +286,9 @@ function cuerpoCatalogo({
   }
   if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
   if (filtered.length === 0) {
+    if (search.trim() && !needsGustos) {
+      return <SinResultados consulta={search.trim()} sugeridos={products.filter((p) => p.stock > 0)} />
+    }
     return (
       <CatalogGridEmpty
         hasFilters={hasFilters}

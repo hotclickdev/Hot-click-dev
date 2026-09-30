@@ -108,8 +108,8 @@ class SkuPorEmpresaIT extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/productos/" + id))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.sku").value(org.hamcrest.Matchers.nullValue()))
-            .andExpect(jsonPath("$.data.numeroLocal").value(org.hamcrest.Matchers.nullValue()));
+            .andExpect(jsonPath("$.data.sku").doesNotExist())
+            .andExpect(jsonPath("$.data.numeroLocal").doesNotExist());
     }
 
     private String body(String nombre, Long bodegaId) {

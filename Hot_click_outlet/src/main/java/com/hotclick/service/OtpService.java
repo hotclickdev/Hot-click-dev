@@ -6,6 +6,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.CodigoOtpRepository;
 import com.hotclick.repository.TipoOtpRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.email.EmailLayoutHelper;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class OtpService {
@@ -21,6 +23,7 @@ public class OtpService {
     @Autowired private TipoOtpRepository tipoOtpRepository;
     @Autowired private ResendEmailService resendEmailService;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private EmailLayoutHelper layout;
 
     private final SecureRandom random = new SecureRandom();
 
@@ -90,12 +93,35 @@ public class OtpService {
     }
 
     /**
-     * Verifica que exista un OTP consumido recientemente (paso 2 completado).
-     * Impide saltar el verify-code e ir directo a reset-password.
+     * Canjea, una sola vez, un OTP ya verificado en el paso anterior (p. ej. reset-password
+     * después de verify-code). Exige el mismo código: haber verificado no alcanza, porque
+     * si no cualquiera que conociera el correo podría cambiar la contraseña en esa ventana.
+     *
+     * Reglas: verificado hace menos de {@link Constants#OTP_VENTANA_REENVIO_MIN} minutos,
+     * máx {@link Constants#OTP_MAX_INTENTOS} intentos, canje atómico y de un solo uso.
+     * Al canjear se dan de baja los demás OTP verificados del usuario.
      */
-    public boolean tieneOtpConsumidoReciente(Usuario usuario, String tipoNombre) {
+    @Transactional
+    public boolean canjearOtpVerificado(Usuario usuario, String tipoNombre, String codigoPlano) {
         LocalDateTime ventana = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
-        return codigoOtpRepository.countRecentlyConsumedOtps(usuario, tipoNombre, ventana) > 0;
+        List<CodigoOtp> verificados = codigoOtpRepository.findVerificadosSinCanjear(
+                usuario, tipoNombre, Constants.ESTADO_ACTIVO, ventana);
+        if (verificados.isEmpty()) return false;
+
+        CodigoOtp otp = verificados.get(0);
+        int intentos = otp.getAttempts() == null ? 0 : otp.getAttempts();
+        if (intentos >= Constants.OTP_MAX_INTENTOS) return false;
+
+        if (codigoPlano == null || !passwordEncoder.matches(codigoPlano, otp.getCodigoHash())) {
+            codigoOtpRepository.incrementarAttempts(otp.getIdOtpCode());
+            return false;
+        }
+
+        if (codigoOtpRepository.canjear(otp.getIdOtpCode(), Constants.ESTADO_ACTIVO, Constants.ESTADO_INACTIVO) == 0) {
+            return false;
+        }
+        codigoOtpRepository.darDeBajaVerificados(usuario, tipoNombre, Constants.ESTADO_ACTIVO, Constants.ESTADO_INACTIVO);
+        return true;
     }
 
     /**
@@ -117,78 +143,23 @@ public class OtpService {
         enviarOtp(usuario, Constants.OTP_TIPO_2FA_LOGIN);
     }
 
+    /**
+     * Plantilla del Figma "08 · QR y correos → Correo · Código de verificación":
+     * esqueleto compartido de {@link EmailLayoutHelper}, código en recuadro azul y aviso de seguridad.
+     */
     private void enviarEmail(String destinatario, String nombre, String codigo, int expiracionSeg) {
         int minutos = expiracionSeg / 60;
-        // Plantilla del Brand Book v1.1 (cap. 12.1): header azul 900 con wordmark bicolor,
-        // cuerpo claro, semánticos del cap. 3.3. Sin emojis en correos de sistema (cap. 10.3).
-        String html = """
-            <!DOCTYPE html>
-            <html lang="es">
-            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-            <body style="margin:0;padding:0;background:#F8F9FB;font-family:'Public Sans',Arial,Helvetica,sans-serif;">
-              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#F8F9FB;padding:48px 16px;">
-                <tr><td align="center">
-                  <table width="520" cellpadding="0" cellspacing="0"
-                    style="background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E4E7EC;max-width:520px;width:100%%;">
-                    <!-- Header -->
-                    <tr>
-                      <td style="background:#152B5E;padding:28px 32px;text-align:center;">
-                        <span style="font-family:'Sora','Arial Black',Arial,sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.5px;">
-                          <span style="color:#F0524A;">Hot</span><span style="color:#FFFFFF;">Click</span>
-                        </span>
-                      </td>
-                    </tr>
-                    <!-- Body -->
-                    <tr>
-                      <td style="padding:40px 36px 32px;">
-                        <h2 style="margin:0 0 8px;color:#14171C;font-size:22px;font-weight:700;font-family:'Sora','Arial Black',Arial,sans-serif;">
-                          Hola, %s.
-                        </h2>
-                        <p style="color:#4D5560;margin:0 0 28px;font-size:15px;line-height:1.65;">
-                          Usá el siguiente código para verificar tu cuenta. Expira en <strong style="color:#14171C;">%d minutos</strong>.
-                        </p>
+        String html = layout.abrirHtml()
+            + layout.header("Tu código de verificación", "Escribilo en la pantalla donde lo pediste.")
+            + layout.abrirCuerpo()
+            + layout.parrafo("Hola, <strong>" + layout.esc(nombre) + "</strong>. Usá este código para verificar tu cuenta.")
+            + layout.datoDestacado("Código", layout.esc(codigo), "#EFF4FE", "#C2D5F9")
+            + "<div style=\"background:#FDF3DC;border:1px solid #EBD9A8;border-radius:12px;padding:16px 20px;margin-bottom:8px\">"
+            + "<p style=\"margin:0;font-size:13px;color:#9A6700;line-height:1.6\">"
+            + "<strong>Vence en " + minutos + " minutos.</strong> No lo compartás con nadie: HotClick nunca te lo va a pedir. "
+            + "Si no fuiste vos, ignorá este correo — tu cuenta sigue segura.</p></div>"
+            + layout.footer("¿No pediste este código?");
 
-                        <!-- Código -->
-                        <div style="text-align:center;margin:0 0 28px;">
-                          <div style="display:inline-block;background:#EFF4FE;border:2px solid #C2D5F9;
-                                      border-radius:16px;padding:24px 48px;">
-                            <span style="font-size:46px;font-weight:900;color:#14171C;letter-spacing:16px;
-                                         font-family:'IBM Plex Mono','Courier New',monospace;display:block;line-height:1;">%s</span>
-                            <span style="font-size:11px;color:#6E7682;letter-spacing:1px;text-transform:uppercase;margin-top:8px;display:block;">
-                              Código de verificación
-                            </span>
-                          </div>
-                        </div>
-
-                        <!-- Aviso de seguridad destacado -->
-                        <div style="background:#FDF3DC;border:1px solid #EBD9A8;
-                                    border-radius:12px;padding:16px 20px;margin-bottom:8px;">
-                          <p style="margin:0;font-size:13px;color:#9A6700;line-height:1.6;">
-                            <strong>Este código es solo para verificar tu cuenta.</strong><br>
-                            <span>No lo compartás con nadie. HotClick nunca te va a pedir este código.</span>
-                          </p>
-                        </div>
-
-                        <p style="color:#9AA1AE;font-size:12px;margin:12px 0 0;text-align:center;line-height:1.5;">
-                          Si no creaste esta cuenta, ignorá este correo.
-                        </p>
-                      </td>
-                    </tr>
-                    <!-- Footer -->
-                    <tr>
-                      <td style="background:#14171C;padding:18px 36px;text-align:center;">
-                        <p style="margin:0;color:#6E7682;font-size:12px;">
-                          © 2026 HotClick — Todos los derechos reservados
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td></tr>
-              </table>
-            </body>
-            </html>
-            """.formatted(nombre, minutos, codigo);
-
-        resendEmailService.send(destinatario, "Tu código de verificación — HotClick", html);
+        resendEmailService.send(destinatario, "Tu código de verificación: " + codigo, html);
     }
 }

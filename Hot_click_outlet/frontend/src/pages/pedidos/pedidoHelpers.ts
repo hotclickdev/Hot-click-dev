@@ -50,6 +50,48 @@ export type PedidoCliente = {
   notas?: string
   numeroGuia?: string
   urlTracking?: string
+  /**
+   * Agrupa subpedidos de un mismo checkout multivendedor (uno por bodega de
+   * origen, un único pago). Viene de `Pedido.grupoPago` en el backend —
+   * campo aditivo, hoy no lo llena ningún endpoint fusionado en esta rama.
+   * Con un solo pedido por grupo (o sin valor) el comportamiento no cambia.
+   */
+  grupoPago?: string | null
+  /** Nombre de la tienda/vendedor dueño de este paquete, si el backend lo manda. */
+  nombreEmpresa?: string
+}
+
+/** Un grupo de pedidos que comparten `grupoPago` (checkout multivendedor). */
+export type GrupoDePedidos = {
+  grupoPago: string | null
+  pedidos: PedidoCliente[]
+}
+
+/**
+ * Agrupa pedidos por `grupoPago` preservando el orden de llegada. Pedidos sin
+ * `grupoPago`, o que son el único representante de su grupo, quedan como
+ * grupos de un solo pedido — la UI los renderiza igual que hoy.
+ */
+export function agruparPedidosPorPaquete(pedidos: PedidoCliente[]): GrupoDePedidos[] {
+  const grupos: GrupoDePedidos[] = []
+  const indicePorClave = new Map<string, number>()
+
+  for (const pedido of pedidos) {
+    const clave = pedido.grupoPago
+    if (!clave) {
+      grupos.push({ grupoPago: null, pedidos: [pedido] })
+      continue
+    }
+    const idx = indicePorClave.get(clave)
+    if (idx === undefined) {
+      indicePorClave.set(clave, grupos.length)
+      grupos.push({ grupoPago: clave, pedidos: [pedido] })
+    } else {
+      grupos[idx].pedidos.push(pedido)
+    }
+  }
+
+  return grupos
 }
 
 export function colorEstadoPedido(estado: string): ColorEstadoPedido {

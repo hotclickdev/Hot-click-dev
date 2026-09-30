@@ -23,6 +23,10 @@ public class Pedido extends BaseEntity {
     @Column(name = "numero_pedido", unique = true, nullable = false, length = 20)
     private String numeroPedido;
 
+    /** Subpedidos de un mismo checkout (uno por vendedor) comparten este valor y un único Pago. */
+    @Column(name = "grupo_pago", length = 40)
+    private String grupoPago;
+
     @Column(name = "fecha_pedido")
     private LocalDateTime fechaPedido;
 
@@ -209,6 +213,9 @@ public class Pedido extends BaseEntity {
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
+
+    public String getGrupoPago() { return grupoPago; }
+    public void setGrupoPago(String grupoPago) { this.grupoPago = grupoPago; }
 
     public Usuario getUsuarioFinal() { return usuarioFinal; }
     public void setUsuarioFinal(Usuario usuarioFinal) { this.usuarioFinal = usuarioFinal; }

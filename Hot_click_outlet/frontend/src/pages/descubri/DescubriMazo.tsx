@@ -75,14 +75,15 @@ export default function DescubriMazo({
 
   return (
     <div className="max-w-md mx-auto flex flex-col items-center">
-      <div className="w-full flex items-center justify-between gap-3 mb-3 px-1">
-        <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }} aria-live="polite">
+      <div className="w-full flex items-center justify-between gap-3 mb-2 px-1">
+        <p className="font-mono text-[12px] font-medium text-hc-n-500" aria-live="polite">
           {progressLabel}
         </p>
-        <p className="text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>
+        <p className="text-[12px] font-semibold text-hc-red-500">
           {t('descubri.likesCount', { count: likes })}
         </p>
       </div>
+      <p className="relative z-10 mb-4 text-center text-[13px] text-hc-n-500">{t('descubri.swipeRightHint')}</p>
 
       <div
         className="relative w-full h-[min(68vh,480px)] mb-6"
@@ -108,12 +109,7 @@ export default function DescubriMazo({
           aria-label={t('descubri.skip')}
           onClick={handleSkip}
           data-testid="descubri-skip"
-          className="flex size-[60px] items-center justify-center rounded-full transition-transform active:scale-95"
-          style={{
-            background: 'var(--hc-surface)',
-            border: '1px solid var(--hc-border)',
-            color: 'var(--hc-muted)',
-          }}
+          className="flex size-[60px] items-center justify-center rounded-full border border-hc-n-200 bg-hc-n-0 text-hc-n-600 shadow-[0_4px_10px_rgba(0,0,0,0.08)] transition-transform active:scale-95"
         >
           <IconSkip />
         </button>
@@ -122,16 +118,14 @@ export default function DescubriMazo({
           aria-label={t('descubri.like')}
           onClick={handleLike}
           data-testid="descubri-like"
-          className="flex size-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-95"
-          style={{ background: 'var(--hc-accent)' }}
+          className="flex size-[60px] items-center justify-center rounded-full bg-hc-red-500 text-hc-n-0 shadow-[0_4px_10px_rgba(0,0,0,0.08)] transition-transform active:scale-95"
         >
           <IconLike />
         </button>
       </div>
 
-      <p className="text-center text-[11px] font-medium" style={{ color: 'var(--hc-muted)' }}>
-        {t('descubri.deckHint')}
-      </p>
+      <p className="text-center text-[12px] text-hc-n-500">{t('descubri.selectionHint', { total: productos.length })}</p>
+      <p className="mt-1 text-center text-[11px] text-hc-n-500">{t('descubri.deckHint')}</p>
       <p className="sr-only">{t('descubri.remaining', { count: restantes })}</p>
     </div>
   )

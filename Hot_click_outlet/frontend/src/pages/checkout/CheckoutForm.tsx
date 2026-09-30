@@ -39,6 +39,10 @@ export default function CheckoutForm({
     SHIPPING_OPTIONS,
     metodoEnvio,
     setMetodoEnvio,
+    paquetes,
+    metodoEnvioPorPaquete,
+    setMetodoEnvioPaquete,
+    necesitaDireccion,
     metodoPago,
     setMetodoPago,
     notas,
@@ -100,6 +104,10 @@ export default function CheckoutForm({
         opciones={SHIPPING_OPTIONS}
         metodoEnvio={metodoEnvio}
         setMetodoEnvio={setMetodoEnvio}
+        paquetes={paquetes}
+        metodoEnvioPorPaquete={metodoEnvioPorPaquete}
+        setMetodoEnvioPaquete={setMetodoEnvioPaquete}
+        necesitaDireccion={necesitaDireccion}
         metodoPago={metodoPago}
         setMetodoPago={setMetodoPago}
         token={token}

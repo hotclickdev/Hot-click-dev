@@ -186,6 +186,10 @@ export const productService = {
   toggleVisibleCatalogo: (id: Id, valor: boolean) =>
     api.patch(`/productos/${id}/visibilidad-catalogo`, { visibleCatalogo: valor }),
 
+  /** "Avisame cuando vuelva" — público, funciona con o sin sesión. */
+  avisarReposicion: (id: Id, correo: string) =>
+    api.post(`/productos/${id}/avisar-reposicion`, { correo }),
+
   getCarrusel: () =>
     api.get('/productos/carrusel')
        .then((r) => {

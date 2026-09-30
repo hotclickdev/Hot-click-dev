@@ -23,7 +23,7 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
     static final Set<String> PRODUCTO_INTERNOS = Set.of(
         "precioCompra", "margenGanancia", "roiPorcentaje", "costoAlmacenaje", "linkAmazon",
         "proveedorPrincipal", "clasificacionAbc", "demandaDiariaAvg", "tiempoReordenDias",
-        "stockMinimo", "stockMaximo", "fechaUltimaCompra", "fechaUltimaVenta", "numeroLocal");
+        "stockMinimo", "stockMaximo", "fechaUltimaCompra", "fechaUltimaVenta", "numeroLocal", "sku");
 
     static final Set<String> BODEGA_INTERNOS = Set.of("correoContacto", "encargadoNombre", "capacidadMaxima");
 

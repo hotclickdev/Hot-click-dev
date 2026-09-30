@@ -3,11 +3,50 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
 import { EfectivoIcon, LockIcon, SinpeIcon, CardIcon } from './checkoutIcons'
-import type { ItemCheckout } from './checkoutHelpers'
+import type { ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import type { Dispatch, SetStateAction } from 'react'
+
+function ItemFila({ item }: { item: ItemCheckout }) {
+  return (
+    <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
+      <span className="truncate mr-2">{item.nombre} ×{item.cantidad}</span>
+      <span className="shrink-0">{formatPrice((item.precio ?? item.precioVenta ?? 0) * (item.cantidad ?? 0))}</span>
+    </div>
+  )
+}
+
+/**
+ * Lista de productos del resumen — agrupada por paquete (uno por vendedor) cuando el
+ * carrito tiene 2+ emprendimientos, para que quede claro que HotClick cobra todo junto
+ * pero cada paquete se despacha por separado. Con 1 solo paquete se ve igual que siempre.
+ */
+function ListaItemsResumen({ items, paquetes }: { items: ItemCheckout[]; paquetes: PaqueteCheckout[] }) {
+  if (paquetes.length <= 1) {
+    return (
+      <div className="space-y-2 text-sm">
+        {items.map((item) => <ItemFila key={item.id} item={item} />)}
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-3 text-sm">
+      {paquetes.map((p, i) => (
+        <div key={p.bodegaId} className="space-y-1.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>
+            Paquete {i + 1} · {p.bodegaNombre}
+          </p>
+          {p.items.map((item) => <ItemFila key={item.id ?? item.cartLineId} item={item} />)}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 type CheckoutSummaryProps = {
   items: ItemCheckout[]
+  paquetes: PaqueteCheckout[]
+  /** true si algún paquete usa un método de envío que HotClick no cobra (ej. encomienda) — el total no lo incluye. */
+  envioVaria: boolean
   token: string | null
   gcInput: string
   setGcInput: Dispatch<SetStateAction<string>>
@@ -44,6 +83,8 @@ type CheckoutSummaryProps = {
 
 export default function CheckoutSummary({
   items,
+  paquetes,
+  envioVaria,
   token,
   gcInput,
   setGcInput,
@@ -100,14 +141,7 @@ export default function CheckoutSummary({
     >
       <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.orderSummary')}</h2>
 
-      <div className="space-y-2 text-sm">
-        {items.map((item) => (
-          <div key={item.id} className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
-            <span className="truncate mr-2">{item.nombre} ×{item.cantidad}</span>
-            <span className="shrink-0">{formatPrice((item.precio ?? item.precioVenta ?? 0) * (item.cantidad ?? 0))}</span>
-          </div>
-        ))}
-      </div>
+      <ListaItemsResumen items={items} paquetes={paquetes} />
 
       {/* Gift card — solo para usuarios autenticados */}
       {token && (
@@ -222,10 +256,19 @@ export default function CheckoutSummary({
         )}
         <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
           <span>{t('checkout.shippingCost')}</span>
-          <span className={costoEnvio === 0 ? 'text-emerald-400 font-medium' : ''}>
-            {costoEnvio === 0 ? t('checkout.free') : formatPrice(costoEnvio)}
-          </span>
+          {envioVaria ? (
+            <span style={{ color: 'var(--hc-muted)' }}>Varía{costoEnvio > 0 ? ` + ${formatPrice(costoEnvio)}` : ''}</span>
+          ) : (
+            <span className={costoEnvio === 0 ? 'text-emerald-400 font-medium' : ''}>
+              {costoEnvio === 0 ? t('checkout.free') : formatPrice(costoEnvio)}
+            </span>
+          )}
         </div>
+        {envioVaria && (
+          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+            El costo de encomienda no lo cobra HotClick — lo paga directo a la empresa de transporte al recibir.
+          </p>
+        )}
       </div>
 
       <div className="pt-3 border-t flex justify-between font-bold" style={{ borderColor: 'var(--hc-border)', color: 'var(--hc-text)' }}>
