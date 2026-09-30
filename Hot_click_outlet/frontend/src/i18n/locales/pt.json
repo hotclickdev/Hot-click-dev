@@ -123,6 +123,14 @@
     "venderHint": "Publicar seu negócio",
     "emprenderHint": "Crescer com HotClick"
   },
+  "estadosComprador": {
+    "irInicio": "Ir para o início",
+    "verCategorias": "Ver categorias",
+    "misPedidos": "Meus pedidos",
+    "ayudaContacto": "Ajuda e contato",
+    "buscarPlaceholder": "Busque ou descreva o que você precisa",
+    "accesos": "Acessos rápidos"
+  },
   "ayudaPage": {
     "title": "Central de ajuda",
     "subtitle": "Serviços HOT, garantia, envios e tudo que você precisa para comprar tranquilo.",

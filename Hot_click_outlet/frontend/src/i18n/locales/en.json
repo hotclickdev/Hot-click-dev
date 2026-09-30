@@ -123,6 +123,14 @@
     "venderHint": "List your business",
     "emprenderHint": "Grow with HotClick"
   },
+  "estadosComprador": {
+    "irInicio": "Go to home",
+    "verCategorias": "Browse categories",
+    "misPedidos": "My orders",
+    "ayudaContacto": "Help and contact",
+    "buscarPlaceholder": "Search or describe what you need",
+    "accesos": "Quick links"
+  },
   "ayudaPage": {
     "title": "Help center",
     "subtitle": "HOT Services, warranty, shipping and everything you need to shop with confidence.",
