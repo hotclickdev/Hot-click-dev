@@ -48,7 +48,7 @@ export default function AdminGiftCards() {
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { void cargar() }, [])
 
   async function crear(e: FormEvent) {
     e.preventDefault()

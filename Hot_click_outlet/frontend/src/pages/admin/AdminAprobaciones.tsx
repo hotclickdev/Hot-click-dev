@@ -84,11 +84,11 @@ export default function AdminAprobaciones() {
   }, [loadingProductos, productos.length, tab, setSearchParams])
 
   useEffect(() => {
-    cargar()
-    cargarProductos()
-    cargarOfertas()
-    cargarCobro()
-    cargarResumen()
+    void cargar()
+    void cargarProductos()
+    void cargarOfertas()
+    void cargarCobro()
+    void cargarResumen()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- montaje único
   }, [])
 
@@ -119,8 +119,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.aprobarProducto(id)
       toast({ message: t('adminAprobaciones.productApproved'), type: 'success' })
-      cargarProductos()
-      cargarResumen()
+      void cargarProductos()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorApproveProduct'), type: 'error' })
       throw new Error('aprobar-producto-failed')
@@ -131,8 +131,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.rechazarProducto(id, comentario)
       toast({ message: t('adminAprobaciones.productRejected'), type: 'success' })
-      cargarProductos()
-      cargarResumen()
+      void cargarProductos()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorRejectProduct'), type: 'error' })
       throw new Error('rechazar-producto-failed')
@@ -155,8 +155,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.aprobarOferta(id)
       toast({ message: t('adminAprobaciones.offerApproved'), type: 'success' })
-      cargarOfertas()
-      cargarResumen()
+      void cargarOfertas()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorApproveOffer'), type: 'error' })
       throw new Error('aprobar-oferta-failed')
@@ -167,8 +167,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.rechazarOferta(id, comentario)
       toast({ message: t('adminAprobaciones.offerRejected'), type: 'success' })
-      cargarOfertas()
-      cargarResumen()
+      void cargarOfertas()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorRejectOffer'), type: 'error' })
       throw new Error('rechazar-oferta-failed')
@@ -191,8 +191,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.aprobarMetodoCobro(id)
       toast({ message: t('adminAprobaciones.cobroApproved'), type: 'success' })
-      cargarCobro()
-      cargarResumen()
+      void cargarCobro()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorApproveCobro'), type: 'error' })
       throw new Error('aprobar-cobro-failed')
@@ -203,8 +203,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.rechazarMetodoCobro(id, comentario)
       toast({ message: t('adminAprobaciones.cobroRejected'), type: 'success' })
-      cargarCobro()
-      cargarResumen()
+      void cargarCobro()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorRejectCobro'), type: 'error' })
       throw new Error('rechazar-cobro-failed')
@@ -229,8 +229,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.aprobarEmpresa(id)
       toast({ message: t('adminAprobaciones.companyApproved'), type: 'success' })
-      cargar()
-      cargarResumen()
+      void cargar()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorApprove'), type: 'error' })
       throw new Error('aprobar-empresa-failed')
@@ -241,8 +241,8 @@ export default function AdminAprobaciones() {
     try {
       await aprobacionService.rechazarEmpresa(id, comentario)
       toast({ message: t('adminAprobaciones.requestRejected'), type: 'success' })
-      cargar()
-      cargarResumen()
+      void cargar()
+      void cargarResumen()
     } catch {
       toast({ message: t('adminAprobaciones.errorReject'), type: 'error' })
       throw new Error('rechazar-empresa-failed')

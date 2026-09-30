@@ -70,7 +70,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }: MultiImage
   const onDrop = (e: DragEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDragging(false)
-    processFiles(e.dataTransfer.files)
+    void processFiles(e.dataTransfer.files)
   }
 
   return (
@@ -135,7 +135,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }: MultiImage
             </>
           )}
           <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
-            onChange={(e) => { processFiles(e.target.files); e.target.value = '' }} />
+            onChange={(e) => { void processFiles(e.target.files); e.target.value = '' }} />
         </button>
       )}
 

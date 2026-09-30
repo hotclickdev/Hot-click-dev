@@ -80,7 +80,7 @@ export function useAdminPOS() {
         setStep('apertura')
       }
     }
-    init()
+    void init()
   }, [])
 
   const agregarProducto = useCallback((producto: ProductoEntradaCarrito) => {

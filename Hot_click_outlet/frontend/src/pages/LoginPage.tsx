@@ -58,7 +58,7 @@ export default function LoginPage() {
             code2FA={code2FA} refs2FA={refs2FA} onCodeChange={setCode2FA}
             error={error} loading={loading} resendCooldown={resendCooldown}
             onSubmit={handleEmailOtp}
-            onResend={() => { setCode2FA(['', '', '', '', '', '']); sendEmailOtp() }}
+            onResend={() => { setCode2FA(['', '', '', '', '', '']); void sendEmailOtp() }}
             onBack={() => { setStep(twoFaMethods.length > 1 ? 'picker' : 'login'); setCode2FA(['', '', '', '', '', '']); setError('') }}
           />
         )}

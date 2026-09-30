@@ -18,7 +18,7 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }: PubRo
   const toast = useToast()
 
   const copiar = () => {
-    navigator.clipboard.writeText(pub.textoFb ?? '').then(() =>
+    void navigator.clipboard.writeText(pub.textoFb ?? '').then(() =>
       toast({ message: 'Texto copiado al portapapeles', type: 'success' })
     )
     onCopiar?.(pub)

@@ -140,7 +140,7 @@ export function useAiChat({
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar() }
   }
 
   const derived = deriveAiChatView({ mensajes, chips, cargando, context, userName, productoId })

@@ -42,7 +42,7 @@ export default function SuperAdminHome() {
 
   useEffect(() => {
     let cancelado = false
-    Promise.all([
+    void Promise.all([
       adminService.getDashboard().catch((err: unknown) => { console.error(err); return { data: {} } }),
       adminService.getEmpresas().catch((err: unknown) => { console.error(err); return { data: [] } }),
       adminService.getUsers().catch((err: unknown) => { console.error(err); return { data: [] } }),

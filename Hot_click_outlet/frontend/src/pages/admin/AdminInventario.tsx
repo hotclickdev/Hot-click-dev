@@ -116,7 +116,7 @@ export default function AdminInventario() {
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
+  useEffect(() => { void cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   async function analizarAhora() {
     setAnalizando(true)

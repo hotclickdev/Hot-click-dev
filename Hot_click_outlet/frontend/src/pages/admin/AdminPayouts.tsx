@@ -43,7 +43,7 @@ export default function AdminPayouts() {
   }
 
   useEffect(() => {
-    cargar()
+    void cargar()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- montaje
   }, [])
 

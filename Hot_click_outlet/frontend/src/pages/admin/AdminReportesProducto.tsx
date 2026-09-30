@@ -31,7 +31,7 @@ export default function AdminReportesProducto() {
   }
 
   useEffect(() => {
-    cargar()
+    void cargar()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- montaje
   }, [])
 

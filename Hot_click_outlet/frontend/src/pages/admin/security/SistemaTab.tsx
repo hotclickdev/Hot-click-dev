@@ -25,7 +25,7 @@ export default function SistemaTab() {
         setServerStatus({ up: false, ms: null })
       }
     }
-    check()
+    void check()
   }, [])
 
   const herramientas = [

@@ -1,0 +1,1 @@
+import{t as e}from"./authStore-dHIRBnqo.js";import{at as t,xt as n}from"./index-CbS7KJ0d.js";function r(){return n(e(e=>e.userRole),t(e=>e.planNombre))}export{r as t};

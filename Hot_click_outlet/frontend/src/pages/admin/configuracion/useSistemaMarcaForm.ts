@@ -32,7 +32,7 @@ export function useSistemaMarcaForm() {
     }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { void cargar() }, [])
 
   async function guardar(ev: FormEvent) {
     ev.preventDefault()

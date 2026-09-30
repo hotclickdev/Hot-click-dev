@@ -135,7 +135,7 @@ export default function MarcaFormModal({
     evento.preventDefault()
     setDragOver(false)
     const archivo = evento.dataTransfer.files?.[0]
-    if (archivo) subirLogo(archivo)
+    if (archivo) void subirLogo(archivo)
   }
 
   return (

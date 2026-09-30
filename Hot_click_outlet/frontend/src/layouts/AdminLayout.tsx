@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   // Cargar estado de empresa para mostrar banners de aprobación / visibilidad
   useEffect(() => {
     if (!esUsuarioSistema(userRole)) return
-    import('@/services/api').then(({ default: api }) => {
+    void import('@/services/api').then(({ default: api }) => {
       api.get<unknown>('/empresa/perfil')
         .then(({ data }) => {
           const root = data && typeof data === 'object' ? data as Record<string, unknown> : null
