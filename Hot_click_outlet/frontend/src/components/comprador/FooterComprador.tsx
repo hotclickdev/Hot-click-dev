@@ -11,7 +11,6 @@ const ENLACES: EnlaceFooter[] = [
   { clave: 'envios', to: '/envios' },
   { clave: 'devoluciones', to: '/devoluciones' },
   { clave: 'contacto', to: '/contacto' },
-  { clave: 'ayuda', to: '/ayuda' },
   { clave: 'terminos', to: '/terminos' },
   { clave: 'privacidad', to: '/privacidad', soloEscritorio: true },
 ]
