@@ -43,7 +43,7 @@ describe('código de descuento · helpers', () => {
   })
 
   it('la rebaja lleva el signo menos y colones enteros', () => {
-    expect(formatoRebaja(50000)).toBe(`− ₡${new Intl.NumberFormat('es-CR').format(50000)}`)
+    expect(formatoRebaja(50000)).toBe('− ₡50.000')
   })
 })
 
