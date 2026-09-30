@@ -51,11 +51,12 @@ jobs:
         run: |
           set -euo pipefail
           git rev-parse --verify "${BASE_SHA}" >/dev/null
-          # Capturar antes de filtrar: con pipefail, un diff grande + `grep -q` puede
-          # cerrar la tuberia (SIGPIPE) apenas encuentra la primera coincidencia y
-          # devolver el pipeline como fallido aunque el match sea real (falso "fe=false").
+          # Sin tuberias: con un diff grande, tanto `git diff | grep -q` como
+          # `echo "$var" | grep -q` pueden cortarse por SIGPIPE apenas grep -q
+          # encuentra la primera coincidencia, y devolver "no matcheo" aunque si
+          # matcheo. Match de string puro en bash, sin subprocesos de por medio.
           diff_files="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")"
-          if echo "${diff_files}" | grep -q 'Hot_click_outlet/frontend/src/'; then
+          if [[ "${diff_files}" == *"Hot_click_outlet/frontend/src/"* ]]; then
             echo "fe=true" >> "$GITHUB_OUTPUT"
           else
             echo "fe=false" >> "$GITHUB_OUTPUT"
