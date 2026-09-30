@@ -9,6 +9,7 @@ import useTenantStore from '@/store/tenantStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
+import { correoDesdeEstado } from './recuperar/recuperarHelpers'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
@@ -38,7 +39,8 @@ function carritoDesdeRespuesta(res: unknown): CarritoRecuperable | null {
 }
 
 /**
- * Estado y handlers del flujo de login (credenciales, 2FA, webauthn, forgot).
+ * Estado y handlers del flujo de login (credenciales, 2FA, webauthn).
+ * Recuperar contraseña vive en /recuperar-contrasena (pages/auth/recuperar).
  * Side effects en el mismo orden que LoginPage original.
  */
 export function useLoginFlow() {
@@ -53,13 +55,13 @@ export function useLoginFlow() {
 
   const [step,              setStep]              = useState('login')
   const [loading,           setLoading]           = useState(false)
-  const [correo,            setCorreo]            = useState('')
+  // Viene prellenado al volver de /recuperar-contrasena.
+  const [correo,            setCorreo]            = useState(() => correoDesdeEstado(location.state))
   const [contrasena,        setContrasena]        = useState('')
   const [tempToken,         setTempToken]         = useState('')
   const [code2FA,           setCode2FA]           = useState(['', '', '', '', '', ''])
   const [useRecovery,       setUseRecovery]       = useState(false)
   const [recoveryInput,     setRecoveryInput]     = useState('')
-  const [showForgot,        setShowForgot]        = useState(false)
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [showCartRecovery,  setShowCartRecovery]  = useState(false)
   const [recoveryCart,      setRecoveryCart]      = useState<CarritoRecuperable | null>(null)
@@ -256,7 +258,6 @@ export function useLoginFlow() {
     code2FA, setCode2FA,
     useRecovery, setUseRecovery,
     recoveryInput, setRecoveryInput,
-    showForgot, setShowForgot,
     showAdminModal, setShowAdminModal,
     showCartRecovery, setShowCartRecovery,
     recoveryCart,

@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Modal from '@/components/ui/Modal'
-import ForgotPasswordModal from './ForgotPasswordModal'
 import { A } from './authUi'
 import LoginHeader from './LoginHeader'
 import CartModal from './CartModal'
@@ -16,7 +15,6 @@ export default function LoginPageLayout({ children, flow }: { children: ReactNod
   const {
     showCartRecovery, recoveryCart, addItem, setShowCartRecovery,
     navigate, recoveryDest, showAdminModal, t, setShowAdminModal,
-    showForgot, setShowForgot,
   } = flow
 
   return (
@@ -93,8 +91,6 @@ export default function LoginPageLayout({ children, flow }: { children: ReactNod
           ))}
         </div>
       </Modal>
-
-      <ForgotPasswordModal open={showForgot} onClose={() => setShowForgot(false)} />
     </div>
   )
 }
