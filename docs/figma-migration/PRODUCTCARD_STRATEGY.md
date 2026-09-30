@@ -62,7 +62,7 @@ Un solo agente (CAT) es dueño de ambos componentes hasta eliminar el antiguo. P
 
 | Paso | Qué | Verificación |
 | --- | --- | --- |
-| C0 | Extender `comprador/ProductCard` **sin romper a Home, SinResultados ni ProductAgotado**: prop opcional para la etiqueta "Hecho a pedido" (producto personalizado) y, según decisión, precio de lista tachado para ofertas. Tests de los helpers | Home sigue igual a 1440 y 390 |
+| C0 (HECHO 2026-09-30, ver `CAT_C0.md`) | Extender `comprador/ProductCard` **sin romper a Home, SinResultados ni ProductAgotado**: prop opcional para la etiqueta "Hecho a pedido" (producto personalizado) y, según decisión, precio de lista tachado para ofertas. Tests de los helpers | Home sigue igual a 1440 y 390 |
 | C1 | Migrar `DescubriResultados` | Captura antes/después |
 | C2 | **Eliminar** `EmprendimientosRow` (decisión del usuario 2026-09-30) y su uso en `CategoryRowsView` | `grep` sin referencias, catálogo intacto |
 | C3 | **Eliminar** `OfertasView` (decisión del usuario 2026-09-30) junto con las pestañas Ofertas y Emprendimientos (ver abajo) | `grep` sin referencias, typecheck, tests |
