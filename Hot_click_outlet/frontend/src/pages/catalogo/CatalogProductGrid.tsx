@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
-import ProductCard from './catalogoProductCard'
+import ProductCard from '@/components/comprador/ProductCard'
+import { CLASE_GRILLA_TARJETAS } from './catalogoGrilla'
 import CategoryRowsView from './CategoryRowsView'
 import AsistenteEnGrilla from './AsistenteEnGrilla'
 import SinResultados from './SinResultados'
@@ -194,7 +195,7 @@ function CatalogGridPagination({
 
 function CatalogFlatGrid({
 
-  animKey, search, filtered, filteredSlice, onQuickView,
+  animKey, search, filtered, filteredSlice,
 
 }: {
 
@@ -205,8 +206,6 @@ function CatalogFlatGrid({
   filtered: Producto[]
 
   filteredSlice: Producto[]
-
-  onQuickView: (product: Producto) => void
 
 }) {
 
@@ -236,11 +235,11 @@ function CatalogFlatGrid({
 
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className={CLASE_GRILLA_TARJETAS}>
 
           {filteredSlice.map((product, i) => (
             <Fragment key={product.id}>
-              <ProductCard product={product} priority={i < 6} index={i} onQuickView={onQuickView} />
+              <ProductCard product={product} priority={i < 6} />
               {search && i === POSICION_ASISTENTE && <AsistenteEnGrilla consulta={search} />}
             </Fragment>
           ))}
@@ -259,7 +258,7 @@ function CatalogFlatGrid({
 
 function cuerpoCatalogo({
   shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
-  animKey, search, filteredSlice, onQuickView,
+  animKey, search, filteredSlice,
   products, categories, onVerMas, page,
   needsGustos,
 }: {
@@ -272,7 +271,6 @@ function cuerpoCatalogo({
   animKey: string
   search: string
   filteredSlice: Producto[]
-  onQuickView: (product: Producto) => void
   products: Producto[]
   categories: CatalogCategoria[]
   onVerMas: (catId: unknown) => void
@@ -303,7 +301,7 @@ function cuerpoCatalogo({
 
         animKey={animKey} search={search}
 
-        filtered={filtered} filteredSlice={filteredSlice} onQuickView={onQuickView}
+        filtered={filtered} filteredSlice={filteredSlice}
 
       />
 
@@ -321,7 +319,7 @@ function cuerpoCatalogo({
 
       onVerMas={onVerMas}
 
-      onQuickView={onQuickView}
+     
 
       page={page}
 
@@ -338,7 +336,7 @@ export default function CatalogProductGrid({
   filtered, filteredSlice, filteredPages, filterViewPage, onPageChange,
   hasFilters, onClearFilters, flatGrid, animKey, search,
   products, categories,
-  onVerMas, onQuickView, page,
+  onVerMas, page,
   needsGustos = false,
 }: {
   gridRef: RefObject<Element | null>
@@ -357,7 +355,6 @@ export default function CatalogProductGrid({
   products: Producto[]
   categories: CatalogCategoria[]
   onVerMas: (catId: unknown) => void
-  onQuickView: (product: Producto) => void
   page: number
   needsGustos?: boolean
 }) {
@@ -365,7 +362,7 @@ export default function CatalogProductGrid({
     <div ref={gridRef as RefObject<HTMLDivElement>}>
       {cuerpoCatalogo({
         shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
-        animKey, search, filteredSlice, onQuickView,
+        animKey, search, filteredSlice,
         products, categories, onVerMas, page,
         needsGustos,
       })}

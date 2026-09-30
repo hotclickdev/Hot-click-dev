@@ -5,7 +5,6 @@ import useChatStore from '@/store/chatStore'
 import { useCatalogoFiltros } from './useCatalogoFiltros'
 import { useCatalogoFetch } from './useCatalogoFetch'
 import { useCatalogoDerived } from './useCatalogoDerived'
-import type { Producto } from '@/types/producto'
 import { FILTROS_EXTRA_VACIOS, type FiltrosExtra } from './buscarExplorar'
 
 /**
@@ -15,7 +14,6 @@ export function useCatalogoPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const toast = useToast()
 
-  const [quickView, setQuickView] = useState<Producto | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -74,8 +72,6 @@ export function useCatalogoPage() {
     setPriceMin: filtros.setPriceMin,
     priceMax: filtros.priceMax,
     setPriceMax: filtros.setPriceMax,
-    quickView,
-    setQuickView,
     sidebarOpen,
     setSidebarOpen,
     filterViewPage: filtros.filterViewPage,

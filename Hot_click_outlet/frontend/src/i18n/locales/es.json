@@ -684,9 +684,7 @@
     "noResultsSub": "Intentá con otro término o categoría",
     "inStock": "En stock",
     "outOfStock": "Agotado",
-    "lowStock": "{{count}} disp.",
     "lowStockLabel": "Bajo stock",
-    "saleBadge": "Oferta",
     "addToCart": "Añadir",
     "loading": "Cargando productos...",
     "of": "de",
@@ -722,7 +720,6 @@
     "viewResults_other": "Ver {{count}} resultados",
     "categoryLabel": "Categoría",
     "categories": "Categorías",
-    "shippingBenefit": "Envío a todo Costa Rica · 1–5 días",
     "fullCatalog": "Catálogo completo",
     "heroSub": "Encontrá todo lo que buscás — precios directos sin intermediarios",
     "availableCount_one": "{{count}} producto disponible",
@@ -1804,19 +1801,6 @@
     "hasAccount": "Ya tengo cuenta — Iniciar sesión",
     "whatsapp": "Consultar por WhatsApp",
     "close": "Cerrar"
-  },
-  "quickView": {
-    "available": "{{count}} disponibles",
-    "outOfStock": "Sin stock",
-    "added": "Añadido",
-    "addToCart": "Agregar al pedido",
-    "viewDetail": "Ver detalle",
-    "inWishlist": "En wishlist",
-    "save": "Guardar",
-    "close": "Cerrar",
-    "removeWishlist": "Quitar de favoritos",
-    "addWishlist": "Agregar a favoritos",
-    "addedToast": "añadido"
   },
   "promo": {
     "firstPurchase": "en tu primera compra",

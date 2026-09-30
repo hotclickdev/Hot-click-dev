@@ -113,7 +113,6 @@ export const analytics = {
   removeFromCart: (id: string | number, name: string) => track(EVENTO.CARRITO_QUITADO, { producto_id: id, nombre: name }),
   wishlistAdd: (p: ItemAnalitica) => track(EVENTO.WISHLIST_AGREGADO, { producto_id: p.id, monto: p.precio }),
   wishlistRemove: (id: string | number) => track(EVENTO.WISHLIST_QUITADO, { producto_id: id }),
-  quickViewOpen: (p: ItemAnalitica) => track('vista_rapida', { producto_id: p.id }),
   searchQuery: (q: string, count: number) => track(EVENTO.BUSQUEDA, { query: q, results: count }),
   checkoutStart: (total: number, n: number) => track(EVENTO.CHECKOUT_INICIADO, { monto: total, item_count: n }),
   descubriChipsView: () => track('descubri_chips_view', {}),

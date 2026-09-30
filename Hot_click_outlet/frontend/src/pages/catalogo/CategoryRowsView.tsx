@@ -14,12 +14,11 @@ import type {
 
 // ── Vista por filas de categoría (modo exploración sin filtros) ───────────────
 export default function CategoryRowsView({
-  products, categories, onVerMas, onQuickView, page,
+  products, categories, onVerMas, page,
 }: {
   products: Producto[]
   categories: CatalogCategoria[]
   onVerMas: (catId: unknown) => void
-  onQuickView: (product: Producto) => void
   page: number
 }) {
   const categoryRows = useMemo(() => {
@@ -99,7 +98,7 @@ export default function CategoryRowsView({
           key={row.catId}
           row={row}
           onVerMas={onVerMas}
-          onQuickView={onQuickView}
+         
         />
       ))}
     </motion.div>
@@ -107,11 +106,10 @@ export default function CategoryRowsView({
 }
 
 function FilaCatalogo({
-  row, onVerMas, onQuickView,
+  row, onVerMas,
 }: {
   row: CatalogRow
   onVerMas: (catId: unknown) => void
-  onQuickView: (product: Producto) => void
 }) {
   if (row.type === 'parent') {
     return (
@@ -121,7 +119,7 @@ function FilaCatalogo({
         childItems={row.childItems}
         totalCount={row.totalCount}
         onVerMas={onVerMas}
-        onQuickView={onQuickView}
+       
       />
     )
   }
@@ -131,7 +129,7 @@ function FilaCatalogo({
       catId={row.catId}
       products={row.products}
       onVerMas={onVerMas}
-      onQuickView={onQuickView}
+     
     />
   )
 }

@@ -32,7 +32,7 @@ export default function CatalogAllView({
     products, categories, marcas, loading, error, retry, page,
     search, setSearch, category, setCategory, marcasFilter, sort, setSort,
     filterStock, setFilterStock, filterCond, setFilterCond, filterTalla, setFilterTalla,
-    priceMin, setPriceMin, priceMax, setPriceMax, setQuickView,
+    priceMin, setPriceMin, priceMax, setPriceMax,
     sidebarOpen, setSidebarOpen, filterViewPage, setFilterViewPage,
     toggleMarca, clearMarcas, clearFilters, filtered,
     productCountByCat, categoryTotalCount, marcasCountInScope, marcasForCategoryScope,
@@ -172,7 +172,6 @@ export default function CatalogAllView({
                 products={products}
                 categories={categories}
                 onVerMas={(catId) => { setCategory(String(catId)); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                onQuickView={setQuickView}
                 page={page}
                 needsGustos={sort === 'para_vos' && !tieneGustos}
               />
