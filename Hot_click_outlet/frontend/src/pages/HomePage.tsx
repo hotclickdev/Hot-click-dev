@@ -69,8 +69,8 @@ export default function HomePage() {
         className="flex flex-col lg:flex-row lg:gap-14 lg:bg-hc-n-0 lg:px-8 lg:pb-10 lg:pt-9 xl:px-[120px]"
       >
         <div className="flex flex-col gap-3 bg-hc-n-0 py-[18px] lg:w-[420px] lg:shrink-0 lg:gap-4 lg:bg-transparent lg:p-0">
-          <div className="flex flex-col gap-1 px-4 lg:px-0">
-            <h1 id="home-titulo" className="font-display text-[22px] font-bold leading-tight text-hc-n-900 lg:text-[36px] lg:leading-[42px]">
+          <div className="flex flex-col gap-1 px-4 lg:gap-4 lg:px-0">
+            <h1 id="home-titulo" className="font-display text-[22px] font-bold leading-[28px] tracking-normal text-hc-n-900 [text-wrap:wrap] lg:text-[36px] lg:leading-[42px]">
               {t('home.compra.titulo')}
             </h1>
             <p className="text-[13px] leading-[18px] text-hc-n-600 lg:text-[15px] lg:leading-[22px]">
@@ -153,7 +153,7 @@ export default function HomePage() {
           </ul>
           <Link
             to="/productos"
-            className="flex items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 py-[13px] text-[14px] font-semibold text-hc-n-900 lg:hidden"
+            className="flex items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900 lg:hidden"
           >
             {t('home.compra.verCatalogo')}
           </Link>

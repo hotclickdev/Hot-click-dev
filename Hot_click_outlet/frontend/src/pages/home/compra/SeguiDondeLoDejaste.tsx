@@ -26,8 +26,8 @@ export default function SeguiDondeLoDejaste() {
                 {item.imagenUrl && <img src={item.imagenUrl} alt="" className="size-full object-cover" loading="lazy" decoding="async" />}
               </span>
               <span className="flex min-w-0 flex-col gap-[2px]">
-                <span className="hidden truncate text-[13px] font-medium text-hc-n-900 lg:block">{item.nombre}</span>
-                <span className="font-display text-[13px] font-semibold text-hc-n-900 lg:text-[14px] lg:font-bold">{formatPrice(item.precio)}</span>
+                <span className="hidden truncate text-[13px] font-medium leading-[normal] text-hc-n-900 lg:block">{item.nombre}</span>
+                <span className="font-display text-[13px] font-semibold leading-[16px] text-hc-n-900 lg:text-[14px] lg:font-bold lg:leading-[18px]">{formatPrice(item.precio)}</span>
               </span>
             </Link>
           </li>

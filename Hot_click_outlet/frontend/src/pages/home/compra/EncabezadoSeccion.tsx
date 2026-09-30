@@ -27,13 +27,13 @@ export default function EncabezadoSeccion({ id, titulo, tituloDesktop, nota, acc
   return (
     <div className="flex items-center justify-between gap-4 lg:items-end">
       <div className="flex flex-col gap-[2px]">
-        <h2 id={id} className="font-display text-[18px] font-bold text-hc-n-900 lg:text-[22px]">
+        <h2 id={id} className="font-display text-[18px] font-bold leading-[23px] tracking-normal text-hc-n-900 [text-wrap:wrap] lg:text-[22px] lg:leading-[28px]">
           <TextoResponsivo movil={titulo} desktop={tituloDesktop} />
         </h2>
-        {nota && <p className="text-[12px] text-hc-n-500 lg:text-[13px]">{nota}</p>}
+        {nota && <p className="text-[12px] leading-[normal] text-hc-n-500 lg:text-[13px]">{nota}</p>}
       </div>
       {accion && (
-        <Link to={accion.to} className="flex shrink-0 items-center gap-[2px] text-[13px] font-semibold text-hc-blue-600 lg:text-[14px]">
+        <Link to={accion.to} className="flex shrink-0 items-center gap-[2px] text-[13px] font-semibold leading-[normal] text-hc-blue-600 lg:text-[14px]">
           <TextoResponsivo movil={accion.texto} desktop={accion.textoDesktop} />
           <span className="flex size-[14px] lg:size-4">
             <IconoFigma src={ICONOS_COMPRADOR.verTodo} size="100%" />
