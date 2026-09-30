@@ -1,8 +1,20 @@
+const formateadorMiles = new Intl.NumberFormat('es-CR', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+
+/**
+ * Número entero con punto de miles (`6.200`), el formato de los montos en Figma.
+ * Usa `Intl.NumberFormat('es-CR')` y cambia solo el separador de grupo (en es-CR es un NBSP).
+ */
+export const formatMiles = (valor: number) =>
+  formateadorMiles
+    .formatToParts(valor)
+    .map((parte) => (parte.type === 'group' ? '.' : parte.value))
+    .join('')
+
 export const formatPrice = (price: number | string | null | undefined) =>
-  `₡${new Intl.NumberFormat('es-CR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Number(price) || 0)}`
+  `₡${formatMiles(Number(price) || 0)}`
 
 export const formatDate = (date: string | number | Date) =>
   new Intl.DateTimeFormat('es-CR', {
