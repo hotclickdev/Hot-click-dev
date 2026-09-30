@@ -53,7 +53,7 @@ export default function MainLayout(props: MainLayoutProps) {
   const navigate = useNavigate()
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-hc-n-50">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-hc-n-50">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-hc-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-hc-n-0"

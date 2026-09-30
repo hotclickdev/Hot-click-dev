@@ -4,10 +4,12 @@ import isotipo from '@/assets/figma/comprador/isotipo.png'
 
 type MarcaCompradorProps = {
   /** `pequena`: logo de 28px de las barras de solo marca (Figma `45:2200`). */
-  tamano: 'pequena' | 'movil' | 'escritorio'
+  tamano: 'centrada' | 'pequena' | 'movil' | 'escritorio'
 }
 
 const MEDIDAS = {
+  /** Logo de 26px de la barra centrada del pago exitoso (Figma `29:1932`). */
+  centrada: { isotipo: 'size-[26px]', texto: 'text-[17px]' },
   pequena: { isotipo: 'size-[28px]', texto: 'text-[18px]' },
   movil: { isotipo: 'size-[30px]', texto: 'text-[19px]' },
   escritorio: { isotipo: 'size-[34px]', texto: 'text-[22px]' },
