@@ -2999,6 +2999,10 @@
     },
     "tarjeta": {
       "quedan": "Quedan {{count}}",
+      "hechoAPedido": "Hecho a pedido",
+      "desde": "Desde",
+      "oferta": "Oferta",
+      "precioAnterior": "Precio anterior",
       "agregar": "Agregar {{nombre}} a tu pedido",
       "agregado": "{{nombre}} se agregó a tu pedido",
       "favoritoAgregar": "Guardar {{nombre}} en favoritos",
