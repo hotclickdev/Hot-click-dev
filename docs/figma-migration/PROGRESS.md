@@ -127,10 +127,10 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | # | Decisión | Afecta a |
 | --- | --- | --- |
 | 1 | ~~Integrar SHELL en base~~ Hecho | Todos |
-| 2 | Precio tachado y badge "Oferta" en la tarjeta nueva: ¿se conservan? | CAT |
+| 2 | ~~Precio tachado y badge Oferta~~ **Resuelto: se conservan, discretos** | CAT |
 | 3 | ~~Ofertas HOT y pestaña Emprendimientos~~ **Resuelto: se eliminan** (ver `PRODUCTCARD_STRATEGY.md`) | CAT |
-| 4 | ¿Se elimina el Quick view (hoy no hace nada)? | CAT |
-| 5 | ¿Se eliminan la pastilla de marca, la condición, el punto de stock y la línea de envío de la tarjeta antigua? | CAT |
+| 4 | ~~Quick view~~ **Resuelto: se elimina** | CAT |
+| 5 | ~~Pastilla de marca, condición, punto de stock y línea de envío~~ **Resuelto: se descartan** | CAT |
 | 6 | Limpieza de los worktrees viejos | — |
 
 ## Riesgos abiertos

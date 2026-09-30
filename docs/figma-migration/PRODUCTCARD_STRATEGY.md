@@ -77,11 +77,16 @@ Cada paso es un commit aparte, verificable y reversible. No se elimina nada hast
 | --- | --- |
 | Eliminar la sección **Ofertas HOT** del catálogo | Borrar `pages/catalogo/OfertasView.tsx`, el modo `ofertas` de `CatalogViewMode` (`catalogoTipos.ts`), su filtro en `catalogoFiltros.ts`, la pestaña en `CatalogViewTabs.tsx`, el caso en `CatalogSeoHelmet.tsx` y la clave `products.seoTitleOfertas`. **No tocar** el panel admin de promociones (`/admin/ofertas`): los vendedores siguen creando promociones |
 | Eliminar la pestaña **Emprendimientos** del catálogo | Borrar `EmprendimientosView.tsx`, `EmprendimientosRow.tsx` (y su uso en `CategoryRowsView`), el modo `emprendimientos` y su pestaña. **No tocar** la página pública `/emprendimientos` (la lleva STORE) |
+| Conservar **precio de lista tachado y badge "Oferta"**, discretos, sin agrandar la tarjeta (paso C0) | Mostrar `precio` tachado pequeño junto a `textoPrecioProducto` cuando `tieneOfertaActiva`; badge "Oferta" en el mismo lugar que "Quedan N" (si coinciden, manda "Quedan N" y el badge Oferta se omite) |
+| Eliminar el **Quick view** | Quitar `onQuickView` del wrapper y de `CatalogProductGrid`, `CategoryRow`, `ParentCategoryRow`; revisar si `QuickViewModal` y `quickView.*` quedan sin uso y, si es así, borrarlos |
+| Descartar **pastilla de marca, condición (Nuevo / Como nuevo), punto de stock y línea de envío** | No migrarlos a la tarjeta nueva. La condición queda solo en la ficha si ya existe allí |
 | Resultado | `CatalogViewTabs` queda sin pestañas alternativas: CAT decide con Figma `26:722` si el componente desaparece por completo |
 
 Riesgo a cuidar: enlaces externos o guardados con `?view=ofertas` o `?view=emprendimientos`. CAT debe hacer que caigan en la vista normal, sin 404.
 
 ## Decisiones que siguen abiertas
+
+Las cuatro decisiones de la lista original quedaron cerradas el 2026-09-30 (1: conservar oferta; 2: eliminar Ofertas HOT; 3: eliminar Quick view; 4: descartar marca, condición, stock y envío). La tabla de abajo se conserva como historial.
 
 | # | Pregunta | Mi recomendación |
 | --- | --- | --- |
