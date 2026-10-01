@@ -1,18 +1,18 @@
 # Inventario de migración Figma → frontend
 
 Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página "Home de compra · prototipo" (`4:2`).
-Última actualización: 2026-09-30 (Fase 2: integración de PR #93, SHELL y Home movidos a sus ramas).
+Última actualización: 2026-10-01 (SRV; el resumen se recontó desde la tabla de pantallas).
 
 ## Resumen
 
 | Estado | Cantidad |
 | --- | --- |
-| PASS — agent verified | 17 |
-| PARTIAL | 13 |
-| OLD_DESIGN | 4 |
+| PASS — agent verified | 31 |
+| PARTIAL | 42 |
+| OLD_DESIGN | 1 |
 | MISSING | 0 |
 | BLOCKED | 0 |
-| UNKNOWN | 56 |
+| UNKNOWN | 16 |
 | **Total pantallas** | **90** |
 
 PASS solo se marca cuando hay implementación completa, comparación visual **y** medidas en píxeles, responsive, estados, tests, typecheck y build. **Los PASS de CAT y PROD son "PASS — agent verified": veredicto del propio agente, medido con API simulada y fotos de color, sin QA independiente** (SHELL sí lo tuvo). El estado no cambia hasta que el supervisor haga la verificación independiente con datos reales.
@@ -31,6 +31,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | PROD: ficha de producto | `feat/figma/prod` | Hecho (4 commits), integrado en `feat/figma/base` (merge `a44632a6`). Ficha rediseñada; 5 pantallas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
 | SYS: estados del sistema, cookies, WhatsApp, sin `SocialProofToast` | `feat/figma/sys` | Hecho (11 commits), integrado en `feat/figma/base` (merge `0536ef45`). Ver `SYS.md` |
 | PROD, ajuste de la ficha agotada (Figma literal) | `feat/figma/prod` | Hecho (`616f0769`), integrado en `base` (`d8af873b`) |
+| SRV: Servicios HOT, encargo, cotización pública, Envíos (plantilla informativa) y blog | `feat/figma/srv` | Hecho en la rama, **sin integrar en `base`**. 8 pantallas: 1 PASS y 7 PARTIAL (agent verified). Ver `SRV.md` |
 
 ## Cómo leer la evidencia
 
@@ -98,12 +99,12 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 05 Cuenta | Recuperar contraseña · 3 nueva | /recuperar-contrasena | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Paso 3 comparado (reglas de contraseña, ojo, nota de cierre de sesión) | B. Recuperada en feat/figma/base (merge del PR #93); falta comparar contra Figma | no | sí | ACC |
 | 05 Cuenta | Verificación en dos pasos · móvil | /login (paso 2FA) | PARTIAL | M (ACC, 1-oct-2026, agent verified, API simulada). Medido (±6 px). Sin "Confiar en este dispositivo" (BLOCKED: no hay soporte en backend). "Usar otra app autenticadora" se cambió por "Usar un código de recuperación", que sí existe. Paso de elegir método y de código por correo sin frame propio | C | no | sí | ACC |
 | 05 Cuenta | Seguimiento de pedido sin cuenta | /seguimiento/:token | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Barra de marca sin buscador ni barra inferior (corregido en ACC). La etiqueta "NUEVO · por programar" y la nota ámbar de diseño no se renderizan | B. Recuperada en feat/figma/base (merge del PR #93); falta comparar contra Figma | no | sí | ACC |
-| 06 Servicios y ayuda | Servicios HOT · inicio · móvil | `28:1429` | /servicios | OLD_DESIGN | V. Figma: lista de 4 opciones; código: tarjetas grandes con foto | no | sí | SRV |
-| 06 Servicios y ayuda | Te lo conseguimos · formulario | `28:1486` | /servicios (vista) | UNKNOWN | C | no | sí | SRV |
-| 06 Servicios y ayuda | Solicitud de garantía · móvil | `28:1531` | /servicios (vista) | UNKNOWN | C | no | sí | SRV |
-| 06 Servicios y ayuda | Encargo · seguimiento público | `28:1594` | /encargo/:token | UNKNOWN | C | no | sí | SRV |
-| 06 Servicios y ayuda | Página informativa · plantilla (Envíos) | `28:1660` | /envios, /devoluciones, /informacion | OLD_DESIGN | H+C. Decisión previa: no se reescribieron; existe PaginaInformativa | no | sí | SRV |
-| 06 Servicios y ayuda | Cotización pública · móvil | `55:2332` | /cotizacion/:token | UNKNOWN | C | no | sí | SRV |
+| 06 Servicios y ayuda | Servicios HOT · inicio · móvil | `28:1429` | /servicios | PASS — agent verified | M (SRV, 1-oct-2026, agent verified, API simulada). Intro, cuatro opciones y aviso "Tenés N solicitudes en curso" medidos a ±2 px (redondeo del `line-height`). Botón de asistente y de WhatsApp flotantes (SYS) no están en Figma. Ver `SRV.md` | no | sí | SRV |
+| 06 Servicios y ayuda | Te lo conseguimos · formulario | `28:1486` | /servicios?vista=busqueda | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Medido a ±1 px. Presupuesto es campo de texto (Figma: selector con rangos, REQUIERE_DECISION); inputs de 16 px por la regla global de SHELL; estado enviado sin frame | no | sí | SRV |
+| 06 Servicios y ayuda | Solicitud de garantía · móvil | `28:1531` | /servicios?vista=garantia | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Medido a ±1 px. BLOCKED por backend: "Fotos de la falla" (la solicitud solo guarda descripción) y campo de motivo (viaja como prefijo de la descripción) | no | sí | SRV |
+| 06 Servicios y ayuda | Encargo · seguimiento público | `28:1594` | /encargo/:token | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Encabezado, tarjeta y línea de tiempo a 0 px. Backend no entrega tienda, fechas de cotización, tiempo de producción ni envío: no se inventaron; "Escribirle a la tienda" usa el WhatsApp de HotClick | no | sí | SRV |
+| 06 Servicios y ayuda | Página informativa · plantilla (Envíos) | `28:1660` | /envios (plantilla); /devoluciones, /informacion sin migrar | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). `/envios` con la plantilla (`PaginaInformativa`, `BloqueInformativo`, `PreguntaFrecuente`) a ±1 px. Tiempos y tarifas de Figma difieren del contenido existente (REQUIERE_DECISION). Devoluciones e Información, REQUIRES_DESIGN_REFERENCE: sin frame, conservan el diseño anterior | no | sí | SRV |
+| 06 Servicios y ayuda | Cotización pública · móvil | `55:2332` | /cotizacion/:token | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Encabezado azul y cliente a 0 px, montos con punto de miles. BLOCKED por backend: "Aceptar cotización" (no hay endpoint; la etiqueta de diseño no se renderiza); "Consultar por WhatsApp" funciona | no | sí | SRV |
 | 08 QR y correos | QR de mesa · menú | `29:1650` | (ruta por confirmar) | UNKNOWN | C. No encontré la ruta | no | sí | QR |
 | 08 QR y correos | QR de mesa · pedido enviado | `29:1741` | (ruta por confirmar) | UNKNOWN | C | no | sí | QR |
 | 08 QR y correos | QR de pago en caja · elegir método | `29:1781` | /pos/pago/:token | UNKNOWN | H (sin cambios por P) | no | sí | QR |
@@ -134,8 +135,8 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 10 Estados del sistema | Sin conexión · móvil | `45:2264` | OfflineBanner | PARTIAL | M (SYS). Geometría igual (strip 36, mensaje y36, vistos y279, reintentar y489). Falta enchufarla en Home (`esSinConexion`) y registrar la ruta `/sin-conexion` (SUP). Fotos reales no verificadas | no | sí | SYS |
 | 10 Estados del sistema | Fallo del servidor · móvil | `45:2322` | (error boundary) | PASS — agent verified | M (SYS). Barra 51, h1 y167 alto 25, botones 46 y 48, ícono SVG original | no | sí | SYS |
 | 10 Estados del sistema | Instalar la app · tarjeta · móvil | `55:2658` | (PWA) | PASS — agent verified | M (SYS). Tarjeta 358x216, título/subtítulo 20/14, botones 42/40. "NUEVO · por programar" no llega a la UI; reglas de aparición intactas | no | sí | SYS |
-| 11 Contenido y SEO | Blog · listado · móvil | `54:2126` | /blog | UNKNOWN | C. Sin tokens nuevos | no | sí | SRV |
-| 11 Contenido y SEO | Blog · artículo · móvil | `54:2219` | /blog/:slug | UNKNOWN | C | no | sí | SRV |
+| 11 Contenido y SEO | Blog · listado · móvil | `54:2126` | /blog | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Barra e intro a 0 px; tarjeta y filas como Figma. BLOCKED por backend: chips de temas (no hay categoría) y buscador; barra inferior no marca "Inicio" (SHELL) | no | sí | SRV |
+| 11 Contenido y SEO | Blog · artículo · móvil | `54:2219` | /blog/:slug | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Barra, migas y título a 0 px; texto con la tipografía de Figma; compartir funciona. BLOCKED por backend: categoría de las migas, "Productos de este artículo" y autor propio | no | sí | SRV |
 
 ## Pantallas por agente
 
@@ -147,7 +148,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | STORE | 4 |
 | CHK | 17 (3 PASS agent verified, 14 PARTIAL) |
 | ACC | 18 (10 PASS, 8 PARTIAL, agent verified) |
-| SRV | 8 |
+| SRV | 8 (1 PASS, 7 PARTIAL, agent verified; sin integrar en `base`) |
 | QR | 13 |
 | SYS | 10 |
 
