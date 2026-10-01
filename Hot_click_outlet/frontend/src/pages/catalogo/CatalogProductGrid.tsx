@@ -191,26 +191,13 @@ function CatalogGridPagination({
 
 }
 
-
-
 function CatalogFlatGrid({
-
-  animKey, search, filtered, filteredSlice,
-
+  animKey, search, filteredSlice,
 }: {
-
   animKey: string
-
   search: string
-
-  filtered: Producto[]
-
   filteredSlice: Producto[]
-
 }) {
-
-  const { t } = useTranslation()
-
   return (
 
     <AnimatePresence mode="wait">
@@ -225,22 +212,12 @@ function CatalogFlatGrid({
 
       >
 
-        {search && (
-
-          <p className="text-xs mb-3 font-medium" style={{ color: 'var(--hc-muted)' }}>
-
-            {t('products.resultsFor', { count: filtered.length, q: search })}
-
-          </p>
-
-        )}
-
         <div className={CLASE_GRILLA_TARJETAS}>
 
           {filteredSlice.map((product, i) => (
             <Fragment key={product.id}>
               <ProductCard product={product} priority={i < 6} />
-              {search && i === POSICION_ASISTENTE && <AsistenteEnGrilla consulta={search} />}
+              {search && i === POSICION_ASISTENTE && <AsistenteEnGrilla consulta={search} variante="tarjeta" />}
             </Fragment>
           ))}
 
@@ -301,7 +278,7 @@ function cuerpoCatalogo({
 
         animKey={animKey} search={search}
 
-        filtered={filtered} filteredSlice={filteredSlice}
+        filteredSlice={filteredSlice}
 
       />
 
