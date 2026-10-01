@@ -5,12 +5,14 @@ type TwoFaCodeInputsProps = {
   refs2FA: RefObject<(HTMLInputElement | null)[]>
   onChange: (digits: string[]) => void
   disabled?: boolean
+  etiqueta?: string
 }
 
 /**
- * Seis inputs de un dígito para códigos 2FA (email OTP y TOTP).
+ * Seis casillas de un dígito para códigos 2FA (correo y app): Figma `44:1673`, 56 px de alto, esquinas de 12
+ * y borde azul en la casilla activa.
  */
-export default function TwoFaCodeInputs({ code2FA, refs2FA, onChange, disabled }: TwoFaCodeInputsProps) {
+export default function TwoFaCodeInputs({ code2FA, refs2FA, onChange, disabled, etiqueta }: TwoFaCodeInputsProps) {
   const handleDigit = (idx: number, val: string) => {
     const digit = val.replace(/\D/, '').slice(-1)
     const next = [...code2FA]
@@ -32,16 +34,17 @@ export default function TwoFaCodeInputs({ code2FA, refs2FA, onChange, disabled }
   }
 
   return (
-    <div className="flex gap-2 justify-center" onPaste={handlePaste}>
+    <div className="flex items-center gap-2" role="group" aria-label={etiqueta} onPaste={handlePaste}>
       {code2FA.map((digit, i) => (
         <input key={i}
           ref={el => { refs2FA.current[i] = el }}
-          type="text" inputMode="numeric" maxLength={1} value={digit}
+          type="text" inputMode="numeric" autoComplete={i === 0 ? 'one-time-code' : 'off'} maxLength={1} value={digit}
+          autoFocus={i === 0}
+          aria-label={`${i + 1}`}
           onChange={(e: ChangeEvent<HTMLInputElement>) => handleDigit(i, e.target.value)}
           onKeyDown={e => handleKey(i, e)}
           disabled={disabled}
-          className="hc-input"
-          style={{ width: 46, height: 58, textAlign: 'center', fontSize: 22, fontWeight: 900, padding: 0 }}
+          className="h-14 min-w-0 flex-1 rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-0 text-center font-display text-[20px] font-bold text-hc-n-900 focus:border-hc-blue-600 focus:shadow-[inset_0_0_0_1px_var(--hc-blue-600)] focus:outline-none"
         />
       ))}
     </div>

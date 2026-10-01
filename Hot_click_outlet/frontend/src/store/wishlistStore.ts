@@ -30,6 +30,7 @@ const useWishlistStore = create<WishlistState>()(
             precio: product.precio,
             imagenUrl: product.imagenUrl,
             stock: product.stock ?? 0,
+            empresaNombre: product.empresaNombre,
           }
           set({ items: [...items, slim] })
           analytics.wishlistAdd(product)

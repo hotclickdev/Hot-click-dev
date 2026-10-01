@@ -25,6 +25,8 @@ export type ItemWishlist = {
   precio: number
   imagenUrl: string
   stock: number
+  /** Tienda del producto: se guarda para mostrarla en Favoritos (Figma `30:1233`). Los favoritos viejos no la tienen. */
+  empresaNombre?: string | null
 }
 
 export type ItemVisto = {

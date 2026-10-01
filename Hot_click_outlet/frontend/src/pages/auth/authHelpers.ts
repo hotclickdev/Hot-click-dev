@@ -17,3 +17,11 @@ export function statusErrorAuth(err: unknown): number | undefined {
   if (!err || typeof err !== 'object' || !('response' in err)) return undefined
   return (err as AuthErrorBody).response?.status
 }
+
+/** "a••••s@gmail.com": deja ver solo la primera y la última letra antes de la arroba (Figma `44:1690`). */
+export function correoEnmascarado(correo: string): string {
+  const [local, dominio] = correo.trim().split('@')
+  if (!local || !dominio) return correo
+  if (local.length <= 2) return `${local[0]}••••@${dominio}`
+  return `${local[0]}••••${local[local.length - 1]}@${dominio}`
+}

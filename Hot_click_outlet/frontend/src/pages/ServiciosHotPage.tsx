@@ -1,5 +1,6 @@
 import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
@@ -15,6 +16,7 @@ import VistaBusqueda from './servicios/VistaBusqueda'
 import VistaGarantia from './servicios/VistaGarantia'
 import VistaTestimonio from './servicios/VistaTestimonio'
 import VistaDigitalizacion from './servicios/VistaDigitalizacion'
+import MisSolicitudesVista from './solicitudes/MisSolicitudesVista'
 import {
   SITE_URL, serviciosJsonLd, FOTO_MAX_BYTES, MAX_FOTOS, PREFIJO_SOLICITUD_INVENTARIO,
   type FormBusqueda, type FotoSolicitud, type GarantiaItem, type ProductoParaResena,
@@ -34,13 +36,13 @@ function urlFotoSubida(data: unknown): unknown {
   return data
 }
 
-export default function ServiciosHotPage() {
+function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) {
   const { t } = useTranslation()
   const { token } = useAuthStore()
   const qc = useQueryClient()
   const contenidoRef = useRef<HTMLDivElement>(null)
 
-  const [vista, setVista] = useState<VistaServicios>('inicio')
+  const [vista, setVista] = useState<VistaServicios>(vistaInicial)
   const [tabBusqueda, setTabBusqueda] = useState<TabBusqueda>('solicitar')
 
   const [fotos, setFotos] = useState<FotoSolicitud[]>([])
@@ -236,4 +238,18 @@ export default function ServiciosHotPage() {
       </div>
     </MainLayout>
   )
+}
+
+const VISTAS_DIRECTAS: VistaServicios[] = ['busqueda', 'garantia', 'testimonio']
+
+/**
+ * `/servicios`. `?vista=solicitudes` abre "Mis solicitudes" (ACC, Figma `29:1535`); `?vista=busqueda|garantia|testimonio`
+ * abre directo esa vista (enlaces desde Mi cuenta y Mis pedidos). Sin parámetro, el inicio de siempre.
+ */
+export default function ServiciosHotPage() {
+  const [params] = useSearchParams()
+  const vista = params.get('vista')
+  if (vista === 'solicitudes') return <MisSolicitudesVista />
+  const inicial = VISTAS_DIRECTAS.find((v) => v === vista) ?? 'inicio'
+  return <ServiciosHotVistas key={inicial} vistaInicial={inicial} />
 }
