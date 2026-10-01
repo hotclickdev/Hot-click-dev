@@ -2128,17 +2128,19 @@
     "satisfied": "Satisfied customers"
   },
   "recuperarCarrito": {
-    "title": "Your saved order",
-    "subtitle": "We found these products you left behind",
+    "title": "We saved your order",
+    "subtitle": "The products are still available. Pick up where you left off.",
     "notAvailable": "Order not available",
     "expired": "This link has already been used or expired.",
     "viewProducts": "View products",
     "quantity": "Quantity:",
-    "total": "Total",
-    "restore": "Add to order and continue",
+    "total": "Subtotal",
+    "restore": "Continue purchase",
     "adding": "Adding…",
     "exploreNew": "Explore new products",
-    "addedToast": "{{count}} product(s) added to order"
+    "addedToast": "{{count}} product(s) added to order",
+    "disponible": "Available · {{count}} left",
+    "nota": "You came here from the “We saved your order” email."
   },
   "multiImagePicker": {
     "label": "Product photos",

@@ -2128,17 +2128,19 @@
     "satisfied": "Clientes satisfechos"
   },
   "recuperarCarrito": {
-    "title": "Tu pedido guardado",
-    "subtitle": "Encontramos estos productos que dejaste antes",
+    "title": "Te guardamos tu pedido",
+    "subtitle": "Los productos siguen disponibles. Retomá donde lo dejaste.",
     "notAvailable": "Pedido no disponible",
     "expired": "Este enlace ya fue utilizado o expiró.",
     "viewProducts": "Ver productos",
     "quantity": "Cantidad:",
-    "total": "Total",
-    "restore": "Agregar al pedido y continuar",
+    "total": "Subtotal",
+    "restore": "Continuar compra",
     "adding": "Añadiendo…",
     "exploreNew": "Explorar productos nuevos",
-    "addedToast": "{{count}} producto(s) añadido(s) al pedido"
+    "addedToast": "{{count}} producto(s) añadido(s) al pedido",
+    "disponible": "Disponible · quedan {{count}}",
+    "nota": "Llegaste acá desde el correo “Te guardamos tu pedido”."
   },
   "multiImagePicker": {
     "label": "Fotos del producto",
