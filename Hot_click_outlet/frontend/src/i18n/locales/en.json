@@ -111,7 +111,9 @@
     "filtroProtanopiaDesc": "Difficulty seeing red",
     "filtroTritanopia": "Blue CVD",
     "filtroTritanopiaDesc": "Difficulty seeing blue",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "hojaTitulo": "Language and accessibility",
+    "listo": "Done"
   },
   "notFound": {
     "title": "This page does not exist",

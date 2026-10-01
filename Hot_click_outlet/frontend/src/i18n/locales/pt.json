@@ -111,7 +111,9 @@
     "filtroProtanopiaDesc": "Dificuldade para ver vermelho",
     "filtroTritanopia": "Dalton. azul",
     "filtroTritanopiaDesc": "Dificuldade para ver azul",
-    "breadcrumb": "Caminho de navegação"
+    "breadcrumb": "Caminho de navegação",
+    "hojaTitulo": "Idioma e acessibilidade",
+    "listo": "Pronto"
   },
   "notFound": {
     "title": "Esta página não existe",

@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
+import { whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import { useBranding } from '@/hooks/useBranding'
@@ -15,7 +16,6 @@ import { esRutaTienda } from '@/utils/rutaTienda'
 import { esRutaClaudeclick, esRutaPrototipo, esRutaVendedorFigma, esRutaVisitanteFigma } from '@/utils/rutaPrototipo'
 import ChatModal from '@/components/ai/ChatModal'
 
-const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
 
 /**
  * Scroll al tope y envía pageview de GA4 en cada cambio de ruta.
@@ -51,10 +51,7 @@ export function PageFade({ children }: { children: ReactNode }) {
  */
 export function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
-  if (WAB_HIDDEN_PATHS.has(pathname)) return null
-  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
-  if (pathname.startsWith('/pos')) return null
-  if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
+  if (whatsappOculto(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname))) return null
   return <WhatsAppFab />
 }
 
