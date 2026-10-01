@@ -251,6 +251,7 @@ export default function DescubriPage() {
         url="https://hotclick.lat/descubri"
       />
 
+      <h1 className="sr-only">{t('descubri.title')}</h1>
       <div className={enMazo ? 'min-h-[calc(100dvh-51px)] bg-hc-n-0' : 'mx-auto max-w-7xl px-4 pb-10 pt-5 sm:px-6 sm:pt-8'}>
         {status === 'loading' && <DescubriLoading />}
         {status === 'error' && <DescubriError onRetry={load} />}

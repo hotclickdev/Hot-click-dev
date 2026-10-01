@@ -46,6 +46,7 @@ export default function BusquedaFotoPage() {
   return (
     <MainLayout variante="interna" titulo={t('search.photoTitle')}>
       <Seo title={t('search.photoTitle')} description={t('search.photoSearchSub')} />
+      <h1 className="sr-only">{t('search.photoTitle')}</h1>
       <div className="mx-auto flex w-full max-w-[480px] flex-col">
         <input ref={camaraRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={alElegir} tabIndex={-1} aria-hidden="true" />
         <input ref={galeriaRef} type="file" accept="image/*" className="sr-only" onChange={alElegir} tabIndex={-1} aria-hidden="true" />
