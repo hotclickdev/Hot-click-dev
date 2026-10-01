@@ -15,7 +15,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, CAT C0 (ProductCard) | **Hecho**, integrado en `base` (`9f11c9a7`). `comprador/ProductCard` 167x280; `formatPrice` global con punto (`₡6.200`). C1 a C5 hechos (abajo). |
 | Ola 1, CAT C1 a C5 | **Hecho**, integrado en `base` (`1cd7721a`). 18 commits en `feat/figma/cat`. De sus 10 pantallas: 8 PASS (según el agente) y 2 PARTIAL (`27:882`, `8:230`). Ver `CAT_C1_C5.md` |
 | Ola 1, PROD | **Hecho**, integrado en `base` (`a44632a6`). 4 commits en `feat/figma/prod`. Galería PASS; 5 fichas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
-| Ola 1, CHK, ACC, SRV, SYS, STORE, QR | **No lanzados** |
+| Ola 1, SYS y CHK | **Lanzados** (2026-09-30). SYS: estados del sistema, FAB y WhatsApp, desmontar `SocialProofToast`. CHK: primero la hoja `45:1607` y el flujo móvil de la ficha, después carrito, checkout y pago. En curso |
+| Ola 1, ACC, SRV, STORE, QR | **No lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | Agentes CAT, PROD, STORE, CHK, ACC, SRV, SYS, QR | **No lanzados**, como se pidió |
@@ -187,10 +188,11 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 7 | ~~Formato de precio~~ **Resuelto: `₡6.200` global** | Home, CAT, CHK |
 | 8 | ~~Copy "Solo aparece si ya visitaste productos"~~ **Resuelto: se mantiene "Lo último que miraste"**. Abierto: orden de categorías del Home | HOME |
 | 9 | ~~Columnas fijas o fluidas en el catálogo~~ **Resuelto por CAT con evidencia: fijas de 167** (113 instancias de la tarjeta miden 167x280 en Figma, también en desktop). Ver `CAT_C1_C5.md` | CAT |
-| 10 | PROD quitó "Comprar ahora" (Figma solo tiene Agregar). ¿Vuelve? | PROD |
-| 11 | PROD quitó distintivos de confianza, prueba social y garantía de la ficha. ¿Vuelven? | PROD |
-| 12 | Foto del producto agotado: rectángulo blanco opaco (Figma) o atenuada al 35 % (actual) | PROD |
-| 13 | Stepper de cantidad en variantes y personalizado (Figma lo omite) | PROD |
+| 10 | ~~"Comprar ahora"~~ **Resuelto: se elimina.** El flujo es "Agregar al pedido" -> hoja `45:1607` ("Ver pedido" al carrito, "Seguir comprando" cierra). Sin puente temporal en el toast. La hoja la construye CHK (con el cableado mínimo en la ficha). Ver `PROD_DECISIONES.md` | CHK |
+| 11 | ~~Confianza, prueba social y garantía~~ **Resuelto: fuera de la ficha** (Figma lo respalda). La confianza va en el checkout ("Compra segura", "Pago protegido", compra sin crear cuenta): lo hace CHK | CHK |
+| 12 | ~~Foto del agotado~~ **Resuelto: Figma literal**, rectángulo blanco opaco (`n/0`) cubriendo la foto al 100 %, sin overlay de 35 % ni variante inventada. Se ajustará si el diseñador aclara otra intención | PROD |
+| 13 | ~~Stepper de cantidad~~ **Resuelto: se mantiene en variantes** (los frames `44:*` son parciales); en personalizado se mantiene la omisión (no cabe en la barra) | PROD |
+| 13b | ~~`SocialProofToast`~~ **Resuelto: se desmonta** (inventa compradores al azar, no está en Figma, riesgo Ley 7472). Lo hace SYS y limpia el código muerto asociado | SYS |
 | 14 | Chip "Con stock" (`43:1541`): CAT no lo agregó porque el catálogo filtra por stock por defecto | CAT |
 | 15 | CAT quitó "Compra por marca", el chip de la búsqueda activa y la UI de condición y talla (Figma no los dibuja; `?marcaId=` sigue filtrando). ¿Se acepta? | CAT |
 | 16 | "Deshacer la última" en Descubrí (nuevo, visto en Figma). ¿Se queda? | CAT |
