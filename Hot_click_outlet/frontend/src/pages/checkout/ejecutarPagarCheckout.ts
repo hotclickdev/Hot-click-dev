@@ -72,6 +72,8 @@ type PagarCheckoutDeps = {
   necesitaDireccion: boolean
   notas: string
   direccion: string
+  /** Dirección completa (señas, cantón, provincia) que viaja en las notas del pedido. */
+  direccionPedido?: string
   sinpeEmail: string
   totalFinal: number
   items: ItemCheckout[]
@@ -110,6 +112,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     necesitaDireccion,
     notas,
     direccion,
+    direccionPedido,
     sinpeEmail,
     totalFinal,
     items,
@@ -169,7 +172,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   const notasFull = [
     notas.trim(),
     necesitaDireccion && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
-    necesitaDireccion && direccion ? `Dirección: ${direccion}` : '',
+    necesitaDireccion && direccion ? `Dirección: ${direccionPedido || direccion}` : '',
     metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
     resumenEnvios ? `Envío: ${resumenEnvios}` : '',
   ].filter(Boolean).join(' | ')

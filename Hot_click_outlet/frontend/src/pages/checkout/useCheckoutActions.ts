@@ -21,6 +21,7 @@ type CheckoutActionsDeps = {
   notas: string
   telefono: string
   direccion: string
+  direccionPedido?: string
   guestEmail: string
   guestPhone: string
   sinpeNombre: string
@@ -42,13 +43,13 @@ type CheckoutActionsDeps = {
   validatePhone: (v: string) => string
   validateAddress: (v: string) => string
   validateGuestEmail: (v: string) => string
-  setGcEstado: Dispatch<SetStateAction<string>>
-  setGcSaldo: Dispatch<SetStateAction<number>>
-  setGcCodigo: Dispatch<SetStateAction<string | null>>
-  setCuponEstado: Dispatch<SetStateAction<string>>
-  setCuponError: Dispatch<SetStateAction<string>>
-  setCuponDescuento: Dispatch<SetStateAction<number>>
-  setCuponCodigo: Dispatch<SetStateAction<string | null>>
+  setGcEstado: (value: string) => void
+  setGcSaldo: (value: number) => void
+  setGcCodigo: (value: string | null) => void
+  setCuponEstado: (value: string) => void
+  setCuponError: (value: string) => void
+  setCuponDescuento: (value: number) => void
+  setCuponCodigo: (value: string | null) => void
   setDireccionError: Dispatch<SetStateAction<string>>
   setDireccionDirty: Dispatch<SetStateAction<boolean>>
   setTelefonoError: Dispatch<SetStateAction<string>>
@@ -77,6 +78,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     notas,
     telefono,
     direccion,
+    direccionPedido,
     guestEmail,
     guestPhone,
     sinpeNombre,
@@ -154,7 +156,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       metodoPago, sinpeNombre, sinpeCedula,
       setSinpeNombreErr, setSinpeCedulaErr, telefono,
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
-      notas, direccion, sinpeEmail, totalFinal, items, bodegaRetiro,
+      notas, direccion, direccionPedido, sinpeEmail, totalFinal, items, bodegaRetiro,
       cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago,
     })
   }, [
@@ -181,6 +183,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     necesitaDireccion,
     notas,
     direccion,
+    direccionPedido,
     sinpeEmail,
     totalFinal,
     items,
