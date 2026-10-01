@@ -58,7 +58,7 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
         className="relative mx-auto flex h-[calc(100dvh-90px)] w-full max-w-[480px] flex-col overflow-y-auto rounded-t-[22px] bg-hc-n-0 outline-none"
       >
         <div className="flex flex-col gap-1 px-5 pb-[6px] pt-5">
-          <h2 id={idTitulo} className="font-display text-[18px] font-bold leading-[normal] tracking-normal text-hc-n-900">{t('cookies.preferenciasTitulo')}</h2>
+          <h2 id={idTitulo} className="font-display text-[18px] font-bold leading-[23px] tracking-normal text-hc-n-900">{t('cookies.preferenciasTitulo')}</h2>
           <p className="text-[13px] leading-[18px] text-hc-n-600">{t('cookies.preferenciasSubtitulo')}</p>
         </div>
 
