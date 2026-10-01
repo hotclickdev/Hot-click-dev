@@ -20,7 +20,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, CHK, restauraciones | **Hecho** (`0f017780`). Restaurados: "Vaciar pedido", WhatsApp en el resumen de escritorio, guardar por correo en escritorio, garantía de 40 días e "Imprimir" en el pago exitoso, y el contexto `CARRITO:items:total` al asistente global. NO restaurados: `AICartSection`, `CrossSellGrid`, stepper del carrito, precio unitario, meta de envío gratis en el carrito. Excepción de ownership aditiva en `chatStore` y `ChatModal` |
 | Ola 1, SYS, ajuste por decisiones | **Hecho**, integrado en `base` (`17988771`, commit `1ec97317`): hoja de accesibilidad sin tema ni filtro de color (alto 354, igual a Figma). Cupón `51:2163` pasa a PASS móvil. Nueva diferencia abierta: Figma resalta el tamaño de fuente "A" (medio) por defecto y la app "A−" |
 | Ola 1, PROD, ajuste de la ficha agotada | **Hecho**, integrado en `base` (`d8af873b`) |
-| Ola 1, ACC | **Hecho en la rama `feat/figma/acc`** (commit `cc54c9c6`, sobre `base` `27f87000`; **aún no integrado en `base`**, local, sin push). 18 pantallas: 10 PASS (agent verified) y 8 PARTIAL; ninguna BLOCKED por completo. Cuenta dividida en resumen, opiniones y datos y seguridad; pedidos por paquete; solicitudes dentro de `/servicios`; login y 2FA al estilo de Figma. Ver `ACC.md` |
+| Ola 1, ACC | **Hecho, integrado en `base`** (merge `8cc644fc`, commits `cc54c9c6` y `95328c21` sobre `27f87000`, local, sin push). 18 pantallas: 10 PASS (agent verified) y 8 PARTIAL; ninguna BLOCKED por completo. Cuenta dividida en resumen, opiniones y datos y seguridad; pedidos por paquete; solicitudes dentro de `/servicios`; login y 2FA al estilo de Figma. Ver `ACC.md` |
 | Ola 1, SRV, STORE, QR | **No lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
@@ -36,7 +36,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | `feat/figma/cat` | `.claude/worktrees/cat` | `feat/figma/base` (`ba4a4171`) | CAT | `a2996613`, `579f01a7`, `9881860a` | C1 a C5 y pantallas hechas e integradas en `base` (`1cd7721a`) |
 | `feat/figma/prod` | `.claude/worktrees/prod` | `feat/figma/base` (`1c87c9d3`) | PROD | `c0ecd189`, `80c770e9`, `47536ba1`, `ea0d3b0f` | Hecha e integrada en `base` (`a44632a6`) |
 | `feat/figma/chk` | `.claude/worktrees/chk` | `11af2c0a` (base de PROD) | CHK | 16 commits (`d1451060` a `3c9b4d62`) y `0f017780` | Hecha e integrada en `base` (`cf657e9c`). Working tree limpio |
-| `feat/figma/acc` | `.claude/worktrees/acc` | `feat/figma/base` (`27f87000`) | ACC | `cc54c9c6` y el commit de docs | Hecha. Working tree limpio. Pendiente de que el supervisor la integre en `base` |
+| `feat/figma/acc` | `.claude/worktrees/acc` | `feat/figma/base` (`27f87000`) | ACC | `cc54c9c6` y el commit de docs | Hecha e integrada en `base` (`8cc644fc`). Working tree limpio |
 | `feat/figma/{srv,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
