@@ -1886,7 +1886,7 @@
   "promo": {
     "firstPurchase": "en tu primera compra",
     "title": "¡Bienvenido a HotClick!",
-    "subtitle": "Ingresá tu correo y te enviamos un código de descuento único e intransferible.",
+    "subtitle": "Ingresá tu correo y te enviamos un código único e intransferible para usar al pagar.",
     "emailPlaceholder": "tu@correo.com",
     "getCoupon": "Recibir mi cupón",
     "sending": "Enviando...",
@@ -1894,7 +1894,8 @@
     "successTitle": "¡Revisá tu correo!",
     "successSub": "Te enviamos tu código. Ingresalo en el checkout al hacer tu primera compra.",
     "viewProducts": "Ver productos",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "discount": "13% de descuento"
   },
   "exitIntent": {
     "title": "¿Aún pensando?",
@@ -1905,7 +1906,13 @@
     "more_other": "+{{count}} productos más",
     "total": "Total",
     "checkout": "Finalizar compra",
-    "continue": "Seguir explorando"
+    "continue": "Seguir explorando",
+    "wishTitle": "¡Tus favoritos te esperan!",
+    "wishHas": "Tus favoritos siguen aquí con",
+    "viewWishlist": "Ver mis favoritos",
+    "unit_one": "{{count}} unidad",
+    "unit_other": "{{count}} unidades",
+    "close": "Cerrar"
   },
   "shippingProgress": {
     "achieved": "¡Umbral alcanzado! El costo de envío sigue según el método que elijas.",

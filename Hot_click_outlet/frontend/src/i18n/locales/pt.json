@@ -1886,7 +1886,7 @@
   "promo": {
     "firstPurchase": "na sua primeira compra",
     "title": "Bem-vindo ao HotClick!",
-    "subtitle": "Insira seu e-mail e te enviamos um código de desconto único e intransferível.",
+    "subtitle": "Insira seu e-mail e enviamos um código único e intransferível para usar ao pagar.",
     "emailPlaceholder": "voce@email.com",
     "getCoupon": "Receber meu cupom",
     "sending": "Enviando...",
@@ -1894,7 +1894,8 @@
     "successTitle": "Verifique seu e-mail!",
     "successSub": "Enviamos seu código. Insira-o no checkout na sua primeira compra.",
     "viewProducts": "Ver produtos",
-    "close": "Fechar"
+    "close": "Fechar",
+    "discount": "13% de desconto"
   },
   "exitIntent": {
     "title": "Ainda pensando?",
@@ -1905,7 +1906,13 @@
     "more_other": "+{{count}} produtos a mais",
     "total": "Total",
     "checkout": "Finalizar compra",
-    "continue": "Continuar explorando"
+    "continue": "Continuar explorando",
+    "wishTitle": "Seus favoritos estão esperando!",
+    "wishHas": "Seus favoritos continuam aqui com",
+    "viewWishlist": "Ver meus favoritos",
+    "unit_one": "{{count}} unidade",
+    "unit_other": "{{count}} unidades",
+    "close": "Fechar"
   },
   "shippingProgress": {
     "achieved": "Frete grátis desbloqueado!",
