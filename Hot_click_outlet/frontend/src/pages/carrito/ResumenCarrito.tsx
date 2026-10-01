@@ -14,6 +14,8 @@ type ResumenCarritoProps = {
   total: number
   escritorio: boolean
   onContinuar: () => void
+  /** Carrito de escritorio: "Pedir por WhatsApp" como enlace de texto bajo el botón (función previa; Figma `30:2351` no lo dibuja). */
+  onWhatsApp?: () => void
   /** Descuento del cupón y saldo de gift card ya aplicados (0 si no hay). */
   descuento?: number
   cuponPorcentaje?: number
@@ -40,7 +42,7 @@ function LineaRebaja({ etiqueta, monto, clase }: { etiqueta: string; monto: numb
 
 /** Resumen del pedido: Figma `37:1647` (móvil, dentro del flujo) y `30:2351` (escritorio, columna lateral). */
 export default function ResumenCarrito({
-  paquetes, unidades, subtotal, envio, total, escritorio, onContinuar,
+  paquetes, unidades, subtotal, envio, total, escritorio, onContinuar, onWhatsApp,
   descuento = 0, cuponPorcentaje = 0, giftCard = 0, codigosEscritorio, textoBoton, consentimiento, botonDeshabilitado, envioVaria = false,
 }: ResumenCarritoProps) {
   const { t } = useTranslation()
@@ -99,6 +101,12 @@ export default function ResumenCarrito({
         <button type="button" onClick={onContinuar} disabled={botonDeshabilitado} className="flex items-center justify-center rounded-[12px] bg-hc-red-500 px-[18px] py-[14px] text-[15px] font-semibold text-hc-n-0 disabled:cursor-not-allowed disabled:opacity-50">
           {textoBoton ?? t('cart.continuar')}
         </button>
+        {onWhatsApp && (
+          <button type="button" onClick={onWhatsApp} className="flex items-center justify-center gap-[6px] text-[13px] font-medium text-hc-n-600 hover:text-hc-n-900">
+            <img src={ICONOS_CHECKOUT.whatsapp} alt="" width={14} height={14} />
+            {t('cart.whatsapp')}
+          </button>
+        )}
         <p className="text-[11px] leading-[15px] text-hc-n-500">{t('cart.notaResumenEscritorio')}</p>
         <p className="flex items-center justify-center gap-[6px] text-[12px] text-hc-n-500">
           <IconoFigma src={ICONOS_CHECKOUT.pagoProtegido} size={14} className="text-hc-success" />

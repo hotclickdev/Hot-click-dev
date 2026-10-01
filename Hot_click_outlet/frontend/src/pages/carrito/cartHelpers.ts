@@ -35,6 +35,12 @@ export function urlWhatsApp(textoEncoded: string, numero = WHATSAPP_HOTCLICK): s
   return `https://wa.me/${numero}?text=${textoEncoded}`
 }
 
+/** Contexto del carrito para el asistente global: `CARRITO:items:total` (mismo formato del antiguo AICartSection). */
+export function contextoCarrito(items: { nombre: string; cantidad: number }[], total: number): string {
+  const resumen = items.map((i) => `${i.nombre} x${i.cantidad}`).join(', ').slice(0, 200)
+  return `CARRITO:${resumen}:${total}`
+}
+
 export function emailCarritoYaCapturado(): boolean {
   return Boolean(localStorage.getItem(KEY_EMAIL_CARRITO))
 }

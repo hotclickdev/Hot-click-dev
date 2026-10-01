@@ -118,3 +118,29 @@ Spec: `tests/pdp-agregar-hoja.spec.ts`.
 - Backend/datos: provincia y si la bodega está en el GAM (línea "Sale de X" y envío normal por origen); `tokenSeguimiento` en el estado del pago; comisión y paquete N de M por pedido; `stock` en el carrito abandonado.
 - Namespace nuevo `despacho` (i18n) y `checkout.f`, `payment.exito/fallo/revision/sinpe` dentro de los namespaces de CHK; para `COMPONENT_OWNERSHIP.md`.
 - Rutas nuevas: ninguna. `AppRoutes.tsx` sin cambios.
+
+## Restauraciones de funcionalidad (decisión del usuario, 1-oct-2026)
+
+Regla: Figma manda el diseño; el código anterior manda la funcionalidad que Figma no elimina de forma explícita. Se restauró sin mover ningún frame dibujado. Estado: `agent verified`, sin QA independiente.
+
+| Función | Dónde queda | Referencia visual |
+| --- | --- | --- |
+| "Vaciar pedido" | Enlace de texto (12 px, gris) al final de la fila "Tu pedido llega en N paquetes", móvil y escritorio (`CartPage`) | Sin frame: Figma `28:989`, `30:2268` no lo dibujan ni lo eliminan |
+| "Pedir por WhatsApp" en escritorio | Enlace de texto bajo "Continuar compra" en `ResumenCarrito` (prop `onWhatsApp`) | Sin frame desktop. En móvil sigue en el pie fijo (`51:1997`) |
+| Guardar por correo en escritorio | `GuardarPorCorreo` al final de la columna de productos | **Posición sin referencia visual desktop en Figma** (`52:2178` es solo móvil). Misma regla: se oculta si ya hay correo capturado o hay sesión |
+| Garantía de 40 días | Bloque de texto bajo los botones de `PagoExito` (claves `payment.exito.garantia` y `garantiaAyuda`, es/en/pt) | Sin frame: `29:1932` no la dibuja. Coincide con la política de `InformacionPage` (hasta 40 días por defectos) |
+| "Imprimir" | Enlace de texto bajo la garantía (`globalThis.print()`, clave `payment.print`) | Sin frame |
+| Contexto del carrito al asistente | `AsistentePedido` abre el chat global con `CARRITO:items:total` (`contextoCarrito` en `cartHelpers`) | `52:2223` no cambia. El panel `AICartSection` NO se restauró |
+
+Excepción de ownership (aditiva): `store/chatStore.ts` (campo `contexto`, segundo argumento opcional de `open`, se limpia en `close`) y `components/ai/ChatModal.tsx` (usa `contexto ?? 'GENERAL'`). Sin ese cambio el chat fija `GENERAL`. Nada más cambió en esos archivos.
+
+Discrepancias exactas con Figma introducidas por las restauraciones:
+- Carrito escritorio `30:2351`: el resumen mide 551 px contra 521 de Figma; los 30 px son el enlace "Pedir por WhatsApp" bajo el botón (pedido por el usuario). El resto de medidas del resumen no cambió.
+- Carrito escritorio `30:2268`: la tarjeta de correo agrega un bloque no dibujado al final de la columna de productos.
+- Pago exitoso `29:1932`: el bloque garantía/Imprimir empuja hacia abajo la tarjeta "Guardá este pedido en tu cuenta" unos 55 px; lo de arriba no se mueve.
+
+Se mantienen eliminados, con respaldo en Figma: `CrossSellGrid`, stepper del carrito, precio unitario visible, meta de envío gratis de ₡15.000 en el carrito (sigue en el mini carrito de SHELL), "Seguir comprando" como botón del resumen (sí existe en `29:1986`).
+
+Problema previo detectado, fuera de CHK (CAT, asistente global): `ChatModal` limpia `pendingMessage` al abrir y eso cancela el temporizador de `autoQuery` de `AIChat`, así que la pregunta con la que se abre el asistente no se envía sola (también falla `asistente-checkout.spec.ts`). El contexto sí viaja con cualquier mensaje que se escriba en el chat abierto (`tests/chk-restauraciones.spec.ts`).
+
+Verificación: `tsc --noEmit` limpio; vitest 87 archivos / 403 tests; eslint limpio sobre lo tocado; e2e `cart-cta`, `checkout-cta`, `pdp-agregar-hoja`, `visitante-compra`, `pago-loading` y `chk-restauraciones` en verde (31); `vite build` OK.

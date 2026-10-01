@@ -35,6 +35,7 @@ export default function ChatModal() {
   const { pathname } = useLocation()
   const isOpen = useChatStore(s => s.isOpen)
   const pendingMessage = useChatStore(s => s.pendingMessage)
+  const contexto = useChatStore(s => s.contexto)
   const resetCount = useChatStore(s => s.resetCount)
   const close = useChatStore(s => s.close)
   const clearPending = useChatStore(s => s.clearPending)
@@ -119,7 +120,7 @@ export default function ChatModal() {
             />
             <div className="min-h-0 flex-1 overflow-hidden">
               <AIChat
-                context="GENERAL"
+                context={contexto ?? 'GENERAL'}
                 sessionKey={sessionKey}
                 chips={chips}
                 placeholder={t('chat.placeholder')}

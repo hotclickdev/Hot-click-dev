@@ -13,11 +13,13 @@ export type ChatMensaje = {
 type ChatState = {
   isOpen: boolean
   pendingMessage: string | null
+  /** Contexto opcional que la pantalla de origen manda al asistente (p. ej. `CARRITO:...`); null = GENERAL. */
+  contexto: string | null
   mensajes: ChatMensaje[]
   sesionId: string | null
   lastActivity: number | null
   resetCount: number
-  open: (message?: string | null) => void
+  open: (message?: string | null, contexto?: string | null) => void
   close: () => void
   clearPending: () => void
   setMensajes: (updater: ChatMensaje[] | ((current: ChatMensaje[]) => ChatMensaje[])) => void
@@ -49,14 +51,15 @@ function clearChatStorageKeys() {
 const useChatStore = create<ChatState>((set, get) => ({
   isOpen: false,
   pendingMessage: null,
+  contexto: null,
 
   mensajes: [],
   sesionId: null,
   lastActivity: null,
   resetCount: 0,
 
-  open: (message = null) => set({ isOpen: true, pendingMessage: message }),
-  close: () => set({ isOpen: false }),
+  open: (message = null, contexto = null) => set({ isOpen: true, pendingMessage: message, contexto: typeof contexto === 'string' ? contexto : null }),
+  close: () => set({ isOpen: false, contexto: null }),
   clearPending: () => set({ pendingMessage: null }),
 
   setMensajes: (updater) => {

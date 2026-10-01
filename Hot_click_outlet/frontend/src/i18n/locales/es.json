@@ -1405,6 +1405,8 @@
       "paquetesTitulo_other": "Tu pedido {{pedido}} llega en {{count}} paquetes",
       "preparando": "Preparando",
       "avisoGuias": "Te avisamos con la guía de cada paquete por correo y WhatsApp.",
+      "garantia": "Tu garantía de 40 días está activa",
+      "garantiaAyuda": "Si tenés cualquier problema, escribinos por WhatsApp.",
       "verPedido": "Ver mi pedido",
       "guardarTitulo": "Guardá este pedido en tu cuenta",
       "guardarTexto": "Con un toque creamos tu cuenta con este correo: seguís el envío, repetís compras y guardás favoritos.",

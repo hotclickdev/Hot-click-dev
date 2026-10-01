@@ -95,6 +95,15 @@ export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoPr
         <BotonPago to="/productos" variante={rutaPedido ? 'secundario' : 'primario'}>{t('checkout.continueShopping')}</BotonPago>
       </div>
 
+      {/* Funciones previas que Figma `29:1932` no dibuja ni elimina: garantía de 40 días (política de InformacionPage) e imprimir. */}
+      <div className="flex flex-col items-center gap-1 px-4 pb-3 pt-1 text-center leading-[normal]">
+        <p className="text-[13px] font-semibold text-hc-success">{t('payment.exito.garantia')}</p>
+        <p className="text-[12px] text-hc-n-500">{t('payment.exito.garantiaAyuda')}</p>
+        <button type="button" onClick={() => globalThis.print()} className="mt-1 text-[13px] font-medium text-hc-n-600 underline-offset-2 hover:underline">
+          {t('payment.print')}
+        </button>
+      </div>
+
       {!token && (
         <section className="px-4 pb-6 pt-[6px]">
           <div className="flex flex-col gap-[10px] rounded-[16px] bg-hc-blue-50 p-4 leading-[normal]">

@@ -30,6 +30,7 @@ import {
   FALLBACK_CATALOGO_SIZE,
   emailCarritoYaCapturado,
   guardarEmailCarritoLocal,
+  contextoCarrito,
   listaProductosDesdeRespuesta,
   paquetesDelCarrito,
   sugerenciaDeLaTienda,
@@ -51,6 +52,7 @@ async function cargarSugerencias(): Promise<Producto[]> {
 export default function CartPage() {
   const items = useCartStore((s) => s.items)
   const removeItem = useCartStore((s) => s.removeItem)
+  const clearCart = useCartStore((s) => s.clearCart)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
   const total = useCartStore((s) => s.total)
   const toWhatsAppMessage = useCartStore((s) => s.toWhatsAppMessage)
@@ -130,6 +132,16 @@ export default function CartPage() {
     removeItem(item.id as Id, item.cartLineId)
   }
 
+  function vaciarPedido() {
+    clearCart()
+    toast({ message: t('cart.cleared'), type: 'info' })
+  }
+
+  /** El asistente global recibe el contexto del carrito (`CARRITO:items:total`) sin volver al panel antiguo. */
+  function preguntarAlAsistente(texto: string) {
+    abrirChat(texto, contextoCarrito(items, subtotal))
+  }
+
   function abrirWhatsAppPedido() {
     if (items.length === 0) return
     globalThis.open(urlWhatsApp(toWhatsAppMessage()), '_blank')
@@ -145,6 +157,15 @@ export default function CartPage() {
     )
   }
 
+  const mostrarGuardarCorreo = !token && (!correoYaCapturado || correoGuardado)
+  const guardarPorCorreo = mostrarGuardarCorreo
+    ? <GuardarPorCorreo correo={correo} guardado={correoGuardado} onCambiar={setCorreo} onGuardar={guardarCorreo} />
+    : null
+  const botonVaciar = (
+    <button type="button" onClick={vaciarPedido} className="shrink-0 text-[12px] font-medium leading-[normal] text-hc-n-500 underline-offset-2 hover:underline">
+      {t('cart.clear')}
+    </button>
+  )
   const emprendimientos = cantidadEmprendimientos(items)
   const tarjetas = paquetes.map((paquete, indice) => (
     <PaqueteCarritoTarjeta
@@ -170,10 +191,13 @@ export default function CartPage() {
               <div className="flex items-center gap-[10px] leading-[normal]">
                 <IconoFigma src={ICONOS_CHECKOUT.paquetesCamion} size={22} className="text-hc-blue-600" />
                 <h2 className="font-display text-[18px] font-bold tracking-normal text-hc-n-900">{t('cart.paquetes', { count: paquetes.length })}</h2>
+                <span className="ml-auto">{botonVaciar}</span>
               </div>
               <AvisoVariosEmprendimientos cantidadNegocios={emprendimientos} />
               <p className="text-[13px] leading-[normal] text-hc-n-600">{t('cart.paquetesNotaEscritorio')}</p>
               {tarjetas}
+              {/* Sin frame desktop en Figma para esta tarjeta: se conserva la función (recuperar carrito) en la columna de productos. */}
+              {guardarPorCorreo}
             </div>
             <ResumenCarrito
               paquetes={paquetes}
@@ -183,6 +207,7 @@ export default function CartPage() {
               total={totalEstimado}
               escritorio
               onContinuar={continuar}
+              onWhatsApp={abrirWhatsAppPedido}
               descuento={descuento}
               cuponPorcentaje={codigos.cuponDescuento}
               giftCard={giftCard}
@@ -201,6 +226,7 @@ export default function CartPage() {
           <div className="flex items-center gap-2 leading-[normal]">
             <IconoFigma src={ICONOS_CHECKOUT.paquetesCamion} size={20} className="text-hc-blue-600" />
             <h2 className="min-w-0 flex-1 font-display text-[16px] font-bold tracking-normal text-hc-n-900">{t('cart.paquetes', { count: paquetes.length })}</h2>
+            {botonVaciar}
           </div>
           <p className="text-[12px] leading-4 text-hc-n-600">{t('cart.paquetesNota')}</p>
           <AvisoVariosEmprendimientos cantidadNegocios={emprendimientos} />
@@ -220,8 +246,8 @@ export default function CartPage() {
           cuponPorcentaje={codigos.cuponDescuento}
           giftCard={giftCard}
         />
-        {!token && (!correoYaCapturado || correoGuardado) && <GuardarPorCorreo correo={correo} guardado={correoGuardado} onCambiar={setCorreo} onGuardar={guardarCorreo} />}
-        <AsistentePedido onPreguntar={abrirChat} />
+        {guardarPorCorreo}
+        <AsistentePedido onPreguntar={preguntarAlAsistente} />
       </div>
       <PieCarritoMovil total={totalEstimado} onContinuar={continuar} onWhatsApp={abrirWhatsAppPedido} />
     </MainLayout>

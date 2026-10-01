@@ -1405,6 +1405,8 @@
       "paquetesTitulo_other": "Your order {{pedido}} arrives in {{count}} packages",
       "preparando": "Preparing",
       "avisoGuias": "We will send you the tracking number of each package by email and WhatsApp.",
+      "garantia": "Your 40-day warranty is active",
+      "garantiaAyuda": "If you have any problem, write to us on WhatsApp.",
       "verPedido": "View my order",
       "guardarTitulo": "Save this order in your account",
       "guardarTexto": "With one tap we create your account with this email: follow the shipment, buy again and save favorites.",
