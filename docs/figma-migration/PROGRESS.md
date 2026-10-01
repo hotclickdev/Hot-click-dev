@@ -198,7 +198,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 
 ## Riesgos abiertos
 
-- **PASS sin QA independiente:** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
+- **PASS sin QA independiente (se documentan como `PASS — agent verified`):** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
 - **e2e de Playwright sin arreglar:** fallan `catalogo-iconos` ("Ver más"), `pdp-comprar-ahora` y los que leen archivos borrados por otros agentes (`AdminConvenios`, `NavbarMobileCategorias`, `ShippingSection`, `navbarIcons`) o buscan el botón "Menú" del header anterior. Hay que decidir quién los arregla.
 - **Lint previo:** quedan errores de eslint que ya existían en `AIChat`, `SearchPanel`, `useSearchPanel`, `DescubriPage:135` y `utils/gustos.ts:120` (regla de refs durante render), más 88 en `src/pages` fuera de lo tocado.
 - **Dependencias hacia SHELL:** `MainLayout` manda "buscar con foto" a `/servicios` aunque `/buscar/foto` existe; el header desktop no muestra la búsqueda actual (Figma `30:1824` sí); la barra inferior marca "Buscar" en `/productos?cat=` y Figma `43:1530` marca "Categorías"; `BarraInterna` pinta el título como `<p>`.
