@@ -1801,6 +1801,7 @@
     "photoSimilar": "Parecidos en HotClick",
     "photoNone": "No encontramos productos parecidos. Probá con otra foto o preguntale al asistente.",
     "photoVerySimilar": "Muy parecido",
+    "photoSameCategory": "Misma categoría",
     "photoRelated": "Relacionado"
   },
   "authPrompt": {
