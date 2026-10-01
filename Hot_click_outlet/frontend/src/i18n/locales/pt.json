@@ -1393,7 +1393,23 @@
     "retrying": "Tentando novamente…",
     "retryUnavailable": "Não foi possível retomar o pagamento",
     "changeMethod": "Trocar método",
-    "home": "Ir para o início"
+    "home": "Ir para o início",
+    "exito": {
+      "titulo": "Pronto, {{nombre}}! Recebemos o seu pedido",
+      "tituloSinNombre": "Pronto! Recebemos o seu pedido",
+      "pedido": "Pedido",
+      "copiar": "Copiar número do pedido",
+      "copiado": "Copiado",
+      "comprobante": "Enviamos o comprovante para {{correo}}",
+      "paquetesTitulo_one": "Seu pedido {{pedido}} chega em {{count}} pacote",
+      "paquetesTitulo_other": "Seu pedido {{pedido}} chega em {{count}} pacotes",
+      "preparando": "Preparando",
+      "avisoGuias": "Avisamos com o rastreio de cada pacote por e-mail e WhatsApp.",
+      "verPedido": "Ver meu pedido",
+      "guardarTitulo": "Guarde este pedido na sua conta",
+      "guardarTexto": "Com um toque criamos sua conta com este e-mail: acompanhe o envio, repita compras e guarde favoritos.",
+      "guardarBoton": "Criar minha conta com um toque"
+    }
   },
   "nosotros": {
     "title": "Sobre nós",

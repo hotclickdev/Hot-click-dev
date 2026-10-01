@@ -16,6 +16,8 @@ export type PagoResumen = {
   cardLast4?: string
   cardBrand?: string
   proveedor?: string
+  /** Token del seguimiento sin cuenta (/seguimiento/:token), si el backend lo devuelve. */
+  tokenSeguimiento?: string
 }
 
 export function esStripeAprobado(redirectStatus: string | null): boolean {

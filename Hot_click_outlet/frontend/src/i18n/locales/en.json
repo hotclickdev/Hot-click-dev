@@ -1393,7 +1393,23 @@
     "retrying": "Retrying…",
     "retryUnavailable": "Could not retry payment. Return to checkout.",
     "changeMethod": "Change method",
-    "home": "Go to home"
+    "home": "Go to home",
+    "exito": {
+      "titulo": "All set, {{nombre}}! We received your order",
+      "tituloSinNombre": "All set! We received your order",
+      "pedido": "Order",
+      "copiar": "Copy order number",
+      "copiado": "Copied",
+      "comprobante": "We sent the receipt to {{correo}}",
+      "paquetesTitulo_one": "Your order {{pedido}} arrives in {{count}} package",
+      "paquetesTitulo_other": "Your order {{pedido}} arrives in {{count}} packages",
+      "preparando": "Preparing",
+      "avisoGuias": "We will send you the tracking number of each package by email and WhatsApp.",
+      "verPedido": "View my order",
+      "guardarTitulo": "Save this order in your account",
+      "guardarTexto": "With one tap we create your account with this email: follow the shipment, buy again and save favorites.",
+      "guardarBoton": "Create my account in one tap"
+    }
   },
   "nosotros": {
     "title": "About us",

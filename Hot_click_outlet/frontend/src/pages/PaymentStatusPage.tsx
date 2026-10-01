@@ -39,7 +39,11 @@ export default function PaymentStatusPage() {
     limpiarRetornoPagoVisitante()
   }, [destinoVisitante])
 
-  useEffect(() => () => stopPolling(), [stopPolling])
+  useEffect(() => () => {
+    stopPolling()
+    // En StrictMode el efecto se monta dos veces: sin reiniciar la marca, el segundo montaje no volvería a consultar el pago.
+    ran.current = false
+  }, [stopPolling])
 
   useEffect(() => {
     globalThis.scrollTo({ top: 0, behavior: 'instant' })
