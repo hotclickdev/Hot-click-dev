@@ -17,7 +17,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, PROD | **Hecho**, integrado en `base` (`a44632a6`). 4 commits en `feat/figma/prod`. Galería PASS; 5 fichas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
 | Ola 1, SYS | **Hecho**, integrado en `base` (`0536ef45`). 10 pantallas: 7 PASS (agent verified) y 3 PARTIAL. FAB y WhatsApp resueltos sin tocar SHELL ni PROD; `SocialProofToast` desmontado. Ver `SYS.md` |
 | Ola 1, CHK | **Relanzado** (agente nuevo, 2026-09-30) sobre la misma rama `feat/figma/chk`, conservando los 19 cambios sin commitear (auditados: compilan, ownership correcto). Primero verifica 5 eliminaciones (`AbandonedEmailPrompt`, `CartItemRow`, `CartSummary`, `CrossSellGrid`, `AICartSection`), luego carrito, checkout, pago y el resto. 1 commit hasta ahora (`d1451060`, hoja `45:1607`). En curso. Ver `CHK.md` |
-| Ola 1, SYS, ajuste por decisiones | **En curso**: sacar el filtro de color/visión y el selector de tema de la hoja del comprador (rama `feat/figma/sys`) |
+| Ola 1, SYS, ajuste por decisiones | **Hecho**, integrado en `base` (`17988771`, commit `1ec97317`): hoja de accesibilidad sin tema ni filtro de color (alto 354, igual a Figma). Cupón `51:2163` pasa a PASS móvil. Nueva diferencia abierta: Figma resalta el tamaño de fuente "A" (medio) por defecto y la app "A−" |
 | Ola 1, PROD, ajuste de la ficha agotada | **Hecho**, integrado en `base` (`d8af873b`) |
 | Ola 1, ACC, SRV, STORE, QR | **No lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
@@ -205,6 +205,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 20 | ~~Campo de correo del cupón~~ **Resuelto: se mantiene 42 px** (el frame de 26 px está comprimido: única diferencia entre 5 campos iguales) | SYS |
 | 21 | ~~WhatsApp desktop~~ **Resuelto: abajo a la derecha, margen 16 px** (nota `52:2422`). **Cookies desktop: `REQUIRES_DESIGN_REFERENCE`**: se mantiene temporalmente la tarjeta abajo a la izquierda (SYS la cambió de la banda centrada anterior sin respaldo en Figma); no es PASS ni está respaldada por Figma hasta que exista frame desktop | SYS |
 | 22 | ~~Desktop tras "Agregar"~~ **Resuelto provisional: se mantiene el toast "Añadido"**. No se implementa la hoja `45:1607` en desktop por analogía (Figma solo la enlaza desde la ficha móvil). **`REQUIRES_DESIGN_REFERENCE`**: falta referencia o interacción desktop; no es PASS definitivo en desktop | CHK |
+| 24 | Tamaño de fuente por defecto en la hoja de accesibilidad (`51:2229`): Figma resalta "A" (el del medio) y la app resalta "A−" porque el valor por defecto del store es el menor. Arreglarlo exige un tamaño nuevo o reetiquetar | SYS |
 | 23 | ~~Aviso de envío del primer producto de un negocio~~ **Resuelto: se mantiene omitido**; se muestra solo cuando ya hay otro producto del mismo negocio (el caso dibujado en Figma) | CHK |
 
 ## Riesgos abiertos
