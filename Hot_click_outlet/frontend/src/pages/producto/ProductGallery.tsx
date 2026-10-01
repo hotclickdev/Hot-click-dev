@@ -28,11 +28,14 @@ type ProductGalleryProps = {
    * variantes, personalizada y agotada). Sin esto: 390 px con indicador de puntos (28:839).
    */
   compacta?: boolean
-  /** Ficha agotada: la foto se muestra atenuada. */
-  atenuada?: boolean
+  /**
+   * Ficha agotada móvil (Figma 44:1919): rectángulo blanco opaco de 390x360 sobre la foto, por
+   * debajo de los botones y del contador. Desktop no tiene frame de agotado y muestra la foto.
+   */
+  cubierta?: boolean
 }
 
-export default function ProductGallery({ product, galeria, activeImg, onSelectImg, compacta = false, atenuada = false }: ProductGalleryProps) {
+export default function ProductGallery({ product, galeria, activeImg, onSelectImg, compacta = false, cubierta = false }: ProductGalleryProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const toast = useToast()
@@ -115,7 +118,7 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
           type="button"
           onClick={() => galeria[activeImg] && setFullscreenOpen(true)}
           aria-label={t('product.galeriaAbrir')}
-          className={`absolute inset-0 cursor-zoom-in ${atenuada ? 'opacity-35' : ''}`}
+          className="absolute inset-0 cursor-zoom-in"
         >
           {galeria[activeImg] ? (
             <OptimizedImage
@@ -133,6 +136,8 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
             </span>
           )}
         </button>
+
+        {cubierta && <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-hc-n-0 lg:hidden" />}
 
         <div
           className={`absolute inset-x-4 flex items-center justify-between lg:hidden ${compacta ? 'top-3' : 'top-4'}`}

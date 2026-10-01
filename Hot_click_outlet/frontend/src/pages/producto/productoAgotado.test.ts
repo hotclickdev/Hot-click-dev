@@ -68,6 +68,13 @@ describe('ficha agotada · componentes', () => {
     expect(info).toContain('{!agotado && (')
   })
 
+  it('la galería agotada cubre la foto con el rectángulo blanco opaco de Figma 44:1919 (sin atenuado)', () => {
+    const galeria = readFileSync(resolve(aqui, 'ProductGallery.tsx'), 'utf8')
+    expect(galeria).toContain('cubierta')
+    expect(galeria).toMatch(/absolute inset-0 bg-hc-n-0 lg:hidden/)
+    expect(galeria).not.toContain('opacity-35')
+  })
+
   it('el aviso de reposición no usa colores hardcodeados ni textos por defecto', () => {
     const form = readFileSync(resolve(aqui, 'FormularioAvisoReposicion.tsx'), 'utf8')
     expect(form).not.toMatch(/#[0-9a-fA-F]{3,6}\b/)
