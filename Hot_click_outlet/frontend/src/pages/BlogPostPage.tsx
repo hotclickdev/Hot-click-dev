@@ -1,28 +1,29 @@
-import { useState, useEffect, type MouseEvent } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import DOMPurify from 'dompurify'
 import MainLayout from '@/layouts/MainLayout'
+import Spinner from '@/components/ui/Spinner'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import { useToast } from '@/components/ui/Toast'
 import { blogService } from '@/services/blogService'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import TextoFlecha from '@/components/ui/TextoFlecha'
-import type { EntradaBlog } from './BlogPage'
+import { IcoBandeja } from './perfil/cuenta/iconosCuenta'
+import { IcoSrv } from './servicios/IcoSrv'
+import { enlacesCompartir, entradaDeRespuesta, fechaEntrada, minutosDeLectura, type EntradaBlog } from './blog/blogHelpers'
 
 const SITE_URL = 'https://hotclick.lat'
 
-function fmtDate(d: string | number | Date | null | undefined) {
-  if (!d) return ''
-  return new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' })
-}
+/** Texto del artículo (Figma `54:2240`): párrafos de 15/23 y subtítulos en Sora. El HTML viene del editor del admin. */
+const CLASE_CUERPO = [
+  'text-[15px] leading-[23px] text-hc-n-900 [overflow-wrap:anywhere]',
+  '[&_p]:mb-3 [&_h2]:mb-3 [&_h2]:[text-wrap:wrap] [&_h3]:[text-wrap:wrap] [&_h2]:font-display [&_h2]:text-[17px] [&_h2]:font-bold [&_h2]:leading-[22px]',
+  '[&_h3]:mb-3 [&_h3]:font-display [&_h3]:text-[16px] [&_h3]:font-bold [&_h3]:leading-[22px]',
+  '[&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5',
+  '[&_a]:font-medium [&_a]:text-hc-blue-600 [&_a]:underline [&_img]:my-3 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[12px]',
+  '[&_blockquote]:mb-3 [&_blockquote]:border-l-2 [&_blockquote]:border-hc-n-200 [&_blockquote]:pl-3 [&_blockquote]:text-hc-n-600',
+].join(' ')
 
-function extraerPost(data: unknown): EntradaBlog | null {
-  if (data && typeof data === 'object' && 'data' in data) {
-    const inner = (data as { data: unknown }).data
-    if (inner && typeof inner === 'object') return inner as EntradaBlog
-  }
-  return null
-}
+const CHIP = 'rounded-full border border-hc-n-200 bg-hc-n-0 px-[14px] py-2 text-[13px] font-medium text-hc-n-900'
 
 function buildBlogPostingJsonLd(post: EntradaBlog) {
   return {
@@ -60,9 +61,10 @@ function buildBlogPostingJsonLd(post: EntradaBlog) {
   }
 }
 
+/** Artículo del blog (Figma `54:2219`). Los productos del artículo y el autor propio necesitan backend (ver docs). */
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
+  const toast = useToast()
   const [post, setPost] = useState<EntradaBlog | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -72,36 +74,35 @@ export default function BlogPostPage() {
     setLoading(true) // eslint-disable-line react-hooks/set-state-in-effect -- reset al cambiar slug
     setNotFound(false)
     blogService.getPublico(slug)
-      .then(r => setPost(extraerPost(r.data)))
+      .then(r => setPost(entradaDeRespuesta(r.data)))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
   }, [slug])
 
   if (loading) {
     return (
-      <MainLayout>
-        <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--hc-bg)' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--hc-border)', borderTopColor: 'var(--hc-accent)', animation: 'spin 0.8s linear infinite' }} />
-        </div>
+      <MainLayout variante="interna" titulo="Blog" atras="/blog">
+        <div className="flex justify-center py-32"><Spinner /></div>
       </MainLayout>
     )
   }
 
   if (notFound || !post) {
     return (
-      <MainLayout>
+      <MainLayout variante="interna" titulo="Blog" atras="/blog">
         <Helmet>
           <title>Artículo no encontrado | Blog HotClick</title>
           <meta name="robots" content="noindex, follow" />
         </Helmet>
-        <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'var(--hc-bg)' }}>
-          <span style={{ color: 'var(--hc-muted)', opacity: 0.45 }}>
-            <TrustGlyph tipo="lista" className="w-16 h-16" />
-          </span>
-          <h1 style={{ color: 'var(--hc-text)', fontSize: 24, fontWeight: 700 }}>Artículo no encontrado</h1>
-          <Link to="/blog" style={{ color: 'var(--hc-accent)', fontWeight: 600 }}>
-            <TextoFlecha dir="atras">Volver al blog</TextoFlecha>
-          </Link>
+        <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-123px)]">
+          <EstadoVacio
+            nivel="h1"
+            tono="azul"
+            espaciado="cuenta"
+            icono={<IcoBandeja size={28} />}
+            titulo="Artículo no encontrado"
+            accion={{ texto: 'Volver al blog', to: '/blog' }}
+          />
         </div>
       </MainLayout>
     )
@@ -111,9 +112,40 @@ export default function BlogPostPage() {
   const seoDesc = post.resumen || post.titulo
   const seoImage = post.imagenUrl || `${SITE_URL}/og-image.png`
   const canonicalUrl = `${SITE_URL}/blog/${post.slug || post.id}`
+  const minutos = minutosDeLectura(post.contenido)
+  const enlaces = enlacesCompartir(canonicalUrl, post.titulo ?? 'Blog HotClick')
+
+  const copiarEnlace = async () => {
+    try {
+      await navigator.clipboard.writeText(canonicalUrl)
+      toast({ message: 'Enlace copiado', type: 'success' })
+    } catch {
+      toast({ message: 'No se pudo copiar el enlace', type: 'error' })
+    }
+  }
+
+  /** Hoja de compartir del sistema si existe; si no, copia el enlace. */
+  const compartir = async () => {
+    if (typeof navigator.share === 'function') {
+      try { await navigator.share({ title: post.titulo, url: canonicalUrl }) } catch { /* el usuario cerró la hoja */ }
+      return
+    }
+    await copiarEnlace()
+  }
+
+  const botonCompartir = (
+    <button
+      type="button"
+      onClick={() => void compartir()}
+      aria-label="Compartir artículo"
+      className="relative flex size-5 items-center justify-center before:absolute before:-inset-[10px] before:content-['']"
+    >
+      <IcoSrv nombre="blogCompartir" size={20} />
+    </button>
+  )
 
   return (
-    <MainLayout>
+    <MainLayout variante="interna" titulo="Blog" atras="/blog" acciones={botonCompartir}>
       <Helmet>
         <title>{seoTitle}</title>
         <meta name="description" content={seoDesc} />
@@ -140,80 +172,41 @@ export default function BlogPostPage() {
         </script>
       </Helmet>
 
-      <article style={{ minHeight: '70vh', background: 'var(--hc-bg)' }}>
-        {/* Hero imagen */}
+      <article className="flex flex-col bg-hc-n-0 leading-[normal] lg:mx-auto lg:w-full lg:max-w-[720px]">
         {post.imagenUrl && (
-          <div style={{ width: '100%', maxHeight: 440, overflow: 'hidden' }}>
-            <img
-              src={post.imagenUrl}
-              alt={post.titulo}
-              style={{ width: '100%', height: 440, objectFit: 'cover' }}
-              fetchPriority="high"
-              loading="eager"
-            />
-          </div>
+          <img src={post.imagenUrl} alt={post.titulo} className="h-[220px] w-full object-cover lg:h-[320px]" fetchPriority="high" loading="eager" />
         )}
 
-        <div className="max-w-3xl mx-auto px-5 sm:px-8" style={{ paddingTop: 40, paddingBottom: 80 }}>
-          {/* Breadcrumb */}
+        <header className="flex flex-col gap-2 px-4 pb-2 pt-[18px]">
           <nav aria-label="Ruta de navegación">
-            <ol className="flex items-center gap-2 text-sm mb-6 list-none p-0 m-0" style={{ color: 'var(--hc-muted)' }}>
-              <li><a href="/" onClick={(e: MouseEvent<HTMLAnchorElement>) => { e.preventDefault(); navigate('/') }} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>HotClick</a></li>
-              <li><span aria-hidden="true">/</span></li>
-              <li><a href="/blog" onClick={(e: MouseEvent<HTMLAnchorElement>) => { e.preventDefault(); navigate('/blog') }} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Blog</a></li>
-              <li><span aria-hidden="true">/</span></li>
-              <li aria-current="page" className="truncate max-w-xs" style={{ color: 'var(--hc-text)' }}>{post.titulo}</li>
+            <ol className="m-0 flex list-none items-center gap-1 p-0 text-[11px] text-hc-n-500">
+              <li><Link to="/">Inicio</Link></li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page"><Link to="/blog">Blog</Link></li>
             </ol>
           </nav>
+          <h1 className="font-display text-[24px] font-extrabold leading-[30px] text-hc-n-900 [overflow-wrap:anywhere] [text-wrap:wrap]">{post.titulo}</h1>
+          <p className="flex flex-wrap items-center gap-2 text-[12px]">
+            <span className="font-semibold text-hc-n-600">Por HotClick</span>
+            <span className="text-hc-n-500">{[fechaEntrada(post), minutos ? `${minutos} min` : ''].filter(Boolean).join(' · ')}</span>
+          </p>
+        </header>
 
-          {/* Cabecera */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <p style={{ fontSize: 12, color: 'var(--hc-accent)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Blog HotClick
-            </p>
-            <h1 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 900, color: 'var(--hc-text)', lineHeight: 1.2, margin: '0 0 16px' }}>
-              {post.titulo}
-            </h1>
-            {post.resumen && (
-              <p style={{ fontSize: 18, color: 'var(--hc-muted)', lineHeight: 1.6, marginBottom: 24 }}>
-                {post.resumen}
-              </p>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 32, borderBottom: '1px solid var(--hc-border)', marginBottom: 40 }}>
-              <span style={{ fontSize: 13, color: 'var(--hc-muted)' }}>
-                {fmtDate(post.fechaPublicacion || post.fechaCreacion)}
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--hc-text)' }}>HotClick</span>
-            </div>
-          </motion.div>
+        {post.contenido && (
+          <div
+            className={`px-4 py-2 ${CLASE_CUERPO}`}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.contenido) }}
+          />
+        )}
 
-          {/* Contenido */}
-          {post.contenido && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="prose-hotclick"
-              style={{
-                color: 'var(--hc-text)',
-                lineHeight: 1.8,
-                fontSize: 16,
-              }}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.contenido) }}
-            />
-          )}
-
-          {/* Volver */}
-          <div style={{ marginTop: 56, paddingTop: 32, borderTop: '1px solid var(--hc-border)' }}>
-            <Link to="/blog" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              color: 'var(--hc-accent)', fontWeight: 700, textDecoration: 'none',
-              fontSize: 15,
-            }}>
-              <TextoFlecha dir="atras">Volver al blog</TextoFlecha>
-            </Link>
+        <section className="flex flex-col gap-[10px] px-4 pb-7 pt-4" aria-labelledby="blog-compartir">
+          <h2 id="blog-compartir" className="font-sans tracking-normal text-[13px] font-semibold text-hc-n-600">Compartir este artículo</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <a href={enlaces.whatsapp} target="_blank" rel="noopener noreferrer" className={CHIP}>WhatsApp</a>
+            <a href={enlaces.facebook} target="_blank" rel="noopener noreferrer" className={CHIP}>Facebook</a>
+            <button type="button" onClick={() => void copiarEnlace()} className={CHIP}>Copiar enlace</button>
           </div>
-        </div>
+        </section>
       </article>
     </MainLayout>
   )

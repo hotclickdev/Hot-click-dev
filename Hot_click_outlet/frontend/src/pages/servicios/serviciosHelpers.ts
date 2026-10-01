@@ -65,63 +65,30 @@ export const serviciosJsonLd = {
 /** Prefijo en descripción al solicitar digitalización de inventario (admin). */
 export const PREFIJO_SOLICITUD_INVENTARIO = '[Digitalización de inventario]'
 
-/** Estilos de badge por estado de solicitud de búsqueda. */
-export const ESTADO_STYLES: Record<string, { color: string; bg: string }> = {
-  PENDIENTE:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  EN_BUSQUEDA:   { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  ENCONTRADO:    { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  NO_ENCONTRADO: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  CANCELADO:     { color: 'var(--hc-muted)', bg: 'rgba(107,114,128,0.12)' },
-}
-
 /** Tamaño máximo de cada foto (5 MB). */
 export const FOTO_MAX_BYTES = 5 * 1024 * 1024
 
 /** Máximo de fotos en una solicitud de búsqueda. */
 export const MAX_FOTOS = 3
 
-/** Estilo compartido de inputs del formulario de búsqueda. */
-export const inputStyle = {
-  backgroundColor: 'var(--hc-surface-2)',
-  border: '1.5px solid var(--hc-border)',
-  color: 'var(--hc-text)',
-  borderRadius: 12,
-  outline: 'none',
-  width: '100%',
-  fontSize: 15,
-  padding: '12px 16px',
-  transition: 'border-color 0.2s',
+/** Campo de texto de los formularios de Servicios HOT (Figma `28:1486`): blanco, borde `n/200`, radio 12, 14/20. */
+export const CLASE_CAMPO =
+  'w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 text-[14px] leading-5 text-hc-n-900 outline-none placeholder:text-[var(--hc-n-400)] focus:border-hc-blue-600'
+
+/**
+ * Teléfono de contacto como lo recibe el backend, con prefijo de país. Quien escribe solo el número local
+ * (8888 8888) queda como +506; quien empieza con "+" conserva su país.
+ */
+export function normalizarTelefono(texto: string): string {
+  const digitos = texto.replace(/\D/g, '')
+  if (texto.trim().startsWith('+')) return `+${digitos}`
+  return digitos.startsWith('506') && digitos.length > 8 ? `+${digitos}` : `+506${digitos}`
 }
 
 /** Etiquetas de calificación 1–5. */
 export const RATING_LABELS: Record<number, string> = { 1: 'Muy malo', 2: 'Malo', 3: 'Regular', 4: 'Bueno', 5: 'Excelente' }
 
-/** Imágenes de tarjetas: local primero, Unsplash como respaldo. */
-export const CARD_IMAGES = {
-  busqueda: {
-    local: '/servicios/busqueda.jpg',
-    fallback: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80',
-    alt: 'Búsqueda de producto',
-  },
-  garantia: {
-    local: '/servicios/garantia.jpg',
-    fallback: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80',
-    alt: 'Garantía de productos',
-  },
-  resena: {
-    local: '/servicios/resena.jpg',
-    fallback: 'https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=800&q=80',
-    alt: 'Dejar reseña',
-  },
-  inventario: {
-    local: '/servicios/inventario.jpg',
-    fallback: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=80',
-    alt: 'Digitalización de inventario',
-  },
-}
-
 export type VistaServicios = 'inicio' | 'busqueda' | 'garantia' | 'testimonio' | 'inventario'
-export type TabBusqueda = 'solicitar' | 'mis-solicitudes'
 
 export type FormBusqueda = {
   descripcion: string
@@ -165,5 +132,42 @@ export type ProductoParaResena = {
   yaReseno?: boolean
 }
 
-export type TipoImagenServicio = keyof typeof CARD_IMAGES
 
+/** Motivos de la solicitud de garantía (Figma `28:1531`). El backend no tiene campo de motivo: viaja en la descripción. */
+export const MOTIVOS_GARANTIA = ['No enciende', 'Se dañó', 'Llegó incompleto', 'Otro'] as const
+export type MotivoGarantia = (typeof MOTIVOS_GARANTIA)[number]
+
+export function descripcionGarantia(motivo: MotivoGarantia | null, texto: string): string {
+  return motivo ? `[Motivo: ${motivo}] ${texto.trim()}` : texto.trim()
+}
+
+export function claveGarantia(g: GarantiaItem): string {
+  return `${g.productoId}-${g.pedidoId}`
+}
+
+/** "12 set": día y mes corto, como las fechas de Figma `28:1531` (en Costa Rica se escribe "set"). */
+export function fechaDiaMes(iso: string | null | undefined): string {
+  const m = iso ? /^(\d{4})-(\d{2})-(\d{2})/.exec(iso) : null
+  if (!m) return ''
+  const fecha = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const mes = new Intl.DateTimeFormat('es-CR', { month: 'short' }).format(fecha).replace('.', '').slice(0, 3)
+  return `${fecha.getDate()} ${mes}`
+}
+
+/** "30 días restantes · vence 12 oct": vigencia de una garantía activa. */
+export function textoVigencia(g: GarantiaItem): string {
+  const dias = g.diasRestantes ?? 0
+  const s = dias === 1 ? '' : 's'
+  const vence = fechaDiaMes(g.fechaVencimiento)
+  return `${dias} día${s} restante${s}${vence ? ` · vence ${vence}` : ''}`
+}
+
+/** "25 sep 2026" para fechas ISO (`2026-09-25`); cualquier otro formato se muestra tal como llega. */
+export function fechaConMes(valor: string | null | undefined): string {
+  if (!valor) return ''
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(valor)
+  if (!m) return valor
+  const fecha = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const mes = new Intl.DateTimeFormat('es-CR', { month: 'short' }).format(fecha).replace('.', '').slice(0, 3)
+  return `${fecha.getDate()} ${mes} ${fecha.getFullYear()}`
+}

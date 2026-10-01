@@ -2301,7 +2301,25 @@
     "errorNameRequired": "Ingresá tu nombre para continuar.",
     "errorPhoneRequired": "Ingresá tu WhatsApp para que podamos contactarte.",
     "uploadErrorFull": "Error al subir imagen. Máximo 10 MB por foto.",
-    "sendErrorFull": "No se pudo enviar la solicitud. Intentá de nuevo."
+    "sendErrorFull": "No se pudo enviar la solicitud. Intentá de nuevo.",
+    "form": {
+      "pasoFoto": "1 · Foto",
+      "pasoDetalle": "2 · Detalle",
+      "pasoContacto": "3 · Contacto",
+      "fotoLabel": "Foto del producto",
+      "quitarFoto": "Quitar foto",
+      "queBuscas": "¿Qué estás buscando?",
+      "queBuscasPh": "Ej: Una lámpara de pie de madera, estilo nórdico, para la sala",
+      "presupuesto": "Presupuesto aproximado",
+      "presupuestoPh": "Ej: ₡25.000 – ₡40.000",
+      "whatsapp": "Tu WhatsApp",
+      "whatsappPh": "8888 8888",
+      "nombreOpcional": "Tu nombre (opcional)",
+      "nombrePh": "Ej: María García",
+      "comoSigueTitulo": "Cómo sigue",
+      "comoSigueTexto": "Buscamos con nuestros proveedores y te escribimos por WhatsApp con precio y disponibilidad. El seguimiento queda en Mi cuenta › Solicitudes.",
+      "comoSigueTextoInvitado": "Buscamos con nuestros proveedores y te escribimos por WhatsApp con precio y disponibilidad."
+    }
   },
   "adminOrders": {
     "title": "Pedidos",

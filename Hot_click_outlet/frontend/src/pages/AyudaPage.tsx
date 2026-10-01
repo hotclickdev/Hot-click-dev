@@ -90,7 +90,7 @@ export default function AyudaPage() {
         url="https://hotclick.lat/ayuda"
       />
       <PaginaInformativa titulo={t('ayudaPage.title')} subtitulo={t('ayudaPage.subtitle')}>
-        <nav aria-label={t('ayudaPage.title')}>
+        <nav aria-label={t('ayudaPage.title')} className="px-4 pb-6 pt-4 lg:px-0">
           <ul className="flex flex-col gap-3">
             {opciones.map((o) => <TarjetaOpcion key={o.to} opcion={o} />)}
           </ul>
