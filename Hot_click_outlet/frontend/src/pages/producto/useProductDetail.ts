@@ -24,6 +24,9 @@ import useAuthStore from '@/store/authStore'
 import { useTurnstileForm } from '@/hooks/useTurnstileForm'
 import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 
+/** Debajo del breakpoint `lg` de Tailwind: la ficha móvil de Figma (390 px). */
+const MEDIA_MOVIL = '(max-width: 1023.98px)'
+
 export function useProductDetail(id: string | undefined, t: TFunction) {
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
@@ -34,7 +37,7 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<string | null>(null)
   const [justAdded, setJustAdded] = useState(false)
-  const [showSticky, setShowSticky] = useState(false)
+  const [hojaAgregadoAbierta, setHojaAgregadoAbierta] = useState(false)
   const [recommendations, setRecommendations] = useState<Producto[]>([])
   const [brandProducts, setBrandProducts] = useState<Producto[]>([])
   const [galeria, setGaleria] = useState<string[]>([])
@@ -147,18 +150,6 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
 
   useEffect(() => () => clearTimeout(addTimeout.current ?? undefined), [])
 
-  useEffect(() => {
-    if (loading) return
-    const el = mainCTARef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowSticky(entry.isIntersecting === false),
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loading])
-
   const inStock = product ? !estaAgotado(product) : false
   const atMax = product ? quantity >= product.stock : false
 
@@ -187,20 +178,6 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
       return
     }
     agregarAlPedido({ conAviso: true })
-  }
-
-  const handleComprarAhora = () => {
-    if (product?.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO') {
-      void handleSolicitarEncargo()
-      return
-    }
-    if (!inStock) return
-    if (product?.esPersonalizado && !tieneReferencia(personalizacion)) {
-      toast({ message: 'Subí al menos una imagen o escribí notas para el artista', type: 'warning' })
-      return
-    }
-    if (!justAdded) agregarAlPedido({ conAviso: false })
-    navigate('/checkout')
   }
 
   async function handleSolicitarEncargo() {
@@ -266,6 +243,11 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
       personalizacion: pers,
     } as Producto, quantity)
     if (!conAviso) return
+    // Figma 45:1607: en móvil la ficha no tiene header ni barra inferior, así que la hoja es el camino al carrito.
+    if (globalThis.matchMedia?.(MEDIA_MOVIL).matches) {
+      setHojaAgregadoAbierta(true)
+      return
+    }
     const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
     toast({
       message: t('product.added', { name: `${qtyPrefix}${productoActual.nombre}` }),
@@ -276,11 +258,10 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   }
 
   return {
-    product, loading, quantity, activeTab, setActiveTab, justAdded, showSticky,
+    product, loading, quantity, activeTab, setActiveTab, justAdded, hojaAgregadoAbierta, setHojaAgregadoAbierta,
     recommendations, brandProducts, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
-    handleComprarAhora,
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
     turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   }

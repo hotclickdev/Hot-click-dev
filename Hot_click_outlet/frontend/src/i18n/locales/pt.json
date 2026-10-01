@@ -3058,7 +3058,17 @@
       "apoyoTexto": "Estamos trabalhando para reduzir o custo de envio em compras de vários negócios."
     },
     "hoja": {
-      "cerrar": "Fechar"
+      "cerrar": "Fechar",
+      "titulo": "Adicionado ao seu pedido",
+      "detalleNegocio_one": "{{negocio}} · {{count}} unidade",
+      "detalleNegocio_other": "{{negocio}} · {{count}} unidades",
+      "detalle_one": "{{count}} unidade",
+      "detalle_other": "{{count}} unidades",
+      "envioPagado": "Pacote de {{negocio}} · o frete já está pago neste pacote, este produto não soma outro frete.",
+      "totalPedido_one": "Seu pedido · {{count}} produto",
+      "totalPedido_other": "Seu pedido · {{count}} produtos",
+      "seguirComprando": "Continuar comprando",
+      "verPedido": "Ver pedido"
     },
     "falloServidor": {
       "marca": "HotClick",

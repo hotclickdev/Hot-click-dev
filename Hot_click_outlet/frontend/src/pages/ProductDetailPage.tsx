@@ -16,13 +16,14 @@ import OpinionesProducto from './producto/OpinionesProducto'
 import RecentlyViewedGrid from './producto/RecentlyViewedGrid'
 import ProductDetailSeo from './producto/ProductDetailSeo'
 import { useProductDetail } from './producto/useProductDetail'
+import HojaAgregadoAlPedido from '@/components/comprador/HojaAgregadoAlPedido'
 import { Helmet } from 'react-helmet-async'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
   const { t } = useTranslation()
   const {
-    product, loading, quantity, activeTab, setActiveTab, justAdded,
+    product, loading, quantity, activeTab, setActiveTab, justAdded, hojaAgregadoAbierta, setHojaAgregadoAbierta,
     recommendations, brandProducts, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
@@ -151,6 +152,12 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+      <HojaAgregadoAlPedido
+        abierta={hojaAgregadoAbierta}
+        onCerrar={() => setHojaAgregadoAbierta(false)}
+        producto={product}
+        cantidad={quantity}
+      />
     </MainLayout>
   )
 }

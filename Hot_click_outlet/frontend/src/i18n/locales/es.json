@@ -3058,7 +3058,17 @@
       "apoyoTexto": "Estamos trabajando para reducir el costo de envío en compras de varios emprendimientos."
     },
     "hoja": {
-      "cerrar": "Cerrar"
+      "cerrar": "Cerrar",
+      "titulo": "Agregado a tu pedido",
+      "detalleNegocio_one": "{{negocio}} · {{count}} unidad",
+      "detalleNegocio_other": "{{negocio}} · {{count}} unidades",
+      "detalle_one": "{{count}} unidad",
+      "detalle_other": "{{count}} unidades",
+      "envioPagado": "Paquete de {{negocio}} · el envío ya lo pagás en este paquete, este producto no suma otro envío.",
+      "totalPedido_one": "Tu pedido · {{count}} producto",
+      "totalPedido_other": "Tu pedido · {{count}} productos",
+      "seguirComprando": "Seguir comprando",
+      "verPedido": "Ver pedido"
     },
     "falloServidor": {
       "marca": "HotClick",

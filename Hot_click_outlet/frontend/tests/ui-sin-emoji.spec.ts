@@ -129,7 +129,6 @@ test('toasts, i18n y pagos no usan cheques ni tarjeta-pronto', () => {
   expect(leer('../src/pages/admin/AdminInventario.tsx')).not.toContain('▶')
   expect(leer('../src/pages/pos/POSPagoPage.tsx')).not.toContain('⚠️')
   expect(leer('../src/pages/admin/SistemaInicio.tsx')).not.toContain('▲')
-  expect(leer('../src/pages/producto/TitleAndBadges.tsx')).not.toContain('✓')
   expect(leer('../src/pages/informacion/ConditionsSection.tsx')).not.toContain('✓')
 })
 

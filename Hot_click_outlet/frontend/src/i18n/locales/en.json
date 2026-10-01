@@ -3058,7 +3058,17 @@
       "apoyoTexto": "We are working to lower shipping costs on purchases from several businesses."
     },
     "hoja": {
-      "cerrar": "Close"
+      "cerrar": "Close",
+      "titulo": "Added to your order",
+      "detalleNegocio_one": "{{negocio}} · {{count}} unit",
+      "detalleNegocio_other": "{{negocio}} · {{count}} units",
+      "detalle_one": "{{count}} unit",
+      "detalle_other": "{{count}} units",
+      "envioPagado": "{{negocio}} package · you already pay shipping in this package, this item adds no other shipping.",
+      "totalPedido_one": "Your order · {{count}} item",
+      "totalPedido_other": "Your order · {{count}} items",
+      "seguirComprando": "Keep shopping",
+      "verPedido": "View order"
     },
     "falloServidor": {
       "marca": "HotClick",
