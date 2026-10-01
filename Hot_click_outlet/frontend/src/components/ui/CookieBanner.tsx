@@ -82,6 +82,7 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
         )}
       </AnimatePresence>
       <HojaPreferenciasCookies
+        key={String(hojaAbierta)}
         abierta={hojaAbierta}
         analiticaInicial={getCookieConsent()?.analytics ?? true}
         onCerrar={() => setHojaAbierta(false)}

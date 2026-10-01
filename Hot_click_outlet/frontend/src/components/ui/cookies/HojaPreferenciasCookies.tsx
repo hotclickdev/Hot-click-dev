@@ -7,7 +7,7 @@ import Interruptor from '@/components/ui/sistema/Interruptor'
 
 type HojaPreferenciasCookiesProps = {
   abierta: boolean
-  /** Valor inicial del interruptor de análisis (consentimiento guardado, o activo si no hay). */
+  /** Valor inicial del interruptor de análisis (consentimiento guardado, o activo si no hay). Quien la usa debe darle `key={abierta}` para que se reinicie al abrir. */
   analiticaInicial: boolean
   onCerrar: () => void
   onGuardar: (analitica: boolean) => void
@@ -23,12 +23,7 @@ const BOTON = 'flex w-full items-center justify-center rounded-[12px] py-[14px] 
  * Preferencias de cookies (Figma `45:2166`): hoja que arranca a 90 px del borde superior, con
  * esenciales (siempre activas), análisis (interruptor) y publicidad (no se usa).
  */
-export default function HojaPreferenciasCookies(props: HojaPreferenciasCookiesProps) {
-  // Se monta solo abierta: el interruptor arranca con el consentimiento vigente cada vez.
-  return props.abierta ? <HojaAbierta {...props} /> : null
-}
-
-function HojaAbierta({ abierta, analiticaInicial, onCerrar, onGuardar, onAceptarTodo }: HojaPreferenciasCookiesProps) {
+export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onCerrar, onGuardar, onAceptarTodo }: HojaPreferenciasCookiesProps) {
   const { t } = useTranslation()
   const idTitulo = useId()
   const hojaRef = useRef<HTMLDivElement>(null)
@@ -48,6 +43,8 @@ function HojaAbierta({ abierta, analiticaInicial, onCerrar, onGuardar, onAceptar
       previo?.focus()
     }
   }, [abierta, onCerrar])
+
+  if (!abierta) return null
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] flex flex-col justify-end">
