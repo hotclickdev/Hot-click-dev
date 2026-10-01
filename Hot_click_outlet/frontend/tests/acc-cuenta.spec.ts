@@ -223,7 +223,7 @@ test.describe('Mis solicitudes', () => {
 
   test('/servicios sin parámetro sigue mostrando el inicio de Servicios HOT', async ({ page }) => {
     await ir(page, '/servicios')
-    await expect(page.getByText('¿En qué te podemos ayudar?')).toBeVisible()
+    await expect(page.getByText('¿En qué te ayudamos?')).toBeVisible()
   })
 })
 

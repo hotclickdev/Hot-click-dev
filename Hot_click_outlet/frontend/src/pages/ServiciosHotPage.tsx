@@ -1,5 +1,4 @@
 import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
-import { AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
@@ -11,19 +10,22 @@ import { testimonioService } from '@/services/testimonioService'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTurnstileForm } from '@/hooks/useTurnstileForm'
 import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
-import ServiciosInicio, { ServiciosHero } from './servicios/ServiciosInicio'
-import VistaBusqueda from './servicios/VistaBusqueda'
+import ServiciosInicio from './servicios/ServiciosInicio'
+import FormularioBusqueda from './servicios/FormularioBusqueda'
 import VistaGarantia from './servicios/VistaGarantia'
 import VistaTestimonio from './servicios/VistaTestimonio'
 import VistaDigitalizacion from './servicios/VistaDigitalizacion'
 import MisSolicitudesVista from './solicitudes/MisSolicitudesVista'
+import { estadoVisual } from './solicitudes/solicitudesHelpers'
 import {
-  SITE_URL, serviciosJsonLd, FOTO_MAX_BYTES, MAX_FOTOS, PREFIJO_SOLICITUD_INVENTARIO,
+  SITE_URL, serviciosJsonLd, FOTO_MAX_BYTES, MAX_FOTOS, PREFIJO_SOLICITUD_INVENTARIO, normalizarTelefono,
   type FormBusqueda, type FotoSolicitud, type GarantiaItem, type ProductoParaResena,
-  type TabBusqueda, type VistaServicios,
+  type SolicitudBusqueda, type VistaServicios,
 } from './servicios/serviciosHelpers'
 
+/** El interceptor de axios ya quita el sobre `{ success, data }`: la lista llega directa o, sin sobre, dentro de `data`. */
 function extraerLista<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[]
   if (data && typeof data === 'object' && 'data' in data) {
     const inner = (data as { data: unknown }).data
     if (Array.isArray(inner)) return inner as T[]
@@ -36,14 +38,21 @@ function urlFotoSubida(data: unknown): unknown {
   return data
 }
 
+/** Título de la barra interna de cada vista (Figma `28:1429`, `28:1486`, `28:1531`). */
+const TITULO_VISTA: Record<VistaServicios, string> = {
+  inicio: 'Servicios HOT',
+  busqueda: 'Te lo conseguimos',
+  garantia: 'Garantía',
+  testimonio: 'Contanos tu experiencia',
+  inventario: 'Digitalizá tu inventario',
+}
+
 function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) {
   const { t } = useTranslation()
   const { token } = useAuthStore()
   const qc = useQueryClient()
-  const contenidoRef = useRef<HTMLDivElement>(null)
 
   const [vista, setVista] = useState<VistaServicios>(vistaInicial)
-  const [tabBusqueda, setTabBusqueda] = useState<TabBusqueda>('solicitar')
 
   const [fotos, setFotos] = useState<FotoSolicitud[]>([])
   const [uploading, setUploading] = useState(false)
@@ -58,11 +67,10 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
     resetTurnstile, turnstileSiteKey, turnstileBloqueaSubmit,
   } = useTurnstileForm()
 
-  const { data: misSolicitudes, isLoading: loadingMias, refetch: refetchMias } = useQuery({
+  const { data: misSolicitudes } = useQuery({
     queryKey: ['mis-solicitudes-servicio'],
     queryFn: () => servicioService.misSolicitudes().then(r => r.data),
-    enabled: !!token && vista === 'busqueda' && tabBusqueda === 'mis-solicitudes',
-    refetchInterval: 30000,
+    enabled: !!token && vista === 'inicio',
     refetchOnWindowFocus: true,
   })
 
@@ -80,16 +88,20 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
     refetchOnWindowFocus: true,
   })
 
+  const solicitudesEnCurso = Array.isArray(misSolicitudes)
+    ? (misSolicitudes as SolicitudBusqueda[]).filter((s) => estadoVisual(s.estado) !== 'cerrada').length
+    : 0
+
   const irA = (destino: VistaServicios) => {
     setVista(destino)
     setError('')
-    setTimeout(() => contenidoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+    window.scrollTo({ top: 0 })
   }
 
   const volver = () => {
     setVista('inicio')
     setSuccess(false)
-    setTimeout(() => contenidoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+    window.scrollTo({ top: 0 })
   }
 
   const handleFotoChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -123,7 +135,7 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
       await servicioService.crear({
         ...form,
         descripcion,
-        telefonoContacto: phone,
+        telefonoContacto: normalizarTelefono(phone),
         fotosUrls: fotos.length ? JSON.stringify(fotos.map(f => f.url)) : null,
         turnstileToken: turnstileToken || undefined,
       })
@@ -131,6 +143,7 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
       setForm({ descripcion: '', presupuesto: '', nombreContacto: '' })
       setPhone(''); setFotos([])
       resetTurnstile()
+      qc.invalidateQueries({ queryKey: ['mis-solicitudes-servicio'] })
     } catch (err: unknown) {
       setError(mensajeErrorApi(err, t('serviciosPage.sendErrorFull')))
       resetTurnstile()
@@ -138,8 +151,14 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
     finally { setSending(false) }
   }
 
+  const propsFormulario = {
+    token, success, setSuccess, form, setForm, phone, setPhone, fotos, setFotos,
+    uploading, sending, error, fileRef, handleEnviar, handleFotoChange,
+    turnstileSiteKey, turnstileRef, setTurnstileToken, turnstileBloqueaSubmit,
+  }
+
   return (
-    <MainLayout>
+    <MainLayout variante="interna" titulo={TITULO_VISTA[vista]} atras={vista === 'inicio' ? '/' : volver}>
       <Helmet>
         <title>Servicios HotClick — Búsqueda de productos y garantías en Costa Rica</title>
         <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HotClick en Costa Rica." />
@@ -157,85 +176,31 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
         <script type="application/ld+json">{JSON.stringify(serviciosJsonLd)}</script>
       </Helmet>
 
-      <ServiciosHero />
-
-      <div ref={contenidoRef} className="px-4 pb-8 max-w-2xl mx-auto">
-        <AnimatePresence mode="wait">
-          {vista === 'inicio' && <ServiciosInicio irA={irA} />}
-          {vista === 'busqueda' && (
-            <VistaBusqueda
-              token={token}
-              tabBusqueda={tabBusqueda}
-              setTabBusqueda={setTabBusqueda}
-              success={success}
-              setSuccess={setSuccess}
-              form={form}
-              setForm={setForm}
-              phone={phone}
-              setPhone={setPhone}
-              fotos={fotos}
-              setFotos={setFotos}
-              uploading={uploading}
-              sending={sending}
-              error={error}
-              fileRef={fileRef}
-              handleEnviar={handleEnviar}
-              handleFotoChange={handleFotoChange}
-              volver={volver}
-              misSolicitudes={misSolicitudes}
-              loadingMias={loadingMias}
-              refetchMias={refetchMias}
-              turnstileSiteKey={turnstileSiteKey}
-              turnstileRef={turnstileRef}
-              setTurnstileToken={setTurnstileToken}
-              turnstileBloqueaSubmit={turnstileBloqueaSubmit}
-            />
-          )}
-          {vista === 'garantia' && (
-            <VistaGarantia
-              token={token}
-              volver={volver}
-              misGarantias={misGarantias}
-              loadingGarantias={loadingGarantias}
-              onReportado={() => qc.invalidateQueries({ queryKey: ['mis-garantias-solicitudes'] })}
-            />
-          )}
-          {vista === 'testimonio' && (
-            <VistaTestimonio
-              token={token}
-              volver={volver}
-              productosResenar={productosResenar}
-              loadingResenar={loadingResenar}
-              refetchResenar={refetchResenar}
-            />
-          )}
-          {vista === 'inventario' && (
-            <VistaDigitalizacion
-              token={token}
-              success={success}
-              setSuccess={setSuccess}
-              setTabBusqueda={setTabBusqueda}
-              form={form}
-              setForm={setForm}
-              phone={phone}
-              setPhone={setPhone}
-              fotos={fotos}
-              setFotos={setFotos}
-              uploading={uploading}
-              sending={sending}
-              error={error}
-              fileRef={fileRef}
-              handleEnviar={handleEnviar}
-              handleFotoChange={handleFotoChange}
-              volver={volver}
-              turnstileSiteKey={turnstileSiteKey}
-              turnstileRef={turnstileRef}
-              setTurnstileToken={setTurnstileToken}
-              turnstileBloqueaSubmit={turnstileBloqueaSubmit}
-            />
-          )}
-        </AnimatePresence>
-      </div>
+      {vista === 'inicio' && <ServiciosInicio irA={irA} solicitudesEnCurso={solicitudesEnCurso} />}
+      {vista === 'busqueda' && (
+        <div className="lg:mx-auto lg:w-full lg:max-w-[560px]">
+          <FormularioBusqueda {...propsFormulario} mostrarPasos />
+        </div>
+      )}
+      {vista === 'garantia' && (
+        <VistaGarantia
+          token={token}
+          volver={volver}
+          misGarantias={misGarantias}
+          loadingGarantias={loadingGarantias}
+          onReportado={() => qc.invalidateQueries({ queryKey: ['mis-garantias'] })}
+        />
+      )}
+      {vista === 'testimonio' && (
+        <VistaTestimonio
+          token={token}
+          volver={volver}
+          productosResenar={productosResenar}
+          loadingResenar={loadingResenar}
+          refetchResenar={refetchResenar}
+        />
+      )}
+      {vista === 'inventario' && <VistaDigitalizacion {...propsFormulario} />}
     </MainLayout>
   )
 }

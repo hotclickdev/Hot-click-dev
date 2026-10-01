@@ -2301,7 +2301,25 @@
     "errorNameRequired": "Please enter your name to continue.",
     "errorPhoneRequired": "Please enter your WhatsApp so we can contact you.",
     "uploadErrorFull": "Error uploading image. Maximum 10 MB per photo.",
-    "sendErrorFull": "Could not submit the request. Please try again."
+    "sendErrorFull": "Could not submit the request. Please try again.",
+    "form": {
+      "pasoFoto": "1 · Photo",
+      "pasoDetalle": "2 · Details",
+      "pasoContacto": "3 · Contact",
+      "fotoLabel": "Product photo",
+      "quitarFoto": "Remove photo",
+      "queBuscas": "What are you looking for?",
+      "queBuscasPh": "E.g. A wooden nordic-style floor lamp for the living room",
+      "presupuesto": "Approximate budget",
+      "presupuestoPh": "E.g. ₡25.000 – ₡40.000",
+      "whatsapp": "Your WhatsApp",
+      "whatsappPh": "8888 8888",
+      "nombreOpcional": "Your name (optional)",
+      "nombrePh": "E.g. Maria Garcia",
+      "comoSigueTitulo": "What happens next",
+      "comoSigueTexto": "We search with our suppliers and message you on WhatsApp with price and availability. Tracking stays in My account › Requests.",
+      "comoSigueTextoInvitado": "We search with our suppliers and message you on WhatsApp with price and availability."
+    }
   },
   "adminOrders": {
     "title": "Orders",

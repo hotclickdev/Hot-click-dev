@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
-import Button from '@/components/ui/Button'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
 import { formatPrice } from '@/utils/format'
 import {
   encargoService,
@@ -10,6 +10,45 @@ import {
   type Encargo,
 } from '@/services/encargoService'
 import { useToast } from '@/components/ui/Toast'
+import { urlWhatsApp } from './carrito/cartHelpers'
+import { IcoBuscarCaja } from './perfil/cuenta/iconosCuenta'
+import { IcoSrv } from './servicios/IcoSrv'
+import { pasosDelEncargo, referenciasDelEncargo, type PasoEncargo } from './encargo/encargoHelpers'
+
+const TARJETA = 'rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4'
+
+function Marca({ estado }: { estado: PasoEncargo['estado'] }) {
+  if (estado === 'hecho') {
+    return <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-hc-success"><IcoSrv nombre="encargoCheck" size={13} /></span>
+  }
+  if (estado === 'error') {
+    return (
+      <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[var(--hc-danger)] text-hc-n-0">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </span>
+    )
+  }
+  return <span className={`size-[22px] shrink-0 rounded-full ${estado === 'actual' ? 'bg-hc-blue-600' : 'bg-hc-n-200'}`} />
+}
+
+function LineaDeTiempo({ pasos }: { pasos: PasoEncargo[] }) {
+  return (
+    <section className={TARJETA} aria-labelledby="encargo-estado">
+      <h2 id="encargo-estado" className="font-sans tracking-normal leading-[normal] text-[14px] font-semibold text-hc-n-900">Estado</h2>
+      <ol className="flex flex-col">
+        {pasos.map((p) => (
+          <li key={p.clave} className="flex items-start gap-3 pt-3" aria-current={p.estado === 'actual' ? 'step' : undefined}>
+            <Marca estado={p.estado} />
+            <div className="flex min-w-0 flex-1 flex-col gap-px">
+              <p className={`text-[14px] [overflow-wrap:anywhere] ${p.estado === 'pendiente' ? 'font-semibold text-hc-n-500' : p.estado === 'actual' ? 'font-bold text-hc-n-900' : 'font-semibold text-hc-n-900'}`}>{p.titulo}</p>
+              {p.detalle && <p className="text-[12px] text-hc-n-500 [overflow-wrap:anywhere]">{p.detalle}</p>}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
 
 export default function EncargoPublicPage() {
   const { token } = useParams()
@@ -51,7 +90,7 @@ export default function EncargoPublicPage() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <MainLayout variante="interna" titulo="Tu encargo">
         <div className="flex justify-center py-32"><Spinner size="xl" /></div>
       </MainLayout>
     )
@@ -59,90 +98,108 @@ export default function EncargoPublicPage() {
 
   if (!encargo) {
     return (
-      <MainLayout>
-        <div className="max-w-lg mx-auto px-4 py-16 text-center">
-          <p className="text-lg mb-4">No encontramos este encargo.</p>
-          <Link to="/productos" className="underline">Volver al catálogo</Link>
+      <MainLayout variante="interna" titulo="Tu encargo">
+        <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-123px)]">
+          <EstadoVacio
+            nivel="h1"
+            tono="azul"
+            espaciado="cuenta"
+            icono={<IcoBuscarCaja size={28} />}
+            titulo="No encontramos este encargo"
+            texto="El enlace puede haber expirado o ser inválido."
+            accion={{ texto: 'Volver al catálogo', to: '/productos' }}
+          />
         </div>
       </MainLayout>
     )
   }
 
-  const refs = [encargo.imagenUrl1, encargo.imagenUrl2, encargo.imagenUrl3].filter(Boolean) as string[]
+  const refs = referenciasDelEncargo(encargo)
+  const pasos = pasosDelEncargo(encargo, formatPrice)
+  const porPagar = encargo.estado === 'APROBADO' && encargo.precioCotizado != null
+  const mensaje = encodeURIComponent(`Hola HotClick, consulto por mi encargo #${encargo.id}.`)
 
   return (
-    <MainLayout>
-      <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
-        <div>
-          <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Encargo personalizado</p>
-          <h1 className="text-2xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>
-            {encargo.productoNombre || 'Tu encargo'}
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Estado: <strong>{etiquetaEstado(encargo.estado)}</strong></p>
+    <MainLayout variante="interna" titulo="Tu encargo">
+      <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
+        <div className="flex flex-col gap-[14px] px-4 pb-3 pt-[18px] lg:px-0">
+          <section className={`${TARJETA} flex items-center gap-3`}>
+            {refs[0]
+              ? <img src={refs[0]} alt="Referencia" className="size-16 shrink-0 rounded-[12px] object-cover" />
+              : <span aria-hidden="true" className="size-16 shrink-0 rounded-[12px] bg-hc-n-100" />}
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-[3px]">
+              <span className="rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold text-hc-warning">Hecho a pedido</span>
+              <h1 className="font-sans tracking-normal leading-[normal] text-[15px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{encargo.productoNombre || 'Tu encargo'}</h1>
+              <p className="text-[12px] text-hc-n-500">Encargo #{encargo.id}</p>
+            </div>
+          </section>
+
+          <LineaDeTiempo pasos={pasos} />
+
+          {(refs.length > 1 || encargo.notas || encargo.mensajeVendedor) && (
+            <section className={`${TARJETA} flex flex-col gap-3`}>
+              {refs.length > 1 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {refs.slice(1).map((url) => (
+                    <img key={url} src={url} alt="Referencia" className="aspect-square rounded-[12px] border border-hc-n-200 object-cover" />
+                  ))}
+                </div>
+              )}
+              {encargo.notas && (
+                <div>
+                  <p className="text-[12px] text-hc-n-500">Tus notas</p>
+                  <p className="text-[14px] text-hc-n-900 [overflow-wrap:anywhere]">{encargo.notas}</p>
+                </div>
+              )}
+              {encargo.mensajeVendedor && (
+                <div>
+                  <p className="text-[12px] text-hc-n-500">Mensaje de la tienda</p>
+                  <p className="text-[14px] text-hc-n-900 [overflow-wrap:anywhere]">{encargo.mensajeVendedor}</p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {encargo.precioCotizado != null && encargo.estado !== 'RECHAZADO' && (
+            <section className={`${TARJETA} flex flex-col gap-[6px]`}>
+              <div className="flex items-center justify-between text-[14px]">
+                <span className="text-hc-n-600">Producto</span>
+                <span className="text-hc-n-900">{formatPrice(encargo.precioCotizado)}</span>
+              </div>
+              <div className="flex items-center justify-between text-hc-n-900">
+                <span className="text-[15px] font-semibold">Total</span>
+                <span className="font-display text-[18px] font-bold">{formatPrice(encargo.precioCotizado)}</span>
+              </div>
+            </section>
+          )}
         </div>
 
-        {refs.length > 0 && (
-          <div className="grid grid-cols-3 gap-2">
-            {refs.map(url => (
-              <img key={url} src={url} alt="Referencia" className="aspect-square rounded-xl object-cover border" style={{ borderColor: 'var(--hc-border)' }} />
-            ))}
-          </div>
-        )}
-
-        {encargo.notas && (
-          <div className="rounded-xl border p-3 text-sm" style={{ borderColor: 'var(--hc-border)' }}>
-            <p className="text-xs mb-1" style={{ color: 'var(--hc-muted)' }}>Tus notas</p>
-            <p>{encargo.notas}</p>
-          </div>
-        )}
-
-        {encargo.estado === 'APROBADO' && encargo.precioCotizado != null && (
-          <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: 'var(--hc-border)' }}>
-            <p className="text-lg font-semibold">Precio aprobado: {formatPrice(encargo.precioCotizado)}</p>
-            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-              Tenés 7 días para pagar desde la aprobación.
-            </p>
-            <Button variant="primary" className="w-full" disabled={pagando} onClick={() => void pagar()}>
-              {pagando ? 'Redirigiendo…' : 'Pagar ahora'}
-            </Button>
-          </div>
-        )}
-
-        {encargo.estado === 'PENDIENTE' && (
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-            El artista está revisando tu solicitud. Te avisaremos por email.
-          </p>
-        )}
-
-        {encargo.estado === 'RECHAZADO' && (
-          <div className="text-sm rounded-xl p-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
-            <p className="font-medium">El artista no pudo aceptar este encargo.</p>
-            {encargo.motivoRechazo && <p className="mt-1">{encargo.motivoRechazo}</p>}
-          </div>
-        )}
-
-        {encargo.estado === 'PAGADO' && (
-          <p className="text-sm text-emerald-600">¡Pagado! El artista ya recibió tu encargo.</p>
-        )}
-
-        {encargo.estado === 'VENCIDO' && (
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-            Esta cotización venció. Podés solicitar un nuevo encargo desde el producto.
-          </p>
-        )}
+        <div className="flex flex-col gap-2 bg-hc-n-0 px-4 pb-6 pt-3 lg:rounded-[16px]">
+          {porPagar && (
+            <>
+              <button
+                type="button"
+                disabled={pagando}
+                onClick={() => void pagar()}
+                className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0 disabled:opacity-50"
+              >
+                <IcoSrv nombre="encargoTarjeta" size={18} />
+                {pagando ? 'Redirigiendo…' : `Pagar ${formatPrice(encargo.precioCotizado)}`}
+              </button>
+              <p className="text-center text-[12px] text-hc-n-500">Tenés 7 días para pagar desde la aprobación.</p>
+            </>
+          )}
+          <a
+            href={urlWhatsApp(mensaje)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-[6px] text-[13px] font-semibold text-hc-blue-600"
+          >
+            <IcoSrv nombre="encargoChat" size={14} />
+            Escribirle a la tienda
+          </a>
+        </div>
       </div>
     </MainLayout>
   )
-}
-
-function etiquetaEstado(estado: string) {
-  switch (estado) {
-    case 'PENDIENTE': return 'Pendiente de revisión'
-    case 'APROBADO': return 'Aprobado — listo para pagar'
-    case 'RECHAZADO': return 'Rechazado'
-    case 'PAGADO': return 'Pagado'
-    case 'PENDIENTE_PAGO': return 'Pago en proceso'
-    case 'VENCIDO': return 'Vencido'
-    default: return estado
-  }
 }

@@ -2301,7 +2301,25 @@
     "errorNameRequired": "Informe seu nome para continuar.",
     "errorPhoneRequired": "Informe seu WhatsApp para que possamos entrar em contato.",
     "uploadErrorFull": "Erro ao enviar imagem. Máximo 10 MB por foto.",
-    "sendErrorFull": "Não foi possível enviar a solicitação. Tente novamente."
+    "sendErrorFull": "Não foi possível enviar a solicitação. Tente novamente.",
+    "form": {
+      "pasoFoto": "1 · Foto",
+      "pasoDetalle": "2 · Detalhes",
+      "pasoContacto": "3 · Contato",
+      "fotoLabel": "Foto do produto",
+      "quitarFoto": "Remover foto",
+      "queBuscas": "O que você está procurando?",
+      "queBuscasPh": "Ex: Um abajur de piso de madeira, estilo nórdico, para a sala",
+      "presupuesto": "Orçamento aproximado",
+      "presupuestoPh": "Ex: ₡25.000 – ₡40.000",
+      "whatsapp": "Seu WhatsApp",
+      "whatsappPh": "8888 8888",
+      "nombreOpcional": "Seu nome (opcional)",
+      "nombrePh": "Ex: Maria Garcia",
+      "comoSigueTitulo": "Como continua",
+      "comoSigueTexto": "Procuramos com nossos fornecedores e escrevemos pelo WhatsApp com preço e disponibilidade. O acompanhamento fica em Minha conta › Solicitações.",
+      "comoSigueTextoInvitado": "Procuramos com nossos fornecedores e escrevemos pelo WhatsApp com preço e disponibilidade."
+    }
   },
   "adminOrders": {
     "title": "Pedidos",

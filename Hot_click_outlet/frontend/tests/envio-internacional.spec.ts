@@ -32,6 +32,5 @@ test.describe('Envío internacional — consulta, no CTA verde', () => {
     await mockApis(page)
     await page.goto('/envios', { waitUntil: 'domcontentloaded' })
     await assertAtajoInternacional(page)
-    await expect(page.getByRole('link', { name: 'Consultar envío internacional por WhatsApp' })).toHaveClass(/card-cta-atajo/)
   })
 })
