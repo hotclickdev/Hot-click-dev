@@ -1920,23 +1920,6 @@
     "confirm": "Confirmation",
     "backTo": "Back to {{step}}"
   },
-  "socialProofToast": {
-    "from": "from",
-    "moment": "just now",
-    "closeNotif": "Close notification",
-    "bought": "bought",
-    "added": "added to order",
-    "viewed": "just viewed"
-  },
-  "socialProof": {
-    "ratingLabel": "Rating: {{stars}} out of 5 stars",
-    "reviews": "reviews",
-    "purchases": "purchases",
-    "secure": "100% secure purchase",
-    "warranty": "40-day warranty",
-    "shipping": "Correos CR shipping",
-    "satisfied": "Satisfied customers"
-  },
   "recuperarCarrito": {
     "title": "Your saved order",
     "subtitle": "We found these products you left behind",

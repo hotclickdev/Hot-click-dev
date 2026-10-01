@@ -22,7 +22,6 @@ import {
   ConditionalChatModal,
   AbandonedCartWatcher,
   WishlistAlertWatcher,
-  SocialProofController,
   BrandingInit,
   AnalyticsInit,
   ServiceWorkerRefresh,
@@ -57,7 +56,6 @@ export default function App() {
           <ConditionalWhatsAppFab />
           <AccessibilityPanel />
           <ConditionalChatModal />
-          <SocialProofController />
           <AbandonedCartWatcher />
           <WishlistAlertWatcher />
           <CookieBanner onConsent={(c) => {

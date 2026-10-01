@@ -1,10 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
+import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
-import SocialProofToast from '@/components/ui/SocialProofToast'
-import { useSocialProof } from '@/hooks/useSocialProof'
-import { productService } from '@/services/productService'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import { useBranding } from '@/hooks/useBranding'
@@ -17,9 +14,7 @@ import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
 import { esRutaClaudeclick, esRutaPrototipo, esRutaVendedorFigma, esRutaVisitanteFigma } from '@/utils/rutaPrototipo'
 import ChatModal from '@/components/ai/ChatModal'
-import type { Producto } from '@/types/producto'
 
-const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/pos', '/tienda', '/prototipo', '/emprendedor', '/pyme', '/negocio-plus', '/visitante']
 const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
 
 /**
@@ -85,40 +80,6 @@ export function AbandonedCartWatcher() {
 export function WishlistAlertWatcher() {
   useWishlistAlert()
   return null
-}
-
-/**
- * Toast de prueba social en tienda pública; se salta admin, prototipo y rutas excluidas.
- */
-export function SocialProofController() {
-  const { pathname } = useLocation()
-  const userRole = useAuthStore((s) => s.userRole)
-  const [products, setProducts] = useState<Producto[]>([])
-
-  const isAdmin = ADMIN_ROLES.has(userRole ?? '')
-  const isExcluded = EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) || esRutaClaudeclick(pathname)
-
-  useEffect(() => {
-    if (isAdmin || isExcluded) return
-    productService.getAll(0, 20)
-      .then(({ data }) => {
-        const pagina = data as { content?: Producto[] } | Producto[]
-        const lista = Array.isArray(pagina) ? pagina : pagina.content ?? []
-        setProducts(lista.filter(conFotoYStock))
-      })
-      .catch((err: unknown) => {
-        console.error('[AppChrome] socialProof products', err)
-      })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const notification = useSocialProof(isAdmin || isExcluded ? [] : products)
-
-  if (isAdmin || isExcluded) return null
-  return <SocialProofToast notification={notification} />
-}
-
-function conFotoYStock(producto: Producto) {
-  return Boolean(producto.imagenUrl) && producto.stock > 0
 }
 
 /** Aplica branding del tenant; el prototipo usa tokens de producción. */

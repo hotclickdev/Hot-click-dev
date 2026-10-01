@@ -1920,23 +1920,6 @@
     "confirm": "Confirmação",
     "backTo": "Voltar para {{step}}"
   },
-  "socialProofToast": {
-    "from": "de",
-    "moment": "agora mesmo",
-    "closeNotif": "Fechar notificação",
-    "bought": "comprou",
-    "added": "adicionou ao pedido",
-    "viewed": "acabou de ver"
-  },
-  "socialProof": {
-    "ratingLabel": "Avaliação: {{stars}} de 5 estrelas",
-    "reviews": "avaliações",
-    "purchases": "compras",
-    "secure": "Compra 100% segura",
-    "warranty": "Garantia de 40 dias",
-    "shipping": "Envio Correos CR",
-    "satisfied": "Clientes satisfeitos"
-  },
   "recuperarCarrito": {
     "title": "Seu pedido salvo",
     "subtitle": "Encontramos estes produtos que você deixou",
