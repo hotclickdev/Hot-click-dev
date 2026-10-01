@@ -44,7 +44,7 @@ function BotonGlifo({ onClick, disabled, etiqueta, children }: {
       onClick={onClick}
       disabled={disabled}
       aria-label={etiqueta}
-      className="relative flex items-center justify-center after:absolute after:-inset-x-[6px] after:-inset-y-3 disabled:opacity-30"
+      className="relative flex w-[10px] items-center justify-center after:absolute after:-inset-x-[6px] after:-inset-y-3 disabled:opacity-30"
     >
       {children}
     </button>
@@ -94,15 +94,17 @@ export default function AccionesCompra({
   } else {
     principal = (
       <>
+        {!product.esPersonalizado && (
         <div
           className={`flex shrink-0 items-center rounded-xl border border-hc-n-200 bg-hc-n-0 font-semibold leading-[normal] text-hc-n-900 ${
             esBarra ? 'gap-[14px] p-3 text-[16px]' : 'gap-[18px] px-4 py-[14px] text-[16px]'
           }`}
         >
           <BotonGlifo onClick={onDecrease} disabled={quantity <= 1} etiqueta={t('product.menosUno')}>−</BotonGlifo>
-          <span aria-live="polite" className={esBarra ? 'text-[15px]' : undefined}>{quantity}</span>
+          <span aria-live="polite" className={`w-[7px] text-center ${esBarra ? 'text-[15px]' : ''}`}>{quantity}</span>
           <BotonGlifo onClick={onIncrease} disabled={atMax || !inStock} etiqueta={t('product.masUno')}>+</BotonGlifo>
         </div>
+        )}
         <button
           ref={esBarra ? undefined : mainCTARef}
           type="button"

@@ -48,10 +48,10 @@ export default function FormularioAvisoReposicion({ product, t }: FormularioAvis
   }
 
   return (
-    <div className="flex w-full flex-col gap-[10px] rounded-[14px] bg-hc-blue-50 p-[14px]">
+    <div className="flex w-full flex-col gap-[10px] rounded-[14px] bg-hc-blue-50 p-[14px] leading-[normal]">
       <div className="flex w-full items-center gap-2">
         <IconoFigma src={ICONOS_COMPRADOR.avisoCampana} size={18} className="text-hc-blue-600" />
-        <h3 className="min-w-0 flex-1 text-[14px] font-semibold text-hc-blue-600">
+        <h3 className="min-w-0 flex-1 font-sans text-[14px] font-semibold tracking-normal text-hc-blue-600">
           {t('product.restockTitle')}
         </h3>
       </div>

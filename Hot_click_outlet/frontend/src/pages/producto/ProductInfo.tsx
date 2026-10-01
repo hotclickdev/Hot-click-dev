@@ -129,7 +129,7 @@ export default function ProductInfo({
         </>
       )}
 
-      {product.id != null && (
+      {product.id != null && token && (
         <div className="px-4 pb-4 lg:p-0">
           <ReportarProductoButton productoId={product.id} />
         </div>

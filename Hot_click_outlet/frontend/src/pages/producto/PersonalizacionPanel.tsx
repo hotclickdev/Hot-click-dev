@@ -68,7 +68,7 @@ export default function PersonalizacionPanel({
   return (
     <section aria-labelledby="personaliza-titulo" className="px-4 pb-2 pt-[14px] lg:p-0">
       <div className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal]">
-        <h2 id="personaliza-titulo" className="text-[15px] font-semibold text-hc-n-900">{t('product.personalizaTitulo')}</h2>
+        <h2 id="personaliza-titulo" className="font-sans text-[15px] font-semibold leading-[18px] tracking-normal text-hc-n-900">{t('product.personalizaTitulo')}</h2>
         <p className="text-[12px] leading-4 text-hc-n-500">{t('product.personalizaAyuda')}</p>
 
         {product.instruccionesPersonalizacion && (
@@ -123,7 +123,7 @@ export default function PersonalizacionPanel({
         <textarea
           id="notas-artista-personalizacion"
           rows={2}
-          className={`${CAMPO} -mt-1 w-full resize-y border-[1.5px] leading-[19px]`}
+          className={`${CAMPO} min-h-[61px] w-full resize-y border-[1.5px] leading-[19px]`}
           value={personalizacion.notas || ''}
           onChange={(e) => onChange({
             ...personalizacion,

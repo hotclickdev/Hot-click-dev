@@ -174,7 +174,7 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
             className={`pointer-events-none absolute rounded-full bg-black/55 leading-[normal] text-hc-n-0 lg:hidden ${
               compacta
                 ? 'bottom-[14px] right-[13px] px-[10px] py-[4px] font-mono text-[11px] font-medium'
-                : 'bottom-[15px] right-[11px] px-2 py-[3px] text-[11px] font-semibold'
+                : 'bottom-[15px] right-[19px] px-2 py-[3px] text-[11px] font-semibold leading-[13px]'
             }`}
           >
             {contador}

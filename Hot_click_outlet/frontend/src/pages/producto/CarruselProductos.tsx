@@ -30,8 +30,8 @@ export default function CarruselProductos({ id, titulo, productos, variante, max
     >
       <h2
         id={id}
-        className={`font-display font-bold text-hc-n-900 lg:px-0 lg:text-[22px] ${
-          sangrado ? 'px-4 text-[17px]' : 'text-[16px]'
+        className={`font-display font-bold tracking-normal text-hc-n-900 [text-wrap:wrap] lg:px-0 lg:text-[22px] lg:leading-7 ${
+          sangrado ? 'px-4 text-[17px] leading-[21px]' : 'text-[16px] leading-5'
         }`}
       >
         {titulo}

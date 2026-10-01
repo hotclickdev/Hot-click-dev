@@ -19,7 +19,7 @@ type ProductoCabeceraProps = {
   compacta: boolean
 }
 
-const ETIQUETA = 'inline-flex w-fit items-start rounded-full px-2 py-[3px] text-[11px] font-semibold'
+const ETIQUETA = 'inline-flex w-fit items-start rounded-full px-2 py-[3px] text-[11px] font-semibold leading-[13px]'
 
 /** Iniciales del vendedor (Figma: "Casa Luna 506" → "CL"). */
 function inicialesVendedor(nombre: string): string {
@@ -86,7 +86,7 @@ export default function ProductoCabecera({ product, agotado, compacta }: Product
       <Vendedor product={product} compacta={compacta} />
 
       <h1
-        className={`font-display font-bold text-hc-n-900 lg:order-2 lg:text-[32px] lg:leading-[38px] ${
+        className={`font-display font-bold tracking-normal text-hc-n-900 [text-wrap:wrap] lg:order-2 lg:text-[32px] lg:leading-[38px] ${
           compacta ? 'order-1 text-[20px] leading-[26px]' : 'order-2 text-[22px] leading-7'
         }`}
       >
@@ -98,8 +98,8 @@ export default function ProductoCabecera({ product, agotado, compacta }: Product
 
       <div className="order-3 flex flex-wrap items-center gap-x-[10px] leading-[normal] lg:items-baseline">
         <p
-          className={`font-display text-hc-n-900 lg:text-[34px] lg:font-extrabold ${
-            compacta ? 'text-[24px] font-bold' : 'text-[26px] font-extrabold'
+          className={`font-display text-hc-n-900 lg:text-[34px] lg:font-extrabold lg:leading-[43px] ${
+            compacta ? 'text-[24px] font-bold leading-[30px]' : 'text-[26px] font-extrabold leading-[33px]'
           }`}
         >
           {textoPrecioProducto(product)}

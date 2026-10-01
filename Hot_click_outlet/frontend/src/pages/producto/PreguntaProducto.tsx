@@ -19,7 +19,7 @@ export default function PreguntaProducto({ product }: { product: Producto }) {
       <div className="flex flex-col gap-[10px] rounded-2xl bg-hc-blue-50 p-[14px] leading-[normal] lg:p-4">
         <div className="flex items-center gap-2">
           <IconoFigma src={ICONOS_COMPRADOR.asistente} size={18} className="text-hc-blue-600" />
-          <h2 id="pregunta-producto" className="text-[14px] font-semibold text-hc-blue-600">
+          <h2 id="pregunta-producto" className="font-sans text-[14px] font-semibold tracking-normal text-hc-blue-600">
             {t('product.preguntaTitulo')}
           </h2>
         </div>

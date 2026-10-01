@@ -70,7 +70,7 @@ export default function SizeSelector({
       {(avisoStock || avisoAgotada || agotadas.length > 0) && (
         <div className="flex flex-wrap items-center gap-[6px]">
           {avisoStock && (
-            <span className="rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold text-hc-warning">
+            <span className="rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold leading-[13px] text-hc-warning">
               {t('product.sizeStock', { count: stockActivo, talla: tallaSeleccionada })}
             </span>
           )}

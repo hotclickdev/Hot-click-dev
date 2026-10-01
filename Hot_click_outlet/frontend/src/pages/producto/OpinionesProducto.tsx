@@ -31,7 +31,7 @@ export default function OpinionesProducto({ productoId }: { productoId: Id | und
       className="flex flex-col gap-[10px] px-4 pb-4 pt-2 leading-[normal] lg:px-0 lg:pb-0"
     >
       <div aria-hidden="true" className="h-px w-full bg-hc-n-200 lg:hidden" />
-      <h2 id="opiniones-producto" className={`font-display text-[17px] font-bold text-hc-n-900 ${vacio ? 'lg:sr-only' : 'lg:text-[22px]'}`}>
+      <h2 id="opiniones-producto" className={`font-display text-[17px] font-bold leading-[21px] tracking-normal [text-wrap:wrap] text-hc-n-900 ${vacio ? 'lg:sr-only' : 'lg:text-[22px]'}`}>
         {t('product.opinionesTitulo')}
       </h2>
 

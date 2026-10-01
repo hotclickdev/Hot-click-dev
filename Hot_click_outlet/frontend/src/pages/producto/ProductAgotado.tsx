@@ -15,7 +15,7 @@ import FormularioAvisoReposicion from './FormularioAvisoReposicion'
 /** Etiqueta "Agotado" sobre el título (Figma 44:1936). */
 export function EtiquetaAgotado({ t }: { t: TFunction }) {
   return (
-    <span className="inline-flex w-fit items-start rounded-full bg-hc-n-100 px-2 py-[3px] text-[11px] font-semibold text-hc-n-600">
+    <span className="inline-flex w-fit items-start rounded-full bg-hc-n-100 px-2 py-[3px] text-[11px] font-semibold leading-[13px] text-hc-n-600">
       {t('product.outOfStock')}
     </span>
   )
