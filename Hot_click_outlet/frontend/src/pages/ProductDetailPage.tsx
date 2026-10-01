@@ -93,7 +93,7 @@ export default function ProductDetailPage() {
               activeImg={activeImg}
               onSelectImg={setActiveImg}
               compacta={compacta}
-              atenuada={agotado}
+              cubierta={agotado}
             />
             <ProductInfo
               product={product}

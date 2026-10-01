@@ -33,7 +33,7 @@ Ninguna ficha es PASS porque cada una tiene al menos una diferencia deliberada o
 | Desktop: opiniones, título, tarjetas (y) | 781, 867, 915 | otras | 781, 867, 914 (el título mide 27 y no 28) |
 | Variantes: título, color, talla, chips (y) | 376, 479, 597, 623 | no existía | idénticos |
 | Personalizado: tag, título, vendedor (y) | 376, 401, 459 | caja | idénticos; panel 27 px más arriba (sin fila Elaboración) |
-| Agotado: etiqueta, carrusel (y) | 376, 754 | parcial | 376, 740 (14 px menos por la etiqueta no mostrada) |
+| Agotado: galería, etiqueta, carrusel (y) | rectángulo blanco 390x360, 376, 754 | foto visible | rectángulo (0,0,390,360), 376, 740 (14 px menos por la etiqueta no mostrada) |
 | Galería completa: cerrar, visor, pista, miniaturas, título | (16,10) 40, (0,88) 390x520, (67,5,560), (52,650), y=740 | otra | idénticos |
 
 Causa de las diferencias de alto en Sora: Figma usa un interlineado de 1,265 y el navegador 1,385; se fijaron `leading` explícitos (33, 30, 43, 28, 21, 20). El `h1-h4` global de `index.css` aplica Sora y tracking de -0,02em; Figma no tiene tracking, por eso los títulos de la ficha llevan `tracking-normal` y los encabezados en Public Sans `font-sans`.
@@ -42,9 +42,9 @@ Causa de las diferencias de alto en Sora: Figma usa un interlineado de 1,265 y e
 
 1. **Elaboración** ("Se elabora en 3 a 5 días hábiles", `44:1876`): no existe el dato en backend y Figma la marca como "NUEVO · por programar". No se muestra.
 2. **"NUEVO · por programar"** (`44:1882`, `44:1952`): anotación de diseño, no se muestra. `FormularioAvisoReposicion` ya no la pinta y se borraron `restockNuevo` y `restockNoAccount` en es/en/pt (el texto "Si ingresaste a tu cuenta, también te avisamos por WhatsApp" es ahora el único, como en Figma). El encabezado del aviso mide 18 y no 32 sin la etiqueta.
-3. **Foto del agotado**: Figma tapa la foto con un rectángulo blanco opaco (`44:1919`). Se muestra la foto atenuada (opacidad 35 %). Pendiente de decisión del usuario.
+3. **Foto del agotado** (decisión del usuario): se aplica Figma literalmente. Un rectángulo blanco opaco (`n/0`, opacidad 1) de 390x360 en (0,0) cubre la foto al 100 %, por debajo de los botones atrás/compartir/favorito y del contador "1 / 4" (que siguen visibles). Medido: rectángulo (0,0,390,360), píxeles de la galería blancos como en Figma, pastilla del contador rgba(115,115,115) idéntica. Solo en móvil: desktop no tiene frame de agotado y muestra la foto. Si el diseñador aclara otra intención se ajusta (prop `cubierta` de `ProductGallery`).
 4. **Guía de tallas** (`44:1813`): no existe contenido ni ruta. No se muestra.
-5. **Stepper de cantidad**: Figma lo omite en la barra de variantes y de personalizado. Se conserva en variantes (funcionalidad) y se oculta en personalizado (la etiqueta "Agregar pedido personalizado · ₡11.000" no cabe con el stepper).
+5. **Stepper de cantidad** (decisión del usuario): se MANTIENE en variantes (Figma lo omite en esa barra; verificado en 390: botones de cantidad presentes) y se mantiene la omisión en personalizado (la etiqueta "Agregar pedido personalizado · ₡11.000" no cabe con el stepper).
 6. **"Comprar ahora"** ya no existe: Figma solo tiene "Agregar". `handleComprarAhora` queda en el hook sin uso.
 7. **Barra superior**: la ficha usa `MainLayout variante="propia" barraInferior={false}`, no `interna`: Figma no tiene barra, la foto llega a y=0 con atrás/compartir/favorito encima.
 8. **Panel de personalizado con precio fijo** oculta presupuesto y "¿Cómo funciona?" (el frame no los muestra); con cotización se conservan.
