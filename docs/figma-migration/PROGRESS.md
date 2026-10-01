@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-09-30. Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-01. Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -16,13 +16,13 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, CAT C1 a C5 | **Hecho**, integrado en `base` (`1cd7721a`). 18 commits en `feat/figma/cat`. De sus 10 pantallas: 8 PASS (según el agente) y 2 PARTIAL (`27:882`, `8:230`). Ver `CAT_C1_C5.md` |
 | Ola 1, PROD | **Hecho**, integrado en `base` (`a44632a6`). 4 commits en `feat/figma/prod`. Galería PASS; 5 fichas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
 | Ola 1, SYS | **Hecho**, integrado en `base` (`0536ef45`). 10 pantallas: 7 PASS (agent verified) y 3 PARTIAL. FAB y WhatsApp resueltos sin tocar SHELL ni PROD; `SocialProofToast` desmontado. Ver `SYS.md` |
-| Ola 1, CHK | **Relanzado** (agente nuevo, 2026-09-30) sobre la misma rama `feat/figma/chk`, conservando los 19 cambios sin commitear (auditados: compilan, ownership correcto). Primero verifica 5 eliminaciones (`AbandonedEmailPrompt`, `CartItemRow`, `CartSummary`, `CrossSellGrid`, `AICartSection`), luego carrito, checkout, pago y el resto. 1 commit hasta ahora (`d1451060`, hoja `45:1607`). En curso. Ver `CHK.md` |
+| Ola 1, CHK | **Hecho**, integrado en `base` (merge `cf657e9c`, local, sin push). Rama `feat/figma/chk`: 16 commits desde `d1451060` (los 19 cambios sin commitear sobrevivieron al apagón y quedaron commiteados) más `0f017780` (restauración de funcionalidad). De sus 17 pantallas: 3 PASS (`45:1607`, `45:1640`, `45:1692`, todas móvil, agent verified) y 14 PARTIAL. Ninguna es QA final. Ver `CHK.md` |
+| Ola 1, CHK, restauraciones | **Hecho** (`0f017780`). Restaurados: "Vaciar pedido", WhatsApp en el resumen de escritorio, guardar por correo en escritorio, garantía de 40 días e "Imprimir" en el pago exitoso, y el contexto `CARRITO:items:total` al asistente global. NO restaurados: `AICartSection`, `CrossSellGrid`, stepper del carrito, precio unitario, meta de envío gratis en el carrito. Excepción de ownership aditiva en `chatStore` y `ChatModal` |
 | Ola 1, SYS, ajuste por decisiones | **Hecho**, integrado en `base` (`17988771`, commit `1ec97317`): hoja de accesibilidad sin tema ni filtro de color (alto 354, igual a Figma). Cupón `51:2163` pasa a PASS móvil. Nueva diferencia abierta: Figma resalta el tamaño de fuente "A" (medio) por defecto y la app "A−" |
 | Ola 1, PROD, ajuste de la ficha agotada | **Hecho**, integrado en `base` (`d8af873b`) |
-| Ola 1, ACC, SRV, STORE, QR | **No lanzados** |
+| Ola 1, ACC, SRV, STORE, QR | **No lanzados** (ACC no se lanza hasta que el usuario lo pida) |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
-| Agentes CAT, PROD, STORE, CHK, ACC, SRV, SYS, QR | **No lanzados**, como se pidió |
 
 ## Ramas y worktrees
 
@@ -34,7 +34,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | `feat/figma/supervisor` | `.claude/worktrees/supervisor` | `feat/figma/base` | SUP | docs | Activa: documentación. Sus docs se mezclan en `base` |
 | `feat/figma/cat` | `.claude/worktrees/cat` | `feat/figma/base` (`ba4a4171`) | CAT | `a2996613`, `579f01a7`, `9881860a` | C1 a C5 y pantallas hechas e integradas en `base` (`1cd7721a`) |
 | `feat/figma/prod` | `.claude/worktrees/prod` | `feat/figma/base` (`1c87c9d3`) | PROD | `c0ecd189`, `80c770e9`, `47536ba1`, `ea0d3b0f` | Hecha e integrada en `base` (`a44632a6`) |
-| `feat/figma/{chk,acc,srv,sys,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
+| `feat/figma/chk` | `.claude/worktrees/chk` | `11af2c0a` (base de PROD) | CHK | 16 commits (`d1451060` a `3c9b4d62`) y `0f017780` | Hecha e integrada en `base` (`cf657e9c`). Working tree limpio |
+| `feat/figma/{acc,srv,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
 Topología:
@@ -208,18 +209,26 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 24 | Tamaño de fuente por defecto en la hoja de accesibilidad (`51:2229`): Figma resalta "A" (el del medio) y la app resalta "A−" porque el valor por defecto del store es el menor. Arreglarlo exige un tamaño nuevo o reetiquetar | SYS |
 | 23 | ~~Aviso de envío del primer producto de un negocio~~ **Resuelto: se mantiene omitido**; se muestra solo cuando ya hay otro producto del mismo negocio (el caso dibujado en Figma) | CHK |
 
+| 25 | ~~Funcionalidad que CHK quitó y Figma no elimina~~ **Resuelto (1-oct-2026): se restauran** vaciar pedido, WhatsApp en escritorio, guardar por correo en escritorio (posición sin referencia desktop), garantía de 40 días, imprimir y el contexto del carrito al asistente. **Se mantienen eliminados**: `AICartSection`, `CrossSellGrid`, stepper, precio unitario, meta de envío gratis en el carrito | CHK |
+| 26 | Cédula SINPE (no está en Figma), atajo de envío internacional y consentimiento (Ley 8968) en escritorio: se conservan; ¿se aceptan? | CHK |
+| 27 | Frames de escritorio que faltan (REQUIRES_DESIGN_REFERENCE): pago exitoso/fallido, pantalla previa de transferencia SINPE, hoja tras "Agregar" | CHK |
+| 28 | `autoQuery` del asistente global: `ChatModal` limpia `pendingMessage` al abrir y la pregunta inicial no se envía sola (afecta también a `AsistentePedido`). Es de CAT, no de CHK | CAT |
+
 ## Riesgos abiertos
 
 - **Pendientes de integración tras SYS:** (SUP) registrar la ruta `/sin-conexion` -> `pages/SinConexionPage` en `AppRoutes.tsx` (ver `ROUTES_REQUESTED.md`); (HOME) usar `esSinConexion(error)` -> `PantallaSinConexion` en errores de red; (SHELL) `FooterComprador` con "Preferencias de cookies" (`abrirPreferenciasCookies()`) e "Idioma y accesibilidad" (`abrirAccesibilidad()`), alias `--color-hc-success-bg` y prop de fondo blanco en `MainLayout`; (ACC) fila "Idioma y accesibilidad" en Mi cuenta. Hasta entonces el botón con isotipo de accesibilidad sigue visible (constante `MOSTRAR_BOTON_FLOTANTE`).
 - **`REQUIRES_DESIGN_REFERENCE` (no son PASS definitivo):** cookies en desktop (tarjeta abajo a la izquierda, provisional) y la interacción desktop tras "Agregar" en la ficha (toast). Hay que pedir a diseño los frames desktop.
 
 - **PASS sin QA independiente (se documentan como `PASS — agent verified`):** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
-- **e2e de Playwright sin arreglar:** fallan `catalogo-iconos` ("Ver más"), `pdp-comprar-ahora` y los que leen archivos borrados por otros agentes (`AdminConvenios`, `NavbarMobileCategorias`, `ShippingSection`, `navbarIcons`) o buscan el botón "Menú" del header anterior. Hay que decidir quién los arregla.
+- **e2e de Playwright sin arreglar:** fallan `catalogo-iconos` ("Ver más") y los que leen archivos borrados por otros agentes (`AdminConvenios`, `NavbarMobileCategorias`, `ShippingSection`, `navbarIcons`) o buscan el botón "Menú" del header anterior. Hay que decidir quién los arregla.
 - **Lint previo:** quedan errores de eslint que ya existían en `AIChat`, `SearchPanel`, `useSearchPanel`, `DescubriPage:135` y `utils/gustos.ts:120` (regla de refs durante render), más 88 en `src/pages` fuera de lo tocado.
 - **Dependencias hacia SHELL:** `MainLayout` manda "buscar con foto" a `/servicios` aunque `/buscar/foto` existe; el header desktop no muestra la búsqueda actual (Figma `30:1824` sí); la barra inferior marca "Buscar" en `/productos?cat=` y Figma `43:1530` marca "Categorías"; `BarraInterna` pinta el título como `<p>`.
 - **Dependencias hacia SYS:** el FAB del asistente y el botón de WhatsApp flotantes se superponen a la barra de compra móvil de la ficha y no están en Figma.
 - **Dependencias hacia backend:** el SSE del asistente no manda los filtros interpretados (fila "Entendí:"); falta `empresaNombre`, `tienda` y `categoria` en resultados de foto; falta dato de tiempo de elaboración y guía de tallas.
 
+- **Dependencias hacia backend (CHK):** provincia de la bodega y marca GAM ("Sale de X" y envío por origen), `tokenSeguimiento` en el estado del pago, comisión y "Paquete N de M", y `stock` en el carrito abandonado.
+- **Dependencias hacia SHELL (CHK):** una regla global de `index.css` fuerza 16 px en inputs móviles (los frames piden 14 y 15) y falta el alias `--color-hc-success-bg`.
+- **e2e:** `pdp-comprar-ahora` se reemplazó por `pdp-agregar-hoja`; siguen fallando fuera de CHK `asistente-checkout` y `envio-rapido`. Queda un error de eslint previo en `useCheckoutForm.ts`.
 - **Fase 2 llegó sin CI:** el PR #93 nunca disparó GitHub Actions. Lo validado aquí es local (tests, tipos, build). Sigue sin pasar los gates E1 a E18.
 - **Conflictos de i18n** entre agentes: mitigados con namespaces, pero el riesgo de merge persiste. Gate E17 exige es/en/pt en el mismo commit.
 - **Fixtures:** 76 pantallas dependen de datos (carrito, sesión, pedidos con paquetes). Sin un arnés común de datos, cada agente improvisará el suyo. Conviene un fixture compartido antes de la ola 1.

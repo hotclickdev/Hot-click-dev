@@ -69,20 +69,20 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 03 Producto y tiendas | Ficha agotada · móvil | `44:1917` | /productos/:id (ProductAgotado) | PARTIAL | M (PROD). Etiqueta 376; chip y carrusel 14 px más arriba porque no se pinta "NUEVO · por programar". Foto atenuada al 35 % contra el rectángulo blanco opaco de Figma (decisión pendiente) | no | sí | PROD |
 | 03 Producto y tiendas | Galería a pantalla completa · móvil | `55:2167` | /productos/:id (overlay) | PASS — agent verified | M (PROD). Cerrar 40 en (16,10), visor 390x520, pista 560, miniaturas 64, contador "1 / 4 · 2×". Solo existe frame móvil | no | sí | PROD |
 | 03 Producto y tiendas | Galería · foto ampliada · móvil | `55:2191` | /productos/:id (overlay) | PASS — agent verified | M (PROD). Foto ampliada verificada con la galería a pantalla completa. Solo existe frame móvil | no | sí | PROD |
-| 04 Comprar | 1 · Carrito · móvil | `28:989` | /carrito | UNKNOWN | C. Captura con carrito vacío; requiere fixture | no | sí | CHK |
-| 04 Comprar | 2 · Checkout · Datos · móvil | `28:1083` | /checkout | UNKNOWN | C. Requiere fixture | no | sí | CHK |
-| 04 Comprar | 3 · Checkout · Entrega · móvil | `29:1248` | /checkout | UNKNOWN | C. Requiere fixture | no | sí | CHK |
-| 04 Comprar | 4 · Checkout · Pago · móvil | `29:1344` | /checkout | UNKNOWN | C. Requiere fixture | no | sí | CHK |
-| 04 Comprar | 5 · Pago exitoso · móvil | `29:1932` | /pago/exito | UNKNOWN | V parcial: sin pedido muestra un error, no el éxito; requiere fixture | no | sí | CHK |
-| 04 Comprar | 6 · Pago fallido · móvil | `29:1999` | /pago/cancelado | UNKNOWN | V parcial: requiere fixture | no | sí | CHK |
-| 04 Comprar | 7 · Recuperar carrito · móvil | `29:2036` | /recuperar-carrito/:token | UNKNOWN | C | no | sí | CHK |
-| 04 Comprar | 8 · Carrito · desktop | `30:2268` | /carrito | UNKNOWN | C. Requiere fixture | sí | no | CHK |
-| 04 Comprar | 9 · Checkout · desktop | `30:2385` | /checkout | UNKNOWN | C. Requiere fixture | sí | no | CHK |
-| 04 Comprar | Vendedor · despachar paquete · móvil | `37:1780` | /emprendedor/* (pedidos) | UNKNOWN | H (N dejó el frontend incompleto) | no | sí | CHK |
-| 04 Comprar | Agregado a tu pedido · hoja · móvil | `45:1607` | (hoja) useAgregarAlPedido | UNKNOWN | C | no | sí | CHK |
-| 04 Comprar | Pago pendiente de verificación · SINPE | `45:1640` | /checkout (estado) | UNKNOWN | C | no | sí | CHK |
-| 04 Comprar | Pago · tarjeta de regalo válida | `55:2220` | /checkout (estado) | UNKNOWN | C. Existe CheckoutPaidGiftCard | no | sí | CHK |
-| 04 Comprar | Pago · tarjeta de regalo inválida | `55:2284` | /checkout (estado) | UNKNOWN | B. Recuperada en feat/figma/base (merge del PR #93); falta comparar contra Figma | no | sí | CHK |
+| 04 Comprar | 1 · Carrito · móvil | `28:989` | /carrito | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Carrito por paquetes móvil: medidas iguales; falta "Sale de <provincia>" (el producto no trae la provincia de la bodega) | no | sí | CHK |
+| 04 Comprar | 2 · Checkout · Datos · móvil | `28:1083` | /checkout | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Checkout paso 1 (datos): coincide al píxel; extras obligatorios no dibujados (consentimiento Ley 8968, cédula SINPE) | no | sí | CHK |
+| 04 Comprar | 3 · Checkout · Entrega · móvil | `29:1248` | /checkout | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Checkout paso 2 (entrega): coincide salvo datos; envío normal GAM o fuera del GAM según cantón destino (Figma lo muestra por origen) | no | sí | CHK |
+| 04 Comprar | 4 · Checkout · Pago · móvil | `29:1344` | /checkout | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Checkout paso 3 (pago): coincide; SINPE por defecto; cédula SINPE y atajo internacional sin frame | no | sí | CHK |
+| 04 Comprar | 5 · Pago exitoso · móvil | `29:1932` | /pago/exito | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Pago exitoso móvil igual al frame con los datos que hay; "Ver mi pedido" de invitado requiere `tokenSeguimiento`; garantía de 40 días e "Imprimir" restaurados (sin frame); escritorio REQUIRES_DESIGN_REFERENCE | no | sí | CHK |
+| 04 Comprar | 6 · Pago fallido · móvil | `29:1999` | /pago/cancelado | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Pago fallido y cancelado móvil igual; reintento Tilopay intacto; escritorio REQUIRES_DESIGN_REFERENCE | no | sí | CHK |
+| 04 Comprar | 7 · Recuperar carrito · móvil | `29:2036` | /recuperar-carrito/:token | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Recuperar carrito igual al frame; "Disponible · quedan N" solo si el backend devuelve `stock` | no | sí | CHK |
+| 04 Comprar | 8 · Carrito · desktop | `30:2268` | /carrito | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Carrito escritorio: columnas y resumen medidos iguales; "Pedir por WhatsApp" (resumen 551 px contra 521) y tarjeta de correo restaurados sin frame desktop; "Vaciar pedido" restaurado | sí | no | CHK |
+| 04 Comprar | 9 · Checkout · desktop | `30:2385` | /checkout | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Checkout escritorio: posiciones y tamaños iguales; SINPE despliega instrucciones/cédula; atajo internacional y consentimiento sin frame | sí | no | CHK |
+| 04 Comprar | Vendedor · despachar paquete · móvil | `37:1780` | /emprendedor/* (pedidos) | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Despacho del vendedor con guía de Correos (`PUT /pedidos/:id/guia`); faltan "Paquete N de M", forma de entrega y comisión (backend) | no | sí | CHK |
+| 04 Comprar | Agregado a tu pedido · hoja · móvil | `45:1607` | (hoja) useAgregarAlPedido | PASS — agent verified | M (CHK, 1-oct-2026, agent verified, API simulada). Hoja "Agregado a tu pedido" móvil medida en píxeles. Escritorio: REQUIRES_DESIGN_REFERENCE (se mantiene el toast) | no | sí | CHK |
+| 04 Comprar | Pago pendiente de verificación · SINPE | `45:1640` | /checkout (estado) | PASS — agent verified | M (CHK, 1-oct-2026, agent verified, API simulada). Pago en revisión SINPE móvil; la pantalla previa de transferencia no tiene frame (REQUIRES_DESIGN_REFERENCE) | no | sí | CHK |
+| 04 Comprar | Pago · tarjeta de regalo válida | `55:2220` | /checkout (estado) | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Tarjeta de regalo válida: "Total restante" y nota; el frame usa una barra "Pago · paso 3 de 3" y un número previo al pago que no existen | no | sí | CHK |
+| 04 Comprar | Pago · tarjeta de regalo inválida | `55:2284` | /checkout (estado) | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Tarjeta de regalo inválida: mismas diferencias que `55:2220` | no | sí | CHK |
 | 05 Cuenta | Ingresar · móvil | `28:1143` | /login | OLD_DESIGN | V. Figma: "Ingresá o creá tu cuenta" con correo y Google; código: "Bienvenido de vuelta" con contraseña | no | sí | ACC |
 | 05 Cuenta | Mi cuenta · móvil | `28:1196` | /perfil | UNKNOWN | C. Requiere sesión | no | sí | ACC |
 | 05 Cuenta | Mis pedidos · móvil | `28:1310` | /mis-pedidos | UNKNOWN | C. Requiere sesión | no | sí | ACC |
@@ -117,14 +117,14 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 08 QR y correos | Correo · Recuperación de carrito | `30:1733` | backend | UNKNOWN | H (P) | no | n/a | QR |
 | 08 QR y correos | Correo · Cupón de bienvenida | `30:1768` | backend | UNKNOWN | H (P) | no | n/a | QR |
 | 08 QR y correos | Correo · Código de verificación | `30:1793` | backend | UNKNOWN | H (P) | no | n/a | QR |
-| 09 Funciones existentes | A · Carrito · notas, gift card, WhatsApp, guardar y asistente | `51:1820` | /carrito | UNKNOWN | C. Requiere fixture | no | sí | CHK |
-| 09 Funciones existentes | B · Checkout · Entrega · envío internacional | `51:2000` | /checkout | UNKNOWN | C. Requiere fixture | no | sí | CHK |
+| 09 Funciones existentes | A · Carrito · notas, gift card, WhatsApp, guardar y asistente | `51:1820` | /carrito | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Notas, cupón y gift card funcionan con `pedidoExtrasStore`; guardar por correo y asistente (`52:2178`, `52:2223`); el asistente envía `CARRITO:items:total` al chat global | no | sí | CHK |
+| 09 Funciones existentes | B · Checkout · Entrega · envío internacional | `51:2000` | /checkout | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Envío internacional: se conserva el atajo; REQUIERE_DECISION en escritorio | no | sí | CHK |
 | 09 Funciones existentes | C · Cupón de bienvenida · hoja | `51:2163` | PromoWelcomePopup | PASS — agent verified (móvil) | M (SYS). Campo de correo de 42 px, decisión del usuario (el frame de 26 px está comprimido). Paso "cupón enviado" no existe en Figma | no | sí | SYS |
 | 09 Funciones existentes | D · ¿Aún pensando? · salida · hoja | `51:2196` | ExitIntentModal | PASS — agent verified | M (SYS). Hoja y525 alto 319. Variante de favoritos sin frame | no | sí | SYS |
 | 09 Funciones existentes | E · Idioma y accesibilidad · hoja | `51:2229` | AccessibilityPanel / LanguageSelector | PARTIAL | M (SYS). Hoja y490 alto 354 (igual a Figma), "Alto contraste" y702, "Reducir movimiento" y740, "Listo" y774, chips 33. Tema y filtro de color sacados por decisión del usuario. Diferencia real: Figma resalta "A" (tamaño del medio) por defecto y la app resalta "A−" (el tamaño por defecto del store es el menor): REQUIRES_DECISION | no | sí | SYS |
 | 09 Funciones existentes | F · Botón flotante de WhatsApp · Home | `51:2262` | WhatsAppFab | PASS — agent verified (móvil) | M (SYS). 56x56 en x318,y705 igual a Figma; sin superposición con barra inferior ni barra de compra. Desktop sin frame: abajo a la derecha con margen 16 (nota `52:2422`), decisión del usuario | no | sí | SYS |
 | 09 Funciones existentes | G · Tienda con su color · perfil del negocio | `51:2468` | /tienda/:slug | UNKNOWN | C | no | sí | STORE |
-| 10 Estados del sistema | Carrito vacío · móvil | `45:1692` | /carrito | UNKNOWN | V parcial: existe estado vacío con "Explorar productos"; sin comparar contra el frame | no | sí | CHK |
+| 10 Estados del sistema | Carrito vacío · móvil | `45:1692` | /carrito | PASS — agent verified | M (CHK, 1-oct-2026, agent verified, API simulada). Carrito vacío móvil con 2 destacados; en escritorio se centra con el mismo ancho (sin frame) | no | sí | CHK |
 | 10 Estados del sistema | Favoritos vacío · móvil | `45:1799` | /wishlist | UNKNOWN | H (O) | no | sí | ACC |
 | 10 Estados del sistema | Sin pedidos · móvil | `45:1848` | /mis-pedidos | UNKNOWN | H (O) | no | sí | ACC |
 | 10 Estados del sistema | Sin solicitudes · móvil | `45:1896` | /servicios (vista) | UNKNOWN | H (O) | no | sí | ACC |
@@ -145,7 +145,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | CAT | 10 |
 | PROD | 7 |
 | STORE | 4 |
-| CHK | 17 |
+| CHK | 17 (3 PASS agent verified, 14 PARTIAL) |
 | ACC | 18 |
 | SRV | 8 |
 | QR | 13 |
