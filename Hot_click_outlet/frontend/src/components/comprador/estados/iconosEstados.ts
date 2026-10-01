@@ -2,6 +2,7 @@ import accesoAyuda from '@/assets/figma/sistema/acceso-ayuda.svg'
 import accesoCategorias from '@/assets/figma/sistema/acceso-categorias.svg'
 import accesoInicio from '@/assets/figma/sistema/acceso-inicio.svg'
 import accesoPedidos from '@/assets/figma/sistema/acceso-pedidos.svg'
+import alertaServidor from '@/assets/figma/sistema/alerta-servidor.svg'
 import accesibilidad from '@/assets/figma/sistema/accesibilidad.svg'
 import buscador404 from '@/assets/figma/sistema/buscador-404.svg'
 import cookie from '@/assets/figma/sistema/cookie.svg'
@@ -27,6 +28,7 @@ export const ICONOS_ESTADOS = {
   accesoInicio,
   accesoPedidos,
   accesibilidad,
+  alertaServidor,
   buscador404,
   cookie,
   cookiesInterruptor,
