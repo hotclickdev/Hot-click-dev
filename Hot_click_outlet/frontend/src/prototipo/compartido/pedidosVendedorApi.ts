@@ -63,3 +63,8 @@ export async function cargarPedidosVendedor(): Promise<Pedido[]> {
 export async function marcarPedidoEnviadoApi(id: string) {
   await orderService.updateStatus(id, 'ENVIADO')
 }
+
+/** Asigna la guía de Correos: el backend deja el pedido en ENVIADO y avisa al cliente con el seguimiento. */
+export async function marcarPedidoConGuiaApi(id: string, numeroGuia: string) {
+  await orderService.asignarGuia(id, numeroGuia)
+}

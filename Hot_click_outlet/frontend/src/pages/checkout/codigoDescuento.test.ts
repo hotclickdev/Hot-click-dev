@@ -80,8 +80,8 @@ describe('código de descuento · presentación (Figma 55:2284 / 55:2220)', () =
     expect(html).toContain('text-hc-success')
   })
 
-  it('CheckoutSummary ya no tiene colores hardcodeados ni textos fijos de gift card/cupón', () => {
-    const resumen = readFileSync(resolve(aqui, 'CheckoutSummary.tsx'), 'utf8')
+  it('el paso de pago y el carrito no tienen colores hardcodeados ni textos fijos de gift card/cupón', () => {
+    const resumen = readFileSync(resolve(aqui, 'PasoPago.tsx'), 'utf8') + readFileSync(resolve(aqui, '../carrito/CodigosNotasCarrito.tsx'), 'utf8')
     expect(resumen).not.toMatch(/#f87171|#10b981|emerald-400|text-red-400/)
     expect(resumen).not.toContain('Código inválido, vencido o sin saldo')
     expect(resumen).not.toContain('¿Tenés una gift card?')
