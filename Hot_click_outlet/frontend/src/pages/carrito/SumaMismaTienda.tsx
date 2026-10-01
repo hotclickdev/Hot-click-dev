@@ -21,9 +21,9 @@ export default function SumaMismaTienda({ producto, negocio, escritorio, onAgreg
   return (
     <div className={`flex items-center bg-hc-blue-50 ${contenedor}`}>
       {foto ? (
-        <img src={foto} alt="" className={`shrink-0 rounded-lg object-cover ${tamanoFoto}`} />
+        <img src={foto} alt="" className={`shrink-0 rounded-[8px] object-cover ${tamanoFoto}`} />
       ) : (
-        <span aria-hidden="true" className={`shrink-0 rounded-lg bg-hc-n-200 ${tamanoFoto}`} />
+        <span aria-hidden="true" className={`shrink-0 rounded-[8px] bg-hc-n-200 ${tamanoFoto}`} />
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p className={`flex items-center gap-1 font-semibold text-hc-blue-600 ${escritorio ? 'text-[13px] leading-[normal]' : 'text-[12px] leading-4'}`}>

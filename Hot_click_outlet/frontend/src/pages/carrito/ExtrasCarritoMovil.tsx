@@ -27,7 +27,7 @@ export function GuardarPorCorreo({ correo, guardado, onCambiar, onGuardar }: Gua
         <p role="status" className="text-[13px] font-semibold leading-[normal] text-hc-success">{t('cart.guardado')}</p>
       ) : (
         <form onSubmit={enviar} className="flex items-center gap-[10px]">
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-hc-n-200 bg-hc-n-0 p-3">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3">
             <IconoFigma src={ICONOS_CHECKOUT.guardarCorreo} size={16} className="text-hc-n-500" />
             <input
               type="email"
@@ -58,7 +58,7 @@ export function AsistentePedido({ onPreguntar }: { onPreguntar: (texto: string) 
   return (
     <section className="flex flex-col gap-2">
       <h2 className="font-sans text-[14px] font-medium leading-[normal] tracking-normal text-hc-n-900">{t('cart.asistenteTitulo')}</h2>
-      <form onSubmit={enviar} className="flex h-12 items-center gap-[10px] rounded-xl border-[1.5px] border-hc-blue-100 bg-hc-n-0 py-[6px] pl-[14px] pr-[6px]">
+      <form onSubmit={enviar} className="flex h-12 items-center gap-[10px] rounded-[12px] border-[1.5px] border-hc-blue-100 bg-hc-n-0 py-[6px] pl-[14px] pr-[6px]">
         <IconoFigma src={ICONOS_COMPRADOR.consultaDestello} size={18} className="text-hc-blue-600" />
         <input
           value={valor}
@@ -89,12 +89,12 @@ export function PieCarritoMovil({ total, onContinuar, onWhatsApp }: PieCarritoMo
       <button
         type="button"
         onClick={onWhatsApp}
-        className="flex items-center justify-center gap-2 rounded-xl border border-hc-n-200 bg-hc-n-0 px-4 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-900"
+        className="flex items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-900"
       >
         <img src={ICONOS_CHECKOUT.whatsapp} alt="" width={18} height={18} />
         {t('cart.whatsapp')}
       </button>
-      <button type="button" onClick={onContinuar} className="flex items-center justify-center rounded-xl bg-hc-red-500 px-4 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0">
+      <button type="button" onClick={onContinuar} className="flex items-center justify-center rounded-[12px] bg-hc-red-500 px-4 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0">
         {t('cart.continuarPrecio', { precio: formatPrice(total) })}
       </button>
     </div>

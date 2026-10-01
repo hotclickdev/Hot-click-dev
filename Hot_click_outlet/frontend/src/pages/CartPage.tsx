@@ -6,6 +6,7 @@ import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import useChatStore from '@/store/chatStore'
 import useWishlistStore from '@/store/wishlistStore'
+import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
 import { productService, normalizeProduct } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
@@ -13,12 +14,14 @@ import AvisoVariosEmprendimientos from '@/components/comprador/AvisoVariosEmpren
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { cantidadEmprendimientos } from '@/pages/checkout/checkoutHelpers'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
+import { totalesConCodigos, useCodigosPedido } from '@/pages/checkout/useCodigosPedido'
 import { useEsDesktop } from '@/pages/checkout/useEsDesktop'
 import { isValidEmail } from '@/utils/validators'
 import type { Producto } from '@/types/producto'
 import type { ItemCarrito } from '@/types/carrito'
 import type { Id } from '@/types/api'
 import CartEmptyState from './carrito/CartEmptyState'
+import { CodigosCarrito, NotasPedido } from './carrito/CodigosNotasCarrito'
 import { AsistentePedido, GuardarPorCorreo, PieCarritoMovil } from './carrito/ExtrasCarritoMovil'
 import PaqueteCarritoTarjeta from './carrito/PaqueteCarritoTarjeta'
 import ResumenCarrito from './carrito/ResumenCarrito'
@@ -59,6 +62,10 @@ export default function CartPage() {
   const toast = useToast()
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
+  const codigos = useCodigosPedido(token)
+  const notas = usePedidoExtrasStore((s) => s.notas)
+  const setNotas = usePedidoExtrasStore((s) => s.setNotas)
+  const reiniciarExtras = usePedidoExtrasStore((s) => s.reiniciar)
   const [sugeridos, setSugeridos] = useState<Producto[]>([])
   const [correo, setCorreo] = useState('')
   const [correoGuardado, setCorreoGuardado] = useState(false)
@@ -73,12 +80,16 @@ export default function CartPage() {
       })
   }, [])
 
+  useEffect(() => {
+    if (items.length === 0) reiniciarExtras()
+  }, [items.length, reiniciarExtras])
+
   const paquetes = useMemo(() => paquetesDelCarrito(items), [items])
   const idsEnCarrito = useMemo(() => new Set(items.map((item) => item.id)), [items])
   const unidades = items.reduce((suma, item) => suma + item.cantidad, 0)
   const subtotal = total()
   const envio = totalEnvioEstimado(paquetes)
-  const totalEstimado = subtotal + envio
+  const { descuento, giftCard, total: totalEstimado } = totalesConCodigos(subtotal, envio, codigos.cuponDescuento, codigos.gcSaldo)
 
   async function guardarCorreo() {
     if (!isValidEmail(correo)) return
@@ -172,6 +183,10 @@ export default function CartPage() {
               total={totalEstimado}
               escritorio
               onContinuar={continuar}
+              descuento={descuento}
+              cuponPorcentaje={codigos.cuponDescuento}
+              giftCard={giftCard}
+              codigosEscritorio={<CodigosCarrito codigos={codigos} conSesion={Boolean(token)} incluirGiftCard={Boolean(token)} descuentoMonto={descuento} giftCardAplicada={giftCard} />}
             />
           </div>
         </div>
@@ -191,6 +206,8 @@ export default function CartPage() {
           <AvisoVariosEmprendimientos cantidadNegocios={emprendimientos} />
         </div>
         {tarjetas}
+        <NotasPedido notas={notas} onCambiar={setNotas} />
+        <CodigosCarrito codigos={codigos} conSesion={Boolean(token)} incluirGiftCard descuentoMonto={descuento} giftCardAplicada={giftCard} />
         <ResumenCarrito
           paquetes={paquetes}
           unidades={unidades}
@@ -199,6 +216,9 @@ export default function CartPage() {
           total={totalEstimado}
           escritorio={false}
           onContinuar={continuar}
+          descuento={descuento}
+          cuponPorcentaje={codigos.cuponDescuento}
+          giftCard={giftCard}
         />
         {!token && (!correoYaCapturado || correoGuardado) && <GuardarPorCorreo correo={correo} guardado={correoGuardado} onCambiar={setCorreo} onGuardar={guardarCorreo} />}
         <AsistentePedido onPreguntar={abrirChat} />

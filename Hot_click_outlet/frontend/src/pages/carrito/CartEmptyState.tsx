@@ -27,7 +27,7 @@ export default function CartEmptyState({ destacados }: { destacados: Producto[] 
         <p className="text-center text-[14px] leading-5 text-hc-n-600">{t('cart.vacioTexto')}</p>
       </div>
       <div className="flex flex-col gap-[14px] px-5 py-2">
-        <Link to="/productos" className="flex items-center justify-center rounded-xl bg-hc-red-500 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0">
+        <Link to="/productos" className="flex items-center justify-center rounded-[12px] bg-hc-red-500 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0">
           {t('cart.verProductos')}
         </Link>
         {categorias.length > 0 && (

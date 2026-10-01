@@ -33,7 +33,7 @@ function Cantidad({ item, escritorio, onCantidad }: Pick<FilaProductoCarritoProp
   const { t } = useTranslation()
   const stockMax = item.stock ?? STOCK_MAX_VISIBLE
   return (
-    <div className={`flex shrink-0 items-center gap-[10px] rounded-lg border border-hc-n-200 px-2 leading-[normal] ${escritorio ? 'py-[5px]' : 'py-1'}`}>
+    <div className={`flex shrink-0 items-center gap-[10px] rounded-[8px] border border-hc-n-200 px-2 leading-[normal] ${escritorio ? 'py-[5px]' : 'py-1'}`}>
       <BotonCantidad icono={ICONOS_CHECKOUT.cantidadMenos} etiqueta={t('cart.menosUno', { nombre: item.nombre })} onClick={() => onCantidad(item, item.cantidad - 1)} />
       <span aria-live="polite" className="text-[13px] font-semibold text-hc-n-900">{item.cantidad}</span>
       <BotonCantidad icono={ICONOS_CHECKOUT.cantidadMas} etiqueta={t('cart.masUno', { nombre: item.nombre })} deshabilitado={item.cantidad >= stockMax} onClick={() => onCantidad(item, item.cantidad + 1)} />
@@ -60,7 +60,7 @@ function DetallePersonalizado({ item }: { item: ItemCarrito }) {
       <p className="text-[11px] font-semibold leading-[normal] text-hc-n-500">{t('cart.personalizado')}</p>
       {referencias.length > 0 && (
         <div className="flex gap-1">
-          {referencias.slice(0, 3).map((url) => <img key={url} src={url} alt="" className="size-8 rounded-md border border-hc-n-200 object-cover" />)}
+          {referencias.slice(0, 3).map((url) => <img key={url} src={url} alt="" className="size-8 rounded-[6px] border border-hc-n-200 object-cover" />)}
         </div>
       )}
       {item.personalizacion.notas && <p className="line-clamp-2 text-[11px] leading-[15px] text-hc-n-500">{item.personalizacion.notas}</p>}

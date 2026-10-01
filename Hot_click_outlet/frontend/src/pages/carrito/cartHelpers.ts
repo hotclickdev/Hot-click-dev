@@ -1,7 +1,7 @@
 import type { Producto, ProductoBackend } from '@/types/producto'
 import type { ItemCarrito } from '@/types/carrito'
 import { SHIPPING_COSTS, paquetesDesdeItems } from '@/pages/checkout/checkoutHelpers'
-import type { ItemCheckout } from '@/pages/checkout/checkoutHelpers'
+import type { ItemCheckout, PaqueteCheckout } from '@/pages/checkout/checkoutHelpers'
 
 export const WHATSAPP_HOTCLICK = '50686667888'
 export const FALLBACK_CATALOGO_SIZE = 12
@@ -51,6 +51,26 @@ export type PaqueteCarrito = {
   subtotal: number
   /** Envío normal estimado; el método definitivo se elige en el checkout. */
   envio: number
+  /** Checkout: método de envío elegido para el paquete. */
+  metodo?: string
+  /** Checkout: el costo lo cobra la empresa de encomienda, no HotClick. */
+  envioVaria?: boolean
+}
+
+/** Paquetes del checkout con el envío del método elegido en cada uno (resumen de Figma `29:1408`, `30:2492`). */
+export function paquetesConEnvioElegido(paquetes: PaqueteCheckout[], metodos: Record<string, string>): PaqueteCarrito[] {
+  return paquetes.map((paquete) => {
+    const metodo = metodos[paquete.bodegaId] ?? 'ENVIO_NORMAL_GAM'
+    return {
+      clave: paquete.bodegaId,
+      negocio: paquete.empresaNombre || paquete.bodegaNombre,
+      items: paquete.items as ItemCarrito[],
+      subtotal: paquete.subtotal,
+      envio: SHIPPING_COSTS[metodo] ?? 0,
+      metodo,
+      envioVaria: metodo === 'ENCOMIENDA_PROPIA',
+    }
+  })
 }
 
 /** Agrupa el carrito por paquete (misma regla del checkout) y estima el envío normal de cada uno. */
