@@ -1,10 +1,10 @@
 import type { Producto, ProductoBackend } from '@/types/producto'
+import type { ItemCarrito } from '@/types/carrito'
+import { SHIPPING_COSTS, paquetesDesdeItems } from '@/pages/checkout/checkoutHelpers'
+import type { ItemCheckout } from '@/pages/checkout/checkoutHelpers'
 
 export const WHATSAPP_HOTCLICK = '50686667888'
-export const EMAIL_PROMPT_DELAY_MS = 45_000
-export const CROSS_SELL_LIMITE = 4
 export const FALLBACK_CATALOGO_SIZE = 12
-export const CROSS_ADDED_FEEDBACK_MS = 1_400
 export const EMAIL_GUARDADO_OCULTAR_MS = 1_800
 export const STOCK_MAX_VISIBLE = 99
 
@@ -21,16 +21,6 @@ export function listaProductosDesdeRespuesta(data: unknown): ProductoBackend[] {
     }
   }
   return []
-}
-
-export function seleccionarCrossSell(
-  productos: Producto[],
-  idsEnCarrito: Set<Producto['id']>,
-  limite = CROSS_SELL_LIMITE,
-): Producto[] {
-  return productos
-    .filter((producto) => !idsEnCarrito.has(producto.id) && producto.stock > 0)
-    .slice(0, limite)
 }
 
 export function imagenItemCarrito(item: { imagenUrl?: string; imagenPrincipalUrl?: string }): string | undefined {
@@ -51,4 +41,36 @@ export function emailCarritoYaCapturado(): boolean {
 
 export function guardarEmailCarritoLocal(email: string): void {
   localStorage.setItem(KEY_EMAIL_CARRITO, email)
+}
+
+/** Un paquete del carrito: los productos de una misma bodega/vendedor, con su envío estimado. */
+export type PaqueteCarrito = {
+  clave: string
+  negocio: string
+  items: ItemCarrito[]
+  subtotal: number
+  /** Envío normal estimado; el método definitivo se elige en el checkout. */
+  envio: number
+}
+
+/** Agrupa el carrito por paquete (misma regla del checkout) y estima el envío normal de cada uno. */
+export function paquetesDelCarrito(items: ItemCarrito[]): PaqueteCarrito[] {
+  return paquetesDesdeItems(items as ItemCheckout[]).map((paquete) => ({
+    clave: paquete.bodegaId,
+    negocio: paquete.empresaNombre || paquete.bodegaNombre,
+    items: paquete.items as ItemCarrito[],
+    subtotal: paquete.subtotal,
+    envio: SHIPPING_COSTS.ENVIO_NORMAL_GAM,
+  }))
+}
+
+export function totalEnvioEstimado(paquetes: PaqueteCarrito[]): number {
+  return paquetes.reduce((suma, paquete) => suma + paquete.envio, 0)
+}
+
+/** Productos sugeridos de la misma tienda de un paquete que aún no están en el carrito. */
+export function sugerenciaDeLaTienda(paquete: PaqueteCarrito, candidatos: Producto[], idsEnCarrito: Set<Producto['id']>): Producto | null {
+  return candidatos.find((p) => (
+    !idsEnCarrito.has(p.id) && p.stock > 0 && Boolean(p.empresaNombre) && p.empresaNombre === paquete.negocio
+  )) ?? null
 }
