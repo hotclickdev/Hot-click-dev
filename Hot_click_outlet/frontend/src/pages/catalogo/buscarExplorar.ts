@@ -10,9 +10,9 @@ export const FILTROS_EXTRA_VACIOS: FiltrosExtra = { tiendas: new Set(), hechoAPe
 
 export type TiendaCatalogo = { nombre: string; cantidad: number }
 
-export type TipoChipEntendi = 'busqueda' | 'categoria' | 'precio' | 'tienda' | 'pedido' | 'retiro'
+export type TipoChipEntendi = 'busqueda' | 'categoria' | 'precio' | 'tienda' | 'pedido' | 'retiro' | 'marca' | 'stock'
 
-export type ChipEntendi = { clave: string; tipo: TipoChipEntendi; valor: string }
+export type ChipEntendi = { clave: string; tipo: TipoChipEntendi; valor: string; etiqueta?: string }
 
 const PALABRAS_VACIAS = new Set(['para', 'con', 'sin', 'por', 'los', 'las', 'del', 'una', 'uno', 'que', 'mis', 'tus', 'the', 'and'])
 const LARGO_MINIMO_PALABRA = 4
@@ -44,13 +44,16 @@ export function tiendasDelCatalogo(productos: Producto[]): TiendaCatalogo[] {
 
 /** Chips "Entendí": lo que el catálogo interpretó de la búsqueda y los filtros, cada uno removible. */
 export function chipsEntendi({
-  search, categoriaNombre, priceMin, priceMax, extra,
+  search, categoriaNombre, priceMin, priceMax, extra, marcas = [], soloConStock = false,
 }: {
   search: string
   categoriaNombre: string | null
   priceMin: string
   priceMax: string
   extra: FiltrosExtra
+  /** Marcas filtradas (id y nombre), por ejemplo desde `?marcaId=`. */
+  marcas?: { id: string; nombre: string }[]
+  soloConStock?: boolean
 }): ChipEntendi[] {
   const chips: ChipEntendi[] = []
   if (search.trim()) chips.push({ clave: 'busqueda', tipo: 'busqueda', valor: search.trim() })
@@ -59,6 +62,8 @@ export function chipsEntendi({
   for (const tienda of extra.tiendas) chips.push({ clave: `tienda-${tienda}`, tipo: 'tienda', valor: tienda })
   if (extra.hechoAPedido) chips.push({ clave: 'pedido', tipo: 'pedido', valor: '' })
   if (extra.retiroEnTienda) chips.push({ clave: 'retiro', tipo: 'retiro', valor: '' })
+  for (const marca of marcas) chips.push({ clave: `marca-${marca.id}`, tipo: 'marca', valor: marca.id, etiqueta: marca.nombre })
+  if (soloConStock) chips.push({ clave: 'stock', tipo: 'stock', valor: '' })
   return chips
 }
 

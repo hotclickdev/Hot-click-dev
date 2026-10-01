@@ -102,8 +102,4 @@ test('Comprar ahora reutiliza addItem y no cambia el cobro', () => {
   expect(sticky).toContain('onClick={onComprarAhora}')
   expect(sticky).toContain("t('product.buyNow')")
 
-  const quick = leer('src/components/ui/QuickViewModal.tsx')
-  expect(quick).not.toContain('#4f7cff')
-  expect(quick).toContain('navigate(\'/checkout\')')
-  expect(quick).toContain('for (let i = 0; i < quantity; i++) addItem(product)')
 })

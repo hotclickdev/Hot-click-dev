@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import ProductCard from '@/components/ui/ProductCard'
+import ProductCard from '@/components/comprador/ProductCard'
 import type { Producto } from '@/types/producto'
 
 export type NegocioRecomendado = {
@@ -78,9 +78,9 @@ export default function DescubriResultados({
           >
             {t('descubri.productsForYou')}
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 sm:grid-cols-[repeat(auto-fill,167px)] sm:justify-start sm:gap-x-4">
             {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} priority={i < 4} index={i} />
+              <ProductCard key={p.id} product={p} priority={i < 4} />
             ))}
           </div>
         </section>
