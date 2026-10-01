@@ -42,6 +42,7 @@ export default function CatalogAllView({
 
   const consulta = search.trim()
   const modoBusqueda = consulta !== ''
+  const sinResultados = modoBusqueda && !loading && !error && filtered.length === 0 && sort !== 'para_vos'
   const tituloCategoria = activeCatName ?? t('products.allProducts')
   const titulo = modoBusqueda ? t('products.resultsTitle', { q: consulta }) : tituloCategoria
 
@@ -101,6 +102,7 @@ export default function CatalogAllView({
         setSearch={setSearch}
         onAtras={volver}
         onBuscarConFoto={() => navigate(RUTA_BUSCAR_FOTO)}
+        sinResultados={sinResultados}
       >
         {modoBusqueda && (
           <EntendiChips
@@ -147,7 +149,7 @@ export default function CatalogAllView({
           </aside>
 
           <div className="min-w-0 flex-1">
-            <div className={`flex items-center justify-between px-4 pb-1 lg:hidden ${modoBusqueda ? 'pt-3.5' : 'pt-3'}`}>
+            <div className={`items-center justify-between px-4 pb-1 lg:hidden ${sinResultados ? 'hidden' : 'flex'} ${modoBusqueda ? 'pt-3.5' : 'pt-3'}`}>
               <p className="text-[14px] font-semibold leading-[normal] text-hc-n-900">{textoCantidad}</p>
               <OrdenarResultados sort={sort} setSort={setSort} variante="movil" />
             </div>

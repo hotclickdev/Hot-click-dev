@@ -10,7 +10,7 @@ import { ICONOS_CATALOGO } from './iconosCatalogo'
  * - `categoria` (`43:1531`): flecha, título de la categoría y buscador "Buscar en …".
  */
 export default function EncabezadoCatalogoMovil({
-  modo, titulo, search, setSearch, onAtras, onBuscarConFoto, children,
+  modo, titulo, search, setSearch, onAtras, onBuscarConFoto, sinResultados = false, children,
 }: {
   modo: 'busqueda' | 'categoria'
   titulo: string
@@ -18,6 +18,8 @@ export default function EncabezadoCatalogoMovil({
   setSearch: (valor: string) => void
   onAtras: () => void
   onBuscarConFoto: () => void
+  /** Búsqueda sin resultados (`27:804`): el buscador muestra una × para borrar y no hay fila "Entendí". */
+  sinResultados?: boolean
   /** Filas bajo el buscador (chips "Entendí" en la versión de búsqueda). */
   children?: ReactNode
 }) {
@@ -33,7 +35,7 @@ export default function EncabezadoCatalogoMovil({
       <div className="flex flex-col gap-3 border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 lg:hidden">
         <div className="flex items-center gap-[10px]">
           {botonAtras}
-          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] bg-hc-n-100 py-[6px] pl-3 pr-[6px]">
+          <div className={`flex min-w-0 flex-1 items-center gap-2 rounded-[12px] bg-hc-n-100 pl-3 ${sinResultados ? 'py-3 pr-[10px]' : 'py-[6px] pr-[6px]'}`}>
             <IconoFigma src={ICONOS_CATALOGO.lupa18} size={18} className="text-hc-n-500" />
             <input
               type="search"
@@ -41,19 +43,25 @@ export default function EncabezadoCatalogoMovil({
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('products.search')}
               aria-label={t('search.inputLabel')}
-              className="hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[19px] text-hc-n-900 outline-none placeholder:text-hc-n-500"
+              className={`hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] text-hc-n-900 outline-none ${sinResultados ? 'leading-[18px]' : 'leading-[19px]'} placeholder:text-hc-n-500`}
             />
-            <button
-              type="button"
-              onClick={onBuscarConFoto}
-              aria-label={t('search.photoSearch')}
-              className="flex size-[34px] shrink-0 items-center justify-center rounded-[9px] bg-hc-n-0 text-hc-blue-600"
-            >
-              <IconoFigma src={ICONOS_CATALOGO.camara16} size={16} />
-            </button>
+            {sinResultados ? (
+              <button type="button" onClick={() => setSearch('')} aria-label={t('search.clearSearch')} className="flex shrink-0 text-hc-n-500">
+                <IconoFigma src={ICONOS_CATALOGO.cerrar16} size={16} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onBuscarConFoto}
+                aria-label={t('search.photoSearch')}
+                className="flex size-[34px] shrink-0 items-center justify-center rounded-[9px] bg-hc-n-0 text-hc-blue-600"
+              >
+                <IconoFigma src={ICONOS_CATALOGO.camara16} size={16} />
+              </button>
+            )}
           </div>
         </div>
-        {children}
+        {!sinResultados && children}
       </div>
     )
   }
