@@ -161,3 +161,63 @@ export function nombreError(err: unknown): string | undefined {
   }
   return undefined
 }
+
+/** Stock a partir del cual la ficha avisa "Quedan N" en vez de "Disponible · N en stock". */
+export const STOCK_BAJO_MAX = 5
+
+export type OpinionProducto = {
+  id: string
+  autor: string
+  comentario: string
+  calificacion: number | null
+}
+
+/** Reseñas aprobadas de `/testimonios/producto/:id/resenas` (`{ data: [...] }` o lista directa). */
+export function opinionesDesdeRespuesta(data: unknown): OpinionProducto[] {
+  const lista = Array.isArray(data)
+    ? data
+    : data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown }).data)
+      ? (data as { data: unknown[] }).data
+      : []
+  const opiniones: OpinionProducto[] = []
+  lista.forEach((item, i) => {
+    if (typeof item !== 'object' || item === null) return
+    const r = item as { id?: unknown; nombreUsuario?: unknown; comentario?: unknown; calificacion?: unknown }
+    const comentario = typeof r.comentario === 'string' ? r.comentario.trim() : ''
+    if (!comentario) return
+    const calificacion = Number(r.calificacion)
+    opiniones.push({
+      id: String(r.id ?? i),
+      autor: typeof r.nombreUsuario === 'string' ? r.nombreUsuario : '',
+      comentario,
+      calificacion: Number.isFinite(calificacion) && calificacion > 0 ? Math.min(5, Math.round(calificacion)) : null,
+    })
+  })
+  return opiniones
+}
+
+export type OpcionTalla = {
+  talla: string
+  /** `propia`: misma ficha (se selecciona). `hermana`: otra ficha con su propio stock (se navega). */
+  origen: 'propia' | 'hermana'
+  id?: number
+  stock: number | null
+}
+
+/**
+ * Tallas de la ficha en el orden del Figma (38, 39, 40, 41, 42): si todas son numéricas van
+ * de menor a mayor; si no, primero las propias y luego las hermanas.
+ */
+export function opcionesDeTalla(product: Producto, variantes: VarianteProducto[]): OpcionTalla[] {
+  const { tallasPropias, hermanasPorTalla } = tallasDesdeProducto(product, variantes)
+  const opciones: OpcionTalla[] = [
+    ...tallasPropias.map((talla) => ({ talla, origen: 'propia' as const, stock: null })),
+    ...[...hermanasPorTalla.entries()].map(([talla, v]) => ({
+      talla, origen: 'hermana' as const, id: v.id, stock: v.stock ?? 0,
+    })),
+  ]
+  if (opciones.length > 1 && opciones.every((o) => /^\d+([.,]\d+)?$/.test(o.talla))) {
+    opciones.sort((a, b) => parseFloat(a.talla.replace(',', '.')) - parseFloat(b.talla.replace(',', '.')))
+  }
+  return opciones
+}

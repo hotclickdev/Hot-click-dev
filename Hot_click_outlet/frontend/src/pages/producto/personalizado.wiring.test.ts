@@ -24,7 +24,9 @@ describe('productos personalizados — wiring estático', () => {
   it('detalle de producto monta PersonalizacionPanel', () => {
     const info = readFileSync(resolve(root, 'src/pages/producto/ProductInfo.tsx'), 'utf8')
     expect(info).toContain('PersonalizacionPanel')
-    expect(info).toContain('Solicitar encargo')
+    expect(info).toContain('esCotizable')
+    const acciones = readFileSync(resolve(root, 'src/pages/producto/AccionesCompra.tsx'), 'utf8')
+    expect(acciones).toContain('product.solicitarEncargo')
   })
 
   it('checkout envía personalizacion en el payload', () => {

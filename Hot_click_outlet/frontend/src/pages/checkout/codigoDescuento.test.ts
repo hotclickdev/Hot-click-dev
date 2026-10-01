@@ -102,8 +102,8 @@ describe('código de descuento · i18n', () => {
 
   it('las claves de la ficha agotada existen en es, en y pt', () => {
     const claves = [
-      'restockTitle', 'restockNuevo', 'restockPlaceholder', 'restockEmailLabel', 'restockCta', 'restockSending',
-      'restockInvalidEmail', 'restockError', 'restockSaved', 'restockWhatsapp', 'restockNoAccount',
+      'restockTitle', 'restockPlaceholder', 'restockEmailLabel', 'restockCta', 'restockSending',
+      'restockInvalidEmail', 'restockError', 'restockSaved', 'restockWhatsapp',
       'buscarParecido', 'buscarParecidoMensaje', 'parecidosDisponibles', 'outOfStock',
     ]
     for (const lng of ['es', 'en', 'pt']) {

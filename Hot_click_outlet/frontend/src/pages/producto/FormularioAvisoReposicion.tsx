@@ -17,12 +17,11 @@ type FormularioAvisoReposicionProps = {
 /**
  * "Avisame cuando vuelva" — ficha de producto agotado (Figma 03 · Producto y
  * tiendas, frame 44:1917 "Ficha agotada", nodo 44:1946). Guarda el interés del
- * cliente en el backend; el envío automático del correo al reponer stock es
- * NUEVO · por programar (todavía no hay disparador de reposición).
+ * cliente en el backend. La etiqueta "NUEVO · por programar" del Figma es una nota de
+ * diseño (el envío automático al reponer stock aún no existe) y no se muestra al usuario.
  */
 export default function FormularioAvisoReposicion({ product, t }: FormularioAvisoReposicionProps) {
   const userEmail = useAuthStore((s) => s.userEmail)
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
   const [correo, setCorreo] = useState(userEmail || '')
   const [enviando, setEnviando] = useState(false)
   const [enviado, setEnviado] = useState(false)
@@ -49,15 +48,12 @@ export default function FormularioAvisoReposicion({ product, t }: FormularioAvis
   }
 
   return (
-    <div className="flex w-full flex-col gap-[10px] rounded-[14px] bg-hc-blue-50 p-[14px]">
+    <div className="flex w-full flex-col gap-[10px] rounded-[14px] bg-hc-blue-50 p-[14px] leading-[normal]">
       <div className="flex w-full items-center gap-2">
         <IconoFigma src={ICONOS_COMPRADOR.avisoCampana} size={18} className="text-hc-blue-600" />
-        <h3 className="min-w-0 flex-1 text-[14px] font-semibold text-hc-blue-600">
+        <h3 className="min-w-0 flex-1 font-sans text-[14px] font-semibold tracking-normal text-hc-blue-600">
           {t('product.restockTitle')}
         </h3>
-        <span className="shrink-0 whitespace-nowrap rounded-[6px] bg-hc-blue-900 px-2 py-[3px] font-mono text-[10px] font-medium text-hc-n-0">
-          {t('product.restockNuevo')}
-        </span>
       </div>
 
       {enviado ? (
@@ -91,7 +87,7 @@ export default function FormularioAvisoReposicion({ product, t }: FormularioAvis
       {error && <p role="alert" className="text-[12px] text-hc-danger">{error}</p>}
       {!enviado && (
         <p className="w-full text-[12px] leading-4 text-hc-n-600">
-          {isAuthenticated ? t('product.restockWhatsapp') : t('product.restockNoAccount')}
+          {t('product.restockWhatsapp')}
         </p>
       )}
     </div>
