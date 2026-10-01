@@ -94,6 +94,24 @@ Veredictos "agent verified" (sin QA independiente). Móvil medido en 390x844 con
 - Las etiquetas "NUEVO · por programar" y las notas de diseño de Figma no llegan a la UI.
 - `PaymentStatusPage`: se reinicia la marca de consulta al desmontar; en StrictMode (solo dev) el segundo montaje no volvía a consultar el pago y la pantalla quedaba en carga.
 
+## Flujo móvil Ficha -> hoja -> carrito (Playwright, 390x844, API simulada)
+
+1. `/productos/121` (Casa Luna 506) con otro producto de la misma tienda en el carrito: "Agregar" abre la hoja `45:1607` con el aviso de envío ya pagado (solo existe con otro producto del mismo negocio; en el primero se omite, decisión del usuario).
+2. "Seguir comprando" cierra la hoja y deja la ficha en la misma URL; "Agregar" vuelve a abrirla.
+3. "Ver pedido" navega a `/carrito`.
+4. Escritorio: sin hoja; toast + botón "Añadido" + carrito del header. REQUIRES_DESIGN_REFERENCE (provisional: Figma no define interacción desktop).
+Spec: `tests/pdp-agregar-hoja.spec.ts`.
+
+## Cierre (agent verified)
+
+- `npx tsc --noEmit`: limpio.
+- `npx vitest run`: 86 archivos / 398 tests verdes (nuevos: `pages/checkout/checkoutFigma.test.ts`; `codigoDescuento.test.ts` apunta a `PasoPago` y al carrito).
+- Playwright contra Vite :3400: `cart-cta` (6), `checkout-cta` (7), `pdp-agregar-hoja` y `visitante-compra` verdes. `cart-cta` y `checkout-cta` se reescribieron para el flujo nuevo; al reescribirlos apareció un error real: tras un pago fallido el checkout volvía al paso 1 sin mostrar el error (el paso vive ahora en `useCheckoutForm`). Siguen fallando fuera de CHK `asistente-checkout` y `envio-rapido` (Home y asistente global).
+- eslint sobre lo tocado: sin errores nuevos. Queda el error `react-hooks/set-state-in-effect` de `useCheckoutForm.ts` que ya existía en la base (efecto de métodos de envío por paquete).
+- `npx vite build --outDir "$TEMP/chk-build-check" --emptyOutDir`: OK.
+- Se corrigió además un archivo que quedó con codificación inválida (`PaymentStatusPage.tsx`, reescrito en UTF-8).
+- Sin pantalla de Figma, quedan con el estilo anterior: `CheckoutPaidGiftCard`, `CheckoutTilopayCard`, `CheckoutLoading`, `CheckoutEmpty` y `PagoLoading` (REQUIRES_DESIGN_REFERENCE).
+
 ## Decisiones y dependencias abiertas
 
 - REQUIERE_DECISION: guardar por correo en escritorio; "Vaciar pedido"; WhatsApp en escritorio; contexto del carrito en `AsistentePedido`; cédula SINPE (no está en Figma); atajo de envío internacional y consentimiento en escritorio.
