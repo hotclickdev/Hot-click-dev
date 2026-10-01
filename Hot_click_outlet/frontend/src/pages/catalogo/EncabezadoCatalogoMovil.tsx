@@ -23,7 +23,7 @@ export default function EncabezadoCatalogoMovil({
 }) {
   const { t } = useTranslation()
   const botonAtras = (
-    <button type="button" onClick={onAtras} aria-label={t('search.back')} className="shrink-0 text-hc-n-900">
+    <button type="button" onClick={onAtras} aria-label={t('search.back')} className="flex shrink-0 text-hc-n-900">
       <IconoFigma src={ICONOS_COMPRADOR.barraAtras} size={22} />
     </button>
   )
@@ -41,7 +41,7 @@ export default function EncabezadoCatalogoMovil({
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('products.search')}
               aria-label={t('search.inputLabel')}
-              className="hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-500"
+              className="hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[19px] text-hc-n-900 outline-none placeholder:text-hc-n-500"
             />
             <button
               type="button"
@@ -72,7 +72,7 @@ export default function EncabezadoCatalogoMovil({
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('products.searchIn', { nombre: titulo })}
           aria-label={t('products.searchIn', { nombre: titulo })}
-          className="hc-input-libre min-w-0 flex-1 bg-transparent text-[14px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-500"
+          className="hc-input-libre min-w-0 flex-1 bg-transparent text-[14px] leading-[18px] text-hc-n-900 outline-none placeholder:text-hc-n-500"
         />
       </label>
     </div>
