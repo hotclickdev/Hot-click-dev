@@ -129,7 +129,14 @@
     "misPedidos": "My orders",
     "ayudaContacto": "Help and contact",
     "buscarPlaceholder": "Search or describe what you need",
-    "accesos": "Quick links"
+    "accesos": "Quick links",
+    "sinConexionAviso": "Offline · showing what is saved",
+    "sinConexionTitulo": "You are offline",
+    "sinConexionTexto": "Meanwhile you can see your favorites and what you viewed. We will let you know when the signal is back.",
+    "vistosRecientes": "Recently viewed",
+    "favoritos": "Favorites",
+    "reintentar": "Try again",
+    "sinConexionNota": "You need a connection to add to your order and pay."
   },
   "ayudaPage": {
     "title": "Help center",

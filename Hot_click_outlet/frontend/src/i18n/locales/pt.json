@@ -129,7 +129,14 @@
     "misPedidos": "Meus pedidos",
     "ayudaContacto": "Ajuda e contato",
     "buscarPlaceholder": "Busque ou descreva o que você precisa",
-    "accesos": "Acessos rápidos"
+    "accesos": "Acessos rápidos",
+    "sinConexionAviso": "Sem conexão · mostrando o que está salvo",
+    "sinConexionTitulo": "Você está sem conexão",
+    "sinConexionTexto": "Enquanto isso, você pode ver seus favoritos e o que viu. Avisamos quando o sinal voltar.",
+    "vistosRecientes": "Vistos recentemente",
+    "favoritos": "Favoritos",
+    "reintentar": "Tentar de novo",
+    "sinConexionNota": "Para adicionar ao pedido e pagar, você precisa de conexão."
   },
   "ayudaPage": {
     "title": "Central de ajuda",
