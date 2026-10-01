@@ -10,12 +10,12 @@ Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYF
 | Fallo del servidor · móvil | `45:2322` | PASS (móvil) | Ya existía (PR #93). Corregidos alturas y tracking del Sora; ícono de alerta ahora es el SVG original |
 | Instalar la app · tarjeta | `55:2658` | PASS (móvil) | Ya existía. Corregidos alturas de título, subtítulo, beneficios y botones; la nota "NUEVO · por programar" y el texto del hook no llegan a la UI. Reglas de la nota (2.ª visita, nunca la primera página, 30 días) intactas |
 | Sin conexión · móvil | `45:2264` | PARTIAL | Geometría igual a Figma. Falta que HOME/SUP la enchufen (ver dependencias); fotos reales de vistos y favoritos no verificadas |
-| Aviso de cookies · móvil | `45:1946` | PASS (móvil) | Tarjeta 366 × 205 en x 12, y 560, botones 163 × 48 y 161 × 46 |
+| Aviso de cookies · móvil | `45:1946` | PASS (móvil) | Tarjeta 366 × 205 en x 12, y 560, botones 163 × 48 y 161 × 46. **Desktop: REQUIRES_DESIGN_REFERENCE** (no hay frame; provisional, ver abajo) |
 | Preferencias de cookies · hoja | `45:2166` | PASS (móvil) | Hoja desde y 90, secciones en 179, 266 y 361, pie en 644; todas iguales a Figma |
-| C · Cupón de bienvenida | `51:2163` | PARTIAL | Igual salvo el campo de correo: Figma lo dibuja comprimido a 26 px (auto-layout sin espacio); se implementó con su relleno natural (42 px). Paso "cupón enviado" no existe en Figma |
+| C · Cupón de bienvenida | `51:2163` | PASS (móvil) | Hoja igual a Figma con el campo de correo de 42 px (decisión del usuario: el frame de 26 px es un frame comprimido, no la referencia final). El paso "cupón enviado" no existe en Figma y se resolvió con el mismo sistema |
 | D · ¿Aún pensando? | `51:2196` | PASS (móvil) | Hoja en y 525, alto 319, igual a Figma. La variante de favoritos no existe en Figma |
-| E · Idioma y accesibilidad | `51:2229` | PARTIAL | Idioma, tamaño, alto contraste y reducir movimiento iguales (chips 79/76/93 × 33, switches 40 × 24). Se conserva el grupo "Filtro de color / visión", que Figma no dibuja: REQUIRES_DECISION |
-| F · Botón flotante de WhatsApp | `51:2262` | PASS (móvil) | 56 × 56 en x 318, y 705, igual a Figma. Posición desktop no definida: REQUIRES_DECISION (menor) |
+| E · Idioma y accesibilidad | `51:2229` | PARTIAL (móvil medido) | Hoja y 490, alto 354 (igual a Figma); idioma, tamaño de fuente, alto contraste, reducir movimiento y Listo en las posiciones de Figma. Sin tema ni filtro de color (decisión del usuario). Diferencia real: Figma resalta "A" (la del medio) por defecto y la app resalta "A−" porque el tamaño por defecto del store es el más pequeño de las tres opciones; arreglarlo exige un tamaño nuevo o reetiquetar: REQUIRES_DECISION |
+| F · Botón flotante de WhatsApp | `51:2262` | PASS (móvil) | 56 × 56 en x 318, y 705, igual a Figma. **Desktop: provisional sin frame** (abajo a la derecha, margen de 16 px, decisión del usuario) |
 
 ## Medidas Figma contra app (antes y ahora)
 
@@ -36,7 +36,13 @@ Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYF
 | Instalar: botones | 158 × 42 y 156 × 40 | 47 y 45 | 42 y 40 |
 | Exit: hoja | y 525, alto 319 | modal centrado con degradado | y 525, 319 |
 | A11y: chips | 79 / 76 / 93 × 33 | panel flotante de 288 px | 78,6 / 75,1 / 92,8 × 33 |
+| A11y: hoja | y 490, alto 354 | panel flotante, con tema y filtro de color | y 490, alto 354 (con filtro de color llegó a 466; tras sacarlo: 354) |
+| A11y: "Alto contraste" / "Reducir movimiento" / "Listo" | y 698+4 / 736+4 / 774 | 702 / 740 / 886 con el filtro | 702 / 740 / 774 |
 | WhatsApp FAB | 56 × 56 en (318, 705) | solo desktop (`hidden md:flex`), 56 en (1368, 828) | móvil (318, 705); desktop (1368, 828) |
+
+## Cookies en desktop (corrección)
+
+Antes de SYS el aviso era una banda centrada (`max-w-3xl`) con degradado y blur. SYS lo cambió en desktop a la misma tarjeta de móvil, abajo a la izquierda a 24 px (`lg:bottom-6 lg:left-6`). **No es una posición respaldada por Figma**: no existe frame desktop del aviso ni de la hoja. Estado: **REQUIRES_DESIGN_REFERENCE / pendiente de frame desktop**; se mantiene provisionalmente y no se declara PASS en desktop.
 
 ## Decisión: botón flotante de WhatsApp y botón con el isotipo
 
@@ -46,10 +52,10 @@ Evidencia (búsqueda en todos los frames del archivo, 622 mil caracteres de meta
 2. **Dónde aparece en Figma.** El botón verde de WhatsApp solo está dibujado en el frame `51:2262` (nodo `52:2418`, 56 × 56 con su sombra). La nota de diseño `52:2422` dice: "F · Botón flotante de WhatsApp sobre la barra inferior (móvil) y abajo a la derecha (desktop)". No hay un FAB con el isotipo del asistente en ningún frame. Lo que se ve con el isotipo en la app **no es del asistente**: es el disparador del panel de accesibilidad (`AccessibilityPanel`). El asistente se abre desde chips, tarjeta y búsqueda, no tiene botón flotante.
 3. **Estados en que aparece.** WhatsApp: todos los de compra salvo los de la lista de ocultamiento. Isotipo/accesibilidad: los mismos, salvo checkout, pago, admin, tienda del vendedor y prototipo.
 4. **Cuándo se ocultan.** Ambos con el asistente abierto (como antes). En la ficha de producto móvil (barra de compra de 83 px y botón "Hacer una pregunta por WhatsApp" propio, `29:1632`) se ocultan los dos (`max-lg:hidden`). Cookies, instalar y hojas (z superior) los tapan mientras están abiertas.
-5. **Posición.** Móvil (< 1024 px, donde existe la barra inferior): WhatsApp a 16 px del borde derecho y 16 px sobre la barra de 67 px (`bottom: 83px + safe-area`), igual a Figma. El botón del isotipo queda 12 px encima (`bottom: 151px`). Desktop (>= 1024 px): WhatsApp en `right 16, bottom 16` (como estaba); el isotipo, 12 px encima.
+5. **Posición.** Móvil (< 1024 px, donde existe la barra inferior): WhatsApp a 16 px del borde derecho y 16 px sobre la barra de 67 px (`bottom: 83px + safe-area`), igual a Figma. El botón del isotipo queda 12 px encima (`bottom: 151px`). Desktop (>= 1024 px): WhatsApp en `right 16, bottom 16` (como estaba, decisión del usuario: se mantiene); el isotipo, 12 px encima. Sin frame desktop: provisional.
 6. **Con la barra inferior.** Se apoyan 16 px encima, sin superponerse (medido: barra y 777, WhatsApp y 705 a 761).
 7. **Con la barra de compra de la ficha.** Ya no se superponen: ambos se ocultan en móvil. Medido en `/productos/1` a 390: solo queda la barra (y 761, 83). No hizo falta tocar `MainLayout` ni `pages/producto`.
-8. **Desktop y móvil.** Móvil como Figma. Desktop: Figma solo dice "abajo a la derecha"; se conservó 16 px. **REQUIRES_DECISION (menor):** margen exacto en desktop.
+8. **Desktop y móvil.** Móvil como Figma. Desktop: Figma solo dice "abajo a la derecha"; 16 px cerrado por el usuario (sin frame, provisional).
 
 El botón con el isotipo se **conserva** de forma temporal: Figma (nota E) dice que "idioma y accesibilidad" se abre desde Mi cuenta y desde el footer, pero ninguno de los dos frames dibuja ese acceso. Está detrás de la constante `MOSTRAR_BOTON_FLOTANTE` de `AccessibilityPanel.tsx`. Cuando SHELL (footer) y ACC (Mi cuenta) llamen a `abrirAccesibilidad()`, pasarla a `false`.
 
@@ -75,17 +81,24 @@ El botón con el isotipo se **conserva** de forma temporal: Figma (nota E) dice 
 - `App.tsx`: se agregó `<AvisoSinConexion />` y se quitó `<SocialProofController />`.
 - `app/AppChrome.tsx`: `ConditionalWhatsAppFab` usa `whatsappOculto`; se eliminó `SocialProofController`.
 - `pages/SinConexionPage.tsx` (nuevo): página de la ruta pedida.
+- `app/HtmlClassManager.tsx`: se quitó el filtro de color (y su SVG) y se limpia `html.style.filter`.
 
 ## Desmontaje de SocialProofToast (decisión del usuario)
 
 Quitado: `SocialProofToast` (inventaba compradores y acciones cada 15 a 30 s; no está en Figma; riesgo Ley 7472), su hook `useSocialProof`, el componente huérfano `SocialProof.tsx` (nadie lo importaba) y las claves `socialProof.*` y `socialProofToast.*` en es/en/pt. Verificado con grep: sin referencias. También se eliminaron `LanguageSelector.tsx` (no se usaba en ningún lado), `A11yPanelContent.tsx` y `a11yUi.tsx` (reemplazados por la hoja nueva). `LanguageRadiogroup` y `a11yConstants` se quedan: los usa Configuración del panel.
 
-## REQUIRES_DECISION
+## Decisiones cerradas por el usuario
 
-1. Filtro de color / visión en la hoja de accesibilidad: Figma no lo dibuja; se conserva por ser accesibilidad real. El interruptor de tema claro/oscuro se quitó de la hoja del comprador: en marketplace el tema siempre es claro (`HtmlClassManager`), el panel admin tiene el suyo.
-2. Campo de correo del cupón: Figma lo dibuja de 26 px (frame comprimido); se hizo de 42 px.
-3. Desktop de cookies (aviso abajo a la izquierda) y de WhatsApp (16 px): sin frame.
-4. Variante de favoritos del aviso de salida y estado "cupón enviado": sin frame.
+1. Selector de tema: eliminado de la hoja del comprador (Figma no lo dibuja). No se trasladó a otra pantalla. En marketplace el tema siempre es claro (`HtmlClassManager`); el panel admin sigue con su propio selector (`ThemeToggle`, `SeccionApariencia`), fuera del alcance del comprador.
+2. Filtro de color / visión: sacado de la hoja. No se movió ni se reimplementó. Se retiraron `COLOR_FILTERS`, las claves `a11y.filtro*` (es/en/pt), el SVG de filtros y la aplicación de `html.style.filter` en `HtmlClassManager`, que ahora limpia cualquier filtro que haya quedado de una sesión anterior (el valor persistido en `uiStore` queda inerte; el store no se tocó). Idea fuera de alcance: si se quisiera conservar el simulador de daltonismo, podría vivir en Apariencia del panel admin.
+3. Campo de correo del cupón: se mantiene en 42 px.
+4. WhatsApp desktop: abajo a la derecha, 16 px.
+5. Cookies desktop: provisional (ver sección arriba).
+
+## Pendientes REQUIRES_DECISION
+
+- Tamaño de fuente: Figma resalta "A" por defecto; la app resalta "A−" (ver fila de E).
+- Variante de favoritos del aviso de salida y estado "cupón enviado": sin frame.
 
 ## Verificación
 
