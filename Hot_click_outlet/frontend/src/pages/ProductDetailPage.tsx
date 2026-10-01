@@ -86,7 +86,7 @@ export default function ProductDetailPage() {
         <div className="lg:mx-auto lg:w-[calc(100%-4rem)] lg:max-w-[1200px] lg:pt-5">
           <ProductBreadcrumb product={product} />
 
-          <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,644px)_minmax(0,1fr)] lg:items-start lg:gap-12 lg:pb-10">
+          <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,644px)_minmax(360px,1fr)] lg:items-start lg:gap-12 lg:pb-10">
             <ProductGallery
               product={product}
               galeria={galeria}
@@ -144,7 +144,9 @@ export default function ProductDetailPage() {
           <div className="px-4 lg:px-0">
             <ProductVideo product={product} />
             <ProductTabs product={product} tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-            <BrandProductsRow product={product} brandProducts={brandProducts} />
+          </div>
+          <BrandProductsRow product={product} brandProducts={brandProducts} />
+          <div className="px-4 lg:px-0">
             <RecentlyViewedGrid items={recentlyViewed} currentProductId={product.id} />
           </div>
         </div>

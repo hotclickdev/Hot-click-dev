@@ -912,7 +912,8 @@
     "precioRango": "De ₡{{min}} a ₡{{max}}",
     "pasoCotiza1": "Você envia suas fotos e notas",
     "pasoCotiza2": "O artista analisa e faz a cotação",
-    "pasoCotiza3": "Você recebe um link para pagar"
+    "pasoCotiza3": "Você recebe um link para pagar",
+    "verTodosMarca": "Ver todos"
   },
   "cart": {
     "title": "Pedido",

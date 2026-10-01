@@ -912,7 +912,8 @@
     "precioRango": "From ₡{{min}} to ₡{{max}}",
     "pasoCotiza1": "You upload your photos and notes",
     "pasoCotiza2": "The artist reviews and quotes you",
-    "pasoCotiza3": "You get a link to pay"
+    "pasoCotiza3": "You get a link to pay",
+    "verTodosMarca": "See all"
   },
   "cart": {
     "title": "Order",
