@@ -4,9 +4,12 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import CloseIcon from '@/components/ui/CloseIcon'
+import { useTranslation } from 'react-i18next'
+import IconoFigma from '@/components/comprador/IconoFigma'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { getOptimizedUrl } from '@/utils/imageUtils'
+import { compartirProducto } from './compartirProducto'
+import { ICONOS_PRODUCTO } from './iconosProducto'
 
 const SWIPE_MIN_PX = 50
 const ZOOM_MAX = 3
@@ -31,18 +34,25 @@ type ProductGalleryFullscreenProps = {
 export default function ProductGalleryFullscreen({
   open, onClose, galeria, activeImg, onSelectImg, titulo, precioLabel,
 }: ProductGalleryFullscreenProps) {
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef, open)
 
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [compartido, setCompartido] = useState(false)
+  const [arrastrando, setArrastrando] = useState(false)
   const dragState = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
   const touchStartX = useRef<number | null>(null)
 
   const resetZoom = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }) }, [])
 
-  useEffect(() => { resetZoom() }, [activeImg, resetZoom])
+  // Al cambiar de foto el zoom vuelve a 1x (se ajusta durante el render, sin efecto).
+  const [imgConZoom, setImgConZoom] = useState(activeImg)
+  if (imgConZoom !== activeImg) {
+    setImgConZoom(activeImg)
+    resetZoom()
+  }
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden'
@@ -69,24 +79,10 @@ export default function ProductGalleryFullscreen({
   }
 
   async function handleShare() {
-    const url = window.location.href
-    const shareData = { title: titulo, url }
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData)
-        return
-      }
-    } catch {
-      // el usuario canceló el share nativo — sin acción
-      return
-    }
-    try {
-      await navigator.clipboard.writeText(url)
-      setCompartido(true)
-      setTimeout(() => setCompartido(false), 1800)
-    } catch {
-      // sin acceso al portapapeles — no hay fallback disponible
-    }
+    const resultado = await compartirProducto(titulo)
+    if (resultado !== 'copiado') return
+    setCompartido(true)
+    setTimeout(() => setCompartido(false), 1800)
   }
 
   function onWheel(e: WheelEvent) {
@@ -96,6 +92,7 @@ export default function ProductGalleryFullscreen({
 
   function onMouseDown(e: MouseEvent) {
     if (zoom <= 1) return
+    setArrastrando(true)
     dragState.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y }
   }
   function onMouseMove(e: MouseEvent) {
@@ -103,24 +100,25 @@ export default function ProductGalleryFullscreen({
     const { startX, startY, panX, panY } = dragState.current
     setPan({ x: panX + (e.clientX - startX), y: panY + (e.clientY - startY) })
   }
-  function onMouseUp() { dragState.current = null }
+  function onMouseUp() { dragState.current = null; setArrastrando(false) }
 
   function onTouchStart(e: TouchEvent) {
     if (zoom > 1) {
-      const t = e.touches[0]
-      dragState.current = { startX: t.clientX, startY: t.clientY, panX: pan.x, panY: pan.y }
+      const touch = e.touches[0]
+      setArrastrando(true)
+    dragState.current = { startX: touch.clientX, startY: touch.clientY, panX: pan.x, panY: pan.y }
       return
     }
     touchStartX.current = e.touches[0]?.clientX ?? null
   }
   function onTouchMove(e: TouchEvent) {
     if (!dragState.current) return
-    const t = e.touches[0]
+    const touch = e.touches[0]
     const { startX, startY, panX, panY } = dragState.current
-    setPan({ x: panX + (t.clientX - startX), y: panY + (t.clientY - startY) })
+    setPan({ x: panX + (touch.clientX - startX), y: panY + (touch.clientY - startY) })
   }
   function onTouchEnd(e: TouchEvent) {
-    if (dragState.current) { dragState.current = null; return }
+    if (dragState.current) { dragState.current = null; setArrastrando(false); return }
     const startX = touchStartX.current
     touchStartX.current = null
     if (startX == null || galeria.length <= 1) return
@@ -140,44 +138,43 @@ export default function ProductGalleryFullscreen({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={`Galería de fotos: ${titulo}`}
+        aria-label={t('product.galeriaTitulo', { titulo })}
         tabIndex={-1}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
-        className="fixed inset-0 z-[100] flex flex-col"
-        style={{ background: 'var(--hc-n-950)' }}
+        className="fixed inset-0 z-[100] flex flex-col overflow-y-auto bg-hc-n-900 leading-[normal]"
       >
-        {/* Barra superior */}
-        <div className="flex items-center justify-between px-2 h-14 shrink-0">
+        {/* Barra (Figma 55:2168): cerrar, contador y compartir centrados en y=30 */}
+        <div className="flex h-14 shrink-0 items-center justify-between px-4 pb-3 pt-4">
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar galería"
-            className="w-10 h-10 flex items-center justify-center rounded-full text-white/90 hover:bg-white/10"
+            aria-label={t('product.galeriaCerrar')}
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/[0.16] text-hc-n-0"
           >
-            <CloseIcon className="w-5 h-5" />
+            <IconoFigma src={ICONOS_PRODUCTO.cerrar} size={20} />
           </button>
-          <span className="text-sm font-medium text-white/90 tabular-nums">{contador}</span>
+          <span className="font-mono text-[13px] font-medium text-hc-n-0">{contador}</span>
           <button
             type="button"
-            onClick={handleShare}
-            aria-label="Compartir foto"
-            className="relative w-10 h-10 flex items-center justify-center rounded-full text-white/90 hover:bg-white/10"
+            onClick={() => void handleShare()}
+            aria-label={t('product.share')}
+            className="relative flex size-5 shrink-0 items-center justify-center text-hc-n-0 after:absolute after:-inset-3"
           >
-            <ShareSVG />
+            <IconoFigma src={ICONOS_PRODUCTO.compartirClaro} size={20} />
             {compartido && (
-              <span className="absolute top-full right-0 mt-1 whitespace-nowrap text-[11px] bg-white text-black rounded-md px-2 py-1">
-                Link copiado
+              <span className="absolute right-0 top-full mt-1 whitespace-nowrap rounded-md bg-hc-n-0 px-2 py-1 text-[11px] text-hc-n-900">
+                {t('product.enlaceCopiado')}
               </span>
             )}
           </button>
         </div>
 
-        {/* Visor */}
+        {/* Visor (Figma 55:2178): 520 px de alto, a 32 px de la barra */}
         <div
-          className="flex-1 min-h-0 overflow-hidden flex items-center justify-center select-none touch-none"
+          className="relative mx-auto mt-8 min-h-[240px] max-h-[520px] w-full max-w-3xl flex-1 select-none touch-none overflow-hidden lg:max-h-[68vh]"
           onWheel={onWheel}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
@@ -193,72 +190,55 @@ export default function ProductGalleryFullscreen({
               <motion.img
                 key={activeImg}
                 src={getOptimizedUrl(galeria[activeImg], { width: 1200 })}
-                alt={`${titulo} — foto ${activeImg + 1} de ${galeria.length}`}
+                alt={t('product.galeriaFoto', { titulo, n: activeImg + 1, total: galeria.length })}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 draggable={false}
-                className="max-w-full max-h-full object-contain"
+                className="absolute inset-0 size-full object-cover"
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                  transition: dragState.current ? 'none' : 'transform 0.2s ease-out',
+                  transition: arrastrando ? 'none' : 'transform 0.2s ease-out',
                   cursor: zoom > 1 ? 'grab' : 'zoom-in',
                 }}
               />
             )}
           </AnimatePresence>
+          {/* Pista de gesto (Figma 55:2180 y 55:2204) */}
+          <p className="pointer-events-none absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-[6px] whitespace-nowrap rounded-full bg-black/55 px-3 py-[7px] text-[12px] text-hc-n-0">
+            <IconoFigma src={ICONOS_PRODUCTO.gestoZoom} size={14} className="text-hc-n-0" />
+            {zoom > 1 ? t('product.galeriaPistaMover') : t('product.galeriaPistaAmpliar')}
+          </p>
         </div>
 
-        {/* Pista de gesto */}
-        <p className="text-center text-xs text-white/60 pb-3">
-          {zoom > 1
-            ? 'Arrastrá para mover · doble toque para volver'
-            : 'Pellizcá o tocá dos veces para ampliar'}
-        </p>
-
-        {/* Miniaturas */}
+        {/* Miniaturas (Figma 55:2185): 64 px, activa con borde blanco de 2 px, el resto al 55 % */}
         {galeria.length > 1 && (
-          <div className="flex gap-2 justify-center overflow-x-auto px-4 pb-4 scrollbar-hide">
+          <div className="scrollbar-hide mx-auto mt-[42px] flex max-w-full shrink-0 gap-[10px] overflow-x-auto px-4">
             {galeria.map((url, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => onSelectImg(i)}
-                aria-label={`Ver foto ${i + 1}`}
+                aria-label={t('product.verFoto', { n: i + 1 })}
                 aria-current={i === activeImg}
-                className="shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-opacity"
-                style={{ borderColor: i === activeImg ? 'var(--hc-accent)' : 'transparent', opacity: i === activeImg ? 1 : 0.5 }}
+                className={`relative size-16 shrink-0 overflow-hidden rounded-[10px] ${
+                  i === activeImg ? 'border-2 border-hc-n-0' : 'opacity-55'
+                }`}
               >
-                <img
-                  src={getOptimizedUrl(url, { width: 64 })}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+                <img src={getOptimizedUrl(url, { width: 128 })} alt="" className="size-full object-cover" loading="lazy" />
               </button>
             ))}
           </div>
         )}
 
         {(titulo || precioLabel) && (
-          <p className="text-center text-sm text-white/85 pb-4 px-4 truncate">
+          <p className="mx-auto mt-[26px] max-w-full shrink-0 truncate px-4 pb-6 text-[14px] font-medium text-hc-n-0">
             {titulo}{precioLabel ? ` · ${precioLabel}` : ''}
           </p>
         )}
       </motion.div>
     </AnimatePresence>,
     document.body
-  )
-}
-
-function ShareSVG() {
-  return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="18" cy="5" r="3" />
-      <circle cx="6" cy="12" r="3" />
-      <circle cx="18" cy="19" r="3" />
-      <path d="M8.6 13.5l6.8 3.9M15.4 6.6L8.6 10.5" />
-    </svg>
   )
 }

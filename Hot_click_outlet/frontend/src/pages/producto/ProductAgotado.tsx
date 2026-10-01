@@ -2,14 +2,14 @@ import type { RefObject } from 'react'
 import type { TFunction } from 'i18next'
 import Chip from '@/components/comprador/Chip'
 import IconoFigma from '@/components/comprador/IconoFigma'
-import ProductCard from '@/components/comprador/ProductCard'
 import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import useChatStore from '@/store/chatStore'
 import type { Producto } from '@/types/producto'
+import FormularioAvisoReposicion from './FormularioAvisoReposicion'
 
 /*
  * Piezas de la ficha agotada · móvil (Figma 03 · Producto y tiendas, 44:1917).
- * El formulario "Te avisamos cuando vuelva" vive en FormularioAvisoReposicion.
+ * "Parecidos disponibles" usa CarruselProductos.
  */
 
 /** Etiqueta "Agotado" sobre el título (Figma 44:1936). */
@@ -21,19 +21,14 @@ export function EtiquetaAgotado({ t }: { t: TFunction }) {
   )
 }
 
-/** Chip "Buscame algo parecido" + carrusel "Parecidos disponibles" (Figma 44:1959 y 44:1965). */
-export function AlternativasAgotado({
-  product, parecidos, t,
-}: {
-  product: Producto
-  parecidos: Producto[]
-  t: TFunction
-}) {
+/** Bloque "Avisame": formulario de aviso de reposición + chip "Buscame algo parecido" (Figma 44:1945). */
+export function AvisameAgotado({ product, t }: { product: Producto; t: TFunction }) {
   const abrirChat = useChatStore((s) => s.open)
   const nombre = product.titulo || product.nombre
 
   return (
-    <>
+    <div className="flex flex-col gap-[10px] px-4 py-2 lg:p-0">
+      <FormularioAvisoReposicion product={product} t={t} />
       <div className="flex w-full items-center">
         <Chip
           texto={t('product.buscarParecido')}
@@ -41,20 +36,7 @@ export function AlternativasAgotado({
           onClick={() => abrirChat(t('product.buscarParecidoMensaje', { nombre }))}
         />
       </div>
-
-      {parecidos.length > 0 && (
-        <section className="flex w-full flex-col gap-3 pt-1" aria-labelledby="parecidos-disponibles">
-          <h2 id="parecidos-disponibles" className="font-display text-[16px] font-bold text-hc-n-900">
-            {t('product.parecidosDisponibles')}
-          </h2>
-          <div className="scrollbar-hide flex w-full gap-3 overflow-x-auto">
-            {parecidos.map((p) => (
-              <ProductCard key={p.id} product={p} className="w-[167px] shrink-0" />
-            ))}
-          </div>
-        </section>
-      )}
-    </>
+    </div>
   )
 }
 
@@ -62,7 +44,7 @@ export function AlternativasAgotado({
 export function BotonAgotado({
   mainCTARef, t,
 }: {
-  mainCTARef: RefObject<HTMLButtonElement | null>
+  mainCTARef?: RefObject<HTMLButtonElement | null>
   t: TFunction
 }) {
   return (
@@ -71,7 +53,7 @@ export function BotonAgotado({
       type="button"
       disabled
       aria-disabled="true"
-      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[12px] bg-hc-n-200 py-[14px] text-[15px] font-semibold text-hc-n-500"
+      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[12px] bg-hc-n-200 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-500"
     >
       <IconoFigma src={ICONOS_COMPRADOR.agotadoMas} size={18} />
       {t('product.outOfStock')}

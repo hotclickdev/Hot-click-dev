@@ -1,26 +1,22 @@
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
-import SocialProof from '@/components/ui/SocialProof'
-import Button from '@/components/ui/Button'
 import TurnstileCampo from '@/components/security/TurnstileCampo'
+import useAuthStore from '@/store/authStore'
 import type { Producto } from '@/types/producto'
 import type { PersonalizacionCarrito } from '@/types/carrito'
-import { esProductoCotizable, stockDesdeProducto } from './productoHelpers'
+import { esProductoCotizable } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
-import TitleAndBadges from './TitleAndBadges'
-import ProductPriceRow from './ProductPriceRow'
-import ProductLowStockAlert from './ProductLowStockAlert'
-import FormularioAvisoReposicion from './FormularioAvisoReposicion'
-import { AlternativasAgotado, BotonAgotado } from './ProductAgotado'
-import QuantitySelector from './QuantitySelector'
-import ProductBuyActions from './ProductBuyActions'
-import TrustBadges from './TrustBadges'
+import ProductoCabecera from './ProductoCabecera'
+import ColorSwatches from './ColorSwatches'
+import SizeSelector from './SizeSelector'
 import PersonalizacionPanel from './PersonalizacionPanel'
+import { AvisameAgotado } from './ProductAgotado'
+import AccionesCompra from './AccionesCompra'
+import BloqueEntregaPago from './BloqueEntregaPago'
+import PreguntaProducto from './PreguntaProducto'
 import ReportarProductoButton from './ReportarProductoButton'
-import useAuthStore from '@/store/authStore'
 
 type ProductInfoProps = {
   product: Producto
@@ -31,7 +27,6 @@ type ProductInfoProps = {
   onDecrease: () => void
   onIncrease: () => void
   onAdd: () => void
-  onComprarAhora: () => void
   justAdded: boolean
   inStock: boolean
   atMax: boolean
@@ -45,10 +40,15 @@ type ProductInfoProps = {
   turnstileRef?: RefObject<TurnstileInstance | null>
   setTurnstileToken?: Dispatch<SetStateAction<string>>
   turnstileBloqueaSubmit?: boolean
-  /** Recomendaciones con stock para la ficha agotada ("Parecidos disponibles"). */
-  parecidos?: Producto[]
+  /** Estilo móvil de los frames de estado (variantes, personalizado, agotado). */
+  compacta: boolean
 }
 
+/**
+ * Columna de compra de la ficha. En móvil los bloques se apilan a sangre (Figma 28:839, 44:1775,
+ * 44:1849, 44:1917); en desktop son la columna derecha de 508 px (Figma 29:2072). La barra de compra
+ * fija del móvil y la fila de acciones del desktop son la misma pieza en dos variantes.
+ */
 export default function ProductInfo({
   product,
   variantes,
@@ -58,7 +58,6 @@ export default function ProductInfo({
   onDecrease,
   onIncrease,
   onAdd,
-  onComprarAhora,
   justAdded,
   inStock,
   atMax,
@@ -72,42 +71,33 @@ export default function ProductInfo({
   turnstileRef,
   setTurnstileToken,
   turnstileBloqueaSubmit = false,
-  parecidos = [],
+  compacta,
 }: ProductInfoProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { badge: stockBadge, label: stockLabel } = stockDesdeProducto(product, t)
-  const token = useAuthStore(s => s.token)
+  const token = useAuthStore((s) => s.token)
   const esCotizable = esProductoCotizable(product)
   const requiereContacto = esCotizable && !token
   const agotado = !inStock && !esCotizable
 
+  const acciones = {
+    product, quantity, atMax, inStock, agotado, cotizable: esCotizable, justAdded, enviandoEncargo,
+    turnstileBloqueaSubmit, tallaSeleccionada, onDecrease, onIncrease, onAdd,
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col gap-3 sm:gap-5"
-    >
-      <TitleAndBadges
+    <div className="flex min-w-0 flex-col lg:gap-4">
+      <ProductoCabecera product={product} agotado={agotado} compacta={compacta} />
+
+      <ColorSwatches product={product} variantes={variantes} onNavigate={navigate} t={t} />
+      <SizeSelector
         product={product}
         variantes={variantes}
         tallaSeleccionada={tallaSeleccionada}
         onSelectTalla={onSelectTalla}
-        stockBadge={stockBadge}
-        stockLabel={stockLabel}
-        agotado={agotado}
         onNavigate={navigate}
         t={t}
       />
-
-      <ProductPriceRow product={product} t={t} />
-
-      <SocialProof productId={product.id} />
-
-      {product.descripcion && (
-        <p className="text-sm text-hc-muted leading-relaxed">{product.descripcion}</p>
-      )}
 
       {product.esPersonalizado && (
         <PersonalizacionPanel
@@ -121,65 +111,29 @@ export default function ProductInfo({
         />
       )}
 
-      {inStock && product.stock <= 5 && !esCotizable && (
-        <ProductLowStockAlert product={product} t={t} />
+      {esCotizable && turnstileSiteKey && turnstileRef && setTurnstileToken && (
+        <div className="px-4 pt-2 lg:p-0">
+          <TurnstileCampo siteKey={turnstileSiteKey} turnstileRef={turnstileRef} setTurnstileToken={setTurnstileToken} />
+        </div>
       )}
 
-      {agotado && (
+      {agotado && <AvisameAgotado product={product} t={t} />}
+
+      <AccionesCompra variante="inline" mainCTARef={mainCTARef} {...acciones} />
+      <AccionesCompra variante="barra" {...acciones} />
+
+      {!agotado && (
         <>
-          <FormularioAvisoReposicion product={product} t={t} />
-          <AlternativasAgotado product={product} parecidos={parecidos} t={t} />
+          <BloqueEntregaPago />
+          <PreguntaProducto product={product} />
         </>
       )}
 
-      {inStock && !esCotizable && (
-        <QuantitySelector
-          quantity={quantity}
-          stock={product.stock}
-          atMax={atMax}
-          onDecrease={onDecrease}
-          onIncrease={onIncrease}
-          t={t}
-        />
+      {product.id != null && (
+        <div className="px-4 pb-4 lg:p-0">
+          <ReportarProductoButton productoId={product.id} />
+        </div>
       )}
-
-      {esCotizable && (
-        <>
-          {turnstileSiteKey && turnstileRef && setTurnstileToken && (
-            <TurnstileCampo
-              siteKey={turnstileSiteKey}
-              turnstileRef={turnstileRef}
-              setTurnstileToken={setTurnstileToken}
-            />
-          )}
-          <Button
-            ref={mainCTARef}
-            variant="primary"
-            size="xl"
-            className="w-full h-14 rounded-2xl text-sm font-semibold"
-            disabled={enviandoEncargo || turnstileBloqueaSubmit}
-            onClick={onAdd}
-          >
-            {enviandoEncargo ? 'Enviando…' : 'Solicitar encargo'}
-          </Button>
-        </>
-      )}
-
-      {agotado && <BotonAgotado mainCTARef={mainCTARef} t={t} />}
-
-      {inStock && !esCotizable && (
-        <ProductBuyActions
-          mainCTARef={mainCTARef}
-          inStock={inStock}
-          justAdded={justAdded}
-          onAdd={onAdd}
-          onComprarAhora={onComprarAhora}
-          t={t}
-        />
-      )}
-
-      <TrustBadges />
-      {product.id != null && <ReportarProductoButton productoId={product.id} />}
-    </motion.div>
+    </div>
   )
 }

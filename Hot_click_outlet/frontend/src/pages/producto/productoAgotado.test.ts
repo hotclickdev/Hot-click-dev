@@ -58,10 +58,14 @@ describe('ficha agotada · componentes', () => {
 
   it('ProductInfo cambia las acciones de compra por BotonAgotado y monta el aviso de reposición', () => {
     const info = readFileSync(resolve(aqui, 'ProductInfo.tsx'), 'utf8')
-    expect(info).toContain('{agotado && <BotonAgotado')
-    expect(info).toContain('<FormularioAvisoReposicion')
-    expect(info).toContain('<AlternativasAgotado')
-    expect(info).toMatch(/\{inStock && !esCotizable && \(\s*<ProductBuyActions/)
+    expect(info).toContain('<AccionesCompra variante="inline"')
+    expect(info).toContain('<AccionesCompra variante="barra"')
+    const acciones = readFileSync(resolve(aqui, 'AccionesCompra.tsx'), 'utf8')
+    expect(acciones).toContain('<BotonAgotado')
+    const agotado = readFileSync(resolve(aqui, 'ProductAgotado.tsx'), 'utf8')
+    expect(agotado).toContain('<FormularioAvisoReposicion')
+    expect(info).toContain('<AvisameAgotado')
+    expect(info).toContain('{!agotado && (')
   })
 
   it('el aviso de reposición no usa colores hardcodeados ni textos por defecto', () => {

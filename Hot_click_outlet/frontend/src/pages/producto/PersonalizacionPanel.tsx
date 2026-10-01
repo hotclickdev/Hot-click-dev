@@ -1,10 +1,16 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import IconoFigma from '@/components/comprador/IconoFigma'
 import type { Producto } from '@/types/producto'
 import type { PersonalizacionCarrito } from '@/types/carrito'
 import { encargoService, urlDesdeUploadEncargo } from '@/services/encargoService'
 import { useToast } from '@/components/ui/Toast'
+import { formatMiles } from '@/utils/format'
+import { ICONOS_PRODUCTO } from './iconosProducto'
 
 const MAX_IMAGENES = 3
+
+const CAMPO = 'rounded-[10px] border border-hc-n-200 bg-hc-n-0 px-3 py-[10px] text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:border-hc-blue-600 focus:outline-none'
 
 type Props = {
   product: Producto
@@ -16,10 +22,17 @@ type Props = {
   requiereContacto: boolean
 }
 
+/**
+ * "Personalizá tu pedido" (Figma 44:1849, nodo 44:1884): indicaciones del artista, tres espacios
+ * de imagen de referencia y notas. El presupuesto, los datos de contacto y "¿Cómo funciona?"
+ * no están en Figma: se conservan de la versión anterior con los mismos tokens, salvo con precio
+ * fijo (el frame no los muestra).
+ */
 export default function PersonalizacionPanel({
   product, tallaSeleccionada, personalizacion, onChange,
   contacto, onContactoChange, requiereContacto,
 }: Props) {
+  const { t } = useTranslation()
   const toast = useToast()
   const [subiendo, setSubiendo] = useState<number | null>(null)
   const modo = product.modoPrecioPersonalizado
@@ -40,7 +53,7 @@ export default function PersonalizacionPanel({
         tallaSeleccionada: tallaSeleccionada || undefined,
       })
     } catch {
-      toast({ message: 'No se pudo subir la imagen. Probá con JPG o PNG de menos de 10 MB.', type: 'error' })
+      toast({ message: t('product.personalizaErrorSubida'), type: 'error' })
     } finally {
       setSubiendo(null)
     }
@@ -53,87 +66,92 @@ export default function PersonalizacionPanel({
   }
 
   return (
-    <div className="rounded-2xl border p-4 space-y-4" style={{ borderColor: 'var(--hc-border)' }}>
-      <div>
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Personalizá tu pedido</h3>
-        <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
-          Subí hasta 3 imágenes de referencia y contale al artista qué querés.
-        </p>
-      </div>
+    <section aria-labelledby="personaliza-titulo" className="px-4 pb-2 pt-[14px] lg:p-0">
+      <div className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal]">
+        <h2 id="personaliza-titulo" className="text-[15px] font-semibold text-hc-n-900">{t('product.personalizaTitulo')}</h2>
+        <p className="text-[12px] leading-4 text-hc-n-500">{t('product.personalizaAyuda')}</p>
 
-      {product.instruccionesPersonalizacion && (
-        <div className="text-xs rounded-xl px-3 py-2" style={{ background: 'rgba(23,71,168,0.06)', color: 'var(--hc-text)' }}>
-          <strong>Indicaciones del artista:</strong> {product.instruccionesPersonalizacion}
+        {product.instruccionesPersonalizacion && (
+          <p className="rounded-[10px] bg-hc-blue-50 px-3 py-[10px] text-[12px] leading-4 text-hc-n-900">
+            <span className="font-semibold">{t('product.indicacionesArtista')}</span>: {product.instruccionesPersonalizacion}
+          </p>
+        )}
+
+        <div className="grid grid-cols-3 gap-2">
+          {[0, 1, 2].map((slot) => {
+            const url = slots[slot]
+            return (
+              <div
+                key={slot}
+                className={`relative flex h-[90px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[10px] border border-hc-n-200 bg-hc-n-50 ${url ? '' : 'border-dashed'}`}
+              >
+                {url ? (
+                  <>
+                    <img src={url} alt={t('product.referenciaN', { n: slot + 1 })} className="size-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => quitar(slot)}
+                      className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-hc-n-0"
+                    >
+                      {t('product.quitar')}
+                    </button>
+                  </>
+                ) : (
+                  <label
+                    className="flex size-full cursor-pointer flex-col items-center justify-center gap-1 text-[11px] text-hc-n-500"
+                    aria-label={t('product.subirReferenciaN', { n: slot + 1 })}
+                  >
+                    <IconoFigma src={ICONOS_PRODUCTO.subirImagen} size={18} className="text-hc-n-500" />
+                    <span>{subiendo === slot ? t('product.subiendo') : t('product.imagenN', { n: slot + 1 })}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={subiendo !== null}
+                      onChange={(e) => void subir(slot, e.target.files?.[0])}
+                    />
+                  </label>
+                )}
+              </div>
+            )
+          })}
         </div>
-      )}
 
-      <div className="grid grid-cols-3 gap-2">
-        {[0, 1, 2].map((slot) => {
-          const url = slots[slot]
-          return (
-            <div key={slot} className="relative aspect-square rounded-xl border overflow-hidden flex items-center justify-center"
-              style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface, #f8f9fb)' }}>
-              {url ? (
-                <>
-                  <img src={url} alt={`Referencia ${slot + 1}`} className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => quitar(slot)}
-                    className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white">
-                    Quitar
-                  </button>
-                </>
-              ) : (
-                <label
-                  className="flex flex-col items-center gap-1 text-[11px] cursor-pointer p-2 text-center"
-                  style={{ color: 'var(--hc-muted)' }}
-                  aria-label={`Subir imagen de referencia ${slot + 1}`}
-                >
-                  <span>{subiendo === slot ? 'Subiendo…' : `Imagen ${slot + 1}`}</span>
-                  <input type="file" accept="image/*" className="hidden" disabled={subiendo !== null}
-                    onChange={e => void subir(slot, e.target.files?.[0])} />
-                </label>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      <div>
-        <label htmlFor="notas-artista-personalizacion" className="text-xs font-medium" style={{ color: 'var(--hc-text)' }}>
-          Notas para el artista
+        <label htmlFor="notas-artista-personalizacion" className="text-[13px] font-medium text-hc-n-900">
+          {t('product.notasArtista')}
         </label>
         <textarea
           id="notas-artista-personalizacion"
-          className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-          style={{ borderColor: 'var(--hc-border)', minHeight: 72 }}
+          rows={2}
+          className={`${CAMPO} -mt-1 w-full resize-y border-[1.5px] leading-[19px]`}
           value={personalizacion.notas || ''}
-          onChange={e => onChange({
+          onChange={(e) => onChange({
             ...personalizacion,
             notas: e.target.value,
             tallaSeleccionada: tallaSeleccionada || undefined,
           })}
-          placeholder="Ej: quiero la foto del medio centrada, fondo blanco, texto ‘Feliz cumpleaños’ abajo…"
+          placeholder={t('product.notasPlaceholder')}
           maxLength={2000}
         />
+
+        {modo !== 'FIJO' && (
+          <PresupuestoCliente personalizacion={personalizacion} onChange={onChange} tallaSeleccionada={tallaSeleccionada} />
+        )}
+
+        {requiereContacto && (
+          <div className="grid gap-2 sm:grid-cols-3">
+            <input className={CAMPO} placeholder={t('product.contactoNombre')} value={contacto.nombre}
+              onChange={(e) => onContactoChange({ ...contacto, nombre: e.target.value })} />
+            <input className={CAMPO} placeholder={t('product.contactoEmail')} type="email" value={contacto.email}
+              onChange={(e) => onContactoChange({ ...contacto, email: e.target.value })} />
+            <input className={CAMPO} placeholder={t('product.contactoTelefono')} value={contacto.telefono}
+              onChange={(e) => onContactoChange({ ...contacto, telefono: e.target.value })} />
+          </div>
+        )}
+
+        {modo !== 'FIJO' && <ComoFunciona modo={modo} product={product} />}
       </div>
-
-      <PresupuestoCliente personalizacion={personalizacion} onChange={onChange} tallaSeleccionada={tallaSeleccionada} />
-
-      {requiereContacto && (
-        <div className="grid gap-2 sm:grid-cols-3">
-          <input className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: 'var(--hc-border)' }}
-            placeholder="Tu nombre" value={contacto.nombre}
-            onChange={e => onContactoChange({ ...contacto, nombre: e.target.value })} />
-          <input className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: 'var(--hc-border)' }}
-            placeholder="Email" type="email" value={contacto.email}
-            onChange={e => onContactoChange({ ...contacto, email: e.target.value })} />
-          <input className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: 'var(--hc-border)' }}
-            placeholder="Teléfono" value={contacto.telefono}
-            onChange={e => onContactoChange({ ...contacto, telefono: e.target.value })} />
-        </div>
-      )}
-
-      <ComoFunciona modo={modo} product={product} />
-    </div>
+    </section>
   )
 }
 
@@ -146,6 +164,7 @@ function PresupuestoCliente({
   onChange: (next: PersonalizacionCarrito) => void
   tallaSeleccionada: string | null
 }) {
+  const { t } = useTranslation()
   const tipo = personalizacion.presupuestoTipo ?? 'SIN_PRESUPUESTO'
   const labelId = 'presupuesto-encargo-label'
 
@@ -160,18 +179,18 @@ function PresupuestoCliente({
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium" id={labelId} style={{ color: 'var(--hc-text)' }}>
-        Tu presupuesto (opcional)
+    <div className="flex flex-col gap-2">
+      <p className="text-[13px] font-medium text-hc-n-900" id={labelId}>
+        {t('product.presupuestoTitulo')}
       </p>
       <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby={labelId}>
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-hc-n-600">
           <input type="radio" name="presupuesto-tipo" checked={tipo === 'SIN_PRESUPUESTO'} onChange={() => setTipo('SIN_PRESUPUESTO')} />
-          Sin presupuesto — el artista cotiza libremente
+          {t('product.presupuestoSin')}
         </label>
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-hc-n-600">
           <input type="radio" name="presupuesto-tipo" checked={tipo === 'RANGO'} onChange={() => setTipo('RANGO')} />
-          Tengo un rango en mente
+          {t('product.presupuestoRango')}
         </label>
       </div>
       {tipo === 'RANGO' ? (
@@ -179,20 +198,18 @@ function PresupuestoCliente({
           <input
             type="number"
             min={1}
-            className="rounded-xl border px-3 py-2 text-sm"
-            style={{ borderColor: 'var(--hc-border)' }}
-            placeholder="Mínimo ₡"
+            className={CAMPO}
+            placeholder={t('product.presupuestoMin')}
             value={personalizacion.presupuestoMin ?? ''}
-            onChange={e => onChange({ ...personalizacion, presupuestoMin: e.target.value, presupuestoTipo: 'RANGO' })}
+            onChange={(e) => onChange({ ...personalizacion, presupuestoMin: e.target.value, presupuestoTipo: 'RANGO' })}
           />
           <input
             type="number"
             min={1}
-            className="rounded-xl border px-3 py-2 text-sm"
-            style={{ borderColor: 'var(--hc-border)' }}
-            placeholder="Máximo ₡"
+            className={CAMPO}
+            placeholder={t('product.presupuestoMax')}
             value={personalizacion.presupuestoMax ?? ''}
-            onChange={e => onChange({ ...personalizacion, presupuestoMax: e.target.value, presupuestoTipo: 'RANGO' })}
+            onChange={(e) => onChange({ ...personalizacion, presupuestoMax: e.target.value, presupuestoTipo: 'RANGO' })}
           />
         </div>
       ) : null}
@@ -206,24 +223,24 @@ function slotsDesdeImagenes(imagenes: string[] | undefined): string[] {
   return slots
 }
 
-function ComoFunciona({ modo, product }: { modo: string | null; product: Producto }) {
-  const pasos = modo === 'FIJO'
-    ? ['Subís tus fotos y notas', 'Agregás al carrito y pagás', 'El artista recibe el encargo ya pagado']
-    : ['Subís tus fotos y notas', 'El artista revisa y te cotiza', 'Recibís un link para pagar']
+function ComoFunciona({ modo, product }: { modo: string | null | undefined; product: Producto }) {
+  const { t } = useTranslation()
+  const pasos = [t('product.pasoCotiza1'), t('product.pasoCotiza2'), t('product.pasoCotiza3')]
 
-  let precioLabel = 'Precio a cotizar'
-  if (modo === 'FIJO') {
-    precioLabel = `Precio fijo: ₡${(product.precioVenta || product.precio || 0).toLocaleString('es-CR')}`
-  } else if (modo === 'RANGO' && product.precioPersonalizadoMin != null && product.precioPersonalizadoMax != null) {
-    precioLabel = `Desde ₡${product.precioPersonalizadoMin.toLocaleString('es-CR')} hasta ₡${product.precioPersonalizadoMax.toLocaleString('es-CR')}`
+  let precioLabel = t('product.precioCotizar')
+  if (modo === 'RANGO' && product.precioPersonalizadoMin != null && product.precioPersonalizadoMax != null) {
+    precioLabel = t('product.precioRango', {
+      min: formatMiles(product.precioPersonalizadoMin),
+      max: formatMiles(product.precioPersonalizadoMax),
+    })
   }
 
   return (
-    <div className="text-xs space-y-1.5 pt-1" style={{ color: 'var(--hc-muted)' }}>
-      <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>¿Cómo funciona?</p>
+    <div className="flex flex-col gap-[6px] text-[12px] leading-4 text-hc-n-500">
+      <p className="font-semibold text-hc-n-900">{t('product.comoFunciona')}</p>
       <p>{precioLabel}</p>
-      <ol className="list-decimal list-inside space-y-0.5">
-        {pasos.map(p => <li key={p}>{p}</li>)}
+      <ol className="list-inside list-decimal space-y-0.5">
+        {pasos.map((p) => <li key={p}>{p}</li>)}
       </ol>
     </div>
   )
