@@ -54,6 +54,49 @@ Cambio mínimo en archivos de PROD:
 - `tests/pdp-comprar-ahora.spec.ts` se reemplazó por `tests/pdp-agregar-hoja.spec.ts` (Agregar, hoja, Ver pedido a `/carrito` sin pedir cuenta; Seguir comprando). Pasa contra Vite en :3400.
 - `tests/ui-sin-emoji.spec.ts`: se retiró la línea de `TitleAndBadges.tsx` (archivo borrado). Ese spec tiene otros 9 casos que ya fallaban en la base por archivos borrados por otras migraciones (home, admin, etc.); no son de CHK.
 
-## Pendiente de CHK
+Claves i18n de `product.*` (`buyNow`, `trust*`, `quantity`, `outOf`, `maxAvailable`) son de PROD: no se borraron.
 
-Carrito, checkout (datos, entrega, pago), pago exitoso/fallido, recuperar carrito, despacho del vendedor, estados de pago pendiente y tarjeta de regalo, pantallas `51:1820`, `51:2000` y `45:1692`: sin comparar contra Figma en esta pasada. Claves i18n de `product.*` (`buyNow`, `trust*`, `quantity`, `outOf`, `maxAvailable`) son de PROD: no se borraron.
+## Paso 0: verificación de las 5 eliminaciones (evidencia: Figma + `git show 11af2c0a:<ruta>`)
+
+Frames de carrito revisados: `28:989`, `30:2268`, `51:1820`, `45:1692` (vacío) y `52:2139`/`52:2178`/`52:2223`. Ninguno dibuja una grilla de productos genéricos.
+
+| Eliminado | Reemplazo | Resultado |
+| --- | --- | --- |
+| `AbandonedEmailPrompt` (popup a los 45 s, sin sesión, solo si no había correo capturado, `isValidEmail`, Enter guarda, confirmación y cierre a 1,8 s) | `GuardarPorCorreo` (`52:2178`) en móvil | Misma función y misma llamada `abandonedCartService.saveAbandonedCart(items, correo)` + `guardarEmailCarritoLocal`; errores con el toast `common.error`. Se perdió la regla "no volver a pedir el correo ya capturado": **restaurada** (`emailCarritoYaCapturado`, la tarjeta se oculta tras guardarlo). **Pérdida respaldada solo en parte:** el popup aparecía también en escritorio; Figma `30:2268` no dibuja el bloque. REQUIERE_DECISION (¿mostrarlo en escritorio?). |
+| `CartItemRow` | `FilaProductoCarrito` (`37:1528`, `38:1373`) | Cubre cantidad (±, tope `stock`/99, `aria-label`), eliminar, precio de la línea, "Personalizado", imágenes y notas de referencia, imagen o placeholder. Se agregó "Mover a favoritos" (Figma). Sin variantes ni favorito en el original; no había analítica en el componente. Se pierde el precio unitario visible (Figma muestra el de la línea). |
+| `CartSummary` | `ResumenCarrito` (`37:1647`, `30:2351`) | Cubre subtotal, envío por paquete, total, IVA, botón a `/checkout`, WhatsApp (móvil, pie fijo), cupón y descuento/gift card. Perdidos y no dibujados en Figma: stepper de pasos (`CheckoutStepper`), `ShippingProgress` (meta de ₡15.000 de envío gratis: el modelo ahora cobra envío por paquete; sigue en `MiniCartFooter`, de SHELL), botón "Vaciar pedido", enlace "Seguir comprando" y, en **escritorio**, "Pedir por WhatsApp" (`51:1820` es solo móvil). REQUIERE_DECISION: vaciar pedido y WhatsApp en escritorio. |
+| `CrossSellGrid` (4 destacados con stock, "Completa tu compra"; `getDestacados` con respaldo a `getAll(0,12)`; en vacío "Te puede interesar") | `SumaMismaTienda` (`37:1595`, `38:1439`) y destacados del vacío (`45:1692`) | **No es lo mismo.** `SumaMismaTienda` sugiere 1 producto de la misma tienda por paquete (con envío ya pagado); usa los mismos destacados con respaldo. La grilla genérica no existe en ningún frame de carrito: eliminación respaldada por Figma. El vacío muestra 2 destacados (Figma). |
+| `AICartSection` (`AIChat` con `autoQuery` al montar, contexto `CARRITO:items:total`, `sessionKey hotclick-cart`, respuestas y tarjetas de producto en línea) | `AsistentePedido` (`52:2223`) | **No equivalente.** Figma solo dibuja una entrada que abre el asistente global (`chatStore.open(pregunta)`). Se pierden: la consulta automática al abrir el carrito, el contexto del carrito enviado al asistente y las sugerencias en línea. REQUIERE_DECISION: ¿enviar el contexto del carrito con la pregunta? ¿mantener el panel? Se deja como Figma. |
+
+## Pantallas CHK
+
+Veredictos "agent verified" (sin QA independiente). Móvil medido en 390x844 con DOM + diferencia de píxeles contra la captura de Figma; escritorio en 1440. Las diferencias de texto por antialias o por datos de ejemplo (fotos, "Sale de San José") no cuentan. Todas las pantallas se probaron con API simulada (`context.route('**/api/**')`).
+
+| Pantalla | Ruta | Frame | Veredicto | Notas |
+| --- | --- | --- | --- | --- |
+| Carrito móvil | `/carrito` | `28:989`, `51:1820` | PARTIAL | Medidas iguales. Faltan por falta de dato: línea "Sale de San José" por paquete (el producto no trae provincia de la bodega). El cupón/notas/gift card (`51:1820`) funcionan con el store `pedidoExtras`. Guardar por correo y asistente: ver Paso 0. |
+| Carrito escritorio | `/carrito` | `30:2268` | PARTIAL | Cupón con "Agregar cupón"; la gift card (con sesión) va dentro del mismo despliegue (Figma no la dibuja en escritorio). |
+| Carrito vacío | `/carrito` | `45:1692` | PASS | Móvil. En escritorio se centra con el mismo ancho (sin frame). |
+| Checkout 3 pasos móvil | `/checkout` | `28:1083`, `29:1248`, `29:1344`, `51:2000` | PARTIAL | Paso 1 y 3 coinciden al píxel; paso 2 coincide salvo datos. Provincia/cantón/señas se compone en `direccion` (mismo campo del backend). El envío normal se ofrece como GAM o fuera del GAM según el cantón destino (Figma lo muestra por origen: falta ese dato). Envío rápido solo dentro del GAM. Marca por defecto SINPE (Figma). Extras no dibujados y obligatorios: consentimiento de datos (Ley 8968), cédula SINPE, nombre con sesión. Cédula y atajo de envío internacional quedan como están (REQUIERE_DECISION). |
+| Checkout escritorio | `/checkout` | `30:2385` | PARTIAL | Posiciones y tamaños medidos iguales. Diferencias: el pago SINPE despliega instrucciones/cédula debajo; el atajo internacional y el consentimiento no están en el frame. |
+| Tarjeta de regalo válida / inválida | `/checkout` (paso 3 con sesión) | `55:2220`, `55:2284` | PARTIAL | Tarjeta de códigos y resumen con "Total restante" y nota; el frame usa una barra "Pago · paso 3 de 3" y un número de pedido previo al pago que no existen en el flujo. |
+| Pago exitoso | `/pago/exito?order=` | `29:1932` | PARTIAL | Móvil igual al frame con los datos que hay. Nombre, correo y paquetes vienen del resumen guardado al pagar (`sessionStorage`). Perdidos: garantía de 40 días, `AIPostPaySection`, "Imprimir", desglose método/tarjeta. "Ver mi pedido" para invitado requiere `tokenSeguimiento` del backend; "Crear mi cuenta con un toque" lleva a `/registro` (el frame lo marca NUEVO · por programar). Escritorio: REQUIRES_DESIGN_REFERENCE. |
+| Pago fallido / cancelado | `/pago/cancelado`, error de pago | `29:1999` | PARTIAL | Móvil igual; reintento Tilopay intacto. Escritorio: REQUIRES_DESIGN_REFERENCE. |
+| Pago en revisión (SINPE y timeout) | `/checkout` (estado), `/pago/exito` (timeout) | `45:1640` | PASS móvil | Diferencia de píxeles solo en antialias. La pantalla previa (transferencia + comprobante) no tiene frame: se rehízo con el estilo del paso de pago (REQUIRES_DESIGN_REFERENCE). Si el comprobante ya se eligió en el paso de pago, se envía solo. |
+| Recuperar carrito | `/recuperar-carrito/:token` | `29:2036` | PARTIAL | Igual al frame; "Disponible · quedan N" solo si el backend devuelve `stock`. Se conservó "Explorar productos nuevos". |
+| Despacho del vendedor | `/emprendedor/pedidos/:id` | `37:1780` | PARTIAL | Productos, dirección y guía de Correos con `PUT /pedidos/:id/guia` (deja ENVIADO y avisa al cliente). Faltan datos del backend: "Paquete N de M", forma de entrega y "Tu pago por este paquete" (comisión). El frame marca todo NUEVO · por programar. |
+
+## Verificación y reglas aplicadas
+
+- Fuentes reales (Sora, Public Sans) con `document.fonts.ready`; alturas con `line-height` explícito donde el valor `normal` de Figma difiere del 1,5 heredado (títulos de 18/19/20 px, texto de 15 px, totales de 17 px).
+- Regla global de `index.css` (`max(16px, 1em)` en inputs bajo 768 px, anti-zoom iOS) hace que los campos midan 16 px y no 14/15 px del frame; es de SHELL y se acepta.
+- Radios: las utilidades `rounded-xl/lg/2xl` apuntan a tokens más grandes que los del Figma; se usan valores explícitos (`rounded-[12px]`).
+- Las etiquetas "NUEVO · por programar" y las notas de diseño de Figma no llegan a la UI.
+- `PaymentStatusPage`: se reinicia la marca de consulta al desmontar; en StrictMode (solo dev) el segundo montaje no volvía a consultar el pago y la pantalla quedaba en carga.
+
+## Decisiones y dependencias abiertas
+
+- REQUIERE_DECISION: guardar por correo en escritorio; "Vaciar pedido"; WhatsApp en escritorio; contexto del carrito en `AsistentePedido`; cédula SINPE (no está en Figma); atajo de envío internacional y consentimiento en escritorio.
+- Backend/datos: provincia y si la bodega está en el GAM (línea "Sale de X" y envío normal por origen); `tokenSeguimiento` en el estado del pago; comisión y paquete N de M por pedido; `stock` en el carrito abandonado.
+- Namespace nuevo `despacho` (i18n) y `checkout.f`, `payment.exito/fallo/revision/sinpe` dentro de los namespaces de CHK; para `COMPONENT_OWNERSHIP.md`.
+- Rutas nuevas: ninguna. `AppRoutes.tsx` sin cambios.

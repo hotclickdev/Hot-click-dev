@@ -41,7 +41,7 @@ export default function PaymentStatusPage() {
 
   useEffect(() => () => {
     stopPolling()
-    // En StrictMode el efecto se monta dos veces: sin reiniciar la marca, el segundo montaje no volvería a consultar el pago.
+    // En StrictMode el efecto se monta dos veces: sin reiniciar la marca, el segundo montaje no volverÃ­a a consultar el pago.
     ran.current = false
   }, [stopPolling])
 
