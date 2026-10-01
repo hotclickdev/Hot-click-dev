@@ -3356,5 +3356,22 @@
     "actividadReciente": "Actividad reciente",
     "misOpiniones": "Mis opiniones",
     "pedidoEnCurso": "Tu pedido en curso"
+  },
+  "despacho": {
+    "pedido": "Pedido #{{id}}",
+    "porDespachar": "Por despachar",
+    "tusProductos": "Tus productos",
+    "unidades_one": "{{count}} u.",
+    "unidades_other": "{{count}} u.",
+    "total": "Total",
+    "enviarA": "Enviar a",
+    "guiaTitulo": "Número de guía de Correos CR",
+    "guiaAyuda": "Llevá el paquete a cualquier sucursal de Correos y copiá la guía del comprobante. El cliente recibe un correo con el seguimiento.",
+    "marcar": "Marcar como despachado",
+    "guardando": "Guardando…",
+    "error": "No se pudo marcar el pedido como enviado.",
+    "titulo": "Despachar paquete",
+    "tituloPedido": "Pedido",
+    "cargando": "Cargando pedido…"
   }
 }

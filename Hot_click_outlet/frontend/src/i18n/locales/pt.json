@@ -3356,5 +3356,22 @@
     "actividadReciente": "Atividade recente",
     "misOpiniones": "Minhas avaliações",
     "pedidoEnCurso": "Seu pedido em andamento"
+  },
+  "despacho": {
+    "pedido": "Pedido #{{id}}",
+    "porDespachar": "A despachar",
+    "tusProductos": "Seus produtos",
+    "unidades_one": "{{count}} un.",
+    "unidades_other": "{{count}} un.",
+    "total": "Total",
+    "enviarA": "Enviar para",
+    "guiaTitulo": "Número de rastreio dos Correios CR",
+    "guiaAyuda": "Leve o pacote a qualquer agência dos Correios e copie o rastreio do comprovante. O cliente recebe um e-mail com o acompanhamento.",
+    "marcar": "Marcar como despachado",
+    "guardando": "Salvando…",
+    "error": "Não foi possível marcar o pedido como enviado.",
+    "titulo": "Despachar pacote",
+    "tituloPedido": "Pedido",
+    "cargando": "Carregando pedido…"
   }
 }

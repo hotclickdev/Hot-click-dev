@@ -3356,5 +3356,22 @@
     "actividadReciente": "Recent activity",
     "misOpiniones": "My reviews",
     "pedidoEnCurso": "Your order in progress"
+  },
+  "despacho": {
+    "pedido": "Order #{{id}}",
+    "porDespachar": "To dispatch",
+    "tusProductos": "Your products",
+    "unidades_one": "{{count}} unit",
+    "unidades_other": "{{count}} units",
+    "total": "Total",
+    "enviarA": "Ship to",
+    "guiaTitulo": "Correos CR tracking number",
+    "guiaAyuda": "Take the package to any Correos branch and copy the tracking number from the receipt. The customer receives an email with the tracking.",
+    "marcar": "Mark as dispatched",
+    "guardando": "Saving…",
+    "error": "The order could not be marked as shipped.",
+    "titulo": "Dispatch package",
+    "tituloPedido": "Order",
+    "cargando": "Loading order…"
   }
 }
