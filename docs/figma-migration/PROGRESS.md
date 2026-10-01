@@ -21,7 +21,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, SYS, ajuste por decisiones | **Hecho**, integrado en `base` (`17988771`, commit `1ec97317`): hoja de accesibilidad sin tema ni filtro de color (alto 354, igual a Figma). Cupón `51:2163` pasa a PASS móvil. Nueva diferencia abierta: Figma resalta el tamaño de fuente "A" (medio) por defecto y la app "A−" |
 | Ola 1, PROD, ajuste de la ficha agotada | **Hecho**, integrado en `base` (`d8af873b`) |
 | Ola 1, ACC | **Hecho, integrado en `base`** (merge `8cc644fc`, commits `cc54c9c6` y `95328c21` sobre `27f87000`, local, sin push). 18 pantallas: 10 PASS (agent verified) y 8 PARTIAL; ninguna BLOCKED por completo. Cuenta dividida en resumen, opiniones y datos y seguridad; pedidos por paquete; solicitudes dentro de `/servicios`; login y 2FA al estilo de Figma. Ver `ACC.md` |
-| Ola 1, SRV | **Hecho en `feat/figma/srv`, sin integrar en `base`** (local, sin push). 8 pantallas: 1 PASS y 7 PARTIAL (agent verified); ninguna BLOCKED por completo. Servicios HOT en lista, formulario y garantía, encargo con línea de tiempo, cotización pública, Envíos con la plantilla informativa y blog. Ver `SRV.md` |
+| Ola 1, SRV | **Hecho, integrado en `base`** (merge `68c0952f`, commits `3282fe58` y `87e2e276` sobre `f57da0ae`, local, sin push). 8 pantallas: 1 PASS y 7 PARTIAL (agent verified); ninguna BLOCKED por completo. Servicios HOT en lista, formulario y garantía, encargo con línea de tiempo, cotización pública, Envíos con la plantilla informativa y blog. Ver `SRV.md` |
 | Ola 1, STORE, QR | **No lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
@@ -38,7 +38,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | `feat/figma/prod` | `.claude/worktrees/prod` | `feat/figma/base` (`1c87c9d3`) | PROD | `c0ecd189`, `80c770e9`, `47536ba1`, `ea0d3b0f` | Hecha e integrada en `base` (`a44632a6`) |
 | `feat/figma/chk` | `.claude/worktrees/chk` | `11af2c0a` (base de PROD) | CHK | 16 commits (`d1451060` a `3c9b4d62`) y `0f017780` | Hecha e integrada en `base` (`cf657e9c`). Working tree limpio |
 | `feat/figma/acc` | `.claude/worktrees/acc` | `feat/figma/base` (`27f87000`) | ACC | `cc54c9c6` y el commit de docs | Hecha e integrada en `base` (`8cc644fc`). Working tree limpio |
-| `feat/figma/srv` | `.claude/worktrees/srv` | `feat/figma/base` (`f57da0ae`, por fast-forward) | SRV | commits de SRV y de docs | Hecha, **sin integrar en `base`**. Working tree limpio |
+| `feat/figma/srv` | `.claude/worktrees/srv` | `feat/figma/base` (`f57da0ae`, por fast-forward) | SRV | `3282fe58` y `87e2e276` | Hecha e integrada en `base` (`68c0952f`). Working tree limpio |
 | `feat/figma/{store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
@@ -223,13 +223,13 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 32 | ACC: **login**: el paso de contraseña no tiene frame (se pide tras "Continuar") y no se puede saber si un correo existe, así que "Creá una" va en el paso 2. Pedir a diseño el frame del paso de contraseña y del registro | ACC |
 | 33 | ACC: **"Confiar en este dispositivo"** de la verificación en dos pasos no tiene soporte en backend. ¿Se construye? | ACC |
 | 34 | ACC: la opinión exige comentario en backend aunque Figma diga "(opcional)". ¿Se cambia el backend o el texto de Figma? | ACC |
-| 35 | SRV: **Presupuesto aproximado** del formulario `28:1486` es un selector con rangos en Figma y texto libre en el backend. ¿Se aprueba una lista de rangos? | SRV |
-| 36 | SRV: **Tiempos y tarifas de Envíos** (`28:1660`): Figma dice "24 h hábiles" y "1 a 3 días"; el contenido que usa el checkout dice "30 min – 2 horas" y "2–4 días hábiles". Se conservó el existente. ¿Cuál es el correcto? | SRV |
-| 37 | SRV: **Devoluciones, Información, Contacto, Términos y Privacidad** pueden adoptar la plantilla informativa, pero no hay frame de cada una. ¿Se piden a diseño? | SRV |
-| 38 | SRV: **Blog**: chips de temas, buscador, productos por artículo y autor necesitan backend. ¿Se priorizan? | SRV |
-| 39 | SRV: **Aceptar cotización** (`55:2332`) necesita endpoint y estado nuevo. ¿Se construye? | SRV |
-| 40 | SRV: **Fotos de la falla** en la garantía (`28:1531`) necesitan campo y almacenamiento en `SolicitudGarantia`. ¿Se construye? | SRV |
-| 41 | SRV: el teléfono del campo "Tu WhatsApp" ya no usa `PhoneField` (selector de país): se escribe el número local y se agrega +506. ¿Se acepta, o se pide el selector de país en Figma? | SRV |
+| 35 | SRV (no bloquea la integración): **Presupuesto aproximado** del formulario `28:1486` es un selector con rangos en Figma y texto libre en el backend. ¿Se aprueba una lista de rangos? | SRV |
+| 36 | ~~Tiempos y tarifas de Envíos~~ **Resuelto: se mantienen los del checkout** ("30 min – 2 horas", "2–4 días hábiles"); no se cambia la lógica del checkout para igualar el texto de Figma | SRV |
+| 37 | ~~Devoluciones, Información, Contacto, Términos y Privacidad~~ **Resuelto: sin frame no se rediseñan**; siguen OLD_DESIGN, pendientes de referencia visual | SRV |
+| 38 | SRV (no bloquea la integración; la pantalla sigue PARTIAL): **Blog**: chips de temas, buscador, productos por artículo y autor necesitan backend. ¿Se priorizan? | SRV |
+| 39 | SRV (no bloquea la integración; la pantalla sigue PARTIAL): **Aceptar cotización** (`55:2332`) necesita endpoint y estado nuevo. ¿Se construye? | SRV |
+| 40 | SRV (no bloquea la integración; la pantalla sigue PARTIAL): **Fotos de la falla** en la garantía (`28:1531`) necesitan campo y almacenamiento en `SolicitudGarantia`. ¿Se construye? | SRV |
+| 41 | ~~Teléfono de "Tu WhatsApp"~~ **Resuelto: se acepta el campo simple que agrega +506**; sin selector de país | SRV |
 
 ## Riesgos abiertos
 
