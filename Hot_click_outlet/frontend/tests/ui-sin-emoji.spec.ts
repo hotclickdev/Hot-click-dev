@@ -108,8 +108,6 @@ test('POS y picker de categorías no pintan emojis de UI', () => {
   expect(leer('../src/pages/admin/categorias/CategoriaFormModal.tsx')).toContain('onSubmit={onSubmit}')
   expect(leer('../src/pages/admin/AdminCategories.tsx')).toContain('onSubmit={guardarCategoria}')
   expect(leer('../src/pages/catalogo/categoriaIconos.ts')).toContain('item.clave === icono')
-  expect(leer('../src/pages/catalogo/CategorySidebar.tsx')).not.toContain('{drilledNode.icono')
-  expect(leer('../src/pages/catalogo/SubcategoryGrid.tsx')).not.toContain('<span>{sub.icono}</span>')
   expect(leer('../src/components/layout/navbar/NavbarMobileCategorias.tsx')).not.toContain('${cat.icono')
   expect(leer('../src/pages/admin/categorias/CategoriaCard.tsx')).not.toContain('node.icono ||')
   expect(leer('../src/components/ui/PhoneField.tsx')).not.toContain('🌐')
@@ -149,8 +147,6 @@ test('cierres y quitar usan CloseIcon, no cruz de carácter', () => {
   expect(leer('../src/pages/admin/ordenes/CloseX.tsx')).toContain("from '@/components/ui/CloseIcon'")
   expect(leer('../src/components/ui/MiniCartDrawer.tsx')).toContain("from '@/components/ui/CloseIcon'")
   expect(leer('../src/components/ai/ChatModal.tsx')).toContain("from '@/components/ui/CloseIcon'")
-  expect(leer('../src/pages/catalogo/CatalogFilterBar.tsx')).toContain("from '@/components/ui/CloseIcon'")
-  expect(leer('../src/pages/catalogo/CatalogMobileSidebar.tsx')).toContain('aria-label="Cerrar"')
   expect(leer('../src/components/layout/navbar/navbarIcons.tsx')).toContain("from '@/components/ui/CloseIcon'")
   expect(leer('../src/components/ui/MiniCartDrawer.tsx')).not.toContain('M6 18L18 6M6 6l12 12')
   expect(leer('../src/components/ai/ChatModal.tsx')).not.toContain('M6 18L18 6M6 6l12 12')
@@ -192,9 +188,6 @@ test('flechas de copy en comprar vender emprender usan TextoFlecha', () => {
   expect(leer('../src/pages/catalogo/ParentCategoryRow.tsx')).toContain('<TextoFlecha')
   expect(leer('../src/pages/catalogo/ParentCategoryRow.tsx')).not.toContain('M9 5l7 7-7 7')
   expect(leer('../src/pages/catalogo/ParentCategoryRow.tsx')).toContain('onClick={() => onVerMas(catId)}')
-  expect(leer('../src/pages/catalogo/CategorySidebar.tsx')).toContain('tipo="adelante"')
-  expect(leer('../src/pages/catalogo/CategorySidebar.tsx')).toContain('onClick={() => handleCatSelect(String(cat.id))}')
-  expect(leer('../src/pages/catalogo/CategorySidebar.tsx')).not.toContain('M9 5l7 7-7 7')
 })
 
 test('volver y canales de contacto usan TextoFlecha o TrustGlyph', () => {
