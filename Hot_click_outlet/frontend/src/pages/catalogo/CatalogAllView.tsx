@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { RefObject } from 'react'
 import Chip from '@/components/comprador/Chip'
-import HojaInferior from '@/components/comprador/HojaInferior'
 import { RetryBanner } from '@/components/ui/RetryBanner'
 import { RUTA_BUSCAR_FOTO } from '@/pages/buscar/rutasBuscar'
 import CatalogProductGrid from './CatalogProductGrid'
 import EncabezadoCatalogoMovil from './EncabezadoCatalogoMovil'
 import EntendiChips from './EntendiChips'
 import FiltrosPanel from './FiltrosPanel'
+import HojaFiltros from './HojaFiltros'
+import { topeDeRango } from './RangoPrecio'
 import FiltrosRapidos from './FiltrosRapidos'
 import OrdenarResultados from './OrdenarResultados'
 import AsistenteEnGrilla from './AsistenteEnGrilla'
@@ -47,6 +48,7 @@ export default function CatalogAllView({
   const titulo = modoBusqueda ? t('products.resultsTitle', { q: consulta }) : tituloCategoria
 
   const tiendas = useMemo(() => tiendasDelCatalogo(products), [products])
+  const precioTope = useMemo(() => topeDeRango(products.map((p) => p.precio ?? 0)), [products])
   const hayRetiro = useMemo(() => products.some((p) => p.bodegaPermiteRetiro === true), [products])
   const marcasActivas = useMemo(
     () => marcas.filter((m) => marcasFilter.has(String(m.id))).map((m) => ({ id: String(m.id), nombre: m.nombreMarca ?? String(m.id) })),
@@ -86,7 +88,7 @@ export default function CatalogAllView({
     categories, categoryTotalCount, category, setCategory,
     tiendas, extras, setExtras,
     soloConStock: filterStock === 'ok', setSoloConStock: (v: boolean) => setFilterStock(v ? 'ok' : ''),
-    hayRetiro,
+    hayRetiro, precioTope,
   }
 
   const textoCantidad = modoBusqueda
@@ -197,25 +199,14 @@ export default function CatalogAllView({
         </div>
       </div>
 
-      <HojaInferior
+      <HojaFiltros
         abierta={filtrosAbiertos}
         onCerrar={() => setFiltrosAbiertos(false)}
-        titulo={(
-          <div className="flex items-center justify-between">
-            <span className="font-display text-[18px] font-bold text-hc-n-900">{t('products.filters')}</span>
-            <button type="button" onClick={clearFilters} className="text-[13px] font-semibold text-hc-blue-600">{t('products.clearAll')}</button>
-          </div>
-        )}
+        onLimpiar={clearFilters}
+        cantidad={filtered.length}
       >
         <FiltrosPanel {...propsFiltros} variante="hoja" />
-        <button
-          type="button"
-          onClick={() => setFiltrosAbiertos(false)}
-          className="rounded-[12px] bg-hc-red-500 px-4 py-[14px] text-[15px] font-semibold text-hc-n-0"
-        >
-          {t('products.viewResults', { count: filtered.length })}
-        </button>
-      </HojaInferior>
+      </HojaFiltros>
     </>
   )
 }

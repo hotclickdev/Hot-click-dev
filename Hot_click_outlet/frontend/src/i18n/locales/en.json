@@ -716,8 +716,6 @@
     "hideFilters": "Hide filters",
     "resultsCount_one": "{{count}} result",
     "resultsCount_other": "{{count}} results",
-    "viewResults_one": "View {{count}} result",
-    "viewResults_other": "View {{count}} results",
     "categoryLabel": "Category",
     "categories": "Categories",
     "fullCatalog": "Full catalog",
@@ -757,6 +755,8 @@
     "categoriesSearch": "Search a category",
     "categoriesEmpty": "No categories with that name.",
     "understood": "We understood:",
+    "viewProducts_one": "View {{count}} product",
+    "viewProducts_other": "View {{count}} products",
     "filters": "Filters",
     "priceShort": "Price",
     "searchIn": "Search in {{nombre}}",
@@ -786,8 +786,7 @@
     "noResultsWeGetIt": "We'll get it for you",
     "noResultsWeGetItSub": "Servicios HOT: send us a photo on WhatsApp, we search our suppliers and quote you in minutes.",
     "noResultsWhatsApp": "Request it on WhatsApp",
-    "meanwhile": "Meanwhile",
-    "viewResults": "View {{count}} results"
+    "meanwhile": "Meanwhile"
   },
   "product": {
     "addToCart": "Add to order",

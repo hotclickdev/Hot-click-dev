@@ -716,8 +716,6 @@
     "hideFilters": "Ocultar filtros",
     "resultsCount_one": "{{count}} resultado",
     "resultsCount_other": "{{count}} resultados",
-    "viewResults_one": "Ver {{count}} resultado",
-    "viewResults_other": "Ver {{count}} resultados",
     "categoryLabel": "Categoria",
     "categories": "Categorias",
     "fullCatalog": "Catálogo completo",
@@ -757,6 +755,8 @@
     "categoriesSearch": "Buscar uma categoria",
     "categoriesEmpty": "Não há categorias com esse nome.",
     "understood": "Entendemos:",
+    "viewProducts_one": "Ver {{count}} produto",
+    "viewProducts_other": "Ver {{count}} produtos",
     "filters": "Filtros",
     "priceShort": "Preço",
     "searchIn": "Buscar em {{nombre}}",
@@ -786,8 +786,7 @@
     "noResultsWeGetIt": "Nós conseguimos para você",
     "noResultsWeGetItSub": "Servicios HOT: mande uma foto pelo WhatsApp, buscamos com nossos fornecedores e cotamos em minutos.",
     "noResultsWhatsApp": "Pedir pelo WhatsApp",
-    "meanwhile": "Enquanto isso",
-    "viewResults": "Ver {{count}} resultados"
+    "meanwhile": "Enquanto isso"
   },
   "product": {
     "addToCart": "Adicionar ao pedido",
