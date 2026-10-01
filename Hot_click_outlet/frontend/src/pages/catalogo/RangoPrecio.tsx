@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-/** Salto del control de rango, en colones. */
-const PASO_RANGO = 500
+import { PASO_RANGO } from './rangoPrecioHelpers'
 
 const CLASE_TIRADOR =
   'hc-input-libre pointer-events-none absolute inset-0 h-5 w-full appearance-none bg-transparent '
@@ -11,12 +10,6 @@ const CLASE_TIRADOR =
   + '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-5 [&::-moz-range-thumb]:cursor-pointer '
   + '[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-solid '
   + '[&::-moz-range-thumb]:border-hc-blue-600 [&::-moz-range-thumb]:bg-hc-n-0'
-
-/** Tope del control: el precio más alto del catálogo, redondeado hacia arriba al salto. */
-export function topeDeRango(precios: number[]): number {
-  const maximo = precios.reduce((m, p) => (p > m ? p : m), 0)
-  return Math.ceil(maximo / PASO_RANGO) * PASO_RANGO
-}
 
 /**
  * Rango visual de la hoja de filtros (Figma `26:902`): pista de 4 px y dos tiradores de 20 px.

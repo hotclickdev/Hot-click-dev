@@ -1,4 +1,5 @@
 /** Precio y CTA de productos en chats asesores (SSE + RAG). */
+import { formatMiles } from '@/utils/format'
 
 export type ModoPrecioChat = 'FIJO' | 'RANGO' | 'COTIZACION' | string | null | undefined
 
@@ -12,7 +13,7 @@ export type ProductoPrecioChat = {
   precioEtiqueta?: string | null
 }
 
-const fmt = (n: number) => new Intl.NumberFormat('es-CR').format(n)
+const fmt = (n: number) => formatMiles(n)
 
 /** Cotización/rango: ir a ficha, no al carrito. */
 export function requiereFichaEncargo(p: ProductoPrecioChat): boolean {
