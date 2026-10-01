@@ -7,6 +7,7 @@ import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import CookieBanner from '@/components/ui/CookieBanner'
+import AvisoSinConexion from '@/components/comprador/estados/AvisoSinConexion'
 import { setAnalyticsConsent, identifyUser } from '@/utils/analytics'
 import { initAnalytics } from '@/utils/initAnalytics'
 import SiteVerification from '@/utils/siteVerification'
@@ -21,7 +22,6 @@ import {
   ConditionalChatModal,
   AbandonedCartWatcher,
   WishlistAlertWatcher,
-  SocialProofController,
   BrandingInit,
   AnalyticsInit,
   ServiceWorkerRefresh,
@@ -45,6 +45,7 @@ export default function App() {
           <BrandingInit />
           <PageProgressBar />
           <ScrollToTop />
+          <AvisoSinConexion />
           <Suspense fallback={<PageLoader />}>
             <PageFade>
             <ErrorBoundaryPorArea>
@@ -55,7 +56,6 @@ export default function App() {
           <ConditionalWhatsAppFab />
           <AccessibilityPanel />
           <ConditionalChatModal />
-          <SocialProofController />
           <AbandonedCartWatcher />
           <WishlistAlertWatcher />
           <CookieBanner onConsent={(c) => {

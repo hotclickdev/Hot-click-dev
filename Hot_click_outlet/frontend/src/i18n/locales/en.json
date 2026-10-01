@@ -111,7 +111,9 @@
     "filtroProtanopiaDesc": "Difficulty seeing red",
     "filtroTritanopia": "Blue CVD",
     "filtroTritanopiaDesc": "Difficulty seeing blue",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "hojaTitulo": "Language and accessibility",
+    "listo": "Done"
   },
   "notFound": {
     "title": "This page does not exist",
@@ -129,7 +131,14 @@
     "misPedidos": "My orders",
     "ayudaContacto": "Help and contact",
     "buscarPlaceholder": "Search or describe what you need",
-    "accesos": "Quick links"
+    "accesos": "Quick links",
+    "sinConexionAviso": "Offline · showing what is saved",
+    "sinConexionTitulo": "You are offline",
+    "sinConexionTexto": "Meanwhile you can see your favorites and what you viewed. We will let you know when the signal is back.",
+    "vistosRecientes": "Recently viewed",
+    "favoritos": "Favorites",
+    "reintentar": "Try again",
+    "sinConexionNota": "You need a connection to add to your order and pay."
   },
   "ayudaPage": {
     "title": "Help center",
@@ -950,7 +959,23 @@
     "body": "Essential cookies keep your cart and session. Analytics cookies help us improve the platform.",
     "moreInfo": "Learn more",
     "essentialOnly": "Essential only",
-    "acceptAll": "Accept all"
+    "acceptAll": "Accept all",
+    "configurar": "Settings",
+    "leyInfo": "Law 8968 · Learn more",
+    "preferenciasTitulo": "Cookie preferences",
+    "preferenciasSubtitulo": "Choose what we may use. You can change it anytime from the page footer.",
+    "esenciales": "Essential",
+    "siempreActivas": "Always on",
+    "esencialesDesc": "They keep your cart, your session and your preferences. Without them you cannot buy.",
+    "analisis": "Analytics",
+    "analisisDesc": "Google Analytics 4, PostHog and Microsoft Clarity, with aggregated and anonymized data, to understand what to improve.",
+    "publicidad": "Advertising",
+    "noLasUsamos": "We do not use them",
+    "publicidadDesc": "We do not use advertising cookies or sell your data today.",
+    "guardarPreferencias": "Save preferences",
+    "leyTexto": "We comply with Law 8968 on the Protection of Individuals regarding the Processing of their Personal Data (Costa Rica).",
+    "verPolitica": "See cookie policy",
+    "cerrarPreferencias": "Close cookie preferences"
   },
   "chat": {
     "open": "Open AI assistant",
@@ -1863,7 +1888,7 @@
   "promo": {
     "firstPurchase": "on your first purchase",
     "title": "Welcome to HotClick!",
-    "subtitle": "Enter your email and we'll send you a unique discount code.",
+    "subtitle": "Enter your email and we will send you a unique, non-transferable code to use at checkout.",
     "emailPlaceholder": "you@email.com",
     "getCoupon": "Get my coupon",
     "sending": "Sending...",
@@ -1871,7 +1896,8 @@
     "successTitle": "Check your email!",
     "successSub": "We sent you your code. Enter it at checkout on your first purchase.",
     "viewProducts": "View products",
-    "close": "Close"
+    "close": "Close",
+    "discount": "13% off"
   },
   "exitIntent": {
     "title": "Still thinking?",
@@ -1882,7 +1908,13 @@
     "more_other": "+{{count}} more products",
     "total": "Total",
     "checkout": "Complete purchase",
-    "continue": "Keep exploring"
+    "continue": "Keep exploring",
+    "wishTitle": "Your favorites are waiting!",
+    "wishHas": "Your favorites are still here with",
+    "viewWishlist": "View my favorites",
+    "unit_one": "{{count}} unit",
+    "unit_other": "{{count}} units",
+    "close": "Close"
   },
   "shippingProgress": {
     "achieved": "Threshold reached! Shipping cost still depends on the method you choose.",
@@ -1896,23 +1928,6 @@
     "payment": "Payment",
     "confirm": "Confirmation",
     "backTo": "Back to {{step}}"
-  },
-  "socialProofToast": {
-    "from": "from",
-    "moment": "just now",
-    "closeNotif": "Close notification",
-    "bought": "bought",
-    "added": "added to order",
-    "viewed": "just viewed"
-  },
-  "socialProof": {
-    "ratingLabel": "Rating: {{stars}} out of 5 stars",
-    "reviews": "reviews",
-    "purchases": "purchases",
-    "secure": "100% secure purchase",
-    "warranty": "40-day warranty",
-    "shipping": "Correos CR shipping",
-    "satisfied": "Satisfied customers"
   },
   "recuperarCarrito": {
     "title": "Your saved order",

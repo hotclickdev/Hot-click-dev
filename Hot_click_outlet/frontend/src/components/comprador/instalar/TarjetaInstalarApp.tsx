@@ -11,7 +11,7 @@ const BENEFICIOS = [
   { icono: ICONOS_COMPRADOR.instalarSinConexion, clave: 'comprador.instalarApp.beneficioSinConexion' },
 ] as const
 
-const BOTON = 'flex min-w-0 flex-1 items-center justify-center rounded-[12px] py-3 text-[14px] font-semibold'
+const BOTON = 'flex min-w-0 flex-1 items-center justify-center rounded-[12px] py-3 text-[14px] font-semibold leading-4'
 
 /**
  * Tarjeta flotante "Instalá HotClick" del Home móvil (Figma `55:2658`), sobre la
@@ -27,24 +27,24 @@ export default function TarjetaInstalarApp() {
   return createPortal(
     <section
       aria-label={t('comprador.instalarApp.aria')}
-      className="fixed inset-x-4 bottom-[89px] z-[55] flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 shadow-[0px_8px_24px_0px_rgba(0,0,0,0.16)] lg:hidden"
+      className="fixed inset-x-4 bottom-[88px] z-[55] flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 shadow-[0px_8px_24px_0px_rgba(0,0,0,0.16)] lg:hidden"
     >
       <div className="flex items-center gap-3">
         <span className="size-11 shrink-0 overflow-hidden rounded-[12px] border border-hc-n-200">
           <img src={isotipo} alt="" className="size-full object-contain" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <h2 className="font-display text-[16px] font-bold text-hc-n-900">{t('comprador.instalarApp.titulo')}</h2>
-          <p className="text-[12px] text-hc-n-500">{t('comprador.instalarApp.subtitulo')}</p>
+          <h2 className="font-display text-[16px] font-bold leading-5 tracking-normal text-hc-n-900">{t('comprador.instalarApp.titulo')}</h2>
+          <p className="text-[12px] leading-[14px] text-hc-n-500">{t('comprador.instalarApp.subtitulo')}</p>
         </div>
-        <button type="button" onClick={descartar} aria-label={t('comprador.instalarApp.cerrar')} className="text-hc-n-500">
+        <button type="button" onClick={descartar} aria-label={t('comprador.instalarApp.cerrar')} className="flex text-hc-n-500">
           <IconoFigma src={ICONOS_COMPRADOR.instalarCerrar} size={18} />
         </button>
       </div>
 
       <ul className="flex flex-col gap-3">
         {BENEFICIOS.map((b) => (
-          <li key={b.clave} className="flex items-center gap-2.5 text-[13px] text-hc-n-600">
+          <li key={b.clave} className="flex items-center gap-2.5 text-[13px] leading-[15px] text-hc-n-600">
             <IconoFigma src={b.icono} size={16} className="text-hc-blue-600" />
             <span className="min-w-0 flex-1">{t(b.clave)}</span>
           </li>

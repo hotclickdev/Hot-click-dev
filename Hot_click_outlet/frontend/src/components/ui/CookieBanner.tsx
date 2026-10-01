@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
+import { ICONOS_ESTADOS } from '@/components/comprador/estados/iconosEstados'
+import HojaPreferenciasCookies from '@/components/ui/cookies/HojaPreferenciasCookies'
+import { EVENTO_ABRIR_PREFERENCIAS_COOKIES } from '@/components/ui/cookies/preferenciasCookiesApi'
 
 const STORAGE_KEY = 'hotclick-cookie-consent'
 
@@ -27,11 +30,13 @@ export function setCookieConsent(value: CookieConsent) {
 }
 
 /**
- * Banner de cookies. No se muestra en el prototipo CLAUDECLICK.
+ * Aviso de cookies (Figma `45:2152`) y hoja de preferencias (`45:2166`). No se muestra en el
+ * prototipo CLAUDECLICK. La hoja también se abre desde el pie de página con `abrirPreferenciasCookies()`.
  */
 export default function CookieBanner({ onConsent }: { onConsent?: (consent: CookieConsent) => void }) {
   const { pathname } = useLocation()
   const [visible, setVisible] = useState(false)
+  const [hojaAbierta, setHojaAbierta] = useState(false)
 
   useEffect(() => {
     if (esRutaClaudeclick(pathname)) return
@@ -40,31 +45,51 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
     return () => clearTimeout(t)
   }, [pathname])
 
+  useEffect(() => {
+    const abrir = () => setHojaAbierta(true)
+    globalThis.addEventListener(EVENTO_ABRIR_PREFERENCIAS_COOKIES, abrir)
+    return () => globalThis.removeEventListener(EVENTO_ABRIR_PREFERENCIAS_COOKIES, abrir)
+  }, [])
+
   function accept(analytics: boolean) {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     const consent: CookieConsent = { analytics, functional: true, timestamp: Date.now() }
     setCookieConsent(consent)
     setVisible(false)
+    setHojaAbierta(false)
     onConsent?.(consent)
   }
 
   if (esRutaClaudeclick(pathname)) return null
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ y: 120, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 120, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="pointer-events-none fixed left-0 right-0 z-[9999] p-3 sm:p-4"
-          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
-        >
-          <CuerpoBanner onSoloEsenciales={() => accept(false)} onAceptarTodo={() => accept(true)} />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <>
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            initial={{ y: 120, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 120, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed inset-x-3 z-[9999] mx-auto max-w-[366px] bottom-[calc(79px+env(safe-area-inset-bottom,0px))] lg:inset-x-auto lg:bottom-6 lg:left-6 lg:mx-0"
+          >
+            <CuerpoBanner
+              onSoloEsenciales={() => accept(false)}
+              onAceptarTodo={() => accept(true)}
+              onConfigurar={() => setHojaAbierta(true)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <HojaPreferenciasCookies
+        key={String(hojaAbierta)}
+        abierta={hojaAbierta}
+        analiticaInicial={getCookieConsent()?.analytics ?? true}
+        onCerrar={() => setHojaAbierta(false)}
+        onGuardar={accept}
+        onAceptarTodo={() => accept(true)}
+      />
+    </>
   )
 }
 
@@ -84,74 +109,42 @@ function parseConsent(raw: string): CookieConsent | null {
   }
 }
 
+const BOTON = 'flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-[12px] py-[14px] text-[15px] font-semibold leading-[18px]'
+
 function CuerpoBanner({
   onSoloEsenciales,
   onAceptarTodo,
+  onConfigurar,
 }: {
   onSoloEsenciales: () => void
   onAceptarTodo: () => void
+  onConfigurar: () => void
 }) {
   const { t } = useTranslation()
   return (
-    <div
-      className="mx-auto flex max-w-3xl flex-col items-start gap-4 rounded-2xl px-5 py-4 pointer-events-auto sm:flex-row sm:items-center"
-      style={{
-        background: 'color-mix(in srgb, var(--hc-surface) 97%, transparent)',
-        border: '1px solid var(--hc-border)',
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 -4px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)',
-      }}
+    <section
+      aria-label={t('cookies.title')}
+      className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 shadow-[0px_8px_24px_0px_rgba(0,0,0,0.16)]"
     >
-      <IconoCookie />
-      <div className="min-w-0 flex-1">
-        <p className="mb-0.5 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-          {t('cookies.title')}
-        </p>
-        <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-          {t('cookies.body')}{' '}
-          <Link to="/cookies" className="underline underline-offset-2 transition-opacity hover:opacity-80" style={{ color: 'var(--hc-accent)' }}>
-            {t('cookies.moreInfo')}
-          </Link>
-        </p>
+      <div className="flex items-center gap-[10px]">
+        <img src={ICONOS_ESTADOS.cookie} alt="" width={20} height={20} className="block size-5 shrink-0" />
+        <p className="flex-1 font-display text-[14px] font-bold leading-[normal] tracking-normal text-hc-n-900">{t('cookies.title')}</p>
       </div>
-      <div className="flex w-full shrink-0 gap-2 sm:w-auto">
-        <button
-          type="button"
-          onClick={onSoloEsenciales}
-          className="flex-1 rounded-xl px-4 py-2 text-xs font-semibold transition-all hover:bg-white/8 sm:flex-none"
-          style={{ color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}
-        >
+      <p className="text-[13px] leading-[18px] text-hc-n-600">{t('cookies.body')}</p>
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={onSoloEsenciales} className={`${BOTON} border border-hc-n-200 bg-hc-n-0 text-hc-n-900 hover:bg-hc-n-50`}>
           {t('cookies.essentialOnly')}
         </button>
-        <button
-          type="button"
-          onClick={onAceptarTodo}
-          className="flex-1 rounded-xl px-5 py-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 sm:flex-none"
-          style={{
-            background: 'var(--hc-accent)',
-            boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 40%, transparent)',
-          }}
-        >
+        <button type="button" onClick={onAceptarTodo} className={`${BOTON} bg-hc-red-500 text-hc-n-0 hover:bg-hc-red-600`}>
           {t('cookies.acceptAll')}
         </button>
       </div>
-    </div>
-  )
-}
-
-function IconoCookie() {
-  return (
-    <div
-      className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:flex"
-      style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 22%, transparent)' }}
-    >
-      <svg className="text-[#4f7cff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }} aria-hidden>
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-        <circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none" />
-        <circle cx="15" cy="8" r="1" fill="currentColor" stroke="none" />
-        <circle cx="15.5" cy="14.5" r="1.5" fill="currentColor" stroke="none" />
-        <circle cx="10" cy="15.5" r="1" fill="currentColor" stroke="none" />
-      </svg>
-    </div>
+      <div className="flex items-center justify-between whitespace-nowrap leading-[normal]">
+        <button type="button" onClick={onConfigurar} className="text-[13px] font-semibold text-hc-blue-600">
+          {t('cookies.configurar')}
+        </button>
+        <Link to="/cookies" className="text-[12px] text-hc-n-500">{t('cookies.leyInfo')}</Link>
+      </div>
+    </section>
   )
 }

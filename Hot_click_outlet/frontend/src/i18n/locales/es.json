@@ -111,7 +111,9 @@
     "filtroProtanopiaDesc": "Dificultad para ver rojo",
     "filtroTritanopia": "Dalton. azul",
     "filtroTritanopiaDesc": "Dificultad para ver azul",
-    "breadcrumb": "Ruta de navegación"
+    "breadcrumb": "Ruta de navegación",
+    "hojaTitulo": "Idioma y accesibilidad",
+    "listo": "Listo"
   },
   "notFound": {
     "title": "Esta página no existe",
@@ -129,7 +131,14 @@
     "misPedidos": "Mis pedidos",
     "ayudaContacto": "Ayuda y contacto",
     "buscarPlaceholder": "Buscá o describí lo que necesitás",
-    "accesos": "Accesos rápidos"
+    "accesos": "Accesos rápidos",
+    "sinConexionAviso": "Sin conexión · mostrando lo guardado",
+    "sinConexionTitulo": "Estás sin conexión",
+    "sinConexionTexto": "Mientras tanto podés ver tus favoritos y lo que miraste. Te avisamos cuando vuelva la señal.",
+    "vistosRecientes": "Vistos recientemente",
+    "favoritos": "Favoritos",
+    "reintentar": "Reintentar",
+    "sinConexionNota": "Para agregar al pedido y pagar necesitás conexión."
   },
   "ayudaPage": {
     "title": "Centro de ayuda",
@@ -950,7 +959,23 @@
     "body": "Las cookies esenciales mantienen tu carrito y sesión. Las de análisis nos ayudan a mejorar la plataforma.",
     "moreInfo": "Más información",
     "essentialOnly": "Solo esenciales",
-    "acceptAll": "Aceptar todo"
+    "acceptAll": "Aceptar todo",
+    "configurar": "Configurar",
+    "leyInfo": "Ley 8968 · Más información",
+    "preferenciasTitulo": "Preferencias de cookies",
+    "preferenciasSubtitulo": "Elegí qué nos dejás usar. Podés cambiarlo cuando quieras desde el pie de página.",
+    "esenciales": "Esenciales",
+    "siempreActivas": "Siempre activas",
+    "esencialesDesc": "Mantienen tu carrito, tu sesión y tus preferencias. Sin ellas no se puede comprar.",
+    "analisis": "Análisis",
+    "analisisDesc": "Google Analytics 4, PostHog y Microsoft Clarity, con datos agregados y anonimizados, para entender qué mejorar.",
+    "publicidad": "Publicidad",
+    "noLasUsamos": "No las usamos",
+    "publicidadDesc": "Hoy no usamos cookies de publicidad ni vendemos tus datos.",
+    "guardarPreferencias": "Guardar preferencias",
+    "leyTexto": "Cumplimos la Ley 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales (Costa Rica).",
+    "verPolitica": "Ver política de cookies",
+    "cerrarPreferencias": "Cerrar preferencias de cookies"
   },
   "chat": {
     "open": "Abrir asistente IA",
@@ -1863,7 +1888,7 @@
   "promo": {
     "firstPurchase": "en tu primera compra",
     "title": "¡Bienvenido a HotClick!",
-    "subtitle": "Ingresá tu correo y te enviamos un código de descuento único e intransferible.",
+    "subtitle": "Ingresá tu correo y te enviamos un código único e intransferible para usar al pagar.",
     "emailPlaceholder": "tu@correo.com",
     "getCoupon": "Recibir mi cupón",
     "sending": "Enviando...",
@@ -1871,7 +1896,8 @@
     "successTitle": "¡Revisá tu correo!",
     "successSub": "Te enviamos tu código. Ingresalo en el checkout al hacer tu primera compra.",
     "viewProducts": "Ver productos",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "discount": "13% de descuento"
   },
   "exitIntent": {
     "title": "¿Aún pensando?",
@@ -1882,7 +1908,13 @@
     "more_other": "+{{count}} productos más",
     "total": "Total",
     "checkout": "Finalizar compra",
-    "continue": "Seguir explorando"
+    "continue": "Seguir explorando",
+    "wishTitle": "¡Tus favoritos te esperan!",
+    "wishHas": "Tus favoritos siguen aquí con",
+    "viewWishlist": "Ver mis favoritos",
+    "unit_one": "{{count}} unidad",
+    "unit_other": "{{count}} unidades",
+    "close": "Cerrar"
   },
   "shippingProgress": {
     "achieved": "¡Umbral alcanzado! El costo de envío sigue según el método que elijas.",
@@ -1896,23 +1928,6 @@
     "payment": "Pago",
     "confirm": "Confirmación",
     "backTo": "Volver a {{step}}"
-  },
-  "socialProofToast": {
-    "from": "de",
-    "moment": "hace un momento",
-    "closeNotif": "Cerrar notificación",
-    "bought": "compró",
-    "added": "agregó al pedido",
-    "viewed": "acaba de ver"
-  },
-  "socialProof": {
-    "ratingLabel": "Calificación: {{stars}} de 5 estrellas",
-    "reviews": "reseñas",
-    "purchases": "compras",
-    "secure": "Compra 100% segura",
-    "warranty": "Garantía 40 días",
-    "shipping": "Envío Correos CR",
-    "satisfied": "Clientes satisfechos"
   },
   "recuperarCarrito": {
     "title": "Tu pedido guardado",
