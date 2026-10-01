@@ -43,7 +43,7 @@ export default function SearchPanel() {
               className="pointer-events-auto flex h-full w-full flex-col bg-hc-n-0 md:mx-auto md:mt-[72px] md:h-auto md:max-h-[82vh] md:max-w-2xl md:rounded-[16px] md:border md:border-hc-n-200 md:shadow-[0_24px_60px_rgba(20,23,28,0.18)]"
             >
               <div className="flex items-center gap-[10px] py-3 pl-3 pr-4">
-                <button type="button" onClick={panel.close} aria-label={t('search.back')} className="p-1 text-hc-n-900">
+                <button type="button" onClick={panel.close} aria-label={t('search.back')} className="-m-1 p-1 text-hc-n-900">
                   <IconoAtras />
                 </button>
                 <div className="flex flex-1 items-center gap-2 rounded-[12px] border-2 border-hc-blue-600 bg-hc-n-0 py-[10px] pl-3 pr-2">
@@ -55,13 +55,13 @@ export default function SearchPanel() {
                     onKeyDown={(e) => { if (e.key === 'Enter') panel.viewAll() }}
                     placeholder={t('search.placeholder')}
                     aria-label={t('search.inputLabel')}
-                    className="min-w-0 flex-1 bg-transparent text-[15px] text-hc-n-900 outline-none placeholder:text-hc-n-500"
+                    className="hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[18px] text-hc-n-900 outline-none placeholder:text-hc-n-500 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
                     autoComplete="off"
                     spellCheck={false}
                   />
                   {panel.loading && <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-hc-blue-600 border-t-transparent" aria-hidden="true" />}
                   {panel.query && (
-                    <button type="button" onClick={() => panel.setQuery('')} aria-label={t('search.clearSearch')} className="p-1 text-hc-n-500">
+                    <button type="button" onClick={() => panel.setQuery('')} aria-label={t('search.clearSearch')} className="shrink-0 text-hc-n-500">
                       <CloseIcon className="size-[18px]" />
                     </button>
                   )}
