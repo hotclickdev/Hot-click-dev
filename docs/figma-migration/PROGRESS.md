@@ -16,7 +16,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, CAT C1 a C5 | **Hecho**, integrado en `base` (`1cd7721a`). 18 commits en `feat/figma/cat`. De sus 10 pantallas: 8 PASS (según el agente) y 2 PARTIAL (`27:882`, `8:230`). Ver `CAT_C1_C5.md` |
 | Ola 1, PROD | **Hecho**, integrado en `base` (`a44632a6`). 4 commits en `feat/figma/prod`. Galería PASS; 5 fichas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
 | Ola 1, SYS | **Hecho**, integrado en `base` (`0536ef45`). 10 pantallas: 7 PASS (agent verified) y 3 PARTIAL. FAB y WhatsApp resueltos sin tocar SHELL ni PROD; `SocialProofToast` desmontado. Ver `SYS.md` |
-| Ola 1, CHK | **Detenido por el usuario** a mitad de trabajo. Rama `feat/figma/chk`: 1 commit (`d1451060`, hoja `45:1607` PASS agent verified, sin integrar en `base`) y trabajo del carrito sin commitear. Ver `CHK.md` |
+| Ola 1, CHK | **Relanzado** (agente nuevo, 2026-09-30) sobre la misma rama `feat/figma/chk`, conservando los 19 cambios sin commitear (auditados: compilan, ownership correcto). Primero verifica 5 eliminaciones (`AbandonedEmailPrompt`, `CartItemRow`, `CartSummary`, `CrossSellGrid`, `AICartSection`), luego carrito, checkout, pago y el resto. 1 commit hasta ahora (`d1451060`, hoja `45:1607`). En curso. Ver `CHK.md` |
+| Ola 1, SYS, ajuste por decisiones | **En curso**: sacar el filtro de color/visión y el selector de tema de la hoja del comprador (rama `feat/figma/sys`) |
 | Ola 1, PROD, ajuste de la ficha agotada | **Hecho**, integrado en `base` (`d8af873b`) |
 | Ola 1, ACC, SRV, STORE, QR | **No lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
@@ -199,17 +200,17 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 15 | CAT quitó "Compra por marca", el chip de la búsqueda activa y la UI de condición y talla (Figma no los dibuja; `?marcaId=` sigue filtrando). ¿Se acepta? | CAT |
 | 16 | "Deshacer la última" en Descubrí (nuevo, visto en Figma). ¿Se queda? | CAT |
 | 17 | Asistente: hoja inferior en móvil; se conservan el ícono de WhatsApp y el botón de borrar que Figma no dibuja. ¿Se acepta? | CAT |
-| 18 | SYS quitó el selector de tema del panel de accesibilidad (el marketplace siempre es claro). ¿Se acepta? | SYS |
-| 19 | "Filtro de color/visión" en Idioma y accesibilidad: Figma no lo dibuja. ¿Se conserva? | SYS |
-| 20 | Campo de correo del cupón de bienvenida: Figma lo dibuja de 26 px comprimido; se hizo de 42. ¿Se deja? | SYS |
-| 21 | Desktop de cookies y WhatsApp flotante: no hay frame; se mantiene lo actual | SYS |
-| 22 | Desktop tras "Agregar" en la ficha: Figma no define hoja ni cajón; hoy toast, botón "Añadido" y carrito del header | CHK |
-| 23 | Aviso de envío cuando es el primer producto de un negocio en el carrito (Figma solo dibuja el caso con otro producto del mismo negocio) | CHK |
+| 18 | ~~Selector de tema~~ **Resuelto: eliminado de la hoja del comprador** (Figma respalda: idioma, tamaño de fuente, alto contraste, reducir movimiento; sin tema). No se traslada a otra pantalla; si se conserva en admin, fuera del alcance del comprador | SYS |
+| 19 | ~~Filtro de color/visión~~ **Resuelto: se saca de la hoja del comprador** (Figma no lo dibuja; es un simulador de daltonismo global). No se reimplementa en otro lugar; idea fuera de alcance: apariencia/admin. SYS lo aplica verificando que el resto de opciones de accesibilidad no se rompa | SYS |
+| 20 | ~~Campo de correo del cupón~~ **Resuelto: se mantiene 42 px** (el frame de 26 px está comprimido: única diferencia entre 5 campos iguales) | SYS |
+| 21 | ~~WhatsApp desktop~~ **Resuelto: abajo a la derecha, margen 16 px** (nota `52:2422`). **Cookies desktop: `REQUIRES_DESIGN_REFERENCE`**: se mantiene temporalmente la tarjeta abajo a la izquierda (SYS la cambió de la banda centrada anterior sin respaldo en Figma); no es PASS ni está respaldada por Figma hasta que exista frame desktop | SYS |
+| 22 | ~~Desktop tras "Agregar"~~ **Resuelto provisional: se mantiene el toast "Añadido"**. No se implementa la hoja `45:1607` en desktop por analogía (Figma solo la enlaza desde la ficha móvil). **`REQUIRES_DESIGN_REFERENCE`**: falta referencia o interacción desktop; no es PASS definitivo en desktop | CHK |
+| 23 | ~~Aviso de envío del primer producto de un negocio~~ **Resuelto: se mantiene omitido**; se muestra solo cuando ya hay otro producto del mismo negocio (el caso dibujado en Figma) | CHK |
 
 ## Riesgos abiertos
 
 - **Pendientes de integración tras SYS:** (SUP) registrar la ruta `/sin-conexion` -> `pages/SinConexionPage` en `AppRoutes.tsx` (ver `ROUTES_REQUESTED.md`); (HOME) usar `esSinConexion(error)` -> `PantallaSinConexion` en errores de red; (SHELL) `FooterComprador` con "Preferencias de cookies" (`abrirPreferenciasCookies()`) e "Idioma y accesibilidad" (`abrirAccesibilidad()`), alias `--color-hc-success-bg` y prop de fondo blanco en `MainLayout`; (ACC) fila "Idioma y accesibilidad" en Mi cuenta. Hasta entonces el botón con isotipo de accesibilidad sigue visible (constante `MOSTRAR_BOTON_FLOTANTE`).
-- **CHK detenido:** su worktree tiene cambios sin commitear del carrito y quedó un dev server en el puerto 3400.
+- **`REQUIRES_DESIGN_REFERENCE` (no son PASS definitivo):** cookies en desktop (tarjeta abajo a la izquierda, provisional) y la interacción desktop tras "Agregar" en la ficha (toast). Hay que pedir a diseño los frames desktop.
 
 - **PASS sin QA independiente (se documentan como `PASS — agent verified`):** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
 - **e2e de Playwright sin arreglar:** fallan `catalogo-iconos` ("Ver más"), `pdp-comprar-ahora` y los que leen archivos borrados por otros agentes (`AdminConvenios`, `NavbarMobileCategorias`, `ShippingSection`, `navbarIcons`) o buscan el botón "Menú" del header anterior. Hay que decidir quién los arregla.
