@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-01. Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-01 (ACC). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -20,7 +20,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, CHK, restauraciones | **Hecho** (`0f017780`). Restaurados: "Vaciar pedido", WhatsApp en el resumen de escritorio, guardar por correo en escritorio, garantía de 40 días e "Imprimir" en el pago exitoso, y el contexto `CARRITO:items:total` al asistente global. NO restaurados: `AICartSection`, `CrossSellGrid`, stepper del carrito, precio unitario, meta de envío gratis en el carrito. Excepción de ownership aditiva en `chatStore` y `ChatModal` |
 | Ola 1, SYS, ajuste por decisiones | **Hecho**, integrado en `base` (`17988771`, commit `1ec97317`): hoja de accesibilidad sin tema ni filtro de color (alto 354, igual a Figma). Cupón `51:2163` pasa a PASS móvil. Nueva diferencia abierta: Figma resalta el tamaño de fuente "A" (medio) por defecto y la app "A−" |
 | Ola 1, PROD, ajuste de la ficha agotada | **Hecho**, integrado en `base` (`d8af873b`) |
-| Ola 1, ACC, SRV, STORE, QR | **No lanzados** (ACC no se lanza hasta que el usuario lo pida) |
+| Ola 1, ACC | **Hecho en la rama `feat/figma/acc`** (commit `cc54c9c6`, sobre `base` `27f87000`; **aún no integrado en `base`**, local, sin push). 18 pantallas: 10 PASS (agent verified) y 8 PARTIAL; ninguna BLOCKED por completo. Cuenta dividida en resumen, opiniones y datos y seguridad; pedidos por paquete; solicitudes dentro de `/servicios`; login y 2FA al estilo de Figma. Ver `ACC.md` |
+| Ola 1, SRV, STORE, QR | **No lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 
@@ -35,7 +36,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | `feat/figma/cat` | `.claude/worktrees/cat` | `feat/figma/base` (`ba4a4171`) | CAT | `a2996613`, `579f01a7`, `9881860a` | C1 a C5 y pantallas hechas e integradas en `base` (`1cd7721a`) |
 | `feat/figma/prod` | `.claude/worktrees/prod` | `feat/figma/base` (`1c87c9d3`) | PROD | `c0ecd189`, `80c770e9`, `47536ba1`, `ea0d3b0f` | Hecha e integrada en `base` (`a44632a6`) |
 | `feat/figma/chk` | `.claude/worktrees/chk` | `11af2c0a` (base de PROD) | CHK | 16 commits (`d1451060` a `3c9b4d62`) y `0f017780` | Hecha e integrada en `base` (`cf657e9c`). Working tree limpio |
-| `feat/figma/{acc,srv,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
+| `feat/figma/acc` | `.claude/worktrees/acc` | `feat/figma/base` (`27f87000`) | ACC | `cc54c9c6` y el commit de docs | Hecha. Working tree limpio. Pendiente de que el supervisor la integre en `base` |
+| `feat/figma/{srv,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
 Topología:
@@ -213,6 +215,12 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 26 | Cédula SINPE (no está en Figma), atajo de envío internacional y consentimiento (Ley 8968) en escritorio: se conservan; ¿se aceptan? | CHK |
 | 27 | Frames de escritorio que faltan (REQUIRES_DESIGN_REFERENCE): pago exitoso/fallido, pantalla previa de transferencia SINPE, hoja tras "Agregar" | CHK |
 | 28 | `autoQuery` del asistente global: `ChatModal` limpia `pendingMessage` al abrir y la pregunta inicial no se envía sola (afecta también a `AsistentePedido`). Es de CAT, no de CHK | CAT |
+| 29 | ACC: **Direcciones guardadas** en Datos y seguridad (`30:1436`, marcada "NUEVO · a confirmar") no existe en backend: se omitió. ¿Se aprueba construirla? | ACC |
+| 30 | ACC: **"Idioma y accesibilidad" en Mi cuenta** (SYS la pidió): ningún frame de Figma la dibuja, no se inventó. Falta el diseño; mientras, el botón flotante de accesibilidad sigue visible | ACC, SYS |
+| 31 | ACC: **solicitud cotizada** necesita backend (precio, vigencia, entrega, comprar) y la pestaña **Encargos** necesita un listado del comprador. ¿Se prioriza? | ACC, SRV |
+| 32 | ACC: **login**: el paso de contraseña no tiene frame (se pide tras "Continuar") y no se puede saber si un correo existe, así que "Creá una" va en el paso 2. Pedir a diseño el frame del paso de contraseña y del registro | ACC |
+| 33 | ACC: **"Confiar en este dispositivo"** de la verificación en dos pasos no tiene soporte en backend. ¿Se construye? | ACC |
+| 34 | ACC: la opinión exige comentario en backend aunque Figma diga "(opcional)". ¿Se cambia el backend o el texto de Figma? | ACC |
 
 ## Riesgos abiertos
 
@@ -229,6 +237,10 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 - **Dependencias hacia backend (CHK):** provincia de la bodega y marca GAM ("Sale de X" y envío por origen), `tokenSeguimiento` en el estado del pago, comisión y "Paquete N de M", y `stock` en el carrito abandonado.
 - **Dependencias hacia SHELL (CHK):** una regla global de `index.css` fuerza 16 px en inputs móviles (los frames piden 14 y 15) y falta el alias `--color-hc-success-bg`.
 - **e2e:** `pdp-comprar-ahora` se reemplazó por `pdp-agregar-hoja`; siguen fallando fuera de CHK `asistente-checkout` y `envio-rapido`. Queda un error de eslint previo en `useCheckoutForm.ts`.
+- **Dependencias hacia SHELL (ACC):** `ReturnVisitorBanner` aparece sobre Mi cuenta y no está en Figma; `BarraInferior` decide solo por ruta y no marca "Cuenta" en `/servicios?vista=solicitudes`; alias `--color-hc-n-400` faltante (se usa `var(--hc-n-400)`); variante de fondo blanco de `MainLayout` para los estados vacíos.
+- **Dependencias hacia CAT (ACC):** el corazón de la `ProductCard` no se rellena en Favoritos.
+- **Dependencias hacia SRV (ACC):** `ServiciosHotPage` pasó a `ServiciosHotVistas` con un `default` que abre `?vista=solicitudes|busqueda|garantia|testimonio`; la pestaña de "mis solicitudes" dentro de Servicios HOT sigue con el diseño anterior.
+- **e2e previos fuera de ACC:** `bottom-nav.spec.ts` (3 pruebas del diseño anterior de la barra inferior) ya fallaba en `base`. ACC actualizó `mis-pedidos`, `wishlist-cta` y `wishlist-placeholder`, que también fallaban.
 - **Fase 2 llegó sin CI:** el PR #93 nunca disparó GitHub Actions. Lo validado aquí es local (tests, tipos, build). Sigue sin pasar los gates E1 a E18.
 - **Conflictos de i18n** entre agentes: mitigados con namespaces, pero el riesgo de merge persiste. Gate E17 exige es/en/pt en el mismo commit.
 - **Fixtures:** 76 pantallas dependen de datos (carrito, sesión, pedidos con paquetes). Sin un arnés común de datos, cada agente improvisará el suyo. Conviene un fixture compartido antes de la ola 1.
