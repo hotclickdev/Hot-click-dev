@@ -35,6 +35,9 @@ export type CheckoutFormState = {
   necesitaDireccion: boolean
   /** true si algún paquete usa un método cuyo costo no cobra HotClick (ej. encomienda) — el total mostrado no lo incluye. */
   envioVaria: boolean
+  /** Paso del checkout móvil (1 datos, 2 entrega, 3 pago). Vive aquí para sobrevivir a la pantalla de carga del pago. */
+  paso: number
+  setPaso: (paso: number) => void
   metodoPago: string
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
@@ -153,6 +156,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   }, [metodoEnvioBase, destinoGAM])
   // Figma 29:1344 abre con SINPE Móvil seleccionado.
   const [metodoPago, setMetodoPago] = useState('SINPE')
+  const [paso, setPaso] = useState(1)
 
   useEffect(() => {
     setMetodoEnvioPorPaqueteState((prev) => {
@@ -271,6 +275,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setMetodoEnvioPaquete,
     necesitaDireccion,
     envioVaria,
+    paso,
+    setPaso,
     metodoPago,
     setMetodoPago,
     notas,

@@ -14,6 +14,7 @@ async function mockApis(page: Page) {
 
 async function seedPedido(page: Page) {
   await page.addInitScript(() => {
+    localStorage.setItem('hc-cart-email', 'visto@example.com')
     localStorage.setItem('hotclick-cart', JSON.stringify({
       state: {
         items: [{ id: 1, nombre: 'Mouse', precio: 5000, cantidad: 1, stock: 4 }],
@@ -24,47 +25,61 @@ async function seedPedido(page: Page) {
   })
 }
 
-test.describe('Carrito — checkout primero', () => {
-  test('el CTA principal va a datos y pago; WhatsApp queda como atajo', async ({ page }) => {
+test.describe('Carrito por paquetes (Figma 28:989, 30:2268, 51:1820)', () => {
+  test('escritorio: el CTA principal continúa a /checkout', async ({ page }) => {
     await mockApis(page)
     await seedPedido(page)
+    await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Pedido' })).toBeVisible()
-    await expect(page.getByRole('navigation', { name: 'Progreso del pedido' }).getByText('Pedido')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Vaciar pedido' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Tu pedido' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Tu pedido llega en 1 paquete' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Agregar cupón' })).toBeVisible()
 
-    const checkout = page.getByRole('button', { name: 'Continuar a datos y pago' })
-    await expect(checkout).toBeVisible()
-    await expect(checkout).toHaveClass(/hc-btn-primary/)
-
-    const whatsapp = page.getByRole('button', { name: 'Consultar por WhatsApp' })
-    await expect(whatsapp).toBeVisible()
-    await expect(whatsapp).not.toHaveClass(/hc-btn-primary/)
-    await expect(whatsapp).not.toHaveClass(/bg-\[#25D366\]/)
-    await expect(page.getByRole('button', { name: 'Pedir por WhatsApp' })).toHaveCount(0)
-
-    await checkout.click()
+    const continuar = page.getByRole('button', { name: 'Continuar compra' })
+    await expect(continuar).toBeVisible()
+    await continuar.click()
     await expect(page).toHaveURL(/\/checkout/)
   })
 
-  test('no interrumpe el pedido con compra por WhatsApp', async ({ page }) => {
+  test('móvil: notas, cupón, gift card, WhatsApp y pie con el total', async ({ page }) => {
     await mockApis(page)
     await seedPedido(page)
+    await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
 
+    await expect(page.getByText('Tu pedido (1)')).toBeVisible()
+    await expect(page.getByLabel('Notas para el pedido (opcional)')).toBeVisible()
+    await expect(page.getByLabel('Código de cupón')).toBeVisible()
+    await expect(page.getByLabel('Código de tarjeta de regalo')).toBeDisabled()
+
+    const whatsapp = page.getByRole('button', { name: 'Pedir por WhatsApp' })
+    await expect(whatsapp).toBeVisible()
     await expect(page.getByText('Continuar por WhatsApp')).toHaveCount(0)
-    await expect(page.getByText(/Continuamos la compra por WhatsApp/)).toHaveCount(0)
+
+    await page.getByRole('button', { name: /Continuar compra · ₡/ }).click()
+    await expect(page).toHaveURL(/\/checkout/)
   })
 
-  test('pedido vacío: explorar productos es el CTA primario', async ({ page }) => {
+  test('las notas se escriben en el carrito y el pedido sigue al checkout', async ({ page }) => {
     await mockApis(page)
+    await seedPedido(page)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
+    await page.getByLabel('Notas para el pedido (opcional)').fill('Tocar el timbre dos veces')
+    await page.getByRole('button', { name: /Continuar compra · ₡/ }).click()
+    await expect(page).toHaveURL(/\/checkout/)
+    await expect(page.getByText('¿A quién le enviamos la confirmación?')).toBeVisible()
+  })
+
+  test('pedido vacío: ver productos es el CTA primario', async ({ page }) => {
+    await mockApis(page)
+    await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
 
-    const explorar = page.getByRole('link', { name: 'Explorar productos' })
-    await expect(explorar).toBeVisible()
-    await expect(explorar).toHaveClass(/hc-btn-primary/)
-    await explorar.click()
+    const ver = page.getByRole('link', { name: 'Ver productos' })
+    await expect(ver).toBeVisible()
+    await ver.click()
     await expect(page).toHaveURL(/\/productos/)
   })
 
@@ -74,15 +89,16 @@ test.describe('Carrito — checkout primero', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/productos', { waitUntil: 'domcontentloaded' })
 
-    await page.getByRole('button', { name: /Ver pedido/ }).click()
+    await page.getByRole('link', { name: /Ver pedido/ }).or(page.getByRole('button', { name: /Ver pedido/ })).first().click()
     await expect(page).toHaveURL(/\/carrito/)
   })
 
   test('sin foto no muestra caja emoji', async ({ page }) => {
     await mockApis(page)
     await seedPedido(page)
+    await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Mouse' })).toBeVisible()
+    await expect(page.getByText('Mouse', { exact: true })).toBeVisible()
     await expect(page.getByText('📦')).toHaveCount(0)
   })
 })

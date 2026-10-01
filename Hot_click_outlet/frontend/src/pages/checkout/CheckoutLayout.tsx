@@ -59,7 +59,7 @@ export default function CheckoutLayout({
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
   const codigos = useCodigosPedido(token)
-  const [paso, setPaso] = useState(1)
+  const { paso, setPaso } = form
   const [consentimientoPendiente, setConsentimientoPendiente] = useState(false)
   const volver = useVolver(RUTA_CARRITO, paso, setPaso)
 
@@ -129,7 +129,7 @@ export default function CheckoutLayout({
   function continuar() {
     if (paso === 1 && !validarDatos()) return enfocarPrimerError()
     if (paso === 2 && !validarEntrega()) return enfocarPrimerError()
-    setPaso((actual) => Math.min(PASO_PAGO, actual + 1))
+    setPaso(Math.min(PASO_PAGO, paso + 1))
   }
 
   const errorPago = (

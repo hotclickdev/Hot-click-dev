@@ -188,7 +188,6 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
         </section>
 
         <p className="rounded-[10px] bg-hc-warning-bg p-3 text-[12px] leading-4 text-hc-warning">{t('payment.sinpe.verificacion')}</p>
-        <button type="button" onClick={onSinpeWhatsApp} className="text-center text-[14px] font-semibold text-hc-blue-600">{t('payment.sinpe.avisarWhatsapp')}</button>
         <Link to={token ? '/mis-pedidos' : '/productos'} className="text-center text-[13px] font-semibold text-hc-n-600">{token ? t('payment.revision.verPedidos') : t('payment.revision.seguir')}</Link>
       </div>
     </MarcoPago>
