@@ -5,7 +5,7 @@ import useUiStore from '@/store/uiStore'
 import Interruptor from '@/components/ui/sistema/Interruptor'
 import OpcionChip from '@/components/ui/sistema/OpcionChip'
 import { BOTON_HOJA_PRIMARIO, TITULO_HOJA } from '@/components/ui/sistema/estilosHoja'
-import { COLOR_FILTERS, LANGUAGES } from './a11yConstants'
+import { LANGUAGES } from './a11yConstants'
 
 type HojaIdiomaAccesibilidadProps = {
   abierta: boolean
@@ -23,8 +23,7 @@ const ETIQUETA_GRUPO = 'font-sans text-[14px] font-medium leading-[normal] track
 
 /**
  * Idioma y accesibilidad (Figma `51:2234`): idioma, tamaño de fuente, alto contraste y reducir
- * movimiento. El filtro de color / visión no está dibujado en Figma pero es funcionalidad existente
- * (afecta a todo el sitio): se conserva como un grupo más con los mismos chips.
+ * movimiento. Sin tema ni filtro de color: Figma no los dibuja.
  */
 export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiomaAccesibilidadProps) {
   const { t } = useTranslation()
@@ -36,8 +35,6 @@ export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiom
   const toggleHighContrast = useUiStore((s) => s.toggleHighContrast)
   const reduceMotion = useUiStore((s) => s.reduceMotion)
   const toggleReduceMotion = useUiStore((s) => s.toggleReduceMotion)
-  const colorFilter = useUiStore((s) => s.colorFilter)
-  const setColorFilter = useUiStore((s) => s.setColorFilter)
 
   return (
     <HojaInferior
@@ -75,17 +72,6 @@ export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiom
       <div className="flex items-center justify-between">
         <p className={ETIQUETA_GRUPO}>{t('a11y.reducirMovimiento')}</p>
         <Interruptor activo={reduceMotion} onCambio={toggleReduceMotion} etiqueta={t('a11y.reducirMovimiento')} />
-      </div>
-
-      <div role="group" aria-labelledby="a11y-filtro" className="flex flex-col gap-2">
-        <p id="a11y-filtro" className={ETIQUETA_GRUPO}>{t('a11y.filtroColor')}</p>
-        <div className="flex flex-wrap gap-2">
-          {COLOR_FILTERS.map(({ value, labelKey, descKey }) => (
-            <OpcionChip key={value} activa={colorFilter === value} onClick={() => setColorFilter(value)} etiqueta={`${t(labelKey)} — ${t(descKey)}`}>
-              {t(labelKey)}
-            </OpcionChip>
-          ))}
-        </div>
       </div>
 
       <div className="flex">
