@@ -7,12 +7,12 @@ Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página 
 
 | Estado | Cantidad |
 | --- | --- |
-| PASS — agent verified | 10 |
-| PARTIAL | 11 |
+| PASS — agent verified | 17 |
+| PARTIAL | 13 |
 | OLD_DESIGN | 4 |
 | MISSING | 0 |
 | BLOCKED | 0 |
-| UNKNOWN | 65 |
+| UNKNOWN | 56 |
 | **Total pantallas** | **90** |
 
 PASS solo se marca cuando hay implementación completa, comparación visual **y** medidas en píxeles, responsive, estados, tests, typecheck y build. **Los PASS de CAT y PROD son "PASS — agent verified": veredicto del propio agente, medido con API simulada y fotos de color, sin QA independiente** (SHELL sí lo tuvo). El estado no cambia hasta que el supervisor haga la verificación independiente con datos reales.
@@ -29,6 +29,8 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | CAT C0: `comprador/ProductCard` 167x280 y `formatPrice` con punto de miles | `feat/figma/cat` | Hecho y medido (commits `a2996613`, `579f01a7`, `9881860a`), integrado en `feat/figma/base` (merge `9f11c9a7`). Ver `CAT_C0.md`. C1 a C5 sin empezar |
 | CAT C1 a C5 y pantallas de buscar y explorar | `feat/figma/cat` | Hecho (18 commits), integrado en `feat/figma/base` (merge `1cd7721a`). Catálogo con columnas fijas de 167; tarjeta antigua, quick view, Ofertas HOT y Emprendimientos eliminados. Ver `CAT_C1_C5.md` |
 | PROD: ficha de producto | `feat/figma/prod` | Hecho (4 commits), integrado en `feat/figma/base` (merge `a44632a6`). Ficha rediseñada; 5 pantallas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
+| SYS: estados del sistema, cookies, WhatsApp, sin `SocialProofToast` | `feat/figma/sys` | Hecho (11 commits), integrado en `feat/figma/base` (merge `0536ef45`). Ver `SYS.md` |
+| PROD, ajuste de la ficha agotada (Figma literal) | `feat/figma/prod` | Hecho (`616f0769`), integrado en `base` (`d8af873b`) |
 
 ## Cómo leer la evidencia
 
@@ -117,21 +119,21 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 08 QR y correos | Correo · Código de verificación | `30:1793` | backend | UNKNOWN | H (P) | no | n/a | QR |
 | 09 Funciones existentes | A · Carrito · notas, gift card, WhatsApp, guardar y asistente | `51:1820` | /carrito | UNKNOWN | C. Requiere fixture | no | sí | CHK |
 | 09 Funciones existentes | B · Checkout · Entrega · envío internacional | `51:2000` | /checkout | UNKNOWN | C. Requiere fixture | no | sí | CHK |
-| 09 Funciones existentes | C · Cupón de bienvenida · hoja | `51:2163` | PromoWelcomePopup | UNKNOWN | C | no | sí | SYS |
-| 09 Funciones existentes | D · ¿Aún pensando? · salida · hoja | `51:2196` | ExitIntentModal | UNKNOWN | C | no | sí | SYS |
-| 09 Funciones existentes | E · Idioma y accesibilidad · hoja | `51:2229` | AccessibilityPanel / LanguageSelector | UNKNOWN | C | no | sí | SYS |
-| 09 Funciones existentes | F · Botón flotante de WhatsApp · Home | `51:2262` | WhatsAppFab | UNKNOWN | C. En Home hoy aparece un botón flotante con el isotipo, no el de WhatsApp | no | sí | SYS |
+| 09 Funciones existentes | C · Cupón de bienvenida · hoja | `51:2163` | PromoWelcomePopup | PARTIAL | M (SYS). Igual salvo el campo de correo: Figma lo dibuja comprimido a 26 px (frame sin espacio) y se hizo de 42. Decisión del usuario pendiente | no | sí | SYS |
+| 09 Funciones existentes | D · ¿Aún pensando? · salida · hoja | `51:2196` | ExitIntentModal | PASS — agent verified | M (SYS). Hoja y525 alto 319. Variante de favoritos sin frame | no | sí | SYS |
+| 09 Funciones existentes | E · Idioma y accesibilidad · hoja | `51:2229` | AccessibilityPanel / LanguageSelector | PARTIAL | M (SYS). Chips 79/76/93x33, switches 40x24. Conserva "Filtro de color/visión" (Figma no lo dibuja) y quitó el selector de tema: decisiones del usuario pendientes | no | sí | SYS |
+| 09 Funciones existentes | F · Botón flotante de WhatsApp · Home | `51:2262` | WhatsAppFab | PASS — agent verified (móvil) | M (SYS). 56x56 en x318,y705 igual a Figma; sin superposición con la barra inferior ni la barra de compra. Desktop sin frame: se mantiene lo actual | no | sí | SYS |
 | 09 Funciones existentes | G · Tienda con su color · perfil del negocio | `51:2468` | /tienda/:slug | UNKNOWN | C | no | sí | STORE |
 | 10 Estados del sistema | Carrito vacío · móvil | `45:1692` | /carrito | UNKNOWN | V parcial: existe estado vacío con "Explorar productos"; sin comparar contra el frame | no | sí | CHK |
 | 10 Estados del sistema | Favoritos vacío · móvil | `45:1799` | /wishlist | UNKNOWN | H (O) | no | sí | ACC |
 | 10 Estados del sistema | Sin pedidos · móvil | `45:1848` | /mis-pedidos | UNKNOWN | H (O) | no | sí | ACC |
 | 10 Estados del sistema | Sin solicitudes · móvil | `45:1896` | /servicios (vista) | UNKNOWN | H (O) | no | sí | ACC |
-| 10 Estados del sistema | Aviso de cookies · sobre el Home | `45:1946` | CookieBanner | UNKNOWN | C | no | sí | SYS |
-| 10 Estados del sistema | Preferencias de cookies · hoja | `45:2166` | CookiesPage / hoja | UNKNOWN | C | no | sí | SYS |
-| 10 Estados del sistema | Página no encontrada · móvil | `45:2198` | * (NotFoundPage) | PARTIAL | V. Contenido correcto; falta shell mínimo (sin buscador/chips/banner) y sobran chevrons | no | sí | SYS |
-| 10 Estados del sistema | Sin conexión · móvil | `45:2264` | OfflineBanner | UNKNOWN | C | no | sí | SYS |
-| 10 Estados del sistema | Fallo del servidor · móvil | `45:2322` | (error boundary) | UNKNOWN | B. Recuperada en feat/figma/base (merge del PR #93); falta comparar contra Figma | no | sí | SYS |
-| 10 Estados del sistema | Instalar la app · tarjeta · móvil | `55:2658` | (PWA) | UNKNOWN | B. Recuperada en feat/figma/base (merge del PR #93); falta comparar contra Figma | no | sí | SYS |
+| 10 Estados del sistema | Aviso de cookies · sobre el Home | `45:1946` | CookieBanner | PASS — agent verified | M (SYS). Tarjeta x12 y560 366x205, botones 163x48 y 161x46 | no | sí | SYS |
+| 10 Estados del sistema | Preferencias de cookies · hoja | `45:2166` | CookiesPage / hoja | PASS — agent verified | M (SYS). Hoja desde y90; secciones 179/266/361, pie 644; interruptor 44x26 | no | sí | SYS |
+| 10 Estados del sistema | Página no encontrada · móvil | `45:2198` | * (NotFoundPage) | PASS — agent verified | M (SYS). Barra de marca, título 22 px x75,5 ancho 239 (Figma 239), buscador y219 350x44, filas 44/45. Sin QA independiente | no | sí | SYS |
+| 10 Estados del sistema | Sin conexión · móvil | `45:2264` | OfflineBanner | PARTIAL | M (SYS). Geometría igual (strip 36, mensaje y36, vistos y279, reintentar y489). Falta enchufarla en Home (`esSinConexion`) y registrar la ruta `/sin-conexion` (SUP). Fotos reales no verificadas | no | sí | SYS |
+| 10 Estados del sistema | Fallo del servidor · móvil | `45:2322` | (error boundary) | PASS — agent verified | M (SYS). Barra 51, h1 y167 alto 25, botones 46 y 48, ícono SVG original | no | sí | SYS |
+| 10 Estados del sistema | Instalar la app · tarjeta · móvil | `55:2658` | (PWA) | PASS — agent verified | M (SYS). Tarjeta 358x216, título/subtítulo 20/14, botones 42/40. "NUEVO · por programar" no llega a la UI; reglas de aparición intactas | no | sí | SYS |
 | 11 Contenido y SEO | Blog · listado · móvil | `54:2126` | /blog | UNKNOWN | C. Sin tokens nuevos | no | sí | SRV |
 | 11 Contenido y SEO | Blog · artículo · móvil | `54:2219` | /blog/:slug | UNKNOWN | C | no | sí | SRV |
 
