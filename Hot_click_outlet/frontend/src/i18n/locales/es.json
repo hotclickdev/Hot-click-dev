@@ -1424,7 +1424,47 @@
       "pedido": "Pedido {{pedido}}",
       "pedidoProductos_one": "Pedido {{pedido}} · {{count}} producto",
       "pedidoProductos_other": "Pedido {{pedido}} · {{count}} productos",
-      "cambiarMetodo": "Cambiar método de pago"
+      "cambiarMetodo": "Cambiar método de pago",
+      "paquetesN_one": "{{count}} paquete",
+      "paquetesN_other": "{{count}} paquetes"
+    },
+    "revision": {
+      "recibido": "Comprobante recibido",
+      "ahora": "Ahora",
+      "verificamos": "Verificamos tu pago",
+      "minutos": "Unos minutos",
+      "correo": "Te confirmamos por correo",
+      "correoSub": "Y cada tienda prepara su paquete",
+      "guia": "Te llega la guía de cada paquete",
+      "guiaSub": "Cada paquete con su guía",
+      "pedido": "Pedido:",
+      "sinConfirmacion": "Si no recibís confirmación en 15 minutos, escribinos por WhatsApp con el número de pedido.",
+      "seguir": "Seguir comprando",
+      "soporte": "Contactar soporte por WhatsApp",
+      "verPedidos": "Ver mis pedidos",
+      "crearCuenta": "Crear cuenta para ver el historial de pedidos",
+      "titulo": "Tu pago está siendo revisado",
+      "textoSinpe": "Recibimos tu comprobante de SINPE Móvil. La confirmación puede tardar unos minutos más; te enviamos un correo cuando se procese."
+    },
+    "sinpe": {
+      "titulo": "Pedido registrado: hacé tu SINPE",
+      "sub": "Transferí el monto exacto y subí la foto del comprobante.",
+      "numero": "Número SINPE",
+      "titular": "Titular",
+      "referencia": "Referencia",
+      "montoExacto": "Monto exacto",
+      "tusDatos": "Tus datos de transferencia",
+      "seleccionar": "Seleccionar imagen del comprobante",
+      "vistaPrevia": "Vista previa del comprobante",
+      "subiendo": "Subiendo comprobante…",
+      "enviar": "Enviar comprobante",
+      "verificacion": "Tu pago será verificado por un administrador. El pedido expira en 72 horas si no se confirma.",
+      "avisarWhatsapp": "Notificar también por WhatsApp",
+      "metodo": "Método",
+      "efectivoTitulo": "¡Pedido registrado!",
+      "efectivoSub": "Pagás en efectivo cuando recibas tu pedido, con el monto exacto.",
+      "efectivoMetodo": "Efectivo contra entrega",
+      "efectivoAviso": "Nuestro repartidor llevará tu pedido y cobrará el monto exacto en efectivo. Te avisamos por WhatsApp antes de salir."
     }
   },
   "nosotros": {

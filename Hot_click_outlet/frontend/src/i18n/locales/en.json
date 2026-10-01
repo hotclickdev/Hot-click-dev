@@ -1424,7 +1424,47 @@
       "pedido": "Order {{pedido}}",
       "pedidoProductos_one": "Order {{pedido}} · {{count}} product",
       "pedidoProductos_other": "Order {{pedido}} · {{count}} products",
-      "cambiarMetodo": "Change payment method"
+      "cambiarMetodo": "Change payment method",
+      "paquetesN_one": "{{count}} package",
+      "paquetesN_other": "{{count}} packages"
+    },
+    "revision": {
+      "recibido": "Receipt received",
+      "ahora": "Now",
+      "verificamos": "We verify your payment",
+      "minutos": "A few minutes",
+      "correo": "We confirm by email",
+      "correoSub": "And each store prepares its package",
+      "guia": "You get the tracking number of each package",
+      "guiaSub": "Each package with its tracking number",
+      "pedido": "Order:",
+      "sinConfirmacion": "If you do not get a confirmation in 15 minutes, write to us on WhatsApp with the order number.",
+      "seguir": "Keep shopping",
+      "soporte": "Contact support on WhatsApp",
+      "verPedidos": "View my orders",
+      "crearCuenta": "Create an account to see your order history",
+      "titulo": "Your payment is being reviewed",
+      "textoSinpe": "We received your SINPE Móvil receipt. Confirmation may take a few more minutes; we email you when it is processed."
+    },
+    "sinpe": {
+      "titulo": "Order registered: make your SINPE payment",
+      "sub": "Transfer the exact amount and upload a photo of the receipt.",
+      "numero": "SINPE number",
+      "titular": "Account holder",
+      "referencia": "Reference",
+      "montoExacto": "Exact amount",
+      "tusDatos": "Your transfer details",
+      "seleccionar": "Choose the receipt image",
+      "vistaPrevia": "Receipt preview",
+      "subiendo": "Uploading receipt…",
+      "enviar": "Send receipt",
+      "verificacion": "Your payment will be verified by an administrator. The order expires in 72 hours if it is not confirmed.",
+      "avisarWhatsapp": "Also notify by WhatsApp",
+      "metodo": "Method",
+      "efectivoTitulo": "Order registered!",
+      "efectivoSub": "You pay in cash when you receive your order, with the exact amount.",
+      "efectivoMetodo": "Cash on delivery",
+      "efectivoAviso": "Our courier will bring your order and collect the exact amount in cash. We notify you on WhatsApp before leaving."
     }
   },
   "nosotros": {
