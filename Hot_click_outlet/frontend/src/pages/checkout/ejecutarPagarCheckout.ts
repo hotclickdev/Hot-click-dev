@@ -4,6 +4,7 @@ import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
 import { BODEGA_DEFAULT, bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
+import { guardarUltimoPedido } from '@/utils/ultimoPedido'
 import type { CheckoutPayload } from '@/types/pedido'
 
 /** Etiqueta legible del método de envío elegido para un paquete, para el resumen en notas. */
@@ -163,6 +164,15 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   }
 
   authService.registrarConsentimiento('CHECKOUT')
+  guardarUltimoPedido({
+    nombre: sinpeNombre.trim(),
+    correo: guestEmail.trim() || sinpeEmail.trim(),
+    paquetes: paquetes.map((p) => ({
+      negocio: p.empresaNombre || p.bodegaNombre,
+      productos: p.items.length,
+      metodoEnvio: metodoEnvioPorPaquete[p.bodegaId],
+    })),
+  })
 
   const phoneEfectivo = token ? telefono : guestPhone
   const resumenEnvios = paquetes

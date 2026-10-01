@@ -73,7 +73,7 @@ function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, deshabilitad
             type="button"
             onClick={onAplicar}
             disabled={deshabilitado || estado === 'loading' || !valor.trim()}
-            className="shrink-0 text-[14px] font-semibold leading-[normal] text-hc-blue-600 disabled:opacity-40"
+            className={`shrink-0 text-[14px] font-semibold leading-[normal] text-hc-blue-600 disabled:cursor-not-allowed ${deshabilitado ? 'opacity-40' : ''}`}
           >
             {estado === 'loading' ? t('checkout.codigo.validando') : t('checkout.codigo.aplicar')}
           </button>
