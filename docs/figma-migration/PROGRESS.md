@@ -12,7 +12,10 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Fase 2b: Home | Rama `feat/figma/home` con la base integrada (`98ec9abc`) y el cuerpo remedido y corregido (`6d0de288`). Los tres frames siguen en PARTIAL (ver Fase 2b) |
 | Ola 0: docs en la base | Integrados (`62a631ac`) |
 | Ola 1: ramas y worktrees | Creadas el 2026-09-30 desde la base: `feat/figma/{cat,prod,chk,acc,srv,sys,store,qr}`, cada una en `.claude/worktrees/<agente>` |
-| Ola 1, CAT C0 (ProductCard) | **Hecho**, integrado en `base` (`9f11c9a7`). `comprador/ProductCard` 167x280; `formatPrice` global con punto (`₡6.200`). C1 a C5 sin empezar. PROD, CHK, ACC, SRV, SYS, STORE y QR **no lanzados** |
+| Ola 1, CAT C0 (ProductCard) | **Hecho**, integrado en `base` (`9f11c9a7`). `comprador/ProductCard` 167x280; `formatPrice` global con punto (`₡6.200`). C1 a C5 hechos (abajo). |
+| Ola 1, CAT C1 a C5 | **Hecho**, integrado en `base` (`1cd7721a`). 18 commits en `feat/figma/cat`. De sus 10 pantallas: 8 PASS (según el agente) y 2 PARTIAL (`27:882`, `8:230`). Ver `CAT_C1_C5.md` |
+| Ola 1, PROD | **Hecho**, integrado en `base` (`a44632a6`). 4 commits en `feat/figma/prod`. Galería PASS; 5 fichas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
+| Ola 1, CHK, ACC, SRV, SYS, STORE, QR | **No lanzados** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | Agentes CAT, PROD, STORE, CHK, ACC, SRV, SYS, QR | **No lanzados**, como se pidió |
@@ -25,8 +28,9 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | `feat/figma/shell` | `.claude/worktrees/shell` | `feat/figma/base` | SHELL | `197e87a0` (sombra/footer/ícono, cherry-pick de Home), `3b54150d` (variantes), `ac69ca69` (sticky y marca centrada) | Implementada, con QA independiente e integrada en `base` (`b3159c1e`) |
 | `feat/figma/home` | `.claude/worktrees/home` | `master` | HOME | `bd50a1d5`, `8c6d1e53`, merge `98ec9abc` (base), `6d0de288` (QA visual) | Base integrada y cuerpo remedido. Sin cambios sin commitear. Aún no se integra en `base` |
 | `feat/figma/supervisor` | `.claude/worktrees/supervisor` | `feat/figma/base` | SUP | docs | Activa: documentación. Sus docs se mezclan en `base` |
-| `feat/figma/cat` | `.claude/worktrees/cat` | `feat/figma/base` (`ba4a4171`) | CAT | `a2996613`, `579f01a7`, `9881860a` | C0 hecho e integrado en `base`. Sigue C1 a C5 |
-| `feat/figma/{prod,chk,acc,srv,sys,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
+| `feat/figma/cat` | `.claude/worktrees/cat` | `feat/figma/base` (`ba4a4171`) | CAT | `a2996613`, `579f01a7`, `9881860a` | C1 a C5 y pantallas hechas e integradas en `base` (`1cd7721a`) |
+| `feat/figma/prod` | `.claude/worktrees/prod` | `feat/figma/base` (`1c87c9d3`) | PROD | `c0ecd189`, `80c770e9`, `47536ba1`, `ea0d3b0f` | Hecha e integrada en `base` (`a44632a6`) |
+| `feat/figma/{chk,acc,srv,sys,store,qr}` | `.claude/worktrees/<agente>` | `feat/figma/base` | cada agente | ninguno | Creadas, sin iniciar. Se ponen al día con `base` (fast-forward) antes de lanzarlas |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
 Topología:
@@ -182,9 +186,24 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 6 | Limpieza de los worktrees viejos (revisados, nada sin commitear; ver la sección de worktrees) | — |
 | 7 | ~~Formato de precio~~ **Resuelto: `₡6.200` global** | Home, CAT, CHK |
 | 8 | ~~Copy "Solo aparece si ya visitaste productos"~~ **Resuelto: se mantiene "Lo último que miraste"**. Abierto: orden de categorías del Home | HOME |
-| 9 | Columnas fijas o fluidas en el catálogo (C4): investigar con todos los frames de catálogo | CAT |
+| 9 | ~~Columnas fijas o fluidas en el catálogo~~ **Resuelto por CAT con evidencia: fijas de 167** (113 instancias de la tarjeta miden 167x280 en Figma, también en desktop). Ver `CAT_C1_C5.md` | CAT |
+| 10 | PROD quitó "Comprar ahora" (Figma solo tiene Agregar). ¿Vuelve? | PROD |
+| 11 | PROD quitó distintivos de confianza, prueba social y garantía de la ficha. ¿Vuelven? | PROD |
+| 12 | Foto del producto agotado: rectángulo blanco opaco (Figma) o atenuada al 35 % (actual) | PROD |
+| 13 | Stepper de cantidad en variantes y personalizado (Figma lo omite) | PROD |
+| 14 | Chip "Con stock" (`43:1541`): CAT no lo agregó porque el catálogo filtra por stock por defecto | CAT |
+| 15 | CAT quitó "Compra por marca", el chip de la búsqueda activa y la UI de condición y talla (Figma no los dibuja; `?marcaId=` sigue filtrando). ¿Se acepta? | CAT |
+| 16 | "Deshacer la última" en Descubrí (nuevo, visto en Figma). ¿Se queda? | CAT |
+| 17 | Asistente: hoja inferior en móvil; se conservan el ícono de WhatsApp y el botón de borrar que Figma no dibuja. ¿Se acepta? | CAT |
 
 ## Riesgos abiertos
+
+- **PASS sin QA independiente:** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
+- **e2e de Playwright sin arreglar:** fallan `catalogo-iconos` ("Ver más"), `pdp-comprar-ahora` y los que leen archivos borrados por otros agentes (`AdminConvenios`, `NavbarMobileCategorias`, `ShippingSection`, `navbarIcons`) o buscan el botón "Menú" del header anterior. Hay que decidir quién los arregla.
+- **Lint previo:** quedan errores de eslint que ya existían en `AIChat`, `SearchPanel`, `useSearchPanel`, `DescubriPage:135` y `utils/gustos.ts:120` (regla de refs durante render), más 88 en `src/pages` fuera de lo tocado.
+- **Dependencias hacia SHELL:** `MainLayout` manda "buscar con foto" a `/servicios` aunque `/buscar/foto` existe; el header desktop no muestra la búsqueda actual (Figma `30:1824` sí); la barra inferior marca "Buscar" en `/productos?cat=` y Figma `43:1530` marca "Categorías"; `BarraInterna` pinta el título como `<p>`.
+- **Dependencias hacia SYS:** el FAB del asistente y el botón de WhatsApp flotantes se superponen a la barra de compra móvil de la ficha y no están en Figma.
+- **Dependencias hacia backend:** el SSE del asistente no manda los filtros interpretados (fila "Entendí:"); falta `empresaNombre`, `tienda` y `categoria` en resultados de foto; falta dato de tiempo de elaboración y guía de tallas.
 
 - **Fase 2 llegó sin CI:** el PR #93 nunca disparó GitHub Actions. Lo validado aquí es local (tests, tipos, build). Sigue sin pasar los gates E1 a E18.
 - **Conflictos de i18n** entre agentes: mitigados con namespaces, pero el riesgo de merge persiste. Gate E17 exige es/en/pt en el mismo commit.
