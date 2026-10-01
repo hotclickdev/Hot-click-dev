@@ -62,7 +62,7 @@ export default function SeguimientoPedidoPage() {
   const carga: Carga = tokenValido ? respuesta : { tipo: 'noEncontrado' }
 
   return (
-    <MainLayout>
+    <MainLayout variante="marca" barraInferior={false}>
       <Helmet>
         <title>{t('comprador.seguimiento.tituloPagina')}</title>
         <meta name="robots" content="noindex, nofollow" />

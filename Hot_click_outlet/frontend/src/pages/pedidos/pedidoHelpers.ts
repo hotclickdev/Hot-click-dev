@@ -23,7 +23,7 @@ export type ColorEstadoPedido = {
 export type ItemPedidoCliente = {
   cantidad?: number
   nombreProducto?: string
-  producto?: { id?: number; nombreProducto?: string }
+  producto?: { id?: number; nombreProducto?: string; imagenPrincipalUrl?: string | null; empresaNombre?: string | null }
   productoId?: number
   precioUnitarioMomento?: number
   subtotalItem?: number
@@ -59,6 +59,13 @@ export type PedidoCliente = {
   grupoPago?: string | null
   /** Nombre de la tienda/vendedor dueño de este paquete, si el backend lo manda. */
   nombreEmpresa?: string
+  subtotal?: number
+  metodoPago?: string
+  fechaEnvio?: string | null
+  fechaEntregaEstimada?: string | null
+  fechaEntregaReal?: string | null
+  /** Bodega de origen del paquete (el backend la serializa; `provincia` alimenta "Sale de …"). */
+  bodega?: { id?: number; nombreBodega?: string; provincia?: string | null } | null
 }
 
 /** Un grupo de pedidos que comparten `grupoPago` (checkout multivendedor). */

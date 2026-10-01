@@ -1,30 +1,34 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
-import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
 import { orderService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
-import OrderCard from './pedidos/OrderCard'
-import PedidoGrupoCard from './pedidos/PedidoGrupoCard'
+import ListaPedidosComprador from './pedidos/ListaPedidosComprador'
+import DetallePedidoComprador from './pedidos/DetallePedidoComprador'
 import PedidosEmptyState from './pedidos/PedidosEmptyState'
-import TextoFlecha from '@/components/ui/TextoFlecha'
-import { agruparPedidosPorPaquete, pedidosDesdeRespuesta } from './pedidos/pedidoHelpers'
+import {
+  pedidoPorNumero, pedidosDelComprador, type FiltroPedidos,
+} from './pedidos/pedidoVistaHelpers'
+import { pedidosDesdeRespuesta } from './pedidos/pedidoHelpers'
 import type { PedidoCliente } from './pedidos/pedidoHelpers'
+import { etiquetaPedido } from './perfil/cuenta/cuentaHelpers'
 
+/** Mis pedidos (`28:1310`) y detalle por paquete (`29:1434`, con `?pedido=<numero>`). */
 export default function MisPedidosPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const toast = useToast()
+  const [busqueda] = useSearchParams()
   const userId = useAuthStore((s) => s.userId)
   const token = useAuthStore((s) => s.token)
   const [orders, setOrders] = useState<PedidoCliente[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
+  const [filtro, setFiltro] = useState<FiltroPedidos>('todos')
 
   useEffect(() => {
     if (!token) { navigate('/login'); return }
@@ -42,61 +46,45 @@ export default function MisPedidosPage() {
     return () => { cancelado = true }
   }, [userId, token, page, navigate, toast, t])
 
-  return (
-    <MainLayout>
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-4 sm:mb-6">
-          <button type="button" onClick={() => navigate('/perfil')} className="flex items-center gap-1.5 text-sm mb-4 transition-colors"
-            style={{ color: 'var(--hc-muted)' }}>
-            <TextoFlecha dir="atras" iconClassName="w-4 h-4">{t('nav.perfil')}</TextoFlecha>
-          </button>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>{t('nav.misPedidos')}</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{t('orders.subtitle')}</p>
-        </motion.div>
+  const pedidos = useMemo(() => pedidosDelComprador(orders), [orders])
+  const numeroDetalle = busqueda.get('pedido')
+  const detalle = pedidoPorNumero(pedidos, numeroDetalle)
 
-        <PedidosContenido
-          loading={loading}
-          orders={orders}
-          onVerProductos={() => navigate('/productos')}
-        />
-
+  const cuerpo = (() => {
+    if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
+    if (numeroDetalle) {
+      return detalle
+        ? <DetallePedidoComprador pedido={detalle} />
+        : <p className="px-4 py-10 text-center text-[13px] text-hc-n-600">{t('pedidoDetalle.noEncontrado')}</p>
+    }
+    if (pedidos.length === 0) return <PedidosEmptyState onVerProductos={() => navigate('/productos')} />
+    return (
+      <>
+        <ListaPedidosComprador pedidos={pedidos} filtro={filtro} onFiltro={setFiltro} />
         {totalPages > 1 && (
-          <div className="flex justify-center gap-3 mt-8">
-            <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => { setLoading(true); setPage((p) => p - 1) }}>
-              <TextoFlecha dir="atras">{t('common.previous')}</TextoFlecha>
-            </Button>
-            <span className="text-sm self-center" style={{ color: 'var(--hc-muted)' }}>
-              {page + 1} / {totalPages}
-            </span>
-            <Button variant="secondary" size="sm" disabled={page >= totalPages - 1} onClick={() => { setLoading(true); setPage((p) => p + 1) }}>
-              <TextoFlecha>{t('common.next')}</TextoFlecha>
-            </Button>
+          <div className="flex items-center justify-center gap-3 pb-6">
+            <button type="button" disabled={page === 0} onClick={() => { setLoading(true); setPage((p) => p - 1) }}
+              className="rounded-full border border-hc-n-200 bg-hc-n-0 px-4 py-2 text-[13px] font-medium text-hc-n-900 disabled:opacity-45">
+              {t('common.previous')}
+            </button>
+            <span className="text-[13px] text-hc-n-600">{page + 1} / {totalPages}</span>
+            <button type="button" disabled={page >= totalPages - 1} onClick={() => { setLoading(true); setPage((p) => p + 1) }}
+              className="rounded-full border border-hc-n-200 bg-hc-n-0 px-4 py-2 text-[13px] font-medium text-hc-n-900 disabled:opacity-45">
+              {t('common.next')}
+            </button>
           </div>
         )}
-      </div>
-    </MainLayout>
-  )
-}
+      </>
+    )
+  })()
 
-function PedidosContenido({
-  loading, orders, onVerProductos,
-}: {
-  loading: boolean
-  orders: PedidoCliente[]
-  onVerProductos: () => void
-}) {
-  if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
-  if (orders.length === 0) return <PedidosEmptyState onVerProductos={onVerProductos} />
-  const grupos = agruparPedidosPorPaquete(orders)
+  const titulo = numeroDetalle && detalle
+    ? t('pedidoDetalle.titulo', { numero: etiquetaPedido(detalle.numero) })
+    : t('cuenta.menu.pedidos')
+
   return (
-    <div className="space-y-3">
-      {grupos.map((grupo, i) => (
-        <motion.div key={grupo.grupoPago ?? grupo.pedidos[0].id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-          {grupo.pedidos.length > 1
-            ? <PedidoGrupoCard pedidos={grupo.pedidos} />
-            : <OrderCard order={grupo.pedidos[0]} />}
-        </motion.div>
-      ))}
-    </div>
+    <MainLayout variante="interna" titulo={titulo} atras={numeroDetalle ? '/mis-pedidos' : '/perfil'} barraInferior={!numeroDetalle}>
+      {cuerpo}
+    </MainLayout>
   )
 }
