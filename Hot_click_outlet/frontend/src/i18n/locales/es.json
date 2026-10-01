@@ -1706,6 +1706,8 @@
     "remaining_one": "{{count}} producto restante",
     "remaining_other": "{{count}} productos restantes",
     "like": "Me gusta",
+    "viewProduct": "Ver producto",
+    "undo": "Deshacer la última",
     "skip": "Saltar",
     "stampLike": "ME GUSTA",
     "stampSkip": "PASAR",

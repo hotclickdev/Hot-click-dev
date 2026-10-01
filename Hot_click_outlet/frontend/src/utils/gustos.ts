@@ -342,6 +342,11 @@ export function marcarProductoVisto(productoId: string | number | null | undefin
   return { ...perfil, seen }
 }
 
+/** Restaura un perfil guardado antes de un swipe (deshacer la última elección). */
+export function restaurarGustos(perfil: GustosPerfil): void {
+  persistPerfil(new Map(perfil.scores), { ...perfil.seen }, [...perfil.selectedCategoryIds], [...perfil.selectedPriceBands])
+}
+
 /** true si el producto ya se swipeó en este navegador. */
 export function productoYaVisto(
   productoId: string | number | null | undefined,

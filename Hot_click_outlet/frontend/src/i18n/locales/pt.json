@@ -1706,6 +1706,8 @@
     "remaining_one": "{{count}} produto restante",
     "remaining_other": "{{count}} produtos restantes",
     "like": "Curtir",
+    "viewProduct": "Ver produto",
+    "undo": "Desfazer a última",
     "skip": "Pular",
     "stampLike": "CURTIR",
     "stampSkip": "PULAR",
