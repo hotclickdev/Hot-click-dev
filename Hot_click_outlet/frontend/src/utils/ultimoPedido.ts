@@ -17,6 +17,9 @@ export type UltimoPedido = {
   nombre: string
   correo: string
   paquetes: PaqueteUltimoPedido[]
+  /** Unidades y total del pedido, para el resumen de un pago fallido. */
+  unidades?: number
+  total?: number
   guardadoEn: number
 }
 

@@ -1409,6 +1409,22 @@
       "guardarTitulo": "Guarde este pedido na sua conta",
       "guardarTexto": "Com um toque criamos sua conta com este e-mail: acompanhe o envio, repita compras e guarde favoritos.",
       "guardarBoton": "Criar minha conta com um toque"
+    },
+    "fallo": {
+      "titulo": "Não conseguimos processar o pagamento",
+      "texto": "Nenhuma cobrança foi feita e o seu pedido continua guardado.",
+      "sinCobro": "Nenhuma cobrança foi feita e o seu pedido continua guardado",
+      "queHacer": "O que você pode fazer",
+      "consejo1": "Confira se o cartão tem compras online habilitadas.",
+      "consejo2": "Tente com SINPE Móvil: confirma em minutos.",
+      "consejo3": "Se o problema continuar, escreva para nós e ajudamos.",
+      "reintentar": "Tentar o pagamento novamente",
+      "soporte": "Falar com o suporte pelo WhatsApp",
+      "whatsappTexto": "Olá HotClick, tive um problema com o pagamento do pedido {{pedido}}.",
+      "pedido": "Pedido {{pedido}}",
+      "pedidoProductos_one": "Pedido {{pedido}} · {{count}} produto",
+      "pedidoProductos_other": "Pedido {{pedido}} · {{count}} produtos",
+      "cambiarMetodo": "Alterar forma de pagamento"
     }
   },
   "nosotros": {

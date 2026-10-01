@@ -165,6 +165,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
 
   authService.registrarConsentimiento('CHECKOUT')
   guardarUltimoPedido({
+    unidades: items.reduce((s, i) => s + (i.cantidad ?? 0), 0),
+    total: totalFinal,
     nombre: sinpeNombre.trim(),
     correo: guestEmail.trim() || sinpeEmail.trim(),
     paquetes: paquetes.map((p) => ({

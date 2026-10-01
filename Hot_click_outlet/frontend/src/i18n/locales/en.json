@@ -1409,6 +1409,22 @@
       "guardarTitulo": "Save this order in your account",
       "guardarTexto": "With one tap we create your account with this email: follow the shipment, buy again and save favorites.",
       "guardarBoton": "Create my account in one tap"
+    },
+    "fallo": {
+      "titulo": "We could not process the payment",
+      "texto": "You were not charged and your order is still saved.",
+      "sinCobro": "You were not charged and your order is still saved",
+      "queHacer": "What you can do",
+      "consejo1": "Check that your card has online purchases enabled.",
+      "consejo2": "Try SINPE Móvil: it is confirmed in minutes.",
+      "consejo3": "If the problem continues, write to us and we will help.",
+      "reintentar": "Retry payment",
+      "soporte": "Talk to support on WhatsApp",
+      "whatsappTexto": "Hi HotClick, I had a problem paying order {{pedido}}.",
+      "pedido": "Order {{pedido}}",
+      "pedidoProductos_one": "Order {{pedido}} · {{count}} product",
+      "pedidoProductos_other": "Order {{pedido}} · {{count}} products",
+      "cambiarMetodo": "Change payment method"
     }
   },
   "nosotros": {
