@@ -32,9 +32,9 @@ function ItemBarra({ icono, texto, activo, to, onClick }: ItemBarraProps) {
 /** Barra de navegación inferior móvil del comprador (Figma `7:358`). */
 export default function BarraInferior() {
   const { t } = useTranslation()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const { rutaCuenta, abrirBusqueda } = useHeaderComprador()
-  const activa: SeccionBarra | null = seccionActivaBarra(pathname)
+  const activa: SeccionBarra | null = seccionActivaBarra(pathname, search)
 
   return (
     <nav

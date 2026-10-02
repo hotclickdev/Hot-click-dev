@@ -11,11 +11,21 @@ const PREFIJOS: ReadonlyArray<[string, SeccionBarra]> = [
   ['/wishlist', 'cuenta'],
   ['/login', 'cuenta'],
   ['/registro', 'cuenta'],
+  ['/blog', 'inicio'],
 ]
 
-/** Qué ítem de la barra inferior queda marcado para la ruta actual. */
-export function seccionActivaBarra(pathname: string): SeccionBarra | null {
+const coincidePrefijo = (pathname: string, prefijo: string) => pathname === prefijo || pathname.startsWith(`${prefijo}/`)
+
+/**
+ * Qué ítem de la barra inferior queda marcado para la ruta actual.
+ * Dos casos dependen de la query: `/productos?cat=` es navegación por categoría (Figma `43:1530`) y
+ * `/servicios?vista=solicitudes` es parte de Cuenta (Figma `29:1535`).
+ */
+export function seccionActivaBarra(pathname: string, search = ''): SeccionBarra | null {
   if (pathname === '/') return 'inicio'
-  const coincidencia = PREFIJOS.find(([prefijo]) => pathname === prefijo || pathname.startsWith(`${prefijo}/`))
+  const params = new URLSearchParams(search)
+  if (pathname === '/productos' && params.has('cat')) return 'categorias'
+  if (pathname === '/servicios' && params.get('vista') === 'solicitudes') return 'cuenta'
+  const coincidencia = PREFIJOS.find(([prefijo]) => coincidePrefijo(pathname, prefijo))
   return coincidencia ? coincidencia[1] : null
 }

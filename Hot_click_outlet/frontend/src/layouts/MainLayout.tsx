@@ -11,8 +11,8 @@ import ExitIntentModal from '@/components/ui/ExitIntentModal'
 import PromoWelcomePopup from '@/components/ui/PromoWelcomePopup'
 import ReturnVisitorBanner from '@/components/ui/ReturnVisitorBanner'
 
-/** Hasta que exista la pantalla de búsqueda por foto, la foto se pide en Servicios HOT. */
-const RUTA_BUSCAR_CON_FOTO = '/servicios'
+/** La búsqueda por foto tiene su propia pantalla (Figma de CAT, ruta `/buscar/foto`). */
+const RUTA_BUSCAR_CON_FOTO = '/buscar/foto'
 
 type OpcionesComunes = {
   children?: ReactNode
@@ -22,6 +22,8 @@ type OpcionesComunes = {
   barraInferior?: boolean
   /** Footer con el banner de vendedor. Por defecto sí; fuera de `raiz` solo se ve en desktop. */
   pie?: boolean
+  /** Fondo de la página: `gris` (n/50, por defecto) o `blanco` (n/0) donde Figma lo dibuja así: estados vacíos. */
+  fondo?: 'gris' | 'blanco'
 }
 
 /**
@@ -46,14 +48,14 @@ const ENCABEZADO_MOVIL: Record<'raiz' | 'interna' | 'marca' | 'propia', Encabeza
 }
 
 export default function MainLayout(props: MainLayoutProps) {
-  const { children, encabezadoEscritorio = 'completo', pie = true } = props
+  const { children, encabezadoEscritorio = 'completo', pie = true, fondo = 'gris' } = props
   const variante = props.variante ?? 'raiz'
   const barraInferior = props.barraInferior ?? variante !== 'interna'
   const { t } = useTranslation()
   const navigate = useNavigate()
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-clip bg-hc-n-50">
+    <div className={`hc-figma-ui flex min-h-screen flex-col overflow-x-clip ${fondo === 'blanco' ? 'bg-hc-n-0' : 'bg-hc-n-50'}`}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-hc-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-hc-n-0"

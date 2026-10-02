@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
 import {
-  RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useHeaderComprador,
+  RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useConsultaBuscador, useHeaderComprador,
 } from './useHeaderComprador'
 
 const CATEGORIAS_VISIBLES_ESCRITORIO = 6
@@ -81,7 +81,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
 function BuscadorEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [consulta, setConsulta] = useState('')
+  const [consulta, setConsulta] = useConsultaBuscador()
 
   const buscar = (evento: FormEvent) => {
     evento.preventDefault()
