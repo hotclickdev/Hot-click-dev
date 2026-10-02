@@ -1,5 +1,7 @@
 # B19 — Cierre definitivo de decisiones Figma
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Fecha: 2-oct-2026.
 
 | | |

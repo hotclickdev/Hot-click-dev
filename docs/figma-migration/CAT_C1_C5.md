@@ -1,5 +1,7 @@
 # CAT · pasos C1 a C5 y pantallas del agente (2026-09-30)
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Rutas relativas a `Hot_click_outlet/frontend/src/`. Rama `feat/figma/cat` (desde `feat/figma/base` `1c87c9d3`). Capturas y scripts de QA fuera del repo (`%TEMP%\cat-qa`).
 
 ## Decisión: columnas fijas de 167

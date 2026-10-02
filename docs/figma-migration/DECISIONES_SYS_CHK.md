@@ -1,5 +1,7 @@
 # Decisiones abiertas de SYS y CHK: análisis contra Figma y código
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Fecha: 2026-09-30. Análisis de solo lectura. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt` (una sola página, 12 secciones). Código leído en los worktrees `base` (SYS, `437d0b13`) y `chk` (rama `feat/figma/chk`, commit `d1451060` más trabajo sin commitear del carrito).
 
 ## Cómo se obtuvo la evidencia de Figma

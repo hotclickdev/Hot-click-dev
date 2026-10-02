@@ -1,5 +1,7 @@
 # ACC · Cuenta, acceso, pedidos, favoritos y solicitudes
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Rama `feat/figma/acc`, puesta al día con `feat/figma/base` en `27f87000` (ya incluye CHK, `cf657e9c`). Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`. Este documento lo mantiene ACC; `INVENTORY.md` y `PROGRESS.md` resumen su estado.
 
 Todos los veredictos son **agent verified**: los verificó el propio agente con la API simulada y fotos de color, sin QA independiente y sin backend real.

@@ -1,5 +1,7 @@
 # CHK · Carrito, checkout, pago y hojas
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Rama `feat/figma/chk`. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`. Este documento lo mantiene CHK; INVENTORY y PROGRESS los actualiza el supervisor.
 
 ## Hoja "Agregado a tu pedido" `45:1607` (móvil)

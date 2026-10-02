@@ -1,5 +1,7 @@
 # QA global final (1-oct-2026)
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Rama `feat/figma/base` desde el merge `0257ab74`. Sin push, deploy ni merge. `master` (`b355fd20`) solo se leyó con `git archive`, sin checkout. Auditoría independiente: no se heredó ningún veredicto de los agentes.
 
 ## Método

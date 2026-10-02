@@ -1,5 +1,7 @@
 # SYS: estados y sistemas (404, fallo, sin conexión, instalar, cookies, popups, accesibilidad, WhatsApp)
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`. Medidas tomadas con Playwright en 390 (y 1440 donde se indica), fuentes reales Sora, Public Sans e IBM Plex Mono con `document.fonts.ready`, API simulada con `context.route('**/api/**')`, offline con `setOffline`, 500 con la API simulada, cookies y popups con localStorage/sessionStorage. Las posiciones son de Figma menos el origen del frame.
 
 ## Veredictos

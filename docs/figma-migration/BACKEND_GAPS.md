@@ -1,5 +1,7 @@
 # Huecos de backend (P11, 2-oct-2026)
 
+> **Cierre (P21):** sin cambios de backend desde P11. El índice por estado y la prioridad están en `CIERRE_MIGRACION.md` §3. La fila #6 (datos de bodega en la API pública) es la primera: R7 en §2.3.
+
 Lista consolidada de los huecos de backend reportados en P01 a P10. Regla de P11: solo se usa lo que ya existe (entidades, columnas, servicios y endpoints). Si el dato existe y solo faltaba exponerlo o cablearlo, se implementó con tests. Lo que pide columnas o tablas nuevas, reglas de negocio nuevas o endpoints públicos nuevos no se implementó: queda abajo con el campo exacto, la pantalla y un contrato propuesto. No se mockea nada dentro de la app.
 
 Estados:
@@ -55,4 +57,4 @@ Estados:
 ## Notas
 
 - Lo implementado se verificó con tests unitarios de backend, una prueba de integración del carrito abandonado (11 casos) y Playwright con la forma real de las respuestas. No se probó contra una base con datos reales.
-- `RecuperarCarritoPage` sigue fijando `stock: 99` al restaurar los productos en el carrito; ahora llega el stock real, pero cambiarlo afecta los límites del carrito y queda para P12.
+- `RecuperarCarritoPage` sigue fijando `stock: 99` al restaurar los productos en el carrito; ahora llega el stock real, pero cambiarlo afecta los límites del carrito y queda para P12. **P12:** se documentó sin cambiar, porque es una decisión de producto. En `8e07c61c` sigue en `RecuperarCarritoPage.tsx:57`, con el mismo valor por defecto (`?? 99`) en `cartStore`, `MiniCartItems`, `aiChatHelpers` y `useAiChat` (`CIERRE_MIGRACION.md` R4).

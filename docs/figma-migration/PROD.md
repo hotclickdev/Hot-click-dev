@@ -1,5 +1,7 @@
 # PROD · Ficha de producto (2026-09-30)
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Rutas relativas a `Hot_click_outlet/frontend/src/`. Rama `feat/figma/prod`. Capturas y scripts de QA fuera del repo (`%TEMP%\prod-qa`).
 
 ## Pantallas

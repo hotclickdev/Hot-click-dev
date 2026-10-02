@@ -413,3 +413,15 @@ El shell Figma (`f9aa72e4`) reemplazó la UI que probaban, y en `src` no queda n
 - Playwright dirigido (26 specs): 155 pasan y 15 se saltan.
   - Fallan igual que en la base: `smoke:131`, `smoke:237`, `catalogo-iconos:67` y `emprende:51`.
   - `nav-categorias` ahora pasa (2/2).
+
+## P21 — documentación final (2-oct-2026)
+
+Solo documentación. El estado final está en `CIERRE_MIGRACION.md`:
+
+- commits P01–P20;
+- decisiones pendientes: D01–D21, B14–B17 y los REQUIERE_DECISION de P12–P20 que están en este archivo (contraste, teléfono, pasos en la URL, `stock: 99`, FAB, gift card, pie táctil, alto contraste, `data: null`);
+- huecos de backend;
+- tests que ya fallaban, con evidencia en `14e841e3`;
+- cómo verificar y el `outDir` de Vite.
+
+No cambia ningún estado: 38 PASS / 52 PARTIAL.

@@ -1,5 +1,7 @@
 # STORE · Perfil del negocio, tienda con su color y directorio de emprendimientos
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Rama `feat/figma/store`, puesta al día con `feat/figma/base` en `e3227842` por fast-forward (ya incluye CHK, ACC y SRV). Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`. Este documento lo mantiene STORE; `INVENTORY.md` y `PROGRESS.md` resumen su estado.
 
 Todos los veredictos son **agent verified**: los verificó el propio agente con la API simulada y fotos de color, sin QA independiente y sin backend real. **Ninguna de las 4 pantallas queda en PASS**: las cuatro tienen una decisión pendiente o una dependencia de backend (ver abajo).

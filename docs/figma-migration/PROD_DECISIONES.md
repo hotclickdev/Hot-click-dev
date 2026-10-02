@@ -1,5 +1,7 @@
 # PROD · Las 4 decisiones que afectan comportamiento (informe de análisis)
 
+> **Estado al cierre (P21, 2-oct-2026):** las decisiones pendientes, los huecos de backend, los tests que ya fallaban y cómo verificar están en `CIERRE_MIGRACION.md`. Los estados de las pantallas están en `INVENTORY.md`. Este documento conserva el detalle del módulo.
+
 Fecha: 2026-09-30. Base analizada: `feat/figma/base` e7717b64 (PROD integrado). Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página única `4:2` (90 pantallas). Es un análisis: no se modificó código, no hay commits.
 
 ## Cómo se obtuvo la evidencia
