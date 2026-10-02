@@ -1,8 +1,9 @@
 import { isValidEmail } from '@/utils/validators'
+import { formatTelefonoCR } from '@/utils/telefono'
 import type { Id } from '@/types/api'
 
 export const WHATSAPP = '50686667888'
-export const SINPE_NUMERO = '8666-7888'
+export const SINPE_NUMERO = formatTelefonoCR('86667888')
 export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 export const BODEGA_DEFAULT = 1
 
@@ -174,7 +175,7 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     ...(bodegaRetiro ? [{
       value: 'RETIRO_EN_TIENDA',
       label: `Retiro en ${bodegaRetiro.nombre}`,
-      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
+      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono ? formatTelefonoCR(bodegaRetiro.telefono) : ''].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
       precio: 0,
       badge: null,
       needsAddress: false,

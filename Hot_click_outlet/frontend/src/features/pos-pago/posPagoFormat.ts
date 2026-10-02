@@ -1,4 +1,5 @@
 import { formatMiles } from '@/utils/format'
+import { formatTelefonoCR } from '@/utils/telefono'
 
 export function formatColones(monto: number | undefined | null): string {
   return formatMiles(Math.max(0, monto ?? 0))
@@ -20,7 +21,7 @@ export function tituloYCodigo(nombre: string): { titulo: string; codigo: string 
   return { titulo: match[1].trim(), codigo: match[2].trim() }
 }
 
-/** Número SINPE sin el prefijo del país (`+506 7019-6686` -> `7019-6686`), como en Figma. */
+/** Número SINPE sin el prefijo del país (`+506 7019-6686` -> `7019-6686`), con el formato único `8888-1234`. */
 export function sinpeNumeroVisible(numero: string | undefined | null): string {
-  return (numero ?? '').replace(/^\+?\s*506[\s-]*/, '').trim()
+  return formatTelefonoCR(numero)
 }

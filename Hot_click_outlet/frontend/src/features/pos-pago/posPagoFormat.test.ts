@@ -30,9 +30,9 @@ describe('tituloYCodigo', () => {
 })
 
 describe('sinpeNumeroVisible', () => {
-  it('quita el prefijo +506', () => {
+  it('quita el prefijo +506 y usa el formato único 8888-1234', () => {
     expect(sinpeNumeroVisible('+506 7019-6686')).toBe('7019-6686')
-    expect(sinpeNumeroVisible('50670196686')).toBe('70196686')
+    expect(sinpeNumeroVisible('50670196686')).toBe('7019-6686')
     expect(sinpeNumeroVisible('7019-6686')).toBe('7019-6686')
     expect(sinpeNumeroVisible(undefined)).toBe('')
   })
