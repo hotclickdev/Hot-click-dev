@@ -131,6 +131,9 @@ test.describe('QR de pago', () => {
     await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Este cobro venció' })).toBeVisible()
     await expect(page.getByText('duran 15 minutos')).toBeVisible()
+    // B16: sin lector propio, el vencido indica abrir la cámara en lugar del botón «Escanear otro QR».
+    await expect(page.getByText('abrí la cámara de tu celular')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Escanear otro QR/i })).toHaveCount(0)
 
     const otra = await page.context().newPage()
     await preparar(otra, { estado: 'PAGADO' })

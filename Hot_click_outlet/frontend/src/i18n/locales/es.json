@@ -3207,7 +3207,8 @@
       "esperandoDesc": "Cuando la pasarela confirme el SINPE, esta pantalla cambia sola.",
       "pagoRecibidoDesc": "Pagaste {{monto}} a {{negocio}}.",
       "vencidoTitulo": "Este cobro venció",
-      "vencidoDesc": "Por seguridad, los cobros por QR duran 15 minutos. Pedile a la caja que genere uno nuevo."
+      "vencidoDesc": "Por seguridad, los cobros por QR duran 15 minutos. Pedile a la caja que genere uno nuevo.",
+      "vencidoCamara": "Cuando tengas el QR nuevo, abrí la cámara de tu celular y escanealo."
     },
     "recibo": {
       "ventaRegistrada": "Venta registrada",
