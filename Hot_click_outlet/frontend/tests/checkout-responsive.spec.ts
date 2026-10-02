@@ -104,7 +104,7 @@ for (const ancho of [390, 1440]) {
           await expect(page.getByText('Tarjeta de regalo HC-REGALO')).toBeVisible()
           await expect(page.getByText(/^Pagás el resto con SINPE Móvil o tarjeta/)).toBeVisible()
         } else {
-          await expect(page.getByText('Gift card', { exact: true })).toBeVisible()
+          await expect(page.getByText('Tarjeta de regalo', { exact: true })).toBeVisible()
         }
       } else {
         const alerta = page.getByRole('alert').filter({ hasText: 'Código inválido, vencido o sin saldo' })

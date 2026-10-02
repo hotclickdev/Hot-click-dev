@@ -939,9 +939,9 @@
     "notasPh": "Instrucciones especiales, horario preferido, etc.",
     "notasAyuda": "La tienda recibe tu nota junto con el paquete.",
     "cuponPh": "Código de cupón",
-    "giftCardPh": "Código de gift card",
-    "giftCardAyuda": "La gift card se aplica con tu cuenta iniciada.",
-    "giftCardLinea": "Gift card",
+    "giftCardPh": "Código de tarjeta de regalo",
+    "giftCardAyuda": "La tarjeta de regalo se aplica con tu cuenta iniciada.",
+    "giftCardLinea": "Tarjeta de regalo",
     "agregarCupon": "Agregar cupón",
     "envioTotal_one": "Envío total ({{count}} paquete)",
     "envioTotal_other": "Envío total ({{count}} paquetes)"
@@ -1437,7 +1437,7 @@
     },
     "giftPagado": {
       "titulo": "¡Pedido confirmado!",
-      "texto": "Tu pedido fue pagado en su totalidad con la gift card.",
+      "texto": "Tu pedido fue pagado en su totalidad con la tarjeta de regalo.",
       "numero": "Número de pedido",
       "verPedidos": "Ver mis pedidos"
     },
