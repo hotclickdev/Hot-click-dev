@@ -203,6 +203,7 @@ public class PosQrPedidoFactory {
 
     private void marcarPagado(PosQrSesion sesion, Pedido saved) {
         sesion.setEstado("PAGADO");
+        sesion.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
         sesion.setPedidoId(saved.getId());
         posQrRepo.save(sesion);
     }

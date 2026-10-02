@@ -29,8 +29,17 @@ public class PosQrService {
     public Map<String, Object> crearSesion(Long usuarioId, Long empresaId, Long turnoId,
                                    String metodoPago, List<Map<String, Object>> items,
                                    String notas, Long clienteId, Long bodegaId) {
+        return crearSesion(usuarioId, empresaId, turnoId, metodoPago, null, items, notas, clienteId, bodegaId);
+    }
+
+    /** Igual, con los métodos que la caja deja elegir al cliente ({@code metodosPago}). */
+    @Transactional
+    @SuppressWarnings("java:S107")
+    public Map<String, Object> crearSesion(Long usuarioId, Long empresaId, Long turnoId,
+                                   String metodoPago, Object metodosPago, List<Map<String, Object>> items,
+                                   String notas, Long clienteId, Long bodegaId) {
         PosQrSesion sesion = sessionService.crearSesion(
-            usuarioId, empresaId, turnoId, metodoPago, items, notas, clienteId, bodegaId);
+            usuarioId, empresaId, turnoId, metodoPago, metodosPago, items, notas, clienteId, bodegaId);
         return sessionService.respuestaCajero(sesion);
     }
 
@@ -41,6 +50,11 @@ public class PosQrService {
     @Transactional(readOnly = true)
     public Map<String, Object> getInfoPublica(String token) {
         return sessionService.getInfoPublica(token);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getComprobante(String token) {
+        return sessionService.getComprobante(token);
     }
 
     @Transactional

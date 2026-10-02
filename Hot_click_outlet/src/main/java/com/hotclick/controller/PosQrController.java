@@ -42,6 +42,7 @@ public class PosQrController {
             Long usuarioId  = extractUserId(request);
             Long empresaId  = extractEmpresaId(request);
             String metodo   = (String) body.getOrDefault("metodoPago", "TARJETA");
+            Object metodos  = body.get("metodosPago");
             @SuppressWarnings("unchecked")
             var items = (java.util.List<Map<String, Object>>) body.get("items");
             String notas    = (String) body.get("notas");
@@ -52,7 +53,7 @@ public class PosQrController {
                 .map(t -> t.getId()).orElse(null);
 
             return ResponseEntity.ok(ResponseDTO.success("QR generado",
-                posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, items, notas, clienteId, bodegaId)));
+                posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, metodos, items, notas, clienteId, bodegaId)));
         } catch (Exception e) {
             log.error("[POS-QR] Error creando sesión: {}", e.getMessage(), e);
             String detalle = e.getMessage() != null ? e.getMessage() : "Error al generar QR";
@@ -100,6 +101,18 @@ public class PosQrController {
             return ResponseEntity.ok(posQrService.getInfoPublica(token));
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado o expirado"));
+        }
+    }
+
+    /** Comprobante del cobro pagado ("Ver comprobante" en la página del QR). */
+    @GetMapping("/pago/{token}/comprobante")
+    public ResponseEntity<?> comprobante(@PathVariable String token) {
+        try {
+            return ResponseEntity.ok(posQrService.getComprobante(token));
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).body(Map.of("error", "El cobro todavía no está pagado"));
         }
     }
 

@@ -3,9 +3,11 @@ package com.hotclick.service.pos;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.model.Usuario;
+import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PosQrSesionRepository;
 import com.hotclick.repository.ProductoRepository;
@@ -37,6 +39,7 @@ public class PosQrSessionService {
     @Autowired private EmpresaRepository     empresaRepo;
     @Autowired private ProductoRepository    productoRepo;
     @Autowired private TurnoCajaRepository   turnoCajaRepo;
+    @Autowired private BodegaRepository      bodegaRepo;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -47,12 +50,24 @@ public class PosQrSessionService {
     public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
                             String metodoPago, List<Map<String, Object>> items,
                             String notas, Long clienteId, Long bodegaId) {
+        return crearSesion(usuarioId, empresaId, turnoId, metodoPago, null, items, notas, clienteId, bodegaId);
+    }
+
+    /**
+     * @param metodosPago métodos que la caja deja elegir al cliente (null = solo {@code metodoPago}).
+     */
+    @Transactional
+    @SuppressWarnings("java:S107") // parámetros del cobro POS; un DTO no aporta para un solo llamador
+    public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
+                            String metodoPago, Object metodosPago, List<Map<String, Object>> items,
+                            String notas, Long clienteId, Long bodegaId) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío");
         }
-        if (!"SINPE".equals(metodoPago) && !"TARJETA".equals(metodoPago)) {
+        if (!PosQrMetodos.SINPE.equals(metodoPago) && !PosQrMetodos.TARJETA.equals(metodoPago)) {
             throw new IllegalArgumentException("Método de pago debe ser SINPE o TARJETA");
         }
+        List<String> habilitados = PosQrMetodos.normalizar(metodosPago, metodoPago);
         exigirItemsDelNegocio(empresaId, items);
 
         Usuario usuario  = usuarioRepo.findById(usuarioId)
@@ -83,6 +98,7 @@ public class PosQrSessionService {
         sesion.setBodegaId(bodegaId);
         sesion.setTotal(total);
         sesion.setMetodoPago(metodoPago);
+        sesion.setMetodosHabilitados(PosQrMetodos.aCsv(habilitados));
         sesion.setEstado("PENDIENTE");
         sesion.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
         sesion.setFechaExpiracion(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
@@ -122,6 +138,9 @@ public class PosQrSessionService {
         r.put("token",        sesion.getToken());
         r.put("estado",       sesion.getEstado());
         r.put("metodoPago",   sesion.getMetodoPago());
+        r.put("metodosHabilitados", PosQrMetodos.deSesion(sesion));
+        r.put("numeroCobro",  PosQrMetodos.numeroCobro(sesion));
+        r.put("caja",         nombreCaja(sesion));
         r.put("total",        sesion.getTotal());
         r.put("items",        items);
         r.put("expiracion",   sesion.getFechaExpiracion().toString());
@@ -135,11 +154,58 @@ public class PosQrSessionService {
         return r;
     }
 
+    /**
+     * Comprobante del cobro ya pagado (Figma `29:1888` "Ver comprobante").
+     * Solo existe con estado PAGADO; el token es el mismo secreto del QR.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getComprobante(String token) {
+        PosQrSesion sesion = posQrRepo.findByToken(token)
+            .orElseThrow(() -> new NoSuchElementException("QR no encontrado"));
+        if (!"PAGADO".equals(sesion.getEstado())) {
+            throw new IllegalStateException("El cobro todavía no está pagado");
+        }
+        Empresa empresa = exigirEmpresa(sesion);
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("numeroCobro",   PosQrMetodos.numeroCobro(sesion));
+        r.put("empresaNombre", empresa.getNombreComercial() != null
+            ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
+        r.put("logoUrl",       empresa.getLogoUrl());
+        r.put("caja",          nombreCaja(sesion));
+        r.put("metodoPago",    sesion.getMetodoPago());
+        r.put("total",         sesion.getTotal());
+        r.put("items",         itemsDe(sesion));
+        LocalDateTime fecha = sesion.getFechaPago() != null ? sesion.getFechaPago() : sesion.getFechaCreacion();
+        r.put("fechaPago",     fecha != null ? fecha.toString() : null);
+        r.put("referencia",    sesion.getToken().substring(0, 8).toUpperCase());
+        return r;
+    }
+
+    private List<Map<String, Object>> itemsDe(PosQrSesion sesion) {
+        try {
+            return mapper.readValue(sesion.getItemsJson(), new TypeReference<>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /** Nombre de la caja que cobra: la bodega/sucursal del POS, si la hay. */
+    String nombreCaja(PosQrSesion sesion) {
+        if (sesion == null || sesion.getBodegaId() == null || bodegaRepo == null) return null;
+        Long empresaId = sesion.getEmpresa() != null ? sesion.getEmpresa().getId() : null;
+        return bodegaRepo.findById(sesion.getBodegaId())
+            .filter(b -> empresaId == null || empresaId.equals(b.getEmpresaId()))
+            .map(Bodega::getNombreBodega)
+            .filter(PosQrSessionService::tieneTexto)
+            .orElse(null);
+    }
+
     public Map<String, Object> respuestaCajero(PosQrSesion sesion) {
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("token", sesion.getToken());
         r.put("total", sesion.getTotal());
         r.put("metodoPago", sesion.getMetodoPago());
+        r.put("metodosHabilitados", PosQrMetodos.deSesion(sesion));
         r.put("expiracion", sesion.getFechaExpiracion().toString());
         r.put("sinpeNumero", destinoSinpe(sesion, exigirEmpresa(sesion)));
         return r;
@@ -154,7 +220,7 @@ public class PosQrSessionService {
     }
 
     String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
-        if (sesion != null && "SINPE".equals(sesion.getMetodoPago())) {
+        if (PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
             if (onvoSinpeDestino != null && !onvoSinpeDestino.isBlank()) {
                 return onvoSinpeDestino;
             }

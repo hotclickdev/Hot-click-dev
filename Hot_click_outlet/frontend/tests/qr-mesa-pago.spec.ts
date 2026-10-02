@@ -16,7 +16,10 @@ const ITEMS_PAGO = [
   { productoId: 3, nombre: 'Funda de silicona para iPhone', cantidad: 1, precioUnitario: 8500 },
 ]
 
-async function preparar(page: Page, opts: { mesaOk?: boolean; estado?: string; metodo?: string } = {}) {
+async function preparar(
+  page: Page,
+  opts: { mesaOk?: boolean; estado?: string; metodo?: string; metodos?: string[]; caja?: string | null } = {},
+) {
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const metodo = route.request().method()
@@ -28,11 +31,26 @@ async function preparar(page: Page, opts: { mesaOk?: boolean; estado?: string; m
     if (path.endsWith('/qr/mesa1')) return json(MESA, opts.mesaOk === false ? 404 : 200)
     if (path.endsWith('/estado')) return json({ estado: 'PENDIENTE' })
     if (path.endsWith('/intent')) return json({ error: 'sin onvo' }, 400)
+    if (path.endsWith('/comprobante')) {
+      return json({
+        numeroCobro: 'P-3391',
+        empresaNombre: 'Bruma Café',
+        caja: 'Caja principal',
+        metodoPago: 'SINPE',
+        total: 10500,
+        items: ITEMS_PAGO,
+        fechaPago: '2026-10-02T15:30:00',
+        referencia: '3F9A2C1B',
+      })
+    }
     if (path.includes('/pos/qr/pago/')) {
       return json({
         token: '3f9a2c1b99',
         estado: opts.estado ?? 'PENDIENTE',
         metodoPago: opts.metodo ?? 'SINPE',
+        metodosHabilitados: opts.metodos,
+        numeroCobro: 'P-3391',
+        caja: opts.caja === undefined ? 'Caja principal' : opts.caja,
         total: 10500,
         empresaNombre: 'Bruma Café',
         items: ITEMS_PAGO,
@@ -140,6 +158,42 @@ test.describe('QR de pago', () => {
     await otra.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
     await expect(otra.getByRole('heading', { name: 'Pago recibido' })).toBeVisible()
     await expect(otra.getByText('Pagaste ₡10.500 a Bruma Café.')).toBeVisible()
+
+    // B16: comprobante del cobro pagado (número, caja, fecha, método y detalle).
+    await otra.getByRole('button', { name: 'Ver comprobante' }).click()
+    const comprobante = otra.getByTestId('pos-pago-comprobante')
+    await expect(comprobante.getByRole('heading', { name: 'Comprobante de pago · Bruma Café' })).toBeVisible()
+    await expect(comprobante.getByText('#P-3391')).toBeVisible()
+    await expect(comprobante.getByText('Caja principal')).toBeVisible()
+    await expect(comprobante.getByText('02/10/2026 15:30')).toBeVisible()
+    await expect(comprobante.getByText('SINPE Móvil')).toBeVisible()
+    await expect(comprobante.getByText('1 × Funda de silicona para iPhone')).toBeVisible()
+    await expect(comprobante.getByRole('button', { name: 'Imprimir o guardar en PDF' })).toBeVisible()
+  })
+
+  test('B16: el cliente elige entre los métodos que habilitó la caja; número de cobro y caja', async ({ page }) => {
+    await preparar(page, { metodo: 'TARJETA', metodos: ['TARJETA', 'SINPE'] })
+    await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
+
+    await expect(page.getByTestId('pos-pago-cobro')).toHaveText('Cobro #P-3391 · Caja principal')
+    const grupo = page.getByRole('radiogroup', { name: 'Elegí cómo pagar' })
+    await expect(grupo.getByRole('radio')).toHaveCount(2)
+    await expect(grupo.getByRole('radio', { name: /Tarjeta/ })).toHaveAttribute('aria-checked', 'true')
+    await expect(page.getByRole('button', { name: /Pagar con SINPE Móvil/ })).toHaveCount(0)
+
+    await grupo.getByRole('radio', { name: /SINPE Móvil/ }).click()
+    await expect(grupo.getByRole('radio', { name: /SINPE Móvil/ })).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('button', { name: /Pagar con SINPE Móvil/ }).click()
+    await expect(page.getByRole('heading', { name: 'Pagá con SINPE Móvil' })).toBeVisible()
+  })
+
+  test('B16: con un solo método habilitado queda marcado y sin caja no se dibuja', async ({ page }) => {
+    await preparar(page, { caja: null })
+    await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByTestId('pos-pago-cobro')).toHaveText('Cobro #P-3391')
+    const radios = page.getByRole('radiogroup', { name: 'Elegí cómo pagar' }).getByRole('radio')
+    await expect(radios).toHaveCount(1)
+    await expect(radios.first()).toHaveAttribute('aria-checked', 'true')
   })
 })
 

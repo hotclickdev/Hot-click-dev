@@ -6,6 +6,7 @@ import QrResultado from '@/features/qr-negocio/QrResultado'
 import { formatPrice } from '@/utils/format'
 import type { PosPagoVista } from './posPagoTypes'
 import PosPagoReporteModal from './PosPagoReporteModal'
+import PosPagoComprobante from './PosPagoComprobante'
 
 type Props = {
   vista: Exclude<PosPagoVista, 'cargando' | 'resumen'>
@@ -14,6 +15,8 @@ type Props = {
   token?: string
   total?: number
   negocio?: string
+  /** Cobro confirmado como PAGADO por el servidor: muestra "Ver comprobante". */
+  conComprobante?: boolean
 }
 
 /**
@@ -21,7 +24,7 @@ type Props = {
  * el frame. Cancelado y los errores no tienen frame: usan el mismo bloque
  * `QrResultado` con el ícono de alerta existente.
  */
-export default function PosPagoEstado({ vista, mensajeError, onReintentar, token, total, negocio }: Props) {
+export default function PosPagoEstado({ vista, mensajeError, onReintentar, token, total, negocio, conComprobante }: Props) {
   const { t } = useTranslation()
   const [reporteAbierto, setReporteAbierto] = useState(false)
 
@@ -43,6 +46,7 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar, token
         descripcion={config.descripcion}
       />
       <div className="flex flex-col gap-3 px-4 pb-6 pt-3">
+        {conComprobante && token ? <PosPagoComprobante token={token} /> : null}
         {vista === 'vencido' ? (
           // `29:1913` dibuja «Escanear otro QR»; la app no tiene lector propio, así que se indica abrir la cámara (decisión B16).
           <p className="text-center text-[13px] leading-[18px] text-hc-n-600">{t('pos.pago.vencidoCamara')}</p>

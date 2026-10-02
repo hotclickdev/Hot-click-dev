@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { formatColones, inicialesProducto, nombreItem, sinpeNumeroVisible, tituloYCodigo } from './posPagoFormat'
+import {
+  fechaComprobante,
+  formatColones,
+  inicialesProducto,
+  metodoActivo,
+  metodosDisponibles,
+  nombreItem,
+  sinpeNumeroVisible,
+  tituloYCodigo,
+} from './posPagoFormat'
 
 describe('inicialesProducto', () => {
   it('toma hasta dos iniciales', () => {
@@ -35,5 +44,32 @@ describe('sinpeNumeroVisible', () => {
     expect(sinpeNumeroVisible('50670196686')).toBe('7019-6686')
     expect(sinpeNumeroVisible('7019-6686')).toBe('7019-6686')
     expect(sinpeNumeroVisible(undefined)).toBe('')
+  })
+})
+
+describe('metodosDisponibles', () => {
+  it('usa los métodos que habilitó la caja, sin repetir ni desconocidos', () => {
+    expect(metodosDisponibles({ metodoPago: 'TARJETA', metodosHabilitados: ['TARJETA', 'SINPE', 'SINPE', 'EFECTIVO'] }))
+      .toEqual(['TARJETA', 'SINPE'])
+  })
+  it('sesión anterior: solo su método', () => {
+    expect(metodosDisponibles({ metodoPago: 'SINPE' })).toEqual(['SINPE'])
+    expect(metodosDisponibles(null)).toEqual([])
+  })
+})
+
+describe('metodoActivo', () => {
+  it('respeta la elección del cliente si está habilitada', () => {
+    expect(metodoActivo(['TARJETA', 'SINPE'], 'TARJETA', 'SINPE')).toBe('SINPE')
+    expect(metodoActivo(['TARJETA'], 'TARJETA', 'SINPE')).toBe('TARJETA')
+    expect(metodoActivo(['SINPE', 'TARJETA'], undefined, null)).toBe('SINPE')
+    expect(metodoActivo([], undefined, null)).toBeNull()
+  })
+})
+
+describe('fechaComprobante', () => {
+  it('formatea la fecha local del servidor', () => {
+    expect(fechaComprobante('2026-10-02T15:30:12.5')).toBe('02/10/2026 15:30')
+    expect(fechaComprobante(null)).toBe('')
   })
 })

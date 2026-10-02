@@ -48,6 +48,12 @@ public class PosQrVentaService {
     public String crearStripeCheckout(String token) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
         exigirMetodoPasarela(sesion);
+        // El checkout hospedado es solo tarjeta: el cobro queda fijo en TARJETA para no
+        // reutilizar ese id como payment intent de SINPE.
+        if (PosQrMetodos.habilitado(sesion, PosQrMetodos.TARJETA)) {
+            sesion.setMetodoPago(PosQrMetodos.TARJETA);
+            sesion.setMetodosHabilitados(PosQrMetodos.TARJETA);
+        }
         if (onvoService.isMockMode()) {
             throw new IllegalStateException(
                 "ONVO no está configurado. Añade ONVO_SECRET_KEY para cobrar con tarjeta en el POS.");
@@ -89,6 +95,7 @@ public class PosQrVentaService {
     public Map<String, String> crearPaymentIntent(String token) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
         exigirMetodoPasarela(sesion);
+        elegirMetodo(sesion, PosQrMetodos.TARJETA);
         if (onvoService.isMockMode()) {
             throw new IllegalStateException(
                 "ONVO no está configurado. Añade ONVO_SECRET_KEY para cobrar con tarjeta en el POS.");
@@ -117,12 +124,13 @@ public class PosQrVentaService {
     public Map<String, String> iniciarSinpeOnvo(String token, String telefono, String cedula,
                                                String nombre, String email) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
-        if (!"SINPE".equals(sesion.getMetodoPago())) {
+        if (!PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
             throw new IllegalStateException("Esta sesión no es de SINPE");
         }
         if ("PAGADO".equals(sesion.getEstado())) {
             return respuestaSinpeOnvo("PAGADO", sesion.getStripeSessionId());
         }
+        elegirMetodo(sesion, PosQrMetodos.SINPE);
         String intentId = asegurarPaymentIntent(sesion);
         if (onvoService.paymentIntentPagado(intentId)) {
             return respuestaSinpeOnvo("PROCESSING", intentId);
@@ -135,6 +143,17 @@ public class PosQrVentaService {
             correo);
         onvoService.confirmarPaymentIntent(intentId, metodo.id());
         return respuestaSinpeOnvo("PROCESSING", intentId);
+    }
+
+    /**
+     * El cliente eligió un método entre los que habilitó la caja: queda en la sesión
+     * (lo usan el pedido POS y los totales del turno). Sin cambio si no está habilitado.
+     */
+    static void elegirMetodo(PosQrSesion sesion, String metodo) {
+        if (!"PENDIENTE".equals(sesion.getEstado())) return;
+        if (PosQrMetodos.habilitado(sesion, metodo) && !metodo.equals(sesion.getMetodoPago())) {
+            sesion.setMetodoPago(metodo);
+        }
     }
 
     private String asegurarPaymentIntent(PosQrSesion sesion) {
@@ -225,6 +244,7 @@ public class PosQrVentaService {
 
     private void marcarPagadoSinPedidoPos(PosQrSesion sesion) {
         sesion.setEstado("PAGADO");
+        sesion.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
         posQrRepo.save(sesion);
         if (sesion.getTurno() != null) {
             try {
@@ -267,6 +287,8 @@ public class PosQrVentaService {
         body.put("estado", estado);
         posQrRepo.findByToken(token).ifPresent(s -> {
             if (s.getPedidoId() != null) body.put("pedidoId", s.getPedidoId());
+            // Método con el que pagó el cliente (puede elegir entre los habilitados).
+            if (s.getMetodoPago() != null) body.put("metodoPago", s.getMetodoPago());
         });
         return body;
     }
