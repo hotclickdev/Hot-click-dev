@@ -24,16 +24,13 @@ export default function RecuperarCarritoPage() {
   const toast   = useToast()
 
   const [items,   setItems]   = useState<ItemRecuperado[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(false)
+  // Sin token no hay nada que pedir: se arranca en error, sin setState dentro del efecto.
+  const [loading, setLoading] = useState(Boolean(token))
+  const [error,   setError]   = useState(!token)
   const [adding,  setAdding]  = useState(false)
 
   useEffect(() => {
-    if (!token) {
-      setError(true)
-      setLoading(false)
-      return
-    }
+    if (!token) return
     abandonedCartService.getAbandonedCart(token)
       .then(({ data }) => {
         // `api` ya desenvuelve el ResponseDTO: llega { id, status, items }. Se acepta también el sobre sin desenvolver.

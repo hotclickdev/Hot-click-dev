@@ -27,7 +27,7 @@ class PagoFallidoEmailBuilder {
                 "Tu pedido #" + layout.esc(pedido.getNumeroPedido()) + " no se completó. No se hizo ningún cobro.")
             + layout.abrirCuerpo()
             + layout.notaConTitulo(EmailLayoutHelper.FONDO_SUAVE, EmailLayoutHelper.TEXTO_SUAVE, "Motivo", motivoTexto, EmailLayoutHelper.TEXTO, "15px")
-            + layout.cta("https://hotclick.lat/checkout", "Intentar de nuevo")
+            + layout.cta(layout.urlSitio("/checkout"), "Intentar de nuevo")
             + layout.notaPequena("También podés pagar con SINPE Móvil desde la misma página. "
                 + "Si el problema sigue, escribinos por WhatsApp y lo vemos juntos.")
             + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);

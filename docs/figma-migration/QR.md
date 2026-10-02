@@ -97,8 +97,8 @@ Lectura del QR por token, catálogo y pedido de mesa (`/qr/:token`), sesión de 
 ## Dependencias
 
 - **Backend:** número de cobro y nombre de caja en `GET /pos/qr/pago/:token`; permitir que el cliente elija método; comprobante o correo del pagador; pedidos hermanos por `grupoPago` para "Paquete N de M"; dirección de entrega y tipo de envío en el pedido; vencimiento del cupón si se quiere prometer "30 días"; estado del pedido de mesa.
-- **SYS / `AppChrome`:** el botón flotante de WhatsApp aparece sobre las pantallas de pago por QR (no está en Figma y tapa el área del pie en móviles pequeños). Decide `ConditionalWhatsAppFab`; no se tocó.
-- **SHELL (`index.css`):** el campo de búsqueda usa `hc-input-libre` (ya existe); los inputs móviles se fuerzan a 16 px (Figma pide 14). La regla global de `header` obliga a usar `div role="banner"`.
+- **SYS / `AppChrome`:** el botón flotante de WhatsApp aparece sobre las pantallas de pago por QR (no está en Figma y tapa el área del pie en móviles pequeños). Decide `ConditionalWhatsAppFab`; no se tocó. **P12 (2-oct-2026):** ya no se monta en `/checkout/qr/:token` ni en `/pos/pago/:token` (`whatsappOculto` cubre `/checkout` y `/pos`); lo comprueba `qr-mesa-pago.spec.ts`.
+- **SHELL (`index.css`):** el campo de búsqueda usa `hc-input-libre` (ya existe); los inputs móviles se fuerzan a 16 px (Figma pide 14). **P12:** `QrPagina` lleva `hc-figma-ui` y el buscador mide 14 px a 390; los campos del paso de confirmación (sin frame) quedan en el tamaño de su clase. La regla global de `header` obliga a usar `div role="banner"`.
 - **SUP / despliegue:** los PNG de `frontend/public/email/` se publican con el `pnpm build` de SUP; hasta entonces los correos muestran el círculo sin ícono. `static/` no se tocó.
 
 ## Decisiones abiertas (pasar al usuario)

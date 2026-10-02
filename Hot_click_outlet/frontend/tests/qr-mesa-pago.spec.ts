@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { colorDeToken, sinDesborde } from './helpers/medidasFigma'
+import { colorDeToken, sinDesborde, tamanosDeCampos } from './helpers/medidasFigma'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -170,4 +170,17 @@ test.describe('Responsive y tokens (P07)', () => {
       expect(errores).toEqual([])
     })
   }
+})
+
+test('P12 a 390: el buscador de la mesa mide 14 px (29:1650) y no hay WhatsApp flotante en mesa ni pago', async ({ page }) => {
+  await preparar(page)
+  await page.goto('/checkout/qr/mesa1', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('searchbox', { name: 'Buscar en el menú' })).toBeVisible()
+  expect(await tamanosDeCampos(page, 'input[type="search"]')).toEqual(['14px'])
+  await expect(page.getByRole('link', { name: 'Consultar un producto por WhatsApp', exact: true })).toHaveCount(0)
+  await sinDesborde(page)
+
+  await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByText('Total a pagar')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Consultar un producto por WhatsApp', exact: true })).toHaveCount(0)
 })

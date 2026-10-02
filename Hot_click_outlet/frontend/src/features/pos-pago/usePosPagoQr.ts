@@ -13,54 +13,44 @@ function vistaDesdeQuery(resultado: string | null, estado?: string): PosPagoVist
   return null
 }
 
+/** Vista (y código de error, si corresponde) para la sesión leída del servidor. */
+function vistaDesdeInfo(data: QrPagoInfo, resultado: string | null): { vista: PosPagoVista; error?: string } {
+  const vistaQuery = vistaDesdeQuery(resultado, data.estado)
+  if (vistaQuery) return { vista: vistaQuery }
+  if (data.estado === 'EXPIRADO') return { vista: 'vencido' }
+  if (data.estado === 'CANCELADO') return { vista: 'error', error: 'qr_invalido' }
+  if (!data.items?.length) return { vista: 'error', error: 'sin_items' }
+  return { vista: 'resumen' }
+}
+
 export function usePosPagoQr(token: string | undefined) {
   const [searchParams] = useSearchParams()
   const resultadoQuery = searchParams.get('resultado')
 
   const [info, setInfo] = useState<QrPagoInfo | null>(null)
-  const [vista, setVista] = useState<PosPagoVista>('cargando')
-  const [mensajeError, setMensajeError] = useState<string | null>(null)
+  // Sin token la vista arranca en error: el efecto de carga no llama a setState de forma síncrona.
+  const [vista, setVista] = useState<PosPagoVista>(token ? 'cargando' : 'error')
+  const [mensajeError, setMensajeError] = useState<string | null>(token ? null : 'token_faltante')
   const [iniciandoPago, setIniciandoPago] = useState(false)
   const pollCount = useRef(0)
 
-  const cargarInfo = useCallback(async () => {
-    if (!token) {
-      setVista('error')
-      setMensajeError('token_faltante')
-      return
-    }
-    try {
-      const data = await posService.infoQrSesion(token) as QrPagoInfo
-      setInfo(data)
-      const vistaQuery = vistaDesdeQuery(resultadoQuery, data.estado)
-      if (vistaQuery) {
-        setVista(vistaQuery)
-        return
-      }
-      if (data.estado === 'EXPIRADO') {
-        setVista('vencido')
-        return
-      }
-      if (data.estado === 'CANCELADO') {
+  const aplicarInfo = useCallback((data: QrPagoInfo) => {
+    setInfo(data)
+    const { vista: siguiente, error } = vistaDesdeInfo(data, resultadoQuery)
+    setVista(siguiente)
+    if (error) setMensajeError(error)
+  }, [resultadoQuery])
+
+  // Los setState quedan en los callbacks de la promesa: el efecto de carga no los llama de forma síncrona.
+  const cargarInfo = useCallback((): Promise<void> => {
+    if (!token) return Promise.resolve()
+    return posService.infoQrSesion(token)
+      .then((data) => aplicarInfo(data as QrPagoInfo))
+      .catch(() => {
         setVista('error')
         setMensajeError('qr_invalido')
-        return
-      }
-      if (data.estado === 'PAGADO') {
-        setVista('pagado')
-        return
-      }
-      if (!data.items?.length) {
-        setVista('error')
-        setMensajeError('sin_items')
-        return
-      }
-      setVista('resumen')
-    } catch {
-      setVista('error')
-      setMensajeError('qr_invalido')
-    }
-  }, [token, resultadoQuery])
+      })
+  }, [token, aplicarInfo])
 
   useEffect(() => {
     void cargarInfo()

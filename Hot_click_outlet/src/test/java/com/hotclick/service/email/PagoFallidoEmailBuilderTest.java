@@ -39,6 +39,20 @@ class PagoFallidoEmailBuilderTest {
     }
 
     @Test
+    @DisplayName("«Intentar de nuevo» lleva al checkout sobre app.url, no a un dominio fijo")
+    void ctaUsaAppUrl() {
+        EmailLayoutHelper layout = new EmailLayoutHelper();
+        ReflectionTestUtils.setField(layout, "appUrl", "https://staging.hotclick.test/");
+        ReflectionTestUtils.setField(builder, "layout", layout);
+
+        String html = builder.buildPagoFallido(pedido(), pedido().getUsuarioFinal(), null);
+
+        assertThat(html)
+            .contains("href=\"https://staging.hotclick.test/checkout\"")
+            .doesNotContain("https://hotclick.lat/checkout");
+    }
+
+    @Test
     @DisplayName("Escapa el motivo cuando viene de una integración externa")
     void escapaMotivo() {
         String html = builder.buildPagoFallido(pedido(), pedido().getUsuarioFinal(), "<script>x</script>");

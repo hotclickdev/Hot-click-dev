@@ -30,7 +30,7 @@ Además: la E2E `bottom-nav.spec.ts` describía la barra anterior (Productos/Ser
 ## Dependencias hacia otros módulos
 
 - ACC/SRV/CHK/STORE: pueden sustituir `var(--hc-n-400)`, `var(--hc-success-bg)`, `var(--hc-red-50)` por las clases nuevas y los contenedores blancos por `fondo="blanco"`. No es obligatorio.
-- La regla `header, aside, footer { … !important }` de `index.css` no se tocó: STORE la resuelve con `div role="banner"`.
+- La regla `header, aside, footer { … !important }` de `index.css` no se tocó: STORE la resuelve con `div role="banner"`. **Resuelta en P12** (ver al final).
 
 ## Verificación
 
@@ -120,3 +120,17 @@ Notas:
 - En móvil el pie solo se ve en pantallas `raiz`; en `interna`, `marca` y `propia` es solo de escritorio. Allí el acceso a la hoja de accesibilidad depende de la fila de Mi cuenta (ACC), que sigue sin frame.
 - En la captura móvil al final de la página, el botón de WhatsApp quedaba sobre "Términos". B2 (2-oct-2026) no movió el botón: en las pantallas `raiz` el spacer móvil pasa de 72 a 155 px para que el texto legal quede 16 px arriba. En internas sin barra el `bottom` es 16 px, no 83. Detalle en `SYS.md` ("Pasada B2").
 - Sin desbordes horizontales a 390 ni a 1440.
+
+## P12 — infraestructura del shell (2-oct-2026)
+
+| Pendiente | Qué se hizo | Comprobación |
+| --- | --- | --- |
+| Regla `header, aside, footer` con `!important` | Fuera de `.hc-figma-ui` y `.hc-tenant-theme` sigue igual (paneles, POS, portales, `/registro`). Dentro, el mismo valor (superficie, borde y texto del tema) pasa a `@layer base`: una utilidad del componente gana. | Estilos calculados de todos los `header`/`aside`/`footer` en 18 rutas a 390 y 1440, antes y después: cambian solo el encabezado del paquete del carrito de escritorio (blanco -> n/50, la clase que ya tenía por `38:1359`) y el texto del pie de la tienda (`--t-muted`). `PasoEntrega` (n/50) y los avisos de `/emprende` (borde del tema o primario, por estilo en línea) también quedan con su propio valor; no se renderizaron en la medición. Costo: en alto contraste, un `header` de la superficie Figma con clase de borde propia ya no toma el borde de accesibilidad (igual que el resto de esa superficie). |
+| Regla de 16 px en inputs móviles fuera de `MainLayout` | `QrPagina` (mesa y pago) lleva `hc-figma-ui`, como `RecuperarContrasenaPage` en P08. | Buscador de `29:1650` a 14 px a 390 (antes 16). Mis opiniones mide 13 px (la nota de 16 px estaba vieja). `TiendaNoDisponible` y `/registro` siguen fuera. |
+| WhatsApp flotante | Pago por QR: ya oculto (`whatsappOculto` cubre `/checkout` y `/pos`), sin cambio de código. `/emprendimientos` móvil: la nota F (`52:2422`) lo hace global y ningún documento pide quitarlo ahí: **REQUIERE_DECISION**, no se tocó. | `qr-mesa-pago.spec.ts` (P12, 390). |
+| `LoginHeader` | Borrado: ningún import. `RegisterHeader` sigue en uso. | `tsc` limpio. |
+| URL fija en `PagoFallidoEmailBuilder` | `EmailLayoutHelper.urlSitio(ruta)` arma el enlace sobre `app.url` (sin barra final, cae a `https://hotclick.lat`); `urlSeguimiento` lo reutiliza. | `PagoFallidoEmailBuilderTest` (caso nuevo con `app.url` de prueba). |
+| `set-state-in-effect` | `RecuperarCarritoPage`: `loading`/`error` arrancan según haya token. `usePosPagoQr`: la vista sin token arranca en error, la carga usa la promesa (setState en los callbacks) y la elección de vista pasa a `vistaDesdeInfo` (se quitó la rama `PAGADO` inalcanzable: `vistaDesdeQuery` ya la cubre). | ESLint limpio en ambos; `qr-mesa-pago`, `pos-pago-express` y `cart-responsive` pasan. |
+| `stock: 99` | **No se cambió.** `RecuperarCarritoPage` agrega con `stock: 99` aunque desde P11 el backend manda el stock real; también lo usan los asistentes (`useCartAssistant`, `useProductsAssistant`, `aiChatHelpers`, `useAiChat`) y el tope por defecto de `cartStore` y `MiniCartItems`. Usar el stock real cambiaría cuánto se puede agregar (y qué pasa con stock 0): decisión de producto. | — |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de los archivos tocados limpio; Vitest 34 de 34 (`features`, `carrito`, `flotantes`); `mvn -o test` de los 7 tests de correo (26 casos) pasan; Playwright 74 de 74 (`qr-mesa-pago`, `cart-responsive`, `shell-global`, `store-perfil`, `bottom-nav`, `pos-pago-express`, `tienda-theme`, `checkout-responsive`, `acc-cuenta`), con un caso nuevo a 390 (QR) y uno a 1440 (carrito).

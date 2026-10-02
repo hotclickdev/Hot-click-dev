@@ -66,9 +66,14 @@ public class EmailLayoutHelper {
      * Un pedido sin token (no persistido) cae a «Mis pedidos».
      */
     public String urlSeguimiento(Pedido pedido) {
-        String base = appUrl == null || appUrl.isBlank() ? SITIO : appUrl.replaceAll("/+$", "");
         String token = pedido != null ? pedido.getTokenSeguimiento() : null;
-        return TokenSeguimientoPedido.formatoValido(token) ? base + "/seguimiento/" + token : base + "/mis-pedidos";
+        return TokenSeguimientoPedido.formatoValido(token) ? urlSitio("/seguimiento/" + token) : urlSitio("/mis-pedidos");
+    }
+
+    /** Enlace a una ruta del sitio sobre {@code app.url} (sin barra final); {@code ruta} empieza con "/". */
+    public String urlSitio(String ruta) {
+        String base = appUrl == null || appUrl.isBlank() ? SITIO : appUrl.replaceAll("/+$", "");
+        return base + ruta;
     }
 
     /** Enlace de texto azul, para correos que ya tienen su botón principal. El label debe llegar ya escapado. */

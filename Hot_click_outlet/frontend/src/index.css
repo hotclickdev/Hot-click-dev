@@ -706,13 +706,22 @@ html.dark .hc-isotipo-placa {
 /* — hover:text-white in light mode → accent — */
 :root [class*="hover:text-white"]:hover { color: var(--hc-accent) !important; }
 
-/* — Structural elements — */
-:root header,
-:root aside,
-:root footer {
+/* — Structural elements —
+   Paneles, POS y portales: sin cambio (superficie y borde del tema con !important).
+   Superficie Figma (`.hc-figma-ui`, raíz de `MainLayout` y de las pantallas QR; `.hc-tenant-theme`, la tienda):
+   el mismo valor queda como base y las utilidades lo pisan, así un bloque con fondo propio puede usar
+   `header`, `aside` o `footer` (por ejemplo el encabezado n/50 del paquete en el carrito de escritorio). */
+:root :is(header, aside, footer):not(:is(.hc-figma-ui, .hc-tenant-theme) *) {
   background-color: var(--hc-surface) !important;
   border-color: var(--hc-border) !important;
   color: var(--hc-text);
+}
+@layer base {
+  :root :is(.hc-figma-ui, .hc-tenant-theme) :is(header, aside, footer) {
+    background-color: var(--hc-surface);
+    border-color: var(--hc-border);
+    color: var(--hc-text);
+  }
 }
 
 /* — Navbar scrolled — */
@@ -1294,7 +1303,7 @@ html:not(.dark) .hc-product-img {
 
 /* Prevenir zoom en inputs iOS (paneles, POS, portales).
    La superficie del comprador queda fuera: Figma pide 14 y 15 px en sus campos y esta regla, al no estar
-   en una capa, le ganaría a `text-[14px]`. `.hc-figma-ui` es la raíz de `MainLayout`; `.hc-tenant-theme`,
+   en una capa, le ganaría a `text-[14px]`. `.hc-figma-ui` es la raíz de `MainLayout` y de `QrPagina`; `.hc-tenant-theme`,
    la de la tienda pública. Costo asumido: en iOS esos campos hacen zoom al enfocar. */
 @media (max-width: 767px) {
   :is(

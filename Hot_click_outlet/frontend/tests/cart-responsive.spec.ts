@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { sinDesborde } from './helpers/medidasFigma'
+import { colorDeToken, sinDesborde } from './helpers/medidasFigma'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -42,6 +42,19 @@ for (const ancho of [390, 1440]) {
     expect(errores).toEqual([])
   })
 }
+
+test('carrito a 1440 (P12): el encabezado del paquete usa n/50 (38:1359) y el header del comprador sigue en blanco', async ({ page }) => {
+  await preparar(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: /^Tu pedido llega en/ })).toBeVisible()
+
+  const encabezadoPaquete = page.locator('main header.bg-hc-n-50').first()
+  await expect(encabezadoPaquete).toHaveCSS('background-color', await colorDeToken(page, '--hc-n-50', 'backgroundColor'))
+  await expect(page.locator('header.sticky').first()).toHaveCSS('background-color', await colorDeToken(page, '--hc-n-0', 'backgroundColor'))
+  await expect(page.locator('footer').last()).toHaveCSS('background-color', await colorDeToken(page, '--hc-n-0', 'backgroundColor'))
+  await sinDesborde(page)
+})
 
 test('recuperar carrito a 390: tienda y "quedan N" con la forma de GET /cart/abandoned/recover (P11, 29:2036)', async ({ page }) => {
   await preparar(page)
