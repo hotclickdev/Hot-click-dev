@@ -1,5 +1,7 @@
 package com.hotclick.service;
 
+import com.hotclick.service.telegram.TelegramTexto;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,7 +107,7 @@ public class TelegramClienteBotService {
             recordarPanel(chatId, nuevo);
             borrarEntradaDelTurno(chatId);
         } catch (Exception e) {
-            log.error("[telegram-cliente] error enviando a chat {} — {}", chatId, e.getMessage());
+            log.error("[telegram-cliente] error enviando a chat {} — {}", chatId, TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -146,7 +148,7 @@ public class TelegramClienteBotService {
         try {
             post("deleteMessage", Map.of("chat_id", chatId, "message_id", borrar));
         } catch (Exception e) {
-            log.debug("[telegram-cliente] no se pudo borrar el mensaje {} — {}", borrar, e.getMessage());
+            log.debug("[telegram-cliente] no se pudo borrar el mensaje {} — {}", borrar, TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -180,7 +182,7 @@ public class TelegramClienteBotService {
         try {
             post("sendChatAction", Map.of("chat_id", chatId, "action", "typing"));
         } catch (Exception e) {
-            log.debug("[telegram-cliente] sendChatAction falló — {}", e.getMessage());
+            log.debug("[telegram-cliente] sendChatAction falló — {}", TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -190,7 +192,7 @@ public class TelegramClienteBotService {
         try {
             post("answerCallbackQuery", Map.of("callback_query_id", callbackQueryId));
         } catch (Exception e) {
-            log.warn("[telegram-cliente] answerCallbackQuery falló — {}", e.getMessage());
+            log.warn("[telegram-cliente] answerCallbackQuery falló — {}", TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -240,7 +242,7 @@ public class TelegramClienteBotService {
             if (bytes != null && bytes.length > maxBytes) return null;
             return bytes;
         } catch (Exception e) {
-            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, e.getMessage());
+            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, TelegramTexto.sinToken(e.getMessage()));
             return null;
         }
     }

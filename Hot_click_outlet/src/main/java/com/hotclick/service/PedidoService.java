@@ -8,6 +8,7 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.service.pedido.PedidoDetailMapper;
 import com.hotclick.service.pedido.PedidoManualFactory;
 import com.hotclick.service.pedido.PedidoNotificacionAppender;
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,8 +49,9 @@ public class PedidoService {
         String metodo = saved.getMetodoPago() != null ? saved.getMetodoPago() : "—";
         telegramService.enviar(String.format(
                 "🛒 *NUEVA COMPRA*\n\n*Cliente:* %s\n*Pedido:* %s\n*Total:* ₡%,d\n*Pago:* %s\n*Estado:* %s",
-                cliente, saved.getNumeroPedido(), saved.getTotalPedido() != null ? saved.getTotalPedido() : 0,
-                metodo, saved.getEstadoPedido()));
+                TelegramTexto.escaparMarkdown(cliente), TelegramTexto.escaparMarkdown(saved.getNumeroPedido()),
+                saved.getTotalPedido() != null ? saved.getTotalPedido() : 0,
+                TelegramTexto.escaparMarkdown(metodo), TelegramTexto.escaparMarkdown(saved.getEstadoPedido())));
         if (saved.getEmpresa() != null) {
             telegramNotificacionClienteService.notificarVenta(saved.getEmpresa().getId(),
                 saved.getNumeroPedido(), saved.getTotalPedido(), metodo, cliente, saved.getOrigen());

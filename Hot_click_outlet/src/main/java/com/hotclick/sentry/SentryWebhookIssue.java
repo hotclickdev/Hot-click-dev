@@ -1,5 +1,7 @@
 package com.hotclick.sentry;
 
+import com.hotclick.service.telegram.TelegramTexto;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -76,10 +78,10 @@ public final class SentryWebhookIssue {
 
     public String mensajeTelegram() {
         String prefijo = esErrorOFatal() ? "[ERROR]" : "[WARNING]";
-        String link = url.isBlank() ? "" : "\n*Ver en Sentry:* " + url;
+        String link = url.isBlank() ? "" : "\n*Ver en Sentry:* " + TelegramTexto.escaparMarkdown(url);
         return String.format(
                 "%s *ERROR EN PRODUCCION*\n\n*Detectado por:* Sentry\n*Nivel:* %s\n*Problema:* %s%s",
-                prefijo, nivel, titulo, link);
+                prefijo, TelegramTexto.escaparMarkdown(nivel), TelegramTexto.escaparMarkdown(titulo), link);
     }
 
     public String action() { return action; }
