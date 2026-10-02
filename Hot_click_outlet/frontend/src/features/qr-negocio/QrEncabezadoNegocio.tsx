@@ -19,7 +19,7 @@ export default function QrEncabezadoNegocio({ nombre, subtitulo, logoUrl, seguro
   return (
     <div
       role="banner"
-      className="flex flex-col gap-[10px] border-b border-[var(--hc-n-200)] bg-[var(--hc-n-0)] px-4 pb-[14px] pt-4"
+      className="flex flex-col gap-[10px] border-b border-hc-n-200 bg-hc-n-0 px-4 pb-[14px] pt-4"
     >
       <div className="flex items-center gap-3">
         {logoUrl ? (
@@ -27,23 +27,23 @@ export default function QrEncabezadoNegocio({ nombre, subtitulo, logoUrl, seguro
         ) : (
           <span
             aria-hidden="true"
-            className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-[var(--hc-blue-900)] font-display text-[16px] font-bold text-white"
+            className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-hc-blue-900 font-display text-[16px] font-bold text-white"
           >
             {inicialesNegocio(nombre)}
           </span>
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-px">
-          <p className="truncate font-display text-[17px] font-bold leading-[21px] text-[var(--hc-n-900)]">
+          <p className="truncate font-display text-[17px] font-bold leading-[21px] text-hc-n-900">
             {nombre}
           </p>
           {subtitulo ? (
-            <p className="truncate text-[12px] leading-[14px] text-[var(--hc-n-500)]">{subtitulo}</p>
+            <p className="truncate text-[12px] leading-[14px] text-hc-n-500">{subtitulo}</p>
           ) : null}
         </div>
       </div>
       <div className="flex items-center gap-[6px]">
         <img src={isotipo} alt="" className="size-[14px] object-contain" />
-        <p className="text-[11px] leading-[13px] text-[var(--hc-n-500)]">{seguro}</p>
+        <p className="text-[11px] leading-[13px] text-hc-n-500">{seguro}</p>
       </div>
     </div>
   )

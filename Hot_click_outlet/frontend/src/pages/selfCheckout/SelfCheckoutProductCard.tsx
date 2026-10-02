@@ -21,10 +21,10 @@ export default function SelfCheckoutProductCard({ producto, cantidad, onCambiar 
 
   return (
     <li
-      className={`flex items-center gap-3 overflow-hidden rounded-[14px] bg-[var(--hc-n-0)] ${
+      className={`flex items-center gap-3 overflow-hidden rounded-[14px] bg-hc-n-0 ${
         elegido
-          ? 'border-[1.5px] border-[var(--hc-blue-600)] p-[10px]'
-          : 'border border-[var(--hc-n-200)] p-[10px]'
+          ? 'border-[1.5px] border-hc-blue-600 p-[10px]'
+          : 'border border-hc-n-200 p-[10px]'
       }`}
     >
       {producto.imagenUrl ? (
@@ -32,22 +32,22 @@ export default function SelfCheckoutProductCard({ producto, cantidad, onCambiar 
       ) : (
         <span
           aria-hidden="true"
-          className="grid size-[68px] shrink-0 place-items-center rounded-[10px] bg-[var(--hc-n-100)] font-display text-[16px] font-bold text-[var(--hc-n-400)]"
+          className="grid size-[68px] shrink-0 place-items-center rounded-[10px] bg-hc-n-100 font-display text-[16px] font-bold text-hc-n-400"
         >
           {inicialesNegocio(nombre)}
         </span>
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
-        <p className="text-[14px] font-medium leading-4 text-[var(--hc-n-900)]">{nombre}</p>
+        <p className="text-[14px] font-medium leading-4 text-hc-n-900">{nombre}</p>
         {producto.categoria ? (
-          <p className="text-[12px] leading-[14px] text-[var(--hc-n-500)]">{producto.categoria}</p>
+          <p className="text-[12px] leading-[14px] text-hc-n-500">{producto.categoria}</p>
         ) : null}
-        <p className="font-display text-[15px] font-bold leading-[19px] text-[var(--hc-n-900)]">
+        <p className="font-display text-[15px] font-bold leading-[19px] text-hc-n-900">
           {fmt(producto.precio)}
         </p>
       </div>
       {elegido ? (
-        <div className="flex shrink-0 items-center gap-[10px] rounded-[10px] bg-[var(--hc-blue-50)] px-2 py-[6px]">
+        <div className="flex shrink-0 items-center gap-[10px] rounded-[10px] bg-hc-blue-50 px-2 py-[6px]">
           <button
             type="button"
             aria-label={t('pos.mesa.quitarA', { nombre })}
@@ -56,7 +56,7 @@ export default function SelfCheckoutProductCard({ producto, cantidad, onCambiar 
           >
             <img src={ICONOS_QR.cantidadMenos} alt="" className="size-4" />
           </button>
-          <span className="text-[14px] font-bold leading-4 text-[var(--hc-blue-600)]">{cantidad}</span>
+          <span className="text-[14px] font-bold leading-4 text-hc-blue-600">{cantidad}</span>
           <button
             type="button"
             aria-label={t('pos.mesa.agregarA', { nombre })}
@@ -71,7 +71,7 @@ export default function SelfCheckoutProductCard({ producto, cantidad, onCambiar 
           type="button"
           aria-label={t('pos.mesa.agregarA', { nombre })}
           onClick={() => onCambiar(producto, 1)}
-          className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-[var(--hc-red-500)]"
+          className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-hc-red-500"
         >
           <img src={ICONOS_QR.agregar} alt="" className="size-[18px]" />
         </button>

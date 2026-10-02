@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { colorDeToken, sinDesborde } from './helpers/medidasFigma'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -137,4 +138,36 @@ test.describe('QR de pago', () => {
     await expect(otra.getByRole('heading', { name: 'Pago recibido' })).toBeVisible()
     await expect(otra.getByText('Pagaste ₡10.500 a Bruma Café.')).toBeVisible()
   })
+})
+
+test.describe('Responsive y tokens (P07)', () => {
+  for (const ancho of [390, 1440]) {
+    test(`mesa y pago a ${ancho}: columna de 430 px como máximo, sin desborde y colores de SHELL`, async ({ page }) => {
+      const errores: string[] = []
+      page.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()) })
+      page.on('pageerror', (e) => errores.push(e.message))
+      await preparar(page)
+      await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 })
+
+      await page.goto('/checkout/qr/mesa1', { waitUntil: 'domcontentloaded' })
+      await page.getByRole('button', { name: 'Agregar Caja' }).click()
+      expect((await page.locator('main').boundingBox())?.width).toBe(Math.min(ancho, 430))
+      const enviar = page.getByRole('button', { name: 'Enviar pedido' })
+      await expect(enviar).toHaveCSS('background-color', await colorDeToken(page, '--hc-red-500', 'backgroundColor'))
+      await sinDesborde(page)
+
+      await enviar.click()
+      await page.getByRole('button', { name: /Realizar pedido/ }).click()
+      await expect(page.getByRole('heading', { name: '¡Pedido enviado!' })).toBeVisible()
+      const circulo = page.locator('section > span[aria-hidden="true"]').first()
+      await expect(circulo).toHaveCSS('background-color', await colorDeToken(page, '--hc-success-bg', 'backgroundColor'))
+      await sinDesborde(page)
+
+      await page.goto('/pos/pago/3f9a2c1b9999', { waitUntil: 'domcontentloaded' })
+      await expect(page.getByText('Total a pagar')).toBeVisible()
+      expect((await page.locator('main').boundingBox())?.width).toBe(Math.min(ancho, 430))
+      await sinDesborde(page)
+      expect(errores).toEqual([])
+    })
+  }
 })

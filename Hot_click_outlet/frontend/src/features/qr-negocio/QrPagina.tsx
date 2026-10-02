@@ -7,8 +7,8 @@ import type { ReactNode } from 'react'
  */
 export default function QrPagina({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <div className="min-h-dvh bg-[var(--hc-n-50)]">
-      <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-[var(--hc-n-50)]">
+    <div className="min-h-dvh bg-hc-n-50">
+      <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-hc-n-50">
         {children}
       </main>
     </div>

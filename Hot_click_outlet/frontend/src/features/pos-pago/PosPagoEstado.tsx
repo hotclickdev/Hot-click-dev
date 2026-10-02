@@ -33,7 +33,7 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar, token
       <QrResultado
         icono={
           config.icono ?? (
-            <span className="text-[var(--hc-red-500)]">
+            <span className="text-hc-red-500">
               <TrustGlyph tipo="alerta" className="size-[34px]" />
             </span>
           )
@@ -56,7 +56,7 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar, token
           <button
             type="button"
             onClick={() => setReporteAbierto(true)}
-            className="min-h-[46px] w-full rounded-[12px] border border-[var(--hc-n-200)] bg-[var(--hc-n-0)] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-[var(--hc-n-900)]"
+            className="min-h-[46px] w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-hc-n-900"
           >
             {t('pos.pago.reportarError')}
           </button>

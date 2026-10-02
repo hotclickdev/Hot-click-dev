@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (P06 SERVICIOS; antes P05 GIFT CARD, P04 CARRITO, P03 CHECKOUT, P02 PRODUCTO, P01 STORE, SYS/SHELL B5, B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (P07 QR; antes P06 SERVICIOS, P05 GIFT CARD, P04 CARRITO, P03 CHECKOUT, P02 PRODUCTO, P01 STORE, SYS/SHELL B5, B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -38,6 +38,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | P04 CARRITO (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). `/carrito` remedido a 390 y 1440: sin desborde ni errores de consola. `bg-hc-success-bg` en `PaqueteCarritoTarjeta` y `CodigosNotasCarrito`. Nuevo `cart-responsive.spec.ts` (2 casos). WhatsApp y guardar por correo en escritorio sin cambios (DECISIÓN HUMANA B14); «Vaciar pedido», «Sale de <provincia>» (backend) y `51:1820` siguen PARTIAL. `danger-bg` y `text-secondary` sin alias (P13). Contador sin cambio: 37 PASS / 53 PARTIAL. |
 | P05 GIFT CARD (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Paso 3 con tarjeta válida (`55:2220`) e inválida (`55:2284`) remedido a 390 y 1440: sin desborde ni errores de consola. Sin cambios de código: el contenido no disputado ya estaba. `checkout-responsive.spec.ts` suma 4 casos. D09 y D10 (chrome del paso 3) siguen como DECISIÓN HUMANA; el número previo al pago no existe hasta cobrar. `CheckoutPaidGiftCard` sin frame. Contador sin cambio: 37 PASS / 53 PARTIAL. |
 | P06 SERVICIOS (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). `/servicios` (inicio `28:1429`, formulario `28:1486`, garantía `28:1531`) remedido a 390 y 1440: sin desborde ni errores de consola, campos de 14 px. Tokens de SHELL en `ServiciosInicio`, `FormularioBusqueda` y `VistaGarantia`, mismo color. Nuevo `servicios-responsive.spec.ts` y helper `medidasFigma.ts` (también lo usa `checkout-responsive`). Presupuesto con rangos (REQUIERE_DECISION) y fotos/motivo de garantía (backend) siguen PARTIAL. Contador sin cambio: 37 PASS / 53 PARTIAL. |
+| P07 QR (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). QR de mesa y de pago remedidos a 390 (0 a 1 px contra `QR.md`) y 1440 (columna de 430 px): sin desborde ni errores de consola. 100 clases `var()` a tokens de SHELL en 13 componentes con frame. `qr-mesa-pago.spec.ts` suma 2 casos con `medidasFigma.ts`. Decisiones y backend de B16 siguen abiertos; correos sin tocar. INVENTORY decía «sin integrar en `base`»: corregido (merge `795d7d01`). Contador sin cambio: 37 PASS / 53 PARTIAL. |
 
 ## Ramas y worktrees
 

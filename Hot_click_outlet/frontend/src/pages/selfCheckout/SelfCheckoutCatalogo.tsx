@@ -22,8 +22,8 @@ export default function SelfCheckoutCatalogo({ productos, carrito, onCambiar }: 
 
   return (
     <>
-      <div className="flex flex-col gap-[10px] bg-[var(--hc-n-0)] px-4 pb-3">
-        <label className="flex items-center gap-2 rounded-[12px] bg-[var(--hc-n-100)] px-3 py-[10px]">
+      <div className="flex flex-col gap-[10px] bg-hc-n-0 px-4 pb-3">
+        <label className="flex items-center gap-2 rounded-[12px] bg-hc-n-100 px-3 py-[10px]">
           <img src={ICONOS_QR.buscar} alt="" className="size-[18px] shrink-0" />
           <input
             type="search"
@@ -31,7 +31,7 @@ export default function SelfCheckoutCatalogo({ productos, carrito, onCambiar }: 
             onChange={(e) => setTexto(e.target.value)}
             placeholder={t('pos.mesa.buscar')}
             aria-label={t('pos.mesa.buscar')}
-            className="hc-input-libre h-[18px] min-w-0 flex-1 bg-transparent p-0 text-[14px] leading-[18px] text-[var(--hc-n-900)] outline-none placeholder:text-[var(--hc-n-500)]"
+            className="hc-input-libre h-[18px] min-w-0 flex-1 bg-transparent p-0 text-[14px] leading-[18px] text-hc-n-900 outline-none placeholder:text-hc-n-500"
           />
         </label>
         {categorias.length > 0 ? (
@@ -49,7 +49,7 @@ export default function SelfCheckoutCatalogo({ productos, carrito, onCambiar }: 
       </div>
 
       {visibles.length === 0 ? (
-        <p className="px-4 py-16 text-center text-[14px] text-[var(--hc-n-500)]">
+        <p className="px-4 py-16 text-center text-[14px] text-hc-n-500">
           {productos.length === 0 ? t('pos.mesa.sinProductos') : t('pos.mesa.sinResultados')}
         </p>
       ) : (
@@ -76,8 +76,8 @@ function Chip({ activo, onClick, children }: Readonly<{ activo: boolean; onClick
       onClick={onClick}
       className={`shrink-0 whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium leading-[15px] ${
         activo
-          ? 'border-[var(--hc-blue-600)] bg-[var(--hc-blue-600)] text-white'
-          : 'border-[var(--hc-n-200)] bg-[var(--hc-n-0)] text-[var(--hc-n-900)]'
+          ? 'border-hc-blue-600 bg-hc-blue-600 text-white'
+          : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'
       }`}
     >
       {children}

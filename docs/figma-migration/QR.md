@@ -68,6 +68,18 @@ Por qué ninguno es PASS: no se probó en clientes reales (Gmail, Outlook, Apple
   - Cupón: Figma dice "Válido por 30 días… No acumulable"; el cupón no tiene vencimiento en el backend. Se conservan las condiciones reales (una sola compra, una vez por persona).
   - Código de verificación: el asunto de Figma lleva el código ("Tu código de verificación: 482 913"). **No se aplicó**: el asunto se ve en la pantalla de bloqueo y el código ya estaba excluido a propósito (hay un test). Se quitó el saludo con el nombre (Figma no lo dibuja). El código sale en dos grupos de 3 con un margen, sin espacio copiable.
 
+## P07 · implementación de QR (2-oct-2026)
+
+Sin acceso directo a Figma. Referencias `29:1650`, `29:1741`, `29:1781`, `29:1830`, `29:1888` y `29:1913`, con las posiciones registradas arriba.
+
+- **Remedido** con Playwright a 390 y a 1440 (`qr-mesa-pago.spec.ts`, describe «Responsive y tokens (P07)»): sin desborde horizontal ni errores de consola.
+  - 390, mesa: encabezado de 99, buscador 358x38 en y=99, «Enviar pedido» en 245/774 de 40 (Figma 244/774: 1 px). Pedido enviado: círculo de 72 en y=131 con `--hc-success-bg`.
+  - 390, pago: botón y=752 de 46 (igual). El bloque del monto mide 117 px desde y=99 y el importe de 40 px está en y=142; la cifra «monto 135» de arriba no dice si es alto o posición, así que no se puede contrastar sin Figma.
+  - 1440: columna de 430 px centrada (x=505) en mesa y pago, sin frame de escritorio.
+- **Tokens:** 100 clases `*-[var(--hc-…)]` pasan a los alias de SHELL (`bg-hc-n-0`, `text-hc-n-900`, `border-hc-n-200`, `bg-hc-blue-50`, `bg-hc-red-500`, etc.) en los 13 componentes con frame: `QrEncabezadoNegocio`, `QrPagina`, `QrResultado` (el `style` del círculo pasa a clase), `PosPagoCta`, `PosPagoEstado`, `PosPagoMetodo`, `PosPagoMonto`, `PosPagoPedido`, `PosPagoSinpe`, `SelfCheckoutCatalogo`, `SelfCheckoutExito`, `SelfCheckoutFab` y `SelfCheckoutProductCard`. El color calculado es el mismo; el spec compara «Enviar pedido» y el círculo con el token.
+- **No se tocaron** (sin frame): `SelfCheckoutFormulario`, `SelfCheckoutLoading`, `SelfCheckoutError`, `PosPagoOnvoEmbed` y `PosPagoReporteModal`. `--hc-focus-ring` y `--hc-shadow-1` no tienen alias: siguen con `var()`.
+- **Sin cambio, siguen PARTIAL** (B16): paso de confirmación de mesa (DECISIÓN HUMANA), quién elige el método (DECISIÓN HUMANA), número de cobro y caja (BACKEND), formulario SINPE sin frame (FIGMA PENDIENTE, D15), comprobante y correo del pago (BACKEND), «Escanear otro QR» (DECISIÓN HUMANA). Los 7 correos no se tocaron.
+
 ## Funcionalidad preservada
 
 Lectura del QR por token, catálogo y pedido de mesa (`/qr/:token`), sesión de pago (`/pos/qr/pago/:token`), SINPE con Onvo y espera por sondeo, tarjeta con formulario embebido y alternativa hosted, redirección y regreso con `?resultado=exito|cancelado`, reintento, reporte de problema por WhatsApp, estados `PAGADO`, `EXPIRADO` y `CANCELADO`, y los envíos de correo con sus asuntos (ahora por builder). La cuenta regresiva solo informa: nunca decide que el cobro venció; al llegar a cero vuelve a pedir el estado al servidor. Si la fecha del servidor (sin zona) no es creíble (pasada o a más de 30 minutos), no se dibuja.
