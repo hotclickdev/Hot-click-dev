@@ -41,16 +41,6 @@ export type CheckoutPayload = {
   [key: string]: unknown
 }
 
-/** Un paquete dentro de la respuesta de checkout — un pago total, un envío por paquete. */
-export type PaqueteRespuesta = {
-  numeroPedido?: string
-  tienda?: string
-  origen?: string
-  metodoEnvio?: string
-  costoEnvio?: number
-  total?: number
-}
-
 /** Línea de pedido en respuestas admin / detalle. */
 export type ItemPedido = {
   productoId?: Id

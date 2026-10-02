@@ -346,3 +346,70 @@ Verificación:
   - aviso de idioma solo al cambiar.
 - Sin las correcciones fallan 8 de esos 13 casos.
 - Fallan igual que en la base: `smoke:131`, `smoke:237`, `tienda-checkout:77` y `catalogo-iconos:67`.
+
+## P20 — limpieza (2-oct-2026)
+
+Restos de la migración Figma, quitados con prueba de que nadie los usa. Herramienta: `npx --yes knip@5` (no se instaló nada en el repo; `package.json` y el lockfile siguen igual), con cada hallazgo confirmado por búsqueda en `src`, `tests`, `scripts`, configs e `index.html`.
+
+### Quitado
+
+- **37 archivos sin importadores:**
+  - `App.css`, `layouts/AuthLayout.tsx`, `hooks/useScrollReveal.ts`;
+  - los asistentes de IA viejos que reemplazó el `ChatModal` global (`components/ai/` CartAssistant, CheckoutAssistant, ProductDetailAssistant, ProductsAssistantPanel, AICartSection, AIProductSection, AISolicitudEspecial(+Fields), `productAdvisorChips` y sus carpetas `cartAssistant/`, `checkoutAssistant/`, `productDetailAssistant/`, `productsAssistant/`);
+  - `ui/Section.tsx`, `auth/authUi.ts`, `catalogo/CatalogBrandLogo.tsx`, `checkout/ExpressCheckout.tsx`, `checkout/SmartField.tsx`;
+  - las secciones de la Emprende vieja (`EmprendeBeneficios`, `Fases`, `Formulario`, `Galeria`, `Planes`, `Proceso`);
+  - `perfil/StarPicker.tsx` (Servicios usa el suyo) y `comprador/estados/iconosAcceso.tsx`.
+- **Exportaciones muertas** (sin ninguna referencia):
+  - `statusColor` (+ `STATUS_COLOR`), `saveGustos` (marcada `@deprecated`), `formatPhone`, `ESTADOS_SIN_ACCION`, `colorEstadoPedido` (+ tipo), `stockDesdeProducto`, `useCookieConsent`, `IcoReloj`;
+  - `IconoCarrito`, `IconoBandeja`, `IconoAlerta`, `IconoDescargar` de `iconosEstado`;
+  - `esRutaEmprender`, `COND_OPTIONS`, `getSrcSet`, `hrefCarritoCheckout`, `StripeIcon`, `GlobeIcon`, `FOTOS_FASES`, `FOTOS_PROCESO`, `WhatsIconSm`, `Trust*SVG` (4);
+  - tipos `RegistroPayload`, `EstadoCodigo`, `AxiosParams`, `PaqueteRespuesta`, `RegisterFlow`;
+  - el parámetro sin uso `_opts` de `loadGustos()`.
+- **CSS (`index.css`, −374 líneas):** 63 reglas y 10 `@keyframes` de clases sin uso literal en `src`, `tests` ni `index.html`:
+  - `glass*`, `text-gradient*`, `surface-2`;
+  - `hc-card*`, `hc-reveal*`, `hc-delay-*`, `hc-step-*`, `hc-float*`, `hc-slide-up`, `hc-scale-in`, `hc-glow-breathe`;
+  - `hc-sticky-cta`, `hc-badge`, `hc-divider`, `hc-nav-link`, `hc-nav-inner`, `hc-navbar-scrolled`, `hc-product-*`, `hc-progress`, `hc-quick-add`, `hc-underline-hover`, `hc-animate-gpu`, `hc-shadow-premium`, `hc-footer-divider`, `hc-modal-safe-bottom`;
+  - `hc-mobile-menu` (menú hamburguesa viejo).
+- **i18n (es/en/pt):** 5 claves que solo usaban los archivos borrados: `footer.inicioAria`, `products.condNuevo`, `products.condComoNuevo`, `products.condUsado` y `products.allConditions`. No hay acceso dinámico a esos prefijos. La paridad de claves sigue en verde.
+- **Test helpers:** se quitó el tipo sin uso `OpcionesSesion` de `tests/helpers/accFixtures.ts`, y seis constantes que solo se usan dentro del archivo dejaron de exportarse.
+
+### Specs viejos
+
+El shell Figma (`f9aa72e4`) reemplazó la UI que probaban, y en `src` no queda nada de ella: no existen `home-jobs-heading` ni `#como-comprar`, no hay `role="menu"` ni botón «Menú», y `.hc-mobile-menu` solo aparecía en CSS.
+
+| Spec | Decisión |
+|---|---|
+| `nav-mas.spec.ts` (2) | **Borrado.** Probaba el menú «Más» de escritorio y el hamburguesa móvil. |
+| `home-jobs.spec.ts` | **Quitados 4 casos** de la Home «Compra · Vende · Emprende». Se queda el caso vigente «sin emojis» (✦). |
+| `nav-categorias:83` | **Actualizado** al camino actual: barra inferior «Categorías» (`43:1530`) → mosaico → `/productos?cat=`. Mock de `/categorias/publicas/con-productos`. Mismas aserciones de filtro. Pasa. |
+
+### Documentado sin tocar
+
+- **Paneles, POS y backend:** archivos sin uso en `admin`, POS, `agentes`, `mesas`, `prototipo`, `planes`, `sellerAdminRoutes`, `SellerPagePad`, `usePermission`, `usePlan`, `sw.ts` (PWA) y `scripts/*.mjs`. También las clases admin `hc-filter-row`, `hc-kpi-grid`, `hc-table-scroll` y `hc-admin-tab-label`.
+- **Exportaciones de panel o ambiguas:**
+  - `rolPaths.mapearPrototipo`, `routeGuards.AdminRoute`;
+  - `offlineDb.encolarOperacion` y `guardarProductCache`;
+  - `useBranding.invalidateBrandingCache`, `recoleccionTipos.ESTADOS_RECOLECCION`, `aiChatBehavior.readAiBehavior`.
+- **Sin uso pero con valor futuro:**
+  - `hooks/useStockSubscription.ts` (SSE de stock del backend);
+  - `theme/claudeclickTokens.ts` (notas Figma/super-admin);
+  - `ui/SellerBadge.tsx` (Brand Book).
+- **Dependencias sin uso según knip:** `react-qr-code` (dep) y `bcryptjs` (devDep). No se tocó `package.json`.
+- **Lo demás que marca knip:**
+  - ~190 exportaciones y ~170 tipos que solo se usan dentro de su archivo; quitarles `export` es churn sin valor;
+  - las claves `emprende.*` que se leen con `t(\`emprende.${…}\`)`.
+- **`console.*`:** los de `tests/acc-medidas`, `shell-medicion` y `global-setup` son la salida del informe. El `console.debug` de `admin/GlobalSearch` es del panel. No queda código comentado ni `debugger` en el comprador.
+- **ESLint, ya presente en HEAD:** `react-refresh/only-export-components` en `CookieBanner.tsx` (bajó de 3 a 2).
+
+### Verificación
+
+- Typecheck limpio en app y e2e.
+- ESLint de los archivos tocados: sin errores nuevos.
+- Vitest: 533/533.
+- `vite build` OK, con `--outDir` en `%TEMP%`. El `outDir` del config es `../src/main/resources/static`, que está versionado, con `emptyOutDir`: una primera build sin `--outDir` lo sobrescribió y se restauró a HEAD con aprobación.
+- knip de nuevo:
+  - antes → después: 114 → 77 archivos, 224 → 193 exportaciones, 179 → 172 tipos;
+  - **ningún huérfano nuevo**.
+- Playwright dirigido (26 specs): 155 pasan y 15 se saltan.
+  - Fallan igual que en la base: `smoke:131`, `smoke:237`, `catalogo-iconos:67` y `emprende:51`.
+  - `nav-categorias` ahora pasa (2/2).

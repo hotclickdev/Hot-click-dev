@@ -1,6 +1,5 @@
 import type { TFunction } from 'i18next'
 import type { Producto } from '@/types/producto'
-import type { BadgeProps } from '@/components/ui/Badge'
 import { formatPrice } from '@/utils/format'
 
 export type TipoVideo = 'youtube' | 'tiktok' | 'instagram'
@@ -76,16 +75,6 @@ export function tabsDesdeProducto(product: Producto, t: TFunction): TabProducto[
     product.comoUsar?.trim()        ? { id: 'como-usar',        label: t('product.howToUseTab') } : null,
   ]
   return tabs.filter((tab): tab is TabProducto => tab != null)
-}
-
-export function stockDesdeProducto(product: Producto, t: TFunction): { badge: NonNullable<BadgeProps['variant']>; label: string } {
-  let badge: NonNullable<BadgeProps['variant']> = 'success'
-  if (product.stock === 0) badge = 'danger'
-  else if (product.stock <= 3) badge = 'warning'
-  let label = t('product.inStock')
-  if (product.stock === 0) label = t('product.outOfStock')
-  else if (product.stock <= 3) label = t('product.lowStock', { count: product.stock })
-  return { badge, label }
 }
 
 /** Producto personalizado con precio a cotizar: no se compra directo, se pide un encargo. */

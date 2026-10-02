@@ -261,36 +261,11 @@ html.hc-teclado :is(input, textarea, select):focus-visible {
 }
 
 @layer utilities {
-  .glass {
-    backdrop-filter: blur(20px) saturate(160%);
-    background-color: var(--hc-glass-bg);
-    border: 1px solid var(--hc-glass-border);
-  }
-
-  .glass-strong {
-    backdrop-filter: blur(32px) saturate(180%);
-    background-color: var(--hc-glass-strong-bg);
-    border: 1px solid var(--hc-glass-strong-border);
-  }
-
-  .text-gradient {
-    color: var(--hc-text);
-  }
-
-  /* El manual no usa texto en degradado: titulares sólidos en Sora */
-  .text-gradient-accent {
-    color: var(--hc-text);
-  }
 
   .glow { box-shadow: 0 0 40px rgba(23, 71, 168, 0.12); }
 
   .surface {
     background-color: var(--hc-surface);
-    border: 1px solid var(--hc-border);
-  }
-
-  .surface-2 {
-    background-color: var(--hc-surface-2);
     border: 1px solid var(--hc-border);
   }
 }
@@ -299,56 +274,10 @@ html.hc-teclado :is(input, textarea, select):focus-visible {
    ANIMATIONS & KEYFRAMES
    ═══════════════════════════════════════════════════════ */
 
-@keyframes hc-float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33%       { transform: translateY(-12px) rotate(1.5deg); }
-  66%       { transform: translateY(-6px) rotate(-1deg); }
-}
-@keyframes hc-float-b {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50%       { transform: translateY(-14px) rotate(-2deg); }
-}
 @keyframes hc-shimmer-load {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
-@keyframes hc-slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes hc-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes hc-scale-in {
-  from { opacity: 0; transform: scale(0.92); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes hc-pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.6); opacity: 0.5; }
-}
-@keyframes hc-glow-breathe {
-  0%, 100% { box-shadow: 0 0 20px color-mix(in srgb, var(--hc-accent) 20%, transparent); }
-  50%       { box-shadow: 0 0 44px color-mix(in srgb, var(--hc-accent) 40%, transparent); }
-}
-@keyframes hc-border-spin {
-  to { transform: rotate(360deg); }
-}
-@keyframes hc-count-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes hc-gradient-shift {
-  0%, 100% { background-position: 0% center; }
-  50%       { background-position: 100% center; }
-}
-
-.hc-float         { animation: hc-float   5s ease-in-out infinite; }
-.hc-float-b       { animation: hc-float-b 6.5s ease-in-out infinite; }
-.hc-slide-up      { animation: hc-slide-up 0.4s ease-out both; }
-.hc-scale-in      { animation: hc-scale-in 0.35s ease-out both; }
-.hc-glow-breathe  { animation: hc-glow-breathe 2.5s ease-in-out infinite; }
 
 /* ═══════════════════════════════════════════════════════
    SKELETON LOADING
@@ -413,14 +342,6 @@ html.hc-teclado :is(input, textarea, select):focus-visible {
 html.dark .hc-btn[disabled], html.dark .hc-btn:disabled {
   background: var(--hc-surface-raised);
   color: var(--hc-text-disabled);
-}
-
-/* ── Sticky CTA bar (ProductDetail): sits above BottomNav on mobile ── */
-.hc-sticky-cta {
-  bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
-}
-@media (min-width: 768px) {
-  .hc-sticky-cta { bottom: 0; }
 }
 
 /* ── Modal close button hover ── */
@@ -498,42 +419,6 @@ html.dark .hc-btn[disabled], html.dark .hc-btn:disabled {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CARD SYSTEM — Brand Book §5.2: borde 1px, radio 16,
-   sin sombra en reposo; hover shadow-2.
-   ═══════════════════════════════════════════════════════ */
-
-.hc-card {
-  background: var(--hc-surface);
-  border: 1px solid var(--hc-border);
-  border-radius: var(--hc-r-lg);
-  transition: border-color var(--hc-dur-base) var(--hc-ease),
-              box-shadow var(--hc-dur-base) var(--hc-ease);
-  position: relative;
-}
-.hc-card:hover {
-  border-color: var(--hc-border-strong);
-  box-shadow: var(--hc-shadow-2);
-}
-.hc-card-glow:hover {
-  border-color: color-mix(in srgb, var(--hc-accent) 42%, transparent);
-  box-shadow: var(--hc-shadow-2);
-}
-
-/* Accent top-line that appears on hover */
-.hc-card-accent-line::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 10%; right: 10%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--hc-accent), transparent);
-  border-radius: 0 0 4px 4px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
-}
-.hc-card-accent-line:hover::before { opacity: 1; }
-
-/* ═══════════════════════════════════════════════════════
    INPUT SYSTEM — Brand Book cap. 7.2: alto 40px, radio 10,
    borde neutro 300; foco azul 500 + anillo azul 200;
    error rojo 500.
@@ -574,88 +459,6 @@ html.dark .hc-input:focus {
   border-color: var(--hc-red-500);
   box-shadow: 0 0 0 2px var(--hc-red-200);
 }
-
-/* ═══════════════════════════════════════════════════════
-   BADGE / PILL — punto + texto (cap. 7)
-   ═══════════════════════════════════════════════════════ */
-
-.hc-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.3rem 0.875rem;
-  border-radius: var(--hc-r-full);
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: var(--hc-info-bg);
-  border: 1px solid color-mix(in srgb, var(--hc-info) 24%, transparent);
-  color: var(--hc-info);
-}
-
-/* ═══════════════════════════════════════════════════════
-   SECTION DIVIDER
-   ═══════════════════════════════════════════════════════ */
-
-.hc-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--hc-border), transparent);
-  margin: 0;
-  border: none;
-}
-
-/* ═══════════════════════════════════════════════════════
-   NAVBAR ACTIVE INDICATOR
-   ═══════════════════════════════════════════════════════ */
-
-.hc-nav-link {
-  position: relative;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  transition: color 0.2s ease, background 0.2s ease;
-  color: var(--hc-muted);
-  text-decoration: none;
-}
-.hc-nav-link::after {
-  content: '';
-  position: absolute;
-  bottom: -2px; left: 50%; right: 50%;
-  height: 2px;
-  border-radius: 9999px;
-  background: var(--hc-accent);
-  transition: left 0.25s ease, right 0.25s ease, opacity 0.25s ease;
-  opacity: 0;
-}
-.hc-nav-link:hover { color: var(--hc-text); background: var(--hc-surface-2); }
-.hc-nav-link.active { color: var(--hc-text); }
-.hc-nav-link.active::after { left: 20%; right: 20%; opacity: 1; }
-
-/* ═══════════════════════════════════════════════════════
-   PRODUCT IMAGE CONTAINER
-   ═══════════════════════════════════════════════════════ */
-
-.hc-product-img {
-  position: relative;
-  overflow: hidden;
-  background: var(--hc-surface-2);
-}
-.hc-product-img::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 50%;
-  background: linear-gradient(to top, var(--hc-surface), transparent);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.hc-product-img:hover::after { opacity: 0; }
-
-/* Image zoom on parent hover */
-.hc-product-img img {
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.group:hover .hc-product-img img { transform: scale(1.07); }
 
 /* ── Wordmark bicolor del logo (§2.1): Hot rojo + Click azul, Sora 800 ── */
 .hc-wordmark {
@@ -750,16 +553,6 @@ html.dark .hc-isotipo-placa {
     border-color: var(--hc-border);
     color: var(--hc-text);
   }
-}
-
-/* — Navbar scrolled — */
-:root .hc-navbar-scrolled {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-}
-
-/* — Mobile menu — */
-:root .hc-mobile-menu {
-  background-color: var(--hc-bg) !important;
 }
 
 /* — Bottom nav — */
@@ -931,8 +724,6 @@ html.dark footer:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin
   background-color: unset !important;
   border-color: unset !important;
 }
-html.dark .hc-navbar-scrolled { background-color: rgba(14,17,22,0.95) !important; }
-html.dark .hc-mobile-menu     { background-color: var(--hc-bg) !important; }
 html.dark .hc-bottom-nav      { background-color: rgba(14,17,22,0.97) !important; border-top-color: var(--hc-border) !important; }
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea,
@@ -1038,147 +829,6 @@ html.high-contrast :is(.hc-sistema-theme, .hc-superadmin-theme, .hc-seller-theme
   --hc-glass-border: var(--hc-a11y-glass-border);
 }
 
-/* ═══════════════════════════════════════════════════════
-   SCROLL PROGRESS BAR — Rojo Hot sólido
-   ═══════════════════════════════════════════════════════ */
-
-.hc-progress {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  z-index: 60;
-  transform-origin: 0% 50%;
-  background: var(--hc-primary);
-  will-change: transform;
-  pointer-events: none;
-  border-radius: 0 2px 2px 0;
-}
-
-/* ═══════════════════════════════════════════════════════
-   SCROLL REVEAL SYSTEM (driven by useScrollReveal hook)
-   ═══════════════════════════════════════════════════════ */
-
-.hc-reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hc-reveal.hc-revealed {
-  opacity: 1;
-  transform: none;
-}
-
-.hc-reveal-scale {
-  opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hc-reveal-scale.hc-revealed {
-  opacity: 1;
-  transform: none;
-}
-
-/* Stagger delay helpers */
-.hc-delay-1 { transition-delay: 80ms; }
-.hc-delay-2 { transition-delay: 160ms; }
-.hc-delay-3 { transition-delay: 240ms; }
-.hc-delay-4 { transition-delay: 320ms; }
-
-/* ═══════════════════════════════════════════════════════
-   STEP CARD HOVER (How to buy)
-   ═══════════════════════════════════════════════════════ */
-
-.hc-step-card {
-  transition:
-    transform    0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow   0.3s ease,
-    border-color 0.25s ease;
-}
-.hc-step-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--hc-shadow-2);
-  border-color: color-mix(in srgb, var(--hc-accent) 38%, transparent) !important;
-}
-.hc-step-card:hover .hc-step-icon {
-  box-shadow: 0 0 20px color-mix(in srgb, var(--hc-accent) 30%, transparent);
-}
-
-.hc-step-icon {
-  transition: box-shadow 0.3s ease;
-}
-
-/* ═══════════════════════════════════════════════════════
-   MULTI-LAYER SHADOW SYSTEM
-   ═══════════════════════════════════════════════════════ */
-
-.hc-shadow-premium {
-  box-shadow: var(--hc-shadow-1);
-}
-.hc-shadow-premium:hover {
-  box-shadow: var(--hc-shadow-2);
-}
-
-/* ═══════════════════════════════════════════════════════
-   NAVBAR HEIGHT TRANSITION
-   ═══════════════════════════════════════════════════════ */
-
-.hc-nav-inner {
-  transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* ═══════════════════════════════════════════════════════
-   ANIMATED LINK UNDERLINE
-   ═══════════════════════════════════════════════════════ */
-
-.hc-underline-hover {
-  position: relative;
-  display: inline-flex;
-}
-.hc-underline-hover::after {
-  content: '';
-  position: absolute;
-  bottom: -1px; left: 0; right: 0;
-  height: 1px;
-  background: var(--hc-accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hc-underline-hover:hover::after { transform: scaleX(1); }
-
-/* ═══════════════════════════════════════════════════════
-   PERFORMANCE HINTS
-   ═══════════════════════════════════════════════════════ */
-
-.hc-animate-gpu {
-  will-change: transform;
-  transform: translateZ(0);
-}
-
-/* ── Quick-add overlay on product cards ── */
-.hc-card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.12) 55%, transparent 85%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.group:hover .hc-card-overlay {
-  opacity: 1;
-}
-.hc-quick-add {
-  transform: translateY(110%);
-  opacity: 0;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-}
-.group:hover .hc-quick-add {
-  transform: translateY(0);
-  opacity: 1;
-}
-
 /* ── Hide scrollbar ── */
 .scrollbar-hide {
   -ms-overflow-style: none;
@@ -1215,15 +865,6 @@ html.dark select:-webkit-autofill {
   transition: background-color 99999s ease-in-out 0s;
 }
 
-/* ── Product name — hover link azul (cap. 3.5) ── */
-.hc-product-name {
-  color: var(--hc-text);
-  transition: color 0.2s ease;
-}
-.group:hover .hc-product-name {
-  color: var(--hc-accent);
-}
-
 /* ── Input adaptive — usa variables del tema ── */
 .hc-input-label {
   color: var(--hc-text);
@@ -1240,16 +881,6 @@ html.dark select:-webkit-autofill {
 .hc-input-error {
   color: var(--hc-danger);
   font-size: 0.75rem;
-}
-
-/* ── Card image container default bg ── */
-html:not(.dark) .hc-product-img {
-  background-color: var(--hc-n-100);
-}
-
-/* ── Footer refinements ── */
-.hc-footer-divider {
-  border-top: 1px solid var(--hc-border);
 }
 
 /* ── react-international-phone theme override ── */
@@ -1322,11 +953,6 @@ html:not(.dark) .hc-product-img {
   .hc-admin-tab-label {
     display: none;
   }
-}
-
-/* Safe-area bottom para modales en iOS */
-.hc-modal-safe-bottom {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
 /* Prevenir zoom en inputs iOS (paneles, POS, portales).

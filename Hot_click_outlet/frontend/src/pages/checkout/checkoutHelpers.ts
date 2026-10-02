@@ -77,11 +77,6 @@ export type OpcionEnvio = {
   needsAddress: boolean
 }
 
-export function formatPhone(v: string): string {
-  const d = v.replace(/\D/g, '').slice(0, 8)
-  return d.length >= 5 ? `${d.slice(0, 4)}-${d.slice(4)}` : d
-}
-
 /**
  * Retiro en tienda solo si el carrito entero es de una bodega que lo permite.
  */

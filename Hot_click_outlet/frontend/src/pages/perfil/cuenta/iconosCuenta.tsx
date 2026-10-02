@@ -31,7 +31,6 @@ export const IcoPin = ({ size }: Tam) => <Trazo size={size}><path d="M12 21s7-6.
 export const IcoMas = ({ size = 18 }: Tam) => <Trazo size={size} ancho={2}><path d="M12 5v14M5 12h14" /></Trazo>
 export const IcoSalir = ({ size }: Tam) => <Trazo size={size}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></Trazo>
 export const IcoChevron = ({ size = 18 }: Tam) => <Trazo size={size} ancho={2}><path d="m9 18 6-6-6-6" /></Trazo>
-export const IcoReloj = ({ size }: Tam) => <Trazo size={size}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Trazo>
 export const IcoWhatsapp = ({ size }: Tam) => <Trazo size={size}><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.7-5A8.5 8.5 0 1 1 21 11.5z" /></Trazo>
 export const IcoExterno = ({ size = 18 }: Tam) => <Trazo size={size} ancho={2}><path d="M14 4h6v6M20 4l-9 9" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></Trazo>
 export const IcoCamara = ({ size }: Tam) => <Trazo size={size}><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><circle cx="12" cy="13.5" r="3.5" /></Trazo>

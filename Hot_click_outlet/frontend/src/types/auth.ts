@@ -25,13 +25,6 @@ export type JwtClaims = {
   rol?: RolUsuario | null
 }
 
-export type RegistroPayload = {
-  correo?: string
-  contrasena?: string
-  nombre?: string
-  [key: string]: unknown
-}
-
 /** Solo lo que vive en localStorage (hotclick-auth). Sin refreshToken. */
 export type AuthPersistido = {
   token?: string | null

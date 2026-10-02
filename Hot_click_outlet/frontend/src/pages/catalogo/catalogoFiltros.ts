@@ -42,20 +42,6 @@ export const STOCK_OPTIONS: FiltroOption[] = [
 
 
 
-export const COND_OPTIONS: FiltroOption[] = [
-
-  { value: '',           labelKey: 'products.allConditions' },
-
-  { value: 'NUEVO',      labelKey: 'products.condNuevo' },
-
-  { value: 'COMO_NUEVO', labelKey: 'products.condComoNuevo' },
-
-  { value: 'USADO',      labelKey: 'products.condUsado' },
-
-]
-
-
-
 type CategoryScopeInput = string | number | boolean | null | undefined
 
 

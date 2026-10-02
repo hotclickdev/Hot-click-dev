@@ -1,8 +1,5 @@
 import { formatPrice } from '@/utils/format'
 
-/** Estados que manejan `ejecutarValidarGiftCard` / `ejecutarValidarCupon`. */
-export type EstadoCodigo = 'idle' | 'loading' | 'valid' | 'invalid'
-
 /**
  * Borde del campo de código según el Figma (55:2220 válido · 55:2284 inválido):
  * éxito en verde, error en rojo, y el borde neutro del sistema en reposo.

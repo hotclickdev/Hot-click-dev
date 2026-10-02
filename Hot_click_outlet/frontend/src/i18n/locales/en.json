@@ -84,8 +84,7 @@
     "ctaRegistro": "Register your business",
     "seguirIg": "Follow HotClick on Instagram",
     "seguirFb": "Follow HotClick on Facebook",
-    "seguirTt": "Follow HotClick on TikTok",
-    "inicioAria": "HotClick — home"
+    "seguirTt": "Follow HotClick on TikTok"
   },
   "a11y": {
     "panel": "Accessibility",
@@ -685,11 +684,7 @@
     "results": "results",
     "searchByName": "Search by name",
     "featured": "Featured",
-    "condNuevo": "New",
-    "condComoNuevo": "Like new",
-    "condUsado": "Used",
     "all": "All",
-    "allConditions": "All",
     "condition": "Condition",
     "availability": "Availability",
     "price": "Price (₡)",

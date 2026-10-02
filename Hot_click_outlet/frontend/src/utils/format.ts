@@ -55,15 +55,3 @@ const CONDITION_VARIANT: Record<string, string> = {
 
 export const conditionVariant = (cond: string) =>
   CONDITION_VARIANT[cond] ?? 'default'
-
-const STATUS_COLOR: Record<string, string> = {
-  PENDIENTE: 'warning',
-  ACTIVO: 'success',
-  INACTIVO: 'default',
-  COMPLETADO: 'success',
-  DESPACHADO: 'accent',
-  ENTREGADO: 'success',
-  CANCELADO: 'danger',
-}
-
-export const statusColor = (estado: string) => STATUS_COLOR[estado] ?? 'default'

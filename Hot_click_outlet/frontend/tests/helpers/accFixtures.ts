@@ -22,9 +22,9 @@ export const FOTOS = {
 
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url')
 /** JWT de prueba con exp lejano: el guard de rutas solo mira la vigencia, la firma no se valida en el cliente. */
-export const TOKEN_PRUEBA = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '7', exp: 4102444800 })}.firma`
+const TOKEN_PRUEBA = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '7', exp: 4102444800 })}.firma`
 
-export const USUARIO = {
+const USUARIO = {
   id: 7,
   nombre: 'María Rojas Solano',
   correo: 'maria.rojas@correo.com',
@@ -40,7 +40,7 @@ const item = ({ nombre, precio, foto, tienda, cantidad = 1 }: ItemPrueba) => ({
 const bodega = (provincia: string) => ({ id: 1, nombreBodega: 'Bodega', provincia })
 
 /** Pedidos con la forma que devuelve GET /pedidos/usuario/:id (items con producto, bodega con provincia). */
-export const PEDIDOS = [
+const PEDIDOS = [
   { id: 1042, numeroPedido: 'ORD-10482', fechaPedido: '2026-09-24T10:00:00', estadoPedido: 'ENVIADO', totalPedido: 33400, grupoPago: 'GRP-1042', numeroGuia: 'CR123456789CR', fechaEnvio: '2026-09-25T09:00:00', urlTracking: 'https://correos.go.cr/rastreo/CR123456789CR', metodoEnvio: 'ENVIO_NORMAL_GAM', costoEnvio: 4000, metodoPago: 'SINPE Móvil', fechaEntregaEstimada: '2026-09-29', bodega: bodega('San José'),
     items: [item({ nombre: 'Sofá de sala dos plazas', precio: 17500, foto: FOTOS.sofa, tienda: 'Casa Luna 506' }), item({ nombre: 'Auriculares over-ear', precio: 11900, foto: FOTOS.auriculares, tienda: 'Casa Luna 506' })] },
   { id: 1043, numeroPedido: 'ORD-10482', fechaPedido: '2026-09-24T10:00:00', estadoPedido: 'EN_PREPARACION', totalPedido: 36000, grupoPago: 'GRP-1042', metodoEnvio: 'ENVIO_NORMAL_GAM', costoEnvio: 4000, metodoPago: 'SINPE Móvil', bodega: bodega('Cartago'),
@@ -60,24 +60,22 @@ export const SOLICITUDES = [
 ]
 
 /** Forma real de GET /testimonios/productos-para-resenar (sin tienda ni fecha: salen del pedido por `pedidoId`). */
-export const PARA_RESENAR = [
+const PARA_RESENAR = [
   { productoId: 501, nombre: 'Sérum facial de día', imagenUrl: FOTOS.serum, pedidoId: 1021, resenasEnviadas: 0, puedeResenar: true },
   { productoId: 502, nombre: 'Zapatos running rojo', imagenUrl: FOTOS.zapatos, pedidoId: 1021, resenasEnviadas: 0, puedeResenar: true },
 ]
 
 /** Forma real de GET /testimonios/mis-testimonios. */
-export const MIS_TESTIMONIOS = [
+const MIS_TESTIMONIOS = [
   { id: 1, tipo: 'RESENA', productoId: 9, productoNombre: 'Taza personalizada con nombre y color', comentario: 'Quedó igualita al diseño y llegó bien empacada. Se la regalé a mi mamá y le encantó.', calificacion: 5, estado: 'APROBADO', fechaCreacion: '2026-09-27T10:00:00', productoImagenUrl: FOTOS.taza },
 ]
 
-export const PRODUCTOS_FAVORITOS = [
+const PRODUCTOS_FAVORITOS = [
   { id: 1, nombre: 'Sillón de sala verde', precio: 32000, imagenUrl: FOTOS.silla, stock: 5, empresaNombre: 'Bruma Café' },
   { id: 2, nombre: 'Auriculares over-ear', precio: 11900, imagenUrl: FOTOS.auriculares, stock: 12, empresaNombre: 'Casa Luna 506' },
   { id: 3, nombre: 'Bolso personalizado en color y grabado', precio: 7900, imagenUrl: FOTOS.bolso, stock: 9, empresaNombre: 'Casa Luna 506' },
   { id: 4, nombre: 'Cama y correa para perro', precio: 21000, imagenUrl: FOTOS.perro, stock: 7, empresaNombre: 'Taller Ceiba' },
 ]
-
-export type OpcionesSesion = { sinSesion?: boolean }
 
 /** Siembra sesión de comprador, consentimiento de cookies y (opcional) favoritos. Sin estado a medio escribir. */
 export async function sembrarSesion(page: Page, opciones: { favoritos?: boolean; conCorreoCapturado?: boolean } = {}) {

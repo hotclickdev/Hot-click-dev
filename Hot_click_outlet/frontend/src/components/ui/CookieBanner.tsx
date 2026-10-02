@@ -21,10 +21,6 @@ export function getCookieConsent(): CookieConsent | null {
   return parseConsent(raw)
 }
 
-export function useCookieConsent() {
-  return getCookieConsent()
-}
-
 export function setCookieConsent(value: CookieConsent) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
 }
