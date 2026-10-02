@@ -153,14 +153,14 @@ export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps
                 checked={activo}
                 disabled={bloqueado}
                 onChange={() => form.setMetodoPago(metodo.id)}
-                className="size-[22px] shrink-0 appearance-none rounded-full border-[1.5px] border-[var(--hc-n-400)] bg-hc-n-0 checked:border-[6px] checked:border-hc-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600"
+                className="size-[22px] shrink-0 appearance-none rounded-full border-[1.5px] border-hc-n-400 bg-hc-n-0 checked:border-[6px] checked:border-hc-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600"
               />
               <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
               <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
                 {!(esSinpe && activo) && <span className="text-[12px] text-hc-n-500">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>}
               </span>
-              {esSinpe && <span className="shrink-0 rounded-full bg-[var(--hc-success-bg)] px-[7px] py-[2px] text-[10px] font-semibold text-hc-success">{t('checkout.f.masUsado')}</span>}
+              {esSinpe && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success">{t('checkout.f.masUsado')}</span>}
             </label>
             {bloqueado && <p className="text-[12px] leading-4 text-hc-warning">{t('checkout.f.efectivoNoRapido')}</p>}
             {esSinpe && activo && <InstruccionesSinpe form={form} total={total} token={token} />}
@@ -324,7 +324,7 @@ export function ConsentimientoDatos({ marcado, onCambiar, error }: { marcado: bo
   const { t } = useTranslation()
   return (
     <label className={`flex cursor-pointer items-start gap-2 rounded-[12px] border p-3 leading-[normal] ${error && !marcado ? 'border-hc-danger' : 'border-hc-n-200'} bg-hc-n-0`}>
-      <input type="checkbox" checked={marcado} onChange={(e) => onCambiar(e.target.checked)} className="mt-[2px] size-4 shrink-0 accent-[var(--hc-blue-600)]" />
+      <input type="checkbox" checked={marcado} onChange={(e) => onCambiar(e.target.checked)} className="mt-[2px] size-4 shrink-0 accent-hc-blue-600" />
       <span className="text-[11px] leading-[15px] text-hc-n-600">
         {t('checkout.f.consentimiento')}{' '}
         <Link to="/privacidad" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">{t('checkout.f.politicaPrivacidad')}</Link>

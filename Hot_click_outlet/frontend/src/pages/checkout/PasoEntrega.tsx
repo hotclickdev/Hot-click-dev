@@ -28,7 +28,7 @@ function Precio({ opcion, escritorio }: { opcion: OpcionEnvio; escritorio: boole
   return <span className={`shrink-0 font-semibold text-hc-n-900 ${tamano}`}>{formatPrice(opcion.precio)}</span>
 }
 
-const CLASE_RADIO = 'size-5 shrink-0 appearance-none rounded-full border-[1.5px] border-[var(--hc-n-400)] bg-hc-n-0 checked:border-[6px] checked:border-hc-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600'
+const CLASE_RADIO = 'size-5 shrink-0 appearance-none rounded-full border-[1.5px] border-hc-n-400 bg-hc-n-0 checked:border-[6px] checked:border-hc-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600'
 
 type OpcionProps = {
   opcion: OpcionEnvio
@@ -134,7 +134,7 @@ function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGA
         <div className="flex min-w-0 flex-1 flex-col">
           <h3 className="font-sans text-[14px] font-semibold tracking-normal text-hc-n-900">{titulo}</h3>
           <p className="flex items-center gap-1 text-[12px] text-hc-n-500">
-            <IconoFigma src={ICONOS_CHECKOUT.paqueteOrigen} size={12} className="text-[var(--hc-n-400)]" />
+            <IconoFigma src={ICONOS_CHECKOUT.paqueteOrigen} size={12} className="text-hc-n-400" />
             {conteo}
           </p>
         </div>

@@ -62,7 +62,7 @@ describe('código de descuento · presentación (Figma 55:2284 / 55:2220)', () =
   it('válido: borde verde, detalle verde y botón Quitar', () => {
     const html = campo('valid')
     expect(html).toContain('border-hc-success')
-    expect(html).toContain('bg-[var(--hc-success-bg)]')
+    expect(html).toContain('bg-hc-success-bg')
     expect(html).toContain('Tarjeta de regalo válida')
     expect(html).toContain('>Quitar<')
     expect(html).not.toContain('>Aplicar<')

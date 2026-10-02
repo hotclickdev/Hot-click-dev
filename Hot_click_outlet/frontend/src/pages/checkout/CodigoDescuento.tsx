@@ -109,7 +109,7 @@ export function CampoCodigo({
             key="valido"
             id={idAviso}
             {...ANIMACION}
-            className="flex w-full flex-col gap-[6px] rounded-[10px] bg-[var(--hc-success-bg)] p-3"
+            className="flex w-full flex-col gap-[6px] rounded-[10px] bg-hc-success-bg p-3"
           >
             {detalleValido}
           </motion.div>

@@ -24,7 +24,7 @@ Diferencias conocidas: ancho del precio Sora 60 vs 58,2 (métricas de fuente, ig
 Reglas de contenido (lo que Figma dibuja y lo que no):
 - "Tu pedido · N productos" cuenta líneas del carrito; el total suma `precio x cantidad` del carrito.
 - El aviso verde de envío ya pagado se muestra solo si el carrito tiene otro producto del mismo negocio (mismo `empresaId`, o mismo nombre si no hay id). Figma solo dibuja ese caso. **El caso "primer producto del paquete" no está dibujado: hoy se omite el aviso. Pendiente de decisión de diseño.**
-- Token ausente: `bg-hc-success-bg` no existe como utilidad (SHELL); se usa `bg-[var(--hc-success-bg)]`. Pedir a SHELL el alias `--color-hc-success-bg`.
+- Token ausente: `bg-hc-success-bg` no existe como utilidad (SHELL); se usa `bg-[var(--hc-success-bg)]`. Pedir a SHELL el alias `--color-hc-success-bg`. **P03:** el alias ya existe; el checkout lo usa. `HojaAgregadoAlPedido` todavía usa `var()` (componente compartido, queda para P13).
 
 ## Dependencia: cableado desde la ficha (excepción autorizada, archivos de PROD)
 
@@ -89,7 +89,7 @@ Veredictos "agent verified" (sin QA independiente). Móvil medido en 390x844 con
 ## Verificación y reglas aplicadas
 
 - Fuentes reales (Sora, Public Sans) con `document.fonts.ready`; alturas con `line-height` explícito donde el valor `normal` de Figma difiere del 1,5 heredado (títulos de 18/19/20 px, texto de 15 px, totales de 17 px).
-- Regla global de `index.css` (`max(16px, 1em)` en inputs bajo 768 px, anti-zoom iOS) hace que los campos midan 16 px y no 14/15 px del frame; es de SHELL y se acepta.
+- Regla global de `index.css` (`max(16px, 1em)` en inputs bajo 768 px, anti-zoom iOS) hace que los campos midan 16 px y no 14/15 px del frame; es de SHELL y se acepta. **P03 (2-oct-2026):** SHELL excluye `.hc-figma-ui`, así que los campos del checkout ya miden 15 px como el frame.
 - Radios: las utilidades `rounded-xl/lg/2xl` apuntan a tokens más grandes que los del Figma; se usan valores explícitos (`rounded-[12px]`).
 - Las etiquetas "NUEVO · por programar" y las notas de diseño de Figma no llegan a la UI.
 - `PaymentStatusPage`: se reinicia la marca de consulta al desmontar; en StrictMode (solo dev) el segundo montaje no volvía a consultar el pago y la pantalla quedaba en carga.
@@ -111,6 +111,22 @@ Spec: `tests/pdp-agregar-hoja.spec.ts`.
 - `npx vite build --outDir "$TEMP/chk-build-check" --emptyOutDir`: OK.
 - Se corrigió además un archivo que quedó con codificación inválida (`PaymentStatusPage.tsx`, reescrito en UTF-8).
 - Sin pantalla de Figma, quedan con el estilo anterior: `CheckoutPaidGiftCard`, `CheckoutTilopayCard`, `CheckoutLoading`, `CheckoutEmpty` y `PagoLoading` (REQUIRES_DESIGN_REFERENCE).
+
+## P03 · implementación de CHECKOUT (2-oct-2026)
+
+Sin acceso directo a Figma. Las referencias son las de este documento, `B10-checkout-decisiones.md`, `B15-envios-decisiones.md` y `DECISIONES_SYS_CHK.md`.
+
+- **Remedido** con Playwright a 390 (pasos Datos, Entrega y Pago) y a 1440: sin desborde horizontal ni errores de consola. Los campos miden 15 px (antes 16 px por la regla de SHELL).
+- **Tokens:** `PasoPago` (radio de método, «Más usado», casilla de consentimiento), `PasoEntrega` (radio de envío, ícono de origen) y `CodigoDescuento` (aviso válido) usan `bg-hc-success-bg`, `border-hc-n-400`, `text-hc-n-400` y `accent-hc-blue-600`. El color calculado es el mismo; `checkout-responsive.spec.ts` lo comprueba.
+- **Sin cambio, sigue PARTIAL:**
+  - D04: consentimiento Ley 8968.
+  - D05: cédula SINPE.
+  - D08: bloques extra en escritorio.
+  - D18: atajo internacional en escritorio.
+  - Las cuatro son DECISIÓN HUMANA sin respuesta (B10, B19 lista D).
+  - Tiempos de envío («30 min a 2 horas», «2 a 4 días hábiles» frente a los de Figma): decisión de negocio (B15).
+  - GAM por origen y «Sale de …»: falta la provincia de la bodega en el backend.
+- `danger-bg` y `text-secondary` no tienen alias en SHELL: siguen con `var()`.
 
 ## Decisiones y dependencias abiertas
 
