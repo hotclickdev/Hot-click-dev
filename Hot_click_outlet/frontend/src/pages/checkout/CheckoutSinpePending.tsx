@@ -6,6 +6,7 @@ import useAuthStore from '@/store/authStore'
 import PagoEnRevision from '@/pages/pago/PagoEnRevision'
 import { BotonPago, MarcoPago } from '@/pages/pago/PiezasPago'
 import { formatPrice } from '@/utils/format'
+import { formatTelefonoCR } from '@/utils/telefono'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import { SINPE_NUMERO, SINPE_TITULAR, copiarNumeroSinpe } from './checkoutHelpers'
 
@@ -153,7 +154,7 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
               <p className="text-[12px] font-semibold text-hc-n-500">{t('payment.sinpe.tusDatos')}</p>
               {sinpeNombre && <FilaDato etiqueta={t('checkout.f.nombre')} valor={sinpeNombre} />}
               {sinpeCedula && <FilaDato etiqueta={t('checkout.f.cedula')} valor={sinpeCedula} />}
-              {sinpeTelefono && <FilaDato etiqueta={t('checkout.f.telefono')} valor={sinpeTelefono} />}
+              {sinpeTelefono && <FilaDato etiqueta={t('checkout.f.telefono')} valor={formatTelefonoCR(sinpeTelefono)} />}
             </div>
           )}
 

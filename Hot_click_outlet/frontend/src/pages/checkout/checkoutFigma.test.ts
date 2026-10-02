@@ -39,9 +39,9 @@ describe('ubicaciones de Costa Rica', () => {
 })
 
 describe('teléfono del checkout', () => {
-  it('guarda con prefijo +506 y muestra 8888 1234', () => {
+  it('guarda con prefijo +506 y muestra 8888-1234', () => {
     expect(telefonoDesdeCampo('8888 1234')).toBe('+50688881234')
-    expect(formatoTelefonoCampo('+50688881234')).toBe('8888 1234')
+    expect(formatoTelefonoCampo('+50688881234')).toBe('8888-1234')
     expect(digitosTelefono('+506 8888-1234 extra99')).toBe('88881234')
     expect(telefonoDesdeCampo('')).toBe('')
   })
