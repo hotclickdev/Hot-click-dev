@@ -5,6 +5,7 @@ import type { ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import { formatPrice } from '@/utils/format'
+import { topeStock } from '@/utils/stock'
 
 type ProductoConExtras = Producto & {
   tallaSeleccionada?: string
@@ -48,7 +49,7 @@ const useCartStore = create<CartState>()(
               ...items,
               {
                 ...product,
-                cantidad: Math.min(qty, product.stock ?? 99),
+                cantidad: Math.min(qty, topeStock(product.stock)),
                 cartLineId,
                 personalizacion: product.personalizacion,
               },
@@ -64,14 +65,14 @@ const useCartStore = create<CartState>()(
           set({
             items: items.map((i) =>
               mismaLinea(i, product.id as Id)
-                ? { ...i, cantidad: Math.min(i.cantidad + qty, i.stock ?? 99) }
+                ? { ...i, cantidad: Math.min(i.cantidad + qty, topeStock(i.stock)) }
                 : i
             ),
             cartUpdatedAt: Date.now(),
           })
         } else {
           set({
-            items: [...items, { ...product, cantidad: Math.min(qty, product.stock ?? 99) }],
+            items: [...items, { ...product, cantidad: Math.min(qty, topeStock(product.stock)) }],
             cartUpdatedAt: Date.now(),
           })
         }
@@ -92,7 +93,7 @@ const useCartStore = create<CartState>()(
         set({
           items: get().items.map((i) =>
             mismaLinea(i, id, cartLineId)
-              ? { ...i, cantidad: Math.min(cantidad, i.stock ?? 99) }
+              ? { ...i, cantidad: Math.min(cantidad, topeStock(i.stock)) }
               : i
           ),
           cartUpdatedAt: Date.now(),
