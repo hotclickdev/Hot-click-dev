@@ -43,6 +43,10 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar, token
         descripcion={config.descripcion}
       />
       <div className="flex flex-col gap-3 px-4 pb-6 pt-3">
+        {vista === 'vencido' ? (
+          // `29:1913` dibuja «Escanear otro QR»; la app no tiene lector propio, así que se indica abrir la cámara (decisión B16).
+          <p className="text-center text-[13px] leading-[18px] text-hc-n-600">{t('pos.pago.vencidoCamara')}</p>
+        ) : null}
         {vista === 'cancelado' && onReintentar ? (
           <button
             type="button"
