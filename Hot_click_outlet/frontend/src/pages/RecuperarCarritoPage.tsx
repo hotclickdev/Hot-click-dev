@@ -12,6 +12,7 @@ import recuperarBolsa from '@/assets/figma/pago/recuperar-bolsa.svg'
 import { PackagePlaceholder } from '@/pages/carrito/cartIcons'
 import type { ItemCarritoAbandonado } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
+import { topeStock } from '@/utils/stock'
 
 type ItemRecuperado = ItemCarritoAbandonado & { empresaNombre?: string; stock?: number }
 
@@ -48,16 +49,18 @@ export default function RecuperarCarritoPage() {
   const handleRestore = async () => {
     if (!token) return
     setAdding(true)
-    items.forEach((item) =>
-      addItem({
-        id:        item.productoId,
-        nombre:    item.nombre,
-        precio:    item.precio,
-        imagenUrl: item.imagenUrl,
-        stock:     99,
-        cantidad:  item.cantidad,
-      } as unknown as Producto)
-    )
+    // R4: stock real del carrito guardado (99 solo si no llegó); un agotado (0) no se vuelve a agregar.
+    items
+      .filter((item) => item.stock !== 0)
+      .forEach((item) =>
+        addItem({
+          id:        item.productoId,
+          nombre:    item.nombre,
+          precio:    item.precio,
+          imagenUrl: item.imagenUrl,
+          stock:     topeStock(item.stock),
+        } as unknown as Producto, item.cantidad ?? 1)
+      )
     try {
       await abandonedCartService.deleteAbandonedCartByToken(token)
     } catch (err) {

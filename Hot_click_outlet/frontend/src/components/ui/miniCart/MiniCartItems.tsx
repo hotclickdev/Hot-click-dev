@@ -4,6 +4,7 @@ import { formatPrice } from '@/utils/format'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { ItemCarrito } from '@/types/carrito'
 import type { Id } from '@/types/api'
+import { topeStock } from '@/utils/stock'
 
 type MiniCartItemsProps = {
   items: ItemCarrito[]
@@ -56,7 +57,7 @@ export default function MiniCartItems({ items, removeItem, updateQuantity }: Min
                   </span>
                   <button type="button"
                     onClick={() => updateQuantity(item.id as Id, item.cantidad + 1)}
-                    disabled={item.cantidad >= (item.stock ?? 99)}
+                    disabled={item.cantidad >= topeStock(item.stock)}
                     className="w-7 h-7 flex items-center justify-center text-xs transition-colors disabled:opacity-25"
                     style={{ color: 'var(--hc-muted)' }}
                   >+</button>

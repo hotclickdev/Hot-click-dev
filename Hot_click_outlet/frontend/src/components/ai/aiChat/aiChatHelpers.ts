@@ -1,4 +1,5 @@
 import type { Producto } from '@/types/producto'
+import { topeStock } from '@/utils/stock'
 
 /** Payload de producto que manda el SSE del chat (snake_case y camelCase). */
 export type AiProductPayload = {
@@ -75,7 +76,7 @@ export function normalizeProduct(p: AiProductPayload): AiChatProducto {
     precioOferta:   esPersonalizado && modo !== 'FIJO' ? null : precioOferta,
     imagenUrl:      p.imagen_principal_url ?? p.imagenUrl,
     sku:            p.sku            ?? '',
-    stock:          p.stock_actual   ?? p.stock ?? 99,
+    stock:          topeStock(p.stock_actual ?? p.stock),
     similarity:     p.similarity,
     esPersonalizado,
     modoPrecioPersonalizado: modo,
