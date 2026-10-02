@@ -36,7 +36,7 @@ export default function PromoWelcomeForm({
   return (
     <>
       <div className="flex flex-col items-center gap-[2px] rounded-[14px] bg-hc-n-50 px-[10px] py-[14px]">
-        <p className="font-display text-[18px] font-bold leading-[23px] tracking-normal text-hc-red-500">{t('promo.discount')}</p>
+        <p className="font-display text-[18px] font-bold leading-[23px] tracking-normal text-hc-red-600">{t('promo.discount')}</p>
         <p className="text-[12px] leading-4 text-hc-n-600">{t('promo.firstPurchase')}</p>
       </div>
       <p className="text-[12px] leading-4 text-hc-n-600">{t('promo.subtitle')}</p>
@@ -57,7 +57,7 @@ export default function PromoWelcomeForm({
               className="h-4 min-w-0 flex-1 bg-transparent p-0 text-[14px] leading-4 text-hc-n-900 outline-none placeholder:text-hc-n-500"
             />
           </label>
-          {errorMsg && <p role="alert" className="text-[12px] leading-4 text-hc-red-500">{errorMsg}</p>}
+          {errorMsg && <p role="alert" className="text-[12px] leading-4 text-hc-red-600">{errorMsg}</p>}
         </div>
 
         <div className="flex gap-[10px]">

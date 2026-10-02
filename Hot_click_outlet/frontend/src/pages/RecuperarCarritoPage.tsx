@@ -123,7 +123,7 @@ export default function RecuperarCarritoPage() {
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
                   <p className="truncate text-[14px] font-medium text-hc-n-900">{item.nombre}</p>
-                  <p className="truncate text-[12px] text-hc-n-500">{detalle}</p>
+                  <p className="truncate text-[12px] text-hc-n-600">{detalle}</p>
                   {item.stock != null && item.stock > 0 && <p className="text-[11px] font-semibold text-hc-success">{t('recuperarCarrito.disponible', { count: item.stock })}</p>}
                 </div>
                 <p className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice((item.precio ?? 0) * cantidad)}</p>
@@ -142,7 +142,7 @@ export default function RecuperarCarritoPage() {
         <BotonPago onClick={() => void handleRestore()} disabled={adding} variante="primario">
           {adding ? t('recuperarCarrito.adding') : t('recuperarCarrito.restore')}
         </BotonPago>
-        <p className="text-center text-[12px] leading-4 text-hc-n-500">{t('recuperarCarrito.nota')}</p>
+        <p className="text-center text-[12px] leading-4 text-hc-n-600">{t('recuperarCarrito.nota')}</p>
         <Link to="/productos" className="text-center text-[13px] font-semibold leading-[normal] text-hc-blue-600">{t('recuperarCarrito.exploreNew')}</Link>
       </div>
     </>,

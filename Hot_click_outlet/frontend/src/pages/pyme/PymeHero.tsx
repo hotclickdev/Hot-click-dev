@@ -56,7 +56,7 @@ export default function PymeHero() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.15 }}
             className="text-sm sm:text-base"
-            style={{ color: 'var(--hc-primary)', fontFamily: 'var(--hc-font-mono)' }}
+            style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}
           >
             {copy.precio}
           </motion.p>

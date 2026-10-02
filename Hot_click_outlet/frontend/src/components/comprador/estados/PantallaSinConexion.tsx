@@ -78,7 +78,7 @@ export default function PantallaSinConexion({ onReintentar = () => globalThis.lo
               <img src={ICONOS_ESTADOS.offlineReintentar} alt="" width={18} height={18} />
               {t('estadosComprador.reintentar')}
             </button>
-            <p className="text-center text-[12px] leading-4 text-hc-n-500">{t('estadosComprador.sinConexionNota')}</p>
+            <p className="text-center text-[12px] leading-4 text-hc-n-600">{t('estadosComprador.sinConexionNota')}</p>
           </div>
         </div>
       </div>

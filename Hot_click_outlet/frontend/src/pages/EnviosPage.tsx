@@ -37,7 +37,7 @@ function Fila({ fila, primera }: { fila: FilaTarifa; primera: boolean }) {
       <IcoSrv nombre="infoCamion" size={18} />
       <span className="flex min-w-0 flex-1 flex-col gap-px">
         <span className="text-[14px] font-medium text-hc-n-900">{fila.nombre}</span>
-        <span className="text-[12px] text-hc-n-500">
+        <span className="text-[12px] text-hc-n-600">
           {fila.detalle ?? [fila.tiempo, fila.nota].filter(Boolean).join(' · ')}
         </span>
       </span>

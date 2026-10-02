@@ -78,7 +78,7 @@ export default function StepSubida({ onContinuar, limit, importarCsvTo = '/admin
         </div>
       </button>
 
-      <Link to={importarCsvTo} className="block text-xs font-bold text-hc-primary">
+      <Link to={importarCsvTo} className="block text-xs font-bold text-hc-primary-text">
         Importar catálogo CSV
       </Link>
 

@@ -34,7 +34,7 @@ export default function BloqueEntregaPago() {
             <IconoFigma src={fila.icono} size={20} className="text-hc-blue-600" />
             <div className="flex min-w-0 flex-1 flex-col gap-px">
               <p className="text-[13px] font-semibold leading-[normal] text-hc-n-900 lg:text-[14px]">{fila.titulo}</p>
-              <p className="text-[12px] leading-4 text-hc-n-500">{fila.detalle}</p>
+              <p className="text-[12px] leading-4 text-hc-n-600">{fila.detalle}</p>
             </div>
           </div>
         ))}

@@ -162,7 +162,7 @@ export default function CartPage() {
     ? <GuardarPorCorreo correo={correo} guardado={correoGuardado} onCambiar={setCorreo} onGuardar={guardarCorreo} />
     : null
   const botonVaciar = (
-    <button type="button" onClick={vaciarPedido} className="shrink-0 text-[12px] font-medium leading-[normal] text-hc-n-500 underline-offset-2 hover:underline">
+    <button type="button" onClick={vaciarPedido} className="shrink-0 text-[12px] font-medium leading-[normal] text-hc-n-600 underline-offset-2 hover:underline">
       {t('cart.clear')}
     </button>
   )

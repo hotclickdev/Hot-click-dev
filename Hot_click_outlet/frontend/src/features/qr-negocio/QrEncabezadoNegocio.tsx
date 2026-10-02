@@ -37,13 +37,13 @@ export default function QrEncabezadoNegocio({ nombre, subtitulo, logoUrl, seguro
             {nombre}
           </p>
           {subtitulo ? (
-            <p className="truncate text-[12px] leading-[14px] text-hc-n-500">{subtitulo}</p>
+            <p className="truncate text-[12px] leading-[14px] text-hc-n-600">{subtitulo}</p>
           ) : null}
         </div>
       </div>
       <div className="flex items-center gap-[6px]">
         <img src={isotipo} alt="" className="size-[14px] object-contain" />
-        <p className="text-[11px] leading-[13px] text-hc-n-500">{seguro}</p>
+        <p className="text-[11px] leading-[13px] text-hc-n-600">{seguro}</p>
       </div>
     </div>
   )

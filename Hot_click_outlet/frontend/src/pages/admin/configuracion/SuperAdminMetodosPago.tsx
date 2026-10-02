@@ -25,7 +25,7 @@ export default function SuperAdminMetodosPago() {
       </ul>
       <p className="mt-6 text-xs text-hc-muted">
         Efectivo, SINPE y tarjeta se cobran en la caja. Los comprobantes y webhooks viven en{' '}
-        <Link to="/admin/pagos" className="font-medium text-hc-primary">
+        <Link to="/admin/pagos" className="font-medium text-hc-primary-text">
           Pagos
         </Link>
         .

@@ -36,7 +36,7 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar, token
       <QrResultado
         icono={
           config.icono ?? (
-            <span className="text-hc-red-500">
+            <span className="text-hc-red-600">
               <TrustGlyph tipo="alerta" className="size-[34px]" />
             </span>
           )

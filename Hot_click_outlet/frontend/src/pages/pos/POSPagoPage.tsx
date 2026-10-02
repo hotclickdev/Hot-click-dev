@@ -70,7 +70,7 @@ export default function POSPagoPage() {
   if (vista === 'cargando') {
     return (
       <QrPagina>
-        <p className="m-auto animate-pulse text-sm text-hc-n-500" role="status">
+        <p className="m-auto animate-pulse text-sm text-hc-n-600" role="status">
           {t('pos.pago.cargando')}
         </p>
       </QrPagina>

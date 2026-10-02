@@ -43,7 +43,7 @@ export default function PosPagoMetodo({ metodos, elegido, onElegir }: Props) {
                 <span className="text-[15px] font-semibold leading-[18px] text-hc-n-900">
                   {esSinpe ? t('pos.pago.sinpeMetodo') : t('pos.pago.tarjetaMetodo')}
                 </span>
-                <span className="text-[12px] leading-[14px] text-hc-n-500">
+                <span className="text-[12px] leading-[14px] text-hc-n-600">
                   {esSinpe ? t('pos.pago.sinpeMetodoDesc') : t('pos.pago.tarjetaMetodoDesc')}
                 </span>
               </span>

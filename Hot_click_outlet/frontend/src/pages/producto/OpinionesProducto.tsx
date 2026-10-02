@@ -43,7 +43,7 @@ export default function OpinionesProducto({ productoId }: { productoId: Id | und
               <span className="hidden lg:inline">{t('product.opinionesTitulo')} · </span>
               {t('product.opinionesVacioTitulo')}
             </p>
-            <p className="text-[12px] leading-4 text-hc-n-500 lg:whitespace-nowrap lg:text-[13px] lg:leading-[normal]">
+            <p className="text-[12px] leading-4 text-hc-n-600 lg:whitespace-nowrap lg:text-[13px] lg:leading-[normal]">
               {t('product.opinionesVacioTexto')}
             </p>
           </div>
@@ -55,7 +55,7 @@ export default function OpinionesProducto({ productoId }: { productoId: Id | und
               <p className="text-[13px] font-semibold text-hc-n-900">
                 {o.autor}
                 {o.calificacion != null && (
-                  <span className="ml-2 font-normal text-hc-n-500">{t('product.opinionEstrellas', { count: o.calificacion })}</span>
+                  <span className="ml-2 font-normal text-hc-n-600">{t('product.opinionEstrellas', { count: o.calificacion })}</span>
                 )}
               </p>
               <p className="text-[13px] leading-[19px] text-hc-n-600">{o.comentario}</p>

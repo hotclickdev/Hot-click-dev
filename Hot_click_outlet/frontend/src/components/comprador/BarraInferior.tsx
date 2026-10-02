@@ -15,7 +15,7 @@ type ItemBarraProps = {
 }
 
 function ItemBarra({ icono, texto, activo, to, onClick }: ItemBarraProps) {
-  const color = activo ? 'font-semibold text-hc-red-500' : 'font-medium text-hc-n-500'
+  const color = activo ? 'font-semibold text-hc-red-600' : 'font-medium text-hc-n-600'
   const clases = `flex flex-col items-center gap-[3px] text-[11px] ${color}`
   const contenido: ReactNode = (
     <>

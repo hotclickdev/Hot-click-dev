@@ -12,7 +12,7 @@ import { ESTADOS_COTIZACION, datosDelCliente, montoCotizacion, textoLinea } from
 import type { CotizacionPublica } from './cotizacion/cotizacionHelpers'
 
 const TARJETA = 'rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]'
-const ETIQUETA_MONO = 'font-mono text-[10px] font-medium text-hc-n-500'
+const ETIQUETA_MONO = 'font-mono text-[10px] font-medium text-hc-n-600'
 
 function Pantalla({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen bg-hc-n-50 leading-[normal]">{children}</div>
@@ -82,7 +82,7 @@ export default function CotizacionPublicaPage() {
           <section className={`${TARJETA} flex flex-col gap-1`}>
             <p className={ETIQUETA_MONO}>PARA</p>
             <p className="text-[15px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{cliente.nombre}</p>
-            {cliente.detalle && <p className="text-[12px] text-hc-n-500 [overflow-wrap:anywhere]">{cliente.detalle}</p>}
+            {cliente.detalle && <p className="text-[12px] text-hc-n-600 [overflow-wrap:anywhere]">{cliente.detalle}</p>}
           </section>
 
           <section className={`${TARJETA} flex flex-col gap-3`} aria-label="Productos cotizados">
@@ -96,9 +96,9 @@ export default function CotizacionPublicaPage() {
                     : <span aria-hidden="true" className="size-[52px] shrink-0 rounded-[10px] bg-hc-n-100" />}
                   <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
                     <p className="text-[13px] font-medium leading-[17px] text-hc-n-900 [overflow-wrap:anywhere]">{item.nombre}</p>
-                    <p className="text-[12px] text-hc-n-500">{textoLinea(item, cot.moneda)}</p>
-                    {item.codigo && <p className="text-[11px] text-hc-n-500">{item.codigo}</p>}
-                    {item.descripcion && <p className="text-[11px] leading-[15px] text-hc-n-500 [overflow-wrap:anywhere]">{item.descripcion}</p>}
+                    <p className="text-[12px] text-hc-n-600">{textoLinea(item, cot.moneda)}</p>
+                    {item.codigo && <p className="text-[11px] text-hc-n-600">{item.codigo}</p>}
+                    {item.descripcion && <p className="text-[11px] leading-[15px] text-hc-n-600 [overflow-wrap:anywhere]">{item.descripcion}</p>}
                   </div>
                   <p className="shrink-0 font-display text-[14px] font-semibold text-hc-n-900">{montoCotizacion(subtotal, cot.moneda)}</p>
                 </div>
@@ -134,7 +134,7 @@ export default function CotizacionPublicaPage() {
           {cot.terminos && (
             <section className={`${TARJETA} flex flex-col gap-1`}>
               <p className={ETIQUETA_MONO}>TÉRMINOS Y CONDICIONES</p>
-              <p className="whitespace-pre-line text-[12px] leading-4 text-hc-n-500">{cot.terminos}</p>
+              <p className="whitespace-pre-line text-[12px] leading-4 text-hc-n-600">{cot.terminos}</p>
             </section>
           )}
 
@@ -150,7 +150,7 @@ export default function CotizacionPublicaPage() {
         </div>
 
         <div className="flex justify-center px-4 pb-6 pt-1">
-          <p className="text-[11px] text-hc-n-500">Cotización generada por HotClick · {cot.numeroCotizacion}</p>
+          <p className="text-[11px] text-hc-n-600">Cotización generada por HotClick · {cot.numeroCotizacion}</p>
         </div>
       </div>
     </Pantalla>

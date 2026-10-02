@@ -51,14 +51,14 @@ function PaqueteDetalle({ paquete, numero, total, pedidoNumero }: { paquete: Ped
   return (
     <article className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal]">
       <div className="flex items-center justify-between">
-        <p className="font-mono text-[11px] font-medium text-hc-n-500">{t('pedidoDetalle.paqueteDe', { n: numero, total })}</p>
+        <p className="font-mono text-[11px] font-medium text-hc-n-600">{t('pedidoDetalle.paqueteDe', { n: numero, total })}</p>
         <ChipEstadoPedido estado={estado} />
       </div>
       <div className="flex items-center gap-2">
         <span className="text-hc-n-900"><IcoCaja size={18} /></span>
         <div className="flex min-w-0 flex-1 flex-col gap-px">
           <h3 className="truncate text-[15px] font-semibold text-hc-n-900">{tienda || t('pedidoDetalle.tiendaSinNombre')}</h3>
-          <p className="flex items-center gap-1 text-[12px] text-hc-n-500">
+          <p className="flex items-center gap-1 text-[12px] text-hc-n-600">
             <span className="shrink-0"><IcoPin size={12} /></span>
             <span className="truncate">
               {retiro
@@ -82,7 +82,7 @@ function PaqueteDetalle({ paquete, numero, total, pedidoNumero }: { paquete: Ped
           <>
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-col gap-px">
-                <p className="text-[11px] text-hc-n-500">{t('pedidoDetalle.guiaCorreos')}</p>
+                <p className="text-[11px] text-hc-n-600">{t('pedidoDetalle.guiaCorreos')}</p>
                 <p className="font-mono text-[14px] font-medium text-hc-n-900">{guia}</p>
               </div>
               {rastreo && (
@@ -151,7 +151,7 @@ export default function DetallePedidoComprador({ pedido }: { pedido: PedidoCompr
       <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-[2px]">
-            <p className="text-[12px] text-hc-n-500">{metodo ? t('pedidoDetalle.fechaPagadoCon', { fecha, metodo }) : fecha}</p>
+            <p className="text-[12px] text-hc-n-600">{metodo ? t('pedidoDetalle.fechaPagadoCon', { fecha, metodo }) : fecha}</p>
             <h2 className="font-display text-[16px] font-semibold text-hc-n-900">
               {varios
                 ? t('misPedidos.resumenPaquetes', { paquetes: t('misPedidos.paquetes', { count: pedido.paquetes.length }), entregados: t('misPedidos.paquetesEntregados', { count: paquetesEntregados(pedido) }) })
@@ -180,7 +180,7 @@ export default function DetallePedidoComprador({ pedido }: { pedido: PedidoCompr
       {pedido.paquetes.map((p, i) => (
         <PaqueteDetalle key={p.id} paquete={p} numero={i + 1} total={pedido.paquetes.length} pedidoNumero={pedido.numero} />
       ))}
-      <p className="text-[12px] leading-4 text-hc-n-500">{t('pedidoDetalle.pie')}</p>
+      <p className="text-[12px] leading-4 text-hc-n-600">{t('pedidoDetalle.pie')}</p>
     </div>
   )
 }

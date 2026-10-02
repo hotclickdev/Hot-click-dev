@@ -17,7 +17,7 @@ function CampoPrecio({ etiqueta, valor, onCambiar }: { etiqueta: string; valor: 
   const id = useId()
   return (
     <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-[2px] rounded-[10px] border border-hc-n-200 bg-hc-n-0 px-3 py-2">
-      <span className="text-[11px] leading-[normal] text-hc-n-500">{etiqueta}</span>
+      <span className="text-[11px] leading-[normal] text-hc-n-600">{etiqueta}</span>
       <input
         id={id}
         type="number"

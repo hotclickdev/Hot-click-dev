@@ -54,7 +54,7 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 leading-[normal]">
           <p className="truncate text-[14px] font-medium text-hc-n-900">{producto.nombre}</p>
-          <p className="truncate text-[12px] text-hc-n-500">
+          <p className="truncate text-[12px] text-hc-n-600">
             {negocio
               ? t('comprador.hoja.detalleNegocio', { negocio, count: cantidad })
               : t('comprador.hoja.detalle', { count: cantidad })}

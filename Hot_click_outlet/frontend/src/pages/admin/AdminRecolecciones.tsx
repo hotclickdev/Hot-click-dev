@@ -45,7 +45,7 @@ export default function AdminRecolecciones() {
                 </div>
                 <p className="mt-1 text-xs text-hc-muted">De: {s.direccionRecoleccion}</p>
                 <p className="text-xs text-hc-muted">A: {s.direccionEntrega}</p>
-                <p className="mt-1 text-sm font-semibold text-hc-primary">{formatoTarifa(s.tarifaColones)}</p>
+                <p className="mt-1 text-sm font-semibold text-hc-primary-text">{formatoTarifa(s.tarifaColones)}</p>
               </button>
             </li>
           ))}

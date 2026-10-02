@@ -68,7 +68,7 @@ function ProductRow({ p, onAplicar, disabled, pctSugerido }: {
         <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{nombre}</p>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
           {formatPrice(p.precioVenta)}
-          {p.enOferta && p.precioOferta && <span className="ml-2 font-semibold" style={{ color: 'var(--hc-primary)' }}>{t('adminOfertas.now')} {formatPrice(p.precioOferta)}</span>}
+          {p.enOferta && p.precioOferta && <span className="ml-2 font-semibold" style={{ color: 'var(--hc-primary-text)' }}>{t('adminOfertas.now')} {formatPrice(p.precioOferta)}</span>}
         </p>
       </div>
       {p.enOferta ? (

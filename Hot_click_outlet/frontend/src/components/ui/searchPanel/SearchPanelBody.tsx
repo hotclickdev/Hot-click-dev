@@ -10,7 +10,7 @@ import type { SearchPanelModel } from './useSearchPanel'
 function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-1">
-      <h2 className="text-[11px] font-semibold uppercase leading-[13px] text-hc-n-500">{titulo}</h2>
+      <h2 className="text-[11px] font-semibold uppercase leading-[13px] text-hc-n-600">{titulo}</h2>
       {children}
     </section>
   )
@@ -65,7 +65,7 @@ export function SearchPanelBody({
       )}
 
       {!consulta && recent.length === 0 && !loading && (
-        <p className="py-8 text-center text-[14px] text-hc-n-500">{t('search.typeToSearch')}</p>
+        <p className="py-8 text-center text-[14px] text-hc-n-600">{t('search.typeToSearch')}</p>
       )}
 
       {consulta && sugerencias.length > 0 && (
@@ -90,7 +90,7 @@ export function SearchPanelBody({
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-[1px]">
                   <span className="truncate text-[14px] font-medium text-hc-n-900">{product.nombre}</span>
-                  <span className="truncate text-[12px] text-hc-n-500">{nombreVendedor(product)}</span>
+                  <span className="truncate text-[12px] text-hc-n-600">{nombreVendedor(product)}</span>
                 </span>
                 <span className="shrink-0 font-display text-[14px] font-bold text-hc-n-900">{formatPrice(product.precio)}</span>
               </button>
@@ -117,7 +117,7 @@ export function SearchPanelBody({
         <IconoFigma src={ICONOS_COMPRADOR.buscarFoto} size={20} className="text-hc-blue-600" />
         <span className="flex flex-col gap-[1px]">
           <span className="text-[14px] font-semibold leading-4 text-hc-n-900">{t('search.photoSearch')}</span>
-          <span className="whitespace-nowrap text-[12px] leading-[14px] text-hc-n-500">{t('search.photoSearchSub')}</span>
+          <span className="whitespace-nowrap text-[12px] leading-[14px] text-hc-n-600">{t('search.photoSearchSub')}</span>
         </span>
       </button>
     </div>

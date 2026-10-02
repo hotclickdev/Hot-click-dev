@@ -35,7 +35,7 @@ export function PageLoader() {
             strokeWidth="3" strokeLinecap="round"/>
         </svg>
         <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center',
-          justifyContent:'center', color:'var(--hc-primary)' }}>
+          justifyContent:'center', color:'var(--hc-primary-text)' }}>
           <TrustGlyph tipo="bolsa" className="w-6 h-6" />
         </span>
       </div>

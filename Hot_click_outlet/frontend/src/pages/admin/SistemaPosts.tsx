@@ -93,7 +93,7 @@ export default function SistemaPosts() {
             <p className="m-0 mt-0.5 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{sugerido.nombre}</p>
             <p className="m-0 mt-0.5 text-xs" style={{ color: '#6b6459' }}>Tu producto más pedido de los últimos 30 días.</p>
           </div>
-          <span className="text-sm font-bold" style={{ color: 'var(--hc-primary)' }}>Publicá / borrador</span>
+          <span className="text-sm font-bold" style={{ color: 'var(--hc-primary-text)' }}>Publicá / borrador</span>
         </button>
       )}
 

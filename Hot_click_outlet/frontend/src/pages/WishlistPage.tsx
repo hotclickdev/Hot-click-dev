@@ -47,12 +47,12 @@ export default function WishlistPage() {
       esTituloPrincipal
       atras="/perfil"
       barraInferior
-      acciones={<span className="shrink-0 text-[13px] leading-[normal] text-hc-n-500">{cantidad}</span>}
+      acciones={<span className="shrink-0 text-[13px] leading-[normal] text-hc-n-600">{cantidad}</span>}
     >
       <div className="mx-auto w-full max-w-[1200px] px-4 pb-5 pt-[14px] lg:px-8 lg:pb-10 lg:pt-8">
         <div className="mb-6 hidden items-baseline justify-between lg:flex">
           <h1 className="font-display text-[28px] font-bold leading-[normal] text-hc-n-900">{t('favoritos.titulo')}</h1>
-          <p className="text-[13px] text-hc-n-500">{cantidad}</p>
+          <p className="text-[13px] text-hc-n-600">{cantidad}</p>
         </div>
         <ul className="grid grid-cols-[repeat(auto-fill,167px)] justify-between gap-y-4 lg:justify-start lg:gap-x-4">
           {items.map((item) => (

@@ -30,9 +30,9 @@ export default function PosPagoCta({ monto, onClick, cargando, disabled, etiquet
         {cargando ? t('pos.pago.procesando') : (etiqueta ?? t('pos.pago.pagar', { monto: formatMiles(monto) }))}
       </button>
       {avisoKey ? (
-        <p className="text-center text-[12px] leading-[14px] text-hc-n-500">{t(avisoKey)}</p>
+        <p className="text-center text-[12px] leading-[14px] text-hc-n-600">{t(avisoKey)}</p>
       ) : null}
-      <p className="flex items-center justify-center gap-[6px] text-[12px] leading-[14px] text-hc-n-500">
+      <p className="flex items-center justify-center gap-[6px] text-[12px] leading-[14px] text-hc-n-600">
         <img src={ICONOS_QR.candado} alt="" className="size-[13px]" />
         {t('pos.pago.protegido')}
       </p>

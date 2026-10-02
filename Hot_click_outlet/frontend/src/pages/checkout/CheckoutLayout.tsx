@@ -41,7 +41,7 @@ function TarjetaPaso({ numero, titulo, subtitulo, children }: { numero: number; 
         <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-hc-blue-600 text-[13px] font-bold text-hc-n-0">{numero}</span>
         <div className="flex min-w-0 flex-1 flex-col gap-px">
           <h2 className="font-display text-[17px] font-semibold tracking-normal text-hc-n-900">{titulo}</h2>
-          {subtitulo && <p className="text-[13px] text-hc-n-500">{subtitulo}</p>}
+          {subtitulo && <p className="text-[13px] text-hc-n-600">{subtitulo}</p>}
         </div>
       </div>
       {children}

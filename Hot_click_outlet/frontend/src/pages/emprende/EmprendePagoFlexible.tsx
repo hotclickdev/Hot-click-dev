@@ -52,7 +52,7 @@ export default function EmprendePagoFlexible() {
               <TrustGlyph tipo="check" className="w-6 h-6 text-hc-primary" />
             </span>
             <p className="text-sm font-semibold text-center" style={{ color: '#14171c' }}>{t('emprende.pagoAprobado')}</p>
-            <p className="text-sm" style={{ color: 'var(--hc-primary)', fontFamily: 'var(--hc-font-mono)' }}>₡3.500</p>
+            <p className="text-sm" style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}>₡3.500</p>
             <span
               className="mt-2 px-2.5 py-1 rounded-full text-[10px]"
               style={{ backgroundColor: 'var(--hc-n-100)', color: 'rgba(20,23,28,0.6)' }}

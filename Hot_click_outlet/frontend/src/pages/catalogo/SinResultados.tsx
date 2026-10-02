@@ -19,7 +19,7 @@ export default function SinResultados({ consulta, sugeridos }: { consulta: strin
   return (
     <div className="flex flex-col lg:py-6">
       <div className="flex flex-col items-center gap-2 pb-2 pt-5 text-center">
-        <span className="flex size-16 items-center justify-center rounded-full bg-hc-n-100 text-hc-n-500">
+        <span className="flex size-16 items-center justify-center rounded-full bg-hc-n-100 text-hc-n-600">
           <IconoFigma src={ICONOS_CATALOGO.sinResultadosLupa30} size={30} />
         </span>
         <h2 className="font-display text-[18px] font-bold leading-[normal] text-hc-n-900">{t('products.noResultsFor', { q: consulta })}</h2>

@@ -21,7 +21,7 @@ export default function NegocioPlusTrustBar() {
       <div className="flex flex-wrap gap-x-10 gap-y-4 px-6 sm:px-10 py-6 max-w-6xl mx-auto">
         {items.map((item) => (
           <div key={item.label} className="flex items-center gap-2.5">
-            <span style={{ color: 'var(--hc-primary)' }}>
+            <span style={{ color: 'var(--hc-primary-text)' }}>
               <TrustGlyph tipo={item.icon} className="w-5 h-5" />
             </span>
             <span className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{item.label}</span>

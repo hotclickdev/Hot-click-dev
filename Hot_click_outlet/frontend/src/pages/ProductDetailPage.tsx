@@ -54,7 +54,7 @@ export default function ProductDetailPage() {
           <h1 className="text-2xl font-bold text-hc-n-900">
             {t('product.notFound')}
           </h1>
-          <p className="text-sm text-hc-n-500">
+          <p className="text-sm text-hc-n-600">
             {t('notFound.subtitle')}
           </p>
           <Link

@@ -53,7 +53,7 @@ export default function ColorSwatches({ product, variantes, onNavigate, t }: Col
           )
         })}
       </div>
-      {otras.length > 0 && <p className="text-[12px] leading-4 text-hc-n-500">{t('product.colorAyuda')}</p>}
+      {otras.length > 0 && <p className="text-[12px] leading-4 text-hc-n-600">{t('product.colorAyuda')}</p>}
     </div>
   )
 }

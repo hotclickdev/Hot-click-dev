@@ -83,7 +83,7 @@ export default function FooterComprador() {
       <BannerVendedor />
       <div className="flex flex-col gap-[6px] bg-hc-n-100 px-4 pb-[18px] pt-4 lg:flex-row lg:items-start lg:justify-between lg:px-8 lg:pb-6 lg:pt-5 xl:px-[120px]">
         <EnlacesLegales />
-        <p className="whitespace-nowrap text-[11px] leading-[13px] text-hc-n-500 lg:text-[12px] lg:leading-[14px]">
+        <p className="whitespace-nowrap text-[11px] leading-[13px] text-hc-n-600 lg:text-[12px] lg:leading-[14px]">
           {t('comprador.footer.derechos', { anio: new Date().getFullYear() })}
         </p>
       </div>

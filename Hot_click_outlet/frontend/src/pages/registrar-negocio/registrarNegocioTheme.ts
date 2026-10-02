@@ -1,4 +1,4 @@
-export const A = { color: 'var(--hc-primary)', ring: 'rgba(231,59,51,0.32)', bg: 'rgba(231,59,51,0.08)' }
+export const A = { color: 'var(--hc-primary-text)', ring: 'rgba(231,59,51,0.32)', bg: 'rgba(231,59,51,0.08)' }
 
 export type EstadoHaciendaColor = { bg: string; border: string; text: string; label: string }
 

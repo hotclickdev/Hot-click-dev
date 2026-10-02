@@ -11,7 +11,7 @@ import { fechaEntrada, listaEntradas, metaEntrada, urlEntrada, type EntradaBlog 
 
 export type { EntradaBlog } from './blog/blogHelpers'
 
-const META = 'font-mono text-[11px] font-medium text-hc-n-500'
+const META = 'font-mono text-[11px] font-medium text-hc-n-600'
 
 /** Artículo destacado: foto de 190, fecha y lectura, título, resumen y "Leer artículo" (Figma `54:2162`). */
 function Destacado({ e }: { e: EntradaBlog }) {

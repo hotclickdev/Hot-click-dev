@@ -11,7 +11,7 @@ import { ICONOS_PRODUCTO } from './iconosProducto'
 export default function ProductBreadcrumb({ product }: { product: Producto }) {
   const { t } = useTranslation()
   const categoria = product.categoriaNombre
-  const enlace = 'text-hc-n-500 hover:text-hc-blue-600'
+  const enlace = 'text-hc-n-600 hover:text-hc-blue-600'
 
   return (
     <nav aria-label={t('product.migasAria')} className="hidden text-[13px] leading-[normal] lg:block">
@@ -23,7 +23,7 @@ export default function ProductBreadcrumb({ product }: { product: Producto }) {
             <li>
               {product.categoriaId
                 ? <Link to={`/productos?cat=${product.categoriaId}`} className={enlace}>{categoria}</Link>
-                : <span className="text-hc-n-500">{categoria}</span>}
+                : <span className="text-hc-n-600">{categoria}</span>}
             </li>
           </>
         )}

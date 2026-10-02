@@ -32,7 +32,7 @@ export default function SelfCheckoutProductCard({ producto, cantidad, onCambiar 
       ) : (
         <span
           aria-hidden="true"
-          className="grid size-[68px] shrink-0 place-items-center rounded-[10px] bg-hc-n-100 font-display text-[16px] font-bold text-hc-n-400"
+          className="grid size-[68px] shrink-0 place-items-center rounded-[10px] bg-hc-n-100 font-display text-[16px] font-bold text-hc-n-600"
         >
           {inicialesNegocio(nombre)}
         </span>
@@ -40,7 +40,7 @@ export default function SelfCheckoutProductCard({ producto, cantidad, onCambiar 
       <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
         <p className="text-[14px] font-medium leading-4 text-hc-n-900">{nombre}</p>
         {producto.categoria ? (
-          <p className="text-[12px] leading-[14px] text-hc-n-500">{producto.categoria}</p>
+          <p className="text-[12px] leading-[14px] text-hc-n-600">{producto.categoria}</p>
         ) : null}
         <p className="font-display text-[15px] font-bold leading-[19px] text-hc-n-900">
           {fmt(producto.precio)}

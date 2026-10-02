@@ -30,7 +30,7 @@ export default function EmprendeQueIncluye() {
           <ul className="flex flex-col gap-2.5">
             {INCLUIDOS.map((key) => (
               <li key={key} className="flex gap-2.5 text-[13px]" style={{ color: '#14171c' }}>
-                <span style={{ color: 'var(--hc-primary)' }}>✓</span>
+                <span style={{ color: 'var(--hc-primary-text)' }}>✓</span>
                 <span>{t(`emprende.${key}`)}</span>
               </li>
             ))}
@@ -49,7 +49,7 @@ export default function EmprendeQueIncluye() {
             <TrustGlyph tipo="garantia" className="w-5 h-5 shrink-0" />
             <div>
               <p className="text-sm font-semibold" style={{ color: '#14171c' }}>{t('emprende.destacado1Titulo')}</p>
-              <p className="text-xs" style={{ color: 'var(--hc-primary)', fontFamily: 'var(--hc-font-mono)' }}>
+              <p className="text-xs" style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}>
                 {t('emprende.destacado1Sub', { comision: PLAN_EMPRENDEDOR.comisionPct })}
               </p>
             </div>
@@ -58,7 +58,7 @@ export default function EmprendeQueIncluye() {
             <TrustGlyph tipo="telefono" className="w-5 h-5 shrink-0" />
             <div>
               <p className="text-sm font-semibold" style={{ color: '#14171c' }}>{t('emprende.destacado2Titulo')}</p>
-              <p className="text-xs" style={{ color: 'var(--hc-primary)', fontFamily: 'var(--hc-font-mono)' }}>{t('emprende.destacado2Sub')}</p>
+              <p className="text-xs" style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}>{t('emprende.destacado2Sub')}</p>
             </div>
           </div>
           <Link

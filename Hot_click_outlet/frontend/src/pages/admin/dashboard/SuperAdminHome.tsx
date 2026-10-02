@@ -112,7 +112,7 @@ function TiendasRecientes({ empresas, total }: { empresas: EmpresaLista[]; total
     <section data-mm="tiendas-recientes">
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="text-[15px] font-bold">Tiendas recientes</h2>
-        <Link to="/admin/empresas" className="text-xs font-medium text-hc-primary">
+        <Link to="/admin/empresas" className="text-xs font-medium text-hc-primary-text">
           Ver todas ›
         </Link>
       </div>

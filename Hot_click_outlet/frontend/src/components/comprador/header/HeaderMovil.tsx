@@ -45,7 +45,7 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
           className="flex min-w-0 flex-1 items-center gap-[10px] text-left"
         >
           <IconoFigma src={ICONOS_COMPRADOR.buscador} size={20} className="text-hc-n-600" />
-          <span className="min-w-0 flex-1 truncate text-[14px] text-hc-n-500">
+          <span className="min-w-0 flex-1 truncate text-[14px] text-hc-n-600">
             {t('comprador.header.buscadorMovil')}
           </span>
         </button>

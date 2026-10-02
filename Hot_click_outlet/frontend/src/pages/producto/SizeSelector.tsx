@@ -75,10 +75,10 @@ export default function SizeSelector({
             </span>
           )}
           {avisoAgotada && (
-            <span className="text-[12px] text-hc-n-500">{t('product.sizeOutOfStock', { talla: tallaSeleccionada })}</span>
+            <span className="text-[12px] text-hc-n-600">{t('product.sizeOutOfStock', { talla: tallaSeleccionada })}</span>
           )}
           {agotadas.length > 0 && (
-            <span className="text-[12px] text-hc-n-500">
+            <span className="text-[12px] text-hc-n-600">
               {agotadas.map((o) => t('product.sizeOutOfStock', { talla: o.talla })).join(' · ')}
             </span>
           )}

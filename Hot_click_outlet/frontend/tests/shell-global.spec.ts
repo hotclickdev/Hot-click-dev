@@ -64,7 +64,7 @@ test.describe('SHELL — header desktop', () => {
     const header = page.locator('header').first()
     await expect(header).toBeVisible()
     expect(Math.round((await header.boundingBox())?.height ?? 0)).toBe(83)
-    await expect(header.locator('a[href="/carrito"]:visible')).toHaveCSS('color', 'rgb(231, 59, 51)')
+    await expect(header.locator('a[href="/carrito"]:visible')).toHaveCSS('color', 'rgb(208, 42, 35)')
 
     await sembrarSesion(page)
     await mockApisAcc(page)

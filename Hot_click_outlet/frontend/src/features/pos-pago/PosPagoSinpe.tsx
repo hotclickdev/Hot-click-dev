@@ -126,7 +126,7 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
           <span className="text-[14px] font-semibold leading-4 text-hc-blue-600">
             {t('pos.pago.registrarPago')}
           </span>
-          <span className="text-[12px] leading-[14px] text-hc-n-500">{t('pos.pago.registrarPagoDesc')}</span>
+          <span className="text-[12px] leading-[14px] text-hc-n-600">{t('pos.pago.registrarPagoDesc')}</span>
         </button>
       )}
 
@@ -209,7 +209,7 @@ type CampoProps = Readonly<{
 function Campo({ id, label, value, onChange, inputMode }: CampoProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-[12px] leading-[14px] text-hc-n-500">
+      <label htmlFor={id} className="text-[12px] leading-[14px] text-hc-n-600">
         {label}
       </label>
       <input

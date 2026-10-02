@@ -17,7 +17,7 @@ export default function PymeParaVos() {
             className="rounded-2xl border p-6 flex items-start gap-2.5"
             style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}
           >
-            <span className="shrink-0 mt-0.5" style={{ color: 'var(--hc-primary)' }}>
+            <span className="shrink-0 mt-0.5" style={{ color: 'var(--hc-primary-text)' }}>
               <TrustGlyph tipo="check" className="w-5 h-5" />
             </span>
             <p className="text-[15px]" style={{ color: 'var(--hc-text)' }}>{t(`pyme.${key}`)}</p>

@@ -122,7 +122,7 @@ export default function ModeSelector() {
                   <p className="text-[15px] leading-relaxed text-hc-muted">{mode.sub}</p>
                 )}
               </div>
-              <div className="mt-auto text-[15px] font-bold text-hc-primary">
+              <div className="mt-auto text-[15px] font-bold text-hc-primary-text">
                 {pieModo(mode)}
               </div>
             </button>

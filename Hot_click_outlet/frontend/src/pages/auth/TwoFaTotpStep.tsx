@@ -45,7 +45,7 @@ export default function TwoFaTotpStep({
             placeholder="XXXXX-XXXXX"
             className="w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[13px] text-center font-mono text-[15px] tracking-[0.2em] text-hc-n-900 focus:border-hc-blue-600 focus:shadow-[inset_0_0_0_1px_var(--hc-blue-600)] focus:outline-none"
           />
-          <p className="text-[12px] text-hc-n-500">{t('login.emergencyCodeHint')}</p>
+          <p className="text-[12px] text-hc-n-600">{t('login.emergencyCodeHint')}</p>
         </div>
       ) : (
         <TwoFaCodeInputs code2FA={code2FA} refs2FA={refs2FA} onChange={onCodeChange} etiqueta={t('login.code6digits')} />

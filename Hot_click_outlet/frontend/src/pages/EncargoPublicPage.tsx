@@ -42,8 +42,8 @@ function LineaDeTiempo({ pasos }: { pasos: PasoEncargo[] }) {
           <li key={p.clave} className="flex items-start gap-3 pt-3" aria-current={p.estado === 'actual' ? 'step' : undefined}>
             <Marca estado={p.estado} />
             <div className="flex min-w-0 flex-1 flex-col gap-px">
-              <p className={`text-[14px] [overflow-wrap:anywhere] ${p.estado === 'pendiente' ? 'font-semibold text-hc-n-500' : p.estado === 'actual' ? 'font-bold text-hc-n-900' : 'font-semibold text-hc-n-900'}`}>{p.titulo}</p>
-              {p.detalle && <p className="text-[12px] text-hc-n-500 [overflow-wrap:anywhere]">{p.detalle}</p>}
+              <p className={`text-[14px] [overflow-wrap:anywhere] ${p.estado === 'pendiente' ? 'font-semibold text-hc-n-600' : p.estado === 'actual' ? 'font-bold text-hc-n-900' : 'font-semibold text-hc-n-900'}`}>{p.titulo}</p>
+              {p.detalle && <p className="text-[12px] text-hc-n-600 [overflow-wrap:anywhere]">{p.detalle}</p>}
             </div>
           </li>
         ))}
@@ -133,7 +133,7 @@ export default function EncargoPublicPage() {
             <div className="flex min-w-0 flex-1 flex-col items-start gap-[3px]">
               <span className="rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold text-hc-warning">{t('comprador.tarjeta.hechoAPedido')}</span>
               <h1 className="font-sans tracking-normal leading-[normal] text-[15px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{encargo.productoNombre || t('encargoPublico.titulo')}</h1>
-              <p className="text-[12px] text-hc-n-500">{t('encargoPublico.numero', { id: encargo.id })}</p>
+              <p className="text-[12px] text-hc-n-600">{t('encargoPublico.numero', { id: encargo.id })}</p>
             </div>
           </section>
 
@@ -150,13 +150,13 @@ export default function EncargoPublicPage() {
               )}
               {encargo.notas && (
                 <div>
-                  <p className="text-[12px] text-hc-n-500">{t('encargoPublico.tusNotas')}</p>
+                  <p className="text-[12px] text-hc-n-600">{t('encargoPublico.tusNotas')}</p>
                   <p className="text-[14px] text-hc-n-900 [overflow-wrap:anywhere]">{encargo.notas}</p>
                 </div>
               )}
               {encargo.mensajeVendedor && (
                 <div>
-                  <p className="text-[12px] text-hc-n-500">{t('encargoPublico.mensajeTienda')}</p>
+                  <p className="text-[12px] text-hc-n-600">{t('encargoPublico.mensajeTienda')}</p>
                   <p className="text-[14px] text-hc-n-900 [overflow-wrap:anywhere]">{encargo.mensajeVendedor}</p>
                 </div>
               )}
@@ -189,7 +189,7 @@ export default function EncargoPublicPage() {
                 <IcoSrv nombre="encargoTarjeta" size={18} />
                 {pagando ? t('encargoPublico.redirigiendo') : t('encargoPublico.pagar', { monto: formatPrice(encargo.precioCotizado) })}
               </button>
-              <p className="text-center text-[12px] text-hc-n-500">{t('encargoPublico.plazoPago')}</p>
+              <p className="text-center text-[12px] text-hc-n-600">{t('encargoPublico.plazoPago')}</p>
             </>
           )}
           <a

@@ -94,7 +94,7 @@ function LineasTicket({ items, descuento, total }: { items: ItemCarritoPos[]; de
       <div className="h-px bg-hc-border" />
       <div className="flex items-baseline justify-between">
         <span className="text-[15px] font-bold">{t('pos.cobro.totalACobrar')}</span>
-        <span className="font-display text-xl font-bold text-hc-primary">₡{formatMontoPos(total)}</span>
+        <span className="font-display text-xl font-bold text-hc-primary-text">₡{formatMontoPos(total)}</span>
       </div>
     </div>
   )

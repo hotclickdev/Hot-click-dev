@@ -16,7 +16,7 @@ import type { ChangeEvent, CSSProperties, FormEvent } from 'react'
 
 function estiloBotonIcono(seleccionado: boolean): CSSProperties {
   if (seleccionado) {
-    return { background: 'var(--hc-red-50)', borderColor: 'var(--hc-primary)', color: 'var(--hc-primary)' }
+    return { background: 'var(--hc-red-50)', borderColor: 'var(--hc-primary)', color: 'var(--hc-primary-text)' }
   }
   return { background: 'var(--hc-surface-2)', borderColor: 'var(--hc-border)', color: 'var(--hc-muted)' }
 }

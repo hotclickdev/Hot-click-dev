@@ -25,7 +25,7 @@ export default function NotFoundPage() {
       <div className="min-h-[calc(100dvh-125px)] bg-hc-n-0 lg:min-h-0">
         <div className="mx-auto w-full max-w-[430px]">
           <section className="flex flex-col items-center gap-[10px] px-5 pb-2 pt-9 text-center">
-            <p className="font-mono text-[14px] font-medium leading-[normal] text-hc-n-500">404</p>
+            <p className="font-mono text-[14px] font-medium leading-[normal] text-hc-n-600">404</p>
             <h1 className="font-display text-[22px] font-bold leading-[28px] tracking-normal text-hc-n-900 [text-wrap:balance]">{t('notFound.title')}</h1>
             <p className="text-[14px] leading-5 text-hc-n-600">{t('notFound.subtitle')}</p>
           </section>
@@ -33,7 +33,7 @@ export default function NotFoundPage() {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="flex w-full items-center gap-[10px] rounded-[12px] bg-hc-n-100 px-[14px] py-[13px] text-left text-[14px] leading-[normal] text-hc-n-500"
+              className="flex w-full items-center gap-[10px] rounded-[12px] bg-hc-n-100 px-[14px] py-[13px] text-left text-[14px] leading-[normal] text-hc-n-600"
             >
               <Icono18 src={ICONOS_ESTADOS.buscador404} />
               {t('estadosComprador.buscarPlaceholder')}

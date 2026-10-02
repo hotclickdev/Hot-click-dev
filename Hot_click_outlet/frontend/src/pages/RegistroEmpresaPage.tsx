@@ -193,7 +193,7 @@ export default function RegistroEmpresaPage() {
 
           <div className="text-center mb-8 w-full max-w-[460px]">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
-              style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
+              style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary-text)', letterSpacing: '0.06em' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-hc-primary animate-pulse"></span>
               <span>Registro de emprendimiento</span>
             </div>

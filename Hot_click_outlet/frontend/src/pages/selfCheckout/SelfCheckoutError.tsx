@@ -15,7 +15,7 @@ export default function SelfCheckoutError({ error }: Readonly<{ error: string }>
         <QrResultado
           tono="alerta"
           icono={
-            <span className="text-hc-red-500">
+            <span className="text-hc-red-600">
               <TrustGlyph tipo="alerta" className="size-[34px]" />
             </span>
           }

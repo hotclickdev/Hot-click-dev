@@ -112,7 +112,7 @@ export default function BottomNavPrimitivo({
                 {item.renderIcon({ active })}
                 <span
                   className={`max-w-full px-0.5 text-center text-[11px] leading-tight ${
-                    active ? 'font-bold text-hc-primary' : 'font-medium text-hc-muted'
+                    active ? 'font-bold text-hc-primary-text' : 'font-medium text-hc-muted'
                   }`}
                 >
                   {item.label}

@@ -53,7 +53,7 @@ export function BotonAgotado({
       type="button"
       disabled
       aria-disabled="true"
-      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[12px] bg-hc-n-200 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-500"
+      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[12px] bg-hc-n-200 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-600"
     >
       <IconoFigma src={ICONOS_COMPRADOR.agotadoMas} size={18} />
       {t('product.outOfStock')}

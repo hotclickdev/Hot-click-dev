@@ -61,7 +61,7 @@ export default function ProductCard({ product, className = '', priority = false 
         onClick={() => toggleFavorito(product)}
         aria-pressed={esFavorito}
         aria-label={t(esFavorito ? 'comprador.tarjeta.favoritoQuitar' : 'comprador.tarjeta.favoritoAgregar', { nombre })}
-        className={`absolute right-1.5 top-2 flex size-8 items-center justify-center rounded-full bg-hc-n-0 shadow-[0px_1px_4px_0px_rgba(0,0,0,0.12)] ${esFavorito ? 'text-hc-red-500' : 'text-hc-n-600'}`}
+        className={`absolute right-1.5 top-2 flex size-8 items-center justify-center rounded-full bg-hc-n-0 shadow-[0px_1px_4px_0px_rgba(0,0,0,0.12)] ${esFavorito ? 'text-hc-red-600' : 'text-hc-n-600'}`}
       >
         <IconoFigma src={esFavorito ? favoritoActivo : ICONOS_COMPRADOR.favorito} size={16} />
       </button>
@@ -69,17 +69,17 @@ export default function ProductCard({ product, className = '', priority = false 
         <Link to={destino} state={{ product }} className="line-clamp-2 min-h-[34px] text-[13px] font-medium leading-[17px] text-hc-n-900">
           {nombre}
         </Link>
-        <p className="truncate text-[11px] leading-[15px] text-hc-n-500">{nombreVendedor(product)}</p>
+        <p className="truncate text-[11px] leading-[15px] text-hc-n-600">{nombreVendedor(product)}</p>
         <div className="flex items-center justify-between pt-[6px]">
           <p className="flex min-w-0 flex-wrap items-baseline gap-x-1 pr-1 font-display text-[15px] font-bold leading-[normal] text-hc-n-900">
             {desde != null && (
-              <span className="w-full font-sans text-[11px] font-normal leading-[normal] text-hc-n-500">{t('comprador.tarjeta.desde')}</span>
+              <span className="w-full font-sans text-[11px] font-normal leading-[normal] text-hc-n-600">{t('comprador.tarjeta.desde')}</span>
             )}
             <span className="whitespace-nowrap">
               {agotado ? t('comprador.tarjeta.agotado') : desde != null ? formatPrice(desde) : textoPrecioProducto(product)}
             </span>
             {precioLista != null && (
-              <s className="font-sans text-[11px] font-normal leading-[normal] text-hc-n-500">
+              <s className="font-sans text-[11px] font-normal leading-[normal] text-hc-n-600">
                 <span className="sr-only">{t('comprador.tarjeta.precioAnterior')} </span>
                 {formatPrice(precioLista)}
               </s>

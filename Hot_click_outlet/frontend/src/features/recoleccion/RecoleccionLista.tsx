@@ -17,7 +17,7 @@ const CLASE_CTA_PRIMARIO =
 const CLASE_CTA_SECUNDARIO =
   'flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border py-3.5 text-[13px] font-medium text-hc-text disabled:opacity-40'
 const CLASE_CANCELAR_INICIAL =
-  'mt-3 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-primary py-3.5 text-[13px] font-medium text-hc-primary disabled:opacity-40'
+  'mt-3 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-primary py-3.5 text-[13px] font-medium text-hc-primary-text disabled:opacity-40'
 
 function resumirDireccion(direccion: string, max = 80): string {
   const texto = direccion.trim()
@@ -118,7 +118,7 @@ export default function RecoleccionLista({ solicitudes, onCancelar, cancelandoId
         <ItemListaStagger key={s.id} className="rounded-xl border border-hc-border bg-hc-surface p-4">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-semibold">{ETIQUETA_ESTADO[s.estado] ?? s.estado}</p>
-            <p className="text-sm font-bold text-hc-primary">{formatoTarifa(s.tarifaColones)}</p>
+            <p className="text-sm font-bold text-hc-primary-text">{formatoTarifa(s.tarifaColones)}</p>
           </div>
           <p className="mt-2 text-xs text-hc-muted">Recolección: {s.direccionRecoleccion}</p>
           <p className="text-xs text-hc-muted">Entrega: {s.direccionEntrega}</p>

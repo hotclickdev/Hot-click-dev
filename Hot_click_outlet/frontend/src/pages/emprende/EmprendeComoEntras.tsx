@@ -25,7 +25,7 @@ export default function EmprendeComoEntras() {
           >
             <span
               className="w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center font-bold text-base"
-              style={{ borderColor: 'var(--hc-primary)', color: 'var(--hc-primary)' }}
+              style={{ borderColor: 'var(--hc-primary)', color: 'var(--hc-primary-text)' }}
             >
               {i + 1}
             </span>

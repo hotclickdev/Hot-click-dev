@@ -69,7 +69,7 @@ export default function PersonalizacionPanel({
     <section aria-labelledby="personaliza-titulo" className="px-4 pb-2 pt-[14px] lg:p-0">
       <div className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal]">
         <h2 id="personaliza-titulo" className="font-sans text-[15px] font-semibold leading-[18px] tracking-normal text-hc-n-900">{t('product.personalizaTitulo')}</h2>
-        <p className="text-[12px] leading-4 text-hc-n-500">{t('product.personalizaAyuda')}</p>
+        <p className="text-[12px] leading-4 text-hc-n-600">{t('product.personalizaAyuda')}</p>
 
         {product.instruccionesPersonalizacion && (
           <p className="rounded-[10px] bg-hc-blue-50 px-3 py-[10px] text-[12px] leading-4 text-hc-n-900">
@@ -98,7 +98,7 @@ export default function PersonalizacionPanel({
                   </>
                 ) : (
                   <label
-                    className="flex size-full cursor-pointer flex-col items-center justify-center gap-1 text-[11px] text-hc-n-500"
+                    className="flex size-full cursor-pointer flex-col items-center justify-center gap-1 text-[11px] text-hc-n-600"
                     aria-label={t('product.subirReferenciaN', { n: slot + 1 })}
                   >
                     <IconoFigma src={ICONOS_PRODUCTO.subirImagen} size={18} className="text-hc-n-500" />
@@ -236,7 +236,7 @@ function ComoFunciona({ modo, product }: { modo: string | null | undefined; prod
   }
 
   return (
-    <div className="flex flex-col gap-[6px] text-[12px] leading-4 text-hc-n-500">
+    <div className="flex flex-col gap-[6px] text-[12px] leading-4 text-hc-n-600">
       <p className="font-semibold text-hc-n-900">{t('product.comoFunciona')}</p>
       <p>{precioLabel}</p>
       <ol className="list-inside list-decimal space-y-0.5">

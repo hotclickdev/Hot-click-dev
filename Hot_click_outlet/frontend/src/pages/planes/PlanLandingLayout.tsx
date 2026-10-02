@@ -65,7 +65,7 @@ export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props
 
         {/* Hero */}
         <section className="text-center sm:text-left mb-10">
-          <p className="text-xs font-bold tracking-[0.14em] uppercase mb-3" style={{ color: 'var(--hc-primary)' }}>
+          <p className="text-xs font-bold tracking-[0.14em] uppercase mb-3" style={{ color: 'var(--hc-primary-text)' }}>
             {copy.eyebrow}
           </p>
           <h1 className="text-3xl sm:text-5xl font-bold mb-4 leading-tight" style={{ color: 'var(--hc-text)', fontFamily: 'var(--hc-font-display)' }}>
@@ -86,12 +86,12 @@ export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props
           </Link>
           {planId !== 'emprendedor' ? (
             <p className="text-xs mt-3" style={{ color: 'var(--hc-muted)' }}>
-              <Link to="/para-emprendedores" style={{ color: 'var(--hc-primary)' }}>Recién arranco, sin mensualidad</Link>
+              <Link to="/para-emprendedores" style={{ color: 'var(--hc-primary-text)' }}>Recién arranco, sin mensualidad</Link>
             </p>
           ) : null}
           {planId !== 'plus' && planId === 'emprendedor' ? (
             <p className="text-xs mt-3" style={{ color: 'var(--hc-muted)' }}>
-              Si ya tenés equipo o local, <Link to="/para-pymes" style={{ color: 'var(--hc-primary)' }}>mirá PYME</Link>
+              Si ya tenés equipo o local, <Link to="/para-pymes" style={{ color: 'var(--hc-primary-text)' }}>mirá PYME</Link>
             </p>
           ) : null}
         </section>

@@ -54,7 +54,7 @@ export default function ProductosPendientes({ productos, loading, aprobar, recha
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium">{producto.nombreProducto ?? '—'}</p>
               <p className="text-[11px] text-hc-muted">{metaProductoPendiente(producto)}</p>
-              <p className="mt-0.5 text-xs font-bold text-hc-primary">{formatPrice(producto.precioVenta)}</p>
+              <p className="mt-0.5 text-xs font-bold text-hc-primary-text">{formatPrice(producto.precioVenta)}</p>
             </div>
             <AdminBadge tono="warn">Pendiente</AdminBadge>
           </div>

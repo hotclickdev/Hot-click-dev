@@ -19,7 +19,7 @@ export default function CategoryTile({ nombre, cantidad, fotoUrl, to, className 
       </span>
       <span className="flex flex-col items-start">
         <span className="font-display text-[14px] font-semibold leading-[normal] text-hc-n-900">{nombre}</span>
-        <span className="text-[12px] leading-[normal] text-hc-n-500">{t('comprador.categoria.productos', { count: cantidad })}</span>
+        <span className="text-[12px] leading-[normal] text-hc-n-600">{t('comprador.categoria.productos', { count: cantidad })}</span>
       </span>
     </Link>
   )
