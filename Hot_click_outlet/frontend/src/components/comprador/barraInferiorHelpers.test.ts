@@ -17,6 +17,10 @@ describe('seccionActivaBarra', () => {
     expect(seccionActivaBarra('/blog/mi-entrada')).toBe('inicio')
   })
 
+  it('marca Inicio en /sin-conexion (Figma 45:2264)', () => {
+    expect(seccionActivaBarra('/sin-conexion')).toBe('inicio')
+  })
+
   it('marca Categorías en /productos?cat= y Buscar en el resto del catálogo', () => {
     expect(seccionActivaBarra('/productos', '?cat=3')).toBe('categorias')
     expect(seccionActivaBarra('/productos', '?search=taza')).toBe('buscar')

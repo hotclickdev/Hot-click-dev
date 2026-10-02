@@ -39,4 +39,41 @@ Además: la E2E `bottom-nav.spec.ts` describía la barra anterior (Productos/Ser
 - Build: `vite build` a un directorio temporal, OK. `static/` no se tocó.
 - ESLint sobre los archivos tocados: sin errores nuevos. `ReturnVisitorBanner.tsx` conserva 1 error (`setState` en efecto) y 1 aviso que ya tenía en `base`.
 - E2E: `bottom-nav.spec.ts` y `shell-global.spec.ts`, 12 de 12. Regresión de módulos (ACC, blog, catálogo, CHK, SRV, STORE, tienda): 59 pasan, 8 se saltan, 6 fallan (`home-jobs` x4, `tienda-checkout:77`, `tienda-theme:115`); esos 6 fallan igual en `base`.
-- No hecho: captura visual comparada con Figma de los cambios (los cambios son lógica de rutas, CSS global y estado activo; los de header y barra se comprobaron por aserciones, no por píxeles) ni QA de las ~90 pantallas.
+- No hecho: QA de las ~90 pantallas. La captura visual comparada con Figma se hizo después, ver la sección siguiente.
+
+## Verificación visual contra Figma (1-oct-2026)
+
+Capturas reales con Playwright (Chrome) en 390 y 1440 px, API simulada con los mocks de ACC (`tests/helpers/accFixtures.ts`), sesión sembrada y espera de 2,3 s para que termine `PageProgressBar`. Se generan con `SHELL_SHOTS=<carpeta> npx playwright test tests/shell-capturas.spec.ts` (se omite sin esa variable). Las imágenes no se versionan. Con la API vacía los listados quedan sin productos: lo que se compara es el chrome de SHELL (header, barra inferior, footer, banner), no el contenido de cada módulo.
+
+| Ruta | Frame Figma | 390 | 1440 | Resultado |
+| --- | --- | --- | --- | --- |
+| `/sin-conexion` | `45:2264` | sí, también con el navegador sin red | sí | **Corregido**: la barra inferior no marcaba Inicio y Figma sí. Franja negra de 36 px y mensaje coinciden. PARTIAL: faltan "Vistos recientemente" y "Favoritos" (datos locales, de SYS) |
+| `/blog` | `54:2126` | sí | sí | Barra interna y Inicio activo coinciden. Contenido de SRV (chips, buscador) fuera de SHELL |
+| `/productos?cat=1` | `43:1530` | sí | sí | Barra interna, chips y Categorías activo coinciden |
+| `/servicios?vista=solicitudes` | `29:1535` | sí | no aplica | Barra interna y Cuenta activo coinciden; sin ReturnVisitorBanner. Falta la pestaña "Encargos" (BLOCKED por backend, ya documentado en ACC) |
+| `/perfil` | `28:1196`, `30:1479` | sí | sí | Header (77 px), menú lateral de 260 px, saludo y accesos coinciden; sin ReturnVisitorBanner |
+| `/mis-pedidos` | sin id de frame en el inventario | sí | no | Barra interna y Cuenta activo; sin banner. Contenido de ACC |
+| `/wishlist` | `30:1224` | sí | no | Barra interna y Cuenta activo; sin banner. El corazón no se rellena de rojo (diferencia de CAT ya documentada) |
+| `/productos?search=` | `26:722`, `30:1824` | sí | sí | Desktop: el buscador muestra la búsqueda vigente, con "Foto" y "Buscar", y el header mide 111 px. Móvil: Buscar activo coincide |
+| `/login` | `28:1143` | sí | no | Barra interna "Tu cuenta" y sin barra inferior coinciden. Falta "Continuar con Google" (solo existe con Clerk) |
+| `/carrito` | `28:989`, `45:1692` | sí | sí | Barra interna, Pedido activo y estado vacío coinciden. No hay frame de escritorio para el vacío |
+| `/descubri` | `27:939` | sí | sí | Barra interna y sin barra inferior coinciden. El contenido depende de datos |
+| `/buscar/foto` | `27:882` | sí | sí | Barra interna coincide; falta la etiqueta "NUEVO · por programar" (CAT, ya documentada) |
+
+Pasadas del 390 y 1440 px también para Home y para el comprador anónimo (header con "Ingresar").
+
+### Diferencias encontradas
+
+1. **Corregida**: `/sin-conexion` no marcaba Inicio en la barra inferior (Figma `45:2264` lo marca). `barraInferiorHelpers.ts` y un caso nuevo en su test.
+2. **Sin corregir, sin referencia consistente**: el frame `43:1530` dibuja la barra inferior y el header con radio de 14 px, pero el componente canónico de la barra (`7:358`) y `54:2126` no lo tienen. No se aplicó.
+3. **Fuera de SHELL**: el buscador móvil de resultados (`26:722`) muestra la cámara dentro del campo y la implementación muestra la X de limpiar (CAT). El Blog vacío pinta un bloque blanco de alto fijo sobre el fondo gris (SRV; candidato a `fondo="blanco"`).
+4. **No es un defecto**: la barra roja del tope es `PageProgressBar` durante 2 s en cada cambio de ruta; el modal de cupón de bienvenida a los 2 s es `PromoWelcomePopup` (SYS), controlado por `hc-promo-seen`. Ninguno está en los frames.
+
+### Pendientes que siguen abiertos
+
+Los de la tabla "PARTIAL / requiere decisión" no cambian: enlaces del footer, fila de accesibilidad en Mi cuenta, cookies en desktop, `<h1>` de `BarraInterna` y remodelación del header. La medición de píxeles del header no se repitió: en esta pasada solo se compararon las capturas.
+
+### Resultados finales
+
+- `tsc` (3 tsconfig): limpio. Vitest: 99 archivos, 488 tests. Build a directorio temporal: OK. ESLint de los archivos tocados: sin errores.
+- E2E: SHELL 12 de 12; regresión (ACC, blog, catálogo, CHK, SRV, STORE, QR, tienda, Home): 88 pasan, 8 se saltan, 8 fallan, y los 8 fallan igual en `base` (`home-jobs` x4, `tienda-checkout:77`, `tienda-theme:115`, `catalogo-iconos:67`, `nav-categorias:83`).

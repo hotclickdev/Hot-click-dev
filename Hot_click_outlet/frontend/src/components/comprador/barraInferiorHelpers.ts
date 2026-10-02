@@ -12,6 +12,7 @@ const PREFIJOS: ReadonlyArray<[string, SeccionBarra]> = [
   ['/login', 'cuenta'],
   ['/registro', 'cuenta'],
   ['/blog', 'inicio'],
+  ['/sin-conexion', 'inicio'],
 ]
 
 const coincidePrefijo = (pathname: string, prefijo: string) => pathname === prefijo || pathname.startsWith(`${prefijo}/`)
