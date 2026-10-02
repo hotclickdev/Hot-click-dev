@@ -226,7 +226,8 @@ import { evaluateScale, scanScaleDiff, scanScaleHotspots } from './scale.mjs';
 test('DOC1 collects java 21 and flyway >= 130 from this repo', () => {
   const facts = collectStackFacts('.');
   assert.equal(facts.javaVersion, '21');
-  assert.equal(facts.springBoot, '3.4.4');
+  // La versión exacta cambia con cada upgrade del parent (hoy 3.5.x); el test valida que se lea del pom.
+  assert.match(facts.springBoot, /^3\.\d+\.\d+$/);
   assert.ok(facts.flywayMax >= 130);
   assert.ok(facts.flywayCount >= 100);
   assert.match(facts.react, /^19\./);
