@@ -98,4 +98,33 @@ class ConfirmacionPedidoEmailBuilderTest {
         Pedido pedido = pedidoConItem("Auriculares over-ear", "Andrea");
         assertThat(builder.buildConfirmacionPedido(pedido, pedido.getUsuarioFinal())).contains("₡15.900");
     }
+
+    @Test
+    @DisplayName("B17: envío normal GAM con la dirección guardada en el pedido («Enviamos a …»)")
+    void enviamosADireccion() {
+        Pedido pedido = pedidoConItem("Auriculares over-ear", "Andrea");
+        pedido.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        pedido.setDireccionEntrega("Del parque 200 m norte, casa <b>azul</b>, Escazú, San José");
+        String html = builder.buildConfirmacionPedido(pedido, pedido.getUsuarioFinal());
+        assertThat(html)
+            .contains("Envío normal GAM")
+            .contains("Enviamos a Del parque 200 m norte, casa &lt;b&gt;azul&lt;/b&gt;, Escazú, San José.")
+            .contains("Envío</td>")
+            .doesNotContain("Retiro en tienda");
+    }
+
+    @Test
+    @DisplayName("B17: sin dirección guardada (pedidos viejos) cae al texto genérico; retiro no muestra envío")
+    void sinDireccionYRetiro() {
+        Pedido pedido = pedidoConItem("Auriculares over-ear", "Andrea");
+        pedido.setMetodoEnvio("ENVIO_NORMAL_FUERA_GAM");
+        assertThat(builder.buildConfirmacionPedido(pedido, pedido.getUsuarioFinal()))
+            .contains("Envío normal fuera del GAM")
+            .contains("en la dirección indicada");
+
+        pedido.setMetodoEnvio(Constants.ENVIO_RETIRO);
+        assertThat(builder.buildConfirmacionPedido(pedido, pedido.getUsuarioFinal()))
+            .contains("Retiro en tienda")
+            .doesNotContain("Enviamos a");
+    }
 }
