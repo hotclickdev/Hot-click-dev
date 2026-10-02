@@ -9,15 +9,24 @@ import org.springframework.cache.CacheManager;
 
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * La API pública devolvía costo, margen, proveedor y contacto de bodega de cada
- * emprendedor. Solo el dueño del producto (o ADMIN) debe verlos.
+ * emprendedor. Solo el dueño del producto (o ADMIN) debe verlos. De la bodega el
+ * público recibe id, nombre, provincia, cantón y si permite retiro (más la dirección
+ * cuando hay retiro): nunca teléfono, correo, encargado ni coordenadas.
  */
 @DisplayName("[SEGURIDAD] Campos internos de Producto y Bodega fuera de la API pública")
 class ProductoCamposInternosTest extends BaseIntegrationTest {
+
+    private static final String TELEFONO_BODEGA  = "61234567";
+    private static final String CORREO_BODEGA    = "bodega-secreta@test.cr";
+    private static final String ENCARGADO_BODEGA = "Encargado Secreto";
+    private static final String DIRECCION_BODEGA = "Calle Secreta 123";
 
     @Autowired private EmpresaRepository   empresaRepository;
     @Autowired private ProductoRepository  productoRepository;
@@ -58,10 +67,23 @@ class ProductoCamposInternosTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.precioCompra").doesNotExist())
             .andExpect(jsonPath("$.data.stockMinimo").doesNotExist())
             .andExpect(jsonPath("$.data.proveedorPrincipal").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.id").exists())
             .andExpect(jsonPath("$.data.bodega.nombreBodega").exists())
+            .andExpect(jsonPath("$.data.bodega.provincia").value("San José"))
+            .andExpect(jsonPath("$.data.bodega.canton").value("Escazú"))
+            .andExpect(jsonPath("$.data.bodega.permiteRetiroCliente").value(false))
             .andExpect(jsonPath("$.data.bodega.telefono").doesNotExist())
             .andExpect(jsonPath("$.data.bodega.direccionExacta").doesNotExist())
-            .andExpect(jsonPath("$.data.bodega.correoContacto").doesNotExist());
+            .andExpect(jsonPath("$.data.bodega.correoContacto").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.encargadoNombre").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.latitud").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.longitud").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.capacidadMaxima").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.horarioApertura").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.empresaId").doesNotExist())
+            .andExpect(content().string(not(containsString(TELEFONO_BODEGA))))
+            .andExpect(content().string(not(containsString(CORREO_BODEGA))))
+            .andExpect(content().string(not(containsString(ENCARGADO_BODEGA))));
     }
 
     @Test
@@ -70,7 +92,12 @@ class ProductoCamposInternosTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/productos?size=50"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Con Costo')]").exists())
-            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Con Costo')].precioCompra").isEmpty());
+            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Con Costo')].precioCompra").isEmpty())
+            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Con Costo')].bodega.nombreBodega").isNotEmpty())
+            .andExpect(content().string(not(containsString(TELEFONO_BODEGA))))
+            .andExpect(content().string(not(containsString(CORREO_BODEGA))))
+            .andExpect(content().string(not(containsString(ENCARGADO_BODEGA))))
+            .andExpect(content().string(not(containsString(DIRECCION_BODEGA))));
     }
 
     @Test
@@ -79,7 +106,12 @@ class ProductoCamposInternosTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/tienda/" + empresa.getSlug() + "/productos"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.content[0].nombreProducto").value("Prod Con Costo"))
-            .andExpect(jsonPath("$.data.content[0].precioCompra").doesNotExist());
+            .andExpect(jsonPath("$.data.content[0].precioCompra").doesNotExist())
+            .andExpect(jsonPath("$.data.content[0].bodega.nombreBodega").exists())
+            .andExpect(jsonPath("$.data.content[0].bodega.telefono").doesNotExist())
+            .andExpect(jsonPath("$.data.content[0].bodega.encargadoNombre").doesNotExist())
+            .andExpect(jsonPath("$.data.content[0].bodega.latitud").doesNotExist())
+            .andExpect(content().string(not(containsString(CORREO_BODEGA))));
     }
 
     @Test
@@ -89,7 +121,11 @@ class ProductoCamposInternosTest extends BaseIntegrationTest {
                 .header("Authorization", tokenPara(duenio, Constants.ROL_EMPRENDEDOR)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.precioCompra").value(6000))
-            .andExpect(jsonPath("$.data.bodega.telefono").value("88880000"));
+            .andExpect(jsonPath("$.data.bodega.telefono").value(TELEFONO_BODEGA))
+            .andExpect(jsonPath("$.data.bodega.direccionExacta").value(DIRECCION_BODEGA))
+            .andExpect(jsonPath("$.data.bodega.correoContacto").value(CORREO_BODEGA))
+            .andExpect(jsonPath("$.data.bodega.encargadoNombre").value(ENCARGADO_BODEGA))
+            .andExpect(jsonPath("$.data.bodega.latitud").exists());
     }
 
     @Test
@@ -97,7 +133,9 @@ class ProductoCamposInternosTest extends BaseIntegrationTest {
     void admin_veCamposInternos() throws Exception {
         mockMvc.perform(get("/api/productos/" + producto.getId()).header("Authorization", adminToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.precioCompra").value(6000));
+            .andExpect(jsonPath("$.data.precioCompra").value(6000))
+            .andExpect(jsonPath("$.data.bodega.telefono").value(TELEFONO_BODEGA))
+            .andExpect(jsonPath("$.data.bodega.encargadoNombre").value(ENCARGADO_BODEGA));
     }
 
     @Test
@@ -110,19 +148,26 @@ class ProductoCamposInternosTest extends BaseIntegrationTest {
                 .header("Authorization", tokenPara(ajeno, Constants.ROL_EMPRENDEDOR)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data[?(@.nombreProducto == 'Prod Con Costo')]").exists())
-            .andExpect(jsonPath("$.data[?(@.nombreProducto == 'Prod Con Costo')].precioCompra").isEmpty());
+            .andExpect(jsonPath("$.data[?(@.nombreProducto == 'Prod Con Costo')].precioCompra").isEmpty())
+            .andExpect(content().string(not(containsString(TELEFONO_BODEGA))))
+            .andExpect(content().string(not(containsString(ENCARGADO_BODEGA))));
     }
 
     @Test
-    @DisplayName("Bodega con retiro en tienda: dirección y teléfono visibles para el checkout")
+    @DisplayName("Bodega con retiro en tienda: solo la dirección se suma para el checkout")
     void bodegaConRetiro_publicaDireccion() throws Exception {
         Producto conRetiro = crearProducto("Prod Retiro", "SKU-COSTO-2", empresa, crearBodega(empresa, true));
 
         mockMvc.perform(get("/api/productos/" + conRetiro.getId()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.bodega.direccionExacta").value("Calle Test 1"))
-            .andExpect(jsonPath("$.data.bodega.telefono").value("88880000"))
+            .andExpect(jsonPath("$.data.bodega.permiteRetiroCliente").value(true))
+            .andExpect(jsonPath("$.data.bodega.direccionExacta").value(DIRECCION_BODEGA))
+            .andExpect(jsonPath("$.data.bodega.telefono").doesNotExist())
             .andExpect(jsonPath("$.data.bodega.correoContacto").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.encargadoNombre").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.latitud").doesNotExist())
+            .andExpect(jsonPath("$.data.bodega.longitud").doesNotExist())
+            .andExpect(content().string(not(containsString(TELEFONO_BODEGA))))
             .andExpect(jsonPath("$.data.precioCompra").doesNotExist());
     }
 
@@ -166,9 +211,15 @@ class ProductoCamposInternosTest extends BaseIntegrationTest {
     private Bodega crearBodega(Empresa suEmpresa, boolean permiteRetiro) {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega Costos " + permiteRetiro);
-        b.setDireccionExacta("Calle Test 1");
-        b.setTelefono("88880000");
-        b.setCorreoContacto("bodega@test.cr");
+        b.setDireccionExacta(DIRECCION_BODEGA);
+        b.setTelefono(TELEFONO_BODEGA);
+        b.setCorreoContacto(CORREO_BODEGA);
+        b.setEncargadoNombre(ENCARGADO_BODEGA);
+        b.setCapacidadMaxima(500);
+        b.setLatitud(new java.math.BigDecimal("9.93333333"));
+        b.setLongitud(new java.math.BigDecimal("-84.08333333"));
+        b.setProvincia("San José");
+        b.setCanton("Escazú");
         b.setPermiteRetiroCliente(permiteRetiro);
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));

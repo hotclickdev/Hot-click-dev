@@ -16,6 +16,7 @@ import java.util.function.Predicate;
 
 /**
  * Omite del JSON los campos internos de Producto y Bodega salvo para el dueño o ADMIN.
+ * De Bodega el público solo recibe {@link #BODEGA_PUBLICOS} (más la dirección si hay retiro).
  * Varios endpoints públicos devuelven la entidad completa; filtrar aquí cubre a todos.
  */
 public class CamposInternosSerializerModifier extends BeanSerializerModifier {
@@ -25,10 +26,15 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
         "proveedorPrincipal", "clasificacionAbc", "demandaDiariaAvg", "tiempoReordenDias",
         "stockMinimo", "stockMaximo", "fechaUltimaCompra", "fechaUltimaVenta", "numeroLocal", "sku");
 
-    static final Set<String> BODEGA_INTERNOS = Set.of("correoContacto", "encargadoNombre", "capacidadMaxima");
+    /**
+     * Lo único que la API pública necesita de una bodega: agrupar el carrito por origen (id),
+     * mostrar de dónde sale el paquete (nombre, provincia, cantón) y ofrecer retiro en tienda.
+     * Lista blanca: cualquier campo nuevo de Bodega queda oculto al público hasta que se agregue acá.
+     */
+    static final Set<String> BODEGA_PUBLICOS = Set.of("id", "nombreBodega", "provincia", "canton", "permiteRetiroCliente");
 
-    /** El checkout los necesita para retiro en tienda; sin retiro no hay motivo para publicarlos. */
-    static final Set<String> BODEGA_SOLO_CON_RETIRO = Set.of("direccionExacta", "telefono", "latitud", "longitud");
+    /** El checkout la muestra para retiro en tienda; sin retiro no hay motivo para publicarla. */
+    static final Set<String> BODEGA_SOLO_CON_RETIRO = Set.of("direccionExacta");
 
     private final transient LongNullablePredicate puedeVerInternos;
 
@@ -45,12 +51,26 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
                 bean -> puedeVerInternos.test(((Producto) bean).getEmpresaId()));
         }
         if (Bodega.class.isAssignableFrom(tipo)) {
-            Predicate<Object> esDelDueno = bean -> puedeVerInternos.test(((Bodega) bean).getEmpresaId());
-            List<BeanPropertyWriter> filtradas = envolver(props, BODEGA_INTERNOS, esDelDueno);
-            return envolver(filtradas, BODEGA_SOLO_CON_RETIRO,
-                bean -> Boolean.TRUE.equals(((Bodega) bean).getPermiteRetiroCliente()) || esDelDueno.test(bean));
+            return filtrarBodega(props);
         }
         return props;
+    }
+
+    /** Teléfono, correo, encargado, coordenadas, horarios, capacidad y auditoría: solo dueño o ADMIN. */
+    private List<BeanPropertyWriter> filtrarBodega(List<BeanPropertyWriter> props) {
+        Predicate<Object> esDelDueno = bean -> puedeVerInternos.test(((Bodega) bean).getEmpresaId());
+        Predicate<Object> conRetiro = bean -> Boolean.TRUE.equals(((Bodega) bean).getPermiteRetiroCliente())
+            || esDelDueno.test(bean);
+        List<BeanPropertyWriter> resultado = new ArrayList<>(props.size());
+        for (BeanPropertyWriter p : props) {
+            String nombre = p.getName();
+            if (BODEGA_PUBLICOS.contains(nombre)) {
+                resultado.add(p);
+            } else {
+                resultado.add(new CampoCondicional(p, BODEGA_SOLO_CON_RETIRO.contains(nombre) ? conRetiro : esDelDueno));
+            }
+        }
+        return resultado;
     }
 
     /** Lista mutable: Jackson quita propiedades después (p. ej. por @JsonIgnoreProperties en la referencia). */
