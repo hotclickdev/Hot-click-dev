@@ -49,7 +49,7 @@ function Campo({ id, etiqueta, icono, children }: { id: string; etiqueta: string
   )
 }
 
-const CLASE_ENTRADA = 'hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[normal] text-hc-n-900 outline-none placeholder:text-[var(--hc-n-400)]'
+const CLASE_ENTRADA = 'hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-400'
 
 /**
  * Ingresar: Figma `28:1143` ("Ingresá o creá tu cuenta"). El frame solo dibuja el correo; la contraseña que exige el
@@ -105,9 +105,9 @@ export default function LoginFormStep({
           <>
             <SocialLoginButtons mode="signIn" variante="figma" />
             <div className="flex items-center gap-[10px]">
-              <span className="h-px flex-1 bg-[var(--hc-n-400)]" />
+              <span className="h-px flex-1 bg-hc-n-400" />
               <span className="text-[12px] text-hc-n-500">{t('login.conCorreo')}</span>
-              <span className="h-px flex-1 bg-[var(--hc-n-400)]" />
+              <span className="h-px flex-1 bg-hc-n-400" />
             </div>
           </>
         )}

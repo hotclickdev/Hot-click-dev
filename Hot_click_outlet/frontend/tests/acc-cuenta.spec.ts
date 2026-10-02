@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { mockApisAcc, sembrarCookies, sembrarSesion } from './helpers/accFixtures'
+import { colorDeToken, sinDesborde, tamanosDeCampos } from './helpers/medidasFigma'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -333,4 +334,36 @@ test.describe('Recuperar contraseña y seguimiento sin cuenta', () => {
     await expect(page.getByText('Paquete 1 · Casa Luna 506')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Crear mi cuenta' })).toBeVisible()
   })
+})
+
+test.describe('Login y recuperar: responsive y tokens (P08)', () => {
+  for (const tam of [MOVIL, ESCRITORIO]) {
+    test(`a ${tam.width}: sin desborde, correo de 15 px, casillas de 22 px y grises de SHELL`, async ({ page }) => {
+      const errores: string[] = []
+      page.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()) })
+      page.on('pageerror', (e) => errores.push(e.message))
+      await sembrarCookies(page)
+      await mockApisAcc(page)
+      await page.route('**/api/auth/forgot-password', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: {} }) }))
+
+      await ir(page, '/login', tam)
+      const correoLogin = page.getByLabel('Correo electrónico')
+      await expect(correoLogin).toHaveCSS('font-size', '15px')
+      const gris = await colorDeToken(page, '--hc-n-400')
+      expect(await correoLogin.evaluate((e) => getComputedStyle(e, '::placeholder').color)).toBe(gris)
+      await sinDesborde(page)
+
+      // 44:1551 y 44:1580: la pantalla no usa MainLayout; sin `hc-figma-ui` la regla de 16 px de SHELL la agrandaba en móvil.
+      await ir(page, '/recuperar-contrasena', tam)
+      const correo = page.getByLabel('Correo')
+      await expect(correo).toHaveCSS('font-size', '15px')
+      await correo.fill('ana.solis@gmail.com')
+      await page.getByRole('button', { name: 'Enviar código' }).click()
+      await expect(page.locator('input[inputmode="numeric"]')).toHaveCount(6)
+      expect(new Set(await tamanosDeCampos(page, 'input[inputmode="numeric"]'))).toEqual(new Set(['22px']))
+      await expect(page.getByText(/^Reenviar en/)).toHaveCSS('color', gris)
+      await sinDesborde(page)
+      expect(errores).toEqual([])
+    })
+  }
 })

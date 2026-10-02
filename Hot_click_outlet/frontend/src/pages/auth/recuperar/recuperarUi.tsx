@@ -68,7 +68,7 @@ export function CampoRecuperar({ etiqueta, icono, final, id, ...props }: CampoPr
         focus-within:border-hc-blue-600 focus-within:shadow-[inset_0_0_0_1px_var(--hc-blue-600)]">
         <span className="flex shrink-0 text-hc-n-500">{icono}</span>
         <input id={inputId} {...props}
-          className="min-w-0 flex-1 bg-transparent text-[15px] text-hc-n-900 outline-none placeholder:text-[var(--hc-n-400)]" />
+          className="min-w-0 flex-1 bg-transparent text-[15px] text-hc-n-900 outline-none placeholder:text-hc-n-400" />
         {final}
       </div>
     </div>

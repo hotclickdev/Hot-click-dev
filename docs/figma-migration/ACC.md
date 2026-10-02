@@ -62,6 +62,18 @@ Siguen PARTIAL por causas que no son visuales: login (paso de contraseña sin fr
 
 Los botones flotantes (isotipo y WhatsApp) tapan parte del contenido en 390 px en detalle de pedido y opiniones: es de SYS (decisión pendiente) y no se tocó.
 
+## P08 · implementación de AUTH (2-oct-2026)
+
+Sin acceso directo a Figma. Referencias `28:1143` (ingresar), `44:1551`, `44:1580` y `44:1614` (recuperar contraseña) y `44:1660` (verificación), con lo que registra este documento.
+
+- **Remedido** con Playwright a 390 y a 1440 (`acc-cuenta.spec.ts`, describe «Login y recuperar: responsive y tokens (P08)»): sin desborde horizontal ni errores de consola.
+  - `/login` 390: título en y=125, campo de correo de 15 px, «Continuar» 358x42 en y=454. 1440: columna de 420 px (x=510), título en y=186.
+  - `/recuperar-contrasena` 1440: correo de 15 px y casillas de 22 px, como declaran los componentes.
+- **Regresión corregida:** a 390, `/recuperar-contrasena` medía el correo en 16 px y las seis casillas en 16 px (los componentes piden 15 y 22). La pantalla no usa `MainLayout`, así que no estaba bajo `.hc-figma-ui` y la regla de 16 px de SHELL (`index.css`, excluye la superficie del comprador) la alcanzaba. La raíz de `RecuperarContrasenaPage` lleva ahora `hc-figma-ui`; queda igual que en escritorio. Mismo costo que asumió SHELL: en iOS esos campos hacen zoom al enfocar.
+- **Tokens:** `LoginFormStep` (`placeholder:text-hc-n-400`, separadores `bg-hc-n-400`), `recuperarUi` (`placeholder:text-hc-n-400`), `PasoCodigo` («Reenviar en», `text-hc-n-400`) y `PasoNueva` (requisito sin cumplir, `text-hc-n-400`) en vez de `var(--hc-n-400)`; mismo color, que el spec compara con el token.
+- **Sin tocar:** `useLoginFlow`, 2FA, WebAuthn, Turnstile, `SocialLoginButtons` y los servicios de auth. El modal de modo de administrador (sin frame) conserva `style={{ var() }}`; los `shadow-[inset_…var(--hc-blue-600)]` y `color-mix(…var(--hc-danger)…)` no tienen alias.
+- **Sin cambio, siguen PARTIAL:** `28:1143` (paso de contraseña y escritorio sin frame, Google solo con Clerk) y `44:1660` («Confiar en este dispositivo», backend; elegir método y código por correo sin frame). Las tres de recuperar siguen PASS.
+
 ## Funcionalidad preservada
 
 - **Login:** `useLoginFlow` no se tocó: mismas llamadas, 2FA por app y por correo, códigos de recuperación, WebAuthn, bloqueo y reenvío de verificación, Turnstile, recuperación del carrito y selector de modo de administrador.

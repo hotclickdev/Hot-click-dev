@@ -7,7 +7,7 @@ import type { RecuperarContrasena } from './useRecuperarContrasena'
 function Requisito({ cumple, texto }: { cumple: boolean; texto: string }) {
   return (
     <li className="flex w-full items-center gap-2">
-      <span className={`flex shrink-0 ${cumple ? 'text-hc-success' : 'text-[var(--hc-n-400)]'}`}>
+      <span className={`flex shrink-0 ${cumple ? 'text-hc-success' : 'text-hc-n-400'}`}>
         {cumple ? <IconoCheck /> : <IconoEquis />}
       </span>
       <span className={`text-[13px] ${cumple ? 'text-hc-success' : 'text-hc-n-500'}`}>{texto}</span>

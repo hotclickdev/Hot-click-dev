@@ -24,7 +24,7 @@ export default function PasoCodigo({ flujo }: { flujo: RecuperarContrasena }) {
       <div className="flex w-full items-center gap-[6px] text-[13px]" aria-live="polite">
         <span className="text-hc-n-600">{t('forgot.notReceived')}</span>
         {reenvioEn > 0 ? (
-          <span className="font-semibold text-[var(--hc-n-400)]">
+          <span className="font-semibold text-hc-n-400">
             {t('forgot.resendIn', { tiempo: formatearCuentaRegresiva(reenvioEn) })}
           </span>
         ) : (
