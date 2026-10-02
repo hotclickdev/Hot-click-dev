@@ -1,6 +1,6 @@
 package com.hotclick.service.catalogo;
 
-import java.text.NumberFormat;
+import com.hotclick.utils.FormatoColones;
 import java.util.Locale;
 import java.util.Map;
 
@@ -15,9 +15,6 @@ public final class ChatPrecioPersonalizado {
     public static final String MODO_COTIZACION = "COTIZACION";
     /** Mismo placeholder que el wizard al publicar cotización. */
     public static final int PLACEHOLDER_COTIZACION = 1;
-
-    private static final NumberFormat COLONES =
-        NumberFormat.getInstance(Locale.forLanguageTag("es-CR"));
 
     private ChatPrecioPersonalizado() {}
 
@@ -98,18 +95,18 @@ public final class ChatPrecioPersonalizado {
     private static String etiquetaCatalogo(Integer precioVenta, Integer precioOferta) {
         if (precioOferta != null && precioOferta > 0) {
             String base = precioVenta != null && precioVenta > 0
-                ? " (antes ₡" + COLONES.format(precioVenta) + ")" : "";
-            return "₡" + COLONES.format(precioOferta) + base;
+                ? " (antes ₡" + FormatoColones.miles(precioVenta) + ")" : "";
+            return "₡" + FormatoColones.miles(precioOferta) + base;
         }
         if (precioVenta == null || precioVenta <= 0) return A_COTIZAR;
-        return "₡" + COLONES.format(precioVenta);
+        return "₡" + FormatoColones.miles(precioVenta);
     }
 
     private static String etiquetaRango(Integer min, Integer max) {
         if (min != null && min > 0 && max != null && max > 0) {
-            return "Desde ₡" + COLONES.format(min) + " hasta ₡" + COLONES.format(max);
+            return "Desde ₡" + FormatoColones.miles(min) + " hasta ₡" + FormatoColones.miles(max);
         }
-        if (min != null && min > 0) return "Desde ₡" + COLONES.format(min);
+        if (min != null && min > 0) return "Desde ₡" + FormatoColones.miles(min);
         return A_COTIZAR;
     }
 }

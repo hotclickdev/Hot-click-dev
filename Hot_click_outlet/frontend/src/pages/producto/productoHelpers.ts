@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import type { Producto } from '@/types/producto'
 import type { BadgeProps } from '@/components/ui/Badge'
+import { formatPrice } from '@/utils/format'
 
 export type TipoVideo = 'youtube' | 'tiktok' | 'instagram'
 
@@ -63,7 +64,7 @@ export function seoDesdeProducto(product: Producto, userLang: string): { seoTitl
   }
   const activeSeo = seoByLang[userLang] ?? {}
   const fallbackTitle = `${product.titulo || product.nombre} | HotClick Outlet`
-  const fallbackDesc  = `${product.descripcion || product.nombre} | Precio: ₡${new Intl.NumberFormat('es-CR').format(product.precio)} | Envíos en Costa Rica`
+  const fallbackDesc  = `${product.descripcion || product.nombre} | Precio: ${formatPrice(product.precio)} | Envíos en Costa Rica`
   const seoTitle       = activeSeo.title       || seoByLang.es.title       || fallbackTitle
   const seoDescription = activeSeo.description || seoByLang.es.description || fallbackDesc
   return { seoTitle, seoDescription }

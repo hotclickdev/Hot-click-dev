@@ -201,3 +201,33 @@ Verificación: `tsc` (app y e2e) limpio; ESLint de los 11 archivos sin errores n
 | Campos de 14 y 15 px del comprador | Figma los pide así; el zoom de iOS es el costo que ya asumió SHELL. |
 
 Verificación: `tsc` (app y e2e) limpio; ESLint de `PhoneField` y del spec sin errores; Vitest de `components/ui` 21 de 21. Nuevo `responsive-barrido.spec.ts` (30 casos: 14 rutas a 390 y 1440 sin desborde, fuera de pantalla, recortes ni errores de página, y el registro con un solo tamaño de campo); sin la corrección falla el de 390. Playwright 100 de 103 en `responsive-barrido`, `registro-vender`, `emprende`, `acc-cuenta`, `qr-mesa-pago`, `smoke`, `emprendedor-wizard`, `a11y-fuente` y `checkout-responsive` (2 omitidos). Fallan `emprende:51`, `smoke:131` y `smoke:237`, que también fallan en `base`.
+
+## P16 — formato de datos (2-oct-2026)
+
+**Regla:** los montos se escriben `₡6.200`: símbolo pegado, punto de miles, sin espacio, NBSP (U+00A0) ni espacio estrecho (U+202F). `Intl.NumberFormat('es-CR')` y `NumberFormat.getInstance(es-CR)` de Java agrupan con NBSP (`₡6 200`) y `String.format("%,d")` depende del locale del servidor; ninguno cumple.
+
+**Un formateador por lado:** frontend `formatPrice` / `formatMiles` (`utils/format.ts`), ahora con `useGrouping: 'always'` para que un motor con agrupación mínima de 2 dígitos no deje `6200`. Backend: nuevo `utils/FormatoColones` (`miles`, `colones`) con el patrón que ya usaba `EmailLayoutHelper.CRC` (`#,##0` con punto); `EmailLayoutHelper.monto` delega en él y se quita la constante estática `CRC` (`DecimalFormat` no es seguro entre hilos). No hay formatos nuevos.
+
+**Corregido (llegaba NBSP, coma o el número sin separar):**
+
+| Dónde | Ahora |
+| --- | --- |
+| WhatsApp del carrito (`cartStore.toWhatsAppMessage`, `toLocaleString` daba `₡12 400`) | `formatPrice` |
+| Precio tachado de `AIProductCard`, `fmt` de los asistentes de carrito y de productos | `formatPrice` / `formatMiles` |
+| Descripción SEO de respaldo de la ficha (`productoHelpers`) | `formatPrice` |
+| Encargos: rango de presupuesto, WhatsApp de cotización, confirmación del precio y KPI «Ticket prom.» | `formatPrice` |
+| `formatoColon` (planes del wizard, prototipo y paneles), `formatMonto` en colones (cotizaciones) y `formatColones` (POS pago) | Delegan en `formatPrice` / `formatMiles` |
+| Backend: WhatsApp de pedido (`WhatsAppHelpers`, `WhatsAppService`), meta SEO de producto (`SpaSeoSupport`), precios del chat (`ChatPrecioPersonalizado`, catálogo del prompt RAG, presupuesto de la memoria y del chat público), publicación de Facebook, Telegram al cliente, nota del evento APROBADO y errores de mínimo/máximo de encargos | `FormatoColones` |
+| Correos (`ConfirmacionPedido`, `RecuperacionCarrito`, `PedidoAdmin`, `EncargoEmailSender`) | Ya daban `₡15.900`; ahora salen de `FormatoColones` |
+
+**Auditado sin cambio:** fechas (`formatDate` y las fechas cortas de pedido, encargo, seguimiento y servicios arman el mes con tres letras), porcentajes (`-20%`, `IVA 13%`, `10% desc.`: entero pegado al `%`), cantidades (`x2`, `3 paquetes × ₡4.000`), números de pedido (se muestran como llegan; `#Q-58` solo en autoservicio, como Figma). Los correos no formatean fechas ni teléfonos.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Teléfono: el campo del checkout muestra `8888 1234` y el número SINPE `7019-6686` | Los dos vienen de Figma (checkout y QR de pago); unificarlos **REQUIERE_DECISION**. `formatPhone` (`8888-1234`) de `checkoutHelpers` no tiene usos. |
+| Helpers propios de paneles y POS (`formatMontoPos`, `fmt` de `components/admin` y `components/pos`, recibo de WhatsApp del POS, `formatoTarifa` de recolección) y avisos internos de Telegram para admin y vendedor (`%,d`) | Fuera de la superficie del comprador; `formatMontoPos` además llena un campo editable y cambiar el separador puede romper su lectura. |
+| Hora de `formatDateTime` (ICU puede meter espacios duros en «a. m.») | Se ve como un espacio y no hay spec registrada para la hora. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint sin errores nuevos (el `only-export-components` de `cartAssistantHelpers` ya estaba); Vitest 507 de 507 (`format.test.ts` suma agrupación de 4 dígitos, sin NBSP, WhatsApp del carrito y textos de encargos; `posPagoFormat` exige `60.720`); JUnit 62 de 62 en 17 clases (nuevo `FormatoColonesTest`; `ChatPrecioPersonalizadoTest` exige `Desde ₡15.000 hasta ₡40.000`; los tests de correo comparan `₡15.900` y `₡95.900` literales). Playwright 41 de 41 en `formato-datos` (nuevo, 2 casos: carrito sin montos con espacio y mensaje de WhatsApp), `emprendedor-wizard` (el plan ahora espera `₡9.900/mes`; antes `₡9 900/mes`), `cart-cta`, `qr-mesa-pago` y `srv-servicios`. Sin la corrección de `cartStore` falla el caso de WhatsApp.

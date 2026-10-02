@@ -1,7 +1,12 @@
-const formateadorMiles = new Intl.NumberFormat('es-CR', {
+// useGrouping 'always' (ES2023, aún no tipado en el lib de TS): motores con agrupación mínima
+// de 2 dígitos para es dejarían 6200 sin punto; los que no lo soportan lo toman como true.
+const OPCIONES_MILES = {
+  useGrouping: 'always',
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
-})
+} as unknown as Intl.NumberFormatOptions
+
+const formateadorMiles = new Intl.NumberFormat('es-CR', OPCIONES_MILES)
 
 /**
  * Número entero con punto de miles (`6.200`), el formato de los montos en Figma.

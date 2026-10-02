@@ -58,7 +58,7 @@ class ConfirmacionPedidoEmailBuilderTest {
             .contains("ORD-10482")
             .contains("Auriculares over-ear")
             .contains("Andrea")
-            .contains("₡" + EmailLayoutHelper.CRC.format(15900))
+            .contains("₡15.900")
             .contains("Envío a domicilio");
     }
 

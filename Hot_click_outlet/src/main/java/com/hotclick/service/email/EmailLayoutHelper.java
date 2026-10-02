@@ -2,10 +2,7 @@ package com.hotclick.service.email;
 
 import com.hotclick.model.Pedido;
 import com.hotclick.utils.TokenSeguimientoPedido;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.util.Locale;
+import com.hotclick.utils.FormatoColones;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,15 +12,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class EmailLayoutHelper {
-
-    /** Montos con punto de miles (₡10.500), como en Figma y en el sitio. */
-    public static final NumberFormat CRC = formatoColones();
-
-    private static NumberFormat formatoColones() {
-        DecimalFormatSymbols simbolos = new DecimalFormatSymbols(Locale.forLanguageTag("es-CR"));
-        simbolos.setGroupingSeparator('.');
-        return new DecimalFormat("#,##0", simbolos);
-    }
 
     public static final String F_TEXT    = "'Public Sans',Arial,Helvetica,sans-serif";
     public static final String F_DISPLAY = "'Sora',Arial,Helvetica,sans-serif";
@@ -312,7 +300,7 @@ public class EmailLayoutHelper {
     }
 
     public String monto(Integer valor) {
-        return "₡" + CRC.format(valor != null ? valor : 0);
+        return FormatoColones.colones(valor);
     }
 
     /** Escapa texto y atributos: sin esto un nombre o una URL con comillas rompe el HTML. */

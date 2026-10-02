@@ -2,6 +2,7 @@ import { useState } from 'react'
 import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import { linkWhatsAppCotizacion, type Encargo } from '@/services/encargoService'
+import { formatPrice } from '@/utils/format'
 
 type Props = Readonly<{
   encargo: Encargo
@@ -163,7 +164,7 @@ export default function EncargoRespuestaPasos({
         {idPaso === 'confirmar' ? (
           <div className="space-y-2">
             <p className="text-sm">
-              Precio: <strong>₡{Number(precio).toLocaleString('es-CR')}</strong>
+              Precio: <strong>{formatPrice(precio)}</strong>
             </p>
             {mensaje.trim() ? <p className="text-sm text-hc-muted">{mensaje}</p> : null}
             {waLink ? (

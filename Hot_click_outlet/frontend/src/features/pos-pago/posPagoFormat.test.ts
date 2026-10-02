@@ -15,7 +15,8 @@ describe('nombreItem y formatColones', () => {
   })
 
   it('formatea colones enteros', () => {
-    expect(formatColones(60720).replace(/\s/g, '')).toBe('60720')
+    expect(formatColones(60720)).toBe('60.720')
+    expect(formatColones(-5)).toBe('0')
   })
 })
 

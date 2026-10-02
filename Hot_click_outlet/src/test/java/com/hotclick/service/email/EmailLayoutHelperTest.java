@@ -65,7 +65,7 @@ class EmailLayoutHelperTest {
     void monto_formatoColones() {
         // El separador de miles de es-CR lo decide el JVM (espacio duro o punto según el entorno);
         // por eso comparamos contra el propio formateador en vez de un literal.
-        assertThat(layout.monto(95900)).isEqualTo("₡" + EmailLayoutHelper.CRC.format(95900));
+        assertThat(layout.monto(95900)).isEqualTo("₡95.900");
         assertThat(layout.monto(null)).isEqualTo("₡0");
     }
 

@@ -6,6 +6,7 @@ import com.hotclick.model.Producto;
 import com.hotclick.model.PublicacionFacebook;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.PublicacionFacebookRepository;
+import com.hotclick.utils.FormatoColones;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +17,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class PublicacionFacebookService {
@@ -101,7 +100,6 @@ public class PublicacionFacebookService {
     }
 
     private String generarTexto(Producto p) {
-        NumberFormat fmt = NumberFormat.getNumberInstance(Locale.of("es", "CR"));
         StringBuilder sb = new StringBuilder();
 
         String nombre = p.getTituloProducto() != null ? p.getTituloProducto() : p.getNombreProducto();
@@ -111,7 +109,7 @@ public class PublicacionFacebookService {
             sb.append(p.getDescripcionCorta()).append("\n\n");
         }
 
-        sb.append("💰 Precio: ₡").append(fmt.format(p.getPrecioVenta())).append("\n");
+        sb.append("💰 Precio: ₡").append(FormatoColones.miles(p.getPrecioVenta())).append("\n");
         sb.append("📦 Stock disponible: ").append(p.getStockDisponible()).append(" unidades\n");
 
         if (p.getCondicion() != null) {

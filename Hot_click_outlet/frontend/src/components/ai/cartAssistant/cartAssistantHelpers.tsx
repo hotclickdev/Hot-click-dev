@@ -1,5 +1,6 @@
 import type { Id } from '@/types/api'
 import type { ProductoPrecioChat } from '../chatProductoPrecio'
+import { formatMiles } from '@/utils/format'
 
 export type ProductoSugerido = ProductoPrecioChat & {
   id?: Id
@@ -15,7 +16,7 @@ export type MensajeAsistenteCarrito = {
   productos?: ProductoSugerido[]
 }
 
-export const fmt = (n?: number | null) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+export const fmt = (n?: number | null) => formatMiles(n ?? 0)
 
 export function TypingDots() {
   return (

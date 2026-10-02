@@ -1,6 +1,7 @@
 package com.hotclick.rag.prompt;
 
 import com.hotclick.rag.dto.ProductoContexto;
+import com.hotclick.utils.FormatoColones;
 
 import java.util.List;
 
@@ -41,7 +42,7 @@ final class PromptCatalogoSection {
                 sb.append("    <sku>").append(PromptBuilderSupport.xmlEscape(p.sku())).append("</sku>\n");
                 String precioTxt = p.precioEtiqueta() != null && !p.precioEtiqueta().isBlank()
                     ? p.precioEtiqueta()
-                    : (p.precio() != null ? "₡" + PromptBuilderSupport.PRECIO_FORMAT.format(p.precio()) : "A cotizar");
+                    : (p.precio() != null ? FormatoColones.colones(p.precio()) : "A cotizar");
                 sb.append("    <precio>").append(PromptBuilderSupport.xmlEscape(precioTxt)).append("</precio>\n");
                 if (Boolean.TRUE.equals(p.esPersonalizado())) {
                     sb.append("    <personalizado>sí</personalizado>\n");

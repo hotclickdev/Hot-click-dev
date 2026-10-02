@@ -5,16 +5,13 @@ import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Usuario;
 
 import com.hotclick.utils.EmpresaNombre;
-import java.text.NumberFormat;
+import com.hotclick.utils.FormatoColones;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class WhatsAppHelpers {
-
-    public static final NumberFormat CRC = NumberFormat.getInstance(Locale.forLanguageTag("es-CR"));
 
     private WhatsAppHelpers() {}
 
@@ -22,7 +19,7 @@ public final class WhatsAppHelpers {
     public static Map<String, String> contextoEmprendedor(Pedido pedido) {
         Map<String, String> ctx = new LinkedHashMap<>();
         ctx.put("numeroPedido",  pedido.getNumeroPedido() != null ? pedido.getNumeroPedido() : "");
-        ctx.put("total",         CRC.format(pedido.getTotalPedido()));
+        ctx.put("total",         FormatoColones.miles(pedido.getTotalPedido()));
         ctx.put("productos",     resumirProductos(pedido.getItems()));
         ctx.put("metodoPago",    pedido.getMetodoPago()  != null ? pedido.getMetodoPago()  : "");
         ctx.put("metodoEnvio",   pedido.getMetodoEnvio() != null ? pedido.getMetodoEnvio() : "");

@@ -1,5 +1,6 @@
 import type { Id } from '@/types/api'
 import { etiquetaPrecioChat, requiereFichaEncargo, type ProductoPrecioChat } from '../chatProductoPrecio'
+import { formatMiles } from '@/utils/format'
 
 export type ProductoSugerido = ProductoPrecioChat & {
   id?: Id
@@ -18,7 +19,7 @@ export type MensajeAsistenteProductos = {
 
 export { etiquetaPrecioChat, requiereFichaEncargo }
 
-export const fmt = (n?: number | null) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+export const fmt = (n?: number | null) => formatMiles(n ?? 0)
 
 export const PANEL_CSS_ID = 'hc-panel-css'
 export const PANEL_CSS = `
