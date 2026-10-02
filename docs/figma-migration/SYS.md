@@ -14,7 +14,7 @@ Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYF
 | Preferencias de cookies · hoja | `45:2166` | PASS (móvil) | Hoja desde y 90, secciones en 179, 266 y 361, pie en 644; todas iguales a Figma |
 | C · Cupón de bienvenida | `51:2163` | PASS (móvil) | Hoja igual a Figma con el campo de correo de 42 px (decisión del usuario: el frame de 26 px es un frame comprimido, no la referencia final). El paso "cupón enviado" no existe en Figma y se resolvió con el mismo sistema |
 | D · ¿Aún pensando? | `51:2196` | PASS (móvil) | Hoja en y 525, alto 319, igual a Figma. La variante de favoritos no existe en Figma |
-| E · Idioma y accesibilidad | `51:2229` | PARTIAL (móvil medido) | Hoja y 490, alto 354 (igual a Figma); idioma, tamaño de fuente, alto contraste, reducir movimiento y Listo en las posiciones de Figma. Sin tema ni filtro de color (decisión del usuario). Diferencia real: Figma resalta "A" (la del medio) por defecto y la app resalta "A−" porque el tamaño por defecto del store es el más pequeño de las tres opciones; arreglarlo exige un tamaño nuevo o reetiquetar: REQUIRES_DECISION |
+| E · Idioma y accesibilidad | `51:2229` | PARTIAL (móvil medido) | Hoja y 490, alto 354 (igual a Figma); idioma, tamaño de fuente, alto contraste, reducir movimiento y Listo en las posiciones de Figma. Sin tema ni filtro de color (decisión del usuario). B3 (2-oct-2026): al abrir, el chip marcado es A y la raíz sigue en 16 px; A+ aplica `fs-lg` (18 px). A− se muestra y no reduce la fuente (el frame no define ese efecto): sigue PARTIAL |
 | F · Botón flotante de WhatsApp | `51:2262` | PASS (móvil) | 56 × 56 en x 318, y 705, igual a Figma. **Desktop: provisional sin frame** (abajo a la derecha, margen de 16 px, decisión del usuario) |
 
 ## Medidas Figma contra app (antes y ahora)
@@ -97,7 +97,7 @@ Quitado: `SocialProofToast` (inventaba compradores y acciones cada 15 a 30 s; no
 
 ## Pendientes REQUIRES_DECISION
 
-- Tamaño de fuente: Figma resalta "A" por defecto; la app resalta "A−" (ver fila de E).
+- Tamaño de fuente, efecto de A−: el chip se muestra y no reduce la raíz (el frame `51:2229` no define un tamaño menor que 16 px). La fila E sigue PARTIAL. El chip marcado al abrir ya es A (B3).
 - Variante de favoritos del aviso de salida y estado "cupón enviado": sin frame.
 
 ## Verificación
@@ -167,4 +167,15 @@ No hay un `bottom` nuevo para todas las pantallas. El ancla de Home (`52:2418`, 
 - **Sin barra y con el botón visible**: spacer de 88 px para que el envío del formulario pueda quedar por encima. No se agrega si el botón está oculto (carrito, checkout, pago, ficha).
 - **Desktop** (`lg`): sigue `bottom: 16px` y `right: 16px`. En 1440 el © y «Términos» no cruzan el botón.
 - **Sigue PARTIAL** donde el frame no dibuja el botón (`/servicios`, `/sin-conexion`) o Home tiene otras pendientes (fotos, badges). El recuento no cambia: 35 PASS / 55 PARTIAL.
-- **Pruebas**: `flotantesHelpers.test.ts` y `tests/whatsapp-fab-b2.spec.ts`. `pie-accesos.spec.ts` sigue exigiendo (318, 705) y (1368, 828). B3 y B4 no se tocaron.
+- **Pruebas**: `flotantesHelpers.test.ts` y `tests/whatsapp-fab-b2.spec.ts`. `pie-accesos.spec.ts` sigue exigiendo (318, 705) y (1368, 828). B4 no se tocó.
+
+## Pasada B3 del 2-oct-2026: tamaño de fuente
+
+Figma `52:2389` marca el chip **A** (blue/50, borde blue/600). A− y A+ van sin marcar. El frame no dice cuántos px aplican fuera de la hoja.
+
+- **A** queda en `fontSize: 'normal'`. Sin preferencia guardada, A sale marcado y `<html>` no lleva `fs-lg` ni `fs-xl`. La raíz sigue en 16 px.
+- **A+** guarda `lg` (18 px, clase `fs-lg`). Si la sesión ya tenía `xl` (20 px), no se rebaja: A+ sigue marcado y la clase `fs-xl` se conserva.
+- **A−** se dibuja. Pulsarlo no cambia la raíz. No hay un `font-size` menor: el frame no lo define.
+- No se tocaron `index.css`, el default del store, WhatsApp, el pie, las cookies ni el radiogroup del idioma.
+- La fila `51:2229` sigue PARTIAL. El recuento no cambia: 35 PASS / 55 PARTIAL.
+- **Pruebas**: `fuenteAccesibilidad.test.ts` y `tests/a11y-fuente.spec.ts` (390 y 1440).

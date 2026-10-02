@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (SYS/SHELL B2; antes B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (SYS/SHELL B3; antes B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -28,7 +28,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | SYS/SHELL, pasada A1/A2/A4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). A1: Home muestra `PantallaSinConexion` ante un error de red sin datos. A2: línea base de 66 medidas del chrome contra 12 frames, todas dentro de ±1 px tras 4 correcciones (header del carrito desktop de 83 px con el carrito rojo; corazón del header móvil y desktop). A4: el aviso de cookies bajó de z 9999 a 65 porque tapaba la hoja del cupón. No se tocó B1 a B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
 | SYS/SHELL, B1 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie con `abrirPreferenciasCookies()` y `abrirAccesibilidad()`; se eliminó el botón flotante con el isotipo. Pie desktop sin cambio, pie móvil 71 -> 89 px. No se tocó B3 ni B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
-| SYS/SHELL, B2 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). WhatsApp: 83 px solo con barra inferior; 16 px si no hay barra; Home (318, 705) y desktop (margen 16) intactos. Spacer de 155 px en la raíz móvil para que el pie legal no quede debajo del botón. B3 y B4 sin cambios. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` |
+| SYS/SHELL, B2 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). WhatsApp: 83 px solo con barra inferior; 16 px si no hay barra; Home (318, 705) y desktop (margen 16) intactos. Spacer de 155 px en la raíz móvil para que el pie legal no quede debajo del botón. B4 sin cambios. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` |
+| SYS/SHELL, B3 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Al abrir la hoja, el chip marcado es A y la raíz sigue en 16 px. A+ aplica `fs-lg` (18 px). A− se muestra y no reduce la fuente (sin frame). La fila `51:2229` sigue PARTIAL. B4 sin cambios. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` |
 
 ## Ramas y worktrees
 
@@ -219,7 +220,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 20 | ~~Campo de correo del cupón~~ **Resuelto: se mantiene 42 px** (el frame de 26 px está comprimido: única diferencia entre 5 campos iguales) | SYS |
 | 21 | ~~WhatsApp desktop~~ **Resuelto: abajo a la derecha, margen 16 px** (nota `52:2422`). **Cookies desktop: `REQUIRES_DESIGN_REFERENCE`**: se mantiene temporalmente la tarjeta abajo a la izquierda (SYS la cambió de la banda centrada anterior sin respaldo en Figma); no es PASS ni está respaldada por Figma hasta que exista frame desktop | SYS |
 | 22 | ~~Desktop tras "Agregar"~~ **Resuelto provisional: se mantiene el toast "Añadido"**. No se implementa la hoja `45:1607` en desktop por analogía (Figma solo la enlaza desde la ficha móvil). **`REQUIRES_DESIGN_REFERENCE`**: falta referencia o interacción desktop; no es PASS definitivo en desktop | CHK |
-| 24 | Tamaño de fuente por defecto en la hoja de accesibilidad (`51:2229`): Figma resalta "A" (el del medio) y la app resalta "A−" porque el valor por defecto del store es el menor. Arreglarlo exige un tamaño nuevo o reetiquetar | SYS |
+| 24 | ~~Chip de fuente marcado al abrir~~ **Resuelto en B3 (2-oct-2026):** A queda en 16 px (`normal`) y A+ en 18 px (`fs-lg`). Sigue pendiente el efecto de A−: el frame no define un tamaño menor, así que el chip no cambia la raíz y la fila `51:2229` sigue PARTIAL | SYS |
 | 23 | ~~Aviso de envío del primer producto de un negocio~~ **Resuelto: se mantiene omitido**; se muestra solo cuando ya hay otro producto del mismo negocio (el caso dibujado en Figma) | CHK |
 
 | 25 | ~~Funcionalidad que CHK quitó y Figma no elimina~~ **Resuelto (1-oct-2026): se restauran** vaciar pedido, WhatsApp en escritorio, guardar por correo en escritorio (posición sin referencia desktop), garantía de 40 días, imprimir y el contexto del carrito al asistente. **Se mantienen eliminados**: `AICartSection`, `CrossSellGrid`, stepper, precio unitario, meta de envío gratis en el carrito | CHK |

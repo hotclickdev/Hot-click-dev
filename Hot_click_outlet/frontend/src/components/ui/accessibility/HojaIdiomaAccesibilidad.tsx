@@ -7,18 +7,12 @@ import Interruptor from '@/components/ui/sistema/Interruptor'
 import OpcionChip from '@/components/ui/sistema/OpcionChip'
 import { BOTON_HOJA_PRIMARIO, TITULO_HOJA } from '@/components/ui/sistema/estilosHoja'
 import { LANGUAGES } from './a11yConstants'
+import { chipFuenteActivo, fuenteAlElegirMayor, fuenteAlElegirMenor, FUENTE_MEDIA } from './fuenteAccesibilidad'
 
 type HojaIdiomaAccesibilidadProps = {
   abierta: boolean
   onCerrar: () => void
 }
-
-/** Valores de `fontSize` del store: A− = normal, A = lg, A+ = xl (la etiqueta "A" es la letra mediana). */
-const TAMANOS_FUENTE = [
-  { valor: 'normal', clave: 'a11y.small' },
-  { valor: 'lg', clave: 'a11y.normal' },
-  { valor: 'xl', clave: 'a11y.large' },
-] as const
 
 const ETIQUETA_GRUPO = 'font-sans text-[14px] font-medium leading-[normal] tracking-normal text-hc-n-900'
 
@@ -89,9 +83,9 @@ export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiom
       <div role="group" aria-labelledby="a11y-fuente" className="flex flex-col gap-2">
         <p id="a11y-fuente" className={ETIQUETA_GRUPO}>{t('a11y.tamanoFuente')}</p>
         <div className="flex flex-wrap gap-2">
-          {TAMANOS_FUENTE.map(({ valor, clave }) => (
-            <OpcionChip key={valor} activa={fontSize === valor} onClick={() => setFontSize(valor)}>{t(clave)}</OpcionChip>
-          ))}
+          <OpcionChip activa={false} onClick={() => setFontSize(fuenteAlElegirMenor(fontSize))}>{t('a11y.small')}</OpcionChip>
+          <OpcionChip activa={chipFuenteActivo(fontSize) === 'media'} onClick={() => setFontSize(FUENTE_MEDIA)}>{t('a11y.normal')}</OpcionChip>
+          <OpcionChip activa={chipFuenteActivo(fontSize) === 'mayor'} onClick={() => setFontSize(fuenteAlElegirMayor(fontSize))}>{t('a11y.large')}</OpcionChip>
         </div>
       </div>
 
