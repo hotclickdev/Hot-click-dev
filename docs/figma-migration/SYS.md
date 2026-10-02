@@ -57,7 +57,7 @@ Evidencia (búsqueda en todos los frames del archivo, 622 mil caracteres de meta
 7. **Con la barra de compra de la ficha.** Ya no se superponen: ambos se ocultan en móvil. Medido en `/productos/1` a 390: solo queda la barra (y 761, 83). No hizo falta tocar `MainLayout` ni `pages/producto`.
 8. **Desktop y móvil.** Móvil como Figma. Desktop: Figma solo dice "abajo a la derecha"; 16 px cerrado por el usuario (sin frame, provisional).
 
-El botón con el isotipo se **conserva** de forma temporal: Figma (nota E) dice que "idioma y accesibilidad" se abre desde Mi cuenta y desde el footer, pero ninguno de los dos frames dibuja ese acceso. Está detrás de la constante `MOSTRAR_BOTON_FLOTANTE` de `AccessibilityPanel.tsx`. Cuando SHELL (footer) y ACC (Mi cuenta) llamen a `abrirAccesibilidad()`, pasarla a `false`.
+~~El botón con el isotipo se conserva de forma temporal~~ **Retirado el 2-oct-2026 (B1).** Figma (nota E) dice que "idioma y accesibilidad" se abre desde Mi cuenta y desde el pie, y ningún frame dibuja el botón flotante. El pie ahora abre la hoja con `abrirAccesibilidad()` y las preferencias de cookies con `abrirPreferenciasCookies()` (ver "Pasada B1" al final); `MOSTRAR_BOTON_FLOTANTE` y el botón se eliminaron. La fila "Idioma y accesibilidad" de Mi cuenta (ACC) sigue sin frame.
 
 ## API que expone SYS
 
@@ -69,7 +69,7 @@ El botón con el isotipo se **conserva** de forma temporal: Figma (nota E) dice 
 
 ## Dependencias para otros agentes
 
-- **SHELL** (`FooterComprador`): agregar enlaces "Preferencias de cookies" → `abrirPreferenciasCookies()` e "Idioma y accesibilidad" → `abrirAccesibilidad()`. `MainLayout` podría tener una prop `fondo="blanco"`: la 404 y el fallo son `n/0` en Figma y el layout pinta `n/50`; hoy la 404 lo resuelve con `min-h-[calc(100dvh-125px)] bg-hc-n-0` (aproximación de móvil).
+- **SHELL** (`FooterComprador`): ~~agregar enlaces~~ hecho el 2-oct-2026 (B1): "Preferencias de cookies" → `abrirPreferenciasCookies()` e "Idioma y accesibilidad" → `abrirAccesibilidad()`. `MainLayout` podría tener una prop `fondo="blanco"`: la 404 y el fallo son `n/0` en Figma y el layout pinta `n/50`; hoy la 404 lo resuelve con `min-h-[calc(100dvh-125px)] bg-hc-n-0` (aproximación de móvil).
 - **ACC** (Mi cuenta): fila "Idioma y accesibilidad" → `abrirAccesibilidad()`.
 - **HOME / quien muestre errores de red**: `if (esSinConexion(error)) return <PantallaSinConexion onReintentar={...} />`. Hecho el 2-oct-2026: `HomePage` muestra `PantallaSinConexion` ante un error de red sin datos, además de `PantallaFalloServidor` ante un 5xx.
 - **SUP**: ruta `/sin-conexion` (`ROUTES_REQUESTED.md`); `App.tsx` y `app/AppChrome.tsx` fueron editados con el cambio mínimo (ver abajo).
@@ -140,3 +140,18 @@ Orden real medido: flotantes (WhatsApp, isotipo) 40 < header y barra inferior 50
 Corrección (única de A4): `CookieBanner.tsx`, `z-[9999]` -> `z-[65]`. Las hojas pasan a cubrir el aviso, como cualquier modal, y el aviso sigue sobre la barra, la tarjeta de instalar y el aviso de actualización. Verificado que la prueba falla con el valor anterior (390) y pasa con el nuevo (390 y 1440). Pruebas: `tests/sys-apilado.spec.ts` (4 casos).
 
 No se tocó el solapamiento de WhatsApp con el contenido ni la posición `bottom: 83px` en páginas internas (B2), ni el botón con isotipo (B1).
+
+## Pasada B1 del 2-oct-2026: accesos del pie y retiro del isotipo flotante
+
+Decisión B1 (tuya): "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie y el botón flotante con el isotipo se elimina. Los frames del pie (`7:355`, `9:559`) no dibujan los accesos; solo la nota E (`51:2590`) dice "desde el pie". No se inventó diseño: van como texto en la misma línea legal, con el estilo de los demás enlaces.
+
+- **Pie** (`FooterComprador.tsx`): dos `<button>` que llaman a `abrirPreferenciasCookies()` y `abrirAccesibilidad()`. Sin navegación falsa. Foco visible con el anillo global de `:focus-visible`. Claves nuevas `comprador.footer.preferenciasCookies` e `idiomaAccesibilidad` en es/en/pt.
+- **Hoja de accesibilidad** (`AccessibilityPanel.tsx`): se eliminaron el botón del isotipo, `MOSTRAR_BOTON_FLOTANTE` y las condiciones de ruta que solo existían para ese botón (con ellas, el enlace del pie no hacía nada en `/pago`). La hoja, el radiogroup de idioma y los controles no cambiaron. Al abrirla, el foco entra en el idioma vigente (`HojaIdiomaAccesibilidad.tsx`); al cerrarla vuelve a quien la abrió.
+- **Cookies**: la hoja de preferencias ya existía y ya devolvía el foco; solo se conectó. Se abre antes y después de haber respondido el aviso, se cierra con Esc y con "Guardar preferencias", y se puede reabrir.
+- **No cambió**: `WhatsAppFab` (misma posición: 390 en (318, 705) de 56 × 56; 1440 en (1368, 828)), tamaño de fuente (B3), criterio de cookies (B4), posición de WhatsApp en páginas internas (B2).
+- **Efecto en la altura del pie**: desktop sin cambio (143 = 84 + 59 de Figma; los accesos entran en la misma línea, que mide 724 px de 1200). Móvil: el pie legal pasa de 71 a 89 px (segunda línea de 18 px) y banner + pie de 138 a 156. Figma no dibuja esos accesos, así que no hay referencia contra la cual corregir; la diferencia es consecuencia directa de B1.
+- **Alcance real del acceso**: el pie solo se ve en móvil en las pantallas `raiz` (Home, catálogo, categorías); en las `interna`, `marca` y `propia` el pie es solo de escritorio. Desde esas pantallas en móvil (carrito, ficha, login, cuenta, checkout) la hoja ya no se alcanza, mientras que antes el isotipo sí estaba. La fila "Idioma y accesibilidad" de Mi cuenta (ACC) no tiene frame y no se inventó. Queda documentado como decisión pendiente, no se resolvió aquí.
+- **Visual**: hoja abierta desde el pie a 390 en y490, alto 354, igual a `51:2229`. Pie a 1440 sin cambios de altura ni de posición del texto legal (x120) ni del © (x1159, 161 de ancho).
+- **Pruebas**: `tests/pie-accesos.spec.ts` (9 casos a 390 y 1440: accesos visibles, cookies abre/cierra/reabre, idioma con `radiogroup`, `aria-checked`, flechas, Esc y foco, sin isotipo, WhatsApp igual, sin desborde, Enter con teclado y foco visible). Se actualizaron `idioma.spec`, `ui-sin-emoji.spec` y `sys-apilado.spec`, que abrían la hoja con el isotipo.
+- **`idioma.spec`**: dos casos (English y Português) siguen fallando, pero en la aserción del enlace "Products/Produtos" del header anterior, después de abrir la hoja y cambiar el idioma. No los causa B1; ya fallaban en `master`.
+- El CSS `.hc-isotipo-placa` de `index.css` quedó sin uso. No se tocó `index.css` en esta pasada.

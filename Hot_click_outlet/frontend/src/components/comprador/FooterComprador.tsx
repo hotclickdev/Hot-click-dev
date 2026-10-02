@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import { RUTA_VENDE } from './header/useHeaderComprador'
+import { abrirAccesibilidad } from '@/components/ui/accessibility/abrirAccesibilidadApi'
+import { abrirPreferenciasCookies } from '@/components/ui/cookies/preferenciasCookiesApi'
 
 type EnlaceFooter = { clave: string; to: string; soloEscritorio?: boolean }
 
@@ -13,6 +15,16 @@ const ENLACES: EnlaceFooter[] = [
   { clave: 'contacto', to: '/contacto' },
   { clave: 'terminos', to: '/terminos' },
   { clave: 'privacidad', to: '/privacidad', soloEscritorio: true },
+]
+
+/**
+ * Accesos que abren una hoja, no una página (Figma `51:2590`, nota E: "desde el pie"). Ningún frame
+ * del pie los dibuja: van como texto de la misma línea legal, sin ícono ni estilo nuevo. En móvil
+ * pasan a una segunda línea para que ningún nombre se parta.
+ */
+const ACCIONES: ReadonlyArray<{ clave: string; abrir: () => void }> = [
+  { clave: 'preferenciasCookies', abrir: abrirPreferenciasCookies },
+  { clave: 'idiomaAccesibilidad', abrir: abrirAccesibilidad },
 ]
 
 function BannerVendedor() {
@@ -48,6 +60,17 @@ function EnlacesLegales() {
           <Link to={enlace.to} className="hover:text-hc-n-900">{t(`comprador.footer.${enlace.clave}`)}</Link>
         </span>
       ))}
+      <span className="hidden lg:inline"> · </span>
+      <span className="block lg:inline">
+        {ACCIONES.map((accion, indice) => (
+          <span key={accion.clave} className="whitespace-nowrap">
+            {indice > 0 && ' · '}
+            <button type="button" onClick={accion.abrir} className="hover:text-hc-n-900">
+              {t(`comprador.footer.${accion.clave}`)}
+            </button>
+          </span>
+        ))}
+      </span>
     </p>
   )
 }

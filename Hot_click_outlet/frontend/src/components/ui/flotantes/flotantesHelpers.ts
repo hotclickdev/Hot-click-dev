@@ -1,5 +1,5 @@
 /**
- * Botones flotantes del sistema (WhatsApp y accesibilidad).
+ * Botón flotante del sistema (WhatsApp). El de accesibilidad con el isotipo se retiró: ahora se abre desde el pie.
  *
  * Móvil (< lg): el botón de WhatsApp de 56 px queda a 16 px sobre la barra inferior de 67 px
  * (Figma `52:2418`: x 318, y 705 en un lienzo de 390 × 844) y a 16 px del borde derecho.

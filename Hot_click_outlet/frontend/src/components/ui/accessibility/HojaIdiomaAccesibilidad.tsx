@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from 'react'
+import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import HojaInferior from '@/components/comprador/HojaInferior'
 import { ICONOS_ESTADOS } from '@/components/comprador/estados/iconosEstados'
@@ -37,6 +37,13 @@ export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiom
   const reduceMotion = useUiStore((s) => s.reduceMotion)
   const toggleReduceMotion = useUiStore((s) => s.toggleReduceMotion)
   const idiomasRef = useRef<(HTMLButtonElement | null)[]>([])
+
+  /** Al abrir desde el pie, el foco entra en la hoja: queda en el idioma vigente (el que tiene tabIndex 0). */
+  useEffect(() => {
+    if (!abierta) return
+    const vigente = LANGUAGES.findIndex(({ code }) => code === language)
+    idiomasRef.current[Math.max(vigente, 0)]?.focus()
+  }, [abierta, language])
 
   /** Radiogroup: flechas, Inicio y Fin mueven la selección, como en `LanguageRadiogroup`. */
   const elegirIdiomaConTeclado = (e: KeyboardEvent<HTMLButtonElement>, indice: number) => {

@@ -93,7 +93,7 @@ test.describe('Hojas contra flotantes y barra inferior (390)', () => {
     expect(await recibeElClic(whatsapp)).toBe(true)
     expect(await recibeElClic(barra)).toBe(true)
 
-    await page.locator('button.hc-isotipo-placa').click()
+    await page.locator('footer').getByRole('button', { name: 'Idioma y accesibilidad' }).click()
     await expect(page.getByRole('button', { name: 'Listo' })).toBeVisible()
     expect(await recibeElClic(page.getByRole('button', { name: 'Listo' }))).toBe(true)
     expect(await recibeElClic(whatsapp)).toBe(false)

@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (SYS/SHELL A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (SYS/SHELL B1; antes A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -27,6 +27,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | SYS/SHELL, pasada A1/A2/A4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). A1: Home muestra `PantallaSinConexion` ante un error de red sin datos. A2: línea base de 66 medidas del chrome contra 12 frames, todas dentro de ±1 px tras 4 correcciones (header del carrito desktop de 83 px con el carrito rojo; corazón del header móvil y desktop). A4: el aviso de cookies bajó de z 9999 a 65 porque tapaba la hoja del cupón. No se tocó B1 a B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
+| SYS/SHELL, B1 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie con `abrirPreferenciasCookies()` y `abrirAccesibilidad()`; se eliminó el botón flotante con el isotipo. Pie desktop sin cambio, pie móvil 71 -> 89 px. No se tocó B2, B3 ni B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
 
 ## Ramas y worktrees
 
@@ -225,7 +226,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 | 27 | Frames de escritorio que faltan (REQUIRES_DESIGN_REFERENCE): pago exitoso/fallido, pantalla previa de transferencia SINPE, hoja tras "Agregar" | CHK |
 | 28 | `autoQuery` del asistente global: `ChatModal` limpia `pendingMessage` al abrir y la pregunta inicial no se envía sola (afecta también a `AsistentePedido`). Es de CAT, no de CHK | CAT |
 | 29 | ACC: **Direcciones guardadas** en Datos y seguridad (`30:1436`, marcada "NUEVO · a confirmar") no existe en backend: se omitió. ¿Se aprueba construirla? | ACC |
-| 30 | ACC: **"Idioma y accesibilidad" en Mi cuenta** (SYS la pidió): ningún frame de Figma la dibuja, no se inventó. Falta el diseño; mientras, el botón flotante de accesibilidad sigue visible | ACC, SYS |
+| 30 | ACC: **"Idioma y accesibilidad" en Mi cuenta** (SYS la pidió): ningún frame de Figma la dibuja, no se inventó. Falta el diseño. Desde el 2-oct-2026 (B1) ya no hay botón flotante: la hoja se abre desde el pie, que en móvil solo se ve en pantallas raíz | ACC, SYS |
 | 31 | ACC: **solicitud cotizada** necesita backend (precio, vigencia, entrega, comprar) y la pestaña **Encargos** necesita un listado del comprador. ¿Se prioriza? | ACC, SRV |
 | 32 | ACC: **login**: el paso de contraseña no tiene frame (se pide tras "Continuar") y no se puede saber si un correo existe, así que "Creá una" va en el paso 2. Pedir a diseño el frame del paso de contraseña y del registro | ACC |
 | 33 | ACC: **"Confiar en este dispositivo"** de la verificación en dos pasos no tiene soporte en backend. ¿Se construye? | ACC |
@@ -240,7 +241,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 
 ## Riesgos abiertos
 
-- **Pendientes de integración tras SYS:** hechos el 2-oct-2026 la ruta `/sin-conexion` (SHELL), el alias `--color-hc-success-bg`, la prop de fondo blanco de `MainLayout` y Home con `esSinConexion` -> `PantallaSinConexion` (A1). Siguen abiertos (decisión tuya): `FooterComprador` con "Preferencias de cookies" (`abrirPreferenciasCookies()`) e "Idioma y accesibilidad" (`abrirAccesibilidad()`) (B1) y la fila de accesibilidad en Mi cuenta (ACC). Hasta entonces el botón con isotipo de accesibilidad sigue visible (constante `MOSTRAR_BOTON_FLOTANTE`).
+- **Pendientes de integración tras SYS:** hechos el 2-oct-2026 la ruta `/sin-conexion` (SHELL), el alias `--color-hc-success-bg`, la prop de fondo blanco de `MainLayout` y Home con `esSinConexion` -> `PantallaSinConexion` (A1). `FooterComprador` con "Preferencias de cookies" e "Idioma y accesibilidad" y el retiro del botón con isotipo (B1) también quedaron hechos. Sigue abierta la fila de accesibilidad en Mi cuenta (ACC, sin frame): en móvil el pie solo existe en pantallas raíz, así que desde carrito, ficha, login y cuenta la hoja no tiene otro acceso.
 - **`REQUIRES_DESIGN_REFERENCE` (no son PASS definitivo):** cookies en desktop (tarjeta abajo a la izquierda, provisional) y la interacción desktop tras "Agregar" en la ficha (toast). Hay que pedir a diseño los frames desktop.
 
 - **PASS sin QA independiente (se documentan como `PASS — agent verified`):** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
@@ -258,7 +259,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 - **Dependencias hacia SRV (ACC):** `ServiciosHotPage` pasó a `ServiciosHotVistas` con un `default` que abre `?vista=solicitudes|busqueda|garantia|testimonio`; la pestaña de "mis solicitudes" dentro de Servicios HOT sigue con el diseño anterior.
 - **e2e previos fuera de ACC:** `bottom-nav.spec.ts` (3 pruebas del diseño anterior de la barra inferior) ya fallaba en `base`. ACC actualizó `mis-pedidos`, `wishlist-cta` y `wishlist-placeholder`, que también fallaban.
 - **Dependencias hacia SHELL (SRV):** los inputs móviles se fuerzan a 16 px (Figma pide 14); una regla pinta `header`, `aside` y `footer` con `!important`, así que un bloque con fondo propio no puede usar esas etiquetas; `BarraInferior` no marca "Inicio" en `/blog`; faltan los alias `--color-hc-success-bg`, `--color-hc-n-400` y `hc-red-50`.
-- **Dependencias hacia SYS (SRV):** el botón con isotipo y el de WhatsApp flotantes tapan el botón de envío del formulario y de la garantía y el total del encargo.
+- **Dependencias hacia SYS (SRV):** el botón con isotipo (retirado el 2-oct-2026, B1) y el de WhatsApp flotantes (B2 pendiente) tapan el botón de envío del formulario y de la garantía y el total del encargo.
 - **Dependencias hacia backend (SRV):** categoría, productos y autor de las entradas del blog; endpoint para aceptar una cotización; fotos y motivo de la solicitud de garantía; nombre de la tienda, fechas, tiempo de producción, envío y teléfono del vendedor en el encargo; rangos de presupuesto.
 - **Defectos previos corregidos por SRV:** el desenvuelto del interceptor dejaba vacías las listas de garantías, productos por opinar y blog; el artículo del blog usaba una clase sin CSS; `formatMonto` agrupaba miles con espacio duro. Ver `SRV.md`.
 - **e2e previos fuera de SRV:** `ui-sin-emoji.spec.ts` (16 casos) y 3 casos de `envio-*` sobre el Home fallan igual en `base`. SRV actualizó `blog`, `envio-internacional` y `envio-rapido` (`/envios`) y agregó `srv-servicios.spec.ts` (16 casos).

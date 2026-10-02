@@ -20,7 +20,7 @@ Además: la E2E `bottom-nav.spec.ts` describía la barra anterior (Productos/Ser
 
 | Pendiente | Estado | Motivo |
 | --- | --- | --- |
-| Footer: "Preferencias de cookies" e "Idioma y accesibilidad" | **REQUIRES_DECISION** | Los footers `7:355` y `9:559` no dibujan los enlaces; solo la nota E dice "desde el pie". Añadirlos cambia la línea legal medida (71 y 59 px). Las APIs `abrirPreferenciasCookies()` y `abrirAccesibilidad()` existen y **nadie las llama**: hoy, tras aceptar o rechazar, las preferencias de cookies no se pueden reabrir desde la interfaz. Conviene que el usuario defina el diseño |
+| Footer: "Preferencias de cookies" e "Idioma y accesibilidad" | **Hecho el 2-oct-2026 (B1)** | Botones en la línea legal que abren las hojas existentes; ver "Accesos del pie" al final. Los frames `7:355` y `9:559` no los dibujan: la altura móvil del pie pasa de 71 a 89 px y la de desktop no cambia (59) |
 | Fila "Idioma y accesibilidad" en Mi cuenta | Sin referencia | No se inventó (decisión previa de SYS/ACC) |
 | Cookies desktop a 24 px del borde | Pendiente, sin referencia | El aviso `45:2152` es móvil; no hay frame desktop. No se movió |
 | Título de `BarraInterna` como `<p>` | Pendiente | Pasarlo a `<h1>` duplicaría el `h1` de las pantallas que ya lo tienen (p. ej. el carrito). Requiere revisar pantalla por pantalla |
@@ -71,7 +71,7 @@ Pasadas del 390 y 1440 px también para Home y para el comprador anónimo (heade
 
 ### Pendientes que siguen abiertos
 
-Los de la tabla "PARTIAL / requiere decisión" no cambian: enlaces del footer, fila de accesibilidad en Mi cuenta, cookies en desktop, `<h1>` de `BarraInterna` y remodelación del header. La medición de píxeles del header se repitió el 2-oct-2026 (ver "Línea base del chrome" al final).
+Los de la tabla "PARTIAL / requiere decisión" no cambian (los enlaces del footer se hicieron el 2-oct-2026, B1): fila de accesibilidad en Mi cuenta, cookies en desktop, `<h1>` de `BarraInterna` y remodelación del header. La medición de píxeles del header se repitió el 2-oct-2026 (ver "Línea base del chrome" al final).
 
 ### Resultados finales
 
@@ -104,3 +104,19 @@ Notas:
 - 404 y `/pago/exito` en desktop no tienen frame propio: solo se verificó que no haya desbordes.
 - Prueba permanente de las correcciones 1 y 2: `tests/shell-global.spec.ts` (header de 83 px en el carrito y de 79 en Mi cuenta, carrito en rojo).
 - `COMPONENT_OWNERSHIP.md` aún lista el carrito rojo como pendiente de SHELL; queda hecho (no se editó ese documento en esta pasada).
+
+## Accesos del pie (B1, 2-oct-2026)
+
+`FooterComprador` suma "Preferencias de cookies" e "Idioma y accesibilidad" como botones al final de la línea legal (`abrirPreferenciasCookies()` y `abrirAccesibilidad()`; las hojas son de SYS). Detalle de la hoja, el foco y las pruebas en `SYS.md` ("Pasada B1").
+
+| Medida | Figma | App antes | App ahora |
+| --- | --- | --- | --- |
+| Banner + pie desktop (`9:550` + `9:559`) | 143 (84 + 59) | 143 | 143 (la línea legal mide 724 px de 1200; © en x1159, 161 de ancho) |
+| Pie legal móvil (`12:489`) | 71 | 71 | 89 (segunda línea de 18 px con los dos accesos) |
+| Banner + pie móvil (`12:483` + `12:489`) | 138 | 138 | 156 |
+| Barra inferior (`12:582`), WhatsApp (`52:2418`) | 67; 56 × 56 en (318, 705) | igual | sin cambio |
+
+- La diferencia móvil de 18 px no tiene frame contra el cual corregirla (Figma no dibuja los accesos); queda registrada como consecuencia de B1. La medición `tests/shell-medicion.spec.ts` espera 156 y 89 con ese comentario.
+- En móvil el pie solo se ve en pantallas `raiz`; en `interna`, `marca` y `propia` es solo de escritorio. Allí el acceso a la hoja de accesibilidad depende de la fila de Mi cuenta (ACC), que sigue sin frame.
+- En la captura móvil al final de la página, el botón de WhatsApp (flotante, sin cambios) queda sobre la palabra "Términos" de la primera línea legal. Es el solapamiento de contenido de B2, no se tocó.
+- Sin desbordes horizontales a 390 ni a 1440.

@@ -85,11 +85,15 @@ async function barraInferior(page: Page, caso: string) {
   }
 }
 
-/** Banner de vendedor + pie en móvil (12:483 alto 67, 12:489 alto 71 = 138). */
+/**
+ * Banner de vendedor + pie en móvil (12:483 alto 67, 12:489 alto 71 = 138). Desde B1 el pie lleva
+ * "Preferencias de cookies" e "Idioma y accesibilidad" en una segunda línea de 18 px que Figma no
+ * dibuja: 71 + 18 = 89 y 67 + 89 = 156. Es la única diferencia esperada.
+ */
 async function pieMovil(page: Page, caso: string) {
-  await medir(page, caso, 'banner + pie (total)', '12:483+12:489', 'footer', { w: 390, h: 138 })
+  await medir(page, caso, 'banner + pie (total, +18 de B1)', '12:483+12:489', 'footer', { w: 390, h: 156 })
   await medir(page, caso, 'banner vendedor', '12:483', 'footer > a', { w: 390, h: 67 })
-  await medir(page, caso, 'pie legal', '12:489', 'footer > div', { w: 390, h: 71 })
+  await medir(page, caso, 'pie legal (+18 de B1)', '12:489', 'footer > div', { w: 390, h: 89 })
 }
 
 /** Banner + pie en desktop (9:550 alto 84, 9:559 alto 59 = 143). */

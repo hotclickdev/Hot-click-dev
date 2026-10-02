@@ -267,7 +267,7 @@ test('el panel de accesibilidad abre sin engranaje de carácter', async ({ page 
     localStorage.setItem('hc-promo-seen', String(Date.now()))
   })
   await page.goto('/', { waitUntil: 'domcontentloaded' })
-  await page.getByRole('button', { name: 'Abrir opciones de accesibilidad' }).click()
+  await page.locator('footer').getByRole('button', { name: 'Idioma y accesibilidad' }).click()
   await expect(page.getByText('Alto contraste')).toBeVisible()
   await expect(page.getByText('⚙')).toHaveCount(0)
   await page.getByRole('button', { name: 'Cerrar' }).click()

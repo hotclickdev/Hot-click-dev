@@ -22,7 +22,8 @@ async function mockApiYConsent(page: Page) {
 }
 
 async function abrirPanelA11y(page: Page) {
-  const trigger = page.getByRole('button', { name: /opciones de accesibilidad|accessibility options|opções de acessibilidade/i })
+  // B1: el panel se abre desde el pie de página (ya no hay botón flotante con el isotipo).
+  const trigger = page.locator('footer').getByRole('button', { name: /idioma y accesibilidad|language and accessibility|idioma e acessibilidade/i })
   await expect(trigger).toBeVisible()
   await trigger.click()
   await expect(page.getByRole('dialog')).toBeVisible()
