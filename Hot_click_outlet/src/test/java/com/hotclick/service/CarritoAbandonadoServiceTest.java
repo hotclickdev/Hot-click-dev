@@ -11,10 +11,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -81,6 +89,40 @@ class CarritoAbandonadoServiceTest {
 
         assertThat(items).extracting(CarritoAbandonadoRequestDTO.CartItemDTO::getEmpresaNombre).containsOnlyNulls();
         assertThat(items).extracting(CarritoAbandonadoRequestDTO.CartItemDTO::getStock).containsExactly(4, 4, null);
+    }
+
+    @Test
+    @DisplayName("Un carrito con m\u00e1s l\u00edneas que el tope devuelve solo las primeras y consulta solo esos productos")
+    void respetaTopeDeLineas() {
+        when(productoRepository.findAllById(anyList())).thenReturn(List.of());
+        String json = IntStream.rangeClosed(1, CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS + 20)
+            .mapToObj(i -> "{\"productoId\":" + i + ",\"cantidad\":1}")
+            .collect(Collectors.joining(",", "[", "]"));
+
+        List<CarritoAbandonadoRequestDTO.CartItemDTO> items = service.itemsConDisponibilidad(json);
+
+        assertThat(items).hasSize(CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS);
+        assertThat(items.get(items.size() - 1).getProductoId()).isEqualTo((long) CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS);
+        verify(productoRepository).findAllById(argThat(ids -> ((Collection<?>) ids).size() == CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS));
+        assertThat(service.itemsConDisponibilidad(json, 3)).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("El alta de carrito rechaza m\u00e1s l\u00edneas que el tope")
+    void dtoRechazaMasLineasQueElTope() {
+        CarritoAbandonadoRequestDTO dto = new CarritoAbandonadoRequestDTO();
+        dto.setItems(IntStream.rangeClosed(1, CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS + 1).mapToObj(i -> {
+            CarritoAbandonadoRequestDTO.CartItemDTO item = new CarritoAbandonadoRequestDTO.CartItemDTO();
+            item.setProductoId((long) i);
+            item.setCantidad(1);
+            return item;
+        }).toList());
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+            Validator validator = factory.getValidator();
+            assertThat(validator.validate(dto)).extracting(v -> v.getPropertyPath().toString()).contains("items");
+            dto.setItems(dto.getItems().subList(0, CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS));
+            assertThat(validator.validate(dto)).extracting(v -> v.getPropertyPath().toString()).doesNotContain("items");
+        }
     }
 
     @Test

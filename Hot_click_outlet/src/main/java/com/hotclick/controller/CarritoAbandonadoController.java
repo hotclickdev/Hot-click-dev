@@ -54,7 +54,8 @@ public class CarritoAbandonadoController {
     public ResponseEntity<ResponseDTO> recuperar(@PathVariable String token) {
         return service.findByTokenRecuperacion(token)
             .map(c -> {
-                List<CarritoAbandonadoRequestDTO.CartItemDTO> items = service.itemsConDisponibilidad(c.getItems());
+                List<CarritoAbandonadoRequestDTO.CartItemDTO> items =
+                    service.itemsConDisponibilidad(c.getItems(), CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS);
                 Map<String, Object> body = Map.of(
                     "id",     c.getId(),
                     "status", c.getStatus(),
