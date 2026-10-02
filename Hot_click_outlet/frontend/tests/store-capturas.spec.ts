@@ -26,9 +26,9 @@ const PRODUCTOS = [
   { id: 6, nombre: 'Set de brochas de maquillaje', precio: 2500, stock: 20, imagenUrl: color('#fbcfe8') },
 ]
 const CONVENIOS = [
-  { id: 1, nombre: 'Casa Luna 506', descripcion: 'Hogar y accesorios hechos con cariño', sitioWeb: 'https://casaluna.cr', logoUrl: '' },
-  { id: 2, nombre: 'Bruma Café', descripcion: 'Café de especialidad y repostería', sitioWeb: '', logoUrl: '' },
-  { id: 3, nombre: 'Taller Ceiba', descripcion: 'Muebles de madera para niños', sitioWeb: 'https://ceiba.cr', logoUrl: '' },
+  { id: 1, nombre: 'Casa Luna 506', descripcion: 'Hogar y accesorios hechos con cariño', urlWeb: 'https://casaluna.cr', logoUrl: '' },
+  { id: 2, nombre: 'Bruma Café', descripcion: 'Café de especialidad y repostería', urlWeb: '', logoUrl: '' },
+  { id: 3, nombre: 'Taller Ceiba', descripcion: 'Muebles de madera para niños', urlWeb: 'https://ceiba.cr', logoUrl: '' },
 ]
 
 async function simular(page: Page, empresa: Record<string, unknown>) {

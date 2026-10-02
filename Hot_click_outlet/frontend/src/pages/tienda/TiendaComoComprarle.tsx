@@ -20,7 +20,7 @@ function Fila({ icono, titulo, detalle, tituloAlto = false, children }: { icono:
   )
 }
 
-const Chevron = () => <IconoFigma src={ICONOS_TIENDA.comoChevron} size={16} className="text-[var(--hc-n-400)]" />
+const Chevron = () => <IconoFigma src={ICONOS_TIENDA.comoChevron} size={16} className="text-hc-n-400" />
 
 /**
  * "Cómo comprarle" (Figma `29:1114`, `29:2410`): envío, retiro en tienda (solo si el negocio lo ofrece)

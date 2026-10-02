@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (SYS/SHELL B5; antes B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (P01 STORE; antes SYS/SHELL B5, B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -32,6 +32,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | SYS/SHELL, B3 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Al abrir la hoja, el chip marcado es A y la raíz sigue en 16 px. A+ aplica `fs-lg` (18 px). A− se muestra y no reduce la fuente (sin frame). La fila `51:2229` sigue PARTIAL. Inventario en ese momento: 35 PASS / 55 PARTIAL. Ver `SYS.md` |
 | SYS/SHELL, B4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). El aviso `45:1946` pasa a PASS móvil: la tarjeta a 390 queda en x 12, y 560, 366 × 205 (0 px) y `CookieBanner` no se tocó. Desktop sin frame (`left` 24, `bottom` 24) no bloquea ese PASS. La hoja `45:2166` sigue PASS. Inventario en ese momento: 36 PASS / 54 PARTIAL. Ver `SYS.md` |
 | SYS/SHELL, B5 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). El FAB no se monta en Sin conexión (`45:2264`): ni en `/sin-conexion` ni en `/` cuando Home muestra `PantallaSinConexion`. El Home con datos sigue en (318, 705) y en desktop (1368, 828). La fila pasa a PASS móvil. Inventario: 37 PASS / 53 PARTIAL. Ver `SYS.md` |
+| P01 STORE (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). `/tienda/:slug` (`29:922`, `29:2308`, `51:2468`) y `/emprendimientos` (`29:1159`) remedidos con Playwright a 390 y 1440: posiciones iguales a las de `STORE.md` (0 px), sin desborde horizontal ni errores de consola. Buscadores a 14 px (Figma); antes 16 px por SHELL. Tokens de SHELL (`text-hc-n-400`, `bg-hc-success-bg`) sin cambio de color. `store-perfil.spec.ts` suma 3 casos de responsive. `store-capturas.spec.ts` usa `urlWeb` (el campo real de `/api/convenios/publicos`). Barra inferior, WhatsApp del vendedor y header de escritorio (D01, D20, D02) siguen sin respuesta: las 4 filas quedan PARTIAL. 37 PASS / 53 PARTIAL. Ver `STORE.md`, sección P01 |
 
 ## Ramas y worktrees
 

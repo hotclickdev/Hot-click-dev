@@ -44,7 +44,7 @@ export default function ConvenioCard({ convenio, indice }: { convenio: ConvenioP
           <span className="truncate font-display text-base font-bold leading-[normal] text-hc-n-900">{nombre}</span>
           {convenio.descripcion && <span className="truncate text-xs leading-[normal] text-hc-n-500">{convenio.descripcion}</span>}
         </span>
-        <IconoFigma src={directorioChevron} size={18} className="text-[var(--hc-n-400)]" />
+        <IconoFigma src={directorioChevron} size={18} className="text-hc-n-400" />
       </Link>
       <div className="flex items-center justify-between text-[13px] font-semibold leading-[normal]">
         {convenio.urlWeb ? (

@@ -129,3 +129,38 @@ test.describe('STORE — directorio de emprendimientos', () => {
     await expect(page.getByText('Próximamente')).toBeVisible()
   })
 })
+
+test.describe('STORE - responsive del perfil y del directorio (P01)', () => {
+  async function sinDesborde(page: Page) {
+    const anchos = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth])
+    expect(anchos[0]).toBeLessThanOrEqual(anchos[1])
+  }
+
+  for (const ancho of [390, 1440]) {
+    test(`perfil a ${ancho}: sin desborde horizontal, buscador de 14 px (Figma) y sin errores de consola`, async ({ page }) => {
+      const errores: string[] = []
+      page.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()) })
+      page.on('pageerror', (e) => errores.push(e.message))
+      await simularApi(page)
+      await page.setViewportSize({ width: ancho, height: 900 })
+      await page.goto('/tienda/casa-luna', { waitUntil: 'domcontentloaded' })
+
+      const buscador = page.getByRole('searchbox', { name: 'Buscar en Casa Luna 506' })
+      await expect(buscador).toBeVisible()
+      await expect(buscador).toHaveCSS('font-size', '14px')
+      await sinDesborde(page)
+      expect(errores).toEqual([])
+    })
+  }
+
+  test('directorio a 390: sin desborde horizontal y buscador de 14 px (Figma)', async ({ page }) => {
+    await simularApi(page, { convenios: [{ id: 1, nombre: 'Casa Luna 506', descripcion: 'Hogar y accesorios', urlWeb: null }] })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/emprendimientos', { waitUntil: 'domcontentloaded' })
+
+    const buscador = page.getByRole('searchbox', { name: 'Buscar un negocio' })
+    await expect(buscador).toBeVisible()
+    await expect(buscador).toHaveCSS('font-size', '14px')
+    await sinDesborde(page)
+  })
+})

@@ -64,7 +64,7 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
             {empresa?.zonaEnvio && <Dato icono={ICONOS_TIENDA.metaEnvio}>Envíos a {empresa.zonaEnvio}</Dato>}
           </div>
           {empresa?.facturaElectronica && (
-            <span className="flex min-h-7 w-fit items-center gap-2 rounded-full bg-hc-green-50 py-[6px] pl-[10px] pr-[14px] text-xs font-semibold leading-[normal] text-hc-green-600">
+            <span className="flex min-h-7 w-fit items-center gap-2 rounded-full bg-hc-success-bg py-[6px] pl-[10px] pr-[14px] text-xs font-semibold leading-[normal] text-hc-green-600">
               <IconoFigma src={ICONOS_TIENDA.selloFactura} size={15} />
               Emite factura electrónica
             </span>

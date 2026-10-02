@@ -52,6 +52,42 @@ Un defecto real corregido: `TiendaAnfitrion` pintaba "Tienda de Casa Luna 506en 
 
 Los cuatro frames conservan su veredicto (4 PARTIAL).
 
+## P01 · implementación de STORE (2-oct-2026)
+
+Bloque de implementación sobre `feat/figma/base`. Figma: no hubo acceso directo en esta sesión (sin token ni MCP utilizable desde la terminal). Las medidas de referencia son las de este documento, tomadas antes con `get_metadata` y `get_design_context`. No se inventó ninguna medida.
+
+### Decisiones
+
+D01 (barra inferior), D20 (WhatsApp del vendedor) y D02 (header de escritorio) siguen sin respuesta. El commit `652fa8ee` («resolve store design decisions») y `B19-CIERRE.md` las dejan como DECISIÓN HUMANA (lista D). No se quitó ni se reemplazó ningún control.
+
+Qué falta para cerrarlas:
+
+- **D01** (`29:922`, `51:2468`): elegir entre mantener `TiendaBottomNav` en móvil o quitarla. Si se quita, hace falta el frame de la entrada al pedido aislado en la portada; `29:922` no la dibuja.
+- **D20** (`51:2468`): decidir si se quedan `TiendaWhatsAppFab` (solo escritorio) y el botón «WhatsApp» del encabezado móvil. Ningún frame del perfil los dibuja.
+- **D02** (`29:2308`): elegir entre el header del marketplace (carrito global `cartStore`) y el header de la tienda (pedido aislado `tiendaStore`). Si gana el del marketplace, hay que definir cómo conviven los dos carritos y el checkout de la tienda.
+
+### Implementado
+
+- Tokens de SHELL en lugar de valores sueltos, con el mismo color medido: chevrones de «Cómo comprarle» y del directorio con `text-hc-n-400` (`#9AA1AE`), sello de factura con `bg-hc-success-bg` (`#E9F7F0`).
+- `store-capturas.spec.ts` usaba `sitioWeb` en los convenios. El backend (`Convenio.urlWeb`) y `ConvenioCard` usan `urlWeb`, así que las capturas no mostraban «Sitio externo». Ya está corregido.
+- `store-perfil.spec.ts` suma 3 casos: perfil a 390 y 1440 (sin desborde horizontal, buscador a 14 px, sin errores de consola) y directorio a 390 (sin desborde, buscador a 14 px).
+
+### Remedición (Playwright, Chrome, API simulada con los datos de Figma)
+
+- Perfil a 390: nombre y=204, «Sobre nosotros» y=432, buscador 358x41 en y=583, tarjetas 167x280 desde y=681 con paso de 296, «Cómo comprarle» y=1581. Todo igual a lo medido antes contra `29:922` (0 px). Con el color de `51:2468` las posiciones son las mismas; `--t-secondary` y `--t-accent` se aplican.
+- Perfil a 1440: lateral 320 en x=120, productos en x=480, buscador 320x44 en x=1000, tarjetas con paso de 183. Igual a `29:2308` debajo del header.
+- Directorio a 390 y 1440: sin desborde.
+- `scrollWidth` igual a `clientWidth` en las 6 vistas medidas, contando `/tienda/:slug/carrito` a 390. Sin errores de consola.
+- Dependencia SHELL cerrada: los buscadores de la tienda y del directorio ya miden 14 px en móvil, como Figma. La regla de 16 px excluye `.hc-tenant-theme` y `.hc-figma-ui`. También existen ya los alias `--color-hc-n-400` y `--color-hc-success-bg`.
+
+### Sin cambio, sigue bloqueado
+
+- Directorio `29:1159`: el backend no tiene un endpoint de empresas públicas. Solo existe `GET /api/convenios/publicos` (nombre, logo, descripción, `urlWeb`). Faltan ciudad, categoría, tres fotos, conteo de productos y slug. Es backend (P11).
+- Días del retiro («Lunes a sábado»): `StorefrontInfoMapper.retiroEnTienda` solo manda las horas de apertura y cierre. Es backend (P11).
+- `ogImagenUrl` no se muestra en la portada: Figma tapa la foto con el color de la tienda.
+
+Veredicto: las 4 filas siguen PARTIAL. Contador global: 37 PASS / 53 PARTIAL.
+
 ## Funcionalidad preservada
 
 - Información de la tienda, tema por vendedor, SEO y JSON-LD (`TiendaLayout` sin cambios salvo ocultar el header en el perfil móvil), pedido aislado por tienda (`tiendaStore`, no toca `cartStore`), búsqueda y filtro por categoría contra `/api/tienda/:slug/productos` (`q`, `categoriaId`), paginación, estados de catálogo nuevo, búsqueda sin resultados, error con reintento y esqueleto, WhatsApp del vendedor con mensaje, Instagram, "Personalizar" para productos cotizables, y subrutas de producto, carrito y checkout intactas.
