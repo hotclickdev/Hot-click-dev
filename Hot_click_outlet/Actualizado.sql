@@ -4017,3 +4017,7 @@ UPDATE hot_click_pedido_tb
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_token_seguimiento
     ON hot_click_pedido_tb (token_seguimiento);
+
+-- V146: ampliar estado_pedido a VARCHAR(30). PENDIENTE_COMPROBANTE (21 caracteres),
+-- estado inicial del checkout SINPE/efectivo, no cabía en VARCHAR(20).
+ALTER TABLE hot_click_pedido_tb ALTER COLUMN estado_pedido TYPE VARCHAR(30);
