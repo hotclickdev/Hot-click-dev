@@ -13,9 +13,8 @@ describe('chipFuenteActivo', () => {
     expect(fuenteAlElegirMayor('xl')).toBe('xl')
   })
 
-  it('A− devuelve el tamaño actual', () => {
-    expect(fuenteAlElegirMenor('normal')).toBe('normal')
-    expect(fuenteAlElegirMenor('lg')).toBe('lg')
-    expect(fuenteAlElegirMenor('xl')).toBe('xl')
+  it('A− guarda sm (87,5 %) y marca su chip', () => {
+    expect(fuenteAlElegirMenor()).toBe('sm')
+    expect(chipFuenteActivo('sm')).toBe('menor')
   })
 })

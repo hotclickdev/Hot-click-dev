@@ -159,6 +159,8 @@ html.dark.high-contrast {
 }
 
 /* ── Font size ── */
+/* A− (D19): 87,5 % de la raíz de 16 px. */
+html.fs-sm { font-size: 14px; }
 html.fs-lg { font-size: 18px; }
 html.fs-xl { font-size: 20px; }
 

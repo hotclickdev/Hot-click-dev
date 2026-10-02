@@ -29,6 +29,7 @@ export default function HtmlClassManager() {
     const html = document.documentElement
     const temaHtml = aplicarClasesTemaHtml(html.classList, pathname, theme, highContrast)
     aplicarMetaThemeColor(temaHtml)
+    html.classList.toggle('fs-sm', fontSize === 'sm')
     html.classList.toggle('fs-lg', fontSize === 'lg')
     html.classList.toggle('fs-xl', fontSize === 'xl')
     html.classList.toggle('reduce-motion', reduceMotion)

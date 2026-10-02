@@ -83,7 +83,7 @@ export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiom
       <div role="group" aria-labelledby="a11y-fuente" className="flex flex-col gap-2">
         <p id="a11y-fuente" className={ETIQUETA_GRUPO}>{t('a11y.tamanoFuente')}</p>
         <div className="flex flex-wrap gap-2">
-          <OpcionChip activa={false} onClick={() => setFontSize(fuenteAlElegirMenor(fontSize))}>{t('a11y.small')}</OpcionChip>
+          <OpcionChip activa={chipFuenteActivo(fontSize) === 'menor'} onClick={() => setFontSize(fuenteAlElegirMenor())}>{t('a11y.small')}</OpcionChip>
           <OpcionChip activa={chipFuenteActivo(fontSize) === 'media'} onClick={() => setFontSize(FUENTE_MEDIA)}>{t('a11y.normal')}</OpcionChip>
           <OpcionChip activa={chipFuenteActivo(fontSize) === 'mayor'} onClick={() => setFontSize(fuenteAlElegirMayor(fontSize))}>{t('a11y.large')}</OpcionChip>
         </div>
