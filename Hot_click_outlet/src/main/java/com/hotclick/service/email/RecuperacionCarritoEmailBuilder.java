@@ -42,6 +42,6 @@ class RecuperacionCarritoEmailBuilder {
             + layout.caja(filas.toString())
             + layout.cta(recoverUrl, "Volver a mi carrito")
             + layout.notaPequena("Si ya no querés recordatorios, simplemente ignorá este mensaje.")
-            + layout.footer("¿Dudas?");
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
     }
 }

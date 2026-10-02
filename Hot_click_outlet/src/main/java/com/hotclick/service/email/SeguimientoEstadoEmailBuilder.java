@@ -66,15 +66,13 @@ class SeguimientoEstadoEmailBuilder {
 
         if (nota != null && !nota.isBlank()) {
             String quien = tienda.isEmpty() ? "Mensaje de HotClick" : "Mensaje de la tienda";
-            cuerpo.append(layout.notaConTitulo("#EFF4FE", "#1747A8", quien, "“" + layout.esc(nota) + "”", "#14171C", "14px"));
+            cuerpo.append(layout.notaConTitulo(EmailLayoutHelper.FONDO_INFO, EmailLayoutHelper.AZUL, quien, "“" + layout.esc(nota) + "”", EmailLayoutHelper.TEXTO, "14px"));
         }
 
         if (pedido.getNumeroGuia() != null && !pedido.getNumeroGuia().isBlank()) {
-            boolean isCorreos = pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
-            String url = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
-                : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
-            String courier = isCorreos ? "Correos de Costa Rica" : "Entrega directa por HotClick";
-            cuerpo.append(layout.codigoDestacado("Número de guía · " + layout.esc(courier), layout.esc(pedido.getNumeroGuia()), "#F8F9FB", true))
+            String url = layout.urlRastreo(pedido);
+            String courier = layout.esRastreoCorreos(pedido) ? "Correos de Costa Rica" : "Entrega directa por HotClick";
+            cuerpo.append(layout.codigoDestacado("Número de guía · " + layout.esc(courier), layout.esc(pedido.getNumeroGuia()), EmailLayoutHelper.FONDO_SUAVE, true))
                 .append(layout.ctaAzul(url, "Rastrear mi paquete"));
         }
 
@@ -89,7 +87,7 @@ class SeguimientoEstadoEmailBuilder {
             + layout.abrirCuerpo()
             + cuerpo
             + layout.cta(layout.urlSeguimiento(pedido), "Ver mi pedido")
-            + layout.footer("¿Dudas?");
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
     }
 
     private String frase(String estado) {

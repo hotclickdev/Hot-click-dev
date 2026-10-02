@@ -80,6 +80,16 @@ Sin acceso directo a Figma. Referencias `29:1650`, `29:1741`, `29:1781`, `29:183
 - **No se tocaron** (sin frame): `SelfCheckoutFormulario`, `SelfCheckoutLoading`, `SelfCheckoutError`, `PosPagoOnvoEmbed` y `PosPagoReporteModal`. `--hc-focus-ring` y `--hc-shadow-1` no tienen alias: siguen con `var()`.
 - **Sin cambio, siguen PARTIAL** (B16): paso de confirmación de mesa (DECISIÓN HUMANA), quién elige el método (DECISIÓN HUMANA), número de cobro y caja (BACKEND), formulario SINPE sin frame (FIGMA PENDIENTE, D15), comprobante y correo del pago (BACKEND), «Escanear otro QR» (DECISIÓN HUMANA). Los 7 correos no se tocaron.
 
+## P09 · implementación de CORREOS (2-oct-2026)
+
+Sin acceso directo a Figma. Referencias `30:1599`, `30:1643`, `30:1669`, `30:1708`, `30:1733`, `30:1768` y `30:1793`, con lo que registran este documento y `B17-emails-decisiones.md`.
+
+- **HTML sin cambios:** se renderizaron los 7 correos (13 variantes: guía por Correos y propia, y seguimiento en PAGADO, EN_PREPARACION, ENVIADO, ENTREGADO, LISTO_RETIRO y CANCELADO) antes y después del cambio con un test temporal fuera del repo: los 13 HTML son idénticos byte a byte.
+- **Render en Chrome** (no en Gmail, Outlook ni Apple Mail): a 390 la tarjeta mide 366 px (x=12) y a 1440 mide 600 px centrada (x=420); sin desborde horizontal, título de 24 px y sin `display:flex` en ninguno.
+- **Código (Sonar):** `EmailLayoutHelper` reúne las aperturas de tabla (`TABLA`, `TABLA_ANCHA`), los colores que los builders pasaban sueltos (`FONDO_SUAVE`, `TEXTO`, `TEXTO_SUAVE`, `AZUL`; ya existían `FONDO_INFO` y `FONDO_ALERTA`), la pregunta del pie (`PREGUNTA_DUDAS`) y el rastreo (`esRastreoCorreos`, `urlRastreo`), que guía y seguimiento repetían. El color del paso deja el ternario anidado (`fondoPaso`). `EmailLayoutHelperTest` suma la prueba del rastreo.
+- **Sin cambio, siguen PARTIAL** (B17): confirmación sin «Enviamos a» ni «Envío normal GAM» (el pedido no guarda dirección), guía sin «Paquete N de M» (pedidos hermanos por `grupoPago`), carrito sin tienda ni «Quedan N» (`CartItemDTO`), cupón sin vencimiento de 30 días (backend), pago fallido «quedó guardado» frente a «no se completó» (DECISIÓN HUMANA) y código en el asunto del OTP (DECISIÓN HUMANA, seguridad). Ninguno se probó en clientes reales.
+- Los demás correos de `NegocioEmailBuilder` (bienvenida, aprobación, rechazo, invitación, moderación, cobro) no tienen frame y no se tocaron.
+
 ## Funcionalidad preservada
 
 Lectura del QR por token, catálogo y pedido de mesa (`/qr/:token`), sesión de pago (`/pos/qr/pago/:token`), SINPE con Onvo y espera por sondeo, tarjeta con formulario embebido y alternativa hosted, redirección y regreso con `?resultado=exito|cancelado`, reintento, reporte de problema por WhatsApp, estados `PAGADO`, `EXPIRADO` y `CANCELADO`, y los envíos de correo con sus asuntos (ahora por builder). La cuenta regresiva solo informa: nunca decide que el cobro venció; al llegar a cero vuelve a pedir el estado al servidor. Si la fecha del servidor (sin zona) no es creíble (pasada o a más de 30 minutos), no se dibuja.

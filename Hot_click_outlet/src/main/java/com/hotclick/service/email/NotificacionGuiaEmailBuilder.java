@@ -22,9 +22,8 @@ class NotificacionGuiaEmailBuilder {
 
     String buildNotificacionGuia(Pedido pedido, Usuario cliente) {
         String guia   = layout.esc(pedido.getNumeroGuia());
-        boolean isCorreos = pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
-        String url    = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
-            : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
+        boolean isCorreos = layout.esRastreoCorreos(pedido);
+        String url    = layout.urlRastreo(pedido);
         String courierNombre = isCorreos ? "Correos de Costa Rica" : "HotClick Express";
         String tienda = pedido.getEmpresa() != null && pedido.getEmpresa().getNombreComercial() != null
             ? pedido.getEmpresa().getNombreComercial() : "";
@@ -36,13 +35,13 @@ class NotificacionGuiaEmailBuilder {
         return layout.abrirHtml()
             + layout.headerConIcono(EmailLayoutHelper.FONDO_INFO, "camion", titulo, sub)
             + layout.abrirCuerpo()
-            + layout.codigoDestacado("Número de guía", guia, "#F8F9FB", true)
+            + layout.codigoDestacado("Número de guía", guia, EmailLayoutHelper.FONDO_SUAVE, true)
             + layout.ctaAzul(url, isCorreos ? "Seguir mi paquete en Correos CR" : "Rastrear mi paquete")
             + (isCorreos
                 ? layout.notaPequena("Si no estás en casa, Correos deja un aviso y lo podés retirar en la sucursal más cercana. "
                     + "También podés rastrear en rastreo.correos.go.cr con tu número de guía.")
                 : "")
             + layout.enlaceSecundario(layout.urlSeguimiento(pedido), "Ver el estado de todo mi pedido")
-            + layout.footer("¿Dudas?");
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
     }
 }

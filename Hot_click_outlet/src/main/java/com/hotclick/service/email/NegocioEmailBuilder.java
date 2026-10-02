@@ -24,7 +24,7 @@ public class NegocioEmailBuilder {
             + layout.headerConIcono(EmailLayoutHelper.FONDO_ALERTA, "regalo", "Tu 13% para la primera compra",
                 "Usalo en cualquier producto del catálogo al pagar.")
             + layout.abrirCuerpo()
-            + layout.codigoDestacado("Tu código", layout.esc(codigo), "#FEF2F1", false)
+            + layout.codigoDestacado("Tu código", layout.esc(codigo), EmailLayoutHelper.FONDO_ALERTA, false)
             + layout.cta("https://hotclick.lat/productos", "Usar mi cupón")
             + layout.notaPequena("Válido para una sola compra, una vez por persona. Ingresalo en el campo «¿Tenés un cupón?» al pagar.")
             + layout.footer("¿Dudas?");

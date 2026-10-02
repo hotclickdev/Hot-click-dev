@@ -26,10 +26,10 @@ class PagoFallidoEmailBuilder {
             + layout.headerConIcono(EmailLayoutHelper.FONDO_ALERTA, "alerta", "No pudimos procesar tu pago",
                 "Tu pedido #" + layout.esc(pedido.getNumeroPedido()) + " no se completó. No se hizo ningún cobro.")
             + layout.abrirCuerpo()
-            + layout.notaConTitulo("#F8F9FB", "#4D5560", "Motivo", motivoTexto, "#14171C", "15px")
+            + layout.notaConTitulo(EmailLayoutHelper.FONDO_SUAVE, EmailLayoutHelper.TEXTO_SUAVE, "Motivo", motivoTexto, EmailLayoutHelper.TEXTO, "15px")
             + layout.cta("https://hotclick.lat/checkout", "Intentar de nuevo")
             + layout.notaPequena("También podés pagar con SINPE Móvil desde la misma página. "
                 + "Si el problema sigue, escribinos por WhatsApp y lo vemos juntos.")
-            + layout.footer("¿Dudas?");
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
     }
 }

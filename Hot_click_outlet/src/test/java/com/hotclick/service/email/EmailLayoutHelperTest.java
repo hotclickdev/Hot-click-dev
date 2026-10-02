@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import com.hotclick.model.Pedido;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -66,5 +67,20 @@ class EmailLayoutHelperTest {
         // por eso comparamos contra el propio formateador en vez de un literal.
         assertThat(layout.monto(95900)).isEqualTo("₡" + EmailLayoutHelper.CRC.format(95900));
         assertThat(layout.monto(null)).isEqualTo("₡0");
+    }
+
+    @Test
+    @DisplayName("urlRastreo() usa la URL del pedido o arma la de Correos con la guía")
+    void urlRastreo_pedidoOCorreos() {
+        Pedido propio = new Pedido();
+        propio.setNumeroGuia("HX-998");
+        propio.setUrlTracking("https://hotclick.lat/rastreo/HX-998");
+        Pedido correos = new Pedido();
+        correos.setNumeroGuia("CR123456789");
+
+        assertThat(layout.urlRastreo(propio)).isEqualTo("https://hotclick.lat/rastreo/HX-998");
+        assertThat(layout.urlRastreo(correos)).isEqualTo("https://rastreo.correos.go.cr/?codigo=CR123456789");
+        assertThat(layout.esRastreoCorreos(propio)).isFalse();
+        assertThat(layout.esRastreoCorreos(correos)).isTrue();
     }
 }

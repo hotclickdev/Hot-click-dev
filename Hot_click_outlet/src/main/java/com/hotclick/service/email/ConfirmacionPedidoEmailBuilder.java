@@ -55,7 +55,7 @@ class ConfirmacionPedidoEmailBuilder {
             + "<p style=\"margin:0 0 18px;color:#4D5560;font-size:14px;line-height:20px\">" + entrega + "</p>"
             + layout.cta(layout.urlSeguimiento(pedido), "Ver mi pedido")
             + layout.notaPequena("Garantía de 40 días activa: si tenés cualquier problema con tu pedido, escribinos por WhatsApp y lo resolvemos.")
-            + layout.footer("¿Dudas?");
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
     }
 
     private String nombreTienda(Pedido pedido, PedidoItem item) {

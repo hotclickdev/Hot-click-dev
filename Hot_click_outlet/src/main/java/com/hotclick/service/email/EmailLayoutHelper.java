@@ -37,6 +37,22 @@ public class EmailLayoutHelper {
     public static final String FONDO_INFO   = "#EFF4FE";
     public static final String FONDO_AVISO  = "#FDF3DC";
     public static final String FONDO_ALERTA = "#FEF2F1";
+    /** Fondo gris de recuadros de código y notas neutras (n/50). */
+    public static final String FONDO_SUAVE  = "#F8F9FB";
+
+    /** Textos y acentos de SHELL que los builders pasan como argumento (n/900, n/600, blue/600). */
+    public static final String TEXTO       = "#14171C";
+    public static final String TEXTO_SUAVE = "#4D5560";
+    public static final String AZUL        = "#1747A8";
+
+    /** Pregunta del pie de los correos al cliente. */
+    public static final String PREGUNTA_DUDAS = "¿Dudas?";
+
+    /** Apertura de las tablas de maquetación: Outlook necesita los atributos además del estilo. */
+    private static final String TABLA       = "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"";
+    private static final String TABLA_ANCHA = "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"";
+
+    private static final String RASTREO_CORREOS = "https://rastreo.correos.go.cr/?codigo=";
 
     private static final String BORDE = "#E4E7EC";
     private static final String SITIO = "https://hotclick.lat";
@@ -75,7 +91,7 @@ public class EmailLayoutHelper {
         return "<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\">"
              + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head>"
              + "<body style=\"margin:0;padding:0;background:#F1F3F6;font-family:" + F_TEXT + "\">"
-             + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#F1F3F6\">"
+             + TABLA_ANCHA + " style=\"background:#F1F3F6\">"
              + "<tr><td align=\"center\" style=\"padding:24px 12px\">"
              + "<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
              + " style=\"width:100%;max-width:600px;background:#FFFFFF;border:1px solid " + BORDE + ";border-radius:14px;border-collapse:separate\">"
@@ -96,7 +112,7 @@ public class EmailLayoutHelper {
      */
     public String headerConIcono(String fondo, String icono, String titulo, String sub) {
         return "<tr><td style=\"padding:28px 32px 0\">"
-             + "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>"
+             + TABLA + "><tr>"
              + "<td width=\"48\" height=\"48\" align=\"center\" valign=\"middle\""
              + " style=\"width:48px;height:48px;background:" + fondo + ";border-radius:24px\">"
              + "<img src=\"" + iconoUrl(icono) + "\" width=\"24\" height=\"24\" alt=\"\""
@@ -131,7 +147,7 @@ public class EmailLayoutHelper {
     }
 
     private String boton(String url, String label, String fondo, String radio) {
-        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 18px\"><tr>"
+        return TABLA + " style=\"margin:0 0 18px\"><tr>"
              + "<td style=\"background:" + fondo + ";border-radius:" + radio + "\">"
              + "<a href=\"" + esc(url) + "\" style=\"display:inline-block;padding:14px 28px;color:#FFFFFF;text-decoration:none;"
              + "font-size:15px;font-weight:700;font-family:" + F_TEXT + "\">" + label + "</a>"
@@ -152,7 +168,7 @@ public class EmailLayoutHelper {
 
     /** Recuadro con borde que agrupa filas de producto (Figma: radio 12, relleno 16). */
     public String caja(String contenido) {
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+        return TABLA_ANCHA
              + " style=\"border:1px solid " + BORDE + ";border-radius:12px;border-collapse:separate;margin:0 0 18px\">"
              + espaciador(10) + contenido + espaciador(10) + "</table>";
     }
@@ -187,12 +203,12 @@ public class EmailLayoutHelper {
     }
 
     public String tablaMontos(String filas) {
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 14px\">" + filas + "</table>";
+        return TABLA_ANCHA + " style=\"margin:0 0 14px\">" + filas + "</table>";
     }
 
     /** Dato destacado en recuadro (número de guía, código, cupón). */
     public String datoDestacado(String etiqueta, String valor, String fondo, String borde) {
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+        return TABLA_ANCHA
              + " style=\"background:" + fondo + ";border:1px solid " + borde + ";border-radius:12px;border-collapse:separate;margin:8px 0 16px\">"
              + "<tr><td align=\"center\" style=\"padding:18px 16px\">"
              + "<p style=\"margin:0 0 6px;color:#4D5560;font-size:12px;text-transform:uppercase;letter-spacing:1px\">" + etiqueta + "</p>"
@@ -207,7 +223,7 @@ public class EmailLayoutHelper {
     public String codigoDestacado(String etiqueta, String valor, String fondo, boolean enMono) {
         String fuente = enMono ? F_MONO : F_DISPLAY;
         String peso = enMono ? "500" : "800";
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+        return TABLA_ANCHA
              + " style=\"background:" + fondo + ";border:1px dashed #9AA1AE;border-radius:12px;border-collapse:separate;margin:0 0 18px\">"
              + "<tr><td align=\"center\" style=\"padding:18px 16px\">"
              + "<p style=\"margin:0 0 4px;color:#6E7682;font-size:12px;line-height:15px\">" + etiqueta + "</p>"
@@ -217,7 +233,7 @@ public class EmailLayoutHelper {
 
     /** Nota con fondo de color y título opcional (Motivo, Mensaje de la tienda). Los textos llegan escapados. */
     public String notaConTitulo(String fondo, String colorTitulo, String tituloNota, String texto, String colorTexto, String tamTexto) {
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+        return TABLA_ANCHA
              + " style=\"background:" + fondo + ";border-radius:12px;border-collapse:separate;margin:0 0 18px\">"
              + "<tr><td style=\"padding:16px\">"
              + "<p style=\"margin:0 0 4px;color:" + colorTitulo + ";font-size:13px;font-weight:600\">" + tituloNota + "</p>"
@@ -227,7 +243,7 @@ public class EmailLayoutHelper {
 
     /** Nota azul con ícono de 18 (Figma: «Otros paquetes»). El texto llega escapado. */
     public String notaAzul(String icono, String texto) {
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+        return TABLA_ANCHA
              + " style=\"background:#EFF4FE;border-radius:10px;border-collapse:separate;margin:0 0 18px\">"
              + "<tr><td width=\"18\" valign=\"top\" style=\"padding:13px 0 12px 16px\">"
              + "<img src=\"" + iconoUrl(icono) + "\" width=\"18\" height=\"18\" alt=\"\" style=\"display:block;border:0\"></td>"
@@ -248,21 +264,36 @@ public class EmailLayoutHelper {
         for (int i = 0; i < etiquetas.length; i++) {
             boolean hecho = i < actual;
             boolean esActual = i == actual;
-            String fondo = hecho ? "#178A50" : esActual ? "#1747A8" : BORDE;
+            String fondo = fondoPaso(hecho, esActual);
             String interior = hecho
                 ? "<img src=\"" + iconoUrl("check-blanco") + "\" width=\"14\" height=\"14\" alt=\"\" style=\"display:block;border:0;margin:0 auto\">"
                 : "&nbsp;";
             String color = esActual || hecho ? "#14171C" : "#6E7682";
             String peso = esActual ? "700" : "500";
             celdas.append("<td align=\"center\" valign=\"top\" width=\"").append(100 / etiquetas.length).append("%\">")
-                .append("<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>")
+                .append(TABLA + "><tr>")
                 .append("<td width=\"24\" height=\"24\" align=\"center\" valign=\"middle\" style=\"width:24px;height:24px;background:").append(fondo)
                 .append(";border-radius:12px;font-size:0;line-height:0\">").append(interior).append("</td></tr></table>")
                 .append("<p style=\"margin:6px 0 0;color:").append(color).append(";font-size:12px;font-weight:").append(peso).append("\">")
                 .append(esc(etiquetas[i])).append("</p></td>");
         }
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 18px\"><tr>"
+        return TABLA_ANCHA + " style=\"margin:0 0 18px\"><tr>"
              + celdas + "</tr></table>";
+    }
+
+    private static String fondoPaso(boolean hecho, boolean esActual) {
+        if (hecho) return "#178A50";
+        return esActual ? AZUL : BORDE;
+    }
+
+    /** Rastreo por Correos de Costa Rica: el pedido no trae URL propia o trae una de correos.go.cr. */
+    public boolean esRastreoCorreos(Pedido pedido) {
+        return pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
+    }
+
+    /** URL de rastreo del paquete: la del pedido o la de Correos con el número de guía. */
+    public String urlRastreo(Pedido pedido) {
+        return pedido.getUrlTracking() != null ? pedido.getUrlTracking() : RASTREO_CORREOS + pedido.getNumeroGuia();
     }
 
     public String parrafo(String html) {

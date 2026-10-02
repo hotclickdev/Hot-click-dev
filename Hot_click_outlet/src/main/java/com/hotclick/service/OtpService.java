@@ -153,10 +153,10 @@ public class OtpService {
             + layout.headerConIcono(EmailLayoutHelper.FONDO_INFO, "candado", "Tu código de verificación",
                 "Escribilo en la pantalla donde lo pediste.")
             + layout.abrirCuerpo()
-            + layout.codigoDestacado("Código", codigoAgrupado(layout.esc(codigo)), "#F8F9FB", true)
+            + layout.codigoDestacado("Código", codigoAgrupado(layout.esc(codigo)), EmailLayoutHelper.FONDO_SUAVE, true)
             + layout.notaPequena("Vence en " + minutos + " minutos. No lo compartás con nadie: HotClick nunca te lo va a pedir. "
                 + "Si no fuiste vos, ignorá este correo: tu cuenta sigue segura.")
-            + layout.footer("¿Dudas?");
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
 
         // El asunto NUNCA lleva el codigo: queda visible en notificaciones/lockscreen sin abrir el correo.
         resendEmailService.send(destinatario, "Tu código de verificación — HotClick", html);
