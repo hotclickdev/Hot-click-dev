@@ -156,10 +156,12 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
 
   test('SINPE: se registra el pedido y el comprobante elegido se envía solo', async ({ page }) => {
     const llamadas: string[] = []
+    const capturado: { cuerpo: Record<string, unknown> | null } = { cuerpo: null }
     await page.route('**/api/**', async (route) => {
       const url = route.request().url()
       llamadas.push(`${route.request().method()} ${new URL(url).pathname}`)
       if (url.includes('/sinpe/guest-checkout')) {
+        capturado.cuerpo = route.request().postDataJSON() as Record<string, unknown>
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -185,5 +187,40 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await expect(page.getByRole('heading', { name: 'Tu pago está siendo revisado' })).toBeVisible()
     await expect(page.getByText('ORD-TEST-1')).toBeVisible()
     expect(llamadas.some((l) => l.includes('/sinpe/guest/ORD-TEST-1/comprobante'))).toBe(true)
+    // B17: la dirección viaja aparte para que el pedido la guarde y el correo diga «Enviamos a …».
+    expect(String(capturado.cuerpo?.direccionEntrega)).toContain('Barrio Escalante, casa 12')
+    expect(String(capturado.cuerpo?.direccionEntrega)).toContain('Escazú')
+  })
+
+  test('R3: el paso vive en ?paso= y no se puede saltar con un enlace o al recargar', async ({ page }) => {
+    await mockApis(page)
+    await seedPedido(page)
+    await page.goto('/checkout?paso=3', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: '¿A quién le enviamos la confirmación?' })).toBeVisible()
+    await expect(page).toHaveURL(/[?&]paso=1\b/)
+
+    await page.getByLabel('Correo').fill('ana@example.com')
+    await page.getByLabel('Teléfono (WhatsApp)').fill('88881234')
+    await page.getByLabel('Nombre completo').fill('Ana Pérez')
+    await page.getByRole('button', { name: 'Continuar a entrega' }).click()
+    await expect(page).toHaveURL(/[?&]paso=2\b/)
+    await expect(page.getByLabel('Señas exactas')).toBeVisible()
+
+    // Atrás y adelante del navegador recorren los pasos.
+    await page.goBack()
+    await expect(page).toHaveURL(/[?&]paso=1\b/)
+    await expect(page.getByRole('heading', { name: '¿A quién le enviamos la confirmación?' })).toBeVisible()
+    await page.goForward()
+    await expect(page).toHaveURL(/[?&]paso=2\b/)
+
+    // Sin dirección, ?paso=3 se queda en la entrega.
+    await page.evaluate(() => {
+      const url = new URL(globalThis.location.href)
+      url.searchParams.set('paso', '3')
+      globalThis.history.pushState({}, '', url)
+      globalThis.dispatchEvent(new PopStateEvent('popstate'))
+    })
+    await expect(page).toHaveURL(/[?&]paso=2\b/)
+    await expect(page.getByLabel('Señas exactas')).toBeVisible()
   })
 })
