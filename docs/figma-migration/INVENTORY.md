@@ -1,18 +1,18 @@
 # Inventario de migración Figma → frontend
 
 Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página "Home de compra · prototipo" (`4:2`).
-Última actualización: 2026-10-01 (STORE; el resumen se recontó desde la tabla de pantallas).
+Última actualización: 2026-10-01 (QR; el resumen se recontó desde la tabla de pantallas).
 
 ## Resumen
 
 | Estado | Cantidad |
 | --- | --- |
-| PASS — agent verified | 31 |
-| PARTIAL | 46 |
+| PASS — agent verified | 32 |
+| PARTIAL | 58 |
 | OLD_DESIGN | 0 |
 | MISSING | 0 |
 | BLOCKED | 0 |
-| UNKNOWN | 13 |
+| UNKNOWN | 0 |
 | **Total pantallas** | **90** |
 
 PASS solo se marca cuando hay implementación completa, comparación visual **y** medidas en píxeles, responsive, estados, tests, typecheck y build. **Los PASS de CAT y PROD son "PASS — agent verified": veredicto del propio agente, medido con API simulada y fotos de color, sin QA independiente** (SHELL sí lo tuvo). El estado no cambia hasta que el supervisor haga la verificación independiente con datos reales.
@@ -33,6 +33,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | PROD, ajuste de la ficha agotada (Figma literal) | `feat/figma/prod` | Hecho (`616f0769`), integrado en `base` (`d8af873b`) |
 | SRV: Servicios HOT, encargo, cotización pública, Envíos (plantilla informativa) y blog | `feat/figma/srv` | Hecho, integrado en `feat/figma/base` (merge `68c0952f`). 8 pantallas: 1 PASS y 7 PARTIAL (agent verified). Ver `SRV.md` |
 | STORE: perfil del negocio (móvil, desktop y con su color) y directorio de emprendimientos | `feat/figma/store` | Hecho en la rama, **sin integrar en `base`**. 4 pantallas: 0 PASS y 4 PARTIAL (agent verified). Ver `STORE.md` |
+| QR: QR de mesa, QR de pago y 7 correos al cliente | `feat/figma/qr` | Hecho en la rama, **sin integrar en `base`**. 13 frames: 1 PASS y 12 PARTIAL (agent verified). Ver `QR.md` |
 
 ## Cómo leer la evidencia
 
@@ -106,19 +107,19 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 06 Servicios y ayuda | Encargo · seguimiento público | `28:1594` | /encargo/:token | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Encabezado, tarjeta y línea de tiempo a 0 px. Backend no entrega tienda, fechas de cotización, tiempo de producción ni envío: no se inventaron; "Escribirle a la tienda" usa el WhatsApp de HotClick | no | sí | SRV |
 | 06 Servicios y ayuda | Página informativa · plantilla (Envíos) | `28:1660` | /envios (plantilla); /devoluciones, /informacion sin migrar | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). `/envios` con la plantilla (`PaginaInformativa`, `BloqueInformativo`, `PreguntaFrecuente`) a ±1 px. Tiempos y tarifas de Figma difieren del contenido existente (REQUIERE_DECISION). Devoluciones e Información, REQUIRES_DESIGN_REFERENCE: sin frame, conservan el diseño anterior | no | sí | SRV |
 | 06 Servicios y ayuda | Cotización pública · móvil | `55:2332` | /cotizacion/:token | PARTIAL | M (SRV, 1-oct-2026, agent verified, API simulada). Encabezado azul y cliente a 0 px, montos con punto de miles. BLOCKED por backend: "Aceptar cotización" (no hay endpoint; la etiqueta de diseño no se renderiza); "Consultar por WhatsApp" funciona | no | sí | SRV |
-| 08 QR y correos | QR de mesa · menú | `29:1650` | (ruta por confirmar) | UNKNOWN | C. No encontré la ruta | no | sí | QR |
-| 08 QR y correos | QR de mesa · pedido enviado | `29:1741` | (ruta por confirmar) | UNKNOWN | C | no | sí | QR |
-| 08 QR y correos | QR de pago en caja · elegir método | `29:1781` | /pos/pago/:token | UNKNOWN | H (sin cambios por P) | no | sí | QR |
-| 08 QR y correos | QR de pago · SINPE en curso | `29:1830` | /pos/pago/:token | UNKNOWN | C | no | sí | QR |
-| 08 QR y correos | QR de pago · pagado | `29:1888` | /pos/pago/:token | UNKNOWN | C | no | sí | QR |
-| 08 QR y correos | QR de pago · vencido | `29:1913` | /pos/pago/:token | UNKNOWN | C | no | sí | QR |
-| 08 QR y correos | Correo · Confirmación de pedido | `30:1599` | backend EmailLayoutHelper | UNKNOWN | H (P). Backend, no se ve en navegador | no | n/a | QR |
-| 08 QR y correos | Correo · Guía asignada | `30:1643` | backend | UNKNOWN | H (P) | no | n/a | QR |
-| 08 QR y correos | Correo · Seguimiento de estado | `30:1669` | backend | UNKNOWN | H (P) | no | n/a | QR |
-| 08 QR y correos | Correo · Pago fallido | `30:1708` | backend | UNKNOWN | H (P) | no | n/a | QR |
-| 08 QR y correos | Correo · Recuperación de carrito | `30:1733` | backend | UNKNOWN | H (P) | no | n/a | QR |
-| 08 QR y correos | Correo · Cupón de bienvenida | `30:1768` | backend | UNKNOWN | H (P) | no | n/a | QR |
-| 08 QR y correos | Correo · Código de verificación | `30:1793` | backend | UNKNOWN | H (P) | no | n/a | QR |
+| 08 QR y correos | QR de mesa · menú | `29:1650` | /checkout/qr/:token | PARTIAL | M (QR, 1-oct-2026, agent verified, API simulada). Encabezado 99, buscador 358x38, filas desde y=204, carrito flotante 244/774. Conserva un paso de confirmación (nombre, teléfono, notas) que Figma no dibuja: decisión pendiente. Ver `QR.md` | no | sí | QR |
+| 08 QR y correos | QR de mesa · pedido enviado | `29:1741` | /checkout/qr/:token | PASS — agent verified | M (QR, 1-oct-2026, agent verified, API simulada). Confirmación 207, "Tu pedido" 138, "¿Cómo pagás?" 88, botón 48 (0 a 1 px). "En preparación" es texto fijo de Figma. Sin QA independiente | no | sí | QR |
+| 08 QR y correos | QR de pago en caja · elegir método | `29:1781` | /pos/pago/:token | PARTIAL | M (QR, 1-oct-2026, agent verified, API simulada). Monto 135, botón y=752 de 46. El cajero fija el método (solo se dibuja el elegido); sin número de cobro ni caja (backend); se agregó "Tu pedido". Ver `QR.md` | no | sí | QR |
+| 08 QR y correos | QR de pago · SINPE en curso | `29:1830` | /pos/pago/:token | PARTIAL | M (QR, 1-oct-2026, agent verified, API simulada). Pasos 154/210, registro 376/112, espera 500/86 (0 px). El formulario de datos no tiene frame | no | sí | QR |
+| 08 QR y correos | QR de pago · pagado | `29:1888` | /pos/pago/:token | PARTIAL | M (QR, 1-oct-2026, agent verified, API simulada). Igual al frame salvo "comprobante por correo" y "Ver comprobante": el pago por QR no tiene correo ni ruta (backend) | no | sí | QR |
+| 08 QR y correos | QR de pago · vencido | `29:1913` | /pos/pago/:token | PARTIAL | M (QR, 1-oct-2026, agent verified, API simulada). Resultado 216 (0 px). Falta "Escanear otro QR": no hay lector de QR para el comprador. `EXPIRADO` ya llega a esta vista | no | sí | QR |
+| 08 QR y correos | Correo · Confirmación de pedido | `30:1599` | backend ConfirmacionPedidoEmailBuilder | PARTIAL | M (QR, 1-oct-2026, agent verified, HTML real del builder renderizado en Chrome; no probado en Gmail ni Outlook). Faltan "Enviamos a" y "Envío normal GAM" (el pedido no guarda dirección). Se conserva la garantía de 40 días | no | n/a | QR |
+| 08 QR y correos | Correo · Guía asignada | `30:1643` | backend NotificacionGuiaEmailBuilder | PARTIAL | M (QR, 1-oct-2026, agent verified, HTML real del builder renderizado en Chrome; no probado en Gmail ni Outlook). Faltan "Paquete N de M" y "Otros paquetes" (requieren pedidos hermanos por grupoPago) | no | n/a | QR |
+| 08 QR y correos | Correo · Seguimiento de estado | `30:1669` | backend SeguimientoEstadoEmailBuilder | PARTIAL | M (QR, 1-oct-2026, agent verified, HTML real del builder renderizado en Chrome; no probado en Gmail ni Outlook). Figma solo dibuja "En preparación"; los demás estados reutilizan la estructura. Se conservan guía y retiro | no | n/a | QR |
+| 08 QR y correos | Correo · Pago fallido | `30:1708` | backend PagoFallidoEmailBuilder | PARTIAL | M (QR, 1-oct-2026, agent verified, HTML real del builder renderizado en Chrome; no probado en Gmail ni Outlook). "Quedó guardado" de Figma contra "stock liberado" del código: decisión pendiente | no | n/a | QR |
+| 08 QR y correos | Correo · Recuperación de carrito | `30:1733` | backend RecuperacionCarritoEmailBuilder | PARTIAL | M (QR, 1-oct-2026, agent verified, HTML real del builder renderizado en Chrome; no probado en Gmail ni Outlook). El carrito guardado no trae tienda ni stock ("Quedan N") | no | n/a | QR |
+| 08 QR y correos | Correo · Cupón de bienvenida | `30:1768` | backend NegocioEmailBuilder | PARTIAL | M (QR, 1-oct-2026, agent verified, HTML real del builder renderizado en Chrome; no probado en Gmail ni Outlook). Figma promete 30 días de vigencia; el cupón no vence en el backend | no | n/a | QR |
+| 08 QR y correos | Correo · Código de verificación | `30:1793` | backend OtpService | PARTIAL | M (QR, 1-oct-2026, agent verified, HTML real del builder renderizado en Chrome; no probado en Gmail ni Outlook). El asunto de Figma lleva el código; no se aplicó por seguridad (pantalla de bloqueo) | no | n/a | QR |
 | 09 Funciones existentes | A · Carrito · notas, gift card, WhatsApp, guardar y asistente | `51:1820` | /carrito | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Notas, cupón y gift card funcionan con `pedidoExtrasStore`; guardar por correo y asistente (`52:2178`, `52:2223`); el asistente envía `CARRITO:items:total` al chat global | no | sí | CHK |
 | 09 Funciones existentes | B · Checkout · Entrega · envío internacional | `51:2000` | /checkout | PARTIAL | M (CHK, 1-oct-2026, agent verified, API simulada). Envío internacional: se conserva el atajo; REQUIERE_DECISION en escritorio | no | sí | CHK |
 | 09 Funciones existentes | C · Cupón de bienvenida · hoja | `51:2163` | PromoWelcomePopup | PASS — agent verified (móvil) | M (SYS). Campo de correo de 42 px, decisión del usuario (el frame de 26 px está comprimido). Paso "cupón enviado" no existe en Figma | no | sí | SYS |
@@ -150,7 +151,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | CHK | 17 (3 PASS agent verified, 14 PARTIAL) |
 | ACC | 18 (10 PASS, 8 PARTIAL, agent verified) |
 | SRV | 8 (1 PASS, 7 PARTIAL, agent verified) |
-| QR | 13 |
+| QR | 13 (1 PASS, 12 PARTIAL, agent verified; sin integrar en `base`) |
 | SYS | 10 |
 
 ## Referencias y notas (no cuentan como pantallas)
