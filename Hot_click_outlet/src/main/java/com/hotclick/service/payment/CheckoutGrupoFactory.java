@@ -65,6 +65,7 @@ public class CheckoutGrupoFactory {
             gcRestante -= pricing.gcMonto();
             Pedido pedido = checkoutOrderFactory.crearSubpedido(pricing, paquete.subtotal(), paquete.costoTotal(),
                 provider, usuario, paquete.bodega(), paquete.metodoEnvio(), paquete.notas(), grupoPago, estadoInicial);
+            checkoutOrderFactory.aplicarDireccion(pedido, req.getDireccionEntrega());
             checkoutOrderFactory.addItemSnapshots(pedido, paquete.items(), reservation.productosMap());
             subpedidos.add(new Subpedido(pedido, pricing));
             totalCobro += pricing.totalConGC();

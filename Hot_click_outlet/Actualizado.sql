@@ -4026,3 +4026,6 @@ ALTER TABLE hot_click_pedido_tb ALTER COLUMN estado_pedido TYPE VARCHAR(30);
 -- "SINPE,TARJETA"; NULL = solo metodo_pago) y fecha real del pago para el comprobante.
 ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS metodos_habilitados VARCHAR(40);
 ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS fecha_pago TIMESTAMP;
+
+-- V148: dirección de entrega en el pedido para los correos («Enviamos a …»).
+ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS direccion_entrega VARCHAR(500);

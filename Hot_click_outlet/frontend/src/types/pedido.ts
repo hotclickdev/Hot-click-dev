@@ -34,6 +34,8 @@ export type CheckoutPayload = {
   /** Forma de entrega por paquete (uno por bodega/vendedor) — precede al `metodoEnvio` global. */
   envios?: EnvioPaqueteDTO[]
   notas?: string | null
+  /** Dirección de entrega (señas, cantón, provincia); el pedido la guarda para los correos. */
+  direccionEntrega?: string | null
   provider?: string
   guestEmail?: string
   /** Token del QR del POS — al pagar, marca la sesión del cajero como PAGADO. */

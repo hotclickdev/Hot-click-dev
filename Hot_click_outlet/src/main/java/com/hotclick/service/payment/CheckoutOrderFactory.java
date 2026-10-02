@@ -24,8 +24,32 @@ public class CheckoutOrderFactory {
     public Pedido createPendingOrder(PaymentCheckoutRequest req, OrderPricingResult pricing,
                                      int subtotal, int costoTotal, String provider,
                                      Usuario usuario, Bodega bodega) {
-        return crearSubpedido(pricing, subtotal, costoTotal, provider, usuario, bodega,
+        Pedido pedido = crearSubpedido(pricing, subtotal, costoTotal, provider, usuario, bodega,
             req.getMetodoEnvio(), req.getNotas(), null, Constants.PEDIDO_PENDIENTE);
+        return aplicarDireccion(pedido, req.getDireccionEntrega());
+    }
+
+    /**
+     * Guarda la dirección en el pedido (para los correos: «Enviamos a …») solo si el
+     * paquete se envía. Se normalizan espacios y se corta a 500 caracteres.
+     */
+    public Pedido aplicarDireccion(Pedido pedido, String direccion) {
+        String limpia = direccionDeEntrega(direccion, pedido.getMetodoEnvio());
+        if (limpia == null) return pedido;
+        pedido.setDireccionEntrega(limpia);
+        return pedidoRepository.save(pedido);
+    }
+
+    static String direccionDeEntrega(String direccion, String metodoEnvio) {
+        if (direccion == null || esRetiro(metodoEnvio)) return null;
+        String limpia = direccion.replaceAll("[\\p{Cntrl}\\s]+", " ").trim();
+        if (limpia.isEmpty()) return null;
+        return limpia.length() <= 500 ? limpia : limpia.substring(0, 500);
+    }
+
+    static boolean esRetiro(String metodoEnvio) {
+        return metodoEnvio == null || Constants.ENVIO_RETIRO.equals(metodoEnvio)
+            || "RETIRO".equals(metodoEnvio) || "EN_TIENDA".equals(metodoEnvio);
     }
 
     /** Un paquete de un checkout multivendedor. Todos los subpedidos del checkout comparten {@code grupoPago}. */

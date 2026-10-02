@@ -38,6 +38,13 @@ public class PaymentCheckoutRequest {
     /** Código de gift card (opcional). Solo para usuarios autenticados. */
     private String codigoGiftCard;
 
+    /** Dirección de entrega (señas, cantón, provincia). Solo se guarda en paquetes con envío. */
+    @jakarta.validation.constraints.Size(max = 500, message = "La dirección es demasiado larga")
+    private String direccionEntrega;
+
+    public String getDireccionEntrega() { return direccionEntrega; }
+    public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
+
     /** Token del QR del POS — al confirmar el pago marca la sesión del cajero. */
     private String posQrToken;
 

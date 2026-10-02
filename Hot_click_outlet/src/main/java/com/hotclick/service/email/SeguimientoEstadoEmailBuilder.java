@@ -24,7 +24,7 @@ class SeguimientoEstadoEmailBuilder {
 
     String buildSeguimientoEstado(Pedido pedido, Usuario cliente, String nota) {
         String estado = pedido.getEstadoPedido() != null ? pedido.getEstadoPedido() : "";
-        boolean esRetiro = !"ENVIO_A_DOMICILIO".equals(pedido.getMetodoEnvio());
+        boolean esRetiro = MetodoEnvioTexto.esRetiro(pedido.getMetodoEnvio());
         String tienda = pedido.getEmpresa() != null && pedido.getEmpresa().getNombreComercial() != null
             ? pedido.getEmpresa().getNombreComercial() : "";
 

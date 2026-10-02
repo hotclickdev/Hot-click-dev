@@ -29,10 +29,8 @@ class ConfirmacionPedidoEmailBuilder {
             filas.append(layout.filaProducto(imgUrl, nombre, detalle, layout.monto(item.getSubtotalItem())));
         }
 
-        boolean esEnvio = "ENVIO_A_DOMICILIO".equals(pedido.getMetodoEnvio());
-        String entrega = esEnvio
-            ? "Envío a domicilio. Vas a recibir tu pedido en la dirección indicada."
-            : "Retiro en tienda. Tu pedido va a estar listo para retirar en nuestra tienda.";
+        boolean esEnvio = !MetodoEnvioTexto.esRetiro(pedido.getMetodoEnvio());
+        String entrega = textoEntrega(pedido, esEnvio);
 
         StringBuilder montos = new StringBuilder();
         montos.append(layout.filaMonto("Productos", layout.monto(pedido.getSubtotal()), false));
@@ -54,6 +52,19 @@ class ConfirmacionPedidoEmailBuilder {
             + layout.cta(layout.urlSeguimiento(pedido), "Ver mi pedido")
             + layout.notaPequena("Garantía de 40 días activa: si tenés cualquier problema con tu pedido, escribinos por WhatsApp y lo resolvemos.")
             + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
+    }
+
+    /** «Envío normal GAM. Enviamos a …» con la dirección guardada en el pedido (V148). */
+    private String textoEntrega(Pedido pedido, boolean esEnvio) {
+        if (!esEnvio) {
+            return "Retiro en tienda. Tu pedido va a estar listo para retirar en nuestra tienda.";
+        }
+        String etiqueta = "<strong style=\"color:#14171C\">" + MetodoEnvioTexto.etiqueta(pedido.getMetodoEnvio()) + "</strong>";
+        String direccion = pedido.getDireccionEntrega();
+        if (direccion == null || direccion.isBlank()) {
+            return etiqueta + ". Vas a recibir tu pedido en la dirección indicada.";
+        }
+        return etiqueta + ". Enviamos a " + layout.esc(direccion) + ".";
     }
 
     private String nombreTienda(Pedido pedido, PedidoItem item) {
