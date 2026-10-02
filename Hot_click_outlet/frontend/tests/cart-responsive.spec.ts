@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { sinDesborde } from './helpers/medidasFigma'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -41,3 +42,24 @@ for (const ancho of [390, 1440]) {
     expect(errores).toEqual([])
   })
 }
+
+test('recuperar carrito a 390: tienda y "quedan N" con la forma de GET /cart/abandoned/recover (P11, 29:2036)', async ({ page }) => {
+  await preparar(page)
+  await page.route('**/api/cart/abandoned/recover/tok-p11', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { id: 7, status: 'EMAIL_ENVIADO', items: [
+        { productoId: 1, cantidad: 1, precio: 5000, nombre: 'Mouse', imagenUrl: '', stock: 2, empresaNombre: 'Casa Luna 506' },
+        { productoId: 2, cantidad: 1, precio: 6200, nombre: 'Taza', imagenUrl: '', stock: 0, empresaNombre: null },
+      ] } }),
+    })
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/recuperar-carrito/tok-p11', { waitUntil: 'domcontentloaded' })
+
+  await expect(page.getByText(/^Casa Luna 506 · /)).toBeVisible()
+  await expect(page.getByText('Disponible · quedan 2')).toBeVisible()
+  await expect(page.getByText(/Disponible · quedan 0/)).toHaveCount(0)
+  await sinDesborde(page)
+})

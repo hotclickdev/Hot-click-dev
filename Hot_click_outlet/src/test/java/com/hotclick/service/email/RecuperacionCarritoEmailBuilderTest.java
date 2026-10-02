@@ -51,4 +51,22 @@ class RecuperacionCarritoEmailBuilderTest {
 
         assertThat(html).doesNotContain("<script>x</script>").contains("&lt;script&gt;").contains("2 unidades");
     }
+
+    @Test
+    @DisplayName("Detalle con la tienda, las unidades y \u00abQuedan N\u00bb solo con stock bajo")
+    void tiendaYStockBajo() {
+        CarritoAbandonadoRequestDTO.CartItemDTO bajo = item("Silla", 5000, 1);
+        bajo.setEmpresaNombre("Casa <Luna>");
+        bajo.setStock(2);
+        CarritoAbandonadoRequestDTO.CartItemDTO alto = item("Mesa", 9000, 2);
+        alto.setEmpresaNombre("Bruma");
+        alto.setStock(12);
+
+        String html = builder.buildRecuperacionCarrito("t", List.of(bajo, alto), "https://hotclick.lat");
+
+        assertThat(html)
+            .contains("Casa &lt;Luna&gt; \u00b7 1 unidad \u00b7 Quedan 2")
+            .contains("Bruma \u00b7 2 unidades")
+            .doesNotContain("Quedan 12");
+    }
 }

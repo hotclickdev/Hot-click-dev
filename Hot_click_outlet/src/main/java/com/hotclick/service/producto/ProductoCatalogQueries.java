@@ -121,7 +121,7 @@ public class ProductoCatalogQueries {
      * dentro de la transacción (open-in-view=false impide hacerlo al serializar).
      * Los productos de la tienda principal (empresa null) no llevan badge.
      */
-    private void poblarBadgeEmpresa(Producto p) {
+    public void poblarBadgeEmpresa(Producto p) {
         var e = p.getEmpresa();
         if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
         if (e.getId().equals(empresaPrincipalId)) return;

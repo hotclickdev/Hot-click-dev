@@ -177,6 +177,12 @@ public class EmailLayoutHelper {
         return "<tr><td colspan=\"3\" height=\"" + alto + "\" style=\"height:" + alto + "px;line-height:" + alto + "px;font-size:0\">&nbsp;</td></tr>";
     }
 
+    /** Detalle de una fila de producto: "Tienda · N unidades", o solo las unidades si no hay tienda. Escapa la tienda. */
+    public String detalleUnidades(String tienda, int cantidad) {
+        String unidades = cantidad + (cantidad == 1 ? " unidad" : " unidades");
+        return tienda == null || tienda.isBlank() ? unidades : esc(tienda) + " · " + unidades;
+    }
+
     /** Fila de producto: miniatura de 56, nombre, detalle y precio. Los textos deben llegar escapados. */
     public String filaProducto(String imgUrl, String nombre, String detalle, String precio) {
         String img = (imgUrl != null && !imgUrl.isBlank())

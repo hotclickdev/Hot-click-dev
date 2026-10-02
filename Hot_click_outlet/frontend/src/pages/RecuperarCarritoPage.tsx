@@ -36,9 +36,9 @@ export default function RecuperarCarritoPage() {
     }
     abandonedCartService.getAbandonedCart(token)
       .then(({ data }) => {
-        const body = data as { data?: { items?: ItemRecuperado[] } }
-        const list = body?.data?.items ?? []
-        setItems(list)
+        // `api` ya desenvuelve el ResponseDTO: llega { id, status, items }. Se acepta también el sobre sin desenvolver.
+        const body = data as { items?: ItemRecuperado[]; data?: { items?: ItemRecuperado[] } }
+        setItems(body?.items ?? body?.data?.items ?? [])
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))

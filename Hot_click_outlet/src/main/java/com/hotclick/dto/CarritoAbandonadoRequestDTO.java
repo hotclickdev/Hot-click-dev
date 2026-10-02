@@ -1,5 +1,6 @@
 package com.hotclick.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
@@ -46,6 +47,14 @@ public class CarritoAbandonadoRequestDTO {
         @Size(max = 1000, message = "La URL de imagen no puede superar 1000 caracteres")
         private String imagenUrl;
 
+        /** Stock disponible al recuperar el carrito. Lo completa el servidor; el cliente no lo puede fijar. */
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private Integer stock;
+
+        /** Tienda visible del producto al recuperar el carrito. Lo completa el servidor; el cliente no lo puede fijar. */
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private String empresaNombre;
+
         public Long getProductoId()                 { return productoId; }
         public void setProductoId(Long productoId)  { this.productoId = productoId; }
         public Integer getCantidad()                { return cantidad; }
@@ -56,5 +65,9 @@ public class CarritoAbandonadoRequestDTO {
         public void setNombre(String nombre)        { this.nombre = nombre; }
         public String getImagenUrl()                { return imagenUrl; }
         public void setImagenUrl(String imagenUrl)  { this.imagenUrl = imagenUrl; }
+        public Integer getStock()                   { return stock; }
+        public void setStock(Integer stock)         { this.stock = stock; }
+        public String getEmpresaNombre()            { return empresaNombre; }
+        public void setEmpresaNombre(String empresaNombre) { this.empresaNombre = empresaNombre; }
     }
 }

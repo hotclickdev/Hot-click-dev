@@ -25,9 +25,7 @@ class ConfirmacionPedidoEmailBuilder {
             String nombre = item.getProducto() != null ? layout.esc(item.getProducto().getNombreProducto()) : "Producto";
             String imgUrl = item.getProducto() != null ? item.getProducto().getImagenPrincipalUrl() : null;
             int cantidad = item.getCantidad() != null ? item.getCantidad() : 1;
-            String unidades = cantidad + (cantidad == 1 ? " unidad" : " unidades");
-            String tienda = nombreTienda(pedido, item);
-            String detalle = tienda.isEmpty() ? unidades : layout.esc(tienda) + " · " + unidades;
+            String detalle = layout.detalleUnidades(nombreTienda(pedido, item), cantidad);
             filas.append(layout.filaProducto(imgUrl, nombre, detalle, layout.monto(item.getSubtotalItem())));
         }
 

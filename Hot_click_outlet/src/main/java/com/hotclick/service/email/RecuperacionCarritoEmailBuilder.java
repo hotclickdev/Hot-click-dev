@@ -7,13 +7,16 @@ import org.springframework.stereotype.Component;
 
 /**
  * Correo de recuperación de carrito abandonado (Figma «Correo · Recuperación de carrito», 30:1733).
- * Figma muestra la tienda y «Quedan N» por producto; el carrito guardado solo trae nombre,
- * precio, cantidad e imagen, así que el detalle es la cantidad.
+ * Detalle por producto: tienda (si es un emprendimiento visible), unidades y «Quedan N» cuando el
+ * stock disponible es bajo. Tienda y stock los completa {@code CarritoAbandonadoService#itemsConDisponibilidad}.
  */
 @Component
 class RecuperacionCarritoEmailBuilder {
 
     static final String ASUNTO = "Tus productos te esperan en HotClick";
+
+    /** Mismo tope que la insignia «Quedan N» del catálogo ({@code STOCK_ESCASO_MAX} del frontend, CAT_C0). */
+    static final int STOCK_ESCASO_MAX = 5;
 
     @Autowired private EmailLayoutHelper layout;
 
@@ -29,7 +32,7 @@ class RecuperacionCarritoEmailBuilder {
             filas.append(layout.filaProducto(
                 item.getImagenUrl(),
                 layout.esc(item.getNombre()),
-                cantidad + (cantidad == 1 ? " unidad" : " unidades"),
+                detalle(item, cantidad),
                 layout.monto(subtotal)));
         }
 
@@ -43,5 +46,11 @@ class RecuperacionCarritoEmailBuilder {
             + layout.cta(recoverUrl, "Volver a mi carrito")
             + layout.notaPequena("Si ya no querés recordatorios, simplemente ignorá este mensaje.")
             + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
+    }
+
+    private String detalle(CarritoAbandonadoRequestDTO.CartItemDTO item, int cantidad) {
+        String detalle = layout.detalleUnidades(item.getEmpresaNombre(), cantidad);
+        Integer stock = item.getStock();
+        return stock != null && stock > 0 && stock <= STOCK_ESCASO_MAX ? detalle + " · Quedan " + stock : detalle;
     }
 }
