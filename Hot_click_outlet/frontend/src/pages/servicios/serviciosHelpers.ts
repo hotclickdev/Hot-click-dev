@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next'
+
 /** URL canónica del sitio (JSON-LD y Helmet). */
 export const SITE_URL = 'https://hotclick.lat'
 
@@ -137,6 +139,9 @@ export type ProductoParaResena = {
 export const MOTIVOS_GARANTIA = ['No enciende', 'Se dañó', 'Llegó incompleto', 'Otro'] as const
 export type MotivoGarantia = (typeof MOTIVOS_GARANTIA)[number]
 
+/** Clave i18n de cada motivo (`serviciosPage.garantia.motivos.*`); a la tienda viaja el texto en español. */
+export const CLAVE_MOTIVO: Record<MotivoGarantia, string> = { 'No enciende': 'noEnciende', 'Se dañó': 'seDano', 'Llegó incompleto': 'incompleto', Otro: 'otro' }
+
 export function descripcionGarantia(motivo: MotivoGarantia | null, texto: string): string {
   return motivo ? `[Motivo: ${motivo}] ${texto.trim()}` : texto.trim()
 }
@@ -155,11 +160,12 @@ export function fechaDiaMes(iso: string | null | undefined): string {
 }
 
 /** "30 días restantes · vence 12 oct": vigencia de una garantía activa. */
-export function textoVigencia(g: GarantiaItem): string {
-  const dias = g.diasRestantes ?? 0
-  const s = dias === 1 ? '' : 's'
-  const vence = fechaDiaMes(g.fechaVencimiento)
-  return `${dias} día${s} restante${s}${vence ? ` · vence ${vence}` : ''}`
+export function textoVigencia(g: GarantiaItem, t: TFunction): string {
+  const count = g.diasRestantes ?? 0
+  const fecha = fechaDiaMes(g.fechaVencimiento)
+  return fecha
+    ? t('serviciosPage.garantia.vigenciaVence', { count, fecha })
+    : t('serviciosPage.garantia.vigencia', { count })
 }
 
 /** "25 sep 2026" para fechas ISO (`2026-09-25`); cualquier otro formato se muestra tal como llega. */

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { claveGarantia, descripcionGarantia, fechaConMes, fechaDiaMes, normalizarTelefono, textoVigencia } from './serviciosHelpers'
+import i18n from '@/i18n'
+
+const t = i18n.getFixedT('es')
 
 describe('teléfono de contacto', () => {
   it('agrega +506 al número local de ocho dígitos', () => {
@@ -28,8 +31,8 @@ describe('garantía', () => {
   })
 
   it('la vigencia usa singular y plural', () => {
-    expect(textoVigencia({ diasRestantes: 1, fechaVencimiento: '2026-10-22' })).toBe('1 día restante · vence 22 oct')
-    expect(textoVigencia({ diasRestantes: 28 })).toBe('28 días restantes')
+    expect(textoVigencia({ diasRestantes: 1, fechaVencimiento: '2026-10-22' }, t)).toBe('1 día restante · vence 22 oct')
+    expect(textoVigencia({ diasRestantes: 28 }, t)).toBe('28 días restantes')
   })
 })
 

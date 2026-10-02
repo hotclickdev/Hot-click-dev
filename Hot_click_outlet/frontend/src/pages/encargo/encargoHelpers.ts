@@ -1,4 +1,5 @@
 import type { Encargo } from '@/services/encargoService'
+import type { TFunction } from 'i18next'
 
 export type EstadoPaso = 'hecho' | 'actual' | 'pendiente' | 'error'
 
@@ -25,42 +26,42 @@ export function fechaHoraEncargo(iso: string | null | undefined): string {
  * Línea de tiempo de Figma `28:1594` a partir del estado real del encargo. Solo lleva detalle donde el backend
  * entrega el dato (fecha de creación, precio cotizado, motivo de rechazo); no se inventan duraciones ni fechas.
  */
-export function pasosDelEncargo(e: Encargo, precio: (monto: number) => string): PasoEncargo[] {
+export function pasosDelEncargo(e: Encargo, precio: (monto: number) => string, t: TFunction): PasoEncargo[] {
   const pasos: PasoEncargo[] = [
-    { clave: 'recibida', titulo: 'Solicitud recibida', detalle: fechaHoraEncargo(e.fechaCreacion) || undefined, estado: 'hecho' },
+    { clave: 'recibida', titulo: t('encargoPublico.pasos.recibida'), detalle: fechaHoraEncargo(e.fechaCreacion) || undefined, estado: 'hecho' },
   ]
 
   if (e.estado === 'RECHAZADO') {
-    pasos.push({ clave: 'rechazado', titulo: 'El artista no pudo aceptar este encargo', detalle: e.motivoRechazo ?? undefined, estado: 'error' })
+    pasos.push({ clave: 'rechazado', titulo: t('encargoPublico.pasos.rechazado'), detalle: e.motivoRechazo ?? undefined, estado: 'error' })
     return pasos
   }
 
   const cotizada = CON_COTIZACION.includes(e.estado) && e.precioCotizado != null
   pasos.push(cotizada
-    ? { clave: 'cotizacion', titulo: 'Cotización enviada', detalle: precio(e.precioCotizado as number), estado: 'hecho' }
-    : { clave: 'cotizacion', titulo: 'Cotización', detalle: 'Estamos revisando tu solicitud', estado: 'actual' })
+    ? { clave: 'cotizacion', titulo: t('encargoPublico.pasos.cotizacionEnviada'), detalle: precio(e.precioCotizado as number), estado: 'hecho' }
+    : { clave: 'cotizacion', titulo: t('encargoPublico.pasos.cotizacion'), detalle: t('encargoPublico.pasos.revisando'), estado: 'actual' })
   if (!cotizada) return pasos
 
   if (e.estado === 'VENCIDO') {
-    pasos.push({ clave: 'vencido', titulo: 'Cotización vencida', detalle: 'Podés solicitar un nuevo encargo desde el producto.', estado: 'error' })
+    pasos.push({ clave: 'vencido', titulo: t('encargoPublico.pasos.vencida'), detalle: t('encargoPublico.pasos.vencidaDetalle'), estado: 'error' })
     return pasos
   }
 
   const pagado = e.estado === 'PAGADO'
   pasos.push({
     clave: 'pago',
-    titulo: e.estado === 'PENDIENTE_PAGO' ? 'Pago en proceso' : pagado ? 'Pago recibido' : 'Esperando tu pago',
-    detalle: pagado ? undefined : 'Pagá para empezar la producción',
+    titulo: e.estado === 'PENDIENTE_PAGO' ? t('encargoPublico.pasos.pagoProceso') : pagado ? t('encargoPublico.pasos.pagoRecibido') : t('encargoPublico.pasos.esperandoPago'),
+    detalle: pagado ? undefined : t('encargoPublico.pasos.pagaDetalle'),
     estado: pagado ? 'hecho' : 'actual',
   })
 
   const fulfillment = e.estadoFulfillment ?? 'EN_PRODUCCION'
   const entregado = fulfillment === 'ENTREGADO'
   const listo = fulfillment === 'LISTO' || entregado
-  pasos.push({ clave: 'produccion', titulo: 'En producción', estado: !pagado ? 'pendiente' : listo ? 'hecho' : 'actual' })
+  pasos.push({ clave: 'produccion', titulo: t('encargoPublico.pasos.produccion'), estado: !pagado ? 'pendiente' : listo ? 'hecho' : 'actual' })
   pasos.push({
     clave: 'listo',
-    titulo: entregado ? 'Entregado' : 'Listo para entregar',
+    titulo: entregado ? t('encargoPublico.pasos.entregado') : t('encargoPublico.pasos.listo'),
     estado: entregado ? 'hecho' : listo ? 'actual' : 'pendiente',
   })
   return pasos

@@ -1,4 +1,5 @@
 import { authService } from '@/services/authService'
+import i18n from '@/i18n'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
@@ -151,13 +152,13 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     if (sinpeNombre.trim()) {
       setSinpeNombreErr('')
     } else {
-      setSinpeNombreErr('El nombre completo es requerido')
+      setSinpeNombreErr(i18n.t('checkout.errores.nombreRequerido'))
       valid = false
     }
     if (sinpeCedula.trim()) {
       setSinpeCedulaErr('')
     } else {
-      setSinpeCedulaErr('El número de cédula es requerido')
+      setSinpeCedulaErr(i18n.t('checkout.errores.cedulaRequerida'))
       valid = false
     }
     if (!valid) return

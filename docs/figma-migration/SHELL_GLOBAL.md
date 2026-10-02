@@ -231,3 +231,38 @@ Verificación: `tsc` (app y e2e) limpio; ESLint de `PhoneField` y del spec sin e
 | Hora de `formatDateTime` (ICU puede meter espacios duros en «a. m.») | Se ve como un espacio y no hay spec registrada para la hora. |
 
 Verificación: `tsc` (app y e2e) limpio; ESLint sin errores nuevos (el `only-export-components` de `cartAssistantHelpers` ya estaba); Vitest 507 de 507 (`format.test.ts` suma agrupación de 4 dígitos, sin NBSP, WhatsApp del carrito y textos de encargos; `posPagoFormat` exige `60.720`); JUnit 62 de 62 en 17 clases (nuevo `FormatoColonesTest`; `ChatPrecioPersonalizadoTest` exige `Desde ₡15.000 hasta ₡40.000`; los tests de correo comparan `₡15.900` y `₡95.900` literales). Playwright 41 de 41 en `formato-datos` (nuevo, 2 casos: carrito sin montos con espacio y mensaje de WhatsApp), `emprendedor-wizard` (el plan ahora espera `₡9.900/mes`; antes `₡9 900/mes`), `cart-cta`, `qr-mesa-pago` y `srv-servicios`. Sin la corrección de `cartStore` falla el caso de WhatsApp.
+
+## P17 — i18n es/en/pt (2-oct-2026)
+
+**Regla:** el texto que ve el comprador en las pantallas migradas sale de `src/i18n/locales/{es,en,pt}.json` (i18next, `fallbackLng: 'es'`, idioma inicial desde `hotclick-ui` → `state.language`). El español queda **idéntico** al de antes (mismas cadenas, voseo incluido); en y pt son traducciones literales, sin copy nuevo. Fuera de componentes (`ejecutar*`) se usa `i18n.t`; los helpers puros reciben `t: TFunction` (`textoVigencia`, `pasosDelEncargo`, `mensajeCargaPago`, `tituloPendiente`, `subtituloPendiente`) y sus tests pasan `i18n.getFixedT('es')`.
+
+**Pasado a claves (154 nuevas por idioma, 3379 → 3533):**
+
+| Pantalla / módulo | Claves |
+| --- | --- |
+| Checkout: gift card pagada (`CheckoutPaidGiftCard`), error de stock (`CheckoutPayError`), WhatsApp de envío internacional (`PasoEntrega`), errores de comprobante SINPE, pago y cupón (`ejecutarSubirComprobante`, `ejecutarPagarCheckout`, `ejecutarValidarCupon`) | `checkout.giftPagado.*`, `checkout.errorStock.*`, `checkout.f.waInternacional`, `checkout.errores.*` |
+| Servicios HOT: inicio (`ServiciosInicio`, título, intro, 4 opciones y aviso «Tenés N solicitudes en curso» con plural) y garantía (`VistaGarantia`, motivos, vigencia con plural) | `serviciosPage.inicio.*`, `serviciosPage.garantia.*` |
+| Perfil de tienda `/tienda/:slug`: `TiendaHomePage` (buscador, «Todo», secciones, paginación), `TiendaComoComprarle`, `TiendaEncabezadoNegocio` (logo, datos, WhatsApp, compartir), `useCompartirTienda`, estados vacío/error/nuevo/no disponible, `TiendaHeader`, `TiendaBottomNav` («HotClick» queda como marca), `TiendaAnfitrion` | `tienda.*` (+ `common.previous`/`next`/`retry`) |
+| Directorio `/emprendimientos`: página, buscador, tarjeta y vacío | `emprendimientos.*` (+ `common.back`/`loading`) |
+| Encargo público: `EncargoPublicPage` y los pasos de `pasosDelEncargo` | `encargoPublico.*` (+ `comprador.tarjeta.hechoAPedido`) |
+| Espera y pago pendiente (`PagoLoading`, `PagoPendiente`, `pagoHelpers.BENEFITS` ahora guarda la clave) | `payment.carga.*`, `payment.pendiente.*` |
+
+**Prueba de paridad:** `src/i18n/locales/paridadClaves.test.ts` aplana es/en/pt (las listas por índice) y exige las mismas claves, ningún texto vacío y las mismas variables `{{…}}` que es. Pasa sobre los 3533 textos (no había diferencias previas).
+
+**Para revisión humana (traducción literal, no se inventó copy):**
+
+| Clave | Por qué |
+| --- | --- |
+| `payment.carga.beneficios.*` | Promesas de negocio («garantía de 40 días», «soporte 24/7», «miles de clientes satisfechos»): traducidas tal cual; confirmar que siguen vigentes en los tres idiomas. |
+| `tienda.envioDetalle`, `encargoPublico.plazoPago` | Montos y plazos comerciales (`₡4.000`, 7 días) fijos en el texto. |
+| `tienda.factura` (pt «nota fiscal eletrônica») | Término brasileño para la factura electrónica de Costa Rica; revisar si se prefiere «fatura eletrônica». |
+| `emprendimientos.titulo` (en «Local businesses»), `emprendimientos.emprender` (en «Start your business on HotClick») | «Emprendimientos/Emprender» no tiene equivalente directo en inglés. |
+| `serviciosPage.inicio.*`, `tienda.waTexto`, `encargoPublico.waMensaje` | Tono voseante del es; en/pt van en registro neutro. Los WhatsApp salen en el idioma del comprador. |
+
+**REQUIERE_DECISION (sin tocar):** la línea de gift card del carrito dice «Gift card» (`cart…giftCardLinea`) y la del checkout «Tarjeta de regalo {{codigo}}» (`lineaGift`), en móvil y escritorio. Unificarlas es un cambio de copy en es.
+
+**Se queda en español a propósito:** texto que viaja al backend o al equipo (motivo de garantía `MOTIVOS_GARANTIA` dentro de la descripción, notas del pedido «Teléfono/Dirección/Cédula/Envío», WhatsApp del comprobante SINPE a HotClick), JSON-LD de `serviciosHelpers` («No alterar el contenido»), marcas (HotClick, Marketplace, WhatsApp, Instagram). **Correos:** los constructores del backend (`EmailLayoutHelper`, `ConfirmacionPedido`, `RecuperacionCarrito`, `EncargoEmailSender`…) no reciben locale ni lo guarda el pedido; siguen solo en español. Traducirlos pide guardar el idioma del comprador y plantillas por idioma (fuera de P17).
+
+**Pendiente (cadenas fijas en español, conteo aproximado del censo de P17, ~2000 en el comprador):** `components/ui` ~274, `components/ai` ~146, `pages/auth` ~119; páginas legales (Privacidad, Términos, Cookies, Acuerdo de vendedores, devoluciones: copy legal, requiere traductor); `registro-empresa`/`registrar-negocio`; `TiendaCheckout`, `TiendaCarrito` y `TiendaSuccess` (sin frame de Figma); `VistaTestimonio`, `TestimonioCard` (`RATING_LABELS`), `VistaDigitalizacion`; `EnviosPage`/`enviosData` y Blog; motivos de Tilopay y el respaldo de retiro «Gratis · Lo coordinamos al confirmar» de `checkoutHelpers`; fechas cortas armadas con meses es-CR (`fechaDiaMes`, `fechaHoraEncargo`, `mesAnioCorto`).
+
+Verificación: `tsc` (app y e2e) limpio; ESLint sin errores nuevos (queda el `set-state-in-effect` previo de `TiendaHomePage`); Vitest 514 de 514 (nuevo `paridadClaves.test.ts`, 7 casos; `serviciosHelpers` y `encargoHelpers` usan `getFixedT('es')` y comprueban el texto en español). Playwright 113 de 121 en 23 specs del alcance (servicios, tienda, carrito, checkout, pago, QR, estados, idioma, formato, smoke), incluido el nuevo `i18n-pantallas.spec.ts` (3 casos: `/servicios` en inglés, `/servicios` y `/emprendimientos` en portugués sin texto en español, y es como predeterminado). `tienda-theme` lee ahora la clave `tienda.enHotclick` en vez del literal. Fallan igual que sin P17: `idioma:39` y `idioma:57` (buscan un enlace «Products»/«Produtos» que el header ya no tiene), `tienda-checkout:77`, `smoke:131` y `smoke:237`; 3 omitidos.

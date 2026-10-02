@@ -1,4 +1,5 @@
 import { paymentService } from '@/services/paymentService'
+import i18n from '@/i18n'
 import { formatPrice } from '@/utils/format'
 import { WHATSAPP } from './checkoutHelpers'
 
@@ -22,10 +23,10 @@ type SubirComprobanteDeps = {
 
 function mensajeErrorComprobante(err: unknown): string {
   if (!err || typeof err !== 'object' || !('response' in err)) {
-    return 'Error al subir el comprobante. Intentá de nuevo.'
+    return i18n.t('checkout.errores.subirComprobante')
   }
   const message = (err as { response?: { data?: { message?: unknown } } }).response?.data?.message
-  return typeof message === 'string' ? message : 'Error al subir el comprobante. Intentá de nuevo.'
+  return typeof message === 'string' ? message : i18n.t('checkout.errores.subirComprobante')
 }
 
 /**
@@ -37,7 +38,7 @@ export async function ejecutarSubirComprobante({
   setSinpeImagenErr, setSinpeUploadEstado, setSinpeUploadError,
 }: SubirComprobanteDeps) {
   if (!sinpeImagen) {
-    setSinpeImagenErr('Debes adjuntar una imagen del comprobante')
+    setSinpeImagenErr(i18n.t('checkout.errores.adjuntarComprobante'))
     return
   }
   setSinpeImagenErr('')

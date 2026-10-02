@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { IcoSrv } from './IcoSrv'
 import type { NombreIconoSrv } from './iconosServicios'
 import type { VistaServicios } from './serviciosHelpers'
@@ -7,16 +8,17 @@ type Opcion = {
   vista: Exclude<VistaServicios, 'inicio'>
   icono: NombreIconoSrv
   fondo: string
+  /** Claves i18n (`serviciosPage.inicio.*`). */
   titulo: string
   detalle: string
 }
 
 /** Las cuatro opciones de Figma `28:1429`: fondo de ícono azul, verde, ámbar y rojo claro. */
 const OPCIONES: Opcion[] = [
-  { vista: 'busqueda', icono: 'inicioBuscar', fondo: 'bg-hc-blue-50', titulo: 'Te lo conseguimos', detalle: 'Mandanos una foto y te cotizamos en minutos' },
-  { vista: 'garantia', icono: 'inicioEscudo', fondo: 'bg-hc-success-bg', titulo: 'Garantía de un producto', detalle: 'Reportá una falla de algo que compraste' },
-  { vista: 'inventario', icono: 'inicioCaja', fondo: 'bg-hc-warning-bg', titulo: 'Digitalizá tu inventario', detalle: 'Para negocios: subí tus productos con fotos' },
-  { vista: 'testimonio', icono: 'inicioEstrella', fondo: 'bg-hc-red-50', titulo: 'Contanos tu experiencia', detalle: 'Dejá tu opinión sobre una compra' },
+  { vista: 'busqueda', icono: 'inicioBuscar', fondo: 'bg-hc-blue-50', titulo: 'serviciosPage.inicio.busquedaTitulo', detalle: 'serviciosPage.inicio.busquedaDetalle' },
+  { vista: 'garantia', icono: 'inicioEscudo', fondo: 'bg-hc-success-bg', titulo: 'serviciosPage.inicio.garantiaTitulo', detalle: 'serviciosPage.inicio.garantiaDetalle' },
+  { vista: 'inventario', icono: 'inicioCaja', fondo: 'bg-hc-warning-bg', titulo: 'serviciosPage.inicio.inventarioTitulo', detalle: 'serviciosPage.inicio.inventarioDetalle' },
+  { vista: 'testimonio', icono: 'inicioEstrella', fondo: 'bg-hc-red-50', titulo: 'serviciosPage.inicio.testimonioTitulo', detalle: 'serviciosPage.inicio.testimonioDetalle' },
 ]
 
 type ServiciosInicioProps = {
@@ -27,12 +29,13 @@ type ServiciosInicioProps = {
 
 /** Inicio de Servicios HOT: introducción, cuatro opciones en lista y aviso de solicitudes en curso (Figma `28:1429`). */
 export default function ServiciosInicio({ irA, solicitudesEnCurso }: ServiciosInicioProps) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
       <section className="flex flex-col gap-[6px] bg-hc-n-0 px-4 py-5 lg:rounded-[16px] lg:mt-6">
-        <h1 className="leading-[normal] font-display text-[22px] font-bold text-hc-n-900">¿En qué te ayudamos?</h1>
+        <h1 className="leading-[normal] font-display text-[22px] font-bold text-hc-n-900">{t('serviciosPage.inicio.titulo')}</h1>
         <p className="text-[14px] leading-5 text-hc-n-600">
-          Conseguimos productos que no están en el catálogo, atendemos garantías y te contamos cómo va tu pedido.
+          {t('serviciosPage.inicio.intro')}
         </p>
       </section>
 
@@ -48,8 +51,8 @@ export default function ServiciosInicio({ irA, solicitudesEnCurso }: ServiciosIn
               <IcoSrv nombre={o.icono} size={22} />
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
-              <span className="text-[15px] font-semibold text-hc-n-900">{o.titulo}</span>
-              <span className="text-[12px] leading-4 text-hc-n-500">{o.detalle}</span>
+              <span className="text-[15px] font-semibold text-hc-n-900">{t(o.titulo)}</span>
+              <span className="text-[12px] leading-4 text-hc-n-500">{t(o.detalle)}</span>
             </span>
             <IcoSrv nombre="inicioFlecha" size={18} />
           </button>
@@ -62,7 +65,7 @@ export default function ServiciosInicio({ irA, solicitudesEnCurso }: ServiciosIn
           >
             <IcoSrv nombre="inicioReloj" size={20} />
             <span className="min-w-0 flex-1 text-[14px] font-semibold text-hc-blue-600">
-              {solicitudesEnCurso === 1 ? 'Tenés 1 solicitud en curso' : `Tenés ${solicitudesEnCurso} solicitudes en curso`}
+              {t('serviciosPage.inicio.enCurso', { count: solicitudesEnCurso })}
             </span>
             <IcoSrv nombre="inicioFlechaAzul" size={16} />
           </Link>

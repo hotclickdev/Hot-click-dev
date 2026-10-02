@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import directorioChevron from '@/assets/figma/tienda/directorio-chevron.svg'
 import { inicialesNegocio } from '@/pages/tienda/tiendaHelpers'
@@ -35,10 +36,11 @@ function LogoNegocio({ nombre, logoUrl, indice }: { nombre: string; logoUrl?: st
  * Faltan del diseño las miniaturas, la ciudad y el conteo de productos: el listado de convenios no los trae.
  */
 export default function ConvenioCard({ convenio, indice }: { convenio: ConvenioPublico; indice: number }) {
+  const { t } = useTranslation()
   const nombre = convenio.nombre ?? ''
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-hc-n-200 bg-hc-n-0 p-[14px]">
-      <Link to={RUTA_CATALOGO_EMPRENDIMIENTOS} className="flex items-center gap-3" aria-label={`${nombre}: ver productos en HotClick`}>
+      <Link to={RUTA_CATALOGO_EMPRENDIMIENTOS} className="flex items-center gap-3" aria-label={t('emprendimientos.verProductosAria', { nombre })}>
         <LogoNegocio nombre={nombre} logoUrl={convenio.logoUrl} indice={indice} />
         <span className="flex min-w-0 flex-1 flex-col gap-[2px] leading-[normal]">
           <span className="truncate font-display text-base font-bold leading-[normal] text-hc-n-900">{nombre}</span>
@@ -52,13 +54,13 @@ export default function ConvenioCard({ convenio, indice }: { convenio: ConvenioP
             href={convenio.urlWeb}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${nombre}: sitio externo, se abre en otra pestaña`}
+            aria-label={t('emprendimientos.sitioExternoAria', { nombre })}
             className="text-hc-n-900"
           >
-            Sitio externo
+            {t('emprendimientos.sitioExterno')}
           </a>
         ) : <span />}
-        <Link to={RUTA_CATALOGO_EMPRENDIMIENTOS} className="text-hc-blue-600">Ver productos</Link>
+        <Link to={RUTA_CATALOGO_EMPRENDIMIENTOS} className="text-hc-blue-600">{t('emprendimientos.verProductos')}</Link>
       </div>
     </article>
   )

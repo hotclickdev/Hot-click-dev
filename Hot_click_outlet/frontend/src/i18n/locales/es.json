@@ -1437,7 +1437,29 @@
       "tituloEscritorio": "Finalizá tu compra",
       "entrega": "Entrega",
       "pago": "Pago",
-      "sesionGift": "Las tarjetas de regalo requieren sesión iniciada."
+      "sesionGift": "Las tarjetas de regalo requieren sesión iniciada.",
+      "waInternacional": "Hola HotClick, consulto un envío internacional."
+    },
+    "giftPagado": {
+      "titulo": "¡Pedido confirmado!",
+      "texto": "Tu pedido fue pagado en su totalidad con la gift card.",
+      "numero": "Número de pedido",
+      "verPedidos": "Ver mis pedidos"
+    },
+    "errorStock": {
+      "productoAntes": "El producto",
+      "productoDespues": "ya no tiene stock disponible.",
+      "varios": "Uno o más productos ya no tienen stock disponible.",
+      "retirar": "Retirá ese producto del pedido y volvé a intentarlo.",
+      "irPedido": "Ir al pedido",
+      "consultarWa": "Consultar disponibilidad por WhatsApp"
+    },
+    "errores": {
+      "subirComprobante": "Error al subir el comprobante. Intentá de nuevo.",
+      "adjuntarComprobante": "Debes adjuntar una imagen del comprobante",
+      "nombreRequerido": "El nombre completo es requerido",
+      "cedulaRequerida": "El número de cédula es requerido",
+      "cuponInvalido": "Código inválido o no disponible"
     }
   },
   "payment": {
@@ -1526,6 +1548,27 @@
       "efectivoSub": "Pagás en efectivo cuando recibas tu pedido, con el monto exacto.",
       "efectivoMetodo": "Efectivo contra entrega",
       "efectivoAviso": "Nuestro repartidor llevará tu pedido y cobrará el monto exacto en efectivo. Te avisamos por WhatsApp antes de salir."
+    },
+    "carga": {
+      "gracias": "¡Gracias por tu compra!",
+      "puedeTardar": "Esto puede tardar unos segundos…",
+      "confirmando": "Confirmando tu pago…",
+      "aprobadoRegistrando": "Pago aprobado — registrando en el sistema…",
+      "verificando": "Verificando el pago con el banco…",
+      "beneficios": {
+        "garantia": "Tu compra está protegida con garantía de 40 días",
+        "paquete": "Tu pedido será preparado con cuidado",
+        "envio": "Envíos rápidos a todo Costa Rica",
+        "whatsapp": "Soporte por WhatsApp disponible 24/7",
+        "pago": "Pago 100% seguro y encriptado",
+        "clientes": "Miles de clientes satisfechos en Costa Rica"
+      }
+    },
+    "pendiente": {
+      "tituloAprobado": "¡Pago aprobado!",
+      "tituloRevision": "Tu pago está siendo revisado",
+      "textoAprobado": "Tu banco ya confirmó el pago. Estamos registrando tu pedido — recibirás un correo en unos minutos.",
+      "textoRevision": "La confirmación puede tardar unos minutos más. Te enviaremos un correo cuando se procese."
     }
   },
   "nosotros": {
@@ -2319,6 +2362,51 @@
       "comoSigueTitulo": "Cómo sigue",
       "comoSigueTexto": "Buscamos con nuestros proveedores y te escribimos por WhatsApp con precio y disponibilidad. El seguimiento queda en Mi cuenta › Solicitudes.",
       "comoSigueTextoInvitado": "Buscamos con nuestros proveedores y te escribimos por WhatsApp con precio y disponibilidad."
+    },
+    "inicio": {
+      "titulo": "¿En qué te ayudamos?",
+      "intro": "Conseguimos productos que no están en el catálogo, atendemos garantías y te contamos cómo va tu pedido.",
+      "busquedaTitulo": "Te lo conseguimos",
+      "busquedaDetalle": "Mandanos una foto y te cotizamos en minutos",
+      "garantiaTitulo": "Garantía de un producto",
+      "garantiaDetalle": "Reportá una falla de algo que compraste",
+      "inventarioTitulo": "Digitalizá tu inventario",
+      "inventarioDetalle": "Para negocios: subí tus productos con fotos",
+      "testimonioTitulo": "Contanos tu experiencia",
+      "testimonioDetalle": "Dejá tu opinión sobre una compra",
+      "enCurso_one": "Tenés 1 solicitud en curso",
+      "enCurso_other": "Tenés {{count}} solicitudes en curso"
+    },
+    "garantia": {
+      "pedidoEntregado": "Pedido #{{numero}} · entregado {{fecha}}",
+      "pedidoVencido": "Pedido #{{numero}} · venció {{fecha}}",
+      "sinSesionTitulo": "Iniciá sesión para reportar una garantía",
+      "sinSesionTexto": "Tus productos con garantía aparecen vinculados a tu cuenta.",
+      "vacioTitulo": "Sin garantías registradas",
+      "vacioTexto": "Los productos comprados con garantía aparecerán aquí una vez entregados.",
+      "volverServicios": "Volver a Servicios HOT",
+      "enviadoTitulo": "Solicitud enviada",
+      "enviadoTexto": "HotClick te contactará pronto.",
+      "errorProducto": "Elegí el producto que tiene la falla.",
+      "errorTexto": "Describí el problema antes de enviar.",
+      "errorEnvio": "No se pudo enviar. Intentá de nuevo.",
+      "queProducto": "¿Qué producto tiene la falla?",
+      "motivo": "Motivo",
+      "motivos": {
+        "noEnciende": "No enciende",
+        "seDano": "Se dañó",
+        "incompleto": "Llegó incompleto",
+        "otro": "Otro"
+      },
+      "quePaso": "Contanos qué pasó",
+      "quePasoPh": "Qué pasó, cuándo empezó y qué probaste",
+      "problema": "¿Problema con un producto?",
+      "contactanos": "Contactanos por WhatsApp",
+      "enviar": "Enviar a la tienda",
+      "vigencia_one": "{{count}} día restante",
+      "vigencia_other": "{{count}} días restantes",
+      "vigenciaVence_one": "{{count}} día restante · vence {{fecha}}",
+      "vigenciaVence_other": "{{count}} días restantes · vence {{fecha}}"
     }
   },
   "adminOrders": {
@@ -3749,6 +3837,98 @@
         "NO_ENCONTRADO": "No se encontró disponible",
         "CANCELADO": "Solicitud cancelada"
       }
+    }
+  },
+  "tienda": {
+    "buscarEn": "Buscar en {{nombre}}",
+    "todo": "Todo",
+    "sobreNosotros": "Sobre nosotros",
+    "comoComprarle": "Cómo comprarle",
+    "productos": "Productos",
+    "productosTotal": "Productos ({{total}})",
+    "envioA": "Envío a {{zona}}",
+    "todoCostaRica": "todo Costa Rica",
+    "envioDetalle": "Desde ₡4.000 con Correos de Costa Rica o por encomienda",
+    "retiro": "Retiro en tienda",
+    "retiroZona": "Retiro en tienda · {{zona}}",
+    "coordinar": "Coordiná con la tienda",
+    "cambios": "Cambios y devoluciones",
+    "cambiosDetalle": "Según la política de HotClick",
+    "logoDe": "Logo de {{nombre}}",
+    "enHotclickDesde": "En HotClick desde {{fecha}}",
+    "enviosA": "Envíos a {{zona}}",
+    "factura": "Emite factura electrónica",
+    "waTexto": "Hola, escribo desde la tienda {{nombre}} en HotClick.",
+    "compartir": "Compartir",
+    "enlaceCopiado": "Enlace de la tienda copiado",
+    "enlaceError": "No se pudo copiar el enlace",
+    "busquedaVaciaTitulo": "No encontramos eso en esta tienda",
+    "busquedaVaciaTexto": "Probá otra búsqueda o mirá todo el catálogo.",
+    "verTodo": "Ver todo el catálogo",
+    "catalogoError": "No se pudo cargar el catálogo",
+    "revisaConexion": "Verificá tu conexión e intentá de nuevo.",
+    "infoError": "No se pudo abrir esta tienda",
+    "nuevaTitulo": "Esta tienda está empezando",
+    "nuevaTexto": "{{nombre}} ya está en HotClick. El catálogo se publica acá cuando haya productos.",
+    "verProductosHotclick": "Ver productos en HotClick",
+    "noDisponibleTitulo": "Esta tienda no está disponible",
+    "noDisponibleTexto": "El enlace no corresponde a un negocio publicado en HotClick. Podés seguir comprando en el marketplace.",
+    "pedidoTienda": "Pedido de esta tienda",
+    "navTienda": "Navegación de esta tienda",
+    "navCatalogo": "Catálogo",
+    "navPedido": "Pedido",
+    "tiendaDe": "Tienda de {{nombre}}",
+    "enHotclick": "en HotClick"
+  },
+  "emprendimientos": {
+    "titulo": "Emprendimientos",
+    "intro": "Conocé a los negocios de Costa Rica que venden en HotClick.",
+    "negocios_one": "{{count}} negocio",
+    "negocios_other": "{{count}} negocios",
+    "sinCoincidencias": "Ningún negocio coincide con “{{busqueda}}”.",
+    "buscar": "Buscar un negocio",
+    "verProductosAria": "{{nombre}}: ver productos en HotClick",
+    "sitioExternoAria": "{{nombre}}: sitio externo, se abre en otra pestaña",
+    "sitioExterno": "Sitio externo",
+    "verProductos": "Ver productos",
+    "proximamente": "Próximamente",
+    "cerrandoConvenios": "Estamos cerrando convenios con emprendimientos de Costa Rica.",
+    "emprender": "Emprender en HotClick"
+  },
+  "encargoPublico": {
+    "titulo": "Tu encargo",
+    "estado": "Estado",
+    "noEncontrado": "No encontramos este encargo",
+    "enlaceInvalido": "El enlace puede haber expirado o ser inválido.",
+    "volverCatalogo": "Volver al catálogo",
+    "checkoutIniciado": "Checkout iniciado. Revisá tu email si no redirige.",
+    "pagoError": "No se pudo iniciar el pago",
+    "waMensaje": "Hola HotClick, consulto por mi encargo #{{id}}.",
+    "referencia": "Referencia",
+    "numero": "Encargo #{{id}}",
+    "tusNotas": "Tus notas",
+    "mensajeTienda": "Mensaje de la tienda",
+    "producto": "Producto",
+    "total": "Total",
+    "redirigiendo": "Redirigiendo…",
+    "pagar": "Pagar {{monto}}",
+    "plazoPago": "Tenés 7 días para pagar desde la aprobación.",
+    "escribirTienda": "Escribirle a la tienda",
+    "pasos": {
+      "recibida": "Solicitud recibida",
+      "rechazado": "El artista no pudo aceptar este encargo",
+      "cotizacionEnviada": "Cotización enviada",
+      "cotizacion": "Cotización",
+      "revisando": "Estamos revisando tu solicitud",
+      "vencida": "Cotización vencida",
+      "vencidaDetalle": "Podés solicitar un nuevo encargo desde el producto.",
+      "pagoProceso": "Pago en proceso",
+      "pagoRecibido": "Pago recibido",
+      "esperandoPago": "Esperando tu pago",
+      "pagaDetalle": "Pagá para empezar la producción",
+      "produccion": "En producción",
+      "entregado": "Entregado",
+      "listo": "Listo para entregar"
     }
   }
 }

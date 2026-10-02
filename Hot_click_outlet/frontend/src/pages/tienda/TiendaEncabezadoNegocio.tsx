@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import type { EmpresaTiendaPublica } from '@/types/tienda'
 import { ICONOS_TIENDA } from './iconosTienda'
@@ -18,16 +19,17 @@ function Dato({ icono, children }: { icono: string; children: ReactNode }) {
 }
 
 function Logo({ nombre, logoUrl }: { nombre: string; logoUrl?: string | null }) {
+  const { t } = useTranslation()
   const base = 'absolute left-0 top-[-34px] flex size-[76px] items-center justify-center overflow-hidden rounded-[21.28px] border-[3px] border-[var(--t-surface)] lg:top-[-50px] lg:size-[120px] lg:rounded-[32px] lg:border-4'
   if (logoUrl) {
     return (
       <div className={`${base} bg-[var(--t-surface)] ring-1 ring-[var(--t-border)]`}>
-        <img src={logoUrl} alt={`Logo de ${nombre}`} className="size-full object-contain p-2" />
+        <img src={logoUrl} alt={t('tienda.logoDe', { nombre })} className="size-full object-contain p-2" />
       </div>
     )
   }
   return (
-    <div className={base} style={{ backgroundColor: 'var(--t-secondary)' }} role="img" aria-label={`Logo de ${nombre}`}>
+    <div className={base} style={{ backgroundColor: 'var(--t-secondary)' }} role="img" aria-label={t('tienda.logoDe', { nombre })}>
       <span className="font-display text-[27.36px] font-extrabold leading-[normal] text-white lg:text-[42px]">
         {inicialesNegocio(nombre)}
       </span>
@@ -40,11 +42,12 @@ function Logo({ nombre, logoUrl }: { nombre: string; logoUrl?: string | null }) 
  * nombre, descripción corta, datos, sello de factura electrónica y acciones.
  */
 export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: EmpresaTiendaPublica | null; nombre: string }) {
+  const { t } = useTranslation()
   const compartir = useCompartirTienda(nombre)
   const whatsapp = (empresa?.whatsapp ?? '').replace(/\D/g, '')
   const desde = mesAnioCorto(empresa?.enHotclickDesde)
   const instagram = empresa?.instagram
-  const textoWhatsapp = encodeURIComponent(`Hola, escribo desde la tienda ${nombre} en HotClick.`)
+  const textoWhatsapp = encodeURIComponent(t('tienda.waTexto', { nombre }))
 
   return (
     <section className="bg-[var(--t-surface)] lg:border-b lg:border-[var(--t-border)]">
@@ -60,13 +63,13 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
           )}
           <div className="flex flex-wrap items-center gap-2 lg:gap-4">
             {empresa?.categoriaNegocio && <Dato icono={ICONOS_TIENDA.metaCategoria}>{empresa.categoriaNegocio}</Dato>}
-            {desde && <Dato icono={ICONOS_TIENDA.metaCalendario}>En HotClick desde {desde}</Dato>}
-            {empresa?.zonaEnvio && <Dato icono={ICONOS_TIENDA.metaEnvio}>Envíos a {empresa.zonaEnvio}</Dato>}
+            {desde && <Dato icono={ICONOS_TIENDA.metaCalendario}>{t('tienda.enHotclickDesde', { fecha: desde })}</Dato>}
+            {empresa?.zonaEnvio && <Dato icono={ICONOS_TIENDA.metaEnvio}>{t('tienda.enviosA', { zona: empresa.zonaEnvio })}</Dato>}
           </div>
           {empresa?.facturaElectronica && (
             <span className="flex min-h-7 w-fit items-center gap-2 rounded-full bg-hc-success-bg py-[6px] pl-[10px] pr-[14px] text-xs font-semibold leading-[normal] text-hc-green-600">
               <IconoFigma src={ICONOS_TIENDA.selloFactura} size={15} />
-              Emite factura electrónica
+              {t('tienda.factura')}
             </span>
           )}
         </div>
@@ -92,7 +95,7 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
           )}
           <button type="button" onClick={compartir} className={CLASE_ACCION_SECUNDARIA}>
             <IconoFigma src={ICONOS_TIENDA.accionCompartir} size={16} className="lg:!size-[18px]" />
-            Compartir
+            {t('tienda.compartir')}
           </button>
         </div>
       </div>

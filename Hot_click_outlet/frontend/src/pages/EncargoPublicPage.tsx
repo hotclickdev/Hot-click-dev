@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
@@ -32,9 +33,10 @@ function Marca({ estado }: { estado: PasoEncargo['estado'] }) {
 }
 
 function LineaDeTiempo({ pasos }: { pasos: PasoEncargo[] }) {
+  const { t } = useTranslation()
   return (
     <section className={TARJETA} aria-labelledby="encargo-estado">
-      <h2 id="encargo-estado" className="font-sans tracking-normal leading-[normal] text-[14px] font-semibold text-hc-n-900">Estado</h2>
+      <h2 id="encargo-estado" className="font-sans tracking-normal leading-[normal] text-[14px] font-semibold text-hc-n-900">{t('encargoPublico.estado')}</h2>
       <ol className="flex flex-col">
         {pasos.map((p) => (
           <li key={p.clave} className="flex items-start gap-3 pt-3" aria-current={p.estado === 'actual' ? 'step' : undefined}>
@@ -53,6 +55,7 @@ function LineaDeTiempo({ pasos }: { pasos: PasoEncargo[] }) {
 export default function EncargoPublicPage() {
   const { token } = useParams()
   const toast = useToast()
+  const { t } = useTranslation()
   const [encargo, setEncargo] = useState<Encargo | null>(null)
   const [loading, setLoading] = useState(true)
   const [pagando, setPagando] = useState(false)
@@ -79,10 +82,10 @@ export default function EncargoPublicPage() {
         window.location.href = url
         return
       }
-      toast({ message: 'Checkout iniciado. Revisá tu email si no redirige.', type: 'success' })
+      toast({ message: t('encargoPublico.checkoutIniciado'), type: 'success' })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast({ message: msg || 'No se pudo iniciar el pago', type: 'error' })
+      toast({ message: msg || t('encargoPublico.pagoError'), type: 'error' })
     } finally {
       setPagando(false)
     }
@@ -90,7 +93,7 @@ export default function EncargoPublicPage() {
 
   if (loading) {
     return (
-      <MainLayout variante="interna" titulo="Tu encargo">
+      <MainLayout variante="interna" titulo={t('encargoPublico.titulo')}>
         <div className="flex justify-center py-32"><Spinner size="xl" /></div>
       </MainLayout>
     )
@@ -98,16 +101,16 @@ export default function EncargoPublicPage() {
 
   if (!encargo) {
     return (
-      <MainLayout variante="interna" titulo="Tu encargo">
+      <MainLayout variante="interna" titulo={t('encargoPublico.titulo')}>
         <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-123px)]">
           <EstadoVacio
             nivel="h1"
             tono="azul"
             espaciado="cuenta"
             icono={<IcoBuscarCaja size={28} />}
-            titulo="No encontramos este encargo"
-            texto="El enlace puede haber expirado o ser inválido."
-            accion={{ texto: 'Volver al catálogo', to: '/productos' }}
+            titulo={t('encargoPublico.noEncontrado')}
+            texto={t('encargoPublico.enlaceInvalido')}
+            accion={{ texto: t('encargoPublico.volverCatalogo'), to: '/productos' }}
           />
         </div>
       </MainLayout>
@@ -115,22 +118,22 @@ export default function EncargoPublicPage() {
   }
 
   const refs = referenciasDelEncargo(encargo)
-  const pasos = pasosDelEncargo(encargo, formatPrice)
+  const pasos = pasosDelEncargo(encargo, formatPrice, t)
   const porPagar = encargo.estado === 'APROBADO' && encargo.precioCotizado != null
-  const mensaje = encodeURIComponent(`Hola HotClick, consulto por mi encargo #${encargo.id}.`)
+  const mensaje = encodeURIComponent(t('encargoPublico.waMensaje', { id: encargo.id }))
 
   return (
-    <MainLayout variante="interna" titulo="Tu encargo">
+    <MainLayout variante="interna" titulo={t('encargoPublico.titulo')}>
       <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
         <div className="flex flex-col gap-[14px] px-4 pb-3 pt-[18px] lg:px-0">
           <section className={`${TARJETA} flex items-center gap-3`}>
             {refs[0]
-              ? <img src={refs[0]} alt="Referencia" className="size-16 shrink-0 rounded-[12px] object-cover" />
+              ? <img src={refs[0]} alt={t('encargoPublico.referencia')} className="size-16 shrink-0 rounded-[12px] object-cover" />
               : <span aria-hidden="true" className="size-16 shrink-0 rounded-[12px] bg-hc-n-100" />}
             <div className="flex min-w-0 flex-1 flex-col items-start gap-[3px]">
-              <span className="rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold text-hc-warning">Hecho a pedido</span>
-              <h1 className="font-sans tracking-normal leading-[normal] text-[15px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{encargo.productoNombre || 'Tu encargo'}</h1>
-              <p className="text-[12px] text-hc-n-500">Encargo #{encargo.id}</p>
+              <span className="rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold text-hc-warning">{t('comprador.tarjeta.hechoAPedido')}</span>
+              <h1 className="font-sans tracking-normal leading-[normal] text-[15px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{encargo.productoNombre || t('encargoPublico.titulo')}</h1>
+              <p className="text-[12px] text-hc-n-500">{t('encargoPublico.numero', { id: encargo.id })}</p>
             </div>
           </section>
 
@@ -141,19 +144,19 @@ export default function EncargoPublicPage() {
               {refs.length > 1 && (
                 <div className="grid grid-cols-3 gap-2">
                   {refs.slice(1).map((url) => (
-                    <img key={url} src={url} alt="Referencia" className="aspect-square rounded-[12px] border border-hc-n-200 object-cover" />
+                    <img key={url} src={url} alt={t('encargoPublico.referencia')} className="aspect-square rounded-[12px] border border-hc-n-200 object-cover" />
                   ))}
                 </div>
               )}
               {encargo.notas && (
                 <div>
-                  <p className="text-[12px] text-hc-n-500">Tus notas</p>
+                  <p className="text-[12px] text-hc-n-500">{t('encargoPublico.tusNotas')}</p>
                   <p className="text-[14px] text-hc-n-900 [overflow-wrap:anywhere]">{encargo.notas}</p>
                 </div>
               )}
               {encargo.mensajeVendedor && (
                 <div>
-                  <p className="text-[12px] text-hc-n-500">Mensaje de la tienda</p>
+                  <p className="text-[12px] text-hc-n-500">{t('encargoPublico.mensajeTienda')}</p>
                   <p className="text-[14px] text-hc-n-900 [overflow-wrap:anywhere]">{encargo.mensajeVendedor}</p>
                 </div>
               )}
@@ -163,11 +166,11 @@ export default function EncargoPublicPage() {
           {encargo.precioCotizado != null && encargo.estado !== 'RECHAZADO' && (
             <section className={`${TARJETA} flex flex-col gap-[6px]`}>
               <div className="flex items-center justify-between text-[14px]">
-                <span className="text-hc-n-600">Producto</span>
+                <span className="text-hc-n-600">{t('encargoPublico.producto')}</span>
                 <span className="text-hc-n-900">{formatPrice(encargo.precioCotizado)}</span>
               </div>
               <div className="flex items-center justify-between text-hc-n-900">
-                <span className="text-[15px] font-semibold">Total</span>
+                <span className="text-[15px] font-semibold">{t('encargoPublico.total')}</span>
                 <span className="font-display text-[18px] font-bold">{formatPrice(encargo.precioCotizado)}</span>
               </div>
             </section>
@@ -184,9 +187,9 @@ export default function EncargoPublicPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0 disabled:opacity-50"
               >
                 <IcoSrv nombre="encargoTarjeta" size={18} />
-                {pagando ? 'Redirigiendo…' : `Pagar ${formatPrice(encargo.precioCotizado)}`}
+                {pagando ? t('encargoPublico.redirigiendo') : t('encargoPublico.pagar', { monto: formatPrice(encargo.precioCotizado) })}
               </button>
-              <p className="text-center text-[12px] text-hc-n-500">Tenés 7 días para pagar desde la aprobación.</p>
+              <p className="text-center text-[12px] text-hc-n-500">{t('encargoPublico.plazoPago')}</p>
             </>
           )}
           <a
@@ -196,7 +199,7 @@ export default function EncargoPublicPage() {
             className="flex items-center justify-center gap-[6px] text-[13px] font-semibold text-hc-blue-600"
           >
             <IcoSrv nombre="encargoChat" size={14} />
-            Escribirle a la tienda
+            {t('encargoPublico.escribirTienda')}
           </a>
         </div>
       </div>

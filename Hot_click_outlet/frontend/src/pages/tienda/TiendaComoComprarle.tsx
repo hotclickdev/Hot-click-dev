@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import type { EmpresaTiendaPublica } from '@/types/tienda'
@@ -27,6 +28,7 @@ const Chevron = () => <IconoFigma src={ICONOS_TIENDA.comoChevron} size={16} clas
  * y política de cambios. El retiro sale de `empresa.retiro`; el envío y las devoluciones son texto fijo del diseño.
  */
 export default function TiendaComoComprarle({ empresa }: { empresa: EmpresaTiendaPublica | null }) {
+  const { t } = useTranslation()
   const retiro = empresa?.retiro
   const horario = retiro ? horarioRetiro(retiro) : ''
   const direccion = retiro ? direccionRetiro(retiro) : ''
@@ -38,8 +40,8 @@ export default function TiendaComoComprarle({ empresa }: { empresa: EmpresaTiend
       <Link to="/envios" className={CLASE_FILA}>
         <Fila
           icono={ICONOS_TIENDA.comoEnvio}
-          titulo={`Envío a ${empresa?.zonaEnvio || 'todo Costa Rica'}`}
-          detalle="Desde ₡4.000 con Correos de Costa Rica o por encomienda"
+          titulo={t('tienda.envioA', { zona: empresa?.zonaEnvio || t('tienda.todoCostaRica') })}
+          detalle={t('tienda.envioDetalle')}
         >
           <Chevron />
         </Fila>
@@ -47,18 +49,18 @@ export default function TiendaComoComprarle({ empresa }: { empresa: EmpresaTiend
       {retiro && (
         urlMapa ? (
           <a href={urlMapa} target="_blank" rel="noopener noreferrer" className={CLASE_FILA}>
-            <Fila tituloAlto icono={ICONOS_TIENDA.comoRetiro} titulo={`Retiro en tienda${zona ? ` · ${zona}` : ''}`} detalle={horario || direccion}>
+            <Fila tituloAlto icono={ICONOS_TIENDA.comoRetiro} titulo={zona ? t('tienda.retiroZona', { zona }) : t('tienda.retiro')} detalle={horario || direccion}>
               <Chevron />
             </Fila>
           </a>
         ) : (
           <div className={CLASE_FILA}>
-            <Fila tituloAlto icono={ICONOS_TIENDA.comoRetiro} titulo={`Retiro en tienda${zona ? ` · ${zona}` : ''}`} detalle={horario || 'Coordiná con la tienda'} />
+            <Fila tituloAlto icono={ICONOS_TIENDA.comoRetiro} titulo={zona ? t('tienda.retiroZona', { zona }) : t('tienda.retiro')} detalle={horario || t('tienda.coordinar')} />
           </div>
         )
       )}
       <div className={CLASE_FILA}>
-        <Fila icono={ICONOS_TIENDA.comoDevoluciones} titulo="Cambios y devoluciones" detalle="Según la política de HotClick" />
+        <Fila icono={ICONOS_TIENDA.comoDevoluciones} titulo={t('tienda.cambios')} detalle={t('tienda.cambiosDetalle')} />
       </div>
     </div>
   )

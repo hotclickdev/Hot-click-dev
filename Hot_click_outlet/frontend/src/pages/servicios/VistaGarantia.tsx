@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
 import Spinner from '@/components/ui/Spinner'
 import { garantiaService } from '@/services/garantiaService'
@@ -7,7 +8,7 @@ import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { urlWhatsApp } from '../carrito/cartHelpers'
 import { IcoEscudo } from '../perfil/cuenta/iconosCuenta'
 import { IcoSrv } from './IcoSrv'
-import { CLASE_CAMPO, MOTIVOS_GARANTIA, claveGarantia, descripcionGarantia, fechaDiaMes, textoVigencia, type GarantiaItem, type MotivoGarantia } from './serviciosHelpers'
+import { CLASE_CAMPO, CLAVE_MOTIVO, MOTIVOS_GARANTIA, claveGarantia, descripcionGarantia, fechaDiaMes, textoVigencia, type GarantiaItem, type MotivoGarantia } from './serviciosHelpers'
 
 type VistaGarantiaProps = {
   token: string | null
@@ -18,11 +19,12 @@ type VistaGarantiaProps = {
 }
 
 function FilaProducto({ g, elegida, onElegir }: { g: GarantiaItem; elegida: boolean; onElegir: () => void }) {
+  const { t } = useTranslation()
   const activa = Boolean(g.activa)
   const fecha = fechaDiaMes(activa ? g.fechaEntrega : g.fechaVencimiento)
   const detalle = activa
-    ? `Pedido #${g.numeroPedido} · entregado ${fechaDiaMes(g.fechaEntrega)}`
-    : `Pedido #${g.numeroPedido} · venció ${fecha}`
+    ? t('serviciosPage.garantia.pedidoEntregado', { numero: g.numeroPedido, fecha: fechaDiaMes(g.fechaEntrega) })
+    : t('serviciosPage.garantia.pedidoVencido', { numero: g.numeroPedido, fecha })
   const estado = elegida
     ? 'border-[1.5px] border-hc-blue-600 bg-hc-blue-50'
     : `border border-hc-n-200 bg-hc-n-0 ${activa ? '' : 'opacity-60'}`
@@ -32,7 +34,7 @@ function FilaProducto({ g, elegida, onElegir }: { g: GarantiaItem; elegida: bool
       role="radio"
       aria-checked={elegida}
       disabled={!activa}
-      title={activa ? textoVigencia(g) : undefined}
+      title={activa ? textoVigencia(g, t) : undefined}
       onClick={onElegir}
       className={`flex w-full items-center gap-3 rounded-[14px] p-[10px] text-left ${estado}`}
     >
@@ -56,6 +58,7 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
   const [enviando, setEnviando] = useState(false)
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState('')
+  const { t } = useTranslation()
 
   if (!token) {
     return (
@@ -64,9 +67,9 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
           tono="azul"
           espaciado="cuenta"
           icono={<IcoEscudo size={28} />}
-          titulo="Iniciá sesión para reportar una garantía"
-          texto="Tus productos con garantía aparecen vinculados a tu cuenta."
-          accion={{ texto: 'Iniciar sesión', to: rutaLoginConRetorno('/servicios?vista=garantia') }}
+          titulo={t('serviciosPage.garantia.sinSesionTitulo')}
+          texto={t('serviciosPage.garantia.sinSesionTexto')}
+          accion={{ texto: t('serviciosPage.loginBtn'), to: rutaLoginConRetorno('/servicios?vista=garantia') }}
         />
       </div>
     )
@@ -81,9 +84,9 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
           tono="azul"
           espaciado="cuenta"
           icono={<IcoEscudo size={28} />}
-          titulo="Sin garantías registradas"
-          texto="Los productos comprados con garantía aparecerán aquí una vez entregados."
-          accion={{ texto: 'Volver a Servicios HOT', onClick: volver }}
+          titulo={t('serviciosPage.garantia.vacioTitulo')}
+          texto={t('serviciosPage.garantia.vacioTexto')}
+          accion={{ texto: t('serviciosPage.garantia.volverServicios'), onClick: volver }}
         />
       </div>
     )
@@ -96,9 +99,9 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
           tono="azul"
           espaciado="cuenta"
           icono={<IcoEscudo size={28} />}
-          titulo="Solicitud enviada"
-          texto="HotClick te contactará pronto."
-          accion={{ texto: 'Ver mis solicitudes', to: '/servicios?vista=solicitudes' }}
+          titulo={t('serviciosPage.garantia.enviadoTitulo')}
+          texto={t('serviciosPage.garantia.enviadoTexto')}
+          accion={{ texto: t('serviciosPage.viewMine'), to: '/servicios?vista=solicitudes' }}
         />
       </div>
     )
@@ -110,8 +113,8 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
 
   const enviar = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!producto) { setError('Elegí el producto que tiene la falla.'); return }
-    if (!texto.trim()) { setError('Describí el problema antes de enviar.'); return }
+    if (!producto) { setError(t('serviciosPage.garantia.errorProducto')); return }
+    if (!texto.trim()) { setError(t('serviciosPage.garantia.errorTexto')); return }
     setEnviando(true); setError('')
     try {
       await garantiaService.crearSolicitud({
@@ -122,7 +125,7 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
       setEnviado(true)
       onReportado?.()
     } catch (err: unknown) {
-      setError(mensajeErrorApi(err, 'No se pudo enviar. Intentá de nuevo.'))
+      setError(mensajeErrorApi(err, t('serviciosPage.garantia.errorEnvio')))
     } finally {
       setEnviando(false)
     }
@@ -132,14 +135,14 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
     <form onSubmit={enviar} className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
       <div className="flex flex-col gap-[18px] px-4 pb-4 pt-[18px] lg:px-0">
         <div role="radiogroup" aria-labelledby="srv-garantia-producto" className="flex flex-col gap-[6px]">
-          <p id="srv-garantia-producto" className="text-[13px] font-semibold text-hc-n-900">¿Qué producto tiene la falla?</p>
+          <p id="srv-garantia-producto" className="text-[13px] font-semibold text-hc-n-900">{t('serviciosPage.garantia.queProducto')}</p>
           {misGarantias.map((g) => (
             <FilaProducto key={claveGarantia(g)} g={g} elegida={claveGarantia(g) === claveElegida} onElegir={() => setElegida(claveGarantia(g))} />
           ))}
         </div>
 
         <div role="radiogroup" aria-labelledby="srv-garantia-motivo" className="flex flex-col gap-2">
-          <p id="srv-garantia-motivo" className="text-[13px] font-semibold text-hc-n-900">Motivo</p>
+          <p id="srv-garantia-motivo" className="text-[13px] font-semibold text-hc-n-900">{t('serviciosPage.garantia.motivo')}</p>
           <div className="flex flex-wrap items-center gap-2">
             {MOTIVOS_GARANTIA.map((m) => (
               <button
@@ -150,20 +153,20 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
                 onClick={() => setMotivo(motivo === m ? null : m)}
                 className={`rounded-full border px-[14px] py-2 text-[13px] font-medium ${motivo === m ? 'border-hc-blue-600 bg-hc-blue-600 text-hc-n-0' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'}`}
               >
-                {m}
+                {t(`serviciosPage.garantia.motivos.${CLAVE_MOTIVO[m]}`)}
               </button>
             ))}
           </div>
         </div>
 
         <div className="flex flex-col gap-[6px]">
-          <label htmlFor="srv-garantia-texto" className="text-[13px] font-semibold text-hc-n-900">Contanos qué pasó</label>
+          <label htmlFor="srv-garantia-texto" className="text-[13px] font-semibold text-hc-n-900">{t('serviciosPage.garantia.quePaso')}</label>
           <textarea
             id="srv-garantia-texto"
             rows={3}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Qué pasó, cuándo empezó y qué probaste"
+            placeholder={t('serviciosPage.garantia.quePasoPh')}
             className={`${CLASE_CAMPO} min-h-[84px] resize-none`}
           />
         </div>
@@ -172,9 +175,9 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
           <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
         )}
         <p className="text-[12px] leading-4 text-hc-n-500">
-          ¿Problema con un producto?{' '}
+          {t('serviciosPage.garantia.problema')}{' '}
           <a href={urlWhatsApp('')} target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
-            Contactanos por WhatsApp
+            {t('serviciosPage.garantia.contactanos')}
           </a>
         </p>
       </div>
@@ -186,8 +189,8 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
           className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0 disabled:opacity-50"
         >
           {enviando
-            ? <><span className="size-4 animate-spin rounded-full border-2 border-hc-n-0/30 border-t-hc-n-0" />Enviando…</>
-            : <><IcoSrv nombre="enviarEscudo" size={18} />Enviar a la tienda</>}
+            ? <><span className="size-4 animate-spin rounded-full border-2 border-hc-n-0/30 border-t-hc-n-0" />{t('common.sending')}</>
+            : <><IcoSrv nombre="enviarEscudo" size={18} />{t('serviciosPage.garantia.enviar')}</>}
         </button>
       </div>
     </form>

@@ -1437,7 +1437,29 @@
       "tituloEscritorio": "Complete your purchase",
       "entrega": "Delivery",
       "pago": "Payment",
-      "sesionGift": "Gift cards require a signed-in account."
+      "sesionGift": "Gift cards require a signed-in account.",
+      "waInternacional": "Hi HotClick, I have a question about international shipping."
+    },
+    "giftPagado": {
+      "titulo": "Order confirmed!",
+      "texto": "Your order was paid in full with the gift card.",
+      "numero": "Order number",
+      "verPedidos": "View my orders"
+    },
+    "errorStock": {
+      "productoAntes": "The product",
+      "productoDespues": "is no longer in stock.",
+      "varios": "One or more products are no longer in stock.",
+      "retirar": "Remove that product from the order and try again.",
+      "irPedido": "Go to order",
+      "consultarWa": "Ask about availability on WhatsApp"
+    },
+    "errores": {
+      "subirComprobante": "Error uploading the receipt. Please try again.",
+      "adjuntarComprobante": "You must attach an image of the receipt",
+      "nombreRequerido": "Full name is required",
+      "cedulaRequerida": "ID number is required",
+      "cuponInvalido": "Invalid or unavailable code"
     }
   },
   "payment": {
@@ -1526,6 +1548,27 @@
       "efectivoSub": "You pay in cash when you receive your order, with the exact amount.",
       "efectivoMetodo": "Cash on delivery",
       "efectivoAviso": "Our courier will bring your order and collect the exact amount in cash. We notify you on WhatsApp before leaving."
+    },
+    "carga": {
+      "gracias": "Thank you for your purchase!",
+      "puedeTardar": "This may take a few seconds…",
+      "confirmando": "Confirming your payment…",
+      "aprobadoRegistrando": "Payment approved — recording it in the system…",
+      "verificando": "Verifying the payment with the bank…",
+      "beneficios": {
+        "garantia": "Your purchase is protected by a 40-day warranty",
+        "paquete": "Your order will be prepared with care",
+        "envio": "Fast shipping across Costa Rica",
+        "whatsapp": "WhatsApp support available 24/7",
+        "pago": "100% secure, encrypted payment",
+        "clientes": "Thousands of satisfied customers in Costa Rica"
+      }
+    },
+    "pendiente": {
+      "tituloAprobado": "Payment approved!",
+      "tituloRevision": "Your payment is being reviewed",
+      "textoAprobado": "Your bank has already confirmed the payment. We're recording your order — you'll get an email in a few minutes.",
+      "textoRevision": "Confirmation may take a few more minutes. We'll email you once it's processed."
     }
   },
   "nosotros": {
@@ -2319,6 +2362,51 @@
       "comoSigueTitulo": "What happens next",
       "comoSigueTexto": "We search with our suppliers and message you on WhatsApp with price and availability. Tracking stays in My account › Requests.",
       "comoSigueTextoInvitado": "We search with our suppliers and message you on WhatsApp with price and availability."
+    },
+    "inicio": {
+      "titulo": "How can we help you?",
+      "intro": "We find products that aren't in the catalog, handle warranties and tell you how your order is going.",
+      "busquedaTitulo": "We'll find it for you",
+      "busquedaDetalle": "Send us a photo and we'll quote it in minutes",
+      "garantiaTitulo": "Product warranty",
+      "garantiaDetalle": "Report a fault with something you bought",
+      "inventarioTitulo": "Digitize your inventory",
+      "inventarioDetalle": "For businesses: upload your products with photos",
+      "testimonioTitulo": "Tell us about your experience",
+      "testimonioDetalle": "Leave your review of a purchase",
+      "enCurso_one": "You have 1 request in progress",
+      "enCurso_other": "You have {{count}} requests in progress"
+    },
+    "garantia": {
+      "pedidoEntregado": "Order #{{numero}} · delivered {{fecha}}",
+      "pedidoVencido": "Order #{{numero}} · expired {{fecha}}",
+      "sinSesionTitulo": "Sign in to report a warranty claim",
+      "sinSesionTexto": "Your products under warranty are linked to your account.",
+      "vacioTitulo": "No registered warranties",
+      "vacioTexto": "Products bought with a warranty will appear here once delivered.",
+      "volverServicios": "Back to HOT Services",
+      "enviadoTitulo": "Request sent",
+      "enviadoTexto": "HotClick will contact you soon.",
+      "errorProducto": "Choose the product that has the fault.",
+      "errorTexto": "Describe the problem before sending.",
+      "errorEnvio": "Could not send. Please try again.",
+      "queProducto": "Which product has the fault?",
+      "motivo": "Reason",
+      "motivos": {
+        "noEnciende": "Won't turn on",
+        "seDano": "It broke",
+        "incompleto": "Arrived incomplete",
+        "otro": "Other"
+      },
+      "quePaso": "Tell us what happened",
+      "quePasoPh": "What happened, when it started and what you tried",
+      "problema": "Problem with a product?",
+      "contactanos": "Contact us on WhatsApp",
+      "enviar": "Send to the store",
+      "vigencia_one": "{{count}} day left",
+      "vigencia_other": "{{count}} days left",
+      "vigenciaVence_one": "{{count}} day left · expires {{fecha}}",
+      "vigenciaVence_other": "{{count}} days left · expires {{fecha}}"
     }
   },
   "adminOrders": {
@@ -3749,6 +3837,98 @@
         "NO_ENCONTRADO": "It was not available",
         "CANCELADO": "Request cancelled"
       }
+    }
+  },
+  "tienda": {
+    "buscarEn": "Search {{nombre}}",
+    "todo": "All",
+    "sobreNosotros": "About us",
+    "comoComprarle": "How to buy",
+    "productos": "Products",
+    "productosTotal": "Products ({{total}})",
+    "envioA": "Shipping to {{zona}}",
+    "todoCostaRica": "all of Costa Rica",
+    "envioDetalle": "From ₡4.000 with Correos de Costa Rica or by courier",
+    "retiro": "In-store pickup",
+    "retiroZona": "In-store pickup · {{zona}}",
+    "coordinar": "Arrange it with the store",
+    "cambios": "Exchanges and returns",
+    "cambiosDetalle": "According to HotClick's policy",
+    "logoDe": "{{nombre}} logo",
+    "enHotclickDesde": "On HotClick since {{fecha}}",
+    "enviosA": "Ships to {{zona}}",
+    "factura": "Issues electronic invoices",
+    "waTexto": "Hi, I'm writing from the {{nombre}} store on HotClick.",
+    "compartir": "Share",
+    "enlaceCopiado": "Store link copied",
+    "enlaceError": "Could not copy the link",
+    "busquedaVaciaTitulo": "We couldn't find that in this store",
+    "busquedaVaciaTexto": "Try another search or browse the whole catalog.",
+    "verTodo": "View the whole catalog",
+    "catalogoError": "Could not load the catalog",
+    "revisaConexion": "Check your connection and try again.",
+    "infoError": "Could not open this store",
+    "nuevaTitulo": "This store is just getting started",
+    "nuevaTexto": "{{nombre}} is already on HotClick. The catalog will be published here once there are products.",
+    "verProductosHotclick": "View products on HotClick",
+    "noDisponibleTitulo": "This store is not available",
+    "noDisponibleTexto": "The link doesn't match a business published on HotClick. You can keep shopping on the marketplace.",
+    "pedidoTienda": "This store's order",
+    "navTienda": "This store's navigation",
+    "navCatalogo": "Catalog",
+    "navPedido": "Order",
+    "tiendaDe": "{{nombre}} store",
+    "enHotclick": "on HotClick"
+  },
+  "emprendimientos": {
+    "titulo": "Local businesses",
+    "intro": "Meet the Costa Rican businesses that sell on HotClick.",
+    "negocios_one": "{{count}} business",
+    "negocios_other": "{{count}} businesses",
+    "sinCoincidencias": "No business matches “{{busqueda}}”.",
+    "buscar": "Search for a business",
+    "verProductosAria": "{{nombre}}: view products on HotClick",
+    "sitioExternoAria": "{{nombre}}: external site, opens in a new tab",
+    "sitioExterno": "External site",
+    "verProductos": "View products",
+    "proximamente": "Coming soon",
+    "cerrandoConvenios": "We're finalizing partnerships with Costa Rican businesses.",
+    "emprender": "Start your business on HotClick"
+  },
+  "encargoPublico": {
+    "titulo": "Your custom order",
+    "estado": "Status",
+    "noEncontrado": "We couldn't find this custom order",
+    "enlaceInvalido": "The link may have expired or be invalid.",
+    "volverCatalogo": "Back to the catalog",
+    "checkoutIniciado": "Checkout started. Check your email if you aren't redirected.",
+    "pagoError": "Could not start the payment",
+    "waMensaje": "Hi HotClick, I have a question about my custom order #{{id}}.",
+    "referencia": "Reference",
+    "numero": "Custom order #{{id}}",
+    "tusNotas": "Your notes",
+    "mensajeTienda": "Message from the store",
+    "producto": "Product",
+    "total": "Total",
+    "redirigiendo": "Redirecting…",
+    "pagar": "Pay {{monto}}",
+    "plazoPago": "You have 7 days to pay from approval.",
+    "escribirTienda": "Message the store",
+    "pasos": {
+      "recibida": "Request received",
+      "rechazado": "The artist couldn't accept this custom order",
+      "cotizacionEnviada": "Quote sent",
+      "cotizacion": "Quote",
+      "revisando": "We're reviewing your request",
+      "vencida": "Quote expired",
+      "vencidaDetalle": "You can request a new custom order from the product page.",
+      "pagoProceso": "Payment in progress",
+      "pagoRecibido": "Payment received",
+      "esperandoPago": "Waiting for your payment",
+      "pagaDetalle": "Pay to start production",
+      "produccion": "In production",
+      "entregado": "Delivered",
+      "listo": "Ready for delivery"
     }
   }
 }

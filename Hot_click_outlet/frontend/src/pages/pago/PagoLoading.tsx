@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import MainLayout from '@/layouts/MainLayout'
 import TrustGlyph from '@/components/ui/TrustGlyph'
@@ -13,6 +14,7 @@ type PagoLoadingProps = {
  * Pantalla de espera mientras se verifica o captura el pago.
  */
 export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps) {
+  const { t } = useTranslation()
   const [progress, setProgress] = useState(0)
   const [benefitIdx, setBenefitIdx] = useState(0)
 
@@ -55,10 +57,10 @@ export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps
         {/* Texto principal */}
         <div>
           <h2 className="text-xl font-bold mb-1 text-hc-text">
-            ¡Gracias por tu compra!
+            {t('payment.carga.gracias')}
           </h2>
           <p className="text-sm text-hc-muted">
-            {mensajeCargaPago(estado, stripeApproved)}
+            {mensajeCargaPago(estado, stripeApproved, t)}
           </p>
         </div>
 
@@ -73,7 +75,7 @@ export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps
             />
           </div>
           <p className="text-xs mt-2 text-hc-muted">
-            Esto puede tardar unos segundos…
+            {t('payment.carga.puedeTardar')}
           </p>
         </div>
 
@@ -92,7 +94,7 @@ export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps
                 <TrustGlyph tipo={benefit.icono} className="w-6 h-6 shrink-0" />
               </span>
               <span className="text-sm font-medium text-left text-hc-text">
-                {benefit.text}
+                {t(benefit.clave)}
               </span>
             </motion.div>
           </AnimatePresence>

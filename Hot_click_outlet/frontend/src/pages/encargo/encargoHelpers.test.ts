@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Encargo } from '@/services/encargoService'
+import i18n from '@/i18n'
 import { fechaHoraEncargo, pasosDelEncargo, referenciasDelEncargo } from './encargoHelpers'
+
+const t = i18n.getFixedT('es')
 
 const base: Encargo = { id: 214, nombreCliente: 'María', email: 'm@x.cr', modoPrecio: 'FIJO', estado: 'PENDIENTE', tokenPublico: 't', fechaCreacion: '2026-09-22T10:14:00' }
 const precio = (n: number) => `₡${n}`
-const estados = (e: Partial<Encargo>) => pasosDelEncargo({ ...base, ...e }, precio).map((p) => `${p.clave}:${p.estado}`)
+const estados = (e: Partial<Encargo>) => pasosDelEncargo({ ...base, ...e }, precio, t).map((p) => `${p.clave}:${p.estado}`)
 
 describe('línea de tiempo del encargo', () => {
   it('pendiente: recibida y cotización en curso', () => {
@@ -30,9 +33,10 @@ describe('línea de tiempo del encargo', () => {
   })
 
   it('muestra solo los datos que entrega el backend', () => {
-    const pasos = pasosDelEncargo({ ...base, estado: 'APROBADO', precioCotizado: 11000 }, precio)
+    const pasos = pasosDelEncargo({ ...base, estado: 'APROBADO', precioCotizado: 11000 }, precio, t)
     expect(pasos[0].detalle).toBe('22 sep · 10:14')
     expect(pasos[1].detalle).toBe('₡11000')
+    expect(pasos.map((p) => p.titulo)).toEqual(['Solicitud recibida', 'Cotización enviada', 'Esperando tu pago', 'En producción', 'Listo para entregar'])
     expect(pasos.find((p) => p.clave === 'produccion')?.detalle).toBeUndefined()
   })
 })

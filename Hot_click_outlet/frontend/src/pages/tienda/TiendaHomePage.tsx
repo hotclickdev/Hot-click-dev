@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, type FormEvent, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import tiendaService from '@/services/tiendaService'
@@ -25,6 +26,7 @@ const TITULO_SECCION = 'font-display text-[17px] font-bold leading-[normal] text
  * Los colores de marca salen de `--t-secondary` (portada, logo) y `--t-accent` (acciones y chip activo).
  */
 export default function TiendaHomePage() {
+  const { t } = useTranslation()
   const { slug } = useParams()
   const { agregarAlCarrito, empresa } = useTiendaStore()
   const [productos, setProductos] = useState<Producto[]>([])
@@ -105,14 +107,14 @@ export default function TiendaHomePage() {
       <div className="mx-auto grid max-w-[1232px] grid-cols-1 px-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:pb-14 lg:pt-8">
         {empresa?.descripcion && (
           <section className="flex flex-col gap-2 pb-[6px] pt-[18px] lg:col-start-1 lg:row-start-1 lg:gap-5 lg:pb-0 lg:pt-0">
-            <h2 className={TITULO_SECCION}>Sobre nosotros</h2>
+            <h2 className={TITULO_SECCION}>{t('tienda.sobreNosotros')}</h2>
             <p className="text-sm leading-[21px] text-hc-n-600 wrap-anywhere">{empresa.descripcion}</p>
           </section>
         )}
 
         <section className="flex flex-col gap-3 pb-[6px] pt-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:gap-4 lg:pb-0 lg:pt-0">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <h2 className="font-display text-[17px] font-bold leading-[normal] text-hc-n-900 lg:text-[22px] lg:leading-7">{catalogoNuevo ? 'Productos' : `Productos (${totalProductos})`}</h2>
+            <h2 className="font-display text-[17px] font-bold leading-[normal] text-hc-n-900 lg:text-[22px] lg:leading-7">{catalogoNuevo ? t('tienda.productos') : t('tienda.productosTotal', { total: totalProductos })}</h2>
             {!catalogoNuevo && !loadError && (
               <BuscadorTienda nombre={nombre} busqueda={busqueda} onBusqueda={setBusqueda} onBuscar={buscar} />
             )}
@@ -149,7 +151,7 @@ export default function TiendaHomePage() {
         </section>
 
         <section className="flex flex-col gap-3 pb-7 pt-[22px] lg:col-start-1 lg:row-start-2 lg:gap-5 lg:self-start lg:pb-0 lg:pt-5">
-          <h2 className={TITULO_SECCION}>Cómo comprarle</h2>
+          <h2 className={TITULO_SECCION}>{t('tienda.comoComprarle')}</h2>
           <TiendaComoComprarle empresa={empresa} />
         </section>
       </div>
@@ -165,6 +167,7 @@ function BuscadorTienda({
   onBusqueda: (v: string) => void
   onBuscar: (e: FormEvent) => void
 }) {
+  const { t } = useTranslation()
   return (
     <form
       onSubmit={onBuscar}
@@ -176,8 +179,8 @@ function BuscadorTienda({
         type="search"
         value={busqueda}
         onChange={(e) => onBusqueda(e.target.value)}
-        placeholder={`Buscar en ${nombre}`}
-        aria-label={`Buscar en ${nombre}`}
+        placeholder={t('tienda.buscarEn', { nombre })}
+        aria-label={t('tienda.buscarEn', { nombre })}
         enterKeyHint="search"
         className="hc-input-libre h-4 min-w-0 flex-1 bg-transparent p-0 text-sm leading-4 text-hc-n-900 outline-none placeholder:text-hc-n-500"
       />
@@ -192,10 +195,11 @@ function FiltrosCategoria({
   catActiva: Id | null
   onFiltrar: (id: Id | null) => void
 }) {
+  const { t } = useTranslation()
   if (categorias.length === 0) return null
   return (
     <div className="-mx-4 flex gap-2 overflow-x-auto px-4 scrollbar-none lg:mx-0 lg:px-0">
-      <ChipCategoria activa={catActiva === null} onClick={() => onFiltrar(null)}>Todo</ChipCategoria>
+      <ChipCategoria activa={catActiva === null} onClick={() => onFiltrar(null)}>{t('tienda.todo')}</ChipCategoria>
       {categorias.map((c) => (
         <ChipCategoria key={c.id} activa={catActiva === c.id} onClick={() => onFiltrar(c.id)}>
           {c.nombreCategoria}
@@ -228,6 +232,7 @@ function PaginacionTienda({
   totalPages: number
   onCargar: (p: number) => void
 }) {
+  const { t } = useTranslation()
   if (totalPages <= 1) return null
   return (
     <div className="flex justify-center gap-2 pt-4">
@@ -237,7 +242,7 @@ function PaginacionTienda({
         onClick={() => onCargar(page - 1)}
         className="min-h-[44px] rounded-lg border border-[var(--t-border)] bg-[var(--t-surface)] px-4 py-2 text-sm disabled:opacity-40"
       >
-        Anterior
+        {t('common.previous')}
       </button>
       <span className="px-4 py-2 text-sm text-[var(--t-muted)]">
         {page + 1} / {totalPages}
@@ -248,7 +253,7 @@ function PaginacionTienda({
         onClick={() => onCargar(page + 1)}
         className="min-h-[44px] rounded-lg border border-[var(--t-border)] bg-[var(--t-surface)] px-4 py-2 text-sm disabled:opacity-40"
       >
-        Siguiente
+        {t('common.next')}
       </button>
     </div>
   )

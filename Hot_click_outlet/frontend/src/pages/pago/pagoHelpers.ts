@@ -1,12 +1,15 @@
+import type { TFunction } from 'i18next'
+
 export type IconoBeneficioPago = 'garantia' | 'paquete' | 'envio' | 'whatsapp' | 'pago' | 'clientes'
 
-export const BENEFITS: { icono: IconoBeneficioPago; text: string }[] = [
-  { icono: 'garantia', text: 'Tu compra está protegida con garantía de 40 días' },
-  { icono: 'paquete', text: 'Tu pedido será preparado con cuidado' },
-  { icono: 'envio', text: 'Envíos rápidos a todo Costa Rica' },
-  { icono: 'whatsapp', text: 'Soporte por WhatsApp disponible 24/7' },
-  { icono: 'pago', text: 'Pago 100% seguro y encriptado' },
-  { icono: 'clientes', text: 'Miles de clientes satisfechos en Costa Rica' },
+/** Beneficios rotativos de la espera; `clave` es la clave i18n del texto. */
+export const BENEFITS: { icono: IconoBeneficioPago; clave: string }[] = [
+  { icono: 'garantia', clave: 'payment.carga.beneficios.garantia' },
+  { icono: 'paquete', clave: 'payment.carga.beneficios.paquete' },
+  { icono: 'envio', clave: 'payment.carga.beneficios.envio' },
+  { icono: 'whatsapp', clave: 'payment.carga.beneficios.whatsapp' },
+  { icono: 'pago', clave: 'payment.carga.beneficios.pago' },
+  { icono: 'clientes', clave: 'payment.carga.beneficios.clientes' },
 ]
 
 export type PagoResumen = {
@@ -52,18 +55,18 @@ export function estaOcupado(estado: string): boolean {
   return estado === 'idle' || estado === 'polling' || estado === 'capturing'
 }
 
-export function mensajeCargaPago(estado: string, stripeApproved: boolean): string {
-  if (estado === 'capturing') return 'Confirmando tu pago…'
-  if (stripeApproved) return 'Pago aprobado — registrando en el sistema…'
-  return 'Verificando el pago con el banco…'
+export function mensajeCargaPago(estado: string, stripeApproved: boolean, t: TFunction): string {
+  if (estado === 'capturing') return t('payment.carga.confirmando')
+  if (stripeApproved) return t('payment.carga.aprobadoRegistrando')
+  return t('payment.carga.verificando')
 }
 
-export function tituloPendiente(stripeApproved: boolean): string {
-  return stripeApproved ? '¡Pago aprobado!' : 'Tu pago está siendo revisado'
+export function tituloPendiente(stripeApproved: boolean, t: TFunction): string {
+  return stripeApproved ? t('payment.pendiente.tituloAprobado') : t('payment.pendiente.tituloRevision')
 }
 
-export function subtituloPendiente(stripeApproved: boolean): string {
+export function subtituloPendiente(stripeApproved: boolean, t: TFunction): string {
   return stripeApproved
-    ? 'Tu banco ya confirmó el pago. Estamos registrando tu pedido — recibirás un correo en unos minutos.'
-    : 'La confirmación puede tardar unos minutos más. Te enviaremos un correo cuando se procese.'
+    ? t('payment.pendiente.textoAprobado')
+    : t('payment.pendiente.textoRevision')
 }

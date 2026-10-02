@@ -9,8 +9,6 @@ import { PROVINCIAS_CR, cantonesDeProvincia } from './ubicacionesCR'
 import type { OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 import type { CheckoutFormState } from './useCheckoutForm'
 
-const TEXTO_WA_INTERNACIONAL = encodeURIComponent('Hola HotClick, consulto un envío internacional.')
-
 /** Claves i18n del título y subtítulo de cada método de envío (Figma `37:1689`–`37:1718`). */
 const CLAVES_OPCION: Record<string, { titulo: string; sub?: string }> = {
   ENVIO_NORMAL_GAM: { titulo: 'envioNormal', sub: 'envioNormalSub' },
@@ -151,7 +149,7 @@ function AtajoInternacional() {
   const { t } = useTranslation()
   return (
     <a
-      href={`https://wa.me/${WHATSAPP}?text=${TEXTO_WA_INTERNACIONAL}`}
+      href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('checkout.f.waInternacional'))}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={t('checkout.envioInternacionalAria')}
