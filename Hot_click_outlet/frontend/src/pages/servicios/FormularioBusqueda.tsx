@@ -5,6 +5,7 @@ import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import TurnstileCampo from '@/components/security/TurnstileCampo'
 import CloseIcon from '@/components/ui/CloseIcon'
 import { IcoSrv } from './IcoSrv'
+import SelectorPresupuesto from './SelectorPresupuesto'
 import { CLASE_CAMPO, MAX_FOTOS, type FormBusqueda, type FotoSolicitud } from './serviciosHelpers'
 
 export type FormularioBusquedaProps = {
@@ -152,16 +153,10 @@ export default function FormularioBusqueda({
         </Campo>
 
         {!ocultarPresupuesto && (
-          <Campo id="srv-presupuesto" etiqueta={t('serviciosPage.form.presupuesto')}>
-            <input
-              id="srv-presupuesto"
-              type="text"
-              placeholder={t('serviciosPage.form.presupuestoPh')}
-              value={form.presupuesto}
-              onChange={(e) => setForm((f) => ({ ...f, presupuesto: e.target.value }))}
-              className={CLASE_CAMPO}
-            />
-          </Campo>
+          <SelectorPresupuesto
+            valor={form.presupuesto}
+            onCambiar={(presupuesto) => setForm((f) => ({ ...f, presupuesto }))}
+          />
         )}
 
         <Campo id="srv-whatsapp" etiqueta={t('serviciosPage.form.whatsapp')}>

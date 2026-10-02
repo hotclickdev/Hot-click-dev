@@ -65,12 +65,19 @@ test.describe('Servicios HOT', () => {
     await expect(page.getByRole('alert')).toHaveText('Contanos qué producto estás buscando.')
 
     await page.getByLabel('¿Qué estás buscando?').fill('Una lámpara de pie de madera')
-    await page.getByLabel('Presupuesto aproximado').fill('₡25.000 – ₡40.000')
+    // D12: selector de rangos (provisionales) con «Otro monto».
+    const presupuesto = page.getByRole('group', { name: 'Presupuesto aproximado' })
+    await expect(presupuesto.getByRole('radio')).toHaveCount(6)
+    await presupuesto.getByText('Otro monto').click()
+    await page.getByRole('textbox', { name: 'Otro monto' }).fill('₡25.000 – ₡40.000')
+    await presupuesto.getByText('₡25.000 – ₡50.000').click()
+    await expect(page.getByRole('textbox', { name: 'Otro monto' })).toHaveCount(0)
+    await expect(presupuesto.getByRole('radio', { name: '₡25.000 – ₡50.000' })).toBeChecked()
     await page.getByLabel('Tu WhatsApp').fill('8888 8888')
     await page.getByRole('button', { name: 'Enviar solicitud' }).click()
 
     await expect(page.getByRole('heading', { name: '¡Solicitud enviada!' })).toBeVisible()
-    expect(cuerpo).toMatchObject({ descripcion: 'Una lámpara de pie de madera', presupuesto: '₡25.000 – ₡40.000', telefonoContacto: '+50688888888' })
+    expect(cuerpo).toMatchObject({ descripcion: 'Una lámpara de pie de madera', presupuesto: '₡25.000 – ₡50.000', telefonoContacto: '+50688888888' })
     await expect(page.getByRole('link', { name: 'Ver mis solicitudes' })).toHaveAttribute('href', '/servicios?vista=solicitudes')
   })
 
