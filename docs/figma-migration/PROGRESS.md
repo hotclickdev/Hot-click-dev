@@ -22,7 +22,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, PROD, ajuste de la ficha agotada | **Hecho**, integrado en `base` (`d8af873b`) |
 | Ola 1, ACC | **Hecho, integrado en `base`** (merge `8cc644fc`, commits `cc54c9c6` y `95328c21` sobre `27f87000`, local, sin push). 18 pantallas: 10 PASS (agent verified) y 8 PARTIAL; ninguna BLOCKED por completo. Cuenta dividida en resumen, opiniones y datos y seguridad; pedidos por paquete; solicitudes dentro de `/servicios`; login y 2FA al estilo de Figma. Ver `ACC.md` |
 | Ola 1, SRV | **Hecho, integrado en `base`** (merge `68c0952f`, commits `3282fe58` y `87e2e276` sobre `f57da0ae`, local, sin push). 8 pantallas: 1 PASS y 7 PARTIAL (agent verified); ninguna BLOCKED por completo. Servicios HOT en lista, formulario y garantía, encargo con línea de tiempo, cotización pública, Envíos con la plantilla informativa y blog. Ver `SRV.md` |
-| Ola 1, STORE | **Hecho en la rama `feat/figma/store`, sin integrar en `base`** (local, sin push). Puesta al día con `base` `e3227842` por fast-forward. 4 pantallas: 0 PASS y 4 PARTIAL (agent verified): perfil móvil, perfil desktop, tienda con su color y directorio. Pendientes: decidir barra inferior y header de escritorio del perfil, y endpoint de empresas públicas para el directorio. Ver `STORE.md` |
+| Ola 1, STORE | **Hecho, integrado en `base`** (merge `e48d441b`, commits `e179fd2f` y `52a5d239` sobre `e3227842`, local, sin push). 4 pantallas: 0 PASS y 4 PARTIAL (agent verified): perfil móvil, perfil desktop, tienda con su color y directorio. Pendientes: decidir barra inferior y header de escritorio del perfil, y endpoint de empresas públicas para el directorio. Ver `STORE.md` |
 | Ola 1, QR | **No lanzado** |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
@@ -40,7 +40,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | `feat/figma/chk` | `.claude/worktrees/chk` | `11af2c0a` (base de PROD) | CHK | 16 commits (`d1451060` a `3c9b4d62`) y `0f017780` | Hecha e integrada en `base` (`cf657e9c`). Working tree limpio |
 | `feat/figma/acc` | `.claude/worktrees/acc` | `feat/figma/base` (`27f87000`) | ACC | `cc54c9c6` y el commit de docs | Hecha e integrada en `base` (`8cc644fc`). Working tree limpio |
 | `feat/figma/srv` | `.claude/worktrees/srv` | `feat/figma/base` (`f57da0ae`, por fast-forward) | SRV | `3282fe58` y `87e2e276` | Hecha e integrada en `base` (`68c0952f`). Working tree limpio |
-| `feat/figma/store` | `.claude/worktrees/store` | `feat/figma/base` (`e3227842`, por fast-forward) | STORE | ver `git log` de la rama | Hecha, **sin integrar en `base`**. Working tree limpio |
+| `feat/figma/store` | `.claude/worktrees/store` | `feat/figma/base` (`e3227842`, por fast-forward) | STORE | `e179fd2f` y `52a5d239` | Hecha e integrada en `base` (`e48d441b`). Working tree limpio |
 | `feat/figma/qr` | `.claude/worktrees/qr` | `feat/figma/base` | QR | ninguno | Creada, sin iniciar. Se pone al día con `base` (fast-forward) antes de lanzarla |
 | `feat/rediseno-comprador-fase2` | `C:\Users\pmdan\hotclick-fase2-test` | `feat/rediseno-comprador` | (PR #93) | 21 commits | **Sin modificar.** Su contenido ya está en `base` |
 
