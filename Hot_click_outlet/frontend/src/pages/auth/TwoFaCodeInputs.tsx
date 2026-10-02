@@ -44,7 +44,7 @@ export default function TwoFaCodeInputs({ code2FA, refs2FA, onChange, disabled, 
           onChange={(e: ChangeEvent<HTMLInputElement>) => handleDigit(i, e.target.value)}
           onKeyDown={e => handleKey(i, e)}
           disabled={disabled}
-          className="h-14 min-w-0 flex-1 rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-0 text-center font-display text-[20px] font-bold text-hc-n-900 focus:border-hc-blue-600 focus:shadow-[inset_0_0_0_1px_var(--hc-blue-600)] focus:outline-none"
+          className="hc-input-libre h-14 min-w-0 flex-1 rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-0 text-center font-display text-[20px] font-bold text-hc-n-900 focus:border-2 focus:border-hc-blue-600 focus:outline-none"
         />
       ))}
     </div>

@@ -6,6 +6,7 @@ import { formatPrice } from '@/utils/format'
 import type { Producto } from '@/types/producto'
 import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
+import favoritoActivo from '@/assets/figma/comprador/favorito-activo.svg'
 import { useAgregarAlPedido } from './useAgregarAlPedido'
 import { fotoProducto, insigniaTarjeta, nombreVendedor, precioDesde, precioListaTachado, tarjetaAgotada } from './productCardHelpers'
 
@@ -62,7 +63,7 @@ export default function ProductCard({ product, className = '', priority = false 
         aria-label={t(esFavorito ? 'comprador.tarjeta.favoritoQuitar' : 'comprador.tarjeta.favoritoAgregar', { nombre })}
         className={`absolute right-1.5 top-2 flex size-8 items-center justify-center rounded-full bg-hc-n-0 shadow-[0px_1px_4px_0px_rgba(0,0,0,0.12)] ${esFavorito ? 'text-hc-red-500' : 'text-hc-n-600'}`}
       >
-        <IconoFigma src={ICONOS_COMPRADOR.favorito} size={16} />
+        <IconoFigma src={esFavorito ? favoritoActivo : ICONOS_COMPRADOR.favorito} size={16} />
       </button>
       <div className="flex flex-col gap-[2px] p-[10px]">
         <Link to={destino} state={{ product }} className="line-clamp-2 min-h-[34px] text-[13px] font-medium leading-[17px] text-hc-n-900">

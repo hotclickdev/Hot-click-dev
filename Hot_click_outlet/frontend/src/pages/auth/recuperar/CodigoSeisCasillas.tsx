@@ -70,8 +70,8 @@ export default function CodigoSeisCasillas({ valor, onCambio, disabled }: Props)
           type="text" inputMode="numeric" pattern="[0-9]*" maxLength={CODIGO_LARGO}
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           aria-label={t('forgot.digitLabel', { n: i + 1 })}
-          className="h-14 w-full min-w-0 flex-1 rounded-[12px] border border-hc-n-200 bg-hc-n-0 text-center font-display text-[22px] font-bold text-hc-n-900
-            caret-transparent outline-none focus:border-hc-blue-600 focus:shadow-[inset_0_0_0_1px_var(--hc-blue-600)]"
+          className="hc-input-libre h-14 w-full min-w-0 flex-1 rounded-[12px] border border-hc-n-200 bg-hc-n-0 text-center font-display text-[22px] font-bold text-hc-n-900
+            caret-transparent outline-none focus:border-2 focus:border-hc-blue-600"
         />
       ))}
     </fieldset>

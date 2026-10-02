@@ -86,7 +86,7 @@ export default function LoginFormStep({
   return (
     <div className="flex flex-1 flex-col leading-[normal]">
       <div className="flex flex-col gap-[10px] px-4 pb-2 pt-7">
-        <MarcaComprador tamano="escritorio" />
+        <div className="flex h-9 items-center"><MarcaComprador tamano="escritorio" /></div>
         <h1 className="font-display text-[24px] font-bold leading-[30px] text-hc-n-900">{t('login.bienvenidaTitulo')}</h1>
         <p className="text-[14px] leading-5 text-hc-n-600">{t('login.bienvenidaTexto')}</p>
       </div>

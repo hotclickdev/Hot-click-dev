@@ -1,9 +1,13 @@
 import type { ReactNode } from 'react'
 
-/** Íconos de trazo de Mi cuenta (Figma `28:1196`, `30:1400`, `30:1479`). Heredan el color con `currentColor`. */
-function Trazo({ children, size = 20, ancho = 1.8 }: { children: ReactNode; size?: number; ancho?: number }) {
+/**
+ * Íconos de trazo de Mi cuenta (Figma `28:1196`, `30:1400`, `30:1479`). Heredan el color con `currentColor`.
+ * Figma dibuja cada ícono a su tamaño con trazo fijo de 2 px (no escalado): `ancho` está en píxeles y se
+ * convierte a unidades del viewBox de 24.
+ */
+function Trazo({ children, size = 20, ancho = 2 }: { children: ReactNode; size?: number; ancho?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={ancho}
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={(ancho * 24) / size}
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
       {children}
     </svg>
@@ -18,7 +22,7 @@ export const IcoBandeja = ({ size }: Tam) => <Trazo size={size}><path d="M22 12h
 export const IcoCorazon = ({ size }: Tam) => <Trazo size={size}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></Trazo>
 export const IcoEstrella = ({ size }: Tam) => <Trazo size={size}><path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.9-5.4 2.9 1-6L3.3 9.4l6-.9z" /></Trazo>
 export const IcoEscudo = ({ size }: Tam) => <Trazo size={size}><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z" /><path d="m9 12 2 2 4-4" /></Trazo>
-export const IcoCamion = ({ size }: Tam) => <Trazo size={size}><rect x="1" y="3" width="15" height="13" rx="1.5" /><path d="M16 8h4l3 5v3h-7z" /><circle cx="5.5" cy="18.5" r="2" /><circle cx="18.5" cy="18.5" r="2" /></Trazo>
+export const IcoCamion = ({ size }: Tam) => <Trazo size={size}><path d="M14 16V6H3v10h11ZM14 16h7v-4l-3-3h-4" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" /></Trazo>
 export const IcoUsuario = ({ size }: Tam) => <Trazo size={size}><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></Trazo>
 export const IcoSobre = ({ size }: Tam) => <Trazo size={size}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></Trazo>
 export const IcoTelefono = ({ size }: Tam) => <Trazo size={size}><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></Trazo>

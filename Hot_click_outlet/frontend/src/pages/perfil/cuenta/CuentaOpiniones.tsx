@@ -81,7 +81,7 @@ function FormularioOpinion({ conCalificacion, onEnviar, sinFoto = false, placeho
         rows={1}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="min-h-[41px] w-full resize-none rounded-[10px] border border-hc-n-200 bg-hc-n-50 p-3 text-[13px] leading-[normal] text-hc-n-900 [field-sizing:content] placeholder:text-[var(--hc-n-400)] focus:border-hc-blue-600 focus:outline-none"
+        className="hc-input-libre min-h-[41px] w-full resize-none rounded-[10px] border border-hc-n-200 bg-hc-n-50 p-3 text-[13px] leading-[normal] text-hc-n-900 [field-sizing:content] placeholder:text-[var(--hc-n-400)] focus:border-hc-blue-600 focus:outline-none"
       />
       {img.preview && (
         <span className="flex items-center gap-2 text-[12px] text-hc-n-600">

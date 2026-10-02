@@ -22,7 +22,7 @@ Todos los veredictos son **agent verified**: los verificó el propio agente con 
 | `29:1434` | Detalle de pedido | `/mis-pedidos?pedido=<numero>` | **PARTIAL** | medido (±2 px) | sin frame |
 | `29:1535` | Mis solicitudes | `/servicios?vista=solicitudes` | **PARTIAL** | medido (±2 px) | sin frame |
 | `29:1594` | Solicitud cotizada | `/servicios?vista=solicitudes&solicitud=<id>` | **PARTIAL** (partes BLOCKED) | comparado | sin frame |
-| `30:1224` | Favoritos | `/wishlist` | **PARTIAL** | comparado | sin frame |
+| `30:1224` | Favoritos | `/wishlist` | **PASS** (reverificado 1-oct-2026) | comparado | sin frame |
 | `30:1327` | Mis opiniones | `/perfil?vista=opiniones` | **PARTIAL** | medido (±8 px) | sin frame |
 | `30:1400` | Datos y seguridad | `/perfil?vista=seguridad` | **PARTIAL** | medido | sin frame |
 | `44:1551` / `44:1580` / `44:1614` | Recuperar contraseña (3 pasos) | `/recuperar-contrasena` | **PASS** | comparado | sin frame |
@@ -32,7 +32,7 @@ Todos los veredictos son **agent verified**: los verificó el propio agente con 
 | `45:1848` | Sin pedidos | `/mis-pedidos` | **PASS** | comparado | sin frame |
 | `45:1896` | Sin solicitudes | `/servicios?vista=solicitudes` | **PASS** | comparado | sin frame |
 
-Resultado: 10 PASS y 8 PARTIAL. Ninguna pantalla quedó BLOCKED por completo; las partes que sí lo están se detallan abajo.
+Resultado: 11 PASS y 7 PARTIAL. Ninguna pantalla quedó BLOCKED por completo; las partes que sí lo están se detallan abajo.
 
 ## Diferencias que quedan, por pantalla
 
@@ -40,11 +40,27 @@ Resultado: 10 PASS y 8 PARTIAL. Ninguna pantalla quedó BLOCKED por completo; la
 - **Detalle de pedido `29:1434`:** Figma muestra un rango ("llega entre el 27 y 29") y el backend entrega una sola fecha estimada (`fechaEntregaEstimada`). El texto es "llega el 29 de set.". La vigencia de la garantía de 40 días se conserva en el atributo del botón (apagado si no aplica).
 - **Mis solicitudes `29:1535`:** falta la pestaña "Encargos": el backend no ofrece un listado de encargos del comprador (BLOCKED). "Garantías" lleva a la vista de garantías ya existente. La línea verde "₡24.500 · responder antes del 30 set." muestra la respuesta escrita de HotClick: no hay precio ni vigencia en `SolicitudServicio`.
 - **Solicitud cotizada `29:1594`:** BLOCKED por datos: precio cotizado, entrega "3 a 5 días", vigencia, botón "Comprar por ₡X" (requiere flujo de compra de cotización) e historial con fechas intermedias. Se muestra lo que sí existe: lo que pidió (foto, descripción, presupuesto), la respuesta de HotClick, WhatsApp e historial con "Solicitud recibida" y el estado actual.
-- **Favoritos `30:1224`:** el corazón de la `ProductCard` no se rellena de rojo cuando el producto es favorito (la tarjeta solo cambia el color de un ícono de contorno). Es de CAT. La tienda ("Bruma Café") solo aparece en favoritos guardados desde ahora: los guardados antes no la tenían.
+- **Favoritos `30:1224`:** resuelto en la reverificación del 1-oct-2026 (ver abajo): el corazón de la `ProductCard` se rellena de rojo. La tienda ("Bruma Café") solo aparece en favoritos guardados desde ahora: los guardados antes no la tenían (dato, no diseño).
 - **Mis opiniones `30:1327`:** Figma dice "Contá tu experiencia (opcional)", pero el backend exige comentario: se pide y "Publicar" espera calificación y comentario. En móvil el texto de la caja mide 16 px (regla de `index.css` de SHELL) y la tarjeta queda 3 px más alta. Las opiniones publicadas no traen la foto del producto (`mis-testimonios` no manda imagen): se ve un recuadro neutro.
 - **Datos y seguridad `30:1400`:** se omitió "Direcciones guardadas": Figma la marca "NUEVO · a confirmar" y no existe en backend. Las filas de nombre, correo y teléfono son de solo lectura (sin chevron): Figma no dibuja pantallas de edición. "Actualizada hace 3 meses" no tiene dato: la fila dice "Cambiar contraseña". El interruptor de dos pasos solo lo puede cambiar el administrador (regla previa): al comprador se le muestra el estado.
 - **Verificación `44:1660`:** no se agregó "Confiar en este dispositivo": no hay soporte en el backend (BLOCKED). La fila "Usar otra app autenticadora" se reemplazó por "Usar un código de recuperación", que sí existe; la de correo aparece solo si el usuario tiene ese método. El correo se enmascara como en Figma.
 - **Mi cuenta:** en el feed el texto de la solicitud usa lo que el usuario escribió (en Figma es corto). La etiqueta "NUEVO · por programar" no se renderiza. "Llega entre el 28 y 30" también es una sola fecha.
+
+## Reverificación contra Figma (1-oct-2026)
+
+Se recapturaron las 8 pantallas PARTIAL con `tests/acc-capturas.spec.ts` y se compararon contra el frame (captura lado a lado y diferencia de píxeles). Las diferencias que quedan en esas pantallas son de datos de ejemplo, backend, SYS (botones flotantes) o decisiones ya documentadas. Se encontraron y corrigieron diferencias visuales reales:
+
+| Pantalla | Diferencia | Corrección |
+| --- | --- | --- |
+| Favoritos `30:1224` | El corazón de favorito era de contorno. Figma usa el mismo trazo con relleno `#E73B33` (SVG de `30:1233`) | `components/comprador/ProductCard.tsx` (CAT, evidencia nueva de Figma): `assets/figma/comprador/favorito-activo.svg` cuando `esFavorito`. Alcanza a todas las tarjetas |
+| Mis opiniones `30:1327` | El campo "Contá tu experiencia" salía blanco con borde del tema: la regla global de `index.css` fuerza el fondo de todo `textarea` con `!important`. Figma: fondo `n/50`, borde `n/200` | Clase `hc-input-libre` en el textarea; la regla global ahora excluye `textarea.hc-input-libre` (cambio mínimo en `index.css`, de SHELL) |
+| Verificación `44:1660` | La casilla activa tenía borde de 1 px y gris (la regla global pisaba el azul); Figma: 2 px `blue/600`. La tarjeta "¿No tenés la app a mano?" tenía 6 px extra sobre el título (filas +5 px) | `hc-input-libre` y `focus:border-2` en `TwoFaCodeInputs` y `CodigoSeisCasillas`; se quitó `pt-[6px]` de `TarjetaOtroMetodo`. Filas a ±1 px |
+| Ingresar `28:1143` | La fila de la marca medía 34 y Figma 36: título y beneficios 2 px más arriba | Contenedor `h-9` alrededor de `MarcaComprador`. Títulos y beneficios a 0 px |
+| Todas las pantallas con íconos de Mi cuenta | Los íconos (`iconosCuenta.tsx`) tenían trazo de 1,8 unidades en un viewBox de 24 (1,35 px a 18 px de tamaño); Figma dibuja cada ícono a su tamaño con trazo fijo de 2 px | `Trazo` convierte `ancho` (ahora en px, 2 por defecto) a unidades del viewBox. El camión se redibujó con la geometría de Figma (`28:1259`) |
+
+Siguen PARTIAL por causas que no son visuales: login (paso de contraseña sin frame y Google solo con Clerk), detalle de pedido (rango de entrega, backend), solicitudes (pestaña Encargos, backend), cotizada (precio y vigencia, backend), opiniones (comentario exigido por backend y foto del producto), datos y seguridad (direcciones guardadas, filas de solo lectura sin chevron) y verificación ("Confiar en este dispositivo").
+
+Los botones flotantes (isotipo y WhatsApp) tapan parte del contenido en 390 px en detalle de pedido y opiniones: es de SYS (decisión pendiente) y no se tocó.
 
 ## Funcionalidad preservada
 
@@ -65,6 +81,8 @@ Resultado: 10 PASS y 8 PARTIAL. Ninguna pantalla quedó BLOCKED por completo; la
 ## Excepciones de ownership (todas aditivas y mínimas)
 
 - `components/comprador/estados/EstadoVacio.tsx` (SYS): props opcionales `tono` (neutro, azul, rojo) y `espaciado="cuenta"`. El uso de SYS no cambia.
+- `components/comprador/ProductCard.tsx` (CAT): corazón relleno en favoritos (reverificación del 1-oct-2026, Figma `30:1224`).
+- `index.css` (SHELL): `hc-input-libre` también exime a `textarea`.
 - `store/wishlistStore.ts` y `types/carrito.ts`: `ItemWishlist.empresaNombre` (opcional) para mostrar la tienda.
 - `components/auth/SocialLoginButtons.tsx`: `variante="figma"` (solo el botón de Google), misma lógica de Clerk.
 - `pages/ServiciosHotPage.tsx` (SRV): el componente existente pasa a `ServiciosHotVistas` y el nuevo `default` decide: `?vista=solicitudes` abre Mis solicitudes (ACC); `?vista=busqueda|garantia|testimonio` abre esa vista directo. Sin parámetros se comporta igual.
@@ -78,7 +96,7 @@ Resultado: 10 PASS y 8 PARTIAL. Ninguna pantalla quedó BLOCKED por completo; la
 
 - **SHELL:** `ReturnVisitorBanner` aparece sobre Mi cuenta y sus subpantallas y no está en Figma; `BarraInferior` decide la pestaña solo por ruta, así que `/servicios?vista=solicitudes` no marca "Cuenta" (Figma `29:1535` sí); la regla global que fuerza 16 px en inputs móviles; falta el alias de Tailwind `--color-hc-n-400` (se usa `var(--hc-n-400)`); falta la variante de fondo blanco de `MainLayout` para los estados vacíos (se usa un contenedor blanco).
 - **SYS / diseño:** la fila "Idioma y accesibilidad" de Mi cuenta (SYS la pidió a ACC): ningún frame de Figma la dibuja, así que **no se inventó**. Hasta que exista el frame, el botón flotante de accesibilidad sigue visible.
-- **CAT:** corazón relleno en `ProductCard` para favoritos. `autoQuery` del asistente global (ya documentado, decisión 28): no lo toca ACC.
+- **CAT:** `autoQuery` del asistente global (ya documentado, decisión 28): no lo toca ACC.
 - **Backend:** precio, vigencia y entrega de las cotizaciones de búsqueda; listado de encargos del comprador; "Confiar en este dispositivo" para 2FA; direcciones guardadas; fecha del último cambio de contraseña; imagen del producto en `mis-testimonios`; rango de entrega en pedidos; edición de nombre y teléfono desde Mi cuenta (existe `PUT /usuarios/{id}`, falta el diseño).
 - **Diseño (REQUIRES_DESIGN_REFERENCE):** escritorio de login, pedidos, detalle, favoritos, solicitudes y verificación; el paso de contraseña del login; la lista de garantías de Mis solicitudes.
 

@@ -837,10 +837,10 @@ html.dark .hc-superadmin-theme {
 }
 
 /* — Forms + select — */
-/* `.hc-input-libre`: el campo vive dentro de un contenedor con su propio fondo (buscadores del
+/* `.hc-input-libre` (input y textarea): el campo vive dentro de un contenedor con su propio fondo (buscadores del
    rediseño de Figma); no debe pintarse de `--hc-surface`. */
 :root input:not([type="checkbox"]):not([type="radio"]):not(.hc-input-libre),
-:root textarea,
+:root textarea:not(.hc-input-libre),
 :root select {
   background-color: var(--hc-surface) !important;
   color: var(--hc-text) !important;

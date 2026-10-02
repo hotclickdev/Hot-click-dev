@@ -7,8 +7,8 @@ Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página 
 
 | Estado | Cantidad |
 | --- | --- |
-| PASS — agent verified | 34 |
-| PARTIAL | 56 |
+| PASS — agent verified | 35 |
+| PARTIAL | 55 |
 | OLD_DESIGN | 0 |
 | MISSING | 0 |
 | BLOCKED | 0 |
@@ -92,7 +92,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 05 Cuenta | Detalle de pedido · móvil | /mis-pedidos?pedido=<numero> | PARTIAL | M (ACC, 1-oct-2026, agent verified, API simulada). Medido (±2 px): resumen 190, paquetes 335/261/279. Diferencia: Figma da un rango de entrega y el backend una fecha; garantía y opinión se apagan hasta que el paquete se entrega. Se conservan novedades del paquete y "Retiro en tienda" | C. No encontré ruta de detalle; verificar | no | sí | ACC |
 | 05 Cuenta | Mis solicitudes · móvil | /servicios?vista=solicitudes | PARTIAL | M (ACC, 1-oct-2026, agent verified, API simulada). Medido (±2 px). Falta la pestaña "Encargos" (BLOCKED: el backend no lista encargos del comprador); "Garantías" abre la vista existente. La línea verde muestra la respuesta de HotClick (no hay precio ni vigencia) | C | no | sí | ACC |
 | 05 Cuenta | Solicitud cotizada · móvil | /servicios?vista=solicitudes&solicitud=<id> | PARTIAL | M (ACC, 1-oct-2026, agent verified, API simulada). Lo que pediste, respuesta de HotClick, WhatsApp e historial con lo que hay. BLOCKED por backend: precio cotizado, entrega, vigencia, botón "Comprar por ₡X" e historial con fechas intermedias | C | no | sí | ACC |
-| 05 Cuenta | Favoritos · móvil | /wishlist | PARTIAL | M (ACC, 1-oct-2026, agent verified, API simulada). Grilla de 167 px con la ProductCard compartida. Diferencia (CAT): el corazón no se rellena de rojo. La tienda solo aparece en favoritos guardados desde ahora. Sin frame de escritorio | C | no | sí | ACC |
+| 05 Cuenta | Favoritos · móvil | /wishlist | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Grilla de 167 px con la ProductCard compartida. Corazón relleno de rojo corregido en la reverificación del 1-oct-2026 (`ProductCard`). La tienda solo aparece en favoritos guardados desde ahora. Sin frame de escritorio | C | no | sí | ACC |
 | 05 Cuenta | Mis opiniones · móvil | /perfil?vista=opiniones | PARTIAL | M (ACC, 1-oct-2026, agent verified, API simulada). Medido (±8 px). Figma dice "(opcional)" pero el backend exige comentario. Texto de 16 px por la regla global de SHELL en móvil. Las publicadas no traen foto. El testimonio general de la tienda se conserva (sin frame) | C | no | sí | ACC |
 | 05 Cuenta | Datos y seguridad · móvil | /perfil?vista=seguridad | PARTIAL | M (ACC, 1-oct-2026, agent verified, API simulada). Datos personales y seguridad coinciden. Se omitió "Direcciones guardadas" (marcada "NUEVO · a confirmar", no existe en backend). Filas de datos de solo lectura; el interruptor de 2 pasos solo lo cambia el administrador | C | no | sí | ACC |
 | 05 Cuenta | Mi cuenta · desktop | /perfil | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Escritorio: menú lateral de 260 px, saludo de 28 px, pedido activo, 4 accesos y feed, con el header compacto de SHELL. Vistas de opiniones y seguridad dentro de la misma columna | C | sí | no | ACC |
@@ -149,7 +149,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | PROD | 7 |
 | STORE | 4 (4 PARTIAL, agent verified; sin integrar en `base`) |
 | CHK | 17 (3 PASS agent verified, 14 PARTIAL) |
-| ACC | 18 (10 PASS, 8 PARTIAL, agent verified) |
+| ACC | 18 (11 PASS, 7 PARTIAL, agent verified) |
 | SRV | 8 (1 PASS, 7 PARTIAL, agent verified) |
 | QR | 13 (1 PASS, 12 PARTIAL, agent verified; sin integrar en `base`) |
 | SYS | 10 |

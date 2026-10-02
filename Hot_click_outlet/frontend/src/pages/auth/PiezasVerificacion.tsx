@@ -49,7 +49,7 @@ export function OpcionAlterna({ icono, titulo, detalle, onClick, deshabilitada }
 export function TarjetaOtroMetodo({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <div className="flex flex-col rounded-[14px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-1">
-      <p className="pt-[6px] text-[13px] font-semibold leading-[normal] text-hc-n-600">{titulo}</p>
+      <p className="text-[13px] font-semibold leading-[normal] text-hc-n-600">{titulo}</p>
       {children}
     </div>
   )
