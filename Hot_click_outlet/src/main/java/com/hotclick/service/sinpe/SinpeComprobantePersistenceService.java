@@ -5,7 +5,6 @@ import com.hotclick.model.ComprobanteSinpe;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteSinpeRepository;
 import com.hotclick.repository.PedidoRepository;
-import com.hotclick.service.payment.PedidoGrupoService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,6 @@ public class SinpeComprobantePersistenceService {
 
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private ComprobanteSinpeRepository comprobanteRepository;
-    @Autowired private PedidoGrupoService         pedidoGrupoService;
 
     @Transactional
     public void guardar(String numeroPedido, String url, String nombreRemitente,
@@ -51,10 +49,13 @@ public class SinpeComprobantePersistenceService {
         comprobante.setFechaSubida(LocalDateTime.now(Constants.ZONA_CR));
         comprobanteRepository.save(comprobante);
 
-        // Un comprobante cubre el checkout entero: los N paquetes pasan a PENDIENTE_APROBACION juntos.
-        for (Pedido p : pedidoGrupoService.delGrupo(pedido)) {
-            p.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
-            pedidoRepository.save(p);
+        // Un comprobante cubre el checkout entero: los N paquetes pasan a PENDIENTE_APROBACION juntos,
+        // en un solo UPDATE por grupo de pago en vez de un save por paquete.
+        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
+        pedidoRepository.save(pedido);
+        String grupoPago = pedido.getGrupoPago();
+        if (grupoPago != null && !grupoPago.isBlank()) {
+            pedidoRepository.actualizarEstadoPorGrupoPago(grupoPago, Constants.PEDIDO_PENDIENTE_APROBACION);
         }
 
         log.info("Comprobante SINPE subido: pedido={} remitente={} cedula={}", numeroPedido, nombreRemitente, cedulaRemitente);
