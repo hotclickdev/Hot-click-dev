@@ -64,7 +64,8 @@ describe('garantía y rastreo', () => {
   it('solo se acepta un enlace de rastreo https; si no, el rastreo oficial de Correos', () => {
     expect(urlRastreo({ numeroGuia: 'CR1', urlTracking: 'https://correos.go.cr/x' })).toBe('https://correos.go.cr/x')
     expect(urlRastreo({ numeroGuia: 'CR1', urlTracking: 'javascript:alert(1)' })).toBe('https://rastreo.correos.go.cr/?codigo=CR1')
-    expect(urlRastreo({ numeroGuia: 'CR1', urlTracking: 'http://inseguro.com' })).toBe('https://rastreo.correos.go.cr/?codigo=CR1')
+    // Caso negativo a propósito: un enlace sin TLS debe descartarse.
+    expect(urlRastreo({ numeroGuia: 'CR1', urlTracking: 'http://inseguro.com' })).toBe('https://rastreo.correos.go.cr/?codigo=CR1') // NOSONAR
     expect(urlRastreo({})).toBeNull()
   })
 })

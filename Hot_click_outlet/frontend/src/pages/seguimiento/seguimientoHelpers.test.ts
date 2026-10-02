@@ -64,7 +64,8 @@ describe('seguimiento de pedido sin cuenta — helpers', () => {
 
   it('descarta enlaces de rastreo que no son https', () => {
     expect(urlSegura('javascript:alert(1)')).toBeNull()
-    expect(urlSegura('http://x.cr')).toBeNull()
+    // Caso negativo a propósito: un enlace sin TLS debe descartarse.
+    expect(urlSegura('http://x.cr')).toBeNull() // NOSONAR
     expect(urlSegura('no es url')).toBeNull()
     expect(urlSegura('https://rastreo.correos.go.cr/?codigo=1')).toBe('https://rastreo.correos.go.cr/?codigo=1')
     expect(lineaGuia({ estado: 'ENVIADO', numeroGuia: 'G1', urlRastreo: 'javascript:alert(1)' }, 'es').urlRastreo).toBeNull()
@@ -93,9 +94,10 @@ describe('seguimiento de pedido sin cuenta — i18n y wiring', () => {
   it('es/en/pt tienen las mismas claves y todos los estados conocidos', () => {
     const claves = (o: Record<string, unknown>, p = ''): string[] => Object.entries(o).flatMap(([k, v]) =>
       v && typeof v === 'object' ? claves(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`])
-    const base = claves(locales.es.comprador.seguimiento).sort()
-    expect(claves(locales.en.comprador.seguimiento).sort()).toEqual(base)
-    expect(claves(locales.pt.comprador.seguimiento).sort()).toEqual(base)
+    const ordenar = (lista: string[]) => [...lista].sort((a, b) => a.localeCompare(b))
+    const base = ordenar(claves(locales.es.comprador.seguimiento))
+    expect(ordenar(claves(locales.en.comprador.seguimiento))).toEqual(base)
+    expect(ordenar(claves(locales.pt.comprador.seguimiento))).toEqual(base)
     for (const estado of ESTADOS_CONOCIDOS) expect(base).toContain(`estado.${estado}`)
   })
 

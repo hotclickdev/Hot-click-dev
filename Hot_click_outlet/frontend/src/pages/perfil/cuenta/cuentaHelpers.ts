@@ -66,7 +66,7 @@ export function estadoGlobal(pedidos: PedidoCliente[]): string {
   if (vivos.every((e) => e === 'ENTREGADO')) return 'ENTREGADO'
   // En un pedido mixto lo que se destaca es lo que está en camino; si no, lo más atrasado.
   if (vivos.includes('ENVIADO')) return 'ENVIADO'
-  return vivos.reduce((peor, e) => (ORDEN_ESTADO.indexOf(e) < ORDEN_ESTADO.indexOf(peor) ? e : peor))
+  return vivos.reduce((peor, e) => (ORDEN_ESTADO.indexOf(e) < ORDEN_ESTADO.indexOf(peor) ? e : peor), vivos[0])
 }
 
 export type MiniaturaPedido = { src: string | null; nombre: string }
