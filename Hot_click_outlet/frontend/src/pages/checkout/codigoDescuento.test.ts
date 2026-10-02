@@ -96,7 +96,8 @@ describe('código de descuento · i18n', () => {
     expect(claves.length).toBeGreaterThan(10)
     for (const lng of idiomas) {
       const codigo = i18n.getResourceBundle(lng, 'translation').checkout.codigo
-      expect(Object.keys(codigo).sort()).toEqual([...claves].sort())
+      const ordenar = (lista: string[]) => [...lista].sort((a, b) => a.localeCompare(b))
+      expect(ordenar(Object.keys(codigo))).toEqual(ordenar(claves))
     }
   })
 

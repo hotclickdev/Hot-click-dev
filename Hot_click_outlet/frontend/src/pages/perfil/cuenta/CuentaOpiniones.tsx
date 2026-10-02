@@ -29,7 +29,7 @@ function origenDelProducto(p: ProductoPorOpinar, pedidos: PedidoCliente[]) {
 
 function Estrellas({ valor, tam, onElegir, etiqueta }: { valor: number; tam: number; onElegir?: (n: number) => void; etiqueta: string }) {
   return (
-    <div className={`flex items-start ${tam >= 32 ? 'gap-1' : 'gap-1'}`} role={onElegir ? 'radiogroup' : 'img'} aria-label={etiqueta}>
+    <div className="flex items-start gap-1" role={onElegir ? 'radiogroup' : 'img'} aria-label={etiqueta}>
       {[1, 2, 3, 4, 5].map((n) => onElegir ? (
         <button key={n} type="button" role="radio" aria-checked={valor === n} aria-label={`${n}`} onClick={() => onElegir(n)} className="flex">
           <EstrellaCalificacion llena={n <= valor} size={tam} />
