@@ -6,7 +6,7 @@ export default function TiendaCatalogoNuevo({ nombre }: { nombre: string }) {
   return (
     <div className="text-center py-16 px-4">
       <TiendaPlaceholder className="mx-auto h-12 w-12 mb-4 text-[var(--t-muted)]" />
-      <h1 className="text-xl font-bold text-[var(--t-text)]">Esta tienda está empezando</h1>
+      <h2 className="text-xl font-bold text-[var(--t-text)]">Esta tienda está empezando</h2>
       <p className="text-sm mt-2 max-w-md mx-auto text-[var(--t-muted)] leading-relaxed">
         {nombre} ya está en HotClick. El catálogo se publica acá cuando haya productos.
       </p>

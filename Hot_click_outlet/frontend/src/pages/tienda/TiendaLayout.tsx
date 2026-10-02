@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Outlet, useParams } from 'react-router-dom'
+import { Outlet, useMatch, useParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
@@ -26,6 +26,7 @@ export default function TiendaLayout() {
   const { empresa, setEmpresa, totalItems } = useTiendaStore()
   const [infoEstado, setInfoEstado] = useState('cargando')
   const cantidadCarrito = totalItems()
+  const esPerfil = useMatch({ path: '/tienda/:slug', end: true }) !== null
 
   const cargarInfo = useCallback(() => {
     setInfoEstado('cargando')
@@ -81,6 +82,7 @@ export default function TiendaLayout() {
         nombre={nombre}
         logoUrl={empresaVista?.logoUrl}
         cantidadCarrito={cantidadCarrito}
+        soloEscritorio={esPerfil}
       />
       <main className="flex-1 pb-20 md:pb-0">
         <Outlet />

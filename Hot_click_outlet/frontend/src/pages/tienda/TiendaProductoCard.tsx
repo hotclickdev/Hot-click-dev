@@ -1,62 +1,76 @@
 import { Link } from 'react-router-dom'
-import { CLASE_TARJETA_TIENDA } from './tiendaTheme'
-import TiendaPlaceholder from './TiendaPlaceholder'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
+import useWishlistStore from '@/store/wishlistStore'
 import { esProductoCotizable, textoPrecioProducto } from '@/utils/precioProducto'
+import TiendaPlaceholder from './TiendaPlaceholder'
 import type { Producto } from '@/types/producto'
 
-/** Tarjeta de catálogo de la tienda del vendedor. */
+const CLASE_AGREGAR = 'flex size-8 shrink-0 items-center justify-center rounded-[10px] text-white transition-colors'
+
+/**
+ * Tarjeta de producto de la tienda del vendedor (Figma `5:23`, 167x280): misma geometría que la del
+ * comprador, pero el botón suma al pedido aislado de esta tienda y los productos a cotizar abren su ficha.
+ */
 export default function TiendaProductoCard({
-  slug, producto, agregado, onAgregar,
+  slug, producto, vendedor, agregado, onAgregar,
 }: {
   slug: string
   producto: Producto
+  vendedor: string
   agregado: boolean
   onAgregar: (producto: Producto) => void
 }) {
+  const toggleFavorito = useWishlistStore((s) => s.toggle)
+  const esFavorito = useWishlistStore((s) => s.items.some((i) => i.id === producto.id))
+  const destino = `/tienda/${slug}/producto/${producto.id}`
+  const nombre = producto.nombre ?? ''
+
   return (
-    <article className={`${CLASE_TARJETA_TIENDA} overflow-hidden flex flex-col group`}>
-      <Link to={`/tienda/${slug}/producto/${producto.id}`} className="block overflow-hidden aspect-square bg-[var(--t-hover)]">
+    <article className="relative flex flex-col overflow-hidden rounded-[14px] border border-[var(--t-border)] bg-[var(--t-surface)]">
+      <Link to={destino} className="block aspect-square w-[calc(100%+2px)] shrink-0 overflow-hidden bg-[var(--t-hover)]" tabIndex={-1} aria-hidden="true">
         {producto.imagenUrl
-          ? (
-            <img
-              src={producto.imagenUrl}
-              alt={producto.nombre}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            )
+          ? <img src={producto.imagenUrl} alt="" className="size-full object-cover" loading="lazy" decoding="async" />
           : (
-            <div className="w-full h-full flex items-center justify-center text-[var(--t-muted)]">
-              <TiendaPlaceholder className="w-12 h-12" />
+            <div className="flex size-full items-center justify-center text-[var(--t-muted)]">
+              <TiendaPlaceholder className="size-12" />
             </div>
             )}
       </Link>
-      <div className="p-3 flex flex-col flex-1 gap-2">
-        <Link to={`/tienda/${slug}/producto/${producto.id}`}>
-          <h3 className="text-sm font-medium text-[var(--t-text)] line-clamp-2 leading-snug hover:underline">
-            {producto.nombre}
-          </h3>
+      <button
+        type="button"
+        onClick={() => toggleFavorito(producto)}
+        aria-pressed={esFavorito}
+        aria-label={esFavorito ? `Quitar ${nombre} de favoritos` : `Guardar ${nombre} en favoritos`}
+        className={`absolute right-1.5 top-2 flex size-8 items-center justify-center rounded-full bg-[var(--t-surface)] shadow-[0px_1px_4px_0px_rgba(0,0,0,0.12)] ${esFavorito ? 'text-hc-red-500' : 'text-hc-n-600'}`}
+      >
+        <IconoFigma src={ICONOS_COMPRADOR.favorito} size={16} />
+      </button>
+      <div className="flex flex-col gap-[2px] p-[10px]">
+        <Link to={destino} className="line-clamp-2 min-h-[34px] text-[13px] font-medium leading-[17px] text-hc-n-900">
+          {nombre}
         </Link>
-        <p className="text-base font-bold mt-auto" style={{ color: 'var(--t-primary)' }}>
-          {textoPrecioProducto(producto)}
-        </p>
-        {esProductoCotizable(producto) ? (
-          <Link
-            to={`/tienda/${slug}/producto/${producto.id}`}
-            className="w-full py-2 min-h-[44px] rounded-lg text-white text-xs font-semibold text-center"
-            style={{ backgroundColor: 'var(--t-primary)' }}
-          >
-            Personalizar
-          </Link>
-        ) : (
-        <button
-          type="button"
-          onClick={() => onAgregar(producto)}
-          className="w-full py-2 min-h-[44px] rounded-lg text-white text-xs font-semibold transition-opacity"
-          style={{ backgroundColor: agregado ? 'var(--hc-success)' : 'var(--t-primary)' }}
-        >
-          {agregado ? 'Agregado al pedido' : 'Agregar al pedido'}
-        </button>
-        )}
+        <p className="truncate text-[11px] leading-[15px] text-hc-n-500">{vendedor}</p>
+        <div className="flex items-center justify-between pt-[6px]">
+          <p className="whitespace-nowrap font-display text-[15px] font-bold leading-[normal] text-hc-n-900">
+            {textoPrecioProducto(producto)}
+          </p>
+          {esProductoCotizable(producto) ? (
+            <Link to={destino} aria-label={`Personalizar ${nombre}`} className={`${CLASE_AGREGAR} bg-hc-red-500`} style={{ backgroundColor: 'var(--t-primary)' }}>
+              <IconoFigma src={ICONOS_COMPRADOR.agregar} size={16} />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onAgregar(producto)}
+              aria-label={agregado ? `Agregado al pedido: ${nombre}` : `Agregar al pedido: ${nombre}`}
+              className={CLASE_AGREGAR}
+              style={{ backgroundColor: agregado ? 'var(--hc-success)' : 'var(--t-primary)' }}
+            >
+              <IconoFigma src={agregado ? ICONOS_COMPRADOR.agregadoCheck : ICONOS_COMPRADOR.agregar} size={16} />
+            </button>
+          )}
+        </div>
       </div>
     </article>
   )
