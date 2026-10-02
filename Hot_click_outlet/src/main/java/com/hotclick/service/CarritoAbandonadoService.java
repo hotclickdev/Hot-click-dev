@@ -132,7 +132,14 @@ public class CarritoAbandonadoService {
      */
     @Transactional(readOnly = true)
     public List<CarritoAbandonadoRequestDTO.CartItemDTO> itemsConDisponibilidad(String json) {
-        List<CarritoAbandonadoRequestDTO.CartItemDTO> items = deserializarItems(json);
+        return itemsConDisponibilidad(json, CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS);
+    }
+
+    /** Como mucho {@code maxItems} líneas: un carrito viejo, guardado antes del tope, no devuelve una lista sin acotar. */
+    public List<CarritoAbandonadoRequestDTO.CartItemDTO> itemsConDisponibilidad(String json, int maxItems) {
+        List<CarritoAbandonadoRequestDTO.CartItemDTO> items = deserializarItems(json).stream()
+            .limit(Math.max(0, maxItems))
+            .toList();
         List<Long> ids = items.stream()
             .map(CarritoAbandonadoRequestDTO.CartItemDTO::getProductoId)
             .filter(Objects::nonNull)

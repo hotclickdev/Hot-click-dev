@@ -11,7 +11,11 @@ import java.util.List;
 
 public class CarritoAbandonadoRequestDTO {
 
+    /** Tope de líneas de un carrito guardado: acota el JSON que se persiste y la lista que se devuelve al recuperarlo. */
+    public static final int MAX_LIST_ITEMS = 100;
+
     @Valid
+    @Size(max = MAX_LIST_ITEMS, message = "El carrito no puede superar " + MAX_LIST_ITEMS + " productos")
     private List<CartItemDTO> items;
 
     @Email(message = "Correo inválido")
