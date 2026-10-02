@@ -66,7 +66,8 @@ public class Pedido extends BaseEntity {
     @Column(name = "origen", length = 20)
     private String origen = "ONLINE";
 
-    @Column(name = "estado_pedido", length = 20)
+    // VARCHAR(30) desde V146: PENDIENTE_COMPROBANTE (21) no cabía en 20.
+    @Column(name = "estado_pedido", length = 30)
     private String estadoPedido = "PENDIENTE";
 
     @Column(name = "metodo_pago", nullable = false, length = 30)
