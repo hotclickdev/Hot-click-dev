@@ -20,7 +20,7 @@ export default function Casilla({
       <input type="checkbox" checked={marcada} onChange={onCambiar} className="peer sr-only" />
       <span
         aria-hidden="true"
-        className={`flex shrink-0 items-center justify-center rounded-[5px] border-[1.5px] peer-focus-visible:ring-2 peer-focus-visible:ring-hc-blue-600/40 ${hoja ? 'size-5' : 'size-[18px]'} ${marcada ? 'border-hc-blue-600 bg-hc-blue-600 text-hc-n-0' : 'border-[var(--hc-n-400)] bg-hc-n-0'}`}
+        className={`flex shrink-0 items-center justify-center rounded-[5px] border-[1.5px] peer-focus-visible:ring-2 peer-focus-visible:ring-hc-blue-600/40 ${hoja ? 'size-5' : 'size-[18px]'} ${marcada ? 'border-hc-blue-600 bg-hc-blue-600 text-hc-n-0' : 'border-hc-n-400 bg-hc-n-0'}`}
       >
         {marcada && <IconoFigma src={hoja ? ICONOS_CATALOGO.casillaCheck14 : ICONOS_CATALOGO.casillaCheck} size={hoja ? 14 : 12} />}
       </span>

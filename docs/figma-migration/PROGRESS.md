@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (P09 CORREOS; antes P08 AUTH, P07 QR, P06 SERVICIOS, P05 GIFT CARD, P04 CARRITO, P03 CHECKOUT, P02 PRODUCTO, P01 STORE, SYS/SHELL B5, B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (P10 HOME/CATÁLOGO; antes P09 CORREOS, P08 AUTH, P07 QR, P06 SERVICIOS, P05 GIFT CARD, P04 CARRITO, P03 CHECKOUT, P02 PRODUCTO, P01 STORE, SYS/SHELL B5, B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -41,6 +41,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | P07 QR (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). QR de mesa y de pago remedidos a 390 (0 a 1 px contra `QR.md`) y 1440 (columna de 430 px): sin desborde ni errores de consola. 100 clases `var()` a tokens de SHELL en 13 componentes con frame. `qr-mesa-pago.spec.ts` suma 2 casos con `medidasFigma.ts`. Decisiones y backend de B16 siguen abiertos; correos sin tocar. INVENTORY decía «sin integrar en `base`»: corregido (merge `795d7d01`). Contador sin cambio: 37 PASS / 53 PARTIAL. |
 | P08 AUTH (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). `/login` y `/recuperar-contrasena` remedidos a 390 y 1440: sin desborde ni errores de consola. Regresión corregida: recuperar no usa `MainLayout` y en móvil la regla de 16 px de SHELL le agrandaba el correo y las casillas; la raíz lleva `hc-figma-ui` (15 y 22 px). Tokens `hc-n-400` en 4 componentes. `acc-cuenta.spec.ts` suma 2 casos. Lógica de auth sin tocar. Login y 2FA siguen PARTIAL (sin frame, Clerk, backend). Contador sin cambio: 37 PASS / 53 PARTIAL. |
 | P09 CORREOS (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Refactor sin cambio de salida: los 7 correos con frame (13 variantes) dan el mismo HTML byte a byte; render en Chrome a 390 (366 px) y 1440 (600 px) sin desborde. `EmailLayoutHelper` reúne tablas, colores, pie y rastreo; sin ternario anidado. Tests Java de correos en verde (+1 caso). Huecos de backend y decisiones de B17 sin cambio; sin prueba en Gmail ni Outlook. Contador sin cambio: 37 PASS / 53 PARTIAL. |
+| P10 HOME/CATÁLOGO (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Tokens en `Casilla` y en la insignia "Oferta" de `comprador/ProductCard`; el resto de Home y catálogo con frame ya estaba en tokens. Medido a 390 y 1440 sin desborde ni campos de 16 px; corregida la nota vieja de 16 px en `CAT_C1_C5.md`. `catalogo-cta.spec.ts` +2 casos. Siguen abiertos: fotos reales, "Quedan N", badge del carrito, orden de categorías (Figma-D21), "Entendí:" del asistente (backend), tienda y categoría en búsqueda por foto. Contador sin cambio: 37 PASS / 53 PARTIAL. |
 
 ## Ramas y worktrees
 

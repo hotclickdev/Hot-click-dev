@@ -46,7 +46,7 @@ Otros borrados del catálogo anterior (sustituidos por la estructura de Figma): 
 - **Chip de la búsqueda:** no se muestra (Figma la pone en el buscador y en el título); "Limpiar" (desktop) la quita junto con los filtros.
 - **Marcas:** la sección "Compra por marca" ya no está (no existe en Figma). El filtro `?marcaId=` sigue funcionando y se ve como chip "Entendí".
 - **Quedan sin UI de edición** `filterCond` y `filterTalla` (nadie los fijaba; solo se podían quitar desde `ActiveFilterChips`).
-- **Tamaño de texto de inputs en móvil:** la regla global de `index.css` fuerza 16 px en inputs (evita el zoom de iOS), por eso el texto del buscador mide 16 y no 15 o 14. El alto se fija con `leading-[Npx]` para que las cajas midan lo de Figma.
+- **Tamaño de texto de inputs en móvil:** la regla global de `index.css` fuerza 16 px en inputs (evita el zoom de iOS), pero excluye `.hc-figma-ui` (raíz de `MainLayout`). Remedido en P10 (2-oct-2026) a 390: el buscador de `/productos` mide 14 px y el campo de `/productos?search=` 15 px; ningún campo de Home ni del catálogo mide 16. El alto se fija con `leading-[Npx]` para que las cajas midan lo de Figma.
 - **Acciones de Descubrí:** el grupo va 12 px a la derecha del centro, como en Figma (`left-[101px]`).
 - **Descubrí, "3 de 10":** el contador es `elecciones / min(8, mazo)` (`SWIPES_PARA_REVELAR`); el texto del pie usa el mismo total.
 - **Asistente:** se conserva el icono de WhatsApp dentro de la barra y el botón de borrar la conversación (funciones del código actual que Figma no dibuja).
@@ -65,3 +65,12 @@ Otros borrados del catálogo anterior (sustituidos por la estructura de Figma): 
 - **STRATEGY:** pasos C1 a C5 hechos. Columnas fijas de 167 en el catálogo (evidencia en este documento). `ui/ProductCard`, `ui/productCard/*` y `catalogoProductCard.ts` eliminados.
 - **INVENTORY:** `8:163` PASS, `8:230` PARTIAL (falta "Entendí:" por el backend), `26:722` PASS, `26:887` PASS, `27:804` PASS, `27:882` PARTIAL (etiqueta "NUEVO · por programar" es anotación), `27:939` PASS, `30:1824` PASS, `43:1454` PASS, `43:1530` PASS.
 - **PROGRESS:** CAT cerró C1 a C5 y las diez pantallas; pendientes de otros: SHELL (foto, búsqueda en el header, barra inferior, h1), backend del asistente (filtros interpretados).
+
+## P10 HOME/CATÁLOGO (2-oct-2026)
+
+- **Tokens:** `Casilla` pasa de `border-[var(--hc-n-400)]` a `border-hc-n-400` y la insignia "Oferta" de `comprador/ProductCard` (Home y catálogo) de `bg-[var(--hc-red-50)]` a `bg-hc-red-50`. El color resuelto no cambia (n/400 = rgb(154, 161, 174), red/50 = rgb(254, 242, 241)).
+- **Revisión:** los demás archivos con frame de Home y catálogo (`HomePage`, `home/compra/*`, `searchPanel/*`, `SearchPanel`, `FiltrosPanel`, `EncabezadoCatalogoMovil`, `SinResultados`, `BusquedaFotoPage`, `CategoriasPage`, `Chip`, `CategoryTile`) ya no tienen `var()` en clases ni `style` con tokens.
+- **Medido (Chrome, API simulada):** sin desborde a 390 y 1440 en `/`, `/productos`, `/productos?search=`, `/buscar/foto`, `/buscar/categorias` y `/descubri`; todas con `.hc-figma-ui`. Campos a 390: 14 y 15 px; a 1440: buscador del header 14 px, cajas de precio 13 px.
+- **Tests:** `catalogo-cta.spec.ts` suma 2 casos con `tests/helpers/medidasFigma.ts` (390 en `/`: sin desborde, sin campos de 16 px, insignia con red/50; 1440 en `/productos`: sin desborde, casilla sin marcar con borde n/400).
+- **Sin cambio de veredicto:** `7:2`, `12:346` y `9:171` siguen PARTIAL (fotos reales, "Quedan N" y badge del carrito dependen de datos; orden de categorías es Figma-D21). `8:230` sigue PARTIAL ("Entendí:" depende del backend) y `27:882` PARTIAL. "Con stock" (`43:1541`) y "Deshacer" siguen como decisiones.
+- **Sin frame, para P13:** estados de `CatalogProductGrid` (vacío, error, paginación, carga), `CategoryRow`, `ParentCategoryRow`, `CatalogBrandLogo`, `DescubriResultados`, `DescubriRevelacion`, `DescubriLoading` (`--hc-surface-3` sin alias), `DescubriError` y los sellos de arrastre de `DescubriCarta` siguen con `style={{ var() }}`.

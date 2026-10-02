@@ -20,7 +20,7 @@ const CLASE_INSIGNIA = 'absolute left-2 top-2 rounded-full px-2 py-[3px] text-[1
 const COLOR_INSIGNIA = {
   hechoAPedido: 'bg-hc-warning-bg text-hc-warning',
   quedan: 'bg-hc-warning-bg text-hc-warning',
-  oferta: 'bg-[var(--hc-red-50)] text-hc-red-600',
+  oferta: 'bg-hc-red-50 text-hc-red-600',
 } as const
 
 /**
