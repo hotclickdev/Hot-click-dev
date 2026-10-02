@@ -160,6 +160,10 @@ Como `index.css` es global, el cambio a `clip` afecta a todo el sitio, incluidos
 
 **Estado de SHELL: integrado en `feat/figma/base` (merge local `b3159c1e`, sin push), con el usuario autorizándolo.** Una segunda pasada del QA sobre `ac69ca69` no se ha hecho; las dos correcciones las verifiqué yo con mediciones.
 
+## SHELL global
+
+Pasada global de SHELL (rutas, barra inferior, alias, inputs móviles, banner, header): ver `SHELL_GLOBAL.md`.
+
 ## Archivos bloqueados ahora
 
 | Archivo | Bloqueado por | Hasta |

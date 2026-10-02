@@ -34,6 +34,7 @@
   --color-hc-n-100: var(--hc-n-100);
   --color-hc-n-200: var(--hc-n-200);
   --color-hc-n-300: var(--hc-n-300);
+  --color-hc-n-400: var(--hc-n-400);
   --color-hc-n-500: var(--hc-n-500);
   --color-hc-n-600: var(--hc-n-600);
   --color-hc-n-900: var(--hc-n-900);
@@ -41,10 +42,12 @@
   --color-hc-blue-100: var(--hc-blue-100);
   --color-hc-blue-600: var(--hc-blue-600);
   --color-hc-blue-900: var(--hc-blue-900);
+  --color-hc-red-50: var(--hc-red-50);
   --color-hc-red-500: var(--hc-red-500);
   --color-hc-red-600: var(--hc-red-600);
   --color-hc-green-600: var(--hc-success);
   --color-hc-green-50: var(--hc-success-bg);
+  --color-hc-success-bg: var(--hc-success-bg);
 
   --font-sans: 'Public Sans', 'PublicSans-fallback', system-ui, -apple-system, sans-serif;
   --font-display: 'Sora', system-ui, sans-serif;
@@ -1289,16 +1292,21 @@ html:not(.dark) .hc-product-img {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
-/* Prevenir zoom en inputs iOS */
+/* Prevenir zoom en inputs iOS (paneles, POS, portales).
+   La superficie del comprador queda fuera: Figma pide 14 y 15 px en sus campos y esta regla, al no estar
+   en una capa, le ganaría a `text-[14px]`. `.hc-figma-ui` es la raíz de `MainLayout`; `.hc-tenant-theme`,
+   la de la tienda pública. Costo asumido: en iOS esos campos hacen zoom al enfocar. */
 @media (max-width: 767px) {
-  input[type="text"],
-  input[type="email"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="search"],
-  input[type="date"],
-  select,
-  textarea {
+  :is(
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="search"],
+    input[type="date"],
+    select,
+    textarea
+  ):not(:is(.hc-figma-ui, .hc-tenant-theme) *) {
     font-size: max(16px, 1em);
   }
 }

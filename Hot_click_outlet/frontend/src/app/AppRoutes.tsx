@@ -76,6 +76,7 @@ const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const RecuperarCarritoPage = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const SinConexionPage = lazy(() => import('@/pages/SinConexionPage'))
 const AdminSolicitudesServicio = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
 const AdminSolicitudesGarantia = lazy(() => import('@/pages/admin/AdminSolicitudesGarantia'))
 const AdminEmpresas = lazy(() => import('@/pages/admin/AdminEmpresas'))
@@ -344,6 +345,7 @@ export default function AppRoutes() {
         <Route path="checkout/exito" element={<TiendaSuccessPage />} />
       </Route>
       <Route path="/404" element={<NotFoundPage />} />
+      <Route path="/sin-conexion" element={<SinConexionPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

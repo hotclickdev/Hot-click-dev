@@ -32,10 +32,13 @@ export default function ReturnVisitorBanner() {
   const cartItems = useCartStore((s) => s.items)
   const wishCount = useWishlistStore((s) => s.items.length)
 
-  const hiddenPaths = ['/carrito', '/checkout', '/pago']
+  // Mi cuenta y sus subpantallas no lo dibujan en Figma (`28:1196`, `30:1479`).
+  const hiddenPaths = ['/carrito', '/checkout', '/pago', '/perfil', '/mis-pedidos', '/wishlist']
+
+  const oculto = hiddenPaths.some(p => location.pathname.startsWith(p))
 
   useEffect(() => {
-    if (hiddenPaths.some(p => location.pathname.startsWith(p))) return
+    if (oculto) return
     if (sessionStorage.getItem(DISMISSED_KEY)) return
     const visitInfo = getVisitInfo()
     if (!visitInfo.isReturn) return
@@ -49,7 +52,7 @@ export default function ReturnVisitorBanner() {
     setVisible(false)
   }
 
-  if (!info) return null
+  if (!info || oculto) return null
 
   const days = info.daysSince
   let greeting = `¡Volviste después de ${days} días!`

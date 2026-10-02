@@ -1,18 +1,18 @@
-import { useState, type FormEvent } from 'react'
+import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
 import { inicialesDe } from './headerHelpers'
-import { useHeaderComprador } from './useHeaderComprador'
+import { useConsultaBuscador, useHeaderComprador } from './useHeaderComprador'
 
 /** Header desktop compacto, sin fila de categorías (Figma `30:1480`, carrito `30:2268`). */
 export default function HeaderEscritorioCompacto() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { cantidadPedido, conSesion, nombreUsuario, rutaCuenta } = useHeaderComprador()
-  const [consulta, setConsulta] = useState('')
+  const [consulta, setConsulta] = useConsultaBuscador()
 
   const buscar = (evento: FormEvent) => {
     evento.preventDefault()
