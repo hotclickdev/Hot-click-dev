@@ -1,8 +1,11 @@
+import { useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useSearchPanel } from './searchPanel/useSearchPanel'
 import { SearchPanelBody } from './searchPanel/SearchPanelBody'
 import CloseIcon from '@/components/ui/CloseIcon'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
+import useUiStore from '@/store/uiStore'
 
 function IconoAtras() {
   return (
@@ -15,6 +18,10 @@ function IconoAtras() {
 /** Búsqueda activa (Figma `8:163`): pantalla completa en móvil y panel desplegable en desktop. */
 export default function SearchPanel() {
   const { t } = useTranslation()
+  const dialogoRef = useRef<HTMLDivElement>(null)
+  // El campo recibe el foco desde `useSearchPanel`; aquí Tab no sale del panel y al cerrar vuelve al disparador.
+  const abierto = useUiStore((s) => s.searchOpen)
+  useFocusTrap(dialogoRef, abierto, 'ninguno')
   const panel = useSearchPanel()
 
   return (
@@ -33,6 +40,7 @@ export default function SearchPanel() {
           <div className="pointer-events-none fixed inset-0 z-[51] flex flex-col md:block">
             <motion.div
               key="search-panel"
+              ref={dialogoRef}
               role="dialog"
               aria-modal="true"
               aria-label={t('search.dialogLabel')}

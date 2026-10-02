@@ -196,6 +196,8 @@ export default function CheckoutLayout({
   return (
     <MainLayout variante="propia" pie={false} barraInferior={false}>
       <div className="flex min-h-dvh flex-col bg-hc-n-50">
+        {/* La cabecera móvil (Figma) no lleva título: el h1 de la pantalla queda para lectores de pantalla. */}
+        <h1 className="sr-only">{t('checkout.f.tituloEscritorio')}</h1>
         <CabeceraCompraSegura onAtras={volver} />
         <IndicadorPasos paso={paso} onIr={setPaso} />
         <div className={`flex flex-1 flex-col px-4 pb-4 pt-[18px] ${paso === PASO_PAGO ? 'gap-3' : 'gap-4'}`}>

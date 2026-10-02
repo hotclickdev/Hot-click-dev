@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { ICONOS_ESTADOS } from '@/components/comprador/estados/iconosEstados'
 import Interruptor from '@/components/ui/sistema/Interruptor'
 
@@ -29,18 +30,18 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
   const hojaRef = useRef<HTMLDivElement>(null)
   const [analitica, setAnalitica] = useState(analiticaInicial)
 
+  // El foco entra en la hoja, Tab no sale de ella y al cerrar vuelve a quien la abrió.
+  useFocusTrap(hojaRef, abierta, 'contenedor')
+
   useEffect(() => {
     if (!abierta) return undefined
-    const previo = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const overflowPrevio = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    hojaRef.current?.focus()
     const alTeclear = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar() }
     globalThis.addEventListener('keydown', alTeclear)
     return () => {
       document.body.style.overflow = overflowPrevio
       globalThis.removeEventListener('keydown', alTeclear)
-      previo?.focus()
     }
   }, [abierta, onCerrar])
 

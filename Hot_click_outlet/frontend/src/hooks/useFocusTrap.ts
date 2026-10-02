@@ -1,35 +1,56 @@
 import { useEffect, type RefObject } from 'react'
+import { destinoTab } from './focoAtrapado'
 
 const SELECTOR_FOCUSABLE =
-  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-/** Atrapa el foco de teclado dentro de `ref` mientras `active` es true; restaura el foco previo al cerrar. */
-export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean) {
+/**
+ * Dónde queda el foco al abrir: en el primer control, en el propio contenedor (que debe tener
+ * `tabIndex={-1}`) o donde lo ponga quien usa el hook.
+ */
+export type FocoInicial = 'primero' | 'contenedor' | 'ninguno'
+
+/** Controles a los que llega Tab: sin `tabIndex` negativo y dibujados (no dentro de un `display: none`). */
+function focoables(nodo: HTMLElement): HTMLElement[] {
+  return Array.from(nodo.querySelectorAll<HTMLElement>(SELECTOR_FOCUSABLE))
+    .filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0)
+}
+
+/**
+ * Atrapa el foco de teclado dentro de `ref` mientras `active` es true: Tab y Mayús+Tab dan la vuelta
+ * dentro del diálogo. Al cerrar devuelve el foco al control que lo tenía, si sigue en la página.
+ * El contenedor se lee en cada tecla porque algunas hojas se vuelven a montar al cambiar de ancho.
+ */
+export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean, focoInicial: FocoInicial = 'primero') {
   useEffect(() => {
-    if (!active) return
-    const previoActivo = document.activeElement as HTMLElement | null
+    if (!active) return undefined
+    const previoActivo = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const nodo = ref.current
-    const primero = nodo?.querySelector<HTMLElement>(SELECTOR_FOCUSABLE)
-    ;(primero ?? nodo)?.focus()
+    if (nodo && focoInicial !== 'ninguno') {
+      const destino = focoInicial === 'primero' ? focoables(nodo)[0] ?? nodo : nodo
+      destino.focus({ preventScroll: true })
+    }
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab' || !nodo) return
-      const focoables = Array.from(nodo.querySelectorAll<HTMLElement>(SELECTOR_FOCUSABLE))
-      if (focoables.length === 0) return
-      const primero = focoables[0]
-      const ultimo = focoables[focoables.length - 1]
-      if (e.shiftKey && document.activeElement === primero) {
-        e.preventDefault()
-        ultimo.focus()
-      } else if (!e.shiftKey && document.activeElement === ultimo) {
-        e.preventDefault()
-        primero.focus()
+      const actual = ref.current
+      if (e.key !== 'Tab' || !actual) return
+      const lista = focoables(actual)
+      const activo = document.activeElement
+      let indice = -1
+      if (activo instanceof HTMLElement && activo !== actual && actual.contains(activo)) {
+        indice = lista.indexOf(activo)
+        // Un elemento enfocado que no está en la lista (p. ej. tabIndex -1): el navegador decide.
+        if (indice === -1) return
       }
+      const destino = destinoTab(lista.length, indice, e.shiftKey)
+      if (destino === null) return
+      e.preventDefault()
+      lista[destino].focus()
     }
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      previoActivo?.focus()
+      if (previoActivo?.isConnected) previoActivo.focus({ preventScroll: true })
     }
-  }, [active, ref])
+  }, [active, ref, focoInicial])
 }

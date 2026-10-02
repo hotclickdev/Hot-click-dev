@@ -169,6 +169,27 @@ html.reduce-motion *::after {
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* P19: al navegar con Tab (`html.hc-teclado`, ver `app/modalidadTeclado.ts`) los campos muestran el anillo
+   de foco aunque el diseño les quite el contorno (`outline-none`); con ratón o toque se ven como en Figma.
+   Fuera de capas para ganarle a las utilidades de Tailwind. */
+html.hc-teclado :is(input, textarea, select):focus-visible {
+  outline: 2px solid var(--hc-focus-ring);
+  outline-offset: 2px;
+}
+
+/* La preferencia del sistema vale lo mismo que el interruptor "Reducir movimiento" (P19). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @layer base {

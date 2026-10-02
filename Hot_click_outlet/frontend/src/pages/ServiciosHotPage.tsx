@@ -47,6 +47,9 @@ const TITULO_VISTA: Record<VistaServicios, string> = {
   inventario: 'Digitalizá tu inventario',
 }
 
+/** En escritorio la barra interna no se dibuja y estas vistas no repiten el título (P06): el h1 queda para lectores de pantalla. */
+const VISTAS_H1_OCULTO_ESCRITORIO: ReadonlySet<VistaServicios> = new Set(['busqueda', 'garantia'])
+
 function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) {
   const { t } = useTranslation()
   const { token } = useAuthStore()
@@ -181,6 +184,7 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
         <script type="application/ld+json">{JSON.stringify(serviciosJsonLd)}</script>
       </Helmet>
 
+      {VISTAS_H1_OCULTO_ESCRITORIO.has(vista) && <h1 className="sr-only max-lg:hidden">{TITULO_VISTA[vista]}</h1>}
       {vista === 'inicio' && <ServiciosInicio irA={irA} solicitudesEnCurso={solicitudesEnCurso} />}
       {vista === 'busqueda' && (
         <div className="lg:mx-auto lg:w-full lg:max-w-[560px]">

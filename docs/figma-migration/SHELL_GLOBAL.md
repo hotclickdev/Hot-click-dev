@@ -291,3 +291,58 @@ Verificación: `tsc` (app y e2e) limpio; ESLint sin errores nuevos (queda el `se
 | Aviso «Idioma cambiado a Español» en cada carga | Región `status` que se anuncia también al abrir la página; no es de rutas. |
 
 Verificación: `tsc` (app y e2e) limpio; ESLint sin errores en los archivos tocados; Vitest 523 de 523 (nuevos `restauracionScroll.test.ts`, 6 casos, y `authRedirect.test.ts`, 3); Playwright 183 de 197 en 33 specs de navegación, catálogo, ficha, tienda, servicios, carrito, checkout, pago, QR, estados, idioma, tema y smoke, incluido el nuevo `navegacion-rutas.spec.ts` (6 casos: altura al volver de la ficha, enlace nuevo arriba, tres 404 y login con retorno). Sin la corrección falla el caso del scroll (vuelve en 0). Fallan igual que sin P18: `catalogo-iconos:67`, `emprende:51`, `tienda-checkout:77`, `smoke:131`, `smoke:237` y los 7 specs viejos de arriba; 2 omitidos.
+
+## P19 — accesibilidad (2-oct-2026)
+
+**Herramienta:** `@axe-core/playwright` no está en las dependencias (tampoco testing-library ni jsdom) y no se agregó. Se usaron aserciones manuales: un script de auditoría fuera del repo (h1, landmarks, nombre accesible de controles, `img` sin `alt`, ids duplicados, foco visible en 45 paradas de Tab) en 22 rutas del comprador a 390 y 1440, y el nuevo `tests/accesibilidad-p19.spec.ts`.
+
+**Auditado sin cambio (cumple):** todas las rutas tienen un `main` (`#main-content`, con enlace para saltar al contenido), un `header` y `nav` con nombre. Ningún botón de icono, enlace ni imagen visible queda sin nombre o `alt`, salvo el teléfono de abajo. No hay ids duplicados. `Modal` y la galería a pantalla completa ya atrapaban el foco. Los botones y enlaces ya mostraban el anillo `--hc-focus-ring` (regla global `:focus-visible`).
+
+**Corregido:**
+
+| Qué | Antes | Ahora |
+| --- | --- | --- |
+| h1 de `/servicios?vista=busqueda` y `vista=garantia` a 1440 | Ninguno: el h1 de la barra interna no se dibuja en escritorio (nota de P06 en `SRV.md`). | h1 `sr-only` solo en escritorio (`max-lg:hidden`) con el mismo título. |
+| h1 de `/checkout` móvil | Ninguno (la cabecera Figma no lleva título). | h1 `sr-only` «Finalizá tu compra», con la clave existente `checkout.f.tituloEscritorio`. |
+| h1 de `/registro` | Dos («Crear cuenta» y «en HotClick»). | Un h1. La segunda línea con degradé pasa a `span` de bloque: se ve igual. |
+| Teléfono (`PhoneField`) | La etiqueta no tenía `for` y el campo de `/registro` no tenía nombre. La librería quitaba el contorno al enfocar. | Prop `id` y `htmlFor`, además de `aria-required` y `aria-invalid`. Con teclado vuelve el anillo de foco. |
+| Hojas modales: `HojaInferior` (idioma y accesibilidad, «Agregado a tu pedido», promo, salida), `HojaFiltros`, preferencias de cookies, búsqueda y asistente | Esc ya cerraba, pero Tab salía de la hoja. Solo cookies y el asistente movían el foco, y solo cookies lo devolvía. | El foco entra en la hoja, Tab y Mayús+Tab no salen, y al cerrar vuelve al disparador. `useFocusTrap` ahora tiene modo de foco inicial (`primero`, `contenedor`, `ninguno`), cuenta solo los controles dibujados, lee el contenedor en cada tecla y devuelve el foco sin scroll, solo si el disparador sigue en la página. La lógica pura está en `hooks/focoAtrapado.ts`. |
+| Foco visible en campos | Unos 15 campos con `outline-none` y sin otro indicador no mostraban el foco con Tab: buscador del header desktop (todas las páginas), buscador del catálogo y de categorías, asistente de la Home, notas, cupón y correo del carrito, campos del checkout, mínimo y máximo. | `html.hc-teclado` (Tab la pone, un clic o toque la quita; `app/modalidadTeclado.ts`) dibuja `--hc-focus-ring` en `input`, `textarea` y `select`. Con ratón o toque los campos se ven como en Figma. |
+| `prefers-reduced-motion` | El sistema solo cortaba dos animaciones. Framer Motion no lo miraba. | Misma regla que el interruptor «Reducir movimiento»: transiciones y animaciones CSS a 0.001 ms y `scroll-behavior: auto`. Framer Motion usa `MotionConfig reducedMotion` (`user`, o `always` con el interruptor) en `app/ConfigMovimiento.tsx`. |
+| Aviso de idioma (`HtmlClassManager`) | La región `status` anunciaba «Idioma cambiado a Español» al cargar cada página (doble efecto de StrictMode). | Solo avisa cuando el idioma cambia de verdad. |
+
+**Contraste de tokens (medido en `styles/contrasteTokens.test.ts`, WCAG 2.x):**
+
+- **Pasan AA** sobre n-0, n-50 y n-100: n-600 (7.5:1 sobre blanco), n-700, n-900, blue-600, `--hc-link`, `--hc-text` y `--hc-text-secondary`. El blanco sobre blue-600 da 8.4:1. El anillo de foco da 4.8:1 sobre blanco (alcanza 3:1).
+- **No llegan a 4.5:1 para texto normal:**
+  - n-400: 2.6:1 sobre blanco (placeholders y texto deshabilitado).
+  - n-500: 4.36:1 sobre n-50 y 4.13:1 sobre n-100 (sobre blanco da 4.59:1 y pasa).
+  - red-500: 4.14:1 como texto y con texto blanco encima.
+  - `--hc-success`: 4.39:1.
+
+  Son colores de Figma: **REQUIERE_DECISION**, no se tocaron.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Tamaño táctil de los enlaces del pie móvil (P15) | Agrandarlos cambia el pie medido contra `12:489`: sigue en **REQUIERE_DECISION**. |
+| Borde de alto contraste en los `header` de la superficie Figma con clase de borde propia (P12) | Sigue en **REQUIERE_DECISION**. |
+| Contraste de tokens | Ver arriba (**REQUIERE_DECISION**). |
+| Anillo de teclado en campos con su propio foco (formulario de Servicios, personalización de la ficha) | Con Tab se suma al borde azul propio. No cambia el aspecto con ratón. |
+| ESLint `react-hooks/refs` en `SearchPanel.tsx` | Son 8 errores que ya estaban en la base (el objeto `panel` lleva `inputRef`). P19 no suma ninguno. |
+
+Verificación:
+
+- `tsc` (app y e2e) limpio. ESLint sin errores nuevos en los archivos tocados.
+- Vitest 533 de 533. Nuevos: `focoAtrapado.test.ts` (4 casos), `modalidadTeclado.test.ts` (2) y `contrasteTokens.test.ts` (4).
+- Playwright 192 de 196 en 30 specs: accesibilidad, servicios, tienda, carrito, checkout, idioma, i18n, rutas, shell, barra inferior, ficha, asistente, cookies, registro y smoke. Se omitieron 17.
+- Nuevo `accesibilidad-p19.spec.ts` (13 casos, 390 y 1440):
+  - un h1 y ningún control sin nombre en 8 rutas;
+  - cookies, idioma, búsqueda y «Agregado a tu pedido» con foco atrapado, Esc y foco de vuelta;
+  - anillo de foco en 10 paradas de Tab;
+  - teléfono con nombre y anillo solo con teclado;
+  - `prefers-reduced-motion`;
+  - aviso de idioma solo al cambiar.
+- Sin las correcciones fallan 8 de esos 13 casos.
+- Fallan igual que en la base: `smoke:131`, `smoke:237`, `tienda-checkout:77` y `catalogo-iconos:67`.

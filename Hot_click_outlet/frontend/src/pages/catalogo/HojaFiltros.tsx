@@ -1,6 +1,7 @@
-import { useEffect, useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 /**
  * Hoja de filtros móvil (Figma `26:888`): velo n/900, esquinas de 22 px, sin agarradera, encabezado
@@ -18,6 +19,8 @@ export default function HojaFiltros({
 }) {
   const { t } = useTranslation()
   const idTitulo = useId()
+  const hojaRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(hojaRef, abierta, 'contenedor')
 
   useEffect(() => {
     if (!abierta) return undefined
@@ -37,10 +40,12 @@ export default function HojaFiltros({
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
       <button type="button" aria-label={t('comprador.hoja.cerrar')} onClick={onCerrar} className="absolute inset-0 bg-hc-n-900" />
       <div
+        ref={hojaRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
-        className="relative flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-[22px] bg-hc-n-0"
+        tabIndex={-1}
+        className="relative flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-[22px] bg-hc-n-0 outline-none"
       >
         <div className="flex items-center justify-between px-4 pb-3 pt-[18px] leading-[normal]">
           <h2 id={idTitulo} className="font-display text-[18px] font-bold text-hc-n-900">{t('products.filters')}</h2>

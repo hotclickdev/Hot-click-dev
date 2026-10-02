@@ -2,12 +2,14 @@ import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
 import { PHONE_FIELD_COUNTRIES } from './phoneFieldCountries'
 import './PhoneField.css'
-import type { CSSProperties, ReactNode } from 'react'
+import { useId, type CSSProperties, type ReactNode } from 'react'
 
 /** Tamaño del número por variable de la librería (no en línea) para que la regla móvil de 16 px de `index.css` lo alcance. */
 const ESTILO_CONTENEDOR = { display: 'flex', width: '100%', alignItems: 'stretch', '--react-international-phone-font-size': '14px' } as CSSProperties
 
 export type PhoneFieldProps = {
+  /** id del campo del número, para enlazarlo con una etiqueta externa (`htmlFor`). */
+  id?: string
   label?: ReactNode
   value?: string
   onChange?: (phone: string) => void
@@ -19,6 +21,7 @@ export type PhoneFieldProps = {
 }
 
 export default function PhoneField({
+  id,
   label,
   value,
   onChange,
@@ -28,12 +31,14 @@ export default function PhoneField({
   defaultCountry = 'cr',
   disabled = false,
 }: PhoneFieldProps) {
+  const idGenerado = useId()
+  const idCampo = id ?? idGenerado
   const border = `1.5px solid ${error ? '#ef4444' : 'var(--hc-border)'}`
   return (
     <div className="hc-phone-field space-y-1.5">
       {label && (
         <div className="flex items-baseline justify-between">
-          <label className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+          <label htmlFor={idCampo} className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
             {label}
             {required && <span className="ml-1" style={{ color: 'var(--hc-accent)' }}>*</span>}
           </label>
@@ -47,13 +52,13 @@ export default function PhoneField({
         value={value}
         onChange={onChange}
         disabled={disabled}
+        inputProps={{ id: idCampo, 'aria-required': required || undefined, 'aria-invalid': error ? true : undefined }}
         inputStyle={{
           backgroundColor: 'var(--hc-surface-2)',
           border,
           borderLeft: 'none',
           color: 'var(--hc-text)',
           borderRadius: '0 10px 10px 0',
-          outline: 'none',
           padding: '10px 14px',
           height: 44,
           flex: '1 1 0',

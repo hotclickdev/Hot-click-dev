@@ -12,6 +12,7 @@ import { setAnalyticsConsent, identifyUser } from '@/utils/analytics'
 import { initAnalytics } from '@/utils/initAnalytics'
 import SiteVerification from '@/utils/siteVerification'
 import HtmlClassManager from '@/app/HtmlClassManager'
+import ConfigMovimiento from '@/app/ConfigMovimiento'
 import AppRoutes from '@/app/AppRoutes'
 import ErrorBoundaryPorArea from '@/app/ErrorBoundaryPorArea'
 import useAuthStore from '@/store/authStore'
@@ -34,6 +35,7 @@ const queryClient = new QueryClient({
 /** Raíz de la SPA: providers, chrome global y árbol de rutas. */
 export default function App() {
   return (
+    <ConfigMovimiento>
     <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
@@ -73,5 +75,6 @@ export default function App() {
       </ToastProvider>
     </QueryClientProvider>
     </HelmetProvider>
+    </ConfigMovimiento>
   )
 }

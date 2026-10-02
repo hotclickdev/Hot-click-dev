@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
 import i18n from '@/i18n'
 import { aplicarClasesTemaHtml, colorChromeParaTema } from '@/utils/temaPorRuta'
+import { instalarModalidadTeclado } from './modalidadTeclado'
 
 function aplicarMetaThemeColor(tema: 'dark' | 'light') {
   const meta = document.querySelector('meta[name="theme-color"]')
@@ -18,7 +19,12 @@ export default function HtmlClassManager() {
   const { pathname } = useLocation()
   const { theme, fontSize, highContrast, reduceMotion, language } = useUiStore()
   const [liveMessage, setLiveMessage] = useState('')
-  const primed = useRef(false)
+  // Idioma ya anunciado: solo se avisa un cambio real (el doble efecto de StrictMode o la carga no anuncian).
+  const idiomaAnunciado = useRef(language)
+
+  // Tab marca el <html> con `hc-teclado`: el anillo de foco de los campos se ve solo al navegar con teclado.
+  useEffect(() => instalarModalidadTeclado(document, document.documentElement), [])
+
   useEffect(() => {
     const html = document.documentElement
     const temaHtml = aplicarClasesTemaHtml(html.classList, pathname, theme, highContrast)
@@ -33,10 +39,8 @@ export default function HtmlClassManager() {
   useEffect(() => {
     document.documentElement.lang = language
     const announce = () => {
-      if (!primed.current) {
-        primed.current = true
-        return
-      }
+      if (idiomaAnunciado.current === language) return
+      idiomaAnunciado.current = language
       const langName = i18n.t(`lang.name.${language}`)
       setLiveMessage(i18n.t('lang.changed', { lang: langName }))
     }
