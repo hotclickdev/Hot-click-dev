@@ -30,7 +30,7 @@ export default function FalloPago({ motivo, numeroPedido, onReintentar, reintent
   return (
     <MarcoPago>
       <div className="flex flex-col items-center gap-[10px] px-4 pb-[13px] pt-8 text-center leading-[normal]">
-        <IconoEstado src={ICONOS_PAGO.falloEquis} tamano={34} circulo={72} clase="bg-[var(--hc-danger-bg)] text-hc-danger" />
+        <IconoEstado src={ICONOS_PAGO.falloEquis} tamano={34} circulo={72} clase="bg-hc-danger-bg text-hc-danger" />
         <h1 className="font-display text-[19px] font-bold leading-[normal] tracking-normal text-hc-n-900">{t('payment.fallo.titulo')}</h1>
         <p className="text-[14px] leading-5 text-hc-n-600">{motivo ? `${motivo}. ${t('payment.fallo.sinCobro')}.` : t('payment.fallo.texto')}</p>
       </div>

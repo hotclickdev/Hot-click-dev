@@ -80,7 +80,7 @@ function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, deshabilitad
         )}
       </div>
       {estado === 'invalid' && (
-        <div role="alert" className="flex items-start gap-2 rounded-[10px] bg-[var(--hc-danger-bg)] p-3">
+        <div role="alert" className="flex items-start gap-2 rounded-[10px] bg-hc-danger-bg p-3">
           <IconoFigma src={ICONOS_COMPRADOR.codigoError} size={16} className="text-hc-danger" />
           <div className="flex min-w-0 flex-1 flex-col gap-[2px]">{invalido}</div>
         </div>
@@ -140,7 +140,7 @@ export function CodigosCarrito({ codigos, conSesion, incluirGiftCard, descuentoM
             invalido={(
               <>
                 <p className="text-[13px] font-semibold text-hc-red-500">{t('checkout.codigo.giftInvalidoTitulo')}</p>
-                <p className="text-[12px] leading-4 text-[var(--hc-text-secondary)]">{t('checkout.codigo.giftInvalidoAyuda')}</p>
+                <p className="text-[12px] leading-4 text-hc-text-secondary">{t('checkout.codigo.giftInvalidoAyuda')}</p>
               </>
             )}
             valido={(

@@ -12,8 +12,7 @@ function WhatsAppAtajo({ href, children }: { href: string; children: ReactNode }
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium"
-      style={{ color: 'var(--hc-muted)' }}
+      className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium text-hc-muted"
     >
       <WhatsAppIcon />
       {children}

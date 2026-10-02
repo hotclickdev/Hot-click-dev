@@ -120,7 +120,7 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
         <button
           type="button"
           onClick={() => setFormAbierto(true)}
-          className="flex w-full flex-col items-center gap-[6px] rounded-[14px] border border-dashed border-hc-n-400 bg-hc-n-0 py-[22px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]"
+          className="flex w-full flex-col items-center gap-[6px] rounded-[14px] border border-dashed border-hc-n-400 bg-hc-n-0 py-[22px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-focus-ring"
         >
           <img src={ICONOS_QR.subir} alt="" className="size-6" />
           <span className="text-[14px] font-semibold leading-4 text-hc-blue-600">

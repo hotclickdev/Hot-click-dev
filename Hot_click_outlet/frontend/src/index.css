@@ -27,6 +27,13 @@
   --color-hc-danger: var(--hc-danger);
   --color-hc-warning: var(--hc-warning);
   --color-hc-warning-bg: var(--hc-warning-bg);
+  /* Alias de tokens que ya existían (P13): mismo valor, sin colores nuevos. */
+  --color-hc-surface-3: var(--hc-surface-3);
+  --color-hc-text-secondary: var(--hc-text-secondary);
+  --color-hc-danger-bg: var(--hc-danger-bg);
+  --color-hc-glass-bg: var(--hc-glass-bg);
+  --color-hc-focus-ring: var(--hc-focus-ring);
+  --shadow-hc-1: var(--hc-shadow-1);
 
   /* Escala de variables del Figma de compra (n/*, blue/*, red/*): tienda pública, solo modo claro. */
   --color-hc-n-0: var(--hc-n-0);

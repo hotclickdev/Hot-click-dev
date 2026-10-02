@@ -93,13 +93,13 @@ export function CampoCodigo({
             id={idAviso}
             role="alert"
             {...ANIMACION}
-            className="flex w-full items-start gap-2 rounded-[10px] bg-[var(--hc-danger-bg)] p-3"
+            className="flex w-full items-start gap-2 rounded-[10px] bg-hc-danger-bg p-3"
           >
             <IconoFigma src={ICONOS_COMPRADOR.codigoError} size={16} className="text-hc-danger" />
             <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
               <p className="text-[13px] font-semibold text-hc-red-500">{invalido.titulo}</p>
               {invalido.ayuda && (
-                <p className="text-[12px] leading-4 text-[var(--hc-text-secondary)]">{invalido.ayuda}</p>
+                <p className="text-[12px] leading-4 text-hc-text-secondary">{invalido.ayuda}</p>
               )}
             </div>
           </motion.div>
@@ -133,7 +133,7 @@ export function TituloValido({ texto }: { texto: string }) {
 export function LineaCodigo({ etiqueta, valor, rebaja = false }: { etiqueta: string; valor: string; rebaja?: boolean }) {
   return (
     <div className="flex w-full items-center justify-between gap-2 text-[13px]">
-      <span className="text-[var(--hc-text-secondary)]">{etiqueta}</span>
+      <span className="text-hc-text-secondary">{etiqueta}</span>
       <span className={`shrink-0 font-medium ${rebaja ? 'text-hc-success' : 'text-hc-text'}`}>{valor}</span>
     </div>
   )

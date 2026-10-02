@@ -49,24 +49,22 @@ export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <div className="absolute inset-0 rounded-full animate-ping opacity-20"
-            style={{ background: 'var(--hc-accent)' }} />
+          <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-hc-accent" />
         </div>
 
         {/* Texto principal */}
         <div>
-          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--hc-text)' }}>
+          <h2 className="text-xl font-bold mb-1 text-hc-text">
             ¡Gracias por tu compra!
           </h2>
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
+          <p className="text-sm text-hc-muted">
             {mensajeCargaPago(estado, stripeApproved)}
           </p>
         </div>
 
         {/* Barra de progreso */}
         <div className="w-full">
-          <div className="w-full h-2 rounded-full overflow-hidden"
-            style={{ background: 'var(--hc-surface-2)' }}>
+          <div className="w-full h-2 rounded-full overflow-hidden bg-hc-surface-2">
             <motion.div
               className="h-full rounded-full"
               style={{ background: 'linear-gradient(90deg, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 70%, var(--hc-blue-300)))' }}
@@ -74,14 +72,13 @@ export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps
               transition={{ duration: 0.4, ease: 'easeOut' }}
             />
           </div>
-          <p className="text-xs mt-2" style={{ color: 'var(--hc-muted)' }}>
+          <p className="text-xs mt-2 text-hc-muted">
             Esto puede tardar unos segundos…
           </p>
         </div>
 
         {/* Beneficios rotativos */}
-        <div className="w-full rounded-2xl p-4 min-h-[64px] flex items-center justify-center"
-          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+        <div className="w-full rounded-2xl p-4 min-h-[64px] flex items-center justify-center border border-hc-border bg-hc-surface">
           <AnimatePresence mode="wait">
             <motion.div
               key={benefitIdx}
@@ -94,7 +91,7 @@ export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps
               <span style={{ color: 'var(--hc-accent)' }}>
                 <TrustGlyph tipo={benefit.icono} className="w-6 h-6 shrink-0" />
               </span>
-              <span className="text-sm font-medium text-left" style={{ color: 'var(--hc-text)' }}>
+              <span className="text-sm font-medium text-left text-hc-text">
                 {benefit.text}
               </span>
             </motion.div>

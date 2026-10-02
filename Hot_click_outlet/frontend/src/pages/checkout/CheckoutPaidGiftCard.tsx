@@ -22,13 +22,13 @@ export default function CheckoutPaidGiftCard({ pagoData }: CheckoutPaidGiftCardP
           </svg>
         </div>
         <div>
-          <p className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>¡Pedido confirmado!</p>
-          <p className="text-sm mt-2" style={{ color: 'var(--hc-muted)' }}>Tu pedido fue pagado en su totalidad con la gift card.</p>
+          <p className="text-2xl font-bold text-hc-text">¡Pedido confirmado!</p>
+          <p className="text-sm mt-2 text-hc-muted">Tu pedido fue pagado en su totalidad con la gift card.</p>
         </div>
         {pagoData?.numeroPedido && (
-          <div className="rounded-2xl p-5 w-full" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Número de pedido</p>
-            <p className="text-xl font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>{pagoData.numeroPedido}</p>
+          <div className="rounded-2xl p-5 w-full border border-hc-border bg-hc-surface">
+            <p className="text-xs text-hc-muted">Número de pedido</p>
+            <p className="text-xl font-bold mt-1 text-hc-accent">{pagoData.numeroPedido}</p>
           </div>
         )}
         <Link to={hrefPedidosCheckout(skinVisitante)} className="hc-btn hc-btn-primary min-h-11">

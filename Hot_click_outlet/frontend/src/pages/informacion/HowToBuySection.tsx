@@ -11,8 +11,8 @@ export default function HowToBuySection() {
   const STEPS = [
     { n: '01', title: t('informacion.step1Title'), desc: t('informacion.step1Desc'), icon: <SearchIcon />, color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
     { n: '02', title: t('informacion.step2Title'), desc: t('informacion.step2Desc'), icon: <EyeIcon />, color: 'text-[var(--hc-blue-400)]', bg: 'bg-[var(--hc-blue-500)]/10', border: 'border-[var(--hc-blue-500)]/20' },
-    { n: '03', title: t('informacion.step3Title'), desc: t('informacion.step3Desc'), icon: <CartIcon />, color: 'text-[var(--hc-primary)]', bg: 'bg-[var(--hc-primary)]/10', border: 'border-[var(--hc-primary)]/20' },
-    { n: '04', title: t('informacion.step4Title'), desc: t('informacion.step4Desc'), icon: <PayIcon />, color: 'text-[var(--hc-primary)]', bg: 'bg-[var(--hc-primary)]/10', border: 'border-[var(--hc-primary)]/20' },
+    { n: '03', title: t('informacion.step3Title'), desc: t('informacion.step3Desc'), icon: <CartIcon />, color: 'text-hc-primary', bg: 'bg-hc-primary/10', border: 'border-hc-primary/20' },
+    { n: '04', title: t('informacion.step4Title'), desc: t('informacion.step4Desc'), icon: <PayIcon />, color: 'text-hc-primary', bg: 'bg-hc-primary/10', border: 'border-hc-primary/20' },
     { n: '05', title: t('informacion.step5Title'), desc: t('informacion.step5Desc'), icon: <CheckIcon />, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
     { n: '06', title: t('informacion.step6Title'), desc: t('informacion.step6Desc'), icon: <TruckIcon />, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
   ]

@@ -144,7 +144,7 @@ function InfoProducto({
       )}
       <h1 className="text-2xl font-bold text-[var(--t-text)] leading-tight">{producto.nombre}</h1>
       <PrecioProducto producto={producto} />
-      <p className={`text-sm font-medium ${stockDisponible > 0 ? 'text-[var(--hc-success)]' : 'text-[var(--hc-danger)]'}`}>
+      <p className={`text-sm font-medium ${stockDisponible > 0 ? 'text-hc-success' : 'text-hc-danger'}`}>
         {stockDisponible > 0 ? `${stockDisponible} disponibles` : 'Sin stock'}
       </p>
       {producto.descripcion && (
@@ -183,7 +183,7 @@ function PrecioProducto({ producto }: { producto: Producto }) {
         <span className="text-3xl font-bold" style={{ color: 'var(--t-primary)' }}>{formatPrice(producto.precioOferta)}</span>
         <span className="text-lg text-[var(--t-muted)] line-through">{formatPrice(producto.precio)}</span>
         {producto.porcentajeDescuento && (
-          <span className="text-sm font-semibold text-[var(--hc-success)] bg-[var(--hc-success-bg)] px-2 py-0.5 rounded-full">
+          <span className="text-sm font-semibold text-hc-success bg-hc-success-bg px-2 py-0.5 rounded-full">
             -{producto.porcentajeDescuento}%
           </span>
         )}

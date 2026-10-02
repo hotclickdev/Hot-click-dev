@@ -14,8 +14,7 @@ export default function ExpressCheckout({ onWhatsApp }: ExpressCheckoutProps) {
     <button
       type="button"
       onClick={onWhatsApp}
-      className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium"
-      style={{ color: 'var(--hc-muted)' }}
+      className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium text-hc-muted"
     >
       <WhatsAppIcon />
       {t('cart.orderWhatsapp')}

@@ -24,7 +24,7 @@ export default function PosPagoCta({ monto, onClick, cargando, disabled, etiquet
         type="button"
         disabled={disabled || cargando}
         onClick={onClick}
-        className="hc-btn-primary flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]"
+        className="hc-btn-primary flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-focus-ring"
       >
         {icono && !cargando ? <img src={icono} alt="" className="size-[18px] shrink-0" /> : null}
         {cargando ? t('pos.pago.procesando') : (etiqueta ?? t('pos.pago.pagar', { monto: formatMiles(monto) }))}

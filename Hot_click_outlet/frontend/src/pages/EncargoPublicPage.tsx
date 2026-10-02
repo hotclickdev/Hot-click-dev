@@ -23,7 +23,7 @@ function Marca({ estado }: { estado: PasoEncargo['estado'] }) {
   }
   if (estado === 'error') {
     return (
-      <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[var(--hc-danger)] text-hc-n-0">
+      <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-hc-danger text-hc-n-0">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </span>
     )

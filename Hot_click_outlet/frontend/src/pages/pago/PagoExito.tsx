@@ -45,7 +45,7 @@ export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoPr
   return (
     <MarcoPago>
       <div className="flex flex-col items-center gap-[10px] px-4 pb-3 pt-7 text-center leading-[normal]">
-        <IconoEstado src={ICONOS_PAGO.exitoCheck} tamano={36} circulo={72} clase="bg-[var(--hc-success-bg)] text-hc-success" />
+        <IconoEstado src={ICONOS_PAGO.exitoCheck} tamano={36} circulo={72} clase="bg-hc-success-bg text-hc-success" />
         <h1 className="font-display text-[19px] font-bold leading-[normal] tracking-normal text-hc-n-900">
           {nombre ? t('payment.exito.titulo', { nombre }) : t('payment.exito.tituloSinNombre')}
         </h1>

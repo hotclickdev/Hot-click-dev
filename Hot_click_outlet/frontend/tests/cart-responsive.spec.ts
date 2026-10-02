@@ -56,6 +56,57 @@ test('carrito a 1440 (P12): el encabezado del paquete usa n/50 (38:1359) y el he
   await sinDesborde(page)
 })
 
+const AGREGAR_CUPON = 'Agregar cupón'
+
+for (const ancho of [390, 1440]) {
+  test(`cupón inválido a ${ancho} (P13): el aviso usa el alias bg-hc-danger-bg con el color de --hc-danger-bg`, async ({ page }) => {
+    await preparar(page)
+    await page.route('**/api/cupones/validar**', (route) =>
+      route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ message: 'Cupón vencido' }) }))
+    await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 })
+    await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
+    // En escritorio el campo vive en el resumen, detrás de "Agregar cupón" (ResumenCarrito).
+    if (ancho === 1440) await page.getByRole('button', { name: AGREGAR_CUPON }).click()
+    const campo = page.getByRole('textbox', { name: 'Código de cupón' }).locator('visible=true')
+    await campo.fill('VENCIDO')
+    await campo.press('Enter')
+    const aviso = page.getByRole('alert').filter({ hasText: 'Cupón vencido' }).locator('visible=true')
+    await expect(aviso).toHaveCSS('background-color', await colorDeToken(page, '--hc-danger-bg', 'backgroundColor'))
+    await sinDesborde(page)
+  })
+}
+
+test('alias de P13: cada clase resuelve al mismo valor que su variable', async ({ page }) => {
+  await preparar(page)
+  await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
+  const valores = await page.evaluate(() => {
+    const medir = (clase: string, estilo: string) => {
+      const a = document.createElement('div'); a.className = clase
+      const b = document.createElement('div'); b.setAttribute('style', estilo)
+      document.body.append(a, b)
+      const [ca, cb] = [getComputedStyle(a), getComputedStyle(b)]
+      const r = [ca.backgroundColor, cb.backgroundColor, ca.color, cb.color, ca.boxShadow, cb.boxShadow, ca.outlineColor, cb.outlineColor]
+      a.remove(); b.remove()
+      return r
+    }
+    return [
+      medir('bg-hc-danger-bg', 'background-color: var(--hc-danger-bg)'),
+      medir('text-hc-text-secondary', 'color: var(--hc-text-secondary)'),
+      medir('shadow-hc-1', 'box-shadow: var(--hc-shadow-1)'),
+      medir('outline-hc-focus-ring', 'outline-color: var(--hc-focus-ring)'),
+    ]
+  })
+  for (const [bgA, bgB, colA, colB, shA, shB, olA, olB] of valores) {
+    expect(bgA).toBe(bgB)
+    expect(colA).toBe(colB)
+    // La utilidad de sombra antepone las capas de anillo de Tailwind (transparentes); la última es el token.
+    expect(shA.endsWith(shB)).toBe(true)
+    expect(olA).toBe(olB)
+  }
+  expect(valores[0][0]).not.toBe('rgba(0, 0, 0, 0)')
+  expect(valores[2][4]).not.toBe('none')
+})
+
 test('recuperar carrito a 390: tienda y "quedan N" con la forma de GET /cart/abandoned/recover (P11, 29:2036)', async ({ page }) => {
   await preparar(page)
   await page.route('**/api/cart/abandoned/recover/tok-p11', async (route) => {

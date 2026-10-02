@@ -4,7 +4,7 @@ import { fmt } from './selfCheckoutFormat'
 import type { CarritoSelfCheckout, FormSelfCheckout, SetFormSelfCheckout } from './selfCheckoutTypes'
 
 const CAMPO =
-  'w-full rounded-[12px] border border-[var(--hc-n-200)] bg-[var(--hc-n-0)] px-4 py-3 text-[14px] text-[var(--hc-n-900)] outline-none placeholder:text-[var(--hc-n-500)] focus:border-[var(--hc-blue-600)]'
+  'w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-3 text-[14px] text-hc-n-900 outline-none placeholder:text-hc-n-500 focus:border-hc-blue-600'
 
 /**
  * Confirmación del pedido antes de enviarlo (nombre, teléfono y notas son
@@ -37,27 +37,27 @@ export default function SelfCheckoutFormulario({
       <button
         type="button"
         onClick={onVolver}
-        className="flex items-center gap-2 self-start text-[14px] text-[var(--hc-n-600)]"
+        className="flex items-center gap-2 self-start text-[14px] text-hc-n-600"
       >
         <TextoFlecha dir="atras">{t('pos.mesa.volver')}</TextoFlecha>
       </button>
 
-      <section className="flex flex-col gap-2 rounded-[16px] border border-[var(--hc-n-200)] bg-[var(--hc-n-0)] p-4">
-        <h2 className="font-sans text-[14px] font-semibold leading-4 tracking-normal text-[var(--hc-n-900)]">
+      <section className="flex flex-col gap-2 rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4">
+        <h2 className="font-sans text-[14px] font-semibold leading-4 tracking-normal text-hc-n-900">
           {t('pos.mesa.tuPedido')}
         </h2>
         <ul className="flex flex-col gap-2">
           {Object.values(carrito).map(({ producto, cantidad }) => (
             <li key={String(producto.id)} className="flex items-center justify-between gap-3 text-[14px]">
-              <span className="min-w-0 truncate text-[var(--hc-n-600)]">
+              <span className="min-w-0 truncate text-hc-n-600">
                 {cantidad} × {producto.nombre}
               </span>
-              <span className="shrink-0 text-[var(--hc-n-900)]">{fmt((producto.precio ?? 0) * cantidad)}</span>
+              <span className="shrink-0 text-hc-n-900">{fmt((producto.precio ?? 0) * cantidad)}</span>
             </li>
           ))}
         </ul>
-        <div className="h-px bg-[var(--hc-n-200)]" />
-        <div className="flex items-center justify-between text-[var(--hc-n-900)]">
+        <div className="h-px bg-hc-n-200" />
+        <div className="flex items-center justify-between text-hc-n-900">
           <span className="text-[15px] font-semibold">{t('pos.mesa.total')}</span>
           <span className="font-display text-[18px] font-bold">{fmt(totalPrecio)}</span>
         </div>
@@ -89,7 +89,7 @@ export default function SelfCheckoutFormulario({
         />
       </div>
 
-      {error ? <p className="text-[13px] text-[var(--hc-red-600)]">{error}</p> : null}
+      {error ? <p className="text-[13px] text-hc-red-600">{error}</p> : null}
 
       <button
         type="button"

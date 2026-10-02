@@ -77,7 +77,7 @@ export default function SmartField({
         )}
         {!error && helpText && (
           <motion.p key="help" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            className="text-xs text-hc-muted">
             {helpText}
           </motion.p>
         )}

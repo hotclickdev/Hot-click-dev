@@ -59,7 +59,7 @@ export default function POSPagoPage() {
   if (vista === 'cargando') {
     return (
       <QrPagina>
-        <p className="m-auto animate-pulse text-sm text-[var(--hc-n-500)]" role="status">
+        <p className="m-auto animate-pulse text-sm text-hc-n-500" role="status">
           {t('pos.pago.cargando')}
         </p>
       </QrPagina>
@@ -126,7 +126,7 @@ export default function POSPagoPage() {
       {esTarjeta && !modoEmbed ? (
         <div className="mt-auto">
           {mensajeError === 'pago_fallido' ? (
-            <p className="px-4 pb-3 text-center text-[13px] text-[var(--hc-red-600)]">
+            <p className="px-4 pb-3 text-center text-[13px] text-hc-red-600">
               {t('pos.pago.errorPagoDesc')}
             </p>
           ) : null}
@@ -137,11 +137,11 @@ export default function POSPagoPage() {
             avisoKey="pos.pago.hostedAviso"
           />
           {mensajeError === 'pago_fallido' ? (
-            <div className="bg-[var(--hc-n-0)] px-4 pb-6">
+            <div className="bg-hc-n-0 px-4 pb-6">
               <button
                 type="button"
                 onClick={() => setReporteAbierto(true)}
-                className="min-h-[46px] w-full rounded-[12px] border border-[var(--hc-n-200)] bg-[var(--hc-n-0)] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-[var(--hc-n-900)]"
+                className="min-h-[46px] w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-hc-n-900"
               >
                 {t('pos.pago.reportarError')}
               </button>

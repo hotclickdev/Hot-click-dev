@@ -202,7 +202,7 @@ export default function FormularioBusqueda({
         )}
 
         {error && (
-          <p role="alert" className="rounded-[12px] bg-[var(--hc-danger-bg)] px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
+          <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
         )}
       </div>
 

@@ -134,3 +134,25 @@ Notas:
 | `stock: 99` | **No se cambió.** `RecuperarCarritoPage` agrega con `stock: 99` aunque desde P11 el backend manda el stock real; también lo usan los asistentes (`useCartAssistant`, `useProductsAssistant`, `aiChatHelpers`, `useAiChat`) y el tope por defecto de `cartStore` y `MiniCartItems`. Usar el stock real cambiaría cuánto se puede agregar (y qué pasa con stock 0): decisión de producto. | — |
 
 Verificación: `tsc` (app y e2e) limpio; ESLint de los archivos tocados limpio; Vitest 34 de 34 (`features`, `carrito`, `flotantes`); `mvn -o test` de los 7 tests de correo (26 casos) pasan; Playwright 74 de 74 (`qr-mesa-pago`, `cart-responsive`, `shell-global`, `store-perfil`, `bottom-nav`, `pos-pago-express`, `tienda-theme`, `checkout-responsive`, `acc-cuenta`), con un caso nuevo a 390 (QR) y uno a 1440 (carrito).
+
+## P13 — componentes compartidos (2-oct-2026)
+
+**Alias nuevos** (`@theme` de `index.css`, solo `var()` de tokens existentes): `--color-hc-surface-3`, `--color-hc-text-secondary`, `--color-hc-danger-bg`, `--color-hc-glass-bg`, `--color-hc-focus-ring` y `--shadow-hc-1`. `surface-3` y `glass-bg` quedan disponibles: hoy nadie los usa como clase.
+
+**Migrado** (sin rediseño; mismo color):
+- 83 clases `*-[var(--hc-*)]` en 31 archivos del comprador pasan al alias (`bg-hc-danger-bg`, `text-hc-text-secondary`, `outline-hc-focus-ring`, `shadow-hc-1`, `text-hc-n-900`...). Incluye `CodigoDescuento`, `CheckoutSinpePending`, `CodigosNotasCarrito`, `HojaAgregadoAlPedido`, `EstadoVacio`, `features/pos-pago/*`, `POSPagoPage`, `selfCheckout/*`, `pago/*`, servicios, Cuenta, ayuda, información y las páginas de la tienda.
+- 30 estilos en línea simples (`color`, `background`, `background` + borde de 1 px, borde del spinner) en 10 archivos: `CheckoutPaidGiftCard`, `CheckoutEmpty`, `CheckoutLoading`, `CheckoutPayError`, `CheckoutTilopayCard`, `ExpressCheckout`, `SmartField` (ayuda), `TilopayRespuestaPage`, `PagoLoading` y `TilopayCardForm` (textos y marco). Solo donde el elemento no tenía otra clase del mismo tipo.
+
+**Comprobación:** color, fondo, bordes, contorno, sombra y `accent-color` calculados de cada elemento en 19 rutas (carrito, checkout, pago, QR de mesa y de pago, servicios, ayuda, información, cotización, encargo, tienda, blog, favoritos, recuperar carrito, registro de empresa, emprendé) a 390 y 1440: 0 diferencias antes y después; dos líneas base seguidas también dan 0. Spinner de `/pago/tilopay/respuesta`: borde superior transparente y el resto `--hc-accent`, igual que antes. `cart-responsive.spec.ts` suma el aviso de cupón inválido a 390 y 1440 (`bg-hc-danger-bg` = `--hc-danger-bg`) y la igualdad clase/variable de los alias usados.
+
+**No migrado (documentado):**
+
+| Qué | Por qué |
+| --- | --- |
+| `components/ui` (`Badge`, `Spinner`, `ThemeToggle`, `UpgradePrompt`, `PlanLoadError`), paneles, POS y `layouts` | Tailwind declara los alias en `:root` (`--color-hc-x: var(--hc-x)`), así que resuelven el valor raíz. `.hc-sistema-theme`, `.hc-superadmin-theme` y `.hc-seller-theme` redefinen tokens en un contenedor: ahí `bg-hc-surface` y `bg-[var(--hc-surface)]` no dan lo mismo. Los alias que ya se usan dentro de esos temas tienen el mismo efecto. Pasar a `@theme inline` lo corregiría, pero cambia colores de los paneles: **REQUIERE_DECISION**. |
+| `HowToBuySection`: `blue-400`, `blue-500`; `primary-hover`, `link`, `shadow-2` | No tienen alias y no estaban en la lista de P13. |
+| `CheckoutPaidGiftCard`: círculo `rgba(34,197,94,0.12)` / `0.25`; `TilopayCardForm`: aviso `#f59e0b` / `#fbbf24`; `TiendaWhatsAppFab`: `#25D366` | Colores sin token: no se inventa uno. |
+| `TilopayCardForm` (campos con borde de 1,5 px), `SmartField` (colores calculados), `PagoLoading` (`color-mix` y degradado), `TiendaProductoCard` (color según `agregado`) | No son un alias directo; la regla global `!important` de `input`/`select` ya decide el color de los campos. |
+| Unificar `TiendaProductoCard` y `ProductCard` | Misma geometría (`5:23`), pero otro comportamiento: colores del vendedor (`--t-*`), enlace a `/tienda/:slug/producto/:id`, suma al pedido aislado de la tienda, estado `agregado` y productos a cotizar que abren la ficha. Unificarlas no deja el comportamiento igual. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de los 42 archivos tocados sin errores nuevos (`TiendaProductoPage` conserva su `set-state-in-effect` de `base`); Vitest 323 de 323 (se actualizó la clase esperada en `codigoDescuento.test.ts`); Playwright 86 de 87 en `cart-responsive`, `qr-mesa-pago`, `pos-pago-express`, `checkout-responsive`, `checkout-cta`, `store-perfil`, `tienda-checkout`, `acc-cuenta`, `srv-servicios` y `descubri-pago`. El que falla es `tienda-checkout:77`, que ya fallaba en `base` (ver la verificación de SHELL arriba).

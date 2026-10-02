@@ -35,7 +35,7 @@ const TONOS = {
   azul: 'bg-hc-blue-50 text-hc-blue-600',
   verde: 'bg-hc-green-50 text-hc-green-600',
   ambar: 'bg-hc-warning-bg text-hc-warning',
-  rojo: 'bg-[var(--hc-red-50)] text-hc-red-500',
+  rojo: 'bg-hc-red-50 text-hc-red-500',
 } as const
 
 type Opcion = { to: string; titulo: string; detalle: string; icono: ReactNode; tono: keyof typeof TONOS }
@@ -56,7 +56,7 @@ function TarjetaOpcion({ opcion }: { opcion: Opcion }) {
           <span className="text-[12px] leading-4 text-hc-n-500">{opcion.detalle}</span>
         </span>
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth={2}
-          strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--hc-n-400)]" aria-hidden="true">
+          strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-hc-n-400" aria-hidden="true">
           <path d="M6.75 13.5 11.25 9 6.75 4.5" />
         </svg>
       </Link>

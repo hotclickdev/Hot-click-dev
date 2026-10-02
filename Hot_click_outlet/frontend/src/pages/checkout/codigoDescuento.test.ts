@@ -52,7 +52,7 @@ describe('código de descuento · presentación (Figma 55:2284 / 55:2220)', () =
     const html = campo('invalid')
     expect(html).toContain('border-hc-red-500')
     expect(html).toContain('role="alert"')
-    expect(html).toContain('bg-[var(--hc-danger-bg)]')
+    expect(html).toContain('bg-hc-danger-bg')
     expect(html).toContain('Código inválido, vencido o sin saldo')
     expect(html).toContain('Revisá que esté bien escrito.')
     expect(html).toContain('>Aplicar<')

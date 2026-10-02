@@ -95,7 +95,7 @@ function LineaPedido({
               <PlusIcon className="h-3.5 w-3.5 mx-auto" />
             </button>
           </div>
-          <button type="button" onClick={() => onQuitar(producto.id as Id)} className="text-[var(--t-muted)] hover:text-[var(--hc-danger)] ml-auto min-h-[44px] min-w-[44px]" aria-label="Eliminar">
+          <button type="button" onClick={() => onQuitar(producto.id as Id)} className="text-[var(--t-muted)] hover:text-hc-danger ml-auto min-h-[44px] min-w-[44px]" aria-label="Eliminar">
             <TrashIcon className="h-4 w-4 mx-auto" />
           </button>
         </div>

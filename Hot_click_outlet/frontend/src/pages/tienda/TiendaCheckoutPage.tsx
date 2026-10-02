@@ -132,7 +132,7 @@ export default function TiendaCheckoutPage() {
           </div>
         </div>
         {error && (
-          <div className="text-[var(--hc-danger)] text-sm bg-[var(--hc-danger-bg)] border border-[var(--hc-danger)]/20 rounded-lg px-4 py-3">{error}</div>
+          <div className="text-hc-danger text-sm bg-hc-danger-bg border border-hc-danger/20 rounded-lg px-4 py-3">{error}</div>
         )}
         <button type="submit" disabled={enviando} className="w-full py-4 min-h-[44px] rounded-xl text-white font-bold text-base disabled:opacity-60" style={{ backgroundColor: 'var(--t-primary)' }}>
           {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}

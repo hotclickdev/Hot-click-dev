@@ -181,7 +181,7 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
           </button>
           {sinpeImagenErr && <p role="alert" className="text-[12px] leading-4 text-hc-danger">{sinpeImagenErr}</p>}
           {sinpeImagen && <img src={URL.createObjectURL(sinpeImagen)} alt={t('payment.sinpe.vistaPrevia')} className="max-h-48 w-full rounded-[10px] border border-hc-n-200 bg-hc-n-0 object-contain" />}
-          {sinpeUploadError && <p role="alert" className="rounded-[8px] bg-[var(--hc-danger-bg)] px-3 py-2 text-[12px] leading-4 text-hc-danger">{sinpeUploadError}</p>}
+          {sinpeUploadError && <p role="alert" className="rounded-[8px] bg-hc-danger-bg px-3 py-2 text-[12px] leading-4 text-hc-danger">{sinpeUploadError}</p>}
           <BotonPago onClick={onSubirComprobante} variante="primario" disabled={sinpeUploadEstado === 'uploading' || !sinpeImagen}>
             {sinpeUploadEstado === 'uploading' ? t('payment.sinpe.subiendo') : t('payment.sinpe.enviar')}
           </BotonPago>
