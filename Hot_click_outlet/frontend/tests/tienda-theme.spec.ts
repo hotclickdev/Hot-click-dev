@@ -156,7 +156,7 @@ test('chrome de tienda: HotClick no se recorta y el footer no lo esconde', () =>
   const anfitrion = readFileSync(join(raiz, '../src/pages/tienda/TiendaAnfitrion.tsx'), 'utf8')
   const footer = readFileSync(join(raiz, '../src/pages/tienda/TiendaFooter.tsx'), 'utf8')
   expect(anfitrion).toContain('shrink-0 whitespace-nowrap')
-  expect(anfitrion).toContain(' en HotClick')
+  expect(anfitrion).toContain('&nbsp;en HotClick')
   expect(footer).toContain('{footerTexto ? <p>{footerTexto}</p> : null}')
   expect(footer).toContain('tienda en')
   expect(footer).toContain('HotClick')

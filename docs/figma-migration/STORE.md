@@ -44,6 +44,14 @@ Posiciones medidas del perfil móvil (Figma contra app): portada 150; encabezado
 - **Directorio, escritorio:** sin frame; es la misma columna centrada de 720 px.
 - **Nota de ejemplo** ("Zonas de ejemplo: la ciudad sale de la bodega del negocio.") es una anotación y no se renderiza.
 
+## Reverificación contra Figma (1-oct-2026)
+
+Se recapturaron las 4 pantallas con `tests/store-capturas.spec.ts` (solo corre con `STORE_SHOTS=<carpeta>`; perfil móvil y de escritorio, tienda con su color y directorio) y se compararon lado a lado con los frames. La composición coincide: portada, encabezado, datos, acciones, buscador, chips, grilla de tarjetas de 167x280 con el botón "+", "Cómo comprarle" y el directorio (barra, descripción y buscador). Lo que difiere es de datos de ejemplo, backend o decisiones ya documentadas (barra inferior y header del perfil de escritorio, directorio sin ciudad, categorías ni fotos, anotaciones de diseño sin renderizar). Se conservan sin cambios la búsqueda con Enter, el botón "+" y el pedido aislado.
+
+Un defecto real corregido: `TiendaAnfitrion` pintaba "Tienda de Casa Luna 506en HotClick" en el header de la tienda (escritorio): el espacio inicial de un ítem flex se colapsa. Ahora usa `&nbsp;`; `tienda-theme.spec.ts:159` (que lee el código fuente) se actualizó a la nueva cadena.
+
+Los cuatro frames conservan su veredicto (4 PARTIAL).
+
 ## Funcionalidad preservada
 
 - Información de la tienda, tema por vendedor, SEO y JSON-LD (`TiendaLayout` sin cambios salvo ocultar el header en el perfil móvil), pedido aislado por tienda (`tiendaStore`, no toca `cartStore`), búsqueda y filtro por categoría contra `/api/tienda/:slug/productos` (`q`, `categoriaId`), paginación, estados de catálogo nuevo, búsqueda sin resultados, error con reintento y esqueleto, WhatsApp del vendedor con mensaje, Instagram, "Personalizar" para productos cotizables, y subrutas de producto, carrito y checkout intactas.
