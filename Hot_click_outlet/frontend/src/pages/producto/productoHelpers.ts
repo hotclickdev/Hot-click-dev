@@ -221,3 +221,14 @@ export function opcionesDeTalla(product: Producto, variantes: VarianteProducto[]
   }
   return opciones
 }
+
+/**
+ * La cabecera compacta (44:1775, 44:1849, 44:1917) oculta la línea de stock porque la ficha con
+ * talla avisa el stock bajo dentro del selector de talla (44:1840). Sin talla (por ejemplo, solo
+ * color) ese aviso no existe: la cabecera conserva "Quedan N" de 28:839 para no perder la escasez.
+ */
+export function avisoStockBajoSinTalla(product: Producto, variantes: VarianteProducto[]): boolean {
+  if (esProductoCotizable(product) || product.esPersonalizado === true || estaAgotado(product)) return false
+  if (Number(product.stock) > STOCK_BAJO_MAX) return false
+  return opcionesDeTalla(product, variantes).length === 0
+}

@@ -56,6 +56,33 @@ Causa de las diferencias de alto en Sora: Figma usa un interlineado de 1,265 y e
 12. Estados sin frame (hover, enfocado, favorito activo): favorito activo se pinta en rojo; stock bajo (≤5) usa color de advertencia; oferta muestra el precio de lista tachado.
 13. Tablet: no hay frame; entre 390 y 1023 el diseño móvil se estira, desde 1024 usa el de desktop con la columna de compra de al menos 360 px.
 
+## P02 · implementación de PRODUCTO (2-oct-2026)
+
+Bloque de implementación sobre `feat/figma/base`. No hubo acceso directo a Figma (sin token ni MCP utilizable desde la terminal). Las referencias son las medidas de este documento, de `PROD_DECISIONES.md` y de `B13-stepper-variantes.md`.
+
+### Remedición (Playwright, Chrome, API simulada, 390x844 y 1440x900)
+
+| Frame | Medido en P02 | Referencia |
+| --- | --- | --- |
+| `28:839` | título 442, precio 480, alto 1522, barra fija y=761 de 83, botón 267x46 | igual |
+| `29:2072` | título 210, precio 264, stock 323, botón «Agregar al pedido» 339x49 en y≈395 | igual |
+| `44:1775` (con `grupoVarianteId`) | título 376, «Color» 479, «Talla» 597, chips 623 | igual |
+| `44:1849` (título de dos líneas) | etiqueta 376, título 401, vendedor 459 | igual |
+| `44:1917` | etiqueta 376, tarjetas de «Parecidos disponibles» en 740 | igual a lo medido por PROD (Figma 754: anotación no pintada) |
+
+En las 8 vistas, `scrollWidth` es igual a `clientWidth` y no hay errores de consola. En móvil no hay botones flotantes encima de la barra de compra. En escritorio se ve el WhatsApp global en (1368, 828), regla de SYS.
+
+### Corregido
+
+- **«Quedan N» sin selector de talla** (punto 5 de «Diferencias reales» en `PROD_DECISIONES.md`). La cabecera compacta oculta la línea de stock porque en `44:1775` el aviso vive en el selector de talla. Un producto con color y sin talla (por ejemplo, stock 3) no mostraba la escasez en ningún lado. Ahora `avisoStockBajoSinTalla` (`productoHelpers.ts`) mantiene en la cabecera la línea de `28:839` solo si no hay selector de talla. No aplica a personalizados, cotizables ni agotados. Los frames de estado no cambian de posición.
+- Pruebas: 3 casos unitarios en `productoFicha.test.ts` y `tests/prod-estados.spec.ts` con 10 casos: cuatro estados a 390 y 1440, aviso en el selector de talla y aviso en la cabecera con solo color.
+
+### Sigue PARTIAL
+
+- `44:1775`: D03 (stepper en variantes). B13 y B19 (lista D) la dejan como DECISIÓN HUMANA sin respuesta. Falta elegir entre la barra de `44:1844` sin stepper y la de `28:839` con stepper. El código conserva el stepper.
+- `44:1849`: no existe el dato «Elaboración» (`44:1876`) en el backend. El panel queda 27 px más arriba.
+- `44:1917`: la cubierta opaca ya está. El único corrimiento (14 px) es la anotación «NUEVO · por programar», que no se pinta por la regla del inventario. B19 la deja en la lista E, sin promoción. Para promoverla hay que remedir el frame completo con acceso a Figma.
+- Guía de tallas (`44:1813`): sin contenido ni ruta. No se inventó.
 ## Consumidores
 
 - `ProductDetailPage` es la única que monta estos componentes. Se eliminaron `AddToCartButton`, `HeartDetailIcon`, `ProductBuyActions`, `ProductLowStockAlert`, `ProductPriceRow`, `QuantitySelector`, `RecommendationsRow`, `StickyCartBar`, `TitleAndBadges` y `TrustBadges` (sin otros consumidores).

@@ -17,6 +17,8 @@ type ProductoCabeceraProps = {
    * vendedor, precio de 24 px, sin "IVA incluido" ni línea de stock. Sin esto: frame 28:839.
    */
   compacta: boolean
+  /** En la cabecera compacta, muestra igual "Quedan N" cuando no hay selector de talla que lo avise. */
+  avisoStockCompacta?: boolean
 }
 
 const ETIQUETA = 'inline-flex w-fit items-start rounded-full px-2 py-[3px] text-[11px] font-semibold leading-[13px]'
@@ -56,7 +58,7 @@ function Vendedor({ product, compacta }: { product: Producto; compacta: boolean 
   return <div className={clases}>{contenido}</div>
 }
 
-export default function ProductoCabecera({ product, agotado, compacta }: ProductoCabeceraProps) {
+export default function ProductoCabecera({ product, agotado, compacta, avisoStockCompacta = false }: ProductoCabeceraProps) {
   const { t } = useTranslation()
   const cotizable = esProductoCotizable(product)
   const hechoAPedido = product.esPersonalizado === true
@@ -120,7 +122,7 @@ export default function ProductoCabecera({ product, agotado, compacta }: Product
       {!cotizable && !agotado && (
         <p
           className={`order-4 items-center gap-[6px] text-[13px] font-medium leading-[normal] lg:flex lg:text-[14px] ${
-            compacta ? 'hidden' : 'flex'
+            compacta && !(avisoStockCompacta && stockBajo) ? 'hidden' : 'flex'
           } ${stockBajo ? 'text-hc-warning' : 'text-hc-success'}`}
         >
           <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-current" />

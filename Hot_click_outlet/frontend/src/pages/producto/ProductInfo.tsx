@@ -6,7 +6,7 @@ import TurnstileCampo from '@/components/security/TurnstileCampo'
 import useAuthStore from '@/store/authStore'
 import type { Producto } from '@/types/producto'
 import type { PersonalizacionCarrito } from '@/types/carrito'
-import { esProductoCotizable } from './productoHelpers'
+import { avisoStockBajoSinTalla, esProductoCotizable } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
 import ProductoCabecera from './ProductoCabecera'
 import ColorSwatches from './ColorSwatches'
@@ -87,7 +87,12 @@ export default function ProductInfo({
 
   return (
     <div className="flex min-w-0 flex-col lg:gap-4">
-      <ProductoCabecera product={product} agotado={agotado} compacta={compacta} />
+      <ProductoCabecera
+        product={product}
+        agotado={agotado}
+        compacta={compacta}
+        avisoStockCompacta={avisoStockBajoSinTalla(product, variantes)}
+      />
 
       <ColorSwatches product={product} variantes={variantes} onNavigate={navigate} t={t} />
       <SizeSelector
