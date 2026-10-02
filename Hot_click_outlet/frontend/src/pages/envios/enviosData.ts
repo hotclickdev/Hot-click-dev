@@ -1,3 +1,5 @@
+import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
+
 export type FilaTarifa = {
   id: string
   nombre: string
@@ -12,26 +14,26 @@ export type FilaTarifa = {
   href?: { url: string; ariaLabel: string }
 }
 
-/** Tarifas de la página de envíos. El copy y los montos vienen del contenido existente; no alterar sin avisar al negocio. */
+/** Tarifas de la página de envíos. Los tiempos salen de `config/tiemposEnvio.ts` (D13, provisionales); los montos, del contenido existente. No alterar sin avisar al negocio. */
 export const TARIFAS: FilaTarifa[] = [
   {
     id: 'rapido',
     nombre: 'Envío rápido GAM',
-    tiempo: '30 min – 2 horas',
+    tiempo: TEXTO_TIEMPO_ENVIO.rapido,
     nota: 'pago previo',
     precio: '₡5.000',
   },
   {
     id: 'normal-gam',
     nombre: 'Envío normal GAM',
-    tiempo: '2–4 días hábiles',
+    tiempo: TEXTO_TIEMPO_ENVIO.normalGam,
     nota: 'estimado',
     precio: '~₡4.000',
   },
   {
     id: 'fuera-gam',
     nombre: 'Fuera de la GAM',
-    tiempo: '3–4 días hábiles',
+    tiempo: TEXTO_TIEMPO_ENVIO.fueraGam,
     nota: 'estimado',
     precio: '~₡4.000',
   },
