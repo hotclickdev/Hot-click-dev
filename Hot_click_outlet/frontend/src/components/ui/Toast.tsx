@@ -71,7 +71,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               exit={{ opacity: 0, y: 24, scale: 0.97 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               role={t.type === 'error' ? 'alert' : 'status'}
-              className="pointer-events-auto flex items-start gap-3 px-4 py-3 max-w-sm"
+              className="pointer-events-auto flex items-start gap-3 px-4 py-3 max-w-[min(24rem,calc(100vw-2rem))]"
               style={{
                 background: 'var(--hc-n-900)',
                 color: '#FFFFFF',
@@ -86,7 +86,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               >
                 <TrustGlyph tipo={tipoGlifoToast(t.type)} className="w-3 h-3" />
               </span>
-              <p className="text-sm leading-snug flex-1">{t.message}</p>
+              <p className="text-sm leading-snug flex-1 min-w-0 wrap-anywhere">{t.message}</p>
               {t.accion && (
                 <button type="button"
                   onClick={() => { t.accion?.onClick(); remove(t.id) }}

@@ -156,3 +156,27 @@ Verificación: `tsc` (app y e2e) limpio; ESLint de los archivos tocados limpio; 
 | Unificar `TiendaProductoCard` y `ProductCard` | Misma geometría (`5:23`), pero otro comportamiento: colores del vendedor (`--t-*`), enlace a `/tienda/:slug/producto/:id`, suma al pedido aislado de la tienda, estado `agregado` y productos a cotizar que abren la ficha. Unificarlas no deja el comportamiento igual. |
 
 Verificación: `tsc` (app y e2e) limpio; ESLint de los 42 archivos tocados sin errores nuevos (`TiendaProductoPage` conserva su `set-state-in-effect` de `base`); Vitest 323 de 323 (se actualizó la clase esperada en `codigoDescuento.test.ts`); Playwright 86 de 87 en `cart-responsive`, `qr-mesa-pago`, `pos-pago-express`, `checkout-responsive`, `checkout-cta`, `store-perfil`, `tienda-checkout`, `acc-cuenta`, `srv-servicios` y `descubri-pago`. El que falla es `tienda-checkout:77`, que ya fallaba en `base` (ver la verificación de SHELL arriba).
+
+## P14 — estados globales y casos límite (2-oct-2026)
+
+**Ya en PASS por su frame (no se tocan):** sin resultados `27:804`, pedido vacío `45:1692`, favoritos, pedidos y solicitudes vacíos, 404 `45:2198`, sin conexión `45:2264`, fallo del servidor `45:2322` y recuperar carrito `29:2036`.
+
+**Barrido con la API simulada** (46 rutas del comprador a 390 y 1440): con 500 y con la red cortada no hay errores de página ni desborde horizontal y cada ruta muestra un estado (lista vacía, «Tu pedido está vacío», «No se pudo abrir esta tienda» con Reintentar, etc.). Con 404, los detalles muestran su estado propio: producto, tienda, cotización, encargo, seguimiento, recuperar carrito, blog, QR de mesa y QR de pago.
+
+**Corregido (texto largo sin espacios se recortaba sin salto ni puntos suspensivos):** se añade `wrap-anywhere` (`overflow-wrap: anywhere`; solo parte la palabra si no cabe, el texto normal no cambia):
+- Ficha (`ProductoCabecera`): nombre de la tienda (con `min-w-0`), título y descripción.
+- Pedido: nombre del producto en móvil (`FilaProductoCarrito`), título del paquete (`PaqueteCarritoTarjeta`) y «Sumá otro producto» (`SumaMismaTienda`, que además quedaba debajo del botón Agregar).
+- Filtros del catálogo (`Casilla`).
+- Tienda: nombre, lema y datos del encabezado (`TiendaEncabezadoNegocio`), «Sobre nosotros» (`TiendaHomePage`), filas de «Cómo comprarle» (`TiendaComoComprarle`) y marca, nombre y descripción de `TiendaProductoPage`.
+- Aviso flotante (`components/ui/Toast`): `left-4` + `max-w-sm` medía 400 px en una pantalla de 390; ahora `max-w-[min(24rem,calc(100vw-2rem))]` y el texto con `min-w-0 wrap-anywhere`. Mismo aspecto en escritorio.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Chips con `whitespace-nowrap` (filtros del catálogo, categorías de la tienda) | Están en un carril con desplazamiento horizontal; un nombre muy largo alarga el chip, no la página. |
+| Tarjetas del catálogo y nombre del producto en el pedido de escritorio | `line-clamp-2` y `truncate` del diseño: recortan sin desbordar. |
+| Respuesta 200 con `data: null` | Los interceptores de `api.ts` y `tiendaService` dejan el sobre `{success, data}` y la ficha o la cotización se pintan vacías (₡0); `TiendaProductoPage` quedaría en blanco si el producto llega vacío. El backend responde 404 en esos casos (`NoSuchElementException`), así que no se reproduce; cambiar el interceptor afecta a todos los servicios: **REQUIERE_DECISION**. |
+| Estados sin frame (carga, esqueletos, errores de secciones) | Siguen con los componentes que ya existen (`Spinner`, esqueletos de cada página, `EstadoVacio`, `PantallaFalloServidor`, `PantallaSinConexion`, `NotFoundPage`); no se dibuja nada nuevo. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de los 11 archivos sin errores nuevos (siguen los de `base`: `set-state-in-effect` en `TiendaProductoPage` y `TiendaHomePage`, `only-export-components` en `Toast`); Vitest 70 de 70 en `components/ui`, carrito, tienda, producto y catálogo. Nuevo `estados-globales.spec.ts` (10 casos a 390 y 1440: ficha, pedido y tienda con texto largo, aviso flotante dentro de la pantalla, 500 en ficha y cotización); sin la corrección fallan 6. Playwright 61 de 63 en `estados-globales`, `cart-responsive`, `store-perfil`, `store-capturas`, `prod-estados`, `catalogo-cta`, `catalogo-iconos`, `tienda-no-disponible`, `tienda-pdp-comprar`, `tienda-theme`, `tienda-vacia`, `tienda-checkout` y `home-sin-conexion` (1 omitido). Fallan `tienda-checkout:77` y `catalogo-iconos:67` («Ver más»), que también fallan en `base`.

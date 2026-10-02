@@ -28,9 +28,9 @@ export default function SumaMismaTienda({ producto, negocio, escritorio, onAgreg
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p className={`flex items-center gap-1 font-semibold text-hc-blue-600 ${escritorio ? 'text-[13px] leading-[normal]' : 'text-[12px] leading-4'}`}>
           <IconoFigma src={ICONOS_CHECKOUT.sumarDestello} size={13} />
-          <span className="min-w-0 flex-1">{t('cart.sumarOtro', { negocio })}</span>
+          <span className="min-w-0 flex-1 wrap-anywhere">{t('cart.sumarOtro', { negocio })}</span>
         </p>
-        <p className="text-[12px] leading-[normal] text-hc-n-600">{`${producto.nombre} · ${formatPrice(producto.precio)}`}</p>
+        <p className="text-[12px] leading-[normal] text-hc-n-600 wrap-anywhere">{`${producto.nombre} · ${formatPrice(producto.precio)}`}</p>
       </div>
       <button
         type="button"

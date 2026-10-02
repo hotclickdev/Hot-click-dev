@@ -140,15 +140,15 @@ function InfoProducto({
   return (
     <div className="flex flex-col gap-4">
       {producto.marcaNombre && (
-        <p className="text-sm font-medium uppercase tracking-wide text-[var(--t-muted)]">{producto.marcaNombre}</p>
+        <p className="text-sm font-medium uppercase tracking-wide text-[var(--t-muted)] wrap-anywhere">{producto.marcaNombre}</p>
       )}
-      <h1 className="text-2xl font-bold text-[var(--t-text)] leading-tight">{producto.nombre}</h1>
+      <h1 className="text-2xl font-bold text-[var(--t-text)] leading-tight wrap-anywhere">{producto.nombre}</h1>
       <PrecioProducto producto={producto} />
       <p className={`text-sm font-medium ${stockDisponible > 0 ? 'text-hc-success' : 'text-hc-danger'}`}>
         {stockDisponible > 0 ? `${stockDisponible} disponibles` : 'Sin stock'}
       </p>
       {producto.descripcion && (
-        <p className="text-[var(--t-muted)] text-sm leading-relaxed">{producto.descripcion}</p>
+        <p className="text-[var(--t-muted)] text-sm leading-relaxed wrap-anywhere">{producto.descripcion}</p>
       )}
       {stockDisponible > 0 && (
         <div className="flex items-center gap-2 border border-[var(--t-border)] rounded-lg p-1 w-fit">

@@ -72,7 +72,7 @@ export default function PaqueteCarritoTarjeta({
       <section className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
         <header className="flex items-center gap-2 leading-[normal]">
           <IconoFigma src={ICONOS_CHECKOUT.paqueteTienda} size={18} className="text-hc-n-900" />
-          <h2 className="min-w-0 flex-1 font-sans text-[14px] font-semibold tracking-normal text-hc-n-900">{titulo}</h2>
+          <h2 className="min-w-0 flex-1 font-sans text-[14px] font-semibold tracking-normal text-hc-n-900 wrap-anywhere">{titulo}</h2>
         </header>
         {productos > 1 && <AvisoUnSoloEnvio cantidad={productos} />}
         {filas}

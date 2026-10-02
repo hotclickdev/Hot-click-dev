@@ -106,7 +106,7 @@ export default function TiendaHomePage() {
         {empresa?.descripcion && (
           <section className="flex flex-col gap-2 pb-[6px] pt-[18px] lg:col-start-1 lg:row-start-1 lg:gap-5 lg:pb-0 lg:pt-0">
             <h2 className={TITULO_SECCION}>Sobre nosotros</h2>
-            <p className="text-sm leading-[21px] text-hc-n-600">{empresa.descripcion}</p>
+            <p className="text-sm leading-[21px] text-hc-n-600 wrap-anywhere">{empresa.descripcion}</p>
           </section>
         )}
 

@@ -10,7 +10,7 @@ const CLASE_ACCION_SECUNDARIA = `${CLASE_ACCION} border border-[var(--t-border)]
 
 function Dato({ icono, children }: { icono: string; children: ReactNode }) {
   return (
-    <span className="flex items-center gap-[5px] text-xs leading-[normal] text-hc-n-600 lg:text-[13px]">
+    <span className="flex min-w-0 items-center gap-[5px] text-xs leading-[normal] text-hc-n-600 wrap-anywhere lg:text-[13px]">
       <IconoFigma src={icono} size={14} className="lg:!size-[15px]" />
       {children}
     </span>
@@ -54,9 +54,9 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
         </div>
 
         <div className="flex min-w-0 flex-col gap-[10px] lg:flex-1 lg:gap-2 lg:pt-4">
-          <h1 className="font-display text-[22px] font-bold leading-7 text-hc-n-900 lg:text-[30px] lg:leading-[normal]">{nombre}</h1>
+          <h1 className="font-display text-[22px] font-bold leading-7 text-hc-n-900 wrap-anywhere lg:text-[30px] lg:leading-[normal]">{nombre}</h1>
           {empresa?.tagline && (
-            <p className="text-sm leading-5 text-hc-n-600 lg:text-[15px] lg:leading-[18px]">{empresa.tagline}</p>
+            <p className="text-sm leading-5 text-hc-n-600 wrap-anywhere lg:text-[15px] lg:leading-[18px]">{empresa.tagline}</p>
           )}
           <div className="flex flex-wrap items-center gap-2 lg:gap-4">
             {empresa?.categoriaNegocio && <Dato icono={ICONOS_TIENDA.metaCategoria}>{empresa.categoriaNegocio}</Dato>}

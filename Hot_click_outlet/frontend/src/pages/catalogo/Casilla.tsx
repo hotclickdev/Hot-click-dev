@@ -24,7 +24,7 @@ export default function Casilla({
       >
         {marcada && <IconoFigma src={hoja ? ICONOS_CATALOGO.casillaCheck14 : ICONOS_CATALOGO.casillaCheck} size={hoja ? 14 : 12} />}
       </span>
-      <span className="min-w-0 flex-1 text-[14px] text-hc-n-900">{etiqueta}</span>
+      <span className="min-w-0 flex-1 text-[14px] text-hc-n-900 wrap-anywhere">{etiqueta}</span>
       {cuenta != null && <span className="shrink-0 text-[13px] text-hc-n-500">{cuenta}</span>}
     </label>
   )

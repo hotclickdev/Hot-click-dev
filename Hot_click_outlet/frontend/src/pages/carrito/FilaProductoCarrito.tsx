@@ -94,7 +94,7 @@ export default function FilaProductoCarrito({ item, escritorio, onCantidad, onQu
     <div className="flex items-start gap-3">
       <Foto item={item} tamano="size-[60px]" />
       <div className="flex min-w-0 flex-1 flex-col items-start gap-[6px]">
-        <p className="w-full text-[14px] font-medium leading-[18px] text-hc-n-900">{item.nombre}</p>
+        <p className="w-full text-[14px] font-medium leading-[18px] text-hc-n-900 wrap-anywhere">{item.nombre}</p>
         <p className="font-display text-[15px] font-bold leading-[normal] text-hc-n-900">{formatPrice(subtotalItem(item))}</p>
         <div className="flex items-center gap-3">
           <Cantidad item={item} escritorio={false} onCantidad={onCantidad} />

@@ -45,7 +45,7 @@ function Vendedor({ product, compacta }: { product: Producto; compacta: boolean 
         {inicialesVendedor(nombre)}
       </span>
       {compacta && <IconoFigma src={ICONOS_PRODUCTO.tienda} size={14} className="text-hc-blue-600 lg:hidden" />}
-      <span className="text-[13px] font-semibold leading-[normal] text-hc-blue-600 lg:text-[14px]">{nombre}</span>
+      <span className="min-w-0 text-[13px] font-semibold leading-[normal] text-hc-blue-600 wrap-anywhere lg:text-[14px]">{nombre}</span>
       {!compacta && <IconoFigma src={ICONOS_COMPRADOR.verTodo} size={14} className="text-hc-blue-600 lg:hidden" />}
       {product.empresaSlug && (
         <span className="hidden text-[13px] leading-[normal] text-hc-n-500 lg:inline">· {t('product.verTienda')}</span>
@@ -88,7 +88,7 @@ export default function ProductoCabecera({ product, agotado, compacta, avisoStoc
       <Vendedor product={product} compacta={compacta} />
 
       <h1
-        className={`font-display font-bold tracking-normal text-hc-n-900 [text-wrap:wrap] lg:order-2 lg:text-[32px] lg:leading-[38px] ${
+        className={`font-display font-bold tracking-normal text-hc-n-900 [text-wrap:wrap] wrap-anywhere lg:order-2 lg:text-[32px] lg:leading-[38px] ${
           compacta ? 'order-1 text-[20px] leading-[26px]' : 'order-2 text-[22px] leading-7'
         }`}
       >
@@ -133,7 +133,7 @@ export default function ProductoCabecera({ product, agotado, compacta, avisoStoc
       )}
 
       {product.descripcion && (
-        <p className="order-5 text-[14px] leading-[21px] text-hc-n-600 lg:text-[15px] lg:leading-[23px]">
+        <p className="order-5 text-[14px] leading-[21px] text-hc-n-600 wrap-anywhere lg:text-[15px] lg:leading-[23px]">
           {product.descripcion}
         </p>
       )}
