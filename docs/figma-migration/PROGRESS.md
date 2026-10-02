@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (SYS/SHELL B1; antes A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (SYS/SHELL B2; antes B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -27,7 +27,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
 | SYS/SHELL, pasada A1/A2/A4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). A1: Home muestra `PantallaSinConexion` ante un error de red sin datos. A2: línea base de 66 medidas del chrome contra 12 frames, todas dentro de ±1 px tras 4 correcciones (header del carrito desktop de 83 px con el carrito rojo; corazón del header móvil y desktop). A4: el aviso de cookies bajó de z 9999 a 65 porque tapaba la hoja del cupón. No se tocó B1 a B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
-| SYS/SHELL, B1 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie con `abrirPreferenciasCookies()` y `abrirAccesibilidad()`; se eliminó el botón flotante con el isotipo. Pie desktop sin cambio, pie móvil 71 -> 89 px. No se tocó B2, B3 ni B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
+| SYS/SHELL, B1 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie con `abrirPreferenciasCookies()` y `abrirAccesibilidad()`; se eliminó el botón flotante con el isotipo. Pie desktop sin cambio, pie móvil 71 -> 89 px. No se tocó B3 ni B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
+| SYS/SHELL, B2 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). WhatsApp: 83 px solo con barra inferior; 16 px si no hay barra; Home (318, 705) y desktop (margen 16) intactos. Spacer de 155 px en la raíz móvil para que el pie legal no quede debajo del botón. B3 y B4 sin cambios. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` |
 
 ## Ramas y worktrees
 
@@ -259,7 +260,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 - **Dependencias hacia SRV (ACC):** `ServiciosHotPage` pasó a `ServiciosHotVistas` con un `default` que abre `?vista=solicitudes|busqueda|garantia|testimonio`; la pestaña de "mis solicitudes" dentro de Servicios HOT sigue con el diseño anterior.
 - **e2e previos fuera de ACC:** `bottom-nav.spec.ts` (3 pruebas del diseño anterior de la barra inferior) ya fallaba en `base`. ACC actualizó `mis-pedidos`, `wishlist-cta` y `wishlist-placeholder`, que también fallaban.
 - **Dependencias hacia SHELL (SRV):** los inputs móviles se fuerzan a 16 px (Figma pide 14); una regla pinta `header`, `aside` y `footer` con `!important`, así que un bloque con fondo propio no puede usar esas etiquetas; `BarraInferior` no marca "Inicio" en `/blog`; faltan los alias `--color-hc-success-bg`, `--color-hc-n-400` y `hc-red-50`.
-- **Dependencias hacia SYS (SRV):** el botón con isotipo (retirado el 2-oct-2026, B1) y el de WhatsApp flotantes (B2 pendiente) tapan el botón de envío del formulario y de la garantía y el total del encargo.
+- **Dependencias hacia SYS (SRV):** el botón con isotipo se retiró el 2-oct-2026 (B1). El WhatsApp en internas sin barra pasó a 16 px del borde (B2) y el formulario puede scrollear el envío por encima; no hay frame de esa posición.
 - **Dependencias hacia backend (SRV):** categoría, productos y autor de las entradas del blog; endpoint para aceptar una cotización; fotos y motivo de la solicitud de garantía; nombre de la tienda, fechas, tiempo de producción, envío y teléfono del vendedor en el encargo; rangos de presupuesto.
 - **Defectos previos corregidos por SRV:** el desenvuelto del interceptor dejaba vacías las listas de garantías, productos por opinar y blog; el artículo del blog usaba una clase sin CSS; `formatMonto` agrupaba miles con espacio duro. Ver `SRV.md`.
 - **e2e previos fuera de SRV:** `ui-sin-emoji.spec.ts` (16 casos) y 3 casos de `envio-*` sobre el Home fallan igual en `base`. SRV actualizó `blog`, `envio-internacional` y `envio-rapido` (`/envios`) y agregó `srv-servicios.spec.ts` (16 casos).

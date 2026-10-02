@@ -118,5 +118,5 @@ Notas:
 
 - La diferencia móvil de 18 px no tiene frame contra el cual corregirla (Figma no dibuja los accesos); queda registrada como consecuencia de B1. La medición `tests/shell-medicion.spec.ts` espera 156 y 89 con ese comentario.
 - En móvil el pie solo se ve en pantallas `raiz`; en `interna`, `marca` y `propia` es solo de escritorio. Allí el acceso a la hoja de accesibilidad depende de la fila de Mi cuenta (ACC), que sigue sin frame.
-- En la captura móvil al final de la página, el botón de WhatsApp (flotante, sin cambios) queda sobre la palabra "Términos" de la primera línea legal. Es el solapamiento de contenido de B2, no se tocó.
+- En la captura móvil al final de la página, el botón de WhatsApp quedaba sobre "Términos". B2 (2-oct-2026) no movió el botón: en las pantallas `raiz` el spacer móvil pasa de 72 a 155 px para que el texto legal quede 16 px arriba. En internas sin barra el `bottom` es 16 px, no 83. Detalle en `SYS.md` ("Pasada B2").
 - Sin desbordes horizontales a 390 ni a 1440.

@@ -9,7 +9,7 @@ Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYF
 | Página no encontrada · móvil | `45:2198` | PASS (móvil) | Barra de marca (`variante="marca"`), mensaje, buscador y accesos planos sin flechas, con los SVG originales. Sin frame desktop |
 | Fallo del servidor · móvil | `45:2322` | PASS (móvil) | Ya existía (PR #93). Corregidos alturas y tracking del Sora; ícono de alerta ahora es el SVG original |
 | Instalar la app · tarjeta | `55:2658` | PASS (móvil) | Ya existía. Corregidos alturas de título, subtítulo, beneficios y botones; la nota "NUEVO · por programar" y el texto del hook no llegan a la UI. Reglas de la nota (2.ª visita, nunca la primera página, 30 días) intactas |
-| Sin conexión · móvil | `45:2264` | PARTIAL | Geometría igual a Figma. Home la muestra ante un error de red sin datos (A1, 2-oct-2026) y la ruta `/sin-conexion` está registrada. Medida con vistos y favoritos sembrados (imágenes sintéticas); fotos reales no verificadas, y los botones flotantes aparecen sobre ella sin estar en el frame (B1/B2) |
+| Sin conexión · móvil | `45:2264` | PARTIAL | Geometría igual a Figma. Home la muestra ante un error de red sin datos (A1, 2-oct-2026) y la ruta `/sin-conexion` está registrada. Medida con vistos y favoritos sembrados (imágenes sintéticas); fotos reales no verificadas. El isotipo flotante se retiró (B1). El WhatsApp sigue a 16 px sobre la barra (B2) y no está en el frame: por eso sigue PARTIAL |
 | Aviso de cookies · móvil | `45:1946` | PASS (móvil) | Tarjeta 366 × 205 en x 12, y 560, botones 163 × 48 y 161 × 46. **Desktop: REQUIRES_DESIGN_REFERENCE** (no hay frame; provisional, ver abajo) |
 | Preferencias de cookies · hoja | `45:2166` | PASS (móvil) | Hoja desde y 90, secciones en 179, 266 y 361, pie en 644; todas iguales a Figma |
 | C · Cupón de bienvenida | `51:2163` | PASS (móvil) | Hoja igual a Figma con el campo de correo de 42 px (decisión del usuario: el frame de 26 px es un frame comprimido, no la referencia final). El paso "cupón enviado" no existe en Figma y se resolvió con el mismo sistema |
@@ -155,3 +155,16 @@ Decisión B1 (tuya): "Preferencias de cookies" e "Idioma y accesibilidad" se abr
 - **Pruebas**: `tests/pie-accesos.spec.ts` (9 casos a 390 y 1440: accesos visibles, cookies abre/cierra/reabre, idioma con `radiogroup`, `aria-checked`, flechas, Esc y foco, sin isotipo, WhatsApp igual, sin desborde, Enter con teclado y foco visible). Se actualizaron `idioma.spec`, `ui-sin-emoji.spec` y `sys-apilado.spec`, que abrían la hoja con el isotipo.
 - **`idioma.spec`**: dos casos (English y Português) siguen fallando, pero en la aserción del enlace "Products/Produtos" del header anterior, después de abrir la hoja y cambiar el idioma. No los causa B1; ya fallaban en `master`.
 - El CSS `.hc-isotipo-placa` de `index.css` quedó sin uso. No se tocó `index.css` en esta pasada.
+
+## Pasada B2 del 2-oct-2026: posición del WhatsApp flotante
+
+No hay un `bottom` nuevo para todas las pantallas. El ancla de Home (`52:2418`, 56 × 56 en x 318, y 705) y el desktop (nota `52:2422`, margen 16 px) no se movieron. Icono, tamaño, `wa.me` y las rutas donde el botón no se monta tampoco.
+
+- **Con barra inferior** (`MainLayout` publica la prop real, no un mapa de rutas): `bottom: 83px` (67 + 16). Así quedan `/`, `/productos`, `/categorias`, el resumen de `/perfil`, el listado de `/mis-pedidos` y `/sin-conexion`.
+- **Sin barra** (`/servicios`, detalle `?pedido=`, `/perfil?vista=seguridad` y el resto de internas): `bottom: 16px`. El offset de 83 px las dejaba 67 px demasiado altas. No hay frame; se reutiliza el margen de la nota de desktop.
+- **Pie móvil** (solo `raiz`): el spacer pasa de 72 a 155 px para que, al final del scroll, «Términos» y los accesos de B1 queden 16 px arriba del botón. Figma no dibuja ese final de página. El botón fijo no se sube, porque eso rompería y 705.
+- **Con barra y sin pie móvil**: spacer de 72 px, como antes.
+- **Sin barra y con el botón visible**: spacer de 88 px para que el envío del formulario pueda quedar por encima. No se agrega si el botón está oculto (carrito, checkout, pago, ficha).
+- **Desktop** (`lg`): sigue `bottom: 16px` y `right: 16px`. En 1440 el © y «Términos» no cruzan el botón.
+- **Sigue PARTIAL** donde el frame no dibuja el botón (`/servicios`, `/sin-conexion`) o Home tiene otras pendientes (fotos, badges). El recuento no cambia: 35 PASS / 55 PARTIAL.
+- **Pruebas**: `flotantesHelpers.test.ts` y `tests/whatsapp-fab-b2.spec.ts`. `pie-accesos.spec.ts` sigue exigiendo (318, 705) y (1368, 828). B3 y B4 no se tocaron.

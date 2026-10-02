@@ -1,10 +1,21 @@
-import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLayoutEffect, type ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import HeaderComprador from '@/components/comprador/header/HeaderComprador'
 import type { DestinoAtras, EncabezadoEscritorio, EncabezadoMovil } from '@/components/comprador/header/tiposHeader'
 import BarraInferior from '@/components/comprador/BarraInferior'
 import FooterComprador from '@/components/comprador/FooterComprador'
+import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
+import { esRutaTienda } from '@/utils/rutaTienda'
+import { publicarBarraInferior } from '@/components/ui/flotantes/barraInferiorStore'
+import {
+  ESPACIO_BAJO_BARRA,
+  ESPACIO_BAJO_PIE_MOVIL,
+  ESPACIO_SIN_BARRA,
+  esFichaProducto,
+  espacioReservadoMovil,
+  whatsappOculto,
+} from '@/components/ui/flotantes/flotantesHelpers'
 import SearchPanel from '@/components/ui/SearchPanel'
 import MiniCartDrawer from '@/components/ui/MiniCartDrawer'
 import ExitIntentModal from '@/components/ui/ExitIntentModal'
@@ -47,12 +58,36 @@ const ENCABEZADO_MOVIL: Record<'raiz' | 'interna' | 'marca' | 'propia', Encabeza
   propia: 'propio',
 }
 
+function claseEspacio(px: number): string {
+  if (px === ESPACIO_BAJO_PIE_MOVIL) return 'h-[155px] lg:hidden'
+  if (px === ESPACIO_SIN_BARRA) return 'h-[88px] lg:hidden'
+  if (px === ESPACIO_BAJO_BARRA) return 'h-[72px] lg:hidden'
+  return 'h-[72px] lg:hidden'
+}
+
+function EspacioFlotante({ px }: { px: number | null }) {
+  if (px == null || px === 0) return null
+  return <div className={claseEspacio(px)} aria-hidden="true" data-espacio={px} />
+}
+
 export default function MainLayout(props: MainLayoutProps) {
   const { children, encabezadoEscritorio = 'completo', pie = true, fondo = 'gris' } = props
   const variante = props.variante ?? 'raiz'
   const barraInferior = props.barraInferior ?? variante !== 'interna'
+  const { pathname } = useLocation()
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const fabVisible = !whatsappOculto(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname)) && !esFichaProducto(pathname)
+  const espacio = espacioReservadoMovil({
+    hayBarra: barraInferior,
+    hayPieMovil: pie && variante === 'raiz',
+    fabVisible,
+  })
+
+  useLayoutEffect(() => {
+    publicarBarraInferior(barraInferior)
+    return () => publicarBarraInferior(false)
+  }, [barraInferior])
 
   return (
     <div className={`hc-figma-ui flex min-h-screen flex-col overflow-x-clip ${fondo === 'blanco' ? 'bg-hc-n-0' : 'bg-hc-n-50'}`}>
@@ -78,12 +113,8 @@ export default function MainLayout(props: MainLayoutProps) {
           <FooterComprador />
         </div>
       )}
-      {barraInferior && (
-        <>
-          <div className="h-[72px] lg:hidden" aria-hidden="true" />
-          <BarraInferior />
-        </>
-      )}
+      <EspacioFlotante px={espacio} />
+      {barraInferior && <BarraInferior />}
       <SearchPanel />
       <MiniCartDrawer />
       <ExitIntentModal />
