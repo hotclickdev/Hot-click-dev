@@ -7,8 +7,8 @@ Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página 
 
 | Estado | Cantidad |
 | --- | --- |
-| PASS — agent verified | 32 |
-| PARTIAL | 58 |
+| PASS — agent verified | 34 |
+| PARTIAL | 56 |
 | OLD_DESIGN | 0 |
 | MISSING | 0 |
 | BLOCKED | 0 |
@@ -62,10 +62,10 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 02 Buscar y explorar | Catálogo · desktop | `30:1824` | /productos | PASS — agent verified | M (CAT). Título (120,135), filtros 260 en (120,255), tarjetas de 167 desde (412,255) con paso 183, relacionadas y=636. Columnas fijas de 167 (decisión con evidencia, ver CAT_C1_C5.md) | sí | no | CAT |
 | 02 Buscar y explorar | Categorías · móvil | `43:1454` | /categorias | PASS — agent verified | M (CAT). Barra propia con buscador, chip del asistente, tiles 167 | no | sí | CAT |
 | 02 Buscar y explorar | Categoría abierta · Hogar · móvil | `43:1530` | /productos?cat= | PASS — agent verified | M (CAT). Título (48,12), buscador 358x42, chips y=104, tarjetas y=189. Sin chip "Con stock" (decisión del usuario pendiente) | no | sí | CAT |
-| 03 Producto y tiendas | Ficha de producto · móvil | `28:839` | /productos/:id | PARTIAL | M (PROD). Alto de página 1522 igual a Figma (antes 1955); título 442, precio 480, entrega y pago 610, barra fija y=761. Quita "Comprar ahora", confianza y garantía (decisión del usuario pendiente). Ver PROD.md | no | sí | PROD |
+| 03 Producto y tiendas | Ficha de producto · móvil | `28:839` | /productos/:id | PASS — agent verified | M (PROD, reverificado 1-oct-2026 por CAT/PROD fase de implementación, API simulada con 4 fotos). Título 442, precio 480, entrega y pago 610, barra fija y=761; alto 1522 (1501 con descripción de 1 línea del dato de ejemplo + 21 px de la 2.ª línea). Las decisiones de quitar "Comprar ahora" y confianza están resueltas (#10, #11) y la hoja `45:1607` la entrega CHK. Los chips de Preguntale coinciden con el componente Chip. Sin QA independiente. Ver PROD.md | no | sí | PROD |
 | 03 Producto y tiendas | Perfil del negocio · móvil | `29:922` | /tienda/:slug | PARTIAL | M (STORE, 1-oct-2026, agent verified, API simulada). Portada 150, encabezado 264, buscador 358x41, tarjetas 167x280 desde y=681, "Cómo comprarle" y=1581 (0 a 1 px). Se conservan la barra inferior de la tienda y el WhatsApp flotante (no están en Figma) por el acceso al pedido aislado: decisión pendiente. Ver `STORE.md` | no | sí | STORE |
 | 03 Producto y tiendas | Directorio de emprendimientos · móvil | `29:1159` | /emprendimientos | PARTIAL | M (STORE, 1-oct-2026, agent verified, API simulada). Barra, descripción y buscador a 0 px. BLOCKED por backend: ciudad, categoría (chips), tres fotos, conteo de productos y slug ("Ver tienda"); `/convenios/publicos` solo trae nombre, logo, descripción y sitio. Ver `STORE.md` | no | sí | STORE |
-| 03 Producto y tiendas | Ficha de producto · desktop | `29:2072` | /productos/:id | PARTIAL | M (PROD). Foto 560x560 en x=204, título/precio y=210/264, acciones 394, entrega y pago 462, opiniones 781. Anchos de Sora ±2 px. Ver PROD.md | sí | no | PROD |
+| 03 Producto y tiendas | Ficha de producto · desktop | `29:2072` | /productos/:id | PASS — agent verified | M (PROD, reverificado 1-oct-2026, API simulada). Altura sin pie 1251 (igual), título 210, stock 323, botón Agregar 339x49 en y=396, entrega 476, Preguntale 616, opiniones 798, "También te puede gustar" 867, tarjetas 167x280. Anchos de Sora ±2 px. Tras Agregar en desktop se mantiene el toast (REQUIRES_DESIGN_REFERENCE de CHK, decisión 22). Ver PROD.md | sí | no | PROD |
 | 03 Producto y tiendas | Perfil del negocio · desktop | `29:2308` | /tienda/:slug | PARTIAL | M (STORE, 1-oct-2026, agent verified, API simulada). Debajo del header: portada 220, encabezado 164, lateral 320, productos en x=480, tarjetas con paso 183, caja 197 (0 a 1 px). Figma dibuja el header del marketplace; se conserva el de la tienda (pedido aislado): decisión pendiente. Ver `STORE.md` | sí | no | STORE |
 | 03 Producto y tiendas | Ficha con variantes · móvil | `44:1775` | /productos/:id | PARTIAL | M (PROD). Título 376, swatches 34 px, talla 597, chips 623. Se conserva el stepper que Figma omite (decisión pendiente) | no | sí | PROD |
 | 03 Producto y tiendas | Ficha producto personalizado · móvil | `44:1849` | /productos/:id | PARTIAL | M (PROD). Etiqueta, título y vendedor idénticos; panel 27 px más arriba porque no se muestra "Elaboración" (falta dato). Sin stepper | no | sí | PROD |

@@ -6,15 +6,17 @@ Rutas relativas a `Hot_click_outlet/frontend/src/`. Rama `feat/figma/prod`. Capt
 
 | Frame Figma | Pantalla | Veredicto |
 | --- | --- | --- |
-| `28:839` | Ficha móvil | PARTIAL |
-| `29:2072` | Ficha desktop | PARTIAL |
+| `28:839` | Ficha móvil | PASS — agent verified (reverificada 1-oct-2026) |
+| `29:2072` | Ficha desktop | PASS — agent verified (reverificada 1-oct-2026) |
 | `44:1775` | Ficha con variantes | PARTIAL |
 | `44:1849` | Ficha personalizada | PARTIAL |
 | `44:1917` | Ficha agotada | PARTIAL |
 | `55:2167` | Galería a pantalla completa | PASS (móvil; solo existe el frame móvil) |
 | `55:2191` | Galería · foto ampliada | PASS (zoom 2x con contador "1 / 4 · 2×") |
 
-Ninguna ficha es PASS porque cada una tiene al menos una diferencia deliberada o no verificable (ver "Diferencias").
+Las fichas principal móvil y desktop pasan a PASS tras reverificar en píxeles (1-oct-2026): las decisiones que las mantenían en PARTIAL (#10 y #11) ya están resueltas y la hoja "Agregado" la entrega CHK. Las otras tres fichas siguen PARTIAL: variantes (stepper que Figma omite, decisión del usuario), personalizado (falta el dato "Elaboración", backend) y agotado (etiqueta de diseño no renderizada, 14 px).
+
+**Nota de reverificación:** en el escritorio, Figma pinta con borde negro los chips de "Preguntale" (`29:2188`, `29:2193`, `29:2198`) porque el trazo de la instancia está ligado a una variable que resuelve a negro; el componente `Chip` (`5:44`) y la ficha móvil usan el azul claro `blue/100`. Se considera un descuido del archivo y se mantiene el azul claro. Si el diseñador confirma el negro, es un cambio de una línea en `PreguntaProducto`.
 
 ## Medidas (Playwright, Sora y Public Sans reales, API simulada)
 
