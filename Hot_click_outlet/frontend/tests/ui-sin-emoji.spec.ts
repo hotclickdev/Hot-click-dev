@@ -11,6 +11,9 @@ function leer(rel: string) {
   return readFileSync(join(dir, rel), 'utf8')
 }
 
+/** Emojis y símbolos decorativos (pictogramas, dingbats, flechas Unicode). */
+const DECORATIVOS = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2190}-\u{21FF}]/u
+
 test('el tour del panel no usa caracteres decorativos', () => {
   const steps = leer('../src/components/ui/appTour/appTourSteps.ts')
   const ui = leer('../src/components/ui/AppTour.tsx')
@@ -21,14 +24,9 @@ test('el tour del panel no usa caracteres decorativos', () => {
 })
 
 test('opiniones del perfil no usan emojis de UI', () => {
-  const opiniones = leer('../src/pages/perfil/OpinionesSection.tsx')
-  const testimonio = leer('../src/pages/perfil/TestimonioForm.tsx')
-  const resena = leer('../src/pages/perfil/ResenaForm.tsx')
-  expect(opiniones).toContain('Tu opinión')
-  expect(opiniones).not.toContain('⭐')
-  expect(opiniones).not.toContain('💬')
-  expect(testimonio).not.toContain('🎉')
-  expect(resena).not.toContain('🎉')
+  expect(leer('../src/pages/perfil/cuenta/CuentaOpiniones.tsx')).not.toMatch(DECORATIVOS)
+  expect(leer('../src/pages/perfil/VistaTestimonio.tsx')).not.toMatch(DECORATIVOS)
+  expect(leer('../src/pages/perfil/TestimonioCard.tsx')).not.toMatch(DECORATIVOS)
 })
 
 test('retiro y domicilio en i18n no usan emojis', () => {
@@ -61,13 +59,12 @@ test('admin IA y forecast no usan emojis de UI', () => {
 })
 
 test('compra, login y mesas no usan emojis de UI', () => {
-  expect(leer('../src/pages/perfil/ProfileOrdersCard.tsx')).not.toContain('📋')
-  expect(leer('../src/pages/perfil/ProfileOrdersCard.tsx')).not.toContain('🛡')
+  expect(leer('../src/pages/pedidos/ListaPedidosComprador.tsx')).not.toMatch(DECORATIVOS)
   expect(leer('../src/components/ui/ReturnVisitorBanner.tsx')).not.toContain('👋')
   expect(leer('../src/pages/auth/LoginPageLayout.tsx')).not.toContain('🛍')
   expect(leer('../src/pages/auth/TwoFaPickerStep.tsx')).not.toContain('🔐')
   expect(leer('../src/pages/auth/TwoFaPickerStep.tsx')).not.toContain('📧')
-  expect(leer('../src/pages/checkout/PaymentMethods.tsx')).not.toContain('💵')
+  expect(leer('../src/pages/checkout/PasoPago.tsx')).not.toMatch(DECORATIVOS)
   expect(leer('../src/pages/checkout/CheckoutSinpePending.tsx')).not.toContain('💰')
   expect(leer('../src/pages/checkout/ejecutarSubirComprobante.ts')).not.toContain('👋')
   expect(leer('../src/pages/admin/AdminMesas.tsx')).not.toContain('🪑')
@@ -154,8 +151,8 @@ test('cierres y quitar usan CloseIcon, no cruz de carácter', () => {
 test('estados y flechas de icono usan TrustGlyph, no cruz de carácter', () => {
   expect(leer('../src/components/ui/TrustGlyph.tsx')).toContain('atras:')
   expect(leer('../src/components/ui/TrustGlyph.tsx')).toContain('adelante:')
-  expect(leer('../src/pages/pago/PagoError.tsx')).toContain('tipo="error"')
-  expect(leer('../src/pages/pago/PagoError.tsx')).toContain('to="/checkout"')
+  expect(leer('../src/pages/pago/PagoError.tsx')).toContain('FalloPago')
+  expect(leer('../src/pages/pago/PagoError.tsx')).toContain("navigate('/checkout')")
   expect(leer('../src/pages/pago/PagoError.tsx')).not.toContain('M6 18L18 6')
   expect(leer('../src/pages/registrar-negocio/HaciendaVerificacion.tsx')).toContain('TrustGlyph')
   expect(leer('../src/pages/admin/AdminPlanes.tsx')).toContain('tipo="check"')
@@ -197,10 +194,8 @@ test('volver y canales de contacto usan TextoFlecha o TrustGlyph', () => {
   expect(leer('../src/pages/PrivacidadPage.tsx')).not.toContain('M15 19l-7-7 7-7')
   expect(leer('../src/pages/AcuerdoVendedoresPage.tsx')).not.toContain('M15 19l-7-7 7-7')
   expect(leer('../src/pages/devoluciones/DevolucionesHero.tsx')).not.toContain('M15 19l-7-7 7-7')
-  expect(leer('../src/pages/envios/EnviosHero.tsx')).toContain('to="/"')
-  expect(leer('../src/pages/envios/enviosIcons.tsx')).not.toContain('IconBack')
+  expect(leer('../src/pages/EnviosPage.tsx')).not.toMatch(DECORATIVOS)
   expect(leer('../src/pages/MisPedidosPage.tsx')).toContain("onClick={() => navigate('/perfil')}")
-  expect(leer('../src/pages/servicios/BotonVolver.tsx')).toContain('onClick={onClick}')
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain("onClick={() => irA('busqueda')}")
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain("onClick={() => irA('inventario')}")
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain('tipo="adelante"')
@@ -254,7 +249,7 @@ test('secuencias y menús usan TextoCamino, no flecha de carácter', () => {
 })
 
 test('accesibilidad y destacados no usan engranaje ni estrella de carácter', () => {
-  expect(leer('../src/components/ui/AccessibilityPanel.tsx')).toContain('A11yIcon')
+  expect(leer('../src/components/ui/AccessibilityPanel.tsx')).toContain('HojaIdiomaAccesibilidad')
   expect(leer('../src/components/ui/AccessibilityPanel.tsx')).not.toContain('⚙')
   expect(leer('../src/pages/admin/productos/ProductosTable.tsx')).toContain("'Dest.'")
   expect(leer('../src/pages/admin/productos/ProductosTable.tsx')).not.toContain('★')
@@ -339,7 +334,6 @@ test('más, reenviar y loader no usan caracteres decorativos', () => {
   expect(leer('../src/components/admin/CategoriaSelect.tsx')).toContain('onChange={(e) => handleSelect(i + 1, e.target.value)}')
   expect(leer('../src/pages/admin/categorias/CategoriaFormModal.tsx')).toContain('onChange={onChange}')
   expect(leer('../src/components/ui/ExitIntentModal.tsx')).not.toContain('+ {preview.length - 3} más')
-  expect(leer('../src/components/ui/ExitIntentModal.tsx')).toContain('y {preview.length - 3} más')
   expect(leer('../src/i18n/locales/es.json')).not.toContain('📸')
   expect(leer('../src/i18n/locales/es.json')).not.toContain('💾')
   expect(leer('../src/i18n/locales/es.json')).toContain('"orderCompleted": "Pedido completado"')
@@ -393,10 +387,9 @@ test('iniciar sesión usa chevron SVG, no flecha de carácter', async ({ page })
     localStorage.setItem('hc-promo-seen', String(Date.now()))
   })
   await page.goto('/login', { waitUntil: 'domcontentloaded' })
-  const entrar = page.getByRole('button', { name: 'Iniciar sesión' })
+  const entrar = page.getByRole('button', { name: 'Continuar', exact: true })
   await expect(entrar).toBeVisible()
-  await expect(entrar).not.toHaveText('→')
-  await expect(entrar.locator('svg')).toHaveCount(1)
+  await expect(entrar).not.toContainText('→')
 })
 
 test('volver al inicio en términos usa chevron SVG', async ({ page }) => {

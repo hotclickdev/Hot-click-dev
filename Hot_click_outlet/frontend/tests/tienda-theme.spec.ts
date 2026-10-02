@@ -146,8 +146,8 @@ test.describe('Tienda tenant — theme', () => {
       })
     })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Teclado' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Mouse' })).toHaveCount(0)
+    await expect(page.getByText('Teclado', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('Mouse', { exact: true })).toHaveCount(0)
   })
 })
 

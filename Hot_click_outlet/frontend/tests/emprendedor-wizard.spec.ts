@@ -201,7 +201,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await expect(page.getByRole('heading', { name: 'Tu tienda' })).toBeVisible()
   })
 
-  test('detalle pedido: confirmar envío pide confirmación', async ({ page }) => {
+  test('detalle pedido: despachar (Figma 37:1780) marca enviado y vuelve al listado', async ({ page }) => {
     await page.route('**/api/**', async (route: Route) => {
       const path = new URL(route.request().url()).pathname
       if (path.includes('/tenant/info')) {
@@ -251,14 +251,10 @@ test.describe('Wizard conversacional Emprendedor', () => {
     }, payloadAuth())
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/emprendedor/pedidos/3001', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('button', { name: 'Confirmar envío' })).toBeVisible({ timeout: 20_000 })
-    await page.getByRole('button', { name: 'Confirmar envío' }).click()
-    await expect(page.getByText('¿Confirmás que ya enviaste este pedido?')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Marcar como despachado' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText('Ana Jiménez')).toBeVisible()
-    await page.getByRole('button', { name: 'Cancelar' }).click()
-    await expect(page.getByRole('button', { name: 'Confirmar envío' })).toBeVisible()
-    await page.getByRole('button', { name: 'Confirmar envío' }).click()
-    await page.getByRole('button', { name: 'Sí, confirmar envío' }).click()
+    await expect(page.getByLabel(/guía/i)).toBeVisible()
+    await page.getByRole('button', { name: 'Marcar como despachado' }).click()
     await expect(page).toHaveURL(/\/emprendedor\/pedidos$/)
   })
 

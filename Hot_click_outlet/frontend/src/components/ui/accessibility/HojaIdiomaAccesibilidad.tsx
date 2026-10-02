@@ -1,3 +1,4 @@
+import { useRef, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import HojaInferior from '@/components/comprador/HojaInferior'
 import { ICONOS_ESTADOS } from '@/components/comprador/estados/iconosEstados'
@@ -35,6 +36,17 @@ export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiom
   const toggleHighContrast = useUiStore((s) => s.toggleHighContrast)
   const reduceMotion = useUiStore((s) => s.reduceMotion)
   const toggleReduceMotion = useUiStore((s) => s.toggleReduceMotion)
+  const idiomasRef = useRef<(HTMLButtonElement | null)[]>([])
+
+  /** Radiogroup: flechas, Inicio y Fin mueven la selección, como en `LanguageRadiogroup`. */
+  const elegirIdiomaConTeclado = (e: KeyboardEvent<HTMLButtonElement>, indice: number) => {
+    const ultimo = LANGUAGES.length - 1
+    const destino = { ArrowRight: indice === ultimo ? 0 : indice + 1, ArrowDown: indice === ultimo ? 0 : indice + 1, ArrowLeft: indice === 0 ? ultimo : indice - 1, ArrowUp: indice === 0 ? ultimo : indice - 1, Home: 0, End: ultimo }[e.key]
+    if (destino === undefined) return
+    e.preventDefault()
+    setLanguage(LANGUAGES[destino].code)
+    idiomasRef.current[destino]?.focus()
+  }
 
   return (
     <HojaInferior
@@ -47,11 +59,22 @@ export default function HojaIdiomaAccesibilidad({ abierta, onCerrar }: HojaIdiom
         </div>
       )}
     >
-      <div role="group" aria-labelledby="a11y-idioma" className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <p id="a11y-idioma" className={ETIQUETA_GRUPO}>{t('lang.select')}</p>
-        <div className="flex flex-wrap gap-2">
-          {LANGUAGES.map(({ code, label }) => (
-            <OpcionChip key={code} activa={language === code} onClick={() => setLanguage(code)}>{label}</OpcionChip>
+        <div role="radiogroup" aria-labelledby="a11y-idioma" className="flex flex-wrap gap-2">
+          {LANGUAGES.map(({ code, label }, indice) => (
+            <OpcionChip
+              key={code}
+              radio
+              activa={language === code}
+              etiqueta={label}
+              tabIndex={language === code ? 0 : -1}
+              botonRef={(el) => { idiomasRef.current[indice] = el }}
+              onKeyDown={(e) => elegirIdiomaConTeclado(e, indice)}
+              onClick={() => setLanguage(code)}
+            >
+              {label}
+            </OpcionChip>
           ))}
         </div>
       </div>

@@ -122,7 +122,7 @@ test.describe('Smoke público', () => {
     await cerrarOverlays(page)
     await assertNotBlank(page)
     await expect(
-      page.getByText(/Catálogo|Cargando productos|No se encontraron productos|Emprendimientos|Buscar productos|Shop/i).first(),
+      page.getByRole('heading', { name: /Todos los productos/i }).or(page.getByText(/Catálogo|Cargando productos|No se encontraron productos|Emprendimientos|Buscar productos|Shop/i)).first(),
     ).toBeVisible({ timeout: 20_000 })
     await assertSinSkusMock(page)
     guards.assertClean()
@@ -259,7 +259,7 @@ test.describe('Smoke público', () => {
     await page.goto('/pago/exito', { waitUntil: 'domcontentloaded' })
     await cerrarOverlays(page)
     await expect(page.locator('body')).not.toContainText(/pedido\s*#4021/i)
-    await expect(page.getByRole('heading', { name: 'Pago no completado' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'No pudimos procesar el pago' })).toBeVisible({ timeout: 20_000 })
     guards.assertClean()
   })
 
