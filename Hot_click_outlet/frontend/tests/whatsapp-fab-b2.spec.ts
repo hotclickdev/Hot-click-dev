@@ -94,14 +94,18 @@ test.describe('WhatsApp flotante — móvil 390', () => {
     await sinDesborde(page)
   })
 
-  test('catálogo y categorías quedan 16 px sobre la barra', async ({ page }) => {
+  test('catálogo y categorías quedan 16 px sobre la barra y al final no tapan la última fila (R5)', async ({ page }) => {
     for (const ruta of ['/productos', '/categorias']) {
       await preparar(page, ruta)
       await expect(barra(page)).toBeVisible()
       expect(Math.abs(await margenInferior(page, fab(page)) - 83)).toBeLessThanOrEqual(1)
       const flotante = await cajaDe(fab(page))
       expect(seCruzan(flotante, await cajaDe(barra(page)))).toBe(false)
-      await expect(page.locator('[data-espacio="72"]')).toHaveCount(1)
+      await expect(page.locator('[data-espacio="155"]')).toHaveCount(1)
+      await expect(page.locator('html')).toHaveClass(/hc-con-fab/)
+      await alFinal(page)
+      const contenido = await cajaDe(page.locator('main'))
+      expect(contenido.y + contenido.height).toBeLessThanOrEqual((await cajaDe(fab(page))).y + 1)
       await sinDesborde(page)
     }
   })

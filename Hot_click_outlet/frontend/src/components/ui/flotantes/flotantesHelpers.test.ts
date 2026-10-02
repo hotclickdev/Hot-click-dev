@@ -76,8 +76,12 @@ describe('espacioReservadoMovil', () => {
     expect(espacioReservadoMovil({ hayBarra: true, hayPieMovil: true, fabVisible: true })).toBe(155)
   })
 
-  it('con barra y sin pie móvil conserva 72 px', () => {
-    expect(espacioReservadoMovil({ hayBarra: true, hayPieMovil: false, fabVisible: true })).toBe(72)
+  it('con barra y botón, aunque no haya pie móvil, deja 155 px (R5: la última fila no queda bajo el botón)', () => {
+    expect(espacioReservadoMovil({ hayBarra: true, hayPieMovil: false, fabVisible: true })).toBe(155)
+  })
+
+  it('con barra y sin botón conserva 72 px', () => {
+    expect(espacioReservadoMovil({ hayBarra: true, hayPieMovil: false, fabVisible: false })).toBe(72)
   })
 
   it('sin barra y con el botón visible deja 88 px', () => {
