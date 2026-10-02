@@ -128,6 +128,19 @@ Sin acceso directo a Figma. Las referencias son las de este documento, `B10-chec
   - GAM por origen y «Sale de …»: falta la provincia de la bodega en el backend.
 - `danger-bg` y `text-secondary` no tienen alias en SHELL: siguen con `var()`.
 
+## P04 · implementación de CARRITO (2-oct-2026)
+
+Sin acceso directo a Figma. Referencias `30:2268` (escritorio), `51:1820` (móvil con extras) y `52:2178` (guardar por correo), con las medidas registradas en este documento.
+
+- **Remedido** con Playwright a 390 y a 1440 (`cart-responsive.spec.ts`): sin desborde horizontal ni errores de consola. A 390 el campo de correo mide 14 px y la pastilla «un solo envío» usa el fondo `--hc-success-bg`.
+- **Tokens:** `PaqueteCarritoTarjeta` y `CodigosNotasCarrito` usan `bg-hc-success-bg` en vez de `bg-[var(--hc-success-bg)]`; mismo color calculado.
+- **Sin cambio, sigue PARTIAL:**
+  - «Pedir por WhatsApp» y tarjeta de guardar por correo en escritorio: restaurados sin frame desktop. Es DECISIÓN HUMANA (B14); el código actual se conserva tal cual y `chk-restauraciones.spec.ts` sigue pasando.
+  - «Vaciar pedido»: restaurado sin frame (REQUIERE_DECISION).
+  - «Sale de <provincia>» (`28:989`): falta la provincia de la bodega en el backend.
+  - `51:1820` no se promueve: B19 lista E pide medir el frame completo y no hay acceso a Figma.
+- `danger-bg` y `text-secondary` siguen sin alias en SHELL: `CodigosNotasCarrito` los mantiene con `var()`.
+
 ## Decisiones y dependencias abiertas
 
 - REQUIERE_DECISION: guardar por correo en escritorio; "Vaciar pedido"; WhatsApp en escritorio; contexto del carrito en `AsistentePedido`; cédula SINPE (no está en Figma); atajo de envío internacional y consentimiento en escritorio.

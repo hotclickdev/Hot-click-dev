@@ -85,7 +85,7 @@ function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, deshabilitad
           <div className="flex min-w-0 flex-1 flex-col gap-[2px]">{invalido}</div>
         </div>
       )}
-      {aplicado && <div className="flex flex-col gap-[6px] rounded-[10px] bg-[var(--hc-success-bg)] p-3">{valido}</div>}
+      {aplicado && <div className="flex flex-col gap-[6px] rounded-[10px] bg-hc-success-bg p-3">{valido}</div>}
     </div>
   )
 }
