@@ -653,12 +653,19 @@ export function keysAddedInLocales(before = {}, after = {}) {
 }
 
 /** Leaf keys from JSON diffs (e.g. `navComision`) match nested paths (`adminConfig.navComision`). */
+/**
+ * Plural de i18next: `t('a.b', { count })` resuelve a `a.b_one`, `a.b_other`, …, no a `a.b`.
+ * Basta con `_other`: es la forma que CLDR define en todos los idiomas.
+ */
+const I18N_PLURAL_OTHER = '_other';
+
 export function localeHasI18nKey(set, key) {
-  if (set.has(key)) return true;
+  if (set.has(key) || (key && set.has(`${key}${I18N_PLURAL_OTHER}`))) return true;
   if (!key || String(key).includes('.')) return false;
   const suffix = `.${key}`;
+  const suffixPlural = `${suffix}${I18N_PLURAL_OTHER}`;
   for (const full of set) {
-    if (full.endsWith(suffix)) return true;
+    if (full.endsWith(suffix) || full.endsWith(suffixPlural)) return true;
   }
   return false;
 }
