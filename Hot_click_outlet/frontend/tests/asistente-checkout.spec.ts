@@ -36,12 +36,9 @@ test.describe('Asistente — no cobra en el chat', () => {
     await seedPedidoYOverlays(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.getByRole('button', { name: 'Asistente' }).click()
-
-    const hero = page.getByPlaceholder('Escribí qué buscás...')
-    await hero.scrollIntoViewIfNeeded()
-    await hero.fill('ofertas')
-    await page.getByRole('button', { name: 'Enviar consulta' }).click()
+    const campo = page.getByRole('textbox', { name: 'Preguntale al asistente' })
+    await campo.fill('ofertas')
+    await page.getByRole('button', { name: 'Enviar al asistente', exact: true }).click()
 
     const dialog = page.getByRole('dialog', { name: 'Asistente HotClick' })
     await expect(dialog).toBeVisible()

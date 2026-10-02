@@ -13,33 +13,24 @@ async function mockApis(page: Page) {
 }
 
 test.describe('Envío rápido — se compra en checkout, no por WhatsApp', () => {
-  test('en home el CTA va al catálogo y no a wa.me', async ({ page }) => {
+  test('en home ya no está la sección de envío rápido', async ({ page }) => {
     await mockApis(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Enviamos a todo el país.' }).scrollIntoViewIfNeeded()
-
-    const cta = page.getByRole('link', { name: 'Pedir envío rápido' })
-    await expect(cta).toBeVisible()
-    await expect(cta).toHaveAttribute('href', /\/productos/)
-    await expect(cta).toHaveClass(/hc-btn-primary/)
-    await expect(cta).not.toHaveAttribute('href', /wa\.me/)
-    await expect(page.getByText('Elegilo en datos y pago')).toBeVisible()
-
-    const seccion = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Enviamos a todo el país.' }) })
-    await expect(seccion.getByText('Tarjeta')).toBeVisible()
-    await expect(seccion.getByText('pronto')).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Enviamos a todo el país.' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Pedir envío rápido' })).toHaveCount(0)
+    await expect(page.getByText('Envío a todo Costa Rica').first()).toBeVisible()
+    await expect(page.locator('a[href*="wa.me"]', { hasText: 'Envío a todo Costa Rica' })).toHaveCount(0)
   })
 
-  test('en home móvil el envío lleva al catálogo, no a un checkout vacío', async ({ page }) => {
+  test('en home móvil ya no está la sección de envío rápido', async ({ page }) => {
     await mockApis(page)
     await page.setViewportSize({ width: 375, height: 700 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Enviamos a todo el país.' }).scrollIntoViewIfNeeded()
-
-    const seccion = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Enviamos a todo el país.' }) })
-    await expect(seccion.getByRole('link', { name: 'Ver catálogo' })).toHaveAttribute('href', /\/productos/)
-    await expect(seccion.getByRole('link', { name: /Comprar ahora/ })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Enviamos a todo el país.' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Ver catálogo' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: /Comprar ahora/ })).toHaveCount(0)
+    await expect(page.getByText('Envío a todo Costa Rica').first()).toBeVisible()
   })
 
   test('en /envios es un servicio activo, no coordinación por WhatsApp', async ({ page }) => {
