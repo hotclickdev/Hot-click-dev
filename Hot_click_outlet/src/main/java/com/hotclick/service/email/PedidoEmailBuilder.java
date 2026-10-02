@@ -43,4 +43,14 @@ public class PedidoEmailBuilder {
     public String buildNuevoPedidoAdminIT(Pedido pedido) {
         return adminEmails.buildNuevoPedidoAdminIT(pedido);
     }
+
+    public String asuntoConfirmacion(Pedido pedido) { return clienteEmails.asuntoConfirmacion(pedido); }
+
+    public String asuntoGuia(Pedido pedido) { return clienteEmails.asuntoGuia(pedido); }
+
+    public String asuntoSeguimiento(Pedido pedido) { return clienteEmails.asuntoSeguimiento(pedido); }
+
+    public String asuntoPagoFallido(Pedido pedido) { return clienteEmails.asuntoPagoFallido(pedido); }
+
+    public String asuntoRecuperacionCarrito() { return clienteEmails.asuntoRecuperacionCarrito(); }
 }

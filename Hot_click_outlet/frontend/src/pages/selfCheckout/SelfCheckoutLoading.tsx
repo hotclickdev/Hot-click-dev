@@ -1,10 +1,13 @@
 /**
  * Spinner de carga del self-checkout.
  */
-export default function SelfCheckoutLoading({ primaryColor }: { primaryColor: string }) {
+export default function SelfCheckoutLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f0f17' }}>
-      <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor: '#333', borderTopColor: primaryColor }} />
+    <div className="flex min-h-dvh items-center justify-center bg-[var(--hc-n-50)]">
+      <div
+        role="status"
+        className="size-10 animate-spin rounded-full border-2 border-[var(--hc-n-200)] border-t-[var(--hc-blue-600)]"
+      />
     </div>
   )
 }

@@ -41,7 +41,7 @@ public class NotificacionPedidoEmailSender {
             try {
                 resendEmailService.send(
                     cliente.getCorreo(),
-                    "Pedido confirmado — " + pedido.getNumeroPedido(),
+                    pedidoEmailBuilder.asuntoConfirmacion(pedido),
                     pedidoEmailBuilder.buildConfirmacionPedido(pedido, cliente)
                 );
                 log.info("Email confirmación enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
@@ -60,7 +60,7 @@ public class NotificacionPedidoEmailSender {
             try {
                 resendEmailService.send(
                     cliente.getCorreo(),
-                    "Tu pedido va en camino — " + pedido.getNumeroPedido(),
+                    pedidoEmailBuilder.asuntoGuia(pedido),
                     pedidoEmailBuilder.buildNotificacionGuia(pedido, cliente)
                 );
                 log.info("Email guía enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
@@ -84,7 +84,7 @@ public class NotificacionPedidoEmailSender {
             throw new IllegalStateException("El pedido no tiene correo de cliente registrado");
         resendEmailService.send(
             cliente.getCorreo(),
-            "Actualización de tu pedido — " + pedido.getNumeroPedido(),
+            pedidoEmailBuilder.asuntoSeguimiento(pedido),
             pedidoEmailBuilder.buildSeguimientoEstado(pedido, cliente, nota)
         );
         log.info("Email seguimiento enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
@@ -97,7 +97,7 @@ public class NotificacionPedidoEmailSender {
         try {
             resendEmailService.send(
                 email,
-                "Tu carrito te espera — HotClick",
+                pedidoEmailBuilder.asuntoRecuperacionCarrito(),
                 pedidoEmailBuilder.buildRecuperacionCarrito(tokenRecuperacion, items, appUrl)
             );
             log.info("Email recuperación carrito enviado a {}", email);
@@ -112,7 +112,7 @@ public class NotificacionPedidoEmailSender {
         try {
             resendEmailService.send(
                 cliente.getCorreo(),
-                "Problema con tu pago — " + pedido.getNumeroPedido(),
+                pedidoEmailBuilder.asuntoPagoFallido(pedido),
                 pedidoEmailBuilder.buildPagoFallido(pedido, cliente, motivo)
             );
             log.info("Email pago fallido enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());

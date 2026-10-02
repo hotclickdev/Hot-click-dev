@@ -1,16 +1,28 @@
+import { useTranslation } from 'react-i18next'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import QrPagina from '@/features/qr-negocio/QrPagina'
+import QrResultado from '@/features/qr-negocio/QrResultado'
+
 /**
- * QR inválido o mesa desactivada.
+ * QR inválido o mesa desactivada. No tiene frame en Figma: usa el bloque de
+ * resultado de las pantallas QR con el ícono de alerta existente.
  */
-export default function SelfCheckoutError({ error }: { error: string }) {
+export default function SelfCheckoutError({ error }: Readonly<{ error: string }>) {
+  const { t } = useTranslation()
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-4" style={{ backgroundColor: '#0f0f17' }}>
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}>
-        <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-        </svg>
+    <QrPagina>
+      <div className="my-auto">
+        <QrResultado
+          tono="alerta"
+          icono={
+            <span className="text-[var(--hc-red-500)]">
+              <TrustGlyph tipo="alerta" className="size-[34px]" />
+            </span>
+          }
+          titulo={t('pos.mesa.errorQrTitulo')}
+          descripcion={error}
+        />
       </div>
-      <p className="text-lg font-bold text-white">QR inválido</p>
-      <p className="text-sm text-gray-400 text-center">{error}</p>
-    </div>
+    </QrPagina>
   )
 }

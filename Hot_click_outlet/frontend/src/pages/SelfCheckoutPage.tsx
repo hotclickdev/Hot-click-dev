@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { selfCheckoutService } from '@/services/selfCheckoutService'
+import QrPagina from '@/features/qr-negocio/QrPagina'
 import SelfCheckoutLoading from './selfCheckout/SelfCheckoutLoading'
 import SelfCheckoutError from './selfCheckout/SelfCheckoutError'
 import SelfCheckoutExito from './selfCheckout/SelfCheckoutExito'
@@ -14,12 +16,18 @@ import type {
   MesaSelfCheckout,
   PedidoResultSelfCheckout,
   ProductoSelfCheckout,
+  ResumenPedidoSelfCheckout,
 } from './selfCheckout/selfCheckoutTypes'
 
 type PasoSelfCheckout = 'catalogo' | 'formulario' | 'exito'
 
+/**
+ * QR de mesa (`/checkout/qr/:token`). Frames Figma: menú `29:1650` y pedido
+ * enviado `29:1741`.
+ */
 export default function SelfCheckoutPage() {
   const { token } = useParams()
+  const { t } = useTranslation()
   const [mesa, setMesa]             = useState<MesaSelfCheckout | null>(null)
   const [productos, setProductos]   = useState<ProductoSelfCheckout[]>([])
   const [carrito, setCarrito]       = useState<CarritoSelfCheckout>({}) // { productoId: { producto, cantidad } }
@@ -29,6 +37,7 @@ export default function SelfCheckoutPage() {
   const [form, setForm]             = useState<FormSelfCheckout>({ clienteNombre: '', clienteTel: '', notas: '' })
   const [enviando, setEnviando]     = useState(false)
   const [pedidoResult, setPedidoResult] = useState<PedidoResultSelfCheckout | null>(null)
+  const [resumen, setResumen]       = useState<ResumenPedidoSelfCheckout | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -37,9 +46,9 @@ export default function SelfCheckoutPage() {
     ]).then(([mesaRes, prodRes]) => {
       setMesa(mesaRes.data as MesaSelfCheckout)
       setProductos(Array.isArray(prodRes.data) ? prodRes.data as ProductoSelfCheckout[] : [])
-    }).catch(() => setError('Código QR inválido o desactivado'))
+    }).catch(() => setError(t('pos.mesa.errorQr')))
     .finally(() => setCargando(false))
-  }, [token])
+  }, [token, t])
 
   const actualizarCarrito = useCallback((producto: ProductoSelfCheckout, cantidad: number) => {
     setCarrito(prev => {
@@ -59,25 +68,25 @@ export default function SelfCheckoutPage() {
   async function enviarPedido() {
     setEnviando(true)
     try {
-      const items = Object.values(carrito).map(({ producto, cantidad }) => ({
+      const lineas = Object.values(carrito)
+      const items = lineas.map(({ producto, cantidad }) => ({
         productoId: producto.id,
         cantidad,
       }))
       const { data } = await selfCheckoutService.crearPedido(token as string, { ...form, items })
       setPedidoResult(data as PedidoResultSelfCheckout)
+      setResumen({ lineas })
       setPaso('exito')
       setCarrito({})
     } catch {
-      setError('Error al enviar el pedido. Intentá de nuevo.')
+      setError(t('pos.mesa.errorEnviar'))
     } finally {
       setEnviando(false)
     }
   }
 
-  const primaryColor = mesa?.colorPrimario ?? '#E73B33'
-
   if (cargando) {
-    return <SelfCheckoutLoading primaryColor={primaryColor} />
+    return <SelfCheckoutLoading />
   }
 
   if (error && !mesa) {
@@ -89,40 +98,36 @@ export default function SelfCheckoutPage() {
       <SelfCheckoutExito
         mesa={mesa}
         pedidoResult={pedidoResult}
-        primaryColor={primaryColor}
-        onOtroPedido={() => { setPaso('catalogo'); setPedidoResult(null) }}
+        resumen={resumen}
+        onOtroPedido={() => { setPaso('catalogo'); setPedidoResult(null); setResumen(null) }}
       />
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0f0f17' }}>
-      {/* Header */}
-      <SelfCheckoutHeader mesa={mesa} primaryColor={primaryColor} />
+    <QrPagina>
+      <SelfCheckoutHeader mesa={mesa} conInvitacion={paso === 'catalogo'} />
 
-      {/* Catálogo */}
       {paso === 'catalogo' && (
-        <SelfCheckoutCatalogo productos={productos} onAdd={actualizarCarrito} />
+        <SelfCheckoutCatalogo productos={productos} carrito={carrito} onCambiar={actualizarCarrito} />
       )}
 
-      {/* Formulario de checkout */}
       {paso === 'formulario' && (
         <SelfCheckoutFormulario
           carrito={carrito} form={form} error={error} enviando={enviando}
-          totalPrecio={totalPrecio} primaryColor={primaryColor}
+          totalPrecio={totalPrecio}
           setForm={setForm}
           onVolver={() => setPaso('catalogo')}
           onEnviar={enviarPedido}
         />
       )}
 
-      {/* FAB del carrito */}
       {paso === 'catalogo' && totalItems > 0 && (
         <SelfCheckoutFab
           totalItems={totalItems} totalPrecio={totalPrecio}
-          primaryColor={primaryColor} onVerPedido={() => setPaso('formulario')}
+          onVerPedido={() => setPaso('formulario')}
         />
       )}
-    </div>
+    </QrPagina>
   )
 }

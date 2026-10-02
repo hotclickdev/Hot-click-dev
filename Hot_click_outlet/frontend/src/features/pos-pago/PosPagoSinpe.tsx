@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
 import { posService } from '@/services/posService'
-import { formatColones } from './posPagoFormat'
+import { formatPrice } from '@/utils/format'
+import { sinpeNumeroVisible } from './posPagoFormat'
 import type { QrPagoInfo } from './posPagoTypes'
 import PosPagoReporteModal from './PosPagoReporteModal'
 
@@ -11,11 +13,15 @@ type Props = Readonly<{
   onPagado: () => void
 }>
 
+const NUMERO_SINPE_POR_DEFECTO = '+506 7019-6686'
+
+/** SINPE en curso (Figma `29:1830`): pasos con número y referencia, registro del pago y espera. */
 export default function PosPagoSinpe({ info, token, onPagado }: Props) {
   const { t } = useTranslation()
   const [nombre, setNombre] = useState('')
   const [cedula, setCedula] = useState('')
   const [telefono, setTelefono] = useState('')
+  const [formAbierto, setFormAbierto] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [esperando, setEsperando] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,52 +55,93 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
     }
   }
 
-  const filas = [
-    { label: t('pos.qr.sinpeA'), value: info.sinpeNumero || '+506 7019-6686' },
-    { label: t('pos.qr.montoExacto'), value: `₡${formatColones(info.total)}` },
-  ]
+  const numero = sinpeNumeroVisible(info.sinpeNumero || NUMERO_SINPE_POR_DEFECTO)
+  const referencia = info.sinpeRef
+  const pasoRegistro = referencia ? 3 : 2
 
   return (
-    <div
-      className="w-full max-w-md mx-auto rounded-[22px] border p-5 space-y-3 shadow-[var(--hc-shadow-2)]"
-      style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
-    >
-      <h2 className="font-display font-bold text-[var(--hc-text)]">
+    <section className="flex flex-col gap-3 px-4 pb-3 pt-[18px]">
+      <h1 className="font-display text-[20px] font-bold leading-[25px] tracking-normal text-[var(--hc-n-900)]">
         {t('pos.pago.sinpeTitulo')}
-      </h2>
-      <p className="text-sm text-[var(--hc-muted)]">{t('pos.pago.sinpeInstruccion')}</p>
-      {filas.map((fila) => (
-        <div key={fila.label} className="flex justify-between gap-3 text-sm">
-          <span className="text-[var(--hc-muted)]">{fila.label}</span>
-          <span className="font-semibold text-[var(--hc-text)] text-right">{fila.value}</span>
-        </div>
-      ))}
-      {esperando ? (
-        <output className="block text-sm text-center text-[var(--hc-muted)]">
-          {t('pos.pago.sinpeEsperando')}
-        </output>
-      ) : (
-        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void enviar() }}>
-          <CampoSinpe id="pos-sinpe-nombre" label={t('pos.pago.sinpeNombre')} value={nombre} onChange={setNombre} />
-          <CampoSinpe id="pos-sinpe-cedula" label={t('pos.pago.sinpeCedula')} value={cedula} onChange={setCedula} inputMode="numeric" />
-          <CampoSinpe id="pos-sinpe-tel" label={t('pos.pago.sinpeTelefono')} value={telefono} onChange={setTelefono} inputMode="tel" />
-          {error ? <p className="text-sm text-red-500">{error}</p> : null}
+      </h1>
+
+      <ol className="flex flex-col gap-[14px] rounded-[16px] border border-[var(--hc-n-200)] bg-[var(--hc-n-0)] p-4">
+        <Paso numero={1}>
+          <p className="text-[14px] leading-[16px] text-[var(--hc-n-600)]">
+            {t('pos.pago.sinpePaso1', { monto: formatPrice(info.total ?? 0) })}
+          </p>
+          <ValorCopiable valor={numero} />
+          <p className="text-[12px] leading-[14px] text-[var(--hc-n-600)]">{t('pos.pago.sinpePaso1Nota')}</p>
+        </Paso>
+        {referencia ? (
+          <Paso numero={2}>
+            <p className="text-[14px] leading-[16px] text-[var(--hc-n-600)]">{t('pos.pago.sinpePaso2')}</p>
+            <ValorCopiable valor={referencia} />
+          </Paso>
+        ) : null}
+        <Paso numero={pasoRegistro}>
+          <p className="text-[14px] leading-[16px] text-[var(--hc-n-600)]">{t('pos.pago.sinpePaso3')}</p>
+        </Paso>
+      </ol>
+
+      {esperando ? null : formAbierto ? (
+        <form
+          className="flex flex-col gap-3 rounded-[14px] border border-[var(--hc-n-200)] bg-[var(--hc-n-0)] p-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void enviar()
+          }}
+        >
+          <Campo id="pos-sinpe-nombre" label={t('pos.pago.sinpeNombre')} value={nombre} onChange={setNombre} />
+          <Campo
+            id="pos-sinpe-cedula"
+            label={t('pos.pago.sinpeCedula')}
+            value={cedula}
+            onChange={setCedula}
+            inputMode="numeric"
+          />
+          <Campo
+            id="pos-sinpe-tel"
+            label={t('pos.pago.sinpeTelefono')}
+            value={telefono}
+            onChange={setTelefono}
+            inputMode="tel"
+          />
+          {error ? <p className="text-[13px] text-[var(--hc-red-600)]">{error}</p> : null}
           <button
             type="submit"
             disabled={enviando || !nombre.trim() || !cedula.trim() || !telefono.trim()}
-            className="w-full min-h-11 rounded-[14px] py-3 text-sm font-bold text-white disabled:opacity-40"
-            style={{ background: 'var(--hc-primary)' }}
+            className="hc-btn-primary min-h-[46px] w-full rounded-[12px] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-white disabled:opacity-40"
           >
             {enviando ? t('pos.cobro.procesando') : t('pos.pago.sinpeRegistrar')}
           </button>
         </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setFormAbierto(true)}
+          className="flex w-full flex-col items-center gap-[6px] rounded-[14px] border border-dashed border-[var(--hc-n-400)] bg-[var(--hc-n-0)] py-[22px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]"
+        >
+          <img src={ICONOS_QR.subir} alt="" className="size-6" />
+          <span className="text-[14px] font-semibold leading-4 text-[var(--hc-blue-600)]">
+            {t('pos.pago.registrarPago')}
+          </span>
+          <span className="text-[12px] leading-[14px] text-[var(--hc-n-500)]">{t('pos.pago.registrarPagoDesc')}</span>
+        </button>
       )}
-      <p className="text-xs text-[var(--hc-muted)] pt-1">{t('pos.pago.sinpeAvisoCajero')}</p>
+
+      <output className="flex flex-col gap-1 rounded-[16px] bg-[var(--hc-warning-bg)] p-4">
+        <span className="flex items-center gap-2 text-[14px] font-semibold leading-4 text-[var(--hc-warning)]">
+          <img src={ICONOS_QR.esperando} alt="" className="size-4" />
+          {t('pos.pago.esperandoTitulo')}
+        </span>
+        <span className="text-[12px] leading-[17px] text-[var(--hc-n-600)]">{t('pos.pago.esperandoDesc')}</span>
+      </output>
+
       <button
         type="button"
         onClick={() => setReporteAbierto(true)}
-        className="w-full rounded-[14px] border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
-        style={{ background: 'var(--hc-surface)' }}
+        className="min-h-11 w-full rounded-[12px] border border-[var(--hc-n-200)] bg-[var(--hc-n-0)] px-4 py-3 text-[14px] font-semibold text-[var(--hc-n-900)]"
       >
         {t('pos.pago.reportarError')}
       </button>
@@ -104,11 +151,54 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
         token={token}
         codigoError="sinpe"
       />
+    </section>
+  )
+}
+
+function Paso({ numero, children }: Readonly<{ numero: number; children: React.ReactNode }>) {
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        aria-hidden="true"
+        className="grid size-[26px] shrink-0 place-items-center rounded-full bg-[var(--hc-blue-600)] text-[12px] font-bold text-white"
+      >
+        {numero}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">{children}</div>
+    </li>
+  )
+}
+
+function ValorCopiable({ valor }: Readonly<{ valor: string }>) {
+  const { t } = useTranslation()
+  const [copiado, setCopiado] = useState(false)
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(valor)
+      setCopiado(true)
+      window.setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      /* sin permiso de portapapeles: el valor sigue visible para copiarlo a mano */
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-[10px]">
+      <span className="font-display text-[20px] font-bold leading-[25px] text-[var(--hc-n-900)]">{valor}</span>
+      <button
+        type="button"
+        onClick={() => void copiar()}
+        className="flex items-center gap-1 rounded-[8px] bg-[var(--hc-blue-50)] px-2 py-1 text-[12px] font-semibold leading-[14px] text-[var(--hc-blue-600)]"
+      >
+        <img src={ICONOS_QR.copiar} alt="" className="size-[13px]" />
+        {copiado ? t('pos.pago.copiado') : t('pos.pago.copiar')}
+      </button>
     </div>
   )
 }
 
-type CampoSinpeProps = Readonly<{
+type CampoProps = Readonly<{
   id: string
   label: string
   value: string
@@ -116,19 +206,18 @@ type CampoSinpeProps = Readonly<{
   inputMode?: 'numeric' | 'tel'
 }>
 
-function CampoSinpe({
-  id, label, value, onChange, inputMode,
-}: CampoSinpeProps) {
+function Campo({ id, label, value, onChange, inputMode }: CampoProps) {
   return (
-    <div className="space-y-1">
-      <label htmlFor={id} className="text-xs text-[var(--hc-muted)]">{label}</label>
+    <div className="flex flex-col gap-1">
+      <label htmlFor={id} className="text-[12px] leading-[14px] text-[var(--hc-n-500)]">
+        {label}
+      </label>
       <input
         id={id}
         value={value}
         inputMode={inputMode}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl px-3 py-2.5 text-sm"
-        style={{ background: 'var(--hc-bg)', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)' }}
+        className="w-full rounded-[12px] border border-[var(--hc-n-200)] bg-[var(--hc-n-50)] px-3 py-[10px] text-[14px] text-[var(--hc-n-900)]"
       />
     </div>
   )

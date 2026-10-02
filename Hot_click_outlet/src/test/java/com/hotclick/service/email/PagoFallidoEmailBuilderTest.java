@@ -35,7 +35,7 @@ class PagoFallidoEmailBuilderTest {
         assertThat(html)
             .contains("ORD-1052")
             .contains("El banco rechazó la tarjeta.")
-            .contains("No se hizo ningún cargo");
+            .contains("No se hizo ningún cobro");
     }
 
     @Test
