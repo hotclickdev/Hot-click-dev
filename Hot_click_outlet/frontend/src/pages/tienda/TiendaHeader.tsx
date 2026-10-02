@@ -7,15 +7,17 @@ import TiendaAnfitrion from './TiendaAnfitrion'
  * y nombra HotClick para no confundir con el marketplace.
  */
 export default function TiendaHeader({
-  slug, nombre, logoUrl, cantidadCarrito,
+  slug, nombre, logoUrl, cantidadCarrito, soloEscritorio = false,
 }: {
   slug: string
   nombre: string
   logoUrl?: string | null
   cantidadCarrito: number
+  /** En el perfil móvil la portada ocupa su lugar (Figma `29:922`): el header solo se ve desde `md`. */
+  soloEscritorio?: boolean
 }) {
   return (
-    <header className="sticky top-0 z-40 shadow-sm" style={{ backgroundColor: 'var(--t-secondary)' }}>
+    <div role="banner" className={`sticky top-0 z-40 shadow-sm ${soloEscritorio ? 'hidden md:block' : ''}`} style={{ backgroundColor: 'var(--t-secondary)' }}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         <Link to={`/tienda/${slug}`} className="flex items-center gap-2 shrink min-w-0">
           {logoUrl
@@ -48,6 +50,6 @@ export default function TiendaHeader({
           </Link>
         </div>
       </div>
-    </header>
+    </div>
   )
 }

@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import directorioAtras from '@/assets/figma/tienda/directorio-atras.svg'
 import MainLayout from '@/layouts/MainLayout'
 import { convenioService, listaConvenios } from '@/services/convenioService'
-import EmprendimientosHero from './emprendimientos/EmprendimientosHero'
 import EmprendimientosVacio from './emprendimientos/EmprendimientosVacio'
 import BuscarNegocio from './emprendimientos/BuscarNegocio'
 import ConvenioCard, { type ConvenioPublico } from './emprendimientos/ConvenioCard'
@@ -13,10 +15,16 @@ function coincide(convenio: ConvenioPublico, termino: string) {
     || (convenio.descripcion ?? '').toLowerCase().includes(t)
 }
 
+/**
+ * Directorio de emprendimientos (Figma `29:1159`, móvil): barra propia con atrás y título (sin barra inferior), descripción,
+ * buscador y lista de negocios. No hay frame de escritorio: es la misma columna, centrada.
+ */
 export default function EmprendimientosPage() {
   const [lista, setLista] = useState<ConvenioPublico[]>([])
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
+  const navigate = useNavigate()
+  const volver = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/'))
 
   useEffect(() => {
     convenioService.getPublicos()
@@ -28,39 +36,44 @@ export default function EmprendimientosPage() {
   const filtrada = useMemo(() => lista.filter((c) => coincide(c, busqueda)), [lista, busqueda])
 
   return (
-    <MainLayout>
-      <div style={{ minHeight: '60vh', background: 'var(--hc-bg)' }}>
-        <EmprendimientosHero />
-        <div className="max-w-2xl mx-auto px-5 sm:px-8" style={{ paddingTop: 28, paddingBottom: 64 }}>
+    <MainLayout variante="propia" barraInferior={false}>
+      <div className="min-h-[60vh] bg-hc-n-50">
+        <div className="border-b border-hc-n-200 bg-hc-n-0">
+          <div className="mx-auto flex max-w-[720px] flex-col gap-3 px-4 py-[14px]">
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={volver} aria-label="Volver" className="relative flex size-[22px] shrink-0 items-center justify-center text-hc-n-900 after:absolute after:-inset-2 after:content-[''] lg:hidden">
+                <IconoFigma src={directorioAtras} size={22} />
+              </button>
+              <h1 className="font-display text-lg font-bold leading-[23px] text-hc-n-900 lg:text-2xl lg:leading-[normal]">Emprendimientos</h1>
+            </div>
+            <p className="text-[13px] leading-[18px] text-hc-n-600 lg:text-sm">
+              Conocé a los negocios de Costa Rica que venden en HotClick.
+            </p>
+            {lista.length > 0 && <BuscarNegocio value={busqueda} onChange={setBusqueda} />}
+          </div>
+        </div>
+
+        <div className="mx-auto flex max-w-[720px] flex-col gap-[14px] px-4 pb-7 pt-4">
           {loading && (
-            <div style={{ textAlign: 'center', padding: 80, color: 'var(--hc-muted)' }}>
-              <div
-                style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  border: '3px solid var(--hc-border)', borderTopColor: 'var(--hc-accent)',
-                  animation: 'spin 0.8s linear infinite', margin: '0 auto 16px',
-                }}
-              />
+            <div role="status" className="py-20 text-center text-sm text-hc-n-500">
+              <div className="mx-auto mb-4 size-9 animate-spin rounded-full border-[3px] border-hc-n-200 border-t-hc-blue-600" />
               Cargando...
             </div>
           )}
           {!loading && lista.length === 0 && <EmprendimientosVacio />}
           {!loading && lista.length > 0 && (
             <>
-              <BuscarNegocio value={busqueda} onChange={setBusqueda} />
-              <p className="text-sm mt-5 mb-3" style={{ color: 'var(--hc-muted)' }}>
+              <p className="text-[13px] font-semibold leading-[normal] text-hc-n-600">
                 {filtrada.length} {filtrada.length === 1 ? 'negocio' : 'negocios'}
               </p>
               {filtrada.length === 0 ? (
-                <p className="text-sm text-center py-16" style={{ color: 'var(--hc-muted)' }}>
+                <p className="py-16 text-center text-sm text-hc-n-500">
                   Ningún negocio coincide con “{busqueda}”.
                 </p>
               ) : (
-                <div className="flex flex-col gap-4">
-                  {filtrada.map((convenio, indice) => (
-                    <ConvenioCard key={convenio.id} convenio={convenio} indice={indice} />
-                  ))}
-                </div>
+                filtrada.map((convenio, indice) => (
+                  <ConvenioCard key={convenio.id} convenio={convenio} indice={indice} />
+                ))
               )}
             </>
           )}

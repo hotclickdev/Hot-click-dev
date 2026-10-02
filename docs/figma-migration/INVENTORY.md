@@ -1,18 +1,18 @@
 # Inventario de migración Figma → frontend
 
 Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página "Home de compra · prototipo" (`4:2`).
-Última actualización: 2026-10-01 (SRV; el resumen se recontó desde la tabla de pantallas).
+Última actualización: 2026-10-01 (STORE; el resumen se recontó desde la tabla de pantallas).
 
 ## Resumen
 
 | Estado | Cantidad |
 | --- | --- |
 | PASS — agent verified | 31 |
-| PARTIAL | 42 |
-| OLD_DESIGN | 1 |
+| PARTIAL | 46 |
+| OLD_DESIGN | 0 |
 | MISSING | 0 |
 | BLOCKED | 0 |
-| UNKNOWN | 16 |
+| UNKNOWN | 13 |
 | **Total pantallas** | **90** |
 
 PASS solo se marca cuando hay implementación completa, comparación visual **y** medidas en píxeles, responsive, estados, tests, typecheck y build. **Los PASS de CAT y PROD son "PASS — agent verified": veredicto del propio agente, medido con API simulada y fotos de color, sin QA independiente** (SHELL sí lo tuvo). El estado no cambia hasta que el supervisor haga la verificación independiente con datos reales.
@@ -31,7 +31,8 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | PROD: ficha de producto | `feat/figma/prod` | Hecho (4 commits), integrado en `feat/figma/base` (merge `a44632a6`). Ficha rediseñada; 5 pantallas PARTIAL por diferencias deliberadas. Ver `PROD.md` |
 | SYS: estados del sistema, cookies, WhatsApp, sin `SocialProofToast` | `feat/figma/sys` | Hecho (11 commits), integrado en `feat/figma/base` (merge `0536ef45`). Ver `SYS.md` |
 | PROD, ajuste de la ficha agotada (Figma literal) | `feat/figma/prod` | Hecho (`616f0769`), integrado en `base` (`d8af873b`) |
-| SRV: Servicios HOT, encargo, cotización pública, Envíos (plantilla informativa) y blog | `feat/figma/srv` | Hecho en la rama, **sin integrar en `base`**. 8 pantallas: 1 PASS y 7 PARTIAL (agent verified). Ver `SRV.md` |
+| SRV: Servicios HOT, encargo, cotización pública, Envíos (plantilla informativa) y blog | `feat/figma/srv` | Hecho, integrado en `feat/figma/base` (merge `68c0952f`). 8 pantallas: 1 PASS y 7 PARTIAL (agent verified). Ver `SRV.md` |
+| STORE: perfil del negocio (móvil, desktop y con su color) y directorio de emprendimientos | `feat/figma/store` | Hecho en la rama, **sin integrar en `base`**. 4 pantallas: 0 PASS y 4 PARTIAL (agent verified). Ver `STORE.md` |
 
 ## Cómo leer la evidencia
 
@@ -61,10 +62,10 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 02 Buscar y explorar | Categorías · móvil | `43:1454` | /categorias | PASS — agent verified | M (CAT). Barra propia con buscador, chip del asistente, tiles 167 | no | sí | CAT |
 | 02 Buscar y explorar | Categoría abierta · Hogar · móvil | `43:1530` | /productos?cat= | PASS — agent verified | M (CAT). Título (48,12), buscador 358x42, chips y=104, tarjetas y=189. Sin chip "Con stock" (decisión del usuario pendiente) | no | sí | CAT |
 | 03 Producto y tiendas | Ficha de producto · móvil | `28:839` | /productos/:id | PARTIAL | M (PROD). Alto de página 1522 igual a Figma (antes 1955); título 442, precio 480, entrega y pago 610, barra fija y=761. Quita "Comprar ahora", confianza y garantía (decisión del usuario pendiente). Ver PROD.md | no | sí | PROD |
-| 03 Producto y tiendas | Perfil del negocio · móvil | `29:922` | /tienda/:slug | UNKNOWN | H (M hizo SEO y "Sobre nosotros"); sin comparar | no | sí | STORE |
-| 03 Producto y tiendas | Directorio de emprendimientos · móvil | `29:1159` | /emprendimientos | OLD_DESIGN | H+C. 0 tokens nuevos; el directorio real necesita endpoint nuevo | no | sí | STORE |
+| 03 Producto y tiendas | Perfil del negocio · móvil | `29:922` | /tienda/:slug | PARTIAL | M (STORE, 1-oct-2026, agent verified, API simulada). Portada 150, encabezado 264, buscador 358x41, tarjetas 167x280 desde y=681, "Cómo comprarle" y=1581 (0 a 1 px). Se conservan la barra inferior de la tienda y el WhatsApp flotante (no están en Figma) por el acceso al pedido aislado: decisión pendiente. Ver `STORE.md` | no | sí | STORE |
+| 03 Producto y tiendas | Directorio de emprendimientos · móvil | `29:1159` | /emprendimientos | PARTIAL | M (STORE, 1-oct-2026, agent verified, API simulada). Barra, descripción y buscador a 0 px. BLOCKED por backend: ciudad, categoría (chips), tres fotos, conteo de productos y slug ("Ver tienda"); `/convenios/publicos` solo trae nombre, logo, descripción y sitio. Ver `STORE.md` | no | sí | STORE |
 | 03 Producto y tiendas | Ficha de producto · desktop | `29:2072` | /productos/:id | PARTIAL | M (PROD). Foto 560x560 en x=204, título/precio y=210/264, acciones 394, entrega y pago 462, opiniones 781. Anchos de Sora ±2 px. Ver PROD.md | sí | no | PROD |
-| 03 Producto y tiendas | Perfil del negocio · desktop | `29:2308` | /tienda/:slug | UNKNOWN | C | sí | no | STORE |
+| 03 Producto y tiendas | Perfil del negocio · desktop | `29:2308` | /tienda/:slug | PARTIAL | M (STORE, 1-oct-2026, agent verified, API simulada). Debajo del header: portada 220, encabezado 164, lateral 320, productos en x=480, tarjetas con paso 183, caja 197 (0 a 1 px). Figma dibuja el header del marketplace; se conserva el de la tienda (pedido aislado): decisión pendiente. Ver `STORE.md` | sí | no | STORE |
 | 03 Producto y tiendas | Ficha con variantes · móvil | `44:1775` | /productos/:id | PARTIAL | M (PROD). Título 376, swatches 34 px, talla 597, chips 623. Se conserva el stepper que Figma omite (decisión pendiente) | no | sí | PROD |
 | 03 Producto y tiendas | Ficha producto personalizado · móvil | `44:1849` | /productos/:id | PARTIAL | M (PROD). Etiqueta, título y vendedor idénticos; panel 27 px más arriba porque no se muestra "Elaboración" (falta dato). Sin stepper | no | sí | PROD |
 | 03 Producto y tiendas | Ficha agotada · móvil | `44:1917` | /productos/:id (ProductAgotado) | PARTIAL | M (PROD). Etiqueta 376; chip y carrusel 14 px más arriba porque no se pinta "NUEVO · por programar". Foto atenuada al 35 % contra el rectángulo blanco opaco de Figma (decisión pendiente) | no | sí | PROD |
@@ -124,7 +125,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 09 Funciones existentes | D · ¿Aún pensando? · salida · hoja | `51:2196` | ExitIntentModal | PASS — agent verified | M (SYS). Hoja y525 alto 319. Variante de favoritos sin frame | no | sí | SYS |
 | 09 Funciones existentes | E · Idioma y accesibilidad · hoja | `51:2229` | AccessibilityPanel / LanguageSelector | PARTIAL | M (SYS). Hoja y490 alto 354 (igual a Figma), "Alto contraste" y702, "Reducir movimiento" y740, "Listo" y774, chips 33. Tema y filtro de color sacados por decisión del usuario. Diferencia real: Figma resalta "A" (tamaño del medio) por defecto y la app resalta "A−" (el tamaño por defecto del store es el menor): REQUIRES_DECISION | no | sí | SYS |
 | 09 Funciones existentes | F · Botón flotante de WhatsApp · Home | `51:2262` | WhatsAppFab | PASS — agent verified (móvil) | M (SYS). 56x56 en x318,y705 igual a Figma; sin superposición con barra inferior ni barra de compra. Desktop sin frame: abajo a la derecha con margen 16 (nota `52:2422`), decisión del usuario | no | sí | SYS |
-| 09 Funciones existentes | G · Tienda con su color · perfil del negocio | `51:2468` | /tienda/:slug | UNKNOWN | C | no | sí | STORE |
+| 09 Funciones existentes | G · Tienda con su color · perfil del negocio | `51:2468` | /tienda/:slug | PARTIAL | M (STORE, 1-oct-2026, agent verified, API simulada). Mismas posiciones que `29:922`; portada y logo con `--t-secondary` (`#134E4A`), WhatsApp, chip y íconos con `--t-accent` (`#0F766E`). Mismas pendientes que `29:922` | no | sí | STORE |
 | 10 Estados del sistema | Carrito vacío · móvil | `45:1692` | /carrito | PASS — agent verified | M (CHK, 1-oct-2026, agent verified, API simulada). Carrito vacío móvil con 2 destacados; en escritorio se centra con el mismo ancho (sin frame) | no | sí | CHK |
 | 10 Estados del sistema | Favoritos vacío · móvil | /wishlist | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Círculo rojo claro, texto, botón rojo y sugerencia de Descubrí; fondo blanco; barra inferior con Cuenta | H (O) | no | sí | ACC |
 | 10 Estados del sistema | Sin pedidos · móvil | /mis-pedidos | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Círculo gris, "Todavía no tenés pedidos", botón y nota "¿Compraste sin cuenta?" | H (O) | no | sí | ACC |
@@ -145,10 +146,10 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | HOME | 3 |
 | CAT | 10 |
 | PROD | 7 |
-| STORE | 4 |
+| STORE | 4 (4 PARTIAL, agent verified; sin integrar en `base`) |
 | CHK | 17 (3 PASS agent verified, 14 PARTIAL) |
 | ACC | 18 (10 PASS, 8 PARTIAL, agent verified) |
-| SRV | 8 (1 PASS, 7 PARTIAL, agent verified; sin integrar en `base`) |
+| SRV | 8 (1 PASS, 7 PARTIAL, agent verified) |
 | QR | 13 |
 | SYS | 10 |
 

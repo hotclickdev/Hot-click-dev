@@ -97,9 +97,10 @@ test.describe('Tienda tenant — theme', () => {
       nombreComercial: 'Emprendimiento Super Largo De Prueba Costa Rica',
     })
     await page.setViewportSize({ width: 375, height: 700 })
-    await page.goto('/tienda/demo', { waitUntil: 'domcontentloaded' })
+    // En el perfil móvil la portada reemplaza al header (Figma 29:922): se revisa en una subruta que lo conserva.
+    await page.goto('/tienda/demo/carrito', { waitUntil: 'domcontentloaded' })
 
-    const header = page.locator('header').first()
+    const header = page.getByRole('banner').first()
     const anfitrion = header.locator('span.shrink-0', { hasText: 'en HotClick' })
     await expect(anfitrion).toBeVisible()
 

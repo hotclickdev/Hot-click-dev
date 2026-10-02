@@ -1,20 +1,29 @@
 import { useState, useEffect, useCallback, type FormEvent, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import IconoFigma from '@/components/comprador/IconoFigma'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
-import { CLASE_INPUT_TIENDA } from './tiendaTheme'
+import { ICONOS_TIENDA } from './iconosTienda'
+import TiendaPortada from './TiendaPortada'
+import TiendaEncabezadoNegocio from './TiendaEncabezadoNegocio'
+import TiendaComoComprarle from './TiendaComoComprarle'
 import TiendaProductoCard from './TiendaProductoCard'
 import EsqueletoCatalogo from './EsqueletoCatalogo'
 import TiendaCatalogoError from './TiendaCatalogoError'
 import TiendaCatalogoNuevo from './TiendaCatalogoNuevo'
 import TiendaCatalogoBusquedaVacia from './TiendaCatalogoBusquedaVacia'
-import TiendaSobreNosotros from './TiendaSobreNosotros'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 
 type CategoriaTienda = { id: Id; nombreCategoria?: string }
 
+const TITULO_SECCION = 'font-display text-[17px] font-bold leading-[normal] text-hc-n-900 lg:text-lg lg:leading-[23px]'
+
+/**
+ * Perfil del negocio en /tienda/:slug (Figma `29:922` móvil, `29:2308` escritorio, `51:2468` con los
+ * colores de la tienda): portada, encabezado, sobre nosotros, catálogo con buscador y categorías, y "Cómo comprarle".
+ * Los colores de marca salen de `--t-secondary` (portada, logo) y `--t-accent` (acciones y chip activo).
+ */
 export default function TiendaHomePage() {
   const { slug } = useParams()
   const { agregarAlCarrito, empresa } = useTiendaStore()
@@ -24,6 +33,7 @@ export default function TiendaHomePage() {
   const [loadError, setLoadError] = useState(false)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalProductos, setTotalProductos] = useState(0)
   const [busqueda, setBusqueda] = useState('')
   const [query, setQuery] = useState('')
   const [catActiva, setCatActiva] = useState<Id | null>(null)
@@ -36,6 +46,7 @@ export default function TiendaHomePage() {
       .then((res) => {
         setProductos(res.content ?? [])
         setTotalPages(res.totalPages ?? 1)
+        setTotalProductos((res as { totalElements?: number }).totalElements ?? res.content?.length ?? 0)
         setPage(p)
       })
       .catch((err: unknown) => {
@@ -56,7 +67,7 @@ export default function TiendaHomePage() {
   const hayFiltro = Boolean(query || catActiva)
   const catalogoNuevo = !loading && !loadError && productos.length === 0 && !hayFiltro
   const busquedaVacia = !loading && !loadError && productos.length === 0 && hayFiltro
-  const nombre = empresa?.nombreComercial ?? slug
+  const nombre = (empresa?.nombreComercial ?? slug) as string
 
   const buscar = (e: FormEvent) => {
     e.preventDefault()
@@ -87,93 +98,90 @@ export default function TiendaHomePage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      {empresa?.tagline && !catalogoNuevo && (
-        <p className="text-center text-[var(--t-muted)] text-sm">{empresa.tagline}</p>
-      )}
+    <div>
+      <TiendaPortada nombre={nombre} />
+      <TiendaEncabezadoNegocio empresa={empresa} nombre={nombre} />
 
-      <TiendaSobreNosotros empresa={empresa} />
+      <div className="mx-auto grid max-w-[1232px] grid-cols-1 px-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:pb-14 lg:pt-8">
+        {empresa?.descripcion && (
+          <section className="flex flex-col gap-2 pb-[6px] pt-[18px] lg:col-start-1 lg:row-start-1 lg:gap-5 lg:pb-0 lg:pt-0">
+            <h2 className={TITULO_SECCION}>Sobre nosotros</h2>
+            <p className="text-sm leading-[21px] text-hc-n-600">{empresa.descripcion}</p>
+          </section>
+        )}
 
-      {!catalogoNuevo && !loadError && (
-        <BuscadorTienda busqueda={busqueda} onBusqueda={setBusqueda} onBuscar={buscar} />
-      )}
+        <section className="flex flex-col gap-3 pb-[6px] pt-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:gap-4 lg:pb-0 lg:pt-0">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <h2 className="font-display text-[17px] font-bold leading-[normal] text-hc-n-900 lg:text-[22px] lg:leading-7">{catalogoNuevo ? 'Productos' : `Productos (${totalProductos})`}</h2>
+            {!catalogoNuevo && !loadError && (
+              <BuscadorTienda nombre={nombre} busqueda={busqueda} onBusqueda={setBusqueda} onBuscar={buscar} />
+            )}
+          </div>
 
-      {!catalogoNuevo && !loadError && (
-        <FiltrosCategoria categorias={categorias} catActiva={catActiva} onFiltrar={filtrarCategoria} />
-      )}
+          {!catalogoNuevo && !loadError && (
+            <FiltrosCategoria categorias={categorias} catActiva={catActiva} onFiltrar={filtrarCategoria} />
+          )}
 
-      {loading && <EsqueletoCatalogo />}
-      {!loading && loadError && (
-        <TiendaCatalogoError onRetry={() => cargarProductos(page, query, catActiva)} />
-      )}
-      {catalogoNuevo && <TiendaCatalogoNuevo nombre={nombre as string} />}
-      {busquedaVacia && <TiendaCatalogoBusquedaVacia onLimpiar={limpiarFiltros} />}
-      {!loading && !loadError && productos.length > 0 && (
-        <GrillaProductos
-          slug={slug as string}
-          productos={productos}
-          agregados={agregados}
-          onAgregar={handleAgregar}
-        />
-      )}
+          {loading && <EsqueletoCatalogo />}
+          {!loading && loadError && (
+            <TiendaCatalogoError onRetry={() => cargarProductos(page, query, catActiva)} />
+          )}
+          {catalogoNuevo && <TiendaCatalogoNuevo nombre={nombre} />}
+          {busquedaVacia && <TiendaCatalogoBusquedaVacia onLimpiar={limpiarFiltros} />}
+          {!loading && !loadError && productos.length > 0 && (
+            <div className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 lg:grid-cols-[repeat(auto-fill,167px)] lg:justify-start lg:gap-x-4 lg:gap-y-5">
+              {productos.map((p) => (
+                <TiendaProductoCard
+                  key={p.id}
+                  slug={slug as string}
+                  producto={p}
+                  vendedor={nombre}
+                  agregado={!!agregados[String(p.id)]}
+                  onAgregar={handleAgregar}
+                />
+              ))}
+            </div>
+          )}
 
-      {!catalogoNuevo && !loadError && (
-        <PaginacionTienda page={page} totalPages={totalPages} onCargar={cargarProductos} />
-      )}
+          {!catalogoNuevo && !loadError && (
+            <PaginacionTienda page={page} totalPages={totalPages} onCargar={cargarProductos} />
+          )}
+        </section>
+
+        <section className="flex flex-col gap-3 pb-7 pt-[22px] lg:col-start-1 lg:row-start-2 lg:gap-5 lg:self-start lg:pb-0 lg:pt-5">
+          <h2 className={TITULO_SECCION}>Cómo comprarle</h2>
+          <TiendaComoComprarle empresa={empresa} />
+        </section>
+      </div>
     </div>
   )
 }
 
 function BuscadorTienda({
-  busqueda, onBusqueda, onBuscar,
+  nombre, busqueda, onBusqueda, onBuscar,
 }: {
+  nombre: string
   busqueda: string
   onBusqueda: (v: string) => void
   onBuscar: (e: FormEvent) => void
 }) {
   return (
-    <form onSubmit={onBuscar} className="flex gap-2">
-      <div className="relative flex-1">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--t-muted)]" />
-        <input
-          type="search"
-          placeholder="Buscar productos..."
-          value={busqueda}
-          onChange={(e) => onBusqueda(e.target.value)}
-          className={`${CLASE_INPUT_TIENDA} pl-9`}
-        />
-      </div>
-      <button
-        type="submit"
-        className="px-4 min-h-[44px] rounded-lg text-white text-sm font-medium"
-        style={{ backgroundColor: 'var(--t-primary)' }}
-      >
-        Buscar
-      </button>
+    <form
+      onSubmit={onBuscar}
+      role="search"
+      className="flex items-center gap-2 rounded-xl border border-[var(--t-border)] bg-[var(--t-surface)] px-3 py-[11px] lg:h-11 lg:w-[320px] lg:px-[14px]"
+    >
+      <IconoFigma src={ICONOS_TIENDA.buscar} size={17} className="text-hc-n-500" />
+      <input
+        type="search"
+        value={busqueda}
+        onChange={(e) => onBusqueda(e.target.value)}
+        placeholder={`Buscar en ${nombre}`}
+        aria-label={`Buscar en ${nombre}`}
+        enterKeyHint="search"
+        className="hc-input-libre h-4 min-w-0 flex-1 bg-transparent p-0 text-sm leading-4 text-hc-n-900 outline-none placeholder:text-hc-n-500"
+      />
     </form>
-  )
-}
-
-function GrillaProductos({
-  slug, productos, agregados, onAgregar,
-}: {
-  slug: string
-  productos: Producto[]
-  agregados: Record<string, boolean>
-  onAgregar: (producto: Producto) => void
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      {productos.map((p) => (
-        <TiendaProductoCard
-          key={p.id}
-          slug={slug}
-          producto={p}
-          agregado={!!agregados[String(p.id)]}
-          onAgregar={onAgregar}
-        />
-      ))}
-    </div>
   )
 }
 
@@ -186,10 +194,8 @@ function FiltrosCategoria({
 }) {
   if (categorias.length === 0) return null
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-      <ChipCategoria activa={catActiva === null} onClick={() => onFiltrar(null)}>
-        <FunnelIcon className="inline h-3 w-3 mr-1" />Todos
-      </ChipCategoria>
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 scrollbar-none lg:mx-0 lg:px-0">
+      <ChipCategoria activa={catActiva === null} onClick={() => onFiltrar(null)}>Todo</ChipCategoria>
       {categorias.map((c) => (
         <ChipCategoria key={c.id} activa={catActiva === c.id} onClick={() => onFiltrar(c.id)}>
           {c.nombreCategoria}
@@ -204,10 +210,11 @@ function ChipCategoria({ activa, onClick, children }: { activa: boolean; onClick
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium border transition-colors ${
-        activa ? 'text-white border-transparent' : 'bg-[var(--t-surface)] border-[var(--t-border)] text-[var(--t-muted)]'
+      aria-pressed={activa}
+      className={`shrink-0 whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium leading-[normal] ${
+        activa ? 'text-white' : 'border-[var(--t-border)] bg-[var(--t-surface)] text-hc-n-900'
       }`}
-      style={activa ? { backgroundColor: 'var(--t-secondary)', borderColor: 'var(--t-secondary)' } : {}}
+      style={activa ? { backgroundColor: 'var(--t-accent)', borderColor: 'var(--t-accent)' } : undefined}
     >
       {children}
     </button>
@@ -228,7 +235,7 @@ function PaginacionTienda({
         type="button"
         disabled={page === 0}
         onClick={() => onCargar(page - 1)}
-        className="px-4 py-2 min-h-[44px] rounded-lg border border-[var(--t-border)] text-sm disabled:opacity-40"
+        className="min-h-[44px] rounded-lg border border-[var(--t-border)] bg-[var(--t-surface)] px-4 py-2 text-sm disabled:opacity-40"
       >
         Anterior
       </button>
@@ -239,7 +246,7 @@ function PaginacionTienda({
         type="button"
         disabled={page + 1 >= totalPages}
         onClick={() => onCargar(page + 1)}
-        className="px-4 py-2 min-h-[44px] rounded-lg border border-[var(--t-border)] text-sm disabled:opacity-40"
+        className="min-h-[44px] rounded-lg border border-[var(--t-border)] bg-[var(--t-surface)] px-4 py-2 text-sm disabled:opacity-40"
       >
         Siguiente
       </button>
