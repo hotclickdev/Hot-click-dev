@@ -64,7 +64,7 @@ test.describe('Barra inferior móvil', () => {
     // La vista exige sesión; sin token redirige a /login.
     await page.addInitScript(() => {
       localStorage.setItem('hotclick-auth', JSON.stringify({
-        state: { token: 'token-de-prueba', userId: 1, userEmail: 'a@b.cr', userRole: 'USER', userName: 'Ana Prueba' },
+        state: { token: 'tok-prueba', userId: 1, userEmail: 'a@b.cr', userRole: 'USER', userName: 'Ana Prueba' },
         version: 0,
       }))
     })

@@ -30,7 +30,7 @@ async function preparar(page: Page, opts: { mesaOk?: boolean; estado?: string; m
     if (path.endsWith('/intent')) return json({ error: 'sin onvo' }, 400)
     if (path.includes('/pos/qr/pago/')) {
       return json({
-        token: '3f9a2c1b9999',
+        token: '3f9a2c1b99',
         estado: opts.estado ?? 'PENDIENTE',
         metodoPago: opts.metodo ?? 'SINPE',
         total: 10500,
@@ -163,7 +163,7 @@ test.describe('Responsive y tokens (P07)', () => {
       await expect(circulo).toHaveCSS('background-color', await colorDeToken(page, '--hc-success-bg', 'backgroundColor'))
       await sinDesborde(page)
 
-      await page.goto('/pos/pago/3f9a2c1b9999', { waitUntil: 'domcontentloaded' })
+      await page.goto('/pos/pago/3f9a2c1b99', { waitUntil: 'domcontentloaded' })
       await expect(page.getByText('Total a pagar')).toBeVisible()
       expect((await page.locator('main').boundingBox())?.width).toBe(Math.min(ancho, 430))
       await sinDesborde(page)
