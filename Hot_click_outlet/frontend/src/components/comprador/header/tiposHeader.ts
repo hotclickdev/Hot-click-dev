@@ -12,10 +12,11 @@ export type EncabezadoMovil = 'global' | 'interno' | 'marca' | 'propio'
 /**
  * Header desktop.
  * - `completo`: buscador híbrido + fila de categorías (Home `9:172`, ficha `29:2072`).
- * - `compacto`: logo, buscador simple y accesos, sin categorías (carrito `30:2268`, cuenta `30:1480`).
+ * - `compacto`: logo, buscador simple y accesos, sin categorías (cuenta `30:1480`, alto 79).
+ * - `carrito`: el compacto con la fila en y18 (carrito `30:2269`, alto 83).
  * - `minimo`: logo + "Compra segura" (checkout `30:2386`).
  */
-export type EncabezadoEscritorio = 'completo' | 'compacto' | 'minimo'
+export type EncabezadoEscritorio = 'completo' | 'compacto' | 'carrito' | 'minimo'
 
 /** Destino del botón atrás: una ruta fija o una función. Sin valor: historial del navegador. */
 export type DestinoAtras = string | (() => void)

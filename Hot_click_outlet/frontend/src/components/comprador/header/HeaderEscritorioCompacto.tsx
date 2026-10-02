@@ -7,8 +7,11 @@ import MarcaComprador from './MarcaComprador'
 import { inicialesDe } from './headerHelpers'
 import { useConsultaBuscador, useHeaderComprador } from './useHeaderComprador'
 
-/** Header desktop compacto, sin fila de categorías (Figma `30:1480`, carrito `30:2268`). */
-export default function HeaderEscritorioCompacto() {
+/**
+ * Header desktop compacto, sin fila de categorías. Cuenta `30:1480`: alto 79 (fila en y16).
+ * Carrito `30:2269`: alto 83 (fila en y18) y carrito en rojo, con `filaCarrito`.
+ */
+export default function HeaderEscritorioCompacto({ filaCarrito = false }: { filaCarrito?: boolean }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { cantidadPedido, conSesion, nombreUsuario, rutaCuenta } = useHeaderComprador()
@@ -21,7 +24,7 @@ export default function HeaderEscritorioCompacto() {
   }
 
   return (
-    <div className="hidden items-center gap-8 border-b border-hc-n-200 bg-hc-n-0 px-8 py-4 leading-[normal] lg:flex xl:px-[120px]">
+    <div className={`hidden items-center gap-8 border-b border-hc-n-200 bg-hc-n-0 px-8 leading-[normal] lg:flex xl:px-[120px] ${filaCarrito ? 'py-[18px]' : 'py-4'}`}>
       <MarcaComprador tamano="escritorio" />
       <form role="search" onSubmit={buscar} className="flex min-w-px flex-1 items-center gap-[10px] rounded-[12px] bg-hc-n-100 px-4 py-[13px]">
         <IconoFigma src={ICONOS_COMPRADOR.buscador} size={20} className="text-hc-n-600" />
@@ -50,7 +53,7 @@ export default function HeaderEscritorioCompacto() {
         <Link
           to="/carrito"
           aria-label={t('comprador.header.carrito', { count: cantidadPedido })}
-          className="flex items-center gap-[6px]"
+          className={`flex items-center gap-[6px] ${filaCarrito ? 'text-hc-red-500' : ''}`}
         >
           <IconoFigma src={ICONOS_COMPRADOR.headerCarritoDesktop} size={22} />
           {cantidadPedido > 0 && (

@@ -34,7 +34,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
             <IconoFigma src={ICONOS_COMPRADOR.headerIngresar} size={20} />
             {conSesion ? t('comprador.header.miCuenta') : t('comprador.header.ingresar')}
           </Link>
-          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')}>
+          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')} className="flex">
             <IconoFigma src={ICONOS_COMPRADOR.headerFavoritos} size={22} />
           </Link>
           <Link

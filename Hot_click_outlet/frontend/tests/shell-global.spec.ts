@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { mockApisAcc, sembrarSesion } from './helpers/accFixtures'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -48,5 +49,27 @@ test.describe('SHELL — header desktop', () => {
     await mockApis(page)
     await page.goto('/productos?search=taza', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('search').first().getByRole('searchbox')).toHaveValue('taza')
+  })
+  test('el carrito usa el header de 83 px con el carrito en rojo (Figma 30:2269) y Mi cuenta el de 79 (30:1480)', async ({ page }) => {
+    await mockApisAcc(page)
+    await page.addInitScript(() => {
+      localStorage.setItem('hc-promo-seen', String(Date.now()))
+      localStorage.setItem('hotclick-cookie-consent', JSON.stringify({ analytics: false, functional: true, timestamp: Date.now() }))
+      localStorage.setItem('hotclick-cart', JSON.stringify({
+        state: { items: [{ id: 1, nombre: 'Mouse', precio: 5000, cantidad: 1, stock: 4 }], cartUpdatedAt: Date.now() },
+        version: 0,
+      }))
+    })
+    await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
+    const header = page.locator('header').first()
+    await expect(header).toBeVisible()
+    expect(Math.round((await header.boundingBox())?.height ?? 0)).toBe(83)
+    await expect(header.locator('a[href="/carrito"]:visible')).toHaveCSS('color', 'rgb(231, 59, 51)')
+
+    await sembrarSesion(page)
+    await mockApisAcc(page)
+    await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
+    await expect(header).toBeVisible()
+    expect(Math.round((await header.boundingBox())?.height ?? 0)).toBe(79)
   })
 })

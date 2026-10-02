@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-01 (QR). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (SYS/SHELL A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -26,6 +26,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | Ola 1, QR | **Hecho, integrado en `base`** (merge `795d7d01`, commits `795c6abe`, `5a526539` y `89315db0` sobre `4d773aaf`, local, sin push). Rama `feat/figma/qr`, puesta al día con `base` (`4d773aaf`) por fast-forward. 13 frames: 1 PASS y 12 PARTIAL (agent verified; 6 pantallas: 1 PASS y 5 PARTIAL, y los 7 correos PARTIAL): QR de mesa (menú y pedido enviado), QR de pago (método, SINPE en curso, pagado, vencido) y 7 correos al cliente. Ninguna BLOCKED. Pendientes: paso de confirmación de la mesa, método elegido por el cajero, "Escanear otro QR", comprobante del pago y datos de paquetes y dirección en los correos. Ver `QR.md` |
 | Fase 2c: SHELL (variantes de `MainLayout`) | Integrado en `feat/figma/base` (merge `b3159c1e`, autorizado por el usuario). Base: tsc limpio, 358 tests |
 | Fase 2d: análisis de `ProductCard` | Hecho, sin tocar código. Ver `PRODUCTCARD_STRATEGY.md` |
+| SYS/SHELL, pasada A1/A2/A4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). A1: Home muestra `PantallaSinConexion` ante un error de red sin datos. A2: línea base de 66 medidas del chrome contra 12 frames, todas dentro de ±1 px tras 4 correcciones (header del carrito desktop de 83 px con el carrito rojo; corazón del header móvil y desktop). A4: el aviso de cookies bajó de z 9999 a 65 porque tapaba la hoja del cupón. No se tocó B1 a B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
 
 ## Ramas y worktrees
 
@@ -239,13 +240,13 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 
 ## Riesgos abiertos
 
-- **Pendientes de integración tras SYS:** (SUP) registrar la ruta `/sin-conexion` -> `pages/SinConexionPage` en `AppRoutes.tsx` (ver `ROUTES_REQUESTED.md`); (HOME) usar `esSinConexion(error)` -> `PantallaSinConexion` en errores de red; (SHELL) `FooterComprador` con "Preferencias de cookies" (`abrirPreferenciasCookies()`) e "Idioma y accesibilidad" (`abrirAccesibilidad()`), alias `--color-hc-success-bg` y prop de fondo blanco en `MainLayout`; (ACC) fila "Idioma y accesibilidad" en Mi cuenta. Hasta entonces el botón con isotipo de accesibilidad sigue visible (constante `MOSTRAR_BOTON_FLOTANTE`).
+- **Pendientes de integración tras SYS:** hechos el 2-oct-2026 la ruta `/sin-conexion` (SHELL), el alias `--color-hc-success-bg`, la prop de fondo blanco de `MainLayout` y Home con `esSinConexion` -> `PantallaSinConexion` (A1). Siguen abiertos (decisión tuya): `FooterComprador` con "Preferencias de cookies" (`abrirPreferenciasCookies()`) e "Idioma y accesibilidad" (`abrirAccesibilidad()`) (B1) y la fila de accesibilidad en Mi cuenta (ACC). Hasta entonces el botón con isotipo de accesibilidad sigue visible (constante `MOSTRAR_BOTON_FLOTANTE`).
 - **`REQUIRES_DESIGN_REFERENCE` (no son PASS definitivo):** cookies en desktop (tarjeta abajo a la izquierda, provisional) y la interacción desktop tras "Agregar" en la ficha (toast). Hay que pedir a diseño los frames desktop.
 
 - **PASS sin QA independiente (se documentan como `PASS — agent verified`):** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
 - **e2e de Playwright sin arreglar:** fallan `catalogo-iconos` ("Ver más") y los que leen archivos borrados por otros agentes (`AdminConvenios`, `NavbarMobileCategorias`, `ShippingSection`, `navbarIcons`) o buscan el botón "Menú" del header anterior. Hay que decidir quién los arregla.
 - **Lint previo:** quedan errores de eslint que ya existían en `AIChat`, `SearchPanel`, `useSearchPanel`, `DescubriPage:135` y `utils/gustos.ts:120` (regla de refs durante render), más 88 en `src/pages` fuera de lo tocado.
-- **Dependencias hacia SHELL:** `MainLayout` manda "buscar con foto" a `/servicios` aunque `/buscar/foto` existe; el header desktop no muestra la búsqueda actual (Figma `30:1824` sí); la barra inferior marca "Buscar" en `/productos?cat=` y Figma `43:1530` marca "Categorías"; `BarraInterna` pinta el título como `<p>`.
+- ~~**Dependencias hacia SHELL:** `MainLayout` manda "buscar con foto" a `/servicios`, el buscador desktop sin la búsqueda actual, la barra inferior en `/productos?cat=`~~ Resueltas por SHELL (`SHELL_GLOBAL.md`). Abierto: `BarraInterna` pinta el título como `<p>`.
 - **Dependencias hacia SYS:** el FAB del asistente y el botón de WhatsApp flotantes se superponen a la barra de compra móvil de la ficha y no están en Figma.
 - **Dependencias hacia backend:** el SSE del asistente no manda los filtros interpretados (fila "Entendí:"); falta `empresaNombre`, `tienda` y `categoria` en resultados de foto; falta dato de tiempo de elaboración y guía de tallas.
 
@@ -263,6 +264,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 - **e2e previos fuera de SRV:** `ui-sin-emoji.spec.ts` (16 casos) y 3 casos de `envio-*` sobre el Home fallan igual en `base`. SRV actualizó `blog`, `envio-internacional` y `envio-rapido` (`/envios`) y agregó `srv-servicios.spec.ts` (16 casos).
 - **Dependencias hacia backend (STORE):** endpoint de empresas públicas para el directorio (slug, ciudad de la bodega, categoría, fotos y conteo de productos) y días de atención del retiro.
 - **Dependencias hacia SHELL (STORE):** la regla global de `header`/`aside`/`footer` con `!important` dejaba invisible el header de la tienda (corregido con `div role="banner"`); los inputs móviles se fuerzan a 16 px.
+- **Nota del 2-oct-2026 sobre las dependencias hacia SHELL de CHK, ACC, SRV y STORE:** SHELL ya resolvió los alias de color, la regla de 16 px en inputs móviles (excluye `.hc-figma-ui` y `.hc-tenant-theme`), el aviso de `/blog`, `/servicios?vista=solicitudes` en Cuenta, `ReturnVisitorBanner` en `/perfil`, `/mis-pedidos` y `/wishlist`, y el fondo blanco. Siguen abiertos la regla `header, aside, footer { … !important }` de `index.css` y el `<h1>` de `BarraInterna`.
 - **e2e previos fuera de STORE:** `tienda-checkout.spec.ts:77`, `tienda-theme.spec.ts:115` (carrito global, CHK) y `convenios-marquee.spec.ts` (Home) fallan igual en `base`. STORE actualizó `tienda-theme` y `tienda-vacia` y agregó `store-perfil.spec.ts` (6 casos).
 - **Fase 2 llegó sin CI:** el PR #93 nunca disparó GitHub Actions. Lo validado aquí es local (tests, tipos, build). Sigue sin pasar los gates E1 a E18.
 - **Conflictos de i18n** entre agentes: mitigados con namespaces, pero el riesgo de merge persiste. Gate E17 exige es/en/pt en el mismo commit.

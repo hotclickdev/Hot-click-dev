@@ -12,6 +12,8 @@ import { useCategoriasCatalogo } from '@/components/comprador/useCategoriasCatal
 import { rutaCategoria } from '@/components/comprador/header/useHeaderComprador'
 import PantallaFalloServidor from '@/components/comprador/estados/PantallaFalloServidor'
 import { esFalloServidor, referenciaDelError } from '@/components/comprador/estados/falloServidorHelpers'
+import PantallaSinConexion from '@/components/comprador/estados/PantallaSinConexion'
+import { esSinConexion } from '@/components/comprador/estados/conexionHelpers'
 import TarjetaInstalarApp from '@/components/comprador/instalar/TarjetaInstalarApp'
 import type { Producto } from '@/types/producto'
 import HomeSeo from './home/HomeSeo'
@@ -54,11 +56,14 @@ export default function HomePage() {
   const preguntar = (texto: string) => abrirChat(texto)
   const referenciaFallo = useMemo(() => referenciaDelError(catalogoQuery.error), [catalogoQuery.error])
 
-  const falloServidor = esFalloServidor(catalogoQuery.error) && catalogo.length === 0 && destacados.length === 0
+  const sinDatos = catalogo.length === 0 && destacados.length === 0
+  const reintentar = () => { void catalogoQuery.refetch(); void destacadosQuery.refetch() }
+  const falloServidor = esFalloServidor(catalogoQuery.error) && sinDatos
   if (falloServidor) {
-    const reintentar = () => { void catalogoQuery.refetch(); void destacadosQuery.refetch() }
     return <PantallaFalloServidor referencia={referenciaFallo} onReintentar={reintentar} />
   }
+  const sinConexion = (esSinConexion(catalogoQuery.error) || esSinConexion(destacadosQuery.error)) && sinDatos
+  if (sinConexion) return <PantallaSinConexion onReintentar={reintentar} />
 
   return (
     <MainLayout>

@@ -20,7 +20,7 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
       <div className="flex items-center justify-between">
         <MarcaComprador tamano="movil" />
         <div className="flex items-center gap-[18px] text-hc-n-900">
-          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')}>
+          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')} className="flex">
             <IconoFigma src={ICONOS_COMPRADOR.headerFavoritos} size={22} />
           </Link>
           <Link

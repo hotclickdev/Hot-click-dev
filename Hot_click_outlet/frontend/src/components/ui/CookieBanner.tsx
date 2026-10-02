@@ -64,6 +64,7 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
 
   return (
     <>
+      {/* z-65: sobre la barra (50), la tarjeta de instalar (55) y el aviso de actualización (60), pero bajo las hojas (70), que no deben quedar tapadas (el cupón sale a los 2 s y este aviso a los 12 s). */}
       <AnimatePresence>
         {visible && (
           <motion.div
@@ -71,7 +72,7 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 120, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed inset-x-3 z-[9999] mx-auto max-w-[366px] bottom-[calc(79px+env(safe-area-inset-bottom,0px))] lg:inset-x-auto lg:bottom-6 lg:left-6 lg:mx-0"
+            className="fixed inset-x-3 z-[65] mx-auto max-w-[366px] bottom-[calc(79px+env(safe-area-inset-bottom,0px))] lg:inset-x-auto lg:bottom-6 lg:left-6 lg:mx-0"
           >
             <CuerpoBanner
               onSoloEsenciales={() => accept(false)}

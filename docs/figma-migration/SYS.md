@@ -9,7 +9,7 @@ Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYF
 | Página no encontrada · móvil | `45:2198` | PASS (móvil) | Barra de marca (`variante="marca"`), mensaje, buscador y accesos planos sin flechas, con los SVG originales. Sin frame desktop |
 | Fallo del servidor · móvil | `45:2322` | PASS (móvil) | Ya existía (PR #93). Corregidos alturas y tracking del Sora; ícono de alerta ahora es el SVG original |
 | Instalar la app · tarjeta | `55:2658` | PASS (móvil) | Ya existía. Corregidos alturas de título, subtítulo, beneficios y botones; la nota "NUEVO · por programar" y el texto del hook no llegan a la UI. Reglas de la nota (2.ª visita, nunca la primera página, 30 días) intactas |
-| Sin conexión · móvil | `45:2264` | PARTIAL | Geometría igual a Figma. Falta que HOME/SUP la enchufen (ver dependencias); fotos reales de vistos y favoritos no verificadas |
+| Sin conexión · móvil | `45:2264` | PARTIAL | Geometría igual a Figma. Home la muestra ante un error de red sin datos (A1, 2-oct-2026) y la ruta `/sin-conexion` está registrada. Medida con vistos y favoritos sembrados (imágenes sintéticas); fotos reales no verificadas, y los botones flotantes aparecen sobre ella sin estar en el frame (B1/B2) |
 | Aviso de cookies · móvil | `45:1946` | PASS (móvil) | Tarjeta 366 × 205 en x 12, y 560, botones 163 × 48 y 161 × 46. **Desktop: REQUIRES_DESIGN_REFERENCE** (no hay frame; provisional, ver abajo) |
 | Preferencias de cookies · hoja | `45:2166` | PASS (móvil) | Hoja desde y 90, secciones en 179, 266 y 361, pie en 644; todas iguales a Figma |
 | C · Cupón de bienvenida | `51:2163` | PASS (móvil) | Hoja igual a Figma con el campo de correo de 42 px (decisión del usuario: el frame de 26 px es un frame comprimido, no la referencia final). El paso "cupón enviado" no existe en Figma y se resolvió con el mismo sistema |
@@ -71,7 +71,7 @@ El botón con el isotipo se **conserva** de forma temporal: Figma (nota E) dice 
 
 - **SHELL** (`FooterComprador`): agregar enlaces "Preferencias de cookies" → `abrirPreferenciasCookies()` e "Idioma y accesibilidad" → `abrirAccesibilidad()`. `MainLayout` podría tener una prop `fondo="blanco"`: la 404 y el fallo son `n/0` en Figma y el layout pinta `n/50`; hoy la 404 lo resuelve con `min-h-[calc(100dvh-125px)] bg-hc-n-0` (aproximación de móvil).
 - **ACC** (Mi cuenta): fila "Idioma y accesibilidad" → `abrirAccesibilidad()`.
-- **HOME / quien muestre errores de red**: `if (esSinConexion(error)) return <PantallaSinConexion onReintentar={...} />`. Hoy `HomePage` solo distingue `esFalloServidor` (5xx).
+- **HOME / quien muestre errores de red**: `if (esSinConexion(error)) return <PantallaSinConexion onReintentar={...} />`. Hecho el 2-oct-2026: `HomePage` muestra `PantallaSinConexion` ante un error de red sin datos, además de `PantallaFalloServidor` ante un 5xx.
 - **SUP**: ruta `/sin-conexion` (`ROUTES_REQUESTED.md`); `App.tsx` y `app/AppChrome.tsx` fueron editados con el cambio mínimo (ver abajo).
 - **CHK**: se consume `HojaInferior` sin editarla (velo `n/900` opaco, 22 px, agarradera 40 × 4).
 - **PROD**: nada. Los botones flotantes ya se ocultan en la ficha móvil.
@@ -109,7 +109,34 @@ Quitado: `SocialProofToast` (inventaba compradores y acciones cada 15 a 30 s; no
 ## No verificado
 
 - Fotos reales de vistos y favoritos en Sin conexión (se usaron imágenes sintéticas).
-- Estado activo "Inicio" de la barra inferior en Sin conexión (depende de la ruta donde se muestre).
+- ~~Estado activo "Inicio" de la barra inferior en Sin conexión~~ Verificado el 2-oct-2026 en `/` y en `/sin-conexion`.
 - Modo oscuro del panel admin con la hoja de accesibilidad (la hoja es del comprador).
 - Navegadores reales con `beforeinstallprompt`: se simuló el evento.
 - Texto propuesto para INVENTORY y PROGRESS: ver el informe final de SYS.
+
+## Pasada del 2-oct-2026: A1 (Home sin conexión) y A4 (apilado)
+
+### A1. Home sin conexión (`45:2264`)
+
+- `HomePage.tsx`: si el catálogo y los destacados no tienen datos y alguna de las dos consultas falla por red (`esSinConexion`), devuelve `PantallaSinConexion`. Mismo patrón que `esFalloServidor`; el 5xx sigue mostrando el fallo del servidor. "Reintentar" vuelve a pedir las dos consultas (no recarga la página), igual que el fallo del servidor. Con datos ya cargados, el Home normal sigue visible aunque no haya red.
+- Medido a 390 con la franja de 36 px (navegador sin red) y con 4 vistos y 2 favoritos sembrados: vistos y279 (miniaturas 80 × 76 en x 20, 110, 200, 290), favoritos y391 (76 × 76 en x 20 y 106), Reintentar en (20, 489) de 350 × 48. Todo a 0 px de Figma. "Inicio" activo en la barra. Sin desbordes y sin errores de página ni de consola (se excluyen los fallos de recurso y el `console.error` de `useBranding`, que son consecuencia de la caída simulada).
+- Desktop: el frame es solo móvil. Se muestra la misma pantalla, sin variante nueva y sin desbordes a 1440.
+- Pruebas: `tests/home-sin-conexion.spec.ts` (6 casos: pantalla, Reintentar, 500, `/sin-conexion`, posiciones con datos guardados, desktop).
+
+### A4. Apilado de elementos fijos
+
+Orden real medido: flotantes (WhatsApp, isotipo) 40 < header y barra inferior 50 < tarjeta de instalar 55 < aviso de actualización 60 < aviso de cookies **65** < hojas (`HojaInferior`: cupón, salida, idioma y accesibilidad, preferencias de cookies) 70. Se comprobó quién recibe el clic en el centro de cada control a 390 (y a 1440 donde aplica).
+
+| Caso | Resultado |
+| --- | --- |
+| Hoja de accesibilidad abierta | Cubre WhatsApp, isotipo, barra inferior y header; "Listo" recibe el clic. Correcto |
+| Preferencias de cookies abiertas desde el aviso | Sus botones reciben el clic. Correcto |
+| Aviso de cookies sin hojas | Sus tres botones reciben el clic y queda sobre los flotantes y la barra. Correcto |
+| Cupón de bienvenida abierto cuando sale el aviso de cookies (12 s) | **Defecto**: el aviso (z 9999) tapaba el título y el campo de correo del cupón (z 70) |
+| Mismo caso a 1440 | Sin solapamiento: el aviso queda abajo a la izquierda y la hoja está centrada |
+| Tarjeta de instalar, aviso de actualización | Sin solapamiento con la barra (la tarjeta termina en y 756 y la barra empieza en 777). El aviso de cookies siempre tapó al de actualización; no se cambió |
+| `MiniCartDrawer` | Nada lo abre (`setCartDrawerOpen(true)` no se llama fuera del propio componente); sin efecto |
+
+Corrección (única de A4): `CookieBanner.tsx`, `z-[9999]` -> `z-[65]`. Las hojas pasan a cubrir el aviso, como cualquier modal, y el aviso sigue sobre la barra, la tarjeta de instalar y el aviso de actualización. Verificado que la prueba falla con el valor anterior (390) y pasa con el nuevo (390 y 1440). Pruebas: `tests/sys-apilado.spec.ts` (4 casos).
+
+No se tocó el solapamiento de WhatsApp con el contenido ni la posición `bottom: 83px` en páginas internas (B2), ni el botón con isotipo (B1).

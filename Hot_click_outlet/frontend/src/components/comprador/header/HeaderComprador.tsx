@@ -40,6 +40,7 @@ function CromoMovil({ movil, onBuscarConFoto, barraInterna, marcaCentrada }: Req
 
 function CromoEscritorio({ escritorio, onBuscarConFoto }: { escritorio: EncabezadoEscritorio; onBuscarConFoto: () => void }) {
   if (escritorio === 'compacto') return <HeaderEscritorioCompacto />
+  if (escritorio === 'carrito') return <HeaderEscritorioCompacto filaCarrito />
   if (escritorio === 'minimo') return <HeaderEscritorioMinimo />
   return <HeaderEscritorio onBuscarConFoto={onBuscarConFoto} />
 }

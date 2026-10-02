@@ -24,7 +24,7 @@ Además: la E2E `bottom-nav.spec.ts` describía la barra anterior (Productos/Ser
 | Fila "Idioma y accesibilidad" en Mi cuenta | Sin referencia | No se inventó (decisión previa de SYS/ACC) |
 | Cookies desktop a 24 px del borde | Pendiente, sin referencia | El aviso `45:2152` es móvil; no hay frame desktop. No se movió |
 | Título de `BarraInterna` como `<p>` | Pendiente | Pasarlo a `<h1>` duplicaría el `h1` de las pantallas que ya lo tienen (p. ej. el carrito). Requiere revisar pantalla por pantalla |
-| Header: altura, spacing, tipografía, variantes | Sin diferencias nuevas medidas | No se rehizo una medición de píxeles; las medidas de la pasada anterior (111, 79, 71, 160, 51, 53, 67) siguen vigentes |
+| Header: altura, spacing, tipografía, variantes | Sin diferencias nuevas medidas | Medición repetida el 2-oct-2026 (66 medidas, ver "Línea base del chrome" al final): 4 correcciones, el resto a ±1 px |
 | Selector de tema y filtro de color del buyer sheet | Sin cambios | Decisión de SYS respetada |
 
 ## Dependencias hacia otros módulos
@@ -71,9 +71,36 @@ Pasadas del 390 y 1440 px también para Home y para el comprador anónimo (heade
 
 ### Pendientes que siguen abiertos
 
-Los de la tabla "PARTIAL / requiere decisión" no cambian: enlaces del footer, fila de accesibilidad en Mi cuenta, cookies en desktop, `<h1>` de `BarraInterna` y remodelación del header. La medición de píxeles del header no se repitió: en esta pasada solo se compararon las capturas.
+Los de la tabla "PARTIAL / requiere decisión" no cambian: enlaces del footer, fila de accesibilidad en Mi cuenta, cookies en desktop, `<h1>` de `BarraInterna` y remodelación del header. La medición de píxeles del header se repitió el 2-oct-2026 (ver "Línea base del chrome" al final).
 
 ### Resultados finales
 
 - `tsc` (3 tsconfig): limpio. Vitest: 99 archivos, 488 tests. Build a directorio temporal: OK. ESLint de los archivos tocados: sin errores.
 - E2E: SHELL 12 de 12; regresión (ACC, blog, catálogo, CHK, SRV, STORE, QR, tienda, Home): 88 pasan, 8 se saltan, 8 fallan, y los 8 fallan igual en `base` (`home-jobs` x4, `tienda-checkout:77`, `tienda-theme:115`, `catalogo-iconos:67`, `nav-categorias:83`).
+
+## Línea base del chrome (2-oct-2026)
+
+Medición de header, barra inferior, banner y pie contra la metadata de Figma (archivo `TmxYFj2nauu10WZnZ0t6yt`, origen del frame restado), tolerancia ±1 px. Se ejecuta con `SHELL_MEDIR=<archivo.json> npx playwright test tests/shell-medicion.spec.ts` (se omite sin esa variable; escribe el JSON y un resumen). Chrome, fuentes reales cargadas, API simulada (`mockApisAcc` más las categorías), sesión sembrada donde la pantalla la pide y carrito de 2 ítems donde Figma dibuja el badge.
+
+**Resultado: 66 medidas, 66 dentro de ±1 px** después de las correcciones. Frames: `12:809`, `30:1480`, `30:2269` (carrito, 30:2268), `30:2386`, `12:551`, `28:1144`, `45:2199`, `29:1933` (pago exitoso, 29:1932), `12:582` (con sus 5 ítems), `12:483`, `12:489`, `9:550` y `9:559`. Rutas: Home, `/productos`, `/perfil`, `/carrito`, `/checkout`, 404 y `/pago/exito`, a 390 y 1440 según tengan frame.
+
+| # | Medida | App antes | Figma | Real o del script | Acción |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Header del carrito desktop | 79 (fila en y16) | 83 (`30:2269`, fila en y18) | **Real** | Variante `carrito` de `MainLayout`/`HeaderEscritorioCompacto` (`py-[18px]`). El cuerpo baja 4 px: "Tu pedido" y115 -> 119 y resumen y173 -> 177, iguales a Figma |
+| 2 | Icono del carrito en el header del carrito | negro | rojo (`30:2269`) | **Real** (pendiente anotado en `COMPONENT_OWNERSHIP.md`) | `text-hc-red-500` solo en esa variante |
+| 3 | Corazón del header móvil | icono en y14 | y16 (`12:557`), alineado con el carrito | **Real**: el enlace medía 26 px de alto por la caja de línea | `className="flex"` en el enlace |
+| 4 | Corazón del header desktop completo | y26 | y28 (`12:832`) | **Real**, misma causa | `className="flex"` en el enlace |
+| 5 | Chips del Home móvil (x 0), acciones (alto 26), avatar, `/pago/exito` sin estado de pago | | | Del script: selector que medía el contenedor con `-mx-4` o el enlace en vez del icono; estado de pago sin simular | Selectores y simulación corregidos |
+| 6 | `/checkout` móvil | sin barra | barra interna | Supuesto mío equivocado: la pantalla usa `variante="propia"` y CHK dibuja su barra | Retirado de la medición (es de CHK) |
+| 7 | Buscador del header compacto en `/perfil` (848,5 contra 875) | | | **Datos**: el badge del carrito ensancha las acciones y Figma `30:1480` no lo dibuja | Sin carrito mide 875. Sin cambio |
+
+Medidas que ya coincidían sin tocar nada: header global móvil 160 (marca 127 × 30, buscador 358 × 48, chips 33), barra inferior 67 con sus 5 ítems, banner + pie móvil 138 (67 + 71), header completo desktop 111 (marca, buscador de 795 × 46, fila de categorías de 34), banner + pie desktop 143 (84 + 59), header compacto de Mi cuenta 79 con buscador de 875 y avatar de 32, header mínimo 71, barra interna 51 (flecha 22 en x16/y14, título en x50), barra de marca de la 404 53 y la del pago exitoso 55 (isotipo 26, wordmark 80 × 21).
+
+Notas:
+
+- La cifra de 77 px de `/perfil` en la tabla de capturas de arriba no se reproduce: el header mide 79, igual que `30:1480`.
+- Los íconos del header del carrito son de 21 px y con 22 de separación en `30:2269`; la app usa 22 y 20 como en `30:1480`. Diferencia de 1 px del dibujo de Figma, no se cambió.
+- El buscador del carrito mide 884 en Figma porque no dibuja el badge del carrito; con ítems la app lo muestra (función). Depende de datos.
+- 404 y `/pago/exito` en desktop no tienen frame propio: solo se verificó que no haya desbordes.
+- Prueba permanente de las correcciones 1 y 2: `tests/shell-global.spec.ts` (header de 83 px en el carrito y de 79 en Mi cuenta, carrito en rojo).
+- `COMPONENT_OWNERSHIP.md` aún lista el carrito rojo como pendiente de SHELL; queda hecho (no se editó ese documento en esta pasada).
