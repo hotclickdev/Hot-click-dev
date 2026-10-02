@@ -4,7 +4,7 @@ test.use(process.env.CI ? {} : { channel: 'chrome' })
 
 /**
  * B3: al abrir la hoja, el chip marcado es A (16 px). A+ sube a fs-lg.
- * A− no cambia la raíz: Figma no define un tamaño menor.
+ * D19: A− pone fs-sm (87,5 %, 14 px).
  */
 
 const MENOR = 'A\u2212'
@@ -40,14 +40,14 @@ for (const [nombre, ancho, alto] of [['390', 390, 844], ['1440', 1440, 900]] as 
       await expect(chip(page, 'A')).toHaveAttribute('aria-pressed', 'true')
       await expect(chip(page, MENOR)).toHaveAttribute('aria-pressed', 'false')
       await expect(chip(page, 'A+')).toHaveAttribute('aria-pressed', 'false')
-      await expect(page.locator('html')).not.toHaveClass(/fs-lg|fs-xl/)
+      await expect(page.locator('html')).not.toHaveClass(/fs-sm|fs-lg|fs-xl/)
       const raiz = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)
       expect(raiz).toBe('16px')
       const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
       expect(desborde).toBeLessThanOrEqual(0)
     })
 
-    test('A+ pone fs-lg y se conserva; A lo quita; A− no agrega clase', async ({ page }) => {
+    test('A+ pone fs-lg y se conserva; A lo quita; A− pone fs-sm (14 px)', async ({ page }) => {
       await preparar(page)
       await abrirHoja(page)
       await chip(page, 'A+').click()
@@ -65,8 +65,14 @@ for (const [nombre, ancho, alto] of [['390', 390, 844], ['1440', 1440, 900]] as 
       await expect(page.locator('html')).not.toHaveClass(/fs-lg|fs-xl/)
 
       await chip(page, MENOR).click()
+      await expect(page.locator('html')).toHaveClass(/fs-sm/)
       await expect(page.locator('html')).not.toHaveClass(/fs-lg|fs-xl/)
-      await expect(chip(page, 'A')).toHaveAttribute('aria-pressed', 'true')
+      await expect(chip(page, MENOR)).toHaveAttribute('aria-pressed', 'true')
+      await expect(chip(page, 'A')).toHaveAttribute('aria-pressed', 'false')
+      expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe('14px')
+
+      await chip(page, 'A').click()
+      await expect(page.locator('html')).not.toHaveClass(/fs-sm|fs-lg|fs-xl/)
 
       await page.getByRole('button', { name: 'Listo' }).click()
       await expect(page.getByRole('dialog', { name: 'Idioma y accesibilidad' })).toHaveCount(0)
