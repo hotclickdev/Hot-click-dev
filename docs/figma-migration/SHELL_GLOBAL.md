@@ -180,3 +180,24 @@ Verificación: `tsc` (app y e2e) limpio; ESLint de los 42 archivos tocados sin e
 | Estados sin frame (carga, esqueletos, errores de secciones) | Siguen con los componentes que ya existen (`Spinner`, esqueletos de cada página, `EstadoVacio`, `PantallaFalloServidor`, `PantallaSinConexion`, `NotFoundPage`); no se dibuja nada nuevo. |
 
 Verificación: `tsc` (app y e2e) limpio; ESLint de los 11 archivos sin errores nuevos (siguen los de `base`: `set-state-in-effect` en `TiendaProductoPage` y `TiendaHomePage`, `only-export-components` en `Toast`); Vitest 70 de 70 en `components/ui`, carrito, tienda, producto y catálogo. Nuevo `estados-globales.spec.ts` (10 casos a 390 y 1440: ficha, pedido y tienda con texto largo, aviso flotante dentro de la pantalla, 500 en ficha y cotización); sin la corrección fallan 6. Playwright 61 de 63 en `estados-globales`, `cart-responsive`, `store-perfil`, `store-capturas`, `prod-estados`, `catalogo-cta`, `catalogo-iconos`, `tienda-no-disponible`, `tienda-pdp-comprar`, `tienda-theme`, `tienda-vacia`, `tienda-checkout` y `home-sin-conexion` (1 omitido). Fallan `tienda-checkout:77` y `catalogo-iconos:67` («Ver más»), que también fallan en `base`.
+
+## P15 — responsive 390 / 1440 (2-oct-2026)
+
+**Barrido** (fuera del repo): 44 rutas públicas y 6 con sesión (`mockApisAcc`) a 390 y 1440, con productos, tienda, categorías, pedido y favoritos simulados. Mide desborde horizontal, elementos fuera de la pantalla, texto recortado (ancho y alto) sin puntos suspensivos, controles tapados por elementos fijos al final de la página, barra inferior en 1440, objetivos táctiles (WCAG 2.5.8: 24 px o la excepción de espaciado) y tamaño de los campos.
+
+**Resultado:** 0 desbordes, 0 elementos fuera, 0 recortes en las 100 vistas; ninguna pantalla muestra la barra inferior en 1440. Las pantallas con frame de escritorio (Home `9:171`, catálogo `30:1824`, ficha `29:2072`, tienda `29:2308`, pedido `30:2268`, checkout `30:2385`, Mi cuenta `30:1480`) siguen dentro de sus medidas: 129 casos verdes en los specs de medición (`shell-global`, `acc-medidas`, `cart-responsive`, `checkout-responsive`, `store-perfil`, `catalogo-cta`, `servicios-responsive`, `qr-mesa-pago` y otros diez).
+
+**Corregido:** la regla móvil de 16 px de `index.css` (evita el zoom de iOS fuera de `.hc-figma-ui` / `.hc-tenant-theme`) no cubría `password`, `url` ni los `input` sin `type`, y `PhoneField` fijaba `fontSize: 14` en línea. En `/registro` y `/registro-empresa` (sin frame, fuera de `.hc-figma-ui`) la contraseña y el teléfono medían 14 px frente a 16 del resto del formulario, e iOS hacía zoom al enfocarlos. Ahora la regla incluye esos tipos y `PhoneField` pasa el tamaño por `--react-international-phone-font-size`: 16 px en móvil, 14 en escritorio, mismo alto (40 y 44). Alcanza también a paneles y POS en móvil, que es lo que la regla pretendía.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Pie móvil: enlaces de 14 a 18 px de alto con filas a 16 px | No cumplen 2.5.8 (ni tamaño ni espaciado). El pie está medido contra `12:489` y darle 24 px lo alarga: **REQUIERE_DECISION**. |
+| Flecha «Volver» 22 × 22 de `BarraInterna`, corazón del header 22 × 22, «Ver todo», «Ver detalle», «Vaciar pedido», preguntas de `/envios` | Miden lo de Figma y cumplen 2.5.8 por la excepción de espaciado (ningún otro control a menos de 12 px del centro). |
+| Campos de 16 a 18 px de alto | Son el texto dentro de una caja de 40 a 48 px que es su `label`. |
+| WhatsApp tapa el «Agregar» de una tarjeta en `/productos` a 390 | Decisión de SYS pendiente (`QA_GLOBAL.md` #4). |
+| 1440 de pantallas sin frame de escritorio (cotización, QR, encargo, seguimiento, servicios, informativas, registro) | Siguen con su columna centrada; no se dibuja un escritorio nuevo. |
+| Campos de 14 y 15 px del comprador | Figma los pide así; el zoom de iOS es el costo que ya asumió SHELL. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de `PhoneField` y del spec sin errores; Vitest de `components/ui` 21 de 21. Nuevo `responsive-barrido.spec.ts` (30 casos: 14 rutas a 390 y 1440 sin desborde, fuera de pantalla, recortes ni errores de página, y el registro con un solo tamaño de campo); sin la corrección falla el de 390. Playwright 100 de 103 en `responsive-barrido`, `registro-vender`, `emprende`, `acc-cuenta`, `qr-mesa-pago`, `smoke`, `emprendedor-wizard`, `a11y-fuente` y `checkout-responsive` (2 omitidos). Fallan `emprende:51`, `smoke:131` y `smoke:237`, que también fallan en `base`.

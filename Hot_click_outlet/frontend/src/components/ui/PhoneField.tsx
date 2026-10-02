@@ -2,7 +2,10 @@ import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
 import { PHONE_FIELD_COUNTRIES } from './phoneFieldCountries'
 import './PhoneField.css'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+
+/** Tamaño del número por variable de la librería (no en línea) para que la regla móvil de 16 px de `index.css` lo alcance. */
+const ESTILO_CONTENEDOR = { display: 'flex', width: '100%', alignItems: 'stretch', '--react-international-phone-font-size': '14px' } as CSSProperties
 
 export type PhoneFieldProps = {
   label?: ReactNode
@@ -51,7 +54,6 @@ export default function PhoneField({
           color: 'var(--hc-text)',
           borderRadius: '0 10px 10px 0',
           outline: 'none',
-          fontSize: 14,
           padding: '10px 14px',
           height: 44,
           flex: '1 1 0',
@@ -75,7 +77,7 @@ export default function PhoneField({
             listItemFlagStyle: { display: 'none' },
           },
         }}
-        style={{ display: 'flex', width: '100%', alignItems: 'stretch' }}
+        style={ESTILO_CONTENEDOR}
       />
 
       {error && (

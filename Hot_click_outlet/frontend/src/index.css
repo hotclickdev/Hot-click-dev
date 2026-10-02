@@ -1314,8 +1314,11 @@ html:not(.dark) .hc-product-img {
    la de la tienda pública. Costo asumido: en iOS esos campos hacen zoom al enfocar. */
 @media (max-width: 767px) {
   :is(
+    input:not([type]),
     input[type="text"],
     input[type="email"],
+    input[type="password"],
+    input[type="url"],
     input[type="number"],
     input[type="tel"],
     input[type="search"],
