@@ -37,12 +37,13 @@ type EspacioFlotante = {
 
 /**
  * Alto del spacer móvil al final del documento.
- * Con pie y barra, 155 px para que el texto legal no quede bajo el botón.
- * Con barra y sin pie, se conserva el hueco de 72 px.
+ * Con barra y botón visible, 155 px (barra + botón + márgenes): ni el texto legal ni la última fila de
+ * tarjetas quedan bajo el botón (R5, 2-oct-2026; antes, sin pie móvil, solo se reservaban 72 px).
+ * Con barra y sin botón, se conserva el hueco de 72 px.
  * Sin barra y con el botón visible, 88 px. Si el botón no está, no hay hueco extra.
  */
-export function espacioReservadoMovil({ hayBarra, hayPieMovil, fabVisible }: EspacioFlotante): number | null {
-  if (hayBarra && hayPieMovil && fabVisible) return ESPACIO_BAJO_PIE_MOVIL
+export function espacioReservadoMovil({ hayBarra, fabVisible }: EspacioFlotante): number | null {
+  if (hayBarra && fabVisible) return ESPACIO_BAJO_PIE_MOVIL
   if (hayBarra) return ESPACIO_BAJO_BARRA
   if (fabVisible) return ESPACIO_SIN_BARRA
   return null

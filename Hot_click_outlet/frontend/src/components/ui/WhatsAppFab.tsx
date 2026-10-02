@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import useChatStore from '@/store/chatStore'
@@ -12,13 +13,23 @@ const WHATSAPP = '50686667888'
  * derecha (desktop)"). 56 × 56, verde de WhatsApp con su sombra, a 16 px del borde derecho.
  * Con barra inferior queda a 16 px sobre ella (83 px). Sin barra, a 16 px del borde: el offset de
  * la barra no se aplica. Desktop no cambia (`lg:bottom-4`). En la ficha móvil se oculta.
+ * R5 (2-oct-2026): mientras el botón está montado, `html.hc-con-fab` agrega en móvil un
+ * `scroll-padding-bottom` del alto que ocupa (barra + botón + márgenes): una tarjeta que recibe foco
+ * o a la que se salta no queda debajo. El hueco al final de la página lo pone `MainLayout`.
  */
 export default function WhatsAppFab() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const chatOpen = useChatStore((s) => s.isOpen)
   const hayBarra = useHayBarraInferior()
-  if (chatOpen) return null
+  const visible = !chatOpen
+  useEffect(() => {
+    if (!visible) return
+    const html = document.documentElement
+    html.classList.add('hc-con-fab')
+    return () => html.classList.remove('hc-con-fab')
+  }, [visible])
+  if (!visible) return null
 
   const label = t('common.whatsappConsult')
   const waUrl = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('common.whatsappGreeting'))}`

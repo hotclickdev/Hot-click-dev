@@ -164,6 +164,12 @@ html.fs-sm { font-size: 14px; }
 html.fs-lg { font-size: 18px; }
 html.fs-xl { font-size: 20px; }
 
+/* R5: con el WhatsApp flotante visible en móvil, el foco y los saltos a anclas no quedan bajo el botón
+   (barra 67 + 16 + botón 56 + 16 = 155 px). */
+@media (max-width: 1023.98px) {
+  html.hc-con-fab { scroll-padding-bottom: 155px; }
+}
+
 /* ── Reduce motion ── */
 html.reduce-motion *,
 html.reduce-motion *::before,
