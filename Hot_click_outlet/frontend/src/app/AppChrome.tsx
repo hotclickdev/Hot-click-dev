@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useLocation, useNavigationType } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
 import { whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
@@ -16,15 +16,50 @@ import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
 import { esRutaClaudeclick, esRutaPrototipo, esRutaVendedorFigma, esRutaVisitanteFigma } from '@/utils/rutaPrototipo'
 import ChatModal from '@/components/ai/ChatModal'
+import { cambiaDePagina, destinoScroll, guardarPosicion, irAPosicion, posicionGuardada } from '@/app/restauracionScroll'
 
 
 /**
- * Scroll al tope y envía pageview de GA4 en cada cambio de ruta.
+ * Scroll en cada cambio de ruta: un enlace nuevo empieza arriba y «Atrás»/«Adelante» vuelve a la posición
+ * que tenía esa entrada del historial (antes siempre iba al tope y el catálogo perdía el lugar al volver de la ficha).
+ * También envía el pageview de GA4.
  */
 export function ScrollToTop() {
-  const { pathname, search } = useLocation()
+  const { pathname, search, key } = useLocation()
+  const tipo = useNavigationType()
+  const claveActual = useRef(key)
+  const urlActual = useRef<string | null>(null)
+  const cancelarScroll = useRef<() => void>(() => undefined)
+
+  // La restauración nativa llega antes de que la página tenga su alto final (datos asíncronos): la hacemos acá.
+  // La posición se toma al decidir irse (clic o atrás/adelante, en captura) y no al scrollear: el router cambia de
+  // página dentro de una transición y, si la página nueva es más corta, el recorte del scroll se guardaría como propio.
   useEffect(() => {
-    globalThis.scrollTo(0, 0)
+    const { history } = globalThis
+    const anterior = history.scrollRestoration
+    history.scrollRestoration = 'manual'
+    const guardar = () => guardarPosicion(claveActual.current, globalThis.scrollY)
+    globalThis.addEventListener('click', guardar, true)
+    globalThis.addEventListener('popstate', guardar, true)
+    return () => {
+      history.scrollRestoration = anterior
+      globalThis.removeEventListener('click', guardar, true)
+      globalThis.removeEventListener('popstate', guardar, true)
+    }
+  }, [])
+
+  useEffect(() => {
+    claveActual.current = key
+    const url = `${pathname}${search}`
+    if (!cambiaDePagina(tipo, url, urlActual.current)) return
+    urlActual.current = url
+    cancelarScroll.current()
+    cancelarScroll.current = irAPosicion(destinoScroll(tipo, posicionGuardada(key)))
+  }, [key, tipo, pathname, search])
+
+  useEffect(() => () => cancelarScroll.current(), [])
+
+  useEffect(() => {
     captureAttributionFromLocation(search, pathname)
     trackPageView(pathname)
     if (pathname.startsWith('/admin') || pathname.startsWith('/pos') || esRutaClaudeclick(pathname)) return

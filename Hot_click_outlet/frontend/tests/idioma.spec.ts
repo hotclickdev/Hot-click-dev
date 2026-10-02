@@ -47,11 +47,12 @@ test.describe('Cambio de idioma accesible', () => {
     await elegirIdioma(page, /^English$/i)
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-    await expect(page.getByRole('link', { name: /^Products$/i }).first()).toBeVisible()
+    // El header desktop del comprador (Figma `12:809`) ya no tiene «Productos»: se mira «Todas las categorías».
+    await expect(page.getByRole('link', { name: /^All categories$/i }).first()).toBeVisible()
 
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-    await expect(page.getByRole('link', { name: /^Products$/i }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: /^All categories$/i }).first()).toBeVisible()
   })
 
   test('panel a11y cambia a Português', async ({ page }) => {
@@ -63,7 +64,7 @@ test.describe('Cambio de idioma accesible', () => {
     await elegirIdioma(page, /^Português$/i)
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt')
-    await expect(page.getByRole('link', { name: /^Produtos$/i }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: /^Todas as categorias$/i }).first()).toBeVisible()
   })
 
   test('radiogroup de idioma es operable con teclado', async ({ page }) => {
