@@ -11,6 +11,7 @@ import {
   espacioReservadoMovil,
   whatsappOculto,
 } from './flotantesHelpers'
+import { leerPantallaSinConexion, retenerPantallaSinConexion } from './pantallaSinConexionStore'
 
 describe('esFichaProducto', () => {
   it('detecta la ficha y no el catálogo', () => {
@@ -23,7 +24,7 @@ describe('esFichaProducto', () => {
 
 describe('whatsappOculto', () => {
   it('se oculta en auth, carrito, pago y paneles', () => {
-    for (const ruta of ['/login', '/registro', '/carrito', '/checkout', '/checkout/pago', '/pago/exito', '/admin/pedidos', '/pos/caja']) {
+    for (const ruta of ['/login', '/registro', '/carrito', '/checkout', '/checkout/pago', '/pago/exito', '/admin/pedidos', '/pos/caja', '/sin-conexion']) {
       expect(whatsappOculto(ruta, false, false)).toBe(true)
     }
   })
@@ -32,9 +33,23 @@ describe('whatsappOculto', () => {
     expect(whatsappOculto('/prototipo/x', false, true)).toBe(true)
   })
   it('se muestra en Home, catálogo y ficha', () => {
-    for (const ruta of ['/', '/productos', '/productos/3', '/mis-pedidos']) {
+    for (const ruta of ['/', '/productos', '/productos/3', '/mis-pedidos', '/categorias', '/servicios', '/perfil']) {
       expect(whatsappOculto(ruta, false, false)).toBe(false)
     }
+  })
+  it('oculta el Home solo cuando la pantalla sin conexión está montada', () => {
+    expect(whatsappOculto('/', false, false, true)).toBe(true)
+    expect(whatsappOculto('/', false, false, false)).toBe(false)
+  })
+})
+
+describe('pantalla sin conexión', () => {
+  it('se retiene al montar y se suelta al desmontar', () => {
+    expect(leerPantallaSinConexion()).toBe(false)
+    const soltar = retenerPantallaSinConexion()
+    expect(leerPantallaSinConexion()).toBe(true)
+    soltar()
+    expect(leerPantallaSinConexion()).toBe(false)
   })
 })
 

@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (SYS/SHELL B4; antes B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (SYS/SHELL B5; antes B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -30,7 +30,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | SYS/SHELL, B1 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie con `abrirPreferenciasCookies()` y `abrirAccesibilidad()`; se eliminó el botón flotante con el isotipo. Pie desktop sin cambio, pie móvil 71 -> 89 px. No se tocó B3 ni B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
 | SYS/SHELL, B2 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). WhatsApp: 83 px solo con barra inferior; 16 px si no hay barra; Home (318, 705) y desktop (margen 16) intactos. Spacer de 155 px en la raíz móvil para que el pie legal no quede debajo del botón. B4 sin cambios. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` |
 | SYS/SHELL, B3 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Al abrir la hoja, el chip marcado es A y la raíz sigue en 16 px. A+ aplica `fs-lg` (18 px). A− se muestra y no reduce la fuente (sin frame). La fila `51:2229` sigue PARTIAL. Inventario en ese momento: 35 PASS / 55 PARTIAL. Ver `SYS.md` |
-| SYS/SHELL, B4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). El aviso `45:1946` pasa a PASS móvil: la tarjeta a 390 queda en x 12, y 560, 366 × 205 (0 px) y `CookieBanner` no se tocó. Desktop sin frame (`left` 24, `bottom` 24) no bloquea ese PASS. La hoja `45:2166` sigue PASS. Inventario: 36 PASS / 54 PARTIAL. Ver `SYS.md` |
+| SYS/SHELL, B4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). El aviso `45:1946` pasa a PASS móvil: la tarjeta a 390 queda en x 12, y 560, 366 × 205 (0 px) y `CookieBanner` no se tocó. Desktop sin frame (`left` 24, `bottom` 24) no bloquea ese PASS. La hoja `45:2166` sigue PASS. Inventario en ese momento: 36 PASS / 54 PARTIAL. Ver `SYS.md` |
+| SYS/SHELL, B5 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). El FAB no se monta en Sin conexión (`45:2264`): ni en `/sin-conexion` ni en `/` cuando Home muestra `PantallaSinConexion`. El Home con datos sigue en (318, 705) y en desktop (1368, 828). La fila pasa a PASS móvil. Inventario: 37 PASS / 53 PARTIAL. Ver `SYS.md` |
 
 ## Ramas y worktrees
 

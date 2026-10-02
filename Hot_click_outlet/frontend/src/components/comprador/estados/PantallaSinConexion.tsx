@@ -1,4 +1,6 @@
+import { useLayoutEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { retenerPantallaSinConexion } from '@/components/ui/flotantes/pantallaSinConexionStore'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
@@ -32,6 +34,7 @@ export default function PantallaSinConexion({ onReintentar = () => globalThis.lo
   const { t } = useTranslation()
   const vistos = useRecentlyViewedStore((s) => s.items).slice(0, MAX_VISTOS)
   const favoritos = useWishlistStore((s) => s.items).slice(0, MAX_FAVORITOS)
+  useLayoutEffect(() => retenerPantallaSinConexion(), [])
 
   return (
     <MainLayout variante="propia" pie={false}>

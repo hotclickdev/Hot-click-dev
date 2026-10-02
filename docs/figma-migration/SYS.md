@@ -9,7 +9,7 @@ Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYF
 | Página no encontrada · móvil | `45:2198` | PASS (móvil) | Barra de marca (`variante="marca"`), mensaje, buscador y accesos planos sin flechas, con los SVG originales. Sin frame desktop |
 | Fallo del servidor · móvil | `45:2322` | PASS (móvil) | Ya existía (PR #93). Corregidos alturas y tracking del Sora; ícono de alerta ahora es el SVG original |
 | Instalar la app · tarjeta | `55:2658` | PASS (móvil) | Ya existía. Corregidos alturas de título, subtítulo, beneficios y botones; la nota "NUEVO · por programar" y el texto del hook no llegan a la UI. Reglas de la nota (2.ª visita, nunca la primera página, 30 días) intactas |
-| Sin conexión · móvil | `45:2264` | PARTIAL | Geometría igual a Figma. Home la muestra ante un error de red sin datos (A1, 2-oct-2026) y la ruta `/sin-conexion` está registrada. Medida con vistos y favoritos sembrados (imágenes sintéticas); fotos reales no verificadas. El isotipo flotante se retiró (B1). El WhatsApp sigue a 16 px sobre la barra (B2) y no está en el frame: por eso sigue PARTIAL |
+| Sin conexión · móvil | `45:2264` | PASS (móvil) | B5 (2-oct-2026): el FAB no está en el frame y ya no se monta, ni en `/sin-conexion` ni en Home cuando muestra esta pantalla. El Home con datos sigue en (318, 705). Geometría medida con vistos y favoritos sembrados (vistos y279, favoritos y391, Reintentar y489, 0–1 px). Sin frame desktop: sin FAB y sin desborde |
 | Aviso de cookies · móvil | `45:1946` | PASS (móvil) | B4 (2-oct-2026): tarjeta medida a 390 en x 12, y 560, 366 × 205 (0 px). El componente no se movió. Desktop sin frame (`left` 24, `bottom` 24) y no bloquea este PASS |
 | Preferencias de cookies · hoja | `45:2166` | PASS (móvil) | Hoja desde y 90, secciones en 179, 266 y 361, pie en 644; todas iguales a Figma |
 | C · Cupón de bienvenida | `51:2163` | PASS (móvil) | Hoja igual a Figma con el campo de correo de 42 px (decisión del usuario: el frame de 26 px es un frame comprimido, no la referencia final). El paso "cupón enviado" no existe en Figma y se resolvió con el mismo sistema |
@@ -160,7 +160,7 @@ Decisión B1 (tuya): "Preferencias de cookies" e "Idioma y accesibilidad" se abr
 
 No hay un `bottom` nuevo para todas las pantallas. El ancla de Home (`52:2418`, 56 × 56 en x 318, y 705) y el desktop (nota `52:2422`, margen 16 px) no se movieron. Icono, tamaño, `wa.me` y las rutas donde el botón no se monta tampoco.
 
-- **Con barra inferior** (`MainLayout` publica la prop real, no un mapa de rutas): `bottom: 83px` (67 + 16). Así quedan `/`, `/productos`, `/categorias`, el resumen de `/perfil`, el listado de `/mis-pedidos` y `/sin-conexion`.
+- **Con barra inferior** (`MainLayout` publica la prop real, no un mapa de rutas): `bottom: 83px` (67 + 16). Así quedan `/`, `/productos`, `/categorias`, el resumen de `/perfil` y el listado de `/mis-pedidos`. `/sin-conexion` salió de esta lista en B5.
 - **Sin barra** (`/servicios`, detalle `?pedido=`, `/perfil?vista=seguridad` y el resto de internas): `bottom: 16px`. El offset de 83 px las dejaba 67 px demasiado altas. No hay frame; se reutiliza el margen de la nota de desktop.
 - **Pie móvil** (solo `raiz`): el spacer pasa de 72 a 155 px para que, al final del scroll, «Términos» y los accesos de B1 queden 16 px arriba del botón. Figma no dibuja ese final de página. El botón fijo no se sube, porque eso rompería y 705.
 - **Con barra y sin pie móvil**: spacer de 72 px, como antes.
@@ -190,3 +190,15 @@ Figma `45:1946` es solo móvil. La tarjeta `45:2152` está en x 12, y 560, 366 �
 - En 1440 no hay coordenada que afirmar. Solo se comprobó que no hay desborde horizontal. `left: 24px` y `bottom: 24px` se dejan como están.
 - La fila `45:1946` pasa a PASS móvil. El recuento queda en 36 PASS / 54 PARTIAL. El escritorio sin frame no bloquea ese PASS.
 - **Pruebas**: `tests/cookies-b4.spec.ts`. `sys-apilado.spec.ts`, `pie-accesos.spec.ts`, `whatsapp-fab-b2.spec.ts` y `a11y-fuente.spec.ts` siguen sin editarse.
+
+## Pasada B5 del 2-oct-2026: WhatsApp fuera de Sin conexión
+
+Figma `45:2264` no dibuja el FAB. B2 lo había dejado a 16 px sobre la barra. El Home normal sigue en el ancla `52:2418`.
+
+- `/sin-conexion` entra en `whatsappOculto`. El Home `/` no: solo se oculta cuando `PantallaSinConexion` está montada (`retenerPantallaSinConexion`). Al volver el catálogo, el botón regresa.
+- No cambian tamaño, icono, href, z-index ni la posición B2. Un 500 sigue mostrando el FAB: esa pantalla no es `45:2264`.
+- Medido a 390 con vistos y favoritos sembrados: vistos y279 x20 80×76, favoritos y391 x20 76×76, Reintentar y489 x20 350×48 (0–1 px). El FAB no está. Inicio sigue activo. El pie no aparece (`pie={false}`).
+- Home con datos, a 390: FAB en (318, 705), 56×56. A 1440: (1368, 828). Catálogo, categorías, servicios, pedidos y perfil conservan 83 px o 16 px según tengan barra.
+- En 1440 no hay frame. La misma pantalla, sin FAB y sin desborde horizontal. No se afirmó una coordenada de escritorio.
+- La fila `45:2264` pasa a PASS móvil. El recuento queda en 37 PASS / 53 PARTIAL.
+- **Pruebas**: `home-sin-conexion.spec.ts`, `whatsapp-fab-b2.spec.ts` y `flotantesHelpers.test.ts`. `cookies-b4`, `sys-apilado`, `pie-accesos` y `a11y-fuente` siguen en verde.

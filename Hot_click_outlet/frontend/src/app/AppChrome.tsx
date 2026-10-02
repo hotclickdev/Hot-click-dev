@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
 import { whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
+import { usePantallaSinConexion } from '@/components/ui/flotantes/pantallaSinConexionStore'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import { useBranding } from '@/hooks/useBranding'
@@ -47,11 +48,13 @@ export function PageFade({ children }: { children: ReactNode }) {
 }
 
 /**
- * WhatsApp FAB oculto en auth, admin, checkout, pago POS y prototipo.
+ * WhatsApp FAB oculto en auth, admin, checkout, pago POS, prototipo y Sin conexión (`45:2264`).
+ * El Home normal (`/`) no entra en esa última condición.
  */
 export function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
-  if (whatsappOculto(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname))) return null
+  const pantallaSinConexion = usePantallaSinConexion()
+  if (whatsappOculto(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname), pantallaSinConexion)) return null
   return <WhatsAppFab />
 }
 

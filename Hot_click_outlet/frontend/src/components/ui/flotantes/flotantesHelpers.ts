@@ -48,8 +48,18 @@ export function espacioReservadoMovil({ hayBarra, hayPieMovil, fabVisible }: Esp
   return null
 }
 
-/** Rutas donde el botón de WhatsApp no se muestra (auth, carrito, pago, paneles, tienda del vendedor, prototipo). */
-export function whatsappOculto(pathname: string, esTienda: boolean, esPrototipo: boolean): boolean {
+/**
+ * Rutas donde el botón de WhatsApp no se muestra (auth, carrito, pago, paneles, tienda del vendedor, prototipo).
+ * `/sin-conexion` no está en el frame `45:2264`. En `/` el Home normal sigue visible: la pantalla sin conexión
+ * se señala aparte, porque esa ruta también es el Home con datos.
+ */
+export function whatsappOculto(
+  pathname: string,
+  esTienda: boolean,
+  esPrototipo: boolean,
+  pantallaSinConexion = false,
+): boolean {
+  if (pantallaSinConexion || pathname === '/sin-conexion') return true
   if (['/login', '/registro', '/carrito', '/checkout'].includes(pathname)) return true
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return true
   if (pathname.startsWith('/pos')) return true

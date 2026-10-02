@@ -121,13 +121,13 @@ test.describe('WhatsApp flotante — móvil 390', () => {
     await sinDesborde(page)
   })
 
-  test('sin conexión mantiene el botón sobre la barra, sin tapar Reintentar', async ({ page }) => {
+  test('sin conexión no monta el botón y deja la barra', async ({ page }) => {
     await preparar(page, '/sin-conexion')
     await expect(barra(page)).toBeVisible()
-    expect(Math.abs(await margenInferior(page, fab(page)) - 83)).toBeLessThanOrEqual(1)
-    const reintentar = page.getByRole('button', { name: 'Reintentar' })
-    await expect(reintentar).toBeVisible()
-    expect(seCruzan(await cajaDe(fab(page)), await cajaDe(reintentar))).toBe(false)
+    await expect(page.getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
+    await expect(fab(page)).toHaveCount(0)
+    await expect(page.locator('footer')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible()
     await sinDesborde(page)
   })
 
@@ -201,5 +201,12 @@ test.describe('WhatsApp flotante — desktop 1440', () => {
     await expect(fab(page)).toHaveCount(0)
     await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
     await expect(fab(page)).toHaveCount(0)
+  })
+
+  test('sin conexión en 1440 no monta el botón ni desborda', async ({ page }) => {
+    await preparar(page, '/sin-conexion')
+    await expect(page.getByRole('heading', { level: 1, name: 'Estás sin conexión' })).toBeVisible()
+    await expect(fab(page)).toHaveCount(0)
+    await sinDesborde(page)
   })
 })

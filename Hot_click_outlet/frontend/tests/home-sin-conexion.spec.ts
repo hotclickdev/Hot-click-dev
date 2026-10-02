@@ -25,6 +25,7 @@ async function apiVacia(page: Page) {
  * simulada. Cualquier otro error de consola o de página es un defecto.
  */
 const RUIDO_DE_RED = [/Failed to load resource/, /\[useBranding\] branding .*Network Error/s]
+const FAB = 'Consultar un producto por WhatsApp'
 
 function vigilarErrores(page: Page): string[] {
   const errores: string[] = []
@@ -52,6 +53,8 @@ test.describe('Home sin conexión (45:2264)', () => {
 
     await expect(page.getByRole('heading', { level: 1, name: 'Estás sin conexión' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible()
+    await expect(page.getByRole('link', { name: FAB, exact: true })).toHaveCount(0)
+    await expect(page.locator('footer')).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
 
     const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
@@ -69,6 +72,7 @@ test.describe('Home sin conexión (45:2264)', () => {
     await page.getByRole('button', { name: 'Reintentar' }).click()
     await expect(page.locator('#home-titulo')).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('heading', { name: 'Estás sin conexión' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: FAB, exact: true })).toBeVisible()
   })
 
   test('con vistos y favoritos guardados coincide con las posiciones de 45:2264', async ({ page }) => {
@@ -84,6 +88,7 @@ test.describe('Home sin conexión (45:2264)', () => {
     await apiCaida(page)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { level: 1, name: 'Estás sin conexión' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('link', { name: FAB, exact: true })).toHaveCount(0)
 
     // La franja negra de 36 px (45:2265) solo existe cuando el navegador avisa que no hay red.
     await page.context().setOffline(true)
@@ -115,6 +120,7 @@ test.describe('Home sin conexión (45:2264)', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('heading', { name: 'Estás sin conexión' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: FAB, exact: true })).toBeVisible()
   })
 
   test('/sin-conexion sigue funcionando y marca Inicio', async ({ page }) => {
@@ -122,6 +128,7 @@ test.describe('Home sin conexión (45:2264)', () => {
     await apiVacia(page)
     await page.goto('/sin-conexion', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { level: 1, name: 'Estás sin conexión' })).toBeVisible()
+    await expect(page.getByRole('link', { name: FAB, exact: true })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
   })
 })
@@ -134,6 +141,17 @@ test.describe('Home sin conexión en desktop (sin frame propio)', () => {
     await apiCaida(page)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { level: 1, name: 'Estás sin conexión' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('link', { name: FAB, exact: true })).toHaveCount(0)
+    const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+    expect(desborde).toBeLessThanOrEqual(0)
+  })
+
+  test('/sin-conexion en 1440 tampoco monta el botón ni desborda', async ({ page }) => {
+    await prepararHome(page)
+    await apiVacia(page)
+    await page.goto('/sin-conexion', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1, name: 'Estás sin conexión' })).toBeVisible()
+    await expect(page.getByRole('link', { name: FAB, exact: true })).toHaveCount(0)
     const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(desborde).toBeLessThanOrEqual(0)
   })
