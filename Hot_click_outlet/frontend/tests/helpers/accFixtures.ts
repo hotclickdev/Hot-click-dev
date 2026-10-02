@@ -67,7 +67,7 @@ export const PARA_RESENAR = [
 
 /** Forma real de GET /testimonios/mis-testimonios. */
 export const MIS_TESTIMONIOS = [
-  { id: 1, tipo: 'RESENA', productoId: 9, productoNombre: 'Taza personalizada con nombre y color', comentario: 'Quedó igualita al diseño y llegó bien empacada. Se la regalé a mi mamá y le encantó.', calificacion: 5, estado: 'APROBADO', fechaCreacion: '2026-09-27T10:00:00' },
+  { id: 1, tipo: 'RESENA', productoId: 9, productoNombre: 'Taza personalizada con nombre y color', comentario: 'Quedó igualita al diseño y llegó bien empacada. Se la regalé a mi mamá y le encantó.', calificacion: 5, estado: 'APROBADO', fechaCreacion: '2026-09-27T10:00:00', productoImagenUrl: FOTOS.taza },
 ]
 
 export const PRODUCTOS_FAVORITOS = [

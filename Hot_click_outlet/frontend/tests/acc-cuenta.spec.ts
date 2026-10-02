@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { mockApisAcc, sembrarCookies, sembrarSesion } from './helpers/accFixtures'
+import { FOTOS, mockApisAcc, sembrarCookies, sembrarSesion } from './helpers/accFixtures'
 import { colorDeToken, sinDesborde, tamanosDeCampos } from './helpers/medidasFigma'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
@@ -77,6 +77,8 @@ test.describe('Mi cuenta', () => {
     await expect(page.getByRole('heading', { name: 'Publicadas' })).toBeVisible()
     await expect(page.getByText('Publicada', { exact: true })).toBeVisible()
     await expect(page.getByText('Revisada por HotClick antes de publicarse')).toBeVisible()
+    const publicada = page.locator('article').filter({ hasText: 'Taza personalizada con nombre y color' })
+    await expect(publicada.locator('img')).toHaveAttribute('src', FOTOS.taza)
   })
 
   test('datos y seguridad: muestra los datos, el interruptor de 2 pasos y abre cambiar contraseña', async ({ page }) => {

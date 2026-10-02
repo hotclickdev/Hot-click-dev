@@ -191,7 +191,7 @@ export default function CuentaOpiniones({ porOpinar, pedidos, opiniones, onEnvia
             return (
               <article key={String(o.id)} className="flex flex-col gap-2 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
                 <div className="flex items-center gap-3">
-                  <Miniatura tam={44} />
+                  <Miniatura src={o.productoImagenUrl} tam={44} />
                   <div className="flex min-w-0 flex-1 flex-col gap-[2px] leading-[normal]">
                     <p className="truncate text-[14px] font-semibold text-hc-n-900">{o.productoNombre ?? t('cuenta.opiniones.deHotclick')}</p>
                     {o.calificacion ? <Estrellas valor={o.calificacion} tam={14} etiqueta={t('cuenta.opiniones.calificacionDe', { count: o.calificacion })} /> : null}

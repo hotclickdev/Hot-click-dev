@@ -2,6 +2,7 @@ package com.hotclick.service;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
+import com.hotclick.model.Producto;
 import com.hotclick.model.Testimonio;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.TestimonioRepository;
@@ -127,11 +128,14 @@ public class TestimonioService {
         return repo.findByUsuarioIdOrderByFechaCreacionDesc(usuario.getId())
             .stream()
             .map(t -> {
+                Producto producto = t.getProducto();
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id", t.getId());
                 m.put("tipo", t.getTipo());
-                m.put("productoId", t.getProducto() != null ? t.getProducto().getId() : null);
-                m.put("productoNombre", t.getProducto() != null ? t.getProducto().getNombreProducto() : null);
+                m.put("productoId", producto != null ? producto.getId() : null);
+                m.put("productoNombre", producto != null ? producto.getNombreProducto() : null);
+                // Foto del producto en "Mis opiniones" (Figma 30:1327); la misma que ya manda productos-para-resenar.
+                m.put("productoImagenUrl", producto != null ? producto.getImagenPrincipalUrl() : null);
                 m.put("comentario", t.getComentario());
                 m.put("calificacion", t.getCalificacion());
                 m.put("estado", t.getEstado());

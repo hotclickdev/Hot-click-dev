@@ -22,6 +22,7 @@ export type OpinionEnviada = {
   tipo?: string
   productoId?: number | string | null
   productoNombre?: string | null
+  productoImagenUrl?: string | null
   comentario?: string
   calificacion?: number | null
   estado?: string
