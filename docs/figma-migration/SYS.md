@@ -10,7 +10,7 @@ Rama `feat/figma/sys` (desde `feat/figma/base` `e7717b64`). Archivo Figma `TmxYF
 | Fallo del servidor · móvil | `45:2322` | PASS (móvil) | Ya existía (PR #93). Corregidos alturas y tracking del Sora; ícono de alerta ahora es el SVG original |
 | Instalar la app · tarjeta | `55:2658` | PASS (móvil) | Ya existía. Corregidos alturas de título, subtítulo, beneficios y botones; la nota "NUEVO · por programar" y el texto del hook no llegan a la UI. Reglas de la nota (2.ª visita, nunca la primera página, 30 días) intactas |
 | Sin conexión · móvil | `45:2264` | PARTIAL | Geometría igual a Figma. Home la muestra ante un error de red sin datos (A1, 2-oct-2026) y la ruta `/sin-conexion` está registrada. Medida con vistos y favoritos sembrados (imágenes sintéticas); fotos reales no verificadas. El isotipo flotante se retiró (B1). El WhatsApp sigue a 16 px sobre la barra (B2) y no está en el frame: por eso sigue PARTIAL |
-| Aviso de cookies · móvil | `45:1946` | PASS (móvil) | Tarjeta 366 × 205 en x 12, y 560, botones 163 × 48 y 161 × 46. **Desktop: REQUIRES_DESIGN_REFERENCE** (no hay frame; provisional, ver abajo) |
+| Aviso de cookies · móvil | `45:1946` | PASS (móvil) | B4 (2-oct-2026): tarjeta medida a 390 en x 12, y 560, 366 × 205 (0 px). El componente no se movió. Desktop sin frame (`left` 24, `bottom` 24) y no bloquea este PASS |
 | Preferencias de cookies · hoja | `45:2166` | PASS (móvil) | Hoja desde y 90, secciones en 179, 266 y 361, pie en 644; todas iguales a Figma |
 | C · Cupón de bienvenida | `51:2163` | PASS (móvil) | Hoja igual a Figma con el campo de correo de 42 px (decisión del usuario: el frame de 26 px es un frame comprimido, no la referencia final). El paso "cupón enviado" no existe en Figma y se resolvió con el mismo sistema |
 | D · ¿Aún pensando? | `51:2196` | PASS (móvil) | Hoja en y 525, alto 319, igual a Figma. La variante de favoritos no existe en Figma |
@@ -179,3 +179,14 @@ Figma `52:2389` marca el chip **A** (blue/50, borde blue/600). A− y A+ van sin
 - No se tocaron `index.css`, el default del store, WhatsApp, el pie, las cookies ni el radiogroup del idioma.
 - La fila `51:2229` sigue PARTIAL. El recuento no cambia: 35 PASS / 55 PARTIAL.
 - **Pruebas**: `fuenteAccesibilidad.test.ts` y `tests/a11y-fuente.spec.ts` (390 y 1440).
+
+## Pasada B4 del 2-oct-2026: criterio del aviso de cookies
+
+Figma `45:1946` es solo móvil. La tarjeta `45:2152` está en x 12, y 560, 366 × 205. No hay frame desktop ni un estado dibujado después de guardar.
+
+- Medido a 390×844, con las fuentes listas y el resorte ya asentado: la tarjeta queda en x 12, y 560, 366 × 205 (0 px de diferencia). `CookieBanner.tsx` no se modificó.
+- «Solo esenciales», «Aceptar todo» y «Guardar preferencias» escriben `hotclick-cookie-consent` y ocultan el aviso. «Configurar» abre la hoja `45:2166`, que sigue PASS.
+- El aviso sigue en `z-[65]`, debajo del cupón. No se cambió el `z-index`, ni los 12 s, ni la hoja de preferencias.
+- En 1440 no hay coordenada que afirmar. Solo se comprobó que no hay desborde horizontal. `left: 24px` y `bottom: 24px` se dejan como están.
+- La fila `45:1946` pasa a PASS móvil. El recuento queda en 36 PASS / 54 PARTIAL. El escritorio sin frame no bloquea ese PASS.
+- **Pruebas**: `tests/cookies-b4.spec.ts`. `sys-apilado.spec.ts`, `pie-accesos.spec.ts`, `whatsapp-fab-b2.spec.ts` y `a11y-fuente.spec.ts` siguen sin editarse.

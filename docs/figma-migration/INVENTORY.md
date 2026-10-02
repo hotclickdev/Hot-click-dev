@@ -1,14 +1,14 @@
 # Inventario de migración Figma → frontend
 
 Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página "Home de compra · prototipo" (`4:2`).
-Última actualización: 2026-10-02 (SYS/SHELL B3: el chip de fuente marcado al abrir es A; el recuento no cambia: 35 PASS / 55 PARTIAL). Anterior: B2, posición del WhatsApp.
+Última actualización: 2026-10-02 (SYS/SHELL B4: el aviso de cookies `45:1946` pasa a PASS móvil; 36 PASS / 54 PARTIAL). Anterior: B3, tamaño de fuente.
 
 ## Resumen
 
 | Estado | Cantidad |
 | --- | --- |
-| PASS — agent verified | 35 |
-| PARTIAL | 55 |
+| PASS — agent verified | 36 |
+| PARTIAL | 54 |
 | OLD_DESIGN | 0 |
 | MISSING | 0 |
 | BLOCKED | 0 |
@@ -37,6 +37,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | SYS/SHELL, pasada A1/A2/A4 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local sobre `380db3d9`). Home muestra `PantallaSinConexion` ante un error de red sin datos. Línea base del chrome de SHELL: 66 medidas contra 12 frames de Figma, todas dentro de ±1 px tras 4 correcciones (header del carrito desktop de 83 px con el carrito en rojo, corazón del header móvil y del desktop). El aviso de cookies pasó de z 9999 a 65 para no tapar las hojas. Ver `SYS.md` y `SHELL_GLOBAL.md` |
 | SYS/SHELL, B1 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local). "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie y el botón flotante con el isotipo se eliminó. Pie desktop sin cambio (143); pie móvil 71 -> 89 px (Figma no dibuja los accesos). Tamaño de fuente (B3) y criterio de cookies (B4) sin cambios. Ver `SYS.md` y `SHELL_GLOBAL.md` |
 | SYS/SHELL, B2 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local). El WhatsApp de Home sigue en (318, 705) y el de desktop en margen 16. Sin barra inferior el `bottom` es 16 px, no 83. En `raiz` el spacer móvil es 155 px para que el pie legal no quede debajo del botón. Sigue PARTIAL lo que no tiene frame. Ver `SYS.md` |
+| SYS/SHELL, B4 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local). Aviso `45:1946` PASS móvil: tarjeta en x12 y560 366x205. Desktop sin frame no bloquea. Hoja `45:2166` sigue PASS. Inventario 36 PASS / 54 PARTIAL. Ver `SYS.md` |
 
 ## Cómo leer la evidencia
 
@@ -134,7 +135,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | 10 Estados del sistema | Favoritos vacío · móvil | /wishlist | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Círculo rojo claro, texto, botón rojo y sugerencia de Descubrí; fondo blanco; barra inferior con Cuenta | H (O) | no | sí | ACC |
 | 10 Estados del sistema | Sin pedidos · móvil | /mis-pedidos | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Círculo gris, "Todavía no tenés pedidos", botón y nota "¿Compraste sin cuenta?" | H (O) | no | sí | ACC |
 | 10 Estados del sistema | Sin solicitudes · móvil | /servicios?vista=solicitudes | PASS — agent verified | M (ACC, 1-oct-2026, agent verified, API simulada). Círculo azul, botones "Pedir un producto" y "Solicitar una garantía". La barra inferior no marca Cuenta (SHELL decide solo por ruta) | H (O) | no | sí | ACC |
-| 10 Estados del sistema | Aviso de cookies · sobre el Home | `45:1946` | CookieBanner | PARTIAL | M (SYS). Móvil: tarjeta x12 y560 366x205, botones 163x48 y 161x46 igual a Figma. Desktop sin frame: tarjeta abajo a la izquierda provisional, REQUIRES_DESIGN_REFERENCE (no respaldada por Figma). A4 (2-oct-2026): el aviso pasó de z 9999 a 65 porque tapaba el título y el campo de correo del cupón (el cupón sale a los 2 s y el aviso a los 12 s); el criterio PARTIAL no cambia (B4 pendiente). Desde el 2-oct-2026 (B1) las preferencias se pueden reabrir desde el pie | no | sí | SYS |
+| 10 Estados del sistema | Aviso de cookies · sobre el Home | `45:1946` | CookieBanner | PASS — agent verified (móvil) | M (SYS). B4 (2-oct-2026): tarjeta medida a 390 en x12 y560 366x205 (0 px). El aviso no tapa el cupón (z 65). Desktop sin frame: se deja `left` 24 / `bottom` 24 y no bloquea este PASS. La hoja `45:2166` sigue PASS | no | sí | SYS |
 | 10 Estados del sistema | Preferencias de cookies · hoja | `45:2166` | CookiesPage / hoja | PASS — agent verified | M (SYS). Hoja desde y90; secciones 179/266/361, pie 644; interruptor 44x26 | no | sí | SYS |
 | 10 Estados del sistema | Página no encontrada · móvil | `45:2198` | * (NotFoundPage) | PASS — agent verified | M (SYS). Barra de marca, título 22 px x75,5 ancho 239 (Figma 239), buscador y219 350x44, filas 44/45. Sin QA independiente | no | sí | SYS |
 | 10 Estados del sistema | Sin conexión · móvil | `45:2264` | OfflineBanner | PARTIAL | M (SYS). Geometría igual (strip 36, mensaje y36, vistos y279, reintentar y489). Home la muestra ante un error de red sin datos (A1, 2-oct-2026) y la ruta `/sin-conexion` ya está registrada (SHELL). Medido con la franja de 36 px y con vistos y favoritos sembrados (imágenes sintéticas): vistos y279, favoritos y391, Reintentar y489, a 0 px; Inicio activo en la barra. Sigue PARTIAL: fotos reales sin verificar. El isotipo se retiró (B1). El WhatsApp queda a 16 px sobre la barra (B2) y no está en el frame. Sin frame desktop: misma pantalla, sin desbordes | no | sí | SYS |

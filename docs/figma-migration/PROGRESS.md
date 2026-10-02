@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (SYS/SHELL B3; antes B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (SYS/SHELL B4; antes B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -29,7 +29,8 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | SYS/SHELL, pasada A1/A2/A4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). A1: Home muestra `PantallaSinConexion` ante un error de red sin datos. A2: línea base de 66 medidas del chrome contra 12 frames, todas dentro de ±1 px tras 4 correcciones (header del carrito desktop de 83 px con el carrito rojo; corazón del header móvil y desktop). A4: el aviso de cookies bajó de z 9999 a 65 porque tapaba la hoja del cupón. No se tocó B1 a B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
 | SYS/SHELL, B1 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). "Preferencias de cookies" e "Idioma y accesibilidad" se abren desde el pie con `abrirPreferenciasCookies()` y `abrirAccesibilidad()`; se eliminó el botón flotante con el isotipo. Pie desktop sin cambio, pie móvil 71 -> 89 px. No se tocó B3 ni B4. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` y `SHELL_GLOBAL.md` |
 | SYS/SHELL, B2 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). WhatsApp: 83 px solo con barra inferior; 16 px si no hay barra; Home (318, 705) y desktop (margen 16) intactos. Spacer de 155 px en la raíz móvil para que el pie legal no quede debajo del botón. B4 sin cambios. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` |
-| SYS/SHELL, B3 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Al abrir la hoja, el chip marcado es A y la raíz sigue en 16 px. A+ aplica `fs-lg` (18 px). A− se muestra y no reduce la fuente (sin frame). La fila `51:2229` sigue PARTIAL. B4 sin cambios. Inventario sin cambios de estado (35 PASS / 55 PARTIAL). Ver `SYS.md` |
+| SYS/SHELL, B3 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Al abrir la hoja, el chip marcado es A y la raíz sigue en 16 px. A+ aplica `fs-lg` (18 px). A− se muestra y no reduce la fuente (sin frame). La fila `51:2229` sigue PARTIAL. Inventario en ese momento: 35 PASS / 55 PARTIAL. Ver `SYS.md` |
+| SYS/SHELL, B4 (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). El aviso `45:1946` pasa a PASS móvil: la tarjeta a 390 queda en x 12, y 560, 366 × 205 (0 px) y `CookieBanner` no se tocó. Desktop sin frame (`left` 24, `bottom` 24) no bloquea ese PASS. La hoja `45:2166` sigue PASS. Inventario: 36 PASS / 54 PARTIAL. Ver `SYS.md` |
 
 ## Ramas y worktrees
 
@@ -244,7 +245,7 @@ Prioridad sugerida dentro de la ola 1: CAT (desbloquea el `ProductCard`), luego 
 ## Riesgos abiertos
 
 - **Pendientes de integración tras SYS:** hechos el 2-oct-2026 la ruta `/sin-conexion` (SHELL), el alias `--color-hc-success-bg`, la prop de fondo blanco de `MainLayout` y Home con `esSinConexion` -> `PantallaSinConexion` (A1). `FooterComprador` con "Preferencias de cookies" e "Idioma y accesibilidad" y el retiro del botón con isotipo (B1) también quedaron hechos. Sigue abierta la fila de accesibilidad en Mi cuenta (ACC, sin frame): en móvil el pie solo existe en pantallas raíz, así que desde carrito, ficha, login y cuenta la hoja no tiene otro acceso.
-- **`REQUIRES_DESIGN_REFERENCE` (no son PASS definitivo):** cookies en desktop (tarjeta abajo a la izquierda, provisional) y la interacción desktop tras "Agregar" en la ficha (toast). Hay que pedir a diseño los frames desktop.
+- **`REQUIRES_DESIGN_REFERENCE`:** la interacción desktop tras "Agregar" en la ficha (toast) sigue sin frame. El aviso de cookies en desktop tampoco tiene frame (`left` 24, `bottom` 24); desde B4 (2-oct-2026) eso no bloquea el PASS móvil de `45:1946`.
 
 - **PASS sin QA independiente (se documentan como `PASS — agent verified`):** los 10 PASS de CAT y PROD son del propio agente, con API simulada y fotos de color. Conviene un QA con otro agente y datos reales antes de darlos por cerrados.
 - **e2e de Playwright sin arreglar:** fallan `catalogo-iconos` ("Ver más") y los que leen archivos borrados por otros agentes (`AdminConvenios`, `NavbarMobileCategorias`, `ShippingSection`, `navbarIcons`) o buscan el botón "Menú" del header anterior. Hay que decidir quién los arregla.
