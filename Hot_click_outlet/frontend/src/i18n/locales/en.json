@@ -3148,7 +3148,9 @@
       "cancelar": "Cancel",
       "confirmando": "Confirming…",
       "sinpeRecibido": "SINPE received",
-      "autoDetecta": "Confirms when they pay in the store"
+      "autoDetecta": "Confirms when they pay in the store",
+      "pagoElegir": "QR payment",
+      "instruccionElegir": "The customer scans the code and picks SINPE Móvil or card"
     },
     "pago": {
       "subtitulo": "In-store payment",
@@ -3208,7 +3210,19 @@
       "pagoRecibidoDesc": "You paid {{monto}} to {{negocio}}.",
       "vencidoTitulo": "This payment expired",
       "vencidoDesc": "For security, QR payments last 15 minutes. Ask the cashier to generate a new one.",
-      "vencidoCamara": "When you have the new QR, open your phone camera and scan it."
+      "vencidoCamara": "When you have the new QR, open your phone camera and scan it.",
+      "cobroNumero": "Charge #{{numero}}",
+      "cobroNumeroCaja": "Charge #{{numero}} · {{caja}}",
+      "verComprobante": "View receipt",
+      "comprobanteCargando": "Loading receipt…",
+      "comprobanteError": "We couldn't load the receipt. Please try again.",
+      "comprobanteTitulo": "Payment receipt · {{negocio}}",
+      "comprobanteNumero": "Charge number",
+      "comprobanteFecha": "Date",
+      "comprobanteCaja": "Register",
+      "comprobanteMetodo": "Method",
+      "comprobanteReferencia": "Reference",
+      "imprimirComprobante": "Print or save as PDF"
     },
     "recibo": {
       "ventaRegistrada": "Sale recorded",

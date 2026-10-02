@@ -3148,7 +3148,9 @@
       "cancelar": "Cancelar",
       "confirmando": "Confirmando…",
       "sinpeRecibido": "SINPE recebido",
-      "autoDetecta": "Confirma ao pagar na loja"
+      "autoDetecta": "Confirma ao pagar na loja",
+      "pagoElegir": "Pagamento com QR",
+      "instruccionElegir": "O cliente escaneia o código e escolhe SINPE Móvil ou cartão"
     },
     "pago": {
       "subtitulo": "Pagamento na loja",
@@ -3208,7 +3210,19 @@
       "pagoRecibidoDesc": "Você pagou {{monto}} para {{negocio}}.",
       "vencidoTitulo": "Esta cobrança venceu",
       "vencidoDesc": "Por segurança, as cobranças por QR duram 15 minutos. Peça ao caixa para gerar uma nova.",
-      "vencidoCamara": "Quando tiver o novo QR, abra a câmera do celular e escaneie."
+      "vencidoCamara": "Quando tiver o novo QR, abra a câmera do celular e escaneie.",
+      "cobroNumero": "Cobrança #{{numero}}",
+      "cobroNumeroCaja": "Cobrança #{{numero}} · {{caja}}",
+      "verComprobante": "Ver comprovante",
+      "comprobanteCargando": "Carregando comprovante…",
+      "comprobanteError": "Não conseguimos carregar o comprovante. Tente de novo.",
+      "comprobanteTitulo": "Comprovante de pagamento · {{negocio}}",
+      "comprobanteNumero": "Número da cobrança",
+      "comprobanteFecha": "Data",
+      "comprobanteCaja": "Caixa",
+      "comprobanteMetodo": "Método",
+      "comprobanteReferencia": "Referência",
+      "imprimirComprobante": "Imprimir ou salvar em PDF"
     },
     "recibo": {
       "ventaRegistrada": "Venda registrada",

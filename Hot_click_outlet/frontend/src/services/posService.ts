@@ -21,6 +21,7 @@ export const posService = {
   // Public endpoints (no auth)
   infoQrSesion:   (token: string)          => publicApi.get(`/pos/qr/pago/${token}`).then(r => r.data),
   estadoQrSesion: (token: string)          => publicApi.get(`/pos/qr/pago/${token}/estado`).then(r => r.data),
+  comprobanteQrSesion: (token: string)     => publicApi.get(`/pos/qr/pago/${token}/comprobante`).then(r => r.data),
   iniciarStripeQr: (token: string)         => publicApi.post(`/pos/qr/pago/${token}/stripe`).then(r => r.data),
   iniciarPaymentIntentQr: (token: string)  => publicApi.post(`/pos/qr/pago/${token}/intent`).then(r => r.data),
   iniciarSinpeOnvoQr: (token: string, dto: JsonBody) =>
