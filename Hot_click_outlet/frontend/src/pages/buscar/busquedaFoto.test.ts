@@ -12,6 +12,16 @@ describe('leerRespuestaFoto', () => {
     expect(r.productos).toEqual([{ id: 272, nombre: 'Sillón de sala verde', precio: 32000, imagenUrl: 'x.jpg', similitud: 91, tienda: null, categoria: null }])
   })
 
+  it('lee la tienda y la categoría que manda search-by-image (P11)', () => {
+    const r = leerRespuestaFoto({
+      analisis: { etiquetaPrincipal: 'Silla', categoria: 'Muebles' },
+      productos: [{ id: 10, nombre: 'Silla', precio: 5000, imagenUrl: null, similarity: 74, empresaNombre: 'Casa Luna', categoria: 'Muebles' }],
+      encontrado: true,
+    })
+    expect(r.productos[0]).toMatchObject({ tienda: 'Casa Luna', categoria: 'Muebles' })
+    expect(etiquetaParecido(r.productos[0], r.categoriaDetectada)).toBe('mismaCategoria')
+  })
+
   it('tolera una respuesta vacía o rara', () => {
     expect(leerRespuestaFoto(null)).toEqual({ categoriaDetectada: '', etiquetas: [], productos: [] })
   })
