@@ -32,7 +32,7 @@ class OtpServiceEmailTest {
     }
 
     @Test
-    @DisplayName("Incluye el código, el nombre y el tiempo de vencimiento — nunca el código en el asunto")
+    @DisplayName("Incluye el código y el tiempo de vencimiento — nunca el código en el asunto")
     void incluyeDatosClave() {
         ReflectionTestUtils.invokeMethod(service, "enviarEmail", "andrea@correo.com", "Andrea", "482913", 600);
 
@@ -42,15 +42,18 @@ class OtpServiceEmailTest {
 
         // El asunto es visible en notificaciones/lockscreen sin abrir el correo: nunca lleva el codigo.
         assertThat(asuntoCaptor.getValue()).doesNotContain("482913");
+        // Dos grupos de 3 como en Figma (482 913); el hueco es un margen, no un espacio copiable.
         assertThat(htmlCaptor.getValue())
-            .contains("482913")
-            .contains("Andrea")
-            .contains("10 minutos");
+            .contains("482<span")
+            .contains(">913</span>")
+            .contains("10 minutos")
+            .doesNotContain("482 913")
+            .contains("/email/icono-candado.png");
     }
 
     @Test
-    @DisplayName("Escapa el nombre del usuario para evitar inyección de HTML")
-    void escapaNombre() {
+    @DisplayName("No inserta el nombre del usuario (Figma no lo muestra), así que no hay HTML que inyectar")
+    void noInsertaElNombre() {
         ReflectionTestUtils.invokeMethod(service, "enviarEmail", "x@correo.com", "<script>alert(1)</script>", "123456", 300);
 
         ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
@@ -58,6 +61,6 @@ class OtpServiceEmailTest {
 
         assertThat(htmlCaptor.getValue())
             .doesNotContain("<script>alert(1)</script>")
-            .contains("&lt;script&gt;");
+            .doesNotContain("script");
     }
 }

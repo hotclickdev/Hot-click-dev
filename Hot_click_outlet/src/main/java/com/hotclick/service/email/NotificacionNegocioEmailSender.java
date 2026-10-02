@@ -22,7 +22,7 @@ public class NotificacionNegocioEmailSender {
 
     public void enviarCuponBienvenida(String email, String codigo) {
         try {
-            resendEmailService.send(email, "Tu cupón de 13% OFF — HotClick", negocioEmailBuilder.buildCuponBienvenida(codigo));
+            resendEmailService.send(email, negocioEmailBuilder.asuntoCuponBienvenida(), negocioEmailBuilder.buildCuponBienvenida(codigo));
             log.info("Email cupón bienvenida enviado a {}", email);
         } catch (Exception e) {
             log.error("No se pudo enviar email de cupón a {}: {}", email, e.getMessage());
