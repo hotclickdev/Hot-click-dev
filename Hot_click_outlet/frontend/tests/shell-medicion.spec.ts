@@ -144,7 +144,8 @@ test.describe('Móvil 390', () => {
     const c = '/carrito 390'
     await medir(page, c, 'barra interna', '28:1144 / 28:989', 'header', { x: 0, y: 0, w: 390, h: 51 })
     await medir(page, c, 'flecha atrás', '28:1146', 'header button', { x: 16, y: 14, w: 22, h: 22 })
-    await medir(page, c, 'título', '28:1148', 'header p', { x: 50, y: 14.5, h: 21 })
+    // Desde B6 el título es <h1> cuando es el de la pantalla (si no, <p>)
+    await medir(page, c, 'título', '28:1148', 'header :is(h1, p)', { x: 50, y: 14.5, h: 21 })
   })
 
   test('404 (barra de marca 45:2199)', async ({ page }) => {

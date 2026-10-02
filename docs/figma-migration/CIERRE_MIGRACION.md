@@ -9,10 +9,11 @@ Punto de entrada único al estado final de `feat/figma/base`. Junta lo que estab
 | `master` | `b355fd20` (sin tocar) |
 | Pantallas | 90: **38 PASS — agent verified / 52 PARTIAL**; 0 OLD_DESIGN, MISSING, BLOCKED ni UNKNOWN |
 | Frontend implementable sin decisión externa | Ninguno (B19, confirmado en P01–P20) |
+| QA final | P22 (§9): 38 PASS / 52 PARTIAL / 0 BLOCKED, sin regresiones; 13 tests que ya fallaban en `14e841e3` |
 
 Los PASS son veredictos del agente, medidos con API simulada. Falta un QA independiente con datos reales y correos probados en Gmail y Outlook antes de darlos por definitivos (`QA_GLOBAL.md`, B19 §10).
 
-## 1. Commits P01–P20
+## 1. Commits P01–P22
 
 Todos en `feat/figma/base`, el 2-oct-2026, hora de Costa Rica. Antes de P01 la base estaba en `14e841e3` (`test(figma): update obsolete post-b19 tests`).
 
@@ -38,6 +39,8 @@ Todos en `feat/figma/base`, el 2-oct-2026, hora de Costa Rica. Antes de P01 la b
 | P18 RUTAS | `2c0d715f` | 09:26 | Scroll al volver; `destinoPostLogin` |
 | P19 A11Y | `533bfebe` | 10:04 | h1, foco atrapado, foco con teclado, movimiento reducido, contraste medido |
 | P20 LIMPIEZA | `8e07c61c` | 10:36 | 37 archivos muertos, CSS y claves sin uso, specs viejos |
+| P21 DOCS | `587d1957` | 10:48 | Este documento y la documentación final |
+| P22 QA FINAL | commit `fix(figma): implement P22 final qa` | — | QA final de las 90 pantallas (§9); dos specs viejos corregidos |
 
 El detalle de cada bloque está en su fila de `PROGRESS.md` y en su sección de `SHELL_GLOBAL.md` (P12–P20) o del documento del módulo (P01–P10).
 
@@ -210,3 +213,104 @@ Los archivos `B*-resultado.txt`, `B8-decisiones-Figma.md`, `auditoria-cierre-B4.
 3. Backend: primero R7 (seguridad), después la §3.
 4. QA independiente con datos reales de los 38 PASS, y correos en Gmail y Outlook.
 5. Integrar en `master` y desplegar, solo cuando el usuario lo autorice.
+
+## 9. QA final (P22)
+
+2-oct-2026, hora de Costa Rica, sobre `587d1957`. Se revisaron las 90 pantallas de `INVENTORY.md` contra la evidencia y los criterios que cada una tiene registrados, con los specs y helpers de medición que ya existían. No hay acceso directo a Figma: no se agregaron medidas nuevas ni se tomaron decisiones.
+
+### 9.1 Definiciones
+
+- **PASS — agent verified:** la pantalla coincide con su frame, con la evidencia que registra `INVENTORY.md`, y sus specs siguen pasando.
+- **PARTIAL:** implementada y medida, pero con una diferencia que el frontend no puede cerrar solo: una decisión humana, un frame que falta en Figma (o una medida que solo se puede tomar en Figma) o un dato que el backend no entrega.
+- **BLOCKED:** pantalla que no se puede implementar ni verificar en absoluto por una de esas causas. Ninguna lo está: las 52 PARTIAL están implementadas y medidas, y lo bloqueado son partes. Las menciones «BLOCKED por backend» en la evidencia de `INVENTORY.md` se refieren a elementos sueltos de una pantalla PARTIAL.
+
+**Resultado: 38 PASS / 52 PARTIAL / 0 BLOCKED.** Sin cambios respecto de P21: no hubo regresiones que bajaran un PASS, y ningún PARTIAL tiene evidencia nueva para subir.
+
+### 9.2 Verificación
+
+| Chequeo | Resultado |
+| --- | --- |
+| `tsc --noEmit` en `tsconfig.json`, `tsconfig.node.json` y `tsconfig.e2e.json` | 0 errores en las tres |
+| `vitest run` | 106 archivos, 533/533 |
+| Playwright, suite completa (`SHELL_MEDIR`, `ACC_MEDIDAS` y las variables de capturas apuntando a `%TEMP%`) | 88 archivos, 458 casos: 440 pasan, 5 omitidos (3 de `tests/pending` y 2 de `smoke` admin sin credenciales), 13 fallan |
+| Medición del chrome (`shell-medicion`) | 66/66 a ±1 px (con la corrección de abajo) |
+| Medidas de ACC (`acc-medidas`) | 8/8 |
+| Barrido responsive (`responsive-barrido`, 390 y 1440) | 30/30 |
+| Otros specs de medición y estado: `store-perfil`, `prod-estados`, `cart-responsive`, `checkout-responsive`, `servicios-responsive`, `qr-mesa-pago`, `estados-globales`, `accesibilidad-p19`, `barra-interna-h1`, `whatsapp-fab-b2`, `cookies-b4` | Todos pasan |
+| `vite build --outDir %TEMP%\hc-p22\dist --emptyOutDir` | Sin errores; `static/` sin cambios |
+| `mvn -o test` de 22 clases de test que cubren el Java tocado desde `b355fd20` (builders de correo, OTP, pedidos, carrito abandonado, seguridad, búsqueda por foto…) | 105/105, BUILD SUCCESS |
+
+**Los 13 fallos de Playwright ya fallaban antes de P01.** Se corrieron en un `git archive` de `14e841e3` (fuera del repo, con los `node_modules` del worktree enlazados) a las 11:05: los 13 fallan en la misma línea. Son los 5 de §4 y estos 8, de paneles de administración y de Sistema, fuera de las 90 pantallas:
+
+- `admin-dashboard.spec.ts:85` (línea 88, no hay heading «Panel Admin»);
+- `admin-it-nav.spec.ts:53` (línea 62, dos enlaces «Config») y `:89` (línea 92, no hay texto «POS»);
+- `mental-model.spec.ts:63` (línea 80) y `:90` (línea 103, no aparece «Hacer el tour»);
+- `sistema-planes.spec.ts:85` (línea 94, ícono de la caja) y `:101` (línea 104, el código usa `plan.tienePos`);
+- `sistema-primer-producto.spec.ts:114` (línea 110, no hay «Nuevo Producto»).
+
+### 9.3 Correcciones de P22
+
+Solo specs. No hubo cambios de código de la app.
+
+- `tests/shell-medicion.spec.ts`: el título de la barra interna de `/carrito` (`28:1148`) se buscaba con `header p`. Desde B6 es `<h1>` cuando es el título de la pantalla, así que la medida daba «no encontrado» (65/66). Ahora usa `header :is(h1, p)` y mide igual que Figma (x 50, y 14,5, alto 21): 66/66.
+- `tests/ui-sin-emoji.spec.ts:170`: leía `src/components/ui/Section.tsx`, borrado en P20 por no tener importadores, y fallaba con ENOENT (en `14e841e3` pasaba). Se quitó esa línea; el resto del caso sigue igual. Ningún otro spec lee archivos borrados (se revisaron las 143 rutas que leen los specs).
+- `INVENTORY.md`: las 18 filas de ACC no tenían la columna «Frame Figma» y tenían una columna de más. Se agregó el frame con los ids de `ACC.md` y la columna sobrante se unió a la evidencia («antes: …»). No cambia ningún estado.
+
+### 9.4 Las 52 PARTIAL y su motivo
+
+Tipo: **Decisión** (respuesta humana pendiente, ver §2), **Figma** (falta el frame o una medida que solo se toma en Figma) y **Backend** (el dato o el endpoint no existe; ver §3 y `BACKEND_GAPS.md`). «QA» marca los correos que además no se probaron en Gmail ni Outlook.
+
+| # | Frame | Pantalla | Tipo | Motivo |
+| --- | --- | --- | --- | --- |
+| 1 | `7:2` | Home · móvil 390 | Datos/backend | Fuera de HOME siguen pendientes las fotos reales, la insignia «Quedan N» y el badge del carrito; el estado de fin de scroll (pie legal bajo el WhatsApp) no tiene frame |
+| 2 | `12:346` | Home móvil · al scrollear | Datos/backend | Header sticky y barra inferior iguales a Figma; mismas pendientes externas que `7:2` |
+| 3 | `9:171` | Home · desktop 1440 | Decisión + datos | Orden de categorías abierto (Figma fija uno, la app respeta el de la API) y las pendientes externas de `7:2` |
+| 4 | `8:230` | Asistente · respuesta · móvil | Backend | Falta la fila «Entendí:»: el backend no devuelve los filtros interpretados |
+| 5 | `27:882` | Búsqueda por foto · móvil | Decisión | «Misma categoría» compara la categoría del catálogo con la etiqueta de Google Vision y casi nunca coincide (REQUIERE_DECISION, `BACKEND_GAPS.md`) |
+| 6 | `29:922` | Perfil del negocio · móvil | Decisión D01/D20 | Se conservan la barra inferior de la tienda y el WhatsApp flotante (no están en Figma) por el pedido aislado |
+| 7 | `29:1159` | Directorio de emprendimientos · móvil | Backend | `/convenios/publicos` solo trae nombre, logo, descripción y sitio: faltan ciudad, categoría, tres fotos, conteo de productos y slug; no hay endpoint de empresas públicas |
+| 8 | `29:2308` | Perfil del negocio · desktop | Decisión D02 | Figma dibuja el header del marketplace; se conserva el de la tienda (pedido aislado) |
+| 9 | `44:1775` | Ficha con variantes · móvil | Decisión D03 | Se conserva el stepper de cantidad que Figma omite |
+| 10 | `44:1849` | Ficha producto personalizado · móvil | Backend | Falta el dato «Elaboración» (el panel queda 27 px más arriba) |
+| 11 | `44:1917` | Ficha agotada · móvil | Figma | Falta remedir el frame completo en Figma (B19 lista E); la anotación «NUEVO · por programar» no se pinta (14 px) |
+| 12 | `28:989` | 1 · Carrito · móvil | Figma | «Sale de <provincia>»: el dato ya llega en `bodega.provincia` (P11, DATO_EXISTE) pero la posición de la línea no está medida en `28:989` |
+| 13 | `28:1083` | 2 · Checkout · Datos · móvil | Decisión D04 | Consentimiento Ley 8968 y cédula SINPE obligatorios, no dibujados en Figma |
+| 14 | `29:1248` | 3 · Checkout · Entrega · móvil | Decisión B15 + backend | GAM por origen (Figma) contra GAM por cantón destino (app); los tiempos son decisión de negocio |
+| 15 | `29:1344` | 4 · Checkout · Pago · móvil | Decisión D05 | Cédula SINPE y atajo internacional sin frame |
+| 16 | `29:1932` | 5 · Pago exitoso · móvil | Backend + Figma | «Ver mi pedido» de invitado requiere `tokenSeguimiento`; garantía de 40 días e «Imprimir» sin frame; escritorio sin frame (REQUIRES_DESIGN_REFERENCE) |
+| 17 | `29:1999` | 6 · Pago fallido · móvil | Figma | Escritorio sin frame (REQUIRES_DESIGN_REFERENCE) |
+| 18 | `30:2268` | 8 · Carrito · desktop | Decisión B14 | «Pedir por WhatsApp» y tarjeta de correo restaurados sin frame de escritorio |
+| 19 | `30:2385` | 9 · Checkout · desktop | Decisión D08 | Atajo internacional y consentimiento sin frame |
+| 20 | `37:1780` | Vendedor · despachar paquete · móvil | Backend + decisión | Faltan «Paquete N de M» y forma de entrega (DATO_EXISTE, sin exponer en el detalle del vendedor) y «Tu pago por este paquete» (REQUIERE_DECISION sobre la comisión) |
+| 21 | `55:2220` | Pago · tarjeta de regalo válida | Decisión D09 | El frame usa una barra «Pago · paso 3 de 3» y un número previo al pago que no existen |
+| 22 | `55:2284` | Pago · tarjeta de regalo inválida | Decisión D10 | Mismo chrome que D09 |
+| 23 | `28:1143` | Ingresar · móvil | Figma | El paso de contraseña y el escritorio no tienen frame; «Continuar con Google» solo aparece con Clerk |
+| 24 | `29:1434` | Detalle de pedido · móvil | Backend | Figma da un rango de entrega y el backend una sola fecha (`fechaEntregaEstimada`) |
+| 25 | `29:1535` | Mis solicitudes · móvil | Backend | Falta la pestaña «Encargos»: el backend no lista encargos del comprador; no hay precio ni vigencia |
+| 26 | `29:1594` | Solicitud cotizada · móvil | Backend | Faltan precio cotizado, entrega, vigencia, «Comprar por ₡X» (flujo de compra de cotización) e historial con fechas intermedias |
+| 27 | `30:1327` | Mis opiniones · móvil | Backend/decisión | Figma dice «(opcional)» pero el backend exige comentario; el testimonio general de la tienda se conserva sin frame |
+| 28 | `30:1400` | Datos y seguridad · móvil | Backend | «Direcciones guardadas» (marcada «NUEVO · a confirmar») no existe en el backend |
+| 29 | `44:1660` | Verificación en dos pasos · móvil | Backend + Figma | «Confiar en este dispositivo» no tiene soporte en el backend; elegir método y código por correo sin frame propio |
+| 30 | `28:1486` | Te lo conseguimos · formulario | Decisión | Presupuesto con rangos (Figma: selector) es REQUIERE_DECISION; el estado enviado no tiene frame |
+| 31 | `28:1531` | Solicitud de garantía · móvil | Backend | «Fotos de la falla» y el campo de motivo: la solicitud solo guarda la descripción |
+| 32 | `28:1594` | Encargo · seguimiento público | Backend | La respuesta por token no trae tienda (DATO_EXISTE), fechas de cotización, tiempo de producción ni envío |
+| 33 | `28:1660` | Página informativa · plantilla (Envíos) | Decisión + Figma | Tiempos y tarifas de Figma difieren del contenido (REQUIERE_DECISION); Devoluciones e Información sin frame |
+| 34 | `55:2332` | Cotización pública · móvil | Backend | «Aceptar cotización» no tiene endpoint |
+| 35 | `29:1650` | QR de mesa · menú | Decisión | Se conserva un paso de confirmación (nombre, teléfono, notas) que Figma no dibuja |
+| 36 | `29:1781` | QR de pago en caja · elegir método | Backend | Sin número de cobro ni caja; el cajero fija el método (solo se dibuja el elegido) |
+| 37 | `29:1830` | QR de pago · SINPE en curso | Figma | El formulario de datos no tiene frame |
+| 38 | `29:1888` | QR de pago · pagado | Backend | El pago por QR no tiene correo ni ruta de comprobante («comprobante por correo», «Ver comprobante») |
+| 39 | `29:1913` | QR de pago · vencido | Backend/producto | «Escanear otro QR»: no hay lector de QR para el comprador |
+| 40 | `30:1599` | Correo · Confirmación de pedido | Backend + QA | Faltan «Enviamos a» y «Envío normal GAM» (el pedido no guarda dirección); no probado en Gmail ni Outlook |
+| 41 | `30:1643` | Correo · Guía asignada | Backend/Figma + QA | «Paquete N de M» y «Otros paquetes» (DATO_EXISTE por `grupoPago`, maquetado sin medir); no probado en Gmail ni Outlook |
+| 42 | `30:1669` | Correo · Seguimiento de estado | Figma + QA | Figma solo dibuja «En preparación»; no probado en Gmail ni Outlook |
+| 43 | `30:1708` | Correo · Pago fallido | Decisión + QA | «Quedó guardado» de Figma contra «stock liberado» del código; no probado en Gmail ni Outlook |
+| 44 | `30:1733` | Correo · Recuperación de carrito | Figma + QA | Tienda y «Quedan N» agregados en P11 sin medir contra Figma; no probado en Gmail ni Outlook |
+| 45 | `30:1768` | Correo · Cupón de bienvenida | Backend/decisión + QA | Figma promete 30 días de vigencia y el cupón no vence en el backend; no probado en Gmail ni Outlook |
+| 46 | `30:1793` | Correo · Código de verificación | Decisión (seguridad) + QA | El asunto de Figma lleva el código; no se aplicó por seguridad (pantalla de bloqueo); no probado en Gmail ni Outlook |
+| 47 | `51:1820` | A · Carrito · notas, gift card, WhatsApp, guardar y asistente | Figma | Falta medir el frame completo (B19 lista E) |
+| 48 | `51:2000` | B · Checkout · Entrega · envío internacional | Decisión D18 | Atajo internacional en escritorio sin respuesta |
+| 49 | `51:2229` | E · Idioma y accesibilidad · hoja | Figma | «A−» se muestra y no reduce la fuente: el frame no define ese efecto |
+| 50 | `51:2468` | G · Tienda con su color · perfil del negocio | Decisión D01/D20 | Mismas pendientes que `29:922` (colores remedidos iguales) |
+| 51 | `54:2126` | Blog · listado · móvil | Backend | Chips de temas (no hay categoría) y buscador |
+| 52 | `54:2219` | Blog · artículo · móvil | Backend | Categoría de las migas, «Productos de este artículo» y autor propio |

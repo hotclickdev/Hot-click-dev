@@ -170,7 +170,6 @@ test('estados y flechas de icono usan TrustGlyph, no cruz de carácter', () => {
 test('flechas de copy en comprar vender emprender usan TextoFlecha', () => {
   expect(leer('../src/components/ui/TextoFlecha.tsx')).toContain('tipo="atras"')
   expect(leer('../src/components/ui/TextoFlecha.tsx')).toContain('tipo="adelante"')
-  expect(leer('../src/components/ui/Section.tsx')).not.toContain('›')
   expect(leer('../src/pages/checkout/CheckoutLayout.tsx')).not.toContain('←')
   expect(leer('../src/pages/auth/LoginFormStep.tsx')).not.toContain('→')
   expect(leer('../src/pages/auth/EmprendimientoCloud.tsx')).not.toContain('→')
