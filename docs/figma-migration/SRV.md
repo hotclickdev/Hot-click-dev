@@ -39,6 +39,12 @@ Estados y vistas sin frame propio que también se migraron o revisaron, ninguna 
 - **Blog listado `54:2126`:** BLOCKED por backend: los chips de temas ("Guías de compra", "Emprendedores", "Envíos") necesitan una categoría en `EntradaBlog` que no existe; el buscador de la barra no se implementó (no hay búsqueda de entradas). Por eso el artículo destacado empieza unos 70 px más arriba. Las filas muestran solo la fecha como Figma; el destacado suma "N min de lectura" calculado del contenido (se omite si el listado no trae el contenido). La barra inferior no marca "Inicio" en `/blog` (SHELL decide por ruta).
 - **Blog artículo `54:2219`:** BLOCKED por backend: la categoría de las migas ("Guías de compra"), "Productos de este artículo" (marcado "NUEVO · por programar") y el autor propio ("NUEVO · autor") no existen. Las migas son "Inicio / Blog"; el autor es "Por HotClick". Compartir funciona (WhatsApp, Facebook, copiar enlace y la hoja del sistema en el ícono de la barra).
 
+## Reverificación contra Figma (1-oct-2026)
+
+Se recapturaron las 8 pantallas con `tests/srv-capturas.spec.ts` (solo corre con `SRV_SHOTS=<carpeta>`) y se compararon lado a lado con los frames. No apareció ninguna diferencia visual nueva que corregir en SRV: todo lo que difiere es de datos de ejemplo, backend o decisión ya documentada (formulario con campos vacíos y sin "Presupuesto" en selector, garantía sin fotos de la falla, encargo sin tienda ni envío, cotización sin "Aceptar", blog sin chips ni buscador, artículo sin productos ni autor, Envíos con el contenido del checkout). Los íconos de `iconosCuenta` que SRV reutiliza (escudo, bandeja, lupa) heredan la corrección de ACC: trazo fijo de 2 px como en Figma.
+
+Todas las pantallas conservan su veredicto (1 PASS y 7 PARTIAL).
+
 ## Funcionalidad preservada
 
 - **Servicios HOT:** las mismas cinco vistas (inicio, búsqueda, garantía, reseña, digitalización), la entrada directa `?vista=busqueda|garantia|testimonio`, `?vista=solicitudes` hacia la pantalla de ACC, subida de fotos (máx. 3, 5 MB) con vista previa, Turnstile, el prefijo `[Digitalización de inventario]`, JSON-LD y SEO. La lista "Mis solicitudes" de la pestaña antigua ahora es la de ACC (`MisSolicitudesVista`), a la que lleva el aviso del inicio y el botón del formulario enviado.
