@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useSignIn, useSignUp } from '@clerk/react'
+import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 
 type SocialMode = 'signIn' | 'signUp'
+
+/** `figma`: solo el botón "Continuar con Google" del Figma `28:1175` (sin separador ni proveedores próximos). */
+type SocialVariante = 'clasica' | 'figma'
 
 type ClerkSocialClient = {
   authenticateWithRedirect: (opts: {
@@ -57,7 +61,8 @@ const COMING_SOON = [
   },
 ]
 
-export default function SocialLoginButtons({ mode = 'signIn' }: { mode?: SocialMode }) {
+export default function SocialLoginButtons({ mode = 'signIn', variante = 'clasica' }: { mode?: SocialMode; variante?: SocialVariante }) {
+  const { t } = useTranslation()
   const signInHook = useSignIn() as unknown as { signIn?: ClerkSocialClient | null; isLoaded: boolean }
   const signUpHook = useSignUp() as unknown as { signUp?: ClerkSocialClient | null; isLoaded: boolean }
   const signIn = signInHook.signIn
@@ -90,6 +95,23 @@ export default function SocialLoginButtons({ mode = 'signIn' }: { mode?: SocialM
       setError(msg)
       setLoading(null)
     }
+  }
+
+  if (variante === 'figma') {
+    return (
+      <div className="flex flex-col gap-2">
+        {error && <p role="alert" className="text-[13px] leading-[18px] text-hc-danger">{error}</p>}
+        <button
+          type="button"
+          disabled={!!loading}
+          onClick={() => handleSocial('google')}
+          className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900 disabled:opacity-50"
+        >
+          <span aria-hidden="true" className="flex size-[18px] items-center justify-center rounded-full bg-hc-n-100 text-[11px] font-bold text-hc-blue-600">G</span>
+          {t('login.google')}
+        </button>
+      </div>
+    )
   }
 
   return (

@@ -1,7 +1,7 @@
-import { tallasDesdeProducto } from './productoHelpers'
 import type { TFunction } from 'i18next'
 import type { NavigateFunction } from 'react-router-dom'
 import type { Producto } from '@/types/producto'
+import { STOCK_BAJO_MAX, opcionesDeTalla } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
 
 type SizeSelectorProps = {
@@ -13,63 +13,76 @@ type SizeSelectorProps = {
   t: TFunction
 }
 
+const CHIP = 'flex h-[33px] shrink-0 items-center rounded-full border px-[14px] text-[13px] font-medium leading-[normal]'
+
+/**
+ * Selector de talla (Figma 44:1775, nodo 44:1810): chips de 33 px, la elegida en oscuro, la agotada
+ * en gris tachada y una nota de stock. Las tallas propias comparten el stock del producto; las
+ * hermanas son otra ficha con su propio stock y llevan a ella.
+ */
 export default function SizeSelector({
   product, variantes, tallaSeleccionada, onSelectTalla, onNavigate, t,
 }: SizeSelectorProps) {
-  const { tallasPropias, hermanasPorTalla } = tallasDesdeProducto(product, variantes)
-  if (tallasPropias.length === 0 && hermanasPorTalla.size === 0) return null
+  const opciones = opcionesDeTalla(product, variantes)
+  if (opciones.length === 0) return null
 
-  // Nota de stock de la talla activa, al estilo Figma ("Quedan 3 en talla 40" /
-  // "Talla 41 agotada"). Las tallas propias comparten el stock del producto;
-  // las hermanas (otra fila de producto) traen su propio stock.
-  const hermanaActiva = tallaSeleccionada ? hermanasPorTalla.get(tallaSeleccionada) : undefined
-  const stockActivo = hermanaActiva ? hermanaActiva.stock ?? null : product.stock
-  const agotadas = [...hermanasPorTalla.entries()].filter(([, v]) => (v.stock ?? 0) <= 0)
+  const stockActivo = tallaSeleccionada ? product.stock : null
+  const agotadas = opciones.filter((o) => o.origen === 'hermana' && (o.stock ?? 0) <= 0)
+  const avisoStock = stockActivo != null && stockActivo > 0 && stockActivo <= STOCK_BAJO_MAX
+  const avisoAgotada = stockActivo != null && stockActivo <= 0 && tallaSeleccionada
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-hc-muted">{t('product.size', 'Talla')}:</span>
-        {tallasPropias.map((tOpt) => (
-          <button key={tOpt} type="button" onClick={() => onSelectTalla(tOpt)}
-            className="min-w-[2.25rem] h-9 px-2 rounded-lg border text-sm font-medium transition-colors"
-            style={tallaSeleccionada === tOpt
-              ? { backgroundColor: 'var(--hc-text)', color: 'var(--hc-surface)', borderColor: 'var(--hc-text)' }
-              : { backgroundColor: 'transparent', color: 'var(--hc-text)', borderColor: 'var(--hc-border)' }}>
-            {tOpt}
-          </button>
-        ))}
-        {[...hermanasPorTalla.entries()].map(([tOpt, v]) => {
-          const agotada = (v.stock ?? 0) <= 0
+    <div className="flex flex-col gap-[10px] px-4 pb-1 pt-3 leading-[normal] lg:p-0">
+      <p className="text-[14px] font-semibold text-hc-n-900">{t('product.size')}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        {opciones.map((o) => {
+          if (o.origen === 'propia') {
+            const activa = tallaSeleccionada === o.talla
+            return (
+              <button
+                key={`p-${o.talla}`}
+                type="button"
+                onClick={() => onSelectTalla(o.talla)}
+                aria-pressed={activa}
+                className={`${CHIP} ${activa ? 'border-hc-n-900 bg-hc-n-900 text-hc-n-0' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'}`}
+              >
+                {o.talla}
+              </button>
+            )
+          }
+          const agotada = (o.stock ?? 0) <= 0
           return (
-            <button key={v.id} type="button" onClick={() => onNavigate(`/productos/${v.id}`)}
-              className="min-w-[2.25rem] h-9 px-2 rounded-lg border text-sm font-medium transition-colors"
-              style={{
-                backgroundColor: 'transparent',
-                color: agotada ? 'var(--hc-muted)' : 'var(--hc-text)',
-                borderColor: 'var(--hc-border)',
-                opacity: agotada ? 0.55 : 1,
-                textDecoration: agotada ? 'line-through' : 'none',
-              }}>
-              {tOpt}
+            <button
+              key={`h-${o.talla}`}
+              type="button"
+              onClick={() => onNavigate(`/productos/${o.id}`)}
+              className={`${CHIP} ${
+                agotada
+                  ? 'border-hc-n-200 bg-hc-n-100 text-[color:var(--hc-n-400)] line-through'
+                  : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'
+              }`}
+            >
+              {o.talla}
             </button>
           )
         })}
       </div>
-      {(stockActivo != null || agotadas.length > 0) && (
-        <p className="text-xs text-hc-muted">
-          {stockActivo != null && tallaSeleccionada && (
-            stockActivo > 0
-              ? t('product.sizeStock', 'Quedan {{count}} en talla {{talla}}', { count: stockActivo, talla: tallaSeleccionada })
-              : t('product.sizeOutOfStock', 'Talla {{talla}} agotada', { talla: tallaSeleccionada })
+      {(avisoStock || avisoAgotada || agotadas.length > 0) && (
+        <div className="flex flex-wrap items-center gap-[6px]">
+          {avisoStock && (
+            <span className="rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold leading-[13px] text-hc-warning">
+              {t('product.sizeStock', { count: stockActivo, talla: tallaSeleccionada })}
+            </span>
+          )}
+          {avisoAgotada && (
+            <span className="text-[12px] text-hc-n-500">{t('product.sizeOutOfStock', { talla: tallaSeleccionada })}</span>
           )}
           {agotadas.length > 0 && (
-            <>
-              {stockActivo != null && tallaSeleccionada ? ' · ' : ''}
-              {agotadas.map(([tOpt]) => t('product.sizeOutOfStock', 'Talla {{talla}} agotada', { talla: tOpt })).join(' · ')}
-            </>
+            <span className="text-[12px] text-hc-n-500">
+              {agotadas.map((o) => t('product.sizeOutOfStock', { talla: o.talla })).join(' · ')}
+            </span>
           )}
-        </p>
+        </div>
       )}
     </div>
   )

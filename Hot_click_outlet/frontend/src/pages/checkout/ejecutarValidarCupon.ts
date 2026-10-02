@@ -1,4 +1,5 @@
 import { cuponService } from '@/services/cuponService'
+import i18n from '@/i18n'
 
 type CuponValidacion = {
   data?: { descuento?: number; codigo?: string }
@@ -16,12 +17,12 @@ type ValidarCuponDeps = {
 
 function mensajeErrorCupon(err: unknown): string {
   if (!err || typeof err !== 'object' || !('response' in err)) {
-    return 'Código inválido o no disponible'
+    return i18n.t('checkout.errores.cuponInvalido')
   }
   const data = (err as { response?: { data?: { message?: unknown; error?: unknown } } }).response?.data
   if (typeof data?.message === 'string') return data.message
   if (typeof data?.error === 'string') return data.error
-  return 'Código inválido o no disponible'
+  return i18n.t('checkout.errores.cuponInvalido')
 }
 
 /**

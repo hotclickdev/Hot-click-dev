@@ -34,6 +34,7 @@ export const authService = {
   verifyCode: (correo: string, codigo: string) =>
     api.post('/auth/verify-code', { correo, codigo }),
 
+  /** Exige el mismo código verificado en verifyCode: el backend no acepta el cambio solo con el correo. */
   resetPassword: (correo: string, codigo: string, nuevaContrasena: string) =>
     api.post('/auth/reset-password', { correo, codigo, nuevaContrasena }),
 

@@ -10,7 +10,7 @@ import type { SearchPanelModel } from './useSearchPanel'
 function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-1">
-      <h2 className="text-[11px] font-semibold uppercase text-hc-n-500">{titulo}</h2>
+      <h2 className="text-[11px] font-semibold uppercase leading-[13px] text-hc-n-500">{titulo}</h2>
       {children}
     </section>
   )
@@ -18,7 +18,7 @@ function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
 
 /** Resultados en vivo del buscador híbrido (Figma `8:163`). */
 export function SearchPanelBody({
-  query, loading, recent, productResults, sugerencias,
+  query, loading, recent, productResults, totalResultados, sugerencias,
   selectProduct, viewAll, clearRecent, setQuery,
   preguntarAsistente, buscarConFoto, elegirSugerencia,
 }: SearchPanelModel) {
@@ -96,8 +96,8 @@ export function SearchPanelBody({
               </button>
             )
           })}
-          <button type="button" onClick={viewAll} className="flex items-center gap-1 self-start pt-1 text-[13px] font-semibold text-hc-blue-600">
-            {t('search.viewAllFor')} “{consulta}”
+          <button type="button" onClick={viewAll} className="flex items-center gap-1 self-start pt-1 text-[13px] font-semibold leading-[15px] text-hc-blue-600">
+            {t('search.viewAllCount', { count: totalResultados, q: consulta })}
             <IconoFigma src={ICONOS_COMPRADOR.verTodo} size={14} />
           </button>
         </Bloque>
@@ -116,8 +116,8 @@ export function SearchPanelBody({
       >
         <IconoFigma src={ICONOS_COMPRADOR.buscarFoto} size={20} className="text-hc-blue-600" />
         <span className="flex flex-col gap-[1px]">
-          <span className="text-[14px] font-semibold text-hc-n-900">{t('search.photoSearch')}</span>
-          <span className="text-[12px] text-hc-n-500">{t('search.photoSearchSub')}</span>
+          <span className="text-[14px] font-semibold leading-4 text-hc-n-900">{t('search.photoSearch')}</span>
+          <span className="whitespace-nowrap text-[12px] leading-[14px] text-hc-n-500">{t('search.photoSearchSub')}</span>
         </span>
       </button>
     </div>

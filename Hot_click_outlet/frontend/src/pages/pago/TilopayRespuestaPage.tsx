@@ -45,10 +45,9 @@ export default function TilopayRespuestaPage() {
     <MainLayout>
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
         <div
-          className="inline-block w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mb-4"
-          style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}
+          className="inline-block w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mb-4 border-hc-accent"
         />
-        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{mensaje}</p>
+        <p className="text-sm text-hc-muted">{mensaje}</p>
       </div>
     </MainLayout>
   )

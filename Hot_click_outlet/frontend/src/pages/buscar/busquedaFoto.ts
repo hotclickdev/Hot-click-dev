@@ -4,9 +4,14 @@ export type ResultadoFoto = {
   precio: number
   imagenUrl: string | null
   similitud: number
+  /** Nombre del negocio, si la respuesta lo trae. */
+  tienda: string | null
+  categoria: string | null
 }
 
 export type RespuestaFoto = {
+  /** Categoría detectada en la foto (puede coincidir con la de un resultado). */
+  categoriaDetectada: string
   etiquetas: string[]
   productos: ResultadoFoto[]
 }
@@ -33,6 +38,18 @@ export function leerRespuestaFoto(data: unknown): RespuestaFoto {
       precio: Number(p.precio) || 0,
       imagenUrl: texto(p.imagenUrl) || null,
       similitud: Number(p.similarity) || 0,
+      tienda: texto(p.empresaNombre) || null,
+      categoria: texto(p.categoriaNombre) || texto(p.categoria) || null,
     }))
-  return { etiquetas, productos }
+  return { categoriaDetectada: texto(analisis.categoria), etiquetas, productos }
+}
+
+export type EtiquetaParecido = 'muyParecido' | 'mismaCategoria' | 'relacionado'
+
+/** Rótulo de cada resultado: muy parecido, de la misma categoría detectada, o relacionado. */
+export function etiquetaParecido(producto: ResultadoFoto, categoriaDetectada: string): EtiquetaParecido {
+  if (producto.similitud >= SIMILITUD_ALTA) return 'muyParecido'
+  const detectada = categoriaDetectada.toLowerCase()
+  if (detectada !== '' && producto.categoria?.toLowerCase() === detectada) return 'mismaCategoria'
+  return 'relacionado'
 }

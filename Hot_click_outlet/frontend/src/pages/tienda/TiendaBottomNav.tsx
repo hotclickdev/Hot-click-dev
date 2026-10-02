@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { itemsTiendaBottomNav, estaTabTiendaActiva } from './tiendaBottomNavItems'
 import type { ComponentType } from 'react'
 
@@ -8,17 +9,21 @@ const ICONOS: Record<string, ComponentType> = {
   hotclick: HotClickIcon,
 }
 
+/** Etiquetas traducibles de la barra; "HotClick" es la marca y no se traduce. */
+const CLAVE_ETIQUETA: Record<string, string> = { catalogo: 'tienda.navCatalogo', pedido: 'tienda.navPedido' }
+
 /**
  * Barra móvil de la tienda del vendedor: catálogo, pedido aislado, salida a HotClick.
  */
 export default function TiendaBottomNav({ slug, cantidadCarrito }: { slug: string; cantidadCarrito: number }) {
   const { pathname } = useLocation()
+  const { t } = useTranslation()
   const items = itemsTiendaBottomNav(slug, cantidadCarrito)
 
   return (
     <nav
       className="hc-tienda-bottom-nav fixed bottom-0 left-0 right-0 z-40 md:hidden"
-      aria-label="Navegación de esta tienda"
+      aria-label={t('tienda.navTienda')}
       style={{
         backgroundColor: 'var(--t-surface)',
         borderTop: '1px solid var(--t-border)',
@@ -54,7 +59,7 @@ export default function TiendaBottomNav({ slug, cantidadCarrito }: { slug: strin
                   </span>
                 )}
               </span>
-              <span className="text-[10px] font-medium leading-none">{item.label}</span>
+              <span className="text-[10px] font-medium leading-none">{CLAVE_ETIQUETA[item.id] ? t(CLAVE_ETIQUETA[item.id]) : item.label}</span>
             </Link>
           )
         })}

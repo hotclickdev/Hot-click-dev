@@ -1,6 +1,7 @@
 package com.hotclick.service.publicchat;
 
 import com.hotclick.service.catalogo.ChatPrecioPersonalizado;
+import com.hotclick.utils.FormatoColones;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -199,7 +200,7 @@ class PublicChatPromptBuilder {
             OBJETIVO: Entendé su necesidad exacta, mostrá entusiasmo genuino y empujá hacia el carrito o cotización.
             """);
         if (isGift) goal.append("El cliente BUSCA UN REGALO → ayudalo con opciones especiales y mencioná el envío a domicilio.\n");
-        if (maxBudget != null) goal.append(String.format("El cliente tiene presupuesto de hasta ₡%,d → priorizá opciones dentro de ese rango.\n", maxBudget));
+        if (maxBudget != null) goal.append("El cliente tiene presupuesto de hasta ").append(FormatoColones.colones(maxBudget)).append(" → priorizá opciones dentro de ese rango.\n");
         if (!negations.isEmpty()) goal.append(String.format("El cliente NO quiere: %s → evitá mencionarlos.\n", String.join(", ", negations)));
         return goal.toString();
     }

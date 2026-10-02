@@ -1,9 +1,11 @@
 import { authService } from '@/services/authService'
+import i18n from '@/i18n'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
 import { BODEGA_DEFAULT, bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
+import { guardarUltimoPedido } from '@/utils/ultimoPedido'
 import type { CheckoutPayload } from '@/types/pedido'
 
 /** Etiqueta legible del método de envío elegido para un paquete, para el resumen en notas. */
@@ -72,6 +74,8 @@ type PagarCheckoutDeps = {
   necesitaDireccion: boolean
   notas: string
   direccion: string
+  /** Dirección completa (señas, cantón, provincia) que viaja en las notas del pedido. */
+  direccionPedido?: string
   sinpeEmail: string
   totalFinal: number
   items: ItemCheckout[]
@@ -110,6 +114,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     necesitaDireccion,
     notas,
     direccion,
+    direccionPedido,
     sinpeEmail,
     totalFinal,
     items,
@@ -147,19 +152,30 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     if (sinpeNombre.trim()) {
       setSinpeNombreErr('')
     } else {
-      setSinpeNombreErr('El nombre completo es requerido')
+      setSinpeNombreErr(i18n.t('checkout.errores.nombreRequerido'))
       valid = false
     }
     if (sinpeCedula.trim()) {
       setSinpeCedulaErr('')
     } else {
-      setSinpeCedulaErr('El número de cédula es requerido')
+      setSinpeCedulaErr(i18n.t('checkout.errores.cedulaRequerida'))
       valid = false
     }
     if (!valid) return
   }
 
   authService.registrarConsentimiento('CHECKOUT')
+  guardarUltimoPedido({
+    unidades: items.reduce((s, i) => s + (i.cantidad ?? 0), 0),
+    total: totalFinal,
+    nombre: sinpeNombre.trim(),
+    correo: guestEmail.trim() || sinpeEmail.trim(),
+    paquetes: paquetes.map((p) => ({
+      negocio: p.empresaNombre || p.bodegaNombre,
+      productos: p.items.length,
+      metodoEnvio: metodoEnvioPorPaquete[p.bodegaId],
+    })),
+  })
 
   const phoneEfectivo = token ? telefono : guestPhone
   const resumenEnvios = paquetes
@@ -169,7 +185,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   const notasFull = [
     notas.trim(),
     necesitaDireccion && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
-    necesitaDireccion && direccion ? `Dirección: ${direccion}` : '',
+    necesitaDireccion && direccion ? `Dirección: ${direccionPedido || direccion}` : '',
     metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
     resumenEnvios ? `Envío: ${resumenEnvios}` : '',
   ].filter(Boolean).join(' | ')

@@ -57,6 +57,7 @@ import java.util.Map;
  *   /api/marcas/publicas           →  60 / 60s
  *   /api/categorias/**             →  60 / 60s
  *   /api/blog/publico/**           →  60 / 60s
+ *   /api/public/pedidos/seguimiento/** → 20 / 60s
  *   /api/public/**                 →  60 / 60s
  *   /api/tienda/**                 → 120 / 60s
  *   /api/productos/**              → 120 / 60s
@@ -113,7 +114,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // Prevent admins from accidentally spamming customers with email notifications.
         new PrefixLimit("/api/pedidos/", 5, 60),   // 5 notificar calls/min per IP
         // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
-        new PrefixLimit("/api/payments/tilopay/", 10, 60)
+        new PrefixLimit("/api/payments/tilopay/", 10, 60),
+        // "Avisame cuando vuelva" es publico (con o sin sesion) y solo pide un email valido —
+        // sin este limite se puede insertar filas sin fin en la tabla de suscripciones.
+        new PrefixLimit("/api/productos/", 5, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -125,6 +129,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/marcas/publicas",             60,  60),
         new GetLimit("/api/categorias",                  60,  60),
         new GetLimit("/api/blog/publico",                60,  60),
+        // Seguimiento por token: más estricto que el resto de /api/public (dificulta adivinar tokens).
+        new GetLimit("/api/public/pedidos/seguimiento",  20,  60),
         new GetLimit("/api/public",                      60,  60),
         new GetLimit("/api/tienda",                     120,  60),
         new GetLimit("/api/productos",                  120,  60)
@@ -155,7 +161,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                         continue;
                     }
                     if (pl.prefix().startsWith("/api/payments/tilopay/")
-                        || path.endsWith("/notificar")) {
+                        || path.endsWith("/notificar")
+                        || path.endsWith("/avisar-reposicion")) {
                         limit = new Limit(pl.maxRequests(), pl.windowSeconds());
                         break;
                     }

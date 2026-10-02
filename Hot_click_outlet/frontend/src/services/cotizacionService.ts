@@ -1,5 +1,6 @@
 import api from './api'
 import type { Id, JsonBody } from '@/types/api'
+import { formatPrice } from '@/utils/format'
 
 // ── Clientes B2B ─────────────────────────────────────────────────────────────
 
@@ -41,5 +42,5 @@ export function formatMonto(monto: number | undefined, moneda: string = 'CRC') {
   if (moneda === 'USD') {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format((monto ?? 0) / 100)
   }
-  return `₡${new Intl.NumberFormat('es-CR').format(monto ?? 0)}`
+  return formatPrice(monto)
 }

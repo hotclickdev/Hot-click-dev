@@ -1,3 +1,9 @@
+/* La librería quita el contorno al enfocar: con teclado vuelve el anillo de la app (P19, `html.hc-teclado`). */
+html.hc-teclado .hc-phone-field .react-international-phone-input-container .react-international-phone-input:focus-visible {
+  outline: 2px solid var(--hc-focus-ring);
+  outline-offset: 2px;
+}
+
 .hc-phone-field .react-international-phone-flag-emoji {
   display: none;
 }

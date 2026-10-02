@@ -60,12 +60,13 @@ test.describe('Mis pedidos — estados sin emoji', () => {
     await page.goto('/mis-pedidos', { waitUntil: 'domcontentloaded' })
 
     await expect(page.getByRole('heading', { name: 'Mis pedidos' })).toBeVisible()
-    await expect(page.getByText('ORD-1001')).toBeVisible()
-    await expect(page.getByText('Listo p/ retirar')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Pedido ORD-1001' })).toBeVisible()
+    await expect(page.getByText('Listo para retirar').first()).toBeVisible()
     await expect(page.getByText('🏪')).toHaveCount(0)
     await expect(page.getByText('✅')).toHaveCount(0)
 
-    await page.getByRole('button', { name: /ORD-1001/ }).click()
+    await page.getByRole('link', { name: /Ver el detalle del pedido ORD-1001/ }).click()
+    await expect(page).toHaveURL(/pedido=ORD-1001/)
     await expect(page.getByText('Retiro en tienda')).toBeVisible()
     await expect(page.getByText('✓')).toHaveCount(0)
   })

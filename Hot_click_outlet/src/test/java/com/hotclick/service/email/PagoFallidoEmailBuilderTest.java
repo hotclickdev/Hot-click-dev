@@ -35,7 +35,21 @@ class PagoFallidoEmailBuilderTest {
         assertThat(html)
             .contains("ORD-1052")
             .contains("El banco rechazó la tarjeta.")
-            .contains("No se hizo ningún cargo");
+            .contains("No se hizo ningún cobro");
+    }
+
+    @Test
+    @DisplayName("«Intentar de nuevo» lleva al checkout sobre app.url, no a un dominio fijo")
+    void ctaUsaAppUrl() {
+        EmailLayoutHelper layout = new EmailLayoutHelper();
+        ReflectionTestUtils.setField(layout, "appUrl", "https://staging.hotclick.test/");
+        ReflectionTestUtils.setField(builder, "layout", layout);
+
+        String html = builder.buildPagoFallido(pedido(), pedido().getUsuarioFinal(), null);
+
+        assertThat(html)
+            .contains("href=\"https://staging.hotclick.test/checkout\"")
+            .doesNotContain("https://hotclick.lat/checkout");
     }
 
     @Test

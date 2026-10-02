@@ -4,6 +4,7 @@ import com.hotclick.model.Pedido;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,6 +17,14 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Optional<Pedido> findByNumeroPedido(String numeroPedido);
 
     List<Pedido> findByGrupoPagoOrderByIdAsc(String grupoPago);
+
+    /** Cambia el estado de todos los paquetes de un checkout (mismo grupo de pago) en un solo UPDATE. */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE Pedido p SET p.estadoPedido = :estado WHERE p.grupoPago = :grupoPago")
+    int actualizarEstadoPorGrupoPago(@Param("grupoPago") String grupoPago, @Param("estado") String estado);
+
+    /** Enlace público de seguimiento — token aleatorio de 64 hex, nunca el id numérico. */
+    Optional<Pedido> findByTokenSeguimiento(String tokenSeguimiento);
 
     /** Detalle completo — evita LazyInitializationException al serializar empresa/usuarioFinal/bodega/items. */
     @Query("SELECT DISTINCT p FROM Pedido p " +

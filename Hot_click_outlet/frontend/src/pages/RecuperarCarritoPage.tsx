@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
@@ -8,11 +7,15 @@ import { abandonedCartService } from '@/services/abandonedCartService'
 import useCartStore from '@/store/cartStore'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import TextoFlecha from '@/components/ui/TextoFlecha'
+import { BotonPago, IconoEstado } from '@/pages/pago/PiezasPago'
+import recuperarBolsa from '@/assets/figma/pago/recuperar-bolsa.svg'
+import { PackagePlaceholder } from '@/pages/carrito/cartIcons'
 import type { ItemCarritoAbandonado } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 
+type ItemRecuperado = ItemCarritoAbandonado & { empresaNombre?: string; stock?: number }
+
+/** Enlace del correo "Te guardamos tu pedido": Figma `29:2036` (móvil). Sin frame de escritorio: misma columna centrada. */
 export default function RecuperarCarritoPage() {
   const { t } = useTranslation()
   const { token } = useParams<{ token: string }>()
@@ -20,22 +23,19 @@ export default function RecuperarCarritoPage() {
   const addItem = useCartStore((s) => s.addItem)
   const toast   = useToast()
 
-  const [items,   setItems]   = useState<ItemCarritoAbandonado[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(false)
+  const [items,   setItems]   = useState<ItemRecuperado[]>([])
+  // Sin token no hay nada que pedir: se arranca en error, sin setState dentro del efecto.
+  const [loading, setLoading] = useState(Boolean(token))
+  const [error,   setError]   = useState(!token)
   const [adding,  setAdding]  = useState(false)
 
   useEffect(() => {
-    if (!token) {
-      setError(true)
-      setLoading(false)
-      return
-    }
+    if (!token) return
     abandonedCartService.getAbandonedCart(token)
       .then(({ data }) => {
-        const body = data as { data?: { items?: ItemCarritoAbandonado[] } }
-        const list = body?.data?.items ?? []
-        setItems(list)
+        // `api` ya desenvuelve el ResponseDTO: llega { id, status, items }. Se acepta también el sobre sin desenvolver.
+        const body = data as { items?: ItemRecuperado[]; data?: { items?: ItemRecuperado[] } }
+        setItems(body?.items ?? body?.data?.items ?? [])
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
@@ -67,10 +67,24 @@ export default function RecuperarCarritoPage() {
     navigate('/carrito')
   }
 
+  const marco = (hijos: React.ReactNode) => (
+    <MainLayout variante="marca" marcaCentrada encabezadoEscritorio="compacto" barraInferior={false}>
+      <div className="mx-auto flex w-full max-w-[480px] flex-col lg:py-10">{hijos}</div>
+    </MainLayout>
+  )
+
+  const cabecera = (titulo: string, texto: string) => (
+    <div className="flex flex-col items-center gap-2 px-4 pb-3 pt-7 text-center leading-[normal]">
+      <IconoEstado src={recuperarBolsa} tamano={30} circulo={64} clase="bg-hc-blue-50 text-hc-blue-600" />
+      <h1 className="font-display text-[20px] font-bold leading-[25px] tracking-normal text-hc-n-900">{titulo}</h1>
+      <p className="text-[14px] leading-5 text-hc-n-600">{texto}</p>
+    </div>
+  )
+
   if (loading) {
     return (
-      <MainLayout>
-        <div className="flex justify-center items-center min-h-[60vh]">
+      <MainLayout variante="marca" marcaCentrada encabezadoEscritorio="compacto" barraInferior={false}>
+        <div className="flex min-h-[60vh] items-center justify-center">
           <Spinner size="lg" />
         </div>
       </MainLayout>
@@ -78,124 +92,56 @@ export default function RecuperarCarritoPage() {
   }
 
   if (error || items.length === 0) {
-    return (
-      <MainLayout>
-        <div className="max-w-md mx-auto px-4 py-20 text-center">
-          <span className="flex justify-center mb-4 opacity-40" style={{ color: 'var(--hc-muted)' }}>
-            <TrustGlyph tipo="bolsa" className="w-12 h-12" />
-          </span>
-          <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>
-            {t('recuperarCarrito.notAvailable')}
-          </h1>
-          <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
-            {t('recuperarCarrito.expired')}
-          </p>
-          <button type="button"
-            onClick={() => navigate('/productos')}
-            className="hc-btn hc-btn-primary"
-          >
-            {t('recuperarCarrito.viewProducts')}
-          </button>
+    return marco(
+      <>
+        {cabecera(t('recuperarCarrito.notAvailable'), t('recuperarCarrito.expired'))}
+        <div className="flex flex-col gap-[10px] px-4 pb-6 pt-[14px]">
+          <BotonPago to="/productos" variante="primario">{t('recuperarCarrito.viewProducts')}</BotonPago>
         </div>
-      </MainLayout>
+      </>,
     )
   }
 
-  return (
-    <MainLayout>
-      <div className="max-w-lg mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {/* Header */}
-          <div className="text-center mb-8">
-            <span className="flex justify-center opacity-40" style={{ color: 'var(--hc-muted)' }}>
-              <TrustGlyph tipo="bolsa" className="w-14 h-14" />
-            </span>
-            <h1 className="text-2xl font-bold mt-3 mb-1" style={{ color: 'var(--hc-text)' }}>
-              {t('recuperarCarrito.title')}
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-              {t('recuperarCarrito.subtitle')}
-            </p>
-          </div>
+  return marco(
+    <>
+      {cabecera(t('recuperarCarrito.title'), t('recuperarCarrito.subtitle'))}
 
-          {/* Product list */}
-          <div
-            className="rounded-2xl overflow-hidden mb-6"
-            style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-          >
-            {items.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 px-4 py-3"
-                style={{ borderBottom: i < items.length - 1 ? '1px solid var(--hc-border)' : 'none' }}
-              >
+      <section className="px-4 pb-2 pt-3">
+        <div className="flex flex-col gap-3 rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4 leading-[normal]">
+          {items.map((item, i) => {
+            const cantidad = item.cantidad ?? 1
+            const detalle = [item.empresaNombre, `${t('recuperarCarrito.quantity')} ${cantidad}`].filter(Boolean).join(' · ')
+            return (
+              <div key={`${item.productoId ?? item.nombre}-${i}`} className="flex items-center gap-3">
                 {item.imagenUrl ? (
-                  <img
-                    src={item.imagenUrl}
-                    alt={item.nombre}
-                    width={52}
-                    height={52}
-                    loading="lazy"
-                    className="rounded-xl object-cover shrink-0"
-                    style={{ background: 'var(--hc-bg)' }}
-                  />
+                  <img src={item.imagenUrl} alt="" width={64} height={64} loading="lazy" className="size-16 shrink-0 rounded-[10px] bg-hc-n-100 object-cover" />
                 ) : (
-                  <div
-                    className="rounded-xl shrink-0 flex items-center justify-center opacity-30"
-                    style={{ background: 'var(--hc-bg)', width: 52, height: 52, color: 'var(--hc-muted)' }}
-                  >
-                    <TrustGlyph tipo="paquete" className="w-6 h-6" />
-                  </div>
+                  <span className="flex size-16 shrink-0 items-center justify-center rounded-[10px] bg-hc-n-100"><PackagePlaceholder /></span>
                 )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>
-                    {item.nombre}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                    {t('recuperarCarrito.quantity')} {item.cantidad ?? 1}
-                  </p>
+                <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+                  <p className="truncate text-[14px] font-medium text-hc-n-900">{item.nombre}</p>
+                  <p className="truncate text-[12px] text-hc-n-500">{detalle}</p>
+                  {item.stock != null && item.stock > 0 && <p className="text-[11px] font-semibold text-hc-success">{t('recuperarCarrito.disponible', { count: item.stock })}</p>}
                 </div>
-                <span className="font-semibold text-sm shrink-0" style={{ color: 'var(--hc-text)' }}>
-                  {formatPrice((item.precio ?? 0) * (item.cantidad ?? 1))}
-                </span>
+                <p className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice((item.precio ?? 0) * cantidad)}</p>
               </div>
-            ))}
-
-            {/* Total */}
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ borderTop: '2px solid var(--hc-border)' }}
-            >
-              <span className="font-semibold text-sm" style={{ color: 'var(--hc-muted)' }}>{t('recuperarCarrito.total')}</span>
-              <span className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>
-                {formatPrice(total)}
-              </span>
-            </div>
+            )
+          })}
+          <div className="h-px bg-hc-n-200" />
+          <div className="flex items-center justify-between text-hc-n-900">
+            <p className="text-[15px] font-semibold">{t('recuperarCarrito.total')}</p>
+            <p className="font-display text-[17px] font-bold">{formatPrice(total)}</p>
           </div>
+        </div>
+      </section>
 
-          {/* Actions */}
-          <div className="flex flex-col gap-3">
-            <button type="button"
-              onClick={handleRestore}
-              disabled={adding}
-              className="hc-btn hc-btn-primary w-full h-12 text-sm font-bold disabled:opacity-60"
-            >
-              {adding ? t('recuperarCarrito.adding') : <TextoFlecha>{t('recuperarCarrito.restore')}</TextoFlecha>}
-            </button>
-            <button type="button"
-              onClick={() => navigate('/productos')}
-              className="hc-btn hc-btn-ghost w-full h-10 text-sm"
-              style={{ color: 'var(--hc-muted)' }}
-            >
-              {t('recuperarCarrito.exploreNew')}
-            </button>
-          </div>
-        </motion.div>
+      <div className="flex flex-col gap-[10px] px-4 pb-6 pt-[14px]">
+        <BotonPago onClick={() => void handleRestore()} disabled={adding} variante="primario">
+          {adding ? t('recuperarCarrito.adding') : t('recuperarCarrito.restore')}
+        </BotonPago>
+        <p className="text-center text-[12px] leading-4 text-hc-n-500">{t('recuperarCarrito.nota')}</p>
+        <Link to="/productos" className="text-center text-[13px] font-semibold leading-[normal] text-hc-blue-600">{t('recuperarCarrito.exploreNew')}</Link>
       </div>
-    </MainLayout>
+    </>,
   )
 }

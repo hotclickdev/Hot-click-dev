@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { usePayment } from '@/hooks/usePayment'
 import useCartStore from '@/store/cartStore'
@@ -100,13 +101,14 @@ function VisitanteEstadoCarga({
   estado: string
   stripeApproved: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <VisitanteMain conNav={false} className="flex flex-col items-center pt-16 text-center">
       <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-[var(--hc-blue-50)] text-hc-accent">
         <IconoEscudo className="size-8 animate-pulse" />
       </div>
       <h1 className="font-display text-xl font-bold">¡Gracias por tu compra!</h1>
-      <p className="mt-2 text-sm text-hc-muted">{mensajeCargaPago(estado, stripeApproved)}</p>
+      <p className="mt-2 text-sm text-hc-muted">{mensajeCargaPago(estado, stripeApproved, t)}</p>
       <p className="mt-6 text-xs text-hc-muted">Esto puede tardar unos segundos…</p>
     </VisitanteMain>
   )
@@ -232,13 +234,14 @@ function VisitanteEstadoPendiente({
   pagoData: PagoResumen | null
   stripeApproved: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <VisitanteMain conNav={false} className="pt-10 text-center">
       <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-amber-500/15 text-amber-500">
         <IconoAlerta className="size-8" />
       </div>
-      <h1 className="font-display text-2xl font-bold">{tituloPendiente(stripeApproved)}</h1>
-      <p className="mt-2 text-sm text-hc-muted">{subtituloPendiente(stripeApproved)}</p>
+      <h1 className="font-display text-2xl font-bold">{tituloPendiente(stripeApproved, t)}</h1>
+      <p className="mt-2 text-sm text-hc-muted">{subtituloPendiente(stripeApproved, t)}</p>
       {pagoData?.numeroPedido ? (
         <div className="mt-6 rounded-2xl border border-hc-border bg-hc-surface p-3 text-sm">
           <span className="text-hc-muted">Pedido: </span>

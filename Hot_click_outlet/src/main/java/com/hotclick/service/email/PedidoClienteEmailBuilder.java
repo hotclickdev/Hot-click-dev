@@ -42,4 +42,14 @@ class PedidoClienteEmailBuilder {
             String appUrl) {
         return carrito.buildRecuperacionCarrito(tokenRecuperacion, items, appUrl);
     }
+
+    String asuntoConfirmacion(Pedido pedido) { return confirmacion.asunto(pedido); }
+
+    String asuntoGuia(Pedido pedido) { return guia.asunto(pedido); }
+
+    String asuntoSeguimiento(Pedido pedido) { return seguimiento.asunto(pedido); }
+
+    String asuntoPagoFallido(Pedido pedido) { return pagoFallido.asunto(pedido); }
+
+    String asuntoRecuperacionCarrito() { return RecuperacionCarritoEmailBuilder.ASUNTO; }
 }

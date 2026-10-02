@@ -12,8 +12,7 @@ function WhatsAppAtajo({ href, children }: { href: string; children: ReactNode }
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium"
-      style={{ color: 'var(--hc-muted)' }}
+      className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium text-hc-muted"
     >
       <WhatsAppIcon />
       {children}
@@ -28,18 +27,19 @@ function ErrorStock({
   productoBloqueado: string | null
   rutaCarrito: string
 }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-2">
       <p>
         {productoBloqueado
-          ? <>El producto <strong className="text-red-300">"{productoBloqueado}"</strong> ya no tiene stock disponible.</>
-          : 'Uno o más productos ya no tienen stock disponible.'}
+          ? <>{t('checkout.errorStock.productoAntes')} <strong className="text-red-300">"{productoBloqueado}"</strong> {t('checkout.errorStock.productoDespues')}</>
+          : t('checkout.errorStock.varios')}
       </p>
       <p className="text-xs text-red-300/80">
-        Retirá ese producto del pedido y volvé a intentarlo.
+        {t('checkout.errorStock.retirar')}
       </p>
       <Link to={rutaCarrito} className="hc-btn hc-btn-primary mt-1 min-h-11 inline-flex items-center justify-center">
-        Ir al pedido
+        {t('checkout.errorStock.irPedido')}
       </Link>
     </div>
   )
@@ -95,7 +95,7 @@ export default function CheckoutPayError({
   const stockMatch = errorStr.match(/para\s+'([^']+)'/)
   const hrefWa = `https://wa.me/${WHATSAPP}?text=${toWhatsAppMessage()}`
   const etiquetaWa = isStockError
-    ? 'Consultar disponibilidad por WhatsApp'
+    ? t('checkout.errorStock.consultarWa')
     : t('cart.orderWhatsapp')
 
   return (

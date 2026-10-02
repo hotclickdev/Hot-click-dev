@@ -7,12 +7,14 @@ import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import CookieBanner from '@/components/ui/CookieBanner'
+import AvisoSinConexion from '@/components/comprador/estados/AvisoSinConexion'
 import { setAnalyticsConsent, identifyUser } from '@/utils/analytics'
 import { initAnalytics } from '@/utils/initAnalytics'
 import SiteVerification from '@/utils/siteVerification'
 import HtmlClassManager from '@/app/HtmlClassManager'
+import ConfigMovimiento from '@/app/ConfigMovimiento'
 import AppRoutes from '@/app/AppRoutes'
-import AdminErrorBoundary from '@/app/AdminErrorBoundary'
+import ErrorBoundaryPorArea from '@/app/ErrorBoundaryPorArea'
 import useAuthStore from '@/store/authStore'
 import {
   ScrollToTop,
@@ -21,7 +23,6 @@ import {
   ConditionalChatModal,
   AbandonedCartWatcher,
   WishlistAlertWatcher,
-  SocialProofController,
   BrandingInit,
   AnalyticsInit,
   ServiceWorkerRefresh,
@@ -34,6 +35,7 @@ const queryClient = new QueryClient({
 /** Raíz de la SPA: providers, chrome global y árbol de rutas. */
 export default function App() {
   return (
+    <ConfigMovimiento>
     <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
@@ -45,21 +47,17 @@ export default function App() {
           <BrandingInit />
           <PageProgressBar />
           <ScrollToTop />
+          <AvisoSinConexion />
           <Suspense fallback={<PageLoader />}>
             <PageFade>
-            <AdminErrorBoundary
-              titulo="Error inesperado"
-              detalle="Algo salió mal. Recargá la página. Si el problema sigue, contactá soporte."
-              accion="Recargar"
-            >
+            <ErrorBoundaryPorArea>
               <AppRoutes />
-            </AdminErrorBoundary>
+            </ErrorBoundaryPorArea>
           </PageFade>
           </Suspense>
           <ConditionalWhatsAppFab />
           <AccessibilityPanel />
           <ConditionalChatModal />
-          <SocialProofController />
           <AbandonedCartWatcher />
           <WishlistAlertWatcher />
           <CookieBanner onConsent={(c) => {
@@ -77,5 +75,6 @@ export default function App() {
       </ToastProvider>
     </QueryClientProvider>
     </HelmetProvider>
+    </ConfigMovimiento>
   )
 }

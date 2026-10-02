@@ -97,9 +97,10 @@ test.describe('Tienda tenant — theme', () => {
       nombreComercial: 'Emprendimiento Super Largo De Prueba Costa Rica',
     })
     await page.setViewportSize({ width: 375, height: 700 })
-    await page.goto('/tienda/demo', { waitUntil: 'domcontentloaded' })
+    // En el perfil móvil la portada reemplaza al header (Figma 29:922): se revisa en una subruta que lo conserva.
+    await page.goto('/tienda/demo/carrito', { waitUntil: 'domcontentloaded' })
 
-    const header = page.locator('header').first()
+    const header = page.getByRole('banner').first()
     const anfitrion = header.locator('span.shrink-0', { hasText: 'en HotClick' })
     await expect(anfitrion).toBeVisible()
 
@@ -145,8 +146,8 @@ test.describe('Tienda tenant — theme', () => {
       })
     })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Teclado' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Mouse' })).toHaveCount(0)
+    await expect(page.getByText('Teclado', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('Mouse', { exact: true })).toHaveCount(0)
   })
 })
 
@@ -155,7 +156,10 @@ test('chrome de tienda: HotClick no se recorta y el footer no lo esconde', () =>
   const anfitrion = readFileSync(join(raiz, '../src/pages/tienda/TiendaAnfitrion.tsx'), 'utf8')
   const footer = readFileSync(join(raiz, '../src/pages/tienda/TiendaFooter.tsx'), 'utf8')
   expect(anfitrion).toContain('shrink-0 whitespace-nowrap')
-  expect(anfitrion).toContain(' en HotClick')
+  // P17: el texto vive en i18n; el espacio duro sigue en el componente para que "en HotClick" no se parta.
+  const es = JSON.parse(readFileSync(join(raiz, '../src/i18n/locales/es.json'), 'utf8'))
+  expect(anfitrion).toContain("&nbsp;{t('tienda.enHotclick')}")
+  expect(es.tienda.enHotclick).toBe('en HotClick')
   expect(footer).toContain('{footerTexto ? <p>{footerTexto}</p> : null}')
   expect(footer).toContain('tienda en')
   expect(footer).toContain('HotClick')

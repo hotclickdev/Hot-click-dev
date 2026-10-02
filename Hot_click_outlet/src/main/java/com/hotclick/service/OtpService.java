@@ -150,16 +150,25 @@ public class OtpService {
     private void enviarEmail(String destinatario, String nombre, String codigo, int expiracionSeg) {
         int minutos = expiracionSeg / 60;
         String html = layout.abrirHtml()
-            + layout.header("Tu código de verificación", "Escribilo en la pantalla donde lo pediste.")
+            + layout.headerConIcono(EmailLayoutHelper.FONDO_INFO, "candado", "Tu código de verificación",
+                "Escribilo en la pantalla donde lo pediste.")
             + layout.abrirCuerpo()
-            + layout.parrafo("Hola, <strong>" + layout.esc(nombre) + "</strong>. Usá este código para verificar tu cuenta.")
-            + layout.datoDestacado("Código", layout.esc(codigo), "#EFF4FE", "#C2D5F9")
-            + "<div style=\"background:#FDF3DC;border:1px solid #EBD9A8;border-radius:12px;padding:16px 20px;margin-bottom:8px\">"
-            + "<p style=\"margin:0;font-size:13px;color:#9A6700;line-height:1.6\">"
-            + "<strong>Vence en " + minutos + " minutos.</strong> No lo compartás con nadie: HotClick nunca te lo va a pedir. "
-            + "Si no fuiste vos, ignorá este correo — tu cuenta sigue segura.</p></div>"
-            + layout.footer("¿No pediste este código?");
+            + layout.codigoDestacado("Código", codigoAgrupado(layout.esc(codigo)), EmailLayoutHelper.FONDO_SUAVE, true)
+            + layout.notaPequena("Vence en " + minutos + " minutos. No lo compartás con nadie: HotClick nunca te lo va a pedir. "
+                + "Si no fuiste vos, ignorá este correo: tu cuenta sigue segura.")
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
 
-        resendEmailService.send(destinatario, "Tu código de verificación: " + codigo, html);
+        // El asunto NUNCA lleva el codigo: queda visible en notificaciones/lockscreen sin abrir el correo.
+        resendEmailService.send(destinatario, "Tu código de verificación — HotClick", html);
+    }
+
+    /**
+     * Código de 6 dígitos en dos grupos de 3 (482 913), como en Figma. El espacio es solo visual
+     * (margen entre dos spans): al seleccionar y copiar el código sale sin espacios.
+     */
+    private String codigoAgrupado(String codigoEscapado) {
+        if (codigoEscapado.length() != 6) return codigoEscapado;
+        return codigoEscapado.substring(0, 3)
+            + "<span style=\"margin-left:14px\">" + codigoEscapado.substring(3) + "</span>";
     }
 }

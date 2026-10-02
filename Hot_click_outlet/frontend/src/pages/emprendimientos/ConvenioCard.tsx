@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import SellerBadge from '@/components/ui/SellerBadge'
+import { useTranslation } from 'react-i18next'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import directorioChevron from '@/assets/figma/tienda/directorio-chevron.svg'
+import { inicialesNegocio } from '@/pages/tienda/tiendaHelpers'
 import { RUTA_CATALOGO_EMPRENDIMIENTOS } from '@/utils/emprendimientoRutas'
 
 export type ConvenioPublico = {
@@ -11,74 +13,55 @@ export type ConvenioPublico = {
   urlWeb?: string | null
 }
 
-function LogoNegocio({ nombre, logoUrl }: { nombre?: string; logoUrl?: string | null }) {
+/** Fondos de las iniciales cuando el negocio no tiene logo (azul 900, rojo 500 y verde del Figma `29:1201`). */
+const FONDOS_INICIALES = ['var(--hc-blue-900)', 'var(--hc-red-500)', 'var(--hc-success)']
+
+function LogoNegocio({ nombre, logoUrl, indice }: { nombre: string; logoUrl?: string | null; indice: number }) {
   if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt={nombre}
-        className="w-12 h-12 rounded-xl object-contain shrink-0"
-        style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', padding: 4 }}
-      />
-    )
+    return <img src={logoUrl} alt="" className="size-12 shrink-0 rounded-[14px] border border-hc-n-200 bg-hc-n-0 object-contain p-1" />
   }
   return (
     <div
-      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-base font-extrabold"
-      style={{ background: 'var(--hc-surface-3)', color: 'var(--hc-text)' }}
+      aria-hidden="true"
+      className="flex size-12 shrink-0 items-center justify-center rounded-[14px] font-display text-base font-extrabold leading-[normal] text-white"
+      style={{ backgroundColor: FONDOS_INICIALES[indice % FONDOS_INICIALES.length] }}
     >
-      {(nombre ?? '?')[0].toUpperCase()}
+      {inicialesNegocio(nombre)}
     </div>
   )
 }
 
-/** Tarjeta de negocio en el directorio de emprendimientos, fiel al Figma (lista, no grilla). */
+/**
+ * Tarjeta de negocio del directorio (Figma `29:1199`): logo, nombre, descripción y pie con enlaces.
+ * Faltan del diseño las miniaturas, la ciudad y el conteo de productos: el listado de convenios no los trae.
+ */
 export default function ConvenioCard({ convenio, indice }: { convenio: ConvenioPublico; indice: number }) {
+  const { t } = useTranslation()
+  const nombre = convenio.nombre ?? ''
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.35, delay: Math.min(indice * 0.04, 0.3) }}
-      className="rounded-2xl p-4"
-      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 2px 12px var(--hc-shadow)' }}
-    >
-      <div className="flex items-start gap-3">
-        <LogoNegocio nombre={convenio.nombre} logoUrl={convenio.logoUrl} />
-        <div className="min-w-0 flex-1">
-          <h3 className="text-[15px] font-bold truncate" style={{ color: 'var(--hc-text)' }}>
-            {convenio.nombre}
-          </h3>
-          <SellerBadge verificado className="mt-1" />
-          {convenio.descripcion && (
-            <p className="text-[13px] mt-1.5 leading-snug line-clamp-2" style={{ color: 'var(--hc-muted)' }}>
-              {convenio.descripcion}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 mt-3.5 pt-3.5" style={{ borderTop: '1px solid var(--hc-border)' }}>
-        <Link
-          to={RUTA_CATALOGO_EMPRENDIMIENTOS}
-          className="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-semibold min-h-[40px]"
-          style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
-        >
-          Ver productos en HotClick
-        </Link>
-        {convenio.urlWeb && (
+    <article className="flex flex-col gap-3 rounded-2xl border border-hc-n-200 bg-hc-n-0 p-[14px]">
+      <Link to={RUTA_CATALOGO_EMPRENDIMIENTOS} className="flex items-center gap-3" aria-label={t('emprendimientos.verProductosAria', { nombre })}>
+        <LogoNegocio nombre={nombre} logoUrl={convenio.logoUrl} indice={indice} />
+        <span className="flex min-w-0 flex-1 flex-col gap-[2px] leading-[normal]">
+          <span className="truncate font-display text-base font-bold leading-[normal] text-hc-n-900">{nombre}</span>
+          {convenio.descripcion && <span className="truncate text-xs leading-[normal] text-hc-n-500">{convenio.descripcion}</span>}
+        </span>
+        <IconoFigma src={directorioChevron} size={18} className="text-hc-n-400" />
+      </Link>
+      <div className="flex items-center justify-between text-[13px] font-semibold leading-[normal]">
+        {convenio.urlWeb ? (
           <a
             href={convenio.urlWeb}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${convenio.nombre}: sitio externo, se abre en otra pestaña`}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-semibold min-h-[40px]"
-            style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', textDecoration: 'none' }}
+            aria-label={t('emprendimientos.sitioExternoAria', { nombre })}
+            className="text-hc-n-900"
           >
-            Sitio externo
+            {t('emprendimientos.sitioExterno')}
           </a>
-        )}
+        ) : <span />}
+        <Link to={RUTA_CATALOGO_EMPRENDIMIENTOS} className="text-hc-blue-600">{t('emprendimientos.verProductos')}</Link>
       </div>
-    </motion.div>
+    </article>
   )
 }

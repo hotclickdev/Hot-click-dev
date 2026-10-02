@@ -1,11 +1,3 @@
-export function StripeIcon({ selected }: { selected?: boolean }) {
-  return (
-    <svg viewBox="0 0 32 16" className={`w-8 h-5 ${selected ? 'opacity-100' : 'opacity-60'}`} fill="none">
-      <text x="0" y="13" fontSize="11" fontWeight="800" fontFamily="sans-serif" fill="#6772e5">stripe</text>
-    </svg>
-  )
-}
-
 export function CardIcon({ selected }: { selected?: boolean }) {
   return (
     <svg className={`w-8 h-5 ${selected ? 'opacity-100' : 'opacity-50'}`} viewBox="0 0 32 20" fill="none">
@@ -50,15 +42,6 @@ export function SinpeIcon({ selected }: { selected?: boolean }) {
       <text x="4" y="14" fontSize="9" fontWeight="800" fontFamily="sans-serif" fill="#34d399">SINPE</text>
       <rect x="26" y="5" width="7" height="10" rx="1.5" fill="#34d399" opacity="0.8" />
       <rect x="27.5" y="3.5" width="4" height="1.5" rx="0.75" fill="#34d399" opacity="0.5" />
-    </svg>
-  )
-}
-
-export function GlobeIcon() {
-  return (
-    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18" />
     </svg>
   )
 }

@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo, useEffect, type Dispatch, type SetStateAction, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
+import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
 import { adminService } from '@/services/orderService'
 import {
   BODEGA_DEFAULT,
@@ -13,6 +14,7 @@ import {
   validateGuestEmail as mensajeEmailInvitado,
   validatePhone as mensajeTelefono,
 } from './checkoutHelpers'
+import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
@@ -33,10 +35,13 @@ export type CheckoutFormState = {
   necesitaDireccion: boolean
   /** true si algún paquete usa un método cuyo costo no cobra HotClick (ej. encomienda) — el total mostrado no lo incluye. */
   envioVaria: boolean
+  /** Paso del checkout móvil (1 datos, 2 entrega, 3 pago). Vive aquí para sobrevivir a la pantalla de carga del pago. */
+  paso: number
+  setPaso: (paso: number) => void
   metodoPago: string
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
-  setNotas: Dispatch<SetStateAction<string>>
+  setNotas: (value: string) => void
   sinpeNombre: string
   setSinpeNombre: Dispatch<SetStateAction<string>>
   sinpeCedula: string
@@ -64,8 +69,16 @@ export type CheckoutFormState = {
   setTelefonoError: Dispatch<SetStateAction<string>>
   telefonoDirty: boolean
   setTelefonoDirty: Dispatch<SetStateAction<boolean>>
+  /** Señas exactas. La dirección completa del pedido es `direccionPedido`. */
   direccion: string
   setDireccion: Dispatch<SetStateAction<string>>
+  provincia: string
+  /** Destino dentro del GAM: define cuál de los dos envíos normales se ofrece. */
+  destinoGAM: boolean
+  setProvincia: (value: string) => void
+  canton: string
+  setCanton: (value: string) => void
+  direccionPedido: string
   direccionError: string
   setDireccionError: Dispatch<SetStateAction<string>>
   direccionDirty: boolean
@@ -83,23 +96,23 @@ export type CheckoutFormState = {
   guestPhoneDirty: boolean
   setGuestPhoneDirty: Dispatch<SetStateAction<boolean>>
   cuponInput: string
-  setCuponInput: Dispatch<SetStateAction<string>>
+  setCuponInput: (value: string) => void
   cuponEstado: string
-  setCuponEstado: Dispatch<SetStateAction<string>>
+  setCuponEstado: (value: string) => void
   cuponDescuento: number
-  setCuponDescuento: Dispatch<SetStateAction<number>>
+  setCuponDescuento: (value: number) => void
   cuponCodigo: string | null
-  setCuponCodigo: Dispatch<SetStateAction<string | null>>
+  setCuponCodigo: (value: string | null) => void
   cuponError: string
-  setCuponError: Dispatch<SetStateAction<string>>
+  setCuponError: (value: string) => void
   gcInput: string
-  setGcInput: Dispatch<SetStateAction<string>>
+  setGcInput: (value: string) => void
   gcEstado: string
-  setGcEstado: Dispatch<SetStateAction<string>>
+  setGcEstado: (value: string) => void
   gcSaldo: number
-  setGcSaldo: Dispatch<SetStateAction<number>>
+  setGcSaldo: (value: number) => void
   gcCodigo: string | null
-  setGcCodigo: Dispatch<SetStateAction<string | null>>
+  setGcCodigo: (value: string | null) => void
   aceptaDatos: boolean
   setAceptaDatos: Dispatch<SetStateAction<boolean>>
   validatePhone: (v: string) => string
@@ -123,8 +136,27 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const bodegaRetiro = paquetes.length === 1 ? bodegaRetiroDePaquete(paquetes[0]) : bodegaRetiroDesdeItems(items)
   const SHIPPING_OPTIONS = opcionesEnvio(bodegaRetiro)
 
-  const [metodoEnvioPorPaquete, setMetodoEnvioPorPaqueteState] = useState<Record<string, string>>({})
-  const [metodoPago, setMetodoPago] = useState('TILOPAY')
+  // Destino: define cuál de los dos envíos normales se ofrece (dentro o fuera del GAM, Figma 37:1689).
+  const [provincia, setProvinciaState] = useState('')
+  const [canton, setCanton] = useState('')
+  const destinoGAM = esDestinoGAM(provincia, canton)
+  function setProvincia(value: string) {
+    setProvinciaState(value)
+    setCanton('')
+  }
+
+  const [metodoEnvioBase, setMetodoEnvioPorPaqueteState] = useState<Record<string, string>>({})
+  const metodoEnvioPorPaquete = useMemo(() => {
+    const normal = destinoGAM ? 'ENVIO_NORMAL_GAM' : 'ENVIO_NORMAL_FUERA_GAM'
+    const resultado: Record<string, string> = {}
+    for (const [id, valor] of Object.entries(metodoEnvioBase)) {
+      resultado[id] = valor.startsWith('ENVIO_NORMAL') || (valor === 'ENVIO_RAPIDO' && !destinoGAM) ? normal : valor
+    }
+    return resultado
+  }, [metodoEnvioBase, destinoGAM])
+  // Figma 29:1344 abre con SINPE Móvil seleccionado.
+  const [metodoPago, setMetodoPago] = useState('SINPE')
+  const [paso, setPaso] = useState(1)
 
   useEffect(() => {
     setMetodoEnvioPorPaqueteState((prev) => {
@@ -146,7 +178,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   }
 
   const bodegaPrincipalId = paquetes[0]?.bodegaId ?? String(BODEGA_DEFAULT)
-  const metodoEnvio = metodoEnvioPorPaquete[bodegaPrincipalId] ?? (bodegaRetiro ? 'RETIRO_EN_TIENDA' : 'ENVIO_NORMAL_GAM')
+  const metodoEnvio = metodoEnvioPorPaquete[bodegaPrincipalId] ?? 'ENVIO_NORMAL_GAM'
   function setMetodoEnvio(value: string) {
     setMetodoEnvioPaquete(bodegaPrincipalId, value)
   }
@@ -173,7 +205,13 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     return mensajeEmailInvitado(v, t)
   }
 
-  const [notas, setNotas] = useState('')
+  // Notas, cupón y gift card viven en el store compartido con el carrito (Figma 51:1820).
+  const {
+    notas, setNotas,
+    cuponInput, setCuponInput, cuponEstado, setCuponEstado, cuponDescuento, setCuponDescuento,
+    cuponCodigo, setCuponCodigo, cuponError, setCuponError,
+    gcInput, setGcInput, gcEstado, setGcEstado, gcSaldo, setGcSaldo, gcCodigo, setGcCodigo,
+  } = usePedidoExtrasStore()
 
   const [sinpeNombre, setSinpeNombre] = useState('')
   const [sinpeCedula, setSinpeCedula] = useState('')
@@ -218,16 +256,6 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [guestPhoneError, setGuestPhoneError] = useState('')
   const [guestPhoneDirty, setGuestPhoneDirty] = useState(false)
 
-  const [cuponInput, setCuponInput] = useState('')
-  const [cuponEstado, setCuponEstado] = useState('idle')
-  const [cuponDescuento, setCuponDescuento] = useState(0)
-  const [cuponCodigo, setCuponCodigo] = useState<string | null>(null)
-  const [cuponError, setCuponError] = useState('')
-
-  const [gcInput, setGcInput] = useState('')
-  const [gcEstado, setGcEstado] = useState('idle')
-  const [gcSaldo, setGcSaldo] = useState(0)
-  const [gcCodigo, setGcCodigo] = useState<string | null>(null)
   const [aceptaDatos, setAceptaDatos] = useState(false)
 
   const costoEnvio = paquetes.reduce((sum, p) => sum + (SHIPPING_COSTS[metodoEnvioPorPaquete[p.bodegaId]] ?? 0), 0)
@@ -247,6 +275,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setMetodoEnvioPaquete,
     necesitaDireccion,
     envioVaria,
+    paso,
+    setPaso,
     metodoPago,
     setMetodoPago,
     notas,
@@ -280,6 +310,12 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setTelefonoDirty,
     direccion,
     setDireccion,
+    provincia,
+    destinoGAM,
+    setProvincia,
+    canton,
+    setCanton,
+    direccionPedido: direccionCompleta(direccion, canton, provincia),
     direccionError,
     setDireccionError,
     direccionDirty,

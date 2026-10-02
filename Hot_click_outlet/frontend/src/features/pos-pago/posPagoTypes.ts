@@ -21,4 +21,11 @@ export type QrPagoInfo = {
   expiracion?: string
 }
 
-export type PosPagoVista = 'cargando' | 'resumen' | 'exito' | 'cancelado' | 'error' | 'pagado'
+export type PosPagoVista =
+  | 'cargando'
+  | 'resumen'
+  | 'exito'
+  | 'cancelado'
+  | 'error'
+  | 'pagado'
+  | 'vencido'

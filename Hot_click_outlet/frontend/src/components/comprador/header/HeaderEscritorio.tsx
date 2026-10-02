@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
 import {
-  RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useHeaderComprador,
+  RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useConsultaBuscador, useHeaderComprador,
 } from './useHeaderComprador'
 
 const CATEGORIAS_VISIBLES_ESCRITORIO = 6
@@ -20,7 +20,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
   const { cantidadPedido, conSesion, rutaCuenta, rutaPanel, categorias } = useHeaderComprador()
 
   return (
-    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 lg:flex xl:px-[120px]">
+    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 leading-[normal] lg:flex xl:px-[120px]">
       <div className="flex items-center gap-8">
         <MarcaComprador tamano="escritorio" />
         <BuscadorEscritorio onBuscarConFoto={onBuscarConFoto} />
@@ -34,7 +34,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
             <IconoFigma src={ICONOS_COMPRADOR.headerIngresar} size={20} />
             {conSesion ? t('comprador.header.miCuenta') : t('comprador.header.ingresar')}
           </Link>
-          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')}>
+          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')} className="flex">
             <IconoFigma src={ICONOS_COMPRADOR.headerFavoritos} size={22} />
           </Link>
           <Link
@@ -81,7 +81,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
 function BuscadorEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [consulta, setConsulta] = useState('')
+  const [consulta, setConsulta] = useConsultaBuscador()
 
   const buscar = (evento: FormEvent) => {
     evento.preventDefault()
@@ -102,7 +102,7 @@ function BuscadorEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
         onChange={(e) => setConsulta(e.target.value)}
         placeholder={t('comprador.header.buscadorDesktop')}
         aria-label={t('comprador.header.buscar')}
-        className="min-w-px flex-1 truncate bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
+        className="hc-input-libre min-w-px flex-1 truncate bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
       />
       <button
         type="button"

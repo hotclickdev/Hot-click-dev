@@ -21,14 +21,13 @@ export default function CheckoutTilopayCard({ payload, onVolver }: CheckoutTilop
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-8 space-y-4 rounded-2xl p-6"
-          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+          className="mt-8 space-y-4 rounded-2xl p-6 border border-hc-border bg-hc-surface"
         >
           <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>
+            <h1 className="text-xl font-bold text-hc-text">
               {t('checkout.tilopayTitle')}
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
+            <p className="text-sm mt-1 text-hc-muted">
               {t('checkout.tilopaySubtitle', { order: payload.orderNumber || payload.numeroPedido })}
             </p>
           </div>

@@ -1,74 +1,81 @@
-import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
+import { inicialesNegocio } from '@/features/qr-negocio/qrNegocioHelpers'
 import { fmt } from './selfCheckoutFormat'
 import type { ProductoSelfCheckout } from './selfCheckoutTypes'
 
-/**
- * Tarjeta de producto del catálogo self-checkout.
- */
-export default function SelfCheckoutProductCard({
-  producto, onAdd,
-}: {
+type Props = Readonly<{
   producto: ProductoSelfCheckout
-  onAdd: (producto: ProductoSelfCheckout, qty: number) => void
-}) {
-  const [qty, setQty] = useState(0)
+  cantidad: number
+  onCambiar: (producto: ProductoSelfCheckout, cantidad: number) => void
+}>
 
-  function agregar() {
-    setQty(q => q + 1)
-    onAdd(producto, qty + 1)
-  }
-  function quitar() {
-    if (qty === 0) return
-    setQty(q => q - 1)
-    onAdd(producto, qty - 1)
-  }
+/**
+ * Producto del menú en fila (Figma `29:1689`): foto de 68, nombre, categoría y
+ * precio; botón "+" rojo de 36 o, con cantidad, selector azul y borde azul.
+ */
+export default function SelfCheckoutProductCard({ producto, cantidad, onCambiar }: Props) {
+  const { t } = useTranslation()
+  const nombre = producto.nombre ?? ''
+  const elegido = cantidad > 0
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col"
-      style={{ backgroundColor: '#1E242E', border: '1px solid rgba(255,255,255,0.08)' }}>
+    <li
+      className={`flex items-center gap-3 overflow-hidden rounded-[14px] bg-hc-n-0 ${
+        elegido
+          ? 'border-[1.5px] border-hc-blue-600 p-[10px]'
+          : 'border border-hc-n-200 p-[10px]'
+      }`}
+    >
       {producto.imagenUrl ? (
-        <img src={producto.imagenUrl} alt={producto.nombre}
-          className="w-full h-36 object-cover" />
+        <img src={producto.imagenUrl} alt="" className="size-[68px] shrink-0 rounded-[10px] object-cover" />
       ) : (
-        <div className="w-full h-36 flex items-center justify-center"
-          style={{ backgroundColor: '#0f0f1a' }}>
-          <svg className="w-10 h-10 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
+        <span
+          aria-hidden="true"
+          className="grid size-[68px] shrink-0 place-items-center rounded-[10px] bg-hc-n-100 font-display text-[16px] font-bold text-hc-n-400"
+        >
+          {inicialesNegocio(nombre)}
+        </span>
       )}
-      <div className="p-3 flex-1 flex flex-col gap-2">
-        <p className="text-sm font-semibold text-white leading-tight line-clamp-2">{producto.nombre}</p>
-        {producto.descripcion && (
-          <p className="text-xs text-gray-400 line-clamp-2">{producto.descripcion}</p>
-        )}
-        <p className="text-base font-bold mt-auto" style={{ color: 'var(--hc-primary)' }}>
-          ₡{fmt(producto.precio)}
+      <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+        <p className="text-[14px] font-medium leading-4 text-hc-n-900">{nombre}</p>
+        {producto.categoria ? (
+          <p className="text-[12px] leading-[14px] text-hc-n-500">{producto.categoria}</p>
+        ) : null}
+        <p className="font-display text-[15px] font-bold leading-[19px] text-hc-n-900">
+          {fmt(producto.precio)}
         </p>
-        <div className="flex items-center gap-2">
-          {qty === 0 ? (
-            <button type="button" onClick={agregar}
-              className="w-full py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
-              style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
-              Agregar
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 w-full justify-between">
-              <button type="button" onClick={quitar}
-                className="w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(231,59,51,0.15)', color: 'var(--hc-primary)' }}>
-                −
-              </button>
-              <span className="text-white font-bold">{qty}</span>
-              <button type="button" onClick={agregar}
-                className="w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center"
-                style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
-                +
-              </button>
-            </div>
-          )}
-        </div>
       </div>
-    </div>
+      {elegido ? (
+        <div className="flex shrink-0 items-center gap-[10px] rounded-[10px] bg-hc-blue-50 px-2 py-[6px]">
+          <button
+            type="button"
+            aria-label={t('pos.mesa.quitarA', { nombre })}
+            onClick={() => onCambiar(producto, cantidad - 1)}
+            className="grid size-4 place-items-center"
+          >
+            <img src={ICONOS_QR.cantidadMenos} alt="" className="size-4" />
+          </button>
+          <span className="text-[14px] font-bold leading-4 text-hc-blue-600">{cantidad}</span>
+          <button
+            type="button"
+            aria-label={t('pos.mesa.agregarA', { nombre })}
+            onClick={() => onCambiar(producto, cantidad + 1)}
+            className="grid size-4 place-items-center"
+          >
+            <img src={ICONOS_QR.cantidadMas} alt="" className="size-4" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          aria-label={t('pos.mesa.agregarA', { nombre })}
+          onClick={() => onCambiar(producto, 1)}
+          className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-hc-red-500"
+        >
+          <img src={ICONOS_QR.agregar} alt="" className="size-[18px]" />
+        </button>
+      )}
+    </li>
   )
 }

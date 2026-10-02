@@ -1,8 +1,25 @@
+// useGrouping 'always' (ES2023, aún no tipado en el lib de TS): motores con agrupación mínima
+// de 2 dígitos para es dejarían 6200 sin punto; los que no lo soportan lo toman como true.
+const OPCIONES_MILES = {
+  useGrouping: 'always',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+} as unknown as Intl.NumberFormatOptions
+
+const formateadorMiles = new Intl.NumberFormat('es-CR', OPCIONES_MILES)
+
+/**
+ * Número entero con punto de miles (`6.200`), el formato de los montos en Figma.
+ * Usa `Intl.NumberFormat('es-CR')` y cambia solo el separador de grupo (en es-CR es un NBSP).
+ */
+export const formatMiles = (valor: number) =>
+  formateadorMiles
+    .formatToParts(valor)
+    .map((parte) => (parte.type === 'group' ? '.' : parte.value))
+    .join('')
+
 export const formatPrice = (price: number | string | null | undefined) =>
-  `₡${new Intl.NumberFormat('es-CR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Number(price) || 0)}`
+  `₡${formatMiles(Number(price) || 0)}`
 
 export const formatDate = (date: string | number | Date) =>
   new Intl.DateTimeFormat('es-CR', {
@@ -38,15 +55,3 @@ const CONDITION_VARIANT: Record<string, string> = {
 
 export const conditionVariant = (cond: string) =>
   CONDITION_VARIANT[cond] ?? 'default'
-
-const STATUS_COLOR: Record<string, string> = {
-  PENDIENTE: 'warning',
-  ACTIVO: 'success',
-  INACTIVO: 'default',
-  COMPLETADO: 'success',
-  DESPACHADO: 'accent',
-  ENTREGADO: 'success',
-  CANCELADO: 'danger',
-}
-
-export const statusColor = (estado: string) => STATUS_COLOR[estado] ?? 'default'

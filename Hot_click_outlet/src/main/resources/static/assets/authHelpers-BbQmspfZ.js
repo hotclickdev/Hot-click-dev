@@ -1,0 +1,1 @@
+function e(e,t){if(!e||typeof e!=`object`)return t;let n=e.response?.data?.message;return typeof n==`string`?n:t}function t(e){if(!(!e||typeof e!=`object`||!(`response`in e)))return e.response?.status}function n(e){let[t,n]=e.trim().split(`@`);return!t||!n?e:t.length<=2?`${t[0]}••••@${n}`:`${t[0]}••••${t[t.length-1]}@${n}`}export{e as n,t as r,n as t};

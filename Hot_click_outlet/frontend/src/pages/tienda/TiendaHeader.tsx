@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ShoppingCartIcon } from '@heroicons/react/24/outline'
 import TiendaAnfitrion from './TiendaAnfitrion'
 
@@ -7,15 +8,18 @@ import TiendaAnfitrion from './TiendaAnfitrion'
  * y nombra HotClick para no confundir con el marketplace.
  */
 export default function TiendaHeader({
-  slug, nombre, logoUrl, cantidadCarrito,
+  slug, nombre, logoUrl, cantidadCarrito, soloEscritorio = false,
 }: {
   slug: string
   nombre: string
   logoUrl?: string | null
   cantidadCarrito: number
+  /** En el perfil móvil la portada ocupa su lugar (Figma `29:922`): el header solo se ve desde `md`. */
+  soloEscritorio?: boolean
 }) {
+  const { t } = useTranslation()
   return (
-    <header className="sticky top-0 z-40 shadow-sm" style={{ backgroundColor: 'var(--t-secondary)' }}>
+    <div role="banner" className={`sticky top-0 z-40 shadow-sm ${soloEscritorio ? 'hidden md:block' : ''}`} style={{ backgroundColor: 'var(--t-secondary)' }}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         <Link to={`/tienda/${slug}`} className="flex items-center gap-2 shrink min-w-0">
           {logoUrl
@@ -34,7 +38,7 @@ export default function TiendaHeader({
           <Link
             to={`/tienda/${slug}/carrito`}
             className="relative text-white hover:text-white/80 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label="Pedido de esta tienda"
+            aria-label={t('tienda.pedidoTienda')}
           >
             <ShoppingCartIcon className="h-6 w-6" />
             {cantidadCarrito > 0 && (
@@ -48,6 +52,6 @@ export default function TiendaHeader({
           </Link>
         </div>
       </div>
-    </header>
+    </div>
   )
 }

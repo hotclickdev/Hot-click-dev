@@ -20,18 +20,17 @@ async function assertAtajoInternacional(page: Page) {
 }
 
 test.describe('Envío internacional — consulta, no CTA verde', () => {
-  test('en home el internacional es atajo muted', async ({ page }) => {
+  test('en home no está el atajo internacional', async ({ page }) => {
     await mockApis(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.getByRole('heading', { name: 'Enviamos a todo el país.' }).scrollIntoViewIfNeeded()
-    await assertAtajoInternacional(page)
+    await expect(page.getByRole('heading', { name: 'Enviamos a todo el país.' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Consultar envío internacional por WhatsApp' })).toHaveCount(0)
   })
 
   test('en /envios el internacional es atajo, no chip de WhatsApp', async ({ page }) => {
     await mockApis(page)
     await page.goto('/envios', { waitUntil: 'domcontentloaded' })
     await assertAtajoInternacional(page)
-    await expect(page.getByRole('link', { name: 'Consultar envío internacional por WhatsApp' })).toHaveClass(/card-cta-atajo/)
   })
 })

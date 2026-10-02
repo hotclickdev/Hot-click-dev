@@ -12,8 +12,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -121,7 +124,22 @@ public class ProductoCatalogQueries {
      * dentro de la transacción (open-in-view=false impide hacerlo al serializar).
      * Los productos de la tienda principal (empresa null) no llevan badge.
      */
-    private void poblarBadgeEmpresa(Producto p) {
+    /**
+     * Tienda visible de cada producto, con la misma regla que el badge del catálogo público.
+     * Los productos de la tienda principal o de negocios no visibles no aparecen en el mapa.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, String> tiendasVisibles(Collection<Long> ids) {
+        Map<Long, String> tiendas = new HashMap<>();
+        if (ids == null || ids.isEmpty()) return tiendas;
+        for (Producto p : productoRepository.findAllById(ids)) {
+            poblarBadgeEmpresa(p);
+            if (p.getEmpresaNombre() != null) tiendas.put(p.getId(), p.getEmpresaNombre());
+        }
+        return tiendas;
+    }
+
+    public void poblarBadgeEmpresa(Producto p) {
         var e = p.getEmpresa();
         if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
         if (e.getId().equals(empresaPrincipalId)) return;

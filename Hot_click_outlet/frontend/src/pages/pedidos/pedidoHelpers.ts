@@ -1,6 +1,5 @@
 import { formatDateShort, formatPrice } from '@/utils/format'
 
-export const ESTADOS_SIN_ACCION = new Set(['CANCELADO', 'PENDIENTE'])
 export const DIAS_GARANTIA = 40
 export const MS_POR_DIA = 86_400_000
 
@@ -14,16 +13,10 @@ export const ESTADO_LABELS: Record<string, string> = {
   CANCELADO: 'Cancelado',
 }
 
-export type ColorEstadoPedido = {
-  bg: string
-  text: string
-  border: string
-}
-
 export type ItemPedidoCliente = {
   cantidad?: number
   nombreProducto?: string
-  producto?: { id?: number; nombreProducto?: string }
+  producto?: { id?: number; nombreProducto?: string; imagenPrincipalUrl?: string | null; empresaNombre?: string | null }
   productoId?: number
   precioUnitarioMomento?: number
   subtotalItem?: number
@@ -59,6 +52,13 @@ export type PedidoCliente = {
   grupoPago?: string | null
   /** Nombre de la tienda/vendedor dueño de este paquete, si el backend lo manda. */
   nombreEmpresa?: string
+  subtotal?: number
+  metodoPago?: string
+  fechaEnvio?: string | null
+  fechaEntregaEstimada?: string | null
+  fechaEntregaReal?: string | null
+  /** Bodega de origen del paquete (el backend la serializa; `provincia` alimenta "Sale de …"). */
+  bodega?: { id?: number; nombreBodega?: string; provincia?: string | null } | null
 }
 
 /** Un grupo de pedidos que comparten `grupoPago` (checkout multivendedor). */
@@ -92,16 +92,6 @@ export function agruparPedidosPorPaquete(pedidos: PedidoCliente[]): GrupoDePedid
   }
 
   return grupos
-}
-
-export function colorEstadoPedido(estado: string): ColorEstadoPedido {
-  if (estado === 'ENTREGADO') return { bg: 'rgba(5,150,105,0.12)', text: '#059669', border: 'rgba(5,150,105,0.25)' }
-  if (estado === 'ENVIADO') return { bg: 'rgba(23,71,168,0.1)', text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.25)' }
-  if (estado === 'LISTO_RETIRO') return { bg: 'rgba(5,150,105,0.1)', text: '#059669', border: 'rgba(5,150,105,0.25)' }
-  if (estado === 'EN_PREPARACION') return { bg: 'rgba(217,119,6,0.1)', text: '#d97706', border: 'rgba(217,119,6,0.25)' }
-  if (estado === 'PAGADO') return { bg: 'rgba(23,71,168,0.08)', text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.2)' }
-  if (estado === 'CANCELADO') return { bg: 'rgba(220,38,38,0.08)', text: '#dc2626', border: 'rgba(220,38,38,0.2)' }
-  return { bg: 'var(--hc-surface-2)', text: 'var(--hc-muted)', border: 'var(--hc-border)' }
 }
 
 export function estadoDePedido(order: PedidoCliente): string {

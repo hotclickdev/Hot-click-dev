@@ -42,20 +42,6 @@ export const STOCK_OPTIONS: FiltroOption[] = [
 
 
 
-export const COND_OPTIONS: FiltroOption[] = [
-
-  { value: '',           labelKey: 'products.allConditions' },
-
-  { value: 'NUEVO',      labelKey: 'products.condNuevo' },
-
-  { value: 'COMO_NUEVO', labelKey: 'products.condComoNuevo' },
-
-  { value: 'USADO',      labelKey: 'products.condUsado' },
-
-]
-
-
-
 type CategoryScopeInput = string | number | boolean | null | undefined
 
 
@@ -64,9 +50,6 @@ type FiltrarCatalogoArgs = {
 
   products: Producto[]
 
-  viewMode: string
-
-  convenioMarcaNames: Set<string>
 
   search: string
 
@@ -134,17 +117,13 @@ export function categoryScopeIds(
 
 export function filtrarCatalogo({
 
-  products, viewMode, convenioMarcaNames, search, categoryScope,
+  products, search, categoryScope,
 
   marcasFilter, filterStock, filterCond, filterTalla, minPrice, maxPrice,
 
 }: FiltrarCatalogoArgs): Producto[] {
 
   return products
-
-    .filter(p => viewMode !== 'ofertas' || p.enOferta)
-
-    .filter(p => viewMode !== 'emprendimientos' || convenioMarcaNames.has(p.marcaNombre?.toLowerCase()))
 
     .filter(p => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()) || p.marcaNombre?.toLowerCase().includes(search.toLowerCase()))
 

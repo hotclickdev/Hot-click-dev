@@ -10,6 +10,7 @@ import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacio
 import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { useEncargos, useEncargosKpis } from './useEncargos'
 import EncargoDetalle from './EncargoDetalle'
+import { formatPrice } from '@/utils/format'
 
 const FILTROS = ['TODOS', 'PENDIENTE', 'APROBADO', 'PENDIENTE_PAGO', 'PAGADO', 'RECHAZADO', 'VENCIDO'] as const
 
@@ -126,7 +127,7 @@ export default function EncargosPanel({
           <KpiCard label="Pendientes" valor={kpis.pendientes} destacado />
           <KpiCard label="Por pagar" valor={kpis.pendientePago} />
           <KpiCard label="Pagados" valor={kpis.pagados} />
-          <KpiCard label="Ticket prom." valor={`₡${Number(kpis.ticketPromedioCotizado || 0).toLocaleString('es-CR')}`} />
+          <KpiCard label="Ticket prom." valor={formatPrice(kpis.ticketPromedioCotizado)} />
         </div>
       ) : null}
 

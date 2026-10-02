@@ -1,109 +1,11 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import MainLayout from '@/layouts/MainLayout'
-import CheckoutStepper from '@/components/ui/CheckoutStepper'
-import { formatPrice } from '@/utils/format'
-import AIPostPaySection from '@/components/ai/AIPostPaySection'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import useAuthStore from '@/store/authStore'
+import { leerUltimoPedido } from '@/utils/ultimoPedido'
+import { ICONOS_PAGO } from './iconosPago'
+import { BotonPago, IconoEstado, MarcoPago } from './PiezasPago'
 import type { PagoResumen } from './pagoHelpers'
-import type { TFunction } from 'i18next'
-
-function PagoExitoResumen({
-  pagoData,
-  numeroPedido,
-  t,
-}: {
-  pagoData: PagoResumen | null
-  numeroPedido: string | null
-  t: TFunction
-}) {
-  const pedidoVisible = pagoData?.numeroPedido || numeroPedido
-  if (!pedidoVisible && !pagoData) return null
-  return (
-    <div className="bg-white/5 rounded-xl p-4 text-sm text-left space-y-2 mb-6">
-      {pedidoVisible && (
-        <div className="flex justify-between">
-          <span className="text-[#8e8e9a]">{t('payment.orderNumber')}</span>
-          <span className="text-[#e8e8ed] font-mono font-medium">{pedidoVisible}</span>
-        </div>
-      )}
-      {pagoData?.total && (
-        <div className="flex justify-between">
-          <span className="text-[#8e8e9a]">Total pagado</span>
-          <span className="font-bold" style={{ color: 'var(--hc-primary)' }}>{formatPrice(pagoData.total)}</span>
-        </div>
-      )}
-      {pagoData?.metodoPago && (
-        <div className="flex justify-between">
-          <span className="text-[#8e8e9a]">Método</span>
-          <span className="text-[#e8e8ed]">{pagoData.metodoPago}</span>
-        </div>
-      )}
-      {pagoData?.cardLast4 && (
-        <div className="flex justify-between">
-          <span className="text-[#8e8e9a]">Tarjeta</span>
-          <span className="text-[#e8e8ed]">{pagoData.cardBrand} •••• {pagoData.cardLast4}</span>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function PagoExitoAcciones({
-  token,
-  t,
-}: {
-  token: string | null
-  t: TFunction
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <button
-        type="button"
-        onClick={() => window.print()}
-        className="hc-btn w-full min-h-11 border border-white/15 text-[#e8e8ed] hover:border-white/30"
-      >
-        {t('payment.print', 'Imprimir')}
-      </button>
-      {token ? (
-        <Link to="/mis-pedidos" className="hc-btn hc-btn-primary w-full min-h-11">
-          Ver mis pedidos
-        </Link>
-      ) : (
-        <Link to="/productos" className="hc-btn hc-btn-primary w-full min-h-11">
-          {t('checkout.continueShopping')}
-        </Link>
-      )}
-      <Link
-        to="/"
-        className="inline-block w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center min-h-11"
-      >
-        {t('payment.home')}
-      </Link>
-      {!token && (
-        <>
-          <a
-            href="https://wa.me/50686667888"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Consultar mi pedido por WhatsApp"
-            className="flex items-center justify-center min-h-11 text-sm font-medium"
-            style={{ color: 'var(--hc-muted)' }}
-          >
-            Consultar mi pedido por WhatsApp
-          </a>
-          <Link
-            to="/registro"
-            className="text-xs text-center hover:underline"
-            style={{ color: 'var(--hc-link)' }}
-          >
-            Crear cuenta para ver el historial de pedidos
-          </Link>
-        </>
-      )}
-    </div>
-  )
-}
 
 type PagoExitoProps = {
   pagoData: PagoResumen | null
@@ -111,56 +13,109 @@ type PagoExitoProps = {
   token: string | null
 }
 
-/**
- * Confirmación visual de pago exitoso.
- */
+function primerNombre(nombre: string | null | undefined): string {
+  return (nombre ?? '').trim().split(/\s+/)[0] ?? ''
+}
+
+/** Confirmación del pago: Figma `29:1932` (móvil). Sin frame de escritorio: misma columna centrada. */
 export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoProps) {
   const { t } = useTranslation()
+  const userName = useAuthStore((s) => s.userName)
+  const userEmail = useAuthStore((s) => s.userEmail)
+  const [copiado, setCopiado] = useState(false)
+  // Lectura única al montar: el resumen del pedido se guardó al pagar (solo sesión del navegador).
+  const [ultimo] = useState(() => leerUltimoPedido())
+
+  const pedido = pagoData?.numeroPedido || numeroPedido || ''
+  const nombre = primerNombre(token ? userName : ultimo?.nombre) || primerNombre(ultimo?.nombre)
+  const correo = (token ? userEmail : ultimo?.correo) || ultimo?.correo || ''
+  const paquetes = ultimo?.paquetes ?? []
+  const rutaPedido = token ? '/mis-pedidos' : pagoData?.tokenSeguimiento ? `/seguimiento/${pagoData.tokenSeguimiento}` : null
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(pedido)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 1_800)
+    } catch {
+      /* el portapapeles puede estar bloqueado: el número sigue visible */
+    }
+  }
+
   return (
-    <MainLayout>
-      <div className="max-w-lg mx-auto px-4 py-10 sm:py-16">
-        <CheckoutStepper activeStep="confirm" />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#111114] border border-white/8 rounded-2xl p-8 text-center"
-        >
-          <div className="w-16 h-16 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+    <MarcoPago>
+      <div className="flex flex-col items-center gap-[10px] px-4 pb-3 pt-7 text-center leading-[normal]">
+        <IconoEstado src={ICONOS_PAGO.exitoCheck} tamano={36} circulo={72} clase="bg-hc-success-bg text-hc-success" />
+        <h1 className="font-display text-[19px] font-bold leading-[normal] tracking-normal text-hc-n-900">
+          {nombre ? t('payment.exito.titulo', { nombre }) : t('payment.exito.tituloSinNombre')}
+        </h1>
+        {pedido && (
+          <div className="flex items-center justify-center gap-[6px]">
+            <p className="text-[14px] text-hc-n-600">{t('payment.exito.pedido')}</p>
+            <p className="font-mono text-[15px] font-medium text-hc-n-900">{pedido}</p>
+            <button type="button" onClick={copiar} aria-label={t('payment.exito.copiar')} className="relative flex size-[15px] items-center justify-center text-hc-blue-600 after:absolute after:-inset-3">
+              <IconoFigma src={ICONOS_PAGO.copiarPedido} size={15} />
+            </button>
+            {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success">{t('payment.exito.copiado')}</span>}
           </div>
+        )}
+        {correo && <p className="text-[13px] text-hc-n-500">{t('payment.exito.comprobante', { correo })}</p>}
+      </div>
 
-          <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">{t('payment.success')}</h1>
-          <p className="text-[#8e8e9a] text-sm mb-6">{t('payment.successSub')}</p>
-
-          <PagoExitoResumen pagoData={pagoData} numeroPedido={numeroPedido} t={t} />
-
-          <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-3 text-sm text-center mb-4">
-            <span className="text-emerald-400 font-medium inline-flex items-center justify-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Tu garantía de 40 días está activa
-            </span>
-            <p className="text-[#8e8e9a] text-xs mt-1">
-              Si tienes cualquier problema, contáctanos por WhatsApp.
+      {paquetes.length > 0 && (
+        <section className="px-4 pb-3 pt-1">
+          <div className="flex flex-col overflow-hidden rounded-[14px] border border-hc-n-200 bg-hc-n-0 leading-[normal]">
+            <h2 className="bg-hc-n-50 px-[14px] py-3 font-display text-[15px] font-bold tracking-normal text-hc-n-900">
+              {t('payment.exito.paquetesTitulo', { pedido, count: paquetes.length })}
+            </h2>
+            {paquetes.map((paquete) => (
+              <div key={paquete.negocio} className="flex items-center gap-[10px] border-t border-hc-n-200 px-[14px] py-3">
+                <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-hc-blue-50 text-hc-blue-600">
+                  <IconoFigma src={ICONOS_PAGO.paqueteCaja} size={18} />
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-px">
+                  <p className="text-[14px] font-semibold text-hc-n-900">{paquete.negocio}</p>
+                  <p className="text-[12px] leading-4 text-hc-n-500">
+                    {t('cart.paqueteProductos', { count: paquete.productos })} · {t(`checkout.f.metodoResumen.${paquete.metodoEnvio}`)}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-hc-warning-bg px-2 py-[3px] text-[11px] font-semibold text-hc-warning">{t('payment.exito.preparando')}</span>
+              </div>
+            ))}
+            <p className="flex items-center gap-2 border-t border-hc-n-200 px-[14px] py-3 text-[12px] leading-4 text-hc-n-600">
+              <IconoFigma src={ICONOS_PAGO.avisoCorreo} size={16} className="text-hc-n-600" />
+              <span className="min-w-0 flex-1">{t('payment.exito.avisoGuias')}</span>
             </p>
           </div>
+        </section>
+      )}
 
-          <AIPostPaySection
-            tipo="success"
-            numeroPedido={pagoData?.numeroPedido || numeroPedido || ''}
-            metodoPago={pagoData?.metodoPago || ''}
-          />
-
-          <p className="text-xs text-[#8e8e9a] mb-6 mt-4">
-            Recibirás un correo de confirmación. ¿Tienes dudas? Contáctanos por WhatsApp.
-          </p>
-
-          <PagoExitoAcciones token={token} t={t} />
-        </motion.div>
+      <div className="flex flex-col gap-[10px] px-4 pb-[10px] pt-[14px]">
+        {rutaPedido && <BotonPago to={rutaPedido} variante="primario">{t('payment.exito.verPedido')}</BotonPago>}
+        <BotonPago to="/productos" variante={rutaPedido ? 'secundario' : 'primario'}>{t('checkout.continueShopping')}</BotonPago>
       </div>
-    </MainLayout>
+
+      {/* Funciones previas que Figma `29:1932` no dibuja ni elimina: garantía de 40 días (política de InformacionPage) e imprimir. */}
+      <div className="flex flex-col items-center gap-1 px-4 pb-3 pt-1 text-center leading-[normal]">
+        <p className="text-[13px] font-semibold text-hc-success">{t('payment.exito.garantia')}</p>
+        <p className="text-[12px] text-hc-n-500">{t('payment.exito.garantiaAyuda')}</p>
+        <button type="button" onClick={() => globalThis.print()} className="mt-1 text-[13px] font-medium text-hc-n-600 underline-offset-2 hover:underline">
+          {t('payment.print')}
+        </button>
+      </div>
+
+      {!token && (
+        <section className="px-4 pb-6 pt-[6px]">
+          <div className="flex flex-col gap-[10px] rounded-[16px] bg-hc-blue-50 p-4 leading-[normal]">
+            <h2 className="flex items-center gap-[10px] font-sans text-[14px] font-semibold tracking-normal text-hc-blue-600">
+              <IconoFigma src={ICONOS_PAGO.cuentaUsuario} size={20} />
+              {t('payment.exito.guardarTitulo')}
+            </h2>
+            <p className="text-[13px] leading-[18px] text-hc-n-600">{t('payment.exito.guardarTexto')}</p>
+            <BotonPago to="/registro" variante="azul">{t('payment.exito.guardarBoton')}</BotonPago>
+          </div>
+        </section>
+      )}
+    </MarcoPago>
   )
 }

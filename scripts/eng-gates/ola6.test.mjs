@@ -340,6 +340,26 @@ describe('E17 i18n PR vs D7', () => {
       addedKeys: ['navComision'],
     });
     assert.equal(leaf.ok, true);
+    // Plural de i18next: t('cart.paquetes', { count }) usa cart.paquetes_one / cart.paquetes_other
+    const plural = evaluateI18nPr({
+      locales: {
+        es: { cart: { paquetes_one: '{{count}} paquete', paquetes_other: '{{count}} paquetes' } },
+        en: { cart: { paquetes_one: '{{count}} package', paquetes_other: '{{count}} packages' } },
+        pt: { cart: { paquetes_one: '{{count}} pacote' } },
+      },
+      addedKeys: ['cart.paquetes'],
+    });
+    assert.equal(plural.ok, false);
+    assert.deepEqual(plural.missing[0].absent, ['pt']);
+    const pluralOk = evaluateI18nPr({
+      locales: {
+        es: { cart: { paquetes_one: 'a', paquetes_other: 'b' } },
+        en: { cart: { paquetes_one: 'a', paquetes_other: 'b' } },
+        pt: { cart: { paquetes_one: 'a', paquetes_other: 'b' } },
+      },
+      addedKeys: ['cart.paquetes', 'paquetes'],
+    });
+    assert.equal(pluralOk.ok, true);
   });
 
   it('keysAddedInLocales solo mira el diff (no el backlog de D7)', () => {

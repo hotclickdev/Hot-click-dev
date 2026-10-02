@@ -109,17 +109,16 @@ export function useSearchPanel() {
     return allBrands.filter((b) => b.nombreMarca?.toLowerCase().includes(q)).slice(0, 3)
   }, [q, allBrands])
 
-  const productResults = useMemo(() => {
+  const todosLosResultados = useMemo(() => {
     if (!q) return []
-    return allProducts
-      .filter((p) =>
-        p.nombre?.toLowerCase().includes(q) ||
-        p.categoriaNombre?.toLowerCase().includes(q) ||
-        p.marcaNombre?.toLowerCase().includes(q) ||
-        p.descripcion?.toLowerCase().includes(q)
-      )
-      .slice(0, 6)
+    return allProducts.filter((p) =>
+      p.nombre?.toLowerCase().includes(q) ||
+      p.categoriaNombre?.toLowerCase().includes(q) ||
+      p.marcaNombre?.toLowerCase().includes(q) ||
+      p.descripcion?.toLowerCase().includes(q)
+    )
   }, [q, allProducts])
+  const productResults = useMemo(() => todosLosResultados.slice(0, 6), [todosLosResultados])
 
   useEffect(() => {
     clearTimeout(analyticsTimer.current ?? undefined)
@@ -194,6 +193,7 @@ export function useSearchPanel() {
     inputRef,
     brandResults,
     productResults,
+    totalResultados: todosLosResultados.length,
     brandProductCount,
     hasResults,
     sugerencias,

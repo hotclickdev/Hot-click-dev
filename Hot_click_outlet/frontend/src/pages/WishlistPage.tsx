@@ -1,164 +1,67 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
 import MainLayout from '@/layouts/MainLayout'
 import useWishlistStore from '@/store/wishlistStore'
-import useCartStore from '@/store/cartStore'
-import { useToast } from '@/components/ui/Toast'
-import { formatPrice } from '@/utils/format'
-import TrustGlyph from '@/components/ui/TrustGlyph'
+import ProductCard from '@/components/comprador/ProductCard'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
 import { IconoCorazon } from '@/components/comprador/estados/iconosEstado'
-import type { ItemWishlist } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
+import { FONDO_BLANCO_VACIO } from './perfil/cuenta/cuentaEstilos'
 
+/** Favoritos: Figma `30:1224` (con productos) y `45:1799` (vacío). Usa la `ProductCard` compartida. */
 export default function WishlistPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const items = useWishlistStore((s) => s.items)
-  const remove = useWishlistStore((s) => s.remove)
-  const addItem = useCartStore((s) => s.addItem)
-  const toast = useToast()
-  const [recentlyAdded, setRecentlyAdded] = useState<Set<number>>(new Set())
-
-  const handleAddToCart = (product: ItemWishlist) => {
-    addItem(product as Producto)
-    toast({ message: t('wishlist.addedToCart', { name: product.nombre }), type: 'success' })
-    setRecentlyAdded((prev) => new Set([...prev, product.id]))
-    setTimeout(() => {
-      setRecentlyAdded((prev) => {
-        const next = new Set(prev)
-        next.delete(product.id)
-        return next
-      })
-    }, 1400)
-  }
+  const cantidad = t('favoritos.guardados', { count: items.length })
 
   if (items.length === 0) {
     return (
-      <MainLayout>
-        <EstadoVacio
-          nivel="h1"
-          icono={<IconoCorazon />}
-          titulo={t('wishlist.empty')}
-          texto={t('wishlist.emptySub')}
-          accion={{ texto: t('wishlist.explore'), onClick: () => navigate('/productos') }}
-        />
+      <MainLayout variante="interna" titulo={t('favoritos.titulo')} atras="/perfil" barraInferior>
+        <div className={FONDO_BLANCO_VACIO}>
+          <EstadoVacio
+            nivel="h1"
+            tono="rojo"
+            espaciado="cuenta"
+            icono={<IconoCorazon />}
+            titulo={t('favoritos.vacioTitulo')}
+            texto={t('favoritos.vacioTexto')}
+            accion={{ texto: t('favoritos.explorar'), onClick: () => navigate('/productos') }}
+          >
+            <p className="flex items-center gap-[10px] rounded-[12px] bg-hc-blue-50 px-[14px] py-3 text-left text-[13px] leading-[18px] text-hc-blue-600">
+              <IconoFigma src={ICONOS_COMPRADOR.consultaDestello} size={18} className="shrink-0" />
+              <span className="min-w-0 flex-1">{t('favoritos.consejo')}</span>
+            </p>
+          </EstadoVacio>
+        </div>
       </MainLayout>
     )
   }
 
   return (
-    <MainLayout>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--hc-text)' }}>{t('wishlist.title')}</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-              {t('wishlist.saved', { count: items.length })}
-            </p>
-          </div>
+    <MainLayout
+      variante="interna"
+      titulo={t('favoritos.titulo')}
+      esTituloPrincipal
+      atras="/perfil"
+      barraInferior
+      acciones={<span className="shrink-0 text-[13px] leading-[normal] text-hc-n-500">{cantidad}</span>}
+    >
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-5 pt-[14px] lg:px-8 lg:pb-10 lg:pt-8">
+        <div className="mb-6 hidden items-baseline justify-between lg:flex">
+          <h1 className="font-display text-[28px] font-bold leading-[normal] text-hc-n-900">{t('favoritos.titulo')}</h1>
+          <p className="text-[13px] text-hc-n-500">{cantidad}</p>
         </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          <AnimatePresence>
-            {items.map((product, i) => (
-              <WishlistCard
-                key={product.id}
-                product={product}
-                index={i}
-                added={recentlyAdded.has(product.id)}
-                onAdd={() => handleAddToCart(product)}
-                onRemove={() => remove(product.id)}
-                t={t}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+        <ul className="grid grid-cols-[repeat(auto-fill,167px)] justify-between gap-y-4 lg:justify-start lg:gap-x-4">
+          {items.map((item) => (
+            <li key={item.id}>
+              <ProductCard product={item as unknown as Producto} className="w-[167px]" />
+            </li>
+          ))}
+        </ul>
       </div>
     </MainLayout>
   )
-}
-
-function WishlistCard({
-  product, index, added, onAdd, onRemove, t,
-}: {
-  product: ItemWishlist
-  index: number
-  added: boolean
-  onAdd: () => void
-  onRemove: () => void
-  t: TFunction
-}) {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.2, delay: index * 0.04 }}
-      className="group rounded-2xl overflow-hidden"
-      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-    >
-      <div className="relative h-40 overflow-hidden" style={{ background: 'var(--hc-surface-2)' }}>
-        <Link to={`/productos/${product.id}`} className="flex items-center justify-center w-full h-full">
-          {product.imagenUrl ? (
-            <img
-              src={product.imagenUrl}
-              alt={product.nombre}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          ) : (
-            <span className="opacity-30" style={{ color: 'var(--hc-muted)' }}>
-              <TrustGlyph tipo="paquete" className="w-10 h-10" />
-            </span>
-          )}
-        </Link>
-        <button type="button"
-          onClick={(e) => { e.stopPropagation(); onRemove() }}
-          className="absolute top-2 right-2 z-10 w-11 h-11 min-h-11 min-w-11 rounded-lg flex items-center justify-center bg-black/45 hover:bg-red-500/30 transition-colors border border-white/10"
-          aria-label={t('wishlist.remove')}
-        >
-          <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-        </button>
-      </div>
-
-      <Link to={`/productos/${product.id}`} className="p-3 block">
-        <h3 className="font-medium text-xs leading-snug line-clamp-2 mb-1.5" style={{ color: 'var(--hc-text)' }}>
-          {product.nombre}
-        </h3>
-        <span className="font-bold text-sm" style={{ color: 'var(--hc-text)', fontFamily: 'var(--font-display)' }}>
-          {formatPrice(product.precio)}
-        </span>
-      </Link>
-
-      <div className="px-3 pb-3">
-        <button
-          type="button"
-          onClick={onAdd}
-          disabled={product.stock === 0}
-          className={claseAgregarWishlist(product.stock === 0, added)}
-        >
-          {etiquetaAgregar(product.stock === 0, added, t)}
-        </button>
-      </div>
-    </motion.div>
-  )
-}
-
-function claseAgregarWishlist(sinStock: boolean, added: boolean): string {
-  if (sinStock) return 'hc-btn w-full min-h-11 text-xs'
-  if (added) return 'hc-btn w-full min-h-11 text-xs bg-emerald-500 text-white border-emerald-500'
-  return 'hc-btn hc-btn-primary w-full min-h-11 text-xs'
-}
-
-function etiquetaAgregar(sinStock: boolean, added: boolean, t: TFunction): string {
-  if (sinStock) return t('wishlist.outOfStock')
-  if (added) return t('wishlist.addedFeedback')
-  return t('wishlist.addToCart')
 }

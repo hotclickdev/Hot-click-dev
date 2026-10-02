@@ -12,10 +12,6 @@ export function usaSkinVisitanteCheckout(pathname: string, embedded?: boolean): 
   return esRutaVisitanteFigma(pathname)
 }
 
-export function hrefCarritoCheckout(skinVisitante: boolean): string {
-  return skinVisitante ? `${VISITANTE_BASE}/carrito` : '/carrito'
-}
-
 export function hrefPedidosCheckout(skinVisitante: boolean): string {
   return skinVisitante ? `${VISITANTE_BASE}/pedidos` : '/mis-pedidos'
 }

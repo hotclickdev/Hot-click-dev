@@ -3,19 +3,12 @@ import { useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
 import i18n from '@/i18n'
 import { aplicarClasesTemaHtml, colorChromeParaTema } from '@/utils/temaPorRuta'
+import { instalarModalidadTeclado } from './modalidadTeclado'
 
 function aplicarMetaThemeColor(tema: 'dark' | 'light') {
   const meta = document.querySelector('meta[name="theme-color"]')
   if (!meta) return
   meta.setAttribute('content', colorChromeParaTema(tema))
-}
-
-const COLOR_FILTERS: Record<string, string> = {
-  none: '',
-  grayscale: 'grayscale(100%)',
-  deuteranopia: 'url(#filter-deuteranopia)',
-  protanopia: 'url(#filter-protanopia)',
-  tritanopia: 'url(#filter-tritanopia)',
 }
 
 /**
@@ -24,9 +17,14 @@ const COLOR_FILTERS: Record<string, string> = {
  */
 export default function HtmlClassManager() {
   const { pathname } = useLocation()
-  const { theme, fontSize, highContrast, reduceMotion, language, colorFilter } = useUiStore()
+  const { theme, fontSize, highContrast, reduceMotion, language } = useUiStore()
   const [liveMessage, setLiveMessage] = useState('')
-  const primed = useRef(false)
+  // Idioma ya anunciado: solo se avisa un cambio real (el doble efecto de StrictMode o la carga no anuncian).
+  const idiomaAnunciado = useRef(language)
+
+  // Tab marca el <html> con `hc-teclado`: el anillo de foco de los campos se ve solo al navegar con teclado.
+  useEffect(() => instalarModalidadTeclado(document, document.documentElement), [])
+
   useEffect(() => {
     const html = document.documentElement
     const temaHtml = aplicarClasesTemaHtml(html.classList, pathname, theme, highContrast)
@@ -34,16 +32,15 @@ export default function HtmlClassManager() {
     html.classList.toggle('fs-lg', fontSize === 'lg')
     html.classList.toggle('fs-xl', fontSize === 'xl')
     html.classList.toggle('reduce-motion', reduceMotion)
-    html.style.filter = COLOR_FILTERS[colorFilter] || ''
-  }, [pathname, theme, fontSize, highContrast, reduceMotion, colorFilter])
+    // El filtro de color se retiró de la interfaz: se limpia cualquiera que haya quedado de una sesión anterior.
+    html.style.filter = ''
+  }, [pathname, theme, fontSize, highContrast, reduceMotion])
 
   useEffect(() => {
     document.documentElement.lang = language
     const announce = () => {
-      if (!primed.current) {
-        primed.current = true
-        return
-      }
+      if (idiomaAnunciado.current === language) return
+      idiomaAnunciado.current = language
       const langName = i18n.t(`lang.name.${language}`)
       setLiveMessage(i18n.t('lang.changed', { lang: langName }))
     }
@@ -64,33 +61,6 @@ export default function HtmlClassManager() {
       >
         {liveMessage}
       </div>
-      <svg
-        id="a11y-color-filters"
-        aria-hidden="true"
-        focusable="false"
-        style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
-      >
-        <defs>
-          <filter id="filter-deuteranopia" colorInterpolationFilters="linearRGB">
-            <feColorMatrix type="matrix" values="0.625 0.375 0   0 0
-                                               0.7   0.3   0   0 0
-                                               0     0.3   0.7 0 0
-                                               0     0     0   1 0" />
-          </filter>
-          <filter id="filter-protanopia" colorInterpolationFilters="linearRGB">
-            <feColorMatrix type="matrix" values="0.567 0.433 0     0 0
-                                               0.558 0.442 0     0 0
-                                               0     0.242 0.758 0 0
-                                               0     0     0     1 0" />
-          </filter>
-          <filter id="filter-tritanopia" colorInterpolationFilters="linearRGB">
-            <feColorMatrix type="matrix" values="0.95 0.05  0     0 0
-                                               0    0.433 0.567 0 0
-                                               0    0.475 0.525 0 0
-                                               0     0     0     1 0" />
-          </filter>
-        </defs>
-      </svg>
     </>
   )
 }

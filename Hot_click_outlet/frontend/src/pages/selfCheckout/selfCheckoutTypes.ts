@@ -6,6 +6,7 @@ export type ProductoSelfCheckout = {
   imagenUrl?: string
   nombre?: string
   descripcion?: string
+  categoria?: string | null
   precio?: number
 }
 
@@ -19,6 +20,11 @@ export type MesaSelfCheckout = {
 export type PedidoResultSelfCheckout = {
   numeroPedido?: string
   total?: number
+}
+
+/** Lo pedido, guardado al enviar para mostrarlo en la confirmación (el carrito se vacía). */
+export type ResumenPedidoSelfCheckout = {
+  lineas: LineaCarritoSelfCheckout[]
 }
 
 export type FormSelfCheckout = {

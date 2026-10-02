@@ -1,67 +1,45 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import MainLayout from '@/layouts/MainLayout'
 import Modal from '@/components/ui/Modal'
-import ForgotPasswordModal from './ForgotPasswordModal'
-import { A } from './authUi'
-import LoginHeader from './LoginHeader'
-import CartModal from './CartModal'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import CartModal from './CartModal'
 import type { ReactNode } from 'react'
 import type { LoginFlow } from './useLoginFlow'
 
+const CODIGO_VACIO = ['', '', '', '', '', '']
+
 /**
- * Marco visual de login: fondo, header, badge, footer y modales.
+ * Marco del login: Figma `28:1143` ("Tu cuenta") y `44:1660` ("Verificación"). Barra interna con flecha atrás,
+ * sin barra inferior ni pie en móvil; en escritorio, header mínimo y la misma columna centrada.
+ * Conserva el modal de recuperación de carrito y el selector de modo de administrador.
  */
 export default function LoginPageLayout({ children, flow }: { children: ReactNode; flow: LoginFlow }) {
+  const { t } = useTranslation()
   const {
+    step, setStep, setCode2FA, setError, setUseRecovery, twoFaMethods,
     showCartRecovery, recoveryCart, addItem, setShowCartRecovery,
-    navigate, recoveryDest, showAdminModal, t, setShowAdminModal,
-    showForgot, setShowForgot,
+    navigate, recoveryDest, showAdminModal, setShowAdminModal,
   } = flow
 
+  const enVerificacion = step !== 'login'
+  /** Dentro de la verificación la flecha vuelve al paso anterior (igual que el botón "Volver" de cada paso). */
+  const volverDePaso = () => {
+    setCode2FA([...CODIGO_VACIO])
+    setError('')
+    setUseRecovery(false)
+    setStep(step === 'email-otp' && twoFaMethods.length > 1 ? 'picker' : 'login')
+  }
+
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden" style={{ background: 'var(--hc-bg)' }}>
-
-      {/* ── Fondo ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 55% at 75% 30%, color-mix(in srgb, var(--hc-accent) 11%, transparent), transparent 65%)` }} />
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 45% 50% at 15% 75%, color-mix(in srgb, var(--hc-accent) 7%, transparent), transparent 65%)` }} />
+    <MainLayout
+      variante="interna"
+      titulo={enVerificacion ? t('login.barraVerificacion') : t('login.barraCuenta')}
+      atras={enVerificacion ? volverDePaso : undefined}
+      encabezadoEscritorio="minimo"
+    >
+      <div className="mx-auto w-full max-w-[420px] bg-hc-n-0 flex flex-col pb-0 max-lg:min-h-[calc(100dvh-51px)] lg:my-10 lg:rounded-[18px] lg:border lg:border-hc-n-200">
+        {children}
       </div>
-      <div className="absolute inset-0 opacity-[0.3] pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(var(--hc-border) 1px, transparent 1px), linear-gradient(90deg, var(--hc-border) 1px, transparent 1px)',
-        backgroundSize: '60px 60px',
-      }} />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none">
-        <span className="font-black uppercase tracking-[-0.02em] whitespace-nowrap leading-none"
-          style={{ fontSize: '22vw', color: 'color-mix(in srgb, var(--hc-text) 3.5%, transparent)', transform: 'rotate(-4deg)' }}>
-          ACCESO
-        </span>
-      </div>
-
-      <LoginHeader />
-
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-[430px]">
-
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-            className="flex items-center gap-3 mb-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
-              style={{ background: A.bg, border: `1px solid ${A.ring}`, color: A.color, letterSpacing: '0.06em' }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: A.color }}></span>
-              <span>COSTA RICA · E-COMMERCE</span>
-            </div>
-            <div className="h-px flex-1 max-w-[60px]" style={{ background: `linear-gradient(90deg, ${A.ring}, transparent)` }} />
-          </motion.div>
-
-          {children}
-        </div>
-      </main>
-
-      <footer className="relative z-10 text-center py-4 text-xs border-t"
-        style={{ borderColor: 'var(--hc-border)', color: 'var(--hc-muted)', background: 'var(--hc-glass-bg)', backdropFilter: 'blur(8px)' }}>
-        © {new Date().getFullYear()} HotClick · Costa Rica ·{' '}
-        <Link to="/informacion" style={{ color: A.color }}>Términos</Link>
-      </footer>
 
       <CartModal
         open={showCartRecovery}
@@ -93,8 +71,6 @@ export default function LoginPageLayout({ children, flow }: { children: ReactNod
           ))}
         </div>
       </Modal>
-
-      <ForgotPasswordModal open={showForgot} onClose={() => setShowForgot(false)} />
-    </div>
+    </MainLayout>
   )
 }

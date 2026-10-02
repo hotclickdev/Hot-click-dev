@@ -5,18 +5,38 @@ import { useTranslation } from 'react-i18next'
 import useChatStore from '@/store/chatStore'
 import useCartStore from '@/store/cartStore'
 import AIChat from './AIChat'
-import { HotClickMark } from '@/components/ui/BrandLogo'
-import CloseIcon from '@/components/ui/CloseIcon'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_CHAT } from './iconosChat'
 import { useVisualViewportBox } from '@/hooks/useVisualViewportBox'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { sessionKeyFromPath } from './aiChat/chatSurface'
 
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
+/** Móvil (< 768 px): el asistente es una hoja inferior (Figma `8:231`); en desktop sigue siendo el panel lateral. */
+function useEsMovil(): boolean {
+  const consulta = '(max-width: 767px)'
+  const [movil, setMovil] = useState(() => globalThis.matchMedia?.(consulta).matches ?? false)
+  useEffect(() => {
+    const lista = globalThis.matchMedia?.(consulta)
+    if (!lista) return undefined
+    const alCambiar = () => setMovil(lista.matches)
+    lista.addEventListener('change', alCambiar)
+    return () => lista.removeEventListener('change', alCambiar)
+  }, [])
+  return movil
+}
+
+/** Distancia entre el borde superior y la hoja en móvil (Figma `8:231`). */
+const MARGEN_SUPERIOR_HOJA = 82
+
 export default function ChatModal() {
   const { t } = useTranslation()
+  const esMovil = useEsMovil()
   const { pathname } = useLocation()
   const isOpen = useChatStore(s => s.isOpen)
   const pendingMessage = useChatStore(s => s.pendingMessage)
+  const contexto = useChatStore(s => s.contexto)
   const resetCount = useChatStore(s => s.resetCount)
   const close = useChatStore(s => s.close)
   const clearPending = useChatStore(s => s.clearPending)
@@ -26,6 +46,8 @@ export default function ChatModal() {
   const viewport = useVisualViewportBox(isOpen)
   const sessionKey = sessionKeyFromPath(pathname)
   const panelRef = useRef<HTMLElement>(null)
+  // Tab no sale del asistente y al cerrar el foco vuelve a quien lo abrió (el primer foco lo pone el efecto de abajo).
+  useFocusTrap(panelRef, isOpen, 'ninguno')
 
   useEffect(() => {
     const { startExpiryTimer, stopExpiryTimer } = useChatStore.getState()
@@ -62,44 +84,52 @@ export default function ChatModal() {
             transition={{ duration: 0.2 }}
             onClick={close}
             className="fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.30)' }}
+            style={{ background: esMovil ? 'var(--hc-n-900)' : 'rgba(0,0,0,0.30)' }}
             aria-hidden="true"
           />
           <motion.aside
-            key={`chat-drawer-${sessionKey}-${resetCount}`}
+            key={`chat-drawer-${sessionKey}-${resetCount}-${esMovil ? 'hoja' : 'panel'}`}
             ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label={t('chat.title')}
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
+            initial={esMovil ? { y: '100%' } : { x: '-100%' }}
+            animate={esMovil ? { y: 0 } : { x: 0 }}
+            exit={esMovil ? { y: '100%' } : { x: '-100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="hc-drawer-surface fixed left-0 z-50 flex flex-col"
-            style={{
-              top: viewport.offsetTop,
-              height: viewport.height,
-              width: 'min(440px, 100vw)',
-              background: 'var(--hc-surface)',
-              borderRight: '1px solid var(--hc-border)',
-              boxShadow: '8px 0 48px rgba(0,0,0,0.12)',
-              color: 'var(--hc-text)',
-            }}
+            className={`hc-drawer-surface fixed z-50 flex flex-col ${esMovil ? 'inset-x-0 mx-auto max-w-[480px] overflow-hidden rounded-t-[22px]' : 'left-0'}`}
+            style={esMovil
+              ? {
+                top: viewport.offsetTop + MARGEN_SUPERIOR_HOJA,
+                height: Math.max(0, viewport.height - MARGEN_SUPERIOR_HOJA),
+                background: 'var(--hc-surface)',
+                color: 'var(--hc-text)',
+              }
+              : {
+                top: viewport.offsetTop,
+                height: viewport.height,
+                width: 'min(440px, 100vw)',
+                background: 'var(--hc-surface)',
+                borderRight: '1px solid var(--hc-border)',
+                boxShadow: '8px 0 48px rgba(0,0,0,0.12)',
+                color: 'var(--hc-text)',
+              }}
           >
+            {esMovil && <span aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-[2px] bg-hc-n-200" />}
             <ChatHeader
               cartCount={cartCount}
-              onBack={close}
               onClear={clearConversation}
               onClose={close}
             />
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-hidden">
               <AIChat
-                context="GENERAL"
+                context={contexto ?? 'GENERAL'}
                 sessionKey={sessionKey}
                 chips={chips}
                 placeholder={t('chat.placeholder')}
                 autoQuery={pendingMessage || undefined}
                 fullHeight
+                variante="hoja"
               />
             </div>
           </motion.aside>
@@ -111,12 +141,10 @@ export default function ChatModal() {
 
 function ChatHeader({
   cartCount,
-  onBack,
   onClear,
   onClose,
 }: {
   cartCount: number
-  onBack: () => void
   onClear: () => void
   onClose: () => void
 }) {
@@ -133,33 +161,19 @@ function ChatHeader({
   }
 
   return (
-    <div
-      className="flex items-center gap-2 px-3 py-3.5 shrink-0"
-      style={{ borderBottom: '1px solid var(--hc-border)' }}
-    >
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label={t('chat.back')}
-        title={t('chat.back')}
-        className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
-        style={{ color: 'var(--hc-muted)' }}
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <HotClickMark size={32} className="shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>{t('chat.title')}</p>
-        <p className="text-[11px] leading-none mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('chat.subtitle')}</p>
+    <div className="flex shrink-0 items-center gap-[10px] px-4 pb-3 pt-[10px]">
+      <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-hc-blue-600 text-hc-n-0">
+        <IconoFigma src={ICONOS_CHAT.asistente16} size={16} />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col leading-[normal]">
+        <p className="truncate font-display text-[15px] font-bold text-hc-n-900">{t('chat.title')}</p>
+        <p className="truncate text-[11px] text-hc-n-500">{t('chat.subtitle')}</p>
       </div>
       {cartCount > 0 && (
         <Link
           to="/checkout"
           onClick={onClose}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold min-h-11 transition-all hover:opacity-80"
-          style={{ background: 'var(--hc-accent)', color: '#fff' }}
+          className="flex min-h-9 shrink-0 items-center rounded-full bg-hc-blue-600 px-3 text-xs font-bold text-hc-n-0"
         >
           {t('chat.goCheckout')}
         </Link>
@@ -170,20 +184,14 @@ function ChatHeader({
         onBlur={() => setConfirmClear(false)}
         aria-label={confirmClear ? t('chat.clearConfirm') : t('chat.clear')}
         title={confirmClear ? t('chat.clearConfirm') : t('chat.clear')}
-        className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
-        style={{ color: confirmClear ? '#DC2626' : 'var(--hc-muted)' }}
+        className={`flex shrink-0 ${confirmClear ? 'text-hc-danger' : 'text-hc-n-500'}`}
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h8" />
         </svg>
       </button>
-      <button type="button"
-        onClick={onClose}
-        aria-label={t('chat.close')}
-        className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
-        style={{ color: 'var(--hc-muted)' }}
-      >
-        <CloseIcon className="w-5 h-5" />
+      <button type="button" onClick={onClose} aria-label={t('chat.close')} className="flex shrink-0 text-hc-n-600">
+        <IconoFigma src={ICONOS_CHAT.cerrar20} size={20} />
       </button>
     </div>
   )

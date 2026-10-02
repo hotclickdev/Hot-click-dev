@@ -4,6 +4,7 @@ import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.sse.StockCambioEvent;
+import com.hotclick.utils.FormatoColones;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +53,7 @@ public class TelegramNotificacionClienteService {
             String texto = titulo + "\n\n"
                 + "Pedido: *" + esc(numeroPedido) + "*\n"
                 + "Cliente: " + esc(cliente != null ? cliente : "Mostrador") + "\n"
-                + "Total: *" + String.format("₡%,d", total != null ? total : 0) + "*\n"
+                + "Total: *" + FormatoColones.colones(total) + "*\n"
                 + "Pago: " + esc(metodoPago != null ? metodoPago : "—");
             enviarATodos(empresaId, texto);
         } catch (Exception e) {

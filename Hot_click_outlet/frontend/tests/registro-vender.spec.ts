@@ -64,7 +64,7 @@ test.describe('Puerta Vender — una entrada, tres rutas', () => {
   test('anónimo en /registrar-negocio va a login con retorno', async ({ page }) => {
     await page.goto('/registrar-negocio', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/login\?redirect=%2Fregistrar-negocio/)
-    await expect(page.getByRole('heading', { name: /bienvenido/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /ingresá o creá tu cuenta/i })).toBeVisible()
   })
 
   test('comprador logueado en /registro-empresa pasa a registrar-negocio', async ({ page }) => {

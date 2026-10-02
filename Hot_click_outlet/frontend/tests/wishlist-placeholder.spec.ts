@@ -22,7 +22,7 @@ test('wishlist sin foto no usa caja emoji', async ({ page }) => {
   })
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/wishlist', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('heading', { name: 'Wishlist' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Favoritos' })).toBeVisible()
   await expect(page.getByText('Mouse')).toBeVisible()
   await expect(page.getByText('📦')).toHaveCount(0)
 })

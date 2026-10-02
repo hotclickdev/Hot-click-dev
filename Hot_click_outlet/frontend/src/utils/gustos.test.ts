@@ -19,6 +19,7 @@ import {
   marcarProductoVisto,
   priceBand,
   rankScoreParaVos,
+  restaurarGustos,
   type GustosScores,
 } from './gustos'
 
@@ -119,5 +120,30 @@ describe('debeRevelar', () => {
     expect(debeRevelar(0, SWIPES_PARA_REVELAR, false)).toBe(true)
     expect(debeRevelar(0, 0, true)).toBe(true)
     expect(debeRevelar(1, 2, false)).toBe(false)
+  })
+})
+
+describe('restaurarGustos (deshacer la última elección de Descubrí)', () => {
+  beforeEach(() => store.clear())
+
+  it('vuelve al perfil anterior al like: puntajes y productos vistos', () => {
+    const antes = loadGustos()
+    aplicarLikeProducto(productoBase({ id: 7, categoriaId: 3 }))
+    expect(loadGustos().scores.size).toBeGreaterThan(0)
+    expect(loadGustos().seen['7']).toBeDefined()
+    restaurarGustos(antes)
+    const despues = loadGustos()
+    expect(despues.scores.size).toBe(0)
+    expect(despues.seen['7']).toBeUndefined()
+  })
+
+  it('deshace un skip sin tocar el resto de lo visto', () => {
+    marcarProductoVisto(1)
+    const antes = loadGustos()
+    marcarProductoVisto(2)
+    restaurarGustos(antes)
+    const despues = loadGustos()
+    expect(despues.seen['1']).toBeDefined()
+    expect(despues.seen['2']).toBeUndefined()
   })
 })

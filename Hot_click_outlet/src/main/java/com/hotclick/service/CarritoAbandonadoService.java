@@ -5,7 +5,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.CarritoAbandonadoRequestDTO;
 import com.hotclick.model.CarritoAbandonado;
+import com.hotclick.model.Producto;
 import com.hotclick.repository.CarritoAbandonadoRepository;
+import com.hotclick.repository.ProductoRepository;
+import com.hotclick.service.producto.ProductoCatalogQueries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class CarritoAbandonadoService {
@@ -30,6 +37,8 @@ public class CarritoAbandonadoService {
 
     @Autowired private CarritoAbandonadoRepository repo;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private ProductoRepository productoRepository;
+    @Autowired private ProductoCatalogQueries productoCatalogQueries;
 
     /** Upsert: update PENDIENTE cart for session, or create new one. */
     @Transactional
@@ -114,6 +123,43 @@ public class CarritoAbandonadoService {
             c.setStatus("VENCIDO");
             repo.save(c);
         });
+    }
+
+    /**
+     * Items guardados con el stock disponible y la tienda visible de cada producto activo, para
+     * "Disponible · quedan N" de la recuperacion (Figma 29:2036) y el correo (30:1733).
+     * Un producto inactivo o borrado queda sin esos datos; el resto del item no cambia.
+     */
+    @Transactional(readOnly = true)
+    public List<CarritoAbandonadoRequestDTO.CartItemDTO> itemsConDisponibilidad(String json) {
+        return itemsConDisponibilidad(json, CarritoAbandonadoRequestDTO.MAX_LIST_ITEMS);
+    }
+
+    /** Como mucho {@code maxItems} líneas: un carrito viejo, guardado antes del tope, no devuelve una lista sin acotar. */
+    public List<CarritoAbandonadoRequestDTO.CartItemDTO> itemsConDisponibilidad(String json, int maxItems) {
+        List<CarritoAbandonadoRequestDTO.CartItemDTO> items = deserializarItems(json).stream()
+            .limit(Math.max(0, maxItems))
+            .toList();
+        List<Long> ids = items.stream()
+            .map(CarritoAbandonadoRequestDTO.CartItemDTO::getProductoId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+        if (ids.isEmpty()) return items;
+        Map<Long, Producto> activos = productoRepository.findAllById(ids).stream()
+            .filter(p -> Objects.equals(p.getEstado(), Constants.ESTADO_ACTIVO))
+            .collect(Collectors.toMap(Producto::getId, Function.identity()));
+        for (CarritoAbandonadoRequestDTO.CartItemDTO item : items) {
+            Producto producto = activos.get(item.getProductoId());
+            if (producto != null) completarConProducto(item, producto);
+        }
+        return items;
+    }
+
+    private void completarConProducto(CarritoAbandonadoRequestDTO.CartItemDTO item, Producto producto) {
+        if (producto.getStockActual() != null) item.setStock(Math.max(0, producto.getStockDisponible()));
+        productoCatalogQueries.poblarBadgeEmpresa(producto);
+        item.setEmpresaNombre(producto.getEmpresaNombre());
     }
 
     /** Deserializes the JSON items string back into a list. */

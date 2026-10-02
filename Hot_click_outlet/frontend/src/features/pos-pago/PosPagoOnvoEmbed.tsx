@@ -65,7 +65,7 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
 
   if (cargando) {
     return (
-      <p className="text-sm text-center text-[var(--hc-muted)] py-4">
+      <p className="text-sm text-center text-hc-muted py-4">
         {t('pos.pago.cargandoPasarela')}
       </p>
     )
@@ -78,7 +78,7 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
       <div
         id="onvo-pos-pago-container"
         ref={containerRef}
-        className="min-h-[120px] rounded-[22px] border p-3 shadow-[var(--hc-shadow-1)]"
+        className="min-h-[120px] rounded-[22px] border p-3 shadow-hc-1"
         style={ESTILO_PAD_ONVO}
       />
       {error ? (
@@ -87,7 +87,7 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
           <button
             type="button"
             onClick={() => setReporteAbierto(true)}
-            className="w-full min-h-11 rounded-2xl border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
+            className="w-full min-h-11 rounded-2xl border border-hc-border py-3 text-sm font-semibold text-hc-text"
             style={{ background: 'var(--hc-surface)' }}
           >
             {t('pos.pago.reportarError')}

@@ -115,14 +115,15 @@ export default function RegisterFormStep({
                   </motion.div>
 
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="mb-6">
+                    {/* Un solo h1: la segunda línea con degradé es parte del mismo título. */}
                     <h1 className="font-black leading-[1.0] tracking-tight" style={{ fontSize: 'clamp(2.2rem, 5vw, 3rem)', color: 'var(--hc-text)' }}>
-                      {t('register.title')}
-                    </h1>
-                    <h1 className="font-black leading-[1.0] tracking-tight"
-                      style={{ fontSize: 'clamp(2.2rem, 5vw, 3rem)',
-                        background: `linear-gradient(120deg, ${BUYER.color} 0%, color-mix(in srgb, ${BUYER.color} 65%, var(--hc-blue-300)) 100%)`,
-                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                      en HotClick
+                      {t('register.title')}{' '}
+                      <span className="block"
+                        style={{
+                          background: `linear-gradient(120deg, ${BUYER.color} 0%, color-mix(in srgb, ${BUYER.color} 65%, var(--hc-blue-300)) 100%)`,
+                          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                        en HotClick
+                      </span>
                     </h1>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="w-5 h-[2px] rounded-full" style={{ background: BUYER.color }} />
@@ -145,8 +146,8 @@ export default function RegisterFormStep({
                         <Input label={`${t('register.email')} *`} type="email" value={form.correo} onChange={actualizarCampo('correo')} required placeholder="tu@email.com" maxLength={150} />
                         <div className="grid grid-cols-2 gap-3">
                           <div className="flex flex-col gap-1.5">
-                            <label className="hc-input-label">{t('register.phone')}</label>
-                            <PhoneField value={form.telefono} onChange={(val) => setForm(f => ({ ...f, telefono: val }))} required />
+                            <label htmlFor="registro-telefono" className="hc-input-label">{t('register.phone')}</label>
+                            <PhoneField id="registro-telefono" value={form.telefono} onChange={(val) => setForm(f => ({ ...f, telefono: val }))} required />
                           </div>
                           <Input label={`${t('register.identification')} *`} value={form.identificacion} onChange={actualizarCampo('identificacion')} required placeholder="1-2345-6789" maxLength={20} />
                         </div>

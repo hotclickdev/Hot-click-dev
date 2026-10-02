@@ -46,7 +46,7 @@ public class CarritoAbandonadoScheduler {
         for (CarritoAbandonado carrito : pendientes) {
             try {
                 List<CarritoAbandonadoRequestDTO.CartItemDTO> itemsDtos =
-                    cartService.deserializarItems(carrito.getItems());
+                    cartService.itemsConDisponibilidad(carrito.getItems());
                 List<java.util.Map<String, Object>> itemsPayload = itemsDtos.stream()
                     .map(i -> java.util.Map.<String, Object>of(
                         "nombre", i.getNombre() != null ? i.getNombre() : "",

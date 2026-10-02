@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import { formatPrice } from '@/utils/format'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import CloseIcon from '@/components/ui/CloseIcon'
-import type { ItemCarrito } from '@/types/carrito'
+import { useTranslation } from 'react-i18next'
+import HojaInferior from '@/components/comprador/HojaInferior'
+import { ICONOS_ESTADOS } from '@/components/comprador/estados/iconosEstados'
+import { BOTON_HOJA_PRIMARIO, BOTON_HOJA_SECUNDARIO, TITULO_HOJA } from '@/components/ui/sistema/estilosHoja'
+import type { ItemCarrito, ItemWishlist } from '@/types/carrito'
 
 const SESSION_KEY = 'hc-exit-intent-shown'
 const DELAY_BEFORE_ARMED_MS = 5000
@@ -22,6 +23,7 @@ const BLOCKED_PATHS = [
 const CART_EXIT_DELAY_MS = 5 * 60 * 1000
 
 export default function ExitIntentModal() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const armed = useRef(false)
   const prevPathnameRef = useRef<string | null>(null)
@@ -95,105 +97,56 @@ export default function ExitIntentModal() {
     }
   }, [cartItems.length, wishItems.length])
 
-  const hasCart    = cartItems.length > 0
-  const preview    = hasCart ? cartItems : wishItems
-  const total      = hasCart ? cartTotal() : null
-  const cartSuffix = cartItems.length === 1 ? '' : 's'
-  const wishSuffix = wishItems.length === 1 ? '' : 's'
+  const hasCart = cartItems.length > 0
+  const preview: Array<ItemCarrito | ItemWishlist> = hasCart ? cartItems : wishItems
+  const primero = preview[0]
+  const resto = preview.length - 1
+  const cantidadPrimero = hasCart ? (primero as ItemCarrito).cantidad : null
+  const tienda = hasCart ? (primero as ItemCarrito).empresaNombre : null
+  const detalle = [tienda, cantidadPrimero ? t('exitIntent.unit', { count: cantidadPrimero }) : null].filter(Boolean).join(' · ')
+  const cerrar = () => setOpen(false)
 
   return (
-    <AnimatePresence>
-      {open && (
+    <HojaInferior
+      abierta={open && Boolean(primero)}
+      onCerrar={cerrar}
+      titulo={(
+        <div className="flex items-center gap-2">
+          <img src={ICONOS_ESTADOS.salidaPedido} alt="" width={24} height={24} className="block size-6 shrink-0" />
+          <h2 className={TITULO_HOJA}>{hasCart ? t('exitIntent.title') : t('exitIntent.wishTitle')}</h2>
+        </div>
+      )}
+    >
+      {primero && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9990] bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.93, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.93, y: 24 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="fixed inset-0 z-[9991] flex items-center justify-center p-4 pointer-events-none"
-          >
-            <div
-              className="pointer-events-auto w-full max-w-sm rounded-3xl overflow-hidden"
-              style={{
-                background: 'var(--hc-surface)',
-                border: '1px solid var(--hc-border)',
-                boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
-              }}
-            >
-              {/* Header */}
-              <div
-                className="relative px-6 pt-6 pb-4 text-center"
-                style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--hc-accent) 12%, transparent), color-mix(in srgb, #ec4899 8%, transparent))' }}
-              >
-                <button type="button"
-                  onClick={() => setOpen(false)}
-                  className="absolute top-4 right-4 w-7 h-7 rounded-xl flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-all"
-                  aria-label="Cerrar"
-                >
-                  <CloseIcon />
-                </button>
-                <div className="flex justify-center mb-2" style={{ color: 'var(--hc-accent)' }}>
-                  <TrustGlyph tipo={hasCart ? 'bolsa' : 'corazon'} className="w-8 h-8" />
-                </div>
-                <h2 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>
-                  {hasCart ? '¡Espera! Tu pedido te espera' : '¡Tus favoritos te esperan!'}
-                </h2>
-                <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
-                  {hasCart
-                    ? `${cartItems.length} producto${cartSuffix} · ${formatPrice(total)}`
-                    : `${wishItems.length} producto${wishSuffix} guardados`}
-                </p>
-              </div>
-
-              {/* Productos */}
-              <div className="px-5 py-4 space-y-2.5">
-                {preview.slice(0, 3).map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: 'var(--hc-bg)' }}>
-                      {item.imagenUrl
-                        ? <img src={item.imagenUrl} alt={item.nombre} className="w-full h-full object-cover" />
-                        : <span className="opacity-30" style={{ color: 'var(--hc-muted)' }}>
-                            <TrustGlyph tipo="paquete" className="w-5 h-5" />
-                          </span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate" style={{ color: 'var(--hc-text)' }}>{item.nombre}</p>
-                      <p className="text-xs font-bold" style={{ color: 'var(--hc-text)' }}>{formatPrice(item.precio)}</p>
-                    </div>
-                    {hasCart && <span className="text-[10px] shrink-0" style={{ color: 'var(--hc-muted)' }}>×{(item as ItemCarrito).cantidad}</span>}
-                  </div>
-                ))}
-                {preview.length > 3 && (
-                  <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>y {preview.length - 3} más</p>
-                )}
-              </div>
-
-              {/* CTAs */}
-              <div className="px-5 pb-5 flex flex-col gap-2">
-                <Link
-                  to={hasCart ? '/carrito' : '/wishlist'}
-                  onClick={() => setOpen(false)}
-                  className="hc-btn hc-btn-primary w-full min-h-11"
-                >
-                  {hasCart ? 'Completar compra' : 'Ver mis favoritos'}
-                </Link>
-                <button type="button"
-                  onClick={() => setOpen(false)}
-                  className="w-full h-9 rounded-xl text-xs font-medium transition-all hover:bg-white/5"
-                  style={{ color: 'var(--hc-muted)' }}
-                >
-                  Seguir explorando
-                </button>
-              </div>
+          <p className="text-[12px] leading-4 text-hc-n-600">
+            {hasCart ? t('exitIntent.cartHas') : t('exitIntent.wishHas')} {preview.length} {t('exitIntent.item', { count: preview.length })}
+          </p>
+          <div className="flex items-center gap-3 rounded-[14px] bg-hc-n-50 p-[10px]">
+            <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-hc-n-100">
+              {primero.imagenUrl && <img src={primero.imagenUrl} alt="" className="size-full object-cover" />}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+              <p className="truncate text-[14px] font-medium leading-4 text-hc-n-900">{primero.nombre}</p>
+              {detalle && <p className="truncate text-[12px] leading-[14px] text-hc-n-500">{detalle}</p>}
             </div>
-          </motion.div>
+            <p className="shrink-0 font-display text-[15px] font-bold leading-[19px] tracking-normal text-hc-n-900">{formatPrice(primero.precio)}</p>
+          </div>
+          {resto > 0 && <p className="text-[11px] leading-[15px] text-hc-n-500">{t('exitIntent.more', { count: resto })}</p>}
+          {hasCart && (
+            <div className="flex items-start justify-between leading-[normal]">
+              <span className="text-[13px] text-hc-n-600">{t('exitIntent.total')}</span>
+              <span className="font-display text-[14px] font-semibold leading-[18px] tracking-normal text-hc-n-900">{formatPrice(cartTotal())}</span>
+            </div>
+          )}
+          <div className="flex gap-[10px]">
+            <button type="button" onClick={cerrar} className={BOTON_HOJA_SECUNDARIO}>{t('exitIntent.continue')}</button>
+            <Link to={hasCart ? '/carrito' : '/wishlist'} onClick={cerrar} className={BOTON_HOJA_PRIMARIO}>
+              {hasCart ? t('exitIntent.checkout') : t('exitIntent.viewWishlist')}
+            </Link>
+          </div>
         </>
       )}
-    </AnimatePresence>
+    </HojaInferior>
   )
 }

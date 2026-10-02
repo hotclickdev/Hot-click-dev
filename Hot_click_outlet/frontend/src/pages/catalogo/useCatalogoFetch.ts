@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from 'react'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
-import { convenioService, listaConvenios } from '@/services/convenioService'
 import { colapsarGruposVariante } from './catalogoHelpers'
 import { PAGE_SIZE } from './catalogoFiltros'
 import type { Producto, ProductoBackend } from '@/types/producto'
-import type { CatalogCategoria, CatalogConvenio, CatalogMarca } from './catalogoTipos'
+import type { CatalogCategoria, CatalogMarca } from './catalogoTipos'
 
 /** Tamaño al filtrar por gustos: el filtro client-side necesita más que una página. */
 export const PARA_VOS_FETCH_SIZE = 100
@@ -24,7 +23,7 @@ function listaDesdeRespuesta(data: unknown): ProductoBackend[] {
 }
 
 /**
- * Fetch de productos, categorías, marcas y convenios del catálogo.
+ * Fetch de productos, categorías y marcas del catálogo.
  * Con sort=para_vos pide 100 ítems para filtrar por gustos en el cliente.
  */
 export function useCatalogoFetch(
@@ -39,7 +38,6 @@ export function useCatalogoFetch(
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [, setTotalPages] = useState(1)
-  const [convenios, setConvenios] = useState<CatalogConvenio[]>([])
   const paraVos = sort === 'para_vos'
   const pageSize = paraVos ? PARA_VOS_FETCH_SIZE : PAGE_SIZE
 
@@ -96,12 +94,9 @@ export function useCatalogoFetch(
       const ms = data?.data ?? data ?? []
       setMarcas(Array.isArray(ms) ? ms as CatalogMarca[] : [])
     }).catch(() => toast({ message: 'Error al cargar marcas', type: 'error' }))
-    convenioService.getPublicos()
-      .then((r) => setConvenios(listaConvenios(r) as CatalogConvenio[]))
-      .catch(() => toast({ message: 'Error al cargar convenios', type: 'error' }))
   }, [toast])
 
   const retry = useCallback(() => fetchProducts(page), [fetchProducts, page])
 
-  return { products, categories, marcas, loading, error, retry, convenios }
+  return { products, categories, marcas, loading, error, retry }
 }

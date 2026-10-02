@@ -41,8 +41,6 @@ export default function CheckoutPage() {
   }, [estado])
 
   const {
-    validarGiftCard,
-    validarCupon,
     handlePagar,
     handleSinpeWhatsApp,
     handleSubirComprobante,
@@ -55,6 +53,7 @@ export default function CheckoutPage() {
     notas: form.notas,
     telefono: form.telefono,
     direccion: form.direccion,
+    direccionPedido: form.direccionPedido,
     guestEmail: form.guestEmail,
     guestPhone: form.guestPhone,
     sinpeNombre: form.sinpeNombre,
@@ -147,8 +146,6 @@ export default function CheckoutPage() {
       maxIntentos={maxIntentos}
       errorBannerRef={errorBannerRef}
       toWhatsAppMessage={toWhatsAppMessage}
-      validarGiftCard={validarGiftCard}
-      validarCupon={validarCupon}
       onPagar={handlePagar}
     />
   )

@@ -43,6 +43,7 @@ const WishlistPage = lazy(() => import('@/pages/WishlistPage'))
 
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
+const RecuperarContrasenaPage = lazy(() => import('@/pages/auth/recuperar/RecuperarContrasenaPage'))
 const NosotrosPage = lazy(() => import('@/pages/NosotrosPage'))
 const AyudaPage = lazy(() => import('@/pages/AyudaPage'))
 const ContactoPage = lazy(() => import('@/pages/ContactoPage'))
@@ -75,6 +76,7 @@ const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const RecuperarCarritoPage = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const SinConexionPage = lazy(() => import('@/pages/SinConexionPage'))
 const AdminSolicitudesServicio = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
 const AdminSolicitudesGarantia = lazy(() => import('@/pages/admin/AdminSolicitudesGarantia'))
 const AdminEmpresas = lazy(() => import('@/pages/admin/AdminEmpresas'))
@@ -90,6 +92,7 @@ const AdminCotizaciones = lazy(() => import('@/pages/admin/AdminCotizaciones'))
 const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
 const CotizacionPublicaPage = lazy(() => import('@/pages/CotizacionPublicaPage'))
 const EncargoPublicPage = lazy(() => import('@/pages/EncargoPublicPage'))
+const SeguimientoPedidoPage = lazy(() => import('@/pages/SeguimientoPedidoPage'))
 const AdminEncargos = lazy(() => import('@/pages/admin/AdminEncargos'))
 const AdminRecolecciones = lazy(() => import('@/pages/admin/AdminRecolecciones'))
 const AdminPayouts = lazy(() => import('@/pages/admin/AdminPayouts'))
@@ -186,6 +189,7 @@ export default function AppRoutes() {
           <Route path="/registro" element={<RegisterPage />} />
         </>
       )}
+      <Route path="/recuperar-contrasena" element={<RecuperarContrasenaPage />} />
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
       <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
@@ -204,6 +208,7 @@ export default function AppRoutes() {
       <Route path="/recuperar-carrito/:token" element={<RecuperarCarritoPage />} />
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
       <Route path="/encargo/:token" element={<EncargoPublicPage />} />
+      <Route path="/seguimiento/:token" element={<SeguimientoPedidoPage />} />
       <Route path="/servicios" element={<ServiciosHotPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
@@ -340,6 +345,7 @@ export default function AppRoutes() {
         <Route path="checkout/exito" element={<TiendaSuccessPage />} />
       </Route>
       <Route path="/404" element={<NotFoundPage />} />
+      <Route path="/sin-conexion" element={<SinConexionPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

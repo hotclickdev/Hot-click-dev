@@ -124,6 +124,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/public/encargos").permitAll()
             .requestMatchers(GET,  "/api/public/encargos/**").permitAll()
             .requestMatchers(POST, "/api/public/encargos/*/checkout").permitAll()
+            // Seguimiento de pedido sin cuenta — solo lectura por token aleatorio (nunca por id)
+            .requestMatchers(GET,  "/api/public/pedidos/seguimiento/*").permitAll()
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -254,6 +256,7 @@ final class SecurityAuthorizationRules {
                 "/ayuda", "/registro-empresa/activar-plan",
                 "/pos/pago", "/pos/pago/**",
                 "/recuperar-carrito", "/recuperar-carrito/**",
+                "/seguimiento/*",
                 "/servicios", "/servicios/**",
                 "/admin/empresas", "/admin/empresas/**",
                 "/admin/equipo", "/admin/aprobaciones",

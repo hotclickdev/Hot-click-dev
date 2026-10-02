@@ -1,84 +1,55 @@
-import { useState, useEffect, type MouseEvent } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
+import Spinner from '@/components/ui/Spinner'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
 import { blogService } from '@/services/blogService'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import TextoFlecha from '@/components/ui/TextoFlecha'
+import { IcoBandeja } from './perfil/cuenta/iconosCuenta'
+import { IcoSrv } from './servicios/IcoSrv'
+import { fechaEntrada, listaEntradas, metaEntrada, urlEntrada, type EntradaBlog } from './blog/blogHelpers'
 
-export type EntradaBlog = {
-  id?: number | string
-  slug?: string
-  titulo?: string
-  resumen?: string
-  imagenUrl?: string | null
-  fechaPublicacion?: string | null
-  fechaCreacion?: string | null
-  contenido?: string
-}
+export type { EntradaBlog } from './blog/blogHelpers'
 
-function fmtDate(d: string | number | Date | null | undefined) {
-  if (!d) return ''
-  return new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' })
-}
+const META = 'font-mono text-[11px] font-medium text-hc-n-500'
 
-function listaEntradas(data: unknown): EntradaBlog[] {
-  if (data && typeof data === 'object' && 'data' in data) {
-    const inner = (data as { data: unknown }).data
-    if (Array.isArray(inner)) return inner as EntradaBlog[]
-  }
-  return []
-}
-
-function CardArticulo({ e, i }: { e: EntradaBlog; i: number }) {
+/** Artículo destacado: foto de 190, fecha y lectura, título, resumen y "Leer artículo" (Figma `54:2162`). */
+function Destacado({ e }: { e: EntradaBlog }) {
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.45, delay: i * 0.06 }}
-      style={{
-        background: 'var(--hc-surface)',
-        border: '1px solid var(--hc-border)',
-        borderRadius: 16,
-        overflow: 'hidden',
-        display: 'flex', flexDirection: 'column',
-        boxShadow: '0 2px 12px var(--hc-shadow)',
-        transition: 'box-shadow 0.2s, transform 0.2s',
-      }}
-      onMouseEnter={(el: MouseEvent<HTMLElement>) => { el.currentTarget.style.boxShadow = '0 8px 32px var(--hc-shadow)'; el.currentTarget.style.transform = 'translateY(-2px)' }}
-      onMouseLeave={(el: MouseEvent<HTMLElement>) => { el.currentTarget.style.boxShadow = '0 2px 12px var(--hc-shadow)'; el.currentTarget.style.transform = 'none' }}
-    >
-      {e.imagenUrl && (
-        <div style={{ height: 180, overflow: 'hidden' }}>
-          <img src={e.imagenUrl} alt={e.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-      )}
-      <div style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <p style={{ fontSize: 11, color: 'var(--hc-muted)', marginBottom: 8, margin: '0 0 8px' }}>
-          {fmtDate(e.fechaPublicacion)}
-        </p>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--hc-text)', margin: '0 0 10px', lineHeight: 1.35 }}>
-          {e.titulo}
-        </h2>
-        {e.resumen && (
-          <p style={{ fontSize: 13, color: 'var(--hc-muted)', lineHeight: 1.6, flex: 1, margin: '0 0 16px' }}>
-            {e.resumen}
-          </p>
-        )}
-        <Link to={`/blog/${e.slug || e.id}`} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          fontSize: 13, fontWeight: 600, color: 'var(--hc-accent)',
-          textDecoration: 'none',
-        }}>
-          <TextoFlecha>Leer más</TextoFlecha>
-        </Link>
-      </div>
-    </motion.article>
+    <Link to={urlEntrada(e)} className="flex flex-col overflow-hidden rounded-[14px] border border-hc-n-200 bg-hc-n-0">
+      {e.imagenUrl
+        ? <img src={e.imagenUrl} alt="" className="h-[190px] w-full object-cover" />
+        : <span aria-hidden="true" className="h-[190px] w-full bg-hc-n-100" />}
+      <span className="flex flex-col gap-[6px] px-[14px] pb-[14px] pt-3">
+        <span className={META}>{metaEntrada(e)}</span>
+        <h2 className="font-display text-[19px] font-bold leading-6 text-hc-n-900 [overflow-wrap:anywhere] [text-wrap:wrap]">{e.titulo}</h2>
+        {e.resumen && <span className="text-[13px] leading-[18px] text-hc-n-600">{e.resumen}</span>}
+        <span className="flex items-center gap-1 text-[13px] font-semibold text-hc-blue-600">
+          Leer artículo
+          <IcoSrv nombre="blogFlecha" size={14} />
+        </span>
+      </span>
+    </Link>
   )
 }
 
+/** Fila de artículo: miniatura de 96, fecha, título y resumen (Figma `54:2173`). */
+function Fila({ e }: { e: EntradaBlog }) {
+  return (
+    <Link to={urlEntrada(e)} className="flex items-start gap-3">
+      {e.imagenUrl
+        ? <img src={e.imagenUrl} alt="" className="size-24 shrink-0 rounded-[12px] object-cover" loading="lazy" />
+        : <span aria-hidden="true" className="size-24 shrink-0 rounded-[12px] bg-hc-n-100" />}
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className={META}>{fechaEntrada(e)}</span>
+        <h2 className="font-display text-[14px] font-semibold leading-[19px] text-hc-n-900 [overflow-wrap:anywhere] [text-wrap:wrap]">{e.titulo}</h2>
+        {e.resumen && <span className="line-clamp-3 text-[12px] leading-4 text-hc-n-600">{e.resumen}</span>}
+      </span>
+    </Link>
+  )
+}
+
+/** Blog (Figma `54:2126`): artículo destacado y lista. Los temas y el buscador del frame necesitan backend (ver docs). */
 export default function BlogPage() {
   const [entradas, setEntradas] = useState<EntradaBlog[]>([])
   const [loading, setLoading] = useState(true)
@@ -107,8 +78,10 @@ export default function BlogPage() {
     })),
   } : null
 
+  const [destacada, ...resto] = entradas
+
   return (
-    <MainLayout>
+    <MainLayout variante="interna" titulo="Blog HotClick" esTituloPrincipal atras="/" barraInferior>
       <Helmet>
         <title>Blog HotClick — Consejos de tecnología y emprendimiento en Costa Rica</title>
         <meta name="description" content="Artículos y tips sobre tecnología, compras online y emprendimiento costarricense. El blog oficial de HotClick Marketplace." />
@@ -128,59 +101,37 @@ export default function BlogPage() {
           <script type="application/ld+json">{JSON.stringify(blogListJsonLd)}</script>
         )}
       </Helmet>
-      <div style={{ minHeight: '60vh', background: 'var(--hc-bg)' }}>
-        {/* Hero */}
-        <div style={{
-          background: 'linear-gradient(135deg, var(--hc-surface) 0%, var(--hc-surface-2) 100%)',
-          borderBottom: '1px solid var(--hc-border)',
-          padding: '56px 24px 48px',
-          textAlign: 'center',
-        }}>
-          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span style={{
-              display: 'inline-block', padding: '4px 14px', borderRadius: 100,
-              background: 'var(--hc-surface-3)', border: '1px solid var(--hc-border)',
-              fontSize: 12, fontWeight: 700, color: 'var(--hc-accent)',
-              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16,
-            }}>
-              Blog HotClick
-            </span>
-            <h1 style={{ fontSize: 36, fontWeight: 900, color: 'var(--hc-text)', margin: '0 0 12px' }}>
-              Noticias y consejos
-            </h1>
-            <p style={{ fontSize: 16, color: 'var(--hc-muted)', maxWidth: 480, margin: '0 auto' }}>
-              Tips de tecnología, novedades de HotClick y más.
-            </p>
-          </motion.div>
-        </div>
 
-        {/* Contenido */}
-        <div className="max-w-7xl mx-auto px-5 sm:px-8" style={{ paddingTop: 48, paddingBottom: 64 }}>
-          {loading && (
-            <div style={{ textAlign: 'center', padding: 80, color: 'var(--hc-muted)' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--hc-border)', borderTopColor: 'var(--hc-accent)', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-              Cargando artículos...
-            </div>
-          )}
-          {!loading && entradas.length === 0 && (
-            <div style={{ textAlign: 'center', padding: 80 }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--hc-muted)', opacity: 0.4 }}>
-                <TrustGlyph tipo="lista" className="w-12 h-12" />
+      <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[720px]">
+        <h1 className="hidden lg:block lg:pt-8 lg:font-display lg:text-[28px] lg:font-bold lg:text-hc-n-900">Blog HotClick</h1>
+        <p className="px-4 pb-1 pt-4 text-[13px] leading-[18px] text-hc-n-600 lg:px-0">
+          Ideas para comprar mejor y conocer a los emprendedores de Costa Rica.
+        </p>
+
+        {loading && <div className="flex justify-center py-20"><Spinner /></div>}
+
+        {!loading && entradas.length === 0 && (
+          <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-240px)] lg:rounded-[16px]">
+            <EstadoVacio
+              tono="azul"
+              espaciado="cuenta"
+              icono={<IcoBandeja size={28} />}
+              titulo="Próximamente"
+              texto="Estamos preparando contenido para vos."
+            />
+          </div>
+        )}
+
+        {!loading && destacada && (
+          <>
+            <div className="px-4 pb-2 pt-3 lg:px-0"><Destacado e={destacada} /></div>
+            {resto.length > 0 && (
+              <div className="flex flex-col gap-3 px-4 pb-6 pt-3 lg:px-0">
+                {resto.map((e) => <Fila key={e.id ?? e.slug} e={e} />)}
               </div>
-              <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--hc-text)', margin: 0 }}>Próximamente</p>
-              <p style={{ fontSize: 14, color: 'var(--hc-muted)', marginTop: 8 }}>Estamos preparando contenido para vos.</p>
-            </div>
-          )}
-          {!loading && entradas.length > 0 && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 24,
-            }}>
-              {entradas.map((e, i) => <CardArticulo key={e.id} e={e} i={i} />)}
-            </div>
-          )}
-        </div>
+            )}
+          </>
+        )}
       </div>
     </MainLayout>
   )

@@ -30,6 +30,9 @@ export type AiProductPayload = {
   instruccionesPersonalizacion?: string
   precio_etiqueta?: string
   precioEtiqueta?: string
+  /** Nombre del negocio, si el backend lo manda. */
+  empresa_nombre?: string
+  empresaNombre?: string
 }
 
 /** Producto canónico más el score de similitud del chat. */
@@ -80,6 +83,7 @@ export function normalizeProduct(p: AiProductPayload): AiChatProducto {
     precioPersonalizadoMax: max,
     instruccionesPersonalizacion: p.instrucciones_personalizacion ?? p.instruccionesPersonalizacion ?? null,
     precioEtiqueta,
+    empresaNombre:  p.empresa_nombre ?? p.empresaNombre ?? null,
   } as unknown as AiChatProducto
 }
 

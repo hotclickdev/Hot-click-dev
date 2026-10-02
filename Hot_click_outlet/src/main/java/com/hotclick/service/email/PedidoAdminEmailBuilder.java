@@ -3,6 +3,7 @@ package com.hotclick.service.email;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.utils.EmpresaNombre;
+import com.hotclick.utils.FormatoColones;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +26,7 @@ class PedidoAdminEmailBuilder {
                 rows.append("<tr>")
                     .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;font-size:13px;color:#14171C'>").append(prod).append("</td>")
                     .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;text-align:center;font-size:13px;color:#4D5560'>×").append(item.getCantidad()).append("</td>")
-                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:13px;font-weight:700;color:#14171C'>₡").append(EmailLayoutHelper.CRC.format(item.getSubtotalItem())).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:13px;font-weight:700;color:#14171C'>₡").append(FormatoColones.miles(item.getSubtotalItem())).append("</td>")
                     .append("</tr>");
             }
         }
@@ -73,7 +74,7 @@ class PedidoAdminEmailBuilder {
             + "</tr></thead><tbody>" + rows + "</tbody></table>"
 
             + "<div style='background:#F8F9FB;border-radius:10px;padding:14px 18px;text-align:right;margin-bottom:20px'>"
-            + "<span style=\"color:#14171C;font-weight:800;font-size:18px;font-family:" + EmailLayoutHelper.F_DISPLAY + "\">Total: ₡" + EmailLayoutHelper.CRC.format(pedido.getTotalPedido()) + "</span>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:18px;font-family:" + EmailLayoutHelper.F_DISPLAY + "\">Total: ₡" + FormatoColones.miles(pedido.getTotalPedido()) + "</span>"
             + "</div>"
 
             + notasStr
@@ -93,7 +94,7 @@ class PedidoAdminEmailBuilder {
                 rows.append("<tr>")
                     .append("<td style='padding:6px 0;border-bottom:1px solid #E4E7EC;font-size:12px;color:#14171C'>").append(prod).append("</td>")
                     .append("<td style='padding:6px 0;border-bottom:1px solid #E4E7EC;text-align:center;font-size:12px;color:#4D5560'>×").append(item.getCantidad()).append("</td>")
-                    .append("<td style='padding:6px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:12px;font-weight:700;color:#14171C'>₡").append(EmailLayoutHelper.CRC.format(item.getSubtotalItem())).append("</td>")
+                    .append("<td style='padding:6px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:12px;font-weight:700;color:#14171C'>₡").append(FormatoColones.miles(item.getSubtotalItem())).append("</td>")
                     .append("</tr>");
             }
         }
@@ -112,7 +113,7 @@ class PedidoAdminEmailBuilder {
             + "<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>"
             + "<tbody>" + rows + "</tbody></table>"
             + "<div style='background:#F8F9FB;border-radius:10px;padding:12px 16px;text-align:right;margin-bottom:20px'>"
-            + "<span style=\"color:#14171C;font-weight:800;font-size:16px;font-family:" + EmailLayoutHelper.F_DISPLAY + "\">Total: ₡" + EmailLayoutHelper.CRC.format(pedido.getTotalPedido()) + "</span>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:16px;font-family:" + EmailLayoutHelper.F_DISPLAY + "\">Total: ₡" + FormatoColones.miles(pedido.getTotalPedido()) + "</span>"
             + "</div>"
             + (pedido.getNotas() != null && !pedido.getNotas().isBlank()
                 ? "<p style='font-size:12px;color:#4D5560;margin:0 0 20px'><strong>Notas:</strong> " + layout.esc(pedido.getNotas()) + "</p>"

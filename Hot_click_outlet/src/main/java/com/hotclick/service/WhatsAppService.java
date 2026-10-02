@@ -6,6 +6,7 @@ import com.hotclick.service.whatsapp.WaPlantilla;
 import com.hotclick.service.whatsapp.WhatsAppHelpers;
 import com.hotclick.service.whatsapp.WhatsAppMessageSender;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.FormatoColones;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,7 @@ public class WhatsAppService {
         Map<String, String> ctx = new LinkedHashMap<>();
         ctx.put("nombre",       u.getNombre());
         ctx.put("numeroPedido", pedido.getNumeroPedido());
-        ctx.put("total",        WhatsAppHelpers.CRC.format(pedido.getTotalPedido()));
+        ctx.put("total",        FormatoColones.miles(pedido.getTotalPedido()));
         ctx.put("productos",    WhatsAppHelpers.resumirProductos(pedido.getItems()));
         ctx.put("segmento",     WhatsAppHelpers.segmento(u));
 

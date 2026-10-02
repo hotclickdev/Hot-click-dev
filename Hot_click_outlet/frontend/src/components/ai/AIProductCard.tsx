@@ -4,6 +4,7 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import { getOptimizedUrl } from '@/utils/imageUtils'
 import type { Producto } from '@/types/producto'
 import { etiquetaPrecioChat, requiereFichaEncargo } from './chatProductoPrecio'
+import { formatPrice } from '@/utils/format'
 
 type ProductoTarjetaAi = Producto & {
   ratingPromedio?: number | string | null
@@ -84,7 +85,7 @@ export default function AIProductCard({
             </span>
             {enOferta && (
               <span className="text-xs line-through" style={{ color: '#9CA3AF' }}>
-                ₡{new Intl.NumberFormat('es-CR').format(producto.precio)}
+                {formatPrice(producto.precio)}
               </span>
             )}
           </div>

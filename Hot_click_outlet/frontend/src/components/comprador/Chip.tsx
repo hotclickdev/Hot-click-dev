@@ -19,7 +19,7 @@ const ESTILOS: Record<ChipVariante, string> = {
 
 /** Chip de categoría o de consulta sugerida al asistente (Figma `5:44`). */
 export default function Chip({ texto, variante = 'categoria', to, onClick, className = '' }: ChipProps) {
-  const clases = `flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium ${ESTILOS[variante]} ${className}`
+  const clases = `flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium leading-[normal] ${ESTILOS[variante]} ${className}`
   const contenido = (
     <>
       {variante === 'asistente' && <IconoFigma src={ICONOS_COMPRADOR.chipAsistente} size={14} />}

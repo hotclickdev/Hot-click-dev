@@ -5,11 +5,10 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.TestimonioRepository;
 import com.hotclick.utils.EmpresaNombre;
+import com.hotclick.utils.FormatoColones;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.text.NumberFormat;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -97,8 +96,7 @@ public class SpaSeoSupport {
             ? p.getDescripcionCorta()
             : nombre;
         if (base.length() > 130) base = base.substring(0, 127) + "...";
-        String precio = NumberFormat.getInstance(Locale.forLanguageTag("es-CR"))
-            .format(p.getPrecioVenta());
+        String precio = FormatoColones.miles(p.getPrecioVenta());
         return base + " – ₡" + precio + " | Envío a todo Costa Rica.";
     }
 

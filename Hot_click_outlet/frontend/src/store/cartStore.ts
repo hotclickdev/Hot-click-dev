@@ -4,6 +4,7 @@ import { analytics } from '@/utils/analytics'
 import type { ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
+import { formatPrice } from '@/utils/format'
 
 type ProductoConExtras = Producto & {
   tallaSeleccionada?: string
@@ -113,10 +114,10 @@ const useCartStore = create<CartState>()(
         const lines = items.map((i) => {
           const talla = i.tallaSeleccionada || i.personalizacion?.tallaSeleccionada
           const pers = i.personalizacion ? ' [personalizado]' : ''
-          return `  • ${i.nombre ?? i.nombreProducto}${talla ? ` (Talla ${talla})` : ''}${pers} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
+          return `  • ${i.nombre ?? i.nombreProducto}${talla ? ` (Talla ${talla})` : ''}${pers} x${i.cantidad} — ${formatPrice((i.precio ?? i.precioVenta ?? 0) * i.cantidad)}`
         })
         const detalle = items.length
-          ? `${lines.join('\n')}\n\nTotal: ₡${total().toLocaleString('es-CR')}\n\n`
+          ? `${lines.join('\n')}\n\nTotal: ${formatPrice(total())}\n\n`
           : ''
         return encodeURIComponent(
           `Hola HotClick, consulto sobre este pedido:\n\n${detalle}¿Me ayudan con una duda?`

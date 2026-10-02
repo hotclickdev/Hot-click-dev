@@ -94,17 +94,16 @@ export default function TilopayCardForm({
         </div>
       )}
 
-      <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
+      <p className="text-sm text-hc-muted">
         {t('checkout.tilopayAmount', { amount: formatPrice(monto) })}
       </p>
 
       <form
-        className="space-y-3 rounded-xl p-4"
-        style={{ background: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}
+        className="space-y-3 rounded-xl p-4 border border-hc-border bg-hc-bg"
         onSubmit={(e) => { e.preventDefault(); void onPagar() }}
       >
         <div className="space-y-1">
-          <label htmlFor="tlpy_payment_method" className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+          <label htmlFor="tlpy_payment_method" className="text-xs text-hc-muted">
             {t('checkout.tilopayMethod')}
           </label>
           <select
@@ -116,7 +115,7 @@ export default function TilopayCardForm({
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="tlpy_saved_cards" className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+          <label htmlFor="tlpy_saved_cards" className="text-xs text-hc-muted">
             {t('checkout.tilopaySavedCards')}
           </label>
           <select
@@ -128,7 +127,7 @@ export default function TilopayCardForm({
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="tlpy_cc_number" className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+          <label htmlFor="tlpy_cc_number" className="text-xs text-hc-muted">
             {t('checkout.tilopayCardNumber')}
           </label>
           <input
@@ -144,7 +143,7 @@ export default function TilopayCardForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label htmlFor="tlpy_cc_expiration_date" className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            <label htmlFor="tlpy_cc_expiration_date" className="text-xs text-hc-muted">
               {t('checkout.tilopayExpiry')}
             </label>
             <input
@@ -158,7 +157,7 @@ export default function TilopayCardForm({
             />
           </div>
           <div className="space-y-1">
-            <label htmlFor="tlpy_cvv" className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            <label htmlFor="tlpy_cvv" className="text-xs text-hc-muted">
               {t('checkout.tilopayCvv')}
             </label>
             <input
@@ -193,8 +192,7 @@ export default function TilopayCardForm({
         <button
           type="button"
           onClick={onVolver}
-          className="w-full min-h-11 text-sm font-medium transition-opacity hover:opacity-80"
-          style={{ color: 'var(--hc-muted)' }}
+          className="w-full min-h-11 text-sm font-medium transition-opacity hover:opacity-80 text-hc-muted"
         >
           {t('checkout.tilopayChangeMethod')}
         </button>

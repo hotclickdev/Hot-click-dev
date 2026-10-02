@@ -73,3 +73,14 @@ describe('busquedasRelacionadas', () => {
     expect(busquedasRelacionadas('sala', catalogo.slice(0, 2))).toEqual(['hogar', 'sofá', 'plazas', 'sillón'])
   })
 })
+
+describe('chipsEntendi: marca y stock', () => {
+  it('suma un chip por marca filtrada y el de solo con stock', () => {
+    const chips = chipsEntendi({
+      search: '', categoriaNombre: null, priceMin: '', priceMax: '35000', extra: FILTROS_EXTRA_VACIOS,
+      marcas: [{ id: '7', nombre: 'Sony' }], soloConStock: true,
+    })
+    expect(chips.map((c) => c.tipo)).toEqual(['precio', 'marca', 'stock'])
+    expect(chips[1]).toMatchObject({ clave: 'marca-7', valor: '7', etiqueta: 'Sony' })
+  })
+})

@@ -77,11 +77,6 @@ export type OpcionEnvio = {
   needsAddress: boolean
 }
 
-export function formatPhone(v: string): string {
-  const d = v.replace(/\D/g, '').slice(0, 8)
-  return d.length >= 5 ? `${d.slice(0, 4)}-${d.slice(4)}` : d
-}
-
 /**
  * Retiro en tienda solo si el carrito entero es de una bodega que lo permite.
  */
@@ -140,24 +135,8 @@ export function bodegaRetiroDePaquete(paquete: PaqueteCheckout): BodegaRetiro | 
 }
 
 export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] {
+  // Orden del Figma (29:1248): normal, rápido, encomienda y, si la tienda lo permite, retiro al final.
   return [
-    ...(bodegaRetiro ? [{
-      value: 'RETIRO_EN_TIENDA',
-      label: `Retiro en ${bodegaRetiro.nombre}`,
-      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
-      precio: 0,
-      badge: null,
-      needsAddress: false,
-    }] : []),
-    {
-      value: 'ENCOMIENDA_PROPIA',
-      label: 'Tu encomienda preferida',
-      sub: 'Lo dejamos en el punto de tu mensajero o encomienda favorita — el costo lo cobra la empresa de transporte al recibir',
-      precio: 0,
-      varia: true,
-      badge: null,
-      needsAddress: true,
-    },
     {
       value: 'ENVIO_NORMAL_GAM',
       label: 'Envío Normal — GAM',
@@ -183,6 +162,23 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
       badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
       needsAddress: true,
     },
+    {
+      value: 'ENCOMIENDA_PROPIA',
+      label: 'Tu encomienda preferida',
+      sub: 'Lo dejamos en el punto de tu mensajero o encomienda favorita — el costo lo cobra la empresa de transporte al recibir',
+      precio: 0,
+      varia: true,
+      badge: null,
+      needsAddress: true,
+    },
+    ...(bodegaRetiro ? [{
+      value: 'RETIRO_EN_TIENDA',
+      label: `Retiro en ${bodegaRetiro.nombre}`,
+      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
+      precio: 0,
+      badge: null,
+      needsAddress: false,
+    }] : []),
   ]
 }
 

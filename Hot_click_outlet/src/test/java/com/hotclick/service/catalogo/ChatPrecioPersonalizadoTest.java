@@ -26,9 +26,7 @@ class ChatPrecioPersonalizadoTest {
     void rango_desdeHasta() {
         String etiqueta = ChatPrecioPersonalizado.etiqueta(
             true, "RANGO", 1, null, 15000, 40000);
-        assertThat(etiqueta).contains("Desde");
-        assertThat(etiqueta).contains("15");
-        assertThat(etiqueta).contains("40");
+        assertThat(etiqueta).isEqualTo("Desde ₡15.000 hasta ₡40.000");
     }
 
     @Test

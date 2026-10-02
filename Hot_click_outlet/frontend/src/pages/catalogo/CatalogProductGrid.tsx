@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
-import ProductCard from './catalogoProductCard'
+import ProductCard from '@/components/comprador/ProductCard'
+import { CLASE_GRILLA_TARJETAS } from './catalogoGrilla'
 import CategoryRowsView from './CategoryRowsView'
 import AsistenteEnGrilla from './AsistenteEnGrilla'
 import SinResultados from './SinResultados'
@@ -190,28 +191,13 @@ function CatalogGridPagination({
 
 }
 
-
-
 function CatalogFlatGrid({
-
-  animKey, search, filtered, filteredSlice, onQuickView,
-
+  animKey, search, filteredSlice,
 }: {
-
   animKey: string
-
   search: string
-
-  filtered: Producto[]
-
   filteredSlice: Producto[]
-
-  onQuickView: (product: Producto) => void
-
 }) {
-
-  const { t } = useTranslation()
-
   return (
 
     <AnimatePresence mode="wait">
@@ -226,22 +212,12 @@ function CatalogFlatGrid({
 
       >
 
-        {search && (
-
-          <p className="text-xs mb-3 font-medium" style={{ color: 'var(--hc-muted)' }}>
-
-            {t('products.resultsFor', { count: filtered.length, q: search })}
-
-          </p>
-
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className={CLASE_GRILLA_TARJETAS}>
 
           {filteredSlice.map((product, i) => (
             <Fragment key={product.id}>
-              <ProductCard product={product} priority={i < 6} index={i} onQuickView={onQuickView} />
-              {search && i === POSICION_ASISTENTE && <AsistenteEnGrilla consulta={search} />}
+              <ProductCard product={product} priority={i < 6} />
+              {search && i === POSICION_ASISTENTE && <AsistenteEnGrilla consulta={search} variante="tarjeta" />}
             </Fragment>
           ))}
 
@@ -259,8 +235,8 @@ function CatalogFlatGrid({
 
 function cuerpoCatalogo({
   shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
-  animKey, search, filteredSlice, onQuickView,
-  products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, page,
+  animKey, search, filteredSlice,
+  products, categories, onVerMas, page,
   needsGustos,
 }: {
   shouldRender: boolean
@@ -272,12 +248,9 @@ function cuerpoCatalogo({
   animKey: string
   search: string
   filteredSlice: Producto[]
-  onQuickView: (product: Producto) => void
   products: Producto[]
   categories: CatalogCategoria[]
-  convenioMarcaNames: Set<string>
   onVerMas: (catId: unknown) => void
-  onVerEmprendimientos: () => void
   page: number
   needsGustos?: boolean
 }) {
@@ -305,7 +278,7 @@ function cuerpoCatalogo({
 
         animKey={animKey} search={search}
 
-        filtered={filtered} filteredSlice={filteredSlice} onQuickView={onQuickView}
+        filteredSlice={filteredSlice}
 
       />
 
@@ -321,13 +294,9 @@ function cuerpoCatalogo({
 
       categories={categories}
 
-      convenioMarcaNames={convenioMarcaNames}
-
       onVerMas={onVerMas}
 
-      onVerEmprendimientos={onVerEmprendimientos}
-
-      onQuickView={onQuickView}
+     
 
       page={page}
 
@@ -343,8 +312,8 @@ export default function CatalogProductGrid({
   gridRef, shouldRender, loading,
   filtered, filteredSlice, filteredPages, filterViewPage, onPageChange,
   hasFilters, onClearFilters, flatGrid, animKey, search,
-  products, categories, convenioMarcaNames,
-  onVerMas, onVerEmprendimientos, onQuickView, page,
+  products, categories,
+  onVerMas, page,
   needsGustos = false,
 }: {
   gridRef: RefObject<Element | null>
@@ -362,10 +331,7 @@ export default function CatalogProductGrid({
   search: string
   products: Producto[]
   categories: CatalogCategoria[]
-  convenioMarcaNames: Set<string>
   onVerMas: (catId: unknown) => void
-  onVerEmprendimientos: () => void
-  onQuickView: (product: Producto) => void
   page: number
   needsGustos?: boolean
 }) {
@@ -373,8 +339,8 @@ export default function CatalogProductGrid({
     <div ref={gridRef as RefObject<HTMLDivElement>}>
       {cuerpoCatalogo({
         shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
-        animKey, search, filteredSlice, onQuickView,
-        products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, page,
+        animKey, search, filteredSlice,
+        products, categories, onVerMas, page,
         needsGustos,
       })}
       {filteredPages > 1 && flatGrid && (

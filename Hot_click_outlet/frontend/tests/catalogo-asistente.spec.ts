@@ -38,45 +38,41 @@ async function mockTecladoMovil(page: Page, height = 480, offsetTop = 120) {
 }
 
 test.describe('Catálogo — asistente IA', () => {
-  test('el FAB no usa el carácter de estrella', async ({ page }) => {
+  test('en móvil el asistente abre como hoja inferior, sin emojis ni estrellas', async ({ page }) => {
     await mockApis(page)
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await page.goto('/productos', { waitUntil: 'domcontentloaded' })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/productos?ai=1', { waitUntil: 'domcontentloaded' })
 
-    const fab = page.getByRole('button', { name: 'Abrir asistente IA' })
-    await expect(fab).toBeVisible()
-    await expect(fab.getByText('¿DUDAS?')).toBeVisible()
-    await expect(fab.getByText('✦')).toHaveCount(0)
-
-    await fab.click()
-    const panel = page.locator('.hc-ai-panel')
-    await expect(panel.getByText('Asistente HotClick')).toBeVisible()
+    const hoja = page.getByRole('dialog', { name: 'Asistente HotClick' })
+    await expect(hoja).toBeVisible()
+    await expect(hoja.getByText('Solo recomienda productos del catálogo')).toBeVisible()
     await expect(page.getByText('✦')).toHaveCount(0)
     await expect(page.getByText('🛍️')).toHaveCount(0)
     await expect(page.getByText('🎉')).toHaveCount(0)
+
+    // la hoja entra con una animación: se espera a que termine de subir
+    await expect.poll(async () => (await hoja.boundingBox())?.y).toBeCloseTo(82, 0)
+    const caja = await hoja.boundingBox()
+    expect((caja?.y ?? 0) + (caja?.height ?? 0)).toBeCloseTo(844, 0)
   })
 
-  test('con teclado simulado el header y el input quedan visibles', async ({ page }) => {
+  test('con teclado simulado la hoja y el campo quedan en el viewport visible', async ({ page }) => {
     const tecladoHeight = 480
     const tecladoOffset = 120
     await mockApis(page)
     await mockTecladoMovil(page, tecladoHeight, tecladoOffset)
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/productos', { waitUntil: 'domcontentloaded' })
+    await page.goto('/productos?ai=1', { waitUntil: 'domcontentloaded' })
 
-    await page.getByRole('button', { name: 'Abrir asistente IA' }).click()
-    const panel = page.locator('.hc-ai-panel')
-    await expect(panel.getByText('Asistente HotClick')).toBeVisible()
-    await expect(panel.getByPlaceholder('¿Qué más necesitás?')).toBeVisible()
+    const hoja = page.getByRole('dialog', { name: 'Asistente HotClick' })
+    await expect(hoja).toBeVisible()
+    await expect(hoja.getByPlaceholder('¿Qué estás buscando?')).toBeVisible()
 
-    const box = await panel.evaluate((el) => {
+    const box = await hoja.evaluate((el) => {
       const s = getComputedStyle(el)
       return { top: s.top, height: s.height }
     })
-    expect(box.top).toBe(`${tecladoOffset}px`)
-    expect(box.height).toBe(`${tecladoHeight}px`)
-
-    const bodyOverflow = await page.evaluate(() => document.body.style.overflow)
-    expect(bodyOverflow).toBe('hidden')
+    expect(box.top).toBe(`${tecladoOffset + 82}px`)
+    expect(box.height).toBe(`${tecladoHeight - 82}px`)
   })
 })

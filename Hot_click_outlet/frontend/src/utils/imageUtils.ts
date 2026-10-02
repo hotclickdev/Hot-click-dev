@@ -83,18 +83,3 @@ export function getOptimizedUrl(url?: string | null, { width, height, quality = 
   if (height) params.set('height', String(height))
   return `${renderUrl}?${params.toString()}`
 }
-
-/**
- * Genera un srcset usando el proxy para imágenes responsivas.
- *
- * @param url
- * @param widths  — ej. [400, 800, 1200]
- * @param quality
- */
-export function getSrcSet(url: string | null | undefined, widths: number[], quality = 82) {
-  if (!url) return ''
-  if (!PROXY_ENABLED && !TRANSFORMS_ENABLED) return ''
-  return widths
-    .map((w) => `${getOptimizedUrl(url, { width: w, quality })} ${w}w`)
-    .join(', ')
-}

@@ -12,18 +12,14 @@ import type { Producto } from '@/types/producto'
 import type {
   CatalogCategoria,
   CatalogCategoriaNodo,
-  CatalogConvenio,
   CatalogCounts,
   CatalogMarca,
-  CatalogViewMode,
 } from './catalogoTipos'
 
 type CatalogoDerivedArgs = {
   products: Producto[]
   categories: CatalogCategoria[]
   marcas: CatalogMarca[]
-  convenios: CatalogConvenio[]
-  viewMode: CatalogViewMode | string
   search: string
   category: string
   marcasFilter: Set<string>
@@ -43,15 +39,10 @@ type CatalogoDerivedArgs = {
  * Derivados del catálogo: filtros aplicados, conteos y flags de vista.
  */
 export function useCatalogoDerived({
-  products, categories, marcas, convenios, viewMode,
+  products, categories, marcas,
   search, category, marcasFilter, sort, gustosScores, gustosPerfil,
   filterStock, filterCond, filterTalla, priceMin, priceMax, filterViewPage, extras,
 }: CatalogoDerivedArgs) {
-  const convenioMarcaNames = useMemo(
-    () => new Set(convenios.map((c) => c.nombre?.toLowerCase()).filter((n): n is string => Boolean(n))),
-    [convenios],
-  )
-
   const categoryScope = useMemo(
     () => categoryScopeIds(category, categories),
     [category, categories],
@@ -61,7 +52,7 @@ export function useCatalogoDerived({
     const minPrice = priceMin !== '' ? Number(priceMin) : null
     const maxPrice = priceMax !== '' ? Number(priceMax) : null
     let lista = filtrarExtras(filtrarCatalogo({
-      products, viewMode, convenioMarcaNames, search, categoryScope,
+      products, search, categoryScope,
       marcasFilter, filterStock, filterCond, filterTalla, minPrice, maxPrice,
     }), extras)
     // "Según tus gustos": oculta lo no relacionado (no solo reordena).
@@ -77,7 +68,7 @@ export function useCatalogoDerived({
     return sortCatalogo(lista, sort, gustosScores, (p, scores) => rankScoreParaVos(p, scores))
   }, [
     products, search, categoryScope, marcasFilter, sort, gustosScores, gustosPerfil,
-    categories, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla, extras,
+    categories, filterStock, filterCond, priceMin, priceMax, filterTalla, extras,
   ])
 
   const productCountByCat = useMemo(() => {
@@ -144,7 +135,6 @@ export function useCatalogoDerived({
   const gridAnimKey = search + category + sort + filterStock + filterCond + priceMin + priceMax + [...marcasFilter].join()
 
   return {
-    convenioMarcaNames,
     filtered,
     productCountByCat,
     categoryTotalCount,

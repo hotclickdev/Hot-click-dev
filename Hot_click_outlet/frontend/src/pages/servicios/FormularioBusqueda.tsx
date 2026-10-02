@@ -1,55 +1,16 @@
-import { motion } from 'framer-motion'
-import PhoneField from '@/components/ui/PhoneField'
-import Field from './Field'
-import TurnstileCampo from '@/components/security/TurnstileCampo'
-import { MAX_FOTOS, inputStyle, type FormBusqueda, type FotoSolicitud, type TabBusqueda } from './serviciosHelpers'
-import CloseIcon from '@/components/ui/CloseIcon'
-import type { ChangeEvent, Dispatch, FormEvent, RefObject, SetStateAction } from 'react'
+import type { ChangeEvent, Dispatch, FormEvent, ReactNode, RefObject, SetStateAction } from 'react'
+import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
-import type { TFunction } from 'i18next'
-
-function CheckIcon({ className = 'w-14 h-14' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  )
-}
-
-function SendIcon({ className = 'w-4 h-4' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-      <polyline points="22,6 12,13 2,6" />
-    </svg>
-  )
-}
-
-function ClockIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="12 7 12 12 16 14" />
-    </svg>
-  )
-}
-
-function WarnIcon({ className = 'w-4 h-4' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  )
-}
+import TurnstileCampo from '@/components/security/TurnstileCampo'
+import CloseIcon from '@/components/ui/CloseIcon'
+import { IcoSrv } from './IcoSrv'
+import { CLASE_CAMPO, MAX_FOTOS, type FormBusqueda, type FotoSolicitud } from './serviciosHelpers'
 
 export type FormularioBusquedaProps = {
   token: string | null
   success: boolean
   setSuccess: Dispatch<SetStateAction<boolean>>
-  setTabBusqueda: Dispatch<SetStateAction<TabBusqueda>>
   form: FormBusqueda
   setForm: Dispatch<SetStateAction<FormBusqueda>>
   phone: string
@@ -62,138 +23,208 @@ export type FormularioBusquedaProps = {
   fileRef: RefObject<HTMLInputElement | null>
   handleEnviar: (e: FormEvent<HTMLFormElement>) => void
   handleFotoChange: (e: ChangeEvent<HTMLInputElement>) => void
-  t: TFunction
   etiquetaEnviar?: string
   descLabel?: string
   descPh?: string
+  fotosLabel?: string
   ocultarPresupuesto?: boolean
+  /** Barra "1 · Foto, 2 · Detalle, 3 · Contacto" de Figma `28:1486`; solo la búsqueda de producto la lleva. */
+  mostrarPasos?: boolean
+  /** Recuadro "Cómo sigue"; `null` lo oculta. Sin valor, el de la búsqueda de producto. */
+  nota?: ReactNode | null
   turnstileSiteKey?: string
   turnstileRef?: RefObject<TurnstileInstance | null>
   setTurnstileToken?: Dispatch<SetStateAction<string>>
   turnstileBloqueaSubmit?: boolean
 }
 
-/** Formulario de solicitud de búsqueda de producto (éxito o campos). */
+function Paso({ activo, texto }: { activo: boolean; texto: string }) {
+  return (
+    <span className={`rounded-full px-2 py-[3px] text-[11px] font-semibold leading-[normal] ${activo ? 'bg-hc-blue-600 text-hc-n-0' : 'bg-hc-n-100 text-hc-n-600'}`}>
+      {texto}
+    </span>
+  )
+}
+
+function Campo({ id, etiqueta, children }: { id?: string; etiqueta: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-[6px]">
+      <label htmlFor={id} className="text-[13px] font-semibold leading-[normal] text-hc-n-900">{etiqueta}</label>
+      {children}
+    </div>
+  )
+}
+
+function Enviado({ token, setSuccess }: Pick<FormularioBusquedaProps, 'token' | 'setSuccess'>) {
+  const { t } = useTranslation()
+  const clase = 'flex min-h-12 w-full items-center justify-center rounded-[12px] px-4 text-[15px] font-semibold'
+  return (
+    <section className="flex flex-col items-center gap-3 bg-hc-n-0 px-5 pb-8 pt-10 text-center leading-[normal]">
+      <span className="flex size-16 items-center justify-center rounded-full bg-hc-success-bg text-hc-success">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </span>
+      <h2 className="leading-[normal] font-display text-[20px] font-bold text-hc-n-900">{t('serviciosPage.successTitle')}</h2>
+      <p className="text-[14px] leading-5 text-hc-n-600">{t('serviciosPage.successSub2')}</p>
+      {token ? (
+        <Link to="/servicios?vista=solicitudes" className={`${clase} mt-2 bg-hc-red-500 text-hc-n-0`}>{t('serviciosPage.viewMine')}</Link>
+      ) : (
+        <button type="button" onClick={() => setSuccess(false)} className={`${clase} mt-2 bg-hc-red-500 text-hc-n-0`}>
+          {t('serviciosPage.newRequestBtn')}
+        </button>
+      )}
+    </section>
+  )
+}
+
+/** Formulario de solicitud de búsqueda de producto (Figma `28:1486`): foto, detalle, presupuesto, WhatsApp y envío. */
 export default function FormularioBusqueda({
-  token, success, setSuccess, setTabBusqueda, form, setForm, phone, setPhone,
-  fotos, setFotos, uploading, sending, error, fileRef, handleEnviar, handleFotoChange, t,
-  etiquetaEnviar, descLabel, descPh, ocultarPresupuesto = false,
+  token, success, setSuccess, form, setForm, phone, setPhone,
+  fotos, setFotos, uploading, sending, error, fileRef, handleEnviar, handleFotoChange,
+  etiquetaEnviar, descLabel, descPh, fotosLabel, ocultarPresupuesto = false, mostrarPasos = false, nota,
   turnstileSiteKey, turnstileRef, setTurnstileToken, turnstileBloqueaSubmit = false,
 }: FormularioBusquedaProps) {
-  const labelDesc = descLabel ?? t('serviciosPage.descLabelFull')
-  const placeholderDesc = descPh ?? t('serviciosPage.descPhFull')
-  const textoEnviar = etiquetaEnviar ?? t('serviciosPage.submit')
-  if (success) {
-    return (
-      <div className="text-center py-16 rounded-3xl"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-        <div className="mb-5 flex justify-center" style={{ color: 'var(--hc-accent)' }}>
-          <CheckIcon />
-        </div>
-        <h2 className="text-2xl font-black mb-2" style={{ color: 'var(--hc-text)' }}>
-          {t('serviciosPage.successTitle')}
-        </h2>
-        <p className="text-sm mb-8" style={{ color: 'var(--hc-muted)' }}>
-          {t('serviciosPage.successSub2')}
-        </p>
-        <button type="button" onClick={() => { setSuccess(false); setTabBusqueda(token ? 'mis-solicitudes' : 'solicitar') }}
-          className="px-8 py-3 rounded-2xl text-sm font-bold"
-          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          {token ? t('serviciosPage.viewMine') : t('serviciosPage.newRequestBtn')}
-        </button>
-      </div>
-    )
-  }
+  const { t } = useTranslation()
+  if (success) return <Enviado token={token} setSuccess={setSuccess} />
+
+  const textoNota = nota === undefined
+    ? t(token ? 'serviciosPage.form.comoSigueTexto' : 'serviciosPage.form.comoSigueTextoInvitado')
+    : nota
 
   return (
-    <form onSubmit={handleEnviar} className="rounded-3xl p-6 sm:p-8 space-y-6"
-      style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-      <Field label={labelDesc} required>
-        <textarea rows={4} placeholder={placeholderDesc}
-          value={form.descripcion}
-          onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
-          style={{ ...inputStyle, resize: 'none' }} />
-      </Field>
+    <form onSubmit={handleEnviar} className="flex flex-col leading-[normal]">
+      <div className="flex flex-col gap-[18px] px-4 pb-4 pt-[18px] lg:px-0">
+        {mostrarPasos && (
+          <div className="flex items-center gap-[6px]">
+            <Paso activo={fotos.length > 0} texto={t('serviciosPage.form.pasoFoto')} />
+            <Paso activo={form.descripcion.trim().length > 0} texto={t('serviciosPage.form.pasoDetalle')} />
+            <Paso activo={sending} texto={t('serviciosPage.form.pasoContacto')} />
+          </div>
+        )}
 
-      <Field label={t('serviciosPage.photosLabelFull')} hint="Máx. 3 · hasta 5 MB c/u">
-        <div className="flex flex-wrap gap-3">
-          {fotos.map((f, i) => (
-            <div key={i} className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0"
-              style={{ border: '1.5px solid var(--hc-border)' }}>
-              <img src={f.preview} alt="" className="w-full h-full object-cover" />
-              <button type="button" onClick={() => setFotos(p => p.filter((_, x) => x !== i))} aria-label="Quitar foto"
-                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center">
-                <CloseIcon className="w-3 h-3" />
+        <div className="flex flex-col gap-[6px]">
+          <p className="text-[13px] font-semibold text-hc-n-900">{fotosLabel ?? t('serviciosPage.form.fotoLabel')}</p>
+          <div className="flex items-center gap-[10px]">
+            {fotos.map((f, i) => (
+              <div key={f.preview} className="relative size-[76px] shrink-0">
+                <img src={f.preview} alt="" className="size-full rounded-[12px] object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setFotos((p) => p.filter((_, x) => x !== i))}
+                  aria-label={t('serviciosPage.form.quitarFoto')}
+                  className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-hc-n-900/70 text-hc-n-0"
+                >
+                  <CloseIcon className="size-3" />
+                </button>
+              </div>
+            ))}
+            {fotos.length < MAX_FOTOS && (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="flex size-[76px] shrink-0 flex-col items-center justify-center gap-1 rounded-[12px] border border-dashed border-hc-n-400 bg-hc-n-0"
+              >
+                {uploading ? (
+                  <span className="size-5 animate-spin rounded-full border-2 border-hc-n-200 border-t-hc-blue-600" />
+                ) : (
+                  <>
+                    <IcoSrv nombre="fotoCamara" size={20} />
+                    <span className="text-[11px] font-semibold text-hc-blue-600">{t('serviciosPage.photoBtn')}</span>
+                  </>
+                )}
               </button>
-            </div>
-          ))}
-          {fotos.length < MAX_FOTOS && (
-            <motion.button type="button" onClick={() => fileRef.current?.click()}
-              disabled={uploading} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-              className="w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-1.5 text-xs font-semibold flex-shrink-0"
-              style={{ border: '2px dashed var(--hc-border)', color: 'var(--hc-muted)' }}>
-              {uploading
-                ? <div className="w-5 h-5 rounded-full border-2 animate-spin"
-                    style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
-                : <><span className="text-3xl leading-none" style={{ color: 'var(--hc-accent)' }}>+</span><span>Foto</span></>
-              }
-            </motion.button>
-          )}
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFotoChange} />
         </div>
-        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFotoChange} />
-        <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: 'var(--hc-muted)' }}>
-          <ClockIcon /> Respuesta en menos de 24 horas
-        </p>
-      </Field>
 
-      {!ocultarPresupuesto && (
-        <Field label={t('serviciosPage.budgetLabelFull')} hint="Opcional">
-          <input type="text" placeholder={t('serviciosPage.budgetPhFull')}
-            value={form.presupuesto}
-            onChange={e => setForm(f => ({ ...f, presupuesto: e.target.value }))}
-            style={inputStyle} />
-        </Field>
-      )}
+        <Campo id="srv-descripcion" etiqueta={descLabel ?? t('serviciosPage.form.queBuscas')}>
+          <textarea
+            id="srv-descripcion"
+            rows={3}
+            placeholder={descPh ?? t('serviciosPage.form.queBuscasPh')}
+            value={form.descripcion}
+            onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
+            className={`${CLASE_CAMPO} min-h-[84px] resize-none`}
+          />
+        </Campo>
 
-      <PhoneField label="Número de teléfono" value={phone} onChange={setPhone} required hint="Te avisamos por WhatsApp" />
+        {!ocultarPresupuesto && (
+          <Campo id="srv-presupuesto" etiqueta={t('serviciosPage.form.presupuesto')}>
+            <input
+              id="srv-presupuesto"
+              type="text"
+              placeholder={t('serviciosPage.form.presupuestoPh')}
+              value={form.presupuesto}
+              onChange={(e) => setForm((f) => ({ ...f, presupuesto: e.target.value }))}
+              className={CLASE_CAMPO}
+            />
+          </Campo>
+        )}
 
-      {!token && (
-        <Field label="Tu nombre" hint="Opcional">
-          <input type="text" placeholder="Ej: María García"
-            value={form.nombreContacto}
-            onChange={e => setForm(f => ({ ...f, nombreContacto: e.target.value }))}
-            style={inputStyle} />
-        </Field>
-      )}
+        <Campo id="srv-whatsapp" etiqueta={t('serviciosPage.form.whatsapp')}>
+          <input
+            id="srv-whatsapp"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder={t('serviciosPage.form.whatsappPh')}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className={CLASE_CAMPO}
+          />
+        </Campo>
 
-      {error && (
-        <p className="text-sm px-4 py-3 rounded-2xl bg-red-500/10 text-red-400 font-medium flex items-center gap-2">
-          <WarnIcon /> {error}
-        </p>
-      )}
+        {!token && (
+          <Campo id="srv-nombre" etiqueta={t('serviciosPage.form.nombreOpcional')}>
+            <input
+              id="srv-nombre"
+              type="text"
+              placeholder={t('serviciosPage.form.nombrePh')}
+              value={form.nombreContacto}
+              onChange={(e) => setForm((f) => ({ ...f, nombreContacto: e.target.value }))}
+              className={CLASE_CAMPO}
+            />
+          </Campo>
+        )}
 
-      {turnstileSiteKey && turnstileRef && setTurnstileToken && (
-        <TurnstileCampo
-          siteKey={turnstileSiteKey}
-          turnstileRef={turnstileRef}
-          setTurnstileToken={setTurnstileToken}
-        />
-      )}
+        {textoNota && (
+          <div className="flex flex-col gap-1 rounded-[16px] bg-hc-n-100 p-4">
+            <p className="text-[13px] font-semibold text-hc-n-900">{t('serviciosPage.form.comoSigueTitulo')}</p>
+            <p className="text-[12px] leading-[17px] text-hc-n-600">{textoNota}</p>
+          </div>
+        )}
 
-      <motion.button type="submit" disabled={sending || uploading || turnstileBloqueaSubmit}
-        whileHover={{ scale: sending ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
-        className="w-full py-4 rounded-2xl font-black text-base disabled:opacity-50"
-        style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-        {sending
-          ? <span className="flex items-center justify-center gap-2">
-              <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+        {turnstileSiteKey && turnstileRef && setTurnstileToken && (
+          <TurnstileCampo siteKey={turnstileSiteKey} turnstileRef={turnstileRef} setTurnstileToken={setTurnstileToken} />
+        )}
+
+        {error && (
+          <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
+        )}
+      </div>
+
+      <div className="bg-hc-n-0 px-4 pb-6 pt-3 lg:rounded-[16px] lg:px-4">
+        <button
+          type="submit"
+          disabled={sending || uploading || turnstileBloqueaSubmit}
+          className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0 disabled:opacity-50"
+        >
+          {sending ? (
+            <>
+              <span className="size-4 animate-spin rounded-full border-2 border-hc-n-0/30 border-t-hc-n-0" />
               {t('serviciosPage.sending')}
-            </span>
-          : <span className="flex items-center justify-center gap-2">
-              <SendIcon /> {textoEnviar}
-            </span>
-        }
-      </motion.button>
+            </>
+          ) : (
+            <>
+              <IcoSrv nombre="enviarChat" size={18} />
+              {etiquetaEnviar ?? t('serviciosPage.submit')}
+            </>
+          )}
+        </button>
+      </div>
     </form>
   )
 }

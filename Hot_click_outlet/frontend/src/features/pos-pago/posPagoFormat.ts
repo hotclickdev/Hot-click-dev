@@ -1,7 +1,7 @@
-const fmtColones = new Intl.NumberFormat('es-CR')
+import { formatMiles } from '@/utils/format'
 
 export function formatColones(monto: number | undefined | null): string {
-  return fmtColones.format(Math.max(0, monto ?? 0))
+  return formatMiles(Math.max(0, monto ?? 0))
 }
 
 export function nombreItem(item: { nombre?: string; nombreProducto?: string }): string {
@@ -18,4 +18,9 @@ export function tituloYCodigo(nombre: string): { titulo: string; codigo: string 
   const match = nombre.match(/^(.*)\s*\(([^)]+)\)\s*$/)
   if (!match) return { titulo: nombre, codigo: null }
   return { titulo: match[1].trim(), codigo: match[2].trim() }
+}
+
+/** Número SINPE sin el prefijo del país (`+506 7019-6686` -> `7019-6686`), como en Figma. */
+export function sinpeNumeroVisible(numero: string | undefined | null): string {
+  return (numero ?? '').replace(/^\+?\s*506[\s-]*/, '').trim()
 }
