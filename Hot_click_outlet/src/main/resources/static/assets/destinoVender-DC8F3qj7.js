@@ -1,0 +1,1 @@
+import{It as e,kt as t}from"./index-t8umyYOy.js";var n=`/registro-empresa`,r=`/registrar-negocio`,i=t;function a({tokenVivo:t,rol:i,empresaId:a,planNombre:s}){return t?o(i,a)?e(i,s):r:n}function o(e,t){return e===`EMPRENDEDOR`||e===`ADMIN`?!0:!!t&&e!==`USUARIO_FINAL`}export{a as i,r as n,n as r,i as t};
