@@ -199,7 +199,7 @@ export default function ProfilePage() {
       {modales}
     </MainLayout>
   ) : (
-    <MainLayout variante="interna" titulo={titulo} atras="/perfil">
+    <MainLayout variante="interna" titulo={titulo} esTituloPrincipal atras="/perfil">
       {contenido}
       {modales}
     </MainLayout>

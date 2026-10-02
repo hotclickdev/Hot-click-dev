@@ -44,6 +44,7 @@ export default function WishlistPage() {
     <MainLayout
       variante="interna"
       titulo={t('favoritos.titulo')}
+      esTituloPrincipal
       atras="/perfil"
       barraInferior
       acciones={<span className="shrink-0 text-[13px] leading-[normal] text-hc-n-500">{cantidad}</span>}

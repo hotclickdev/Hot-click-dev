@@ -26,4 +26,10 @@ export type DatosBarraInterna = {
   atras?: DestinoAtras
   /** Contenido a la derecha del título (por ejemplo el contador "3 de 10" de Descubrí). */
   acciones?: ReactNode
+  /**
+   * El título de la barra es el único heading de la pantalla en móvil.
+   * En escritorio la barra no se dibuja (`lg:hidden`): el h1 de esa vista sigue en el contenido.
+   * Sin este flag el título queda en `<p>`, para no duplicar un h1 que la pantalla ya tiene.
+   */
+  esTituloPrincipal?: boolean
 }

@@ -5,11 +5,15 @@ import { ICONOS_COMPRADOR } from '../iconosComprador'
 import { puedeVolverAtras } from './headerHelpers'
 import type { DatosBarraInterna } from './tiposHeader'
 
+const CLASE_TITULO = 'min-w-0 flex-1 truncate font-display text-[17px] font-bold text-hc-n-900'
+/** Anula el tracking y el balance globales de `h1` para que el cambio de etiqueta no mueva el texto. */
+const CLASE_TITULO_PRINCIPAL = `${CLASE_TITULO} tracking-normal [text-wrap:nowrap]`
+
 /**
  * Barra superior de las pantallas internas en móvil: flecha atrás + título (Figma `28:1144`, `27:941`).
  * Sin destino explícito vuelve en el historial; si la pantalla se abrió directo, cae en el Home.
  */
-export default function BarraInterna({ titulo, atras, acciones }: DatosBarraInterna) {
+export default function BarraInterna({ titulo, atras, acciones, esTituloPrincipal }: DatosBarraInterna) {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
@@ -30,7 +34,9 @@ export default function BarraInterna({ titulo, atras, acciones }: DatosBarraInte
       >
         <IconoFigma src={ICONOS_COMPRADOR.barraAtras} size={22} />
       </button>
-      <p className="min-w-0 flex-1 truncate font-display text-[17px] font-bold text-hc-n-900">{titulo}</p>
+      {esTituloPrincipal
+        ? <h1 className={CLASE_TITULO_PRINCIPAL}>{titulo}</h1>
+        : <p className={CLASE_TITULO}>{titulo}</p>}
       {acciones}
     </div>
   )

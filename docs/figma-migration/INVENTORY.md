@@ -1,7 +1,7 @@
 # Inventario de migración Figma → frontend
 
 Fuente única de coordinación. Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`, página "Home de compra · prototipo" (`4:2`).
-Última actualización: 2026-10-02 (SYS/SHELL B5: Sin conexión `45:2264` pasa a PASS móvil; 37 PASS / 53 PARTIAL). Anterior: B4, aviso de cookies.
+Última actualización: 2026-10-02 (B6: `<h1>` de la barra interna donde ese texto es el título de la pantalla). El contador no cambia: 37 PASS / 53 PARTIAL. Anterior: B5, Sin conexión.
 
 ## Resumen
 
@@ -39,6 +39,7 @@ No hay frames de tablet. Desktop existe solo para: Home (9:171), Catálogo, Fich
 | SYS/SHELL, B2 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local). El WhatsApp de Home sigue en (318, 705) y el de desktop en margen 16. Sin barra inferior el `bottom` es 16 px, no 83. En `raiz` el spacer móvil es 155 px para que el pie legal no quede debajo del botón. Sigue PARTIAL lo que no tiene frame. Ver `SYS.md` |
 | SYS/SHELL, B4 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local). Aviso `45:1946` PASS móvil: tarjeta en x12 y560 366x205. Desktop sin frame no bloquea. Hoja `45:2166` sigue PASS. Inventario en ese momento: 36 PASS / 54 PARTIAL. Ver `SYS.md` |
 | SYS/SHELL, B5 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local). El FAB de WhatsApp no se monta en `/sin-conexion` ni en `/` cuando Home muestra `PantallaSinConexion` (`45:2264`). El Home con datos sigue en (318, 705). Inventario: 37 PASS / 53 PARTIAL. Ver `SYS.md` |
+| SYS/SHELL, B6 | `feat/figma/base` | Hecho el 2026-10-02 (un commit local). La barra interna (`28:1144`) es `<h1>` solo si ese texto es el título de la pantalla. Checkout móvil, QR, cotización, login y las vistas que ya tenían heading no cambian. Contador: 37 PASS / 53 PARTIAL. |
 
 ## Cómo leer la evidencia
 

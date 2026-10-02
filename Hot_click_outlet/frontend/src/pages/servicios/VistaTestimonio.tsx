@@ -3,6 +3,7 @@ import Spinner from '@/components/ui/Spinner'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { IcoCaja, IcoEstrella } from '../perfil/cuenta/iconosCuenta'
 import TestimonioCard from './TestimonioCard'
+import TituloVista from './TituloVista'
 import type { ProductoParaResena } from './serviciosHelpers'
 
 type VistaTestimonioProps = {
@@ -59,7 +60,7 @@ export default function VistaTestimonio({ token, volver, productosResenar, loadi
   return (
     <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
       <section className="flex flex-col gap-[6px] bg-hc-n-0 px-4 py-5 lg:mt-6 lg:rounded-[16px]">
-        <h1 className="leading-[normal] font-display text-[22px] font-bold text-hc-n-900">Contanos tu experiencia</h1>
+        <TituloVista>Contanos tu experiencia</TituloVista>
         <p className="text-[14px] leading-5 text-hc-n-600">Una opinión por producto. Tus comentarios ayudan a otros compradores.</p>
         <p className="mt-1 rounded-[12px] bg-hc-warning-bg px-[14px] py-3 text-[12px] leading-4 text-hc-warning">
           Al dejar tu opinión, HotClick te contactará con un beneficio especial para tu próxima compra.

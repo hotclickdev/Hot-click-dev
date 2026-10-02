@@ -158,7 +158,12 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
   }
 
   return (
-    <MainLayout variante="interna" titulo={TITULO_VISTA[vista]} atras={vista === 'inicio' ? '/' : volver}>
+    <MainLayout
+      variante="interna"
+      titulo={TITULO_VISTA[vista]}
+      esTituloPrincipal={vista !== 'inicio'}
+      atras={vista === 'inicio' ? '/' : volver}
+    >
       <Helmet>
         <title>Servicios HotClick — Búsqueda de productos y garantías en Costa Rica</title>
         <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HotClick en Costa Rica." />

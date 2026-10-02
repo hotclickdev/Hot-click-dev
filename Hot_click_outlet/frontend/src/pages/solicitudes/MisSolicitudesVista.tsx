@@ -190,6 +190,7 @@ export default function MisSolicitudesVista() {
     <MainLayout
       variante="interna"
       titulo={enDetalle ? t('solicitudes.detalle.titulo') : t('cuenta.menu.solicitudes')}
+      esTituloPrincipal
       atras={idSolicitud ? RUTA_LISTA : '/perfil'}
       barraInferior={!enDetalle}
       acciones={enDetalle && detalle ? <ChipSolicitud estado={detalle.estado} /> : undefined}

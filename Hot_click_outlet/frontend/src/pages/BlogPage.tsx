@@ -81,7 +81,7 @@ export default function BlogPage() {
   const [destacada, ...resto] = entradas
 
   return (
-    <MainLayout variante="interna" titulo="Blog HotClick" atras="/" barraInferior>
+    <MainLayout variante="interna" titulo="Blog HotClick" esTituloPrincipal atras="/" barraInferior>
       <Helmet>
         <title>Blog HotClick — Consejos de tecnología y emprendimiento en Costa Rica</title>
         <meta name="description" content="Artículos y tips sobre tecnología, compras online y emprendimiento costarricense. El blog oficial de HotClick Marketplace." />
@@ -103,7 +103,7 @@ export default function BlogPage() {
       </Helmet>
 
       <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[720px]">
-        <h1 className="sr-only lg:not-sr-only lg:pt-8 lg:font-display lg:text-[28px] lg:font-bold lg:text-hc-n-900">Blog HotClick</h1>
+        <h1 className="hidden lg:block lg:pt-8 lg:font-display lg:text-[28px] lg:font-bold lg:text-hc-n-900">Blog HotClick</h1>
         <p className="px-4 pb-1 pt-4 text-[13px] leading-[18px] text-hc-n-600 lg:px-0">
           Ideas para comprar mejor y conocer a los emprendedores de Costa Rica.
         </p>

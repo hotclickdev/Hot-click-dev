@@ -183,7 +183,7 @@ export default function CartPage() {
 
   if (esDesktop) {
     return (
-      <MainLayout variante="interna" titulo={t('cart.titulo', { count: unidades })} encabezadoEscritorio="carrito">
+      <MainLayout variante="interna" titulo={t('cart.titulo', { count: unidades })} esTituloPrincipal encabezadoEscritorio="carrito">
         <div className="mx-auto flex w-[calc(100%-4rem)] max-w-[1200px] flex-col gap-5 pb-16 pt-9">
           <h1 className="font-display text-[30px] font-bold leading-[normal] tracking-normal text-hc-n-900">{t('cart.tituloVacio')}</h1>
           <div className="flex items-start gap-8">
@@ -220,7 +220,7 @@ export default function CartPage() {
   }
 
   return (
-    <MainLayout variante="interna" titulo={t('cart.titulo', { count: unidades })} encabezadoEscritorio="compacto">
+    <MainLayout variante="interna" titulo={t('cart.titulo', { count: unidades })} esTituloPrincipal encabezadoEscritorio="compacto">
       <div className="flex flex-col gap-[14px] px-4 pb-[18px] pt-[14px]">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 leading-[normal]">

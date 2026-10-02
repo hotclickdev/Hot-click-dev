@@ -244,14 +244,14 @@ export default function DescubriPage() {
   ) : undefined
 
   return (
-    <MainLayout variante="interna" titulo={t('descubri.title')} acciones={contador}>
+    <MainLayout variante="interna" titulo={t('descubri.title')} esTituloPrincipal acciones={contador}>
       <Seo
         title={t('descubri.metaTitle')}
         description={t('descubri.metaDescription')}
         url="https://hotclick.lat/descubri"
       />
 
-      <h1 className="sr-only">{t('descubri.title')}</h1>
+      <h1 className="sr-only max-lg:hidden">{t('descubri.title')}</h1>
       <div className={enMazo ? 'min-h-[calc(100dvh-51px)] bg-hc-n-0' : 'mx-auto max-w-7xl px-4 pb-10 pt-5 sm:px-6 sm:pt-8'}>
         {status === 'loading' && <DescubriLoading />}
         {status === 'error' && <DescubriError onRetry={load} />}

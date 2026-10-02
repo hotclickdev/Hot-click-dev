@@ -1,4 +1,5 @@
 import FormularioBusqueda from './FormularioBusqueda'
+import TituloVista from './TituloVista'
 import type { FormularioBusquedaProps } from './FormularioBusqueda'
 
 const INCLUSIONES = [
@@ -19,7 +20,7 @@ export default function VistaDigitalizacion(props: FormularioBusquedaProps) {
   return (
     <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
       <section className="flex flex-col gap-3 bg-hc-n-0 px-4 py-5 lg:mt-6 lg:rounded-[16px]">
-        <h1 className="leading-[normal] font-display text-[22px] font-bold text-hc-n-900">Digitalizá tu inventario</h1>
+        <TituloVista>Digitalizá tu inventario</TituloVista>
         <p className="text-[14px] leading-5 text-hc-n-600">
           ¿Tu negocio no tiene un inventario digital o algunos productos no tienen código de barras? No hay problema.
           HOTCLICK puede ayudarte a digitalizar tu inventario directamente en tu local.

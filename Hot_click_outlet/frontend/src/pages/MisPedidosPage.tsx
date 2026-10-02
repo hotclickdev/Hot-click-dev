@@ -83,7 +83,7 @@ export default function MisPedidosPage() {
     : t('cuenta.menu.pedidos')
 
   return (
-    <MainLayout variante="interna" titulo={titulo} atras={numeroDetalle ? '/mis-pedidos' : '/perfil'} barraInferior={!numeroDetalle}>
+    <MainLayout variante="interna" titulo={titulo} esTituloPrincipal atras={numeroDetalle ? '/mis-pedidos' : '/perfil'} barraInferior={!numeroDetalle}>
       {cuerpo}
     </MainLayout>
   )

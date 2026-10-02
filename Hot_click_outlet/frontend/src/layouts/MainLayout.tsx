@@ -47,7 +47,7 @@ type OpcionesComunes = {
 export type MainLayoutProps = OpcionesComunes &
   (
     | { variante?: 'raiz' | 'propia' }
-    | { variante: 'interna'; titulo: string; atras?: DestinoAtras; acciones?: ReactNode }
+    | { variante: 'interna'; titulo: string; atras?: DestinoAtras; acciones?: ReactNode; esTituloPrincipal?: boolean }
     | { variante: 'marca'; marcaCentrada?: boolean }
   )
 
@@ -101,7 +101,7 @@ export default function MainLayout(props: MainLayoutProps) {
         onBuscarConFoto={() => navigate(RUTA_BUSCAR_CON_FOTO)}
         movil={ENCABEZADO_MOVIL[variante]}
         escritorio={encabezadoEscritorio}
-        barraInterna={props.variante === 'interna' ? { titulo: props.titulo, atras: props.atras, acciones: props.acciones } : undefined}
+        barraInterna={props.variante === 'interna' ? { titulo: props.titulo, atras: props.atras, acciones: props.acciones, esTituloPrincipal: props.esTituloPrincipal } : undefined}
         marcaCentrada={props.variante === 'marca' ? props.marcaCentrada : undefined}
       />
       <main id="main-content" className="flex-1" tabIndex={-1}>
