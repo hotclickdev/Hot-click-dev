@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatColones, inicialesProducto, nombreItem, tituloYCodigo } from './posPagoFormat'
+import { formatColones, inicialesProducto, nombreItem, sinpeNumeroVisible, tituloYCodigo } from './posPagoFormat'
 
 describe('inicialesProducto', () => {
   it('toma hasta dos iniciales', () => {
@@ -25,5 +25,14 @@ describe('tituloYCodigo', () => {
       titulo: 'Gar naranja hombre',
       codigo: 'GAR-8322',
     })
+  })
+})
+
+describe('sinpeNumeroVisible', () => {
+  it('quita el prefijo +506', () => {
+    expect(sinpeNumeroVisible('+506 7019-6686')).toBe('7019-6686')
+    expect(sinpeNumeroVisible('50670196686')).toBe('70196686')
+    expect(sinpeNumeroVisible('7019-6686')).toBe('7019-6686')
+    expect(sinpeNumeroVisible(undefined)).toBe('')
   })
 })

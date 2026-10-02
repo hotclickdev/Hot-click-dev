@@ -19,3 +19,8 @@ export function tituloYCodigo(nombre: string): { titulo: string; codigo: string 
   if (!match) return { titulo: nombre, codigo: null }
   return { titulo: match[1].trim(), codigo: match[2].trim() }
 }
+
+/** Número SINPE sin el prefijo del país (`+506 7019-6686` -> `7019-6686`), como en Figma. */
+export function sinpeNumeroVisible(numero: string | undefined | null): string {
+  return (numero ?? '').replace(/^\+?\s*506[\s-]*/, '').trim()
+}

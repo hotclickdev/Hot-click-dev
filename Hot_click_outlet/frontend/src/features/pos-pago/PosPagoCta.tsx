@@ -1,36 +1,40 @@
 import { useTranslation } from 'react-i18next'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import { formatColones } from './posPagoFormat'
+import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
+import { formatMiles } from '@/utils/format'
 
 type Props = {
   monto: number
   onClick: () => void
   cargando?: boolean
   disabled?: boolean
-  avisoKey: 'pos.pago.hostedAviso' | 'pos.pago.walletsAviso'
+  /** Texto del botón; por defecto "Pagar ₡monto". */
+  etiqueta?: string
+  /** Ícono del botón (Figma lo dibuja solo en SINPE). */
+  icono?: string
+  avisoKey?: 'pos.pago.hostedAviso' | 'pos.pago.walletsAviso'
 }
 
-export default function PosPagoCta({ monto, onClick, cargando, disabled, avisoKey }: Props) {
+/** Pie de pago (Figma `29:1819`): botón rojo de 46 y "Pago protegido por HotClick". */
+export default function PosPagoCta({ monto, onClick, cargando, disabled, etiqueta, icono, avisoKey }: Props) {
   const { t } = useTranslation()
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-3">
+    <div className="flex w-full flex-col gap-2 bg-[var(--hc-n-0)] px-4 pb-6 pt-3">
       <button
         type="button"
         disabled={disabled || cargando}
         onClick={onClick}
-        className="hc-btn-primary flex items-center justify-center w-full min-h-12 rounded-2xl px-5 py-4 text-[15px] font-bold text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]"
-        style={{ boxShadow: '0 10px 24px color-mix(in srgb, var(--hc-primary) 28%, transparent)' }}
+        className="hc-btn-primary flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[12px] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]"
       >
-        <span className="inline-flex items-center justify-center gap-2">
-          <TrustGlyph tipo="pago" className="size-4 shrink-0" />
-          {cargando
-            ? t('pos.pago.procesando')
-            : t('pos.pago.pagar', { monto: formatColones(monto) })}
-        </span>
+        {icono && !cargando ? <img src={icono} alt="" className="size-[18px] shrink-0" /> : null}
+        {cargando ? t('pos.pago.procesando') : (etiqueta ?? t('pos.pago.pagar', { monto: formatMiles(monto) }))}
       </button>
-      <p className="px-2 text-center text-xs leading-relaxed text-pretty text-[var(--hc-muted)]">
-        {t(avisoKey)}
+      {avisoKey ? (
+        <p className="text-center text-[12px] leading-[14px] text-[var(--hc-n-500)]">{t(avisoKey)}</p>
+      ) : null}
+      <p className="flex items-center justify-center gap-[6px] text-[12px] leading-[14px] text-[var(--hc-n-500)]">
+        <img src={ICONOS_QR.candado} alt="" className="size-[13px]" />
+        {t('pos.pago.protegido')}
       </p>
     </div>
   )

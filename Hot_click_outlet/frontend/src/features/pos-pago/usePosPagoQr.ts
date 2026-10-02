@@ -37,7 +37,11 @@ export function usePosPagoQr(token: string | undefined) {
         setVista(vistaQuery)
         return
       }
-      if (data.estado === 'EXPIRADO' || data.estado === 'CANCELADO') {
+      if (data.estado === 'EXPIRADO') {
+        setVista('vencido')
+        return
+      }
+      if (data.estado === 'CANCELADO') {
         setVista('error')
         setMensajeError('qr_invalido')
         return
@@ -121,6 +125,7 @@ export function usePosPagoQr(token: string | undefined) {
     vista,
     mensajeError,
     iniciandoPago,
+    recargar: cargarInfo,
     pagarHosted,
     reintentar,
     marcarExitoEmbed,
