@@ -1,6 +1,6 @@
 # Progreso de la migración Figma
 
-Actualizado 2026-10-02 (P04 CARRITO; antes P03 CHECKOUT, P02 PRODUCTO, P01 STORE, SYS/SHELL B5, B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
+Actualizado 2026-10-02 (P05 GIFT CARD; antes P04 CARRITO, P03 CHECKOUT, P02 PRODUCTO, P01 STORE, SYS/SHELL B5, B4, B3, B2, B1, A1, A2 y A4). Complementa `INVENTORY.md` (qué pantallas) y `COMPONENT_OWNERSHIP.md` (quién toca qué).
 Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada se desplegó.** Todo vive en ramas locales.
 
 ## Estado general
@@ -36,6 +36,7 @@ Regla vigente: **nada se ha enviado a GitHub, nada se mergeó a `master`, nada s
 | P02 PRODUCTO (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Ficha `/productos/:id` remedida con Playwright: `28:839` y `29:2072` (PASS) sin regresión; `44:1775`, `44:1849` y `44:1917` con las mismas posiciones que `PROD.md`. Sin desborde ni errores de consola en 8 vistas. Corregido el punto 5 de `PROD_DECISIONES.md`: sin selector de talla, la cabecera compacta conserva "Quedan N" (`avisoStockBajoSinTalla`). Nuevo `prod-estados.spec.ts` (10 casos) y 3 tests unitarios. D03 (stepper), "Elaboración" (backend) y la anotación del agotado siguen igual: 3 PARTIAL. 37 PASS / 53 PARTIAL. Ver `PROD.md`, sección P02 |
 | P03 CHECKOUT (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). `/checkout` remedido a 390 (3 pasos) y a 1440: sin desborde ni errores de consola, campos a 15 px (Figma). Antes medían 16 px por SHELL, ya no. Tokens de SHELL en `PasoPago`, `PasoEntrega` y `CodigoDescuento`, mismo color. Nuevo `checkout-responsive.spec.ts` (2 casos); `codigoDescuento.test.ts` apunta a la clase nueva. Consentimiento, cédula SINPE, escritorio y atajo internacional (D04, D05, D08, D18) siguen sin respuesta. Tiempos y GAM por origen (B15) siguen como decisión y backend. 37 PASS / 53 PARTIAL. Ver `CHK.md`, sección P03 |
 | P04 CARRITO (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). `/carrito` remedido a 390 y 1440: sin desborde ni errores de consola. `bg-hc-success-bg` en `PaqueteCarritoTarjeta` y `CodigosNotasCarrito`. Nuevo `cart-responsive.spec.ts` (2 casos). WhatsApp y guardar por correo en escritorio sin cambios (DECISIÓN HUMANA B14); «Vaciar pedido», «Sale de <provincia>» (backend) y `51:1820` siguen PARTIAL. `danger-bg` y `text-secondary` sin alias (P13). Contador sin cambio: 37 PASS / 53 PARTIAL. |
+| P05 GIFT CARD (2-oct-2026) | **Hecho**, un commit local en `feat/figma/base` (sin push ni merge). Paso 3 con tarjeta válida (`55:2220`) e inválida (`55:2284`) remedido a 390 y 1440: sin desborde ni errores de consola. Sin cambios de código: el contenido no disputado ya estaba. `checkout-responsive.spec.ts` suma 4 casos. D09 y D10 (chrome del paso 3) siguen como DECISIÓN HUMANA; el número previo al pago no existe hasta cobrar. `CheckoutPaidGiftCard` sin frame. Contador sin cambio: 37 PASS / 53 PARTIAL. |
 
 ## Ramas y worktrees
 

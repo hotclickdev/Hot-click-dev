@@ -141,6 +141,21 @@ Sin acceso directo a Figma. Referencias `30:2268` (escritorio), `51:1820` (móvi
   - `51:1820` no se promueve: B19 lista E pide medir el frame completo y no hay acceso a Figma.
 - `danger-bg` y `text-secondary` siguen sin alias en SHELL: `CodigosNotasCarrito` los mantiene con `var()`.
 
+## P05 · implementación de GIFT CARD (2-oct-2026)
+
+Sin acceso directo a Figma. Referencias `55:2220` (válida) y `55:2284` (inválida), con lo que registran este documento y `B12-giftcard-decisiones.md`.
+
+- **Remedido** con Playwright, paso 3 con sesión y `/gift-cards/validar` simulado, a 390 y a 1440 en los dos estados: sin desborde horizontal ni errores de consola.
+  - 390, válida: «Tarjeta de regalo válida», «Quitar», línea «Tarjeta de regalo HC-REGALO», nota del resto y pie «Total restante a pagar». Campo de 14 px.
+  - 390 y 1440, inválida: alerta «Código inválido, vencido o sin saldo» con fondo `--hc-danger-bg`, sin «Quitar» ni «Total restante».
+  - 1440, válida: la tarjeta está dentro del despliegue «Agregar cupón» del resumen; el resumen muestra la línea «Gift card» y el total ya descuenta el saldo (₡9.000 a ₡6.000), con la etiqueta «Total». No hay frame de escritorio de este estado.
+- **Código:** sin cambios. Lo que los frames dibujan y no está en disputa (campo válido e inválido, total restante y nota) ya estaba. `checkout-responsive.spec.ts` suma 4 casos (390 y 1440, válida e inválida); B12 había anotado que no había spec del estado inválido.
+- **Sin cambio, sigue PARTIAL:**
+  - D09 (`55:2220`) y D10 (`55:2284`): barra «Pago · paso 3 de 3» frente al indicador de tres pasos de `29:1344`. Es DECISIÓN HUMANA sin respuesta (B12, B19 lista D).
+  - Número de pedido previo al pago: el API lo devuelve al cobrar; pintarlo antes sería inventar el dato.
+- `CodigoDescuento` sigue con `var(--hc-danger-bg)` y `var(--hc-text-secondary)`: no hay alias en SHELL.
+- `CheckoutPaidGiftCard` no tiene frame (REQUIRES_DESIGN_REFERENCE): no se tocó. Tiene estilos `style={{ var() }}` y textos en español sin i18n.
+
 ## Decisiones y dependencias abiertas
 
 - REQUIERE_DECISION: guardar por correo en escritorio; "Vaciar pedido"; WhatsApp en escritorio; contexto del carrito en `AsistentePedido`; cédula SINPE (no está en Figma); atajo de envío internacional y consentimiento en escritorio.
