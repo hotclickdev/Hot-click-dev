@@ -60,7 +60,7 @@ function Enviado({ token, setSuccess }: Pick<FormularioBusquedaProps, 'token' | 
   const clase = 'flex min-h-12 w-full items-center justify-center rounded-[12px] px-4 text-[15px] font-semibold'
   return (
     <section className="flex flex-col items-center gap-3 bg-hc-n-0 px-5 pb-8 pt-10 text-center leading-[normal]">
-      <span className="flex size-16 items-center justify-center rounded-full bg-hc-green-50 text-hc-success">
+      <span className="flex size-16 items-center justify-center rounded-full bg-hc-success-bg text-hc-success">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M20 6 9 17l-5-5" />
         </svg>
@@ -124,7 +124,7 @@ export default function FormularioBusqueda({
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="flex size-[76px] shrink-0 flex-col items-center justify-center gap-1 rounded-[12px] border border-dashed border-[var(--hc-n-400)] bg-hc-n-0"
+                className="flex size-[76px] shrink-0 flex-col items-center justify-center gap-1 rounded-[12px] border border-dashed border-hc-n-400 bg-hc-n-0"
               >
                 {uploading ? (
                   <span className="size-5 animate-spin rounded-full border-2 border-hc-n-200 border-t-hc-blue-600" />
@@ -202,7 +202,7 @@ export default function FormularioBusqueda({
         )}
 
         {error && (
-          <p role="alert" className="rounded-[12px] bg-[var(--hc-danger-bg)] px-[14px] py-3 text-[13px] font-medium text-[var(--hc-danger)]">{error}</p>
+          <p role="alert" className="rounded-[12px] bg-[var(--hc-danger-bg)] px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
         )}
       </div>
 

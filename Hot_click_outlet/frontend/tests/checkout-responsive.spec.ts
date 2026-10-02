@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { colorDeToken, sinDesborde, tamanosDeCampos } from './helpers/medidasFigma'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -32,29 +33,10 @@ async function preparar(page: Page, gift?: EstadoGift) {
   }, Boolean(gift))
 }
 
-async function sinDesborde(page: Page) {
-  const [scroll, cliente] = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth])
-  expect(scroll).toBeLessThanOrEqual(cliente)
-}
-
 async function camposDe15px(page: Page) {
-  const tamanos = await page.evaluate(() => Array.from(document.querySelectorAll('input:not([type=radio]):not([type=checkbox]), select'))
-    .filter((e) => e.getBoundingClientRect().height > 2)
-    .map((e) => getComputedStyle(e).fontSize))
+  const tamanos = await tamanosDeCampos(page, 'input:not([type=radio]):not([type=checkbox]), select')
   expect(tamanos.length).toBeGreaterThan(0)
   expect(new Set(tamanos)).toEqual(new Set(['15px']))
-}
-
-/** Color que resuelve un token de SHELL, para comparar con el estilo calculado. */
-async function colorDeToken(page: Page, token: string, propiedad: 'color' | 'backgroundColor' = 'color') {
-  return page.evaluate(([t, prop]) => {
-    const prueba = document.createElement('span')
-    prueba.style[prop] = `var(${t})`
-    document.body.appendChild(prueba)
-    const color = getComputedStyle(prueba)[prop]
-    prueba.remove()
-    return color
-  }, [token, propiedad] as const)
 }
 
 async function llenarDatosYEntrega(page: Page, movil: boolean, conSesion = false) {

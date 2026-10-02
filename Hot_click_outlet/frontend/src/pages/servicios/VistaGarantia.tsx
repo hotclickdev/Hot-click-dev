@@ -169,7 +169,7 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
         </div>
 
         {error && (
-          <p role="alert" className="rounded-[12px] bg-[var(--hc-danger-bg)] px-[14px] py-3 text-[13px] font-medium text-[var(--hc-danger)]">{error}</p>
+          <p role="alert" className="rounded-[12px] bg-[var(--hc-danger-bg)] px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
         )}
         <p className="text-[12px] leading-4 text-hc-n-500">
           ¿Problema con un producto?{' '}

@@ -14,9 +14,9 @@ type Opcion = {
 /** Las cuatro opciones de Figma `28:1429`: fondo de ícono azul, verde, ámbar y rojo claro. */
 const OPCIONES: Opcion[] = [
   { vista: 'busqueda', icono: 'inicioBuscar', fondo: 'bg-hc-blue-50', titulo: 'Te lo conseguimos', detalle: 'Mandanos una foto y te cotizamos en minutos' },
-  { vista: 'garantia', icono: 'inicioEscudo', fondo: 'bg-hc-green-50', titulo: 'Garantía de un producto', detalle: 'Reportá una falla de algo que compraste' },
+  { vista: 'garantia', icono: 'inicioEscudo', fondo: 'bg-hc-success-bg', titulo: 'Garantía de un producto', detalle: 'Reportá una falla de algo que compraste' },
   { vista: 'inventario', icono: 'inicioCaja', fondo: 'bg-hc-warning-bg', titulo: 'Digitalizá tu inventario', detalle: 'Para negocios: subí tus productos con fotos' },
-  { vista: 'testimonio', icono: 'inicioEstrella', fondo: 'bg-[var(--hc-red-50)]', titulo: 'Contanos tu experiencia', detalle: 'Dejá tu opinión sobre una compra' },
+  { vista: 'testimonio', icono: 'inicioEstrella', fondo: 'bg-hc-red-50', titulo: 'Contanos tu experiencia', detalle: 'Dejá tu opinión sobre una compra' },
 ]
 
 type ServiciosInicioProps = {
