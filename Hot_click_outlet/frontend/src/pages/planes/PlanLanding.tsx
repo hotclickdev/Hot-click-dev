@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { WHATSAPP_HOTCLICK } from '@/components/ui/flotantes/flotantesHelpers'
 import { COMPARATIVA, FAQ_IDS, FOTO_HERO, PLANES_ORDEN, PUNTOS, QUERY_REGISTRO, RUTA_LANDING, type PlanLandingId } from './planLandingDatos'
 
 /**
@@ -81,8 +83,10 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
       {/* Comparativa */}
       <section id="comparar-planes" className="mx-auto max-w-[1200px] scroll-mt-20 px-4 pb-8 lg:px-6 lg:pb-12">
         <h2 className="font-[family-name:var(--hc-font-display)] text-[20px] font-bold lg:text-[24px]">{t('planes.titulo')}</h2>
-        {/* relative: los sr-only (position:absolute) de las celdas no deben escapar del scroll horizontal. */}
-        <div className="relative mt-3 overflow-x-auto rounded-[14px] border border-hc-n-200 bg-hc-n-0">
+        {/* Celular: selector de plan y una sola tarjeta con todas las filas (sin tabla cortada). */}
+        <ComparativaMovil plan={plan} />
+        {/* Escritorio: la tabla de siempre. relative: los sr-only (position:absolute) de las celdas no escapan del scroll. */}
+        <div className="relative mt-3 hidden overflow-x-auto rounded-[14px] border border-hc-n-200 bg-hc-n-0 sm:block" data-testid="comparativa-tabla">
           <table className="w-full min-w-[520px] border-collapse text-left text-[13px]">
             <thead>
               <tr className="border-b border-hc-n-200">
@@ -132,7 +136,67 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
             {t(`planes.${plan}.cta`)}
           </Link>
         </div>
+        {/* En celular el botón flotante de WhatsApp no se muestra aquí (tapaba la foto y la barra): va en su lugar. */}
+        <div className="mt-3 flex flex-col items-start gap-2 rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4 lg:hidden" data-testid="landing-whatsapp">
+          <p className="text-[14px] text-hc-n-600">{t('planes.landing.whatsapp.texto')}</p>
+          <a
+            href={`https://wa.me/${WHATSAPP_HOTCLICK}?text=${encodeURIComponent(t('planes.landing.whatsapp.saludo'))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-11 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 text-[15px] font-semibold text-hc-n-900 no-underline"
+          >
+            {t('planes.landing.whatsapp.boton')}
+          </a>
+        </div>
       </section>
+    </div>
+  )
+}
+
+/**
+ * Comparativa en celular (< 640 px): control segmentado Emprendedor / Pyme / Negocio Plus (fondo n100, activa
+ * blanca con texto b600) y una tarjeta con cada característica y su valor en 15 px. Arranca en el plan de la página.
+ */
+function ComparativaMovil({ plan }: { plan: PlanLandingId }) {
+  const { t } = useTranslation()
+  const [elegido, setElegido] = useState<PlanLandingId>(plan)
+  const indice = PLANES_ORDEN.indexOf(elegido)
+  return (
+    <div className="mt-3 flex flex-col gap-3 sm:hidden" data-testid="comparativa-movil">
+      <div role="group" aria-label={t('planes.titulo')} className="flex w-full rounded-[12px] bg-hc-n-100 p-1">
+        {PLANES_ORDEN.map((p) => (
+          <button
+            key={p}
+            type="button"
+            aria-pressed={p === elegido}
+            onClick={() => setElegido(p)}
+            className={`min-h-[40px] flex-1 rounded-[9px] px-1.5 py-2 text-center text-[14px] font-semibold ${p === elegido ? 'bg-hc-n-0 text-hc-blue-600 shadow-[0_1px_3px_rgba(20,23,28,.12)]' : 'text-hc-n-600'}`}
+          >
+            {t(`planes.${p}.nombre`)}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-[14px] border border-hc-n-200 bg-hc-n-0" aria-live="polite">
+        <p className="flex items-center justify-between gap-2 border-b border-hc-n-200 px-4 py-3">
+          <span className="font-[family-name:var(--hc-font-display)] text-[17px] font-bold text-hc-n-900">{t(`planes.${elegido}.nombre`)}</span>
+          {elegido === plan ? (
+            <span className="rounded-full bg-hc-blue-50 px-2.5 py-0.5 text-[12px] font-semibold text-hc-blue-600">{t('planes.landing.planDeEstaPagina')}</span>
+          ) : null}
+        </p>
+        <dl className="flex flex-col">
+          {COMPARATIVA.map(({ fila, valores }) => (
+            <div key={fila} className="flex items-center justify-between gap-3 border-b border-hc-n-200 px-4 py-3 last:border-b-0">
+              <dt className="text-[15px] leading-[21px] text-hc-n-900">{t(`planes.comparativa.${fila}`)}</dt>
+              <dd className="shrink-0 text-right text-[15px]"><CeldaValor v={valores[indice]} /></dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      {elegido !== plan ? (
+        <Link to={RUTA_LANDING[elegido]} className="text-[14px] font-semibold text-hc-blue-600">
+          {t('planes.landing.verPlan', { plan: t(`planes.${elegido}.nombre`) })}
+        </Link>
+      ) : null}
     </div>
   )
 }

@@ -3919,7 +3919,14 @@
       "faqTitulo": "Frequently asked questions",
       "metaPyme": "Pyme on HotClick: your contact details shown, up to 500 products, 2 warehouses and point of sale with 2 registers.",
       "metaPlus": "Negocio Plus on HotClick: unlimited products, warehouses, registers and users.",
-      "metaEmprende": "Start selling on HotClick with the Emprendedor plan: up to 50 products, 1 warehouse and point of sale."
+      "metaEmprende": "Start selling on HotClick with the Emprendedor plan: up to 50 products, 1 warehouse and point of sale.",
+      "whatsapp": {
+        "texto": "Still have a question about the plans?",
+        "boton": "Message us on WhatsApp",
+        "saludo": "Hi HotClick, I have a question about the selling plans."
+      },
+      "planDeEstaPagina": "This plan",
+      "verPlan": "See the {{plan}} page"
     }
   },
   "registroVendedor": {

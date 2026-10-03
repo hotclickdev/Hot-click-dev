@@ -3919,7 +3919,14 @@
       "faqTitulo": "Preguntas frecuentes",
       "metaPyme": "Pyme en HotClick: tu contacto visible, hasta 500 productos, 2 bodegas y punto de venta con 2 cajas.",
       "metaPlus": "Negocio Plus en HotClick: productos, bodegas, cajas y usuarios sin límite.",
-      "metaEmprende": "Empezá a vender en HotClick con el plan Emprendedor: hasta 50 productos, 1 bodega y punto de venta."
+      "metaEmprende": "Empezá a vender en HotClick con el plan Emprendedor: hasta 50 productos, 1 bodega y punto de venta.",
+      "whatsapp": {
+        "texto": "¿Te quedó una duda sobre los planes?",
+        "boton": "Escribinos por WhatsApp",
+        "saludo": "Hola HotClick, tengo una consulta sobre los planes para vender."
+      },
+      "planDeEstaPagina": "Este plan",
+      "verPlan": "Ver la página de {{plan}}"
     }
   },
   "registroVendedor": {
