@@ -146,4 +146,34 @@ class ContactoTextoFiltroTest {
     void instagramConUsuario_seNormalizaSinUsuario(String url, String esperado) {
         assertThat(ContactoTextoFiltro.videoPermitido(url)).isEqualTo(esperado);
     }
+
+    @Test
+    @DisplayName("Textos largos con muchos subdominios no desbordan la pila (Sonar java:S5998)")
+    void textoLargo_sinStackOverflow() {
+        String subdominios = "a.".repeat(60_000);
+        String texto = "Escribime a ventas@" + subdominios + "com o visitá " + subdominios + "com y " + subdominios + "instagram.com/casa";
+        String salida = ContactoTextoFiltro.ocultar(texto);
+        assertThat(salida).doesNotContain("ventas@").doesNotContain("instagram.com").contains(OCULTO);
+    }
+
+    @ParameterizedTest(name = "subdominios: {0}")
+    @ValueSource(strings = {
+        "Escribime a ventas@mail.casa-luna.co.cr",
+        "Mirá tienda.casaluna.shop",
+        "Seguinos en m.facebook.com/casaluna",
+        "Seguinos en www.instagram.com/casaluna",
+    })
+    void subdominios_seOcultan(String texto) {
+        assertThat(ContactoTextoFiltro.ocultar(texto)).contains(OCULTO).doesNotContain("casaluna").doesNotContain("casa-luna");
+    }
+
+    @ParameterizedTest(name = "se respeta: {0}")
+    @ValueSource(strings = {
+        "Comprá en hotclick.lat/tienda/casa-luna",
+        "Más info en www.hotclick.lat",
+        "Tela xinstagram mide 200x90 cm",
+    })
+    void respetaHotclickYPalabrasParecidas(String texto) {
+        assertThat(ContactoTextoFiltro.ocultar(texto)).isEqualTo(texto);
+    }
 }
