@@ -18,6 +18,9 @@ import java.util.List;
 @RequestMapping("/api/public/negocios")
 public class NegociosPublicController {
 
+    /** Tope explícito de la respuesta: el directorio nunca devuelve más de esto por llamada. */
+    static final int MAX_LIST_NEGOCIOS = DirectorioNegociosService.LIMITE_MAXIMO;
+
     private final DirectorioNegociosService directorio;
 
     public NegociosPublicController(DirectorioNegociosService directorio) {
@@ -29,6 +32,7 @@ public class NegociosPublicController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String plan,
             @RequestParam(required = false) Integer limite) {
-        return directorio.buscar(q, plan, limite);
+        int tope = limite == null ? DirectorioNegociosService.LIMITE_DEFECTO : Math.min(Math.max(limite, 1), MAX_LIST_NEGOCIOS);
+        return directorio.buscar(q, plan, tope);
     }
 }
