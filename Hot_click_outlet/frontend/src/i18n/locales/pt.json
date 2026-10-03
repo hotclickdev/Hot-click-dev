@@ -2426,7 +2426,7 @@
     "sysResetToast": "Banco de dados redefinido. Todos os dados foram excluídos.",
     "sysResetError": "Erro ao redefinir dados",
     "sysExternalTitle": "Painéis externos",
-    "sysSupabaseDesc": "BD & Armazenamento",
+    "sysDbDesc": "PostgreSQL na AWS Lightsail",
     "sysRenderDesc": "Servidor de produção",
     "sysSendGridDesc": "E-mail transacional",
     "sysStripeDesc": "Gateway de pagamento",

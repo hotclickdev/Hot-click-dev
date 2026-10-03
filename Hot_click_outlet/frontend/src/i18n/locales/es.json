@@ -2426,7 +2426,7 @@
     "sysResetToast": "Base de datos restablecida. Todos los datos fueron eliminados.",
     "sysResetError": "Error al restablecer datos",
     "sysExternalTitle": "Paneles externos",
-    "sysSupabaseDesc": "DB & Storage",
+    "sysDbDesc": "PostgreSQL en AWS Lightsail",
     "sysRenderDesc": "Servidor prod",
     "sysSendGridDesc": "Email transaccional",
     "sysStripeDesc": "Pasarela de pagos",

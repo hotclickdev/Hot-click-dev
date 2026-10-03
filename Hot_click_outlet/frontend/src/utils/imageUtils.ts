@@ -1,20 +1,15 @@
-// Image utility — dos modos:
-//
-// 1. PROXY (default): ruteamos imágenes de Supabase por /api/img con resize
-//    en el servidor (Thumbnailator). No requiere Supabase Pro.
-//    El proxy devuelve JPEG comprimido al tamaño real mostrado.
-//
-// 2. SUPABASE TRANSFORMS (TRANSFORMS_ENABLED=true): usa la API de Supabase
-//    Image Transformation (requiere Supabase Pro) para WebP on-the-fly.
-
-const TRANSFORMS_ENABLED = false   // true solo con Supabase Pro
-const PROXY_ENABLED      = true    // proxy Spring Boot con Thumbnailator
+// Imágenes: se rutean por el proxy /api/img (Spring Boot + Thumbnailator), que las lee del bucket S3 de AWS
+// (`aws.s3.public-url`) y devuelve JPEG al tamaño real mostrado. Supabase ya no se usa (decisión del 3-oct-2026);
+// las URLs viejas con formato Supabase que sigan en la base se reconocen igual para pasar por el proxy.
 
 const STORAGE_SEGMENT = '/storage/v1/object/public/'
 const RENDER_SEGMENT  = '/storage/v1/render/image/public/'
 
-// Prefijo del bucket esperado en las URLs de Supabase
-const SUPABASE_BUCKET = 'HOT_CLICK/'
+// Prefijo de bucket de las URLs viejas (formato Supabase); el proxy lo quita antes de leer de S3.
+const BUCKET_LEGADO = 'HOT_CLICK/'
+
+/** Host público del bucket S3 (virtual-hosted o path-style). */
+const HOST_S3 = /^[a-z0-9.-]+\.s3[.-]([a-z0-9-]+\.)?amazonaws\.com$/i
 
 export type OptimizeOpts = {
   width?: number
@@ -22,64 +17,48 @@ export type OptimizeOpts = {
   quality?: number
 }
 
-function normalizeUrl(url?: string | null) {
-  if (!url) return url
+function normalizeUrl(url: string): string {
   const idx = url.indexOf(RENDER_SEGMENT)
-  if (idx !== -1) {
-    let path = url.substring(idx + RENDER_SEGMENT.length)
-    const qIdx = path.indexOf('?')
-    if (qIdx !== -1) path = path.substring(0, qIdx)
-    return url.substring(0, idx) + STORAGE_SEGMENT + path
-  }
-  return url
+  if (idx === -1) return url
+  let path = url.substring(idx + RENDER_SEGMENT.length)
+  const qIdx = path.indexOf('?')
+  if (qIdx !== -1) path = path.substring(0, qIdx)
+  return url.substring(0, idx) + STORAGE_SEGMENT + path
 }
 
 /**
- * Extrae el path relativo dentro del bucket HOT_CLICK desde una URL de Supabase.
- * Ej: "https://xxx.supabase.co/storage/v1/object/public/HOT_CLICK/productos/abc.jpg"
- *     → "HOT_CLICK/productos/abc.jpg"
- * Retorna null si la URL no es del bucket esperado.
+ * Path dentro del bucket para el proxy, o `null` si la URL no es del almacenamiento propio.
+ * - S3: "https://hotclick-media.s3.us-east-2.amazonaws.com/productos/abc.jpg" → "productos/abc.jpg"
+ * - Legado: "https://xxx/storage/v1/object/public/HOT_CLICK/productos/abc.jpg" → "HOT_CLICK/productos/abc.jpg"
  */
-function extractBucketPath(url?: string | null) {
+export function extractBucketPath(url?: string | null): string | null {
   if (!url) return null
   const normalized = normalizeUrl(url)
-  if (!normalized) return null
   const idx = normalized.indexOf(STORAGE_SEGMENT)
-  if (idx === -1) return null
-  const path = normalized.substring(idx + STORAGE_SEGMENT.length)
-  if (!path.startsWith(SUPABASE_BUCKET)) return null
-  return path
+  if (idx !== -1) {
+    const path = normalized.substring(idx + STORAGE_SEGMENT.length)
+    return path.startsWith(BUCKET_LEGADO) ? path : null
+  }
+  try {
+    const u = new URL(normalized)
+    if (!HOST_S3.test(u.hostname)) return null
+    const path = decodeURIComponent(u.pathname.replace(/^\/+/, ''))
+    return path && !path.includes('..') && !path.includes('%') ? path : null
+  } catch {
+    return null
+  }
 }
 
 /**
- * Devuelve una URL optimizada para mostrar la imagen.
- *
- * - Con PROXY_ENABLED: /api/img?p=HOT_CLICK/...&w=N&h=N&q=N
- * - Con TRANSFORMS_ENABLED: URL de Supabase Image Transformation (Pro)
- * - Sin ninguno: URL original de Supabase
+ * URL optimizada para mostrar la imagen: `/api/img?p=…&w=N&h=N&q=N` si es del almacenamiento propio;
+ * si no, la URL original.
  */
 export function getOptimizedUrl(url?: string | null, { width, height, quality = 82 }: OptimizeOpts = {}) {
   if (!url) return ''
-
-  if (PROXY_ENABLED) {
-    const path = extractBucketPath(url)
-    if (path) {
-      const params = new URLSearchParams({ p: path, q: String(quality) })
-      if (width)  params.set('w', String(width))
-      if (height) params.set('h', String(height))
-      return `/api/img?${params.toString()}`
-    }
-    // Si no es del bucket propio, devolvemos la URL original
-    return url
-  }
-
-  if (!TRANSFORMS_ENABLED) return normalizeUrl(url) ?? ''
-
-  const normalized = normalizeUrl(url)
-  if (!normalized?.includes(STORAGE_SEGMENT)) return normalized ?? ''
-  const renderUrl = normalized.replace(STORAGE_SEGMENT, RENDER_SEGMENT)
-  const params = new URLSearchParams({ quality: String(quality), format: 'webp' })
-  if (width)  params.set('width',  String(width))
-  if (height) params.set('height', String(height))
-  return `${renderUrl}?${params.toString()}`
+  const path = extractBucketPath(url)
+  if (!path) return url
+  const params = new URLSearchParams({ p: path, q: String(quality) })
+  if (width)  params.set('w', String(width))
+  if (height) params.set('h', String(height))
+  return `/api/img?${params.toString()}`
 }

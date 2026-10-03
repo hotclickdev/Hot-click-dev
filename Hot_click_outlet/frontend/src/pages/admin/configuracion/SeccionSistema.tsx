@@ -69,10 +69,10 @@ export default function SeccionSistema({ toast }: { toast: ToastFn }) {
           {[
             { labelKey: 'adminConfig.sysBackend',  value: 'Spring Boot 3.4', color: 'var(--hc-accent)' },
             { labelKey: 'adminConfig.sysFrontend', value: 'React + Vite',    color: 'var(--hc-blue-300)' },
-            { labelKey: 'adminConfig.sysDB',       value: 'Supabase (PG)',   color: '#34d399' },
-            { labelKey: 'adminConfig.sysDeploy',   value: 'Render',          color: '#E5A93D' },
+            { labelKey: 'adminConfig.sysDB',       value: 'PostgreSQL · AWS Lightsail', color: '#34d399' },
+            { labelKey: 'adminConfig.sysDeploy',   value: 'AWS Lightsail',   color: '#E5A93D' },
             { labelKey: 'adminConfig.sysPayments', value: 'Tarjetas / SINPE', color: '#f472b6' },
-            { labelKey: 'adminConfig.sysStorage',  value: 'Supabase S3',     color: '#6490EA' },
+            { labelKey: 'adminConfig.sysStorage',  value: 'AWS S3',          color: '#6490EA' },
           ].map(({ labelKey, value, color }) => (
             <div key={labelKey} style={{ padding: '12px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--hc-muted)', margin: '0 0 4px', fontFamily: F.body }}>{t(labelKey)}</p>
@@ -151,7 +151,7 @@ export default function SeccionSistema({ toast }: { toast: ToastFn }) {
       <Block label={t('adminConfig.sysExternalTitle')}>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Base de datos',     descKey: 'adminConfig.sysSupabaseDesc', color: '#3ecf8e', icon: DBIcon },
+            { label: 'Base de datos',     descKey: 'adminConfig.sysDbDesc', color: '#3ecf8e', icon: DBIcon },
             { label: 'Servidor',          descKey: 'adminConfig.sysRenderDesc',   color: '#46e3b7', icon: ServerIcon },
             { label: 'Correo electrónico',descKey: 'adminConfig.sysSendGridDesc', color: '#1a82e2', icon: MailIcon },
             { label: 'Pasarela de pagos', descKey: 'adminConfig.sysStripeDesc', color: 'var(--hc-blue-300)', icon: CardIcon },
