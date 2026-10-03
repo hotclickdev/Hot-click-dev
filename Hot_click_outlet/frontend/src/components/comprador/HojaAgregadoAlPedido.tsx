@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import HojaInferior from './HojaInferior'
 import IconoFigma from './IconoFigma'
+import BarraEnvioGratis from './BarraEnvioGratis'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import { fotoProducto } from './productCardHelpers'
 import useCartStore from '@/store/cartStore'
@@ -30,6 +31,7 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
     producto.empresaId != null ? i.empresaId === producto.empresaId : Boolean(negocio) && i.empresaNombre === negocio
   ))
   const comparteEnvio = Boolean(negocio) && mismoPaquete.length > 1
+  const subtotalPaquete = mismoPaquete.reduce((suma, i) => suma + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0)
   const totalPedido = items.reduce((suma, i) => suma + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0)
   const foto = fotoProducto(producto)
 
@@ -69,6 +71,8 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
           <p className="min-w-0 flex-1 text-[12px] leading-4 text-hc-success-text">{t('comprador.hoja.envioPagado', { negocio })}</p>
         </div>
       )}
+
+      {negocio && <BarraEnvioGratis subtotal={subtotalPaquete} />}
 
       <div className="flex items-start justify-between leading-[normal]">
         <p className="text-[13px] text-hc-n-600">{t('comprador.hoja.totalPedido', { count: items.length })}</p>

@@ -3547,7 +3547,10 @@
       "totalPedido_one": "Tu pedido · {{count}} producto",
       "totalPedido_other": "Tu pedido · {{count}} productos",
       "seguirComprando": "Seguir comprando",
-      "verPedido": "Ver pedido"
+      "verPedido": "Ver pedido",
+      "envioGratisFalta": "Te faltan {{monto}} para envío gratis",
+      "envioGratisListo": "Tu pedido ya tiene envío gratis",
+      "envioGratisDesde": "En compras desde {{monto}} en esta tienda"
     },
     "falloServidor": {
       "marca": "HotClick",
