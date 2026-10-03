@@ -1,5 +1,6 @@
 package com.hotclick.controller.producto;
 
+import com.hotclick.service.contacto.ContactoTextoPublico;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.CategoriaRepository;
@@ -36,6 +37,7 @@ public class ProductoCatalogHandler {
     @Autowired private CompanyScope        companyScope;
     @Autowired private StockService        stockService;
     @Autowired private ProductoAccessGuard productoAccessGuard;
+    @Autowired private ContactoTextoPublico contactoTexto;
 
     public ResponseEntity<ResponseDTO> listarProductos(int page, int size) {
         Long empresaId = companyScope.getCurrentEmpresaId();
@@ -150,9 +152,10 @@ public class ProductoCatalogHandler {
             .stream()
             .map(p -> java.util.Map.of(
                 "id", p.getId(),
-                "nombreProducto", p.getNombreProducto(),
-                "colorVariante", p.getColorVariante() != null ? p.getColorVariante() : "",
-                "talla", p.getTalla() != null ? p.getTalla() : "",
+                // Plan sin contacto directo: sin teléfonos, correos ni enlaces externos (ContactoTextoPublico).
+                "nombreProducto", contactoTexto.texto(p.getEmpresaId(), p.getNombreProducto()),
+                "colorVariante", p.getColorVariante() != null ? contactoTexto.texto(p.getEmpresaId(), p.getColorVariante()) : "",
+                "talla", p.getTalla() != null ? contactoTexto.texto(p.getEmpresaId(), p.getTalla()) : "",
                 "imagenPrincipalUrl", p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "",
                 "precioVenta", p.getPrecioVenta(),
                 "stock", p.getStock()

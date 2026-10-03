@@ -1,5 +1,8 @@
 package com.hotclick.rag.service;
 
+import com.hotclick.service.contacto.ContactoPublicoPolicy;
+import com.hotclick.service.contacto.ContactoTextoFiltro;
+import com.hotclick.service.contacto.ContactoTextoPublico;
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.service.catalogo.CatalogoChatSql;
 import com.hotclick.service.catalogo.ChatKeywordRankSql;
@@ -43,9 +46,10 @@ public class VectorSearchService {
                (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
                p.tags,
                c.nombre_categoria AS nombre_categoria,
+               %s,
                LEFT(COALESCE(p.especificaciones, ''), 600) AS especificaciones,
                LEFT(COALESCE(p.como_usar, ''), 400) AS como_usar
-        """ + ChatPrecioPersonalizado.fragmentoSelectSql();
+        """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private static final String SELECT_ASESOR = """
         SELECT p.id_producto,
@@ -58,9 +62,10 @@ public class VectorSearchService {
                (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
                p.tags,
                c.nombre_categoria AS nombre_categoria,
+               %s,
                LEFT(COALESCE(p.especificaciones, ''), 1500) AS especificaciones,
                LEFT(COALESCE(p.como_usar, ''), 800) AS como_usar
-        """ + ChatPrecioPersonalizado.fragmentoSelectSql();
+        """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private final EmbeddingService embeddingService;
     private final JdbcTemplate jdbc;
@@ -259,31 +264,37 @@ public class VectorSearchService {
         Integer precioVenta = (Integer) rs.getObject("precio_venta");
         Integer min = (Integer) rs.getObject("precio_personalizado_min");
         Integer max = (Integer) rs.getObject("precio_personalizado_max");
-        String instrucciones = rs.getString("instrucciones_personalizacion");
+        // Plan sin contacto directo (EMPRENDEDOR, sin plan): texto libre enmascarado para el chat público.
+        boolean oculta = !ContactoPublicoPolicy.permiteContacto(columnaOpcional(rs, "plan_empresa"));
+        String instrucciones = t(oculta, rs.getString("instrucciones_personalizacion"));
         Integer precioNum = ChatPrecioPersonalizado.precioNumerico(
             personalizado, ChatPrecioPersonalizado.modo(modo), precioVenta, null, min);
         String etiqueta = ChatPrecioPersonalizado.etiqueta(
             personalizado, ChatPrecioPersonalizado.modo(modo), precioVenta, null, min, max);
         return new ProductoContexto(
             rs.getLong("id_producto"),
-            rs.getString("nombre_producto"),
+            t(oculta, rs.getString("nombre_producto")),
             rs.getString("sku"),
             precioNum,
-            rs.getString("descripcion_corta"),
+            t(oculta, rs.getString("descripcion_corta")),
             rs.getString("imagen_principal_url"),
             rs.getInt("stock_disponible"),
-            rs.getString("tags"),
+            t(oculta, rs.getString("tags")),
             rs.getString("nombre_categoria"),
-            rs.getString("especificaciones"),
-            rs.getString("como_usar"),
+            t(oculta, rs.getString("especificaciones")),
+            t(oculta, rs.getString("como_usar")),
             personalizado,
             ChatPrecioPersonalizado.modo(modo),
             min,
             max,
             instrucciones == null || instrucciones.isBlank() ? null : instrucciones,
             etiqueta,
-            columnaOpcional(rs, "descripcion_larga")
+            t(oculta, columnaOpcional(rs, "descripcion_larga"))
         );
+    }
+
+    private static String t(boolean oculta, String texto) {
+        return oculta ? ContactoTextoFiltro.ocultar(texto) : texto;
     }
 
     private static String columnaOpcional(java.sql.ResultSet rs, String columna) {
