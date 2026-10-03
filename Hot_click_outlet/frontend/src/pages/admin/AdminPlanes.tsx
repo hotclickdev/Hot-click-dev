@@ -1,3 +1,4 @@
+import { etiquetaPlan } from '@/prototipo/compartido/planesPageHelpers'
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { billingService } from '@/services/billingService'
@@ -33,18 +34,11 @@ function listaPlanes(data: unknown): PlanSaas[] {
   return Array.isArray(data) ? data as PlanSaas[] : []
 }
 
-function etiquetaComision(plan: PlanSaas): string {
-  const pct = Number(plan.comisionPorcentaje ?? 0)
-  const base = Number.isFinite(pct) && pct > 0 ? `${pct}% por venta` : 'Sin comisión por venta'
-  if (plan.nombre === 'EMPRENDEDOR') return `${base} (mín. ₡400)`
-  return base
-}
-
 function Feature({ ok, label }: { ok?: boolean; label: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm" style={{ color: ok ? 'var(--hc-text)' : 'var(--hc-muted)' }}>
+    <div className={`flex items-center gap-2 text-[14px] ${ok ? 'text-hc-n-900' : 'text-hc-n-600'}`}>
       {ok
-        ? <span className="shrink-0" style={{ color: '#22c55e' }}><TrustGlyph tipo="check" className="w-4 h-4" /></span>
+        ? <span className="shrink-0 text-hc-success"><TrustGlyph tipo="check" className="w-4 h-4" /></span>
         : <CloseIcon className="w-4 h-4 shrink-0" />}
       {label}
     </div>
@@ -57,57 +51,37 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
   loading: boolean
   onSelect: (planId: Id) => void
 }) {
-  const esEnterprise = plan.nombre === 'NEGOCIO_PLUS'
   const esFree = plan.nombre === 'EMPRENDEDOR'
-  const precioCrc = Number(plan.precioMensual ?? 0)
+  const nombre = etiquetaPlan(plan.nombre)
 
   return (
     <div
-      className="relative flex flex-col rounded-2xl p-6 gap-4"
-      style={{
-        backgroundColor: esEnterprise ? 'var(--hc-accent)' : 'var(--hc-surface)',
-        border: esCurrent
-          ? '2px solid var(--hc-accent)'
-          : esEnterprise ? 'none' : '1px solid var(--hc-border)',
-        color: esEnterprise ? '#fff' : 'var(--hc-text)',
-      }}
+      className={`relative flex flex-col gap-4 rounded-[14px] border bg-hc-n-0 p-5 text-hc-n-900 ${esCurrent ? 'border-hc-blue-600 bg-hc-blue-50 shadow-[0_1px_3px_rgba(20,23,28,.12)]' : 'border-hc-n-200'}`}
     >
       {esCurrent && (
-        <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full"
-          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          Plan actual
-        </span>
-      )}
-      {esEnterprise && !esCurrent && (
-        <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full"
-          style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: '#fff' }}>
-          Popular
+        <span className="absolute right-3 top-3 rounded-full bg-hc-n-0 px-2 py-0.5 text-[11px] font-semibold text-hc-blue-600 ring-1 ring-hc-blue-100">
+          Tu plan actual
         </span>
       )}
 
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider opacity-70">{plan.nombre}</p>
-        <div className="flex items-end gap-1 mt-1">
-          <span className="text-3xl font-bold">
-            {precioCrc === 0 ? 'Gratis' : `₡${precioCrc.toLocaleString('es-CR')}`}
-          </span>
-          {precioCrc > 0 && (
-            <span className="text-sm opacity-60 mb-1">/mes</span>
-          )}
-        </div>
-        <p className="text-xs mt-1 opacity-60">{plan.descripcion}</p>
+        <p className="font-[family-name:var(--hc-font-display)] text-[17px] font-bold">{nombre}</p>
+        <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[13px] text-hc-n-600">
+          Mensualidad y comisión:
+          <span className="rounded-full bg-hc-n-100 px-2 py-0.5 text-[11px] font-semibold text-hc-n-600">[PENDIENTE]</span>
+        </p>
       </div>
 
       <div className="flex flex-col gap-2 flex-1">
-        <Feature ok label={etiquetaComision(plan)} />
-        <Feature ok label={`${plan.maxProductos === -1 ? 'Ilimitados' : plan.maxProductos} productos`} />
-        <Feature ok label={`${plan.maxUsuarios} usuario${(plan.maxUsuarios ?? 0) > 1 ? 's' : ''}`} />
-        <Feature ok={plan.tienePos} label="POS / Caja registradora" />
-        <Feature ok={plan.tieneCrm} label="CRM / Clientes" />
-        <Feature ok={plan.tieneCompras}  label="Módulo de compras" />
-        <Feature ok={plan.tieneGiftCards} label="Gift Cards" />
-        <Feature ok={plan.tieneReportes} label="Reportes avanzados" />
-        <Feature ok={plan.tieneAi}       label="Consultas con Hot" />
+        <Feature ok label={plan.maxProductos === -1 ? 'Productos sin límite' : `Hasta ${plan.maxProductos} productos`} />
+        <Feature ok label={plan.maxUsuarios === -1 ? 'Usuarios sin límite' : `Equipo de ${plan.maxUsuarios} usuario${(plan.maxUsuarios ?? 0) > 1 ? 's' : ''}`} />
+        <Feature ok={plan.tienePos} label="Punto de venta" />
+        <Feature ok label="Inventario y alertas de stock bajo" />
+        <Feature ok label="Lista de clientes" />
+        <Feature ok label="Reportes de ventas" />
+        <Feature ok={plan.tieneCompras}  label="Compras a proveedores" />
+        <Feature ok={plan.tieneGiftCards} label="Gift cards" />
+        <Feature ok={plan.tieneAi}       label="Consultas de IA" />
         <Feature ok={plan.tieneApi}      label="API Keys / Webhooks" />
       </div>
 
@@ -115,18 +89,13 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
         <button type="button"
           onClick={() => onSelect(plan.id)}
           disabled={loading}
-          className="w-full py-2.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{
-            backgroundColor: esEnterprise ? 'transparent' : 'var(--hc-accent)',
-            color: esEnterprise ? 'var(--hc-accent)' : '#fff',
-            border: esEnterprise ? '2px solid var(--hc-accent)' : 'none',
-          }}
+          className={`h-12 w-full rounded-[12px] text-[15px] font-semibold disabled:cursor-not-allowed disabled:bg-hc-n-200 disabled:text-hc-n-600 ${esFree ? 'border border-hc-n-200 bg-hc-n-0 text-hc-n-900 hover:bg-hc-n-50' : 'bg-hc-red-500 text-white hover:bg-hc-red-600'}`}
         >
-          {loading ? 'Procesando…' : esFree ? `Bajar a ${plan.nombre}` : `Cambiar a ${plan.nombre}`}
+          {loading ? 'Procesando…' : esFree ? `Bajar a ${nombre}` : `Mejorar a ${nombre}`}
         </button>
       )}
       {esCurrent && !esFree && (
-        <div className="text-center text-xs opacity-60">Plan activo</div>
+        <div className="text-center text-[12px] text-hc-n-600">Plan activo</div>
       )}
     </div>
   )
@@ -164,11 +133,11 @@ export default function AdminPlanes() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Planes y precios</h1>
+          <h1 className="font-[family-name:var(--hc-font-display)] text-[24px] font-bold text-hc-n-900">Planes</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
             Plan actual: <strong>{planNombre}</strong>
             {estadoPlan === 'TRIAL' && trialDias >= 0 && (
-              <span className="ml-2 text-yellow-400">— trial ({trialDias} días restantes)</span>
+              <span className="ml-2 text-hc-warning">— trial ({trialDias} días restantes)</span>
             )}
           </p>
         </div>
@@ -182,7 +151,7 @@ export default function AdminPlanes() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+        <div role="alert" className="rounded-[12px] border border-hc-red-500 bg-hc-n-0 p-3 text-[13px] text-hc-n-900">
           {error}
         </div>
       )}
@@ -226,8 +195,7 @@ export default function AdminPlanes() {
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
-        Podés cancelar en cualquier momento desde la sección de suscripción.
+        Los montos se confirman antes de pagar. Podés subir de plan cuando quieras; si bajás, el cambio aplica al final del período que ya pagaste.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold pt-2">

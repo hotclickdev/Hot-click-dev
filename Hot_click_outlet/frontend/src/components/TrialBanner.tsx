@@ -105,7 +105,7 @@ function textoBanner(args: {
     return 'La prueba de un mes cerró. Pedí autorización para seguir usando el negocio.'
   }
   if (args.requiereMembresia) {
-    return 'Los cupos gratis se agotaron. Activá PYME o Negocio Plus para publicar en el catálogo.'
+    return 'Para publicar en el catálogo, activá el plan Pyme o Negocio Plus.'
   }
   if (args.estadoPlan === 'PAST_DUE') {
     return 'Pago pendiente — actualiza tu método de pago para continuar usando el plan'

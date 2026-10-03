@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import CopilotInsightCards from './copilot/CopilotInsightCards'
 import CopilotFixedChips from './copilot/CopilotFixedChips'
 import { useCopilotChat } from './copilot/useCopilotChat'
@@ -14,6 +15,7 @@ const MUTED = 'var(--hc-muted)'
  */
 export default function SistemaCopilot() {
   const chat = useCopilotChat()
+  const { t } = useTranslation()
   const deshabilitado = Boolean(chat.enviando || (chat.uso && !chat.uso.habilitado))
 
   return (
@@ -26,9 +28,9 @@ export default function SistemaCopilot() {
       {chat.uso && !chat.uso.habilitado && (
         <div className="rounded-2xl p-5 text-center mb-3"
           style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-          <p className="text-sm font-semibold m-0" style={{ color: '#a8291f' }}>Hot no está en tu plan actual</p>
+          <p className="text-sm font-semibold m-0" style={{ color: '#a8291f' }}>{t('planes.bloqueo.ia.titulo')}</p>
           <p className="text-xs m-0 mt-1" style={{ color: MUTED }}>
-            Actualizá a PYME (80 consultas/mes) o Negocio Plus (consultas ilimitadas)
+            {t('planes.bloqueo.ia.texto')}
           </p>
         </div>
       )}
