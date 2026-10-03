@@ -26,6 +26,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
@@ -125,6 +126,12 @@ public class GlobalExceptionHandler {
 
     private static String mensajeError(MessageSourceResolvable e) {
         return e instanceof FieldError fe ? fe.getField() + ": " + fe.getDefaultMessage() : e.getDefaultMessage();
+    }
+
+    /** Parámetro de URL o query con tipo inválido ("?limite=abc", "/productos/abc"): 400, no 500 */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ResponseDTO> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body(ResponseDTO.error("Parámetro inválido: " + ex.getName()));
     }
 
     /** JSON malformado o tipo incorrecto en el body */
