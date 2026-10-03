@@ -1,15 +1,6 @@
-import { A } from './registrarNegocioTheme'
 import type { ReactNode } from 'react'
 
-/** Card contenedora del formulario de registro de negocio. */
+/** Tarjeta clara del formulario (radio 14, borde n200, sin degradado ni sombra). */
 export default function RegistrarNegocioCard({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-2xl overflow-hidden"
-      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 4px 32px var(--hc-shadow)' }}>
-      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${A.color}, transparent)` }} />
-      <div className="p-6 sm:p-7">
-        {children}
-      </div>
-    </div>
-  )
+  return <div className="rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 lg:p-5">{children}</div>
 }

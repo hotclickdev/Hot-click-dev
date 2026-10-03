@@ -1,39 +1,14 @@
-import { Link } from 'react-router-dom'
-import BrandLogo from '@/components/ui/BrandLogo'
-import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { ReactNode } from 'react'
+import { AltaHeader } from '@/pages/registro-empresa/AltaVendedorUI'
 
-/** Chrome de fondo, header y contenedor de `/registrar-negocio`. */
+/** Chrome de `/registrar-negocio` (comprador que pasa a vendedor): mismo header y fondo n50 que el alta (Figma 30:2385). */
 export default function RegistrarNegocioLayout({ onSkip, children }: { onSkip: () => void; children: ReactNode }) {
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden" style={{ background: 'var(--hc-bg)' }}>
-
-      {/* Fondo */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 70% 25%, rgba(231,59,51,0.1), transparent 65%)` }} />
-      </div>
-      <div className="absolute inset-0 opacity-[0.25] pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(var(--hc-border) 1px,transparent 1px),linear-gradient(90deg,var(--hc-border) 1px,transparent 1px)',
-        backgroundSize: '60px 60px',
-      }} />
-
-      {/* Header */}
-      <header className="relative z-10 flex items-center justify-between px-5 sm:px-8 py-4 border-b"
-        style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-glass-bg)', backdropFilter: 'blur(16px)' }}>
-        <Link to="/" className="flex items-center gap-2.5">
-          <BrandLogo size={28} wordmarkSize={15} />
-        </Link>
-        <button type="button" onClick={onSkip} className="hc-btn hc-btn-ghost hc-btn-sm">
-          <TextoFlecha>Hacer esto después</TextoFlecha>
-        </button>
-      </header>
-
-      {/* Contenido */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-[480px]">
-          {children}
-        </div>
-      </main>
+    <div className="min-h-screen bg-hc-n-50 font-[family-name:var(--hc-font-text)] text-hc-n-900">
+      <AltaHeader
+        derecha={<button type="button" onClick={onSkip} className="text-[13px] font-semibold text-hc-blue-600">Hacer esto después</button>}
+      />
+      <main className="mx-auto w-full max-w-[640px] px-4 pb-12 pt-5 lg:pt-8">{children}</main>
     </div>
   )
 }

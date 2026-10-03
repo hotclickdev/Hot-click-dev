@@ -7,7 +7,7 @@ import EmprendeMembresiaAviso from './EmprendeMembresiaAviso'
 export default function EmprendeHub() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-      <EmprendeHero yaEsDuenio />
+      <EmprendeHero />
       <EmprendeMembresiaAviso />
       <EmprendePasos yaEsDuenio />
       <EmprendeAcciones yaEsDuenio />
