@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-BSHORDBQ.js";function t(){return e()}export{t};
