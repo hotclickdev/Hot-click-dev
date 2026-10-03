@@ -22,8 +22,8 @@ public class DirectorioNegociosService {
 
     /** Tope de negocios que se leen por consulta: el directorio es chico y así la consulta queda acotada. */
     static final int MAX_NEGOCIOS = 500;
-    static final int LIMITE_DEFECTO = 50;
-    static final int LIMITE_MAXIMO = 200;
+    public static final int LIMITE_DEFECTO = 50;
+    public static final int LIMITE_MAXIMO = 200;
     static final int LARGO_MAXIMO_BUSQUEDA = 80;
 
     private final EmpresaRepository empresaRepository;
