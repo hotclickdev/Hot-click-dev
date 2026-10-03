@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { STOCK_QUEDAN_MAX } from '@/utils/stockEscaso'
 import { useParams, useNavigate } from 'react-router-dom'
 import useTiendaStore from '@/store/tiendaStore'
 import tiendaService from '@/services/tiendaService'
@@ -9,7 +10,7 @@ import { BotonTienda } from './PiezasTienda'
 import type { Producto } from '@/types/producto'
 
 /** Productos con 3 o menos se anuncian como "Quedan N" en ámbar (mismo umbral que la ficha del marketplace). */
-const STOCK_BAJO = 3
+const STOCK_BAJO = STOCK_QUEDAN_MAX
 
 /**
  * Ficha del producto dentro de la tienda pública (derivado de Figma `28:839` móvil y `29:2072` escritorio):

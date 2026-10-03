@@ -1,4 +1,5 @@
 import type { Producto } from '@/types/producto'
+import { quedanPocos } from '@/utils/stockEscaso'
 
 
 
@@ -34,7 +35,7 @@ export const STOCK_OPTIONS: FiltroOption[] = [
 
   { value: 'ok',  labelKey: 'products.inStock' },
 
-  { value: 'low', labelKey: 'products.lowStockLabel' },
+  { value: 'low', labelKey: 'stock.filtro.quedanPocos' },
 
   { value: 'out', labelKey: 'products.outOfStock' },
 
@@ -159,7 +160,7 @@ export function filtrarCatalogo({
 
       if (filterStock === 'ok')  return p.stock > 0
 
-      if (filterStock === 'low') return p.stock > 0 && p.stock <= 3
+      if (filterStock === 'low') return quedanPocos(p.stock)
 
       if (filterStock === 'out') return p.stock === 0
 
