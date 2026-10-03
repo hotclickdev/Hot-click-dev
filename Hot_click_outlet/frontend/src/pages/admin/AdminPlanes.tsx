@@ -10,6 +10,7 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
 import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
+import AvisoBajadaBloqueada from '@/features/billing/AvisoBajadaBloqueada'
 import type { Id } from '@/types/api'
 
 type PlanSaas = {
@@ -112,6 +113,7 @@ export default function AdminPlanes() {
     error,
     setError,
     pagoPendiente,
+    bajadaBloqueada,
     seleccionarPlan,
     irAExito,
     cancelarPago,
@@ -156,6 +158,8 @@ export default function AdminPlanes() {
         </div>
       )}
 
+      {bajadaBloqueada && <AvisoBajadaBloqueada plan={bajadaBloqueada.plan} excesos={bajadaBloqueada.excesos} />}
+
       {pagoPendiente && (
         <div className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="flex items-center justify-between gap-2">
@@ -188,14 +192,14 @@ export default function AdminPlanes() {
               plan={plan}
               esCurrent={plan.nombre === planNombre}
               loading={loadingPlan === plan.id}
-              onSelect={(id) => { void seleccionarPlan(id) }}
+              onSelect={(id) => { void seleccionarPlan(id, plan, etiquetaPlan(plan.nombre)) }}
             />
           ))}
         </div>
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los montos se confirman antes de pagar. Podés subir de plan cuando quieras; si bajás, el cambio aplica al final del período que ya pagaste.
+        Los montos se confirman antes de pagar. Podés subir de plan cuando quieras; si bajás, el cambio aplica al final del período que ya pagaste. No borramos nada: vos elegís qué ajustar.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold pt-2">

@@ -3,12 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { billingService, type CambiarPlanResultado } from '@/services/billingService'
 import useTenantStore from '@/store/tenantStore'
 import type { Id } from '@/types/api'
+import { esBajada, excesosAlBajar, type ExcesoPlan, type LimitesPlan } from './bajarPlanHelpers'
 
 function mensajeErrorPlan(err: unknown, fallback: string): string {
   if (typeof err !== 'object' || err === null || !('response' in err)) return fallback
   const error = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error
   return typeof error === 'string' && error ? error : fallback
 }
+
+/** Plan de destino con sus límites, para revisar una bajada antes de llamar al backend. */
+export type DestinoPlan = LimitesPlan & { nombre: string }
+
+export type BajadaBloqueada = { plan: string; excesos: ExcesoPlan[] }
 
 export type PagoOnvoPendiente = {
   subscriptionId: string
@@ -31,6 +37,7 @@ export function useCambiarPlan({ rutaExito }: Options) {
   const [loadingPlan, setLoadingPlan] = useState<Id | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pagoPendiente, setPagoPendiente] = useState<PagoOnvoPendiente | null>(null)
+  const [bajadaBloqueada, setBajadaBloqueada] = useState<BajadaBloqueada | null>(null)
 
   const irAExito = useCallback(async () => {
     await loadTenantInfo()
@@ -39,10 +46,22 @@ export function useCambiarPlan({ rutaExito }: Options) {
     navigate(rutaExito)
   }, [loadTenantInfo, navigate, rutaExito])
 
-  const seleccionarPlan = useCallback(async (planId: Id) => {
+  const seleccionarPlan = useCallback(async (planId: Id, destino?: DestinoPlan, etiquetaDestino?: string) => {
     setLoadingPlan(planId)
     setError(null)
+    setBajadaBloqueada(null)
     try {
+      if (destino && esBajada(useTenantStore.getState().planNombre, destino.nombre)) {
+        // Bajar con más uso del permitido: no se borra nada, se bloquea y se avisa qué ajustar.
+        await useTenantStore.getState().loadTenantUso()
+        const { usoProductos, usoUsuarios } = useTenantStore.getState()
+        const excesos = excesosAlBajar(destino, { productos: usoProductos, usuarios: usoUsuarios })
+        if (excesos.length > 0) {
+          setBajadaBloqueada({ plan: etiquetaDestino ?? destino.nombre, excesos })
+          setLoadingPlan(null)
+          return
+        }
+      }
       const { data } = await billingService.cambiarPlan(planId)
       const result = data as CambiarPlanResultado
 
@@ -86,6 +105,7 @@ export function useCambiarPlan({ rutaExito }: Options) {
     error,
     setError,
     pagoPendiente,
+    bajadaBloqueada,
     seleccionarPlan,
     irAExito,
     cancelarPago,

@@ -3,6 +3,8 @@ import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
 import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
+import AvisoBajadaBloqueada from '@/features/billing/AvisoBajadaBloqueada'
+import type { LimitesPlan, RecursoPlan } from '@/features/billing/bajarPlanHelpers'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
 import type { Id } from '@/types/api'
 import {
@@ -22,6 +24,8 @@ type Props = Readonly<{
   /** Shell de página (cabecera + EntradaPagina + main). */
   renderShell: (args: { children: ReactNode; error: string | null }) => ReactNode
   variante?: CompararPlanesVariante
+  /** Rutas del panel para «Ir a mis productos» / «Ir a mi equipo» cuando una bajada queda bloqueada. */
+  rutaAjuste?: Partial<Record<RecursoPlan, string>>
 }>
 
 /**
@@ -32,8 +36,10 @@ export default function CompararPlanesVista({
   rutaExito,
   renderShell,
   variante = 'seller',
+  rutaAjuste,
 }: Props) {
   const [planes, setPlanes] = useState<PlanUi[]>([])
+  const [limites, setLimites] = useState<Record<string, LimitesPlan>>({})
   const [cargando, setCargando] = useState(true)
   const [paso, setPaso] = useState(0)
   const [planElegido, setPlanElegido] = useState<PlanUi | null>(null)
@@ -42,6 +48,7 @@ export default function CompararPlanesVista({
     error,
     setError,
     pagoPendiente,
+    bajadaBloqueada,
     seleccionarPlan,
     irAExito,
     cancelarPago,
@@ -51,9 +58,10 @@ export default function CompararPlanesVista({
     billingService.getPlanes()
       .then(({ data }) => {
         const lista = Array.isArray(data)
-          ? data as Array<{ id: Id; nombre: string; precioMensual?: number }>
+          ? data as Array<{ id: Id; nombre: string; precioMensual?: number } & LimitesPlan>
           : []
         setPlanes(lista.map(mapApiPlanToUi))
+        setLimites(Object.fromEntries(lista.map((p) => [String(p.id), { maxProductos: p.maxProductos, maxUsuarios: p.maxUsuarios }])))
       })
       .catch(() => setError('No se pudieron cargar los planes'))
       .finally(() => setCargando(false))
@@ -74,7 +82,11 @@ export default function CompararPlanesVista({
 
   async function confirmarCambio() {
     if (!planElegido) return
-    await seleccionarPlan(planElegido.id)
+    await seleccionarPlan(
+      planElegido.id,
+      { nombre: planElegido.nombreApi, ...limites[String(planElegido.id)] },
+      planElegido.nombre,
+    )
   }
 
   function volverDesdePago() {
@@ -154,6 +166,9 @@ export default function CompararPlanesVista({
         ) : null}
         {idPaso === 'confirmar' && planElegido ? (
           <ResumenPlan plan={planElegido} />
+        ) : null}
+        {idPaso === 'confirmar' && bajadaBloqueada ? (
+          <AvisoBajadaBloqueada plan={bajadaBloqueada.plan} excesos={bajadaBloqueada.excesos} rutaAjuste={rutaAjuste} />
         ) : null}
       </FormularioPorPasos>
     ),
