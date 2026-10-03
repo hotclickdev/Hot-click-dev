@@ -38,6 +38,18 @@ class SpaVisitanteRutasPublicasTest extends BaseIntegrationTest {
             });
     }
 
+    @ParameterizedTest(name = "{0} sin sesión → no 401/403")
+    @ValueSource(strings = {
+        "/emprende/local.jpg", "/emprende/recorrido.mp4", "/email/icono-check.png", "/opensearch.xml",
+    })
+    void recursoPublico_sinSesion_noPideAuth(String ruta) throws Exception {
+        mockMvc.perform(get(ruta))
+            .andExpect(result -> {
+                int s = result.getResponse().getStatus();
+                assertTrue(s != 401 && s != 403, ruta + " no debe pedir sesión y dio " + s);
+            });
+    }
+
     @Test
     @DisplayName("ruta inexistente de visitante → 404 con el SPA (noindex), no 401")
     void rutaInexistente_404ConSpa() throws Exception {
