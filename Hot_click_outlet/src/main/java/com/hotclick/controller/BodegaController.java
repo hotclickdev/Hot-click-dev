@@ -8,8 +8,14 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
+import com.hotclick.utils.TelefonoBodega;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +27,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/bodegas")
 public class BodegaController {
+
+    private static final Logger log = LoggerFactory.getLogger(BodegaController.class);
+    /** Mismo texto que {@code ERROR_GUARDAR_BODEGA} del front; no se devuelve el mensaje crudo de la excepción. */
+    static final String MENSAJE_ERROR_GUARDAR = "No se pudo guardar la bodega.";
+    /** Mismo texto que el 403 de {@code TenantAccessDeniedException} para recursos sin empresa. */
+    static final String MENSAJE_SIN_EMPRESA = "Acceso denegado: recurso sin empresa asignada";
 
     @Autowired private BodegaRepository  bodegaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
@@ -52,12 +64,18 @@ public class BodegaController {
         return ResponseEntity.ok(ResponseDTO.success("Bodegas", dtos));
     }
 
+    /**
+     * SEC-11: solo ADMIN o EMPRENDEDOR. La empresa sale de la sesión (cualquier empresa del body se
+     * ignora); sin empresa en la sesión solo un IT Admin puede crear (bodega legacy sin empresa).
+     */
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal UserDetails ud) {
+        Long eid = empresaDeLaSesion();
+        if (eid == null && !esAdminSinImpersonar()) return sinEmpresa();
         // Verificación de límite de plan — propaga PlanLimitException → GlobalExceptionHandler (HTTP 403)
-        Long eid = companyScope.getCurrentEmpresaIdOrOwn();
         if (eid != null) tenantService.verificarLimiteBodegas(eid);
 
         try {
@@ -67,11 +85,12 @@ public class BodegaController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("La dirección es obligatoria"));
             if (body.get("telefono") == null || body.get("telefono").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El teléfono es obligatorio"));
+            String telefono = TelefonoBodega.normalizar(body.get("telefono"));
             var empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             Bodega b = new Bodega();
             b.setNombreBodega(body.get("nombreBodega").trim());
             b.setDireccionExacta(body.get("direccionExacta").trim());
-            b.setTelefono(body.get("telefono").trim());
+            b.setTelefono(telefono);
             b.setCorreoContacto(body.getOrDefault("correoContacto", ""));
             b.setEncargadoNombre(body.getOrDefault("encargadoNombre", ""));
             b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
@@ -84,18 +103,23 @@ public class BodegaController {
                     .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"))
             );
             return ResponseEntity.ok(ResponseDTO.success("Bodega creada", bodegaRepository.save(b)));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | RecursoNoEncontradoException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return errorGuardar("crear", e);
         }
     }
 
+    /** SEC-11: mismas reglas que {@link #crear}. Las filas con teléfono inválido se omiten (SEC-08). */
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping("/bulk")
     public ResponseEntity<ResponseDTO> importarBulk(
             @RequestBody List<Map<String, String>> items,
             @AuthenticationPrincipal UserDetails ud) {
+        Long eid2 = empresaDeLaSesion();
+        if (eid2 == null && !esAdminSinImpersonar()) return sinEmpresa();
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
-        Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
         // Verifica que el lote completo quepa dentro del plan antes de procesar (HTTP 403 si no)
         if (eid2 != null) tenantService.verificarLimiteBodegasBulk(eid2, items.size());
         var empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
@@ -108,10 +132,17 @@ public class BodegaController {
                 errors++;
                 continue;
             }
+            String telefono;
+            try {
+                telefono = TelefonoBodega.normalizar(tel);
+            } catch (IllegalArgumentException e) {
+                errors++;
+                continue;
+            }
             Bodega b = new Bodega();
             b.setNombreBodega(nombre.trim());
             b.setDireccionExacta(dir.trim());
-            b.setTelefono(tel.trim());
+            b.setTelefono(telefono);
             b.setCorreoContacto(item.getOrDefault("correoContacto", ""));
             b.setEncargadoNombre(item.getOrDefault("encargadoNombre", ""));
             b.setProvincia(sanitizer.normalizeGeo(item.get("provincia")));
@@ -126,6 +157,8 @@ public class BodegaController {
         return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("ok", ok, "errors", errors)));
     }
 
+    /** SEC-11: solo ADMIN o EMPRENDEDOR de la empresa de la bodega (otra empresa → 403). */
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
             @PathVariable Long id,
@@ -139,7 +172,7 @@ public class BodegaController {
             if (body.get("direccionExacta") != null && !body.get("direccionExacta").isBlank())
                 b.setDireccionExacta(body.get("direccionExacta").trim());
             if (body.get("telefono") != null && !body.get("telefono").isBlank())
-                b.setTelefono(body.get("telefono").trim());
+                b.setTelefono(TelefonoBodega.normalizar(body.get("telefono")));
             if (body.get("correoContacto") != null)
                 b.setCorreoContacto(body.get("correoContacto"));
             if (body.get("encargadoNombre") != null)
@@ -151,11 +184,17 @@ public class BodegaController {
             if (body.containsKey("permiteRetiroCliente"))
                 b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
             return ResponseEntity.ok(ResponseDTO.success("Bodega actualizada", bodegaRepository.save(b)));
-        } catch (Exception e) {
+        } catch (AccessDeniedException | com.hotclick.exception.TenantAccessDeniedException e) {
+            throw e;
+        } catch (IllegalArgumentException | RecursoNoEncontradoException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return errorGuardar("actualizar", e);
         }
     }
 
+    /** SEC-11: solo ADMIN o EMPRENDEDOR de la empresa de la bodega (otra empresa → 403). */
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         try {
@@ -165,9 +204,29 @@ public class BodegaController {
             b.setEstado(Constants.ESTADO_INACTIVO);
             bodegaRepository.save(b);
             return ResponseEntity.ok(ResponseDTO.success("Bodega eliminada", null));
+        } catch (AccessDeniedException | com.hotclick.exception.TenantAccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    /** Empresa de la sesión (JWT / impersonación); nunca la del body. */
+    private Long empresaDeLaSesion() {
+        return companyScope.getCurrentEmpresaIdOrOwn();
+    }
+
+    private boolean esAdminSinImpersonar() {
+        return companyScope.isAdminIT() && !companyScope.isImpersonating();
+    }
+
+    private static ResponseEntity<ResponseDTO> sinEmpresa() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(MENSAJE_SIN_EMPRESA));
+    }
+
+    private static ResponseEntity<ResponseDTO> errorGuardar(String accion, Exception e) {
+        log.warn("[bodegas] Error al {} bodega: {}", accion, e.toString());
+        return ResponseEntity.badRequest().body(ResponseDTO.error(MENSAJE_ERROR_GUARDAR));
     }
 
     /**
