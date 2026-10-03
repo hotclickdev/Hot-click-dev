@@ -239,7 +239,7 @@ function PresupuestoCliente({
 function CampoColones({ etiqueta, valor, onCambio }: { etiqueta: string; valor: string | number; onCambio: (v: string) => void }) {
   return (
     <span className="relative block">
-      <span aria-hidden="true" className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[14px] text-hc-n-500">
+      <span aria-hidden="true" className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[14px] text-hc-n-600">
         ₡
       </span>
       <input
