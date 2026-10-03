@@ -74,7 +74,7 @@ function CotizarPreview({ waTab, waTexts, onClose, onWaTab, onWaTexts, onEnviar 
 }) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <div className="w-full max-w-lg rounded-[14px] overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--hc-border)' }}>
           <h3 className="font-bold text-[15px]" style={{ color: 'var(--hc-text)' }}>Previsualizar mensaje</h3>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--hc-muted)' }}>

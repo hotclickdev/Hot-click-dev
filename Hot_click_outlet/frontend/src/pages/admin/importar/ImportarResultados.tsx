@@ -30,7 +30,7 @@ function CabeceraNegocio({
   const nombre = nombreNegocio(empresa)
   return (
     <div
-      className="flex items-center gap-4 rounded-2xl p-4"
+      className="flex items-center gap-4 rounded-[14px] p-4"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
     >
       <div

@@ -68,7 +68,7 @@ export default function AdminAyuda() {
   if (enviado) {
     return (
       <div className="max-w-lg mx-auto py-16 text-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: '#e2f1e8' }}>
+        <div className="w-14 h-14 rounded-[14px] mx-auto flex items-center justify-center" style={{ backgroundColor: '#e2f1e8' }}>
           <svg className="w-7 h-7" style={{ color: '#1E7F4F' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
@@ -96,7 +96,7 @@ export default function AdminAyuda() {
         </p>
       </header>
 
-      <form onSubmit={enviar} className="rounded-2xl p-5 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <form onSubmit={enviar} className="rounded-[14px] p-5 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>¿Qué título le ponés? *</label>
           <input

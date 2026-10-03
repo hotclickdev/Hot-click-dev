@@ -71,7 +71,7 @@ export default function AgentesRegistryTable({ agents, statusById }: Props) {
         {rows.length} agentes · estado I1 según la última corrida · catálogo de{' '}
         <a className="text-[var(--hc-link)] underline" href={`${GITHUB}/tree/master/docs`}>docs/AGENTES_*.md</a>
       </p>
-      <div className="overflow-x-auto rounded-2xl border border-hc-border">
+      <div className="overflow-x-auto rounded-[14px] border border-hc-border">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-[var(--hc-surface-2)] text-xs uppercase tracking-wide text-hc-muted">
             <tr>

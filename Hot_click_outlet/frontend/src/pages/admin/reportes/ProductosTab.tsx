@@ -13,7 +13,7 @@ export default function ProductosTab({ loading, topProductos }: ProductosTabProp
   if (loading) return <div className="flex justify-center py-16"><Spinner size="lg"/></div>
   if (topProductos.length === 0) {
     return (
-      <div className="rounded-2xl p-10 text-center" style={cardStyle}>
+      <div className="rounded-[14px] p-10 text-center" style={cardStyle}>
         <p style={{ color: 'var(--hc-muted)' }}>Sin datos de productos para este período.</p>
         <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>Los ítems aparecen cuando los pedidos tienen líneas detalladas.</p>
       </div>
@@ -27,7 +27,7 @@ export default function ProductosTab({ loading, topProductos }: ProductosTabProp
         <StatCard label="Unidades vendidas" value={fmt(topProductos.reduce((s,p) => s + p.cantidad, 0))} color={SUCCESS}/>
         <StatCard label="Ingreso total" value={formatPrice(topProductos.reduce((s,p) => s + p.ingreso, 0))} color={INFO}/>
       </ReportesKpis>
-      <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+      <div className="rounded-[14px] overflow-hidden" style={cardStyle}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>

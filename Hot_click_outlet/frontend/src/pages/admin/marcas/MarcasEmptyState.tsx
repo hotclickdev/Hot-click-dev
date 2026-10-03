@@ -12,7 +12,7 @@ function TagIcon() {
 export default function MarcasEmptyState({ onCrear }: { onCrear: () => void }) {
   return (
     <div className="text-center py-14 space-y-3">
-      <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+      <div className="w-14 h-14 rounded-[14px] mx-auto flex items-center justify-center"
         style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.15)' }}>
         <TagIcon />
       </div>

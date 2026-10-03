@@ -161,7 +161,7 @@ export default function AdminPlanes() {
       {bajadaBloqueada && <AvisoBajadaBloqueada plan={bajadaBloqueada.plan} excesos={bajadaBloqueada.excesos} />}
 
       {pagoPendiente && (
-        <div className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+        <div className="rounded-[14px] p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
               Pagar plan {pagoPendiente.planNombre ?? ''}

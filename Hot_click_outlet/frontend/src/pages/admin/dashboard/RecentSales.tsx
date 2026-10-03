@@ -27,7 +27,7 @@ export default function RecentSales({ ventas }: RecentSalesProps) {
           <TextoFlecha>{t('admin.dashboard.viewAll')}</TextoFlecha>
         </Link>
       </div>
-      <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl overflow-hidden">
+      <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-[14px] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[560px]">
             <thead>

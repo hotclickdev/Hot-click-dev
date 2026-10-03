@@ -9,7 +9,7 @@ export default function BilleteraMovimientosTable({ txs, txPage, txTotal, onPage
   onPage: (page: number) => void
 }) {
   return (
-    <div className="bg-hc-surface border border-hc-border rounded-2xl overflow-hidden">
+    <div className="bg-hc-surface border border-hc-border rounded-[14px] overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs text-hc-muted border-b border-hc-border">

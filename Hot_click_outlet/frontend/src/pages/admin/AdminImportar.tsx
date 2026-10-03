@@ -146,7 +146,7 @@ export default function AdminImportar() {
         {paso === 1 && (
           <motion.div key="paso1"
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="rounded-2xl p-6 space-y-5"
+            className="rounded-[14px] p-6 space-y-5"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
           >
             {esAdminIT && (

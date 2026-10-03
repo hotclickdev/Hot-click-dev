@@ -26,7 +26,7 @@ export default function VisibilidadCard({
   }
 
   return (
-    <div className="rounded-2xl p-5 flex items-center justify-between gap-4"
+    <div className="rounded-[14px] p-5 flex items-center justify-between gap-4"
       style={{
         backgroundColor: 'var(--hc-surface)',
         border: `1px solid ${bordeDe(publicado, bloqueado)}`,

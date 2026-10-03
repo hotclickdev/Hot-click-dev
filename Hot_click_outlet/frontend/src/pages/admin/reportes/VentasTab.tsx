@@ -87,7 +87,7 @@ export default function VentasTab({
       </ReportesKpis>
 
       {loading ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
-        <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+        <div className="rounded-[14px] overflow-hidden" style={cardStyle}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] text-sm">
               <thead>

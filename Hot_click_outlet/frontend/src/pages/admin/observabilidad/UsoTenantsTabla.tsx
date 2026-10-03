@@ -25,7 +25,7 @@ export default function UsoTenantsTabla({ ranking, loading, orden, onOrden, onVe
 }) {
   if (loading && !ranking) {
     return (
-      <div className="rounded-2xl border border-gray-200 p-8 text-sm text-gray-400 dark:border-gray-700">
+      <div className="rounded-[14px] border border-gray-200 p-8 text-sm text-gray-400 dark:border-gray-700">
         Cargando ranking de tenants…
       </div>
     )
@@ -34,14 +34,14 @@ export default function UsoTenantsTabla({ ranking, loading, orden, onOrden, onVe
   const tenants = ordenarTenants(ranking?.tenants ?? [], orden)
   if (tenants.length === 0) {
     return (
-      <div className="rounded-2xl border border-gray-200 p-8 text-sm text-gray-500 dark:border-gray-700">
+      <div className="rounded-[14px] border border-gray-200 p-8 text-sm text-gray-500 dark:border-gray-700">
         No hay tenants para mostrar.
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700">
+    <div className="overflow-x-auto rounded-[14px] border border-gray-200 dark:border-gray-700">
       <table className="w-full min-w-[720px] text-sm">
         <thead>
           <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">

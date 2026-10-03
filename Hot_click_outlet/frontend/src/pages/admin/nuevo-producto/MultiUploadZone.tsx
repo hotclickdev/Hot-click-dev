@@ -60,7 +60,7 @@ export default function MultiUploadZone({ files, previews, onAddFiles, onRemove 
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className="w-full border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200"
+          className="w-full border-2 border-dashed rounded-[14px] p-12 text-center transition-all duration-200"
           style={dragging
             ? { borderColor: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.05)' }
             : { borderColor: 'var(--hc-border)' }}>

@@ -52,7 +52,7 @@ export default function EgresosTab({
     return (
       <>
         {kpis}
-        <div className="bg-hc-surface border border-hc-border rounded-2xl p-10 text-center space-y-3">
+        <div className="bg-hc-surface border border-hc-border rounded-[14px] p-10 text-center space-y-3">
           <p className="text-hc-text font-medium">{t('adminFinanzas.noExpenses')}</p>
           <p className="text-sm text-hc-muted">{t('adminFinanzas.noExpensesHint')}</p>
           <button type="button" onClick={() => onNuevo(EMPTY_GASTO)}
@@ -68,7 +68,7 @@ export default function EgresosTab({
   return (
     <>
       {kpis}
-      <div className="bg-hc-surface border border-hc-border rounded-2xl overflow-hidden">
+      <div className="bg-hc-surface border border-hc-border rounded-[14px] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[560px]">
             <thead>

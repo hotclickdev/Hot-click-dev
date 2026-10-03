@@ -68,7 +68,7 @@ export default function AdminAiControl() {
           { label: 'Costo estimado USD', value: `$${costoTotal.toFixed(4)}`, color: 'var(--hc-success-text)' },
           { label: 'Alertas activas', value: alertas.length, color: alertas.length > 0 ? 'var(--hc-danger)' : 'var(--hc-success-text)' },
         ].map((k) => (
-          <div key={k.label} className="rounded-2xl p-4"
+          <div key={k.label} className="rounded-[14px] p-4"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{k.label}</p>
             <p className="text-xl font-bold mt-1" style={{ color: k.color }}>{k.value}</p>
@@ -126,7 +126,7 @@ export default function AdminAiControl() {
         <AiControlConsumoTab empresas={empresas} costoTotal={costoTotal} />
       )}
 
-      <div className="rounded-2xl p-5 space-y-3"
+      <div className="rounded-[14px] p-5 space-y-3"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <p className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
           <TrustGlyph tipo="idea" className="w-4 h-4" />

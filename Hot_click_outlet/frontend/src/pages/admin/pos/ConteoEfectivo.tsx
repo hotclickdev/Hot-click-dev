@@ -22,7 +22,7 @@ export default function ConteoEfectivo({ label, onTotal, totalColor = '#34d399' 
         <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{label}</p>
         <span className="text-xl font-black" style={{ color: totalColor }}>₡{formatMontoPos(total)}</span>
       </div>
-      <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface-2)' }}>
+      <div className="rounded-[14px] overflow-hidden border" style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface-2)' }}>
         {DENOM.map(d => {
           const qty = qtys[d.v]
           const sub = (Number.parseInt(String(qty)) || 0) * d.v

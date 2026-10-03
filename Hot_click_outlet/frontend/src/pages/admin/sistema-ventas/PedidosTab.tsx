@@ -78,7 +78,7 @@ function PedidosCuerpo({ loading, filter, filtered, paged, ordPage, totalOrdPage
   if (loading) return <div className="flex justify-center py-16"><Spinner size="lg" /></div>
   if (filtered.length === 0) {
     return (
-      <div className="rounded-2xl p-10 text-center" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+      <div className="rounded-[14px] p-10 text-center" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
         <p style={{ color: 'var(--hc-muted)' }}>{textoVacioPedidos(filter)}</p>
       </div>
     )

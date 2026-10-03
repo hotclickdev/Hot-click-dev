@@ -131,7 +131,7 @@ export default function AdminFacturas() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl p-4"
+      <div className="flex flex-wrap items-end gap-3 rounded-[14px] p-4"
         style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', boxShadow: 'var(--hc-shadow-1)' }}>
         <div>
           <label htmlFor="facturas-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Estado</label>
@@ -167,7 +167,7 @@ export default function AdminFacturas() {
       </div>
 
       {/* Tabla */}
-      <div className="overflow-hidden rounded-2xl" style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', boxShadow: 'var(--hc-shadow-1)' }}>
+      <div className="overflow-hidden rounded-[14px]" style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', boxShadow: 'var(--hc-shadow-1)' }}>
         {loading ? (
           <div className="flex items-center justify-center py-16 text-sm" style={{ color: 'var(--hc-text-disabled)' }}>Cargando…</div>
         ) : comprobantes.length === 0 ? (

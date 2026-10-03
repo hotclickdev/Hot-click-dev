@@ -24,7 +24,7 @@ export default function WizardDone({ productoCreado, form, onReset }: {
       </div>
       {productoCreado?.imagen && (
         <img src={productoCreado.imagen} alt=""
-          className="w-28 h-28 object-cover rounded-2xl mx-auto" style={{ border: '1px solid var(--hc-border)' }} />
+          className="w-28 h-28 object-cover rounded-[14px] mx-auto" style={{ border: '1px solid var(--hc-border)' }} />
       )}
       <div className="flex flex-col gap-3">
         <Button onClick={() => navigate('/admin/productos')}>Ver todos los productos</Button>

@@ -10,7 +10,7 @@ export default function TabAnalisis({ productosEstrella, totalSemana, mejorDia, 
 }) {
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="rounded-2xl p-5 flex flex-col gap-2.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+      <div className="rounded-[14px] p-5 flex flex-col gap-2.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
         <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>Productos estrella</h2>
         {productosEstrella.length === 0 ? (
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin ventas suficientes esta semana todavía.</p>
@@ -25,8 +25,8 @@ export default function TabAnalisis({ productosEstrella, totalSemana, mejorDia, 
       </div>
 
       {totalSemana > 0 && (
-        <div className="rounded-2xl p-5 flex items-start gap-3.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
-          <div className="w-9 h-9 rounded-[10px] shrink-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14, color: 'var(--hc-accent)' }}>H</div>
+        <div className="rounded-[14px] p-5 flex items-start gap-3.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+          <div className="w-9 h-9 rounded-[12px] shrink-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14, color: 'var(--hc-accent)' }}>H</div>
           <div className="flex flex-col gap-1">
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--hc-text)' }}>Recomendación</div>
             <div style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--hc-text)' }}>
@@ -37,8 +37,8 @@ export default function TabAnalisis({ productosEstrella, totalSemana, mejorDia, 
       )}
 
       {productosEstrella.length > 0 && (
-        <div className="rounded-2xl p-5 flex items-start gap-3.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
-          <div className="w-9 h-9 rounded-[10px] shrink-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14, color: 'var(--hc-accent)' }}>H</div>
+        <div className="rounded-[14px] p-5 flex items-start gap-3.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+          <div className="w-9 h-9 rounded-[12px] shrink-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14, color: 'var(--hc-accent)' }}>H</div>
           <div className="flex flex-col gap-1">
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--hc-text)' }}>Recomendación</div>
             <div style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--hc-text)' }}>

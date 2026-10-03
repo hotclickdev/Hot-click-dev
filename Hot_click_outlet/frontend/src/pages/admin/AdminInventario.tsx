@@ -48,7 +48,7 @@ function KpiCard({ label, value, sub, color = 'var(--hc-accent)' }: {
   color?: string
 }) {
   return (
-    <div className="rounded-2xl p-5"
+    <div className="rounded-[14px] p-5"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{label}</p>
       <p className="text-3xl font-bold mt-1" style={{ color }}>{value}</p>
@@ -64,7 +64,7 @@ function ProductTable({ title, rows, emptyMsg, cols }: {
   cols: ColumnaInventario[]
 }) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
       <div className="px-4 py-3" style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
         <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{title}</p>
       </div>
@@ -229,7 +229,7 @@ export default function AdminInventario() {
                   const item = data.abcResumen?.find(r => r.clase === clase)
                   const desc = { A: 'Top 70% de ingresos', B: '20% siguiente', C: '10% restante' }[clase]
                   return (
-                    <div key={clase} className="rounded-2xl p-5 space-y-2"
+                    <div key={clase} className="rounded-[14px] p-5 space-y-2"
                       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                       <div className="flex items-center gap-2">
                         <span className={`text-2xl font-bold px-3 py-1 rounded-xl ${ABC_STYLE[clase]}`}>{clase}</span>
@@ -247,7 +247,7 @@ export default function AdminInventario() {
                   )
                 })}
               </div>
-              <div className="rounded-2xl p-4 text-sm"
+              <div className="rounded-[14px] p-4 text-sm"
                 style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                 <strong style={{ color: 'var(--hc-text)' }}>Cómo funciona:</strong> El análisis clasifica tus productos según su
                 contribución a los ingresos totales de los últimos 90 días. Los productos A generan el 70% de tus ingresos

@@ -140,7 +140,7 @@ function MarcoQr({ token, qrUrl, alt, errorMsg }: {
 }) {
   return (
     <div
-      className="rounded-2xl p-5"
+      className="rounded-[14px] p-5"
       style={{ backgroundColor: posUi.panel, border: `1px solid ${posUi.borde}` }}
     >
       {token ? (
@@ -202,7 +202,7 @@ function DetalleSinpe({ sinpeNumero, referencia, monto }: {
   ]
   return (
     <div
-      className="mt-5 w-full space-y-2 rounded-2xl p-4 text-left"
+      className="mt-5 w-full space-y-2 rounded-[14px] p-4 text-left"
       style={{ backgroundColor: 'var(--hc-info-bg)', border: '1px solid color-mix(in srgb, var(--hc-blue-600) 22%, transparent)' }}
     >
       {filas.map((fila) => (
@@ -250,13 +250,13 @@ function AccionesQr({ onCancelar, onReportar }: {
         <button
           type="button"
           onClick={onCancelar}
-          className="min-h-11 rounded-2xl py-3 text-sm font-semibold"
+          className="min-h-11 rounded-[14px] py-3 text-sm font-semibold"
           style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}
         >
           {t('pos.qr.cancelar')}
         </button>
         <p
-          className="flex min-h-11 items-center justify-center rounded-2xl px-2 text-center text-xs"
+          className="flex min-h-11 items-center justify-center rounded-[14px] px-2 text-center text-xs"
           style={{ backgroundColor: posUi.panel, color: posUi.muted }}
         >
           {t('pos.qr.autoDetecta')}
@@ -265,7 +265,7 @@ function AccionesQr({ onCancelar, onReportar }: {
       <button
         type="button"
         onClick={onReportar}
-        className="min-h-11 w-full rounded-2xl py-3 text-sm font-semibold transition-colors hover:bg-hc-surface-2"
+        className="min-h-11 w-full rounded-[14px] py-3 text-sm font-semibold transition-colors hover:bg-hc-surface-2"
         style={{ backgroundColor: posUi.fondo, color: posUi.texto, border: `1px solid ${posUi.borde}` }}
         aria-label={t('pos.reporte.botonAria')}
       >

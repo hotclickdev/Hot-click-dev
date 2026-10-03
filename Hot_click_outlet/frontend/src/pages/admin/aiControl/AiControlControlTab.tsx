@@ -12,7 +12,7 @@ export default function AiControlControlTab({ empresas, toggling, onToggleFlag, 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3">
-        <div className="rounded-2xl px-4 py-3 flex items-center gap-4"
+        <div className="rounded-[14px] px-4 py-3 flex items-center gap-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div>
             <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
@@ -34,7 +34,7 @@ export default function AiControlControlTab({ empresas, toggling, onToggleFlag, 
           </div>
         </div>
 
-        <div className="rounded-2xl px-4 py-3 flex items-center gap-4"
+        <div className="rounded-[14px] px-4 py-3 flex items-center gap-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div>
             <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
@@ -57,7 +57,7 @@ export default function AiControlControlTab({ empresas, toggling, onToggleFlag, 
         </div>
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+      <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] text-sm">
             <thead>

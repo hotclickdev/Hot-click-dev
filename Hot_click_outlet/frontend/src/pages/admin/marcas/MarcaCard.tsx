@@ -45,10 +45,10 @@ export type MarcaCardProps = {
 export default function MarcaCard({ marca, logoRoto, onEdit, onDelete, onLogoError }: MarcaCardProps) {
   return (
     <div
-      className="group rounded-2xl p-4 flex flex-col items-center gap-3 transition-colors"
+      className="group rounded-[14px] p-4 flex flex-col items-center gap-3 transition-colors"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
     >
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden shrink-0"
+      <div className="w-16 h-16 rounded-[14px] flex items-center justify-center overflow-hidden shrink-0"
         style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
         <LogoMarca marca={marca} logoRoto={logoRoto} onLogoError={onLogoError} />
       </div>

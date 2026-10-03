@@ -64,7 +64,7 @@ export default function FinanzasResumen({
         <Kpi label={t('adminFinanzas.kpiGrossIncome')} value={totalIngresos} color="#4ade80" />
         <Kpi label={t('adminFinanzas.kpiTotalExpenses')} value={totalEgresos} color="#f87171" negative />
         <Kpi label={t('adminFinanzas.kpiNetProfit')} value={utilidadNeta} color={colorUtilidad} />
-        <div className="bg-hc-surface border border-hc-border rounded-2xl p-5">
+        <div className="bg-hc-surface border border-hc-border rounded-[14px] p-5">
           <p className="text-xs text-hc-muted mb-1">{t('adminFinanzas.netMargin')}</p>
           <p className="text-2xl font-bold" style={{ color: colorUtilidad }}>
             {margen}
@@ -73,7 +73,7 @@ export default function FinanzasResumen({
         </div>
       </div>
 
-      <div className="bg-hc-surface border border-hc-border rounded-2xl p-5 space-y-4">
+      <div className="bg-hc-surface border border-hc-border rounded-[14px] p-5 space-y-4">
         <h3 className="text-sm font-semibold text-hc-text">{t('adminFinanzas.incomeVsExpenses')}</h3>
         <div className="space-y-3">
           <div>
@@ -100,7 +100,7 @@ export default function FinanzasResumen({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-hc-surface border border-hc-border rounded-2xl p-5 space-y-4">
+        <div className="bg-hc-surface border border-hc-border rounded-[14px] p-5 space-y-4">
           <h3 className="text-sm font-semibold text-hc-text">{t('adminFinanzas.salesByChannel')}</h3>
           {origenesConVentas.map(([origen, valor]) => (
             <BarraMonto
@@ -117,7 +117,7 @@ export default function FinanzasResumen({
           )}
         </div>
 
-        <div className="bg-hc-surface border border-hc-border rounded-2xl p-5 space-y-4">
+        <div className="bg-hc-surface border border-hc-border rounded-[14px] p-5 space-y-4">
           <h3 className="text-sm font-semibold text-hc-text">{t('adminFinanzas.salesByPayment')}</h3>
           {porMetodo.slice(0, 5).map(([metodo, valor]) => (
             <BarraMonto
@@ -135,7 +135,7 @@ export default function FinanzasResumen({
       </div>
 
       {porCategoria.length > 0 && (
-        <div className="bg-hc-surface border border-hc-border rounded-2xl p-5 space-y-3">
+        <div className="bg-hc-surface border border-hc-border rounded-[14px] p-5 space-y-3">
           <h3 className="text-sm font-semibold text-hc-text">{t('adminFinanzas.expensesByCategory')}</h3>
           {porCategoria.map(([cat, valor]) => (
             <BarraMonto

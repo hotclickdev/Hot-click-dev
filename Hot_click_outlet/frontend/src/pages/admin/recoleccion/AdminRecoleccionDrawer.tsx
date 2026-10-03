@@ -53,7 +53,7 @@ export default function AdminRecoleccionDrawer({ seleccion, onCerrar, onOk }: Pr
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-hc-surface p-5" role="dialog" aria-labelledby="recoleccion-titulo">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[14px] bg-hc-surface p-5" role="dialog" aria-labelledby="recoleccion-titulo">
         <h2 id="recoleccion-titulo" className="font-display text-lg font-bold">{seleccion.empresaNombre}</h2>
         <p className="mt-3 text-sm"><strong>Recolección:</strong> {seleccion.direccionRecoleccion}</p>
         <p className="text-sm">{seleccion.contactoRecoleccion} · {seleccion.telefonoRecoleccion}</p>

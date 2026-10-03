@@ -73,7 +73,7 @@ export default function SistemaPosts() {
         <button
           type="button"
           onClick={() => setModal('new')}
-          className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[10px] text-[15px] font-bold"
+          className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[12px] text-[15px] font-bold"
           style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
         >
           <TextoMas>Creá un post</TextoMas>
@@ -84,10 +84,10 @@ export default function SistemaPosts() {
         <button
           type="button"
           onClick={() => setModal(formPostSugerido(sugerido) as EntradaBlog)}
-          className="w-full text-left rounded-2xl p-4 mb-5 flex items-center gap-4 flex-wrap"
+          className="w-full text-left rounded-[14px] p-4 mb-5 flex items-center gap-4 flex-wrap"
           style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}
         >
-          {sugerido.imagenUrl && <img src={sugerido.imagenUrl} alt="" className="w-12 h-12 rounded-[10px] object-cover" />}
+          {sugerido.imagenUrl && <img src={sugerido.imagenUrl} alt="" className="w-12 h-12 rounded-[12px] object-cover" />}
           <div className="flex-1 min-w-[180px]">
             <p className="m-0 text-xs font-bold" style={{ color: 'var(--hc-accent)' }}>Publicá esto</p>
             <p className="m-0 mt-0.5 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{sugerido.nombre}</p>
@@ -131,7 +131,7 @@ function TarjetaPost({ entrada, onEdit, onToggle, onDelete }: {
   onDelete: () => void
 }) {
   return (
-    <article className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <article className="rounded-[14px] overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       {entrada.imagenUrl
         ? <img src={entrada.imagenUrl} alt="" className="w-full aspect-[4/3] object-cover" />
         : <div className="w-full aspect-[4/3]" style={{ backgroundColor: 'var(--hc-surface-2)' }} />}

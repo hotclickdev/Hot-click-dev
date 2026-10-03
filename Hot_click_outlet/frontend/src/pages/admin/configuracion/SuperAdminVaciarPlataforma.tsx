@@ -41,7 +41,7 @@ export default function SuperAdminVaciarPlataforma() {
         titulo="Vaciar plataforma"
         subtitulo="Borra tiendas, usuarios y productos. Conserva admin y las 3 cuentas QA."
       />
-      <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 dark:border-red-900/40 dark:bg-red-950/20">
+      <div className="mt-6 rounded-[14px] border border-red-200 bg-red-50 p-5 dark:border-red-900/40 dark:bg-red-950/20">
         <p className="text-sm font-semibold text-red-700">Esto no se puede deshacer</p>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-hc-muted">
           <li>Todos los productos</li>

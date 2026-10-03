@@ -8,7 +8,7 @@ export default function AnalisisProgress({ previews, currentIdx }: { previews: s
       <AnimatePresence mode="wait">
         <motion.div key={currentIdx} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.25 }}
-          className="relative rounded-2xl overflow-hidden aspect-video flex items-center justify-center"
+          className="relative rounded-[14px] overflow-hidden aspect-video flex items-center justify-center"
           style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
           {previews[currentIdx] && (
             <img src={previews[currentIdx]} alt={`Imagen ${currentIdx + 1}`} className="max-h-72 max-w-full object-contain" />

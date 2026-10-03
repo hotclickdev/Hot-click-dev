@@ -14,7 +14,7 @@ export default function SalesChart({ salesLast7 }: SalesChartProps) {
   const maxSale = Math.max(...salesLast7.map((d) => d.total), 1)
 
   return (
-    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl p-5">
+    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-[14px] p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-sm font-semibold text-[var(--hc-text)]">{t('admin.dashboard.revenue')}</h2>

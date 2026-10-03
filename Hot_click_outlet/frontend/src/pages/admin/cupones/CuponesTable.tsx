@@ -45,7 +45,7 @@ export default function CuponesTable({
       )}
 
       {(stats?.tipos?.length ?? 0) > 0 && (
-        <div className="rounded-2xl p-5 space-y-3"
+        <div className="rounded-[14px] p-5 space-y-3"
           style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <h2 className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>Tipos de descuento activos</h2>
           <div className="divide-y" style={{ borderColor: 'var(--hc-border)' }}>
@@ -75,7 +75,7 @@ export default function CuponesTable({
         </div>
       )}
 
-      <div className="rounded-2xl overflow-hidden"
+      <div className="rounded-[14px] overflow-hidden"
         style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div className="p-4 flex flex-wrap gap-3 items-center border-b" style={{ borderColor: 'var(--hc-border)' }}>
           <div className="flex gap-2 flex-wrap">

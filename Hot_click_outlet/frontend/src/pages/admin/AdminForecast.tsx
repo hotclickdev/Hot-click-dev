@@ -180,7 +180,7 @@ export default function AdminForecast() {
               { label: 'Confianza del modelo', value: `${avgConfianza.toFixed(0)}%`,
                 color: avgConfianza >= 70 ? '#34d399' : avgConfianza >= 40 ? '#fbbf24' : '#f87171' },
             ].map(k => (
-              <div key={k.label} className="rounded-2xl p-5"
+              <div key={k.label} className="rounded-[14px] p-5"
                 style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                 <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{k.label}</p>
                 <p className="text-2xl font-bold mt-1" style={{ color: k.color }}>{k.value}</p>
@@ -189,7 +189,7 @@ export default function AdminForecast() {
           </div>
 
           {/* Chart */}
-          <div className="rounded-2xl p-5 space-y-4"
+          <div className="rounded-[14px] p-5 space-y-4"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
@@ -239,7 +239,7 @@ export default function AdminForecast() {
 
           {/* Forecast table */}
           {data.pronostico && data.pronostico.length > 0 && (
-            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+            <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
               <div className="px-4 py-3" style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
                 <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Detalle del pronóstico</p>
               </div>

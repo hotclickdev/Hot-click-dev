@@ -175,7 +175,7 @@ export function ServicioFotoLightbox({ fotoModal, onClose }: { fotoModal: string
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
       onClick={onClose}>
-      <img src={fotoModal} alt="" className="max-w-full max-h-full rounded-2xl object-contain" />
+      <img src={fotoModal} alt="" className="max-w-full max-h-full rounded-[14px] object-contain" />
     </motion.div>
   )
 }

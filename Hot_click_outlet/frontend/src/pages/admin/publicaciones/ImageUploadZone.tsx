@@ -23,7 +23,7 @@ export default function ImageUploadZone({ onFile }: ImageUploadZoneProps) {
       onDragLeave={() => setDrag(false)}
       onDrop={handleDrop}
       className={`
-        w-full border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-200
+        w-full border-2 border-dashed rounded-[14px] p-8 text-center transition-all duration-200
         ${drag
           ? 'border-hc-primary bg-hc-primary/5'
           : 'border-hc-border hover:border-hc-primary/50 hover:bg-hc-surface-2'

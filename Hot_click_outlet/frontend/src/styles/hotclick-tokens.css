@@ -82,8 +82,9 @@
 
   /* ---------- Radios ---------- */
   --hc-r-sm: 6px;    /* chips, badges */
-  --hc-r-md: 10px;   /* botones, inputs */
-  --hc-r-lg: 16px;   /* tarjetas, modales */
+  --hc-r-md: 12px;   /* botones, inputs (manual Figma) */
+  --hc-r-lg: 14px;   /* tarjetas (manual Figma) */
+  --hc-r-destacado: 16px; /* bloques destacados, modales */
   --hc-r-xl: 24px;   /* heros, sheets */
   --hc-r-full: 999px;
 

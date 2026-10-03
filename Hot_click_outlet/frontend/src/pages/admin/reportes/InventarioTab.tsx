@@ -23,12 +23,12 @@ export default function InventarioTab({ loading, productos, stockRiesgo }: Inven
       </ReportesKpis>
 
       {stockRiesgo.length === 0 ? (
-        <div className="rounded-2xl p-10 text-center" style={cardStyle}>
+        <div className="rounded-[14px] p-10 text-center" style={cardStyle}>
           <p className="font-medium" style={{ color: SUCCESS }}>¡Todo el inventario está en niveles seguros!</p>
           <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>Ningún producto está por debajo de su stock mínimo.</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+        <div className="rounded-[14px] overflow-hidden" style={cardStyle}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead>

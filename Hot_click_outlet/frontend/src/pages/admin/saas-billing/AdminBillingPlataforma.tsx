@@ -158,7 +158,7 @@ function KpiRow({ kpis }: { kpis: BillingKpis }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
       {items.map((k) => (
-        <div key={k.label} className="rounded-2xl border border-hc-border p-3">
+        <div key={k.label} className="rounded-[14px] border border-hc-border p-3">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-hc-muted">{k.label}</p>
           <p className="mt-1 text-xl font-bold text-hc-text">{k.valor}</p>
         </div>

@@ -228,7 +228,7 @@ export default function AdminInventarioCaptura() {
       </div>
 
       {!paquete ? (
-        <div className="rounded-2xl p-4 space-y-3"
+        <div className="rounded-[14px] p-4 space-y-3"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <label className="block text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Empresa (si ya existe)</label>
           <select value={String(empresaId)} onChange={(e) => setEmpresaId(e.target.value ? Number(e.target.value) : '')}
@@ -258,7 +258,7 @@ export default function AdminInventarioCaptura() {
         </div>
       ) : (
         <>
-          <div className="rounded-2xl p-3 flex items-center justify-between"
+          <div className="rounded-[14px] p-3 flex items-center justify-between"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <div>
               <p className="font-mono text-sm font-bold" style={{ color: 'var(--hc-text)' }}>{paquete.codigo}</p>

@@ -37,7 +37,7 @@ function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, o
     '',
   ]
   return (
-    <div className="bg-hc-surface border border-hc-border rounded-2xl overflow-hidden">
+    <div className="bg-hc-surface border border-hc-border rounded-[14px] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[700px]">
           <thead>
@@ -136,7 +136,7 @@ export default function IngresosTab({
     return (
       <>
         {kpis}
-        <div className="bg-hc-surface border border-hc-border rounded-2xl p-10 text-center space-y-2">
+        <div className="bg-hc-surface border border-hc-border rounded-[14px] p-10 text-center space-y-2">
           <p className="text-hc-text font-medium">{t('adminFinanzas.noSalesPeriod')}</p>
           <p className="text-sm text-hc-muted">{t('adminFinanzas.noSalesHint')}</p>
           <Link to="/admin/pedidos" className="inline-block text-xs text-hc-link hover:underline mt-1">

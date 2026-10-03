@@ -41,7 +41,7 @@ export default function StepResumen({ drafts, categories, onEditar, onGuardar, s
         </div>
       )}
 
-      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

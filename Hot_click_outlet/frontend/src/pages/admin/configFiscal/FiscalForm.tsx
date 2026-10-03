@@ -27,7 +27,7 @@ export default function FiscalForm({
   onP12File,
 }: FiscalFormProps) {
   return (
-    <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-[var(--hc-border)] bg-[var(--hc-surface)] p-6 shadow-sm">
+    <form onSubmit={onSubmit} className="space-y-5 rounded-[14px] border border-[var(--hc-border)] bg-[var(--hc-surface)] p-6 shadow-sm">
 
       <div>
         <label htmlFor="fiscal-ambiente" className="block text-sm font-medium text-[var(--hc-text)] mb-1">

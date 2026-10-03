@@ -186,7 +186,7 @@ function KpiCard({ titulo, valor, badge, extra }: {
   extra?: ReactNode
 }) {
   return (
-    <motion.div variants={stagger.item} className="rounded-2xl p-5 flex flex-col gap-3"
+    <motion.div variants={stagger.item} className="rounded-[14px] p-5 flex flex-col gap-3"
       style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
       <span className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>{titulo}</span>
       <div className="text-2xl sm:text-[28px] leading-none"
@@ -257,7 +257,7 @@ function AccesosRapidos({ porDespachar }: { porDespachar: number }) {
 
 function PedidosRecientes({ recientes }: { recientes: VentaInicio[] }) {
   return (
-    <section className="rounded-2xl overflow-hidden"
+    <section className="rounded-[14px] overflow-hidden"
       style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
         <h2 className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Pedidos recientes</h2>

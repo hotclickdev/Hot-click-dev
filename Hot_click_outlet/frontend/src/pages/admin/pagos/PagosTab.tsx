@@ -15,7 +15,7 @@ function TablaPagos({ pagos, actionLoading, onConfirmar, onRechazar, page, total
   onPage: (p: number) => void
 }) {
   return (
-    <div className="bg-hc-surface border border-hc-border rounded-2xl overflow-hidden">
+    <div className="bg-hc-surface border border-hc-border rounded-[14px] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[800px]">
           <thead>

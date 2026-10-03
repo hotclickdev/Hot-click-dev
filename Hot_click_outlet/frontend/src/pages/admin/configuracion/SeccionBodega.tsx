@@ -192,7 +192,7 @@ function FormBodega({ form, setForm, saving, onCancel, onSave }: {
 
 function TarjetaBodega({ bodega, onEdit, onDelete }: { bodega: Bodega; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: CARD_SHADOW }}>
+    <div className="rounded-[14px] p-5 flex flex-col gap-2" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: CARD_SHADOW }}>
       <div className="flex items-center justify-between gap-2">
         <span className="font-bold text-[16px]" style={{ fontFamily: F.display }}>{bodega.nombreBodega}</span>
         <div className="flex gap-2">

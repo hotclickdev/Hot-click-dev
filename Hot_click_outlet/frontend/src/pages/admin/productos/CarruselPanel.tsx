@@ -113,7 +113,7 @@ function CarruselSlot({
 
 export default function CarruselPanel({ carruselSlots, open, onToggleOpen, onMover, onQuitar }: CarruselPanelProps) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <button type="button"
         onClick={onToggleOpen}
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--hc-surface-2)] transition-colors"

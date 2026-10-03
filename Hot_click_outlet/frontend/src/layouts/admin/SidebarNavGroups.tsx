@@ -117,7 +117,7 @@ export default function SidebarNavGroups({
                       <NavLink
                         to={link.to ?? ''}
                         end={link.exact}
-                        className={`group/item relative flex items-center gap-2.5 px-3 mb-0.5 transition-colors duration-150 ${layoutSistema ? 'py-2 rounded-[10px]' : 'py-2.5 rounded-xl'}`}
+                        className={`group/item relative flex items-center gap-2.5 px-3 mb-0.5 transition-colors duration-150 ${layoutSistema ? 'py-2 rounded-[12px]' : 'py-2.5 rounded-xl'}`}
                         style={({ isActive }) => ({
                           color:           isActive ? 'var(--hc-link)' : 'var(--hc-text)',
                           fontWeight:      isActive ? 700 : 500,
@@ -192,7 +192,7 @@ function ItemSistema({
     <>
       {!isActive && (
         <motion.div
-          className="absolute inset-0 rounded-[10px] opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
+          className="absolute inset-0 rounded-[12px] opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
           style={{ backgroundColor: hoverBg }}
         />
       )}

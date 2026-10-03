@@ -27,7 +27,7 @@ export default function QuickLinks({ links }: QuickLinksProps) {
             <Link
               key={link.to}
               to={link.to}
-              className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-all text-center group col-span-1"
+              className="flex flex-col items-center gap-2 p-4 rounded-[14px] transition-all text-center group col-span-1"
               style={{ background: 'rgba(23,71,168,0.08)', border: '1.5px solid rgba(23,71,168,0.28)' }}
             >
               <span className="w-5 h-5" style={{ color: 'var(--hc-link)' }}>{link.icon}</span>

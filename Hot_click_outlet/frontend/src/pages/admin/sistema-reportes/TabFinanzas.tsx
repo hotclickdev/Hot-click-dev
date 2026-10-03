@@ -13,7 +13,7 @@ export default function TabFinanzas({ porDia, totalSemana, maxDia, mejorDia, mej
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="md:col-span-2 rounded-2xl p-6 flex flex-col gap-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+      <div className="md:col-span-2 rounded-[14px] p-6 flex flex-col gap-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
         <div className="flex items-center justify-between">
           <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--hc-text)' }}>Ventas de la semana</h2>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>{formatPrice(totalSemana)}</span>
@@ -34,12 +34,12 @@ export default function TabFinanzas({ porDia, totalSemana, maxDia, mejorDia, mej
         </div>
       </div>
       <div className="flex flex-col gap-4">
-        <div className="rounded-2xl p-5 flex flex-col gap-1.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+        <div className="rounded-[14px] p-5 flex flex-col gap-1.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
           <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>Ingreso neto de la semana</h3>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--hc-text)' }}>{formatPrice(ingresoNeto)}</div>
           {costoSemana > 0 && <p style={{ fontSize: 13, color: '#1E7F4F', fontWeight: 600, margin: 0 }}>Después de {formatPrice(costoSemana)} en costos</p>}
         </div>
-        <div className="rounded-2xl p-5 flex flex-col gap-1.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+        <div className="rounded-[14px] p-5 flex flex-col gap-1.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
           <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>Mejor día para vender</h3>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--hc-text)' }}>{capitalizar(mejorDia.labelLargo)}</div>
           {totalSemana > 0 && <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: 0 }}>{mejorDiaPct}% de tus ventas de la semana</p>}

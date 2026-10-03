@@ -137,7 +137,7 @@ function SeccionPersonalizado({ form, setForm }: {
   setForm: Dispatch<SetStateAction<WizardForm>>
 }) {
   return (
-    <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: 'var(--hc-border)' }}>
+    <div className="rounded-[14px] border p-4 space-y-3" style={{ borderColor: 'var(--hc-border)' }}>
       <label className="flex items-start gap-3 cursor-pointer" aria-label="Producto personalizado / por encargo">
         <input
           type="checkbox"

@@ -165,7 +165,7 @@ export default function AdminAdsMetricas() {
           ) : null}
 
           {alertas.length > 0 && (
-            <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
+            <section className="rounded-[14px] border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
               <h2 className="font-semibold text-hc-text">Alertas creativas</h2>
               <ul className="space-y-1 text-sm text-hc-text">
                 {alertas.map((a, i) => (
@@ -175,7 +175,7 @@ export default function AdminAdsMetricas() {
             </section>
           )}
 
-          <section className="rounded-2xl border border-hc-border bg-hc-surface overflow-hidden">
+          <section className="rounded-[14px] border border-hc-border bg-hc-surface overflow-hidden">
             <div className="px-4 py-3 border-b border-hc-border font-semibold">Por campaña</div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -210,7 +210,7 @@ export default function AdminAdsMetricas() {
         </>
       )}
 
-      <section className="rounded-2xl border border-hc-border bg-hc-surface p-4 space-y-4">
+      <section className="rounded-[14px] border border-hc-border bg-hc-surface p-4 space-y-4">
         <h2 className="font-semibold text-hc-text">Cargar gasto de campaña</h2>
         <div className="flex flex-wrap gap-2 items-end">
           <label className="text-xs text-hc-muted flex flex-col gap-1">
@@ -251,7 +251,7 @@ export default function AdminAdsMetricas() {
 
 function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-hc-border bg-hc-surface p-4">
+    <div className="rounded-[14px] border border-hc-border bg-hc-surface p-4">
       <div className="text-xs text-hc-muted">{label}</div>
       <div className="text-xl font-bold text-hc-text mt-1">{value}</div>
       {hint && <div className="text-[11px] text-hc-muted mt-1">{hint}</div>}

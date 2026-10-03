@@ -86,7 +86,7 @@ export default function AdminBilletera() {
         <KpiBox label={t('adminBilletera.kpiWithdrawn')} value={wallet?.totalRetirado} color="#c084fc" sub={t('adminBilletera.kpiWithdrawnSub')} />
       </div>
 
-      <div className="bg-hc-surface border border-hc-border rounded-2xl p-5">
+      <div className="bg-hc-surface border border-hc-border rounded-[14px] p-5">
         <h2 className="text-sm font-medium mb-3 text-hc-muted">{t('adminBilletera.howCalculated')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div className="bg-white/4 rounded-xl p-3">

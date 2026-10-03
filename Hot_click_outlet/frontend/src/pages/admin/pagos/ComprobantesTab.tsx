@@ -21,7 +21,7 @@ function TarjetaComprobante({
 }) {
   return (
     <div
-      className="rounded-2xl p-5 space-y-4"
+      className="rounded-[14px] p-5 space-y-4"
       style={{ background: 'var(--hc-surface)', border: `1px solid ${c.estado === 'PENDIENTE' ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}` }}
     >
       <div className="flex items-start justify-between gap-3 flex-wrap">

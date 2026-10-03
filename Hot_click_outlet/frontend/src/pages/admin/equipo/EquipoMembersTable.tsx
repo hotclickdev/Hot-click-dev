@@ -26,7 +26,7 @@ export default function EquipoMembersTable({
     return (
       <div className="p-10 text-center space-y-3">
         <div
-          className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+          className="w-14 h-14 rounded-[14px] mx-auto flex items-center justify-center"
           style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}
         >
           <svg
@@ -61,7 +61,7 @@ export default function EquipoMembersTable({
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[560px]">
           <thead>

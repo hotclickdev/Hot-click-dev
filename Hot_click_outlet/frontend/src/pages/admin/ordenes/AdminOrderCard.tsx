@@ -56,7 +56,7 @@ export default function OrderCard({ order, onUpdate, onDelete }: {
   })
 
   return (
-    <div className="rounded-2xl border overflow-hidden"
+    <div className="rounded-[14px] border overflow-hidden"
       style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}>
 
       <div className="flex items-center gap-2 px-2 py-1 hover:bg-[var(--hc-surface-2)]">

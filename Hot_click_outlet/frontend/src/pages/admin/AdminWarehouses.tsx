@@ -150,7 +150,7 @@ export default function AdminWarehouses() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {warehouses.map((w) => (
-              <div key={w.id} className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+              <div key={w.id} className="rounded-[14px] p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Logo negocio */}

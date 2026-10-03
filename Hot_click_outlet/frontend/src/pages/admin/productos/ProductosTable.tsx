@@ -48,7 +48,7 @@ export default function ProductosTable({
   const encabezados = encabezadosProductos(t, isAdmin, vistaSimple)
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <div className="overflow-x-auto hidden md:block">
         <table className="w-full min-w-[900px] text-sm">
           <thead>
