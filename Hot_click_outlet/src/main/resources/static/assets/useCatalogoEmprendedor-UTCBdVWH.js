@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-Bhi1-ITW.js";function t(){return e()}export{t};
