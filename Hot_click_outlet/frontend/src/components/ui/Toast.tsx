@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 import { motion, AnimatePresence } from 'framer-motion'
 import TrustGlyph from './TrustGlyph'
 import CloseIcon from './CloseIcon'
+import useAuthStore from '@/store/authStore'
+import { varianteDeRuta, type VariantePieza } from './varianteVisitante'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -12,6 +14,7 @@ type ToastItem = {
   message: string
   type: ToastType
   accion?: ToastAccion
+  variante: VariantePieza
 }
 
 type ShowToastFn = (opts: { message: string; type?: ToastType; duration?: number; accion?: ToastAccion }) => void
@@ -33,17 +36,25 @@ let toastId = 0
  * máximo 3 apilados, icono con color semántico + texto (el color nunca es el
  * único indicador, cap. 9). En móvil se elevan sobre el BottomNav.
  */
-export function ToastProvider({ children }: { children: ReactNode }) {
+/**
+ * `variantePorRuta` (solo `App`): cada toast toma la variante de la ruta en que se crea (visitante = Figma).
+ * Sin la prop (tests, paneles sueltos) todos los toasts son clásicos. ⚠️ COMPARTIDO.
+ */
+export function ToastProvider({ children, variantePorRuta = false }: { children: ReactNode; variantePorRuta?: boolean }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const toast = useCallback<ShowToastFn>(({ message, type = 'info', duration = 5000, accion }) => {
     const id = ++toastId
-    setToasts((prev) => [...prev, { id, message, type, accion }].slice(-3))
+    // ⚠️ COMPARTIDO: la variante se fija al crear el toast, según la ruta (visitante = Figma, paneles = clásica).
+    const variante: VariantePieza = variantePorRuta
+      ? varianteDeRuta(globalThis.location?.pathname ?? '/', useAuthStore.getState().userRole)
+      : 'clasica'
+    setToasts((prev) => [...prev, { id, message, type, accion, variante }].slice(-3))
     if (type !== 'error' && !accion) {
       const filterOut = (prev: ToastItem[]) => prev.filter((t) => t.id !== id)
       setTimeout(() => setToasts(filterOut), duration)
     }
-  }, [])
+  }, [variantePorRuta])
 
   const remove = (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id))
 
@@ -63,7 +74,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         aria-live="polite"
       >
         <AnimatePresence>
-          {toasts.map((t) => (
+          {toasts.filter((t) => t.variante !== 'figma').map((t) => (
             <motion.div
               key={t.id}
               initial={{ opacity: 0, y: 24, scale: 0.97 }}
@@ -108,7 +119,65 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           ))}
         </AnimatePresence>
       </div>
+      <PilaToastsFigma toasts={toasts.filter((t) => t.variante === 'figma')} onCerrar={remove} />
     </ToastContext.Provider>
+  )
+}
+
+const ICONO_FIGMA: Record<ToastType, string> = {
+  success: 'bg-hc-success-bg text-hc-success-text',
+  error: 'bg-hc-red-50 text-hc-red-600',
+  warning: 'bg-hc-warning-bg text-hc-warning',
+  info: 'bg-hc-blue-50 text-hc-blue-600',
+}
+
+/**
+ * Toasts del visitante (derivado de Figma `29:2036` y del aviso de versión nueva): tarjeta blanca de radio 14
+ * con borde n200, centrada abajo, ícono en círculo de color semántico claro, texto SemiBold 14 n900 y acción azul b600.
+ */
+function PilaToastsFigma({ toasts, onCerrar }: { toasts: ToastItem[]; onCerrar: (id: number) => void }) {
+  return (
+    <div
+      className="pointer-events-none fixed left-1/2 z-[9999] flex w-[min(92vw,24rem)] -translate-x-1/2 flex-col gap-2 bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] md:bottom-6"
+      aria-live="polite"
+    >
+      <AnimatePresence>
+        {toasts.map((t) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            role={t.type === 'error' ? 'alert' : 'status'}
+            data-variante="figma"
+            className="pointer-events-auto flex items-center gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 leading-[normal] shadow-[0_8px_24px_rgba(20,23,28,0.12)]"
+          >
+            <span aria-hidden="true" className={`flex size-7 shrink-0 items-center justify-center rounded-full ${ICONO_FIGMA[t.type] || ICONO_FIGMA.info}`}>
+              <TrustGlyph tipo={tipoGlifoToast(t.type)} className="size-4" />
+            </span>
+            <p className="min-w-0 flex-1 text-[14px] font-semibold leading-[18px] text-hc-n-900 wrap-anywhere">{t.message}</p>
+            {t.accion && (
+              <button
+                type="button"
+                onClick={() => { t.accion?.onClick(); onCerrar(t.id) }}
+                className="shrink-0 text-[14px] font-semibold text-hc-blue-600"
+              >
+                {t.accion.label}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => onCerrar(t.id)}
+              aria-label="Cerrar notificación"
+              className="flex size-7 shrink-0 items-center justify-center rounded-full text-hc-n-600 hover:bg-hc-n-100 hover:text-hc-n-900"
+            >
+              <CloseIcon className="size-4" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   )
 }
 
