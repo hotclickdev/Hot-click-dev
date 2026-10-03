@@ -12,7 +12,6 @@ import EstadoVacioConversacional from '../compartido/motion/EstadoVacioConversac
 import { ListaStagger, ItemListaStagger } from '../compartido/motion/ListaStagger'
 import ListadoFeedback from '../compartido/ListadoFeedback'
 import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
-import { formatoColon } from '@/theme/formatoColon'
 import { useToast } from '@/components/ui/Toast'
 import { sucursalService, type SucursalDto } from '@/services/sucursalService'
 import {
@@ -28,10 +27,12 @@ const MS_AUTO_DISMISS_EXITO = 4500
 
 type EstadoSucursal = 'Al día' | 'Inactiva'
 
+// Decisión 3.9 B (3-oct-2026): el backend todavía no mide ventas por sucursal (`ventasMes` llega en 0
+// fijo), así que la pantalla no muestra montos que parezcan reales.
 type SucursalVista = {
   id: string
   nombre: string
-  ventasMes: number
+  ubicacion: string | null
   estado: EstadoSucursal
 }
 
@@ -72,7 +73,7 @@ export default function SucursalesPage() {
     return () => { vivo = false }
   }, [])
 
-  const totalVentas = sucursales.reduce((acc, s) => acc + s.ventasMes, 0)
+  const activas = sucursales.filter((s) => s.estado === 'Al día').length
   const pendienteDesactivar = accion?.tipo === 'desactivar' ? accion.sucursal : null
 
   return (
@@ -89,7 +90,7 @@ export default function SucursalesPage() {
             <StatCard etiqueta="Sucursales" valor={String(sucursales.length)} />
           </ItemListaStagger>
           <ItemListaStagger>
-            <StatCard etiqueta="Ventas totales" valor={formatoColon(totalVentas)} />
+            <StatCard etiqueta="Activas" valor={String(activas)} />
           </ItemListaStagger>
         </ListaStagger>
 
@@ -119,7 +120,7 @@ export default function SucursalesPage() {
             empty={(
               <EstadoVacioConversacional
                 titulo="Todavía no hay sucursales"
-                mensaje="Agregá la primera para consolidar ventas e inventario."
+                mensaje="Agregá la primera para tener tus locales en un solo lugar."
               />
             )}
           >
@@ -181,7 +182,7 @@ function CabeceraSucursales({
         </Link>
         <h1 className="font-display text-[22px] font-bold md:text-[28px]">Mis Sucursales</h1>
         <p className="mt-1 text-xs text-hc-muted md:text-sm">
-          Ventas e inventario consolidado de tu grupo
+          Los locales de tu negocio
         </p>
       </div>
       {!ocultarAgregar ? (
@@ -202,7 +203,7 @@ function aUnaVista(s: SucursalDto): SucursalVista {
   return {
     id: String(s.id),
     nombre: s.nombre,
-    ventasMes: typeof s.ventasMes === 'number' ? s.ventasMes : 0,
+    ubicacion: s.ubicacion?.trim() || null,
     estado: s.activo === false ? 'Inactiva' : 'Al día',
   }
 }
@@ -240,9 +241,9 @@ function FilaSucursal({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-medium md:text-[15px] md:font-semibold">{sucursal.nombre}</p>
-          <p className="text-[11px] text-hc-muted md:text-[13px]">
-            {formatoColon(sucursal.ventasMes)} este mes
-          </p>
+          {sucursal.ubicacion ? (
+            <p className="truncate text-[11px] text-hc-muted md:text-[13px]">{sucursal.ubicacion}</p>
+          ) : null}
         </div>
         <span
           className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium md:text-xs"
@@ -296,7 +297,7 @@ function ConfirmacionDesactivar({
       <div className="rounded-xl border border-hc-border bg-hc-surface p-4 space-y-2">
         <p className="text-sm font-semibold text-hc-text">{sucursal.nombre}</p>
         <p className="text-[13px] text-hc-muted">
-          {formatoColon(sucursal.ventasMes)} este mes · {sucursal.estado}
+          {sucursal.estado === 'Al día' ? 'Activa' : 'Inactiva'}
         </p>
       </div>
       <p className="mt-5 text-[15px] font-semibold text-hc-text">
@@ -664,7 +665,7 @@ function ResumenSucursal({ nombre, ubicacion }: { nombre: string; ubicacion: str
         </div>
       </div>
       <p className="mt-3 text-xs text-hc-muted">
-        Podés agregar más sucursales después para consolidar ventas e inventario.
+        Podés agregar más sucursales después.
       </p>
     </div>
   )
