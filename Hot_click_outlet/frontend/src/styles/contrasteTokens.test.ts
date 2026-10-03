@@ -82,10 +82,12 @@ describe('R1: el texto no usa tokens por debajo de AA', () => {
   it('n-400, n-500 y red-500 como texto solo quedan en íconos, placeholders o sobre fondo oscuro', () => {
     const ICONO = /IconoFigma|Glyph|<svg|<[A-Z]\w*Icon\b|<Icon[A-Z]\w*/
     const TEXTO_BAJO = /(?<![\w:-])text-hc-(n-400|n-500|red-500)(?![\w-])/
+    // SelfCheckoutFab: texto sobre fondo oscuro. MarcaComprador: logotipo «Hot», exento por WCAG 1.4.3.
+    const EXENTOS = ['SelfCheckoutFab.tsx', 'MarcaComprador.tsx']
     const malos: string[] = []
     for (const archivo of fuentes(new URL('../', import.meta.url))) {
       readFileSync(archivo, 'utf8').split('\n').forEach((linea, i) => {
-        if (TEXTO_BAJO.test(linea) && !ICONO.test(linea) && !archivo.endsWith('SelfCheckoutFab.tsx')) {
+        if (TEXTO_BAJO.test(linea) && !ICONO.test(linea) && !EXENTOS.some((e) => archivo.endsWith(e))) {
           malos.push(`${archivo.replaceAll('\\', '/').split('/src/')[1]}:${i + 1}`)
         }
       })
