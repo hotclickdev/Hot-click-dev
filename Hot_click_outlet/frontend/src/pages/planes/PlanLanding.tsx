@@ -20,7 +20,7 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
         <div className="flex flex-col gap-4">
           <SegmentoPlanes actual={plan} />
           <h1 className="font-[family-name:var(--hc-font-display)] text-[30px] font-extrabold leading-[36px] lg:text-[44px] lg:leading-[52px]">
-            {t('planes.landing.planLabel')} <span className="text-hc-red-500">{nombre}</span>
+            {t('planes.landing.planLabel')} <span className="text-hc-red-600">{nombre}</span>
           </h1>
           <p className="text-[16px] leading-[24px] text-hc-n-600 lg:text-[18px] lg:leading-[28px]">{t(`planes.${plan}.pitch`)}</p>
           <p className="flex flex-wrap items-center gap-2 text-[13px] text-hc-n-600">
