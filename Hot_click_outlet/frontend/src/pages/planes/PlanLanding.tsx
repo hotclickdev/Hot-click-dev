@@ -301,7 +301,7 @@ function ComparativaMovil({ plan }: { plan: PlanLandingId }) {
 
 function CheckCirculo() {
   return (
-    <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-hc-success-bg text-hc-success" aria-hidden="true">
+    <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-hc-success-bg text-hc-success-text" aria-hidden="true">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 6 9 17l-5-5" />
       </svg>
