@@ -1630,7 +1630,8 @@
     "sending": "Enviando…",
     "successToast": "Mensagem enviada com sucesso",
     "errorToast": "Não foi possível enviar. Tente pelo WhatsApp.",
-    "saturday": "Sábados"
+    "saturday": "Sábados",
+    "canales": "Canais"
   },
   "informacion": {
     "title": "Informações",
