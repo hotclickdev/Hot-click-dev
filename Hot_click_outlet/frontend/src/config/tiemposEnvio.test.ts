@@ -13,6 +13,9 @@ describe('tiempos de envío: una sola fuente (D13)', () => {
     const json = JSON.parse(readFileSync(new URL('../../../src/main/resources/config/tiempos-envio.json', import.meta.url), 'utf8'))
     expect(TIEMPOS_ENVIO).toEqual({ rapido: json.rapido, normalGam: json.normalGam, fueraGam: json.fueraGam })
     expect(TIEMPOS_ENVIO_PROVISIONALES).toBe(json.provisional)
+    // Confirmados por el negocio el 2-oct-2026.
+    expect(TIEMPOS_ENVIO_PROVISIONALES).toBe(false)
+    expect(TIEMPOS_ENVIO).toEqual({ rapido: { desdeMin: 30, hastaHoras: 2 }, normalGam: { desdeDias: 2, hastaDias: 4 }, fueraGam: { desdeDias: 3, hastaDias: 4 } })
   })
 
   it('/envios y el checkout muestran el mismo texto que la config', () => {
@@ -37,6 +40,9 @@ describe('tiempos de envío: una sola fuente (D13)', () => {
     expect(i18n.t('checkout.f.envioNormalSub')).toBe('2 a 4 días hábiles')
     expect(i18n.t('home.shipping.normalTime', { lng: 'en' })).toBe('2–4 business days')
     expect(i18n.t('home.shipping.fueraTime', { lng: 'pt' })).toBe('3–4 dias úteis')
+    expect(i18n.t('home.aboutShippingBody')).toContain('en 2–4 días hábiles dentro del GAM y 3–4 fuera del GAM. Envío rápido en el GAM: 30 min – 2 horas.')
+    expect(i18n.t('home.aboutShippingBody', { lng: 'en' })).toContain('in 2–4 business days within the GAM and 3–4 outside it. Express shipping in the GAM: 30 min – 2 hours.')
+    expect(i18n.t('home.aboutShippingBody', { lng: 'pt' })).toContain('em 2–4 dias úteis dentro da GAM e 3–4 fora dela. Envio expresso na GAM: 30 min – 2 horas.')
     for (const lng of ['es', 'en', 'pt']) {
       const json = JSON.stringify({ es, en, pt }[lng])
       expect(json).not.toMatch(/30 min [–a]|2–4 |2 a 4 d|2 to 4 b/)

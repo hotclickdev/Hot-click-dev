@@ -25,6 +25,7 @@ class TiemposEnvioTest {
         assertThat(v.normalGamHasta()).isEqualTo(json.at("/normalGam/hastaDias").asInt());
         assertThat(v.fueraGamDesde()).isEqualTo(json.at("/fueraGam/desdeDias").asInt());
         assertThat(v.fueraGamHasta()).isEqualTo(json.at("/fueraGam/hastaDias").asInt());
+        assertThat(json.at("/provisional").asBoolean()).as("confirmados por el negocio").isFalse();
     }
 
     @Test
@@ -38,12 +39,16 @@ class TiemposEnvioTest {
     }
 
     @Test
-    @DisplayName("Plazo por método de envío, con los valores provisionales actuales")
+    @DisplayName("Plazo por método de envío, con los valores confirmados (2-oct-2026)")
     void plazoPorMetodo() {
         assertThat(TiemposEnvio.plazo("ENVIO_RAPIDO")).isEqualTo("de 30 min a 2 horas");
         assertThat(TiemposEnvio.plazo("ENVIO_NORMAL_GAM")).isEqualTo("de 2 a 4 días hábiles");
         assertThat(TiemposEnvio.plazo("ENVIO_NORMAL_FUERA_GAM")).isEqualTo("de 3 a 4 días hábiles");
         assertThat(TiemposEnvio.plazo(null)).isEqualTo("de 2 a 4 días hábiles");
+        assertThat(TiemposEnvio.plazoEn("ENVIO_RAPIDO")).isEqualTo("30 min to 2 hours");
+        assertThat(TiemposEnvio.plazoEn("ENVIO_NORMAL_FUERA_GAM")).isEqualTo("3-4 business days");
+        assertThat(TiemposEnvio.resumen())
+            .isEqualTo("en el GAM de 2 a 4 días hábiles, fuera del GAM de 3 a 4 días hábiles y envío rápido en el GAM de 30 min a 2 horas");
     }
 
     @Test

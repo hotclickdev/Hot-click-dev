@@ -592,7 +592,7 @@
     "aboutPaymentsTitle": "Pagamentos seguros",
     "aboutPaymentsBody": "Aceitamos cartões de crédito e débito, além de SINPE Móvil. Todos os pagamentos são processados com criptografia SSL. Compre com confiança.",
     "aboutShippingTitle": "Envio para toda a Costa Rica",
-    "aboutShippingBody": "Enviamos para San José, Alajuela, Heredia, Cartago, Puntarenas, Limón e Guanacaste em 1–5 dias úteis. Envio expresso disponível.",
+    "aboutShippingBody": "Enviamos para San José, Alajuela, Heredia, Cartago, Puntarenas, Limón e Guanacaste em {{envioNormalDesde}}–{{envioNormalHasta}} dias úteis dentro da GAM e {{envioFueraDesde}}–{{envioFueraHasta}} fora dela. Envio expresso na GAM: {{envioRapidoDesde}} min – {{envioRapidoHasta}} horas.",
     "brandsSub": "Confiança que se reconhece.",
     "verTestimonio": "Ver depoimento {{n}}",
     "shipping": {

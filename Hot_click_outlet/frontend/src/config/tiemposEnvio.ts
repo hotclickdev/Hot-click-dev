@@ -6,7 +6,7 @@ import tiempos from '../../../src/main/resources/config/tiempos-envio.json'
  * (`/envios`, opciones del checkout y textos i18n) y el backend (`com.hotclick.config.TiemposEnvio`,
  * correo de guía). Vive en `src/main/resources` porque el build del backend solo copia `src/`.
  *
- * ⚠ VALORES PROVISIONALES — confirmar con el negocio. Son los que ya usaba la operación.
+ * Valores CONFIRMADOS por el negocio el 2-oct-2026 (son los que ya usaba la operación).
  * Figma `28:1660` proponía «24 h hábiles» (rápido) y «1 a 3 días» (normal).
  * Para cambiarlos, editar solo el JSON: los textos de es/en/pt los leen por interpolación
  * (`{{envioRapidoDesde}}`, etc., registrados como `defaultVariables` en `i18n/index.ts`).

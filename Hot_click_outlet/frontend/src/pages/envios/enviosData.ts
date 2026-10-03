@@ -14,7 +14,7 @@ export type FilaTarifa = {
   href?: { url: string; ariaLabel: string }
 }
 
-/** Tarifas de la página de envíos. Los tiempos salen de `config/tiemposEnvio.ts` (D13, provisionales); los montos, del contenido existente. No alterar sin avisar al negocio. */
+/** Tarifas de la página de envíos. Los tiempos salen de `config/tiemposEnvio.ts` (D13, confirmados el 2-oct-2026); los montos, del contenido existente. No alterar sin avisar al negocio. */
 export const TARIFAS: FilaTarifa[] = [
   {
     id: 'rapido',

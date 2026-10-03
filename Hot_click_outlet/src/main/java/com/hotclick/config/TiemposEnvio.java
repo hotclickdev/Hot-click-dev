@@ -10,7 +10,7 @@ import java.io.UncheckedIOException;
 /**
  * Tiempos de entrega leídos de {@code classpath:config/tiempos-envio.json}, la ÚNICA FUENTE
  * que comparte con el frontend ({@code frontend/src/config/tiemposEnvio.ts}). Decisión D13;
- * valores PROVISIONALES hasta que el negocio los confirme.
+ * valores confirmados por el negocio el 2-oct-2026.
  */
 public final class TiemposEnvio {
 
@@ -41,6 +41,31 @@ public final class TiemposEnvio {
         if ("ENVIO_NORMAL_GAM".equals(metodoEnvio)) return dias(v.normalGamDesde(), v.normalGamHasta());
         if ("ENVIO_NORMAL_FUERA_GAM".equals(metodoEnvio)) return dias(v.fueraGamDesde(), v.fueraGamHasta());
         return dias(Math.min(v.normalGamDesde(), v.fueraGamDesde()), Math.max(v.normalGamHasta(), v.fueraGamHasta()));
+    }
+
+    /** Lo mismo en inglés, para el asistente: «2-4 business days», «30 min to 2 hours». */
+    public static String plazoEn(String metodoEnvio) {
+        Valores v = VALORES;
+        if ("ENVIO_RAPIDO".equals(metodoEnvio)) return v.rapidoDesdeMin() + " min to " + v.rapidoHastaHoras() + " hours";
+        if ("ENVIO_NORMAL_GAM".equals(metodoEnvio)) return diasEn(v.normalGamDesde(), v.normalGamHasta());
+        if ("ENVIO_NORMAL_FUERA_GAM".equals(metodoEnvio)) return diasEn(v.fueraGamDesde(), v.fueraGamHasta());
+        return diasEn(Math.min(v.normalGamDesde(), v.fueraGamDesde()), Math.max(v.normalGamHasta(), v.fueraGamHasta()));
+    }
+
+    /** Resumen en español para el prompt del asistente: GAM, fuera del GAM y rápido. */
+    public static String resumen() {
+        return "en el GAM " + plazo("ENVIO_NORMAL_GAM") + ", fuera del GAM " + plazo("ENVIO_NORMAL_FUERA_GAM")
+            + " y envío rápido en el GAM " + plazo("ENVIO_RAPIDO");
+    }
+
+    /** Resumen en inglés para el asistente. */
+    public static String resumenEn() {
+        return "GAM " + plazoEn("ENVIO_NORMAL_GAM") + ", outside the GAM " + plazoEn("ENVIO_NORMAL_FUERA_GAM")
+            + ", and express delivery in the GAM in " + plazoEn("ENVIO_RAPIDO");
+    }
+
+    private static String diasEn(int desde, int hasta) {
+        return desde == hasta ? desde + " business days" : desde + "-" + hasta + " business days";
     }
 
     private static String dias(int desde, int hasta) {
