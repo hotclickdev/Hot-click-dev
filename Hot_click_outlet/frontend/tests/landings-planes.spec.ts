@@ -29,7 +29,31 @@ for (const ancho of [390, 1440]) {
         await expect(landing).toBeVisible()
         await expect(landing.getByRole('link', { name: 'Elegir este plan' }).first()).toHaveAttribute('href', `/registro-empresa?plan=${c.query}`)
         await expect(landing.getByText('[PENDIENTE]').first()).toBeVisible()
-        await expect(landing.getByRole('table')).toBeVisible()
+        const nombres: Record<string, string> = { emprendedor: 'Emprendedor', pyme: 'Pyme', negocioPlus: 'Negocio Plus' }
+        if (ancho === 390) {
+          // Celular: sin tabla cortada; selector de plan + una tarjeta, con el plan de la página preseleccionado.
+          await expect(landing.getByRole('table')).toBeHidden()
+          const movil = landing.getByTestId('comparativa-movil')
+          await expect(movil).toBeVisible()
+          await expect(movil.getByRole('button', { name: nombres[c.id], exact: true })).toHaveAttribute('aria-pressed', 'true')
+          await expect(movil.getByText('Este plan')).toBeVisible()
+          for (const otro of Object.values(nombres)) {
+            await movil.getByRole('button', { name: otro, exact: true }).click()
+            await expect(movil.getByRole('button', { name: otro, exact: true })).toHaveAttribute('aria-pressed', 'true')
+            await expect(movil.locator('dl > div')).toHaveCount(14)
+            const caja = await movil.boundingBox()
+            expect(caja && caja.x + caja.width).toBeLessThanOrEqual(ancho)
+          }
+          await expect(movil.getByText('Sin límite').first()).toBeVisible()
+          await expect(movil.getByText('[PENDIENTE]').first()).toBeVisible()
+          await movil.getByRole('button', { name: nombres[c.id], exact: true }).click()
+          // El WhatsApp no flota sobre la foto ni la barra: va dentro de la página.
+          await expect(page.locator('a[href^="https://wa.me"].fixed')).toBeHidden()
+          await expect(landing.getByTestId('landing-whatsapp').getByRole('link', { name: 'Escribinos por WhatsApp' })).toBeVisible()
+        } else {
+          await expect(landing.getByRole('table')).toBeVisible()
+          await expect(landing.getByTestId('comparativa-movil')).toBeHidden()
+        }
         const texto = await landing.innerText()
         expect(texto).not.toMatch(/₡\s?\d|\d\s?%|cupos? gratis|soporte prioritario|sucursal|CRM/i)
         const puntos = landing.locator('ul').first()
@@ -37,7 +61,13 @@ for (const ancho of [390, 1440]) {
         else await expect(puntos).not.toContainText('Tu contacto visible')
         // Sin scroll horizontal de página (la comparativa se desliza dentro de su caja).
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(ancho)
-        if (SHOTS) await page.screenshot({ path: `${SHOTS}/landing-${c.id}-${ancho}.png`, fullPage: true })
+        if (SHOTS) {
+          // Alto completo como viewport: la barra inferior fija queda abajo, donde la ve el usuario al final.
+          const alto = await page.evaluate(() => document.documentElement.scrollHeight)
+          await page.setViewportSize({ width: ancho, height: alto })
+          await page.waitForTimeout(300)
+          await page.screenshot({ path: `${SHOTS}/landing-${c.id}-${ancho}.png` })
+        }
       })
     }
   })
