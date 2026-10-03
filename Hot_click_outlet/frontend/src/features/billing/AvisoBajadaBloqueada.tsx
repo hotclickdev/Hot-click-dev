@@ -34,6 +34,7 @@ export default function AvisoBajadaBloqueada({
               <p className="mt-0.5 text-[13px] text-[#4D5560]">
                 {t(`planes.bajarBloqueado.${e.recurso}.texto`, { uso: e.uso, limite: e.limite, exceso: e.exceso, plan })}
               </p>
+              <BarraUso uso={e.uso} limite={e.limite} etiqueta={t('planes.bloqueo.limite.contador', { uso: e.uso, limite: e.limite })} />
               <Link to={ruta} className="mt-2 inline-block text-[13px] font-semibold text-[#1747A8] underline-offset-2 hover:underline">
                 {t(`planes.bajarBloqueado.${e.recurso}.boton`)}
               </Link>
@@ -42,5 +43,19 @@ export default function AvisoBajadaBloqueada({
         })}
       </ul>
     </section>
+  )
+}
+
+/** Vista rápida del exceso: barra n100 con el tramo permitido en azul y el excedente en rojo (sin degradados). */
+function BarraUso({ uso, limite, etiqueta }: { uso: number; limite: number; etiqueta: string }) {
+  const permitido = uso > 0 ? Math.min(100, Math.round((limite / uso) * 100)) : 100
+  return (
+    <div className="mt-2" aria-label={etiqueta} role="img">
+      <div className="flex h-2 w-full overflow-hidden rounded-full bg-[#F1F3F6]">
+        <span className="h-full bg-[#1747A8]" style={{ width: `${permitido}%` }} />
+        <span className="h-full bg-[#E73B33]" style={{ width: `${100 - permitido}%` }} />
+      </div>
+      <p className="mt-1 text-[12px] text-[#4D5560]">{etiqueta}</p>
+    </div>
   )
 }
