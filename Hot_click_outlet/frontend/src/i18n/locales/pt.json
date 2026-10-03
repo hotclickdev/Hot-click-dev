@@ -3633,6 +3633,8 @@
   "despacho": {
     "pedido": "Pedido #{{id}}",
     "porDespachar": "A despachar",
+    "esperandoPago": "Aguardando pagamento",
+    "esperandoPagoAyuda": "Você pode despachar quando o pagamento for confirmado.",
     "tusProductos": "Seus produtos",
     "unidades_one": "{{count}} un.",
     "unidades_other": "{{count}} un.",

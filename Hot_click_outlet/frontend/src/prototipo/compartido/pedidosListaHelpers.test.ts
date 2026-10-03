@@ -17,6 +17,12 @@ describe('pedidosListaHelpers', () => {
     { ...base, id: '3', estado: 'Entregado' },
   ]
 
+  it('Pendientes incluye los que esperan pago (no desaparecen del chip)', () => {
+    const conEspera: PedidoMock[] = [...pedidos, { ...base, id: '4', estado: 'Esperando pago' }]
+    expect(filtrarPedidos(conEspera, 'Pendientes').map((p) => p.id)).toEqual(['1', '4'])
+    expect(filtrarPedidos(conEspera, 'Todos')).toHaveLength(4)
+  })
+
   it('filtrarPedidos por chip', () => {
     expect(filtrarPedidos(pedidos, 'Todos')).toHaveLength(3)
     expect(filtrarPedidos(pedidos, 'Pendientes').map((p) => p.id)).toEqual(['1'])
@@ -28,5 +34,6 @@ describe('pedidosListaHelpers', () => {
     expect(estiloEstadoPedido('Entregado').color).toBe('var(--hc-success)')
     expect(estiloEstadoPedido('Cancelado').color).toBe('var(--hc-danger)')
     expect(estiloEstadoPedido('Pendiente').color).toBe('var(--hc-warning)')
+    expect(estiloEstadoPedido('Esperando pago').color).toBe('var(--hc-warning)')
   })
 })
