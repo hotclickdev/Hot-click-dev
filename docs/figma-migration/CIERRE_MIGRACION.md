@@ -97,7 +97,7 @@ Ninguna se implementó por inferencia. «Vigente» describe lo que hace el códi
 | R4 | **`stock: 99`:** `RecuperarCarritoPage.tsx:57` agrega con 99 aunque desde P11 llega el stock real. El mismo valor por defecto está en `aiChatHelpers.ts:78`, `useAiChat.ts:99`, los topes de `cartStore.ts` (`?? 99`) y `MiniCartItems.tsx:59`. Usar el stock real cambia cuánto se puede agregar | `SHELL_GLOBAL.md` P12; `git grep` en `8e07c61c` | P11, P12 |
 | R5 | **FAB de WhatsApp:** en `/emprendimientos` móvil la nota `52:2422` lo hace global y nadie pidió quitarlo. En `/productos` a 390 tapa parte de una tarjeta (`QA_GLOBAL.md` #4). En la tienda va con D01/D20 | `SHELL_GLOBAL.md` P12 y P15 | P12, P15 |
 | R6 | **Nombre de la gift card:** el carrito dice «Gift card» (`cart…giftCardLinea`) y el checkout «Tarjeta de regalo {{codigo}}» (`lineaGift`) | `SHELL_GLOBAL.md` P17 | P17 |
-| R7 | **Seguridad: datos de la bodega en la API pública.** `Producto.bodega` no tiene `@JsonIgnore`, así que `/productos` y `/productos/:id` exponen `direccionExacta`, `telefono`, `correoContacto`, `encargadoNombre`, latitud y longitud, horarios y capacidad. Propuesta: DTO público con `id`, `nombreBodega`, `provincia`, `canton` y `permiteRetiroCliente` | BG #6 | P11 (**prioridad alta**) |
+| R7 | **Seguridad: datos de la bodega en la API pública.** `Producto.bodega` no tiene `@JsonIgnore`, así que `/productos` y `/productos/:id` exponen `direccionExacta`, `telefono`, `correoContacto`, `encargadoNombre`, latitud y longitud, horarios y capacidad. Propuesta: DTO público con `id`, `nombreBodega`, `provincia`, `canton` y `permiteRetiroCliente` | BG #6 | P11. **Resuelto** en `826e37b6` (PR #95, `00252fa3`): lista blanca de campos públicos de `Bodega` en `CamposInternosSerializerModifier` |
 | R8 | Tamaño táctil de los enlaces del pie móvil (WCAG 2.5.8): agrandarlos alarga el pie medido contra `12:489` | `SHELL_GLOBAL.md` P15 y P19 | P15, P19 |
 | R9 | Borde de alto contraste en los `header` de la superficie Figma que tienen su propia clase de borde | `SHELL_GLOBAL.md` P19 | P12, P19 |
 | R10 | Respuesta 200 con `data: null`: la ficha y la cotización se pintarían vacías. Cambiar el interceptor afecta a todos los servicios | `SHELL_GLOBAL.md` P14 | P14 |
@@ -128,9 +128,10 @@ La tabla completa, con campo, pantalla y contrato propuesto, está en `BACKEND_G
 | Estado | Filas |
 | --- | --- |
 | IMPLEMENTADO (P11) | #1 carrito recuperado (`4b7a71c6`), #2 foto en Mis opiniones (`818764ce`), #3 búsqueda por foto (`88101cf3`) |
+| RESUELTO (PR #95) | #6 bodega pública (seguridad, R7): `826e37b6` |
 | DATO_EXISTE (falta cablear o medir) | #4 «Sale de <provincia>», #9 paquete N de M en el correo de guía, #8 N de M y forma de entrega en el despacho, #23 tienda en el encargo |
 | REQUIERE_BACKEND | #10 dirección en el pedido, #14 comprobante del QR, #15 directorio de tiendas, #16 días de retiro, #17 elaboración, #18 guía de tallas, #19 fotos y motivo de la garantía, #20 cotizaciones, #22 encargos del comprador, #23 fechas y producción del encargo, #26 blog, #28 último cambio de contraseña, #29 direcciones, #32 «Entendí:» del asistente |
-| REQUIERE_DECISION | #5 GAM por origen, **#6 bodega pública (seguridad)**, #7 `tokenSeguimiento` del invitado, #8 pago por paquete, #13 método en el QR, #24 teléfono del vendedor, #25 rangos de presupuesto, #27 confiar en el dispositivo, #30 rango de entrega, #31 edición en Mi cuenta (diseño), #33 «Misma categoría» por foto |
+| REQUIERE_DECISION | #5 GAM por origen, #7 `tokenSeguimiento` del invitado, #8 pago por paquete, #13 método en el QR, #24 teléfono del vendedor, #25 rangos de presupuesto, #27 confiar en el dispositivo, #30 rango de entrega, #31 edición en Mi cuenta (diseño), #33 «Misma categoría» por foto |
 | DECISIÓN + BACKEND | #11 vencimiento del cupón, #12 número de cobro y caja, #21 aceptar cotización |
 | Solo datos | #34 fotos reales, «Quedan N» y badge del Home |
 
@@ -213,7 +214,7 @@ Los archivos `B*-resultado.txt`, `B8-decisiones-Figma.md`, `auditoria-cierre-B4.
 
 1. Producto y diseño responden la §2.
 2. Diseño entrega los frames que faltan: D06, D11, D15, D19, cookies de escritorio, páginas legales e informativas.
-3. Backend: primero R7 (seguridad), después la §3.
+3. Backend: la §3 (R7, la bodega en la API pública, ya está resuelto en `826e37b6`).
 4. QA independiente con datos reales de los 38 PASS, y correos en Gmail y Outlook.
 5. Integrar en `master` y desplegar, solo cuando el usuario lo autorice.
 
@@ -364,7 +365,7 @@ Hora de Costa Rica: de 16:01 a 19:31. El commit de docs va al final.
 | B17 cupón | No se promete vencimiento de 30 días (el copy no lo decía; un test lo asegura) | `NegocioEmailBuilder` |
 | R1 | Hecho para texto (ver pendientes) | `hotclick-tokens.css`, `contrasteTokens.test.ts` |
 | R2, R3, R4, R5, R6 | Hechos | §10.1 |
-| R7 (bodega pública) | **No incluida** en las decisiones aceptadas; sigue abierta y es de prioridad alta | BG #6 |
+| R7 (bodega pública) | **Ya resuelto** en `826e37b6` (PR #95): de `Bodega` el público solo recibe `id`, `nombreBodega`, `provincia`, `canton` y `permiteRetiroCliente`, y `direccionExacta` solo con retiro; el resto, solo dueño o ADMIN. Esta sección lo daba por abierto por error | BG #6, `CamposInternosSerializerModifier` |
 | R8–R15 | Sin cambio | §2.3 |
 
 Valores PROVISIONALES que hay que confirmar:
@@ -384,11 +385,7 @@ R1 cambia a propósito colores de texto de Figma (n-400/n-500 → n-600, red-500
 
 ### 10.4 Pendientes que quedan
 
-- **R7:** DTO público de la bodega (seguridad, prioridad alta). No estaba en la lista aceptada.
-- El correo de guía dice «2 a 5 días hábiles» fijo: el backend no lee `tiemposEnvio.ts`.
-- `pos.pago.vencidoDesc` dice «15 minutos» y el backend vence el QR a los 30.
 - Comprobante del QR por correo: no se hizo.
-- `--hc-success` como texto sigue debajo de AA (4,39:1); no estaba en la decisión.
 - Los íconos siguen con n-400/n-500 (no son texto).
 - Rotar el token de Telegram.
 - QA independiente con datos reales y correos en Gmail y Outlook.
@@ -408,4 +405,26 @@ R1 cambia a propósito colores de texto de Figma (n-400/n-500 → n-600, red-500
 | Gates (sin contexto de GitHub, no comentan PR), `BASE_SHA=00252fa3` | E17 i18n PASS (0 faltantes); E1 Flyway PASS (V147, V148); SCALE1 PASS con 2 avisos (`@Transactional` en `PosQrSessionService`); E11 sensibles PASS (pos, payment); E10 authz PASS; E2 tenant PASS con 1 aviso (falso positivo: `nombreCaja` busca la bodega de la sesión y filtra por empresa); E3 SPA PASS con el `static/` regenerado |
 | gitleaks 8.30.1 (rango `00252fa3..HEAD` y árbol) | Sin hallazgos |
 | `static/` | Regenerado con `vite build` sin archivos `.env` (solo existe `.env.example`, que Vite no lee) ni variables `VITE_*` en el entorno; sin claves de Clerk, PostHog, Sentry ni GA en los `.js`; commit aparte `db068105` |
+
+### 10.6 Restos corregidos (2-oct-2026, 19:40–20:15 hora de Costa Rica)
+
+| Resto | Commit | Qué cambió | Tests |
+| --- | --- | --- | --- |
+| R7 | — | Ya estaba resuelto en `826e37b6` (PR #95). Se corrigió este documento, que lo daba por abierto | — |
+| Plazo del correo de guía | `f0fcabea` | La fuente única pasa a `Hot_click_outlet/src/main/resources/config/tiempos-envio.json`: el frontend la importa (`tiemposEnvio.ts`; `server.fs.allow` en `vite.config.ts`) y el backend la lee del classpath (`com.hotclick.config.TiemposEnvio`). Vive en `src/` porque el Docker del backend solo copia `src/`. El correo dice «La entrega tarda de 2 a 4 días hábiles» (GAM), «de 3 a 4» (fuera de la GAM) o «de 30 min a 2 horas» (rápido), en vez de «2 a 5» fijo | `TiemposEnvioTest` (4), `NotificacionGuiaEmailBuilderTest` (+1), `tiemposEnvio.test.ts` (+1) |
+| QR vencido: «15 minutos» | `96ea0977` | `PosQrSessionService.VIGENCIA_MINUTOS = 30` fija la expiración y sale en la info pública (`vigenciaMinutos`). El texto es/en/pt interpola `{{minutos}}`; sin dato usa `VIGENCIA_QR_MINUTOS` (30), que un test compara con el backend | `PosQrVigenciaTest` (2), `posPagoFormat.test.ts` (+1), `qr-mesa-pago` (+1) |
+| `--hc-success` como texto | `5a66adcd` | Token nuevo `--hc-success-text`: `#107142` en claro, superadmin y Sistema (6,06:1 sobre blanco; 5,49:1 sobre success-bg; 4,86:1 sobre el crema de Sistema) y `#3DCB82` en oscuro (8,29:1). 62 archivos: clases `text-hc-success`/`text-hc-green-600`, `text-[var(--hc-success)]` y estilos `color`/`text`. Íconos, sus círculos, fondos y bordes siguen con el verde de Figma | `contrasteTokens.test.ts` (+2, con guard de fuentes) |
+| `static/` | `2f5ae3ac` | Regenerado sin `VITE_*` (commit aparte) | — |
+
+Verificación final, sobre `5a66adcd` (y `2f5ae3ac` para `static/`):
+
+- **tsc:** 0 errores en app, e2e y node.
+- **vitest:** 111 archivos, 560/560.
+- **Java, suite completa:** 1095 tests, 0 fallas.
+- **Playwright, suite completa:** 462 casos; 413 pasan, 36 omitidos y 13 fallan, los mismos 13 de §9.2.
+- **ESLint** sobre los 71 archivos tocados: 0 problemas nuevos (2 viejos, en líneas sin cambios).
+- **Gates** (`BASE_SHA=00252fa3`, sin contexto de GitHub): E17 PASS; E1 Flyway PASS; E11 PASS; E10 PASS; E2 tenant PASS con el mismo aviso falso de `nombreCaja`; E3 SPA PASS. SCALE1 no corre en Windows (la lista de archivos de `static/` supera el largo máximo de una línea de comandos); en el box, con los mismos commits, da PASS con 3 avisos (dos `@Transactional` en `PosQrSessionService` y `sw.js` fuera de `assets/`).
+- **gitleaks** 8.30.1: sin hallazgos en el rango ni en el árbol.
+
+Quedan fuera de esta tanda: el prompt del asistente público (`PublicChatPromptBuilder`) y `aboutShippingBody` de i18n siguen con plazos propios («2-5 días hábiles», «1–5 días hábiles»).
 
