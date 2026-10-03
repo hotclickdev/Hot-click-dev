@@ -1,15 +1,17 @@
 import { Helmet } from 'react-helmet-async'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
-import NegocioPlusLanding from '../negocioplus/NegocioPlusLanding'
+import PlanLanding from './PlanLanding'
 
 export default function NegocioPlusLandingPage() {
+  const { t } = useTranslation()
   return (
     <MainLayout>
       <Helmet>
-        <title>Negocio Plus — Todas tus sucursales en un panel | HotClick</title>
-        <meta name="description" content="Pedidos por local, equipo sin tope y CRM de clientes, por ₡24.900 al mes." />
+        <title>{`${t('planes.landing.planLabel')} Negocio Plus | HotClick`}</title>
+        <meta name="description" content={t('planes.landing.metaPlus')} />
       </Helmet>
-      <NegocioPlusLanding />
+      <PlanLanding plan="negocioPlus" />
     </MainLayout>
   )
 }

@@ -4014,5 +4014,273 @@
     "enResultados": "Negócios que correspondem",
     "verTodos": "Ver todos os negócios",
     "sinPlan": "Ainda não há lojas {{plan}} na HotClick."
+  },
+  "planes": {
+    "emprendedor": {
+      "nombre": "Emprendedor",
+      "pitch": "Comece a vender na HotClick.",
+      "punto": {
+        "productos": "Até 50 produtos",
+        "bodegas": "1 depósito",
+        "pos": "Ponto de venda com 1 caixa",
+        "equipo": "Equipe de 2 usuários",
+        "inventario": "Estoque e alertas de estoque baixo",
+        "clientes": "Lista de clientes",
+        "pagos": "Receba por cartão e SINPE",
+        "contacto": "Seus clientes compram de você pela HotClick",
+        "montos": "Mensalidade e comissão: [PENDIENTE]"
+      },
+      "cta": "Escolher este plano"
+    },
+    "pyme": {
+      "nombre": "Pyme",
+      "pitch": "Para quando seu negócio já tem clientes que procuram por você.",
+      "punto": {
+        "contacto": "Seu contato visível na sua loja",
+        "productos": "Até 500 produtos",
+        "bodegas": "2 depósitos",
+        "pos": "Ponto de venda com 2 caixas",
+        "equipo": "Equipe de 5 usuários",
+        "compras": "Compras de fornecedores",
+        "giftCards": "Vale-presentes",
+        "ia": "80 consultas de IA por mês",
+        "base": "Tudo do Emprendedor",
+        "montos": "Mensalidade e comissão: [PENDIENTE]"
+      },
+      "cta": "Escolher este plano"
+    },
+    "negocioPlus": {
+      "nombre": "Negocio Plus",
+      "pitch": "Sem limites para crescer.",
+      "punto": {
+        "contacto": "Seu contato visível na sua loja",
+        "productos": "Produtos sem limite",
+        "bodegas": "Depósitos sem limite",
+        "pos": "Ponto de venda com caixas sem limite",
+        "equipo": "Usuários sem limite",
+        "ia": "Consultas de IA sem limite",
+        "base": "Tudo do Pyme",
+        "montos": "Mensalidade e comissão: [PENDIENTE]"
+      },
+      "cta": "Escolher este plano"
+    },
+    "titulo": "Escolha seu plano",
+    "subtitulo": "Todos os planos incluem loja na HotClick, ponto de venda, estoque e lista de clientes.",
+    "nota": {
+      "cambio": "Você pode subir de plano quando quiser.",
+      "montos": "Os valores são confirmados antes do pagamento."
+    },
+    "badge": {
+      "actual": "Seu plano atual",
+      "provisorio": "Provisório"
+    },
+    "comparativa": {
+      "productos": "Produtos",
+      "bodegas": "Depósitos",
+      "cajas": "Caixas do PDV",
+      "usuarios": "Usuários da equipe",
+      "inventario": "Estoque e alertas de estoque baixo",
+      "clientes": "Lista de clientes",
+      "reportes": "Relatórios de vendas",
+      "telegram": "Avisos de vendas e estoque no Telegram",
+      "contacto": "Contato visível na sua loja",
+      "compras": "Compras de fornecedores",
+      "giftCards": "Vale-presentes",
+      "ia": "Consultas de IA por mês",
+      "mensualidad": "Mensalidade",
+      "comision": "Comissão por venda",
+      "sinLimite": "Sem limite",
+      "incluido": "Incluído",
+      "noIncluido": "Não incluído"
+    },
+    "cambio": {
+      "titulo": "Mudar de plano",
+      "subir": "Mudar para {{plan}}",
+      "subirAyuda": "O novo plano é ativado assim que o pagamento é confirmado.",
+      "bajar": "Mudar para {{plan}}",
+      "bajarAyuda": "Se o seu uso couber nos limites do {{plan}}, a mudança vale no fim do período já pago. Até {{fecha}} você mantém tudo do seu plano atual.",
+      "bajarNadaSeBorra": "Não apagamos nada: você escolhe o que ajustar.",
+      "bajarContacto": "No Emprendedor, seu contato deixa de aparecer na sua loja.",
+      "confirmar": "Confirmar mudança",
+      "programado": "Seu plano muda para {{plan}} em {{fecha}}.",
+      "listo": "Pronto. Seu plano agora é {{plan}}.",
+      "confirmandoPago": "Estamos confirmando seu pagamento. Costuma levar alguns segundos.",
+      "errorConfirmar": "Não conseguimos confirmar a mudança. Confira em Opções → Seu plano.",
+      "yaEsTuPlan": "Esse já é o seu plano."
+    },
+    "bajarBloqueado": {
+      "titulo": "Você ainda não pode mudar para o {{plan}}",
+      "texto": "Seu uso atual passa do que o {{plan}} permite. Não apagamos nada: ajuste o que indicamos e depois confirme a mudança.",
+      "productos": {
+        "titulo": "Produtos",
+        "texto": "Você tem {{uso}} produtos e o {{plan}} permite {{limite}}. Despublique ou exclua {{exceso}}.",
+        "boton": "Ir para meus produtos"
+      },
+      "bodegas": {
+        "titulo": "Depósitos",
+        "texto": "Você tem {{uso}} depósitos e o {{plan}} permite {{limite}}. Mova seus produtos para outro depósito e exclua {{exceso}}. Atenção: um depósito excluído não pode ser recuperado.",
+        "boton": "Ir para meus depósitos"
+      },
+      "cajas": {
+        "titulo": "Caixas",
+        "texto": "[PENDENTE]",
+        "boton": "Ir para o ponto de venda"
+      },
+      "usuarios": {
+        "titulo": "Usuários",
+        "texto": "Sua equipe tem {{uso}} usuários e o {{plan}} permite {{limite}}. Remova {{exceso}} da equipe.",
+        "boton": "Ir para minha equipe"
+      },
+      "listo": "Pronto, seu uso já cabe no {{plan}}. Agora você pode confirmar a mudança."
+    },
+    "pagarDespues": {
+      "boton": "Pagar depois",
+      "ayuda": "Até você pagar o {{plan}}, sua loja funciona como Emprendedor em tudo: com os limites dele e sem seu contato visível.",
+      "limites": "Enquanto isso: até 50 produtos, 1 depósito, 1 caixa, 2 usuários e sem consultas de IA.",
+      "bannerTitulo": "Seu plano {{plan}} está aguardando pagamento",
+      "bannerTexto": "Enquanto isso, sua loja funciona como Emprendedor: com os limites dele e sem seu contato visível. Quando você pagar, os limites e funções do {{plan}} e seu contato são ativados.",
+      "bannerCta": "Pagar agora",
+      "monto": "Valor: [PENDIENTE]"
+    },
+    "bloqueo": {
+      "boton": "Melhorar plano",
+      "compras": {
+        "titulo": "Compras de fornecedores",
+        "texto": "Registre compras de fornecedores a partir do plano Pyme. Você continua vendo seu estoque normalmente."
+      },
+      "giftCards": {
+        "titulo": "Vale-presentes",
+        "texto": "Venda vale-presentes a partir do plano Pyme."
+      },
+      "ia": {
+        "titulo": "Consultas de IA",
+        "texto": "As consultas de IA estão nos planos Pyme e Negocio Plus."
+      },
+      "iaAgotada": {
+        "titulo": "Você usou as consultas deste mês",
+        "texto": "Você usou {{uso}} de {{limite}}. Elas renovam no próximo mês, ou melhore seu plano para ter mais."
+      },
+      "limite": {
+        "productos": {
+          "titulo": "Você chegou ao limite de produtos",
+          "texto": "Seu plano permite {{limite}} produtos e você já tem {{uso}}. Para publicar mais, melhore seu plano."
+        },
+        "productosLote": "Você pode adicionar mais {{disponibles}}: seu plano permite {{limite}} e você já tem {{uso}}.",
+        "bodegas": {
+          "titulo": "Você chegou ao limite de depósitos",
+          "texto": "Seu plano permite {{limite}} depósito(s). Para adicionar outro, melhore seu plano."
+        },
+        "cajas": {
+          "titulo": "Você chegou ao limite de caixas",
+          "texto": "Seu plano permite {{limite}} caixa(s) aberto(s). Feche um ou melhore seu plano."
+        },
+        "usuarios": {
+          "titulo": "Você chegou ao limite de usuários",
+          "texto": "Seu plano permite {{limite}} usuários na equipe. Para convidar mais alguém, melhore seu plano."
+        },
+        "contador": "{{uso}} de {{limite}}"
+      }
+    },
+    "faq": {
+      "1": {
+        "q": "Quanto custa cada plano?",
+        "a": "Mensalidade e comissão por venda: [PENDIENTE]. Você sempre vê os valores antes de pagar."
+      },
+      "2": {
+        "q": "Posso mudar de plano?",
+        "a": "Sim. Você pode subir quando quiser, e ele é ativado quando o pagamento é confirmado. Para descer, seu uso precisa caber nos limites do novo plano; se não couber, dizemos o que ajustar. Não apagamos nada. A mudança vale no fim do período já pago."
+      },
+      "3": {
+        "q": "Meus clientes veem meu WhatsApp ou minhas redes?",
+        "a": "No Pyme e no Negocio Plus, sim: seu contato aparece na sua loja. No Emprendedor, seus clientes compram pela HotClick e nenhum contato direto é exibido."
+      },
+      "4": {
+        "q": "O que acontece se eu escolher \"Pagar depois\"?",
+        "a": "Até você pagar, sua loja funciona como Emprendedor em tudo: com os limites dele e sem contato visível. Quando você pagar, tudo do seu plano é ativado."
+      },
+      "5": {
+        "q": "Todos os planos têm ponto de venda?",
+        "a": "Sim. Muda a quantidade de caixas: 1 no Emprendedor, 2 no Pyme e sem limite no Negocio Plus."
+      },
+      "6": {
+        "q": "Posso ver meu estoque em qualquer plano?",
+        "a": "Sim. Todos veem o estoque e recebem alertas de estoque baixo. As compras de fornecedores começam no Pyme."
+      },
+      "7": {
+        "q": "Posso trabalhar com minha equipe?",
+        "a": "Sim. O Emprendedor inclui 2 usuários, o Pyme 5 e o Negocio Plus não tem limite."
+      },
+      "8": {
+        "q": "Tem frete grátis?",
+        "a": "Por enquanto, não. O valor do frete aparece antes do pagamento."
+      }
+    },
+    "landing": {
+      "planLabel": "Plano",
+      "faqTitulo": "Perguntas frequentes",
+      "metaPyme": "Pyme na HotClick: seu contato visível, até 500 produtos, 2 depósitos e ponto de venda com 2 caixas.",
+      "metaPlus": "Negocio Plus na HotClick: produtos, depósitos, caixas e usuários sem limite.",
+      "metaEmprende": "Comece a vender na HotClick com o plano Emprendedor: até 50 produtos, 1 depósito e ponto de venda."
+    }
+  },
+  "registroVendedor": {
+    "paso1": {
+      "titulo": "Comece a vender na HotClick"
+    },
+    "paso2": {
+      "titulo": "Conte sobre o seu negócio"
+    },
+    "paso3": {
+      "titulo": "Confira seu e-mail"
+    },
+    "activar": {
+      "titulo": "Ative seu plano {{plan}}"
+    },
+    "listo": {
+      "titulo": "Pronto! Seu negócio foi criado"
+    },
+    "boton": {
+      "crearCuenta": "Criar minha conta",
+      "pagarActivar": "Pagar e ativar {{plan}}",
+      "irPanel": "Ir para meu painel"
+    },
+    "contacto": {
+      "ayuda": "Os compradores só veem estes dados se seu plano for Pyme ou Negocio Plus."
+    },
+    "acuerdo": {
+      "check": "Li e aceito o {{acuerdo}}.",
+      "enlace": "Acordo de Vendedores",
+      "ayuda": "Inclui suas obrigações como Operador dos dados dos seus clientes (Lei 8968 da Costa Rica).",
+      "error": "Para continuar, aceite o Acordo de Vendedores."
+    },
+    "revision": {
+      "texto": "Revisamos sua loja antes de publicá-la. Avisamos você por e-mail."
+    },
+    "primerosPasos": {
+      "marca": {
+        "emprendedor": "Nome e logo da sua loja",
+        "pymePlus": "Nome, logo e contato da sua loja"
+      }
+    }
+  },
+  "stock": {
+    "disponible": "Disponível",
+    "quedan_one": "Resta {{count}}",
+    "quedan_other": "Restam {{count}}",
+    "agotado": "Esgotado",
+    "tallaQuedan": "Restam {{count}} no tamanho {{talla}}",
+    "tallaAgotada": "Tamanho {{talla}} esgotado",
+    "maximo": "Não há mais unidades: restam {{count}}",
+    "filtro": {
+      "soloDisponibles": "Somente disponíveis",
+      "quedanPocos": "Restam poucos"
+    },
+    "wishlist": {
+      "uno": "Restam {{count}} de \"{{nombre}}\"",
+      "varios": "{{count}} dos seus favoritos estão quase esgotados"
+    },
+    "checkout": {
+      "agotado": "{{nombre}} esgotou. Tire do pedido e tente de novo."
+    }
   }
 }

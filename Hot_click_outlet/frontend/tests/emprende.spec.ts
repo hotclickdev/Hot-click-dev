@@ -48,29 +48,16 @@ async function silenciarOverlays(page: Page) {
 }
 
 test.describe('Emprende — una puerta, no un laberinto', () => {
-  test('pasos 2 y 3 no fingen el alta; solo crear negocio es el link', async ({ page }) => {
+  test('visitante ve la landing Figma del plan Emprendedor, sin montos ni cupos', async ({ page }) => {
     await mockApi(page)
     await silenciarOverlays(page)
     await page.goto('/emprende', { waitUntil: 'domcontentloaded' })
-
-    await expect(page.getByRole('heading', { name: /crecé tu negocio/i })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /paso a paso/i })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /qué pide el formulario/i })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /qué te llevás al vender/i })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /más información/i })).toBeVisible()
+    await expect(page.getByTestId('landing-emprendedor')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Plan Emprendedor/ })).toBeVisible()
     await expect(page.getByAltText('Interior de un local comercial')).toBeVisible()
-    await expect(page.locator('ol').getByRole('link', { name: /crear mi negocio/i }).first()).toHaveAttribute(
-      'href',
-      '/registro-empresa',
-    )
-    await expect(page.getByRole('link', { name: /publicar el primer producto/i })).toHaveCount(0)
-    await expect(page.getByRole('link', { name: /elegir plan/i })).toHaveCount(0)
-    await expect(page.getByText('Publicar el primer producto', { exact: true })).toBeVisible()
-    await expect(page.getByText('Después del alta, en Sistema. Sin producto no hay venta.')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Crear mi negocio', exact: true }).first()).toHaveAttribute(
-      'href',
-      '/registro-empresa',
-    )
+    await expect(page.getByRole('link', { name: 'Elegir este plan' }).first()).toHaveAttribute('href', '/registro-empresa?plan=emprendedor')
+    const texto = await page.getByTestId('landing-emprendedor').innerText()
+    expect(texto).not.toMatch(/₡\s?\d|\d\s?%|cupos? gratis|soporte prioritario|sucursal/i)
   })
 
   test('dueño ve destinos reales de Sistema', async ({ page }) => {

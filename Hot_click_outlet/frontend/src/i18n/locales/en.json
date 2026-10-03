@@ -4014,5 +4014,273 @@
     "enResultados": "Matching businesses",
     "verTodos": "See all businesses",
     "sinPlan": "There are no {{plan}} stores on HotClick yet."
+  },
+  "planes": {
+    "emprendedor": {
+      "nombre": "Emprendedor",
+      "pitch": "Start selling on HotClick.",
+      "punto": {
+        "productos": "Up to 50 products",
+        "bodegas": "1 warehouse",
+        "pos": "Point of sale with 1 register",
+        "equipo": "Team of 2 users",
+        "inventario": "Inventory and low-stock alerts",
+        "clientes": "Customer list",
+        "pagos": "Get paid by card and SINPE",
+        "contacto": "Your customers buy from you through HotClick",
+        "montos": "Monthly fee and commission: [PENDIENTE]"
+      },
+      "cta": "Choose this plan"
+    },
+    "pyme": {
+      "nombre": "Pyme",
+      "pitch": "For when customers are already looking for your business.",
+      "punto": {
+        "contacto": "Your contact details shown in your store",
+        "productos": "Up to 500 products",
+        "bodegas": "2 warehouses",
+        "pos": "Point of sale with 2 registers",
+        "equipo": "Team of 5 users",
+        "compras": "Purchases from suppliers",
+        "giftCards": "Gift cards",
+        "ia": "80 AI queries per month",
+        "base": "Everything in Emprendedor",
+        "montos": "Monthly fee and commission: [PENDIENTE]"
+      },
+      "cta": "Choose this plan"
+    },
+    "negocioPlus": {
+      "nombre": "Negocio Plus",
+      "pitch": "No limits to grow.",
+      "punto": {
+        "contacto": "Your contact details shown in your store",
+        "productos": "Unlimited products",
+        "bodegas": "Unlimited warehouses",
+        "pos": "Point of sale with unlimited registers",
+        "equipo": "Unlimited users",
+        "ia": "Unlimited AI queries",
+        "base": "Everything in Pyme",
+        "montos": "Monthly fee and commission: [PENDIENTE]"
+      },
+      "cta": "Choose this plan"
+    },
+    "titulo": "Choose your plan",
+    "subtitulo": "Every plan includes a HotClick store, point of sale, inventory and a customer list.",
+    "nota": {
+      "cambio": "You can upgrade whenever you want.",
+      "montos": "Amounts are confirmed before you pay."
+    },
+    "badge": {
+      "actual": "Your current plan",
+      "provisorio": "Provisional"
+    },
+    "comparativa": {
+      "productos": "Products",
+      "bodegas": "Warehouses",
+      "cajas": "POS registers",
+      "usuarios": "Team users",
+      "inventario": "Inventory and low-stock alerts",
+      "clientes": "Customer list",
+      "reportes": "Sales reports",
+      "telegram": "Sales and stock alerts on Telegram",
+      "contacto": "Contact details shown in your store",
+      "compras": "Supplier purchases",
+      "giftCards": "Gift cards",
+      "ia": "AI queries per month",
+      "mensualidad": "Monthly fee",
+      "comision": "Commission per sale",
+      "sinLimite": "Unlimited",
+      "incluido": "Included",
+      "noIncluido": "Not included"
+    },
+    "cambio": {
+      "titulo": "Change plan",
+      "subir": "Upgrade to {{plan}}",
+      "subirAyuda": "Your new plan turns on as soon as the payment is confirmed.",
+      "bajar": "Downgrade to {{plan}}",
+      "bajarAyuda": "If your usage fits within {{plan}}'s limits, the change applies at the end of the period you already paid for. Until {{fecha}} you keep everything in your current plan.",
+      "bajarNadaSeBorra": "We don't delete anything: you choose what to adjust.",
+      "bajarContacto": "On Emprendedor, your contact details are no longer shown in your store.",
+      "confirmar": "Confirm change",
+      "programado": "Your plan switches to {{plan}} on {{fecha}}.",
+      "listo": "Done. Your plan is now {{plan}}.",
+      "confirmandoPago": "We're confirming your payment. It usually takes a few seconds.",
+      "errorConfirmar": "We couldn't confirm the change. Check it in Options → Your plan.",
+      "yaEsTuPlan": "That's already your plan."
+    },
+    "bajarBloqueado": {
+      "titulo": "You can't downgrade to {{plan}} yet",
+      "texto": "Your current usage is above what {{plan}} allows. We don't delete anything: adjust what's listed below, then confirm the change.",
+      "productos": {
+        "titulo": "Products",
+        "texto": "You have {{uso}} products and {{plan}} allows {{limite}}. Unpublish or delete {{exceso}}.",
+        "boton": "Go to my products"
+      },
+      "bodegas": {
+        "titulo": "Warehouses",
+        "texto": "You have {{uso}} warehouses and {{plan}} allows {{limite}}. Move your products to another warehouse and delete {{exceso}}. Note: a deleted warehouse can't be restored.",
+        "boton": "Go to my warehouses"
+      },
+      "cajas": {
+        "titulo": "Registers",
+        "texto": "[PENDING]",
+        "boton": "Go to point of sale"
+      },
+      "usuarios": {
+        "titulo": "Users",
+        "texto": "Your team has {{uso}} users and {{plan}} allows {{limite}}. Remove {{exceso}} from the team.",
+        "boton": "Go to my team"
+      },
+      "listo": "Done, your usage now fits {{plan}}. You can confirm the change."
+    },
+    "pagarDespues": {
+      "boton": "Pay later",
+      "ayuda": "Until you pay for {{plan}}, your store works as Emprendedor in every way: with its limits and without your contact details shown.",
+      "limites": "Meanwhile: up to 50 products, 1 warehouse, 1 register, 2 users and no AI queries.",
+      "bannerTitulo": "Your {{plan}} plan is awaiting payment",
+      "bannerTexto": "Meanwhile, your store runs as Emprendedor: with its limits and without your contact details shown. Once you pay, {{plan}}'s limits, features and your contact details turn on.",
+      "bannerCta": "Pay now",
+      "monto": "Amount: [PENDIENTE]"
+    },
+    "bloqueo": {
+      "boton": "Upgrade plan",
+      "compras": {
+        "titulo": "Supplier purchases",
+        "texto": "Record supplier purchases starting with the Pyme plan. You can still see your inventory as usual."
+      },
+      "giftCards": {
+        "titulo": "Gift cards",
+        "texto": "Sell gift cards starting with the Pyme plan."
+      },
+      "ia": {
+        "titulo": "AI queries",
+        "texto": "AI queries are available on Pyme and Negocio Plus."
+      },
+      "iaAgotada": {
+        "titulo": "You've used this month's queries",
+        "texto": "You've used {{uso}} of {{limite}}. They renew next month, or upgrade for more."
+      },
+      "limite": {
+        "productos": {
+          "titulo": "You've reached your product limit",
+          "texto": "Your plan allows {{limite}} products and you have {{uso}}. Upgrade to publish more."
+        },
+        "productosLote": "You can add {{disponibles}} more: your plan allows {{limite}} and you have {{uso}}.",
+        "bodegas": {
+          "titulo": "You've reached your warehouse limit",
+          "texto": "Your plan allows {{limite}} warehouse(s). Upgrade to add another."
+        },
+        "cajas": {
+          "titulo": "You've reached your register limit",
+          "texto": "Your plan allows {{limite}} open register(s). Close one or upgrade."
+        },
+        "usuarios": {
+          "titulo": "You've reached your user limit",
+          "texto": "Your plan allows {{limite}} team users. Upgrade to invite someone else."
+        },
+        "contador": "{{uso}} of {{limite}}"
+      }
+    },
+    "faq": {
+      "1": {
+        "q": "How much does each plan cost?",
+        "a": "Monthly fee and commission per sale: [PENDIENTE]. You always see them before paying."
+      },
+      "2": {
+        "q": "Can I change plans?",
+        "a": "Yes. You can upgrade anytime; it turns on once the payment is confirmed. To downgrade, your usage must fit the new plan's limits; if it doesn't, we tell you what to adjust. We don't delete anything. The change applies at the end of the period you already paid for."
+      },
+      "3": {
+        "q": "Can my customers see my WhatsApp or social media?",
+        "a": "On Pyme and Negocio Plus, yes: your contact details appear in your store. On Emprendedor, customers buy through HotClick and no direct contact is shown."
+      },
+      "4": {
+        "q": "What happens if I choose \"Pay later\"?",
+        "a": "Until you pay, your store works as Emprendedor in every way: with its limits and no contact details shown. Once you pay, everything in your plan turns on."
+      },
+      "5": {
+        "q": "Do all plans include point of sale?",
+        "a": "Yes. The number of registers changes: 1 on Emprendedor, 2 on Pyme and unlimited on Negocio Plus."
+      },
+      "6": {
+        "q": "Can I see my inventory on any plan?",
+        "a": "Yes. Every plan shows your stock and sends low-stock alerts. Supplier purchases start with Pyme."
+      },
+      "7": {
+        "q": "Can I work with my team?",
+        "a": "Yes. Emprendedor includes 2 users, Pyme 5, and Negocio Plus has no limit."
+      },
+      "8": {
+        "q": "Is there free shipping?",
+        "a": "Not for now. The shipping cost is shown before you pay."
+      }
+    },
+    "landing": {
+      "planLabel": "Plan",
+      "faqTitulo": "Frequently asked questions",
+      "metaPyme": "Pyme on HotClick: your contact details shown, up to 500 products, 2 warehouses and point of sale with 2 registers.",
+      "metaPlus": "Negocio Plus on HotClick: unlimited products, warehouses, registers and users.",
+      "metaEmprende": "Start selling on HotClick with the Emprendedor plan: up to 50 products, 1 warehouse and point of sale."
+    }
+  },
+  "registroVendedor": {
+    "paso1": {
+      "titulo": "Start selling on HotClick"
+    },
+    "paso2": {
+      "titulo": "Tell us about your business"
+    },
+    "paso3": {
+      "titulo": "Check your email"
+    },
+    "activar": {
+      "titulo": "Activate your {{plan}} plan"
+    },
+    "listo": {
+      "titulo": "Done! Your business is set up"
+    },
+    "boton": {
+      "crearCuenta": "Create my account",
+      "pagarActivar": "Pay and activate {{plan}}",
+      "irPanel": "Go to my dashboard"
+    },
+    "contacto": {
+      "ayuda": "Buyers only see these details if your plan is Pyme or Negocio Plus."
+    },
+    "acuerdo": {
+      "check": "I have read and accept the {{acuerdo}}.",
+      "enlace": "Seller Agreement",
+      "ayuda": "It includes your obligations as Data Processor of your customers' data (Costa Rica Law 8968).",
+      "error": "To continue, accept the Seller Agreement."
+    },
+    "revision": {
+      "texto": "We review your store before publishing it. We'll let you know by email."
+    },
+    "primerosPasos": {
+      "marca": {
+        "emprendedor": "Your store's name and logo",
+        "pymePlus": "Your store's name, logo and contact details"
+      }
+    }
+  },
+  "stock": {
+    "disponible": "Available",
+    "quedan_one": "{{count}} left",
+    "quedan_other": "{{count}} left",
+    "agotado": "Sold out",
+    "tallaQuedan": "{{count}} left in size {{talla}}",
+    "tallaAgotada": "Size {{talla}} sold out",
+    "maximo": "No more units: {{count}} left",
+    "filtro": {
+      "soloDisponibles": "Available only",
+      "quedanPocos": "Few left"
+    },
+    "wishlist": {
+      "uno": "{{count}} left of \"{{nombre}}\"",
+      "varios": "{{count}} of your favorites are almost sold out"
+    },
+    "checkout": {
+      "agotado": "{{nombre}} sold out. Remove it from your order and try again."
+    }
   }
 }

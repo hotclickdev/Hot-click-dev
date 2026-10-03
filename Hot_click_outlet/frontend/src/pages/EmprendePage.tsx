@@ -4,7 +4,7 @@ import MainLayout from '@/layouts/MainLayout'
 import useAuthStore from '@/store/authStore'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
 import EmprendeHub from './emprende/EmprendeHub'
-import EmprendeLanding from './emprende/EmprendeLanding'
+import PlanLanding from './planes/PlanLanding'
 
 /** Visitante ve la landing; dueño ya logueado ve el checklist de Sistema. */
 export default function EmprendePage() {
@@ -16,9 +16,9 @@ export default function EmprendePage() {
     <MainLayout>
       <Helmet>
         <title>{t('emprende.metaTitle')}</title>
-        <meta name="description" content={t('emprende.metaDescription')} />
+        <meta name="description" content={t('planes.landing.metaEmprende')} />
       </Helmet>
-      {yaEsDuenio ? <EmprendeHub /> : <EmprendeLanding />}
+      {yaEsDuenio ? <EmprendeHub /> : <PlanLanding plan="emprendedor" />}
     </MainLayout>
   )
 }

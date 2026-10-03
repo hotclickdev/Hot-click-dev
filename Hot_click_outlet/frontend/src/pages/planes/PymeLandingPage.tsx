@@ -1,15 +1,17 @@
 import { Helmet } from 'react-helmet-async'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
-import PymeLanding from '../pyme/PymeLanding'
+import PlanLanding from './PlanLanding'
 
 export default function PymeLandingPage() {
+  const { t } = useTranslation()
   return (
     <MainLayout>
       <Helmet>
-        <title>PYME — Operá tu negocio en un panel | HotClick</title>
-        <meta name="description" content="Equipo, inventario y caja en un solo panel, por ₡9.900 al mes." />
+        <title>{`${t('planes.landing.planLabel')} Pyme | HotClick`}</title>
+        <meta name="description" content={t('planes.landing.metaPyme')} />
       </Helmet>
-      <PymeLanding />
+      <PlanLanding plan="pyme" />
     </MainLayout>
   )
 }
