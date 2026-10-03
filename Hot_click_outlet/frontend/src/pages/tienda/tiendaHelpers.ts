@@ -1,4 +1,4 @@
-import type { RetiroTienda } from '@/types/tienda'
+import type { EmpresaTiendaPublica, RetiroTienda } from '@/types/tienda'
 
 const MESES_CORTOS = ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sept.', 'oct.', 'nov.', 'dic.']
 
@@ -38,4 +38,20 @@ export function horarioRetiro(retiro: RetiroTienda): string {
 /** Enlace de Instagram a partir de "@usuario" o "usuario". */
 export function urlInstagram(usuario: string): string {
   return `https://instagram.com/${usuario.replace(/^@/, '')}`
+}
+
+/**
+ * Contacto directo del vendedor (WhatsApp, Instagram) que puede ver el visitante. Regla de negocio:
+ * solo planes PYME y NEGOCIO_PLUS (`contactoDirecto` lo calcula el backend). En EMPRENDEDOR la venta
+ * tiene que quedar en HotClick, así que no hay botones aunque llegue un dato.
+ */
+export function contactoVisible(empresa?: Pick<EmpresaTiendaPublica, 'contactoDirecto' | 'whatsapp' | 'instagram'> | null): {
+  whatsapp: string
+  instagram: string
+} {
+  if (empresa?.contactoDirecto !== true) return { whatsapp: '', instagram: '' }
+  return {
+    whatsapp: (empresa.whatsapp ?? '').replace(/\D/g, ''),
+    instagram: (empresa.instagram ?? '').trim(),
+  }
 }

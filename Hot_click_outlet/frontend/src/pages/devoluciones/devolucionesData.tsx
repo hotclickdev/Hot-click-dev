@@ -22,7 +22,7 @@ export const returnPolicyJsonLd = {
 /** Resumen en filas con ícono de Figma (antes eran 3 "badges" con TrustGlyph). */
 export const resumen = [
   { icono: 'inicioCaja', title: '7 días hábiles', desc: 'Para solicitar devolución' },
-  { icono: 'encargoChat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
+  { icono: 'encargoChat', title: 'Proceso simple', desc: 'Lo gestionás con HotClick' },
   { icono: 'inicioEscudo', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
 ] as const
 
@@ -81,13 +81,13 @@ export const sections = [
         <p>Seguí estos pasos para iniciar una devolución:</p>
         <ul>
           <li>
-            <strong>Paso 1 — Contactar al emprendedor:</strong> escribí al vendedor dentro de los 7 días hábiles. Podés hacerlo vía WhatsApp desde la página de tu pedido en <Link to="/mis-pedidos" className="font-semibold text-hc-blue-600">Mis Pedidos</Link>.
+            <strong>Paso 1 — Avisar por HotClick:</strong> dentro de los 7 días hábiles, escribinos desde tu pedido en <Link to="/mis-pedidos" className="font-semibold text-hc-blue-600">Mis Pedidos</Link> o a <a href="mailto:hotclick.cr@gmail.com" className="font-semibold text-hc-blue-600">hotclick.cr@gmail.com</a>. Nosotros coordinamos con el emprendedor.
           </li>
           <li>
             <strong>Paso 2 — Describir el problema:</strong> indicá el número de pedido, el motivo de la devolución y adjuntá fotos o video que muestren el problema.
           </li>
           <li>
-            <strong>Paso 3 — Acuerdo de devolución:</strong> el emprendedor te indicará cómo proceder: envío del producto, punto de recogida o solución alternativa.
+            <strong>Paso 3 — Acuerdo de devolución:</strong> te indicamos, junto con el emprendedor, cómo proceder: envío del producto, punto de recogida o solución alternativa.
           </li>
           <li>
             <strong>Paso 4 — Reembolso o reemplazo:</strong> una vez verificado el problema, el emprendedor procesará el reembolso o enviará el producto de reemplazo.
