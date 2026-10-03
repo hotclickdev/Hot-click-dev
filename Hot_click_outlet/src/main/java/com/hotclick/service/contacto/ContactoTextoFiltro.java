@@ -1,5 +1,6 @@
 package com.hotclick.service.contacto;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -24,6 +25,15 @@ public final class ContactoTextoFiltro {
     public static final String OCULTO = "[contacto oculto]";
 
     private static final int I = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+    /**
+     * Solo ASCII, para dominios: con UNICODE_CASE, K (U+212A), ſ (U+017F), İ (U+0130) e ı (U+0131) entran en
+     * [a-z] pero no en el \w del lookbehind, y cada uno vuelve a ser un inicio de búsqueda (cuadrático).
+     * Para seguir ocultando "faceboo\u212A.com" o "casaluna.\u017Fhop" (el navegador los lleva a ASCII) se busca
+     * también en una copia plegada a ASCII y se ocultan los dos resultados ({@link #reemplazarDominio}).
+     */
+    private static final int I_ASCII = Pattern.CASE_INSENSITIVE;
+    private static final String PLEGABLES = "\u212A\u017F\u0130\u0131";
+    private static final String PLEGADOS = "ksii";
 
     /**
      * Tope de caracteres que se revisan (el campo más largo admite 10 000). Lo que pasa del tope no se
@@ -57,10 +67,10 @@ public final class ContactoTextoFiltro {
     private static final Pattern DOMINIO_CONTACTO = Pattern.compile(
         "(?<![\\w.@-])(?:[a-z0-9-][a-z0-9.-]*\\.)?(?:wa\\.me|wa\\.link|whatsapp\\.com|instagram\\.com|instagr\\.am|tiktok\\.com"
             + "|facebook\\.com|fb\\.com|fb\\.me|fb\\.watch|m\\.me|t\\.me|telegram\\.me|linktr\\.ee|bit\\.ly"
-            + "|twitter\\.com|x\\.com|threads\\.net|youtube\\.com|youtu\\.be)(?![\\w-])(?:/[^\\s<>\"']*)?", I);
+            + "|twitter\\.com|x\\.com|threads\\.net|youtube\\.com|youtu\\.be)(?![\\w-])(?:/[^\\s<>\"']*)?", I_ASCII);
     private static final Pattern DOMINIO = Pattern.compile(
         "(?<![\\w.@-])[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\\."
-            + "(?:com|net|org|cr|lat|co|io|store|shop|site|online|info|biz|app|page|xyz)(?![\\w-])(?:/[^\\s<>\"']*)?", I);
+            + "(?:com|net|org|cr|lat|co|io|store|shop|site|online|info|biz|app|page|xyz)(?![\\w-])(?:/[^\\s<>\"']*)?", I_ASCII);
     private static final Pattern HANDLE = Pattern.compile("(?<![\\w.@])@[A-Za-z0-9_](?:[A-Za-z0-9_.]{0,28}[A-Za-z0-9_])?");
 
     private static final Pattern TEL_INTERNACIONAL = Pattern.compile("(?<![\\w+])\\+\\s?\\d{1,3}(?:[\\s.\\-()]*\\d){7,12}(?!\\d)");
@@ -131,8 +141,8 @@ public final class ContactoTextoFiltro {
         s = reemplazar(URL, s, ContactoTextoFiltro::enlace);
         s = EMAIL.matcher(s).replaceAll(OCULTO);
         s = EMAIL_ESCRITO.matcher(s).replaceAll(OCULTO);
-        s = reemplazar(DOMINIO_CONTACTO, s, ContactoTextoFiltro::enlace);
-        s = reemplazar(DOMINIO, s, ContactoTextoFiltro::enlace);
+        s = reemplazarDominio(DOMINIO_CONTACTO, s);
+        s = reemplazarDominio(DOMINIO, s);
         s = HANDLE.matcher(s).replaceAll(Matcher.quoteReplacement(OCULTO));
         s = TEL_INTERNACIONAL.matcher(s).replaceAll(OCULTO);
         s = TEL_506.matcher(s).replaceAll(OCULTO);
@@ -193,6 +203,38 @@ public final class ContactoTextoFiltro {
         if (i >= 0 && s.charAt(i) == ' ') i--;
         if (i >= 0 && (s.charAt(i) == '₡' || s.charAt(i) == '$')) return true;
         return MONEDA_DESPUES.matcher(s).region(fin, s.length()).lookingAt();
+    }
+
+    /** K, ſ, İ, ı → k, s, i, i: un carácter por otro, así las posiciones del texto original no cambian. */
+    private static String plegar(String s) {
+        char[] c = s.toCharArray();
+        for (int i = 0; i < c.length; i++) {
+            int k = PLEGABLES.indexOf(c[i]);
+            if (k >= 0) c[i] = PLEGADOS.charAt(k);
+        }
+        return new String(c);
+    }
+
+    /**
+     * Dominios: lo que encuentra el patrón en el texto tal cual o en su copia plegada se junta (los tramos que se
+     * tocan se unen) y se reemplaza en el original, así lo publicado no cambia de letras.
+     */
+    private static String reemplazarDominio(Pattern p, String s) {
+        if (s.chars().noneMatch(c -> PLEGABLES.indexOf(c) >= 0)) return reemplazar(p, s, ContactoTextoFiltro::enlace);
+        boolean[] marca = new boolean[s.length()];
+        for (String t : new String[]{s, plegar(s)}) {
+            Matcher m = p.matcher(t);
+            while (m.find()) Arrays.fill(marca, m.start(), m.end(), true);
+        }
+        StringBuilder out = new StringBuilder(s.length());
+        int i = 0;
+        while (i < s.length()) {
+            int j = i;
+            while (j < s.length() && marca[j] == marca[i]) j++;
+            out.append(marca[i] ? enlace(s.substring(i, j)) : s.substring(i, j));
+            i = j;
+        }
+        return out.toString();
     }
 
     private static String reemplazar(Pattern p, String s, Function<String, String> f) {
