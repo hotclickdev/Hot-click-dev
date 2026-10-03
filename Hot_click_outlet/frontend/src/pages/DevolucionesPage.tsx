@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import PaginaLegal, { type EnlaceLegal, type SeccionLegal } from '@/components/comprador/PaginaLegal'
 import { IcoSrv } from './servicios/IcoSrv'
+import WhatsAppSoporteDevoluciones from './devoluciones/WhatsAppSoporteDevoluciones'
 import { LAST_UPDATED, SITE_URL, resumen, returnPolicyJsonLd, sections } from './devoluciones/devolucionesData'
 
 const ENLACES: EnlaceLegal[] = [
@@ -61,6 +62,7 @@ export default function DevolucionesPage() {
         secciones={secciones}
         pregunta="¿Tenés un problema con tu pedido?"
         correo="hotclick.cr@gmail.com"
+        accion={<WhatsAppSoporteDevoluciones />}
         enlaces={ENLACES}
       />
     </>
