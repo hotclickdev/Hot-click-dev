@@ -34,13 +34,13 @@ export default function CategoriasPage() {
   return (
     <MainLayout variante="propia">
       <Seo title={t('products.categoriesTitle')} description={t('products.categoriesSub')} url="https://hotclick.lat/categorias" />
-      <div className="mx-auto flex w-full max-w-5xl flex-col">
+      <div className="mx-auto flex w-full max-w-5xl flex-col lg:max-w-none lg:px-8 lg:pt-6 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
         <form
           onSubmit={alBuscar}
           className="flex flex-col gap-3 rounded-b-[14px] border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-0"
         >
           <h1 className="font-display text-[20px] font-bold leading-[normal] text-hc-n-900">{t('products.categoriesTitle')}</h1>
-          <label className="flex items-center gap-[10px] rounded-[12px] bg-hc-n-100 px-[14px] py-3">
+          <label className="flex items-center gap-[10px] rounded-[12px] bg-hc-n-100 px-[14px] py-3 lg:max-w-[560px]">
             <IconoFigma src={ICONOS_CATALOGO.lupa18} size={18} className="shrink-0 text-hc-n-500" />
             <input
               type="search"
@@ -67,9 +67,9 @@ export default function CategoriasPage() {
           {!cargando && visibles.length === 0 && (
             <p className="text-[14px] text-hc-n-600">{t('products.categoriesEmpty')}</p>
           )}
-          <div className={CLASE_GRILLA_TARJETAS}>
+          <div className={`${CLASE_GRILLA_TARJETAS} lg:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]`}>
             {visibles.map((c) => (
-              <CategoryTile key={c.id} nombre={c.nombre} cantidad={c.cantidad} fotoUrl={c.fotoUrl} to={`/productos?cat=${c.id}`} className="w-[167px]" />
+              <CategoryTile key={c.id} nombre={c.nombre} cantidad={c.cantidad} fotoUrl={c.fotoUrl} to={`/productos?cat=${c.id}`} className="w-[167px] lg:w-full" />
             ))}
           </div>
         </div>
