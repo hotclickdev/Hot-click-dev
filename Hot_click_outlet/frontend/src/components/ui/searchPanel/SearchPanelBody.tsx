@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatPrice } from '@/utils/format'
+import { textoPrecioProducto } from '@/utils/precioProducto'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import { fotoProducto, nombreVendedor } from '@/components/comprador/productCardHelpers'
@@ -101,7 +101,7 @@ export function SearchPanelBody({
                   <span className="truncate text-[14px] font-medium text-hc-n-900">{product.nombre}</span>
                   <span className="truncate text-[12px] text-hc-n-600">{nombreVendedor(product)}</span>
                 </span>
-                <span className="shrink-0 font-display text-[14px] font-bold text-hc-n-900">{formatPrice(product.precio)}</span>
+                <span className="shrink-0 font-display text-[14px] font-bold text-hc-n-900">{textoPrecioProducto(product)}</span>
               </button>
             )
           })}

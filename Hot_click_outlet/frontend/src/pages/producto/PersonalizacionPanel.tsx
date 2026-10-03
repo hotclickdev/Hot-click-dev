@@ -10,7 +10,9 @@ import { ICONOS_PRODUCTO } from './iconosProducto'
 
 const MAX_IMAGENES = 3
 
-const CAMPO = 'rounded-[10px] border border-hc-n-200 bg-hc-n-0 px-3 py-[10px] text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:border-hc-blue-600 focus:outline-none'
+/** Campo de Figma (manual de marca): radio 12, borde n200; foco b600 con halo b100. */
+const CAMPO = 'w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[11px] text-[14px] leading-[18px] text-hc-n-900 outline-none placeholder:text-hc-n-500 focus:border-hc-blue-600 focus:shadow-[0_0_0_3px_var(--hc-blue-100)]'
+const ETIQUETA = 'text-[13px] font-semibold leading-[normal] text-hc-n-900'
 
 type Props = {
   product: Producto
@@ -23,10 +25,10 @@ type Props = {
 }
 
 /**
- * "Personalizá tu pedido" (Figma 44:1849, nodo 44:1884): indicaciones del artista, tres espacios
- * de imagen de referencia y notas. El presupuesto, los datos de contacto y "¿Cómo funciona?"
- * no están en Figma: se conservan de la versión anterior con los mismos tokens, salvo con precio
- * fijo (el frame no los muestra).
+ * "Personalizá tu pedido" (Figma 44:1849, nodo 44:1884): indicaciones del artista en caja b50, tres
+ * espacios de imagen punteados y notas. El presupuesto (opciones tipo tarjeta y rango en ₡), los datos
+ * de contacto y "¿Cómo funciona?" (pasos numerados) no están en el frame: se derivan del manual de marca
+ * (campos radio 12 con foco b600 + halo b100, pills 999). Con precio fijo no se muestran.
  */
 export default function PersonalizacionPanel({
   product, tallaSeleccionada, personalizacion, onChange,
@@ -67,12 +69,14 @@ export default function PersonalizacionPanel({
 
   return (
     <section aria-labelledby="personaliza-titulo" className="px-4 pb-2 pt-[14px] lg:p-0">
-      <div className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal]">
-        <h2 id="personaliza-titulo" className="font-sans text-[15px] font-semibold leading-[18px] tracking-normal text-hc-n-900">{t('product.personalizaTitulo')}</h2>
-        <p className="text-[12px] leading-4 text-hc-n-600">{t('product.personalizaAyuda')}</p>
+      <div className="flex flex-col gap-[14px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 leading-[normal]">
+        <div className="flex flex-col gap-1">
+          <h2 id="personaliza-titulo" className="font-sans text-[15px] font-semibold leading-[18px] tracking-normal text-hc-n-900">{t('product.personalizaTitulo')}</h2>
+          <p className="text-[13px] leading-[18px] text-hc-n-600">{t('product.personalizaAyuda')}</p>
+        </div>
 
         {product.instruccionesPersonalizacion && (
-          <p className="rounded-[10px] bg-hc-blue-50 px-3 py-[10px] text-[12px] leading-4 text-hc-n-900">
+          <p className="rounded-[10px] bg-hc-blue-50 px-3 py-[10px] text-[13px] leading-[18px] text-hc-n-900">
             <span className="font-semibold">{t('product.indicacionesArtista')}</span>: {product.instruccionesPersonalizacion}
           </p>
         )}
@@ -83,7 +87,7 @@ export default function PersonalizacionPanel({
             return (
               <div
                 key={slot}
-                className={`relative flex h-[90px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[10px] border border-hc-n-200 bg-hc-n-50 ${url ? '' : 'border-dashed'}`}
+                className={`relative flex h-[90px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[10px] border bg-hc-n-50 ${url ? 'border-hc-n-200' : 'border-dashed border-hc-n-400'}`}
               >
                 {url ? (
                   <>
@@ -91,14 +95,14 @@ export default function PersonalizacionPanel({
                     <button
                       type="button"
                       onClick={() => quitar(slot)}
-                      className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-hc-n-0"
+                      className="absolute right-[6px] top-[6px] rounded-full bg-hc-n-900/70 px-2 py-[3px] text-[11px] font-semibold text-hc-n-0"
                     >
                       {t('product.quitar')}
                     </button>
                   </>
                 ) : (
                   <label
-                    className="flex size-full cursor-pointer flex-col items-center justify-center gap-1 text-[11px] text-hc-n-600"
+                    className="flex size-full cursor-pointer flex-col items-center justify-center gap-1 text-[12px] text-hc-n-600 focus-within:shadow-[inset_0_0_0_1.5px_var(--hc-blue-600)]"
                     aria-label={t('product.subirReferenciaN', { n: slot + 1 })}
                   >
                     <IconoFigma src={ICONOS_PRODUCTO.subirImagen} size={18} className="text-hc-n-500" />
@@ -117,13 +121,13 @@ export default function PersonalizacionPanel({
           })}
         </div>
 
-        <label htmlFor="notas-artista-personalizacion" className="text-[13px] font-medium text-hc-n-900">
+        <label htmlFor="notas-artista-personalizacion" className={`${ETIQUETA} -mb-2`}>
           {t('product.notasArtista')}
         </label>
         <textarea
           id="notas-artista-personalizacion"
-          rows={2}
-          className={`${CAMPO} min-h-[61px] w-full resize-y border-[1.5px] leading-[19px]`}
+          rows={3}
+          className={`${CAMPO} min-h-[76px] resize-y leading-[19px]`}
           value={personalizacion.notas || ''}
           onChange={(e) => onChange({
             ...personalizacion,
@@ -139,14 +143,17 @@ export default function PersonalizacionPanel({
         )}
 
         {requiereContacto && (
-          <div className="grid gap-2 sm:grid-cols-3">
-            <input className={CAMPO} placeholder={t('product.contactoNombre')} value={contacto.nombre}
+          <fieldset className="m-0 flex min-w-0 flex-col gap-[6px] border-0 p-0">
+            <legend className={`${ETIQUETA} mb-2 p-0`}>{t('product.contactoTitulo')}</legend>
+            <input className={CAMPO} aria-label={t('product.contactoNombre')} placeholder={t('product.contactoNombre')} autoComplete="name" value={contacto.nombre}
               onChange={(e) => onContactoChange({ ...contacto, nombre: e.target.value })} />
-            <input className={CAMPO} placeholder={t('product.contactoEmail')} type="email" value={contacto.email}
-              onChange={(e) => onContactoChange({ ...contacto, email: e.target.value })} />
-            <input className={CAMPO} placeholder={t('product.contactoTelefono')} value={contacto.telefono}
-              onChange={(e) => onContactoChange({ ...contacto, telefono: e.target.value })} />
-          </div>
+            <div className="grid gap-[6px] sm:grid-cols-2">
+              <input className={CAMPO} aria-label={t('product.contactoEmail')} placeholder={t('product.contactoEmail')} type="email" autoComplete="email" value={contacto.email}
+                onChange={(e) => onContactoChange({ ...contacto, email: e.target.value })} />
+              <input className={CAMPO} aria-label={t('product.contactoTelefono')} placeholder={t('product.contactoTelefono')} type="tel" inputMode="tel" autoComplete="tel" value={contacto.telefono}
+                onChange={(e) => onContactoChange({ ...contacto, telefono: e.target.value })} />
+            </div>
+          </fieldset>
         )}
 
         {modo !== 'FIJO' && <ComoFunciona modo={modo} product={product} />}
@@ -178,42 +185,74 @@ function PresupuestoCliente({
     })
   }
 
+  const opciones = [
+    { valor: 'SIN_PRESUPUESTO' as const, texto: t('product.presupuestoSin') },
+    { valor: 'RANGO' as const, texto: t('product.presupuestoRango') },
+  ]
+
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[13px] font-medium text-hc-n-900" id={labelId}>
+      <p className={ETIQUETA} id={labelId}>
         {t('product.presupuestoTitulo')}
       </p>
       <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby={labelId}>
-        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-hc-n-600">
-          <input type="radio" name="presupuesto-tipo" checked={tipo === 'SIN_PRESUPUESTO'} onChange={() => setTipo('SIN_PRESUPUESTO')} />
-          {t('product.presupuestoSin')}
-        </label>
-        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-hc-n-600">
-          <input type="radio" name="presupuesto-tipo" checked={tipo === 'RANGO'} onChange={() => setTipo('RANGO')} />
-          {t('product.presupuestoRango')}
-        </label>
+        {opciones.map((o) => {
+          const activo = tipo === o.valor
+          return (
+            <label
+              key={o.valor}
+              className={`flex cursor-pointer items-center gap-[10px] rounded-[12px] border px-3 py-[11px] text-[13px] leading-[18px] focus-within:shadow-[0_0_0_3px_var(--hc-blue-100)] ${
+                activo ? 'border-hc-blue-600 bg-hc-blue-50 text-hc-n-900' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-600'
+              }`}
+            >
+              <input type="radio" name="presupuesto-tipo" className="sr-only" checked={activo} onChange={() => setTipo(o.valor)} />
+              <span
+                aria-hidden="true"
+                className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border-[1.5px] ${activo ? 'border-hc-blue-600' : 'border-hc-n-400'}`}
+              >
+                {activo && <span className="size-2 rounded-full bg-hc-blue-600" />}
+              </span>
+              {o.texto}
+            </label>
+          )
+        })}
       </div>
       {tipo === 'RANGO' ? (
         <div className="grid grid-cols-2 gap-2">
-          <input
-            type="number"
-            min={1}
-            className={CAMPO}
-            placeholder={t('product.presupuestoMin')}
-            value={personalizacion.presupuestoMin ?? ''}
-            onChange={(e) => onChange({ ...personalizacion, presupuestoMin: e.target.value, presupuestoTipo: 'RANGO' })}
+          <CampoColones
+            etiqueta={t('product.presupuestoMin')}
+            valor={personalizacion.presupuestoMin ?? ''}
+            onCambio={(v) => onChange({ ...personalizacion, presupuestoMin: v, presupuestoTipo: 'RANGO' })}
           />
-          <input
-            type="number"
-            min={1}
-            className={CAMPO}
-            placeholder={t('product.presupuestoMax')}
-            value={personalizacion.presupuestoMax ?? ''}
-            onChange={(e) => onChange({ ...personalizacion, presupuestoMax: e.target.value, presupuestoTipo: 'RANGO' })}
+          <CampoColones
+            etiqueta={t('product.presupuestoMax')}
+            valor={personalizacion.presupuestoMax ?? ''}
+            onCambio={(v) => onChange({ ...personalizacion, presupuestoMax: v, presupuestoTipo: 'RANGO' })}
           />
         </div>
       ) : null}
     </div>
+  )
+}
+
+/** Monto en colones: el símbolo ₡ va dentro del campo, a la izquierda. */
+function CampoColones({ etiqueta, valor, onCambio }: { etiqueta: string; valor: string | number; onCambio: (v: string) => void }) {
+  return (
+    <span className="relative block">
+      <span aria-hidden="true" className="pointer-events-none absolute left-[14px] top-1/2 -translate-y-1/2 text-[14px] text-hc-n-500">
+        ₡
+      </span>
+      <input
+        type="number"
+        min={1}
+        inputMode="numeric"
+        aria-label={etiqueta}
+        className={`${CAMPO} pl-7`}
+        placeholder={etiqueta.replace(/\s*₡\s*$/, '')}
+        value={valor}
+        onChange={(e) => onCambio(e.target.value)}
+      />
+    </span>
   )
 }
 
@@ -236,11 +275,22 @@ function ComoFunciona({ modo, product }: { modo: string | null | undefined; prod
   }
 
   return (
-    <div className="flex flex-col gap-[6px] text-[12px] leading-4 text-hc-n-600">
-      <p className="font-semibold text-hc-n-900">{t('product.comoFunciona')}</p>
-      <p>{precioLabel}</p>
-      <ol className="list-inside list-decimal space-y-0.5">
-        {pasos.map((p) => <li key={p}>{p}</li>)}
+    <div className="flex flex-col gap-[10px] rounded-[12px] bg-hc-n-50 p-3 leading-[normal]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[13px] font-semibold text-hc-n-900">{t('product.comoFunciona')}</p>
+        <span className="rounded-full bg-hc-n-0 px-[10px] py-[3px] text-[12px] font-semibold text-hc-n-900 shadow-[inset_0_0_0_1px_var(--hc-n-200)]">
+          {precioLabel}
+        </span>
+      </div>
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
+        {pasos.map((p, i) => (
+          <li key={p} className="flex items-center gap-[10px] text-[13px] leading-[18px] text-hc-n-600">
+            <span aria-hidden="true" className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-hc-blue-50 text-[12px] font-bold text-hc-blue-600">
+              {i + 1}
+            </span>
+            {p}
+          </li>
+        ))}
       </ol>
     </div>
   )
