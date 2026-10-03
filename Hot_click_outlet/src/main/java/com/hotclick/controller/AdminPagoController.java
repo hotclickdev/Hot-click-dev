@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -117,8 +118,12 @@ public class AdminPagoController {
      */
     @PostMapping("/pagos/{pagoId}/confirmar-sinpe")
     public ResponseEntity<ResponseDTO> confirmarSinpe(@PathVariable Long pagoId) {
-        var resultado = paymentService.confirmarSinpe(pagoId);
-        return ResponseEntity.ok(ResponseDTO.success("Pago SINPE confirmado", resultado));
+        try {
+            var resultado = paymentService.confirmarSinpe(pagoId);
+            return ResponseEntity.ok(ResponseDTO.success("Pago SINPE confirmado", resultado));
+        } catch (SecurityException e) {
+            return prohibido(e);
+        }
     }
 
     /**
@@ -129,7 +134,15 @@ public class AdminPagoController {
     public ResponseEntity<ResponseDTO> rechazarSinpe(
             @PathVariable Long pagoId,
             @RequestParam(required = false) String motivo) {
-        paymentService.rechazarSinpe(pagoId, motivo);
-        return ResponseEntity.ok(ResponseDTO.success("Pago SINPE rechazado", null));
+        try {
+            paymentService.rechazarSinpe(pagoId, motivo);
+            return ResponseEntity.ok(ResponseDTO.success("Pago SINPE rechazado", null));
+        } catch (SecurityException e) {
+            return prohibido(e);
+        }
+    }
+
+    private static ResponseEntity<ResponseDTO> prohibido(SecurityException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
     }
 }
