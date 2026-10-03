@@ -18,6 +18,8 @@ export type PhoneFieldProps = {
   error?: ReactNode
   defaultCountry?: string
   disabled?: boolean
+  /** No deja borrar el código de país (se cambia con el selector). */
+  forceDialCode?: boolean
 }
 
 export default function PhoneField({
@@ -30,6 +32,7 @@ export default function PhoneField({
   error,
   defaultCountry = 'cr',
   disabled = false,
+  forceDialCode = false,
 }: PhoneFieldProps) {
   const idGenerado = useId()
   const idCampo = id ?? idGenerado
@@ -52,6 +55,7 @@ export default function PhoneField({
         value={value}
         onChange={onChange}
         disabled={disabled}
+        forceDialCode={forceDialCode}
         inputProps={{ id: idCampo, 'aria-required': required || undefined, 'aria-invalid': error ? true : undefined }}
         inputStyle={{
           backgroundColor: 'var(--hc-surface-2)',

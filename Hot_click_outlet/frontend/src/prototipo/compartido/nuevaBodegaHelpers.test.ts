@@ -40,6 +40,17 @@ describe('validarTelefonoBodega', () => {
     expect(validarTelefonoBodega('+1202')).toBe(TELEFONO_INVALIDO)
     expect(validarTelefonoBodega('+1234567890123456')).toBe(TELEFONO_INVALIDO)
   })
+
+  it('QA-B01-1: sin el +506 los primeros dígitos no son un código de país → inválido', () => {
+    // Borraron "+506" y escribieron el número local: PhoneField entrega "+88881234".
+    expect(validarTelefonoBodega('+88881234')).toBe(TELEFONO_INVALIDO)
+    expect(validarTelefonoBodega('+8888-1234')).toBe(TELEFONO_INVALIDO)
+    expect(validarTelefonoBodega('+2222333344')).toBe(TELEFONO_INVALIDO)
+    // Códigos reales de la lista de PhoneField siguen valiendo.
+    expect(validarTelefonoBodega('+34612345678')).toBeNull()
+    expect(validarTelefonoBodega('+50760001234')).toBeNull()
+    expect(validarTelefonoBodega('+525512345678')).toBeNull()
+  })
 })
 
 describe('normalizarTelefonoBodega', () => {
@@ -93,6 +104,9 @@ describe('mensajeErrorGuardarBodega', () => {
     expect(mensajeErrorGuardarBodega(err)).toBe('El teléfono es obligatorio.')
     expect(mensajeErrorGuardarBodega(errorHttp(400, { message: 'La dirección es obligatoria' })))
       .toBe('La dirección es obligatoria.')
+    // SEC-08: el backend valida el teléfono con el mismo texto que el front.
+    expect(mensajeErrorGuardarBodega(errorHttp(400, { message: TELEFONO_INVALIDO })))
+      .toBe(`${TELEFONO_INVALIDO}.`)
   })
 
   it('400 con texto interno (excepción cruda): no lo muestra', () => {

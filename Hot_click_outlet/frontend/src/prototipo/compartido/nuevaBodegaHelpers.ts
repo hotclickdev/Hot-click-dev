@@ -1,3 +1,5 @@
+import { parseCountry } from 'react-international-phone'
+import { PHONE_FIELD_COUNTRIES } from '@/components/ui/phoneFieldCountries'
 import { mapearErrorBackend } from '@/services/errorMapper'
 import { PREFIJO_CR } from '@/utils/telefono'
 
@@ -14,6 +16,17 @@ const DIGITOS_CR = 8
 const MIN_DIGITOS_INTERNACIONAL = 8
 const MAX_DIGITOS_E164 = 15
 
+/** Códigos de país que ofrece PhoneField (sin `+`). */
+const CODIGOS_PAIS = new Set(PHONE_FIELD_COUNTRIES.map((c) => parseCountry(c).dialCode))
+
+/** QA-B01-1: si borran el `+506` y escriben el número, los primeros dígitos no son un código de país real. */
+function tieneCodigoPaisConocido(digitos: string): boolean {
+  for (let largo = 1; largo <= 3; largo++) {
+    if (CODIGOS_PAIS.has(digitos.slice(0, largo))) return true
+  }
+  return false
+}
+
 /**
  * Validaciones de `POST /api/bodegas` (BodegaController) cuyo texto se puede mostrar tal cual.
  * Cualquier otro 400 puede traer el mensaje crudo de una excepción y no se muestra.
@@ -22,6 +35,7 @@ const VALIDACIONES_API = new Set([
   'El nombre es obligatorio',
   'La dirección es obligatoria',
   'El teléfono es obligatorio',
+  TELEFONO_INVALIDO,
 ])
 
 /** Valor de PhoneField (`+50688881234`, `+506 8888-1234`…) → `+` y solo dígitos; vacío si no hay número. */
@@ -30,7 +44,7 @@ export function normalizarTelefonoBodega(valor: string | null | undefined): stri
   return digitos ? `+${digitos}` : ''
 }
 
-/** null = válido. Costa Rica (+506): 8 dígitos locales; otro código de país: largo E.164. */
+/** null = válido. Costa Rica (+506): 8 dígitos locales; otro código de país (de los de PhoneField): largo E.164. */
 export function validarTelefonoBodega(valor: string | null | undefined): string | null {
   const normal = normalizarTelefonoBodega(valor)
   if (!normal || normal === PREFIJO_CR) return TELEFONO_OBLIGATORIO
@@ -39,6 +53,7 @@ export function validarTelefonoBodega(valor: string | null | undefined): string 
     return digitos.length - CODIGO_CR.length === DIGITOS_CR ? null : TELEFONO_INVALIDO
   }
   if (digitos.length < MIN_DIGITOS_INTERNACIONAL || digitos.length > MAX_DIGITOS_E164) return TELEFONO_INVALIDO
+  if (!tieneCodigoPaisConocido(digitos)) return TELEFONO_INVALIDO
   return null
 }
 

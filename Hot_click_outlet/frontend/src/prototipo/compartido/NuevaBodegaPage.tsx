@@ -92,7 +92,7 @@ export function NuevaBodegaPage({
           />
         ) : null}
         {idPaso === 'telefono' ? (
-          <PhoneField label="Teléfono de la bodega" value={telefono} onChange={setTelefono} required />
+          <PhoneField label="Teléfono de la bodega" value={telefono} onChange={setTelefono} required forceDialCode />
         ) : null}
         {idPaso === 'encargado' ? (
           <Campo
