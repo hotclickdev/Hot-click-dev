@@ -68,7 +68,8 @@ public class DirectorioNegociosService {
     }
 
     private static boolean coincide(NegocioPublicoDTO n, String q) {
-        return normalizar(n.nombre()).contains(q) || normalizar(n.slug().replace('-', ' ')).contains(q);
+        String conEspacios = q.replace('-', ' ');
+        return normalizar(n.nombre()).contains(conEspacios) || normalizar(n.slug().replace('-', ' ')).contains(conEspacios);
     }
 
     /** 0 = el nombre empieza con lo buscado, 1 = una palabra empieza con lo buscado, 2 = lo contiene. */
