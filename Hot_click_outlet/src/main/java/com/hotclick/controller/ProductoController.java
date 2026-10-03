@@ -5,6 +5,7 @@ import com.hotclick.controller.producto.ProductoWriteHandler;
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/productos")
 public class ProductoController {
+
+    /** Tope del bulk; el handler responde lo mismo si llega más. */
+    static final int MAX_BULK_IMPORT = 200;
 
     @Autowired private ProductoCatalogHandler catalogHandler;
     @Autowired private ProductoWriteHandler   writeHandler;
@@ -147,7 +151,9 @@ public class ProductoController {
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<ResponseDTO> importarBulk(@RequestBody List<@Valid ProductoRequestDTO> dtos) {
+    public ResponseEntity<ResponseDTO> importarBulk(
+            @RequestBody @Size(max = MAX_BULK_IMPORT, message = "El bulk acepta entre 1 y 200 productos por lote")
+            List<@Valid ProductoRequestDTO> dtos) {
         return writeHandler.importarBulk(dtos);
     }
 
