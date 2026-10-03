@@ -11,7 +11,7 @@ type BuscarNegocioProps = {
 export default function BuscarNegocio({ value, onChange }: BuscarNegocioProps) {
   const { t } = useTranslation()
   return (
-    <div role="search" className="flex items-center gap-2 rounded-xl bg-hc-n-100 p-3">
+    <div role="search" className="flex items-center gap-2 rounded-[12px] bg-hc-n-100 p-3">
       <IconoFigma src={ICONOS_TIENDA.buscar} size={17} className="text-hc-n-500" />
       <input
         type="search"

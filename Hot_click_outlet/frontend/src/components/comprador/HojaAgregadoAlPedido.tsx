@@ -79,14 +79,14 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
         <button
           type="button"
           onClick={onCerrar}
-          className="flex min-w-0 flex-1 items-center justify-center rounded-xl border border-hc-n-200 bg-hc-n-0 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900"
+          className="flex min-w-0 flex-1 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900"
         >
           {t('comprador.hoja.seguirComprando')}
         </button>
         <Link
           to="/carrito"
           onClick={onCerrar}
-          className="flex min-w-0 flex-1 items-center justify-center rounded-xl bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-0"
+          className="flex min-w-0 flex-1 items-center justify-center rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-0"
         >
           {t('comprador.hoja.verPedido')}
         </Link>

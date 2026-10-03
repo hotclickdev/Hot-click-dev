@@ -39,7 +39,7 @@ export default function TiendaBuyActions({
 
   const fila = (
     <div className="flex items-center gap-[10px]">
-      <div className="flex shrink-0 items-center gap-[14px] rounded-xl border border-hc-n-200 bg-hc-n-0 p-3 text-[16px] font-semibold leading-[normal] text-hc-n-900">
+      <div className="flex shrink-0 items-center gap-[14px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3 text-[16px] font-semibold leading-[normal] text-hc-n-900">
         <Glifo etiqueta="Uno menos" disabled={cantidad <= 1} onClick={() => onCantidad(Math.max(1, cantidad - 1))}>−</Glifo>
         <span aria-live="polite" className="min-w-[7px] text-center text-[15px]">{cantidad}</span>
         <Glifo etiqueta="Uno más" disabled={cantidad >= stockDisponible} onClick={() => onCantidad(Math.min(stockDisponible, cantidad + 1))}>+</Glifo>
@@ -47,7 +47,7 @@ export default function TiendaBuyActions({
       <button
         type="button"
         onClick={onAgregar}
-        className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0 transition-colors ${
+        className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-[12px] py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0 transition-colors ${
           agregado ? 'bg-hc-success' : 'bg-[var(--t-primary)]'
         }`}
       >
@@ -62,7 +62,7 @@ export default function TiendaBuyActions({
       <button
         type="button"
         onClick={onComprarAhora}
-        className="flex flex-1 items-center justify-center rounded-xl border border-hc-n-200 bg-hc-n-0 py-3 text-[14px] font-semibold leading-[normal] text-hc-n-900 hover:bg-hc-n-50"
+        className="flex flex-1 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 py-3 text-[14px] font-semibold leading-[normal] text-hc-n-900 hover:bg-hc-n-50"
       >
         Comprar ahora
       </button>

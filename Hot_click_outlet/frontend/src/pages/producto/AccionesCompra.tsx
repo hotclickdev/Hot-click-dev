@@ -72,7 +72,7 @@ export default function AccionesCompra({
   if (justAdded) etiqueta = t('product.addedBtn')
   const iconoBoton = esBarra && (product.esPersonalizado || conTalla) ? ICONOS_PRODUCTO.agregarBarra : ICONOS_PRODUCTO.bolsa
 
-  const botonBase = `flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl font-semibold leading-[normal] text-hc-n-0 transition-colors ${
+  const botonBase = `flex min-w-0 flex-1 items-center justify-center gap-2 rounded-[12px] font-semibold leading-[normal] text-hc-n-0 transition-colors ${
     esBarra ? 'py-[14px] text-[15px]' : 'px-4 py-[15px] text-[16px]'
   }`
 
@@ -96,7 +96,7 @@ export default function AccionesCompra({
       <>
         {!product.esPersonalizado && (
         <div
-          className={`flex shrink-0 items-center rounded-xl border border-hc-n-200 bg-hc-n-0 font-semibold leading-[normal] text-hc-n-900 ${
+          className={`flex shrink-0 items-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 font-semibold leading-[normal] text-hc-n-900 ${
             esBarra ? 'gap-[14px] p-3 text-[16px]' : 'gap-[18px] px-4 py-[14px] text-[16px]'
           }`}
         >
@@ -135,7 +135,7 @@ export default function AccionesCompra({
         onClick={() => toggleWishlist(product)}
         aria-label={guardado ? t('product.saved') : t('common.save')}
         aria-pressed={guardado}
-        className="flex size-[52px] shrink-0 items-center justify-center rounded-xl border border-hc-n-200 bg-hc-n-0 text-hc-n-900"
+        className="flex size-[52px] shrink-0 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 text-hc-n-900"
       >
         <IconoFigma src={ICONOS_PRODUCTO.favoritoEscritorio} size={20} className={guardado ? 'text-hc-red-500' : ''} />
       </button>

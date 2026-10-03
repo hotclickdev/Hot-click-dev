@@ -58,7 +58,7 @@ export default function ProductDetailPage() {
           </p>
           <Link
             to="/productos"
-            className="inline-flex items-center justify-center rounded-xl bg-hc-red-500 px-5 py-2.5 text-sm font-semibold text-hc-n-0"
+            className="inline-flex items-center justify-center rounded-[12px] bg-hc-red-500 px-5 py-2.5 text-sm font-semibold text-hc-n-0"
           >
             {t('notFound.comprarHint')}
           </Link>

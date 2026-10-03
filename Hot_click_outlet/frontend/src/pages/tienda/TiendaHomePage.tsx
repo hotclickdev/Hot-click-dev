@@ -172,7 +172,7 @@ function BuscadorTienda({
     <form
       onSubmit={onBuscar}
       role="search"
-      className="flex items-center gap-2 rounded-xl border border-[var(--t-border)] bg-[var(--t-surface)] px-3 py-[11px] lg:h-11 lg:w-[320px] lg:px-[14px]"
+      className="flex items-center gap-2 rounded-[12px] border border-[var(--t-border)] bg-[var(--t-surface)] px-3 py-[11px] lg:h-11 lg:w-[320px] lg:px-[14px]"
     >
       <IconoFigma src={ICONOS_TIENDA.buscar} size={17} className="text-hc-n-500" />
       <input
