@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
+import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '../negocios/negociosPublicos'
 import {
   RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useConsultaBuscador, useHeaderComprador,
 } from './useHeaderComprador'
@@ -57,16 +58,29 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
           {t('comprador.header.todasCategorias')}
           <IconoFigma src={ICONOS_COMPRADOR.chevronAbajo} size={16} />
         </Link>
-        {categorias.slice(0, CATEGORIAS_VISIBLES_ESCRITORIO).map((categoria) => (
+        {/* Tiendas por plan (directorio filtrado en el backend), separadas de las categorías por un divisor fino. */}
+        {PLANES_DIRECTORIO.map((p) => (
           <Link
-            key={categoria.id}
-            to={rutaCategoria(categoria.id)}
+            key={p.alias}
+            to={rutaDirectorioPlan(p.alias)}
             className="shrink-0 whitespace-nowrap text-[14px] font-medium text-hc-n-600 hover:text-hc-n-900"
           >
-            {categoria.nombre}
+            {t(p.nav)}
           </Link>
         ))}
-        <span className="min-w-px flex-1" />
+        <span aria-hidden="true" className="h-4 w-px shrink-0 bg-hc-n-200" />
+        {/* Las categorías que no caben pasan a una segunda línea oculta: nunca empujan "Servicios HOT". */}
+        <div className="flex h-[18px] min-w-0 flex-1 flex-wrap items-center gap-x-[26px] overflow-hidden">
+          {categorias.slice(0, CATEGORIAS_VISIBLES_ESCRITORIO).map((categoria) => (
+            <Link
+              key={categoria.id}
+              to={rutaCategoria(categoria.id)}
+              className="shrink-0 whitespace-nowrap text-[14px] font-medium leading-[18px] text-hc-n-600 hover:text-hc-n-900"
+            >
+              {categoria.nombre}
+            </Link>
+          ))}
+        </div>
         <Link to={RUTA_SERVICIOS_HOT} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-600">
           {t('comprador.header.serviciosHot')}
         </Link>

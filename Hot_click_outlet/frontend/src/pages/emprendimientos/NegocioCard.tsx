@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import directorioChevron from '@/assets/figma/tienda/directorio-chevron.svg'
 import { inicialesNegocio } from '@/pages/tienda/tiendaHelpers'
+import InsigniaPlan from '@/components/comprador/negocios/InsigniaPlan'
+import type { PlanPublico } from '@/services/negocioService'
 import type { NegocioDirectorio } from './directorioHelpers'
 
 /** Fondos de las iniciales (azul 900, rojo 500 y verde del Figma `29:1159`). */
 const FONDOS_INICIALES = ['var(--hc-blue-900)', 'var(--hc-red-500)', 'var(--hc-success)']
 
 /** Tarjeta de negocio del directorio (Figma `29:1159`): iniciales, nombre, rubro · ciudad, 3 fotos, conteo y "Ver tienda". */
-export default function NegocioCard({ negocio, indice }: { negocio: NegocioDirectorio; indice: number }) {
+export default function NegocioCard({ negocio, indice, plan }: { negocio: NegocioDirectorio; indice: number; plan?: PlanPublico }) {
   const { t } = useTranslation()
   const ruta = `/tienda/${negocio.slug}`
   const subtitulo = [negocio.rubro, negocio.ciudad].filter(Boolean).join(' · ')
@@ -24,7 +26,10 @@ export default function NegocioCard({ negocio, indice }: { negocio: NegocioDirec
           {inicialesNegocio(negocio.nombre)}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-[2px] leading-[normal]">
-          <span className="truncate font-display text-base font-bold leading-[normal] text-hc-n-900">{negocio.nombre}</span>
+          <span className="flex min-w-0 items-center gap-[6px]">
+            <span className="truncate font-display text-base font-bold leading-[normal] text-hc-n-900">{negocio.nombre}</span>
+            {plan && <InsigniaPlan plan={plan} />}
+          </span>
           {subtitulo && <span className="truncate text-xs leading-[normal] text-hc-n-600">{subtitulo}</span>}
         </span>
         <IconoFigma src={directorioChevron} size={18} className="text-hc-n-400" />

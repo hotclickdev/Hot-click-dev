@@ -4,6 +4,7 @@ import Chip from '../Chip'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
+import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '../negocios/negociosPublicos'
 import { rutaCategoria, useHeaderComprador } from './useHeaderComprador'
 
 type HeaderMovilProps = {
@@ -59,13 +60,15 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
         </button>
       </div>
 
-      {categorias.length > 0 && (
-        <nav aria-label={t('comprador.header.categoriasAria')} className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
-          {categorias.map((categoria) => (
-            <Chip key={categoria.id} texto={categoria.nombre} to={rutaCategoria(categoria.id)} />
-          ))}
-        </nav>
-      )}
+      <nav aria-label={t('comprador.header.categoriasAria')} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+        {PLANES_DIRECTORIO.map((p) => (
+          <Chip key={p.alias} texto={t(p.nav)} to={rutaDirectorioPlan(p.alias)} />
+        ))}
+        {categorias.length > 0 && <span aria-hidden="true" className="h-5 w-px shrink-0 bg-hc-n-200" />}
+        {categorias.map((categoria) => (
+          <Chip key={categoria.id} texto={categoria.nombre} to={rutaCategoria(categoria.id)} />
+        ))}
+      </nav>
     </div>
   )
 }

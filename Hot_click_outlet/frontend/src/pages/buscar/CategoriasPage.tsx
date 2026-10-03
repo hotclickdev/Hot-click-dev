@@ -10,6 +10,7 @@ import { useCategoriasCatalogo } from '@/components/comprador/useCategoriasCatal
 import useChatStore from '@/store/chatStore'
 import { ICONOS_CATALOGO } from '@/pages/catalogo/iconosCatalogo'
 import { CLASE_GRILLA_TARJETAS } from '@/pages/catalogo/catalogoGrilla'
+import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '@/components/comprador/negocios/negociosPublicos'
 import { filtrarCategorias } from './categoriasFiltro'
 
 /**
@@ -56,6 +57,12 @@ export default function CategoriasPage() {
           <div className="flex items-center">
             <Chip variante="asistente" texto={t('products.categoriesAssistant')} onClick={() => useChatStore.getState().open(null)} />
           </div>
+          <nav aria-label={t('negocios.navAria')} className="flex flex-col gap-2">
+            <h2 className="text-[13px] font-semibold leading-[normal] text-hc-n-600">{t('negocios.navAria')}</h2>
+            <div className="flex flex-wrap gap-2">
+              {PLANES_DIRECTORIO.map((p) => <Chip key={p.alias} texto={t(p.nav)} to={rutaDirectorioPlan(p.alias)} />)}
+            </div>
+          </nav>
           {cargando && <p className="text-[14px] text-hc-n-600">{t('products.loading')}</p>}
           {!cargando && visibles.length === 0 && (
             <p className="text-[14px] text-hc-n-600">{t('products.categoriesEmpty')}</p>
