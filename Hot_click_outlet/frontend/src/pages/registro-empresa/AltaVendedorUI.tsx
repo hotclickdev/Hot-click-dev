@@ -50,7 +50,7 @@ export function AltaTitulo({ antes, acento, despues, sub }: { antes: string; ace
   return (
     <div className="mt-1">
       <h1 className="font-[family-name:var(--hc-font-display)] text-[28px] font-bold leading-[34px] text-hc-n-900 lg:text-[32px] lg:leading-[40px]">
-        {antes} <span className="text-hc-red-500">{acento}</span>{despues ? ` ${despues}` : ''}
+        {antes} <span className="text-hc-red-600">{acento}</span>{despues ? ` ${despues}` : ''}
       </h1>
       {sub ? <p className="mt-1.5 text-[14px] leading-[21px] text-hc-n-600">{sub}</p> : null}
     </div>
