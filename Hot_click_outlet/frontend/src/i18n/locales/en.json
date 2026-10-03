@@ -872,7 +872,9 @@
     "pasoCotiza1": "You upload your photos and notes",
     "pasoCotiza2": "The artist reviews and quotes you",
     "pasoCotiza3": "You get a link to pay",
-    "verTodosMarca": "See all"
+    "verTodosMarca": "See all",
+    "verVideo": "Watch video",
+    "videoDe": "Video of {{titulo}}"
   },
   "cart": {
     "title": "Order",

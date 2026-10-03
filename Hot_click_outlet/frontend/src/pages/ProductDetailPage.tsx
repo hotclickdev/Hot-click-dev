@@ -8,9 +8,7 @@ import {
 import ProductBreadcrumb from './producto/ProductBreadcrumb'
 import ProductGallery from './producto/ProductGallery'
 import ProductInfo from './producto/ProductInfo'
-import ProductVideo from './producto/ProductVideo'
 import ProductTabs from './producto/ProductTabs'
-import BrandProductsRow from './producto/BrandProductsRow'
 import CarruselProductos from './producto/CarruselProductos'
 import OpinionesProducto from './producto/OpinionesProducto'
 import RecentlyViewedGrid from './producto/RecentlyViewedGrid'
@@ -24,7 +22,7 @@ export default function ProductDetailPage() {
   const { t } = useTranslation()
   const {
     product, loading, quantity, activeTab, setActiveTab, justAdded, hojaAgregadoAbierta, setHojaAgregadoAbierta,
-    recommendations, brandProducts, galeria, activeImg, setActiveImg,
+    recommendations, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
@@ -143,10 +141,8 @@ export default function ProductDetailPage() {
           )}
 
           <div className="px-4 lg:px-0">
-            <ProductVideo product={product} />
             <ProductTabs product={product} tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
-          <BrandProductsRow product={product} brandProducts={brandProducts} />
           <div className="px-4 lg:px-0">
             <RecentlyViewedGrid items={recentlyViewed} currentProductId={product.id} />
           </div>

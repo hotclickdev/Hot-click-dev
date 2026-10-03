@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import type { Producto } from '@/types/producto'
 import { formatPrice } from '@/utils/format'
+import { normalizarBusqueda } from '@/pages/catalogo/catalogoFiltros'
 
 export type TipoVideo = 'youtube' | 'tiktok' | 'instagram'
 
@@ -221,4 +222,23 @@ export function avisoStockBajoSinTalla(product: Producto, variantes: VariantePro
   if (esProductoCotizable(product) || product.esPersonalizado === true || estaAgotado(product)) return false
   if (Number(product.stock) > STOCK_BAJO_MAX) return false
   return opcionesDeTalla(product, variantes).length === 0
+}
+
+/**
+ * La ficha (`GET /productos/:id`) no trae el nombre ni el slug de la tienda; el listado público sí.
+ * Se toman de cualquier producto del mismo negocio para dibujar la fila de tienda del Figma `28:839`.
+ */
+export function tiendaDesdeCatalogo(
+  lista: Pick<Producto, 'empresaId' | 'empresaNombre' | 'empresaSlug'>[],
+  empresaId: Producto['empresaId'],
+): { empresaNombre: string; empresaSlug: string } | null {
+  if (empresaId === null || empresaId === undefined) return null
+  const hallado = lista.find((p) => String(p.empresaId) === String(empresaId) && p.empresaNombre && p.empresaSlug)
+  return hallado ? { empresaNombre: hallado.empresaNombre as string, empresaSlug: hallado.empresaSlug as string } : null
+}
+
+/** La marca es la del propio negocio cuando su nombre está contenido en el de la tienda (sin tildes ni mayúsculas). */
+export function marcaEsLaTienda(product: Pick<Producto, 'marcaNombre' | 'empresaNombre'>): boolean {
+  if (!product.marcaNombre || !product.empresaNombre) return false
+  return normalizarBusqueda(product.empresaNombre).includes(normalizarBusqueda(product.marcaNombre))
 }
