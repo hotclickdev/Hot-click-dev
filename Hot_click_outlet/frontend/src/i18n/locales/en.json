@@ -3902,11 +3902,10 @@
     "noDisponibleTitulo": "This store is not available",
     "noDisponibleTexto": "The link doesn't match a business published on HotClick. You can keep shopping on the marketplace.",
     "pedidoTienda": "This store's order",
-    "navTienda": "This store's navigation",
-    "navCatalogo": "Catalog",
-    "navPedido": "Order",
-    "tiendaDe": "{{nombre}} store",
-    "enHotclick": "on HotClick"
+    "enHotclick": "on HotClick",
+    "irAHotclick": "Go to HotClick",
+    "verPedido_one": "View order · {{count}} item · {{total}}",
+    "verPedido_other": "View order · {{count}} items · {{total}}"
   },
   "emprendimientos": {
     "titulo": "Local businesses",

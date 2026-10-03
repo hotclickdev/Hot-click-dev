@@ -240,7 +240,7 @@ function PaginacionTienda({
         type="button"
         disabled={page === 0}
         onClick={() => onCargar(page - 1)}
-        className="min-h-[44px] rounded-lg border border-[var(--t-border)] bg-[var(--t-surface)] px-4 py-2 text-sm disabled:opacity-40"
+        className="min-h-11 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[10px] text-[13px] font-semibold text-hc-n-900 disabled:opacity-40"
       >
         {t('common.previous')}
       </button>
@@ -251,7 +251,7 @@ function PaginacionTienda({
         type="button"
         disabled={page + 1 >= totalPages}
         onClick={() => onCargar(page + 1)}
-        className="min-h-[44px] rounded-lg border border-[var(--t-border)] bg-[var(--t-surface)] px-4 py-2 text-sm disabled:opacity-40"
+        className="min-h-11 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[10px] text-[13px] font-semibold text-hc-n-900 disabled:opacity-40"
       >
         {t('common.next')}
       </button>
