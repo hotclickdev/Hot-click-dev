@@ -51,4 +51,3 @@ En la columna "¿Podría hacer falta?":
 | Límite de `video_url` | Backend | La columna admite 500 caracteres y el DTO 1000. Hay que alinearlos |
 | Formulario de video del vendedor | Panel emprendedor (fuera de alcance) | Solo está documentado en la auditoría §4.1 |
 | "Continuar con Google" | Ingresar `28:1143` | Necesita Clerk activo (`VITE_CLERK_*`). Sin Clerk el botón no aparece |
-| Insignias de reseñas reales | Ficha `28:839` | Se muestra el estado vacío de Figma mientras no haya opiniones |
