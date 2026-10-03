@@ -20,6 +20,15 @@ public final class SpaVisitanteFallback {
         "/encargo/*", "/cotizacion/*", "/sin-conexion",
     };
 
+    /**
+     * Archivos públicos de {@code static/} en subcarpetas que no cubrían las reglas del SPA (3-oct-2026):
+     * fotos y video de /emprende, íconos de los correos transaccionales y el descriptor de búsqueda.
+     * Antes respondían 401 en entrada directa (y en los clientes de correo).
+     */
+    static final String[] RECURSOS_PUBLICOS_VISITANTE = {
+        "/emprende/**", "/email/**", "/opensearch.xml",
+    };
+
     /** Prefijos que nunca entran al fallback: API, actuator, errores y paneles/flujos de rol. */
     private static final List<String> PREFIJOS_EXCLUIDOS = List.of(
         "/api", "/actuator", "/error", "/ws", "/oauth2", "/login/oauth2", "/webhooks",
