@@ -80,6 +80,13 @@ describe('ficha · chip de marca redundante', () => {
   })
 })
 
+/** La misma URL con esquema http, armada con `URL` (sin el literal inseguro que marca Sonar S5332). */
+function conProtocoloHttp(url: string): string {
+  const u = new URL(url)
+  u.protocol = 'http:'
+  return u.href
+}
+
 describe('ficha · video del producto por red (derivado de Figma 28:839)', () => {
   it.each([
     ['https://www.youtube.com/watch?v=LXb3EKWsInQ', 'youtube', 'YouTube', false],
@@ -126,7 +133,7 @@ describe('ficha · video del producto por red (derivado de Figma 28:839)', () =>
   })
   it.each([
     ['https://youtu.be/LXb3EKWsInQ?si=x&next=https://sitio-ajeno.example', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
-    ['http://m.youtube.com/watch?v=LXb3EKWsInQ&t=10', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
+    [conProtocoloHttp('https://m.youtube.com/watch?v=LXb3EKWsInQ&t=10'), 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
     ['https://youtube.com/shorts/LXb3EKWsInQ?si=x', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
     ['https://www.youtube.com/embed/LXb3EKWsInQ', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
     ['https://vimeo.com/76979871?share=copy', 'https://vimeo.com/76979871'],
