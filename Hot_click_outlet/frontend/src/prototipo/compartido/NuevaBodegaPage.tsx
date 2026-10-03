@@ -5,10 +5,13 @@ import { useSellerRuta } from './SellerPlanContext'
 import { crearBodegaVendedor } from './bodegasVendedorApi'
 import FormularioPorPasos from './FormularioPorPasos'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
+import { mensajeErrorGuardarBodega, validarTelefonoBodega } from './nuevaBodegaHelpers'
+import PhoneField from '@/components/ui/PhoneField'
 
 const PASOS: readonly PasoFormulario[] = [
   { id: 'nombre', titulo: 'Nombre de la bodega' },
   { id: 'ubicacion', titulo: 'Ubicación' },
+  { id: 'telefono', titulo: 'Teléfono' },
   { id: 'encargado', titulo: 'Encargado', opcional: true },
 ]
 
@@ -31,6 +34,7 @@ export function NuevaBodegaPage({
   const [paso, setPaso] = useState(0)
   const [nombre, setNombre] = useState('')
   const [ubicacion, setUbicacion] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [encargado, setEncargado] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
@@ -41,6 +45,7 @@ export function NuevaBodegaPage({
     const id = PASOS[i]?.id
     if (id === 'nombre' && !nombre.trim()) return 'El nombre es obligatorio.'
     if (id === 'ubicacion' && !ubicacion.trim()) return 'La ubicación es obligatoria.'
+    if (id === 'telefono') return validarTelefonoBodega(telefono)
     return null
   }
 
@@ -48,52 +53,58 @@ export function NuevaBodegaPage({
     setGuardando(true)
     setError(null)
     try {
-      await crearBodegaVendedor(nombre, ubicacion, encargado)
+      await crearBodegaVendedor({ nombre, ubicacion, telefono, encargado })
       navigate(destino)
     } catch (err: unknown) {
       console.error('[NuevaBodega]', err)
-      setError('No se pudo guardar la bodega.')
+      setError(mensajeErrorGuardarBodega(err))
     } finally {
       setGuardando(false)
     }
   }
 
+  // Ancho máximo de 640 px en escritorio (analisis-diseno.md §4, Nueva bodega).
   const wizard = (
-    <FormularioPorPasos
-      pasos={PASOS}
-      pasoActual={paso}
-      onPasoChange={setPaso}
-      validarPaso={validar}
-      onFinalizar={guardar}
-      etiquetaFinal="Guardar bodega"
-      enviando={guardando}
-    >
-      {idPaso === 'nombre' ? (
-        <Campo
-          etiqueta="Nombre de la bodega"
-          value={nombre}
-          onChange={setNombre}
-          placeholder="Ej: Bodega Central"
-        />
-      ) : null}
-      {idPaso === 'ubicacion' ? (
-        <Campo
-          etiqueta="Ubicación"
-          value={ubicacion}
-          onChange={setUbicacion}
-          placeholder="Ej: San José, Costa Rica"
-        />
-      ) : null}
-      {idPaso === 'encargado' ? (
-        <Campo
-          etiqueta="Encargado (opcional)"
-          value={encargado}
-          onChange={setEncargado}
-          placeholder="Ej: Sofía Vargas"
-        />
-      ) : null}
-      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-    </FormularioPorPasos>
+    <div className="w-full max-w-[640px]">
+      <FormularioPorPasos
+        pasos={PASOS}
+        pasoActual={paso}
+        onPasoChange={setPaso}
+        validarPaso={validar}
+        onFinalizar={guardar}
+        etiquetaFinal="Guardar bodega"
+        enviando={guardando}
+      >
+        {idPaso === 'nombre' ? (
+          <Campo
+            etiqueta="Nombre de la bodega"
+            value={nombre}
+            onChange={setNombre}
+            placeholder="Ej: Bodega Central"
+          />
+        ) : null}
+        {idPaso === 'ubicacion' ? (
+          <Campo
+            etiqueta="Ubicación"
+            value={ubicacion}
+            onChange={setUbicacion}
+            placeholder="Ej: San José, Costa Rica"
+          />
+        ) : null}
+        {idPaso === 'telefono' ? (
+          <PhoneField label="Teléfono de la bodega" value={telefono} onChange={setTelefono} required />
+        ) : null}
+        {idPaso === 'encargado' ? (
+          <Campo
+            etiqueta="Encargado (opcional)"
+            value={encargado}
+            onChange={setEncargado}
+            placeholder="Ej: Sofía Vargas"
+          />
+        ) : null}
+        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+      </FormularioPorPasos>
+    </div>
   )
 
   if (soloFormulario) return wizard

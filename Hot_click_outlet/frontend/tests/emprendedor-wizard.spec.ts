@@ -107,7 +107,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
   test('nueva bodega y método de cobro muestran progreso', async ({ page }) => {
     await entrarEmprendedor(page)
     await page.goto('/emprendedor/opciones/bodegas/nueva', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 3')).toBeVisible()
+    await expect(page.getByText('Paso 1 de 4')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Nombre de la bodega' })).toBeVisible()
 
     await page.goto('/emprendedor/opciones/cobro/nuevo', { waitUntil: 'domcontentloaded' })
