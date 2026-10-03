@@ -29,6 +29,8 @@ export type PedidoEmprendedor = {
   total: number
   /** 'Pendiente' = pago confirmado, por despachar (ver estadoPedidoVendedor). */
   estado: EstadoPedidoVendedor
+  /** Efectivo con retiro sin cobrar: se entrega en vez de despacharse (ver pagaAlRetirar). */
+  pagaAlRetirar?: boolean
   fecha: string
   direccion: string
   productos: { id: string; nombre: string; cantidad: number; precio: number }[]

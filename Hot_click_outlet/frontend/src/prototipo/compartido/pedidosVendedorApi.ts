@@ -3,7 +3,7 @@ import { listaPedidosDesdeRespuesta } from '@/pages/admin/ordenes/ordenesHelpers
 import type { Pedido, ItemPedido } from '@/types/pedido'
 import type { PedidoEmprendedor } from '@/prototipo/emprendedor/types'
 import type { PedidoMock } from '@/prototipo/compartido/mock'
-import { estadoPedidoVendedor } from './estadoPedidoVendedor'
+import { estadoPedidoVendedor, pagaAlRetirar } from './estadoPedidoVendedor'
 
 function lineas(items: ItemPedido[] | undefined): PedidoEmprendedor['productos'] {
   return (items ?? []).map((item, i) => ({
@@ -22,11 +22,14 @@ function direccionDePedido(p: Pedido): string {
 }
 
 export function aPedidoEmprendedor(p: Pedido): PedidoEmprendedor {
+  const estadoCrudo = p.estado ?? p.estadoPedido
+  const datos = { metodoPago: p.metodoPago, metodoEnvio: p.metodoEnvio }
   return {
     id: String(p.id ?? ''),
     cliente: p.nombreCliente ?? 'Cliente',
     total: Number(p.total ?? p.totalPedido ?? 0),
-    estado: estadoPedidoVendedor(p.estado ?? p.estadoPedido),
+    estado: estadoPedidoVendedor(estadoCrudo, datos),
+    pagaAlRetirar: pagaAlRetirar(estadoCrudo, datos),
     fecha: String(p.fechaCreacion ?? p.fechaPedido ?? ''),
     direccion: direccionDePedido(p),
     productos: lineas(p.items),
@@ -39,6 +42,7 @@ export function aPedidoSeller(p: PedidoEmprendedor): PedidoMock {
     cliente: p.cliente,
     total: p.total,
     estado: p.estado,
+    pagaAlRetirar: p.pagaAlRetirar,
     fecha: p.fecha,
     direccion: p.direccion,
     items: p.productos.map((item) => ({
@@ -56,6 +60,11 @@ export async function cargarPedidosVendedor(): Promise<Pedido[]> {
 
 export async function marcarPedidoEnviadoApi(id: string) {
   await orderService.updateStatus(id, 'ENVIADO')
+}
+
+/** Efectivo con retiro: el backend registra el cobro y deja el pedido ENTREGADO. */
+export async function marcarPedidoEntregadoApi(id: string) {
+  await orderService.updateStatus(id, 'ENTREGADO')
 }
 
 /** Asigna la guía de Correos: el backend deja el pedido en ENVIADO y avisa al cliente con el seguimiento. */

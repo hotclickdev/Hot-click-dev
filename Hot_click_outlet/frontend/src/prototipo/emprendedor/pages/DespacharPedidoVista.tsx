@@ -15,6 +15,8 @@ type DespacharPedidoVistaProps = {
   marcando: boolean
   error: string | null
   onMarcar: () => void
+  /** Efectivo con retiro: entregar (el backend registra el cobro). */
+  onEntregar?: () => void
 }
 
 const MAX_GUIA = 100
@@ -24,10 +26,12 @@ const MAX_GUIA = 100
  * guía de Correos; con guía, el backend notifica al cliente con el seguimiento. Sin datos de paquetes del pedido
  * ni de liquidación al vendedor, los bloques "Paquete 1 de N" y "Tu pago por este paquete" quedan pendientes.
  * Sin pago confirmado ('Esperando pago') no se ofrece despachar: el backend respondería 409.
+ * Efectivo con retiro (`pagaAlRetirar`) no se despacha: se ofrece "Marcar entregado" y el backend registra el cobro.
  */
-export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, error, onMarcar }: DespacharPedidoVistaProps) {
+export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, error, onMarcar, onEntregar }: DespacharPedidoVistaProps) {
   const { t } = useTranslation()
-  const pendiente = puedeDespachar(pedido.estado)
+  const entregar = puedeDespachar(pedido.estado) && pedido.pagaAlRetirar === true
+  const pendiente = puedeDespachar(pedido.estado) && !entregar
   const esperandoPago = pedido.estado === 'Esperando pago'
   return (
     <div className="flex flex-col gap-[14px] leading-[normal]">
@@ -35,7 +39,7 @@ export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, e
         <div className="flex items-center justify-between gap-2">
           <p className="font-mono text-[11px] font-medium text-hc-n-500">{t('despacho.pedido', { id: pedido.id })}</p>
           <span className={`rounded-full px-2 py-[3px] text-[11px] font-semibold ${claseEstado(pedido.estado)}`}>
-            {etiquetaEstado(pedido.estado, t)}
+            {entregar ? t('adminOrders.statusPENDIENTE') : etiquetaEstado(pedido.estado, t)}
           </span>
         </div>
         <h2 className="font-sans text-[15px] font-semibold tracking-normal text-hc-n-900">{t('despacho.tusProductos')}</h2>
@@ -67,6 +71,21 @@ export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, e
         <p role="status" className="rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] text-[13px] leading-[18px] text-hc-n-600">
           {t('despacho.esperandoPagoAyuda')}
         </p>
+      )}
+
+      {entregar && (
+        <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
+          {error && <p role="alert" className="text-[12px] leading-4 text-hc-danger">{error}</p>}
+          <button
+            type="button"
+            onClick={onEntregar}
+            disabled={marcando || !onEntregar}
+            className="flex items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 py-[14px] text-[15px] font-semibold leading-[18px] text-hc-n-0 disabled:opacity-60"
+          >
+            <IconoFigma src={despachoCheck} size={18} />
+            {marcando ? t('despacho.guardando') : t('adminOrders.markDelivered')}
+          </button>
+        </section>
       )}
 
       {pendiente && (

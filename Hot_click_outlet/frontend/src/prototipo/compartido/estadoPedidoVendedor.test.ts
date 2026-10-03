@@ -3,6 +3,7 @@ import {
   ESTADOS_SIN_VENTA,
   estadoPedidoVendedor,
   mensajeErrorDespacho,
+  pagaAlRetirar,
   puedeDespachar,
 } from './estadoPedidoVendedor'
 import { aPedidoEmprendedor } from './pedidosVendedorApi'
@@ -69,5 +70,35 @@ describe('mensajeErrorDespacho', () => {
     expect(mensajeErrorDespacho({ response: { status: 409, data: {} } }, generico)).toBe(generico)
     expect(mensajeErrorDespacho(new Error('Network Error'), generico)).toBe(generico)
     expect(mensajeErrorDespacho(undefined, generico)).toBe(generico)
+  })
+})
+
+describe('efectivo con retiro (paga al retirar)', () => {
+  it('EFECTIVO + RETIRO_EN_TIENDA en PENDIENTE_COMPROBANTE no es "Esperando pago" y se puede entregar', () => {
+    const datos = { metodoPago: 'efectivo', metodoEnvio: 'RETIRO_EN_TIENDA' }
+    expect(pagaAlRetirar('PENDIENTE_COMPROBANTE', datos)).toBe(true)
+    const visible = estadoPedidoVendedor('PENDIENTE_COMPROBANTE', datos)
+    expect(visible).toBe('Pendiente')
+    expect(puedeDespachar(visible)).toBe(true)
+  })
+
+  it.each([
+    ['EFECTIVO', 'ENVIO_A_DOMICILIO', 'PENDIENTE_COMPROBANTE'],
+    ['SINPE', 'RETIRO_EN_TIENDA', 'PENDIENTE_COMPROBANTE'],
+    ['TILOPAY', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
+    ['EFECTIVO', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
+  ])('%s + %s en %s sigue en "Esperando pago"', (metodoPago, metodoEnvio, estado) => {
+    expect(pagaAlRetirar(estado, { metodoPago, metodoEnvio })).toBe(false)
+    expect(estadoPedidoVendedor(estado, { metodoPago, metodoEnvio })).toBe('Esperando pago')
+  })
+
+  it('aPedidoEmprendedor marca pagaAlRetirar solo para efectivo con retiro', () => {
+    const base = { id: 7, estadoPedido: 'PENDIENTE_COMPROBANTE', totalPedido: 1000 } as Pedido
+    const retiro = aPedidoEmprendedor({ ...base, metodoPago: 'EFECTIVO', metodoEnvio: 'RETIRO_EN_TIENDA' } as Pedido)
+    expect(retiro.estado).toBe('Pendiente')
+    expect(retiro.pagaAlRetirar).toBe(true)
+    const envio = aPedidoEmprendedor({ ...base, metodoPago: 'EFECTIVO', metodoEnvio: 'ENVIO_A_DOMICILIO' } as Pedido)
+    expect(envio.estado).toBe('Esperando pago')
+    expect(envio.pagaAlRetirar).toBe(false)
   })
 })

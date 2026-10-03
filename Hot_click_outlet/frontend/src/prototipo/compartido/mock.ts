@@ -35,6 +35,8 @@ export type PedidoMock = {
   cliente: string
   total: number
   estado: EstadoPedido
+  /** Efectivo con retiro sin cobrar: se entrega en vez de despacharse. */
+  pagaAlRetirar?: boolean
   fecha: string
   direccion: string
   sucursal?: string

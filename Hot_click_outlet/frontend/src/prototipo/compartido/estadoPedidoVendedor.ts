@@ -22,17 +22,37 @@ export const ESTADOS_SIN_VENTA: ReadonlySet<EstadoPedidoVendedor> = new Set<Esta
   'Cancelado',
 ])
 
-export function estadoPedidoVendedor(estado?: string | null): EstadoPedidoVendedor {
-  const e = (estado ?? '').trim().toUpperCase()
+/** Método de pago y de entrega del pedido, tal como vienen del backend. */
+export type DatosEntregaPedido = { metodoPago?: string | null; metodoEnvio?: string | null }
+
+const normalizar = (valor?: string | null) => (valor ?? '').trim().toUpperCase()
+
+/**
+ * Efectivo con retiro en tienda que todavía no se cobró (PENDIENTE_COMPROBANTE): el cliente paga al
+ * retirar. No es "Esperando pago": el vendedor lo entrega y el backend registra el cobro en ese paso.
+ * Efectivo con envío a domicilio sigue esperando el pago.
+ */
+export function pagaAlRetirar(estado?: string | null, datos?: DatosEntregaPedido): boolean {
+  return normalizar(estado) === 'PENDIENTE_COMPROBANTE'
+    && normalizar(datos?.metodoPago) === 'EFECTIVO'
+    && normalizar(datos?.metodoEnvio) === 'RETIRO_EN_TIENDA'
+}
+
+export function estadoPedidoVendedor(estado?: string | null, datos?: DatosEntregaPedido): EstadoPedidoVendedor {
+  const e = normalizar(estado)
   if (e === 'ENTREGADO' || e === 'COMPLETADO') return 'Entregado'
   if (e === 'ENVIADO') return 'Enviado'
   if (e === 'CANCELADO') return 'Cancelado'
+  if (pagaAlRetirar(e, datos)) return 'Pendiente'
   if (!e || ESTADOS_SIN_PAGO_CONFIRMADO.has(e)) return 'Esperando pago'
   // PAGADO, EN_PREPARACION, LISTO_RETIRO…: pago confirmado, falta despachar.
   return 'Pendiente'
 }
 
-/** 'Pendiente' = pago confirmado y todavía sin despachar: lo único que muestra "Marcar como despachado". */
+/**
+ * 'Pendiente' = pago confirmado (o efectivo que se paga al retirar) y todavía sin despachar ni entregar.
+ * Si el pedido se paga al retirar, la acción es "Marcar entregado" en vez de despachar.
+ */
 export function puedeDespachar(estado: EstadoPedidoVendedor): boolean {
   return estado === 'Pendiente'
 }
