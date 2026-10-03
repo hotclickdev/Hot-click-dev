@@ -28,6 +28,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
 
     @Autowired private EmpresaRepository  empresaRepository;
     @Autowired private PedidoRepository   pedidoRepository;
+    @Autowired private com.hotclick.repository.PagoRepository pagoRepository;
     @Autowired private BodegaRepository   bodegaRepository;
     @Autowired private CategoriaRepository categoriaRepository;
 
@@ -59,6 +60,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
         categoriaRepository.deleteAll();
@@ -101,11 +103,11 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data[?(@.numeroPedido == 'ORD-EXT-001')]").doesNotExist());
     }
 
-    // ── T-PED-004: Cambiar estado PENDIENTE → EN_PREPARACION ─────────────────
+    // ── T-PED-004: Cambiar estado PAGADO → EN_PREPARACION (SEC-06: desde PENDIENTE ya no) ──
     @Test
-    @DisplayName("T-PED-004 | INTERMEDIO — Cambiar estado PENDIENTE → EN_PREPARACION → 200")
-    void changeEstado_pendiente_a_enPreparacion() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/estado")
+    @DisplayName("T-PED-004 | INTERMEDIO — Cambiar estado PAGADO → EN_PREPARACION → 200")
+    void changeEstado_pagado_a_enPreparacion() throws Exception {
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/estado")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"EN_PREPARACION\"}"))
@@ -117,7 +119,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-005 | INTERMEDIO — Cambiar estado con nota → 200 y notificaciones no vacías")
     void changeEstado_conNota_persisteNotificacion() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/estado")
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/estado")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"EN_PREPARACION\",\"nota\":\"Preparando su pedido\"}"))
@@ -151,6 +153,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-008 | INTERMEDIO — Asignar guía a pedido propio → 200")
     void asignarGuia_ownPedido_200() throws Exception {
+        pagoCapturado(pedido2);
         mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/guia")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -185,6 +188,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-011 | INTERMEDIO — Procesar envío con guía y costo → 200")
     void procesarEnvio_ownPedido_200() throws Exception {
+        pagoCapturado(pedido2);
         mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/envio")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -265,13 +269,13 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-019 | INTERMEDIO — Estado actualizado se persiste y se refleja al releer")
     void changeEstado_persistsInDB() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/estado")
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/estado")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"LISTO_RETIRO\"}"))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/pedidos/" + pedido1.getId())
+        mockMvc.perform(get("/api/pedidos/" + pedido2.getId())
                 .header("Authorization", tokenEmp))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.estadoPedido").value("LISTO_RETIRO"));
@@ -281,6 +285,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-020 | INTERMEDIO — Asignar guía cambia estado pedido a ENVIADO")
     void asignarGuia_updatesEstadoToEnviado() throws Exception {
+        pagoCapturado(pedido2);
         mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/guia")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -293,6 +298,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-021 | INTERMEDIO — procesarEnvio cambia estado a ENVIADO")
     void procesarEnvio_updatesEstadoToEnviado() throws Exception {
+        pagoCapturado(pedido2);
         mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/envio")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -337,6 +343,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-025 | INTERMEDIO — Guía con espacios al inicio/fin se trimea correctamente")
     void asignarGuia_trimsSpaces() throws Exception {
+        pagoCapturado(pedido2);
         mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/guia")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -458,5 +465,18 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
         p.setEstado(Constants.ESTADO_ACTIVO);
         p.setItems(new ArrayList<>());
         return pedidoRepository.saveAndFlush(p);
+    }
+
+    /** SEC-09: despachar exige el Pago CAPTURADO, no solo el estado PAGADO. */
+    private void pagoCapturado(Pedido pedido) {
+        Pago pago = new Pago();
+        pago.setMerchantToken("tok-" + java.util.UUID.randomUUID());
+        pago.setMonto(pedido.getTotalPedido());
+        pago.setProveedor(Constants.PROVEEDOR_SINPE);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        pago.setPedido(pedido);
+        pago.setUsuario(pedido.getUsuarioFinal());
+        pago.setFechaCreacion(LocalDateTime.now());
+        pagoRepository.saveAndFlush(pago);
     }
 }
