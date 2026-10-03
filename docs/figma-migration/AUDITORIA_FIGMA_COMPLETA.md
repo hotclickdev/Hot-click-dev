@@ -178,7 +178,7 @@
 
 ---
 
-## 5. Plan de cambios por bloques (Fase 2, no iniciada)
+## 5. Plan de cambios por bloques (Fase 2: ejecutada, resultado en §6)
 
 Reglas para todos los bloques:
 - Ninguno toca `pages/admin/**`, `emprendedor/**`, `pyme/**`, `negocio-plus/**`, POS, `RegistroEmpresa*` ni `RegistrarNegocio*`.
@@ -237,6 +237,78 @@ Reglas para todos los bloques:
 
 ---
 
+## 6. Resultado de la Fase 2 (2 y 3-oct-2026, rama `feat/figma/alineacion-total`, sin push)
+
+### 6.1 Commits por bloque
+
+| Bloque | Commit | Qué |
+|---|---|---|
+| Auditoría | `b08f14c3` | Este documento |
+| 1 | `07da5781` | Búsqueda sin tildes y directorio con negocios reales |
+| 2, 2b, 2c | `b9b22017`, `53497183`, `3534eee6` | Ficha `28:839` / `29:2072` y sección "Video del producto" igual a la imagen aprobada |
+| Manual de marca | `4e457c19` | `docs/figma-migration/MANUAL_MARCA_FIGMA/` y sus punteros (⚠️ este commit también borra `LegalMasLinks.tsx`, que no se usaba) |
+| 3a, 3b, 3c | `41c683ca`, `7ec1b929`, `47193769` | Legales, Nosotros, Contacto, Información y Devoluciones sobre la plantilla `28:1660` |
+| 0b | `4487915a` | SW: auto-actualización solo para visitantes sin sesión (ítem aprobado 2) |
+| 0a | `cb9677f0` | Backend: rutas públicas y fallback SPA (ítem aprobado 1). Hay 9 rutas, no 10 |
+| 4 | `d2d6b4ad` | Crear cuenta de comprador. "Quiero vender" queda igual (ítem aprobado 4) |
+| 5 | `d45416ff` | Tienda pública, solo visual (ítem aprobado 3) |
+| 6 | `4433d27c` | Elementos globales: WhatsApp solo en el Home, aviso de vuelta, estados vacíos |
+| 7a–7f | `1b22e2a2`, `b0f59b41`, `b172cf4c`, `64d83798`, `eb0535e3`, `3f176d17` | Estados de checkout, pago y carrito. Catálogo, spinners y reseñas. Descubrí, SSO y modales de cuenta. Asistente y espera de ruta. `/error` claro. Aviso de versión nueva |
+| a11y | `f5b0cf64` | Contraste AA en los textos nuevos |
+| Docs | `7b3bc3ef` | `ELIMINADOS_VISITANTE.md` |
+
+### 6.2 Coincidencia por frame (evidencia: `/workspace/figma-audit/sbs-final/`, Figma a la izquierda)
+
+**Coinciden en estructura y estilo** (solo cambian los datos del catálogo):
+- `7:2`, `9:171` Home.
+- `26:722` Resultados y `30:1824` Catálogo de escritorio.
+- `27:804` Sin resultados, `27:939` Descubrí, `43:1454` Categorías.
+- Ficha: `28:839`, `29:2072`, `44:1775` variantes, `44:1849` personalizada, `44:1917` agotada, `55:2167` galería.
+- Tienda: `29:922`, `29:2308`, `51:2468`, y `29:1159` Directorio.
+- Carrito y checkout: `28:989`, `30:2268`, `45:1692`, `28:1083`, `30:2385`, `29:1999`.
+- Cuenta: `28:1143` Ingresar (sin "Continuar con Google": necesita Clerk) y `44:1551` Recuperar.
+- Servicios: `28:1429` inicio y `28:1486` Te lo conseguimos.
+- Plantilla `28:1660`: Envíos, legales, Contacto, Información, Devoluciones, Nosotros y Acuerdo.
+- Sistema: `45:2198` 404, `45:2264` Sin conexión, `45:1799` Favoritos vacío, `45:1946` Cookies.
+- `54:2126` Blog: prod no tiene artículos, así que se ve el estado vacío.
+- `8:230` Asistente: se ve el estado inicial; la burbuja azul y las tarjetas están en el código.
+
+**Mismo estilo, otro estado** (la ruta necesita un token, una sesión o un pedido real que el box no tiene). El estado con datos lo cubren los specs de Playwright con API simulada:
+- `29:1932` Pago exitoso: sin pedido muestra el fallo.
+- `28:1531` Garantía: pide sesión.
+- `44:1701` Seguimiento, `28:1594` Encargo, `55:2332` Cotización, `29:2036` Recuperar carrito, `54:2219` Artículo del blog.
+- `27:882` Búsqueda por foto: antes de subir la foto.
+
+**Sin captura lado a lado** (necesitan interacción o sesión). Se revisaron por código y specs:
+- Pasos `29:1248` y `29:1344` del checkout.
+- `45:1607` Agregado, `45:1640` SINPE pendiente, `55:2220` / `55:2284` Gift card.
+- `26:887` Filtros, `43:1530` Categoría Hogar, `8:163` Búsqueda activa, `12:346` / `12:610` Scroll.
+- `55:2191` Foto ampliada.
+- `44:1580` / `44:1614` Recuperar pasos 2 y 3, `44:1660` 2FA.
+- QR: `29:1650`–`29:1913`.
+- `45:2166` Preferencias de cookies, `45:2322` Fallo del servidor (el `/error` del backend ya usa su estilo), `55:2658` Instalar app.
+- Extras `51:1820`–`51:2229`.
+
+### 6.3 Lo que queda con el estilo viejo, y por qué
+
+| Qué | Por qué |
+|---|---|
+| `Modal`, `ConfirmModal`, `Toast`, `Input`, `Button` (`components/ui`) | ⚠️ COMPARTIDOS con todos los paneles. El visitante ya no los usa en las pantallas rediseñadas (hojas `HojaInferior`, `Campo` / `CampoCuenta`). Los modales de `/perfil` usan `PiezasModalCuenta` con `figma` solo para `USUARIO_FINAL` |
+| `PageProgressBar` (barra superior de navegación) | ⚠️ COMPARTIDO. Usa `--hc-primary`. Es una línea de 3 px y no tiene frame en Figma |
+| `features/encargos/*` | Los usan los paneles de admin y emprendedor. El encargo público (`/encargo/:token`) ya va con Figma |
+| Modal admin dentro de `LoginPageLayout`, `ModeSelector`, `EmprendimientoForm` / `emprendimiento/*`, `AppTour` | Flujos de vendedor o admin, fuera de alcance |
+| Landings `/emprende`, `/para-emprendedores`, `/para-pymes`, `/negocio-plus-plan`, `/registro-empresa`, `/registrar-negocio` | Son de vendedor, fuera de alcance |
+| `framer-motion` en `CodigoDescuento`, `TwoFAModal`, `CatalogProductGrid`, `CategoryRowsView` | Es solo animación; el estilo ya es Figma |
+
+### 6.4 Tests y gates (3-oct-2026, 00:00 CR)
+
+- Vitest completo: 114 archivos, 592 tests en verde. `tsc --noEmit` limpio.
+- ESLint en los archivos tocados: limpio, salvo errores previos que no son de esta rama:
+  - `react-hooks/set-state-in-effect` en TiendaLayout, TiendaHomePage, TiendaProductoPage, ReturnVisitorBanner y DescubriPage
+  - `react-hooks/refs` en `AIChat` / `useAiChatEffects`: 26 problemas, los mismos en `HEAD` sin los cambios
+- Java en la PC (árbol `a8030739` idéntico al del box): `mvn -o test` dio **1122 tests, 0 fallos, 15 omitidos, BUILD SUCCESS**. Incluye `CustomErrorControllerTest` (4).
+- Playwright: ver el reporte final de la rama.
+
 ## Método reutilizable
 
 1. **Inventario de Figma en 2 llamadas.** Primero `get_metadata` sin nodo, para obtener las páginas. Después `get_metadata` de la página, que se **guarda a disco** y se parsea con Python/ElementTree. Hay que cortar el texto después de `</canvas>`. De ahí sale `frames.json` con sección, id, nombre y tamaño.
@@ -255,3 +327,12 @@ Reglas para todos los bloques:
 7. **Entrada directa vs. navegación SPA.** Hacer siempre `curl -s -o /dev/null -w '%{http_code}' -H 'Accept: text/html'` sobre todas las rutas públicas. El navegador con service worker esconde los 401/404 del servidor. Así aparecieron 10 rutas rotas.
 8. **Comparación.** `sbs.py` arma Figma a la izquierda y prod a la derecha con la misma escala (opción `CROP` para recortar prod), y `grid.py` junta entre 3 y 6 pares en una sola imagen para revisarlos en una llamada. Clasificar cada diferencia como **diseño**, **contenido/datos**, **configuración** o **entrega** antes de proponer cambios.
 9. **Alcance por rol.** Antes de proponer nada, `grep` del componente en las rutas de roles. Si aparece, marcarlo ⚠️ COMPARTIDO y limitar el cambio a la superficie de visitante.
+10. **Fase 2: notas de ejecución.**
+    - `lcap.sh` recibe un solo argumento `"nombre=/ruta"`. Conviene una ruta por llamada, o `batch.sh lista.txt` con una línea por ruta. Varias en una sola llamada duplicaban capturas.
+    - `Read` a veces no encuentra una imagen recién escrita. Esperar un minuto o mirar un JPG reducido (`/tmp/*.jpg`).
+    - Semillas de `cap.mjs`: `?hcCart=1` (carrito), `?hcTienda=1` (carrito de tienda, `TIENDA_CART`), `?hcVuelta=1` (visitante que vuelve).
+    - `capmock.mjs` captura estados sin datos en prod (variantes, agotado, galería) con la API simulada.
+    - Java en la PC del usuario: `git format-patch` → tar → CopyFromBox → `git -c core.autocrlf=false am --keep-cr`. Verificar con `git rev-parse 'HEAD^{tree}'`.
+    - No usar `--amend` (Auto-review lo bloquea): hacer commits de seguimiento.
+    - `git rm` va solo, no combinado con otras ediciones.
+    - Correr Vitest **completo** antes de cerrar un bloque: `contrasteTokens.test` revisa todo el código y detectó textos n-500 / success nuevos.
