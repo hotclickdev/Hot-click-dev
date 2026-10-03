@@ -24,7 +24,6 @@ const TelegramPage = lazy(() => import('./pages/TelegramPage'))
 const CobroPage = lazy(() => import('./pages/CobroPage'))
 const AgregarMetodoCobroPage = lazy(() => import('./pages/AgregarMetodoCobroPage'))
 const AyudaPage = lazy(() => import('./pages/AyudaPage'))
-const ConsultasHotPage = lazy(() => import('./pages/ConsultasHotPage'))
 const ProximamentePage = lazy(() => import('./pages/ProximamentePage'))
 const BodegasPage = lazy(() => import('./pages/BodegasPage'))
 const NuevaBodegaPage = lazy(() => import('./pages/NuevaBodegaPage'))
@@ -73,7 +72,7 @@ export default function EmprendedorRoutes() {
       <Route path="plan" element={<Navigate to="opciones/plan" replace />} />
       <Route path="plan/actualizado" element={<Navigate to="opciones/plan/actualizado" replace />} />
       <Route path="ayuda" element={<Navigate to="opciones/ayuda" replace />} />
-      <Route path="consultas" element={<Navigate to="opciones/consultas" replace />} />
+      <Route path="consultas" element={<Navigate to="opciones" replace />} />
       <Route path="perfil" element={<Navigate to="opciones/perfil" replace />} />
       <Route path="cobro" element={<Navigate to="opciones/cobro" replace />} />
       <Route path="cobro/nuevo" element={<Navigate to="opciones/cobro/nuevo" replace />} />
@@ -103,7 +102,8 @@ export default function EmprendedorRoutes() {
         <Route path="opciones/cobro" element={page(CobroPage)} />
         <Route path="opciones/cobro/nuevo" element={page(AgregarMetodoCobroPage)} />
         <Route path="opciones/ayuda" element={page(AyudaPage)} />
-        <Route path="opciones/consultas" element={page(ConsultasHotPage)} />
+        {/* Emprendedor sin IA (decisión 3.8 A): «Consultas con Hot» no se ofrece. */}
+        <Route path="opciones/consultas" element={<Navigate to="../opciones" replace />} />
         <Route path="opciones/bodegas" element={page(BodegasPage)} />
         <Route path="opciones/bodegas/nueva" element={page(NuevaBodegaPage)} />
         <Route path="opciones/negocio" element={page(DatosNegocioPage)} />
