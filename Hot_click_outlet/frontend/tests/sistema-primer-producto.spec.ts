@@ -107,7 +107,7 @@ async function sesion(page: Page, opts: {
 async function publicarProducto(page: Page) {
   await page.goto('/admin/productos/nuevo', { waitUntil: 'domcontentloaded' })
   await expect(page).toHaveURL(/\/emprendedor\/productos\/nuevo/)
-  await expect(page.getByText('Nuevo Producto')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Agregar producto' }).first()).toBeVisible()
 }
 
 test.describe('Primer producto — Fase 0 sale de /admin a Figma', () => {
