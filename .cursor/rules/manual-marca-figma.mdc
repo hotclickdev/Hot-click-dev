@@ -12,3 +12,5 @@ rojo `#E73B33`, tarjetas claras, radios, espaciado y chips/controles segmentados
 
 **Contacto directo del vendedor:** WhatsApp, redes, teléfono, correo o web del vendedor solo se muestran al visitante
 si el backend manda `contactoDirecto: true` (planes PYME y NEGOCIO_PLUS). En EMPRENDEDOR, "contactar" va a HotClick.
+Sin `contactoDirecto`, el backend ya manda el texto libre con `[contacto oculto]` en lugar de teléfonos, correos,
+@usuarios y enlaces, y omite el `videoUrl` que no es de un video concreto. La UI no reconstruye ni linkea contacto.
