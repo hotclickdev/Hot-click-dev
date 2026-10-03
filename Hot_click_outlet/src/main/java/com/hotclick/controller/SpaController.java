@@ -132,6 +132,7 @@ public class SpaController {
         "/envios",
         "/devoluciones",
         "/acuerdo-vendedores",
+        "/sin-conexion",
         "/servicios",
         "/blog",
         "/emprende",
