@@ -307,7 +307,19 @@ Reglas para todos los bloques:
   - `react-hooks/set-state-in-effect` en TiendaLayout, TiendaHomePage, TiendaProductoPage, ReturnVisitorBanner y DescubriPage
   - `react-hooks/refs` en `AIChat` / `useAiChatEffects`: 26 problemas, los mismos en `HEAD` sin los cambios
 - Java en la PC (árbol `a8030739` idéntico al del box): `mvn -o test` dio **1122 tests, 0 fallos, 15 omitidos, BUILD SUCCESS**. Incluye `CustomErrorControllerTest` (4).
-- Playwright: ver el reporte final de la rama.
+- Java en la PC tras `fix(error)` (árbol `6a6a6370` = commit `0232af33`): `mvn -o test` repetido dio otra vez **1122 tests, 0 fallos, 0 errores, 15 omitidos, BUILD SUCCESS**, con `CustomErrorControllerTest` 4/4.
+- `typecheck` completo (app, node y e2e): limpio. Hizo falta quitar un helper sin uso en `whatsapp-fab-b2.spec.ts` (`4a6e9ded`).
+- ESLint de todo el frontend: 193 errores en 76 archivos, todos previos. En los 5 archivos con errores que tocó esta rama, la cuenta es igual en la base `b08f14c3`.
+- Playwright (`tests/`, 482 tests, contra el dev server con la API simulada): 410 en verde, 36 omitidos (sin credenciales E2E) y 36 fallos.
+  - Los fallos de visitante eran asserts del diseño viejo y quedaron al día en `e85e6b04`: crear cuenta, botón primario, aviso de vuelta, Información, directorio, tienda, enlace legal y campos de registro.
+  - 10 fallaban igual en la base `b08f14c3`: admin-dashboard, admin-it-nav ×2, catalogo-iconos, emprende, mental-model ×2, sistema-planes ×2 y sistema-primer-producto. Son de paneles o landings, fuera de alcance.
+  - `smoke.spec.ts` (14) no arranca en el box: no fija `channel: 'chrome'` y falta el Chromium de Playwright. Es del entorno, no del código.
+- Gates (`scripts/eng-gates`, BASE `dc65ebb3`):
+  - E1 Flyway, E2 Tenant, E3 SPA, E10 Authz, E11 Sensitive y E4 commit-gate: **PASS**.
+  - SCALE1: **PASS** con un aviso sobre `sw.js`. Antes había un falso positivo por `List.of` en `CustomErrorController`, corregido en el último commit `fix(error)`.
+  - Auto-test de los gates: 18/18.
+  - `gitleaks` no está instalado en el box. En `static/` solo aparecen los prefijos `pk_live_` / `pk_test_` del código de Clerk, sin ninguna clave. No hay `.env` ni `VITE_*` en el build.
+- `static/` reconstruido sin claves: `43ef14b5`.
 
 ## Método reutilizable
 
