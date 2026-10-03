@@ -321,6 +321,20 @@ Reglas para todos los bloques:
   - `gitleaks` no está instalado en el box. En `static/` solo aparecen los prefijos `pk_live_` / `pk_test_` del código de Clerk, sin ninguna clave. No hay `.env` ni `VITE_*` en el build.
 - `static/` reconstruido sin claves: `43ef14b5`.
 
+### 6.5 Perfil de tienda 29:922 / 29:2308 con datos (3-oct-2026, 00:55 CR)
+
+En prod, `casa-luna-506` tiene vacíos `tagline`, `descripcion`, `categoriaNegocio`, `zonaEnvio`, `whatsapp` e `instagram`, con `facturaElectronica=false` y `/categorias` devolviendo `[]`. Por eso la captura real solo muestra un "Compartir" ancho.
+
+Ningún elemento falta en el código. Cada uno se muestra cuando tiene datos:
+- **Tagline:** `TiendaEncabezadoNegocio`, con `tagline`.
+- **Categoría y "Envíos a ...":** `categoriaNegocio` y `zonaEnvio`.
+- **Pastilla "Emite factura electrónica":** `facturaElectronica`.
+- **Botones WhatsApp, Instagram y Compartir:** `whatsapp` e `instagram`. Compartir sale siempre.
+- **"Sobre nosotros":** `TiendaHomePage`, con `descripcion`.
+- **Chips Todo + categorías:** `FiltrosCategoria`, con `/categorias`.
+
+Captura con la info y las categorías mockeadas (`/workspace/figma-audit/captienda.mjs`): `sbs-final/tienda-m.png` y `sbs-final/tienda-mock-d.png` coinciden con Figma. La captura sin datos queda en `sbs-final/tienda-m.sin-datos.png`. `tests/store-perfil.spec.ts` lo cubre con datos.
+
 ## Método reutilizable
 
 1. **Inventario de Figma en 2 llamadas.** Primero `get_metadata` sin nodo, para obtener las páginas. Después `get_metadata` de la página, que se **guarda a disco** y se parsea con Python/ElementTree. Hay que cortar el texto después de `</canvas>`. De ahí sale `frames.json` con sección, id, nombre y tamaño.
