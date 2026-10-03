@@ -1,6 +1,6 @@
 {
-  "_comentario": "UNICA FUENTE de los tiempos de entrega (decision D13). La leen el frontend (src/config/tiemposEnvio.ts) y el backend (com.hotclick.config.TiemposEnvio). VALORES PROVISIONALES: confirmar con el negocio.",
-  "provisional": true,
+  "_comentario": "UNICA FUENTE de los tiempos de entrega (decision D13). La leen el frontend (src/config/tiemposEnvio.ts) y el backend (com.hotclick.config.TiemposEnvio). Valores confirmados por el negocio el 2-oct-2026.",
+  "provisional": false,
   "rapido": { "desdeMin": 30, "hastaHoras": 2 },
   "normalGam": { "desdeDias": 2, "hastaDias": 4 },
   "fueraGam": { "desdeDias": 3, "hastaDias": 4 }
