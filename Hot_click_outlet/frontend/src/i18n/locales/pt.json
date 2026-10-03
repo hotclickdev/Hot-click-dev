@@ -3959,5 +3959,29 @@
       "entregado": "Entregue",
       "listo": "Pronto para entrega"
     }
+  },
+  "negocios": {
+    "seccion": "Negócios",
+    "planEmprendedor": "Empreendimento",
+    "planPyme": "PME",
+    "planNegocioPlus": "Negocio Plus",
+    "navEmprendimientos": "Empreendimentos",
+    "navPymes": "PMEs",
+    "navNegocioPlus": "Negocio Plus",
+    "navAria": "Lojas por tipo de negócio",
+    "tituloEmprendimientos": "Empreendimentos",
+    "tituloPymes": "PMEs",
+    "tituloNegocioPlus": "Negocio Plus",
+    "introPlan": "Lojas {{plan}} que vendem na HotClick.",
+    "filtrarPlan": "Filtrar por tipo de negócio",
+    "todos": "Todos",
+    "verTienda": "{{nombre}}: ver loja",
+    "productos_one": "{{count}} produto",
+    "productos_other": "{{count}} produtos",
+    "sinNegocios": "Nenhum negócio se chama “{{q}}”.",
+    "sinResultados": "Não encontramos produtos nem negócios para “{{q}}”.",
+    "enResultados": "Negócios que correspondem",
+    "verTodos": "Ver todos os negócios",
+    "sinPlan": "Ainda não há lojas {{plan}} na HotClick."
   }
 }

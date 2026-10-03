@@ -3959,5 +3959,29 @@
       "entregado": "Delivered",
       "listo": "Ready for delivery"
     }
+  },
+  "negocios": {
+    "seccion": "Businesses",
+    "planEmprendedor": "Small business",
+    "planPyme": "SME",
+    "planNegocioPlus": "Negocio Plus",
+    "navEmprendimientos": "Small businesses",
+    "navPymes": "SMEs",
+    "navNegocioPlus": "Negocio Plus",
+    "navAria": "Stores by business type",
+    "tituloEmprendimientos": "Small businesses",
+    "tituloPymes": "SMEs",
+    "tituloNegocioPlus": "Negocio Plus",
+    "introPlan": "{{plan}} stores selling on HotClick.",
+    "filtrarPlan": "Filter by business type",
+    "todos": "All",
+    "verTienda": "{{nombre}}: view store",
+    "productos_one": "{{count}} product",
+    "productos_other": "{{count}} products",
+    "sinNegocios": "No business is called “{{q}}”.",
+    "sinResultados": "We found no products or businesses for “{{q}}”.",
+    "enResultados": "Matching businesses",
+    "verTodos": "See all businesses",
+    "sinPlan": "There are no {{plan}} stores on HotClick yet."
   }
 }
