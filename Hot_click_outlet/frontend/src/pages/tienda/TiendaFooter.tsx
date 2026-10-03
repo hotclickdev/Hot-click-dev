@@ -1,13 +1,14 @@
 /**
- * Pie: el texto del vendedor es extra; HotClick siempre queda como anfitrión.
+ * Pie de la tienda (derivado de Figma: pie del comprador `25:721`, en versión mínima). El texto del
+ * vendedor es extra; HotClick siempre queda como anfitrión.
  */
 export default function TiendaFooter({ nombre, footerTexto }: { nombre: string; footerTexto?: string | null }) {
   return (
-    <footer className="py-6 text-center text-xs border-t border-[var(--t-border)] bg-[var(--t-surface)] text-[var(--t-muted)] space-y-1">
-      {footerTexto ? <p>{footerTexto}</p> : null}
+    <footer className="border-t border-hc-n-200 bg-hc-n-0 px-4 py-5 text-center text-[12px] leading-4 text-hc-n-600">
+      {footerTexto ? <p className="mb-1">{footerTexto}</p> : null}
       <p>
-        {nombre} — tienda en{' '}
-        <span className="font-semibold text-[var(--t-text)]">HotClick</span>
+        {nombre} · tienda en{' '}
+        <a href="/" className="font-display font-bold text-hc-n-900">HotClick</a>
       </p>
     </footer>
   )

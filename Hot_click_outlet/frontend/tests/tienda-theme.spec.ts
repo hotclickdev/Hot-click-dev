@@ -52,41 +52,31 @@ test.describe('Tienda tenant — theme', () => {
 
     const shell = page.locator('.hc-tenant-theme')
     await expect(shell).toBeVisible()
-    await expect(page.getByText('Tienda de Demo Store en HotClick')).toBeVisible()
+    const header = page.getByRole('banner').first()
+    await expect(header.getByText('Demo Store', { exact: true })).toBeVisible()
+    await expect(header.getByText('en HotClick', { exact: true })).toBeVisible()
     await expect(page.getByText('Hecho en Costa Rica')).toBeVisible()
-    await expect(page.getByText('Demo Store — tienda en')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Marketplace' })).toHaveAttribute('href', '/')
+    await expect(page.getByText('Demo Store · tienda en')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Ir a HotClick' })).toHaveAttribute('href', '/')
     await expect(page.getByRole('button', { name: 'Agregar al pedido' })).toBeVisible()
     await expect(shell).not.toHaveClass(/bg-gray-50/)
 
     const bg = await shell.evaluate((el) => getComputedStyle(el).backgroundColor)
     expect(bg).toBe('rgb(248, 249, 251)')
 
-    await expect(page.getByRole('link', { name: 'Pedido de esta tienda' })).toBeVisible()
+    await expect(header.getByRole('link', { name: 'Pedido de esta tienda' })).toBeVisible()
     await expect(page.locator('nav.hc-bottom-nav')).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Escribinos por WhatsApp' })).toHaveCount(0)
-    await expect(page.locator('nav.hc-tienda-bottom-nav')).toBeHidden()
+    // Sin barra inferior propia ni botón flotante: el WhatsApp del negocio vive en su encabezado (Figma 29:922).
+    await expect(page.locator('nav.hc-tienda-bottom-nav')).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'WhatsApp de Demo Store' })).toHaveCount(0)
 
     await page.setViewportSize({ width: 375, height: 700 })
-    const bar = page.locator('nav.hc-tienda-bottom-nav')
-    await expect(bar).toBeVisible()
-    await expect(bar).toHaveAttribute('aria-label', 'Navegación de esta tienda')
-    await expect(bar.getByRole('link', { name: 'Catálogo' })).toBeVisible()
-    await expect(bar.getByRole('link', { name: 'Pedido' })).toBeVisible()
-    await expect(bar.getByRole('link', { name: 'HotClick' })).toHaveAttribute('href', '/')
-    await expect(page.getByRole('link', { name: 'WhatsApp de Demo Store' })).toBeHidden()
-
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await expect(page.getByRole('link', { name: 'WhatsApp de Demo Store' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'WhatsApp de Demo Store' })).toHaveAttribute(
-      'href',
-      /wa\.me\/50688887777/,
-    )
-
-    await page.setViewportSize({ width: 375, height: 700 })
-
+    await expect(page.getByRole('link', { name: /^Ver pedido/ })).toHaveCount(0)
     await page.getByRole('button', { name: 'Agregar al pedido' }).click()
-    await bar.getByRole('link', { name: 'Pedido' }).click()
+    const verPedido = page.getByRole('link', { name: /^Ver pedido · 1 producto/ })
+    await expect(verPedido).toBeVisible()
+    await verPedido.click()
     await expect(page).toHaveURL(/\/tienda\/demo\/carrito/)
     await expect(page.getByRole('heading', { name: 'Pedido de esta tienda' })).toBeVisible()
   })
@@ -101,7 +91,7 @@ test.describe('Tienda tenant — theme', () => {
     await page.goto('/tienda/demo/carrito', { waitUntil: 'domcontentloaded' })
 
     const header = page.getByRole('banner').first()
-    const anfitrion = header.locator('span.shrink-0', { hasText: 'en HotClick' })
+    const anfitrion = header.getByText('en HotClick', { exact: true })
     await expect(anfitrion).toBeVisible()
 
     const headerBox = await header.boundingBox()
@@ -153,14 +143,14 @@ test.describe('Tienda tenant — theme', () => {
 
 test('chrome de tienda: HotClick no se recorta y el footer no lo esconde', () => {
   const raiz = dirname(fileURLToPath(import.meta.url))
-  const anfitrion = readFileSync(join(raiz, '../src/pages/tienda/TiendaAnfitrion.tsx'), 'utf8')
+  const header = readFileSync(join(raiz, '../src/pages/tienda/TiendaHeader.tsx'), 'utf8')
   const footer = readFileSync(join(raiz, '../src/pages/tienda/TiendaFooter.tsx'), 'utf8')
-  expect(anfitrion).toContain('shrink-0 whitespace-nowrap')
-  // P17: el texto vive en i18n; el espacio duro sigue en el componente para que "en HotClick" no se parta.
+  // "en HotClick" va en su propia línea, sin truncar: el nombre largo se recorta, el anfitrión no.
   const es = JSON.parse(readFileSync(join(raiz, '../src/i18n/locales/es.json'), 'utf8'))
-  expect(anfitrion).toContain("&nbsp;{t('tienda.enHotclick')}")
+  expect(header).toContain("{t('tienda.enHotclick')}")
+  expect(header).toContain('truncate font-display')
   expect(es.tienda.enHotclick).toBe('en HotClick')
-  expect(footer).toContain('{footerTexto ? <p>{footerTexto}</p> : null}')
+  expect(footer).toContain('{footerTexto ? <p className="mb-1">{footerTexto}</p> : null}')
   expect(footer).toContain('tienda en')
   expect(footer).toContain('HotClick')
 })

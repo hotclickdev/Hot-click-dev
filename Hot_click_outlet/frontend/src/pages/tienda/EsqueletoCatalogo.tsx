@@ -3,7 +3,7 @@ export default function EsqueletoCatalogo() {
   return (
     <div className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 lg:grid-cols-[repeat(auto-fill,167px)] lg:justify-start lg:gap-x-4 lg:gap-y-5">
       {[...new Array(6)].map((_, i) => (
-        <div key={i} className="h-[280px] animate-pulse rounded-[14px] bg-[var(--t-hover)]" />
+        <div key={i} className="h-[280px] animate-pulse rounded-[14px] bg-hc-n-100" />
       ))}
     </div>
   )

@@ -3902,11 +3902,10 @@
     "noDisponibleTitulo": "Esta loja não está disponível",
     "noDisponibleTexto": "O link não corresponde a um negócio publicado na HotClick. Você pode continuar comprando no marketplace.",
     "pedidoTienda": "Pedido desta loja",
-    "navTienda": "Navegação desta loja",
-    "navCatalogo": "Catálogo",
-    "navPedido": "Pedido",
-    "tiendaDe": "Loja de {{nombre}}",
-    "enHotclick": "na HotClick"
+    "enHotclick": "na HotClick",
+    "irAHotclick": "Ir para o HotClick",
+    "verPedido_one": "Ver pedido · {{count}} produto · {{total}}",
+    "verPedido_other": "Ver pedido · {{count}} produtos · {{total}}"
   },
   "emprendimientos": {
     "titulo": "Empreendimentos",
