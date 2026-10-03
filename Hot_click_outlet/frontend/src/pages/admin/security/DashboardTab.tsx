@@ -47,7 +47,7 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
         <KpiCard label="Rate limits"        value={summary.rateLimitEvents}  accent="var(--hc-warning)" />
         <KpiCard label="Alertas activas"    value={summary.activeAlerts}
           accent={(summary.activeAlerts ?? 0) > 0 ? 'var(--hc-danger)' : undefined} />
-        <KpiCard label="Sesiones (30 min)"  value={sesiones?.activas30min ?? '—'} accent="var(--hc-success)"
+        <KpiCard label="Sesiones (30 min)"  value={sesiones?.activas30min ?? '—'} accent="var(--hc-success-text)"
           sub={`${sesiones?.activas24h ?? '—'} en 24h`} />
       </div>
 
@@ -56,7 +56,7 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
         <Card className="p-5 space-y-3">
           <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Adopción 2FA</p>
           <div className="flex items-end gap-3">
-            <span className="text-4xl font-bold tabular-nums" style={{ color: 'var(--hc-success)' }}>
+            <span className="text-4xl font-bold tabular-nums" style={{ color: 'var(--hc-success-text)' }}>
               {twoFactorAdoption.adoptionPercent ?? 0}%
             </span>
             <span className="text-sm mb-1" style={{ color: 'var(--hc-muted)' }}>
@@ -124,7 +124,7 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
                 </div>
                 <button type="button" onClick={() => handleResolve(alert.id)} disabled={resolving === alert.id}
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 disabled:opacity-40"
-                  style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
+                  style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success-text)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
                   {resolving === alert.id ? '...' : 'Resolver'}
                 </button>
               </div>

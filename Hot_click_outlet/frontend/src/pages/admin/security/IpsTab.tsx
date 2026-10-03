@@ -89,13 +89,13 @@ export default function IpsTab() {
                           <td className="px-4 py-2.5">
                             {ip.bloqueada
                               ? <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--hc-danger-bg)', color: 'var(--hc-danger)' }}>Bloqueada</span>
-                              : <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>Libre</span>}
+                              : <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success-text)' }}>Libre</span>}
                           </td>
                           <td className="px-4 py-2.5">
                             {ip.bloqueada
                               ? <button type="button" onClick={() => desbloquear(ip.ip)} disabled={blocking === ip.ip}
                                   className="px-2.5 py-1 rounded-lg text-xs hover:opacity-80 disabled:opacity-40"
-                                  style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
+                                  style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success-text)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
                                   {blocking === ip.ip ? '...' : 'Desbloquear'}
                                 </button>
                               : <button type="button" onClick={() => bloquear(ip.ip)} disabled={blocking === ip.ip}
@@ -165,7 +165,7 @@ export default function IpsTab() {
                             {b.activa && (
                               <button type="button" onClick={() => desbloquear(b.ipAddress)} disabled={blocking === b.ipAddress}
                                 className="px-2.5 py-1 rounded-lg text-xs hover:opacity-80 disabled:opacity-40"
-                                style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
+                                style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success-text)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }}>
                                 {blocking === b.ipAddress ? '...' : 'Desbloquear'}
                               </button>
                             )}

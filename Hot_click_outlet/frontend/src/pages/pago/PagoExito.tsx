@@ -56,7 +56,7 @@ export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoPr
             <button type="button" onClick={copiar} aria-label={t('payment.exito.copiar')} className="relative flex size-[15px] items-center justify-center text-hc-blue-600 after:absolute after:-inset-3">
               <IconoFigma src={ICONOS_PAGO.copiarPedido} size={15} />
             </button>
-            {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success">{t('payment.exito.copiado')}</span>}
+            {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success-text">{t('payment.exito.copiado')}</span>}
           </div>
         )}
         {correo && <p className="text-[13px] text-hc-n-600">{t('payment.exito.comprobante', { correo })}</p>}
@@ -97,7 +97,7 @@ export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoPr
 
       {/* Funciones previas que Figma `29:1932` no dibuja ni elimina: garantía de 40 días (política de InformacionPage) e imprimir. */}
       <div className="flex flex-col items-center gap-1 px-4 pb-3 pt-1 text-center leading-[normal]">
-        <p className="text-[13px] font-semibold text-hc-success">{t('payment.exito.garantia')}</p>
+        <p className="text-[13px] font-semibold text-hc-success-text">{t('payment.exito.garantia')}</p>
         <p className="text-[12px] text-hc-n-600">{t('payment.exito.garantiaAyuda')}</p>
         <button type="button" onClick={() => globalThis.print()} className="mt-1 text-[13px] font-medium text-hc-n-600 underline-offset-2 hover:underline">
           {t('payment.print')}

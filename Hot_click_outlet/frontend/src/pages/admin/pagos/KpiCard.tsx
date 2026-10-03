@@ -2,8 +2,8 @@ import StatCard from '@/components/ui/StatCard'
 
 const COLOR_TOKEN: Record<string, string> = {
   'text-hc-text': 'var(--hc-text)',
-  'text-green-400': 'var(--hc-success)',
-  'text-emerald-400': 'var(--hc-success)',
+  'text-green-400': 'var(--hc-success-text)',
+  'text-emerald-400': 'var(--hc-success-text)',
   'text-red-400': 'var(--hc-danger)',
   'text-yellow-400': 'var(--hc-warning)',
 }

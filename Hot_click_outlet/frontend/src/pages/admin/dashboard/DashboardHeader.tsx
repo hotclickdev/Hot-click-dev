@@ -23,7 +23,7 @@ export default function DashboardHeader({ title, welcome, onOpenTour, serverStat
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {serverStatus && (
-          <span className="text-xs" style={{ color: serverStatus.up ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
+          <span className="text-xs" style={{ color: serverStatus.up ? 'var(--hc-success-text)' : 'var(--hc-danger)' }}>
             {serverStatus.up
               ? t('admin.dashboard.apiMs', { ms: serverStatus.ms })
               : t('admin.dashboard.apiDown')}

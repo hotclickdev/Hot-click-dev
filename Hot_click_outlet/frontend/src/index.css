@@ -25,6 +25,7 @@
   --color-hc-accent: var(--hc-accent);
   --color-hc-accent-hover: var(--hc-accent-hover);
   --color-hc-success: var(--hc-success);
+  --color-hc-success-text: var(--hc-success-text);
   --color-hc-danger: var(--hc-danger);
   --color-hc-warning: var(--hc-warning);
   --color-hc-warning-bg: var(--hc-warning-bg);
@@ -419,7 +420,7 @@ html.dark .hc-btn[disabled], html.dark .hc-btn:disabled {
 
 .hc-btn-success {
   background: var(--hc-success-bg);
-  color: var(--hc-success);
+  color: var(--hc-success-text);
   border-color: color-mix(in srgb, var(--hc-success) 40%, transparent);
 }
 .hc-btn-success:hover {

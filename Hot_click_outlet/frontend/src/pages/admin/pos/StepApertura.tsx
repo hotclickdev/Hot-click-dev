@@ -13,7 +13,7 @@ export default function StepApertura({ onAbrir, loading }: { onAbrir: (monto: nu
       <div className="w-full max-w-lg space-y-6 pt-2">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold"
-            style={{ backgroundColor: 'rgba(23,138,80,0.1)', border: '1px solid rgba(23,138,80,0.2)', color: 'var(--hc-success)' }}>
+            style={{ backgroundColor: 'rgba(23,138,80,0.1)', border: '1px solid rgba(23,138,80,0.2)', color: 'var(--hc-success-text)' }}>
             <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-black"
               style={{ backgroundColor: 'rgba(23,138,80,0.2)' }}>1</span>
             <span>{t('pos.apertura.paso')}</span>

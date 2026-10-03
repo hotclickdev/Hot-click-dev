@@ -199,7 +199,7 @@ export default function CuentaOpiniones({ porOpinar, pedidos, opiniones, onEnvia
                 </div>
                 <p className="text-[13px] leading-[19px] text-hc-n-600">“{o.comentario}”</p>
                 <div className="flex items-center gap-[6px] leading-[normal]">
-                  <span className={`rounded-full px-2 py-[3px] text-[11px] font-semibold ${aprobada ? 'bg-hc-green-50 text-hc-success' : rechazada ? 'bg-hc-n-100 text-hc-n-600' : 'bg-hc-warning-bg text-hc-warning'}`}>
+                  <span className={`rounded-full px-2 py-[3px] text-[11px] font-semibold ${aprobada ? 'bg-hc-green-50 text-hc-success-text' : rechazada ? 'bg-hc-n-100 text-hc-n-600' : 'bg-hc-warning-bg text-hc-warning'}`}>
                     {aprobada ? t('cuenta.opiniones.estadoPublicada') : rechazada ? t('cuenta.opiniones.estadoNoPublicada') : t('cuenta.opiniones.estadoRevision')}
                   </span>
                   <span className="text-[11px] text-hc-n-600">{t('cuenta.opiniones.revisada')}</span>

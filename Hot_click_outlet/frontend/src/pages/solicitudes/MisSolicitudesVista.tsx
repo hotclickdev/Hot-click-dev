@@ -44,7 +44,7 @@ function TarjetaSolicitud({ solicitud }: { solicitud: SolicitudBusqueda }) {
         <span className="w-full text-[14px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{solicitud.descripcion}</span>
         <span className="text-[12px] text-hc-n-600">{t('solicitudes.enviadaEl', { fecha: fechaCorta(solicitud.fechaCreacion, i18n.language) })}</span>
         {respuesta
-          ? <span className="line-clamp-2 text-[12px] font-semibold text-hc-success">{respuesta}</span>
+          ? <span className="line-clamp-2 text-[12px] font-semibold text-hc-success-text">{respuesta}</span>
           : <span className="text-[12px] text-hc-n-600">{t(claveLinea(solicitud.estado))}</span>}
       </span>
       <span className="mt-[2px] text-hc-n-600"><IcoChevron /></span>
@@ -125,7 +125,7 @@ function Detalle({ solicitud }: { solicitud: SolicitudBusqueda }) {
 
       {respuesta && (
         <section className={`flex flex-col gap-[10px] rounded-[14px] border p-[14px] ${visual === 'cotizada' ? 'border-hc-success bg-hc-green-50' : 'border-hc-n-200 bg-hc-n-0'}`}>
-          <p className={`text-[11px] font-semibold uppercase ${visual === 'cotizada' ? 'text-hc-success' : 'text-hc-n-600'}`}>
+          <p className={`text-[11px] font-semibold uppercase ${visual === 'cotizada' ? 'text-hc-success-text' : 'text-hc-n-600'}`}>
             {visual === 'cotizada' ? t('solicitudes.detalle.teLaConseguimos') : t('solicitudes.detalle.respuesta')}
           </p>
           <p className="text-[14px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{respuesta}</p>

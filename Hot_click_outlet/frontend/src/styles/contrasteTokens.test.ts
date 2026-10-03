@@ -55,6 +55,17 @@ describe('contraste de tokens (WCAG 2.x)', () => {
     expect(CSS).toMatch(/--hc-primary-text:\s*var\(--hc-red-600\)/)
   })
 
+  it('--hc-success-text (éxito como texto) pasa AA en claro, en Sistema y en oscuro', () => {
+    for (const fondo of [...FONDOS, 'hc-success-bg']) {
+      expect(contraste(token('hc-success-text'), token(fondo)), `hc-success-text / ${fondo}`).toBeGreaterThanOrEqual(4.5)
+    }
+    // Crema de Sistema (#ede5da) y superficies oscuras (#161B22, #0E1116, success-bg oscuro #10301F).
+    expect(contraste(token('hc-success-text'), '#EDE5DA')).toBeGreaterThanOrEqual(4.5)
+    for (const fondo of ['#161B22', '#0E1116', '#10301F']) expect(contraste('#3DCB82', fondo)).toBeGreaterThanOrEqual(4.5)
+    expect(CSS.match(/--hc-success-text:\s*#107142/g)?.length).toBe(3)
+    expect(CSS.match(/--hc-success-text:\s*#3DCB82/g)?.length).toBe(2)
+  })
+
   it('pares por debajo de AA para texto normal: solo quedan en fondos, bordes, íconos y placeholders (decisión R1)', () => {
     const debajo = (a: string, b: string) => contraste(token(a), token(b)) < 4.5
     expect(debajo('hc-n-400', 'hc-n-0')).toBe(true)
@@ -94,4 +105,32 @@ describe('R1: el texto no usa tokens por debajo de AA', () => {
     }
     expect(malos).toEqual([])
   })
+})
+
+describe('el verde de éxito como texto usa --hc-success-text', () => {
+  it('ninguna clase ni estilo de texto usa --hc-success directo (íconos y sus círculos quedan con el verde de Figma)', () => {
+    const ICONO = /IconoFigma|Glyph|<svg|<[A-Z]\w*Icon\b|<Icon[A-Z]\w*|Icono[A-Z]\w*|<path/
+    // Contenedores de un ícono (círculos y casillas): no tienen texto propio.
+    const CONTENEDORES = [
+      'flex size-14 shrink-0 items-center justify-center rounded-full bg-hc-green-50 text-hc-success"',
+      "`flex shrink-0 ${cumple ? 'text-hc-success'",
+      "icono: revisionRecibido, color: 'text-hc-success'",
+      'flex size-16 items-center justify-center rounded-full bg-hc-success-bg text-hc-success"',
+    ]
+    const TEXTO_EXITO = [
+      /(?<![\w:-])text-hc-(success|green-600)(?![\w-])/,
+      /text-\[var\(--hc-success\)\]/,
+      /(?<![\w-])(color|text)\s*:\s*[^,;{}\n]*?var\(--hc-success\)/,
+    ]
+    const malos: string[] = []
+    for (const archivo of fuentes(new URL('../', import.meta.url))) {
+      readFileSync(archivo, 'utf8').split('\n').forEach((linea, i) => {
+        if (!linea.includes('success') && !linea.includes('green-600')) return
+        if (ICONO.test(linea) || CONTENEDORES.some((c) => linea.includes(c))) return
+        if (TEXTO_EXITO.some((r) => r.test(linea))) malos.push(`${archivo.replaceAll('\\', '/').split('/src/')[1]}:${i + 1}`)
+      })
+    }
+    expect(malos).toEqual([])
+    expect(readFileSync(new URL('../index.css', import.meta.url), 'utf8')).toMatch(/\.hc-btn-success \{[^}]*\n\s*color: var\(--hc-success-text\)/)
+  }, 20_000)
 })

@@ -66,7 +66,7 @@ function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, o
                       style={estiloOrigen(p.origen)}>{p.origen ?? 'ONLINE'}</span>
                   </td>
                   <td className="px-4 py-3 text-xs text-hc-muted">{p.metodoPago ?? '—'}</td>
-                  <td className="px-4 py-3 font-semibold text-hc-success">{formatPrice(productos)}</td>
+                  <td className="px-4 py-3 font-semibold text-hc-success-text">{formatPrice(productos)}</td>
                   <td className="px-4 py-3">
                     {envio > 0
                       ? <span className="font-semibold text-amber-400">{formatPrice(envio)}</span>
@@ -89,7 +89,7 @@ function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, o
               <td colSpan={5} className="px-4 py-3 text-xs font-semibold text-hc-muted uppercase">
                 {t('adminFinanzas.periodTotals')}
               </td>
-              <td className="px-4 py-3 font-bold text-hc-success">{formatPrice(totalProductos)}</td>
+              <td className="px-4 py-3 font-bold text-hc-success-text">{formatPrice(totalProductos)}</td>
               <td className="px-4 py-3 font-bold text-amber-400">{formatPrice(totalEnvio)}</td>
               <td className="px-4 py-3 font-bold text-hc-link">{formatPrice(totalIngresos)}</td>
               <td />

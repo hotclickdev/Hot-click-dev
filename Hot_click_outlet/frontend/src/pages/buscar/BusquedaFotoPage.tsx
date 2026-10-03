@@ -107,7 +107,7 @@ export default function BusquedaFotoPage() {
                       {p.imagenUrl && <img src={p.imagenUrl} alt="" className="size-full object-cover" loading="lazy" />}
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col items-start gap-[3px]">
-                      <span className={`rounded-full px-[7px] py-[2px] text-[10px] font-semibold ${muyParecido ? 'bg-hc-green-50 text-hc-green-600' : 'bg-hc-n-100 text-hc-n-600'}`}>
+                      <span className={`rounded-full px-[7px] py-[2px] text-[10px] font-semibold ${muyParecido ? 'bg-hc-green-50 text-hc-success-text' : 'bg-hc-n-100 text-hc-n-600'}`}>
                         {t(`search.photo${rotulo === 'muyParecido' ? 'VerySimilar' : rotulo === 'mismaCategoria' ? 'SameCategory' : 'Related'}`)}
                       </span>
                       <span className="truncate text-[14px] font-medium text-hc-n-900">{p.nombre}</span>

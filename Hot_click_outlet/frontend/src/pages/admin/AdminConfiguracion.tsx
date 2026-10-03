@@ -128,7 +128,7 @@ export default function AdminConfiguracion() {
         .cfg-btn-primary { background:var(--hc-primary); color:#fff; box-shadow:0 1px 12px var(--hc-shadow); }
         .cfg-btn-primary:hover:not(:disabled) { background:var(--hc-primary-hover); box-shadow:0 3px 18px var(--hc-shadow); transform:translateY(-1px); }
         .cfg-btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
-        .cfg-btn-success { background:var(--hc-glass-bg); color:var(--hc-success); border:1px solid var(--hc-glass-border); }
+        .cfg-btn-success { background:var(--hc-glass-bg); color:var(--hc-success-text); border:1px solid var(--hc-glass-border); }
         .cfg-btn-ghost { background:var(--hc-surface-2); color:var(--hc-muted); border:1px solid var(--hc-border); }
         .cfg-btn-ghost:hover { color:var(--hc-text); border-color:var(--hc-border-strong); }
         .cfg-btn-danger { background:rgba(220,38,38,.08); color:var(--hc-danger); border:1px solid rgba(220,38,38,.22); }

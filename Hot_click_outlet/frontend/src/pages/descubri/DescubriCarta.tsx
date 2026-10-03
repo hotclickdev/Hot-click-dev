@@ -99,7 +99,7 @@ export default function DescubriCarta({
             className="absolute right-5 top-5 rotate-12 rounded-lg border-[2.5px] px-3 py-1.5 text-sm font-bold"
             style={{
               opacity: likeOpacity,
-              color: 'var(--hc-success)',
+              color: 'var(--hc-success-text)',
               borderColor: 'var(--hc-success)',
               background: 'color-mix(in srgb, var(--hc-surface) 88%, transparent)',
             }}

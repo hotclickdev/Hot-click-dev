@@ -39,7 +39,7 @@ export default function BlogEntryList({ lista, onTogglePublicado, onEdit, onDele
             <span style={{
               padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
               background: e.publicado ? 'rgba(5,150,105,0.1)' : 'rgba(245,158,11,0.1)',
-              color: e.publicado ? 'var(--hc-success)' : 'var(--hc-warning)',
+              color: e.publicado ? 'var(--hc-success-text)' : 'var(--hc-warning)',
               border: `1px solid ${e.publicado ? 'rgba(5,150,105,0.3)' : 'rgba(245,158,11,0.3)'}`,
             }}>
               {e.publicado ? 'Publicado' : 'Borrador'}

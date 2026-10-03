@@ -2,7 +2,7 @@ import { STATUS_LABEL } from './agentesLabels'
 import type { InspectStatus } from '@/types/agentes'
 
 const TONO: Record<string, string> = {
-  al_dia: 'bg-[var(--hc-success-bg)] text-[var(--hc-success)]',
+  al_dia: 'bg-[var(--hc-success-bg)] text-[var(--hc-success-text)]',
   activar: 'bg-[var(--hc-warning-bg)] text-[var(--hc-warning)]',
   actualizar: 'bg-[var(--hc-info-bg)] text-[var(--hc-info)]',
   mejorar: 'bg-[var(--hc-blue-50)] text-[var(--hc-blue-600)]',

@@ -124,7 +124,7 @@ export default function RecuperarCarritoPage() {
                 <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
                   <p className="truncate text-[14px] font-medium text-hc-n-900">{item.nombre}</p>
                   <p className="truncate text-[12px] text-hc-n-600">{detalle}</p>
-                  {item.stock != null && item.stock > 0 && <p className="text-[11px] font-semibold text-hc-success">{t('recuperarCarrito.disponible', { count: item.stock })}</p>}
+                  {item.stock != null && item.stock > 0 && <p className="text-[11px] font-semibold text-hc-success-text">{t('recuperarCarrito.disponible', { count: item.stock })}</p>}
                 </div>
                 <p className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice((item.precio ?? 0) * cantidad)}</p>
               </div>

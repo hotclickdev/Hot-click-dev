@@ -29,7 +29,7 @@ export type UsuariosTableProps = {
 }
 
 const BTN = 'px-2.5 py-1 text-xs rounded-lg transition-colors'
-const BTN_OK = `${BTN} bg-[var(--hc-success-bg)] text-hc-success hover:opacity-90`
+const BTN_OK = `${BTN} bg-[var(--hc-success-bg)] text-hc-success-text hover:opacity-90`
 const BTN_WARN = `${BTN} bg-[var(--hc-warning-bg)] text-hc-warning hover:opacity-90`
 const BTN_MUTED = `${BTN} bg-hc-surface-2 text-hc-muted hover:opacity-80`
 const BTN_DANGER = `${BTN} bg-[var(--hc-danger-bg)] text-hc-danger hover:opacity-90`

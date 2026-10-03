@@ -66,7 +66,7 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
           style={{ backgroundColor: 'rgba(23,138,80,0.08)', border: '1px solid rgba(23,138,80,0.2)' }}
         >
           <span className="size-1.5 animate-pulse rounded-full bg-[var(--hc-success)]" />
-          <span className="text-xs font-bold" style={{ color: 'var(--hc-success)' }}>{t('pos.common.turnoActivo')}</span>
+          <span className="text-xs font-bold" style={{ color: 'var(--hc-success-text)' }}>{t('pos.common.turnoActivo')}</span>
         </div>
       ) : null}
 

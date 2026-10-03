@@ -15,7 +15,7 @@ const TONO_POR_ESTADO: Record<string, Tono> = {
 const CLASES: Record<Tono, string> = {
   azul: 'bg-hc-blue-50 text-hc-blue-600',
   ambar: 'bg-hc-warning-bg text-hc-warning',
-  verde: 'bg-hc-green-50 text-hc-success',
+  verde: 'bg-hc-green-50 text-hc-success-text',
   gris: 'bg-hc-n-100 text-hc-n-600',
 }
 

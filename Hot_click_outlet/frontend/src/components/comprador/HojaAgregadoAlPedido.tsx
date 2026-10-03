@@ -66,7 +66,7 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
       {comparteEnvio && (
         <div className="flex items-start gap-2 rounded-[10px] bg-hc-success-bg px-3 py-[10px]">
           <IconoFigma src={ICONOS_COMPRADOR.agregadoEnvio} size={16} />
-          <p className="min-w-0 flex-1 text-[12px] leading-4 text-hc-success">{t('comprador.hoja.envioPagado', { negocio })}</p>
+          <p className="min-w-0 flex-1 text-[12px] leading-4 text-hc-success-text">{t('comprador.hoja.envioPagado', { negocio })}</p>
         </div>
       )}
 

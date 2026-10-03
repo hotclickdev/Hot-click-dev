@@ -106,7 +106,7 @@ export function ImportPreviewModal({
 
 function colorNotaImport(importErr: string, importOk: boolean) {
   if (importErr) return 'var(--hc-danger)'
-  if (importOk) return 'var(--hc-success)'
+  if (importOk) return 'var(--hc-success-text)'
   return 'var(--hc-muted)'
 }
 

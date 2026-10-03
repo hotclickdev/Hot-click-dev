@@ -24,7 +24,7 @@ export function GuardarPorCorreo({ correo, guardado, onCambiar, onGuardar }: Gua
       <h2 className="font-sans text-[14px] font-medium leading-[normal] tracking-normal text-hc-n-900">{t('cart.guardarTitulo')}</h2>
       <p className="text-[12px] leading-4 text-hc-n-600">{t('cart.guardarTexto')}</p>
       {guardado ? (
-        <p role="status" className="text-[13px] font-semibold leading-[normal] text-hc-success">{t('cart.guardado')}</p>
+        <p role="status" className="text-[13px] font-semibold leading-[normal] text-hc-success-text">{t('cart.guardado')}</p>
       ) : (
         <form onSubmit={enviar} className="flex items-center gap-[10px]">
           <label className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3">

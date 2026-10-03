@@ -17,7 +17,7 @@ export type TonoEstado = 'exito' | 'info' | 'aviso' | 'neutro'
 
 /** Colores del chip de estado (Figma 44:1720 / 44:1738 / 44:1752), solo tokens. */
 export const CLASES_TONO: Record<TonoEstado, string> = {
-  exito: 'bg-hc-green-50 text-hc-green-600',
+  exito: 'bg-hc-green-50 text-hc-success-text',
   info: 'bg-hc-blue-50 text-hc-blue-600',
   aviso: 'bg-hc-warning-bg text-hc-warning',
   neutro: 'bg-hc-n-100 text-hc-n-600',

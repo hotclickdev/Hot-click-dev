@@ -124,7 +124,7 @@ export function TituloValido({ texto }: { texto: string }) {
   return (
     <div className="flex w-full items-center gap-[6px]">
       <IconoFigma src={ICONOS_COMPRADOR.codigoValidado} size={16} className="text-hc-success" />
-      <p className="text-[13px] font-semibold text-hc-success">{texto}</p>
+      <p className="text-[13px] font-semibold text-hc-success-text">{texto}</p>
     </div>
   )
 }
@@ -134,7 +134,7 @@ export function LineaCodigo({ etiqueta, valor, rebaja = false }: { etiqueta: str
   return (
     <div className="flex w-full items-center justify-between gap-2 text-[13px]">
       <span className="text-hc-text-secondary">{etiqueta}</span>
-      <span className={`shrink-0 font-medium ${rebaja ? 'text-hc-success' : 'text-hc-text'}`}>{valor}</span>
+      <span className={`shrink-0 font-medium ${rebaja ? 'text-hc-success-text' : 'text-hc-text'}`}>{valor}</span>
     </div>
   )
 }

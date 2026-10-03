@@ -54,7 +54,7 @@ function InstruccionesSinpe({ form, total, token }: { form: CheckoutFormState; t
         <button type="button" onClick={copiar} aria-label={t('checkout.f.copiarSinpe')} className="relative flex size-4 items-center justify-center text-hc-blue-600 after:absolute after:-inset-2">
           <IconoFigma src={ICONOS_CHECKOUT.copiar} size={16} />
         </button>
-        {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success">{t('checkout.f.copiado')}</span>}
+        {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success-text">{t('checkout.f.copiado')}</span>}
       </div>
       <p className="text-[13px] leading-[18px] text-hc-n-600">{t('checkout.f.sinpePaso2')}</p>
       <input
@@ -160,7 +160,7 @@ export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
                 {!(esSinpe && activo) && <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>}
               </span>
-              {esSinpe && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success">{t('checkout.f.masUsado')}</span>}
+              {esSinpe && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success-text">{t('checkout.f.masUsado')}</span>}
             </label>
             {bloqueado && <p className="text-[12px] leading-4 text-hc-warning">{t('checkout.f.efectivoNoRapido')}</p>}
             {esSinpe && activo && <InstruccionesSinpe form={form} total={total} token={token} />}
@@ -297,13 +297,13 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
       {descuento > 0 && (
         <div className="flex items-start justify-between text-[13px]">
           <p className="font-medium text-hc-n-600">{t('checkout.codigo.lineaDescuento', { porcentaje: cuponPorcentaje })}</p>
-          <p className="font-semibold text-hc-success">{formatoRebaja(descuento)}</p>
+          <p className="font-semibold text-hc-success-text">{formatoRebaja(descuento)}</p>
         </div>
       )}
       {giftCard > 0 && (
         <div className="flex items-start justify-between text-[13px]">
           <p className="font-medium text-hc-n-600">{t('checkout.codigo.lineaGift', { codigo: codigos.gcCodigo ?? '' })}</p>
-          <p className="font-semibold text-hc-success">{formatoRebaja(giftCard)}</p>
+          <p className="font-semibold text-hc-success-text">{formatoRebaja(giftCard)}</p>
         </div>
       )}
       <p className="text-[11px] leading-[15px] text-hc-n-600">{giftCard > 0 ? t('checkout.codigo.notaRestante') : t('cart.notaResumenEscritorio')}</p>

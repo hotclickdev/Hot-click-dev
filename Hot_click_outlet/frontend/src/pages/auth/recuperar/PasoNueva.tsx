@@ -10,7 +10,7 @@ function Requisito({ cumple, texto }: { cumple: boolean; texto: string }) {
       <span className={`flex shrink-0 ${cumple ? 'text-hc-success' : 'text-hc-n-600'}`}>
         {cumple ? <IconoCheck /> : <IconoEquis />}
       </span>
-      <span className={`text-[13px] ${cumple ? 'text-hc-success' : 'text-hc-n-600'}`}>{texto}</span>
+      <span className={`text-[13px] ${cumple ? 'text-hc-success-text' : 'text-hc-n-600'}`}>{texto}</span>
     </li>
   )
 }

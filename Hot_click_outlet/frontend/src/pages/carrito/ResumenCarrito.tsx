@@ -35,7 +35,7 @@ function LineaRebaja({ etiqueta, monto, clase }: { etiqueta: string; monto: numb
   return (
     <div className={`flex items-center justify-between ${clase}`}>
       <p className="font-medium text-hc-n-600">{etiqueta}</p>
-      <p className="font-semibold text-hc-success">{formatoRebaja(monto)}</p>
+      <p className="font-semibold text-hc-success-text">{formatoRebaja(monto)}</p>
     </div>
   )
 }

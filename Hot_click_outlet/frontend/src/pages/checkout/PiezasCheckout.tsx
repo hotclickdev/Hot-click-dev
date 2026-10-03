@@ -19,7 +19,7 @@ export function CabeceraCompraSegura({ onAtras }: CabeceraProps) {
         </button>
         <MarcaComprador tamano="centrada" />
       </div>
-      <p className="flex items-center gap-[5px] text-[12px] font-semibold text-hc-success">
+      <p className="flex items-center gap-[5px] text-[12px] font-semibold text-hc-success-text">
         <IconoFigma src={ICONOS_CHECKOUT.candadoCompraSegura} size={15} />
         {t('checkout.f.compraSegura')}
       </p>

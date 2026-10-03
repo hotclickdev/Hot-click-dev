@@ -49,7 +49,7 @@ export function tonoRolFigma(rol: string, estado: string): { label: string; clas
     return { label: 'Suspendido', clase: 'bg-[var(--hc-danger-bg)] text-hc-danger' }
   }
   if (rol === 'USUARIO_FINAL') {
-    return { label: 'Comprador', clase: 'bg-[var(--hc-success-bg)] text-hc-success' }
+    return { label: 'Comprador', clase: 'bg-[var(--hc-success-bg)] text-hc-success-text' }
   }
   if (rol === 'EMPRENDEDOR') {
     return { label: 'Vendedor', clase: 'bg-[var(--hc-info-bg)] text-hc-link' }

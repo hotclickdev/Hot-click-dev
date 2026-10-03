@@ -22,7 +22,7 @@ function Precio({ opcion, escritorio }: { opcion: OpcionEnvio; escritorio: boole
   const { t } = useTranslation()
   const tamano = escritorio ? 'text-[13px]' : 'text-[14px]'
   if (opcion.varia) return <span className={`shrink-0 font-semibold text-hc-n-900 ${tamano}`}>{t('checkout.f.varia')}</span>
-  if (opcion.precio === 0) return <span className={`shrink-0 font-semibold text-hc-success ${tamano}`}>{t('checkout.f.gratis')}</span>
+  if (opcion.precio === 0) return <span className={`shrink-0 font-semibold text-hc-success-text ${tamano}`}>{t('checkout.f.gratis')}</span>
   return <span className={`shrink-0 font-semibold text-hc-n-900 ${tamano}`}>{formatPrice(opcion.precio)}</span>
 }
 
