@@ -21,7 +21,7 @@ export default function SistemaProductoCreado({ producto, slug, tiendaPublica, o
       <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>
         {tiendaPublica ? 'Ya está en tu tienda' : 'Producto listo en Sistema'}
       </h1>
-      <p className="text-[15px] mt-2" style={{ color: '#6b6459' }}>
+      <p className="text-[15px] mt-2" style={{ color: 'var(--hc-muted)' }}>
         {producto.nombre}
       </p>
       {producto.imagenUrl && (
@@ -63,7 +63,7 @@ function HintPublicacion({ slug, rutaTienda }: { slug: string | null; rutaTienda
   if (tiendaPublica) {
     return (
       <div className="mt-4">
-        <p className="text-sm mb-2" style={{ color: '#6b6459' }}>
+        <p className="text-sm mb-2" style={{ color: 'var(--hc-muted)' }}>
           Así te ven los compradores. Copiá el link y mandáselo a quien quieras.
         </p>
         <CopiarLinkTienda ruta={rutaTienda ?? ''} mostrarUrl />
@@ -72,7 +72,7 @@ function HintPublicacion({ slug, rutaTienda }: { slug: string | null; rutaTienda
   }
   if (estadoEmpresa === 'ACTIVO') {
     return (
-      <p className="text-sm mt-4" style={{ color: '#6b6459' }}>
+      <p className="text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
         Tu tienda está pausada en el catálogo.{' '}
         <Link to={RUTA_SISTEMA_VISIBILIDAD} className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
           Publicála
@@ -82,7 +82,7 @@ function HintPublicacion({ slug, rutaTienda }: { slug: string | null; rutaTienda
     )
   }
   return (
-    <p className="text-sm mt-4" style={{ color: '#6b6459' }}>
+    <p className="text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
       Cuando HotClick active tu negocio, este producto aparece en tu tienda
       {slug ? ` (/tienda/${slug})` : ''}. Mientras tanto queda en Sistema.
     </p>

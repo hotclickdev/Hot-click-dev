@@ -5,8 +5,8 @@
  * de Figma sin decisión de producto.
  *
  * Huecos vs Figma:
- * - Super Admin usa .hc-superadmin-theme (#E31E24 / #0D47A1 / #0B132B).
- * - Resto del sitio: Brand Book --hc-red-500 #E73B33 y --hc-blue-600 #1747A8.
+ * - Desde el rediseño del 3-oct-2026 todo el sitio (Super Admin incluido) usa el manual Figma:
+ *   --hc-red-500 #E73B33, --hc-blue-600 #1747A8 y texto n900 #14171C.
  * - Figma tipografía Poppins; producción Sora + Public Sans.
  * - Sin keyframes en el archivo Figma (logo/hero son estáticos).
  * - Fotos de catálogo en Visitante son placeholders.
@@ -21,9 +21,9 @@
  * - El prototipo Emprendedor no llama al API: altas, cobros y pedidos viven en memoria.
  */
 export const FIGMA_BRAND = {
-  red: '#E31E24',
-  blue: '#0D47A1',
-  navy: '#0B132B',
+  red: '#E73B33',
+  blue: '#1747A8',
+  navy: '#14171C',
 } as const
 
 export const TOKEN_CSS = {

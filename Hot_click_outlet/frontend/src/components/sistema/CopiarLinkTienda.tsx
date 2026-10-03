@@ -33,7 +33,7 @@ export default function CopiarLinkTienda({ ruta, mostrarUrl = false }: { ruta: s
   return (
     <div className={mostrarUrl ? 'flex flex-col gap-2 items-stretch' : 'inline-flex'}>
       {mostrarUrl && (
-        <p className="text-sm font-mono break-all m-0" style={{ color: '#6b6459' }}>{ruta}</p>
+        <p className="text-sm font-mono break-all m-0" style={{ color: 'var(--hc-muted)' }}>{ruta}</p>
       )}
       <button
         type="button"

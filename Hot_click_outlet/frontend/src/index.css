@@ -605,8 +605,8 @@ html.dark .hc-isotipo-placa {
 
 /* Alias de "Sistema" (claro). Oscuro: html.dark .hc-sistema-theme. */
 .hc-sistema-theme {
-  --hc-surface-2: #f6f1e9;
-  --hc-surface-3: var(--hc-n-200);
+  --hc-surface-2: var(--hc-n-50);
+  --hc-surface-3: var(--hc-n-100);
   --hc-text-2:    var(--hc-n-700);
   --hc-accent:       var(--hc-link);
   --hc-accent-hover: var(--hc-blue-700);
@@ -622,22 +622,22 @@ html.dark .hc-isotipo-placa {
   color-scheme: light;
 }
 
-/* Super Admin (rol ADMIN · Figma 41:128): Manual de Marca en claro. */
+/* Super Admin (rol ADMIN): manual Figma (rojo #E73B33, azul #1747A8, texto #14171C). */
 .hc-superadmin-theme {
   --hc-surface-2: #F8F9FB;
   --hc-surface-3: #F1F3F6;
   --hc-text-2:    #4D5560;
-  --hc-accent:       #0D47A1;
-  --hc-accent-hover: #0A3780;
-  --hc-shadow: rgba(11, 19, 43, 0.10);
+  --hc-accent:       #1747A8;
+  --hc-accent-hover: #143A8C;
+  --hc-shadow: rgba(20, 23, 28, 0.10);
   --hc-glass-bg: rgba(255, 255, 255, 0.88);
-  --hc-glass-border: rgba(11, 19, 43, 0.08);
+  --hc-glass-border: rgba(20, 23, 28, 0.08);
   --hc-glass-strong-bg: rgba(255, 255, 255, 0.94);
-  --hc-glass-strong-border: rgba(11, 19, 43, 0.12);
-  --hc-scrollbar: rgba(11, 19, 43, 0.18);
-  --hc-scrollbar-hover: rgba(11, 19, 43, 0.34);
-  --hc-wordmark-hot: #E31E24;
-  --hc-wordmark-click: #0D47A1;
+  --hc-glass-strong-border: rgba(20, 23, 28, 0.12);
+  --hc-scrollbar: rgba(20, 23, 28, 0.18);
+  --hc-scrollbar-hover: rgba(20, 23, 28, 0.34);
+  --hc-wordmark-hot: var(--hc-red-500);
+  --hc-wordmark-click: var(--hc-blue-600);
   color-scheme: light;
 }
 
