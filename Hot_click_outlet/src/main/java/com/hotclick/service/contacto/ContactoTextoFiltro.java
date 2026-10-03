@@ -29,17 +29,19 @@ public final class ContactoTextoFiltro {
     private static final Pattern TAG = Pattern.compile("<[a-zA-Z/!][^>]*>");
     private static final Pattern A_CON_HREF = Pattern.compile("(?is)^<a\\b[^>]*\\bhref\\s*=\\s*[\"']?([^\"'\\s>]*)");
 
+    // Sin repeticiones de grupos (`(?:...)*`): en Java recursan y pueden desbordar la pila con textos largos
+    // (Sonar java:S5998). Los subdominios van con clases de caracteres.
     private static final Pattern ESQUEMA_CONTACTO = Pattern.compile("\\b(?:mailto|tel|sms|whatsapp|tg):[^\\s<>\"']+", I);
     private static final Pattern URL = Pattern.compile("(?:\\bhttps?://|\\bwww\\.)[^\\s<>\"']+", I);
-    private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}");
+    private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*\\.[A-Za-z]{2,}");
     private static final Pattern EMAIL_ESCRITO = Pattern.compile(
         "[A-Za-z0-9._%+-]+\\s*(?:\\(at\\)|\\[at\\]|\\s+arroba\\s+)\\s*[A-Za-z0-9-]+\\s*(?:\\.|\\(dot\\)|\\s+punto\\s+)\\s*[A-Za-z]{2,}", I);
     private static final Pattern DOMINIO_CONTACTO = Pattern.compile(
-        "(?<![\\w.@-])(?:[a-z0-9-]+\\.)*(?:wa\\.me|wa\\.link|whatsapp\\.com|instagram\\.com|instagr\\.am|tiktok\\.com"
+        "(?<![\\w.@-])(?:[a-z0-9-][a-z0-9.-]*\\.)?(?:wa\\.me|wa\\.link|whatsapp\\.com|instagram\\.com|instagr\\.am|tiktok\\.com"
             + "|facebook\\.com|fb\\.com|fb\\.me|fb\\.watch|m\\.me|t\\.me|telegram\\.me|linktr\\.ee|bit\\.ly"
             + "|twitter\\.com|x\\.com|threads\\.net|youtube\\.com|youtu\\.be)(?![\\w-])(?:/[^\\s<>\"']*)?", I);
     private static final Pattern DOMINIO = Pattern.compile(
-        "(?<![\\w.@-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+"
+        "(?<![\\w.@-])[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\\."
             + "(?:com|net|org|cr|lat|co|io|store|shop|site|online|info|biz|app|page|xyz)(?![\\w-])(?:/[^\\s<>\"']*)?", I);
     private static final Pattern HANDLE = Pattern.compile("(?<![\\w.@])@[A-Za-z0-9_](?:[A-Za-z0-9_.]{0,28}[A-Za-z0-9_])?");
 
