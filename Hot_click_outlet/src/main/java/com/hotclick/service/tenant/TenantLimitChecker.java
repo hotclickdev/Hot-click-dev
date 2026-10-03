@@ -97,13 +97,8 @@ public class TenantLimitChecker {
         };
         if (habilitada) return;
 
-        String label = switch (feature) {
-            case "giftCards" -> "Gift Cards";
-            default -> feature;
-        };
-        String mensaje = "Tu plan actual no incluye " + label + ".";
-        String upgrade = "Plan actual: «" + plan.getNombre() + "». "
-            + "Ve a Configuración → Suscripción para ampliar tu capacidad.";
+        String mensaje = mensajeFuncionBloqueada(feature);
+        String upgrade = textoPlanActual(plan.getNombre());
 
         log.warn("[plan-feature] empresa={} feature={} plan={}", empresaId, feature, plan.getNombre());
         throw new PlanLimitException(mensaje, feature, upgrade);
@@ -138,18 +133,8 @@ public class TenantLimitChecker {
 
         if (usoActual + cantidad > limite) {
             long disponibles = Math.max(0, limite - usoActual);
-            String label = switch (entidad) {
-                case "productos" -> "productos";
-                case "usuarios"  -> "usuarios del equipo";
-                case "bodegas"   -> "bodegas";
-                case "cajas"     -> "cajas registradoras";
-                default          -> entidad;
-            };
-
-            String mensaje = mensajeLimitePlan(cantidad, label, usoActual, limite, disponibles);
-
-            String upgrade = "Plan actual: «" + plan.getNombre() + "». "
-                + "Ve a Configuración → Suscripción para ampliar tu capacidad.";
+            String mensaje = mensajeLimitePlan(entidad, cantidad, usoActual, limite, disponibles);
+            String upgrade = textoPlanActual(plan.getNombre());
 
             log.warn("[plan-limit] empresa={} entidad={} uso={} cantidad={} limite={}",
                 empresaId, entidad, usoActual, cantidad, limite);
@@ -157,12 +142,38 @@ public class TenantLimitChecker {
         }
     }
 
-    private static String mensajeLimitePlan(int cantidad, String label, long usoActual, long limite, long disponibles) {
-        if (cantidad == 1) {
-            return "Has alcanzado el límite de " + label + " de tu plan (" + usoActual + "/" + limite + ").";
+    /** Textos de planes.bloqueo.* (textos-planes-final.md §8): en vos, sin rutas que no existen en el panel. */
+    static String mensajeFuncionBloqueada(String feature) {
+        return switch (feature) {
+            case "compras"   -> "Registrá tus compras a proveedores desde el plan Pyme. Tu inventario lo seguís viendo igual.";
+            case "giftCards" -> "Vendé gift cards desde el plan Pyme.";
+            case "ai"        -> "Las consultas de IA están en Pyme y Negocio Plus.";
+            default          -> "Esta función está desde el plan Pyme.";
+        };
+    }
+
+    /** Textos de planes.bloqueo.limite.* (textos-planes-final.md §8). */
+    static String mensajeLimitePlan(String entidad, int cantidad, long usoActual, long limite, long disponibles) {
+        if (cantidad > 1 && "productos".equals(entidad)) {
+            return "Podés agregar " + disponibles + " más: tu plan permite " + limite + " y ya tenés " + usoActual + ".";
         }
-        String plural = disponibles == 1 ? "" : "s";
-        return "No es posible agregar " + cantidad + " " + label + ": tu plan permite " + limite
-            + ", ya tenés " + usoActual + " (" + disponibles + " disponible" + plural + ").";
+        return switch (entidad) {
+            case "productos" -> "Tu plan permite " + limite + " productos y ya tenés " + usoActual
+                + ". Para publicar más, mejorá tu plan.";
+            case "bodegas"   -> "Tu plan permite " + limite + " bodega(s). Para agregar otra, mejorá tu plan.";
+            case "cajas"     -> "Tu plan permite " + limite + " caja(s) abierta(s). Cerrá una o mejorá tu plan.";
+            case "usuarios"  -> "Tu plan permite " + limite + " usuarios en tu equipo. Para invitar a alguien más, mejorá tu plan.";
+            default          -> "Llegaste al límite de tu plan (" + usoActual + " de " + limite + "). Mejorá tu plan para seguir.";
+        };
+    }
+
+    static String textoPlanActual(String planNombre) {
+        String nombre = switch (planNombre == null ? "" : planNombre) {
+            case "EMPRENDEDOR"  -> "Emprendedor";
+            case "PYME"         -> "Pyme";
+            case "NEGOCIO_PLUS" -> "Negocio Plus";
+            default             -> planNombre;
+        };
+        return "Tu plan actual es " + nombre + ".";
     }
 }
