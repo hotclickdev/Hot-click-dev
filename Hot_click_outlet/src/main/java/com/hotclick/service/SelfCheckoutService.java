@@ -1,5 +1,7 @@
 package com.hotclick.service;
 
+import com.hotclick.service.contacto.ContactoPublicoPolicy;
+
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.utils.Constants;
@@ -55,7 +57,8 @@ public class SelfCheckoutService {
         r.put("logoUrl",      empresa.getLogoUrl());
         r.put("colorPrimario", empresa.getColorPrimario());
         r.put("colorSecundario", empresa.getColorSecundario());
-        r.put("numeroWhatsapp", empresa.getNumeroWhatsapp());
+        // Contacto directo del vendedor solo con plan PYME o NEGOCIO_PLUS (ContactoPublicoPolicy).
+        r.put("numeroWhatsapp", ContactoPublicoPolicy.permiteContacto(empresa) ? empresa.getNumeroWhatsapp() : null);
         r.put("qrUrl", appUrl + "/checkout/qr/" + token);
         return r;
     }

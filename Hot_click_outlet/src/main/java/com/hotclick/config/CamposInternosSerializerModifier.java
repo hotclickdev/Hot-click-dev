@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import com.hotclick.model.Bodega;
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 
 import java.util.ArrayList;
@@ -36,10 +37,23 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
     /** El checkout la muestra para retiro en tienda; sin retiro no hay motivo para publicarla. */
     static final Set<String> BODEGA_SOLO_CON_RETIRO = Set.of("direccionExacta");
 
+    /**
+     * Contacto directo del negocio cuando un endpoint devuelve la entidad Empresa (p. ej. cotización pública).
+     * Solo lo ven el dueño o ADMIN, o cualquiera si el plan es PYME o NEGOCIO_PLUS (ContactoPublicoPolicy).
+     */
+    static final Set<String> EMPRESA_CONTACTO = Set.of("correoEmpresa", "telefonoEmpresa", "numeroWhatsapp", "instagram");
+
     private final transient LongNullablePredicate puedeVerInternos;
+    private final transient LongNullablePredicate permiteContactoPublico;
 
     public CamposInternosSerializerModifier(LongNullablePredicate puedeVerInternos) {
+        this(puedeVerInternos, empresaId -> false);
+    }
+
+    public CamposInternosSerializerModifier(LongNullablePredicate puedeVerInternos,
+                                            LongNullablePredicate permiteContactoPublico) {
         this.puedeVerInternos = puedeVerInternos;
+        this.permiteContactoPublico = permiteContactoPublico;
     }
 
     @Override
@@ -52,6 +66,12 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
         }
         if (Bodega.class.isAssignableFrom(tipo)) {
             return filtrarBodega(props);
+        }
+        if (Empresa.class.isAssignableFrom(tipo)) {
+            return envolver(props, EMPRESA_CONTACTO, bean -> {
+                Long id = ((Empresa) bean).getId();
+                return puedeVerInternos.test(id) || permiteContactoPublico.test(id);
+            });
         }
         return props;
     }
