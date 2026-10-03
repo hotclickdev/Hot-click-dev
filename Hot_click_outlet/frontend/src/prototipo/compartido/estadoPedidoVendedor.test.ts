@@ -39,7 +39,7 @@ describe('estadoPedidoVendedor (BUG-02)', () => {
   })
 
   it('los reportes excluyen los mismos pedidos que antes (sin pago, por despachar y cancelados)', () => {
-    expect([...ESTADOS_SIN_VENTA].sort()).toEqual(['Cancelado', 'Esperando pago', 'Pendiente'])
+    expect([...ESTADOS_SIN_VENTA].sort((a, b) => a.localeCompare(b))).toEqual(['Cancelado', 'Esperando pago', 'Pendiente'])
   })
 
   it('aPedidoEmprendedor usa el estado del listado del vendedor', () => {
