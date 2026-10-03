@@ -87,14 +87,15 @@ test.describe('Sistema — planes y caja', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin/billing/planes', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByRole('heading', { name: 'Planes y precios' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Planes', exact: true })).toBeVisible()
 
-    const filaPos = page.locator('div.flex.items-center').filter({ hasText: 'POS / Caja registradora' })
+    // Figma: la fila con check lleva el glifo de éxito; la que no, el ícono de cerrar.
+    const filaPos = page.locator('div.flex.items-center').filter({ hasText: /^Punto de venta$/ })
     await expect(filaPos).toHaveCount(1)
-    await expect(filaPos.locator('path').first()).toHaveAttribute('d', /M5 13/)
+    await expect(filaPos.locator('.text-hc-success')).toHaveCount(1)
 
-    const filaCompras = page.locator('div.flex.items-center').filter({ hasText: 'Módulo de compras' })
-    await expect(filaCompras.locator('path').first()).toHaveAttribute('d', /M6 18/)
+    const filaCompras = page.locator('div.flex.items-center').filter({ hasText: /^Compras a proveedores$/ })
+    await expect(filaCompras.locator('.text-hc-success')).toHaveCount(0)
   })
 })
 
@@ -102,5 +103,5 @@ test('la ficha de planes no usa tienePos para pintar la caja', () => {
   const raiz = dirname(fileURLToPath(import.meta.url))
   const pagina = readFileSync(join(raiz, '../src/pages/admin/AdminPlanes.tsx'), 'utf8')
   expect(pagina).not.toContain('plan.tienePos')
-  expect(pagina).toContain('POS / Caja registradora')
+  expect(pagina).toContain('Punto de venta')
 })
