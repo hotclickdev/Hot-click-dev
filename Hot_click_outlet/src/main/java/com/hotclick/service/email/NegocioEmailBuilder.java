@@ -40,8 +40,10 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0 0 10px;font-weight:700;color:#14171C'>Próximos pasos:</p>"
             + "<ul style='margin:0;padding-left:20px;color:#4D5560;line-height:1.8;font-size:14px'>"
             + "<li>Agregá tus primeros productos desde el panel</li>"
-            + "<li>Configurá el perfil de tu negocio (logo, colores, WhatsApp)</li>"
-            + "<li>Invitá a tu equipo de administración</li>"
+            // Toda tienda nueva arranca como Emprendedor hasta que pague (decisión 13:55 CR), y en Emprendedor
+            // el contacto no se muestra: por eso no se pide WhatsApp (textos-planes-final.md, correo.bienvenida.*).
+            + "<li>Configurá el perfil de tu negocio (logo y colores)</li>"
+            + "<li>Invitá a tu equipo desde el panel</li>"
             + "</ul>"
             + "</div>"
             + layout.cta("https://hotclick.lat/admin", "Ir a mi panel")

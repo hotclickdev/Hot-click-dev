@@ -43,4 +43,14 @@ class NegocioEmailBuilderTest {
             .doesNotContain("30 días");
         assertThat(builder.asuntoCuponBienvenida()).isEqualTo("Tu 13% de descuento para la primera compra");
     }
+
+    @Test
+    @DisplayName("Bienvenida de negocio: no pide WhatsApp (la tienda arranca como Emprendedor, sin contacto visible)")
+    void bienvenidaSinWhatsapp() {
+        String html = builder.buildBienvenidaEmprendedor("Ana", "Tienda Ana");
+        assertThat(html)
+            .contains("Configurá el perfil de tu negocio (logo y colores)")
+            .contains("Invitá a tu equipo desde el panel")
+            .doesNotContain("WhatsApp");
+    }
 }
