@@ -192,11 +192,6 @@ function ComparativaMovil({ plan }: { plan: PlanLandingId }) {
           ))}
         </dl>
       </div>
-      {elegido !== plan ? (
-        <Link to={RUTA_LANDING[elegido]} className="text-[14px] font-semibold text-hc-blue-600">
-          {t('planes.landing.verPlan', { plan: t(`planes.${elegido}.nombre`) })}
-        </Link>
-      ) : null}
     </div>
   )
 }
