@@ -6,6 +6,17 @@
  * Móvil sin barra: el mismo margen de 16 px del borde (nota `52:2422`); no hay frame propio.
  * Desktop (>= lg): abajo a la derecha, margen 16 px, sin barra inferior.
  */
+/** WhatsApp de soporte de HotClick (el mismo del pie y de Contacto). */
+export const WHATSAPP_HOTCLICK = '50686667888'
+
+/**
+ * Landings de planes (`/emprende`, `/para-pymes`, `/negocio-plus-plan`): en celular el botón flotante tapaba la
+ * foto del inicio y la barra, así que ahí va dentro de la página (pedido de HOT_CLICK, 3-oct-2026).
+ */
+export function esLandingPlan(pathname: string): boolean {
+  return ['/emprende', '/para-pymes', '/negocio-plus-plan'].includes(pathname.replace(/\/$/, '') || '/')
+}
+
 export const ALTO_BARRA_INFERIOR = 67
 export const SEPARACION_FLOTANTE = 16
 export const TAMANO_WHATSAPP = 56

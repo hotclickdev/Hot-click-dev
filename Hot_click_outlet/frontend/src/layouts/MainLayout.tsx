@@ -15,6 +15,7 @@ import {
   esFichaProducto,
   espacioReservadoMovil,
   whatsappOculto,
+  esLandingPlan,
 } from '@/components/ui/flotantes/flotantesHelpers'
 import SearchPanel from '@/components/ui/SearchPanel'
 import ExitIntentModal from '@/components/ui/ExitIntentModal'
@@ -76,7 +77,7 @@ export default function MainLayout(props: MainLayoutProps) {
   const { pathname } = useLocation()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const fabVisible = !whatsappOculto(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname)) && !esFichaProducto(pathname)
+  const fabVisible = !whatsappOculto(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname)) && !esFichaProducto(pathname) && !esLandingPlan(pathname)
   const espacio = espacioReservadoMovil({
     hayBarra: barraInferior,
     hayPieMovil: pie && variante === 'raiz',
