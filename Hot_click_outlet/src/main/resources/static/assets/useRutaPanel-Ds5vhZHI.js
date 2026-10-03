@@ -1,1 +1,0 @@
-import{t as e}from"./authStore-X14HU4_F.js";import{u as t}from"./planPaths-_ZeRBA9-.js";import{yt as n}from"./index-BZzGLO0s.js";function r(){return t(e(e=>e.userRole),n(e=>e.planNombre))}export{r as t};

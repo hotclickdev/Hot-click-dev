@@ -11,6 +11,7 @@ const ES_MODO_PRUEBA =
 type TilopayCardFormProps = {
   sdkToken: string
   monto: number
+  moneda?: string
   orderNumber: string
   redirectUrl?: string
   onVolver?: () => void
@@ -23,6 +24,7 @@ type TilopayCardFormProps = {
 export default function TilopayCardForm({
   sdkToken,
   monto,
+  moneda = 'CRC',
   orderNumber,
   redirectUrl,
   onVolver,
@@ -39,6 +41,11 @@ export default function TilopayCardForm({
     const redirect =
       redirectUrl
       || `${globalThis.location.origin}/pago/tilopay/respuesta`
+
+    if (moneda !== 'CRC' || !Number.isFinite(monto) || monto <= 0) {
+      setErrorInit(t('checkout.tilopayInitError'))
+      return
+    }
 
     void (async () => {
       try {
@@ -63,7 +70,7 @@ export default function TilopayCardForm({
     })()
 
     return () => { activo = false }
-  }, [sdkToken, monto, orderNumber, redirectUrl, init, showToast, t])
+  }, [sdkToken, monto, moneda, orderNumber, redirectUrl, init, showToast, t])
 
   async function onPagar() {
     if (!listo || pagando) return

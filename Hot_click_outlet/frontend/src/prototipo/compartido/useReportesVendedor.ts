@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
 import type { PedidoEmprendedor } from '@/prototipo/emprendedor/types'
+import { ESTADOS_SIN_VENTA } from './estadoPedidoVendedor'
 
 export type TopVendido = {
   nombre: string
@@ -32,7 +33,7 @@ export function useReportesVendedor(): ResumenReportes {
     const top = agruparTop(pedidos)
     const unidadesVendidas = top.reduce((acc, item) => acc + item.vendidos, 0)
     const gananciaVendida = pedidos
-      .filter((p) => p.estado !== 'Pendiente')
+      .filter((p) => !ESTADOS_SIN_VENTA.has(p.estado))
       .reduce((acc, p) => acc + p.total, 0)
     return {
       publicados,

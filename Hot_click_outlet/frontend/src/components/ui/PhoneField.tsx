@@ -23,6 +23,8 @@ export type PhoneFieldProps = {
    * Solo la usa el registro de comprador (visitante); el resto de formularios sigue con la variante clásica.
    */
   variante?: 'clasica' | 'figma'
+  /** No deja borrar el código de país (se cambia con el selector). */
+  forceDialCode?: boolean
 }
 
 export default function PhoneField({
@@ -36,6 +38,7 @@ export default function PhoneField({
   defaultCountry = 'cr',
   disabled = false,
   variante = 'clasica',
+  forceDialCode = false,
 }: PhoneFieldProps) {
   const idGenerado = useId()
   const idCampo = id ?? idGenerado
@@ -64,6 +67,7 @@ export default function PhoneField({
         value={value}
         onChange={onChange}
         disabled={disabled}
+        forceDialCode={forceDialCode}
         inputProps={{ id: idCampo, 'aria-required': required || undefined, 'aria-invalid': error ? true : undefined }}
         inputStyle={{
           backgroundColor: fondo,

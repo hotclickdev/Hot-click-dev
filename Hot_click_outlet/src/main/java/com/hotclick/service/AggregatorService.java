@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -62,6 +63,42 @@ public class AggregatorService {
     }
 
     /**
+     * QA-B02-5: acredita la venta dentro de la transacción que confirma el pago (pedido PAGADO + Pago
+     * CAPTURADO + billetera). Si la acreditación falla, la excepción sale y se revierte todo junto:
+     * no queda un pedido PAGADO con el Pago PENDIENTE ni una venta sin acreditar. Es idempotente: si el
+     * pedido ya tiene movimiento en el ledger, no vuelve a acreditar.
+     */
+    @Transactional
+    public void acreditarVentaEnTransaccion(Pedido pedido) {
+        Long empresaId = pedido.getEmpresaId();
+        long bruto = pedido.getTotalPedido() != null ? pedido.getTotalPedido() : 0L;
+        if (empresaId == null) {
+            log.warn("[aggregator] Pedido {} sin empresa — no se acredita wallet", pedido.getId());
+            return;
+        }
+        if (bruto <= 0) {
+            log.warn("[aggregator] Pedido {} total ≤ 0 — no se acredita wallet", pedido.getId());
+            return;
+        }
+        if (walletService.ventaYaAcreditada(pedido.getId())) {
+            log.info("[aggregator] Pedido {} ya acreditado — se ignora", pedido.getId());
+            return;
+        }
+        Resultado calc = calcularParaEmpresa(empresaId, bruto);
+        if (calc.neto() <= 0) {
+            log.warn("[aggregator] Neto ≤ 0 pedido={} — revisar tasas de comisión", pedido.getId());
+            return;
+        }
+        walletService.acreditarVenta(
+            empresaId, calc.neto(), bruto, calc.comisionSaas(), calc.comisionGw(), pedido.getId());
+        log.info("[aggregator] Venta acreditada pedido={} empresa={} bruto=₡{} comSaas=₡{} comGw=₡{} neto=₡{}",
+            pedido.getId(), empresaId, bruto, calc.comisionSaas(), calc.comisionGw(), calc.neto());
+    }
+
+    /**
+     * Variante asíncrona con DLQ. Desde QA-B02-5 la confirmación de pagos usa
+     * {@link #acreditarVentaEnTransaccion} (atómica); esta queda para reprocesos fuera de la confirmación.
+     *
      * Llamado desde PaymentService.confirmarPedido() después del COMMIT del pago.
      * Ejecuta en el pool taskExecutor (hilo separado, sin TX del llamador).
      */

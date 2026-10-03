@@ -49,6 +49,9 @@ public class PaymentNotificationsFacade {
 
     public void onPedidoConfirmado(Pedido pedido, Pago pago) {
         if (pedido == null || pago == null) return;
+        // QA-B02-5: la billetera se acredita en la misma transacción que confirma el pago, antes de
+        // avisar a nadie. Si falla, se revierte todo (pedido, Pago, stock) y no sale ningún aviso.
+        aggregatorService.acreditarVentaEnTransaccion(pedido);
         touchUsuarioFinalForAsync(pedido);
         ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
@@ -57,8 +60,6 @@ public class PaymentNotificationsFacade {
             "total",        pedido.getTotalPedido(),
             "proveedor",    pago.getProveedor()
         ));
-        // Acreditar wallet del emprendedor (async, fuera de esta TX)
-        aggregatorService.acreditarVentaAsync(pedido);
         capturarPedidoPagado(pedido, pago);
         log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
     }

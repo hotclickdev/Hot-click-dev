@@ -2,6 +2,7 @@ package com.hotclick.config;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.exception.PedidoNoDespachableException;
 import com.hotclick.exception.PlanLimitException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.exception.TenantAccessDeniedException;
@@ -59,6 +60,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<ResponseDTO> handleStock(StockInsuficienteException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
+    }
+
+    /** Despacho de un pedido sin pago confirmado o cancelado (PedidoDespachoPolicy). */
+    @ExceptionHandler(PedidoNoDespachableException.class)
+    public ResponseEntity<ResponseDTO> handlePedidoNoDespachable(PedidoNoDespachableException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
     }
 

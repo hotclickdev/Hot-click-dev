@@ -1,6 +1,7 @@
 import { warehouseService } from '@/services/orderService'
 import type { BodegaEmprendedor } from '@/prototipo/emprendedor/types'
 import type { Id } from '@/types/api'
+import { normalizarTelefonoBodega } from './nuevaBodegaHelpers'
 
 type BodegaApi = {
   id?: Id
@@ -32,10 +33,19 @@ export async function cargarBodegasVendedor(): Promise<BodegaEmprendedor[]> {
   return listaBodegas(data).map((bodega, indice) => aBodegaEmprendedor(bodega, indice))
 }
 
-export async function crearBodegaVendedor(nombre: string, ubicacion: string, encargado: string) {
+export type NuevaBodegaVendedor = Readonly<{
+  nombre: string
+  ubicacion: string
+  /** Valor de PhoneField; se envía normalizado (`+50688881234`). Uso interno: no se publica. */
+  telefono: string
+  encargado: string
+}>
+
+export async function crearBodegaVendedor({ nombre, ubicacion, telefono, encargado }: NuevaBodegaVendedor) {
   await warehouseService.create({
     nombreBodega: nombre.trim(),
     direccionExacta: ubicacion.trim(),
+    telefono: normalizarTelefonoBodega(telefono),
     ...(encargado.trim() ? { encargadoNombre: encargado.trim() } : {}),
   })
 }

@@ -1,1 +1,0 @@
-var e=[`emprendedor`,`pyme`,`negocio-plus`];function t(t){let n=new URLSearchParams(t).get(`plan`);return e.includes(n)?n:null}function n(e){return e===`pyme`?`PYME`:e===`negocio-plus`?`NEGOCIO_PLUS`:`EMPRENDEDOR`}export{n,t};

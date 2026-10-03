@@ -3329,6 +3329,8 @@
   "despacho": {
     "pedido": "Order #{{id}}",
     "porDespachar": "To dispatch",
+    "esperandoPago": "Awaiting payment",
+    "esperandoPagoAyuda": "You can dispatch it once the payment is confirmed.",
     "tusProductos": "Your products",
     "unidades_one": "{{count}} unit",
     "unidades_other": "{{count}} units",
