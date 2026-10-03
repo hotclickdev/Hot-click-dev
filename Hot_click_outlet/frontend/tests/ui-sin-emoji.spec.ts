@@ -37,7 +37,6 @@ test('retiro y domicilio en i18n no usan emojis', () => {
 })
 
 test('placeholders de pedido y wishlist no usan caja emoji', () => {
-  expect(leer('../src/components/ui/miniCart/MiniCartItems.tsx')).not.toContain('📦')
   expect(leer('../src/pages/WishlistPage.tsx')).not.toContain('📦')
   expect(leer('../src/pages/RecuperarCarritoPage.tsx')).not.toContain('🛒')
   expect(leer('../src/components/ui/ExitIntentModal.tsx')).not.toContain('🛒')
@@ -142,11 +141,9 @@ test('cierres y quitar usan CloseIcon, no cruz de carácter', () => {
   expect(leer('../src/components/ui/MultiImagePicker.tsx')).not.toContain('✕')
   expect(leer('../src/pages/admin/blog/BlogEntryList.tsx')).not.toContain('×')
   expect(leer('../src/pages/admin/ordenes/CloseX.tsx')).toContain("from '@/components/ui/CloseIcon'")
-  expect(leer('../src/components/ui/MiniCartDrawer.tsx')).toContain("from '@/components/ui/CloseIcon'")
   expect(leer('../src/components/ai/ChatModal.tsx')).toContain('ICONOS_CHAT.cerrar20')
   expect(leer('../src/components/comprador/header/HeaderMovil.tsx')).toContain('IconoFigma')
   expect(leer('../src/components/comprador/header/HeaderMovil.tsx')).not.toContain('✕')
-  expect(leer('../src/components/ui/MiniCartDrawer.tsx')).not.toContain('M6 18L18 6M6 6l12 12')
   expect(leer('../src/components/ai/ChatModal.tsx')).not.toContain('M6 18L18 6M6 6l12 12')
 })
 

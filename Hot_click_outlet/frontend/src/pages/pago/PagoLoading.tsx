@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { motion, AnimatePresence } from 'framer-motion'
-import MainLayout from '@/layouts/MainLayout'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import CargaComprador from '@/components/comprador/estados/CargaComprador'
+import { MarcoPago } from './PiezasPago'
 import { BENEFITS, mensajeCargaPago } from './pagoHelpers'
 
 type PagoLoadingProps = {
@@ -11,7 +11,8 @@ type PagoLoadingProps = {
 }
 
 /**
- * Pantalla de espera mientras se verifica o captura el pago.
+ * Pantalla de espera mientras se verifica o captura el pago (derivado de Figma: marco de pago `29:1932`,
+ * círculo de estado, barra azul y tarjeta clara con el beneficio rotativo).
  */
 export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps) {
   const { t } = useTranslation()
@@ -40,67 +41,23 @@ export default function PagoLoading({ estado, stripeApproved }: PagoLoadingProps
   const benefit = BENEFITS[benefitIdx]
 
   return (
-    <MainLayout>
-      <div className="max-w-md mx-auto px-4 py-24 flex flex-col items-center gap-8 text-center">
-
-        {/* Ícono animado */}
-        <div className="relative">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center"
-            style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', border: '2px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }}>
-            <svg className="w-9 h-9 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="var(--hc-accent)" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+    <MarcoPago>
+      <CargaComprador titulo={t('payment.carga.gracias')} texto={mensajeCargaPago(estado, stripeApproved, t)}>
+        <div className="flex w-full flex-col gap-4">
+          <div>
+            <div className="h-1 w-full overflow-hidden rounded-[2px] bg-hc-n-200">
+              <div className="h-full rounded-[2px] bg-hc-blue-600 transition-[width] duration-300 ease-out" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="mt-2 text-[12px] leading-4 text-hc-n-600">{t('payment.carga.puedeTardar')}</p>
           </div>
-          <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-hc-accent" />
-        </div>
-
-        {/* Texto principal */}
-        <div>
-          <h2 className="text-xl font-bold mb-1 text-hc-text">
-            {t('payment.carga.gracias')}
-          </h2>
-          <p className="text-sm text-hc-muted">
-            {mensajeCargaPago(estado, stripeApproved, t)}
-          </p>
-        </div>
-
-        {/* Barra de progreso */}
-        <div className="w-full">
-          <div className="w-full h-2 rounded-full overflow-hidden bg-hc-surface-2">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 70%, var(--hc-blue-300)))' }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-            />
+          <div key={benefitIdx} className="flex min-h-[64px] items-center gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 text-left">
+            <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-hc-blue-50 text-hc-blue-600">
+              <TrustGlyph tipo={benefit.icono} className="size-[18px]" />
+            </span>
+            <span className="text-[13px] font-medium leading-[18px] text-hc-n-900">{t(benefit.clave)}</span>
           </div>
-          <p className="text-xs mt-2 text-hc-muted">
-            {t('payment.carga.puedeTardar')}
-          </p>
         </div>
-
-        {/* Beneficios rotativos */}
-        <div className="w-full rounded-2xl p-4 min-h-[64px] flex items-center justify-center border border-hc-border bg-hc-surface">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={benefitIdx}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4 }}
-              className="flex items-center gap-3"
-            >
-              <span style={{ color: 'var(--hc-accent)' }}>
-                <TrustGlyph tipo={benefit.icono} className="w-6 h-6 shrink-0" />
-              </span>
-              <span className="text-sm font-medium text-left text-hc-text">
-                {t(benefit.clave)}
-              </span>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-      </div>
-    </MainLayout>
+      </CargaComprador>
+    </MarcoPago>
   )
 }

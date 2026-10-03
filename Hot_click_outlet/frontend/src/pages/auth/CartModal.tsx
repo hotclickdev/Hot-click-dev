@@ -1,4 +1,5 @@
-import Modal from '@/components/ui/Modal'
+import HojaInferior from '@/components/comprador/HojaInferior'
+import { BotonPago } from '@/pages/pago/PiezasPago'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 
@@ -24,6 +25,7 @@ type CartModalProps = {
   onDone: () => void
 }
 
+/** Recuperar el carrito guardado al iniciar sesión (derivado de Figma `29:2036`, en hoja inferior `45:1612`). */
 export default function CartModal({ open, cart, addItem, onClose, onDone }: CartModalProps) {
   const restore = async () => {
     cart?.items?.forEach((item) =>
@@ -43,29 +45,33 @@ export default function CartModal({ open, cart, addItem, onClose, onDone }: Cart
     } catch { /* ok */ }
     onClose(); onDone()
   }
+  const items = cart?.items ?? []
   return (
-    <Modal open={open} title="¡Tenés productos guardados!">
-      <div>
-        <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>
-          Dejaste {cart?.items?.length ?? 0} producto(s) en tu carrito antes. ¿Querés restaurarlos?
+    // Sin cierre libre, como antes: el comprador elige restaurar o descartar.
+    <HojaInferior abierta={open} onCerrar={() => {}} titulo={<h2 className="font-display text-[19px] font-bold tracking-normal text-hc-n-900">¡Tenés productos guardados!</h2>}>
+      <div className="flex flex-col gap-3 leading-[normal]">
+        <p className="text-[14px] leading-5 text-hc-n-600">
+          Dejaste {items.length} producto(s) en tu carrito antes. ¿Querés restaurarlos?
         </p>
-        <div className="space-y-2 mb-5">
-          {cart?.items?.slice(0, 3).map((item, i) => (
-            <div key={i} className="flex items-center gap-2.5 py-1">
-              {item.imagenUrl && <img src={item.imagenUrl} alt={item.nombre} width={32} height={32} className="rounded-lg object-cover shrink-0" />}
-              <span className="text-sm truncate flex-1" style={{ color: 'var(--hc-text)' }}>{item.nombre}</span>
-              <span className="text-xs shrink-0" style={{ color: 'var(--hc-muted)' }}>×{item.cantidad ?? 1}</span>
+        <div className="overflow-hidden rounded-[14px] border border-hc-n-200 bg-hc-n-0">
+          {items.slice(0, 3).map((item, i) => (
+            <div key={i} className="flex items-center gap-[10px] border-t border-hc-n-200 px-[14px] py-[10px] first:border-t-0">
+              <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-hc-n-100">
+                {item.imagenUrl && <img src={item.imagenUrl} alt="" width={44} height={44} className="size-full object-cover" />}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-hc-n-900">{item.nombre}</span>
+              <span className="shrink-0 text-[13px] text-hc-n-600">×{item.cantidad ?? 1}</span>
             </div>
           ))}
-          {(cart?.items?.length ?? 0) > 3 && (
-            <p className="text-xs pl-1" style={{ color: 'var(--hc-muted)' }}>y {(cart?.items?.length ?? 0) - 3} más…</p>
+          {items.length > 3 && (
+            <p className="border-t border-hc-n-200 px-[14px] py-[10px] text-[12px] text-hc-n-600">y {items.length - 3} más…</p>
           )}
         </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={restore} className="hc-btn hc-btn-primary flex-1">Restaurar carrito</button>
-          <button type="button" onClick={discard} className="hc-btn hc-btn-outline flex-1">Descartar</button>
+        <div className="flex flex-col gap-2 pt-1">
+          <BotonPago variante="primario" onClick={() => { void restore() }}>Restaurar carrito</BotonPago>
+          <BotonPago variante="secundario" onClick={() => { void discard() }}>Descartar</BotonPago>
         </div>
       </div>
-    </Modal>
+    </HojaInferior>
   )
 }

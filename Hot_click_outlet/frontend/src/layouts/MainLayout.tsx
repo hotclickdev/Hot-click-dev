@@ -17,7 +17,6 @@ import {
   whatsappOculto,
 } from '@/components/ui/flotantes/flotantesHelpers'
 import SearchPanel from '@/components/ui/SearchPanel'
-import MiniCartDrawer from '@/components/ui/MiniCartDrawer'
 import ExitIntentModal from '@/components/ui/ExitIntentModal'
 import PromoWelcomePopup from '@/components/ui/PromoWelcomePopup'
 import ReturnVisitorBanner from '@/components/ui/ReturnVisitorBanner'
@@ -116,7 +115,6 @@ export default function MainLayout(props: MainLayoutProps) {
       <EspacioFlotante px={espacio} />
       {barraInferior && <BarraInferior />}
       <SearchPanel />
-      <MiniCartDrawer />
       <ExitIntentModal />
       <PromoWelcomePopup />
     </div>
