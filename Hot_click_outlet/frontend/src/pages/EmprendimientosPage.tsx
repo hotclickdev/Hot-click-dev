@@ -92,7 +92,7 @@ export default function EmprendimientosPage() {
     <MainLayout variante="propia" barraInferior={false}>
       <div className="min-h-[60vh] bg-hc-n-50">
         <div className="border-b border-hc-n-200 bg-hc-n-0">
-          <div className="mx-auto flex max-w-[720px] flex-col gap-3 px-4 py-[14px]">
+          <div className="mx-auto flex max-w-[720px] flex-col gap-3 px-4 py-[14px] lg:max-w-none lg:px-8 xl:px-[max(120px,calc((100%_-_1200px)/2))] lg:py-6">
             <div className="flex items-center gap-3">
               <button type="button" onClick={volver} aria-label={t('common.back')} className="relative flex size-[22px] shrink-0 items-center justify-center text-hc-n-900 after:absolute after:-inset-2 after:content-[''] lg:hidden">
                 <IconoFigma src={directorioAtras} size={22} />
@@ -103,7 +103,7 @@ export default function EmprendimientosPage() {
               {t('emprendimientos.intro')}
             </p>
             {lista.length > 0 && <BuscarNegocio value={busqueda} onChange={setBusqueda} />}
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" role="group" aria-label={t('negocios.filtrarPlan')}>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0" role="group" aria-label={t('negocios.filtrarPlan')}>
               {[null, ...PLANES_DIRECTORIO].map((p) => {
                 const activo = (planActivo?.alias ?? null) === (p?.alias ?? null)
                 return (
@@ -122,7 +122,7 @@ export default function EmprendimientosPage() {
               })}
             </div>
             {categorias.length > 1 && (
-              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" role="group" aria-label={t('emprendimientos.filtrar')}>
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0" role="group" aria-label={t('emprendimientos.filtrar')}>
                 {['', ...categorias].map((c) => (
                   <button
                     key={c || 'todos'}
@@ -141,7 +141,7 @@ export default function EmprendimientosPage() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-[720px] flex-col gap-[14px] px-4 pb-7 pt-4">
+        <div className="mx-auto flex max-w-[720px] flex-col gap-[14px] px-4 pb-7 pt-4 lg:max-w-none lg:px-8 xl:px-[max(120px,calc((100%_-_1200px)/2))] lg:pb-12 lg:pt-6">
           {loading && (
             <div role="status" className="py-20 text-center text-sm text-hc-n-600">
               <div className="mx-auto mb-4 size-9 animate-spin rounded-full border-[3px] border-hc-n-200 border-t-hc-blue-600" />
@@ -161,9 +161,11 @@ export default function EmprendimientosPage() {
                     : t('negocios.sinPlan', { plan: planActivo ? t(planActivo.titulo) : '' })}
                 </p>
               ) : (
-                filtrada.map((negocio, indice) => (
-                  <NegocioCard key={negocio.slug} negocio={negocio} indice={indice} plan={planes?.get(negocio.slug)} />
-                ))
+                <div className="grid gap-[14px] lg:grid-cols-2 xl:grid-cols-3">
+                  {filtrada.map((negocio, indice) => (
+                    <NegocioCard key={negocio.slug} negocio={negocio} indice={indice} plan={planes?.get(negocio.slug)} />
+                  ))}
+                </div>
               )}
             </>
           )}
