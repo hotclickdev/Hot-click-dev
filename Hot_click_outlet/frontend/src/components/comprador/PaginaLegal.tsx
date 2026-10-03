@@ -18,6 +18,8 @@ type PaginaLegalProps = {
   anexo?: ReactNode
   pregunta: string
   correo: string
+  /** Acción extra en la tarjeta de consulta, debajo del correo (p. ej. WhatsApp de soporte en Devoluciones). */
+  accion?: ReactNode
   enlaces: EnlaceLegal[]
 }
 
@@ -40,7 +42,7 @@ export function TarjetaLegal({ etiqueta, children }: { etiqueta?: string; childr
  * intro, índice en chips, un bloque por sección y una tarjeta final de consulta. Derivado de Figma: la nota del
  * frame pide esta misma estructura para Términos y Privacidad.
  */
-export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, secciones, anexo, pregunta, correo, enlaces }: PaginaLegalProps) {
+export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, secciones, anexo, pregunta, correo, accion, enlaces }: PaginaLegalProps) {
   return (
     <PaginaInformativa
       titulo={titulo}
@@ -65,6 +67,7 @@ export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, secc
           <div className="flex flex-col gap-3 rounded-2xl bg-hc-blue-50 p-[14px] leading-[normal]">
             <p className="text-[14px] font-semibold text-hc-n-900">{pregunta}</p>
             <a href={`mailto:${correo}`} className="text-[14px] font-semibold text-hc-blue-600">{correo}</a>
+            {accion}
             <nav aria-label="Más información legal" className="flex flex-wrap gap-2">
               {enlaces.map((e) => (
                 <Link
