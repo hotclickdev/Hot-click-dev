@@ -7,9 +7,10 @@ Punto de entrada único al estado final de `feat/figma/base`. Junta lo que estab
 | Rama | `feat/figma/base` (local; sin push, merge, PR ni deploy) |
 | HEAD al documentar | `8e07c61c` |
 | `master` | `b355fd20` (sin tocar) |
-| Pantallas | 90: **38 PASS — agent verified / 52 PARTIAL**; 0 OLD_DESIGN, MISSING, BLOCKED ni UNKNOWN |
+| Pantallas | 90: **56 PASS — agent verified / 34 PARTIAL** después de las decisiones aceptadas (§10); antes 38 / 52. 0 OLD_DESIGN, MISSING, BLOCKED ni UNKNOWN |
 | Frontend implementable sin decisión externa | Ninguno (B19, confirmado en P01–P20) |
 | QA final | P22 (§9): 38 PASS / 52 PARTIAL / 0 BLOCKED, sin regresiones; 13 tests que ya fallaban en `14e841e3` |
+| Decisiones aceptadas | `feat/figma/pendientes` (local, sobre `54c64201`), §10 |
 
 Los PASS son veredictos del agente, medidos con API simulada. Falta un QA independiente con datos reales y correos probados en Gmail y Outlook antes de darlos por definitivos (`QA_GLOBAL.md`, B19 §10).
 
@@ -45,6 +46,8 @@ Todos en `feat/figma/base`, el 2-oct-2026, hora de Costa Rica. Antes de P01 la b
 El detalle de cada bloque está en su fila de `PROGRESS.md` y en su sección de `SHELL_GLOBAL.md` (P12–P20) o del documento del módulo (P01–P10).
 
 ## 2. Decisiones humanas pendientes (lista consolidada)
+
+**Actualización 2-oct-2026:** estas decisiones se aceptaron y se implementaron en `feat/figma/pendientes`; el estado de cada una está en §10.2. Las tablas de abajo quedan como registro de la pregunta original.
 
 Ninguna se implementó por inferencia. «Vigente» describe lo que hace el código hoy. La matriz original de D01–D21 está en `B8-decisiones-Figma.md`, un archivo local que no se versiona. El análisis de cada una está en B10–B18, y el resumen en B19 §6.
 
@@ -256,7 +259,7 @@ Solo specs. No hubo cambios de código de la app.
 - `tests/ui-sin-emoji.spec.ts:170`: leía `src/components/ui/Section.tsx`, borrado en P20 por no tener importadores, y fallaba con ENOENT (en `14e841e3` pasaba). Se quitó esa línea; el resto del caso sigue igual. Ningún otro spec lee archivos borrados (se revisaron las 143 rutas que leen los specs).
 - `INVENTORY.md`: las 18 filas de ACC no tenían la columna «Frame Figma» y tenían una columna de más. Se agregó el frame con los ids de `ACC.md` y la columna sobrante se unió a la evidencia («antes: …»). No cambia ningún estado.
 
-### 9.4 Las 52 PARTIAL y su motivo
+### 9.4 Las 52 PARTIAL y su motivo (al cierre de P22; el estado vigente está en §10.3)
 
 Tipo: **Decisión** (respuesta humana pendiente, ver §2), **Figma** (falta el frame o una medida que solo se toma en Figma) y **Backend** (el dato o el endpoint no existe; ver §3 y `BACKEND_GAPS.md`). «QA» marca los correos que además no se probaron en Gmail ni Outlook.
 
@@ -314,3 +317,95 @@ Tipo: **Decisión** (respuesta humana pendiente, ver §2), **Figma** (falta el f
 | 50 | `51:2468` | G · Tienda con su color · perfil del negocio | Decisión D01/D20 | Mismas pendientes que `29:922` (colores remedidos iguales) |
 | 51 | `54:2126` | Blog · listado · móvil | Backend | Chips de temas (no hay categoría) y buscador |
 | 52 | `54:2219` | Blog · artículo · móvil | Backend | Categoría de las migas, «Productos de este artículo» y autor propio |
+
+## 10. Decisiones aceptadas (`feat/figma/pendientes`)
+
+2-oct-2026, hora de Costa Rica. Rama local sobre `54c64201` (merge de `origin/master`), sin push, PR, merge ni deploy. Un commit por grupo; los cambios de base de datos llevan migración Flyway y su bloque en `Hot_click_outlet/Actualizado.sql`; los textos nuevos tienen es, en y pt.
+
+### 10.1 Commits
+
+| Grupo | Commit | Qué hace |
+| --- | --- | --- |
+| Telegram | `fc588479` | Escapa Markdown en los valores, reintenta en texto plano ante «can't parse entities» y enmascara el token en los logs (`bot***`) |
+| R6 | `72a24cce` | «Tarjeta de regalo» / «Gift card» / «Cartão-presente» en carrito y checkout |
+| D19 | `b29bf73a` | A− pone la raíz en 87,5 % (`fs-sm`, 14 px) |
+| R2 | `f3433900` | `formatTelefonoCR`: teléfonos de Costa Rica como `8888-1234` |
+| R4 | `3f17581c` | `utils/stock.ts`: tope con el stock real; 99 solo si el stock no se conoce |
+| R5 | `fb44117f` | Zona del FAB de WhatsApp: 155 px al final de las listas móviles y `scroll-padding-bottom` |
+| D13 | `52325298` | Tiempos de envío desde una sola fuente, `src/config/tiemposEnvio.ts` (PROVISIONAL) |
+| D12 | `526a9ffd` | Selector de presupuesto con `src/config/rangosPresupuesto.ts` (PROVISIONAL) y «Otro monto» |
+| B16 | `e8516cee` | QR vencido: texto «abrí la cámara» en lugar de «Escanear otro QR» |
+| B16 | `5e631f50`, V147 | El cliente elige entre los métodos que habilita la caja; «Cobro #P-<id>», caja y comprobante imprimible (`GET /api/pos/qr/pago/{token}/comprobante`, solo PAGADO) |
+| B17 | `f68636fb`, V148 | `hot_click_pedido_tb.direccion_entrega`; confirmación con «Envío normal GAM. Enviamos a …»; guía con «Paquete N de M»; corrige el envío tratado como retiro en los correos |
+| R3 | `4a8ae1af` | Paso en `?paso=` con guard (no se salta un paso por enlace ni al recargar); «Atrás» del navegador vuelve al paso anterior |
+| R1 | `82352e08` | Texto con n-600 y red-600, placeholders con n-500 y token `--hc-primary-text` (AA); íconos, logo y fondos sin cambio |
+| Docs | este commit (`docs(figma)`) | Este §10 e `INVENTORY.md` |
+| Build | `db068105` | Regeneración intencional de `static/`, sin claves `VITE_*` (commit aparte) |
+
+Hora de Costa Rica: de 16:01 a 19:31. El commit de docs va al final.
+
+### 10.2 Estado por decisión
+
+| Decisión | Estado | Dónde |
+| --- | --- | --- |
+| D01, D02, D03, D06, D07/B14, D09, D10, D11, D14, D15, D18, D20 | Se deja como está: no hubo que cambiar código | §2.1 |
+| D04, D05, D08 | Ya cumplido: la cédula solo se pide en el panel SINPE (`PasoPago`: `InstruccionesSinpe`/`DatosRemitente`) y el consentimiento Ley 8968 sigue obligatorio | `PasoPago.tsx` |
+| D12 | Hecho: selector de rangos (PROVISIONALES) | `config/rangosPresupuesto.ts` |
+| D13 | Hecho: una sola fuente para checkout y `/envios` (PROVISIONALES) | `config/tiemposEnvio.ts` |
+| D16 | Se conserva el texto actual del correo de pago fallido | `PagoFallidoEmailBuilder` |
+| D17 | Se conserva: el asunto no lleva el código OTP | `OtpService` |
+| D19 | Hecho: A− = 87,5 % | `fs-sm` |
+| D21 | Se conserva el orden de la API | Home |
+| B15 GAM | Ya cumplido: GAM por cantón destino, `esDestinoGAM(provincia, canton)` | `useCheckoutForm.ts` |
+| B16 método | Hecho: elige el cliente entre los métodos que habilita la caja (V147) | `PosQrMetodos`, `PosPagoMetodo` |
+| B16 número, caja, comprobante | Hecho: «Cobro #P-<id>», nombre de la caja y comprobante imprimible; no hay comprobante por correo | `PosPagoComprobante` |
+| B16 «Escanear otro QR» | Hecho: texto «abrí la cámara», sin lector | `pos.pago.vencidoCamara` |
+| B17 dirección y paquete N de M | Hecho (V148) | `CheckoutOrderFactory.aplicarDireccion`, `NotificacionGuiaEmailBuilder` |
+| B17 cupón | No se promete vencimiento de 30 días (el copy no lo decía; un test lo asegura) | `NegocioEmailBuilder` |
+| R1 | Hecho para texto (ver pendientes) | `hotclick-tokens.css`, `contrasteTokens.test.ts` |
+| R2, R3, R4, R5, R6 | Hechos | §10.1 |
+| R7 (bodega pública) | **No incluida** en las decisiones aceptadas; sigue abierta y es de prioridad alta | BG #6 |
+| R8–R15 | Sin cambio | §2.3 |
+
+Valores PROVISIONALES que hay que confirmar:
+
+- **Tiempos de envío** (`tiemposEnvio.ts`): rápido 30 min – 2 h; normal GAM 2–4 días hábiles; fuera de la GAM 3–4 días hábiles.
+- **Rangos de presupuesto** (`rangosPresupuesto.ts`): hasta ₡10.000; ₡10.000–25.000; ₡25.000–50.000; ₡50.000–100.000; más de ₡100.000; «Otro monto».
+
+### 10.3 Nuevo conteo: 56 PASS / 34 PARTIAL / 0 BLOCKED
+
+Criterio: una fila PARTIAL pasa a PASS solo si **todos** sus motivos de §9.4 eran decisiones que ya se tomaron (o se implementaron) y la parte que queda ya estaba medida. Sigue PARTIAL si queda un frame que falta, una medida que solo se toma en Figma, un dato del backend o un maquetado nuevo sin medir. «Falta QA en Gmail/Outlook» no impide el PASS, porque aplica a todos los PASS (son veredictos del agente).
+
+- **Pasan a PASS (18):** #6 `29:922`, #8 `29:2308`, #9 `44:1775`, #13 `28:1083`, #14 `29:1248`, #15 `29:1344`, #18 `30:2268`, #19 `30:2385`, #21 `55:2220`, #22 `55:2284`, #35 `29:1650`, #39 `29:1913`, #43 `30:1708`, #45 `30:1768`, #46 `30:1793`, #48 `51:2000`, #49 `51:2229`, #50 `51:2468`. Para #14, los tiempos son los provisionales de §10.2.
+- **Siguen PARTIAL, con avance:** #3 `9:171` (D21 resuelta; faltan datos), #30 `28:1486` (selector hecho; el estado enviado no tiene frame), #33 `28:1660` (tiempos de una sola fuente; Devoluciones e Información sin frame), #36 `29:1781` (método, número y caja hechos; la línea del número no está medida en Figma), #38 `29:1888` (comprobante hecho; la vista no tiene frame), #40 `30:1599` y #41 `30:1643` (dirección y «Paquete N de M» hechos; maquetado sin medir).
+- **Siguen PARTIAL sin cambio:** las otras 27 filas de §9.4.
+
+R1 cambia a propósito colores de texto de Figma (n-400/n-500 → n-600, red-500 → red-600) para cumplir AA; es la decisión aceptada y no baja ningún PASS.
+
+### 10.4 Pendientes que quedan
+
+- **R7:** DTO público de la bodega (seguridad, prioridad alta). No estaba en la lista aceptada.
+- El correo de guía dice «2 a 5 días hábiles» fijo: el backend no lee `tiemposEnvio.ts`.
+- `pos.pago.vencidoDesc` dice «15 minutos» y el backend vence el QR a los 30.
+- Comprobante del QR por correo: no se hizo.
+- `--hc-success` como texto sigue debajo de AA (4,39:1); no estaba en la decisión.
+- Los íconos siguen con n-400/n-500 (no son texto).
+- Rotar el token de Telegram.
+- QA independiente con datos reales y correos en Gmail y Outlook.
+
+### 10.5 Verificación final
+
+2-oct-2026, 19:10–19:31 hora de Costa Rica, en Windows sobre `82352e08` (y `db068105` para `gate-spa`).
+
+| Chequeo | Resultado |
+| --- | --- |
+| `tsc --noEmit` en `tsconfig.json`, `tsconfig.e2e.json` y `tsconfig.node.json` | 0 errores en los tres |
+| `vitest run` | 111 archivos, 556/556 |
+| `mvn -o test` (suite completa) | 190 clases, 1088 tests, 0 fallas |
+| Playwright, suite completa | 461 casos: 412 pasan, 36 omitidos (medición sin sus variables, admin sin credenciales, `pending`), 13 fallan: los mismos 13 de §9.2, que ya fallaban antes de P01. Los dos casos de `acc-cuenta:343` que rompió R1 se corrigieron (25/25) |
+| `shell-medicion` (`SHELL_MEDIR`) y `acc-medidas` (`ACC_MEDIDAS=1`) | 66/66 a ±1 px y 8/8 |
+| ESLint sobre los 190 `.ts/.tsx` tocados | 0 problemas nuevos; los 20 que salen están en líneas que no cambió esta rama (`git blame`), los mismos de §4 |
+| Gates (sin contexto de GitHub, no comentan PR), `BASE_SHA=00252fa3` | E17 i18n PASS (0 faltantes); E1 Flyway PASS (V147, V148); SCALE1 PASS con 2 avisos (`@Transactional` en `PosQrSessionService`); E11 sensibles PASS (pos, payment); E10 authz PASS; E2 tenant PASS con 1 aviso (falso positivo: `nombreCaja` busca la bodega de la sesión y filtra por empresa); E3 SPA PASS con el `static/` regenerado |
+| gitleaks 8.30.1 (rango `00252fa3..HEAD` y árbol) | Sin hallazgos |
+| `static/` | Regenerado con `vite build` sin archivos `.env` (solo existe `.env.example`, que Vite no lee) ni variables `VITE_*` en el entorno; sin claves de Clerk, PostHog, Sentry ni GA en los `.js`; commit aparte `db068105` |
+
