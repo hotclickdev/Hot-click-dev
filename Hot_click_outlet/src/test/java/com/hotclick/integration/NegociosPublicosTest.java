@@ -87,6 +87,14 @@ class NegociosPublicosTest extends BaseIntegrationTest {
             .andExpect(content().string(not(containsString("cafe.bruma"))));
     }
 
+    @Test
+    @DisplayName("limite que no es número → 400, no 500 (SEC-98-05)")
+    void limiteInvalido_400() throws Exception {
+        mockMvc.perform(get("/api/public/negocios").param("limite", "abc"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message", containsString("limite")));
+    }
+
     private Empresa empresa(String nombre, String slug, String plan, boolean visible) {
         Empresa e = new Empresa();
         e.setNombreEmpresa(nombre);

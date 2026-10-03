@@ -192,6 +192,20 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
             .andExpect(status().is4xxClientError());
     }
 
+    // ── SEC-98-01: el PUT valida los límites del DTO ───────────────────────────
+    @Test
+    @DisplayName("SEC-98-01 | Actualizar con especificaciones de más de 5000 caracteres → 400")
+    void updateProducto_especificacionesLargas_400() throws Exception {
+        String body = buildProductoBody("Zapato Rojo Test", "SKU-ZAP-T01", 28000, 15000, 10)
+            .replaceFirst("}$", ",\"especificaciones\":\"" + "a".repeat(5_001) + "\"}");
+        mockMvc.perform(put("/api/productos/" + productoPropio.getId())
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("especificaciones")));
+    }
+
     // ── T-PROD-012: Emprendedor elimina su producto → 200 ────────────────────
     @Test
     @DisplayName("T-PROD-012 | NORMAL — Emprendedor elimina su propio producto → 200")
@@ -426,6 +440,21 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
                 .content("[]"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.ok").value(0));
+    }
+
+    // ── SEC-98-01: el bulk valida cada producto ──────────────────────────────
+    @Test
+    @DisplayName("SEC-98-01 | Bulk con un producto de especificaciones de más de 5000 caracteres → 400")
+    void bulkImport_especificacionesLargas_400() throws Exception {
+        String valido = buildProductoBody("Bulk Uno", "SKU-BULK-01", 5000, 3000, 1);
+        String largo = buildProductoBody("Bulk Dos", "SKU-BULK-02", 5000, 3000, 1)
+            .replaceFirst("}$", ",\"especificaciones\":\"" + "a".repeat(5_001) + "\"}");
+        mockMvc.perform(post("/api/productos/bulk")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[" + valido + "," + largo + "]"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("[1] especificaciones")));
     }
 
     // ── T-PROD-030: USUARIO_FINAL no puede eliminar productos → 403 ──────────

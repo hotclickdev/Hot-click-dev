@@ -18,10 +18,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
@@ -104,6 +109,29 @@ public class GlobalExceptionHandler {
                 .map(cv -> cv.getPropertyPath().toString() + ": " + cv.getMessage())
                 .collect(Collectors.joining("; "));
         return ResponseEntity.badRequest().body(ResponseDTO.error(errors));
+    }
+
+    /** Disparado por @Valid en elementos de una lista (p. ej. {@code List<@Valid Dto>} en el bulk) */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ResponseDTO> handleMethodValidation(HandlerMethodValidationException ex) {
+        String errors = ex.getParameterValidationResults().stream()
+                .flatMap(r -> r.getResolvableErrors().stream().map(e -> prefijoElemento(r) + mensajeError(e)))
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.badRequest().body(ResponseDTO.error(errors));
+    }
+
+    private static String prefijoElemento(ParameterValidationResult r) {
+        return r.getContainerIndex() == null ? "" : "[" + r.getContainerIndex() + "] ";
+    }
+
+    private static String mensajeError(MessageSourceResolvable e) {
+        return e instanceof FieldError fe ? fe.getField() + ": " + fe.getDefaultMessage() : e.getDefaultMessage();
+    }
+
+    /** Parámetro de URL o query con tipo inválido ("?limite=abc", "/productos/abc"): 400, no 500 */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ResponseDTO> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body(ResponseDTO.error("Parámetro inválido: " + ex.getName()));
     }
 
     /** JSON malformado o tipo incorrecto en el body */

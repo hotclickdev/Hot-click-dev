@@ -25,17 +25,35 @@ public final class ContactoTextoFiltro {
 
     private static final int I = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
 
-    /** Etiqueta HTML: "<" seguido de letra, "/" o "!" (así "< 5 cm" no cuenta como etiqueta). */
-    private static final Pattern TAG = Pattern.compile("<[a-zA-Z/!][^>]*>");
+    /**
+     * Tope de caracteres que se revisan (el campo más largo admite 10 000). Lo que pasa del tope no se
+     * publica: se cambia por {@link #OCULTO}.
+     */
+    static final int MAX_TEXTO = 20_000;
+    /** Para cortar en un espacio y no partir un teléfono o un correo. */
+    private static final int MARGEN_CORTE = 200;
+
+    /**
+     * Etiqueta HTML: "<" seguido de letra, "/" o "!" (así "< 5 cm" no cuenta como etiqueta). Sin "<" adentro:
+     * con muchos "<a" sin cerrar cada intento termina en el "<" siguiente y no al final del texto.
+     */
+    private static final Pattern TAG = Pattern.compile("<[a-zA-Z/!][^<>]*>");
     private static final Pattern A_CON_HREF = Pattern.compile("(?is)^<a\\b[^>]*\\bhref\\s*=\\s*[\"']?([^\"'\\s>]*)");
 
     // Sin repeticiones de grupos (`(?:...)*`): en Java recursan y pueden desbordar la pila con textos largos
     // (Sonar java:S5998). Los subdominios van con clases de caracteres.
+    // Tiempo lineal (Sonar java:S5852): los correos empiezan solo al inicio de una palabra (lookbehind) o
+    // justo donde terminó el anterior (\G); sin eso "aaaa…" sin espacios se reintenta desde cada letra
+    // (cuadrático). Los cuantificadores posesivos (`++`, `*+`) no devuelven lo que tomaron cuando lo que
+    // sigue no puede ser de su clase, y "\s*" ya no compite con "\s+arroba".
     private static final Pattern ESQUEMA_CONTACTO = Pattern.compile("\\b(?:mailto|tel|sms|whatsapp|tg):[^\\s<>\"']+", I);
     private static final Pattern URL = Pattern.compile("(?:\\bhttps?://|\\bwww\\.)[^\\s<>\"']+", I);
-    private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*\\.[A-Za-z]{2,}");
+    private static final String INICIO_CORREO = "(?:\\G|(?<![A-Za-z0-9._%+-]))";
+    private static final Pattern EMAIL = Pattern.compile(
+        INICIO_CORREO + "[A-Za-z0-9._%+-]++@[A-Za-z0-9-][A-Za-z0-9.-]*\\.[A-Za-z]{2,}");
     private static final Pattern EMAIL_ESCRITO = Pattern.compile(
-        "[A-Za-z0-9._%+-]+\\s*(?:\\(at\\)|\\[at\\]|\\s+arroba\\s+)\\s*[A-Za-z0-9-]+\\s*(?:\\.|\\(dot\\)|\\s+punto\\s+)\\s*[A-Za-z]{2,}", I);
+        INICIO_CORREO + "[A-Za-z0-9._%+-]++(?:\\s*+(?:\\(at\\)|\\[at\\])|\\s++arroba\\s)\\s*+"
+            + "[A-Za-z0-9-]++(?:\\s*+(?:\\.|\\(dot\\))|\\s++punto\\s)\\s*+[A-Za-z]{2,}", I);
     private static final Pattern DOMINIO_CONTACTO = Pattern.compile(
         "(?<![\\w.@-])(?:[a-z0-9-][a-z0-9.-]*\\.)?(?:wa\\.me|wa\\.link|whatsapp\\.com|instagram\\.com|instagr\\.am|tiktok\\.com"
             + "|facebook\\.com|fb\\.com|fb\\.me|fb\\.watch|m\\.me|t\\.me|telegram\\.me|linktr\\.ee|bit\\.ly"
@@ -59,9 +77,30 @@ public final class ContactoTextoFiltro {
 
     private ContactoTextoFiltro() {}
 
-    /** Texto plano o HTML del editor. Null y vacío se devuelven igual. */
+    /**
+     * Texto plano o HTML del editor. Null y vacío se devuelven igual. Más de {@link #MAX_TEXTO} caracteres:
+     * se revisa hasta el tope y el resto queda como {@link #OCULTO}.
+     */
     public static String ocultar(String texto) {
         if (texto == null || texto.isEmpty()) return texto;
+        if (texto.length() > MAX_TEXTO) return ocultarHtml(cortar(texto)) + " " + OCULTO;
+        return ocultarHtml(texto);
+    }
+
+    /** Corta en el último espacio antes del tope (si hay uno cerca); nunca parte un par sustituto. */
+    private static String cortar(String texto) {
+        int corte = MAX_TEXTO;
+        for (int i = MAX_TEXTO; i > MAX_TEXTO - MARGEN_CORTE; i--) {
+            if (Character.isWhitespace(texto.charAt(i))) {
+                corte = i;
+                break;
+            }
+        }
+        if (Character.isLowSurrogate(texto.charAt(corte))) corte--;
+        return texto.substring(0, corte);
+    }
+
+    private static String ocultarHtml(String texto) {
         if (!TAG.matcher(texto).find()) return ocultarTexto(texto);
         Matcher m = TAG.matcher(texto);
         StringBuilder out = new StringBuilder(texto.length());
@@ -153,7 +192,7 @@ public final class ContactoTextoFiltro {
         int i = inicio - 1;
         if (i >= 0 && s.charAt(i) == ' ') i--;
         if (i >= 0 && (s.charAt(i) == '₡' || s.charAt(i) == '$')) return true;
-        return MONEDA_DESPUES.matcher(s.substring(fin)).find();
+        return MONEDA_DESPUES.matcher(s).region(fin, s.length()).lookingAt();
     }
 
     private static String reemplazar(Pattern p, String s, Function<String, String> f) {

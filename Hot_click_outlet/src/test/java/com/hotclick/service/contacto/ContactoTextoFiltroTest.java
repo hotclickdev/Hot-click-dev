@@ -161,6 +161,63 @@ class ContactoTextoFiltroTest {
         });
     }
 
+    @ParameterizedTest(name = "50 000 caracteres de \"{0}\" en menos de 1 s")
+    @ValueSource(strings = {"a", "1", "a.", "1-", "<a", "a@", "x@b.", "+", "1 ", "a arroba "})
+    @DisplayName("Textos de 50 000 caracteres sin espacios terminan en menos de 1 s (SEC-98-01)")
+    void textoLargo_tiempoLineal(String patron) {
+        String texto = patron.repeat(50_000 / patron.length());
+        String resultado = assertTimeoutPreemptively(Duration.ofSeconds(1), () -> ContactoTextoFiltro.ocultar(texto));
+        assertThat(resultado).endsWith(" " + OCULTO);
+    }
+
+    @Test
+    @DisplayName("Espacios largos antes de 'arroba' o '+506' no hacen el filtro cuadrático")
+    void espaciosLargos_tiempoLineal() {
+        String espacios = " ".repeat(19_000);
+        assertTimeoutPreemptively(Duration.ofSeconds(1), () -> {
+            assertThat(ContactoTextoFiltro.ocultar("a" + espacios + "x")).isEqualTo("a" + espacios + "x");
+            assertThat(ContactoTextoFiltro.ocultar("+1" + espacios + "x")).isEqualTo("+1" + espacios + "x");
+        });
+    }
+
+    @Test
+    @DisplayName("Lo que pasa del tope no se publica; lo de antes se sigue filtrando")
+    void textoSobreElTope_seCortaYOculta() {
+        String relleno = "Mesa de roble macizo. ".repeat(1_000);
+        String texto = "WA 8888-8888. " + relleno + "Escribime al 8777-6655 o a ventas@casaluna.cr";
+        assertThat(texto.length()).isGreaterThan(ContactoTextoFiltro.MAX_TEXTO);
+
+        String resultado = ContactoTextoFiltro.ocultar(texto);
+
+        assertThat(resultado).startsWith("WA " + OCULTO + ". Mesa de roble").endsWith(" " + OCULTO)
+            .doesNotContain("8888-8888").doesNotContain("8777-6655").doesNotContain("ventas@");
+        assertThat(resultado.length()).isLessThan(texto.length());
+    }
+
+    @Test
+    @DisplayName("Bajo el tope, un contacto al final de un texto largo se oculta")
+    void textoLargoBajoElTope_contactoAlFinal() {
+        String texto = "a".repeat(9_000) + " Escribime a ventas@casaluna.cr o al 8777-6655";
+        assertThat(ContactoTextoFiltro.ocultar(texto)).doesNotContain("ventas@").doesNotContain("8777-6655")
+            .startsWith("a".repeat(9_000));
+    }
+
+    @Test
+    @DisplayName("Un correo pegado al anterior también se oculta")
+    void correosPegados() {
+        assertThat(ContactoTextoFiltro.ocultar("a@b.com.x@y.com")).doesNotContain("@").contains(OCULTO);
+        assertThat(ContactoTextoFiltro.ocultar("juan arroba gmail punto com")).isEqualTo(OCULTO);
+        assertThat(ContactoTextoFiltro.ocultar("juan (at) gmail (dot) com")).isEqualTo(OCULTO);
+    }
+
+    @Test
+    @DisplayName("Muchos '<a' sin cerrar: el contacto del final se oculta y no es cuadrático")
+    void etiquetasSinCerrar() {
+        String texto = "<a ".repeat(5_000) + "WA 8888-8888 <b>ok</b>";
+        String resultado = assertTimeoutPreemptively(Duration.ofSeconds(1), () -> ContactoTextoFiltro.ocultar(texto));
+        assertThat(resultado).doesNotContain("8888-8888").endsWith("WA " + OCULTO + " <b>ok</b>");
+    }
+
     @ParameterizedTest(name = "subdominios: {0}")
     @ValueSource(strings = {
         "Escribime a ventas@mail.casa-luna.co.cr",

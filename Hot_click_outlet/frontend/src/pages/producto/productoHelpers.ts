@@ -46,60 +46,76 @@ export function parseTallas(talla: string | null | undefined): string[] {
   return talla.split(/[-,/]/).map((s) => s.trim()).filter(Boolean)
 }
 
-const YT_ID = '([a-zA-Z0-9_-]{11})'
+const YT_ID = /^[a-zA-Z0-9_-]{11}$/
+const NUMERO = /^\d+$/
 
-/** `youtube.com/watch?v=ID` (con cualquier orden de parámetros), leído con `URL` en vez de una regex. */
-function idDeWatch(url: string): [string, string] | null {
-  try {
-    const u = new URL(url)
-    const v = u.searchParams.get('v')
-    return /(^|\.)youtube\.com$/.test(u.hostname) && u.pathname === '/watch' && v && /^[a-zA-Z0-9_-]{11}$/.test(v) ? [url, v] : null
-  } catch {
-    return null
+type Red = Omit<VideoDetectado, 'miniatura'> & { miniatura?: string | null }
+
+function youtube(id: string, etiqueta: 'YouTube' | 'Shorts'): Red {
+  return { type: 'youtube', etiqueta, vertical: etiqueta === 'Shorts', url: `https://www.youtube.com/watch?v=${id}`,
+    miniatura: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&autoplay=1` }
+}
+
+/**
+ * Cada red se reconoce por el host exacto (con o sin `www.`/`m.`) y por la forma de la ruta; el enlace
+ * "Ver en …" se arma de nuevo desde el ID, nunca con la URL que escribió el vendedor (SEC-98-03).
+ */
+function redDeVideo(u: URL): Red | null {
+  const host = u.hostname.toLowerCase().replace(/^(?:www|m)\./, '')
+  const [, a = '', b = '', c = '', d = ''] = u.pathname.split('/')
+  switch (host) {
+    case 'youtu.be':
+      return YT_ID.test(a) ? youtube(a, 'YouTube') : null
+    case 'youtube.com': {
+      if (a === 'shorts' && YT_ID.test(b)) return youtube(b, 'Shorts')
+      if ((a === 'embed' || a === 'live') && YT_ID.test(b)) return youtube(b, 'YouTube')
+      const v = u.searchParams.get('v')
+      return a === 'watch' && !b && v && YT_ID.test(v) ? youtube(v, 'YouTube') : null
+    }
+    case 'vimeo.com':
+    case 'player.vimeo.com': {
+      const id = a === 'video' ? b : a
+      return NUMERO.test(id)
+        ? { type: 'vimeo', etiqueta: 'Vimeo', vertical: false, url: `https://vimeo.com/${id}`, embedUrl: `https://player.vimeo.com/video/${id}?dnt=1` }
+        : null
+    }
+    case 'tiktok.com':
+      return /^@[\w.-]+$/.test(a) && b === 'video' && NUMERO.test(c)
+        ? { type: 'tiktok', etiqueta: 'TikTok', vertical: true, url: `https://www.tiktok.com/${a}/video/${c}`, embedUrl: `https://www.tiktok.com/embed/v2/${c}` }
+        : null
+    case 'instagram.com': {
+      if (!['p', 'reel', 'reels', 'tv'].includes(a) || !/^[A-Za-z0-9_-]+$/.test(b)) return null
+      const tipo = a === 'reels' ? 'reel' : a
+      return { type: 'instagram', etiqueta: 'Instagram', vertical: true, url: `https://www.instagram.com/${tipo}/${b}/`,
+        embedUrl: `https://www.instagram.com/${tipo}/${b}/embed/` }
+    }
+    case 'facebook.com':
+    case 'fb.watch': {
+      const esVideo = host === 'fb.watch' ? Boolean(a) : a === 'watch' || a === 'reel' || (b === 'videos' && Boolean(c || d))
+      if (!esVideo) return null
+      const enlace = `https://${host === 'fb.watch' ? 'fb.watch' : 'www.facebook.com'}${u.pathname}${u.search}`
+      return { type: 'facebook', etiqueta: 'Facebook', vertical: a === 'reel', url: enlace,
+        embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(enlace)}&show_text=false` }
+    }
+    default:
+      return null
   }
 }
 
 export function detectVideo(url: string | null | undefined): VideoDetectado | null {
   const limpio = url?.trim()
   if (!limpio) return null
-  const base = { url: limpio, miniatura: null as string | null }
-
-  const short = limpio.match(new RegExp(`youtube\\.com/shorts/${YT_ID}`))
-  if (short) {
-    return { ...base, type: 'youtube', etiqueta: 'Shorts', vertical: true, miniatura: `https://i.ytimg.com/vi/${short[1]}/hqdefault.jpg`,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${short[1]}?rel=0&modestbranding=1&autoplay=1` }
-  }
-  const yt = limpio.match(new RegExp(`(?:youtu\\.be/|youtube\\.com/embed/|youtube\\.com/live/)${YT_ID}`)) ?? idDeWatch(limpio)
-  if (yt) {
-    return { ...base, type: 'youtube', etiqueta: 'YouTube', vertical: false, miniatura: `https://i.ytimg.com/vi/${yt[1]}/hqdefault.jpg`,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1&autoplay=1` }
-  }
-
-  const tt = limpio.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/)
-  if (tt) return { ...base, type: 'tiktok', etiqueta: 'TikTok', vertical: true, embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}` }
-
-  const ig = limpio.match(/instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/)
-  if (ig) {
-    const tipo = ig[1] === 'reels' ? 'reel' : ig[1]
-    return { ...base, type: 'instagram', etiqueta: 'Instagram', vertical: true, embedUrl: `https://www.instagram.com/${tipo}/${ig[2]}/embed/` }
-  }
-
-  if (/(?:facebook\.com\/.+\/videos\/|facebook\.com\/(?:watch|reel)|fb\.watch\/)/.test(limpio)) {
-    const reel = /facebook\.com\/reel/.test(limpio)
-    return { ...base, type: 'facebook', etiqueta: 'Facebook', vertical: reel,
-      embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(limpio)}&show_text=false` }
-  }
-
-  const vimeo = limpio.match(/vimeo\.com\/(?:video\/)?(\d+)/)
-  if (vimeo) return { ...base, type: 'vimeo', etiqueta: 'Vimeo', vertical: false, embedUrl: `https://player.vimeo.com/video/${vimeo[1]}?dnt=1` }
-
+  let u: URL
   try {
-    const u = new URL(limpio)
-    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
-    return { ...base, type: 'otra', etiqueta: u.hostname.replace(/^www\./, ''), vertical: false, embedUrl: null }
+    u = new URL(limpio)
   } catch {
     return null
   }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
+  const red = redDeVideo(u)
+  if (red) return { miniatura: null, ...red }
+  return { type: 'otra', etiqueta: u.hostname.replace(/^www\./, ''), vertical: false, embedUrl: null, miniatura: null, url: u.href }
 }
 
 /** Segmento del control de plataforma (imagen aprobada `ficha-video.png`): Facebook, Vimeo y el resto van a "Otra red". */
