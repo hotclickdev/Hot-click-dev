@@ -3901,13 +3901,15 @@
     "negocios_other": "{{count}} businesses",
     "sinCoincidencias": "No business matches “{{busqueda}}”.",
     "buscar": "Search for a business",
-    "verProductosAria": "{{nombre}}: view products on HotClick",
-    "sitioExternoAria": "{{nombre}}: external site, opens in a new tab",
-    "sitioExterno": "External site",
-    "verProductos": "View products",
     "proximamente": "Coming soon",
     "cerrandoConvenios": "We're finalizing partnerships with Costa Rican businesses.",
-    "emprender": "Start your business on HotClick"
+    "emprender": "Start your business on HotClick",
+    "verTienda": "View store",
+    "verTiendaAria": "{{nombre}}: view store",
+    "productos_one": "{{count}} product",
+    "productos_other": "{{count}} products",
+    "filtrar": "Filter businesses by category",
+    "todos": "All"
   },
   "encargoPublico": {
     "titulo": "Your custom order",
