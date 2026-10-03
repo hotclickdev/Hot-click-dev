@@ -51,7 +51,7 @@ export default function MisPedidosPage() {
   const detalle = pedidoPorNumero(pedidos, numeroDetalle)
 
   const cuerpo = (() => {
-    if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
+    if (loading) return <div className="flex justify-center py-16"><Spinner variante="figma" /></div>
     if (numeroDetalle) {
       return detalle
         ? <DetallePedidoComprador pedido={detalle} />

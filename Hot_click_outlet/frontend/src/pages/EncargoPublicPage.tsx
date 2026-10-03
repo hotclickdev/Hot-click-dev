@@ -94,7 +94,7 @@ export default function EncargoPublicPage() {
   if (loading) {
     return (
       <MainLayout variante="interna" titulo={t('encargoPublico.titulo')}>
-        <div className="flex justify-center py-32"><Spinner size="xl" /></div>
+        <div className="flex justify-center py-32"><Spinner size="xl" variante="figma" /></div>
       </MainLayout>
     )
   }

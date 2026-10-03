@@ -37,7 +37,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex justify-center py-32"><Spinner size="xl" /></div>
+        <div className="flex justify-center py-32"><Spinner size="xl" variante="figma" /></div>
       </MainLayout>
     )
   }

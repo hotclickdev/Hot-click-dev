@@ -108,7 +108,7 @@ export default function BlogPage() {
           Ideas para comprar mejor y conocer a los emprendedores de Costa Rica.
         </p>
 
-        {loading && <div className="flex justify-center py-20"><Spinner /></div>}
+        {loading && <div className="flex justify-center py-20"><Spinner variante="figma" /></div>}
 
         {!loading && entradas.length === 0 && (
           <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-240px)] lg:rounded-[16px]">

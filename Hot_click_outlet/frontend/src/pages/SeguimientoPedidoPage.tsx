@@ -71,7 +71,7 @@ export default function SeguimientoPedidoPage() {
       <div className="mx-auto w-full max-w-[560px]">
         {carga.tipo === 'cargando' && (
           <div className="flex justify-center py-32" role="status" aria-label={t('comprador.seguimiento.cargando')}>
-            <Spinner size="xl" />
+            <Spinner size="xl" variante="figma" />
           </div>
         )}
         {carga.tipo === 'noEncontrado' && (
