@@ -875,8 +875,12 @@
     "verTodosMarca": "Ver todos",
     "videoDe": "Vídeo de {{titulo}}",
     "reproducirVideo": "Reproduzir o vídeo de {{titulo}}",
-    "verVideoEn": "Ver vídeo em {{red}}",
-    "videoOtraPestana": "Abre em outra aba"
+    "videoOtraPestana": "Abre em outra aba",
+    "publicadoPor": "Publicado por {{tienda}}",
+    "verEn": "Ver no {{red}}",
+    "seReproduceAqui": "Reproduz aqui mesmo",
+    "plataformaVideo": "Plataforma do vídeo",
+    "otraRed": "Outra rede"
   },
   "cart": {
     "title": "Pedido",

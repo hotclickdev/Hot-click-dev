@@ -101,6 +101,13 @@ export function detectVideo(url: string | null | undefined): VideoDetectado | nu
   }
 }
 
+/** Segmento del control de plataforma (imagen aprobada `ficha-video.png`): Facebook, Vimeo y el resto van a "Otra red". */
+export type SegmentoVideo = 'youtube' | 'instagram' | 'tiktok' | 'otra'
+
+export function segmentoVideo(tipo: TipoVideo): SegmentoVideo {
+  return tipo === 'youtube' || tipo === 'instagram' || tipo === 'tiktok' ? tipo : 'otra'
+}
+
 export function seoDesdeProducto(product: Producto, userLang: string): { seoTitle: string; seoDescription: string } {
   const seoByLang: Record<string, { title?: string | null; description?: string | null }> = {
     es: { title: product.metaTitle,         description: product.metaDescription },
