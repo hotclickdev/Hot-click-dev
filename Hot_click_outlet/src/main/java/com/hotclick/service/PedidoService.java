@@ -5,7 +5,10 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.pedido.PedidoDespachoVerificador;
 import com.hotclick.service.pedido.PedidoDetailMapper;
+import com.hotclick.service.pedido.PedidoEstadoMaquina;
+import com.hotclick.service.pedido.PedidoPagoManualService;
 import com.hotclick.service.pedido.PedidoManualFactory;
 import com.hotclick.service.pedido.PedidoNotificacionAppender;
 import com.hotclick.service.telegram.TelegramTexto;
@@ -32,6 +35,8 @@ public class PedidoService {
     @Autowired private PedidoManualFactory pedidoManualFactory;
     @Autowired private PedidoNotificacionAppender pedidoNotificacionAppender;
     @Autowired private PedidoDetailMapper pedidoDetailMapper;
+    @Autowired private PedidoPagoManualService pedidoPagoManualService;
+    @Autowired private PedidoDespachoVerificador despachoVerificador;
 
     @CacheEvict(value = "dashboard-metricas",
         key = "#pedido.empresa != null ? #pedido.empresa.id.toString() : 'global'")
@@ -65,10 +70,50 @@ public class PedidoService {
         return pedidoManualFactory.crearPedidoManual(dto, empresa);
     }
 
+    /** Cambio de estado sin referencia de pago (Telegram/copiloto): PAGADO manual queda rechazado (400). */
     @Transactional
     public Pedido cambiarEstado(Long id, String nuevoEstado, String nota) {
+        return cambiarEstado(id, nuevoEstado, nota, null);
+    }
+
+    /**
+     * Cambio de estado manual (panel, Telegram/copiloto).
+     * <ul>
+     *   <li>Estado y transición contra la lista cerrada de {@link PedidoEstadoMaquina} (400).</li>
+     *   <li>Despachar ({@code → ENVIADO}) o entregar ({@code → ENTREGADO}) exige pago verificado según
+     *       {@link PedidoDespachoVerificador}: mira el Pago, no el estado del pedido (409, SEC-09).</li>
+     *   <li>{@code → PAGADO}: confirmación manual con referencia ({@link PedidoPagoManualService}, 400).
+     *       También si el pedido ya dice PAGADO pero no tiene pago verificado (datos viejos).</li>
+     *   <li>Efectivo + retiro: {@code PENDIENTE_COMPROBANTE → ENTREGADO} registra el cobro.</li>
+     * </ul>
+     */
+    @Transactional
+    public Pedido cambiarEstado(Long id, String estadoSolicitado, String nota, String referenciaPago) {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        String nuevoEstado = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
+        String estadoActual = PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido());
+        boolean mismoEstado = nuevoEstado.equals(estadoActual);
+        if (Constants.PEDIDO_ENVIADO.equals(nuevoEstado) && !mismoEstado) {
+            despachoVerificador.verificarDespachable(pedido);
+        }
+        boolean cobroAlRetirar = Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)
+            && Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(estadoActual)
+            && PedidoPagoManualService.esEfectivoConRetiro(pedido);
+        if (cobroAlRetirar) {
+            // Efectivo + retiro en tienda: el cliente paga al retirar (registra el cobro y lo audita).
+            pedidoPagoManualService.confirmarCobroAlRetirar(pedido, estadoActual, referenciaPago);
+        } else {
+            PedidoEstadoMaquina.verificarTransicion(estadoActual, nuevoEstado);
+            if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado) && !mismoEstado
+                    && !Constants.PEDIDO_ENVIADO.equals(estadoActual)) {
+                despachoVerificador.verificarDespachable(pedido);
+            }
+            if (Constants.PEDIDO_PAGADO.equals(nuevoEstado)
+                    && (!mismoEstado || !despachoVerificador.pagoVerificado(pedido))) {
+                pedidoPagoManualService.confirmar(pedido, estadoActual, referenciaPago);
+            }
+        }
         pedido.setEstadoPedido(nuevoEstado);
         if (nota != null && !nota.isBlank()) {
             pedidoNotificacionAppender.appendNotificacion(pedido, nuevoEstado, nota);
@@ -109,10 +154,22 @@ public class PedidoService {
         return pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
     }
 
+    /**
+     * Guía / envío: si el pedido ya está ENVIADO solo se corrige la guía. Si no, exige pago verificado
+     * (409) y que la transición a ENVIADO sea válida (400; p. ej. no desde ENTREGADO o COMPLETADO).
+     */
+    private void verificarDespachoConGuia(Pedido pedido) {
+        String estadoActual = PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido());
+        if (Constants.PEDIDO_ENVIADO.equals(estadoActual)) return;
+        despachoVerificador.verificarDespachable(pedido);
+        PedidoEstadoMaquina.verificarTransicion(estadoActual, Constants.PEDIDO_ENVIADO);
+    }
+
     @Transactional
     public Pedido asignarGuia(Long id, String numeroGuia) {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        verificarDespachoConGuia(pedido);
         pedido.setNumeroGuia(numeroGuia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + numeroGuia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
@@ -129,6 +186,7 @@ public class PedidoService {
     public Pedido procesarEnvio(Long id, String guia, Integer costoEnvio) {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        verificarDespachoConGuia(pedido);
         pedido.setNumeroGuia(guia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + guia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));

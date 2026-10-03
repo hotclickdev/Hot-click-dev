@@ -2,7 +2,7 @@
  * Provocación de errores / edge en wizards PYME (local Playwright).
  * Run: pnpm exec playwright test tests/seller-wizard-errors.spec.ts
  */
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page, type Route } from '@playwright/test'
 import { entrarSeller, expectPaso } from './seller-wizard-helpers'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
@@ -52,5 +52,36 @@ test.describe('Wizard errores / edge PYME', () => {
     await entrarSeller(page, 'PYME')
     await expectPaso(page, '/pyme/bodegas/nueva', 'Paso 1 de 3', 'Nombre de la bodega')
     await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
+  })
+})
+
+async function pedidoPyme(page: Page, estado: string) {
+  await entrarSeller(page, 'PYME')
+  await page.route('**/api/pedidos', async (route: Route) => {
+    if (route.request().method() !== 'GET') return route.fallback()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: [{ id: 41, nombreCliente: 'Ana', total: 17900, estado, items: [{ nombreProducto: 'Taza', cantidad: 1, precioUnitario: 17900 }] }],
+      }),
+    })
+  })
+  await page.goto('/pyme/pedidos/41', { waitUntil: 'domcontentloaded' })
+}
+
+test.describe('Pedido sin pago confirmado PYME (BUG-02)', () => {
+  test('SINPE sin comprobante: esperando pago y sin Confirmar envío', async ({ page }) => {
+    await pedidoPyme(page, 'PENDIENTE_COMPROBANTE')
+    await expect(page.getByText('Esperando pago', { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Podés despacharlo cuando se confirme el pago.')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Confirmar envío' })).toHaveCount(0)
+  })
+
+  test('pago confirmado: Pendiente de envío con Confirmar envío', async ({ page }) => {
+    await pedidoPyme(page, 'PAGADO')
+    await expect(page.getByText('Pendiente de envío', { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Confirmar envío' })).toBeVisible()
   })
 })
