@@ -2,7 +2,20 @@ import TrustGlyph from './TrustGlyph'
 
 const SIZES = { sm: 'h-4 w-4', md: 'h-6 w-6', lg: 'h-8 w-8', xl: 'h-12 w-12' } as const
 
-export default function Spinner({ size = 'md', className = '' }: { size?: keyof typeof SIZES; className?: string }) {
+/**
+ * ⚠️ COMPARTIDO. `variante="figma"` es solo para pantallas del visitante: aro azul del manual de marca
+ * (docs/figma-migration/MANUAL_MARCA_FIGMA). Sin variante, el spinner de siempre (paneles y POS sin cambios).
+ */
+export default function Spinner({ size = 'md', className = '', variante }: { size?: keyof typeof SIZES; className?: string; variante?: 'figma' }) {
+  if (variante === 'figma') {
+    return (
+      <span
+        role="status"
+        aria-label="Cargando"
+        className={`inline-block animate-spin rounded-full border-[3px] border-hc-blue-100 border-t-hc-blue-600 ${SIZES[size]} ${className}`}
+      />
+    )
+  }
   return (
     <svg
       className={`animate-spin text-[var(--hc-primary)] ${SIZES[size]} ${className}`}

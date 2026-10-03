@@ -13,15 +13,14 @@ export default function StarPicker({ value, onChange }: { value: number; onChang
           onClick={() => onChange(s)}
           onMouseEnter={() => setHovered(s)}
           onMouseLeave={() => setHovered(0)}
-          className="transition-transform hover:scale-110 active:scale-95 focus:outline-none"
+          className="rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600"
           aria-label={`${s} estrella${s === 1 ? '' : 's'}`}
         >
-          <svg className={`w-8 h-8 transition-colors duration-100 ${s <= active ? 'text-amber-400' : ''}`}
+          <svg className={`size-7 transition-colors duration-100 ${s <= active ? 'text-hc-warning' : 'text-hc-n-400'}`}
             viewBox="0 0 20 20"
             fill={s <= active ? 'currentColor' : 'none'}
             stroke="currentColor"
-            strokeWidth={s <= active ? 0 : 1.5}
-            style={{ color: s <= active ? '#fbbf24' : 'var(--hc-border)' }}>
+            strokeWidth={s <= active ? 0 : 1.5}>
             <path d={STAR_PATH} />
           </svg>
         </button>
