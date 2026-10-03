@@ -326,23 +326,23 @@ Tipo: **Decisión** (respuesta humana pendiente, ver §2), **Figma** (falta el f
 
 | Grupo | Commit | Qué hace |
 | --- | --- | --- |
-| Telegram | `fix(telegram)` | Escapa Markdown en los valores, reintenta en texto plano ante «can't parse entities» y enmascara el token en los logs (`bot***`) |
-| R6 | `fix(i18n)` | «Tarjeta de regalo» / «Gift card» / «Cartão-presente» en carrito y checkout |
-| D19 | `feat(a11y)` | A− pone la raíz en 87,5 % (`fs-sm`, 14 px) |
-| R2 | `feat(format)` | `formatTelefonoCR`: teléfonos de Costa Rica como `8888-1234` |
-| R4 | `fix(cart)` | `utils/stock.ts`: tope con el stock real; 99 solo si el stock no se conoce |
-| R5 | `fix(ui)` | Zona del FAB de WhatsApp: 155 px al final de las listas móviles y `scroll-padding-bottom` |
-| D13 | `feat(envios)` | Tiempos de envío desde una sola fuente, `src/config/tiemposEnvio.ts` (PROVISIONAL) |
-| D12 | `feat(servicios)` | Selector de presupuesto con `src/config/rangosPresupuesto.ts` (PROVISIONAL) y «Otro monto» |
-| B16 | `feat(qr)` | QR vencido: texto «abrí la cámara» en lugar de «Escanear otro QR» |
-| B16 | `feat(qr)`, V147 | El cliente elige entre los métodos que habilita la caja; «Cobro #P-<id>», caja y comprobante imprimible (`GET /api/pos/qr/pago/{token}/comprobante`, solo PAGADO) |
-| B17 | `feat(correos)`, V148 | `hot_click_pedido_tb.direccion_entrega`; confirmación con «Envío normal GAM. Enviamos a …»; guía con «Paquete N de M»; corrige el envío tratado como retiro en los correos |
-| R3 | `feat(checkout)` | Paso en `?paso=` con guard (no se salta un paso por enlace ni al recargar); «Atrás» del navegador vuelve al paso anterior |
-| R1 | `fix(a11y)` | Texto con n-600 y red-600, placeholders con n-500 y token `--hc-primary-text` (AA); íconos, logo y fondos sin cambio |
-| Docs | `docs(figma)` | Este §10 e `INVENTORY.md` |
-| Build | `build(static)` | Regeneración intencional de `static/`, sin claves `VITE_*` (commit aparte) |
+| Telegram | `fc588479` | Escapa Markdown en los valores, reintenta en texto plano ante «can't parse entities» y enmascara el token en los logs (`bot***`) |
+| R6 | `72a24cce` | «Tarjeta de regalo» / «Gift card» / «Cartão-presente» en carrito y checkout |
+| D19 | `b29bf73a` | A− pone la raíz en 87,5 % (`fs-sm`, 14 px) |
+| R2 | `f3433900` | `formatTelefonoCR`: teléfonos de Costa Rica como `8888-1234` |
+| R4 | `3f17581c` | `utils/stock.ts`: tope con el stock real; 99 solo si el stock no se conoce |
+| R5 | `fb44117f` | Zona del FAB de WhatsApp: 155 px al final de las listas móviles y `scroll-padding-bottom` |
+| D13 | `52325298` | Tiempos de envío desde una sola fuente, `src/config/tiemposEnvio.ts` (PROVISIONAL) |
+| D12 | `526a9ffd` | Selector de presupuesto con `src/config/rangosPresupuesto.ts` (PROVISIONAL) y «Otro monto» |
+| B16 | `e8516cee` | QR vencido: texto «abrí la cámara» en lugar de «Escanear otro QR» |
+| B16 | `5e631f50`, V147 | El cliente elige entre los métodos que habilita la caja; «Cobro #P-<id>», caja y comprobante imprimible (`GET /api/pos/qr/pago/{token}/comprobante`, solo PAGADO) |
+| B17 | `f68636fb`, V148 | `hot_click_pedido_tb.direccion_entrega`; confirmación con «Envío normal GAM. Enviamos a …»; guía con «Paquete N de M»; corrige el envío tratado como retiro en los correos |
+| R3 | `4a8ae1af` | Paso en `?paso=` con guard (no se salta un paso por enlace ni al recargar); «Atrás» del navegador vuelve al paso anterior |
+| R1 | `82352e08` | Texto con n-600 y red-600, placeholders con n-500 y token `--hc-primary-text` (AA); íconos, logo y fondos sin cambio |
+| Docs | este commit (`docs(figma)`) | Este §10 e `INVENTORY.md` |
+| Build | `db068105` | Regeneración intencional de `static/`, sin claves `VITE_*` (commit aparte) |
 
-Los hashes están en `git log` de `feat/figma/pendientes`.
+Hora de Costa Rica: de 16:01 a 19:31. El commit de docs va al final.
 
 ### 10.2 Estado por decisión
 
@@ -392,3 +392,20 @@ R1 cambia a propósito colores de texto de Figma (n-400/n-500 → n-600, red-500
 - Los íconos siguen con n-400/n-500 (no son texto).
 - Rotar el token de Telegram.
 - QA independiente con datos reales y correos en Gmail y Outlook.
+
+### 10.5 Verificación final
+
+2-oct-2026, 19:10–19:31 hora de Costa Rica, en Windows sobre `82352e08` (y `db068105` para `gate-spa`).
+
+| Chequeo | Resultado |
+| --- | --- |
+| `tsc --noEmit` en `tsconfig.json`, `tsconfig.e2e.json` y `tsconfig.node.json` | 0 errores en los tres |
+| `vitest run` | 111 archivos, 556/556 |
+| `mvn -o test` (suite completa) | 190 clases, 1088 tests, 0 fallas |
+| Playwright, suite completa | 461 casos: 412 pasan, 36 omitidos (medición sin sus variables, admin sin credenciales, `pending`), 13 fallan: los mismos 13 de §9.2, que ya fallaban antes de P01. Los dos casos de `acc-cuenta:343` que rompió R1 se corrigieron (25/25) |
+| `shell-medicion` (`SHELL_MEDIR`) y `acc-medidas` (`ACC_MEDIDAS=1`) | 66/66 a ±1 px y 8/8 |
+| ESLint sobre los 190 `.ts/.tsx` tocados | 0 problemas nuevos; los 20 que salen están en líneas que no cambió esta rama (`git blame`), los mismos de §4 |
+| Gates (sin contexto de GitHub, no comentan PR), `BASE_SHA=00252fa3` | E17 i18n PASS (0 faltantes); E1 Flyway PASS (V147, V148); SCALE1 PASS con 2 avisos (`@Transactional` en `PosQrSessionService`); E11 sensibles PASS (pos, payment); E10 authz PASS; E2 tenant PASS con 1 aviso (falso positivo: `nombreCaja` busca la bodega de la sesión y filtra por empresa); E3 SPA PASS con el `static/` regenerado |
+| gitleaks 8.30.1 (rango `00252fa3..HEAD` y árbol) | Sin hallazgos |
+| `static/` | Regenerado con `vite build` sin archivos `.env` (solo existe `.env.example`, que Vite no lee) ni variables `VITE_*` en el entorno; sin claves de Clerk, PostHog, Sentry ni GA en los `.js`; commit aparte `db068105` |
+
