@@ -70,3 +70,9 @@ export function subtituloPendiente(stripeApproved: boolean, t: TFunction): strin
     ? t('payment.pendiente.textoAprobado')
     : t('payment.pendiente.textoRevision')
 }
+
+/** Contexto que entiende el asistente (`ChatContextoPermitido`, `PromptIdentidadSection.appendPagoFallo`). */
+export function contextoPagoFallo(motivo?: string): string {
+  const limpio = motivo?.replace(/\s+/g, ' ').trim().slice(0, 120)
+  return limpio ? `PAGO_FALLO:${limpio}` : 'PAGO_FALLO'
+}

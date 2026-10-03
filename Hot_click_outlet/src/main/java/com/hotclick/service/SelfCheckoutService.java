@@ -1,5 +1,8 @@
 package com.hotclick.service;
 
+import com.hotclick.service.contacto.ContactoPublicoPolicy;
+import com.hotclick.service.contacto.ContactoTextoFiltro;
+
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.utils.Constants;
@@ -55,7 +58,8 @@ public class SelfCheckoutService {
         r.put("logoUrl",      empresa.getLogoUrl());
         r.put("colorPrimario", empresa.getColorPrimario());
         r.put("colorSecundario", empresa.getColorSecundario());
-        r.put("numeroWhatsapp", empresa.getNumeroWhatsapp());
+        // Contacto directo del vendedor solo con plan PYME o NEGOCIO_PLUS (ContactoPublicoPolicy).
+        r.put("numeroWhatsapp", ContactoPublicoPolicy.permiteContacto(empresa) ? empresa.getNumeroWhatsapp() : null);
         r.put("qrUrl", appUrl + "/checkout/qr/" + token);
         return r;
     }
@@ -65,13 +69,15 @@ public class SelfCheckoutService {
     public List<Map<String, Object>> getCatalogo(String token) {
         Mesa mesa = findMesaActiva(token);
         List<Producto> productos = productoRepo.findActivosByEmpresaId(mesa.getEmpresa().getId());
+        // Plan sin contacto directo: nombre y descripción sin teléfonos, correos ni enlaces externos.
+        boolean filtra = !ContactoPublicoPolicy.permiteContacto(mesa.getEmpresa());
         return productos.stream()
             .filter(p -> p.getStockActual() == null || p.getStockActual() > 0)
             .map(p -> {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id",             p.getId());
-                m.put("nombre",         p.getNombreProducto());
-                m.put("descripcion",    p.getDescripcionCorta());
+                m.put("nombre",         filtra ? ContactoTextoFiltro.ocultar(p.getNombreProducto()) : p.getNombreProducto());
+                m.put("descripcion",    filtra ? ContactoTextoFiltro.ocultar(p.getDescripcionCorta()) : p.getDescripcionCorta());
                 m.put("precio",         p.getPrecioVenta());
                 m.put("imagenUrl",      p.getImagenPrincipalUrl());
                 m.put("stock",          p.getStockActual());

@@ -1,9 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import Modal from '@/components/ui/Modal'
+import { BotonModalCuenta, CampoModalCuenta, ContenedorModalCuenta, ErrorModalCuenta, TextoModalCuenta } from './PiezasModalCuenta'
 import { useToast } from '@/components/ui/Toast'
 import { authService } from '@/services/authService'
 import { mensajeErrorApi, textoCampoApi } from './perfilHelpers'
@@ -11,9 +9,11 @@ import { mensajeErrorApi, textoCampoApi } from './perfilHelpers'
 type Paso2FA = 'info' | 'qr' | 'disable'
 
 export default function TwoFAModal({
-  open, onClose, enabled, onToggle,
+  open, onClose, enabled, onToggle, figma = false,
 }: {
   open: boolean
+  /** Solo comprador: hoja inferior y campos de Figma. ⚠️ COMPARTIDO, sin `figma` queda igual. */
+  figma?: boolean
   onClose: () => void
   enabled: boolean
   onToggle: (val: boolean) => void
@@ -74,53 +74,59 @@ export default function TwoFAModal({
     } finally { setLoading(false) }
   }
 
+  const pila = figma ? 'flex flex-col gap-[14px]' : 'space-y-4'
+  const errorPaso = figma
+    ? <ErrorModalCuenta figma texto={error} />
+    : (error ? <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p> : null)
+
   return (
-    <Modal open={open} onClose={onClose} title={t('profile.twoFactor')}>
+    <ContenedorModalCuenta figma={figma} open={open} onClose={onClose} titulo={t('profile.twoFactor')}>
       <AnimatePresence mode="wait">
         {step === 'info' && (
-          <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.twoFASetupInfo')}</p>
-            {error && <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p>}
-            <Button className="w-full" loading={loading} onClick={handleSetup}>{t('profile.twoFASetupBtn')}</Button>
+          <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={pila}>
+            <TextoModalCuenta figma={figma}>{t('profile.twoFASetupInfo')}</TextoModalCuenta>
+            {errorPaso}
+            <BotonModalCuenta figma={figma} loading={loading} onClick={handleSetup}>{t('profile.twoFASetupBtn')}</BotonModalCuenta>
           </motion.div>
         )}
         {step === 'qr' && (
           <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <form onSubmit={handleActivate} className="space-y-4">
-              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.twoFAQrInfo')}</p>
+            <form onSubmit={handleActivate} className={pila}>
+              <TextoModalCuenta figma={figma}>{t('profile.twoFAQrInfo')}</TextoModalCuenta>
               {qrUri && (
                 <div className="flex justify-center py-3">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUri)}`}
-                    alt="QR 2FA" className="rounded-xl border" style={{ borderColor: 'var(--hc-border)' }} width={180} height={180}
+                    alt="QR 2FA" className={figma ? 'rounded-[12px] border border-hc-n-200' : 'rounded-xl border'}
+                    style={figma ? undefined : { borderColor: 'var(--hc-border)' }} width={180} height={180}
                   />
                 </div>
               )}
-              <Input label={t('profile.twoFACodeLabel')} value={code}
+              <CampoModalCuenta figma={figma} etiqueta={t('profile.twoFACodeLabel')} value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                maxLength={6} inputMode="numeric" placeholder="000000" required />
-              {error && <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p>}
-              <Button type="submit" loading={loading} className="w-full">{t('profile.twoFAActivateBtn')}</Button>
+                maxLength={6} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" required />
+              {errorPaso}
+              <BotonModalCuenta figma={figma} type="submit" loading={loading}>{t('profile.twoFAActivateBtn')}</BotonModalCuenta>
             </form>
           </motion.div>
         )}
         {step === 'disable' && (
           <motion.div key="disable" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <form onSubmit={handleDisable} className="space-y-4">
-              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.twoFADisableInfo')}</p>
-              <Input label={t('profile.passwordLabel')} type="password" value={contrasena}
-                onChange={(e) => setCont(e.target.value)} required autoFocus />
-              <Input label={t('profile.twoFAAuthCode')} value={code}
+            <form onSubmit={handleDisable} className={pila}>
+              <TextoModalCuenta figma={figma}>{t('profile.twoFADisableInfo')}</TextoModalCuenta>
+              <CampoModalCuenta figma={figma} etiqueta={t('profile.passwordLabel')} type="password" value={contrasena}
+                onChange={(e) => setCont(e.target.value)} required autoFocus autoComplete="current-password" />
+              <CampoModalCuenta figma={figma} etiqueta={t('profile.twoFAAuthCode')} value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                maxLength={6} inputMode="numeric" placeholder="000000" required />
-              {error && <p className="text-sm" style={{ color: 'var(--hc-danger)' }}>{error}</p>}
-              <Button type="submit" loading={loading} variant="danger" className="w-full">
+                maxLength={6} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" required />
+              {errorPaso}
+              <BotonModalCuenta figma={figma} type="submit" loading={loading} peligro>
                 {t('profile.twoFADeactivateBtn')}
-              </Button>
+              </BotonModalCuenta>
             </form>
           </motion.div>
         )}
       </AnimatePresence>
-    </Modal>
+    </ContenedorModalCuenta>
   )
 }

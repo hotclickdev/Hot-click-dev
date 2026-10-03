@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import HojaInferior from './HojaInferior'
 import IconoFigma from './IconoFigma'
+import BarraEnvioGratis from './BarraEnvioGratis'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import { fotoProducto } from './productCardHelpers'
 import useCartStore from '@/store/cartStore'
@@ -30,6 +31,7 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
     producto.empresaId != null ? i.empresaId === producto.empresaId : Boolean(negocio) && i.empresaNombre === negocio
   ))
   const comparteEnvio = Boolean(negocio) && mismoPaquete.length > 1
+  const subtotalPaquete = mismoPaquete.reduce((suma, i) => suma + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0)
   const totalPedido = items.reduce((suma, i) => suma + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0)
   const foto = fotoProducto(producto)
 
@@ -70,6 +72,8 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
         </div>
       )}
 
+      {negocio && <BarraEnvioGratis subtotal={subtotalPaquete} />}
+
       <div className="flex items-start justify-between leading-[normal]">
         <p className="text-[13px] text-hc-n-600">{t('comprador.hoja.totalPedido', { count: items.length })}</p>
         <p className="font-display text-[14px] font-semibold leading-[18px] text-hc-n-900">{formatPrice(totalPedido)}</p>
@@ -79,14 +83,14 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
         <button
           type="button"
           onClick={onCerrar}
-          className="flex min-w-0 flex-1 items-center justify-center rounded-xl border border-hc-n-200 bg-hc-n-0 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900"
+          className="flex min-w-0 flex-1 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900"
         >
           {t('comprador.hoja.seguirComprando')}
         </button>
         <Link
           to="/carrito"
           onClick={onCerrar}
-          className="flex min-w-0 flex-1 items-center justify-center rounded-xl bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-0"
+          className="flex min-w-0 flex-1 items-center justify-center rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-0"
         >
           {t('comprador.hoja.verPedido')}
         </Link>

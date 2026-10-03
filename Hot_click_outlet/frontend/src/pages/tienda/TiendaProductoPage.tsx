@@ -1,13 +1,21 @@
-import { useState, useEffect, type Dispatch, type SetStateAction } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeftIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
-import tiendaService from '@/services/tiendaService'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import useTiendaStore from '@/store/tiendaStore'
+import tiendaService from '@/services/tiendaService'
 import { formatPrice } from '@/utils/format'
 import TiendaPlaceholder from './TiendaPlaceholder'
 import TiendaBuyActions from './TiendaBuyActions'
+import { BotonTienda } from './PiezasTienda'
 import type { Producto } from '@/types/producto'
 
+/** Productos con 3 o menos se anuncian como "Quedan N" en ámbar (mismo umbral que la ficha del marketplace). */
+const STOCK_BAJO = 3
+
+/**
+ * Ficha del producto dentro de la tienda pública (derivado de Figma `28:839` móvil y `29:2072` escritorio):
+ * foto cuadrada, etiqueta de marca, título y precio en Sora, punto de stock y barra de compra fija en móvil.
+ * Comprar ahora y Agregar al pedido funcionan igual que antes (pedido aislado de la tienda).
+ */
 export default function TiendaProductoPage() {
   const { slug, productoId } = useParams()
   const navigate = useNavigate()
@@ -41,13 +49,13 @@ export default function TiendaProductoPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-10 animate-pulse">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="aspect-square rounded-2xl bg-[var(--t-hover)]" />
-          <div className="space-y-4 pt-4">
-            <div className="h-6 bg-[var(--t-hover)] rounded w-3/4" />
-            <div className="h-4 bg-[var(--t-hover)] rounded w-1/2" />
-            <div className="h-8 bg-[var(--t-hover)] rounded w-1/3 mt-6" />
+      <div className="mx-auto max-w-[1232px] lg:px-4 lg:py-8" aria-busy="true">
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
+          <div className="aspect-square animate-pulse bg-hc-n-100 lg:rounded-[16px]" />
+          <div className="space-y-3 px-4 lg:px-0 lg:pt-4">
+            <div className="h-7 w-3/4 animate-pulse rounded-md bg-hc-n-200" />
+            <div className="h-8 w-1/3 animate-pulse rounded-md bg-hc-n-200" />
+            <div className="h-4 w-1/2 animate-pulse rounded-md bg-hc-n-100" />
           </div>
         </div>
       </div>
@@ -58,28 +66,57 @@ export default function TiendaProductoPage() {
 
   const imagenes = [producto.imagenUrl, ...(((producto as Producto & { imagenesAdicionales?: string[] }).imagenesAdicionales) ?? [])].filter(Boolean) as string[]
   const stockDisponible = producto.stock ?? 0
+  const precioUnitario = producto.enOferta && producto.precioOferta ? producto.precioOferta : producto.precio
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
-      <Link
-        to={`/tienda/${slug}`}
-        className="inline-flex items-center gap-1 text-sm text-[var(--t-muted)] hover:text-[var(--t-text)] mb-6 min-h-[44px]"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        Volver al catálogo
-      </Link>
-
-      <div className="grid md:grid-cols-2 gap-8">
+    <div className="mx-auto max-w-[1232px] bg-hc-n-0 pb-32 lg:bg-transparent lg:px-4 lg:py-8 lg:pb-12">
+      <div className="grid lg:grid-cols-2 lg:gap-10">
         <GaleriaProducto imagenes={imagenes} imgActiva={imgActiva} onElegir={setImgActiva} nombre={producto.nombre} />
-        <InfoProducto
-          producto={producto}
+        <div className="flex flex-col gap-[10px] px-4 pb-4 pt-[18px] leading-[normal] lg:gap-4 lg:p-0 lg:pt-2">
+          {producto.marcaNombre && (
+            <span className="inline-flex w-fit rounded-full bg-hc-n-100 px-2 py-[3px] text-[11px] font-semibold leading-[13px] text-hc-n-600 wrap-anywhere">
+              {producto.marcaNombre}
+            </span>
+          )}
+          <h1 className="font-display text-[22px] font-bold leading-7 tracking-normal text-hc-n-900 wrap-anywhere lg:text-[32px] lg:leading-[38px]">
+            {producto.nombre}
+          </h1>
+          <PrecioProducto producto={producto} />
+          <Stock stock={stockDisponible} />
+          {producto.descripcion && (
+            <p className="text-[14px] leading-[21px] text-hc-n-600 wrap-anywhere lg:text-[15px] lg:leading-[23px]">{producto.descripcion}</p>
+          )}
+          <div className="hidden lg:block">
+            <TiendaBuyActions
+              variante="inline"
+              slug={slug as string}
+              stockDisponible={stockDisponible}
+              cantidad={cantidad}
+              onCantidad={setCantidad}
+              total={formatPrice(precioUnitario * cantidad)}
+              agregado={agregado}
+              onAgregar={handleAgregar}
+              onComprarAhora={handleComprarAhora}
+            />
+          </div>
+          {stockDisponible <= 0 && (
+            <div className="mt-2">
+              <BotonTienda variante="secundario" to={`/tienda/${slug}`}>Ver otros productos de la tienda</BotonTienda>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="lg:hidden">
+        <TiendaBuyActions
+          variante="barra"
+          slug={slug as string}
           stockDisponible={stockDisponible}
           cantidad={cantidad}
-          setCantidad={setCantidad}
+          onCantidad={setCantidad}
+          total={formatPrice(precioUnitario * cantidad)}
           agregado={agregado}
           onAgregar={handleAgregar}
           onComprarAhora={handleComprarAhora}
-          slug={slug}
         />
       </div>
     </div>
@@ -95,28 +132,30 @@ function GaleriaProducto({
   nombre: string
 }) {
   return (
-    <div className="space-y-3">
-      <div className="aspect-square rounded-2xl overflow-hidden bg-[var(--t-hover)]">
+    <div className="flex flex-col gap-3">
+      <div className="aspect-square w-full overflow-hidden bg-hc-n-100 lg:rounded-[16px] lg:border lg:border-hc-n-200">
         {imagenes[imgActiva]
-          ? <img src={imagenes[imgActiva]} alt={nombre} className="w-full h-full object-cover" />
+          ? <img src={imagenes[imgActiva]} alt={nombre} className="size-full object-cover" />
           : (
-            <div className="w-full h-full flex items-center justify-center text-[var(--t-muted)]">
-              <TiendaPlaceholder className="w-16 h-16" />
+            <div className="flex size-full items-center justify-center">
+              <TiendaPlaceholder className="size-16" />
             </div>
             )}
       </div>
       {imagenes.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto px-4 lg:px-0">
           {imagenes.map((img, i) => (
             <button
               type="button"
               key={img}
               onClick={() => onElegir(i)}
-              className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                i === imgActiva ? 'border-[var(--t-primary)]' : 'border-transparent'
+              aria-label={`Foto ${i + 1} de ${imagenes.length}`}
+              aria-current={i === imgActiva ? 'true' : undefined}
+              className={`size-16 shrink-0 overflow-hidden rounded-[10px] ${
+                i === imgActiva ? 'border-2 border-hc-blue-600' : 'border border-hc-n-200'
               }`}
             >
-              <img src={img} alt="" className="w-full h-full object-cover" />
+              <img src={img} alt="" className="size-full object-cover" />
             </button>
           ))}
         </div>
@@ -125,72 +164,35 @@ function GaleriaProducto({
   )
 }
 
-function InfoProducto({
-  producto, stockDisponible, cantidad, setCantidad, agregado, onAgregar, onComprarAhora, slug,
-}: {
-  producto: Producto
-  stockDisponible: number
-  cantidad: number
-  setCantidad: Dispatch<SetStateAction<number>>
-  agregado: boolean
-  onAgregar: () => void
-  onComprarAhora: () => void
-  slug: string | undefined
-}) {
+function Stock({ stock }: { stock: number }) {
+  const clase = stock <= 0 ? 'text-hc-danger' : stock <= STOCK_BAJO ? 'text-hc-warning' : 'text-hc-success-text'
+  const texto = stock <= 0 ? 'Agotado' : stock <= STOCK_BAJO ? `Quedan ${stock}` : `${stock} disponibles`
   return (
-    <div className="flex flex-col gap-4">
-      {producto.marcaNombre && (
-        <p className="text-sm font-medium uppercase tracking-wide text-[var(--t-muted)] wrap-anywhere">{producto.marcaNombre}</p>
-      )}
-      <h1 className="text-2xl font-bold text-[var(--t-text)] leading-tight wrap-anywhere">{producto.nombre}</h1>
-      <PrecioProducto producto={producto} />
-      <p className={`text-sm font-medium ${stockDisponible > 0 ? 'text-hc-success-text' : 'text-hc-danger'}`}>
-        {stockDisponible > 0 ? `${stockDisponible} disponibles` : 'Sin stock'}
-      </p>
-      {producto.descripcion && (
-        <p className="text-[var(--t-muted)] text-sm leading-relaxed wrap-anywhere">{producto.descripcion}</p>
-      )}
-      {stockDisponible > 0 && (
-        <div className="flex items-center gap-2 border border-[var(--t-border)] rounded-lg p-1 w-fit">
-          <button type="button" onClick={() => setCantidad((c) => Math.max(1, c - 1))} className="min-h-[44px] min-w-[44px] rounded hover:bg-[var(--t-hover)]" aria-label="Menos">
-            <MinusIcon className="h-4 w-4 mx-auto" />
-          </button>
-          <span className="w-8 text-center font-semibold">{cantidad}</span>
-          <button type="button" onClick={() => setCantidad((c) => Math.min(stockDisponible, c + 1))} className="min-h-[44px] min-w-[44px] rounded hover:bg-[var(--t-hover)]" aria-label="Más">
-            <PlusIcon className="h-4 w-4 mx-auto" />
-          </button>
-        </div>
-      )}
-      <TiendaBuyActions
-        stockDisponible={stockDisponible}
-        agregado={agregado}
-        onAgregar={onAgregar}
-        onComprarAhora={onComprarAhora}
-      />
-      {agregado && (
-        <Link to={`/tienda/${slug}/carrito`} className="text-center text-sm font-medium underline" style={{ color: 'var(--t-accent)' }}>
-          Ver pedido de esta tienda
-        </Link>
-      )}
-    </div>
+    <p className={`flex items-center gap-[6px] text-[13px] font-medium lg:text-[14px] ${clase}`}>
+      <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-current" />
+      {texto}
+    </p>
   )
 }
 
 function PrecioProducto({ producto }: { producto: Producto }) {
-  if (producto.enOferta && producto.precioOferta) {
-    return (
-      <div className="flex items-baseline gap-3">
-        <span className="text-3xl font-bold" style={{ color: 'var(--t-primary)' }}>{formatPrice(producto.precioOferta)}</span>
-        <span className="text-lg text-[var(--t-muted)] line-through">{formatPrice(producto.precio)}</span>
-        {producto.porcentajeDescuento && (
-          <span className="text-sm font-semibold text-hc-success-text bg-hc-success-bg px-2 py-0.5 rounded-full">
-            -{producto.porcentajeDescuento}%
-          </span>
-        )}
-      </div>
-    )
-  }
+  const oferta = Boolean(producto.enOferta && producto.precioOferta)
   return (
-    <span className="text-3xl font-bold" style={{ color: 'var(--t-primary)' }}>{formatPrice(producto.precio)}</span>
+    <div className="flex flex-wrap items-baseline gap-x-[10px] gap-y-1">
+      <p className="font-display text-[26px] font-extrabold leading-[33px] text-hc-n-900 lg:text-[34px] lg:leading-[43px]">
+        {formatPrice(oferta ? (producto.precioOferta as number) : producto.precio)}
+      </p>
+      {oferta && (
+        <s className="text-[13px] text-hc-n-600 lg:text-[15px]">
+          <span className="sr-only">Precio anterior </span>
+          {formatPrice(producto.precio)}
+        </s>
+      )}
+      {oferta && producto.porcentajeDescuento ? (
+        <span className="rounded-full bg-hc-red-50 px-2 py-[3px] text-[11px] font-semibold leading-[13px] text-hc-red-600">
+          -{producto.porcentajeDescuento}%
+        </span>
+      ) : null}
+    </div>
   )
 }
