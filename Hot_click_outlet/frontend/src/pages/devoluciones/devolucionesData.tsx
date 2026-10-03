@@ -19,11 +19,12 @@ export const returnPolicyJsonLd = {
   refundType: 'https://schema.org/FullRefund',
 }
 
-export const badges = [
-  { icono: 'paquete', title: '7 días hábiles', desc: 'Para solicitar devolución' },
-  { icono: 'chat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
-  { icono: 'tarjeta', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
-]
+/** Resumen en filas con ícono de Figma (antes eran 3 "badges" con TrustGlyph). */
+export const resumen = [
+  { icono: 'inicioCaja', title: '7 días hábiles', desc: 'Para solicitar devolución' },
+  { icono: 'encargoChat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
+  { icono: 'inicioEscudo', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
+] as const
 
 export const sections = [
   {
