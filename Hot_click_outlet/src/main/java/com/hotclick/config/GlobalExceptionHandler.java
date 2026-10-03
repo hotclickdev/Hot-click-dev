@@ -6,11 +6,16 @@ import com.hotclick.exception.PlanLimitException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.exception.TenantNotFoundException;
+import com.hotclick.controller.spa.SpaIndexHtml;
+import com.hotclick.security.config.SpaVisitanteFallback;
 import io.sentry.Sentry;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,6 +33,10 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** Opcional: en tests unitarios ({@code new GlobalExceptionHandler()}) queda null y se responde JSON. */
+    @Autowired(required = false)
+    private SpaIndexHtml spaIndexHtml;
 
     // ── Dominio ───────────────────────────────────────────────────────────────
 
@@ -156,9 +165,21 @@ public class GlobalExceptionHandler {
 
     // ── Recursos estáticos no encontrados ────────────────────────────────────
 
-    /** favicon.ico, assets inexistentes, etc. → 404 silencioso */
+    /**
+     * favicon.ico, assets inexistentes, etc. → 404 silencioso.
+     * Navegación HTML de visitante a una ruta inexistente → 404 con el SPA (pinta el 404 de Figma 45:2198).
+     */
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
-    public ResponseEntity<ResponseDTO> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+    public ResponseEntity<Object> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex,
+                                                   HttpServletRequest request) {
+        if (spaIndexHtml != null && request != null && SpaVisitanteFallback.esNavegacionVisitante(request)) {
+            var html = spaIndexHtml.paraNoEncontrado();
+            if (html.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+                        .body(html.get());
+            }
+        }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ResponseDTO.error("Recurso no encontrado"));
     }
