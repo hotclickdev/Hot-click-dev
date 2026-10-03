@@ -5,18 +5,23 @@ import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Cliente Tilopay API v1: login API (24h), loginSdk (1h) y consulta de transacción.
- * Sin credenciales → modo mock (desarrollo sin afiliación).
+ * Sin credenciales, el modo simulado solo existe en perfiles dev y test.
+ * En cualquier otro perfil los pagos con tarjeta quedan deshabilitados.
  */
 @Service
 public class TilopayService {
@@ -35,13 +40,46 @@ public class TilopayService {
     @Value("${tilopay.base-url:https://app.tilopay.com}")
     private String baseUrl;
 
+    @Autowired
+    private Environment environment;
+
     private RestClient restClient;
     private boolean mockMode;
+    private boolean pagosDisponibles;
 
     private final AtomicReference<CachedToken> apiToken = new AtomicReference<>();
     private final AtomicReference<CachedToken> sdkToken = new AtomicReference<>();
 
-    public record ConsultaResultado(boolean aprobada, String code, String description, String auth) {}
+    /**
+     * Resultado de POST /api/v1/consult. El monto y la moneda son los que Tilopay cobró.
+     * {@code simulada} solo es true en el modo de desarrollo, nunca con una respuesta real.
+     */
+    public record ConsultaResultado(
+            boolean aprobada,
+            String code,
+            String description,
+            String auth,
+            BigDecimal amount,
+            String currency,
+            String orderNumber,
+            boolean simulada) {
+
+        public ConsultaResultado(boolean aprobada, String code, String description, String auth) {
+            this(aprobada, code, description, auth, null, null, null, false);
+        }
+
+        public static ConsultaResultado simulada(boolean aprobada, String orderNumber) {
+            return new ConsultaResultado(
+                    aprobada,
+                    aprobada ? "1" : "0",
+                    aprobada ? "Mock approved" : "Mock declined",
+                    aprobada ? "MOCK-AUTH" : null,
+                    null,
+                    "CRC",
+                    orderNumber,
+                    true);
+        }
+    }
 
     private record CachedToken(String token, Instant expiresAt) {
         boolean vigente() {
@@ -51,14 +89,23 @@ public class TilopayService {
 
     @PostConstruct
     void init() {
-        mockMode = blank(apiUser) || blank(password) || blank(apiKey);
+        boolean credenciales = credencialesPresentes();
+        mockMode = !credenciales && perfilDeSimulacion();
+        pagosDisponibles = credenciales || mockMode;
         restClient = RestClient.builder().baseUrl(baseUrl).build();
         if (mockMode) {
-            log.warn("[tilopay] Credenciales incompletas — modo MOCK activo. "
-                + "Configurá TILOPAY_API_USER, TILOPAY_PASSWORD y TILOPAY_KEY.");
+            log.warn("[tilopay] Sin credenciales en perfil dev/test — modo simulado. No cobra tarjetas reales.");
+            return;
+        }
+        if (!credenciales) {
+            log.error("[ALERTA-PAGO] Tilopay sin credenciales fuera de dev/test. Pagos con tarjeta deshabilitados.");
             return;
         }
         log.info("[tilopay] Cliente inicializado baseUrl={}", baseUrl);
+    }
+
+    public boolean isPagosDisponibles() {
+        return pagosDisponibles;
     }
 
     public boolean isMockMode() {
@@ -72,6 +119,7 @@ public class TilopayService {
     @CircuitBreaker(name = "tilopay", fallbackMethod = "loginSdkFallback")
     @Retry(name = "tilopay")
     public String loginSdk() {
+        exigirDisponible();
         if (mockMode) {
             return "mock-sdk-token";
         }
@@ -91,6 +139,7 @@ public class TilopayService {
     @CircuitBreaker(name = "tilopay", fallbackMethod = "loginApiFallback")
     @Retry(name = "tilopay")
     public String loginApi() {
+        exigirDisponible();
         if (mockMode) {
             return "mock-api-token";
         }
@@ -108,7 +157,8 @@ public class TilopayService {
     }
 
     /**
-     * Consulta el estado real de la transacción. En mock: aprobada salvo orderNumber con "-FAIL".
+     * Consulta el estado real. En simulación (solo dev/test): aprobada salvo orderNumber con "-FAIL".
+     * Sin credenciales fuera de dev/test no aprueba.
      */
     @CircuitBreaker(name = "tilopay", fallbackMethod = "consultarFallback")
     @Retry(name = "tilopay")
@@ -116,10 +166,12 @@ public class TilopayService {
         if (blank(orderNumber)) {
             return new ConsultaResultado(false, "0", "orderNumber vacío", null);
         }
+        if (!pagosDisponibles) {
+            return new ConsultaResultado(false, "0", "Pagos con tarjeta no están disponibles", null);
+        }
         if (mockMode) {
             boolean ok = !orderNumber.toUpperCase().contains("-FAIL");
-            return new ConsultaResultado(ok, ok ? "1" : "0",
-                ok ? "Mock approved" : "Mock declined", ok ? "MOCK-AUTH" : null);
+            return ConsultaResultado.simulada(ok, orderNumber);
         }
 
         String token = loginApi();
@@ -148,7 +200,39 @@ public class TilopayService {
         String desc = String.valueOf(tx.getOrDefault("response",
             tx.getOrDefault("description", tx.getOrDefault("codeDescription", ""))));
         String auth = tx.get("auth") != null ? String.valueOf(tx.get("auth")) : null;
-        return new ConsultaResultado("1".equals(code), code, desc, auth);
+        return new ConsultaResultado(
+                "1".equals(code),
+                code,
+                desc,
+                auth,
+                leerMonto(primero(tx, "amount", "Amount")),
+                leerTexto(primero(tx, "currency", "Currency")),
+                leerTexto(primero(tx, "orderNumber", "order")),
+                false);
+    }
+
+    static BigDecimal leerMonto(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return new BigDecimal(String.valueOf(raw).trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static Object primero(Map<String, Object> tx, String a, String b) {
+        Object valor = tx.get(a);
+        return valor != null ? valor : tx.get(b);
+    }
+
+    private static String leerTexto(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        String texto = String.valueOf(raw).trim();
+        return texto.isEmpty() ? null : texto;
     }
 
     @SuppressWarnings("unchecked")
@@ -188,6 +272,20 @@ public class TilopayService {
         }
         cache.set(new CachedToken(token, Instant.now().plusSeconds(ttl)));
         return token;
+    }
+
+    private void exigirDisponible() {
+        if (!pagosDisponibles) {
+            throw new IllegalStateException("Pagos con tarjeta no están disponibles");
+        }
+    }
+
+    private boolean credencialesPresentes() {
+        return !blank(apiUser) && !blank(password) && !blank(apiKey);
+    }
+
+    private boolean perfilDeSimulacion() {
+        return environment != null && environment.acceptsProfiles(Profiles.of("dev", "test"));
     }
 
     private static boolean blank(String s) {

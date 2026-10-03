@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -18,12 +20,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TilopayWebhookController — secret gate")
 class TilopayWebhookControllerSecretTest {
 
     @Mock private TilopayConfirmacionService tilopayConfirmacionService;
+    @Mock private Environment environment;
 
     @InjectMocks private TilopayWebhookController controller;
 
@@ -33,8 +37,22 @@ class TilopayWebhookControllerSecretTest {
     }
 
     @Test
-    @DisplayName("sin secret configurado → acepta y procesa")
-    void sinSecretConfigurado_acepta() {
+    @DisplayName("sin secret y fuera de dev/test → 401, no procesa")
+    void sinSecret_enProduccion_rechaza() {
+        when(environment.acceptsProfiles(any(Profiles.class))).thenReturn(false);
+
+        ResponseEntity<Map<String, String>> resp = controller.recibir(
+            Map.of("orderNumber", "ORD-1"), null);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(401);
+        verify(tilopayConfirmacionService, never()).procesarWebhook(any(), any());
+    }
+
+    @Test
+    @DisplayName("sin secret en perfil test → acepta")
+    void sinSecret_enTest_acepta() {
+        when(environment.acceptsProfiles(any(Profiles.class))).thenReturn(true);
+
         ResponseEntity<Map<String, String>> resp = controller.recibir(
             Map.of("orderNumber", "ORD-1"), null);
 

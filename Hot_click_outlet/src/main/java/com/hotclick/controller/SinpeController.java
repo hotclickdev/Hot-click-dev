@@ -119,6 +119,8 @@ public class SinpeController {
             String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
             sinpeService.aprobar(id, adminEmail, null);
             return ResponseEntity.ok(ResponseDTO.success("Comprobante aprobado", null));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -136,6 +138,8 @@ public class SinpeController {
             String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
             sinpeService.rechazar(id, motivo, adminEmail, null);
             return ResponseEntity.ok(ResponseDTO.success("Comprobante rechazado", null));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

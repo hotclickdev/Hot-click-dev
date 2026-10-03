@@ -34,6 +34,7 @@ export default function CheckoutTilopayCard({ payload, onVolver }: CheckoutTilop
           <TilopayCardForm
             sdkToken={payload.sdkToken}
             monto={payload.monto}
+            moneda={payload.moneda}
             orderNumber={payload.orderNumber}
             redirectUrl={payload.redirectUrl}
             onVolver={onVolver}
