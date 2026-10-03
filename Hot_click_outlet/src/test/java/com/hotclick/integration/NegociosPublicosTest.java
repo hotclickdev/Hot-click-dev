@@ -46,6 +46,7 @@ class NegociosPublicosTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         productoRepository.deleteAll();
+        categoriaRepository.deleteAll();
         bodegaRepository.deleteAll();
         usuarioRepository.findAll().stream()
             .filter(u -> u.getEmpresa() != null)
