@@ -874,6 +874,8 @@
     "pasoCotiza2": "El artista revisa y te cotiza",
     "pasoCotiza3": "Recibís un link para pagar",
     "verTodosMarca": "Ver todos",
+    "verLosN": "Ver los {{count}}",
+    "productosDeMarca": "productos de {{brand}}",
     "videoDe": "Video de {{titulo}}",
     "reproducirVideo": "Reproducir el video de {{titulo}}",
     "videoOtraPestana": "Se abre en otra pestaña",

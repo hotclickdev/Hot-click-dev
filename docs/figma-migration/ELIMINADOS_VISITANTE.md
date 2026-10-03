@@ -14,7 +14,7 @@ En la columna "¿Podría hacer falta?":
 | Qué era | Dónde | Qué hacía | Commit | ¿Podría hacer falta? |
 |---|---|---|---|---|
 | `ConvenioCard` | `pages/emprendimientos/ConvenioCard.tsx` | Tarjeta de "convenio" en el directorio de emprendimientos, con el estilo viejo | `07da5781` | No. El directorio de Figma `29:1159` no la tiene |
-| `BrandProductsRow` | `pages/producto/BrandProductsRow.tsx` | Fila "Más de esta marca" en la ficha | `b9b22017` | Quizás. Figma `28:839` usa "Más de Casa Luna 506" con tarjetas de catálogo, que ya está |
+| `BrandProductsRow` | `pages/producto/BrandProductsRow.tsx` | Fila "Más de esta marca" en la ficha | `b9b22017` | **Restaurado** en estilo Figma como `pages/producto/MasDeLaMarca.tsx` (marca o, si no hay, la tienda; sin el producto actual; se oculta si está vacía) |
 | `ProductVideo` (viejo) | `pages/producto/ProductVideo.tsx` | Caja negra del video dentro de la ficha | `b9b22017` | No. Se reemplazó por la sección "Video del producto" de la imagen aprobada (`3534eee6`) |
 | `ProductVideoVisor` + `BotonVideoProducto` | `pages/producto/ProductVideoVisor.tsx` | Visor modal y botón "Ver video" sobre la galería | `53497183` | No. El video se reproduce en su sección |
 | `LegalMasLinks` | `pages/legal/LegalMasLinks.tsx` | Bloque de enlaces "más información" en las páginas legales. Ya no lo importaba nadie | `4e457c19` ⚠️ | No. **Aviso:** el borrado quedó dentro del commit del manual de marca |

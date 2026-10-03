@@ -14,6 +14,8 @@ import OpinionesProducto from './producto/OpinionesProducto'
 import ProductVideo from './producto/ProductVideo'
 import RecentlyViewedGrid from './producto/RecentlyViewedGrid'
 import ProductDetailSeo from './producto/ProductDetailSeo'
+import MasDeLaMarca from './producto/MasDeLaMarca'
+import { useMasDeLaMarca } from './producto/useMasDeLaMarca'
 import { useProductDetail } from './producto/useProductDetail'
 import HojaAgregadoAlPedido from '@/components/comprador/HojaAgregadoAlPedido'
 import { Helmet } from 'react-helmet-async'
@@ -29,6 +31,7 @@ export default function ProductDetailPage() {
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
     turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   } = useProductDetail(id, t)
+  const masDeLaMarca = useMasDeLaMarca(product)
 
   // Figma 28:839: la ficha dibuja su propia barra (atrás, compartir, favorito sobre la foto) y una barra
   // de compra fija, así que no lleva barra superior ni inferior en móvil. En desktop usa el header completo.
@@ -141,6 +144,7 @@ export default function ProductDetailPage() {
               variante="sangrado"
             />
           )}
+          <MasDeLaMarca fuente={masDeLaMarca.fuente} productos={masDeLaMarca.productos} total={masDeLaMarca.total} />
 
           <div className="px-4 lg:px-0">
             <ProductTabs product={product} tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />

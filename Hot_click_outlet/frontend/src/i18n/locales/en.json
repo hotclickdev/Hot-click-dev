@@ -874,6 +874,8 @@
     "pasoCotiza2": "The artist reviews and quotes you",
     "pasoCotiza3": "You get a link to pay",
     "verTodosMarca": "See all",
+    "verLosN": "See all {{count}}",
+    "productosDeMarca": "products from {{brand}}",
     "videoDe": "Video of {{titulo}}",
     "reproducirVideo": "Play the video of {{titulo}}",
     "videoOtraPestana": "Opens in a new tab",
