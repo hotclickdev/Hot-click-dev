@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { colorBarra, useVariantePieza, type VariantePieza } from '@/components/ui/varianteVisitante'
 
 type Phase = 'idle' | 'running' | 'done' | 'out'
 
@@ -8,7 +9,8 @@ type Phase = 'idle' | 'running' | 'done' | 'out'
  * Se activa en cada cambio de ruta: progresa de 0 → 85 % durante la
  * transición y salta a 100 % antes de desaparecer con fade-out.
  */
-export default function PageProgressBar() {
+export default function PageProgressBar({ variante }: { variante?: VariantePieza } = {}) {
+  const figma = useVariantePieza(variante) === 'figma'
   const { pathname } = useLocation()
   const [pct, setPct]       = useState(0)
   const [phase, setPhase]   = useState<Phase>('idle')
@@ -44,14 +46,14 @@ export default function PageProgressBar() {
   return (
     <div
       aria-hidden
+      data-variante={figma ? 'figma' : undefined}
       style={{
         position:   'fixed',
         top: 0, left: 0,
         height:     3,
         width:      `${pct}%`,
         zIndex:     9999,
-        background: 'var(--hc-primary)',
-        boxShadow:  '0 0 10px color-mix(in srgb, var(--hc-primary) 45%, transparent)',
+        ...colorBarra(figma ? 'figma' : 'clasica'),
         transition: easing,
         opacity:    phase === 'out' ? 0 : 1,
         pointerEvents: 'none',

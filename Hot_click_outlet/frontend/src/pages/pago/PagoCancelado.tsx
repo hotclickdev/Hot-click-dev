@@ -66,7 +66,11 @@ function payloadDesdeReintento(data: unknown, fallbackNumero: string): TilopayCa
   if (!sdkToken) return null
   const numeroPedido = typeof d.numeroPedido === 'string' ? d.numeroPedido : fallbackNumero
   const orderNumber = typeof d.orderNumber === 'string' ? d.orderNumber : numeroPedido
-  const monto = Number(d.monto ?? d.total ?? 0) || 0
+  const bruto = d.monto ?? d.total
+  const monto = typeof bruto === 'number' ? bruto : Number(bruto)
+  if (!Number.isFinite(monto) || monto <= 0) return null
+  const moneda = typeof d.moneda === 'string' && d.moneda.trim() ? d.moneda.toUpperCase() : 'CRC'
+  if (moneda !== 'CRC') return null
   const redirectUrl = typeof d.redirectUrl === 'string' ? d.redirectUrl : undefined
-  return { numeroPedido, sdkToken, monto, orderNumber, redirectUrl }
+  return { numeroPedido, sdkToken, monto, moneda: 'CRC', orderNumber, redirectUrl }
 }

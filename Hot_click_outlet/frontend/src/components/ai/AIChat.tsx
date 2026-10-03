@@ -187,11 +187,11 @@ export default function AIChat({
 
   if (fullHeight) {
     return (
-      <div className="h-full flex flex-col" style={{ background: 'var(--hc-surface)' }}>
+      <div className="h-full flex flex-col" style={{ background: 'var(--hc-n-0)' }}>
         <div
           ref={chat.historyRef}
           className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 px-4 pt-4 pb-2"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--hc-border) transparent' }}
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--hc-n-200) transparent' }}
         >
           {afterHoursBanner}
           {greetingEl}
@@ -203,7 +203,7 @@ export default function AIChat({
 
         <div
           className="shrink-0 px-4 pt-2 pb-4 flex flex-col gap-2"
-          style={{ borderTop: '1px solid var(--hc-border)' }}
+          style={{ borderTop: '1px solid var(--hc-n-200)' }}
         >
           {alternativasEl}
           {inputBar}
@@ -224,7 +224,7 @@ export default function AIChat({
           style={{
             maxHeight: maxHistoryHeight,
             scrollbarWidth: 'thin',
-            scrollbarColor: 'var(--hc-border) transparent',
+            scrollbarColor: 'var(--hc-n-200) transparent',
           }}
         >
           {messageList}

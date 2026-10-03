@@ -1,1 +1,0 @@
-function e(e){if(!e||typeof e!=`object`)return;let t=e.response?.data;if(!(!t||typeof t!=`object`))return t}function t(t,n){let r=e(t);return r?r.error===`LIMIT_REACHED`?{mensaje:r.message??n,tipo:`warning`,accion:{label:`Ver planes`,ruta:`/admin/billing/planes`}}:{mensaje:r.message??n,tipo:`error`}:{mensaje:n,tipo:`error`}}export{t};

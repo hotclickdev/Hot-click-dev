@@ -2,6 +2,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import CloseIcon from '@/components/ui/CloseIcon'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import HojaInferior from '@/components/comprador/HojaInferior'
+import { TITULO_HOJA } from '@/components/ui/sistema/estilosHoja'
+import { useVariantePieza, type VariantePieza } from '@/components/ui/varianteVisitante'
 
 const SIZES = {
   sm: 'max-w-sm',
@@ -17,9 +20,45 @@ export type ModalProps = {
   title?: ReactNode
   children?: ReactNode
   size?: keyof typeof SIZES
+  /** ⚠️ COMPARTIDO. Sin prop: `figma` en rutas del visitante, `clasica` en paneles (ver `varianteVisitante`). */
+  variante?: VariantePieza
 }
 
-export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+const sinAccion = () => undefined
+
+export default function Modal({ variante, ...props }: ModalProps) {
+  return useVariantePieza(variante) === 'figma' ? <ModalFigma {...props} /> : <ModalClasico {...props} />
+}
+
+/**
+ * Visitante: hoja inferior del manual de marca (Figma `45:1612`, `26:888`) con título Sora 17 y botón
+ * de cierre redondo n100 (derivado de `51:2171`).
+ */
+function ModalFigma({ open, onClose, title, children }: Omit<ModalProps, 'variante'>) {
+  const cerrar = onClose ?? sinAccion
+  const titulo = (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className={TITULO_HOJA}>{title}</h2>
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-hc-n-100 text-hc-n-900 hover:bg-hc-n-200"
+        >
+          <CloseIcon className="size-[18px]" />
+        </button>
+      )}
+    </div>
+  )
+  return (
+    <HojaInferior abierta={open} onCerrar={cerrar} titulo={titulo}>
+      <div className="flex flex-col gap-[14px] text-[14px] leading-[21px] text-hc-n-900">{children}</div>
+    </HojaInferior>
+  )
+}
+
+function ModalClasico({ open, onClose, title, children, size = 'md' }: Omit<ModalProps, 'variante'>) {
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef, open)

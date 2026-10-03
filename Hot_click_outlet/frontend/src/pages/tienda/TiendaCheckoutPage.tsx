@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useParams, useNavigate } from 'react-router-dom'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import { Campo } from '@/pages/checkout/PiezasCheckout'
+import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
@@ -10,7 +13,7 @@ import {
   METODO_ENVIO_RETIRO,
   mensajeErrorCheckout,
 } from './tiendaCheckoutValidacion'
-import { CLASE_INPUT_TIENDA, CLASE_TARJETA_TIENDA } from './tiendaTheme'
+import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
 
 const METODOS_PAGO = [
   { value: 'SINPE_MOVIL', label: 'SINPE Móvil' },
@@ -33,6 +36,11 @@ type FormCheckout = {
   notas: string
 }
 
+/**
+ * Checkout de la tienda pública (derivado de Figma: checkout `28:1083` móvil y `30:2410` escritorio): campos
+ * con etiqueta de 13, cajas de 12 con ícono, métodos como filas con radio azul, resumen en tarjeta clara y
+ * botón rojo. El formulario, la validación y el pedido al API no cambian.
+ */
 export default function TiendaCheckoutPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -80,113 +88,149 @@ export default function TiendaCheckoutPage() {
 
   if (carrito.length === 0) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-20 text-center text-[var(--t-muted)]">
-        <p className="mb-4">Este pedido está vacío.</p>
-        <Link to={`/tienda/${slug}`} className="underline" style={{ color: 'var(--t-accent)' }}>Volver al catálogo</Link>
+      <div className="py-10">
+        <EstadoVacio
+          nivel="h1"
+          icono={<IconoFigma src={ICONOS_CHECKOUT.carritoVacio} size={28} />}
+          titulo="Este pedido está vacío"
+          texto="Agregá productos de esta tienda para finalizar la compra."
+          accion={{ texto: 'Volver al catálogo', to: `/tienda/${slug}` }}
+        />
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-      <Link to={`/tienda/${slug}/carrito`} className="inline-flex items-center gap-1 text-sm text-[var(--t-muted)] hover:text-[var(--t-text)] min-h-[44px]">
-        <ArrowLeftIcon className="h-4 w-4" />
-        Volver al pedido
-      </Link>
-      <h1 className="text-xl font-bold text-[var(--t-text)]">Finalizar pedido</h1>
-      <p className="text-sm text-[var(--t-muted)]">
-        Pedido de {empresa?.nombreComercial ?? slug} en HotClick. No se mezcla con el pedido del marketplace.
-      </p>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <fieldset className={`${CLASE_TARJETA_TIENDA} p-5 space-y-4`}>
-          <legend className="font-semibold text-[var(--t-text)] mb-1">Tus datos</legend>
-          <Campo id="tienda-nombre" label="Nombre completo *" required value={form.nombreCliente} onChange={(v) => set('nombreCliente', v)} placeholder="Juan Pérez" />
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Campo id="tienda-correo" label="Correo electrónico *" required type="email" value={form.correoCliente} onChange={(v) => set('correoCliente', v)} placeholder="juan@ejemplo.com" />
-            <Campo id="tienda-telefono" label="Teléfono *" required type="tel" value={form.telefonoCliente} onChange={(v) => set('telefonoCliente', v)} placeholder="8888-8888" />
-          </div>
-        </fieldset>
-        <fieldset className={`${CLASE_TARJETA_TIENDA} p-5 space-y-4`}>
-          <legend className="font-semibold text-[var(--t-text)] mb-1">Envío y pago</legend>
-          <GrupoOpciones label="Método de envío *" name="metodoEnvio" opciones={METODOS_ENVIO} valor={form.metodoEnvio} onChange={(v) => set('metodoEnvio', v)} columnas />
-          {form.metodoEnvio === METODO_ENVIO_DOMICILIO && (
-            <TiendaCheckoutDireccion value={form.direccionEntrega} onChange={(valor) => set('direccionEntrega', valor)} />
-          )}
-          <GrupoOpciones label="Método de pago *" name="metodoPago" opciones={METODOS_PAGO} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
-          <div>
-            <label className="block text-xs font-medium text-[var(--t-muted)] mb-1">Notas adicionales</label>
-            <textarea value={form.notas} onChange={(e) => set('notas', e.target.value)} placeholder="Instrucciones especiales, horario preferido, etc." rows={2} className={`${CLASE_INPUT_TIENDA} resize-none`} />
-          </div>
-        </fieldset>
-        <div className={`${CLASE_TARJETA_TIENDA} p-5 space-y-3`}>
-          <h3 className="font-semibold text-[var(--t-text)]">Resumen</h3>
-          {carrito.map(({ producto, cantidad }) => (
-            <div key={producto.id} className="flex justify-between text-sm text-[var(--t-muted)]">
-              <span className="truncate mr-4">{producto.nombre} × {cantidad}</span>
-              <span className="shrink-0 font-medium">{formatPrice(producto.precio * cantidad)}</span>
+    <div className="mx-auto max-w-[1232px] px-4 py-5 lg:py-8">
+      <div className="mb-4 flex flex-col gap-1">
+        <TituloTienda>Finalizar pedido</TituloTienda>
+        <p className="text-[13px] leading-[18px] text-hc-n-600">
+          Pedido de {empresa?.nombreComercial ?? slug} en HotClick. No se mezcla con el pedido del marketplace.
+        </p>
+      </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-4">
+          <fieldset className={`${CLASE_TARJETA} flex flex-col gap-[14px] p-4`}>
+            <legend className="float-left mb-1 w-full font-display text-[16px] font-bold tracking-normal text-hc-n-900">Tus datos</legend>
+            <Campo etiqueta="Nombre completo">
+              {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.campoUsuario} required autoComplete="name" value={form.nombreCliente} onChange={(v) => set('nombreCliente', v)} placeholder="Juan Pérez" />}
+            </Campo>
+            <div className="flex flex-col gap-[14px] sm:flex-row">
+              <Campo etiqueta="Correo electrónico">
+                {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.campoCorreo} required type="email" autoComplete="email" value={form.correoCliente} onChange={(v) => set('correoCliente', v)} placeholder="juan@ejemplo.com" />}
+              </Campo>
+              <Campo etiqueta="Teléfono">
+                {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.campoTelefono} required type="tel" autoComplete="tel" value={form.telefonoCliente} onChange={(v) => set('telefonoCliente', v)} placeholder="8888-8888" />}
+              </Campo>
             </div>
-          ))}
-          <div className="border-t border-[var(--t-border)] pt-3 flex justify-between font-bold text-[var(--t-text)]">
-            <span>Total</span>
-            <span>{formatPrice(totalImporte())}</span>
-          </div>
+          </fieldset>
+          <fieldset className={`${CLASE_TARJETA} flex flex-col gap-[14px] p-4`}>
+            <legend className="float-left mb-1 w-full font-display text-[16px] font-bold tracking-normal text-hc-n-900">Envío y pago</legend>
+            <GrupoOpciones label="Método de envío" name="metodoEnvio" opciones={METODOS_ENVIO} valor={form.metodoEnvio} onChange={(v) => set('metodoEnvio', v)} />
+            {form.metodoEnvio === METODO_ENVIO_DOMICILIO && (
+              <TiendaCheckoutDireccion value={form.direccionEntrega} onChange={(valor) => set('direccionEntrega', valor)} />
+            )}
+            <GrupoOpciones label="Método de pago" name="metodoPago" opciones={METODOS_PAGO} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
+            <Campo etiqueta="Notas adicionales">
+              {({ id }) => (
+                <textarea
+                  id={id}
+                  value={form.notas}
+                  onChange={(e) => set('notas', e.target.value)}
+                  placeholder="Instrucciones especiales, horario preferido, etc."
+                  rows={2}
+                  className={CLASE_AREA}
+                />
+              )}
+            </Campo>
+          </fieldset>
         </div>
-        {error && (
-          <div className="text-hc-danger text-sm bg-hc-danger-bg border border-hc-danger/20 rounded-lg px-4 py-3">{error}</div>
-        )}
-        <button type="submit" disabled={enviando} className="w-full py-4 min-h-[44px] rounded-xl text-white font-bold text-base disabled:opacity-60" style={{ backgroundColor: 'var(--t-primary)' }}>
-          {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}
-        </button>
+        <div className="flex flex-col gap-4 lg:sticky lg:top-20">
+          <section className={`${CLASE_TARJETA} flex flex-col overflow-hidden`}>
+            <CabeceraTarjeta>Resumen</CabeceraTarjeta>
+            <div className="flex flex-col gap-2 px-[14px] py-[14px] leading-[normal]">
+              {carrito.map(({ producto, cantidad }) => (
+                <div key={producto.id} className="flex justify-between gap-4 text-[13px] text-hc-n-600">
+                  <span className="truncate">{producto.nombre} × {cantidad}</span>
+                  <span className="shrink-0 font-medium text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
+                </div>
+              ))}
+              <div className="mt-1 flex items-center justify-between border-t border-hc-n-200 pt-3 text-hc-n-900">
+                <span className="text-[15px] font-semibold">Total</span>
+                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte())}</span>
+              </div>
+            </div>
+          </section>
+          {error && (
+            <p role="alert" className="rounded-[12px] border border-hc-danger/20 bg-hc-danger-bg px-[14px] py-3 text-[13px] leading-[18px] text-hc-danger">{error}</p>
+          )}
+          <BotonTienda variante="primario" type="submit" disabled={enviando}>
+            {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}
+          </BotonTienda>
+          <BotonTienda variante="secundario" to={`/tienda/${slug}/carrito`}>Volver al pedido</BotonTienda>
+        </div>
       </form>
     </div>
   )
 }
 
-function Campo({
-  id, label, value, onChange, type = 'text', required = false, placeholder,
+const CLASE_CAJA = 'flex w-full items-center gap-[10px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[13px] focus-within:border-hc-blue-600 lg:rounded-[10px] lg:py-3'
+
+const CLASE_AREA = 'hc-input-libre w-full resize-none rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[13px] text-[15px] leading-[20px] text-hc-n-900 outline-none placeholder:text-hc-n-500 focus:border-hc-blue-600 lg:rounded-[10px]'
+
+/** Caja de texto del checkout del Figma (`28:1112`), con `required` nativo como antes. */
+function Entrada({
+  id, icono, value, onChange, type = 'text', required = false, placeholder, autoComplete,
 }: {
   id: string
-  label: string
+  icono: string
   value: string
   onChange: (v: string) => void
   type?: string
   required?: boolean
   placeholder?: string
+  autoComplete?: string
 }) {
   return (
-    <div>
-      <label className="block text-xs font-medium text-[var(--t-muted)] mb-1" htmlFor={id}>{label}</label>
-      <input id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={CLASE_INPUT_TIENDA} />
+    <div className={CLASE_CAJA}>
+      <IconoFigma src={icono} size={18} className="text-hc-n-500 lg:hidden" />
+      <input
+        id={id}
+        required={required}
+        type={type}
+        value={value}
+        autoComplete={autoComplete}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[18px] text-hc-n-900 outline-none placeholder:text-hc-n-500"
+      />
     </div>
   )
 }
 
+/** Opciones como filas de lista con radio azul (Figma `37:1689`). */
 function GrupoOpciones({
-  label, name, opciones, valor, onChange, columnas = false,
+  label, name, opciones, valor, onChange,
 }: {
   label: string
   name: string
   opciones: { value: string; label: string }[]
   valor: string
   onChange: (v: string) => void
-  columnas?: boolean
 }) {
   return (
-    <div>
-      <label className="block text-xs font-medium text-[var(--t-muted)] mb-1">{label}</label>
-      <div className={columnas ? 'grid grid-cols-2 gap-2' : 'space-y-2'}>
-        {opciones.map((m) => (
-          <label
-            key={m.value}
-            className={`flex items-center gap-2 border rounded-lg px-3 py-2.5 min-h-[44px] cursor-pointer text-sm ${
-              valor === m.value ? 'border-[var(--t-secondary)] font-medium' : 'border-[var(--t-border)]'
-            }`}
-            style={valor === m.value ? { backgroundColor: 'color-mix(in srgb, var(--t-accent) 12%, var(--t-surface))' } : {}}
-          >
-            <input type="radio" name={name} value={m.value} checked={valor === m.value} onChange={() => onChange(m.value)} className="accent-[var(--t-secondary)]" />
-            {m.label}
-          </label>
-        ))}
+    <div role="radiogroup" aria-label={label} className="flex flex-col gap-[6px] leading-[normal]">
+      <p className="text-[13px] font-semibold text-hc-n-900">{label}</p>
+      <div className="overflow-hidden rounded-[12px] border border-hc-n-200">
+        {opciones.map((m) => {
+          const activa = valor === m.value
+          return (
+            <label key={m.value} className={`flex cursor-pointer items-center gap-[10px] border-t border-hc-n-200 px-[14px] py-[13px] first:border-t-0 ${activa ? 'bg-hc-blue-50' : 'bg-hc-n-0'}`}>
+              <input type="radio" name={name} value={m.value} checked={activa} onChange={() => onChange(m.value)} className={CLASE_RADIO_TIENDA} />
+              <span className={`text-[14px] text-hc-n-900 ${activa ? 'font-semibold' : 'font-medium'}`}>{m.label}</span>
+            </label>
+          )
+        })}
       </div>
     </div>
   )

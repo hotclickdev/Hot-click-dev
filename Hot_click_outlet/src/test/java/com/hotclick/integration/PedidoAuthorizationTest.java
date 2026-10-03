@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PedidoAuthorizationTest extends BaseIntegrationTest {
 
     @Autowired private PedidoRepository pedidoRepository;
+    @Autowired private com.hotclick.repository.PagoRepository pagoRepository;
     @Autowired private BodegaRepository bodegaRepository;
 
     private Pedido userPedido;
@@ -49,7 +50,8 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
         userPedido = new Pedido();
         userPedido.setNumeroPedido("ORD-AUTH-001");
         userPedido.setFechaPedido(LocalDateTime.now());
-        userPedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        // Pago confirmado: estas pruebas son de autorización; despachar sin pago responde 409 (PedidoDespachoPolicy).
+        userPedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
         userPedido.setUsuarioFinal(testUser);
         userPedido.setBodega(testBodega);
         userPedido.setSubtotal(15000);
@@ -70,6 +72,7 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
     @AfterEach
     void tearDownPedido() {
         // Pedidos antes que Bodegas, que antes que Usuarios (FK constraints)
+        pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
     }
@@ -138,6 +141,7 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Admin puede cambiar estado del pedido")
     void admin_canChangeEstado() throws Exception {
+        pagoCapturado(userPedido);
         mockMvc.perform(put("/api/pedidos/" + userPedido.getId() + "/estado")
                 .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -171,6 +175,7 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Admin puede asignar guía de envío")
     void admin_canAssignGuia() throws Exception {
+        pagoCapturado(userPedido);
         mockMvc.perform(put("/api/pedidos/" + userPedido.getId() + "/guia")
                 .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -204,5 +209,18 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
         mockMvc.perform(delete("/api/pedidos/" + userPedido.getId())
                 .header("Authorization", adminToken))
             .andExpect(status().isOk());
+    }
+
+    /** SEC-09: despachar exige el Pago CAPTURADO, no solo el estado PAGADO. */
+    private void pagoCapturado(Pedido pedido) {
+        Pago pago = new Pago();
+        pago.setMerchantToken("tok-" + java.util.UUID.randomUUID());
+        pago.setMonto(pedido.getTotalPedido());
+        pago.setProveedor(Constants.PROVEEDOR_SINPE);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        pago.setPedido(pedido);
+        pago.setUsuario(pedido.getUsuarioFinal());
+        pago.setFechaCreacion(LocalDateTime.now());
+        pagoRepository.saveAndFlush(pago);
     }
 }

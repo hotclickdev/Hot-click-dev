@@ -2,21 +2,32 @@ package com.hotclick.config;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.exception.PedidoNoDespachableException;
 import com.hotclick.exception.PlanLimitException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.exception.TenantNotFoundException;
+import com.hotclick.controller.spa.SpaIndexHtml;
+import com.hotclick.security.config.SpaVisitanteFallback;
 import io.sentry.Sentry;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
@@ -28,6 +39,10 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** Opcional: en tests unitarios ({@code new GlobalExceptionHandler()}) queda null y se responde JSON. */
+    @Autowired(required = false)
+    private SpaIndexHtml spaIndexHtml;
 
     // ── Dominio ───────────────────────────────────────────────────────────────
 
@@ -45,6 +60,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<ResponseDTO> handleStock(StockInsuficienteException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
+    }
+
+    /** Despacho de un pedido sin pago confirmado o cancelado (PedidoDespachoPolicy). */
+    @ExceptionHandler(PedidoNoDespachableException.class)
+    public ResponseEntity<ResponseDTO> handlePedidoNoDespachable(PedidoNoDespachableException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
     }
 
@@ -95,6 +116,29 @@ public class GlobalExceptionHandler {
                 .map(cv -> cv.getPropertyPath().toString() + ": " + cv.getMessage())
                 .collect(Collectors.joining("; "));
         return ResponseEntity.badRequest().body(ResponseDTO.error(errors));
+    }
+
+    /** Disparado por @Valid en elementos de una lista (p. ej. {@code List<@Valid Dto>} en el bulk) */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ResponseDTO> handleMethodValidation(HandlerMethodValidationException ex) {
+        String errors = ex.getParameterValidationResults().stream()
+                .flatMap(r -> r.getResolvableErrors().stream().map(e -> prefijoElemento(r) + mensajeError(e)))
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.badRequest().body(ResponseDTO.error(errors));
+    }
+
+    private static String prefijoElemento(ParameterValidationResult r) {
+        return r.getContainerIndex() == null ? "" : "[" + r.getContainerIndex() + "] ";
+    }
+
+    private static String mensajeError(MessageSourceResolvable e) {
+        return e instanceof FieldError fe ? fe.getField() + ": " + fe.getDefaultMessage() : e.getDefaultMessage();
+    }
+
+    /** Parámetro de URL o query con tipo inválido ("?limite=abc", "/productos/abc"): 400, no 500 */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ResponseDTO> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body(ResponseDTO.error("Parámetro inválido: " + ex.getName()));
     }
 
     /** JSON malformado o tipo incorrecto en el body */
@@ -156,9 +200,21 @@ public class GlobalExceptionHandler {
 
     // ── Recursos estáticos no encontrados ────────────────────────────────────
 
-    /** favicon.ico, assets inexistentes, etc. → 404 silencioso */
+    /**
+     * favicon.ico, assets inexistentes, etc. → 404 silencioso.
+     * Navegación HTML de visitante a una ruta inexistente → 404 con el SPA (pinta el 404 de Figma 45:2198).
+     */
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
-    public ResponseEntity<ResponseDTO> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+    public ResponseEntity<Object> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex,
+                                                   HttpServletRequest request) {
+        if (spaIndexHtml != null && request != null && SpaVisitanteFallback.esNavegacionVisitante(request)) {
+            var html = spaIndexHtml.paraNoEncontrado();
+            if (html.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+                        .body(html.get());
+            }
+        }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ResponseDTO.error("Recurso no encontrado"));
     }

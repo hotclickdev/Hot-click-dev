@@ -8,13 +8,14 @@ import {
 import ProductBreadcrumb from './producto/ProductBreadcrumb'
 import ProductGallery from './producto/ProductGallery'
 import ProductInfo from './producto/ProductInfo'
-import ProductVideo from './producto/ProductVideo'
 import ProductTabs from './producto/ProductTabs'
-import BrandProductsRow from './producto/BrandProductsRow'
 import CarruselProductos from './producto/CarruselProductos'
 import OpinionesProducto from './producto/OpinionesProducto'
+import ProductVideo from './producto/ProductVideo'
 import RecentlyViewedGrid from './producto/RecentlyViewedGrid'
 import ProductDetailSeo from './producto/ProductDetailSeo'
+import MasDeLaMarca from './producto/MasDeLaMarca'
+import { useMasDeLaMarca } from './producto/useMasDeLaMarca'
 import { useProductDetail } from './producto/useProductDetail'
 import HojaAgregadoAlPedido from '@/components/comprador/HojaAgregadoAlPedido'
 import { Helmet } from 'react-helmet-async'
@@ -24,12 +25,13 @@ export default function ProductDetailPage() {
   const { t } = useTranslation()
   const {
     product, loading, quantity, activeTab, setActiveTab, justAdded, hojaAgregadoAbierta, setHojaAgregadoAbierta,
-    recommendations, brandProducts, galeria, activeImg, setActiveImg,
+    recommendations, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
     turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   } = useProductDetail(id, t)
+  const masDeLaMarca = useMasDeLaMarca(product)
 
   // Figma 28:839: la ficha dibuja su propia barra (atrás, compartir, favorito sobre la foto) y una barra
   // de compra fija, así que no lleva barra superior ni inferior en móvil. En desktop usa el header completo.
@@ -38,7 +40,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex justify-center py-32"><Spinner size="xl" /></div>
+        <div className="flex justify-center py-32"><Spinner size="xl" variante="figma" /></div>
       </MainLayout>
     )
   }
@@ -59,7 +61,7 @@ export default function ProductDetailPage() {
           </p>
           <Link
             to="/productos"
-            className="inline-flex items-center justify-center rounded-xl bg-hc-red-500 px-5 py-2.5 text-sm font-semibold text-hc-n-0"
+            className="inline-flex items-center justify-center rounded-[12px] bg-hc-red-500 px-5 py-2.5 text-sm font-semibold text-hc-n-0"
           >
             {t('notFound.comprarHint')}
           </Link>
@@ -125,6 +127,7 @@ export default function ProductDetailPage() {
 
         <div className="lg:mx-auto lg:w-[calc(100%-4rem)] lg:max-w-[1200px]">
           {!agotado && <OpinionesProducto productoId={product.id} />}
+          <ProductVideo videoUrl={product.videoUrl} titulo={product.titulo || product.nombre || ''} tienda={product.empresaNombre} portada={product.imagenUrl} />
 
           {agotado ? (
             <CarruselProductos
@@ -141,12 +144,11 @@ export default function ProductDetailPage() {
               variante="sangrado"
             />
           )}
+          <MasDeLaMarca fuente={masDeLaMarca.fuente} productos={masDeLaMarca.productos} total={masDeLaMarca.total} />
 
           <div className="px-4 lg:px-0">
-            <ProductVideo product={product} />
             <ProductTabs product={product} tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
-          <BrandProductsRow product={product} brandProducts={brandProducts} />
           <div className="px-4 lg:px-0">
             <RecentlyViewedGrid items={recentlyViewed} currentProductId={product.id} />
           </div>

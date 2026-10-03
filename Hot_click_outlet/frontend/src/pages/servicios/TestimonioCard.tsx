@@ -1,8 +1,9 @@
 import { useState, useRef, type ChangeEvent, type SyntheticEvent } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { testimonioService } from '@/services/testimonioService'
 import { FOTO_MAX_BYTES, RATING_LABELS, type ProductoParaResena } from './serviciosHelpers'
 import CloseIcon from '@/components/ui/CloseIcon'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import StarPicker from './StarPicker'
 import type { JsonBody } from '@/types/api'
 
@@ -18,7 +19,7 @@ function PackageIcon({ className = 'w-5 h-5' }: { className?: string }) {
 
 function CameraIcon({ className = 'w-6 h-6' }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ color: '#f59e0b' }}>
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" >
       <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
       <circle cx="12" cy="13" r="4" />
     </svg>
@@ -55,13 +56,11 @@ function WarnIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
 function ProductoThumb({ p }: { p: ProductoParaResena }) {
   if (p.imagenUrl) {
     return (
-      <img src={p.imagenUrl} alt={p.nombre} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" style={{ border: '1px solid var(--hc-border)' }} onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none' }} />
+      <img src={p.imagenUrl} alt={p.nombre} className="size-12 shrink-0 rounded-[10px] border border-hc-n-200 object-cover" onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none' }} />
     )
   }
   return (
-    <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
-      <PackageIcon />
-    </div>
+    <div className="flex size-12 shrink-0 items-center justify-center rounded-[10px] bg-hc-n-100 text-hc-n-400"><PackageIcon /></div>
   )
 }
 
@@ -79,6 +78,7 @@ function urlImagenSubida(data: unknown): string {
   return ''
 }
 
+/** Reseña de un producto comprado (derivado de Figma: tarjetas y campos del manual de marca, acordeón en tarjeta clara). */
 export default function TestimonioCard({ p, onEnviado }: { p: ProductoParaResena; onEnviado?: () => void }) {
   const [abierto, setAbierto] = useState(false)
   const [calificacion, setCalificacion] = useState(0)
@@ -119,14 +119,13 @@ export default function TestimonioCard({ p, onEnviado }: { p: ProductoParaResena
 
   if (p.yaReseno || enviado) {
     return (
-      <div className="flex items-center gap-3 p-4 rounded-2xl"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <div className="flex items-center gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 leading-[normal]">
         <ProductoThumb p={p} />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-semibold text-hc-n-900">{p.nombre}</p>
           {enviado
-            ? <p className="text-xs font-semibold mt-0.5 flex items-center gap-1" style={{ color: '#f59e0b' }}><CheckIcon /> Reseña enviada — ¡gracias!</p>
-            : <p className="text-xs font-semibold mt-0.5 flex items-center gap-1" style={{ color: 'var(--hc-accent)' }}><CheckIcon /> Ya dejaste una reseña</p>
+            ? <p className="mt-0.5 flex items-center gap-1 text-[12px] font-semibold text-hc-success-text"><CheckIcon /> Reseña enviada — ¡gracias!</p>
+            : <p className="mt-0.5 flex items-center gap-1 text-[12px] font-semibold text-hc-blue-600"><CheckIcon /> Ya dejaste una reseña</p>
           }
         </div>
       </div>
@@ -134,93 +133,74 @@ export default function TestimonioCard({ p, onEnviado }: { p: ProductoParaResena
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden"
-      style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${abierto ? 'rgba(245,158,11,0.35)' : 'var(--hc-border)'}` }}>
-
+    <div className={`overflow-hidden rounded-[14px] border bg-hc-n-0 leading-[normal] ${abierto ? 'border-hc-blue-600' : 'border-hc-n-200'}`}>
       <button type="button" onClick={() => { setAbierto(v => !v); setErr('') }}
-        className="w-full flex items-center gap-3 p-4 text-left transition-colors"
-        style={{ backgroundColor: abierto ? 'rgba(245,158,11,0.06)' : 'transparent' }}>
+        aria-expanded={abierto}
+        className={`flex w-full items-center gap-3 px-[14px] py-3 text-left ${abierto ? 'bg-hc-blue-50' : ''}`}>
         <ProductoThumb p={p} />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-semibold text-hc-n-900">{p.nombre}</p>
+          <p className="mt-0.5 text-[12px] text-hc-n-600">
             {abierto ? 'Tocá para cerrar' : 'Tocá para dejar tu reseña'}
           </p>
         </div>
-        <svg className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${abierto ? 'rotate-180' : ''}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--hc-muted)' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <IconoFigma src={ICONOS_COMPRADOR.chevronAbajo} size={16} className={`shrink-0 text-hc-n-600 transition-transform duration-200 ${abierto ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence>
-        {abierto && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.22 }}
-            className="overflow-hidden">
-            <div className="px-4 pb-4 space-y-3"
-              style={{ borderTop: '1px solid var(--hc-border)' }}>
-
-              <div className="pt-3">
-                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>
-                  Calificación <span style={{ color: 'var(--hc-accent)' }}>*</span>
-                </p>
-                <div className="flex items-center gap-3">
-                  <StarPicker value={calificacion} onChange={setCalificacion} />
-                  {calificacion > 0 && (
-                    <span className="text-sm font-bold" style={{ color: '#fbbf24' }}>
-                      {RATING_LABELS[calificacion]}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <textarea rows={3} placeholder="¿Qué te pareció el producto? Tu experiencia ayuda a otros compradores…"
-                  value={comentario} onChange={e => setComentario(e.target.value)}
-                  maxLength={500}
-                  className="w-full rounded-xl text-sm resize-none"
-                  style={{ padding: '10px 14px', backgroundColor: 'var(--hc-surface-2)', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)', outline: 'none' }} />
-                <p className="text-right text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{comentario.length}/500</p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {imagenUrl ? (
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '1.5px solid var(--hc-border)' }}>
-                    <img src={imagenUrl} alt="" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => setImagenUrl('')} aria-label="Quitar foto"
-                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
-                      <CloseIcon className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-                    className="w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-semibold flex-shrink-0 transition-opacity disabled:opacity-50"
-                    style={{ border: '2px dashed var(--hc-border)', color: 'var(--hc-muted)' }}>
-                    {uploading
-                      ? <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--hc-border)', borderTopColor: '#f59e0b' }} />
-                      : <><CameraIcon className="w-6 h-6" /><span>Foto</span></>
-                    }
-                  </button>
-                )}
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Foto opcional · hasta 5 MB</p>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFoto} />
-              </div>
-
-              {err && <p className="text-xs text-red-400 font-medium flex items-center gap-1.5"><WarnIcon /> {err}</p>}
-
-              <motion.button whileTap={{ scale: 0.97 }} onClick={handleEnviar} disabled={enviando || uploading}
-                className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
-                {enviando
-                  ? <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Enviando…</>
-                  : <><StarStrokeIcon /> Enviar reseña</>
-                }
-              </motion.button>
+      {abierto && (
+        <div className="flex flex-col gap-[14px] border-t border-hc-n-200 px-[14px] pb-4 pt-3">
+          <div className="flex flex-col gap-[6px]">
+            <p className="text-[13px] font-semibold text-hc-n-900">Calificación</p>
+            <div className="flex items-center gap-3">
+              <StarPicker value={calificacion} onChange={setCalificacion} />
+              {calificacion > 0 && (
+                <span className="text-[13px] font-semibold text-hc-warning">{RATING_LABELS[calificacion]}</span>
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+
+          <div className="flex flex-col gap-[6px]">
+            <label htmlFor={`resena-${p.productoId}`} className="text-[13px] font-semibold text-hc-n-900">Tu comentario</label>
+            <textarea id={`resena-${p.productoId}`} rows={3} placeholder="¿Qué te pareció el producto? Tu experiencia ayuda a otros compradores…"
+              value={comentario} onChange={e => setComentario(e.target.value)}
+              maxLength={500}
+              className="hc-input-libre w-full resize-none rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[13px] text-[15px] leading-5 text-hc-n-900 outline-none placeholder:text-hc-n-500 focus:border-hc-blue-600" />
+            <p className="text-right text-[12px] text-hc-n-600">{comentario.length}/500</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {imagenUrl ? (
+              <div className="relative size-16 shrink-0 overflow-hidden rounded-[10px] border border-hc-n-200">
+                <img src={imagenUrl} alt="" className="size-full object-cover" />
+                <button type="button" onClick={() => setImagenUrl('')} aria-label="Quitar foto"
+                  className="absolute right-0.5 top-0.5 flex size-5 items-center justify-center rounded-full bg-hc-n-900 text-hc-n-0">
+                  <CloseIcon className="size-3" />
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                className="flex size-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-hc-n-400 text-[11px] font-semibold text-hc-n-600 disabled:opacity-50">
+                {uploading
+                  ? <span className="size-4 animate-spin rounded-full border-2 border-hc-blue-100 border-t-hc-blue-600" />
+                  : <><CameraIcon className="size-5" /><span>Foto</span></>
+                }
+              </button>
+            )}
+            <p className="text-[12px] leading-4 text-hc-n-600">Foto opcional · hasta 5 MB</p>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFoto} />
+          </div>
+
+          {err && <p role="alert" className="flex items-center gap-1.5 text-[12px] font-medium leading-4 text-hc-danger"><WarnIcon /> {err}</p>}
+
+          <button type="button" onClick={handleEnviar} disabled={enviando || uploading}
+            className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-hc-n-0 disabled:opacity-50">
+            {enviando
+              ? <><span className="size-4 animate-spin rounded-full border-2 border-hc-n-0/30 border-t-hc-n-0" /> Enviando…</>
+              : <><StarStrokeIcon /> Enviar reseña</>
+            }
+          </button>
+        </div>
+      )}
     </div>
   )
 }

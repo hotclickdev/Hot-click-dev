@@ -6,7 +6,8 @@ export type FiltroPedidos = (typeof FILTROS_PEDIDOS)[number]
 
 export function filtrarPedidos(pedidos: PedidoMock[], filtro: string): PedidoMock[] {
   if (filtro === 'Todos') return pedidos
-  if (filtro === 'Pendientes') return pedidos.filter((p) => p.estado === 'Pendiente')
+  // Pendientes = sin despachar: con pago confirmado ('Pendiente') o esperando el pago.
+  if (filtro === 'Pendientes') return pedidos.filter((p) => p.estado === 'Pendiente' || p.estado === 'Esperando pago')
   if (filtro === 'Enviados') return pedidos.filter((p) => p.estado === 'Enviado')
   return pedidos.filter((p) => p.estado === 'Entregado')
 }

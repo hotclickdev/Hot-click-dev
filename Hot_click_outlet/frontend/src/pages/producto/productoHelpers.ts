@@ -1,12 +1,24 @@
 import type { TFunction } from 'i18next'
 import type { Producto } from '@/types/producto'
 import { formatPrice } from '@/utils/format'
+import { normalizarBusqueda } from '@/pages/catalogo/catalogoFiltros'
 
-export type TipoVideo = 'youtube' | 'tiktok' | 'instagram'
+export type TipoVideo = 'youtube' | 'tiktok' | 'instagram' | 'facebook' | 'vimeo' | 'otra'
 
+/**
+ * Video del producto detectado desde la URL que guarda el vendedor (`Producto.videoUrl`, sin campo de plataforma).
+ * `embedUrl` es null cuando la red no se puede incrustar: la ficha muestra una tarjeta de enlace.
+ */
 export type VideoDetectado = {
   type: TipoVideo
-  embedUrl: string
+  /** Nombre visible de la red para la insignia ("YouTube", "Shorts", "Instagram"...). */
+  etiqueta: string
+  embedUrl: string | null
+  /** 9:16 (Shorts, Reels, TikTok) o 16:9. */
+  vertical: boolean
+  /** Miniatura conocida (YouTube) para cargar el embed recién al tocar. */
+  miniatura: string | null
+  url: string
 }
 
 export type TabProducto = {
@@ -33,25 +45,83 @@ export function parseTallas(talla: string | null | undefined): string[] {
   return talla.split(/[-,/]/).map((s) => s.trim()).filter(Boolean)
 }
 
-export function detectVideo(url: string | null | undefined): VideoDetectado | null {
-  if (!url) return null
+const YT_ID = /^[a-zA-Z0-9_-]{11}$/
+const NUMERO = /^\d+$/
 
-  const ytPatterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
-  ]
-  for (const re of ytPatterns) {
-    const m = url.match(re)
-    if (m) return { type: 'youtube', embedUrl: `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0&modestbranding=1` }
+type Red = Omit<VideoDetectado, 'miniatura'> & { miniatura?: string | null }
+
+function youtube(id: string, etiqueta: 'YouTube' | 'Shorts'): Red {
+  return { type: 'youtube', etiqueta, vertical: etiqueta === 'Shorts', url: `https://www.youtube.com/watch?v=${id}`,
+    miniatura: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&autoplay=1` }
+}
+
+/**
+ * Cada red se reconoce por el host exacto (con o sin `www.`/`m.`) y por la forma de la ruta; el enlace
+ * "Ver en …" se arma de nuevo desde el ID, nunca con la URL que escribió el vendedor (SEC-98-03).
+ */
+function redDeVideo(u: URL): Red | null {
+  const host = u.hostname.toLowerCase().replace(/^(?:www|m)\./, '')
+  const [, a = '', b = '', c = '', d = ''] = u.pathname.split('/')
+  switch (host) {
+    case 'youtu.be':
+      return YT_ID.test(a) ? youtube(a, 'YouTube') : null
+    case 'youtube.com': {
+      if (a === 'shorts' && YT_ID.test(b)) return youtube(b, 'Shorts')
+      if ((a === 'embed' || a === 'live') && YT_ID.test(b)) return youtube(b, 'YouTube')
+      const v = u.searchParams.get('v')
+      return a === 'watch' && !b && v && YT_ID.test(v) ? youtube(v, 'YouTube') : null
+    }
+    case 'vimeo.com':
+    case 'player.vimeo.com': {
+      const id = a === 'video' ? b : a
+      return NUMERO.test(id)
+        ? { type: 'vimeo', etiqueta: 'Vimeo', vertical: false, url: `https://vimeo.com/${id}`, embedUrl: `https://player.vimeo.com/video/${id}?dnt=1` }
+        : null
+    }
+    case 'tiktok.com':
+      return /^@[\w.-]+$/.test(a) && b === 'video' && NUMERO.test(c)
+        ? { type: 'tiktok', etiqueta: 'TikTok', vertical: true, url: `https://www.tiktok.com/${a}/video/${c}`, embedUrl: `https://www.tiktok.com/embed/v2/${c}` }
+        : null
+    case 'instagram.com': {
+      if (!['p', 'reel', 'reels', 'tv'].includes(a) || !/^[A-Za-z0-9_-]+$/.test(b)) return null
+      const tipo = a === 'reels' ? 'reel' : a
+      return { type: 'instagram', etiqueta: 'Instagram', vertical: true, url: `https://www.instagram.com/${tipo}/${b}/`,
+        embedUrl: `https://www.instagram.com/${tipo}/${b}/embed/` }
+    }
+    case 'facebook.com':
+    case 'fb.watch': {
+      const esVideo = host === 'fb.watch' ? Boolean(a) : a === 'watch' || a === 'reel' || (b === 'videos' && Boolean(c || d))
+      if (!esVideo) return null
+      const enlace = `https://${host === 'fb.watch' ? 'fb.watch' : 'www.facebook.com'}${u.pathname}${u.search}`
+      return { type: 'facebook', etiqueta: 'Facebook', vertical: a === 'reel', url: enlace,
+        embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(enlace)}&show_text=false` }
+    }
+    default:
+      return null
   }
+}
 
-  const ttMatch = url.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/)
-  if (ttMatch) return { type: 'tiktok', embedUrl: `https://www.tiktok.com/embed/v2/${ttMatch[1]}` }
+export function detectVideo(url: string | null | undefined): VideoDetectado | null {
+  const limpio = url?.trim()
+  if (!limpio) return null
+  let u: URL
+  try {
+    u = new URL(limpio)
+  } catch {
+    return null
+  }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
+  const red = redDeVideo(u)
+  if (red) return { miniatura: null, ...red }
+  return { type: 'otra', etiqueta: u.hostname.replace(/^www\./, ''), vertical: false, embedUrl: null, miniatura: null, url: u.href }
+}
 
-  const igMatch = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/)
-  if (igMatch) return { type: 'instagram', embedUrl: `https://www.instagram.com/${igMatch[1]}/${igMatch[2]}/embed/` }
+/** Segmento del control de plataforma (imagen aprobada `ficha-video.png`): Facebook, Vimeo y el resto van a "Otra red". */
+export type SegmentoVideo = 'youtube' | 'instagram' | 'tiktok' | 'otra'
 
-  return null
+export function segmentoVideo(tipo: TipoVideo): SegmentoVideo {
+  return tipo === 'youtube' || tipo === 'instagram' || tipo === 'tiktok' ? tipo : 'otra'
 }
 
 export function seoDesdeProducto(product: Producto, userLang: string): { seoTitle: string; seoDescription: string } {
@@ -221,4 +291,23 @@ export function avisoStockBajoSinTalla(product: Producto, variantes: VariantePro
   if (esProductoCotizable(product) || product.esPersonalizado === true || estaAgotado(product)) return false
   if (Number(product.stock) > STOCK_BAJO_MAX) return false
   return opcionesDeTalla(product, variantes).length === 0
+}
+
+/**
+ * La ficha (`GET /productos/:id`) no trae el nombre ni el slug de la tienda; el listado público sí.
+ * Se toman de cualquier producto del mismo negocio para dibujar la fila de tienda del Figma `28:839`.
+ */
+export function tiendaDesdeCatalogo(
+  lista: Pick<Producto, 'empresaId' | 'empresaNombre' | 'empresaSlug'>[],
+  empresaId: Producto['empresaId'],
+): { empresaNombre: string; empresaSlug: string } | null {
+  if (empresaId === null || empresaId === undefined) return null
+  const hallado = lista.find((p) => String(p.empresaId) === String(empresaId) && p.empresaNombre && p.empresaSlug)
+  return hallado ? { empresaNombre: hallado.empresaNombre as string, empresaSlug: hallado.empresaSlug as string } : null
+}
+
+/** La marca es la del propio negocio cuando su nombre está contenido en el de la tienda (sin tildes ni mayúsculas). */
+export function marcaEsLaTienda(product: Pick<Producto, 'marcaNombre' | 'empresaNombre'>): boolean {
+  if (!product.marcaNombre || !product.empresaNombre) return false
+  return normalizarBusqueda(product.empresaNombre).includes(normalizarBusqueda(product.marcaNombre))
 }

@@ -1,9 +1,9 @@
 package com.hotclick.service.payment;
 
 import com.hotclick.dto.PaymentStatusResponse;
-import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Pago;
 import com.hotclick.repository.PagoRepository;
+import com.hotclick.service.sinpe.SinpeAprobacionGuard;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,16 +23,13 @@ public class SinpePaymentAdminService {
     @Autowired private PaymentOrderConfirmationService orderConfirmationService;
     @Autowired private PaymentFailureHandler         paymentFailureHandler;
     @Autowired private PaymentStatusAssembler          paymentStatusAssembler;
+    @Autowired private SinpeAprobacionGuard            aprobacionGuard;
 
     @Transactional
     public PaymentStatusResponse confirmarSinpe(Long pagoId, Object paymentServiceSelf,
                                                 ApplicationEventPublisher eventPublisher) {
-        Pago pago = pagoRepository.findById(pagoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago", pagoId));
-
-        if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
-            throw new IllegalArgumentException("El pago no es de tipo SINPE");
-        }
+        Pago pago = pagoResoluble(pagoId);
+        exigirSinpe(pago);
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             return paymentStatusAssembler.build(pago);
         }
@@ -51,12 +48,8 @@ public class SinpePaymentAdminService {
 
     @Transactional
     public void rechazarSinpe(Long pagoId, String motivo) {
-        Pago pago = pagoRepository.findById(pagoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago", pagoId));
-
-        if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
-            throw new IllegalArgumentException("El pago no es de tipo SINPE");
-        }
+        Pago pago = pagoResoluble(pagoId);
+        exigirSinpe(pago);
         if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
             throw new IllegalStateException("El pago ya fue procesado y no puede rechazarse");
         }
@@ -64,5 +57,17 @@ public class SinpePaymentAdminService {
         paymentFailureHandler.marcarFallido(pago, motivo != null && !motivo.isBlank()
             ? motivo : "Comprobante rechazado por administrador");
         log.info("Pago SINPE {} rechazado", pago.getPedido().getNumeroPedido());
+    }
+
+    private Pago pagoResoluble(Long pagoId) {
+        Pago pago = pagoRepository.findById(pagoId).orElse(null);
+        aprobacionGuard.assertPuedeResolverPago(pago);
+        return pago;
+    }
+
+    private static void exigirSinpe(Pago pago) {
+        if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
+            throw new IllegalArgumentException("El pago no es de tipo SINPE");
+        }
     }
 }

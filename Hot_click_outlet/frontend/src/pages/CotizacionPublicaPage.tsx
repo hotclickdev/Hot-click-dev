@@ -32,7 +32,7 @@ export default function CotizacionPublicaPage() {
   }, [token])
 
   if (loading) {
-    return <Pantalla><div className="flex justify-center py-32"><Spinner size="xl" /></div></Pantalla>
+    return <Pantalla><div className="flex justify-center py-32"><Spinner size="xl" variante="figma" /></div></Pantalla>
   }
 
   if (error || !cot) {

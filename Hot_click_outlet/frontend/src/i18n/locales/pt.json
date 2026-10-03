@@ -863,6 +863,7 @@
     "presupuestoRango": "Tenho uma faixa em mente",
     "presupuestoMin": "Mínimo ₡",
     "presupuestoMax": "Máximo ₡",
+    "contactoTitulo": "Seus dados para o artista responder",
     "contactoNombre": "Seu nome",
     "contactoEmail": "E-mail",
     "contactoTelefono": "Telefone",
@@ -872,7 +873,17 @@
     "pasoCotiza1": "Você envia suas fotos e notas",
     "pasoCotiza2": "O artista analisa e faz a cotação",
     "pasoCotiza3": "Você recebe um link para pagar",
-    "verTodosMarca": "Ver todos"
+    "verTodosMarca": "Ver todos",
+    "verLosN": "Ver os {{count}}",
+    "productosDeMarca": "produtos de {{brand}}",
+    "videoDe": "Vídeo de {{titulo}}",
+    "reproducirVideo": "Reproduzir o vídeo de {{titulo}}",
+    "videoOtraPestana": "Abre em outra aba",
+    "publicadoPor": "Publicado por {{tienda}}",
+    "verEn": "Ver no {{red}}",
+    "seReproduceAqui": "Reproduz aqui mesmo",
+    "plataformaVideo": "Plataforma do vídeo",
+    "otraRed": "Outra rede"
   },
   "cart": {
     "title": "Pedido",
@@ -1156,7 +1167,12 @@
     "successSub": "Sua conta foi verificada e criada com sucesso. Você já pode entrar.",
     "goToLogin": "Ir para o login",
     "quieroComprar": "Quero comprar",
-    "quieroVender": "Quero vender"
+    "quieroVender": "Quero vender",
+    "titulo": "Crie sua conta",
+    "intro": "Para comprar não precisa de conta. Com uma você acompanha pedidos, vê suas solicitações e guarda favoritos.",
+    "nombreCorto": "Nome",
+    "primerApellido": "Sobrenome",
+    "segundoApellido": "Segundo sobrenome"
   },
   "profile": {
     "title": "Meu perfil",
@@ -1504,7 +1520,13 @@
       "pedidoProductos_other": "Pedido {{pedido}} · {{count}} produtos",
       "cambiarMetodo": "Alterar forma de pagamento",
       "paquetesN_one": "{{count}} pacote",
-      "paquetesN_other": "{{count}} pacotes"
+      "paquetesN_other": "{{count}} pacotes",
+      "asistenteTitulo": "Pergunte ao assistente",
+      "asistenteAyuda": "Explica o que aconteceu e como concluir a compra. Não vê os dados do seu cartão.",
+      "asistentePregunta1": "Por que meu cartão foi recusado?",
+      "asistentePregunta2": "Fui cobrado?",
+      "asistentePregunta3": "Como pago com SINPE Móvil?",
+      "asistenteMensaje": "{{pregunta}} (pedido {{pedido}})"
     },
     "revision": {
       "recibido": "Comprovante recebido",
@@ -1622,7 +1644,8 @@
     "sending": "Enviando…",
     "successToast": "Mensagem enviada com sucesso",
     "errorToast": "Não foi possível enviar. Tente pelo WhatsApp.",
-    "saturday": "Sábados"
+    "saturday": "Sábados",
+    "canales": "Canais"
   },
   "informacion": {
     "title": "Informações",
@@ -2161,7 +2184,26 @@
     "photoNone": "Não encontramos produtos parecidos. Tente outra foto ou pergunte ao assistente.",
     "photoVerySimilar": "Muito parecido",
     "photoSameCategory": "Mesma categoria",
-    "photoRelated": "Relacionado"
+    "photoRelated": "Relacionado",
+    "photoHeroTitle": "Busque com uma foto",
+    "photoHeroSub": "Viu algo de que gostou? Tire uma foto ou envie uma da galeria e mostramos produtos parecidos dos negócios da HotClick.",
+    "photoDrop": "Arraste uma foto aqui ou clique para escolher",
+    "photoDropMobile": "Toque para escolher uma foto",
+    "photoFormats": "JPG, PNG ou WebP · até 5 MB",
+    "photoChoose": "Escolher uma foto",
+    "photoChooseAnother": "Escolher outra foto",
+    "photoExplore": "Explorar o catálogo",
+    "photoStepsTitle": "Como funciona",
+    "photoStep1": "Tire ou envie uma foto",
+    "photoStep2": "Analisamos o produto",
+    "photoStep3": "Mostramos opções parecidas",
+    "photoTipsTitle": "Para melhores resultados",
+    "photoTip1": "Use boa luz, sem sombras fortes.",
+    "photoTip2": "Deixe o produto centralizado e inteiro na foto.",
+    "photoTip3": "Um item por foto, com fundo simples se puder.",
+    "photoPrivacy": "Não guardamos sua foto: ela é usada só nesta busca e não fica na sua conta nem na HotClick.",
+    "photoBadType": "Esse arquivo não é uma imagem compatível. Use uma foto JPG, PNG ou WebP.",
+    "photoTooBig": "A foto tem mais de 5 MB. Tente uma mais leve."
   },
   "authPrompt": {
     "title": "Como quer continuar?",
@@ -3511,7 +3553,10 @@
       "totalPedido_one": "Seu pedido · {{count}} produto",
       "totalPedido_other": "Seu pedido · {{count}} produtos",
       "seguirComprando": "Continuar comprando",
-      "verPedido": "Ver pedido"
+      "verPedido": "Ver pedido",
+      "envioGratisFalta": "Faltam {{monto}} para frete grátis",
+      "envioGratisListo": "Seu pedido já tem frete grátis",
+      "envioGratisDesde": "Em compras a partir de {{monto}} nesta loja"
     },
     "falloServidor": {
       "marca": "HotClick",
@@ -3588,6 +3633,8 @@
   "despacho": {
     "pedido": "Pedido #{{id}}",
     "porDespachar": "A despachar",
+    "esperandoPago": "Aguardando pagamento",
+    "esperandoPagoAyuda": "Você pode despachar quando o pagamento for confirmado.",
     "tusProductos": "Seus produtos",
     "unidades_one": "{{count}} un.",
     "unidades_other": "{{count}} un.",
@@ -3888,11 +3935,10 @@
     "noDisponibleTitulo": "Esta loja não está disponível",
     "noDisponibleTexto": "O link não corresponde a um negócio publicado na HotClick. Você pode continuar comprando no marketplace.",
     "pedidoTienda": "Pedido desta loja",
-    "navTienda": "Navegação desta loja",
-    "navCatalogo": "Catálogo",
-    "navPedido": "Pedido",
-    "tiendaDe": "Loja de {{nombre}}",
-    "enHotclick": "na HotClick"
+    "enHotclick": "na HotClick",
+    "irAHotclick": "Ir para o HotClick",
+    "verPedido_one": "Ver pedido · {{count}} produto · {{total}}",
+    "verPedido_other": "Ver pedido · {{count}} produtos · {{total}}"
   },
   "emprendimientos": {
     "titulo": "Empreendimentos",
@@ -3901,13 +3947,15 @@
     "negocios_other": "{{count}} negócios",
     "sinCoincidencias": "Nenhum negócio corresponde a “{{busqueda}}”.",
     "buscar": "Buscar um negócio",
-    "verProductosAria": "{{nombre}}: ver produtos na HotClick",
-    "sitioExternoAria": "{{nombre}}: site externo, abre em outra aba",
-    "sitioExterno": "Site externo",
-    "verProductos": "Ver produtos",
     "proximamente": "Em breve",
     "cerrandoConvenios": "Estamos fechando parcerias com empreendimentos da Costa Rica.",
-    "emprender": "Empreender na HotClick"
+    "emprender": "Empreender na HotClick",
+    "verTienda": "Ver loja",
+    "verTiendaAria": "{{nombre}}: ver loja",
+    "productos_one": "{{count}} produto",
+    "productos_other": "{{count}} produtos",
+    "filtrar": "Filtrar negócios por categoria",
+    "todos": "Todos"
   },
   "encargoPublico": {
     "titulo": "Sua encomenda",
@@ -3944,5 +3992,29 @@
       "entregado": "Entregue",
       "listo": "Pronto para entrega"
     }
+  },
+  "negocios": {
+    "seccion": "Negócios",
+    "planEmprendedor": "Empreendimento",
+    "planPyme": "PME",
+    "planNegocioPlus": "Negocio Plus",
+    "navEmprendimientos": "Empreendimentos",
+    "navPymes": "PMEs",
+    "navNegocioPlus": "Negocio Plus",
+    "navAria": "Lojas por tipo de negócio",
+    "tituloEmprendimientos": "Empreendimentos",
+    "tituloPymes": "PMEs",
+    "tituloNegocioPlus": "Negocio Plus",
+    "introPlan": "Lojas {{plan}} que vendem na HotClick.",
+    "filtrarPlan": "Filtrar por tipo de negócio",
+    "todos": "Todos",
+    "verTienda": "{{nombre}}: ver loja",
+    "productos_one": "{{count}} produto",
+    "productos_other": "{{count}} produtos",
+    "sinNegocios": "Nenhum negócio se chama “{{q}}”.",
+    "sinResultados": "Não encontramos produtos nem negócios para “{{q}}”.",
+    "enResultados": "Negócios que correspondem",
+    "verTodos": "Ver todos os negócios",
+    "sinPlan": "Ainda não há lojas {{plan}} na HotClick."
   }
 }

@@ -24,7 +24,7 @@ export default function HeaderEscritorioCompacto({ filaCarrito = false }: { fila
   }
 
   return (
-    <div className={`hidden items-center gap-8 border-b border-hc-n-200 bg-hc-n-0 px-8 leading-[normal] lg:flex xl:px-[120px] ${filaCarrito ? 'py-[18px]' : 'py-4'}`}>
+    <div className={`hidden items-center gap-8 border-b border-hc-n-200 bg-hc-n-0 px-8 leading-[normal] lg:flex xl:px-[max(120px,calc((100%_-_1200px)/2))] ${filaCarrito ? 'py-[18px]' : 'py-4'}`}>
       <MarcaComprador tamano="escritorio" />
       <form role="search" onSubmit={buscar} className="flex min-w-px flex-1 items-center gap-[10px] rounded-[12px] bg-hc-n-100 px-4 py-[13px]">
         <IconoFigma src={ICONOS_COMPRADOR.buscador} size={20} className="text-hc-n-600" />

@@ -1,16 +1,19 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
-import { motion } from 'framer-motion'
+import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import MainLayout from '@/layouts/MainLayout'
+import PaginaInformativa, { BloqueInformativo } from '@/components/comprador/PaginaInformativa'
 import { useToast } from '@/components/ui/Toast'
 import { enviarContacto } from '@/services/contactoService'
 import { useTurnstileForm } from '@/hooks/useTurnstileForm'
 import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 import ContactoSeo from './contacto/ContactoSeo'
 import ContactoFormulario from './contacto/ContactoFormulario'
-import ContactoCanales from './contacto/ContactoCanales'
-import { fadeUp, FORM_VACIO, type FormContacto } from './contacto/contactoHelpers'
+import { ContactoCanales, ContactoHorario } from './contacto/ContactoCanales'
+import { FORM_VACIO, type FormContacto } from './contacto/contactoHelpers'
 
+/**
+ * Contacto con la plantilla informativa de Figma `28:1660` (derivado de Figma: no tiene frame propio).
+ * Canales en filas, formulario con los campos del checkout y horario.
+ */
 export default function ContactoPage() {
   const toast = useToast()
   const { t } = useTranslation()
@@ -22,17 +25,13 @@ export default function ContactoPage() {
     resetTurnstile, turnstileSiteKey, turnstileBloqueaSubmit,
   } = useTurnstileForm()
 
-  const setCampo = (campo: keyof FormContacto) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((prev) => ({ ...prev, [campo]: e.target.value }))
+  const setCampo = (campo: keyof FormContacto, valor: string) => setForm((prev) => ({ ...prev, [campo]: valor }))
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     try {
-      await enviarContacto({
-        ...form,
-        turnstileToken: turnstileToken || undefined,
-      })
+      await enviarContacto({ ...form, turnstileToken: turnstileToken || undefined })
       setSent(true)
       toast({ message: t('contacto.successToast'), type: 'success' })
     } catch (err: unknown) {
@@ -45,21 +44,22 @@ export default function ContactoPage() {
   }
 
   return (
-    <MainLayout>
+    <PaginaInformativa
+      titulo={t('contacto.title')}
+      encabezado={t('contacto.title')}
+      subtitulo={t('contacto.subtitle')}
+      indice={[
+        { id: 'canales', texto: t('contacto.canales') },
+        { id: 'mensaje', texto: t('contacto.sendForm') },
+        { id: 'horario', texto: t('contacto.schedule') },
+      ]}
+    >
       <ContactoSeo />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
-        <motion.div {...fadeUp()} className="text-center mb-14">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#4f7cff]/15 border border-[#4f7cff]/25 mb-5">
-            <svg className="w-7 h-7 text-[#4f7cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
-          <h1 className="text-4xl font-bold text-[#e8e8ed] mb-2">{t('contacto.title')}</h1>
-          <p className="text-[#8e8e9a] text-base">{t('contacto.subtitle')}</p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="flex flex-col bg-hc-n-50 pb-8 lg:bg-transparent">
+        <BloqueInformativo id="canales" titulo={t('contacto.canales')}>
+          <ContactoCanales />
+        </BloqueInformativo>
+        <BloqueInformativo id="mensaje" titulo={t('contacto.sendForm')}>
           <ContactoFormulario
             form={form}
             sent={sent}
@@ -72,9 +72,11 @@ export default function ContactoPage() {
             onSubmit={handleSubmit}
             onReset={(vacio) => { setSent(false); setForm(vacio); resetTurnstile() }}
           />
-          <ContactoCanales />
-        </div>
+        </BloqueInformativo>
+        <BloqueInformativo id="horario" titulo={t('contacto.schedule')}>
+          <ContactoHorario />
+        </BloqueInformativo>
       </div>
-    </MainLayout>
+    </PaginaInformativa>
   )
 }

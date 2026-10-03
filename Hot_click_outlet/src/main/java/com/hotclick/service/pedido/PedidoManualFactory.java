@@ -32,6 +32,7 @@ public class PedidoManualFactory {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private N8nWebhookService n8nWebhookService;
+    @Autowired private PedidoPagoManualService pedidoPagoManualService;
 
     public Pedido crearPedidoManual(ManualPedidoDTO dto, Empresa empresa) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
@@ -101,6 +102,8 @@ public class PedidoManualFactory {
 
         Pedido saved = pedidoRepository.save(pedido);
         Hibernate.initialize(saved.getItems());
+        // SEC-09: si nace ya pagada (método manual), deja el Pago manual que habilita el despacho.
+        pedidoPagoManualService.registrarPagoAlCrear(saved);
         if (Constants.PEDIDO_PAGADO.equals(saved.getEstadoPedido())) {
             n8nWebhookService.notificarPedidoNuevo(saved);
         }

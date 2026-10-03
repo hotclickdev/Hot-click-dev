@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +17,9 @@ import java.util.Map;
 /**
  * Webhook Tilopay (contrato pendiente de sac@tilopay.com).
  * Solo encola y reconsulta — no confía en el body sin verificación OrderHash.
- * Si {@code tilopay.webhook-secret} está configurado, exige header {@code X-Webhook-Secret}.
+ * Fuera de dev/test, {@code tilopay.webhook-secret} vacío rechaza el webhook.
+ * En dev/test, vacío sigue aceptando para no romper el modo simulado.
+ * Si el secret está configurado, exige header {@code X-Webhook-Secret}.
  */
 @RestController
 @RequestMapping("/api/webhooks")
@@ -24,6 +28,7 @@ public class TilopayWebhookController {
     private static final Logger log = LoggerFactory.getLogger(TilopayWebhookController.class);
 
     @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
+    @Autowired private Environment environment;
 
     @Value("${tilopay.webhook-secret:}")
     private String webhookSecret;
@@ -49,10 +54,10 @@ public class TilopayWebhookController {
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
 
-    /** Si el secret no está configurado, acepta (rollout). Si está, comparación constante. */
+    /** Vacío solo pasa en dev/test. Si está configurado, comparación en tiempo constante. */
     boolean secretValido(String secretHeader) {
         if (webhookSecret == null || webhookSecret.isBlank()) {
-            return true;
+            return perfilDeSimulacion();
         }
         if (secretHeader == null) {
             return false;
@@ -60,6 +65,10 @@ public class TilopayWebhookController {
         byte[] a = webhookSecret.getBytes(StandardCharsets.UTF_8);
         byte[] b = secretHeader.getBytes(StandardCharsets.UTF_8);
         return MessageDigest.isEqual(a, b);
+    }
+
+    private boolean perfilDeSimulacion() {
+        return environment != null && environment.acceptsProfiles(Profiles.of("dev", "test"));
     }
 
     private static String extraerOrder(Map<String, Object> body) {

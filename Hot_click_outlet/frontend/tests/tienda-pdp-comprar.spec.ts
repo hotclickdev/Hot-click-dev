@@ -39,14 +39,15 @@ test.describe('Ficha de tienda — Comprar ahora', () => {
     await page.goto('/tienda/demo/producto/1', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { level: 1, name: 'Mouse' })).toBeVisible()
 
-    const comprar = page.getByRole('button', { name: 'Comprar ahora' })
-    const agregar = page.getByRole('button', { name: 'Agregar al pedido' })
+    // Barra fija del móvil o fila del escritorio (Figma 28:977 / 29:2150): una sola está visible.
+    const comprar = page.getByRole('button', { name: 'Comprar ahora' }).filter({ visible: true })
+    const agregar = page.getByRole('button', { name: /^Agregar · / }).filter({ visible: true })
     await expect(comprar).toBeVisible()
     await expect(agregar).toBeVisible()
 
     await agregar.click()
     await expect(page).toHaveURL(/\/tienda\/demo\/producto\/1/)
-    await expect(page.getByRole('button', { name: 'Agregado al pedido' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Agregado al pedido' }).filter({ visible: true })).toBeVisible()
 
     await comprar.click()
     await expect(page).toHaveURL(/\/tienda\/demo\/checkout/)

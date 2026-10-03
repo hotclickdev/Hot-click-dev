@@ -14,12 +14,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * NIVEL: INTERMEDIO — 25 tests
+ * NIVEL: INTERMEDIO — 29 tests
  *
  * Verifica la lógica funcional de pedidos para el rol EMPRENDEDOR:
  * - Listar solo pedidos propios
  * - Cambiar estado (flujo correcto e incorrecto)
- * - Asignar guía / procesar envío
+ * - Asignar guía / procesar envío (solo con pago confirmado: pedido2 está PAGADO)
  * - Pendientes filtrados
  * - Eliminación de pedidos
  */
@@ -28,6 +28,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
 
     @Autowired private EmpresaRepository  empresaRepository;
     @Autowired private PedidoRepository   pedidoRepository;
+    @Autowired private com.hotclick.repository.PagoRepository pagoRepository;
     @Autowired private BodegaRepository   bodegaRepository;
     @Autowired private CategoriaRepository categoriaRepository;
 
@@ -59,6 +60,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
         categoriaRepository.deleteAll();
@@ -101,11 +103,11 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data[?(@.numeroPedido == 'ORD-EXT-001')]").doesNotExist());
     }
 
-    // ── T-PED-004: Cambiar estado PENDIENTE → EN_PREPARACION ─────────────────
+    // ── T-PED-004: Cambiar estado PAGADO → EN_PREPARACION (SEC-06: desde PENDIENTE ya no) ──
     @Test
-    @DisplayName("T-PED-004 | INTERMEDIO — Cambiar estado PENDIENTE → EN_PREPARACION → 200")
-    void changeEstado_pendiente_a_enPreparacion() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/estado")
+    @DisplayName("T-PED-004 | INTERMEDIO — Cambiar estado PAGADO → EN_PREPARACION → 200")
+    void changeEstado_pagado_a_enPreparacion() throws Exception {
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/estado")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"EN_PREPARACION\"}"))
@@ -117,7 +119,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-005 | INTERMEDIO — Cambiar estado con nota → 200 y notificaciones no vacías")
     void changeEstado_conNota_persisteNotificacion() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/estado")
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/estado")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"EN_PREPARACION\",\"nota\":\"Preparando su pedido\"}"))
@@ -151,7 +153,8 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-008 | INTERMEDIO — Asignar guía a pedido propio → 200")
     void asignarGuia_ownPedido_200() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/guia")
+        pagoCapturado(pedido2);
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/guia")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"numeroGuia\":\"CR111222333CR\"}"))
@@ -185,7 +188,8 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-011 | INTERMEDIO — Procesar envío con guía y costo → 200")
     void procesarEnvio_ownPedido_200() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/envio")
+        pagoCapturado(pedido2);
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/envio")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"guia\":\"CR999888777CR\",\"costoEnvio\":2500}"))
@@ -265,13 +269,13 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-019 | INTERMEDIO — Estado actualizado se persiste y se refleja al releer")
     void changeEstado_persistsInDB() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/estado")
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/estado")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"LISTO_RETIRO\"}"))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/pedidos/" + pedido1.getId())
+        mockMvc.perform(get("/api/pedidos/" + pedido2.getId())
                 .header("Authorization", tokenEmp))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.estadoPedido").value("LISTO_RETIRO"));
@@ -281,7 +285,8 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-020 | INTERMEDIO — Asignar guía cambia estado pedido a ENVIADO")
     void asignarGuia_updatesEstadoToEnviado() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/guia")
+        pagoCapturado(pedido2);
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/guia")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"numeroGuia\":\"CR777666555CR\"}"))
@@ -293,7 +298,8 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-021 | INTERMEDIO — procesarEnvio cambia estado a ENVIADO")
     void procesarEnvio_updatesEstadoToEnviado() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/envio")
+        pagoCapturado(pedido2);
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/envio")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"guia\":\"CR444555666CR\",\"costoEnvio\":3000}"))
@@ -337,12 +343,74 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PED-025 | INTERMEDIO — Guía con espacios al inicio/fin se trimea correctamente")
     void asignarGuia_trimsSpaces() throws Exception {
-        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/guia")
+        pagoCapturado(pedido2);
+        mockMvc.perform(put("/api/pedidos/" + pedido2.getId() + "/guia")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"numeroGuia\":\"  CR123456789CR  \"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.numeroGuia").value("CR123456789CR"));
+    }
+
+    // ── T-PED-026: Guía a pedido sin pago confirmado → 409 (BUG-02) ──────────
+    @Test
+    @DisplayName("T-PED-026 | CRÍTICO — Asignar guía a pedido PENDIENTE (pago sin confirmar) → 409 y sigue PENDIENTE")
+    void asignarGuia_sinPago_409() throws Exception {
+        mockMvc.perform(put("/api/pedidos/" + pedido1.getId() + "/guia")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"numeroGuia\":\"RR123456789CR\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.message").value(
+                "El pago de este pedido todavía no está confirmado. Podés despacharlo cuando se confirme el pago."));
+
+        Pedido releido = pedidoRepository.findById(pedido1.getId()).orElseThrow();
+        Assertions.assertEquals(Constants.PEDIDO_PENDIENTE, releido.getEstadoPedido());
+        Assertions.assertNull(releido.getNumeroGuia());
+    }
+
+    // ── T-PED-027: Envío de SINPE/efectivo sin comprobante → 409 ─────────────
+    @Test
+    @DisplayName("T-PED-027 | CRÍTICO — Procesar envío de pedido PENDIENTE_COMPROBANTE → 409")
+    void procesarEnvio_pendienteComprobante_409() throws Exception {
+        Pedido sinpe = crearPedido("ORD-PED-003", testUser, bodega, empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        mockMvc.perform(put("/api/pedidos/" + sinpe.getId() + "/envio")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"guia\":\"CR444555666CR\",\"costoEnvio\":3000}"))
+            .andExpect(status().isConflict());
+
+        Assertions.assertEquals(Constants.PEDIDO_PENDIENTE_COMPROBANTE,
+            pedidoRepository.findById(sinpe.getId()).orElseThrow().getEstadoPedido());
+    }
+
+    // ── T-PED-028: Estado ENVIADO sin pago confirmado → 409 ──────────────────
+    @Test
+    @DisplayName("T-PED-028 | CRÍTICO — Cambiar estado a ENVIADO de un pedido PENDIENTE_APROBACION → 409")
+    void changeEstado_enviadoSinPago_409() throws Exception {
+        Pedido enRevision = crearPedido("ORD-PED-004", testUser, bodega, empresa, Constants.PEDIDO_PENDIENTE_APROBACION);
+        mockMvc.perform(put("/api/pedidos/" + enRevision.getId() + "/estado")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"estado\":\"ENVIADO\"}"))
+            .andExpect(status().isConflict());
+
+        Assertions.assertEquals(Constants.PEDIDO_PENDIENTE_APROBACION,
+            pedidoRepository.findById(enRevision.getId()).orElseThrow().getEstadoPedido());
+    }
+
+    // ── T-PED-029: Guía a pedido cancelado → 409 ─────────────────────────────
+    @Test
+    @DisplayName("T-PED-029 | CRÍTICO — Asignar guía a pedido CANCELADO → 409")
+    void asignarGuia_cancelado_409() throws Exception {
+        Pedido cancelado = crearPedido("ORD-PED-005", testUser, bodega, empresa, Constants.PEDIDO_CANCELADO);
+        mockMvc.perform(put("/api/pedidos/" + cancelado.getId() + "/guia")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"numeroGuia\":\"RR123456789CR\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value("Este pedido está cancelado y no se puede despachar."));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -397,5 +465,18 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
         p.setEstado(Constants.ESTADO_ACTIVO);
         p.setItems(new ArrayList<>());
         return pedidoRepository.saveAndFlush(p);
+    }
+
+    /** SEC-09: despachar exige el Pago CAPTURADO, no solo el estado PAGADO. */
+    private void pagoCapturado(Pedido pedido) {
+        Pago pago = new Pago();
+        pago.setMerchantToken("tok-" + java.util.UUID.randomUUID());
+        pago.setMonto(pedido.getTotalPedido());
+        pago.setProveedor(Constants.PROVEEDOR_SINPE);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        pago.setPedido(pedido);
+        pago.setUsuario(pedido.getUsuarioFinal());
+        pago.setFechaCreacion(LocalDateTime.now());
+        pagoRepository.saveAndFlush(pago);
     }
 }

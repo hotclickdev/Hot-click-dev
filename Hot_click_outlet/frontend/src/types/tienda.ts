@@ -25,6 +25,11 @@ export type EmpresaTiendaPublica = {
   ogImagenUrl?: string | null
   enHotclickDesde?: string | null
   facturaElectronica?: boolean
+  /**
+   * Lo decide el backend según el plan: true solo en PYME o NEGOCIO_PLUS. En EMPRENDEDOR la API manda
+   * whatsapp e instagram vacíos y esto en false; el visitante no ve contacto directo del vendedor.
+   */
+  contactoDirecto?: boolean
   retiro?: RetiroTienda | null
 }
 

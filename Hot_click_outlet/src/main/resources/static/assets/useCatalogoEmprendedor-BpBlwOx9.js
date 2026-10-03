@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-Bocq301-.js";function t(){return e()}export{t};

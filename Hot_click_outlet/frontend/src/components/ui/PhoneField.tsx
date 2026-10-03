@@ -18,6 +18,11 @@ export type PhoneFieldProps = {
   error?: ReactNode
   defaultCountry?: string
   disabled?: boolean
+  /**
+   * `figma`: caja de cuenta de Figma `28:1183` (fondo blanco, borde `hc-n-200`, radio 12, alto 48, texto 15).
+   * Solo la usa el registro de comprador (visitante); el resto de formularios sigue con la variante clásica.
+   */
+  variante?: 'clasica' | 'figma'
   /** No deja borrar el código de país (se cambia con el selector). */
   forceDialCode?: boolean
 }
@@ -32,11 +37,18 @@ export default function PhoneField({
   error,
   defaultCountry = 'cr',
   disabled = false,
+  variante = 'clasica',
   forceDialCode = false,
 }: PhoneFieldProps) {
   const idGenerado = useId()
   const idCampo = id ?? idGenerado
-  const border = `1.5px solid ${error ? '#ef4444' : 'var(--hc-border)'}`
+  const figma = variante === 'figma'
+  const border = figma
+    ? `1px solid ${error ? 'var(--hc-danger)' : 'var(--hc-n-200)'}`
+    : `1.5px solid ${error ? '#ef4444' : 'var(--hc-border)'}`
+  const fondo = figma ? 'var(--hc-n-0)' : 'var(--hc-surface-2)'
+  const radio = figma ? 12 : 10
+  const alto = figma ? 48 : 44
   return (
     <div className="hc-phone-field space-y-1.5">
       {label && (
@@ -58,13 +70,14 @@ export default function PhoneField({
         forceDialCode={forceDialCode}
         inputProps={{ id: idCampo, 'aria-required': required || undefined, 'aria-invalid': error ? true : undefined }}
         inputStyle={{
-          backgroundColor: 'var(--hc-surface-2)',
+          backgroundColor: fondo,
           border,
           borderLeft: 'none',
-          color: 'var(--hc-text)',
-          borderRadius: '0 10px 10px 0',
+          color: figma ? 'var(--hc-n-900)' : 'var(--hc-text)',
+          borderRadius: `0 ${radio}px ${radio}px 0`,
           padding: '10px 14px',
-          height: 44,
+          height: alto,
+          fontSize: figma ? 15 : undefined,
           flex: '1 1 0',
           minWidth: 0,
           width: '100%',
@@ -72,13 +85,13 @@ export default function PhoneField({
         }}
         countrySelectorStyleProps={{
           buttonStyle: {
-            backgroundColor: 'var(--hc-surface-2)',
+            backgroundColor: fondo,
             border,
             borderRight: 'none',
-            borderRadius: '10px 0 0 10px',
-            paddingLeft: 10,
+            borderRadius: `${radio}px 0 0 ${radio}px`,
+            paddingLeft: figma ? 14 : 10,
             paddingRight: 8,
-            height: 44,
+            height: alto,
             flexShrink: 0,
           },
           flagStyle: { display: 'none' },
