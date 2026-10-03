@@ -17,14 +17,14 @@ export function ContenedorModalCuenta({ figma, open, onClose, titulo, children }
   children: ReactNode
 }) {
   if (figma) return <HojaInferior abierta={open} onCerrar={onClose} titulo={titulo}>{children}</HojaInferior>
-  return <Modal open={open} onClose={onClose} title={titulo}>{children}</Modal>
+  return <Modal open={open} onClose={onClose} title={titulo} variante="clasica">{children}</Modal>
 }
 
 type CampoModalProps = InputHTMLAttributes<HTMLInputElement> & { figma: boolean; etiqueta: string }
 
 export function CampoModalCuenta({ figma, etiqueta, className, ...resto }: CampoModalProps) {
   const id = useId()
-  if (!figma) return <Input label={etiqueta} className={className} {...resto} />
+  if (!figma) return <Input label={etiqueta} className={className} variante="clasica" {...resto} />
   return (
     <div className="flex w-full min-w-0 flex-col gap-[6px] leading-[normal]">
       <label htmlFor={id} className="text-[13px] font-semibold text-hc-n-900">{etiqueta}</label>
@@ -64,7 +64,7 @@ export function BotonModalCuenta({ figma, loading, peligro, type = 'button', onC
   children: ReactNode
 }) {
   if (!figma) {
-    return <Button type={type} loading={loading} onClick={onClick} variant={peligro ? 'danger' : undefined} className="w-full">{children}</Button>
+    return <Button type={type} loading={loading} onClick={onClick} variant={peligro ? 'danger' : undefined} variante="clasica" className="w-full">{children}</Button>
   }
   const color = peligro ? 'border border-hc-danger bg-hc-n-0 text-hc-danger' : 'bg-hc-red-500 text-hc-n-0'
   return (
