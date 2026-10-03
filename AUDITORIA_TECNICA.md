@@ -628,14 +628,14 @@ Los siguientes fixes fueron implementados durante F30 y están en el código act
 resilience4j.circuitbreaker.instances.stripe.sliding-window-size=5
 resilience4j.circuitbreaker.instances.hacienda.failure-rate-threshold=80
 resilience4j.circuitbreaker.instances.claude.wait-duration-in-open-state=15s
-resilience4j.circuitbreaker.instances.supabase.failure-rate-threshold=60
+resilience4j.circuitbreaker.instances.s3.failure-rate-threshold=60
 ```
 
 ---
 
 ### F30-02: Circuit Breakers visibles en ObservabilityController ✅
 **Archivo:** `ObservabilityController.java`  
-`CircuitBreakerRegistry` inyectado. Sección `circuitBreakers` en `GET /api/admin/observabilidad` expone para stripe/hacienda/claude/supabase:
+`CircuitBreakerRegistry` inyectado. Sección `circuitBreakers` en `GET /api/admin/observabilidad` expone para stripe/hacienda/claude/s3:
 - `estado` (CLOSED/OPEN/HALF_OPEN)
 - `tasaFallo` (%)
 - `llamadasExitosas`, `llamadasFallidas`, `llamadasBuffered`

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Funciones de S8. Sourced por restore-drill.sh y por tests.
-# No imprime passwords. No usa SUPABASE_* como destino.
+# No imprime passwords. El destino del drill es solo Postgres local throwaway.
 
 TABLAS_ESPERADAS=(
   hot_click_usuario_tb
@@ -27,7 +27,7 @@ restore_drill_is_local_url() {
 restore_drill_require_throwaway() {
   local url="${DATABASE_URL:-}"
   if [[ -z "$url" ]]; then
-    echo "S8 FAIL: DATABASE_URL vacío. Este job no inventa credenciales y no usa SUPABASE_* como destino." >&2
+    echo "S8 FAIL: DATABASE_URL vacío. Este job no inventa credenciales y no restaura en producción." >&2
     exit 1
   fi
   if restore_drill_is_prod_url "$url"; then

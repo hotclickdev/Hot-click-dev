@@ -14,7 +14,7 @@ Scripts: `scripts/eng-gates/` (`hunter-idor`, `sonar-batch`, `e2e-gap-map`, `gat
 | **S1** | `sonar-batch.yml` | Lunes 14:00 UTC (**08:00 CR**) + dispatch | Issue-only: lote de ~8 archivos ≥200 LOC **fuera** de `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*`. Si hay `SONAR_TOKEN`, consulta un recorte de issues; si falta, lista por LOC y declara que la API se omitió. **No** abre un PR de refactor masivo. | `skip-sonar-batch` |
 | **S3** | `e2e-gap-map.yml` | Martes 14:00 UTC + dispatch | Mapa `/checkout`, `/admin/pos`, `/admin/finanzas`, 2FA, SINPE, wallet, Hacienda vs `*.spec.ts`. Issue semanal. Stubs SKIP en `frontend/tests/pending/` (no están en `test:e2e:ci`). | `skip-e2e-gap` |
 | **E10** | `gate-authz.yml` | PR a `master` | Si el PR agrega `@RestController` o mappings `/api` nuevos, falla cuando el path no tiene `requestMatchers` explícito en `SecurityAuthorizationRules` (el catch-all `/api/**` no alcanza). También falla si se borra el catch-all o `SecurityAuthorizationRulesCatchAllTest`. Comenta el path faltante. | `skip-authz-gate` |
-| **S8** | `restore-drill.yml` | Domingo 07:00 UTC (**01:00 CR**, después del backup 06:00 UTC) + dispatch | Baja el último artifact de `Daily DB Backup` y lo restaura en un **Postgres de servicio throwaway**. Nunca usa `SUPABASE_*` como destino. Si el restore falla → Issue **P0**. Si no hay artifact / secretos de backup, el job **falla en claro** (no inventa credenciales). Dispatch `use_fixture=true` prueba solo el mecanismo con SQL sintético. | `skip-restore-drill` (no implementado en cron; el job P0 sí corre si falla) |
+| **S8** | `restore-drill.yml` | Domingo 07:00 UTC (**01:00 CR**, después del backup 06:00 UTC) + dispatch | El job de GitHub restaura solo el **fixture sintético** en un Postgres throwaway. No descarga dumps de producción. En schedule (y en dispatch sin `use_fixture`) otro job hace SSH y mira el tamaño/edad del último objeto S3, sin bajarlo. Si algo falla → Issue **P0**. | `skip-restore-drill` (no implementado en cron; el job P0 sí corre si falla) |
 | — | `ola2-selftest.yml` | PR que toca estos scripts/workflows | `node --test scripts/eng-gates/ola2.test.mjs` | — |
 
 ## Relación con ola 1 (no duplicar)
@@ -40,7 +40,7 @@ Ola 5 (D9/D10/S5/S7/E12/E14/E18): [AGENTES_OLA5.md](AGENTES_OLA5.md).
 | --- | --- | --- |
 | `GITHUB_TOKEN` | Sí (automático) | Issues D2/S1/S3/S8, comentario E10, download de artifacts S8 |
 | `SONAR_TOKEN` | Opcional para S1 | Sin él, S1 igual abre el Issue por LOC y anota “API Sonar omitida”. Sigue siendo obligatorio para `sonarcloud.yml` |
-| `SUPABASE_BACKUP_URL` / `SUPABASE_DB_PASSWORD` | **No los usa S8 como destino** | Los necesita `backup.yml` para generar el artifact. Si faltan, el dump diario falla y S8 falla en claro al no hallar artifact. **Nunca se inventan.** |
+| `LIGHTSAIL_SSH_*` | El job de frescura S3 | Mismos cuatro secrets que `backup.yml`. Si faltan, ese job falla en claro. El fixture no los necesita. **Nunca se inventan.** |
 | `TELEGRAM_*`, `SENTRY_*` | No | Siguen en CI / app |
 
 No hay credenciales nuevas commiteadas. S8 fija `DATABASE_URL` a `127.0.0.1` del service container.

@@ -269,10 +269,10 @@ Hot_click_outlet/
 
 | Variable | Propósito |
 | --- | --- |
-| `SPRING_DATASOURCE_URL` | URL JDBC Supabase con Transaction Pooler (puerto 6543) |
-| `SPRING_DATASOURCE_PASSWORD` | Contraseña PostgreSQL |
-| `SUPABASE_URL` | URL del proyecto Supabase |
-| `SUPABASE_KEY` | Service Role Key de Supabase Storage |
+| `DB_URL` | JDBC al Postgres de Lightsail (`postgres:5432`, sin puerto público) |
+| `DB_PASSWORD` | Contraseña PostgreSQL del contenedor |
+| `AWS_S3_BUCKET` | Bucket de imágenes (`hotclick-media`) |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | IAM de S3 en Lightsail (no hay Instance Profile) |
 | `JWT_SECRET` | Clave secreta para firmar tokens JWT |
 | `RESEND_API_KEY` | SendGrid (email transaccional) |
 | `STRIPE_SECRET_KEY` | Stripe — pagos con tarjeta |
@@ -368,8 +368,7 @@ docker compose up --build
 # Desde la raíz del proyecto
 docker build -t hotclick-outlet .
 docker run -p 8080:8080 \
-  -e SUPABASE_SERVICE_KEY=<key> \
-  -e MAIL_PASSWORD=<pass> \
+  --env-file .env \
   hotclick-outlet
 ```
 
@@ -377,7 +376,8 @@ docker run -p 8080:8080 \
 
 | Variable | Descripción |
 |---|---|
-| `SUPABASE_SERVICE_KEY` | Service Role Key de Supabase Storage |
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | Postgres del compose de Lightsail |
+| `AWS_S3_BUCKET` | Imágenes en S3 |
 | `MAIL_PASSWORD` | App Password de Gmail SMTP |
 | `APP_URL` | URL pública de la app (para callbacks PayXpert) |
 | `PAYXPERT_ORIGINATOR_ID` | ID de comercio PayXpert |

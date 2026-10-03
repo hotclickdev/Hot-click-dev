@@ -39,7 +39,7 @@ external.call.total{service, operation, status}   # counter: success/failure
 external.call.duration{service, operation}         # timer: latencia por llamada
 ```
 
-Servicios instrumentados: claude, stripe, hacienda, supabase, sendgrid, bccr
+Servicios instrumentados: claude, stripe, hacienda, s3, sendgrid, bccr
 
 ### Base de datos (via ObservabilityController)
 - Tamaño total: `pg_database_size(current_database())`

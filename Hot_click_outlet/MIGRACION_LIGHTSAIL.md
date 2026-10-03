@@ -124,6 +124,12 @@ Igual que el EC2: proxy a `127.0.0.1:8080`, `certbot` para `hotclick.lat`.
 
 Encender la EC2, confirmar que RDS `hotclick-db` está available, y pasar el DNS otra vez a `18.227.68.15`. Lightsail no se apaga hasta que ese corte responda.
 
+## Backups
+
+El workflow `Daily DB Backup` entra por SSH y corre `pg_dump -Fc` dentro de
+`hotclick-postgres`. El archivo va a un bucket S3 privado (SSE), no a GitHub.
+Restore: `scripts/backup/RESTORE.md`. El puerto 5432 sigue cerrado.
+
 ## Qué no hacer
 
 - Abrir Postgres a `0.0.0.0`.

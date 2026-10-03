@@ -17,66 +17,42 @@
 
 | Activo | Ubicación | Backup automático | Criticidad |
 |--------|----------|------------------|-----------|
-| Base de datos PostgreSQL | Supabase | ✅ Diario (Supabase Point-in-Time Recovery) | CRÍTICO |
-| Imágenes de productos | Supabase Storage (bucket HOT_CLICK) | ❌ Manual | ALTO |
-| Logos de empresas | Supabase Storage (bucket HOT_CLICK) | ❌ Manual | ALTO |
-| Certificados fiscales (.p12) | Supabase Storage (path `certificados/`) | ❌ Manual | CRÍTICO |
-| Código fuente | Git (GitHub/GitLab) | ✅ Continuo | CRÍTICO |
-| Variables de entorno | Render Dashboard | ❌ Manual (documentar) | CRÍTICO |
-| Configuración Stripe | Stripe Dashboard | ✅ Stripe gestiona | ALTO |
-| Claves API externas | Variables de entorno | ❌ Manual (documentar) | ALTO |
+| Base de datos PostgreSQL | Contenedor `hotclick-postgres` en Lightsail | Diario a S3 privado (SSE), retención 30 días. Ver `scripts/backup/RESTORE.md` | CRÍTICO |
+| Imágenes, logos, certificados | S3 `hotclick-media` | Versionado del bucket si está activo; no van en el dump de GitHub | ALTO / CRÍTICO (.p12) |
+| Código fuente | GitHub | Continuo | CRÍTICO |
+| Variables de entorno | `.env` en el host de Lightsail, fuera del repo | Copia en el gestor de secretos del equipo | CRÍTICO |
+| Claves API externas | Ese mismo `.env` | Manual | ALTO |
 
 ---
 
-## PostgreSQL (Supabase)
+## PostgreSQL (Lightsail)
 
 ### Backup automático
-- **Plan Free**: Backup diario, retención 7 días (Point-in-Time Recovery no disponible)
-- **Plan Pro**: PITR con retención 7 días, restauración a cualquier segundo
-- **Recomendación**: Usar Plan Pro para producción — PITR es crítico para recuperar de errores accidentales
+- Workflow `Daily DB Backup` (06:00 UTC): SSH al host, `docker exec hotclick-postgres pg_dump -Fc`, sube a un bucket S3 privado con SSE.
+- El puerto 5432 no está publicado. El dump no se guarda como artifact de GitHub.
+- Retención: lifecycle de 30 días en el prefijo `db/`.
+- Si el dump pesa menos de 1 KB, el workflow falla, abre el issue D5 y avisa por Telegram.
 
 ### Procedimiento de restauración
-```bash
-# 1. Desde Supabase Dashboard → Database → Backups
-# 2. Seleccionar backup de la fecha/hora deseada
-# 3. Clic en "Restore" (crea una nueva instancia)
-# 4. Actualizar DB_URL en Render con la nueva connection string
-# 5. Reiniciar el Web Service en Render
+Ver `scripts/backup/RESTORE.md`. Resumen: bajar el objeto en el host, ensayar en una base `hotclick_restore`, y solo entonces reemplazar la base viva con la app detenida.
 
-# Validar restauración:
-curl https://hotclick-app.onrender.com/api/health
-# Verificar migraciones Flyway:
-# GET /api/health debe retornar 200 con flyway.status = success
+```bash
+curl -s http://127.0.0.1:8080/api/health
 ```
 
 ### Flyway post-restauración
-Las migraciones V1–V49 son idempotentes (usan `IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`).
-Si se restaura a una versión anterior, Flyway re-aplica las migraciones faltantes en startup.
+Las migraciones usan `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS` donde aplica.
+Si se restaura un dump anterior, Flyway aplica las migraciones que falten al arrancar.
 
 ---
 
-## Supabase Storage (imágenes y certificados)
+## S3 (imágenes y certificados)
 
 ### Estado actual
-❌ **No existe backup automático del Storage en el plan Free.**
+Las imágenes y los `.p12` están en el bucket de medios, no en el dump de Postgres.
+El dump de la base no reemplaza una copia de ese bucket.
 
-### Procedimiento de backup manual (recomendado mensualmente)
-```bash
-# Usar la Supabase CLI o la API REST del bucket
-# Opción 1: Supabase CLI
-supabase storage download --project-ref <ref> HOT_CLICK ./backup-storage-$(date +%Y%m%d)/
-
-# Opción 2: Script via API REST
-curl -H "Authorization: Bearer <SERVICE_KEY>" \
-  "https://<PROJECT>.supabase.co/storage/v1/bucket/HOT_CLICK/objects" \
-  | jq '.[].name' | while read f; do
-    curl -H "Authorization: Bearer <SERVICE_KEY>" \
-      -o "./backup-storage/$f" \
-      "https://<PROJECT>.supabase.co/storage/v1/object/HOT_CLICK/$f"
-  done
-```
-
-### Impacto de pérdida de Storage
+### Impacto de pérdida del bucket
 - **Imágenes de productos**: Los productos siguen funcionando; solo se pierde el display visual. Recuperables de CDN caché o re-upload por emprendedor.
 - **Logos**: Mismo impacto que imágenes.
 - **Certificados .p12**: **CRÍTICO** — sin certificado, la empresa no puede facturar. El EMPRENDEDOR tiene la copia original del certificado emitido por SINPE/Bansaseguros.
@@ -106,7 +82,8 @@ Documentar en un gestor de secretos (Vault, Doppler, 1Password Teams):
 | `STRIPE_SECRET_KEY` | Clave Stripe | Sin pagos |
 | `STRIPE_WEBHOOK_SECRET` | Validación webhooks | Sin confirmación de pagos |
 | `ANTHROPIC_API_KEY` | Claude AI | Sin AI Copilot |
-| `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` | Storage y DB | Sin imágenes ni storage |
+| `AWS_S3_BUCKET` + keys IAM de medios | Imágenes y certificados | Sin fotos ni `.p12` en S3 |
+| Env de backup en el host (`backup.env`) | Dump diario a S3 | Sin backup nuevo hasta reponerlo |
 | `SENDGRID_API_KEY` | Emails | Sin notificaciones |
 | `CORS_ALLOWED_ORIGINS` | Orígenes permitidos | CORS error en producción |
 
@@ -118,26 +95,26 @@ Documentar en un gestor de secretos (Vault, Doppler, 1Password Teams):
 
 ### Incidente 1: App caída (5xx generalizados)
 ```
-1. Verificar logs en Render Dashboard → Web Service → Logs
-2. Verificar conectividad BD: curl /api/health
-3. Si startup falla: revisar últimas migraciones Flyway en logs
-4. Si OOM: escalar RAM en Render (Starter → Standard)
+1. `docker logs hotclick` en el host de Lightsail
+2. Verificar `curl -s http://127.0.0.1:8080/api/health` y `https://hotclick.lat/api/health`
+3. Si startup falla: revisar últimas migraciones Flyway en esos logs
+4. Si OOM: `docker stats` (app tope 2 GB, postgres tope 768 MB en el compose)
 5. RTO estimado: 10 min
 ```
 
 ### Incidente 2: Base de datos inaccesible
 ```
-1. Verificar estado de Supabase en status.supabase.com
-2. Si outage de Supabase: esperar (SLA 99.9% = max 8.7h/año de downtime)
-3. Si corrupción propia: restaurar desde backup vía Dashboard
+1. `docker ps` y el healthcheck de `hotclick-postgres`
+2. Si el contenedor está caído: `docker compose -f docker-compose.lightsail.yml up -d postgres` en el directorio del compose
+3. Si los datos están corruptos: restaurar desde S3 (`scripts/backup/RESTORE.md`)
 4. RTO estimado: 30-60 min
 ```
 
 ### Incidente 3: Pérdida de JWT_SECRET
 ```
 1. Generar nuevo secreto: openssl rand -base64 48
-2. Actualizar en Render Environment Variables
-3. Reiniciar Web Service (invalida TODOS los tokens existentes)
+2. Actualizar el `.env` de Lightsail
+3. `docker compose -f docker-compose.lightsail.yml restart app` (invalida TODOS los tokens existentes)
 4. Notificar a usuarios: "Cerraste sesión por actualización de seguridad. Vuelve a iniciar sesión."
 5. RTO estimado: 5 min (todos los usuarios deben re-autenticarse)
 ```

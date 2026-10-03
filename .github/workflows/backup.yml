@@ -3,42 +3,56 @@ name: Daily DB Backup
 on:
   schedule:
     - cron: '0 6 * * *'  # 6 AM UTC = medianoche Costa Rica (UTC-6)
-  workflow_dispatch:      # trigger manual desde GitHub Actions
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      backup_key: ${{ steps.dump.outputs.backup_key }}
+      backup_size: ${{ steps.dump.outputs.backup_size }}
     steps:
-      - name: Install postgresql-client
-        run: sudo apt-get install -y postgresql-client
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Dump and compress
+      - name: Dump en Lightsail y subir a S3 privado
+        id: dump
         env:
-          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          SUPABASE_BACKUP_URL: ${{ secrets.SUPABASE_BACKUP_URL }}
+          LIGHTSAIL_SSH_HOST: ${{ secrets.LIGHTSAIL_SSH_HOST }}
+          LIGHTSAIL_SSH_USER: ${{ secrets.LIGHTSAIL_SSH_USER }}
+          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          LIGHTSAIL_SSH_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_SSH_KNOWN_HOSTS }}
         run: |
-          FILENAME="hotclick-backup-$(date +%Y%m%d-%H%M%S).sql.gz"
-          pg_dump "$SUPABASE_BACKUP_URL" \
-            --no-owner --no-acl --format=plain | gzip > "$FILENAME"
-          SIZE=$(stat -c%s "$FILENAME")
-          echo "BACKUP_FILE=$FILENAME" >> $GITHUB_ENV
-          echo "Backup generado: $(du -sh $FILENAME) ($SIZE bytes)"
-          if [ "$SIZE" -lt 1024 ]; then
-            echo "::error::D5: dump vacío o demasiado chico ($SIZE bytes)"
+          set -euo pipefail
+          set +e
+          out="$(bash scripts/backup/lightsail-ssh.sh scripts/backup/remote-pg-dump.sh)"
+          rc=$?
+          set -e
+          printf '%s\n' "$out"
+          if [[ "$rc" -ne 0 ]]; then
+            exit "$rc"
+          fi
+          key="$(printf '%s\n' "$out" | awk -F= '/^BACKUP_KEY=/{print substr($0, index($0, "=") + 1)}' | tail -n 1)"
+          size="$(printf '%s\n' "$out" | awk -F= '/^BACKUP_SIZE=/{print substr($0, index($0, "=") + 1)}' | tail -n 1)"
+          if [[ -z "$key" || ! "$size" =~ ^[0-9]+$ ]]; then
+            echo "::error::D5: el host no reportó BACKUP_KEY/BACKUP_SIZE"
             exit 1
           fi
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: db-backup-${{ github.run_id }}
-          path: ${{ env.BACKUP_FILE }}
-          retention-days: 30
+          if [[ "$size" -lt 1024 ]]; then
+            echo "::error::D5: dump vacío o demasiado chico ($size bytes)"
+            exit 1
+          fi
+          echo "backup_key=$key" >> "$GITHUB_OUTPUT"
+          echo "backup_size=$size" >> "$GITHUB_OUTPUT"
 
   verify-backup:
     name: D5 — Dump presente y no vacío
     needs: backup
-    if: always()
+    if: always() && needs.backup.result != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,14 +62,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Download dump
-        uses: actions/download-artifact@v7
-        continue-on-error: true
-        with:
-          name: db-backup-${{ github.run_id }}
-          path: backup-artifact
-
-      - name: Verificar dump
+      - name: Verificar metadatos (sin bajar el dump)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash scripts/eng-gates/verify-backup.sh backup-artifact 1024
+          BACKUP_KEY: ${{ needs.backup.outputs.backup_key }}
+          BACKUP_SIZE: ${{ needs.backup.outputs.backup_size }}
+        run: bash scripts/eng-gates/verify-backup.sh --meta 1024
+
+  notify-failure:
+    name: Notificar fallo en Telegram
+    needs: [backup, verify-backup]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar alerta a Telegram
+        run: |
+          JOB_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE=$(printf '%s\n' \
+            "❌ *FALLO EN BACKUP*" \
+            "*Workflow:* Daily DB Backup" \
+            "*Rama:* ${{ github.ref_name }}" \
+            "" \
+            "[Ver detalle del fallo]($JOB_URL)")
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"

@@ -36,7 +36,7 @@ case "$cmd" in
     ;;
   refuse-prod)
     if restore_drill_is_local_url "${DATABASE_URL:-postgresql://x:y@db.supabase.co:5432/postgres}"; then
-      echo "FAIL: una URL de supabase se aceptó como local" >&2
+      echo "FAIL: una URL remota se aceptó como local" >&2
       exit 1
     fi
     echo "OK: URL de prod rechazada"

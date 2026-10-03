@@ -39,7 +39,7 @@ jobs:
           --health-timeout 5s
           --health-retries 8
     env:
-      # Destino SOLO local. Nunca SUPABASE_BACKUP_URL.
+      # Destino SOLO local. Nunca la base de Lightsail.
       DATABASE_URL: postgresql://drill:drill_local_only@127.0.0.1:5432/restore_drill
       DRILL_ALLOW_RESTORE: '1'
       PGPASSWORD: drill_local_only
@@ -50,20 +50,36 @@ jobs:
       - name: Install postgresql-client
         run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client --quiet
 
-      - name: Obtener dump (artifact o fixture)
+      - name: Obtener fixture sintético
         id: dump
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USE_FIXTURE: ${{ github.event.inputs.use_fixture || 'false' }}
+          USE_FIXTURE: 'true'
         run: bash scripts/eng-gates/fetch-backup-dump.sh
 
       - name: Restore drill (throwaway)
         run: bash scripts/eng-gates/restore-drill.sh drill "${{ steps.dump.outputs.file }}"
 
+  s3-freshness:
+    name: S8 objeto S3 reciente (sin descargar)
+    if: github.event_name == 'schedule' || github.event.inputs.use_fixture != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Head del último dump en el host
+        env:
+          LIGHTSAIL_SSH_HOST: ${{ secrets.LIGHTSAIL_SSH_HOST }}
+          LIGHTSAIL_SSH_USER: ${{ secrets.LIGHTSAIL_SSH_USER }}
+          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          LIGHTSAIL_SSH_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_SSH_KNOWN_HOSTS }}
+        run: bash scripts/backup/lightsail-ssh.sh scripts/backup/remote-backup-status.sh
+
   open-p0:
     name: S8 Issue P0 si el restore falla
-    if: failure()
-    needs: [restore-drill]
+    if: always() && (needs.restore-drill.result == 'failure' || needs.s3-freshness.result == 'failure')
+    needs: [restore-drill, s3-freshness]
     runs-on: ubuntu-latest
     permissions:
       contents: read

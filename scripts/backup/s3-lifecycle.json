@@ -1,0 +1,11 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-db-dumps",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "db/" },
+      "Expiration": { "Days": 30 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}

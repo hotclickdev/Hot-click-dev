@@ -115,7 +115,8 @@ describe('D9 AI quota', () => {
 
   it('dbSecretsPresent no usa placeholders inventados', () => {
     assert.equal(dbSecretsPresent({}), false);
-    assert.equal(dbSecretsPresent({ SUPABASE_BACKUP_URL: 'postgresql://x' }), true);
+    assert.equal(dbSecretsPresent({ SUPABASE_BACKUP_URL: 'postgresql://x' }), false);
+    assert.equal(dbSecretsPresent({ DATABASE_URL: 'postgresql://x' }), true);
   });
 });
 

@@ -53,10 +53,10 @@ En producción con problema:
 |---|---|---|
 | `JWT_SECRET` | Clave para firmar todos los JWT. Mínimo 64 chars | `openssl rand -base64 64` |
 | `TOTP_ENCRYPTION_KEY` | Clave AES-256 para cifrar secretos TOTP. Exactamente 64 hex chars | `openssl rand -hex 32` |
-| `DB_URL` | URL de conexión PostgreSQL (Supabase) | Supabase Dashboard |
-| `DB_USERNAME` | Usuario de base de datos | Supabase Dashboard |
-| `DB_PASSWORD` | Contraseña de base de datos | Supabase Dashboard |
-| `SUPABASE_SERVICE_KEY` | Service role key para Supabase Storage | Supabase Dashboard → API |
+| `DB_URL` | JDBC al Postgres de Lightsail (host `postgres`, sin exponer 5432) | `.env` del host |
+| `DB_USERNAME` | Usuario de base de datos | `.env` del host |
+| `DB_PASSWORD` | Contraseña de base de datos | `.env` del host |
+| `AWS_S3_BUCKET` | Imágenes públicas en S3 | Consola AWS |
 
 ### Operacionales (afectan funcionalidad pero no seguridad directa)
 
@@ -75,9 +75,9 @@ En producción con problema:
 ```properties
 # application.properties — valores de seguridad clave
 spring.jpa.hibernate.ddl-auto=none      # NUNCA cambiar a create/update
-server.forward-headers-strategy=FRAMEWORK # Necesario detrás del proxy de Render
+server.forward-headers-strategy=FRAMEWORK # Necesario detrás de Nginx en Lightsail
 paypal.ssl.skip-verify=false            # Solo true en dev con sandbox
-spring.datasource.hikari.maximum-pool-size=3  # Límite Supabase free tier
+spring.datasource.hikari.maximum-pool-size=10 # Postgres local en el compose; no hay pooler externo
 ```
 
 ---
@@ -86,10 +86,10 @@ spring.datasource.hikari.maximum-pool-size=3  # Límite Supabase free tier
 
 ### Antes del primer deploy
 
-- [ ] `JWT_SECRET` generado y configurado en Render (≥ 64 chars)
-- [ ] `TOTP_ENCRYPTION_KEY` generado y configurado en Render (exactamente 64 hex chars)
-- [ ] `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` de Supabase configurados
-- [ ] `SUPABASE_SERVICE_KEY` configurado
+- [ ] `JWT_SECRET` generado y configurado en el `.env` de Lightsail (≥ 64 chars)
+- [ ] `TOTP_ENCRYPTION_KEY` generado y configurado en el `.env` de Lightsail (exactamente 64 hex chars)
+- [ ] `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` del contenedor `hotclick-postgres`
+- [ ] `AWS_S3_BUCKET` y keys IAM de imágenes (Lightsail no usa Instance Profile)
 - [ ] `CORS_ALLOWED_ORIGINS` apunta solo a dominios de producción (no localhost)
 - [ ] `APP_URL` apunta al dominio de producción
 - [ ] `SENDGRID_API_KEY` configurado (para emails de 2FA y notificaciones)
@@ -122,8 +122,8 @@ La rotación invalida todos los access tokens activos (expirarán en ≤15 min) 
 
 **Procedimiento:**
 1. Generar nuevo secret: `openssl rand -base64 64`
-2. Actualizar en Render → Environment Variables
-3. Trigger redeploy
+2. Actualizar en el `.env` de Lightsail y reiniciar el contenedor `hotclick`
+3. Verificar que el contenedor volvió a arrancar
 4. Verificar startup logs
 
 ### TOTP_ENCRYPTION_KEY
@@ -132,8 +132,8 @@ La rotación invalida todos los access tokens activos (expirarán en ≤15 min) 
 
 **Procedimiento de rotación segura (si es necesario):**
 1. Script de migración: leer todos los secretos TOTP, descifrar con clave vieja, re-cifrar con clave nueva
-2. Actualizar la clave en Render
-3. Redeploy con los datos ya migrados
+2. Actualizar la clave en el `.env` de Lightsail
+3. Reiniciar `hotclick` con los datos ya migrados
 
 **No rotar TOTP_ENCRYPTION_KEY sin la migración previa.**
 
@@ -155,15 +155,16 @@ Hot_click_outlet/src/main/resources/db/migration/
   V20__security_audit_log.sql   ← última migración
 ```
 
-Flyway ejecuta las migraciones automáticamente en startup. El `flyway_schema_history` en Supabase registra qué migraciones se han aplicado.
+Flyway ejecuta las migraciones automáticamente en startup. `flyway_schema_history` en el Postgres de Lightsail registra qué migraciones se han aplicado.
 
 ---
 
-## Supabase free tier — limitaciones de seguridad
+## Postgres en Lightsail
 
-- **Pool de conexiones:** Máximo 3 conexiones simultáneas (HikariCP configurado a 3)
-- **Storage:** Sin virus scanning automático (depende de validación en backend)
-- **Row Level Security (RLS):** No está siendo usado (la app maneja autorización en Spring Security). Podría ser una capa adicional.
+- **Conexión:** directa al contenedor `hotclick-postgres`. El puerto 5432 no se publica.
+- **Pool:** Hikari en la app (`maximum-pool-size=10`). No hay PgBouncer delante.
+- **Imágenes:** S3 (`hotclick-media`). La validación de archivos sigue en el backend.
+- **RLS:** no se usa. La autorización es Spring Security (`CompanyScope`).
 
 ---
 
@@ -180,7 +181,7 @@ Los eventos de seguridad se logean a nivel `INFO` o `WARN` (siempre visibles).
 Los eventos críticos de SecurityDetectionService se logean a `WARN`.  
 Errores de configuración crítica se logean a `ERROR`.
 
-Los logs de Render son el único destino de logging actualmente. Para buscar eventos de seguridad en logs de Render:
+Los logs salen por `docker logs hotclick`. Para buscar eventos de seguridad:
 ```
 Buscar: [SEC]     → todos los eventos de security audit
 Buscar: [SEC-ALERT] → alertas de ataque

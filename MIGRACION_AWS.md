@@ -1,5 +1,7 @@
 # Guía de Migración Completa: → AWS (sin Supabase, sin Railway)
 
+> **Histórico.** Desde el 24 sep 2026 la base viva no es RDS ni un proyecto externo: es el contenedor `hotclick-postgres` en Lightsail. El procedimiento vigente está en [`Hot_click_outlet/MIGRACION_LIGHTSAIL.md`](Hot_click_outlet/MIGRACION_LIGHTSAIL.md). Backup y restore: [`scripts/backup/RESTORE.md`](scripts/backup/RESTORE.md). No abras Postgres a internet.
+
 **Proyecto:** HotClick Outlet — Spring Boot 3.4.4 / Java 21 / React  
 **Fecha:** 2026-06-17  
 

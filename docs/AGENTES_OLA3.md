@@ -49,7 +49,7 @@ Ningún secreto va en git. `GITHUB_TOKEN` automático alcanza para Issues/coment
 | `SENTRY_DSN` / `VITE_SENTRY_DSN` / `SENTRY_WEBHOOK_SECRET` | No | Siguen en la app / `ci.yml`. El webhook inbound no se reemplaza. |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Opcional E9 | Ya los usa `ci.yml`. Si faltan, E9 solo abre Issue. |
 | `HEALTH_URL` | Opcional E9 / keep-alive | Override del ping. Default `https://hot-click-dev.onrender.com/api/health`. |
-| `SONAR_TOKEN`, `SUPABASE_*` | No | Siguen en ola 1/2 |
+| `SONAR_TOKEN`, `LIGHTSAIL_SSH_*` | No | SSH solo en `backup.yml` / frescura S8 |
 
 ## Labels
 

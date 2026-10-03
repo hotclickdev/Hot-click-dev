@@ -100,8 +100,8 @@ Content-Security-Policy:
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://www.sandbox.paypal.com; 
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
   font-src 'self' https://fonts.gstatic.com; 
-  img-src 'self' data: blob: https://nkevwfcjhjaawtdqquns.supabase.co https://www.paypalobjects.com; 
-  connect-src 'self' https://nkevwfcjhjaawtdqquns.supabase.co https://api-m.paypal.com https://api-m.sandbox.paypal.com; 
+  img-src 'self' data: blob: https://*.amazonaws.com https://www.paypalobjects.com; 
+  connect-src 'self' https://*.amazonaws.com https://api-m.paypal.com https://api-m.sandbox.paypal.com; 
   frame-src https://www.paypal.com https://www.sandbox.paypal.com; 
   object-src 'none'; 
   base-uri 'self';
@@ -115,8 +115,8 @@ Content-Security-Policy:
 | `script-src` | 'self' + PayPal + 'unsafe-inline' + 'unsafe-eval' | React compilado requiere inline/eval |
 | `style-src` | 'self' + inline + Google Fonts | CSS de la aplicación + tipografías |
 | `font-src` | 'self' + Google Fonts CDN | Fuentes tipográficas |
-| `img-src` | 'self' + data: + blob: + Supabase + PayPal | Imágenes de productos + logos PayPal |
-| `connect-src` | 'self' + Supabase + PayPal APIs | Llamadas AJAX del frontend |
+| `img-src` | 'self' + data: + blob: + S3 + PayPal | Imágenes de productos + logos PayPal |
+| `connect-src` | 'self' + S3 + PayPal APIs | Llamadas AJAX del frontend |
 | `frame-src` | Solo PayPal | Iframes del checkout PayPal |
 | `object-src 'none'` | Sin plugins (Flash, PDF embebido) | Deshabilita plugins obsoletos |
 | `base-uri 'self'` | Sin `<base>` de otros orígenes | Previene base tag injection |

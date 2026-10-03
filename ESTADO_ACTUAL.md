@@ -296,9 +296,9 @@ NO-GO para:
 | Prioridad | Acción | Esfuerzo |
 |-----------|--------|----------|
 | **Crítico** | Eliminar / rotar credencial `Admin1234!` de `PROGRESO.md` | 5 min |
-| **Crítico** | Configurar `SUPABASE_BACKUP_URL` + `SUPABASE_DB_PASSWORD` en GitHub Secrets | 10 min |
+| **Crítico** | Secrets SSH de Lightsail y bucket S3 privado para el backup diario (`scripts/backup/RESTORE.md`) | 10 min |
 | **Crítico** | Verificar `PAYPAL_WEBHOOK_ID` configurado en Render | 5 min |
 | **Alto** | Rate limiting en `/api/auth/login` y `/api/auth/forgot-password` | 2h |
 | **Medio** | CI/CD de build (`.github/workflows/ci.yml`) | 2h |
 
-**El backup no protege nada hasta que se configuren los 2 secrets en GitHub → Settings → Secrets → Actions.**
+**El backup no protege nada hasta que existan los secrets SSH y el bucket S3 privado descritos en `scripts/backup/RESTORE.md`.**

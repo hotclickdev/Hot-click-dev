@@ -292,7 +292,8 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 | Servicio | Dónde rotar |
 |----------|-------------|
 | Anthropic (Claude) | console.anthropic.com → API Keys |
-| Supabase | supabase.com → Project → Settings → API |
+| AWS S3 (imágenes) | IAM user de `hotclick-media` (Lightsail no tiene Instance Profile) |
+| AWS S3 (backups de BD) | IAM user aparte, solo el prefijo `db/` del bucket privado. Ver `scripts/backup/RESTORE.md` |
 | SendGrid | app.sendgrid.com → Settings → API Keys |
 | Stripe | dashboard.stripe.com → Developers → API Keys |
 | Clerk | dashboard.clerk.com → API Keys |
@@ -327,9 +328,9 @@ en el backend, en el controller del copilot, antes de llamar a Claude.
 - El número de WhatsApp/SINPE Móvil de HOTCLICK es `50686667888` (8666-7888).
 - Soft delete en Marcas: `estado = 0` (INACTIVO) en vez de borrar el registro.
 
-## Constraints de infraestructura — PgBouncer transaction mode (CRÍTICO)
+## Constraints de infraestructura — no depender de sesión de Postgres (CRÍTICO)
 
-Supabase usa PgBouncer en **transaction mode**. Esto significa que la conexión se devuelve al pool al finalizar cada transacción. Las siguientes funcionalidades de PostgreSQL **NO FUNCIONAN** y nunca deben usarse:
+Producción es Postgres en Docker dentro de Lightsail (`hotclick-postgres`), conexión directa, sin pooler. El código igual **no usa** funciones que se rompen si delante hay un pooler en transaction mode (el arreglo histórico, y cualquier pooler futuro):
 
 | ❌ NO usar | Motivo |
 |-----------|--------|
