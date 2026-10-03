@@ -124,7 +124,7 @@ public class PosQrVentaService {
     public Map<String, String> iniciarSinpeOnvo(String token, String telefono, String cedula,
                                                String nombre, String email) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
-        if (!PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
+        if (sesion == null || !PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
             throw new IllegalStateException("Esta sesión no es de SINPE");
         }
         if ("PAGADO".equals(sesion.getEstado())) {

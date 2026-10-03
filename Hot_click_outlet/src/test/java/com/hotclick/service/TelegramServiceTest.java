@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("TelegramService: Markdown escapado, reintento en texto plano y token fuera del log")
 class TelegramServiceTest {
 
-    private static final String TOKEN = "123456789:AAH-fake_token-for_tests";
+    private static final String TOKEN_FALSO = "123456789:AAH-fake_token-for_tests";
 
     private RestTemplate restTemplate;
     private TelegramService service;
@@ -37,7 +37,7 @@ class TelegramServiceTest {
     void setUp() {
         restTemplate = mock(RestTemplate.class);
         service = new TelegramService(restTemplate);
-        ReflectionTestUtils.setField(service, "botToken", TOKEN);
+        ReflectionTestUtils.setField(service, "botToken", TOKEN_FALSO);
         ReflectionTestUtils.setField(service, "chatId", "-100");
     }
 
@@ -82,12 +82,12 @@ class TelegramServiceTest {
     @Test
     @DisplayName("sinToken quita el token de la URL del bot y de la de archivos")
     void sinTokenEnmascara() {
-        String mensaje = "400 Bad Request on POST request for \"https://api.telegram.org/bot" + TOKEN + "/sendMessage\"";
+        String mensaje = "400 Bad Request on POST request for \"https://api.telegram.org/bot" + TOKEN_FALSO + "/sendMessage\"";
         assertThat(TelegramTexto.sinToken(mensaje))
-            .doesNotContain(TOKEN)
+            .doesNotContain(TOKEN_FALSO)
             .doesNotContain("AAH-fake")
             .contains("https://api.telegram.org/bot***/sendMessage");
-        assertThat(TelegramTexto.sinToken("https://api.telegram.org/file/bot" + TOKEN + "/photos/a.jpg"))
+        assertThat(TelegramTexto.sinToken("https://api.telegram.org/file/bot" + TOKEN_FALSO + "/photos/a.jpg"))
             .isEqualTo("https://api.telegram.org/file/bot***/photos/a.jpg");
         assertThat(TelegramTexto.sinToken(null)).isNull();
     }

@@ -120,7 +120,7 @@ describe('el verde de éxito como texto usa --hc-success-text', () => {
     const TEXTO_EXITO = [
       /(?<![\w:-])text-hc-(success|green-600)(?![\w-])/,
       /text-\[var\(--hc-success\)\]/,
-      /(?<![\w-])(color|text)\s*:\s*[^,;{}\n]*?var\(--hc-success\)/,
+      /(?<![\w-])(color|text)\s*:[^,;{}\n]*var\(--hc-success\)/,
     ]
     const malos: string[] = []
     for (const archivo of fuentes(new URL('../', import.meta.url))) {
@@ -131,6 +131,10 @@ describe('el verde de éxito como texto usa --hc-success-text', () => {
       })
     }
     expect(malos).toEqual([])
-    expect(readFileSync(new URL('../index.css', import.meta.url), 'utf8')).toMatch(/\.hc-btn-success \{[^}]*\n\s*color: var\(--hc-success-text\)/)
+    const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8')
+    const inicio = css.indexOf('.hc-btn-success {')
+    const bloque = css.slice(inicio, css.indexOf('}', inicio)).split('\n').map((l) => l.trim())
+    expect(inicio).toBeGreaterThan(-1)
+    expect(bloque).toContain('color: var(--hc-success-text);')
   }, 20_000)
 })
