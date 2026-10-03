@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
-import { HotClickMark } from '@/components/ui/BrandLogo'
 import { AnimatePresence } from 'framer-motion'
 import useAuthStore from '@/store/authStore'
 import { billingService } from '@/services/billingService'
@@ -11,12 +10,15 @@ import { useVerificarCorreoOtp } from '@/hooks/useVerificarCorreoOtp'
 import { RUTA_PANEL_VENDEDOR } from '@/utils/destinoVender'
 import { leerPlanQuery, planIdToNombreBackend } from './planQueryParam'
 import type { Id } from '@/types/api'
+import { planAlta, textoPagarDespues } from './altaVendedorPlanes'
+import { AltaHeader, AltaPasos, AltaTitulo, PillPendiente } from './AltaVendedorUI'
 
 type PlanApi = { id: Id; nombre: string }
 
 export default function ActivarPlanPage() {
   const [searchParams] = useSearchParams()
   const planQuery = leerPlanQuery(searchParams.toString())
+  const plan = planAlta(planQuery)
   const correoVerificado = useAuthStore((s) => s.correoVerificado)
   const userEmail = useAuthStore((s) => s.userEmail)
   const token = useAuthStore((s) => s.token)
@@ -61,21 +63,23 @@ export default function ActivarPlanPage() {
   if (!planQuery) return <Navigate to="/registro-empresa" replace />
 
   return (
-    <div className="min-h-screen flex flex-col items-center" style={{ fontFamily: 'var(--hc-font-text)', background: 'var(--hc-bg)' }}>
-      <div className="flex items-center justify-between w-full px-6 py-4" style={{ borderBottom: '1px solid var(--hc-border)' }}>
-        <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
-          <HotClickMark size={28} className="shrink-0" />
-          <span className="hc-wordmark" style={{ fontSize: '1rem' }}>
-            <span className="hot">Hot</span><span className="click">Click</span>
-          </span>
-        </Link>
-      </div>
-
-      <div className="flex-1 flex flex-col items-center px-5 py-10 w-full max-w-[460px]">
-        <div className="w-full rounded-2xl overflow-hidden" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 8px 40px var(--hc-shadow)' }}>
-          <div style={{ height: 3, background: 'linear-gradient(90deg, transparent, var(--hc-primary), transparent)' }} />
-          <div className="p-6 sm:p-8">
-
+    <div className="min-h-screen bg-hc-n-50 font-[family-name:var(--hc-font-text)] text-hc-n-900">
+      <AltaHeader derecha={null} />
+      <main className="mx-auto flex w-full max-w-[640px] flex-col gap-5 px-4 pb-12 pt-5 lg:pt-8">
+        <AltaPasos paso={2} />
+        <AltaTitulo
+          antes={pagoPendiente ? 'Activá tu plan' : 'Revisá tu'}
+          acento={pagoPendiente ? plan.nombre : 'correo'}
+          sub={pagoPendiente ? 'Confirmá el pago para activar tu suscripción.' : 'Te mandamos un código para confirmar que el correo es tuyo.'}
+        />
+        <div className="flex items-center gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-3.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-semibold text-hc-n-900">Plan {plan.nombre}</p>
+            <p className="flex flex-wrap items-center gap-1.5 text-[12px] text-hc-n-600">Mensualidad y comisión: <PillPendiente /></p>
+          </div>
+        </div>
+        <div className="rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 lg:p-5">
+          <div>
             <AnimatePresence mode="wait">
               {!puedeActivar ? (
                 <EmprendimientoPasoVerificar
@@ -92,10 +96,6 @@ export default function ActivarPlanPage() {
                 />
               ) : pagoPendiente ? (
                 <div key="pago" className="space-y-4">
-                  <div className="text-center mb-2">
-                    <h2 className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>Activá tu plan {pagoPendiente.planNombre}</h2>
-                    <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Confirmá el pago para activar tu suscripción.</p>
-                  </div>
                   <OnvoSuscripcionEmbed
                     subscriptionId={pagoPendiente.subscriptionId}
                     customerId={pagoPendiente.customerId}
@@ -103,19 +103,18 @@ export default function ActivarPlanPage() {
                     onSuccess={() => void irAExito()}
                     onError={() => {}}
                   />
-                  {errorCobro && <p className="text-sm text-center text-red-500">{errorCobro}</p>}
+                  {errorCobro && <p role="alert" className="rounded-[12px] border border-hc-red-500 p-3 text-[13px] text-hc-n-900">{errorCobro}</p>}
                   <button
                     type="button"
                     onClick={cancelarPago}
-                    className="w-full text-center text-xs py-1.5"
-                    style={{ color: 'var(--hc-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                    className="w-full py-1.5 text-center text-[13px] font-semibold text-hc-blue-600"
                   >
                     Volver
                   </button>
                 </div>
               ) : (
                 <div key="cargando" className="text-center py-6">
-                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
+                  <p className="text-[14px] text-hc-n-600">
                     {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorPlan || 'Un momento…')}
                   </p>
                 </div>
@@ -124,14 +123,13 @@ export default function ActivarPlanPage() {
           </div>
         </div>
 
-        <Link
-          to={RUTA_PANEL_VENDEDOR}
-          className="mt-5 w-full text-center text-sm py-2 rounded-xl hover:opacity-70"
-          style={{ color: 'var(--hc-muted)', textDecoration: 'none' }}
-        >
-          Continuar y pagar después
-        </Link>
-      </div>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <Link to={RUTA_PANEL_VENDEDOR} className="inline-flex h-12 w-full items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 text-[15px] font-semibold text-hc-n-900 no-underline hover:bg-hc-n-50">
+            Pagar después
+          </Link>
+          <p className="text-[12px] text-hc-n-600">{textoPagarDespues(plan.nombre)}</p>
+        </div>
+      </main>
     </div>
   )
 }
