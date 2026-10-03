@@ -3,11 +3,18 @@ import i18next from 'i18next'
 import es from '@/i18n/locales/es.json'
 import en from '@/i18n/locales/en.json'
 import pt from '@/i18n/locales/pt.json'
-import { TEXTO_TIEMPO_ENVIO, variablesTiemposEnvio } from './tiemposEnvio'
+import { readFileSync } from 'node:fs'
+import { TEXTO_TIEMPO_ENVIO, TIEMPOS_ENVIO, TIEMPOS_ENVIO_PROVISIONALES, variablesTiemposEnvio } from './tiemposEnvio'
 import { TARIFAS } from '@/pages/envios/enviosData'
 import { opcionesEnvio } from '@/pages/checkout/checkoutHelpers'
 
 describe('tiempos de envío: una sola fuente (D13)', () => {
+  it('los valores salen del JSON que también lee el backend (correo de guía)', () => {
+    const json = JSON.parse(readFileSync(new URL('../../../src/main/resources/config/tiempos-envio.json', import.meta.url), 'utf8'))
+    expect(TIEMPOS_ENVIO).toEqual({ rapido: json.rapido, normalGam: json.normalGam, fueraGam: json.fueraGam })
+    expect(TIEMPOS_ENVIO_PROVISIONALES).toBe(json.provisional)
+  })
+
   it('/envios y el checkout muestran el mismo texto que la config', () => {
     const tarifa = (id: string) => TARIFAS.find((f) => f.id === id)?.tiempo
     expect(tarifa('rapido')).toBe(TEXTO_TIEMPO_ENVIO.rapido)

@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import com.hotclick.config.TiemposEnvio;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PedidoRepository;
@@ -9,7 +10,8 @@ import org.springframework.stereotype.Component;
 /**
  * Correo de guía asignada al cliente (Figma «Correo · Guía asignada», 30:1643).
  * «Paquete N de M» y «Los otros paquetes…» salen de los pedidos hermanos del mismo
- * pago ({@code grupoPago}); con un solo paquete no se dibujan.
+ * pago ({@code grupoPago}); con un solo paquete no se dibujan. El plazo sale de
+ * {@link TiemposEnvio} (la misma config que el checkout).
  */
 @Component
 class NotificacionGuiaEmailBuilder {
@@ -34,7 +36,7 @@ class NotificacionGuiaEmailBuilder {
         int[] paquete = paqueteDelGrupo(pedido);
         String prefijo = paquete == null ? "" : "Paquete " + paquete[0] + " de " + paquete[1] + ". ";
         String sub = prefijo + "Tu pedido #" + layout.esc(pedido.getNumeroPedido()) + " salió con " + courierNombre
-            + ". La entrega tarda de 2 a 5 días hábiles.";
+            + ". La entrega tarda " + TiemposEnvio.plazo(pedido.getMetodoEnvio()) + ".";
 
         return layout.abrirHtml()
             + layout.headerConIcono(EmailLayoutHelper.FONDO_INFO, "camion", titulo, sub)

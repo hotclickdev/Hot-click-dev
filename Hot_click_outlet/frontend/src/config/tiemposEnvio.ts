@@ -1,22 +1,26 @@
+import tiempos from '../../../src/main/resources/config/tiempos-envio.json'
+
 /**
- * Tiempos de entrega: ÚNICA FUENTE para `/envios`, las opciones del checkout y los textos i18n
- * (decisión D13, 2-oct-2026).
+ * Tiempos de entrega (decisión D13, 2-oct-2026). La ÚNICA FUENTE es
+ * `Hot_click_outlet/src/main/resources/config/tiempos-envio.json`: la leen este módulo
+ * (`/envios`, opciones del checkout y textos i18n) y el backend (`com.hotclick.config.TiemposEnvio`,
+ * correo de guía). Vive en `src/main/resources` porque el build del backend solo copia `src/`.
  *
  * ⚠ VALORES PROVISIONALES — confirmar con el negocio. Son los que ya usaba la operación.
  * Figma `28:1660` proponía «24 h hábiles» (rápido) y «1 a 3 días» (normal).
- * Para cambiarlos, editar solo este objeto: los textos de es/en/pt los leen por interpolación
+ * Para cambiarlos, editar solo el JSON: los textos de es/en/pt los leen por interpolación
  * (`{{envioRapidoDesde}}`, etc., registrados como `defaultVariables` en `i18n/index.ts`).
  */
 export const TIEMPOS_ENVIO = {
   /** Envío rápido (express) dentro del GAM, en minutos y horas. */
-  rapido: { desdeMin: 30, hastaHoras: 2 },
+  rapido: tiempos.rapido,
   /** Envío normal dentro del GAM, en días hábiles. */
-  normalGam: { desdeDias: 2, hastaDias: 4 },
+  normalGam: tiempos.normalGam,
   /** Envío normal fuera del GAM, en días hábiles. */
-  fueraGam: { desdeDias: 3, hastaDias: 4 },
+  fueraGam: tiempos.fueraGam,
 } as const
 
-export const TIEMPOS_ENVIO_PROVISIONALES = true
+export const TIEMPOS_ENVIO_PROVISIONALES = tiempos.provisional
 
 /** Variables de interpolación para i18next (mismas en los tres idiomas). */
 export function variablesTiemposEnvio(): Record<string, number> {
