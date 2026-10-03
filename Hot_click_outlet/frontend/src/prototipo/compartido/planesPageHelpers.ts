@@ -1,4 +1,3 @@
-import { formatoColon } from '@/theme/formatoColon'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import type { Id } from '@/types/api'
 import type { PlanId } from './plan'
@@ -12,30 +11,44 @@ export type PlanUi = {
   cta: string | null
 }
 
+/**
+ * Beneficios por plan = textos finales de Producto (`planes.{plan}.punto.*`, 3-oct-2026). Límites = los que aplica
+ * el backend (DataSeeder), provisionales. Sin montos: mensualidad y comisión los fija HOT_CLICK ([PENDIENTE]).
+ */
 export const BENEFICIOS_PLAN: Record<string, readonly string[]> = {
   EMPRENDEDOR: [
-    'Hasta 20 productos publicados',
-    'Reportes básicos',
-    'Comisión 8% por venta (mín. ₡400)',
+    'Hasta 50 productos',
     '1 bodega',
+    'Punto de venta con 1 caja',
+    'Equipo de 2 usuarios',
+    'Tus clientes te compran a través de HotClick',
+    'Mensualidad y comisión: [PENDIENTE]',
   ],
   PYME: [
-    'Productos ilimitados',
-    'Gestión de equipo (varios usuarios)',
-    '₡9.900/mes + 4% por venta',
-    'Reportes avanzados',
+    'Tu contacto visible en tu tienda',
+    'Hasta 500 productos',
+    '2 bodegas',
+    'Punto de venta con 2 cajas',
+    'Equipo de 5 usuarios',
+    'Compras a proveedores y gift cards',
+    '80 consultas de IA al mes',
+    'Mensualidad y comisión: [PENDIENTE]',
   ],
   NEGOCIO_PLUS: [
-    'Todo lo de PYME',
-    'Multi-sucursal',
-    '₡24.900/mes + 4% por venta',
-    'Soporte prioritario',
+    'Tu contacto visible en tu tienda',
+    'Productos, bodegas, cajas y usuarios sin límite',
+    'Consultas de IA sin límite',
+    'Todo lo de Pyme',
+    'Mensualidad y comisión: [PENDIENTE]',
   ],
 }
 
+/** Monto mostrado en la tarjeta de plan: lo fija HOT_CLICK, mientras tanto [PENDIENTE] (sin «Gratis»). */
+export const PRECIO_PENDIENTE = '[PENDIENTE]'
+
 export const CTA_PLAN: Record<string, string> = {
   EMPRENDEDOR: 'Bajar a Emprendedor',
-  PYME: 'Mejorar a PYME',
+  PYME: 'Mejorar a Pyme',
   NEGOCIO_PLUS: 'Mejorar a Negocio Plus',
 }
 
@@ -49,6 +62,7 @@ export const TOTAL_PASOS_PLAN = 3
 export function etiquetaPlan(nombre: string): string {
   if (nombre === 'NEGOCIO_PLUS') return 'Negocio Plus'
   if (nombre === 'EMPRENDEDOR') return 'Emprendedor'
+  if (nombre === 'PYME') return 'Pyme'
   return nombre
 }
 
@@ -67,9 +81,7 @@ export function mapApiPlanToUi(p: {
     id: p.id,
     nombreApi: p.nombre,
     nombre: etiquetaPlan(p.nombre),
-    precio: Number(p.precioMensual ?? 0) === 0
-      ? 'Gratis'
-      : `${formatoColon(Number(p.precioMensual))}/mes`,
+    precio: PRECIO_PENDIENTE,
     beneficios: BENEFICIOS_PLAN[p.nombre] ?? [],
     cta: CTA_PLAN[p.nombre] ?? `Cambiar a ${p.nombre}`,
   }
@@ -80,6 +92,6 @@ export function validarPasoElegirPlan(
   planActualApi: string,
 ): string | null {
   if (!planElegido) return 'Elegí un plan para continuar.'
-  if (planElegido.nombreApi === planActualApi) return 'Ese ya es tu plan actual.'
+  if (planElegido.nombreApi === planActualApi) return 'Ese ya es tu plan.'
   return null
 }
