@@ -574,10 +574,6 @@ html.dark .hc-isotipo-placa {
   outline: 2px solid var(--hc-focus-ring);
   outline-offset: -4px;
 }
-.hc-tienda-bottom-nav a:focus-visible {
-  outline: 2px solid var(--t-accent);
-  outline-offset: -4px;
-}
 
 /* Super Admin Figma: sidebar clara (Manual de Marca). */
 :root .hc-admin-sidebar,

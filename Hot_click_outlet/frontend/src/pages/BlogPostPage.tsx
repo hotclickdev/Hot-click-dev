@@ -82,7 +82,7 @@ export default function BlogPostPage() {
   if (loading) {
     return (
       <MainLayout variante="interna" titulo="Blog" atras="/blog">
-        <div className="flex justify-center py-32"><Spinner /></div>
+        <div className="flex justify-center py-32"><Spinner variante="figma" /></div>
       </MainLayout>
     )
   }

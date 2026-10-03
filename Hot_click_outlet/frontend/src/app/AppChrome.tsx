@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigationType } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
-import { whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
+import { esRutaVisitante, whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
+import { PageLoader, PageLoaderFigma } from '@/components/ui/Spinner'
 import { usePantallaSinConexion } from '@/components/ui/flotantes/pantallaSinConexionStore'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
@@ -132,6 +133,8 @@ function BrandingFetch() {
 /** Banner para aplicar update del SW sin reload silencioso mid-wizard. */
 export function ServiceWorkerRefresh() {
   const [disponible, setDisponible] = useState(false)
+  // Está fuera del BrowserRouter: la ruta se lee del navegador cuando llega el aviso.
+  const pathname = globalThis.location?.pathname ?? '/'
 
   useEffect(() => {
     function avisar() {
@@ -142,6 +145,33 @@ export function ServiceWorkerRefresh() {
   }, [])
 
   if (!disponible) return null
+
+  if (esRutaVisitante(pathname, esRutaClaudeclick(pathname))) {
+    // Visitante con sesión (sin sesión se actualiza solo): aviso claro derivado de Figma `29:2036`. ⚠️ COMPARTIDO.
+    return (
+      <div role="status" className="fixed bottom-20 left-1/2 z-[60] flex w-[min(92vw,24rem)] -translate-x-1/2 flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal] shadow-[0_8px_24px_rgba(20,23,28,0.12)] md:bottom-6">
+        <p className="text-[14px] font-semibold text-hc-n-900">Hay una versión nueva de HotClick.</p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="flex-1 rounded-[12px] bg-hc-red-500 px-3 py-[12px] text-[14px] font-semibold text-hc-n-0"
+            onClick={() => {
+              void import('@/app/swUpdate').then(({ aplicarSwUpdate }) => aplicarSwUpdate(true))
+            }}
+          >
+            Actualizar
+          </button>
+          <button
+            type="button"
+            className="flex-1 rounded-[12px] border border-hc-n-200 px-3 py-[11px] text-[14px] font-semibold text-hc-n-900"
+            onClick={() => setDisponible(false)}
+          >
+            Ahora no
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -183,4 +213,10 @@ export function AnalyticsInit() {
     })
   }, [])
   return null
+}
+
+/** Fallback de `Suspense`: visitante con la espera de Figma, paneles y landings con el `PageLoader` de siempre. */
+export function CargaDeRuta() {
+  const { pathname } = useLocation()
+  return esRutaVisitante(pathname, esRutaClaudeclick(pathname)) ? <PageLoaderFigma /> : <PageLoader />
 }

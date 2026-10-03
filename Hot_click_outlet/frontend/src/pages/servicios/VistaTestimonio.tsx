@@ -44,7 +44,7 @@ export default function VistaTestimonio({ token, volver, productosResenar, loadi
       />
     )
   }
-  if (loadingResenar) return <div className="flex justify-center py-16"><Spinner /></div>
+  if (loadingResenar) return <div className="flex justify-center py-16"><Spinner variante="figma" /></div>
   if (!productosResenar?.length) {
     return (
       <Vacio

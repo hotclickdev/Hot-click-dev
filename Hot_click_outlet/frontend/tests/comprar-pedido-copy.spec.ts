@@ -43,7 +43,8 @@ test.describe('Comprar — lenguaje de pedido', () => {
     await expect(page.getByText(/en el pedido/i)).toBeVisible()
     const verPedido = page.getByRole('link', { name: /ver pedido/i }).first()
     await expect(verPedido).toBeVisible()
-    await expect(verPedido).toHaveClass(/hc-btn-primary/)
+    // Aviso de vuelta derivado de Figma 29:2036: enlace azul, no botón viejo.
+    await expect(verPedido).toHaveClass(/text-hc-blue-600/)
 
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: /pedido/i }).first()).toBeVisible()

@@ -49,7 +49,7 @@ export default function LoginPageLayout({ children, flow }: { children: ReactNod
         onDone={() => navigate(recoveryDest, { replace: true })}
       />
 
-      <Modal open={showAdminModal} title={t('login.adminModal')}>
+      <Modal open={showAdminModal} title={t('login.adminModal')} variante="clasica">
         <div className="space-y-3">
           <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>{t('login.adminModalSub')}</p>
           {[

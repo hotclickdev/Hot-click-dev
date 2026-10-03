@@ -12,7 +12,7 @@ export default function SeguiDondeLoDejaste() {
   if (vistos.length === 0) return null
 
   return (
-    <section aria-labelledby="home-seguir" className="flex flex-col gap-3 px-4 pb-[6px] pt-[22px] lg:gap-4 lg:px-8 lg:pb-2 lg:pt-11 xl:px-[120px]">
+    <section aria-labelledby="home-seguir" className="flex flex-col gap-3 px-4 pb-[6px] pt-[22px] lg:gap-4 lg:px-8 lg:pb-2 lg:pt-11 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
       <EncabezadoSeccion id="home-seguir" titulo={t('home.compra.seguirTitulo')} nota={t('home.compra.seguirNota')} />
       <ul className="grid grid-cols-4 gap-[10px] lg:gap-4">
         {vistos.map((item) => (
