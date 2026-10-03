@@ -89,4 +89,18 @@ class NotificacionGuiaEmailBuilderTest {
             .doesNotContain("Paquete ")
             .doesNotContain("Los otros paquetes");
     }
+
+    @Test
+    @DisplayName("El plazo de entrega sale de la config única (tiempos-envio.json), no de un texto fijo")
+    void plazoDesdeLaConfigUnica() {
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        p.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("La entrega tarda " + com.hotclick.config.TiemposEnvio.plazo("ENVIO_NORMAL_GAM") + ".")
+            .contains("de 2 a 4 días hábiles")
+            .doesNotContain("2 a 5");
+
+        p.setMetodoEnvio("ENVIO_NORMAL_FUERA_GAM");
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal())).contains("La entrega tarda de 3 a 4 días hábiles.");
+    }
 }

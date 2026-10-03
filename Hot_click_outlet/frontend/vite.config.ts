@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
@@ -148,6 +148,8 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    // `src/config/tiemposEnvio.ts` importa la config compartida con el backend (D13).
+    fs: { allow: [searchForWorkspaceRoot(directorioFrontend), path.resolve(directorioFrontend, '../src/main/resources/config')] },
     proxy: {
       '/api': {
         target: process.env.VITE_API_PROXY || 'http://localhost:8080',
