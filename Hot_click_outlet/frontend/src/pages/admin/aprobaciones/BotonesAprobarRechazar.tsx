@@ -19,7 +19,7 @@ export default function BotonesAprobarRechazar({ disabled, onAprobar, onRechazar
         type="button"
         onClick={onRechazar}
         disabled={disabled}
-        className="flex min-h-10 items-center justify-center rounded-[10px] bg-[var(--hc-danger-bg)] text-xs font-bold text-hc-primary disabled:opacity-50"
+        className="flex min-h-10 items-center justify-center rounded-[10px] bg-[var(--hc-danger-bg)] text-xs font-bold text-hc-primary-text disabled:opacity-50"
       >
         Rechazar
       </button>

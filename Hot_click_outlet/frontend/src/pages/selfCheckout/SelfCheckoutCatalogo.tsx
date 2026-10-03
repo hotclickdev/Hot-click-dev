@@ -49,7 +49,7 @@ export default function SelfCheckoutCatalogo({ productos, carrito, onCambiar }: 
       </div>
 
       {visibles.length === 0 ? (
-        <p className="px-4 py-16 text-center text-[14px] text-hc-n-500">
+        <p className="px-4 py-16 text-center text-[14px] text-hc-n-600">
           {productos.length === 0 ? t('pos.mesa.sinProductos') : t('pos.mesa.sinResultados')}
         </p>
       ) : (

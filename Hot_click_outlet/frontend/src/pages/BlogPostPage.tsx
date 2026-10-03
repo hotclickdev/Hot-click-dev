@@ -179,7 +179,7 @@ export default function BlogPostPage() {
 
         <header className="flex flex-col gap-2 px-4 pb-2 pt-[18px]">
           <nav aria-label="Ruta de navegación">
-            <ol className="m-0 flex list-none items-center gap-1 p-0 text-[11px] text-hc-n-500">
+            <ol className="m-0 flex list-none items-center gap-1 p-0 text-[11px] text-hc-n-600">
               <li><Link to="/">Inicio</Link></li>
               <li aria-hidden="true">/</li>
               <li aria-current="page"><Link to="/blog">Blog</Link></li>
@@ -188,7 +188,7 @@ export default function BlogPostPage() {
           <h1 className="font-display text-[24px] font-extrabold leading-[30px] text-hc-n-900 [overflow-wrap:anywhere] [text-wrap:wrap]">{post.titulo}</h1>
           <p className="flex flex-wrap items-center gap-2 text-[12px]">
             <span className="font-semibold text-hc-n-600">Por HotClick</span>
-            <span className="text-hc-n-500">{[fechaEntrada(post), minutos ? `${minutos} min` : ''].filter(Boolean).join(' · ')}</span>
+            <span className="text-hc-n-600">{[fechaEntrada(post), minutos ? `${minutos} min` : ''].filter(Boolean).join(' · ')}</span>
           </p>
         </header>
 

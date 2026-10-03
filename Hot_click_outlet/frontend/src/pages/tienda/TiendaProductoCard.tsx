@@ -42,7 +42,7 @@ export default function TiendaProductoCard({
         onClick={() => toggleFavorito(producto)}
         aria-pressed={esFavorito}
         aria-label={esFavorito ? `Quitar ${nombre} de favoritos` : `Guardar ${nombre} en favoritos`}
-        className={`absolute right-1.5 top-2 flex size-8 items-center justify-center rounded-full bg-[var(--t-surface)] shadow-[0px_1px_4px_0px_rgba(0,0,0,0.12)] ${esFavorito ? 'text-hc-red-500' : 'text-hc-n-600'}`}
+        className={`absolute right-1.5 top-2 flex size-8 items-center justify-center rounded-full bg-[var(--t-surface)] shadow-[0px_1px_4px_0px_rgba(0,0,0,0.12)] ${esFavorito ? 'text-hc-red-600' : 'text-hc-n-600'}`}
       >
         <IconoFigma src={ICONOS_COMPRADOR.favorito} size={16} />
       </button>
@@ -50,7 +50,7 @@ export default function TiendaProductoCard({
         <Link to={destino} className="line-clamp-2 min-h-[34px] text-[13px] font-medium leading-[17px] text-hc-n-900">
           {nombre}
         </Link>
-        <p className="truncate text-[11px] leading-[15px] text-hc-n-500">{vendedor}</p>
+        <p className="truncate text-[11px] leading-[15px] text-hc-n-600">{vendedor}</p>
         <div className="flex items-center justify-between pt-[6px]">
           <p className="whitespace-nowrap font-display text-[15px] font-bold leading-[normal] text-hc-n-900">
             {textoPrecioProducto(producto)}

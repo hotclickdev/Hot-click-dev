@@ -60,7 +60,7 @@ export default function DescubriMazo({
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center">
-      <p className="pt-3 text-center text-[13px] leading-[normal] text-hc-n-500">{t('descubri.swipeRightHint')}</p>
+      <p className="pt-3 text-center text-[13px] leading-[normal] text-hc-n-600">{t('descubri.swipeRightHint')}</p>
 
       <div className="relative mt-[57px] h-[460px] w-[310px]" role="region" aria-label={t('descubri.deckLabel')} data-testid="descubri-mazo">
         {[...visibles].reverse().map((p, i, arr) => (
@@ -106,7 +106,7 @@ export default function DescubriMazo({
       </div>
 
       <div className="-mt-0.5 flex flex-col items-center gap-[6px] px-4 pb-5 leading-[normal]">
-        <p className="text-[12px] text-hc-n-500">{t('descubri.selectionHint', { total: eleccionesParaSeleccion })}</p>
+        <p className="text-[12px] text-hc-n-600">{t('descubri.selectionHint', { total: eleccionesParaSeleccion })}</p>
         <button
           type="button"
           onClick={onDeshacer}

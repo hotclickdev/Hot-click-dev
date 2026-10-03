@@ -351,7 +351,7 @@ test.describe('Login y recuperar: responsive y tokens (P08)', () => {
       await ir(page, '/login', tam)
       const correoLogin = page.getByLabel('Correo electrónico')
       await expect(correoLogin).toHaveCSS('font-size', '15px')
-      const gris = await colorDeToken(page, '--hc-n-400')
+      const gris = await colorDeToken(page, '--hc-n-500')
       expect(await correoLogin.evaluate((e) => getComputedStyle(e, '::placeholder').color)).toBe(gris)
       await sinDesborde(page)
 
@@ -363,7 +363,8 @@ test.describe('Login y recuperar: responsive y tokens (P08)', () => {
       await page.getByRole('button', { name: 'Enviar código' }).click()
       await expect(page.locator('input[inputmode="numeric"]')).toHaveCount(6)
       expect(new Set(await tamanosDeCampos(page, 'input[inputmode="numeric"]'))).toEqual(new Set(['22px']))
-      await expect(page.getByText(/^Reenviar en/)).toHaveCSS('color', gris)
+      // R1: el texto pasa a n-600 (AA); el placeholder queda en n-500.
+      await expect(page.getByText(/^Reenviar en/)).toHaveCSS('color', await colorDeToken(page, '--hc-n-600'))
       await sinDesborde(page)
       expect(errores).toEqual([])
     })

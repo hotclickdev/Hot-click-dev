@@ -81,7 +81,7 @@ function FormularioOpinion({ conCalificacion, onEnviar, sinFoto = false, placeho
         rows={1}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="hc-input-libre min-h-[41px] w-full resize-none rounded-[10px] border border-hc-n-200 bg-hc-n-50 p-3 text-[13px] leading-[normal] text-hc-n-900 [field-sizing:content] placeholder:text-hc-n-400 focus:border-hc-blue-600 focus:outline-none"
+        className="hc-input-libre min-h-[41px] w-full resize-none rounded-[10px] border border-hc-n-200 bg-hc-n-50 p-3 text-[13px] leading-[normal] text-hc-n-900 [field-sizing:content] placeholder:text-hc-n-500 focus:border-hc-blue-600 focus:outline-none"
       />
       {img.preview && (
         <span className="flex items-center gap-2 text-[12px] text-hc-n-600">
@@ -161,7 +161,7 @@ export default function CuentaOpiniones({ porOpinar, pedidos, opiniones, onEnvia
                 <Miniatura src={p.imagenUrl} tam={esAbierto ? 56 : 44} />
                 <div className="flex min-w-0 flex-1 flex-col gap-px leading-[normal]">
                   <p className="truncate text-[14px] font-semibold text-hc-n-900">{p.nombre}</p>
-                  {subtitulo && <p className="truncate text-[12px] text-hc-n-500">{subtitulo}</p>}
+                  {subtitulo && <p className="truncate text-[12px] text-hc-n-600">{subtitulo}</p>}
                 </div>
                 {!esAbierto && (
                   <button type="button" onClick={() => setAbiertoManual(id)} aria-label={t('cuenta.opiniones.opinarSobre', { producto: p.nombre })} className="flex gap-1">
@@ -202,7 +202,7 @@ export default function CuentaOpiniones({ porOpinar, pedidos, opiniones, onEnvia
                   <span className={`rounded-full px-2 py-[3px] text-[11px] font-semibold ${aprobada ? 'bg-hc-green-50 text-hc-success' : rechazada ? 'bg-hc-n-100 text-hc-n-600' : 'bg-hc-warning-bg text-hc-warning'}`}>
                     {aprobada ? t('cuenta.opiniones.estadoPublicada') : rechazada ? t('cuenta.opiniones.estadoNoPublicada') : t('cuenta.opiniones.estadoRevision')}
                   </span>
-                  <span className="text-[11px] text-hc-n-500">{t('cuenta.opiniones.revisada')}</span>
+                  <span className="text-[11px] text-hc-n-600">{t('cuenta.opiniones.revisada')}</span>
                 </div>
               </article>
             )

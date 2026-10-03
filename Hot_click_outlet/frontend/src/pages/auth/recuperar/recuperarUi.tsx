@@ -66,9 +66,9 @@ export function CampoRecuperar({ etiqueta, icono, final, id, ...props }: CampoPr
       <label htmlFor={inputId} className="text-[13px] font-semibold text-hc-n-600">{etiqueta}</label>
       <div className="flex w-full items-center gap-[10px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[13px]
         focus-within:border-hc-blue-600 focus-within:shadow-[inset_0_0_0_1px_var(--hc-blue-600)]">
-        <span className="flex shrink-0 text-hc-n-500">{icono}</span>
+        <span className="flex shrink-0 text-hc-n-600">{icono}</span>
         <input id={inputId} {...props}
-          className="min-w-0 flex-1 bg-transparent text-[15px] text-hc-n-900 outline-none placeholder:text-hc-n-400" />
+          className="min-w-0 flex-1 bg-transparent text-[15px] text-hc-n-900 outline-none placeholder:text-hc-n-500" />
         {final}
       </div>
     </div>

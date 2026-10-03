@@ -67,10 +67,10 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
           </Link>
         ))}
         <span className="min-w-px flex-1" />
-        <Link to={RUTA_SERVICIOS_HOT} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-500">
+        <Link to={RUTA_SERVICIOS_HOT} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-600">
           {t('comprador.header.serviciosHot')}
         </Link>
-        <Link to={RUTA_VENDE} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-500">
+        <Link to={RUTA_VENDE} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-600">
           {t('comprador.header.vende')}
         </Link>
       </nav>

@@ -27,7 +27,7 @@ export default function FranjaConfianza() {
               </span>
               <span className="flex min-w-0 flex-col gap-px leading-[normal] lg:gap-[2px]">
                 <span className="truncate text-[14px] font-semibold text-hc-n-900">{t(`home.compra.promesa.${promesa.clave}Titulo`)}</span>
-                <span className="truncate text-[12px] text-hc-n-500">{t(`home.compra.promesa.${promesa.clave}Texto`)}</span>
+                <span className="truncate text-[12px] text-hc-n-600">{t(`home.compra.promesa.${promesa.clave}Texto`)}</span>
               </span>
             </>
           )

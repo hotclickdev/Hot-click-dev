@@ -21,6 +21,7 @@
   --color-hc-text: var(--hc-text);
   --color-hc-muted: var(--hc-muted);
   --color-hc-primary: var(--hc-primary);
+  --color-hc-primary-text: var(--hc-primary-text);
   --color-hc-accent: var(--hc-accent);
   --color-hc-accent-hover: var(--hc-accent-hover);
   --color-hc-success: var(--hc-success);

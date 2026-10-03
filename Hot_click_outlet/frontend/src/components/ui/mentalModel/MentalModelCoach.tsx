@@ -283,7 +283,7 @@ function WelcomeModal({
                 <button
                   type="button"
                   onClick={onModos}
-                  className="min-h-12 w-full rounded-[14px] border border-hc-primary text-sm font-bold text-hc-primary"
+                  className="min-h-12 w-full rounded-[14px] border border-hc-primary text-sm font-bold text-hc-primary-text"
                 >
                   Elegir qué voy a hacer
                 </button>

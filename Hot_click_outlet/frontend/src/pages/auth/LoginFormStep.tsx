@@ -42,14 +42,14 @@ function Campo({ id, etiqueta, icono, children }: { id: string; etiqueta: string
     <div className="flex w-full flex-col gap-1">
       <label htmlFor={id} className="text-[13px] font-medium leading-[normal] text-hc-n-600">{etiqueta}</label>
       <div className="flex w-full items-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[13px] focus-within:border-hc-blue-600 focus-within:shadow-[inset_0_0_0_1px_var(--hc-blue-600)]">
-        <span className="shrink-0 text-hc-n-500">{icono}</span>
+        <span className="shrink-0 text-hc-n-600">{icono}</span>
         {children}
       </div>
     </div>
   )
 }
 
-const CLASE_ENTRADA = 'hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-400'
+const CLASE_ENTRADA = 'hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-500'
 
 /**
  * Ingresar: Figma `28:1143` ("Ingresá o creá tu cuenta"). El frame solo dibuja el correo; la contraseña que exige el
@@ -106,7 +106,7 @@ export default function LoginFormStep({
             <SocialLoginButtons mode="signIn" variante="figma" />
             <div className="flex items-center gap-[10px]">
               <span className="h-px flex-1 bg-hc-n-400" />
-              <span className="text-[12px] text-hc-n-500">{t('login.conCorreo')}</span>
+              <span className="text-[12px] text-hc-n-600">{t('login.conCorreo')}</span>
               <span className="h-px flex-1 bg-hc-n-400" />
             </div>
           </>
@@ -189,7 +189,7 @@ export default function LoginFormStep({
           </p>
         )}
 
-        <p className="text-center text-[12px] leading-4 text-hc-n-500">{t('login.terminos')}</p>
+        <p className="text-center text-[12px] leading-4 text-hc-n-600">{t('login.terminos')}</p>
       </form>
 
       <div className="mt-auto px-4 pb-[28px] pt-8">

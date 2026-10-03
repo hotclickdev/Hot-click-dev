@@ -19,7 +19,7 @@ export default function AvisoVariosEmprendimientos({ cantidadNegocios, className
     { icono: ICONOS_COMPRADOR.avisoUbicacion, color: 'text-hc-blue-600', titulo: t('comprador.aviso.domicilioTitulo'), texto: t('comprador.aviso.domicilioTexto') },
     {
       icono: ICONOS_COMPRADOR.avisoCorazon,
-      color: 'text-hc-red-500',
+      color: 'text-hc-red-600',
       titulo: t('comprador.aviso.apoyoTitulo', { count: cantidadNegocios }),
       texto: t('comprador.aviso.apoyoTexto'),
     },

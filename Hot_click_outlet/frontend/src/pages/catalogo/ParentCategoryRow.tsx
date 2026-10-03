@@ -70,7 +70,7 @@ export default function ParentCategoryRow({
           unidad="categorías más"
           categoria={catName}
           onClick={() => onVerMas(catId)}
-          icono={<span className="text-[26px] font-bold leading-none text-hc-n-500">…</span>}
+          icono={<span className="text-[26px] font-bold leading-none text-hc-n-600">…</span>}
         />
       </div>
     </div>

@@ -151,7 +151,7 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
 
           {(sinpeNombre || sinpeCedula || sinpeTelefono) && (
             <div className="flex flex-col gap-1 rounded-[10px] bg-hc-n-0 p-3">
-              <p className="text-[12px] font-semibold text-hc-n-500">{t('payment.sinpe.tusDatos')}</p>
+              <p className="text-[12px] font-semibold text-hc-n-600">{t('payment.sinpe.tusDatos')}</p>
               {sinpeNombre && <FilaDato etiqueta={t('checkout.f.nombre')} valor={sinpeNombre} />}
               {sinpeCedula && <FilaDato etiqueta={t('checkout.f.cedula')} valor={sinpeCedula} />}
               {sinpeTelefono && <FilaDato etiqueta={t('checkout.f.telefono')} valor={formatTelefonoCR(sinpeTelefono)} />}

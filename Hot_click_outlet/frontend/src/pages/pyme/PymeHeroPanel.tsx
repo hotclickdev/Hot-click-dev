@@ -39,7 +39,7 @@ export default function PymeHeroPanel() {
                 <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{item.nombre}</p>
                 <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{item.detalle}</p>
               </div>
-              <p className="text-[13px] shrink-0" style={{ color: 'var(--hc-primary)', fontFamily: 'var(--hc-font-mono)' }}>{item.precio}</p>
+              <p className="text-[13px] shrink-0" style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}>{item.precio}</p>
             </div>
           </div>
         ))}

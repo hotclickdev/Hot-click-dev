@@ -63,7 +63,7 @@ export default function BusquedaFotoPage() {
 
           {estado === 'listo' && etiquetas.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[12px] text-hc-n-500">{t('search.photoDetected')}</span>
+              <span className="text-[12px] text-hc-n-600">{t('search.photoDetected')}</span>
               {etiquetas.map((e) => (
                 <button
                   key={e}
@@ -111,7 +111,7 @@ export default function BusquedaFotoPage() {
                         {t(`search.photo${rotulo === 'muyParecido' ? 'VerySimilar' : rotulo === 'mismaCategoria' ? 'SameCategory' : 'Related'}`)}
                       </span>
                       <span className="truncate text-[14px] font-medium text-hc-n-900">{p.nombre}</span>
-                      {p.tienda && <span className="truncate text-[12px] text-hc-n-500">{p.tienda}</span>}
+                      {p.tienda && <span className="truncate text-[12px] text-hc-n-600">{p.tienda}</span>}
                     </span>
                     <span className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice(p.precio)}</span>
                   </Link>

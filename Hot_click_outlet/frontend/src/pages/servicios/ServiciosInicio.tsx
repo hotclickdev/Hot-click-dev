@@ -52,7 +52,7 @@ export default function ServiciosInicio({ irA, solicitudesEnCurso }: ServiciosIn
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
               <span className="text-[15px] font-semibold text-hc-n-900">{t(o.titulo)}</span>
-              <span className="text-[12px] leading-4 text-hc-n-500">{t(o.detalle)}</span>
+              <span className="text-[12px] leading-4 text-hc-n-600">{t(o.detalle)}</span>
             </span>
             <IcoSrv nombre="inicioFlecha" size={18} />
           </button>

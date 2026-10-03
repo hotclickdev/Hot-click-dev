@@ -15,7 +15,7 @@ export function estadoVisual(estado?: string): EstadoVisual {
 export const CLASE_CHIP_SOLICITUD: Record<EstadoVisual, string> = {
   cotizada: 'bg-hc-green-50 text-hc-success',
   enBusqueda: 'bg-hc-warning-bg text-hc-warning',
-  cerrada: 'bg-hc-n-100 text-hc-n-500',
+  cerrada: 'bg-hc-n-100 text-hc-n-600',
 }
 
 /** Clave i18n de la tercera línea de la tarjeta cuando no hay respuesta escrita de HotClick. */

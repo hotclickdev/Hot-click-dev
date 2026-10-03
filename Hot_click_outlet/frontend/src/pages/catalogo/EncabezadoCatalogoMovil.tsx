@@ -46,7 +46,7 @@ export default function EncabezadoCatalogoMovil({
               className={`hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] text-hc-n-900 outline-none ${sinResultados ? 'leading-[18px]' : 'leading-[19px]'} placeholder:text-hc-n-500`}
             />
             {sinResultados ? (
-              <button type="button" onClick={() => setSearch('')} aria-label={t('search.clearSearch')} className="flex shrink-0 text-hc-n-500">
+              <button type="button" onClick={() => setSearch('')} aria-label={t('search.clearSearch')} className="flex shrink-0 text-hc-n-600">
                 <IconoFigma src={ICONOS_CATALOGO.cerrar16} size={16} />
               </button>
             ) : (

@@ -75,7 +75,7 @@ export const MAX_FOTOS = 3
 
 /** Campo de texto de los formularios de Servicios HOT (Figma `28:1486`): blanco, borde `n/200`, radio 12, 14/20. */
 export const CLASE_CAMPO =
-  'w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 text-[14px] leading-5 text-hc-n-900 outline-none placeholder:text-hc-n-400 focus:border-hc-blue-600'
+  'w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 text-[14px] leading-5 text-hc-n-900 outline-none placeholder:text-hc-n-500 focus:border-hc-blue-600'
 
 /**
  * Teléfono de contacto como lo recibe el backend, con prefijo de país. Quien escribe solo el número local

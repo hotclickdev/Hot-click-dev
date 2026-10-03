@@ -58,7 +58,7 @@ export default function PantallaFalloServidor({ referencia, onReintentar }: Pant
             <IconoFigma src={ICONOS_COMPRADOR.falloWhatsapp} size={18} />
             {t('comprador.falloServidor.whatsapp', { numero: WHATSAPP_SOPORTE_VISIBLE })}
           </a>
-          <p className="text-center font-mono text-[11px] font-medium leading-[15px] text-hc-n-500">
+          <p className="text-center font-mono text-[11px] font-medium leading-[15px] text-hc-n-600">
             {t('comprador.falloServidor.referencia', { referencia })}
           </p>
         </div>

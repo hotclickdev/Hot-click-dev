@@ -35,9 +35,9 @@ export default function TarjetaInstalarApp() {
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h2 className="font-display text-[16px] font-bold leading-5 tracking-normal text-hc-n-900">{t('comprador.instalarApp.titulo')}</h2>
-          <p className="text-[12px] leading-[14px] text-hc-n-500">{t('comprador.instalarApp.subtitulo')}</p>
+          <p className="text-[12px] leading-[14px] text-hc-n-600">{t('comprador.instalarApp.subtitulo')}</p>
         </div>
-        <button type="button" onClick={descartar} aria-label={t('comprador.instalarApp.cerrar')} className="flex text-hc-n-500">
+        <button type="button" onClick={descartar} aria-label={t('comprador.instalarApp.cerrar')} className="flex text-hc-n-600">
           <IconoFigma src={ICONOS_COMPRADOR.instalarCerrar} size={18} />
         </button>
       </div>

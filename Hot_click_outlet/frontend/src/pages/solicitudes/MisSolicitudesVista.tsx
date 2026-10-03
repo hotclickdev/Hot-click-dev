@@ -42,12 +42,12 @@ function TarjetaSolicitud({ solicitud }: { solicitud: SolicitudBusqueda }) {
       <span className="flex min-w-0 flex-1 flex-col items-start gap-[3px]">
         <ChipSolicitud estado={solicitud.estado} />
         <span className="w-full text-[14px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{solicitud.descripcion}</span>
-        <span className="text-[12px] text-hc-n-500">{t('solicitudes.enviadaEl', { fecha: fechaCorta(solicitud.fechaCreacion, i18n.language) })}</span>
+        <span className="text-[12px] text-hc-n-600">{t('solicitudes.enviadaEl', { fecha: fechaCorta(solicitud.fechaCreacion, i18n.language) })}</span>
         {respuesta
           ? <span className="line-clamp-2 text-[12px] font-semibold text-hc-success">{respuesta}</span>
           : <span className="text-[12px] text-hc-n-600">{t(claveLinea(solicitud.estado))}</span>}
       </span>
-      <span className="mt-[2px] text-hc-n-500"><IcoChevron /></span>
+      <span className="mt-[2px] text-hc-n-600"><IcoChevron /></span>
     </Link>
   )
 }
@@ -76,7 +76,7 @@ function Lista({ solicitudes }: { solicitudes: SolicitudBusqueda[] }) {
       <h1 className="hidden font-display text-[28px] font-bold leading-[normal] text-hc-n-900 lg:block lg:pb-4 lg:pt-8">{t('cuenta.menu.solicitudes')}</h1>
       <div role="tablist" className="flex bg-hc-n-0 px-4 lg:bg-transparent lg:px-0">
         <span role="tab" aria-selected="true" className="flex-1 border-b-2 border-hc-blue-600 py-3 text-center text-[14px] font-semibold leading-[normal] text-hc-blue-600">{t('solicitudes.tabs.busquedas')}</span>
-        <Link role="tab" aria-selected="false" to="/servicios?vista=garantia" className="flex-1 py-3 text-center text-[14px] font-medium leading-[normal] text-hc-n-500">{t('solicitudes.tabs.garantias')}</Link>
+        <Link role="tab" aria-selected="false" to="/servicios?vista=garantia" className="flex-1 py-3 text-center text-[14px] font-medium leading-[normal] text-hc-n-600">{t('solicitudes.tabs.garantias')}</Link>
       </div>
       <div className="flex flex-col gap-3 px-4 pb-5 pt-[14px] lg:px-0">
         <Link
@@ -86,7 +86,7 @@ function Lista({ solicitudes }: { solicitudes: SolicitudBusqueda[] }) {
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hc-blue-50 text-hc-blue-600"><IcoCamara size={22} /></span>
           <span className="flex min-w-0 flex-1 flex-col gap-px">
             <span className="text-[14px] font-semibold text-hc-n-900">{t('solicitudes.nueva.titulo')}</span>
-            <span className="text-[12px] text-hc-n-500">{t('solicitudes.nueva.texto')}</span>
+            <span className="text-[12px] text-hc-n-600">{t('solicitudes.nueva.texto')}</span>
           </span>
           <span className="text-hc-blue-600"><IcoMas size={20} /></span>
         </Link>
@@ -111,7 +111,7 @@ function Detalle({ solicitud }: { solicitud: SolicitudBusqueda }) {
   return (
     <div className="flex flex-col gap-3 px-4 pb-5 pt-[14px] leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px] lg:px-0">
       <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
-        <p className="text-[11px] font-semibold uppercase text-hc-n-500">{t('solicitudes.detalle.loPediste')}</p>
+        <p className="text-[11px] font-semibold uppercase text-hc-n-600">{t('solicitudes.detalle.loPediste')}</p>
         <div className="flex items-start gap-3">
           <Miniatura src={foto} tam={72} />
           <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
@@ -125,7 +125,7 @@ function Detalle({ solicitud }: { solicitud: SolicitudBusqueda }) {
 
       {respuesta && (
         <section className={`flex flex-col gap-[10px] rounded-[14px] border p-[14px] ${visual === 'cotizada' ? 'border-hc-success bg-hc-green-50' : 'border-hc-n-200 bg-hc-n-0'}`}>
-          <p className={`text-[11px] font-semibold uppercase ${visual === 'cotizada' ? 'text-hc-success' : 'text-hc-n-500'}`}>
+          <p className={`text-[11px] font-semibold uppercase ${visual === 'cotizada' ? 'text-hc-success' : 'text-hc-n-600'}`}>
             {visual === 'cotizada' ? t('solicitudes.detalle.teLaConseguimos') : t('solicitudes.detalle.respuesta')}
           </p>
           <p className="text-[14px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{respuesta}</p>
@@ -148,7 +148,7 @@ function Detalle({ solicitud }: { solicitud: SolicitudBusqueda }) {
           <div key={i} className="flex items-center gap-[10px]">
             <span className="size-2 shrink-0 rounded-full bg-hc-n-200" />
             <p className="min-w-0 flex-1 text-[13px] text-hc-n-900">{e.texto}</p>
-            {e.tiempo && <p className="shrink-0 text-[12px] text-hc-n-500">{e.tiempo}</p>}
+            {e.tiempo && <p className="shrink-0 text-[12px] text-hc-n-600">{e.tiempo}</p>}
           </div>
         ))}
       </section>

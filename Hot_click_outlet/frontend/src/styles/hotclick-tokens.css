@@ -62,6 +62,8 @@
   --hc-border:        var(--hc-n-200);
   --hc-border-strong: var(--hc-n-300);
   --hc-primary:       var(--hc-red-500);
+  /* Primario usado como TEXTO: red-500 no llega a AA sobre blanco (decisión R1). */
+  --hc-primary-text:  var(--hc-red-600);
   --hc-primary-hover: var(--hc-red-600);
   --hc-primary-press: var(--hc-red-700);
   --hc-link:          var(--hc-blue-600);
@@ -119,6 +121,7 @@
   --hc-border:         #E6E6E6;
   --hc-border-strong:  #CDD2DB;
   --hc-primary:        #E31E24;
+  --hc-primary-text:   #C4181E;
   --hc-primary-hover:  #C4181E;
   --hc-primary-press:  #A11418;
   --hc-link:           #0D47A1;
@@ -162,6 +165,7 @@
   --hc-text-disabled:  var(--hc-n-400);
   --hc-border-strong:  #b9ad97;
   --hc-primary:        var(--hc-red-500);
+  --hc-primary-text:   var(--hc-red-600);
   --hc-primary-hover:  var(--hc-red-600);
   --hc-primary-press:  var(--hc-red-700);
   --hc-link:           var(--hc-blue-600);
@@ -186,6 +190,7 @@ html.dark,
   --hc-border:        #262D38;
   --hc-border-strong: #333B48;
   --hc-primary:       #F0524A;   /* rojo elevado para fondo oscuro */
+  --hc-primary-text:  #F0524A;
   --hc-primary-hover: #F3766F;
   --hc-primary-press: #E73B33;
   --hc-link:          #7AA3F2;
@@ -221,6 +226,7 @@ html.dark .hc-seller-theme,
   --hc-border:         #262D38;
   --hc-border-strong:  #333B48;
   --hc-primary:        #F0524A;
+  --hc-primary-text:   #F0524A;
   --hc-primary-hover:  #F3766F;
   --hc-primary-press:  #E73B33;
   --hc-link:           #7AA3F2;
@@ -252,6 +258,7 @@ html.dark .hc-seller-theme,
   --color-hc-text: var(--hc-text);
   --color-hc-muted: var(--hc-muted);
   --color-hc-primary: var(--hc-primary);
+  --color-hc-primary-text: var(--hc-primary-text);
   --color-hc-accent: var(--hc-accent);
   --color-hc-accent-hover: var(--hc-accent-hover);
   --color-hc-success: var(--hc-success);

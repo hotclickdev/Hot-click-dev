@@ -53,7 +53,7 @@ export default function HeaderEscritorioCompacto({ filaCarrito = false }: { fila
         <Link
           to="/carrito"
           aria-label={t('comprador.header.carrito', { count: cantidadPedido })}
-          className={`flex items-center gap-[6px] ${filaCarrito ? 'text-hc-red-500' : ''}`}
+          className={`flex items-center gap-[6px] ${filaCarrito ? 'text-hc-red-600' : ''}`}
         >
           <IconoFigma src={ICONOS_COMPRADOR.headerCarritoDesktop} size={22} />
           {cantidadPedido > 0 && (

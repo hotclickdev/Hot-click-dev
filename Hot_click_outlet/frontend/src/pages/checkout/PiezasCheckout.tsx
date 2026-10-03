@@ -40,7 +40,7 @@ export function IndicadorPasos({ paso, onIr }: IndicadorPasosProps) {
           const numero = i + 1
           const actual = numero === paso
           const hecho = numero < paso
-          const color = actual ? 'font-semibold text-hc-n-900' : hecho ? 'font-medium text-hc-blue-600' : 'font-medium text-hc-n-500'
+          const color = actual ? 'font-semibold text-hc-n-900' : hecho ? 'font-medium text-hc-blue-600' : 'font-medium text-hc-n-600'
           return (
             <li key={etiqueta} className="flex min-w-px flex-1 flex-col gap-[6px]">
               <span className={`h-1 w-full rounded-[2px] ${numero <= paso ? 'bg-hc-blue-600' : 'bg-hc-n-200'}`} />
@@ -105,7 +105,7 @@ export function Campo({ etiqueta, ayuda, error, children }: CampoProps) {
       {error ? (
         <p id={idMensaje} role="alert" className="text-[12px] leading-4 text-hc-danger">{error}</p>
       ) : ayuda ? (
-        <p id={idMensaje} className="text-[12px] leading-4 text-hc-n-500">{ayuda}</p>
+        <p id={idMensaje} className="text-[12px] leading-4 text-hc-n-600">{ayuda}</p>
       ) : null}
     </div>
   )
@@ -180,7 +180,7 @@ export function CampoSelector({ id, describedBy, valor, opciones, placeholder, o
         onBlur={onBlur}
         aria-invalid={error || undefined}
         aria-describedby={describedBy}
-        className={`hc-input-libre min-w-0 flex-1 appearance-none bg-transparent text-[15px] leading-[18px] outline-none disabled:cursor-not-allowed ${valor ? 'text-hc-n-900' : 'text-hc-n-500'}`}
+        className={`hc-input-libre min-w-0 flex-1 appearance-none bg-transparent text-[15px] leading-[18px] outline-none disabled:cursor-not-allowed ${valor ? 'text-hc-n-900' : 'text-hc-n-600'}`}
       >
         <option value="">{placeholder}</option>
         {opciones.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}

@@ -40,7 +40,7 @@ export function TarjetaAcceso({ to, icono, titulo, detalle, escritorio = false }
     >
       <span className="text-hc-blue-600">{icono}</span>
       <span className={`font-semibold text-hc-n-900 ${escritorio ? 'text-[15px]' : 'text-[14px]'}`}>{titulo}</span>
-      <span className="text-[12px] text-hc-n-500">{detalle}</span>
+      <span className="text-[12px] text-hc-n-600">{detalle}</span>
     </Link>
   )
 }

@@ -97,7 +97,7 @@ export function CampoCodigo({
           >
             <IconoFigma src={ICONOS_COMPRADOR.codigoError} size={16} className="text-hc-danger" />
             <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
-              <p className="text-[13px] font-semibold text-hc-red-500">{invalido.titulo}</p>
+              <p className="text-[13px] font-semibold text-hc-red-600">{invalido.titulo}</p>
               {invalido.ayuda && (
                 <p className="text-[12px] leading-4 text-hc-text-secondary">{invalido.ayuda}</p>
               )}
