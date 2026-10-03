@@ -32,6 +32,9 @@ import java.util.UUID;
 @Service
 public class PosQrSessionService {
 
+    /** Minutos que dura un cobro por QR. El texto «vencido» del comprador lo recibe en {@code vigenciaMinutos}. */
+    public static final int VIGENCIA_MINUTOS = 30;
+
     private static final Logger log = LoggerFactory.getLogger(PosQrSessionService.class);
 
     @Autowired private PosQrSesionRepository posQrRepo;
@@ -101,7 +104,7 @@ public class PosQrSessionService {
         sesion.setMetodosHabilitados(PosQrMetodos.aCsv(habilitados));
         sesion.setEstado("PENDIENTE");
         sesion.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
-        sesion.setFechaExpiracion(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
+        sesion.setFechaExpiracion(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(VIGENCIA_MINUTOS));
         sesion.setNotas(notas);
 
         if (turnoId != null) {
@@ -144,6 +147,7 @@ public class PosQrSessionService {
         r.put("total",        sesion.getTotal());
         r.put("items",        items);
         r.put("expiracion",   sesion.getFechaExpiracion().toString());
+        r.put("vigenciaMinutos", VIGENCIA_MINUTOS);
         r.put("empresaNombre", empresa.getNombreComercial() != null
             ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
         r.put("logoUrl",      empresa.getLogoUrl());

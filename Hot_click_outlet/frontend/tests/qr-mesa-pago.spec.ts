@@ -18,7 +18,7 @@ const ITEMS_PAGO = [
 
 async function preparar(
   page: Page,
-  opts: { mesaOk?: boolean; estado?: string; metodo?: string; metodos?: string[]; caja?: string | null } = {},
+  opts: { mesaOk?: boolean; estado?: string; metodo?: string; metodos?: string[]; caja?: string | null; vigencia?: number } = {},
 ) {
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -47,6 +47,7 @@ async function preparar(
       return json({
         token: '3f9a2c1b99',
         estado: opts.estado ?? 'PENDIENTE',
+        ...(opts.vigencia ? { vigenciaMinutos: opts.vigencia } : {}),
         metodoPago: opts.metodo ?? 'SINPE',
         metodosHabilitados: opts.metodos,
         numeroCobro: 'P-3391',
@@ -144,11 +145,19 @@ test.describe('QR de pago', () => {
     await expect(page.getByLabel('Cédula')).toBeVisible()
   })
 
+  test('vencido: los minutos salen de vigenciaMinutos del backend', async ({ page }) => {
+    await preparar(page, { estado: 'EXPIRADO', vigencia: 45 })
+    await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Este cobro venció' })).toBeVisible()
+    await expect(page.getByText('duran 45 minutos')).toBeVisible()
+  })
+
   test('cobro vencido y pago recibido', async ({ page }) => {
     await preparar(page, { estado: 'EXPIRADO' })
     await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Este cobro venció' })).toBeVisible()
-    await expect(page.getByText('duran 15 minutos')).toBeVisible()
+    // Sin vigenciaMinutos en la respuesta usa VIGENCIA_QR_MINUTOS (= PosQrSessionService.VIGENCIA_MINUTOS).
+    await expect(page.getByText('duran 30 minutos')).toBeVisible()
     // B16: sin lector propio, el vencido indica abrir la cámara en lugar del botón «Escanear otro QR».
     await expect(page.getByText('abrí la cámara de tu celular')).toBeVisible()
     await expect(page.getByRole('button', { name: /Escanear otro QR/i })).toHaveCount(0)

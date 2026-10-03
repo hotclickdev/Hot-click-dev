@@ -60,3 +60,10 @@ export function fechaComprobante(iso: string | null | undefined): string {
   if (!m) return ''
   return `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`
 }
+
+/**
+ * Minutos que dura un cobro por QR si la respuesta no los trae (la vista «vencido» puede
+ * llegar sin info). Debe ser igual a `PosQrSessionService.VIGENCIA_MINUTOS`; lo vigila
+ * `PosQrVigenciaTest` en el backend.
+ */
+export const VIGENCIA_QR_MINUTOS = 30

@@ -3209,7 +3209,7 @@
       "esperandoDesc": "Quando a plataforma confirmar o SINPE, esta tela muda sozinha.",
       "pagoRecibidoDesc": "Você pagou {{monto}} para {{negocio}}.",
       "vencidoTitulo": "Esta cobrança venceu",
-      "vencidoDesc": "Por segurança, as cobranças por QR duram 15 minutos. Peça ao caixa para gerar uma nova.",
+      "vencidoDesc": "Por segurança, as cobranças por QR duram {{minutos}} minutos. Peça ao caixa para gerar uma nova.",
       "vencidoCamara": "Quando tiver o novo QR, abra a câmera do celular e escaneie.",
       "cobroNumero": "Cobrança #{{numero}}",
       "cobroNumeroCaja": "Cobrança #{{numero}} · {{caja}}",
