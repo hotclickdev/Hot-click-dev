@@ -48,6 +48,7 @@ En la columna "¿Podría hacer falta?":
 | Clases `hc-input*` para el visitante | `components/ui/Input.tsx` | Campo con fondo y foco de la paleta vieja | `3f4d7d83` | No. Visitante: campo `28:1110` |
 | Clases `hc-btn*` para el visitante | `components/ui/Button.tsx` | Botones del Brand Book anterior (ghost con borde, success verde claro) | `25dbbe4e` | No. Visitante: primario rojo de 48, secundario borde n200, ghost texto b600 |
 | Barra roja con brillo para el visitante | `components/ui/PageProgressBar.tsx` | Línea `--hc-primary` con `box-shadow` al navegar | `65a5d3e9` | No. Visitante: línea azul b600 sin brillo (Figma no tiene barra) |
+| Botones "Tomar foto" y "Galería" en escritorio | `pages/buscar/BusquedaFotoPage.tsx` | En escritorio el navegador ignora `capture`, así que ambos abrían el mismo selector de archivos | este commit | No. En escritorio quedan "Elegir una foto" (principal) y "Explorar el catálogo" (secundario), y la zona acepta arrastrar. En móvil siguen los dos, como en Figma `27:882` |
 
 ## Hace falta agregar (Figma lo pide y el sistema no lo tiene)
 
