@@ -3209,7 +3209,7 @@
       "esperandoDesc": "When the gateway confirms the SINPE, this screen updates by itself.",
       "pagoRecibidoDesc": "You paid {{monto}} to {{negocio}}.",
       "vencidoTitulo": "This payment expired",
-      "vencidoDesc": "For security, QR payments last 15 minutes. Ask the cashier to generate a new one.",
+      "vencidoDesc": "For security, QR payments last {{minutos}} minutes. Ask the cashier to generate a new one.",
       "vencidoCamara": "When you have the new QR, open your phone camera and scan it.",
       "cobroNumero": "Charge #{{numero}}",
       "cobroNumeroCaja": "Charge #{{numero}} · {{caja}}",

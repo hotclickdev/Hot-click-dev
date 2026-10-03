@@ -1,3 +1,7 @@
+import i18next from 'i18next'
+import es from '@/i18n/locales/es.json'
+import en from '@/i18n/locales/en.json'
+import pt from '@/i18n/locales/pt.json'
 import { describe, expect, it } from 'vitest'
 import {
   fechaComprobante,
@@ -8,6 +12,7 @@ import {
   nombreItem,
   sinpeNumeroVisible,
   tituloYCodigo,
+  VIGENCIA_QR_MINUTOS,
 } from './posPagoFormat'
 
 describe('inicialesProducto', () => {
@@ -71,5 +76,19 @@ describe('fechaComprobante', () => {
   it('formatea la fecha local del servidor', () => {
     expect(fechaComprobante('2026-10-02T15:30:12.5')).toBe('02/10/2026 15:30')
     expect(fechaComprobante(null)).toBe('')
+  })
+})
+
+describe('vencido: minutos de vigencia del backend (no un número fijo)', () => {
+  it('es, en y pt interpolan {{minutos}}', async () => {
+    const i18n = i18next.createInstance()
+    await i18n.init({ resources: { es: { translation: es }, en: { translation: en }, pt: { translation: pt } }, lng: 'es' })
+    expect(i18n.t('pos.pago.vencidoDesc', { minutos: VIGENCIA_QR_MINUTOS })).toContain('duran 30 minutos')
+    expect(i18n.t('pos.pago.vencidoDesc', { lng: 'en', minutos: 45 })).toContain('last 45 minutes')
+    expect(i18n.t('pos.pago.vencidoDesc', { lng: 'pt', minutos: 30 })).toContain('duram 30 minutos')
+    for (const loc of [es, en, pt]) {
+      expect(loc.pos.pago.vencidoDesc).toContain('{{minutos}}')
+      expect(loc.pos.pago.vencidoDesc).not.toMatch(/\b15\b/)
+    }
   })
 })

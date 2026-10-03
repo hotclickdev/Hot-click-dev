@@ -19,6 +19,8 @@ export type QrPagoInfo = {
   sinpeNumero?: string
   sinpeRef?: string
   expiracion?: string
+  /** Minutos que dura el cobro (backend `PosQrSessionService.VIGENCIA_MINUTOS`). */
+  vigenciaMinutos?: number
   /** Métodos que la caja habilitó; el cliente elige entre ellos (V147). */
   metodosHabilitados?: string[]
   /** Número de cobro visible ("P-3391"). */

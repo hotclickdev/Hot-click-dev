@@ -87,6 +87,7 @@ export default function POSPagoPage() {
         total={info?.total}
         negocio={info?.empresaNombre}
         conComprobante={vista === 'pagado'}
+        vigenciaMinutos={info?.vigenciaMinutos}
       />
     )
     return info ? conEncabezado(estado) : <QrPagina>{estado}</QrPagina>
