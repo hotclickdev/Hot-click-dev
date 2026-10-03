@@ -35,6 +35,8 @@ for (const ancho of [390, 1440]) {
         const puntos = landing.locator('ul').first()
         if (c.contacto) await expect(puntos).toContainText('Tu contacto visible en tu tienda')
         else await expect(puntos).not.toContainText('Tu contacto visible')
+        // Sin scroll horizontal de página (la comparativa se desliza dentro de su caja).
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(ancho)
         if (SHOTS) await page.screenshot({ path: `${SHOTS}/landing-${c.id}-${ancho}.png`, fullPage: true })
       })
     }

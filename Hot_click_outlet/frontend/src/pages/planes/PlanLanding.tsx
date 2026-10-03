@@ -81,7 +81,8 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
       {/* Comparativa */}
       <section id="comparar-planes" className="mx-auto max-w-[1200px] scroll-mt-20 px-4 pb-8 lg:px-6 lg:pb-12">
         <h2 className="font-[family-name:var(--hc-font-display)] text-[20px] font-bold lg:text-[24px]">{t('planes.titulo')}</h2>
-        <div className="mt-3 overflow-x-auto rounded-[14px] border border-hc-n-200 bg-hc-n-0">
+        {/* relative: los sr-only (position:absolute) de las celdas no deben escapar del scroll horizontal. */}
+        <div className="relative mt-3 overflow-x-auto rounded-[14px] border border-hc-n-200 bg-hc-n-0">
           <table className="w-full min-w-[520px] border-collapse text-left text-[13px]">
             <thead>
               <tr className="border-b border-hc-n-200">
@@ -89,7 +90,6 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
                 {PLANES_ORDEN.map((p) => (
                   <th key={p} scope="col" className={`p-3 text-[14px] font-bold ${p === plan ? 'bg-hc-blue-50 text-hc-blue-600' : 'text-hc-n-900'}`}>
                     {t(`planes.${p}.nombre`)}
-                    {p === plan ? <span className="block text-[11px] font-semibold text-hc-blue-600">{t('planes.badge.provisorio')}</span> : null}
                   </th>
                 ))}
               </tr>
