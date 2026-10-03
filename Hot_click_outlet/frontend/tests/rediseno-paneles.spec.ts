@@ -112,3 +112,37 @@ test.describe('Tu plan del panel Pyme (/pyme/plan)', () => {
     })
   }
 })
+
+test.describe('Mi equipo en Emprendedor y Negocio Plus (decisión 3.3 A)', () => {
+  for (const ancho of [390, 1440]) {
+    test(`Emprendedor › Opciones › Mi equipo · ${ancho}px`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 })
+      await sesion(page, 'EMPRENDEDOR')
+      await page.goto('/emprendedor/opciones', { waitUntil: 'domcontentloaded' })
+      await page.getByText('Mi equipo').click()
+      await expect(page).toHaveURL(/\/emprendedor\/opciones\/equipo$/)
+      await expect(page.getByRole('heading', { name: 'Mi Equipo' })).toBeVisible({ timeout: 15_000 })
+      await page.getByRole('button', { name: '+ Invitar miembro' }).first().click()
+      await expect(page.getByText('Paso 1 de 4')).toBeVisible()
+      await captura(page, `emprendedor-equipo-${ancho}`)
+      await page.goto('/emprendedor/equipo', { waitUntil: 'domcontentloaded' })
+      await expect(page).toHaveURL(/\/emprendedor\/opciones\/equipo$/)
+      // Los atajos planos llevan a Opciones sin duplicar el segmento (antes: /emprendedor/plan/opciones/plan).
+      await page.goto('/emprendedor/plan', { waitUntil: 'domcontentloaded' })
+      await expect(page).toHaveURL(/\/emprendedor\/opciones\/plan$/)
+    })
+
+    test(`Negocio Plus › Mi equipo · ${ancho}px`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 })
+      await sesion(page, 'NEGOCIO_PLUS')
+      await page.goto('/negocio-plus/opciones', { waitUntil: 'domcontentloaded' })
+      await expect(page.getByText('Mis sucursales')).toBeVisible({ timeout: 15_000 })
+      await page.getByText('Mi equipo').click()
+      await expect(page).toHaveURL(/\/negocio-plus\/equipo$/)
+      await expect(page.getByRole('heading', { name: 'Mi Equipo' })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText('Todavía no hay miembros')).toBeVisible()
+      await page.waitForTimeout(400)
+      await captura(page, `negocio-plus-equipo-${ancho}`)
+    })
+  }
+})

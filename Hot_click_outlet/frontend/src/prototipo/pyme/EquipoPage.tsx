@@ -32,7 +32,8 @@ import {
 } from './equipoConfirmacionHelpers'
 
 /**
- * Mi Equipo — PLAN PYME (Figma 305:339 / 352:9116) con API `/empresa/equipo`.
+ * Mi Equipo (Figma 305:339 / 352:9116) con API `/empresa/equipo`. La usan Pyme, Negocio Plus y
+ * Emprendedor (decisión 3.3 A, 3-oct-2026).
  */
 export default function EquipoPage() {
   const ruta = useSellerRuta()

@@ -15,6 +15,7 @@ const OPCIONES = [
   { to: '/opciones/bodegas', etiqueta: 'Mis bodegas' },
   { to: '/recoleccion', etiqueta: 'Recolección y entrega' },
   { to: '/opciones/negocio', etiqueta: 'Datos de tu negocio', dataMm: 'seller-opciones-negocio' },
+  { to: '/opciones/equipo', etiqueta: 'Mi equipo' },
   { to: '/opciones/plan', etiqueta: 'Tu plan' },
 ] as const
 

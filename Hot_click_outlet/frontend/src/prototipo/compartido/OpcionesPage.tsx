@@ -63,6 +63,11 @@ export default function OpcionesPage() {
           <ItemFila>
             <FilaOpcion to={ruta(plan.extraOpcion.to)} label={plan.extraOpcion.label} />
           </ItemFila>
+          {plan.extraOpcion.to !== 'equipo' ? (
+            <ItemFila>
+              <FilaOpcion to={ruta('equipo')} label="Mi equipo" />
+            </ItemFila>
+          ) : null}
           <ItemFila>
             <FilaOpcion to={ruta('bodegas')} label="Mis bodegas" />
           </ItemFila>
