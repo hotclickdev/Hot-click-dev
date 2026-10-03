@@ -7,7 +7,7 @@ export type SucursalDto = {
   ubicacion?: string | null
   empresaId?: number
   activo: boolean
-  /** Stub hasta haber métricas reales por sucursal */
+  /** Stub del backend (siempre 0) hasta haber métricas reales por sucursal; la pantalla no lo muestra (decisión 3.9 B). */
   ventasMes: number
   fechaCreacion?: string
 }

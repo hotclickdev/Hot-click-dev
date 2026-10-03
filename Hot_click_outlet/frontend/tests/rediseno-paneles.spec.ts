@@ -146,3 +146,31 @@ test.describe('Mi equipo en Emprendedor y Negocio Plus (decisión 3.3 A)', () =>
     })
   }
 })
+
+test.describe('Sucursales de Negocio Plus sin ventas en 0 (decisión 3.9 B)', () => {
+  for (const ancho of [390, 1440]) {
+    test(`no muestra montos de ventas que el backend todavía no mide · ${ancho}px`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 })
+      await sesion(page, 'NEGOCIO_PLUS')
+      await page.route('**/api/sucursales**', (route) => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            { id: 1, nombre: 'Escazú', ubicacion: 'Multiplaza', activo: true, ventasMes: 0 },
+            { id: 2, nombre: 'Heredia', activo: true, ventasMes: 0 },
+          ],
+        }),
+      }))
+      await page.goto('/negocio-plus/sucursales', { waitUntil: 'domcontentloaded' })
+      await expect(page.getByRole('heading', { name: 'Mis Sucursales' })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText('Escazú')).toBeVisible()
+      await expect(page.getByText('Multiplaza')).toBeVisible()
+      await expect(page.getByText('Activas')).toBeVisible()
+      await expect(page.getByText(/este mes|Ventas totales|₡\s?0/)).toHaveCount(0)
+      await page.waitForTimeout(400)
+      await captura(page, `negocio-plus-sucursales-${ancho}`)
+    })
+  }
+})
