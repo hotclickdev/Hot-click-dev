@@ -61,7 +61,9 @@ test.describe('Tienda pública — catálogo vacío', () => {
       'href',
       '/productos',
     )
-    await expect(page.getByText('Tienda de Demo Store en HotClick')).toBeVisible()
+    // Bloque 5: la banda "Tienda de … en HotClick" se reemplazó por el encabezado blanco con el nombre y "en HotClick".
+    await expect(page.getByText('en HotClick', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('Tienda de Demo Store en HotClick')).toHaveCount(0)
   })
 
   test('si el catálogo no carga, se puede reintentar', async ({ page }) => {
