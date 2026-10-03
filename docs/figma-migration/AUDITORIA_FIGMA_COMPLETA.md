@@ -362,3 +362,39 @@ Captura con la info y las categorías mockeadas (`/workspace/figma-audit/captien
     - No usar `--amend` (Auto-review lo bloquea): hacer commits de seguimiento.
     - `git rm` va solo, no combinado con otras ediciones.
     - Correr Vitest **completo** antes de cerrar un bloque: `contrasteTokens.test` revisa todo el código y detectó textos n-500 / success nuevos.
+
+### 6.6 Regla de negocio: contacto directo del vendedor (3-oct-2026)
+
+**Regla:** el visitante solo ve WhatsApp, Instagram, teléfono o correo del negocio si el plan es `PYME` o `NEGOCIO_PLUS`. Los nombres salen de `hot_click_plan_tb.nombre` y, si no hay Plan, de `Empresa.planSaas`. En `EMPRENDEDOR`, `GRATUITO` o sin plan se niega.
+
+Lo decide el backend (`service/contacto/ContactoPublicoPolicy`, `ContactoPublicoService`). Se aplica en:
+
+| Endpoint | Campo | Con plan EMPRENDEDOR |
+|---|---|---|
+| `GET /api/tienda/{slug}` | `whatsapp`, `instagram` | `""`, con `contactoDirecto: false` |
+| `GET /api/public/branding` | `whatsapp` | `null`, con `contactoDirecto: false` (el mapa de ADMIN no cambia) |
+| `GET /api/qr/{token}` (mesa) | `numeroWhatsapp` | `null` |
+| `POST /api/public/chat` (prompt, mensajes y respuestas) | WhatsApp o teléfono del vendedor | WhatsApp de HotClick `50686667888` |
+| Toda `Empresa` serializada (p. ej. `GET /api/cotizaciones/publica/{token}`) | `correoEmpresa`, `telefonoEmpresa`, `numeroWhatsapp`, `instagram` | omitidos, salvo dueño o ADMIN |
+
+**Sin cambios porque ya no exponen contacto:**
+- `/api/productos/**`: solo `empresaNombre` y `empresaSlug`; `empresa` es `@JsonIgnore`.
+- Directorio: se arma con los productos.
+- Encargo público: `empresa` es `@JsonIgnore`.
+- Seguimiento de pedido: no lleva datos de contacto.
+- Bodega: teléfono y correo ya estaban ocultos al público con cualquier plan.
+
+**Frontend (visitante):**
+- `contactoVisible()`: los botones de WhatsApp e Instagram de la tienda aparecen solo con dato y `contactoDirecto`.
+- JSON-LD de la tienda: sin `telephone` en EMPRENDEDOR.
+- "Pedido recibido": muestra "Consultar a HotClick" en vez del vendedor.
+- Devoluciones: el paso 1 va por HotClick.
+- El botón flotante, el chat, Contacto, Envíos y los errores ya usaban el número de HotClick.
+
+**Riesgos que quedan (solo señalados):**
+- Texto libre que el vendedor escribe y se publica tal cual: descripción del producto, `descripcion`, `tagline` y `footerTexto` de la tienda, nombre del producto y variantes, reseñas y respuestas. Ahí puede ir un teléfono o un @usuario. Las fotos también pueden traer un número.
+- `videoUrl` del producto: puede ser un reel o perfil de Instagram o TikTok del vendedor.
+- Dirección de retiro (`retiro`): se publica porque hace falta para retirar. No es un canal de contacto, pero identifica el local.
+- POS QR (`/api/pos/qr/pago/**`): si el método SINPE del negocio no es el de HotClick, se muestra su número SINPE (WhatsApp o teléfono) como destino del pago. No se tocó porque es el cobro mismo.
+- Cotización pública: la entidad `Empresa` completa sigue saliendo con datos fiscales (`rucCedula`, `cedulaJuridica`, `dominioCustom`, …). No es contacto, pero conviene pasarla a DTO.
+- `dominioCustom` en `/api/public/branding`: es el dominio de la tienda, no se tocó.

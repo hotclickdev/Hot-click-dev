@@ -9,3 +9,6 @@ Toda UI nueva o rediseñada (pantalla, sección, componente, modal, toast, estad
 [`docs/figma-migration/MANUAL_MARCA_FIGMA`](../../docs/figma-migration/MANUAL_MARCA_FIGMA/README.md):
 Figma `TmxYFj2nauu10WZnZ0t6yt` (página `4:2`) y la imagen aprobada `ficha-video.png` (tokens `hc-*`, Public Sans/Sora,
 rojo `#E73B33`, tarjetas claras, radios, espaciado y chips/controles segmentados). Lo que Figma no cubre se deriva de Figma.
+
+**Contacto directo del vendedor:** WhatsApp, redes, teléfono, correo o web del vendedor solo se muestran al visitante
+si el backend manda `contactoDirecto: true` (planes PYME y NEGOCIO_PLUS). En EMPRENDEDOR, "contactar" va a HotClick.
