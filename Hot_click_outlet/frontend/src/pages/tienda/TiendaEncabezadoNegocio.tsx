@@ -6,7 +6,7 @@ import { ICONOS_TIENDA } from './iconosTienda'
 import { contactoVisible, inicialesNegocio, mesAnioCorto, urlInstagram } from './tiendaHelpers'
 import { useCompartirTienda } from './useCompartirTienda'
 
-const CLASE_ACCION = 'flex flex-1 items-center justify-center gap-[6px] rounded-[11px] px-3 py-[11px] text-[13px] font-semibold leading-[normal] lg:flex-none lg:gap-2 lg:rounded-xl lg:px-4 lg:text-sm'
+const CLASE_ACCION = 'flex flex-1 items-center justify-center gap-[6px] rounded-[11px] px-3 py-[11px] text-[13px] font-semibold leading-[normal] lg:flex-none lg:gap-2 lg:rounded-[12px] lg:px-4 lg:text-sm'
 const CLASE_ACCION_SECUNDARIA = `${CLASE_ACCION} border border-[var(--t-border)] bg-[var(--t-surface)] text-hc-n-900`
 
 function Dato({ icono, children }: { icono: string; children: ReactNode }) {

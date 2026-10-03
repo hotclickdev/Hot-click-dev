@@ -39,7 +39,7 @@ export default function ReportarProductoButton({ productoId }: { productoId: Id 
           Reportar este producto
         </button>
       ) : (
-        <div className="space-y-2 rounded-xl bg-[#f6f6f8] p-3">
+        <div className="space-y-2 rounded-[12px] bg-[#f6f6f8] p-3">
           <p className="text-xs font-semibold text-hc-text">¿Qué pasó con este producto?</p>
           <select
             value={motivo}
@@ -62,14 +62,14 @@ export default function ReportarProductoButton({ productoId }: { productoId: Id 
               type="button"
               disabled={enviando}
               onClick={enviar}
-              className="min-h-11 flex-1 rounded-xl bg-hc-primary text-white text-xs font-bold disabled:opacity-50"
+              className="min-h-11 flex-1 rounded-[12px] bg-hc-primary text-white text-xs font-bold disabled:opacity-50"
             >
               Enviar
             </button>
             <button
               type="button"
               onClick={() => setAbierto(false)}
-              className="min-h-11 flex-1 rounded-xl border border-hc-border text-xs font-bold"
+              className="min-h-11 flex-1 rounded-[12px] border border-hc-border text-xs font-bold"
             >
               Cancelar
             </button>
