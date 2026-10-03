@@ -91,3 +91,24 @@ for (const ancho of [390, 1440]) {
     })
   })
 }
+
+test.describe('Tu plan del panel Pyme (/pyme/plan)', () => {
+  for (const ancho of [390, 1440]) {
+    test(`bajar a Emprendedor con 63 productos queda bloqueado con aviso · ${ancho}px`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 })
+      const llamadas = await sesion(page, 'PYME')
+      await page.goto('/pyme/plan', { waitUntil: 'domcontentloaded' })
+      await expect(page.getByRole('button', { name: 'Bajar a Emprendedor' })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByRole('button', { name: 'Mejorar a Negocio Plus' })).toBeVisible()
+      await page.getByRole('button', { name: 'Bajar a Emprendedor' }).click()
+      await page.getByRole('button', { name: 'Continuar' }).click()
+      await page.getByRole('button', { name: 'Confirmar cambio' }).click()
+      const aviso = page.getByTestId('aviso-bajada-bloqueada')
+      await expect(aviso).toBeVisible()
+      await expect(aviso).toContainText('Tenés 63 productos y Emprendedor permite 50')
+      await expect(aviso.getByRole('link', { name: 'Ir a mis productos' })).toHaveAttribute('href', '/pyme/productos')
+      expect(llamadas).toEqual([])
+      await captura(page, `pyme-tu-plan-bajada-bloqueada-${ancho}`)
+    })
+  }
+})

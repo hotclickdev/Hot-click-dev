@@ -4,7 +4,7 @@ import { billingService } from '@/services/billingService'
 import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import AvisoBajadaBloqueada from '@/features/billing/AvisoBajadaBloqueada'
-import type { LimitesPlan, RecursoPlan } from '@/features/billing/bajarPlanHelpers'
+import { esBajada, type LimitesPlan, type RecursoPlan } from '@/features/billing/bajarPlanHelpers'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
 import type { Id } from '@/types/api'
 import {
@@ -156,6 +156,7 @@ export default function CompararPlanesVista({
                 <TarjetaPlan
                   plan={plan}
                   actual={plan.nombreApi === planActualApi}
+                  cta={`${esBajada(planActualApi, plan.nombreApi) ? 'Bajar a' : 'Mejorar a'} ${plan.nombre}`}
                   seleccionado={planElegido?.id === plan.id}
                   onSelect={() => setPlanElegido(plan)}
                   emp={emp}
@@ -177,10 +178,10 @@ export default function CompararPlanesVista({
 
 function ResumenPlan({ plan }: { plan: PlanUi }) {
   return (
-    <div className="space-y-4 rounded-xl border border-hc-border bg-hc-surface p-5">
+    <div className="space-y-4 rounded-[14px] border border-hc-border bg-hc-surface p-5">
       <div>
         <p className="font-display text-lg font-bold">{plan.nombre}</p>
-        <p className="font-display text-[22px] font-bold text-hc-primary">{plan.precio}</p>
+        {/* El monto ya va en los beneficios como «Mensualidad y comisión: [PENDIENTE]»; no se repite en grande. */}
       </div>
       <ul className="flex flex-col gap-2">
         {plan.beneficios.map((b) => (
@@ -197,12 +198,15 @@ function ResumenPlan({ plan }: { plan: PlanUi }) {
 function TarjetaPlan({
   plan,
   actual,
+  cta,
   seleccionado,
   onSelect,
   emp,
 }: {
   plan: PlanUi
   actual: boolean
+  /** «Mejorar a …» o «Bajar a …» según el plan actual (antes fijo por plan). */
+  cta: string
   seleccionado: boolean
   onSelect: () => void
   emp: boolean
@@ -222,20 +226,20 @@ function TarjetaPlan({
         </ul>
         <div className="mt-auto pt-2">
           {actual ? (
-            <span className="flex min-h-11 w-full items-center justify-center rounded-[10px] border border-hc-border text-[15px] font-bold text-hc-text">
-              TU PLAN ACTUAL
+            <span className="flex min-h-11 w-full items-center justify-center rounded-[12px] border border-hc-border text-[15px] font-bold text-hc-text">
+              Tu plan actual
             </span>
           ) : (
             <button
               type="button"
               onClick={onSelect}
-              className={`flex min-h-11 w-full items-center justify-center rounded-[10px] text-[15px] font-bold ${
+              className={`flex min-h-11 w-full items-center justify-center rounded-[12px] text-[15px] font-bold ${
                 seleccionado
                   ? 'border-2 border-hc-primary bg-[var(--hc-danger-bg)] text-hc-primary'
                   : 'bg-hc-primary text-white'
               }`}
             >
-              {seleccionado ? 'Seleccionado' : plan.cta}
+              {seleccionado ? 'Seleccionado' : cta}
             </button>
           )}
         </div>
@@ -248,7 +252,7 @@ function TarjetaPlan({
     : 'border border-hc-border'
 
   return (
-    <article className={`rounded-xl p-4 ${borde}`}>
+    <article className={`rounded-[14px] bg-hc-surface p-4 ${borde}`}>
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
           <p className="font-display text-lg font-bold">{plan.nombre}</p>
@@ -256,10 +260,10 @@ function TarjetaPlan({
         </div>
         {actual ? (
           <span
-            className="rounded-full px-2.5 py-1 text-[10px] font-bold"
+            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
             style={{ background: 'var(--hc-info-bg)', color: 'var(--hc-info)' }}
           >
-            TU PLAN ACTUAL
+            Tu plan actual
           </span>
         ) : null}
       </div>
@@ -276,13 +280,13 @@ function TarjetaPlan({
           <button
             type="button"
             onClick={onSelect}
-            className={`flex min-h-11 w-full items-center justify-center rounded-[10px] text-[15px] font-bold ${
+            className={`flex min-h-11 w-full items-center justify-center rounded-[12px] text-[15px] font-bold ${
               seleccionado
                 ? 'border-2 border-hc-primary bg-[var(--hc-danger-bg)] text-hc-primary'
                 : 'bg-hc-primary text-white'
             }`}
           >
-            {seleccionado ? 'Seleccionado' : plan.cta}
+            {seleccionado ? 'Seleccionado' : cta}
           </button>
         </div>
       ) : null}

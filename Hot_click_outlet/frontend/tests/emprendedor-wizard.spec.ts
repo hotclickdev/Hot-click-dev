@@ -305,12 +305,14 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await page.goto('/emprendedor/opciones/plan', { waitUntil: 'domcontentloaded' })
     await expect(page.getByText('Paso 1 de 3')).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('heading', { name: 'Elegí tu plan' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Mejorar a PYME' })).toBeVisible()
-    await page.getByRole('button', { name: 'Mejorar a PYME' }).click()
+    await expect(page.getByRole('button', { name: 'Mejorar a Pyme' })).toBeVisible()
+    await page.getByRole('button', { name: 'Mejorar a Pyme' }).click()
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByText('Paso 2 de 3')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Confirmá el cambio' })).toBeVisible()
-    await expect(page.getByText('₡9.900/mes').first()).toBeVisible()
+    // Decisión 3-oct-2026: ningún monto en pantalla hasta que HOT_CLICK lo fije.
+    await expect(page.getByText('[PENDIENTE]').first()).toBeVisible()
+    await expect(page.getByText(/₡/)).toHaveCount(0)
   })
 
   test('encargos: cotizar abre pasos de respuesta', async ({ page }) => {
