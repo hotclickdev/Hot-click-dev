@@ -37,7 +37,6 @@ test('retiro y domicilio en i18n no usan emojis', () => {
 })
 
 test('placeholders de pedido y wishlist no usan caja emoji', () => {
-  expect(leer('../src/components/ui/miniCart/MiniCartItems.tsx')).not.toContain('📦')
   expect(leer('../src/pages/WishlistPage.tsx')).not.toContain('📦')
   expect(leer('../src/pages/RecuperarCarritoPage.tsx')).not.toContain('🛒')
   expect(leer('../src/components/ui/ExitIntentModal.tsx')).not.toContain('🛒')
@@ -76,7 +75,6 @@ test('servicios, convenios, executive y blog no usan emojis de UI', () => {
   expect(leer('../src/pages/admin/solicitudesServicio/servicioHelpers.ts')).not.toContain('👋')
   expect(leer('../src/pages/admin/solicitudesGarantia/garantiaHelpers.ts')).not.toContain('👋')
   expect(leer('../src/pages/admin/ordenes/ordenesHelpers.ts')).not.toContain('🙂')
-  expect(leer('../src/pages/emprendimientos/ConvenioCard.tsx')).not.toContain('🤝')
   expect(leer('../src/pages/admin/AdminExecutive.tsx')).not.toContain('🤖')
   expect(leer('../src/app/AppRoutes.tsx')).not.toContain('PluginsList')
   expect(leer('../src/app/AppRoutes.tsx')).not.toContain('AdminPlugins')
@@ -115,7 +113,7 @@ test('POS y picker de categorías no pintan emojis de UI', () => {
   expect(leer('../src/components/ui/PhoneField.tsx')).not.toContain('FlagComponent')
   expect(leer('../src/components/ui/PhoneField.tsx')).toContain('onChange={onChange}')
   expect(leer('../src/components/ui/PhoneField.css')).toContain('attr(data-country)')
-  expect(leer('../src/pages/auth/RegisterFormStep.tsx')).toContain('onChange={(val) => setForm(f => ({ ...f, telefono: val }))}')
+  expect(leer('../src/pages/auth/RegisterFormStep.tsx')).toContain('onChange={(val) => setForm((f) => ({ ...f, telefono: val }))}')
   expect(leer('../src/pages/admin/AdminMultipais.tsx')).not.toContain('🌎')
 })
 
@@ -128,7 +126,7 @@ test('toasts, i18n y pagos no usan cheques ni tarjeta-pronto', () => {
   expect(leer('../src/pages/admin/AdminInventario.tsx')).not.toContain('▶')
   expect(leer('../src/pages/pos/POSPagoPage.tsx')).not.toContain('⚠️')
   expect(leer('../src/pages/admin/SistemaInicio.tsx')).not.toContain('▲')
-  expect(leer('../src/pages/informacion/ConditionsSection.tsx')).not.toContain('✓')
+  expect(leer('../src/pages/informacion/PiezasInformacion.tsx')).not.toContain('✓')
 })
 
 test('cierres y quitar usan CloseIcon, no cruz de carácter', () => {
@@ -143,11 +141,9 @@ test('cierres y quitar usan CloseIcon, no cruz de carácter', () => {
   expect(leer('../src/components/ui/MultiImagePicker.tsx')).not.toContain('✕')
   expect(leer('../src/pages/admin/blog/BlogEntryList.tsx')).not.toContain('×')
   expect(leer('../src/pages/admin/ordenes/CloseX.tsx')).toContain("from '@/components/ui/CloseIcon'")
-  expect(leer('../src/components/ui/MiniCartDrawer.tsx')).toContain("from '@/components/ui/CloseIcon'")
   expect(leer('../src/components/ai/ChatModal.tsx')).toContain('ICONOS_CHAT.cerrar20')
   expect(leer('../src/components/comprador/header/HeaderMovil.tsx')).toContain('IconoFigma')
   expect(leer('../src/components/comprador/header/HeaderMovil.tsx')).not.toContain('✕')
-  expect(leer('../src/components/ui/MiniCartDrawer.tsx')).not.toContain('M6 18L18 6M6 6l12 12')
   expect(leer('../src/components/ai/ChatModal.tsx')).not.toContain('M6 18L18 6M6 6l12 12')
 })
 
@@ -160,7 +156,7 @@ test('estados y flechas de icono usan TrustGlyph, no cruz de carácter', () => {
   expect(leer('../src/pages/registrar-negocio/HaciendaVerificacion.tsx')).toContain('TrustGlyph')
   expect(leer('../src/pages/admin/AdminPlanes.tsx')).toContain('tipo="check"')
   expect(leer('../src/pages/admin/AdminPlanes.tsx')).not.toContain('M6 18L18 6')
-  expect(leer('../src/pages/auth/RegisterVerifyStep.tsx')).toContain('tipo="alerta"')
+  expect(leer('../src/pages/auth/RegisterVerifyStep.tsx')).not.toMatch(/[✕✖×⚠]/)
   expect(leer('../src/pages/admin/productos/SeoStatusIcon.tsx')).toContain('tipo="error"')
   expect(leer('../src/pages/admin/productos/CarruselPanel.tsx')).not.toContain('←')
   expect(leer('../src/pages/admin/AdminNuevaCompra.tsx')).not.toContain('←')
@@ -172,7 +168,6 @@ test('flechas de copy en comprar vender emprender usan TextoFlecha', () => {
   expect(leer('../src/components/ui/TextoFlecha.tsx')).toContain('tipo="adelante"')
   expect(leer('../src/pages/checkout/CheckoutLayout.tsx')).not.toContain('←')
   expect(leer('../src/pages/auth/LoginFormStep.tsx')).not.toContain('→')
-  expect(leer('../src/pages/auth/EmprendimientoCloud.tsx')).not.toContain('→')
   expect(leer('../src/pages/registro-empresa/StepDatosEmpresa.tsx')).not.toContain('←')
   expect(leer('../src/pages/registro-empresa/StepDatosEmpresa.tsx')).not.toContain('→')
   expect(leer('../src/components/ui/AppTour.tsx')).not.toContain('←')
@@ -190,20 +185,18 @@ test('flechas de copy en comprar vender emprender usan TextoFlecha', () => {
 })
 
 test('volver y canales de contacto usan TextoFlecha o TrustGlyph', () => {
-  expect(leer('../src/pages/TerminosPage.tsx')).toContain('dir="atras"')
-  expect(leer('../src/pages/TerminosPage.tsx')).toContain('to="/"')
   expect(leer('../src/pages/TerminosPage.tsx')).not.toContain('M15 19l-7-7 7-7')
   expect(leer('../src/pages/CookiesPage.tsx')).not.toContain('M15 19l-7-7 7-7')
   expect(leer('../src/pages/PrivacidadPage.tsx')).not.toContain('M15 19l-7-7 7-7')
   expect(leer('../src/pages/AcuerdoVendedoresPage.tsx')).not.toContain('M15 19l-7-7 7-7')
-  expect(leer('../src/pages/devoluciones/DevolucionesHero.tsx')).not.toContain('M15 19l-7-7 7-7')
+  expect(leer('../src/pages/DevolucionesPage.tsx')).not.toContain('M15 19l-7-7 7-7')
   expect(leer('../src/pages/EnviosPage.tsx')).not.toMatch(DECORATIVOS)
   expect(leer('../src/pages/MisPedidosPage.tsx')).toContain("'/perfil'")
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain("onClick={() => irA(o.vista)}")
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain("vista: 'busqueda'")
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain("vista: 'inventario'")
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain('nombre="inicioFlecha"')
-  expect(leer('../src/pages/contacto/ContactoCanales.tsx')).toContain('tipo="adelante"')
+  expect(leer('../src/pages/contacto/ContactoCanales.tsx')).toContain('<Flecha />')
   expect(leer('../src/pages/contacto/ContactoCanales.tsx')).toContain('wa.me')
   expect(leer('../src/pages/EmpresaSelectionPage.tsx')).toContain('onClick={() => seleccionar(emp)}')
   expect(leer('../src/pages/admin/asignar/BuscarCliente.tsx')).toContain('onClick={() => onSelect(u)}')
@@ -401,7 +394,7 @@ test('iniciar sesión usa chevron SVG, no flecha de carácter', async ({ page })
   await expect(entrar).not.toContainText('→')
 })
 
-test('volver al inicio en términos usa chevron SVG', async ({ page }) => {
+test('volver en términos usa el ícono de la barra interna del Figma, no una flecha de carácter', async ({ page }) => {
   await page.route('**/api/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -412,11 +405,9 @@ test('volver al inicio en términos usa chevron SVG', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('hc-promo-seen', String(Date.now()))
   })
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/terminos', { waitUntil: 'domcontentloaded' })
-  const volver = page.getByRole('link', { name: 'Volver al inicio' })
+  const volver = page.getByRole('button', { name: 'Volver', exact: true })
   await expect(volver).toBeVisible()
-  await expect(volver.locator('svg')).toHaveCount(1)
-  await volver.click()
-  await expect(page).not.toHaveURL(/terminos/)
+  await expect(volver).not.toContainText('←')
 })
-

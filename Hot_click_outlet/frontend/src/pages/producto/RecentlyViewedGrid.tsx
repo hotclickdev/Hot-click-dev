@@ -26,7 +26,7 @@ export default function RecentlyViewedGrid({ items, currentProductId }: Recently
           <Link
             key={p.id}
             to={`/productos/${p.id}`}
-            className="flex items-center gap-[10px] rounded-xl border border-hc-n-200 bg-hc-n-0 p-2"
+            className="flex items-center gap-[10px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-2"
           >
             <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-hc-n-100">
               {p.imagenUrl

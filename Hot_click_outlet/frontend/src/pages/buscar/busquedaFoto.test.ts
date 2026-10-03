@@ -38,3 +38,21 @@ describe('etiquetaParecido', () => {
     expect(etiquetaParecido({ ...base, similitud: 60, categoria: null }, '')).toBe('relacionado')
   })
 })
+
+describe('validarFoto (mismas reglas que search-by-image)', () => {
+  it('acepta JPG, PNG, WebP y GIF de hasta 5 MB', async () => {
+    const { validarFoto, FOTO_MAX_BYTES } = await import('./busquedaFoto')
+    expect(validarFoto({ type: 'image/jpeg', size: 1000 })).toBe('ok')
+    expect(validarFoto({ type: 'image/png', size: FOTO_MAX_BYTES })).toBe('ok')
+    expect(validarFoto({ type: 'image/webp', size: 10 })).toBe('ok')
+    expect(validarFoto({ type: 'image/gif', size: 10 })).toBe('ok')
+  })
+
+  it('rechaza otros formatos y fotos de más de 5 MB', async () => {
+    const { validarFoto, FOTO_MAX_BYTES } = await import('./busquedaFoto')
+    expect(validarFoto({ type: 'image/heic', size: 10 })).toBe('formato')
+    expect(validarFoto({ type: 'application/pdf', size: 10 })).toBe('formato')
+    expect(validarFoto({ type: '', size: 10 })).toBe('formato')
+    expect(validarFoto({ type: 'image/jpeg', size: FOTO_MAX_BYTES + 1 })).toBe('pesada')
+  })
+})

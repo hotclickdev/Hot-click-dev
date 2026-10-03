@@ -41,9 +41,9 @@ export default function CartEmptyState({ destacados }: { destacados: Producto[] 
       {productos.length > 0 && (
         <section className="flex flex-col gap-3 px-5 pb-2 pt-[18px]">
           <h2 className="font-display text-[16px] font-bold leading-[normal] tracking-normal text-hc-n-900">{t('cart.destacados')}</h2>
-          <div className="flex items-start justify-between">
+          <div className="grid grid-cols-2 items-start gap-4">
             {productos.map((producto) => (
-              <ProductCard key={producto.id} product={producto} className="w-[167px]" />
+              <ProductCard key={producto.id} product={producto} className="w-full min-w-0" />
             ))}
           </div>
         </section>

@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Manual de marca Figma obligatorio:** toda UI nueva o rediseñada DEBE seguir [`docs/figma-migration/MANUAL_MARCA_FIGMA`](docs/figma-migration/MANUAL_MARCA_FIGMA/README.md) (Figma `TmxYFj2nauu10WZnZ0t6yt` + imagen aprobada `ficha-video.png`). Skill: `.claude/skills/hot-click-diseno-figma/SKILL.md`.
+
 ## Comandos principales
 
 El proyecto incluye una instalación local de Maven en `maven/bin/`. Usar `.\maven\bin\mvn` en lugar de `mvn` global.

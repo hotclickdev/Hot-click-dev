@@ -36,7 +36,7 @@ export default function OpinionesProducto({ productoId }: { productoId: Id | und
       </h2>
 
       {vacio ? (
-        <div className="flex items-center gap-3 rounded-xl bg-hc-n-50 px-[14px] py-3 lg:rounded-[14px] lg:border lg:border-hc-n-200 lg:bg-hc-n-0 lg:px-[18px] lg:py-4">
+        <div className="flex items-center gap-3 rounded-[12px] bg-hc-n-50 px-[14px] py-3 lg:rounded-[14px] lg:border lg:border-hc-n-200 lg:bg-hc-n-0 lg:px-[18px] lg:py-4">
           <IconoFigma src={ICONOS_PRODUCTO.opiniones} size={22} className="text-[color:var(--hc-n-400)]" />
           <div className="flex min-w-0 flex-1 flex-col gap-px">
             <p className="text-[13px] font-semibold text-hc-n-900 lg:whitespace-nowrap lg:text-[14px]">
@@ -51,7 +51,7 @@ export default function OpinionesProducto({ productoId }: { productoId: Id | und
       ) : (
         <ul className="flex flex-col gap-3">
           {opiniones.map((o) => (
-            <li key={o.id} className="flex flex-col gap-1 rounded-xl border border-hc-n-200 bg-hc-n-0 px-[14px] py-3">
+            <li key={o.id} className="flex flex-col gap-1 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3">
               <p className="text-[13px] font-semibold text-hc-n-900">
                 {o.autor}
                 {o.calificacion != null && (

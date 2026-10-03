@@ -16,6 +16,7 @@ import {
   listaImagenesProducto,
   nombreError,
   estaAgotado,
+  tiendaDesdeCatalogo,
 } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
 import type { PersonalizacionCarrito } from '@/types/carrito'
@@ -39,7 +40,6 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   const [justAdded, setJustAdded] = useState(false)
   const [hojaAgregadoAbierta, setHojaAgregadoAbierta] = useState(false)
   const [recommendations, setRecommendations] = useState<Producto[]>([])
-  const [brandProducts, setBrandProducts] = useState<Producto[]>([])
   const [galeria, setGaleria] = useState<string[]>([])
   const [activeImg, setActiveImg] = useState(0)
   const [variantes, setVariantes] = useState<VarianteProducto[]>([])
@@ -88,6 +88,22 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recarga solo al cambiar el id de ruta
   }, [id])
 
+  // La ficha no trae la tienda: se completa con el listado público (fila de tienda, Figma `28:839`).
+  const faltaTienda = Boolean(product && !product.empresaNombre && product.empresaId)
+  useEffect(() => {
+    if (!faltaTienda || !product) return
+    const empresaId = product.empresaId
+    let vigente = true
+    productService.getAll(0, 100)
+      .then(({ data }) => {
+        const tienda = tiendaDesdeCatalogo(listaProductosDesdePagina(data), empresaId)
+        if (vigente && tienda) setProduct((prev) => (prev && String(prev.empresaId) === String(empresaId) ? { ...prev, ...tienda } : prev))
+      })
+      .catch(() => {})
+    return () => { vigente = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cargar una ficha sin tienda
+  }, [faltaTienda, product?.id])
+
   useEffect(() => {
     if (!product?.id) return
     productService.getImagenes(product.id)
@@ -118,22 +134,6 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
     return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recomendaciones por id de producto
   }, [product?.id])
-
-  useEffect(() => {
-    if (!product?.marcaId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sin marca no hay carrusel
-      setBrandProducts([])
-      return
-    }
-    const controller = new AbortController()
-    productService.getByMarca(product.marcaId, 0, 8)
-      .then(({ data }) => {
-        const items = listaProductosDesdePagina(data).filter((p) => p.id !== product.id).slice(0, 6)
-        setBrandProducts(items)
-      })
-      .catch((err: unknown) => { console.error(err) })
-    return () => controller.abort()
-  }, [product?.marcaId, product?.id])
 
   useEffect(() => {
     if (!product?.grupoVarianteId) {
@@ -259,7 +259,7 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
 
   return {
     product, loading, quantity, activeTab, setActiveTab, justAdded, hojaAgregadoAbierta, setHojaAgregadoAbierta,
-    recommendations, brandProducts, galeria, activeImg, setActiveImg,
+    recommendations, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,

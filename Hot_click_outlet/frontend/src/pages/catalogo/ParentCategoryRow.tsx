@@ -23,18 +23,16 @@ export default function ParentCategoryRow({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--hc-text)' }}>
+          <h2 className="font-display text-[17px] font-bold leading-[normal] tracking-normal text-hc-n-900 lg:text-[20px]">
             {catName}
-          </span>
-          <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-            style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }}>
+          </h2>
+          <span className="rounded-full bg-hc-n-100 px-2 py-[3px] text-[11px] font-semibold leading-[13px] text-hc-n-600">
             {totalCount}
           </span>
         </div>
         <button type="button"
           onClick={() => onVerMas(catId)}
-          className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
-          style={{ color: 'var(--hc-accent)' }}
+          className="flex items-center gap-1 text-[13px] font-semibold leading-[normal] text-hc-blue-600"
         >
           <TextoFlecha iconClassName="w-3.5 h-3.5">Ver más</TextoFlecha>
         </button>
@@ -45,8 +43,7 @@ export default function ParentCategoryRow({
         {/* Primeros 2 hijos — siempre visibles */}
         {visible.slice(0, 2).map(item => (
           <div key={item.childId} className="flex flex-col gap-1">
-            <span className="text-[9px] font-black uppercase tracking-widest px-0.5 truncate"
-              style={{ color: 'var(--hc-accent)', opacity: 0.75 }}>
+            <span className="truncate px-0.5 text-[11px] font-semibold leading-[normal] text-hc-n-600">
               {item.childName}
             </span>
             <ProductCard product={item.product} />
@@ -56,8 +53,7 @@ export default function ParentCategoryRow({
         {/* 3er hijo — solo desktop */}
         {visible[2] && (
           <div className="hidden sm:flex flex-col gap-1">
-            <span className="text-[9px] font-black uppercase tracking-widest px-0.5 truncate"
-              style={{ color: 'var(--hc-accent)', opacity: 0.75 }}>
+            <span className="truncate px-0.5 text-[11px] font-semibold leading-[normal] text-hc-n-600">
               {visible[2].childName}
             </span>
             <ProductCard product={visible[2].product} />
