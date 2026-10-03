@@ -7,6 +7,9 @@ import { RUTA_BUSCAR_FOTO } from '@/pages/buscar/rutasBuscar'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import { analytics } from '@/utils/analytics'
+import { useBuscarNegocios } from '@/components/comprador/negocios/useBuscarNegocios'
+import { rutaTienda } from '@/components/comprador/negocios/negociosPublicos'
+import type { NegocioPublico } from '@/services/negocioService'
 import type { Producto, ProductoBackend } from '@/types/producto'
 import {
   getRecent,
@@ -137,9 +140,12 @@ export function useSearchPanel() {
     )
   }, [brandResults, allProducts])
 
+  // Negocios por nombre o slug (backend, sin tildes): van arriba de los productos.
+  const { negocios: negocioResults, cargando: cargandoNegocios } = useBuscarNegocios(searchOpen ? debouncedQuery : '')
+
   const sugerencias = useMemo(() => sugerenciasBusqueda(debouncedQuery, allProducts), [debouncedQuery, allProducts])
 
-  const hasResults = brandResults.length > 0 || productResults.length > 0
+  const hasResults = brandResults.length > 0 || productResults.length > 0 || negocioResults.length > 0
 
   const close = () => setSearchOpen(false)
 
@@ -164,6 +170,12 @@ export function useSearchPanel() {
     saveRecent(brand.nombreMarca as string)
     close()
     navigate(`/productos?marcaId=${brand.id}`)
+  }
+
+  const selectNegocio = (negocio: NegocioPublico) => {
+    saveRecent(query.trim() || negocio.nombre)
+    close()
+    navigate(rutaTienda(negocio))
   }
 
   const selectProduct = (product: Producto) => {
@@ -193,6 +205,8 @@ export function useSearchPanel() {
     inputRef,
     brandResults,
     productResults,
+    negocioResults,
+    cargandoNegocios,
     totalResultados: todosLosResultados.length,
     brandProductCount,
     hasResults,
@@ -203,6 +217,7 @@ export function useSearchPanel() {
     close,
     selectBrand,
     selectProduct,
+    selectNegocio,
     viewAll,
     clearRecent,
   }
