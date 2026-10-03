@@ -45,7 +45,7 @@ export default function SistemaProductoForm() {
           <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>
             {f.editing ? 'Editá el producto' : 'Agregá un producto'}
           </h1>
-          <p className="text-[15px] m-0" style={{ color: '#6b6459' }}>
+          <p className="text-[15px] m-0" style={{ color: 'var(--hc-muted)' }}>
             Solo el nombre y el precio son obligatorios. Lo demás lo podés completar después.
           </p>
         </header>
@@ -57,9 +57,9 @@ export default function SistemaProductoForm() {
 
       <footer
         className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-10 py-4 flex items-center justify-end gap-5"
-        style={{ backgroundColor: 'var(--hc-surface)', borderTop: '1px solid #e3dacb' }}
+        style={{ backgroundColor: 'var(--hc-surface)', borderTop: '1px solid var(--hc-border)' }}
       >
-        <Link to="/admin/productos" className="text-[15px] font-semibold" style={{ color: '#6b6459' }}>Cancelá</Link>
+        <Link to="/admin/productos" className="text-[15px] font-semibold" style={{ color: 'var(--hc-muted)' }}>Cancelá</Link>
         <button
           type="submit"
           disabled={f.saving}

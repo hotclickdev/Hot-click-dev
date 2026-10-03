@@ -104,10 +104,10 @@
   --hc-dur-slow: 320ms;
 }
 
-/* ---------- Super Admin (rol ADMIN · Figma CLAUDECLICK 41:128) ----------
-   Manual de Marca: rojo #E31E24, azul #0D47A1, navy #0B132B.
-   Fondo blanco / n-50 — NUNCA la paleta crema de .hc-sistema-theme.
-   Modo oscuro: html.dark .hc-superadmin-theme más abajo. */
+/* ---------- Super Admin (rol ADMIN) ----------
+   Rediseño 3-oct-2026: misma paleta del manual Figma que el sitio (rojo #E73B33,
+   azul #1747A8, texto n900 #14171C). Antes usaba #E31E24 / #0D47A1 / #0B132B.
+   Fondo blanco / n-50. Modo oscuro: html.dark .hc-superadmin-theme más abajo. */
 .hc-superadmin-theme {
   /* Figma 41:128: canvas blanco; KPI/search #F8F9FB; avatares un tono más. */
   --hc-bg:             #FFFFFF;
@@ -115,47 +115,49 @@
   --hc-surface-raised: #FFFFFF;
   --hc-surface-2:      #F8F9FB;
   --hc-surface-3:      #F1F3F6;
-  --hc-text:           #0B132B;
+  --hc-text:           #14171C;
   --hc-text-secondary: #4D5560;
   --hc-text-disabled:  #9AA1AE;
   --hc-muted:          #4D5560;
-  --hc-border:         #E6E6E6;
+  --hc-border:         #E4E7EC;
   --hc-border-strong:  #CDD2DB;
-  --hc-primary:        #E31E24;
-  --hc-primary-text:   #C4181E;
-  --hc-primary-hover:  #C4181E;
-  --hc-primary-press:  #A11418;
-  --hc-link:           #0D47A1;
-  --hc-accent:         #0D47A1;
-  --hc-accent-hover:   #0A3780;
+  --hc-primary:        #E73B33;
+  --hc-primary-text:   #D02A23;
+  --hc-primary-hover:  #D02A23;
+  --hc-primary-press:  #AE211C;
+  --hc-link:           #1747A8;
+  --hc-accent:         #1747A8;
+  --hc-accent-hover:   #143A8C;
   --hc-focus-ring:     #3F6CDE;
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
   --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
-  --hc-danger:  #E31E24;  --hc-danger-bg:  #FEF2F1;
-  --hc-info:    #0D47A1;  --hc-info-bg:    #EFF4FE;
-  --hc-shadow-1: 0 1px 2px rgba(11,19,43,.06);
-  --hc-shadow-2: 0 2px 8px rgba(11,19,43,.08);
-  --hc-shadow-3: 0 12px 32px rgba(11,19,43,.14);
+  --hc-danger:  #D02A23;  --hc-danger-bg:  #FEF2F1;
+  --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
+  --hc-shadow-1: 0 1px 2px rgba(20,23,28,.06);
+  --hc-shadow-2: 0 2px 8px rgba(20,23,28,.08);
+  --hc-shadow-3: 0 12px 32px rgba(20,23,28,.14);
   color: var(--hc-text);
   background-color: var(--hc-bg);
 }
 
-/* ---------- Panel "Sistema" (rol EMPRENDEDOR) ----------
-   Los mockups aprobados por junta (Front para cliente EPN/) usan una
-   paleta cálida distinta del resto del sitio (Brand Book v1.1, neutros
-   fríos). Se sobreescribe solo dentro de .hc-sistema-theme —aplicada por
-   AdminLayout únicamente cuando el rol NO es ADMIN. */
+/* ---------- Panel "Sistema" (rol EMPRENDEDOR / staff) ----------
+   Rediseño 3-oct-2026: deja la paleta crema de los mockups viejos (fondo,
+   bordes y muted cálidos) y usa los neutros del manual Figma:
+   fondo n50, bordes n200, texto secundario n600, texto n900. Se aplica solo
+   dentro de .hc-sistema-theme (AdminLayout cuando el rol NO es ADMIN). */
 .hc-sistema-theme {
-  --hc-bg:     #ede5da;
-  /* Bordes un par de pasos más oscuros que el #e3dacb del mockup: el dueño
-     pidió divisiones visibles (el original casi no se distingue del fondo). */
-  --hc-border: #d6cbb8;
-  --hc-muted:  #6b6459;
-  --hc-text:   #1a1a1a;
+  --hc-bg:     var(--hc-n-50);
+  --hc-border: var(--hc-n-200);
+  --hc-muted:  var(--hc-n-600);
+  --hc-text:   var(--hc-n-900);
+  --hc-surface-2: var(--hc-n-50);
+  --hc-surface-3: var(--hc-n-100);
+  --hc-accent:       var(--hc-blue-600);
+  --hc-accent-hover: var(--hc-blue-700);
   /* Color explícito: si algún reset deja `color` en unset/inherit dentro
      del panel, debe resolver a este texto oscuro y no al del body (que en
-     html.dark es casi blanco → texto invisible sobre el crema). */
+     html.dark es casi blanco). */
   color: var(--hc-text);
 
   /* El resto de las variables de rol semántico también se fijan acá —
@@ -165,7 +167,7 @@
   --hc-surface-raised: var(--hc-n-0);
   --hc-text-secondary: var(--hc-n-600);
   --hc-text-disabled:  var(--hc-n-400);
-  --hc-border-strong:  #b9ad97;
+  --hc-border-strong:  var(--hc-n-300);
   --hc-primary:        var(--hc-red-500);
   --hc-primary-text:   var(--hc-red-600);
   --hc-primary-hover:  var(--hc-red-600);

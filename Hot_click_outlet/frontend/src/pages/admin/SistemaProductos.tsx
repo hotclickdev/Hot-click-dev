@@ -22,7 +22,7 @@ export default function SistemaProductos() {
           <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>
             Productos
           </h1>
-          <p className="text-[15px] m-0" style={{ color: '#6b6459' }}>
+          <p className="text-[15px] m-0" style={{ color: 'var(--hc-muted)' }}>
             {textoConteo(page.totalCatalogo, page.loading)}
           </p>
           <div className="flex flex-wrap items-center gap-3 mt-2">

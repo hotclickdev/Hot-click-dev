@@ -95,7 +95,7 @@ export function estiloChip(activo: boolean): CSSProperties {
 
 export function estiloEstado(agotado: boolean): CSSProperties {
   if (agotado) {
-    return { backgroundColor: '#efe9df', color: '#6b6459' }
+    return { backgroundColor: 'var(--hc-n-100)', color: 'var(--hc-muted)' }
   }
   return { backgroundColor: '#e2f1e8', color: '#1E7F4F' }
 }

@@ -55,7 +55,7 @@ export default function SistemaClientes() {
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('adminClientes.titleSistema')}</h1>
-          <p className="text-[15px] m-0 mt-1" style={{ color: '#6b6459' }}>{t('adminClientes.count', { count: clientes.length })}</p>
+          <p className="text-[15px] m-0 mt-1" style={{ color: 'var(--hc-muted)' }}>{t('adminClientes.count', { count: clientes.length })}</p>
         </div>
         <button
           data-mm="seller-clientes-nuevo"
@@ -82,7 +82,7 @@ export default function SistemaClientes() {
 
       {loading && <div className="flex justify-center py-16"><Spinner size="lg" /></div>}
       {!loading && filtrados.length === 0 && (
-        <p className="text-sm py-12 text-center" style={{ color: '#6b6459' }}>
+        <p className="text-sm py-12 text-center" style={{ color: 'var(--hc-muted)' }}>
           {clientes.length === 0
             ? t('adminClientes.emptySistema')
             : t('adminClientes.noSearchMatch')}
@@ -150,10 +150,10 @@ function TarjetaCliente({ cliente, onVer }: { cliente: ClienteSistema; onVer: ()
         </div>
         <div className="min-w-0">
           <p className="text-[15px] font-semibold m-0 truncate" style={{ color: 'var(--hc-text)' }}>{nombre}</p>
-          <p className="text-[13px] m-0" style={{ color: '#6b6459' }}>{cliente.telefono || 'Sin teléfono'}</p>
+          <p className="text-[13px] m-0" style={{ color: 'var(--hc-muted)' }}>{cliente.telefono || 'Sin teléfono'}</p>
         </div>
       </div>
-      <div className="flex justify-between text-[13px] pt-2.5" style={{ borderTop: '1px solid #f0e9dd', color: '#6b6459' }}>
+      <div className="flex justify-between text-[13px] pt-2.5" style={{ borderTop: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
         <span>{compras} {compras === 1 ? 'compra' : 'compras'}</span>
         <span>Última: {textoUltima(cliente)}</span>
       </div>
