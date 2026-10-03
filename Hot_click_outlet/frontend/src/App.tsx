@@ -3,8 +3,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import { ToastProvider } from '@/components/ui/Toast'
-import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
+import { VarianteVisitanteProvider } from '@/components/ui/VarianteVisitanteProvider'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import CookieBanner from '@/components/ui/CookieBanner'
 import AvisoSinConexion from '@/components/comprador/estados/AvisoSinConexion'
@@ -26,6 +26,7 @@ import {
   BrandingInit,
   AnalyticsInit,
   ServiceWorkerRefresh,
+  CargaDeRuta,
 } from '@/app/AppChrome'
 
 const queryClient = new QueryClient({
@@ -38,17 +39,19 @@ export default function App() {
     <ConfigMovimiento>
     <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
+      <ToastProvider variantePorRuta>
         <AnalyticsInit />
         <ServiceWorkerRefresh />
         <SiteVerification />
         <BrowserRouter>
+          {/* Variante Figma de las piezas compartidas solo en rutas del visitante (paneles sin cambios). */}
+          <VarianteVisitanteProvider>
           <HtmlClassManager />
           <BrandingInit />
           <PageProgressBar />
           <ScrollToTop />
           <AvisoSinConexion />
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<CargaDeRuta />}>
             <PageFade>
             <ErrorBoundaryPorArea>
               <AppRoutes />
@@ -71,6 +74,7 @@ export default function App() {
               empresaId: sesion.empresaId,
             })
           }} />
+          </VarianteVisitanteProvider>
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>

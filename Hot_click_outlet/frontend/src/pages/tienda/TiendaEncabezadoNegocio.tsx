@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import type { EmpresaTiendaPublica } from '@/types/tienda'
 import { ICONOS_TIENDA } from './iconosTienda'
-import { inicialesNegocio, mesAnioCorto, urlInstagram } from './tiendaHelpers'
+import { contactoVisible, inicialesNegocio, mesAnioCorto, urlInstagram } from './tiendaHelpers'
 import { useCompartirTienda } from './useCompartirTienda'
 
-const CLASE_ACCION = 'flex flex-1 items-center justify-center gap-[6px] rounded-[11px] px-3 py-[11px] text-[13px] font-semibold leading-[normal] lg:flex-none lg:gap-2 lg:rounded-xl lg:px-4 lg:text-sm'
+const CLASE_ACCION = 'flex flex-1 items-center justify-center gap-[6px] rounded-[11px] px-3 py-[11px] text-[13px] font-semibold leading-[normal] lg:flex-none lg:gap-2 lg:rounded-[12px] lg:px-4 lg:text-sm'
 const CLASE_ACCION_SECUNDARIA = `${CLASE_ACCION} border border-[var(--t-border)] bg-[var(--t-surface)] text-hc-n-900`
 
 function Dato({ icono, children }: { icono: string; children: ReactNode }) {
@@ -40,13 +40,14 @@ function Logo({ nombre, logoUrl }: { nombre: string; logoUrl?: string | null }) 
 /**
  * Encabezado del negocio (Figma `29:934` móvil, `29:2357` escritorio): logo flotante sobre la portada,
  * nombre, descripción corta, datos, sello de factura electrónica y acciones.
+ * WhatsApp e Instagram solo aparecen si el plan lo permite (PYME / NEGOCIO_PLUS); en EMPRENDEDOR queda Compartir.
  */
 export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: EmpresaTiendaPublica | null; nombre: string }) {
   const { t } = useTranslation()
   const compartir = useCompartirTienda(nombre)
-  const whatsapp = (empresa?.whatsapp ?? '').replace(/\D/g, '')
+  // WhatsApp e Instagram solo con plan PYME o NEGOCIO_PLUS (contactoDirecto del backend).
+  const { whatsapp, instagram } = contactoVisible(empresa)
   const desde = mesAnioCorto(empresa?.enHotclickDesde)
-  const instagram = empresa?.instagram
   const textoWhatsapp = encodeURIComponent(t('tienda.waTexto', { nombre }))
 
   return (

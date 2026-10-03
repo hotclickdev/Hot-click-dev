@@ -75,7 +75,7 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
     )
   }
 
-  if (loadingGarantias) return <div className="flex justify-center py-16"><Spinner /></div>
+  if (loadingGarantias) return <div className="flex justify-center py-16"><Spinner variante="figma" /></div>
 
   if (!misGarantias?.length) {
     return (

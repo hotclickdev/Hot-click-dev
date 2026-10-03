@@ -176,7 +176,7 @@ export default function MisSolicitudesVista() {
   const detalle = solicitudPorId(solicitudes, idSolicitud)
 
   const cuerpo = (() => {
-    if (isLoading) return <div className="flex justify-center py-16"><Spinner /></div>
+    if (isLoading) return <div className="flex justify-center py-16"><Spinner variante="figma" /></div>
     if (idSolicitud) {
       return detalle
         ? <Detalle solicitud={detalle} />

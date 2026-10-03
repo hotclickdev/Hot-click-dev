@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatPrice } from '@/utils/format'
+import { textoPrecioProducto } from '@/utils/precioProducto'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import { fotoProducto, nombreVendedor } from '@/components/comprador/productCardHelpers'
+import FilaNegocio from '@/components/comprador/negocios/FilaNegocio'
 import { highlight } from './searchPanelHighlight'
 import type { SearchPanelModel } from './useSearchPanel'
 
@@ -18,8 +19,8 @@ function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
 
 /** Resultados en vivo del buscador híbrido (Figma `8:163`). */
 export function SearchPanelBody({
-  query, loading, recent, productResults, totalResultados, sugerencias,
-  selectProduct, viewAll, clearRecent, setQuery,
+  query, loading, recent, productResults, negocioResults, cargandoNegocios, totalResultados, sugerencias,
+  selectProduct, selectNegocio, viewAll, clearRecent, setQuery,
   preguntarAsistente, buscarConFoto, elegirSugerencia,
 }: SearchPanelModel) {
   const { t } = useTranslation()
@@ -79,6 +80,14 @@ export function SearchPanelBody({
         </Bloque>
       )}
 
+      {consulta && negocioResults.length > 0 && (
+        <Bloque titulo={t('negocios.seccion')}>
+          {negocioResults.map((negocio) => (
+            <FilaNegocio key={negocio.slug} negocio={negocio} onElegir={selectNegocio} />
+          ))}
+        </Bloque>
+      )}
+
       {consulta && productResults.length > 0 && (
         <Bloque titulo={t('search.productsSection')}>
           {productResults.map((product) => {
@@ -92,7 +101,7 @@ export function SearchPanelBody({
                   <span className="truncate text-[14px] font-medium text-hc-n-900">{product.nombre}</span>
                   <span className="truncate text-[12px] text-hc-n-600">{nombreVendedor(product)}</span>
                 </span>
-                <span className="shrink-0 font-display text-[14px] font-bold text-hc-n-900">{formatPrice(product.precio)}</span>
+                <span className="shrink-0 font-display text-[14px] font-bold text-hc-n-900">{textoPrecioProducto(product)}</span>
               </button>
             )
           })}
@@ -103,9 +112,9 @@ export function SearchPanelBody({
         </Bloque>
       )}
 
-      {consulta && productResults.length === 0 && !loading && (
+      {consulta && productResults.length === 0 && negocioResults.length === 0 && !loading && !cargandoNegocios && (
         <p className="text-[13px] text-hc-n-600">
-          {t('search.noResults')} “{consulta}”. {t('search.noResultsSub')}
+          {t('negocios.sinResultados', { q: consulta })} {t('search.noResultsSub')}
         </p>
       )}
 

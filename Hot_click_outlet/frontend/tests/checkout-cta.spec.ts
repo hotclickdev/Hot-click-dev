@@ -138,7 +138,8 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
 
     const reintentar = alerta.getByRole('button', { name: /Intentar de nuevo/ })
     await expect(reintentar).toBeVisible()
-    await expect(reintentar).toHaveClass(/hc-btn-primary/)
+    // Botón primario del manual de marca (rojo de Figma), ya no la clase vieja hc-btn-primary.
+    await expect(reintentar).toHaveClass(/bg-hc-red-500/)
     await expect(alerta.getByRole('link', { name: 'Consultar por WhatsApp' })).toHaveAttribute('href', /consulto/)
     await expect(alerta.getByRole('link', { name: 'Pedir por WhatsApp' })).toHaveCount(0)
   })
@@ -149,7 +150,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
 
     const seguir = page.getByRole('link', { name: 'Seguir comprando' })
     await expect(seguir).toBeVisible()
-    await expect(seguir).toHaveClass(/hc-btn-primary/)
+    await expect(seguir).toHaveClass(/bg-hc-red-500/)
     await seguir.click()
     await expect(page).toHaveURL(/\/productos/)
   })

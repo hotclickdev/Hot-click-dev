@@ -50,9 +50,34 @@ export function espacioReservadoMovil({ hayBarra, fabVisible }: EspacioFlotante)
 }
 
 /**
+ * Pantallas de rol o de captación de vendedores: fuera del alcance de la alineación del visitante, el botón
+ * conserva ahí su comportamiento anterior (visible salvo las exclusiones de siempre).
+ */
+const PREFIJOS_SIN_CAMBIO = [
+  '/emprendedor', '/pyme', '/negocio-plus', '/seleccionar-negocio', '/mode-select', '/registrar-negocio',
+  '/registro-empresa', '/emprende', '/para-emprendedores', '/para-pymes', '/visitante',
+]
+
+function esRutaSinCambio(pathname: string): boolean {
+  return PREFIJOS_SIN_CAMBIO.some((p) => pathname === p || pathname.startsWith(`${p}/`) || pathname.startsWith(`${p}-`))
+}
+
+/**
+ * Pantalla del visitante/comprador (marketplace y tienda pública): no es panel (`/admin`, `/pos`, roles),
+ * ni landing de vendedor, ni prototipo. Sirve para variantes ⚠️ COMPARTIDAS que solo cambian para el visitante.
+ */
+export function esRutaVisitante(pathname: string, esPrototipo = false): boolean {
+  if (esPrototipo) return false
+  if (pathname.startsWith('/admin') || pathname.startsWith('/pos')) return false
+  return !esRutaSinCambio(pathname)
+}
+
+/**
  * Rutas donde el botón de WhatsApp no se muestra (auth, carrito, pago, paneles, tienda del vendedor, prototipo).
  * `/sin-conexion` no está en el frame `45:2264`. En `/` el Home normal sigue visible: la pantalla sin conexión
  * se señala aparte, porque esa ruta también es el Home con datos.
+ * Visitante (2-oct-2026): Figma solo lo dibuja en el Home (`51:2262`), así que en el resto de las pantallas
+ * del comprador no aparece. El WhatsApp de HotClick sigue en Contacto y en el pie.
  */
 export function whatsappOculto(
   pathname: string,
@@ -64,5 +89,7 @@ export function whatsappOculto(
   if (['/login', '/registro', '/carrito', '/checkout'].includes(pathname)) return true
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return true
   if (pathname.startsWith('/pos')) return true
-  return esTienda || esPrototipo
+  if (esTienda || esPrototipo) return true
+  if (esRutaSinCambio(pathname)) return false
+  return pathname !== '/'
 }

@@ -53,3 +53,16 @@ export function etiquetaParecido(producto: ResultadoFoto, categoriaDetectada: st
   if (detectada !== '' && producto.categoria?.toLowerCase() === detectada) return 'mismaCategoria'
   return 'relacionado'
 }
+
+/** Lo mismo que acepta el backend (ShoppingAssistantImageSearchHandler): JPG, PNG, WebP o GIF de hasta 5 MB. */
+export const FOTO_MAX_BYTES = 5 * 1024 * 1024
+const FOTO_TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+export type ValidacionFoto = 'ok' | 'formato' | 'pesada'
+
+/** Revisa la foto antes de mandarla, para avisar al toque en vez de esperar el 400 del backend. */
+export function validarFoto(archivo: { type: string; size: number }): ValidacionFoto {
+  if (!FOTO_TIPOS.some((t) => archivo.type.startsWith(t))) return 'formato'
+  if (archivo.size > FOTO_MAX_BYTES) return 'pesada'
+  return 'ok'
+}

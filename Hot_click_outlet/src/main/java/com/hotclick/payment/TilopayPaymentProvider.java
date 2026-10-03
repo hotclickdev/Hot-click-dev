@@ -35,8 +35,8 @@ public class TilopayPaymentProvider implements PaymentProvider {
         String sdkToken = tilopayService.loginSdk();
         String redirect = appUrl + "/pago/tilopay/respuesta?order=" + orderNumber;
 
-        log.info("[tilopay] Sesión embebida pedido={} mock={}",
-            orderNumber, tilopayService.isMockMode());
+        log.info("[tilopay] Sesión embebida pedido={} monto={} moneda=CRC mock={}",
+            orderNumber, pedido.getTotalPedido(), tilopayService.isMockMode());
 
         return new PaymentSession(orderNumber, redirect, sdkToken, true);
     }

@@ -14,6 +14,7 @@ import { topeDeRango } from './rangoPrecioHelpers'
 import FiltrosRapidos from './FiltrosRapidos'
 import OrdenarResultados from './OrdenarResultados'
 import AsistenteEnGrilla from './AsistenteEnGrilla'
+import NegociosEnResultados from './NegociosEnResultados'
 import { buildCategoryTree } from './catalogoHelpers'
 import { busquedasRelacionadas, chipsEntendi, tiendasDelCatalogo, type ChipEntendi } from './buscarExplorar'
 import type { CatalogoPageModel } from './useCatalogoPage'
@@ -157,6 +158,7 @@ export default function CatalogAllView({
             </div>
 
             <div className="flex flex-col gap-3 px-4 pb-1 pt-2 lg:gap-5 lg:p-0">
+              {modoBusqueda && <NegociosEnResultados consulta={consulta} />}
               {error ? (
                 <RetryBanner message="No pudimos cargar los productos. Verificá tu conexión." onRetry={retry} />
               ) : (

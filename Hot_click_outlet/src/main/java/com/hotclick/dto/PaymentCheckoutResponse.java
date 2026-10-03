@@ -11,6 +11,8 @@ public class PaymentCheckoutResponse {
     private String sdkToken;
     private String orderNumber;
     private Boolean modoEmbebido;
+    /** Moneda del cobro. El servidor solo cobra colones. */
+    private String moneda = "CRC";
     /** HMAC para POST /payments/guest/cancel — solo en checkout de invitado/sesión. */
     private String cancelToken;
     /** Un paquete por vendedor. {@code numeroPedido} es el del paquete principal, al que va asociado el pago. */
@@ -34,6 +36,7 @@ public class PaymentCheckoutResponse {
         this.total = total;
         this.proveedor = proveedor;
         this.modoEmbebido = false;
+        this.moneda = "CRC";
     }
 
     public static PaymentCheckoutResponse embebido(Long pedidoId, String numeroPedido,
@@ -74,6 +77,9 @@ public class PaymentCheckoutResponse {
 
     public Boolean getModoEmbebido() { return modoEmbebido; }
     public void setModoEmbebido(Boolean modoEmbebido) { this.modoEmbebido = modoEmbebido; }
+
+    public String getMoneda() { return moneda; }
+    public void setMoneda(String moneda) { this.moneda = moneda; }
 
     public String getCancelToken() { return cancelToken; }
     public void setCancelToken(String cancelToken) { this.cancelToken = cancelToken; }

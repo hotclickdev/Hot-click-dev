@@ -35,6 +35,12 @@ export function urlWhatsApp(textoEncoded: string, numero = WHATSAPP_HOTCLICK): s
   return `https://wa.me/${numero}?text=${textoEncoded}`
 }
 
+/** Número de WhatsApp en formato visible: '50686667888' → '+506 8666 7888'. */
+export function whatsAppVisible(numero = WHATSAPP_HOTCLICK): string {
+  const m = /^506(\d{4})(\d{4})$/.exec(numero)
+  return m ? `+506 ${m[1]} ${m[2]}` : `+${numero}`
+}
+
 /** Contexto del carrito para el asistente global: `CARRITO:items:total` (mismo formato del antiguo AICartSection). */
 export function contextoCarrito(items: { nombre: string; cantidad: number }[], total: number): string {
   const resumen = items.map((i) => `${i.nombre} x${i.cantidad}`).join(', ').slice(0, 200)

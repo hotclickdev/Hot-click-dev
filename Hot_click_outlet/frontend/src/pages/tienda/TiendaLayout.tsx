@@ -6,10 +6,10 @@ import useTiendaStore from '@/store/tiendaStore'
 import Seo from '@/components/seo/Seo'
 import { generateLocalBusinessJsonLd } from '@/utils/jsonLd'
 import { estiloMarcaTienda } from './tiendaTheme'
+import { contactoVisible } from './tiendaHelpers'
 import TiendaHeader from './TiendaHeader'
 import TiendaFooter from './TiendaFooter'
-import TiendaBottomNav from './TiendaBottomNav'
-import TiendaWhatsAppFab from './TiendaWhatsAppFab'
+import TiendaBarraPedido from './TiendaBarraPedido'
 import TiendaNoDisponible from './TiendaNoDisponible'
 import TiendaInfoError from './TiendaInfoError'
 import EsqueletoTiendaLayout from './EsqueletoTiendaLayout'
@@ -18,15 +18,17 @@ import type { EmpresaTiendaPublica } from '@/types/tienda'
 type EmpresaTiendaLayout = EmpresaTiendaPublica & { footerTexto?: string | null }
 
 /**
- * Layout de /tienda/:slug. Theme del vendedor, carrito aislado,
- * chrome que nombra HotClick.
+ * Layout de /tienda/:slug. Theme del vendedor, carrito aislado, chrome que nombra HotClick.
+ * Superficie Figma (`29:922`, `29:2308`, `51:2468`); las subpantallas son "derivado de Figma"
+ * según docs/figma-migration/MANUAL_MARCA_FIGMA.
  */
 export default function TiendaLayout() {
   const { slug } = useParams()
-  const { empresa, setEmpresa, totalItems } = useTiendaStore()
+  const { empresa, setEmpresa, totalItems, totalImporte } = useTiendaStore()
   const [infoEstado, setInfoEstado] = useState('cargando')
   const cantidadCarrito = totalItems()
   const esPerfil = useMatch({ path: '/tienda/:slug', end: true }) !== null
+  const esExito = useMatch({ path: '/tienda/:slug/checkout/exito', end: true }) !== null
 
   const cargarInfo = useCallback(() => {
     setInfoEstado('cargando')
@@ -71,7 +73,7 @@ export default function TiendaLayout() {
               descripcion: empresaVista?.descripcion,
               logoUrl: empresaVista?.logoUrl,
               categoriaNegocio: empresaVista?.categoriaNegocio,
-              whatsapp: empresaVista?.whatsapp,
+              whatsapp: contactoVisible(empresaVista).whatsapp || null,
               retiro: empresaVista?.retiro,
             }))}
           </script>
@@ -83,13 +85,13 @@ export default function TiendaLayout() {
         logoUrl={empresaVista?.logoUrl}
         cantidadCarrito={cantidadCarrito}
         soloEscritorio={esPerfil}
+        conAtras={!esPerfil && !esExito}
       />
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className={`flex-1 ${esPerfil && cantidadCarrito > 0 ? 'pb-24 md:pb-0' : ''}`}>
         <Outlet />
       </main>
       <TiendaFooter nombre={nombre} footerTexto={empresaVista?.footerTexto} />
-      <TiendaBottomNav slug={slug as string} cantidadCarrito={cantidadCarrito} />
-      <TiendaWhatsAppFab nombre={nombre} whatsapp={empresaVista?.whatsapp} />
+      {esPerfil && <TiendaBarraPedido slug={slug as string} cantidad={cantidadCarrito} total={totalImporte()} />}
     </div>
   )
 }

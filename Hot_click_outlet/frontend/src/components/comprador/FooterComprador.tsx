@@ -32,7 +32,7 @@ function BannerVendedor() {
   return (
     <Link
       to={RUTA_VENDE}
-      className="flex flex-col gap-[2px] bg-hc-blue-900 p-4 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-[22px] xl:px-[120px]"
+      className="flex flex-col gap-[2px] bg-hc-blue-900 p-4 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-[22px] xl:px-[max(120px,calc((100%_-_1200px)/2))]"
     >
       <span className="flex flex-col gap-[2px] whitespace-nowrap">
         <span className="text-[12px] leading-[14px] text-hc-blue-100 lg:text-[13px] lg:leading-[15px]">{t('comprador.footer.bannerPregunta')}</span>
@@ -81,7 +81,7 @@ export default function FooterComprador() {
   return (
     <footer aria-label={t('comprador.footer.aria')} className="mt-auto leading-[normal]">
       <BannerVendedor />
-      <div className="flex flex-col gap-[6px] bg-hc-n-100 px-4 pb-[18px] pt-4 lg:flex-row lg:items-start lg:justify-between lg:px-8 lg:pb-6 lg:pt-5 xl:px-[120px]">
+      <div className="flex flex-col gap-[6px] bg-hc-n-100 px-4 pb-[18px] pt-4 lg:flex-row lg:items-start lg:justify-between lg:px-8 lg:pb-6 lg:pt-5 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
         <EnlacesLegales />
         <p className="whitespace-nowrap text-[11px] leading-[13px] text-hc-n-600 lg:text-[12px] lg:leading-[14px]">
           {t('comprador.footer.derechos', { anio: new Date().getFullYear() })}

@@ -88,7 +88,7 @@ export default function RecuperarCarritoPage() {
     return (
       <MainLayout variante="marca" marcaCentrada encabezadoEscritorio="compacto" barraInferior={false}>
         <div className="flex min-h-[60vh] items-center justify-center">
-          <Spinner size="lg" />
+          <Spinner size="lg" variante="figma" />
         </div>
       </MainLayout>
     )

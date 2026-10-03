@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Lógica de negocio para pagos SINPE Móvil.
- * Flujo: checkout → subir comprobante → aprobación admin (o auto-aprobación a los 3 días).
+ * Flujo: checkout → subir comprobante → aprobación manual de la tienda dueña o de un admin.
  */
 @Service
 public class SinpeService {
