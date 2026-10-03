@@ -1,1 +1,0 @@
-import{t as e}from"./authStore-GbBkvpCV.js";import{It as t,bt as n}from"./index-_0MoyUHN.js";function r(){return t(e(e=>e.userRole),n(e=>e.planNombre))}export{r as t};
