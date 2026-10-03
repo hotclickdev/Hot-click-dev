@@ -179,6 +179,15 @@ class ContactoTextoFiltroTest {
         assertThat(resultado).isEqualTo(texto);
     }
 
+    @ParameterizedTest(name = "20 000 veces U+{0} en menos de 1 s")
+    @ValueSource(strings = {"0301", "FE0F", "1DC0"})
+    @DisplayName("Marcas combinantes repetidas no hacen cuadráticos URL ni esquemas de contacto (SEC-98-01, \\b)")
+    void marcaCombinante_tiempoLineal(String codigo) {
+        String texto = Character.toString(Integer.parseInt(codigo, 16)).repeat(20_000);
+        String resultado = assertTimeoutPreemptively(Duration.ofSeconds(1), () -> ContactoTextoFiltro.ocultar(texto));
+        assertThat(resultado).isEqualTo(texto);
+    }
+
     @ParameterizedTest(name = "se oculta: {0}")
     @ValueSource(strings = {
         "Seguinos en faceboo\u212A.com/casaluna",

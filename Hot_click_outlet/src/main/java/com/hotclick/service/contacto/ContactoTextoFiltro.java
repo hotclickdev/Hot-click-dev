@@ -56,8 +56,8 @@ public final class ContactoTextoFiltro {
     // justo donde terminó el anterior (\G); sin eso "aaaa…" sin espacios se reintenta desde cada letra
     // (cuadrático). Los cuantificadores posesivos (`++`, `*+`) no devuelven lo que tomaron cuando lo que
     // sigue no puede ser de su clase, y "\s*" ya no compite con "\s+arroba".
-    private static final Pattern ESQUEMA_CONTACTO = Pattern.compile("\\b(?:mailto|tel|sms|whatsapp|tg):[^\\s<>\"']+", I);
-    private static final Pattern URL = Pattern.compile("(?:\\bhttps?://|\\bwww\\.)[^\\s<>\"']+", I);
+    private static final Pattern ESQUEMA_CONTACTO = Pattern.compile("(?<![\\p{L}\\p{N}_])(?:mailto|tel|sms|whatsapp|tg):[^\\s<>\"']+", I);
+    private static final Pattern URL = Pattern.compile("(?<![\\p{L}\\p{N}_])(?:https?://|www\\.)[^\\s<>\"']+", I);
     private static final String INICIO_CORREO = "(?:\\G|(?<![A-Za-z0-9._%+-]))";
     private static final Pattern EMAIL = Pattern.compile(
         INICIO_CORREO + "[A-Za-z0-9._%+-]++@[A-Za-z0-9-][A-Za-z0-9.-]*\\.[A-Za-z]{2,}");
