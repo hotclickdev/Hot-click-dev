@@ -4,16 +4,34 @@ import { useNavigate } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import directorioAtras from '@/assets/figma/tienda/directorio-atras.svg'
 import MainLayout from '@/layouts/MainLayout'
-import { convenioService, listaConvenios } from '@/services/convenioService'
+import { productService } from '@/services/productService'
+import type { Producto } from '@/types/producto'
+import { normalizarBusqueda } from '@/pages/catalogo/catalogoFiltros'
 import EmprendimientosVacio from './emprendimientos/EmprendimientosVacio'
 import BuscarNegocio from './emprendimientos/BuscarNegocio'
-import ConvenioCard, { type ConvenioPublico } from './emprendimientos/ConvenioCard'
+import NegocioCard from './emprendimientos/NegocioCard'
+import { categoriasDirectorio, negociosDesdeProductos, type NegocioDirectorio } from './emprendimientos/directorioHelpers'
 
-function coincide(convenio: ConvenioPublico, termino: string) {
-  const t = termino.trim().toLowerCase()
+const TAM_PAGINA = 100
+const MAX_PAGINAS = 10
+
+function coincide(negocio: NegocioDirectorio, termino: string) {
+  const t = normalizarBusqueda(termino)
   if (!t) return true
-  return (convenio.nombre ?? '').toLowerCase().includes(t)
-    || (convenio.descripcion ?? '').toLowerCase().includes(t)
+  return [negocio.nombre, negocio.rubro, negocio.ciudad].some((v) => normalizarBusqueda(v).includes(t))
+}
+
+/** Todos los productos públicos, página por página (el directorio se arma con ellos: no hay listado público de tiendas). */
+async function productosPublicos(): Promise<Producto[]> {
+  const todos: Producto[] = []
+  for (let page = 0; page < MAX_PAGINAS; page++) {
+    const { data } = await productService.getAll(page, TAM_PAGINA)
+    const contenido = (Array.isArray(data) ? data : data?.content ?? []) as Producto[]
+    todos.push(...contenido)
+    const totalPages = Array.isArray(data) ? 1 : Number((data as { totalPages?: number } | undefined)?.totalPages ?? 1)
+    if (page + 1 >= totalPages || contenido.length === 0) break
+  }
+  return todos
 }
 
 /**
@@ -22,20 +40,25 @@ function coincide(convenio: ConvenioPublico, termino: string) {
  */
 export default function EmprendimientosPage() {
   const { t } = useTranslation()
-  const [lista, setLista] = useState<ConvenioPublico[]>([])
+  const [lista, setLista] = useState<NegocioDirectorio[]>([])
+  const [categoria, setCategoria] = useState('')
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
   const navigate = useNavigate()
   const volver = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/'))
 
   useEffect(() => {
-    convenioService.getPublicos()
-      .then((r) => setLista(listaConvenios(r) as ConvenioPublico[]))
-      .catch((err: unknown) => { console.error('[EmprendimientosPage] convenios', err) })
+    productosPublicos()
+      .then((productos) => setLista(negociosDesdeProductos(productos)))
+      .catch((err: unknown) => { console.error('[EmprendimientosPage] negocios', err) })
       .finally(() => setLoading(false))
   }, [])
 
-  const filtrada = useMemo(() => lista.filter((c) => coincide(c, busqueda)), [lista, busqueda])
+  const categorias = useMemo(() => categoriasDirectorio(lista), [lista])
+  const filtrada = useMemo(
+    () => lista.filter((n) => coincide(n, busqueda) && (!categoria || n.categoria === categoria)),
+    [lista, busqueda, categoria],
+  )
 
   return (
     <MainLayout variante="propia" barraInferior={false}>
@@ -52,6 +75,23 @@ export default function EmprendimientosPage() {
               {t('emprendimientos.intro')}
             </p>
             {lista.length > 0 && <BuscarNegocio value={busqueda} onChange={setBusqueda} />}
+            {categorias.length > 1 && (
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" role="group" aria-label={t('emprendimientos.filtrar')}>
+                {['', ...categorias].map((c) => (
+                  <button
+                    key={c || 'todos'}
+                    type="button"
+                    aria-pressed={categoria === c}
+                    onClick={() => setCategoria(c)}
+                    className={`shrink-0 whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium leading-[normal] ${
+                      categoria === c ? 'border-hc-blue-600 bg-hc-blue-600 text-white' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'
+                    }`}
+                  >
+                    {c || t('emprendimientos.todos')}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -73,8 +113,8 @@ export default function EmprendimientosPage() {
                   {t('emprendimientos.sinCoincidencias', { busqueda })}
                 </p>
               ) : (
-                filtrada.map((convenio, indice) => (
-                  <ConvenioCard key={convenio.id} convenio={convenio} indice={indice} />
+                filtrada.map((negocio, indice) => (
+                  <NegocioCard key={negocio.slug} negocio={negocio} indice={indice} />
                 ))
               )}
             </>

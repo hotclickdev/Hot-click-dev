@@ -3901,13 +3901,15 @@
     "negocios_other": "{{count}} negocios",
     "sinCoincidencias": "Ningún negocio coincide con “{{busqueda}}”.",
     "buscar": "Buscar un negocio",
-    "verProductosAria": "{{nombre}}: ver productos en HotClick",
-    "sitioExternoAria": "{{nombre}}: sitio externo, se abre en otra pestaña",
-    "sitioExterno": "Sitio externo",
-    "verProductos": "Ver productos",
     "proximamente": "Próximamente",
     "cerrandoConvenios": "Estamos cerrando convenios con emprendimientos de Costa Rica.",
-    "emprender": "Emprender en HotClick"
+    "emprender": "Emprender en HotClick",
+    "verTienda": "Ver tienda",
+    "verTiendaAria": "{{nombre}}: ver tienda",
+    "productos_one": "{{count}} producto",
+    "productos_other": "{{count}} productos",
+    "filtrar": "Filtrar negocios por categoría",
+    "todos": "Todos"
   },
   "encargoPublico": {
     "titulo": "Tu encargo",
