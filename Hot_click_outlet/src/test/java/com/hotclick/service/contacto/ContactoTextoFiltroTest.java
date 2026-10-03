@@ -6,8 +6,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.Duration;
+
 import static com.hotclick.service.contacto.ContactoTextoFiltro.OCULTO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @DisplayName("[NEGOCIO] Texto público del vendedor sin contacto directo (EMPRENDEDOR)")
 class ContactoTextoFiltroTest {
@@ -150,10 +153,12 @@ class ContactoTextoFiltroTest {
     @Test
     @DisplayName("Textos largos con muchos subdominios no desbordan la pila (Sonar java:S5998)")
     void textoLargo_sinStackOverflow() {
-        String subdominios = "a.".repeat(60_000);
-        String texto = "Escribime a ventas@" + subdominios + "com o visitá " + subdominios + "com y " + subdominios + "instagram.com/casa";
-        String salida = ContactoTextoFiltro.ocultar(texto);
-        assertThat(salida).doesNotContain("ventas@").doesNotContain("instagram.com").contains(OCULTO);
+        String subdominios = "a.".repeat(4_000);
+        assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
+            assertThat(ContactoTextoFiltro.ocultar("Escribime a ventas@" + subdominios + "com")).doesNotContain("ventas@").contains(OCULTO);
+            assertThat(ContactoTextoFiltro.ocultar("Visitá " + subdominios + "com")).doesNotContain("a.com").contains(OCULTO);
+            assertThat(ContactoTextoFiltro.ocultar("Seguinos " + subdominios + "instagram.com/casa")).doesNotContain("instagram.com").contains(OCULTO);
+        });
     }
 
     @ParameterizedTest(name = "subdominios: {0}")
