@@ -1,6 +1,7 @@
 package com.hotclick.service.publicchat;
 
 import com.hotclick.service.catalogo.CatalogoChatSql;
+import com.hotclick.service.contacto.ContactoTextoPublico;
 import com.hotclick.service.catalogo.ChatKeywordRankSql;
 import com.hotclick.service.catalogo.ChatPrecioPersonalizado;
 import com.hotclick.service.catalogo.ChatProductoMatchSql;
@@ -28,9 +29,10 @@ public class PublicChatProductSearch {
                    p.stock_actual,
                    (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
                    p.tags, c.nombre_categoria AS nombre_categoria,
+                   %s,
                    LEFT(COALESCE(p.especificaciones, ''), 600) AS especificaciones,
                    LEFT(COALESCE(p.como_usar, ''), 400) AS como_usar
-            """ + ChatPrecioPersonalizado.fragmentoSelectSql();
+            """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private static final String SELECT_ASESOR = """
             SELECT p.id_producto, p.nombre_producto, p.descripcion_corta,
@@ -39,10 +41,11 @@ public class PublicChatProductSearch {
                    p.stock_actual,
                    (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
                    p.tags, c.nombre_categoria AS nombre_categoria,
+                   %s,
                    LEFT(COALESCE(p.especificaciones, ''), 1500) AS especificaciones,
                    LEFT(COALESCE(p.como_usar, ''), 800) AS como_usar,
                    p.garantia_dias
-            """ + ChatPrecioPersonalizado.fragmentoSelectSql();
+            """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private final JdbcTemplate jdbc;
     private final PublicChatIntentHelper intentHelper;
@@ -91,7 +94,7 @@ public class PublicChatProductSearch {
             + CatalogoChatSql.joins(marketplace)
             + " WHERE " + CatalogoChatSql.whereFichaAsesor(marketplace)
             + " AND p.id_producto = ?";
-        List<Map<String, Object>> rows = jdbc.queryForList(sql, params.toArray());
+        List<Map<String, Object>> rows = consultar(sql, params.toArray());
         return rows.isEmpty() ? null : rows.get(0);
     }
 
@@ -107,7 +110,7 @@ public class PublicChatProductSearch {
             + " WHERE " + CatalogoChatSql.filtroEmpresa(marketplace)
             + " AND p.fk_id_estado = 1"
             + " AND p.id_producto IN (" + placeholders + ")";
-        return jdbc.queryForList(sql, params.toArray());
+        return consultar(sql, params.toArray());
     }
 
     public List<Map<String, Object>> buscarProductos(Long empresaId, boolean marketplace, String tsQuery,
@@ -185,7 +188,7 @@ public class PublicChatProductSearch {
                 + (synCount > 0 ? ", " + ChatKeywordRankSql.scoreExpr(synCount, 1, 1, 1, 0) + " DESC" : "")
                 + ", p.id_producto DESC"
                 + " LIMIT ? OFFSET ?";
-            return jdbc.queryForList(sql, params.toArray());
+            return consultar(sql, params.toArray());
         } catch (Exception e) {
             log.debug("[Chat] tsvector query failed ({}), fallback to ILIKE", e.getMessage());
             return List.of();
@@ -225,7 +228,12 @@ public class PublicChatProductSearch {
             + price
             + order
             + " LIMIT ? OFFSET ?";
-        return jdbc.queryForList(sql, params.toArray());
+        return consultar(sql, params.toArray());
+    }
+
+    /** Filas al visitante y al modelo: con plan sin contacto directo el texto sale enmascarado. */
+    private List<Map<String, Object>> consultar(String sql, Object[] params) {
+        return ContactoTextoPublico.ocultarFilasProducto(jdbc.queryForList(sql, params));
     }
 
     private static String appendPrecio(List<Object> params, Long maxBudget) {
@@ -240,6 +248,6 @@ public class PublicChatProductSearch {
         CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
         params.add(limit);
         params.add(offset);
-        return jdbc.queryForList(sql, params.toArray());
+        return consultar(sql, params.toArray());
     }
 }
