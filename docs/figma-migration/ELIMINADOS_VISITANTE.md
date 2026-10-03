@@ -42,6 +42,12 @@ En la columna "¿Podría hacer falta?":
 | Paleta vieja en Descubrí | `pages/descubri/DescubriError.tsx`, `DescubriLoading.tsx`, `DescubriRevelacion.tsx`, `DescubriResultados.tsx` | Estados con `--hc-accent` / `--hc-surface` y cuadrado animado | `b172cf4c` | No |
 | Página `/error` oscura para el visitante | `Hot_click_outlet/src/main/java/com/hotclick/controller/CustomErrorController.java` | HTML negro con emoji 🔍 y botón violeta | `eb0535e3` | No. El visitante ve el estilo de `45:2198` y `45:2322`; paneles y roles siguen con la oscura |
 | `PageLoader` para el visitante | `components/ui/Spinner.tsx` (`PageLoaderFigma`) | Bolsa con barra y puntos al cargar una ruta | `64d83798` | No. Para paneles y landings sigue el de siempre |
+| `Modal` centrado con velo borroso para el visitante | `components/ui/Modal.tsx` (`ModalFigma`) | Tarjeta `hc-modal-bg` centrada, título con borde inferior y cierre con anillo | `aa4b681c` | No. En rutas del visitante es la hoja inferior `45:1612`; los paneles siguen igual |
+| Botones `#ef4444` / `--hc-surface-2` del `ConfirmModal` para el visitante | `components/ui/ConfirmModal.tsx` | Confirmar rojo pill a la izquierda y cancelar gris | `21f6d326` | No. Visitante: botones de hoja `51:2192`/`51:2194` (cancelar a la izquierda, rojo a la derecha) |
+| Toast oscuro n900 para el visitante | `components/ui/Toast.tsx` (`PilaToastsFigma`) | Pila de toasts negros abajo a la izquierda | `03828a95` | No. Visitante: tarjeta blanca centrada (derivada de `29:2036`); paneles siguen con la oscura |
+| Clases `hc-input*` para el visitante | `components/ui/Input.tsx` | Campo con fondo y foco de la paleta vieja | `3f4d7d83` | No. Visitante: campo `28:1110` |
+| Clases `hc-btn*` para el visitante | `components/ui/Button.tsx` | Botones del Brand Book anterior (ghost con borde, success verde claro) | `25dbbe4e` | No. Visitante: primario rojo de 48, secundario borde n200, ghost texto b600 |
+| Barra roja con brillo para el visitante | `components/ui/PageProgressBar.tsx` | Línea `--hc-primary` con `box-shadow` al navegar | `65a5d3e9` | No. Visitante: línea azul b600 sin brillo (Figma no tiene barra) |
 
 ## Hace falta agregar (Figma lo pide y el sistema no lo tiene)
 
