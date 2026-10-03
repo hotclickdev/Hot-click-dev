@@ -129,7 +129,7 @@ public class ProductoController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> actualizarProducto(
             @PathVariable Long id,
-            @RequestBody ProductoRequestDTO dto) {
+            @RequestBody @Valid ProductoRequestDTO dto) {
         return writeHandler.actualizarProducto(id, dto);
     }
 
@@ -147,7 +147,7 @@ public class ProductoController {
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<ResponseDTO> importarBulk(@RequestBody List<ProductoRequestDTO> dtos) {
+    public ResponseEntity<ResponseDTO> importarBulk(@RequestBody List<@Valid ProductoRequestDTO> dtos) {
         return writeHandler.importarBulk(dtos);
     }
 
