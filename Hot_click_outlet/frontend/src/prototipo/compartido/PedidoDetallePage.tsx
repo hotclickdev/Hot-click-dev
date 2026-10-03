@@ -1,11 +1,14 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { formatoColon } from '@/theme/formatoColon'
 import { EncabezadoPagina, Miniatura } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
 import { marcarPedidoEnviadoApi } from './pedidosVendedorApi'
+import { mensajeErrorDespacho, puedeDespachar } from './estadoPedidoVendedor'
+import { estiloEstadoPedido } from './pedidosListaHelpers'
 import type { PlanConfig } from './plan'
 import type { PedidoMock } from './mock'
 import EntradaPagina from './motion/EntradaPagina'
@@ -35,7 +38,7 @@ export default function PedidoDetallePage() {
       navigate(ruta('pedidos'))
     } catch (err: unknown) {
       console.error('[PedidoDetalle]', err)
-      setErrorMarca('No se pudo marcar el pedido como enviado.')
+      setErrorMarca(mensajeErrorDespacho(err, 'No se pudo marcar el pedido como enviado.'))
     } finally {
       setMarcando(false)
     }
@@ -90,7 +93,7 @@ export default function PedidoDetallePage() {
             <p className="mt-1 text-sm text-hc-muted">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
           ) : null}
         </header>
-        {confirmando && pedido.estado === 'Pendiente' ? (
+        {confirmando && puedeDespachar(pedido.estado) ? (
           <ConfirmacionEnvio
             pedido={pedido}
             errorMarca={errorMarca}
@@ -148,6 +151,7 @@ function DetallePedidoContenido({
   plan: PlanConfig
   onConfirmarEnvio: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <>
       {plan.id === 'negocioPlus' ? (
@@ -155,11 +159,7 @@ function DetallePedidoContenido({
       ) : null}
       <span
         className="rounded-full px-3 py-1 text-xs"
-        style={
-          pedido.estado === 'Pendiente'
-            ? { background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)' }
-            : estiloEstadoDetalle(pedido.estado)
-        }
+        style={estiloEstadoPedido(pedido.estado)}
       >
         {pedido.estado === 'Pendiente' ? 'Pendiente de envío' : pedido.estado}
       </span>
@@ -179,7 +179,10 @@ function DetallePedidoContenido({
           <span>Total</span>
           <span>{formatoColon(pedido.total)}</span>
         </div>
-        {pedido.estado === 'Pendiente' ? (
+        {pedido.estado === 'Esperando pago' ? (
+          <p role="status" className="mt-6 text-sm text-hc-muted">{t('despacho.esperandoPagoAyuda')}</p>
+        ) : null}
+        {puedeDespachar(pedido.estado) ? (
           <div className="mt-6">
             <CtaEnvio variante="primario" onClick={onConfirmarEnvio}>
               Confirmar envío
@@ -243,10 +246,4 @@ function FilaDato({ label, valor }: { label: string; valor: string }) {
       <dd>{valor}</dd>
     </div>
   )
-}
-
-function estiloEstadoDetalle(estado: PedidoMock['estado']): { background: string; color: string } {
-  if (estado === 'Entregado') return { background: 'var(--hc-success-bg)', color: 'var(--hc-success)' }
-  if (estado === 'Enviado') return { background: 'var(--hc-info-bg)', color: 'var(--hc-info)' }
-  return { background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)' }
 }

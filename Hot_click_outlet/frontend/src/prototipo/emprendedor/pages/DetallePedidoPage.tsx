@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { marcarPedidoConGuiaApi, marcarPedidoEnviadoApi } from '@/prototipo/compartido/pedidosVendedorApi'
+import { mensajeErrorDespacho, puedeDespachar } from '@/prototipo/compartido/estadoPedidoVendedor'
 import EstadoVacioConversacional from '@/prototipo/compartido/motion/EstadoVacioConversacional'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
@@ -33,7 +34,7 @@ export default function DetallePedidoPage() {
       navigate(`${RUTA_EMPRENDEDOR}/pedidos`)
     } catch (err: unknown) {
       console.error('[DetallePedido]', err)
-      setErrorMarca(t('despacho.error'))
+      setErrorMarca(mensajeErrorDespacho(err, t('despacho.error')))
     } finally {
       setMarcando(false)
     }
@@ -61,7 +62,7 @@ export default function DetallePedidoPage() {
   }
 
   return (
-    <EmprendedorPageFrame titulo={pedido.estado === 'Pendiente' ? t('despacho.titulo') : `Pedido #${pedido.id}`} volverA={`${RUTA_EMPRENDEDOR}/pedidos`}>
+    <EmprendedorPageFrame titulo={puedeDespachar(pedido.estado) ? t('despacho.titulo') : `Pedido #${pedido.id}`} volverA={`${RUTA_EMPRENDEDOR}/pedidos`}>
       <DespacharPedidoVista pedido={pedido} guia={guia} onGuia={setGuia} marcando={marcando} error={errorMarca} onMarcar={() => void marcarEnviado()} />
     </EmprendedorPageFrame>
   )

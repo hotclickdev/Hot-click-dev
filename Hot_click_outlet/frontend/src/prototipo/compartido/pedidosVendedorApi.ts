@@ -3,13 +3,7 @@ import { listaPedidosDesdeRespuesta } from '@/pages/admin/ordenes/ordenesHelpers
 import type { Pedido, ItemPedido } from '@/types/pedido'
 import type { PedidoEmprendedor } from '@/prototipo/emprendedor/types'
 import type { PedidoMock } from '@/prototipo/compartido/mock'
-
-function estadoFigma(estado?: string): PedidoEmprendedor['estado'] {
-  const e = (estado ?? '').toUpperCase()
-  if (e === 'ENTREGADO' || e === 'COMPLETADO') return 'Entregado'
-  if (e === 'ENVIADO') return 'Enviado'
-  return 'Pendiente'
-}
+import { estadoPedidoVendedor } from './estadoPedidoVendedor'
 
 function lineas(items: ItemPedido[] | undefined): PedidoEmprendedor['productos'] {
   return (items ?? []).map((item, i) => ({
@@ -32,7 +26,7 @@ export function aPedidoEmprendedor(p: Pedido): PedidoEmprendedor {
     id: String(p.id ?? ''),
     cliente: p.nombreCliente ?? 'Cliente',
     total: Number(p.total ?? p.totalPedido ?? 0),
-    estado: estadoFigma(p.estado ?? p.estadoPedido),
+    estado: estadoPedidoVendedor(p.estado ?? p.estadoPedido),
     fecha: String(p.fechaCreacion ?? p.fechaPedido ?? ''),
     direccion: direccionDePedido(p),
     productos: lineas(p.items),

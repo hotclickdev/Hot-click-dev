@@ -5,6 +5,7 @@ import { formatPrice } from '@/utils/format'
 import despachoCheck from '@/assets/figma/pago/despacho-check.svg'
 import despachoEscanear from '@/assets/figma/pago/despacho-escanear.svg'
 import despachoUbicacion from '@/assets/figma/pago/despacho-ubicacion.svg'
+import { puedeDespachar } from '@/prototipo/compartido/estadoPedidoVendedor'
 import type { PedidoEmprendedor } from '../types'
 
 type DespacharPedidoVistaProps = {
@@ -22,17 +23,19 @@ const MAX_GUIA = 100
  * Despachar un pedido: Figma `37:1780` (móvil). Muestra los productos, la dirección de envío y el número de
  * guía de Correos; con guía, el backend notifica al cliente con el seguimiento. Sin datos de paquetes del pedido
  * ni de liquidación al vendedor, los bloques "Paquete 1 de N" y "Tu pago por este paquete" quedan pendientes.
+ * Sin pago confirmado ('Esperando pago') no se ofrece despachar: el backend respondería 409.
  */
 export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, error, onMarcar }: DespacharPedidoVistaProps) {
   const { t } = useTranslation()
-  const pendiente = pedido.estado === 'Pendiente'
+  const pendiente = puedeDespachar(pedido.estado)
+  const esperandoPago = pedido.estado === 'Esperando pago'
   return (
     <div className="flex flex-col gap-[14px] leading-[normal]">
       <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
         <div className="flex items-center justify-between gap-2">
           <p className="font-mono text-[11px] font-medium text-hc-n-500">{t('despacho.pedido', { id: pedido.id })}</p>
-          <span className={`rounded-full px-2 py-[3px] text-[11px] font-semibold ${pendiente ? 'bg-hc-warning-bg text-hc-warning' : 'bg-[var(--hc-success-bg)] text-hc-success'}`}>
-            {pendiente ? t('despacho.porDespachar') : pedido.estado}
+          <span className={`rounded-full px-2 py-[3px] text-[11px] font-semibold ${claseEstado(pedido.estado)}`}>
+            {etiquetaEstado(pedido.estado, t)}
           </span>
         </div>
         <h2 className="font-sans text-[15px] font-semibold tracking-normal text-hc-n-900">{t('despacho.tusProductos')}</h2>
@@ -59,6 +62,12 @@ export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, e
           </div>
         </div>
       </section>
+
+      {esperandoPago && (
+        <p role="status" className="rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] text-[13px] leading-[18px] text-hc-n-600">
+          {t('despacho.esperandoPagoAyuda')}
+        </p>
+      )}
 
       {pendiente && (
         <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
@@ -90,4 +99,16 @@ export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, e
       )}
     </div>
   )
+}
+
+function etiquetaEstado(estado: PedidoEmprendedor['estado'], t: (clave: string) => string): string {
+  if (estado === 'Pendiente') return t('despacho.porDespachar')
+  if (estado === 'Esperando pago') return t('despacho.esperandoPago')
+  return estado
+}
+
+function claseEstado(estado: PedidoEmprendedor['estado']): string {
+  if (estado === 'Pendiente' || estado === 'Esperando pago') return 'bg-hc-warning-bg text-hc-warning'
+  if (estado === 'Cancelado') return 'bg-[var(--hc-danger-bg)] text-hc-danger'
+  return 'bg-[var(--hc-success-bg)] text-hc-success'
 }

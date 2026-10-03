@@ -22,7 +22,7 @@ export type ProductoMock = {
   instruccionesPersonalizacion?: string
 }
 
-export type EstadoPedido = 'Pendiente' | 'Enviado' | 'Entregado' | 'Cancelado'
+export type EstadoPedido = 'Esperando pago' | 'Pendiente' | 'Enviado' | 'Entregado' | 'Cancelado'
 
 export type ItemPedido = {
   nombre: string
