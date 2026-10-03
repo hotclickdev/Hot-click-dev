@@ -1,1 +1,0 @@
-import{t as e}from"./authStore-GbBkvpCV.js";import{Bt as t,xt as n}from"./index-BY-15_rB.js";function r(){return t(e(e=>e.userRole),n(e=>e.planNombre))}export{r as t};

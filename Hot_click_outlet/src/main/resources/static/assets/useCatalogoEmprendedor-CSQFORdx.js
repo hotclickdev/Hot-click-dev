@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-CL01FsQ0.js";function t(){return e()}export{t};
