@@ -124,7 +124,7 @@ export default function ProductDetailPage() {
 
         <div className="lg:mx-auto lg:w-[calc(100%-4rem)] lg:max-w-[1200px]">
           {!agotado && <OpinionesProducto productoId={product.id} />}
-          <ProductVideo videoUrl={product.videoUrl} titulo={product.titulo || product.nombre || ''} />
+          <ProductVideo videoUrl={product.videoUrl} titulo={product.titulo || product.nombre || ''} tienda={product.empresaNombre} portada={product.imagenUrl} />
 
           {agotado ? (
             <CarruselProductos

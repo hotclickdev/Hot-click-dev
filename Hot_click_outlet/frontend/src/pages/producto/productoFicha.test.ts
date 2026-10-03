@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Producto } from '@/types/producto'
-import { avisoStockBajoSinTalla, detectVideo, opcionesDeTalla, opinionesDesdeRespuesta, tiendaDesdeCatalogo } from './productoHelpers'
+import { avisoStockBajoSinTalla, detectVideo, segmentoVideo, opcionesDeTalla, opinionesDesdeRespuesta, tiendaDesdeCatalogo } from './productoHelpers'
 
 describe('ficha · opiniones', () => {
   it('lee la lista de { data: [...] } y descarta lo que no trae comentario', () => {
@@ -108,5 +108,16 @@ describe('ficha · video del producto por red (derivado de Figma 28:839)', () =>
     expect(detectVideo(null)).toBeNull()
     expect(detectVideo('no es una url')).toBeNull()
     expect(detectVideo('javascript:alert(1)')).toBeNull()
+  })
+})
+
+describe('ficha · segmento de plataforma del video', () => {
+  it('YouTube, Instagram y TikTok tienen segmento propio; Facebook, Vimeo y el resto van a "Otra red"', () => {
+    expect(segmentoVideo('youtube')).toBe('youtube')
+    expect(segmentoVideo('instagram')).toBe('instagram')
+    expect(segmentoVideo('tiktok')).toBe('tiktok')
+    expect(segmentoVideo('facebook')).toBe('otra')
+    expect(segmentoVideo('vimeo')).toBe('otra')
+    expect(segmentoVideo('otra')).toBe('otra')
   })
 })

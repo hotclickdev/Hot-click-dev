@@ -13,6 +13,17 @@
   - Los datos de prod son el mismo catálogo de muestra de Figma: Casa Luna 506, Taller Ceiba, Bruma Café; 27 productos.
   - Por eso las diferencias de **contenido** (fotos, conteos, productos destacados) se separan de las diferencias de **diseño**.
 
+## Aprobaciones y reglas vigentes (2-oct-2026, usuario HOT_CLICK)
+
+| Fecha | Qué se aprobó | Condiciones |
+|---|---|---|
+| 2-oct-2026 | Fase 2 en `feat/figma/alineacion-total`, solo superficies de visitante | Un commit por bloque; sin push, merge ni deploy; roles Emprendedor, administrador, Pyme y Negocio Plus intactos |
+| 2-oct-2026 | Los 4 cambios en código compartido: (1) rutas públicas de visitante + fallback SPA en `SecurityAuthorizationRules.java`; (2) auto-actualización del SW solo para visitantes sin sesión; (3) rediseño de la tienda pública; (4) registro | Solo afectan al visitante. (1) sin cambiar ninguna regla de rol, con tests que prueban que `/api` y las rutas de rol siguen pidiendo auth. (2) POS/caja y los paneles admin, emprendedor, Pyme y Negocio Plus siguen en modo *prompt* y nunca se recargan a mitad de una venta, con test. (3) solo visual, sin tocar lógica de plan, flags, paneles ni datos de Negocio Plus. (4) "Quiero vender" queda igual |
+| 2-oct-2026 | El video del producto **se queda**, rediseñado | Sección "Video del producto" entre Opiniones y "También te puede gustar", solo si hay video; YouTube (con Shorts), Instagram (post/reel), TikTok, Facebook/Vimeo y "otra red" como tarjeta de enlace; embed perezoso e insignia de plataforma. Sale de la tabla "se destruye" |
+| 2-oct-2026 | **Imagen aprobada** `docs/figma-migration/MANUAL_MARCA_FIGMA/ficha-video.png` ("excelente, es el diseño que buscaba"), fuente HTML/CSS en `MANUAL_MARCA_FIGMA/fuente/index.html` | El panel izquierdo (ficha con video) se implementa exacto. El panel derecho (formulario del vendedor) es del panel emprendedor: **no se implementa**, solo se documenta (ver 4.1) |
+
+**Regla permanente (desde el 2-oct-2026):** todo rediseño, en esta rama y en el trabajo futuro, se ve como la imagen aprobada: tokens de Figma `hc-*`, Public Sans para texto y Sora para títulos, rojo `#E73B33`, tarjetas claras, radios (12/14/16 px), espaciado y chips/controles segmentados. Lo que Figma no cubre se deriva de Figma y de esa imagen. Cero pantallas o componentes de visitante con el diseño anterior. El manual completo está en [`MANUAL_MARCA_FIGMA/README.md`](MANUAL_MARCA_FIGMA/README.md).
+
 ## Conteo de pantallas
 
 | | Cantidad |
@@ -74,7 +85,7 @@
 | Todas (MainLayout) | Banner "¡Bienvenido de vuelta! Tenés N productos en el pedido · Ver pedido" (`ReturnVisitorBanner`) | No existe en ningún frame | Se muestra sobre Servicios, Nosotros, Contacto e Información. Se propone **derivarlo de Figma**: usar la tarjeta 29:2036 "Recuperar carrito" con estilo de aviso blue/50, o quitarlo |
 | `/productos/:id` (m y d) | Fila de tienda | "CL Casa Luna 506 ›" (avatar y link a la tienda) | Chips "Luna 506 · Nuevo" (marca y condición), sin link a la tienda |
 | `/productos/:id` | Galería | Indicador 1/4 con puntos y miniaturas a la izquierda en escritorio | Una sola imagen, sin miniaturas (el producto 284 tiene 1 foto: es contenido) |
-| `/productos/:id` | "Video del producto" | No existe | Recuadro negro grande con YouTube debajo de "También te puede gustar" (`ProductVideo.tsx`, el producto 284 tiene `videoUrl`). **Derivado de Figma:** integrarlo como un ítem más de la galería 55:2167 (miniatura con ▶) y abrirlo en la vista 55:2191 |
+| `/productos/:id` | "Video del producto" | No existe | Recuadro negro grande con YouTube debajo de "También te puede gustar" (`ProductVideo.tsx`, el producto 284 tiene `videoUrl`). **Cambio del usuario (2-oct):** se conserva y se rediseña como sección propia según la imagen aprobada `MANUAL_MARCA_FIGMA/ficha-video.png` (derivada de 28:839), entre Opiniones y "También te puede gustar" |
 | `/productos/290` (personalizado) | Flujo | 44:1849: formulario de personalización dentro de la ficha y CTA "Agregar pedido personalizado · ₡11.000" | "Desde ₡11.000" y "Solicitar encargo" con formulario de nombre, correo y teléfono (modo encargo/cotización). Alinear con 44:1849 cuando el precio es fijo y dejar el modo encargo como **derivado de Figma** (cotización 55:2332) |
 | `/tienda/:slug` (m y d) | Encabezado | Portada de color, botones WhatsApp e Instagram, "Emite factura", "Sobre nosotros" y chips de categoría | Faltan "Sobre nosotros", los botones sociales y las insignias (depende de datos de la tienda). En móvil aparece además una **barra flotante de tienda** (Catálogo, Pedido, Inicio) sobre el contenido, que no está en Figma |
 | `/carrito` | Estructura | 28:989 / 30:2268 | Coincide: paquetes por tienda, aviso 40:1350, cupón, resumen. Los extras "Pedir por WhatsApp", gift card, "¿Lo terminás después?" y asistente están en 51:1820 (aceptados) |
@@ -133,7 +144,7 @@
 | `/tienda/:slug/producto/:id` | Renderizar la **ficha 28:839 / 29:2072** (los mismos componentes de `/productos/:id`) dentro del shell de tienda | **derivado de Figma** |
 | `/tienda/:slug/carrito`, `/checkout`, `/checkout/exito` | Rehacer con 28:989, 28:1083 y 29:1932, con un solo paquete y el color de la tienda (51:2468). Quitar la barra flotante de tienda y usar el encabezado de 29:922 más la barra de compra de la ficha. ⚠️ **COMPARTIDO**: la tienda propia es una función de plan del emprendedor (Negocio Plus). El cambio es solo de presentación al visitante; no se tocan la configuración de la tienda ni sus datos. **Requiere confirmación** | **derivado de Figma** |
 | Banner de visitante recurrente | Tarjeta compacta derivada de 29:2036 o quitar | **derivado de Figma** |
-| Video de producto | Ítem de galería 55:2167 / 55:2191 | **derivado de Figma** |
+| Video de producto | Sección "Video del producto" de la imagen aprobada `ficha-video.png` (patrones de 28:839) | **derivado de Figma**, aprobado |
 | Estados vacíos de categoría y de blog | Variantes de 27:804 y 45:1799 | **derivado de Figma** |
 | `/visitante/*`, `/prototipo/*` | `/visitante/*` ya redirige. `/prototipo/*` es el prototipo viejo, público y con `permitAll`: **eliminar la ruta** (o dejarla detrás de un flag de desarrollo) | — |
 | `/emprende`, `/para-pymes`, `/negocio-plus-plan`, `/registro-empresa`, `/registrar-negocio` | Son embudos de adquisición de los roles Emprendedor, Pyme y Negocio Plus. **Fuera de alcance por instrucción.** Se listan solo porque un visitante los ve; no se proponen cambios | fuera de alcance |
@@ -142,6 +153,28 @@
 - **Ficha personalizada → encargo enviado:** falta la confirmación de "encargo enviado". Se deriva de 29:1932 (check y resumen) → **derivado de Figma**.
 - **Carrito → "Lo terminás después" → recuperar:** falta la confirmación inline de "Te lo mandamos". Se deriva del aviso success de 45:1607 → **derivado de Figma**.
 - **Login con correo inexistente → crear cuenta:** falta la pantalla B (ver `/registro` arriba) → **derivado de Figma**.
+
+### 4.1 Video del producto (implementado, aprobado el 2-oct-2026)
+
+**Qué ve el visitante** (`frontend/src/pages/producto/ProductVideo.tsx`, valores tomados de `MANUAL_MARCA_FIGMA/fuente/index.html`):
+- Separador, título "Video del producto" en Sora 17 y "Publicado por {tienda}" en 12 px `hc-n-500`.
+- Control segmentado de 4 plataformas (YouTube, Instagram, TikTok, Otra red): fondo `hc-n-100`, radio 12, padding 4; el segmento activo es blanco, radio 9, texto `hc-blue-600` semibold y sombra con anillo `hc-blue-100`. Es un indicador (`<ul>` con `aria-current`), porque el producto tiene un solo video. Facebook y Vimeo marcan "Otra red".
+- Tarjeta 16:9 de radio 14 con portada (miniatura de YouTube, o la foto principal del producto en las demás redes), velo `rgba(20,23,28,.22)`, botón rojo de 60 px y una insignia oscura con el ícono y el nombre de la red.
+- Abajo, "Ver en {red} ↗" en `hc-blue-600` y "Se reproduce aquí mismo" (o "Se abre en otra pestaña" para "otra red").
+- Carga perezosa: el iframe se crea recién al tocar play. **Derivado:** las redes verticales (Shorts, Instagram, TikTok, reels de Facebook) pasan a 9:16 (máx. 340 px) al reproducir; si no, el embed no se puede usar.
+- "Otra red" sin embed: la tarjeta abre el enlace en otra pestaña.
+- Sin `videoUrl`, o con una URL inválida, no se dibuja nada.
+- **No se muestra** la duración (`0:48` de la imagen): el backend no la guarda. Hace falta agregarla.
+
+**Backend actual:** solo hay `Producto.videoUrl` (`video_url`, columna de 500 caracteres; el DTO `ProductoRequestDTO` valida hasta 1000 y que empiece con http/https). No hay campo de plataforma ni de duración: la plataforma se deduce de la URL en el cliente (`detectVideo` / `segmentoVideo` en `productoHelpers.ts`, con tests).
+
+**Lo que necesitaría el formulario del vendedor** (panel derecho de la imagen; es del panel emprendedor, **NO se implementó**):
+1. Una tarjeta "Video del producto (opcional)" con el texto "Se muestra en la ficha, debajo de las opiniones."
+2. El mismo control segmentado de plataforma (YouTube / Instagram / TikTok / Otra red). Puede ser solo de ayuda visual o guardarse en un campo nuevo `videoPlataforma`.
+3. Un campo "Enlace o código embed", con ayuda "Pegá el enlace de YouTube, Instagram, TikTok u otra red" y botón para limpiar.
+4. Una vista previa en vivo con `detectVideo` ("Video de YouTube detectado · Así se verá en la ficha del producto").
+5. Botones "Guardar video" (rojo) y "Quitar video" (secundario), y una nota: con "Otra red" se pega el `<iframe>` que da la plataforma.
+6. Backend: igualar el largo de la columna `video_url` (500) con el DTO (1000), o subir la columna, porque los códigos embed son largos. Opcional: `video_plataforma` y `video_duracion_seg`. Si se aceptan códigos `<iframe>`, hay que sanear del lado del servidor y quedarse solo con el `src` de dominios permitidos.
 
 ---
 
@@ -163,7 +196,7 @@ Reglas para todos los bloques:
 
 **Bloque 2: Ficha de producto**
 1. Fila de tienda 28:839 (avatar con iniciales y link a `/tienda/:slug`) en lugar del chip de marca.
-2. Video dentro de la galería (55:2167 / 55:2191) → **derivado de Figma**. Eliminar la sección suelta `ProductVideo` de la ficha de visitante.
+2. ~~Video dentro de la galería~~ → reemplazado por decisión del usuario: sección "Video del producto" según la imagen aprobada (ver 4.1).
 3. Ficha personalizada con precio fijo según 44:1849. El modo encargo queda como **derivado de Figma**.
 4. Verificar las variantes (44:1775) y el estado agotado (44:1917) con datos mock.
 
@@ -197,7 +230,7 @@ Reglas para todos los bloques:
 | Componentes y archivos | `pages/informacion/InformacionHero.tsx`, `HowToBuySection.tsx`, `ConditionsSection.tsx`, `WarrantySection.tsx`, `ShippingOptions.tsx`, `ReservePolicy.tsx`, `FaqSection.tsx`, `InformacionCta.tsx` y `informacionIcons.tsx` (los textos se pasan a la plantilla); `pages/devoluciones/DevolucionesHero.tsx`, `DevolucionesBadges.tsx` y `DevolucionesCta.tsx`; las secciones visuales de `NosotrosPage.tsx` (hero con degradado y tarjeta del fundador); `pages/contacto/ContactoCanales.tsx` (mosaicos de colores) y la piel de `ContactoFormulario.tsx`; el layout propio de las 4 páginas legales (título degradado e índice en tarjetas) |
 | Registro | Las pestañas "Quiero comprar / Quiero vender" y el hero bicolor de `RegisterPage.tsx`, y el formulario largo de `RegisterFormStep.tsx`, **solo en el camino comprador** ⚠️ |
 | Tienda | `TiendaBottomNav.tsx`, `tiendaBottomNavItems.ts`, la piel actual de `TiendaProductoPage.tsx`, `TiendaCarritoPage.tsx`, `TiendaCheckoutPage.tsx`, `TiendaCheckoutDireccion.tsx` y `TiendaSuccessPage.tsx`, y el banner navy "Tienda de … en HotClick" (sujeto a la confirmación del Bloque 5) |
-| Secciones | La sección suelta "Video del producto" en la ficha; el banner `ReturnVisitorBanner` en su forma actual; el FAB de WhatsApp fuera de las pantallas de 51:2262 |
+| Secciones | El recuadro negro del video y el visor modal viejo (`ProductVideoVisor`, botón "Ver video"); **la sección de video NO se destruye, se rediseña** (cambio del usuario del 2-oct); el banner `ReturnVisitorBanner` en su forma actual; el FAB de WhatsApp fuera de las pantallas de 51:2262 |
 | Rutas | `/prototipo/*` (prototipo viejo público): eliminar la ruta, sus matchers en `SecurityAuthorizationRules` y `SpaController`, y la carpeta `src/prototipo/visitante/*` si nada más la importa. Verificar con `grep` antes |
 | Estilos | Clases de degradado y hero de las páginas anteriores. No se toca `index.css` global ni los tokens `hc-*`, que son los de Figma |
 | **No** se destruye | Nada bajo `/admin`, `/emprendedor`, `/pyme`, `/negocio-plus`, POS, `/emprende`, `/para-pymes`, `/negocio-plus-plan`, `/registro-empresa` ni `/registrar-negocio` |

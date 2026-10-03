@@ -875,8 +875,12 @@
     "verTodosMarca": "See all",
     "videoDe": "Video of {{titulo}}",
     "reproducirVideo": "Play the video of {{titulo}}",
-    "verVideoEn": "Watch video on {{red}}",
-    "videoOtraPestana": "Opens in a new tab"
+    "videoOtraPestana": "Opens in a new tab",
+    "publicadoPor": "Posted by {{tienda}}",
+    "verEn": "Watch on {{red}}",
+    "seReproduceAqui": "Plays right here",
+    "plataformaVideo": "Video platform",
+    "otraRed": "Other"
   },
   "cart": {
     "title": "Order",
