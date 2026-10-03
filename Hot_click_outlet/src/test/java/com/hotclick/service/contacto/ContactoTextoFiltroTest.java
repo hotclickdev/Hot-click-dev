@@ -170,6 +170,28 @@ class ContactoTextoFiltroTest {
         assertThat(resultado).endsWith(" " + OCULTO);
     }
 
+    @ParameterizedTest(name = "20 000 veces U+{0} en menos de 1 s")
+    @ValueSource(strings = {"212A", "017F", "0130", "0131"})
+    @DisplayName("K (Kelvin), ſ, İ e ı repetidos no hacen cuadráticos los dominios (SEC-98-01, UNICODE_CASE)")
+    void unicodePlegable_tiempoLineal(String codigo) {
+        String texto = Character.toString(Integer.parseInt(codigo, 16)).repeat(20_000);
+        String resultado = assertTimeoutPreemptively(Duration.ofSeconds(1), () -> ContactoTextoFiltro.ocultar(texto));
+        assertThat(resultado).isEqualTo(texto);
+    }
+
+    @ParameterizedTest(name = "se oculta: {0}")
+    @ValueSource(strings = {
+        "Seguinos en faceboo\u212A.com/casaluna",
+        "Mirá casaluna.\u017Fhop",
+        "IG: \u0130nstagram.com/casaluna",
+        "Escribinos a t.me/casaluna\u212A",
+    })
+    @DisplayName("Dominios con K, ſ o İ en vez de k, s o i se siguen ocultando")
+    void dominioConLetraPlegable_seOculta(String texto) {
+        String resultado = ContactoTextoFiltro.ocultar(texto);
+        assertThat(resultado).contains(OCULTO).doesNotContain(".com").doesNotContain("hop").doesNotContain("t.me");
+    }
+
     @Test
     @DisplayName("Espacios largos antes de 'arroba' o '+506' no hacen el filtro cuadrático")
     void espaciosLargos_tiempoLineal() {
