@@ -71,7 +71,7 @@ export default function HomePage() {
 
       <section
         aria-labelledby="home-titulo"
-        className="flex flex-col lg:flex-row lg:gap-14 lg:bg-hc-n-0 lg:px-8 lg:pb-10 lg:pt-9 xl:px-[120px]"
+        className="flex flex-col lg:flex-row lg:gap-14 lg:bg-hc-n-0 lg:px-8 lg:pb-10 lg:pt-9 xl:px-[max(120px,calc((100%_-_1200px)/2))]"
       >
         <div className="flex flex-col gap-3 bg-hc-n-0 py-[18px] lg:w-[420px] lg:shrink-0 lg:gap-4 lg:bg-transparent lg:p-0">
           <div className="flex flex-col gap-1 px-4 lg:gap-4 lg:px-0">
@@ -121,7 +121,7 @@ export default function HomePage() {
           <SeguiDondeLoDejaste />
         </div>
         {categorias.length > 0 && (
-          <section aria-labelledby="home-categorias" className="order-2 flex flex-col gap-[14px] px-4 pb-[6px] pt-6 lg:order-1 lg:gap-[18px] lg:px-8 lg:pb-2 lg:pt-11 xl:px-[120px]">
+          <section aria-labelledby="home-categorias" className="order-2 flex flex-col gap-[14px] px-4 pb-[6px] pt-6 lg:order-1 lg:gap-[18px] lg:px-8 lg:pb-2 lg:pt-11 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
             <EncabezadoSeccion
               id="home-categorias"
               titulo={t('home.compra.categorias')}
@@ -143,7 +143,7 @@ export default function HomePage() {
       </section>
 
       {nuevos.length > 0 && (
-        <section aria-labelledby="home-nuevos" className="flex flex-col gap-[14px] px-4 pb-[6px] pt-6 lg:gap-[18px] lg:px-8 lg:pb-2 lg:pt-11 xl:px-[120px]">
+        <section aria-labelledby="home-nuevos" className="flex flex-col gap-[14px] px-4 pb-[6px] pt-6 lg:gap-[18px] lg:px-8 lg:pb-2 lg:pt-11 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
           <EncabezadoSeccion
             id="home-nuevos"
             titulo={t('home.compra.nuevos')}

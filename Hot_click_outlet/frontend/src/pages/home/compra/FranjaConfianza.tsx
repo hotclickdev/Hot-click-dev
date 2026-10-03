@@ -14,7 +14,7 @@ const PROMESAS = [
 export default function FranjaConfianza() {
   const { t } = useTranslation()
   return (
-    <section aria-labelledby="home-confianza" className="flex flex-col gap-[14px] px-4 pb-5 pt-7 lg:gap-4 lg:px-8 lg:py-12 xl:px-[120px]">
+    <section aria-labelledby="home-confianza" className="flex flex-col gap-[14px] px-4 pb-5 pt-7 lg:gap-4 lg:px-8 lg:py-12 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
       <h2 id="home-confianza" className="sr-only">{t('home.compra.confianzaTitulo')}</h2>
       <ul className="flex flex-col overflow-hidden rounded-[16px] border border-hc-n-200 bg-hc-n-0 lg:flex-row">
         {PROMESAS.map((promesa, i) => {
