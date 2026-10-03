@@ -1520,7 +1520,13 @@
       "pedidoProductos_other": "Pedido {{pedido}} · {{count}} produtos",
       "cambiarMetodo": "Alterar forma de pagamento",
       "paquetesN_one": "{{count}} pacote",
-      "paquetesN_other": "{{count}} pacotes"
+      "paquetesN_other": "{{count}} pacotes",
+      "asistenteTitulo": "Pergunte ao assistente",
+      "asistenteAyuda": "Explica o que aconteceu e como concluir a compra. Não vê os dados do seu cartão.",
+      "asistentePregunta1": "Por que meu cartão foi recusado?",
+      "asistentePregunta2": "Fui cobrado?",
+      "asistentePregunta3": "Como pago com SINPE Móvil?",
+      "asistenteMensaje": "{{pregunta}} (pedido {{pedido}})"
     },
     "revision": {
       "recibido": "Comprovante recebido",

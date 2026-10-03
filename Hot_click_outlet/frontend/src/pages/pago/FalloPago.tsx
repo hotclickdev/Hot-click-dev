@@ -7,6 +7,7 @@ import { leerUltimoPedido } from '@/utils/ultimoPedido'
 import { WHATSAPP } from '@/pages/checkout/checkoutHelpers'
 import { ICONOS_PAGO } from './iconosPago'
 import { BotonPago, IconoEstado, MarcoPago } from './PiezasPago'
+import AyudaPagoAsistente from './AyudaPagoAsistente'
 
 type FalloPagoProps = {
   /** Motivo que devolvió el proveedor, si lo hay. */
@@ -74,6 +75,7 @@ export default function FalloPago({ motivo, numeroPedido, onReintentar, reintent
           </div>
         </section>
       )}
+      <AyudaPagoAsistente numeroPedido={numeroPedido} motivo={motivo} />
       {extra}
     </MarcoPago>
   )
