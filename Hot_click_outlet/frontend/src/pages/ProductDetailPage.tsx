@@ -11,6 +11,7 @@ import ProductInfo from './producto/ProductInfo'
 import ProductTabs from './producto/ProductTabs'
 import CarruselProductos from './producto/CarruselProductos'
 import OpinionesProducto from './producto/OpinionesProducto'
+import ProductVideo from './producto/ProductVideo'
 import RecentlyViewedGrid from './producto/RecentlyViewedGrid'
 import ProductDetailSeo from './producto/ProductDetailSeo'
 import { useProductDetail } from './producto/useProductDetail'
@@ -123,6 +124,7 @@ export default function ProductDetailPage() {
 
         <div className="lg:mx-auto lg:w-[calc(100%-4rem)] lg:max-w-[1200px]">
           {!agotado && <OpinionesProducto productoId={product.id} />}
+          <ProductVideo videoUrl={product.videoUrl} titulo={product.titulo || product.nombre || ''} />
 
           {agotado ? (
             <CarruselProductos

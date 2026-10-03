@@ -873,8 +873,10 @@
     "pasoCotiza2": "El artista revisa y te cotiza",
     "pasoCotiza3": "Recibís un link para pagar",
     "verTodosMarca": "Ver todos",
-    "verVideo": "Ver video",
-    "videoDe": "Video de {{titulo}}"
+    "videoDe": "Video de {{titulo}}",
+    "reproducirVideo": "Reproducir el video de {{titulo}}",
+    "verVideoEn": "Ver video en {{red}}",
+    "videoOtraPestana": "Se abre en otra pestaña"
   },
   "cart": {
     "title": "Pedido",

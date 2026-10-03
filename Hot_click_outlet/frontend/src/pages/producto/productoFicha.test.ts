@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Producto } from '@/types/producto'
-import { avisoStockBajoSinTalla, opcionesDeTalla, opinionesDesdeRespuesta, tiendaDesdeCatalogo } from './productoHelpers'
+import { avisoStockBajoSinTalla, detectVideo, opcionesDeTalla, opinionesDesdeRespuesta, tiendaDesdeCatalogo } from './productoHelpers'
 
 describe('ficha · opiniones', () => {
   it('lee la lista de { data: [...] } y descarta lo que no trae comentario', () => {
@@ -77,5 +77,36 @@ describe('ficha · chip de marca redundante', () => {
     expect(marcaEsLaTienda({ marcaNombre: 'Luna 506', empresaNombre: 'Casa Luna 506' })).toBe(true)
     expect(marcaEsLaTienda({ marcaNombre: 'Nike', empresaNombre: 'Casa Luna 506' })).toBe(false)
     expect(marcaEsLaTienda({ marcaNombre: 'Nike', empresaNombre: null })).toBe(false)
+  })
+})
+
+describe('ficha · video del producto por red (derivado de Figma 28:839)', () => {
+  it.each([
+    ['https://www.youtube.com/watch?v=LXb3EKWsInQ', 'youtube', 'YouTube', false],
+    ['https://www.youtube.com/watch?feature=share&v=LXb3EKWsInQ', 'youtube', 'YouTube', false],
+    ['https://youtu.be/LXb3EKWsInQ', 'youtube', 'YouTube', false],
+    ['https://youtube.com/shorts/LXb3EKWsInQ?si=x', 'youtube', 'Shorts', true],
+    ['https://www.instagram.com/reel/C9abc_12/', 'instagram', 'Instagram', true],
+    ['https://www.instagram.com/p/C9abc_12/', 'instagram', 'Instagram', true],
+    ['https://www.tiktok.com/@luna/video/7312345678901234567', 'tiktok', 'TikTok', true],
+    ['https://www.facebook.com/casaluna/videos/123456789/', 'facebook', 'Facebook', false],
+    ['https://www.facebook.com/reel/123456789', 'facebook', 'Facebook', true],
+    ['https://vimeo.com/76979871', 'vimeo', 'Vimeo', false],
+  ])('%s → %s', (url, type, etiqueta, vertical) => {
+    const v = detectVideo(url)
+    expect(v).toMatchObject({ type, etiqueta, vertical })
+    expect(v?.embedUrl).toBeTruthy()
+  })
+  it('YouTube trae miniatura para cargar el embed al tocar', () => {
+    expect(detectVideo('https://youtu.be/LXb3EKWsInQ')?.miniatura).toBe('https://i.ytimg.com/vi/LXb3EKWsInQ/hqdefault.jpg')
+  })
+  it('otra red: tarjeta de enlace sin embed', () => {
+    expect(detectVideo('https://www.dailymotion.com/video/x8abc')).toMatchObject({ type: 'otra', etiqueta: 'dailymotion.com', embedUrl: null })
+  })
+  it('sin video o URL inválida no dibuja nada', () => {
+    expect(detectVideo('')).toBeNull()
+    expect(detectVideo(null)).toBeNull()
+    expect(detectVideo('no es una url')).toBeNull()
+    expect(detectVideo('javascript:alert(1)')).toBeNull()
   })
 })
