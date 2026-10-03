@@ -18,7 +18,7 @@ Los scripts viven en `scripts/eng-gates/` (Node 22, sin dependencias). Tests: `n
 | E11 | `gate-sensitive.yml` | PR que toca `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` en `src/main/java` | Liviano: exige que exista un test nominal (`*Payment*Test*.java`, etc.). No corre Maven. | `skip-sensitive-gate` |
 | DOC1 | `docs-stack.yml` | Semanal (lunes) + `workflow_dispatch` | Regenera `docs/GENERATED_STACK.md` (Java/Flyway/React/módulos), artifact, issue semanal, PR si el fingerprint cambió. Parches seguros de README/ESTADO_ACTUAL solo con `--apply-safe-docs`. | — |
 | SCALE1 | `gate-scale.yml` | PR Java/TS/static + semanal | Diff: `findAll`/listas sin Pageable, N+1, I/O bloqueante en controllers (FAIL P1); `@Transactional` gordo / imports pesados (WARN). Semanal: issue de hotspots por tamaño + `findAll`. | `skip-scale-gate` |
-| D5 | `backup.yml` → job `verify-backup` | Schedule / `workflow_dispatch` (igual que el dump) | Tras el artifact de `pg_dump`, falla si el dump no existe o pesa &lt; 1 KB. Abre/comenta issue `[D5] Backup diario…`. | — |
+| D5 | `backup.yml` → job `verify-backup` | Schedule / `workflow_dispatch` (igual que el dump) | Tras el `pg_dump -Fc` en Lightsail, falla si no hay clave/tamaño o pesa &lt; 1 KB. No descarga el dump. Abre/comenta issue `[D5] Backup diario…`. Telegram con los mismos `TELEGRAM_*` que CI. | — |
 | — | `eng-gates-selftest.yml` | PR que toca scripts/workflows de gates | `node --test` de los gates | — |
 
 ## Cómo saltear un gate
@@ -47,8 +47,11 @@ Secretos que **ya** usa el repo y siguen igual:
 | Secreto | Workflow | Notas |
 | --- | --- | --- |
 | `GITHUB_TOKEN` | todos | Automático. Comentarios de PR / issues D5 / labels |
-| `SUPABASE_BACKUP_URL` | `backup.yml` | URL de `pg_dump`. D5 no inventa credenciales: si falta, el dump (y D5) fallan |
-| `SUPABASE_DB_PASSWORD` | `backup.yml` | `PGPASSWORD` del dump |
+| `LIGHTSAIL_SSH_HOST` | `backup.yml` | Host SSH. Si falta, el dump falla (no hay socket local) |
+| `LIGHTSAIL_SSH_USER` | `backup.yml` | Usuario SSH con acceso a Docker |
+| `LIGHTSAIL_SSH_PRIVATE_KEY` | `backup.yml` | Llave privada. Solo el nombre va en el workflow |
+| `LIGHTSAIL_SSH_KNOWN_HOSTS` | `backup.yml` | `ssh-keyscan` del host. `StrictHostKeyChecking=yes` |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | `backup.yml` | Alerta si el dump o D5 fallan. Los mismos que `ci.yml` |
 | `SONAR_TOKEN` | `sonarcloud.yml` | Sin esto Sonar no publica; no lo usan los gates ola 1. El job reintenta 1 vez si sonarcloud.io responde 503 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | `ci.yml` | Notificaciones de CI; no los usan los gates |
 | `SENTRY_DSN` / `VITE_SENTRY_DSN` | app / `ci.yml` | El gate E3 pone `VITE_SENTRY_DSN=""` a propósito (bundle determinista). No commitear el DSN |
@@ -81,7 +84,8 @@ node scripts/eng-gates/gate-sensitive.mjs
 
 PR_TITLE='Bump axios from 1.7.0 to 1.7.1' node scripts/eng-gates/dependabot-triage.mjs
 
-# D5 contra un directorio con un .sql.gz de prueba
+# D5 contra metadatos (sin archivo) o contra un directorio local
+BACKUP_KEY=db/hotclick.dump BACKUP_SIZE=2048 bash scripts/eng-gates/verify-backup.sh --meta 1024
 bash scripts/eng-gates/verify-backup.sh /tmp/backup-artifact 1024
 
 node --test scripts/eng-gates/eng-gates.test.mjs

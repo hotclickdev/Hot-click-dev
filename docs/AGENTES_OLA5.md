@@ -10,7 +10,7 @@ Scripts: `scripts/eng-gates/` (`ola5-lib`, `ai-quota-alert`, `issues-hygiene`, `
 
 | ID | Workflow | Trigger | Qué hace | Skip |
 | --- | --- | --- | --- | --- |
-| **D9** | `ai-quota-alert.yml` | Diario **05:00 America/Costa_Rica** (11:00 UTC) + dispatch | Si no hay URL de DB (`AI_USAGE_DATABASE_URL` / `DATABASE_URL` / `SUPABASE_*`): **skip honesto**. Si hay: `SELECT` a `hot_click_ai_uso_tb` (mismo criterio 80% que `AiControlController`). Issue + Telegram si tenant o plataforma ≥80%. Heurística de `AiQuotaService` si no hay live usage. **No inventa credenciales. No escribe en prod.** | `skip-ai-quota` |
+| **D9** | `ai-quota-alert.yml` | Diario **05:00 America/Costa_Rica** (11:00 UTC) + dispatch | Si no hay URL de DB (`AI_USAGE_DATABASE_URL` / `DATABASE_URL`): **skip honesto**. La base de Lightsail no se consulta desde GitHub (5432 no está publicado). Si hay URL: `SELECT` a `hot_click_ai_uso_tb`. Issue + Telegram si tenant o plataforma ≥80%. **No inventa credenciales. No escribe en prod.** | `skip-ai-quota` |
 | **D10** | `issues-hygiene.yml` | Diario 06:30 CR (12:30 UTC) + dispatch | PRs Dependabot: labels `deps-major` / `deps-patch` / `stale`. Comentario won't-merge si Spring Boot 4 / jjwt major / stripe major van **sin** label de bloqueo. Issues `eng-agent` stale: **comenta primero**; cierra solo tras ping + N días. **No** mass-close de `bug` / `outage` / `prod-errors`. | `skip-issues-hygiene` |
 | **S5** | `design-tokens-drift.yml` | Lunes 08:30 CR (14:30 UTC) + dispatch | Hex y `style={{` en `frontend/src` fuera de `hotclick-tokens.css`. Respeta `.hc-superadmin-theme`. Issue `design-drift` + sugerencia de codemod. **No** PR de rewrite masivo. | `skip-design-tokens` |
 | **S7** | `ley8968-checklist.yml` | Martes 08:00 CR (14:00 UTC) + dispatch | Heurística FE+BE: `/privacidad`, checkbox checkout, consentimiento vendedor, `POST /api/consentimiento` + IP, ARCO. Issue si falta. | `skip-ley8968` |
@@ -39,7 +39,7 @@ En PRs, `security.yml` corre `scripts/eng-gates/gitleaks-scan.sh`: rango `base..
 | Secreto / var | ¿Ola 5 lo pide? | Notas |
 | --- | --- | --- |
 | `GITHUB_TOKEN` | Sí (automático) | Issues D9/D10/S5/S7, comentarios E12/E14/E18, labels D10 |
-| `AI_USAGE_DATABASE_URL` / `DATABASE_URL` / `SUPABASE_DB_URL` / `SUPABASE_BACKUP_URL` | Opcional D9 | Si **todos** faltan: el job **pasa** y declara skip. SELECT only. **Nunca se inventan.** `SUPABASE_BACKUP_URL` es el mismo del dump diario; D9 no lo usa como destino de restore. |
+| `AI_USAGE_DATABASE_URL` / `DATABASE_URL` | Opcional D9 | Si **ambos** faltan: el job **pasa** y declara skip. SELECT only. **Nunca se inventan.** No apuntes esto al Postgres de producción por internet. |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Opcional D9 | Ya los usa `ci.yml`. Si faltan, D9 solo abre Issue. |
 | `SONAR_TOKEN`, `SENTRY_*` | No | Siguen en otras olas |
 

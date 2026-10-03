@@ -90,7 +90,7 @@ La configuración resilience4j está en application.properties pero las anotacio
 // Pendiente agregar en:
 // HaciendaApiClient.enviar() → @Retry(name="hacienda")
 // AiCopilotService.chatStream() → @CircuitBreaker(name="claude")
-// SupabaseStorageService.subirImagen() → @Retry(name="supabase")
+// SupabaseStorageService.subirImagen() → @Retry(name="s3")
 ```
 
 **F29-TEN-04 — OrdenCompraController sin tenant check en getById/recibirMercancia**
@@ -188,7 +188,7 @@ SendGrid: Async ✅ | Sin timeout explícito ❌
 El sistema está listo para producción multi-tenant con las siguientes condiciones:
 
 ### Obligatorias antes del go-live
-- [ ] Variables de entorno configuradas: `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`, `STRIPE_*`, `ANTHROPIC_API_KEY`, `SUPABASE_*`, `SENDGRID_API_KEY`
+- [ ] Variables de entorno configuradas: `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`, `STRIPE_*`, `ANTHROPIC_API_KEY`, `AWS_S3_*`, `SENDGRID_API_KEY`
 - [ ] `cors.allowed.origins` = dominio de producción (no localhost)
 - [ ] Flyway V1–V49 verificadas en entorno de staging
 - [ ] Supabase Plan Pro (para PITR de BD)

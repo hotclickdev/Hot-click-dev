@@ -41,7 +41,7 @@ Ningún secreto va en git. `GITHUB_TOKEN` automático alcanza para Issues/coment
 | `GITHUB_TOKEN` | Sí (automático) | Issues S6/S9/S10/S11/S12, comentario commit E13, Issue E15, PR E17 |
 | `K6_BASE_URL` / `K6_STAGING_URL` | Opcional S6 | Staging (p. ej. Render). Si **faltan**: mock local + Issue con instrucciones. **Nunca se inventa prod.** |
 | `K6_ALLOW_PRODUCTION` | Opcional S6 | Solo `1` autoriza un `K6_BASE_URL` que parezca `hotclick.lat` / `18.227.68.15`. Default: refuse. |
-| `AI_USAGE_DATABASE_URL` / `DATABASE_URL` / `SUPABASE_DB_URL` / `SUPABASE_BACKUP_URL` | Opcional S12 | Igual que D9. Si **todos** faltan: skip honesto. SELECT only. |
+| `AI_USAGE_DATABASE_URL` / `DATABASE_URL` | Opcional S12 | Igual que D9. Si **ambos** faltan: skip honesto. SELECT only. No abre el Postgres de Lightsail a internet. |
 | `SONAR_TOKEN` / `SENTRY_*` / `TELEGRAM_*` | No | Siguen en otras olas |
 
 ## Labels

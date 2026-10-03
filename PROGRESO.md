@@ -22,10 +22,10 @@
 |---|---|
 | Backend | Spring Boot 3.4.4 / Java 21 |
 | Seguridad | Spring Security + JWT (stateless) |
-| BD | Supabase PostgreSQL — Transaction Pooler `aws-1-us-east-2.pooler.supabase.com:6543` |
+| BD | Postgres 18 en Docker (`hotclick-postgres`, Lightsail). Sin puerto público |
 | ORM | JPA/Hibernate, `ddl-auto=none`, `PhysicalNamingStrategyStandardImpl` |
 | Frontend | React 19 + Vite (en `Hot_click_outlet/frontend/`) |
-| Imágenes | Supabase Storage (bucket `HOT_CLICK`) — upload vía backend `/api/productos/imagen` |
+| Imágenes | S3 `hotclick-media` — upload vía backend `/api/productos/imagen` |
 | Gestor paquetes frontend | pnpm 11.1.2 (en lugar de npm) |
 | Pagos online | PayPal Orders API v2 |
 | Pagos offline | SINPE manual (pendiente) · Efectivo |
@@ -112,7 +112,7 @@ cd Hot_click_outlet/frontend && pnpm run build
 
 ### Infraestructura y Operaciones
 - **Flyway** — migraciones versionadas; `V1__initial_schema.sql` como baseline; nuevos cambios de schema van en `V2__...sql`, `V3__...sql`
-- **Backup diario** — `.github/workflows/backup.yml`; `pg_dump` → gzip → GitHub Actions Artifact (30 días); `scripts/restore.sh` con procedimiento completo
+- **Backup diario** — `.github/workflows/backup.yml`; `pg_dump -Fc` en Lightsail → S3 privado cifrado (30 días); `scripts/backup/RESTORE.md`
 - **Logging estructurado** — `logback-spring.xml` + `MdcRequestIdFilter`; cada request tiene un `request-id` trazable en todos los logs
 - **Cache L1 Caffeine** — `spring-boot-starter-cache` + `caffeine`; 200 entradas, TTL 120s
 
@@ -240,11 +240,11 @@ Foto del producto (celular/PC)
 
 ### Alta prioridad
 
-- [ ] **Configurar secrets en GitHub** — `SUPABASE_BACKUP_URL` + `SUPABASE_DB_PASSWORD` para que el backup diario funcione (ver `ROADMAP.md` sección P0)
+- [ ] **Configurar el backup diario** — secrets SSH de Lightsail y bucket S3 privado (ver `scripts/backup/RESTORE.md` y `ROADMAP.md` P0)
 - [ ] **CI/CD** — `.github/workflows/ci.yml` con `mvn test` en cada push (ver `ROADMAP.md` P1-1)
 - [ ] **Rate limiting** — Bucket4j en `/api/auth/login`, `/api/auth/2fa/verify`, `/api/auth/forgot-password` (ver `ROADMAP.md` P1-2)
 - [ ] **SINPE manual** — flujo completo de comprobante (ver `ROADMAP.md` P1-3)
-- [ ] **Verificar RLS Supabase** — si `rowsecurity = true` en las tablas, los INSERTs fallan silenciosamente:
+- [ ] **Verificar que no quedó RLS heredado** — en Lightsail no hay Data API. Si `rowsecurity = true`, los INSERTs fallan:
 
   ```sql
   SELECT tablename, rowsecurity FROM pg_tables

@@ -38,7 +38,7 @@ Ningún secreto va en git. `GITHUB_TOKEN` automático alcanza.
 | Secreto / var | ¿Ola 4 lo pide? | Notas |
 | --- | --- | --- |
 | `GITHUB_TOKEN` | Sí (automático) | Issues D6/D7/D8/D11/S4, comentarios E5, `gh api` de runs (D6) |
-| `SENTRY_*` / `TELEGRAM_*` / `SONAR_TOKEN` / `SUPABASE_*` | No | Siguen en olas 1–3 |
+| `SENTRY_*` / `TELEGRAM_*` / `SONAR_TOKEN` / `LIGHTSAIL_SSH_*` | No | Telegram lo usa CI y el backup. SSH solo el backup |
 | Playwright browsers | No en el default de E5 | Solo si dispatch `run_smoke=true` |
 
 D8 **no** imprime valores. El Issue muestra `path:línea`, tipo y redact (`abc…xy` / `***`).

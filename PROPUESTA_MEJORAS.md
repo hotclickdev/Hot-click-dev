@@ -162,7 +162,7 @@ Ya existe `ProductoImagen` en el modelo y `ProductoImagenRepository` — solo fa
 ```bash
 # Crear Hot_click_outlet/.env (agregar a .gitignore) — valores reales solo ahí
 SPRING_DATASOURCE_PASSWORD=<from-.env>
-SUPABASE_SERVICE_KEY=<from-.env>
+AWS_S3_BUCKET=<from-.env>
 MAIL_PASSWORD=<from-.env>
 PAYXPERT_ORIGINATOR_ID=<from-.env>
 PAYXPERT_ORIGINATOR_PASSWORD=<from-.env>

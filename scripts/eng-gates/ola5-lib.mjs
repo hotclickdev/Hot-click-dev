@@ -134,8 +134,6 @@ export function dbSecretNames(env = process.env) {
   return [
     'AI_USAGE_DATABASE_URL',
     'DATABASE_URL',
-    'SUPABASE_DB_URL',
-    'SUPABASE_BACKUP_URL',
   ].filter((name) => Boolean(String(env[name] || '').trim()));
 }
 
@@ -147,8 +145,6 @@ export function pickDbUrl(env = process.env) {
   for (const name of [
     'AI_USAGE_DATABASE_URL',
     'DATABASE_URL',
-    'SUPABASE_DB_URL',
-    'SUPABASE_BACKUP_URL',
   ]) {
     const value = String(env[name] || '').trim();
     if (value) return { name, url: value };
@@ -202,7 +198,7 @@ export function evaluateAiQuota({ rows = [], heuristics, secretsPresent }) {
   if (!secretsPresent) {
     return {
       skipped: true,
-      reason: 'Sin secretos de DB (AI_USAGE_DATABASE_URL / DATABASE_URL / SUPABASE_BACKUP_URL). Skip honesto; no se inventan credenciales.',
+      reason: 'Sin secretos de DB (AI_USAGE_DATABASE_URL / DATABASE_URL). Skip honesto; no se inventan credenciales. La base de Lightsail no se consulta desde GitHub.',
       tenants: [],
       platformOver: false,
       shouldAlert: false,

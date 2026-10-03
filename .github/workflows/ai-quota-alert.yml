@@ -36,8 +36,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AI_USAGE_DATABASE_URL: ${{ secrets.AI_USAGE_DATABASE_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          SUPABASE_BACKUP_URL: ${{ secrets.SUPABASE_BACKUP_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node scripts/eng-gates/ai-quota-alert.mjs

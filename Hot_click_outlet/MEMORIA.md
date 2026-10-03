@@ -46,7 +46,7 @@ El usuario admin es creado automáticamente por `DataSeeder.java` al iniciar la 
 
 ## Base de datos
 
-- **Host:** Supabase (aws-1-us-east-2.pooler.supabase.com:6543)
+- **Host:** Postgres en Docker en Lightsail (`hotclick-postgres`, compose `docker-compose.lightsail.yml`). No hay pooler externo.
 - **`ddl-auto=none`** — El esquema se gestiona manualmente con el archivo `Actualizado.sql`
 - **Naming strategy:** `PhysicalNamingStrategyStandardImpl` — los nombres de tabla/columna se usan exactamente como están en las entidades (minúsculas)
 - **Moneda:** CRC (₡), enteros sin decimales para todos los montos

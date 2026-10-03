@@ -27,7 +27,7 @@
 
 ### Infraestructura
 - [x] **Flyway** — `flyway-core` + `flyway-database-postgresql` en pom.xml; `V1__initial_schema.sql`; `baseline-on-migrate=true`
-- [x] **Backup diario** — `.github/workflows/backup.yml`; `pg_dump` → artifact 30 días; `scripts/restore.sh`
+- [x] **Backup diario** — `.github/workflows/backup.yml`; `pg_dump -Fc` en Lightsail → S3 privado (SSE), retención 30 días; `scripts/backup/RESTORE.md`
 - [x] **spring-boot-starter-cache** — fix de startup crash en Render (cacheManager no encontrado)
 - [x] **Logging estructurado** — `logback-spring.xml` + `MdcRequestIdFilter` (request-id en cada log)
 
@@ -54,8 +54,7 @@ Estas no requieren código — solo configuración:
 
 | Acción | Dónde | Urgencia |
 |--------|-------|---------|
-| Configurar `SUPABASE_BACKUP_URL` en GitHub Secrets | GitHub → Settings → Secrets → Actions | **Crítico** — el backup no corre sin esto |
-| Configurar `SUPABASE_DB_PASSWORD` en GitHub Secrets | GitHub → Settings → Secrets → Actions | **Crítico** |
+| Secrets SSH de Lightsail + bucket S3 privado de backups | GitHub Actions secrets y AWS. Lista en el PR del backup y en `scripts/backup/RESTORE.md` | **Crítico** — sin eso el dump diario falla |
 | Verificar `PAYPAL_WEBHOOK_ID` en Render | Render → Environment | **Crítico** |
 | Eliminar `Admin1234!` de `PROGRESO.md` | Archivo local | **Alto** |
 | Rotar contraseña admin si fue expuesta | Panel admin → cambiar contraseña | **Alto** |
