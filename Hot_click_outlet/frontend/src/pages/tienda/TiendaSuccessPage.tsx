@@ -4,11 +4,14 @@ import { ICONOS_PAGO } from '@/pages/pago/iconosPago'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
+import { enlaceWhatsappSoporte } from '@/components/comprador/estados/falloServidorHelpers'
 import { BotonTienda, CabeceraTarjeta, CLASE_TARJETA } from './PiezasTienda'
+import { contactoVisible } from './tiendaHelpers'
 
 /**
  * Confirmación del pedido de la tienda (derivado de Figma `29:1932`): círculo verde con el check, título en
  * Sora, número en mono y tarjeta "Qué sigue". El número vive en ?orden= y sobrevive un refresh.
+ * El botón de WhatsApp va al vendedor solo con plan PYME o NEGOCIO_PLUS; si no, a soporte de HotClick.
  */
 export default function TiendaSuccessPage() {
   const { slug } = useParams()
@@ -17,7 +20,8 @@ export default function TiendaSuccessPage() {
   const { empresa } = useTiendaStore()
   const numeroPedido = (params.get('orden') || state?.numeroPedido || '').trim()
   const total = state?.total
-  const whatsapp = empresa?.whatsapp
+  // Con plan PYME o NEGOCIO_PLUS se escribe al vendedor; en EMPRENDEDOR la consulta va a HotClick.
+  const { whatsapp } = contactoVisible(empresa)
   const nombre = empresa?.nombreComercial ?? slug
 
   return (
@@ -59,13 +63,21 @@ export default function TiendaSuccessPage() {
       </section>
 
       <div className="flex flex-col gap-2 pt-1">
-        {whatsapp && (
+        {whatsapp ? (
           <BotonTienda
             variante="secundario"
-            href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=Hola%2C%20acabo%20de%20hacer%20el%20pedido%20${encodeURIComponent(numeroPedido)}%20en%20su%20tienda.`}
+            href={`https://wa.me/${whatsapp}?text=Hola%2C%20acabo%20de%20hacer%20el%20pedido%20${encodeURIComponent(numeroPedido)}%20en%20su%20tienda.`}
           >
             <img src={ICONOS_CHECKOUT.whatsapp} alt="" className="size-[18px]" />
             Contactar por WhatsApp
+          </BotonTienda>
+        ) : (
+          <BotonTienda
+            variante="secundario"
+            href={enlaceWhatsappSoporte(`Hola HotClick, tengo una consulta sobre mi pedido ${numeroPedido} de ${nombre}.`.replace(/\s+/g, ' '))}
+          >
+            <img src={ICONOS_CHECKOUT.whatsapp} alt="" className="size-[18px]" />
+            Consultar a HotClick
           </BotonTienda>
         )}
         <BotonTienda variante="primario" to={`/tienda/${slug}`}>Seguir comprando</BotonTienda>

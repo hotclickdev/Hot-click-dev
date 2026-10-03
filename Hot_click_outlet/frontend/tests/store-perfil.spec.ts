@@ -16,6 +16,8 @@ const EMPRESA = {
   categoriaNegocio: 'Hogar y accesorios',
   enHotclickDesde: '2026-09-14',
   facturaElectronica: true,
+  // Plan PYME o NEGOCIO_PLUS: el backend habilita el contacto directo.
+  contactoDirecto: true,
   retiro: { provincia: 'San José', canton: 'San José', direccion: 'Barrio Escalante', horarioApertura: '09:00:00', horarioCierre: '18:00:00' },
 }
 
@@ -30,7 +32,7 @@ const PRODUCTOS_DIRECTORIO = [
   { id: 12, nombreProducto: 'Café de altura', precioVenta: 6500, stockActual: 5, empresaNombre: 'Bruma Café', empresaSlug: 'bruma-cafe', categoria: { nombreCategoria: 'Café' } },
 ]
 
-async function simularApi(page: Page, { convenios = [] as unknown[], productos = PRODUCTOS as unknown[] } = {}) {
+async function simularApi(page: Page, { convenios = [] as unknown[], productos = PRODUCTOS as unknown[], empresa = EMPRESA as Record<string, unknown> } = {}) {
   await page.addInitScript(() => {
     localStorage.setItem('hotclick-cookie-consent', JSON.stringify({ analytics: false, functional: true, timestamp: Date.now() }))
     localStorage.setItem('hc-promo-seen', String(Date.now()))
@@ -38,7 +40,7 @@ async function simularApi(page: Page, { convenios = [] as unknown[], productos =
   await page.route('**/api/**', async (route: Route) => {
     const path = new URL(route.request().url()).pathname
     const data = path === '/api/tienda/casa-luna'
-      ? EMPRESA
+      ? empresa
       : path.endsWith('/productos')
         ? { content: productos, totalPages: 1, totalElements: productos.length }
         : path.endsWith('/categorias')
@@ -69,6 +71,20 @@ test.describe('STORE — perfil del negocio', () => {
     await expect(page.getByText('9:00 a 18:00')).toBeVisible()
     // La portada ocupa el lugar del header en el perfil móvil.
     await expect(page.getByRole('banner')).toBeHidden()
+  })
+
+  test('emprendedor: sin WhatsApp ni Instagram del vendedor, solo Compartir (la venta queda en HotClick)', async ({ page }) => {
+    // El backend ya los manda vacíos; aunque llegara un dato, sin contactoDirecto no se muestra.
+    await simularApi(page, { empresa: { ...EMPRESA, contactoDirecto: false } })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/tienda/casa-luna', { waitUntil: 'domcontentloaded' })
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Casa Luna 506' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Instagram' })).toHaveCount(0)
+    await expect(page.locator('a[href*="wa.me/50688887777"], a[href*="instagram.com"]')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Compartir', exact: true })).toBeVisible()
+    await expect(page.locator('script[type="application/ld+json"]', { hasText: '50688887777' })).toHaveCount(0)
   })
 
   test('escritorio: conserva el header de la tienda y muestra el catálogo', async ({ page }) => {

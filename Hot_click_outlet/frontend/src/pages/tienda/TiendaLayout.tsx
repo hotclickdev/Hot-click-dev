@@ -6,6 +6,7 @@ import useTiendaStore from '@/store/tiendaStore'
 import Seo from '@/components/seo/Seo'
 import { generateLocalBusinessJsonLd } from '@/utils/jsonLd'
 import { estiloMarcaTienda } from './tiendaTheme'
+import { contactoVisible } from './tiendaHelpers'
 import TiendaHeader from './TiendaHeader'
 import TiendaFooter from './TiendaFooter'
 import TiendaBarraPedido from './TiendaBarraPedido'
@@ -72,7 +73,7 @@ export default function TiendaLayout() {
               descripcion: empresaVista?.descripcion,
               logoUrl: empresaVista?.logoUrl,
               categoriaNegocio: empresaVista?.categoriaNegocio,
-              whatsapp: empresaVista?.whatsapp,
+              whatsapp: contactoVisible(empresaVista).whatsapp || null,
               retiro: empresaVista?.retiro,
             }))}
           </script>
