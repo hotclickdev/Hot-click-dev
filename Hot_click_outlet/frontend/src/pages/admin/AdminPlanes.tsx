@@ -11,6 +11,7 @@ import CloseIcon from '@/components/ui/CloseIcon'
 import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import AvisoBajadaBloqueada from '@/features/billing/AvisoBajadaBloqueada'
+import { esBajada } from '@/features/billing/bajarPlanHelpers'
 import type { Id } from '@/types/api'
 
 type PlanSaas = {
@@ -46,13 +47,15 @@ function Feature({ ok, label }: { ok?: boolean; label: string }) {
   )
 }
 
-function PlanCard({ plan, esCurrent, loading, onSelect }: {
+function PlanCard({ plan, planActual, esCurrent, loading, onSelect }: {
   plan: PlanSaas
+  planActual: string
   esCurrent: boolean
   loading: boolean
   onSelect: (planId: Id) => void
 }) {
   const esFree = plan.nombre === 'EMPRENDEDOR'
+  const bajada = esBajada(planActual, plan.nombre)
   const nombre = etiquetaPlan(plan.nombre)
 
   return (
@@ -76,7 +79,8 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
       <div className="flex flex-col gap-2 flex-1">
         <Feature ok label={plan.maxProductos === -1 ? 'Productos sin límite' : `Hasta ${plan.maxProductos} productos`} />
         <Feature ok label={plan.maxUsuarios === -1 ? 'Usuarios sin límite' : `Equipo de ${plan.maxUsuarios} usuario${(plan.maxUsuarios ?? 0) > 1 ? 's' : ''}`} />
-        <Feature ok={plan.tienePos} label="Punto de venta" />
+        {/* El POS va en los tres planes (decisión 3-oct-2026): no depende de tienePos del API. */}
+        <Feature ok label="Punto de venta" />
         <Feature ok label="Inventario y alertas de stock bajo" />
         <Feature ok label="Lista de clientes" />
         <Feature ok label="Reportes de ventas" />
@@ -90,9 +94,9 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
         <button type="button"
           onClick={() => onSelect(plan.id)}
           disabled={loading}
-          className={`h-12 w-full rounded-[12px] text-[15px] font-semibold disabled:cursor-not-allowed disabled:bg-hc-n-200 disabled:text-hc-n-600 ${esFree ? 'border border-hc-n-200 bg-hc-n-0 text-hc-n-900 hover:bg-hc-n-50' : 'bg-hc-red-500 text-white hover:bg-hc-red-600'}`}
+          className={`h-12 w-full rounded-[12px] text-[15px] font-semibold disabled:cursor-not-allowed disabled:bg-hc-n-200 disabled:text-hc-n-600 ${bajada || esFree ? 'border border-hc-n-200 bg-hc-n-0 text-hc-n-900 hover:bg-hc-n-50' : 'bg-hc-red-500 text-white hover:bg-hc-red-600'}`}
         >
-          {loading ? 'Procesando…' : esFree ? `Bajar a ${nombre}` : `Mejorar a ${nombre}`}
+          {loading ? 'Procesando…' : bajada ? `Bajar a ${nombre}` : `Mejorar a ${nombre}`}
         </button>
       )}
       {esCurrent && !esFree && (
@@ -137,7 +141,7 @@ export default function AdminPlanes() {
         <div>
           <h1 className="font-[family-name:var(--hc-font-display)] text-[24px] font-bold text-hc-n-900">Planes</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-            Plan actual: <strong>{planNombre}</strong>
+            Plan actual: <strong>{etiquetaPlan(planNombre)}</strong>
             {estadoPlan === 'TRIAL' && trialDias >= 0 && (
               <span className="ml-2 text-hc-warning">— trial ({trialDias} días restantes)</span>
             )}
@@ -190,6 +194,7 @@ export default function AdminPlanes() {
             <PlanCard
               key={plan.id}
               plan={plan}
+              planActual={planNombre}
               esCurrent={plan.nombre === planNombre}
               loading={loadingPlan === plan.id}
               onSelect={(id) => { void seleccionarPlan(id, plan, etiquetaPlan(plan.nombre)) }}
