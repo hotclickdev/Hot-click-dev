@@ -109,6 +109,36 @@ describe('ficha · video del producto por red (derivado de Figma 28:839)', () =>
     expect(detectVideo('no es una url')).toBeNull()
     expect(detectVideo('javascript:alert(1)')).toBeNull()
   })
+  it.each([
+    'https://sitio-ajeno.example/x?youtu.be/AAAAAAAAAAA',
+    'https://sitio-ajeno.example/youtube.com/watch?v=AAAAAAAAAAA',
+    'https://youtu.be.sitio-ajeno.example/AAAAAAAAAAA',
+    'https://noyoutube.com/watch?v=AAAAAAAAAAA',
+    'https://youtu.be@sitio-ajeno.example/AAAAAAAAAAA',
+    'https://sitio-ajeno.example/?vimeo.com/76979871',
+    'https://vimeo.com.sitio-ajeno.example/76979871',
+  ])('host ajeno no se hace pasar por YouTube o Vimeo (SEC-98-03): %s', (url) => {
+    const v = detectVideo(url)
+    const host = new URL(url).hostname
+    expect(host).not.toMatch(/^(?:www\.|m\.)?(?:youtube\.com|youtu\.be|vimeo\.com)$/)
+    expect(v).toMatchObject({ type: 'otra', etiqueta: host, embedUrl: null })
+    expect(new URL(v!.url).hostname).toBe(host)
+  })
+  it.each([
+    ['https://youtu.be/LXb3EKWsInQ?si=x&next=https://sitio-ajeno.example', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
+    ['http://m.youtube.com/watch?v=LXb3EKWsInQ&t=10', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
+    ['https://youtube.com/shorts/LXb3EKWsInQ?si=x', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
+    ['https://www.youtube.com/embed/LXb3EKWsInQ', 'https://www.youtube.com/watch?v=LXb3EKWsInQ'],
+    ['https://vimeo.com/76979871?share=copy', 'https://vimeo.com/76979871'],
+    ['https://player.vimeo.com/video/76979871', 'https://vimeo.com/76979871'],
+  ])('"Ver en …" se arma desde el ID: %s → %s', (url, enlace) => {
+    expect(detectVideo(url)?.url).toBe(enlace)
+  })
+  it('YouTube o Vimeo con ruta sin ID válido no se toma como video de esa red', () => {
+    expect(detectVideo('https://www.youtube.com/@canal')).toMatchObject({ type: 'otra', embedUrl: null })
+    expect(detectVideo('https://youtu.be/corto')).toMatchObject({ type: 'otra', embedUrl: null })
+    expect(detectVideo('https://vimeo.com/canal/abc')).toMatchObject({ type: 'otra', embedUrl: null })
+  })
 })
 
 describe('ficha · segmento de plataforma del video', () => {
