@@ -3547,7 +3547,10 @@
       "totalPedido_one": "Your order · {{count}} item",
       "totalPedido_other": "Your order · {{count}} items",
       "seguirComprando": "Keep shopping",
-      "verPedido": "View order"
+      "verPedido": "View order",
+      "envioGratisFalta": "{{monto}} away from free shipping",
+      "envioGratisListo": "Your order ships free",
+      "envioGratisDesde": "On orders from {{monto}} at this store"
     },
     "falloServidor": {
       "marca": "HotClick",

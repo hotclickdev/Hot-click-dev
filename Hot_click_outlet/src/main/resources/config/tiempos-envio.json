@@ -3,5 +3,9 @@
   "provisional": false,
   "rapido": { "desdeMin": 30, "hastaHoras": 2 },
   "normalGam": { "desdeDias": 2, "hastaDias": 4 },
-  "fueraGam": { "desdeDias": 3, "hastaDias": 4 }
+  "fueraGam": { "desdeDias": 3, "hastaDias": 4 },
+  "envioGratis": {
+    "_comentario": "Monto en colones desde el que un paquete (una tienda) envia gratis. null = no hay envio gratis y la barra de progreso de la hoja 'Agregado' no se muestra. HOY el checkout NO aplica envio gratis (OrderPricingService.calcularCostoEnvio y checkoutHelpers.SHIPPING_COSTS cobran tarifa fija): antes de poner un monto hay que implementarlo ahi. EnvioGratisConfigTest lo exige.",
+    "desdeColones": null
+  }
 }
