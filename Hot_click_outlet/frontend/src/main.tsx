@@ -7,7 +7,7 @@ import { registerSW } from 'virtual:pwa-register'
 import { PostHogProvider } from '@posthog/react'
 import { initSentry, syncSentryUser } from '@/utils/sentryClient'
 import useAuthStore from '@/store/authStore'
-import { registrarAplicarSwUpdate } from '@/app/swUpdate'
+import { debeAutoActualizar, registrarAplicarSwUpdate } from '@/app/swUpdate'
 
 initSentry()
 const sesion = useAuthStore.getState()
@@ -25,6 +25,13 @@ if ('serviceWorker' in navigator) {
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
+      // Visitante sin sesión en la vitrina: la versión nueva se aplica sola (si no, se quedaba con el diseño viejo).
+      // Roles, POS/caja y formularios en curso siguen con el banner "Actualizar" (ver debeAutoActualizar).
+      const haySesion = Boolean(useAuthStore.getState().token || useAuthStore.getState().userId)
+      if (debeAutoActualizar(globalThis.location.pathname, haySesion)) {
+        void updateSW(true)
+        return
+      }
       globalThis.dispatchEvent(new CustomEvent('sw-update-available'))
     },
     onOfflineReady() {},
