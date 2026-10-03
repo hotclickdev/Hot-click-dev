@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-DqEC-19Z.js";function t(){return e()}export{t};
