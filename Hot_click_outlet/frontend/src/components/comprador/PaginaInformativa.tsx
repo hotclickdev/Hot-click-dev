@@ -14,6 +14,8 @@ type PaginaInformativaProps = {
   /** Índice en chips: cada entrada lleva al bloque con ese `id` (Figma `28:1669`). */
   indice?: EntradaIndice[]
   atras?: DestinoAtras
+  /** Índice en una sola fila desplazable (páginas legales con muchas secciones; derivado de `28:1669`). */
+  indiceEnFila?: boolean
   children: ReactNode
 }
 
@@ -29,7 +31,7 @@ function irAlBloque(id: string) {
  * chips, bloques (`BloqueInformativo`) y preguntas frecuentes. Envíos la usa hoy; Devoluciones, Contacto,
  * Términos y Privacidad pueden adoptarla con la misma estructura.
  */
-export default function PaginaInformativa({ titulo, encabezado, subtitulo, indice, atras, children }: PaginaInformativaProps) {
+export default function PaginaInformativa({ titulo, encabezado, subtitulo, indice, atras, indiceEnFila = false, children }: PaginaInformativaProps) {
   return (
     <MainLayout variante="interna" titulo={titulo} atras={atras}>
       <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[672px]">
@@ -39,7 +41,12 @@ export default function PaginaInformativa({ titulo, encabezado, subtitulo, indic
           </h1>
           {subtitulo && <p className="text-[14px] leading-5 text-hc-n-600">{subtitulo}</p>}
           {indice && indice.length > 0 && (
-            <nav aria-label="Contenido de la página" className="flex flex-wrap items-center gap-2">
+            <nav
+              aria-label="Contenido de la página"
+              className={indiceEnFila
+                ? '-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0'
+                : 'flex flex-wrap items-center gap-2'}
+            >
               {indice.map((e) => <Chip key={e.id} texto={e.texto} onClick={() => irAlBloque(e.id)} />)}
             </nav>
           )}

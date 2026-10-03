@@ -1,10 +1,9 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
-import MainLayout from '@/layouts/MainLayout'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import LegalMasLinks from '@/pages/legal/LegalMasLinks'
+import PaginaInformativa, { BloqueInformativo } from '@/components/comprador/PaginaInformativa'
+import { IcoSrv } from './servicios/IcoSrv'
+import type { NombreIconoSrv } from './servicios/iconosServicios'
 
 const SITE_URL = 'https://hotclick.lat'
 
@@ -32,184 +31,110 @@ const aboutPageJsonLd = {
   },
 }
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.5, delay },
-})
+type Fila = { icono: NombreIconoSrv; titulo: string; detalle: string }
 
+/** Lista de filas con ícono, como la tabla de tarifas de Figma `28:1660`. */
+function ListaFilas({ filas }: { filas: Fila[] }) {
+  return (
+    <ul className="m-0 flex list-none flex-col rounded-[16px] border border-hc-n-200 bg-hc-n-0 px-4 py-1">
+      {filas.map((f, i) => (
+        <li key={f.titulo} className={`flex items-start gap-3 py-3 ${i === 0 ? '' : 'border-t border-hc-n-200'}`}>
+          <IcoSrv nombre={f.icono} size={18} className="mt-px" />
+          <span className="flex min-w-0 flex-1 flex-col gap-px">
+            <span className="text-[14px] font-medium text-hc-n-900">{f.titulo}</span>
+            <span className="text-[12px] leading-[17px] text-hc-n-600">{f.detalle}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * Nosotros con la plantilla informativa de Figma `28:1660` (derivado de Figma: no tiene frame propio).
+ * Intro con índice en chips, historia del fundador, valores y envíos en filas, y CTA de contacto.
+ */
 export default function NosotrosPage() {
   const { t } = useTranslation()
 
-  const values = [
-    { icono: 'idea', titleKey: 'nosotros.val1Title', descKey: 'nosotros.val1Desc' },
-    { icono: 'chat', titleKey: 'nosotros.val2Title', descKey: 'nosotros.val2Desc' },
-    { icono: 'candado', titleKey: 'nosotros.val3Title', descKey: 'nosotros.val3Desc' },
+  const valores: Fila[] = [
+    { icono: 'inicioEscudo', titulo: t('nosotros.val1Title'), detalle: t('nosotros.val1Desc') },
+    { icono: 'inicioBuscar', titulo: t('nosotros.val2Title'), detalle: t('nosotros.val2Desc') },
+    { icono: 'inicioEstrella', titulo: t('nosotros.val3Title'), detalle: t('nosotros.val3Desc') },
+  ]
+  const envios: Fila[] = [
+    { icono: 'infoCamion', titulo: t('nosotros.correosCR'), detalle: t('nosotros.correosCRSub') },
+    { icono: 'inicioReloj', titulo: t('nosotros.uberFlash'), detalle: t('nosotros.uberFlashSub') },
   ]
 
   return (
-    <MainLayout>
-      <Helmet>
-        <title>Sobre nosotros — HotClick Marketplace Costa Rica</title>
-        <meta name="description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense que conecta emprendedores con compradores de todo el país." />
-        <link rel="canonical" href={`${SITE_URL}/nosotros`} />
-        <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/nosotros`} />
-        <link rel="alternate" hrefLang="es"    href={`${SITE_URL}/nosotros`} />
-        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Sobre nosotros — HotClick Marketplace Costa Rica" />
-        <meta property="og:description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense." />
-        <meta property="og:url" content={`${SITE_URL}/nosotros`} />
-        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
-        <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HotClick" />
-        <script type="application/ld+json">{JSON.stringify(aboutPageJsonLd)}</script>
-      </Helmet>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-16">
-
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: 'var(--hc-text)' }}>
-            {t('nosotros.title')}
-          </h1>
-          <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-            {t('nosotros.subtitle')}
-          </p>
-        </motion.div>
-
-        {/* Founder */}
-        <motion.div
-          {...fadeUp(0.1)}
-          className="flex flex-col sm:flex-row items-center gap-8 rounded-3xl p-8"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-        >
-          <div className="shrink-0">
-            <img
-              src="/fundador.jpg"
-              alt="Fundador de HotClick"
-              className="w-36 h-36 rounded-2xl object-cover"
-              style={{ boxShadow: '0 0 24px rgba(23,71,168,0.15)', outline: '2px solid rgba(23,71,168,0.25)' }}
-            />
-          </div>
-          <div className="text-center sm:text-left">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--hc-accent)' }}>
-              {t('nosotros.founderLabel')}
-            </p>
-            <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--hc-text)' }}>
-              {t('nosotros.founderTitle')}
-            </h2>
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+    <PaginaInformativa
+      titulo={t('nosotros.title')}
+      encabezado={t('nosotros.title')}
+      subtitulo={t('nosotros.subtitle')}
+      indice={[
+        { id: 'historia', texto: t('nosotros.founderLabel') },
+        { id: 'valores', texto: t('nosotros.values') },
+        { id: 'envios', texto: t('nosotros.shippingTitle') },
+      ]}
+    >
+    <Helmet>
+      <title>Sobre nosotros — HotClick Marketplace Costa Rica</title>
+      <meta name="description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense que conecta emprendedores con compradores de todo el país." />
+      <link rel="canonical" href={`${SITE_URL}/nosotros`} />
+      <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/nosotros`} />
+      <link rel="alternate" hrefLang="es"    href={`${SITE_URL}/nosotros`} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content="Sobre nosotros — HotClick Marketplace Costa Rica" />
+      <meta property="og:description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense." />
+      <meta property="og:url" content={`${SITE_URL}/nosotros`} />
+      <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+      <meta property="og:locale" content="es_CR" />
+      <meta property="og:site_name" content="HotClick" />
+      <script type="application/ld+json">{JSON.stringify(aboutPageJsonLd)}</script>
+    </Helmet>
+      <div className="flex flex-col bg-hc-n-50 pb-8 lg:bg-transparent">
+        <BloqueInformativo id="historia" titulo={t('nosotros.founderTitle')}>
+          <div className="flex flex-col gap-3 rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4">
+            <div className="flex items-center gap-3">
+              <img src="/fundador.jpg" alt={t('nosotros.founderLabel')} width={56} height={56} loading="lazy" className="size-14 shrink-0 rounded-full object-cover" />
+              <span className="text-[12px] font-semibold uppercase tracking-[0.06em] text-hc-blue-600">{t('nosotros.founderLabel')}</span>
+            </div>
+            <p className="text-[14px] leading-[21px] text-hc-n-600">
               {t('nosotros.founderBio1')}{' '}
-              <span className="font-medium" style={{ color: 'var(--hc-text)' }}>{t('nosotros.founderBio1Bold')}</span>.{' '}
+              <strong className="font-semibold text-hc-n-900">{t('nosotros.founderBio1Bold')}</strong>.{' '}
               {t('nosotros.founderBio1End')}
             </p>
-            <p className="text-sm leading-relaxed mt-3" style={{ color: 'var(--hc-muted)' }}>
+            <p className="text-[14px] leading-[21px] text-hc-n-600">
               {t('nosotros.founderBio2')}{' '}
-              <span className="font-medium" style={{ color: 'var(--hc-text)' }}>{t('nosotros.founderBio2Bold')}</span>{' '}
+              <strong className="font-semibold text-hc-n-900">{t('nosotros.founderBio2Bold')}</strong>{' '}
               {t('nosotros.founderBio2End')}
             </p>
           </div>
-        </motion.div>
+        </BloqueInformativo>
 
-        {/* Values */}
-        <motion.div {...fadeUp(0.15)}>
-          <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: 'var(--hc-text)' }}>{t('nosotros.values')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {values.map(({ icono, titleKey, descKey }, i) => (
-              <motion.div
-                key={titleKey}
-                {...fadeUp(0.1 * i)}
-                className="text-center p-6 rounded-2xl transition-colors"
-                style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-              >
-                <span className="flex justify-center mb-3" style={{ color: 'var(--hc-accent)' }}>
-                  <TrustGlyph tipo={icono} className="w-8 h-8" />
-                </span>
-                <h3 className="font-semibold mb-2" style={{ color: 'var(--hc-text)' }}>{t(titleKey)}</h3>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>{t(descKey)}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+        <BloqueInformativo id="valores" titulo={t('nosotros.values')}>
+          <ListaFilas filas={valores} />
+        </BloqueInformativo>
 
-        {/* Shipping */}
-        <motion.div
-          {...fadeUp(0.1)}
-          className="rounded-3xl p-8"
-          style={{
-            background: 'linear-gradient(135deg, rgba(23,71,168,0.06) 0%, rgba(63,108,222,0.04) 100%)',
-            border: '1px solid var(--hc-border)',
-          }}
-        >
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-3"
-              style={{ backgroundColor: 'rgba(23,71,168,0.1)' }}>
-              <svg className="w-6 h-6" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 8h14M5 8a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v2M5 8l1 9a2 2 0 002 2h8a2 2 0 002-2l1-9" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>{t('nosotros.shippingTitle')}</h2>
-            <p className="text-sm max-w-lg mx-auto" style={{ color: 'var(--hc-muted)' }}>
-              {t('nosotros.shippingDesc')}{' '}
-              <span className="font-medium" style={{ color: 'var(--hc-text)' }}>{t('nosotros.shippingDescBold')}</span>
-              {t('nosotros.shippingDescEnd')}
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <div className="flex items-center gap-3 rounded-xl px-5 py-3"
-              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-                <svg className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{t('nosotros.correosCR')}</p>
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('nosotros.correosCRSub')}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-xl px-5 py-3"
-              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: 'rgba(23,71,168,0.1)' }}>
-                <svg className="w-4 h-4" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{t('nosotros.uberFlash')}</p>
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('nosotros.uberFlashSub')}</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* CTA */}
-        <motion.div {...fadeUp(0.1)} className="text-center">
-          <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>
-            {t('nosotros.ctaSub')}
+        <BloqueInformativo id="envios" titulo={t('nosotros.shippingTitle')}>
+          <p className="text-[14px] leading-5 text-hc-n-600">
+            {t('nosotros.shippingDesc')} <strong className="font-semibold text-hc-n-900">{t('nosotros.shippingDescBold')}</strong>
+            {t('nosotros.shippingDescEnd')}
           </p>
-          <Link
-            to="/contacto"
-            className="inline-block px-6 py-2.5 rounded-xl text-white text-sm font-medium transition-all duration-200"
-            style={{
-              backgroundColor: 'var(--hc-accent)',
-              boxShadow: '0 0 16px rgba(23,71,168,0.25)',
-            }}
-          >
-            {t('nosotros.ctaBtn')}
-          </Link>
-        </motion.div>
+          <ListaFilas filas={envios} />
+        </BloqueInformativo>
 
+        <section className="px-4 pt-[18px] lg:px-0">
+          <div className="flex flex-col gap-3 rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4">
+            <p className="text-[14px] leading-5 text-hc-n-600">{t('nosotros.ctaSub')}</p>
+            <Link to="/contacto" className="flex items-center justify-center rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0">
+              {t('nosotros.ctaBtn')}
+            </Link>
+          </div>
+        </section>
       </div>
-      <LegalMasLinks />
-    </MainLayout>
+    </PaginaInformativa>
   )
 }

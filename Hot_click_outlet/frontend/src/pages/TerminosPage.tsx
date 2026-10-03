@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import MainLayout from '@/layouts/MainLayout'
-import TextoFlecha from '@/components/ui/TextoFlecha'
-import LegalMasLinks from '@/pages/legal/LegalMasLinks'
+
+import PaginaLegal, { type EnlaceLegal } from '@/components/comprador/PaginaLegal'
 
 const SITE_URL = 'https://hotclick.lat'
 const LAST_UPDATED = '5 de junio de 2025'
@@ -99,7 +98,7 @@ const clausulas = [
     num: 'CLÁUSULA NOVENA',
     title: 'Política de Cookies y Almacenamiento Local',
     content: (
-      <p>HotClick utiliza cookies técnicas obligatorias (autenticación, carrito de compras) y cookies analíticas de terceros (Google Analytics 4) activadas únicamente con consentimiento expreso del usuario. El usuario conserva la facultad de configurar su navegador para bloquear o eliminar las cookies en cualquier momento, aceptando que la desactivación de las cookies técnicas puede impedir la ejecución de compras. Para consultar el detalle completo de las tecnologías de seguimiento utilizadas, sus finalidades y plazos de vigencia, véase la <Link to="/cookies" style={{ color: 'var(--hc-accent)', textDecoration: 'none' }}>Política de Cookies</Link> de la Plataforma.</p>
+      <p>HotClick utiliza cookies técnicas obligatorias (autenticación, carrito de compras) y cookies analíticas de terceros (Google Analytics 4) activadas únicamente con consentimiento expreso del usuario. El usuario conserva la facultad de configurar su navegador para bloquear o eliminar las cookies en cualquier momento, aceptando que la desactivación de las cookies técnicas puede impedir la ejecución de compras. Para consultar el detalle completo de las tecnologías de seguimiento utilizadas, sus finalidades y plazos de vigencia, véase la <Link to="/cookies">Política de Cookies</Link> de la Plataforma.</p>
     ),
   },
   {
@@ -107,14 +106,21 @@ const clausulas = [
     num: 'CLÁUSULA DÉCIMA',
     title: 'Jurisdicción y Ley Aplicable',
     content: (
-      <p>El presente instrumento se rige por las leyes de la República de Costa Rica. Para la resolución de controversias, las partes se someten a la jurisdicción de los Tribunales de Justicia de San José, Costa Rica, con renuncia expresa a cualquier otro fuero. Con carácter previo, las partes intentarán la resolución amistosa mediante comunicación dirigida a <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a> por un período mínimo de treinta (30) días.</p>
+      <p>El presente instrumento se rige por las leyes de la República de Costa Rica. Para la resolución de controversias, las partes se someten a la jurisdicción de los Tribunales de Justicia de San José, Costa Rica, con renuncia expresa a cualquier otro fuero. Con carácter previo, las partes intentarán la resolución amistosa mediante comunicación dirigida a <a href="mailto:hotclick.cr@gmail.com">hotclick.cr@gmail.com</a> por un período mínimo de treinta (30) días.</p>
     ),
   },
 ]
 
+const ENLACES: EnlaceLegal[] = [
+  { to: '/envios', texto: 'Envíos' },
+  { to: '/devoluciones', texto: 'Devoluciones' },
+  { to: '/privacidad', texto: 'Privacidad' },
+  { to: '/cookies', texto: 'Cookies' },
+]
+
 export default function TerminosPage() {
   return (
-    <MainLayout>
+    <>
       <Helmet>
         <title>Términos y Condiciones — HotClick Costa Rica</title>
         <meta name="description" content="Términos y condiciones de uso de HotClick Marketplace. Condiciones para compradores y vendedores emprendedores costarricenses." />
@@ -130,90 +136,16 @@ export default function TerminosPage() {
         <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(termsJsonLd)}</script>
       </Helmet>
-      <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
-
-        {/* Hero */}
-        <div style={{ borderBottom: '1px solid var(--hc-border)', background: 'var(--hc-surface)', padding: '3rem 1.5rem 2.5rem' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto' }}>
-            <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none', marginBottom: '1.5rem' }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}>
-              <TextoFlecha dir="atras" iconClassName="w-3.5 h-3.5">Volver al inicio</TextoFlecha>
-            </Link>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1rem' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" style={{ color: 'var(--hc-accent)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                </svg>
-              </div>
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--hc-accent)', margin: 0 }}>
-                  Contrato de Adhesión
-                </p>
-                <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', fontWeight: 900, color: 'var(--hc-text)', margin: 0, lineHeight: 1.1 }}>
-                  Términos y Condiciones de Uso
-                </h1>
-                <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-                  HotClick · Última actualización: {LAST_UPDATED}
-                </p>
-              </div>
-            </div>
-
-            <p style={{ fontSize: 15, color: 'var(--hc-muted)', lineHeight: 1.7, margin: 0 }}>
-              Las presentes condiciones generales regulan el acceso, registro y uso de la plataforma web y de comercio electrónico denominada HotClick. Todo usuario que acceda, navegue o interactúe en la Plataforma se adhiere de pleno derecho a lo aquí estipulado.
-            </p>
-          </div>
-        </div>
-
-        <div style={{ maxWidth: 760, margin: '0 auto', padding: '2.5rem 1.5rem 0' }}>
-
-          {/* Índice */}
-          <div style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', borderRadius: 14, padding: '1.25rem 1.5rem', marginBottom: '2.5rem' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--hc-muted)', margin: '0 0 0.75rem' }}>Índice de cláusulas</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem 1rem' }}>
-              {clausulas.map(c => (
-                <a key={c.id} href={`#${c.id}`} style={{ fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none' }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}>
-                  {c.num}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Cláusulas */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {clausulas.map(c => (
-              <section key={c.id} id={c.id} style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', borderRadius: 16, padding: '1.75rem', scrollMarginTop: '5rem' }}>
-                <div style={{ marginBottom: '0.875rem' }}>
-                  <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--hc-accent)', margin: '0 0 4px' }}>{c.num}</p>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--hc-text)', margin: 0 }}>{c.title}</h2>
-                </div>
-                <div style={{ fontSize: 14.5, color: 'var(--hc-muted)', lineHeight: 1.8 }}>
-                  <style>{`#${c.id} p { margin: 0 0 0.75rem; } #${c.id} p:last-child { margin: 0; } #${c.id} strong { color: var(--hc-text); }`}</style>
-                  {c.content}
-                </div>
-              </section>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'color-mix(in srgb, var(--hc-accent) 6%, var(--hc-surface))', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)', borderRadius: 16, textAlign: 'center' }}>
-            <p style={{ fontSize: 14, color: 'var(--hc-muted)', margin: '0 0 0.5rem' }}>¿Preguntas sobre estos términos?</p>
-            <a href="mailto:hotclick.cr@gmail.com" style={{ fontSize: 15, fontWeight: 700, color: 'var(--hc-accent)', textDecoration: 'none' }}>hotclick.cr@gmail.com</a>
-            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <Link to="/privacidad" style={{ fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}><TextoFlecha>Política de Privacidad</TextoFlecha></Link>
-              <Link to="/devoluciones" style={{ fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}><TextoFlecha>Política de Devoluciones</TextoFlecha></Link>
-            </div>
-          </div>
-        </div>
-      </div>
-      <LegalMasLinks />
-    </MainLayout>
+      <PaginaLegal
+        titulo="Términos"
+        encabezado="Términos y Condiciones de Uso"
+        subtitulo={`Contrato de Adhesión · Última actualización: ${LAST_UPDATED}`}
+        intro={<p>Las presentes condiciones generales regulan el acceso, registro y uso de la plataforma web y de comercio electrónico denominada HotClick. Todo usuario que acceda, navegue o interactúe en la Plataforma se adhiere de pleno derecho a lo aquí estipulado.</p>}
+        secciones={clausulas}
+        pregunta="¿Preguntas sobre estos términos?"
+        correo="hotclick.cr@gmail.com"
+        enlaces={ENLACES}
+      />
+    </>
   )
 }
