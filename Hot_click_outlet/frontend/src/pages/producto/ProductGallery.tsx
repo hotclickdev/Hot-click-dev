@@ -11,7 +11,6 @@ import { getOptimizedUrl } from '@/utils/imageUtils'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import BotonCirculoGaleria from './BotonCirculoGaleria'
-import ProductVideoVisor, { BotonVideoProducto } from './ProductVideoVisor'
 import { compartirProducto } from './compartirProducto'
 import { ICONOS_PRODUCTO } from './iconosProducto'
 import { PackagePlaceholder } from './productIcons'
@@ -44,7 +43,6 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
   const isLiked = useWishlistStore((s) => s.isLiked)
   const touchStartX = useRef<number | null>(null)
   const [fullscreenOpen, setFullscreenOpen] = useState(false)
-  const [videoOpen, setVideoOpen] = useState(false)
 
   const titulo = product.titulo || product.nombre || ''
   const altPrincipal = `${titulo}${product.marcaNombre ? ` — ${product.marcaNombre}` : ''} | Disponible en Costa Rica`
@@ -176,14 +174,6 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
           </div>
         )}
 
-        {!cubierta && (
-          <BotonVideoProducto
-            videoUrl={product.videoUrl}
-            onClick={() => setVideoOpen(true)}
-            className={compacta ? 'bottom-[10px] left-[13px]' : 'bottom-[11px] left-4 lg:bottom-4'}
-          />
-        )}
-
         {galeria.length > 1 && (
           <span
             className={`pointer-events-none absolute rounded-full bg-black/55 leading-[normal] text-hc-n-0 lg:hidden ${
@@ -196,14 +186,6 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
           </span>
         )}
       </div>
-
-      <ProductVideoVisor
-        open={videoOpen}
-        onClose={() => setVideoOpen(false)}
-        videoUrl={product.videoUrl}
-        titulo={titulo}
-        precioLabel={precioLabel}
-      />
 
       <ProductGalleryFullscreen
         open={fullscreenOpen}

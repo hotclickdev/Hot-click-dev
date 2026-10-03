@@ -3,11 +3,22 @@ import type { Producto } from '@/types/producto'
 import { formatPrice } from '@/utils/format'
 import { normalizarBusqueda } from '@/pages/catalogo/catalogoFiltros'
 
-export type TipoVideo = 'youtube' | 'tiktok' | 'instagram'
+export type TipoVideo = 'youtube' | 'tiktok' | 'instagram' | 'facebook' | 'vimeo' | 'otra'
 
+/**
+ * Video del producto detectado desde la URL que guarda el vendedor (`Producto.videoUrl`, sin campo de plataforma).
+ * `embedUrl` es null cuando la red no se puede incrustar: la ficha muestra una tarjeta de enlace.
+ */
 export type VideoDetectado = {
   type: TipoVideo
-  embedUrl: string
+  /** Nombre visible de la red para la insignia ("YouTube", "Shorts", "Instagram"...). */
+  etiqueta: string
+  embedUrl: string | null
+  /** 9:16 (Shorts, Reels, TikTok) o 16:9. */
+  vertical: boolean
+  /** Miniatura conocida (YouTube) para cargar el embed recién al tocar. */
+  miniatura: string | null
+  url: string
 }
 
 export type TabProducto = {
@@ -34,25 +45,60 @@ export function parseTallas(talla: string | null | undefined): string[] {
   return talla.split(/[-,/]/).map((s) => s.trim()).filter(Boolean)
 }
 
-export function detectVideo(url: string | null | undefined): VideoDetectado | null {
-  if (!url) return null
+const YT_ID = '([a-zA-Z0-9_-]{11})'
 
-  const ytPatterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
-  ]
-  for (const re of ytPatterns) {
-    const m = url.match(re)
-    if (m) return { type: 'youtube', embedUrl: `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0&modestbranding=1` }
+/** `youtube.com/watch?v=ID` (con cualquier orden de parámetros), leído con `URL` en vez de una regex. */
+function idDeWatch(url: string): [string, string] | null {
+  try {
+    const u = new URL(url)
+    const v = u.searchParams.get('v')
+    return /(^|\.)youtube\.com$/.test(u.hostname) && u.pathname === '/watch' && v && /^[a-zA-Z0-9_-]{11}$/.test(v) ? [url, v] : null
+  } catch {
+    return null
+  }
+}
+
+export function detectVideo(url: string | null | undefined): VideoDetectado | null {
+  const limpio = url?.trim()
+  if (!limpio) return null
+  const base = { url: limpio, miniatura: null as string | null }
+
+  const short = limpio.match(new RegExp(`youtube\\.com/shorts/${YT_ID}`))
+  if (short) {
+    return { ...base, type: 'youtube', etiqueta: 'Shorts', vertical: true, miniatura: `https://i.ytimg.com/vi/${short[1]}/hqdefault.jpg`,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${short[1]}?rel=0&modestbranding=1&autoplay=1` }
+  }
+  const yt = limpio.match(new RegExp(`(?:youtu\\.be/|youtube\\.com/embed/|youtube\\.com/live/)${YT_ID}`)) ?? idDeWatch(limpio)
+  if (yt) {
+    return { ...base, type: 'youtube', etiqueta: 'YouTube', vertical: false, miniatura: `https://i.ytimg.com/vi/${yt[1]}/hqdefault.jpg`,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1&autoplay=1` }
   }
 
-  const ttMatch = url.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/)
-  if (ttMatch) return { type: 'tiktok', embedUrl: `https://www.tiktok.com/embed/v2/${ttMatch[1]}` }
+  const tt = limpio.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/)
+  if (tt) return { ...base, type: 'tiktok', etiqueta: 'TikTok', vertical: true, embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}` }
 
-  const igMatch = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/)
-  if (igMatch) return { type: 'instagram', embedUrl: `https://www.instagram.com/${igMatch[1]}/${igMatch[2]}/embed/` }
+  const ig = limpio.match(/instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/)
+  if (ig) {
+    const tipo = ig[1] === 'reels' ? 'reel' : ig[1]
+    return { ...base, type: 'instagram', etiqueta: 'Instagram', vertical: true, embedUrl: `https://www.instagram.com/${tipo}/${ig[2]}/embed/` }
+  }
 
-  return null
+  if (/(?:facebook\.com\/.+\/videos\/|facebook\.com\/(?:watch|reel)|fb\.watch\/)/.test(limpio)) {
+    const reel = /facebook\.com\/reel/.test(limpio)
+    return { ...base, type: 'facebook', etiqueta: 'Facebook', vertical: reel,
+      embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(limpio)}&show_text=false` }
+  }
+
+  const vimeo = limpio.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+  if (vimeo) return { ...base, type: 'vimeo', etiqueta: 'Vimeo', vertical: false, embedUrl: `https://player.vimeo.com/video/${vimeo[1]}?dnt=1` }
+
+  try {
+    const u = new URL(limpio)
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
+    return { ...base, type: 'otra', etiqueta: u.hostname.replace(/^www\./, ''), vertical: false, embedUrl: null }
+  } catch {
+    return null
+  }
 }
 
 export function seoDesdeProducto(product: Producto, userLang: string): { seoTitle: string; seoDescription: string } {
