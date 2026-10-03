@@ -1164,7 +1164,12 @@
     "successSub": "Your account was verified and created successfully. You can now sign in.",
     "goToLogin": "Go to sign in",
     "quieroComprar": "I want to buy",
-    "quieroVender": "I want to sell"
+    "quieroVender": "I want to sell",
+    "titulo": "Create your account",
+    "intro": "You can buy without an account. With one you track orders, see your requests and keep favorites.",
+    "nombreCorto": "First name",
+    "primerApellido": "Last name",
+    "segundoApellido": "Second last name"
   },
   "profile": {
     "title": "My profile",

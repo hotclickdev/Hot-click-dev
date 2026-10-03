@@ -1164,7 +1164,12 @@
     "successSub": "Tu cuenta fue verificada y creada exitosamente. Ya podés iniciar sesión.",
     "goToLogin": "Ir al inicio de sesión",
     "quieroComprar": "Quiero comprar",
-    "quieroVender": "Quiero vender"
+    "quieroVender": "Quiero vender",
+    "titulo": "Creá tu cuenta",
+    "intro": "Para comprar no hace falta cuenta. Con una seguís tus pedidos, ves tus solicitudes y guardás favoritos.",
+    "nombreCorto": "Nombre",
+    "primerApellido": "Primer apellido",
+    "segundoApellido": "Segundo apellido"
   },
   "profile": {
     "title": "Mi perfil",

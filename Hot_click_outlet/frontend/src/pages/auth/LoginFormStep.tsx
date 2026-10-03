@@ -6,6 +6,8 @@ import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 import MarcaComprador from '@/components/comprador/header/MarcaComprador'
 import { isValidEmail } from '@/utils/validators'
 import { IcoBandeja, IcoCamion, IcoCandado, IcoCorazon, IcoSobre } from '../perfil/cuenta/iconosCuenta'
+import CampoCuenta from './CampoCuenta'
+import { CLASE_ENTRADA } from './campoCuenta'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 type LoginFormStepProps = {
@@ -35,21 +37,6 @@ const BENEFICIOS: { icono: ReactNode; clave: string }[] = [
   { icono: <IcoBandeja size={18} />, clave: 'login.beneficio2' },
   { icono: <IcoCorazon size={18} />, clave: 'login.beneficio3' },
 ]
-
-/** Campo de Figma `28:1183`: etiqueta de 13, caja de 12 con ícono de 18 y texto de 15. */
-function Campo({ id, etiqueta, icono, children }: { id: string; etiqueta: string; icono: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex w-full flex-col gap-1">
-      <label htmlFor={id} className="text-[13px] font-medium leading-[normal] text-hc-n-600">{etiqueta}</label>
-      <div className="flex w-full items-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-[13px] focus-within:border-hc-blue-600 focus-within:shadow-[inset_0_0_0_1px_var(--hc-blue-600)]">
-        <span className="shrink-0 text-hc-n-600">{icono}</span>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-const CLASE_ENTRADA = 'hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-500'
 
 /**
  * Ingresar: Figma `28:1143` ("Ingresá o creá tu cuenta"). El frame solo dibuja el correo; la contraseña que exige el
@@ -112,7 +99,7 @@ export default function LoginFormStep({
           </>
         )}
 
-        <Campo id="login-correo" etiqueta={t('login.email')} icono={<IcoSobre size={18} />}>
+        <CampoCuenta id="login-correo" etiqueta={t('login.email')} icono={<IcoSobre size={18} />}>
           <input
             id="login-correo"
             type="email"
@@ -124,10 +111,10 @@ export default function LoginFormStep({
             readOnly={paso === 'contrasena'}
             className={CLASE_ENTRADA}
           />
-        </Campo>
+        </CampoCuenta>
 
         {paso === 'contrasena' && (
-          <Campo id="login-clave" etiqueta={t('login.password')} icono={<IcoCandado size={18} />}>
+          <CampoCuenta id="login-clave" etiqueta={t('login.password')} icono={<IcoCandado size={18} />}>
             <input
               id="login-clave"
               ref={claveRef}
@@ -140,7 +127,7 @@ export default function LoginFormStep({
               autoComplete="current-password"
               className={CLASE_ENTRADA}
             />
-          </Campo>
+          </CampoCuenta>
         )}
 
         {mensaje && (
