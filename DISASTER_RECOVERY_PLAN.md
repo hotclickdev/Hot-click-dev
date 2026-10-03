@@ -1,4 +1,7 @@
 # F29.7 — Disaster Recovery Plan
+
+> **Histórico (3-oct-2026):** Supabase ya no se usa. La base de datos y el almacenamiento pasaron a AWS (PostgreSQL `hotclick-postgres` en Lightsail y bucket S3 `hotclick-media`); el respaldo diario se reapunta a Lightsail (ver `MIGRACION_AWS.md`). Lo que sigue describe el esquema anterior y queda como referencia hasta que se reescriba.
+
 **Fecha:** 2026-06-02 | **Proyecto:** HOTCLICK SaaS
 
 ---

@@ -488,7 +488,7 @@ Migrar progresivamente. El contrato entre frontend y backend (normalización de 
 
 **3. Optimización de imágenes**
 
-Generar WebP/AVIF en Supabase Storage al subir (transform en la URL de Supabase). Usar `<img srcset>` para tamaños correctos. En `ProductCard`, las imágenes grandes en grids de 4 columnas son el principal peso de página.
+Generar WebP/AVIF al subir al bucket S3 (Supabase ya no se usa desde el 3-oct-2026; hoy el proxy `/api/img` redimensiona). Usar `<img srcset>` para tamaños correctos. En `ProductCard`, las imágenes grandes en grids de 4 columnas son el principal peso de página.
 
 **4. Refactorizar `AdminOrders.jsx`**
 Dividir en sub-componentes: `OrderTable`, `OrderDetailDrawer`, `ShippingForm`, `PaymentHistory`. El archivo actual de 826 líneas concentra demasiada lógica y es el más difícil de tocar sin introducir bugs.
