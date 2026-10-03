@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ManualPedidoDTO;
+import com.hotclick.exception.PedidoNoDespachableException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.service.pedido.PedidoDetailMapper;
@@ -13,6 +14,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -183,7 +187,7 @@ class PedidoServiceTest {
     @Test
     @DisplayName("cambiarEstado → actualiza estadoPedido, sin email si no hay nota")
     void cambiarEstado_sinNota_noEnviaEmail() {
-        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
 
@@ -210,7 +214,7 @@ class PedidoServiceTest {
     @DisplayName("cambiarEstado → con nota envía email de seguimiento")
     @SuppressWarnings("unchecked")
     void cambiarEstado_conNota_enviaEmail() throws Exception {
-        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
         when(objectMapper.readValue(anyString(), any(TypeReference.class)))
@@ -277,6 +281,103 @@ class PedidoServiceTest {
         assertThat(pedido.getCostoEnvio()).isEqualTo(3500);
         assertThat(pedido.getNumeroGuia()).isEqualTo("GU987654321");
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENVIADO);
+    }
+
+    // ── despacho sin pago confirmado (BUG-02) ─────────────────────────────────
+
+    @ParameterizedTest(name = "asignarGuia rechaza {0}")
+    @ValueSource(strings = {"PENDIENTE", "PENDIENTE_COMPROBANTE", "PENDIENTE_APROBACION"})
+    @NullAndEmptySource
+    @DisplayName("asignarGuia → 409 si el pago no está confirmado; no guarda ni avisa al cliente")
+    void asignarGuia_sinPagoConfirmado_rechaza(String estado) {
+        Pedido pedido = buildPedido(estado);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.asignarGuia(1L, "RR123456789CR"))
+            .isInstanceOf(PedidoNoDespachableException.class)
+            .hasMessageContaining("pago")
+            .hasMessageContaining("no está confirmado");
+
+        assertThat(pedido.getEstadoPedido()).isEqualTo(estado);
+        assertThat(pedido.getNumeroGuia()).isNull();
+        verify(pedidoRepository, never()).save(any());
+        verify(notificacionEmailService, never()).enviarNotificacionGuia(any());
+    }
+
+    @Test
+    @DisplayName("asignarGuia → 409 si el pedido está cancelado")
+    void asignarGuia_cancelado_rechaza() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_CANCELADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.asignarGuia(1L, "RR123456789CR"))
+            .isInstanceOf(PedidoNoDespachableException.class)
+            .hasMessageContaining("cancelado");
+        verify(pedidoRepository, never()).save(any());
+    }
+
+    @ParameterizedTest(name = "asignarGuia acepta {0}")
+    @ValueSource(strings = {"PAGADO", "EN_PREPARACION", "LISTO_RETIRO", "ENVIADO"})
+    @DisplayName("asignarGuia → con pago confirmado (o corrigiendo la guía de un ENVIADO) sigue igual")
+    void asignarGuia_pagoConfirmado_acepta(String estado) {
+        Pedido pedido = buildPedido(estado);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        Pedido result = service.asignarGuia(1L, "RR123456789CR");
+
+        assertThat(result.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENVIADO);
+        verify(notificacionEmailService).enviarNotificacionGuia(pedido);
+    }
+
+    @Test
+    @DisplayName("procesarEnvio → 409 para SINPE/efectivo sin comprobante")
+    void procesarEnvio_sinPagoConfirmado_rechaza() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.procesarEnvio(1L, "GU987654321", 3500))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        verify(pedidoRepository, never()).save(any());
+        verify(notificacionEmailService, never()).enviarNotificacionGuia(any());
+    }
+
+    @ParameterizedTest(name = "cambiarEstado a {0} desde PENDIENTE se rechaza")
+    @ValueSource(strings = {"ENVIADO", "enviado", " ENVIADO "})
+    @DisplayName("cambiarEstado → no permite pasar a ENVIADO sin pago confirmado")
+    void cambiarEstado_aEnviadoSinPago_rechaza(String nuevoEstado) {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.cambiarEstado(1L, nuevoEstado, null))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        verify(pedidoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("cambiarEstado → confirmar el pago (PAGADO) de un pedido pendiente sigue permitido")
+    void cambiarEstado_confirmarPago_permitido() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        assertThat(service.cambiarEstado(1L, Constants.PEDIDO_PAGADO, null).getEstadoPedido())
+            .isEqualTo(Constants.PEDIDO_PAGADO);
+    }
+
+    @Test
+    @DisplayName("cambiarEstado → ENTREGADO desde PENDIENTE_COMPROBANTE no cambia (efectivo al retirar)")
+    void cambiarEstado_entregadoEfectivoRetiro_sinCambios() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        pedido.setMetodoPago("EFECTIVO");
+        pedido.setMetodoEnvio(Constants.ENVIO_RETIRO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        assertThat(service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null).getEstadoPedido())
+            .isEqualTo(Constants.PEDIDO_ENTREGADO);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

@@ -206,6 +206,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-SEC-013 | CRÍTICO — ADMIN_IT puede cambiar estado de pedido de cualquier empresa → 200")
     void adminIT_canChangeEstado_anyPedido() throws Exception {
+        confirmarPago(pedidoA);
         mockMvc.perform(put("/api/pedidos/" + pedidoA.getId() + "/estado")
                 .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -260,6 +261,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-SEC-018 | CRÍTICO — EmprendedorA puede asignar guía a su propio pedido → 200")
     void emprendedorA_canAsignarGuia_ownPedido() throws Exception {
+        confirmarPago(pedidoA);
         mockMvc.perform(put("/api/pedidos/" + pedidoA.getId() + "/guia")
                 .header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -346,6 +348,12 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
         p.setAdminCliente(adminUser);
         p.setFechaCreacion(LocalDateTime.now());
         return productoRepository.saveAndFlush(p);
+    }
+
+    /** Despachar exige pago confirmado (PedidoDespachoPolicy): deja el pedido en PAGADO. */
+    private void confirmarPago(Pedido pedido) {
+        pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+        pedidoRepository.saveAndFlush(pedido);
     }
 
     private Pedido crearPedido(String numero, Usuario cliente, Bodega bodega, Empresa empresa) {

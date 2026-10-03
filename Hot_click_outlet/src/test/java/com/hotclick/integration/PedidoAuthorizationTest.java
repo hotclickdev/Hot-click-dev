@@ -49,7 +49,8 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
         userPedido = new Pedido();
         userPedido.setNumeroPedido("ORD-AUTH-001");
         userPedido.setFechaPedido(LocalDateTime.now());
-        userPedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        // Pago confirmado: estas pruebas son de autorización; despachar sin pago responde 409 (PedidoDespachoPolicy).
+        userPedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
         userPedido.setUsuarioFinal(testUser);
         userPedido.setBodega(testBodega);
         userPedido.setSubtotal(15000);

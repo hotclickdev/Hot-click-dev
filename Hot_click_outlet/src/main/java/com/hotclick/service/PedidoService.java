@@ -5,6 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.pedido.PedidoDespachoPolicy;
 import com.hotclick.service.pedido.PedidoDetailMapper;
 import com.hotclick.service.pedido.PedidoManualFactory;
 import com.hotclick.service.pedido.PedidoNotificacionAppender;
@@ -69,6 +70,9 @@ public class PedidoService {
     public Pedido cambiarEstado(Long id, String nuevoEstado, String nota) {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        if (PedidoDespachoPolicy.esEnviado(nuevoEstado)) {
+            PedidoDespachoPolicy.verificarDespachable(pedido);
+        }
         pedido.setEstadoPedido(nuevoEstado);
         if (nota != null && !nota.isBlank()) {
             pedidoNotificacionAppender.appendNotificacion(pedido, nuevoEstado, nota);
@@ -113,6 +117,7 @@ public class PedidoService {
     public Pedido asignarGuia(Long id, String numeroGuia) {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        PedidoDespachoPolicy.verificarDespachable(pedido);
         pedido.setNumeroGuia(numeroGuia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + numeroGuia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
@@ -129,6 +134,7 @@ public class PedidoService {
     public Pedido procesarEnvio(Long id, String guia, Integer costoEnvio) {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        PedidoDespachoPolicy.verificarDespachable(pedido);
         pedido.setNumeroGuia(guia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + guia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
