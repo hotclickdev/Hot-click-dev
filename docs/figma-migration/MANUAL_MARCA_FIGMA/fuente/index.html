@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<style>
+:root{--n0:#fff;--n50:#f8f9fb;--n100:#f1f3f6;--n200:#e4e7ec;--n400:#9aa1ae;--n500:#6e7682;--n600:#4d5560;--n900:#14171c;
+--b50:#eff4fe;--b100:#dee9fc;--b600:#1747a8;--red:#e73b33;--ok:#178a50}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#ebedf1;font-family:'Public Sans',sans-serif;color:var(--n900);-webkit-font-smoothing:antialiased}
+.sora{font-family:'Sora',sans-serif}
+#canvas{display:inline-flex;gap:56px;padding:40px 56px 56px 96px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:14px}
+.lbl{display:flex;flex-direction:column;gap:4px;padding-left:2px}
+.lbl h2{font-family:'Sora';font-weight:700;font-size:18px;line-height:24px;color:var(--n900)}
+.lbl p{font-size:13px;color:var(--n500);line-height:18px}
+.frame{width:390px;background:#fff;border-radius:28px;overflow:hidden;box-shadow:0 1px 2px rgba(20,23,28,.06),0 12px 32px rgba(20,23,28,.10);position:relative}
+.wrap{position:relative}
+/* Figma ficha */
+.gal{height:390px;position:relative;overflow:hidden}
+.gal>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rb{position:absolute;width:40px;height:40px;border-radius:999px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;top:16px}
+.rb img{width:19.2px;height:19.2px}
+.ind{position:absolute;left:169px;top:362px;display:flex;gap:6px}
+.ind i{display:block;height:6px;width:6px;border-radius:3px;background:var(--n200);opacity:.8}
+.ind i.on{width:18px;background:#fff;opacity:1}
+.cnt{position:absolute;left:334px;top:356px;background:rgba(0,0,0,.55);color:#fff;font-weight:600;font-size:11px;padding:3px 8px;border-radius:999px}
+.info{padding:18px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.vend{display:flex;gap:8px;align-items:center}
+.av{width:24px;height:24px;border-radius:999px;background:var(--b50);color:var(--b600);font-weight:700;font-size:10px;display:flex;align-items:center;justify-content:center}
+.vend b{font-weight:600;font-size:13px;color:var(--b600)}
+.ttl{font-family:'Sora';font-weight:700;font-size:22px;line-height:28px}
+.price{display:flex;gap:10px;align-items:center}
+.price b{font-family:'Sora';font-weight:800;font-size:26px}
+.price span{font-size:12px;color:var(--n500)}
+.stock{display:flex;gap:6px;align-items:center;font-weight:500;font-size:13px;color:var(--ok)}
+.stock i{width:8px;height:8px;border-radius:9px;background:var(--ok);display:block}
+.desc{font-size:14px;line-height:21px;color:var(--n600)}
+.sec{padding:4px 16px 16px}
+.caja{background:var(--n50);border:1px solid var(--n200);border-radius:14px;overflow:hidden}
+.row{display:flex;gap:12px;align-items:center;padding:12px 14px}
+.row+.row{border-top:1px solid var(--n200)}
+.row img{width:20px;height:20px;flex:none}
+.t1{font-weight:600;font-size:13px}
+.t2{font-size:12px;line-height:16px;color:var(--n500)}
+.tx{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.ask{background:var(--b50);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.askh{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px;color:var(--b600)}
+.askh img{width:18px;height:18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:#fff;border:1px solid var(--b100);border-radius:999px;padding:8px 14px;display:flex;gap:6px;align-items:center;font-weight:500;font-size:13px;color:var(--b600)}
+.chip img{width:14px;height:14px}
+.op{padding:8px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.hr{height:1px;background:var(--n200)}
+.h17{font-family:'Sora';font-weight:700;font-size:17px;line-height:normal}
+.empty{background:var(--n50);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center}
+.empty img{width:22px;height:22px}
+.rec{padding:8px 0 16px;display:flex;flex-direction:column;gap:12px}
+.car{display:flex;gap:12px;padding-left:16px;overflow:hidden}
+.pc{width:167px;flex:none;border:1px solid var(--n200);border-radius:14px;overflow:hidden;background:#fff}
+.media{width:167px;height:167px;position:relative;background:var(--n100)}
+.media>img{width:100%;height:100%;object-fit:cover;display:block}
+.fav{position:absolute;left:127px;top:8px;width:32px;height:32px;border-radius:999px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center}
+.fav img{width:16px;height:16px}
+.pi{padding:10px;display:flex;flex-direction:column;gap:2px}
+.pn{font-weight:500;font-size:13px;line-height:17px;min-height:34px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ps{font-size:11px;line-height:15px;color:var(--n500);white-space:nowrap}
+.pf{display:flex;justify-content:space-between;align-items:center;padding-top:6px}
+.pf b{font-family:'Sora';font-weight:700;font-size:15px}
+.add{width:32px;height:32px;border-radius:10px;background:var(--red);display:flex;align-items:center;justify-content:center}
+.add img{width:16px;height:16px}
+.bar{border-top:1px solid var(--n200);background:#fff;display:flex;gap:10px;align-items:center;padding:12px 16px 24px}
+.qty{border:1px solid var(--n200);border-radius:12px;padding:12px;display:flex;gap:14px;align-items:center;font-weight:600}
+.qty span{font-size:16px}.qty b{font-size:15px;font-weight:600}
+.cta{flex:1;background:var(--red);border-radius:12px;padding:14px 0;display:flex;gap:8px;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:15px}
+.cta img{width:18px;height:18px}
+/* NEW: video */
+.vid{padding:8px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.vhead{display:flex;flex-direction:column;gap:2px}
+.pl{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--n100);border-radius:12px;padding:4px}
+.pchip{border-radius:9px;padding:8px 0 7px;display:flex;flex-direction:column;gap:4px;align-items:center;font-weight:500;font-size:12px;line-height:15px;color:var(--n600);white-space:nowrap}
+.pchip svg{width:18px;height:18px;flex:none}
+.pchip.on{background:#fff;color:var(--b600);font-weight:600;box-shadow:0 1px 3px rgba(20,23,28,.12),0 0 0 1px var(--b100)}
+.player{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:var(--n100)}
+.player>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 58%}
+.scrim{position:absolute;inset:0;background:rgba(20,23,28,.22)}
+.play{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:999px;background:var(--red);box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+.badge{position:absolute;background:rgba(0,0,0,.55);color:#fff;font-weight:600;font-size:11px;padding:4px 9px 4px 7px;border-radius:999px;display:flex;gap:5px;align-items:center}
+.badge svg{width:13px;height:13px}
+.vmeta{display:flex;justify-content:space-between;align-items:center}
+.link{display:flex;gap:4px;align-items:center;font-weight:600;font-size:13px;color:var(--b600)}
+.link svg{width:14px;height:14px}
+.muted{font-size:12px;color:var(--n500)}
+.new{position:absolute;left:-58px;width:4px;border-radius:4px;background:var(--b600)}
+.newtag{position:absolute;left:-66px;transform:translateX(-100%) rotate(-90deg);transform-origin:right top}
+.ntag{position:absolute;background:var(--b600);color:#fff;font-weight:700;font-size:10px;letter-spacing:.06em;padding:4px 8px;border-radius:999px}
+/* seller panel */
+.top{display:flex;align-items:center;gap:12px;padding:16px 16px 12px;border-bottom:1px solid var(--n200)}
+.top .rb{position:static;box-shadow:none;border:1px solid var(--n200)}
+.prow{display:flex;gap:12px;align-items:center;padding:16px}
+.prow img{width:52px;height:52px;border-radius:10px;object-fit:cover}
+.form{padding:0 16px 16px}
+.fcard{border:1px solid var(--n200);border-radius:16px;padding:16px 14px;display:flex;flex-direction:column;gap:10px;background:#fff}
+.fl{font-weight:600;font-size:13px;color:var(--n900)}
+.opt{font-weight:400;color:var(--n500)}
+.field{border:1.5px solid var(--b600);border-radius:12px;padding:12px 12px 12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 0 3px var(--b100);background:#fff}
+.field span{flex:1;font-size:14px;color:var(--n900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.caret{display:inline-block;width:1.5px;height:17px;background:var(--b600);vertical-align:-3px;margin-left:1px}
+.help{font-size:12px;line-height:16px;color:var(--n500)}
+.okrow{display:flex;gap:10px;align-items:center;background:var(--n50);border-radius:12px;padding:8px}
+.okrow .th{width:72px;height:40px;border-radius:8px;overflow:hidden;position:relative;flex:none}
+.okrow .th img{width:100%;height:100%;object-fit:cover;object-position:50% 58%}
+.okrow .mini{position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:99px;background:var(--red);display:flex;align-items:center;justify-content:center}
+.okd{display:flex;gap:5px;align-items:center;font-weight:500;font-size:12px;color:var(--ok)}
+.btn{background:var(--red);border-radius:12px;padding:14px 0;color:#fff;font-weight:600;font-size:15px;display:flex;justify-content:center;align-items:center;gap:8px;margin-top:4px}
+.btn2{border:1px solid var(--n200);border-radius:12px;padding:13px 0;color:var(--n600);font-weight:600;font-size:14px;display:flex;justify-content:center}
+.note{margin:0 16px 20px;background:var(--b50);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.note svg{width:18px;height:18px;flex:none;margin-top:1px}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute">
+ <symbol id="yt" viewBox="0 0 16 16"><rect x="1.5" y="3.5" width="13" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.8 6.1v3.8L10 8z" fill="currentColor"/></symbol>
+ <symbol id="ig" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="2.7" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="11.4" cy="4.6" r=".9" fill="currentColor"/></symbol>
+ <symbol id="tt" viewBox="0 0 16 16"><path d="M8.6 2v8.4a2.4 2.4 0 1 1-2.4-2.4M8.6 2c.3 1.9 1.6 3.1 3.6 3.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ <symbol id="ln" viewBox="0 0 16 16"><path d="M6.7 9.3a2.6 2.6 0 0 0 3.7 0l2.1-2.1a2.6 2.6 0 0 0-3.7-3.7l-.6.6M9.3 6.7a2.6 2.6 0 0 0-3.7 0L3.5 8.8a2.6 2.6 0 0 0 3.7 3.7l.6-.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ <symbol id="ext" viewBox="0 0 16 16"><path d="M6 3.5H4A1.5 1.5 0 0 0 2.5 5v7A1.5 1.5 0 0 0 4 13.5h7a1.5 1.5 0 0 0 1.5-1.5v-2M9 2.5h4.5V7M13.3 2.7 7.5 8.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ <symbol id="pl" viewBox="0 0 24 24"><path d="M9 6.8v10.4c0 .6.7 1 1.2.6l8-5.2a.7.7 0 0 0 0-1.2l-8-5.2c-.5-.4-1.2 0-1.2.6z" fill="#fff"/></symbol>
+ <symbol id="chk" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m5.4 8.2 1.8 1.8 3.4-3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ <symbol id="x" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#e4e7ec"/><path d="m5.6 5.6 4.8 4.8m0-4.8-4.8 4.8" stroke="#4d5560" stroke-width="1.5" stroke-linecap="round"/></symbol>
+ <symbol id="inf" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="#1747a8" stroke-width="1.8"/><path d="M9 8.2v4M9 5.6v.1" stroke="#1747a8" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</svg>
+<div id="canvas">
+ <!-- LEFT -->
+ <div class="col">
+  <div class="lbl"><h2>Ficha de producto · con video</h2><p>Lo que ve el visitante · móvil 390</p></div>
+  <div class="wrap">
+  <div class="frame" id="ficha">
+   <div class="gal"><img src="a/9ddcb.png">
+    <div class="rb" style="left:16px"><img src="a/12523.svg"></div>
+    <div class="rb" style="left:282px"><img src="a/a311f.svg"></div>
+    <div class="rb" style="left:334px"><img src="a/59962.svg"></div>
+    <div class="ind"><i class="on"></i><i></i><i></i><i></i></div>
+    <div class="cnt">1 / 4</div>
+   </div>
+   <div class="info">
+    <div class="vend"><div class="av">CL</div><b>Casa Luna 506</b><img src="a/d15e4.svg" style="width:14px;height:14px"></div>
+    <div class="ttl">Sofá de sala dos plazas</div>
+    <div class="price"><b>₡17.500</b><span>IVA incluido</span></div>
+    <div class="stock"><i></i>Disponible · 12 en stock</div>
+    <div class="desc">Sofá tapizado de 2 plazas, pata de madera. Entrega en GAM.</div>
+   </div>
+   <div class="sec"><div class="caja">
+    <div class="row"><img src="a/d26bf.svg"><div class="tx"><div class="t1">Envío a todo Costa Rica</div><div class="t2">Desde ₡4.000 · 2 a 4 días hábiles en GAM</div></div></div>
+    <div class="row"><img src="a/787be.svg"><div class="tx"><div class="t1">Pagá como prefieras</div><div class="t2">SINPE Móvil, tarjeta o efectivo · compra sin crear cuenta</div></div></div>
+   </div></div>
+   <div class="sec" style="padding-top:8px"><div class="ask">
+    <div class="askh"><img src="a/5c427.svg">Preguntale sobre este producto</div>
+    <div class="t2" style="color:var(--n600)">Responde con los datos de la ficha. Si no sabe algo, te lo dice.</div>
+    <div class="chips"><div class="chip"><img src="a/6f0f3.svg">¿Qué medidas tiene?</div><div class="chip"><img src="a/6f0f3.svg">¿Tiene garantía?</div><div class="chip"><img src="a/6f0f3.svg">¿De qué color es?</div></div>
+   </div></div>
+   <div class="op"><div class="hr"></div><div class="h17">Opiniones</div>
+    <div class="empty"><img src="a/8360f.svg"><div class="tx"><div class="t1">Todavía no tiene opiniones</div><div class="t2">Quienes lo compren podrán calificarlo desde su cuenta.</div></div></div>
+   </div>
+   <!-- NUEVO -->
+   <div class="vid" id="vid"><div class="hr"></div>
+    <div class="vhead"><div class="h17">Video del producto</div><div class="muted">Publicado por Casa Luna 506</div></div>
+    <div class="pl">
+     <div class="pchip on"><svg><use href="#yt"/></svg>YouTube</div>
+     <div class="pchip"><svg><use href="#ig"/></svg>Instagram</div>
+     <div class="pchip"><svg><use href="#tt"/></svg>TikTok</div>
+     <div class="pchip"><svg><use href="#ln"/></svg>Otra red</div>
+    </div>
+    <div class="player"><img src="a/9ddcb.png"><div class="scrim"></div>
+     <div class="badge" style="left:10px;top:10px"><svg><use href="#yt"/></svg>YouTube</div>
+     <div class="badge" style="right:10px;bottom:10px;padding:3px 8px">0:48</div>
+     <div class="play"><svg width="30" height="30"><use href="#pl"/></svg></div>
+    </div>
+    <div class="vmeta"><div class="link">Ver en YouTube<svg><use href="#ext"/></svg></div><div class="muted">Se reproduce aquí mismo</div></div>
+   </div>
+   <div class="rec"><div class="h17" style="padding:0 16px">También te puede gustar</div>
+    <div class="car">
+     <div class="pc"><div class="media"><img src="a/c95ea.png"><div class="fav"><img src="a/50ab4.svg"></div></div><div class="pi"><div class="pn">Sillón de sala verde</div><div class="ps">Bruma Café</div><div class="pf"><b>₡32.000</b><div class="add"><img src="a/55ee9.svg"></div></div></div></div>
+     <div class="pc"><div class="media"><img src="a/9f915.png"><div class="fav"><img src="a/50ab4.svg"></div></div><div class="pi"><div class="pn">Taza personalizada con nombre y color</div><div class="ps">Casa Luna 506</div><div class="pf"><b>₡11.000</b><div class="add"><img src="a/55ee9.svg"></div></div></div></div>
+     <div class="pc"><div class="media"><img src="a/21549.png"><div class="fav"><img src="a/50ab4.svg"></div></div><div class="pi"><div class="pn">Bloques de madera para niños</div><div class="ps">Taller Ceiba</div><div class="pf"><b>₡22.500</b><div class="add"><img src="a/55ee9.svg"></div></div></div></div>
+    </div>
+   </div>
+   <div class="bar"><div class="qty"><span>−</span><b>1</b><span>+</span></div><div class="cta"><img src="a/39a95.svg">Agregar · ₡17.500</div></div>
+  </div>
+  <div class="new" id="newline"></div><div class="ntag" id="ntag">NUEVO</div>
+  </div>
+ </div>
+ <!-- RIGHT -->
+ <div class="col">
+  <div class="lbl"><h2>Cómo lo carga el vendedor</h2><p>Panel del vendedor · Editar producto · móvil 390</p></div>
+  <div class="frame">
+   <div class="top"><div class="rb"><img src="a/12523.svg"></div><div class="h17">Editar producto</div></div>
+   <div class="prow"><img src="a/9ddcb.png"><div class="tx"><div class="t1" style="font-size:14px">Sofá de sala dos plazas</div><div class="t2">₡17.500 · 12 en stock</div></div></div>
+   <div class="form"><div class="fcard">
+    <div class="vhead" style="margin-bottom:4px"><div class="h17" style="font-size:16px">Video del producto <span class="opt" style="font-family:'Public Sans';font-size:13px">(opcional)</span></div><div class="t2">Se muestra en la ficha, debajo de las opiniones.</div></div>
+    <div class="fl">Plataforma</div>
+    <div class="pl">
+     <div class="pchip on"><svg><use href="#yt"/></svg>YouTube</div>
+     <div class="pchip"><svg><use href="#ig"/></svg>Instagram</div>
+     <div class="pchip"><svg><use href="#tt"/></svg>TikTok</div>
+     <div class="pchip"><svg><use href="#ln"/></svg>Otra red</div>
+    </div>
+    <div class="fl" style="margin-top:6px">Enlace o código embed</div>
+    <div class="field"><span>https://youtube.com/watch?v=…<i class="caret"></i></span><svg width="16" height="16"><use href="#x"/></svg></div>
+    <div class="help">Pegá el enlace de YouTube, Instagram, TikTok u otra red.</div>
+    <div class="okrow"><div class="th"><img src="a/9ddcb.png"><div class="mini"><svg width="12" height="12" viewBox="0 0 24 24"><use href="#pl"/></svg></div></div>
+     <div class="tx"><div class="okd"><svg width="14" height="14"><use href="#chk"/></svg>Video de YouTube detectado</div><div class="t2">Así se verá en la ficha del producto.</div></div></div>
+    <div class="btn">Guardar video</div>
+    <div class="btn2">Quitar video</div>
+   </div></div>
+   <div class="note"><svg><use href="#inf"/></svg><div class="t2" style="color:var(--n600)">Si elegís «Otra red», pegá el código embed que te da la plataforma (empieza con &lt;iframe…).</div></div>
+  </div>
+ </div>
+</div>
+<script>
+const f=document.getElementById('ficha').getBoundingClientRect(),v=document.getElementById('vid').getBoundingClientRect();
+const l=document.getElementById('newline'),t=document.getElementById('ntag');
+l.style.top=(v.top-f.top+8)+'px';l.style.height=(v.height-8)+'px';l.style.left='-14px';
+t.style.top=(v.top-f.top+8)+'px';t.style.left='-14px';t.style.transform='translateX(-100%) translateX(-8px)';
+</script>
+</body></html>

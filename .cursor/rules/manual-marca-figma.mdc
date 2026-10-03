@@ -1,0 +1,11 @@
+---
+description: Manual de marca Figma obligatorio para toda UI nueva o rediseñada
+alwaysApply: true
+---
+
+# Manual de marca Figma (obligatorio)
+
+Toda UI nueva o rediseñada (pantalla, sección, componente, modal, toast, estado vacío/error/carga) **DEBE** seguir
+[`docs/figma-migration/MANUAL_MARCA_FIGMA`](../../docs/figma-migration/MANUAL_MARCA_FIGMA/README.md):
+Figma `TmxYFj2nauu10WZnZ0t6yt` (página `4:2`) y la imagen aprobada `ficha-video.png` (tokens `hc-*`, Public Sans/Sora,
+rojo `#E73B33`, tarjetas claras, radios, espaciado y chips/controles segmentados). Lo que Figma no cubre se deriva de Figma.
