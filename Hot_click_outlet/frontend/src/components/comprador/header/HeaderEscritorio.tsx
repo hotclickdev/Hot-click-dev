@@ -20,7 +20,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
   const { cantidadPedido, conSesion, rutaCuenta, rutaPanel, categorias } = useHeaderComprador()
 
   return (
-    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 leading-[normal] lg:flex xl:px-[120px]">
+    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 leading-[normal] lg:flex xl:px-[max(120px,calc((100%_-_1200px)/2))]">
       <div className="flex items-center gap-8">
         <MarcaComprador tamano="escritorio" />
         <BuscadorEscritorio onBuscarConFoto={onBuscarConFoto} />
