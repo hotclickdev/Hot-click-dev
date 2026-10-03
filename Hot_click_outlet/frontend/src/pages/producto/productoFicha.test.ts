@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Producto } from '@/types/producto'
-import { avisoStockBajoSinTalla, opcionesDeTalla, opinionesDesdeRespuesta } from './productoHelpers'
+import { avisoStockBajoSinTalla, opcionesDeTalla, opinionesDesdeRespuesta, tiendaDesdeCatalogo } from './productoHelpers'
 
 describe('ficha · opiniones', () => {
   it('lee la lista de { data: [...] } y descarta lo que no trae comentario', () => {
@@ -53,5 +53,29 @@ describe('ficha · stock bajo sin talla', () => {
     expect(avisoStockBajoSinTalla({ ...base, stock: 0 } as Producto, [])).toBe(false)
     expect(avisoStockBajoSinTalla({ ...base, esPersonalizado: true, modoPrecioPersonalizado: 'FIJO' } as Producto, [])).toBe(false)
     expect(avisoStockBajoSinTalla({ ...base, esPersonalizado: true, modoPrecioPersonalizado: 'COTIZACION' } as Producto, [])).toBe(false)
+  })
+})
+
+describe('ficha · fila de tienda (Figma 28:839)', () => {
+  const lista = [
+    { empresaId: 7, empresaNombre: 'Bruma Café', empresaSlug: 'bruma-cafe' },
+    { empresaId: 9, empresaNombre: null, empresaSlug: null },
+    { empresaId: 9, empresaNombre: 'Casa Luna 506', empresaSlug: 'casa-luna-506' },
+  ]
+  it('toma nombre y slug de otro producto del mismo negocio', () => {
+    expect(tiendaDesdeCatalogo(lista, 9)).toEqual({ empresaNombre: 'Casa Luna 506', empresaSlug: 'casa-luna-506' })
+  })
+  it('sin negocio conocido no inventa nada', () => {
+    expect(tiendaDesdeCatalogo(lista, 1)).toBeNull()
+    expect(tiendaDesdeCatalogo(lista, null)).toBeNull()
+  })
+})
+
+describe('ficha · chip de marca redundante', () => {
+  it('se oculta cuando la marca es la del propio negocio', async () => {
+    const { marcaEsLaTienda } = await import('./productoHelpers')
+    expect(marcaEsLaTienda({ marcaNombre: 'Luna 506', empresaNombre: 'Casa Luna 506' })).toBe(true)
+    expect(marcaEsLaTienda({ marcaNombre: 'Nike', empresaNombre: 'Casa Luna 506' })).toBe(false)
+    expect(marcaEsLaTienda({ marcaNombre: 'Nike', empresaNombre: null })).toBe(false)
   })
 })

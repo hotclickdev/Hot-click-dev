@@ -5,7 +5,7 @@ import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import { conditionLabel, formatPrice } from '@/utils/format'
 import { textoPrecioProducto, tieneOfertaActiva } from '@/utils/precioProducto'
 import type { Producto } from '@/types/producto'
-import { STOCK_BAJO_MAX, esProductoCotizable } from './productoHelpers'
+import { STOCK_BAJO_MAX, esProductoCotizable, marcaEsLaTienda } from './productoHelpers'
 import { ICONOS_PRODUCTO } from './iconosProducto'
 import { EtiquetaAgotado } from './ProductAgotado'
 
@@ -62,9 +62,12 @@ export default function ProductoCabecera({ product, agotado, compacta, avisoStoc
   const { t } = useTranslation()
   const cotizable = esProductoCotizable(product)
   const hechoAPedido = product.esPersonalizado === true
-  const condicion = product.condicion ? conditionLabel(product.condicion) : ''
+  // "Nuevo" es la condición por defecto: Figma (`28:839`, `44:1849`) solo marca las que no lo son.
+  const condicion = product.condicion && product.condicion !== 'NUEVO' ? conditionLabel(product.condicion) : ''
   const marcaHref = `/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`
-  const hayEtiquetas = agotado || hechoAPedido || Boolean(product.marcaNombre) || Boolean(condicion)
+  // La marca propia del negocio ("Luna 506" de "Casa Luna 506") ya se ve en la fila de tienda (Figma `28:839`).
+  const mostrarMarca = Boolean(product.marcaNombre && product.marcaId) && !marcaEsLaTienda(product)
+  const hayEtiquetas = agotado || hechoAPedido || mostrarMarca || Boolean(condicion)
   const oferta = tieneOfertaActiva(product)
   const stockBajo = !cotizable && !agotado && product.stock <= STOCK_BAJO_MAX
 
@@ -78,7 +81,7 @@ export default function ProductoCabecera({ product, agotado, compacta, avisoStoc
         <div className="order-none flex flex-wrap items-center gap-2">
           {agotado && <EtiquetaAgotado t={t} />}
           {hechoAPedido && <span className={`${ETIQUETA} bg-hc-warning-bg text-hc-warning`}>{t('product.hechoAPedido')}</span>}
-          {product.marcaNombre && product.marcaId && (
+          {mostrarMarca && (
             <Link to={marcaHref} className={`${ETIQUETA} bg-hc-n-100 text-hc-n-600`}>{product.marcaNombre}</Link>
           )}
           {condicion && <span className={`${ETIQUETA} bg-hc-n-100 text-hc-n-600`}>{condicion}</span>}
