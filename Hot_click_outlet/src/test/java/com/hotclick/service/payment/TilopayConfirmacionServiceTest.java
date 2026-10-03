@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 
@@ -65,7 +66,7 @@ class TilopayConfirmacionServiceTest {
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
             .thenReturn(false);
         when(tilopayService.consultarTransaccion("ORD-ABC"))
-            .thenReturn(new TilopayService.ConsultaResultado(true, "1", "ok", "AUTH"));
+            .thenReturn(cobro(10000, "ORD-ABC"));
         when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
 
         service.confirmar("ORD-ABC", Map.of("code", "1"));
@@ -103,5 +104,56 @@ class TilopayConfirmacionServiceTest {
         verify(tilopayService, never()).consultarTransaccion(anyString());
         verify(paymentService, never()).confirmarPedido(any());
         verify(webhookEventRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmar_montoDistinto_noMarcaPagado() {
+        when(pedidoRepository.findByNumeroPedido("ORD-ABC")).thenReturn(Optional.of(pedido));
+        when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
+        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
+            .thenReturn(false);
+        when(tilopayService.consultarTransaccion("ORD-ABC")).thenReturn(cobro(1, "ORD-ABC"));
+        when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
+
+        service.confirmar("ORD-ABC", Map.of("code", "1"));
+
+        assertEquals(Constants.PAGO_PENDIENTE, pago.getEstadoPago());
+        verify(paymentService, never()).confirmarPedido(any());
+        verify(paymentService).marcarFallido(eq(pago), anyString());
+    }
+
+    @Test
+    void webhook_montoDistinto_noAcredita() {
+        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
+            .thenReturn(false);
+        when(pagoRepository.findByMerchantToken("ORD-ABC")).thenReturn(Optional.of(pago));
+        when(tilopayService.consultarTransaccion("ORD-ABC")).thenReturn(cobro(1, "ORD-ABC"));
+
+        service.procesarWebhook("ORD-ABC", "{}");
+
+        verify(paymentService, never()).confirmarPedido(any());
+        verify(paymentService).marcarFallido(eq(pago), anyString());
+    }
+
+    @Test
+    void confirmar_simulacionFueraDeMock_noAprueba() {
+        when(pedidoRepository.findByNumeroPedido("ORD-ABC")).thenReturn(Optional.of(pedido));
+        when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
+        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
+            .thenReturn(false);
+        when(tilopayService.isMockMode()).thenReturn(false);
+        when(tilopayService.consultarTransaccion("ORD-ABC"))
+            .thenReturn(TilopayService.ConsultaResultado.simulada(true, "ORD-ABC"));
+        when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
+
+        service.confirmar("ORD-ABC", Map.of());
+
+        verify(paymentService, never()).confirmarPedido(any());
+        verify(paymentService).marcarFallido(eq(pago), anyString());
+    }
+
+    private static TilopayService.ConsultaResultado cobro(int monto, String order) {
+        return new TilopayService.ConsultaResultado(
+            true, "1", "ok", "AUTH", BigDecimal.valueOf(monto), "CRC", order, false);
     }
 }

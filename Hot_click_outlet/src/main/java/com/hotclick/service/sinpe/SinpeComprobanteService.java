@@ -8,6 +8,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteSinpeRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.SupabaseStorageService;
@@ -36,6 +37,8 @@ public class SinpeComprobanteService {
     @Autowired private NotificacionEmailService       notificacionEmailService;
     @Autowired private PaymentService                paymentService;
     @Autowired private SinpeAuditSupport             auditSupport;
+    @Autowired private SinpeAprobacionGuard          aprobacionGuard;
+    @Autowired private CompanyScope                  companyScope;
     @Autowired private com.hotclick.service.payment.PedidoGrupoService pedidoGrupoService;
     @Autowired private SinpeComprobantePersistenceService persistenceService;
 
@@ -81,6 +84,7 @@ public class SinpeComprobanteService {
     public void aprobar(Long comprobanteId, String adminEmail, Long adminId) {
         ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
+        aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
 
         if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
             throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());
@@ -117,6 +121,7 @@ public class SinpeComprobanteService {
     public void rechazar(Long comprobanteId, String motivo, String adminEmail, Long adminId) {
         ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
+        aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
 
         if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
             throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());
@@ -156,6 +161,13 @@ public class SinpeComprobanteService {
 
     @Transactional(readOnly = true)
     public Page<ComprobanteSinpe> listar(String estado, Pageable pageable) {
-        return comprobanteRepository.buscarPorEstado(estado, pageable);
+        if (companyScope.isAdminIT()) {
+            return comprobanteRepository.buscarPorEstado(estado, pageable);
+        }
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId == null) {
+            throw new SecurityException(SinpeAprobacionGuard.OTRA_TIENDA);
+        }
+        return comprobanteRepository.buscarPorEstadoYEmpresa(estado, empresaId, pageable);
     }
 }
