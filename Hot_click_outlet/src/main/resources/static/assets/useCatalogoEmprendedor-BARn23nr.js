@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-LFHK8Fct.js";function t(){return e()}export{t};
