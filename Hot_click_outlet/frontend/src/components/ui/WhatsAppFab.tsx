@@ -3,10 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import useChatStore from '@/store/chatStore'
 import { ICONOS_ESTADOS } from '@/components/comprador/estados/iconosEstados'
-import { esFichaProducto } from './flotantes/flotantesHelpers'
+import { WHATSAPP_HOTCLICK, esFichaProducto, esLandingPlan } from './flotantes/flotantesHelpers'
 import { useHayBarraInferior } from './flotantes/barraInferiorStore'
-
-const WHATSAPP = '50686667888'
 
 /**
  * Botón flotante de WhatsApp (Figma `52:2418`, nota F: "sobre la barra inferior (móvil) y abajo a la
@@ -32,7 +30,7 @@ export default function WhatsAppFab() {
   if (!visible) return null
 
   const label = t('common.whatsappConsult')
-  const waUrl = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('common.whatsappGreeting'))}`
+  const waUrl = `https://wa.me/${WHATSAPP_HOTCLICK}?text=${encodeURIComponent(t('common.whatsappGreeting'))}`
   const bottomMovil = hayBarra
     ? 'bottom-[calc(83px+env(safe-area-inset-bottom,0px))]'
     : 'bottom-[calc(16px+env(safe-area-inset-bottom,0px))]'
@@ -44,7 +42,7 @@ export default function WhatsAppFab() {
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
-      className={`fixed right-4 z-40 block size-14 rounded-full transition-transform active:scale-95 ${bottomMovil} lg:bottom-4 ${esFichaProducto(pathname) ? 'max-lg:hidden' : ''}`}
+      className={`fixed right-4 z-40 block size-14 rounded-full transition-transform active:scale-95 ${bottomMovil} lg:bottom-4 ${esFichaProducto(pathname) || esLandingPlan(pathname) ? 'max-lg:hidden' : ''}`}
     >
       {/* El SVG de Figma (80 × 80) incluye la sombra: 12 px a cada lado, 8 arriba y 16 abajo. */}
       <img
