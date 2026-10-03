@@ -33,7 +33,7 @@ const IconoContacto = () => (
 /** Fondo y color del mosaico, en el mismo orden que las opciones del Figma `28:1438`. */
 const TONOS = {
   azul: 'bg-hc-blue-50 text-hc-blue-600',
-  verde: 'bg-hc-green-50 text-hc-green-600',
+  verde: 'bg-hc-green-50 text-hc-success-text',
   ambar: 'bg-hc-warning-bg text-hc-warning',
   rojo: 'bg-hc-red-50 text-hc-red-600',
 } as const

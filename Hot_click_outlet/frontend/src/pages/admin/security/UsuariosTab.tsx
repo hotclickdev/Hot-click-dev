@@ -54,11 +54,11 @@ export default function UsuariosTab() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
           {([
-            ['Logins exitosos', selected.loginsExitosos, 'var(--hc-success)'],
+            ['Logins exitosos', selected.loginsExitosos, 'var(--hc-success-text)'],
             ['Logins fallidos', selected.loginsFallidos, 'var(--hc-danger)'],
             ['IPs distintas',   selected.ipsDistintas,  'var(--hc-text)'],
             ['2FA',             selected.twoFactorEnabled ? 'Activo' : 'Inactivo',
-              selected.twoFactorEnabled ? 'var(--hc-success)' : 'var(--hc-danger)'],
+              selected.twoFactorEnabled ? 'var(--hc-success-text)' : 'var(--hc-danger)'],
           ] as [string, string | number | undefined, string][]).map(([label, val, color]) => (
             <div key={label} className="rounded-xl p-3 text-center"
               style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
@@ -151,11 +151,11 @@ export default function UsuariosTab() {
                       <td className="px-4 py-2.5">
                         <span className="px-2 py-0.5 rounded text-xs font-semibold"
                           style={{ backgroundColor: u.twoFactorEnabled ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
-                                   color: u.twoFactorEnabled ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
+                                   color: u.twoFactorEnabled ? 'var(--hc-success-text)' : 'var(--hc-danger)' }}>
                           {u.twoFactorEnabled ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: 'var(--hc-success)' }}>{u.loginsExitosos}</td>
+                      <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: 'var(--hc-success-text)' }}>{u.loginsExitosos}</td>
                       <td className="px-4 py-2.5 text-center font-bold tabular-nums" style={{ color: (u.loginsFallidos ?? 0) > 0 ? 'var(--hc-danger)' : 'var(--hc-muted)' }}>{u.loginsFallidos}</td>
                       <td className="px-4 py-2.5 text-center" style={{ color: 'var(--hc-muted)' }}>{u.ipsDistintas}</td>
                       <td className="px-4 py-2.5">

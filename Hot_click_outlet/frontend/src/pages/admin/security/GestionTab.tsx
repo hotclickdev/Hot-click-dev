@@ -112,7 +112,7 @@ export default function GestionTab() {
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl text-sm font-medium shadow-xl"
           style={{ backgroundColor: toast.ok ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
-                   color: toast.ok ? 'var(--hc-success)' : 'var(--hc-danger)',
+                   color: toast.ok ? 'var(--hc-success-text)' : 'var(--hc-danger)',
                    border: `1px solid color-mix(in srgb, ${toast.ok ? 'var(--hc-success)' : 'var(--hc-danger)'} 30%, transparent)` }}>
           {toast.msg}
         </div>

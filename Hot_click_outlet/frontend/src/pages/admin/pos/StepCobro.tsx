@@ -179,7 +179,7 @@ function CalculadoraEfectivo({
         >
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-hc-muted">{faltante ? t('pos.cobro.faltante') : t('pos.cobro.vuelto')}</span>
-            <span className={`text-2xl font-black tabular-nums ${faltante ? 'text-hc-danger' : 'text-hc-success'}`}>
+            <span className={`text-2xl font-black tabular-nums ${faltante ? 'text-hc-danger' : 'text-hc-success-text'}`}>
               ₡{formatMontoPos(Math.abs(recibidoNum - total))}
             </span>
           </div>

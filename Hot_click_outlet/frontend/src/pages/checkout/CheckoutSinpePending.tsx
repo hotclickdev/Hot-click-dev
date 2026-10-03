@@ -138,7 +138,7 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
                 <button type="button" onClick={copiar} aria-label={t('checkout.f.copiarSinpe')} className="relative flex size-4 items-center justify-center text-hc-blue-600 after:absolute after:-inset-2">
                   <IconoFigma src={ICONOS_CHECKOUT.copiar} size={16} />
                 </button>
-                {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success">{t('checkout.f.copiado')}</span>}
+                {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success-text">{t('checkout.f.copiado')}</span>}
               </span>
             </div>
             <FilaDato etiqueta={t('payment.sinpe.titular')} valor={SINPE_TITULAR} />

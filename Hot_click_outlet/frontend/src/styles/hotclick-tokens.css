@@ -44,6 +44,7 @@
 
   /* ---------- Color · Semánticos ---------- */
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
   --hc-danger:  #D02A23;  --hc-danger-bg:  #FEF2F1;
   --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
@@ -129,6 +130,7 @@
   --hc-accent-hover:   #0A3780;
   --hc-focus-ring:     #3F6CDE;
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
   --hc-danger:  #E31E24;  --hc-danger-bg:  #FEF2F1;
   --hc-info:    #0D47A1;  --hc-info-bg:    #EFF4FE;
@@ -171,6 +173,7 @@
   --hc-link:           var(--hc-blue-600);
   --hc-focus-ring:     var(--hc-blue-500);
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
   --hc-danger:  #D02A23;  --hc-danger-bg:  #FEF2F1;
   --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
@@ -196,6 +199,7 @@ html.dark,
   --hc-link:          #7AA3F2;
   --hc-focus-ring:    #6490EA;
   --hc-success: #3DCB82;  --hc-success-bg: #10301F;
+  --hc-success-text: #3DCB82;  /* en oscuro el verde claro ya pasa AA */
   --hc-warning: #E5A93D;  --hc-warning-bg: #33270D;
   --hc-danger:  #F0524A;  --hc-danger-bg:  #3A1513;
   --hc-info:    #7AA3F2;  --hc-info-bg:    #13203A;
@@ -234,6 +238,7 @@ html.dark .hc-seller-theme,
   --hc-accent-hover:   #97B7F3;
   --hc-focus-ring:     #6490EA;
   --hc-success: #3DCB82;  --hc-success-bg: #10301F;
+  --hc-success-text: #3DCB82;  /* en oscuro el verde claro ya pasa AA */
   --hc-warning: #E5A93D;  --hc-warning-bg: #33270D;
   --hc-danger:  #F0524A;  --hc-danger-bg:  #3A1513;
   --hc-info:    #7AA3F2;  --hc-info-bg:    #13203A;
@@ -262,6 +267,7 @@ html.dark .hc-seller-theme,
   --color-hc-accent: var(--hc-accent);
   --color-hc-accent-hover: var(--hc-accent-hover);
   --color-hc-success: var(--hc-success);
+  --color-hc-success-text: var(--hc-success-text);
   --color-hc-danger: var(--hc-danger);
   --color-hc-warning: var(--hc-warning);
   color: var(--hc-text);

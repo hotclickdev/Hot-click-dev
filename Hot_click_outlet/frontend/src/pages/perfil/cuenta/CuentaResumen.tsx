@@ -28,7 +28,7 @@ type CuentaResumenProps = {
 }
 
 const ICONO_EVENTO = { pedido: <IcoCamion size={18} />, solicitud: <IcoBandeja size={18} />, opinion: <IcoEstrella size={18} /> }
-const FONDO_EVENTO = { azul: 'bg-hc-blue-50 text-hc-blue-600', verde: 'bg-hc-green-50 text-hc-success', ambar: 'bg-hc-warning-bg text-hc-warning' }
+const FONDO_EVENTO = { azul: 'bg-hc-blue-50 text-hc-blue-600', verde: 'bg-hc-green-50 text-hc-success-text', ambar: 'bg-hc-warning-bg text-hc-warning' }
 
 /** Resumen de Mi cuenta: móvil `28:1196` y escritorio `30:1479` (el menú lateral lo pone `ProfilePage`). */
 export default function CuentaResumen(props: CuentaResumenProps) {
@@ -119,7 +119,7 @@ export default function CuentaResumen(props: CuentaResumenProps) {
           <span className="text-hc-blue-600"><IcoEscudo size={22} /></span>
           <span className="flex min-w-0 flex-1 flex-col gap-px">
             <span className="text-[14px] font-semibold text-hc-n-900">{t('cuenta.menu.seguridad')}</span>
-            <span className={`text-[12px] ${twoFAActiva ? 'text-hc-success' : 'text-hc-n-600'}`}>
+            <span className={`text-[12px] ${twoFAActiva ? 'text-hc-success-text' : 'text-hc-n-600'}`}>
               {twoFAActiva ? t('cuenta.seguridad.dosPasosActiva') : t('cuenta.seguridad.dosPasosInactiva')}
             </span>
           </span>

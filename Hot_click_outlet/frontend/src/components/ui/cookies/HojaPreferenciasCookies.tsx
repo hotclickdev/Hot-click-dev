@@ -66,7 +66,7 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
         <section className={FILA}>
           <div className="flex items-center gap-[10px]">
             <h3 className={`${TITULO_FILA} font-sans tracking-normal`}>{t('cookies.esenciales')}</h3>
-            <span className="flex items-center gap-1 text-[12px] font-semibold leading-[normal] text-hc-success">
+            <span className="flex items-center gap-1 text-[12px] font-semibold leading-[normal] text-hc-success-text">
               <img src={ICONOS_ESTADOS.cookiesSiempreActivas} alt="" width={12} height={12} />
               {t('cookies.siempreActivas')}
             </span>

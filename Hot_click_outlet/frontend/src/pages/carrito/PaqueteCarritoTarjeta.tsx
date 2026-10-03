@@ -23,7 +23,7 @@ type PaqueteCarritoTarjetaProps = {
 function AvisoUnSoloEnvio({ cantidad }: { cantidad: number }) {
   const { t } = useTranslation()
   return (
-    <span className="flex w-fit items-center gap-1 rounded-full bg-hc-success-bg px-2 py-[3px] text-[11px] font-semibold leading-[normal] text-hc-success">
+    <span className="flex w-fit items-center gap-1 rounded-full bg-hc-success-bg px-2 py-[3px] text-[11px] font-semibold leading-[normal] text-hc-success-text">
       <IconoFigma src={ICONOS_CHECKOUT.paqueteUnEnvio} size={12} />
       {t('cart.unSoloEnvio', { count: cantidad })}
     </span>

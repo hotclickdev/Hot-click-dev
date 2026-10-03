@@ -37,7 +37,7 @@ function VisibilidadToggle({ emp, saving, onToggle }: {
       className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-opacity disabled:opacity-40"
       style={{
         background: visible ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
-        color: visible ? 'var(--hc-success)' : 'var(--hc-danger)',
+        color: visible ? 'var(--hc-success-text)' : 'var(--hc-danger)',
       }}
     >
       {visible ? <><EyeIcon />Catálogo: visible</> : <><EyeOffIcon />Catálogo: oculto</>}

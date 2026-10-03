@@ -37,7 +37,7 @@ export default function TfaRecoveryModal({ t, recoveryCodes, copiedAll, onCopyAl
           <p style={{ fontSize: '12px', color: 'rgba(251,191,36,0.9)', fontFamily: F.body, margin: 0 }}>{t('adminConfig.tfaModalWarning')}</p>
         </div>
         <div style={{ padding: '0 24px 24px', display: 'flex', gap: '10px' }}>
-          <button type="button" onClick={onCopyAll} className="cfg-btn" style={{ flex: 1, justifyContent: 'center', background: copiedAll ? 'rgba(34,197,94,0.12)' : 'var(--hc-surface-2)', color: copiedAll ? 'var(--hc-success)' : 'var(--hc-text)', border: `1px solid ${copiedAll ? 'rgba(34,197,94,0.3)' : 'var(--hc-border)'}` }}>
+          <button type="button" onClick={onCopyAll} className="cfg-btn" style={{ flex: 1, justifyContent: 'center', background: copiedAll ? 'rgba(34,197,94,0.12)' : 'var(--hc-surface-2)', color: copiedAll ? 'var(--hc-success-text)' : 'var(--hc-text)', border: `1px solid ${copiedAll ? 'rgba(34,197,94,0.3)' : 'var(--hc-border)'}` }}>
             {copiedAll ? <CheckIcon style={{ width: '14px', height: '14px' }} /> : <CopyIcon style={{ width: '14px', height: '14px' }} />}
             {copiedAll ? t('adminConfig.tfaCopiedAll') : t('adminConfig.tfaCopyAll')}
           </button>

@@ -203,7 +203,7 @@ export default function AdminSuperAdmin() {
                       <td className="px-4 py-2">
                         <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${
                           f.activoDefecto
-                            ? 'bg-[var(--hc-success-bg)] text-[var(--hc-success)]'
+                            ? 'bg-[var(--hc-success-bg)] text-[var(--hc-success-text)]'
                             : 'bg-[var(--hc-surface-3)] text-[var(--hc-muted)]'
                         }`}>
                           {f.activoDefecto ? 'ON' : 'OFF'}

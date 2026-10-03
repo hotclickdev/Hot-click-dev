@@ -123,7 +123,7 @@ export default function ProductoCabecera({ product, agotado, compacta, avisoStoc
         <p
           className={`order-4 items-center gap-[6px] text-[13px] font-medium leading-[normal] lg:flex lg:text-[14px] ${
             compacta && !(avisoStockCompacta && stockBajo) ? 'hidden' : 'flex'
-          } ${stockBajo ? 'text-hc-warning' : 'text-hc-success'}`}
+          } ${stockBajo ? 'text-hc-warning' : 'text-hc-success-text'}`}
         >
           <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-current" />
           {stockBajo

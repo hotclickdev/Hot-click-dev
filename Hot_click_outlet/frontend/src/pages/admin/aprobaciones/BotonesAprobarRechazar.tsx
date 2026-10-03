@@ -11,7 +11,7 @@ export default function BotonesAprobarRechazar({ disabled, onAprobar, onRechazar
         onClick={onAprobar}
         disabled={disabled}
         data-mm={dataMmAprobar}
-        className="flex min-h-10 items-center justify-center rounded-[10px] bg-[var(--hc-success-bg)] text-xs font-bold text-hc-success disabled:opacity-50"
+        className="flex min-h-10 items-center justify-center rounded-[10px] bg-[var(--hc-success-bg)] text-xs font-bold text-hc-success-text disabled:opacity-50"
       >
         Aprobar
       </button>

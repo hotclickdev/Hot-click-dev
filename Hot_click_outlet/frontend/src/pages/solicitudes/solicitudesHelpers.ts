@@ -13,7 +13,7 @@ export function estadoVisual(estado?: string): EstadoVisual {
 }
 
 export const CLASE_CHIP_SOLICITUD: Record<EstadoVisual, string> = {
-  cotizada: 'bg-hc-green-50 text-hc-success',
+  cotizada: 'bg-hc-green-50 text-hc-success-text',
   enBusqueda: 'bg-hc-warning-bg text-hc-warning',
   cerrada: 'bg-hc-n-100 text-hc-n-600',
 }

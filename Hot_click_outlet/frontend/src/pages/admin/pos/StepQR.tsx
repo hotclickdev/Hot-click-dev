@@ -210,7 +210,7 @@ function DetalleSinpe({ sinpeNumero, referencia, monto }: {
           <span style={{ color: posUi.muted }}>{fila.label}</span>
           <span
             className="font-mono font-bold"
-            style={{ color: fila.resalte ? 'var(--hc-success)' : 'var(--hc-blue-600)' }}
+            style={{ color: fila.resalte ? 'var(--hc-success-text)' : 'var(--hc-blue-600)' }}
           >
             {fila.value}
           </span>

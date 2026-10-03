@@ -56,7 +56,7 @@ function ProductoRecomendado({ producto, onAdd }: { producto: AiChatProducto; on
           type="button"
           onClick={agregar}
           disabled={sinStock}
-          className={`${claseBoton} ${agregado ? 'bg-hc-green-50 text-hc-green-600' : sinStock ? 'bg-hc-n-100 text-hc-n-600' : 'bg-hc-red-500 text-hc-n-0'}`}
+          className={`${claseBoton} ${agregado ? 'bg-hc-green-50 text-hc-success-text' : sinStock ? 'bg-hc-n-100 text-hc-n-600' : 'bg-hc-red-500 text-hc-n-0'}`}
         >
           {!agregado && !sinStock && <IconoFigma src={ICONOS_CHAT.agregar14} size={14} />}
           {agregado ? t('chat.added') : sinStock ? t('chat.outOfStock') : t('chat.add')}

@@ -15,7 +15,7 @@ export type SeverityStyle = { bg: string; text: string; border: string }
 // semánticos (success/warning/danger), no hay un 4to tono propio — decisión del
 // dueño del producto, no un descuido.
 export const SEVERITY_COLOR: Record<string, SeverityStyle> = {
-  LOW:      { bg: 'var(--hc-success-bg)', text: 'var(--hc-success)', border: 'color-mix(in srgb, var(--hc-success) 30%, transparent)' },
+  LOW:      { bg: 'var(--hc-success-bg)', text: 'var(--hc-success-text)', border: 'color-mix(in srgb, var(--hc-success) 30%, transparent)' },
   MEDIUM:   { bg: 'var(--hc-warning-bg)', text: 'var(--hc-warning)', border: 'color-mix(in srgb, var(--hc-warning) 30%, transparent)' },
   HIGH:     { bg: 'var(--hc-warning-bg)', text: 'var(--hc-warning)', border: 'color-mix(in srgb, var(--hc-warning) 30%, transparent)' },
   CRITICAL: { bg: 'var(--hc-danger-bg)',  text: 'var(--hc-danger)',  border: 'color-mix(in srgb, var(--hc-danger) 30%, transparent)'  },
