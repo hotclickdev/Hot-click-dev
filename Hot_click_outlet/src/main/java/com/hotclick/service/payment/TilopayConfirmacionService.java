@@ -48,7 +48,7 @@ public class TilopayConfirmacionService {
     public PaymentStatusResponse confirmar(String numeroPedido, Map<String, String> queryParams) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
+        Pago pago = pagoRepository.findTopByPedidoIdForUpdate(pedido.getId())
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
@@ -93,21 +93,26 @@ public class TilopayConfirmacionService {
             log.warn("[tilopay] Webhook sin orderNumber");
             return;
         }
-        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(orderNumber, EVENTO_WEBHOOK)) {
-            log.info("[tilopay] Webhook duplicado order={}", orderNumber);
-            return;
-        }
-        guardarEvento(orderNumber, EVENTO_WEBHOOK, rawBody);
-
-        Pago pago = pagoRepository.findByMerchantToken(orderNumber).orElse(null);
+        Pago pago = pagoRepository.findByMerchantTokenForUpdate(orderNumber).orElse(null);
         if (pago == null) {
+            registrarEventoWebhook(orderNumber, rawBody);
             log.error("[tilopay] Webhook: pago no encontrado order={}", orderNumber);
             return;
         }
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
+            registrarEventoWebhook(orderNumber, rawBody);
+            log.info("[tilopay] Webhook ignorado: pago ya capturado order={}", orderNumber);
             return;
         }
+        if (eventoWebhookYaExiste(orderNumber)) {
+            log.info("[tilopay] Webhook duplicado order={}", orderNumber);
+            return;
+        }
+        guardarEvento(orderNumber, EVENTO_WEBHOOK, rawBody);
+        aplicarDecisionWebhook(pago, orderNumber);
+    }
 
+    private void aplicarDecisionWebhook(Pago pago, String orderNumber) {
         TilopayService.ConsultaResultado consulta = tilopayService.consultarTransaccion(orderNumber);
         Decision decision = decidir(pago, consulta);
         if (decision == Decision.ACEPTAR) {
@@ -117,6 +122,16 @@ public class TilopayConfirmacionService {
         if (decision == Decision.RECHAZAR_MONTO || decision == Decision.RECHAZAR_SIMULACION) {
             alertarYRechazar(pago, consulta);
         }
+    }
+
+    private void registrarEventoWebhook(String orderNumber, String rawBody) {
+        if (!eventoWebhookYaExiste(orderNumber)) {
+            guardarEvento(orderNumber, EVENTO_WEBHOOK, rawBody);
+        }
+    }
+
+    private boolean eventoWebhookYaExiste(String orderNumber) {
+        return webhookEventRepository.existsByMerchantTokenAndEventoTipo(orderNumber, EVENTO_WEBHOOK);
     }
 
     /**

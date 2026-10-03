@@ -1,5 +1,7 @@
 package com.hotclick.service.sinpe;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.security.CompanyScope;
@@ -26,6 +28,20 @@ public class SinpeAprobacionGuard {
         String correo = auth != null ? auth.getName() : null;
         assertReglas(pedido, correo, companyScope.getCurrentUserId(),
                 companyScope.isAdminIT(), companyScope.getCurrentEmpresaId());
+    }
+
+    /**
+     * Un pago que no existe no se revela a un vendedor: 403, no 404.
+     * El admin de plataforma sí recibe 404.
+     */
+    public void assertPuedeResolverPago(Pago pago) {
+        if (pago == null) {
+            if (companyScope.isAdminIT()) {
+                throw new RecursoNoEncontradoException("Pago no encontrado");
+            }
+            throw new SecurityException(OTRA_TIENDA);
+        }
+        assertPuedeResolver(pago.getPedido());
     }
 
     static void assertReglas(Pedido pedido, String correoActor, Long actorId,

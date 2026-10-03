@@ -62,7 +62,7 @@ class TilopayConfirmacionServiceTest {
     @Test
     void confirmar_aprobada() {
         when(pedidoRepository.findByNumeroPedido("ORD-ABC")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
             .thenReturn(false);
         when(tilopayService.consultarTransaccion("ORD-ABC"))
@@ -79,7 +79,7 @@ class TilopayConfirmacionServiceTest {
     @Test
     void confirmar_rechazada() {
         when(pedidoRepository.findByNumeroPedido("ORD-ABC")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
             .thenReturn(false);
         when(tilopayService.consultarTransaccion("ORD-ABC"))
@@ -96,20 +96,37 @@ class TilopayConfirmacionServiceTest {
     void confirmar_duplicadaYaCapturado() {
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         when(pedidoRepository.findByNumeroPedido("ORD-ABC")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
         when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
 
         service.confirmar("ORD-ABC", Map.of());
 
         verify(tilopayService, never()).consultarTransaccion(anyString());
         verify(paymentService, never()).confirmarPedido(any());
+        verify(paymentService, never()).marcarFallido(any(), any());
+        verify(webhookEventRepository, never()).save(any());
+        assertEquals(Constants.PAGO_CAPTURADO, pago.getEstadoPago());
+    }
+
+    @Test
+    void webhook_yaCapturado_noRepiteEfectos() {
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        when(pagoRepository.findByMerchantTokenForUpdate("ORD-ABC")).thenReturn(Optional.of(pago));
+        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
+            .thenReturn(true);
+
+        service.procesarWebhook("ORD-ABC", "{}");
+
+        verify(paymentService, never()).confirmarPedido(any());
+        verify(paymentService, never()).marcarFallido(any(), any());
+        verify(tilopayService, never()).consultarTransaccion(anyString());
         verify(webhookEventRepository, never()).save(any());
     }
 
     @Test
     void confirmar_montoDistinto_noMarcaPagado() {
         when(pedidoRepository.findByNumeroPedido("ORD-ABC")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
             .thenReturn(false);
         when(tilopayService.consultarTransaccion("ORD-ABC")).thenReturn(cobro(1, "ORD-ABC"));
@@ -126,7 +143,7 @@ class TilopayConfirmacionServiceTest {
     void webhook_montoDistinto_noAcredita() {
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
             .thenReturn(false);
-        when(pagoRepository.findByMerchantToken("ORD-ABC")).thenReturn(Optional.of(pago));
+        when(pagoRepository.findByMerchantTokenForUpdate("ORD-ABC")).thenReturn(Optional.of(pago));
         when(tilopayService.consultarTransaccion("ORD-ABC")).thenReturn(cobro(1, "ORD-ABC"));
 
         service.procesarWebhook("ORD-ABC", "{}");
@@ -138,7 +155,7 @@ class TilopayConfirmacionServiceTest {
     @Test
     void confirmar_simulacionFueraDeMock_noAprueba() {
         when(pedidoRepository.findByNumeroPedido("ORD-ABC")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString()))
             .thenReturn(false);
         when(tilopayService.isMockMode()).thenReturn(false);
