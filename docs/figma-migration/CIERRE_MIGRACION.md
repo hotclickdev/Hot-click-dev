@@ -333,7 +333,7 @@ Tipo: **Decisión** (respuesta humana pendiente, ver §2), **Figma** (falta el f
 | R2 | `f3433900` | `formatTelefonoCR`: teléfonos de Costa Rica como `8888-1234` |
 | R4 | `3f17581c` | `utils/stock.ts`: tope con el stock real; 99 solo si el stock no se conoce |
 | R5 | `fb44117f` | Zona del FAB de WhatsApp: 155 px al final de las listas móviles y `scroll-padding-bottom` |
-| D13 | `52325298` | Tiempos de envío desde una sola fuente, `src/config/tiemposEnvio.ts` (PROVISIONAL) |
+| D13 | `52325298` | Tiempos de envío desde una sola fuente, `src/config/tiemposEnvio.ts` (confirmados después, §10.7) |
 | D12 | `526a9ffd` | Selector de presupuesto con `src/config/rangosPresupuesto.ts` (PROVISIONAL) y «Otro monto» |
 | B16 | `e8516cee` | QR vencido: texto «abrí la cámara» en lugar de «Escanear otro QR» |
 | B16 | `5e631f50`, V147 | El cliente elige entre los métodos que habilita la caja; «Cobro #P-<id>», caja y comprobante imprimible (`GET /api/pos/qr/pago/{token}/comprobante`, solo PAGADO) |
@@ -352,7 +352,7 @@ Hora de Costa Rica: de 16:01 a 19:31. El commit de docs va al final.
 | D01, D02, D03, D06, D07/B14, D09, D10, D11, D14, D15, D18, D20 | Se deja como está: no hubo que cambiar código | §2.1 |
 | D04, D05, D08 | Ya cumplido: la cédula solo se pide en el panel SINPE (`PasoPago`: `InstruccionesSinpe`/`DatosRemitente`) y el consentimiento Ley 8968 sigue obligatorio | `PasoPago.tsx` |
 | D12 | Hecho: selector de rangos (PROVISIONALES) | `config/rangosPresupuesto.ts` |
-| D13 | Hecho: una sola fuente para checkout y `/envios` (PROVISIONALES) | `config/tiemposEnvio.ts` |
+| D13 | Hecho: una sola fuente, `config/tiempos-envio.json`, para checkout, `/envios`, correo de guía y asistente. **Confirmados** el 2-oct-2026 | `config/tiempos-envio.json` |
 | D16 | Se conserva el texto actual del correo de pago fallido | `PagoFallidoEmailBuilder` |
 | D17 | Se conserva: el asunto no lleva el código OTP | `OtpService` |
 | D19 | Hecho: A− = 87,5 % | `fs-sm` |
@@ -368,16 +368,16 @@ Hora de Costa Rica: de 16:01 a 19:31. El commit de docs va al final.
 | R7 (bodega pública) | **Ya resuelto** en `826e37b6` (PR #95): de `Bodega` el público solo recibe `id`, `nombreBodega`, `provincia`, `canton` y `permiteRetiroCliente`, y `direccionExacta` solo con retiro; el resto, solo dueño o ADMIN. Esta sección lo daba por abierto por error | BG #6, `CamposInternosSerializerModifier` |
 | R8–R15 | Sin cambio | §2.3 |
 
-Valores PROVISIONALES que hay que confirmar:
+Valores:
 
-- **Tiempos de envío** (`tiemposEnvio.ts`): rápido 30 min – 2 h; normal GAM 2–4 días hábiles; fuera de la GAM 3–4 días hábiles.
-- **Rangos de presupuesto** (`rangosPresupuesto.ts`): hasta ₡10.000; ₡10.000–25.000; ₡25.000–50.000; ₡50.000–100.000; más de ₡100.000; «Otro monto».
+- **Tiempos de envío** (`config/tiempos-envio.json`), **CONFIRMADOS** por el negocio el 2-oct-2026: rápido 30 min – 2 h; normal GAM 2–4 días hábiles; fuera de la GAM 3–4 días hábiles.
+- **Rangos de presupuesto** (PROVISIONALES, falta confirmar) (`rangosPresupuesto.ts`): hasta ₡10.000; ₡10.000–25.000; ₡25.000–50.000; ₡50.000–100.000; más de ₡100.000; «Otro monto».
 
 ### 10.3 Nuevo conteo: 56 PASS / 34 PARTIAL / 0 BLOCKED
 
 Criterio: una fila PARTIAL pasa a PASS solo si **todos** sus motivos de §9.4 eran decisiones que ya se tomaron (o se implementaron) y la parte que queda ya estaba medida. Sigue PARTIAL si queda un frame que falta, una medida que solo se toma en Figma, un dato del backend o un maquetado nuevo sin medir. «Falta QA en Gmail/Outlook» no impide el PASS, porque aplica a todos los PASS (son veredictos del agente).
 
-- **Pasan a PASS (18):** #6 `29:922`, #8 `29:2308`, #9 `44:1775`, #13 `28:1083`, #14 `29:1248`, #15 `29:1344`, #18 `30:2268`, #19 `30:2385`, #21 `55:2220`, #22 `55:2284`, #35 `29:1650`, #39 `29:1913`, #43 `30:1708`, #45 `30:1768`, #46 `30:1793`, #48 `51:2000`, #49 `51:2229`, #50 `51:2468`. Para #14, los tiempos son los provisionales de §10.2.
+- **Pasan a PASS (18):** #6 `29:922`, #8 `29:2308`, #9 `44:1775`, #13 `28:1083`, #14 `29:1248`, #15 `29:1344`, #18 `30:2268`, #19 `30:2385`, #21 `55:2220`, #22 `55:2284`, #35 `29:1650`, #39 `29:1913`, #43 `30:1708`, #45 `30:1768`, #46 `30:1793`, #48 `51:2000`, #49 `51:2229`, #50 `51:2468`. Para #14, los tiempos ya están confirmados (§10.2).
 - **Siguen PARTIAL, con avance:** #3 `9:171` (D21 resuelta; faltan datos), #30 `28:1486` (selector hecho; el estado enviado no tiene frame), #33 `28:1660` (tiempos de una sola fuente; Devoluciones e Información sin frame), #36 `29:1781` (método, número y caja hechos; la línea del número no está medida en Figma), #38 `29:1888` (comprobante hecho; la vista no tiene frame), #40 `30:1599` y #41 `30:1643` (dirección y «Paquete N de M» hechos; maquetado sin medir).
 - **Siguen PARTIAL sin cambio:** las otras 27 filas de §9.4.
 
@@ -426,5 +426,16 @@ Verificación final, sobre `5a66adcd` (y `2f5ae3ac` para `static/`):
 - **Gates** (`BASE_SHA=00252fa3`, sin contexto de GitHub): E17 PASS; E1 Flyway PASS; E11 PASS; E10 PASS; E2 tenant PASS con el mismo aviso falso de `nombreCaja`; E3 SPA PASS. SCALE1 no corre en Windows (la lista de archivos de `static/` supera el largo máximo de una línea de comandos); en el box, con los mismos commits, da PASS con 3 avisos (dos `@Transactional` en `PosQrSessionService` y `sw.js` fuera de `assets/`).
 - **gitleaks** 8.30.1: sin hallazgos en el rango ni en el árbol.
 
-Quedan fuera de esta tanda: el prompt del asistente público (`PublicChatPromptBuilder`) y `aboutShippingBody` de i18n siguen con plazos propios («2-5 días hábiles», «1–5 días hábiles»).
+El prompt del asistente público y `aboutShippingBody` quedaron alineados en §10.7.
+
+### 10.7 Tiempos de envío confirmados (2-oct-2026, 20:17–20:35 hora de Costa Rica)
+
+El negocio confirmó los tiempos del checkout: rápido 30 min – 2 h, GAM 2–4 días hábiles y fuera del GAM 3–4 días hábiles. Commit `6dbe0da3`:
+
+- `config/tiempos-envio.json` pasa a `"provisional": false`; los comentarios de `tiemposEnvio.ts`, `TiemposEnvio.java` y `enviosData.ts` ya no los marcan como provisionales.
+- **Asistente público** (`PublicChatPromptBuilder`): el texto de información del negocio (es y en) y los datos de la tienda del prompt leen `TiemposEnvio.resumen()` / `resumenEn()`. Antes decían «Correos 2-5 días hábiles» y «entrega directa en el GAM 1-2 días».
+- **`home.aboutShippingBody`** (es/en/pt) interpola las variables de la config (antes «1–5 días hábiles»). Hoy ningún componente usa esa clave.
+- **Tests:** `TiemposEnvioTest` (provisional en false, `plazoEn`, `resumen`), `PublicChatPromptBuilderTest` (+1) y `tiemposEnvio.test.ts` (valores fijados y `aboutShippingBody` en los tres idiomas).
+- **Verificación:** tsc 0 errores; vitest 560/560; Java completo 1096 tests, 0 fallas; Playwright `envio-rapido`, `envio-internacional`, `srv-servicios`, `checkout-cta` y `checkout-responsive` 35/35; gates E17, E1, E11, E10, E2 (mismo aviso falso), E3 y SCALE1 en PASS; gitleaks sin hallazgos.
+- **`static/`:** regenerado sin `VITE_*` en `ad747e8a` (commit aparte).
 
