@@ -102,17 +102,17 @@ export default function ChatModal() {
               ? {
                 top: viewport.offsetTop + MARGEN_SUPERIOR_HOJA,
                 height: Math.max(0, viewport.height - MARGEN_SUPERIOR_HOJA),
-                background: 'var(--hc-surface)',
-                color: 'var(--hc-text)',
+                background: 'var(--hc-n-0)',
+                color: 'var(--hc-n-900)',
               }
               : {
                 top: viewport.offsetTop,
                 height: viewport.height,
                 width: 'min(440px, 100vw)',
-                background: 'var(--hc-surface)',
-                borderRight: '1px solid var(--hc-border)',
+                background: 'var(--hc-n-0)',
+                borderRight: '1px solid var(--hc-n-200)',
                 boxShadow: '8px 0 48px rgba(0,0,0,0.12)',
-                color: 'var(--hc-text)',
+                color: 'var(--hc-n-900)',
               }}
           >
             {esMovil && <span aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-[2px] bg-hc-n-200" />}

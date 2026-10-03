@@ -65,7 +65,7 @@ export function useAiChat({
   const cargRef          = useRef(false)
   const autoSent         = useRef(false)
 
-  const accent = accentColor || 'var(--hc-accent)'
+  const accent = accentColor || 'var(--hc-blue-600)'
 
   function setLoading(v: boolean) { cargRef.current = v; setCargando(v) }
 

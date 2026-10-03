@@ -15,7 +15,7 @@ export default function AICategoryChip({
   onSelect?: (nombre: string) => void
 }) {
   const navigate = useNavigate()
-  const accent = accentColor || 'var(--hc-accent)'
+  const accent = accentColor || 'var(--hc-blue-600)'
 
   function handleClick() {
     if (onSelect) {

@@ -28,6 +28,20 @@ export default function Spinner({ size = 'md', className = '', variante }: { siz
   )
 }
 
+/**
+ * Espera de ruta del visitante (derivado de Figma: aro azul del manual de marca sobre fondo blanco).
+ * ⚠️ COMPARTIDO: `App` la usa solo en rutas de visitante; paneles y landings siguen con `PageLoader`.
+ */
+export function PageLoaderFigma() {
+  return (
+    <div role="status" aria-label="Cargando" className="flex min-h-screen items-center justify-center bg-hc-n-0">
+      <span className="flex size-[72px] items-center justify-center rounded-full bg-hc-blue-50">
+        <span aria-hidden="true" className="size-9 animate-spin rounded-full border-[3px] border-hc-blue-100 border-t-hc-blue-600" />
+      </span>
+    </div>
+  )
+}
+
 export function PageLoader() {
   return (
     <div
