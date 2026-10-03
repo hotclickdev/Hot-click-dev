@@ -1,4 +1,5 @@
 import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
+import { VariantePiezaFija } from '@/components/ui/VarianteVisitanteProvider'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { authService } from '@/services/authService'
@@ -114,7 +115,9 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     } finally { setReenvioLoad(false) }
   }
 
+  // Flujo de vendedor dentro de `/registro`: las piezas compartidas quedan con el estilo de siempre.
   return (
+    <VariantePiezaFija variante="clasica">
     <motion.div key="emp-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.3 }}>
 
@@ -166,5 +169,6 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
         </button>
       )}
     </motion.div>
+    </VariantePiezaFija>
   )
 }
