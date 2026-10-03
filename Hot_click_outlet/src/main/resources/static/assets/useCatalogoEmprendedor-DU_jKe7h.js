@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-B1xGPENv.js";function t(){return e()}export{t};
