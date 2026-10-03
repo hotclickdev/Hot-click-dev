@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.hotclick.security.VisibilidadCamposInternos;
+import com.hotclick.service.contacto.ContactoPublicoService;
 import org.hibernate.proxy.HibernateProxy;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
@@ -31,10 +32,12 @@ public class JacksonConfig {
 
     /** Lazy: CompanyScope depende de beans que a su vez usan el ObjectMapper. */
     @Bean
-    public Module camposInternosModule(ObjectProvider<VisibilidadCamposInternos> visibilidad) {
+    public Module camposInternosModule(ObjectProvider<VisibilidadCamposInternos> visibilidad,
+                                       ObjectProvider<ContactoPublicoService> contactoPublico) {
         SimpleModule modulo = new SimpleModule("camposInternos");
         modulo.setSerializerModifier(new CamposInternosSerializerModifier(
-            empresaId -> visibilidad.getObject().puedeVer(empresaId)));
+            empresaId -> visibilidad.getObject().puedeVer(empresaId),
+            empresaId -> contactoPublico.getObject().permiteContacto(empresaId)));
         return modulo;
     }
 }

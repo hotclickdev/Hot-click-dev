@@ -3,6 +3,7 @@ package com.hotclick.controller.storefront;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.BodegaRepository;
+import com.hotclick.service.contacto.ContactoPublicoService;
 import com.hotclick.utils.Constants;
 import org.springframework.stereotype.Component;
 
@@ -14,13 +15,20 @@ import java.util.Map;
 public class StorefrontInfoMapper {
 
     private final BodegaRepository bodegaRepository;
+    private final ContactoPublicoService contactoPublico;
 
-    public StorefrontInfoMapper(BodegaRepository bodegaRepository) {
+    public StorefrontInfoMapper(BodegaRepository bodegaRepository, ContactoPublicoService contactoPublico) {
         this.bodegaRepository = bodegaRepository;
+        this.contactoPublico = contactoPublico;
     }
 
-    /** Solo datos de vitrina: nada fiscal ni de contacto interno de la empresa. */
+    /**
+     * Solo datos de vitrina: nada fiscal ni de contacto interno de la empresa.
+     * WhatsApp e Instagram solo salen si el plan es PYME o NEGOCIO_PLUS ({@code contactoDirecto});
+     * en EMPRENDEDOR van vacíos para que la venta no se vaya fuera de HotClick.
+     */
     public Map<String, Object> info(Empresa empresa) {
+        boolean contacto = contactoPublico.permiteContacto(empresa.getId());
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("slug", empresa.getSlug());
         m.put("nombreComercial", orEmpty(empresa.getNombreComercial(), empresa.getNombreEmpresa()));
@@ -30,15 +38,16 @@ public class StorefrontInfoMapper {
         m.put("colorAcento", orEmpty(empresa.getColorAcento(), "#1747A8"));
         m.put("tagline", orEmpty(empresa.getTagline(), ""));
         m.put("footerTexto", orEmpty(empresa.getFooterTexto(), ""));
-        m.put("whatsapp", orEmpty(empresa.getNumeroWhatsapp(), ""));
+        m.put("whatsapp", contacto ? orEmpty(empresa.getNumeroWhatsapp(), "") : "");
         m.put("moneda", orEmpty(empresa.getMonedaDefecto(), "CRC"));
         m.put("descripcion", orEmpty(empresa.getDescripcion(), ""));
         m.put("categoriaNegocio", orEmpty(empresa.getCategoriaNegocio(), ""));
-        m.put("instagram", orEmpty(empresa.getInstagram(), ""));
+        m.put("instagram", contacto ? orEmpty(empresa.getInstagram(), "") : "");
         m.put("zonaEnvio", orEmpty(empresa.getZonaEnvio(), ""));
         m.put("ogImagenUrl", orEmpty(empresa.getOgImagenUrl(), ""));
         m.put("enHotclickDesde", desde(empresa));
         m.put("facturaElectronica", Boolean.TRUE.equals(empresa.getInscritoHacienda()));
+        m.put("contactoDirecto", contacto);
         m.put("retiro", retiroEnTienda(empresa));
         return m;
     }

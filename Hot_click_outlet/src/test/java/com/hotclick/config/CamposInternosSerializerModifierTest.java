@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * La bodega se publica por lista blanca: un visitante solo recibe lo que el catálogo
  * y el checkout usan. Cualquier campo nuevo de Bodega queda oculto hasta agregarlo a la lista.
  */
-@DisplayName("[SEGURIDAD] Bodega en la API pública: solo campos mínimos")
+@DisplayName("[SEGURIDAD] Bodega y contacto de Empresa en la API pública: solo campos permitidos")
 class CamposInternosSerializerModifierTest {
 
     private static final Set<String> SENSIBLES = Set.of(
@@ -58,6 +58,49 @@ class CamposInternosSerializerModifierTest {
         assertThat(campos(json)).containsAll(SENSIBLES).contains("direccionExacta");
         assertThat(json.get("telefono").asText()).isEqualTo("61234567");
         assertThat(json.get("encargadoNombre").asText()).isEqualTo("Encargado Secreto");
+    }
+
+    // ── Empresa entera (p. ej. /api/cotizaciones/publica/{token}) ─────────────────────────────
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "visitante, plan PYME/NEGOCIO_PLUS={0}: contacto visible={0}")
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    @DisplayName("Visitante: correo, teléfono, WhatsApp e Instagram de la empresa solo con plan pago")
+    void empresa_visitante_contactoSegunPlan(boolean planPago) throws Exception {
+        JsonNode json = serializarEmpresa(empresaConContacto(), false, planPago);
+
+        assertThat(json.get("nombreComercial").asText()).isEqualTo("Casa Luna 506");
+        if (planPago) {
+            assertThat(campos(json)).containsAll(CamposInternosSerializerModifier.EMPRESA_CONTACTO);
+            assertThat(json.get("numeroWhatsapp").asText()).isEqualTo("50688880506");
+        } else {
+            assertThat(campos(json)).doesNotContainAnyElementsOf(CamposInternosSerializerModifier.EMPRESA_CONTACTO);
+            assertThat(json.toString()).doesNotContain("50688880506", "22223333", "tienda@casaluna.cr", "casaluna506");
+        }
+    }
+
+    @Test
+    @DisplayName("Dueño o ADMIN: ve el contacto de su empresa aunque el plan sea EMPRENDEDOR (panel sin cambios)")
+    void empresa_duenio_veContacto() throws Exception {
+        JsonNode json = serializarEmpresa(empresaConContacto(), true, false);
+        assertThat(campos(json)).containsAll(CamposInternosSerializerModifier.EMPRESA_CONTACTO);
+    }
+
+    private static JsonNode serializarEmpresa(Empresa empresa, boolean puedeVer, boolean planPago) throws Exception {
+        SimpleModule modulo = new SimpleModule("camposInternosEmpresaTest");
+        modulo.setSerializerModifier(new CamposInternosSerializerModifier(id -> puedeVer, id -> planPago));
+        JsonMapper mapper = JsonMapper.builder().addModule(new JavaTimeModule()).addModule(modulo).build();
+        return mapper.readTree(mapper.writeValueAsString(empresa));
+    }
+
+    private static Empresa empresaConContacto() {
+        Empresa e = new Empresa();
+        e.setId(42L);
+        e.setNombreComercial("Casa Luna 506");
+        e.setNumeroWhatsapp("50688880506");
+        e.setTelefonoEmpresa("22223333");
+        e.setCorreoEmpresa("tienda@casaluna.cr");
+        e.setInstagram("casaluna506");
+        return e;
     }
 
     private static JsonNode serializar(Bodega bodega, boolean puedeVer) throws Exception {

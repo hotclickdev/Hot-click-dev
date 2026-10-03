@@ -4,6 +4,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.FeatureFlagService;
+import com.hotclick.service.contacto.ContactoPublicoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,7 @@ public class BrandingController {
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private FeatureFlagService flagService;
+    @Autowired private ContactoPublicoService contactoPublico;
 
     // ── Public — no auth — used by storefront to fetch tenant branding ────────
     /**
@@ -34,6 +36,10 @@ public class BrandingController {
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Empresa e = opt.get();
         Map<String, Object> result = new java.util.LinkedHashMap<>(toBrandingMap(e));
+        // Contacto directo del vendedor solo con plan PYME o NEGOCIO_PLUS (ContactoPublicoPolicy).
+        boolean contacto = contactoPublico.permiteContacto(e.getId());
+        if (!contacto) result.put("whatsapp", null);
+        result.put("contactoDirecto", contacto);
         result.put("chatActivo",    flagService.isEnabled("chat_publico",       e.getId()));
         result.put("copilotActivo", flagService.isEnabled("copilot_emprendedor", e.getId()));
         return ResponseEntity.ok(result);
