@@ -59,12 +59,6 @@ async function sinIsotipo(page: Page) {
   await expect(page.getByRole('button', { name: /opciones de accesibilidad/i })).toHaveCount(0)
 }
 
-async function margenInferior(page: Page, locator: Locator) {
-  const caja = await cajaDe(locator)
-  const alto = page.viewportSize()?.height ?? 0
-  return alto - (caja.y + caja.height)
-}
-
 test.describe('WhatsApp flotante — móvil 390', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
