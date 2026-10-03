@@ -51,6 +51,10 @@ class NegocioEmailBuilderTest {
         assertThat(html)
             .contains("Configurá el perfil de tu negocio (logo y colores)")
             .contains("Invitá a tu equipo desde el panel")
-            .doesNotContain("WhatsApp");
+            .doesNotContain("logo, colores, WhatsApp");
+        // El pie conserva el WhatsApp de soporte de HotClick (no es el contacto del vendedor);
+        // lo que no puede aparecer es WhatsApp dentro de los próximos pasos del negocio.
+        String pasos = html.substring(html.indexOf("Próximos pasos"), html.indexOf("</ul>"));
+        assertThat(pasos).doesNotContain("WhatsApp");
     }
 }
