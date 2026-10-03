@@ -7,8 +7,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
-
 /**
  * Página HTML de /error. ⚠️ COMPARTIDO: para rutas de visitante usa el diseño claro de Figma
  * (404 `45:2198`, fallo del servidor `45:2322`); paneles, roles y landings de vendedor siguen con la página
@@ -18,9 +16,9 @@ import java.util.List;
 public class CustomErrorController implements ErrorController {
 
     /** Rutas que no son del visitante: conservan la página oscura sin cambios. */
-    static final List<String> PREFIJOS_SIN_CAMBIO = List.of(
+    private static final String[] PREFIJOS_SIN_CAMBIO = {
         "/admin", "/emprendedor", "/pos", "/pyme", "/negocio-plus", "/seleccionar-negocio", "/mode-select",
-        "/registrar-negocio", "/registro-empresa", "/emprende", "/para-emprendedores", "/para-pymes", "/api");
+        "/registrar-negocio", "/registro-empresa", "/emprende", "/para-emprendedores", "/para-pymes", "/api"};
 
     static boolean esRutaVisitante(String uri) {
         if (uri == null || uri.isBlank()) return true;
