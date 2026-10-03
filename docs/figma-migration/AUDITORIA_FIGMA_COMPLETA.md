@@ -391,9 +391,44 @@ Lo decide el backend (`service/contacto/ContactoPublicoPolicy`, `ContactoPublico
 - Devoluciones: el paso 1 va por HotClick.
 - El botón flotante, el chat, Contacto, Envíos y los errores ya usaban el número de HotClick.
 
+**Texto libre y video (hecho el 3-oct-2026):** sin `contactoDirecto`, el backend enmascara el contacto en la salida pública. Usa `ContactoTextoFiltro` (estático, entiende HTML) y `ContactoTextoPublico` (decide por plan con `ContactoPublicoService`). Cada coincidencia se reemplaza por `[contacto oculto]`. No se modifica la base, y el dueño, ADMIN, PYME y NEGOCIO_PLUS reciben el texto tal cual.
+
+Qué se enmascara:
+- Teléfonos: `8888-8888`, `+506 …`, `(506)`, dígitos separados por espacios o puntos, 7 o más dígitos seguidos.
+- Correos, también "arroba".
+- `@usuarios`.
+- `wa.me`, `whatsapp`, `instagram`, `tiktok`, `facebook`, `t.me` y cualquier enlace o dominio externo. Los de `hotclick.lat` se conservan.
+- En HTML, el texto de las etiquetas; un `<a href>` externo queda sin `href`.
+
+Qué no se toca: precios (`₡17.500`, `₡1.250.000`, `1.250.000 colones`), medidas (`200x90 cm`), años (`modelo 2026`, `2025-2026`), tallas (`38 39 40 41`) ni fechas (`03-10-2026`).
+
+| Salida pública | Campos |
+|---|---|
+| Todo `Producto` serializado (`/api/productos/**`, tienda, directorio, encargo) | nombre, título, descripciones, especificaciones, cómo usar, meta*, talla, color, modelo, marca texto, instrucciones, tags |
+| `Producto.videoUrl` | solo video concreto: YouTube watch/shorts/youtu.be/embed, Instagram `/reel/` o `/p/` (se normaliza sin usuario), TikTok `/video/`, Vimeo con id. Perfil, canal, inicio u "otra red" → campo omitido |
+| `GET /api/productos/{id}/variantes` | `nombreProducto`, `colorVariante`, `talla` |
+| `GET /api/tienda/{slug}` | `tagline`, `footerTexto`, `descripcion`, `zonaEnvio` |
+| `GET /api/public/branding` | `tagline`, `footerTexto`, `descripcion` |
+| Reseñas públicas (`toPublicMap`) | `comentario`, `productoNombre` |
+| `EncargoPersonalizado` | `mensajeVendedor`, `motivoRechazo`, `productoNombre` |
+| `Cotizacion` y sus ítems (`/api/cotizaciones/publica/{token}`) | `observaciones`, `terminos`, `mensajeEnviado`, ítem `nombre` y `descripcion` |
+| Mesa QR (`/api/qr/{token}/catalogo`) | `nombre`, `descripcion` |
+| Meta SEO del SPA (producto y tienda) y `GET /api/public/feed/shopping.xml` | título y descripción |
+| Chat público (`PublicChatProductSearch`, `VectorSearchService`) | fichas de producto. La columna `plan_empresa` se suma al SELECT para no hacer otra consulta |
+
+Tests:
+- `ContactoTextoFiltroTest`: 74 casos, entre ellos falsos positivos y video.
+- `TextoLibreContactoSerializerTest`: por plan, más dueño.
+- `StorefrontInfoMapperContactoTest`.
+- `TestimonioDtoMapperContactoTest`.
+- `ContactoTextoPublicoTest`.
+
 **Riesgos que quedan (solo señalados):**
-- Texto libre que el vendedor escribe y se publica tal cual: descripción del producto, `descripcion`, `tagline` y `footerTexto` de la tienda, nombre del producto y variantes, reseñas y respuestas. Ahí puede ir un teléfono o un @usuario. Las fotos también pueden traer un número.
-- `videoUrl` del producto: puede ser un reel o perfil de Instagram o TikTok del vendedor.
+- El nombre comercial no se enmascara (es la identidad de la tienda). Tampoco el catálogo maestro del marketplace (`CatalogoMaestro`, sin dueño por plan).
+- Fotos con números.
+- Usuarios sin `@` ("ig casaluna506") y teléfonos escritos en palabras.
+- Códigos de 7 o más dígitos dentro del texto (p. ej. un código de barras escrito en la descripción) se enmascaran.
+- Las reseñas públicas están en caché (`testimonios-publicos`): un cambio de plan se nota cuando expira la caché.
 - Dirección de retiro (`retiro`): se publica porque hace falta para retirar. No es un canal de contacto, pero identifica el local.
 - POS QR (`/api/pos/qr/pago/**`): si el método SINPE del negocio no es el de HotClick, se muestra su número SINPE (WhatsApp o teléfono) como destino del pago. No se tocó porque es el cobro mismo.
 - Cotización pública: la entidad `Empresa` completa sigue saliendo con datos fiscales (`rucCedula`, `cedulaJuridica`, `dominioCustom`, …). No es contacto, pero conviene pasarla a DTO.
