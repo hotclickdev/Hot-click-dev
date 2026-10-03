@@ -30,7 +30,7 @@ export function buildSistemaLinks(t: TFunction): SidebarLink[] {
     { to: '/admin/blog', label: t('admin.sidebar.posts'), icon: 'blog' },
     { to: '/admin/reportes', label: t('admin.sidebar.reportes'), icon: 'bar', feature: 'reportes' },
     { to: '/admin/ads', label: t('admin.sidebar.adsMetricas'), icon: 'chart' },
-    { to: '/admin/copilot', label: t('admin.sidebar.consultasConHot'), icon: 'copilot' },
+    { to: '/admin/copilot', label: t('admin.sidebar.consultasConHot'), icon: 'copilot', feature: 'ai' },
     { section: SISTEMA_SECCION.MAS },
     { to: '/admin/offline/cola', label: t('admin.sidebar.colaOffline'), icon: 'sync' },
     { to: '/admin/configuracion', label: t('admin.sidebar.configuracion'), icon: 'config' },
