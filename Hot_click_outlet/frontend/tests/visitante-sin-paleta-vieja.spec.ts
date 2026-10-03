@@ -3,6 +3,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test, expect } from '@playwright/test'
 
+test.use(process.env.CI ? {} : { channel: 'chrome' })
+
 /**
  * Fase 2 (alineación total con Figma): las pantallas de visitante ya rediseñadas no vuelven a la paleta
  * vieja (`--hc-accent`, `--hc-surface*`, `--hc-muted`, `--hc-text`, `--hc-border`, `--hc-bg`, ámbar).
@@ -39,3 +41,12 @@ for (const archivo of ARCHIVOS) {
     expect(readFileSync(join(dir, '../src', archivo), 'utf8')).not.toMatch(PALETA_VIEJA)
   })
 }
+
+test('aviso de versión nueva en una ruta de visitante usa el estilo de Figma', async ({ page }) => {
+  await page.route('**/api/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }))
+  await page.goto('/terminos', { waitUntil: 'domcontentloaded' })
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('sw-update-available')))
+  const aviso = page.getByRole('status').filter({ hasText: 'Hay una versión nueva de HotClick.' })
+  await expect(aviso).toBeVisible()
+  await expect(aviso.getByRole('button', { name: 'Actualizar' })).toHaveClass(/bg-hc-red-500/)
+})
