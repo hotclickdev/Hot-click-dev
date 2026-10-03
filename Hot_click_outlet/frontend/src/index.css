@@ -21,9 +21,11 @@
   --color-hc-text: var(--hc-text);
   --color-hc-muted: var(--hc-muted);
   --color-hc-primary: var(--hc-primary);
+  --color-hc-primary-text: var(--hc-primary-text);
   --color-hc-accent: var(--hc-accent);
   --color-hc-accent-hover: var(--hc-accent-hover);
   --color-hc-success: var(--hc-success);
+  --color-hc-success-text: var(--hc-success-text);
   --color-hc-danger: var(--hc-danger);
   --color-hc-warning: var(--hc-warning);
   --color-hc-warning-bg: var(--hc-warning-bg);
@@ -159,8 +161,16 @@ html.dark.high-contrast {
 }
 
 /* ── Font size ── */
+/* A− (D19): 87,5 % de la raíz de 16 px. */
+html.fs-sm { font-size: 14px; }
 html.fs-lg { font-size: 18px; }
 html.fs-xl { font-size: 20px; }
+
+/* R5: con el WhatsApp flotante visible en móvil, el foco y los saltos a anclas no quedan bajo el botón
+   (barra 67 + 16 + botón 56 + 16 = 155 px). */
+@media (max-width: 1023.98px) {
+  html.hc-con-fab { scroll-padding-bottom: 155px; }
+}
 
 /* ── Reduce motion ── */
 html.reduce-motion *,
@@ -410,7 +420,7 @@ html.dark .hc-btn[disabled], html.dark .hc-btn:disabled {
 
 .hc-btn-success {
   background: var(--hc-success-bg);
-  color: var(--hc-success);
+  color: var(--hc-success-text);
   border-color: color-mix(in srgb, var(--hc-success) 40%, transparent);
 }
 .hc-btn-success:hover {

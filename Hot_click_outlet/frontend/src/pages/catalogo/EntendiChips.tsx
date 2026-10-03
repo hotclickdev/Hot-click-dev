@@ -36,7 +36,7 @@ export default function EntendiChips({
   return (
     <div className={`items-center gap-2 overflow-x-auto [scrollbar-width:none] ${visibles.length === 0 ? 'flex lg:hidden' : 'flex'}`}>
       {visibles.length > 0 && (
-        <span className="shrink-0 text-[12px] leading-[normal] text-hc-n-500 lg:text-[13px]">{t('products.understood')}</span>
+        <span className="shrink-0 text-[12px] leading-[normal] text-hc-n-600 lg:text-[13px]">{t('products.understood')}</span>
       )}
       {visibles.map((chip) => {
         const texto = etiqueta(chip, t)

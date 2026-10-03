@@ -45,7 +45,7 @@ export type CotizacionPublica = {
 export const ESTADOS_COTIZACION: Record<string, { texto: string; clase: string }> = {
   BORRADOR: { texto: 'Borrador', clase: 'bg-hc-n-100 text-hc-n-600' },
   ENVIADA: { texto: 'Enviada', clase: 'bg-hc-blue-50 text-hc-blue-600' },
-  APROBADA: { texto: 'Aprobada', clase: 'bg-hc-green-50 text-hc-success' },
+  APROBADA: { texto: 'Aprobada', clase: 'bg-hc-green-50 text-hc-success-text' },
   RECHAZADA: { texto: 'Rechazada', clase: 'bg-hc-danger-bg text-hc-danger' },
 }
 

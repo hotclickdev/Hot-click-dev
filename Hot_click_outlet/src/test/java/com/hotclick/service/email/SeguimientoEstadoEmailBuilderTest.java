@@ -70,4 +70,17 @@ class SeguimientoEstadoEmailBuilderTest {
 
         assertThat(html).doesNotContain("<script>x</script>").contains("&lt;script&gt;");
     }
+
+    @Test
+    @DisplayName("B17: envío normal GAM no se trata como retiro (sin nota de retiro en tienda)")
+    void envioNormalNoEsRetiro() {
+        Pedido pedido = pedido("EN_PREPARACION");
+        pedido.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        assertThat(builder.buildSeguimientoEstado(pedido, pedido.getUsuarioFinal(), null))
+            .doesNotContain("Retiro en tienda");
+
+        pedido.setMetodoEnvio(Constants.ENVIO_RETIRO);
+        assertThat(builder.buildSeguimientoEstado(pedido, pedido.getUsuarioFinal(), null))
+            .contains("Retiro en tienda");
+    }
 }

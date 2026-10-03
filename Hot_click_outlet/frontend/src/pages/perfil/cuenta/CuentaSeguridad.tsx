@@ -10,7 +10,7 @@ function Fila({ icono, etiqueta, valor, final, onClick }: FilaProps) {
     <>
       <span className="text-hc-n-600">{icono}</span>
       <span className="flex min-w-0 flex-1 flex-col gap-px text-left">
-        <span className="text-[12px] text-hc-n-500">{etiqueta}</span>
+        <span className="text-[12px] text-hc-n-600">{etiqueta}</span>
         <span className="truncate text-[14px] font-medium text-hc-n-900">{valor}</span>
       </span>
       {final}
@@ -23,7 +23,7 @@ function Fila({ icono, etiqueta, valor, final, onClick }: FilaProps) {
 }
 
 function Titulo({ children }: { children: ReactNode }) {
-  return <p className="text-[11px] font-semibold uppercase leading-[normal] text-hc-n-500">{children}</p>
+  return <p className="text-[11px] font-semibold uppercase leading-[normal] text-hc-n-600">{children}</p>
 }
 
 function Tarjeta({ children }: { children: ReactNode }) {
@@ -80,7 +80,7 @@ export default function CuentaSeguridad(props: CuentaSeguridadProps) {
           icono={<IcoCandado />}
           etiqueta={t('cuenta.seguridad.contrasena')}
           valor={t('cuenta.seguridad.cambiarContrasena')}
-          final={<span className="text-hc-n-500"><IcoChevron /></span>}
+          final={<span className="text-hc-n-600"><IcoChevron /></span>}
           onClick={onCambiarContrasena}
         />
         <Fila
@@ -93,7 +93,7 @@ export default function CuentaSeguridad(props: CuentaSeguridadProps) {
 
       {extra}
 
-      <button type="button" onClick={onCerrarSesion} className="flex items-center gap-[10px] pt-2 text-[14px] font-semibold leading-[normal] text-hc-red-500">
+      <button type="button" onClick={onCerrarSesion} className="flex items-center gap-[10px] pt-2 text-[14px] font-semibold leading-[normal] text-hc-red-600">
         <IcoSalir />
         {t('cuenta.menu.cerrarSesion')}
       </button>

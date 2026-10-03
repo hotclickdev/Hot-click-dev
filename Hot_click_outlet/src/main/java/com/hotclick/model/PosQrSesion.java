@@ -61,7 +61,15 @@ public class PosQrSesion {
     @Column(name = "fk_id_bodega")
     private Long bodegaId;
 
+    /** Métodos que la caja deja elegir al cliente (CSV: "SINPE,TARJETA"). Null = solo metodoPago. */
+    @Column(name = "metodos_habilitados", length = 40)
+    private String metodosHabilitados;
+
+    @Column(name = "fecha_pago")
+    private LocalDateTime fechaPago;
+
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
     public Empresa getEmpresa() { return empresa; }
@@ -92,4 +100,8 @@ public class PosQrSesion {
     public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
+    public String getMetodosHabilitados() { return metodosHabilitados; }
+    public void setMetodosHabilitados(String metodosHabilitados) { this.metodosHabilitados = metodosHabilitados; }
+    public LocalDateTime getFechaPago() { return fechaPago; }
+    public void setFechaPago(LocalDateTime fechaPago) { this.fechaPago = fechaPago; }
 }

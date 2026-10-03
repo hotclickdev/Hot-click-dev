@@ -167,7 +167,7 @@ function ChatHeader({
       </span>
       <div className="flex min-w-0 flex-1 flex-col leading-[normal]">
         <p className="truncate font-display text-[15px] font-bold text-hc-n-900">{t('chat.title')}</p>
-        <p className="truncate text-[11px] text-hc-n-500">{t('chat.subtitle')}</p>
+        <p className="truncate text-[11px] text-hc-n-600">{t('chat.subtitle')}</p>
       </div>
       {cartCount > 0 && (
         <Link
@@ -184,7 +184,7 @@ function ChatHeader({
         onBlur={() => setConfirmClear(false)}
         aria-label={confirmClear ? t('chat.clearConfirm') : t('chat.clear')}
         title={confirmClear ? t('chat.clearConfirm') : t('chat.clear')}
-        className={`flex shrink-0 ${confirmClear ? 'text-hc-danger' : 'text-hc-n-500'}`}
+        className={`flex shrink-0 ${confirmClear ? 'text-hc-danger' : 'text-hc-n-600'}`}
       >
         <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h8" />

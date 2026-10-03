@@ -19,7 +19,7 @@ export default function PymeQueIncluye() {
         <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-3">
           {ITEMS.map((key) => (
             <li key={key} className="flex items-center gap-2.5 text-[15px]" style={{ color: 'var(--hc-text)' }}>
-              <span className="shrink-0" style={{ color: 'var(--hc-primary)' }}>
+              <span className="shrink-0" style={{ color: 'var(--hc-primary-text)' }}>
                 <TrustGlyph tipo="check" className="w-5 h-5" />
               </span>
               {t(`pyme.${key}`)}

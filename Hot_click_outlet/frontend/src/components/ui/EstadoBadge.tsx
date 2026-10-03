@@ -1,7 +1,7 @@
 export type EstadoTono = 'success' | 'warning' | 'danger' | 'info' | 'muted'
 
 const TONO_ESTILO: Record<EstadoTono, { bg: string; text: string; border: string }> = {
-  success: { bg: 'var(--hc-success-bg)', text: 'var(--hc-success)', border: 'var(--hc-success)' },
+  success: { bg: 'var(--hc-success-bg)', text: 'var(--hc-success-text)', border: 'var(--hc-success)' },
   warning: { bg: 'var(--hc-warning-bg)', text: 'var(--hc-warning)', border: 'var(--hc-warning)' },
   danger: { bg: 'var(--hc-danger-bg)', text: 'var(--hc-danger)', border: 'var(--hc-danger)' },
   info: { bg: 'var(--hc-info-bg)', text: 'var(--hc-info)', border: 'var(--hc-info)' },

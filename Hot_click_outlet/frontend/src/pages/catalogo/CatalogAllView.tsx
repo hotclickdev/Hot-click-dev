@@ -136,7 +136,7 @@ export default function CatalogAllView({
         <div className="hidden items-center justify-between lg:flex">
           <div className="flex flex-col gap-[2px]">
             <h1 className="font-display text-[26px] font-bold leading-[normal] text-hc-n-900">{titulo}</h1>
-            <p className="text-[14px] leading-[normal] text-hc-n-500">{t('products.countProducts', { count: filtered.length })}</p>
+            <p className="text-[14px] leading-[normal] text-hc-n-600">{t('products.countProducts', { count: filtered.length })}</p>
           </div>
           <OrdenarResultados sort={sort} setSort={setSort} variante="escritorio" />
         </div>

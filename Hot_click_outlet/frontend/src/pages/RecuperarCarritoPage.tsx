@@ -12,6 +12,7 @@ import recuperarBolsa from '@/assets/figma/pago/recuperar-bolsa.svg'
 import { PackagePlaceholder } from '@/pages/carrito/cartIcons'
 import type { ItemCarritoAbandonado } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
+import { topeStock } from '@/utils/stock'
 
 type ItemRecuperado = ItemCarritoAbandonado & { empresaNombre?: string; stock?: number }
 
@@ -48,16 +49,18 @@ export default function RecuperarCarritoPage() {
   const handleRestore = async () => {
     if (!token) return
     setAdding(true)
-    items.forEach((item) =>
-      addItem({
-        id:        item.productoId,
-        nombre:    item.nombre,
-        precio:    item.precio,
-        imagenUrl: item.imagenUrl,
-        stock:     99,
-        cantidad:  item.cantidad,
-      } as unknown as Producto)
-    )
+    // R4: stock real del carrito guardado (99 solo si no llegó); un agotado (0) no se vuelve a agregar.
+    items
+      .filter((item) => item.stock !== 0)
+      .forEach((item) =>
+        addItem({
+          id:        item.productoId,
+          nombre:    item.nombre,
+          precio:    item.precio,
+          imagenUrl: item.imagenUrl,
+          stock:     topeStock(item.stock),
+        } as unknown as Producto, item.cantidad ?? 1)
+      )
     try {
       await abandonedCartService.deleteAbandonedCartByToken(token)
     } catch (err) {
@@ -120,8 +123,8 @@ export default function RecuperarCarritoPage() {
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
                   <p className="truncate text-[14px] font-medium text-hc-n-900">{item.nombre}</p>
-                  <p className="truncate text-[12px] text-hc-n-500">{detalle}</p>
-                  {item.stock != null && item.stock > 0 && <p className="text-[11px] font-semibold text-hc-success">{t('recuperarCarrito.disponible', { count: item.stock })}</p>}
+                  <p className="truncate text-[12px] text-hc-n-600">{detalle}</p>
+                  {item.stock != null && item.stock > 0 && <p className="text-[11px] font-semibold text-hc-success-text">{t('recuperarCarrito.disponible', { count: item.stock })}</p>}
                 </div>
                 <p className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice((item.precio ?? 0) * cantidad)}</p>
               </div>
@@ -139,7 +142,7 @@ export default function RecuperarCarritoPage() {
         <BotonPago onClick={() => void handleRestore()} disabled={adding} variante="primario">
           {adding ? t('recuperarCarrito.adding') : t('recuperarCarrito.restore')}
         </BotonPago>
-        <p className="text-center text-[12px] leading-4 text-hc-n-500">{t('recuperarCarrito.nota')}</p>
+        <p className="text-center text-[12px] leading-4 text-hc-n-600">{t('recuperarCarrito.nota')}</p>
         <Link to="/productos" className="text-center text-[13px] font-semibold leading-[normal] text-hc-blue-600">{t('recuperarCarrito.exploreNew')}</Link>
       </div>
     </>,

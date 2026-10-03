@@ -1,8 +1,10 @@
 import { isValidEmail } from '@/utils/validators'
+import { formatTelefonoCR } from '@/utils/telefono'
+import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
 import type { Id } from '@/types/api'
 
 export const WHATSAPP = '50686667888'
-export const SINPE_NUMERO = '8666-7888'
+export const SINPE_NUMERO = formatTelefonoCR('86667888')
 export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 export const BODEGA_DEFAULT = 1
 
@@ -140,7 +142,7 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     {
       value: 'ENVIO_NORMAL_GAM',
       label: 'Envío Normal — GAM',
-      sub: '2–4 días hábiles · Incluye número de rastreo',
+      sub: `${TEXTO_TIEMPO_ENVIO.normalGam} · Incluye número de rastreo`,
       precio: 4000,
       badge: null,
       needsAddress: true,
@@ -148,7 +150,7 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     {
       value: 'ENVIO_NORMAL_FUERA_GAM',
       label: 'Envío Normal — Fuera de la GAM',
-      sub: '3–4 días hábiles · Incluye número de rastreo',
+      sub: `${TEXTO_TIEMPO_ENVIO.fueraGam} · Incluye número de rastreo`,
       precio: 4000,
       badge: null,
       needsAddress: true,
@@ -156,7 +158,7 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     {
       value: 'ENVIO_RAPIDO',
       label: 'Envío Rápido (Express)',
-      sub: '30 min – 2 horas en la GAM · Pago previo obligatorio',
+      sub: `${TEXTO_TIEMPO_ENVIO.rapido} en la GAM · Pago previo obligatorio`,
       precio: 5000,
       badge: 'Pago previo',
       badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
@@ -174,7 +176,7 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     ...(bodegaRetiro ? [{
       value: 'RETIRO_EN_TIENDA',
       label: `Retiro en ${bodegaRetiro.nombre}`,
-      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
+      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono ? formatTelefonoCR(bodegaRetiro.telefono) : ''].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
       precio: 0,
       badge: null,
       needsAddress: false,

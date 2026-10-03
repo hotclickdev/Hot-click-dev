@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @DisplayName("NotificacionGuiaEmailBuilder — correo de guía (Figma: Correo · Guía asignada)")
 class NotificacionGuiaEmailBuilderTest {
@@ -64,5 +66,41 @@ class NotificacionGuiaEmailBuilderTest {
         Pedido p = pedido("<b>RR1</b>", null, "Ana");
         String html = builder.buildNotificacionGuia(p, p.getUsuarioFinal());
         assertThat(html).doesNotContain("<b>RR1</b>").contains("&lt;b&gt;RR1&lt;/b&gt;");
+    }
+
+    @Test
+    @DisplayName("B17: «Paquete N de M» cuando el pago tiene varios paquetes; solo uno no lo dibuja")
+    void paqueteNdeM() {
+        com.hotclick.repository.PedidoRepository repo = mock(com.hotclick.repository.PedidoRepository.class);
+        ReflectionTestUtils.setField(builder, "pedidoRepository", repo);
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        p.setId(11L);
+        p.setGrupoPago("GRP-1");
+        Pedido otro = new Pedido();
+        otro.setId(10L);
+        when(repo.findByGrupoPagoOrderByIdAsc("GRP-1")).thenReturn(java.util.List.of(otro, p));
+
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("Paquete 2 de 2.")
+            .contains("Los otros paquetes de tu compra");
+
+        when(repo.findByGrupoPagoOrderByIdAsc("GRP-1")).thenReturn(java.util.List.of(p));
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .doesNotContain("Paquete ")
+            .doesNotContain("Los otros paquetes");
+    }
+
+    @Test
+    @DisplayName("El plazo de entrega sale de la config única (tiempos-envio.json), no de un texto fijo")
+    void plazoDesdeLaConfigUnica() {
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        p.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("La entrega tarda " + com.hotclick.config.TiemposEnvio.plazo("ENVIO_NORMAL_GAM") + ".")
+            .contains("de 2 a 4 días hábiles")
+            .doesNotContain("2 a 5");
+
+        p.setMetodoEnvio("ENVIO_NORMAL_FUERA_GAM");
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal())).contains("La entrega tarda de 3 a 4 días hábiles.");
     }
 }

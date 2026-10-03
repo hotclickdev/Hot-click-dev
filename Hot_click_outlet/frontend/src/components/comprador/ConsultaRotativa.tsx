@@ -50,7 +50,7 @@ export default function ConsultaRotativa({ onEnviar, className = '' }: ConsultaR
           <button
             type="button"
             onClick={() => onEnviar(pregunta)}
-            className="absolute inset-0 whitespace-nowrap text-left text-[14px] text-hc-n-500 transition-opacity ease-out motion-reduce:transition-none"
+            className="absolute inset-0 whitespace-nowrap text-left text-[14px] text-hc-n-600 transition-opacity ease-out motion-reduce:transition-none"
             style={{ opacity: saliendo ? 0 : 1, transitionDuration: `${SALIDA_PREGUNTA_MS}ms` }}
           >
             <FraseEscalera key={indice} texto={pregunta} />

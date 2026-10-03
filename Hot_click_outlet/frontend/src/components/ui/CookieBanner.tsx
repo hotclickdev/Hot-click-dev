@@ -140,7 +140,7 @@ function CuerpoBanner({
         <button type="button" onClick={onConfigurar} className="text-[13px] font-semibold text-hc-blue-600">
           {t('cookies.configurar')}
         </button>
-        <Link to="/cookies" className="text-[12px] text-hc-n-500">{t('cookies.leyInfo')}</Link>
+        <Link to="/cookies" className="text-[12px] text-hc-n-600">{t('cookies.leyInfo')}</Link>
       </div>
     </section>
   )

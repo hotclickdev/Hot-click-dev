@@ -28,7 +28,7 @@ type CuentaResumenProps = {
 }
 
 const ICONO_EVENTO = { pedido: <IcoCamion size={18} />, solicitud: <IcoBandeja size={18} />, opinion: <IcoEstrella size={18} /> }
-const FONDO_EVENTO = { azul: 'bg-hc-blue-50 text-hc-blue-600', verde: 'bg-hc-green-50 text-hc-success', ambar: 'bg-hc-warning-bg text-hc-warning' }
+const FONDO_EVENTO = { azul: 'bg-hc-blue-50 text-hc-blue-600', verde: 'bg-hc-green-50 text-hc-success-text', ambar: 'bg-hc-warning-bg text-hc-warning' }
 
 /** Resumen de Mi cuenta: móvil `28:1196` y escritorio `30:1479` (el menú lateral lo pone `ProfilePage`). */
 export default function CuentaResumen(props: CuentaResumenProps) {
@@ -76,10 +76,10 @@ export default function CuentaResumen(props: CuentaResumenProps) {
                 <span className="flex min-w-0 flex-1 flex-col gap-px">
                   <span className="text-[14px] font-medium text-hc-n-900">{t(evento.titulo.clave, evento.titulo.valores)}</span>
                   {!esDesktop && (detalle || tiempo) && (
-                    <span className="text-[12px] text-hc-n-500">{[detalle, tiempo].filter(Boolean).join(' · ')}</span>
+                    <span className="text-[12px] text-hc-n-600">{[detalle, tiempo].filter(Boolean).join(' · ')}</span>
                   )}
                 </span>
-                {esDesktop && tiempo && <span className="shrink-0 text-[12px] text-hc-n-500">{tiempo[0].toUpperCase() + tiempo.slice(1)}</span>}
+                {esDesktop && tiempo && <span className="shrink-0 text-[12px] text-hc-n-600">{tiempo[0].toUpperCase() + tiempo.slice(1)}</span>}
               </Link>
             </li>
           )
@@ -108,7 +108,7 @@ export default function CuentaResumen(props: CuentaResumenProps) {
           <Avatar texto={iniciales(nombre)} />
           <div className="flex min-w-0 flex-1 flex-col gap-px leading-[normal]">
             <h1 className="truncate font-display text-[20px] font-bold text-hc-n-900">{t('cuenta.hola', { nombre: primerNombre(nombre) })}</h1>
-            <p className="truncate text-[13px] text-hc-n-500">{correo}</p>
+            <p className="truncate text-[13px] text-hc-n-600">{correo}</p>
           </div>
         </div>
         {activo}
@@ -119,11 +119,11 @@ export default function CuentaResumen(props: CuentaResumenProps) {
           <span className="text-hc-blue-600"><IcoEscudo size={22} /></span>
           <span className="flex min-w-0 flex-1 flex-col gap-px">
             <span className="text-[14px] font-semibold text-hc-n-900">{t('cuenta.menu.seguridad')}</span>
-            <span className={`text-[12px] ${twoFAActiva ? 'text-hc-success' : 'text-hc-n-500'}`}>
+            <span className={`text-[12px] ${twoFAActiva ? 'text-hc-success-text' : 'text-hc-n-600'}`}>
               {twoFAActiva ? t('cuenta.seguridad.dosPasosActiva') : t('cuenta.seguridad.dosPasosInactiva')}
             </span>
           </span>
-          <span className="text-hc-n-500"><IcoChevron /></span>
+          <span className="text-hc-n-600"><IcoChevron /></span>
         </Link>
       </section>
       {feed}
@@ -152,7 +152,7 @@ function PedidoActivo({ pedidos, esDesktop, idioma }: { pedidos: PedidoCliente[]
           <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
             <p className="text-[15px] font-semibold text-hc-n-900">{t('cuenta.activo.numeroEstado', { numero, estado: t(`cuenta.estado.${estado}`) })}</p>
             {lineaLlegada && <p className="text-[13px] text-hc-n-600">{lineaLlegada}</p>}
-            {guia && <p className="font-mono text-[12px] font-medium text-hc-n-500">{t('cuenta.activo.guia', { guia })}</p>}
+            {guia && <p className="font-mono text-[12px] font-medium text-hc-n-600">{t('cuenta.activo.guia', { guia })}</p>}
           </div>
           <Link to={destino} className="flex shrink-0 items-center justify-center rounded-[12px] bg-hc-blue-600 px-[14px] py-[11px] text-[14px] font-semibold text-hc-n-0 hover:bg-hc-blue-900">
             {t('cuenta.activo.verSeguimiento')}
@@ -174,7 +174,7 @@ function PedidoActivo({ pedidos, esDesktop, idioma }: { pedidos: PedidoCliente[]
         {fotos.map((f, i) => <Miniatura key={i} src={f.src} tam={44} />)}
         <span className="flex min-w-0 flex-1 flex-col gap-px">
           {lineaLlegada && <span className="truncate text-[13px] font-medium text-hc-n-900">{lineaLlegada}</span>}
-          {guia && <span className="truncate text-[12px] text-hc-n-500">{t('cuenta.activo.correosGuia', { guia })}</span>}
+          {guia && <span className="truncate text-[12px] text-hc-n-600">{t('cuenta.activo.correosGuia', { guia })}</span>}
         </span>
         <span className="text-hc-blue-600"><IcoChevron /></span>
       </span>

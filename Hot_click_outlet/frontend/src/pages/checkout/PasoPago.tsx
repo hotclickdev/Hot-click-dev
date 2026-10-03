@@ -54,7 +54,7 @@ function InstruccionesSinpe({ form, total, token }: { form: CheckoutFormState; t
         <button type="button" onClick={copiar} aria-label={t('checkout.f.copiarSinpe')} className="relative flex size-4 items-center justify-center text-hc-blue-600 after:absolute after:-inset-2">
           <IconoFigma src={ICONOS_CHECKOUT.copiar} size={16} />
         </button>
-        {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success">{t('checkout.f.copiado')}</span>}
+        {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success-text">{t('checkout.f.copiado')}</span>}
       </div>
       <p className="text-[13px] leading-[18px] text-hc-n-600">{t('checkout.f.sinpePaso2')}</p>
       <input
@@ -125,7 +125,7 @@ export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps
                 <input type="radio" name="pago" value={metodo.id} checked={activo} disabled={bloqueado} onChange={() => form.setMetodoPago(metodo.id)} className="sr-only" />
                 <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.id === 'SINPE' ? 'sinpe' : metodo.id === 'TILOPAY' ? 'tarjeta' : 'efectivo'}`)}</span>
-                <span className="text-[12px] text-hc-n-500">{t(`checkout.f.${metodo.subtituloEscritorio}`, { numero: SINPE_NUMERO })}</span>
+                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtituloEscritorio}`, { numero: SINPE_NUMERO })}</span>
               </label>
             )
           })}
@@ -158,9 +158,9 @@ export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps
               <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
               <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
-                {!(esSinpe && activo) && <span className="text-[12px] text-hc-n-500">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>}
+                {!(esSinpe && activo) && <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>}
               </span>
-              {esSinpe && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success">{t('checkout.f.masUsado')}</span>}
+              {esSinpe && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success-text">{t('checkout.f.masUsado')}</span>}
             </label>
             {bloqueado && <p className="text-[12px] leading-4 text-hc-warning">{t('checkout.f.efectivoNoRapido')}</p>}
             {esSinpe && activo && <InstruccionesSinpe form={form} total={total} token={token} />}
@@ -260,7 +260,7 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
     <>
     {token && (
       <>
-        <p className="text-[12px] leading-4 text-hc-n-500">{t('checkout.f.sesionGift')}</p>
+        <p className="text-[12px] leading-4 text-hc-n-600">{t('checkout.f.sesionGift')}</p>
         <CodigosCheckout codigos={codigos} token={token} descuento={descuento} giftCard={giftCard} />
       </>
     )}
@@ -279,7 +279,7 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
             <p>{paquete.negocio}</p>
             <p>{formatPrice(paquete.subtotal)}</p>
           </div>
-          <div className="flex items-start justify-between gap-2 text-[12px] text-hc-n-500">
+          <div className="flex items-start justify-between gap-2 text-[12px] text-hc-n-600">
             <p>{t('cart.paqueteProductos', { count: paquete.items.length })}{paquete.metodo ? ` · ${t(`checkout.f.metodoResumen.${paquete.metodo}`)}` : ''}</p>
             <p className="shrink-0">{paquete.envioVaria ? t('checkout.f.envioVariaLinea') : t('cart.envioDe', { precio: formatPrice(paquete.envio) })}</p>
           </div>
@@ -297,16 +297,16 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
       {descuento > 0 && (
         <div className="flex items-start justify-between text-[13px]">
           <p className="font-medium text-hc-n-600">{t('checkout.codigo.lineaDescuento', { porcentaje: cuponPorcentaje })}</p>
-          <p className="font-semibold text-hc-success">{formatoRebaja(descuento)}</p>
+          <p className="font-semibold text-hc-success-text">{formatoRebaja(descuento)}</p>
         </div>
       )}
       {giftCard > 0 && (
         <div className="flex items-start justify-between text-[13px]">
           <p className="font-medium text-hc-n-600">{t('checkout.codigo.lineaGift', { codigo: codigos.gcCodigo ?? '' })}</p>
-          <p className="font-semibold text-hc-success">{formatoRebaja(giftCard)}</p>
+          <p className="font-semibold text-hc-success-text">{formatoRebaja(giftCard)}</p>
         </div>
       )}
-      <p className="text-[11px] leading-[15px] text-hc-n-500">{giftCard > 0 ? t('checkout.codigo.notaRestante') : t('cart.notaResumenEscritorio')}</p>
+      <p className="text-[11px] leading-[15px] text-hc-n-600">{giftCard > 0 ? t('checkout.codigo.notaRestante') : t('cart.notaResumenEscritorio')}</p>
       {!token && (
         <button type="button" onClick={() => setCodigosAbiertos((v) => !v)} aria-expanded={codigosAbiertos} className="flex items-center gap-[6px] text-left text-[13px] font-semibold text-hc-blue-600">
           <IconoFigma src={ICONOS_CHECKOUT.cupon} size={14} className="text-hc-success" />

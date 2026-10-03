@@ -10,7 +10,7 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
   if (yaEsDuenio) {
     return (
       <header className="mb-10">
-        <p className="text-xs font-bold tracking-[0.14em] uppercase mb-3" style={{ color: 'var(--hc-primary)' }}>
+        <p className="text-xs font-bold tracking-[0.14em] uppercase mb-3" style={{ color: 'var(--hc-primary-text)' }}>
           {t('emprende.badge')}
         </p>
         <h1 className="text-3xl sm:text-4xl font-bold mb-3" style={{ color: 'var(--hc-text)' }}>
@@ -57,7 +57,7 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.15 }}
         className="text-sm mb-6"
-        style={{ color: 'var(--hc-primary)', fontFamily: 'var(--hc-font-mono)' }}
+        style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}
       >
         {t('emprende.heroPrecioLinea', {
           comision: PLAN_EMPRENDEDOR.comisionPct,

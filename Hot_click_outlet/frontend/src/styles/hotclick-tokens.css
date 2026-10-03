@@ -44,6 +44,7 @@
 
   /* ---------- Color · Semánticos ---------- */
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
   --hc-danger:  #D02A23;  --hc-danger-bg:  #FEF2F1;
   --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
@@ -62,6 +63,8 @@
   --hc-border:        var(--hc-n-200);
   --hc-border-strong: var(--hc-n-300);
   --hc-primary:       var(--hc-red-500);
+  /* Primario usado como TEXTO: red-500 no llega a AA sobre blanco (decisión R1). */
+  --hc-primary-text:  var(--hc-red-600);
   --hc-primary-hover: var(--hc-red-600);
   --hc-primary-press: var(--hc-red-700);
   --hc-link:          var(--hc-blue-600);
@@ -119,6 +122,7 @@
   --hc-border:         #E6E6E6;
   --hc-border-strong:  #CDD2DB;
   --hc-primary:        #E31E24;
+  --hc-primary-text:   #C4181E;
   --hc-primary-hover:  #C4181E;
   --hc-primary-press:  #A11418;
   --hc-link:           #0D47A1;
@@ -126,6 +130,7 @@
   --hc-accent-hover:   #0A3780;
   --hc-focus-ring:     #3F6CDE;
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
   --hc-danger:  #E31E24;  --hc-danger-bg:  #FEF2F1;
   --hc-info:    #0D47A1;  --hc-info-bg:    #EFF4FE;
@@ -162,11 +167,13 @@
   --hc-text-disabled:  var(--hc-n-400);
   --hc-border-strong:  #b9ad97;
   --hc-primary:        var(--hc-red-500);
+  --hc-primary-text:   var(--hc-red-600);
   --hc-primary-hover:  var(--hc-red-600);
   --hc-primary-press:  var(--hc-red-700);
   --hc-link:           var(--hc-blue-600);
   --hc-focus-ring:     var(--hc-blue-500);
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
   --hc-danger:  #D02A23;  --hc-danger-bg:  #FEF2F1;
   --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
@@ -186,11 +193,13 @@ html.dark,
   --hc-border:        #262D38;
   --hc-border-strong: #333B48;
   --hc-primary:       #F0524A;   /* rojo elevado para fondo oscuro */
+  --hc-primary-text:  #F0524A;
   --hc-primary-hover: #F3766F;
   --hc-primary-press: #E73B33;
   --hc-link:          #7AA3F2;
   --hc-focus-ring:    #6490EA;
   --hc-success: #3DCB82;  --hc-success-bg: #10301F;
+  --hc-success-text: #3DCB82;  /* en oscuro el verde claro ya pasa AA */
   --hc-warning: #E5A93D;  --hc-warning-bg: #33270D;
   --hc-danger:  #F0524A;  --hc-danger-bg:  #3A1513;
   --hc-info:    #7AA3F2;  --hc-info-bg:    #13203A;
@@ -221,6 +230,7 @@ html.dark .hc-seller-theme,
   --hc-border:         #262D38;
   --hc-border-strong:  #333B48;
   --hc-primary:        #F0524A;
+  --hc-primary-text:   #F0524A;
   --hc-primary-hover:  #F3766F;
   --hc-primary-press:  #E73B33;
   --hc-link:           #7AA3F2;
@@ -228,6 +238,7 @@ html.dark .hc-seller-theme,
   --hc-accent-hover:   #97B7F3;
   --hc-focus-ring:     #6490EA;
   --hc-success: #3DCB82;  --hc-success-bg: #10301F;
+  --hc-success-text: #3DCB82;  /* en oscuro el verde claro ya pasa AA */
   --hc-warning: #E5A93D;  --hc-warning-bg: #33270D;
   --hc-danger:  #F0524A;  --hc-danger-bg:  #3A1513;
   --hc-info:    #7AA3F2;  --hc-info-bg:    #13203A;
@@ -252,9 +263,11 @@ html.dark .hc-seller-theme,
   --color-hc-text: var(--hc-text);
   --color-hc-muted: var(--hc-muted);
   --color-hc-primary: var(--hc-primary);
+  --color-hc-primary-text: var(--hc-primary-text);
   --color-hc-accent: var(--hc-accent);
   --color-hc-accent-hover: var(--hc-accent-hover);
   --color-hc-success: var(--hc-success);
+  --color-hc-success-text: var(--hc-success-text);
   --color-hc-danger: var(--hc-danger);
   --color-hc-warning: var(--hc-warning);
   color: var(--hc-text);

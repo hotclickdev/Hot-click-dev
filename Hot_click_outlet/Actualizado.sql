@@ -4017,3 +4017,15 @@ UPDATE hot_click_pedido_tb
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_token_seguimiento
     ON hot_click_pedido_tb (token_seguimiento);
+
+-- V146: ampliar estado_pedido a VARCHAR(30). PENDIENTE_COMPROBANTE (21 caracteres),
+-- estado inicial del checkout SINPE/efectivo, no cabía en VARCHAR(20).
+ALTER TABLE hot_click_pedido_tb ALTER COLUMN estado_pedido TYPE VARCHAR(30);
+
+-- V147: cobro por QR de caja. Métodos que la caja deja elegir al cliente (CSV
+-- "SINPE,TARJETA"; NULL = solo metodo_pago) y fecha real del pago para el comprobante.
+ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS metodos_habilitados VARCHAR(40);
+ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS fecha_pago TIMESTAMP;
+
+-- V148: dirección de entrega en el pedido para los correos («Enviamos a …»).
+ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS direccion_entrega VARCHAR(500);

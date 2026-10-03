@@ -16,8 +16,8 @@ public class NegocioEmailBuilder {
 
     /**
      * Cupón de bienvenida (Figma «Correo · Cupón de bienvenida», 30:1768).
-     * Figma dice «Válido por 30 días»: el cupón no tiene vencimiento en el backend, así que se
-     * conservan las condiciones reales (una sola compra, una vez por persona).
+     * Figma dice «Válido por 30 días», pero el cupón no vence en el backend. Decisión B17:
+     * no se promete vencimiento; se dejan las condiciones reales (una sola compra, una vez por persona).
      */
     public String buildCuponBienvenida(String codigo) {
         return layout.abrirHtml()

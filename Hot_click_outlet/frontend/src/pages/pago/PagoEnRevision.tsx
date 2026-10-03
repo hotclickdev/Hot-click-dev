@@ -33,8 +33,8 @@ export default function PagoEnRevision({ titulo, texto, numeroPedido, token, onW
   const pasos: Paso[] = [
     { icono: revisionRecibido, color: 'text-hc-success', titulo: t('payment.revision.recibido'), sub: t('payment.revision.ahora'), activo: true },
     { icono: revisionVerificando, color: 'text-hc-warning', titulo: t('payment.revision.verificamos'), sub: t('payment.revision.minutos'), activo: true },
-    { icono: ICONOS_CHECKOUT.campoCorreo, color: 'text-hc-n-500', titulo: t('payment.revision.correo'), sub: t('payment.revision.correoSub'), activo: false },
-    { icono: revisionGuia, color: 'text-hc-n-500', titulo: t('payment.revision.guia'), sub: paquetes > 0 ? t('payment.fallo.paquetesN', { count: paquetes }) : t('payment.revision.guiaSub'), activo: false },
+    { icono: ICONOS_CHECKOUT.campoCorreo, color: 'text-hc-n-600', titulo: t('payment.revision.correo'), sub: t('payment.revision.correoSub'), activo: false },
+    { icono: revisionGuia, color: 'text-hc-n-600', titulo: t('payment.revision.guia'), sub: paquetes > 0 ? t('payment.fallo.paquetesN', { count: paquetes }) : t('payment.revision.guiaSub'), activo: false },
   ]
   const textoWa = encodeURIComponent(t('payment.fallo.whatsappTexto', { pedido: numeroPedido ?? '' }))
 
@@ -47,7 +47,7 @@ export default function PagoEnRevision({ titulo, texto, numeroPedido, token, onW
           <p className="text-[14px] leading-5 text-hc-n-600">{texto}</p>
           {numeroPedido && (
             <div className="flex w-full items-start justify-center gap-[6px] rounded-[10px] border border-hc-n-200 bg-hc-n-0 py-[10px]">
-              <p className="text-[13px] text-hc-n-500">{t('payment.revision.pedido')}</p>
+              <p className="text-[13px] text-hc-n-600">{t('payment.revision.pedido')}</p>
               <p className="font-mono text-[14px] font-medium text-hc-n-900">{numeroPedido}</p>
             </div>
           )}
@@ -57,12 +57,12 @@ export default function PagoEnRevision({ titulo, texto, numeroPedido, token, onW
                 <IconoFigma src={paso.icono} size={18} className={paso.color} />
                 <div className="flex min-w-0 flex-1 flex-col gap-px">
                   <p className={`text-[13px] font-semibold ${paso.activo ? 'text-hc-n-900' : 'text-hc-n-600'}`}>{paso.titulo}</p>
-                  <p className="text-[12px] text-hc-n-500">{paso.sub}</p>
+                  <p className="text-[12px] text-hc-n-600">{paso.sub}</p>
                 </div>
               </li>
             ))}
           </ol>
-          <p className="text-[12px] leading-4 text-hc-n-500">{t('payment.revision.sinConfirmacion')}</p>
+          <p className="text-[12px] leading-4 text-hc-n-600">{t('payment.revision.sinConfirmacion')}</p>
         </div>
         <div className="flex-1" />
         <div className="flex flex-col items-center gap-[10px] rounded-[14px] border-t border-hc-n-200 bg-hc-n-0 px-4 pb-6 pt-3">

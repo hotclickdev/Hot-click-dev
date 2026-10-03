@@ -14,7 +14,7 @@ function Fila({ icono, titulo, detalle, tituloAlto = false, children }: { icono:
       <IconoFigma src={icono} size={20} className="text-[var(--t-accent)]" />
       <span className="flex min-w-0 flex-1 flex-col gap-px">
         <span className={`text-[13px] font-semibold leading-[normal] text-hc-n-900 wrap-anywhere lg:text-sm ${tituloAlto ? "min-h-4" : ""}`}>{titulo}</span>
-        <span className="truncate text-xs leading-[normal] text-hc-n-500 lg:overflow-visible lg:whitespace-normal lg:leading-4">{detalle}</span>
+        <span className="truncate text-xs leading-[normal] text-hc-n-600 lg:overflow-visible lg:whitespace-normal lg:leading-4">{detalle}</span>
       </span>
       {children}
     </>

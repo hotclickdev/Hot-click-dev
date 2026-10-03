@@ -35,7 +35,7 @@ function LineaRebaja({ etiqueta, monto, clase }: { etiqueta: string; monto: numb
   return (
     <div className={`flex items-center justify-between ${clase}`}>
       <p className="font-medium text-hc-n-600">{etiqueta}</p>
-      <p className="font-semibold text-hc-success">{formatoRebaja(monto)}</p>
+      <p className="font-semibold text-hc-success-text">{formatoRebaja(monto)}</p>
     </div>
   )
 }
@@ -60,7 +60,7 @@ export default function ResumenCarrito({
               <p>{paquete.negocio}</p>
               <p>{formatPrice(paquete.subtotal)}</p>
             </div>
-            <div className="flex items-center justify-between text-[12px] text-hc-n-500">
+            <div className="flex items-center justify-between text-[12px] text-hc-n-600">
               <p>{t('cart.paqueteProductos', { count: paquete.items.length })}</p>
               <p>{paquete.envioVaria ? t('checkout.f.envioVariaLinea') : t('cart.envioDe', { precio: formatPrice(paquete.envio) })}</p>
             </div>
@@ -96,7 +96,7 @@ export default function ResumenCarrito({
           <p className="text-[16px] font-semibold">{t('cart.total')}</p>
           <p className="font-display text-[20px] font-bold">{formatPrice(total)}</p>
         </div>
-        <p className="text-[12px] text-hc-n-500">{t('cart.ivaIncluido')}</p>
+        <p className="text-[12px] text-hc-n-600">{t('cart.ivaIncluido')}</p>
         {consentimiento}
         <button type="button" onClick={onContinuar} disabled={botonDeshabilitado} className="flex items-center justify-center rounded-[12px] bg-hc-red-500 px-[18px] py-[14px] text-[15px] font-semibold text-hc-n-0 disabled:cursor-not-allowed disabled:opacity-50">
           {textoBoton ?? t('cart.continuar')}
@@ -107,8 +107,8 @@ export default function ResumenCarrito({
             {t('cart.whatsapp')}
           </button>
         )}
-        <p className="text-[11px] leading-[15px] text-hc-n-500">{t('cart.notaResumenEscritorio')}</p>
-        <p className="flex items-center justify-center gap-[6px] text-[12px] text-hc-n-500">
+        <p className="text-[11px] leading-[15px] text-hc-n-600">{t('cart.notaResumenEscritorio')}</p>
+        <p className="flex items-center justify-center gap-[6px] text-[12px] text-hc-n-600">
           <IconoFigma src={ICONOS_CHECKOUT.pagoProtegido} size={14} className="text-hc-success" />
           {t('cart.pagoProtegido')}
         </p>
@@ -136,7 +136,7 @@ export default function ResumenCarrito({
         <p className="text-[14px] font-semibold text-hc-n-900">{formatPrice(envio)}</p>
       </div>
       {detalleAbierto && (
-        <div className="flex flex-col gap-1 border-l-2 border-hc-n-200 pl-3 text-[12px] text-hc-n-500">
+        <div className="flex flex-col gap-1 border-l-2 border-hc-n-200 pl-3 text-[12px] text-hc-n-600">
           {paquetes.map((paquete) => (
             <div key={paquete.clave} className="flex items-center justify-between">
               <p>{paquete.negocio}</p>
@@ -152,7 +152,7 @@ export default function ResumenCarrito({
         <p className="text-[16px]">{t('cart.totalEstimado')}</p>
         <p className="text-[18px]">{formatPrice(total)}</p>
       </div>
-      <p className="text-[11px] leading-[15px] text-hc-n-500">{t('cart.notaResumen')}</p>
+      <p className="text-[11px] leading-[15px] text-hc-n-600">{t('cart.notaResumen')}</p>
     </section>
   )
 }

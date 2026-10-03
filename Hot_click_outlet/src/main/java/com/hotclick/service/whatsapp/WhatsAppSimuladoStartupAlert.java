@@ -1,6 +1,7 @@
 package com.hotclick.service.whatsapp;
 
 import com.hotclick.service.TelegramService;
+import com.hotclick.service.telegram.TelegramTexto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -26,6 +27,8 @@ class WhatsAppSimuladoStartupAlert implements ApplicationRunner {
         log.warn("[WA] modo SIMULADO — WHATSAPP_PHONE_ID o WHATSAPP_TOKEN vacios; los clientes no reciben mensajes");
         telegramService.enviar(
             "*WhatsApp en modo SIMULADO*\n\n"
-            + "Los mensajes a clientes no se envian. Configura WHATSAPP_PHONE_ID y WHATSAPP_TOKEN.");
+            + "Los mensajes a clientes no se envian. Configura "
+            + TelegramTexto.escaparMarkdown("WHATSAPP_PHONE_ID") + " y "
+            + TelegramTexto.escaparMarkdown("WHATSAPP_TOKEN") + ".");
     }
 }

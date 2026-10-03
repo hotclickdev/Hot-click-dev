@@ -1,4 +1,5 @@
-import { useState, useRef, useMemo, useEffect, type Dispatch, type SetStateAction, type RefObject } from 'react'
+import { useState, useRef, useMemo, useEffect, useCallback, type Dispatch, type SetStateAction, type RefObject } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
@@ -15,6 +16,7 @@ import {
   validatePhone as mensajeTelefono,
 } from './checkoutHelpers'
 import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
+import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
@@ -37,7 +39,8 @@ export type CheckoutFormState = {
   envioVaria: boolean
   /** Paso del checkout móvil (1 datos, 2 entrega, 3 pago). Vive aquí para sobrevivir a la pantalla de carga del pago. */
   paso: number
-  setPaso: (paso: number) => void
+  /** Cambia `?paso=` (R3): agrega al historial salvo `reemplazar`. */
+  setPaso: (paso: number, opciones?: OpcionesPaso) => void
   metodoPago: string
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
@@ -156,7 +159,16 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   }, [metodoEnvioBase, destinoGAM])
   // Figma 29:1344 abre con SINPE Móvil seleccionado.
   const [metodoPago, setMetodoPago] = useState('SINPE')
-  const [paso, setPaso] = useState(1)
+  // R3: el paso del checkout móvil vive en `?paso=`; el guard de CheckoutLayout impide saltar pasos.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const paso = pasoDesdeQuery(searchParams.get('paso'))
+  const setPaso = useCallback((nuevo: number, opciones?: OpcionesPaso) => {
+    setSearchParams((prev) => {
+      const sig = new URLSearchParams(prev)
+      sig.set('paso', String(pasoDesdeQuery(String(nuevo))))
+      return sig
+    }, { replace: opciones?.reemplazar ?? false })
+  }, [setSearchParams])
 
   useEffect(() => {
     setMetodoEnvioPorPaqueteState((prev) => {

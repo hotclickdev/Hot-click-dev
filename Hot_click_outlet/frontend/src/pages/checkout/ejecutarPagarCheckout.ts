@@ -203,6 +203,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
         metodoEnvio: metodoEnvioPorPaquete[p.bodegaId],
       })),
       notas: notasFull || null,
+      // B17: la dirección también viaja aparte para que el pedido la guarde y los correos digan «Enviamos a …».
+      direccionEntrega: necesitaDireccion && direccion ? (direccionPedido || direccion).slice(0, 500) : null,
       provider: metodoPago,
       items: items.map((i) => ({
         productoId: i.id,

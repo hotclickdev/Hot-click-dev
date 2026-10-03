@@ -129,6 +129,10 @@ public class Pedido extends BaseEntity {
     @Column(name = "fecha_envio")
     private LocalDateTime fechaEnvio;
 
+    /** Dirección de entrega del checkout (señas, cantón, provincia); null en retiro. V148. */
+    @Column(name = "direccion_entrega", length = 500)
+    private String direccionEntrega;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_empresa")
@@ -264,4 +268,6 @@ public class Pedido extends BaseEntity {
     public void setClienteNombre(String v) { this.clienteNombre = v; }
     public String getClienteTel() { return clienteTel; }
     public void setClienteTel(String v) { this.clienteTel = v; }
+    public String getDireccionEntrega() { return direccionEntrega; }
+    public void setDireccionEntrega(String v) { this.direccionEntrega = v; }
 }

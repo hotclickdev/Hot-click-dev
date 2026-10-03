@@ -6,6 +6,7 @@ import useAuthStore from '@/store/authStore'
 import PagoEnRevision from '@/pages/pago/PagoEnRevision'
 import { BotonPago, MarcoPago } from '@/pages/pago/PiezasPago'
 import { formatPrice } from '@/utils/format'
+import { formatTelefonoCR } from '@/utils/telefono'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import { SINPE_NUMERO, SINPE_TITULAR, copiarNumeroSinpe } from './checkoutHelpers'
 
@@ -137,7 +138,7 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
                 <button type="button" onClick={copiar} aria-label={t('checkout.f.copiarSinpe')} className="relative flex size-4 items-center justify-center text-hc-blue-600 after:absolute after:-inset-2">
                   <IconoFigma src={ICONOS_CHECKOUT.copiar} size={16} />
                 </button>
-                {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success">{t('checkout.f.copiado')}</span>}
+                {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success-text">{t('checkout.f.copiado')}</span>}
               </span>
             </div>
             <FilaDato etiqueta={t('payment.sinpe.titular')} valor={SINPE_TITULAR} />
@@ -150,10 +151,10 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
 
           {(sinpeNombre || sinpeCedula || sinpeTelefono) && (
             <div className="flex flex-col gap-1 rounded-[10px] bg-hc-n-0 p-3">
-              <p className="text-[12px] font-semibold text-hc-n-500">{t('payment.sinpe.tusDatos')}</p>
+              <p className="text-[12px] font-semibold text-hc-n-600">{t('payment.sinpe.tusDatos')}</p>
               {sinpeNombre && <FilaDato etiqueta={t('checkout.f.nombre')} valor={sinpeNombre} />}
               {sinpeCedula && <FilaDato etiqueta={t('checkout.f.cedula')} valor={sinpeCedula} />}
-              {sinpeTelefono && <FilaDato etiqueta={t('checkout.f.telefono')} valor={sinpeTelefono} />}
+              {sinpeTelefono && <FilaDato etiqueta={t('checkout.f.telefono')} valor={formatTelefonoCR(sinpeTelefono)} />}
             </div>
           )}
 

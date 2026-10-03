@@ -33,7 +33,7 @@ export default function MenuLateralCuenta({ activa, nombre, correo, onCerrarSesi
         <Avatar texto={iniciales(nombre)} tam={40} />
         <div className="flex min-w-0 flex-col">
           <p className="truncate text-[14px] font-semibold text-hc-n-900">{nombreCorto}</p>
-          <p className="truncate text-[12px] text-hc-n-500">{correo}</p>
+          <p className="truncate text-[12px] text-hc-n-600">{correo}</p>
         </div>
       </div>
       {ENTRADAS.map((entrada) => {
@@ -50,7 +50,7 @@ export default function MenuLateralCuenta({ activa, nombre, correo, onCerrarSesi
           </Link>
         )
       })}
-      <button type="button" onClick={onCerrarSesion} className="flex items-center gap-3 rounded-[10px] px-3 py-[10px] text-left text-[14px] font-medium text-hc-red-500 hover:bg-hc-n-50">
+      <button type="button" onClick={onCerrarSesion} className="flex items-center gap-3 rounded-[10px] px-3 py-[10px] text-left text-[14px] font-medium text-hc-red-600 hover:bg-hc-n-50">
         <IcoSalir />
         {t('cuenta.menu.cerrarSesion')}
       </button>

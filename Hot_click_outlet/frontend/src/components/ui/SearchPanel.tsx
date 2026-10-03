@@ -69,7 +69,7 @@ export default function SearchPanel() {
                   />
                   {panel.loading && <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-hc-blue-600 border-t-transparent" aria-hidden="true" />}
                   {panel.query && (
-                    <button type="button" onClick={() => panel.setQuery('')} aria-label={t('search.clearSearch')} className="shrink-0 text-hc-n-500">
+                    <button type="button" onClick={() => panel.setQuery('')} aria-label={t('search.clearSearch')} className="shrink-0 text-hc-n-600">
                       <CloseIcon className="size-[18px]" />
                     </button>
                   )}

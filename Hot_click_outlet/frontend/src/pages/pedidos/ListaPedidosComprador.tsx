@@ -53,7 +53,7 @@ function TarjetaPedido({ pedido }: { pedido: PedidoComprador }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-px">
           <h2 className="truncate text-[14px] font-semibold leading-4 text-hc-n-900">{t('misPedidos.pedido', { numero: etiqueta })}</h2>
-          <p className="text-[12px] leading-[14px] text-hc-n-500">{fechaConAnio(pedido.fecha, i18n.language)}</p>
+          <p className="text-[12px] leading-[14px] text-hc-n-600">{fechaConAnio(pedido.fecha, i18n.language)}</p>
         </div>
         <ChipEstadoPedido estado={pedido.estado} />
       </div>
@@ -61,7 +61,7 @@ function TarjetaPedido({ pedido }: { pedido: PedidoComprador }) {
         {fotos.map((f, i) => <Miniatura key={i} src={f.src} tam={52} />)}
         <div className="flex min-w-0 flex-1 flex-col items-end gap-px">
           <p className="font-display text-[15px] font-bold text-hc-n-900">{formatPrice(pedido.total)}</p>
-          {detalle && <p className="text-[12px] text-hc-n-500">{detalle}</p>}
+          {detalle && <p className="text-[12px] text-hc-n-600">{detalle}</p>}
         </div>
       </div>
       <div className="flex items-center justify-between gap-2">

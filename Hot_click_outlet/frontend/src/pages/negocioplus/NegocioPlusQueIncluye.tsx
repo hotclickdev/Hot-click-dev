@@ -17,7 +17,7 @@ export default function NegocioPlusQueIncluye() {
             className={`flex items-center gap-3 px-6 py-3.5 ${i > 0 ? 'border-t' : ''}`}
             style={{ borderColor: 'var(--hc-border)' }}
           >
-            <span style={{ color: 'var(--hc-primary)' }}>
+            <span style={{ color: 'var(--hc-primary-text)' }}>
               <TrustGlyph tipo="check" className="w-4 h-4 shrink-0" />
             </span>
             <p className="text-sm" style={{ color: 'var(--hc-text)' }}>{t(`negocioPlus.${key}`)}</p>

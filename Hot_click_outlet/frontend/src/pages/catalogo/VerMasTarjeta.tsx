@@ -21,7 +21,7 @@ export default function VerMasTarjeta({
         <span className="font-display text-[26px] font-bold leading-none text-hc-n-900">+{cantidad}</span>
       ) : icono}
       <span className="text-[12px] font-semibold text-hc-n-600">{unidad}</span>
-      <span className="text-[11px] leading-[15px] text-hc-n-500">{categoria}</span>
+      <span className="text-[11px] leading-[15px] text-hc-n-600">{categoria}</span>
       <span className="text-[12px] font-semibold text-hc-blue-600">
         <TextoFlecha iconClassName="w-3.5 h-3.5">Ver categoría completa</TextoFlecha>
       </span>

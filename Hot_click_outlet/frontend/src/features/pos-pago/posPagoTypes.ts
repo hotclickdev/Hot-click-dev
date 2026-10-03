@@ -19,6 +19,29 @@ export type QrPagoInfo = {
   sinpeNumero?: string
   sinpeRef?: string
   expiracion?: string
+  /** Minutos que dura el cobro (backend `PosQrSessionService.VIGENCIA_MINUTOS`). */
+  vigenciaMinutos?: number
+  /** Métodos que la caja habilitó; el cliente elige entre ellos (V147). */
+  metodosHabilitados?: string[]
+  /** Número de cobro visible ("P-3391"). */
+  numeroCobro?: string | null
+  /** Nombre de la caja o sucursal que cobra. */
+  caja?: string | null
+}
+
+export type MetodoQr = 'SINPE' | 'TARJETA'
+
+/** Comprobante del cobro pagado (`GET /pos/qr/pago/:token/comprobante`). */
+export type QrComprobante = {
+  numeroCobro?: string | null
+  empresaNombre?: string
+  logoUrl?: string | null
+  caja?: string | null
+  metodoPago?: string
+  total?: number
+  items?: QrPagoItem[]
+  fechaPago?: string | null
+  referencia?: string
 }
 
 export type PosPagoVista =

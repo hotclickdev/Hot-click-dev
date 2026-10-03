@@ -66,7 +66,7 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
         <section className={FILA}>
           <div className="flex items-center gap-[10px]">
             <h3 className={`${TITULO_FILA} font-sans tracking-normal`}>{t('cookies.esenciales')}</h3>
-            <span className="flex items-center gap-1 text-[12px] font-semibold leading-[normal] text-hc-success">
+            <span className="flex items-center gap-1 text-[12px] font-semibold leading-[normal] text-hc-success-text">
               <img src={ICONOS_ESTADOS.cookiesSiempreActivas} alt="" width={12} height={12} />
               {t('cookies.siempreActivas')}
             </span>
@@ -85,7 +85,7 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
         <section className={FILA}>
           <div className="flex items-center gap-[10px]">
             <h3 className={`${TITULO_FILA} font-sans tracking-normal`}>{t('cookies.publicidad')}</h3>
-            <span className="text-[12px] font-semibold leading-[normal] text-hc-n-500">{t('cookies.noLasUsamos')}</span>
+            <span className="text-[12px] font-semibold leading-[normal] text-hc-n-600">{t('cookies.noLasUsamos')}</span>
           </div>
           <p className={DESCRIPCION}>{t('cookies.publicidadDesc')}</p>
         </section>
@@ -99,7 +99,7 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
           <button type="button" onClick={onAceptarTodo} className={`${BOTON} border border-hc-n-200 bg-hc-n-0 text-hc-n-900 hover:bg-hc-n-50`}>
             {t('cookies.acceptAll')}
           </button>
-          <p className="text-[11px] leading-[15px] text-hc-n-500">
+          <p className="text-[11px] leading-[15px] text-hc-n-600">
             {t('cookies.leyTexto')}{' '}
             <Link to="/cookies" onClick={onCerrar} className="underline underline-offset-2">{t('cookies.verPolitica')}</Link>
           </p>

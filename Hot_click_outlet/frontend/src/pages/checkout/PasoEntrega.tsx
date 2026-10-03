@@ -22,7 +22,7 @@ function Precio({ opcion, escritorio }: { opcion: OpcionEnvio; escritorio: boole
   const { t } = useTranslation()
   const tamano = escritorio ? 'text-[13px]' : 'text-[14px]'
   if (opcion.varia) return <span className={`shrink-0 font-semibold text-hc-n-900 ${tamano}`}>{t('checkout.f.varia')}</span>
-  if (opcion.precio === 0) return <span className={`shrink-0 font-semibold text-hc-success ${tamano}`}>{t('checkout.f.gratis')}</span>
+  if (opcion.precio === 0) return <span className={`shrink-0 font-semibold text-hc-success-text ${tamano}`}>{t('checkout.f.gratis')}</span>
   return <span className={`shrink-0 font-semibold text-hc-n-900 ${tamano}`}>{formatPrice(opcion.precio)}</span>
 }
 
@@ -64,8 +64,8 @@ function OpcionFila({ opcion, nombre, activa, conNotaRetiro, onElegir }: OpcionP
           <span className={`text-[14px] text-hc-n-900 ${activa ? 'font-semibold' : 'font-medium'}`}>{t(`checkout.f.${claves.titulo}`)}</span>
           {esRetiro && <EtiquetaRetiro />}
         </span>
-        {claves.sub && <span className="w-full text-[12px] leading-4 text-hc-n-500">{t(`checkout.f.${claves.sub}`)}</span>}
-        {esRetiro && opcion.sub && <span className="w-full text-[12px] leading-4 text-hc-n-500">{opcion.sub}</span>}
+        {claves.sub && <span className="w-full text-[12px] leading-4 text-hc-n-600">{t(`checkout.f.${claves.sub}`)}</span>}
+        {esRetiro && opcion.sub && <span className="w-full text-[12px] leading-4 text-hc-n-600">{opcion.sub}</span>}
         {esRetiro && conNotaRetiro && <NotaDistancia escritorio={false} />}
       </span>
       <Precio opcion={opcion} escritorio={false} />
@@ -113,7 +113,7 @@ function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGA
         <div className="flex items-center gap-2 leading-[normal]">
           <IconoFigma src={ICONOS_CHECKOUT.paqueteTienda} size={16} className="text-hc-n-900" />
           <h3 className="font-sans text-[14px] font-semibold tracking-normal text-hc-n-900">{titulo}</h3>
-          <p className="text-[12px] text-hc-n-500">{conteo}</p>
+          <p className="text-[12px] text-hc-n-600">{conteo}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {opciones.map((opcion) => (
@@ -131,7 +131,7 @@ function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGA
         <IconoFigma src={ICONOS_CHECKOUT.paqueteTienda} size={18} className="text-hc-n-900" />
         <div className="flex min-w-0 flex-1 flex-col">
           <h3 className="font-sans text-[14px] font-semibold tracking-normal text-hc-n-900">{titulo}</h3>
-          <p className="flex items-center gap-1 text-[12px] text-hc-n-500">
+          <p className="flex items-center gap-1 text-[12px] text-hc-n-600">
             <IconoFigma src={ICONOS_CHECKOUT.paqueteOrigen} size={12} className="text-hc-n-400" />
             {conteo}
           </p>
@@ -158,7 +158,7 @@ function AtajoInternacional() {
       <IconoFigma src={ICONOS_CHECKOUT.envioInternacional} size={20} className="text-hc-blue-600" />
       <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
         <span className="text-[14px] font-semibold text-hc-n-900">{t('checkout.envioInternacional')}</span>
-        <span className="text-[12px] leading-[15px] text-hc-n-500">{t('checkout.envioInternacionalHint')}</span>
+        <span className="text-[12px] leading-[15px] text-hc-n-600">{t('checkout.envioInternacionalHint')}</span>
       </span>
       <IconoFigma src={ICONOS_CHECKOUT.chevronDerecha} size={16} className="text-hc-n-500" />
     </a>
@@ -236,7 +236,7 @@ export default function PasoEntrega({ form, escritorio, onElegirEnvio }: PasoEnt
           onElegir={(valor) => onElegirEnvio(paquete.bodegaId, valor)}
         />
       ))}
-      <p className="text-[12px] leading-4 text-hc-n-500">{escritorio ? t('checkout.f.encomiendaNotaEscritorio') : t('checkout.f.retiroNotaPie')}</p>
+      <p className="text-[12px] leading-4 text-hc-n-600">{escritorio ? t('checkout.f.encomiendaNotaEscritorio') : t('checkout.f.retiroNotaPie')}</p>
       <AtajoInternacional />
       <div className="flex items-center justify-between rounded-[12px] bg-hc-n-100 px-[14px] py-3 text-[14px] leading-[normal] text-hc-n-900">
         <p className="font-medium">{t('cart.envioTotal', { count: paquetes.length })}</p>

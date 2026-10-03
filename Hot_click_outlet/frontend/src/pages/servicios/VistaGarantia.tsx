@@ -43,7 +43,7 @@ function FilaProducto({ g, elegida, onElegir }: { g: GarantiaItem; elegida: bool
         : <span aria-hidden="true" className="size-[52px] shrink-0 rounded-[10px] bg-hc-n-100" />}
       <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
         <span className="truncate text-[14px] font-medium text-hc-n-900">{g.nombre}</span>
-        <span className="truncate text-[12px] text-hc-n-500">{detalle}</span>
+        <span className="truncate text-[12px] text-hc-n-600">{detalle}</span>
       </span>
       <IcoSrv nombre={elegida ? 'radioActivo' : 'radioInactivo'} size={20} />
     </button>
@@ -174,7 +174,7 @@ export default function VistaGarantia({ token, volver, misGarantias, loadingGara
         {error && (
           <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
         )}
-        <p className="text-[12px] leading-4 text-hc-n-500">
+        <p className="text-[12px] leading-4 text-hc-n-600">
           {t('serviciosPage.garantia.problema')}{' '}
           <a href={urlWhatsApp('')} target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
             {t('serviciosPage.garantia.contactanos')}

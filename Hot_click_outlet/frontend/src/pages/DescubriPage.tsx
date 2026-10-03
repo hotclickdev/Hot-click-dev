@@ -238,7 +238,7 @@ export default function DescubriPage() {
   const eleccionesParaSeleccion = Math.min(SWIPES_PARA_REVELAR, deck.length)
   const enMazo = status === 'ready' && fase === 'mazo' && deck.length > 0
   const contador = enMazo ? (
-    <span className="font-mono text-[12px] font-medium leading-[normal] text-hc-n-500" aria-live="polite">
+    <span className="font-mono text-[12px] font-medium leading-[normal] text-hc-n-600" aria-live="polite">
       {t('descubri.deckProgress', { current: Math.min(swipes + 1, eleccionesParaSeleccion), total: eleccionesParaSeleccion })}
     </span>
   ) : undefined

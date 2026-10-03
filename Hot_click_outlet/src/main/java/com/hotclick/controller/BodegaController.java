@@ -32,15 +32,7 @@ public class BodegaController {
     @Transactional(readOnly = true)
     @GetMapping
     public ResponseEntity<ResponseDTO> listar(@RequestParam(required = false) Long empresaId) {
-        Long scopeEmpresaId = companyScope.getCurrentEmpresaId();
-        // IT Admin no tiene empresa propia (scopeEmpresaId null) — puede pedir explícitamente
-        // las bodegas de una empresa puntual (ej. al elegir a quién asignar un import).
-        // Para cualquier otro rol el query param se ignora: siempre manda su propio scope.
-        Long efectivo = empresaIdEfectivoBodegas(scopeEmpresaId, empresaId);
-        var bodegas = efectivo != null
-            ? bodegaRepository.findByEmpresaIdOrNoEmpresaAndEstado(efectivo, Constants.ESTADO_ACTIVO)
-            : bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
-        var dtos = bodegas.stream().map(b -> {
+        var dtos = bodegasVisibles(empresaId).stream().map(b -> {
             var m = new java.util.LinkedHashMap<String, Object>();
             m.put("id", b.getId());
             m.put("nombreBodega", b.getNombreBodega());
@@ -178,9 +170,24 @@ public class BodegaController {
         }
     }
 
-    private Long empresaIdEfectivoBodegas(Long scopeEmpresaId, Long empresaId) {
-        if (scopeEmpresaId != null) return scopeEmpresaId;
-        if (companyScope.isAdminIT()) return empresaId;
-        return null;
+    /**
+     * Bodegas que el usuario actual puede listar (con datos de contacto).
+     * <ul>
+     *   <li>IT Admin (sin impersonar): todas, o las de {@code empresaId} si lo pide
+     *       (ej. al elegir a quién asignar un import).</li>
+     *   <li>Usuario de empresa o sesión de soporte: solo las de su empresa. El query param
+     *       se ignora y las bodegas legacy sin empresa no se incluyen.</li>
+     *   <li>Cualquier otro (comprador o staff sin empresa): lista vacía.</li>
+     * </ul>
+     */
+    private List<Bodega> bodegasVisibles(Long empresaIdSolicitada) {
+        if (companyScope.isAdminIT()) {
+            return empresaIdSolicitada != null
+                ? bodegaRepository.findByEmpresaIdOrNoEmpresaAndEstado(empresaIdSolicitada, Constants.ESTADO_ACTIVO)
+                : bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        }
+        Long scopeEmpresaId = companyScope.getCurrentEmpresaId();
+        if (scopeEmpresaId == null) return List.of();
+        return bodegaRepository.findByEmpresaIdAndEstado(scopeEmpresaId, Constants.ESTADO_ACTIVO);
     }
 }

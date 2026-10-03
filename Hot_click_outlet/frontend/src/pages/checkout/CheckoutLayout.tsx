@@ -11,7 +11,7 @@ import PasoDatos from './PasoDatos'
 import PasoEntrega from './PasoEntrega'
 import { CodigosCheckout, ConsentimientoDatos, MetodosPago, ResumenPagoMovil } from './PasoPago'
 import { CabeceraCompraSegura, IndicadorPasos, PieCheckoutMovil } from './PiezasCheckout'
-import { useVolver } from './pasosCheckoutHelpers'
+import { pasoMaximoCheckout, useVolver } from './pasosCheckoutHelpers'
 import { useCodigosPedido } from './useCodigosPedido'
 import { useEsDesktop } from './useEsDesktop'
 import type { ItemCheckout } from './checkoutHelpers'
@@ -41,7 +41,7 @@ function TarjetaPaso({ numero, titulo, subtitulo, children }: { numero: number; 
         <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-hc-blue-600 text-[13px] font-bold text-hc-n-0">{numero}</span>
         <div className="flex min-w-0 flex-1 flex-col gap-px">
           <h2 className="font-display text-[17px] font-semibold tracking-normal text-hc-n-900">{titulo}</h2>
-          {subtitulo && <p className="text-[13px] text-hc-n-500">{subtitulo}</p>}
+          {subtitulo && <p className="text-[13px] text-hc-n-600">{subtitulo}</p>}
         </div>
       </div>
       {children}
@@ -59,14 +59,36 @@ export default function CheckoutLayout({
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
   const codigos = useCodigosPedido(token)
-  const { paso, setPaso } = form
+  const { setPaso } = form
   const [consentimientoPendiente, setConsentimientoPendiente] = useState(false)
-  const volver = useVolver(RUTA_CARRITO, paso, setPaso)
 
   const paquetesResumen = useMemo(() => paquetesConEnvioElegido(form.paquetes, form.metodoEnvioPorPaquete), [form.paquetes, form.metodoEnvioPorPaquete])
   const unidades = items.reduce((suma, item) => suma + (item.cantidad ?? 0), 0)
   const ocupado = estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos
   const requiereEntrega = form.paquetes.some((p) => form.metodoEnvioPorPaquete[p.bodegaId] !== 'RETIRO_EN_TIENDA')
+
+  // R3: `?paso=` no deja saltar pasos (enlace o recarga): se queda en el primer paso incompleto.
+  const pasoMaximo = pasoMaximoCheckout(
+    {
+      conSesion: Boolean(token),
+      necesitaDireccion: form.necesitaDireccion,
+      requiereEntrega,
+      telefono: form.telefono,
+      guestEmail: form.guestEmail,
+      guestPhone: form.guestPhone,
+      nombre: form.sinpeNombre,
+      direccion: form.direccion,
+      provincia: form.provincia,
+      canton: form.canton,
+    },
+    { telefono: form.validatePhone, correo: form.validateGuestEmail, direccion: form.validateAddress },
+  )
+  const paso = esDesktop ? form.paso : Math.min(form.paso, pasoMaximo)
+  const volver = useVolver(RUTA_CARRITO, paso, setPaso)
+
+  useEffect(() => {
+    if (!esDesktop && form.paso > pasoMaximo) setPaso(pasoMaximo, { reemplazar: true })
+  }, [esDesktop, form.paso, pasoMaximo, setPaso])
 
   useEffect(() => {
     globalThis.scrollTo({ top: 0, behavior: 'instant' })

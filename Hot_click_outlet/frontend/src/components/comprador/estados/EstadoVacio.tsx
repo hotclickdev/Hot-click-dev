@@ -9,7 +9,7 @@ type Tono = 'neutro' | 'azul' | 'rojo'
 const CLASE_TONO: Record<Tono, string> = {
   neutro: 'bg-hc-n-100 text-hc-n-600',
   azul: 'bg-hc-blue-50 text-hc-blue-600',
-  rojo: 'bg-hc-red-50 text-hc-red-500',
+  rojo: 'bg-hc-red-50 text-hc-red-600',
 }
 
 type EstadoVacioProps = {

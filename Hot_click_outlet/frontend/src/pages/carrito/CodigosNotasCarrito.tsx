@@ -24,7 +24,7 @@ export function NotasPedido({ notas, onCambiar }: { notas: string; onCambiar: (v
         placeholder={t('cart.notasPh')}
         className="hc-input-libre h-[72px] w-full resize-none rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3 text-[14px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-500"
       />
-      <p className="text-[11px] leading-[15px] text-hc-n-500">{t('cart.notasAyuda')}</p>
+      <p className="text-[11px] leading-[15px] text-hc-n-600">{t('cart.notasAyuda')}</p>
     </section>
   )
 }
@@ -116,7 +116,7 @@ export function CodigosCarrito({ codigos, conSesion, incluirGiftCard, descuentoM
         onCambiar={codigos.cambiarCupon}
         onAplicar={codigos.validarCupon}
         onQuitar={codigos.quitarCupon}
-        invalido={<p className="text-[13px] font-semibold text-hc-red-500">{codigos.cuponError || t('checkout.codigo.cuponInvalidoTitulo')}</p>}
+        invalido={<p className="text-[13px] font-semibold text-hc-red-600">{codigos.cuponError || t('checkout.codigo.cuponInvalidoTitulo')}</p>}
         valido={(
           <>
             <TituloValido texto={t('checkout.codigo.cuponValidoTitulo')} />
@@ -139,7 +139,7 @@ export function CodigosCarrito({ codigos, conSesion, incluirGiftCard, descuentoM
             onQuitar={codigos.quitarGiftCard}
             invalido={(
               <>
-                <p className="text-[13px] font-semibold text-hc-red-500">{t('checkout.codigo.giftInvalidoTitulo')}</p>
+                <p className="text-[13px] font-semibold text-hc-red-600">{t('checkout.codigo.giftInvalidoTitulo')}</p>
                 <p className="text-[12px] leading-4 text-hc-text-secondary">{t('checkout.codigo.giftInvalidoAyuda')}</p>
               </>
             )}
@@ -152,7 +152,7 @@ export function CodigosCarrito({ codigos, conSesion, incluirGiftCard, descuentoM
               </>
             )}
           />
-          <p className="text-[11px] leading-[15px] text-hc-n-500">{t('cart.giftCardAyuda')}</p>
+          <p className="text-[11px] leading-[15px] text-hc-n-600">{t('cart.giftCardAyuda')}</p>
         </>
       )}
     </div>

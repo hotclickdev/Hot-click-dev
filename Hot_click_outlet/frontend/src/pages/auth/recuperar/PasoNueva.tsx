@@ -7,10 +7,10 @@ import type { RecuperarContrasena } from './useRecuperarContrasena'
 function Requisito({ cumple, texto }: { cumple: boolean; texto: string }) {
   return (
     <li className="flex w-full items-center gap-2">
-      <span className={`flex shrink-0 ${cumple ? 'text-hc-success' : 'text-hc-n-400'}`}>
+      <span className={`flex shrink-0 ${cumple ? 'text-hc-success' : 'text-hc-n-600'}`}>
         {cumple ? <IconoCheck /> : <IconoEquis />}
       </span>
-      <span className={`text-[13px] ${cumple ? 'text-hc-success' : 'text-hc-n-500'}`}>{texto}</span>
+      <span className={`text-[13px] ${cumple ? 'text-hc-success-text' : 'text-hc-n-600'}`}>{texto}</span>
     </li>
   )
 }
@@ -25,7 +25,7 @@ export default function PasoNueva({ flujo }: { flujo: RecuperarContrasena }) {
   const botonOjo = (
     <button type="button" onClick={() => setVerContrasena(v => !v)}
       aria-label={verContrasena ? t('forgot.hidePassword') : t('forgot.showPassword')} aria-pressed={verContrasena}
-      className="-m-1 flex shrink-0 rounded p-1 text-hc-n-500 hover:text-hc-n-900">
+      className="-m-1 flex shrink-0 rounded p-1 text-hc-n-600 hover:text-hc-n-900">
       {verContrasena ? <IconoOjoTachado /> : <IconoOjo />}
     </button>
   )

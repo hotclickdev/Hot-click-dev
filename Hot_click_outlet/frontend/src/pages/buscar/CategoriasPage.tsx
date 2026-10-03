@@ -56,7 +56,7 @@ export default function CategoriasPage() {
           <div className="flex items-center">
             <Chip variante="asistente" texto={t('products.categoriesAssistant')} onClick={() => useChatStore.getState().open(null)} />
           </div>
-          {cargando && <p className="text-[14px] text-hc-n-500">{t('products.loading')}</p>}
+          {cargando && <p className="text-[14px] text-hc-n-600">{t('products.loading')}</p>}
           {!cargando && visibles.length === 0 && (
             <p className="text-[14px] text-hc-n-600">{t('products.categoriesEmpty')}</p>
           )}

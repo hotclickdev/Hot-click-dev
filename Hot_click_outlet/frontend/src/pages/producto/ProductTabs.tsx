@@ -55,7 +55,7 @@ export default function ProductTabs({ product, tabs, activeTab, onTabChange }: P
             aria-selected={activeTab === tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`-mb-px border-b-2 px-4 py-3 text-[14px] font-semibold ${
-              activeTab === tab.id ? 'border-hc-blue-600 text-hc-n-900' : 'border-transparent text-hc-n-500'
+              activeTab === tab.id ? 'border-hc-blue-600 text-hc-n-900' : 'border-transparent text-hc-n-600'
             }`}
           >
             {tab.label}

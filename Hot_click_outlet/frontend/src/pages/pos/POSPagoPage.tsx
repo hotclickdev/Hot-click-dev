@@ -14,11 +14,21 @@ import { useCuentaRegresiva } from '@/features/pos-pago/useCuentaRegresiva'
 import QrPagina from '@/features/qr-negocio/QrPagina'
 import QrEncabezadoNegocio from '@/features/qr-negocio/QrEncabezadoNegocio'
 import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
+import { metodoActivo, metodosDisponibles } from '@/features/pos-pago/posPagoFormat'
+import type { MetodoQr } from '@/features/pos-pago/posPagoTypes'
+import type { TFunction } from 'i18next'
 
 /** Token legacy del flujo carrito; ya no se escribe desde esta página. */
 export const POS_QR_TOKEN_KEY = 'hc-pos-qr-token'
 
 const USA_EMBED_ONVO = true
+
+/** "Cobro #P-3391 · Caja principal"; sin número de cobro no hay línea. */
+function textoCobro(t: TFunction, numero?: string | null, caja?: string | null): string | null {
+  if (!numero) return null
+  if (caja) return t('pos.pago.cobroNumeroCaja', { numero, caja })
+  return t('pos.pago.cobroNumero', { numero })
+}
 
 /**
  * Pago del cliente por QR de caja (`/pos/pago/:token`). Frames Figma:
@@ -31,6 +41,7 @@ export default function POSPagoPage() {
   const [modoEmbed, setModoEmbed] = useState(USA_EMBED_ONVO)
   const [sinpeIniciado, setSinpeIniciado] = useState(false)
   const [reporteAbierto, setReporteAbierto] = useState(false)
+  const [metodoElegido, setMetodoElegido] = useState<MetodoQr | null>(null)
 
   const {
     info,
@@ -59,7 +70,7 @@ export default function POSPagoPage() {
   if (vista === 'cargando') {
     return (
       <QrPagina>
-        <p className="m-auto animate-pulse text-sm text-hc-n-500" role="status">
+        <p className="m-auto animate-pulse text-sm text-hc-n-600" role="status">
           {t('pos.pago.cargando')}
         </p>
       </QrPagina>
@@ -75,6 +86,8 @@ export default function POSPagoPage() {
         token={token}
         total={info?.total}
         negocio={info?.empresaNombre}
+        conComprobante={vista === 'pagado'}
+        vigenciaMinutos={info?.vigenciaMinutos}
       />
     )
     return info ? conEncabezado(estado) : <QrPagina>{estado}</QrPagina>
@@ -88,8 +101,13 @@ export default function POSPagoPage() {
     )
   }
 
-  const esTarjeta = info.metodoPago === 'TARJETA'
-  const esSinpe = info.metodoPago === 'SINPE'
+  // El cliente elige entre los métodos que habilitó la caja; el backend fija el
+  // método de la sesión cuando arranca el pago (intent, checkout o SINPE).
+  const metodos = metodosDisponibles(info)
+  const metodo = metodoActivo(metodos, info.metodoPago, metodoElegido)
+  const esTarjeta = metodo === 'TARJETA'
+  const esSinpe = metodo === 'SINPE'
+  const cobro = textoCobro(t, info.numeroCobro, info.caja)
 
   if (esSinpe && sinpeIniciado) {
     return conEncabezado(<PosPagoSinpe info={info} token={token} onPagado={marcarExitoEmbed} />)
@@ -97,8 +115,8 @@ export default function POSPagoPage() {
 
   return conEncabezado(
     <>
-      <PosPagoMonto total={info.total} restante={restante} />
-      {esSinpe || esTarjeta ? <PosPagoMetodo metodo={esSinpe ? 'SINPE' : 'TARJETA'} /> : null}
+      <PosPagoMonto total={info.total} restante={restante} cobro={cobro} />
+      {metodo ? <PosPagoMetodo metodos={metodos} elegido={metodo} onElegir={setMetodoElegido} /> : null}
       <PosPagoPedido items={info.items ?? []} />
 
       {esTarjeta && modoEmbed ? (

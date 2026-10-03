@@ -24,7 +24,7 @@ type EmpresaFiscal = {
 const ESTADO_TOKENS: Record<string, { color: string; bg: string }> = {
   PENDIENTE: { color: 'var(--hc-warning)', bg: 'var(--hc-warning-bg)' },
   ENVIADO:   { color: 'var(--hc-accent)',  bg: '#EFF4FE' },
-  ACEPTADO:  { color: 'var(--hc-success)', bg: 'var(--hc-success-bg)' },
+  ACEPTADO:  { color: 'var(--hc-success-text)', bg: 'var(--hc-success-bg)' },
   RECHAZADO: { color: 'var(--hc-danger)',  bg: 'var(--hc-danger-bg)' },
   ERROR:     { color: 'var(--hc-danger)',  bg: 'var(--hc-danger-bg)' },
 }
@@ -214,7 +214,7 @@ export default function AdminFacturas() {
                       <td className="px-4 py-3">
                         <span className="rounded px-1.5 py-0.5 text-xs font-semibold"
                           style={{
-                            color: prod ? 'var(--hc-success)' : 'var(--hc-muted)',
+                            color: prod ? 'var(--hc-success-text)' : 'var(--hc-muted)',
                             background: prod ? 'var(--hc-success-bg)' : 'var(--hc-surface-2)',
                           }}>
                           {cf.ambiente}

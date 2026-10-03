@@ -57,13 +57,13 @@ function DetallePersonalizado({ item }: { item: ItemCarrito }) {
   const referencias = item.personalizacion.imagenes?.filter(Boolean) ?? []
   return (
     <>
-      <p className="text-[11px] font-semibold leading-[normal] text-hc-n-500">{t('cart.personalizado')}</p>
+      <p className="text-[11px] font-semibold leading-[normal] text-hc-n-600">{t('cart.personalizado')}</p>
       {referencias.length > 0 && (
         <div className="flex gap-1">
           {referencias.slice(0, 3).map((url) => <img key={url} src={url} alt="" className="size-8 rounded-[6px] border border-hc-n-200 object-cover" />)}
         </div>
       )}
-      {item.personalizacion.notas && <p className="line-clamp-2 text-[11px] leading-[15px] text-hc-n-500">{item.personalizacion.notas}</p>}
+      {item.personalizacion.notas && <p className="line-clamp-2 text-[11px] leading-[15px] text-hc-n-600">{item.personalizacion.notas}</p>}
     </>
   )
 }
@@ -98,7 +98,7 @@ export default function FilaProductoCarrito({ item, escritorio, onCantidad, onQu
         <p className="font-display text-[15px] font-bold leading-[normal] text-hc-n-900">{formatPrice(subtotalItem(item))}</p>
         <div className="flex items-center gap-3">
           <Cantidad item={item} escritorio={false} onCantidad={onCantidad} />
-          <button type="button" onClick={() => onQuitar(item)} aria-label={t('cart.quitar', { nombre: item.nombre })} className="relative flex size-4 items-center justify-center text-hc-n-500 after:absolute after:-inset-3">
+          <button type="button" onClick={() => onQuitar(item)} aria-label={t('cart.quitar', { nombre: item.nombre })} className="relative flex size-4 items-center justify-center text-hc-n-600 after:absolute after:-inset-3">
             <IconoFigma src={ICONOS_CHECKOUT.eliminar} size={16} />
           </button>
         </div>

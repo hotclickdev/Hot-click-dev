@@ -110,7 +110,7 @@ export default function GestionUserTable({
                         <p className="font-medium truncate max-w-[140px]" style={{ color: 'var(--hc-text)' }}>{empresa.nombreEmpresa}</p>
                         <span className="text-xs px-1.5 py-0.5 rounded"
                           style={{ backgroundColor: empresa.estadoEmpresa === 'ACTIVO' ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
-                                   color: empresa.estadoEmpresa === 'ACTIVO' ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
+                                   color: empresa.estadoEmpresa === 'ACTIVO' ? 'var(--hc-success-text)' : 'var(--hc-danger)' }}>
                           {empresa.estadoEmpresa} · {empresa.planSaas ?? '—'}
                         </span>
                       </div>
@@ -123,13 +123,13 @@ export default function GestionUserTable({
                     {sec ? (
                       <span className="px-2 py-0.5 rounded text-xs font-semibold"
                         style={{ backgroundColor: sec.twoFactorEnabled ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
-                                 color: sec.twoFactorEnabled ? 'var(--hc-success)' : 'var(--hc-danger)' }}>
+                                 color: sec.twoFactorEnabled ? 'var(--hc-success-text)' : 'var(--hc-danger)' }}>
                         {sec.twoFactorEnabled ? 'Activo' : 'Inactivo'}
                       </span>
                     ) : <span style={{ color: 'var(--hc-muted)' }}>—</span>}
                   </td>
 
-                  <td className="px-4 py-3 text-center font-bold tabular-nums" style={{ color: 'var(--hc-success)' }}>
+                  <td className="px-4 py-3 text-center font-bold tabular-nums" style={{ color: 'var(--hc-success-text)' }}>
                     {sec?.loginsExitosos ?? '—'}
                   </td>
 
@@ -157,14 +157,14 @@ export default function GestionUserTable({
                       {estado === 'SUSPENDIDO' && (
                         <button type="button" onClick={() => onAction(u, 'unblock')}
                           className="px-2.5 py-1 rounded-lg text-xs font-medium"
-                          style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>
+                          style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success-text)' }}>
                           Desbloquear
                         </button>
                       )}
                       {estado === 'ELIMINADO' && (
                         <button type="button" onClick={() => onAction(u, 'restore')}
                           className="px-2.5 py-1 rounded-lg text-xs font-medium"
-                          style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success)' }}>
+                          style={{ backgroundColor: 'var(--hc-success-bg)', color: 'var(--hc-success-text)' }}>
                           Restaurar
                         </button>
                       )}

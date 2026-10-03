@@ -7,7 +7,7 @@ export type EstadoServicio = (typeof ESTADOS)[number]
 export const ESTADO_STYLES: Record<string, { color: string; bg: string }> = {
   PENDIENTE:     { color: 'var(--hc-warning)', bg: 'var(--hc-warning-bg)' },
   EN_BUSQUEDA:   { color: 'var(--hc-accent)',  bg: '#EFF4FE' },
-  ENCONTRADO:    { color: 'var(--hc-success)', bg: 'var(--hc-success-bg)' },
+  ENCONTRADO:    { color: 'var(--hc-success-text)', bg: 'var(--hc-success-bg)' },
   NO_ENCONTRADO: { color: 'var(--hc-danger)',  bg: 'var(--hc-danger-bg)' },
   CANCELADO:     { color: 'var(--hc-muted)',   bg: 'var(--hc-surface-2)' },
 }

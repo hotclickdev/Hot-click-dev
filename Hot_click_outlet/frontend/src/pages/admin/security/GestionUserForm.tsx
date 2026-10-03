@@ -80,7 +80,7 @@ export default function GestionUserForm({
             <div className="space-y-2">
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Estado</p>
               <div className="grid grid-cols-2 gap-2">
-                {[['ACTIVO', 'var(--hc-success)', 'var(--hc-success-bg)', 'color-mix(in srgb, var(--hc-success) 40%, transparent)'],
+                {[['ACTIVO', 'var(--hc-success-text)', 'var(--hc-success-bg)', 'color-mix(in srgb, var(--hc-success) 40%, transparent)'],
                   ['INACTIVO', 'var(--hc-danger)', 'var(--hc-danger-bg)', 'color-mix(in srgb, var(--hc-danger) 40%, transparent)']].map(([val, color, bg, border]) => (
                   <button type="button" key={val} onClick={() => onEditEstado(val)}
                     className="px-2 py-2 rounded-xl text-xs font-medium border transition-all"
@@ -136,7 +136,7 @@ export default function GestionUserForm({
                 className="flex-1 h-9 rounded-xl text-sm font-semibold disabled:opacity-50"
                 style={{
                   backgroundColor: actionType === 'block' || actionType === 'delete' ? 'var(--hc-danger-bg)' : 'var(--hc-success-bg)',
-                  color: actionType === 'block' || actionType === 'delete' ? 'var(--hc-danger)' : 'var(--hc-success)',
+                  color: actionType === 'block' || actionType === 'delete' ? 'var(--hc-danger)' : 'var(--hc-success-text)',
                 }}>
                 {actionLoading ? '...' : 'Confirmar'}
               </button>

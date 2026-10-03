@@ -94,7 +94,7 @@ function LineasTicket({ items, descuento, total }: { items: ItemCarritoPos[]; de
       <div className="h-px bg-hc-border" />
       <div className="flex items-baseline justify-between">
         <span className="text-[15px] font-bold">{t('pos.cobro.totalACobrar')}</span>
-        <span className="font-display text-xl font-bold text-hc-primary">₡{formatMontoPos(total)}</span>
+        <span className="font-display text-xl font-bold text-hc-primary-text">₡{formatMontoPos(total)}</span>
       </div>
     </div>
   )
@@ -179,7 +179,7 @@ function CalculadoraEfectivo({
         >
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-hc-muted">{faltante ? t('pos.cobro.faltante') : t('pos.cobro.vuelto')}</span>
-            <span className={`text-2xl font-black tabular-nums ${faltante ? 'text-hc-danger' : 'text-hc-success'}`}>
+            <span className={`text-2xl font-black tabular-nums ${faltante ? 'text-hc-danger' : 'text-hc-success-text'}`}>
               ₡{formatMontoPos(Math.abs(recibidoNum - total))}
             </span>
           </div>

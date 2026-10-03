@@ -40,7 +40,7 @@ export function OpcionAlterna({ icono, titulo, detalle, onClick, deshabilitada }
       <span className="shrink-0 text-hc-blue-600">{icono}</span>
       <span className="flex min-w-0 flex-1 flex-col gap-px">
         <span className="text-[14px] font-semibold text-hc-blue-600">{titulo}</span>
-        <span className="text-[12px] text-hc-n-500">{detalle}</span>
+        <span className="text-[12px] text-hc-n-600">{detalle}</span>
       </span>
     </button>
   )

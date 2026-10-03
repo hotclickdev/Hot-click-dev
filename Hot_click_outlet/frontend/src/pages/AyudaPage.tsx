@@ -33,9 +33,9 @@ const IconoContacto = () => (
 /** Fondo y color del mosaico, en el mismo orden que las opciones del Figma `28:1438`. */
 const TONOS = {
   azul: 'bg-hc-blue-50 text-hc-blue-600',
-  verde: 'bg-hc-green-50 text-hc-green-600',
+  verde: 'bg-hc-green-50 text-hc-success-text',
   ambar: 'bg-hc-warning-bg text-hc-warning',
-  rojo: 'bg-hc-red-50 text-hc-red-500',
+  rojo: 'bg-hc-red-50 text-hc-red-600',
 } as const
 
 type Opcion = { to: string; titulo: string; detalle: string; icono: ReactNode; tono: keyof typeof TONOS }
@@ -53,10 +53,10 @@ function TarjetaOpcion({ opcion }: { opcion: Opcion }) {
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[15px] font-semibold text-hc-n-900">{opcion.titulo}</span>
-          <span className="text-[12px] leading-4 text-hc-n-500">{opcion.detalle}</span>
+          <span className="text-[12px] leading-4 text-hc-n-600">{opcion.detalle}</span>
         </span>
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth={2}
-          strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-hc-n-400" aria-hidden="true">
+          strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-hc-n-600" aria-hidden="true">
           <path d="M6.75 13.5 11.25 9 6.75 4.5" />
         </svg>
       </Link>

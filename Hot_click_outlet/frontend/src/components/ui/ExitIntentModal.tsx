@@ -128,11 +128,11 @@ export default function ExitIntentModal() {
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
               <p className="truncate text-[14px] font-medium leading-4 text-hc-n-900">{primero.nombre}</p>
-              {detalle && <p className="truncate text-[12px] leading-[14px] text-hc-n-500">{detalle}</p>}
+              {detalle && <p className="truncate text-[12px] leading-[14px] text-hc-n-600">{detalle}</p>}
             </div>
             <p className="shrink-0 font-display text-[15px] font-bold leading-[19px] tracking-normal text-hc-n-900">{formatPrice(primero.precio)}</p>
           </div>
-          {resto > 0 && <p className="text-[11px] leading-[15px] text-hc-n-500">{t('exitIntent.more', { count: resto })}</p>}
+          {resto > 0 && <p className="text-[11px] leading-[15px] text-hc-n-600">{t('exitIntent.more', { count: resto })}</p>}
           {hasCart && (
             <div className="flex items-start justify-between leading-[normal]">
               <span className="text-[13px] text-hc-n-600">{t('exitIntent.total')}</span>

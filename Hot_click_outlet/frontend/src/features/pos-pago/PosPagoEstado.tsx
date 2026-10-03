@@ -5,7 +5,9 @@ import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
 import QrResultado from '@/features/qr-negocio/QrResultado'
 import { formatPrice } from '@/utils/format'
 import type { PosPagoVista } from './posPagoTypes'
+import { VIGENCIA_QR_MINUTOS } from './posPagoFormat'
 import PosPagoReporteModal from './PosPagoReporteModal'
+import PosPagoComprobante from './PosPagoComprobante'
 
 type Props = {
   vista: Exclude<PosPagoVista, 'cargando' | 'resumen'>
@@ -14,6 +16,10 @@ type Props = {
   token?: string
   total?: number
   negocio?: string
+  /** Cobro confirmado como PAGADO por el servidor: muestra "Ver comprobante". */
+  conComprobante?: boolean
+  /** Minutos que dura el cobro, según el backend; sin dato usa `VIGENCIA_QR_MINUTOS`. */
+  vigenciaMinutos?: number
 }
 
 /**
@@ -21,11 +27,11 @@ type Props = {
  * el frame. Cancelado y los errores no tienen frame: usan el mismo bloque
  * `QrResultado` con el ícono de alerta existente.
  */
-export default function PosPagoEstado({ vista, mensajeError, onReintentar, token, total, negocio }: Props) {
+export default function PosPagoEstado({ vista, mensajeError, onReintentar, token, total, negocio, conComprobante, vigenciaMinutos }: Props) {
   const { t } = useTranslation()
   const [reporteAbierto, setReporteAbierto] = useState(false)
 
-  const config = configEstado(vista, mensajeError, t, total, negocio)
+  const config = configEstado(vista, mensajeError, t, total, negocio, vigenciaMinutos)
   const mostrarReporte = vista === 'error' || vista === 'cancelado'
 
   return (
@@ -33,7 +39,7 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar, token
       <QrResultado
         icono={
           config.icono ?? (
-            <span className="text-hc-red-500">
+            <span className="text-hc-red-600">
               <TrustGlyph tipo="alerta" className="size-[34px]" />
             </span>
           )
@@ -43,6 +49,11 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar, token
         descripcion={config.descripcion}
       />
       <div className="flex flex-col gap-3 px-4 pb-6 pt-3">
+        {conComprobante && token ? <PosPagoComprobante token={token} /> : null}
+        {vista === 'vencido' ? (
+          // `29:1913` dibuja «Escanear otro QR»; la app no tiene lector propio, así que se indica abrir la cámara (decisión B16).
+          <p className="text-center text-[13px] leading-[18px] text-hc-n-600">{t('pos.pago.vencidoCamara')}</p>
+        ) : null}
         {vista === 'cancelado' && onReintentar ? (
           <button
             type="button"
@@ -85,6 +96,7 @@ function configEstado(
   t: (key: string, opts?: Record<string, unknown>) => string,
   total?: number,
   negocio?: string,
+  vigenciaMinutos?: number,
 ): ConfigEstado {
   if (vista === 'exito' || vista === 'pagado') {
     return {
@@ -102,7 +114,7 @@ function configEstado(
       icono: ICONOS_QR.vencido,
       tono: 'alerta',
       titulo: t('pos.pago.vencidoTitulo'),
-      descripcion: t('pos.pago.vencidoDesc'),
+      descripcion: t('pos.pago.vencidoDesc', { minutos: vigenciaMinutos ?? VIGENCIA_QR_MINUTOS }),
     }
   }
   if (vista === 'cancelado') {

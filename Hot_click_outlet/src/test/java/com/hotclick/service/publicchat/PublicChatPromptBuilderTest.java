@@ -126,4 +126,23 @@ class PublicChatPromptBuilderTest {
         assertThat(prompt).doesNotContain("conectalos en 1 frase");
         assertThat(PublicChatPromptBuilder.formatearFicha(ficha)).contains("no consta");
     }
+
+    @Test
+    @DisplayName("Plazos de envío del asistente salen de la fuente única (tiempos-envio.json)")
+    void plazosDesdeLaFuenteUnica() {
+        PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
+        String es = builder.businessInfoText("50686667888", "HOTCLICK", true, false);
+        String en = builder.businessInfoText("50686667888", "HOTCLICK", true, true);
+        assertThat(es).contains(com.hotclick.config.TiemposEnvio.resumen())
+            .contains("en el GAM de 2 a 4 días hábiles, fuera del GAM de 3 a 4 días hábiles y envío rápido en el GAM de 30 min a 2 horas")
+            .doesNotContain("2-5").doesNotContain("1-2 días");
+        assertThat(en).contains(com.hotclick.config.TiemposEnvio.resumenEn())
+            .contains("GAM 2-4 business days, outside the GAM 3-4 business days")
+            .doesNotContain("2-5").doesNotContain("1-2 days");
+
+        String prompt = builder.buildSalesSystemPrompt(
+            "50686667888", "HOTCLICK", true, "GENERAL", List.of(), false, false, null, Set.of(), false, false);
+        assertThat(prompt).contains("- Envíos (marketplace): Correos de Costa Rica + entrega directa en el GAM; "
+            + com.hotclick.config.TiemposEnvio.resumen()).doesNotContain("2-5 días");
+    }
 }

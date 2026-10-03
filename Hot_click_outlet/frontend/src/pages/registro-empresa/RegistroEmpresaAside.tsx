@@ -54,7 +54,7 @@ export default function RegistroEmpresaAside() {
         <div className="flex-1 flex flex-col justify-center">
           <motion.p {...stagger(1)} style={{
             fontSize: 11, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
-            color: 'var(--hc-primary)', marginBottom: 18,
+            color: 'var(--hc-primary-text)', marginBottom: 18,
           }}>
             Para emprendedores · Costa Rica
           </motion.p>
@@ -87,7 +87,7 @@ export default function RegistroEmpresaAside() {
                   borderRadius: 14, padding: '14px 12px',
                   backdropFilter: 'blur(12px)',
                 }}>
-                  <div style={{ width: 22, height: 22, marginBottom: 6, color: 'var(--hc-primary)' }}>
+                  <div style={{ width: 22, height: 22, marginBottom: 6, color: 'var(--hc-primary-text)' }}>
                     <Icono />
                   </div>
                   <p style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 600, fontSize: '0.78rem', color: '#FFFFFF', marginBottom: 3, lineHeight: 1.2 }}>{title}</p>
@@ -103,7 +103,7 @@ export default function RegistroEmpresaAside() {
         }}>
           {STATS.map(({ n, s }) => (
             <div key={s}>
-              <p style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: '1.75rem', color: 'var(--hc-primary)', lineHeight: 1 }}>{n}</p>
+              <p style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: '1.75rem', color: 'var(--hc-primary-text)', lineHeight: 1 }}>{n}</p>
               <p style={{ fontSize: '0.65rem', color: 'var(--hc-blue-300)', marginTop: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s}</p>
             </div>
           ))}

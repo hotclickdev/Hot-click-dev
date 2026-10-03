@@ -24,7 +24,7 @@ export default function PaqueteSeguimientoCard({ paquete, numero }: Props) {
             {t('comprador.seguimiento.paquete', { numero, tienda: paquete.tienda ?? 'HotClick' })}
           </h2>
           {paquete.origen && (
-            <p className="text-[12px] text-hc-n-500">{t('comprador.seguimiento.saleDe', { origen: paquete.origen })}</p>
+            <p className="text-[12px] text-hc-n-600">{t('comprador.seguimiento.saleDe', { origen: paquete.origen })}</p>
           )}
         </div>
         <span className={`shrink-0 whitespace-nowrap rounded-full px-2 py-[3px] text-[11px] font-semibold ${CLASES_TONO[tonoDeEstado(paquete.estado)]}`}>
