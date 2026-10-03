@@ -41,24 +41,29 @@ public class DataSeeder implements ApplicationRunner {
         asignarPlanesDemo();
     }
 
+    /**
+     * Planes SaaS. 3-oct-2026: las descripciones ya no llevan montos (se veían en el panel y contradecían la web)
+     * y el POS va en los tres planes (decisión jul 2026, confirmada 3-oct). La comisión y la mensualidad siguen
+     * con los valores de antes: los fija HOT_CLICK; mientras tanto la UI los muestra como [PENDIENTE].
+     */
     private void seedPlanesSaas() {
         seedPlan(
             "EMPRENDEDOR",
-            "Plan gratuito. Comisión 9% por venta (mín. ₡600), cubre pasarela Tilopay y plataforma.",
+            "Empezá a vender en HotClick.",
             BigDecimal.ZERO, new BigDecimal("9.00"), 0,
             2, 50, 1, 1,
-            false, false, false, true, false, false, 0, false
+            true, false, false, true, false, false, 0, false
         );
         seedPlan(
             "PYME",
-            "Plan para negocios en crecimiento. ₡9.900/mes + 6% por venta (cubre Tilopay).",
+            "Para cuando tu negocio ya tiene clientes que te buscan.",
             new BigDecimal("11.99"), new BigDecimal("6.00"), 9900,
             5, 500, 2, 2,
             true, false, true, true, true, false, 80, true
         );
         seedPlan(
             "NEGOCIO_PLUS",
-            "Plan completo. ₡24.900/mes + 6% por venta (cubre Tilopay).",
+            "Sin límites para crecer.",
             new BigDecimal("19.99"), new BigDecimal("6.00"), 24900,
             -1, -1, -1, -1,
             true, true, true, true, true, false, -1, true
@@ -88,6 +93,10 @@ public class DataSeeder implements ApplicationRunner {
             }
             if (p.getPrecioMensual() == null || p.getPrecioMensual() != precioMensualCrc) {
                 p.setPrecioMensual(precioMensualCrc);
+                dirty = true;
+            }
+            if (!Boolean.valueOf(pos).equals(p.getTienePos())) {
+                p.setTienePos(pos);
                 dirty = true;
             }
             if (descripcion != null && !descripcion.equals(p.getDescripcion())) {
