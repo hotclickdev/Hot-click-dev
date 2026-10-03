@@ -169,9 +169,9 @@ export default function ProfilePage() {
   const seccion: SeccionCuenta = vista
   const modales = (
     <>
-      <ChangePasswordModal open={showChangePassword} onClose={() => setShowChangePassword(false)} refreshToken={null} />
+      <ChangePasswordModal open={showChangePassword} onClose={() => setShowChangePassword(false)} refreshToken={null} figma={userRole === 'USUARIO_FINAL'} />
       {isAdmin() && (
-        <TwoFAModal open={show2FASetup} onClose={() => setShow2FASetup(false)} enabled={twoFAEnabled} onToggle={(val) => setTwoFAEnabled(val)} />
+        <TwoFAModal open={show2FASetup} onClose={() => setShow2FASetup(false)} enabled={twoFAEnabled} onToggle={(val) => setTwoFAEnabled(val)} figma={userRole === 'USUARIO_FINAL'} />
       )}
     </>
   )

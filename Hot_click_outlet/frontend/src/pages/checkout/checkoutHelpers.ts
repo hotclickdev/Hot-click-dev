@@ -161,7 +161,7 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
       sub: `${TEXTO_TIEMPO_ENVIO.rapido} en la GAM · Pago previo obligatorio`,
       precio: 5000,
       badge: 'Pago previo',
-      badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      badgeColor: 'bg-hc-warning-bg text-hc-warning border-hc-warning/30',
       needsAddress: true,
     },
     {

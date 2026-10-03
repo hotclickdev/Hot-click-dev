@@ -53,7 +53,7 @@ export default function WebAuthnStep({ correo, onSuccess, onError }: WebAuthnSte
       </div>
 
       {msg && (
-        <p className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">{msg}</p>
+        <p className="rounded-[12px] bg-hc-warning-bg px-[14px] py-[10px] text-[13px] leading-[18px] text-hc-warning">{msg}</p>
       )}
 
       <button type="button"

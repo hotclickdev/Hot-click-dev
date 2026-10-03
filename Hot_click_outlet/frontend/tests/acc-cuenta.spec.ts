@@ -90,7 +90,11 @@ test.describe('Mi cuenta', () => {
     // Solo el administrador puede cambiarla (regla previa): para un comprador queda de solo lectura.
     await expect(dosPasos).toBeDisabled()
     await page.getByRole('button', { name: /Cambiar contraseña/ }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    const hoja = page.getByRole('dialog')
+    await expect(hoja).toBeVisible()
+    // Comprador: hoja inferior y campo de Figma (28:1110), no el Modal/Input viejos.
+    await expect(hoja.getByLabel('Contraseña actual')).toHaveClass(/rounded-\[12px\]/)
+    await expect(hoja.getByRole('button', { name: 'Actualizar contraseña' })).toHaveClass(/bg-hc-red-500/)
   })
 
   test('sin sesión, /perfil lleva al login con retorno', async ({ browser }) => {

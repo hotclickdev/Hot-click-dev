@@ -81,7 +81,7 @@ export const sections = [
         <p>Seguí estos pasos para iniciar una devolución:</p>
         <ul>
           <li>
-            <strong>Paso 1 — Contactar al emprendedor:</strong> escribí al vendedor dentro de los 7 días hábiles. Podés hacerlo vía WhatsApp desde la página de tu pedido en <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link>.
+            <strong>Paso 1 — Contactar al emprendedor:</strong> escribí al vendedor dentro de los 7 días hábiles. Podés hacerlo vía WhatsApp desde la página de tu pedido en <Link to="/mis-pedidos" className="font-semibold text-hc-blue-600">Mis Pedidos</Link>.
           </li>
           <li>
             <strong>Paso 2 — Describir el problema:</strong> indicá el número de pedido, el motivo de la devolución y adjuntá fotos o video que muestren el problema.
@@ -93,7 +93,7 @@ export const sections = [
             <strong>Paso 4 — Reembolso o reemplazo:</strong> una vez verificado el problema, el emprendedor procesará el reembolso o enviará el producto de reemplazo.
           </li>
         </ul>
-        <p>Si no lográs llegar a un acuerdo con el emprendedor, contactanos a <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a> para mediar en el proceso.</p>
+        <p>Si no lográs llegar a un acuerdo con el emprendedor, contactanos a <a href="mailto:hotclick.cr@gmail.com" className="font-semibold text-hc-blue-600">hotclick.cr@gmail.com</a> para mediar en el proceso.</p>
       </>
     ),
   },
@@ -129,8 +129,8 @@ export const sections = [
       <>
         <p>Si tenés dudas sobre tu devolución o necesitás que HotClick intervenga como mediador, contactanos:</p>
         <ul>
-          <li><strong>Correo:</strong> <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a></li>
-          <li><strong>WhatsApp:</strong> <a href="https://wa.me/50686667888" style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">+506 8666-7888</a></li>
+          <li><strong>Correo:</strong> <a href="mailto:hotclick.cr@gmail.com" className="font-semibold text-hc-blue-600">hotclick.cr@gmail.com</a></li>
+          <li><strong>WhatsApp:</strong> <a href="https://wa.me/50686667888" className="font-semibold text-hc-blue-600" target="_blank" rel="noopener noreferrer">+506 8666-7888</a></li>
           <li><strong>Horario:</strong> Lun–Sáb 8:00–19:00</li>
         </ul>
       </>

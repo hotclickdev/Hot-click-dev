@@ -2,13 +2,16 @@ import { useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { DURACION_REVELACION_MS } from '@/utils/gustos'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_DESCUBRI } from './iconosDescubri'
 
 type DescubriRevelacionProps = {
   onDone: () => void
 }
 
 /**
- * Overlay corto antes de mostrar productos y negocios recomendados.
+ * Overlay corto antes de mostrar productos y negocios recomendados (derivado de Figma: círculo de estado
+ * de `29:1932` con el corazón del mazo `27:965`).
  * Con reduced-motion salta al resultado de inmediato.
  */
 export default function DescubriRevelacion({ onDone }: DescubriRevelacionProps) {
@@ -28,29 +31,23 @@ export default function DescubriRevelacion({ onDone }: DescubriRevelacionProps) 
 
   return (
     <div
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
-      style={{ background: 'color-mix(in srgb, var(--hc-bg) 92%, transparent)' }}
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-hc-n-0/95 px-6 text-center leading-[normal]"
       role="status"
       aria-live="polite"
       data-testid="descubri-revelacion"
     >
-      <motion.div
-        className="w-16 h-16 rounded-2xl mb-5"
-        style={{ background: 'var(--hc-accent)' }}
-        animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }}
+      <motion.span
+        className="flex size-[72px] items-center justify-center rounded-full bg-hc-red-50"
+        animate={{ scale: [1, 1.08, 1] }}
         transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
         aria-hidden="true"
-      />
-      <motion.p
-        className="text-center text-base sm:text-lg font-bold max-w-xs"
-        style={{ color: 'var(--hc-text)', fontFamily: 'var(--font-display)' }}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
       >
+        <IconoFigma src={ICONOS_DESCUBRI.meGusta25} size={28} className="text-hc-red-500" />
+      </motion.span>
+      <p className="max-w-xs font-display text-[19px] font-bold text-hc-n-900 [text-wrap:balance]">
         {t('descubri.revealTitle')}
-      </motion.p>
-      <p className="text-sm mt-2 text-center" style={{ color: 'var(--hc-muted)' }}>
+      </p>
+      <p className="max-w-xs text-[14px] leading-5 text-hc-n-600">
         {t('descubri.revealSub')}
       </p>
     </div>

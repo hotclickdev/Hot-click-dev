@@ -7,34 +7,17 @@ import { AuthenticateWithRedirectCallback } from '@clerk/react'
  */
 export default function SSOCallback() {
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 16,
-        background: 'var(--hc-bg)',
-      }}
-    >
+    <div role="status" aria-live="polite" className="flex min-h-screen flex-col items-center justify-center gap-3 bg-hc-n-0 px-6 text-center leading-[normal]">
       <AuthenticateWithRedirectCallback
         signInFallbackRedirectUrl="/sso-complete"
         signUpFallbackRedirectUrl="/sso-complete"
         signInForceRedirectUrl="/sso-complete"
         signUpForceRedirectUrl="/sso-complete"
       />
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          border: '3px solid var(--hc-accent)',
-          borderTopColor: 'transparent',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }}
-      />
-      <p style={{ color: 'var(--hc-muted)', fontSize: 14 }}>Verificando identidad…</p>
+      <span className="flex size-[72px] items-center justify-center rounded-full bg-hc-blue-50">
+        <span aria-hidden="true" className="size-9 animate-spin rounded-full border-[3px] border-hc-blue-100 border-t-hc-blue-600" />
+      </span>
+      <p className="font-display text-[19px] font-bold text-hc-n-900">Verificando identidad…</p>
     </div>
   )
 }
