@@ -27,6 +27,11 @@ const ARCHIVOS = [
   'pages/checkout/checkoutHelpers.ts',
   'components/auth/SocialLoginButtons.tsx',
   'components/auth/WebAuthnStep.tsx',
+  'components/ai/ChatModal.tsx',
+  'components/ai/AIChat.tsx',
+  'components/ai/aiChat/AIChatViews.tsx',
+  'components/ai/aiChat/useAiChat.ts',
+  'components/ai/AICategoryChip.tsx',
 ]
 
 for (const archivo of ARCHIVOS) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ALTO_BARRA_INFERIOR,
+  esRutaVisitante,
   ESPACIO_BAJO_BARRA,
   ESPACIO_BAJO_PIE_MOVIL,
   ESPACIO_SIN_BARRA,
@@ -100,5 +101,24 @@ describe('espacioReservadoMovil', () => {
 
   it('con barra y sin botón conserva solo el hueco de la barra', () => {
     expect(espacioReservadoMovil({ hayBarra: true, hayPieMovil: true, fabVisible: false })).toBe(72)
+  })
+})
+
+describe('esRutaVisitante', () => {
+  it('marketplace y tienda pública son de visitante', () => {
+    expect(esRutaVisitante('/')).toBe(true)
+    expect(esRutaVisitante('/productos/12')).toBe(true)
+    expect(esRutaVisitante('/tienda/casa-luna-506')).toBe(true)
+    expect(esRutaVisitante('/checkout')).toBe(true)
+  })
+  it('paneles, roles, landings de vendedor y prototipo no cambian', () => {
+    expect(esRutaVisitante('/admin/pedidos')).toBe(false)
+    expect(esRutaVisitante('/pos')).toBe(false)
+    expect(esRutaVisitante('/emprendedor/inicio')).toBe(false)
+    expect(esRutaVisitante('/pyme')).toBe(false)
+    expect(esRutaVisitante('/negocio-plus-plan')).toBe(false)
+    expect(esRutaVisitante('/para-emprendedores')).toBe(false)
+    expect(esRutaVisitante('/registro-empresa')).toBe(false)
+    expect(esRutaVisitante('/', true)).toBe(false)
   })
 })

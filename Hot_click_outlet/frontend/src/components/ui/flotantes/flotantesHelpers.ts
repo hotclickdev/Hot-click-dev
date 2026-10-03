@@ -63,6 +63,16 @@ function esRutaSinCambio(pathname: string): boolean {
 }
 
 /**
+ * Pantalla del visitante/comprador (marketplace y tienda pública): no es panel (`/admin`, `/pos`, roles),
+ * ni landing de vendedor, ni prototipo. Sirve para variantes ⚠️ COMPARTIDAS que solo cambian para el visitante.
+ */
+export function esRutaVisitante(pathname: string, esPrototipo = false): boolean {
+  if (esPrototipo) return false
+  if (pathname.startsWith('/admin') || pathname.startsWith('/pos')) return false
+  return !esRutaSinCambio(pathname)
+}
+
+/**
  * Rutas donde el botón de WhatsApp no se muestra (auth, carrito, pago, paneles, tienda del vendedor, prototipo).
  * `/sin-conexion` no está en el frame `45:2264`. En `/` el Home normal sigue visible: la pantalla sin conexión
  * se señala aparte, porque esa ruta también es el Home con datos.

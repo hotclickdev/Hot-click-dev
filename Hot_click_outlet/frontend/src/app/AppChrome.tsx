@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigationType } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
-import { whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
+import { esRutaVisitante, whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
+import { PageLoader, PageLoaderFigma } from '@/components/ui/Spinner'
 import { usePantallaSinConexion } from '@/components/ui/flotantes/pantallaSinConexionStore'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
@@ -183,4 +184,10 @@ export function AnalyticsInit() {
     })
   }, [])
   return null
+}
+
+/** Fallback de `Suspense`: visitante con la espera de Figma, paneles y landings con el `PageLoader` de siempre. */
+export function CargaDeRuta() {
+  const { pathname } = useLocation()
+  return esRutaVisitante(pathname, esRutaClaudeclick(pathname)) ? <PageLoaderFigma /> : <PageLoader />
 }
