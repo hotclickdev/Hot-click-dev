@@ -291,14 +291,28 @@ Reglas para todos los bloques:
 
 ### 6.3 Lo que queda con el estilo viejo, y por qué
 
+**Piezas compartidas con variante (3-oct-2026, 02:30 CR).** `Modal`, `ConfirmModal`, `Toast`, `Input`, `Button` y `PageProgressBar` (`components/ui`) tienen variante `figma` y variante `clasica`:
+- La variante sale de la ruta: `varianteDeRuta` en `components/ui/varianteVisitante.ts` usa `esRutaVisitante`. En `/perfil` solo el comprador (`USUARIO_FINAL`) ve Figma, igual que `PiezasModalCuenta`.
+- `App` monta `VarianteVisitanteProvider` dentro del router y `ToastProvider variantePorRuta`. Sin proveedor (tests, paneles, POS) todo es `clasica`.
+- Flujos de vendedor dentro de rutas de visitante quedan fijos en `clasica`: alta de emprendimiento en `/registro` (`VariantePiezaFija`), modal admin de `/login` y la rama no comprador de `/perfil`.
+
+Pruebas:
+- `components/ui/piezasVariante.test.ts` (69 casos): clases de siempre en paneles y Figma en rutas de visitante.
+- `tests/visitante-sin-paleta-vieja.spec.ts`: rama `figma` de cada pieza sin paleta vieja; toast de `/encargo` y barra en `/terminos`.
+- Previews antes/después: `/workspace/figma-audit/previews/*.png`.
+
+`features/encargos/*` no tiene partes de visitante: lo usan `AdminEncargos` y el prototipo de vendedor. El encargo y la cotización públicos (`EncargoPublicPage`, `CotizacionPublicaPage`) ya eran Figma; el único resto viejo era el toast del pago, que ahora va con la variante.
+
+**Lo que queda viejo, justificado:**
+
 | Qué | Por qué |
 |---|---|
-| `Modal`, `ConfirmModal`, `Toast`, `Input`, `Button` (`components/ui`) | ⚠️ COMPARTIDOS con todos los paneles. El visitante ya no los usa en las pantallas rediseñadas (hojas `HojaInferior`, `Campo` / `CampoCuenta`). Los modales de `/perfil` usan `PiezasModalCuenta` con `figma` solo para `USUARIO_FINAL` |
-| `PageProgressBar` (barra superior de navegación) | ⚠️ COMPARTIDO. Usa `--hc-primary`. Es una línea de 3 px y no tiene frame en Figma |
-| `features/encargos/*` | Los usan los paneles de admin y emprendedor. El encargo público (`/encargo/:token`) ya va con Figma |
-| Modal admin dentro de `LoginPageLayout`, `ModeSelector`, `EmprendimientoForm` / `emprendimiento/*`, `AppTour` | Flujos de vendedor o admin, fuera de alcance |
+| Rama `clasica` de las piezas de arriba | Es la de los paneles de emprendedor, admin, Pyme y Negocio Plus: no se toca sin autorización |
+| Modal admin dentro de `LoginPageLayout`, `ModeSelector`, `EmprendimientoForm` / `emprendimiento/*`, `AppTour` | Flujos de vendedor o admin, fuera de alcance (fijados en `clasica`) |
+| `MentalModelCoach` (tarjetas y bienvenida con `hc-surface`) | Solo lo montan `AdminLayout`, `POSShell` y `SellerShell`: el visitante no lo ve |
+| `VerificacionCorreoBanner`, `LanguageRadiogroup`, `Badge`, `EstadoBadge`, `StatCard`, `UpgradePrompt`, `CuotaBar` | Solo en paneles. El visitante usa `HojaIdiomaAccesibilidad` y sus propias insignias |
 | Landings `/emprende`, `/para-emprendedores`, `/para-pymes`, `/negocio-plus-plan`, `/registro-empresa`, `/registrar-negocio` | Son de vendedor, fuera de alcance |
-| `framer-motion` en `CodigoDescuento`, `TwoFAModal`, `CatalogProductGrid`, `CategoryRowsView` | Es solo animación; el estilo ya es Figma |
+| `framer-motion` en `CodigoDescuento`, `TwoFAModal`, `CatalogProductGrid`, `CategoryRowsView`, `Toast` y `Modal` clásico | Es solo animación; el estilo ya es Figma |
 
 ### 6.4 Tests y gates (3-oct-2026, 00:00 CR)
 
