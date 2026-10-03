@@ -1,25 +1,21 @@
 package com.hotclick.service.pedido;
 
-import com.hotclick.exception.PedidoNoDespachableException;
-import com.hotclick.model.Pedido;
 import com.hotclick.utils.Constants;
 
 import java.util.Locale;
 import java.util.Set;
 
 /**
- * Regla única de despacho: un pedido pasa a ENVIADO (guía de Correos, envío o cambio de estado)
- * solo si su pago está confirmado.
+ * Constantes y normalización compartidas por el despacho de pedidos.
  *
  * <ul>
- *   <li>Sin pago confirmado: {@code PENDIENTE} (tarjeta sin capturar, pedido de tienda o manual sin
- *       confirmar), {@code PENDIENTE_COMPROBANTE} (SINPE sin comprobante y EFECTIVO del checkout) y
- *       {@code PENDIENTE_APROBACION} (comprobante en revisión). El pago se confirma con
- *       {@code PAGADO} (pasarela, aprobación SINPE o confirmación manual).</li>
- *   <li>{@code CANCELADO}: nunca se despacha.</li>
- *   <li>El resto ({@code PAGADO}, {@code EN_PREPARACION}, {@code LISTO_RETIRO}, {@code ENVIADO} para
- *       corregir la guía…) no cambia. Tampoco se toca {@code ENTREGADO}: el retiro en tienda con pago
- *       en efectivo y el POS (que nace ENTREGADO) siguen igual.</li>
+ *   <li>Estados sin pago confirmado: {@code PENDIENTE}, {@code PENDIENTE_COMPROBANTE},
+ *       {@code PENDIENTE_APROBACION}. Los usa {@link PedidoEstadoMaquina} para no dejar saltar desde
+ *       ahí a preparación, despacho o entrega.</li>
+ *   <li>Desde SEC-09 la decisión de despachar o entregar <b>no</b> mira el estado del pedido: la toma
+ *       {@link PedidoDespachoVerificador} con el Pago (CAPTURADO) o la marca de pago manual.</li>
+ *   <li>El POS (nace ENTREGADO) no pasa por acá. El cambio manual {@code sin pago → ENTREGADO} solo
+ *       existe para efectivo con retiro en tienda desde PENDIENTE_COMPROBANTE (registra el cobro).</li>
  * </ul>
  */
 public final class PedidoDespachoPolicy {
@@ -39,25 +35,5 @@ public final class PedidoDespachoPolicy {
     static String normalizar(String estado) {
         if (estado == null || estado.isBlank()) return Constants.PEDIDO_PENDIENTE;
         return estado.trim().toUpperCase(Locale.ROOT);
-    }
-
-    public static boolean pagoConfirmado(String estadoPedido) {
-        String estado = normalizar(estadoPedido);
-        return !ESTADOS_SIN_PAGO_CONFIRMADO.contains(estado) && !Constants.PEDIDO_CANCELADO.equals(estado);
-    }
-
-    public static boolean esEnviado(String estado) {
-        return estado != null && Constants.PEDIDO_ENVIADO.equals(estado.trim().toUpperCase(Locale.ROOT));
-    }
-
-    /** Lanza {@link PedidoNoDespachableException} (409) si el pedido no se puede despachar. */
-    public static void verificarDespachable(Pedido pedido) {
-        String estado = normalizar(pedido.getEstadoPedido());
-        if (Constants.PEDIDO_CANCELADO.equals(estado)) {
-            throw new PedidoNoDespachableException(MENSAJE_CANCELADO);
-        }
-        if (ESTADOS_SIN_PAGO_CONFIRMADO.contains(estado)) {
-            throw new PedidoNoDespachableException(MENSAJE_SIN_PAGO);
-        }
     }
 }

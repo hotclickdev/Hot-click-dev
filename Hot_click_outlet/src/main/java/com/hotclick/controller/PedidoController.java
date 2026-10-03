@@ -15,6 +15,7 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
+import com.hotclick.service.pedido.PedidoPagoManualService;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
 import jakarta.servlet.http.HttpServletRequest;
@@ -163,11 +164,19 @@ public class PedidoController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Estado requerido"));
             }
             String nota = sanitizer.cleanWithLimit(body.get("nota"), 500);
+            String referenciaCruda = body.get("referencia");
+            if (referenciaCruda != null && referenciaCruda.length() > PedidoPagoManualService.LARGO_MAXIMO_REFERENCIA) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error(PedidoPagoManualService.MENSAJE_REFERENCIA_LARGA));
+            }
+            String referencia = sanitizer.clean(referenciaCruda);
             return pedidoTenantResponder.conAcceso(id, "Estado actualizado",
                 existente -> {
-                    Object resultado = pedidoService.cambiarEstado(existente.getId(), estado, nota);
-                    auditoriaAdminRegistroService.registrarSiAdmin("PEDIDO_CAMBIO_ESTADO", "PEDIDO",
-                        existente.getId(), existente.getEmpresaId(), "Estado cambiado a " + estado);
+                    String anterior = existente.getEstadoPedido();
+                    Pedido resultado = pedidoService.cambiarEstado(existente.getId(), estado, nota, referencia);
+                    // SEC-05: el cambio de estado queda auditado para cualquier rol, no solo ADMIN.
+                    auditoriaAdminRegistroService.registrar("PEDIDO_CAMBIO_ESTADO", "PEDIDO",
+                        existente.getId(), existente.getEmpresaId(),
+                        "Estado " + anterior + " → " + resultado.getEstadoPedido());
                     return resultado;
                 });
         } catch (Exception e) {
