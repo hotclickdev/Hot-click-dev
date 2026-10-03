@@ -1,8 +1,9 @@
 import type { Producto } from '@/types/producto'
+import { STOCK_QUEDAN_MAX } from '@/utils/stockEscaso'
 import { esProductoCotizable, tieneOfertaActiva } from '@/utils/precioProducto'
 
 /** Hasta este stock se muestra el badge “Quedan N” de la tarjeta (`5:26`). */
-export const STOCK_ESCASO_MAX = 5
+export const STOCK_ESCASO_MAX = STOCK_QUEDAN_MAX
 
 export function stockEscaso(product: Pick<Producto, 'stock'>): number | null {
   const stock = product.stock

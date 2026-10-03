@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { STOCK_QUEDAN_MAX } from '@/utils/stockEscaso'
 import { useLocation } from 'react-router-dom'
 import useWishlistStore from '@/store/wishlistStore'
 import { productService, normalizeProduct } from '@/services/productService'
@@ -10,7 +11,7 @@ import type { Producto, ProductoBackend } from '@/types/producto'
 
 const findById = (list: ItemWishlist[], id: Id | undefined) => list.find((i) => i.id === id)
 
-const LOW_STOCK = 3
+const LOW_STOCK = STOCK_QUEDAN_MAX
 const CHECK_KEY = 'hc-wishlist-alert-ts'
 const INTERVAL_MS = 4 * 60 * 60 * 1000  // re-check every 4 h
 const BLOCKED_PATHS = ['/checkout', '/pago/', '/pos/', '/carrito', '/login', '/registro']
