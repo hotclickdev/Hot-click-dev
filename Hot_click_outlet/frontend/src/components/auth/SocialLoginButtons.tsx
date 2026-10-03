@@ -155,7 +155,7 @@ export default function SocialLoginButtons({ mode = 'signIn', variante = 'clasic
             <div
               key={id}
               aria-disabled="true"
-              className="relative flex h-11 cursor-not-allowed select-none items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-50 px-3 text-[14px] font-semibold text-hc-n-500"
+              className="relative flex h-11 cursor-not-allowed select-none items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-50 px-3 text-[14px] font-semibold text-hc-n-600"
             >
               {icon}
               <span>{label}</span>

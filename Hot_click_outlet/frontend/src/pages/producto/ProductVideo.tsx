@@ -150,7 +150,7 @@ export default function ProductVideo({ videoUrl, titulo, tienda, portada }: Prod
         <h2 id="video-producto" className="font-display text-[17px] font-bold leading-[normal] tracking-normal text-hc-n-900">
           {t('product.videoTitle')}
         </h2>
-        {tienda && <p className="text-[12px] text-hc-n-500">{t('product.publicadoPor', { tienda })}</p>}
+        {tienda && <p className="text-[12px] text-hc-n-600">{t('product.publicadoPor', { tienda })}</p>}
       </div>
       <ControlPlataforma activo={segmentoVideo(video.type)} />
       <Reproductor video={video} titulo={titulo} portada={portada} />
@@ -159,7 +159,7 @@ export default function ProductVideo({ videoUrl, titulo, tienda, portada }: Prod
           <span className="truncate">{t('product.verEn', { red: video.etiqueta })}</span>
           <IconoExterno />
         </a>
-        <span className="shrink-0 text-[12px] text-hc-n-500">{video.embedUrl ? t('product.seReproduceAqui') : t('product.videoOtraPestana')}</span>
+        <span className="shrink-0 text-[12px] text-hc-n-600">{video.embedUrl ? t('product.seReproduceAqui') : t('product.videoOtraPestana')}</span>
       </div>
     </section>
   )

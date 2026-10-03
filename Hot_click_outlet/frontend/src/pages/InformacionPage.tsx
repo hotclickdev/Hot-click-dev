@@ -85,7 +85,7 @@ export default function InformacionPage() {
         <BloqueInformativo id="garantia" titulo={k('warrantyTitle')}>
           <p className="text-[14px] leading-5 text-hc-n-600">{k('warrantySub')}</p>
           <Tarjeta className="flex-row items-center gap-3">
-            <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-[12px] bg-hc-green-50 text-hc-green-600">
+            <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-[12px] bg-hc-green-50 text-hc-success-text">
               <span className="font-display text-[20px] font-extrabold leading-none">40</span>
               <span className="text-[10px] font-semibold uppercase tracking-[0.06em]">{k('days')}</span>
             </span>

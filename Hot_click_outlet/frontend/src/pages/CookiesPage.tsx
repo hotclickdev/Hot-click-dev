@@ -84,7 +84,7 @@ function AnexoTablaCookies() {
                   <td className="px-2 py-2 font-mono text-[12px] text-hc-n-900">{row.nombre}</td>
                   <td className="px-2 py-2">
                     <span className={`inline-block whitespace-nowrap rounded-full px-2 py-[2px] text-[11px] font-semibold ${
-                      row.categoria === 'Técnica' ? 'bg-hc-green-50 text-hc-success' : 'bg-hc-warning-bg text-hc-warning'
+                      row.categoria === 'Técnica' ? 'bg-hc-green-50 text-hc-success-text' : 'bg-hc-warning-bg text-hc-warning'
                     }`}
                     >
                       {row.categoria}

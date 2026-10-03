@@ -23,9 +23,7 @@ export default function TiendaSuccessPage() {
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-3 px-4 pb-8 pt-7 leading-[normal] lg:py-10">
       <div className="flex flex-col items-center gap-[10px] text-center">
-        <span className="flex size-[72px] items-center justify-center rounded-full bg-hc-success-bg text-hc-success">
-          <IconoFigma src={ICONOS_PAGO.exitoCheck} size={36} />
-        </span>
+        <span className="flex size-[72px] items-center justify-center rounded-full bg-hc-success-bg text-hc-success"><IconoFigma src={ICONOS_PAGO.exitoCheck} size={36} /></span>
         <h1 className="font-display text-[19px] font-bold tracking-normal text-hc-n-900">Pedido recibido</h1>
         <p className="text-[13px] text-hc-n-600">Pedido de {nombre} en HotClick</p>
         {numeroPedido
