@@ -65,6 +65,15 @@ public class TenantLimitChecker {
     }
 
     /**
+     * Cajas del POS (decisión 3.2 A, 3-oct-2026): cada turno abierto ocupa una caja.
+     * Límite actual del plan: 1 / 2 / sin tope.
+     */
+    @Transactional(readOnly = true)
+    public void verificarLimiteCajas(Long empresaId, long cajasAbiertas) {
+        ejecutarVerificacion(empresaId, "cajas", cajasAbiertas, 1);
+    }
+
+    /**
      * API de bajo nivel: verifica entidad + uso ya calculado por el llamador.
      * Se mantiene por compatibilidad con código existente.
      */

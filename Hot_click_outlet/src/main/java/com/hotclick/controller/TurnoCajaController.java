@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.PlanLimitException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.TurnoCaja;
 import com.hotclick.security.JwtUtil;
@@ -22,8 +23,8 @@ public class TurnoCajaController {
     @Autowired private JwtUtil          jwtUtil;
 
     // El POS está disponible para todos los planes (decisión de negocio jul
-    // 2026) — no se gatea por feature "pos". Los límites de cajas por plan
-    // (maxCajas) siguen vigentes en TenantService.
+    // 2026) — no se gatea por feature "pos". El límite de cajas abiertas por plan
+    // (maxCajas) lo hace cumplir TurnoCajaService.abrirTurno (decisión 3.2 A).
 
     @PostMapping("/abrir")
     @PreAuthorize("hasAuthority('pos.caja.abrir') or hasAnyRole('ADMIN','EMPRENDEDOR')")
@@ -35,6 +36,8 @@ public class TurnoCajaController {
                 ? Integer.valueOf(body.get("montoInicial").toString()) : 0;
             TurnoCaja turno = turnoCajaService.abrirTurno(usuarioId, empresaId, monto);
             return ResponseEntity.ok(ResponseDTO.success("Turno abierto correctamente", turno));
+        } catch (PlanLimitException e) {
+            throw e; // 403 LIMIT_REACHED con el texto de planes.bloqueo.limite.cajas (GlobalExceptionHandler)
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

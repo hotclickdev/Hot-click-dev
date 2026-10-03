@@ -12,6 +12,9 @@ public interface TurnoCajaRepository extends JpaRepository<TurnoCaja, Long> {
 
     Optional<TurnoCaja> findByUsuario_IdAndEstado(Long usuarioId, String estado);
 
+    /** Cajas abiertas del negocio (cada turno ABIERTO ocupa una caja del plan). */
+    long countByEmpresa_IdAndEstado(Long empresaId, String estado);
+
     List<TurnoCaja> findByEmpresa_IdAndFechaAperturaAfterOrderByFechaAperturaDesc(
             Long empresaId, LocalDateTime desde);
 

@@ -9,6 +9,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.TurnoCajaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.tenant.TenantLimitChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class TurnoCajaService {
     @Autowired private UsuarioRepository   usuarioRepository;
     @Autowired private EmpresaRepository   empresaRepository;
     @Autowired private CompanyScope        companyScope;
+    @Autowired private TenantLimitChecker  tenantLimitChecker;
 
     @Transactional
     public TurnoCaja abrirTurno(Long usuarioId, Long empresaId, Integer montoInicial) {
@@ -36,6 +38,9 @@ public class TurnoCajaService {
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", usuarioId));
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
+        // Decisión 3.2 A: el plan limita las cajas abiertas a la vez (1 / 2 / sin tope).
+        tenantLimitChecker.verificarLimiteCajas(
+            empresaId, turnoCajaRepository.countByEmpresa_IdAndEstado(empresaId, "ABIERTO"));
 
         TurnoCaja turno = new TurnoCaja();
         turno.setUsuario(usuario);
