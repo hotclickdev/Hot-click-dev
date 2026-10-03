@@ -94,34 +94,19 @@ test.describe('WhatsApp flotante — móvil 390', () => {
     await sinDesborde(page)
   })
 
-  test('catálogo y categorías quedan 16 px sobre la barra y al final no tapan la última fila (R5)', async ({ page }) => {
+  // 2-oct-2026: Figma solo dibuja el botón en el Home (51:2262); el resto del visitante no lo monta.
+  test('catálogo, categorías y servicios no montan el botón y dejan el hueco de la barra', async ({ page }) => {
     for (const ruta of ['/productos', '/categorias']) {
       await preparar(page, ruta)
       await expect(barra(page)).toBeVisible()
-      expect(Math.abs(await margenInferior(page, fab(page)) - 83)).toBeLessThanOrEqual(1)
-      const flotante = await cajaDe(fab(page))
-      expect(seCruzan(flotante, await cajaDe(barra(page)))).toBe(false)
-      await expect(page.locator('[data-espacio="155"]')).toHaveCount(1)
-      await expect(page.locator('html')).toHaveClass(/hc-con-fab/)
-      await alFinal(page)
-      const contenido = await cajaDe(page.locator('main'))
-      expect(contenido.y + contenido.height).toBeLessThanOrEqual((await cajaDe(fab(page))).y + 1)
+      await expect(fab(page)).toHaveCount(0)
+      await expect(page.locator('[data-espacio="72"]')).toHaveCount(1)
+      await expect(page.locator('html')).not.toHaveClass(/hc-con-fab/)
       await sinDesborde(page)
     }
-  })
-
-  test('servicios no hereda el offset de la barra y no tapa el envío', async ({ page }) => {
     await preparar(page, '/servicios')
-    await expect(page.locator('[data-espacio="88"]')).toHaveCount(1)
-    await expect(barra(page)).toHaveCount(0)
-    expect(Math.abs(await margenInferior(page, fab(page)) - 16)).toBeLessThanOrEqual(1)
-
-    await page.goto('/servicios?vista=busqueda', { waitUntil: 'domcontentloaded' })
-    const enviar = page.getByRole('button', { name: 'Enviar solicitud' })
-    await expect(enviar).toBeVisible()
-    await alFinal(page)
-    expect(seCruzan(await cajaDe(fab(page)), await cajaDe(enviar))).toBe(false)
-    expect(Math.abs(await margenInferior(page, fab(page)) - 16)).toBeLessThanOrEqual(1)
+    await expect(fab(page)).toHaveCount(0)
+    await expect(page.locator('[data-espacio="88"]')).toHaveCount(0)
     await sinDesborde(page)
   })
 
@@ -135,24 +120,12 @@ test.describe('WhatsApp flotante — móvil 390', () => {
     await sinDesborde(page)
   })
 
-  test('pedidos y perfil usan 83 px con barra y 16 px sin ella', async ({ page }) => {
+  test('pedidos y perfil no montan el botón', async ({ page }) => {
     await preparar(page, '/mis-pedidos', true)
-    await expect(barra(page)).toBeVisible()
-    expect(Math.abs(await margenInferior(page, fab(page)) - 83)).toBeLessThanOrEqual(1)
-
-    await page.goto('/mis-pedidos?pedido=1038', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('[data-espacio="88"]')).toHaveCount(1)
-    await expect(barra(page)).toHaveCount(0)
-    expect(Math.abs(await margenInferior(page, fab(page)) - 16)).toBeLessThanOrEqual(1)
-
+    await expect(fab(page)).toHaveCount(0)
     await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
     await expect(barra(page)).toBeVisible()
-    expect(Math.abs(await margenInferior(page, fab(page)) - 83)).toBeLessThanOrEqual(1)
-
-    await page.goto('/perfil?vista=seguridad', { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('[data-espacio="88"]')).toHaveCount(1)
-    await expect(barra(page)).toHaveCount(0)
-    expect(Math.abs(await margenInferior(page, fab(page)) - 16)).toBeLessThanOrEqual(1)
+    await expect(fab(page)).toHaveCount(0)
     await sinDesborde(page)
   })
 
@@ -187,16 +160,11 @@ test.describe('WhatsApp flotante — desktop 1440', () => {
     await sinDesborde(page)
   })
 
-  test('perfil y servicios conservan el margen de 16 px', async ({ page }) => {
+  test('perfil y servicios no montan el botón', async ({ page }) => {
     await preparar(page, '/perfil', true)
-    const perfil = await cajaDe(fab(page))
-    expect(Math.abs(1440 - (perfil.x + perfil.width) - 16)).toBeLessThanOrEqual(1)
-    expect(Math.abs(900 - (perfil.y + perfil.height) - 16)).toBeLessThanOrEqual(1)
-
+    await expect(fab(page)).toHaveCount(0)
     await page.goto('/servicios', { waitUntil: 'domcontentloaded' })
-    const servicios = await cajaDe(fab(page))
-    expect(Math.abs(1440 - (servicios.x + servicios.width) - 16)).toBeLessThanOrEqual(1)
-    expect(Math.abs(900 - (servicios.y + servicios.height) - 16)).toBeLessThanOrEqual(1)
+    await expect(fab(page)).toHaveCount(0)
     await sinDesborde(page)
   })
 

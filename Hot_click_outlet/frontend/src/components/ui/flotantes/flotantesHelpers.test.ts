@@ -32,8 +32,14 @@ describe('whatsappOculto', () => {
     expect(whatsappOculto('/tienda/casa-luna', true, false)).toBe(true)
     expect(whatsappOculto('/prototipo/x', false, true)).toBe(true)
   })
-  it('se muestra en Home, catálogo y ficha', () => {
-    for (const ruta of ['/', '/productos', '/productos/3', '/mis-pedidos', '/categorias', '/servicios', '/perfil']) {
+  it('en el visitante solo se muestra en el Home (Figma 51:2262)', () => {
+    expect(whatsappOculto('/', false, false)).toBe(false)
+    for (const ruta of ['/productos', '/productos/3', '/mis-pedidos', '/categorias', '/servicios', '/perfil', '/blog', '/contacto', '/buscar', '/ruta-que-no-existe']) {
+      expect(whatsappOculto(ruta, false, false)).toBe(true)
+    }
+  })
+  it('las pantallas de rol y de captación de vendedores no cambian', () => {
+    for (const ruta of ['/emprendedor/pedidos', '/pyme', '/negocio-plus/panel', '/para-emprendedores', '/para-pymes', '/emprende', '/registro-empresa', '/negocio-plus-plan']) {
       expect(whatsappOculto(ruta, false, false)).toBe(false)
     }
   })

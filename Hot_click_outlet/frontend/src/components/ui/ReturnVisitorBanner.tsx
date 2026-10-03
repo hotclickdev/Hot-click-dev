@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import CloseIcon from '@/components/ui/CloseIcon'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 
 const FIRST_VISIT_KEY = 'hc-first-visit-ts'
 const DISMISSED_KEY   = 'hc-return-banner-dismissed'
@@ -25,6 +24,10 @@ function getVisitInfo(): VisitInfo {
   return { isReturn: true, daysSince }
 }
 
+/**
+ * Aviso de visitante recurrente (derivado de Figma: tarjeta "Recuperar carrito" `29:2036`, en versión de aviso
+ * azul claro del sistema). Misma lógica de antes: solo con pedido o favoritos, se cierra por sesión.
+ */
 export default function ReturnVisitorBanner() {
   const [visible, setVisible] = useState(false)
   const [info, setInfo]       = useState<VisitInfo | null>(null)
@@ -59,72 +62,34 @@ export default function ReturnVisitorBanner() {
   if (days === 0) greeting = '¡Bienvenido de vuelta!'
   else if (days === 1) greeting = '¡Volviste! Te extrañamos.'
 
+  if (!visible) return null
+  const conPedido = cartItems.length > 0
+  const cantidad = conPedido ? cartItems.length : wishCount
+  const detalle = conPedido
+    ? `Tenés ${cantidad} producto${cantidad > 1 ? 's' : ''} en el pedido.`
+    : `Tenés ${cantidad} producto${cantidad > 1 ? 's' : ''} en tus favoritos.`
+
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="overflow-hidden"
-          style={{ borderBottom: '1px solid var(--hc-border)' }}
+    <div className="mx-auto w-full max-w-[1232px] px-4 pt-3 lg:pt-4">
+      <div role="status" className="flex items-center gap-[10px] rounded-[14px] border border-hc-blue-100 bg-hc-blue-50 px-[14px] py-3 leading-[normal]">
+        <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-hc-n-0 text-hc-blue-600">
+          <IconoFigma src={conPedido ? ICONOS_COMPRADOR.navPedido : ICONOS_COMPRADOR.avisoCorazon} size={18} />
+        </span>
+        <p className="min-w-0 flex-1 text-[13px] leading-[18px] text-hc-n-600">
+          <span className="font-semibold text-hc-n-900">{greeting}</span>{' '}{detalle}
+        </p>
+        <Link to={conPedido ? '/carrito' : '/wishlist'} onClick={dismiss} className="shrink-0 text-[13px] font-semibold text-hc-blue-600">
+          {conPedido ? 'Ver pedido' : 'Ver favoritos'}
+        </Link>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Cerrar"
+          className="relative flex size-4 shrink-0 items-center justify-center text-hc-n-600 after:absolute after:-inset-3"
         >
-          <div
-            className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5"
-            style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--hc-accent) 8%, transparent), color-mix(in srgb, #ec4899 5%, transparent))' }}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="shrink-0" style={{ color: 'var(--hc-accent)' }}>
-                <TrustGlyph tipo="clientes" className="w-4 h-4" />
-              </span>
-              <div className="min-w-0">
-                <span className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
-                  {greeting}{' '}
-                </span>
-                {cartItems.length > 0 && (
-                  <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    Tenés {cartItems.length} producto{cartItems.length > 1 ? 's' : ''} en el pedido.
-                  </span>
-                )}
-                {!cartItems.length && wishCount > 0 && (
-                  <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    Tenés {wishCount} producto{wishCount > 1 ? 's' : ''} en tu lista de deseos.
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {cartItems.length > 0 && (
-                <Link
-                  to="/carrito"
-                  onClick={dismiss}
-                  className="hc-btn hc-btn-primary px-3 py-1 min-h-8 text-xs"
-                >
-                  Ver pedido
-                </Link>
-              )}
-              {!cartItems.length && wishCount > 0 && (
-                <Link
-                  to="/wishlist"
-                  onClick={dismiss}
-                  className="hc-btn hc-btn-primary px-3 py-1 min-h-8 text-xs"
-                >
-                  Ver favoritos
-                </Link>
-              )}
-              <button type="button"
-                onClick={dismiss}
-                className="w-6 h-6 flex items-center justify-center rounded-lg text-xs transition-all hover:bg-white/10"
-                style={{ color: 'var(--hc-muted)' }}
-                aria-label="Cerrar"
-              >
-                <CloseIcon className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          <IconoFigma src={ICONOS_COMPRADOR.instalarCerrar} size={16} />
+        </button>
+      </div>
+    </div>
   )
 }
