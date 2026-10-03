@@ -3925,7 +3925,10 @@
         "boton": "Fale com a gente pelo WhatsApp",
         "saludo": "Olá HotClick, tenho uma dúvida sobre os planos para vender."
       },
-      "planDeEstaPagina": "Este plano"
+      "planDeEstaPagina": "Este plano",
+      "empezarCon": "Começar com {{plan}}",
+      "incluye": "Inclui",
+      "noIncluye": "Não inclui"
     }
   },
   "registroVendedor": {

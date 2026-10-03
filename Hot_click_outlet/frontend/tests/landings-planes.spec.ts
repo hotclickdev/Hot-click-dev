@@ -37,15 +37,21 @@ for (const ancho of [390, 1440]) {
           await expect(movil).toBeVisible()
           await expect(movil.getByRole('button', { name: nombres[c.id], exact: true })).toHaveAttribute('aria-pressed', 'true')
           await expect(movil.getByText('Este plan')).toBeVisible()
+          const queries: Record<string, string> = { Emprendedor: 'emprendedor', Pyme: 'pyme', 'Negocio Plus': 'negocio-plus' }
+          const faltan: Record<string, number> = { Emprendedor: 4, Pyme: 0, 'Negocio Plus': 0 }
           for (const otro of Object.values(nombres)) {
             await movil.getByRole('button', { name: otro, exact: true }).click()
             await expect(movil.getByRole('button', { name: otro, exact: true })).toHaveAttribute('aria-pressed', 'true')
-            await expect(movil.locator('dl > div')).toHaveCount(14)
+            const tarjeta = movil.getByTestId('tarjeta-plan-movil')
+            await expect(tarjeta.getByRole('heading', { name: otro, exact: true })).toBeVisible()
+            await expect(tarjeta.getByText('[PENDIENTE]')).toHaveCount(2)
+            await expect(tarjeta.getByText('Cajas del punto de venta')).toBeVisible()
+            await expect(tarjeta.getByTestId('no-incluidas').locator('li')).toHaveCount(faltan[otro])
+            await expect(tarjeta.getByRole('link', { name: `Empezar con ${otro}` })).toHaveAttribute('href', `/registro-empresa?plan=${queries[otro]}`)
             const caja = await movil.boundingBox()
             expect(caja && caja.x + caja.width).toBeLessThanOrEqual(ancho)
           }
           await expect(movil.getByText('Sin límite').first()).toBeVisible()
-          await expect(movil.getByText('[PENDIENTE]').first()).toBeVisible()
           await movil.getByRole('button', { name: nombres[c.id], exact: true }).click()
           // El WhatsApp no flota sobre la foto ni la barra: va dentro de la página.
           await expect(page.locator('a[href^="https://wa.me"].fixed')).toBeHidden()
