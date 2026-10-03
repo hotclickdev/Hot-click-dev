@@ -60,9 +60,7 @@ function ProductoThumb({ p }: { p: ProductoParaResena }) {
     )
   }
   return (
-    <div className="flex size-12 shrink-0 items-center justify-center rounded-[10px] bg-hc-n-100 text-hc-n-400">
-      <PackageIcon />
-    </div>
+    <div className="flex size-12 shrink-0 items-center justify-center rounded-[10px] bg-hc-n-100 text-hc-n-400"><PackageIcon /></div>
   )
 }
 

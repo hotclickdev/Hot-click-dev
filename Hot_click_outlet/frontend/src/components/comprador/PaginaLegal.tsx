@@ -29,7 +29,7 @@ const CLASE_TEXTO_LEGAL =
 export function TarjetaLegal({ etiqueta, children }: { etiqueta?: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-hc-n-200 bg-hc-n-0 p-[14px]">
-      {etiqueta && <p className="text-[11px] font-semibold uppercase leading-[normal] tracking-[0.06em] text-hc-n-500">{etiqueta}</p>}
+      {etiqueta && <p className="text-[11px] font-semibold uppercase leading-[normal] tracking-[0.06em] text-hc-n-600">{etiqueta}</p>}
       <div className={CLASE_TEXTO_LEGAL}>{children}</div>
     </div>
   )

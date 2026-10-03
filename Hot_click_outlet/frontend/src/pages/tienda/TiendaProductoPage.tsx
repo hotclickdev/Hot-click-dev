@@ -137,7 +137,7 @@ function GaleriaProducto({
         {imagenes[imgActiva]
           ? <img src={imagenes[imgActiva]} alt={nombre} className="size-full object-cover" />
           : (
-            <div className="flex size-full items-center justify-center text-hc-n-400">
+            <div className="flex size-full items-center justify-center">
               <TiendaPlaceholder className="size-16" />
             </div>
             )}

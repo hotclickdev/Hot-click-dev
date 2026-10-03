@@ -42,7 +42,7 @@ export function BotonTienda({ variante, children, ...props }: BotonTiendaProps) 
 /** Foto cuadrada de 10 de radio con la silueta del Figma cuando no hay imagen. */
 export function FotoTienda({ src, tamano }: { src?: string | null; tamano: string }) {
   return (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-hc-n-100 text-hc-n-400 ${tamano}`}>
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-hc-n-100 ${tamano}`}>
       {src ? <img src={src} alt="" className="size-full object-cover" /> : <TiendaPlaceholder className="size-1/2" />}
     </div>
   )

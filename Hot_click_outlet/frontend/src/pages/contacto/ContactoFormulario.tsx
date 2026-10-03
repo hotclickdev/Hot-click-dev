@@ -25,9 +25,7 @@ function Enviado({ onOtro }: { onOtro: () => void }) {
   const { t } = useTranslation()
   return (
     <div role="status" className={`${TARJETA} items-center py-8 text-center`}>
-      <span className="flex size-14 items-center justify-center rounded-full bg-hc-green-50 text-hc-green-600">
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-7"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </span>
+      <span className="flex size-14 items-center justify-center rounded-full bg-hc-green-50 text-hc-green-600"><svg aria-hidden="true" viewBox="0 0 24 24" className="size-7"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
       <span className="font-display text-[17px] font-bold text-hc-n-900">{t('contacto.sent')}</span>
       <span className="text-[14px] leading-5 text-hc-n-600">{t('contacto.sentSub')}</span>
       <button type="button" onClick={onOtro} className="rounded-[12px] border border-hc-n-200 px-4 py-[11px] text-[14px] font-semibold text-hc-n-600">
