@@ -94,8 +94,9 @@ for (const ancho of ANCHOS) {
       await page.goto('/registro')
       await expect(page.locator('input[type="password"]')).toBeVisible()
       const tamanos = await tamanosDeCampos(page, 'input[type="text"], input[type="email"], input[type="tel"], input[type="password"]')
-      expect(tamanos.length).toBeGreaterThan(4)
-      expect(new Set(tamanos)).toEqual(new Set([ancho === 390 ? '16px' : '14px']))
+      // Bloque 4: crear cuenta usa el campo de Figma 28:1183 (texto de 15 px en todos los anchos, igual que ingresar).
+      expect(tamanos.length).toBeGreaterThan(2)
+      expect(new Set(tamanos)).toEqual(new Set(['15px']))
     })
   })
 }

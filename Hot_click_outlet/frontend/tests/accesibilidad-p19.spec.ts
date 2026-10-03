@@ -131,7 +131,7 @@ for (const [etiqueta, ancho, alto] of [['390', 390, 844], ['1440', 1440, 900]] a
     test('registro: el teléfono tiene nombre y foco visible, y el título es un solo h1', async ({ page }) => {
       await preparar(page)
       await page.goto('/registro', { waitUntil: 'domcontentloaded' })
-      await expect(page.getByRole('heading', { level: 1, name: /Crear cuenta\s+en HotClick/ })).toHaveCount(1)
+      await expect(page.getByRole('heading', { level: 1, name: /Creá tu cuenta/ })).toHaveCount(1)
       const telefono = page.getByRole('textbox', { name: 'Teléfono' })
       // Tab marca la navegación por teclado; con ratón el campo se ve como en el diseño.
       await page.keyboard.press('Tab')

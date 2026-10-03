@@ -153,7 +153,9 @@ test.describe('Vender — Sistema, no un admin genérico', () => {
 
     await page.getByRole('button', { name: /ver mi tienda/i }).click()
     await expect(page).toHaveURL(/\/tienda\/demo/)
-    await expect(page.getByText('Tienda de Demo Store en HotClick')).toBeVisible()
+    // Bloque 5: la banda "Tienda de … en HotClick" se reemplazó por el encabezado blanco con el nombre y "en HotClick".
+    await expect(page.getByText('en HotClick', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('Tienda de Demo Store en HotClick')).toHaveCount(0)
   })
 
   test('sin productos, el dueño entra al menú Figma en /emprendedor', async ({ page }) => {

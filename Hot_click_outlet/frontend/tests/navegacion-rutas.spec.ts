@@ -62,7 +62,8 @@ test.describe('P18 navegación del comprador', () => {
     await page.goto('/privacidad', { waitUntil: 'networkidle' })
     await page.evaluate(() => globalThis.scrollTo(0, 1200))
     await expect.poll(() => scrollY(page)).toBe(1200)
-    await page.locator('footer a[href="/terminos"]').first().click()
+    // Plantilla legal 28:1660: en móvil no hay pie; se usa el enlace a Términos del final de la página.
+    await page.locator('main a[href="/terminos"]').first().click()
     await expect(page).toHaveURL(/\/terminos$/)
     await expect.poll(() => scrollY(page)).toBe(0)
   })

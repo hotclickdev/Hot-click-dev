@@ -24,7 +24,13 @@ const PRODUCTOS = [
   { id: 2, nombre: 'Taza con nombre', precio: 11000, stock: 5 },
 ]
 
-async function simularApi(page: Page, { convenios = [] as unknown[] } = {}) {
+/** Bloque 1 (Figma 29:1159): el directorio se arma con los productos públicos agrupados por negocio. */
+const PRODUCTOS_DIRECTORIO = [
+  { id: 11, nombreProducto: 'Taza con nombre', precioVenta: 11000, stockActual: 5, empresaNombre: 'Casa Luna 506', empresaSlug: 'casa-luna-506', categoria: { nombreCategoria: 'Hogar' } },
+  { id: 12, nombreProducto: 'Café de altura', precioVenta: 6500, stockActual: 5, empresaNombre: 'Bruma Café', empresaSlug: 'bruma-cafe', categoria: { nombreCategoria: 'Café' } },
+]
+
+async function simularApi(page: Page, { convenios = [] as unknown[], productos = PRODUCTOS as unknown[] } = {}) {
   await page.addInitScript(() => {
     localStorage.setItem('hotclick-cookie-consent', JSON.stringify({ analytics: false, functional: true, timestamp: Date.now() }))
     localStorage.setItem('hc-promo-seen', String(Date.now()))
@@ -34,7 +40,7 @@ async function simularApi(page: Page, { convenios = [] as unknown[] } = {}) {
     const data = path === '/api/tienda/casa-luna'
       ? EMPRESA
       : path.endsWith('/productos')
-        ? { content: PRODUCTOS, totalPages: 1, totalElements: 2 }
+        ? { content: productos, totalPages: 1, totalElements: productos.length }
         : path.endsWith('/categorias')
           ? [{ id: 1, nombreCategoria: 'Hogar' }]
           : path === '/api/convenios/publicos'
@@ -110,13 +116,14 @@ test.describe('STORE — directorio de emprendimientos', () => {
   ]
 
   test('móvil: título, buscador, conteo y tarjetas con sus enlaces', async ({ page }) => {
-    await simularApi(page, { convenios: CONVENIOS })
+    await simularApi(page, { convenios: CONVENIOS, productos: PRODUCTOS_DIRECTORIO })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/emprendimientos', { waitUntil: 'domcontentloaded' })
 
     await expect(page.getByRole('heading', { level: 1, name: 'Emprendimientos' })).toBeVisible()
     await expect(page.getByText('2 negocios')).toBeVisible()
-    await expect(page.getByRole('link', { name: /Casa Luna 506: sitio externo/ })).toHaveAttribute('href', 'https://casaluna.example')
+    // Las tarjetas llevan a la tienda en HotClick (ya no al sitio externo del convenio).
+    await expect(page.locator('a[href="/tienda/casa-luna-506"]').first()).toBeVisible()
 
     await page.getByRole('searchbox', { name: 'Buscar un negocio' }).fill('bruma')
     await expect(page.getByText('1 negocio', { exact: true })).toBeVisible()
@@ -154,7 +161,7 @@ test.describe('STORE - responsive del perfil y del directorio (P01)', () => {
   }
 
   test('directorio a 390: sin desborde horizontal y buscador de 14 px (Figma)', async ({ page }) => {
-    await simularApi(page, { convenios: [{ id: 1, nombre: 'Casa Luna 506', descripcion: 'Hogar y accesorios', urlWeb: null }] })
+    await simularApi(page, { productos: PRODUCTOS_DIRECTORIO })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/emprendimientos', { waitUntil: 'domcontentloaded' })
 
