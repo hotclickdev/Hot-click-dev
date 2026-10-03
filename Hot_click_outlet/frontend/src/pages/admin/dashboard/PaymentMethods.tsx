@@ -29,7 +29,7 @@ export default function PaymentMethods({
   ].filter((s) => s.count > 0)
 
   return (
-    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl p-5">
+    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-[14px] p-5">
       <h2 className="text-sm font-semibold text-[var(--hc-text)] mb-4">{titulo}</h2>
       {byMethod.length === 0 ? (
         <p className="text-xs text-[var(--hc-muted)] text-center py-8">{vacio ?? t('common.noData')}</p>

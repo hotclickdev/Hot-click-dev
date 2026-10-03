@@ -30,7 +30,7 @@ function statusHttp(err: unknown): number | undefined {
 
 function KPI({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color: string; icon?: ReactNode }) {
   return (
-    <div className="bg-[#111114] border border-white/8 rounded-2xl p-6 flex flex-col gap-2">
+    <div className="bg-[#111114] border border-white/8 rounded-[14px] p-6 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wider text-[#8e8e9a]">{label}</p>
         {icon}
@@ -124,7 +124,7 @@ export default function AdminReporteContador() {
 
       {/* Bloqueo por plan */}
       {denied && (
-        <div className="bg-[#111114] border border-amber-500/20 rounded-2xl p-8 text-center space-y-3">
+        <div className="bg-[#111114] border border-amber-500/20 rounded-[14px] p-8 text-center space-y-3">
           <p className="text-[#e8e8ed] font-bold text-lg">Función disponible en plan Pro+</p>
           <p className="text-sm text-[#8e8e9a] max-w-md mx-auto">
             La analítica financiera y el reporte para el contador requieren un plan Pro o superior.
@@ -134,7 +134,7 @@ export default function AdminReporteContador() {
       )}
 
       {error && !denied && (
-        <div className="bg-[#111114] border border-red-500/20 rounded-2xl p-8 text-center">
+        <div className="bg-[#111114] border border-red-500/20 rounded-[14px] p-8 text-center">
           <p className="text-[#f87171] text-sm">Error al cargar el reporte. Intenta de nuevo.</p>
         </div>
       )}
@@ -155,7 +155,7 @@ export default function AdminReporteContador() {
             </div>
 
             {/* Desglose */}
-            <div className="bg-[#111114] border border-white/8 rounded-2xl p-5 space-y-3">
+            <div className="bg-[#111114] border border-white/8 rounded-[14px] p-5 space-y-3">
               <h3 className="text-sm font-semibold text-[#e8e8ed]">Desglose del período</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                 <div className="flex justify-between border-b border-white/5 pb-2">
@@ -187,7 +187,7 @@ export default function AdminReporteContador() {
 
             {/* Export CSV */}
             <button type="button" onClick={handleExport} disabled={exporting}
-              className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl text-base font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 py-5 rounded-[14px] text-base font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
               style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
               {exporting ? <Spinner size="sm"/> : (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

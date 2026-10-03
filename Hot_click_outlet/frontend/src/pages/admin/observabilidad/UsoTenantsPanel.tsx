@@ -116,7 +116,7 @@ export default function UsoTenantsPanel() {
 
 function KpiUso({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="rounded-[14px] border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</p>
       <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{value}</p>
     </div>

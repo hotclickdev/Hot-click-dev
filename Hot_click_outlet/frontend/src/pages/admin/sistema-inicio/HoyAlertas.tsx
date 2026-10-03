@@ -13,7 +13,7 @@ export default function HoyAlertas({ porDespachar, sinStock, sinVenta }: {
   sinVenta: number
 }) {
   return (
-    <section className="rounded-2xl p-5 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <section className="rounded-[14px] p-5 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Hoy</h2>

@@ -119,7 +119,7 @@ export default function AdminOfflineCola() {
       ) : (
         <div className="space-y-4">
           {cola.length > 0 && (
-            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+            <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
               {cola.map((item) => (
                 <div key={item.id}
                   className="flex items-start gap-4 px-5 py-4 border-b last:border-0"
@@ -169,7 +169,7 @@ export default function AdminOfflineCola() {
             </div>
           )}
           {captura.length > 0 && (
-            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+            <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
               <div className="flex items-center justify-between px-5 py-2"
                 style={{ backgroundColor: 'var(--hc-surface)' }}>
                 <p className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>

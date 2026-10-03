@@ -104,7 +104,7 @@ export default function DashboardTab({ period }: { period: string; onPeriodChang
 
       {/* Alertas activas */}
       {activeAlerts.length > 0 && (
-        <div className="rounded-2xl overflow-hidden"
+        <div className="rounded-[14px] overflow-hidden"
           style={{ border: '1px solid color-mix(in srgb, var(--hc-danger) 30%, transparent)', backgroundColor: 'color-mix(in srgb, var(--hc-danger) 5%, transparent)' }}>
           <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid color-mix(in srgb, var(--hc-danger) 20%, transparent)' }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--hc-danger)' }} />

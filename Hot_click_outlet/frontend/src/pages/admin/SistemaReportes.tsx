@@ -146,7 +146,7 @@ function BannerVistaPrevia() {
 
 function CtaPlanPyme() {
   return (
-    <section className="rounded-2xl flex items-center gap-5 flex-wrap" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW, padding: '24px 28px' }}>
+    <section className="rounded-[14px] flex items-center gap-5 flex-wrap" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW, padding: '24px 28px' }}>
       <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)' }}>
         <svg className="w-6 h-6" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <rect x="4" y="10" width="16" height="10" rx="2"/><path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>

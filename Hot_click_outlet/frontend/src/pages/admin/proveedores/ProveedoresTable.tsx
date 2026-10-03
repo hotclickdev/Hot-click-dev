@@ -9,7 +9,7 @@ export default function ProveedoresTable({ proveedores, onCostos, onEdit, onDele
   onDelete: (p: ProveedorAdmin) => void
 }) {
   return (
-    <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+    <div className="rounded-[14px] overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[600px] text-sm">
           <thead>
@@ -76,7 +76,7 @@ export function ProveedorCostosModal({ costosTarget, historial, loadingHistorial
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-lg rounded-2xl p-6 space-y-4 max-h-[80vh] overflow-y-auto"
+      <div className="w-full max-w-lg rounded-[14px] p-6 space-y-4 max-h-[80vh] overflow-y-auto"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center justify-between">
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>

@@ -64,9 +64,9 @@ export default function AdminPOSCaja() {
         <div className="flex justify-end">
           <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
         </div>
-        <div className="rounded-3xl p-6 text-center space-y-4"
+        <div className="rounded-[16px] p-6 text-center space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
+          <div className="w-16 h-16 rounded-[14px] mx-auto flex items-center justify-center"
             style={{ backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399' }}>
             <CheckIcon />
           </div>
@@ -93,7 +93,7 @@ export default function AdminPOSCaja() {
           </div>
         </div>
         <Link to="/admin/pos"
-          className="block w-full py-4 rounded-2xl font-black text-center text-base"
+          className="block w-full py-4 rounded-[14px] font-black text-center text-base"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>
           <TextoFlecha dir="atras">{t('pos.common.volverAlPos')}</TextoFlecha>
         </Link>
@@ -108,7 +108,7 @@ export default function AdminPOSCaja() {
         <div className="flex justify-end">
           <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
         </div>
-        <div className="rounded-2xl p-8"
+        <div className="rounded-[14px] p-8"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center" style={{ color: 'var(--hc-muted)' }}>
             <TransferenciaIcon className="w-10 h-10" />
@@ -119,7 +119,7 @@ export default function AdminPOSCaja() {
           </p>
         </div>
         <Link to="/admin/pos"
-          className="flex w-full py-4 rounded-2xl font-black items-center justify-center gap-1 text-base"
+          className="flex w-full py-4 rounded-[14px] font-black items-center justify-center gap-1 text-base"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>
           {t('pos.caja.irAlPos')} <TrustGlyph tipo="adelante" className="w-3.5 h-3.5" /> {t('pos.caja.abrirTurnoHint')}
         </Link>
@@ -183,7 +183,7 @@ export default function AdminPOSCaja() {
       </div>
 
       {/* Conteo final */}
-      <div className="rounded-2xl p-5 space-y-5"
+      <div className="rounded-[14px] p-5 space-y-5"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div>
           <p className="font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>{t('pos.caja.contaFisico')}</p>

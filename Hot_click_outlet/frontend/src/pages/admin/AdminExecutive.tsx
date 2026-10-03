@@ -91,7 +91,7 @@ export default function AdminExecutive() {
       />
 
       {(data?.historialReportes?.length ?? 0) > 0 && (
-        <div className="rounded-2xl p-5 space-y-3 print:hidden"
+        <div className="rounded-[14px] p-5 space-y-3 print:hidden"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Reportes anteriores</p>
           <div className="flex flex-wrap gap-2">

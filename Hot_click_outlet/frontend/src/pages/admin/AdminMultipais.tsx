@@ -96,7 +96,7 @@ export default function AdminMultipais() {
 
       <form onSubmit={guardar} className="space-y-5">
         {/* País selector */}
-        <div className="rounded-2xl p-5 space-y-4"
+        <div className="rounded-[14px] p-5 space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>País de operación</p>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -124,7 +124,7 @@ export default function AdminMultipais() {
         </div>
 
         {/* Fine-grain config */}
-        <div className="rounded-2xl p-5 space-y-4"
+        <div className="rounded-[14px] p-5 space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Configuración detallada</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -166,7 +166,7 @@ export default function AdminMultipais() {
         </div>
 
         {/* Preview */}
-        <div className="rounded-2xl p-4 flex items-center gap-4"
+        <div className="rounded-[14px] p-4 flex items-center gap-4"
           style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
           <VistaBanderaPais pais={selectedPais} />
           <div>
@@ -192,7 +192,7 @@ export default function AdminMultipais() {
 
       {/* Tasas de cambio */}
       {tasas.length > 0 && (
-        <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+        <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
           <div className="px-4 py-3" style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
             <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
               Tasas de cambio de referencia (1 CRC =)

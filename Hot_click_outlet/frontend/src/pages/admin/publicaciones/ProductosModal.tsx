@@ -62,7 +62,7 @@ export default function ProductosModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-lg bg-hc-surface border border-hc-border rounded-2xl overflow-hidden flex flex-col max-h-[80vh]"
+            className="w-full max-w-lg bg-hc-surface border border-hc-border rounded-[14px] overflow-hidden flex flex-col max-h-[80vh]"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-hc-border shrink-0">
               <div>

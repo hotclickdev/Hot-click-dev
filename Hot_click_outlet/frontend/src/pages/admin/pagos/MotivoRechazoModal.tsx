@@ -14,7 +14,7 @@
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div
-        className="w-full max-w-sm rounded-2xl p-6 space-y-4"
+        className="w-full max-w-sm rounded-[14px] p-6 space-y-4"
         style={{ background: 'var(--hc-surface)', border: '1px solid rgba(248,113,113,0.25)' }}
       >
         <h3 className="font-semibold text-hc-text">Rechazar comprobante</h3>

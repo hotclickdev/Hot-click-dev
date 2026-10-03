@@ -12,7 +12,7 @@ export const SETUP_KEY = 'hotclick-setup-dismissed'
 export const HEALTH_POLL_MS = 30_000
 
 /** Tarjeta clara del dashboard (Figma Super Admin). */
-export const CLASE_TARJETA_DASH = 'bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl'
+export const CLASE_TARJETA_DASH = 'bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-[14px]'
 
 export const stagger: { container: Variants; item: Variants } = {
   container: { show: { transition: { staggerChildren: 0.07 } } },

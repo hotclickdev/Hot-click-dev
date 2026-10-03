@@ -87,7 +87,7 @@ export default function AdminInventarioPaquetes() {
       ) : paquetesFiltrados.length === 0 ? (
         <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Ningún paquete coincide con el filtro.</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl"
+        <div className="overflow-x-auto rounded-[14px]"
           style={{ border: '1px solid var(--hc-border)' }}>
           <table className="w-full text-sm">
             <thead>

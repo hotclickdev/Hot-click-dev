@@ -100,7 +100,7 @@ export default function CopilotInsightCards({
 
 function InsightBlock({ titulo, children }: { titulo: string; children?: ReactNode }) {
   return (
-    <div className="rounded-2xl p-4 space-y-1"
+    <div className="rounded-[14px] p-4 space-y-1"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>{titulo}</p>
       {children}

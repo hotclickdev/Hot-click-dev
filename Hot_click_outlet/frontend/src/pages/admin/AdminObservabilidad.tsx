@@ -43,7 +43,7 @@ function KpiCard({ label, value, sub, color = 'gray', icono }: {
     gray:   'border-[var(--hc-border)] bg-[var(--hc-surface)]',
   }
   return (
-    <div className={`rounded-2xl border p-5 shadow-sm ${colors[color]}`}>
+    <div className={`rounded-[14px] border p-5 shadow-sm ${colors[color]}`}>
       <div className="flex items-start justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--hc-text-disabled)]">{label}</p>
         {icono && (

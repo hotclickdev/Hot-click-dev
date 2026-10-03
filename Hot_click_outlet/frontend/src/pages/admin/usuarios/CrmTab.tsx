@@ -21,7 +21,7 @@ export default function CrmTab({ clientes, crmSearch, onCrmSearch, onSelect, loa
 
   if (clientes.length === 0) {
     return (
-      <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+      <div className="bg-[#111114] border border-white/8 rounded-[14px] overflow-hidden">
         <div className="text-center py-12 text-[#8e8e9a] text-sm">No hay clientes registrados</div>
       </div>
     )
@@ -33,7 +33,7 @@ export default function CrmTab({ clientes, crmSearch, onCrmSearch, onSelect, loa
   )
 
   return (
-    <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+    <div className="bg-[#111114] border border-white/8 rounded-[14px] overflow-hidden">
       <div className="p-4 border-b border-white/8">
         <input
           type="text"

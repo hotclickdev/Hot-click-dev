@@ -64,7 +64,7 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
           Cargando solicitudes…
         </div>
       ) : !filtradas.length ? (
-        <div className="text-center py-20 rounded-2xl"
+        <div className="text-center py-20 rounded-[14px]"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="mb-3 flex justify-center" style={{ color: 'var(--hc-muted)' }}>
             <TrustGlyph tipo="garantia" className="w-10 h-10 opacity-40" />
@@ -80,7 +80,7 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
             return (
               <motion.div key={s.id}
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-2xl cursor-pointer transition-all hover:shadow-md"
+                className="p-4 rounded-[14px] cursor-pointer transition-all hover:shadow-md"
                 style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                 onClick={() => onOpenDetalle(s)}>
 

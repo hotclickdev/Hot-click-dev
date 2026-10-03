@@ -43,7 +43,7 @@ type KpiCardProps = {
 
 export function KpiCard({ label, value, sub, delta, color = 'var(--hc-accent)' }: KpiCardProps) {
   return (
-    <div className="rounded-2xl p-5 space-y-1"
+    <div className="rounded-[14px] p-5 space-y-1"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{label}</p>
       <p className="text-2xl font-bold" style={{ color }}>{value}</p>
@@ -99,7 +99,7 @@ export function ExecutiveKpis({ data }: { data: ExecutiveDashboard | null }) {
 export function ExecutiveTrends({ data }: { data: ExecutiveDashboard | null }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div className="rounded-2xl p-5 space-y-4"
+      <div className="rounded-[14px] p-5 space-y-4"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
           Tendencia de ingresos (12 meses)
@@ -111,7 +111,7 @@ export function ExecutiveTrends({ data }: { data: ExecutiveDashboard | null }) {
         )}
       </div>
 
-      <div className="rounded-2xl p-5 space-y-4"
+      <div className="rounded-[14px] p-5 space-y-4"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
           Top categorías (últimos 3 meses)
@@ -155,7 +155,7 @@ type ExecutiveAiSummaryProps = {
 export function ExecutiveAiSummary({ aiText, aiLoading, guardado, onGuardar }: ExecutiveAiSummaryProps) {
   if (!aiText && !aiLoading) return null
   return (
-    <div className="rounded-2xl p-5 space-y-3"
+    <div className="rounded-[14px] p-5 space-y-3"
       style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-[#4f7cff] inline-flex items-center gap-1.5">

@@ -39,7 +39,7 @@ export default function GestionUserForm({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button type="button" className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
             aria-label="Cerrar" onClick={onCloseEdit} />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl p-6 space-y-5"
+          <div className="relative z-10 w-full max-w-sm rounded-[14px] p-6 space-y-5"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
 
             <div className="flex items-center justify-between">
@@ -115,7 +115,7 @@ export default function GestionUserForm({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button type="button" className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
             aria-label="Cerrar" onClick={onCloseAction} />
-          <div className="relative z-10 w-full max-w-xs rounded-2xl p-6 space-y-4"
+          <div className="relative z-10 w-full max-w-xs rounded-[14px] p-6 space-y-4"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>
               {actionType === 'block'   && 'Bloquear usuario'}

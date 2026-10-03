@@ -22,12 +22,12 @@ export default function SaleSuccess({ createdOrder, onNuevaVenta, onVerPedidos }
         <p className="text-sm text-[#8e8e9a]">{createdOrder.nombreCliente} · {createdOrder.metodoPago}</p>
       </div>
 
-      <div className="bg-white/3 border border-white/8 rounded-2xl px-4 py-5 space-y-3">
+      <div className="bg-white/3 border border-white/8 rounded-[14px] px-4 py-5 space-y-3">
         <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Estado del pedido</p>
         <SaleStepTracker estado={createdOrder.estado} esRetiro={createdOrder.esRetiro} />
       </div>
 
-      <div className="bg-white/3 border border-white/8 rounded-2xl px-4 py-4 space-y-2">
+      <div className="bg-white/3 border border-white/8 rounded-[14px] px-4 py-4 space-y-2">
         <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Productos</p>
         {createdOrder.items.map((i) => (
           <div key={i.id} className="flex justify-between items-center text-sm">

@@ -10,7 +10,7 @@ export default function CategoryBars({ categorias }: CategoryBarsProps) {
   const maxCat = Math.max(...categorias.map((c) => c.cantidad ?? 0), 1)
 
   return (
-    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl p-5">
+    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-[14px] p-5">
       <h2 className="text-sm font-semibold text-[var(--hc-text)] mb-4">Productos por categoría</h2>
       <div className="space-y-2.5">
         {categorias.slice(0, 6).map((cat, i) => (

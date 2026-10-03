@@ -14,7 +14,7 @@ export default function AdminCopilot() {
       <CopilotHeader uso={chat.uso} pctUso={chat.pctUso} pctColor={chat.pctColor} onLimpiar={chat.pedirLimpiar} />
 
       {chat.uso && !chat.uso.habilitado && (
-        <div className="rounded-2xl p-5 text-center mb-3 space-y-2"
+        <div className="rounded-[14px] p-5 text-center mb-3 space-y-2"
           style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
           <p className="text-sm font-semibold" style={{ color: '#a8291f' }}>Consultas con Hot no disponible en tu plan actual</p>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
@@ -74,7 +74,7 @@ export default function AdminCopilot() {
             placeholder={chat.uso?.habilitado === false ? 'Consultas con Hot no disponible en tu plan' : 'Pregunta sobre tu negocio… (Enter para enviar, Shift+Enter = nueva línea)'}
             disabled={chat.enviando || copilotDeshabilitado}
             rows={2}
-            className="flex-1 px-4 py-3 rounded-2xl text-sm outline-none resize-none disabled:opacity-50"
+            className="flex-1 px-4 py-3 rounded-[14px] text-sm outline-none resize-none disabled:opacity-50"
             style={{
               backgroundColor: 'var(--hc-surface)',
               border: '1.5px solid var(--hc-border)',
@@ -83,7 +83,7 @@ export default function AdminCopilot() {
           />
           <button type="submit" disabled={chat.enviando || !chat.input.trim() || copilotDeshabilitado}
             aria-label="Enviar"
-            className="px-4 rounded-2xl font-semibold text-sm disabled:opacity-40 hover:opacity-80 transition-all min-w-[56px]"
+            className="px-4 rounded-[14px] font-semibold text-sm disabled:opacity-40 hover:opacity-80 transition-all min-w-[56px]"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             {chat.enviando ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />

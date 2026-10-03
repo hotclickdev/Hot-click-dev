@@ -46,11 +46,11 @@ export default function StepRecibo({ venta, userName, onNueva }: {
   return (
     <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
       <div className="w-full max-w-sm space-y-4">
-        <div id="pos-ticket" className="rounded-3xl p-6 shadow-2xl"
+        <div id="pos-ticket" className="rounded-[16px] p-6 shadow-2xl"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
 
           <div className="text-center mb-5">
-            <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center"
+            <div className="w-16 h-16 rounded-[14px] mx-auto mb-3 flex items-center justify-center"
               style={{ backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399' }}>
               <CheckIcon />
             </div>
@@ -85,17 +85,17 @@ export default function StepRecibo({ venta, userName, onNueva }: {
 
         <div className="grid grid-cols-3 gap-2">
           <button type="button" onClick={imprimir}
-            className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125 flex items-center justify-center gap-1.5"
+            className="py-3 rounded-[14px] text-xs font-semibold transition-all hover:brightness-125 flex items-center justify-center gap-1.5"
             style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
             <PrintIcon /> {t('pos.recibo.imprimir')}
           </button>
           <button type="button" onClick={whatsapp}
-            className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125 flex items-center justify-center gap-1.5"
+            className="py-3 rounded-[14px] text-xs font-semibold transition-all hover:brightness-125 flex items-center justify-center gap-1.5"
             style={{ backgroundColor: 'rgba(37,211,102,0.12)', color: '#25d366' }}>
             <WhatsAppIcon /> {t('pos.recibo.whatsapp')}
           </button>
           <button type="button" onClick={onNueva}
-            className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125 inline-flex items-center justify-center"
+            className="py-3 rounded-[14px] text-xs font-semibold transition-all hover:brightness-125 inline-flex items-center justify-center"
             style={{ background: 'var(--hc-accent)', color: '#fff' }}>
             <TextoMas>{t('pos.recibo.nueva')}</TextoMas>
           </button>

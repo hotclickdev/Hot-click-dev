@@ -21,7 +21,7 @@ export default function SistemaChecklist({
   return (
     <div
       data-testid="sistema-checklist"
-      className="rounded-2xl p-5"
+      className="rounded-[14px] p-5"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
     >
       <div className="flex items-start justify-between gap-3">

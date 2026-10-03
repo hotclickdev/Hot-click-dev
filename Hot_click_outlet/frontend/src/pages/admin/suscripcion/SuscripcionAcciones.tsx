@@ -29,7 +29,7 @@ export default function SuscripcionAcciones({
   onConfirmarCancelar: () => void
 }) {
   return (
-    <div className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Acciones</p>
 
       {esTrial && (

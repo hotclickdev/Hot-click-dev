@@ -146,14 +146,14 @@ export default function GarantiaDetalleDrawer({
         <div className="p-5 flex gap-3" style={{ borderTop: '1px solid var(--hc-border)' }}>
           {waLinkGarantia(selected) && (
             <a href={waLinkGarantia(selected) ?? undefined} target="_blank" rel="noopener noreferrer"
-              className="flex-1 py-3 rounded-2xl text-sm font-bold text-center inline-flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-[14px] text-sm font-bold text-center inline-flex items-center justify-center gap-2"
               style={{ backgroundColor: 'rgba(37,211,102,0.12)', color: '#25d366' }}>
               <TrustGlyph tipo="chat" className="w-4 h-4" />
               WhatsApp
             </a>
           )}
           <button type="button" onClick={onGuardar} disabled={saving}
-            className="flex-1 py-3 rounded-2xl text-sm font-bold disabled:opacity-50"
+            className="flex-1 py-3 rounded-[14px] text-sm font-bold disabled:opacity-50"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             {saving
               ? <span className="flex items-center justify-center gap-2">

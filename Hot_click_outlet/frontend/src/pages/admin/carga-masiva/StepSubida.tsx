@@ -55,7 +55,7 @@ export default function StepSubida({ onContinuar, limit, importarCsvTo = '/admin
         onDragLeave={() => setDragging(false)}
         onClick={openFilePicker}
         onKeyDown={onZoneKeyDown}
-        className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed py-[30px] transition-all"
+        className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed py-[30px] transition-all"
         style={{
           borderColor: dragging ? 'var(--hc-primary)' : 'var(--hc-border)',
           background: dragging ? 'var(--hc-red-50)' : 'var(--hc-surface-2)',
@@ -65,7 +65,7 @@ export default function StepSubida({ onContinuar, limit, importarCsvTo = '/admin
           onChange={(e) => { addFiles(e.target.files); e.target.value = '' }}
           onClick={(e) => e.stopPropagation()}
         />
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--hc-red-50)]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[14px] bg-[var(--hc-red-50)]">
           <IconUpload className="h-7 w-7 text-hc-primary" />
         </div>
         <div className="pointer-events-none text-center">

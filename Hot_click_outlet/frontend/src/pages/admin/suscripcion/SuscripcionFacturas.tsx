@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 export default function SuscripcionFacturas({ facturas }: { facturas: FacturaBilling[] }) {
   if (facturas.length === 0) return null
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
       <div className="px-5 py-3 border-b" style={{ backgroundColor: 'var(--hc-surface-2)', borderColor: 'var(--hc-border)' }}>
         <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Historial de facturas</p>
       </div>

@@ -180,7 +180,7 @@ export default function SistemaPromociones() {
       </header>
 
       {sugeridos.length > 0 && (
-        <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+        <div className="rounded-[14px] p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
           <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>
             {t('adminOfertas.suggestedTitle')}
           </h2>
@@ -202,7 +202,7 @@ export default function SistemaPromociones() {
       )}
 
       {pendientesActivos.length > 0 && (
-        <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+        <div className="rounded-[14px] p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
           <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>{t('adminOfertas.myRequests')}</h2>
           {pendientesActivos.map(s => {
             const color = ESTADO_COLOR[s.estadoSolicitud ?? ''] ?? ESTADO_COLOR.PENDIENTE
@@ -231,7 +231,7 @@ export default function SistemaPromociones() {
         </div>
       )}
 
-      <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+      <div className="rounded-[14px] p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>{t('adminOfertas.yourProducts')}</h2>
           <input

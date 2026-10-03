@@ -63,7 +63,7 @@ function QrModal({ mesa, onClose }: { mesa: MesaAdmin; onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
       onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="rounded-2xl p-6 max-w-sm w-full flex flex-col items-center gap-4"
+      <div className="rounded-[14px] p-6 max-w-sm w-full flex flex-col items-center gap-4"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>{mesa.nombre}</h3>
@@ -159,7 +159,7 @@ export default function AdminMesas() {
       )}
 
       {mostrarForm && (
-        <form onSubmit={crear} className="rounded-2xl p-5 space-y-4"
+        <form onSubmit={crear} className="rounded-[14px] p-5 space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Nueva mesa</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -207,7 +207,7 @@ export default function AdminMesas() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {mesas.map(m => (
-            <div key={m.id} className="rounded-2xl p-4 space-y-3 relative"
+            <div key={m.id} className="rounded-[14px] p-4 space-y-3 relative"
               style={{
                 backgroundColor: 'var(--hc-surface)',
                 border: `1px solid ${m.activo ? 'var(--hc-border)' : 'rgba(156,163,175,0.2)'}`,

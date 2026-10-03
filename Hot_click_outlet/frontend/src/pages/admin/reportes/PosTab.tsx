@@ -24,11 +24,11 @@ export default function PosTab({ loading, posFiltradas, posTx, posTotal, posTick
       </ReportesKpis>
 
       {posFiltradas.length === 0 ? (
-        <div className="rounded-2xl p-10 text-center" style={cardStyle}>
+        <div className="rounded-[14px] p-10 text-center" style={cardStyle}>
           <p style={{ color: 'var(--hc-muted)' }}>Sin ventas POS para este período.</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+        <div className="rounded-[14px] overflow-hidden" style={cardStyle}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead>

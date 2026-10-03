@@ -13,7 +13,7 @@ export function EstadoBadge({ estado }: { estado: string }) {
 
 export function KpiCard({ label, value, sub }: KpiCardProps) {
   return (
-    <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] p-5" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{label}</p>
       <p className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>{value}</p>
       {sub && <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{sub}</p>}

@@ -144,7 +144,7 @@ export default function AdminHomepage() {
       </div>
 
       {/* ── Sección carousel/hero ── */}
-      <section className="rounded-2xl p-6 space-y-4" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <section className="rounded-[14px] p-6 space-y-4" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div>
           <h2 className="text-base font-bold" style={{ color: 'var(--hc-text)' }}>Carousel / Hero</h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
@@ -196,7 +196,7 @@ export default function AdminHomepage() {
       </section>
 
       {/* ── Categorías visibles en homepage ── */}
-      <section className="rounded-2xl p-6 space-y-4" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <section className="rounded-[14px] p-6 space-y-4" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div>
           <h2 className="text-base font-bold" style={{ color: 'var(--hc-text)' }}>Categorías en homepage</h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>

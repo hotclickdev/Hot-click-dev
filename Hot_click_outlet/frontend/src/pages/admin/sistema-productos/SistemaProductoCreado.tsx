@@ -28,7 +28,7 @@ export default function SistemaProductoCreado({ producto, slug, tiendaPublica, o
         <img
           src={producto.imagenUrl}
           alt=""
-          className="w-28 h-28 object-cover rounded-2xl mt-5"
+          className="w-28 h-28 object-cover rounded-[14px] mt-5"
           style={{ border: '1px solid var(--hc-border)' }}
         />
       )}
@@ -37,7 +37,7 @@ export default function SistemaProductoCreado({ producto, slug, tiendaPublica, o
         {tiendaPublica && ruta && (
           <Link
             to={ruta}
-            className="hc-btn hc-btn-primary inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[10px] text-[15px] font-bold"
+            className="hc-btn hc-btn-primary inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[12px] text-[15px] font-bold"
           >
             Verlo en tu tienda
           </Link>
@@ -45,7 +45,7 @@ export default function SistemaProductoCreado({ producto, slug, tiendaPublica, o
         <button
           type="button"
           onClick={onOtro}
-          className="inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[10px] text-[15px] font-semibold"
+          className="inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[12px] text-[15px] font-semibold"
           style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)', backgroundColor: 'var(--hc-surface)' }}
         >
           Agregar otro producto

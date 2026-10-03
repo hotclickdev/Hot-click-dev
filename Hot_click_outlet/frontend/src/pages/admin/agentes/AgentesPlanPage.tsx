@@ -21,7 +21,7 @@ export default function AgentesPlanPage() {
         {(plan.olas ?? []).map((ola) => (
           <article
             key={ola.n}
-            className="rounded-2xl border border-hc-border bg-hc-surface p-4"
+            className="rounded-[14px] border border-hc-border bg-hc-surface p-4"
           >
             <p className="text-[10px] font-bold uppercase tracking-wider text-hc-muted">
               {ola.status === 'en_master' ? 'en master' : 'pendiente'}
@@ -62,7 +62,7 @@ export default function AgentesPlanPage() {
 
 function Kpi({ valor, etiqueta }: { valor: string; etiqueta: string }) {
   return (
-    <div className="rounded-2xl border border-hc-border bg-hc-surface p-4">
+    <div className="rounded-[14px] border border-hc-border bg-hc-surface p-4">
       <p className="text-2xl font-bold text-hc-text">{valor}</p>
       <p className="text-xs text-hc-muted">{etiqueta}</p>
     </div>

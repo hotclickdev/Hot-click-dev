@@ -20,11 +20,11 @@ export default function ActivityFeed({ activity }: ActivityFeedProps) {
         )}
       </div>
       {activity.length === 0 ? (
-        <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl p-8 text-center text-xs text-[var(--hc-muted)]">
+        <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-[14px] p-8 text-center text-xs text-[var(--hc-muted)]">
           Sin actividad reciente
         </div>
       ) : (
-        <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl divide-y divide-[var(--hc-border)] overflow-hidden">
+        <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-[14px] divide-y divide-[var(--hc-border)] overflow-hidden">
           {activity.map((item, i) => (
             <ActivityRow key={item.id} item={item} index={i} />
           ))}

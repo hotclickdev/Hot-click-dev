@@ -12,7 +12,7 @@ export default function NewSaleTabs({ tab, onSwitch }: {
   onSwitch: (id: TabVentaId) => void
 }) {
   return (
-    <div className="flex gap-1 bg-[#111114] border border-white/8 rounded-2xl p-1">
+    <div className="flex gap-1 bg-[#111114] border border-white/8 rounded-[14px] p-1">
       {TABS.map((item) => {
         const Icon = TAB_ICONS[item.id]
         return (

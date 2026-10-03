@@ -20,7 +20,7 @@ export function KpiCard({ label, value, sub, accent }: {
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl p-5 flex flex-col gap-1"
+      className="rounded-[14px] p-5 flex flex-col gap-1"
       style={{ backgroundColor: 'var(--hc-card)', border: '1px solid var(--hc-border)' }}>
       <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{label}</p>
       <p className="text-3xl font-bold tabular-nums" style={{ color: accent || 'var(--hc-text)' }}>{value ?? '—'}</p>
@@ -31,7 +31,7 @@ export function KpiCard({ label, value, sub, accent }: {
 
 export function Card({ children, className = '' }: { children?: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl ${className}`}
+    <div className={`rounded-[14px] ${className}`}
       style={{ backgroundColor: 'var(--hc-card)', border: '1px solid var(--hc-border)' }}>
       {children}
     </div>

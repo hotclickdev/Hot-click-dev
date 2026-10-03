@@ -24,7 +24,7 @@ export default function StepApertura({ onAbrir, loading }: { onAbrir: (monto: nu
           </p>
         </div>
 
-        <div className="rounded-2xl p-5"
+        <div className="rounded-[14px] p-5"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <ConteoEfectivo label={t('pos.apertura.conteoLabel')} onTotal={setMonto} />
         </div>
@@ -32,7 +32,7 @@ export default function StepApertura({ onAbrir, loading }: { onAbrir: (monto: nu
         <button type="button"
           onClick={() => onAbrir(monto)}
           disabled={loading}
-          className="w-full py-4 rounded-2xl font-black text-base transition-all hover:brightness-110 disabled:opacity-40"
+          className="w-full py-4 rounded-[14px] font-black text-base transition-all hover:brightness-110 disabled:opacity-40"
           style={{ background: 'var(--hc-primary)', color: '#fff' }}>
           {etiquetaAbrirTurno(t, loading, monto)}
         </button>

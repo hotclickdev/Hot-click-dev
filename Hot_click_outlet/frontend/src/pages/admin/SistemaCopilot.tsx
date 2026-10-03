@@ -26,7 +26,7 @@ export default function SistemaCopilot() {
       <SistemaCopilotHeader uso={chat.uso} onLimpiar={chat.pedirLimpiar} />
 
       {chat.uso && !chat.uso.habilitado && (
-        <div className="rounded-2xl p-5 text-center mb-3"
+        <div className="rounded-[14px] p-5 text-center mb-3"
           style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
           <p className="text-sm font-semibold m-0" style={{ color: '#a8291f' }}>{t('planes.bloqueo.ia.titulo')}</p>
           <p className="text-xs m-0 mt-1" style={{ color: MUTED }}>
@@ -77,13 +77,13 @@ export default function SistemaCopilot() {
             placeholder={chat.uso?.habilitado === false ? 'Hot no está en tu plan' : 'Escribí tu consulta…'}
             disabled={deshabilitado}
             rows={1}
-            className="flex-1 px-[18px] py-[15px] rounded-[10px] text-[15px] outline-none resize-none disabled:opacity-50"
+            className="flex-1 px-[18px] py-[15px] rounded-[12px] text-[15px] outline-none resize-none disabled:opacity-50"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
           />
           <button
             type="submit"
             disabled={deshabilitado || !chat.input.trim()}
-            className="px-[26px] rounded-[10px] text-[15px] font-bold disabled:opacity-40"
+            className="px-[26px] rounded-[12px] text-[15px] font-bold disabled:opacity-40"
             style={{ backgroundColor: '#E73B33', color: '#fff' }}
           >
             {chat.enviando ? '…' : 'Enviá'}
@@ -127,7 +127,7 @@ function SistemaCopilotHeader({ uso, onLimpiar }: { uso: CopilotUso | null; onLi
       <button
         type="button"
         onClick={onLimpiar}
-        className="text-sm font-semibold px-3 py-2 min-h-[44px] rounded-[10px]"
+        className="text-sm font-semibold px-3 py-2 min-h-[44px] rounded-[12px]"
         style={{ border: '1px solid var(--hc-border)', color: MUTED }}
       >
         Limpiar
