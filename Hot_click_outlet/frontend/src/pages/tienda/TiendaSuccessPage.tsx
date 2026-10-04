@@ -1,4 +1,4 @@
-import { useLocation, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_PAGO } from '@/pages/pago/iconosPago'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
@@ -23,6 +23,18 @@ export default function TiendaSuccessPage() {
   // Con plan PYME o NEGOCIO_PLUS se escribe al vendedor; en EMPRENDEDOR la consulta va a HotClick.
   const { whatsapp } = contactoVisible(empresa)
   const nombre = empresa?.nombreComercial ?? slug
+
+  if (!numeroPedido) {
+    return (
+      <div className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-4 px-4 py-12 text-center">
+        <h1 className="font-display text-[19px] font-bold text-hc-n-900">No encontramos ese pedido</h1>
+        <p className="text-[14px] leading-5 text-hc-n-600">El enlace no trae un número de pedido.</p>
+        <Link to="/mis-pedidos" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-hc-red-500 px-6 text-[15px] font-semibold text-white no-underline">
+          Ver mis pedidos
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-3 px-4 pb-8 pt-7 leading-[normal] lg:py-10">
