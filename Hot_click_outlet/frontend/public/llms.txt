@@ -1,0 +1,25 @@
+# HOTCLICK
+
+HOTCLICK (hotclick.lat) es la tienda en línea de Costa Rica para comprar a emprendedores, pymes y negocios grandes en un solo lugar. Envío a todo el país. Pago con SINPE Móvil, Visa o Mastercard. Montos en colones (₡), sin decimales. Atención Lun–Sáb 8:00–19:00. WhatsApp +506 8666-7888.
+
+## Para quién compra
+
+- Catálogo: https://hotclick.lat/productos
+- Ficha de producto (canónica): https://hotclick.lat/productos/{id}
+- Sector: https://hotclick.lat/comprar/{slug} (solo categorías con productos publicados)
+- Tiendas por provincia: https://hotclick.lat/tiendas/{provincia}
+- Si el producto no está publicado: https://hotclick.lat/servicios/buscar-producto (gratis)
+
+## Para quién vende
+
+- Emprendedor: https://hotclick.lat/emprende
+- PYME: https://hotclick.lat/para-pymes
+- Negocio con varios locales: https://hotclick.lat/negocio-plus-plan
+- Tienda de un negocio: https://hotclick.lat/tienda/{slug}
+- Digitalizar inventario en el local (códigos, SKU y etiquetas): https://hotclick.lat/servicios/digitalizar-inventario
+
+## Hechos
+
+- País: Costa Rica. No opera envíos internacionales.
+- Cada negocio aprobado y visible tiene su URL /tienda/{slug}. El producto se indexa una sola vez, en /productos/{id}.
+- Provincias con tiendas publicadas: San José, Alajuela, Cartago, Heredia, Guanacaste, Puntarenas, Limón.

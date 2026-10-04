@@ -212,6 +212,8 @@ final class SecurityAuthorizationRules {
                 Constants.PERM_GLOBAL_METRICS)
             .requestMatchers(GET, "/api/admin/embudo").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_METRICS)
+            .requestMatchers("/api/admin/d105/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_METRICS)
             .requestMatchers("/api/auth/seleccionar-empresa").permitAll()
             .requestMatchers("/api/auth/mis-negocios").authenticated()
             .requestMatchers("/api/auth/cambiar-negocio").authenticated()
@@ -236,7 +238,7 @@ final class SecurityAuthorizationRules {
             // Rutas del SPA React (frontend)
             .requestMatchers("/error", "/error/**").permitAll()
             .requestMatchers("/sw.js", "/manifest.webmanifest", "/workbox-*.js",
-                "/registerSW.js", "/vite.svg", "/robots.txt").permitAll()
+                "/registerSW.js", "/vite.svg", "/robots.txt", "/llms.txt", "/opensearch.xml").permitAll()
             .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png",
                 "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
                 "/images/**", "/assets/**", "/brand/**", "/admin/**",
@@ -248,6 +250,8 @@ final class SecurityAuthorizationRules {
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan",
                 "/emprendimientos",
+                "/comprar", "/comprar/**",
+                "/tiendas", "/tiendas/**",
                 "/404",
                 "/seleccionar-negocio", "/mode-select", "/registrar-negocio",
                 "/sso-callback", "/sso-complete",

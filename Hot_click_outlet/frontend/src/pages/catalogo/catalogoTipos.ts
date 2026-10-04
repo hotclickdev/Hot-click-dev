@@ -11,6 +11,7 @@ export type CatalogCategoria = {
   nombreCategoria?: string
   nombre?: string
   icono?: string
+  slug?: string | null
 }
 
 export type CatalogCategoriaNodo = CatalogCategoria & {

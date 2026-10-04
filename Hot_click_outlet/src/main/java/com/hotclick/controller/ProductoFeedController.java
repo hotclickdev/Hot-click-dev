@@ -4,6 +4,7 @@ import com.hotclick.model.BlogEntrada;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.seo.SeoPublicoService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ public class ProductoFeedController {
 
     @Autowired private ProductoRepository    productoRepository;
     @Autowired private BlogEntradaRepository blogEntradaRepository;
+    @Autowired private SeoPublicoService     seoPublicoService;
 
     @Value("${app.url:https://hotclick.lat}")
     private String appUrl;
@@ -42,7 +44,7 @@ public class ProductoFeedController {
         xml.append("  <channel>\n");
         xml.append("    <title>HOTCLICK Outlet</title>\n");
         xml.append("    <link>").append(appUrl).append("</link>\n");
-        xml.append("    <description>Ropa, Zapatos y Accesorios de Marca en Costa Rica</description>\n");
+        xml.append("    <description>Productos de emprendedores, pymes y negocios de Costa Rica. Envío a todo el país.</description>\n");
 
         for (Producto p : productos) {
             String nombre = (p.getTituloProducto() != null && !p.getTituloProducto().isBlank())
@@ -119,7 +121,12 @@ public class ProductoFeedController {
         sitemapUrl(xml, appUrl + "/nosotros", "0.5", "monthly", hoy);
         sitemapUrl(xml, appUrl + "/contacto", "0.5", "monthly", hoy);
         sitemapUrl(xml, appUrl + "/servicios", "0.5", "monthly", hoy);
+        sitemapUrl(xml, appUrl + "/servicios/buscar-producto", "0.6", "weekly", hoy);
+        sitemapUrl(xml, appUrl + "/servicios/digitalizar-inventario", "0.6", "weekly", hoy);
+        sitemapUrl(xml, appUrl + "/para-pymes", "0.7", "weekly", hoy);
+        sitemapUrl(xml, appUrl + "/negocio-plus-plan", "0.7", "weekly", hoy);
         sitemapUrl(xml, appUrl + "/blog", "0.6", "weekly", hoy);
+        agregarRutasSeo(xml, hoy);
 
         // Sin ?cat= — el canonical del catálogo es /productos (evita URLs facetadas duplicadas)
 
@@ -153,6 +160,17 @@ public class ProductoFeedController {
 
         xml.append("</urlset>");
         return xml.toString();
+    }
+
+    /** Tiendas, sectores y provincias. Si falla, el sitemap de productos sigue saliendo. */
+    private void agregarRutasSeo(StringBuilder xml, String hoy) {
+        try {
+            for (String ruta : seoPublicoService.rutasSitemap()) {
+                sitemapUrl(xml, appUrl + ruta, "0.7", "weekly", hoy);
+            }
+        } catch (Exception e) {
+            log.warn("Sitemap sin rutas de tiendas, sectores o provincias", e);
+        }
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

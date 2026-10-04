@@ -9,6 +9,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.producto.CategoriaCatalogoQueries;
+import com.hotclick.service.producto.CategoriaSlugs;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +22,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 @RestController
@@ -78,6 +81,7 @@ public class CategoriaController {
             if (body.get("icono") != null) cat.setIcono(sanitizer.cleanWithLimit(body.get("icono"), 20));
             cat.setEstado(Constants.ESTADO_ACTIVO);
             asignarAlcance(cat);
+            CategoriaSlugs.asegurar(cat, categoriaRepository);
             cat.setAdminCliente(
                 usuarioRepository.findByCorreo(ud.getUsername())
                     .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"))
@@ -103,6 +107,7 @@ public class CategoriaController {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
         List<Categoria> batch = new ArrayList<>();
+        Set<String> slugs = new HashSet<>();
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreCategoria");
             if (nombre == null || nombre.isBlank()) continue;
@@ -111,6 +116,7 @@ public class CategoriaController {
             cat.setDescripcion(sanitizer.cleanWithLimit(item.getOrDefault("descripcion", ""), 500));
             cat.setEstado(Constants.ESTADO_ACTIVO);
             asignarAlcance(cat);
+            CategoriaSlugs.asegurar(cat, categoriaRepository, slugs);
             cat.setAdminCliente(admin);
             batch.add(cat);
         }
@@ -134,6 +140,7 @@ public class CategoriaController {
                 cat.setDescripcion(sanitizer.cleanWithLimit(body.get("descripcion"), 500));
             if (body.containsKey("icono"))
                 cat.setIcono(body.get("icono") != null ? sanitizer.cleanWithLimit(body.get("icono"), 20) : null);
+            CategoriaSlugs.asegurar(cat, categoriaRepository);
             if (body.containsKey("padreId")) {
                 String padreIdStr = body.get("padreId");
                 if (padreIdStr == null || padreIdStr.isBlank()) {

@@ -202,6 +202,20 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         + "AND e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true ORDER BY p.id ASC")
     List<Producto> findActivosVisibles();
 
+    /** Fichas públicas de un sector (categoría global por slug). */
+    @Query(nativeQuery = true, value =
+        "SELECT p.id_producto, " +
+        "COALESCE(NULLIF(trim(p.titulo_producto), ''), p.nombre_producto), " +
+        "p.precio_venta, p.imagen_principal_url " +
+        "FROM hot_click_producto_tb p " +
+        "INNER JOIN hot_click_empresa_tb e ON e.id_empresa = p.fk_id_empresa " +
+        "INNER JOIN hot_click_categoria_tb c ON c.id_categoria = p.fk_id_categoria " +
+        "WHERE c.slug = :slug AND c.fk_id_empresa IS NULL AND c.fk_id_estado = 1 " +
+        "AND p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+        "ORDER BY p.id_producto DESC")
+    List<Object[]> findProductosDeSector(@Param("slug") String slug, Pageable pageable);
+
     /** Productos activos sin publicación en Facebook — para el scheduler, paginado */
     @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND NOT EXISTS (SELECT 1 FROM PublicacionFacebook fb WHERE fb.producto.id = p.id) ORDER BY p.id ASC")
     List<Producto> findActivosSinPublicacion(Pageable pageable);

@@ -9,6 +9,8 @@ import CatalogMobileSidebar from './CatalogMobileSidebar'
 import { RetryBanner } from '@/components/ui/RetryBanner'
 import { useTranslation } from 'react-i18next'
 import type { CatalogoPageModel } from './useCatalogoPage'
+import { useSlugsSector } from '@/pages/seo/useSlugsSector'
+import type { CatalogCategoria } from './catalogoTipos'
 import type { RefObject } from 'react'
 
 /**
@@ -22,6 +24,7 @@ export default function CatalogAllView({
   shouldRenderGrid: boolean
 }) {
   const { t } = useTranslation()
+  const slugsSector = useSlugsSector()
   const {
     products, categories, marcas, loading, error, retry, page, setViewMode,
     search, setSearch, category, setCategory, marcasFilter, sort, setSort,
@@ -41,6 +44,7 @@ export default function CatalogAllView({
         activeCatName={activeCatName}
         filteredCount={filtered.length}
         onClearCategory={() => setCategory('')}
+        sectorHref={hrefSector(categories, category, slugsSector)}
       />
 
       <CatalogFilterBar
@@ -158,4 +162,10 @@ export default function CatalogAllView({
       </div>
     </>
   )
+}
+
+function hrefSector(categories: CatalogCategoria[], category: string, slugs: ReadonlySet<string>) {
+  const cat = categories.find(c => String(c.id) === String(category))
+  if (!cat?.slug || !slugs.has(cat.slug)) return undefined
+  return `/comprar/${cat.slug}`
 }

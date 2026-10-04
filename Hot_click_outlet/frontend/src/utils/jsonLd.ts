@@ -162,8 +162,9 @@ export function generateOrganizationJsonLd(urlBase: string, socialUrls: string[]
     '@context': 'https://schema.org',
     '@type': ['Organization', 'OnlineStore'],
     name: SITE_NAME,
-    alternateName: 'HOTCLICK Marketplace Costa Rica',
-    description: 'Marketplace de emprendedores costarricenses. Productos únicos con envío a todo Costa Rica.',
+    alternateName: ['HOTCLICK Marketplace Costa Rica', 'HotClick'],
+    description: 'Tienda en línea de Costa Rica donde se compra a emprendedores, pymes y negocios grandes, con envío a todo el país y pago con SINPE Móvil o tarjeta. También ofrece búsqueda de productos por encargo y digitalización de inventario para negocios.',
+    slogan: 'Comprá en línea a negocios de Costa Rica',
     url: urlBase,
     logo: {
       '@type': 'ImageObject',
@@ -212,7 +213,7 @@ export function generateFAQJsonLd() {
         name: '¿Qué es HOTCLICK?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'HOTCLICK es el marketplace de emprendedores costarricenses donde podés comprar miles de productos únicos: tecnología, ropa, accesorios, artículos del hogar y más, con envío a todo Costa Rica.',
+          text: 'HOTCLICK es una tienda en línea de Costa Rica donde comprás a emprendedores, pymes y negocios grandes en un solo lugar: tecnología, ropa, accesorios, hogar y más, con envío a todo el país y pago con SINPE Móvil o tarjeta.',
         },
       },
       {
@@ -255,6 +256,30 @@ export function generateFAQJsonLd() {
           text: 'Registrá tu emprendimiento en HOTCLICK gratis. Sin comisiones el primer mes, tu tienda activa en 24 horas. Visitá la sección "Vendé con nosotros" para comenzar.',
         },
       },
+      {
+        '@type': 'Question',
+        name: '¿Puedo comprar a pymes y negocios grandes en HOTCLICK?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Sí. En HOTCLICK venden emprendedores, pymes y negocios grandes de Costa Rica. Cada negocio tiene su propia tienda en hotclick.lat/tienda con sus productos, y todos se pagan y envían igual.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '¿HOTCLICK me ayuda a encontrar un producto que no está publicado?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Sí. En hotclick.lat/servicios/buscar-producto describís lo que buscás, con foto y presupuesto, y el equipo de HOTCLICK lo busca entre los negocios de Costa Rica. El servicio es gratis.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '¿Qué es la digitalización de inventario de HOTCLICK?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Es un servicio para negocios de Costa Rica sin inventario digital o con productos sin código de barras. El equipo de HOTCLICK va al local, escanea los códigos existentes, registra los productos sin código con un SKU interno, imprime sus etiquetas y carga todo al catálogo para empezar a vender en línea. Se solicita en hotclick.lat/servicios/digitalizar-inventario.',
+        },
+      },
     ],
   }
 }
@@ -281,12 +306,12 @@ export function generateBreadcrumbJsonLd(items: BreadcrumbItem[]) {
  * @param {Array<{id: string|number, name: string, url?: string, image?: string, price?: number}>} products
  * @param {string} urlBase
  */
-export function generateItemListJsonLd(products: ItemListProduct[], urlBase: string) {
+export function generateItemListJsonLd(products: ItemListProduct[], urlBase: string, nombre = 'Productos destacados de HOTCLICK') {
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Productos destacados de HOTCLICK',
-    description: 'Los mejores productos de emprendedores costarricenses',
+    name: nombre,
+    description: 'Productos de emprendedores, pymes y negocios de Costa Rica',
     numberOfItems: products.length,
     itemListElement: products.slice(0, 10).map((p, i) => ({
       '@type': 'ListItem',

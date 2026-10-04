@@ -21,6 +21,26 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     Optional<Empresa> findBySlug(String slug);
 
+    /**
+     * Tiendas públicas para sitemap y directorio.
+     * Columnas: slug, nombre visible, tagline, logo, provincia de la bodega de venta o la primera con provincia.
+     */
+    @Query(nativeQuery = true, value =
+        "SELECT e.slug, " +
+        "COALESCE(NULLIF(trim(e.nombre_comercial), ''), e.nombre_empresa), " +
+        "e.tagline, e.logo_url, " +
+        "COALESCE(NULLIF(trim(bo.provincia), ''), (" +
+        "  SELECT b.provincia FROM hot_click_bodega_tb b " +
+        "  WHERE b.fk_id_empresa = e.id_empresa " +
+        "  AND b.provincia IS NOT NULL AND trim(b.provincia) <> '' " +
+        "  ORDER BY b.id_bodega LIMIT 1)) " +
+        "FROM hot_click_empresa_tb e " +
+        "LEFT JOIN hot_click_bodega_tb bo ON bo.id_bodega = e.fk_id_bodega_venta_online " +
+        "WHERE e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+        "AND e.slug IS NOT NULL AND trim(e.slug) <> '' " +
+        "ORDER BY 2")
+    List<Object[]> findTiendasPublicasSeo();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Empresa e WHERE e.id = :id")
     Optional<Empresa> findByIdForUpdate(@Param("id") Long id);

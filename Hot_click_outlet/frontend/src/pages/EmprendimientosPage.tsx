@@ -4,6 +4,7 @@ import { convenioService, listaConvenios } from '@/services/convenioService'
 import EmprendimientosHero from './emprendimientos/EmprendimientosHero'
 import EmprendimientosVacio from './emprendimientos/EmprendimientosVacio'
 import ConvenioCard, { type ConvenioPublico } from './emprendimientos/ConvenioCard'
+import TiendasDirectorio from './seo/TiendasDirectorio'
 
 export default function EmprendimientosPage() {
   const [lista, setLista] = useState<ConvenioPublico[]>([])
@@ -48,6 +49,7 @@ export default function EmprendimientosPage() {
             </div>
           )}
         </div>
+        <TiendasDirectorio />
       </div>
     </MainLayout>
   )

@@ -27,6 +27,10 @@ public class Categoria extends BaseEntity {
     @Column(name = "icono", length = 20)
     private String icono;
 
+    /** URL pública /comprar/{slug}. Estable: no se regenera si el nombre cambia. */
+    @Column(name = "slug", length = 120)
+    private String slug;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_categoria_padre")
@@ -58,6 +62,9 @@ public class Categoria extends BaseEntity {
 
     public String getIcono() { return icono; }
     public void setIcono(String icono) { this.icono = icono; }
+
+    public String getSlug() { return slug; }
+    public void setSlug(String slug) { this.slug = slug; }
 
     public Categoria getCategoriaPadre() { return categoriaPadre; }
     public void setCategoriaPadre(Categoria categoriaPadre) { this.categoriaPadre = categoriaPadre; }

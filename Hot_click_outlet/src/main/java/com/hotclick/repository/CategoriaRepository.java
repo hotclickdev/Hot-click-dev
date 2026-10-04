@@ -6,11 +6,29 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
     List<Categoria> findByEstado(Integer estado);
+
+    Optional<Categoria> findBySlug(String slug);
+
+    /** Categorías globales con suficientes productos públicos para una landing. */
+    @Query(nativeQuery = true, value =
+        "SELECT c.slug, c.nombre_categoria, c.descripcion, COUNT(p.id_producto) " +
+        "FROM hot_click_categoria_tb c " +
+        "INNER JOIN hot_click_producto_tb p ON p.fk_id_categoria = c.id_categoria " +
+        "INNER JOIN hot_click_empresa_tb e ON e.id_empresa = p.fk_id_empresa " +
+        "WHERE c.fk_id_empresa IS NULL AND c.fk_id_estado = 1 " +
+        "AND c.slug IS NOT NULL AND trim(c.slug) <> '' " +
+        "AND p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+        "GROUP BY c.id_categoria, c.slug, c.nombre_categoria, c.descripcion " +
+        "HAVING COUNT(p.id_producto) >= :minimo " +
+        "ORDER BY c.nombre_categoria")
+    List<Object[]> findSectoresIndexables(@Param("minimo") int minimo);
 
     @Query(nativeQuery = true, value =
         "SELECT c.* FROM hot_click_categoria_tb c " +

@@ -1,11 +1,12 @@
 package com.hotclick.controller;
 
 import com.hotclick.model.BlogEntrada;
-import com.hotclick.model.Empresa;
 import com.hotclick.controller.spa.SpaSeoSupport;
 import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.seo.SeoPublicoService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,9 @@ public class SpaController {
 
     @Autowired
     private SpaSeoSupport spaSeoSupport;
+
+    @Autowired
+    private SeoPublicoService seoPublicoService;
 
     @Value("classpath:/static/index.html")
     private Resource indexHtmlResource;
@@ -90,13 +94,43 @@ public class SpaController {
     @GetMapping(value = {"/tienda/{slug}", "/tienda/{slug}/**"},
                 produces = MediaType.TEXT_HTML_VALUE)
     @ResponseBody
-    public ResponseEntity<String> tiendaPage(@PathVariable String slug) {
+    public ResponseEntity<String> tiendaPage(@PathVariable String slug, HttpServletRequest request) {
         return empresaRepository.findBySlug(slug)
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()) && Boolean.TRUE.equals(e.getVisibilidadPublica()))
             .<ResponseEntity<String>>map(e -> ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                .body(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e)))
+                .body(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e, request.getRequestURI())))
             .orElseGet(this::serveSpa);
+    }
+
+    @GetMapping(value = "/comprar/{slug}", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> sectorPage(@PathVariable String slug) {
+        return seoPublicoService.sector(slug)
+            .map(sector -> html(spaSeoSupport.injectSector(indexHtmlContent, sector)))
+            .orElseGet(() -> htmlNoIndex("Sector no encontrado | HOTCLICK",
+                "Este sector no está publicado en HotClick.", "/comprar/" + slug));
+    }
+
+    @GetMapping(value = "/tiendas/{provincia}", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> provinciaPage(@PathVariable String provincia) {
+        return seoPublicoService.provincia(provincia)
+            .map(p -> html(spaSeoSupport.injectProvincia(indexHtmlContent, p)))
+            .orElseGet(() -> htmlNoIndex("Provincia no encontrada | HOTCLICK",
+                "No hay tiendas publicadas en esta provincia.", "/tiendas/" + provincia));
+    }
+
+    @GetMapping(value = "/servicios/buscar-producto", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> buscarProductoPage() {
+        return html(spaSeoSupport.injectBuscarProducto(indexHtmlContent));
+    }
+
+    @GetMapping(value = "/servicios/digitalizar-inventario", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> digitalizarInventarioPage() {
+        return html(spaSeoSupport.injectDigitalizarInventario(indexHtmlContent));
     }
 
     @GetMapping(value = {
@@ -172,9 +206,19 @@ public class SpaController {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private ResponseEntity<String> serveSpa() {
+        return html(indexHtmlContent);
+    }
+
+    private ResponseEntity<String> html(String body) {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-            .body(indexHtmlContent);
+            .body(body);
+    }
+
+    private ResponseEntity<String> htmlNoIndex(String title, String desc, String path) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+            .body(spaSeoSupport.injectNoindex(indexHtmlContent, title, desc, path));
     }
 
     /** Soft-404 de producto: HTTP 404 + SPA con noindex para que el cliente muestre UI. */
