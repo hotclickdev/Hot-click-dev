@@ -85,7 +85,19 @@ HotClick implementa las siguientes medidas de seguridad: transmisión cifrada HT
 
 ---
 
-## SECCIÓN VIII: AUTORIDAD DE CONTROL
+## SECCIÓN VIII: PERSONAS MENORES DE EDAD
+
+La Plataforma está dirigida a personas mayores de dieciocho (18) años. No se permite el registro ni la compra a personas menores de edad. HotClick no recaba de forma intencional datos de personas menores de trece (13) años. Si un padre, madre o tutor advierte una cuenta de un menor, debe escribir a <hotclick.cr@gmail.com>. El consentimiento para tratar datos de un menor, cuando excepcionalmente proceda, lo otorga quien ejerza la patria potestad.
+
+---
+
+## SECCIÓN IX: ASISTENTES DE INTELIGENCIA ARTIFICIAL
+
+El chat de la tienda es un asistente de inteligencia artificial. No es una persona. Los mensajes pueden enviarse a Anthropic (Claude) para generar la respuesta. No se venden. Las respuestas son orientativas y no sustituyen la ficha del producto ni el contrato.
+
+---
+
+## SECCIÓN X: AUTORIDAD DE CONTROL
 
 El titular tiene derecho a presentar una reclamación ante la **Agencia de Protección de Datos de los Habitantes (PRODHAB)**, autoridad de control en materia de protección de datos personales en Costa Rica.
 

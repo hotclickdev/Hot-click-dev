@@ -23,7 +23,7 @@ La Plataforma emplea las siguientes categorías de Cookies:
 
 **b) De Rendimiento y Analítica:** Administradas por terceros (por ejemplo, Google Analytics 4) que recopilan información estadística anónima para evaluar el rendimiento de la Plataforma y corregir errores. Se activan únicamente con consentimiento expreso del usuario.
 
-**c) De Publicidad Comportamental:** Utilizadas para segmentar perfiles de interés y desplegar anuncios publicitarios personalizados dentro y fuera de la Plataforma. Requieren consentimiento explícito independiente.
+**c) De Publicidad:** Meta, para medir anuncios. Se autoriza por separado en el panel de configuración. No se activa si el usuario las rechaza.
 
 ### Tabla de cookies por categoría
 
@@ -41,7 +41,7 @@ La Plataforma emplea las siguientes categorías de Cookies:
 
 El usuario conserva la facultad de configurar su navegador web para bloquear, restringir o eliminar las Cookies en cualquier momento. No obstante, el usuario acepta que la desactivación de las Cookies técnicas puede impedir o degradar significativamente la funcionalidad de la Plataforma, imposibilitando la ejecución de compras.
 
-Para ejercer control granular sobre las cookies analíticas, el usuario puede actualizar sus preferencias en cualquier momento a través del panel de configuración de cookies disponible en la Plataforma.
+El usuario puede aceptar todas las cookies, rechazar las opcionales o configurarlas por categoría en el aviso inicial y, después, en el enlace «Configurar cookies» del pie de página. La elección se guarda durante un año o hasta que se cambie.
 
 ---
 

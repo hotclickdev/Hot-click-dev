@@ -65,9 +65,10 @@ export default function App() {
           <WishlistAlertWatcher />
           <HojaAgregado />
           <CookieBanner onConsent={(c) => {
-            setAnalyticsConsent(c.analytics)
-            if (!c.analytics) return
+            setAnalyticsConsent(c.analytics || c.advertising)
+            if (!c.analytics && !c.advertising) return
             initAnalytics()
+            if (!c.analytics) return
             const sesion = useAuthStore.getState()
             identifyUser({
               userId: sesion.userId,

@@ -114,6 +114,30 @@ const secciones = [
       <p>HotClick implementa las siguientes medidas de seguridad: transmisión cifrada mediante protocolo HTTPS/TLS, almacenamiento de contraseñas mediante hash bcrypt (nunca en texto plano), tokens JWT con tiempo de expiración reducido y tokens de refresco de rotación automática, auditoría de acciones administrativas sobre datos sensibles, y acceso restringido al personal autorizado bajo el principio de mínimo privilegio. En caso de brecha de seguridad, HotClick notificará a las autoridades competentes y a los titulares afectados conforme a la Ley N.° 8968.</p>
     ),
   },
+  {
+    id: 'menores',
+    num: 'SECCIÓN VIII',
+    title: 'Personas menores de edad',
+    content: (
+      <>
+        <p>La Plataforma está dirigida a personas mayores de dieciocho (18) años, con capacidad legal para contratar según el Código Civil de Costa Rica. No se permite el registro ni la compra a personas menores de edad.</p>
+        <p>HotClick no recaba de forma intencional datos de personas menores de trece (13) años. Si un padre, madre o tutor advierte que un menor creó una cuenta o suministró datos, debe escribir a <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a>. HotClick cerrará la cuenta y eliminará o anonimizará esos datos, salvo la conservación fiscal de comprobantes cuando exista una compra.</p>
+        <p>El consentimiento para tratar datos de un menor, cuando excepcionalmente proceda, lo otorga quien ejerza la patria potestad, conforme a la Sala Constitucional y a la Ley N.° 8968.</p>
+      </>
+    ),
+  },
+  {
+    id: 'ia',
+    num: 'SECCIÓN IX',
+    title: 'Asistentes de inteligencia artificial',
+    content: (
+      <>
+        <p>El chat de la tienda es un asistente de inteligencia artificial. No es una persona. Eso se indica en la ventana del chat antes de que el usuario escriba.</p>
+        <p>Los mensajes pueden enviarse a <strong>Anthropic (Claude)</strong> para generar la respuesta. Se usan para atender la consulta, soporte y mejora del servicio. No se venden. El titular puede pedir la supresión de esos registros por el canal ARCO, con las excepciones legales de conservación.</p>
+        <p>Las respuestas del asistente son orientativas. No sustituyen la ficha del producto, el precio publicado ni el contrato de compraventa.</p>
+      </>
+    ),
+  },
 ]
 
 export default function PrivacidadPage() {

@@ -42,7 +42,10 @@ const clausulas = [
     num: 'CLÁUSULA SEGUNDA',
     title: 'Capacidad Legal y Registro',
     content: (
-      <p>El uso de la Plataforma está reservado exclusivamente para personas físicas con capacidad legal plena para contratar (mayores de 18 años) o personas jurídicas debidamente representadas. El usuario es responsable de salvaguardar la confidencialidad de sus credenciales de acceso, asumiendo total responsabilidad por las transacciones ejecutadas bajo su perfil de usuario.</p>
+      <>
+        <p>El uso de la Plataforma está reservado exclusivamente para personas físicas con capacidad legal plena para contratar (mayores de 18 años) o personas jurídicas debidamente representadas. En el registro, el usuario declara esa mayoría de edad. El usuario es responsable de salvaguardar la confidencialidad de sus credenciales de acceso, asumiendo total responsabilidad por las transacciones ejecutadas bajo su perfil de usuario.</p>
+        <p>No se permiten cuentas de personas menores de edad. Si HotClick advierte que una cuenta pertenece a un menor, la cerrará y devolverá, cuando corresponda, las sumas no ejecutadas. Los padres o tutores pueden escribir a <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a>.</p>
+      </>
     ),
   },
   {
@@ -116,8 +119,16 @@ const clausulas = [
     ),
   },
   {
-    id: 'jurisdiccion',
+    id: 'ia',
     num: 'CLÁUSULA DÉCIMA',
+    title: 'Asistentes de inteligencia artificial',
+    content: (
+      <p>El chat de la tienda es un asistente de inteligencia artificial y no una persona. Sus respuestas son orientativas y no modifican precios, existencias ni las condiciones publicadas. El usuario no debe ingresar datos de menores ni información sensible (salud, orientación sexual, biometría o datos de terceros) en el chat.</p>
+    ),
+  },
+  {
+    id: 'jurisdiccion',
+    num: 'CLÁUSULA UNDÉCIMA',
     title: 'Jurisdicción y Ley Aplicable',
     content: (
       <p>El presente instrumento se rige por las leyes de la República de Costa Rica. Para la resolución de controversias, las partes se someten a la jurisdicción de los Tribunales de Justicia de San José, Costa Rica, con renuncia expresa a cualquier otro fuero. Con carácter previo, las partes intentarán la resolución amistosa mediante comunicación dirigida a <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a> por un período mínimo de treinta (30) días.</p>

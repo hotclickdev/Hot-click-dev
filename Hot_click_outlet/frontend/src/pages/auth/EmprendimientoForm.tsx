@@ -49,6 +49,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
   const [codigoVerif, setCodigoVerif] = useState('')
   const [correoReg,   setCorreoReg]   = useState('')
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [declaraMayoriaEdad, setDeclaraMayoriaEdad] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance | null>(null)
   const [form, setForm] = useState<FormEmprendimiento>({
@@ -69,6 +70,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     e.preventDefault(); setError('')
     if (!form.correoAdmin.trim()) { setError('El correo es requerido'); return }
     if (form.passwordAdmin.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    if (!aceptaTerminos || !declaraMayoriaEdad) { setError('Debe aceptar los términos y declarar que es mayor de 18 años'); return }
     setLoading(true)
     authService.registrarConsentimiento('REGISTRO')
     try {
@@ -145,9 +147,11 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
             {step === 1 && (
               <EmprendimientoPasoCuenta
                 form={form} error={error} loading={loading}
-                aceptaTerminos={aceptaTerminos} turnstileToken={turnstileToken}
+                aceptaTerminos={aceptaTerminos} declaraMayoriaEdad={declaraMayoriaEdad}
+                turnstileToken={turnstileToken}
                 turnstileRef={turnstileRef} actualizarCampo={actualizarCampo}
                 setForm={setForm} setAceptaTerminos={setAceptaTerminos}
+                setDeclaraMayoriaEdad={setDeclaraMayoriaEdad}
                 setTurnstileToken={setTurnstileToken}
                 onSubmit={handleSubmit}
                 onAtras={() => { setStep(0); setError('') }} />

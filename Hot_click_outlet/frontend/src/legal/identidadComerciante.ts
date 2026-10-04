@@ -29,8 +29,8 @@ export const IDENTIDAD_COMERCIANTE: IdentidadComerciante = {
   sitio: 'https://hotclick.lat',
 }
 
-export const POLITICAS_ACTUALIZADAS = '30 de septiembre de 2026'
-export const POLITICAS_ACTUALIZADAS_ISO = '2026-09-30'
+export const POLITICAS_ACTUALIZADAS = '4 de octubre de 2026'
+export const POLITICAS_ACTUALIZADAS_ISO = '2026-10-04'
 
 /** Ley 7472 y art. 130 del Reglamento: ocho días hábiles desde el perfeccionamiento. */
 export const PLAZO_RETRACTO = '8 días hábiles'

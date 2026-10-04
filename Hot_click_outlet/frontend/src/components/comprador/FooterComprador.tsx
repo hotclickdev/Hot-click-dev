@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { abrirPreferenciasCookies } from '@/utils/cookieConsent'
 import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import { RUTA_VENDE } from './header/useHeaderComprador'
@@ -49,6 +50,10 @@ function EnlacesLegales() {
           <Link to={enlace.to} className="hover:text-hc-n-900">{t(`comprador.footer.${enlace.clave}`)}</Link>
         </span>
       ))}
+      {' · '}
+      <button type="button" onClick={abrirPreferenciasCookies} className="hover:text-hc-n-900 bg-transparent p-0 border-0 cursor-pointer">
+        {t('comprador.footer.configurarCookies')}
+      </button>
     </p>
   )
 }

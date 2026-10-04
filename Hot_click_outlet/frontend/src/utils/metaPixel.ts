@@ -79,7 +79,7 @@ function metaEventFromHotclick(event: string, data: PropsAnalitica): { name: str
 export function initMetaPixel() {
   if (!PIXEL_ID) return
   const consent = getCookieConsent()
-  if (!consent?.analytics) return
+  if (!consent?.advertising) return
   injectPixel(PIXEL_ID)
   addAdapter((event, data) => {
     const mapped = metaEventFromHotclick(event, data)

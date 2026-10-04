@@ -28,7 +28,7 @@ En cada producto publicado se indicará claramente si es vendido directamente po
 
 ## CLÁUSULA SEGUNDA: CAPACIDAD LEGAL Y REGISTRO
 
-El uso de la Plataforma está reservado exclusivamente para personas físicas con capacidad legal plena para contratar (mayores de 18 años) o personas jurídicas debidamente representadas. El usuario es responsable de salvaguardar la confidencialidad de sus credenciales de acceso, asumiendo total responsabilidad por las transacciones ejecutadas bajo su perfil de usuario.
+El uso de la Plataforma está reservado exclusivamente para personas físicas con capacidad legal plena para contratar (mayores de 18 años) o personas jurídicas debidamente representadas. En el registro, el usuario declara esa mayoría de edad. No se permiten cuentas de personas menores de edad. Si HotClick advierte que una cuenta pertenece a un menor, la cerrará. Los padres o tutores pueden escribir a <hotclick.cr@gmail.com>.
 
 ---
 
@@ -68,7 +68,13 @@ HotClick se reserva el derecho de modificar los presentes Términos y Condicione
 
 ---
 
-## CLÁUSULA OCTAVA: JURISDICCIÓN Y LEY APLICABLE
+## CLÁUSULA OCTAVA: ASISTENTES DE INTELIGENCIA ARTIFICIAL
+
+El chat de la tienda es un asistente de inteligencia artificial y no una persona. Sus respuestas son orientativas y no modifican precios, existencias ni las condiciones publicadas. El usuario no debe ingresar datos de menores ni información sensible en el chat.
+
+---
+
+## CLÁUSULA NOVENA: JURISDICCIÓN Y LEY APLICABLE
 
 El presente instrumento se rige por las leyes de la República de Costa Rica. Para la resolución de controversias, las partes se someten a la jurisdicción de los Tribunales de Justicia de San José, Costa Rica, con renuncia expresa a cualquier otro fuero. Con carácter previo, las partes intentarán la resolución amistosa mediante comunicación dirigida a <hotclick.cr@gmail.com> por un período mínimo de treinta (30) días.
 

@@ -4,6 +4,12 @@ import TextoFlecha from '@/components/ui/TextoFlecha'
 import Seo from '@/components/seo/Seo'
 import { IDENTIDAD_COMERCIANTE, POLITICAS_ACTUALIZADAS } from '@/legal/identidadComerciante'
 
+function colorCategoria(categoria: string) {
+  if (categoria === 'Técnica') return { fondo: 'color-mix(in srgb, #22c55e 12%, transparent)', texto: '#4ade80', borde: 'color-mix(in srgb, #22c55e 25%, transparent)' }
+  if (categoria === 'Publicidad') return { fondo: 'color-mix(in srgb, #a855f7 12%, transparent)', texto: '#c084fc', borde: 'color-mix(in srgb, #a855f7 25%, transparent)' }
+  return { fondo: 'color-mix(in srgb, #f59e0b 12%, transparent)', texto: '#fbbf24', borde: 'color-mix(in srgb, #f59e0b 25%, transparent)' }
+}
+
 const COOKIES_TABLE = [
   { nombre: 'hotclick-cart (localStorage)', categoria: 'Técnica', finalidad: 'Carrito de compras persistido localmente', duracion: 'Sesión / manual' },
   { nombre: 'hotclick-auth (localStorage)', categoria: 'Técnica', finalidad: 'Token JWT de autenticación', duracion: 'Hasta logout' },
@@ -34,7 +40,7 @@ const clausulas = [
         <ul>
           <li><strong>a) Técnicas u Obligatorias:</strong> Esenciales para el correcto funcionamiento del sitio, la autenticación de usuarios y la seguridad de las transacciones. No pueden ser desactivadas.</li>
           <li><strong>b) De Rendimiento y Analítica:</strong> Administradas por terceros (Google Analytics 4, PostHog y Microsoft Clarity) para evaluar el rendimiento de la Plataforma. Se activan únicamente con consentimiento expreso.</li>
-          <li><strong>c) De Publicidad:</strong> Meta, para medir anuncios. Requiere el mismo consentimiento expreso del banner y no se activa sin él.</li>
+          <li><strong>c) De Publicidad:</strong> Meta, para medir anuncios. Se autoriza por separado en el panel de configuración. No se activa si usted las rechaza.</li>
         </ul>
       </>
     ),
@@ -44,7 +50,7 @@ const clausulas = [
     num: 'CLÁUSULA TERCERA',
     title: 'Mecanismo de Desactivación',
     content: (
-      <p>El usuario conserva la facultad de configurar su navegador web para bloquear, restringir o eliminar las Cookies en cualquier momento. No obstante, el usuario acepta que la desactivación de las Cookies técnicas puede impedir o degradar significativamente la funcionalidad de la Plataforma, imposibilitando la ejecución de compras. Las preferencias de cookies analíticas pueden actualizarse en cualquier momento a través del panel de consentimiento disponible en la Plataforma.</p>
+      <p>Usted puede aceptar todas las cookies, rechazar las opcionales o configurarlas por categoría en el aviso que aparece al entrar y, después, en el enlace «Configurar cookies» del pie de página. También puede bloquearlas en el navegador. Desactivar las cookies técnicas puede impedir la compra. La elección se guarda durante un año o hasta que usted la cambie.</p>
     ),
   },
   {
@@ -168,9 +174,9 @@ export default function CookiesPage() {
                         <td style={{ padding: '0.6rem 0.75rem' }}>
                           <span style={{
                             display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600,
-                            background: row.categoria === 'Técnica' ? 'color-mix(in srgb, #22c55e 12%, transparent)' : 'color-mix(in srgb, #f59e0b 12%, transparent)',
-                            color: row.categoria === 'Técnica' ? '#4ade80' : '#fbbf24',
-                            border: `1px solid ${row.categoria === 'Técnica' ? 'color-mix(in srgb, #22c55e 25%, transparent)' : 'color-mix(in srgb, #f59e0b 25%, transparent)'}`,
+                            background: colorCategoria(row.categoria).fondo,
+                            color: colorCategoria(row.categoria).texto,
+                            border: `1px solid ${colorCategoria(row.categoria).borde}`,
                           }}>{row.categoria}</span>
                         </td>
                         <td style={{ padding: '0.6rem 0.75rem', lineHeight: 1.5 }}>{row.finalidad}</td>

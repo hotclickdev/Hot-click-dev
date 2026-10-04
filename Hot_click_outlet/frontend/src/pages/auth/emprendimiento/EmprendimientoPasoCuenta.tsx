@@ -15,19 +15,21 @@ const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
  * Paso 1 — datos de la cuenta admin. El submit vive en el padre (auth congelado).
  */
 export default function EmprendimientoPasoCuenta({
-  form, error, loading, aceptaTerminos, turnstileToken, turnstileRef,
-  actualizarCampo, setForm, setAceptaTerminos, setTurnstileToken,
+  form, error, loading, aceptaTerminos, declaraMayoriaEdad, turnstileToken, turnstileRef,
+  actualizarCampo, setForm, setAceptaTerminos, setDeclaraMayoriaEdad, setTurnstileToken,
   onSubmit, onAtras,
 }: {
   form: FormEmprendimiento
   error: string
   loading: boolean
   aceptaTerminos: boolean
+  declaraMayoriaEdad: boolean
   turnstileToken: string
   turnstileRef: RefObject<TurnstileInstance | null>
   actualizarCampo: (field: keyof FormEmprendimiento) => (e: ChangeEvent<HTMLInputElement>) => void
   setForm: Dispatch<SetStateAction<FormEmprendimiento>>
   setAceptaTerminos: Dispatch<SetStateAction<boolean>>
+  setDeclaraMayoriaEdad: Dispatch<SetStateAction<boolean>>
   setTurnstileToken: Dispatch<SetStateAction<string>>
   onSubmit: (e: FormEvent) => void
   onAtras: () => void
@@ -66,6 +68,18 @@ export default function EmprendimientoPasoCuenta({
         </span>
       </label>
 
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem', borderRadius: 10, border: `1px solid ${declaraMayoriaEdad ? 'var(--hc-accent)' : 'var(--hc-border)'}`, background: declaraMayoriaEdad ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'var(--hc-surface-2)', transition: 'all 0.15s' }}>
+        <input
+          type="checkbox"
+          checked={declaraMayoriaEdad}
+          onChange={e => setDeclaraMayoriaEdad(e.target.checked)}
+          style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--hc-accent)', width: 16, height: 16, cursor: 'pointer' }}
+        />
+        <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
+          Declaro que soy mayor de 18 años. HotClick no permite cuentas de personas menores de edad.
+        </span>
+      </label>
+
       {TURNSTILE_SITE_KEY && (
         <Turnstile
           ref={turnstileRef}
@@ -81,7 +95,7 @@ export default function EmprendimientoPasoCuenta({
         <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">
           <TextoFlecha dir="atras">Atrás</TextoFlecha>
         </button>
-        <button type="submit" disabled={loading || !aceptaTerminos || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
+        <button type="submit" disabled={loading || !aceptaTerminos || !declaraMayoriaEdad || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
           className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
           style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
           {loading

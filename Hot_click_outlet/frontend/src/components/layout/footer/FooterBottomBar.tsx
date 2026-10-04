@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { abrirPreferenciasCookies } from '@/utils/cookieConsent'
 
 const LEGAL_LINKS = [
   { path: '/privacidad', key: 'footer.privacidadShort' },
@@ -32,6 +33,16 @@ export default function FooterBottomBar({ year }: { year: number }) {
               {t(key)}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={abrirPreferenciasCookies}
+            className="text-xs transition-colors hover:opacity-80"
+            style={{ color: 'var(--hc-muted)', background: 'none', border: 0, cursor: 'pointer' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--hc-text)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--hc-muted)' }}
+          >
+            {t('footer.configurarCookies')}
+          </button>
         </div>
       </div>
 

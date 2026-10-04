@@ -54,6 +54,7 @@ export default function RegisterFormStep({
   onDoneCart: () => void
 }) {
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [declaraMayoriaEdad, setDeclaraMayoriaEdad] = useState(false)
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden" style={{ background: 'var(--hc-bg)' }}>
 
@@ -186,6 +187,25 @@ export default function RegisterFormStep({
                             </Link>.
                           </span>
                         </label>
+                        <label
+                          className="flex items-start gap-2.5 cursor-pointer rounded-xl p-3"
+                          style={{
+                            border: `1px solid ${declaraMayoriaEdad ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+                            background: declaraMayoriaEdad ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'transparent',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            required
+                            checked={declaraMayoriaEdad}
+                            onChange={(e) => setDeclaraMayoriaEdad(e.target.checked)}
+                            className="mt-0.5 shrink-0"
+                            style={{ accentColor: 'var(--hc-accent)', width: 15, height: 15 }}
+                          />
+                          <span className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                            {t('register.ageConfirm')}
+                          </span>
+                        </label>
                         {TURNSTILE_SITE_KEY && (
                           <Turnstile
                             ref={turnstileRef}
@@ -196,7 +216,7 @@ export default function RegisterFormStep({
                             options={{ appearance: 'invisible' as 'always' }}
                           />
                         )}
-                        <button type="submit" disabled={loading || !aceptaTerminos || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
+                        <button type="submit" disabled={loading || !aceptaTerminos || !declaraMayoriaEdad || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
                           className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
                           style={{ background: BUYER.color, boxShadow: `0 0 32px ${BUYER.ring}` }}>
                           {loading ? 'Enviando código…' : (

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import FooterLink from './FooterLink'
+import FooterCookieButton from './FooterCookieButton'
 
 type TrustBadge = {
   icono: 'candado' | 'cr' | 'rayo'
@@ -138,6 +139,7 @@ export default function FooterColumns() {
           <FooterLink to="/devoluciones">{t('footer.devoluciones')}</FooterLink>
           <FooterLink to="/envios">{t('footer.envios')}</FooterLink>
           <FooterLink to="/cookies">{t('footer.cookies')}</FooterLink>
+          <FooterCookieButton />
           <FooterLink to="/acuerdo-vendedores">{t('footer.acuerdoVendedores')}</FooterLink>
           <FooterLink to="/informacion">{t('footer.faq')}</FooterLink>
         </ul>
