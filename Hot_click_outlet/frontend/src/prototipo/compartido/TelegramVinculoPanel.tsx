@@ -154,7 +154,7 @@ function CuerpoEstado({
     return (
       <Tarjeta titulo="Todavía no está activo">
         <p className="text-[13px] text-hc-muted">
-          El bot de Telegram no está habilitado en el servidor. Escribinos si querés activarlo para tu negocio.
+          Todavía no podés vincular Telegram desde acá. Escribinos y lo activamos para tu negocio.
         </p>
       </Tarjeta>
     )
