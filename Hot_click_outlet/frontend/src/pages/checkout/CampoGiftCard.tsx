@@ -12,7 +12,7 @@ export default function CampoGiftCard({ giftCard }: { giftCard: EstadoGiftCard }
   if (giftCard.aplicada) {
     return (
       <div className="flex items-center gap-[10px]">
-        <p className="flex min-w-0 flex-1 items-center gap-[8px] rounded-[12px] border border-hc-green-600 bg-hc-green-50 p-[12px] text-[14px] font-semibold text-hc-green-600">
+        <p className="flex min-w-0 flex-1 items-center gap-[8px] rounded-[12px] border border-hc-green-600 bg-hc-green-50 p-[12px] text-[14px] font-semibold text-hc-success-text">
           <IconoFigma src={ICONOS_COMPRA.cupon} size={16} />
           {t('compra.giftCard.aplicada', { codigo: giftCard.aplicada.codigo, saldo: formatPrice(giftCard.aplicada.saldo) })}
         </p>
@@ -32,7 +32,7 @@ export default function CampoGiftCard({ giftCard }: { giftCard: EstadoGiftCard }
           void giftCard.validar()
         }}
       >
-        <label className="flex min-w-0 flex-1 items-center gap-[8px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-[12px] text-hc-n-500">
+        <label className="flex min-w-0 flex-1 items-center gap-[8px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-[12px] text-hc-n-600">
           <IconoFigma src={ICONOS_COMPRA.cupon} size={16} />
           <input
             value={giftCard.input}

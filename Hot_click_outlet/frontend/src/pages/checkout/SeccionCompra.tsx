@@ -24,7 +24,7 @@ export default function SeccionCompra({ numero, titulo, subtitulo, visibleEnMovi
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-px">
           <h2 id={`seccion-compra-${numero}`} className="font-display text-[17px] font-semibold text-hc-n-900">{titulo}</h2>
-          {subtitulo ? <p className="text-[13px] text-hc-n-500">{subtitulo}</p> : null}
+          {subtitulo ? <p className="text-[13px] text-hc-n-600">{subtitulo}</p> : null}
         </div>
       </div>
       {children}

@@ -577,7 +577,7 @@
     "aboutPaymentsTitle": "Pagos seguros",
     "aboutPaymentsBody": "Manejamos tarjetas de crédito y débito, además de SINPE Móvil. Todos los pagos se procesan con encriptación SSL. Compra con total confianza.",
     "aboutShippingTitle": "Envío a todo Costa Rica",
-    "aboutShippingBody": "Enviamos a San José, Alajuela, Heredia, Cartago, Puntarenas, Limón y Guanacaste en 1–5 días hábiles. Envío express disponible.",
+    "aboutShippingBody": "Enviamos a San José, Alajuela, Heredia, Cartago, Puntarenas, Limón y Guanacaste en {{envioNormalDesde}}–{{envioNormalHasta}} días hábiles dentro del GAM y {{envioFueraDesde}}–{{envioFueraHasta}} fuera del GAM. Envío rápido en el GAM: {{envioRapidoDesde}} min – {{envioRapidoHasta}} horas.",
     "brandsSub": "Confianza que se reconoce.",
     "verTestimonio": "Ver testimonio {{n}}",
     "shipping": {
@@ -585,10 +585,10 @@
       "title": "Enviamos a todo el país.",
       "sub": "Elegí la opción que mejor se adapte a vos.",
       "rapidoTitle": "Envío Rápido",
-      "rapidoTime": "30 min – 2 horas",
+      "rapidoTime": "{{envioRapidoDesde}} min – {{envioRapidoHasta}} horas",
       "rapidoDesc": "Dentro de la GAM · Pago previo requerido",
       "normalTitle": "Envío Normal — GAM",
-      "normalTime": "2–4 días hábiles",
+      "normalTime": "{{envioNormalDesde}}–{{envioNormalHasta}} días hábiles",
       "normalDesc": "Con número de rastreo incluido",
       "fueraTitle": "Fuera de la GAM",
       "fueraTime": "3–4 días hábiles",
@@ -604,7 +604,7 @@
       "consultarWaAria": "Consultar envío internacional por WhatsApp",
       "verCatalogo": "Ver catálogo",
       "urgenteTitle": "¿Necesitás algo urgente?",
-      "urgenteDesc": "Elegilo en datos y pago — 30 min a 2 horas en la GAM. Pago previo.",
+      "urgenteDesc": "Elegilo en datos y pago — {{envioRapidoDesde}} min a {{envioRapidoHasta}} horas en la GAM. Pago previo.",
       "pedirRapido": "Pedir envío rápido",
       "pagoSinpe": "SINPE Móvil",
       "pagoEfectivo": "Efectivo",
@@ -1684,7 +1684,7 @@
     "correosCR": "Correos de Costa Rica",
     "correosCRSub": "Envío nacional",
     "uberFlash": "Envío rápido",
-    "uberFlashSub": "GAM · 30 min a 2 horas",
+    "uberFlashSub": "GAM · {{envioRapidoDesde}} min a {{envioRapidoHasta}} horas",
     "ctaSub": "Un ecosistema digital que conecta clientes, proveedores y emprendedores. Cualquier duda, escribime.",
     "ctaBtn": "Contactarme"
   },
@@ -1761,12 +1761,12 @@
     "shippingCorreosTitle": "Correos de Costa Rica",
     "shippingCorreosBadge": "Todo el país",
     "correosP1": "Entrega en sucursal Correos más cercana o a domicilio",
-    "correosP2": "2 a 4 días hábiles según la zona",
+    "correosP2": "{{envioNormalDesde}} a {{envioNormalHasta}} días hábiles según la zona",
     "correosP3": "Número de guía para rastreo en tiempo real",
     "correosP4": "Costo ~₡4,000 — se cobra en el checkout",
     "shippingUberTitle": "Envío rápido",
     "shippingUberBadge": "GAM · Pago previo",
-    "uberP1": "30 min a 2 horas a tu puerta",
+    "uberP1": "{{envioRapidoDesde}} min a {{envioRapidoHasta}} horas a tu puerta",
     "uberP2": "Disponible dentro del Gran Área Metropolitana",
     "uberP3": "₡5,000 — se cobra en el checkout",
     "uberP4": "Lo elegís en datos y pago. Pago previo obligatorio.",
@@ -1790,7 +1790,7 @@
     "faqTitle": "Preguntas frecuentes",
     "faqSub": "Todo lo que suelen preguntarnos",
     "faq1q": "¿Qué opciones de envío tienen?",
-    "faq1a": "En el checkout elegís: Correos de Costa Rica (todo el país), envío rápido en la GAM (30 min a 2 horas), tu encomienda o retiro en tienda si el producto lo permite. WhatsApp es para consultas, no para armar el envío.",
+    "faq1a": "En el checkout elegís: Correos de Costa Rica (todo el país), envío rápido en la GAM ({{envioRapidoDesde}} min a {{envioRapidoHasta}} horas), tu encomienda o retiro en tienda si el producto lo permite. WhatsApp es para consultas, no para armar el envío.",
     "faq2q": "¿Cuánto cuesta el envío rápido?",
     "faq2a": "₡5,000 dentro de la GAM, con pago previo. Lo elegís en datos y pago al cerrar el pedido.",
     "faq3q": "¿Cuáles son los métodos de pago aceptados?",
@@ -3918,7 +3918,7 @@
     "envio": {
       "ENVIO_NORMAL_GAM": {
         "titulo": "Envío normal",
-        "detalle": "2 a 4 días hábiles",
+        "detalle": "{{envioNormalDesde}} a {{envioNormalHasta}} días hábiles",
         "corto": "Envío normal"
       },
       "ENVIO_NORMAL_FUERA_GAM": {
@@ -3928,7 +3928,7 @@
       },
       "ENVIO_RAPIDO": {
         "titulo": "Envío rápido",
-        "detalle": "30 min a 2 horas · dentro del GAM",
+        "detalle": "{{envioRapidoDesde}} min a {{envioRapidoHasta}} horas · dentro del GAM",
         "corto": "Envío rápido"
       },
       "ENCOMIENDA_PROPIA": {

@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/servicioService-2WUAzr6Q.js
-import{t as e}from"./api-D26upmHw.js";var t={subirFoto:t=>e.post(`/servicios/fotos`,t,{headers:{"Content-Type":void 0}}),crear:t=>{let{turnstileToken:n,...r}=t;return e.post(`/servicios`,{...r,...n?{turnstileToken:n}:{}})},misSolicitudes:()=>e.get(`/servicios/mis-solicitudes`),listarTodas:()=>e.get(`/servicios`),cambiarEstado:(t,n,r)=>e.put(`/servicios/${t}/estado`,{estado:n,notasAdmin:r}),eliminar:t=>e.delete(`/servicios/${t}`)};export{t};
-========
-import{t as e}from"./api-C-uKlyiA.js";var t={subirFoto:t=>e.post(`/servicios/fotos`,t,{headers:{"Content-Type":void 0}}),crear:t=>{let{turnstileToken:n,...r}=t;return e.post(`/servicios`,{...r,...n?{turnstileToken:n}:{}})},misSolicitudes:()=>e.get(`/servicios/mis-solicitudes`),listarTodas:()=>e.get(`/servicios`),cambiarEstado:(t,n,r)=>e.put(`/servicios/${t}/estado`,{estado:n,notasAdmin:r}),eliminar:t=>e.delete(`/servicios/${t}`)};export{t};
->>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/servicioService-57ZQgMkR.js

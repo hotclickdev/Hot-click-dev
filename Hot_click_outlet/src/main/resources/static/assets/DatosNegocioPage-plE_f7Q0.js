@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/DatosNegocioPage-DpDM0_qX.js
-import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-tNi8W4aA.js";import{t as n}from"./planPaths-C6kFR7vr.js";import"./constants-CZj1lVOx.js";import{DatosNegocioPage as r}from"./DatosNegocioPage-BDMpIBSm.js";import{n as i}from"./EmprendedorPageFrame-khQsMIlS.js";var a=e(t(),1),o=`${n}/opciones`;function s(){return(0,a.jsx)(i,{titulo:`Datos de tu Negocio`,volverA:o,children:(0,a.jsx)(r,{volverA:o,rutaExito:o,soloFormulario:!0})})}export{s as default};
-========
-import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-MNPf1zau.js";import{t as n}from"./planPaths-C6kFR7vr.js";import"./constants-CZj1lVOx.js";import{DatosNegocioPage as r}from"./DatosNegocioPage-C2qmyoKX.js";import{n as i}from"./EmprendedorPageFrame-BKQuyrBG.js";var a=e(t(),1),o=`${n}/opciones`;function s(){return(0,a.jsx)(i,{titulo:`Datos de tu Negocio`,volverA:o,children:(0,a.jsx)(r,{volverA:o,rutaExito:o,soloFormulario:!0})})}export{s as default};
->>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/DatosNegocioPage-plE_f7Q0.js

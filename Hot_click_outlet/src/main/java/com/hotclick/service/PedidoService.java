@@ -22,11 +22,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 @Service
 public class PedidoService {
+
+    private static final Pattern GUIA_VALIDA = Pattern.compile("[A-Z0-9-]{3,40}");
 
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
@@ -157,8 +161,11 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public Page<Pedido> listarPorUsuario(Long usuarioId, Pageable pageable) {
-        // Usa fetch join en la query de count/sort paginada — la carga de items ocurre en una sola query adicional
-        return pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(usuarioId, pageable);
+        Page<Pedido> pagina = pedidoRepository.findPaginaDelComprador(usuarioId, pageable);
+        if (pagina.hasContent()) {
+            pedidoRepository.cargarItemsDe(pagina.getContent().stream().map(Pedido::getId).toList());
+        }
+        return pagina;
     }
 
     @Transactional(readOnly = true)
@@ -175,6 +182,14 @@ public class PedidoService {
      * Guía / envío: si el pedido ya está ENVIADO solo se corrige la guía. Si no, exige pago verificado
      * (409) y que la transición a ENVIADO sea válida (400; p. ej. no desde ENTREGADO o COMPLETADO).
      */
+    private static String guiaNormalizada(String numeroGuia) {
+        String guia = numeroGuia == null ? "" : numeroGuia.trim().toUpperCase(Locale.ROOT);
+        if (!GUIA_VALIDA.matcher(guia).matches()) {
+            throw new IllegalArgumentException("Número de guía no válido");
+        }
+        return guia;
+    }
+
     private void verificarDespachoConGuia(Pedido pedido) {
         String estadoActual = PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido());
         if (Constants.PEDIDO_ENVIADO.equals(estadoActual)) return;
@@ -184,11 +199,12 @@ public class PedidoService {
 
     @Transactional
     public Pedido asignarGuia(Long id, String numeroGuia) {
+        String guia = guiaNormalizada(numeroGuia);
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         verificarDespachoConGuia(pedido);
-        pedido.setNumeroGuia(numeroGuia);
-        pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + numeroGuia);
+        pedido.setNumeroGuia(guia);
+        pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + guia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);

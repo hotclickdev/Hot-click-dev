@@ -3,7 +3,7 @@ import type { TonoEstado } from './paquetePedido'
 const ESTILO_TONO: Record<TonoEstado, string> = {
   azul: 'bg-hc-blue-50 text-hc-blue-600',
   ambar: 'bg-hc-warning-bg text-hc-warning',
-  verde: 'bg-hc-green-50 text-hc-green-600',
+  verde: 'bg-hc-green-50 text-hc-success-text',
   rojo: 'bg-[#fef2f1] text-hc-red-600',
 }
 

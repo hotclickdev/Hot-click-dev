@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/AdminEncargos-DbLqCBrJ.js
-import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-tNi8W4aA.js";import{s as n}from"./index-JIWTrOL_.js";import{t as r}from"./EncargosPanel-CxcGvsEA.js";var i=e(t(),1);function a(){return(0,i.jsx)(n,{children:(0,i.jsx)(`div`,{className:`p-4 sm:p-6 max-w-5xl`,children:(0,i.jsx)(r,{})})})}export{a as default};
-========
-import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-MNPf1zau.js";import{w as n}from"./index-Cd8kXDef.js";import{t as r}from"./EncargosPanel-Dk7I7WWc.js";var i=e(t(),1);function a(){return(0,i.jsx)(n,{children:(0,i.jsx)(`div`,{className:`p-4 sm:p-6 max-w-5xl`,children:(0,i.jsx)(r,{})})})}export{a as default};
->>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/AdminEncargos-B1NKh2PE.js

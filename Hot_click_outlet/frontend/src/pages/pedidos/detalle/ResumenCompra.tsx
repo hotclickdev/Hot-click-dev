@@ -22,7 +22,7 @@ export default function ResumenCompra({ compra }: { compra: CompraCliente }) {
     <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
       <div className="flex items-center justify-between gap-[8px]">
         <div className="flex min-w-0 flex-col gap-[2px]">
-          <span className="text-[12px] leading-[14px] text-hc-n-500">{pagadoCon(t, compra, i18n.language)}</span>
+          <span className="text-[12px] leading-[14px] text-hc-n-600">{pagadoCon(t, compra, i18n.language)}</span>
           <span className="font-display text-[16px] font-semibold leading-[20px] text-hc-n-900">{resumenPaquetes(t, compra)}</span>
         </div>
         <span className="shrink-0 font-display text-[18px] font-bold leading-[23px] text-hc-n-900">{formatPrice(total)}</span>

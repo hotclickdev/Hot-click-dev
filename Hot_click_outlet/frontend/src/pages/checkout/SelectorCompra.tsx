@@ -31,7 +31,7 @@ export default function SelectorCompra({
           <option value="">{placeholder}</option>
           {opciones.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
         </select>
-        <span className="pointer-events-none absolute right-[14px] top-1/2 flex -translate-y-1/2 text-hc-n-500">
+        <span className="pointer-events-none absolute right-[14px] top-1/2 flex -translate-y-1/2 text-hc-n-600">
           <IconoFigma src={ICONOS_COMPRA.chevronAbajo} size={16} />
         </span>
       </div>

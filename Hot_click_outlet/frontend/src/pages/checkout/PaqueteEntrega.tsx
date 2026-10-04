@@ -20,7 +20,7 @@ type OpcionProps = {
 function Precio({ precio, className }: { precio: number | null; className: string }) {
   const { t } = useTranslation()
   if (precio === null) return <span className={`${className} text-hc-n-900`}>{t('compra.entrega.varia')}</span>
-  if (precio === 0) return <span className={`${className} text-hc-green-600`}>{t('compra.entrega.gratis')}</span>
+  if (precio === 0) return <span className={`${className} text-hc-success-text`}>{t('compra.entrega.gratis')}</span>
   return <span className={`${className} text-hc-n-900`}>{formatPrice(precio)}</span>
 }
 
@@ -54,7 +54,7 @@ function OpcionFila({ opcion, elegida, onElegir }: OpcionProps) {
       <Radio elegida={elegida} tamano="movil" />
       <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
         <span className={`text-[14px] text-hc-n-900 ${elegida ? 'font-semibold' : 'font-medium'}`}>{textos.titulo(opcion.metodo)}</span>
-        <span className="text-[12px] leading-[16px] text-hc-n-500">{textos.detalle(opcion)}</span>
+        <span className="text-[12px] leading-[16px] text-hc-n-600">{textos.detalle(opcion)}</span>
         {opcion.retiro ? <span className="mt-[4px]"><NotaDistancia /></span> : null}
       </span>
       <Precio precio={opcion.precio} className="text-[14px] font-semibold" />
@@ -94,7 +94,7 @@ export default function PaqueteEntrega({ paquete, metodo, onElegir }: PaqueteEnt
         <IconoFigma src={ICONOS_COMPRA.tienda} size={18} className="text-hc-n-900" />
         <div className="flex min-w-0 flex-1 flex-col lg:flex-row lg:items-center lg:gap-[8px]">
           <p className="text-[14px] font-semibold text-hc-n-900">{titulo}</p>
-          <p className="flex items-center gap-[4px] text-[12px] text-hc-n-500">
+          <p className="flex items-center gap-[4px] text-[12px] text-hc-n-600">
             {paquete.provincia ? <span className="flex lg:hidden"><IconoFigma src={ICONOS_COMPRA.origen} size={12} /></span> : null}
             {origen}
           </p>

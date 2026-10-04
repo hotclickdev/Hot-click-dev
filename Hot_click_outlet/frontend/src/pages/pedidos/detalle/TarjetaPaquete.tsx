@@ -36,7 +36,7 @@ export default function TarjetaPaquete({ compra, paquete }: TarjetaPaqueteProps)
   return (
     <article className="flex flex-col gap-[12px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
       <div className="flex items-center justify-between gap-[8px]">
-        <span className="font-mono text-[11px] font-medium leading-[14px] text-hc-n-500">
+        <span className="font-mono text-[11px] font-medium leading-[14px] text-hc-n-600">
           {t('misPedidos.paquete.numero', { numero: paquete.numeroPaquete ?? 1, total: totalPaquetes(compra) })}
         </span>
         <PillEstado tono={TONO_ESTADO_PAQUETE[estado]} texto={t(`misPedidos.estadoPaquete.${estado}`)} />
@@ -45,7 +45,7 @@ export default function TarjetaPaquete({ compra, paquete }: TarjetaPaqueteProps)
         <IconoFigma src={ICONOS_PEDIDOS.paquete} size={18} className="text-hc-n-900" />
         <div className="flex min-w-0 flex-1 flex-col gap-px">
           <h2 className="truncate text-[15px] font-semibold leading-[18px] text-hc-n-900">{nombreTienda(paquete)}</h2>
-          <span className="flex items-center gap-[4px] text-[12px] leading-[14px] text-hc-n-500">
+          <span className="flex items-center gap-[4px] text-[12px] leading-[14px] text-hc-n-600">
             <IconoFigma src={ICONOS_PEDIDOS.pin} size={12} />
             <span className="truncate">{origenPaquete(t, paquete)}</span>
           </span>

@@ -14,7 +14,7 @@ function ContenidoCompra({ compra }: { compra: CompraCliente }) {
     <div className="mx-auto flex max-w-[720px] flex-col gap-[12px] px-[16px] pb-[20px] pt-[14px]">
       <ResumenCompra compra={compra} />
       {compra.paquetes.map((paquete) => <TarjetaPaquete key={paquete.id} compra={compra} paquete={paquete} />)}
-      <p className="text-[12px] leading-[16px] text-hc-n-500">{t('misPedidos.detalle.pieAcciones')}</p>
+      <p className="text-[12px] leading-[16px] text-hc-n-600">{t('misPedidos.detalle.pieAcciones')}</p>
     </div>
   )
 }
@@ -33,7 +33,7 @@ export default function DetallePedidoPage() {
         <BarraPedidos titulo={titulo} onVolver={() => navigate('/mis-pedidos')} />
         {cargando && <div className="flex justify-center py-16"><Spinner /></div>}
         {!cargando && !compra && (
-          <p className="px-[16px] pt-[24px] text-center text-[13px] text-hc-n-500">{t('misPedidos.detalle.noEncontrado')}</p>
+          <p className="px-[16px] pt-[24px] text-center text-[13px] text-hc-n-600">{t('misPedidos.detalle.noEncontrado')}</p>
         )}
         {compra && <ContenidoCompra compra={compra} />}
       </div>

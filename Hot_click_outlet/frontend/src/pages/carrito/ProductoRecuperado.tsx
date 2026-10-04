@@ -20,8 +20,8 @@ export default function ProductoRecuperado({ linea }: { linea: LineaRecuperada }
       )}
       <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
         <span className="truncate text-[14px] font-medium text-hc-n-900">{linea.nombre}</span>
-        <span className="truncate text-[12px] text-hc-n-500">{tienda}</span>
-        <span className={`text-[11px] font-semibold ${disponible ? 'text-hc-green-600' : 'text-hc-red-600'}`}>
+        <span className="truncate text-[12px] text-hc-n-600">{tienda}</span>
+        <span className={`text-[11px] font-semibold ${disponible ? 'text-hc-success-text' : 'text-hc-red-600'}`}>
           {disponible ? t('compra.recuperar.disponible', { count: linea.producto.stock }) : t('compra.recuperar.agotado')}
         </span>
       </span>

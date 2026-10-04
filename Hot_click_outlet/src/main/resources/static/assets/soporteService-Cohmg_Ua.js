@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/soporteService-Cohmg_Ua.js
-import{t as e}from"./api-D26upmHw.js";var t={subirFoto:t=>e.post(`/soporte/tickets/fotos`,t,{headers:{"Content-Type":void 0}}),crearTicket:({titulo:t,descripcion:n,fotoUrl:r})=>e.post(`/soporte/tickets`,{titulo:t,descripcion:n,fotoUrl:r}),listarAdmin:t=>e.get(`/admin/soporte/tickets`,{params:t}),asignar:t=>e.put(`/admin/soporte/tickets/${t}`,{accion:`ASIGNAR`}),resolver:(t,n)=>e.put(`/admin/soporte/tickets/${t}`,{accion:`RESOLVER`,notasAdmin:n})};export{t};
-========
-import{t as e}from"./api-C-uKlyiA.js";var t={subirFoto:t=>e.post(`/soporte/tickets/fotos`,t,{headers:{"Content-Type":void 0}}),crearTicket:({titulo:t,descripcion:n,fotoUrl:r})=>e.post(`/soporte/tickets`,{titulo:t,descripcion:n,fotoUrl:r}),listarAdmin:t=>e.get(`/admin/soporte/tickets`,{params:t}),asignar:t=>e.put(`/admin/soporte/tickets/${t}`,{accion:`ASIGNAR`}),resolver:(t,n)=>e.put(`/admin/soporte/tickets/${t}`,{accion:`RESOLVER`,notasAdmin:n})};export{t};
->>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/soporteService-DtMD4Sxm.js

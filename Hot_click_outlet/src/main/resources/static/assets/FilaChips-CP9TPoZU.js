@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/FilaChips-CP9TPoZU.js
-import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-tNi8W4aA.js";import{r as n}from"./ui-kSFNNPuL.js";var r=e(t(),1);function i({valor:e,opciones:t,onChange:i}){return(0,r.jsx)(`div`,{className:`flex gap-2 overflow-x-auto`,children:t.map(t=>(0,r.jsx)(n,{activo:e===t,onClick:()=>i(t),children:t},t))})}export{i as t};
-========
-import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-MNPf1zau.js";import{r as n}from"./ui-B_equqbq.js";var r=e(t(),1);function i({valor:e,opciones:t,onChange:i}){return(0,r.jsx)(`div`,{className:`flex gap-2 overflow-x-auto`,children:t.map(t=>(0,r.jsx)(n,{activo:e===t,onClick:()=>i(t),children:t},t))})}export{i as t};
->>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/FilaChips-CXh31Cte.js

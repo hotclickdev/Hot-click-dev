@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/billingService-B5xI7YMn.js
-import{t as e}from"./api-D26upmHw.js";var t={getPlanes:()=>e.get(`/billing/planes`),getSuscripcion:()=>e.get(`/billing/suscripcion`),getFacturas:(t=0)=>e.get(`/billing/facturas?pagina=${t}`),iniciarTrial:()=>e.post(`/billing/trial`),crearCheckout:t=>e.post(`/billing/checkout/${t}`),cambiarPlan:t=>e.post(`/billing/cambiar-plan/${t}`),crearPortal:()=>e.post(`/billing/portal`),cancelar:(t=!1)=>e.post(`/billing/cancelar?inmediata=${t}`)};export{t};
-========
-import{t as e}from"./api-C-uKlyiA.js";var t={getPlanes:()=>e.get(`/billing/planes`),getSuscripcion:()=>e.get(`/billing/suscripcion`),getFacturas:(t=0)=>e.get(`/billing/facturas?pagina=${t}`),iniciarTrial:()=>e.post(`/billing/trial`),crearCheckout:t=>e.post(`/billing/checkout/${t}`),cambiarPlan:t=>e.post(`/billing/cambiar-plan/${t}`),crearPortal:()=>e.post(`/billing/portal`),cancelar:(t=!1)=>e.post(`/billing/cancelar?inmediata=${t}`)};export{t};
->>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/billingService-CZpJCjKq.js

@@ -11,7 +11,7 @@ type EncabezadoCompraSeguraProps = {
 function CompraSegura({ className, icono }: { className: string; icono: number }) {
   const { t } = useTranslation()
   return (
-    <p className={`flex items-center gap-[6px] font-semibold text-hc-green-600 ${className}`}>
+    <p className={`flex items-center gap-[6px] font-semibold text-hc-success-text ${className}`}>
       <IconoFigma src={ICONOS_COMPRA.compraSegura} size={icono} />
       {t('compra.checkout.compraSegura')}
     </p>

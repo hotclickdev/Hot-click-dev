@@ -24,7 +24,7 @@ export default function CampoCompra({
       <div
         className={`flex items-center gap-[10px] rounded-[12px] border bg-hc-n-0 px-[14px] py-[13px] lg:rounded-[10px] lg:py-[12px] ${error ? 'border-hc-red-500' : 'border-hc-n-200'}`}
       >
-        {icono ? <span className="flex text-hc-n-500 lg:hidden"><IconoFigma src={icono} size={18} /></span> : null}
+        {icono ? <span className="flex text-hc-n-600 lg:hidden"><IconoFigma src={icono} size={18} /></span> : null}
         <input
           id={id}
           value={valor}
@@ -38,7 +38,7 @@ export default function CampoCompra({
       {error ? (
         <p id={idAyuda} role="alert" className="text-[12px] text-hc-red-600">{error}</p>
       ) : null}
-      {!error && pista ? <p id={idAyuda} className="text-[12px] text-hc-n-500 lg:hidden">{pista}</p> : null}
+      {!error && pista ? <p id={idAyuda} className="text-[12px] text-hc-n-600 lg:hidden">{pista}</p> : null}
     </div>
   )
 }

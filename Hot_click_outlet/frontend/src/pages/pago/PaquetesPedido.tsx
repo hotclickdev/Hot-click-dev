@@ -25,7 +25,7 @@ function FilaPaquete({ paquete }: { paquete: PaqueteGuardado }) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-px">
         <span className="text-[14px] font-semibold text-hc-n-900">{paquete.tienda}</span>
-        <span className="text-[12px] leading-[16px] text-hc-n-500">{detalle}</span>
+        <span className="text-[12px] leading-[16px] text-hc-n-600">{detalle}</span>
       </span>
       <span className="shrink-0 rounded-full bg-hc-warning-bg px-[8px] py-[3px] text-[11px] font-semibold text-hc-warning">
         {t('compra.exito.preparando')}

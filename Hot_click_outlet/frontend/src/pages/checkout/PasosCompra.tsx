@@ -6,7 +6,7 @@ const PASOS: PasoCompra[] = [1, 2, 3]
 function claseEtiqueta(paso: PasoCompra, actual: PasoCompra): string {
   if (paso === actual) return 'font-semibold text-hc-n-900'
   if (paso < actual) return 'font-medium text-hc-blue-600'
-  return 'font-medium text-hc-n-500'
+  return 'font-medium text-hc-n-600'
 }
 
 /** Barras de pasos del checkout móvil (`28:1090`); desktop muestra las tres secciones a la vez. */

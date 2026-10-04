@@ -19,7 +19,7 @@ export default function PaqueteResumen({ paquete, envio, entrega }: PaqueteResum
         <p className="min-w-0 truncate">{paquete.nombre}</p>
         <p>{formatPrice(paquete.subtotal)}</p>
       </div>
-      <div className="flex items-center justify-between gap-[8px] text-[12px] text-hc-n-500">
+      <div className="flex items-center justify-between gap-[8px] text-[12px] text-hc-n-600">
         <p className="min-w-0">{detalle.join(' · ')}</p>
         <p className="shrink-0">{t('compra.resumen.envioMonto', { monto: formatPrice(envio) })}</p>
       </div>

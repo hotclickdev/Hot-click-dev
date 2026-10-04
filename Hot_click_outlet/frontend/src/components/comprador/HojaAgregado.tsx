@@ -60,12 +60,12 @@ function Hoja({ agregado, onCerrar }: { agregado: ProductoAgregado; onCerrar: ()
             : <span className="size-[56px] shrink-0 rounded-[10px] bg-hc-n-100" />}
           <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
             <span className="truncate text-[14px] font-medium text-hc-n-900">{producto.nombre}</span>
-            <span className="truncate text-[12px] text-hc-n-500">{tienda} · {t('compra.unidades', { count: cantidad })}</span>
+            <span className="truncate text-[12px] text-hc-n-600">{tienda} · {t('compra.unidades', { count: cantidad })}</span>
           </span>
           <span className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
         </div>
         {mismoPaquete ? (
-          <p className="flex items-start gap-[8px] rounded-[10px] bg-hc-green-50 px-[12px] py-[10px] text-[12px] leading-[16px] text-hc-green-600">
+          <p className="flex items-start gap-[8px] rounded-[10px] bg-hc-green-50 px-[12px] py-[10px] text-[12px] leading-[16px] text-hc-success-text">
             <IconoFigma src={ICONOS_COMPRA.envio} size={16} />
             <span className="flex-1">{t('compra.agregado.mismoPaquete', { tienda })}</span>
           </p>

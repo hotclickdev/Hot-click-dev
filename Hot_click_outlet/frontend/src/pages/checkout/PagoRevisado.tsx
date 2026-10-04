@@ -22,7 +22,7 @@ function FilaPaso({ paso, primero }: { paso: PasoSiguiente; primero: boolean }) 
       <span className={`flex ${paso.colorIcono}`}><IconoFigma src={paso.icono} size={18} /></span>
       <span className="flex min-w-0 flex-1 flex-col gap-px">
         <span className={`text-[13px] font-semibold ${paso.activo ? 'text-hc-n-900' : 'text-hc-n-600'}`}>{paso.titulo}</span>
-        <span className="text-[12px] text-hc-n-500">{paso.detalle}</span>
+        <span className="text-[12px] text-hc-n-600">{paso.detalle}</span>
       </span>
     </li>
   )
@@ -33,13 +33,13 @@ export default function PagoRevisado({ numeroPedido, cantidadPaquetes, esInvitad
   const { t } = useTranslation()
   const pasos: PasoSiguiente[] = [
     {
-      icono: ICONOS_COMPRA.comprobante, colorIcono: 'text-hc-green-600',
+      icono: ICONOS_COMPRA.comprobante, colorIcono: 'text-hc-success-text',
       titulo: pasoInicial ?? t('compra.revisado.recibido'), detalle: t('compra.revisado.ahora'), activo: true,
     },
     { icono: ICONOS_COMPRA.reloj, colorIcono: 'text-hc-warning', titulo: t('compra.revisado.verificamos'), detalle: t('compra.revisado.unosMinutos'), activo: true },
-    { icono: ICONOS_COMPRA.correo, colorIcono: 'text-hc-n-500', titulo: t('compra.revisado.confirmamos'), detalle: t('compra.revisado.cadaTienda'), activo: false },
+    { icono: ICONOS_COMPRA.correo, colorIcono: 'text-hc-n-600', titulo: t('compra.revisado.confirmamos'), detalle: t('compra.revisado.cadaTienda'), activo: false },
     {
-      icono: ICONOS_COMPRA.guia, colorIcono: 'text-hc-n-500', titulo: t('compra.revisado.guias'),
+      icono: ICONOS_COMPRA.guia, colorIcono: 'text-hc-n-600', titulo: t('compra.revisado.guias'),
       detalle: t('compra.revisado.paquetes', { count: cantidadPaquetes }), activo: false,
     },
   ]
@@ -55,13 +55,13 @@ export default function PagoRevisado({ numeroPedido, cantidadPaquetes, esInvitad
           <h1 className="text-center font-display text-[21px] font-bold text-hc-n-900">{titulo ?? t('compra.revisado.titulo')}</h1>
           <p className="text-center text-[14px] leading-[20px] text-hc-n-600">{texto ?? t('compra.revisado.texto')}</p>
           <p className="flex w-full items-center justify-center gap-[6px] rounded-[10px] border border-hc-n-200 bg-hc-n-0 py-[10px]">
-            <span className="text-[13px] text-hc-n-500">{t('compra.revisado.pedido')}</span>
+            <span className="text-[13px] text-hc-n-600">{t('compra.revisado.pedido')}</span>
             <span className="font-mono text-[14px] font-medium text-hc-n-900">{numeroPedido}</span>
           </p>
           <ol className="w-full overflow-hidden rounded-[14px] border border-hc-n-200 bg-hc-n-0">
             {pasos.map((paso, indice) => <FilaPaso key={paso.titulo} paso={paso} primero={indice === 0} />)}
           </ol>
-          <p className="text-center text-[12px] leading-[16px] text-hc-n-500">{t('compra.revisado.nota')}</p>
+          <p className="text-center text-[12px] leading-[16px] text-hc-n-600">{t('compra.revisado.nota')}</p>
         </div>
         <div className="flex-1" />
         <div className="flex flex-col items-center gap-[10px] rounded-[14px] border-t border-hc-n-200 bg-hc-n-0 px-[16px] pb-[24px] pt-[12px]">

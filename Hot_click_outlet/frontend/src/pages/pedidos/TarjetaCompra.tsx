@@ -36,7 +36,7 @@ function DetalleCantidades({ compra }: { compra: CompraCliente }) {
   const productos = t('misPedidos.tarjeta.productos', { count: cantidadProductos(compra) })
   const paquetes = totalPaquetes(compra)
   return (
-    <span className="text-[12px] leading-[14px] text-hc-n-500">
+    <span className="text-[12px] leading-[14px] text-hc-n-600">
       {paquetes > 1 ? `${productos} · ${t('misPedidos.tarjeta.tiendas', { count: paquetes })}` : productos}
     </span>
   )
@@ -51,7 +51,7 @@ export default function TarjetaCompra({ compra }: { compra: CompraCliente }) {
       <div className="flex items-center justify-between gap-[8px]">
         <div className="flex min-w-0 flex-col gap-px whitespace-nowrap">
           <h2 className="truncate text-[14px] font-semibold leading-[16px] text-hc-n-900">{t('misPedidos.tarjeta.titulo', { numero: compra.numero })}</h2>
-          <span className="text-[12px] leading-[14px] text-hc-n-500">{fechaCorta(compra.fecha, i18n.language)}</span>
+          <span className="text-[12px] leading-[14px] text-hc-n-600">{fechaCorta(compra.fecha, i18n.language)}</span>
         </div>
         <PillEstado tono={TONO_COMPRA[estado]} texto={t(`misPedidos.estadoCompra.${estado}`)} />
       </div>

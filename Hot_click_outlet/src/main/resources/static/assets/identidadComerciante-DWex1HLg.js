@@ -1,1 +1,0 @@
-var e={nombreComercial:`HotClick`,razonSocial:null,cedula:null,domicilio:null,canton:null,telefono:`+506 8666-7888`,telefonoWa:`50686667888`,correo:`hotclick.cr@gmail.com`,dominio:`hotclick.lat`,sitio:`https://hotclick.lat`},t=`30 de septiembre de 2026`,n=`2026-09-30`;export{t as n,n as r,e as t};

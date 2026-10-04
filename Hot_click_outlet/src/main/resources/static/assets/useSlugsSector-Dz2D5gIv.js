@@ -1,1 +1,0 @@
-import{t as e}from"./vendor-query-BqG65GZR.js";import{t}from"./seoService-DUd0wE7g.js";function n(){let n=e({queryKey:[`seo-sectores`],queryFn:()=>t.sectores(),staleTime:6e4});return new Set((n.data??[]).map(e=>e.slug))}export{n as t};

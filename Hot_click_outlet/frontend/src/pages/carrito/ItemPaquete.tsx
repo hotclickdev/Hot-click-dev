@@ -41,7 +41,7 @@ export default function ItemPaquete({ item, onCambiarCantidad, onEliminar, onMov
         <p className="font-display text-[15px] font-bold text-hc-n-900 lg:hidden">{precio}</p>
         <div className="flex items-center gap-[12px] lg:hidden">
           {cantidad}
-          <button type="button" onClick={() => onEliminar(item)} aria-label={t('compra.carrito.eliminarDe', { nombre })} className="text-hc-n-500">
+          <button type="button" onClick={() => onEliminar(item)} aria-label={t('compra.carrito.eliminarDe', { nombre })} className="text-hc-n-600">
             <IconoFigma src={ICONOS_COMPRA.eliminar} size={16} />
           </button>
         </div>

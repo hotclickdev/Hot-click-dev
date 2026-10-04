@@ -21,7 +21,7 @@ type PaqueteCarritoProps = {
 function ChipUnSoloEnvio({ cantidad, className }: { cantidad: number; className: string }) {
   const { t } = useTranslation()
   return (
-    <span className={`items-center gap-[4px] rounded-full bg-hc-green-50 px-[8px] py-[3px] text-[11px] font-semibold text-hc-green-600 ${className}`}>
+    <span className={`items-center gap-[4px] rounded-full bg-hc-green-50 px-[8px] py-[3px] text-[11px] font-semibold text-hc-success-text ${className}`}>
       <IconoFigma src={ICONOS_COMPRA.check} size={12} />
       {t('compra.carrito.unSoloEnvio', { count: cantidad })}
     </span>
@@ -46,7 +46,7 @@ export default function PaqueteCarrito({
             {t('compra.carrito.paqueteTitulo', { numero: paquete.numero, tienda: paquete.nombre })}
           </h2>
           {paquete.provincia ? (
-            <p className="flex items-center gap-[4px] text-[12px] text-hc-n-500">
+            <p className="flex items-center gap-[4px] text-[12px] text-hc-n-600">
               <IconoFigma src={ICONOS_COMPRA.origen} size={12} />
               {t('compra.carrito.saleDe', { provincia: paquete.provincia })}
             </p>

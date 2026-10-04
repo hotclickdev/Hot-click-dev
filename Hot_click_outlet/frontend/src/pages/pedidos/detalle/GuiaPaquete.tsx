@@ -23,7 +23,7 @@ export default function GuiaPaquete({ paquete }: { paquete: PedidoCliente }) {
     <div className="flex flex-col gap-[4px] rounded-[10px] bg-hc-n-50 px-[12px] py-[10px]">
       <div className="flex items-center justify-between gap-[8px]">
         <div className="flex min-w-0 flex-col gap-px">
-          <span className="text-[11px] leading-[13px] text-hc-n-500">
+          <span className="text-[11px] leading-[13px] text-hc-n-600">
             {t(esGuiaDeCorreos(paquete) ? 'misPedidos.paquete.guiaCorreos' : 'misPedidos.paquete.guiaExpress')}
           </span>
           <span className="truncate font-mono text-[14px] font-medium leading-[18px] text-hc-n-900">{paquete.numeroGuia}</span>

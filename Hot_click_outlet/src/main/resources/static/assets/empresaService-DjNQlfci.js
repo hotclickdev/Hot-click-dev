@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/empresaService-BS672t0K.js
-import{t as e}from"./api-D26upmHw.js";var t={getPerfil:()=>e.get(`/empresa/perfil`),updatePerfil:t=>e.put(`/empresa/perfil`,t),uploadLogo:t=>e.post(`/empresa/perfil/logo`,t,{headers:{"Content-Type":`multipart/form-data`}}),setVisibilidad:t=>e.put(`/empresa/perfil/visibilidad`,{visibilidadPublica:t}),uploadCertP12:t=>e.post(`/empresa/perfil/cert-p12`,t,{headers:{"Content-Type":`multipart/form-data`}}),updateFiscal:t=>e.put(`/empresa/perfil/fiscal`,t)};export{t};
-========
-import{t as e}from"./api-C-uKlyiA.js";var t={getPerfil:()=>e.get(`/empresa/perfil`),updatePerfil:t=>e.put(`/empresa/perfil`,t),uploadLogo:t=>e.post(`/empresa/perfil/logo`,t,{headers:{"Content-Type":`multipart/form-data`}}),setVisibilidad:t=>e.put(`/empresa/perfil/visibilidad`,{visibilidadPublica:t}),uploadCertP12:t=>e.post(`/empresa/perfil/cert-p12`,t,{headers:{"Content-Type":`multipart/form-data`}}),updateFiscal:t=>e.put(`/empresa/perfil/fiscal`,t)};export{t};
->>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/empresaService-DjNQlfci.js

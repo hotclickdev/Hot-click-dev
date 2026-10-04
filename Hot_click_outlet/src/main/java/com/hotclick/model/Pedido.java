@@ -261,7 +261,7 @@ public class Pedido extends BaseEntity {
 
     public Compra getCompra() { return compra; }
     public void setCompra(Compra compra) { this.compra = compra; }
-    public Long getCompraId() { return compra != null ? compra.getId() : null; }
+    public Long getCompraId() { return cargado(compra) ? compra.getId() : null; }
 
     // Solo lectura: devuelven null si la relación LAZY no se cargó dentro de la transacción.
     public String getNumeroCompra() { return cargado(compra) ? compra.getNumeroCompra() : null; }

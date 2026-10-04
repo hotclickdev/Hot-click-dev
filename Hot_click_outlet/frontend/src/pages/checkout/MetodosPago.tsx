@@ -69,10 +69,10 @@ function TarjetaMovil({ metodo, elegido, onElegir, children }: { metodo: Metodo;
           <span className="flex items-center gap-[8px] text-[14px] font-semibold text-hc-n-900">
             {metodo.titulo}
             {metodo.valor === 'SINPE' ? (
-              <span className="ml-auto rounded-full bg-hc-green-50 px-[7px] py-[2px] text-[10px] font-semibold text-hc-green-600">{t('compra.pago.masUsado')}</span>
+              <span className="ml-auto rounded-full bg-hc-green-50 px-[7px] py-[2px] text-[10px] font-semibold text-hc-success-text">{t('compra.pago.masUsado')}</span>
             ) : null}
           </span>
-          {metodo.detalleMovil ? <span className="text-[12px] text-hc-n-500">{metodo.detalleMovil}</span> : null}
+          {metodo.detalleMovil ? <span className="text-[12px] text-hc-n-600">{metodo.detalleMovil}</span> : null}
         </span>
       </button>
       {elegido ? children : null}
@@ -92,7 +92,7 @@ function TarjetaDesktop({ metodo, elegido, onElegir }: { metodo: Metodo; elegido
     >
       <span className={`flex ${metodo.colorIcono}`}><IconoFigma src={metodo.icono} size={20} /></span>
       <span className="text-[14px] font-semibold text-hc-n-900">{metodo.tituloDesktop}</span>
-      <span className="text-[12px] text-hc-n-500">{metodo.detalleDesktop}</span>
+      <span className="text-[12px] text-hc-n-600">{metodo.detalleDesktop}</span>
     </button>
   )
 }
