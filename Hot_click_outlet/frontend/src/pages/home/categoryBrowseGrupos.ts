@@ -14,12 +14,14 @@ export type CategoriaBrowse = {
   idCategoria?: number | string
   nombreCategoria?: string
   nombre?: string
+  slug?: string | null
 }
 
 export type GrupoCategoria = {
   products: ProductoMuestraCategoria[]
   catId: string
   nombre: string
+  slug?: string
 }
 
 /** Agrupa productos por categoría; descarta las que no tienen nombre en vez de mostrar "Sin nombre". */
@@ -44,7 +46,7 @@ export function agruparPorCategoria(
       const cat = categories.find((c) => String(c.id ?? c.idCategoria) === catId)
       const nombreDelProducto = productos.find((p) => p.categoriaNombre)?.categoriaNombre
       const nombre = (cat?.nombreCategoria ?? cat?.nombre ?? nombreDelProducto ?? '').trim()
-      return { catId, products: productos, nombre }
+      return { catId, products: productos, nombre, slug: cat?.slug || undefined }
     })
     .filter((g) => g.nombre !== '' && (!fijadas || fijadas.has(g.catId)))
     .sort((a, b) => b.products.length - a.products.length)

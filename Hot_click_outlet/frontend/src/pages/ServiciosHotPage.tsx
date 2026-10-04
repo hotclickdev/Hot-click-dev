@@ -1,4 +1,5 @@
-import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
+import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
@@ -19,7 +20,15 @@ import {
   SITE_URL, serviciosJsonLd, FOTO_MAX_BYTES, MAX_FOTOS, PREFIJO_SOLICITUD_INVENTARIO,
   type FormBusqueda, type FotoSolicitud, type GarantiaItem, type ProductoParaResena,
   type TabBusqueda, type VistaServicios,
+  metaDeRutaServicio,
+  faqDeRutaServicio,
 } from './servicios/serviciosHelpers'
+
+function vistaDeRuta(pathname: string): VistaServicios | null {
+  if (pathname.startsWith('/servicios/buscar-producto')) return 'busqueda'
+  if (pathname.startsWith('/servicios/digitalizar-inventario')) return 'inventario'
+  return null
+}
 
 function extraerLista<T>(data: unknown): T[] {
   if (data && typeof data === 'object' && 'data' in data) {
@@ -39,8 +48,15 @@ export default function ServiciosHotPage() {
   const { token } = useAuthStore()
   const qc = useQueryClient()
   const contenidoRef = useRef<HTMLDivElement>(null)
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  const [vista, setVista] = useState<VistaServicios>('inicio')
+  const [vista, setVista] = useState<VistaServicios>(() => vistaDeRuta(location.pathname) ?? 'inicio')
+  const vistaRuta = vistaDeRuta(location.pathname)
+
+  useEffect(() => {
+    if (vistaRuta) setVista(vistaRuta)
+  }, [vistaRuta])
   const [tabBusqueda, setTabBusqueda] = useState<TabBusqueda>('solicitar')
 
   const [fotos, setFotos] = useState<FotoSolicitud[]>([])
@@ -87,6 +103,7 @@ export default function ServiciosHotPage() {
   const volver = () => {
     setVista('inicio')
     setSuccess(false)
+    if (location.pathname !== '/servicios') navigate('/servicios')
     setTimeout(() => contenidoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
   }
 
@@ -136,26 +153,30 @@ export default function ServiciosHotPage() {
     finally { setSending(false) }
   }
 
+  const meta = metaDeRutaServicio(location.pathname)
+  const faq = faqDeRutaServicio(location.pathname)
+
   return (
     <MainLayout>
       <Helmet>
-        <title>Servicios HotClick — Búsqueda de productos y garantías en Costa Rica</title>
-        <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HotClick en Costa Rica." />
-        <link rel="canonical" href={`${SITE_URL}/servicios`} />
-        <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/servicios`} />
-        <link rel="alternate" hrefLang="es"    href={`${SITE_URL}/servicios`} />
+        <title>{meta.title}</title>
+        <meta name="description" content={meta.description} />
+        <link rel="canonical" href={`${SITE_URL}${meta.path}`} />
+        <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}${meta.path}`} />
+        <link rel="alternate" hrefLang="es" href={`${SITE_URL}${meta.path}`} />
         <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Servicios HotClick — Búsqueda y garantías en Costa Rica" />
-        <meta property="og:description" content="Te buscamos el producto que necesitás y gestionamos garantías. Gratis para todos los clientes de HotClick." />
-        <meta property="og:url" content={`${SITE_URL}/servicios`} />
+        <meta property="og:title" content={meta.title} />
+        <meta property="og:description" content={meta.description} />
+        <meta property="og:url" content={`${SITE_URL}${meta.path}`} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:locale" content="es_CR" />
         <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(serviciosJsonLd)}</script>
+        {faq && <script type="application/ld+json">{JSON.stringify(faq)}</script>}
       </Helmet>
 
-      <ServiciosHero />
+      {vistaRuta == null && <ServiciosHero />}
 
       <div ref={contenidoRef} className="px-4 pb-8 max-w-2xl mx-auto">
         <AnimatePresence mode="wait">

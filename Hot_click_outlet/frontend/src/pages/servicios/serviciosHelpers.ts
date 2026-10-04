@@ -21,7 +21,7 @@ export const serviciosJsonLd = {
         areaServed: { '@type': 'Country', name: 'Costa Rica' },
         availableChannel: {
           '@type': 'ServiceChannel',
-          serviceUrl: `${SITE_URL}/servicios`,
+          serviceUrl: `${SITE_URL}/servicios/buscar-producto`,
           servicePhone: '+506-8666-7888',
         },
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'CRC', availability: 'https://schema.org/InStock' },
@@ -54,7 +54,7 @@ export const serviciosJsonLd = {
         areaServed: { '@type': 'Country', name: 'Costa Rica' },
         availableChannel: {
           '@type': 'ServiceChannel',
-          serviceUrl: `${SITE_URL}/servicios`,
+          serviceUrl: `${SITE_URL}/servicios/digitalizar-inventario`,
           servicePhone: '+506-8666-7888',
         },
       },
@@ -121,6 +121,48 @@ export const CARD_IMAGES = {
 }
 
 export type VistaServicios = 'inicio' | 'busqueda' | 'garantia' | 'testimonio' | 'inventario'
+
+const META_SERVICIOS = {
+  inicio: {
+    path: '/servicios',
+    title: 'Servicios HotClick — Búsqueda de productos y garantías en Costa Rica',
+    description: 'Solicitá búsqueda de cualquier producto, digitalizá el inventario de tu negocio o gestioná la garantía de tu compra en HotClick.',
+  },
+  buscar: {
+    path: '/servicios/buscar-producto',
+    title: 'Buscar un producto en Costa Rica | HotClick',
+    description: 'Si no está en el catálogo, HotClick lo busca entre emprendedores, pymes y negocios. Describí el producto, con foto y presupuesto. El servicio es gratis.',
+  },
+  inventario: {
+    path: '/servicios/digitalizar-inventario',
+    title: 'Digitalizar inventario para vender en línea | HotClick',
+    description: 'HotClick digitaliza el inventario en tu local: escanea códigos, crea SKU y etiquetas para productos sin código de barras y los carga al catálogo.',
+  },
+} as const
+
+export function metaDeRutaServicio(pathname: string) {
+  if (pathname.startsWith('/servicios/buscar-producto')) return META_SERVICIOS.buscar
+  if (pathname.startsWith('/servicios/digitalizar-inventario')) return META_SERVICIOS.inventario
+  return META_SERVICIOS.inicio
+}
+
+/** FAQ de una sola pregunta en las URLs de servicio, para que un buscador pueda citarlas. */
+export function faqDeRutaServicio(pathname: string) {
+  const meta = metaDeRutaServicio(pathname)
+  if (meta.path === '/servicios') return null
+  const pregunta = meta.path.endsWith('/buscar-producto')
+    ? '¿Cómo encuentra HotClick un producto que no está publicado?'
+    : '¿Qué es digitalizar el inventario?'
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [{
+      '@type': 'Question',
+      name: pregunta,
+      acceptedAnswer: { '@type': 'Answer', text: meta.description },
+    }],
+  }
+}
 export type TabBusqueda = 'solicitar' | 'mis-solicitudes'
 
 export type FormBusqueda = {

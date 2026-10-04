@@ -48,8 +48,10 @@ export default function VistaBusqueda({
         style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
         <span style={{ color: 'var(--hc-accent)' }}><SearchIcon className="w-8 h-8" /></span>
         <div>
-          <h2 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>Buscar producto por ti</h2>
-          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Describí o enviá fotos y te lo conseguimos.</p>
+          <h1 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>Buscar producto por ti</h1>
+          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            HotClick busca en Costa Rica el producto que no está en el catálogo. Describí lo que necesitás, con foto y presupuesto: el servicio es gratis.
+          </p>
         </div>
       </div>
 

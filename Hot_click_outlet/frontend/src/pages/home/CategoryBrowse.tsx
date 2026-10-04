@@ -6,6 +6,7 @@ import Section from '@/components/ui/Section'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import { agruparPorCategoria, type CategoriaBrowse, type ProductoMuestraCategoria } from './categoryBrowseGrupos'
+import { useSlugsSector } from '@/pages/seo/useSlugsSector'
 
 // ─── Sección "Explorar por categoría" estilo Amazon ──────────────────────────
 export default function CategoryBrowse({
@@ -21,6 +22,7 @@ export default function CategoryBrowse({
   maxCategories?: number
 }) {
   const { t } = useTranslation()
+  const slugsSector = useSlugsSector()
   const catGroups = useMemo(
     () => agruparPorCategoria(products, categories, visibleCategoryIds, maxCategories),
     [products, categories, visibleCategoryIds, maxCategories],
@@ -45,7 +47,7 @@ export default function CategoryBrowse({
             transition={{ duration: 0.35, delay: gi * 0.06 }}
           >
             <Link
-              to={`/productos?cat=${group.catId}`}
+              to={group.slug && slugsSector.has(group.slug) ? `/comprar/${group.slug}` : `/productos?cat=${group.catId}`}
               className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg group"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >

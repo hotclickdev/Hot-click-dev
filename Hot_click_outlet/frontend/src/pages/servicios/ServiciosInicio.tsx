@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ServiceCardImage from './ServiceCardImage'
 import TrustGlyph from '@/components/ui/TrustGlyph'
@@ -84,11 +85,9 @@ export default function ServiciosInicio({ irA }: { irA: (destino: VistaServicios
       transition={{ duration: 0.3 }}
       className="grid sm:grid-cols-2 gap-5">
 
-      <motion.button
-        whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.97 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        onClick={() => irA('busqueda')}
-        className="text-left rounded-3xl overflow-hidden relative group cursor-pointer"
+      <Link
+        to="/servicios/buscar-producto"
+        className="text-left rounded-3xl overflow-hidden relative group cursor-pointer block"
         style={{ border: '1px solid rgba(23,71,168,0.2)', backgroundColor: 'var(--hc-surface)' }}>
 
         <div className="relative h-44 overflow-hidden">
@@ -114,7 +113,7 @@ export default function ServiciosInicio({ irA }: { irA: (destino: VistaServicios
             Describí o enviá una foto del producto que buscás y nosotros lo conseguimos.
           </p>
         </div>
-      </motion.button>
+      </Link>
 
       <motion.button
         whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.97 }}
@@ -148,11 +147,9 @@ export default function ServiciosInicio({ irA }: { irA: (destino: VistaServicios
         </div>
       </motion.button>
 
-      <motion.button
-        whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.97 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        onClick={() => irA('inventario')}
-        className="text-left rounded-3xl overflow-hidden relative group cursor-pointer sm:col-span-2"
+      <Link
+        to="/servicios/digitalizar-inventario"
+        className="text-left rounded-3xl overflow-hidden relative group cursor-pointer block sm:col-span-2"
         style={{ border: '1px solid rgba(23,71,168,0.2)', backgroundColor: 'var(--hc-surface)' }}>
 
         <div className="relative h-44 overflow-hidden">
@@ -178,7 +175,7 @@ export default function ServiciosInicio({ irA }: { irA: (destino: VistaServicios
             Digitalizamos tu inventario en el local, aunque no tengas códigos de barras ni catálogo digital.
           </p>
         </div>
-      </motion.button>
+      </Link>
 
       <motion.button
         whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.97 }}

@@ -64,9 +64,9 @@ export default function VistaDigitalizacion({
         style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
         <span style={{ color: 'var(--hc-accent)' }}><TagIcon /></span>
         <div>
-          <h2 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>
+          <h1 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>
             Digitalización y etiquetado de inventario
-          </h2>
+          </h1>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
             Llevamos el proceso a tu local para que puedas vender en HOTCLICK.
           </p>
@@ -76,8 +76,7 @@ export default function VistaDigitalizacion({
       <div className="rounded-3xl p-6 sm:p-8 mb-6 space-y-4"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-          ¿Tu negocio no tiene un inventario digital o algunos productos no tienen código de barras? No hay problema.
-          HOTCLICK puede ayudarte a digitalizar tu inventario directamente en tu local.
+          HotClick digitaliza el inventario en tu local en Costa Rica: escanea los códigos que ya existen, registra los productos sin código con un SKU interno, imprime sus etiquetas y carga todo al catálogo para vender en línea.
         </p>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
           Nuestro equipo puede escanear los productos que ya cuentan con código de barras y registrar manualmente

@@ -96,7 +96,7 @@ function PromoCopy() {
         transition={{ delay: 0.27 }}
         className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
       >
-        <Link to="/servicios" className="hc-btn hc-btn-primary hc-btn-lg inline-flex items-center gap-2 group">
+        <Link to="/servicios/buscar-producto" className="hc-btn hc-btn-primary hc-btn-lg inline-flex items-center gap-2 group">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <TextoFlecha iconClassName="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1">
             {t('home.servicesRequest')}
