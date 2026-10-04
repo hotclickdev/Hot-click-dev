@@ -93,10 +93,10 @@ export default function AdminPOSHistorial() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle className={`min-h-11 min-w-11 flex shrink-0 items-center justify-center ${ocultarTemaSiHayPanel}`} />
-          <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
+          <div className="flex max-w-full overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--hc-border)' }}>
             {FILTROS.map(f => (
               <button type="button" key={f.key} onClick={() => setFiltro(f.key)}
-                className="px-3 py-1.5 text-xs font-medium transition-all"
+                className="shrink-0 px-3 py-1.5 text-xs font-medium transition-all"
                 style={{
                   backgroundColor: filtro === f.key ? 'var(--hc-accent)' : 'var(--hc-surface)',
                   color: filtro === f.key ? '#fff' : 'var(--hc-muted)',
