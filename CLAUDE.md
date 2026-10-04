@@ -89,7 +89,7 @@ docker compose -f docker-compose.dev.yml up -d
 | Bootstrap vacío | Tablas nativas en [`db/dev-bootstrap/nativas.sql`](Hot_click_outlet/src/main/resources/db/dev-bootstrap/nativas.sql) + Flyway **baseline en V136** (no rejuega V1..V136) |
 | CI | [`.github/workflows/gate-flyway-fresh.yml`](.github/workflows/gate-flyway-fresh.yml) — arranca con perfil `dev` contra Postgres vacío |
 
-Admin sembrado: `admin@hotclick.com` / `Admin1234!` (o `ADMIN_DEFAULT_PASSWORD`).
+Admin sembrado: `admin@hotclick.com`, contraseña desde `HOTCLICK_ADMIN_INITIAL_PASSWORD` (se acepta el nombre anterior `ADMIN_DEFAULT_PASSWORD`). Sin variable: en dev, contraseña aleatoria; en producción no se crea. No escribas contraseñas en el repo.
 
 **Por qué no se rejugan V1..V136 en base vacía:** `V1__initial_schema.sql` es un dump legacy que en producción se marcó como baseline (nunca se ejecutó). Si se ejecuta, choca con V2+ (tablas/columnas distintas). En `dev`, Flyway hace baseline en 136 y Hibernate arma el esquema; **las migraciones nuevas (V137+) sí se aplican** al reiniciar.
 

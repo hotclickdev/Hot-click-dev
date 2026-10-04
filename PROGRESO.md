@@ -11,7 +11,7 @@
 | URL local (producción) | `http://localhost:8080` |
 | URL dev frontend | `http://localhost:3000` |
 | Correo | `admin@hotclick.com` |
-| Contraseña | `Admin1234!` |
+| Contraseña | `[CONFIGURAR]` en `HOTCLICK_ADMIN_INITIAL_PASSWORD` (nunca en el repo) |
 | Panel admin | `/admin` (React Router) |
 
 ---

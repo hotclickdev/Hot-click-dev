@@ -57,7 +57,7 @@ Estas no requieren código — solo configuración:
 | Configurar `SUPABASE_BACKUP_URL` en GitHub Secrets | GitHub → Settings → Secrets → Actions | **Crítico** — el backup no corre sin esto |
 | Configurar `SUPABASE_DB_PASSWORD` en GitHub Secrets | GitHub → Settings → Secrets → Actions | **Crítico** |
 | Verificar `PAYPAL_WEBHOOK_ID` en Render | Render → Environment | **Crítico** |
-| Eliminar `Admin1234!` de `PROGRESO.md` | Archivo local | **Alto** |
+| Eliminar la contraseña del admin de `PROGRESO.md` (hecho el 4-oct-2026; sigue en el historial de git) | Archivo local | **Alto** |
 | Rotar contraseña admin si fue expuesta | Panel admin → cambiar contraseña | **Alto** |
 
 ---

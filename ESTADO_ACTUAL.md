@@ -161,7 +161,7 @@
 
 | Riesgo | Descripción | Fix en Roadmap |
 |--------|-------------|---------------|
-| Credenciales admin en `PROGRESO.md` | `Admin1234!` en texto plano en un archivo potencialmente público | P0-1 |
+| Credenciales admin en `PROGRESO.md` | Contraseña del admin en texto plano (quitada el 4-oct-2026; sigue en el historial de git, por eso se rotó) | P0-1 |
 | Sin backups verificados | Supabase free tier tiene PITR limitado | P0-2 |
 | TOTP secret en respuesta de setup | `GET /api/auth/2fa/setup` devuelve el secret en texto plano (necesario para QR, pero sensible) | — |
 | Password mínimo 6 chars para admins | Mismo mínimo que clientes | — |
@@ -295,7 +295,7 @@ NO-GO para:
 
 | Prioridad | Acción | Esfuerzo |
 |-----------|--------|----------|
-| **Crítico** | Eliminar / rotar credencial `Admin1234!` de `PROGRESO.md` | 5 min |
+| **Crítico** | Eliminar / rotar la credencial del admin de `PROGRESO.md` | 5 min |
 | **Crítico** | Configurar `SUPABASE_BACKUP_URL` + `SUPABASE_DB_PASSWORD` en GitHub Secrets | 10 min |
 | **Crítico** | Verificar `PAYPAL_WEBHOOK_ID` configurado en Render | 5 min |
 | **Alto** | Rate limiting en `/api/auth/login` y `/api/auth/forgot-password` | 2h |

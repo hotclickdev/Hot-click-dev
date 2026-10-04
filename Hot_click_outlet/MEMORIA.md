@@ -37,10 +37,10 @@ bodegas, categorías, finanzas y pedidos desde un panel React.
 | Campo | Valor |
 |-------|-------|
 | Correo | `admin@hotclick.com` |
-| Contraseña | `Admin1234!` |
+| Contraseña | `[CONFIGURAR]` en `HOTCLICK_ADMIN_INITIAL_PASSWORD` (nunca en el repo) |
 | Rol | `ADMIN_IT` |
 
-El usuario admin es creado automáticamente por `DataSeeder.java` al iniciar la app.
+El usuario admin lo crea `DataSeeder.java` al iniciar la app con la contraseña de `HOTCLICK_ADMIN_INITIAL_PASSWORD`. En producción, si falta o es débil, no se crea; en local, sin la variable se crea con una contraseña aleatoria que nadie conoce.
 
 ---
 
