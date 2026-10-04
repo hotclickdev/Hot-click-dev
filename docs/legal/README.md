@@ -19,6 +19,7 @@ Expediente jurídico completo de la plataforma HotClick conforme a la Ley N.° 8
 | Acuerdo de Vendedores (Encargados de Tratamiento) | [acuerdo-vendedores.md](acuerdo-vendedores.md) | `/acuerdo-vendedores` |
 | Formulario de Consentimiento Informado | [consentimiento.md](consentimiento.md) | (checkbox en registro y checkout) |
 | Protocolo de Notificación de Incidentes | [protocolo-incidentes.md](protocolo-incidentes.md) | (uso interno — debida diligencia PRODHAB) |
+| Checklist de multas (CR + global) | [../Hot_click_outlet/docs/legal/checklist-multas-y-cumplimiento.md](../../Hot_click_outlet/docs/legal/checklist-multas-y-cumplimiento.md) | (uso interno) |
 
 ---
 

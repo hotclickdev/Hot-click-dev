@@ -109,7 +109,11 @@ Se completa con el nombre y la cédula de quien acepta el cargo. No firmar en bl
 
 Cubierto en la rama `legal/cumplimiento-cr`:
 
-- Políticas de privacidad, cookies, términos y devoluciones, con fecha 30 de septiembre de 2026.
+- Políticas de privacidad, cookies, términos y devoluciones, con fecha 4 de octubre de 2026.
+- Aviso de cookies con tres opciones (rechazar opcionales, configurar, aceptar todas), panel por categoría y enlace «Configurar cookies» en el pie.
+- Declaración de mayoría de edad (18 años) en el registro de comprador y de negocio. No se pide fecha de nacimiento.
+- El chat indica que es un asistente de inteligencia artificial.
+- Lista interna de multas: `docs/legal/checklist-multas-y-cumplimiento.md`.
 - Retracto de 8 días hábiles desde la confirmación del pago, por el mismo medio, con reembolso al mismo medio. La garantía comercial de 40 días por defectos se mantiene y no sustituye al retracto.
 - Medios de pago descritos como SINPE Móvil y tarjeta (Tilopay, Stripe u ONVO), sin guardar el número de tarjeta.
 - Canal de reclamo en la plataforma. La cláusula del marketplace ya no dice que HotClick queda exenta de toda responsabilidad.

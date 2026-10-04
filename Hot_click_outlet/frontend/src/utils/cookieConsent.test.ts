@@ -1,15 +1,27 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import {
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+const store = new Map<string, string>()
+
+vi.stubGlobal('localStorage', {
+  getItem: (k: string) => store.get(k) ?? null,
+  setItem: (k: string, v: string) => { store.set(k, v) },
+  removeItem: (k: string) => { store.delete(k) },
+  clear: () => { store.clear() },
+  key: () => null,
+  length: 0,
+})
+
+const {
   COOKIE_CONSENT_KEY,
   VIGENCIA_CONSENTIMIENTO_MS,
   consentDesdeCategorias,
   getCookieConsent,
   parseCookieConsent,
   setCookieConsent,
-} from './cookieConsent'
+} = await import('./cookieConsent')
 
 afterEach(() => {
-  localStorage.removeItem(COOKIE_CONSENT_KEY)
+  store.clear()
 })
 
 describe('parseCookieConsent', () => {
@@ -53,8 +65,8 @@ describe('getCookieConsent', () => {
   })
 
   it('guarda y lee el consentimiento vigente', () => {
-    const value = consentDesdeCategorias(false, false)
-    setCookieConsent(value)
+    setCookieConsent(consentDesdeCategorias(false, false))
     expect(getCookieConsent()).toMatchObject({ analytics: false, advertising: false, functional: true })
+    expect(store.get(COOKIE_CONSENT_KEY)).toBeTruthy()
   })
 })
