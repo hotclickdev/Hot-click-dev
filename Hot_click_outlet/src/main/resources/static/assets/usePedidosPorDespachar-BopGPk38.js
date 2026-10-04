@@ -1,0 +1,1 @@
+import{t as e}from"./vendor-query-CjbS_V8J.js";import{r as t,t as n}from"./pedidosVendedorApi-ckHJDF5R.js";var r=`Pendiente`;function i(e){return e.filter(e=>e.estado===r).length}function a(){return e({queryKey:[`pedidos`,`vendedor`,`por-despachar`],queryFn:async()=>i((await t()).map(n)),staleTime:6e4})}export{a as t};
