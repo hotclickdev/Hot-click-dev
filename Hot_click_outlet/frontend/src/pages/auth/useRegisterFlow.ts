@@ -136,5 +136,3 @@ export function useRegisterFlow() {
     actualizarCampo, handleSubmit, handleVerify, handleReenviar,
   }
 }
-
-export type RegisterFlow = ReturnType<typeof useRegisterFlow>

@@ -21,5 +21,3 @@ export type Pagina<T> = {
   first?: boolean
   last?: boolean
 }
-
-export type AxiosParams = Record<string, string | number | boolean | undefined | null>

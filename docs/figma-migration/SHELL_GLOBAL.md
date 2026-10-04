@@ -1,0 +1,427 @@
+# SHELL · pasada global (1-oct-2026)
+
+Rama `feat/figma/shell`, partida de `feat/figma/base` (`12accb60`, fast-forward: la rama no tenía commits propios). Archivo Figma `TmxYFj2nauu10WZnZ0t6yt`. Sin push, deploy ni merge a `master`.
+
+## Corregido
+
+| # | Pendiente | Qué se hizo | Referencia |
+| --- | --- | --- | --- |
+| 1 | `/sin-conexion` | Ruta registrada en `AppRoutes.tsx` (lazy `SinConexionPage`, pública). Ya la había pedido SYS en `ROUTES_REQUESTED.md`. No hay redirección automática hacia ella: ningún frame dibuja ese flujo, así que no se inventó. La franja `AvisoSinConexion` sigue siendo el aviso | `45:2264`, `45:2265` |
+| 2 | `MainLayout` fondo blanco | Prop `fondo?: 'gris' \| 'blanco'` (por defecto `gris`, los 41 usos no cambian). Los módulos que hoy usan un contenedor blanco con alto fijo pueden migrar a `fondo="blanco"`; no se tocaron sus pantallas | Estados vacíos de ACC y 404/fallo (`n/0`) |
+| 3 | Header | El buscador desktop (completo y compacto) muestra la búsqueda vigente (`?search=`) en `/productos`. "Buscar con foto" va a `/buscar/foto` (antes `/servicios`) | `30:1824` |
+| 5 | Barra inferior | `/blog` y `/blog/*` marcan Inicio; `/servicios?vista=solicitudes` marca Cuenta; `/productos?cat=` marca Categorías. `/productos` sin `cat` sigue marcando Buscar | `54:2126`, `29:1535`, `43:1530` |
+| 6 | Alias de color | `--color-hc-n-400`, `--color-hc-success-bg`, `--color-hc-red-50` en el `@theme` de `index.css`, apuntando a los tokens existentes (`#9AA1AE`, `#E9F7F0`, `#FEF2F1`). Hoy nadie los usa como clase; los módulos siguen con `var(--hc-…)` y pueden pasar a la clase | `hotclick-tokens.css` |
+| 7 | Inputs móviles | La regla `max(16px, 1em)` (< 768 px, sin capa, ganaba a `text-[14px]`) ahora excluye `.hc-figma-ui` (raíz de `MainLayout`) y `.hc-tenant-theme` (tienda pública). Sigue activa en paneles, POS y portales. **Costo asumido:** en iOS los campos de 14/15 px del comprador hacen zoom al enfocar | 14 y 15 px en CHK, ACC, SRV |
+| 8 | `ReturnVisitorBanner` | No está en ningún frame (ni Home `7:2` ni Mi cuenta `28:1196`, `30:1479`). Se oculta en `/perfil`, `/mis-pedidos` y `/wishlist`. Se conserva en Home y catálogo: quitarlo ahí es una decisión de comportamiento sin respaldo | Figma |
+
+Además: la E2E `bottom-nav.spec.ts` describía la barra anterior (Productos/Servicios/Emprender) y fallaba en `base`; se reescribió para la barra actual y la aserción del FAB de WhatsApp sigue la decisión de SYS (visible sobre la barra, sin solaparse). Spec nuevo: `shell-global.spec.ts`.
+
+## PARTIAL / requiere decisión
+
+| Pendiente | Estado | Motivo |
+| --- | --- | --- |
+| Footer: "Preferencias de cookies" e "Idioma y accesibilidad" | **Hecho el 2-oct-2026 (B1)** | Botones en la línea legal que abren las hojas existentes; ver "Accesos del pie" al final. Los frames `7:355` y `9:559` no los dibujan: la altura móvil del pie pasa de 71 a 89 px y la de desktop no cambia (59) |
+| Fila "Idioma y accesibilidad" en Mi cuenta | Sin referencia | No se inventó (decisión previa de SYS/ACC) |
+| Cookies desktop a 24 px del borde | Pendiente, sin referencia | El aviso `45:2152` es móvil; no hay frame desktop. No se movió |
+| Título de `BarraInterna` como `<p>` | Pendiente | Pasarlo a `<h1>` duplicaría el `h1` de las pantallas que ya lo tienen (p. ej. el carrito). Requiere revisar pantalla por pantalla |
+| Header: altura, spacing, tipografía, variantes | Sin diferencias nuevas medidas | Medición repetida el 2-oct-2026 (66 medidas, ver "Línea base del chrome" al final): 4 correcciones, el resto a ±1 px |
+| Selector de tema y filtro de color del buyer sheet | Sin cambios | Decisión de SYS respetada |
+
+## Dependencias hacia otros módulos
+
+- ACC/SRV/CHK/STORE: pueden sustituir `var(--hc-n-400)`, `var(--hc-success-bg)`, `var(--hc-red-50)` por las clases nuevas y los contenedores blancos por `fondo="blanco"`. No es obligatorio.
+- La regla `header, aside, footer { … !important }` de `index.css` no se tocó: STORE la resuelve con `div role="banner"`. **Resuelta en P12** (ver al final).
+
+## Verificación
+
+- `tsc` con los tres tsconfig: limpio.
+- Vitest: 99 archivos, 487 tests, todos pasan (incluye 3 casos nuevos del helper de la barra).
+- Build: `vite build` a un directorio temporal, OK. `static/` no se tocó.
+- ESLint sobre los archivos tocados: sin errores nuevos. `ReturnVisitorBanner.tsx` conserva 1 error (`setState` en efecto) y 1 aviso que ya tenía en `base`.
+- E2E: `bottom-nav.spec.ts` y `shell-global.spec.ts`, 12 de 12. Regresión de módulos (ACC, blog, catálogo, CHK, SRV, STORE, tienda): 59 pasan, 8 se saltan, 6 fallan (`home-jobs` x4, `tienda-checkout:77`, `tienda-theme:115`); esos 6 fallan igual en `base`.
+- No hecho: QA de las ~90 pantallas. La captura visual comparada con Figma se hizo después, ver la sección siguiente.
+
+## Verificación visual contra Figma (1-oct-2026)
+
+Capturas reales con Playwright (Chrome) en 390 y 1440 px, API simulada con los mocks de ACC (`tests/helpers/accFixtures.ts`), sesión sembrada y espera de 2,3 s para que termine `PageProgressBar`. Se generan con `SHELL_SHOTS=<carpeta> npx playwright test tests/shell-capturas.spec.ts` (se omite sin esa variable). Las imágenes no se versionan. Con la API vacía los listados quedan sin productos: lo que se compara es el chrome de SHELL (header, barra inferior, footer, banner), no el contenido de cada módulo.
+
+| Ruta | Frame Figma | 390 | 1440 | Resultado |
+| --- | --- | --- | --- | --- |
+| `/sin-conexion` | `45:2264` | sí, también con el navegador sin red | sí | **Corregido**: la barra inferior no marcaba Inicio y Figma sí. Franja negra de 36 px y mensaje coinciden. PARTIAL: faltan "Vistos recientemente" y "Favoritos" (datos locales, de SYS) |
+| `/blog` | `54:2126` | sí | sí | Barra interna y Inicio activo coinciden. Contenido de SRV (chips, buscador) fuera de SHELL |
+| `/productos?cat=1` | `43:1530` | sí | sí | Barra interna, chips y Categorías activo coinciden |
+| `/servicios?vista=solicitudes` | `29:1535` | sí | no aplica | Barra interna y Cuenta activo coinciden; sin ReturnVisitorBanner. Falta la pestaña "Encargos" (BLOCKED por backend, ya documentado en ACC) |
+| `/perfil` | `28:1196`, `30:1479` | sí | sí | Header (77 px), menú lateral de 260 px, saludo y accesos coinciden; sin ReturnVisitorBanner |
+| `/mis-pedidos` | sin id de frame en el inventario | sí | no | Barra interna y Cuenta activo; sin banner. Contenido de ACC |
+| `/wishlist` | `30:1224` | sí | no | Barra interna y Cuenta activo; sin banner. El corazón no se rellena de rojo (diferencia de CAT ya documentada) |
+| `/productos?search=` | `26:722`, `30:1824` | sí | sí | Desktop: el buscador muestra la búsqueda vigente, con "Foto" y "Buscar", y el header mide 111 px. Móvil: Buscar activo coincide |
+| `/login` | `28:1143` | sí | no | Barra interna "Tu cuenta" y sin barra inferior coinciden. Falta "Continuar con Google" (solo existe con Clerk) |
+| `/carrito` | `28:989`, `45:1692` | sí | sí | Barra interna, Pedido activo y estado vacío coinciden. No hay frame de escritorio para el vacío |
+| `/descubri` | `27:939` | sí | sí | Barra interna y sin barra inferior coinciden. El contenido depende de datos |
+| `/buscar/foto` | `27:882` | sí | sí | Barra interna coincide; falta la etiqueta "NUEVO · por programar" (CAT, ya documentada) |
+
+Pasadas del 390 y 1440 px también para Home y para el comprador anónimo (header con "Ingresar").
+
+### Diferencias encontradas
+
+1. **Corregida**: `/sin-conexion` no marcaba Inicio en la barra inferior (Figma `45:2264` lo marca). `barraInferiorHelpers.ts` y un caso nuevo en su test.
+2. **Sin corregir, sin referencia consistente**: el frame `43:1530` dibuja la barra inferior y el header con radio de 14 px, pero el componente canónico de la barra (`7:358`) y `54:2126` no lo tienen. No se aplicó.
+3. **Fuera de SHELL**: el buscador móvil de resultados (`26:722`) muestra la cámara dentro del campo y la implementación muestra la X de limpiar (CAT). El Blog vacío pinta un bloque blanco de alto fijo sobre el fondo gris (SRV; candidato a `fondo="blanco"`).
+4. **No es un defecto**: la barra roja del tope es `PageProgressBar` durante 2 s en cada cambio de ruta; el modal de cupón de bienvenida a los 2 s es `PromoWelcomePopup` (SYS), controlado por `hc-promo-seen`. Ninguno está en los frames.
+
+### Pendientes que siguen abiertos
+
+Los de la tabla "PARTIAL / requiere decisión" no cambian (los enlaces del footer se hicieron el 2-oct-2026, B1): fila de accesibilidad en Mi cuenta, cookies en desktop, `<h1>` de `BarraInterna` y remodelación del header. La medición de píxeles del header se repitió el 2-oct-2026 (ver "Línea base del chrome" al final).
+
+### Resultados finales
+
+- `tsc` (3 tsconfig): limpio. Vitest: 99 archivos, 488 tests. Build a directorio temporal: OK. ESLint de los archivos tocados: sin errores.
+- E2E: SHELL 12 de 12; regresión (ACC, blog, catálogo, CHK, SRV, STORE, QR, tienda, Home): 88 pasan, 8 se saltan, 8 fallan, y los 8 fallan igual en `base` (`home-jobs` x4, `tienda-checkout:77`, `tienda-theme:115`, `catalogo-iconos:67`, `nav-categorias:83`).
+
+## Línea base del chrome (2-oct-2026)
+
+Medición de header, barra inferior, banner y pie contra la metadata de Figma (archivo `TmxYFj2nauu10WZnZ0t6yt`, origen del frame restado), tolerancia ±1 px. Se ejecuta con `SHELL_MEDIR=<archivo.json> npx playwright test tests/shell-medicion.spec.ts` (se omite sin esa variable; escribe el JSON y un resumen). Chrome, fuentes reales cargadas, API simulada (`mockApisAcc` más las categorías), sesión sembrada donde la pantalla la pide y carrito de 2 ítems donde Figma dibuja el badge.
+
+**Resultado: 66 medidas, 66 dentro de ±1 px** después de las correcciones. Frames: `12:809`, `30:1480`, `30:2269` (carrito, 30:2268), `30:2386`, `12:551`, `28:1144`, `45:2199`, `29:1933` (pago exitoso, 29:1932), `12:582` (con sus 5 ítems), `12:483`, `12:489`, `9:550` y `9:559`. Rutas: Home, `/productos`, `/perfil`, `/carrito`, `/checkout`, 404 y `/pago/exito`, a 390 y 1440 según tengan frame.
+
+| # | Medida | App antes | Figma | Real o del script | Acción |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Header del carrito desktop | 79 (fila en y16) | 83 (`30:2269`, fila en y18) | **Real** | Variante `carrito` de `MainLayout`/`HeaderEscritorioCompacto` (`py-[18px]`). El cuerpo baja 4 px: "Tu pedido" y115 -> 119 y resumen y173 -> 177, iguales a Figma |
+| 2 | Icono del carrito en el header del carrito | negro | rojo (`30:2269`) | **Real** (pendiente anotado en `COMPONENT_OWNERSHIP.md`) | `text-hc-red-500` solo en esa variante |
+| 3 | Corazón del header móvil | icono en y14 | y16 (`12:557`), alineado con el carrito | **Real**: el enlace medía 26 px de alto por la caja de línea | `className="flex"` en el enlace |
+| 4 | Corazón del header desktop completo | y26 | y28 (`12:832`) | **Real**, misma causa | `className="flex"` en el enlace |
+| 5 | Chips del Home móvil (x 0), acciones (alto 26), avatar, `/pago/exito` sin estado de pago | | | Del script: selector que medía el contenedor con `-mx-4` o el enlace en vez del icono; estado de pago sin simular | Selectores y simulación corregidos |
+| 6 | `/checkout` móvil | sin barra | barra interna | Supuesto mío equivocado: la pantalla usa `variante="propia"` y CHK dibuja su barra | Retirado de la medición (es de CHK) |
+| 7 | Buscador del header compacto en `/perfil` (848,5 contra 875) | | | **Datos**: el badge del carrito ensancha las acciones y Figma `30:1480` no lo dibuja | Sin carrito mide 875. Sin cambio |
+
+Medidas que ya coincidían sin tocar nada: header global móvil 160 (marca 127 × 30, buscador 358 × 48, chips 33), barra inferior 67 con sus 5 ítems, banner + pie móvil 138 (67 + 71), header completo desktop 111 (marca, buscador de 795 × 46, fila de categorías de 34), banner + pie desktop 143 (84 + 59), header compacto de Mi cuenta 79 con buscador de 875 y avatar de 32, header mínimo 71, barra interna 51 (flecha 22 en x16/y14, título en x50), barra de marca de la 404 53 y la del pago exitoso 55 (isotipo 26, wordmark 80 × 21).
+
+Notas:
+
+- La cifra de 77 px de `/perfil` en la tabla de capturas de arriba no se reproduce: el header mide 79, igual que `30:1480`.
+- Los íconos del header del carrito son de 21 px y con 22 de separación en `30:2269`; la app usa 22 y 20 como en `30:1480`. Diferencia de 1 px del dibujo de Figma, no se cambió.
+- El buscador del carrito mide 884 en Figma porque no dibuja el badge del carrito; con ítems la app lo muestra (función). Depende de datos.
+- 404 y `/pago/exito` en desktop no tienen frame propio: solo se verificó que no haya desbordes.
+- Prueba permanente de las correcciones 1 y 2: `tests/shell-global.spec.ts` (header de 83 px en el carrito y de 79 en Mi cuenta, carrito en rojo).
+- `COMPONENT_OWNERSHIP.md` aún lista el carrito rojo como pendiente de SHELL; queda hecho (no se editó ese documento en esta pasada).
+
+## Accesos del pie (B1, 2-oct-2026)
+
+`FooterComprador` suma "Preferencias de cookies" e "Idioma y accesibilidad" como botones al final de la línea legal (`abrirPreferenciasCookies()` y `abrirAccesibilidad()`; las hojas son de SYS). Detalle de la hoja, el foco y las pruebas en `SYS.md` ("Pasada B1").
+
+| Medida | Figma | App antes | App ahora |
+| --- | --- | --- | --- |
+| Banner + pie desktop (`9:550` + `9:559`) | 143 (84 + 59) | 143 | 143 (la línea legal mide 724 px de 1200; © en x1159, 161 de ancho) |
+| Pie legal móvil (`12:489`) | 71 | 71 | 89 (segunda línea de 18 px con los dos accesos) |
+| Banner + pie móvil (`12:483` + `12:489`) | 138 | 138 | 156 |
+| Barra inferior (`12:582`), WhatsApp (`52:2418`) | 67; 56 × 56 en (318, 705) | igual | sin cambio |
+
+- La diferencia móvil de 18 px no tiene frame contra el cual corregirla (Figma no dibuja los accesos); queda registrada como consecuencia de B1. La medición `tests/shell-medicion.spec.ts` espera 156 y 89 con ese comentario.
+- En móvil el pie solo se ve en pantallas `raiz`; en `interna`, `marca` y `propia` es solo de escritorio. Allí el acceso a la hoja de accesibilidad depende de la fila de Mi cuenta (ACC), que sigue sin frame.
+- En la captura móvil al final de la página, el botón de WhatsApp quedaba sobre "Términos". B2 (2-oct-2026) no movió el botón: en las pantallas `raiz` el spacer móvil pasa de 72 a 155 px para que el texto legal quede 16 px arriba. En internas sin barra el `bottom` es 16 px, no 83. Detalle en `SYS.md` ("Pasada B2").
+- Sin desbordes horizontales a 390 ni a 1440.
+
+## P12 — infraestructura del shell (2-oct-2026)
+
+| Pendiente | Qué se hizo | Comprobación |
+| --- | --- | --- |
+| Regla `header, aside, footer` con `!important` | Fuera de `.hc-figma-ui` y `.hc-tenant-theme` sigue igual (paneles, POS, portales, `/registro`). Dentro, el mismo valor (superficie, borde y texto del tema) pasa a `@layer base`: una utilidad del componente gana. | Estilos calculados de todos los `header`/`aside`/`footer` en 18 rutas a 390 y 1440, antes y después: cambian solo el encabezado del paquete del carrito de escritorio (blanco -> n/50, la clase que ya tenía por `38:1359`) y el texto del pie de la tienda (`--t-muted`). `PasoEntrega` (n/50) y los avisos de `/emprende` (borde del tema o primario, por estilo en línea) también quedan con su propio valor; no se renderizaron en la medición. Costo: en alto contraste, un `header` de la superficie Figma con clase de borde propia ya no toma el borde de accesibilidad (igual que el resto de esa superficie). |
+| Regla de 16 px en inputs móviles fuera de `MainLayout` | `QrPagina` (mesa y pago) lleva `hc-figma-ui`, como `RecuperarContrasenaPage` en P08. | Buscador de `29:1650` a 14 px a 390 (antes 16). Mis opiniones mide 13 px (la nota de 16 px estaba vieja). `TiendaNoDisponible` y `/registro` siguen fuera. |
+| WhatsApp flotante | Pago por QR: ya oculto (`whatsappOculto` cubre `/checkout` y `/pos`), sin cambio de código. `/emprendimientos` móvil: la nota F (`52:2422`) lo hace global y ningún documento pide quitarlo ahí: **REQUIERE_DECISION**, no se tocó. | `qr-mesa-pago.spec.ts` (P12, 390). |
+| `LoginHeader` | Borrado: ningún import. `RegisterHeader` sigue en uso. | `tsc` limpio. |
+| URL fija en `PagoFallidoEmailBuilder` | `EmailLayoutHelper.urlSitio(ruta)` arma el enlace sobre `app.url` (sin barra final, cae a `https://hotclick.lat`); `urlSeguimiento` lo reutiliza. | `PagoFallidoEmailBuilderTest` (caso nuevo con `app.url` de prueba). |
+| `set-state-in-effect` | `RecuperarCarritoPage`: `loading`/`error` arrancan según haya token. `usePosPagoQr`: la vista sin token arranca en error, la carga usa la promesa (setState en los callbacks) y la elección de vista pasa a `vistaDesdeInfo` (se quitó la rama `PAGADO` inalcanzable: `vistaDesdeQuery` ya la cubre). | ESLint limpio en ambos; `qr-mesa-pago`, `pos-pago-express` y `cart-responsive` pasan. |
+| `stock: 99` | **No se cambió.** `RecuperarCarritoPage` agrega con `stock: 99` aunque desde P11 el backend manda el stock real; también lo usan los asistentes (`useCartAssistant`, `useProductsAssistant`, `aiChatHelpers`, `useAiChat`) y el tope por defecto de `cartStore` y `MiniCartItems`. Usar el stock real cambiaría cuánto se puede agregar (y qué pasa con stock 0): decisión de producto. | — |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de los archivos tocados limpio; Vitest 34 de 34 (`features`, `carrito`, `flotantes`); `mvn -o test` de los 7 tests de correo (26 casos) pasan; Playwright 74 de 74 (`qr-mesa-pago`, `cart-responsive`, `shell-global`, `store-perfil`, `bottom-nav`, `pos-pago-express`, `tienda-theme`, `checkout-responsive`, `acc-cuenta`), con un caso nuevo a 390 (QR) y uno a 1440 (carrito).
+
+## P13 — componentes compartidos (2-oct-2026)
+
+**Alias nuevos** (`@theme` de `index.css`, solo `var()` de tokens existentes): `--color-hc-surface-3`, `--color-hc-text-secondary`, `--color-hc-danger-bg`, `--color-hc-glass-bg`, `--color-hc-focus-ring` y `--shadow-hc-1`. `surface-3` y `glass-bg` quedan disponibles: hoy nadie los usa como clase.
+
+**Migrado** (sin rediseño; mismo color):
+- 83 clases `*-[var(--hc-*)]` en 31 archivos del comprador pasan al alias (`bg-hc-danger-bg`, `text-hc-text-secondary`, `outline-hc-focus-ring`, `shadow-hc-1`, `text-hc-n-900`...). Incluye `CodigoDescuento`, `CheckoutSinpePending`, `CodigosNotasCarrito`, `HojaAgregadoAlPedido`, `EstadoVacio`, `features/pos-pago/*`, `POSPagoPage`, `selfCheckout/*`, `pago/*`, servicios, Cuenta, ayuda, información y las páginas de la tienda.
+- 30 estilos en línea simples (`color`, `background`, `background` + borde de 1 px, borde del spinner) en 10 archivos: `CheckoutPaidGiftCard`, `CheckoutEmpty`, `CheckoutLoading`, `CheckoutPayError`, `CheckoutTilopayCard`, `ExpressCheckout`, `SmartField` (ayuda), `TilopayRespuestaPage`, `PagoLoading` y `TilopayCardForm` (textos y marco). Solo donde el elemento no tenía otra clase del mismo tipo.
+
+**Comprobación:** color, fondo, bordes, contorno, sombra y `accent-color` calculados de cada elemento en 19 rutas (carrito, checkout, pago, QR de mesa y de pago, servicios, ayuda, información, cotización, encargo, tienda, blog, favoritos, recuperar carrito, registro de empresa, emprendé) a 390 y 1440: 0 diferencias antes y después; dos líneas base seguidas también dan 0. Spinner de `/pago/tilopay/respuesta`: borde superior transparente y el resto `--hc-accent`, igual que antes. `cart-responsive.spec.ts` suma el aviso de cupón inválido a 390 y 1440 (`bg-hc-danger-bg` = `--hc-danger-bg`) y la igualdad clase/variable de los alias usados.
+
+**No migrado (documentado):**
+
+| Qué | Por qué |
+| --- | --- |
+| `components/ui` (`Badge`, `Spinner`, `ThemeToggle`, `UpgradePrompt`, `PlanLoadError`), paneles, POS y `layouts` | Tailwind declara los alias en `:root` (`--color-hc-x: var(--hc-x)`), así que resuelven el valor raíz. `.hc-sistema-theme`, `.hc-superadmin-theme` y `.hc-seller-theme` redefinen tokens en un contenedor: ahí `bg-hc-surface` y `bg-[var(--hc-surface)]` no dan lo mismo. Los alias que ya se usan dentro de esos temas tienen el mismo efecto. Pasar a `@theme inline` lo corregiría, pero cambia colores de los paneles: **REQUIERE_DECISION**. |
+| `HowToBuySection`: `blue-400`, `blue-500`; `primary-hover`, `link`, `shadow-2` | No tienen alias y no estaban en la lista de P13. |
+| `CheckoutPaidGiftCard`: círculo `rgba(34,197,94,0.12)` / `0.25`; `TilopayCardForm`: aviso `#f59e0b` / `#fbbf24`; `TiendaWhatsAppFab`: `#25D366` | Colores sin token: no se inventa uno. |
+| `TilopayCardForm` (campos con borde de 1,5 px), `SmartField` (colores calculados), `PagoLoading` (`color-mix` y degradado), `TiendaProductoCard` (color según `agregado`) | No son un alias directo; la regla global `!important` de `input`/`select` ya decide el color de los campos. |
+| Unificar `TiendaProductoCard` y `ProductCard` | Misma geometría (`5:23`), pero otro comportamiento: colores del vendedor (`--t-*`), enlace a `/tienda/:slug/producto/:id`, suma al pedido aislado de la tienda, estado `agregado` y productos a cotizar que abren la ficha. Unificarlas no deja el comportamiento igual. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de los 42 archivos tocados sin errores nuevos (`TiendaProductoPage` conserva su `set-state-in-effect` de `base`); Vitest 323 de 323 (se actualizó la clase esperada en `codigoDescuento.test.ts`); Playwright 86 de 87 en `cart-responsive`, `qr-mesa-pago`, `pos-pago-express`, `checkout-responsive`, `checkout-cta`, `store-perfil`, `tienda-checkout`, `acc-cuenta`, `srv-servicios` y `descubri-pago`. El que falla es `tienda-checkout:77`, que ya fallaba en `base` (ver la verificación de SHELL arriba).
+
+## P14 — estados globales y casos límite (2-oct-2026)
+
+**Ya en PASS por su frame (no se tocan):** sin resultados `27:804`, pedido vacío `45:1692`, favoritos, pedidos y solicitudes vacíos, 404 `45:2198`, sin conexión `45:2264`, fallo del servidor `45:2322` y recuperar carrito `29:2036`.
+
+**Barrido con la API simulada** (46 rutas del comprador a 390 y 1440): con 500 y con la red cortada no hay errores de página ni desborde horizontal y cada ruta muestra un estado (lista vacía, «Tu pedido está vacío», «No se pudo abrir esta tienda» con Reintentar, etc.). Con 404, los detalles muestran su estado propio: producto, tienda, cotización, encargo, seguimiento, recuperar carrito, blog, QR de mesa y QR de pago.
+
+**Corregido (texto largo sin espacios se recortaba sin salto ni puntos suspensivos):** se añade `wrap-anywhere` (`overflow-wrap: anywhere`; solo parte la palabra si no cabe, el texto normal no cambia):
+- Ficha (`ProductoCabecera`): nombre de la tienda (con `min-w-0`), título y descripción.
+- Pedido: nombre del producto en móvil (`FilaProductoCarrito`), título del paquete (`PaqueteCarritoTarjeta`) y «Sumá otro producto» (`SumaMismaTienda`, que además quedaba debajo del botón Agregar).
+- Filtros del catálogo (`Casilla`).
+- Tienda: nombre, lema y datos del encabezado (`TiendaEncabezadoNegocio`), «Sobre nosotros» (`TiendaHomePage`), filas de «Cómo comprarle» (`TiendaComoComprarle`) y marca, nombre y descripción de `TiendaProductoPage`.
+- Aviso flotante (`components/ui/Toast`): `left-4` + `max-w-sm` medía 400 px en una pantalla de 390; ahora `max-w-[min(24rem,calc(100vw-2rem))]` y el texto con `min-w-0 wrap-anywhere`. Mismo aspecto en escritorio.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Chips con `whitespace-nowrap` (filtros del catálogo, categorías de la tienda) | Están en un carril con desplazamiento horizontal; un nombre muy largo alarga el chip, no la página. |
+| Tarjetas del catálogo y nombre del producto en el pedido de escritorio | `line-clamp-2` y `truncate` del diseño: recortan sin desbordar. |
+| Respuesta 200 con `data: null` | Los interceptores de `api.ts` y `tiendaService` dejan el sobre `{success, data}` y la ficha o la cotización se pintan vacías (₡0); `TiendaProductoPage` quedaría en blanco si el producto llega vacío. El backend responde 404 en esos casos (`NoSuchElementException`), así que no se reproduce; cambiar el interceptor afecta a todos los servicios: **REQUIERE_DECISION**. |
+| Estados sin frame (carga, esqueletos, errores de secciones) | Siguen con los componentes que ya existen (`Spinner`, esqueletos de cada página, `EstadoVacio`, `PantallaFalloServidor`, `PantallaSinConexion`, `NotFoundPage`); no se dibuja nada nuevo. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de los 11 archivos sin errores nuevos (siguen los de `base`: `set-state-in-effect` en `TiendaProductoPage` y `TiendaHomePage`, `only-export-components` en `Toast`); Vitest 70 de 70 en `components/ui`, carrito, tienda, producto y catálogo. Nuevo `estados-globales.spec.ts` (10 casos a 390 y 1440: ficha, pedido y tienda con texto largo, aviso flotante dentro de la pantalla, 500 en ficha y cotización); sin la corrección fallan 6. Playwright 61 de 63 en `estados-globales`, `cart-responsive`, `store-perfil`, `store-capturas`, `prod-estados`, `catalogo-cta`, `catalogo-iconos`, `tienda-no-disponible`, `tienda-pdp-comprar`, `tienda-theme`, `tienda-vacia`, `tienda-checkout` y `home-sin-conexion` (1 omitido). Fallan `tienda-checkout:77` y `catalogo-iconos:67` («Ver más»), que también fallan en `base`.
+
+## P15 — responsive 390 / 1440 (2-oct-2026)
+
+**Barrido** (fuera del repo): 44 rutas públicas y 6 con sesión (`mockApisAcc`) a 390 y 1440, con productos, tienda, categorías, pedido y favoritos simulados. Mide desborde horizontal, elementos fuera de la pantalla, texto recortado (ancho y alto) sin puntos suspensivos, controles tapados por elementos fijos al final de la página, barra inferior en 1440, objetivos táctiles (WCAG 2.5.8: 24 px o la excepción de espaciado) y tamaño de los campos.
+
+**Resultado:** 0 desbordes, 0 elementos fuera, 0 recortes en las 100 vistas; ninguna pantalla muestra la barra inferior en 1440. Las pantallas con frame de escritorio (Home `9:171`, catálogo `30:1824`, ficha `29:2072`, tienda `29:2308`, pedido `30:2268`, checkout `30:2385`, Mi cuenta `30:1480`) siguen dentro de sus medidas: 129 casos verdes en los specs de medición (`shell-global`, `acc-medidas`, `cart-responsive`, `checkout-responsive`, `store-perfil`, `catalogo-cta`, `servicios-responsive`, `qr-mesa-pago` y otros diez).
+
+**Corregido:** la regla móvil de 16 px de `index.css` (evita el zoom de iOS fuera de `.hc-figma-ui` / `.hc-tenant-theme`) no cubría `password`, `url` ni los `input` sin `type`, y `PhoneField` fijaba `fontSize: 14` en línea. En `/registro` y `/registro-empresa` (sin frame, fuera de `.hc-figma-ui`) la contraseña y el teléfono medían 14 px frente a 16 del resto del formulario, e iOS hacía zoom al enfocarlos. Ahora la regla incluye esos tipos y `PhoneField` pasa el tamaño por `--react-international-phone-font-size`: 16 px en móvil, 14 en escritorio, mismo alto (40 y 44). Alcanza también a paneles y POS en móvil, que es lo que la regla pretendía.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Pie móvil: enlaces de 14 a 18 px de alto con filas a 16 px | No cumplen 2.5.8 (ni tamaño ni espaciado). El pie está medido contra `12:489` y darle 24 px lo alarga: **REQUIERE_DECISION**. |
+| Flecha «Volver» 22 × 22 de `BarraInterna`, corazón del header 22 × 22, «Ver todo», «Ver detalle», «Vaciar pedido», preguntas de `/envios` | Miden lo de Figma y cumplen 2.5.8 por la excepción de espaciado (ningún otro control a menos de 12 px del centro). |
+| Campos de 16 a 18 px de alto | Son el texto dentro de una caja de 40 a 48 px que es su `label`. |
+| WhatsApp tapa el «Agregar» de una tarjeta en `/productos` a 390 | Decisión de SYS pendiente (`QA_GLOBAL.md` #4). |
+| 1440 de pantallas sin frame de escritorio (cotización, QR, encargo, seguimiento, servicios, informativas, registro) | Siguen con su columna centrada; no se dibuja un escritorio nuevo. |
+| Campos de 14 y 15 px del comprador | Figma los pide así; el zoom de iOS es el costo que ya asumió SHELL. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint de `PhoneField` y del spec sin errores; Vitest de `components/ui` 21 de 21. Nuevo `responsive-barrido.spec.ts` (30 casos: 14 rutas a 390 y 1440 sin desborde, fuera de pantalla, recortes ni errores de página, y el registro con un solo tamaño de campo); sin la corrección falla el de 390. Playwright 100 de 103 en `responsive-barrido`, `registro-vender`, `emprende`, `acc-cuenta`, `qr-mesa-pago`, `smoke`, `emprendedor-wizard`, `a11y-fuente` y `checkout-responsive` (2 omitidos). Fallan `emprende:51`, `smoke:131` y `smoke:237`, que también fallan en `base`.
+
+## P16 — formato de datos (2-oct-2026)
+
+**Regla:** los montos se escriben `₡6.200`: símbolo pegado, punto de miles, sin espacio, NBSP (U+00A0) ni espacio estrecho (U+202F). `Intl.NumberFormat('es-CR')` y `NumberFormat.getInstance(es-CR)` de Java agrupan con NBSP (`₡6 200`) y `String.format("%,d")` depende del locale del servidor; ninguno cumple.
+
+**Un formateador por lado:** frontend `formatPrice` / `formatMiles` (`utils/format.ts`), ahora con `useGrouping: 'always'` para que un motor con agrupación mínima de 2 dígitos no deje `6200`. Backend: nuevo `utils/FormatoColones` (`miles`, `colones`) con el patrón que ya usaba `EmailLayoutHelper.CRC` (`#,##0` con punto); `EmailLayoutHelper.monto` delega en él y se quita la constante estática `CRC` (`DecimalFormat` no es seguro entre hilos). No hay formatos nuevos.
+
+**Corregido (llegaba NBSP, coma o el número sin separar):**
+
+| Dónde | Ahora |
+| --- | --- |
+| WhatsApp del carrito (`cartStore.toWhatsAppMessage`, `toLocaleString` daba `₡12 400`) | `formatPrice` |
+| Precio tachado de `AIProductCard`, `fmt` de los asistentes de carrito y de productos | `formatPrice` / `formatMiles` |
+| Descripción SEO de respaldo de la ficha (`productoHelpers`) | `formatPrice` |
+| Encargos: rango de presupuesto, WhatsApp de cotización, confirmación del precio y KPI «Ticket prom.» | `formatPrice` |
+| `formatoColon` (planes del wizard, prototipo y paneles), `formatMonto` en colones (cotizaciones) y `formatColones` (POS pago) | Delegan en `formatPrice` / `formatMiles` |
+| Backend: WhatsApp de pedido (`WhatsAppHelpers`, `WhatsAppService`), meta SEO de producto (`SpaSeoSupport`), precios del chat (`ChatPrecioPersonalizado`, catálogo del prompt RAG, presupuesto de la memoria y del chat público), publicación de Facebook, Telegram al cliente, nota del evento APROBADO y errores de mínimo/máximo de encargos | `FormatoColones` |
+| Correos (`ConfirmacionPedido`, `RecuperacionCarrito`, `PedidoAdmin`, `EncargoEmailSender`) | Ya daban `₡15.900`; ahora salen de `FormatoColones` |
+
+**Auditado sin cambio:** fechas (`formatDate` y las fechas cortas de pedido, encargo, seguimiento y servicios arman el mes con tres letras), porcentajes (`-20%`, `IVA 13%`, `10% desc.`: entero pegado al `%`), cantidades (`x2`, `3 paquetes × ₡4.000`), números de pedido (se muestran como llegan; `#Q-58` solo en autoservicio, como Figma). Los correos no formatean fechas ni teléfonos.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Teléfono: el campo del checkout muestra `8888 1234` y el número SINPE `7019-6686` | Los dos vienen de Figma (checkout y QR de pago); unificarlos **REQUIERE_DECISION**. `formatPhone` (`8888-1234`) de `checkoutHelpers` no tiene usos. |
+| Helpers propios de paneles y POS (`formatMontoPos`, `fmt` de `components/admin` y `components/pos`, recibo de WhatsApp del POS, `formatoTarifa` de recolección) y avisos internos de Telegram para admin y vendedor (`%,d`) | Fuera de la superficie del comprador; `formatMontoPos` además llena un campo editable y cambiar el separador puede romper su lectura. |
+| Hora de `formatDateTime` (ICU puede meter espacios duros en «a. m.») | Se ve como un espacio y no hay spec registrada para la hora. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint sin errores nuevos (el `only-export-components` de `cartAssistantHelpers` ya estaba); Vitest 507 de 507 (`format.test.ts` suma agrupación de 4 dígitos, sin NBSP, WhatsApp del carrito y textos de encargos; `posPagoFormat` exige `60.720`); JUnit 62 de 62 en 17 clases (nuevo `FormatoColonesTest`; `ChatPrecioPersonalizadoTest` exige `Desde ₡15.000 hasta ₡40.000`; los tests de correo comparan `₡15.900` y `₡95.900` literales). Playwright 41 de 41 en `formato-datos` (nuevo, 2 casos: carrito sin montos con espacio y mensaje de WhatsApp), `emprendedor-wizard` (el plan ahora espera `₡9.900/mes`; antes `₡9 900/mes`), `cart-cta`, `qr-mesa-pago` y `srv-servicios`. Sin la corrección de `cartStore` falla el caso de WhatsApp.
+
+## P17 — i18n es/en/pt (2-oct-2026)
+
+**Regla:** el texto que ve el comprador en las pantallas migradas sale de `src/i18n/locales/{es,en,pt}.json` (i18next, `fallbackLng: 'es'`, idioma inicial desde `hotclick-ui` → `state.language`). El español queda **idéntico** al de antes (mismas cadenas, voseo incluido); en y pt son traducciones literales, sin copy nuevo. Fuera de componentes (`ejecutar*`) se usa `i18n.t`; los helpers puros reciben `t: TFunction` (`textoVigencia`, `pasosDelEncargo`, `mensajeCargaPago`, `tituloPendiente`, `subtituloPendiente`) y sus tests pasan `i18n.getFixedT('es')`.
+
+**Pasado a claves (154 nuevas por idioma, 3379 → 3533):**
+
+| Pantalla / módulo | Claves |
+| --- | --- |
+| Checkout: gift card pagada (`CheckoutPaidGiftCard`), error de stock (`CheckoutPayError`), WhatsApp de envío internacional (`PasoEntrega`), errores de comprobante SINPE, pago y cupón (`ejecutarSubirComprobante`, `ejecutarPagarCheckout`, `ejecutarValidarCupon`) | `checkout.giftPagado.*`, `checkout.errorStock.*`, `checkout.f.waInternacional`, `checkout.errores.*` |
+| Servicios HOT: inicio (`ServiciosInicio`, título, intro, 4 opciones y aviso «Tenés N solicitudes en curso» con plural) y garantía (`VistaGarantia`, motivos, vigencia con plural) | `serviciosPage.inicio.*`, `serviciosPage.garantia.*` |
+| Perfil de tienda `/tienda/:slug`: `TiendaHomePage` (buscador, «Todo», secciones, paginación), `TiendaComoComprarle`, `TiendaEncabezadoNegocio` (logo, datos, WhatsApp, compartir), `useCompartirTienda`, estados vacío/error/nuevo/no disponible, `TiendaHeader`, `TiendaBottomNav` («HotClick» queda como marca), `TiendaAnfitrion` | `tienda.*` (+ `common.previous`/`next`/`retry`) |
+| Directorio `/emprendimientos`: página, buscador, tarjeta y vacío | `emprendimientos.*` (+ `common.back`/`loading`) |
+| Encargo público: `EncargoPublicPage` y los pasos de `pasosDelEncargo` | `encargoPublico.*` (+ `comprador.tarjeta.hechoAPedido`) |
+| Espera y pago pendiente (`PagoLoading`, `PagoPendiente`, `pagoHelpers.BENEFITS` ahora guarda la clave) | `payment.carga.*`, `payment.pendiente.*` |
+
+**Prueba de paridad:** `src/i18n/locales/paridadClaves.test.ts` aplana es/en/pt (las listas por índice) y exige las mismas claves, ningún texto vacío y las mismas variables `{{…}}` que es. Pasa sobre los 3533 textos (no había diferencias previas).
+
+**Para revisión humana (traducción literal, no se inventó copy):**
+
+| Clave | Por qué |
+| --- | --- |
+| `payment.carga.beneficios.*` | Promesas de negocio («garantía de 40 días», «soporte 24/7», «miles de clientes satisfechos»): traducidas tal cual; confirmar que siguen vigentes en los tres idiomas. |
+| `tienda.envioDetalle`, `encargoPublico.plazoPago` | Montos y plazos comerciales (`₡4.000`, 7 días) fijos en el texto. |
+| `tienda.factura` (pt «nota fiscal eletrônica») | Término brasileño para la factura electrónica de Costa Rica; revisar si se prefiere «fatura eletrônica». |
+| `emprendimientos.titulo` (en «Local businesses»), `emprendimientos.emprender` (en «Start your business on HotClick») | «Emprendimientos/Emprender» no tiene equivalente directo en inglés. |
+| `serviciosPage.inicio.*`, `tienda.waTexto`, `encargoPublico.waMensaje` | Tono voseante del es; en/pt van en registro neutro. Los WhatsApp salen en el idioma del comprador. |
+
+**REQUIERE_DECISION (sin tocar):** la línea de gift card del carrito dice «Gift card» (`cart…giftCardLinea`) y la del checkout «Tarjeta de regalo {{codigo}}» (`lineaGift`), en móvil y escritorio. Unificarlas es un cambio de copy en es.
+
+**Se queda en español a propósito:** texto que viaja al backend o al equipo (motivo de garantía `MOTIVOS_GARANTIA` dentro de la descripción, notas del pedido «Teléfono/Dirección/Cédula/Envío», WhatsApp del comprobante SINPE a HotClick), JSON-LD de `serviciosHelpers` («No alterar el contenido»), marcas (HotClick, Marketplace, WhatsApp, Instagram). **Correos:** los constructores del backend (`EmailLayoutHelper`, `ConfirmacionPedido`, `RecuperacionCarrito`, `EncargoEmailSender`…) no reciben locale ni lo guarda el pedido; siguen solo en español. Traducirlos pide guardar el idioma del comprador y plantillas por idioma (fuera de P17).
+
+**Pendiente (cadenas fijas en español, conteo aproximado del censo de P17, ~2000 en el comprador):** `components/ui` ~274, `components/ai` ~146, `pages/auth` ~119; páginas legales (Privacidad, Términos, Cookies, Acuerdo de vendedores, devoluciones: copy legal, requiere traductor); `registro-empresa`/`registrar-negocio`; `TiendaCheckout`, `TiendaCarrito` y `TiendaSuccess` (sin frame de Figma); `VistaTestimonio`, `TestimonioCard` (`RATING_LABELS`), `VistaDigitalizacion`; `EnviosPage`/`enviosData` y Blog; motivos de Tilopay y el respaldo de retiro «Gratis · Lo coordinamos al confirmar» de `checkoutHelpers`; fechas cortas armadas con meses es-CR (`fechaDiaMes`, `fechaHoraEncargo`, `mesAnioCorto`).
+
+Verificación: `tsc` (app y e2e) limpio; ESLint sin errores nuevos (queda el `set-state-in-effect` previo de `TiendaHomePage`); Vitest 514 de 514 (nuevo `paridadClaves.test.ts`, 7 casos; `serviciosHelpers` y `encargoHelpers` usan `getFixedT('es')` y comprueban el texto en español). Playwright 113 de 121 en 23 specs del alcance (servicios, tienda, carrito, checkout, pago, QR, estados, idioma, formato, smoke), incluido el nuevo `i18n-pantallas.spec.ts` (3 casos: `/servicios` en inglés, `/servicios` y `/emprendimientos` en portugués sin texto en español, y es como predeterminado). `tienda-theme` lee ahora la clave `tienda.enHotclick` en vez del literal. Fallan igual que sin P17: `idioma:39` y `idioma:57` (buscan un enlace «Products»/«Produtos» que el header ya no tiene), `tienda-checkout:77`, `smoke:131` y `smoke:237`; 3 omitidos.
+
+## P18 — rutas y navegación (2-oct-2026)
+
+**Auditado:** las rutas del comprador en `AppRoutes.tsx`, los enlaces internos fijos de `src` (fuera de admin, POS y prototipo; un script cruza cada `to`/`href`/`navigate` con las rutas: ninguno roto), botones de atrás, estado activo de la barra inferior (`seccionActivaBarra`) y de la barra de tienda (`estaTabTiendaActiva`), enlaces profundos con la API respondiendo 404, rutas con sesión, retorno después del login y del logout, y la posición del scroll.
+
+**Corregido:**
+
+| Qué | Antes | Ahora |
+| --- | --- | --- |
+| Scroll al volver (`ScrollToTop`, nuevo `app/restauracionScroll.ts`) | Cada cambio de ruta iba al tope, también «Atrás»: del catálogo a la ficha y de vuelta, el comprador quedaba arriba (medido: 1500 → 0). La restauración del navegador no alcanzaba porque el catálogo carga sus datos después de montar. | Un enlace nuevo sigue empezando arriba; atrás/adelante (`POP`) vuelve a la altura guardada de esa entrada del historial y reintenta hasta 3 s mientras la página crece (se corta si el comprador scrollea o toca). La posición se toma al hacer clic o al volver (en captura), no en cada scroll, porque el router cambia de página dentro de una transición y el recorte de una página más corta se guardaría como propio. Un reemplazo que deja la misma URL (el catálogo normaliza su query al montar) no mueve el scroll. `history.scrollRestoration = 'manual'`. |
+| Retorno después del login (`destinoPostLogin`) | Aceptaba `/\otro-sitio` y rutas con tab o salto de línea, que el navegador resuelve como `//otro-sitio`; `navigate` fallaba en el login. | Se rechazan y el destino queda en `/`. |
+| `idioma:39` e `idioma:57` | Buscaban el enlace «Products»/«Produtos» del header viejo. | Miran «All categories»/«Todas as categorias». El cambio del header es intencional: header desktop del comprador según Figma `12:809` (commit `f9aa72e4`, medido en `PROGRESS.md`). |
+
+**Auditado sin cambio (funciona):** `/productos/:id` inexistente muestra «Producto no encontrado»; `/tienda/:slug` y sus hijas con un slug inexistente muestran «Esta tienda no está disponible»; `/tienda/:slug/<otra>`, `/categorias/x` y cualquier ruta desconocida dan el 404; los tokens inválidos de `/pos/pago/:token`, `/checkout/qr/:token`, `/encargo/:token`, `/seguimiento/:token`, `/cotizacion/:token` y `/recuperar-carrito/:token` tienen su propio estado; `/perfil`, `/mis-pedidos` y `/registrar-negocio` sin sesión van a `/login?redirect=…`; cerrar sesión en el perfil lleva a `/` y cambiar la contraseña a `/login`; los botones de atrás de `BarraInterna`, ficha, portada de tienda, emprendimientos y fallo del servidor vuelven al Inicio cuando se entró directo.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Pasos del checkout (`/checkout`) | Viven en estado y no en la URL: la flecha del checkout vuelve un paso, pero «Atrás» del navegador sale del checkout y no hay enlace profundo a un paso. Pasarlos a la URL es una decisión de IA (**REQUIERE_DECISION**). |
+| Barra de tienda con slug no ASCII | `estaTabTiendaActiva` compara el `pathname` (codificado) con el slug de `useParams` (decodificado): con tildes no marcaría la pestaña. Los slugs publicados hoy son ASCII. |
+| Specs viejos: `home-jobs` (4 casos), `nav-mas` (2) y `nav-categorias:83` | Fallan igual sin P18: prueban la Home «Compra · Vende · Emprende», el menú hamburguesa y el menú «Más» anteriores al cascarón Figma (`f9aa72e4`). Su propósito ya no existe; retirarlos o reescribirlos queda para quien decida la cobertura. |
+| Aviso «Idioma cambiado a Español» en cada carga | Región `status` que se anuncia también al abrir la página; no es de rutas. |
+
+Verificación: `tsc` (app y e2e) limpio; ESLint sin errores en los archivos tocados; Vitest 523 de 523 (nuevos `restauracionScroll.test.ts`, 6 casos, y `authRedirect.test.ts`, 3); Playwright 183 de 197 en 33 specs de navegación, catálogo, ficha, tienda, servicios, carrito, checkout, pago, QR, estados, idioma, tema y smoke, incluido el nuevo `navegacion-rutas.spec.ts` (6 casos: altura al volver de la ficha, enlace nuevo arriba, tres 404 y login con retorno). Sin la corrección falla el caso del scroll (vuelve en 0). Fallan igual que sin P18: `catalogo-iconos:67`, `emprende:51`, `tienda-checkout:77`, `smoke:131`, `smoke:237` y los 7 specs viejos de arriba; 2 omitidos.
+
+## P19 — accesibilidad (2-oct-2026)
+
+**Herramienta:** `@axe-core/playwright` no está en las dependencias (tampoco testing-library ni jsdom) y no se agregó. Se usaron aserciones manuales: un script de auditoría fuera del repo (h1, landmarks, nombre accesible de controles, `img` sin `alt`, ids duplicados, foco visible en 45 paradas de Tab) en 22 rutas del comprador a 390 y 1440, y el nuevo `tests/accesibilidad-p19.spec.ts`.
+
+**Auditado sin cambio (cumple):** todas las rutas tienen un `main` (`#main-content`, con enlace para saltar al contenido), un `header` y `nav` con nombre. Ningún botón de icono, enlace ni imagen visible queda sin nombre o `alt`, salvo el teléfono de abajo. No hay ids duplicados. `Modal` y la galería a pantalla completa ya atrapaban el foco. Los botones y enlaces ya mostraban el anillo `--hc-focus-ring` (regla global `:focus-visible`).
+
+**Corregido:**
+
+| Qué | Antes | Ahora |
+| --- | --- | --- |
+| h1 de `/servicios?vista=busqueda` y `vista=garantia` a 1440 | Ninguno: el h1 de la barra interna no se dibuja en escritorio (nota de P06 en `SRV.md`). | h1 `sr-only` solo en escritorio (`max-lg:hidden`) con el mismo título. |
+| h1 de `/checkout` móvil | Ninguno (la cabecera Figma no lleva título). | h1 `sr-only` «Finalizá tu compra», con la clave existente `checkout.f.tituloEscritorio`. |
+| h1 de `/registro` | Dos («Crear cuenta» y «en HotClick»). | Un h1. La segunda línea con degradé pasa a `span` de bloque: se ve igual. |
+| Teléfono (`PhoneField`) | La etiqueta no tenía `for` y el campo de `/registro` no tenía nombre. La librería quitaba el contorno al enfocar. | Prop `id` y `htmlFor`, además de `aria-required` y `aria-invalid`. Con teclado vuelve el anillo de foco. |
+| Hojas modales: `HojaInferior` (idioma y accesibilidad, «Agregado a tu pedido», promo, salida), `HojaFiltros`, preferencias de cookies, búsqueda y asistente | Esc ya cerraba, pero Tab salía de la hoja. Solo cookies y el asistente movían el foco, y solo cookies lo devolvía. | El foco entra en la hoja, Tab y Mayús+Tab no salen, y al cerrar vuelve al disparador. `useFocusTrap` ahora tiene modo de foco inicial (`primero`, `contenedor`, `ninguno`), cuenta solo los controles dibujados, lee el contenedor en cada tecla y devuelve el foco sin scroll, solo si el disparador sigue en la página. La lógica pura está en `hooks/focoAtrapado.ts`. |
+| Foco visible en campos | Unos 15 campos con `outline-none` y sin otro indicador no mostraban el foco con Tab: buscador del header desktop (todas las páginas), buscador del catálogo y de categorías, asistente de la Home, notas, cupón y correo del carrito, campos del checkout, mínimo y máximo. | `html.hc-teclado` (Tab la pone, un clic o toque la quita; `app/modalidadTeclado.ts`) dibuja `--hc-focus-ring` en `input`, `textarea` y `select`. Con ratón o toque los campos se ven como en Figma. |
+| `prefers-reduced-motion` | El sistema solo cortaba dos animaciones. Framer Motion no lo miraba. | Misma regla que el interruptor «Reducir movimiento»: transiciones y animaciones CSS a 0.001 ms y `scroll-behavior: auto`. Framer Motion usa `MotionConfig reducedMotion` (`user`, o `always` con el interruptor) en `app/ConfigMovimiento.tsx`. |
+| Aviso de idioma (`HtmlClassManager`) | La región `status` anunciaba «Idioma cambiado a Español» al cargar cada página (doble efecto de StrictMode). | Solo avisa cuando el idioma cambia de verdad. |
+
+**Contraste de tokens (medido en `styles/contrasteTokens.test.ts`, WCAG 2.x):**
+
+- **Pasan AA** sobre n-0, n-50 y n-100: n-600 (7.5:1 sobre blanco), n-700, n-900, blue-600, `--hc-link`, `--hc-text` y `--hc-text-secondary`. El blanco sobre blue-600 da 8.4:1. El anillo de foco da 4.8:1 sobre blanco (alcanza 3:1).
+- **No llegan a 4.5:1 para texto normal:**
+  - n-400: 2.6:1 sobre blanco (placeholders y texto deshabilitado).
+  - n-500: 4.36:1 sobre n-50 y 4.13:1 sobre n-100 (sobre blanco da 4.59:1 y pasa).
+  - red-500: 4.14:1 como texto y con texto blanco encima.
+  - `--hc-success`: 4.39:1.
+
+  Son colores de Figma: **REQUIERE_DECISION**, no se tocaron.
+
+**Documentado sin tocar:**
+
+| Qué | Por qué |
+| --- | --- |
+| Tamaño táctil de los enlaces del pie móvil (P15) | Agrandarlos cambia el pie medido contra `12:489`: sigue en **REQUIERE_DECISION**. |
+| Borde de alto contraste en los `header` de la superficie Figma con clase de borde propia (P12) | Sigue en **REQUIERE_DECISION**. |
+| Contraste de tokens | Ver arriba (**REQUIERE_DECISION**). |
+| Anillo de teclado en campos con su propio foco (formulario de Servicios, personalización de la ficha) | Con Tab se suma al borde azul propio. No cambia el aspecto con ratón. |
+| ESLint `react-hooks/refs` en `SearchPanel.tsx` | Son 8 errores que ya estaban en la base (el objeto `panel` lleva `inputRef`). P19 no suma ninguno. |
+
+Verificación:
+
+- `tsc` (app y e2e) limpio. ESLint sin errores nuevos en los archivos tocados.
+- Vitest 533 de 533. Nuevos: `focoAtrapado.test.ts` (4 casos), `modalidadTeclado.test.ts` (2) y `contrasteTokens.test.ts` (4).
+- Playwright 192 de 196 en 30 specs: accesibilidad, servicios, tienda, carrito, checkout, idioma, i18n, rutas, shell, barra inferior, ficha, asistente, cookies, registro y smoke. Se omitieron 17.
+- Nuevo `accesibilidad-p19.spec.ts` (13 casos, 390 y 1440):
+  - un h1 y ningún control sin nombre en 8 rutas;
+  - cookies, idioma, búsqueda y «Agregado a tu pedido» con foco atrapado, Esc y foco de vuelta;
+  - anillo de foco en 10 paradas de Tab;
+  - teléfono con nombre y anillo solo con teclado;
+  - `prefers-reduced-motion`;
+  - aviso de idioma solo al cambiar.
+- Sin las correcciones fallan 8 de esos 13 casos.
+- Fallan igual que en la base: `smoke:131`, `smoke:237`, `tienda-checkout:77` y `catalogo-iconos:67`.
+
+## P20 — limpieza (2-oct-2026)
+
+Restos de la migración Figma, quitados con prueba de que nadie los usa. Herramienta: `npx --yes knip@5` (no se instaló nada en el repo; `package.json` y el lockfile siguen igual), con cada hallazgo confirmado por búsqueda en `src`, `tests`, `scripts`, configs e `index.html`.
+
+### Quitado
+
+- **37 archivos sin importadores:**
+  - `App.css`, `layouts/AuthLayout.tsx`, `hooks/useScrollReveal.ts`;
+  - los asistentes de IA viejos que reemplazó el `ChatModal` global (`components/ai/` CartAssistant, CheckoutAssistant, ProductDetailAssistant, ProductsAssistantPanel, AICartSection, AIProductSection, AISolicitudEspecial(+Fields), `productAdvisorChips` y sus carpetas `cartAssistant/`, `checkoutAssistant/`, `productDetailAssistant/`, `productsAssistant/`);
+  - `ui/Section.tsx`, `auth/authUi.ts`, `catalogo/CatalogBrandLogo.tsx`, `checkout/ExpressCheckout.tsx`, `checkout/SmartField.tsx`;
+  - las secciones de la Emprende vieja (`EmprendeBeneficios`, `Fases`, `Formulario`, `Galeria`, `Planes`, `Proceso`);
+  - `perfil/StarPicker.tsx` (Servicios usa el suyo) y `comprador/estados/iconosAcceso.tsx`.
+- **Exportaciones muertas** (sin ninguna referencia):
+  - `statusColor` (+ `STATUS_COLOR`), `saveGustos` (marcada `@deprecated`), `formatPhone`, `ESTADOS_SIN_ACCION`, `colorEstadoPedido` (+ tipo), `stockDesdeProducto`, `useCookieConsent`, `IcoReloj`;
+  - `IconoCarrito`, `IconoBandeja`, `IconoAlerta`, `IconoDescargar` de `iconosEstado`;
+  - `esRutaEmprender`, `COND_OPTIONS`, `getSrcSet`, `hrefCarritoCheckout`, `StripeIcon`, `GlobeIcon`, `FOTOS_FASES`, `FOTOS_PROCESO`, `WhatsIconSm`, `Trust*SVG` (4);
+  - tipos `RegistroPayload`, `EstadoCodigo`, `AxiosParams`, `PaqueteRespuesta`, `RegisterFlow`;
+  - el parámetro sin uso `_opts` de `loadGustos()`.
+- **CSS (`index.css`, −374 líneas):** 63 reglas y 10 `@keyframes` de clases sin uso literal en `src`, `tests` ni `index.html`:
+  - `glass*`, `text-gradient*`, `surface-2`;
+  - `hc-card*`, `hc-reveal*`, `hc-delay-*`, `hc-step-*`, `hc-float*`, `hc-slide-up`, `hc-scale-in`, `hc-glow-breathe`;
+  - `hc-sticky-cta`, `hc-badge`, `hc-divider`, `hc-nav-link`, `hc-nav-inner`, `hc-navbar-scrolled`, `hc-product-*`, `hc-progress`, `hc-quick-add`, `hc-underline-hover`, `hc-animate-gpu`, `hc-shadow-premium`, `hc-footer-divider`, `hc-modal-safe-bottom`;
+  - `hc-mobile-menu` (menú hamburguesa viejo).
+- **i18n (es/en/pt):** 5 claves que solo usaban los archivos borrados: `footer.inicioAria`, `products.condNuevo`, `products.condComoNuevo`, `products.condUsado` y `products.allConditions`. No hay acceso dinámico a esos prefijos. La paridad de claves sigue en verde.
+- **Test helpers:** se quitó el tipo sin uso `OpcionesSesion` de `tests/helpers/accFixtures.ts`, y seis constantes que solo se usan dentro del archivo dejaron de exportarse.
+
+### Specs viejos
+
+El shell Figma (`f9aa72e4`) reemplazó la UI que probaban, y en `src` no queda nada de ella: no existen `home-jobs-heading` ni `#como-comprar`, no hay `role="menu"` ni botón «Menú», y `.hc-mobile-menu` solo aparecía en CSS.
+
+| Spec | Decisión |
+|---|---|
+| `nav-mas.spec.ts` (2) | **Borrado.** Probaba el menú «Más» de escritorio y el hamburguesa móvil. |
+| `home-jobs.spec.ts` | **Quitados 4 casos** de la Home «Compra · Vende · Emprende». Se queda el caso vigente «sin emojis» (✦). |
+| `nav-categorias:83` | **Actualizado** al camino actual: barra inferior «Categorías» (`43:1530`) → mosaico → `/productos?cat=`. Mock de `/categorias/publicas/con-productos`. Mismas aserciones de filtro. Pasa. |
+
+### Documentado sin tocar
+
+- **Paneles, POS y backend:** archivos sin uso en `admin`, POS, `agentes`, `mesas`, `prototipo`, `planes`, `sellerAdminRoutes`, `SellerPagePad`, `usePermission`, `usePlan`, `sw.ts` (PWA) y `scripts/*.mjs`. También las clases admin `hc-filter-row`, `hc-kpi-grid`, `hc-table-scroll` y `hc-admin-tab-label`.
+- **Exportaciones de panel o ambiguas:**
+  - `rolPaths.mapearPrototipo`, `routeGuards.AdminRoute`;
+  - `offlineDb.encolarOperacion` y `guardarProductCache`;
+  - `useBranding.invalidateBrandingCache`, `recoleccionTipos.ESTADOS_RECOLECCION`, `aiChatBehavior.readAiBehavior`.
+- **Sin uso pero con valor futuro:**
+  - `hooks/useStockSubscription.ts` (SSE de stock del backend);
+  - `theme/claudeclickTokens.ts` (notas Figma/super-admin);
+  - `ui/SellerBadge.tsx` (Brand Book).
+- **Dependencias sin uso según knip:** `react-qr-code` (dep) y `bcryptjs` (devDep). No se tocó `package.json`.
+- **Lo demás que marca knip:**
+  - ~190 exportaciones y ~170 tipos que solo se usan dentro de su archivo; quitarles `export` es churn sin valor;
+  - las claves `emprende.*` que se leen con `t(\`emprende.${…}\`)`.
+- **`console.*`:** los de `tests/acc-medidas`, `shell-medicion` y `global-setup` son la salida del informe. El `console.debug` de `admin/GlobalSearch` es del panel. No queda código comentado ni `debugger` en el comprador.
+- **ESLint, ya presente en HEAD:** `react-refresh/only-export-components` en `CookieBanner.tsx` (bajó de 3 a 2).
+
+### Verificación
+
+- Typecheck limpio en app y e2e.
+- ESLint de los archivos tocados: sin errores nuevos.
+- Vitest: 533/533.
+- `vite build` OK, con `--outDir` en `%TEMP%`. El `outDir` del config es `../src/main/resources/static`, que está versionado, con `emptyOutDir`: una primera build sin `--outDir` lo sobrescribió y se restauró a HEAD con aprobación.
+- knip de nuevo:
+  - antes → después: 114 → 77 archivos, 224 → 193 exportaciones, 179 → 172 tipos;
+  - **ningún huérfano nuevo**.
+- Playwright dirigido (26 specs): 155 pasan y 15 se saltan.
+  - Fallan igual que en la base: `smoke:131`, `smoke:237`, `catalogo-iconos:67` y `emprende:51`.
+  - `nav-categorias` ahora pasa (2/2).
+
+## P21 — documentación final (2-oct-2026)
+
+Solo documentación. El estado final está en `CIERRE_MIGRACION.md`:
+
+- commits P01–P20;
+- decisiones pendientes: D01–D21, B14–B17 y los REQUIERE_DECISION de P12–P20 que están en este archivo (contraste, teléfono, pasos en la URL, `stock: 99`, FAB, gift card, pie táctil, alto contraste, `data: null`);
+- huecos de backend;
+- tests que ya fallaban, con evidencia en `14e841e3`;
+- cómo verificar y el `outDir` de Vite.
+
+No cambia ningún estado: 38 PASS / 52 PARTIAL.

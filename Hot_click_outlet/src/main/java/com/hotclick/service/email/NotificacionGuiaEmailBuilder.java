@@ -1,54 +1,67 @@
 package com.hotclick.service.email;
 
+import com.hotclick.config.TiemposEnvio;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
+import com.hotclick.repository.PedidoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Template de notificación de guía de envío al cliente.
- * Extraído bit-idéntico de PedidoClienteEmailBuilder — no cambia comportamiento.
+ * Correo de guía asignada al cliente (Figma «Correo · Guía asignada», 30:1643).
+ * «Paquete N de M» y «Los otros paquetes…» salen de los pedidos hermanos del mismo
+ * pago ({@code grupoPago}); con un solo paquete no se dibujan. El plazo sale de
+ * {@link TiemposEnvio} (la misma config que el checkout).
  */
 @Component
 class NotificacionGuiaEmailBuilder {
 
     @Autowired private EmailLayoutHelper layout;
+    @Autowired(required = false) private PedidoRepository pedidoRepository;
 
-    String buildNotificacionGuia(Pedido pedido, Usuario cliente) {
-        String nombre = layout.esc(cliente.getNombre() != null ? cliente.getNombre() : "Cliente");
-        String guia   = layout.esc(pedido.getNumeroGuia());
-        boolean isCorreos = pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
-        String url    = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
-            : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
-        String courierNombre = isCorreos ? "Correos de Costa Rica" : "HotClick Express";
-
-        return layout.abrirHtml()
-            + layout.header("Tu pedido va en camino", "Ya salió de nuestras manos hacia las tuyas")
-            + layout.abrirCuerpo()
-            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + nombre + "</strong>.</p>"
-            + "<p style='margin:0 0 28px;color:#4D5560;font-size:14px;line-height:1.6'>Tu pedido <strong style='color:#14171C'>" + layout.esc(numeroConPaquete(pedido)) + "</strong> fue enviado con <strong>" + courierNombre + "</strong>.</p>"
-
-            // Número de guía en mono (cap. 4.1: datos en IBM Plex Mono)
-            + "<div style='background:#E9F7F0;border:1px solid #BFE5D1;border-radius:16px;padding:24px;text-align:center;margin-bottom:24px'>"
-            + "<p style='margin:0 0 8px;font-size:12px;color:#178A50;font-weight:700;text-transform:uppercase;letter-spacing:2px'>Número de guía</p>"
-            + "<p style=\"margin:0 0 20px;font-size:28px;font-weight:800;color:#14171C;letter-spacing:3px;font-family:'IBM Plex Mono',monospace\">" + guia + "</p>"
-            + "<a href='" + layout.esc(url) + "' style='display:inline-block;background:#E73B33;color:#FFFFFF;text-decoration:none;padding:13px 32px;border-radius:10px;font-size:15px;font-weight:700'>Rastrear mi paquete</a>"
-            + "</div>"
-
-            + "<div style='border:1px solid #EBD9A8;background:#FDF3DC;border-radius:12px;padding:14px 18px;margin-bottom:8px'>"
-            + "<p style='margin:0;font-size:13px;color:#9A6700;line-height:1.6'><strong>Dato útil:</strong> también podés rastrear en "
-            + (isCorreos ? "<strong>rastreo.correos.go.cr</strong> ingresando tu número de guía." : "el enlace de arriba.")
-            + " La entrega tarda de 2 a 5 días hábiles.</p>"
-            + "</div>"
-            + layout.footer("¿Alguna pregunta sobre tu envío?");
+    /** Asunto del correo: «Tu pedido #1042 va en camino». */
+    String asunto(Pedido pedido) {
+        return "Tu pedido #" + pedido.getNumeroPedido() + " va en camino";
     }
 
-    /** «ORD-10482 · Paquete 2 de 3» si la compra tiene varios paquetes; si no, el número del pedido. */
-    static String numeroConPaquete(Pedido pedido) {
-        Integer total = pedido.getCantidadPaquetes();
-        Integer numero = pedido.getNumeroPaquete();
-        if (total == null || total <= 1 || numero == null) return pedido.getNumeroPedido();
-        String numeroCompra = pedido.getNumeroCompra() != null ? pedido.getNumeroCompra() : pedido.getNumeroPedido();
-        return numeroCompra + " · Paquete " + numero + " de " + total;
+    String buildNotificacionGuia(Pedido pedido, Usuario cliente) {
+        String guia   = layout.esc(pedido.getNumeroGuia());
+        boolean isCorreos = layout.esRastreoCorreos(pedido);
+        String url    = layout.urlRastreo(pedido);
+        String courierNombre = isCorreos ? "Correos de Costa Rica" : "HotClick Express";
+        String tienda = pedido.getEmpresa() != null && pedido.getEmpresa().getNombreComercial() != null
+            ? pedido.getEmpresa().getNombreComercial() : "";
+
+        String titulo = tienda.isEmpty() ? "Tu pedido va en camino" : layout.esc(tienda) + " despachó tu paquete";
+        int[] paquete = paqueteDelGrupo(pedido);
+        String prefijo = paquete == null ? "" : "Paquete " + paquete[0] + " de " + paquete[1] + ". ";
+        String sub = prefijo + "Tu pedido #" + layout.esc(pedido.getNumeroPedido()) + " salió con " + courierNombre
+            + ". La entrega tarda " + TiemposEnvio.plazo(pedido.getMetodoEnvio()) + ".";
+
+        return layout.abrirHtml()
+            + layout.headerConIcono(EmailLayoutHelper.FONDO_INFO, "camion", titulo, sub)
+            + layout.abrirCuerpo()
+            + layout.codigoDestacado("Número de guía", guia, EmailLayoutHelper.FONDO_SUAVE, true)
+            + layout.ctaAzul(url, isCorreos ? "Seguir mi paquete en Correos CR" : "Rastrear mi paquete")
+            + (isCorreos
+                ? layout.notaPequena("Si no estás en casa, Correos deja un aviso y lo podés retirar en la sucursal más cercana. "
+                    + "También podés rastrear en rastreo.correos.go.cr con tu número de guía.")
+                : "")
+            + (paquete == null ? ""
+                : layout.notaPequena("Los otros paquetes de tu compra salen por separado: te avisamos cuando cada uno vaya en camino."))
+            + layout.enlaceSecundario(layout.urlSeguimiento(pedido), "Ver el estado de todo mi pedido")
+            + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
+    }
+
+    /** {N, M} si el pedido es uno de varios paquetes del mismo pago; null si va solo. */
+    int[] paqueteDelGrupo(Pedido pedido) {
+        String grupo = pedido.getGrupoPago();
+        if (grupo == null || grupo.isBlank() || pedidoRepository == null || pedido.getId() == null) return null;
+        java.util.List<Pedido> hermanos = pedidoRepository.findByGrupoPagoOrderByIdAsc(grupo);
+        if (hermanos.size() < 2) return null;
+        for (int i = 0; i < hermanos.size(); i++) {
+            if (pedido.getId().equals(hermanos.get(i).getId())) return new int[] {i + 1, hermanos.size()};
+        }
+        return null;
     }
 }

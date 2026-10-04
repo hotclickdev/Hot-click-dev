@@ -1,10 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
-import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useLocation, useNavigationType } from 'react-router-dom'
+import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
-import SocialProofToast from '@/components/ui/SocialProofToast'
-import { useSocialProof } from '@/hooks/useSocialProof'
-import { productService } from '@/services/productService'
+import { esRutaVisitante, whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
+import { PageLoader, PageLoaderFigma } from '@/components/ui/Spinner'
+import { usePantallaSinConexion } from '@/components/ui/flotantes/pantallaSinConexionStore'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import { useBranding } from '@/hooks/useBranding'
@@ -17,18 +17,50 @@ import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
 import { esRutaClaudeclick, esRutaPrototipo, esRutaVendedorFigma, esRutaVisitanteFigma } from '@/utils/rutaPrototipo'
 import ChatModal from '@/components/ai/ChatModal'
-import type { Producto } from '@/types/producto'
+import { cambiaDePagina, destinoScroll, guardarPosicion, irAPosicion, posicionGuardada } from '@/app/restauracionScroll'
 
-const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/pos', '/tienda', '/prototipo', '/emprendedor', '/pyme', '/negocio-plus', '/visitante']
-const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
 
 /**
- * Scroll al tope y envía pageview de GA4 en cada cambio de ruta.
+ * Scroll en cada cambio de ruta: un enlace nuevo empieza arriba y «Atrás»/«Adelante» vuelve a la posición
+ * que tenía esa entrada del historial (antes siempre iba al tope y el catálogo perdía el lugar al volver de la ficha).
+ * También envía el pageview de GA4.
  */
 export function ScrollToTop() {
-  const { pathname, search } = useLocation()
+  const { pathname, search, key } = useLocation()
+  const tipo = useNavigationType()
+  const claveActual = useRef(key)
+  const urlActual = useRef<string | null>(null)
+  const cancelarScroll = useRef<() => void>(() => undefined)
+
+  // La restauración nativa llega antes de que la página tenga su alto final (datos asíncronos): la hacemos acá.
+  // La posición se toma al decidir irse (clic o atrás/adelante, en captura) y no al scrollear: el router cambia de
+  // página dentro de una transición y, si la página nueva es más corta, el recorte del scroll se guardaría como propio.
   useEffect(() => {
-    globalThis.scrollTo(0, 0)
+    const { history } = globalThis
+    const anterior = history.scrollRestoration
+    history.scrollRestoration = 'manual'
+    const guardar = () => guardarPosicion(claveActual.current, globalThis.scrollY)
+    globalThis.addEventListener('click', guardar, true)
+    globalThis.addEventListener('popstate', guardar, true)
+    return () => {
+      history.scrollRestoration = anterior
+      globalThis.removeEventListener('click', guardar, true)
+      globalThis.removeEventListener('popstate', guardar, true)
+    }
+  }, [])
+
+  useEffect(() => {
+    claveActual.current = key
+    const url = `${pathname}${search}`
+    if (!cambiaDePagina(tipo, url, urlActual.current)) return
+    urlActual.current = url
+    cancelarScroll.current()
+    cancelarScroll.current = irAPosicion(destinoScroll(tipo, posicionGuardada(key)))
+  }, [key, tipo, pathname, search])
+
+  useEffect(() => () => cancelarScroll.current(), [])
+
+  useEffect(() => {
     captureAttributionFromLocation(search, pathname)
     trackPageView(pathname)
     if (!pathname.startsWith('/admin') && !pathname.startsWith('/pos')) analytics.visita()
@@ -53,14 +85,13 @@ export function PageFade({ children }: { children: ReactNode }) {
 }
 
 /**
- * WhatsApp FAB oculto en auth, admin, checkout, pago POS y prototipo.
+ * WhatsApp FAB oculto en auth, admin, checkout, pago POS, prototipo y Sin conexión (`45:2264`).
+ * El Home normal (`/`) no entra en esa última condición.
  */
 export function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
-  if (WAB_HIDDEN_PATHS.has(pathname)) return null
-  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
-  if (pathname.startsWith('/pos')) return null
-  if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
+  const pantallaSinConexion = usePantallaSinConexion()
+  if (whatsappOculto(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname), pantallaSinConexion)) return null
   return <WhatsAppFab />
 }
 
@@ -88,40 +119,6 @@ export function WishlistAlertWatcher() {
   return null
 }
 
-/**
- * Toast de prueba social en tienda pública; se salta admin, prototipo y rutas excluidas.
- */
-export function SocialProofController() {
-  const { pathname } = useLocation()
-  const userRole = useAuthStore((s) => s.userRole)
-  const [products, setProducts] = useState<Producto[]>([])
-
-  const isAdmin = ADMIN_ROLES.has(userRole ?? '')
-  const isExcluded = EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) || esRutaClaudeclick(pathname)
-
-  useEffect(() => {
-    if (isAdmin || isExcluded) return
-    productService.getAll(0, 20)
-      .then(({ data }) => {
-        const pagina = data as { content?: Producto[] } | Producto[]
-        const lista = Array.isArray(pagina) ? pagina : pagina.content ?? []
-        setProducts(lista.filter(conFotoYStock))
-      })
-      .catch((err: unknown) => {
-        console.error('[AppChrome] socialProof products', err)
-      })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const notification = useSocialProof(isAdmin || isExcluded ? [] : products)
-
-  if (isAdmin || isExcluded) return null
-  return <SocialProofToast notification={notification} />
-}
-
-function conFotoYStock(producto: Producto) {
-  return Boolean(producto.imagenUrl) && producto.stock > 0
-}
-
 /** Aplica branding del tenant; el prototipo usa tokens de producción. */
 export function BrandingInit() {
   const { pathname } = useLocation()
@@ -137,6 +134,8 @@ function BrandingFetch() {
 /** Banner para aplicar update del SW sin reload silencioso mid-wizard. */
 export function ServiceWorkerRefresh() {
   const [disponible, setDisponible] = useState(false)
+  // Está fuera del BrowserRouter: la ruta se lee del navegador cuando llega el aviso.
+  const pathname = globalThis.location?.pathname ?? '/'
 
   useEffect(() => {
     function avisar() {
@@ -147,6 +146,33 @@ export function ServiceWorkerRefresh() {
   }, [])
 
   if (!disponible) return null
+
+  if (esRutaVisitante(pathname, esRutaClaudeclick(pathname))) {
+    // Visitante con sesión (sin sesión se actualiza solo): aviso claro derivado de Figma `29:2036`. ⚠️ COMPARTIDO.
+    return (
+      <div role="status" className="fixed bottom-20 left-1/2 z-[60] flex w-[min(92vw,24rem)] -translate-x-1/2 flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal] shadow-[0_8px_24px_rgba(20,23,28,0.12)] md:bottom-6">
+        <p className="text-[14px] font-semibold text-hc-n-900">Hay una versión nueva de HotClick.</p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="flex-1 rounded-[12px] bg-hc-red-500 px-3 py-[12px] text-[14px] font-semibold text-hc-n-0"
+            onClick={() => {
+              void import('@/app/swUpdate').then(({ aplicarSwUpdate }) => aplicarSwUpdate(true))
+            }}
+          >
+            Actualizar
+          </button>
+          <button
+            type="button"
+            className="flex-1 rounded-[12px] border border-hc-n-200 px-3 py-[11px] text-[14px] font-semibold text-hc-n-900"
+            onClick={() => setDisponible(false)}
+          >
+            Ahora no
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -188,4 +214,10 @@ export function AnalyticsInit() {
     })
   }, [])
   return null
+}
+
+/** Fallback de `Suspense`: visitante con la espera de Figma, paneles y landings con el `PageLoader` de siempre. */
+export function CargaDeRuta() {
+  const { pathname } = useLocation()
+  return esRutaVisitante(pathname, esRutaClaudeclick(pathname)) ? <PageLoaderFigma /> : <PageLoader />
 }

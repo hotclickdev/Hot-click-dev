@@ -28,7 +28,7 @@ export default function DetallePedidoPage() {
   const titulo = compra ? t('misPedidos.detalle.titulo', { numero: compra.numero }) : t('misPedidos.titulo')
 
   return (
-    <MainLayout barraMovilPropia>
+    <MainLayout variante="propia" barraInferior={false}>
       <div className="min-h-screen bg-hc-n-50 lg:min-h-0 lg:pb-[64px]">
         <BarraPedidos titulo={titulo} onVolver={() => navigate('/mis-pedidos')} />
         {cargando && <div className="flex justify-center py-16"><Spinner /></div>}

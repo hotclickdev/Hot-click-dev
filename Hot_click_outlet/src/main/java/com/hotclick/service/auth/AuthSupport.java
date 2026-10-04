@@ -90,6 +90,19 @@ public class AuthSupport {
         return hasUpper && hasDigit;
     }
 
+    /** Mismo rango que RegisterRequest.contrasena (el tope es de request; bcrypt usa 72 bytes). */
+    static final int CONTRASENA_MIN = 8;
+    static final int CONTRASENA_MAX = 128;
+
+    /**
+     * Política de la nueva contraseña al recuperarla (Figma "Recuperar contraseña · 3 nueva"):
+     * entre 8 y 128 caracteres y distinta del correo. Es la misma regla de largo que el registro.
+     */
+    public static boolean esContrasenaRecuperacionValida(String pwd, String correo) {
+        if (pwd == null || pwd.length() < CONTRASENA_MIN || pwd.length() > CONTRASENA_MAX) return false;
+        return correo == null || !pwd.trim().equalsIgnoreCase(correo.trim());
+    }
+
     public String slugify(String text) {
         String normalized = Normalizer.normalize(text.toLowerCase().trim(), Normalizer.Form.NFD);
         return normalized.replaceAll("[^\\p{ASCII}]", "")

@@ -1,161 +1,198 @@
-import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-import BotonVolver from './BotonVolver'
-import GarantiaCard from './GarantiaCard'
-import type { GarantiaItem } from './serviciosHelpers'
+import { useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import Spinner from '@/components/ui/Spinner'
+import { garantiaService } from '@/services/garantiaService'
+import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
+import { rutaLoginConRetorno } from '@/utils/authRedirect'
+import { urlWhatsApp } from '../carrito/cartHelpers'
+import { IcoEscudo } from '../perfil/cuenta/iconosCuenta'
+import { IcoSrv } from './IcoSrv'
+import { CLASE_CAMPO, CLAVE_MOTIVO, MOTIVOS_GARANTIA, claveGarantia, descripcionGarantia, fechaDiaMes, textoVigencia, type GarantiaItem, type MotivoGarantia } from './serviciosHelpers'
 
-function ShieldIcon({ className = 'w-8 h-8' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  )
-}
-
-function LockIcon({ className = 'w-12 h-12' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0110 0v4" />
-    </svg>
-  )
-}
-
-function ResumenGarantias({ misGarantias }: { misGarantias: GarantiaItem[] }) {
-  const activas = misGarantias.filter(g => g.activa).length
-  const vencidas = misGarantias.length - activas
-  return (
-    <div className="flex gap-3 mb-2">
-      <div className="flex-1 text-center p-3 rounded-2xl"
-        style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
-        <p className="text-2xl font-black" style={{ color: 'var(--hc-accent)' }}>{activas}</p>
-        <p className="text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>Activa{activas === 1 ? '' : 's'}</p>
-      </div>
-      {vencidas > 0 && (
-        <div className="flex-1 text-center p-3 rounded-2xl"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <p className="text-2xl font-black" style={{ color: 'var(--hc-muted)' }}>{vencidas}</p>
-          <p className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Vencida{vencidas === 1 ? '' : 's'}</p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ContenidoGarantia({
-  token,
-  loadingGarantias,
-  misGarantias,
-  onReportado,
-}: {
-  token: string | null
-  loadingGarantias: boolean
-  misGarantias: GarantiaItem[] | undefined
-  onReportado?: () => void
-}) {
-  const navigate = useNavigate()
-
-  if (!token) {
-    return (
-      <div className="text-center py-16 rounded-3xl"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-        <div className="mb-4 flex justify-center" style={{ color: 'var(--hc-muted)' }}>
-          <LockIcon />
-        </div>
-        <p className="font-bold text-lg mb-1" style={{ color: 'var(--hc-text)' }}>Iniciá sesión para ver tus garantías</p>
-        <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>Tus garantías activas aparecen vinculadas a tu cuenta.</p>
-        <button type="button" onClick={() => navigate('/login')}
-          className="px-6 py-3 rounded-2xl text-sm font-bold"
-          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          Iniciar sesión
-        </button>
-      </div>
-    )
-  }
-
-  if (loadingGarantias) {
-    return (
-      <div className="text-center py-20" style={{ color: 'var(--hc-muted)' }}>
-        <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-4"
-          style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
-        Cargando garantías…
-      </div>
-    )
-  }
-
-  if (!misGarantias?.length) {
-    return (
-      <div className="text-center py-16 rounded-3xl"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-        <div className="mb-4 flex justify-center" style={{ color: 'var(--hc-muted)' }}>
-          <ShieldIcon className="w-12 h-12" />
-        </div>
-        <p className="font-bold text-lg mb-1" style={{ color: 'var(--hc-text)' }}>Sin garantías registradas</p>
-        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-          Los productos comprados con garantía aparecerán aquí una vez entregados.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      <ResumenGarantias misGarantias={misGarantias} />
-      {misGarantias.map((g, i) => (
-        <GarantiaCard
-          key={`${g.productoId}-${i}`}
-          g={g}
-          onReportado={onReportado}
-        />
-      ))}
-      <p className="text-xs text-center pt-2" style={{ color: 'var(--hc-muted)' }}>
-        ¿Problema con un producto?{' '}
-        <a href="https://wa.me/50686667888" target="_blank" rel="noopener noreferrer"
-          className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
-          Contactanos por WhatsApp
-        </a>
-      </p>
-    </div>
-  )
-}
-
-export default function VistaGarantia({
-  token,
-  volver,
-  misGarantias,
-  loadingGarantias,
-  onReportado,
-}: {
+type VistaGarantiaProps = {
   token: string | null
   volver: () => void
   misGarantias: GarantiaItem[] | undefined
   loadingGarantias: boolean
   onReportado?: () => void
-}) {
+}
+
+function FilaProducto({ g, elegida, onElegir }: { g: GarantiaItem; elegida: boolean; onElegir: () => void }) {
+  const { t } = useTranslation()
+  const activa = Boolean(g.activa)
+  const fecha = fechaDiaMes(activa ? g.fechaEntrega : g.fechaVencimiento)
+  const detalle = activa
+    ? t('serviciosPage.garantia.pedidoEntregado', { numero: g.numeroPedido, fecha: fechaDiaMes(g.fechaEntrega) })
+    : t('serviciosPage.garantia.pedidoVencido', { numero: g.numeroPedido, fecha })
+  const estado = elegida
+    ? 'border-[1.5px] border-hc-blue-600 bg-hc-blue-50'
+    : `border border-hc-n-200 bg-hc-n-0 ${activa ? '' : 'opacity-60'}`
   return (
-    <motion.div key="garantia"
-      initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}
-      transition={{ duration: 0.3 }}>
+    <button
+      type="button"
+      role="radio"
+      aria-checked={elegida}
+      disabled={!activa}
+      title={activa ? textoVigencia(g, t) : undefined}
+      onClick={onElegir}
+      className={`flex w-full items-center gap-3 rounded-[14px] p-[10px] text-left ${estado}`}
+    >
+      {g.imagenUrl
+        ? <img src={g.imagenUrl} alt="" className="size-[52px] shrink-0 rounded-[10px] object-cover" loading="lazy" />
+        : <span aria-hidden="true" className="size-[52px] shrink-0 rounded-[10px] bg-hc-n-100" />}
+      <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
+        <span className="truncate text-[14px] font-medium text-hc-n-900">{g.nombre}</span>
+        <span className="truncate text-[12px] text-hc-n-600">{detalle}</span>
+      </span>
+      <IcoSrv nombre={elegida ? 'radioActivo' : 'radioInactivo'} size={20} />
+    </button>
+  )
+}
 
-      <BotonVolver onClick={volver} />
+/** Formulario de garantía (Figma `28:1531`): producto, motivo, qué pasó y envío a la tienda. */
+export default function VistaGarantia({ token, volver, misGarantias, loadingGarantias, onReportado }: VistaGarantiaProps) {
+  const [elegida, setElegida] = useState<string | null>(null)
+  const [motivo, setMotivo] = useState<MotivoGarantia | null>(null)
+  const [texto, setTexto] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [enviado, setEnviado] = useState(false)
+  const [error, setError] = useState('')
+  const { t } = useTranslation()
 
-      <div className="flex items-center gap-3 mb-6 p-4 rounded-2xl"
-        style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
-        <span style={{ color: 'var(--hc-accent)' }}><ShieldIcon /></span>
-        <div>
-          <h2 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>Garantía de productos</h2>
-          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-            Estado de garantía de tus productos HotClick.
-          </p>
+  if (!token) {
+    return (
+      <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-123px)]">
+        <EstadoVacio
+          tono="azul"
+          espaciado="cuenta"
+          icono={<IcoEscudo size={28} />}
+          titulo={t('serviciosPage.garantia.sinSesionTitulo')}
+          texto={t('serviciosPage.garantia.sinSesionTexto')}
+          accion={{ texto: t('serviciosPage.loginBtn'), to: rutaLoginConRetorno('/servicios?vista=garantia') }}
+        />
+      </div>
+    )
+  }
+
+  if (loadingGarantias) return <div className="flex justify-center py-16"><Spinner variante="figma" /></div>
+
+  if (!misGarantias?.length) {
+    return (
+      <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-123px)]">
+        <EstadoVacio
+          tono="azul"
+          espaciado="cuenta"
+          icono={<IcoEscudo size={28} />}
+          titulo={t('serviciosPage.garantia.vacioTitulo')}
+          texto={t('serviciosPage.garantia.vacioTexto')}
+          accion={{ texto: t('serviciosPage.garantia.volverServicios'), onClick: volver }}
+        />
+      </div>
+    )
+  }
+
+  if (enviado) {
+    return (
+      <div className="bg-hc-n-0 max-lg:min-h-[calc(100dvh-123px)]">
+        <EstadoVacio
+          tono="azul"
+          espaciado="cuenta"
+          icono={<IcoEscudo size={28} />}
+          titulo={t('serviciosPage.garantia.enviadoTitulo')}
+          texto={t('serviciosPage.garantia.enviadoTexto')}
+          accion={{ texto: t('serviciosPage.viewMine'), to: '/servicios?vista=solicitudes' }}
+        />
+      </div>
+    )
+  }
+
+  const primeraActiva = misGarantias.find((g) => g.activa)
+  const claveElegida = elegida ?? (primeraActiva ? claveGarantia(primeraActiva) : null)
+  const producto = misGarantias.find((g) => claveGarantia(g) === claveElegida)
+
+  const enviar = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!producto) { setError(t('serviciosPage.garantia.errorProducto')); return }
+    if (!texto.trim()) { setError(t('serviciosPage.garantia.errorTexto')); return }
+    setEnviando(true); setError('')
+    try {
+      await garantiaService.crearSolicitud({
+        productoId: producto.productoId,
+        pedidoId: producto.pedidoId,
+        descripcion: descripcionGarantia(motivo, texto),
+      })
+      setEnviado(true)
+      onReportado?.()
+    } catch (err: unknown) {
+      setError(mensajeErrorApi(err, t('serviciosPage.garantia.errorEnvio')))
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <form onSubmit={enviar} className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
+      <div className="flex flex-col gap-[18px] px-4 pb-4 pt-[18px] lg:px-0">
+        <div role="radiogroup" aria-labelledby="srv-garantia-producto" className="flex flex-col gap-[6px]">
+          <p id="srv-garantia-producto" className="text-[13px] font-semibold text-hc-n-900">{t('serviciosPage.garantia.queProducto')}</p>
+          {misGarantias.map((g) => (
+            <FilaProducto key={claveGarantia(g)} g={g} elegida={claveGarantia(g) === claveElegida} onElegir={() => setElegida(claveGarantia(g))} />
+          ))}
         </div>
+
+        <div role="radiogroup" aria-labelledby="srv-garantia-motivo" className="flex flex-col gap-2">
+          <p id="srv-garantia-motivo" className="text-[13px] font-semibold text-hc-n-900">{t('serviciosPage.garantia.motivo')}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {MOTIVOS_GARANTIA.map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={motivo === m}
+                onClick={() => setMotivo(motivo === m ? null : m)}
+                className={`rounded-full border px-[14px] py-2 text-[13px] font-medium ${motivo === m ? 'border-hc-blue-600 bg-hc-blue-600 text-hc-n-0' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'}`}
+              >
+                {t(`serviciosPage.garantia.motivos.${CLAVE_MOTIVO[m]}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-[6px]">
+          <label htmlFor="srv-garantia-texto" className="text-[13px] font-semibold text-hc-n-900">{t('serviciosPage.garantia.quePaso')}</label>
+          <textarea
+            id="srv-garantia-texto"
+            rows={3}
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder={t('serviciosPage.garantia.quePasoPh')}
+            className={`${CLASE_CAMPO} min-h-[84px] resize-none`}
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-[14px] py-3 text-[13px] font-medium text-hc-danger">{error}</p>
+        )}
+        <p className="text-[12px] leading-4 text-hc-n-600">
+          {t('serviciosPage.garantia.problema')}{' '}
+          <a href={urlWhatsApp('')} target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
+            {t('serviciosPage.garantia.contactanos')}
+          </a>
+        </p>
       </div>
 
-      <ContenidoGarantia
-        token={token}
-        loadingGarantias={loadingGarantias}
-        misGarantias={misGarantias}
-        onReportado={onReportado}
-      />
-    </motion.div>
+      <div className="bg-hc-n-0 px-4 pb-6 pt-3 lg:rounded-[16px]">
+        <button
+          type="submit"
+          disabled={enviando}
+          className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0 disabled:opacity-50"
+        >
+          {enviando
+            ? <><span className="size-4 animate-spin rounded-full border-2 border-hc-n-0/30 border-t-hc-n-0" />{t('common.sending')}</>
+            : <><IcoSrv nombre="enviarEscudo" size={18} />{t('serviciosPage.garantia.enviar')}</>}
+        </button>
+      </div>
+    </form>
   )
 }

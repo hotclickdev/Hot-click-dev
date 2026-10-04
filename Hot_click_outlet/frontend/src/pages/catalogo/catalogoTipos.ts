@@ -1,8 +1,6 @@
 import type { Id } from '@/types/api'
 import type { Producto } from '@/types/producto'
 
-export type CatalogViewMode = 'all' | 'ofertas' | 'emprendimientos'
-
 export type CatalogCategoria = {
   id?: Id
   padreId?: unknown
@@ -21,12 +19,6 @@ export type CatalogCategoriaNodo = CatalogCategoria & {
 export type CatalogMarca = {
   id?: Id
   nombreMarca?: string
-  logoUrl?: string | null
-}
-
-export type CatalogConvenio = {
-  id?: Id
-  nombre?: string
   logoUrl?: string | null
 }
 
@@ -55,8 +47,4 @@ export type CatalogLeafRow = {
   totalCount: number
 }
 
-export type CatalogEmpRow = {
-  type: 'emprendimientos'
-}
-
-export type CatalogRow = CatalogParentRow | CatalogLeafRow | CatalogEmpRow
+export type CatalogRow = CatalogParentRow | CatalogLeafRow

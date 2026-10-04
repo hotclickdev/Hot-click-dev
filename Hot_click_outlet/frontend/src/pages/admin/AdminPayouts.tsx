@@ -112,7 +112,7 @@ export default function AdminPayouts() {
                   {p.nombreTitular && <p className="text-[11px] text-hc-muted">{p.nombreTitular}</p>}
                   {p.destinoSinpe && <p className="text-[11px] font-mono text-hc-muted">{p.destinoSinpe}</p>}
                 </div>
-                <p className="text-sm font-bold text-hc-primary">{formatoColonPayout(p.monto)}</p>
+                <p className="text-sm font-bold text-hc-primary-text">{formatoColonPayout(p.monto)}</p>
               </div>
               <div className="flex gap-2">
                 <button

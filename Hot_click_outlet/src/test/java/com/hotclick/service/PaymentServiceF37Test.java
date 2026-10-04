@@ -62,7 +62,6 @@ class PaymentServiceF37Test {
     @Mock PosQrVentaService          posQrVentaService;
     @Mock EncargoService             encargoService;
     @Mock AtribucionPedidoService    atribucionPedidoService;
-    @Mock CompraRepository           compraRepository;
 
     @InjectMocks CheckoutValidator              checkoutValidator;
     @InjectMocks GuestUserResolver              guestUserResolver;
@@ -85,8 +84,6 @@ class PaymentServiceF37Test {
 
     @BeforeEach
     void setUp() throws Exception {
-        when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
-        when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
         testUser = new Usuario();
         testUser.setId(1L);
         testUser.setCorreo("buyer@test.cr");
@@ -113,17 +110,22 @@ class PaymentServiceF37Test {
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
         testProducto.setBodega(testBodega);
 
+        CheckoutPaquetesPlanner checkoutPaquetesPlanner = new CheckoutPaquetesPlanner();
+        CheckoutGrupoFactory checkoutGrupoFactory = new CheckoutGrupoFactory(
+            checkoutValidator, checkoutPaquetesPlanner, orderPricingService, checkoutOrderFactory, giftCardService);
+        PedidoGrupoService pedidoGrupoService = new PedidoGrupoService(pedidoRepository, pagoRepository);
+
         service = new PaymentService();
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(service, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
-        CompraCheckoutTestWiring.conectar(service, new CompraCheckoutTestWiring.Piezas(
-            checkoutValidator, stockReservationService, orderPricingService, checkoutOrderFactory,
-            paymentNotificationsFacade, compraRepository, pedidoRepository, giftCardService, posQrVentaService));
+        ReflectionTestUtils.setField(service, "checkoutGrupoFactory", checkoutGrupoFactory);
+        ReflectionTestUtils.setField(service, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(service, "paymentRecordFactory", paymentRecordFactory);
         ReflectionTestUtils.setField(service, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(service, "paymentNotificationsFacade", paymentNotificationsFacade);
@@ -144,10 +146,12 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(orderConfirmationService, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(paymentFailureHandler, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(paymentFailureHandler, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);

@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Outlet, useParams, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useMatch, useParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
+import Seo from '@/components/seo/Seo'
+import { generateLocalBusinessJsonLd } from '@/utils/jsonLd'
 import { estiloMarcaTienda } from './tiendaTheme'
+import { contactoVisible } from './tiendaHelpers'
 import TiendaHeader from './TiendaHeader'
 import TiendaFooter from './TiendaFooter'
-import TiendaBottomNav from './TiendaBottomNav'
-import TiendaWhatsAppFab from './TiendaWhatsAppFab'
+import TiendaBarraPedido from './TiendaBarraPedido'
 import TiendaNoDisponible from './TiendaNoDisponible'
 import TiendaInfoError from './TiendaInfoError'
 import EsqueletoTiendaLayout from './EsqueletoTiendaLayout'
@@ -16,15 +18,18 @@ import type { EmpresaTiendaPublica } from '@/types/tienda'
 type EmpresaTiendaLayout = EmpresaTiendaPublica & { footerTexto?: string | null; tagline?: string | null }
 
 /**
- * Layout de /tienda/:slug. Theme del vendedor, carrito aislado,
- * chrome que nombra HotClick.
+ * Layout de /tienda/:slug. Theme del vendedor, carrito aislado, chrome que nombra HotClick.
+ * Superficie Figma (`29:922`, `29:2308`, `51:2468`); las subpantallas son "derivado de Figma"
+ * según docs/figma-migration/MANUAL_MARCA_FIGMA.
  */
 export default function TiendaLayout() {
   const { slug } = useParams()
   const { pathname } = useLocation()
-  const { empresa, setEmpresa, totalItems } = useTiendaStore()
+  const { empresa, setEmpresa, totalItems, totalImporte } = useTiendaStore()
   const [infoEstado, setInfoEstado] = useState('cargando')
   const cantidadCarrito = totalItems()
+  const esPerfil = useMatch({ path: '/tienda/:slug', end: true }) !== null
+  const esExito = useMatch({ path: '/tienda/:slug/checkout/exito', end: true }) !== null
 
   const cargarInfo = useCallback(() => {
     setInfoEstado('cargando')
@@ -49,60 +54,55 @@ export default function TiendaLayout() {
 
   const empresaVista = empresa as EmpresaTiendaLayout | null
   const nombre = empresaVista?.nombreComercial ?? (slug as string)
+  const descripcionSeo = empresaVista?.tagline || empresaVista?.descripcion
+    || `Comprá en la tienda de ${nombre} dentro de HotClick, el marketplace de emprendedores de Costa Rica.`
+  const productoEnRuta = pathname.match(/\/producto\/(\d+)/)
+  const esTransaccional = pathname.includes('/carrito') || pathname.includes('/checkout')
+  const urlCanonica = productoEnRuta
+    ? `https://hotclick.lat/productos/${productoEnRuta[1]}`
+    : `https://hotclick.lat/tienda/${slug}`
 
   return (
     <div className="hc-tenant-theme flex flex-col min-h-screen" style={estiloMarcaTienda(empresa)}>
-      <MetaTienda slug={slug as string} nombre={nombre} pathname={pathname} tagline={empresaVista?.tagline} />
+      {esTransaccional ? (
+        <Helmet><meta name="robots" content="noindex, follow" /></Helmet>
+      ) : (
+        <Seo
+          title={`${nombre} · HotClick`}
+          description={descripcionSeo}
+          image={empresaVista?.ogImagenUrl || empresaVista?.logoUrl || undefined}
+          url={urlCanonica}
+        />
+      )}
+      {empresa && !esTransaccional && !productoEnRuta && (
+        <Helmet>
+          <script type="application/ld+json">
+            {JSON.stringify(generateLocalBusinessJsonLd({
+              slug: slug as string,
+              nombreComercial: nombre,
+              descripcion: empresaVista?.descripcion,
+              logoUrl: empresaVista?.logoUrl,
+              categoriaNegocio: empresaVista?.categoriaNegocio,
+              whatsapp: contactoVisible(empresaVista).whatsapp || null,
+              retiro: empresaVista?.retiro,
+            }))}
+          </script>
+        </Helmet>
+      )}
       <TiendaHeader
         slug={slug as string}
         nombre={nombre}
         logoUrl={empresaVista?.logoUrl}
         cantidadCarrito={cantidadCarrito}
+        soloEscritorio={esPerfil}
+        conAtras={!esPerfil && !esExito}
       />
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className={`flex-1 ${esPerfil && cantidadCarrito > 0 ? 'pb-24 md:pb-0' : ''}`}>
         <Outlet />
       </main>
       <TiendaFooter nombre={nombre} footerTexto={empresaVista?.footerTexto} />
-      <TiendaBottomNav slug={slug as string} cantidadCarrito={cantidadCarrito} />
-      <TiendaWhatsAppFab nombre={nombre} whatsapp={empresaVista?.whatsapp} />
+      {esPerfil && <TiendaBarraPedido slug={slug as string} cantidad={cantidadCarrito} total={totalImporte()} />}
     </div>
-  )
-}
-
-function MetaTienda({
-  slug, nombre, pathname, tagline,
-}: {
-  slug: string
-  nombre: string
-  pathname: string
-  tagline?: string | null
-}) {
-  const producto = pathname.match(/\/producto\/(\d+)/)
-  if (producto) {
-    const url = `https://hotclick.lat/productos/${producto[1]}`
-    return (
-      <Helmet>
-        <link rel="canonical" href={url} />
-        <meta property="og:url" content={url} />
-      </Helmet>
-    )
-  }
-  if (pathname.includes('/carrito') || pathname.includes('/checkout')) {
-    return <Helmet><meta name="robots" content="noindex, follow" /></Helmet>
-  }
-  const title = `${nombre} — tienda en línea en Costa Rica`
-  const description = tagline?.trim()
-    || `Comprá en ${nombre}, tienda en línea en Costa Rica. Envío a todo el país por HotClick.`
-  const url = `https://hotclick.lat/tienda/${slug}`
-  return (
-    <Helmet>
-      <title>{title}</title>
-      <meta name="description" content={description} />
-      <link rel="canonical" href={url} />
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:url" content={url} />
-    </Helmet>
   )
 }
 

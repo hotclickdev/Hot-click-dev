@@ -1,30 +1,35 @@
 import { cuponService } from '@/services/cuponService'
-import type { CuponCarrito } from '@/types/carrito'
+import i18n from '@/i18n'
 
-type DatosCupon = { descuento?: number; codigo?: string; empresaId?: number | null }
-
-type CuponValidacion = DatosCupon & { data?: DatosCupon }
+type CuponValidacion = {
+  data?: { descuento?: number; codigo?: string }
+  descuento?: number
+  codigo?: string
+}
 
 type ValidarCuponDeps = {
   cuponInput: string
   setCuponEstado: (estado: string) => void
   setCuponError: (error: string) => void
-  setCupon: (cupon: CuponCarrito | null) => void
+  setCuponDescuento: (descuento: number) => void
+  setCuponCodigo: (codigo: string | null) => void
 }
 
 function mensajeErrorCupon(err: unknown): string {
   if (!err || typeof err !== 'object' || !('response' in err)) {
-    return 'Código inválido o no disponible'
+    return i18n.t('checkout.errores.cuponInvalido')
   }
   const data = (err as { response?: { data?: { message?: unknown; error?: unknown } } }).response?.data
   if (typeof data?.message === 'string') return data.message
   if (typeof data?.error === 'string') return data.error
-  return 'Código inválido o no disponible'
+  return i18n.t('checkout.errores.cuponInvalido')
 }
 
-/** Valida un cupón y lo deja en el carrito con el negocio al que pertenece. */
+/**
+ * Valida un cupón — mismo orden de setState que el original.
+ */
 export async function ejecutarValidarCupon({
-  cuponInput, setCuponEstado, setCuponError, setCupon,
+  cuponInput, setCuponEstado, setCuponError, setCuponDescuento, setCuponCodigo,
 }: ValidarCuponDeps) {
   if (!cuponInput.trim()) return
   setCuponEstado('loading')
@@ -32,16 +37,16 @@ export async function ejecutarValidarCupon({
   try {
     const { data } = await cuponService.validar(cuponInput.trim())
     const resultado = data as CuponValidacion
-    const datos = resultado?.data ?? resultado
-    setCupon({
-      codigo: datos?.codigo ?? cuponInput.trim().toUpperCase(),
-      descuento: datos?.descuento ?? 0,
-      empresaId: datos?.empresaId ?? null,
-    })
+    const pct = resultado?.data?.descuento ?? resultado?.descuento ?? 0
+    const cod = resultado?.data?.codigo ?? resultado?.codigo ?? cuponInput.trim().toUpperCase()
+    setCuponDescuento(pct)
+    setCuponCodigo(cod)
     setCuponEstado('valid')
   } catch (err: unknown) {
-    setCupon(null)
-    setCuponError(mensajeErrorCupon(err))
+    const msg = mensajeErrorCupon(err)
+    setCuponDescuento(0)
+    setCuponCodigo(null)
+    setCuponError(msg)
     setCuponEstado('invalid')
   }
 }

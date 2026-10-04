@@ -68,6 +68,58 @@ async function entrarEmprendedor(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 })
 }
 
+async function abrirDetallePedido(page: Page, estado: string) {
+  await page.route('**/api/**', async (route: Route) => {
+    const path = new URL(route.request().url()).pathname
+    if (path.includes('/tenant/info')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { planNombre: 'EMPRENDEDOR', features: {} } }),
+      })
+      return
+    }
+    if (path.includes('/pedidos') && route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{
+          id: 3001,
+          nombreCliente: 'Ana Jiménez',
+          total: 18500,
+          estado,
+          fechaCreacion: '26/08/2026',
+          direccionEntrega: 'Heredia, CR',
+          items: [{ nombreProducto: 'Auriculares X200', cantidad: 1, precioUnitario: 18500 }],
+        }]),
+      })
+      return
+    }
+    if (path.includes('/pedidos') && route.request().method() === 'PUT') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    })
+  })
+  await page.addInitScript((auth) => {
+    localStorage.setItem('hotclick-auth', JSON.stringify(auth))
+    localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
+      analytics: false,
+      functional: true,
+      timestamp: Date.now(),
+    }))
+    localStorage.setItem('hc-admin-tour-v4-done', '1')
+    localStorage.setItem('hc-mm-v1-off', '1')
+    localStorage.setItem('hc-mm-v1-welcome-done', '1')
+  }, payloadAuth())
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/emprendedor/pedidos/3001', { waitUntil: 'domcontentloaded' })
+}
+
 test.describe('Wizard conversacional Emprendedor', () => {
   test('agregar producto: tipo → foto → identidad con validación', async ({ page }) => {
     await entrarEmprendedor(page)
@@ -107,7 +159,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
   test('nueva bodega y método de cobro muestran progreso', async ({ page }) => {
     await entrarEmprendedor(page)
     await page.goto('/emprendedor/opciones/bodegas/nueva', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 3')).toBeVisible()
+    await expect(page.getByText('Paso 1 de 4')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Nombre de la bodega' })).toBeVisible()
 
     await page.goto('/emprendedor/opciones/cobro/nuevo', { waitUntil: 'domcontentloaded' })
@@ -201,66 +253,27 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await expect(page.getByRole('heading', { name: 'Tu tienda' })).toBeVisible()
   })
 
-  test('detalle pedido: confirmar envío pide confirmación', async ({ page }) => {
-    await page.route('**/api/**', async (route: Route) => {
-      const path = new URL(route.request().url()).pathname
-      if (path.includes('/tenant/info')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: { planNombre: 'EMPRENDEDOR', features: {} } }),
-        })
-        return
-      }
-      if (path.includes('/pedidos') && route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify([{
-            id: 3001,
-            nombreCliente: 'Ana Jiménez',
-            total: 18500,
-            estado: 'PENDIENTE',
-            fechaCreacion: '26/08/2026',
-            direccionEntrega: 'Heredia, CR',
-            items: [{ nombreProducto: 'Auriculares X200', cantidad: 1, precioUnitario: 18500 }],
-          }]),
-        })
-        return
-      }
-      if (path.includes('/pedidos') && route.request().method() === 'PUT') {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-        return
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [] }),
-      })
-    })
-    await page.addInitScript((auth) => {
-      localStorage.setItem('hotclick-auth', JSON.stringify(auth))
-      localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
-        analytics: false,
-        functional: true,
-        timestamp: Date.now(),
-      }))
-      localStorage.setItem('hc-admin-tour-v4-done', '1')
-      localStorage.setItem('hc-mm-v1-off', '1')
-      localStorage.setItem('hc-mm-v1-welcome-done', '1')
-    }, payloadAuth())
-    await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/emprendedor/pedidos/3001', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('button', { name: 'Confirmar envío' })).toBeVisible({ timeout: 20_000 })
-    await page.getByRole('button', { name: 'Confirmar envío' }).click()
-    await expect(page.getByText('¿Confirmás que ya enviaste este pedido?')).toBeVisible()
+  test('detalle pedido: despachar (Figma 37:1780) marca enviado y vuelve al listado', async ({ page }) => {
+    await abrirDetallePedido(page, 'PAGADO')
+    await expect(page.getByRole('button', { name: 'Marcar como despachado' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText('Ana Jiménez')).toBeVisible()
-    await page.getByRole('button', { name: 'Cancelar' }).click()
-    await expect(page.getByRole('button', { name: 'Confirmar envío' })).toBeVisible()
-    await page.getByRole('button', { name: 'Confirmar envío' }).click()
-    await page.getByRole('button', { name: 'Sí, confirmar envío' }).click()
+    await expect(page.getByText('Por despachar')).toBeVisible()
+    await expect(page.getByLabel(/guía/i)).toBeVisible()
+    await page.getByRole('button', { name: 'Marcar como despachado' }).click()
     await expect(page).toHaveURL(/\/emprendedor\/pedidos$/)
   })
+
+  for (const estado of ['PENDIENTE', 'PENDIENTE_COMPROBANTE', 'PENDIENTE_APROBACION']) {
+    test(`detalle pedido ${estado}: esperando pago, sin despachar`, async ({ page }) => {
+      await abrirDetallePedido(page, estado)
+      await expect(page.getByText('Ana Jiménez')).toBeVisible({ timeout: 20_000 })
+      await expect(page.getByText('Esperando pago', { exact: true })).toBeVisible()
+      await expect(page.getByText('Podés despacharlo cuando se confirme el pago.')).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Marcar como despachado' })).toHaveCount(0)
+      await expect(page.getByLabel(/guía/i)).toHaveCount(0)
+      await expect(page.getByText('Por despachar')).toHaveCount(0)
+    })
+  }
 
   test('cambiar plan: paso 1 elegir plan con mock API', async ({ page }) => {
     await page.route('**/api/**', async (route: Route) => {
@@ -314,7 +327,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByText('Paso 2 de 3')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Confirmá el cambio' })).toBeVisible()
-    await expect(page.getByText('₡9 900/mes').first()).toBeVisible()
+    await expect(page.getByText('₡9.900/mes').first()).toBeVisible()
   })
 
   test('encargos: cotizar abre pasos de respuesta', async ({ page }) => {

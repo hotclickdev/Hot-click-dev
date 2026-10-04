@@ -1,3 +1,5 @@
+import type { EstadoPedidoVendedor } from '@/prototipo/compartido/estadoPedidoVendedor'
+
 export type CategoriaProducto = 'Tecnología' | 'Ropa' | 'Otro'
 
 export type EstadoPublicacion = 'Publicado' | 'Pausado'
@@ -25,7 +27,10 @@ export type PedidoEmprendedor = {
   id: string
   cliente: string
   total: number
-  estado: 'Pendiente' | 'Enviado' | 'Entregado'
+  /** 'Pendiente' = pago confirmado, por despachar (ver estadoPedidoVendedor). */
+  estado: EstadoPedidoVendedor
+  /** Efectivo con retiro sin cobrar: se entrega en vez de despacharse (ver pagaAlRetirar). */
+  pagaAlRetirar?: boolean
   fecha: string
   direccion: string
   productos: { id: string; nombre: string; cantidad: number; precio: number }[]

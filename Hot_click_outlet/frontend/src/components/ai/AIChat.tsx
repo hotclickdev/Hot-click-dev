@@ -4,6 +4,8 @@
 import { useAiChat } from './aiChat/useAiChat'
 import './aiChat/aiChatHelpers'
 import { AIChatMessageList, AIChatInputBar, AIChatChips } from './aiChat/AIChatViews'
+import { BarraEscribirHoja, ChipsHoja, MensajesHoja } from './aiChat/AIChatHoja'
+import { useTranslation } from 'react-i18next'
 import type { Ref } from 'react'
 import type { Producto } from '@/types/producto'
 
@@ -24,6 +26,8 @@ export type AIChatProps = {
   proactiveTrigger?: boolean
   exitIntentEnabled?: boolean
   fullHeight?: boolean
+  /** `hoja`: asistente global de Figma `8:231` (burbuja azul, productos en fila, barra gris). Por defecto el estilo clásico. */
+  variante?: 'clasica' | 'hoja'
 }
 
 export default function AIChat({
@@ -43,7 +47,9 @@ export default function AIChat({
   proactiveTrigger = false,
   exitIntentEnabled = false,
   fullHeight = false,
+  variante = 'clasica',
 }: AIChatProps) {
+  const { t } = useTranslation()
   const chat = useAiChat({
     empresaSlug,
     context,
@@ -146,13 +152,46 @@ export default function AIChat({
     />
   )
 
+  if (fullHeight && variante === 'hoja') {
+    return (
+      <div className="flex h-full flex-col bg-hc-n-0">
+        <div ref={chat.historyRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3 pt-1">
+          {afterHoursBanner}
+          {greetingEl}
+          <MensajesHoja
+            mensajes={chat.mensajes}
+            enviar={chat.enviar}
+            setMensajes={chat.setMensajes}
+            removeMsg={chat.removeMsg}
+            handleAdd={chat.handleAdd}
+          />
+          {chat.mensajes.length === 0 && <div className="flex-1" />}
+          {chat.showChips && <ChipsHoja chips={chat.activeChips} enviar={chat.enviar} />}
+        </div>
+        <div className="shrink-0 border-t border-hc-n-200 px-4 pb-6 pt-[10px]">
+          <BarraEscribirHoja
+            inputRef={chat.inputRef}
+            input={chat.input}
+            setInput={chat.setInput}
+            onKeyDown={chat.onKeyDown}
+            enviar={chat.enviar}
+            cargando={chat.cargando}
+            placeholder={chat.mensajes.length > 0 ? t('chat.placeholderOtra') : placeholder}
+            showHumanButton={showHumanButton}
+            whatsappNumber={whatsappNumber}
+          />
+        </div>
+      </div>
+    )
+  }
+
   if (fullHeight) {
     return (
-      <div className="h-full flex flex-col" style={{ background: 'var(--hc-surface)' }}>
+      <div className="h-full flex flex-col" style={{ background: 'var(--hc-n-0)' }}>
         <div
           ref={chat.historyRef}
           className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 px-4 pt-4 pb-2"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--hc-border) transparent' }}
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--hc-n-200) transparent' }}
         >
           {afterHoursBanner}
           {greetingEl}
@@ -164,7 +203,7 @@ export default function AIChat({
 
         <div
           className="shrink-0 px-4 pt-2 pb-4 flex flex-col gap-2"
-          style={{ borderTop: '1px solid var(--hc-border)' }}
+          style={{ borderTop: '1px solid var(--hc-n-200)' }}
         >
           {alternativasEl}
           {inputBar}
@@ -185,7 +224,7 @@ export default function AIChat({
           style={{
             maxHeight: maxHistoryHeight,
             scrollbarWidth: 'thin',
-            scrollbarColor: 'var(--hc-border) transparent',
+            scrollbarColor: 'var(--hc-n-200) transparent',
           }}
         >
           {messageList}

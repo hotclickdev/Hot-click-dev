@@ -66,17 +66,3 @@ export const FOTOS_FERIA: readonly FotoEmprende[] = [
   FOTOS_EMPRENDE.feria2,
   FOTOS_EMPRENDE.feria3,
 ]
-
-export const FOTOS_FASES: readonly FotoEmprende[] = [
-  FOTOS_EMPRENDE.feria1,
-  FOTOS_EMPRENDE.registro,
-  FOTOS_EMPRENDE.tienda,
-  FOTOS_EMPRENDE.caja,
-  FOTOS_EMPRENDE.local,
-]
-
-export const FOTOS_PROCESO: readonly FotoEmprende[] = [
-  FOTOS_EMPRENDE.registro,
-  FOTOS_EMPRENDE.tienda,
-  FOTOS_EMPRENDE.caja,
-]

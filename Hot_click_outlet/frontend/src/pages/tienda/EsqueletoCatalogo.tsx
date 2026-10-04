@@ -1,9 +1,9 @@
-/** Esqueleto del grid de productos de la tienda pública. */
+/** Esqueleto del grid de productos de la tienda pública (tarjetas de 167x280, como la real). */
 export default function EsqueletoCatalogo() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      {[...new Array(8)].map((_, i) => (
-        <div key={i} className="rounded-xl bg-[var(--t-hover)] animate-pulse aspect-[3/4]" />
+    <div className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 lg:grid-cols-[repeat(auto-fill,167px)] lg:justify-start lg:gap-x-4 lg:gap-y-5">
+      {[...new Array(6)].map((_, i) => (
+        <div key={i} className="h-[280px] animate-pulse rounded-[14px] bg-hc-n-100" />
       ))}
     </div>
   )

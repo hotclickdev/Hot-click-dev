@@ -24,7 +24,7 @@ export default function EmprendeMembresiaAviso() {
       <Link
         to={RUTA_PLANES}
         className="inline-flex mt-3 text-sm font-semibold min-h-[44px] items-center"
-        style={{ color: 'var(--hc-primary)' }}
+        style={{ color: 'var(--hc-primary-text)' }}
       >
         {t('emprende.membresiaCta')}
       </Link>

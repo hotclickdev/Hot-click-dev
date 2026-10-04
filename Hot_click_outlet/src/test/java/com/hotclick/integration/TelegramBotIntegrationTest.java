@@ -422,11 +422,12 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @DisplayName("La IA propone cambiar el estado de un pedido → Confirmar lo ejecuta y limpia el borrador")
     void accion_proponeYConfirma_ejecutaCambioEstado() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);
-        Pedido pedido = crearPedido("ORD-TEST-1", "PENDIENTE", empresa);
+        // SEC-06: ENVIADO → ENTREGADO es una transición válida (PENDIENTE → ENTREGADO ya no).
+        Pedido pedido = crearPedido("ORD-TEST-1", "ENVIADO", empresa);
         doReturn(new AiCopilotService.ChatConAccionesResultado(
                 "Te mandé la confirmación arriba, tocá el botón para aplicarlo.",
                 new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
-                    Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-1: PENDIENTE → ENTREGADO")))
+                    Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-1: ENVIADO → ENTREGADO")))
             .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-TEST-1 como entregado"));
@@ -442,6 +443,25 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         assertThat(actualizado.getEstadoPedido()).isEqualTo("ENTREGADO");
         assertThat(vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto()).isNull();
         verify(bot).enviarMensaje(eq(CHAT_ID), contains("ORD-TEST-1"));
+    }
+
+    @Test
+    @DisplayName("SEC-06/09: la IA propone PENDIENTE → ENTREGADO (sin pago) → Confirmar NO lo cambia")
+    void accion_proponeEntregadoSinPago_noCambia() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Pedido pedido = crearPedido("ORD-TEST-9", "PENDIENTE", empresa);
+        doReturn(new AiCopilotService.ChatConAccionesResultado(
+                "Te mandé la confirmación arriba, tocá el botón para aplicarlo.",
+                new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
+                    Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-9: PENDIENTE → ENTREGADO")))
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+
+        postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-TEST-9 como entregado"));
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("Cambiar el pedido ORD-TEST-9"), anyList());
+
+        postUpdate(callback(CHAT_ID, "acn:ok"));
+
+        assertThat(pedidoRepository.findById(pedido.getId()).orElseThrow().getEstadoPedido()).isEqualTo("PENDIENTE");
     }
 
     @Test

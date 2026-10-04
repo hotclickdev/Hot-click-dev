@@ -49,10 +49,10 @@ export default function PymePagoVerificado() {
               className="w-14 h-14 rounded-full flex items-center justify-center mb-3"
               style={{ backgroundColor: 'rgba(231,59,51,0.14)' }}
             >
-              <TrustGlyph tipo="check" className="w-6 h-6 text-[var(--hc-primary)]" />
+              <TrustGlyph tipo="check" className="w-6 h-6 text-hc-primary" />
             </span>
             <p className="text-sm font-semibold text-center" style={{ color: '#14171c' }}>{t('pyme.pagoAprobado')}</p>
-            <p className="text-sm" style={{ color: 'var(--hc-primary)', fontFamily: 'var(--hc-font-mono)' }}>₡8.500</p>
+            <p className="text-sm" style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}>₡8.500</p>
             <span
               className="mt-2 px-2.5 py-1 rounded-full text-[10px] inline-flex items-center gap-1"
               style={{ backgroundColor: 'var(--hc-n-100, #f1f3f6)', color: 'rgba(20,23,28,0.6)' }}

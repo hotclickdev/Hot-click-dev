@@ -7,6 +7,9 @@ const CATEGORIAS = [
   { id: 8, nombreCategoria: 'Hogar', padreId: null, icono: 'hogar' },
 ]
 
+/** Forma de GET /categorias/publicas/con-productos (pestaña Categorías). */
+const CATEGORIAS_CON_PRODUCTOS = CATEGORIAS.map((c) => ({ id: c.id, nombre: c.nombreCategoria, cantidad: 1, fotoUrl: null }))
+
 const PRODUCTOS = [
   {
     id: 1,
@@ -29,6 +32,14 @@ const PRODUCTOS = [
 async function mockApis(page: Page) {
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/categorias/publicas/con-productos')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: CATEGORIAS_CON_PRODUCTOS }),
+      })
+      return
+    }
     if (path.includes('/categorias/publicas')) {
       await route.fulfill({
         status: 200,
@@ -70,14 +81,14 @@ async function mockApis(page: Page) {
   })
 }
 
+/** Camino móvil del shell Figma: barra inferior «Categorías» (`43:1530`) → mosaico de la categoría. */
 async function abrirCategoriaDelMenu(page: Page, nombre: string) {
-  await page.getByRole('button', { name: 'Menú' }).click()
-  const overlay = page.locator('.hc-mobile-menu')
-  await overlay.getByRole('button', { name: 'Productos' }).click()
-  await overlay.getByRole('link', { name: nombre }).click()
+  await page.getByRole('navigation', { name: 'Navegación principal' }).getByRole('link', { name: 'Categorías' }).click()
+  await expect(page).toHaveURL(/\/categorias$/)
+  await page.getByRole('main').getByRole('link', { name: nombre }).click()
 }
 
-test.describe('Nav móvil — categorías del menú Productos', () => {
+test.describe('Nav móvil — categorías desde la barra inferior', () => {
   test.use({ viewport: { width: 375, height: 700 } })
 
   test('click en una categoría filtra el catálogo y cambia al hacer otro click', async ({ page }) => {

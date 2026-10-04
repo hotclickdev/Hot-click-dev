@@ -13,8 +13,18 @@ type DescubriCartaProps = {
 }
 
 /**
- * Carta fullscreen del mazo: foto, precio y badge de negocio.
- * Drag horizontal confirma like/skip.
+ * Posición de cada carta del mazo respecto de la carta activa (Figma `27:946`):
+ * la activa mide 310x460; la 2.ª 284x440 girada 4° al 75 %; la 3.ª 268x440 girada -5° al 50 %.
+ */
+const POSICION_MAZO = [
+  { left: 0, top: 0, ancho: 310, alto: 460, giro: 0, opacidad: 1 },
+  { left: -2.7, top: -2.6, ancho: 284, alto: 440, giro: 4, opacidad: 0.75 },
+  { left: 39.7, top: -36.5, ancho: 268, alto: 440, giro: -5, opacidad: 0.5 },
+] as const
+
+/**
+ * Carta del mazo: foto a todo el tamaño con degradé inferior, nombre y negocio · precio.
+ * El arrastre horizontal confirma "me gusta" o "saltar".
  */
 export default function DescubriCarta({
   producto,
@@ -25,7 +35,7 @@ export default function DescubriCarta({
 }: DescubriCartaProps) {
   const { t } = useTranslation()
   const x = useMotionValue(0)
-  const rotate = useTransform(x, [-200, 200], [-12, 12])
+  const giroArrastre = useTransform(x, [-200, 200], [-12, 12])
   const likeOpacity = useTransform(x, [40, UMBRAL_ARRASTRE_PX], [0, 1])
   const skipOpacity = useTransform(x, [-UMBRAL_ARRASTRE_PX, -40], [1, 0])
 
@@ -38,22 +48,22 @@ export default function DescubriCarta({
     if (info.offset.x < -UMBRAL_ARRASTRE_PX) onSkip()
   }
 
-  const offsetY = stackIndex * 8
-  const scale = 1 - stackIndex * 0.04
+  const pos = POSICION_MAZO[Math.min(stackIndex, POSICION_MAZO.length - 1)]
   const negocio = producto.empresaNombre?.trim()
+  const detalle = negocio ? `${negocio} · ${formatPrice(producto.precio)}` : formatPrice(producto.precio)
 
   return (
     <motion.article
-      className="absolute inset-0 flex flex-col rounded-3xl overflow-hidden select-none"
+      className={`absolute select-none overflow-hidden rounded-[22px] bg-hc-n-100 ${activo ? 'shadow-[0px_12px_28px_0px_rgba(0,0,0,0.18)]' : ''}`}
       style={{
+        left: pos.left,
+        top: pos.top,
+        width: pos.ancho,
+        height: pos.alto,
+        opacity: pos.opacidad,
         x: activo ? x : 0,
-        rotate: activo ? rotate : stackIndex % 2 === 0 ? -3 : 4,
-        y: offsetY,
-        scale,
+        rotate: activo ? giroArrastre : pos.giro,
         zIndex: 10 - stackIndex,
-        background: 'var(--hc-surface)',
-        border: '1px solid var(--hc-border)',
-        boxShadow: '0 12px 40px var(--hc-shadow)',
         touchAction: activo ? 'none' : 'auto',
       }}
       drag={activo ? 'x' : false}
@@ -62,57 +72,42 @@ export default function DescubriCarta({
       onDragEnd={handleDragEnd}
       aria-hidden={!activo}
     >
-      <div className="relative flex-1 min-h-0 bg-[var(--hc-surface-2)]">
-        <img
-          src={producto.imagenUrl}
-          alt={producto.nombre}
-          className="absolute inset-0 w-full h-full object-cover"
-          draggable={false}
-        />
-        {activo && (
-          <>
-            <motion.span
-              className="absolute top-5 left-5 px-3 py-1.5 rounded-lg text-sm font-bold border-[2.5px] -rotate-12"
-              style={{
-                opacity: skipOpacity,
-                color: 'var(--hc-danger)',
-                borderColor: 'var(--hc-danger)',
-                background: 'color-mix(in srgb, var(--hc-surface) 88%, transparent)',
-              }}
-            >
-              {t('descubri.stampSkip')}
-            </motion.span>
-            <motion.span
-              className="absolute top-5 right-5 px-3 py-1.5 rounded-lg text-sm font-bold border-[2.5px] rotate-12"
-              style={{
-                opacity: likeOpacity,
-                color: 'var(--hc-success)',
-                borderColor: 'var(--hc-success)',
-                background: 'color-mix(in srgb, var(--hc-surface) 88%, transparent)',
-              }}
-            >
-              {t('descubri.stampLike')}
-            </motion.span>
-          </>
-        )}
-      </div>
-
-      <div className="p-4 sm:p-5 shrink-0">
-        {negocio && (
-          <p className="text-xs font-semibold mb-1 truncate" style={{ color: 'var(--hc-accent)' }}>
-            {t('descubri.fromBusiness', { name: negocio })}
-          </p>
-        )}
-        <h2
-          className="text-base sm:text-lg font-bold leading-snug line-clamp-2"
-          style={{ color: 'var(--hc-text)', fontFamily: 'var(--font-display)' }}
-        >
-          {producto.nombre}
-        </h2>
-        <p className="mt-1.5 text-lg font-bold" style={{ color: 'var(--hc-primary)' }}>
-          {formatPrice(producto.precio)}
-        </p>
-      </div>
+      <img
+        src={producto.imagenUrl}
+        alt={activo ? producto.nombre : ''}
+        className="absolute inset-0 size-full object-cover"
+        draggable={false}
+      />
+      {activo && (
+        <>
+          <div className="absolute inset-x-0 bottom-0 flex h-[130px] flex-col justify-end gap-[2px] bg-gradient-to-b from-transparent to-black/[0.72] px-4 pb-4 pt-10 leading-[normal] text-hc-n-0">
+            <h2 className="truncate font-display text-[18px] font-bold">{producto.nombre}</h2>
+            <p className="truncate text-[14px] font-medium">{detalle}</p>
+          </div>
+          <motion.span
+            className="absolute left-5 top-5 -rotate-12 rounded-lg border-[2.5px] px-3 py-1.5 text-sm font-bold"
+            style={{
+              opacity: skipOpacity,
+              color: 'var(--hc-danger)',
+              borderColor: 'var(--hc-danger)',
+              background: 'color-mix(in srgb, var(--hc-surface) 88%, transparent)',
+            }}
+          >
+            {t('descubri.stampSkip')}
+          </motion.span>
+          <motion.span
+            className="absolute right-5 top-5 rotate-12 rounded-lg border-[2.5px] px-3 py-1.5 text-sm font-bold"
+            style={{
+              opacity: likeOpacity,
+              color: 'var(--hc-success-text)',
+              borderColor: 'var(--hc-success)',
+              background: 'color-mix(in srgb, var(--hc-surface) 88%, transparent)',
+            }}
+          >
+            {t('descubri.stampLike')}
+          </motion.span>
+        </>
+      )}
     </motion.article>
   )
 }

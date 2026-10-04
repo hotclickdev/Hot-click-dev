@@ -24,10 +24,12 @@ function armarReceiptQr(
   cartItems: ItemCarritoPos[],
   autoConfirmed: boolean,
   numeroPedido = '—',
+  metodoFinal?: string,
 ): PosVenta {
   return {
     totalPedido:  qrData?.total,
-    metodoPago:   autoConfirmed ? qrData?.metodoPago : 'SINPE',
+    // El cliente puede haber elegido otro método entre los habilitados.
+    metodoPago:   autoConfirmed ? (metodoFinal ?? qrData?.metodoPago) : 'SINPE',
     numeroPedido,
     items: cartItems.map(i => ({
       producto: { nombreProducto: i.nombre },
@@ -136,7 +138,8 @@ export function useAdminPOS() {
 
   const handleQrCliente = async () => {
     if (cartItems.length === 0) return
-    await crearSesionQr('TARJETA')
+    // QR para el cliente: la caja habilita SINPE Móvil y tarjeta y el cliente elige (decisión B16).
+    await crearSesionQr('TARJETA', ['TARJETA', 'SINPE'])
   }
 
   const handleConfirmarPago = async (payload: PayloadCobroPos) => {
@@ -167,11 +170,12 @@ export function useAdminPOS() {
     }
   }
 
-  const crearSesionQr = async (metodoPago: string) => {
+  const crearSesionQr = async (metodoPago: string, metodosPago: string[] = [metodoPago]) => {
     setLoadingVenta(true)
     try {
       const data = await posService.crearQrSesion({
         metodoPago,
+        metodosPago,
         bodegaId,
         clienteId: cliente?.id ?? null,
         items: cartItems.map(i => ({
@@ -200,8 +204,9 @@ export function useAdminPOS() {
     token: string | null,
     autoConfirmed: boolean,
     numeroPedido = '—',
+    metodoFinal?: string,
   ) => {
-    const receiptBase = armarReceiptQr(qrData, cartItems, autoConfirmed, numeroPedido)
+    const receiptBase = armarReceiptQr(qrData, cartItems, autoConfirmed, numeroPedido, metodoFinal)
 
     if (autoConfirmed) {
       setReceipt(receiptBase)
@@ -209,7 +214,7 @@ export function useAdminPOS() {
       setCartItems([])
       setDescuento(0)
       setStep('recibo')
-      const metodo = qrData?.metodoPago
+      const metodo = metodoFinal ?? qrData?.metodoPago
       showToast(
         metodo === 'SINPE' ? 'SINPE confirmado' : 'Pago con tarjeta confirmado',
         'success',

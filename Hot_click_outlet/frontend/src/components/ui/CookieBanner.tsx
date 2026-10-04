@@ -10,14 +10,15 @@ import {
   setCookieConsent,
   type CookieConsent,
 } from '@/utils/cookieConsent'
+import { EVENTO_ABRIR_PREFERENCIAS_COOKIES as EVENTO_PREFERENCIAS_PIE } from '@/components/ui/cookies/preferenciasCookiesApi'
 
 export type { CookieConsent }
 export { getCookieConsent, setCookieConsent } from '@/utils/cookieConsent'
 export { useCookieConsent } from '@/utils/cookieConsent'
 
 /**
- * Aviso de cookies al estilo de bancos y empresas grandes en Costa Rica:
- * usted, tres opciones (rechazar / configurar / aceptar) y panel por categoría.
+ * Aviso de cookies: rechazar, configurar o aceptar, con analítica y publicidad por separado.
+ * También se abre desde el pie (`abrirPreferenciasCookies`).
  */
 export default function CookieBanner({ onConsent }: { onConsent?: (consent: CookieConsent) => void }) {
   const { pathname } = useLocation()
@@ -36,7 +37,11 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
       setPanel(true)
     }
     window.addEventListener(EVENTO_ABRIR_PREFERENCIAS_COOKIES, abrirPanel)
-    return () => window.removeEventListener(EVENTO_ABRIR_PREFERENCIAS_COOKIES, abrirPanel)
+    window.addEventListener(EVENTO_PREFERENCIAS_PIE, abrirPanel)
+    return () => {
+      window.removeEventListener(EVENTO_ABRIR_PREFERENCIAS_COOKIES, abrirPanel)
+      window.removeEventListener(EVENTO_PREFERENCIAS_PIE, abrirPanel)
+    }
   }, [])
 
   function guardar(consent: CookieConsent) {

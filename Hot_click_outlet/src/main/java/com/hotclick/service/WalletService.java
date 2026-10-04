@@ -73,6 +73,12 @@ public class WalletService {
         return txRepo.findByEmpresaIdOrderByFechaCreacionDesc(empresaId, pageable);
     }
 
+    /** True si el pedido ya tiene un crédito de venta en el ledger (idempotencia de la acreditación). */
+    @Transactional(readOnly = true)
+    public boolean ventaYaAcreditada(Long pedidoId) {
+        return creditService.ventaYaAcreditada(pedidoId);
+    }
+
     @Transactional
     public WalletTransaccion acreditarVenta(Long empresaId, long monto,
                                             long totalBruto, long comisionSaas, long comisionGw,

@@ -4,6 +4,8 @@ import { analytics } from '@/utils/analytics'
 import type { CuponCarrito, ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
+import { formatPrice } from '@/utils/format'
+import { topeStock } from '@/utils/stock'
 
 type ProductoConExtras = Producto & {
   tallaSeleccionada?: string
@@ -52,7 +54,7 @@ const useCartStore = create<CartState>()(
               ...items,
               {
                 ...product,
-                cantidad: Math.min(qty, product.stock ?? 99),
+                cantidad: Math.min(qty, topeStock(product.stock)),
                 cartLineId,
                 personalizacion: product.personalizacion,
               },
@@ -68,14 +70,14 @@ const useCartStore = create<CartState>()(
           set({
             items: items.map((i) =>
               mismaLinea(i, product.id as Id)
-                ? { ...i, cantidad: Math.min(i.cantidad + qty, i.stock ?? 99) }
+                ? { ...i, cantidad: Math.min(i.cantidad + qty, topeStock(i.stock)) }
                 : i
             ),
             cartUpdatedAt: Date.now(),
           })
         } else {
           set({
-            items: [...items, { ...product, cantidad: Math.min(qty, product.stock ?? 99) }],
+            items: [...items, { ...product, cantidad: Math.min(qty, topeStock(product.stock)) }],
             cartUpdatedAt: Date.now(),
           })
         }
@@ -96,7 +98,7 @@ const useCartStore = create<CartState>()(
         set({
           items: get().items.map((i) =>
             mismaLinea(i, id, cartLineId)
-              ? { ...i, cantidad: Math.min(cantidad, i.stock ?? 99) }
+              ? { ...i, cantidad: Math.min(cantidad, topeStock(i.stock)) }
               : i
           ),
           cartUpdatedAt: Date.now(),
@@ -118,10 +120,10 @@ const useCartStore = create<CartState>()(
         const lines = items.map((i) => {
           const talla = i.tallaSeleccionada || i.personalizacion?.tallaSeleccionada
           const pers = i.personalizacion ? ' [personalizado]' : ''
-          return `  • ${i.nombre ?? i.nombreProducto}${talla ? ` (Talla ${talla})` : ''}${pers} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
+          return `  • ${i.nombre ?? i.nombreProducto}${talla ? ` (Talla ${talla})` : ''}${pers} x${i.cantidad} — ${formatPrice((i.precio ?? i.precioVenta ?? 0) * i.cantidad)}`
         })
         const detalle = items.length
-          ? `${lines.join('\n')}\n\nTotal: ₡${total().toLocaleString('es-CR')}\n\n`
+          ? `${lines.join('\n')}\n\nTotal: ${formatPrice(total())}\n\n`
           : ''
         return encodeURIComponent(
           `Hola HotClick, consulto sobre este pedido:\n\n${detalle}¿Me ayudan con una duda?`

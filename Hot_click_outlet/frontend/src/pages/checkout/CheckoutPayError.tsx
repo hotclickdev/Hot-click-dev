@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { WhatsAppIcon } from './checkoutIcons'
+import { ICONOS_CHECKOUT } from './iconosCheckout'
 import { WHATSAPP } from './checkoutHelpers'
 import type { ReactNode, RefObject } from 'react'
 import type { TFunction } from 'i18next'
@@ -12,10 +11,9 @@ function WhatsAppAtajo({ href, children }: { href: string; children: ReactNode }
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium"
-      style={{ color: 'var(--hc-muted)' }}
+      className="inline-flex min-h-11 w-full items-center justify-center gap-2 text-[13px] font-semibold text-hc-n-900"
     >
-      <WhatsAppIcon />
+      <img src={ICONOS_CHECKOUT.whatsapp} alt="" className="size-[18px]" />
       {children}
     </a>
   )
@@ -28,18 +26,19 @@ function ErrorStock({
   productoBloqueado: string | null
   rutaCarrito: string
 }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-2">
       <p>
         {productoBloqueado
-          ? <>El producto <strong className="text-red-300">"{productoBloqueado}"</strong> ya no tiene stock disponible.</>
-          : 'Uno o más productos ya no tienen stock disponible.'}
+          ? <>{t('checkout.errorStock.productoAntes')} <strong className="font-semibold text-hc-n-900">"{productoBloqueado}"</strong> {t('checkout.errorStock.productoDespues')}</>
+          : t('checkout.errorStock.varios')}
       </p>
-      <p className="text-xs text-red-300/80">
-        Retirá ese producto del pedido y volvé a intentarlo.
+      <p className="text-[12px] leading-4 text-hc-n-600">
+        {t('checkout.errorStock.retirar')}
       </p>
-      <Link to={rutaCarrito} className="hc-btn hc-btn-primary mt-1 min-h-11 inline-flex items-center justify-center">
-        Ir al pedido
+      <Link to={rutaCarrito} className="mt-1 flex min-h-12 w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 text-[15px] font-semibold text-hc-n-0 hover:bg-hc-red-600">
+        {t('checkout.errorStock.irPedido')}
       </Link>
     </div>
   )
@@ -58,7 +57,7 @@ function ErrorPago({
     <div className="space-y-3">
       <p>{errorStr}</p>
       {intentos < maxIntentos && (
-        <button type="button" onClick={onPagar} className="hc-btn hc-btn-primary w-full min-h-11">
+        <button type="button" onClick={onPagar} className="flex min-h-12 w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 text-[15px] font-semibold text-hc-n-0 hover:bg-hc-red-600">
           {t('checkout.retry', { remaining: maxIntentos - intentos })}
         </button>
       )}
@@ -77,6 +76,7 @@ type CheckoutPayErrorProps = {
   rutaCarrito?: string
 }
 
+/** Error al pagar en el checkout (derivado de Figma: aviso rojo claro y botón de 12 de `29:1999`). */
 export default function CheckoutPayError({
   estado,
   error,
@@ -95,19 +95,17 @@ export default function CheckoutPayError({
   const stockMatch = errorStr.match(/para\s+'([^']+)'/)
   const hrefWa = `https://wa.me/${WHATSAPP}?text=${toWhatsAppMessage()}`
   const etiquetaWa = isStockError
-    ? 'Consultar disponibilidad por WhatsApp'
+    ? t('checkout.errorStock.consultarWa')
     : t('cart.orderWhatsapp')
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+    <div
       ref={errorBannerRef}
       className="space-y-3"
       role="alert"
     >
-      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400">
-        <p className="font-medium mb-1">{t('checkout.payError')}</p>
+      <div className="rounded-[12px] border border-hc-danger/20 bg-hc-danger-bg px-[14px] py-3 text-[13px] leading-[18px] text-hc-danger">
+        <p className="mb-1 font-semibold">{t('checkout.payError')}</p>
         {isStockError
           ? <ErrorStock productoBloqueado={stockMatch?.[1] ?? null} rutaCarrito={rutaCarrito} />
           : (
@@ -121,6 +119,6 @@ export default function CheckoutPayError({
           )}
       </div>
       <WhatsAppAtajo href={hrefWa}>{etiquetaWa}</WhatsAppAtajo>
-    </motion.div>
+    </div>
   )
 }

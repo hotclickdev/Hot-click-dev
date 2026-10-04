@@ -1,9 +1,8 @@
-const formateadorCrc = new Intl.NumberFormat('es-CR', { maximumFractionDigits: 0 })
-const ESPACIOS_DE_MILES = /[\s\u00a0\u202f]/g
+import { formatMiles, formatPrice } from '@/utils/format'
 
-/** Miles con punto como en el Figma («95.900»); `es-CR` los separa con espacio. */
+/** Miles con punto como en el Figma («95.900»); redondea antes de agrupar. */
 export function formatoMiles(monto: number): string {
-  return formateadorCrc.format(Math.round(monto ?? 0)).replace(ESPACIOS_DE_MILES, '.')
+  return formatMiles(Math.round(monto ?? 0))
 }
 
 /**
@@ -11,5 +10,5 @@ export function formatoMiles(monto: number): string {
  * @param {number} colones
  */
 export function formatoColon(colones: number): string {
-  return `₡${formatoMiles(colones)}`
+  return formatPrice(Math.round(colones ?? 0))
 }

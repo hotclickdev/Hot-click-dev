@@ -22,6 +22,12 @@ public class WalletCreditService {
         this.txRepo     = txRepo;
     }
 
+    @Transactional(readOnly = true)
+    public boolean ventaYaAcreditada(Long pedidoId) {
+        return pedidoId != null && txRepo.existsByReferenciaTipoAndReferenciaIdAndTipo(
+            WalletTransaccion.REF_PEDIDO, pedidoId, WalletTransaccion.CREDITO_VENTA);
+    }
+
     /**
      * Acredita el monto neto de una venta al wallet del emprendedor.
      *
@@ -48,7 +54,12 @@ public class WalletCreditService {
         tx.setDescripcion("Venta procesada — pedido #" + pedidoId);
         tx = txRepo.saveAndFlush(tx);
 
-        walletRepo.upsertAcreditar(empresaId, monto);
+        // QA-B02-5: crear la fila si falta (ON CONFLICT DO NOTHING, no aborta la transacción) y sumar
+        // con un UPDATE simple. Corre dentro de la transacción de la confirmación del pago.
+        walletRepo.crearSiNoExiste(empresaId);
+        if (walletRepo.sumarAcreditado(empresaId, monto) != 1) {
+            throw new IllegalStateException("No se pudo acreditar la billetera de la empresa " + empresaId);
+        }
 
         long saldoActual = walletRepo.findSaldoDisponible(empresaId).orElse(monto);
         tx.setSaldoTrasMovimiento(saldoActual);

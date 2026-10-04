@@ -35,12 +35,11 @@ test.describe('Wishlist — CTA de compra', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/wishlist', { waitUntil: 'domcontentloaded' })
 
-    const agregar = page.getByRole('button', { name: /agregar al pedido/i }).first()
+    // Favoritos usa la ProductCard del catálogo: el botón de agregar es el rojo primario de Figma (#E73B33).
+    const agregar = page.getByRole('button', { name: /agregar teclado mecánico/i }).first()
     await expect(agregar).toBeVisible()
-    await expect(agregar).toHaveClass(/hc-btn-primary/)
 
     const color = await agregar.evaluate((el) => getComputedStyle(el).backgroundColor)
-    expect(color).not.toBe('rgba(0, 0, 0, 0)')
-    expect(color).not.toMatch(/rgb\(79,\s*124,\s*255\)/)
+    expect(color).toBe('rgb(231, 59, 51)')
   })
 })

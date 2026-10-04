@@ -17,17 +17,16 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import java.util.List;
 
+/**
+ * Confirma el pago de un checkout. Un checkout multivendedor tiene N subpedidos bajo un mismo
+ * Pago: todos se marcan PAGADO, cada uno consume su propio stock y acredita a su propia empresa.
+ */
 @Service
 public class PaymentOrderConfirmationService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentOrderConfirmationService.class);
-
-    /** Estados posteriores al pago: confirmar de nuevo descontaría stock y cupones otra vez. */
-    static final Set<String> YA_CONFIRMADOS = Set.of(
-        Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
-        Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
 
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private CuponService               cuponService;
@@ -35,53 +34,57 @@ public class PaymentOrderConfirmationService {
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PaymentNotificationsFacade paymentNotificationsFacade;
     @Autowired private PosQrVentaService          posQrVentaService;
+    @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired @Lazy private EncargoService       encargoService;
 
-    /** Confirma todos los paquetes de la compra cobrada por {@code pago}. */
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
-        Long compraId = null;
-        boolean recienConfirmada = false;
-        for (Pedido pedido : CompraPaquetes.paquetesDe(pago.getPedido(), pedidoRepository)) {
-            if (confirmarPaquete(pedido, pago, paymentServiceSelf, eventPublisher)) {
-                recienConfirmada = true;
-                if (compraId == null) compraId = pedido.getCompraId();
-            }
+        Pedido principal = pago.getPedido();
+        if (principal == null) {
+            log.warn("confirmarPedido ignorado — pago {} sin pedido asociado", pago.getId());
+            return;
         }
-        if (recienConfirmada && compraId != null && eventPublisher != null) {
-            eventPublisher.publishEvent(new CompraPagadaEvent(compraId));
+        List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
+
+        // Idempotencia: si el principal ya está pagado, el grupo entero ya se procesó.
+        if (Constants.PEDIDO_PAGADO.equals(principal.getEstadoPedido())) {
+            log.info("confirmarPedido ignorado — pedido {} ya está PAGADO", principal.getNumeroPedido());
+            return;
+        }
+
+        marcarCuponUsadoUnaVez(grupo);
+
+        for (Pedido pedido : grupo) {
+            Hibernate.initialize(pedido.getItems());
+            stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
+
+            pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+            pedidoRepository.save(pedido);
+
+            if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
+                giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
+            }
+            encargoService.marcarPagadosPorPedido(pedido.getId());
+            paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
+            posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
         }
     }
 
-    private boolean confirmarPaquete(Pedido pedido, Pago pago, Object paymentServiceSelf,
-                                  ApplicationEventPublisher eventPublisher) {
-        Hibernate.initialize(pedido.getItems());
-
-        // Idempotencia atómica: dos confirmaciones simultáneas leen el mismo estado viejo, solo una gana el UPDATE.
-        if (YA_CONFIRMADOS.contains(pedido.getEstadoPedido())
-            || pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0) {
-            log.info("confirmarPedido ignorado — pedido {} ya está confirmado", pedido.getNumeroPedido());
-            return false;
-        }
-
-        stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
-
-        pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
-        pedidoRepository.save(pedido);
-
-        if (pedido.getCuponCodigo() != null) {
-            if (pedido.getEmpresa() != null) {
-                cuponService.marcarUsado(pedido.getCuponCodigo(), pedido.getEmpresa().getId());
+    /**
+     * Un cupón se usa una sola vez por checkout, aunque su descuento se haya aplicado a varios
+     * paquetes (cupón de plataforma) — evita consumir el límite de usos N veces.
+     */
+    private void marcarCuponUsadoUnaVez(List<Pedido> grupo) {
+        for (Pedido pedido : grupo) {
+            String codigo = pedido.getCuponCodigo();
+            if (codigo == null) continue;
+            Long empresaId = pedido.getEmpresaId();
+            if (cuponService.esDeEmpresa(codigo, empresaId)) {
+                cuponService.marcarUsado(codigo, empresaId);
             } else {
-                cuponService.marcarUsado(pedido.getCuponCodigo());
+                cuponService.marcarUsado(codigo);
             }
+            return;
         }
-        if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
-            giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
-        }
-        encargoService.marcarPagadosPorPedido(pedido.getId());
-        paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
-        posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
-        return true;
     }
 }

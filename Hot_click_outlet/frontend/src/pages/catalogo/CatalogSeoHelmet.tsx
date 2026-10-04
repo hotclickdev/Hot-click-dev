@@ -3,35 +3,24 @@ import { useTranslation } from 'react-i18next'
 import { generateItemListJsonLd } from '@/utils/jsonLd'
 import { hrefCanonicalCatalogo } from '@/pages/seo/canonicalCatalogo'
 import type { Producto } from '@/types/producto'
-import type { CatalogMarca, CatalogViewMode } from './catalogoTipos'
+import type { CatalogMarca } from './catalogoTipos'
 
 type SeoArgs = {
-  viewMode: CatalogViewMode | string
   activeCatName?: string | null
   activeMarcaName?: string | null
-  filteredLength: number
   productsLength: number
   t: (key: string, opts?: Record<string, string | number>) => string
 }
 
-function tituloSeo({ viewMode, activeCatName, activeMarcaName, t }: SeoArgs) {
-  if (viewMode === 'ofertas') return t('products.seoTitleOfertas')
-  if (viewMode === 'emprendimientos') return t('products.seoTitleEmp')
+function tituloSeo({ activeCatName, activeMarcaName, t }: SeoArgs) {
   if (activeCatName) return t('products.seoTitleCat', { name: activeCatName })
   if (activeMarcaName) return t('products.seoTitleBrand', { name: activeMarcaName })
   return t('products.seoTitleDefault')
 }
 
 function descripcionSeo({
-  viewMode, activeCatName, activeMarcaName, filteredLength, productsLength, t,
+  activeCatName, activeMarcaName, productsLength, t,
 }: SeoArgs) {
-  if (viewMode === 'ofertas') {
-    const prefix = filteredLength > 0
-      ? t('products.seoDescOfertasPrefix', { count: filteredLength })
-      : ''
-    return t('products.seoDescOfertas', { prefix })
-  }
-  if (viewMode === 'emprendimientos') return t('products.seoDescEmp')
   if (activeCatName) return t('products.seoDescCat', { name: activeCatName })
   if (activeMarcaName) return t('products.seoDescBrand', { name: activeMarcaName })
   if (productsLength > 0) return t('products.seoDescDefault', { count: productsLength })
@@ -39,16 +28,14 @@ function descripcionSeo({
 }
 
 export default function CatalogSeoHelmet({
-  viewMode, activeCatName, marcas, marcasFilter, hasFilters, category, filtered, products,
+  activeCatName, marcas, marcasFilter, hasFilters, category, products,
   categorySlug, sectorIndexable = false, soloCategoria = false,
 }: {
-  viewMode: CatalogViewMode | string
   activeCatName?: string | null
   marcas: CatalogMarca[]
   marcasFilter: Set<string>
   hasFilters: boolean
   category: string
-  filtered: Producto[]
   products: Producto[]
   categorySlug?: string | null
   sectorIndexable?: boolean
@@ -59,8 +46,7 @@ export default function CatalogSeoHelmet({
     ? marcas.find(m => String(m.id) === [...marcasFilter][0])?.nombreMarca
     : null
   const seoArgs: SeoArgs = {
-    viewMode, activeCatName, activeMarcaName,
-    filteredLength: filtered.length, productsLength: products.length, t,
+    activeCatName, activeMarcaName, productsLength: products.length, t,
   }
   const seoTitle = tituloSeo(seoArgs)
   const seoDesc = descripcionSeo(seoArgs)
@@ -84,7 +70,7 @@ export default function CatalogSeoHelmet({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={seoTitle} />
       <meta name="twitter:description" content={seoDesc} />
-      {products.length > 0 && viewMode === 'all' && (
+      {products.length > 0 && (
         <script type="application/ld+json">
           {JSON.stringify(generateItemListJsonLd(products.slice(0, 12) as { id: number; nombre: string }[], 'https://hotclick.lat'))}
         </script>

@@ -1,0 +1,1 @@
+var e=`/assets/isotipo-C-D5bWnH.png`;export{e as t};

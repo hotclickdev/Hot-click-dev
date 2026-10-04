@@ -1,5 +1,7 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.ImagenOcupadaException;
+import com.hotclick.service.storage.StorageImageValidator;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
 import org.slf4j.Logger;
@@ -21,6 +23,7 @@ import java.time.Duration;
 public class ImageProxyController {
 
     private static final Logger log = LoggerFactory.getLogger(ImageProxyController.class);
+    private static final StorageImageValidator IMAGE_VALIDATOR = new StorageImageValidator();
     private static final int MAX_DIM = 1200;
 
     @Value("${aws.s3.public-url}")
@@ -89,6 +92,13 @@ public class ImageProxyController {
                 .header("Cache-Control", "public, max-age=31536000, immutable")
                 .body(imageBytes);
 
+        } catch (IllegalArgumentException e) {
+            log.warn("[img-proxy] Imagen rechazada {}: {}", cleanPath, e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (ImagenOcupadaException e) {
+            return ResponseEntity.status(503)
+                .header("Retry-After", String.valueOf(ImagenOcupadaException.RETRY_AFTER_SEGUNDOS))
+                .build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("[img-proxy] Interrumpido {}", cleanPath);
@@ -110,6 +120,8 @@ public class ImageProxyController {
     }
 
     private byte[] resize(byte[] src, int width, int height, int quality) throws Exception {
+        // FULL-01: tope de megapíxeles por header antes de decodificar.
+        IMAGE_VALIDATOR.verificarDimensiones(src);
         var builder = Thumbnails.of(new ByteArrayInputStream(src));
 
         if (width > 0 && height > 0) {
@@ -120,10 +132,17 @@ public class ImageProxyController {
             builder.height(height);
         }
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        builder.outputFormat("jpg")
-               .outputQuality(quality / 100.0)
-               .toOutputStream(out);
-        return out.toByteArray();
+        try {
+            // R1: mismo tope global de decodificaciones simultáneas que los uploads.
+            return StorageImageValidator.conPermisoDeDecodificacion(() -> {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                builder.outputFormat("jpg")
+                       .outputQuality(quality / 100.0)
+                       .toOutputStream(out);
+                return out.toByteArray();
+            });
+        } catch (OutOfMemoryError e) {
+            throw new IllegalArgumentException(StorageImageValidator.MSG_NO_PROCESABLE);
+        }
     }
 }

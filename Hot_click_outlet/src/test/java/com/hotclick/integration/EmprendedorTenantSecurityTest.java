@@ -26,6 +26,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     @Autowired private EmpresaRepository     empresaRepository;
     @Autowired private ProductoRepository    productoRepository;
     @Autowired private PedidoRepository      pedidoRepository;
+    @Autowired private com.hotclick.repository.PagoRepository pagoRepository;
     @Autowired private BodegaRepository      bodegaRepository;
     @Autowired private CategoriaRepository   categoriaRepository;
 
@@ -68,6 +69,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDownTenants() {
+        pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         productoRepository.deleteAll();
         bodegaRepository.deleteAll();
@@ -206,6 +208,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-SEC-013 | CRÍTICO — ADMIN_IT puede cambiar estado de pedido de cualquier empresa → 200")
     void adminIT_canChangeEstado_anyPedido() throws Exception {
+        confirmarPago(pedidoA);
         mockMvc.perform(put("/api/pedidos/" + pedidoA.getId() + "/estado")
                 .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -248,6 +251,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-SEC-017 | CRÍTICO — EmprendedorA puede cambiar estado de su propio pedido → 200")
     void emprendedorA_canChangeEstado_ownPedido() throws Exception {
+        confirmarPago(pedidoA); // SEC-06: EN_PREPARACION exige pago confirmado
         mockMvc.perform(put("/api/pedidos/" + pedidoA.getId() + "/estado")
                 .header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -260,6 +264,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-SEC-018 | CRÍTICO — EmprendedorA puede asignar guía a su propio pedido → 200")
     void emprendedorA_canAsignarGuia_ownPedido() throws Exception {
+        confirmarPago(pedidoA);
         mockMvc.perform(put("/api/pedidos/" + pedidoA.getId() + "/guia")
                 .header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -348,6 +353,13 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
         return productoRepository.saveAndFlush(p);
     }
 
+    /** Despachar exige pago confirmado (SEC-09): deja el pedido en PAGADO con su Pago CAPTURADO. */
+    private void confirmarPago(Pedido pedido) {
+        pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+        pedidoRepository.saveAndFlush(pedido);
+        pagoCapturado(pedido);
+    }
+
     private Pedido crearPedido(String numero, Usuario cliente, Bodega bodega, Empresa empresa) {
         Pedido p = new Pedido();
         p.setNumeroPedido(numero);
@@ -369,5 +381,18 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
         p.setEstado(Constants.ESTADO_ACTIVO);
         p.setItems(new ArrayList<>());
         return pedidoRepository.saveAndFlush(p);
+    }
+
+    /** SEC-09: despachar exige el Pago CAPTURADO, no solo el estado PAGADO. */
+    private void pagoCapturado(Pedido pedido) {
+        Pago pago = new Pago();
+        pago.setMerchantToken("tok-" + java.util.UUID.randomUUID());
+        pago.setMonto(pedido.getTotalPedido());
+        pago.setProveedor(Constants.PROVEEDOR_SINPE);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        pago.setPedido(pedido);
+        pago.setUsuario(pedido.getUsuarioFinal());
+        pago.setFechaCreacion(LocalDateTime.now());
+        pagoRepository.saveAndFlush(pago);
     }
 }

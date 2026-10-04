@@ -74,6 +74,28 @@ public class CuponService {
                           && c.getUsosActuales() < c.getMaxUsos());
     }
 
+    /** Cupón de plataforma (sin empresa), p. ej. el de bienvenida: aplica a cualquier tienda. */
+    public Optional<Cupon> validarGlobal(String codigo) {
+        return cuponRepository.findByCodigo(codigo.trim().toUpperCase())
+                .filter(c -> c.getEmpresa() == null)
+                .filter(c -> !Boolean.TRUE.equals(c.getUsado())
+                          && c.getUsosActuales() < c.getMaxUsos());
+    }
+
+    /** Primero el cupón de la tienda; si no hay, el de plataforma. */
+    public Optional<Cupon> validarParaEmpresa(String codigo, Long empresaId) {
+        if (empresaId != null) {
+            Optional<Cupon> deEmpresa = validarCodigo(codigo, empresaId);
+            if (deEmpresa.isPresent()) return deEmpresa;
+        }
+        return validarGlobal(codigo);
+    }
+
+    public boolean esDeEmpresa(String codigo, Long empresaId) {
+        return empresaId != null
+            && cuponRepository.findByCodigoAndEmpresaId(codigo.trim().toUpperCase(), empresaId).isPresent();
+    }
+
     /**
      * Registra un uso del cupón de forma atómica.
      * Retorna false si el cupón ya alcanzó su límite (bloqueado).

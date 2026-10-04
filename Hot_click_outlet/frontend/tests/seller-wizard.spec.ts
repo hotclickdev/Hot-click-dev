@@ -21,9 +21,9 @@ test.describe('Wizard conversacional PYME', () => {
     await expectPaso(page, '/pyme/productos/nuevo', 'Paso 1 de 5', 'Tipo de producto')
   })
 
-  test('nueva bodega: ve progreso Paso 1 de 3', async ({ page }) => {
+  test('nueva bodega: ve progreso Paso 1 de 4', async ({ page }) => {
     await entrarSeller(page, 'PYME')
-    await expectPaso(page, '/pyme/bodegas/nueva', 'Paso 1 de 3', 'Nombre de la bodega')
+    await expectPaso(page, '/pyme/bodegas/nueva', 'Paso 1 de 4', 'Nombre de la bodega')
   })
 
   test('comparar planes: ve Paso 1 de 3', async ({ page }) => {
@@ -75,10 +75,10 @@ test.describe('Wizard conversacional Negocio Plus', () => {
     await expectPaso(page, `${base}/productos/nuevo`, 'Paso 1 de 5', 'Tipo de producto')
   })
 
-  test('nueva bodega: ve Paso 1 de 3', async ({ page }) => {
+  test('nueva bodega: ve Paso 1 de 4', async ({ page }) => {
     const base = prefijoPorPlan('NEGOCIO_PLUS')
     await entrarSeller(page, 'NEGOCIO_PLUS')
-    await expectPaso(page, `${base}/bodegas/nueva`, 'Paso 1 de 3', 'Nombre de la bodega')
+    await expectPaso(page, `${base}/bodegas/nueva`, 'Paso 1 de 4', 'Nombre de la bodega')
   })
 
   test('comparar planes: ve Paso 1 de 3', async ({ page }) => {

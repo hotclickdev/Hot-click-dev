@@ -1,6 +1,7 @@
-import { useEffect, useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 type HojaInferiorProps = {
   abierta: boolean
@@ -17,6 +18,9 @@ type HojaInferiorProps = {
 export default function HojaInferior({ abierta, onCerrar, titulo, children, className = '' }: HojaInferiorProps) {
   const { t } = useTranslation()
   const idTitulo = useId()
+  const hojaRef = useRef<HTMLDivElement>(null)
+  // Teclado: el foco entra en la hoja, Tab no sale de ella y al cerrar vuelve a quien la abrió.
+  useFocusTrap(hojaRef, abierta, 'contenedor')
 
   useEffect(() => {
     if (!abierta) return undefined
@@ -36,10 +40,12 @@ export default function HojaInferior({ abierta, onCerrar, titulo, children, clas
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
       <button type="button" aria-label={t('comprador.hoja.cerrar')} onClick={onCerrar} className="absolute inset-0 bg-hc-n-900" />
       <div
+        ref={hojaRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
-        className={`relative flex max-h-[92vh] w-full max-w-[480px] flex-col gap-[14px] overflow-y-auto rounded-t-[22px] bg-hc-n-0 px-4 pb-7 pt-[10px] ${className}`}
+        tabIndex={-1}
+        className={`relative flex max-h-[92vh] w-full max-w-[480px] flex-col gap-[14px] overflow-y-auto rounded-t-[22px] bg-hc-n-0 px-4 pb-7 pt-[10px] outline-none ${className}`}
       >
         <span aria-hidden="true" className="mx-auto h-1 w-10 shrink-0 rounded-[2px] bg-hc-n-200" />
         <div id={idTitulo}>{titulo}</div>

@@ -21,11 +21,11 @@ export const returnPolicyJsonLd = {
   refundType: 'https://schema.org/FullRefund',
 }
 
-export const badges = [
-  { icono: 'paquete', title: '8 días hábiles', desc: 'Desde la confirmación del pago' },
-  { icono: 'chat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
-  { icono: 'tarjeta', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
-]
+export const resumen = [
+  { icono: 'inicioCaja', title: '8 días hábiles', desc: 'Desde la confirmación del pago' },
+  { icono: 'encargoChat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
+  { icono: 'inicioEscudo', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
+] as const
 
 export const sections = [
   {
@@ -82,19 +82,19 @@ export const sections = [
         <p>Seguí estos pasos para iniciar una devolución:</p>
         <ul>
           <li>
-            <strong>Paso 1 — Avisar en el mismo medio:</strong> dentro de los 8 días hábiles desde la confirmación del pago, escribí desde <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link> o al correo {IDENTIDAD_COMERCIANTE.correo}. WhatsApp sirve para consultas.
+            <strong>Paso 1 — Avisar en el mismo medio:</strong> dentro de los 8 días hábiles desde la confirmación del pago, escribí desde <Link to="/mis-pedidos" className="font-semibold text-hc-blue-600">Mis Pedidos</Link> o al correo {IDENTIDAD_COMERCIANTE.correo}. WhatsApp sirve para consultas.
           </li>
           <li>
             <strong>Paso 2 — Describir el problema:</strong> indicá el número de pedido, el motivo de la devolución y adjuntá fotos o video que muestren el problema.
           </li>
           <li>
-            <strong>Paso 3 — Acuerdo de devolución:</strong> el emprendedor te indicará cómo proceder: envío del producto, punto de recogida o solución alternativa.
+            <strong>Paso 3 — Acuerdo de devolución:</strong> te indicamos, junto con el emprendedor, cómo proceder: envío del producto, punto de recogida o solución alternativa.
           </li>
           <li>
             <strong>Paso 4 — Reembolso o reemplazo:</strong> una vez verificado el problema, el emprendedor procesará el reembolso o enviará el producto de reemplazo.
           </li>
         </ul>
-        <p>Si no lográs llegar a un acuerdo con el emprendedor, escribinos a <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a>. HotClick media el reclamo.</p>
+        <p>Si no lográs llegar a un acuerdo con el emprendedor, escribinos a <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} className="font-semibold text-hc-blue-600">{IDENTIDAD_COMERCIANTE.correo}</a>. HotClick media el reclamo.</p>
       </>
     ),
   },
@@ -130,8 +130,8 @@ export const sections = [
       <>
         <p>Si tenés dudas sobre tu devolución o necesitás que HotClick intervenga como mediador, contactanos:</p>
         <ul>
-          <li><strong>Correo:</strong> <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} style={{ color: 'var(--hc-accent)' }}>{IDENTIDAD_COMERCIANTE.correo}</a></li>
-          <li><strong>WhatsApp:</strong> <a href={`https://wa.me/${IDENTIDAD_COMERCIANTE.telefonoWa}`} style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">{IDENTIDAD_COMERCIANTE.telefono}</a></li>
+          <li><strong>Correo:</strong> <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} className="font-semibold text-hc-blue-600">{IDENTIDAD_COMERCIANTE.correo}</a></li>
+          <li><strong>WhatsApp:</strong> <a href={`https://wa.me/${IDENTIDAD_COMERCIANTE.telefonoWa}`} className="font-semibold text-hc-blue-600" target="_blank" rel="noopener noreferrer">{IDENTIDAD_COMERCIANTE.telefono}</a></li>
           <li><strong>Horario:</strong> Lun–Sáb 8:00–19:00</li>
         </ul>
         <BloqueIdentidad />

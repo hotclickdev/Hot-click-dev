@@ -14,7 +14,7 @@ export default function EmprendeSeccion({ id, badge, title, subtitle, children, 
   return (
     <section id={id} className={`scroll-mt-24 py-10 sm:py-12 border-t first:border-t-0 first:pt-0 ${className}`} style={{ borderColor: 'var(--hc-border)' }}>
       {badge ? (
-        <p className="text-xs font-bold tracking-[0.14em] uppercase mb-2" style={{ color: 'var(--hc-primary)' }}>
+        <p className="text-xs font-bold tracking-[0.14em] uppercase mb-2" style={{ color: 'var(--hc-primary-text)' }}>
           {badge}
         </p>
       ) : null}

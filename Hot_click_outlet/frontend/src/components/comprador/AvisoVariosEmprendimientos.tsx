@@ -19,7 +19,7 @@ export default function AvisoVariosEmprendimientos({ cantidadNegocios, className
     { icono: ICONOS_COMPRADOR.avisoUbicacion, color: 'text-hc-blue-600', titulo: t('comprador.aviso.domicilioTitulo'), texto: t('comprador.aviso.domicilioTexto') },
     {
       icono: ICONOS_COMPRADOR.avisoCorazon,
-      color: 'text-hc-red-500',
+      color: 'text-hc-red-600',
       titulo: t('comprador.aviso.apoyoTitulo', { count: cantidadNegocios }),
       texto: t('comprador.aviso.apoyoTexto'),
     },
@@ -27,7 +27,7 @@ export default function AvisoVariosEmprendimientos({ cantidadNegocios, className
 
   return (
     <section className={`flex flex-col gap-[10px] rounded-[14px] border border-hc-blue-100 bg-hc-blue-50 p-[14px] ${className}`}>
-      <h2 className="flex items-center gap-2 font-display text-[14px] font-bold text-hc-blue-600">
+      <h2 className="flex items-center gap-2 font-display text-[14px] font-bold leading-[18px] text-hc-blue-600">
         <IconoFigma src={ICONOS_COMPRADOR.avisoTienda} size={18} />
         {t('comprador.aviso.titulo', { count: cantidadNegocios })}
       </h2>

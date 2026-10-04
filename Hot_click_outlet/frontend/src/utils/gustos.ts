@@ -113,11 +113,8 @@ export function positivePriceBands(scores: GustosScores): PriceBandId[] {
   return ids
 }
 
-/**
- * Carga el perfil. `decay` queda por compatibilidad pero ya no se usa:
- * la selección por chips es explícita hasta que el visitante la cambie.
- */
-export function loadGustos(_opts: { decay?: boolean } = {}): GustosPerfil {
+/** Carga el perfil. La selección por chips es explícita hasta que el visitante la cambie (sin decaimiento). */
+export function loadGustos(): GustosPerfil {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(LS_KEY) ?? '{}')
     const raw = asRecord(parsed)
@@ -171,23 +168,6 @@ export function saveGustosSeleccion(
       seen: {},
       selectedCategoryIds: categoryIds,
       selectedPriceBands: priceBands,
-      updatedAt: Date.now(),
-    }))
-  } catch { /* almacenamiento lleno o bloqueado */ }
-}
-
-/** @deprecated Preferí saveGustosSeleccion. Compat con callers viejos. */
-export function saveGustos(scores: GustosScores, seen: GustosSeen) {
-  try {
-    const ids = Object.keys(seen)
-    if (ids.length > 500) {
-      for (const id of ids.slice(0, ids.length - 500)) delete seen[id]
-    }
-    localStorage.setItem(LS_KEY, JSON.stringify({
-      scores: Object.fromEntries(scores),
-      seen,
-      selectedCategoryIds: positiveCategoryIds(scores),
-      selectedPriceBands: positivePriceBands(scores),
       updatedAt: Date.now(),
     }))
   } catch { /* almacenamiento lleno o bloqueado */ }
@@ -340,6 +320,11 @@ export function marcarProductoVisto(productoId: string | number | null | undefin
     perfil.selectedPriceBands,
   )
   return { ...perfil, seen }
+}
+
+/** Restaura un perfil guardado antes de un swipe (deshacer la última elección). */
+export function restaurarGustos(perfil: GustosPerfil): void {
+  persistPerfil(new Map(perfil.scores), { ...perfil.seen }, [...perfil.selectedCategoryIds], [...perfil.selectedPriceBands])
 }
 
 /** true si el producto ya se swipeó en este navegador. */

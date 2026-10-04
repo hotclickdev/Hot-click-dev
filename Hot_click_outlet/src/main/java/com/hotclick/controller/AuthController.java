@@ -193,8 +193,8 @@ public class AuthController {
     // ── Recuperar contraseña ──────────────────────────────────────────────────
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ResponseDTO> forgotPassword(@RequestBody Map<String, String> body) {
-        return authLoginService.forgotPassword(body);
+    public ResponseEntity<ResponseDTO> forgotPassword(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
+        return authLoginService.forgotPassword(body, httpRequest);
     }
 
     @PostMapping("/verify-code")
@@ -203,7 +203,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<ResponseDTO> resetPassword(@RequestBody Map<String, String> body) {
-        return authLoginService.resetPassword(body);
+    public ResponseEntity<ResponseDTO> resetPassword(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
+        return authLoginService.resetPassword(body, httpRequest);
     }
 }

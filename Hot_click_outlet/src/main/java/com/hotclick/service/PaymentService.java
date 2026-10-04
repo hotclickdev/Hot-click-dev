@@ -35,13 +35,14 @@ public class PaymentService {
     @Autowired private PaymentProviderFactory           providerFactory;
     @Autowired private PedidoRepository                 pedidoRepository;
     @Autowired private PagoRepository                 pagoRepository;
+    @Autowired private GiftCardService                  giftCardService;
     @Autowired private ApplicationEventPublisher        eventPublisher;
 
     @Autowired private CheckoutValidator                checkoutValidator;
     @Autowired private GuestUserResolver                guestUserResolver;
     @Autowired private StockReservationService          stockReservationService;
-    @Autowired private CompraCheckoutService            compraCheckoutService;
-    @Autowired private CompraGiftCardService            compraGiftCardService;
+    @Autowired private CheckoutGrupoFactory             checkoutGrupoFactory;
+    @Autowired private PedidoGrupoService               pedidoGrupoService;
     @Autowired private PaymentRecordFactory             paymentRecordFactory;
     @Autowired private PaymentStatusAssembler           paymentStatusAssembler;
     @Autowired private PaymentNotificationsFacade       paymentNotificationsFacade;
@@ -61,68 +62,67 @@ public class PaymentService {
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
 
-        CompraCheckoutResult compra = compraCheckoutService.crear(req, usuario, provider, Constants.PEDIDO_PENDIENTE);
-        Pedido pedido = compra.principal();
-        atribucionPedidoService.guardarSiPresente(pedido, req.getAtribucion());
-        posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), compra);
+        Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
+        Bodega bodegaDefault = checkoutValidator.loadBodega(bodegaId);
 
-        if (compraGiftCardService.liquidarSiCubreTodo(compra)) {
-            return conCancelToken(new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
-                null, "PAGADO", 0, "GIFT_CARD"));
+        StockReservationResult reservation = stockReservationService.reserveForCheckout(req.getItems());
+        CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
+            req, reservation, bodegaDefault, provider, usuario, Constants.PEDIDO_PENDIENTE);
+        Pedido principal = grupo.principal();
+        atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());
+        posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), principal.getId());
+
+        if (grupo.cubiertoPorGiftCard()) {
+            for (CheckoutGrupoFactory.Subpedido s : grupo.subpedidos()) {
+                Pedido pedido = s.pedido();
+                stockReservationService.consumeForGiftCard(pedido);
+                pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+                pedido.setMetodoPago("GIFT_CARD");
+                pedidoRepository.save(pedido);
+                if (s.pricing().gcMonto() > 0) {
+                    giftCardService.canjear(s.pricing().gcCodigo(), pedido, s.pricing().gcMonto());
+                }
+                paymentNotificationsFacade.onGiftCardFullPayment(pedido, s.pricing().gcCodigo());
+            }
+            posQrVentaService.marcarPagadoPorPedidoTienda(principal.getId());
+            return conCancelToken(new PaymentCheckoutResponse(principal.getId(), principal.getNumeroPedido(),
+                null, "PAGADO", 0, "GIFT_CARD"), grupo);
         }
 
-        PaymentSession session = abrirSesion(provider, compra, usuario);
-        int total = compra.totalSinGiftCard();
-        paymentRecordFactory.createAndPersist(session, pedido, usuario, provider, total);
-
-        log.info("Checkout iniciado: provider={} compra={} paquetes={} total={}",
-            provider, pedido.getNumeroPedido(), compra.pedidos().size(), total);
-
-        compra.pedidos().forEach(p -> paymentNotificationsFacade.onPedidoCreado(p, provider));
-
-        if (session.modoEmbebido()) {
-            return conCancelToken(PaymentCheckoutResponse.embebido(
-                pedido.getId(), pedido.getNumeroPedido(),
-                session.redirectUrl(), Constants.PAGO_PENDIENTE, total, provider,
-                session.sdkToken(), session.externalId()));
-        }
-        return conCancelToken(new PaymentCheckoutResponse(
-            pedido.getId(), pedido.getNumeroPedido(),
-            session.redirectUrl(), Constants.PAGO_PENDIENTE, total, provider));
-    }
-
-    private PaymentSession abrirSesion(String provider, CompraCheckoutResult compra, Usuario usuario) {
+        PaymentSession session;
         try {
-            return providerFactory.get(provider).crearSesion(pedidoACobrar(compra), usuario);
+            session = providerFactory.get(provider)
+                .crearSesion(CheckoutGrupoFactory.paraCobro(principal, grupo.totalCobro()), usuario);
         } catch (RuntimeException e) {
-            compra.pedidos().forEach(stockReservationService::liberarReservas);
+            grupo.pedidos().forEach(stockReservationService::liberarReservas);
             throw e;
         } catch (Exception e) {
-            compra.pedidos().forEach(stockReservationService::liberarReservas);
+            grupo.pedidos().forEach(stockReservationService::liberarReservas);
             throw new IntegracionExternaException(provider, IntegracionExternaException.Tipo.IO_ERROR,
                 "Error iniciando sesión de pago: " + e.getMessage(), e);
         }
+
+        paymentRecordFactory.createAndPersist(session, principal, usuario, provider, grupo.totalCobro());
+
+        log.info("Checkout iniciado: provider={} pedido={} paquetes={} total={}",
+            provider, principal.getNumeroPedido(), grupo.subpedidos().size(), grupo.totalCobro());
+
+        grupo.pedidos().forEach(p -> paymentNotificationsFacade.onPedidoCreado(p, provider));
+
+        if (session.modoEmbebido()) {
+            return conCancelToken(PaymentCheckoutResponse.embebido(
+                principal.getId(), principal.getNumeroPedido(),
+                session.redirectUrl(), Constants.PAGO_PENDIENTE, grupo.totalCobro(), provider,
+                session.sdkToken(), session.externalId()), grupo);
+        }
+        return conCancelToken(new PaymentCheckoutResponse(
+            principal.getId(), principal.getNumeroPedido(),
+            session.redirectUrl(), Constants.PAGO_PENDIENTE, grupo.totalCobro(), provider), grupo);
     }
 
-    /**
-     * La pasarela cobra un solo monto: con varios paquetes se le pasa una copia
-     * no persistida del paquete 1 con el total de la compra.
-     */
-    static Pedido pedidoACobrar(CompraCheckoutResult compra) {
-        Pedido principal = compra.principal();
-        int totalCobro = compra.totalCobro();
-        if (compra.pedidos().size() == 1) return principal;
-        Pedido cobro = new Pedido();
-        cobro.setId(principal.getId());
-        cobro.setNumeroPedido(principal.getNumeroPedido());
-        cobro.setTotalPedido(totalCobro);
-        cobro.setUsuarioFinal(principal.getUsuarioFinal());
-        cobro.setEmpresa(principal.getEmpresa());
-        return cobro;
-    }
-
-    private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response) {
+    private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response, CheckoutGrupoFactory.Grupo grupo) {
         response.setCancelToken(guestCancelTokenService.emitir(response.getNumeroPedido()));
+        response.setPaquetes(CheckoutGrupoFactory.resumen(grupo.pedidos()));
         return response;
     }
 
@@ -145,7 +145,7 @@ public class PaymentService {
     public PaymentStatusResponse consultarEstado(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
-        Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository)
+        Pago pago = pedidoGrupoService.pagoDelGrupo(pedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
         return buildStatusResponse(pago);
     }

@@ -1,8 +1,10 @@
 import { isValidEmail } from '@/utils/validators'
+import { formatTelefonoCR } from '@/utils/telefono'
+import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
 import type { Id } from '@/types/api'
 
 export const WHATSAPP = '50686667888'
-export const SINPE_NUMERO = '8666-7888'
+export const SINPE_NUMERO = formatTelefonoCR('86667888')
 export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 export const BODEGA_DEFAULT = 1
 
@@ -22,7 +24,8 @@ export function copiarNumeroSinpe(): Promise<boolean> {
 
 export const SHIPPING_COSTS: Record<string, number> = {
   RETIRO_EN_TIENDA:       0,
-  ENCOMIENDA_PROPIA:   2500,
+  // La empresa de encomienda le cobra al cliente directo al recibir — HotClick no cobra este envío.
+  ENCOMIENDA_PROPIA:      0,
   ENVIO_NORMAL_GAM:    4000,
   ENVIO_NORMAL_FUERA_GAM: 4000,
   ENVIO_RAPIDO:        5000,
@@ -39,6 +42,7 @@ export type ItemCheckout = {
   bodegaNombre?: string
   bodegaDireccion?: string
   bodegaTelefono?: string
+  empresaNombre?: string | null
   personalizacion?: {
     imagenes?: string[]
     notas?: string
@@ -46,6 +50,18 @@ export type ItemCheckout = {
     encargoToken?: string
   }
   cartLineId?: string
+}
+
+/** Un paquete = los productos de una misma bodega de origen. Cada uno se despacha y cobra el envío por separado. */
+export type PaqueteCheckout = {
+  bodegaId: string
+  bodegaNombre: string
+  bodegaDireccion?: string
+  bodegaTelefono?: string
+  bodegaPermiteRetiro: boolean
+  empresaNombre?: string | null
+  items: ItemCheckout[]
+  subtotal: number
 }
 
 export type BodegaRetiro = {
@@ -60,14 +76,11 @@ export type OpcionEnvio = {
   label: string
   sub: string
   precio: number
+  /** true = el costo no lo cobra HotClick (ej. encomienda), se muestra "Varía" en vez de un monto. */
+  varia?: boolean
   badge: string | null
   badgeColor?: string
   needsAddress: boolean
-}
-
-export function formatPhone(v: string): string {
-  const d = v.replace(/\D/g, '').slice(0, 8)
-  return d.length >= 5 ? `${d.slice(0, 4)}-${d.slice(4)}` : d
 }
 
 /**
@@ -85,28 +98,55 @@ export function bodegaRetiroDesdeItems(items: ItemCheckout[]): BodegaRetiro | nu
     : null
 }
 
+/**
+ * Agrupa el carrito en paquetes por bodega de origen — un paquete por vendedor,
+ * cada uno con su propio envío. Espeja `CheckoutPaquetesPlanner.bodegaDeOrigen` del backend.
+ */
+export function paquetesDesdeItems(items: ItemCheckout[]): PaqueteCheckout[] {
+  const grupos = new Map<string, PaqueteCheckout>()
+  for (const item of items) {
+    const key = item.bodegaId !== null && item.bodegaId !== undefined && item.bodegaId !== ''
+      ? String(item.bodegaId)
+      : String(BODEGA_DEFAULT)
+    let grupo = grupos.get(key)
+    if (!grupo) {
+      grupo = {
+        bodegaId: key,
+        bodegaNombre: item.bodegaNombre || 'HotClick',
+        bodegaDireccion: item.bodegaDireccion,
+        bodegaTelefono: item.bodegaTelefono,
+        bodegaPermiteRetiro: Boolean(item.bodegaPermiteRetiro),
+        empresaNombre: item.empresaNombre,
+        items: [],
+        subtotal: 0,
+      }
+      grupos.set(key, grupo)
+    }
+    grupo.items.push(item)
+    grupo.subtotal += (item.precio ?? item.precioVenta ?? 0) * (item.cantidad ?? 0)
+  }
+  return [...grupos.values()]
+}
+
+/** Cantidad de emprendimientos distintos representados en el carrito — dispara el aviso de varios vendedores. */
+export function cantidadEmprendimientos(items: ItemCheckout[]): number {
+  const nombres = new Set(items.map((i) => i.empresaNombre || i.bodegaNombre).filter(Boolean))
+  return nombres.size
+}
+
+export function bodegaRetiroDePaquete(paquete: PaqueteCheckout): BodegaRetiro | null {
+  return paquete.bodegaPermiteRetiro
+    ? { id: paquete.bodegaId, nombre: paquete.bodegaNombre, direccion: paquete.bodegaDireccion, telefono: paquete.bodegaTelefono }
+    : null
+}
+
 export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] {
+  // Orden del Figma (29:1248): normal, rápido, encomienda y, si la tienda lo permite, retiro al final.
   return [
-    ...(bodegaRetiro ? [{
-      value: 'RETIRO_EN_TIENDA',
-      label: `Retiro en ${bodegaRetiro.nombre}`,
-      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
-      precio: 0,
-      badge: null,
-      needsAddress: false,
-    }] : []),
-    {
-      value: 'ENCOMIENDA_PROPIA',
-      label: 'Tu encomienda preferida',
-      sub: 'Te entregamos en el punto de tu mensajero o encomienda favorita',
-      precio: 2500,
-      badge: null,
-      needsAddress: true,
-    },
     {
       value: 'ENVIO_NORMAL_GAM',
       label: 'Envío Normal — GAM',
-      sub: '2–4 días hábiles · Incluye número de rastreo',
+      sub: `${TEXTO_TIEMPO_ENVIO.normalGam} · Incluye número de rastreo`,
       precio: 4000,
       badge: null,
       needsAddress: true,
@@ -114,7 +154,7 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     {
       value: 'ENVIO_NORMAL_FUERA_GAM',
       label: 'Envío Normal — Fuera de la GAM',
-      sub: '3–4 días hábiles · Incluye número de rastreo',
+      sub: `${TEXTO_TIEMPO_ENVIO.fueraGam} · Incluye número de rastreo`,
       precio: 4000,
       badge: null,
       needsAddress: true,
@@ -122,12 +162,29 @@ export function opcionesEnvio(bodegaRetiro: BodegaRetiro | null): OpcionEnvio[] 
     {
       value: 'ENVIO_RAPIDO',
       label: 'Envío Rápido (Express)',
-      sub: '30 min – 2 horas en la GAM · Pago previo obligatorio',
+      sub: `${TEXTO_TIEMPO_ENVIO.rapido} en la GAM · Pago previo obligatorio`,
       precio: 5000,
       badge: 'Pago previo',
-      badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      badgeColor: 'bg-hc-warning-bg text-hc-warning border-hc-warning/30',
       needsAddress: true,
     },
+    {
+      value: 'ENCOMIENDA_PROPIA',
+      label: 'Tu encomienda preferida',
+      sub: 'Lo dejamos en el punto de tu mensajero o encomienda favorita — el costo lo cobra la empresa de transporte al recibir',
+      precio: 0,
+      varia: true,
+      badge: null,
+      needsAddress: true,
+    },
+    ...(bodegaRetiro ? [{
+      value: 'RETIRO_EN_TIENDA',
+      label: `Retiro en ${bodegaRetiro.nombre}`,
+      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono ? formatTelefonoCR(bodegaRetiro.telefono) : ''].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
+      precio: 0,
+      badge: null,
+      needsAddress: false,
+    }] : []),
   ]
 }
 

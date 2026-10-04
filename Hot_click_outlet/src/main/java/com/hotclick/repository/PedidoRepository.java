@@ -17,17 +17,11 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Optional<Pedido> findByNumeroPedido(String numeroPedido);
 
-    /**
-     * Reclama el paquete para confirmar su pago: devuelve 1 solo a la primera confirmación
-     * (webhook, retorno del navegador, admin o scheduler); las demás esperan el lock y ven 0.
-     */
-    @Modifying
-    @Query("UPDATE Pedido p SET p.estadoPedido = 'PAGADO' WHERE p.id = :id AND p.estadoPedido NOT IN :yaConfirmados")
-    int reclamarParaConfirmar(@Param("id") Long id, @Param("yaConfirmados") Collection<String> yaConfirmados);
+    List<Pedido> findByGrupoPagoOrderByIdAsc(String grupoPago);
 
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
 
-    /** Paquetes de una compra con lo que serializa el detalle del comprador; los items van con {@link #cargarItemsDe}. */
+    /** Paquetes de una compra con empresa, comprador y bodega; los items van con {@link #cargarItemsDe}. */
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.empresa " +
            "LEFT JOIN FETCH p.usuarioFinal " +
@@ -35,6 +29,17 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
            "LEFT JOIN FETCH p.compra " +
            "WHERE p.compra.id = :compraId ORDER BY p.numeroPaquete ASC")
     List<Pedido> findPaquetesDeCompra(@Param("compraId") Long compraId);
+
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items i LEFT JOIN FETCH i.producto WHERE p.id IN :ids")
+    List<Pedido> cargarItemsDe(@Param("ids") Collection<Long> ids);
+
+    /** Cambia el estado de todos los paquetes de un checkout (mismo grupo de pago) en un solo UPDATE. */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE Pedido p SET p.estadoPedido = :estado WHERE p.grupoPago = :grupoPago")
+    int actualizarEstadoPorGrupoPago(@Param("grupoPago") String grupoPago, @Param("estado") String estado);
+
+    /** Enlace público de seguimiento — token aleatorio de 64 hex, nunca el id numérico. */
+    Optional<Pedido> findByTokenSeguimiento(String tokenSeguimiento);
 
     /** Detalle completo — evita LazyInitializationException al serializar empresa/usuarioFinal/bodega/items. */
     @Query("SELECT DISTINCT p FROM Pedido p " +
@@ -51,7 +56,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Page<Pedido> findByUsuarioFinalIdOrderByFechaPedidoDesc(Long usuarioId, Pageable pageable);
 
-    /** «Mis pedidos» del comprador: relaciones @ManyToOne precargadas para serializar sin sesión. */
     @Query(value = "SELECT p FROM Pedido p " +
                    "LEFT JOIN FETCH p.usuarioFinal " +
                    "LEFT JOIN FETCH p.bodega " +
@@ -61,10 +65,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                    "ORDER BY p.fechaPedido DESC, p.id ASC",
            countQuery = "SELECT COUNT(p) FROM Pedido p WHERE p.usuarioFinal.id = :usuarioId")
     Page<Pedido> findPaginaDelComprador(@Param("usuarioId") Long usuarioId, Pageable pageable);
-
-    /** Carga items + producto de una página ya leída (evita paginar en memoria con JOIN FETCH de colección). */
-    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items i LEFT JOIN FETCH i.producto WHERE p.id IN :ids")
-    List<Pedido> cargarItemsDe(@Param("ids") Collection<Long> ids);
 
     /** Con items precargados — evita N+1 al iterar items en listarPorUsuario. */
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items WHERE p.usuarioFinal.id = :usuarioId ORDER BY p.fechaPedido DESC")
@@ -205,7 +205,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Object[]> reporteIvaDetalle(@Param("empresaId") Long empresaId,
                                      @Param("desde") String desde,
                                      @Param("hasta") String hasta);
-
     @Query("""
         SELECT COUNT(p) FROM Pedido p
         WHERE p.fechaPedido >= :desde AND p.fechaPedido < :hasta
@@ -214,7 +213,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     long countPorEstadosEnPeriodo(
         @Param("desde") java.time.LocalDateTime desde,
         @Param("hasta") java.time.LocalDateTime hasta,
-        @Param("estados") java.util.Collection<String> estados);
+        @Param("estados") Collection<String> estados);
 
     @Query("""
         SELECT COALESCE(SUM(p.totalPedido), 0) FROM Pedido p

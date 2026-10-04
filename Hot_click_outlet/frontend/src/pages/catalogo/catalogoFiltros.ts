@@ -42,20 +42,6 @@ export const STOCK_OPTIONS: FiltroOption[] = [
 
 
 
-export const COND_OPTIONS: FiltroOption[] = [
-
-  { value: '',           labelKey: 'products.allConditions' },
-
-  { value: 'NUEVO',      labelKey: 'products.condNuevo' },
-
-  { value: 'COMO_NUEVO', labelKey: 'products.condComoNuevo' },
-
-  { value: 'USADO',      labelKey: 'products.condUsado' },
-
-]
-
-
-
 type CategoryScopeInput = string | number | boolean | null | undefined
 
 
@@ -64,9 +50,6 @@ type FiltrarCatalogoArgs = {
 
   products: Producto[]
 
-  viewMode: string
-
-  convenioMarcaNames: Set<string>
 
   search: string
 
@@ -126,6 +109,30 @@ export function categoryScopeIds(
 
 
 
+/** Texto sin tildes ni mayúsculas: "Sofá" y "sofa" coinciden (Figma `26:722`). */
+
+export function normalizarBusqueda(texto: string): string {
+
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+}
+
+
+
+/** El producto coincide con la búsqueda por nombre, marca o tienda, sin distinguir tildes. */
+
+export function coincideBusqueda(p: Pick<Producto, 'nombre' | 'marcaNombre' | 'empresaNombre'>, search: string): boolean {
+
+  const q = normalizarBusqueda(search)
+
+  if (!q) return true
+
+  return [p.nombre, p.marcaNombre, p.empresaNombre].some((t) => Boolean(t) && normalizarBusqueda(String(t)).includes(q))
+
+}
+
+
+
 /**
 
  * Aplica los filtros del catálogo (sin ordenar).
@@ -134,7 +141,7 @@ export function categoryScopeIds(
 
 export function filtrarCatalogo({
 
-  products, viewMode, convenioMarcaNames, search, categoryScope,
+  products, search, categoryScope,
 
   marcasFilter, filterStock, filterCond, filterTalla, minPrice, maxPrice,
 
@@ -142,11 +149,7 @@ export function filtrarCatalogo({
 
   return products
 
-    .filter(p => viewMode !== 'ofertas' || p.enOferta)
-
-    .filter(p => viewMode !== 'emprendimientos' || convenioMarcaNames.has(p.marcaNombre?.toLowerCase()))
-
-    .filter(p => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()) || p.marcaNombre?.toLowerCase().includes(search.toLowerCase()))
+    .filter(p => coincideBusqueda(p, search))
 
     .filter(p => !categoryScope || categoryScope.has(String(p.categoriaId)))
 

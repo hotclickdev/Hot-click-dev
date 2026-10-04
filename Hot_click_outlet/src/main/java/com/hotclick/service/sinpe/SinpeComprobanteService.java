@@ -8,10 +8,10 @@ import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteSinpeRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.SupabaseStorageService;
-import com.hotclick.service.payment.CompraPaquetes;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +37,17 @@ public class SinpeComprobanteService {
     @Autowired private NotificacionEmailService       notificacionEmailService;
     @Autowired private PaymentService                paymentService;
     @Autowired private SinpeAuditSupport             auditSupport;
+    @Autowired private SinpeAprobacionGuard          aprobacionGuard;
+    @Autowired private CompanyScope                  companyScope;
+    @Autowired private com.hotclick.service.payment.PedidoGrupoService pedidoGrupoService;
+    @Autowired private SinpeComprobantePersistenceService persistenceService;
 
-    @Transactional
+    /**
+     * Sin @Transactional a proposito: el upload a S3 es I/O externo lento (con reintentos de
+     * SupabaseStorageService) y retenerlo dentro de una transaccion agota el pool de PgBouncer
+     * bajo carga (muchos comprobantes SINPE simultaneos). La persistencia corre aparte, en
+     * {@link SinpeComprobantePersistenceService#guardar}, en su propia transaccion corta.
+     */
     public void subirComprobante(String numeroPedido, MultipartFile archivo,
                           String nombreRemitente, String cedulaRemitente,
                           String telefonoRemitente, String correoUsuario) {
@@ -68,29 +77,14 @@ public class SinpeComprobanteService {
                 "Error al subir el comprobante: " + e.getMessage(), e);
         }
 
-        ComprobanteSinpe comprobante = new ComprobanteSinpe();
-        comprobante.setPedido(pedido);
-        comprobante.setUrlComprobante(url);
-        comprobante.setNombreRemitente(nombreRemitente.trim());
-        comprobante.setCedulaRemitente(cedulaRemitente != null ? cedulaRemitente.trim() : null);
-        comprobante.setTelefonoRemitente(telefonoRemitente != null ? telefonoRemitente.trim() : null);
-        comprobante.setCorreoRemitente(correoUsuario);
-        comprobante.setEstado(Constants.COMPROBANTE_PENDIENTE);
-        comprobante.setFechaSubida(LocalDateTime.now(Constants.ZONA_CR));
-        comprobanteRepository.save(comprobante);
-
-        for (Pedido paquete : CompraPaquetes.paquetesDe(pedido, pedidoRepository)) {
-            paquete.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
-            pedidoRepository.save(paquete);
-        }
-
-        log.info("Comprobante SINPE subido: pedido={} remitente={} cedula={}", numeroPedido, nombreRemitente, cedulaRemitente);
+        persistenceService.guardar(numeroPedido, url, nombreRemitente, cedulaRemitente, telefonoRemitente, correoUsuario);
     }
 
     @Transactional
     public void aprobar(Long comprobanteId, String adminEmail, Long adminId) {
         ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
+        aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
 
         if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
             throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());
@@ -101,7 +95,7 @@ public class SinpeComprobanteService {
             throw new IllegalStateException("El pedido no está en estado PENDIENTE_APROBACION");
         }
 
-        Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository)
+        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
@@ -127,6 +121,7 @@ public class SinpeComprobanteService {
     public void rechazar(Long comprobanteId, String motivo, String adminEmail, Long adminId) {
         ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
+        aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
 
         if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
             throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());
@@ -141,21 +136,21 @@ public class SinpeComprobanteService {
         comprobante.setAdminEmail(adminEmail);
         comprobanteRepository.save(comprobante);
 
-        Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
+        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId()).orElse(null);
         if (pago != null) {
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagoRepository.save(pago);
         }
 
-        for (Pedido paquete : CompraPaquetes.paquetesDe(pedido, pedidoRepository)) {
-            paquete.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-            pedidoRepository.save(paquete);
-            paymentService.liberarReservas(paquete);
+        for (Pedido p : pedidoGrupoService.delGrupo(pedido)) {
+            p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+            pedidoRepository.save(p);
+            paymentService.liberarReservas(p);
+            if (p.getUsuarioFinal() != null) { p.getUsuarioFinal().getCorreo(); }
+            notificacionEmailService.enviarPagoFallido(p,
+                "Comprobante SINPE rechazado" + (motivo != null ? ": " + motivo : ""));
         }
-        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
-        notificacionEmailService.enviarPagoFallido(pedido,
-            "Comprobante SINPE rechazado" + (motivo != null ? ": " + motivo : ""));
 
         auditSupport.registrarAuditoria(adminId, adminEmail,
             Constants.AUDITORIA_RECHAZAR_SINPE, "COMPROBANTE_SINPE", comprobanteId,
@@ -166,6 +161,13 @@ public class SinpeComprobanteService {
 
     @Transactional(readOnly = true)
     public Page<ComprobanteSinpe> listar(String estado, Pageable pageable) {
-        return comprobanteRepository.buscarPorEstado(estado, pageable);
+        if (companyScope.isAdminIT()) {
+            return comprobanteRepository.buscarPorEstado(estado, pageable);
+        }
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId == null) {
+            throw new SecurityException(SinpeAprobacionGuard.OTRA_TIENDA);
+        }
+        return comprobanteRepository.buscarPorEstadoYEmpresa(estado, empresaId, pageable);
     }
 }

@@ -3982,7 +3982,55 @@ SET comision_porcentaje = 9.00,
     descripcion = 'Plan gratuito. Comisión 9% por venta (mín. ₡700), cubre pasarela y plataforma.'
 WHERE nombre = 'EMPRENDEDOR';
 
--- V142: Compra multi-negocio (un pedido por negocio bajo un pago)
+-- V142: un checkout multivendedor crea un subpedido por bodega/vendedor bajo un mismo pago.
+ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS grupo_pago VARCHAR(40);
+CREATE INDEX IF NOT EXISTS idx_pedido_grupo_pago ON hot_click_pedido_tb (grupo_pago);
+
+-- V143: "Avisame cuando vuelva" — interés de clientes en un producto agotado.
+-- Guarda el interés (email + usuario opcional si tenía sesión). El envío
+-- automático del correo cuando el producto vuelve a stock queda pendiente
+-- (NUEVO · por programar); esta tabla solo persiste la suscripción.
+CREATE TABLE IF NOT EXISTS hot_click_suscripcion_reposicion_tb (
+    id_suscripcion_reposicion BIGSERIAL PRIMARY KEY,
+    fk_id_producto            BIGINT NOT NULL REFERENCES hot_click_producto_tb(id_producto) ON DELETE CASCADE,
+    fk_id_usuario             BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL,
+    correo                    VARCHAR(160) NOT NULL,
+    fecha_creacion            TIMESTAMP NOT NULL DEFAULT NOW(),
+    notificado                BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_notificacion        TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_suscripcion_reposicion_producto_correo
+    ON hot_click_suscripcion_reposicion_tb (fk_id_producto, correo);
+
+CREATE INDEX IF NOT EXISTS idx_suscripcion_reposicion_producto
+    ON hot_click_suscripcion_reposicion_tb (fk_id_producto) WHERE notificado = FALSE;
+
+-- V145: enlace público de seguimiento de pedido sin cuenta (/seguimiento/{token}).
+-- Token aleatorio de 64 hex (256 bits) — nunca se consulta un pedido por su id numérico.
+ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS token_seguimiento VARCHAR(64);
+
+-- Pedidos anteriores: se les genera token para que los correos nuevos puedan enlazarlos.
+UPDATE hot_click_pedido_tb
+   SET token_seguimiento = replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')
+ WHERE token_seguimiento IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_token_seguimiento
+    ON hot_click_pedido_tb (token_seguimiento);
+
+-- V146: ampliar estado_pedido a VARCHAR(30). PENDIENTE_COMPROBANTE (21 caracteres),
+-- estado inicial del checkout SINPE/efectivo, no cabía en VARCHAR(20).
+ALTER TABLE hot_click_pedido_tb ALTER COLUMN estado_pedido TYPE VARCHAR(30);
+
+-- V147: cobro por QR de caja. Métodos que la caja deja elegir al cliente (CSV
+-- "SINPE,TARJETA"; NULL = solo metodo_pago) y fecha real del pago para el comprobante.
+ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS metodos_habilitados VARCHAR(40);
+ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS fecha_pago TIMESTAMP;
+
+-- V148: dirección de entrega en el pedido para los correos («Enviamos a …»).
+ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS direccion_entrega VARCHAR(500);
+
+-- V149: Compra multi-negocio (un pedido por negocio bajo un pago)
 -- Compra multi-negocio: un pago a HotClick agrupa un pedido (paquete) por negocio.
 CREATE TABLE IF NOT EXISTS hot_click_compra_tb (
     id_compra            BIGSERIAL    PRIMARY KEY,
@@ -4004,7 +4052,7 @@ CREATE INDEX IF NOT EXISTS idx_pedido_compra ON hot_click_pedido_tb (fk_id_compr
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS fk_id_compra BIGINT REFERENCES hot_click_compra_tb(id_compra);
 CREATE INDEX IF NOT EXISTS idx_pago_compra ON hot_click_pago_tb (fk_id_compra);
 
--- V143: Embudo de visita anónima (sin correo, nombre ni IP). Una fila por sesión del navegador.
+-- V150: Embudo de visita anónima (sin correo, nombre ni IP). Una fila por sesión del navegador.
 CREATE TABLE IF NOT EXISTS hot_click_embudo_sesion_tb (
     id_embudo_sesion BIGSERIAL PRIMARY KEY,
     session_key      VARCHAR(36) NOT NULL UNIQUE,
@@ -4017,7 +4065,7 @@ CREATE TABLE IF NOT EXISTS hot_click_embudo_sesion_tb (
 CREATE INDEX IF NOT EXISTS idx_embudo_sesion_actualizado
     ON hot_click_embudo_sesion_tb (actualizado_en);
 
--- V144: slug de categoría para landings /comprar/{slug}
+-- V151: slug de categoría para landings /comprar/{slug}
 ALTER TABLE hot_click_categoria_tb
   ADD COLUMN IF NOT EXISTS slug VARCHAR(120);
 
@@ -4053,7 +4101,7 @@ WHERE c.id_categoria = n.id_categoria
 CREATE UNIQUE INDEX IF NOT EXISTS uq_categoria_slug
   ON hot_click_categoria_tb (slug);
 
--- V145: CAByS de 13 dígitos en el producto, tiquete ligado a la compra
+-- V152: CAByS de 13 dígitos en el producto, tiquete ligado a la compra
 -- y compras de proveedores para el consolidado del D-105.
 ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS codigo_cabys VARCHAR(13);
@@ -4084,6 +4132,6 @@ CREATE TABLE IF NOT EXISTS hot_click_compra_d105_tb (
 CREATE INDEX IF NOT EXISTS idx_compra_d105_trimestre
     ON hot_click_compra_d105_tb (anio, trimestre);
 
--- V146: foto privada del comprobante de compra. La ruta no se devuelve al cliente.
+-- V153: foto privada del comprobante de compra. La ruta no se devuelve al cliente.
 ALTER TABLE hot_click_compra_d105_tb
     ADD COLUMN IF NOT EXISTS foto_path VARCHAR(500);

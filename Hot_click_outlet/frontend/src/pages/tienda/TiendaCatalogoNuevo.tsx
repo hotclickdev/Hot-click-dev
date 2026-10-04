@@ -1,22 +1,16 @@
-import { Link } from 'react-router-dom'
-import TiendaPlaceholder from './TiendaPlaceholder'
+import { useTranslation } from 'react-i18next'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import { IconoPaquete } from '@/components/comprador/estados/iconosEstado'
 
-/** Vacío de tienda pública sin catálogo: tienda nueva, no catálogo roto. */
+/** Tienda pública sin catálogo: tienda nueva, no catálogo roto (derivado de Figma: estados vacíos `45:1692`). */
 export default function TiendaCatalogoNuevo({ nombre }: { nombre: string }) {
+  const { t } = useTranslation()
   return (
-    <div className="text-center py-16 px-4">
-      <TiendaPlaceholder className="mx-auto h-12 w-12 mb-4 text-[var(--t-muted)]" />
-      <h1 className="text-xl font-bold text-[var(--t-text)]">Esta tienda está empezando</h1>
-      <p className="text-sm mt-2 max-w-md mx-auto text-[var(--t-muted)] leading-relaxed">
-        {nombre} ya está en HotClick. El catálogo se publica acá cuando haya productos.
-      </p>
-      <Link
-        to="/productos"
-        className="inline-flex items-center justify-center mt-6 px-5 min-h-11 rounded-lg text-white text-sm font-semibold"
-        style={{ backgroundColor: 'var(--t-primary)' }}
-      >
-        Ver productos en HotClick
-      </Link>
-    </div>
+    <EstadoVacio
+      icono={<IconoPaquete />}
+      titulo={t('tienda.nuevaTitulo')}
+      texto={t('tienda.nuevaTexto', { nombre })}
+      accion={{ texto: t('tienda.verProductosHotclick'), to: '/productos' }}
+    />
   )
 }

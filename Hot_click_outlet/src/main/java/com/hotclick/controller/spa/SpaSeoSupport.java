@@ -7,12 +7,12 @@ import com.hotclick.model.BlogEntrada;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.TestimonioRepository;
+import com.hotclick.service.contacto.ContactoTextoPublico;
 import com.hotclick.utils.EmpresaNombre;
+import com.hotclick.utils.FormatoColones;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.text.NumberFormat;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -25,12 +25,14 @@ public class SpaSeoSupport {
     private static final String SEO_END = "<!-- HC_SEO_BLOCK_END -->";
 
     private final TestimonioRepository testimonioRepository;
+    private final ContactoTextoPublico contactoTexto;
 
     @Value("${app.url:https://hotclick.lat}")
     private String appUrl;
 
-    public SpaSeoSupport(TestimonioRepository testimonioRepository) {
+    public SpaSeoSupport(TestimonioRepository testimonioRepository, ContactoTextoPublico contactoTexto) {
         this.testimonioRepository = testimonioRepository;
+        this.contactoTexto = contactoTexto;
     }
 
     public String injectProductMeta(String html, Producto p) {
@@ -42,6 +44,11 @@ public class SpaSeoSupport {
 
         String metaDesc = p.getMetaDescription() != null && !p.getMetaDescription().isBlank()
             ? p.getMetaDescription() : buildProductDescription(nombre, p);
+
+        // Plan sin contacto directo: sin teléfonos, correos ni enlaces externos en las meta públicas.
+        nombre = contactoTexto.texto(p.getEmpresaId(), nombre);
+        metaTitle = contactoTexto.texto(p.getEmpresaId(), metaTitle);
+        metaDesc = contactoTexto.texto(p.getEmpresaId(), metaDesc);
 
         String imagen = p.getImagenPrincipalUrl() != null && !p.getImagenPrincipalUrl().isBlank()
             ? p.getImagenPrincipalUrl() : appUrl + "/og-image.png";
@@ -100,8 +107,7 @@ public class SpaSeoSupport {
             ? p.getDescripcionCorta()
             : nombre;
         if (base.length() > 130) base = base.substring(0, 127) + "...";
-        String precio = NumberFormat.getInstance(Locale.forLanguageTag("es-CR"))
-            .format(p.getPrecioVenta());
+        String precio = FormatoColones.miles(p.getPrecioVenta());
         return base + " – ₡" + precio + " | Envío a todo Costa Rica.";
     }
 
@@ -232,6 +238,7 @@ public class SpaSeoSupport {
         String desc = empresa.getTagline() != null && !empresa.getTagline().isBlank()
             ? empresa.getTagline()
             : "Comprá en " + nombre + ", tienda en línea en Costa Rica. Envío a todo el país por HotClick.";
+        desc = contactoTexto.texto(empresa.getId(), desc);
         desc = recortar(desc, 155);
         String imagen = imagenOg(empresa);
         String path = "/tienda/" + empresa.getSlug();

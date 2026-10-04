@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import CheckoutStepper from '@/components/ui/CheckoutStepper'
+import { IndicadorPasos } from './PiezasCheckout'
 import CheckoutChrome from './CheckoutChrome'
 import TilopayCardForm from './TilopayCardForm'
 import type { TilopayCardPayload } from '@/hooks/usePayment'
@@ -10,36 +10,36 @@ type CheckoutTilopayCardProps = {
   onVolver?: () => void
 }
 
-/** Pantalla de checkout cuando el pago pasa a tarjeta embebida Tilopay. */
+/**
+ * Pantalla de checkout cuando el pago pasa a tarjeta embebida Tilopay (derivado de Figma: paso 3 · Pago de
+ * `28:1096`, tarjeta clara de 14 y campos de `28:1112`).
+ */
 export default function CheckoutTilopayCard({ payload, onVolver }: CheckoutTilopayCardProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   return (
     <CheckoutChrome>
-      <div className="mx-auto max-w-md px-4 py-14">
-        <CheckoutStepper activeStep="checkout" />
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-8 space-y-4 rounded-2xl p-6"
-          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-        >
+      <div className="mx-auto max-w-md py-6 lg:py-10">
+        <IndicadorPasos paso={3} onIr={() => navigate('/checkout')} />
+        <div className="mx-4 mt-2 flex flex-col gap-4 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 leading-[normal]">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>
+            <h1 className="font-display text-[19px] font-bold tracking-normal text-hc-n-900">
               {t('checkout.tilopayTitle')}
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
+            <p className="mt-1 text-[13px] leading-[18px] text-hc-n-600">
               {t('checkout.tilopaySubtitle', { order: payload.orderNumber || payload.numeroPedido })}
             </p>
           </div>
           <TilopayCardForm
             sdkToken={payload.sdkToken}
             monto={payload.monto}
+            moneda={payload.moneda}
             orderNumber={payload.orderNumber}
             redirectUrl={payload.redirectUrl}
             onVolver={onVolver}
           />
-        </motion.div>
+        </div>
       </div>
     </CheckoutChrome>
   )

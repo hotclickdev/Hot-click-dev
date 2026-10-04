@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -65,6 +66,10 @@ class PaymentExpirationCleanupTilopayTest {
             .thenReturn(List.of(empresa));
         when(pagoRepository.findExpiradosPendientesByEmpresa(any(), eq(1L)))
             .thenReturn(List.of(pagoTilopay));
+
+        // Pedido sin grupoPago (checkout de un solo paquete): delGrupo() devuelve solo este pedido.
+        ReflectionTestUtils.setField(service, "pedidoGrupoService",
+            new PedidoGrupoService(pedidoRepository, pagoRepository));
     }
 
     @Test

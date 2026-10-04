@@ -66,7 +66,7 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
                       {item.cantidad} × {formatPrice(precio)}
                     </p>
                   </div>
-                  <p className="text-sm font-bold text-hc-success shrink-0">{formatPrice(subtotalItem)}</p>
+                  <p className="text-sm font-bold text-hc-success-text shrink-0">{formatPrice(subtotalItem)}</p>
                 </div>
               )
             })}
@@ -80,7 +80,7 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between">
             <span className="text-hc-muted">Subtotal productos</span>
-            <span className="text-hc-success font-semibold">{formatPrice(subtotal)}</span>
+            <span className="text-hc-success-text font-semibold">{formatPrice(subtotal)}</span>
           </div>
           {(data.costoEnvio ?? 0) > 0 && (
             <div className="flex justify-between">

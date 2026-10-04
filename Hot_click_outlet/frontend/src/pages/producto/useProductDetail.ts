@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import type { TFunction } from 'i18next'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
-import useHojaAgregadoStore from '@/store/hojaAgregadoStore'
-import { tienePaqueteDe } from '@/pages/checkout/paquetesCompra'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { analytics } from '@/utils/analytics'
@@ -17,6 +15,8 @@ import {
   variantesDesdeRespuesta,
   listaImagenesProducto,
   nombreError,
+  estaAgotado,
+  tiendaDesdeCatalogo,
 } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
 import type { PersonalizacionCarrito } from '@/types/carrito'
@@ -25,10 +25,12 @@ import useAuthStore from '@/store/authStore'
 import { useTurnstileForm } from '@/hooks/useTurnstileForm'
 import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
 
+/** Debajo del breakpoint `lg` de Tailwind: la ficha móvil de Figma (390 px). */
+const MEDIA_MOVIL = '(max-width: 1023.98px)'
+
 export function useProductDetail(id: string | undefined, t: TFunction) {
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
-  const mostrarAgregado = useHojaAgregadoStore((s) => s.mostrar)
   const toast = useToast()
 
   const [product, setProduct] = useState<Producto | null>(null)
@@ -36,9 +38,8 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<string | null>(null)
   const [justAdded, setJustAdded] = useState(false)
-  const [showSticky, setShowSticky] = useState(false)
+  const [hojaAgregadoAbierta, setHojaAgregadoAbierta] = useState(false)
   const [recommendations, setRecommendations] = useState<Producto[]>([])
-  const [brandProducts, setBrandProducts] = useState<Producto[]>([])
   const [galeria, setGaleria] = useState<string[]>([])
   const [activeImg, setActiveImg] = useState(0)
   const [variantes, setVariantes] = useState<VarianteProducto[]>([])
@@ -87,6 +88,22 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recarga solo al cambiar el id de ruta
   }, [id])
 
+  // La ficha no trae la tienda: se completa con el listado público (fila de tienda, Figma `28:839`).
+  const faltaTienda = Boolean(product && !product.empresaNombre && product.empresaId)
+  useEffect(() => {
+    if (!faltaTienda || !product) return
+    const empresaId = product.empresaId
+    let vigente = true
+    productService.getAll(0, 100)
+      .then(({ data }) => {
+        const tienda = tiendaDesdeCatalogo(listaProductosDesdePagina(data), empresaId)
+        if (vigente && tienda) setProduct((prev) => (prev && String(prev.empresaId) === String(empresaId) ? { ...prev, ...tienda } : prev))
+      })
+      .catch(() => {})
+    return () => { vigente = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cargar una ficha sin tienda
+  }, [faltaTienda, product?.id])
+
   useEffect(() => {
     if (!product?.id) return
     productService.getImagenes(product.id)
@@ -119,22 +136,6 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   }, [product?.id])
 
   useEffect(() => {
-    if (!product?.marcaId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sin marca no hay carrusel
-      setBrandProducts([])
-      return
-    }
-    const controller = new AbortController()
-    productService.getByMarca(product.marcaId, 0, 8)
-      .then(({ data }) => {
-        const items = listaProductosDesdePagina(data).filter((p) => p.id !== product.id).slice(0, 6)
-        setBrandProducts(items)
-      })
-      .catch((err: unknown) => { console.error(err) })
-    return () => controller.abort()
-  }, [product?.marcaId, product?.id])
-
-  useEffect(() => {
     if (!product?.grupoVarianteId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- sin grupo no hay swatches
       setVariantes([])
@@ -149,19 +150,7 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
 
   useEffect(() => () => clearTimeout(addTimeout.current ?? undefined), [])
 
-  useEffect(() => {
-    if (loading) return
-    const el = mainCTARef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowSticky(entry.isIntersecting === false),
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loading])
-
-  const inStock = product ? product.stock > 0 : false
+  const inStock = product ? !estaAgotado(product) : false
   const atMax = product ? quantity >= product.stock : false
 
   const handleDecrease = () => setQuantity((q) => Math.max(1, q - 1))
@@ -189,20 +178,6 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
       return
     }
     agregarAlPedido({ conAviso: true })
-  }
-
-  const handleComprarAhora = () => {
-    if (product?.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO') {
-      void handleSolicitarEncargo()
-      return
-    }
-    if (!inStock) return
-    if (product?.esPersonalizado && !tieneReferencia(personalizacion)) {
-      toast({ message: 'Subí al menos una imagen o escribí notas para el artista', type: 'warning' })
-      return
-    }
-    if (!justAdded) agregarAlPedido({ conAviso: false })
-    navigate('/checkout')
   }
 
   async function handleSolicitarEncargo() {
@@ -262,24 +237,31 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
           tallaSeleccionada: tallaSeleccionada || personalizacion.tallaSeleccionada,
         }
       : undefined
-    const mismoPaquete = tienePaqueteDe(useCartStore.getState().items, productoActual)
     addItem({
       ...normalizeProduct(productoActual),
       tallaSeleccionada,
       personalizacion: pers,
     } as Producto, quantity)
     if (!conAviso) return
-    mostrarAgregado({ producto: productoActual, cantidad: quantity, mismoPaquete })
+    // Figma 45:1607: en móvil la ficha no tiene header ni barra inferior, así que la hoja es el camino al carrito.
+    if (globalThis.matchMedia?.(MEDIA_MOVIL).matches) {
+      setHojaAgregadoAbierta(true)
+      return
+    }
+    const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
+    toast({
+      message: t('product.added', { name: `${qtyPrefix}${productoActual.nombre}` }),
+      type: 'success',
+    })
     setJustAdded(true)
     addTimeout.current = setTimeout(() => setJustAdded(false), 1400)
   }
 
   return {
-    product, loading, quantity, activeTab, setActiveTab, justAdded, showSticky,
-    recommendations, brandProducts, galeria, activeImg, setActiveImg,
+    product, loading, quantity, activeTab, setActiveTab, justAdded, hojaAgregadoAbierta, setHojaAgregadoAbierta,
+    recommendations, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
-    handleComprarAhora,
     personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
     turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   }

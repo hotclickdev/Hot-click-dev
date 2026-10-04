@@ -86,6 +86,13 @@ export default function OrderCard({ order, onUpdate, onDelete }: {
                 {order.metodoPago}
               </span>
             )}
+            {order.grupoPago && (
+              // Figma 37:1791: el paquete de una compra multivendedor se marca con texto mono, sin píldora.
+              <span className="font-mono text-[11px] font-medium text-[var(--hc-muted)]"
+                title={t('adminOrders.multivendorPackageHint')}>
+                {t('adminOrders.multivendorPackage')}
+              </span>
+            )}
           </div>
           <span className="text-sm font-bold text-[var(--hc-text)] min-w-[80px] text-right">
             {formatPrice(order.total ?? 0)}

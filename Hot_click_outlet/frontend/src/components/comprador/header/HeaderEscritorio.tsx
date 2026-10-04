@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from 'react'
+import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
+import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '../negocios/negociosPublicos'
 import {
-  RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useHeaderComprador,
+  RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useConsultaBuscador, useHeaderComprador,
 } from './useHeaderComprador'
 
 const CATEGORIAS_VISIBLES_ESCRITORIO = 6
@@ -17,19 +18,24 @@ type HeaderEscritorioProps = {
 /** Header desktop del comprador (Figma `9:172`). */
 export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
   const { t } = useTranslation()
-  const { cantidadPedido, conSesion, rutaCuenta, categorias } = useHeaderComprador()
+  const { cantidadPedido, conSesion, rutaCuenta, rutaPanel, categorias } = useHeaderComprador()
 
   return (
-    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 lg:flex xl:px-[120px]">
+    <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 leading-[normal] lg:flex xl:px-[max(120px,calc((100%_-_1200px)/2))]">
       <div className="flex items-center gap-8">
         <MarcaComprador tamano="escritorio" />
         <BuscadorEscritorio onBuscarConFoto={onBuscarConFoto} />
         <div className="flex shrink-0 items-center gap-[22px] text-hc-n-900">
+          {rutaPanel && (
+            <Link to={rutaPanel} className="text-[14px] font-medium text-hc-n-600 hover:text-hc-n-900">
+              {t('comprador.header.panel')}
+            </Link>
+          )}
           <Link to={rutaCuenta} className="flex items-center gap-[6px] text-[14px] font-medium">
             <IconoFigma src={ICONOS_COMPRADOR.headerIngresar} size={20} />
             {conSesion ? t('comprador.header.miCuenta') : t('comprador.header.ingresar')}
           </Link>
-          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')}>
+          <Link to="/wishlist" aria-label={t('comprador.header.favoritos')} className="flex">
             <IconoFigma src={ICONOS_COMPRADOR.headerFavoritos} size={22} />
           </Link>
           <Link
@@ -52,20 +58,33 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
           {t('comprador.header.todasCategorias')}
           <IconoFigma src={ICONOS_COMPRADOR.chevronAbajo} size={16} />
         </Link>
-        {categorias.slice(0, CATEGORIAS_VISIBLES_ESCRITORIO).map((categoria) => (
+        {/* Tiendas por plan (directorio filtrado en el backend), separadas de las categorías por un divisor fino. */}
+        {PLANES_DIRECTORIO.map((p) => (
           <Link
-            key={categoria.id}
-            to={rutaCategoria(categoria.id)}
+            key={p.alias}
+            to={rutaDirectorioPlan(p.alias)}
             className="shrink-0 whitespace-nowrap text-[14px] font-medium text-hc-n-600 hover:text-hc-n-900"
           >
-            {categoria.nombre}
+            {t(p.nav)}
           </Link>
         ))}
-        <span className="min-w-px flex-1" />
-        <Link to={RUTA_SERVICIOS_HOT} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-500">
+        <span aria-hidden="true" className="h-4 w-px shrink-0 bg-hc-n-200" />
+        {/* Las categorías que no caben pasan a una segunda línea oculta: nunca empujan "Servicios HOT". */}
+        <div className="flex h-[18px] min-w-0 flex-1 flex-wrap items-center gap-x-[26px] overflow-hidden">
+          {categorias.slice(0, CATEGORIAS_VISIBLES_ESCRITORIO).map((categoria) => (
+            <Link
+              key={categoria.id}
+              to={rutaCategoria(categoria.id)}
+              className="shrink-0 whitespace-nowrap text-[14px] font-medium leading-[18px] text-hc-n-600 hover:text-hc-n-900"
+            >
+              {categoria.nombre}
+            </Link>
+          ))}
+        </div>
+        <Link to={RUTA_SERVICIOS_HOT} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-600">
           {t('comprador.header.serviciosHot')}
         </Link>
-        <Link to={RUTA_VENDE} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-500">
+        <Link to={RUTA_VENDE} className="shrink-0 whitespace-nowrap text-[13px] font-medium text-hc-n-600">
           {t('comprador.header.vende')}
         </Link>
       </nav>
@@ -76,7 +95,7 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
 function BuscadorEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [consulta, setConsulta] = useState('')
+  const [consulta, setConsulta] = useConsultaBuscador()
 
   const buscar = (evento: FormEvent) => {
     evento.preventDefault()
@@ -97,7 +116,7 @@ function BuscadorEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
         onChange={(e) => setConsulta(e.target.value)}
         placeholder={t('comprador.header.buscadorDesktop')}
         aria-label={t('comprador.header.buscar')}
-        className="min-w-px flex-1 truncate bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
+        className="hc-input-libre min-w-px flex-1 truncate bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
       />
       <button
         type="button"

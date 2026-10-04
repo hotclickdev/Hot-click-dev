@@ -48,6 +48,8 @@ export type EmpresaPedidoTab = {
   estado?: string
   cliente?: string
   metodoPago?: string
+  /** Presente cuando este subpedido es parte de una compra con varios vendedores (un solo pago a HotClick). */
+  grupoPago?: string | null
 }
 
 export type EmpresaMiembroTab = {
@@ -101,7 +103,7 @@ export const PLAN_COLOR: Record<string, string> = {
 }
 
 export const ESTADO_COLOR: Record<string, string> = {
-  ACTIVO: 'bg-[var(--hc-success-bg)] text-hc-success',
+  ACTIVO: 'bg-[var(--hc-success-bg)] text-hc-success-text',
   PENDIENTE_APROBACION: 'bg-[var(--hc-warning-bg)] text-hc-warning',
   SUSPENDIDO: 'bg-[var(--hc-danger-bg)] text-hc-danger',
   INACTIVO: 'bg-hc-surface-2 text-hc-muted',

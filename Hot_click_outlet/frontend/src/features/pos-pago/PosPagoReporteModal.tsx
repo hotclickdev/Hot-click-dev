@@ -65,10 +65,10 @@ export default function PosPagoReporteModal({ open, onClose, token, codigoError 
   return (
     <Modal open={open} onClose={cerrar} title={t('pos.reporte.tituloCliente')} size="md">
       <div className="space-y-4 px-6 py-4">
-        <p className="text-sm text-[var(--hc-muted)]">{t('pos.reporte.subtituloCliente')}</p>
+        <p className="text-sm text-hc-muted">{t('pos.reporte.subtituloCliente')}</p>
 
         <fieldset className="space-y-2">
-          <legend className="text-xs font-bold uppercase tracking-wide text-[var(--hc-muted)]">
+          <legend className="text-xs font-bold uppercase tracking-wide text-hc-muted">
             {t('pos.reporte.tiposLabel')}
           </legend>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -77,7 +77,7 @@ export default function PosPagoReporteModal({ open, onClose, token, codigoError 
               return (
                 <label
                   key={id}
-                  className="flex min-h-11 cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm text-[var(--hc-text)]"
+                  className="flex min-h-11 cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm text-hc-text"
                   style={{
                     borderColor: checked ? 'var(--hc-primary)' : 'var(--hc-border)',
                     backgroundColor: checked ? 'rgba(23, 71, 168, 0.08)' : 'var(--hc-surface)',
@@ -85,7 +85,7 @@ export default function PosPagoReporteModal({ open, onClose, token, codigoError 
                 >
                   <input
                     type="checkbox"
-                    className="mt-0.5 size-4 shrink-0 accent-[var(--hc-primary)]"
+                    className="mt-0.5 size-4 shrink-0 accent-hc-primary"
                     checked={checked}
                     onChange={() => toggleTipo(id)}
                   />
@@ -97,7 +97,7 @@ export default function PosPagoReporteModal({ open, onClose, token, codigoError 
         </fieldset>
 
         <div className="space-y-1.5">
-          <label htmlFor="pos-pago-reporte-detalle" className="text-xs font-bold uppercase tracking-wide text-[var(--hc-muted)]">
+          <label htmlFor="pos-pago-reporte-detalle" className="text-xs font-bold uppercase tracking-wide text-hc-muted">
             {t('pos.reporte.detalleLabel')}
           </label>
           <textarea
@@ -106,16 +106,16 @@ export default function PosPagoReporteModal({ open, onClose, token, codigoError 
             value={detalle}
             onChange={(e) => setDetalle(e.target.value)}
             placeholder={t('pos.reporte.detallePlaceholderCliente')}
-            className="w-full resize-y rounded-xl border border-[var(--hc-border)] bg-[var(--hc-surface)] px-3 py-2.5 text-sm text-[var(--hc-text)] outline-none focus:ring-2 focus:ring-[var(--hc-primary)]"
+            className="w-full resize-y rounded-xl border border-hc-border bg-hc-surface px-3 py-2.5 text-sm text-hc-text outline-none focus:ring-2 focus:ring-hc-primary"
           />
-          <p className="text-xs text-[var(--hc-muted)]">{t('pos.reporte.detalleAyuda')}</p>
+          <p className="text-xs text-hc-muted">{t('pos.reporte.detalleAyuda')}</p>
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={cerrar}
-            className="min-h-11 rounded-xl border border-[var(--hc-border)] bg-[var(--hc-surface)] px-4 text-sm font-semibold text-[var(--hc-text)]"
+            className="min-h-11 rounded-xl border border-hc-border bg-hc-surface px-4 text-sm font-semibold text-hc-text"
           >
             {t('pos.reporte.cancelar')}
           </button>

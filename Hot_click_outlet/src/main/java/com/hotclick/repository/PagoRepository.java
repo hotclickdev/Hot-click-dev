@@ -1,10 +1,11 @@
 package com.hotclick.repository;
 
 import com.hotclick.model.Pago;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,10 +19,14 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     Optional<Pago> findByMerchantToken(String merchantToken);
 
-    /** Pasa a FALLIDO solo si sigue PENDIENTE: un segundo aviso de fallo no libera reservas otra vez. */
-    @Modifying
-    @Query("UPDATE Pago p SET p.estadoPago = 'FALLIDO', p.fechaActualizacion = :ahora WHERE p.id = :id AND p.estadoPago = 'PENDIENTE'")
-    int marcarFallidoSiPendiente(@Param("id") Long id, @Param("ahora") LocalDateTime ahora);
+    /** Serializa confirmación y webhook del mismo cobro. El lock dura la transacción. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Pago p WHERE p.merchantToken = :merchantToken")
+    Optional<Pago> findByMerchantTokenForUpdate(@Param("merchantToken") String merchantToken);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Pago p WHERE p.pedido.id = :pedidoId ORDER BY p.fechaCreacion DESC")
+    Optional<Pago> findTopByPedidoIdForUpdate(@Param("pedidoId") Long pedidoId);
 
     @Query("SELECT p FROM Pago p WHERE p.pedido.id = :pedidoId AND p.usuario.id = :usuarioId ORDER BY p.fechaCreacion DESC")
     Optional<Pago> findTopByPedidoIdAndUsuarioId(Long pedidoId, Long usuarioId);

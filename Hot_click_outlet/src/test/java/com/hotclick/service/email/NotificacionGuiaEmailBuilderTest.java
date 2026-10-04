@@ -1,96 +1,106 @@
 package com.hotclick.service.email;
 
-import com.hotclick.model.Compra;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
-import com.hotclick.service.ResendEmailService;
-import com.hotclick.service.WhatsAppService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("Email de guía — «Paquete X de N» en compras multi-negocio")
+@DisplayName("NotificacionGuiaEmailBuilder — correo de guía (Figma: Correo · Guía asignada)")
 class NotificacionGuiaEmailBuilderTest {
 
-    private NotificacionGuiaEmailBuilder builder;
-    private Usuario cliente;
+    private final NotificacionGuiaEmailBuilder builder = new NotificacionGuiaEmailBuilder();
 
     @BeforeEach
     void setUp() {
-        builder = new NotificacionGuiaEmailBuilder();
         ReflectionTestUtils.setField(builder, "layout", new EmailLayoutHelper());
-        cliente = new Usuario();
-        cliente.setNombre("Ana");
-        cliente.setCorreo("ana@test.cr");
+    }
+
+    private Pedido pedido(String guia, String urlTracking, String nombreCliente) {
+        Pedido p = new Pedido();
+        p.setNumeroPedido("ORD-10482");
+        p.setNumeroGuia(guia);
+        p.setUrlTracking(urlTracking);
+        Usuario cliente = new Usuario();
+        cliente.setNombre(nombreCliente);
+        p.setUsuarioFinal(cliente);
+        return p;
     }
 
     @Test
-    @DisplayName("Compra de 3 paquetes → «ORD-10482 · Paquete 2 de 3» junto al número")
-    void compraMultiPaquete_muestraPaqueteXdeN() {
-        Pedido pedido = paquete("ORD-10482-2", 2, compra("ORD-10482", 3));
+    @DisplayName("Muestra la guía de Correos de Costa Rica cuando no hay tracking externo")
+    void guiaCorreosCr() {
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        String html = builder.buildNotificacionGuia(p, p.getUsuarioFinal());
 
-        String html = builder.buildNotificacionGuia(pedido, cliente);
-
-        assertThat(html).contains("ORD-10482 · Paquete 2 de 3");
+        assertThat(html)
+            .contains("RR123456789CR")
+            .contains("Correos de Costa Rica")
+            .contains("ORD-10482")
+            .contains("rastreo.correos.go.cr");
     }
 
     @Test
-    @DisplayName("Compra de un solo paquete → solo el número del pedido, sin «Paquete»")
-    void compraDeUnPaquete_noMuestraPaquete() {
-        Pedido pedido = paquete("ORD-500", 1, compra("ORD-500", 1));
+    @DisplayName("Enlaza al seguimiento público con el token del pedido; sin token cae a Mis pedidos")
+    void enlazaSeguimientoPublico() {
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        String token = com.hotclick.utils.TokenSeguimientoPedido.generar();
+        p.setTokenSeguimiento(token);
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("https://hotclick.lat/seguimiento/" + token);
 
-        String html = builder.buildNotificacionGuia(pedido, cliente);
-
-        assertThat(html).contains("ORD-500").doesNotContain("Paquete 1 de 1");
+        p.setTokenSeguimiento(null);
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("https://hotclick.lat/mis-pedidos")
+            .doesNotContain("/seguimiento/");
     }
 
     @Test
-    @DisplayName("Pedido previo a V142 (sin compra) → número del pedido tal cual")
-    void pedidoSinCompra_usaNumeroPedido() {
-        Pedido pedido = paquete("ORD-VIEJO", null, null);
-
-        assertThat(NotificacionGuiaEmailBuilder.numeroConPaquete(pedido)).isEqualTo("ORD-VIEJO");
+    @DisplayName("Escapa el número de guía")
+    void escapaGuia() {
+        Pedido p = pedido("<b>RR1</b>", null, "Ana");
+        String html = builder.buildNotificacionGuia(p, p.getUsuarioFinal());
+        assertThat(html).doesNotContain("<b>RR1</b>").contains("&lt;b&gt;RR1&lt;/b&gt;");
     }
 
     @Test
-    @DisplayName("El asunto del correo también lleva «Paquete X de N»")
-    void asunto_llevaPaqueteXdeN() {
-        ResendEmailService resend = mock(ResendEmailService.class);
-        PedidoEmailBuilder pedidoEmailBuilder = mock(PedidoEmailBuilder.class);
-        NotificacionPedidoEmailSender sender = new NotificacionPedidoEmailSender();
-        ReflectionTestUtils.setField(sender, "resendEmailService", resend);
-        ReflectionTestUtils.setField(sender, "whatsAppService", mock(WhatsAppService.class));
-        ReflectionTestUtils.setField(sender, "pedidoEmailBuilder", pedidoEmailBuilder);
-        Pedido pedido = paquete("ORD-10482", 1, compra("ORD-10482", 3));
-        pedido.setUsuarioFinal(cliente);
-        when(pedidoEmailBuilder.buildNotificacionGuia(pedido, cliente)).thenReturn("<html></html>");
+    @DisplayName("B17: «Paquete N de M» cuando el pago tiene varios paquetes; solo uno no lo dibuja")
+    void paqueteNdeM() {
+        com.hotclick.repository.PedidoRepository repo = mock(com.hotclick.repository.PedidoRepository.class);
+        ReflectionTestUtils.setField(builder, "pedidoRepository", repo);
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        p.setId(11L);
+        p.setGrupoPago("GRP-1");
+        Pedido otro = new Pedido();
+        otro.setId(10L);
+        when(repo.findByGrupoPagoOrderByIdAsc("GRP-1")).thenReturn(java.util.List.of(otro, p));
 
-        sender.enviarNotificacionGuia(pedido);
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("Paquete 2 de 2.")
+            .contains("Los otros paquetes de tu compra");
 
-        verify(resend).send(eq("ana@test.cr"), eq("Tu pedido va en camino — ORD-10482 · Paquete 1 de 3"), anyString());
+        when(repo.findByGrupoPagoOrderByIdAsc("GRP-1")).thenReturn(java.util.List.of(p));
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .doesNotContain("Paquete ")
+            .doesNotContain("Los otros paquetes");
     }
 
-    private static Compra compra(String numero, int paquetes) {
-        Compra compra = new Compra();
-        compra.setNumeroCompra(numero);
-        compra.setCantidadPaquetes(paquetes);
-        return compra;
-    }
+    @Test
+    @DisplayName("El plazo de entrega sale de la config única (tiempos-envio.json), no de un texto fijo")
+    void plazoDesdeLaConfigUnica() {
+        Pedido p = pedido("RR123456789CR", null, "Andrea");
+        p.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal()))
+            .contains("La entrega tarda " + com.hotclick.config.TiemposEnvio.plazo("ENVIO_NORMAL_GAM") + ".")
+            .contains("de 2 a 4 días hábiles")
+            .doesNotContain("2 a 5");
 
-    private static Pedido paquete(String numeroPedido, Integer numeroPaquete, Compra compra) {
-        Pedido pedido = new Pedido();
-        pedido.setNumeroPedido(numeroPedido);
-        pedido.setNumeroPaquete(numeroPaquete);
-        pedido.setCompra(compra);
-        pedido.setNumeroGuia("RR123456789CR");
-        return pedido;
+        p.setMetodoEnvio("ENVIO_NORMAL_FUERA_GAM");
+        assertThat(builder.buildNotificacionGuia(p, p.getUsuarioFinal())).contains("La entrega tarda de 3 a 4 días hábiles.");
     }
 }

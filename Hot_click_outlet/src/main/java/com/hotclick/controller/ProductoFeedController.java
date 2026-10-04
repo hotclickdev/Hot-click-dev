@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.service.contacto.ContactoTextoPublico;
 import com.hotclick.model.BlogEntrada;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.BlogEntradaRepository;
@@ -28,6 +29,7 @@ public class ProductoFeedController {
     @Autowired private ProductoRepository    productoRepository;
     @Autowired private BlogEntradaRepository blogEntradaRepository;
     @Autowired private SeoPublicoService     seoPublicoService;
+    @Autowired private ContactoTextoPublico  contactoTexto;
 
     @Value("${app.url:https://hotclick.lat}")
     private String appUrl;
@@ -52,6 +54,9 @@ public class ProductoFeedController {
             String marcaNombre = p.getMarca() != null ? p.getMarca().getNombreMarca() : null;
             String title    = marcaNombre != null ? nombre + " - " + marcaNombre : nombre;
             String desc     = stripHtml(p.getDescripcionCorta() != null ? p.getDescripcionCorta() : nombre);
+            // Plan sin contacto directo: el feed público no lleva teléfonos, correos ni enlaces externos.
+            title = contactoTexto.texto(p.getEmpresaId(), title);
+            desc  = contactoTexto.texto(p.getEmpresaId(), desc);
             String imagen   = p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "";
             String brand    = marcaNombre != null ? marcaNombre : "HOTCLICK";
             String condicion = condicionGMC(p.getCondicion());

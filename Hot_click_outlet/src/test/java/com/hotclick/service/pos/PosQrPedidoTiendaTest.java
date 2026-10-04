@@ -4,11 +4,11 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.model.TurnoCaja;
+import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.PosQrSesionRepository;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.StripeService;
 import com.hotclick.service.TurnoCajaService;
-import com.hotclick.service.payment.CompraCheckoutResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -35,6 +34,7 @@ class PosQrPedidoTiendaTest {
     private static final int TOTAL_QR = 15000;
 
     @Mock PosQrSesionRepository posQrRepo;
+    @Mock PedidoRepository pedidoRepository;
     @Mock StripeService stripeService;
     @Mock OnvoService onvoService;
     @Mock PosQrSessionService sessionService;
@@ -48,8 +48,9 @@ class PosQrPedidoTiendaTest {
         PosQrSesion sesion = sesionPendiente();
         when(posQrRepo.findByToken("tokencarrito01")).thenReturn(Optional.of(sesion));
         when(posQrRepo.save(sesion)).thenReturn(sesion);
+        when(pedidoRepository.findById(88L)).thenReturn(Optional.of(pedido(88L, EMPRESA_QR, TOTAL_QR)));
 
-        service.vincularPedidoTienda("tokencarrito01", compra(pedido(88L, EMPRESA_QR, TOTAL_QR)));
+        service.vincularPedidoTienda("tokencarrito01", 88L);
 
         assertThat(sesion.getPedidoId()).isEqualTo(88L);
         assertThat(sesion.getEstado()).isEqualTo("PENDIENTE");
@@ -61,8 +62,9 @@ class PosQrPedidoTiendaTest {
     void noVinculaPedidoDeOtroNegocio() {
         PosQrSesion sesion = sesionPendiente();
         when(posQrRepo.findByToken("tokencarrito01")).thenReturn(Optional.of(sesion));
+        when(pedidoRepository.findById(88L)).thenReturn(Optional.of(pedido(88L, 99L, TOTAL_QR)));
 
-        service.vincularPedidoTienda("tokencarrito01", compra(pedido(88L, 99L, TOTAL_QR)));
+        service.vincularPedidoTienda("tokencarrito01", 88L);
 
         assertThat(sesion.getPedidoId()).isNull();
         verify(posQrRepo, never()).save(any());
@@ -73,8 +75,9 @@ class PosQrPedidoTiendaTest {
     void noVinculaPedidoDeOtroMonto() {
         PosQrSesion sesion = sesionPendiente();
         when(posQrRepo.findByToken("tokencarrito01")).thenReturn(Optional.of(sesion));
+        when(pedidoRepository.findById(88L)).thenReturn(Optional.of(pedido(88L, EMPRESA_QR, 500)));
 
-        service.vincularPedidoTienda("tokencarrito01", compra(pedido(88L, EMPRESA_QR, 500)));
+        service.vincularPedidoTienda("tokencarrito01", 88L);
 
         assertThat(sesion.getPedidoId()).isNull();
     }
@@ -84,12 +87,8 @@ class PosQrPedidoTiendaTest {
     void noPisaVinculoNiAceptaVariosPaquetes() {
         PosQrSesion vinculada = sesionPendiente();
         vinculada.setPedidoId(50L);
-        assertThat(PosQrVentaService.motivoRechazoVinculo(vinculada, compra(pedido(88L, EMPRESA_QR, TOTAL_QR))))
+        assertThat(PosQrVentaService.motivoRechazoVinculo(vinculada, pedido(88L, EMPRESA_QR, TOTAL_QR)))
             .contains("ya vinculada");
-
-        CompraCheckoutResult varios = new CompraCheckoutResult(null,
-            List.of(pedido(88L, EMPRESA_QR, TOTAL_QR), pedido(89L, 8L, 1000)), List.of());
-        assertThat(PosQrVentaService.motivoRechazoVinculo(sesionPendiente(), varios)).contains("varios negocios");
     }
 
     @Test
@@ -185,7 +184,4 @@ class PosQrPedidoTiendaTest {
         return pedido;
     }
 
-    private static CompraCheckoutResult compra(Pedido pedido) {
-        return new CompraCheckoutResult(null, List.of(pedido), List.of());
-    }
 }

@@ -29,6 +29,7 @@ public class ProductoWriteOperations {
     @Autowired private ProductoCacheEvictor cacheEvictor;
     @Autowired private ProductoGuardadoNotifier guardadoNotifier;
     @Autowired private UbicacionDespachoService ubicacionDespachoService;
+    @Autowired private SkuAsignador skuAsignador;
 
     @Transactional
     public Producto crearProducto(Object source, ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
@@ -39,9 +40,6 @@ public class ProductoWriteOperations {
         Producto p = new Producto();
         dtoMapper.mapDtoToProducto(dto, p);
         p.setEstado(Constants.ESTADO_ACTIVO);
-        if (p.getSku() == null) {
-            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        }
         p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
             .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
 
@@ -59,7 +57,11 @@ public class ProductoWriteOperations {
         }
         p.setAdminCliente(usuarioRepository.findByCorreo(adminCorreo)
             .orElseThrow(() -> new RecursoNoEncontradoException("Admin", adminCorreo)));
-        p.setEmpresa(empresa);
+        if (empresa != null) {
+            skuAsignador.asignarSiguiente(p, empresa);
+        } else if (p.getSku() == null) {
+            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        }
         Producto saved = productoRepository.save(p);
         guardadoNotifier.publish(source, saved, empresa != null ? empresa.getId() : null);
         return saved;

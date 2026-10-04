@@ -77,11 +77,20 @@ public class GiftCardService {
      */
     @Transactional
     public Optional<GiftCard> validar(String codigo, Long empresaId) {
-        Optional<GiftCard> opt = giftCardRepository.findByCodigo(codigo.toUpperCase());
+        return validarPublico(codigo).filter(gc -> gc.getEmpresa().getId().equals(empresaId));
+    }
+
+    /**
+     * Valida sin exigir tenant: el comprador del marketplace no tiene JWT de empresa.
+     * La tarjeta sigue siendo de una tienda; el checkout la aplica solo al paquete de esa tienda.
+     */
+    @Transactional
+    public Optional<GiftCard> validarPublico(String codigo) {
+        Optional<GiftCard> opt = giftCardRepository.findByCodigo(codigo.trim().toUpperCase());
         if (opt.isEmpty()) return Optional.empty();
 
         GiftCard gc = opt.get();
-        if (!gc.getEmpresa().getId().equals(empresaId)) return Optional.empty();
+        if (gc.getEmpresa() == null) return Optional.empty();
         if (!"ACTIVA".equals(gc.getEstado())) return Optional.empty();
         if (gc.getSaldoActual() <= 0) return Optional.empty();
         if (gc.getFechaVencimiento() != null && gc.getFechaVencimiento().isBefore(LocalDate.now(Constants.ZONA_CR))) {

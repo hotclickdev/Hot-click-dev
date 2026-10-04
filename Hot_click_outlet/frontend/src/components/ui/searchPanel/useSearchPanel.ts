@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
+import useChatStore from '@/store/chatStore'
+import { sugerenciasBusqueda } from '@/pages/catalogo/buscarExplorar'
+import { RUTA_BUSCAR_FOTO } from '@/pages/buscar/rutasBuscar'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import { analytics } from '@/utils/analytics'
+import { useBuscarNegocios } from '@/components/comprador/negocios/useBuscarNegocios'
+import { rutaTienda } from '@/components/comprador/negocios/negociosPublicos'
+import type { NegocioPublico } from '@/services/negocioService'
 import type { Producto, ProductoBackend } from '@/types/producto'
 import {
   getRecent,
@@ -32,7 +38,7 @@ function marcasDesdeRespuesta(data: unknown): MarcaBusqueda[] {
   return Array.isArray(brands) ? brands as MarcaBusqueda[] : []
 }
 
-/** Estado y handlers del panel de búsqueda — bit-idéntico al original. */
+/** Estado y handlers del panel de búsqueda híbrida: productos en vivo, sugerencias, asistente y foto. */
 export function useSearchPanel() {
   const searchOpen = useUiStore((s) => s.searchOpen)
   const setSearchOpen = useUiStore((s) => s.setSearchOpen)
@@ -106,17 +112,16 @@ export function useSearchPanel() {
     return allBrands.filter((b) => b.nombreMarca?.toLowerCase().includes(q)).slice(0, 3)
   }, [q, allBrands])
 
-  const productResults = useMemo(() => {
+  const todosLosResultados = useMemo(() => {
     if (!q) return []
-    return allProducts
-      .filter((p) =>
-        p.nombre?.toLowerCase().includes(q) ||
-        p.categoriaNombre?.toLowerCase().includes(q) ||
-        p.marcaNombre?.toLowerCase().includes(q) ||
-        p.descripcion?.toLowerCase().includes(q)
-      )
-      .slice(0, 6)
+    return allProducts.filter((p) =>
+      p.nombre?.toLowerCase().includes(q) ||
+      p.categoriaNombre?.toLowerCase().includes(q) ||
+      p.marcaNombre?.toLowerCase().includes(q) ||
+      p.descripcion?.toLowerCase().includes(q)
+    )
   }, [q, allProducts])
+  const productResults = useMemo(() => todosLosResultados.slice(0, 6), [todosLosResultados])
 
   useEffect(() => {
     clearTimeout(analyticsTimer.current ?? undefined)
@@ -135,14 +140,42 @@ export function useSearchPanel() {
     )
   }, [brandResults, allProducts])
 
-  const hasResults = brandResults.length > 0 || productResults.length > 0
+  // Negocios por nombre o slug (backend, sin tildes): van arriba de los productos.
+  const { negocios: negocioResults, cargando: cargandoNegocios } = useBuscarNegocios(searchOpen ? debouncedQuery : '')
+
+  const sugerencias = useMemo(() => sugerenciasBusqueda(debouncedQuery, allProducts), [debouncedQuery, allProducts])
+
+  const hasResults = brandResults.length > 0 || productResults.length > 0 || negocioResults.length > 0
 
   const close = () => setSearchOpen(false)
+
+  const preguntarAsistente = () => {
+    const texto = query.trim()
+    close()
+    useChatStore.getState().open(texto || null)
+  }
+
+  const buscarConFoto = () => {
+    close()
+    navigate(RUTA_BUSCAR_FOTO)
+  }
+
+  const elegirSugerencia = (texto: string) => {
+    saveRecent(texto)
+    close()
+    navigate(`/productos?search=${encodeURIComponent(texto)}`)
+  }
 
   const selectBrand = (brand: MarcaBusqueda) => {
     saveRecent(brand.nombreMarca as string)
     close()
     navigate(`/productos?marcaId=${brand.id}`)
+  }
+
+  const selectNegocio = (negocio: NegocioPublico) => {
+    saveRecent(query.trim() || negocio.nombre)
+    close()
+    navigate(rutaTienda(negocio))
   }
 
   const selectProduct = (product: Producto) => {
@@ -172,11 +205,19 @@ export function useSearchPanel() {
     inputRef,
     brandResults,
     productResults,
+    negocioResults,
+    cargandoNegocios,
+    totalResultados: todosLosResultados.length,
     brandProductCount,
     hasResults,
+    sugerencias,
+    preguntarAsistente,
+    buscarConFoto,
+    elegirSugerencia,
     close,
     selectBrand,
     selectProduct,
+    selectNegocio,
     viewAll,
     clearRecent,
   }

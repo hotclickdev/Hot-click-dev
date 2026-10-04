@@ -1,40 +1,35 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getOptimizedUrl } from '@/utils/imageUtils'
+import IconoFigma from '@/components/comprador/IconoFigma'
 import type { Producto } from '@/types/producto'
+import { ICONOS_PRODUCTO } from './iconosProducto'
 
+/**
+ * Migas de pan del desktop (Figma 29:2072, nodo 29:2120): Inicio › categoría › producto.
+ * En móvil la ficha no lleva migas (Figma 28:839).
+ */
 export default function ProductBreadcrumb({ product }: { product: Producto }) {
-  const navigate = useNavigate()
   const { t } = useTranslation()
-  const marcaHref = `/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`
+  const categoria = product.categoriaNombre
+  const enlace = 'text-hc-n-600 hover:text-hc-blue-600'
 
   return (
-    <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-sm text-hc-muted mb-3 sm:mb-6 flex-wrap">
-      <ol className="flex items-center gap-2 flex-wrap list-none p-0 m-0">
-        <li>
-          <a href="/productos" onClick={(e) => { e.preventDefault(); navigate('/productos') }}
-            className="hover:text-hc-accent transition-colors">
-            {t('product.productsNav')}
-          </a>
-        </li>
-        {product.marcaNombre && product.marcaId && (
-          <li className="flex items-center gap-2">
-            <span aria-hidden="true">/</span>
-            <a href={marcaHref}
-              onClick={(e) => { e.preventDefault(); navigate(marcaHref) }}
-              className="hover:text-hc-accent transition-colors flex items-center gap-1">
-              {product.marcaLogoUrl && (
-                <img src={getOptimizedUrl(product.marcaLogoUrl, { width: 28 })} alt="" className="w-3.5 h-3.5 object-contain rounded-sm" onError={(e) => { e.currentTarget.style.display = 'none' }} />
-              )}
-              {product.marcaNombre}
-            </a>
-          </li>
+    <nav aria-label={t('product.migasAria')} className="hidden text-[13px] leading-[normal] lg:block">
+      <ol className="m-0 flex list-none items-center gap-[6px] whitespace-nowrap p-0">
+        <li><Link to="/" className={enlace}>{t('product.migasInicio')}</Link></li>
+        {categoria && (
+          <>
+            <li aria-hidden="true" className="flex"><IconoFigma src={ICONOS_PRODUCTO.migas} size={12} className="text-[color:var(--hc-n-400)]" /></li>
+            <li>
+              {product.categoriaId
+                ? <Link to={`/productos?cat=${product.categoriaId}`} className={enlace}>{categoria}</Link>
+                : <span className="text-hc-n-600">{categoria}</span>}
+            </li>
+          </>
         )}
-        <li className="flex items-center gap-2">
-          <span aria-hidden="true">/</span>
-          <span className="text-hc-text truncate max-w-xs" aria-current="page">
-            {product.titulo || product.nombre}
-          </span>
+        <li aria-hidden="true" className="flex"><IconoFigma src={ICONOS_PRODUCTO.migas} size={12} className="text-[color:var(--hc-n-400)]" /></li>
+        <li className="min-w-0 truncate font-medium text-hc-n-900" aria-current="page">
+          {product.titulo || product.nombre}
         </li>
       </ol>
     </nav>

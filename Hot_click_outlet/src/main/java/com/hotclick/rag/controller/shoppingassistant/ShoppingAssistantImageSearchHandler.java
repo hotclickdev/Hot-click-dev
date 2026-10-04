@@ -5,6 +5,7 @@ import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.VectorSearchService;
 import com.hotclick.service.GoogleVisionService;
 import com.hotclick.service.catalogo.MarketplaceCatalogo;
+import com.hotclick.service.producto.ProductoCatalogQueries;
 import com.hotclick.service.storage.StorageImageValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +32,17 @@ public class ShoppingAssistantImageSearchHandler {
     private final ShoppingAssistantTenantGuard tenantGuard;
     private final VectorSearchService          vectorSearchService;
     private final GoogleVisionService          visionService;
+    private final ProductoCatalogQueries       catalogQueries;
     private final StorageImageValidator        imageValidator = new StorageImageValidator();
 
     ShoppingAssistantImageSearchHandler(ShoppingAssistantTenantGuard tenantGuard,
                                         VectorSearchService vectorSearchService,
-                                        GoogleVisionService visionService) {
+                                        GoogleVisionService visionService,
+                                        ProductoCatalogQueries catalogQueries) {
         this.tenantGuard         = tenantGuard;
         this.vectorSearchService = vectorSearchService;
         this.visionService       = visionService;
+        this.catalogQueries      = catalogQueries;
     }
 
     public ResponseEntity<Map<String, Object>> searchByImage(MultipartFile image, String empresaSlug,
@@ -89,6 +93,9 @@ public class ShoppingAssistantImageSearchHandler {
 
         // Asignar porcentajes de similitud decrecientes (sin image embeddings, es estimación)
         int[] simScores = SIM_SCORES;
+        // Tienda y categoría de cada resultado (Figma 27:882): la tienda con la regla pública del catálogo.
+        Map<Long, String> tiendas = catalogQueries.tiendasVisibles(
+            productos.stream().map(ProductoContexto::id).filter(Objects::nonNull).toList());
         List<Map<String, Object>> productosConSim = IntStream.range(0, productos.size())
             .mapToObj(i -> {
                 ProductoContexto p = productos.get(i);
@@ -99,6 +106,8 @@ public class ShoppingAssistantImageSearchHandler {
                 m.put("precio",          p.precio());
                 m.put("descripcionCorta", p.descripcionCorta());
                 m.put("imagenUrl",       p.imagenUrl());
+                m.put("empresaNombre",   tiendas.get(p.id()));
+                m.put("categoria",       p.categoria());
                 m.put("similarity",      i < simScores.length ? simScores[i] : 60);
                 return m;
             })

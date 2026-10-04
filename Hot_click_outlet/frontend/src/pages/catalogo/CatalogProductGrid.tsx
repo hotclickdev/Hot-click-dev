@@ -1,10 +1,18 @@
 import type { RefObject } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
-import ProductCard from './catalogoProductCard'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import { IconoBuscarNada } from '@/components/comprador/estados/iconosEstado'
+import ProductCard from '@/components/comprador/ProductCard'
+import { CLASE_GRILLA_TARJETAS } from './catalogoGrilla'
 import CategoryRowsView from './CategoryRowsView'
+import AsistenteEnGrilla from './AsistenteEnGrilla'
+import SinResultados from './SinResultados'
+import { Fragment } from 'react'
+
+/** El asistente aparece después de la segunda tarjeta, como en el Figma `26:722`. */
+const POSICION_ASISTENTE = 1
 import type { Producto } from '@/types/producto'
 import type { CatalogCategoria } from './catalogoTipos'
 
@@ -30,6 +38,7 @@ function tokensPaginacion(total: number, actual: number): (number | '…')[] {
 
 
 
+/** Catálogo vacío (derivado de Figma: estados vacíos `45:2198`). */
 function CatalogGridEmpty({
   hasFilters,
   onClearFilters,
@@ -43,52 +52,27 @@ function CatalogGridEmpty({
 
   if (needsGustos) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center gap-5">
-        <div>
-          <p className="font-semibold text-base mb-1" style={{ color: 'var(--hc-text)' }}>
-            {t('products.needsGustosTitle')}
-          </p>
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-            {t('products.needsGustosHint')}
-          </p>
-        </div>
-        <Link
-          to="/descubri"
-          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-          style={{ background: 'var(--hc-accent)' }}
-        >
-          {t('products.needsGustosCta')}
-        </Link>
-      </div>
+      <EstadoVacio
+        tono="azul"
+        icono={<IconoBuscarNada />}
+        titulo={t('products.needsGustosTitle')}
+        texto={t('products.needsGustosHint')}
+        accion={{ texto: t('products.needsGustosCta'), to: '/descubri' }}
+      />
     )
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center gap-5">
-      <div className="relative w-24 h-24 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-3xl"
-          style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
-        <svg className="relative w-12 h-12" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.3} viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          <line x1="8" y1="11" x2="14" y2="11" strokeLinecap="round"/>
-        </svg>
-      </div>
-      <div>
-        <p className="font-semibold text-base mb-1" style={{ color: 'var(--hc-text)' }}>{t('products.noResults')}</p>
-        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('products.noResultsHint')}</p>
-      </div>
-      {hasFilters && (
-        <button type="button" onClick={onClearFilters}
-          className="px-5 py-2 rounded-xl border text-sm font-medium transition-colors hover:opacity-70"
-          style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}>
-          {t('products.clearFilters')}
-        </button>
-      )}
-    </div>
+    <EstadoVacio
+      icono={<IconoBuscarNada />}
+      titulo={t('products.noResults')}
+      texto={t('products.noResultsHint')}
+      secundaria={hasFilters ? { texto: t('products.clearFilters'), onClick: onClearFilters } : undefined}
+    />
   )
 }
 
-
+const CLASE_PAGINA = 'flex h-9 min-w-9 items-center justify-center rounded-[10px] px-3 text-[13px] font-semibold leading-[normal] disabled:cursor-not-allowed disabled:opacity-30'
 
 function CatalogGridPagination({
 
@@ -124,7 +108,7 @@ function CatalogGridPagination({
 
         disabled={filterViewPage === 0}
 
-        className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
+        className={`${CLASE_PAGINA} border border-hc-n-200 bg-hc-n-0 text-hc-n-900`}>
 
         {t('products.prev')}
 
@@ -134,7 +118,7 @@ function CatalogGridPagination({
 
         i === '…' ? (
 
-          <span key={`gap-${idx}`} className="px-1 text-sm" style={{ color: 'var(--hc-muted)' }}>…</span>
+          <span key={`gap-${idx}`} className="px-1 text-[13px] text-hc-n-600">…</span>
 
         ) : (
 
@@ -148,14 +132,7 @@ function CatalogGridPagination({
 
             aria-current={i === filterViewPage ? 'page' : undefined}
 
-            className="w-8 h-8 rounded-lg text-sm font-semibold transition-colors"
-
-            style={i === filterViewPage
-
-              ? { background: 'var(--hc-accent)', color: '#fff' }
-
-              : { color: 'var(--hc-text-2)', border: '1px solid var(--hc-border)' }}
-
+            className={`${CLASE_PAGINA} ${i === filterViewPage ? 'bg-hc-blue-600 text-hc-n-0' : 'border border-hc-n-200 bg-hc-n-0 text-hc-n-900'}`}
           >
 
             {i + 1}
@@ -172,7 +149,7 @@ function CatalogGridPagination({
 
         disabled={filterViewPage >= filteredPages - 1}
 
-        className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
+        className={`${CLASE_PAGINA} border border-hc-n-200 bg-hc-n-0 text-hc-n-900`}>
 
         {t('products.next')}
 
@@ -184,28 +161,13 @@ function CatalogGridPagination({
 
 }
 
-
-
 function CatalogFlatGrid({
-
-  animKey, search, filtered, filteredSlice, onQuickView,
-
+  animKey, search, filteredSlice,
 }: {
-
   animKey: string
-
   search: string
-
-  filtered: Producto[]
-
   filteredSlice: Producto[]
-
-  onQuickView: (product: Producto) => void
-
 }) {
-
-  const { t } = useTranslation()
-
   return (
 
     <AnimatePresence mode="wait">
@@ -220,22 +182,13 @@ function CatalogFlatGrid({
 
       >
 
-        {search && (
-
-          <p className="text-xs mb-3 font-medium" style={{ color: 'var(--hc-muted)' }}>
-
-            {t('products.resultsFor', { count: filtered.length, q: search })}
-
-          </p>
-
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className={CLASE_GRILLA_TARJETAS}>
 
           {filteredSlice.map((product, i) => (
-
-            <ProductCard key={product.id} product={product} priority={i < 6} index={i} onQuickView={onQuickView} />
-
+            <Fragment key={product.id}>
+              <ProductCard product={product} priority={i < 6} />
+              {search && i === POSICION_ASISTENTE && <AsistenteEnGrilla consulta={search} variante="tarjeta" />}
+            </Fragment>
           ))}
 
         </div>
@@ -252,8 +205,8 @@ function CatalogFlatGrid({
 
 function cuerpoCatalogo({
   shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
-  animKey, search, filteredSlice, onQuickView,
-  products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, page,
+  animKey, search, filteredSlice,
+  products, categories, onVerMas, page,
   needsGustos,
 }: {
   shouldRender: boolean
@@ -265,20 +218,20 @@ function cuerpoCatalogo({
   animKey: string
   search: string
   filteredSlice: Producto[]
-  onQuickView: (product: Producto) => void
   products: Producto[]
   categories: CatalogCategoria[]
-  convenioMarcaNames: Set<string>
   onVerMas: (catId: unknown) => void
-  onVerEmprendimientos: () => void
   page: number
   needsGustos?: boolean
 }) {
   if (!shouldRender) {
-    return <div className="h-96 animate-pulse rounded-2xl" style={{ background: 'var(--hc-surface)' }} />
+    return <div className="h-96 animate-pulse rounded-[14px] bg-hc-n-100" />
   }
-  if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+  if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" variante="figma" /></div>
   if (filtered.length === 0) {
+    if (search.trim() && !needsGustos) {
+      return <SinResultados consulta={search.trim()} sugeridos={products.filter((p) => p.stock > 0)} />
+    }
     return (
       <CatalogGridEmpty
         hasFilters={hasFilters}
@@ -295,7 +248,7 @@ function cuerpoCatalogo({
 
         animKey={animKey} search={search}
 
-        filtered={filtered} filteredSlice={filteredSlice} onQuickView={onQuickView}
+        filteredSlice={filteredSlice}
 
       />
 
@@ -311,13 +264,9 @@ function cuerpoCatalogo({
 
       categories={categories}
 
-      convenioMarcaNames={convenioMarcaNames}
-
       onVerMas={onVerMas}
 
-      onVerEmprendimientos={onVerEmprendimientos}
-
-      onQuickView={onQuickView}
+     
 
       page={page}
 
@@ -333,8 +282,8 @@ export default function CatalogProductGrid({
   gridRef, shouldRender, loading,
   filtered, filteredSlice, filteredPages, filterViewPage, onPageChange,
   hasFilters, onClearFilters, flatGrid, animKey, search,
-  products, categories, convenioMarcaNames,
-  onVerMas, onVerEmprendimientos, onQuickView, page,
+  products, categories,
+  onVerMas, page,
   needsGustos = false,
 }: {
   gridRef: RefObject<Element | null>
@@ -352,10 +301,7 @@ export default function CatalogProductGrid({
   search: string
   products: Producto[]
   categories: CatalogCategoria[]
-  convenioMarcaNames: Set<string>
   onVerMas: (catId: unknown) => void
-  onVerEmprendimientos: () => void
-  onQuickView: (product: Producto) => void
   page: number
   needsGustos?: boolean
 }) {
@@ -363,8 +309,8 @@ export default function CatalogProductGrid({
     <div ref={gridRef as RefObject<HTMLDivElement>}>
       {cuerpoCatalogo({
         shouldRender, loading, filtered, hasFilters, onClearFilters, flatGrid,
-        animKey, search, filteredSlice, onQuickView,
-        products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, page,
+        animKey, search, filteredSlice,
+        products, categories, onVerMas, page,
         needsGustos,
       })}
       {filteredPages > 1 && flatGrid && (

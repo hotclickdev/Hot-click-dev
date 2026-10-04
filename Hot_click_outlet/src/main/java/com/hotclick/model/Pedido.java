@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.hotclick.utils.TokenSeguimientoPedido;
 import jakarta.persistence.*;
 import org.hibernate.Hibernate;
 import java.math.BigDecimal;
@@ -23,6 +24,18 @@ public class Pedido extends BaseEntity {
 
     @Column(name = "numero_pedido", unique = true, nullable = false, length = 20)
     private String numeroPedido;
+
+    /** Subpedidos de un mismo checkout (uno por vendedor) comparten este valor y un único Pago. */
+    @Column(name = "grupo_pago", length = 40)
+    private String grupoPago;
+
+    /**
+     * Token del enlace público de seguimiento (/seguimiento/{token}) que va en los correos al comprador.
+     * Nunca se serializa: un vendedor que ve su subpedido no debe poder abrir los paquetes de otros vendedores.
+     */
+    @JsonIgnore
+    @Column(name = "token_seguimiento", length = 64, unique = true)
+    private String tokenSeguimiento;
 
     @Column(name = "fecha_pedido")
     private LocalDateTime fechaPedido;
@@ -63,7 +76,8 @@ public class Pedido extends BaseEntity {
     @Column(name = "origen", length = 20)
     private String origen = "ONLINE";
 
-    @Column(name = "estado_pedido", length = 20)
+    // VARCHAR(30) desde V146: PENDIENTE_COMPROBANTE (21) no cabía en 20.
+    @Column(name = "estado_pedido", length = 30)
     private String estadoPedido = "PENDIENTE";
 
     @Column(name = "metodo_pago", nullable = false, length = 30)
@@ -115,6 +129,10 @@ public class Pedido extends BaseEntity {
 
     @Column(name = "fecha_envio")
     private LocalDateTime fechaEnvio;
+
+    /** Dirección de entrega del checkout (señas, cantón, provincia); null en retiro. V148. */
+    @Column(name = "direccion_entrega", length = 500)
+    private String direccionEntrega;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -220,6 +238,18 @@ public class Pedido extends BaseEntity {
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 
+    public String getGrupoPago() { return grupoPago; }
+    public void setGrupoPago(String grupoPago) { this.grupoPago = grupoPago; }
+
+    @JsonIgnore
+    public String getTokenSeguimiento() { return tokenSeguimiento; }
+    public void setTokenSeguimiento(String tokenSeguimiento) { this.tokenSeguimiento = tokenSeguimiento; }
+
+    @PrePersist
+    void asegurarTokenSeguimiento() {
+        if (tokenSeguimiento == null) tokenSeguimiento = TokenSeguimientoPedido.generar();
+    }
+
     public Usuario getUsuarioFinal() { return usuarioFinal; }
     public void setUsuarioFinal(Usuario usuarioFinal) { this.usuarioFinal = usuarioFinal; }
 
@@ -268,4 +298,6 @@ public class Pedido extends BaseEntity {
     public void setClienteNombre(String v) { this.clienteNombre = v; }
     public String getClienteTel() { return clienteTel; }
     public void setClienteTel(String v) { this.clienteTel = v; }
+    public String getDireccionEntrega() { return direccionEntrega; }
+    public void setDireccionEntrega(String v) { this.direccionEntrega = v; }
 }

@@ -31,6 +31,7 @@ import java.util.Map;
  *   /api/auth/2fa/verify         →  5 / 60s
  *   /api/auth/2fa/email/send     →  3 / 300s
  *   /api/auth/verify-code        →  5 / 60s
+ *   /api/auth/reset-password     →  5 / 60s
  *   /api/auth/registro-empresa   →  5 / 60s
  *   /api/auth/register           →  5 / 3600s
  *   /api/auth/send-verification  →  5 / 60s
@@ -56,6 +57,7 @@ import java.util.Map;
  *   /api/marcas/publicas           →  60 / 60s
  *   /api/categorias/**             →  60 / 60s
  *   /api/blog/publico/**           →  60 / 60s
+ *   /api/public/pedidos/seguimiento/** → 20 / 60s
  *   /api/public/**                 →  60 / 60s
  *   /api/tienda/**                 → 120 / 60s
  *   /api/productos/**              → 120 / 60s
@@ -85,6 +87,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/2fa/verify",         new Limit(5,    60)),
         Map.entry("/api/auth/2fa/email/send",     new Limit(3,   300)),
         Map.entry("/api/auth/verify-code",        new Limit(5,    60)),
+        Map.entry("/api/auth/reset-password",     new Limit(5,    60)),
         Map.entry("/api/auth/registro-empresa",   new Limit(5,    60)),
         Map.entry("/api/auth/register",           new Limit(5,  3600)),
         Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
@@ -120,7 +123,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // QR de pago POS público: cada POST crea checkout o intento en ONVO/Stripe
         new PrefixLimit("/api/pos/qr/pago/", null, 10, 60),
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
-        new PrefixLimit("/api/qr/", null, 10, 60)
+        new PrefixLimit("/api/qr/", null, 10, 60),
+        // "Avisame cuando vuelva" es publico y solo pide un email: sin limite se insertan filas sin fin.
+        new PrefixLimit("/api/productos/", "/avisar-reposicion", 5, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -134,6 +139,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/marcas/publicas",             60,  60),
         new GetLimit("/api/categorias",                  60,  60),
         new GetLimit("/api/blog/publico",                60,  60),
+        // Seguimiento por token: más estricto que el resto de /api/public (dificulta adivinar tokens).
+        new GetLimit("/api/public/pedidos/seguimiento",  20,  60),
         new GetLimit("/api/public",                      60,  60),
         new GetLimit("/api/tienda",                     120,  60),
         new GetLimit("/api/productos",                  120,  60)

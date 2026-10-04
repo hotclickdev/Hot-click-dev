@@ -13,6 +13,8 @@ public interface WalletTransaccionRepository extends JpaRepository<WalletTransac
 
     boolean existsByReferenciaTipoAndReferenciaId(String referenciaTipo, Long referenciaId);
 
+    boolean existsByReferenciaTipoAndReferenciaIdAndTipo(String referenciaTipo, Long referenciaId, String tipo);
+
     /** Último saldo registrado en el ledger para calcular saldo_tras_movimiento. */
     @Query("""
         SELECT COALESCE(MAX(t.saldoTrasMovimiento), 0)

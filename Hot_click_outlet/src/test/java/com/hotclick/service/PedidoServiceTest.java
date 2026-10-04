@@ -3,16 +3,24 @@ package com.hotclick.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ManualPedidoDTO;
+import com.hotclick.exception.PedidoNoDespachableException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.service.pedido.PedidoDetailMapper;
 import com.hotclick.service.pedido.PedidoManualFactory;
+import com.hotclick.service.pedido.PedidoPagoManualService;
+import com.hotclick.service.pedido.PedidoDespachoVerificador;
+import com.hotclick.service.payment.PedidoGrupoService;
 import com.hotclick.service.pedido.PedidoNotificacionAppender;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,6 +45,8 @@ class PedidoServiceTest {
     @Mock private BodegaRepository          bodegaRepository;
     @Mock private ProductoRepository        productoRepository;
     @Mock private ObjectMapper              objectMapper;
+    @Mock private PedidoPagoManualService   pedidoPagoManualService;
+    @Mock private PedidoGrupoService        pedidoGrupoService;
 
     @InjectMocks private PedidoManualFactory         pedidoManualFactory;
     @InjectMocks private PedidoNotificacionAppender  pedidoNotificacionAppender;
@@ -57,6 +67,10 @@ class PedidoServiceTest {
         ReflectionTestUtils.setField(service, "pedidoManualFactory", pedidoManualFactory);
         ReflectionTestUtils.setField(service, "pedidoNotificacionAppender", pedidoNotificacionAppender);
         ReflectionTestUtils.setField(service, "pedidoDetailMapper", pedidoDetailMapper);
+        ReflectionTestUtils.setField(service, "pedidoPagoManualService", pedidoPagoManualService);
+        ReflectionTestUtils.setField(service, "despachoVerificador", new PedidoDespachoVerificador(pedidoGrupoService));
+        // Por defecto el pedido tiene un Pago CAPTURADO; los tests de "sin pago" lo cambian.
+        lenient().when(pedidoGrupoService.pagoDelGrupo(any())).thenReturn(Optional.of(pago(Constants.PAGO_CAPTURADO)));
 
         testUser = new Usuario();
         testUser.setId(1L);
@@ -183,7 +197,7 @@ class PedidoServiceTest {
     @Test
     @DisplayName("cambiarEstado → actualiza estadoPedido, sin email si no hay nota")
     void cambiarEstado_sinNota_noEnviaEmail() {
-        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
 
@@ -210,7 +224,7 @@ class PedidoServiceTest {
     @DisplayName("cambiarEstado → con nota envía email de seguimiento")
     @SuppressWarnings("unchecked")
     void cambiarEstado_conNota_enviaEmail() throws Exception {
-        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
         when(objectMapper.readValue(anyString(), any(TypeReference.class)))
@@ -349,7 +363,231 @@ class PedidoServiceTest {
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENVIADO);
     }
 
+    // ── despacho sin pago confirmado (BUG-02) ─────────────────────────────────
+
+    @ParameterizedTest(name = "asignarGuia rechaza {0}")
+    @ValueSource(strings = {"PENDIENTE", "PENDIENTE_COMPROBANTE", "PENDIENTE_APROBACION"})
+    @NullAndEmptySource
+    @DisplayName("asignarGuia → 409 si el pago no está confirmado; no guarda ni avisa al cliente")
+    void asignarGuia_sinPagoConfirmado_rechaza(String estado) {
+        Pedido pedido = buildPedido(estado);
+        sinPagoCapturado();
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.asignarGuia(1L, "RR123456789CR"))
+            .isInstanceOf(PedidoNoDespachableException.class)
+            .hasMessageContaining("pago")
+            .hasMessageContaining("no está confirmado");
+
+        assertThat(pedido.getEstadoPedido()).isEqualTo(estado);
+        assertThat(pedido.getNumeroGuia()).isNull();
+        verify(pedidoRepository, never()).save(any());
+        verify(notificacionEmailService, never()).enviarNotificacionGuia(any());
+    }
+
+    @Test
+    @DisplayName("asignarGuia → 409 si el pedido está cancelado")
+    void asignarGuia_cancelado_rechaza() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_CANCELADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.asignarGuia(1L, "RR123456789CR"))
+            .isInstanceOf(PedidoNoDespachableException.class)
+            .hasMessageContaining("cancelado");
+        verify(pedidoRepository, never()).save(any());
+    }
+
+    @ParameterizedTest(name = "asignarGuia acepta {0}")
+    @ValueSource(strings = {"PAGADO", "EN_PREPARACION", "LISTO_RETIRO", "ENVIADO"})
+    @DisplayName("asignarGuia → con pago confirmado (o corrigiendo la guía de un ENVIADO) sigue igual")
+    void asignarGuia_pagoConfirmado_acepta(String estado) {
+        Pedido pedido = buildPedido(estado);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        Pedido result = service.asignarGuia(1L, "RR123456789CR");
+
+        assertThat(result.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENVIADO);
+        verify(notificacionEmailService).enviarNotificacionGuia(pedido);
+    }
+
+    @Test
+    @DisplayName("procesarEnvio → 409 para SINPE/efectivo sin comprobante")
+    void procesarEnvio_sinPagoConfirmado_rechaza() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        sinPagoCapturado();
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.procesarEnvio(1L, "GU987654321", 3500))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        verify(pedidoRepository, never()).save(any());
+        verify(notificacionEmailService, never()).enviarNotificacionGuia(any());
+    }
+
+    @ParameterizedTest(name = "cambiarEstado a {0} desde PENDIENTE se rechaza")
+    @ValueSource(strings = {"ENVIADO", "enviado", " ENVIADO "})
+    @DisplayName("cambiarEstado → no permite pasar a ENVIADO sin pago confirmado")
+    void cambiarEstado_aEnviadoSinPago_rechaza(String nuevoEstado) {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        sinPagoCapturado();
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.cambiarEstado(1L, nuevoEstado, null))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        verify(pedidoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("cambiarEstado → PAGADO desde pendiente delega en la confirmación manual con la referencia (SEC-05)")
+    void cambiarEstado_confirmarPago_delegaConReferencia() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        assertThat(service.cambiarEstado(1L, " pagado ", null, "SINPE 123456").getEstadoPedido())
+            .isEqualTo(Constants.PEDIDO_PAGADO);
+        verify(pedidoPagoManualService).confirmar(pedido, Constants.PEDIDO_PENDIENTE, "SINPE 123456");
+    }
+
+    @Test
+    @DisplayName("cambiarEstado → si la confirmación manual rechaza, el pedido no cambia ni se guarda")
+    void cambiarEstado_confirmarPagoRechazado_sinCambios() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        doThrow(new IllegalArgumentException(PedidoPagoManualService.MENSAJE_REFERENCIA_REQUERIDA))
+            .when(pedidoPagoManualService).confirmar(any(), any(), any());
+
+        assertThatThrownBy(() -> service.cambiarEstado(1L, Constants.PEDIDO_PAGADO, null))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage(PedidoPagoManualService.MENSAJE_REFERENCIA_REQUERIDA);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        verify(pedidoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("cambiarEstado → PAGADO cuando ya está PAGADO es idempotente y no vuelve a confirmar")
+    void cambiarEstado_pagadoIdempotente() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        service.cambiarEstado(1L, Constants.PEDIDO_PAGADO, null);
+        verifyNoInteractions(pedidoPagoManualService);
+    }
+
+    @ParameterizedTest(name = "cambiarEstado → ENTREGADO sin pago se rechaza: {0} + {1} (SEC-06 / QA-B02-2)")
+    @CsvSource({"TILOPAY,ENVIO_A_DOMICILIO", "TILOPAY,RETIRO_EN_TIENDA", "SINPE,RETIRO_EN_TIENDA", "EFECTIVO,ENVIO_A_DOMICILIO",
+        "CONTRA_ENTREGA,RETIRO_EN_TIENDA"})
+    void cambiarEstado_entregadoSinPago_rechaza(String metodo, String envio) {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        pedido.setMetodoPago(metodo);
+        pedido.setMetodoEnvio(envio);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("primero hay que confirmar el pago");
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        verify(pedidoRepository, never()).save(any());
+        verify(n8nWebhookService, never()).notificarPedidoEntregado(any());
+        verifyNoInteractions(pedidoPagoManualService);
+    }
+
+    @Test
+    @DisplayName("cambiarEstado → efectivo + retiro en tienda pasa a ENTREGADO sin PAGADO previo y registra el cobro")
+    void cambiarEstado_efectivoRetiro_entregadoRegistraCobro() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        pedido.setMetodoPago("EFECTIVO");
+        pedido.setMetodoEnvio(Constants.ENVIO_RETIRO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        assertThat(service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null).getEstadoPedido())
+            .isEqualTo(Constants.PEDIDO_ENTREGADO);
+        verify(pedidoPagoManualService).confirmarCobroAlRetirar(pedido, Constants.PEDIDO_PENDIENTE_COMPROBANTE, null);
+        verify(n8nWebhookService).notificarPedidoEntregado(pedido);
+    }
+
+    // ── SEC-09: el despacho mira el Pago, no el estado del pedido ─────────────
+
+    @ParameterizedTest(name = "SEC-09: pedido en {0} con Pago {1} → asignarGuia 409")
+    @CsvSource({"PAGADO,PENDIENTE", "EN_PREPARACION,PENDIENTE", "LISTO_RETIRO,FALLIDO", "PAGADO,CANCELADO", "PAGADO,"})
+    void sec09_estadoForzadoSinPagoCapturado_noDespacha(String estado, String estadoPago) {
+        Pedido pedido = buildPedido(estado);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoGrupoService.pagoDelGrupo(any()))
+            .thenReturn(estadoPago == null ? Optional.empty() : Optional.of(pago(estadoPago)));
+
+        assertThatThrownBy(() -> service.asignarGuia(1L, "RR1"))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThatThrownBy(() -> service.procesarEnvio(1L, "RR1", null))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThatThrownBy(() -> service.cambiarEstado(1L, Constants.PEDIDO_ENVIADO, null))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(estado);
+        verify(pedidoRepository, never()).save(any());
+        verify(notificacionEmailService, never()).enviarNotificacionGuia(any());
+    }
+
+    @Test
+    @DisplayName("SEC-09: ENTREGADO desde PAGADO sin Pago capturado → 409")
+    void sec09_entregadoSinPagoCapturado() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        sinPagoCapturado();
+
+        assertThatThrownBy(() -> service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null))
+            .isInstanceOf(PedidoNoDespachableException.class);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
+    }
+
+    @Test
+    @DisplayName("SEC-09: corregir la guía de un ENVIADO no vuelve a exigir el pago")
+    void sec09_corregirGuiaEnviado() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_ENVIADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+        sinPagoCapturado();
+
+        assertThat(service.asignarGuia(1L, "RR9").getNumeroGuia()).isEqualTo("RR9");
+    }
+
+    @Test
+    @DisplayName("SEC-06: guía sobre un ENTREGADO/COMPLETADO pagado → 400 (no vuelve a ENVIADO)")
+    void sec06_guiaDesdeEntregado_400() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_ENTREGADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.asignarGuia(1L, "RR1")).isInstanceOf(IllegalArgumentException.class);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENTREGADO);
+    }
+
+    @Test
+    @DisplayName("SEC-09: PAGADO → PAGADO sin pago verificado (dato viejo) pide confirmar con referencia")
+    void sec09_pagadoSinVerificar_confirma() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+        when(pedidoGrupoService.pagoDelGrupo(any())).thenReturn(Optional.empty());
+
+        service.cambiarEstado(1L, Constants.PEDIDO_PAGADO, null, "ref 1");
+        verify(pedidoPagoManualService).confirmar(pedido, Constants.PEDIDO_PAGADO, "ref 1");
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
+
+    private static Pago pago(String estado) {
+        Pago p = new Pago();
+        p.setEstadoPago(estado);
+        p.setProveedor(Constants.PROVEEDOR_SINPE);
+        return p;
+    }
+
+    private void sinPagoCapturado() {
+        lenient().when(pedidoGrupoService.pagoDelGrupo(any())).thenReturn(Optional.of(pago(Constants.PAGO_PENDIENTE)));
+    }
 
     private void setupManualMocks() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(testUser));

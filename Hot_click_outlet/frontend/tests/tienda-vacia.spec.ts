@@ -61,7 +61,9 @@ test.describe('Tienda pública — catálogo vacío', () => {
       'href',
       '/productos',
     )
-    await expect(page.getByText('Tienda de Demo Store en HotClick')).toBeVisible()
+    // Bloque 5: la banda "Tienda de … en HotClick" se reemplazó por el encabezado blanco con el nombre y "en HotClick".
+    await expect(page.getByText('en HotClick', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('Tienda de Demo Store en HotClick')).toHaveCount(0)
   })
 
   test('si el catálogo no carga, se puede reintentar', async ({ page }) => {
@@ -80,8 +82,9 @@ test.describe('Tienda pública — catálogo vacío', () => {
     await page.goto('/tienda/demo', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('button', { name: 'Agregar al pedido' })).toBeVisible()
 
-    await page.getByPlaceholder('Buscar productos...').fill('xyz')
-    await page.getByRole('button', { name: 'Buscar' }).click()
+    // El buscador sigue el Figma 29:986: placeholder con el nombre de la tienda y envío con Enter (sin botón Buscar).
+    await page.getByRole('searchbox', { name: /Buscar en / }).fill('xyz')
+    await page.keyboard.press('Enter')
 
     await expect(page.getByText('No encontramos eso en esta tienda')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Esta tienda está empezando' })).toHaveCount(0)

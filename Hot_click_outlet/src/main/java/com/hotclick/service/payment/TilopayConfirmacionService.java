@@ -11,7 +11,10 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.TilopayService;
+import com.hotclick.service.payment.TilopayCobroVerificador.Decision;
 import com.hotclick.utils.Constants;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +48,7 @@ public class TilopayConfirmacionService {
     public PaymentStatusResponse confirmar(String numeroPedido, Map<String, String> queryParams) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
+        Pago pago = pagoRepository.findTopByPedidoIdForUpdate(pedido.getId())
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
@@ -67,8 +70,13 @@ public class TilopayConfirmacionService {
             guardarEvento(orderNumber, EVENTO_CONFIRMAR, raw);
         }
 
-        if (consulta.aprobada()) {
+        Decision decision = decidir(pago, consulta);
+        if (decision == Decision.ACEPTAR) {
             aplicarAprobado(pago, orderNumber);
+            return paymentService.buildStatusResponse(pago);
+        }
+        if (decision == Decision.RECHAZAR_MONTO || decision == Decision.RECHAZAR_SIMULACION) {
+            alertarYRechazar(pago, consulta);
             return paymentService.buildStatusResponse(pago);
         }
 
@@ -85,25 +93,45 @@ public class TilopayConfirmacionService {
             log.warn("[tilopay] Webhook sin orderNumber");
             return;
         }
-        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(orderNumber, EVENTO_WEBHOOK)) {
-            log.info("[tilopay] Webhook duplicado order={}", orderNumber);
-            return;
-        }
-        guardarEvento(orderNumber, EVENTO_WEBHOOK, rawBody);
-
-        Pago pago = pagoRepository.findByMerchantToken(orderNumber).orElse(null);
+        Pago pago = pagoRepository.findByMerchantTokenForUpdate(orderNumber).orElse(null);
         if (pago == null) {
+            registrarEventoWebhook(orderNumber, rawBody);
             log.error("[tilopay] Webhook: pago no encontrado order={}", orderNumber);
             return;
         }
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
+            registrarEventoWebhook(orderNumber, rawBody);
+            log.info("[tilopay] Webhook ignorado: pago ya capturado order={}", orderNumber);
             return;
         }
-
-        TilopayService.ConsultaResultado consulta = tilopayService.consultarTransaccion(orderNumber);
-        if (consulta.aprobada()) {
-            aplicarAprobado(pago, orderNumber);
+        if (eventoWebhookYaExiste(orderNumber)) {
+            log.info("[tilopay] Webhook duplicado order={}", orderNumber);
+            return;
         }
+        guardarEvento(orderNumber, EVENTO_WEBHOOK, rawBody);
+        aplicarDecisionWebhook(pago, orderNumber);
+    }
+
+    private void aplicarDecisionWebhook(Pago pago, String orderNumber) {
+        TilopayService.ConsultaResultado consulta = tilopayService.consultarTransaccion(orderNumber);
+        Decision decision = decidir(pago, consulta);
+        if (decision == Decision.ACEPTAR) {
+            aplicarAprobado(pago, orderNumber);
+            return;
+        }
+        if (decision == Decision.RECHAZAR_MONTO || decision == Decision.RECHAZAR_SIMULACION) {
+            alertarYRechazar(pago, consulta);
+        }
+    }
+
+    private void registrarEventoWebhook(String orderNumber, String rawBody) {
+        if (!eventoWebhookYaExiste(orderNumber)) {
+            guardarEvento(orderNumber, EVENTO_WEBHOOK, rawBody);
+        }
+    }
+
+    private boolean eventoWebhookYaExiste(String orderNumber) {
+        return webhookEventRepository.existsByMerchantTokenAndEventoTipo(orderNumber, EVENTO_WEBHOOK);
     }
 
     /**
@@ -163,11 +191,35 @@ public class TilopayConfirmacionService {
         }
         String orderNumber = pago.getMerchantToken();
         TilopayService.ConsultaResultado consulta = tilopayService.consultarTransaccion(orderNumber);
-        if (!consulta.aprobada()) {
-            return false;
+        Decision decision = decidir(pago, consulta);
+        if (decision == Decision.ACEPTAR) {
+            aplicarAprobado(pago, orderNumber);
+            return true;
         }
-        aplicarAprobado(pago, orderNumber);
-        return true;
+        if (decision == Decision.RECHAZAR_MONTO || decision == Decision.RECHAZAR_SIMULACION) {
+            alertarYRechazar(pago, consulta);
+            return true;
+        }
+        return false;
+    }
+
+    private Decision decidir(Pago pago, TilopayService.ConsultaResultado consulta) {
+        return TilopayCobroVerificador.decidir(pago, consulta, tilopayService.isMockMode());
+    }
+
+    private void alertarYRechazar(Pago pago, TilopayService.ConsultaResultado consulta) {
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())
+                || Constants.PAGO_FALLIDO.equals(pago.getEstadoPago())) {
+            return;
+        }
+        String mensaje = TilopayCobroVerificador.mensajeAlerta(pago, consulta);
+        log.error("[ALERTA-PAGO] {}", mensaje);
+        try {
+            Sentry.captureMessage(mensaje, SentryLevel.ERROR);
+        } catch (RuntimeException e) {
+            log.warn("[tilopay] No se pudo enviar la alerta: {}", e.getMessage());
+        }
+        paymentService.marcarFallido(pago, "El monto o la moneda cobrados no coinciden con el pedido");
     }
 
     private void aplicarAprobado(Pago pago, String orderNumber) {

@@ -1,63 +1,32 @@
-import { useEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { analytics } from '@/utils/analytics'
+import { useRef, useEffect } from 'react'
 import useCartStore from '@/store/cartStore'
+import useAuthStore from '@/store/authStore'
 import { usePayment, tilopayCardDesdePago } from '@/hooks/usePayment'
-import ResumenLateral from './carrito/ResumenLateral'
-import CampoGiftCard from './checkout/CampoGiftCard'
 import CheckoutEmpty from './checkout/CheckoutEmpty'
 import CheckoutLoading from './checkout/CheckoutLoading'
-import PagoExito from './pago/PagoExito'
-import CheckoutPayError from './checkout/CheckoutPayError'
+import CheckoutPaidGiftCard from './checkout/CheckoutPaidGiftCard'
+import CheckoutSinpePending from './checkout/CheckoutSinpePending'
 import CheckoutTilopayCard from './checkout/CheckoutTilopayCard'
-import ConsentimientoDatos from './checkout/ConsentimientoDatos'
-import EncabezadoCompraSegura from './checkout/EncabezadoCompraSegura'
-import PasosCompra from './checkout/PasosCompra'
-import PieCompraMovil from './checkout/PieCompraMovil'
-import ResultadoSinpe from './checkout/ResultadoSinpe'
-import SeccionDatos from './checkout/SeccionDatos'
-import SeccionEntrega from './checkout/SeccionEntrega'
-import SeccionPago from './checkout/SeccionPago'
-import { useComprobanteSinpe } from './checkout/useComprobanteSinpe'
-import { useFormularioCompra } from './checkout/useFormularioCompra'
-import { useNavegacionCompra } from './checkout/useNavegacionCompra'
+import CheckoutLayout from './checkout/CheckoutLayout'
+import { useCheckoutForm } from './checkout/useCheckoutForm'
+import { useCheckoutActions } from './checkout/useCheckoutActions'
 
 /**
- * Checkout por paquetes: móvil en 3 pasos (`28:1083`, `29:1248`, `29:1344`), desktop en una página (`30:2385`).
- * Los side effects de pago (`usePayment`) son los mismos de siempre.
+ * Checkout de producción: mismos side effects de pago; layout TypeScript Figma.
+ * Bajo `/visitante/*` omite MainLayout (skin vía pathname en subvistas).
  */
 export default function CheckoutPage() {
-  const { t } = useTranslation()
-  const items = useCartStore((s) => s.items)
-  const clearCart = useCartStore((s) => s.clearCart)
-  const toWhatsAppMessage = useCartStore((s) => s.toWhatsAppMessage)
+  const { items, total, toWhatsAppMessage } = useCartStore()
+  const { token } = useAuthStore()
   const { estado, pagoData, error, intentos, maxIntentos, iniciarPago, reset } = usePayment()
   const errorBannerRef = useRef<HTMLDivElement | null>(null)
 
-  const form = useFormularioCompra(items)
-  const navegacion = useNavegacionCompra({ form, items, estado, intentos, maxIntentos, iniciarPago })
-  const totalPedido = Number(pagoData?.total) || form.totales.total
-  const comprobante = useComprobanteSinpe({
-    estado, pagoData, token: form.token, datos: form.datos, comprobante: form.comprobante, total: totalPedido,
-  })
+  const form = useCheckoutForm({ items, total })
 
-  const checkoutVisto = useRef(false)
-  const totalVista = form.totales.total
-  const unidades = items.reduce((s, i) => s + i.cantidad, 0)
-
+  const { clearCart: clearCartFn } = useCartStore()
   useEffect(() => {
-    if (estado === 'failed') analytics.pagoFallido()
-  }, [estado])
-
-  useEffect(() => {
-    if (checkoutVisto.current || items.length === 0) return
-    checkoutVisto.current = true
-    analytics.checkoutView(totalVista, unidades)
-  }, [items.length, totalVista, unidades])
-
-  useEffect(() => {
-    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCart()
-  }, [estado, clearCart])
+    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCartFn()
+  }, [estado, clearCartFn])
 
   useEffect(() => {
     globalThis.scrollTo({ top: 0, behavior: 'instant' })
@@ -71,79 +40,113 @@ export default function CheckoutPage() {
     }
   }, [estado])
 
+  const {
+    handlePagar,
+    handleSinpeWhatsApp,
+    handleSubirComprobante,
+  } = useCheckoutActions({
+    token,
+    items,
+    totalFinal: form.totalFinal,
+    metodoEnvio: form.metodoEnvio,
+    metodoPago: form.metodoPago,
+    notas: form.notas,
+    telefono: form.telefono,
+    direccion: form.direccion,
+    direccionPedido: form.direccionPedido,
+    guestEmail: form.guestEmail,
+    guestPhone: form.guestPhone,
+    sinpeNombre: form.sinpeNombre,
+    sinpeCedula: form.sinpeCedula,
+    sinpeTelefono: form.sinpeTelefono,
+    sinpeEmail: form.sinpeEmail,
+    sinpeImagen: form.sinpeImagen,
+    pagoData,
+    aceptaDatos: form.aceptaDatos,
+    bodegaRetiro: form.bodegaRetiro,
+    cuponCodigo: form.cuponCodigo,
+    gcCodigo: form.gcCodigo,
+    gcInput: form.gcInput,
+    cuponInput: form.cuponInput,
+    paquetes: form.paquetes,
+    metodoEnvioPorPaquete: form.metodoEnvioPorPaquete,
+    necesitaDireccion: form.necesitaDireccion,
+    iniciarPago,
+    validatePhone: form.validatePhone,
+    validateAddress: form.validateAddress,
+    validateGuestEmail: form.validateGuestEmail,
+    setGcEstado: form.setGcEstado,
+    setGcSaldo: form.setGcSaldo,
+    setGcCodigo: form.setGcCodigo,
+    setCuponEstado: form.setCuponEstado,
+    setCuponError: form.setCuponError,
+    setCuponDescuento: form.setCuponDescuento,
+    setCuponCodigo: form.setCuponCodigo,
+    setDireccionError: form.setDireccionError,
+    setDireccionDirty: form.setDireccionDirty,
+    setTelefonoError: form.setTelefonoError,
+    setTelefonoDirty: form.setTelefonoDirty,
+    setGuestEmailError: form.setGuestEmailError,
+    setGuestEmailDirty: form.setGuestEmailDirty,
+    setGuestPhoneError: form.setGuestPhoneError,
+    setGuestPhoneDirty: form.setGuestPhoneDirty,
+    setSinpeNombreErr: form.setSinpeNombreErr,
+    setSinpeCedulaErr: form.setSinpeCedulaErr,
+    setSinpeImagenErr: form.setSinpeImagenErr,
+    setSinpeUploadEstado: form.setSinpeUploadEstado,
+    setSinpeUploadError: form.setSinpeUploadError,
+  })
+
   if (estado === 'tilopay_card') {
     const payload = tilopayCardDesdePago(pagoData)
-    if (payload) return <CheckoutTilopayCard payload={payload} onVolver={reset} />
+    if (payload) {
+      return <CheckoutTilopayCard payload={payload} onVolver={reset} />
+    }
   }
 
   if (estado === 'sinpe_pendiente') {
     return (
-      <ResultadoSinpe
+      <CheckoutSinpePending
         pagoData={pagoData}
-        comprobante={comprobante}
-        datos={form.datos}
-        total={totalPedido}
-        cantidadPaquetes={navegacion.paquetesPagados}
-        esInvitado={!form.token}
-        subidaAutomatica={Boolean(form.comprobante)}
+        totalFinal={Number(form.totalFinal) || Number(pagoData?.total) || 0}
+        sinpeNombre={form.sinpeNombre}
+        sinpeCedula={form.sinpeCedula}
+        sinpeTelefono={form.sinpeTelefono}
+        sinpeImagen={form.sinpeImagen}
+        setSinpeImagen={form.setSinpeImagen}
+        sinpeImagenErr={form.sinpeImagenErr}
+        setSinpeImagenErr={form.setSinpeImagenErr}
+        sinpeUploadEstado={form.sinpeUploadEstado}
+        setSinpeUploadEstado={form.setSinpeUploadEstado}
+        sinpeUploadError={form.sinpeUploadError}
+        setSinpeUploadError={form.setSinpeUploadError}
+        sinpeInputRef={form.sinpeInputRef}
+        onSubirComprobante={handleSubirComprobante}
+        onSinpeWhatsApp={handleSinpeWhatsApp}
       />
     )
   }
 
-  if (estado === 'gift_card_paid') {
-    return <PagoExito pagoData={pagoData} numeroPedido={pagoData?.numeroPedido ?? null} token={form.token} />
+  if (estado === 'gift_card_paid') return <CheckoutPaidGiftCard pagoData={pagoData} />
+
+  if (estado === 'redirecting' || estado === 'loading') {
+    return <CheckoutLoading estado={estado} />
   }
-  if (estado === 'redirecting' || estado === 'loading') return <CheckoutLoading estado={estado} />
+
   if (items.length === 0) return <CheckoutEmpty />
 
-  const consentimiento = <ConsentimientoDatos acepta={form.aceptaDatos} onCambiar={form.setAceptaDatos} />
-  const avisoError = (
-    <CheckoutPayError
+  return (
+    <CheckoutLayout
+      token={token}
+      items={items}
+      form={form}
       estado={estado}
       error={error}
       intentos={intentos}
       maxIntentos={maxIntentos}
-      onPagar={navegacion.pagar}
-      toWhatsAppMessage={toWhatsAppMessage}
       errorBannerRef={errorBannerRef}
+      toWhatsAppMessage={toWhatsAppMessage}
+      onPagar={handlePagar}
     />
-  )
-
-  return (
-    <div className="min-h-screen bg-hc-n-50">
-      <EncabezadoCompraSegura onVolver={navegacion.volver} />
-      <PasosCompra actual={navegacion.paso} />
-      <main className="mx-auto w-full max-w-[1440px] pb-[160px] lg:px-[120px] lg:pb-[64px] lg:pt-[36px]">
-        <h1 className="sr-only font-display text-[30px] font-bold text-hc-n-900 lg:not-sr-only lg:mb-[20px] lg:block">
-          {t('compra.checkout.titulo')}
-        </h1>
-        <div className="flex flex-col lg:flex-row lg:items-start lg:gap-[32px]">
-          <div className="flex min-w-0 flex-1 flex-col lg:gap-[16px]">
-            <SeccionDatos form={form} visibleEnMovil={navegacion.paso === 1} />
-            <SeccionEntrega form={form} visibleEnMovil={navegacion.paso === 2} />
-            <SeccionPago form={form} visibleEnMovil={navegacion.paso === 3} avisoError={avisoError} />
-          </div>
-          <div className="hidden lg:sticky lg:top-[24px] lg:block">
-            <ResumenLateral
-              paquetes={form.paquetes}
-              envios={form.envios}
-              totales={form.totales}
-              cupon={form.cupon}
-              textoBoton={navegacion.textoPagar}
-              onBoton={navegacion.pagar}
-              botonDeshabilitado={navegacion.pagoBloqueado}
-              extraCupon={<CampoGiftCard giftCard={form.giftCard} />}
-              antesDelBoton={consentimiento}
-            />
-          </div>
-        </div>
-      </main>
-      <PieCompraMovil
-        total={form.totales.total}
-        textoBoton={navegacion.textoBotonPaso}
-        onBoton={navegacion.avanzar}
-        deshabilitado={navegacion.paso === 3 && navegacion.pagoBloqueado}
-      />
-    </div>
   )
 }

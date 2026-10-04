@@ -16,6 +16,9 @@ import java.time.LocalDateTime;
  * productos) sin impersonar. No escribe nada cuando el actor no es ADMIN
  * (ej. un EMPRENDEDOR editando su propio negocio) — mismo criterio que el
  * bypass de {@link CompanyScope#assertCanAccessNullable}.
+ *
+ * <p>{@link #registrar} escribe siempre (cualquier rol), para acciones sensibles del propio negocio
+ * como la confirmación manual de un pago o el cambio de estado de un pedido (SEC-05).
  */
 @Service
 public class AuditoriaAdminRegistroService {
@@ -25,15 +28,20 @@ public class AuditoriaAdminRegistroService {
 
     public void registrarSiAdmin(String accion, String entidad, Long entidadId, Long empresaId, String detalle) {
         if (!companyScope.isAdminIT()) return;
-        Usuario admin = companyScope.getCurrentUser();
+        registrar(accion, entidad, entidadId, empresaId, detalle);
+    }
+
+    /** Registra siempre, con el usuario autenticado (ADMIN, EMPRENDEDOR o miembro) como actor. */
+    public void registrar(String accion, String entidad, Long entidadId, Long empresaId, String detalle) {
+        Usuario actor = companyScope.getCurrentUser();
         AuditoriaAdmin audit = new AuditoriaAdmin();
-        audit.setAdminId(admin != null ? admin.getId() : null);
-        audit.setAdminEmail(admin != null ? admin.getCorreo() : null);
+        audit.setAdminId(actor != null ? actor.getId() : null);
+        audit.setAdminEmail(actor != null ? actor.getCorreo() : null);
         audit.setAccion(accion);
         audit.setEntidad(entidad);
         audit.setEntidadId(entidadId);
         audit.setEmpresaId(empresaId);
-        audit.setDetalle(detalle);
+        audit.setDetalle(detalle != null && detalle.length() > 500 ? detalle.substring(0, 500) : detalle);
         audit.setFecha(LocalDateTime.now(Constants.ZONA_CR));
         auditoriaAdminRepository.save(audit);
     }

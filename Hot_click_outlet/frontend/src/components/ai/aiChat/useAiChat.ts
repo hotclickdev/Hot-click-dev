@@ -12,6 +12,7 @@ import { surfaceFromSessionKey } from './chatSurface'
 import type { AIChatProps } from '../AIChat'
 import type { Producto } from '@/types/producto'
 import { requiereFichaEncargo } from '../chatProductoPrecio'
+import { topeStock } from '@/utils/stock'
 
 type UseAiChatArgs = Pick<AIChatProps,
   | 'empresaSlug'
@@ -64,7 +65,7 @@ export function useAiChat({
   const cargRef          = useRef(false)
   const autoSent         = useRef(false)
 
-  const accent = accentColor || 'var(--hc-accent)'
+  const accent = accentColor || 'var(--hc-blue-600)'
 
   function setLoading(v: boolean) { cargRef.current = v; setCargando(v) }
 
@@ -96,7 +97,7 @@ export function useAiChat({
     addItem({
       id: producto.id, nombre: producto.nombre, sku: producto.sku ?? '',
       precio: producto.precio, precioVenta: producto.precio,
-      imagenPrincipalUrl: producto.imagenUrl ?? null, stock: producto.stock ?? 99,
+      imagenPrincipalUrl: producto.imagenUrl ?? null, stock: topeStock(producto.stock),
     } as unknown as Producto, 1)
     onProductAdd?.(producto)
   }, [addItem, onProductAdd])

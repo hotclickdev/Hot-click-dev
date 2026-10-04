@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatDateShort, formatPrice } from '@/utils/format'
 import { PencilIcon } from './empresasIcons'
 import EstadoBadge from './EstadoBadge'
@@ -79,14 +80,22 @@ function PedidoRow({
   onCambiarEstado: (id: Id, estado: string) => void
   onAsignarGuia: (id: Id, numeroGuia: string) => void
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   return (
     <div className="px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold" style={{ color: 'var(--hc-text)' }}>#{pedido.id}</span>
             <EstadoBadge estado={pedido.estado} />
+            {pedido.grupoPago && (
+              // Figma 37:1791: el paquete de una compra multivendedor se marca con texto mono, sin píldora.
+              <span className="font-mono text-[11px] font-medium" style={{ color: 'var(--hc-muted)' }}
+                title={t('adminOrders.multivendorPackageHint')}>
+                {t('adminOrders.multivendorPackage')}
+              </span>
+            )}
           </div>
           <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--hc-muted)' }}>{pedido.cliente}</p>
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>{pedido.metodoPago} · {formatDateShort(pedido.fecha)}</p>

@@ -1,8 +1,6 @@
 package com.hotclick.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.hotclick.service.producto.StaffOnlyValueSerializer;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -257,7 +255,7 @@ public class Producto extends BaseEntity {
 
     // ── IVA Hacienda CR (F12) ────────────────────────────────────────────────
     /** Porcentaje de IVA: 13.00 (general), 4.00, 2.00, 0.00 (exento) */
-    @Column(name = "porcentaje_iva", columnDefinition = "NUMERIC(5,2) DEFAULT 13.00")
+    @Column(name = "porcentaje_iva", columnDefinition = "NUMERIC(5,2)")
     private java.math.BigDecimal porcentajeIva = new java.math.BigDecimal("13.00");
 
     /** Código de tarifa Hacienda: '08'=13%, '04'=4%, '02'=2%, '01'=exento */
@@ -341,11 +339,9 @@ public class Producto extends BaseEntity {
     public Integer getPesoEnGramos() { return pesoEnGramos; }
     public void setPesoEnGramos(Integer pesoEnGramos) { this.pesoEnGramos = pesoEnGramos; }
 
-    @JsonSerialize(using = StaffOnlyValueSerializer.class)
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
 
-    @JsonSerialize(using = StaffOnlyValueSerializer.class)
     public Integer getNumeroLocal() { return numeroLocal; }
     public void setNumeroLocal(Integer numeroLocal) { this.numeroLocal = numeroLocal; }
 

@@ -101,15 +101,15 @@ public class AuthLoginService {
         return verificationHandler.verifyRegistration(body);
     }
 
-    public ResponseEntity<ResponseDTO> forgotPassword(Map<String, String> body) {
-        return passwordRecoveryHandler.forgotPassword(body);
+    public ResponseEntity<ResponseDTO> forgotPassword(Map<String, String> body, HttpServletRequest request) {
+        return passwordRecoveryHandler.forgotPassword(body, request);
     }
 
     public ResponseEntity<ResponseDTO> verifyCode(Map<String, String> body) {
         return passwordRecoveryHandler.verifyCode(body);
     }
 
-    public ResponseEntity<ResponseDTO> resetPassword(Map<String, String> body) {
-        return passwordRecoveryHandler.resetPassword(body);
+    public ResponseEntity<ResponseDTO> resetPassword(Map<String, String> body, HttpServletRequest request) {
+        return passwordRecoveryHandler.resetPassword(body, request);
     }
 }

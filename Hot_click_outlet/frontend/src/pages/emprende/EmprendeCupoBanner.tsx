@@ -21,7 +21,7 @@ export default function EmprendeCupoBanner({ compact = false }: Props) {
       }}
       aria-live="polite"
     >
-      <p className="text-xs font-bold tracking-[0.12em] uppercase mb-1" style={{ color: 'var(--hc-primary)' }}>
+      <p className="text-xs font-bold tracking-[0.12em] uppercase mb-1" style={{ color: 'var(--hc-primary-text)' }}>
         {t('emprende.cupoBadge')}
       </p>
       <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
@@ -34,7 +34,7 @@ export default function EmprendeCupoBanner({ compact = false }: Props) {
         <Link
           to="#pyme"
           className="inline-flex mt-3 text-sm font-semibold min-h-[44px] items-center"
-          style={{ color: 'var(--hc-primary)' }}
+          style={{ color: 'var(--hc-primary-text)' }}
         >
           {t('emprende.cupoVerPlanes')}
         </Link>

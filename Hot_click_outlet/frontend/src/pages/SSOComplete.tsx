@@ -154,28 +154,11 @@ export default function SSOComplete() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 16,
-        background: 'var(--hc-bg)',
-      }}
-    >
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          border: '3px solid var(--hc-accent)',
-          borderTopColor: 'transparent',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }}
-      />
-      <p style={{ color: 'var(--hc-muted)', fontSize: 14 }}>Conectando tu cuenta…</p>
+    <div role="status" aria-live="polite" className="flex min-h-screen flex-col items-center justify-center gap-3 bg-hc-n-0 px-6 text-center leading-[normal]">
+      <span className="flex size-[72px] items-center justify-center rounded-full bg-hc-blue-50">
+        <span aria-hidden="true" className="size-9 animate-spin rounded-full border-[3px] border-hc-blue-100 border-t-hc-blue-600" />
+      </span>
+      <p className="font-display text-[19px] font-bold text-hc-n-900">Conectando tu cuenta…</p>
     </div>
   )
 }

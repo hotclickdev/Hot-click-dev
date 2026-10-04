@@ -26,6 +26,7 @@ type PagoData = {
   orderNumber?: string
   modoEmbebido?: boolean
   monto?: number
+  moneda?: string
   cancelToken?: string
 }
 
@@ -33,6 +34,7 @@ export type TilopayCardPayload = {
   numeroPedido: string
   sdkToken: string
   monto: number
+  moneda: 'CRC'
   redirectUrl?: string
   orderNumber: string
 }
@@ -50,13 +52,25 @@ function esCheckoutTilopayEmbebido(data: PagoData): boolean {
   return Boolean(data.modoEmbebido || data.sdkToken)
 }
 
-/** Payload tipado para el formulario embebido Tilopay. */
+/** Monto que devolvió el servidor. No se inventa un 0 si falta. */
+export function montoCobroServidor(data: PagoData | null): number | null {
+  if (!data) return null
+  const bruto = data.monto ?? data.total
+  if (bruto == null || !Number.isFinite(bruto) || bruto <= 0) return null
+  return bruto
+}
+
+/** Payload tipado para el formulario embebido Tilopay. Solo colones, monto del servidor. */
 export function tilopayCardDesdePago(data: PagoData | null): TilopayCardPayload | null {
-  if (!data?.sdkToken || !data.numeroPedido) return null
+  const monto = montoCobroServidor(data)
+  if (!data?.sdkToken || !data.numeroPedido || monto == null) return null
+  const moneda = (data.moneda || 'CRC').toUpperCase()
+  if (moneda !== 'CRC') return null
   return {
     numeroPedido: data.numeroPedido,
     sdkToken: data.sdkToken,
-    monto: data.monto ?? data.total ?? 0,
+    monto,
+    moneda: 'CRC',
     redirectUrl: data.redirectUrl,
     orderNumber: data.orderNumber || data.numeroPedido,
   }

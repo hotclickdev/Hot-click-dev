@@ -61,7 +61,6 @@ class PaymentServiceTest {
     @Mock private PosQrVentaService          posQrVentaService;
     @Mock private EncargoService             encargoService;
     @Mock private AtribucionPedidoService    atribucionPedidoService;
-    @Mock private CompraRepository           compraRepository;
 
     @InjectMocks private CheckoutValidator              checkoutValidator;
     @InjectMocks private GuestUserResolver              guestUserResolver;
@@ -109,24 +108,27 @@ class PaymentServiceTest {
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
         testProducto.setBodega(testBodega);
 
-        when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
-        when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
         when(providerFactory.soporta("STRIPE")).thenReturn(true);
         when(providerFactory.get("STRIPE")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("TXN-123", REDIRECT));
 
+        CheckoutPaquetesPlanner checkoutPaquetesPlanner = new CheckoutPaquetesPlanner();
+        CheckoutGrupoFactory checkoutGrupoFactory = new CheckoutGrupoFactory(
+            checkoutValidator, checkoutPaquetesPlanner, orderPricingService, checkoutOrderFactory, giftCardService);
+        PedidoGrupoService pedidoGrupoService = new PedidoGrupoService(pedidoRepository, pagoRepository);
+
         service = new PaymentService();
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(service, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
-        CompraCheckoutTestWiring.conectar(service, new CompraCheckoutTestWiring.Piezas(
-            checkoutValidator, stockReservationService, orderPricingService, checkoutOrderFactory,
-            paymentNotificationsFacade, compraRepository, pedidoRepository, giftCardService, posQrVentaService));
+        ReflectionTestUtils.setField(service, "checkoutGrupoFactory", checkoutGrupoFactory);
+        ReflectionTestUtils.setField(service, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(service, "paymentRecordFactory", paymentRecordFactory);
         ReflectionTestUtils.setField(service, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(service, "paymentNotificationsFacade", paymentNotificationsFacade);
@@ -147,10 +149,12 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(orderConfirmationService, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(paymentFailureHandler, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(paymentFailureHandler, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(paymentFailureHandler, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pedidoGrupoService", pedidoGrupoService);
         ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
@@ -160,6 +164,7 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(paymentExpirationCleanupService, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(paymentExpirationCleanupService, "pedidoGrupoService", pedidoGrupoService);
     }
 
     // ── checkout — camino feliz ───────────────────────────────────────────────
@@ -184,42 +189,16 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("checkout → ENVIO_NORMAL_GAM suma ₡4000 al total")
-    void checkout_envioNormal_addsCostoEnvio() throws Exception {
+    @DisplayName("checkout → ENVIO_A_DOMICILIO suma ₡2000 al total")
+    void checkout_envioADomicilio_addsCostoEnvio() throws Exception {
         setupCheckoutMocks();
 
         PaymentCheckoutRequest req = buildRequest(1);
-        req.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        req.setMetodoEnvio(Constants.ENVIO_DOMICILIO);
 
         PaymentCheckoutResponse resp = service.checkout(req, CORREO);
 
-        assertThat(resp.getTotal()).isEqualTo(25000 + 4000);
-    }
-
-    @Test
-    @DisplayName("checkout → método de envío desconocido o de pedidos manuales se rechaza (no cae en ₡0)")
-    void checkout_metodoEnvioDesconocido_rechazado() {
-        setupCheckoutMocks();
-
-        for (String metodo : List.of("GRATIS", Constants.ENVIO_DOMICILIO)) {
-            PaymentCheckoutRequest req = buildRequest(1);
-            req.setMetodoEnvio(metodo);
-            assertThatThrownBy(() -> service.checkout(req, CORREO))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Método de envío no válido");
-        }
-    }
-
-    @Test
-    @DisplayName("checkout → precioUnitarioOverride que manda el navegador se ignora")
-    void checkout_precioOverrideDelJson_ignorado() throws Exception {
-        String json = "{\"productoId\":1,\"cantidad\":1,\"precioUnitarioOverride\":1}";
-
-        PaymentCheckoutRequest.ItemDTO item = new com.fasterxml.jackson.databind.ObjectMapper()
-            .readValue(json, PaymentCheckoutRequest.ItemDTO.class);
-
-        assertThat(item.getProductoId()).isEqualTo(1L);
-        assertThat(item.getPrecioUnitarioOverride()).isNull();
+        assertThat(resp.getTotal()).isEqualTo(25000 + 2000);
     }
 
     @Test

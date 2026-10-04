@@ -2,6 +2,7 @@ package com.hotclick.service.email;
 
 import com.hotclick.model.EncargoPersonalizado;
 import com.hotclick.service.ResendEmailService;
+import com.hotclick.utils.FormatoColones;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,7 @@ public class EncargoEmailSender {
     public void notificarEncargoAprobado(EncargoPersonalizado encargo) {
         try {
             String producto = layout.esc(encargo.getProductoNombre());
-            String precio = "₡" + EmailLayoutHelper.CRC.format(encargo.getPrecioCotizado());
+            String precio = FormatoColones.colones(encargo.getPrecioCotizado());
             String link = appUrl + "/encargo/" + encargo.getTokenPublico();
             String html = layout.abrirHtml()
                 + layout.header("Tu encargo fue aprobado", producto)

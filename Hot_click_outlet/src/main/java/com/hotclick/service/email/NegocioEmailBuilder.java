@@ -9,17 +9,25 @@ public class NegocioEmailBuilder {
 
     @Autowired private EmailLayoutHelper layout;
 
+    /** Asunto del cupón de bienvenida (Figma 30:1768). */
+    public String asuntoCuponBienvenida() {
+        return "Tu 13% de descuento para la primera compra";
+    }
+
+    /**
+     * Cupón de bienvenida (Figma «Correo · Cupón de bienvenida», 30:1768).
+     * Figma dice «Válido por 30 días», pero el cupón no vence en el backend. Decisión B17:
+     * no se promete vencimiento; se dejan las condiciones reales (una sola compra, una vez por persona).
+     */
     public String buildCuponBienvenida(String codigo) {
         return layout.abrirHtml()
-            + layout.header("Tu código de descuento", "13% menos en tu primera compra en línea")
+            + layout.headerConIcono(EmailLayoutHelper.FONDO_ALERTA, "regalo", "Tu 13% para la primera compra",
+                "Usalo en cualquier producto del catálogo al pagar.")
             + layout.abrirCuerpo()
-            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Gracias por unirte a HotClick. Usá este código al pagar y obtené un <strong style='color:#14171C'>13% de descuento</strong> en tu primera compra en línea:</p>"
-            + "<div style='background:#FEF2F1;border:2px dashed #E73B33;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px'>"
-            + "<span style=\"font-size:28px;font-weight:800;letter-spacing:4px;color:#D02A23;font-family:'IBM Plex Mono',monospace\">" + layout.esc(codigo) + "</span>"
-            + "</div>"
-            + "<p style='margin:0 0 24px;color:#4D5560;font-size:13px;line-height:1.8'>• Válido para una sola compra<br>• Una vez por persona<br>• Ingresalo en el campo «¿Tenés un cupón?» al hacer checkout</p>"
-            + layout.cta("https://hotclick.lat/productos", "Encontrá lo que buscás")
-            + layout.footer("¿Tenés alguna pregunta?");
+            + layout.codigoDestacado("Tu código", layout.esc(codigo), EmailLayoutHelper.FONDO_ALERTA, false)
+            + layout.cta("https://hotclick.lat/productos", "Usar mi cupón")
+            + layout.notaPequena("Válido para una sola compra, una vez por persona. Ingresalo en el campo «¿Tenés un cupón?» al pagar.")
+            + layout.footer("¿Dudas?");
     }
 
     public String buildBienvenidaEmprendedor(String nombre, String nombreEmpresa) {

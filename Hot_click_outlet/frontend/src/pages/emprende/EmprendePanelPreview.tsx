@@ -69,7 +69,7 @@ function PreviewPos() {
       <div className="flex justify-between"><span>Aretes de feria x2</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡7.000</span></div>
       <div className="flex justify-between"><span>Bolso tejido x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡12.000</span></div>
       <div className="flex justify-between pt-[10px] border-t font-semibold" style={{ borderColor: '#e8dcc8' }}>
-        <span>Total</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-primary)' }}>₡19.000</span>
+        <span>Total</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-primary-text)' }}>₡19.000</span>
       </div>
       <span className="mt-1 py-2.5 rounded-full text-center text-white text-[13px] font-semibold" style={{ backgroundColor: 'var(--hc-primary)' }}>Cobrar</span>
     </div>

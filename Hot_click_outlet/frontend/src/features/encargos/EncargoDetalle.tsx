@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatPrice } from '@/utils/format'
+import { formatTelefonoCR } from '@/utils/telefono'
 import { etiquetaPresupuestoCliente, type Encargo } from '@/services/encargoService'
 import EncargoRespuestaPasos from './EncargoRespuestaPasos'
 
@@ -104,7 +105,7 @@ export default function EncargoDetalle({
           <h2 className="font-semibold">{encargo.productoNombre}</h2>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
             {encargo.nombreCliente} · {encargo.email}
-            {encargo.telefono ? ` · ${encargo.telefono}` : ''}
+            {encargo.telefono ? ` · ${formatTelefonoCR(encargo.telefono)}` : ''}
           </p>
         </div>
         <button type="button" onClick={onCerrar} className="text-sm">Cerrar</button>

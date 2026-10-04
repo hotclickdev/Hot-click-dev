@@ -1,6 +1,5 @@
 import { formatDateShort, formatPrice } from '@/utils/format'
 
-export const ESTADOS_SIN_ACCION = new Set(['CANCELADO', 'PENDIENTE'])
 export const DIAS_GARANTIA = 40
 export const MS_POR_DIA = 86_400_000
 
@@ -14,16 +13,10 @@ export const ESTADO_LABELS: Record<string, string> = {
   CANCELADO: 'Cancelado',
 }
 
-export type ColorEstadoPedido = {
-  bg: string
-  text: string
-  border: string
-}
-
 export type ItemPedidoCliente = {
   cantidad?: number
   nombreProducto?: string
-  producto?: { id?: number; nombreProducto?: string; imagenPrincipalUrl?: string | null }
+  producto?: { id?: number; nombreProducto?: string; imagenPrincipalUrl?: string | null; empresaNombre?: string | null }
   productoId?: number
   precioUnitarioMomento?: number
   subtotalItem?: number
@@ -50,26 +43,60 @@ export type PedidoCliente = {
   notas?: string
   numeroGuia?: string
   urlTracking?: string
-  metodoPago?: string
-  fechaEnvio?: string | null
-  fechaEntregaReal?: string | null
-  /** Compra multi-negocio: un paquete (pedido) por negocio bajo un solo pago. */
+  /**
+   * Agrupa subpedidos de un mismo checkout multivendedor (uno por bodega de
+   * origen, un único pago). Viene de `Pedido.grupoPago` en el backend —
+   * campo aditivo, hoy no lo llena ningún endpoint fusionado en esta rama.
+   * Con un solo pedido por grupo (o sin valor) el comportamiento no cambia.
+   */
+  grupoPago?: string | null
   compraId?: number | null
   numeroCompra?: string | null
-  cantidadPaquetes?: number | null
   numeroPaquete?: number | null
+  cantidadPaquetes?: number | null
   nombreNegocio?: string | null
-  bodega?: { provincia?: string | null } | null
+  /** Nombre de la tienda/vendedor dueño de este paquete, si el backend lo manda. */
+  nombreEmpresa?: string
+  subtotal?: number
+  metodoPago?: string
+  fechaEnvio?: string | null
+  fechaEntregaEstimada?: string | null
+  fechaEntregaReal?: string | null
+  /** Bodega de origen del paquete (el backend la serializa; `provincia` alimenta "Sale de …"). */
+  bodega?: { id?: number; nombreBodega?: string; provincia?: string | null } | null
 }
 
-export function colorEstadoPedido(estado: string): ColorEstadoPedido {
-  if (estado === 'ENTREGADO') return { bg: 'rgba(5,150,105,0.12)', text: '#059669', border: 'rgba(5,150,105,0.25)' }
-  if (estado === 'ENVIADO') return { bg: 'rgba(23,71,168,0.1)', text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.25)' }
-  if (estado === 'LISTO_RETIRO') return { bg: 'rgba(5,150,105,0.1)', text: '#059669', border: 'rgba(5,150,105,0.25)' }
-  if (estado === 'EN_PREPARACION') return { bg: 'rgba(217,119,6,0.1)', text: '#d97706', border: 'rgba(217,119,6,0.25)' }
-  if (estado === 'PAGADO') return { bg: 'rgba(23,71,168,0.08)', text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.2)' }
-  if (estado === 'CANCELADO') return { bg: 'rgba(220,38,38,0.08)', text: '#dc2626', border: 'rgba(220,38,38,0.2)' }
-  return { bg: 'var(--hc-surface-2)', text: 'var(--hc-muted)', border: 'var(--hc-border)' }
+/** Un grupo de pedidos que comparten `grupoPago` (checkout multivendedor). */
+export type GrupoDePedidos = {
+  grupoPago: string | null
+  pedidos: PedidoCliente[]
+}
+
+/**
+ * Agrupa pedidos por `grupoPago` preservando el orden de llegada. Pedidos sin
+ * `grupoPago`, o que son el único representante de su grupo, quedan como
+ * grupos de un solo pedido — la UI los renderiza igual que hoy.
+ */
+export function agruparPedidosPorPaquete(pedidos: PedidoCliente[]): GrupoDePedidos[] {
+  const grupos: GrupoDePedidos[] = []
+  const indicePorClave = new Map<string, number>()
+
+  for (const pedido of pedidos) {
+    const clave = pedido.grupoPago
+    if (!clave) {
+      grupos.push({ grupoPago: null, pedidos: [pedido] })
+      continue
+    }
+    const idx = indicePorClave.get(clave)
+    if (idx === undefined) {
+      indicePorClave.set(clave, grupos.length)
+      grupos.push({ grupoPago: clave, pedidos: [pedido] })
+    } else {
+      grupos[idx].pedidos.push(pedido)
+    }
+  }
+
+  return grupos
 }
 
 export function estadoDePedido(order: PedidoCliente): string {
@@ -92,6 +119,16 @@ function esPedidoCliente(value: unknown): value is PedidoCliente {
   return typeof value === 'object' && value !== null
 }
 
+export function pedidoDesdeRespuesta(data: unknown): PedidoCliente | null {
+  const lista = pedidosDesdeRespuesta(data)
+  if (lista.pedidos.length > 0) return lista.pedidos[0]
+  const envelope = data && typeof data === 'object' && 'data' in data
+    ? (data as { data: unknown }).data
+    : data
+  if (!esPedidoCliente(envelope) || Array.isArray(envelope) || 'content' in envelope) return null
+  return envelope
+}
+
 export function pedidosDesdeRespuesta(data: unknown): { pedidos: PedidoCliente[]; totalPages: number } {
   const envelope = data && typeof data === 'object' && 'data' in data
     ? (data as { data: unknown }).data
@@ -102,14 +139,6 @@ export function pedidosDesdeRespuesta(data: unknown): { pedidos: PedidoCliente[]
     return { pedidos: content, totalPages: pagina.totalPages ?? 1 }
   }
   return { pedidos: Array.isArray(envelope) ? envelope.filter(esPedidoCliente) : [], totalPages: 1 }
-}
-
-/** `GET /pedidos/{id}` responde `{ success, data: pedido }`. */
-export function pedidoDesdeRespuesta(data: unknown): PedidoCliente | null {
-  const pedido = data && typeof data === 'object' && 'data' in data
-    ? (data as { data: unknown }).data
-    : data
-  return esPedidoCliente(pedido) ? pedido : null
 }
 
 export { formatDateShort, formatPrice }

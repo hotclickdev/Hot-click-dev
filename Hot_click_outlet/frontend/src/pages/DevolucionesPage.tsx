@@ -1,14 +1,43 @@
 import { Helmet } from 'react-helmet-async'
-import MainLayout from '@/layouts/MainLayout'
-import { SITE_URL, returnPolicyJsonLd } from './devoluciones/devolucionesData'
-import DevolucionesHero from './devoluciones/DevolucionesHero'
-import DevolucionesBadges from './devoluciones/DevolucionesBadges'
-import DevolucionesSections from './devoluciones/DevolucionesSections'
-import DevolucionesCta from './devoluciones/DevolucionesCta'
+import PaginaLegal, { type EnlaceLegal, type SeccionLegal } from '@/components/comprador/PaginaLegal'
+import { IcoSrv } from './servicios/IcoSrv'
+import WhatsAppSoporteDevoluciones from './devoluciones/WhatsAppSoporteDevoluciones'
+import { LAST_UPDATED, SITE_URL, resumen, returnPolicyJsonLd, sections } from './devoluciones/devolucionesData'
 
+const ENLACES: EnlaceLegal[] = [
+  { to: '/envios', texto: 'Envíos' },
+  { to: '/informacion', texto: 'Garantía' },
+  { to: '/terminos', texto: 'Términos' },
+  { to: '/privacidad', texto: 'Privacidad' },
+]
+
+/** "1. Resumen de la Política" → etiqueta "Sección 1" + título sin número. */
+const secciones: SeccionLegal[] = sections.map((s) => {
+  const m = /^(\d+)\.\s*(.*)$/.exec(s.title)
+  return { id: s.id, num: m ? `Sección ${m[1]}` : '', title: m ? m[2] : s.title, content: s.content }
+})
+
+/** Resumen de la política en filas con ícono (derivado de Figma `28:1660`). */
+function Resumen() {
+  return (
+    <ul className="m-0 flex list-none flex-col p-0">
+      {resumen.map((r, i) => (
+        <li key={r.title} className={`flex items-center gap-3 py-[10px] ${i === 0 ? 'pt-0' : 'border-t border-hc-n-200'} ${i === resumen.length - 1 ? 'pb-0' : ''}`}>
+          <IcoSrv nombre={r.icono} size={20} />
+          <span className="flex min-w-0 flex-1 flex-col gap-px leading-[normal]">
+            <span className="text-[14px] font-semibold text-hc-n-900">{r.title}</span>
+            <span className="text-[12px] text-hc-n-600">{r.desc}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Devoluciones sobre la plantilla legal (derivado de Figma `28:1660`): resumen en filas, secciones y consulta. */
 export default function DevolucionesPage() {
   return (
-    <MainLayout>
+    <>
       <Helmet>
         <title>Política de devoluciones — HotClick Costa Rica</title>
         <meta name="description" content="Tenés 8 días hábiles desde la confirmación del pago para ejercer el retracto. Conocé el proceso de devolución y cambio de HotClick." />
@@ -25,14 +54,17 @@ export default function DevolucionesPage() {
         <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(returnPolicyJsonLd)}</script>
       </Helmet>
-      <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
-        <DevolucionesHero />
-        <div style={{ maxWidth: 760, margin: '0 auto', padding: '2rem 1.5rem 0' }}>
-          <DevolucionesBadges />
-          <DevolucionesSections />
-          <DevolucionesCta />
-        </div>
-      </div>
-    </MainLayout>
+      <PaginaLegal
+        titulo="Devoluciones"
+        encabezado="Política de devoluciones"
+        subtitulo={`Ley N.° 7472 · Costa Rica · Última actualización: ${LAST_UPDATED}`}
+        intro={<Resumen />}
+        secciones={secciones}
+        pregunta="¿Tenés un problema con tu pedido?"
+        correo="hotclick.cr@gmail.com"
+        accion={<WhatsAppSoporteDevoluciones />}
+        enlaces={ENLACES}
+      />
+    </>
   )
 }

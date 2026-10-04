@@ -135,4 +135,36 @@ class WebhookIdempotencyTest {
         verify(dlqTxOps, never())
             .encolar(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyString());
     }
+
+    // ── QA-B02-5: acreditación dentro de la transacción de la confirmación ──
+
+    @Test
+    @DisplayName("IDEM-06 | CRÍTICO — En transacción: acredita una vez y no usa la DLQ")
+    void enTransaccion_acredita() {
+        service.acreditarVentaEnTransaccion(pedido);
+        verify(walletService, times(1))
+            .acreditarVenta(eq(99L), eq(46_000L), eq(50_000L), eq(2_000L), eq(2_000L), eq(101L));
+        verifyNoInteractions(dlqTxOps);
+    }
+
+    @Test
+    @DisplayName("IDEM-07 | CRÍTICO — En transacción: si falla, la excepción sale (rollback del pago) y no va a la DLQ")
+    void enTransaccion_fallo_propaga() {
+        doThrow(new RuntimeException("column reference \"saldo_disponible\" is ambiguous"))
+            .when(walletService)
+            .acreditarVenta(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.acreditarVentaEnTransaccion(pedido))
+            .hasMessageContaining("ambiguous");
+        verifyNoInteractions(dlqTxOps);
+    }
+
+    @Test
+    @DisplayName("IDEM-08 | CRÍTICO — En transacción: pedido ya acreditado → no vuelve a acreditar")
+    void enTransaccion_yaAcreditado_noRepite() {
+        when(walletService.ventaYaAcreditada(101L)).thenReturn(true);
+        service.acreditarVentaEnTransaccion(pedido);
+        verify(walletService, never())
+            .acreditarVenta(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong());
+    }
 }

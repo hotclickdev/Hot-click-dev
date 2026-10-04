@@ -1,18 +1,18 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import Modal from '@/components/ui/Modal'
+import { BotonModalCuenta, CampoModalCuenta, ContenedorModalCuenta, ErrorModalCuenta } from './PiezasModalCuenta'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
 import { authService } from '@/services/authService'
 import { mensajeErrorApi } from './perfilHelpers'
 
 export default function ChangePasswordModal({
-  open, onClose, refreshToken,
+  open, onClose, refreshToken, figma = false,
 }: {
   open: boolean
+  /** Solo comprador: hoja inferior y campos de Figma. ⚠️ COMPARTIDO, sin `figma` queda igual. */
+  figma?: boolean
   onClose: () => void
   refreshToken: string | null
 }) {
@@ -48,20 +48,20 @@ export default function ChangePasswordModal({
   }
 
   return (
-    <Modal open={open} onClose={() => { onClose(); reset() }} title={t('profile.changePassword')}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label={t('profile.currentPassword')} type="password" value={actual}
-          onChange={(e) => setActual(e.target.value)} required autoFocus />
-        <Input label={t('profile.newPassword')} type="password" value={nueva}
-          onChange={(e) => setNueva(e.target.value)} required minLength={6} />
-        <Input label={t('profile.confirmPassword')} type="password" value={confirm}
-          onChange={(e) => setConfirm(e.target.value)} required />
-        {error && (
-          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
-        )}
-        <p className="text-xs text-[#8e8e9a]">{t('profile.passwordWarning')}</p>
-        <Button type="submit" loading={loading} className="w-full">{t('profile.updatePassword')}</Button>
+    <ContenedorModalCuenta figma={figma} open={open} onClose={() => { onClose(); reset() }} titulo={t('profile.changePassword')}>
+      <form onSubmit={handleSubmit} className={figma ? 'flex flex-col gap-[14px]' : 'space-y-4'}>
+        <CampoModalCuenta figma={figma} etiqueta={t('profile.currentPassword')} type="password" value={actual}
+          onChange={(e) => setActual(e.target.value)} required autoFocus autoComplete="current-password" />
+        <CampoModalCuenta figma={figma} etiqueta={t('profile.newPassword')} type="password" value={nueva}
+          onChange={(e) => setNueva(e.target.value)} required minLength={6} autoComplete="new-password" />
+        <CampoModalCuenta figma={figma} etiqueta={t('profile.confirmPassword')} type="password" value={confirm}
+          onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" />
+        <ErrorModalCuenta figma={figma} texto={error} />
+        {figma
+          ? <p className="text-[12px] leading-4 text-hc-n-600">{t('profile.passwordWarning')}</p>
+          : <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('profile.passwordWarning')}</p>}
+        <BotonModalCuenta figma={figma} type="submit" loading={loading}>{t('profile.updatePassword')}</BotonModalCuenta>
       </form>
-    </Modal>
+    </ContenedorModalCuenta>
   )
 }

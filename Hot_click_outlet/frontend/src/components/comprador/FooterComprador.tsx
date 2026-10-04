@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { abrirPreferenciasCookies } from '@/utils/cookieConsent'
 import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import { RUTA_VENDE } from './header/useHeaderComprador'
+import { abrirAccesibilidad } from '@/components/ui/accessibility/abrirAccesibilidadApi'
+import { abrirPreferenciasCookies } from '@/components/ui/cookies/preferenciasCookiesApi'
 
 type EnlaceFooter = { clave: string; to: string }
 
@@ -17,16 +18,26 @@ const ENLACES: EnlaceFooter[] = [
   { clave: 'cookies', to: '/cookies' },
 ]
 
+/**
+ * Accesos que abren una hoja, no una página (Figma `51:2590`, nota E: "desde el pie"). Ningún frame
+ * del pie los dibuja: van como texto de la misma línea legal, sin ícono ni estilo nuevo. En móvil
+ * pasan a una segunda línea para que ningún nombre se parta.
+ */
+const ACCIONES: ReadonlyArray<{ clave: string; abrir: () => void }> = [
+  { clave: 'preferenciasCookies', abrir: abrirPreferenciasCookies },
+  { clave: 'idiomaAccesibilidad', abrir: abrirAccesibilidad },
+]
+
 function BannerVendedor() {
   const { t } = useTranslation()
   return (
     <Link
       to={RUTA_VENDE}
-      className="flex flex-col gap-[2px] bg-hc-blue-900 p-4 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-[22px] xl:px-[120px]"
+      className="flex flex-col gap-[2px] bg-hc-blue-900 p-4 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-[22px] xl:px-[max(120px,calc((100%_-_1200px)/2))]"
     >
       <span className="flex flex-col gap-[2px] whitespace-nowrap">
-        <span className="text-[12px] text-hc-blue-100 lg:text-[13px]">{t('comprador.footer.bannerPregunta')}</span>
-        <span className="flex items-center gap-1 font-display text-[15px] font-semibold text-hc-n-0 lg:text-[18px]">
+        <span className="text-[12px] leading-[14px] text-hc-blue-100 lg:text-[13px] lg:leading-[15px]">{t('comprador.footer.bannerPregunta')}</span>
+        <span className="flex items-center gap-1 font-display text-[15px] font-semibold leading-[19px] text-hc-n-0 lg:text-[18px] lg:leading-[23px]">
           <span className="lg:hidden">{t('comprador.footer.bannerTitulo')}</span>
           <span className="hidden lg:inline">{t('comprador.footer.bannerTituloDesktop')}</span>
           <IconoFigma src={ICONOS_COMPRADOR.bannerFlecha} size={16} className="lg:hidden" />
@@ -43,17 +54,24 @@ function BannerVendedor() {
 function EnlacesLegales() {
   const { t } = useTranslation()
   return (
-    <p className="text-[12px] leading-[18px] text-hc-n-600 lg:text-[13px] lg:leading-normal">
+    <p className="text-[12px] leading-[18px] text-hc-n-600 lg:text-[13px] lg:leading-[15px]">
       {ENLACES.map((enlace, indice) => (
         <span key={enlace.clave}>
           {indice > 0 && ' · '}
           <Link to={enlace.to} className="hover:text-hc-n-900">{t(`comprador.footer.${enlace.clave}`)}</Link>
         </span>
       ))}
-      {' · '}
-      <button type="button" onClick={abrirPreferenciasCookies} className="hover:text-hc-n-900 bg-transparent p-0 border-0 cursor-pointer">
-        {t('comprador.footer.configurarCookies')}
-      </button>
+      <span className="hidden lg:inline"> · </span>
+      <span className="block lg:inline">
+        {ACCIONES.map((accion, indice) => (
+          <span key={accion.clave} className="whitespace-nowrap">
+            {indice > 0 && ' · '}
+            <button type="button" onClick={accion.abrir} className="hover:text-hc-n-900">
+              {t(`comprador.footer.${accion.clave}`)}
+            </button>
+          </span>
+        ))}
+      </span>
     </p>
   )
 }
@@ -62,11 +80,11 @@ function EnlacesLegales() {
 export default function FooterComprador() {
   const { t } = useTranslation()
   return (
-    <footer aria-label={t('comprador.footer.aria')} className="mt-auto">
+    <footer aria-label={t('comprador.footer.aria')} className="mt-auto leading-[normal]">
       <BannerVendedor />
-      <div className="flex flex-col gap-[6px] bg-hc-n-100 px-4 pb-[18px] pt-4 lg:flex-row lg:items-start lg:justify-between lg:px-8 lg:pb-6 lg:pt-5 xl:px-[120px]">
+      <div className="flex flex-col gap-[6px] bg-hc-n-100 px-4 pb-[18px] pt-4 lg:flex-row lg:items-start lg:justify-between lg:px-8 lg:pb-6 lg:pt-5 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
         <EnlacesLegales />
-        <p className="whitespace-nowrap text-[11px] text-hc-n-500 lg:text-[12px]">
+        <p className="whitespace-nowrap text-[11px] leading-[13px] text-hc-n-600 lg:text-[12px] lg:leading-[14px]">
           {t('comprador.footer.derechos', { anio: new Date().getFullYear() })}
         </p>
       </div>

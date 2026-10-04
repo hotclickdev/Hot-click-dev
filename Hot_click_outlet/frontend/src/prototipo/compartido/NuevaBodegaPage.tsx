@@ -5,13 +5,18 @@ import { useSellerRuta } from './SellerPlanContext'
 import { crearBodegaVendedor } from './bodegasVendedorApi'
 import FormularioPorPasos from './FormularioPorPasos'
 import CamposUbicacion from './CamposUbicacion'
+import PhoneField from '@/components/ui/PhoneField'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
-import { FORM_BODEGA_INICIAL, type FormBodega, type PasoBodega, validarPasoBodega } from './nuevaBodegaHelpers'
+import {
+  FORM_BODEGA_INICIAL, mensajeErrorGuardarBodega, validarPasoBodega,
+  type FormBodega, type PasoBodega,
+} from './nuevaBodegaHelpers'
 import { erroresUbicacion, type UbicacionDespacho } from './ubicacionDespachoHelpers'
 
 const PASOS: readonly (PasoFormulario & { id: PasoBodega })[] = [
   { id: 'nombre', titulo: 'Nombre de la bodega' },
   { id: 'ubicacion', titulo: 'Ubicación de despacho' },
+  { id: 'telefono', titulo: 'Teléfono' },
   { id: 'encargado', titulo: 'Encargado', opcional: true },
 ]
 
@@ -61,56 +66,52 @@ export function NuevaBodegaPage({
       navigate(destino)
     } catch (err: unknown) {
       console.error('[NuevaBodega]', err)
-      setError('No se pudo guardar la bodega.')
+      setError(mensajeErrorGuardarBodega(err))
     } finally {
       setGuardando(false)
     }
   }
 
   const wizard = (
-    <FormularioPorPasos
-      pasos={PASOS}
-      pasoActual={paso}
-      onPasoChange={setPaso}
-      validarPaso={validar}
-      onFinalizar={guardar}
-      etiquetaFinal="Guardar bodega"
-      enviando={guardando}
-    >
-      {idPaso === 'nombre' ? (
-        <>
+    <div className="w-full max-w-[640px]">
+      <FormularioPorPasos
+        pasos={PASOS}
+        pasoActual={paso}
+        onPasoChange={setPaso}
+        validarPaso={validar}
+        onFinalizar={guardar}
+        etiquetaFinal="Guardar bodega"
+        enviando={guardando}
+      >
+        {idPaso === 'nombre' ? (
           <Campo
             etiqueta="Nombre de la bodega"
             value={form.nombre}
             onChange={setCampo('nombre')}
             placeholder="Ej: Bodega Central"
           />
-          <Campo
-            etiqueta="Teléfono de la bodega"
-            value={form.telefono}
-            onChange={setCampo('telefono')}
-            placeholder="Ej: 8888 8888"
-            type="tel"
+        ) : null}
+        {idPaso === 'ubicacion' ? (
+          <CamposUbicacion
+            ubicacion={form.ubicacion}
+            onChange={setUbicacion}
+            errores={intentoUbicacion ? erroresUbicacion(form.ubicacion) : undefined}
           />
-        </>
-      ) : null}
-      {idPaso === 'ubicacion' ? (
-        <CamposUbicacion
-          ubicacion={form.ubicacion}
-          onChange={setUbicacion}
-          errores={intentoUbicacion ? erroresUbicacion(form.ubicacion) : undefined}
-        />
-      ) : null}
-      {idPaso === 'encargado' ? (
-        <Campo
-          etiqueta="Encargado (opcional)"
-          value={form.encargado}
-          onChange={setCampo('encargado')}
-          placeholder="Ej: Sofía Vargas"
-        />
-      ) : null}
-      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-    </FormularioPorPasos>
+        ) : null}
+        {idPaso === 'telefono' ? (
+          <PhoneField label="Teléfono de la bodega" value={form.telefono} onChange={setCampo('telefono')} required forceDialCode />
+        ) : null}
+        {idPaso === 'encargado' ? (
+          <Campo
+            etiqueta="Encargado (opcional)"
+            value={form.encargado}
+            onChange={setCampo('encargado')}
+            placeholder="Ej: Sofía Vargas"
+          />
+        ) : null}
+        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+      </FormularioPorPasos>
+    </div>
   )
 
   if (soloFormulario) return wizard

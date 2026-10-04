@@ -1,5 +1,6 @@
 import api from './api'
 import type { Id } from '@/types/api'
+import { formatPrice } from '@/utils/format'
 
 export type PresupuestoTipo = 'SIN_PRESUPUESTO' | 'RANGO'
 
@@ -128,8 +129,7 @@ export function kpisDesdeRespuesta(data: unknown): EncargoKpis | null {
 
 export function etiquetaPresupuestoCliente(encargo: Encargo): string {
   if (encargo.presupuestoTipo === 'RANGO' && encargo.presupuestoMin != null && encargo.presupuestoMax != null) {
-    const fmt = (n: number) => new Intl.NumberFormat('es-CR').format(n)
-    return `₡${fmt(encargo.presupuestoMin)} – ₡${fmt(encargo.presupuestoMax)}`
+    return `${formatPrice(encargo.presupuestoMin)} – ${formatPrice(encargo.presupuestoMax)}`
   }
   return 'Sin presupuesto indicado'
 }
@@ -137,8 +137,7 @@ export function etiquetaPresupuestoCliente(encargo: Encargo): string {
 export function linkWhatsAppCotizacion(encargo: Encargo, precio: number): string | null {
   const tel = encargo.telefono?.replace(/\D/g, '')
   if (!tel) return null
-  const fmt = new Intl.NumberFormat('es-CR').format(precio)
   const link = `${globalThis.location?.origin ?? 'https://hotclick.lat'}/encargo/${encargo.tokenPublico}`
-  const msg = `Hola ${encargo.nombreCliente}, tu encargo de ${encargo.productoNombre ?? 'producto personalizado'} quedó cotizado en ₡${fmt}. Pagá acá: ${link}`
+  const msg = `Hola ${encargo.nombreCliente}, tu encargo de ${encargo.productoNombre ?? 'producto personalizado'} quedó cotizado en ${formatPrice(precio)}. Pagá acá: ${link}`
   return `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`
 }

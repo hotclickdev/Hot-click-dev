@@ -48,6 +48,22 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     @Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.plan WHERE e.id = :id")
     Optional<Empresa> findByIdWithPlan(@Param("id") Long id);
 
+    /** Plan efectivo para la API pública: el del Plan estructurado o, si no hay, plan_saas. */
+    @Query("SELECT COALESCE(p.nombre, e.planSaas) FROM Empresa e LEFT JOIN e.plan p WHERE e.id = :id")
+    Optional<String> findNombrePlanEfectivo(@Param("id") Long id);
+
+    /**
+     * Negocios visibles para el visitante (activos y públicos) con su plan efectivo y la cantidad de productos
+     * publicados. Solo campos de vitrina: el directorio y el buscador nunca reciben contacto del vendedor.
+     */
+    @Query("SELECT e.slug AS slug, COALESCE(NULLIF(e.nombreComercial, ''), e.nombreEmpresa) AS nombre, "
+        + "e.logoUrl AS logoUrl, e.categoriaNegocio AS categoria, COALESCE(p.nombre, e.planSaas) AS plan, "
+        + "(SELECT COUNT(pr.id) FROM Producto pr WHERE pr.empresa = e AND pr.estado = 1 AND pr.visibleCatalogo = true "
+        + "AND pr.stockActual > 0 AND pr.vendido = false) AS productos "
+        + "FROM Empresa e LEFT JOIN e.plan p "
+        + "WHERE e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true AND e.slug IS NOT NULL ORDER BY e.id ASC")
+    List<NegocioPublicoFila> findNegociosPublicos(Pageable pageable);
+
     @Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.plan ORDER BY e.fechaRegistro DESC")
     List<Empresa> findAllWithPlanOrderByFechaRegistroDesc();
 

@@ -26,7 +26,6 @@ export default function PaymentStatusPage() {
   const {
     estado,
     pagoData,
-    error,
     iniciarPolling,
     stopPolling,
     cancelarPedido,
@@ -38,7 +37,11 @@ export default function PaymentStatusPage() {
     limpiarRetornoPagoVisitante()
   }, [destinoVisitante])
 
-  useEffect(() => () => stopPolling(), [stopPolling])
+  useEffect(() => () => {
+    stopPolling()
+    // En StrictMode el efecto se monta dos veces: sin reiniciar la marca, el segundo montaje no volvería a consultar el pago.
+    ran.current = false
+  }, [stopPolling])
 
   useEffect(() => {
     globalThis.scrollTo({ top: 0, behavior: 'instant' })
@@ -66,7 +69,7 @@ export default function PaymentStatusPage() {
   }
 
   if (!numeroPedido) {
-    return <PagoCancelado motivoError="No encontramos el número de pedido en el enlace de retorno." />
+    return <PagoCancelado />
   }
 
   if (estaOcupado(estado)) {
@@ -85,12 +88,11 @@ export default function PaymentStatusPage() {
     return (
       <PagoPendiente
         pagoData={pagoData as PagoResumen | null}
-        numeroPedido={numeroPedido}
         stripeApproved={stripeApproved}
         token={token}
       />
     )
   }
 
-  return <PagoCancelado motivoError={error} />
+  return <PagoCancelado />
 }

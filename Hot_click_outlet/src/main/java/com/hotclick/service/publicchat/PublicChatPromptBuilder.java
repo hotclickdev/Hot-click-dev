@@ -1,6 +1,8 @@
 package com.hotclick.service.publicchat;
 
+import com.hotclick.config.TiemposEnvio;
 import com.hotclick.service.catalogo.ChatPrecioPersonalizado;
+import com.hotclick.utils.FormatoColones;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -15,8 +17,8 @@ class PublicChatPromptBuilder {
         String nombre = nombreSeguro(nombreTienda);
         if (isEnglish) {
             if (marketplace) {
-                return nombre + " is an online store in Costa Rica. We ship nationwide via Correos de Costa Rica "
-                    + "(2-5 business days) and offer direct delivery in the GAM (1-2 days). You can pay with SINPE "
+                return nombre + " is an online store in Costa Rica. We ship nationwide (Correos de Costa Rica and "
+                    + "direct delivery in the GAM): " + TiemposEnvio.resumenEn() + ". You can pay with SINPE "
                     + "Móvil, debit/credit card, or bank transfer. For warranty or returns on a specific product, "
                     + "check its product page or WhatsApp. Anything I can help you find?";
             }
@@ -24,8 +26,8 @@ class PublicChatPromptBuilder {
                 + "https://wa.me/" + wa + " — or ask about a specific product. What are you looking for?";
         }
         if (marketplace) {
-            return nombre + " es una tienda online en Costa Rica. Enviamos a todo el país con Correos de Costa Rica "
-                + "(2-5 días hábiles) y hacemos entrega directa en el GAM (1-2 días). Podés pagar con SINPE Móvil, "
+            return nombre + " es una tienda online en Costa Rica. Enviamos a todo el país (Correos de Costa Rica y "
+                + "entrega directa en el GAM): " + TiemposEnvio.resumen() + ". Podés pagar con SINPE Móvil, "
                 + "tarjeta o transferencia. Garantía y devoluciones dependen de cada producto: mirá la ficha o "
                 + "escribinos al WhatsApp. ¿Qué estás buscando?";
         }
@@ -199,7 +201,7 @@ class PublicChatPromptBuilder {
             OBJETIVO: Entendé su necesidad exacta, mostrá entusiasmo genuino y empujá hacia el carrito o cotización.
             """);
         if (isGift) goal.append("El cliente BUSCA UN REGALO → ayudalo con opciones especiales y mencioná el envío a domicilio.\n");
-        if (maxBudget != null) goal.append(String.format("El cliente tiene presupuesto de hasta ₡%,d → priorizá opciones dentro de ese rango.\n", maxBudget));
+        if (maxBudget != null) goal.append("El cliente tiene presupuesto de hasta ").append(FormatoColones.colones(maxBudget)).append(" → priorizá opciones dentro de ese rango.\n");
         if (!negations.isEmpty()) goal.append(String.format("El cliente NO quiere: %s → evitá mencionarlos.\n", String.join(", ", negations)));
         return goal.toString();
     }
@@ -209,7 +211,9 @@ class PublicChatPromptBuilder {
         sb.append("- Nombre: ").append(nombre).append('\n');
         sb.append("- WhatsApp / contacto: wa.me/").append(wa).append(" (número ").append(wa).append(")\n");
         if (marketplace) {
-            sb.append("- Envíos (marketplace): Correos de Costa Rica (2-5 días hábiles) + entrega directa GAM (1-2 días)\n");
+            // Plazos desde la fuente única (config/tiempos-envio.json), los mismos del checkout.
+            sb.append("- Envíos (marketplace): Correos de Costa Rica + entrega directa en el GAM; ")
+                .append(TiemposEnvio.resumen()).append("\n");
             sb.append("- Pago: SINPE Móvil, tarjeta débito/crédito online, transferencia bancaria\n");
             sb.append("- Garantía/devoluciones: solo lo que diga cada ficha; no inventes plazos globales\n");
         } else {

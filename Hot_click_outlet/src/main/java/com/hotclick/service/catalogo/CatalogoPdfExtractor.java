@@ -2,9 +2,15 @@ package com.hotclick.service.catalogo;
 
 import com.hotclick.dto.ProductoExtraidoDto;
 import com.hotclick.service.SupabaseStorageService;
+import com.hotclick.service.storage.StorageImageValidator;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSDictionary;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
@@ -16,8 +22,10 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class CatalogoPdfExtractor {
@@ -72,6 +80,8 @@ public class CatalogoPdfExtractor {
         List<ProductoExtraidoDto> resultado = new ArrayList<>();
         try (PDDocument pdf = Loader.loadPDF(pdfBytes)) {
             PDFRenderer renderer = new PDFRenderer(pdf);
+            // R2: deja a PDFBox submuestrear imágenes embebidas más grandes que la salida.
+            renderer.setSubsamplingAllowed(true);
 
             for (int inicio = 0; inicio < paginasAProcesar && resultado.size() < MAX_PRODUCTOS; inicio += PAGINAS_POR_LOTE_VISION) {
                 int fin = Math.min(inicio + PAGINAS_POR_LOTE_VISION, paginasAProcesar);
@@ -79,10 +89,24 @@ public class CatalogoPdfExtractor {
 
                 for (int i = inicio; i < fin; i++) {
                     byte[] jpg;
+                    // R2: una página chica puede traer una imagen embebida de 30000×30000; se lee
+                    // ancho/alto del diccionario del XObject, sin decodificarla, y se rechaza el PDF.
+                    verificarImagenesEmbebidas(pdf.getPage(i).getResources());
+                    // FULL-01: no rasterizar páginas gigantes (MediaBox enorme → BufferedImage de GB).
+                    var caja = pdf.getPage(i).getCropBox();
+                    double escala = DPI_RENDER_VISION / 72.0;
+                    double anchoPx = caja.getWidth() * escala;
+                    double altoPx = caja.getHeight() * escala;
+                    if (anchoPx > StorageImageValidator.MAX_LADO_PX || altoPx > StorageImageValidator.MAX_LADO_PX
+                            || anchoPx * altoPx > StorageImageValidator.MAX_PIXELES) {
+                        log.warn("[import-pdf] página {} demasiado grande para rasterizar ({}x{} px) — se omite",
+                            i + 1, (long) anchoPx, (long) altoPx);
+                        continue;
+                    }
                     try {
                         BufferedImage img = renderer.renderImageWithDPI(i, DPI_RENDER_VISION);
                         jpg = aJpegBytes(img);
-                    } catch (Exception e) {
+                    } catch (Exception | OutOfMemoryError e) {
                         log.warn("[import-pdf] no se pudo renderizar página {}: {}", i + 1, e.getMessage());
                         continue;
                     }
@@ -128,6 +152,42 @@ public class CatalogoPdfExtractor {
         }
 
         return resultado.size() > MAX_PRODUCTOS ? resultado.subList(0, MAX_PRODUCTOS) : resultado;
+    }
+
+    static final String MSG_IMAGEN_EMBEBIDA_GRANDE =
+        "El PDF trae una imagen demasiado grande para procesar (máximo 40 megapíxeles).";
+
+    /**
+     * R2: recorre los XObject de imagen de los recursos de la página (y de los Form XObject
+     * anidados) y rechaza cualquiera con Width × Height por encima de
+     * {@link StorageImageValidator#MAX_PIXELES}. Lee solo el diccionario COS: nunca llama a
+     * {@code getImage()}, que es lo que decodifica.
+     *
+     * @throws IllegalArgumentException si alguna imagen supera el tope (→ 400).
+     */
+    static void verificarImagenesEmbebidas(PDResources recursos) {
+        if (recursos == null) return;
+        verificarImagenesEmbebidas(recursos.getCOSObject(), new HashSet<>(), 0);
+    }
+
+    private static void verificarImagenesEmbebidas(COSDictionary recursos, Set<COSBase> vistos, int profundidad) {
+        if (recursos == null || profundidad > 10 || !vistos.add(recursos)) return;
+        COSDictionary xobjetos = recursos.getCOSDictionary(COSName.XOBJECT);
+        if (xobjetos == null) return;
+        for (COSName nombre : xobjetos.keySet()) {
+            if (!(xobjetos.getDictionaryObject(nombre) instanceof COSStream xobjeto)) continue;
+            COSName subtipo = xobjeto.getCOSName(COSName.SUBTYPE);
+            if (COSName.IMAGE.equals(subtipo)) {
+                long ancho = Math.max(0, xobjeto.getInt(COSName.WIDTH, 0));
+                long alto = Math.max(0, xobjeto.getInt(COSName.HEIGHT, 0));
+                if (ancho * alto > StorageImageValidator.MAX_PIXELES) {
+                    log.warn("[import-pdf] imagen embebida {} de {}x{} — se rechaza el PDF", nombre.getName(), ancho, alto);
+                    throw new IllegalArgumentException(MSG_IMAGEN_EMBEBIDA_GRANDE);
+                }
+            } else if (COSName.FORM.equals(subtipo)) {
+                verificarImagenesEmbebidas(xobjeto.getCOSDictionary(COSName.RESOURCES), vistos, profundidad + 1);
+            }
+        }
     }
 
     private byte[] aJpegBytes(BufferedImage img) throws Exception {

@@ -11,15 +11,8 @@ import java.util.List;
 
 public class PaymentCheckoutRequest {
 
-    /**
-     * Bodega elegida por el cliente (retiro o tienda propia). Solo se respeta si
-     * pertenece al negocio del paquete; si no, el origen es la bodega del negocio.
-     */
+    @NotNull(message = "La bodega es requerida")
     private Long bodegaId;
-
-    /** Entrega por negocio. Si falta un negocio, su paquete usa {@link #metodoEnvio}. */
-    @Valid
-    private List<PaqueteEntregaDTO> paquetes;
 
     @NotBlank(message = "El método de envío es requerido")
     private String metodoEnvio;
@@ -45,17 +38,51 @@ public class PaymentCheckoutRequest {
     /** Código de gift card (opcional). Solo para usuarios autenticados. */
     private String codigoGiftCard;
 
+    /** Dirección de entrega (señas, cantón, provincia). Solo se guarda en paquetes con envío. */
+    @jakarta.validation.constraints.Size(max = 500, message = "La dirección es demasiado larga")
+    private String direccionEntrega;
+
+    public String getDireccionEntrega() { return direccionEntrega; }
+    public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
+
     /** Token del QR del POS — al confirmar el pago marca la sesión del cajero. */
     private String posQrToken;
 
     /** First/last touch UTM + _fbp/_fbc para atribución y CAPI. */
     private AtribucionSnapshotDTO atribucion;
 
+    /**
+     * Entrega elegida por paquete (una bodega de origen = un paquete). Sin esta lista,
+     * todos los paquetes usan {@code metodoEnvio}.
+     */
+    @Valid
+    private List<EnvioPaqueteDTO> envios;
+
+    public List<EnvioPaqueteDTO> getEnvios() { return envios; }
+    public void setEnvios(List<EnvioPaqueteDTO> envios) { this.envios = envios; }
+
+    public static class EnvioPaqueteDTO {
+        @NotNull(message = "La bodega del paquete es requerida")
+        private Long bodegaId;
+
+        @NotBlank(message = "El método de envío del paquete es requerido")
+        private String metodoEnvio;
+
+        /** Nota para la tienda de este paquete (opcional). */
+        private String notas;
+
+        public Long getBodegaId() { return bodegaId; }
+        public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
+
+        public String getMetodoEnvio() { return metodoEnvio; }
+        public void setMetodoEnvio(String metodoEnvio) { this.metodoEnvio = metodoEnvio; }
+
+        public String getNotas() { return notas; }
+        public void setNotas(String notas) { this.notas = notas; }
+    }
+
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
-
-    public List<PaqueteEntregaDTO> getPaquetes() { return paquetes; }
-    public void setPaquetes(List<PaqueteEntregaDTO> paquetes) { this.paquetes = paquetes; }
 
     public String getMetodoEnvio() { return metodoEnvio; }
     public void setMetodoEnvio(String metodoEnvio) { this.metodoEnvio = metodoEnvio; }
@@ -96,7 +123,10 @@ public class PaymentCheckoutRequest {
         @Min(value = 1, message = "La cantidad debe ser al menos 1")
         private Integer cantidad;
 
-        /** Precio unitario forzado (solo uso interno, p.ej. encargo cotizado). Nunca se acepta del JSON. */
+        /**
+         * Precio unitario forzado, solo para uso interno (encargo cotizado, asignado en Java).
+         * Ignorado en el JSON de entrada: si no, un checkout público podría fijar su propio precio.
+         */
         @JsonIgnore
         private Integer precioUnitarioOverride;
 
@@ -117,27 +147,6 @@ public class PaymentCheckoutRequest {
         public void setPersonalizacion(PersonalizacionDTO personalizacion) {
             this.personalizacion = personalizacion;
         }
-    }
-
-    public static class PaqueteEntregaDTO {
-
-        @NotNull(message = "El negocio del paquete es requerido")
-        private Long empresaId;
-
-        @NotBlank(message = "El método de envío del paquete es requerido")
-        private String metodoEnvio;
-
-        /** Bodega de retiro elegida para este paquete (opcional). */
-        private Long bodegaId;
-
-        public Long getEmpresaId() { return empresaId; }
-        public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
-
-        public String getMetodoEnvio() { return metodoEnvio; }
-        public void setMetodoEnvio(String metodoEnvio) { this.metodoEnvio = metodoEnvio; }
-
-        public Long getBodegaId() { return bodegaId; }
-        public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
     }
 
     public static class PersonalizacionDTO {

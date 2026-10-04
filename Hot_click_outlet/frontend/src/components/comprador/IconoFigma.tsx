@@ -2,7 +2,8 @@ import type { CSSProperties } from 'react'
 
 type IconoFigmaProps = {
   src: string
-  size: number
+  /** Píxeles, o `'100%'` para tomar el tamaño de un contenedor responsivo. */
+  size: number | '100%'
   className?: string
 }
 

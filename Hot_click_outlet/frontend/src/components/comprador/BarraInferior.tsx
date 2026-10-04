@@ -15,12 +15,12 @@ type ItemBarraProps = {
 }
 
 function ItemBarra({ icono, texto, activo, to, onClick }: ItemBarraProps) {
-  const color = activo ? 'font-semibold text-hc-red-500' : 'font-medium text-hc-n-500'
+  const color = activo ? 'font-semibold text-hc-red-600' : 'font-medium text-hc-n-600'
   const clases = `flex flex-col items-center gap-[3px] text-[11px] ${color}`
   const contenido: ReactNode = (
     <>
       <IconoFigma src={icono} size={22} />
-      <span className="whitespace-nowrap">{texto}</span>
+      <span className="whitespace-nowrap leading-[13px]">{texto}</span>
     </>
   )
   if (to) {
@@ -32,14 +32,14 @@ function ItemBarra({ icono, texto, activo, to, onClick }: ItemBarraProps) {
 /** Barra de navegación inferior móvil del comprador (Figma `7:358`). */
 export default function BarraInferior() {
   const { t } = useTranslation()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const { rutaCuenta, abrirBusqueda } = useHeaderComprador()
-  const activa: SeccionBarra | null = seccionActivaBarra(pathname)
+  const activa: SeccionBarra | null = seccionActivaBarra(pathname, search)
 
   return (
     <nav
       aria-label={t('comprador.nav.aria')}
-      className="fixed inset-x-0 bottom-0 z-50 flex items-start justify-between border-t border-hc-n-200 bg-hc-n-0 px-[22px] pb-5 pt-2 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 flex items-start justify-between border-t border-hc-n-200 bg-hc-n-0 px-[22px] pb-5 pt-2 leading-[normal] lg:hidden"
     >
       <ItemBarra icono={ICONOS_COMPRADOR.navInicio} texto={t('comprador.nav.inicio')} activo={activa === 'inicio'} to="/" />
       <ItemBarra icono={ICONOS_COMPRADOR.navBuscar} texto={t('comprador.nav.buscar')} activo={activa === 'buscar'} onClick={abrirBusqueda} />

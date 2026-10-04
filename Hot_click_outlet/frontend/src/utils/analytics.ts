@@ -42,8 +42,11 @@ function loadConsentFromStorage() {
     const raw = localStorage.getItem(CONSENT_KEY)
     if (!raw) return
     const parsed: unknown = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object' && 'analytics' in parsed) {
-      analyticsEnabled = Boolean((parsed as { analytics?: unknown }).analytics)
+    if (parsed && typeof parsed === 'object') {
+      const consentimiento = parsed as { analytics?: unknown; advertising?: unknown }
+      if ('analytics' in consentimiento || 'advertising' in consentimiento) {
+        analyticsEnabled = Boolean(consentimiento.analytics) || Boolean(consentimiento.advertising)
+      }
     }
   } catch {
     analyticsEnabled = false
@@ -134,6 +137,7 @@ export const analytics = {
     if (count === 0) track(EVENTO.BUSQUEDA_SIN_RESULTADOS, { query: q, results: 0 })
   },
   checkoutView: (total: number, n: number) => track(EVENTO.CHECKOUT_VISTO, { monto: total, item_count: n }),
+  checkoutStart: (total: number, n: number) => track(EVENTO.CHECKOUT_INICIADO, { monto: total, item_count: n }),
   checkoutBloqueado: (motivo: string) => track(EVENTO.CHECKOUT_BLOQUEADO, { motivo }),
   pagoIntentado: (total: number, n: number) => track(EVENTO.PAGO_INTENTADO, { monto: total, item_count: n }),
   pagoFallido: () => track(EVENTO.PAGO_FALLIDO, {}),

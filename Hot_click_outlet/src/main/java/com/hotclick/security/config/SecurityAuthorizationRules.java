@@ -70,6 +70,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, API_PRODUCTO_POR_ID).permitAll()
             // Stock en tiempo real (SSE) — público; el tenant se infiere del producto, no del caller
             .requestMatchers(GET, "/api/marketplace/productos/*/stock-stream").permitAll()
+            // Avisame cuando vuelva — público, cualquiera (con cuenta o no) puede suscribirse
+            .requestMatchers(POST, "/api/productos/*/avisar-reposicion").permitAll()
             // Gestión de productos — roles de empresa + API keys con scope write:productos
             .requestMatchers(POST,   "/api/productos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,    API_PRODUCTO_POR_ID).hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -123,6 +125,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/public/encargos").permitAll()
             .requestMatchers(GET,  "/api/public/encargos/**").permitAll()
             .requestMatchers(POST, "/api/public/encargos/*/checkout").permitAll()
+            // Seguimiento de pedido sin cuenta — solo lectura por token aleatorio (nunca por id)
+            .requestMatchers(GET,  "/api/public/pedidos/seguimiento/*").permitAll()
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -245,8 +249,8 @@ final class SecurityAuthorizationRules {
                 "/visitante", "/visitante/**", "/emprendedor", "/emprendedor/**",
                 "/pyme", "/pyme/**", "/negocio-plus", "/negocio-plus/**",
                 "/prototipo", "/prototipo/**",
-                "/nosotros", "/productos", "/productos/**", "/descubri", "/informacion", "/contacto",
-                "/carrito", "/login", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
+                "/nosotros", "/productos", "/productos/**", "/descubri", "/categorias", "/buscar/foto", "/informacion", "/contacto",
+                "/carrito", "/login", "/recuperar-contrasena", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan",
                 "/emprendimientos",
@@ -255,9 +259,11 @@ final class SecurityAuthorizationRules {
                 "/404",
                 "/seleccionar-negocio", "/mode-select", "/registrar-negocio",
                 "/sso-callback", "/sso-complete",
-                "/checkout", "/pago/exito", "/pago/cancelado",
+                "/checkout", "/pago/exito", "/pago/cancelado", "/pago/tilopay/respuesta",
+                "/ayuda", "/registro-empresa/activar-plan",
                 "/pos/pago", "/pos/pago/**",
                 "/recuperar-carrito", "/recuperar-carrito/**",
+                "/seguimiento/*",
                 "/servicios", "/servicios/**",
                 "/admin/empresas", "/admin/empresas/**",
                 "/admin/equipo", "/admin/aprobaciones",
@@ -266,6 +272,10 @@ final class SecurityAuthorizationRules {
                 "/admin/offline", "/admin/offline/**",
                 "/admin/gift-cards", "/admin/gift-cards/**",
                 "/checkout/qr", "/checkout/qr/**").permitAll()
+            // Visitante (aprobado 2-oct-2026): páginas públicas en entrada directa y fallback SPA para el 404.
+            // Van después de "/api/**" y de todas las reglas de rol, así que no cambian ninguna.
+            .requestMatchers(SpaVisitanteFallback.RUTAS_PUBLICAS_VISITANTE).permitAll()
+            .requestMatchers(SpaVisitanteFallback.NAVEGACION_VISITANTE).permitAll()
             .anyRequest().authenticated();
     }
 }

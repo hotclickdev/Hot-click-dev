@@ -21,15 +21,43 @@ public class CheckoutOrderFactory {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired @Lazy private EncargoService encargoService;
 
-    public Pedido createPendingOrder(CompraContexto ctx, PaqueteCheckout paquete, OrderPricingResult pricing) {
-        PaymentCheckoutRequest req = ctx.req();
-        int subtotal = paquete.subtotal();
-        int costoTotal = paquete.costoTotal();
-        Bodega bodega = paquete.origen();
+    public Pedido createPendingOrder(PaymentCheckoutRequest req, OrderPricingResult pricing,
+                                     int subtotal, int costoTotal, String provider,
+                                     Usuario usuario, Bodega bodega) {
+        Pedido pedido = crearSubpedido(pricing, subtotal, costoTotal, provider, usuario, bodega,
+            req.getMetodoEnvio(), req.getNotas(), null, Constants.PEDIDO_PENDIENTE);
+        return aplicarDireccion(pedido, req.getDireccionEntrega());
+    }
+
+    /**
+     * Guarda la dirección en el pedido (para los correos: «Enviamos a …») solo si el
+     * paquete se envía. Se normalizan espacios y se corta a 500 caracteres.
+     */
+    public Pedido aplicarDireccion(Pedido pedido, String direccion) {
+        String limpia = direccionDeEntrega(direccion, pedido.getMetodoEnvio());
+        if (limpia == null) return pedido;
+        pedido.setDireccionEntrega(limpia);
+        return pedidoRepository.save(pedido);
+    }
+
+    static String direccionDeEntrega(String direccion, String metodoEnvio) {
+        if (direccion == null || esRetiro(metodoEnvio)) return null;
+        String limpia = direccion.replaceAll("[\\p{Cntrl}\\s]+", " ").trim();
+        if (limpia.isEmpty()) return null;
+        return limpia.length() <= 500 ? limpia : limpia.substring(0, 500);
+    }
+
+    static boolean esRetiro(String metodoEnvio) {
+        return metodoEnvio == null || Constants.ENVIO_RETIRO.equals(metodoEnvio)
+            || "RETIRO".equals(metodoEnvio) || "EN_TIENDA".equals(metodoEnvio);
+    }
+
+    /** Un paquete de un checkout multivendedor. Todos los subpedidos del checkout comparten {@code grupoPago}. */
+    public Pedido crearSubpedido(OrderPricingResult pricing, int subtotal, int costoTotal, String provider,
+                                 Usuario usuario, Bodega bodega, String metodoEnvio, String notas,
+                                 String grupoPago, String estadoInicial) {
         Pedido pedido = new Pedido();
-        pedido.setNumeroPedido(ctx.numeroPedido(paquete.numero()));
-        pedido.setCompra(ctx.compra());
-        pedido.setNumeroPaquete(paquete.numero());
+        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
         pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(pricing.totalConGC());
@@ -48,11 +76,12 @@ public class CheckoutOrderFactory {
                     .divide(BigDecimal.valueOf(subtotal), 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100)));
         }
-        pedido.setMetodoPago(ctx.provider());
-        pedido.setMetodoEnvio(paquete.metodoEnvio() != null ? paquete.metodoEnvio() : Constants.ENVIO_RETIRO);
-        pedido.setNotas(req.getNotas());
-        pedido.setEstadoPedido(ctx.estadoInicial());
-        pedido.setUsuarioFinal(ctx.usuario());
+        pedido.setMetodoPago(provider);
+        pedido.setMetodoEnvio(metodoEnvio != null ? metodoEnvio : Constants.ENVIO_RETIRO);
+        pedido.setNotas(notas);
+        pedido.setGrupoPago(grupoPago);
+        pedido.setEstadoPedido(estadoInicial);
+        pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
         pedido.setEmpresa(bodega.getEmpresa());
         pedido.setEstado(Constants.ESTADO_ACTIVO);
@@ -69,9 +98,10 @@ public class CheckoutOrderFactory {
             PedidoItem pi = new PedidoItem();
             pi.setCantidad(item.getCantidad());
             pi.setPrecioUnitarioMomento(precioUnitario);
-            pi.setCostoUnitarioMomento(p.getPrecioCompra());
+            int costoUnitario = p.getPrecioCompra() != null ? p.getPrecioCompra() : 0;
+            pi.setCostoUnitarioMomento(costoUnitario);
             pi.setSubtotalItem(precioUnitario * item.getCantidad());
-            pi.setUtilidadItem((precioUnitario - p.getPrecioCompra()) * item.getCantidad());
+            pi.setUtilidadItem((precioUnitario - costoUnitario) * item.getCantidad());
             pi.setDescuentoAplicado(0);
             pi.setProducto(p);
             pi.setPedido(pedido);

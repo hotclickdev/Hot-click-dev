@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useSignIn, useSignUp } from '@clerk/react'
+import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 
 type SocialMode = 'signIn' | 'signUp'
+
+/** `figma`: solo el botón "Continuar con Google" del Figma `28:1175` (sin separador ni proveedores próximos). */
+type SocialVariante = 'clasica' | 'figma'
 
 type ClerkSocialClient = {
   authenticateWithRedirect: (opts: {
@@ -57,7 +61,8 @@ const COMING_SOON = [
   },
 ]
 
-export default function SocialLoginButtons({ mode = 'signIn' }: { mode?: SocialMode }) {
+export default function SocialLoginButtons({ mode = 'signIn', variante = 'clasica' }: { mode?: SocialMode; variante?: SocialVariante }) {
+  const { t } = useTranslation()
   const signInHook = useSignIn() as unknown as { signIn?: ClerkSocialClient | null; isLoaded: boolean }
   const signUpHook = useSignUp() as unknown as { signUp?: ClerkSocialClient | null; isLoaded: boolean }
   const signIn = signInHook.signIn
@@ -92,20 +97,36 @@ export default function SocialLoginButtons({ mode = 'signIn' }: { mode?: SocialM
     }
   }
 
+  if (variante === 'figma') {
+    return (
+      <div className="flex flex-col gap-2">
+        {error && <p role="alert" className="text-[13px] leading-[18px] text-hc-danger">{error}</p>}
+        <button
+          type="button"
+          disabled={!!loading}
+          onClick={() => handleSocial('google')}
+          className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900 disabled:opacity-50"
+        >
+          <span aria-hidden="true" className="flex size-[18px] items-center justify-center rounded-full bg-hc-n-100 text-[11px] font-bold text-hc-blue-600">G</span>
+          {t('login.google')}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="mt-5">
       {error && (
-        <div className="mb-3 px-3 py-2 rounded-xl text-sm text-center"
-          style={{ color: 'var(--hc-danger)', background: 'color-mix(in srgb, var(--hc-danger) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-danger) 22%, transparent)' }}>
+        <div role="alert" className="mb-3 rounded-[12px] bg-hc-danger-bg px-[14px] py-[10px] text-center text-[13px] leading-[18px] text-hc-danger">
           {error}
         </div>
       )}
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>
+        <div className="h-px flex-1 bg-hc-n-200" />
+        <span className="text-[12px] text-hc-n-600">
           o continuá con
         </span>
-        <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
+        <div className="h-px flex-1 bg-hc-n-200" />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -116,12 +137,7 @@ export default function SocialLoginButtons({ mode = 'signIn' }: { mode?: SocialM
             type="button"
             disabled={!!loading}
             onClick={() => handleSocial(id)}
-            className="flex items-center justify-center gap-2 h-10 px-3 rounded-xl font-medium text-sm transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
-            style={{
-              background: 'var(--hc-surface-2)',
-              border: '1px solid var(--hc-border)',
-              color: 'var(--hc-text)',
-            }}
+            className="flex h-12 items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 text-[15px] font-semibold text-hc-n-900 disabled:opacity-50"
           >
             {loading === id ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -138,20 +154,13 @@ export default function SocialLoginButtons({ mode = 'signIn' }: { mode?: SocialM
           {COMING_SOON.map(({ id, label, icon }) => (
             <div
               key={id}
-              className="relative flex items-center justify-center gap-2 h-10 px-3 rounded-xl font-medium text-sm select-none"
-              style={{
-                background: 'var(--hc-surface-2)',
-                border: '1px solid var(--hc-border)',
-                color: 'var(--hc-muted)',
-                opacity: 0.5,
-                cursor: 'not-allowed',
-              }}
+              aria-disabled="true"
+              className="relative flex h-11 cursor-not-allowed select-none items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-50 px-3 text-[14px] font-semibold text-hc-n-600"
             >
               {icon}
               <span>{label}</span>
               <span
-                className="absolute -top-2 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none"
-                style={{ background: 'var(--hc-accent)', color: '#fff', letterSpacing: '0.03em' }}
+                className="absolute -right-1 -top-2 rounded-full bg-hc-n-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-hc-n-600"
               >
                 Pronto
               </span>

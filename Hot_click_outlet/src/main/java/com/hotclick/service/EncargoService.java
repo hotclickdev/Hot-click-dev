@@ -11,6 +11,7 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.email.EncargoEmailSender;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
+import com.hotclick.utils.FormatoColones;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +132,7 @@ public class EncargoService {
         EncargoPersonalizado guardado = encargoRepo.save(encargo);
         enriquecer(guardado);
         registrarEvento(guardado, "APROBADO", EncargoPersonalizado.ESTADO_PENDIENTE,
-            EncargoPersonalizado.ESTADO_APROBADO, "₡" + req.getPrecioCotizado());
+            EncargoPersonalizado.ESTADO_APROBADO, FormatoColones.colones(req.getPrecioCotizado()));
         emailSender.notificarEncargoAprobado(guardado);
         return guardado;
     }
@@ -385,10 +386,10 @@ public class EncargoService {
         Integer min = p.getPrecioPersonalizadoMin();
         Integer max = p.getPrecioPersonalizadoMax();
         if (min != null && precio < min) {
-            throw new IllegalArgumentException("El precio está por debajo del mínimo (₡" + min + ")");
+            throw new IllegalArgumentException("El precio está por debajo del mínimo (" + FormatoColones.colones(min) + ")");
         }
         if (max != null && precio > max) {
-            throw new IllegalArgumentException("El precio está por encima del máximo (₡" + max + ")");
+            throw new IllegalArgumentException("El precio está por encima del máximo (" + FormatoColones.colones(max) + ")");
         }
     }
 

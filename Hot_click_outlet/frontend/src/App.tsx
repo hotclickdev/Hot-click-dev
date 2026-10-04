@@ -3,17 +3,19 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import { ToastProvider } from '@/components/ui/Toast'
-import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
+import { VarianteVisitanteProvider } from '@/components/ui/VarianteVisitanteProvider'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import CookieBanner from '@/components/ui/CookieBanner'
 import HojaAgregado from '@/components/comprador/HojaAgregado'
+import AvisoSinConexion from '@/components/comprador/estados/AvisoSinConexion'
 import { setAnalyticsConsent, identifyUser } from '@/utils/analytics'
 import { initAnalytics } from '@/utils/initAnalytics'
 import SiteVerification from '@/utils/siteVerification'
 import HtmlClassManager from '@/app/HtmlClassManager'
+import ConfigMovimiento from '@/app/ConfigMovimiento'
 import AppRoutes from '@/app/AppRoutes'
-import AdminErrorBoundary from '@/app/AdminErrorBoundary'
+import ErrorBoundaryPorArea from '@/app/ErrorBoundaryPorArea'
 import useAuthStore from '@/store/authStore'
 import {
   ScrollToTop,
@@ -22,10 +24,10 @@ import {
   ConditionalChatModal,
   AbandonedCartWatcher,
   WishlistAlertWatcher,
-  SocialProofController,
   BrandingInit,
   AnalyticsInit,
   ServiceWorkerRefresh,
+  CargaDeRuta,
 } from '@/app/AppChrome'
 
 const queryClient = new QueryClient({
@@ -35,32 +37,31 @@ const queryClient = new QueryClient({
 /** Raíz de la SPA: providers, chrome global y árbol de rutas. */
 export default function App() {
   return (
+    <ConfigMovimiento>
     <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
+      <ToastProvider variantePorRuta>
         <AnalyticsInit />
         <ServiceWorkerRefresh />
         <SiteVerification />
         <BrowserRouter>
+          {/* Variante Figma de las piezas compartidas solo en rutas del visitante (paneles sin cambios). */}
+          <VarianteVisitanteProvider>
           <HtmlClassManager />
           <BrandingInit />
           <PageProgressBar />
           <ScrollToTop />
-          <Suspense fallback={<PageLoader />}>
+          <AvisoSinConexion />
+          <Suspense fallback={<CargaDeRuta />}>
             <PageFade>
-            <AdminErrorBoundary
-              titulo="Error inesperado"
-              detalle="Algo salió mal. Recargá la página. Si el problema sigue, contactá soporte."
-              accion="Recargar"
-            >
+            <ErrorBoundaryPorArea>
               <AppRoutes />
-            </AdminErrorBoundary>
+            </ErrorBoundaryPorArea>
           </PageFade>
           </Suspense>
           <ConditionalWhatsAppFab />
           <AccessibilityPanel />
           <ConditionalChatModal />
-          <SocialProofController />
           <AbandonedCartWatcher />
           <WishlistAlertWatcher />
           <HojaAgregado />
@@ -76,9 +77,11 @@ export default function App() {
               empresaId: sesion.empresaId,
             })
           }} />
+          </VarianteVisitanteProvider>
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
     </HelmetProvider>
+    </ConfigMovimiento>
   )
 }

@@ -84,6 +84,8 @@ export type PosCierre = {
 export type PosQrData = {
   token: string
   metodoPago: string
+  /** Métodos entre los que elige el cliente al escanear (V147); uno solo = fijo. */
+  metodosHabilitados: string[]
   total: number
   sinpeNumero: string
 }
@@ -111,6 +113,9 @@ export function qrDataDesdeRespuesta(data: unknown, totalFallback: number): PosQ
   return {
     token: inner.token as string,
     metodoPago: typeof inner.metodoPago === 'string' ? inner.metodoPago : 'TARJETA',
+    metodosHabilitados: Array.isArray(inner.metodosHabilitados)
+      ? inner.metodosHabilitados.filter((m): m is string => typeof m === 'string')
+      : [],
     total,
     sinpeNumero: typeof inner.sinpeNumero === 'string' ? inner.sinpeNumero : '',
   }

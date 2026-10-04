@@ -21,7 +21,7 @@ function limpiarPoll(pollRef: MutableRefObject<ReturnType<typeof setInterval> | 
 
 export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm: _loadingConfirm }: {
   qrData: PosQrData
-  onConfirmSinpe: (token: string | null, autoConfirmed: boolean, numeroPedido?: string) => void
+  onConfirmSinpe: (token: string | null, autoConfirmed: boolean, numeroPedido?: string, metodoFinal?: string) => void
   onCancelar: () => void
   loadingConfirm: boolean
 }) {
@@ -31,17 +31,23 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [paid, setPaid] = useState(false)
   const ticketPagadoRef = useRef('—')
+  const metodoPagadoRef = useRef<string | undefined>(undefined)
   const [sesionCerrada, setSesionCerrada] = useState(false)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const tokenFaltante = !token
-  const esSinpe = metodoPago === 'SINPE'
+  // Con más de un método habilitado el cliente elige al escanear (decisión B16).
+  const eligeCliente = (qrData.metodosHabilitados?.length ?? 0) > 1
+  const esSinpe = !eligeCliente && metodoPago === 'SINPE'
 
   useEffect(() => {
     if ((metodoPago !== 'TARJETA' && metodoPago !== 'SINPE') || tokenFaltante) return
     pollRef.current = setInterval(async () => {
       try {
-        const res = await posService.estadoQrSesion(token) as { estado?: string, pedidoId?: number, numeroPedido?: string }
+        const res = await posService.estadoQrSesion(token) as {
+          estado?: string, pedidoId?: number, numeroPedido?: string, metodoPago?: string
+        }
         if (res?.estado === 'PAGADO') {
+          metodoPagadoRef.current = res.metodoPago
           ticketPagadoRef.current = res.numeroPedido
             ?? (res.pedidoId != null ? String(res.pedidoId) : '—')
           limpiarPoll(pollRef)
@@ -57,12 +63,12 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
     return () => limpiarPoll(pollRef)
   }, [token, metodoPago, tokenFaltante])
 
-  useEffect(() => { if (paid) onConfirmSinpe(null, true, ticketPagadoRef.current) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (paid) onConfirmSinpe(null, true, ticketPagadoRef.current, metodoPagadoRef.current) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
-        <EncabezadoQr esSinpe={esSinpe} />
+        <EncabezadoQr esSinpe={esSinpe} eligeCliente={eligeCliente} />
         <MarcoQr
           token={token}
           qrUrl={qrUrl}
@@ -93,9 +99,23 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
   )
 }
 
-function EncabezadoQr({ esSinpe }: { esSinpe: boolean }) {
+const TEXTOS_ENCABEZADO = {
+  elegir: { titulo: 'pos.qr.pagoElegir', instruccion: 'pos.qr.instruccionElegir' },
+  sinpe: { titulo: 'pos.qr.pagoSinpe', instruccion: 'pos.qr.instruccionSinpe' },
+  tarjeta: { titulo: 'pos.qr.pagoTarjeta', instruccion: 'pos.qr.instruccionTarjeta' },
+} as const
+
+function modoEncabezado(esSinpe: boolean, eligeCliente: boolean): keyof typeof TEXTOS_ENCABEZADO {
+  if (eligeCliente) return 'elegir'
+  return esSinpe ? 'sinpe' : 'tarjeta'
+}
+
+function EncabezadoQr({ esSinpe, eligeCliente }: { esSinpe: boolean; eligeCliente: boolean }) {
   const { t } = useTranslation()
   const Icono = esSinpe ? SinpeIcon : QrCodeIcon
+  const textos = TEXTOS_ENCABEZADO[modoEncabezado(esSinpe, eligeCliente)]
+  const titulo = t(textos.titulo)
+  const instruccion = t(textos.instruccion)
   return (
     <div className="mb-6 space-y-2">
       <p
@@ -103,10 +123,10 @@ function EncabezadoQr({ esSinpe }: { esSinpe: boolean }) {
         style={{ color: 'var(--hc-blue-600)' }}
       >
         <Icono className="h-4 w-4" />
-        {esSinpe ? t('pos.qr.pagoSinpe') : t('pos.qr.pagoTarjeta')}
+        {titulo}
       </p>
       <p className="text-pretty text-sm" style={{ color: posUi.muted }}>
-        {esSinpe ? t('pos.qr.instruccionSinpe') : t('pos.qr.instruccionTarjeta')}
+        {instruccion}
       </p>
     </div>
   )
@@ -190,7 +210,7 @@ function DetalleSinpe({ sinpeNumero, referencia, monto }: {
           <span style={{ color: posUi.muted }}>{fila.label}</span>
           <span
             className="font-mono font-bold"
-            style={{ color: fila.resalte ? 'var(--hc-success)' : 'var(--hc-blue-600)' }}
+            style={{ color: fila.resalte ? 'var(--hc-success-text)' : 'var(--hc-blue-600)' }}
           >
             {fila.value}
           </span>

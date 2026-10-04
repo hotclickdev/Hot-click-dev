@@ -1,126 +1,29 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router-dom'
-import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
-import useUiStore from '@/store/uiStore'
-import { HotClickMark } from '@/components/ui/BrandLogo'
-import useChatStore from '@/store/chatStore'
-import A11yPanelContent from './accessibility/A11yPanelContent'
-import { CloseIcon, A11yIcon } from './accessibility/a11yUi'
+import { useEffect, useRef, useState } from 'react'
+import HojaIdiomaAccesibilidad from './accessibility/HojaIdiomaAccesibilidad'
+import { EVENTO_ABRIR_ACCESIBILIDAD } from './accessibility/abrirAccesibilidadApi'
 
+/**
+ * Host de la hoja "Idioma y accesibilidad" (Figma `51:2234`). La abre `abrirAccesibilidad()` desde el
+ * pie de página (nota E de Figma: "desde el pie"); ya no hay botón flotante con el isotipo, que ningún
+ * frame dibuja. Al cerrar, el foco vuelve a quien la abrió.
+ */
 export default function AccessibilityPanel() {
-  const { t } = useTranslation()
-  const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const titleId = useId()
-
-  const chatOpen = useChatStore((s) => s.isOpen)
-  const theme = useUiStore((s) => s.theme)
-  const setTheme = useUiStore((s) => s.setTheme)
-  const language = useUiStore((s) => s.language)
-  const setLanguage = useUiStore((s) => s.setLanguage)
-  const fontSize = useUiStore((s) => s.fontSize)
-  const setFontSize = useUiStore((s) => s.setFontSize)
-  const highContrast = useUiStore((s) => s.highContrast)
-  const toggleHighContrast = useUiStore((s) => s.toggleHighContrast)
-  const reduceMotion = useUiStore((s) => s.reduceMotion)
-  const toggleReduceMotion = useUiStore((s) => s.toggleReduceMotion)
-  const colorFilter = useUiStore((s) => s.colorFilter)
-  const setColorFilter = useUiStore((s) => s.setColorFilter)
+  const quienAbrio = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false)
-        triggerRef.current?.focus()
-      }
+    const abrir = () => {
+      quienAbrio.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      setOpen(true)
     }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open])
+    globalThis.addEventListener(EVENTO_ABRIR_ACCESIBILIDAD, abrir)
+    return () => globalThis.removeEventListener(EVENTO_ABRIR_ACCESIBILIDAD, abrir)
+  }, [])
 
-  if (pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
-  // El widget es para clientes de la tienda (idioma, tamaño de letra, filtros de color);
-  // en el panel admin flotaba encima de botones y texto de las herramientas internas.
-  if (pathname.startsWith('/admin')) return null
-  if (pathname.startsWith('/tienda')) return null
-  if (esRutaClaudeclick(pathname)) return null
-  if (chatOpen) return null
+  const cerrar = () => {
+    setOpen(false)
+    quienAbrio.current?.focus()
+  }
 
-  const isDark = theme === 'dark'
-
-  return (
-    <div className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom,0px))] md:bottom-20 right-4 md:right-6 z-50 flex flex-col items-end gap-2">
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            initial={{ opacity: 0, y: 10, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.96 }}
-            transition={{ duration: 0.18 }}
-            className="rounded-2xl w-72 shadow-[0_8px_40px_var(--hc-shadow)] overflow-hidden overflow-y-auto max-h-[80vh]"
-            style={{
-              backgroundColor: 'var(--hc-surface)',
-              border: '1px solid var(--hc-border)',
-              color: 'var(--hc-text)',
-            }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 sticky top-0"
-              style={{ borderBottom: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
-              <span id={titleId} className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
-                <span className="shrink-0" style={{ color: 'var(--hc-muted)' }} aria-hidden="true">
-                  <A11yIcon />
-                </span>
-                {t('a11y.panel')}
-              </span>
-              <button type="button"
-                onClick={() => {
-                  setOpen(false)
-                  triggerRef.current?.focus()
-                }}
-                aria-label={t('a11y.close')}
-                className="p-1 rounded-lg transition-colors"
-                style={{ color: 'var(--hc-muted)' }}
-              >
-                <CloseIcon />
-              </button>
-            </div>
-
-            <A11yPanelContent
-              t={t} isDark={isDark} setTheme={setTheme}
-              language={language} setLanguage={setLanguage}
-              fontSize={fontSize} setFontSize={setFontSize}
-              colorFilter={colorFilter} setColorFilter={setColorFilter}
-              highContrast={highContrast} toggleHighContrast={toggleHighContrast}
-              reduceMotion={reduceMotion} toggleReduceMotion={toggleReduceMotion}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Trigger button — símbolo de marca (§2.4) ── */}
-      <button type="button"
-        ref={triggerRef}
-        onClick={() => setOpen(!open)}
-        aria-label={t('a11y.open')}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        title={t('a11y.panel')}
-        className="hc-isotipo-placa w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200
-          shadow-[0_4px_20px_var(--hc-shadow)] hover:scale-110 active:scale-95"
-        style={{
-          border: `1px solid ${open ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-        }}
-      >
-        <HotClickMark size={24} />
-      </button>
-    </div>
-  )
+  return <HojaIdiomaAccesibilidad abierta={open} onCerrar={cerrar} />
 }

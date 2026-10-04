@@ -22,7 +22,7 @@ export type ProductoMock = {
   instruccionesPersonalizacion?: string
 }
 
-export type EstadoPedido = 'Pendiente' | 'Enviado' | 'Entregado' | 'Cancelado'
+export type EstadoPedido = 'Esperando pago' | 'Pendiente' | 'Enviado' | 'Entregado' | 'Cancelado'
 
 export type ItemPedido = {
   nombre: string
@@ -35,6 +35,8 @@ export type PedidoMock = {
   cliente: string
   total: number
   estado: EstadoPedido
+  /** Efectivo con retiro sin cobrar: se entrega en vez de despacharse. */
+  pagaAlRetirar?: boolean
   fecha: string
   direccion: string
   sucursal?: string

@@ -1,9 +1,18 @@
-import { useLocation, useParams, useSearchParams, Link } from 'react-router-dom'
-import { CheckCircleIcon } from '@heroicons/react/24/solid'
+import { useLocation, useParams, useSearchParams } from 'react-router-dom'
+import IconoFigma from '@/components/comprador/IconoFigma'
+import { ICONOS_PAGO } from '@/pages/pago/iconosPago'
+import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
+import { enlaceWhatsappSoporte } from '@/components/comprador/estados/falloServidorHelpers'
+import { BotonTienda, CabeceraTarjeta, CLASE_TARJETA } from './PiezasTienda'
+import { contactoVisible } from './tiendaHelpers'
 
-/** Confirmación: el número vive en ?orden= y sobrevive un refresh. */
+/**
+ * Confirmación del pedido de la tienda (derivado de Figma `29:1932`): círculo verde con el check, título en
+ * Sora, número en mono y tarjeta "Qué sigue". El número vive en ?orden= y sobrevive un refresh.
+ * El botón de WhatsApp va al vendedor solo con plan PYME o NEGOCIO_PLUS; si no, a soporte de HotClick.
+ */
 export default function TiendaSuccessPage() {
   const { slug } = useParams()
   const { state } = useLocation()
@@ -11,56 +20,67 @@ export default function TiendaSuccessPage() {
   const { empresa } = useTiendaStore()
   const numeroPedido = (params.get('orden') || state?.numeroPedido || '').trim()
   const total = state?.total
-  const whatsapp = empresa?.whatsapp
+  // Con plan PYME o NEGOCIO_PLUS se escribe al vendedor; en EMPRENDEDOR la consulta va a HotClick.
+  const { whatsapp } = contactoVisible(empresa)
+  const nombre = empresa?.nombreComercial ?? slug
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-16 text-center space-y-5">
-      <CheckCircleIcon className="mx-auto h-16 w-16 text-[var(--hc-success)]" />
-      <h1 className="text-2xl font-bold text-[var(--t-text)]">Pedido recibido</h1>
-      <p className="text-sm text-[var(--t-muted)]">
-        Pedido de {empresa?.nombreComercial ?? slug} en HotClick
-      </p>
-      {numeroPedido
-        ? (
-          <p className="text-[var(--t-muted)]">
-            Número de pedido: <span className="font-semibold text-[var(--t-text)]">{numeroPedido}</span>
-          </p>
-          )
-        : (
-          <p className="text-[var(--t-muted)]">
-            Anotá el número que te llega por correo. Si recargaste esta página y no ves el número, revisá el correo de confirmación.
-          </p>
-          )}
-      {total !== undefined && (
-        <p className="text-[var(--t-muted)]">
-          Total: <span className="font-bold text-[var(--t-text)]">{formatPrice(total)}</span>
-        </p>
-      )}
-      <p className="text-sm text-[var(--t-muted)] leading-relaxed">
-        Recibirás un correo de confirmación con los detalles de tu pedido.
-        El vendedor se pondrá en contacto para coordinar la entrega.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-        {whatsapp && (
-          <a
-            href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=Hola%2C%20acabo%20de%20hacer%20el%20pedido%20${encodeURIComponent(numeroPedido)}%20en%20su%20tienda.`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-white font-semibold bg-[var(--hc-success)] hover:opacity-90 transition-opacity min-h-[44px]"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.128.558 4.122 1.527 5.854L0 24l6.335-1.652A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.755.984.998-3.648-.234-.374A9.818 9.818 0 1121.818 12 9.83 9.83 0 0112 21.818z" />
-            </svg>
-            Contactar por WhatsApp
-          </a>
+    <div className="mx-auto flex w-full max-w-[480px] flex-col gap-3 px-4 pb-8 pt-7 leading-[normal] lg:py-10">
+      <div className="flex flex-col items-center gap-[10px] text-center">
+        <span className="flex size-[72px] items-center justify-center rounded-full bg-hc-success-bg text-hc-success"><IconoFigma src={ICONOS_PAGO.exitoCheck} size={36} /></span>
+        <h1 className="font-display text-[19px] font-bold tracking-normal text-hc-n-900">Pedido recibido</h1>
+        <p className="text-[13px] text-hc-n-600">Pedido de {nombre} en HotClick</p>
+        {numeroPedido
+          ? (
+            <p className="flex items-center gap-[6px] text-[14px] text-hc-n-600">
+              Pedido <span className="font-mono text-[15px] font-medium text-hc-n-900">{numeroPedido}</span>
+            </p>
+            )
+          : (
+            <p className="text-[13px] leading-[18px] text-hc-n-600">
+              Anotá el número que te llega por correo. Si recargaste esta página y no ves el número, revisá el correo de confirmación.
+            </p>
+            )}
+      </div>
+
+      <section className={`${CLASE_TARJETA} flex flex-col overflow-hidden`}>
+        <CabeceraTarjeta>Qué sigue</CabeceraTarjeta>
+        {total !== undefined && (
+          <div className="flex items-center justify-between border-t border-hc-n-200 px-[14px] py-3 text-hc-n-900">
+            <span className="text-[14px] font-semibold">Total</span>
+            <span className="font-display text-[17px] font-bold">{formatPrice(total)}</span>
+          </div>
         )}
-        <Link
-          to={`/tienda/${slug}`}
-          className="inline-flex items-center justify-center px-5 py-3 rounded-xl font-semibold border border-[var(--t-border)] text-[var(--t-text)] hover:bg-[var(--t-hover)] transition-colors min-h-[44px]"
-        >
-          Seguir comprando
-        </Link>
+        <div className="flex items-start gap-[10px] border-t border-hc-n-200 px-[14px] py-3">
+          <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-hc-blue-50 text-hc-blue-600">
+            <IconoFigma src={ICONOS_PAGO.avisoCorreo} size={18} />
+          </span>
+          <p className="min-w-0 flex-1 text-[13px] leading-[18px] text-hc-n-600">
+            Recibirás un correo de confirmación con los detalles de tu pedido.
+            El vendedor se pondrá en contacto para coordinar la entrega.
+          </p>
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-2 pt-1">
+        {whatsapp ? (
+          <BotonTienda
+            variante="secundario"
+            href={`https://wa.me/${whatsapp}?text=Hola%2C%20acabo%20de%20hacer%20el%20pedido%20${encodeURIComponent(numeroPedido)}%20en%20su%20tienda.`}
+          >
+            <img src={ICONOS_CHECKOUT.whatsapp} alt="" className="size-[18px]" />
+            Contactar por WhatsApp
+          </BotonTienda>
+        ) : (
+          <BotonTienda
+            variante="secundario"
+            href={enlaceWhatsappSoporte(`Hola HotClick, tengo una consulta sobre mi pedido ${numeroPedido} de ${nombre}.`.replace(/\s+/g, ' '))}
+          >
+            <img src={ICONOS_CHECKOUT.whatsapp} alt="" className="size-[18px]" />
+            Consultar a HotClick
+          </BotonTienda>
+        )}
+        <BotonTienda variante="primario" to={`/tienda/${slug}`}>Seguir comprando</BotonTienda>
       </div>
     </div>
   )

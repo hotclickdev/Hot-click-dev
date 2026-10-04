@@ -15,7 +15,7 @@ export default function LoginPage() {
   const {
     step, setStep, loading, correo, setCorreo, contrasena, setContrasena,
     code2FA, setCode2FA, useRecovery, setUseRecovery, recoveryInput, setRecoveryInput,
-    setShowForgot, error, setError, needsVerification, needsPasswordReset,
+    navigate, error, setError, needsVerification, needsPasswordReset,
     resendLoading, refs2FA, turnstileRef, turnstileToken, setTurnstileToken,
     twoFaMethods, resendCooldown, handleLogin, handleResendVerification,
     sendEmailOtp, handlePickMethod, handle2FA, handleEmailOtp, handleLoginSuccess,
@@ -38,7 +38,7 @@ export default function LoginPage() {
             setTurnstileToken={setTurnstileToken}
             onSubmit={handleLogin}
             onResendVerification={handleResendVerification}
-            onForgot={() => setShowForgot(true)}
+            onForgot={() => navigate('/recuperar-contrasena', { state: { correo } })}
           />
         )}
 
@@ -48,18 +48,19 @@ export default function LoginPage() {
             methods={twoFaMethods}
             loading={loading}
             onPick={handlePickMethod}
-            onBack={() => { setStep('login'); setError('') }}
           />
         )}
 
         {step === 'email-otp' && (
           <TwoFaEmailOtpStep
             key="email-otp"
+            correo={correo}
             code2FA={code2FA} refs2FA={refs2FA} onCodeChange={setCode2FA}
             error={error} loading={loading} resendCooldown={resendCooldown}
+            puedeApp={twoFaMethods.includes('TOTP')}
+            onUsarApp={() => { setCode2FA(['', '', '', '', '', '']); setError(''); setStep('2fa') }}
             onSubmit={handleEmailOtp}
             onResend={() => { setCode2FA(['', '', '', '', '', '']); void sendEmailOtp() }}
-            onBack={() => { setStep(twoFaMethods.length > 1 ? 'picker' : 'login'); setCode2FA(['', '', '', '', '', '']); setError('') }}
           />
         )}
 
@@ -74,13 +75,15 @@ export default function LoginPage() {
         {step === '2fa' && (
           <TwoFaTotpStep
             key="2fa"
+            correo={correo}
+            puedeCorreo={twoFaMethods.includes('EMAIL_OTP')}
+            onPedirCorreo={() => { setCode2FA(['', '', '', '', '', '']); void handlePickMethod('EMAIL_OTP') }}
             useRecovery={useRecovery}
             recoveryInput={recoveryInput} onRecoveryInput={setRecoveryInput}
             code2FA={code2FA} refs2FA={refs2FA} onCodeChange={setCode2FA}
             error={error} loading={loading}
             onSubmit={handle2FA}
             onToggleRecovery={() => { setUseRecovery(p => !p); setError(''); setRecoveryInput(''); setCode2FA(['', '', '', '', '', '']) }}
-            onBack={() => { setStep('login'); setCode2FA(['', '', '', '', '', '']); setError(''); setUseRecovery(false); setRecoveryInput('') }}
           />
         )}
 

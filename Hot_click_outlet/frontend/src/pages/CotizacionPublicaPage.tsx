@@ -1,225 +1,158 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { cotizacionService, formatMonto } from '@/services/cotizacionService'
+import { useParams } from 'react-router-dom'
+import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
+import Spinner from '@/components/ui/Spinner'
+import isotipo from '@/assets/figma/comprador/isotipo.png'
+import { cotizacionService } from '@/services/cotizacionService'
+import { urlWhatsApp } from './carrito/cartHelpers'
+import { IcoBuscarCaja } from './perfil/cuenta/iconosCuenta'
+import { IcoSrv } from './servicios/IcoSrv'
+import { fechaConMes } from './servicios/serviciosHelpers'
+import { ESTADOS_COTIZACION, datosDelCliente, montoCotizacion, textoLinea } from './cotizacion/cotizacionHelpers'
+import type { CotizacionPublica } from './cotizacion/cotizacionHelpers'
 
-type ClienteCotizacion = {
-  razonSocial?: string
-  nombreComercial?: string
-  cedulaJuridica?: string
-  correo?: string
-  telefono?: string
-  direccion?: string
-  contactoPrincipal?: string
+const TARJETA = 'rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]'
+const ETIQUETA_MONO = 'font-mono text-[10px] font-medium text-hc-n-600'
+
+function Pantalla({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-screen bg-hc-n-50 leading-[normal]">{children}</div>
 }
 
-type EmpresaCotizacion = {
-  nombreEmpresa?: string
-}
-
-type ItemCotizacion = {
-  imagenUrl?: string
-  nombre?: string
-  codigo?: string
-  descripcion?: string
-  cantidad?: number
-  unidadMedida?: string
-  precioUnitario?: number
-  descuentoPorcentaje?: number
-}
-
-type CotizacionPublica = {
-  empresa?: EmpresaCotizacion
-  cliente?: ClienteCotizacion
-  items?: ItemCotizacion[]
-  numeroCotizacion?: string
-  fechaEmision?: string
-  fechaVencimiento?: string
-  estadoCotizacion?: string
-  nombreCliente?: string
-  subtotal?: number
-  aplicaIva?: boolean
-  porcentajeIva?: number
-  montoIva?: number
-  total?: number
-  moneda?: string
-  observaciones?: string
-  terminos?: string
-}
-
-const ESTADO_COLOR: Record<string, string> = {
-  BORRADOR: '#6b7280',
-  ENVIADA: '#3b82f6',
-  APROBADA: '#22c55e',
-  RECHAZADA: '#ef4444',
-}
-
+/** Cotización pública (Figma `55:2332`). Solo se muestra y se consulta por WhatsApp: aceptarla no existe en el backend. */
 export default function CotizacionPublicaPage() {
   const { token } = useParams()
-  const [cot,     setCot]     = useState<CotizacionPublica | null>(null)
-  const [error,   setError]   = useState(false)
+  const [cot, setCot] = useState<CotizacionPublica | null>(null)
+  const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     cotizacionService.publica(token as string)
-      .then(c => { setCot(c as CotizacionPublica); setLoading(false) })
+      .then((c) => { setCot(c as CotizacionPublica); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
   }, [token])
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fb' }}>
-      <p className="text-sm text-gray-400">Cargando cotización...</p>
-    </div>
-  )
+  if (loading) {
+    return <Pantalla><div className="flex justify-center py-32"><Spinner size="xl" variante="figma" /></div></Pantalla>
+  }
 
-  if (error || !cot) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fb' }}>
-      <div className="text-center space-y-4 px-4">
-        <p className="text-lg font-semibold text-gray-700">Cotización no encontrada</p>
-        <p className="text-sm text-gray-400">El enlace puede haber expirado o ser inválido.</p>
-        <Link
-          to="/productos"
-          className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-          style={{ background: 'var(--hc-accent, #E73B33)' }}
-        >
-          Ir al catálogo
-        </Link>
-      </div>
-    </div>
-  )
+  if (error || !cot) {
+    return (
+      <Pantalla>
+        <EstadoVacio
+          nivel="h1"
+          tono="azul"
+          espaciado="cuenta"
+          icono={<IcoBuscarCaja size={28} />}
+          titulo="Cotización no encontrada"
+          texto="El enlace puede haber expirado o ser inválido."
+          accion={{ texto: 'Ir al catálogo', to: '/productos' }}
+        />
+      </Pantalla>
+    )
+  }
 
-  const empresa  = cot.empresa ?? {}
-  const cliente  = cot.cliente ?? {}
-  const items    = cot.items   ?? []
-
-  const estadoColor  = ESTADO_COLOR[cot.estadoCotizacion as string] ?? '#6b7280'
+  const items = cot.items ?? []
+  const estado = ESTADOS_COTIZACION[cot.estadoCotizacion ?? ''] ?? { texto: cot.estadoCotizacion ?? '', clase: 'bg-hc-n-100 text-hc-n-600' }
+  const emision = fechaConMes(cot.fechaEmision)
+  const vence = fechaConMes(cot.fechaVencimiento)
+  const cliente = datosDelCliente(cot)
+  const mensaje = encodeURIComponent(`Hola HotClick, consulto por la cotización ${cot.numeroCotizacion ?? ''}.`)
 
   return (
-    <div className="min-h-screen py-10 px-4" style={{ background: '#f1f5f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
-
-        {/* Encabezado */}
-        <div className="px-10 py-8 flex items-start justify-between"
-          style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Cotización</p>
-            <p className="text-3xl font-bold text-white">{cot.numeroCotizacion}</p>
-            <p className="text-slate-400 text-sm">Emitida el {cot.fechaEmision ?? '—'}</p>
-            {cot.fechaVencimiento && (
-              <p className="text-slate-400 text-sm">Válida hasta {cot.fechaVencimiento}</p>
-            )}
+    <Pantalla>
+      <div className="mx-auto flex w-full max-w-[560px] flex-col">
+        {/* div y no header/footer: index.css fuerza el fondo de esas etiquetas (SHELL). */}
+        <div className="flex flex-col gap-2 bg-hc-blue-900 px-4 py-5">
+          <div className="flex items-center gap-2">
+            <img src={isotipo} alt="" className="size-[26px] object-contain" />
+            <p className="text-[13px] font-semibold text-hc-blue-100">
+              {cot.empresa?.nombreEmpresa ? `Cotización de ${cot.empresa.nombreEmpresa}` : 'Cotización'}
+            </p>
           </div>
-          <div className="text-right space-y-1">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: `${estadoColor}22`, color: estadoColor, border: `1px solid ${estadoColor}44` }}>
-              {cot.estadoCotizacion}
-            </span>
-            {empresa.nombreEmpresa && (
-              <p className="text-white font-bold text-lg mt-2">{empresa.nombreEmpresa}</p>
-            )}
+          <h1 className="leading-[normal] font-display text-[24px] font-bold text-hc-n-0">{cot.numeroCotizacion}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-[10px] py-1 text-[12px] font-semibold ${estado.clase}`}>{estado.texto}</span>
+            <p className="text-[12px] text-hc-blue-100">
+              {emision ? `Emitida ${emision}` : ''}{emision && vence ? ' · ' : ''}{vence ? `válida hasta ${vence}` : ''}
+            </p>
           </div>
         </div>
 
-        <div className="px-10 py-8 space-y-8">
+        <div className="flex flex-col gap-[14px] p-4">
+          <section className={`${TARJETA} flex flex-col gap-1`}>
+            <p className={ETIQUETA_MONO}>PARA</p>
+            <p className="text-[15px] font-semibold text-hc-n-900 [overflow-wrap:anywhere]">{cliente.nombre}</p>
+            {cliente.detalle && <p className="text-[12px] text-hc-n-600 [overflow-wrap:anywhere]">{cliente.detalle}</p>}
+          </section>
 
-          {/* Datos del cliente */}
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Para</p>
-              <p className="font-bold text-gray-900">{cliente.razonSocial ?? cliente.nombreComercial ?? cot.nombreCliente ?? '—'}</p>
-              {cliente.cedulaJuridica  && <p className="text-sm text-gray-500">Cédula: {cliente.cedulaJuridica}</p>}
-              {cliente.correo          && <p className="text-sm text-gray-500">{cliente.correo}</p>}
-              {cliente.telefono        && <p className="text-sm text-gray-500">{cliente.telefono}</p>}
-              {cliente.direccion       && <p className="text-sm text-gray-500">{cliente.direccion}</p>}
-              {cliente.contactoPrincipal && <p className="text-sm text-gray-500">Attn: {cliente.contactoPrincipal}</p>}
-            </div>
-          </div>
-
-          {/* Tabla de productos */}
-          <div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                  {['#', 'Producto', 'Cant.', 'Unidad', 'Precio unit.', 'Desc.', 'Total'].map(h => (
-                    <th key={h} className="pb-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, i) => {
-                  const base     = (item.precioUnitario ?? 0) * (item.cantidad ?? 1)
-                  const subtotal = Math.round(base * (1 - (item.descuentoPorcentaje ?? 0) / 100))
-                  return (
-                    <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td className="py-3 pr-3 text-gray-400 text-xs">{i + 1}</td>
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-3">
-                          {item.imagenUrl && (
-                            <img src={item.imagenUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-100" />
-                          )}
-                          <div>
-                            <p className="font-semibold text-gray-900">{item.nombre}</p>
-                            {item.codigo && <p className="text-xs text-gray-400">{item.codigo}</p>}
-                            {item.descripcion && <p className="text-xs text-gray-400 mt-0.5">{item.descripcion}</p>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-3 text-gray-700">{item.cantidad}</td>
-                      <td className="py-3 pr-3 text-gray-500 text-xs">{item.unidadMedida}</td>
-                      <td className="py-3 pr-3 text-gray-700">{formatMonto(item.precioUnitario, cot.moneda)}</td>
-                      <td className="py-3 pr-3 text-gray-500">
-                        {(item.descuentoPorcentaje ?? 0) > 0 ? `${item.descuentoPorcentaje}%` : '—'}
-                      </td>
-                      <td className="py-3 font-semibold text-gray-900">{formatMonto(subtotal, cot.moneda)}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Totales */}
-          <div className="flex justify-end">
-            <div className="w-72 space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Subtotal</span>
-                <span className="font-medium">{formatMonto(cot.subtotal, cot.moneda)}</span>
-              </div>
-              {cot.aplicaIva && (
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>IVA ({cot.porcentajeIva}%)</span>
-                  <span>{formatMonto(cot.montoIva, cot.moneda)}</span>
+          <section className={`${TARJETA} flex flex-col gap-3`} aria-label="Productos cotizados">
+            {items.map((item, i) => {
+              const base = (item.precioUnitario ?? 0) * (item.cantidad ?? 1)
+              const subtotal = Math.round(base * (1 - (item.descuentoPorcentaje ?? 0) / 100))
+              return (
+                <div key={i} className="flex items-start gap-3">
+                  {item.imagenUrl
+                    ? <img src={item.imagenUrl} alt="" className="size-[52px] shrink-0 rounded-[10px] object-cover" loading="lazy" />
+                    : <span aria-hidden="true" className="size-[52px] shrink-0 rounded-[10px] bg-hc-n-100" />}
+                  <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+                    <p className="text-[13px] font-medium leading-[17px] text-hc-n-900 [overflow-wrap:anywhere]">{item.nombre}</p>
+                    <p className="text-[12px] text-hc-n-600">{textoLinea(item, cot.moneda)}</p>
+                    {item.codigo && <p className="text-[11px] text-hc-n-600">{item.codigo}</p>}
+                    {item.descripcion && <p className="text-[11px] leading-[15px] text-hc-n-600 [overflow-wrap:anywhere]">{item.descripcion}</p>}
+                  </div>
+                  <p className="shrink-0 font-display text-[14px] font-semibold text-hc-n-900">{montoCotizacion(subtotal, cot.moneda)}</p>
                 </div>
-              )}
-              <div className="flex justify-between text-lg font-bold border-t pt-2 border-gray-200" style={{ color: '#0f172a' }}>
-                <span>Total</span>
-                <span>{formatMonto(cot.total, cot.moneda)}</span>
+              )
+            })}
+          </section>
+
+          <section className={`${TARJETA} flex flex-col gap-2`}>
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-hc-n-600">Subtotal</span>
+              <span className="font-medium text-hc-n-900">{montoCotizacion(cot.subtotal, cot.moneda)}</span>
+            </div>
+            {cot.aplicaIva && (
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-hc-n-600">IVA {cot.porcentajeIva}%</span>
+                <span className="font-medium text-hc-n-900">{montoCotizacion(cot.montoIva, cot.moneda)}</span>
               </div>
+            )}
+            <div className="h-px w-full bg-hc-n-200" />
+            <div className="flex items-center justify-between text-hc-n-900">
+              <span className="text-[15px] font-semibold">Total</span>
+              <span className="font-display text-[17px] font-bold">{montoCotizacion(cot.total, cot.moneda)}</span>
             </div>
-          </div>
+          </section>
 
-          {/* Observaciones */}
           {cot.observaciones && (
-            <div className="rounded-2xl p-4 bg-slate-50 border border-slate-100">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Observaciones</p>
-              <p className="text-sm text-gray-600 whitespace-pre-line">{cot.observaciones}</p>
-            </div>
+            <section className={`${TARJETA} flex flex-col gap-1`}>
+              <p className={ETIQUETA_MONO}>OBSERVACIONES</p>
+              <p className="whitespace-pre-line text-[13px] leading-[18px] text-hc-n-600">{cot.observaciones}</p>
+            </section>
           )}
 
-          {/* Términos */}
           {cot.terminos && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Términos y condiciones</p>
-              <p className="text-xs text-gray-400 whitespace-pre-line leading-relaxed">{cot.terminos}</p>
-            </div>
+            <section className={`${TARJETA} flex flex-col gap-1`}>
+              <p className={ETIQUETA_MONO}>TÉRMINOS Y CONDICIONES</p>
+              <p className="whitespace-pre-line text-[12px] leading-4 text-hc-n-600">{cot.terminos}</p>
+            </section>
           )}
+
+          <a
+            href={urlWhatsApp(mensaje)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 py-[13px] text-[15px] font-semibold text-hc-n-900"
+          >
+            <IcoSrv nombre="cotizacionWhatsapp" size={18} />
+            Consultar por WhatsApp
+          </a>
         </div>
 
-        {/* Footer */}
-        <div className="px-10 py-5 border-t border-gray-100 flex items-center justify-between">
-          <p className="text-xs text-gray-400">Cotización generada por HotClick</p>
-          <p className="text-xs text-gray-400">{cot.numeroCotizacion}</p>
+        <div className="flex justify-center px-4 pb-6 pt-1">
+          <p className="text-[11px] text-hc-n-600">Cotización generada por HotClick · {cot.numeroCotizacion}</p>
         </div>
       </div>
-    </div>
+    </Pantalla>
   )
 }
