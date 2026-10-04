@@ -7,7 +7,9 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.TenantService;
 import com.hotclick.service.onvo.OnvoBillingClient;
+import com.hotclick.service.tenant.UsoTenant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,7 @@ class SuscripcionOnvoChangeServiceTest {
     @Mock OnvoBillingClient onvoBilling;
     @Mock OnvoService onvoService;
     @Mock SuscripcionPlanSupport planSupport;
+    @Mock TenantService tenantService;
 
     SuscripcionOnvoChangeService service;
 
@@ -47,7 +50,7 @@ class SuscripcionOnvoChangeServiceTest {
     @BeforeEach
     void setUp() {
         service = new SuscripcionOnvoChangeService(
-            suscripcionRepo, empresaRepo, planRepo, onvoBilling, onvoService, planSupport, null);
+            suscripcionRepo, empresaRepo, planRepo, onvoBilling, onvoService, planSupport, tenantService, null);
         // self-proxy: in unit tests call through same instance for @Transactional methods
         try {
             var field = SuscripcionOnvoChangeService.class.getDeclaredField("self");
@@ -147,5 +150,76 @@ class SuscripcionOnvoChangeServiceTest {
         assertThat(out.get("subscriptionId")).isEqualTo("sub_real");
         assertThat(out.get("publishableKey")).isEqualTo("pk_test");
         assertThat(empresa.getPlan().getNombre()).isEqualTo("EMPRENDEDOR");
+    }
+
+    @Test
+    @DisplayName("Subir de plan no revisa el uso")
+    void subirNoRevisaUso() {
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+        when(onvoBilling.isMockMode()).thenReturn(true);
+        when(onvoBilling.getPriceIdForPlan("PYME")).thenReturn(null);
+        when(onvoBilling.crearCustomer(any(), any(), anyMap()))
+            .thenReturn(new OnvoBillingClient.OnvoCustomer("cus_mock"));
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_mock"), any(), anyMap()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_mock", "item_mock"));
+        when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(planPyme));
+        when(suscripcionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(empresaRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.cambiarPlan(10L, 2L);
+
+        verify(tenantService, never()).usoActual(any());
+    }
+
+    @Test
+    @DisplayName("Bajar con el uso por encima del límite se rechaza y no toca ONVO ni la empresa")
+    void bajarConExcesoRechaza() {
+        empresaEnPyme();
+        planEmprendedor.setMaxProductos(50);
+        planEmprendedor.setMaxBodegas(1);
+        planEmprendedor.setMaxCajas(1);
+        planEmprendedor.setMaxUsuarios(2);
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+        when(tenantService.usoActual(10L)).thenReturn(new UsoTenant(63, 3, 2, 2));
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+            .isInstanceOfSatisfying(BajadaPlanBloqueadaException.class, e ->
+                assertThat(e.getExcesos()).extracting(BajadaPlanPolicy.ExcesoPlan::recurso)
+                    .containsExactly("productos", "bodegas", "cajas"));
+
+        verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(suscripcionRepo, never()).save(any());
+        verify(empresaRepo, never()).save(any());
+        assertThat(empresa.getPlan().getNombre()).isEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Bajar con el uso dentro del límite sigue adelante")
+    void bajarDentroDelLimiteContinua() {
+        empresaEnPyme();
+        planEmprendedor.setMaxProductos(50);
+        planEmprendedor.setMaxBodegas(1);
+        planEmprendedor.setMaxCajas(1);
+        planEmprendedor.setMaxUsuarios(2);
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+        when(tenantService.usoActual(10L)).thenReturn(new UsoTenant(50, 1, 1, 2));
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+        when(planRepo.findByNombre("EMPRENDEDOR")).thenReturn(Optional.of(planEmprendedor));
+        when(suscripcionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(empresaRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> out = service.cambiarPlan(10L, 1L);
+
+        assertThat(out.get("status")).isEqualTo("activado");
+        assertThat(empresa.getPlan().getNombre()).isEqualTo("EMPRENDEDOR");
+    }
+
+    private void empresaEnPyme() {
+        empresa.setPlan(planPyme);
+        empresa.setPlanSaas("PYME");
     }
 }

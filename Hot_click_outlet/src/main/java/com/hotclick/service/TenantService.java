@@ -4,10 +4,12 @@ import com.hotclick.model.Empresa;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.TurnoCajaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.tenant.TenantInfoBuilder;
 import com.hotclick.service.tenant.TenantLimitChecker;
+import com.hotclick.service.tenant.UsoTenant;
 import com.hotclick.utils.Constants;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +21,13 @@ import java.util.NoSuchElementException;
 @Service
 public class TenantService {
 
+    private static final String ESTADO_TURNO_ABIERTO = "ABIERTO";
+
     private final EmpresaRepository  empresaRepo;
     private final ProductoRepository productoRepo;
     private final UsuarioRepository  usuarioRepo;
     private final BodegaRepository   bodegaRepo;
+    private final TurnoCajaRepository turnoCajaRepo;
     private final FeatureFlagService  flagService;
     private final TenantInfoBuilder   infoBuilder;
     private final TenantLimitChecker  limitChecker;
@@ -31,6 +36,7 @@ public class TenantService {
                          ProductoRepository productoRepo,
                          UsuarioRepository usuarioRepo,
                          BodegaRepository bodegaRepo,
+                         TurnoCajaRepository turnoCajaRepo,
                          FeatureFlagService flagService,
                          TenantInfoBuilder infoBuilder,
                          TenantLimitChecker limitChecker) {
@@ -38,6 +44,7 @@ public class TenantService {
         this.productoRepo = productoRepo;
         this.usuarioRepo  = usuarioRepo;
         this.bodegaRepo   = bodegaRepo;
+        this.turnoCajaRepo = turnoCajaRepo;
         this.flagService  = flagService;
         this.infoBuilder  = infoBuilder;
         this.limitChecker = limitChecker;
@@ -63,16 +70,25 @@ public class TenantService {
     // ── Uso en tiempo real (sin caché) ────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getTenantUso(Long empresaId) {
-        long productos = productoRepo.countProductosActivosByEmpresaId(empresaId);
-        long usuarios  = usuarioRepo.countActivosByEmpresaId(empresaId);
-        long bodegas   = bodegaRepo.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO);
+    public UsoTenant usoActual(Long empresaId) {
+        return new UsoTenant(
+            productoRepo.countProductosActivosByEmpresaId(empresaId),
+            bodegaRepo.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO),
+            turnoCajaRepo.countByEmpresa_IdAndEstado(empresaId, ESTADO_TURNO_ABIERTO),
+            usuarioRepo.countActivosByEmpresaId(empresaId)
+        );
+    }
 
-        Map<String, Object> uso = new HashMap<>();
-        uso.put("productos", productos);
-        uso.put("usuarios",  usuarios);
-        uso.put("bodegas",   bodegas);
-        return uso;
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTenantUso(Long empresaId) {
+        UsoTenant uso = usoActual(empresaId);
+
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("productos", uso.productos());
+        respuesta.put("usuarios",  uso.usuarios());
+        respuesta.put("bodegas",   uso.bodegas());
+        respuesta.put("cajas",     uso.cajas());
+        return respuesta;
     }
 
     // ── Features ──────────────────────────────────────────────────────────────

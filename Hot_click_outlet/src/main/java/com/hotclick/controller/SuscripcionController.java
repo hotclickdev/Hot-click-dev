@@ -6,10 +6,12 @@ import com.hotclick.repository.PlanRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.SuscripcionService;
 import com.hotclick.service.auth.AuthSupport;
+import com.hotclick.service.suscripcion.BajadaPlanBloqueadaException;
 import com.stripe.exception.StripeException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -168,6 +170,11 @@ public class SuscripcionController {
                 }
             }
             return ResponseEntity.ok(suscripcionService.cambiarPlanOnvo(empresaId, planId));
+        } catch (BajadaPlanBloqueadaException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "error", e.getMessage(),
+                "codigo", "BAJADA_BLOQUEADA",
+                "excesos", e.excesosComoMapas()));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (SecurityException e) {

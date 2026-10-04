@@ -1,10 +1,19 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
 import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import AvisoBajadaBloqueada from '@/features/billing/AvisoBajadaBloqueada'
-import { esBajada, type LimitesPlan, type RecursoPlan } from '@/features/billing/bajarPlanHelpers'
+import {
+  esBajada,
+  recursosQueEntran,
+  textoFaltante,
+  type ExcesoPlan,
+  type LimitesPlan,
+  type RecursoPlan,
+} from '@/features/billing/bajarPlanHelpers'
+import { useExcesosBajada } from '@/features/billing/useExcesosBajada'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
 import type { Id } from '@/types/api'
 import {
@@ -43,6 +52,7 @@ export default function CompararPlanesVista({
   const [cargando, setCargando] = useState(true)
   const [paso, setPaso] = useState(0)
   const [planElegido, setPlanElegido] = useState<PlanUi | null>(null)
+  const [visitaConfirmar, setVisitaConfirmar] = useState(0)
   const {
     loadingPlan,
     error,
@@ -61,19 +71,29 @@ export default function CompararPlanesVista({
           ? data as Array<{ id: Id; nombre: string; precioMensual?: number } & LimitesPlan>
           : []
         setPlanes(lista.map(mapApiPlanToUi))
-        setLimites(Object.fromEntries(lista.map((p) => [String(p.id), { maxProductos: p.maxProductos, maxUsuarios: p.maxUsuarios }])))
+        setLimites(Object.fromEntries(lista.map((p) => [String(p.id), limitesDe(p)])))
       })
       .catch(() => setError('No se pudieron cargar los planes'))
       .finally(() => setCargando(false))
   }, [setError])
 
-  useEffect(() => {
-    if (pagoPendiente) setPaso(2)
-  }, [pagoPendiente])
-
   const idPaso = PASOS_CAMBIAR_PLAN[paso]?.id
   const confirmando = loadingPlan !== null
   const emp = variante === 'emp'
+  const enConfirmar = idPaso === 'confirmar'
+  const destino = planElegido ? { nombre: planElegido.nombreApi, ...limites[String(planElegido.id)] } : null
+  const estadoBajada = useExcesosBajada({ destino, activo: enConfirmar, visita: visitaConfirmar })
+  const excesosVisibles = bajadaBloqueada?.excesos ?? estadoBajada.excesos
+  const bloqueadoPorUso = enConfirmar && estadoBajada.esBajada && (estadoBajada.cargandoUso || excesosVisibles.length > 0)
+
+  useEffect(() => {
+    if (enConfirmar && estadoBajada.esBajada) globalThis.scrollTo({ top: 0 })
+  }, [enConfirmar, estadoBajada.esBajada])
+
+  function cambiarPaso(indice: number) {
+    if (PASOS_CAMBIAR_PLAN[indice]?.id === 'confirmar') setVisitaConfirmar((visita) => visita + 1)
+    setPaso(indice)
+  }
 
   function validarPaso(indice: number): string | null {
     if (PASOS_CAMBIAR_PLAN[indice]?.id !== 'elegir') return null
@@ -81,12 +101,8 @@ export default function CompararPlanesVista({
   }
 
   async function confirmarCambio() {
-    if (!planElegido) return
-    await seleccionarPlan(
-      planElegido.id,
-      { nombre: planElegido.nombreApi, ...limites[String(planElegido.id)] },
-      planElegido.nombre,
-    )
+    if (!planElegido || !destino || bloqueadoPorUso) return
+    await seleccionarPlan(planElegido.id, destino, planElegido.nombre)
   }
 
   function volverDesdePago() {
@@ -94,7 +110,7 @@ export default function CompararPlanesVista({
     setPaso(1)
   }
 
-  if (paso === 2 && pagoPendiente) {
+  if (pagoPendiente) {
     return renderShell({
       error,
       children: (
@@ -136,12 +152,15 @@ export default function CompararPlanesVista({
       <FormularioPorPasos
         pasos={PASOS_CAMBIAR_PLAN}
         pasoActual={paso}
-        onPasoChange={setPaso}
+        onPasoChange={cambiarPaso}
         validarPaso={validarPaso}
         onFinalizar={confirmarCambio}
         etiquetaFinal="Confirmar cambio"
         enviando={confirmando}
         totalProgreso={TOTAL_PASOS_PLAN}
+        deshabilitado={bloqueadoPorUso}
+        motivoDeshabilitado={bloqueadoPorUso ? motivoBloqueo(estadoBajada.cargandoUso, excesosVisibles) : undefined}
+        colorCtaFinal="rojo"
       >
         {idPaso === 'elegir' ? (
           <ListaStagger
@@ -165,15 +184,67 @@ export default function CompararPlanesVista({
             ))}
           </ListaStagger>
         ) : null}
-        {idPaso === 'confirmar' && planElegido ? (
-          <ResumenPlan plan={planElegido} />
-        ) : null}
-        {idPaso === 'confirmar' && bajadaBloqueada ? (
-          <AvisoBajadaBloqueada plan={bajadaBloqueada.plan} excesos={bajadaBloqueada.excesos} rutaAjuste={rutaAjuste} />
+        {enConfirmar && planElegido ? (
+          <PasoConfirmar
+            plan={planElegido}
+            etiquetaPlan={bajadaBloqueada?.plan ?? planElegido.nombre}
+            esBajada={estadoBajada.esBajada}
+            cargandoUso={estadoBajada.cargandoUso}
+            excesos={excesosVisibles}
+            rutaAjuste={rutaAjuste}
+          />
         ) : null}
       </FormularioPorPasos>
     ),
   })
+}
+
+function limitesDe(plan: LimitesPlan): LimitesPlan {
+  return {
+    maxProductos: plan.maxProductos,
+    maxBodegas: plan.maxBodegas,
+    maxCajas: plan.maxCajas,
+    maxUsuarios: plan.maxUsuarios,
+  }
+}
+
+function motivoBloqueo(cargandoUso: boolean, excesos: ExcesoPlan[]): string {
+  // TODO copy Producto
+  if (cargandoUso) return 'Estamos revisando tu uso…'
+  // TODO copy Producto
+  return `Te falta ajustar ${textoFaltante(excesos)}`
+}
+
+type PasoConfirmarProps = Readonly<{
+  plan: PlanUi
+  etiquetaPlan: string
+  esBajada: boolean
+  cargandoUso: boolean
+  excesos: ExcesoPlan[]
+  rutaAjuste?: Partial<Record<RecursoPlan, string>>
+}>
+
+/** Aviso de bajada bloqueada arriba (antes del resumen del plan) y mensaje de listo cuando ya se puede confirmar. */
+function PasoConfirmar({ plan, etiquetaPlan, esBajada: bajada, cargandoUso, excesos, rutaAjuste }: PasoConfirmarProps) {
+  const { t } = useTranslation()
+  const puedeConfirmar = bajada && !cargandoUso && excesos.length === 0
+  return (
+    <div className="flex flex-col gap-4">
+      <AvisoBajadaBloqueada
+        plan={etiquetaPlan}
+        excesos={excesos}
+        rutaAjuste={rutaAjuste}
+        entran={recursosQueEntran(excesos)}
+      />
+      {puedeConfirmar ? (
+        <p className="flex items-start gap-2 rounded-[14px] bg-[var(--hc-success-bg)] p-3 text-[13px] text-hc-success md:hidden" role="status">
+          <span aria-hidden className="font-bold">✓</span>
+          {t('planes.bajarBloqueado.listo', { plan: etiquetaPlan })}
+        </p>
+      ) : null}
+      <ResumenPlan plan={plan} />
+    </div>
+  )
 }
 
 function ResumenPlan({ plan }: { plan: PlanUi }) {
@@ -195,6 +266,14 @@ function ResumenPlan({ plan }: { plan: PlanUi }) {
   )
 }
 
+/**
+ * En celular la única CTA roja de «Tu plan» es la barra fija: elegir plan es secundario y la selección va en azul.
+ * A partir de md se conserva el diseño de escritorio.
+ */
+const CLASE_BOTON_ELEGIR = 'bg-hc-primary text-white max-md:border max-md:border-hc-border max-md:bg-hc-surface max-md:text-hc-text'
+const CLASE_BOTON_ELEGIDO = 'border-2 border-hc-primary bg-[var(--hc-danger-bg)] text-hc-primary max-md:border-[var(--hc-info)] max-md:bg-[var(--hc-info-bg)] max-md:text-[var(--hc-info)]'
+const CLASE_BORDE_ELEGIDO = 'border-2 border-hc-primary max-md:border-[var(--hc-info)]'
+
 function TarjetaPlan({
   plan,
   actual,
@@ -213,12 +292,12 @@ function TarjetaPlan({
 }) {
   if (emp) {
     const borde = actual || seleccionado
-      ? 'border-2 border-hc-primary bg-hc-surface'
+      ? `${CLASE_BORDE_ELEGIDO} bg-hc-surface`
       : 'border border-hc-border bg-hc-surface'
     return (
       <article className={`flex flex-1 flex-col gap-3 rounded-xl p-5 md:px-5 md:py-6 ${borde}`}>
         <p className="font-display text-base font-bold md:text-lg">{plan.nombre}</p>
-        <p className="font-display text-lg font-bold text-hc-primary md:text-[22px]">{plan.precio}</p>
+        <p className="font-display text-lg font-bold text-hc-primary max-md:text-hc-text md:text-[22px]">{plan.precio}</p>
         <ul className="flex flex-col gap-2">
           {plan.beneficios.map((b) => (
             <li key={b} className="text-[11px] text-hc-muted md:text-[13px]">✓ {b}</li>
@@ -234,9 +313,7 @@ function TarjetaPlan({
               type="button"
               onClick={onSelect}
               className={`flex min-h-11 w-full items-center justify-center rounded-[12px] text-[15px] font-bold ${
-                seleccionado
-                  ? 'border-2 border-hc-primary bg-[var(--hc-danger-bg)] text-hc-primary'
-                  : 'bg-hc-primary text-white'
+                seleccionado ? CLASE_BOTON_ELEGIDO : CLASE_BOTON_ELEGIR
               }`}
             >
               {seleccionado ? 'Seleccionado' : cta}
@@ -248,7 +325,7 @@ function TarjetaPlan({
   }
 
   const borde = actual || seleccionado
-    ? 'border-2 border-hc-primary'
+    ? CLASE_BORDE_ELEGIDO
     : 'border border-hc-border'
 
   return (
@@ -281,9 +358,7 @@ function TarjetaPlan({
             type="button"
             onClick={onSelect}
             className={`flex min-h-11 w-full items-center justify-center rounded-[12px] text-[15px] font-bold ${
-              seleccionado
-                ? 'border-2 border-hc-primary bg-[var(--hc-danger-bg)] text-hc-primary'
-                : 'bg-hc-primary text-white'
+              seleccionado ? CLASE_BOTON_ELEGIDO : CLASE_BOTON_ELEGIR
             }`}
           >
             {seleccionado ? 'Seleccionado' : cta}
