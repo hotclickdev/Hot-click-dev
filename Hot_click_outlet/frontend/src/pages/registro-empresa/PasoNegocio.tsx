@@ -28,7 +28,7 @@ function idPrimerError(form: RegistroEmpresaForm, consentimientos: Consentimient
 
 function TextoAcuerdo() {
   const { t } = useTranslation()
-  const [antes, despues] = t('registro.acuerdo.check', {
+  const [antes, despues] = t('registroVendedor.acuerdo.check', {
     acuerdo: '\u0000',
     defaultValue: 'Leí y acepto el \u0000.',
   }).split('\u0000')
@@ -36,11 +36,11 @@ function TextoAcuerdo() {
     <span>
       {antes}
       <Link to="/acuerdo-vendedores" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
-        {t('registro.acuerdo.enlace', { defaultValue: 'Acuerdo de Vendedores' })}
+        {t('registroVendedor.acuerdo.enlace', { defaultValue: 'Acuerdo de Vendedores' })}
       </Link>
       {despues}
       <span className="mt-1 block text-[12px] leading-[18px] text-hc-n-600">
-        {t('registro.acuerdo.ayuda', { defaultValue: 'Incluye tus obligaciones como Encargado de Tratamiento de los datos de tus clientes (Ley 8968).' })}
+        {t('registroVendedor.acuerdo.ayuda', { defaultValue: 'Incluye tus obligaciones como Encargado de Tratamiento de los datos de tus clientes (Ley 8968).' })}
       </span>
     </span>
   )
@@ -167,7 +167,7 @@ export default function PasoNegocio({
         </Casilla>
         {intento && !consentimientos.acuerdo ? (
           <p role="alert" className="text-[12px] font-medium text-hc-red-600">
-            {t('registro.acuerdo.error', { defaultValue: 'Para continuar, aceptá el Acuerdo de Vendedores.' })}
+            {t('registroVendedor.acuerdo.error', { defaultValue: 'Para continuar, aceptá el Acuerdo de Vendedores.' })}
           </p>
         ) : null}
       </AltaTarjeta>
