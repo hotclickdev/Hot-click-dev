@@ -12,6 +12,7 @@ import EstadoVacioConversacional from '../compartido/motion/EstadoVacioConversac
 import { ListaStagger, ItemListaStagger } from '../compartido/motion/ListaStagger'
 import ListadoFeedback from '../compartido/ListadoFeedback'
 import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
+import HojaInferior from '@/components/comprador/HojaInferior'
 import { useToast } from '@/components/ui/Toast'
 import { sucursalService, type SucursalDto } from '@/services/sucursalService'
 import {
@@ -233,6 +234,7 @@ function FilaSucursal({
 }) {
   const letra = sucursal.nombre.slice(0, 1).toUpperCase()
   const alDia = sucursal.estado === 'Al día'
+  const [menu, setMenu] = useState(false)
   return (
     <article className="flex flex-col gap-3 rounded-[10px] border border-hc-border bg-hc-surface p-3.5 md:flex-row md:items-center md:px-4 md:py-3">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -245,20 +247,21 @@ function FilaSucursal({
             <p className="truncate text-[11px] text-hc-muted md:text-[13px]">{sucursal.ubicacion}</p>
           ) : null}
         </div>
-        <span
-          className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium md:text-xs"
-          style={{
-            background: alDia ? 'var(--hc-warning-bg)' : 'var(--hc-danger-bg)',
-            color: alDia ? 'var(--hc-warning)' : 'var(--hc-danger)',
-          }}
-        >
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium md:text-xs ${alDia ? 'bg-hc-success-bg text-hc-success-text' : 'bg-hc-n-100 text-hc-n-600'}`}>
           {sucursal.estado}
         </span>
       </div>
-      <div className="flex gap-2 md:shrink-0">
+      <div className="hidden gap-2 md:flex md:shrink-0">
         <Boton variante="contorno" onClick={onRenombrar}>Renombrar</Boton>
         <Boton variante="contorno" onClick={onDesactivar}>Desactivar</Boton>
       </div>
+      <button type="button" aria-label={`Acciones de ${sucursal.nombre}`} onClick={() => setMenu(true)} className="flex size-11 items-center justify-center text-[20px] md:hidden">⋯</button>
+      <HojaInferior abierta={menu} onCerrar={() => setMenu(false)} titulo={<h2 className="font-display text-lg font-bold">Acciones</h2>}>
+        <div className="flex flex-col">
+          <button type="button" className="min-h-11 text-left text-[15px] font-semibold" onClick={() => { setMenu(false); onRenombrar() }}>Renombrar</button>
+          <button type="button" className="min-h-11 text-left text-[15px] font-semibold text-hc-red-500" onClick={() => { setMenu(false); onDesactivar() }}>Desactivar</button>
+        </div>
+      </HojaInferior>
     </article>
   )
 }
