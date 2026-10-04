@@ -17,7 +17,7 @@ const FILTROS: { id: FiltroBilling; label: string }[] = [
   { id: 'TODAS', label: 'Todas' },
   { id: 'ALERTA', label: 'Alerta cobro' },
   { id: 'PAST_DUE', label: 'Past due' },
-  { id: 'ONVO', label: 'Onvo' },
+  { id: 'ONVO', label: 'Pasarela' },
 ]
 
 const KPIS_VACIOS: BillingKpis = {
@@ -72,7 +72,7 @@ export default function AdminBillingPlataforma() {
     <div className="mx-auto max-w-5xl pb-10">
       <AdminPageHeader
         titulo="Billing de plataforma"
-        subtitulo="Plan, Onvo, fallos de cobro y comisión por negocio"
+        subtitulo="Plan, pasarela, fallos de cobro y comisión por negocio"
       />
       <KpiRow kpis={kpis} />
       <div className="mt-4 flex flex-wrap gap-2">
@@ -152,7 +152,7 @@ function KpiRow({ kpis }: { kpis: BillingKpis }) {
     { label: 'Negocios', valor: kpis.total },
     { label: 'Past due', valor: kpis.pastDue },
     { label: 'Alerta cobro', valor: kpis.conAlertaCobro },
-    { label: 'Onvo', valor: kpis.conOnvo },
+    { label: 'Pasarela', valor: kpis.conOnvo },
     { label: 'Stripe', valor: kpis.conStripe },
   ]
   return (

@@ -53,7 +53,7 @@ export default function PlanActualizadoPage() {
         <div className="mx-auto mb-6 size-20 animate-pulse rounded-full bg-hc-surface-2" aria-hidden />
         <h1 className="font-display text-xl font-bold">Confirmando tu pago…</h1>
         <p className="mt-2 text-sm text-hc-muted">
-          Estamos esperando la confirmación de ONVO. Esto suele tardar unos segundos.
+          Estamos confirmando tu pago. Esto suele tardar unos segundos.
         </p>
       </main>
     )
