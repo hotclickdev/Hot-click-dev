@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.exception.ImagenOcupadaException;
 import com.hotclick.service.storage.StorageImageValidator;
 import com.hotclick.service.storage.StorageUploadHelper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -93,6 +94,16 @@ public class SupabaseStorageService {
      * no disponible". Retry y circuit breaker de s3 lo ignoran (application.properties).
      */
     private String subirImagenFallback(MultipartFile file, String carpeta, IllegalArgumentException e) {
+        throw e;
+    }
+
+    /** R1: sin permiso de decodificación → 503, no "S3 caído". */
+    private String subirImagenFallback(MultipartFile file, String carpeta, ImagenOcupadaException e) {
+        throw e;
+    }
+
+    private String subirImagenDescargadaFallback(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta,
+                                                 ImagenOcupadaException e) {
         throw e;
     }
 

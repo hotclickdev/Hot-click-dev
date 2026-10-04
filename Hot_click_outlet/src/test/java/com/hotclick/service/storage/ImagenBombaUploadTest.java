@@ -24,6 +24,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -72,5 +73,21 @@ class ImagenBombaUploadTest {
             .andExpect(status().isOk());
 
         verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    }
+
+    @Test
+    @DisplayName("R1: sin permiso de decodificación → 503 con Retry-After, sin reintentar ni subir a S3")
+    void semaforoOcupadoDa503() throws Exception {
+        MockMultipartFile foto = new MockMultipartFile(
+            "file", "foto.png", "image/png", ImagenesDePrueba.fotoNormal("png"));
+        StorageImageValidator.DECODIFICACIONES.acquire(StorageImageValidator.PERMISOS_DECODIFICACION);
+        try {
+            mvc().perform(multipart("/api/servicios/fotos").file(foto))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string("Retry-After", "5"));
+        } finally {
+            StorageImageValidator.DECODIFICACIONES.release(StorageImageValidator.PERMISOS_DECODIFICACION);
+        }
+        verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 }

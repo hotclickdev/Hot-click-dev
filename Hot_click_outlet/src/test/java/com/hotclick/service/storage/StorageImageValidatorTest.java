@@ -1,5 +1,6 @@
 package com.hotclick.service.storage;
 
+import com.hotclick.exception.ImagenOcupadaException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -69,5 +70,36 @@ class StorageImageValidatorTest {
         assertThatThrownBy(() -> validator.sanitizarImagen(jpegFalso, "jpg"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage(StorageImageValidator.MSG_NO_PROCESABLE);
+    }
+
+    @Test
+    @DisplayName("R1: PNG RGBA de 16 bits de 30 MP (≈240 MB de raster) se rechaza por memoria estimada")
+    void pngRgba16BitsSuperaPresupuestoDeBytes() throws Exception {
+        byte[] png = ImagenesDePrueba.pngSoloCabecera(6_000, 5_000, 16, 6);
+        assertThatThrownBy(() -> validator.verificarDimensiones(png))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage(StorageImageValidator.MSG_DEMASIADO_GRANDE);
+        // La misma geometría en gris de 8 bits (30 MB) entra en el presupuesto.
+        validator.verificarDimensiones(ImagenesDePrueba.pngSoloCabecera(6_000, 5_000, 8, 0));
+    }
+
+    @Test
+    @DisplayName("R1: sin permiso de decodificación libre → ImagenOcupadaException, y el permiso siempre se libera")
+    void semaforoOcupadoNoDecodifica() throws Exception {
+        byte[] foto = ImagenesDePrueba.fotoNormal("png");
+        StorageImageValidator.DECODIFICACIONES.acquire(StorageImageValidator.PERMISOS_DECODIFICACION);
+        try {
+            assertThatThrownBy(() -> validator.sanitizarImagen(foto, "png"))
+                .isInstanceOf(ImagenOcupadaException.class);
+        } finally {
+            StorageImageValidator.DECODIFICACIONES.release(StorageImageValidator.PERMISOS_DECODIFICACION);
+        }
+        // Una falla de decodificación también devuelve el permiso.
+        byte[] jpegFalso = new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x01, 0x02, 0x03, 0x04};
+        assertThatThrownBy(() -> validator.sanitizarImagen(jpegFalso, "jpg"))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThat(validator.sanitizarImagen(foto, "png")).isNotEmpty();
+        assertThat(StorageImageValidator.DECODIFICACIONES.availablePermits())
+            .isEqualTo(StorageImageValidator.PERMISOS_DECODIFICACION);
     }
 }

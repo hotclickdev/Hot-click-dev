@@ -38,6 +38,25 @@ final class ImagenesDePrueba {
         return png.toByteArray();
     }
 
+    /**
+     * PNG con header de {@code ancho}×{@code alto}, profundidad y tipo de color dados, y un IDAT
+     * mínimo: alcanza para los chequeos por header (no se decodifica).
+     */
+    static byte[] pngSoloCabecera(int ancho, int alto, int bitsPorCanal, int tipoColor) throws IOException {
+        ByteArrayOutputStream idat = new ByteArrayOutputStream();
+        try (DeflaterOutputStream z = new DeflaterOutputStream(idat)) {
+            z.write(new byte[16]);
+        }
+        ByteArrayOutputStream png = new ByteArrayOutputStream();
+        png.write(new byte[] {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'});
+        ByteBuffer ihdr = ByteBuffer.allocate(13).putInt(ancho).putInt(alto)
+            .put((byte) bitsPorCanal).put((byte) tipoColor).put((byte) 0).put((byte) 0).put((byte) 0);
+        chunk(png, "IHDR", ihdr.array());
+        chunk(png, "IDAT", idat.toByteArray());
+        chunk(png, "IEND", new byte[0]);
+        return png.toByteArray();
+    }
+
     /** Foto normal (300×200) en el formato pedido ("png" o "jpg"). */
     static byte[] fotoNormal(String formato) throws IOException {
         BufferedImage img = new BufferedImage(300, 200, BufferedImage.TYPE_INT_RGB);

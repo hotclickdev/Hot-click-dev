@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.ImagenOcupadaException;
 import com.hotclick.service.storage.StorageImageValidator;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
@@ -94,6 +95,10 @@ public class ImageProxyController {
         } catch (IllegalArgumentException e) {
             log.warn("[img-proxy] Imagen rechazada {}: {}", cleanPath, e.getMessage());
             return ResponseEntity.badRequest().build();
+        } catch (ImagenOcupadaException e) {
+            return ResponseEntity.status(503)
+                .header("Retry-After", String.valueOf(ImagenOcupadaException.RETRY_AFTER_SEGUNDOS))
+                .build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("[img-proxy] Interrumpido {}", cleanPath);
@@ -127,14 +132,17 @@ public class ImageProxyController {
             builder.height(height);
         }
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            builder.outputFormat("jpg")
-                   .outputQuality(quality / 100.0)
-                   .toOutputStream(out);
+            // R1: mismo tope global de decodificaciones simultáneas que los uploads.
+            return StorageImageValidator.conPermisoDeDecodificacion(() -> {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                builder.outputFormat("jpg")
+                       .outputQuality(quality / 100.0)
+                       .toOutputStream(out);
+                return out.toByteArray();
+            });
         } catch (OutOfMemoryError e) {
             throw new IllegalArgumentException(StorageImageValidator.MSG_NO_PROCESABLE);
         }
-        return out.toByteArray();
     }
 }

@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.ImagenOcupadaException;
 import com.hotclick.dto.*;
 import com.hotclick.model.EncargoPersonalizado;
 import com.hotclick.service.EncargoService;
@@ -40,6 +41,10 @@ public class EncargoPublicController {
             return ResponseEntity.ok(ResponseDTO.success("Imagen subida", Map.of("url", url)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (ImagenOcupadaException e) {
+            return ResponseEntity.status(503)
+                .header("Retry-After", String.valueOf(ImagenOcupadaException.RETRY_AFTER_SEGUNDOS))
+                .body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             log.error("[encargos/imagenes] Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()

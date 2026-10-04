@@ -1,6 +1,7 @@
 package com.hotclick.config;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.ImagenOcupadaException;
 import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.exception.PedidoNoDespachableException;
 import com.hotclick.exception.PlanLimitException;
@@ -79,6 +80,17 @@ public class GlobalExceptionHandler {
                 ? ex.getUpgrade()
                 : "Actualiza tu suscripción en Configuración → Plan.");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    /** FULL-01 / R1: tope global de decodificaciones de imagen ocupado → 503 con Retry-After. */
+    @ExceptionHandler(ImagenOcupadaException.class)
+    public ResponseEntity<Object> handleImagenOcupada(ImagenOcupadaException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error",   "IMAGEN_OCUPADO");
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("Retry-After", String.valueOf(ImagenOcupadaException.RETRY_AFTER_SEGUNDOS))
+                .body(body);
     }
 
     /** Integraciones externas (Claude API, Vision API, Gemini, scraping, BCCR). */

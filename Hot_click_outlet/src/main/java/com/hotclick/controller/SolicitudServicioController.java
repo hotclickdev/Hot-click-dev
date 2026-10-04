@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.ImagenOcupadaException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.SolicitudServicio;
@@ -48,6 +49,10 @@ public class SolicitudServicioController {
             return ResponseEntity.ok(ResponseDTO.success("Foto subida", Map.of("url", url)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (ImagenOcupadaException e) {
+            return ResponseEntity.status(503)
+                .header("Retry-After", String.valueOf(ImagenOcupadaException.RETRY_AFTER_SEGUNDOS))
+                .body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             log.error("[servicios/fotos] Error al subir: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir foto: " + e.getMessage()));
