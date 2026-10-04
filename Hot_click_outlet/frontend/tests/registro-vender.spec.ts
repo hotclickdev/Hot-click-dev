@@ -67,11 +67,14 @@ test.describe('Puerta Vender — una entrada, tres rutas', () => {
     await expect(page.getByRole('heading', { name: /ingresá o creá tu cuenta/i })).toBeVisible()
   })
 
-  test('comprador logueado en /registro-empresa pasa a registrar-negocio', async ({ page }) => {
+  test('comprador logueado en /registro-empresa ve el mismo alta, sin cuenta nueva', async ({ page }) => {
     await sesion(page, payloadAuth({ rol: 'USUARIO_FINAL' }))
     await page.goto('/registro-empresa', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/registrar-negocio$/)
-    await expect(page.getByText(/empezá a vender/i)).toBeVisible()
+    await expect(page).toHaveURL(/\/registro-empresa$/)
+    await expect(page.getByRole('heading', { name: /Empezá a vender en HotClick/ })).toBeVisible()
+    await page.getByTestId('plan-emprendedor').getByRole('button', { name: 'Elegir este plan' }).click()
+    await expect(page.getByText('Tu cuenta de acceso')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Registrar mi negocio' })).toBeVisible()
   })
 
   test('vendedor logueado en /registro-empresa va al panel', async ({ page }) => {
@@ -85,6 +88,7 @@ test.describe('Puerta Vender — una entrada, tres rutas', () => {
     await expect(page.getByRole('link', { name: /quiero vender/i })).toBeVisible()
     await sesion(page, payloadAuth({ rol: 'USUARIO_FINAL' }))
     await page.goto('/registrar-negocio', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/registrar-negocio$/)
+    await expect(page).toHaveURL(/\/registro-empresa$/)
+    await expect(page.getByRole('heading', { name: /Empezá a vender en HotClick/ })).toBeVisible()
   })
 })

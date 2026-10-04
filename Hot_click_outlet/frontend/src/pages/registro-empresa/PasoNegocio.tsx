@@ -19,7 +19,7 @@ export type ConsentimientosAlta = { terminos: boolean; acuerdo: boolean }
 /** Paso 2 · Tu negocio: datos del negocio y de la cuenta en un solo paso (campos Figma 28:1083). */
 export default function PasoNegocio({
   plan, form, consentimientos, error, loading, turnstileRef, turnstileToken,
-  onCampo, onTelefono, onTelefonoAdmin, onInscrito, onConsentimiento, onTurnstileToken, onCambiarPlan, onAtras, onSubmit,
+  onCampo, onTelefono, onTelefonoAdmin, onInscrito, onConsentimiento, onTurnstileToken,   onCambiarPlan, onAtras, onSubmit, conSesion = false,
 }: {
   plan: PlanAlta
   form: RegistroEmpresaForm
@@ -37,8 +37,10 @@ export default function PasoNegocio({
   onCambiarPlan: () => void
   onAtras: () => void
   onSubmit: (e: FormEvent) => void
+  /** Comprador ya logueado: no pide correo ni contraseña. */
+  conSesion?: boolean
 }) {
-  const turnstileObligatorio = Boolean(TURNSTILE_SITE_KEY)
+  const turnstileObligatorio = Boolean(TURNSTILE_SITE_KEY) && !conSesion
   const faltaConsentimiento = !consentimientos.terminos || !consentimientos.acuerdo
   const deshabilitado = loading || faltaConsentimiento || (turnstileObligatorio && !turnstileToken)
 
@@ -80,7 +82,7 @@ export default function PasoNegocio({
         ) : null}
       </AltaTarjeta>
 
-      <AltaTarjeta titulo="Tu cuenta de acceso" sub="Con estos datos entrás a tu panel de vendedor.">
+      {conSesion ? null : <AltaTarjeta titulo="Tu cuenta de acceso" sub="Con estos datos entrás a tu panel de vendedor.">
         <Input variante="figma" label="Tu nombre completo" placeholder="Ana Solís" autoComplete="name"
           value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} maxLength={100} />
         <Input variante="figma" label="Tu correo (obligatorio)" type="email" placeholder="ana@correo.com" autoComplete="email"
@@ -89,7 +91,7 @@ export default function PasoNegocio({
           value={form.passwordAdmin} onChange={onCampo('passwordAdmin')} required minLength={MIN_PASSWORD} maxLength={128}
           hint={`Mínimo ${MIN_PASSWORD} caracteres.`} />
         <PhoneField variante="figma" label="Tu teléfono (opcional)" value={form.telefonoAdmin} onChange={onTelefonoAdmin} />
-      </AltaTarjeta>
+      </AltaTarjeta>}
 
       <AltaTarjeta>
         <Casilla id="alta-terminos" checked={consentimientos.terminos} onChange={(v) => onConsentimiento('terminos', v)}>
@@ -128,7 +130,7 @@ export default function PasoNegocio({
       <div className="flex gap-2.5">
         <BotonSecundario onClick={onAtras}>Atrás</BotonSecundario>
         <BotonPrimario type="submit" className="flex-1" disabled={deshabilitado}>
-          {loading ? <><Spinner />Creando tu cuenta…</> : 'Crear mi cuenta'}
+          {loading ? <><Spinner />Creando tu cuenta…</> : (conSesion ? 'Registrar mi negocio' : 'Crear mi cuenta')}
         </BotonPrimario>
       </div>
     </form>

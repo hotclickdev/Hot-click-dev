@@ -128,12 +128,14 @@ export default function TiendaCheckoutPage() {
         notas={form.notas}
         envios={METODOS_ENVIO}
         pagos={METODOS_PAGO}
-        lineas={carrito.map(({ producto, cantidad }) => ({
-          id: producto.id,
-          nombre: producto.nombre,
-          cantidad,
-          subtotal: producto.precio * cantidad,
-        }))}
+        lineas={carrito.flatMap(({ producto, cantidad }) => (
+          producto.id == null ? [] : [{
+            id: producto.id,
+            nombre: producto.nombre,
+            cantidad,
+            subtotal: producto.precio * cantidad,
+          }]
+        ))}
         total={totalImporte()}
         enviando={enviando}
         error={error}

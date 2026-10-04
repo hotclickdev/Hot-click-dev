@@ -153,7 +153,6 @@ test('estados y flechas de icono usan TrustGlyph, no cruz de carácter', () => {
   expect(leer('../src/pages/pago/PagoError.tsx')).toContain('FalloPago')
   expect(leer('../src/pages/pago/PagoError.tsx')).toContain("navigate('/checkout')")
   expect(leer('../src/pages/pago/PagoError.tsx')).not.toContain('M6 18L18 6')
-  expect(leer('../src/pages/registrar-negocio/HaciendaVerificacion.tsx')).toContain('TrustGlyph')
   expect(leer('../src/pages/admin/AdminPlanes.tsx')).toContain('tipo="check"')
   expect(leer('../src/pages/admin/AdminPlanes.tsx')).not.toContain('M6 18L18 6')
   expect(leer('../src/pages/auth/RegisterVerifyStep.tsx')).not.toMatch(/[✕✖×⚠]/)

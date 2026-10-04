@@ -5,8 +5,9 @@ export const RUTA_REGISTRAR_NEGOCIO = '/registrar-negocio'
 export const RUTA_PANEL_VENDEDOR = RUTA_EMPRENDEDOR
 
 /**
- * Una puerta pública de Vender. No fusiona formularios:
- * cuenta nueva → registro-empresa; comprador logueado → registrar-negocio.
+ * Una puerta pública de Vender.
+ * Sin sesión → registro-empresa. Con sesión y sin negocio → registrar-negocio,
+ * que entra al mismo alta sin pedir cuenta de nuevo. Con negocio → panel.
  */
 export function destinoVender({ tokenVivo, rol, empresaId, planNombre }: {
   tokenVivo: boolean

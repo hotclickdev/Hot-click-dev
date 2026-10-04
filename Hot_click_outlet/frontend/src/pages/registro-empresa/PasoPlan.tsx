@@ -4,6 +4,7 @@ import { RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { PLANES_ALTA, TEXTO_CAMBIO_PLAN, TEXTO_MONTOS, TEXTO_SUBTITULO_PLANES } from './altaVendedorPlanes'
 import type { PlanQueryId } from './planQueryParam'
 import { AltaTitulo, BotonPrimario, BotonSecundario, IconoBeneficio, Nota, PillPendiente } from './AltaVendedorUI'
+import PasoPlanMovil from './PasoPlanMovil'
 
 const VENTAJAS = [
   { id: 'panel', titulo: 'Panel de ventas', desc: 'Pedidos, ingresos y estadísticas al día' },
@@ -19,7 +20,11 @@ export default function PasoPlan({ plan, onPlan, onElegir }: {
   onElegir: (id: PlanQueryId) => void
 }) {
   return (
-    <div className="flex flex-col gap-5">
+    <>
+    <div className="md:hidden">
+      <PasoPlanMovil plan={plan} onPlan={onPlan} onElegir={onElegir} />
+    </div>
+    <div className="hidden flex-col gap-5 md:flex">
       <AltaTitulo antes="Empezá a" acento="vender" despues="en HotClick" sub={`Elegí tu plan. ${TEXTO_SUBTITULO_PLANES}`} />
 
       <ul className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
@@ -85,5 +90,6 @@ export default function PasoPlan({ plan, onPlan, onElegir }: {
         y registrá tu negocio con la misma cuenta.
       </p>
     </div>
+    </>
   )
 }
