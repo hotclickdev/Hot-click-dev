@@ -3,19 +3,28 @@ package com.hotclick.config;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 @Component
 @Order(100)
 public class DataSeeder implements ApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
     private static final String DEMO_PYME = "qa.pyme.demo@hotclick.test";
     private static final String DEMO_PLUS = "qa.negocioplus.demo@hotclick.test";
@@ -28,6 +37,17 @@ public class DataSeeder implements ApplicationRunner {
     @Autowired private PlanRepository planRepository;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired(required = false) private Environment environment;
+
+    @Value("${app.url:http://localhost:3000}")
+    private String appUrl;
+
+    /** Lectura de variables de entorno; los tests la reemplazan. */
+    private UnaryOperator<String> entorno = System::getenv;
+
+    void setEntorno(UnaryOperator<String> entorno) { this.entorno = entorno; }
+
+    void setAppUrl(String appUrl) { this.appUrl = appUrl; }
 
     @Override
     @Transactional
@@ -186,61 +206,102 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private void seedAdminUser() {
-        String correo = "admin@hotclick.com";
-        String defaultPassword = System.getenv().getOrDefault("ADMIN_DEFAULT_PASSWORD", "Admin1234!"); // NOSONAR — contraseña de seed, nunca usada en producción con valor por defecto
+        String correo = Constants.CORREO_ADMIN;
+        boolean produccion = ClaveSemilla.esProduccion(appUrl,
+            environment == null ? null : environment.getActiveProfiles());
+        String clave = claveAdmin(produccion).orElse(null);
         if (usuarioRepository.existsByCorreo(correo)) {
-            Usuario admin = usuarioRepository.findByCorreo(correo).orElseThrow();
-            // La contraseña solo se re-escribe con ADMIN_RESET_PASSWORD=true (mecanismo
-            // de recuperación); sin el flag, un cambio hecho desde la app sobrevive reinicios
-            if ("true".equalsIgnoreCase(System.getenv("ADMIN_RESET_PASSWORD"))) {
-                admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
-            }
-            if (admin.getIdentificacion() == null) admin.setIdentificacion("0000000001");
-            if (admin.getTelefono() == null)       admin.setTelefono("0000000000");
-            admin.setEstado(Constants.ESTADO_ACTIVO);
-            admin.setIntentosFallidos(0);
-            admin.setBloqueadoHasta(null);
-            // ADMIN es staff de plataforma: sin empresa propia.
-            admin.setEmpresa(null);
-            boolean tieneAdmin = admin.getRoles().stream()
-                .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN));
-            if (!tieneAdmin) {
-                rolRepository.findByNombreRol(Constants.ROL_ADMIN)
-                    .ifPresent(rol -> admin.getRoles().add(rol));
-            }
-            usuarioRepository.save(admin);
+            actualizarAdminExistente(usuarioRepository.findByCorreo(correo).orElseThrow(), clave);
         } else {
-            Usuario admin = new Usuario();
-            admin.setIdentificacion("0000000001");
-            admin.setNombre("Admin");
-            admin.setApellidoPaterno("HotClick");
-            admin.setCorreo(correo);
-            admin.setTelefono("0000000000");
-            admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
-            admin.setEstado(Constants.ESTADO_ACTIVO);
-            admin.setIntentosFallidos(0);
-            admin.setEmpresa(null);
-            rolRepository.findByNombreRol(Constants.ROL_ADMIN)
-                .ifPresent(rol -> admin.getRoles().add(rol));
-            usuarioRepository.save(admin);
+            crearAdmin(correo, clave, produccion);
         }
+        asegurarAdminSecundario();
+    }
 
-        // Garantizar rol ADMIN a cuenta secundaria configurada por env var
-        String correoExtra = System.getenv("ADMIN_EMAIL");
-        if (correoExtra != null && !correoExtra.isBlank()) {
-            usuarioRepository.findByCorreo(correoExtra.trim().toLowerCase()).ifPresent(u -> {
-                u.setEstado(Constants.ESTADO_ACTIVO);
-                u.setIntentosFallidos(0);
-                u.setBloqueadoHasta(null);
-                u.setEmpresa(null);
-                boolean tieneAdmin = u.getRoles().stream()
-                    .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN));
-                if (!tieneAdmin) {
-                    rolRepository.findByNombreRol(Constants.ROL_ADMIN)
-                        .ifPresent(rol -> u.getRoles().add(rol));
-                }
-                usuarioRepository.save(u);
-            });
+    /**
+     * Contraseña del admin desde el entorno, nunca un valor fijo del código.
+     * En producción además tiene que ser fuerte ({@link ClaveSemilla#esFuerte}).
+     */
+    private Optional<String> claveAdmin(boolean produccion) {
+        Optional<String> clave = ClaveSemilla.leer(entorno, ClaveSemilla.ENV_ADMIN, ClaveSemilla.ENV_ADMIN_LEGADO);
+        if (clave.isPresent() && produccion && !ClaveSemilla.esFuerte(clave.get())) {
+            log.error("[seed] {} es débil (mínimo {} caracteres, 3 tipos de carácter y sin secuencias obvias): se ignora en producción.",
+                ClaveSemilla.ENV_ADMIN, ClaveSemilla.LARGO_MINIMO_PRODUCCION);
+            return Optional.empty();
+        }
+        return clave;
+    }
+
+    private void actualizarAdminExistente(Usuario admin, String clave) {
+        // La contraseña solo se re-escribe con ADMIN_RESET_PASSWORD=true (mecanismo
+        // de recuperación); sin el flag, un cambio hecho desde la app sobrevive reinicios
+        if ("true".equalsIgnoreCase(entorno.apply("ADMIN_RESET_PASSWORD"))) {
+            if (clave != null) {
+                admin.setContrasenaHash(passwordEncoder.encode(clave));
+                admin.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
+                log.warn("[seed] ADMIN_RESET_PASSWORD=true: contraseña del admin reseteada desde {}. Volvé a poner el flag en false.",
+                    ClaveSemilla.ENV_ADMIN);
+            } else {
+                log.error("[seed] ADMIN_RESET_PASSWORD=true pero falta {} (o no es válida): la contraseña del admin no se cambia.",
+                    ClaveSemilla.ENV_ADMIN);
+            }
+        }
+        if (admin.getIdentificacion() == null) admin.setIdentificacion("0000000001");
+        if (admin.getTelefono() == null)       admin.setTelefono("0000000000");
+        admin.setEstado(Constants.ESTADO_ACTIVO);
+        admin.setIntentosFallidos(0);
+        admin.setBloqueadoHasta(null);
+        // ADMIN es staff de plataforma: sin empresa propia.
+        admin.setEmpresa(null);
+        agregarRolAdminSiFalta(admin);
+        usuarioRepository.save(admin);
+    }
+
+    private void crearAdmin(String correo, String clave, boolean produccion) {
+        if (clave == null && produccion) {
+            log.error("[seed] Producción: no se crea {} porque falta {} o no es válida. Configurala en el .env y reiniciá.",
+                correo, ClaveSemilla.ENV_ADMIN);
+            return;
+        }
+        if (clave == null) {
+            log.warn("[seed] {} sin {}: se crea con una contraseña aleatoria que nadie conoce. "
+                + "Para entrar, configurá {} y ADMIN_RESET_PASSWORD=true y reiniciá.",
+                correo, ClaveSemilla.ENV_ADMIN, ClaveSemilla.ENV_ADMIN);
+        }
+        Usuario admin = new Usuario();
+        admin.setIdentificacion("0000000001");
+        admin.setNombre("Admin");
+        admin.setApellidoPaterno("HotClick");
+        admin.setCorreo(correo);
+        admin.setTelefono("0000000000");
+        admin.setContrasenaHash(passwordEncoder.encode(clave != null ? clave : ClaveSemilla.aleatoriaInutilizable()));
+        admin.setEstado(Constants.ESTADO_ACTIVO);
+        admin.setIntentosFallidos(0);
+        admin.setEmpresa(null);
+        agregarRolAdminSiFalta(admin);
+        usuarioRepository.save(admin);
+    }
+
+    /** Garantizar rol ADMIN a cuenta secundaria configurada por env var. */
+    private void asegurarAdminSecundario() {
+        String correoExtra = entorno.apply("ADMIN_EMAIL");
+        if (correoExtra == null || correoExtra.isBlank()) return;
+        usuarioRepository.findByCorreo(correoExtra.trim().toLowerCase()).ifPresent(u -> {
+            u.setEstado(Constants.ESTADO_ACTIVO);
+            u.setIntentosFallidos(0);
+            u.setBloqueadoHasta(null);
+            u.setEmpresa(null);
+            agregarRolAdminSiFalta(u);
+            usuarioRepository.save(u);
+        });
+    }
+
+    private void agregarRolAdminSiFalta(Usuario usuario) {
+        boolean tieneAdmin = usuario.getRoles().stream()
+            .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN));
+        if (!tieneAdmin) {
+            rolRepository.findByNombreRol(Constants.ROL_ADMIN)
+                .ifPresent(rol -> usuario.getRoles().add(rol));
         }
     }
 

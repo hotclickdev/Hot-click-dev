@@ -10,24 +10,35 @@ import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 /**
  * Cuentas de prueba de dev: emprendedor, PYME y Negocio Plus.
  * Quedan activas, sin fecha de vencimiento.
+ *
+ * <p>La contraseña sale de {@code QA_DEFAULT_PASSWORD}; sin esa variable no se crean.
+ * Nunca corre contra producción, aunque alguien active el perfil {@code dev} ahí.
  */
 @Component
 @Profile("dev")
 @Order(110)
 public class QaCuentasSeeder implements ApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(QaCuentasSeeder.class);
 
     private final UsuarioRepository usuarioRepository;
     private final EmpresaRepository empresaRepository;
@@ -35,6 +46,17 @@ public class QaCuentasSeeder implements ApplicationRunner {
     private final PlanRepository planRepository;
     private final MiembroEmpresaRepository miembroEmpresaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
+
+    @Value("${app.url:http://localhost:3000}")
+    private String appUrl;
+
+    /** Lectura de variables de entorno; los tests la reemplazan. */
+    private UnaryOperator<String> entorno = System::getenv;
+
+    void setEntorno(UnaryOperator<String> entorno) { this.entorno = entorno; }
+
+    void setAppUrl(String appUrl) { this.appUrl = appUrl; }
 
     public QaCuentasSeeder(
             UsuarioRepository usuarioRepository,
@@ -42,18 +64,27 @@ public class QaCuentasSeeder implements ApplicationRunner {
             RolRepository rolRepository,
             PlanRepository planRepository,
             MiembroEmpresaRepository miembroEmpresaRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            Environment environment) {
         this.usuarioRepository = usuarioRepository;
         this.empresaRepository = empresaRepository;
         this.rolRepository = rolRepository;
         this.planRepository = planRepository;
         this.miembroEmpresaRepository = miembroEmpresaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.environment = environment;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        if (ClaveSemilla.esProduccion(appUrl, environment.getActiveProfiles())) {
+            log.error("[seed-qa] app.url apunta a producción: no se crean ni tocan cuentas QA.");
+            return;
+        }
+        if (clave().isEmpty()) {
+            log.warn("[seed-qa] Sin {}: no se crean cuentas QA nuevas.", ClaveSemilla.ENV_QA);
+        }
         asegurar(Constants.CORREO_QA_EMPRENDEDOR, "Emprendedor", "EMPRENDEDOR", "qa-emprendedor", "QA-EMP-0001");
         asegurar(Constants.CORREO_QA_PYME, "Pyme", "PYME", "qa-pyme", "QA-PYME-0001");
         asegurar(Constants.CORREO_QA_NEGOCIO_PLUS, "Negocio Plus", "NEGOCIO_PLUS", "qa-negocio-plus", "QA-PLUS-0001");
@@ -69,8 +100,9 @@ public class QaCuentasSeeder implements ApplicationRunner {
     }
 
     private void tocarExistente(Usuario usuario) {
-        if ("true".equalsIgnoreCase(System.getenv("QA_RESET_PASSWORD"))) {
-            usuario.setContrasenaHash(passwordEncoder.encode(clave()));
+        Optional<String> clave = clave();
+        if ("true".equalsIgnoreCase(entorno.apply("QA_RESET_PASSWORD")) && clave.isPresent()) {
+            usuario.setContrasenaHash(passwordEncoder.encode(clave.get()));
             usuarioRepository.save(usuario);
         }
         Empresa empresa = usuario.getEmpresa();
@@ -78,10 +110,12 @@ public class QaCuentasSeeder implements ApplicationRunner {
     }
 
     private void crear(String correo, String apellido, String nombrePlan, String slug, String identificacion) {
+        String clave = clave().orElse(null);
+        if (clave == null) return;
         Plan plan = planRepository.findByNombre(nombrePlan).orElse(null);
         if (plan == null) return;
         Empresa empresa = nuevaEmpresa(correo, apellido, slug, plan);
-        Usuario usuario = nuevoUsuario(correo, apellido, identificacion, empresa);
+        Usuario usuario = nuevoUsuario(correo, apellido, identificacion, empresa, clave);
         miembroEmpresaRepository.save(new MiembroEmpresa(usuario, empresa, "PROPIETARIO"));
     }
 
@@ -102,14 +136,14 @@ public class QaCuentasSeeder implements ApplicationRunner {
         return empresaRepository.save(empresa);
     }
 
-    private Usuario nuevoUsuario(String correo, String apellido, String identificacion, Empresa empresa) {
+    private Usuario nuevoUsuario(String correo, String apellido, String identificacion, Empresa empresa, String clave) {
         Usuario usuario = new Usuario();
         usuario.setIdentificacion(identificacion);
         usuario.setNombre("QA");
         usuario.setApellidoPaterno(apellido);
         usuario.setCorreo(correo);
         usuario.setTelefono("88880000");
-        usuario.setContrasenaHash(passwordEncoder.encode(clave()));
+        usuario.setContrasenaHash(passwordEncoder.encode(clave));
         usuario.setEstado(Constants.ESTADO_ACTIVO);
         usuario.setIntentosFallidos(0);
         usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -127,9 +161,7 @@ public class QaCuentasSeeder implements ApplicationRunner {
         empresa.setVisibilidadPublica(true);
     }
 
-    private static String clave() {
-        String desdeEntorno = System.getenv("QA_DEFAULT_PASSWORD");
-        if (desdeEntorno == null || desdeEntorno.isBlank()) return "Prueba1234";
-        return desdeEntorno;
+    private Optional<String> clave() {
+        return ClaveSemilla.leer(entorno, ClaveSemilla.ENV_QA);
     }
 }

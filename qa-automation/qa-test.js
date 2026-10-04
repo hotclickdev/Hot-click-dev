@@ -20,7 +20,7 @@
 // Variables de entorno opcionales:
 //   QA_BASE_URL       (default http://localhost:8080)
 //   QA_ADMIN_EMAIL     (default admin@hotclick.com)
-//   QA_ADMIN_PASSWORD  (default Admin1234!)
+//   QA_ADMIN_PASSWORD  (obligatoria, sin valor por defecto)
 //   HEADLESS=false     para ver el navegador mientras corre
 
 const { chromium } = require('playwright');

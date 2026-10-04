@@ -394,7 +394,7 @@ Creado automáticamente por `DataSeeder` al primer arranque:
 | Campo | Valor |
 |---|---|
 | Correo | `admin@hotclick.com` |
-| Contraseña | `Admin1234!` |
+| Contraseña | `[CONFIGURAR]` en `HOTCLICK_ADMIN_INITIAL_PASSWORD` (nunca en el repo) |
 | Rol | `ADMIN_IT` |
 
 **Cambiar esta contraseña en producción.**

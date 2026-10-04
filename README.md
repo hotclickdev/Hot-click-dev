@@ -120,7 +120,7 @@ pnpm dev
 
 La interfaz queda en `http://localhost:3000` y envía `/api` al puerto 8080.
 
-Cuenta de administración inicial: `admin@hotclick.com` / `Admin1234!`.
+Cuenta de administración inicial: `admin@hotclick.com`, con la contraseña que pongas en `HOTCLICK_ADMIN_INITIAL_PASSWORD` antes del primer arranque. Sin esa variable, en local se crea con una contraseña aleatoria que nadie conoce; para fijarla después, definí la variable y `ADMIN_RESET_PASSWORD=true` y reiniciá. En producción, sin la variable o con una débil, no se crea.
 
 En una base vacía, Flyway marca como aplicadas las migraciones hasta V136 y no las vuelve a ejecutar. V1 es un volcado heredado y no se puede reaplicar en cadena. Hibernate completa el esquema de las entidades. Las migraciones nuevas, de V137 en adelante, sí se aplican al reiniciar. Si la base local queda inconsistente:
 
@@ -141,7 +141,7 @@ La salida queda en `Hot_click_outlet/src/main/resources/static/`.
 
 ### Cuentas de prueba
 
-Al arrancar con perfil `dev`, el sistema crea estas cuentas si no existen. No vencen. Contraseña: `Prueba1234`. La de administración sigue siendo `Admin1234!`.
+Al arrancar con perfil `dev`, el sistema crea estas cuentas si no existen y si está definida `QA_DEFAULT_PASSWORD`, que es su contraseña. No vencen. Nunca corren contra producción. La de administración sale de `HOTCLICK_ADMIN_INITIAL_PASSWORD`.
 
 | Rol | Correo | Plan |
 | --- | --- | --- |
