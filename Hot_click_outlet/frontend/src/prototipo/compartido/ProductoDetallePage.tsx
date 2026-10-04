@@ -30,7 +30,7 @@ export default function ProductoDetallePage() {
         <div className="relative h-[280px] bg-hc-surface-2">
           <Link
             to={ruta('tienda')}
-            className="absolute left-5 top-5 flex size-9 items-center justify-center rounded-full bg-hc-surface text-lg"
+            className="absolute left-5 top-5 hidden size-9 items-center justify-center rounded-full bg-hc-surface text-lg md:flex"
             aria-label="Volver"
           >
             ←
