@@ -123,12 +123,16 @@ export default function ActivarPlanPage() {
                     {t('comun.reintentar', { defaultValue: 'Reintentar' })}
                   </button>
                 </div>
-              ) : (
+              ) : buscandoPlan ? (
                 <div key="cargando" className="flex flex-col gap-3 py-4" aria-busy="true" aria-live="polite">
                   <div className="h-4 w-2/3 animate-pulse rounded bg-hc-n-100" />
                   <div className="h-24 animate-pulse rounded-[12px] bg-hc-n-100" />
                   <p className="sr-only">Preparando tu suscripción…</p>
                 </div>
+              ) : (
+                <p key="listo" className="py-4 text-[15px] text-hc-n-900">
+                  Vas a activar {plan.nombre}. El monto se confirma antes de pagar.
+                </p>
               )}
             </AnimatePresence>
           </div>
@@ -137,7 +141,7 @@ export default function ActivarPlanPage() {
         <div className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-2 border-t border-hc-n-200 bg-hc-n-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <button
             type="button"
-            disabled={!planId || loadingPlan}
+            disabled={planId == null || Boolean(loadingPlan)}
             onClick={() => { if (planId) void seleccionarPlan(planId) }}
             className="inline-flex h-12 w-full items-center justify-center rounded-[12px] bg-hc-red-500 text-[15px] font-semibold text-white disabled:bg-hc-n-200 disabled:text-hc-n-600"
           >
