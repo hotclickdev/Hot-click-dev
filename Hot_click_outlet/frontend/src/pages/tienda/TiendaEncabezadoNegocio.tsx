@@ -94,9 +94,9 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
               Instagram
             </a>
           )}
-          <button type="button" onClick={compartir} className={CLASE_ACCION_SECUNDARIA}>
+          <button type="button" onClick={compartir} aria-label={t('tienda.compartir')} className={`${CLASE_ACCION_SECUNDARIA} max-md:size-11 max-md:flex-none max-md:px-0`}>
             <IconoFigma src={ICONOS_TIENDA.accionCompartir} size={16} className="lg:!size-[18px]" />
-            {t('tienda.compartir')}
+            <span className="max-md:sr-only">{t('tienda.compartir')}</span>
           </button>
         </div>
       </div>
