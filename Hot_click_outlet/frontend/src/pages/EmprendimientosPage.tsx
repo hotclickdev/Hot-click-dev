@@ -120,24 +120,20 @@ export default function EmprendimientosPage() {
                   </button>
                 )
               })}
+              {categorias.length > 1 && categorias.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-pressed={categoria === c}
+                  onClick={() => setCategoria(categoria === c ? '' : c)}
+                  className={`shrink-0 whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium leading-[normal] ${
+                    categoria === c ? 'border-hc-blue-600 bg-hc-blue-600 text-white' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
-            {categorias.length > 1 && (
-              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0" role="group" aria-label={t('emprendimientos.filtrar')}>
-                {['', ...categorias].map((c) => (
-                  <button
-                    key={c || 'todos'}
-                    type="button"
-                    aria-pressed={categoria === c}
-                    onClick={() => setCategoria(c)}
-                    className={`shrink-0 whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium leading-[normal] ${
-                      categoria === c ? 'border-hc-blue-600 bg-hc-blue-600 text-white' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'
-                    }`}
-                  >
-                    {c || t('emprendimientos.todos')}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
