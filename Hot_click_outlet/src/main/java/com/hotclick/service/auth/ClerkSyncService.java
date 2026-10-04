@@ -1,6 +1,7 @@
 package com.hotclick.service.auth;
 
 import com.hotclick.dto.AuthResponse;
+import com.hotclick.legal.MayoriaEdad;
 import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.RolRepository;
@@ -27,11 +28,11 @@ public class ClerkSyncService {
     @Autowired private AuthSupport authSupport;
 
     public AuthResponse sync(String clerkUserId, String email, boolean emailVinoEnJwt,
-                             String nombre, String apellido, String fotoUrl) {
+                             String nombre, String apellido, String fotoUrl, boolean declaraMayoriaEdad) {
         if (!emailVinoEnJwt) {
             log.warn("[clerk-sync] JWT sin claim 'email' — usando email del body (configura el JWT template). clerkUserId={}", clerkUserId);
         }
-        Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl);
+        Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl, declaraMayoriaEdad);
         usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now(Constants.ZONA_CR));
         usuario = usuarioRepository.findByCorreo(usuario.getCorreo())
             .orElseThrow(() -> new IllegalStateException("Error al cargar usuario tras sync"));
@@ -41,16 +42,25 @@ public class ClerkSyncService {
     }
 
     private Usuario resolveUser(String clerkUserId, String email,
-                                 String nombre, String apellido, String fotoUrl) {
+                                 String nombre, String apellido, String fotoUrl,
+                                 boolean declaraMayoriaEdad) {
         Optional<Usuario> byClerk = usuarioRepository.findByClerkUserId(clerkUserId);
         if (byClerk.isPresent()) {
-            return byClerk.get();
+            return rechazarSiCerrada(byClerk.get());
         }
         Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email);
         if (byEmail.isPresent()) {
-            return vincularCuentaExistente(byEmail.get(), clerkUserId, email, fotoUrl);
+            return vincularCuentaExistente(rechazarSiCerrada(byEmail.get()), clerkUserId, email, fotoUrl);
         }
+        MayoriaEdad.exigir(declaraMayoriaEdad);
         return createOAuthUser(clerkUserId, email, nombre, apellido, fotoUrl);
+    }
+
+    private Usuario rechazarSiCerrada(Usuario u) {
+        if (u.getEstado() != null && u.getEstado() == Constants.ESTADO_ELIMINADO) {
+            throw new SecurityException("Esta cuenta fue cerrada.");
+        }
+        return u;
     }
 
     private Usuario vincularCuentaExistente(Usuario u, String clerkUserId, String email, String fotoUrl) {

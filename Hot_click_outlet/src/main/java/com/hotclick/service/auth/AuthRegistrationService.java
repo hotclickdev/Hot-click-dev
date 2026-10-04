@@ -6,6 +6,7 @@ import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.UpgradeEmprendedorDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.legal.MayoriaEdad;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
@@ -48,6 +49,7 @@ public class AuthRegistrationService {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
         try {
+            MayoriaEdad.exigir(req.getDeclaraMayoriaEdad());
             Usuario usuario = new Usuario();
             usuario.setNombre(req.getNombre().trim());
             usuario.setCorreo(req.getCorreo().trim().toLowerCase());

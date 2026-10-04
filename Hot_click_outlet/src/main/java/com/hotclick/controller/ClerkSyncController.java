@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.legal.MayoriaEdad;
 import com.hotclick.service.ClerkTokenService;
 import com.hotclick.service.auth.ClerkSyncService;
 import org.slf4j.Logger;
@@ -65,7 +66,10 @@ public class ClerkSyncController {
                 clerkUserId, email, !emailFromJwt.isBlank(),
                 Optional.ofNullable(body.get("nombre")).orElse(""),
                 Optional.ofNullable(body.get("apellido")).orElse(""),
-                Optional.ofNullable(body.get("fotoUrl")).orElse(""))));
+                Optional.ofNullable(body.get("fotoUrl")).orElse(""),
+                MayoriaEdad.desdeTexto(body.get("declaraMayoriaEdad")))));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         }

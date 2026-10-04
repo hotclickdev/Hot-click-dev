@@ -8,6 +8,7 @@ import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { ChangeEvent, Dispatch, FormEvent, RefObject, SetStateAction } from 'react'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import type { FormEmprendimiento } from '../EmprendimientoForm'
+import { guardarDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
@@ -72,7 +73,10 @@ export default function EmprendimientoPasoCuenta({
         <input
           type="checkbox"
           checked={declaraMayoriaEdad}
-          onChange={e => setDeclaraMayoriaEdad(e.target.checked)}
+          onChange={e => {
+            setDeclaraMayoriaEdad(e.target.checked)
+            guardarDeclaraMayoriaEdad(e.target.checked)
+          }}
           style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--hc-accent)', width: 16, height: 16, cursor: 'pointer' }}
         />
         <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>

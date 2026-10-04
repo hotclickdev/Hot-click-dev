@@ -17,7 +17,7 @@ import java.util.Set;
 public class ConsentimientoController {
 
     private static final Logger log = LoggerFactory.getLogger(ConsentimientoController.class);
-    private static final Set<String> TIPOS_VALIDOS = Set.of("REGISTRO", "CHECKOUT", "VENDEDOR");
+    private static final Set<String> TIPOS_VALIDOS = Set.of("REGISTRO", "CHECKOUT", "VENDEDOR", "MAYORIA_EDAD");
 
     private final ConsentimientoLogRepository repo;
     private final JwtUtil                    jwt;

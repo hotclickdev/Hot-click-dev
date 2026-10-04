@@ -75,7 +75,12 @@ export function useRegisterFlow() {
         telefono:        form.telefono.trim(),
         identificacion:  form.identificacion.trim(),
       }
-      await authService.sendVerification(trimmed, turnstileToken)
+      authService.registrarConsentimiento('REGISTRO')
+      authService.registrarConsentimiento('MAYORIA_EDAD')
+      await authService.sendVerification({
+        ...trimmed,
+        declaraMayoriaEdad: true,
+      }, turnstileToken)
       setCorreoRegistro(form.correo)
       setStep('verify')
     } catch (err: unknown) {
@@ -110,7 +115,10 @@ export function useRegisterFlow() {
   const handleReenviar = async () => {
     setError(''); setLoading(true)
     try {
-      await authService.sendVerification(form, turnstileToken)
+      await authService.sendVerification({
+        ...form,
+        declaraMayoriaEdad: true,
+      }, turnstileToken)
       toast({ message: t('register.resentSuccess'), type: 'success' })
       setCodigo('')
     } catch (err: unknown) {

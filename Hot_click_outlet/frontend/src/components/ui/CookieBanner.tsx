@@ -208,6 +208,7 @@ function FilaCategoria({
           <button
             type="button"
             role="switch"
+            aria-label={titulo}
             aria-checked={activo}
             onClick={() => onCambio?.(!activo)}
             className="relative h-6 w-11 shrink-0 rounded-full transition-colors"

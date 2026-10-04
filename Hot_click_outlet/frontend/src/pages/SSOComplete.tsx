@@ -1,9 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth, useUser } from '@clerk/react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
+import { authService } from '@/services/authService'
+import { leoDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 import type { AuthResponse } from '@/types/auth'
+import { sincronizarClerk, type SsoClerkPayload } from './sso/ssoClerkSync'
 
 /**
  * After Clerk completes the OAuth flow, this page:
@@ -12,6 +15,7 @@ import type { AuthResponse } from '@/types/auth'
  *   3. Stores the returned app JWT in authStore (same as email/password login).
  *   4. Signs out of Clerk (our app manages its own JWT session).
  *   5. Redirects to the app.
+ * Primera cuenta social: si el API pide mayoría de edad, no cierra Clerk; muestra el checkbox.
  */
 export default function SSOComplete() {
   const { isLoaded, isSignedIn, getToken, signOut } = useAuth()
@@ -20,6 +24,24 @@ export default function SSOComplete() {
   const login       = useAuthStore((s) => s.login)
   const toast       = useToast()
   const attempted   = useRef(false)
+  const [fase, setFase] = useState<'conectando' | 'edad'>('conectando')
+  const [declara, setDeclara] = useState(false)
+  const [error, setError] = useState('')
+  const [pendiente, setPendiente] = useState<{ token: string; payload: SsoClerkPayload } | null>(null)
+
+  const terminarOk = async (data: AuthResponse, email: string) => {
+    login(data)
+    try { await signOut() } catch { /* ignore */ }
+    toast({ message: `¡Bienvenido, ${data.nombre || email}!`, type: 'success' })
+    const isNewUser = !data.empresaId && data.rol === 'USUARIO_FINAL'
+    navigate(isNewUser ? '/registrar-negocio' : '/', { replace: true })
+  }
+
+  const fallar = async (msg: string) => {
+    try { await signOut() } catch { /* ignore */ }
+    toast({ message: msg, type: 'error' })
+    navigate('/login', { replace: true })
+  }
 
   useEffect(() => {
     if (!isLoaded) return
@@ -32,59 +54,104 @@ export default function SSOComplete() {
 
     void (async () => {
       try {
-        // Intentar el template con email claim; si no existe (dev/sin configurar) usar el default.
         const clerkToken = await getToken({ template: 'hotclick-session' })
           .catch(() => null)
           ?? await getToken()
-
         if (!clerkToken) throw new Error('No se pudo obtener el token de sesión de Clerk')
 
         const email    = user.primaryEmailAddress?.emailAddress ?? ''
-        const nombre   = user.firstName ?? ''
-        const apellido = user.lastName  ?? ''
-        const fotoUrl  = user.imageUrl  ?? ''
-
-        if (!email) {
-          throw new Error('No se pudo obtener el email de tu cuenta Google')
+        const payload: SsoClerkPayload = {
+          email,
+          nombre: user.firstName ?? '',
+          apellido: user.lastName ?? '',
+          fotoUrl: user.imageUrl ?? '',
         }
+        if (!email) throw new Error('No se pudo obtener el email de tu cuenta Google')
 
-        const res = await fetch('/api/auth/clerk-sync', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${clerkToken}`,
-            'Content-Type': 'application/json',
-          },
-          // email incluido como fallback para cuando el JWT template no está configurado.
-          // El backend prefiere el email del JWT verificado si está disponible.
-          body: JSON.stringify({ email, nombre, apellido, fotoUrl }),
-        })
-
-        const json: unknown = await res.json().catch(() => ({}))
-        const body = json && typeof json === 'object' ? json as { success?: boolean; message?: string; data?: AuthResponse } : {}
-
-        if (!res.ok || !body.success) {
-          throw new Error(body.message || `Error del servidor (${res.status})`)
+        const yaDeclaro = leoDeclaraMayoriaEdad()
+        const resultado = await sincronizarClerk(clerkToken, payload, yaDeclaro)
+        if (resultado.ok) {
+          await terminarOk(resultado.data, email)
+          return
         }
-
-        if (body.success && body.data) {
-          login(body.data)
-          // Sign out of Clerk — our app manages the session via its own JWT
-          try { await signOut() } catch { /* ignore */ }
-          toast({ message: `¡Bienvenido, ${body.data.nombre || email}!`, type: 'success' })
-          // New user without empresa → offer to register their business
-          const isNewUser = !body.data.empresaId && body.data.rol === 'USUARIO_FINAL'
-          navigate(isNewUser ? '/registrar-negocio' : '/', { replace: true })
-        } else {
-          throw new Error(body.message || 'Error al sincronizar cuenta')
+        if (resultado.requiereEdad) {
+          setPendiente({ token: clerkToken, payload })
+          setFase('edad')
+          return
         }
+        await fallar(resultado.message)
       } catch (err: unknown) {
-        try { await signOut() } catch { /* ignore */ }
         const msg = err instanceof Error ? err.message : 'Error al conectar tu cuenta social. Intentá de nuevo.'
-        toast({ message: msg, type: 'error' })
-        navigate('/login', { replace: true })
+        await fallar(msg)
       }
     })()
   }, [isLoaded, isSignedIn, user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const confirmarEdad = async () => {
+    if (!pendiente || !declara) return
+    setError('')
+    authService.registrarConsentimiento('MAYORIA_EDAD')
+    const resultado = await sincronizarClerk(pendiente.token, pendiente.payload, true)
+    if (resultado.ok) {
+      await terminarOk(resultado.data, pendiente.payload.email)
+      return
+    }
+    if (resultado.requiereEdad) {
+      setError('Debe declarar que es mayor de 18 años.')
+      return
+    }
+    await fallar(resultado.message)
+  }
+
+  if (fase === 'edad') {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 16,
+          background: 'var(--hc-bg)',
+          padding: 24,
+        }}
+      >
+        <p style={{ color: 'var(--hc-text)', fontSize: 16, fontWeight: 700, textAlign: 'center', maxWidth: 360 }}>
+          HotClick solo admite personas mayores de 18 años.
+        </p>
+        <label
+          className="flex items-start gap-2.5 cursor-pointer rounded-xl p-3"
+          style={{
+            maxWidth: 360,
+            border: `1px solid ${declara ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+            background: declara ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'var(--hc-surface)',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={declara}
+            onChange={(e) => setDeclara(e.target.checked)}
+            className="mt-0.5 shrink-0"
+            style={{ accentColor: 'var(--hc-accent)', width: 15, height: 15 }}
+          />
+          <span className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+            Declaro que soy mayor de 18 años. HotClick no permite cuentas de personas menores de edad.
+          </span>
+        </label>
+        {error && <p style={{ color: 'var(--hc-danger)', fontSize: 12 }}>{error}</p>}
+        <button
+          type="button"
+          disabled={!declara}
+          onClick={() => { void confirmarEdad() }}
+          className="h-11 px-6 rounded-xl font-bold text-sm text-white disabled:opacity-60"
+          style={{ background: 'var(--hc-accent)' }}
+        >
+          Continuar
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div

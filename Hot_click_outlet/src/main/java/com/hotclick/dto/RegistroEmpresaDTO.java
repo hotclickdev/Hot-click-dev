@@ -68,6 +68,10 @@ public class RegistroEmpresaDTO {
     public String getTurnstileToken() { return turnstileToken; }
     public void setTurnstileToken(String v) { this.turnstileToken = v; }
 
+    private Boolean declaraMayoriaEdad;
+    public Boolean getDeclaraMayoriaEdad() { return declaraMayoriaEdad; }
+    public void setDeclaraMayoriaEdad(Boolean v) { this.declaraMayoriaEdad = v; }
+
     // Ubicación de despacho (opcional): si viene, se crea la primera bodega del negocio.
     // Mismos topes que la entidad Bodega; BodegaDespachoInicialService los hace cumplir.
     @Size(max = 50, message = "La provincia no puede superar 50 caracteres")

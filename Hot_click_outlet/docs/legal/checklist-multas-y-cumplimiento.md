@@ -13,8 +13,9 @@ Los montos en colones son **aproximados**, con el salario base judicial 2026 de 
 | Cookies | Aviso al entrar, sin esperar 12 segundos. Tres opciones: rechazar opcionales, configurar, aceptar todas. Análisis y publicidad van por separado. El pie tiene «Configurar cookies». |
 | Analítica y Meta | No arrancan sin el consentimiento de esa categoría. |
 | Privacidad y términos | Publicados, con identidad, ARCO, encargados, retención de 5 años por Hacienda. |
-| Menores | La cuenta pide declarar 18 años. No se pide fecha de nacimiento (eso evitaría “saber” que hay un niño de 13). Políticas: no se registran menores; si aparece uno, se cierra la cuenta. |
-| IA | El chat dice que es un asistente de inteligencia artificial, no una persona. Privacidad nombra a Anthropic. |
+| Menores | El API exige la declaración de 18 años (registro, empresa y primer login social). No se pide fecha de nacimiento. El chat corta si alguien dice ser menor. Políticas: no se registran menores; si aparece uno, se cierra la cuenta. |
+| ARCO | En /perfil: descargar datos y cerrar cuenta. El contacto se anonimiza; los pedidos se conservan 5 años por Hacienda. |
+| IA | El chat dice que es un asistente de inteligencia artificial, no una persona. No se envían a Anthropic números de tarjeta ni frases de menor de edad. Privacidad nombra a Anthropic. |
 | Consumidor | Retracto de 8 días hábiles, precios en colones, canal de reclamo. |
 | Consentimiento | Checkbox en registro y checkout; queda en `hot_click_consentimiento_log_tb`. |
 

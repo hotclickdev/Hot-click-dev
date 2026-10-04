@@ -80,6 +80,7 @@ export default function RegistroEmpresaPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [declaraMayoriaEdad, setDeclaraMayoriaEdad] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance | null>(null)
   const [form, setForm] = useState<RegistroEmpresaForm>({
@@ -118,8 +119,8 @@ export default function RegistroEmpresaPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    if (!aceptaTerminos) {
-      setError('Debés aceptar los términos para continuar')
+    if (!aceptaTerminos || !declaraMayoriaEdad) {
+      setError('Debés aceptar los términos y declarar que sos mayor de 18 años')
       return
     }
     if (!form.correoAdmin.trim()) {
@@ -132,6 +133,7 @@ export default function RegistroEmpresaPage() {
     }
     setLoading(true)
     authService.registrarConsentimiento('REGISTRO')
+    authService.registrarConsentimiento('MAYORIA_EDAD')
     try {
       const { data } = await authService.registroEmpresa({
         nombreEmpresa:        form.nombreEmpresa.trim(),
@@ -143,6 +145,7 @@ export default function RegistroEmpresaPage() {
         telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
         inscritoTributacion:  form.inscritoTributacion,
         ...payloadUbicacionRegistro(ubicacion.ubicacion),
+        declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
       })
       const authData = authDataRegistroEmpresa(data)
@@ -270,11 +273,13 @@ export default function RegistroEmpresaPage() {
                       error={error}
                       loading={loading}
                       aceptaTerminos={aceptaTerminos}
+                      declaraMayoriaEdad={declaraMayoriaEdad}
                       turnstileToken={turnstileToken}
                       turnstileRef={turnstileRef}
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoAdmin: val }))}
                       onAceptaChange={setAceptaTerminos}
+                      onDeclaraMayoriaEdad={setDeclaraMayoriaEdad}
                       onTurnstileToken={setTurnstileToken}
                       onSubmit={handleSubmit}
                       onAtras={() => { setStep(0); setError('') }}

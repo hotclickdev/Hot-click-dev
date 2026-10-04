@@ -9,28 +9,31 @@ import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { ChangeEvent, FormEvent, RefObject } from 'react'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import type { RegistroEmpresaForm } from './registroEmpresaHelpers'
+import { guardarDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined
 
 export default function StepDatosAdmin({
-  form, error, loading, aceptaTerminos, turnstileToken, turnstileRef,
-  onCampo, onTelefono, onAceptaChange, onTurnstileToken, onSubmit, onAtras,
+  form, error, loading, aceptaTerminos, declaraMayoriaEdad, turnstileToken, turnstileRef,
+  onCampo, onTelefono, onAceptaChange, onDeclaraMayoriaEdad, onTurnstileToken, onSubmit, onAtras,
 }: {
   form: RegistroEmpresaForm
   error: string
   loading: boolean
   aceptaTerminos: boolean
+  declaraMayoriaEdad: boolean
   turnstileToken: string
   turnstileRef: RefObject<TurnstileInstance | null>
   onCampo: (campo: keyof RegistroEmpresaForm) => (evento: ChangeEvent<HTMLInputElement>) => void
   onTelefono: (val: string) => void
   onAceptaChange: (acepta: boolean) => void
+  onDeclaraMayoriaEdad: (declara: boolean) => void
   onTurnstileToken: (token: string) => void
   onSubmit: (e: FormEvent) => void
   onAtras: () => void
 }) {
   const turnstileObligatorio = Boolean(TURNSTILE_SITE_KEY)
-  const submitDisabled = loading || !aceptaTerminos || (turnstileObligatorio && !turnstileToken)
+  const submitDisabled = loading || !aceptaTerminos || !declaraMayoriaEdad || (turnstileObligatorio && !turnstileToken)
 
   return (
     <motion.form key="s2" {...STEP_MOTION} onSubmit={onSubmit} className="space-y-4">
@@ -69,6 +72,27 @@ export default function StepDatosAdmin({
           y los{' '}
           <Link to="/terminos" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer">Términos y Condiciones</Link>{' '}
           de HotClick.
+        </span>
+      </label>
+
+      <label style={{
+        display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem',
+        borderRadius: 10,
+        border: `1px solid ${declaraMayoriaEdad ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+        background: declaraMayoriaEdad ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'var(--hc-surface-2)',
+        transition: 'all 0.15s',
+      }}>
+        <input
+          type="checkbox"
+          checked={declaraMayoriaEdad}
+          onChange={(e) => {
+            onDeclaraMayoriaEdad(e.target.checked)
+            guardarDeclaraMayoriaEdad(e.target.checked)
+          }}
+          style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--hc-accent)', width: 16, height: 16, cursor: 'pointer' }}
+        />
+        <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
+          Declaro que soy mayor de 18 años. HotClick no permite cuentas de personas menores de edad.
         </span>
       </label>
 

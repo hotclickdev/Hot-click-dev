@@ -1,6 +1,7 @@
 package com.hotclick.service.auth;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.legal.MayoriaEdad;
 import com.hotclick.model.Usuario;
 import com.hotclick.service.EmailVerificationService;
 import com.hotclick.service.SecurityAuditService;
@@ -31,7 +32,7 @@ public class AuthVerificationHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
         try {
-            usuario.setContrasenaHash(passwordEncoder.encode(usuario.getContrasenaHash()));
+            prepararAltaSiAplica(usuario);
             emailVerificationService.iniciarRegistro(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código de verificación enviado a tu correo", null));
         } catch (Exception e) {
@@ -42,6 +43,16 @@ public class AuthVerificationHandler {
             log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
             return ResponseEntity.badRequest().body(ResponseDTO.error(msg));
         }
+    }
+
+    /** Alta nueva (trae contraseña): exige 18 años y hashea. Reenvío solo con correo: no. */
+    private void prepararAltaSiAplica(Usuario usuario) {
+        String clave = usuario.getContrasenaHash();
+        if (clave == null || clave.isBlank()) {
+            return;
+        }
+        MayoriaEdad.exigir(usuario.getDeclaraMayoriaEdad());
+        usuario.setContrasenaHash(passwordEncoder.encode(clave));
     }
 
     public ResponseEntity<ResponseDTO> verifyRegistration(Map<String, String> body) {

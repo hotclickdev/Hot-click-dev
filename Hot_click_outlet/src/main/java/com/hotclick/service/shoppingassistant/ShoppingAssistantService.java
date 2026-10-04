@@ -1,5 +1,6 @@
 package com.hotclick.service.shoppingassistant;
 
+import com.hotclick.legal.ChatLegalGuard;
 import com.hotclick.rag.classifier.AssistantMetricsService;
 import com.hotclick.rag.classifier.QueryClassification;
 import com.hotclick.rag.classifier.QueryClassifier;
@@ -95,6 +96,12 @@ public class ShoppingAssistantService {
         if (mensaje.isBlank()) {
             return new ChatResponse(
                 "No recibí ningún mensaje. ¿En qué te puedo ayudar?",
+                sesionIdStr, List.of(), List.of(), List.of());
+        }
+        var legal = ChatLegalGuard.revisar(mensaje);
+        if (legal != ChatLegalGuard.Motivo.OK) {
+            return new ChatResponse(
+                ChatLegalGuard.respuesta(legal),
                 sesionIdStr, List.of(), List.of(), List.of());
         }
 

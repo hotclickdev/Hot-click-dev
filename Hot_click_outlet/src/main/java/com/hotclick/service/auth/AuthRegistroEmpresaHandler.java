@@ -3,6 +3,7 @@ package com.hotclick.service.auth;
 import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.legal.MayoriaEdad;
 import com.hotclick.model.Usuario;
 import com.hotclick.service.EmprendedorRegistroService;
 import com.hotclick.service.OtpService;
@@ -35,6 +36,7 @@ public class AuthRegistroEmpresaHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
         try {
+            MayoriaEdad.exigir(dto.getDeclaraMayoriaEdad());
             Usuario emprendedor = emprendedorRegistroService.registrar(dto);
             boolean otpEnviado = false;
             String otpError = null;

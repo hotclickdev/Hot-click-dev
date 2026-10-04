@@ -29,6 +29,8 @@ public class RegisterRequest {
 
     private String turnstileToken;
 
+    private Boolean declaraMayoriaEdad;
+
     public String getNombre()    { return nombre; }
     public void setNombre(String v)    { this.nombre = v; }
     public String getCorreo()    { return correo; }
@@ -39,4 +41,7 @@ public class RegisterRequest {
     public void setTelefono(String v)  { this.telefono = v; }
     public String getTurnstileToken() { return turnstileToken; }
     public void setTurnstileToken(String v) { this.turnstileToken = v; }
+
+    public Boolean getDeclaraMayoriaEdad() { return declaraMayoriaEdad; }
+    public void setDeclaraMayoriaEdad(Boolean v) { this.declaraMayoriaEdad = v; }
 }

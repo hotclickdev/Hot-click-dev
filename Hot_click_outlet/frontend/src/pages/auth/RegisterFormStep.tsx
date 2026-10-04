@@ -15,6 +15,7 @@ import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import type { RegistroCompradorForm } from './useRegisterFlow'
 import type { CarritoRecuperable } from './CartModal'
 import type { Producto } from '@/types/producto'
+import { guardarDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
@@ -198,7 +199,11 @@ export default function RegisterFormStep({
                             type="checkbox"
                             required
                             checked={declaraMayoriaEdad}
-                            onChange={(e) => setDeclaraMayoriaEdad(e.target.checked)}
+                            onChange={(e) => {
+                              const declara = e.target.checked
+                              setDeclaraMayoriaEdad(declara)
+                              guardarDeclaraMayoriaEdad(declara)
+                            }}
                             className="mt-0.5 shrink-0"
                             style={{ accentColor: 'var(--hc-accent)', width: 15, height: 15 }}
                           />

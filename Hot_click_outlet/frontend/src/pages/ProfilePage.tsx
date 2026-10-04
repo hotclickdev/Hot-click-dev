@@ -10,6 +10,7 @@ import AdminWebAuthnSetup from '@/components/admin/AdminWebAuthnSetup'
 import ProfileHeader from './perfil/ProfileHeader'
 import ProfileOrdersCard from './perfil/ProfileOrdersCard'
 import ProfileSecurityCard from './perfil/ProfileSecurityCard'
+import ProfileDatosCard from './perfil/ProfileDatosCard'
 import OpinionesSection from './perfil/OpinionesSection'
 import ChangePasswordModal from './perfil/ChangePasswordModal'
 import TwoFAModal from './perfil/TwoFAModal'
@@ -61,6 +62,14 @@ export default function ProfilePage() {
           isAdmin={isAdmin()}
           onChangePassword={() => setShowChangePassword(true)}
           onSetup2FA={() => setShow2FASetup(true)}
+        />
+        <ProfileDatosCard
+          onCerrada={() => {
+            authService.logout().catch(() => { /* ok */ })
+            logout()
+            toast({ message: t('profile.arcoCloseOk'), type: 'info' })
+            navigate('/')
+          }}
         />
         {userRole === 'ADMIN' && <AdminWebAuthnSetup />}
         <OpinionesSection orders={orders} ordersLoading={loading} />

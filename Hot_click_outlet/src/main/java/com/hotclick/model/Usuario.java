@@ -130,6 +130,10 @@ public class Usuario extends BaseEntity {
     @Column(name = "num_pedidos_hist", nullable = false)
     private Integer numPedidosHist = 0;
 
+    /** Solo llega en el JSON de registro. No se persiste ni se pide fecha de nacimiento. */
+    @Transient
+    private Boolean declaraMayoriaEdad;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "hot_click_usuario_rol_tb",
@@ -279,4 +283,7 @@ public class Usuario extends BaseEntity {
         twoFactorMethods = updated.isBlank() ? null : updated;
         if (twoFactorMethods == null) twoFactorEnabled = false;
     }
+
+    public Boolean getDeclaraMayoriaEdad() { return declaraMayoriaEdad; }
+    public void setDeclaraMayoriaEdad(Boolean declaraMayoriaEdad) { this.declaraMayoriaEdad = declaraMayoriaEdad; }
 }

@@ -73,6 +73,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     if (!aceptaTerminos || !declaraMayoriaEdad) { setError('Debe aceptar los términos y declarar que es mayor de 18 años'); return }
     setLoading(true)
     authService.registrarConsentimiento('REGISTRO')
+    authService.registrarConsentimiento('MAYORIA_EDAD')
     try {
       const { data } = await authService.registroEmpresa({
         nombreEmpresa:   form.nombreEmpresa.trim(),
@@ -83,6 +84,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
         passwordAdmin:   form.passwordAdmin,
         telefonoAdmin:   form.telefonoAdmin.trim() || undefined,
         ...payloadUbicacionRegistro(ubicacion.ubicacion),
+        declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
       })
       const authData = authDataRegistro(data)

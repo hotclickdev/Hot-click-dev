@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.PublicChatRequest;
+import com.hotclick.legal.ChatLegalGuard;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.ClientIpResolver;
 import com.hotclick.security.RateLimiter;
@@ -71,6 +72,10 @@ public class PublicChatController {
         var textMod = textModerationService.moderar(message);
         if (!textMod.safe()) {
             return errorEmitter(emitter, "Mensaje rechazado: contenido no permitido en la plataforma");
+        }
+        var legal = ChatLegalGuard.revisar(message);
+        if (legal != ChatLegalGuard.Motivo.OK) {
+            return errorEmitter(emitter, ChatLegalGuard.respuesta(legal));
         }
 
         Long empresaId = resolverEmpresa(slug);
