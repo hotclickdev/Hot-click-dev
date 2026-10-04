@@ -1,10 +1,12 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronRightIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { ChevronRightIcon, CubeIcon, ShoppingBagIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { rutaConPrefijo } from '@/utils/planPaths'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
 import { PARAM_FILTRO_PEDIDOS } from './pedidosListaHelpers'
+import { useKpisInicio } from './useKpisInicio'
 import { usePedidosPorDespachar } from './usePedidosPorDespachar'
 
 type Props = Readonly<{
@@ -94,6 +96,7 @@ export default function InicioMovil({ base, rol }: Props) {
       {/* TODO copy Producto */}
       <h1 className="font-display text-[22px] font-bold text-hc-text">Inicio</h1>
       <TarjetaPorDespachar base={base} />
+      <KpisInicio base={base} />
       <div className="mt-4">
         <OnboardingPrimeraVez rol={rol} />
       </div>
@@ -102,5 +105,53 @@ export default function InicioMovil({ base, rol }: Props) {
         <FilaAtajo to={rutaConPrefijo(base, 'recoleccion')} etiqueta="Recolección y entrega" />
       </ul>
     </div>
+  )
+}
+
+function KpisInicio({ base }: { base: string }) {
+  const { t } = useTranslation()
+  const { data, isPending, isError } = useKpisInicio()
+
+  if (isPending) {
+    return <div aria-busy="true" aria-label="Revisando el día" className="mt-3 grid grid-cols-2 gap-3">
+      <div className="h-[88px] animate-pulse rounded-[16px] bg-hc-surface-2" />
+      <div className="h-[88px] animate-pulse rounded-[16px] bg-hc-surface-2" />
+    </div>
+  }
+  if (isError || !data) return null
+
+  return (
+    <ul className="mt-3 grid grid-cols-2 gap-3">
+      <li>
+        <KpiCard
+          to={rutaConPrefijo(base, 'pedidos')}
+          icono={<ShoppingBagIcon className="size-5" aria-hidden />}
+          valor={data.pedidosHoy}
+          etiqueta={t('admin.dashboard.ordersToday')}
+        />
+      </li>
+      <li>
+        <KpiCard
+          to={rutaConPrefijo(base, 'productos')}
+          icono={<CubeIcon className="size-5" aria-hidden />}
+          valor={data.stockBajo}
+          etiqueta={t('admin.dashboard.lowStock')}
+        />
+      </li>
+    </ul>
+  )
+}
+
+function KpiCard({ to, icono, valor, etiqueta }: { to: string; icono: ReactNode; valor: number; etiqueta: string }) {
+  return (
+    <Link to={to} className="flex min-h-[88px] flex-col justify-between rounded-[16px] border border-hc-border bg-hc-surface p-3">
+      <span className="flex size-8 items-center justify-center rounded-[10px] bg-[var(--hc-info-bg)] text-[var(--hc-info)]">
+        {icono}
+      </span>
+      <span>
+        <span className="block font-display text-xl font-bold leading-none text-hc-text">{valor}</span>
+        <span className="mt-1 block text-[12px] leading-[16px] text-hc-muted">{etiqueta}</span>
+      </span>
+    </Link>
   )
 }
