@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filtrarPedidos, estiloEstadoPedido } from './pedidosListaHelpers'
+import { filtrarPedidos, filtroPedidosDesdeBusqueda, estiloEstadoPedido } from './pedidosListaHelpers'
 import type { PedidoMock } from './mock'
 
 const base: Omit<PedidoMock, 'id' | 'estado'> = {
@@ -28,6 +28,14 @@ describe('pedidosListaHelpers', () => {
     expect(filtrarPedidos(pedidos, 'Pendientes').map((p) => p.id)).toEqual(['1'])
     expect(filtrarPedidos(pedidos, 'Enviados').map((p) => p.id)).toEqual(['2'])
     expect(filtrarPedidos(pedidos, 'Entregados').map((p) => p.id)).toEqual(['3'])
+  })
+
+  it('el filtro inicial sale de ?filtro= en la URL y por defecto es Todos', () => {
+    expect(filtroPedidosDesdeBusqueda('?filtro=pendientes')).toBe('Pendientes')
+    expect(filtroPedidosDesdeBusqueda('?filtro=ENVIADOS')).toBe('Enviados')
+    expect(filtroPedidosDesdeBusqueda('?filtro=entregados&otro=1')).toBe('Entregados')
+    expect(filtroPedidosDesdeBusqueda('?filtro=inventado')).toBe('Todos')
+    expect(filtroPedidosDesdeBusqueda('')).toBe('Todos')
   })
 
   it('estiloEstadoPedido distingue tonos', () => {

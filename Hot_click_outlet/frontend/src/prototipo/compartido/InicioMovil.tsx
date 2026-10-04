@@ -4,6 +4,7 @@ import { ChevronRightIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { rutaConPrefijo } from '@/utils/planPaths'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
+import { PARAM_FILTRO_PEDIDOS } from './pedidosListaHelpers'
 import { usePedidosPorDespachar } from './usePedidosPorDespachar'
 
 type Props = Readonly<{
@@ -54,7 +55,7 @@ function TarjetaPorDespachar({ base }: { base: string }) {
         </div>
       </div>
       <Link
-        to={rutaConPrefijo(base, 'pedidos')}
+        to={`${rutaConPrefijo(base, 'pedidos')}?${PARAM_FILTRO_PEDIDOS}=pendientes`}
         className="mt-4 flex min-h-12 w-full items-center justify-center rounded-[14px] bg-hc-primary text-[15px] font-bold text-white"
       >
         {/* La clave inicio.porDespachar.boton todavía no existe en los idiomas; el texto de respaldo es provisorio. */}
