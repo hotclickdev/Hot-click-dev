@@ -32,6 +32,13 @@ public class SolicitudServicioController {
     @Autowired private TurnstileFormGuard turnstileFormGuard;
 
     /** Subir foto para una solicitud — devuelve la URL pública */
+    /*
+     * FULL-01: sin Turnstile a propósito. El formulario sube cada foto al elegirla, en paralelo
+     * y antes de que el widget emita su token; el token de Cloudflare es de un solo uso y lo
+     * consume el POST final. Con la clave configurada (prod) exigirlo acá rompería las subidas
+     * actuales. La protección de este endpoint es el rate-limit por IP y el tope de
+     * megapíxeles por header de StorageImageValidator.
+     */
     @PostMapping("/fotos")
     public ResponseEntity<ResponseDTO> subirFoto(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty())

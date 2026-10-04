@@ -86,6 +86,21 @@ public class SupabaseStorageService {
             "Servicio de almacenamiento no disponible temporalmente");
     }
 
+    /**
+     * FULL-01: un rechazo de validación (tamaño, formato, imagen no decodificable) no es una
+     * falla de S3. Resilience4j elige el fallback con el tipo de excepción más específico, así
+     * que estos dos lo devuelven tal cual y el controller responde 400 en vez de "almacenamiento
+     * no disponible". Retry y circuit breaker de s3 lo ignoran (application.properties).
+     */
+    private String subirImagenFallback(MultipartFile file, String carpeta, IllegalArgumentException e) {
+        throw e;
+    }
+
+    private String subirImagenDescargadaFallback(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta,
+                                                 IllegalArgumentException e) {
+        throw e;
+    }
+
     private String subirImagenFallback(MultipartFile file, String carpeta, Throwable t) {
         log.error("[s3-circuit] OPEN subirImagen carpeta={}: {}", carpeta, t.getMessage());
         throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,

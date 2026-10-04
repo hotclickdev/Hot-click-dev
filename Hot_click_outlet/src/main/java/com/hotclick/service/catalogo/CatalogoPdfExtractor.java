@@ -2,6 +2,7 @@ package com.hotclick.service.catalogo;
 
 import com.hotclick.dto.ProductoExtraidoDto;
 import com.hotclick.service.SupabaseStorageService;
+import com.hotclick.service.storage.StorageImageValidator;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -79,10 +80,21 @@ public class CatalogoPdfExtractor {
 
                 for (int i = inicio; i < fin; i++) {
                     byte[] jpg;
+                    // FULL-01: no rasterizar páginas gigantes (MediaBox enorme → BufferedImage de GB).
+                    var caja = pdf.getPage(i).getCropBox();
+                    double escala = DPI_RENDER_VISION / 72.0;
+                    double anchoPx = caja.getWidth() * escala;
+                    double altoPx = caja.getHeight() * escala;
+                    if (anchoPx > StorageImageValidator.MAX_LADO_PX || altoPx > StorageImageValidator.MAX_LADO_PX
+                            || anchoPx * altoPx > StorageImageValidator.MAX_PIXELES) {
+                        log.warn("[import-pdf] página {} demasiado grande para rasterizar ({}x{} px) — se omite",
+                            i + 1, (long) anchoPx, (long) altoPx);
+                        continue;
+                    }
                     try {
                         BufferedImage img = renderer.renderImageWithDPI(i, DPI_RENDER_VISION);
                         jpg = aJpegBytes(img);
-                    } catch (Exception e) {
+                    } catch (Exception | OutOfMemoryError e) {
                         log.warn("[import-pdf] no se pudo renderizar página {}: {}", i + 1, e.getMessage());
                         continue;
                     }
