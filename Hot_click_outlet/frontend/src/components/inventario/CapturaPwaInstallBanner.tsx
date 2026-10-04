@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import HojaInferior from '@/components/comprador/HojaInferior'
 import useAuthStore from '@/store/authStore'
 import { usePwaInstallPrompt } from '@/hooks/usePwaInstallPrompt'
 import {
@@ -32,6 +33,7 @@ export default function CapturaPwaInstallBanner() {
   const userRole = useAuthStore((s) => s.userRole)
   const { canInstall, instalar } = usePwaInstallPrompt()
   const [oculto, setOculto] = useState(leerDismissed)
+  const [instrucciones, setInstrucciones] = useState(false)
 
   if (esPwaStandalone() || userRole !== 'ADMIN' || oculto) return null
 
@@ -62,10 +64,11 @@ export default function CapturaPwaInstallBanner() {
           Instalá la app para captura en campo
         </p>
         <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-          {canInstall
-            ? 'Pantalla completa, acceso rápido y mejor uso offline.'
-            : accionSecundaria}
+          Pantalla completa, acceso rápido y mejor uso offline.
         </p>
+        <button type="button" className="mt-1 text-xs font-semibold text-hc-blue-600" onClick={() => setInstrucciones(true)}>
+          Cómo instalar
+        </button>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {canInstall && (
@@ -87,6 +90,9 @@ export default function CapturaPwaInstallBanner() {
           Ahora no
         </button>
       </div>
+      <HojaInferior abierta={instrucciones} onCerrar={() => setInstrucciones(false)} titulo="Cómo instalar">
+        <p className="p-4 text-sm text-hc-n-600">{accionSecundaria ?? 'Pantalla completa, acceso rápido y mejor uso offline.'}</p>
+      </HojaInferior>
     </div>
   )
 }
