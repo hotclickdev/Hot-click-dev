@@ -125,6 +125,7 @@ export default function RegistroEmpresaPage() {
       />
       <div className="min-h-screen bg-hc-n-50 font-[family-name:var(--hc-font-text)] text-hc-n-900">
         <AltaHeader
+          atras={fase === 'listo' ? undefined : { to: '/registro', label: 'Volver a crear cuenta de comprador' }}
           derecha={fase === 'listo' ? null : (
             <>¿Ya tenés cuenta?{' '}
               <Link to={rutaLoginConRetorno(RUTA_REGISTRAR_NEGOCIO)} className="font-semibold text-hc-blue-600">Ingresar</Link>

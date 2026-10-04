@@ -76,6 +76,9 @@ export default function PasoPlan({ plan, onPlan, onElegir }: {
         Es el porcentaje que HotClick retiene de cada venta que hacés en la plataforma. Si no vendés, no pagás comisión. Monto por plan: <PillPendiente />
       </Nota>
 
+      <p className="text-center text-[13px] text-hc-n-600">
+        <Link to="/registro" className="font-semibold text-hc-blue-600">¿Solo querés comprar? Creá una cuenta de comprador</Link>
+      </p>
       <p className="text-center text-[12px] text-hc-n-600">
         ¿Ya comprás en HotClick?{' '}
         <Link to={rutaLoginConRetorno(RUTA_REGISTRAR_NEGOCIO)} className="font-semibold text-hc-blue-600">Ingresá</Link>{' '}

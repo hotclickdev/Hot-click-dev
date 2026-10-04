@@ -47,7 +47,7 @@ export default function RegisterPage() {
   return (
     <RegisterFormStep
       t={t} modo={modo} form={form} setForm={setForm}
-      error={error} loading={loading} actualizarCampo={actualizarCampo}
+      error={error} setError={setError} loading={loading} actualizarCampo={actualizarCampo}
       turnstileToken={turnstileToken} setTurnstileToken={setTurnstileToken} turnstileRef={turnstileRef}
       onSubmit={handleSubmit}
       onVolver={() => { setModo('comprador'); setError('') }}

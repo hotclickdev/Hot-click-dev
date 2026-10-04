@@ -9,15 +9,26 @@ import { MONTO_PENDIENTE, PASOS_ALTA, type BeneficioPlan } from './altaVendedorP
  * campos 28:1083 y nota 44:1580. Solo tokens del manual: n50/n200/n600/n900, b50/b100/b600, rojo #E73B33.
  */
 
-export function AltaHeader({ derecha }: { derecha: ReactNode }) {
+export function AltaHeader({ derecha, atras }: { derecha: ReactNode; atras?: { to: string; label: string } }) {
   return (
     <header className="sticky top-0 z-10 border-b border-hc-n-200 bg-hc-n-0">
-      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-4 lg:h-16 lg:px-6">
-        <Link to="/" className="flex items-center gap-2 no-underline" aria-label="HotClick, ir al inicio">
-          <HotClickMark size={28} className="shrink-0" />
-          <span className="hc-wordmark text-[17px]"><span className="hot">Hot</span><span className="click">Click</span></span>
-        </Link>
-        <div className="text-[13px] text-hc-n-600">{derecha}</div>
+      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between gap-3 px-4 lg:h-16 lg:px-6">
+        <div className="flex min-w-0 items-center gap-1">
+          {atras && (
+            <Link
+              to={atras.to}
+              aria-label={atras.label}
+              className="flex size-11 shrink-0 items-center justify-center text-hc-n-900"
+            >
+              <IconoAtras />
+            </Link>
+          )}
+          <Link to="/" className="flex items-center gap-2 no-underline" aria-label="HotClick, ir al inicio">
+            <HotClickMark size={28} className="shrink-0" />
+            <span className="hc-wordmark text-[17px]"><span className="hot">Hot</span><span className="click">Click</span></span>
+          </Link>
+        </div>
+        <div className="shrink-0 text-[13px] text-hc-n-600">{derecha}</div>
       </div>
     </header>
   )
@@ -133,6 +144,14 @@ export function Spinner() {
 }
 
 const SVG = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
+
+function IconoAtras() {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 18 9 12l6-6" />
+    </svg>
+  )
+}
 
 export function IconoInfo() {
   return <svg {...SVG} className="mt-px shrink-0 text-hc-blue-600"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>

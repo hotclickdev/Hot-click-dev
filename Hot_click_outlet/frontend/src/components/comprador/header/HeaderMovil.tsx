@@ -5,7 +5,7 @@ import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
 import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '../negocios/negociosPublicos'
-import { rutaCategoria, useHeaderComprador } from './useHeaderComprador'
+import { RUTA_SERVICIOS_HOT, rutaCategoria, useHeaderComprador } from './useHeaderComprador'
 
 type HeaderMovilProps = {
   onBuscarConFoto: () => void
@@ -61,6 +61,8 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
       </div>
 
       <nav aria-label={t('comprador.header.categoriasAria')} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+        <Chip texto={t('comprador.header.servicios')} to={RUTA_SERVICIOS_HOT} />
+        <span aria-hidden="true" className="h-5 w-px shrink-0 bg-hc-n-200" />
         {PLANES_DIRECTORIO.map((p) => (
           <Chip key={p.alias} texto={t(p.nav)} to={rutaDirectorioPlan(p.alias)} />
         ))}

@@ -13,12 +13,12 @@ type CategoryTileProps = {
 export default function CategoryTile({ nombre, cantidad, fotoUrl, to, className = '' }: CategoryTileProps) {
   const { t } = useTranslation()
   return (
-    <Link to={to} className={`flex flex-col items-start gap-2 ${className}`}>
+    <Link to={to} className={`flex min-w-0 flex-col items-start gap-2.5 ${className}`}>
       <span className="block h-[112px] w-full overflow-hidden rounded-[14px] bg-hc-n-100">
         {fotoUrl && <img src={fotoUrl} alt="" className="size-full object-cover" loading="lazy" decoding="async" />}
       </span>
-      <span className="flex flex-col items-start">
-        <span className="font-display text-[14px] font-semibold leading-[normal] text-hc-n-900">{nombre}</span>
+      <span className="flex min-w-0 flex-col items-start">
+        <span className="font-display text-[14px] font-semibold leading-[normal] break-words text-hc-n-900">{nombre}</span>
         <span className="text-[12px] leading-[normal] text-hc-n-600">{t('comprador.categoria.productos', { count: cantidad })}</span>
       </span>
     </Link>
