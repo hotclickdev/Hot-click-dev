@@ -17,8 +17,6 @@ const ConfirmarEliminacionPage = lazy(() => import('./pages/ConfirmarEliminacion
 const ReportesPage = lazy(() => import('./pages/ReportesPage'))
 const TiendaPublicaPage = lazy(() => import('./pages/TiendaPublicaPage'))
 const DetalleProductoPage = lazy(() => import('./pages/DetalleProductoPage'))
-const CarritoPage = lazy(() => import('./pages/CarritoPage'))
-const CompraConfirmadaPage = lazy(() => import('./pages/CompraConfirmadaPage'))
 const OpcionesPage = lazy(() => import('./pages/OpcionesPage'))
 const PerfilPage = lazy(() => import('./pages/PerfilPage'))
 const NotificacionesPage = lazy(() => import('./pages/NotificacionesPage'))
@@ -101,8 +99,8 @@ export default function EmprendedorRoutes() {
       </Route>
       <Route element={<EmprendedorShell />}>
         <Route path="productos/:id/eliminar" element={page(ConfirmarEliminacionPage)} />
-        <Route path="tienda/carrito" element={page(CarritoPage)} />
-        <Route path="tienda/compra-confirmada" element={page(CompraConfirmadaPage)} />
+        <Route path="tienda/carrito" element={<Navigate to={`${RUTA_EMPRENDEDOR}/tienda`} replace />} />
+        <Route path="tienda/compra-confirmada" element={<Navigate to={`${RUTA_EMPRENDEDOR}/tienda`} replace />} />
         <Route path="tienda/:id" element={page(DetalleProductoPage)} />
         <Route path="opciones/perfil" element={page(PerfilPage)} />
         <Route path="opciones/notificaciones" element={page(NotificacionesPage)} />

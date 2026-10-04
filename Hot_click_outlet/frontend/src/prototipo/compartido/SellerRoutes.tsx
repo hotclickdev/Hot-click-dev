@@ -1,6 +1,8 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import EstadoError from '@/components/comprador/estados/EstadoError'
 import SellerShell from './SellerShell'
+import { useSellerRuta } from './SellerPlanContext'
 
 const MenuPage = lazy(() => import('./MenuPage'))
 const ProductosPage = lazy(() => import('./ProductosPage'))
@@ -20,7 +22,6 @@ const AyudaPage = lazy(() => import('./AyudaPage'))
 const ConsultasPage = lazy(() => import('./ConsultasPage'))
 const ProximamentePage = lazy(() => import('./ProximamentePage'))
 const CarritoPage = lazy(() => import('./CarritoPage'))
-const CompraOkPage = lazy(() => import('./CompraOkPage'))
 const BodegasPage = lazy(() => import('./BodegasPage'))
 const NuevaBodegaPage = lazy(() => import('./NuevaBodegaPage'))
 const DatosNegocioPage = lazy(() => import('./DatosNegocioPage'))
@@ -44,6 +45,23 @@ function SpinnerRuta() {
 
 function LazyPage({ children }: { children: ReactNode }) {
   return <Suspense fallback={<SpinnerRuta />}>{children}</Suspense>
+}
+
+function IrATienda() {
+  const ruta = useSellerRuta()
+  return <Navigate to={ruta('tienda')} replace />
+}
+
+function RutaPanelDesconocida() {
+  const ruta = useSellerRuta()
+  return (
+    <EstadoError
+      titulo="No encontramos esa pantalla"
+      texto="El enlace no existe en este panel."
+      accion={{ texto: 'Volver al inicio', to: ruta() }}
+      enlace={{ texto: 'Ayuda', to: ruta('ayuda') }}
+    />
+  )
 }
 
 function page(Comp: ComponentType) {
@@ -84,7 +102,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="productos/:id" element={page(ProductoDetallePage)} />
         <Route path="productos/:id/eliminar" element={page(EliminarProductoPage)} />
         <Route path="carrito" element={page(CarritoPage)} />
-        <Route path="compra-ok" element={page(CompraOkPage)} />
+        <Route path="compra-ok" element={<IrATienda />} />
         <Route path="perfil" element={page(PerfilPage)} />
         <Route path="notificaciones" element={page(NotificacionesPage)} />
         <Route path="telegram" element={page(TelegramVincularPage)} />
@@ -100,6 +118,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="plan/actualizado" element={page(PlanActualizadoPage)} />
         <Route path="pedidos/:id" element={page(PedidoDetallePage)} />
         {extra}
+        <Route path="*" element={page(RutaPanelDesconocida)} />
       </Route>
     </Routes>
   )
