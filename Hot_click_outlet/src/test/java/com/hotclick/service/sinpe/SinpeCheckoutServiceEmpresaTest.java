@@ -49,6 +49,7 @@ class SinpeCheckoutServiceEmpresaTest {
     @Mock private AtribucionPedidoService atribucionPedidoService;
     @Mock private EncargoService encargoService;
 
+    @Mock private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @InjectMocks private CheckoutValidator checkoutValidator;
     @InjectMocks private GuestUserResolver guestUserResolver;
     @InjectMocks private StockReservationService stockReservationService;
@@ -95,6 +96,7 @@ class SinpeCheckoutServiceEmpresaTest {
             checkoutValidator, planner, orderPricingService, checkoutOrderFactory, giftCardService);
 
         service = new SinpeCheckoutService();
+        ReflectionTestUtils.setField(service, "reservaAntiBot", reservaAntiBot);
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);

@@ -37,6 +37,9 @@ class PaymentExpirationCleanupTilopayTest {
     @Mock private StockReservationService stockReservationService;
     @Mock private TilopayConfirmacionService tilopayConfirmacionService;
 
+    @Mock private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
+    @Mock private com.hotclick.service.payment.ReservaSospechosaLiberador reservaSospechosaLiberador;
+
     @InjectMocks private PaymentExpirationCleanupService service;
 
     private Empresa empresa;
@@ -45,6 +48,8 @@ class PaymentExpirationCleanupTilopayTest {
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(reservaAntiBot.ahora())
+            .thenAnswer(i -> java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
         empresa = new Empresa();
         empresa.setId(1L);
         empresa.setEstadoEmpresa("ACTIVO");

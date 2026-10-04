@@ -30,15 +30,26 @@ public class PaymentExpirationCleanupService {
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
     @Autowired private PedidoGrupoService         pedidoGrupoService;
+    @Autowired private ReservaAntiBotService      reservaAntiBot;
+    @Autowired private ReservaSospechosaLiberador reservaSospechosaLiberador;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
     @Transactional
     public void cancelarExpirados() {
-        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(30);
+        ejecutar();
+    }
+
+    /** Cuerpo del scheduler, sin ShedLock (lo usan los tests con reloj controlado). */
+    @Transactional
+    public void ejecutar() {
+        LocalDateTime ahora = reservaAntiBot.ahora();
+        LocalDateTime corte = ahora.minusMinutes(30);
         for (Empresa empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
             try {
                 cancelarExpiradosDeEmpresa(empresa.getId(), corte);
+                // Regla anti-bot (QA-CONC-4): reservas marcadas cuya liberación ya venció.
+                reservaSospechosaLiberador.liberarVencidas(empresa.getId(), ahora);
             } catch (Exception e) {
                 log.error("[payment-cleanup] Error empresa={}: {}", empresa.getId(), e.getMessage());
             }

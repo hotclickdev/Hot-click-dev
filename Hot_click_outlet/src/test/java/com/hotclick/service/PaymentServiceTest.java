@@ -70,6 +70,8 @@ class PaymentServiceTest {
     @InjectMocks private PaymentRecordFactory           paymentRecordFactory;
     @InjectMocks private PaymentStatusAssembler         paymentStatusAssembler;
     @InjectMocks private PaymentNotificationsFacade     paymentNotificationsFacade;
+    @Mock private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
+    @Mock private com.hotclick.service.payment.ReservaSospechosaLiberador reservaSospechosaLiberador;
     @InjectMocks private PaymentExpirationCleanupService paymentExpirationCleanupService;
     @InjectMocks private PaymentOrderConfirmationService orderConfirmationService;
     @InjectMocks private PaymentFailureHandler            paymentFailureHandler;
@@ -119,6 +121,9 @@ class PaymentServiceTest {
         PedidoGrupoService pedidoGrupoService = new PedidoGrupoService(pedidoRepository, pagoRepository);
 
         service = new PaymentService();
+        ReflectionTestUtils.setField(service, "reservaAntiBot", reservaAntiBot);
+        org.mockito.Mockito.lenient().when(reservaAntiBot.ahora())
+            .thenAnswer(i -> java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);

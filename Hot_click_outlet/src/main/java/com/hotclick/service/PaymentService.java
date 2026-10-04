@@ -52,6 +52,7 @@ public class PaymentService {
     @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
     @Autowired private PosQrVentaService                posQrVentaService;
     @Autowired private GuestCancelTokenService          guestCancelTokenService;
+    @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Transactional
@@ -102,7 +103,8 @@ public class PaymentService {
                 "Error iniciando sesión de pago: " + e.getMessage(), e);
         }
 
-        paymentRecordFactory.createAndPersist(session, principal, usuario, provider, grupo.totalCobro());
+        Pago pago = paymentRecordFactory.createAndPersist(session, principal, usuario, provider, grupo.totalCobro());
+        reservaAntiBot.registrar(usuario, esInvitado(correoUsuario), req, grupo.pedidos(), pago);
 
         log.info("Checkout iniciado: provider={} pedido={} paquetes={} total={}",
             provider, principal.getNumeroPedido(), grupo.subpedidos().size(), grupo.totalCobro());
@@ -118,6 +120,10 @@ public class PaymentService {
         return conCancelToken(new PaymentCheckoutResponse(
             principal.getId(), principal.getNumeroPedido(),
             session.redirectUrl(), Constants.PAGO_PENDIENTE, grupo.totalCobro(), provider), grupo);
+    }
+
+    private static boolean esInvitado(String correoUsuario) {
+        return correoUsuario == null || "anonymousUser".equals(correoUsuario);
     }
 
     private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response, CheckoutGrupoFactory.Grupo grupo) {
