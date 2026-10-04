@@ -72,7 +72,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         empresa.setSlug("antibot-" + System.nanoTime());
         empresa.setCorreoEmpresa("antibot" + System.nanoTime() + "@test.cr");
         empresa.setEstadoEmpresa("ACTIVO");
-        empresa.setFechaRegistro(LocalDateTime.now());
+        empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa = empresaRepository.saveAndFlush(empresa);
 
         categoria = new Categoria();
@@ -107,7 +107,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         producto.setEmpresa(empresa);
         producto.setBodega(bodega);
         producto.setAdminCliente(adminUser);
-        producto.setFechaCreacion(LocalDateTime.now());
+        producto.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
         producto = productoRepository.saveAndFlush(producto);
     }
 
@@ -134,7 +134,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         reservar("203.0.113.10", 5);
         assertThat(reservado()).isEqualTo(10);
         assertThat(pagosPendientes()).allSatisfy(p ->
-            assertThat(p.getFechaExpiracion()).isAfter(LocalDateTime.now().plusHours(23)));
+            assertThat(p.getFechaExpiracion()).isAfter(LocalDateTime.now(Constants.ZONA_CR).plusHours(23)));
 
         avanzar(20);
         cleanup.ejecutar();
@@ -152,7 +152,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         reservar("203.0.113.20", 4);
         assertThat(reservado()).isEqualTo(15);
 
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         assertThat(pagosPendientes().stream().filter(p -> p.getFechaExpiracion().isBefore(ahora.plusMinutes(16))))
             .hasSize(3);
 

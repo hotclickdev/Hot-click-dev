@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,39 +42,49 @@ public class ReservaSospechosaLiberador {
             .minusMinutes((long) reservaAntiBot.getVentanaMinutos() + reservaAntiBot.getLiberarEnMinutos())
             .minusHours(MARGEN_HORAS);
         List<Long> ids = pagoRepository.findIdsReservaMarcadaVencidaByEmpresa(ahora, desde, empresaId);
-        List<Pago> pagosCancelados = new ArrayList<>();
+        int liberados = 0;
         for (Long id : ids) {
-            Pago pago = pagoRepository.findByIdForUpdate(id).orElse(null);
-            if (pago == null || !Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())
-                    || pago.getFechaExpiracion() == null || !pago.getFechaExpiracion().isBefore(ahora)) {
-                continue;
-            }
-            List<Pedido> grupo = pedidoGrupoService.delGrupo(pago.getPedido());
-            if (grupo.stream().anyMatch(p -> !esPendiente(p.getEstadoPedido()))) {
-                continue; // algún pedido ya avanzó (comprobante subido, pagado, etc.): no se toca
-            }
-            if (Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
-                try {
-                    if (tilopayConfirmacionService.intentarConfirmarSiAprobado(pago)) continue;
-                } catch (Exception e) {
-                    log.warn("[reserva-antibot] reconsulta Tilopay falló pago={}: {}", id, e.getClass().getSimpleName());
-                }
-            }
-            pago.setEstadoPago(Constants.PAGO_CANCELADO);
-            pago.setFechaActualizacion(ahora);
-            pagosCancelados.add(pago);
-            for (Pedido pedido : grupo) {
-                pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                stockReservationService.liberarReservas(pedido);
-            }
+            if (liberarSiCorresponde(id, ahora)) liberados++;
         }
         // Pagos y pedidos son entidades gestionadas (cargadas en esta transacción): el cambio de
         // estado se escribe en el commit por dirty checking, sin un save por fila.
-        int liberados = pagosCancelados.size();
         if (liberados > 0) {
             log.warn("[reserva-antibot] empresa={}: {} reservas sospechosas liberadas", empresaId, liberados);
         }
         return liberados;
+    }
+
+    /** Toma el pago con lock, re-chequea y, si sigue marcado y vencido, cancela y devuelve el stock. */
+    private boolean liberarSiCorresponde(Long id, LocalDateTime ahora) {
+        Pago pago = pagoRepository.findByIdForUpdate(id).orElse(null);
+        if (pago == null || !sigueVencido(pago, ahora)) return false;
+        List<Pedido> grupo = pedidoGrupoService.delGrupo(pago.getPedido());
+        // Algún pedido ya avanzó (comprobante subido, pagado, etc.) o Tilopay ya aprobó: no se toca.
+        if (grupo.stream().anyMatch(p -> !esPendiente(p.getEstadoPedido())) || tilopayYaAprobado(pago)) {
+            return false;
+        }
+        pago.setEstadoPago(Constants.PAGO_CANCELADO);
+        pago.setFechaActualizacion(ahora);
+        for (Pedido pedido : grupo) {
+            pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+            stockReservationService.liberarReservas(pedido);
+        }
+        return true;
+    }
+
+    private static boolean sigueVencido(Pago pago, LocalDateTime ahora) {
+        return Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())
+            && pago.getFechaExpiracion() != null && pago.getFechaExpiracion().isBefore(ahora);
+    }
+
+    private boolean tilopayYaAprobado(Pago pago) {
+        if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) return false;
+        try {
+            return tilopayConfirmacionService.intentarConfirmarSiAprobado(pago);
+        } catch (Exception e) {
+            log.warn("[reserva-antibot] reconsulta Tilopay falló pago={}: {}", pago.getId(), e.getClass().getSimpleName());
+            return false;
+        }
     }
 
     private static boolean esPendiente(String estado) {
