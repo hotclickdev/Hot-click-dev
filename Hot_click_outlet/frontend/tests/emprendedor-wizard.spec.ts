@@ -124,25 +124,26 @@ test.describe('Wizard conversacional Emprendedor', () => {
   test('agregar producto: tipo → foto → identidad con validación', async ({ page }) => {
     await entrarEmprendedor(page)
     await page.goto('/emprendedor/productos/nuevo', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 5')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Tipo de producto' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '¿Qué vas a vender?' })).toBeVisible()
 
     await page.getByRole('link', { name: /Producto de catálogo/i }).click()
     await expect(page).toHaveURL(/productos\/nuevo\/catalogo/)
-    await expect(page.getByText('Paso 2 de 5')).toBeVisible()
+    await expect(page.getByTestId('cabecera-wizard-producto')).toContainText('1 de 4')
     await expect(page.getByRole('heading', { name: 'Foto del producto' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tomar foto' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Continuar' }).click()
-    await expect(page.getByText('Paso 3 de 5')).toBeVisible()
+    await expect(page.getByTestId('cabecera-wizard-producto')).toContainText('2 de 4')
     await expect(page.getByRole('heading', { name: 'Nombre y categoría' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByText('Escribí el nombre del producto.')).toBeVisible()
 
     await page.getByLabel('Nombre del producto').fill('Camiseta test')
+    await page.getByRole('button', { name: 'Elegí categoría' }).click()
     await page.getByRole('button', { name: /Ropa/i }).click()
     await page.getByRole('button', { name: 'Continuar' }).click()
-    await expect(page.getByText('Paso 4 de 5')).toBeVisible()
+    await expect(page.getByTestId('cabecera-wizard-producto')).toContainText('3 de 4')
     await expect(page.getByRole('heading', { name: 'Precios' })).toBeVisible()
   })
 
@@ -237,7 +238,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
     }, payloadAuth())
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/emprendedor/productos/42/editar', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Paso 1 de 5')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByTestId('cabecera-wizard-producto')).toContainText('1 de 5', { timeout: 20_000 })
     await expect(page.getByRole('heading', { name: 'Foto del producto' })).toBeVisible()
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByRole('heading', { name: 'Nombre y categoría' })).toBeVisible()

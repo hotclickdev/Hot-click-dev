@@ -10,13 +10,15 @@ import SellerSidebar from './SellerSidebar'
 
 type Props = {
   sinNav?: boolean
+  /** Wizard a pantalla completa: sin cabecera de tienda (la pone la pantalla). */
+  sinCabecera?: boolean
 }
 
 /**
  * Shell PYME / Negocio Plus: móvil cabecera + barra inferior; desktop sidebar.
  * `.hc-seller-theme` sigue html.dark (tokens semánticos).
  */
-export default function SellerShell({ sinNav = false }: Props) {
+export default function SellerShell({ sinNav = false, sinCabecera = false }: Props) {
   const plan = useSellerPlan()
   const planApi = mapSellerPlanIdToApi(plan.id)
   return (
@@ -29,7 +31,9 @@ export default function SellerShell({ sinNav = false }: Props) {
         <SellerSidebar />
         <div className={`min-w-0 flex-1 ${sinNav ? '' : 'pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0'}`}>
           <div className="mx-auto max-w-md md:mx-0 md:max-w-none">
-            <PanelCabeceraMovil base={plan.basePath} planApi={planApi} interna={sinNav} />
+            {sinCabecera ? null : (
+              <PanelCabeceraMovil base={plan.basePath} planApi={planApi} interna={sinNav} />
+            )}
             <VendedorAvisos />
             <Outlet />
           </div>

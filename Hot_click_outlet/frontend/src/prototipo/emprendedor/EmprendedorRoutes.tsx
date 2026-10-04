@@ -88,16 +88,18 @@ export default function EmprendedorRoutes() {
         <Route path="encargos" element={page(EncargosPage)} />
         <Route path="recoleccion" element={page(RecoleccionPage)} />
         <Route path="productos/vacio" element={page(ProductosVacioPage)} />
-        <Route path="productos/nuevo" element={page(ElegirTipoProductoPage)} />
-        <Route path="productos/nuevo/catalogo" element={page(AgregarProductoPage)} />
-        <Route path="productos/nuevo/personalizado" element={<LazyPage><AgregarProductoPage personalizado /></LazyPage>} />
         <Route path="tienda" element={page(TiendaPublicaPage)} />
         <Route path="reportes" element={page(ReportesPage)} />
         <Route path="opciones" element={page(OpcionesPage)} />
         <Route path="pedidos" element={page(PedidosPage)} />
       </Route>
-      <Route element={<EmprendedorShell />}>
+      <Route element={<EmprendedorShell sinCabecera />}>
+        <Route path="productos/nuevo" element={page(ElegirTipoProductoPage)} />
+        <Route path="productos/nuevo/catalogo" element={page(AgregarProductoPage)} />
+        <Route path="productos/nuevo/personalizado" element={<LazyPage><AgregarProductoPage personalizado /></LazyPage>} />
         <Route path="productos/:id/editar" element={page(EditarProductoPage)} />
+      </Route>
+      <Route element={<EmprendedorShell />}>
         <Route path="productos/:id/eliminar" element={page(ConfirmarEliminacionPage)} />
         <Route path="tienda/carrito" element={page(CarritoPage)} />
         <Route path="tienda/compra-confirmada" element={page(CompraConfirmadaPage)} />

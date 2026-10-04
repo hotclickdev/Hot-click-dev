@@ -38,6 +38,8 @@ type Props = Readonly<{
   motivoDeshabilitado?: string
   /** Color del botón del último paso. El verde es de éxito, no de acción: `rojo` es el color de la CTA de marca. */
   colorCtaFinal?: 'exito' | 'rojo'
+  /** En celular el wizard de producto lleva la barra en la cabecera. */
+  ocultarProgresoEnMovil?: boolean
 }>
 
 /**
@@ -59,6 +61,7 @@ export default function FormularioPorPasos({
   deshabilitado = false,
   motivoDeshabilitado,
   colorCtaFinal = 'exito',
+  ocultarProgresoEnMovil = false,
 }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [shakeKey, setShakeKey] = useState(0)
@@ -110,6 +113,12 @@ export default function FormularioPorPasos({
     onPasoChange(pasoAnterior(indice))
   }
 
+  function omitir() {
+    if (bloqueado || ultimo) return
+    setError(null)
+    onPasoChange(siguientePasoSiValido(indice, total, null))
+  }
+
   return (
     <motion.div
       className="flex flex-col gap-5"
@@ -125,6 +134,7 @@ export default function FormularioPorPasos({
         enviando={enviando}
         successFlash={successFlash}
         subprogreso={subprogreso}
+        ocultarStepperEnMovil={ocultarProgresoEnMovil}
       />
 
       <PasoAnimado
@@ -176,7 +186,16 @@ export default function FormularioPorPasos({
           rojo={colorCtaFinal === 'rojo'}
           onClick={() => void continuar()}
         />
-        {!primero || !ocultarAtrasEnPrimero ? (
+        {paso?.opcional ? (
+          <button
+            type="button"
+            disabled={bloqueado}
+            onClick={omitir}
+            className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface py-3.5 text-[13px] font-medium text-hc-text md:w-auto md:min-w-[7.5rem] md:px-5"
+          >
+            Omitir
+          </button>
+        ) : !primero || !ocultarAtrasEnPrimero ? (
           <button
             type="button"
             disabled={bloqueado || primero}
@@ -264,6 +283,7 @@ type ProgresoProps = Readonly<{
   enviando?: boolean
   successFlash?: boolean
   subprogreso?: number
+  ocultarStepperEnMovil?: boolean
 }>
 
 /** Stepper reutilizable (también fuera del shell, p. ej. elegir tipo). */
@@ -276,13 +296,14 @@ export function ProgresoPasos({
   enviando = false,
   successFlash = false,
   subprogreso,
+  ocultarStepperEnMovil = false,
 }: ProgresoProps) {
   const seguro = Math.max(total, 1)
   const actual = indicePasoValido(indice, seguro)
   const reduced = useReducedMotion() ?? false
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className={`flex items-center justify-between gap-2 ${ocultarStepperEnMovil ? 'max-md:hidden' : ''}`}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
             key={etiquetaProgreso(actual, seguro)}
@@ -301,14 +322,16 @@ export function ProgresoPasos({
           </span>
         ) : null}
       </div>
-      <StepperDotLine
-        indice={actual}
-        total={seguro}
-        direccion={direccion}
-        enviando={enviando}
-        successFlash={successFlash}
-        subprogreso={subprogreso}
-      />
+      <div className={ocultarStepperEnMovil ? 'max-md:hidden' : undefined}>
+        <StepperDotLine
+          indice={actual}
+          total={seguro}
+          direccion={direccion}
+          enviando={enviando}
+          successFlash={successFlash}
+          subprogreso={subprogreso}
+        />
+      </div>
       {titulo ? (
         <AnimatePresence mode="wait" initial={false}>
           <motion.h2

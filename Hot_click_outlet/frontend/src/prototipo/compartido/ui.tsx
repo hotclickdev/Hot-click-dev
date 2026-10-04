@@ -112,6 +112,12 @@ type CampoProps = {
   maxLength?: number
   clearable?: boolean
   loading?: boolean
+  inputMode?: 'none' | 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url'
+  autoComplete?: string
+  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'
+  autoCapitalize?: string
+  pattern?: string
+  prefijo?: string
 }
 
 export function Campo(props: CampoProps) {

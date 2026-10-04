@@ -9,7 +9,9 @@ import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
 import PasosProductoVendedor from '@/prototipo/compartido/PasosProductoVendedor'
 import useFormProductoVendedor from '@/prototipo/compartido/useFormProductoVendedor'
 import type { ModoPrecioPersonalizado } from '@/prototipo/compartido/personalizadoProductoHelpers'
+import { formularioProductoSucio } from '@/prototipo/compartido/formularioProductoSucio'
 import { pasosProducto, validarPasoProducto } from '@/prototipo/compartido/productoVendedorPasos'
+import WizardProductoMarco from '@/prototipo/compartido/WizardProductoMarco'
 import PantallaExitoWizard, {
   navegarConTransicion,
 } from '@/prototipo/compartido/motion/PantallaExitoWizard'
@@ -106,11 +108,19 @@ export default function EditarProductoPage() {
   }
 
   return (
-    <main className="flex flex-col gap-[22px] px-5 py-8">
-      <CabeceraAtras
-        titulo={esPersonalizado ? 'Editar personalizado' : 'Editar Producto'}
-        to={`${RUTA_EMPRENDEDOR}/productos`}
-      />
+    <WizardProductoMarco
+      titulo="Editar producto"
+      paso={form.paso}
+      total={pasos.length}
+      sucio={formularioProductoSucio(form)}
+      onSalir={irAProductos}
+      desktop={(
+        <CabeceraAtras
+          titulo={esPersonalizado ? 'Editar personalizado' : 'Editar Producto'}
+          to={`${RUTA_EMPRENDEDOR}/productos`}
+        />
+      )}
+    >
       <FormularioPorPasos
         pasos={pasos}
         pasoActual={form.paso}
@@ -119,6 +129,8 @@ export default function EditarProductoPage() {
         onFinalizar={guardar}
         etiquetaFinal="Guardar cambios"
         enviando={form.guardando}
+        colorCtaFinal="rojo"
+        ocultarProgresoEnMovil
       >
         <PasosProductoVendedor
           idPaso={idPaso}
@@ -155,6 +167,6 @@ export default function EditarProductoPage() {
       <Boton variante="suave" to={`${RUTA_EMPRENDEDOR}/productos/${id}/eliminar`}>
         Eliminar producto
       </Boton>
-    </main>
+    </WizardProductoMarco>
   )
 }

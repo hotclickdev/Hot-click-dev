@@ -8,14 +8,15 @@ import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
 import PasosProductoVendedor from '@/prototipo/compartido/PasosProductoVendedor'
 import useFormProductoVendedor from '@/prototipo/compartido/useFormProductoVendedor'
 import { tituloFormProducto } from '@/prototipo/compartido/personalizadoProductoHelpers'
+import { formularioProductoSucio } from '@/prototipo/compartido/formularioProductoSucio'
 import { pasosProducto, validarPasoProducto } from '@/prototipo/compartido/productoVendedorPasos'
+import WizardProductoMarco from '@/prototipo/compartido/WizardProductoMarco'
 import PantallaExitoWizard, {
   navegarConTransicion,
 } from '@/prototipo/compartido/motion/PantallaExitoWizard'
 
 type Props = Readonly<{ personalizado?: boolean }>
 
-const TOTAL_FLUJO_NUEVO = 5
 const AUTO_CIERRE_EXITO_MS = 2200
 
 /**
@@ -64,11 +65,19 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
   }
 
   return (
-    <main className="flex flex-col gap-[22px] px-5 py-8">
-      <CabeceraAtras
-        titulo={tituloFormProducto(false, personalizado)}
-        to={`${RUTA_EMPRENDEDOR}/productos/nuevo`}
-      />
+    <WizardProductoMarco
+      titulo="Nuevo producto"
+      paso={form.paso}
+      total={pasos.length}
+      sucio={formularioProductoSucio(form)}
+      onSalir={() => navigate(`${RUTA_EMPRENDEDOR}/productos/nuevo`)}
+      desktop={(
+        <CabeceraAtras
+          titulo={tituloFormProducto(false, personalizado)}
+          to={`${RUTA_EMPRENDEDOR}/productos/nuevo`}
+        />
+      )}
+    >
       <FormularioPorPasos
         pasos={pasos}
         pasoActual={form.paso}
@@ -77,8 +86,8 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
         onFinalizar={publicar}
         etiquetaFinal="Publicar producto"
         enviando={form.guardando}
-        progresoOffset={1}
-        totalProgreso={TOTAL_FLUJO_NUEVO}
+        colorCtaFinal="rojo"
+        ocultarProgresoEnMovil
       >
         <PasosProductoVendedor
           idPaso={idPaso}
@@ -112,6 +121,6 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
           errorSubmit={form.errorSubmit}
         />
       </FormularioPorPasos>
-    </main>
+    </WizardProductoMarco>
   )
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  filtrarCategorias,
   idCategoriaValido,
   listaCategoriasVendedor,
   nombreCategoriaVendedor,
@@ -18,6 +19,18 @@ describe('nombreCategoriaVendedor', () => {
     expect(nombreCategoriaVendedor({ id: 1, nombreCategoria: 'Ropa' })).toBe('Ropa')
     expect(nombreCategoriaVendedor({ id: 1, nombre: 'Hogar' })).toBe('Hogar')
     expect(nombreCategoriaVendedor({ id: 1 })).toBe('Categoría')
+  })
+})
+
+describe('filtrarCategorias', () => {
+  const lista = [
+    { id: 1, nombreCategoria: 'Ropa' },
+    { id: 2, nombreCategoria: 'Tecnología' },
+  ]
+
+  it('sin texto devuelve todas y filtra por nombre', () => {
+    expect(filtrarCategorias(lista, '  ')).toHaveLength(2)
+    expect(filtrarCategorias(lista, 'tec').map((c) => c.id)).toEqual([2])
   })
 })
 

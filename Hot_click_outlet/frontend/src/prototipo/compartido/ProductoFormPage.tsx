@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Boton, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
+import { formularioProductoSucio } from './formularioProductoSucio'
+import WizardProductoMarco from './WizardProductoMarco'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 import {
   guardarProductoVendedor,
@@ -18,7 +20,6 @@ import PantallaExitoWizard, { navegarConTransicion } from './motion/PantallaExit
 
 type Props = Readonly<{ personalizado?: boolean }>
 
-const TOTAL_FLUJO_NUEVO = 5
 const AUTO_CIERRE_EXITO_MS = 2200
 
 /**
@@ -74,7 +75,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
 
   if (editar && cargando && !existente) {
     return (
-      <main className="px-5 pb-8 pt-[60px]">
+      <main className="px-5 pb-8 pt-8">
         <EncabezadoPagina titulo={tituloFormProducto(true, false)} volverA={volverA} />
         <p className="text-sm text-hc-muted">Cargando…</p>
       </main>
@@ -83,7 +84,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
 
   if (editar && !cargando && !existente) {
     return (
-      <main className="px-5 pb-8 pt-[60px]">
+      <main className="px-5 pb-8 pt-8">
         <EncabezadoPagina titulo={tituloFormProducto(true, false)} volverA={volverA} />
         <p className="text-sm text-hc-muted">No encontramos ese producto.</p>
       </main>
@@ -122,8 +123,14 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
   }
 
   return (
-    <main className="flex flex-col gap-[22px] px-5 pb-8 pt-[60px]">
-      <EncabezadoPagina titulo={tituloFormProducto(editar, esPersonalizado)} volverA={volverA} />
+    <WizardProductoMarco
+      titulo={editar ? 'Editar producto' : 'Nuevo producto'}
+      paso={form.paso}
+      total={pasos.length}
+      sucio={formularioProductoSucio(form)}
+      onSalir={() => navigate(volverA)}
+      desktop={<EncabezadoPagina titulo={tituloFormProducto(editar, esPersonalizado)} volverA={volverA} />}
+    >
       <FormularioPorPasos
         pasos={pasos}
         pasoActual={form.paso}
@@ -132,8 +139,8 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
         onFinalizar={finalizar}
         etiquetaFinal={editar ? 'Guardar cambios' : 'Publicar producto'}
         enviando={form.guardando}
-        progresoOffset={editar ? 0 : 1}
-        totalProgreso={editar ? undefined : TOTAL_FLUJO_NUEVO}
+        colorCtaFinal="rojo"
+        ocultarProgresoEnMovil
       >
         <PasosProductoVendedor
           idPaso={idPaso}
@@ -170,6 +177,6 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
       {editar && id ? (
         <Boton variante="suave" to={ruta(`productos/${id}/eliminar`)}>Eliminar producto</Boton>
       ) : null}
-    </main>
+    </WizardProductoMarco>
   )
 }

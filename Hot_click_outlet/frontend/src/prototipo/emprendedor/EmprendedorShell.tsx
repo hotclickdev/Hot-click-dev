@@ -7,13 +7,13 @@ import PanelCabeceraMovil from '@/prototipo/compartido/PanelCabeceraMovil'
 import { RUTA_EMPRENDEDOR } from './constants'
 import EmprendedorSidebar from './EmprendedorSidebar'
 
-type Props = { conNav?: boolean }
+type Props = { conNav?: boolean; sinCabecera?: boolean }
 
 /**
  * Shell Emprendedor: móvil max-w-md + cabecera y barra inferior; desktop sidebar.
  * `.hc-seller-theme` sigue html.dark (tokens semánticos).
  */
-export default function EmprendedorShell({ conNav = false }: Props) {
+export default function EmprendedorShell({ conNav = false, sinCabecera = false }: Props) {
   return (
     <div
       className="hc-seller-theme min-h-dvh bg-hc-bg text-hc-text"
@@ -24,7 +24,9 @@ export default function EmprendedorShell({ conNav = false }: Props) {
         <EmprendedorSidebar />
         <div className={`min-w-0 flex-1 ${conNav ? 'pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
           <div className="mx-auto max-w-md md:mx-0 md:max-w-none">
-            <PanelCabeceraMovil base={RUTA_EMPRENDEDOR} planApi="EMPRENDEDOR" interna={!conNav} />
+            {sinCabecera ? null : (
+              <PanelCabeceraMovil base={RUTA_EMPRENDEDOR} planApi="EMPRENDEDOR" interna={!conNav} />
+            )}
             <VendedorAvisos />
             <Outlet />
           </div>

@@ -1,6 +1,6 @@
 /**
  * Smoke checklist PYME + Negocio Plus (local Playwright):
- * - Ambos: /productos/nuevo (Paso 1/5), /bodegas/nueva, /plan (1/3),
+ * - Ambos: /productos/nuevo (tipo) + wizard 4 pasos, /bodegas/nueva, /plan (1/3),
  *   /cobro/nuevo, /negocio, /perfil
  * - Solo PYME: /pyme/equipo → Invitar miembro (wizard)
  * - Solo Plus: /negocio-plus/sucursales → Agregar sucursal (Paso 1/3)
@@ -16,9 +16,17 @@ import {
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
 test.describe('Wizard conversacional PYME', () => {
-  test('agregar producto: ve Paso 1 de 5', async ({ page }) => {
+  test('agregar producto: tipo y wizard a pantalla completa', async ({ page }) => {
     await entrarSeller(page, 'PYME')
-    await expectPaso(page, '/pyme/productos/nuevo', 'Paso 1 de 5', 'Tipo de producto')
+    await page.goto('/pyme/productos/nuevo', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: '¿Qué vas a vender?' })).toBeVisible({ timeout: 15_000 })
+    await page.getByRole('link', { name: /Producto de catálogo/i }).click()
+    await expect(page).toHaveURL(/productos\/nuevo\/catalogo/)
+    await expect(page.getByTestId('cabecera-wizard-producto')).toContainText('1 de 4')
+    await expect(page.getByRole('button', { name: 'Tomar foto' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Elegir de la galería' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Omitir' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Pedidos' })).toHaveCount(0)
   })
 
   test('nueva bodega: ve progreso Paso 1 de 4', async ({ page }) => {
@@ -64,15 +72,19 @@ test.describe('Wizard conversacional PYME', () => {
     await entrarSeller(page, 'PYME')
     await page.goto('/emprendedor/productos/nuevo', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/pyme\/productos\/nuevo/)
-    await expect(page.getByText('Paso 1 de 5')).toBeVisible()
+    await expect(page.getByRole('heading', { name: '¿Qué vas a vender?' })).toBeVisible()
   })
 })
 
 test.describe('Wizard conversacional Negocio Plus', () => {
-  test('agregar producto: ve Paso 1 de 5', async ({ page }) => {
+  test('agregar producto: tipo y wizard a pantalla completa', async ({ page }) => {
     const base = prefijoPorPlan('NEGOCIO_PLUS')
     await entrarSeller(page, 'NEGOCIO_PLUS')
-    await expectPaso(page, `${base}/productos/nuevo`, 'Paso 1 de 5', 'Tipo de producto')
+    await page.goto(`${base}/productos/nuevo`, { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: '¿Qué vas a vender?' })).toBeVisible({ timeout: 15_000 })
+    await page.getByRole('link', { name: /Producto de catálogo/i }).click()
+    await expect(page.getByTestId('cabecera-wizard-producto')).toContainText('1 de 4')
+    await expect(page.getByRole('button', { name: 'Tomar foto' })).toBeVisible()
   })
 
   test('nueva bodega: ve Paso 1 de 4', async ({ page }) => {

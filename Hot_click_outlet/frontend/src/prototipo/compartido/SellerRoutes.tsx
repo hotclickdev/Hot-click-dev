@@ -63,9 +63,6 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
       <Route element={<SellerShell />}>
         <Route index element={page(MenuPage)} />
         <Route path="productos" element={page(ProductosPage)} />
-        <Route path="productos/nuevo" element={page(ElegirTipoProductoPage)} />
-        <Route path="productos/nuevo/catalogo" element={page(ProductoFormPage)} />
-        <Route path="productos/nuevo/personalizado" element={<LazyPage><ProductoFormPage personalizado /></LazyPage>} />
         <Route path="reportes" element={page(ReportesPage)} />
         <Route path="tienda" element={page(TiendaPublicaPage)} />
         <Route path="opciones" element={page(OpcionesPage)} />
@@ -77,9 +74,14 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
       <Route path="registro" element={<Navigate to="/registro" replace />} />
       <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
       <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
+      <Route element={<SellerShell sinNav sinCabecera />}>
+        <Route path="productos/nuevo" element={page(ElegirTipoProductoPage)} />
+        <Route path="productos/nuevo/catalogo" element={page(ProductoFormPage)} />
+        <Route path="productos/nuevo/personalizado" element={<LazyPage><ProductoFormPage personalizado /></LazyPage>} />
+        <Route path="productos/:id/editar" element={page(ProductoFormPage)} />
+      </Route>
       <Route element={<SellerShell sinNav />}>
         <Route path="productos/:id" element={page(ProductoDetallePage)} />
-        <Route path="productos/:id/editar" element={page(ProductoFormPage)} />
         <Route path="productos/:id/eliminar" element={page(EliminarProductoPage)} />
         <Route path="carrito" element={page(CarritoPage)} />
         <Route path="compra-ok" element={page(CompraOkPage)} />

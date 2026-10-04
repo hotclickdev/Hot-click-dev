@@ -18,6 +18,12 @@ export function nombreCategoriaVendedor(cat: CategoriaVendedor): string {
   return nombre.trim() || 'Categoría'
 }
 
+export function filtrarCategorias(lista: CategoriaVendedor[], q: string): CategoriaVendedor[] {
+  const t = q.trim().toLowerCase()
+  if (!t) return lista
+  return lista.filter((c) => nombreCategoriaVendedor(c).toLowerCase().includes(t))
+}
+
 export function idCategoriaValido(categoriaId: string | undefined): string | null {
   if (!categoriaId) return null
   const n = Number(categoriaId)
