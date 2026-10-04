@@ -25,6 +25,8 @@ export type PhoneFieldProps = {
   variante?: 'clasica' | 'figma'
   /** No deja borrar el código de país (se cambia con el selector). */
   forceDialCode?: boolean
+  autoComplete?: string
+  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'
 }
 
 export default function PhoneField({
@@ -39,6 +41,8 @@ export default function PhoneField({
   disabled = false,
   variante = 'clasica',
   forceDialCode = false,
+  autoComplete,
+  enterKeyHint,
 }: PhoneFieldProps) {
   const idGenerado = useId()
   const idCampo = id ?? idGenerado
@@ -68,7 +72,13 @@ export default function PhoneField({
         onChange={onChange}
         disabled={disabled}
         forceDialCode={forceDialCode}
-        inputProps={{ id: idCampo, 'aria-required': required || undefined, 'aria-invalid': error ? true : undefined }}
+        inputProps={{
+          id: idCampo,
+          autoComplete,
+          enterKeyHint,
+          'aria-required': required || undefined,
+          'aria-invalid': error ? true : undefined,
+        }}
         inputStyle={{
           backgroundColor: fondo,
           border,

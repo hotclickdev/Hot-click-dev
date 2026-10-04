@@ -1,9 +1,10 @@
+import { useState, type ChangeEvent, type FormEvent, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
 import { WHATSAPP_HOTCLICK, urlWhatsApp } from '@/pages/carrito/cartHelpers'
-import type { ChangeEvent, FormEvent, RefObject } from 'react'
 import { MIN_PASSWORD, type RegistroEmpresaForm } from './registroEmpresaHelpers'
 import { TEXTO_REVISION, textoPagarDespues, type PlanAlta } from './altaVendedorPlanes'
 import { AltaTarjeta, AltaTitulo, BotonPrimario, BotonSecundario, Casilla, IconoBeneficio, Nota, PillPendiente, Spinner } from './AltaVendedorUI'
@@ -16,10 +17,40 @@ const HREF_WA_TRIBUTACION = urlWhatsApp(
 
 export type ConsentimientosAlta = { terminos: boolean; acuerdo: boolean }
 
+function idPrimerError(form: RegistroEmpresaForm, consentimientos: ConsentimientosAlta, conSesion: boolean) {
+  if (!form.nombreEmpresa.trim()) return 'alta-nombre'
+  if (!conSesion && !form.correoAdmin.trim()) return 'alta-correo'
+  if (!conSesion && form.passwordAdmin.length < MIN_PASSWORD) return 'alta-clave'
+  if (!consentimientos.terminos) return 'alta-terminos'
+  if (!consentimientos.acuerdo) return 'alta-acuerdo'
+  return ''
+}
+
+function TextoAcuerdo() {
+  const { t } = useTranslation()
+  const [antes, despues] = t('registro.acuerdo.check', {
+    acuerdo: '\u0000',
+    defaultValue: 'Leí y acepto el \u0000.',
+  }).split('\u0000')
+  return (
+    <span>
+      {antes}
+      <Link to="/acuerdo-vendedores" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">
+        {t('registro.acuerdo.enlace', { defaultValue: 'Acuerdo de Vendedores' })}
+      </Link>
+      {despues}
+      <span className="mt-1 block text-[12px] leading-[18px] text-hc-n-600">
+        {t('registro.acuerdo.ayuda', { defaultValue: 'Incluye tus obligaciones como Encargado de Tratamiento de los datos de tus clientes (Ley 8968).' })}
+      </span>
+    </span>
+  )
+}
+
 /** Paso 2 · Tu negocio: datos del negocio y de la cuenta en un solo paso (campos Figma 28:1083). */
 export default function PasoNegocio({
   plan, form, consentimientos, error, loading, turnstileRef, turnstileToken,
-  onCampo, onTelefono, onTelefonoAdmin, onInscrito, onConsentimiento, onTurnstileToken,   onCambiarPlan, onAtras, onSubmit, conSesion = false,
+  onCampo, onTelefono, onTelefonoAdmin, onInscrito, onConsentimiento, onTurnstileToken,
+  onCambiarPlan, onAtras, onSubmit, conSesion = false,
 }: {
   plan: PlanAlta
   form: RegistroEmpresaForm
@@ -40,12 +71,30 @@ export default function PasoNegocio({
   /** Comprador ya logueado: no pide correo ni contraseña. */
   conSesion?: boolean
 }) {
+  const { t } = useTranslation()
+  const [opcionales, setOpcionales] = useState(false)
+  const [verClave, setVerClave] = useState(false)
+  const [intento, setIntento] = useState(false)
   const turnstileObligatorio = Boolean(TURNSTILE_SITE_KEY) && !conSesion
   const faltaConsentimiento = !consentimientos.terminos || !consentimientos.acuerdo
   const deshabilitado = loading || faltaConsentimiento || (turnstileObligatorio && !turnstileToken)
+  const claseOpcional = opcionales ? 'flex flex-col gap-3.5' : 'hidden flex-col gap-3.5 md:flex'
+  const textoCta = loading
+    ? null
+    : (conSesion ? 'Registrar mi negocio' : 'Crear mi cuenta')
+
+  const alEnviar = (e: FormEvent) => {
+    setIntento(true)
+    const id = idPrimerError(form, consentimientos, conSesion)
+    if (id) {
+      document.getElementById(id)?.scrollIntoView({ block: 'center' })
+      document.getElementById(id)?.focus()
+    }
+    onSubmit(e)
+  }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form onSubmit={alEnviar} noValidate className="flex flex-col gap-4 pb-28 md:pb-0">
       <AltaTitulo antes="Contanos de tu" acento="negocio" sub="Lo completás en unos minutos. Los campos opcionales los podés completar después en tu panel." />
 
       <div className="flex items-center gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-3.5">
@@ -54,44 +103,59 @@ export default function PasoNegocio({
           <p className="text-[14px] font-semibold text-hc-n-900">Plan {plan.nombre}</p>
           <p className="flex flex-wrap items-center gap-1.5 text-[12px] text-hc-n-600">Mensualidad y comisión: <PillPendiente /></p>
         </div>
-        <button type="button" onClick={onCambiarPlan} className="text-[13px] font-semibold text-hc-blue-600">Cambiar</button>
+        <button type="button" onClick={onCambiarPlan} className="min-h-11 text-[13px] font-semibold text-hc-blue-600">Cambiar</button>
       </div>
 
       <AltaTarjeta titulo="Tu negocio" sub="Así te van a encontrar los compradores.">
-        <Input variante="figma" label="Nombre del negocio (obligatorio)" placeholder="Ej: Tienda Tica" autoComplete="organization"
-          value={form.nombreEmpresa} onChange={onCampo('nombreEmpresa')} required maxLength={120}
+        <Input variante="figma" id="alta-nombre" label="Nombre del negocio (obligatorio)" placeholder="Ej: Tienda Tica" autoComplete="organization"
+          enterKeyHint="next" value={form.nombreEmpresa} onChange={onCampo('nombreEmpresa')} required maxLength={120}
           hint="Es el nombre que se ve en tu tienda y en cada producto." />
-        <div className="grid gap-3.5 lg:grid-cols-2">
-          <PhoneField variante="figma" label="Teléfono del negocio (opcional)" value={form.telefonoEmpresa} onChange={onTelefono} />
-          <Input variante="figma" label="Correo del negocio (opcional)" type="email" placeholder="hola@tiendatica.cr" autoComplete="email"
-            value={form.correoEmpresa} onChange={onCampo('correoEmpresa')} maxLength={150} />
+        <button type="button" aria-expanded={opcionales} onClick={() => setOpcionales((v) => !v)}
+          className="min-h-11 text-left text-[14px] font-semibold text-hc-blue-600 md:hidden">
+          Agregar datos de contacto (opcional)
+        </button>
+        <div className={claseOpcional}>
+          <div className="grid gap-3.5 lg:grid-cols-2">
+            <PhoneField variante="figma" label="Teléfono del negocio (opcional)" value={form.telefonoEmpresa} onChange={onTelefono}
+              autoComplete="tel" enterKeyHint="next" />
+            <Input variante="figma" label="Correo del negocio (opcional)" type="email" placeholder="hola@tiendatica.cr" autoComplete="email"
+              enterKeyHint="next" value={form.correoEmpresa} onChange={onCampo('correoEmpresa')} maxLength={150} />
+          </div>
+          <Nota>
+            {plan.contactoVisible
+              ? <>Lo usamos para avisarte de pedidos. Con el plan {plan.nombre}, los compradores también lo ven en tu tienda.</>
+              : <>Lo usamos para avisarte de pedidos. Tus compradores ven estos datos solo si tu plan es Pyme o Negocio Plus.</>}
+          </Nota>
+          <Casilla id="alta-atv" checked={form.inscritoTributacion} onChange={onInscrito}>
+            <strong className="font-semibold">Estoy inscrito en Tributación (ATV)</strong> y puedo emitir facturas electrónicas.
+          </Casilla>
+          {!form.inscritoTributacion ? (
+            <p className="text-[12px] leading-[18px] text-hc-n-600">
+              Podés registrarte igual y ponerte al día después.{' '}
+              <a href={HREF_WA_TRIBUTACION} target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">Te ayudamos por WhatsApp</a>.
+            </p>
+          ) : null}
         </div>
-        <Nota>
-          {plan.contactoVisible
-            ? <>Lo usamos para avisarte de pedidos. Con el plan {plan.nombre}, los compradores también lo ven en tu tienda.</>
-            : <>Lo usamos para avisarte de pedidos. Tus compradores ven estos datos solo si tu plan es Pyme o Negocio Plus.</>}
-        </Nota>
-        <Casilla id="alta-atv" checked={form.inscritoTributacion} onChange={onInscrito}>
-          <strong className="font-semibold">Estoy inscrito en Tributación (ATV)</strong> y puedo emitir facturas electrónicas.
-        </Casilla>
-        {!form.inscritoTributacion ? (
-          <p className="text-[12px] leading-[18px] text-hc-n-600">
-            Podés registrarte igual y ponerte al día después.{' '}
-            <a href={HREF_WA_TRIBUTACION} target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">Te ayudamos por WhatsApp</a>.
-          </p>
-        ) : null}
       </AltaTarjeta>
 
-      {conSesion ? null : <AltaTarjeta titulo="Tu cuenta de acceso" sub="Con estos datos entrás a tu panel de vendedor.">
-        <Input variante="figma" label="Tu nombre completo" placeholder="Ana Solís" autoComplete="name"
-          value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} maxLength={100} />
-        <Input variante="figma" label="Tu correo (obligatorio)" type="email" placeholder="ana@correo.com" autoComplete="email"
-          value={form.correoAdmin} onChange={onCampo('correoAdmin')} required maxLength={150} />
-        <Input variante="figma" label="Contraseña (obligatorio)" type="password" autoComplete="new-password"
-          value={form.passwordAdmin} onChange={onCampo('passwordAdmin')} required minLength={MIN_PASSWORD} maxLength={128}
-          hint={`Mínimo ${MIN_PASSWORD} caracteres.`} />
-        <PhoneField variante="figma" label="Tu teléfono (opcional)" value={form.telefonoAdmin} onChange={onTelefonoAdmin} />
-      </AltaTarjeta>}
+      {conSesion ? null : (
+        <AltaTarjeta titulo="Tu cuenta de acceso" sub="Con estos datos entrás a tu panel de vendedor.">
+          <Input variante="figma" label="Tu nombre completo" placeholder="Ana Solís" autoComplete="name" enterKeyHint="next"
+            value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} maxLength={100} />
+          <Input variante="figma" id="alta-correo" label="Tu correo (obligatorio)" type="email" placeholder="ana@correo.com" autoComplete="email"
+            enterKeyHint="next" value={form.correoAdmin} onChange={onCampo('correoAdmin')} required maxLength={150} />
+          <Input variante="figma" id="alta-clave" label="Contraseña (obligatorio)" type={verClave ? 'text' : 'password'} autoComplete="new-password"
+            enterKeyHint={opcionales ? 'next' : 'done'} value={form.passwordAdmin} onChange={onCampo('passwordAdmin')} required minLength={MIN_PASSWORD} maxLength={128}
+            hint={`Mínimo ${MIN_PASSWORD} caracteres.`} />
+          <button type="button" onClick={() => setVerClave((v) => !v)} className="min-h-11 self-start text-[13px] font-semibold text-hc-blue-600 md:hidden">
+            {verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          </button>
+          <div className={claseOpcional}>
+            <PhoneField variante="figma" label="Tu teléfono (opcional)" value={form.telefonoAdmin} onChange={onTelefonoAdmin}
+              autoComplete="tel" enterKeyHint="done" />
+          </div>
+        </AltaTarjeta>
+      )}
 
       <AltaTarjeta>
         <Casilla id="alta-terminos" checked={consentimientos.terminos} onChange={(v) => onConsentimiento('terminos', v)}>
@@ -99,9 +163,13 @@ export default function PasoNegocio({
           la <Link to="/privacidad" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">Política de Privacidad</Link> de HotClick.
         </Casilla>
         <Casilla id="alta-acuerdo" checked={consentimientos.acuerdo} onChange={(v) => onConsentimiento('acuerdo', v)}>
-          Leí y acepto el <Link to="/acuerdo-vendedores" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">Acuerdo de Vendedores</Link> y
-          mi rol como Encargado de Tratamiento de los datos de mis clientes (Ley 8968).
+          <TextoAcuerdo />
         </Casilla>
+        {intento && !consentimientos.acuerdo ? (
+          <p role="alert" className="text-[12px] font-medium text-hc-red-600">
+            {t('registro.acuerdo.error', { defaultValue: 'Para continuar, aceptá el Acuerdo de Vendedores.' })}
+          </p>
+        ) : null}
       </AltaTarjeta>
 
       <Nota titulo="¿Qué pasa después?">
@@ -127,10 +195,16 @@ export default function PasoNegocio({
         />
       ) : null}
 
-      <div className="flex gap-2.5">
+      <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-hc-n-200 bg-hc-n-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden">
+        <BotonSecundario onClick={onAtras}>Atrás</BotonSecundario>
+        <BotonPrimario type="submit" className="flex-1" disabled={loading}>
+          {textoCta ?? <><Spinner />Creando tu cuenta…</>}
+        </BotonPrimario>
+      </div>
+      <div className="hidden gap-2.5 md:flex">
         <BotonSecundario onClick={onAtras}>Atrás</BotonSecundario>
         <BotonPrimario type="submit" className="flex-1" disabled={deshabilitado}>
-          {loading ? <><Spinner />Creando tu cuenta…</> : (conSesion ? 'Registrar mi negocio' : 'Crear mi cuenta')}
+          {textoCta ?? <><Spinner />Creando tu cuenta…</>}
         </BotonPrimario>
       </div>
     </form>
