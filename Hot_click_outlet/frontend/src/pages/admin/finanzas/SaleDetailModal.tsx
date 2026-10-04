@@ -154,7 +154,7 @@ export default function SaleDetailModal({ pedidoId, onClose }: SaleDetailModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      <div className="w-full max-w-lg rounded-[14px] overflow-hidden flex flex-col max-h-[90vh]"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
 
         <div className="flex items-center justify-between px-5 py-4 shrink-0"

@@ -18,7 +18,7 @@ export default function ComprobanteImageModal({ src, onClose }: { src: string; o
         <img
           src={src}
           alt="Comprobante SINPE ampliado"
-          className="w-full rounded-2xl border border-hc-border max-h-[80vh] object-contain bg-black/40"
+          className="w-full rounded-[14px] border border-hc-border max-h-[80vh] object-contain bg-black/40"
         />
       </div>
     </div>

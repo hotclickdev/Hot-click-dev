@@ -47,9 +47,9 @@ async function sesion(page: Page, auth: ReturnType<typeof payloadAuth>) {
 test.describe('Puerta Vender — una entrada, tres rutas', () => {
   test('anónimo en /registro-empresa ve el alta; login vuelve a registrar-negocio', async ({ page }) => {
     await page.goto('/registro-empresa', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Registrá tu empresa' })).toBeVisible()
-    await expect(page.getByText(/si ya comprás en hotclick/i)).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute(
+    await expect(page.getByRole('heading', { name: /Empezá a vender en HotClick/ })).toBeVisible()
+    await expect(page.getByText(/ya comprás en hotclick/i)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Ingresar', exact: true })).toHaveAttribute(
       'href',
       /\/login\?redirect=%2Fregistrar-negocio/,
     )
@@ -58,7 +58,7 @@ test.describe('Puerta Vender — una entrada, tres rutas', () => {
   test('/registro?intencion=vender llega a registro-empresa', async ({ page }) => {
     await page.goto('/registro?intencion=vender', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/registro-empresa$/)
-    await expect(page.getByRole('heading', { name: 'Registrá tu empresa' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Empezá a vender en HotClick/ })).toBeVisible()
   })
 
   test('anónimo en /registrar-negocio va a login con retorno', async ({ page }) => {

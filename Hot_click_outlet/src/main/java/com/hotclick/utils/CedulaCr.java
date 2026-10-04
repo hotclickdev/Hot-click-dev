@@ -1,7 +1,9 @@
 package com.hotclick.utils;
 
 /**
- * Cédula / DIMEX de Costa Rica: 9 a 12 dígitos (física, jurídica o DIMEX).
+ * Cédula / DIMEX de Costa Rica: 9 a 12 dígitos (física, jurídica, DIMEX o NITE). La física de 9 no empieza en 0
+ * y se rechaza un solo dígito repetido (p. ej. 111111111, que antes se aceptaba). Misma regla que
+ * {@code frontend/src/utils/cedulaCr.ts}.
  */
 public final class CedulaCr {
 
@@ -14,6 +16,8 @@ public final class CedulaCr {
         if (cedula == null || cedula.isBlank()) return null;
         String digits = cedula.replaceAll("[^0-9]", "");
         if (digits.length() < MIN_DIGITOS || digits.length() > MAX_DIGITOS) return null;
+        if (digits.chars().distinct().count() == 1) return null;
+        if (digits.length() == MIN_DIGITOS && digits.charAt(0) == '0') return null;
         return digits;
     }
 

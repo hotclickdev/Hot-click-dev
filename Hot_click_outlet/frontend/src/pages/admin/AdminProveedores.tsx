@@ -78,7 +78,7 @@ export default function AdminProveedores() {
             style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
         </div>
       ) : proveedores.length === 0 ? (
-        <div className="text-center py-16 rounded-2xl"
+        <div className="text-center py-16 rounded-[14px]"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>No hay proveedores registrados</p>
           <button type="button" onClick={openNew} className="mt-3 text-sm font-medium inline-flex items-center" style={{ color: 'var(--hc-accent)' }}>

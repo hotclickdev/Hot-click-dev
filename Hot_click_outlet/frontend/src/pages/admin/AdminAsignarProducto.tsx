@@ -55,7 +55,7 @@ export default function AdminAsignarProducto() {
 
       <AsignarStepper paso={paso} onPaso={setPaso} />
 
-      <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <div className="rounded-[14px] p-6" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <AnimatePresence mode="wait">
           {paso === 0 && (
             <PasoCliente key="p0" onSelect={seleccionarCliente} />

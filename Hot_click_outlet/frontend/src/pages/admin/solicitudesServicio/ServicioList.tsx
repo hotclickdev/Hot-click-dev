@@ -66,7 +66,7 @@ export default function ServicioList({ solicitudes, filtroEstado, isLoading, onO
           {t('adminSolicitudes.loading')}
         </div>
       ) : !filtradas.length ? (
-        <div className="text-center py-20 rounded-2xl"
+        <div className="text-center py-20 rounded-[14px]"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="flex justify-center mb-3 opacity-40" style={{ color: 'var(--hc-muted)' }}>
             <TrustGlyph tipo="lista" className="w-10 h-10" />
@@ -81,7 +81,7 @@ export default function ServicioList({ solicitudes, filtroEstado, isLoading, onO
             return (
               <motion.div key={s.id}
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-2xl cursor-pointer transition-all hover:shadow-md"
+                className="p-4 rounded-[14px] cursor-pointer transition-all hover:shadow-md"
                 style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                 onClick={() => onOpenDetalle(s)}>
                 <div className="flex items-start justify-between gap-3">

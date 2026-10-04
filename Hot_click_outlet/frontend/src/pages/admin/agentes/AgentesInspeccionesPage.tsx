@@ -44,7 +44,7 @@ export default function AgentesInspeccionesPage() {
       {latest ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {SUMMARY_KEYS.map((k) => (
-            <div key={k} className="rounded-2xl border border-hc-border bg-hc-surface p-4">
+            <div key={k} className="rounded-[14px] border border-hc-border bg-hc-surface p-4">
               <p className="text-2xl font-bold text-hc-text">{latest.summary[k]}</p>
               <AgentesStatusBadge status={k} />
             </div>
@@ -54,7 +54,7 @@ export default function AgentesInspeccionesPage() {
         <p className="text-sm text-hc-muted">Todavía no hay corridas empaquetadas.</p>
       )}
       {runs.map((run) => (
-        <article key={run.id} className="rounded-2xl border border-hc-border bg-hc-surface p-4">
+        <article key={run.id} className="rounded-[14px] border border-hc-border bg-hc-surface p-4">
           <p className="text-[10px] font-bold uppercase tracking-wider text-hc-muted">{run.source}</p>
           <h3 className="text-lg font-semibold text-hc-text">{formatCr(run.ranAt)}</h3>
           <p className="font-mono text-xs text-hc-muted">{run.id}</p>

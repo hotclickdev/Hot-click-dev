@@ -167,7 +167,7 @@ export default function AdminAuditorias() {
         <p className="py-10 text-center text-sm text-hc-muted">Cargando eventos…</p>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-hc-border">
+          <div className="overflow-x-auto rounded-[14px] border border-hc-border">
             <table className="w-full min-w-[640px] text-left text-xs">
               <thead>
                 <tr className="border-b border-hc-border text-hc-muted">

@@ -150,7 +150,7 @@ function CalculadoraEfectivo({
   const { t } = useTranslation()
   const billetesSugeridos = descomponer(vuelto)
   return (
-    <div className="space-y-3 rounded-2xl border border-hc-border bg-hc-surface p-4">
+    <div className="space-y-3 rounded-[14px] border border-hc-border bg-hc-surface p-4">
       <p className="text-xs font-semibold text-hc-muted">{t('pos.cobro.montoRecibido')}</p>
       <BotonesMontoSugerido total={total} recibidoNum={recibidoNum} onRecibido={onRecibido} />
       <div className="relative">
@@ -238,7 +238,7 @@ function BotonesMontoSugerido({
 function AvisoQr({ metodo }: { metodo: string }) {
   const { t } = useTranslation()
   return (
-    <div className="space-y-1 rounded-2xl border border-hc-border bg-hc-surface-2 p-4 text-center">
+    <div className="space-y-1 rounded-[14px] border border-hc-border bg-hc-surface-2 p-4 text-center">
       <p className="flex items-center justify-center gap-2 text-sm font-semibold text-hc-text">
         <MetodoPagoIcon iconId={metodo === 'SINPE' ? 'sinpe' : 'tarjeta'} className="h-4 w-4" />
         {metodo === 'SINPE' ? t('pos.cobro.avisoSinpeTitle') : t('pos.cobro.avisoTarjetaTitle')}

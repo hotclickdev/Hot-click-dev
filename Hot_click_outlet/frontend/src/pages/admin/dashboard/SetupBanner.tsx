@@ -13,7 +13,7 @@ type SetupBannerProps = {
 
 export default function SetupBanner({ onDismiss }: SetupBannerProps) {
   return (
-    <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
+    <div className="rounded-[14px] p-5" style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm text-[var(--hc-text)] mb-1">Empezá en 3 pasos</p>

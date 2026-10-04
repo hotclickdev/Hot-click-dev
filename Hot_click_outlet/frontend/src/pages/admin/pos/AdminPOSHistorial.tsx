@@ -152,7 +152,7 @@ export default function AdminPOSHistorial() {
           <p className="text-sm">{t('pos.historial.sinVentas')}</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
+        <div className="rounded-[14px] overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] text-sm">
             <thead>

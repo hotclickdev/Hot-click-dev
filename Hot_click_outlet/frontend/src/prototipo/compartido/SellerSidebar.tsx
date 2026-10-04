@@ -35,6 +35,9 @@ function gruposSeller(
   pendientesEncargos: number,
 ): GrupoNav[] {
   const extra = plan.id === 'emprendedor' ? [] : [itemPlanExtra(ruta, plan)]
+  if (plan.id === 'negocioPlus') {
+    extra.push({ to: ruta('equipo'), etiqueta: 'Equipo', Icono: UserGroupIcon })
+  }
   return [
     {
       titulo: 'Operar',

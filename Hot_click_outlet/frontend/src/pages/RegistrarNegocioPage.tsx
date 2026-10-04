@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { esCedulaCrValida, normalizarCedula } from '@/utils/cedulaCr'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import useAuthStore from '@/store/authStore'
@@ -52,8 +53,8 @@ export default function RegistrarNegocioPage() {
   const set = (field: keyof FormNegocio) => (e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, [field]: e.target.value }))
 
   const verificarHacienda = async () => {
-    const c = cedula.trim().replace(/\D/g, '')
-    if (!c || c.length < 9) { setHaciendaError('Ingresá una cédula válida (9 o más dígitos)'); return }
+    const c = normalizarCedula(cedula.trim())
+    if (!esCedulaCrValida(c)) { setHaciendaError('Ingresá una cédula válida: física de 9 dígitos, jurídica de 10 o DIMEX de 11 o 12.'); return }
     setHaciendaError('')
     setVerificando(true)
     setHaciendaResult(null)

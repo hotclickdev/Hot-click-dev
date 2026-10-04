@@ -23,7 +23,7 @@ export default function ComprasOrdenList({
 }) {
   if (ordenesFiltradas.length === 0) {
     return (
-      <div className="text-center py-16 rounded-2xl"
+      <div className="text-center py-16 rounded-[14px]"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
         <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
           {filtro === 'TODAS' ? 'No hay órdenes de compra' : `No hay órdenes ${ESTADO_META[filtro]?.label?.toLowerCase()}`}
@@ -38,7 +38,7 @@ export default function ComprasOrdenList({
   return (
     <div className="space-y-3">
       {ordenesFiltradas.map((orden) => (
-        <div key={orden.id} className="rounded-2xl overflow-hidden border"
+        <div key={orden.id} className="rounded-[14px] overflow-hidden border"
           style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'rgba(255,255,255,0.07)' }}>
           <button type="button" className="flex items-center gap-4 p-4 w-full text-left"
             onClick={() => onToggleExpand(expanded === orden.id ? null : orden.id)}>

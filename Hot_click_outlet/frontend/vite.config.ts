@@ -111,10 +111,11 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: ({ url }) => url.hostname.includes('supabase.co'),
+            // Imágenes directas del bucket S3 (AWS); el resto pasa por /api/img (regla siguiente).
+            urlPattern: ({ url }) => /\.s3[.-]([a-z0-9-]+\.)?amazonaws\.com$/i.test(url.hostname),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'supabase-images',
+              cacheName: 'media-images',
               expiration: { maxAgeSeconds: 7 * 24 * 60 * 60, maxEntries: 200 },
               cacheableResponse: { statuses: [0, 200] },
             },

@@ -2,6 +2,8 @@ import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import EmprendedorShell from './EmprendedorShell'
 import { RUTA_EMPRENDEDOR } from './constants'
+import { PLAN_EMPRENDEDOR } from '../compartido/plan'
+import { SellerPlanProvider } from '../compartido/SellerPlanContext'
 
 const MenuPage = lazy(() => import('./pages/MenuPage'))
 const ProductosPage = lazy(() => import('./pages/ProductosPage'))
@@ -24,7 +26,6 @@ const TelegramPage = lazy(() => import('./pages/TelegramPage'))
 const CobroPage = lazy(() => import('./pages/CobroPage'))
 const AgregarMetodoCobroPage = lazy(() => import('./pages/AgregarMetodoCobroPage'))
 const AyudaPage = lazy(() => import('./pages/AyudaPage'))
-const ConsultasHotPage = lazy(() => import('./pages/ConsultasHotPage'))
 const ProximamentePage = lazy(() => import('./pages/ProximamentePage'))
 const BodegasPage = lazy(() => import('./pages/BodegasPage'))
 const NuevaBodegaPage = lazy(() => import('./pages/NuevaBodegaPage'))
@@ -33,6 +34,8 @@ const DetallePedidoPage = lazy(() => import('./pages/DetallePedidoPage'))
 const DatosNegocioPage = lazy(() => import('./pages/DatosNegocioPage'))
 const PlanesPage = lazy(() => import('./pages/PlanesPage'))
 const PlanActualizadoPage = lazy(() => import('./pages/PlanActualizadoPage'))
+// Decisión 3.3 A (3-oct-2026): Emprendedor también tiene equipo; se reusa la pantalla de Pyme.
+const EquipoPage = lazy(() => import('../pyme/EquipoPage'))
 
 function SpinnerRuta() {
   return (
@@ -67,17 +70,18 @@ export default function EmprendedorRoutes() {
       <Route path="registro" element={<Navigate to="/registro" replace />} />
       <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
       <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
-      <Route path="bodegas" element={<Navigate to="opciones/bodegas" replace />} />
-      <Route path="bodegas/nueva" element={<Navigate to="opciones/bodegas/nueva" replace />} />
-      <Route path="negocio" element={<Navigate to="opciones/negocio" replace />} />
-      <Route path="plan" element={<Navigate to="opciones/plan" replace />} />
-      <Route path="plan/actualizado" element={<Navigate to="opciones/plan/actualizado" replace />} />
-      <Route path="ayuda" element={<Navigate to="opciones/ayuda" replace />} />
-      <Route path="consultas" element={<Navigate to="opciones/consultas" replace />} />
-      <Route path="perfil" element={<Navigate to="opciones/perfil" replace />} />
-      <Route path="cobro" element={<Navigate to="opciones/cobro" replace />} />
-      <Route path="cobro/nuevo" element={<Navigate to="opciones/cobro/nuevo" replace />} />
-      <Route path="telegram" element={<Navigate to="opciones/telegram" replace />} />
+      <Route path="bodegas" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/bodegas`} replace />} />
+      <Route path="bodegas/nueva" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/bodegas/nueva`} replace />} />
+      <Route path="negocio" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/negocio`} replace />} />
+      <Route path="plan" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/plan`} replace />} />
+      <Route path="plan/actualizado" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/plan/actualizado`} replace />} />
+      <Route path="ayuda" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/ayuda`} replace />} />
+      <Route path="consultas" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones`} replace />} />
+      <Route path="perfil" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/perfil`} replace />} />
+      <Route path="cobro" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/cobro`} replace />} />
+      <Route path="cobro/nuevo" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/cobro/nuevo`} replace />} />
+      <Route path="telegram" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/telegram`} replace />} />
+      <Route path="equipo" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/equipo`} replace />} />
       <Route element={<EmprendedorShell conNav />}>
         <Route index element={page(MenuPage)} />
         <Route path="productos" element={page(ProductosPage)} />
@@ -103,10 +107,15 @@ export default function EmprendedorRoutes() {
         <Route path="opciones/cobro" element={page(CobroPage)} />
         <Route path="opciones/cobro/nuevo" element={page(AgregarMetodoCobroPage)} />
         <Route path="opciones/ayuda" element={page(AyudaPage)} />
-        <Route path="opciones/consultas" element={page(ConsultasHotPage)} />
+        {/* Emprendedor sin IA (decisión 3.8 A): «Consultas con Hot» no se ofrece. */}
+        <Route path="opciones/consultas" element={<Navigate to="../opciones" replace />} />
         <Route path="opciones/bodegas" element={page(BodegasPage)} />
         <Route path="opciones/bodegas/nueva" element={page(NuevaBodegaPage)} />
         <Route path="opciones/negocio" element={page(DatosNegocioPage)} />
+        <Route
+          path="opciones/equipo"
+          element={<SellerPlanProvider plan={PLAN_EMPRENDEDOR}>{page(EquipoPage)}</SellerPlanProvider>}
+        />
         <Route path="opciones/plan" element={page(PlanesPage)} />
         <Route path="opciones/plan/actualizado" element={page(PlanActualizadoPage)} />
         <Route path="proximamente/pedidos" element={<Navigate to={`${RUTA_EMPRENDEDOR}/pedidos`} replace />} />

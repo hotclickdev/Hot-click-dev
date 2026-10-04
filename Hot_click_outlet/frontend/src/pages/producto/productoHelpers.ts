@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { STOCK_QUEDAN_MAX } from '@/utils/stockEscaso'
 import type { Producto } from '@/types/producto'
 import { formatPrice } from '@/utils/format'
 import { normalizarBusqueda } from '@/pages/catalogo/catalogoFiltros'
@@ -223,7 +224,7 @@ export function nombreError(err: unknown): string | undefined {
 }
 
 /** Stock a partir del cual la ficha avisa "Quedan N" en vez de "Disponible · N en stock". */
-export const STOCK_BAJO_MAX = 5
+export const STOCK_BAJO_MAX = STOCK_QUEDAN_MAX
 
 export type OpinionProducto = {
   id: string

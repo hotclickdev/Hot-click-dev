@@ -34,7 +34,7 @@ const FILTROS = [{ value: '', label: 'Todas' }, ...ESTADOS_COTIZACION]
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-2xl p-5 flex flex-col gap-1 border"
+    <div className="rounded-[14px] p-5 flex flex-col gap-1 border"
       style={{ background: 'var(--hc-card)', borderColor: 'var(--hc-border)' }}>
       <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{label}</span>
       <span className="text-3xl font-bold" style={{ color }}>{value}</span>
@@ -150,7 +150,7 @@ export default function AdminCotizaciones() {
       </div>
 
       {/* Tabla */}
-      <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
+      <div className="rounded-[14px] overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
         <table className="w-full text-sm">
           <thead>
             <tr style={{ background: 'var(--hc-card)', borderBottom: '1px solid var(--hc-border)' }}>

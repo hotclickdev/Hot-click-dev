@@ -7,7 +7,7 @@ import MarcaComprador from '@/components/comprador/header/MarcaComprador'
 import { isValidEmail } from '@/utils/validators'
 import { IcoBandeja, IcoCamion, IcoCandado, IcoCorazon, IcoSobre } from '../perfil/cuenta/iconosCuenta'
 import CampoCuenta from './CampoCuenta'
-import { CLASE_ENTRADA } from './campoCuenta'
+import { CLASE_ENTRADA } from './campoCuentaClases'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 type LoginFormStepProps = {

@@ -40,7 +40,7 @@ export default function RecibirModal({ orden, onClose, onDone }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-lg rounded-2xl p-6 space-y-5"
+      <div className="w-full max-w-lg rounded-[14px] p-6 space-y-5"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center justify-between">
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>

@@ -21,14 +21,14 @@ export default function SistemaProductoCreado({ producto, slug, tiendaPublica, o
       <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>
         {tiendaPublica ? 'Ya está en tu tienda' : 'Producto listo en Sistema'}
       </h1>
-      <p className="text-[15px] mt-2" style={{ color: '#6b6459' }}>
+      <p className="text-[15px] mt-2" style={{ color: 'var(--hc-muted)' }}>
         {producto.nombre}
       </p>
       {producto.imagenUrl && (
         <img
           src={producto.imagenUrl}
           alt=""
-          className="w-28 h-28 object-cover rounded-2xl mt-5"
+          className="w-28 h-28 object-cover rounded-[14px] mt-5"
           style={{ border: '1px solid var(--hc-border)' }}
         />
       )}
@@ -37,7 +37,7 @@ export default function SistemaProductoCreado({ producto, slug, tiendaPublica, o
         {tiendaPublica && ruta && (
           <Link
             to={ruta}
-            className="hc-btn hc-btn-primary inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[10px] text-[15px] font-bold"
+            className="hc-btn hc-btn-primary inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[12px] text-[15px] font-bold"
           >
             Verlo en tu tienda
           </Link>
@@ -45,7 +45,7 @@ export default function SistemaProductoCreado({ producto, slug, tiendaPublica, o
         <button
           type="button"
           onClick={onOtro}
-          className="inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[10px] text-[15px] font-semibold"
+          className="inline-flex items-center justify-center min-h-11 px-5 py-3 rounded-[12px] text-[15px] font-semibold"
           style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)', backgroundColor: 'var(--hc-surface)' }}
         >
           Agregar otro producto
@@ -63,7 +63,7 @@ function HintPublicacion({ slug, rutaTienda }: { slug: string | null; rutaTienda
   if (tiendaPublica) {
     return (
       <div className="mt-4">
-        <p className="text-sm mb-2" style={{ color: '#6b6459' }}>
+        <p className="text-sm mb-2" style={{ color: 'var(--hc-muted)' }}>
           Así te ven los compradores. Copiá el link y mandáselo a quien quieras.
         </p>
         <CopiarLinkTienda ruta={rutaTienda ?? ''} mostrarUrl />
@@ -72,7 +72,7 @@ function HintPublicacion({ slug, rutaTienda }: { slug: string | null; rutaTienda
   }
   if (estadoEmpresa === 'ACTIVO') {
     return (
-      <p className="text-sm mt-4" style={{ color: '#6b6459' }}>
+      <p className="text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
         Tu tienda está pausada en el catálogo.{' '}
         <Link to={RUTA_SISTEMA_VISIBILIDAD} className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
           Publicála
@@ -82,7 +82,7 @@ function HintPublicacion({ slug, rutaTienda }: { slug: string | null; rutaTienda
     )
   }
   return (
-    <p className="text-sm mt-4" style={{ color: '#6b6459' }}>
+    <p className="text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
       Cuando HotClick active tu negocio, este producto aparece en tu tienda
       {slug ? ` (/tienda/${slug})` : ''}. Mientras tanto queda en Sistema.
     </p>

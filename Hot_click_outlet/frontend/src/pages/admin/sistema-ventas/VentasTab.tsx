@@ -60,7 +60,7 @@ export default function VentasTab() {
 
 function VacioVentas() {
   return (
-    <div className="rounded-2xl p-10 text-center" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <div className="rounded-[14px] p-10 text-center" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <p style={{ color: 'var(--hc-muted)' }}>Sin ventas en este período.</p>
       <Link to="/admin/pos" className="text-sm font-semibold mt-2 inline-block" style={{ color: 'var(--hc-accent)' }}>
         <TextoFlecha>Abrí la caja (POS)</TextoFlecha>
@@ -71,7 +71,7 @@ function VacioVentas() {
 
 function TablaVentas({ ventas }: { ventas: VentaPosHistorial[] }) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <div className="rounded-[14px] overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead>

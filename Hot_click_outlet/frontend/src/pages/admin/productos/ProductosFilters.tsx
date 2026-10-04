@@ -102,7 +102,7 @@ function FiltrosAside({
 }: Omit<ProductosFiltrosValores, 'search' | 'onSearch'>) {
   return (
     <aside className="w-52 shrink-0 space-y-5 hidden md:block">
-      <div className="rounded-2xl p-4 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <div className="rounded-[14px] p-4 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Filtros</span>
           {hasFilters && (

@@ -28,7 +28,7 @@ export default function BloqueSeo({
   form, setForm, seoOpen, setSeoOpen, seoAutoTitle, setSeoAutoTitle, seoAutoDesc, setSeoAutoDesc,
 }: BloqueSeoProps) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+    <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
       <button
         type="button"
         onClick={() => setSeoOpen((o) => !o)}

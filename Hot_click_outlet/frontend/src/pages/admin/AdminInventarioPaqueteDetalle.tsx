@@ -223,7 +223,7 @@ export default function AdminInventarioPaqueteDetalle() {
       </div>
 
       {paquete.estado !== 'ASIGNADO' && (
-        <div className="rounded-2xl p-4 flex flex-wrap items-end gap-3"
+        <div className="rounded-[14px] p-4 flex flex-wrap items-end gap-3"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>Asignar a empresa</label>
@@ -254,7 +254,7 @@ export default function AdminInventarioPaqueteDetalle() {
       )}
 
       {preview && (
-        <div className="rounded-2xl p-4 space-y-2"
+        <div className="rounded-[14px] p-4 space-y-2"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
             Preview import: {preview.ok} válidas

@@ -19,7 +19,7 @@ export default function SeccionTotales({ form, setF, subtotal, montoIva, total, 
 }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border p-5 space-y-4"
+      <div className="rounded-[14px] border p-5 space-y-4"
         style={{ background: 'var(--hc-card)', borderColor: 'var(--hc-border)' }}>
         <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Impuesto</h2>
 
@@ -43,7 +43,7 @@ export default function SeccionTotales({ form, setF, subtotal, montoIva, total, 
         )}
       </div>
 
-      <div className="rounded-2xl border p-5 space-y-3 sticky top-6"
+      <div className="rounded-[14px] border p-5 space-y-3 sticky top-6"
         style={{ background: 'var(--hc-card)', borderColor: 'var(--hc-border)' }}>
         <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Resumen</h2>
 

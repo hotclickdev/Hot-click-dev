@@ -55,13 +55,13 @@ export default function SistemaClientes() {
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('adminClientes.titleSistema')}</h1>
-          <p className="text-[15px] m-0 mt-1" style={{ color: '#6b6459' }}>{t('adminClientes.count', { count: clientes.length })}</p>
+          <p className="text-[15px] m-0 mt-1" style={{ color: 'var(--hc-muted)' }}>{t('adminClientes.count', { count: clientes.length })}</p>
         </div>
         <button
           data-mm="seller-clientes-nuevo"
           type="button"
           onClick={() => setShowNuevo((v) => !v)}
-          className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[10px] text-[15px] font-bold"
+          className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[12px] text-[15px] font-bold"
           style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
         >
           <TextoMas>{t('adminClientes.addClient')}</TextoMas>
@@ -76,13 +76,13 @@ export default function SistemaClientes() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t('adminClientes.searchPhSistema')}
-        className="w-full max-w-[380px] px-3.5 py-3 rounded-[10px] text-[15px] mb-4 focus:outline-none"
+        className="w-full max-w-[380px] px-3.5 py-3 rounded-[12px] text-[15px] mb-4 focus:outline-none"
         style={{ border: '1px solid #d8cfc0', backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)' }}
       />
 
       {loading && <div className="flex justify-center py-16"><Spinner size="lg" /></div>}
       {!loading && filtrados.length === 0 && (
-        <p className="text-sm py-12 text-center" style={{ color: '#6b6459' }}>
+        <p className="text-sm py-12 text-center" style={{ color: 'var(--hc-muted)' }}>
           {clientes.length === 0
             ? t('adminClientes.emptySistema')
             : t('adminClientes.noSearchMatch')}
@@ -128,11 +128,11 @@ function FormNuevoCliente({ onCreado }: { onCreado: () => void }) {
   }
 
   return (
-    <form onSubmit={crear} className="rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
-      <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={t('adminClientes.phName')} required className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
-      <input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder={t('adminClientes.phPhone')} className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
-      <input value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder={t('adminClientes.phEmail')} type="email" className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
-      <button type="submit" disabled={saving} className="sm:col-span-3 py-2.5 rounded-[10px] text-sm font-bold disabled:opacity-50" style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
+    <form onSubmit={crear} className="rounded-[14px] p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+      <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={t('adminClientes.phName')} required className="px-3 py-2.5 rounded-[12px] text-sm focus:outline-none" style={inputStyle} />
+      <input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder={t('adminClientes.phPhone')} className="px-3 py-2.5 rounded-[12px] text-sm focus:outline-none" style={inputStyle} />
+      <input value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder={t('adminClientes.phEmail')} type="email" className="px-3 py-2.5 rounded-[12px] text-sm focus:outline-none" style={inputStyle} />
+      <button type="submit" disabled={saving} className="sm:col-span-3 py-2.5 rounded-[12px] text-sm font-bold disabled:opacity-50" style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
         {saving ? t('adminClientes.saving') : t('adminClientes.register')}
       </button>
     </form>
@@ -143,17 +143,17 @@ function TarjetaCliente({ cliente, onVer }: { cliente: ClienteSistema; onVer: ()
   const nombre = `${cliente.nombre ?? ''} ${cliente.apellidoPaterno ?? ''}`.trim() || 'Sin nombre'
   const compras = cliente.numPedidosHist ?? 0
   return (
-    <article className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <article className="rounded-[14px] p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ backgroundColor: 'rgba(23,71,168,0.08)', color: 'var(--hc-accent)' }}>
           {iniciales(nombre)}
         </div>
         <div className="min-w-0">
           <p className="text-[15px] font-semibold m-0 truncate" style={{ color: 'var(--hc-text)' }}>{nombre}</p>
-          <p className="text-[13px] m-0" style={{ color: '#6b6459' }}>{cliente.telefono || 'Sin teléfono'}</p>
+          <p className="text-[13px] m-0" style={{ color: 'var(--hc-muted)' }}>{cliente.telefono || 'Sin teléfono'}</p>
         </div>
       </div>
-      <div className="flex justify-between text-[13px] pt-2.5" style={{ borderTop: '1px solid #f0e9dd', color: '#6b6459' }}>
+      <div className="flex justify-between text-[13px] pt-2.5" style={{ borderTop: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
         <span>{compras} {compras === 1 ? 'compra' : 'compras'}</span>
         <span>Última: {textoUltima(cliente)}</span>
       </div>

@@ -101,7 +101,8 @@ export function PerfilPage({
           ) : null}
           {idPaso === 'contacto' ? (
             <>
-              <Campo etiqueta="Correo" value={correo} onChange={setCorreo} type="email" />
+              {/* El correo es el usuario de acceso: no se guarda desde acá (antes se podía escribir y se perdía al guardar). */}
+              <Campo etiqueta="Correo" value={correo} type="email" readOnly />
               <Campo etiqueta="Teléfono" value={telefono} onChange={setTelefono} type="tel" />
             </>
           ) : null}
@@ -119,9 +120,6 @@ export function PerfilPage({
         <div className="flex size-14 items-center justify-center rounded-full bg-hc-primary text-xl font-bold text-white">
           {cuenta.inicial}
         </div>
-        <button type="button" className="text-sm text-hc-accent">
-          Cambiar foto de perfil
-        </button>
       </div>
       {wizard}
     </main>

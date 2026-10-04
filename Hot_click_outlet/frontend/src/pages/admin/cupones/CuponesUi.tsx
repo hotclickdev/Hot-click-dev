@@ -6,7 +6,7 @@ type StatCardProps = {
 
 export function StatCard({ label, value, color = 'var(--hc-accent)' }: StatCardProps) {
   return (
-    <div className="rounded-2xl p-5 flex flex-col gap-1"
+    <div className="rounded-[14px] p-5 flex flex-col gap-1"
       style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <span className="text-2xl font-black" style={{ color }}>{value}</span>
       <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>{label}</span>

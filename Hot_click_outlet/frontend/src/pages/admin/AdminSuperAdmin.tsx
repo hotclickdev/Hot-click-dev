@@ -89,7 +89,7 @@ export default function AdminSuperAdmin() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Columna izquierda: lista de empresas */}
         <div className="lg:col-span-1">
-          <div className="rounded-2xl border border-[var(--hc-border)] bg-[var(--hc-surface)] shadow-sm">
+          <div className="rounded-[14px] border border-[var(--hc-border)] bg-[var(--hc-surface)] shadow-sm">
             <div className="border-b border-[var(--hc-border)] px-4 py-3">
               <h2 className="font-semibold text-[var(--hc-text)]">Empresas</h2>
             </div>
@@ -116,7 +116,7 @@ export default function AdminSuperAdmin() {
 
         {/* Columna derecha: flags de la empresa seleccionada */}
         <div className="lg:col-span-2">
-          <div className="rounded-2xl border border-[var(--hc-border)] bg-[var(--hc-surface)] shadow-sm">
+          <div className="rounded-[14px] border border-[var(--hc-border)] bg-[var(--hc-surface)] shadow-sm">
             <div className="border-b border-[var(--hc-border)] px-4 py-3">
               <h2 className="font-semibold text-[var(--hc-text)]">
                 {selected ? `Feature flags — ${selected.nombreEmpresa}` : 'Selecciona una empresa'}
@@ -182,7 +182,7 @@ export default function AdminSuperAdmin() {
           </div>
 
           {/* Registro global de flags */}
-          <div className="mt-4 rounded-2xl border border-[var(--hc-border)] bg-[var(--hc-surface)] shadow-sm">
+          <div className="mt-4 rounded-[14px] border border-[var(--hc-border)] bg-[var(--hc-surface)] shadow-sm">
             <div className="border-b border-[var(--hc-border)] px-4 py-3">
               <h2 className="font-semibold text-[var(--hc-text)]">Registro global de flags</h2>
             </div>

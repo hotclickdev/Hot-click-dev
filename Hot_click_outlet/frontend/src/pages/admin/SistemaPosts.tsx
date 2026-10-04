@@ -68,12 +68,12 @@ export default function SistemaPosts() {
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Posts</h1>
-          <p className="text-[15px] m-0 mt-1" style={{ color: '#6b6459' }}>Publicá novedades y promos en tu tienda de HOTCLICK.</p>
+          <p className="text-[15px] m-0 mt-1" style={{ color: 'var(--hc-muted)' }}>Publicá novedades y promos en tu tienda de HOTCLICK.</p>
         </div>
         <button
           type="button"
           onClick={() => setModal('new')}
-          className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[10px] text-[15px] font-bold"
+          className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[12px] text-[15px] font-bold"
           style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
         >
           <TextoMas>Creá un post</TextoMas>
@@ -84,14 +84,14 @@ export default function SistemaPosts() {
         <button
           type="button"
           onClick={() => setModal(formPostSugerido(sugerido) as EntradaBlog)}
-          className="w-full text-left rounded-2xl p-4 mb-5 flex items-center gap-4 flex-wrap"
+          className="w-full text-left rounded-[14px] p-4 mb-5 flex items-center gap-4 flex-wrap"
           style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}
         >
-          {sugerido.imagenUrl && <img src={sugerido.imagenUrl} alt="" className="w-12 h-12 rounded-[10px] object-cover" />}
+          {sugerido.imagenUrl && <img src={sugerido.imagenUrl} alt="" className="w-12 h-12 rounded-[12px] object-cover" />}
           <div className="flex-1 min-w-[180px]">
             <p className="m-0 text-xs font-bold" style={{ color: 'var(--hc-accent)' }}>Publicá esto</p>
             <p className="m-0 mt-0.5 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{sugerido.nombre}</p>
-            <p className="m-0 mt-0.5 text-xs" style={{ color: '#6b6459' }}>Tu producto más pedido de los últimos 30 días.</p>
+            <p className="m-0 mt-0.5 text-xs" style={{ color: 'var(--hc-muted)' }}>Tu producto más pedido de los últimos 30 días.</p>
           </div>
           <span className="text-sm font-bold" style={{ color: 'var(--hc-primary-text)' }}>Publicá / borrador</span>
         </button>
@@ -99,7 +99,7 @@ export default function SistemaPosts() {
 
       {loading && <div className="flex justify-center py-16"><Spinner size="lg" /></div>}
       {!loading && lista.length === 0 && (
-        <p className="text-center py-16 text-sm" style={{ color: '#6b6459' }}>Todavía no tenés posts. Contale a tus clientes qué hay de nuevo.</p>
+        <p className="text-center py-16 text-sm" style={{ color: 'var(--hc-muted)' }}>Todavía no tenés posts. Contale a tus clientes qué hay de nuevo.</p>
       )}
       {!loading && lista.length > 0 && (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -131,14 +131,14 @@ function TarjetaPost({ entrada, onEdit, onToggle, onDelete }: {
   onDelete: () => void
 }) {
   return (
-    <article className="rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <article className="rounded-[14px] overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       {entrada.imagenUrl
         ? <img src={entrada.imagenUrl} alt="" className="w-full aspect-[4/3] object-cover" />
         : <div className="w-full aspect-[4/3]" style={{ backgroundColor: 'var(--hc-surface-2)' }} />}
       <div className="p-4 flex flex-col gap-2">
         <p className="m-0 text-[15px] font-semibold leading-snug" style={{ color: 'var(--hc-text)' }}>{entrada.titulo}</p>
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={entrada.publicado ? { backgroundColor: '#e2f1e8', color: '#1E7F4F' } : { backgroundColor: '#efe9df', color: '#6b6459' }}>
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={entrada.publicado ? { backgroundColor: '#e2f1e8', color: '#1E7F4F' } : { backgroundColor: 'var(--hc-n-100)', color: 'var(--hc-muted)' }}>
             {entrada.publicado ? 'Publicado' : 'Borrador'}
           </span>
           <span className="text-[13px]" style={{ color: '#8a8378' }}>
@@ -149,10 +149,10 @@ function TarjetaPost({ entrada, onEdit, onToggle, onDelete }: {
           <button type="button" onClick={onEdit} className="text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}>
             {entrada.publicado ? 'Editá' : 'Seguí editando'}
           </button>
-          <button type="button" onClick={onToggle} className="text-sm font-semibold" style={{ color: '#6b6459' }}>
+          <button type="button" onClick={onToggle} className="text-sm font-semibold" style={{ color: 'var(--hc-muted)' }}>
             {entrada.publicado ? 'Ocultá' : 'Publicá'}
           </button>
-          <button type="button" onClick={onDelete} className="text-sm font-semibold" style={{ color: '#6b6459' }}>Borrá</button>
+          <button type="button" onClick={onDelete} className="text-sm font-semibold" style={{ color: 'var(--hc-muted)' }}>Borrá</button>
         </div>
       </div>
     </article>

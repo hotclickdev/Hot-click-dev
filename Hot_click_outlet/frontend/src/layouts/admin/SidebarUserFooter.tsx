@@ -35,7 +35,7 @@ export default function SidebarUserFooter({
         <>
           <NavLink
             to="/admin/pos"
-            className="flex items-center justify-center px-3 py-[11px] rounded-[10px] text-sm font-semibold transition-colors hover:bg-[var(--hc-surface-2)]"
+            className="flex items-center justify-center px-3 py-[11px] rounded-[12px] text-sm font-semibold transition-colors hover:bg-[var(--hc-surface-2)]"
             style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
           >
             <TextoFlecha>Ir a la Caja (POS)</TextoFlecha>
@@ -43,7 +43,7 @@ export default function SidebarUserFooter({
           <motion.button
             onClick={handleLogout}
             whileHover={{ color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.06)' }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-sm font-medium transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-sm font-medium transition-colors text-left"
             style={{ color: 'var(--hc-muted)' }}
           >
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

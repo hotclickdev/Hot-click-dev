@@ -55,7 +55,7 @@ export default function UsuariosTable({
 }: UsuariosTableProps) {
   if (displayed.length === 0) {
     return (
-      <div className="rounded-2xl border border-hc-border bg-hc-surface">
+      <div className="rounded-[14px] border border-hc-border bg-hc-surface">
         <div className="py-12 text-center text-sm text-hc-muted">{emptyLabel}</div>
       </div>
     )

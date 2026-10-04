@@ -100,7 +100,7 @@ export default function AdminGiftCards() {
 
       {/* Formulario */}
       {mostrarForm && (
-        <form onSubmit={crear} className="rounded-2xl p-5 space-y-4"
+        <form onSubmit={crear} className="rounded-[14px] p-5 space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Nueva gift card</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -158,7 +158,7 @@ export default function AdminGiftCards() {
           <p className="text-sm mt-1">Crea una gift card para que tus clientes la usen en el checkout</p>
         </div>
       ) : (
-        <div data-mm="seller-giftcards-lista" className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
+        <div data-mm="seller-giftcards-lista" className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
             <thead>

@@ -143,12 +143,7 @@
   },
   "emprende": {
     "metaTitle": "Choose the plan for your business on HotClick",
-    "metaDescription": "Emprendedor with no monthly fee to start, or PYME and Negocio Plus with more tools as you grow. You choose.",
     "badge": "Grow",
-    "title": "Publish and get paid on HotClick.",
-    "sub": "No monthly fee: just a commission when you sell.",
-    "heroBadge": "No team or storefront needed",
-    "heroPrecioLinea": "₡0 /mo · {{comision}}% commission (min ₡{{minimo}}, payment gateway included)",
     "titleOwner": "Keep growing in Sistema",
     "subOwner": "Complete your store brand, publish a product, and review your plan. The start checklist is in your panel.",
     "paso1": "Create my business",
@@ -158,7 +153,7 @@
     "paso3": "Choose a plan and get orders",
     "paso3hint": "After signup. The plan lives in Sistema, in one place.",
     "pasoOwner1": "Complete brand",
-    "pasoOwner1hint": "Name, logo and WhatsApp for your store",
+    "pasoOwner1hint": "Your store's name and logo",
     "pasoOwner2": "Add a product",
     "pasoOwner2hint": "To show up in Buy",
     "pasoOwner3": "See your plan",
@@ -167,308 +162,9 @@
     "ctaSistema": "Go to Sistema",
     "ctaCatalogo": "Shop from local sellers",
     "ctaAliados": "See partners",
-    "procesoTitle": "Step by step",
-    "procesoSub": "First you register the business. The first product and the plan are set later, in Sistema.",
-    "formTitle": "What the signup form asks",
-    "formSub": "Signup has three blocks. It takes a few minutes.",
-    "formStep1Title": "Business details",
-    "formStep1Desc": "Store name, email, and contact phone.",
-    "formStep2Title": "Who administers",
-    "formStep2Desc": "Your name, email, and a password to enter Sistema.",
-    "formStep3Title": "Tax details",
-    "formStep3Desc": "If you invoice with Hacienda. If not yet, you can complete them later.",
-    "formNota": "When you finish, the store is ready to publish the first product. No product, no sale in the catalog.",
-    "beneficiosTitle": "What you get by selling on HotClick",
-    "beneficiosSub": "The same operations panel: payments, orders, and shipping.",
-    "beneficio1Title": "Sales panel",
-    "beneficio1Desc": "Orders, revenue, and live stats.",
-    "beneficio2Title": "Card and SINPE payments",
-    "beneficio2Desc": "Receive secure payments without extra setup.",
-    "beneficio3Title": "Built-in logistics",
-    "beneficio3Desc": "Coordinate shipping across Costa Rica from admin.",
-    "beneficio4Title": "Dedicated support",
-    "beneficio4Desc": "Team available on WhatsApp when you need it.",
-    "planesTitle": "Three plans, one signup",
-    "planesSub": "You start on Emprendedor. PYME and Negocio Plus are chosen later in Sistema.",
-    "planEmprendedorBadge": "To start",
-    "planEmprendedorTitle": "Emprendedor",
-    "planEmprendedorDesc": "Publish and get paid. The starter plan for the first 70.",
-    "planEmprendedorPuntos": [
-      "Up to 50 products",
-      "Basic reports",
-      "1 warehouse and 1 POS till",
-      "Card and SINPE payments",
-      "Shipping across Costa Rica",
-      "9% sales fee (min ₡700)"
-    ],
-    "planPymeBadge": "To grow",
-    "planPymeTitle": "PYME",
-    "planPymeDesc": "Team, more warehouses, and fuller reports.",
-    "planPymePuntos": [
-      "Up to 500 products",
-      "Team management (5 users)",
-      "2 warehouses and 2 tills",
-      "Purchasing and inventory",
-      "AI and advanced reports",
-      "₡9,900/mo + 4% per sale"
-    ],
-    "planPlusBadge": "To operate at scale",
-    "planPlusTitle": "Negocio Plus",
-    "planPlusDesc": "Several branches and orders per location.",
-    "planPlusPuntos": [
-      "Everything in PYME",
-      "Unlimited products and users",
-      "Multi-branch and orders per location",
-      "Customer CRM",
-      "Unlimited AI",
-      "₡24,900/mo + 4% per sale"
-    ],
-    "pymeCta": "Create my business",
-    "plusCta": "Create my business",
-    "faqTitle": "Frequently asked questions",
-    "faqSub": "What people ask before signing up.",
-    "faq1q": "Do you charge anything to sign up?",
-    "faq1a": "No. Membership is ₡0. HotClick keeps 9% of each sale (minimum ₡700), a percentage that already includes the payment gateway cost. These amounts can change; you'll always see the current ones here before you sell.",
-    "faq2q": "What happens if the free slots fill up?",
-    "faq2a": "We'll let you know above and the button will offer PYME or Negocio Plus instead. Your signup won't be closed.",
-    "faq3q": "How do I get paid?",
-    "faq3a": "By card or SINPE. HotClick withholds 9% (minimum ₡700) per sale, with the payment gateway already included.",
-    "faq4q": "Can I upgrade later?",
-    "faq4a": "Yes, you can move to PYME or Negocio Plus whenever you need to, without losing your catalog or orders.",
-    "galeriaCaption": "Shops and small businesses: the same kind of store you can sell on HotClick.",
-    "feriaBadge": "Fairs",
-    "feriaCaption": "From the fair to the catalog: the same stall, now with payments, orders, and shipping on HotClick.",
-    "fasesTitle": "Phases of being with us",
-    "fasesSub": "From first contact to operating and growing. Everything an entrepreneur, PYME, or Negocio Plus can do on HotClick.",
-    "fase1Title": "We meet you",
-    "fase1Desc": "At fairs, in the community, and on social. That is where the conversation starts, not the charge.",
-    "fase2Title": "You register the business",
-    "fase2Desc": "One signup. Then you enter Sistema with your store ready to configure.",
-    "fase3Title": "You publish and get paid",
-    "fase3Desc": "Products in the catalog, POS till, card and SINPE. No product, no sale.",
-    "fase4Title": "You run orders and shipping",
-    "fase4Desc": "Sales panel, logistics across Costa Rica, and customer follow-up.",
-    "fase5Title": "You upgrade your plan",
-    "fase5Desc": "PYME adds team and purchasing. Negocio Plus adds branches and CRM.",
-    "cupoBadge": "Starter slots",
-    "cupoCargando": "Checking free slots…",
-    "cupoError": "We could not load the slots. The first 70 entrepreneurs join for free.",
-    "cupoTitle": "{{quedan}} of {{limite}} free slots left",
-    "cupoHint": "The first 70 entrepreneurs do not pay membership. Later ones activate PYME or Negocio Plus.",
-    "cupoLlenoTitle": "The 70 free slots are taken",
-    "cupoLlenoHint": "You can still sign up. To publish in the catalog, activate PYME or Negocio Plus in Sistema.",
-    "cupoVerPlanes": "See PYME and Negocio Plus",
     "membresiaTitle": "Your store needs a membership",
-    "membresiaHint": "Free slots are gone. Activate PYME or Negocio Plus to publish.",
-    "membresiaCta": "See plans",
-    "fotoLocalAlt": "Interior of a retail store",
-    "fotoCajaAlt": "Customer checkout at a register",
-    "fotoTiendaAlt": "Clothing store with products on display",
-    "fotoCafeAlt": "Coffee shop counter",
-    "fotoRegistroAlt": "Person registering a business on a laptop",
-    "fotoMercadoAlt": "Market stall with local products",
-    "fotoFeria1Alt": "Outdoor entrepreneurship fair with stalls",
-    "fotoFeria2Alt": "Visitors walking through a producers fair",
-    "fotoFeria3Alt": "Fair stall with handmade products",
-    "vitrinaCard1Titulo": "Your store, online",
-    "vitrinaCard1Desc": "The same business, now on HotClick too.",
-    "vitrinaCard2Titulo": "From the market to the catalog",
-    "vitrinaCard2Desc": "Publish what you already sell at the fair.",
-    "vitrinaCard3Titulo": "Coffee and counter",
-    "vitrinaCard3Desc": "Add online sales without changing your storefront.",
-    "vitrinaSticker": "Publish it today!",
-    "vitrinaCita": "Fair, social media, and storefront businesses already publish and get paid on HotClick.",
-    "comoFuncionaTitle": "See how it works",
-    "comoFuncionaPlay": "Play video",
-    "comoFuncionaCaption": "Quick walkthrough: create an account, publish a product, and get your first sale paid.",
-    "confianzaTitle": "Businesses that already trust HotClick",
-    "confianzaLogoPlaceholder": "Logo",
-    "negociosRealesTitle": "Real businesses on HotClick",
-    "negociosRealesCaption": "Fairs and shops that already publish and get paid through HotClick.",
-    "paraVosTitle": "Is this for you?",
-    "paraVos1": "You sell at fairs, on Instagram, or WhatsApp",
-    "paraVos2": "You don't have a team or storefront yet",
-    "paraVosPyme": "Already have a team or storefront? Check out PYME",
-    "incluyeTitle": "What this plan includes",
-    "incluye1": "Up to 50 products",
-    "incluye2": "2 users",
-    "incluye3": "1 warehouse and 1 till",
-    "incluye4": "Card and SINPE payments",
-    "incluye5": "Shipping across Costa Rica",
-    "incluye6": "Basic reports",
-    "destacado1Titulo": "No hidden fees",
-    "destacado1Sub": "{{comision}}% per sale, payment gateway included",
-    "destacado2Titulo": "Get paid from your phone",
-    "destacado2Sub": "Card or SINPE",
-    "cupoCtaDisponible": "Create my business",
-    "cupoCtaLleno": "See PYME and Negocio Plus",
-    "panelTitle": "Everything you control from the panel",
-    "panelPosTitulo": "Point of sale",
-    "panelPosDesc": "Get paid at the fair by card or SINPE, from your phone.",
-    "panelCatalogoTitulo": "Catalog",
-    "panelCatalogoDesc": "Upload photos and price in minutes, ready to sell.",
-    "panelTelegramTitulo": "Telegram bot and alerts",
-    "panelTelegramDesc": "We notify every sale straight to Telegram, no need to open the panel.",
-    "pagoFlexibleTitle": "Your customers pay however they want",
-    "pagoFlexibleSub": "Card or SINPE — we verify every payment for you. No need to check receipts by hand.",
-    "pagoProductoA": "Fair earrings",
-    "pagoProductoB": "Woven bag",
-    "pagoAprobado": "Payment approved",
-    "pagoSinpeVerificado": "SINPE verified",
-    "pagoChipTarjeta": "Card in minutes",
-    "pagoChipSinpe": "New sale",
-    "pagoChipAprobacion": "Approved in seconds",
-    "comoEntrasTitle": "How you get started",
-    "comoEntras1Titulo": "Create your account",
-    "comoEntras1Desc": "No card, no upfront payment.",
-    "comoEntras2Titulo": "Publish your first product",
-    "comoEntras2Desc": "Upload photos, price, and you're ready to sell.",
-    "comoEntras3Titulo": "Get paid by card or SINPE",
-    "comoEntras3Desc": "HotClick withholds {{comision}}% (minimum ₡{{minimo}}) per sale, gateway included.",
-    "precioMensualidad": "₡0 /mo",
-    "precioComision": "{{comision}}% commission per sale (minimum ₡{{minimo}}, payment gateway included)",
-    "ctaFinalTitle": "Ready to sell with no monthly fee?"
-  },
-  "pyme": {
-    "heroBadge": "For businesses that already sell and need a team",
-    "heroSecondary": "Just starting out, no monthly fee",
-    "resultadosNumero": "180+",
-    "resultadosLabel": "businesses already selling on HotClick",
-    "resultadosCita": "Moving to PYME organized our team: everyone sees only what's theirs, and inventory stopped being a mess.",
-    "resultadosAutor": "María Fernández · Clothing store",
-    "comoFuncionaTitle": "See how it works",
-    "comoFuncionaPlay": "Play video",
-    "comoFuncionaCaption": "Short walkthrough: team roles, inventory by warehouse, and checkout at the register.",
-    "paraVosTitle": "Is this for you?",
-    "paraVos1": "You already sell and your team grew (2 to 5 people)",
-    "paraVos2": "Your notebook or spreadsheet isn't enough anymore",
-    "paraVosNo": "Just starting with no team? Check out Emprendedor. More than one location? Check out Negocio Plus.",
-    "confianzaTitle": "Businesses that already trust HotClick",
-    "confianzaLogoPlaceholder": "Logo",
-    "negociosRealesTitle": "Real businesses on HotClick",
-    "negociosRealesFotoAlt": "PYME business {{n}}",
-    "negociosRealesCaption": "Businesses with a team and several warehouses already running on the PYME plan.",
-    "incluyeTitle": "What this plan includes",
-    "incluyeItem1": "Up to 500 products",
-    "incluyeItem2": "5 users",
-    "incluyeItem3": "2 warehouses and 2 registers",
-    "incluyeItem4": "Purchasing and inventory",
-    "incluyeItem5": "Gift cards",
-    "incluyeItem6": "Advanced reports",
-    "incluyeIA": "Hot IA: 80 credits/month included",
-    "panelTitle": "Everything you control from the panel",
-    "panelPosTitulo": "Point of Sale",
-    "panelPosDesc": "Charge at the counter with card or SINPE, without losing track of inventory.",
-    "panelPosCobrar": "Charge",
-    "panelInventarioTitulo": "Inventory Control",
-    "panelInventarioDesc": "Stock by warehouse in real time, with an alert when something is about to run out.",
-    "panelTelegramTitulo": "Telegram: bot and alerts",
-    "panelTelegramDesc": "Get sales and low-stock alerts straight to your Telegram, without opening the panel.",
-    "panelTelegramAlerta1": "1L Thermos with only 3 units left",
-    "panelTelegramAlerta2": "Sale registered: ₡8,900",
-    "pagoTitle": "Your customers pay however they want",
-    "pagoSub": "Card or SINPE — we verify every payment for you. No need to check receipts by hand.",
-    "pagoAprobado": "Payment approved",
-    "pagoSinpeVerificado": "SINPE verified",
-    "pagoProductoA": "Basic T-shirt",
-    "pagoProductoB": "1L Thermos",
-    "pagoChipVisa": "Visa •••• 4242",
-    "pagoChipNuevaVenta": "New sale",
-    "pagoChipTarjetaMinutos": "Card in minutes",
-    "pagoChipAprobacion": "Approval in seconds",
-    "comoEntrasTitle": "How you get in",
-    "comoEntras1Titulo": "You sign up",
-    "comoEntras1Desc": "Create your account in minutes.",
-    "comoEntras2Titulo": "You pay the monthly fee",
-    "comoEntras2Desc": "With the ONVO gateway the panel already uses.",
-    "comoEntras3Titulo": "You're in with PYME active",
-    "comoEntras3Desc": "Team, inventory, and register, ready to operate.",
-    "comparativaNota": "On a ₡50,000 sale: Emprendedor keeps ₡4,000 in commission, PYME keeps ₡2,000 plus the monthly fee.",
-    "faqTitle": "Frequently asked questions",
-    "faq2q": "How much do I need to sell for it to be worth it?",
-    "faq2a": "If you sell regularly, the lower commission recovers the monthly fee fast. If you sell little, Emprendedor suits you better.",
-    "faq3q": "What if I need more than one location?",
-    "faq3a": "Check out Negocio Plus, which has no limit on locations.",
-    "faq4q": "How is the monthly fee charged?",
-    "faq4a": "With the ONVO gateway the panel already uses, charged automatically every month.",
-    "ctaFinalTitle": "Ready to run everything from one panel?"
-  },
-  "negocioPlus": {
-    "heroBadge": "For businesses with more than one location",
-    "heroCta": "Subscribe to Business Plus",
-    "panelSucursales": "locations",
-    "panelPedidosHoy": "orders today",
-    "panelUsuarios": "users",
-    "panelSucursalCentro": "Downtown Branch",
-    "panelSucursalCentroDetalle": "San José · 18 orders",
-    "panelSucursalNorte": "North Branch",
-    "panelSucursalNorteDetalle": "Heredia · 21 orders",
-    "panelSucursalSur": "South Branch",
-    "panelSucursalSurDetalle": "Cartago · 9 orders",
-    "trustNegocios": "Businesses with multiple locations",
-    "trustRecomienda": "Owners who recommend Business Plus",
-    "trustSoporteTitulo": "Support",
-    "trustSoporteSub": "priority",
-    "trustPagosTitulo": "Payments",
-    "trustPagosSub": "with Tilopay",
-    "comparativaTitle": "Business Plus vs. SMB",
-    "comparativaColPyme": "SMB",
-    "comparativaColPlus": "Business Plus",
-    "comparativaSucursales": "Locations",
-    "comparativaSucursalesPyme": "1",
-    "comparativaSucursalesPlus": "No limit",
-    "comparativaUsuarios": "Users",
-    "comparativaUsuariosPyme": "Up to 5",
-    "comparativaUsuariosPlus": "No limit",
-    "comparativaCrm": "Customer CRM",
-    "comparativaCrmPyme": "—",
-    "comparativaCrmPlus": "Included",
-    "comparativaIa": "AI credits",
-    "comparativaIaPyme": "80/month",
-    "comparativaIaPlus": "Unlimited",
-    "comoFuncionaTitle": "See how it works",
-    "comoFuncionaCaption": "A tour of the Business Plus panel: locations, orders and CRM in one place.",
-    "comoFuncionaPlay": "Play video",
-    "confianzaTitle": "Businesses that already trust HotClick",
-    "confianzaLogoPlaceholder": "Logo",
-    "negociosRealesTitle": "Real businesses on HotClick",
-    "negociosRealesCaption": "Businesses already running several locations on HotClick.",
-    "incluyeTitle": "What this plan includes",
-    "incluyeIntro": "Everything in SMB, plus:",
-    "incluye1": "Unlimited products, users, warehouses and registers",
-    "incluye2": "Multiple locations with per-branch orders",
-    "incluye3": "Customer CRM per branch and consolidated",
-    "incluye4": "Unlimited AI credits",
-    "panelControlTitle": "Everything you control from the panel",
-    "panelPosTitulo": "Point of Sale",
-    "panelPosDesc": "Charge at any location, with its own register per branch.",
-    "panelInventarioTitulo": "Inventory Control",
-    "panelInventarioDesc": "Real-time stock per branch, consolidated in one panel.",
-    "panelTelegramTitulo": "Telegram: bot and alerts",
-    "panelTelegramDesc": "Sales and low-stock alerts per branch, straight to your Telegram.",
-    "pagosTitle": "Your customers pay however they want",
-    "pagosSub": "Card or SINPE — we verify every payment for you. No need to check receipts by hand.",
-    "pagosAprobado": "Payment approved",
-    "pagosSinpeVerificado": "SINPE verified",
-    "pagosVisa": "Visa •••• 4242",
-    "pagosNuevaVenta": "New sale",
-    "pagosTarjetaMinutos": "Card in minutes",
-    "pagosAprobacionSegundos": "Approval in seconds",
-    "comoEntrasTitle": "How you get started",
-    "comoEntras1": "You sign up",
-    "comoEntras2": "You pay the subscription",
-    "comoEntras3": "You activate your locations",
-    "precioDestacadoPerk1": "Unlimited locations",
-    "precioDestacadoPerk2": "Customer CRM included",
-    "precioDestacadoPerk3": "Priority support",
-    "faqTitle": "Frequently asked questions",
-    "faq2q": "I only have one location, is this for me?",
-    "faq2a": "Probably not — SMB is enough and costs less.",
-    "faq3q": "How do I see orders per branch?",
-    "faq3a": "The panel automatically splits orders and inventory by location.",
-    "faq4q": "What does the CRM store?",
-    "faq4a": "Your customers' purchase history and contact info, per branch and consolidated.",
-    "ctaFinalTitle": "Ready to run all your locations?"
+    "membresiaHint": "To publish in the catalog, activate the Pyme or Negocio Plus plan.",
+    "membresiaCta": "See plans"
   },
   "theme": {
     "light": "Light mode",
@@ -2730,7 +2426,7 @@
     "sysResetToast": "Database reset. All data has been deleted.",
     "sysResetError": "Error resetting data",
     "sysExternalTitle": "External panels",
-    "sysSupabaseDesc": "DB & Storage",
+    "sysDbDesc": "PostgreSQL on AWS Lightsail",
     "sysRenderDesc": "Production server",
     "sysSendGridDesc": "Transactional email",
     "sysStripeDesc": "Payment gateway",
@@ -3504,7 +3200,7 @@
       "derechos": "© {{anio}} HotClick · Costa Rica",
       "bannerPregunta": "Do you have a business?",
       "bannerTitulo": "Sell on HotClick",
-      "bannerTituloDesktop": "Sell on HotClick with no monthly fee",
+      "bannerTituloDesktop": "Sell on HotClick",
       "bannerCta": "See the plans"
     },
     "tarjeta": {
@@ -4016,5 +3712,285 @@
     "enResultados": "Matching businesses",
     "verTodos": "See all businesses",
     "sinPlan": "There are no {{plan}} stores on HotClick yet."
+  },
+  "planes": {
+    "emprendedor": {
+      "nombre": "Emprendedor",
+      "pitch": "Start selling on HotClick.",
+      "punto": {
+        "productos": "Up to 50 products",
+        "bodegas": "1 warehouse",
+        "pos": "Point of sale with 1 register",
+        "equipo": "Team of 2 users",
+        "inventario": "Inventory and low-stock alerts",
+        "clientes": "Customer list",
+        "pagos": "Get paid by card and SINPE",
+        "contacto": "Your customers buy from you through HotClick",
+        "montos": "Monthly fee and commission: [PENDIENTE]"
+      },
+      "cta": "Choose this plan"
+    },
+    "pyme": {
+      "nombre": "Pyme",
+      "pitch": "For when customers are already looking for your business.",
+      "punto": {
+        "contacto": "Your contact details shown in your store",
+        "productos": "Up to 500 products",
+        "bodegas": "2 warehouses",
+        "pos": "Point of sale with 2 registers",
+        "equipo": "Team of 5 users",
+        "compras": "Purchases from suppliers",
+        "giftCards": "Gift cards",
+        "ia": "80 AI queries per month",
+        "base": "Everything in Emprendedor",
+        "montos": "Monthly fee and commission: [PENDIENTE]"
+      },
+      "cta": "Choose this plan"
+    },
+    "negocioPlus": {
+      "nombre": "Negocio Plus",
+      "pitch": "No limits to grow.",
+      "punto": {
+        "contacto": "Your contact details shown in your store",
+        "productos": "Unlimited products",
+        "bodegas": "Unlimited warehouses",
+        "pos": "Point of sale with unlimited registers",
+        "equipo": "Unlimited users",
+        "ia": "Unlimited AI queries",
+        "base": "Everything in Pyme",
+        "montos": "Monthly fee and commission: [PENDIENTE]"
+      },
+      "cta": "Choose this plan"
+    },
+    "titulo": "Choose your plan",
+    "subtitulo": "Every plan includes a HotClick store, point of sale, inventory and a customer list.",
+    "nota": {
+      "cambio": "You can upgrade whenever you want.",
+      "montos": "Amounts are confirmed before you pay."
+    },
+    "badge": {
+      "actual": "Your current plan",
+      "provisorio": "Provisional"
+    },
+    "comparativa": {
+      "productos": "Products",
+      "bodegas": "Warehouses",
+      "cajas": "POS registers",
+      "usuarios": "Team users",
+      "inventario": "Inventory and low-stock alerts",
+      "clientes": "Customer list",
+      "reportes": "Sales reports",
+      "telegram": "Sales and stock alerts on Telegram",
+      "contacto": "Contact details shown in your store",
+      "compras": "Supplier purchases",
+      "giftCards": "Gift cards",
+      "ia": "AI queries per month",
+      "mensualidad": "Monthly fee",
+      "comision": "Commission per sale",
+      "sinLimite": "Unlimited",
+      "incluido": "Included",
+      "noIncluido": "Not included"
+    },
+    "cambio": {
+      "titulo": "Change plan",
+      "subir": "Upgrade to {{plan}}",
+      "subirAyuda": "Your new plan turns on as soon as the payment is confirmed.",
+      "bajar": "Downgrade to {{plan}}",
+      "bajarAyuda": "If your usage fits within {{plan}}'s limits, the change applies at the end of the period you already paid for. Until {{fecha}} you keep everything in your current plan.",
+      "bajarNadaSeBorra": "We don't delete anything: you choose what to adjust.",
+      "bajarContacto": "On Emprendedor, your contact details are no longer shown in your store.",
+      "confirmar": "Confirm change",
+      "programado": "Your plan switches to {{plan}} on {{fecha}}.",
+      "listo": "Done. Your plan is now {{plan}}.",
+      "confirmandoPago": "We're confirming your payment. It usually takes a few seconds.",
+      "errorConfirmar": "We couldn't confirm the change. Check it in Options → Your plan.",
+      "yaEsTuPlan": "That's already your plan."
+    },
+    "bajarBloqueado": {
+      "titulo": "You can't downgrade to {{plan}} yet",
+      "texto": "Your current usage is above what {{plan}} allows. We don't delete anything: adjust what's listed below, then confirm the change.",
+      "productos": {
+        "titulo": "Products",
+        "texto": "You have {{uso}} products and {{plan}} allows {{limite}}. Unpublish or delete {{exceso}}.",
+        "boton": "Go to my products"
+      },
+      "bodegas": {
+        "titulo": "Warehouses",
+        "texto": "You have {{uso}} warehouses and {{plan}} allows {{limite}}. Move your products to another warehouse and delete {{exceso}}. Note: a deleted warehouse can't be restored.",
+        "boton": "Go to my warehouses"
+      },
+      "cajas": {
+        "titulo": "Registers",
+        "texto": "[PENDING]",
+        "boton": "Go to point of sale"
+      },
+      "usuarios": {
+        "titulo": "Users",
+        "texto": "Your team has {{uso}} users and {{plan}} allows {{limite}}. Remove {{exceso}} from the team.",
+        "boton": "Go to my team"
+      },
+      "listo": "Done, your usage now fits {{plan}}. You can confirm the change."
+    },
+    "pagarDespues": {
+      "boton": "Pay later",
+      "ayuda": "Until you pay for {{plan}}, your store works as Emprendedor in every way: with its limits and without your contact details shown.",
+      "limites": "Meanwhile: up to 50 products, 1 warehouse, 1 register, 2 users and no AI queries.",
+      "bannerTitulo": "Your {{plan}} plan is awaiting payment",
+      "bannerTexto": "Meanwhile, your store runs as Emprendedor: with its limits and without your contact details shown. Once you pay, {{plan}}'s limits, features and your contact details turn on.",
+      "bannerCta": "Pay now",
+      "monto": "Amount: [PENDIENTE]"
+    },
+    "bloqueo": {
+      "boton": "Upgrade plan",
+      "compras": {
+        "titulo": "Supplier purchases",
+        "texto": "Record supplier purchases starting with the Pyme plan. You can still see your inventory as usual."
+      },
+      "giftCards": {
+        "titulo": "Gift cards",
+        "texto": "Sell gift cards starting with the Pyme plan."
+      },
+      "ia": {
+        "titulo": "AI queries",
+        "texto": "AI queries are available on Pyme and Negocio Plus."
+      },
+      "iaAgotada": {
+        "titulo": "You've used this month's queries",
+        "texto": "You've used {{uso}} of {{limite}}. They renew next month, or upgrade for more."
+      },
+      "limite": {
+        "productos": {
+          "titulo": "You've reached your product limit",
+          "texto": "Your plan allows {{limite}} products and you have {{uso}}. Upgrade to publish more."
+        },
+        "productosLote": "You can add {{disponibles}} more: your plan allows {{limite}} and you have {{uso}}.",
+        "bodegas": {
+          "titulo": "You've reached your warehouse limit",
+          "texto": "Your plan allows {{limite}} warehouse(s). Upgrade to add another."
+        },
+        "cajas": {
+          "titulo": "You've reached your register limit",
+          "texto": "Your plan allows {{limite}} open register(s). Close one or upgrade."
+        },
+        "usuarios": {
+          "titulo": "You've reached your user limit",
+          "texto": "Your plan allows {{limite}} team users. Upgrade to invite someone else."
+        },
+        "contador": "{{uso}} of {{limite}}"
+      },
+      "generico": {
+        "texto": "This feature is available starting with the {{plan}} plan."
+      }
+    },
+    "faq": {
+      "1": {
+        "q": "How much does each plan cost?",
+        "a": "Monthly fee and commission per sale: [PENDIENTE]. You always see them before paying."
+      },
+      "2": {
+        "q": "Can I change plans?",
+        "a": "Yes. You can upgrade anytime; it turns on once the payment is confirmed. To downgrade, your usage must fit the new plan's limits; if it doesn't, we tell you what to adjust. We don't delete anything. The change applies at the end of the period you already paid for."
+      },
+      "3": {
+        "q": "Can my customers see my WhatsApp or social media?",
+        "a": "On Pyme and Negocio Plus, yes: your contact details appear in your store. On Emprendedor, customers buy through HotClick and no direct contact is shown."
+      },
+      "4": {
+        "q": "What happens if I choose \"Pay later\"?",
+        "a": "Until you pay, your store works as Emprendedor in every way: with its limits and no contact details shown. Once you pay, everything in your plan turns on."
+      },
+      "5": {
+        "q": "Do all plans include point of sale?",
+        "a": "Yes. The number of registers changes: 1 on Emprendedor, 2 on Pyme and unlimited on Negocio Plus."
+      },
+      "6": {
+        "q": "Can I see my inventory on any plan?",
+        "a": "Yes. Every plan shows your stock and sends low-stock alerts. Supplier purchases start with Pyme."
+      },
+      "7": {
+        "q": "Can I work with my team?",
+        "a": "Yes. Emprendedor includes 2 users, Pyme 5, and Negocio Plus has no limit."
+      },
+      "8": {
+        "q": "Is there free shipping?",
+        "a": "Not for now. The shipping cost is shown before you pay."
+      }
+    },
+    "landing": {
+      "planLabel": "Plan",
+      "faqTitulo": "Frequently asked questions",
+      "metaPyme": "Pyme on HotClick: your contact details shown, up to 500 products, 2 warehouses and point of sale with 2 registers.",
+      "metaPlus": "Negocio Plus on HotClick: unlimited products, warehouses, registers and users.",
+      "metaEmprende": "Start selling on HotClick with the Emprendedor plan: up to 50 products, 1 warehouse and point of sale.",
+      "whatsapp": {
+        "texto": "Still have a question about the plans?",
+        "boton": "Message us on WhatsApp",
+        "saludo": "Hi HotClick, I have a question about the selling plans."
+      },
+      "planDeEstaPagina": "This plan",
+      "empezarCon": "Start with {{plan}}",
+      "incluye": "Includes",
+      "noIncluye": "Not included"
+    }
+  },
+  "registroVendedor": {
+    "paso1": {
+      "titulo": "Start selling on HotClick"
+    },
+    "paso2": {
+      "titulo": "Tell us about your business"
+    },
+    "paso3": {
+      "titulo": "Check your email"
+    },
+    "activar": {
+      "titulo": "Activate your {{plan}} plan"
+    },
+    "listo": {
+      "titulo": "Done! Your business is set up"
+    },
+    "boton": {
+      "crearCuenta": "Create my account",
+      "pagarActivar": "Pay and activate {{plan}}",
+      "irPanel": "Go to my dashboard"
+    },
+    "contacto": {
+      "ayuda": "Buyers only see these details if your plan is Pyme or Negocio Plus."
+    },
+    "acuerdo": {
+      "check": "I have read and accept the {{acuerdo}}.",
+      "enlace": "Seller Agreement",
+      "ayuda": "It includes your obligations as Data Processor of your customers' data (Costa Rica Law 8968).",
+      "error": "To continue, accept the Seller Agreement."
+    },
+    "revision": {
+      "texto": "We review your store before publishing it. We'll let you know by email."
+    },
+    "primerosPasos": {
+      "marca": {
+        "emprendedor": "Your store's name and logo",
+        "pymePlus": "Your store's name, logo and contact details"
+      }
+    }
+  },
+  "stock": {
+    "disponible": "Available",
+    "quedan_one": "{{count}} left",
+    "quedan_other": "{{count}} left",
+    "agotado": "Sold out",
+    "tallaQuedan": "{{count}} left in size {{talla}}",
+    "tallaAgotada": "Size {{talla}} sold out",
+    "maximo": "No more units: {{count}} left",
+    "filtro": {
+      "soloDisponibles": "Available only",
+      "quedanPocos": "Few left"
+    },
+    "wishlist": {
+      "uno": "{{count}} left of \"{{nombre}}\"",
+      "varios": "{{count}} of your favorites are almost sold out"
+    },
+    "checkout": {
+      "agotado": "{{nombre}} sold out. Remove it from your order and try again."
+    }
   }
 }

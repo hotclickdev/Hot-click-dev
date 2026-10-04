@@ -143,12 +143,7 @@
   },
   "emprende": {
     "metaTitle": "Escolha o plano do seu negócio no HotClick",
-    "metaDescription": "Emprendedor sem mensalidade para começar, ou PYME e Negocio Plus com mais ferramentas conforme você cresce. Você escolhe.",
     "badge": "Empreenda",
-    "title": "Publique e receba no HotClick.",
-    "sub": "Sem mensalidade: só uma comissão quando você vende.",
-    "heroBadge": "Sem equipe nem loja física",
-    "heroPrecioLinea": "₡0 /mês · comissão {{comision}}% (mín. ₡{{minimo}}, já inclui o gateway de pagamento)",
     "titleOwner": "Continue crescendo no Sistema",
     "subOwner": "Complete a marca da sua loja, publique um produto e revise seu plano. O checklist de início está no seu painel.",
     "paso1": "Criar meu negócio",
@@ -158,7 +153,7 @@
     "paso3": "Escolher plano e receber pedidos",
     "paso3hint": "Depois do cadastro. O plano fica no Sistema, em um só lugar.",
     "pasoOwner1": "Completar marca",
-    "pasoOwner1hint": "Nome, logo e WhatsApp da sua loja",
+    "pasoOwner1hint": "Nome e logo da sua loja",
     "pasoOwner2": "Adicionar um produto",
     "pasoOwner2hint": "Para aparecer em Comprar",
     "pasoOwner3": "Ver seu plano",
@@ -167,308 +162,9 @@
     "ctaSistema": "Ir ao Sistema",
     "ctaCatalogo": "Comprar de empreendedores",
     "ctaAliados": "Ver aliados",
-    "procesoTitle": "Passo a passo",
-    "procesoSub": "Primeiro você cadastra o negócio. O primeiro produto e o plano são configurados depois, no Sistema.",
-    "formTitle": "O que o formulário pede",
-    "formSub": "O cadastro tem três blocos. Leva alguns minutos.",
-    "formStep1Title": "Dados do negócio",
-    "formStep1Desc": "Nome da loja, e-mail e telefone de contato.",
-    "formStep2Title": "Quem administra",
-    "formStep2Desc": "Seu nome, e-mail e uma senha para entrar no Sistema.",
-    "formStep3Title": "Dados tributários",
-    "formStep3Desc": "Se você fatura com a Hacienda. Se ainda não, pode completar depois.",
-    "formNota": "Ao terminar, a loja fica pronta para publicar o primeiro produto. Sem produto não há venda no catálogo.",
-    "beneficiosTitle": "O que você ganha ao vender no HotClick",
-    "beneficiosSub": "A mesma operação do painel: pagamentos, pedidos e envios.",
-    "beneficio1Title": "Painel de vendas",
-    "beneficio1Desc": "Pedidos, receita e estatísticas atualizados.",
-    "beneficio2Title": "Pagamentos com cartão e SINPE",
-    "beneficio2Desc": "Receba pagamentos seguros sem configurar nada extra.",
-    "beneficio3Title": "Logística integrada",
-    "beneficio3Desc": "Coordene envios em toda a Costa Rica pelo admin.",
-    "beneficio4Title": "Suporte dedicado",
-    "beneficio4Desc": "Equipe disponível no WhatsApp quando você precisar.",
-    "planesTitle": "Três planos, um único cadastro",
-    "planesSub": "Você começa no Emprendedor. PYME e Negocio Plus se escolhem depois no Sistema.",
-    "planEmprendedorBadge": "Para começar",
-    "planEmprendedorTitle": "Emprendedor",
-    "planEmprendedorDesc": "Publique e receba. O plano inicial dos primeiros 70.",
-    "planEmprendedorPuntos": [
-      "Até 50 produtos",
-      "Relatórios básicos",
-      "1 depósito e 1 caixa POS",
-      "Pagamentos com cartão e SINPE",
-      "Envios na Costa Rica",
-      "Comissão 9% por venda (mín. ₡700)"
-    ],
-    "planPymeBadge": "Para crescer",
-    "planPymeTitle": "PYME",
-    "planPymeDesc": "Equipe, mais depósitos e relatórios mais completos.",
-    "planPymePuntos": [
-      "Até 500 produtos",
-      "Gestão de equipe (5 usuários)",
-      "2 depósitos e 2 caixas",
-      "Compras e estoque",
-      "IA e relatórios avançados",
-      "₡9.900/mês + 4% por venda"
-    ],
-    "planPlusBadge": "Para operar de verdade",
-    "planPlusTitle": "Negocio Plus",
-    "planPlusDesc": "Várias filiais e pedidos por local.",
-    "planPlusPuntos": [
-      "Tudo do PYME",
-      "Produtos e usuários ilimitados",
-      "Multi-filial e pedidos por local",
-      "CRM de clientes",
-      "IA sem limite",
-      "₡24.900/mês + 4% por venda"
-    ],
-    "pymeCta": "Criar meu negócio",
-    "plusCta": "Criar meu negócio",
-    "faqTitle": "Perguntas frequentes",
-    "faqSub": "O que mais perguntam antes de se cadastrar.",
-    "faq1q": "Cobram algo no cadastro?",
-    "faq1a": "Não. A mensalidade é ₡0. O HotClick fica com 9% de cada venda (mínimo ₡700), um percentual que já inclui o custo do gateway de pagamento. Esses valores podem mudar; você sempre vai vê-los atualizados aqui antes de vender.",
-    "faq2q": "O que acontece se as vagas grátis acabarem?",
-    "faq2a": "Avisamos ali em cima e o botão passa a oferecer PYME ou Negocio Plus. Seu cadastro não é fechado.",
-    "faq3q": "Como eu recebo as vendas?",
-    "faq3a": "Por cartão ou SINPE. O HotClick retém 9% (mínimo ₡700) por venda, já com o gateway de pagamento incluído.",
-    "faq4q": "Posso crescer depois?",
-    "faq4a": "Sim, você pode migrar para PYME ou Negocio Plus quando precisar, sem perder seu catálogo nem seus pedidos.",
-    "galeriaCaption": "Comércios e empreendimentos: o mesmo tipo de negócio que você pode vender no HotClick.",
-    "feriaBadge": "Feiras",
-    "feriaCaption": "Da feira ao catálogo: o mesmo ponto, agora com pagamentos, pedidos e envios no HotClick.",
-    "fasesTitle": "Fases de estar conosco",
-    "fasesSub": "Do primeiro contato a operar e crescer. Tudo o que um empreendedor, PYME ou Negocio Plus pode fazer no HotClick.",
-    "fase1Title": "A gente te conhece",
-    "fase1Desc": "Em feiras, na comunidade e nas redes. É aí que começa a conversa, não a cobrança.",
-    "fase2Title": "Você cadastra o negócio",
-    "fase2Desc": "Um cadastro. Depois entra no Sistema com a loja pronta para configurar.",
-    "fase3Title": "Você publica e recebe",
-    "fase3Desc": "Produtos no catálogo, caixa POS, cartão e SINPE. Sem produto não há venda.",
-    "fase4Title": "Você opera pedidos e envios",
-    "fase4Desc": "Painel de vendas, logística na Costa Rica e acompanhamento ao cliente.",
-    "fase5Title": "Você sobe de plano",
-    "fase5Desc": "PYME soma equipe e compras. Negocio Plus soma filiais e CRM.",
-    "cupoBadge": "Vagas de início",
-    "cupoCargando": "Consultando vagas grátis…",
-    "cupoError": "Não foi possível carregar as vagas. Os primeiros 70 empreendedores entram grátis.",
-    "cupoTitle": "Restam {{quedan}} de {{limite}} vagas grátis",
-    "cupoHint": "Os primeiros 70 empreendedores não pagam assinatura. Os seguintes ativam PYME ou Negocio Plus.",
-    "cupoLlenoTitle": "As 70 vagas grátis já foram ocupadas",
-    "cupoLlenoHint": "Você pode se cadastrar do mesmo jeito. Para publicar no catálogo, ative PYME ou Negocio Plus no Sistema.",
-    "cupoVerPlanes": "Ver PYME e Negocio Plus",
     "membresiaTitle": "Sua loja precisa de assinatura",
-    "membresiaHint": "As vagas grátis acabaram. Ative PYME ou Negocio Plus para publicar.",
-    "membresiaCta": "Ver planos",
-    "fotoLocalAlt": "Interior de um estabelecimento comercial",
-    "fotoCajaAlt": "Atendimento no caixa",
-    "fotoTiendaAlt": "Loja de roupas com produtos em exposição",
-    "fotoCafeAlt": "Negócio de café e balcão",
-    "fotoRegistroAlt": "Pessoa cadastrando o negócio no computador",
-    "fotoMercadoAlt": "Barraca de mercado com produtos locais",
-    "fotoFeria1Alt": "Feira de empreendedores ao ar livre",
-    "fotoFeria2Alt": "Visitantes percorrendo uma feira de produtores",
-    "fotoFeria3Alt": "Barraca de feira com produtos artesanais",
-    "vitrinaCard1Titulo": "Sua loja, online",
-    "vitrinaCard1Desc": "O mesmo negócio, agora também no HotClick.",
-    "vitrinaCard2Titulo": "Da feira para o catálogo",
-    "vitrinaCard2Desc": "Publique o que você já vende na feira.",
-    "vitrinaCard3Titulo": "Café e balcão",
-    "vitrinaCard3Desc": "Some vendas online sem mudar seu ponto físico.",
-    "vitrinaSticker": "Publique hoje!",
-    "vitrinaCita": "Negócios de feira, redes sociais e loja física já publicam e recebem no HotClick.",
-    "comoFuncionaTitle": "Veja como funciona",
-    "comoFuncionaPlay": "Reproduzir vídeo",
-    "comoFuncionaCaption": "Tour rápido: criar conta, publicar um produto e receber a primeira venda.",
-    "confianzaTitle": "Negócios que já confiam no HotClick",
-    "confianzaLogoPlaceholder": "Logo",
-    "negociosRealesTitle": "Negócios reais no HotClick",
-    "negociosRealesCaption": "Feiras e comércios que já publicam e recebem pelo HotClick.",
-    "paraVosTitle": "É para você?",
-    "paraVos1": "Você vende em feiras, Instagram ou WhatsApp",
-    "paraVos2": "Ainda não tem equipe nem loja física",
-    "paraVosPyme": "Já tem equipe ou loja física? Veja o PYME",
-    "incluyeTitle": "O que este plano inclui",
-    "incluye1": "Até 50 produtos",
-    "incluye2": "2 usuários",
-    "incluye3": "1 depósito e 1 caixa",
-    "incluye4": "Pagamentos com cartão e SINPE",
-    "incluye5": "Envios na Costa Rica",
-    "incluye6": "Relatórios básicos",
-    "destacado1Titulo": "Sem comissão escondida",
-    "destacado1Sub": "{{comision}}% por venda, gateway de pagamento incluído",
-    "destacado2Titulo": "Receba pelo celular",
-    "destacado2Sub": "Cartão ou SINPE",
-    "cupoCtaDisponible": "Criar meu negócio",
-    "cupoCtaLleno": "Ver PYME e Negocio Plus",
-    "panelTitle": "Tudo o que você controla pelo painel",
-    "panelPosTitulo": "Ponto de Venda",
-    "panelPosDesc": "Receba na feira por cartão ou SINPE, pelo celular.",
-    "panelCatalogoTitulo": "Catálogo",
-    "panelCatalogoDesc": "Suba fotos e preço em minutos, pronto para vender.",
-    "panelTelegramTitulo": "Telegram: bot e avisos",
-    "panelTelegramDesc": "Avisamos cada venda direto no Telegram, sem precisar abrir o painel.",
-    "pagoFlexibleTitle": "Seus clientes pagam como quiserem",
-    "pagoFlexibleSub": "Cartão ou SINPE — nós verificamos cada pagamento por você. Você não precisa checar comprovantes na mão.",
-    "pagoProductoA": "Brincos de feira",
-    "pagoProductoB": "Bolsa de crochê",
-    "pagoAprobado": "Pagamento aprovado",
-    "pagoSinpeVerificado": "SINPE verificado",
-    "pagoChipTarjeta": "Cartão em minutos",
-    "pagoChipSinpe": "Nova venda",
-    "pagoChipAprobacion": "Aprovação em segundos",
-    "comoEntrasTitle": "Como você começa",
-    "comoEntras1Titulo": "Você cria sua conta",
-    "comoEntras1Desc": "Sem cartão, sem pagamento adiantado.",
-    "comoEntras2Titulo": "Você publica seu primeiro produto",
-    "comoEntras2Desc": "Suba fotos, preço e já está pronto para vender.",
-    "comoEntras3Titulo": "Você recebe por cartão ou SINPE",
-    "comoEntras3Desc": "O HotClick retém {{comision}}% (mínimo ₡{{minimo}}) por venda, gateway incluído.",
-    "precioMensualidad": "₡0 /mês",
-    "precioComision": "Comissão {{comision}}% por venda (mínimo ₡{{minimo}}, gateway de pagamento incluído)",
-    "ctaFinalTitle": "Pronto para vender sem mensalidade?"
-  },
-  "pyme": {
-    "heroBadge": "Para negócios que já vendem e precisam de equipe",
-    "heroSecondary": "Estou começando agora, sem mensalidade",
-    "resultadosNumero": "180+",
-    "resultadosLabel": "negócios já vendem no HotClick",
-    "resultadosCita": "Passar para o PYME organizou nossa equipe: cada um vê só o que é seu, e o estoque parou de ser uma bagunça.",
-    "resultadosAutor": "María Fernández · Loja de roupas",
-    "comoFuncionaTitle": "Veja como funciona",
-    "comoFuncionaPlay": "Reproduzir vídeo",
-    "comoFuncionaCaption": "Passeio rápido: equipe, estoque por depósito e cobrança no caixa.",
-    "paraVosTitle": "Isso é para você?",
-    "paraVos1": "Você já vende e a equipe cresceu (2 a 5 pessoas)",
-    "paraVos2": "O caderno ou a planilha já não são suficientes",
-    "paraVosNo": "Está começando sem equipe? Veja Emprendedor. Mais de uma unidade? Veja Negocio Plus.",
-    "confianzaTitle": "Negócios que já confiam no HotClick",
-    "confianzaLogoPlaceholder": "Logo",
-    "negociosRealesTitle": "Negócios reais no HotClick",
-    "negociosRealesFotoAlt": "Negócio PYME {{n}}",
-    "negociosRealesCaption": "Comércios com equipe e vários depósitos que já operam no plano PYME.",
-    "incluyeTitle": "O que este plano inclui",
-    "incluyeItem1": "Até 500 produtos",
-    "incluyeItem2": "5 usuários",
-    "incluyeItem3": "2 depósitos e 2 caixas",
-    "incluyeItem4": "Compras e estoque",
-    "incluyeItem5": "Vale-presente",
-    "incluyeItem6": "Relatórios avançados",
-    "incluyeIA": "Hot IA: 80 créditos/mês incluídos",
-    "panelTitle": "Tudo o que você controla pelo painel",
-    "panelPosTitulo": "Ponto de Venda",
-    "panelPosDesc": "Cobre no balcão com cartão ou SINPE, sem perder o fio do estoque.",
-    "panelPosCobrar": "Cobrar",
-    "panelInventarioTitulo": "Controle de Estoque",
-    "panelInventarioDesc": "Estoque por depósito em tempo real, com aviso quando algo está acabando.",
-    "panelTelegramTitulo": "Telegram: bot e avisos",
-    "panelTelegramDesc": "Receba alertas de vendas e estoque baixo direto no seu Telegram, sem entrar no painel.",
-    "panelTelegramAlerta1": "Garrafa térmica 1L com só 3 unidades",
-    "panelTelegramAlerta2": "Venda registrada: ₡8.900",
-    "pagoTitle": "Seus clientes pagam como quiserem",
-    "pagoSub": "Cartão ou SINPE — nós verificamos cada pagamento por você. Sem precisar checar comprovantes manualmente.",
-    "pagoAprobado": "Pagamento aprovado",
-    "pagoSinpeVerificado": "SINPE verificado",
-    "pagoProductoA": "Camiseta básica",
-    "pagoProductoB": "Garrafa térmica 1L",
-    "pagoChipVisa": "Visa •••• 4242",
-    "pagoChipNuevaVenta": "Nova venda",
-    "pagoChipTarjetaMinutos": "Cartão em minutos",
-    "pagoChipAprobacion": "Aprovação em segundos",
-    "comoEntrasTitle": "Como você entra",
-    "comoEntras1Titulo": "Você se cadastra",
-    "comoEntras1Desc": "Cria sua conta em minutos.",
-    "comoEntras2Titulo": "Você paga a mensalidade",
-    "comoEntras2Desc": "Com o gateway ONVO que o painel já usa.",
-    "comoEntras3Titulo": "Você entra com o PYME ativo",
-    "comoEntras3Desc": "Equipe, estoque e caixa, prontos para operar.",
-    "comparativaNota": "Em uma venda de ₡50.000: Emprendedor fica com ₡4.000 de comissão, PYME fica com ₡2.000 mais a mensalidade.",
-    "faqTitle": "Perguntas frequentes",
-    "faq2q": "Quanto preciso vender para valer a pena?",
-    "faq2a": "Se você vende com frequência, a comissão menor recupera a mensalidade rápido. Se vende pouco, o Emprendedor vale mais a pena.",
-    "faq3q": "E se eu precisar de mais de uma unidade?",
-    "faq3a": "Veja o Negocio Plus, que não tem limite de unidades.",
-    "faq4q": "Como a mensalidade é cobrada?",
-    "faq4a": "Com o gateway ONVO que o painel já usa, cobrada automaticamente todo mês.",
-    "ctaFinalTitle": "Pronto para operar tudo em um painel?"
-  },
-  "negocioPlus": {
-    "heroBadge": "Para negócios com mais de uma unidade",
-    "heroCta": "Assinar Negócio Plus",
-    "panelSucursales": "unidades",
-    "panelPedidosHoy": "pedidos hoje",
-    "panelUsuarios": "usuários",
-    "panelSucursalCentro": "Unidade Centro",
-    "panelSucursalCentroDetalle": "San José · 18 pedidos",
-    "panelSucursalNorte": "Unidade Norte",
-    "panelSucursalNorteDetalle": "Heredia · 21 pedidos",
-    "panelSucursalSur": "Unidade Sul",
-    "panelSucursalSurDetalle": "Cartago · 9 pedidos",
-    "trustNegocios": "Negócios com várias unidades",
-    "trustRecomienda": "Donos que recomendam o Negócio Plus",
-    "trustSoporteTitulo": "Suporte",
-    "trustSoporteSub": "prioritário",
-    "trustPagosTitulo": "Pagamentos",
-    "trustPagosSub": "com Tilopay",
-    "comparativaTitle": "Negócio Plus vs. PME",
-    "comparativaColPyme": "PME",
-    "comparativaColPlus": "Negócio Plus",
-    "comparativaSucursales": "Unidades",
-    "comparativaSucursalesPyme": "1",
-    "comparativaSucursalesPlus": "Sem limite",
-    "comparativaUsuarios": "Usuários",
-    "comparativaUsuariosPyme": "Até 5",
-    "comparativaUsuariosPlus": "Sem limite",
-    "comparativaCrm": "CRM de clientes",
-    "comparativaCrmPyme": "—",
-    "comparativaCrmPlus": "Incluído",
-    "comparativaIa": "Créditos de IA",
-    "comparativaIaPyme": "80/mês",
-    "comparativaIaPlus": "Sem limite",
-    "comoFuncionaTitle": "Veja como funciona",
-    "comoFuncionaCaption": "Um tour pelo painel do Negócio Plus: unidades, pedidos e CRM em um só lugar.",
-    "comoFuncionaPlay": "Reproduzir vídeo",
-    "confianzaTitle": "Negócios que já confiam no HotClick",
-    "confianzaLogoPlaceholder": "Logo",
-    "negociosRealesTitle": "Negócios reais no HotClick",
-    "negociosRealesCaption": "Comércios que já operam várias unidades pelo HotClick.",
-    "incluyeTitle": "O que este plano inclui",
-    "incluyeIntro": "Tudo do PME, mais:",
-    "incluye1": "Produtos, usuários, depósitos e caixas sem limite",
-    "incluye2": "Várias unidades com pedidos por local",
-    "incluye3": "CRM de clientes por unidade e consolidado",
-    "incluye4": "IA sem limite de créditos",
-    "panelControlTitle": "Tudo o que você controla pelo painel",
-    "panelPosTitulo": "Ponto de Venda",
-    "panelPosDesc": "Cobre em qualquer unidade, com caixa própria por local.",
-    "panelInventarioTitulo": "Controle de Estoque",
-    "panelInventarioDesc": "Estoque por unidade em tempo real, consolidado em um só painel.",
-    "panelTelegramTitulo": "Telegram: bot e avisos",
-    "panelTelegramDesc": "Alertas de vendas e estoque baixo por unidade, direto no seu Telegram.",
-    "pagosTitle": "Seus clientes pagam como quiserem",
-    "pagosSub": "Cartão ou SINPE — nós verificamos cada pagamento por você. Sem precisar checar comprovantes à mão.",
-    "pagosAprobado": "Pagamento aprovado",
-    "pagosSinpeVerificado": "SINPE verificado",
-    "pagosVisa": "Visa •••• 4242",
-    "pagosNuevaVenta": "Nova venda",
-    "pagosTarjetaMinutos": "Cartão em minutos",
-    "pagosAprobacionSegundos": "Aprovação em segundos",
-    "comoEntrasTitle": "Como você entra",
-    "comoEntras1": "Você se registra",
-    "comoEntras2": "Você paga a mensalidade",
-    "comoEntras3": "Você ativa suas unidades",
-    "precioDestacadoPerk1": "Unidades sem limite",
-    "precioDestacadoPerk2": "CRM de clientes incluído",
-    "precioDestacadoPerk3": "Suporte prioritário",
-    "faqTitle": "Perguntas frequentes",
-    "faq2q": "Tenho só uma unidade, vale a pena?",
-    "faq2a": "Provavelmente não — o PME já é suficiente e sai mais barato.",
-    "faq3q": "Como vejo os pedidos por unidade?",
-    "faq3a": "O painel separa pedidos e estoque por local automaticamente.",
-    "faq4q": "O que o CRM guarda?",
-    "faq4a": "Histórico de compras e contato dos seus clientes, por unidade e consolidado.",
-    "ctaFinalTitle": "Pronto para operar todas as suas unidades?"
+    "membresiaHint": "Para publicar no catálogo, ative o plano Pyme ou Negocio Plus.",
+    "membresiaCta": "Ver planos"
   },
   "theme": {
     "light": "Modo claro",
@@ -2730,7 +2426,7 @@
     "sysResetToast": "Banco de dados redefinido. Todos os dados foram excluídos.",
     "sysResetError": "Erro ao redefinir dados",
     "sysExternalTitle": "Painéis externos",
-    "sysSupabaseDesc": "BD & Armazenamento",
+    "sysDbDesc": "PostgreSQL na AWS Lightsail",
     "sysRenderDesc": "Servidor de produção",
     "sysSendGridDesc": "E-mail transacional",
     "sysStripeDesc": "Gateway de pagamento",
@@ -3504,7 +3200,7 @@
       "derechos": "© {{anio}} HotClick · Costa Rica",
       "bannerPregunta": "Você tem um negócio?",
       "bannerTitulo": "Venda na HotClick",
-      "bannerTituloDesktop": "Venda na HotClick sem mensalidade",
+      "bannerTituloDesktop": "Venda na HotClick",
       "bannerCta": "Conheça os planos"
     },
     "tarjeta": {
@@ -4016,5 +3712,285 @@
     "enResultados": "Negócios que correspondem",
     "verTodos": "Ver todos os negócios",
     "sinPlan": "Ainda não há lojas {{plan}} na HotClick."
+  },
+  "planes": {
+    "emprendedor": {
+      "nombre": "Emprendedor",
+      "pitch": "Comece a vender na HotClick.",
+      "punto": {
+        "productos": "Até 50 produtos",
+        "bodegas": "1 depósito",
+        "pos": "Ponto de venda com 1 caixa",
+        "equipo": "Equipe de 2 usuários",
+        "inventario": "Estoque e alertas de estoque baixo",
+        "clientes": "Lista de clientes",
+        "pagos": "Receba por cartão e SINPE",
+        "contacto": "Seus clientes compram de você pela HotClick",
+        "montos": "Mensalidade e comissão: [PENDIENTE]"
+      },
+      "cta": "Escolher este plano"
+    },
+    "pyme": {
+      "nombre": "Pyme",
+      "pitch": "Para quando seu negócio já tem clientes que procuram por você.",
+      "punto": {
+        "contacto": "Seu contato visível na sua loja",
+        "productos": "Até 500 produtos",
+        "bodegas": "2 depósitos",
+        "pos": "Ponto de venda com 2 caixas",
+        "equipo": "Equipe de 5 usuários",
+        "compras": "Compras de fornecedores",
+        "giftCards": "Vale-presentes",
+        "ia": "80 consultas de IA por mês",
+        "base": "Tudo do Emprendedor",
+        "montos": "Mensalidade e comissão: [PENDIENTE]"
+      },
+      "cta": "Escolher este plano"
+    },
+    "negocioPlus": {
+      "nombre": "Negocio Plus",
+      "pitch": "Sem limites para crescer.",
+      "punto": {
+        "contacto": "Seu contato visível na sua loja",
+        "productos": "Produtos sem limite",
+        "bodegas": "Depósitos sem limite",
+        "pos": "Ponto de venda com caixas sem limite",
+        "equipo": "Usuários sem limite",
+        "ia": "Consultas de IA sem limite",
+        "base": "Tudo do Pyme",
+        "montos": "Mensalidade e comissão: [PENDIENTE]"
+      },
+      "cta": "Escolher este plano"
+    },
+    "titulo": "Escolha seu plano",
+    "subtitulo": "Todos os planos incluem loja na HotClick, ponto de venda, estoque e lista de clientes.",
+    "nota": {
+      "cambio": "Você pode subir de plano quando quiser.",
+      "montos": "Os valores são confirmados antes do pagamento."
+    },
+    "badge": {
+      "actual": "Seu plano atual",
+      "provisorio": "Provisório"
+    },
+    "comparativa": {
+      "productos": "Produtos",
+      "bodegas": "Depósitos",
+      "cajas": "Caixas do PDV",
+      "usuarios": "Usuários da equipe",
+      "inventario": "Estoque e alertas de estoque baixo",
+      "clientes": "Lista de clientes",
+      "reportes": "Relatórios de vendas",
+      "telegram": "Avisos de vendas e estoque no Telegram",
+      "contacto": "Contato visível na sua loja",
+      "compras": "Compras de fornecedores",
+      "giftCards": "Vale-presentes",
+      "ia": "Consultas de IA por mês",
+      "mensualidad": "Mensalidade",
+      "comision": "Comissão por venda",
+      "sinLimite": "Sem limite",
+      "incluido": "Incluído",
+      "noIncluido": "Não incluído"
+    },
+    "cambio": {
+      "titulo": "Mudar de plano",
+      "subir": "Mudar para {{plan}}",
+      "subirAyuda": "O novo plano é ativado assim que o pagamento é confirmado.",
+      "bajar": "Mudar para {{plan}}",
+      "bajarAyuda": "Se o seu uso couber nos limites do {{plan}}, a mudança vale no fim do período já pago. Até {{fecha}} você mantém tudo do seu plano atual.",
+      "bajarNadaSeBorra": "Não apagamos nada: você escolhe o que ajustar.",
+      "bajarContacto": "No Emprendedor, seu contato deixa de aparecer na sua loja.",
+      "confirmar": "Confirmar mudança",
+      "programado": "Seu plano muda para {{plan}} em {{fecha}}.",
+      "listo": "Pronto. Seu plano agora é {{plan}}.",
+      "confirmandoPago": "Estamos confirmando seu pagamento. Costuma levar alguns segundos.",
+      "errorConfirmar": "Não conseguimos confirmar a mudança. Confira em Opções → Seu plano.",
+      "yaEsTuPlan": "Esse já é o seu plano."
+    },
+    "bajarBloqueado": {
+      "titulo": "Você ainda não pode mudar para o {{plan}}",
+      "texto": "Seu uso atual passa do que o {{plan}} permite. Não apagamos nada: ajuste o que indicamos e depois confirme a mudança.",
+      "productos": {
+        "titulo": "Produtos",
+        "texto": "Você tem {{uso}} produtos e o {{plan}} permite {{limite}}. Despublique ou exclua {{exceso}}.",
+        "boton": "Ir para meus produtos"
+      },
+      "bodegas": {
+        "titulo": "Depósitos",
+        "texto": "Você tem {{uso}} depósitos e o {{plan}} permite {{limite}}. Mova seus produtos para outro depósito e exclua {{exceso}}. Atenção: um depósito excluído não pode ser recuperado.",
+        "boton": "Ir para meus depósitos"
+      },
+      "cajas": {
+        "titulo": "Caixas",
+        "texto": "[PENDENTE]",
+        "boton": "Ir para o ponto de venda"
+      },
+      "usuarios": {
+        "titulo": "Usuários",
+        "texto": "Sua equipe tem {{uso}} usuários e o {{plan}} permite {{limite}}. Remova {{exceso}} da equipe.",
+        "boton": "Ir para minha equipe"
+      },
+      "listo": "Pronto, seu uso já cabe no {{plan}}. Agora você pode confirmar a mudança."
+    },
+    "pagarDespues": {
+      "boton": "Pagar depois",
+      "ayuda": "Até você pagar o {{plan}}, sua loja funciona como Emprendedor em tudo: com os limites dele e sem seu contato visível.",
+      "limites": "Enquanto isso: até 50 produtos, 1 depósito, 1 caixa, 2 usuários e sem consultas de IA.",
+      "bannerTitulo": "Seu plano {{plan}} está aguardando pagamento",
+      "bannerTexto": "Enquanto isso, sua loja funciona como Emprendedor: com os limites dele e sem seu contato visível. Quando você pagar, os limites e funções do {{plan}} e seu contato são ativados.",
+      "bannerCta": "Pagar agora",
+      "monto": "Valor: [PENDIENTE]"
+    },
+    "bloqueo": {
+      "boton": "Melhorar plano",
+      "compras": {
+        "titulo": "Compras de fornecedores",
+        "texto": "Registre compras de fornecedores a partir do plano Pyme. Você continua vendo seu estoque normalmente."
+      },
+      "giftCards": {
+        "titulo": "Vale-presentes",
+        "texto": "Venda vale-presentes a partir do plano Pyme."
+      },
+      "ia": {
+        "titulo": "Consultas de IA",
+        "texto": "As consultas de IA estão nos planos Pyme e Negocio Plus."
+      },
+      "iaAgotada": {
+        "titulo": "Você usou as consultas deste mês",
+        "texto": "Você usou {{uso}} de {{limite}}. Elas renovam no próximo mês, ou melhore seu plano para ter mais."
+      },
+      "limite": {
+        "productos": {
+          "titulo": "Você chegou ao limite de produtos",
+          "texto": "Seu plano permite {{limite}} produtos e você já tem {{uso}}. Para publicar mais, melhore seu plano."
+        },
+        "productosLote": "Você pode adicionar mais {{disponibles}}: seu plano permite {{limite}} e você já tem {{uso}}.",
+        "bodegas": {
+          "titulo": "Você chegou ao limite de depósitos",
+          "texto": "Seu plano permite {{limite}} depósito(s). Para adicionar outro, melhore seu plano."
+        },
+        "cajas": {
+          "titulo": "Você chegou ao limite de caixas",
+          "texto": "Seu plano permite {{limite}} caixa(s) aberto(s). Feche um ou melhore seu plano."
+        },
+        "usuarios": {
+          "titulo": "Você chegou ao limite de usuários",
+          "texto": "Seu plano permite {{limite}} usuários na equipe. Para convidar mais alguém, melhore seu plano."
+        },
+        "contador": "{{uso}} de {{limite}}"
+      },
+      "generico": {
+        "texto": "Este recurso está disponível a partir do plano {{plan}}."
+      }
+    },
+    "faq": {
+      "1": {
+        "q": "Quanto custa cada plano?",
+        "a": "Mensalidade e comissão por venda: [PENDIENTE]. Você sempre vê os valores antes de pagar."
+      },
+      "2": {
+        "q": "Posso mudar de plano?",
+        "a": "Sim. Você pode subir quando quiser, e ele é ativado quando o pagamento é confirmado. Para descer, seu uso precisa caber nos limites do novo plano; se não couber, dizemos o que ajustar. Não apagamos nada. A mudança vale no fim do período já pago."
+      },
+      "3": {
+        "q": "Meus clientes veem meu WhatsApp ou minhas redes?",
+        "a": "No Pyme e no Negocio Plus, sim: seu contato aparece na sua loja. No Emprendedor, seus clientes compram pela HotClick e nenhum contato direto é exibido."
+      },
+      "4": {
+        "q": "O que acontece se eu escolher \"Pagar depois\"?",
+        "a": "Até você pagar, sua loja funciona como Emprendedor em tudo: com os limites dele e sem contato visível. Quando você pagar, tudo do seu plano é ativado."
+      },
+      "5": {
+        "q": "Todos os planos têm ponto de venda?",
+        "a": "Sim. Muda a quantidade de caixas: 1 no Emprendedor, 2 no Pyme e sem limite no Negocio Plus."
+      },
+      "6": {
+        "q": "Posso ver meu estoque em qualquer plano?",
+        "a": "Sim. Todos veem o estoque e recebem alertas de estoque baixo. As compras de fornecedores começam no Pyme."
+      },
+      "7": {
+        "q": "Posso trabalhar com minha equipe?",
+        "a": "Sim. O Emprendedor inclui 2 usuários, o Pyme 5 e o Negocio Plus não tem limite."
+      },
+      "8": {
+        "q": "Tem frete grátis?",
+        "a": "Por enquanto, não. O valor do frete aparece antes do pagamento."
+      }
+    },
+    "landing": {
+      "planLabel": "Plano",
+      "faqTitulo": "Perguntas frequentes",
+      "metaPyme": "Pyme na HotClick: seu contato visível, até 500 produtos, 2 depósitos e ponto de venda com 2 caixas.",
+      "metaPlus": "Negocio Plus na HotClick: produtos, depósitos, caixas e usuários sem limite.",
+      "metaEmprende": "Comece a vender na HotClick com o plano Emprendedor: até 50 produtos, 1 depósito e ponto de venda.",
+      "whatsapp": {
+        "texto": "Ficou com alguma dúvida sobre os planos?",
+        "boton": "Fale com a gente pelo WhatsApp",
+        "saludo": "Olá HotClick, tenho uma dúvida sobre os planos para vender."
+      },
+      "planDeEstaPagina": "Este plano",
+      "empezarCon": "Começar com {{plan}}",
+      "incluye": "Inclui",
+      "noIncluye": "Não inclui"
+    }
+  },
+  "registroVendedor": {
+    "paso1": {
+      "titulo": "Comece a vender na HotClick"
+    },
+    "paso2": {
+      "titulo": "Conte sobre o seu negócio"
+    },
+    "paso3": {
+      "titulo": "Confira seu e-mail"
+    },
+    "activar": {
+      "titulo": "Ative seu plano {{plan}}"
+    },
+    "listo": {
+      "titulo": "Pronto! Seu negócio foi criado"
+    },
+    "boton": {
+      "crearCuenta": "Criar minha conta",
+      "pagarActivar": "Pagar e ativar {{plan}}",
+      "irPanel": "Ir para meu painel"
+    },
+    "contacto": {
+      "ayuda": "Os compradores só veem estes dados se seu plano for Pyme ou Negocio Plus."
+    },
+    "acuerdo": {
+      "check": "Li e aceito o {{acuerdo}}.",
+      "enlace": "Acordo de Vendedores",
+      "ayuda": "Inclui suas obrigações como Operador dos dados dos seus clientes (Lei 8968 da Costa Rica).",
+      "error": "Para continuar, aceite o Acordo de Vendedores."
+    },
+    "revision": {
+      "texto": "Revisamos sua loja antes de publicá-la. Avisamos você por e-mail."
+    },
+    "primerosPasos": {
+      "marca": {
+        "emprendedor": "Nome e logo da sua loja",
+        "pymePlus": "Nome, logo e contato da sua loja"
+      }
+    }
+  },
+  "stock": {
+    "disponible": "Disponível",
+    "quedan_one": "Resta {{count}}",
+    "quedan_other": "Restam {{count}}",
+    "agotado": "Esgotado",
+    "tallaQuedan": "Restam {{count}} no tamanho {{talla}}",
+    "tallaAgotada": "Tamanho {{talla}} esgotado",
+    "maximo": "Não há mais unidades: restam {{count}}",
+    "filtro": {
+      "soloDisponibles": "Somente disponíveis",
+      "quedanPocos": "Restam poucos"
+    },
+    "wishlist": {
+      "uno": "Restam {{count}} de \"{{nombre}}\"",
+      "varios": "{{count}} dos seus favoritos estão quase esgotados"
+    },
+    "checkout": {
+      "agotado": "{{nombre}} esgotou. Tire do pedido e tente de novo."
+    }
   }
 }

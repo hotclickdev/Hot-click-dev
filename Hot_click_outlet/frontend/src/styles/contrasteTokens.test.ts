@@ -49,8 +49,8 @@ describe('contraste de tokens (WCAG 2.x)', () => {
     for (const texto of ['hc-n-600', 'hc-red-600']) {
       for (const fondo of FONDOS) expect(contraste(token(texto), token(fondo)), `${texto} / ${fondo}`).toBeGreaterThanOrEqual(4.5)
     }
-    // Primario como texto en el tema superadmin (#C4181E) y en oscuro (#F0524A sobre #161B22).
-    expect(contraste('#C4181E', token('hc-n-0'))).toBeGreaterThanOrEqual(4.5)
+    // Primario como texto en el tema superadmin (red-600 #D02A23 desde el rediseño del 3-oct) y en oscuro (#F0524A sobre #161B22).
+    expect(contraste('#D02A23', token('hc-n-0'))).toBeGreaterThanOrEqual(4.5)
     expect(contraste('#F0524A', '#161B22')).toBeGreaterThanOrEqual(4.5)
     expect(CSS).toMatch(/--hc-primary-text:\s*var\(--hc-red-600\)/)
   })
@@ -59,11 +59,25 @@ describe('contraste de tokens (WCAG 2.x)', () => {
     for (const fondo of [...FONDOS, 'hc-success-bg']) {
       expect(contraste(token('hc-success-text'), token(fondo)), `hc-success-text / ${fondo}`).toBeGreaterThanOrEqual(4.5)
     }
-    // Crema de Sistema (#ede5da) y superficies oscuras (#161B22, #0E1116, success-bg oscuro #10301F).
-    expect(contraste(token('hc-success-text'), '#EDE5DA')).toBeGreaterThanOrEqual(4.5)
+    // Superficies oscuras (#161B22, #0E1116, success-bg oscuro #10301F). Sistema ya usa n-50 (sin crema).
+    expect(CSS).not.toMatch(/#ede5da/i)
     for (const fondo of ['#161B22', '#0E1116', '#10301F']) expect(contraste('#3DCB82', fondo)).toBeGreaterThanOrEqual(4.5)
     expect(CSS.match(/--hc-success-text:\s*#107142/g)?.length).toBe(3)
     expect(CSS.match(/--hc-success-text:\s*#3DCB82/g)?.length).toBe(2)
+  })
+
+  it('rediseño 3-oct-2026: Sistema usa neutros Figma y Super Admin la paleta del manual (sin crema ni #E31E24)', () => {
+    const bloque = (sel: string) => CSS.slice(CSS.indexOf(`${sel} {`), CSS.indexOf('}', CSS.indexOf(`${sel} {`)))
+    const sistema = bloque('.hc-sistema-theme')
+    expect(sistema).toMatch(/--hc-bg:\s*var\(--hc-n-50\)/)
+    expect(sistema).toMatch(/--hc-border:\s*var\(--hc-n-200\)/)
+    expect(sistema).toMatch(/--hc-muted:\s*var\(--hc-n-600\)/)
+    expect(sistema).toMatch(/--hc-text:\s*var\(--hc-n-900\)/)
+    const superadmin = bloque('.hc-superadmin-theme')
+    expect(superadmin).toMatch(/--hc-primary:\s*#E73B33/)
+    expect(superadmin).toMatch(/--hc-accent:\s*#1747A8/)
+    expect(superadmin).toMatch(/--hc-text:\s*#14171C/)
+    expect(superadmin).not.toMatch(/#E31E24|#0D47A1|#0B132B/i)
   })
 
   it('pares por debajo de AA para texto normal: solo quedan en fondos, bordes, íconos y placeholders (decisión R1)', () => {

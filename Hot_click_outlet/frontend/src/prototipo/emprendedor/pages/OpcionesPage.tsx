@@ -12,15 +12,15 @@ const OPCIONES = [
   { to: '/opciones/cobro', etiqueta: 'Métodos de cobro' },
   { to: '/opciones/telegram', etiqueta: 'Telegram' },
   { to: '/opciones/ayuda', etiqueta: 'Ayuda y soporte' },
-  { to: '/opciones/consultas', etiqueta: 'Consultas con Hot' },
   { to: '/opciones/bodegas', etiqueta: 'Mis bodegas' },
   { to: '/recoleccion', etiqueta: 'Recolección y entrega' },
   { to: '/opciones/negocio', etiqueta: 'Datos de tu negocio', dataMm: 'seller-opciones-negocio' },
+  { to: '/opciones/equipo', etiqueta: 'Mi equipo' },
   { to: '/opciones/plan', etiqueta: 'Tu plan' },
 ] as const
 
 /**
- * Paso 7 Opciones (Figma 20:2).
+ * Paso 7 Opciones (Figma 20:2). Sin «Consultas con Hot»: Emprendedor no tiene IA (decisión 3.8 A, 3-oct-2026).
  */
 export default function OpcionesPage() {
   const navigate = useNavigate()

@@ -44,7 +44,7 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-hc-surface border border-hc-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="bg-hc-surface border border-hc-border rounded-[14px] p-6 w-full max-w-md shadow-2xl">
         <h2 className="text-lg font-semibold mb-5">Solicitar retiro</h2>
 
         <label htmlFor="bil-monto" className="block text-xs text-hc-muted mb-1">Monto (₡)</label>

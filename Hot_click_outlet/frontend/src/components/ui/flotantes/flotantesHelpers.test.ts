@@ -11,6 +11,7 @@ import {
   esFichaProducto,
   espacioReservadoMovil,
   whatsappOculto,
+  esLandingPlan,
 } from './flotantesHelpers'
 import { leerPantallaSinConexion, retenerPantallaSinConexion } from './pantallaSinConexionStore'
 
@@ -120,5 +121,18 @@ describe('esRutaVisitante', () => {
     expect(esRutaVisitante('/para-emprendedores')).toBe(false)
     expect(esRutaVisitante('/registro-empresa')).toBe(false)
     expect(esRutaVisitante('/', true)).toBe(false)
+  })
+})
+
+describe('esLandingPlan', () => {
+  it('reconoce las tres landings de planes (con o sin barra final)', () => {
+    for (const ruta of ['/emprende', '/para-pymes', '/negocio-plus-plan', '/emprende/']) {
+      expect(esLandingPlan(ruta)).toBe(true)
+    }
+  })
+  it('no confunde otras rutas', () => {
+    for (const ruta of ['/', '/emprendimientos', '/emprende/x', '/negocio-plus']) {
+      expect(esLandingPlan(ruta)).toBe(false)
+    }
   })
 })

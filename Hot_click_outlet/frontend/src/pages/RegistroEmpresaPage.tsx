@@ -1,80 +1,44 @@
-import { useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { HotClickMark } from '@/components/ui/BrandLogo'
-import { AnimatePresence } from 'framer-motion'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { authService } from '@/services/authService'
-import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import Seo from '@/components/seo/Seo'
-import {
-  authDataRegistroEmpresa,
-  MIN_PASSWORD,
-  type RegistroEmpresaForm,
-} from './registro-empresa/registroEmpresaHelpers'
-import RegistroEmpresaAside from './registro-empresa/RegistroEmpresaAside'
-import StepDatosEmpresa from './registro-empresa/StepDatosEmpresa'
-import StepDatosAdmin from './registro-empresa/StepDatosAdmin'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
-import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
+import { destinoVender, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
-import type { TurnstileInstance } from '@marsidev/react-turnstile'
-import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
-import { leerPlanQuery, esPlanPago } from './registro-empresa/planQueryParam'
+import { authDataRegistroEmpresa, MIN_PASSWORD, type RegistroEmpresaForm } from './registro-empresa/registroEmpresaHelpers'
+import { leerPlanQuery, type PlanQueryId } from './registro-empresa/planQueryParam'
+import { destinoTrasAlta, planAlta } from './registro-empresa/altaVendedorPlanes'
+import { AltaHeader, AltaPasos } from './registro-empresa/AltaVendedorUI'
+import PasoPlan from './registro-empresa/PasoPlan'
+import PasoNegocio, { type ConsentimientosAlta } from './registro-empresa/PasoNegocio'
+import PasoListo from './registro-empresa/PasoListo'
 
-const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
-const STEP_DESCS = [
-  'Datos básicos de tu negocio.',
-  'Con estos datos iniciás sesión en el panel.',
-]
-const STEP_LABELS = ['Tu empresa', 'Tu cuenta']
+type Fase = 'plan' | 'negocio' | 'listo'
 
-function estiloPaso(indice: number, step: number): CSSProperties {
-  if (indice < step) {
-    return { background: 'var(--hc-success, #22c55e)', color: '#fff' }
-  }
-  if (indice === step) {
-    return { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px rgba(231,59,51,0.4)' }
-  }
-  return { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }
-}
-
-function BarraProgreso({ step }: { step: number }) {
-  return (
-    <div className="flex items-center gap-3 mb-6">
-      {STEP_LABELS.map((label, i) => (
-        <div key={label} className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
-            style={estiloPaso(i, step)}>
-            {i < step
-              ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><polyline points="20 6 9 17 4 12" /></svg>
-              : i + 1}
-          </div>
-          <span className="text-xs font-medium" style={{ color: i === step ? 'var(--hc-text)' : 'var(--hc-muted)' }}>{label}</span>
-          {i < 1 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
-        </div>
-      ))}
-    </div>
-  )
-}
-
+/**
+ * Alta de vendedor (visitante) — propuesta de Diseño aprobada el 3-oct-2026 sobre la base de Figma.
+ * Paso 1 Plan → Paso 2 Tu negocio → Paso 3 Activar (Pyme/Plus en /registro-empresa/activar-plan) o "¡Listo!" (Emprendedor).
+ * Reemplaza el diseño viejo (aside marino con degradados, badge pulsante, tarjeta con línea degradada).
+ */
 export default function RegistroEmpresaPage() {
   const navigate = useNavigate()
-  const toast = useToast()
-  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
-  const planQuery = leerPlanQuery(searchParams.toString())
-  const planPago = esPlanPago(planQuery)
   const loginStore = useAuthStore((s) => s.login)
   const token = useAuthStore((s) => s.token)
   const userRole = useAuthStore((s) => s.userRole)
   const empresaId = useAuthStore((s) => s.empresaId)
 
-  const [step, setStep] = useState(0)
+  const planInicial = leerPlanQuery(searchParams.toString())
+  const [plan, setPlan] = useState<PlanQueryId>(planInicial ?? 'emprendedor')
+  const [fase, setFase] = useState<Fase>(planInicial ? 'negocio' : 'plan')
+  /** BUG-03: el destino post-alta se fija ANTES de loginStore, así el guard de sesión no gana la carrera. */
+  const [destinoPost, setDestinoPost] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [consentimientos, setConsentimientos] = useState<ConsentimientosAlta>({ terminos: false, acuerdo: false })
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance | null>(null)
   const [form, setForm] = useState<RegistroEmpresaForm>({
@@ -83,21 +47,21 @@ export default function RegistroEmpresaPage() {
     inscritoTributacion: true,
   })
 
+  if (destinoPost) return <Navigate to={destinoPost} replace />
   const destino = destinoVender({ tokenVivo: isTokenAlive(token), rol: userRole, empresaId })
-  if (destino !== RUTA_REGISTRO_EMPRESA) {
-    return <Navigate to={destino} replace />
-  }
+  if (fase !== 'listo' && destino !== RUTA_REGISTRO_EMPRESA) return <Navigate to={destino} replace />
 
-  const actualizarCampo = (campo: keyof RegistroEmpresaForm) => (evento: ChangeEvent<HTMLInputElement>) => setForm((prev) => ({ ...prev, [campo]: evento.target.value }))
+  const planElegido = planAlta(plan)
+  const paso = fase === 'plan' ? 0 : fase === 'negocio' ? 1 : 2
 
-  const handleNext = (e: FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!form.nombreEmpresa.trim()) {
-      setError('El nombre del negocio es requerido')
-      return
-    }
-    setStep(1)
+  const actualizarCampo = (campo: keyof RegistroEmpresaForm) => (e: ChangeEvent<HTMLInputElement>) =>
+    setForm((prev) => ({ ...prev, [campo]: e.target.value }))
+
+  const elegirPlan = (id: PlanQueryId) => {
+    setPlan(id)
+    setFase('negocio')
+    navigate({ search: `?plan=${id}` }, { replace: true })
+    window.scrollTo({ top: 0 })
   }
 
   const resetTurnstile = () => {
@@ -105,51 +69,47 @@ export default function RegistroEmpresaPage() {
     setTurnstileToken('')
   }
 
+  const validar = (): string => {
+    if (!form.nombreEmpresa.trim()) return 'Escribí el nombre de tu negocio.'
+    if (!form.correoAdmin.trim()) return 'Escribí tu correo para entrar al panel.'
+    if (form.passwordAdmin.length < MIN_PASSWORD) return `La contraseña necesita al menos ${MIN_PASSWORD} caracteres.`
+    if (!consentimientos.terminos) return 'Aceptá los Términos y la Política de Privacidad para continuar.'
+    if (!consentimientos.acuerdo) return 'Para continuar, aceptá el Acuerdo de Vendedores.'
+    return ''
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setError('')
-    if (!aceptaTerminos) {
-      setError('Debés aceptar los términos para continuar')
-      return
-    }
-    if (!form.correoAdmin.trim()) {
-      setError('El correo es requerido')
-      return
-    }
-    if (form.passwordAdmin.length < MIN_PASSWORD) {
-      setError(`La contraseña debe tener al menos ${MIN_PASSWORD} caracteres`)
-      return
-    }
+    const problema = validar()
+    setError(problema)
+    if (problema) return
     setLoading(true)
-    authService.registrarConsentimiento('REGISTRO')
     try {
       const { data } = await authService.registroEmpresa({
-        nombreEmpresa:        form.nombreEmpresa.trim(),
-        correoEmpresa:        form.correoEmpresa.trim().toLowerCase() || undefined,
-        telefonoEmpresa:      form.telefonoEmpresa.trim() || undefined,
-        nombreAdmin:          form.nombreAdmin.trim() || undefined,
-        correoAdmin:          form.correoAdmin.trim().toLowerCase(),
-        passwordAdmin:        form.passwordAdmin,
-        telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
-        inscritoTributacion:  form.inscritoTributacion,
+        nombreEmpresa: form.nombreEmpresa.trim(),
+        correoEmpresa: form.correoEmpresa.trim().toLowerCase() || undefined,
+        telefonoEmpresa: form.telefonoEmpresa.trim() || undefined,
+        nombreAdmin: form.nombreAdmin.trim() || undefined,
+        correoAdmin: form.correoAdmin.trim().toLowerCase(),
+        passwordAdmin: form.passwordAdmin,
+        telefonoAdmin: form.telefonoAdmin.trim() || undefined,
+        inscritoTributacion: form.inscritoTributacion,
         ...(turnstileToken ? { turnstileToken } : {}),
       })
       const authData = authDataRegistroEmpresa(data)
-      if (authData?.accessToken) {
-        loginStore(authData)
-        if (planPago && planQuery) {
-          navigate(`/registro-empresa/activar-plan?plan=${planQuery}`)
-          return
-        }
-        toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
-        navigate(RUTA_PANEL_VENDEDOR)
+      if (!authData?.accessToken) {
+        setError('No pudimos terminar el registro. Intentá de nuevo.')
+        resetTurnstile()
         return
       }
-      setError('Registro incompleto. Intentá de nuevo.')
-      resetTurnstile()
+      const siguiente = destinoTrasAlta(plan)
+      if (siguiente) setDestinoPost(siguiente)
+      else setFase('listo')
+      loginStore(authData)
+      authService.registrarConsentimiento('REGISTRO')
+      authService.registrarConsentimiento('VENDEDOR')
     } catch (err: unknown) {
-      const msg = mensajeErrorAuth(err, '')
-      setError(msg || 'Error al registrar. Intentá de nuevo.')
+      setError(mensajeErrorAuth(err, '') || 'No pudimos crear tu cuenta. Revisá los datos e intentá de nuevo.')
       resetTurnstile()
     } finally {
       setLoading(false)
@@ -158,128 +118,45 @@ export default function RegistroEmpresaPage() {
 
   return (
     <>
-    <Seo
-      title="Registrá tu emprendimiento — Vendé en HOTCLICK Costa Rica"
-      description="Creá tu tienda en HOTCLICK. Empezás con el plan Emprendedor sin costo de alta; comisiones y planes se ven al registrarte."
-      url="https://hotclick.lat/registro-empresa"
-    />
-    <div className="min-h-screen flex" style={{ fontFamily: 'var(--hc-font-text)' }}>
-
-      <RegistroEmpresaAside />
-
-      <div className="flex-1 flex flex-col overflow-y-auto" style={{ background: 'var(--hc-bg)' }}>
-
-        <div className="flex items-center justify-between px-6 py-4 shrink-0"
-          style={{ borderBottom: '1px solid var(--hc-border)' }}>
-          <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
-            <HotClickMark size={28} className="shrink-0" />
-            <span className="hc-wordmark lg:hidden" style={{ fontSize: '1rem' }}>
-              <span className="hot">Hot</span><span className="click">Click</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-2.5">
-            <span style={{ color: 'var(--hc-muted)', fontSize: '0.8rem' }}>¿Ya tenés cuenta?</span>
-            <Link
-              to={rutaLoginConRetorno(RUTA_REGISTRAR_NEGOCIO)}
-              className="hc-btn hc-btn-ghost hc-btn-sm"
-              style={{ textDecoration: 'none' }}
-            >
-              Iniciar sesión
-            </Link>
-          </div>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center px-5 py-8">
-
-          <div className="text-center mb-8 w-full max-w-[460px]">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
-              style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary-text)', letterSpacing: '0.06em' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-hc-primary animate-pulse"></span>
-              <span>Registro de emprendimiento</span>
-            </div>
-            <h1 style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: 'clamp(1.9rem, 5vw, 2.8rem)', color: 'var(--hc-text)', lineHeight: 1.05, marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
-              Registrá tu empresa
-            </h1>
-            <p style={{ color: 'var(--hc-muted)', fontSize: '0.9rem' }}>
-              Cuenta nueva acá. Si ya comprás en HotClick, iniciá sesión y registrá el negocio sin crear otra cuenta.
-            </p>
-            {planQuery ? (
-              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.22)', color: 'var(--hc-blue-600)' }}>
-                Plan elegido: {t(`emprende.plan${planQuery === 'negocio-plus' ? 'Plus' : planQuery === 'pyme' ? 'Pyme' : 'Emprendedor'}Title`)}
-              </div>
-            ) : null}
-            <div className="mt-4 text-left">
-              <EmprendeCupoBanner compact />
-            </div>
-          </div>
-
-          <div className="w-full max-w-[460px]">
-
-            <div style={{
-              background: 'var(--hc-surface)', border: '1px solid var(--hc-border)',
-              borderRadius: 20, overflow: 'hidden',
-              boxShadow: '0 8px 40px var(--hc-shadow)',
-            }}>
-              <div style={{
-                height: 3,
-                background: 'linear-gradient(90deg, transparent, var(--hc-primary), transparent)',
-              }} />
-
-              <div className="p-6 sm:p-8">
-
-                <div className="mb-6">
-                  <h2 style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: '1.7rem', color: 'var(--hc-text)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
-                    {STEP_TITLES[step]}
-                  </h2>
-                  <p style={{ color: 'var(--hc-muted)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
-                    {STEP_DESCS[step]}
-                  </p>
-                </div>
-
-                <BarraProgreso step={step} />
-
-                <AnimatePresence mode="wait">
-                  {step === 0 && (
-                    <StepDatosEmpresa
-                      key="s0"
-                      form={form}
-                      error={error}
-                      onCampo={actualizarCampo}
-                      onTelefono={(val) => setForm((p) => ({ ...p, telefonoEmpresa: val }))}
-                      onInscritoTributacionChange={(v) => setForm((p) => ({ ...p, inscritoTributacion: v }))}
-                      onSubmit={handleNext}
-                    />
-                  )}
-                  {step === 1 && (
-                    <StepDatosAdmin
-                      key="s1"
-                      form={form}
-                      error={error}
-                      loading={loading}
-                      aceptaTerminos={aceptaTerminos}
-                      turnstileToken={turnstileToken}
-                      turnstileRef={turnstileRef}
-                      onCampo={actualizarCampo}
-                      onTelefono={(val) => setForm((p) => ({ ...p, telefonoAdmin: val }))}
-                      onAceptaChange={setAceptaTerminos}
-                      onTurnstileToken={setTurnstileToken}
-                      onSubmit={handleSubmit}
-                      onAtras={() => { setStep(0); setError('') }}
-                    />
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            <p className="text-center text-xs mt-6" style={{ color: 'var(--hc-muted)' }}>
-              © {new Date().getFullYear()} HotClick · Costa Rica ·{' '}
-              <Link to="/informacion" className="hover:underline" style={{ color: 'var(--hc-accent)' }}>Términos</Link>
-            </p>
-          </div>
-        </div>
+      <Seo
+        title="Empezá a vender en HotClick — Registrá tu negocio"
+        description="Creá tu tienda en HotClick: elegí tu plan, contanos de tu negocio y empezá a vender en todo Costa Rica."
+        url="https://hotclick.lat/registro-empresa"
+      />
+      <div className="min-h-screen bg-hc-n-50 font-[family-name:var(--hc-font-text)] text-hc-n-900">
+        <AltaHeader
+          derecha={fase === 'listo' ? null : (
+            <>¿Ya tenés cuenta?{' '}
+              <Link to={rutaLoginConRetorno(RUTA_REGISTRAR_NEGOCIO)} className="font-semibold text-hc-blue-600">Ingresar</Link>
+            </>
+          )}
+        />
+        <main className={`mx-auto flex w-full flex-col gap-5 px-4 pb-12 pt-5 lg:pt-8 ${fase === 'plan' ? 'max-w-[960px]' : 'max-w-[640px]'}`}>
+          <AltaPasos paso={paso} />
+          {fase === 'plan' ? <PasoPlan plan={plan} onPlan={setPlan} onElegir={elegirPlan} /> : null}
+          {fase === 'negocio' ? (
+            <PasoNegocio
+              plan={planElegido}
+              form={form}
+              consentimientos={consentimientos}
+              error={error}
+              loading={loading}
+              turnstileRef={turnstileRef}
+              turnstileToken={turnstileToken}
+              onCampo={actualizarCampo}
+              onTelefono={(v) => setForm((p) => ({ ...p, telefonoEmpresa: v }))}
+              onTelefonoAdmin={(v) => setForm((p) => ({ ...p, telefonoAdmin: v }))}
+              onInscrito={(v) => setForm((p) => ({ ...p, inscritoTributacion: v }))}
+              onConsentimiento={(campo, v) => setConsentimientos((p) => ({ ...p, [campo]: v }))}
+              onTurnstileToken={setTurnstileToken}
+              onCambiarPlan={() => setFase('plan')}
+              onAtras={() => setFase('plan')}
+              onSubmit={handleSubmit}
+            />
+          ) : null}
+          {fase === 'listo' ? <PasoListo nombreNegocio={form.nombreEmpresa.trim()} /> : null}
+        </main>
       </div>
-    </div>
     </>
   )
 }

@@ -102,7 +102,7 @@ export default function AdminNuevaCompra() {
       </div>
 
       {/* Proveedor y notas */}
-      <div className="rounded-2xl p-5 space-y-4"
+      <div className="rounded-[14px] p-5 space-y-4"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Información general</h2>
 
@@ -126,7 +126,7 @@ export default function AdminNuevaCompra() {
       </div>
 
       {/* Líneas de productos */}
-      <div className="rounded-2xl p-5 space-y-3"
+      <div className="rounded-[14px] p-5 space-y-3"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Productos a comprar</h2>

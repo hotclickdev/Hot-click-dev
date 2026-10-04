@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { A } from './registrarNegocioTheme'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { ChangeEvent } from 'react'
 
@@ -15,32 +14,30 @@ export default function AcuerdoYSubmit({
 }) {
   return (
     <>
-      {/* Acuerdo de Vendedores */}
-      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem', borderRadius: 10, border: `1px solid ${aceptaAcuerdo ? A.color : 'var(--hc-border)'}`, background: aceptaAcuerdo ? `${A.bg}` : 'transparent', transition: 'all 0.15s' }}>
+      {/* Acuerdo de Vendedores: texto corto + enlace al acuerdo completo (decisión 13:55 CR, lo valida HOT_CLICK) */}
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3 text-[13px] leading-[19px] text-hc-n-900">
         <input
           type="checkbox"
           checked={aceptaAcuerdo}
           onChange={onAceptaChange}
-          style={{ marginTop: 2, accentColor: A.color, width: 15, height: 15, flexShrink: 0 }}
+          className="mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer accent-[var(--hc-blue-600)]"
         />
-        <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
-          He leído y acepto el{' '}
-          <Link to="/acuerdo-vendedores" target="_blank" rel="noopener noreferrer" style={{ color: A.color, textDecoration: 'none' }}>Acuerdo de Vendedores</Link>
-          , reconozco mi rol como <strong style={{ color: 'var(--hc-text)' }}>Encargado de Tratamiento</strong> de datos de clientes conforme a la Ley N.° 8968 y acepto las obligaciones de confidencialidad e indemnidad estipuladas.
+        <span>
+          Leí y acepto el{' '}
+          <Link to="/acuerdo-vendedores" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-blue-600">Acuerdo de Vendedores</Link>{' '}
+          y mi rol como Encargado de Tratamiento de los datos de mis clientes (Ley 8968).
         </span>
       </label>
 
       {error && (
         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-          className="px-3 py-2.5 rounded-xl text-sm"
-          style={{ color: 'var(--hc-danger)', background: 'color-mix(in srgb,var(--hc-danger) 7%,transparent)', border: '1px solid color-mix(in srgb,var(--hc-danger) 22%,transparent)' }}>
+          role="alert" className="rounded-[12px] border border-hc-red-500 bg-hc-n-0 p-3 text-[13px] text-hc-n-900">
           {error}
         </motion.div>
       )}
 
       <button type="submit" disabled={loading || !aceptaAcuerdo}
-        className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60"
-        style={{ background: A.color, boxShadow: `0 0 32px ${A.ring}` }}>
+        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-hc-red-500 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-hc-red-600 disabled:cursor-not-allowed disabled:bg-hc-n-200 disabled:text-hc-n-600">
         {loading ? (
           <>
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

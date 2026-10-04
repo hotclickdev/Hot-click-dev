@@ -268,6 +268,7 @@ final class SecurityAuthorizationRules {
             // Visitante (aprobado 2-oct-2026): páginas públicas en entrada directa y fallback SPA para el 404.
             // Van después de "/api/**" y de todas las reglas de rol, así que no cambian ninguna.
             .requestMatchers(SpaVisitanteFallback.RUTAS_PUBLICAS_VISITANTE).permitAll()
+            .requestMatchers(GET, SpaVisitanteFallback.RECURSOS_PUBLICOS_VISITANTE).permitAll()
             .requestMatchers(SpaVisitanteFallback.NAVEGACION_VISITANTE).permitAll()
             .anyRequest().authenticated();
     }

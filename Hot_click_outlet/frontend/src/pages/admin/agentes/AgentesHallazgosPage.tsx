@@ -23,7 +23,7 @@ export default function AgentesHallazgosPage() {
         {GROUPS.map((g) => (
           <a
             key={g.label}
-            className="rounded-2xl border border-hc-border bg-hc-surface p-4 hover:border-[var(--hc-link)]"
+            className="rounded-[14px] border border-hc-border bg-hc-surface p-4 hover:border-[var(--hc-link)]"
             href={githubIssuesUrl(g.q)}
           >
             <p className="text-[10px] font-bold uppercase tracking-wider text-hc-muted">label</p>

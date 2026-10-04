@@ -14,7 +14,7 @@ class CedulaCrTest {
     void valida() {
         assertThat(CedulaCr.normalizarONulo("1-2345-0678")).isEqualTo("123450678");
         assertThat(CedulaCr.normalizarONulo("3101123456")).isEqualTo("3101123456");
-        assertThat(CedulaCr.requireValida("1-1111-1111")).isEqualTo("111111111");
+        assertThat(CedulaCr.requireValida("1-0234-0567")).isEqualTo("102340567");
     }
 
     @Test
@@ -23,6 +23,9 @@ class CedulaCrTest {
         assertThat(CedulaCr.normalizarONulo(null)).isNull();
         assertThat(CedulaCr.normalizarONulo("abc")).isNull();
         assertThat(CedulaCr.normalizarONulo("123")).isNull();
+        assertThat(CedulaCr.normalizarONulo("111111111")).isNull();
+        assertThat(CedulaCr.normalizarONulo("1-1111-1111")).isNull();
+        assertThat(CedulaCr.normalizarONulo("012345678")).isNull();
         assertThatThrownBy(() -> CedulaCr.requireValida("no-es-cedula"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Cédula inválida");

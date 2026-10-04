@@ -106,7 +106,8 @@ function mapearSegmentoAdmin(
     return rutaCuentaSeller(planNombre, resto)
   }
   if (limpio === 'equipo' || limpio.startsWith('equipo/')) {
-    return prefijoPorPlan(planNombre) === RUTA_PYME ? limpio : rutaCuentaSeller(planNombre, '')
+    // Decisión 3.3 A: los tres planes tienen equipo (Emprendedor lo cuelga de Opciones).
+    return rutaCuentaSeller(planNombre, 'equipo')
   }
   if (limpio === 'marcas') return rutaCuentaSeller(planNombre, '')
   return limpio

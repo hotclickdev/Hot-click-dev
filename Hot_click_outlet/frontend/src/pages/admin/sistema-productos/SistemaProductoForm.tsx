@@ -7,7 +7,7 @@ import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { CategoriaAdmin } from '../productos/productosHelpers'
 import type { ChangeEvent, ReactNode } from 'react'
 
-const inputClass = 'px-3.5 py-3 rounded-[10px] text-[15px] focus:outline-none w-full'
+const inputClass = 'px-3.5 py-3 rounded-[12px] text-[15px] focus:outline-none w-full'
 const inputStyle = { border: '1px solid #d8cfc0', color: 'var(--hc-text)', backgroundColor: 'var(--hc-surface)' }
 
 type SetCampo = (campo: keyof FormSistemaProducto) => (
@@ -45,7 +45,7 @@ export default function SistemaProductoForm() {
           <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>
             {f.editing ? 'Editá el producto' : 'Agregá un producto'}
           </h1>
-          <p className="text-[15px] m-0" style={{ color: '#6b6459' }}>
+          <p className="text-[15px] m-0" style={{ color: 'var(--hc-muted)' }}>
             Solo el nombre y el precio son obligatorios. Lo demás lo podés completar después.
           </p>
         </header>
@@ -57,13 +57,13 @@ export default function SistemaProductoForm() {
 
       <footer
         className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-10 py-4 flex items-center justify-end gap-5"
-        style={{ backgroundColor: 'var(--hc-surface)', borderTop: '1px solid #e3dacb' }}
+        style={{ backgroundColor: 'var(--hc-surface)', borderTop: '1px solid var(--hc-border)' }}
       >
-        <Link to="/admin/productos" className="text-[15px] font-semibold" style={{ color: '#6b6459' }}>Cancelá</Link>
+        <Link to="/admin/productos" className="text-[15px] font-semibold" style={{ color: 'var(--hc-muted)' }}>Cancelá</Link>
         <button
           type="submit"
           disabled={f.saving}
-          className="inline-flex items-center justify-center px-[26px] py-[13px] rounded-[10px] text-[15px] font-bold disabled:opacity-50"
+          className="inline-flex items-center justify-center px-[26px] py-[13px] rounded-[12px] text-[15px] font-bold disabled:opacity-50"
           style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
         >
           {f.saving ? 'Guardando…' : 'Guardá el producto'}
@@ -79,7 +79,7 @@ function BloqueDatos({ form, setCampo, categories }: {
   categories: CategoriaAdmin[]
 }) {
   return (
-    <section className="rounded-2xl p-6 flex flex-col gap-[18px] mb-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <section className="rounded-[14px] p-6 flex flex-col gap-[18px] mb-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <h2 className="m-0 text-[17px] font-bold" style={{ fontFamily: 'var(--font-display)' }}>Datos del producto</h2>
       <Campo label="Nombre">
         <input value={form.nombre} onChange={setCampo('nombre')} placeholder="Ej: Café molido 500 g" required className={inputClass} style={inputStyle} />
@@ -101,11 +101,11 @@ function BloqueDatos({ form, setCampo, categories }: {
 
 function BloquePrecio({ form, setCampo }: { form: FormSistemaProducto; setCampo: SetCampo }) {
   return (
-    <section className="rounded-2xl p-6 flex flex-col gap-[18px] mb-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <section className="rounded-[14px] p-6 flex flex-col gap-[18px] mb-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <h2 className="m-0 text-[17px] font-bold" style={{ fontFamily: 'var(--font-display)' }}>Precio y stock</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Campo label="Precio de venta" hint="Con IVA incluido.">
-          <div className="flex items-center overflow-hidden rounded-[10px]" style={{ border: '1px solid #d8cfc0' }}>
+          <div className="flex items-center overflow-hidden rounded-[12px]" style={{ border: '1px solid #d8cfc0' }}>
             <span className="pl-3.5 font-bold" style={{ fontFamily: 'var(--font-display)', color: '#8a8378' }}>₡</span>
             <input type="number" min="0" value={form.precioVenta} onChange={setCampo('precioVenta')} placeholder="0" className="flex-1 px-2 py-3 font-bold text-[15px] focus:outline-none" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }} />
           </div>
@@ -129,7 +129,7 @@ function BloqueFoto({ form, subiendo, onFile }: {
   onFile: (file?: File) => void
 }) {
   return (
-    <section className="rounded-2xl p-6 flex flex-col gap-3.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+    <section className="rounded-[14px] p-6 flex flex-col gap-3.5" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <h2 className="m-0 text-[17px] font-bold" style={{ fontFamily: 'var(--font-display)' }}>
         Foto <span className="font-normal text-sm" style={{ fontFamily: 'var(--font-sans)', color: '#8a8378' }}>(opcional, pero vende más)</span>
       </h2>

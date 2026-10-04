@@ -21,7 +21,7 @@ export default function CopilotMsg({ rol, contenido, streaming }: CopilotMsgProp
           </svg>
         )}
       </div>
-      <div className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+      <div className={`max-w-[78%] rounded-[14px] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
         style={isUser
           ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
           : { backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
