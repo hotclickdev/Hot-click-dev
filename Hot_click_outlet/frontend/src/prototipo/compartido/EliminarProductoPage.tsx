@@ -4,6 +4,7 @@ import { EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 import { borrarProductoVendedor, mensajeErrorProducto } from './catalogoVendedorApi'
+import HojaInferior from '@/components/comprador/HojaInferior'
 import ConfirmarEliminarProductoVista from './ConfirmarEliminarProductoVista'
 
 /**
@@ -34,7 +35,8 @@ export default function EliminarProductoPage() {
   }
 
   return (
-    <main className="px-5 pb-8 pt-[60px] text-center">
+    <HojaInferior abierta titulo="Eliminar producto" onCerrar={() => navigate(ruta('productos'))}>
+      <div className="px-5 pb-8 text-center">
       <ConfirmarEliminarProductoVista
         nombre={nombre}
         cargando={cargando}
@@ -44,6 +46,7 @@ export default function EliminarProductoPage() {
         onCancelar={() => navigate(id ? ruta(`productos/${id}/editar`) : ruta('productos'))}
         encabezado={<EncabezadoPagina titulo="" volverA={ruta('productos')} />}
       />
-    </main>
+      </div>
+    </HojaInferior>
   )
 }
