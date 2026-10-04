@@ -96,7 +96,10 @@ export default function ImportarTabs({
           {archivo
             ? <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{archivo.name}</p>
             : <>
-                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Arrastrá o hacé clic para subir</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
+                  <span className="md:hidden">Elegí un archivo o tomá una foto</span>
+                  <span className="hidden md:inline">Arrastrá o hacé clic para subir</span>
+                </p>
                 <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{tab === 'pdf' ? 'PDF hasta 30 MB' : 'CSV hasta 5 MB'}</p>
               </>
           }
