@@ -21,6 +21,10 @@ export default function CampoDatoCobro({ tipo, value, onChange }: Props) {
         onChange={onChange}
         placeholder={placeholderDato(tipo)}
         type={visible ? 'text' : 'password'}
+        inputMode={tipo === 'sinpe' ? 'tel' : 'text'}
+        autoCapitalize={tipo === 'iban' ? 'characters' : 'off'}
+        autoComplete="off"
+        enterKeyHint="done"
       />
       <button
         type="button"
