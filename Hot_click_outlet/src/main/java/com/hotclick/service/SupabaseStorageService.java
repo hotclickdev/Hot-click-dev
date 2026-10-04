@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.exception.ImagenOcupadaException;
 import com.hotclick.service.storage.StorageImageValidator;
 import com.hotclick.service.storage.StorageUploadHelper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -84,6 +85,31 @@ public class SupabaseStorageService {
         log.error("[s3-circuit] OPEN subirCertificado empresa={}: {}", empresaId, t.getMessage());
         throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
             "Servicio de almacenamiento no disponible temporalmente");
+    }
+
+    /**
+     * FULL-01: un rechazo de validación (tamaño, formato, imagen no decodificable) no es una
+     * falla de S3. Resilience4j elige el fallback con el tipo de excepción más específico, así
+     * que estos dos lo devuelven tal cual y el controller responde 400 en vez de "almacenamiento
+     * no disponible". Retry y circuit breaker de s3 lo ignoran (application.properties).
+     */
+    private String subirImagenFallback(MultipartFile file, String carpeta, IllegalArgumentException e) {
+        throw e;
+    }
+
+    /** R1: sin permiso de decodificación → 503, no "S3 caído". */
+    private String subirImagenFallback(MultipartFile file, String carpeta, ImagenOcupadaException e) {
+        throw e;
+    }
+
+    private String subirImagenDescargadaFallback(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta,
+                                                 ImagenOcupadaException e) {
+        throw e;
+    }
+
+    private String subirImagenDescargadaFallback(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta,
+                                                 IllegalArgumentException e) {
+        throw e;
     }
 
     private String subirImagenFallback(MultipartFile file, String carpeta, Throwable t) {
