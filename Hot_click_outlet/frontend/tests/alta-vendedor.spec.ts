@@ -39,7 +39,7 @@ for (const ancho of [390, 1440]) {
       } else {
         await expect(page.getByRole('heading', { name: /Empezá a vender en HotClick/ })).toBeVisible()
       }
-      await expect(page.getByText('Paso 1 de 3')).toBeVisible()
+      await expect(page.getByText(ancho === 390 ? '1 · Plan' : 'Paso 1 de 3')).toBeVisible()
       await expect(page.getByRole('radio')).toHaveCount(3)
       await expect(page.getByTestId('plan-emprendedor')).not.toContainText('Tu contacto visible')
       await expect(page.getByTestId('plan-pyme')).toContainText('Tu contacto visible en tu tienda')
@@ -57,7 +57,7 @@ for (const ancho of [390, 1440]) {
       await page.goto('/registro-empresa', { waitUntil: 'domcontentloaded' })
       if (ancho === 390) await page.getByRole('button', { name: 'Continuar con Emprendedor' }).click()
       else await page.getByTestId('plan-emprendedor').getByRole('button', { name: 'Elegir este plan' }).click()
-      await expect(page.getByText('Paso 2 de 3')).toBeVisible()
+      await expect(page.getByText(ancho === 390 ? '2 · Tu negocio' : 'Paso 2 de 3')).toBeVisible()
       await expect(page).toHaveURL(/plan=emprendedor/)
       await expect(page.getByText(/WhatsApp de tu tienda/i)).toHaveCount(0)
       await page.getByLabel('Nombre del negocio (obligatorio)').fill('Tienda Tica')
@@ -92,7 +92,7 @@ for (const ancho of [390, 1440]) {
       await page.getByLabel(/Acuerdo de Vendedores/).check()
       await page.getByRole('button', { name: 'Crear mi cuenta' }).click()
       await expect(page).toHaveURL(/\/registro-empresa\/activar-plan\?plan=pyme/)
-      await expect(page.getByText('Paso 3 de 3')).toBeVisible()
+      await expect(page.getByText(ancho === 390 ? '3 · Activar' : 'Paso 3 de 3')).toBeVisible()
       await expect(page.getByRole('link', { name: 'Pagar después' })).toBeVisible()
       await shot(page, 'alta-paso3-activar')
     })

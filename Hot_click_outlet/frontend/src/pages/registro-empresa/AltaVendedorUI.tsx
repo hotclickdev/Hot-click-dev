@@ -54,7 +54,7 @@ export function AltaPasos({ paso }: { paso: number }) {
           )
         })}
       </ol>
-      <p className="mt-4 text-[12px] text-hc-n-600">Paso {paso + 1} de 3</p>
+      <p className="mt-4 hidden text-[12px] text-hc-n-600 md:block">Paso {paso + 1} de 3</p>
     </nav>
   )
 }
