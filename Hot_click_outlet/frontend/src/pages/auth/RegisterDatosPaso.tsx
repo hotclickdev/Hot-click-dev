@@ -71,7 +71,7 @@ export default function RegisterDatosPaso({
       </label>
 
       <button type="submit" disabled={bloqueado}
-        className="flex w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0 hover:bg-hc-red-600 disabled:cursor-not-allowed disabled:opacity-60">
+        className="flex w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 py-[13px] text-[14px] font-semibold text-hc-n-0 hover:bg-hc-red-600 disabled:cursor-not-allowed disabled:bg-hc-n-100 disabled:text-hc-n-400">
         {loading ? t('login.sending') : t('register.sendCode')}
       </button>
     </form>

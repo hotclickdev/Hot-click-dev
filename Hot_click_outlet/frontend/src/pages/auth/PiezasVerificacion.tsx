@@ -19,7 +19,7 @@ export function BotonVerificar({ cargando, textoCargando, texto, deshabilitado }
     <button
       type="submit"
       disabled={cargando || deshabilitado}
-      className="flex w-full items-center justify-center rounded-[12px] bg-hc-red-500 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0 hover:bg-hc-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex w-full items-center justify-center rounded-[12px] bg-hc-red-500 py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0 hover:bg-hc-red-600 disabled:cursor-not-allowed disabled:bg-hc-n-100 disabled:text-hc-n-400"
     >
       {cargando ? textoCargando : texto}
     </button>
