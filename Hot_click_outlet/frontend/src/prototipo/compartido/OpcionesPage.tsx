@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { FilaOpcion } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
 import FilaModoOscuro from './FilaModoOscuro'
 import MmGuiaToggle from './MmGuiaToggle'
 import EntradaPagina from './motion/EntradaPagina'
@@ -19,6 +20,12 @@ export default function OpcionesPage() {
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
   const userName = useAuthStore((s) => s.userName) ?? plan.usuario
+  const features = useTenantStore((s) => s.features)
+  const planCargado = useTenantStore((s) => s.loaded)
+  const hasFeature = useTenantStore((s) => s.hasFeature)
+  const telegramBloqueado = planCargado && features.telegram === false
+  const consultasBloqueadas = planCargado && !hasFeature('ai')
+  const textoMejorar = 'Mejorar plan'
 
   function cerrarSesion() {
     logout()
@@ -56,13 +63,21 @@ export default function OpcionesPage() {
             <FilaOpcion to={ruta('cobro')} label="Métodos de cobro" />
           </ItemFila>
           <ItemFila>
-            <FilaOpcion to={ruta('telegram')} label="Telegram" />
+            <FilaOpcion
+              to={ruta('telegram')}
+              label="Telegram"
+              bloqueo={telegramBloqueado ? { to: ruta('plan'), texto: textoMejorar } : undefined}
+            />
           </ItemFila>
           <ItemFila>
             <FilaOpcion to={ruta('ayuda')} label="Ayuda y soporte" />
           </ItemFila>
           <ItemFila>
-            <FilaOpcion to={ruta('consultas')} label="Consultas con Hot" />
+            <FilaOpcion
+              to={ruta('consultas')}
+              label="Consultas con Hot"
+              bloqueo={consultasBloqueadas ? { to: ruta('plan'), texto: textoMejorar } : undefined}
+            />
           </ItemFila>
           <ItemFila>
             <FilaOpcion to={ruta(plan.extraOpcion.to)} label={plan.extraOpcion.label} />

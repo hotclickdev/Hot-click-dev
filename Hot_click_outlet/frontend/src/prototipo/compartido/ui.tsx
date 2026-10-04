@@ -139,28 +139,47 @@ export function BadgePlan({ texto }: { texto: string }) {
   )
 }
 
+function Candado() {
+  return (
+    <svg viewBox="0 0 20 20" className="size-4 shrink-0" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="4" y="9" width="12" height="8" rx="1.5" />
+      <path d="M7 9V6.5a3 3 0 0 1 6 0V9" />
+    </svg>
+  )
+}
+
 export function FilaOpcion({
   to,
   label,
   peligro = false,
   onClick,
   dataMm,
+  bloqueo,
 }: {
   to?: string
   label: string
   peligro?: boolean
   onClick?: () => void
   dataMm?: string
+  bloqueo?: { to: string; texto: string }
 }) {
   const color = peligro ? 'text-hc-primary' : 'text-hc-text'
-  const clase = `flex min-h-14 w-full items-center justify-between border-b border-hc-border ${color}`
+  const clase = `flex min-h-14 w-full items-center justify-between gap-3 border-b border-hc-border ${color}`
   const attrs = dataMm ? { 'data-mm': dataMm } : {}
   const contenido = (
     <>
-      <span className="text-sm font-medium">{label}</span>
-      <span className="text-base font-bold text-hc-muted" aria-hidden>›</span>
+      <span className="flex items-center gap-2 text-sm font-medium">
+        {bloqueo ? <Candado /> : null}
+        {label}
+      </span>
+      {bloqueo
+        ? <span className="text-sm font-semibold text-hc-red-500">{bloqueo.texto}</span>
+        : <span className="text-base font-bold text-hc-muted" aria-hidden>›</span>}
     </>
   )
+  if (bloqueo) {
+    return <Link to={bloqueo.to} className={clase} {...attrs}>{contenido}</Link>
+  }
   if (to) {
     return <Link to={to} className={clase} {...attrs}>{contenido}</Link>
   }
