@@ -11,6 +11,7 @@ import EstadoVacioConversacional from '../compartido/motion/EstadoVacioConversac
 import { ListaStagger, ItemListaStagger } from '../compartido/motion/ListaStagger'
 import ListadoFeedback from '../compartido/ListadoFeedback'
 import { EASE_PREMIUM } from '../compartido/motion/formularioMotionTokens'
+import HojaInferior from '@/components/comprador/HojaInferior'
 import { equipoService } from '@/services/equipoService'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -81,6 +82,16 @@ export default function EquipoPage() {
   }
 
   const visibles = miembros.filter(esMiembroVisibleEnLista)
+  const movil = useEsMovil()
+  const formulario = mostrarForm ? (
+    <FormularioInvitar
+      onCerrar={() => setMostrarForm(false)}
+      onInvitado={(nuevo) => {
+        setMiembros((prev) => [...prev, nuevo])
+        setMostrarForm(false)
+      }}
+    />
+  ) : null
 
   return (
     <main className="px-5 pb-10 pt-8 md:px-12 md:py-12" data-mm="seller-equipo">
@@ -94,7 +105,7 @@ export default function EquipoPage() {
             <p className="mt-1 text-xs text-hc-muted md:text-sm">Miembros con acceso a esta tienda</p>
           </div>
           {!pendiente ? (
-            <Boton onClick={() => setMostrarForm(true)}>+ Invitar miembro</Boton>
+            <Boton onClick={() => setMostrarForm(true)}>Agregar persona</Boton>
           ) : null}
         </div>
 
@@ -117,7 +128,7 @@ export default function EquipoPage() {
               empty={(
                 <EstadoVacioConversacional
                   titulo="Todavía no hay miembros"
-                  mensaje="Invitá a tu equipo para que entren a esta tienda."
+                  mensaje="Agregá a una persona para que entre a esta tienda."
                 />
               )}
             >
@@ -136,15 +147,15 @@ export default function EquipoPage() {
               </ListaStagger>
             </ListadoFeedback>
 
-            {mostrarForm ? (
-              <FormularioInvitar
+            {movil ? (
+              <HojaInferior
+                abierta={mostrarForm}
                 onCerrar={() => setMostrarForm(false)}
-                onInvitado={(nuevo) => {
-                  setMiembros((prev) => [...prev, nuevo])
-                  setMostrarForm(false)
-                }}
-              />
-            ) : null}
+                titulo={<h2 className="font-display text-lg font-bold">Agregar persona</h2>}
+              >
+                {formulario}
+              </HojaInferior>
+            ) : formulario}
 
             <p className="mt-6 hidden text-xs text-hc-muted md:block">
               También desde <a className="font-medium text-hc-primary" href={ruta('opciones')}>Opciones</a>.
@@ -154,6 +165,18 @@ export default function EquipoPage() {
       </EntradaPagina>
     </main>
   )
+}
+
+function useEsMovil() {
+  const [movil, setMovil] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const aplicar = () => setMovil(mq.matches)
+    aplicar()
+    mq.addEventListener('change', aplicar)
+    return () => mq.removeEventListener('change', aplicar)
+  }, [])
+  return movil
 }
 
 function listaMiembros(data: unknown): MiembroEquipo[] {
@@ -330,7 +353,7 @@ function FormularioInvitar({
     return (
       <div className="mt-6 rounded-xl border border-hc-border bg-hc-surface p-4 md:max-w-lg">
         <PantallaExitoWizard
-          titulo="Invitación enviada"
+          titulo="Persona agregada"
           mensaje={mensajeExitoInvitacion(miembroCreado.nombre)}
           accion={
             <Boton onClick={cerrarTrasExito}>
@@ -344,14 +367,14 @@ function FormularioInvitar({
 
   return (
     <div className="mt-6 rounded-xl border border-hc-border bg-hc-surface p-4 md:max-w-lg">
-      <p className="mb-4 text-sm font-semibold">Invitar miembro</p>
+      <p className="mb-4 text-sm font-semibold">Agregar persona</p>
       <FormularioPorPasos
         pasos={PASOS_INVITAR_EQUIPO}
         pasoActual={paso}
         onPasoChange={setPaso}
         validarPaso={(i) => validarPasoInvitarEquipo(i, form)}
         onFinalizar={enviar}
-        etiquetaFinal="Enviar invitación"
+        etiquetaFinal="Agregar persona"
         enviando={guardando}
       >
         {idPaso === 'persona' ? (

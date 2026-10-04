@@ -62,7 +62,7 @@ test.describe('Wizard conversacional PYME', () => {
     await entrarSeller(page, 'PYME')
     await page.goto('/pyme/equipo', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Mi Equipo' })).toBeVisible({ timeout: 20_000 })
-    await page.getByRole('button', { name: '+ Invitar miembro' }).click()
+    await page.getByRole('button', { name: 'Agregar persona' }).click()
     await expect(page.getByText('Paso 1 de 4')).toBeVisible()
     await expect(page.getByRole('heading', { name: '¿Cómo se llama?' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()

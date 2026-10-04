@@ -126,7 +126,7 @@ test.describe('Mi equipo en Emprendedor y Negocio Plus (decisión 3.3 A)', () =>
       await page.getByText('Mi equipo').click()
       await expect(page).toHaveURL(/\/emprendedor\/opciones\/equipo$/)
       await expect(page.getByRole('heading', { name: 'Mi Equipo' })).toBeVisible({ timeout: 15_000 })
-      await page.getByRole('button', { name: '+ Invitar miembro' }).first().click()
+      await page.getByRole('button', { name: 'Agregar persona' }).first().click()
       await expect(page.getByText('Paso 1 de 4')).toBeVisible()
       await captura(page, `emprendedor-equipo-${ancho}`)
       await page.goto('/emprendedor/equipo', { waitUntil: 'domcontentloaded' })
