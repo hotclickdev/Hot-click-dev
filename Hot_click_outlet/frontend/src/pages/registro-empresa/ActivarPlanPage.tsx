@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AnimatePresence } from 'framer-motion'
 import useAuthStore from '@/store/authStore'
 import { billingService } from '@/services/billingService'
@@ -16,6 +17,7 @@ import { AltaHeader, AltaPasos, AltaTitulo, PillPendiente } from './AltaVendedor
 type PlanApi = { id: Id; nombre: string }
 
 export default function ActivarPlanPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const planQuery = leerPlanQuery(searchParams.toString())
   const plan = planAlta(planQuery)
@@ -30,6 +32,7 @@ export default function ActivarPlanPage() {
   const [buscandoPlan, setBuscandoPlan] = useState(true)
   const [errorPlan, setErrorPlan] = useState('')
   const [intentado, setIntentado] = useState(false)
+  const [carga, setCarga] = useState(0)
 
   const {
     loadingPlan, error: errorCobro, pagoPendiente,
@@ -51,7 +54,7 @@ export default function ActivarPlanPage() {
       .catch(() => { if (activo) setErrorPlan('No se pudieron cargar los planes') })
       .finally(() => { if (activo) setBuscandoPlan(false) })
     return () => { activo = false }
-  }, [planQuery])
+  }, [planQuery, carga])
 
   useEffect(() => {
     if (!puedeActivar || !planId || intentado) return
@@ -65,7 +68,7 @@ export default function ActivarPlanPage() {
   return (
     <div className="min-h-screen bg-hc-n-50 font-[family-name:var(--hc-font-text)] text-hc-n-900">
       <AltaHeader derecha={null} />
-      <main className="mx-auto flex w-full max-w-[640px] flex-col gap-5 px-4 pb-12 pt-5 lg:pt-8">
+      <main className="mx-auto flex w-full max-w-[640px] flex-col gap-5 px-4 pb-36 pt-5 lg:pt-8">
         <AltaPasos paso={2} />
         <AltaTitulo
           antes={pagoPendiente ? 'Activá tu plan' : 'Revisá tu'}
@@ -112,22 +115,38 @@ export default function ActivarPlanPage() {
                     Volver
                   </button>
                 </div>
+              ) : errorPlan ? (
+                <div key="error" role="alert" aria-live="assertive" className="flex flex-col items-start gap-3 py-4">
+                  <p className="text-[14px] text-hc-n-900">{errorPlan}</p>
+                  <button type="button" onClick={() => { setErrorPlan(''); setBuscandoPlan(true); setCarga((n) => n + 1) }}
+                    className="inline-flex h-12 items-center justify-center rounded-[12px] bg-hc-red-500 px-5 text-[15px] font-semibold text-white">
+                    {t('comun.reintentar', { defaultValue: 'Reintentar' })}
+                  </button>
+                </div>
               ) : (
-                <div key="cargando" className="text-center py-6">
-                  <p className="text-[14px] text-hc-n-600">
-                    {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorPlan || 'Un momento…')}
-                  </p>
+                <div key="cargando" className="flex flex-col gap-3 py-4" aria-busy="true" aria-live="polite">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-hc-n-100" />
+                  <div className="h-24 animate-pulse rounded-[12px] bg-hc-n-100" />
+                  <p className="sr-only">Preparando tu suscripción…</p>
                 </div>
               )}
             </AnimatePresence>
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-1 text-center">
-          <Link to={RUTA_PANEL_VENDEDOR} className="inline-flex h-12 w-full items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 text-[15px] font-semibold text-hc-n-900 no-underline hover:bg-hc-n-50">
+        <div className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-2 border-t border-hc-n-200 bg-hc-n-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+          <button
+            type="button"
+            disabled={!planId || loadingPlan}
+            onClick={() => { if (planId) void seleccionarPlan(planId) }}
+            className="inline-flex h-12 w-full items-center justify-center rounded-[12px] bg-hc-red-500 text-[15px] font-semibold text-white disabled:bg-hc-n-200 disabled:text-hc-n-600"
+          >
+            {t('registroVendedor.boton.pagarActivar', { plan: plan.nombre, defaultValue: `Pagar y activar ${plan.nombre}` })}
+          </button>
+          <Link to={RUTA_PANEL_VENDEDOR} className="inline-flex h-12 w-full items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 text-[15px] font-semibold text-hc-n-900 no-underline">
             Pagar después
           </Link>
-          <p className="text-[12px] text-hc-n-600">{textoPagarDespues(plan.nombre)}</p>
+          <p className="text-center text-[12px] text-hc-n-600">{textoPagarDespues(plan.nombre)}</p>
         </div>
       </main>
     </div>
