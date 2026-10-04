@@ -2,9 +2,10 @@ import { Outlet } from 'react-router-dom'
 import VendedorAvisos from '@/app/VendedorAvisos'
 import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
-import ThemeToggle from '@/components/ui/ThemeToggle'
-import NegocioPertenenciaChip from './NegocioPertenenciaChip'
+import PanelCabeceraMovil from './PanelCabeceraMovil'
+import { mapSellerPlanIdToApi } from './planesPageHelpers'
 import SellerBottomNav from './SellerBottomNav'
+import { useSellerPlan } from './SellerPlanContext'
 import SellerSidebar from './SellerSidebar'
 
 type Props = {
@@ -16,6 +17,7 @@ type Props = {
  * `.hc-seller-theme` sigue html.dark (tokens semánticos).
  */
 export default function SellerShell({ sinNav = false }: Props) {
+  const plan = useSellerPlan()
   return (
     <div
       className="hc-seller-theme min-h-dvh bg-hc-bg text-hc-text"
@@ -26,12 +28,7 @@ export default function SellerShell({ sinNav = false }: Props) {
         <SellerSidebar />
         <div className={`min-w-0 flex-1 ${sinNav ? '' : 'pb-16 md:pb-0'}`}>
           <div className="mx-auto max-w-md md:mx-0 md:max-w-none">
-            <div className="flex items-center gap-2 px-4 pt-3 md:hidden">
-              <div className="min-w-0 flex-1">
-                <NegocioPertenenciaChip variante="card" />
-              </div>
-              <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
-            </div>
+            <PanelCabeceraMovil base={plan.basePath} planApi={mapSellerPlanIdToApi(plan.id)} interna={sinNav} />
             <VendedorAvisos />
             <Outlet />
           </div>

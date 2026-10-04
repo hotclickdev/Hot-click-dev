@@ -66,6 +66,12 @@ export function etiquetaPlan(nombre: string): string {
   return nombre
 }
 
+/** Nombre de plan de `tenantStore` (puede ser `FREE` o `Sin plan` antes de cargar) → plan de la API. */
+export function normalizarPlanApi(nombre: string | null | undefined): string {
+  const plan = (nombre ?? '').toUpperCase()
+  return plan === 'PYME' || plan === 'NEGOCIO_PLUS' ? plan : 'EMPRENDEDOR'
+}
+
 export function mapSellerPlanIdToApi(id: PlanId): string {
   if (id === 'pyme') return 'PYME'
   if (id === 'negocioPlus') return 'NEGOCIO_PLUS'

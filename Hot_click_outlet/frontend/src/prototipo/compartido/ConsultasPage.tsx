@@ -12,7 +12,7 @@ export default function ConsultasPage() {
     <EntradaPagina className="flex min-h-dvh flex-col">
       <main className="flex min-h-dvh flex-col">
         <header className="flex items-center gap-3 border-b border-hc-border px-5 pb-3 pt-14">
-          <Link to={ruta('opciones')} className="text-xl font-bold" aria-label="Volver">←</Link>
+          <Link to={ruta('opciones')} className="text-xl font-bold max-md:hidden" aria-label="Volver">←</Link>
           <div className="flex size-9 items-center justify-center rounded-full bg-hc-primary text-sm font-bold text-white">H</div>
           <div>
             <p className="font-semibold">Asistente Hot</p>

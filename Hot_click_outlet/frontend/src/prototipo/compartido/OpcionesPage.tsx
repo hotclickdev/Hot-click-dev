@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { FilaOpcion } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import useAuthStore from '@/store/authStore'
+import FilaModoOscuro from './FilaModoOscuro'
 import MmGuiaToggle from './MmGuiaToggle'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
@@ -40,6 +41,9 @@ export default function OpcionesPage() {
         </div>
         <div className="mt-6 md:max-w-[760px]">
           <MmGuiaToggle />
+        </div>
+        <div className="mt-3 md:hidden">
+          <FilaModoOscuro />
         </div>
         <ListaStagger className="mt-4 md:max-w-[760px]">
           <ItemFila>

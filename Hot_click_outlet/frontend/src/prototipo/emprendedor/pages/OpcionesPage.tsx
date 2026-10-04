@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import FilaOpcion from '../ui/FilaOpcion'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import useAuthStore from '@/store/authStore'
+import FilaModoOscuro from '@/prototipo/compartido/FilaModoOscuro'
 import MmGuiaToggle from '@/prototipo/compartido/MmGuiaToggle'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
@@ -49,6 +50,7 @@ export default function OpcionesPage() {
           </div>
         </div>
         <MmGuiaToggle />
+        <FilaModoOscuro />
         <ListaStagger className="mt-2">
           {OPCIONES.map((item) => (
             <ItemListaStagger key={item.to}>

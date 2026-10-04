@@ -86,7 +86,7 @@ export function EncabezadoPagina({ titulo, subtitulo, volverA, extra }: Encabeza
       <div>
         <div className="flex items-center gap-2.5">
           {volverA ? (
-            <Link to={volverA} className="min-h-11 min-w-8 text-xl font-bold leading-none" aria-label="Volver">
+            <Link to={volverA} className="min-h-11 min-w-8 text-xl font-bold leading-none max-md:hidden" aria-label="Volver">
               ←
             </Link>
           ) : null}

@@ -12,6 +12,7 @@ import TextoFlecha from '@/components/ui/TextoFlecha'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { JsonBody } from '@/types/api'
+import { ocultarEnMovilSiHayPanel, useCabeceraPanelEnPos } from './useCabeceraPanelEnPos'
 
 export default function AdminPOSCaja() {
   const { t } = useTranslation()
@@ -24,6 +25,7 @@ export default function AdminPOSCaja() {
   const [cerrado, setCerrado] = useState<PosCierre | null>(null)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const [errorCerrar, setErrorCerrar] = useState(false)
+  const claseTema = `min-h-11 min-w-11 flex shrink-0 items-center justify-center ${ocultarEnMovilSiHayPanel(useCabeceraPanelEnPos())}`
 
   useEffect(() => {
     posService.getCajaActiva()
@@ -62,7 +64,7 @@ export default function AdminPOSCaja() {
     return (
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
         <div className="flex justify-end">
-          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
+          <ThemeToggle className={claseTema} />
         </div>
         <div className="rounded-[16px] p-6 text-center space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
@@ -106,7 +108,7 @@ export default function AdminPOSCaja() {
     return (
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6 text-center">
         <div className="flex justify-end">
-          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
+          <ThemeToggle className={claseTema} />
         </div>
         <div className="rounded-[14px] p-8"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
@@ -145,7 +147,7 @@ export default function AdminPOSCaja() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
+          <ThemeToggle className={claseTema} />
           <button
             type="button"
             onClick={() => setReporteAbierto(true)}
