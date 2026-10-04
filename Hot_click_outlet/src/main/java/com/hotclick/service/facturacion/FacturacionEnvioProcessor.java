@@ -4,6 +4,7 @@ import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteFiscalRepository;
+import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.FacturacionContingenciaService;
 import com.hotclick.service.FirmaDigitalService;
 import com.hotclick.service.HaciendaApiClient;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class FacturacionEnvioProcessor {
@@ -23,17 +25,20 @@ public class FacturacionEnvioProcessor {
     private static final int MAX_INTENTOS = 5;
 
     private final ComprobanteFiscalRepository comprobanteRepo;
+    private final PedidoRepository pedidoRepository;
     private final XmlFacturaBuilder xmlBuilder;
     private final FirmaDigitalService firmaService;
     private final HaciendaApiClient haciendaClient;
     private final FacturacionContingenciaService contingenciaService;
 
     public FacturacionEnvioProcessor(ComprobanteFiscalRepository comprobanteRepo,
+                                     PedidoRepository pedidoRepository,
                                      XmlFacturaBuilder xmlBuilder,
                                      FirmaDigitalService firmaService,
                                      HaciendaApiClient haciendaClient,
                                      FacturacionContingenciaService contingenciaService) {
         this.comprobanteRepo     = comprobanteRepo;
+        this.pedidoRepository    = pedidoRepository;
         this.xmlBuilder          = xmlBuilder;
         this.firmaService        = firmaService;
         this.haciendaClient      = haciendaClient;
@@ -52,10 +57,11 @@ public class FacturacionEnvioProcessor {
         }
 
         Empresa empresa = cf.getEmpresa();
-        Pedido  pedido  = cf.getPedido();
 
         if (!empresa.isConfiguracionFiscalCompleta()) {
-            log.warn("[facturacion] empresa={} sin config fiscal completa — stub mode", empresa.getId());
+            log.warn("[facturacion] empresa={} sin certificado o credenciales — comprobante={} queda PENDIENTE",
+                empresa.getId(), comprobanteId);
+            return;
         }
 
         cf.setIntentosEnvio(cf.getIntentosEnvio() + 1);
@@ -63,7 +69,7 @@ public class FacturacionEnvioProcessor {
         comprobanteRepo.save(cf);
 
         try {
-            String xmlSinFirmar = xmlBuilder.construir(cf, empresa, pedido);
+            String xmlSinFirmar = xmlDe(cf, empresa);
             String xmlFirmado   = firmaService.firmar(xmlSinFirmar, empresa);
 
             boolean enviado = haciendaClient.enviar(xmlFirmado, cf.getClaveNumerica(), empresa);
@@ -110,5 +116,16 @@ public class FacturacionEnvioProcessor {
             }
         }
         comprobanteRepo.save(cf);
+    }
+
+    private String xmlDe(ComprobanteFiscal cf, Empresa empresa) {
+        if (cf.getCompra() != null && cf.getCompra().getId() != null) {
+            List<Pedido> paquetes = pedidoRepository.findByCompra_IdOrderByNumeroPaqueteAsc(cf.getCompra().getId());
+            return xmlBuilder.construir(cf, empresa, paquetes);
+        }
+        if (cf.getPedido() == null) {
+            throw new IllegalStateException("El comprobante no tiene compra ni pedido");
+        }
+        return xmlBuilder.construir(cf, empresa, cf.getPedido());
     }
 }

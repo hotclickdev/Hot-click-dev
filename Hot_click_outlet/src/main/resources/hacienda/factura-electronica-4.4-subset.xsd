@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Subset local de Hacienda 4.3 alineado al XML que emitimos hoy.
-  NO es el XSD oficial (el CDN de Hacienda responde AccessDenied).
-
-  Huecos vs esquema oficial: Emisor sin Ubicacion/Telefono;
-  MedioPago único (oficial permite lista); ResumenFactura sin
-  TotalVenta/TotalExento/TotalMercanciasGravadas/etc.; sin Otros/Normativa.
+  Subset local de Hacienda 4.4 (FacturaElectronica) alineado al XML que emitimos.
+  NO es el XSD oficial. Contrastearlo con el esquema de Hacienda antes de producción.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica"
-           xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica"
+           targetNamespace="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica"
+           xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica"
            elementFormDefault="qualified">
 
   <xs:element name="FacturaElectronica" type="ComprobanteType"/>
@@ -17,7 +13,8 @@
   <xs:complexType name="ComprobanteType">
     <xs:sequence>
       <xs:element name="Clave" type="xs:string"/>
-      <xs:element name="CodigoActividad" type="xs:string"/>
+      <xs:element name="ProveedorSistemas" type="xs:string"/>
+      <xs:element name="CodigoActividadEmisor" type="xs:string"/>
       <xs:element name="NumeroConsecutivo" type="xs:string"/>
       <xs:element name="FechaEmision">
         <xs:simpleType>
@@ -27,7 +24,7 @@
         </xs:simpleType>
       </xs:element>
       <xs:element name="Emisor" type="EmisorType"/>
-      <xs:element name="Receptor" type="ReceptorType" minOccurs="0"/>
+      <xs:element name="Receptor" type="ReceptorType"/>
       <xs:element name="CondicionVenta" type="xs:string"/>
       <xs:element name="MedioPago" type="xs:string"/>
       <xs:element name="DetalleServicio" type="DetalleServicioType"/>
@@ -67,13 +64,14 @@
   <xs:complexType name="LineaDetalleType">
     <xs:sequence>
       <xs:element name="NumeroLinea" type="xs:positiveInteger"/>
-      <xs:element name="Detalle" type="xs:string"/>
+      <xs:element name="CodigoCABYS" type="xs:string"/>
       <xs:element name="Cantidad" type="xs:decimal"/>
       <xs:element name="UnidadMedida" type="xs:string"/>
+      <xs:element name="Detalle" type="xs:string"/>
       <xs:element name="PrecioUnitario" type="xs:decimal"/>
       <xs:element name="MontoTotal" type="xs:decimal"/>
-      <xs:element name="Impuesto" type="ImpuestoType" minOccurs="0"/>
       <xs:element name="SubTotal" type="xs:decimal"/>
+      <xs:element name="Impuesto" type="ImpuestoType" minOccurs="0"/>
       <xs:element name="ImpuestoNeto" type="xs:decimal"/>
       <xs:element name="MontoTotalLinea" type="xs:decimal"/>
     </xs:sequence>
@@ -82,7 +80,7 @@
   <xs:complexType name="ImpuestoType">
     <xs:sequence>
       <xs:element name="Codigo" type="xs:string"/>
-      <xs:element name="CodigoTarifa" type="xs:string"/>
+      <xs:element name="CodigoTarifaIVA" type="xs:string"/>
       <xs:element name="Tarifa" type="xs:decimal"/>
       <xs:element name="Monto" type="xs:decimal"/>
     </xs:sequence>

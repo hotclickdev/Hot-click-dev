@@ -19,8 +19,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("XmlFacturaBuilder — XSD 4.3 subset y zona -06:00")
+@DisplayName("XmlFacturaBuilder — subset 4.4 y zona -06:00")
 class XmlFacturaBuilderTest {
+
+    private static final String CABYS = "4321150100101";
 
     private XmlFacturaBuilder builder;
 
@@ -30,25 +32,50 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
-    @DisplayName("factura valida namespace 4.3 y fecha Costa Rica")
+    @DisplayName("factura valida namespace 4.4 y fecha Costa Rica")
     void facturaCumpleSubsetYTimezone() {
         String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedidoConIva());
-        assertThat(xml).contains("xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica\"");
+        assertThat(xml).contains("xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica\"");
         assertThat(xml).containsPattern("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}-06:00");
         assertThat(xml).contains("<FacturaElectronica");
+        assertThat(xml).contains("<ProveedorSistemas>3101123456</ProveedorSistemas>");
+        assertThat(xml).contains("<CodigoCABYS>" + CABYS + "</CodigoCABYS>");
         assertThat(xml).contains("<Receptor>");
     }
 
     @Test
-    @DisplayName("tiquete valida namespace 4.3 y fecha Costa Rica")
-    void tiqueteCumpleSubsetYTimezone() {
+    @DisplayName("tiquete sin cédula no inventa receptor")
+    void tiqueteSinReceptor() {
         ComprobanteFiscal cf = comprobante(ComprobanteFiscal.TIPO_TIQUETE);
         cf.setReceptorCedula(null);
         String xml = builder.construir(cf, empresa(), pedidoSinIva());
-        assertThat(xml).contains("xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/tiqueteElectronico\"");
+        assertThat(xml).contains("xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico\"");
         assertThat(xml).contains("<TiqueteElectronico");
         assertThat(xml).contains("-06:00");
         assertThat(xml).doesNotContain("<Receptor>");
+    }
+
+    @Test
+    @DisplayName("línea de 1000 colones al 13% suma 130 de IVA")
+    void ivaTrecePorCientoPorLinea() {
+        Producto producto = producto("Cable", new BigDecimal("13"), "08");
+        Pedido pedido = pedidoCon(producto, 1000, 1);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_TIQUETE), empresa(), pedido);
+        assertThat(xml).contains("<Monto>130</Monto>");
+        assertThat(xml).contains("<TotalImpuesto>130</TotalImpuesto>");
+        assertThat(xml).contains("<TotalComprobante>1130</TotalComprobante>");
+        assertThat(xml).contains("<CodigoTarifaIVA>08</CodigoTarifaIVA>");
+    }
+
+    @Test
+    @DisplayName("sin CAByS no se emite el XML")
+    void sinCabysFalla() {
+        Producto producto = producto("Cable", new BigDecimal("13"), "08");
+        producto.setCodigoCabys(null);
+        assertThatThrownBy(() -> builder.construir(
+            comprobante(ComprobanteFiscal.TIPO_TIQUETE), empresa(), pedidoCon(producto, 1000, 1)))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("CAByS");
     }
 
     @Test
@@ -57,7 +84,7 @@ class XmlFacturaBuilderTest {
         XmlFacturaSchemaValidator validator = new XmlFacturaSchemaValidator();
         assertThatThrownBy(() -> validator.validar("<FacturaElectronica/>", true))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("XSD 4.3");
+            .hasMessageContaining("v4.4");
     }
 
     @Test
@@ -91,23 +118,25 @@ class XmlFacturaBuilderTest {
     }
 
     private static Pedido pedidoConIva() {
-        Producto producto = new Producto();
-        producto.setNombreProducto("Cable USB");
-        producto.setPorcentajeIva(new BigDecimal("13"));
-        producto.setCodigoTarifaIva("08");
-        return pedidoCon(producto, 1000);
+        return pedidoCon(producto("Cable USB", new BigDecimal("13"), "08"), 1000, 2);
     }
 
     private static Pedido pedidoSinIva() {
-        Producto producto = new Producto();
-        producto.setNombreProducto("Sticker");
-        producto.setPorcentajeIva(BigDecimal.ZERO);
-        return pedidoCon(producto, 500);
+        return pedidoCon(producto("Sticker", BigDecimal.ZERO, "01"), 500, 2);
     }
 
-    private static Pedido pedidoCon(Producto producto, int precio) {
+    private static Producto producto(String nombre, BigDecimal iva, String tarifa) {
+        Producto producto = new Producto();
+        producto.setNombreProducto(nombre);
+        producto.setPorcentajeIva(iva);
+        producto.setCodigoTarifaIva(tarifa);
+        producto.setCodigoCabys(CABYS);
+        return producto;
+    }
+
+    private static Pedido pedidoCon(Producto producto, int precio, int cantidad) {
         PedidoItem item = new PedidoItem();
-        item.setCantidad(2);
+        item.setCantidad(cantidad);
         item.setPrecioUnitarioMomento(precio);
         item.setProducto(producto);
         Pedido pedido = new Pedido();

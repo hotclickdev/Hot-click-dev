@@ -16,8 +16,9 @@ import java.io.InputStream;
 import java.io.StringReader;
 
 /**
- * Valida el XML generado contra un subset local de Hacienda 4.3
+ * Valida el XML generado contra un subset local de Hacienda 4.4
  * (namespace, fecha -06:00, estructura que emitimos hoy).
+ * No es el XSD oficial.
  */
 @Component
 public class XmlFacturaSchemaValidator {
@@ -28,8 +29,8 @@ public class XmlFacturaSchemaValidator {
     private final Schema schemaTiquete;
 
     public XmlFacturaSchemaValidator() {
-        this.schemaFactura = cargar("hacienda/factura-electronica-4.3-subset.xsd");
-        this.schemaTiquete = cargar("hacienda/tiquete-electronico-4.3-subset.xsd");
+        this.schemaFactura = cargar("hacienda/factura-electronica-4.4-subset.xsd");
+        this.schemaTiquete = cargar("hacienda/tiquete-electronico-4.4-subset.xsd");
     }
 
     public void validar(String xml, boolean esFactura) {
@@ -41,7 +42,7 @@ public class XmlFacturaSchemaValidator {
         } catch (SAXException | IOException e) {
             log.error("[hacienda-xsd] XML invalido: {}", e.getMessage());
             throw new IllegalStateException(
-                "XML de comprobante no cumple XSD 4.3 (subset local): " + e.getMessage(), e);
+                "XML de comprobante no cumple el subset local v4.4: " + e.getMessage(), e);
         }
     }
 

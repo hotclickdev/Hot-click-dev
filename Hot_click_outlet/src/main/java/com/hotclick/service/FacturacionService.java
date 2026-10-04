@@ -62,6 +62,19 @@ public class FacturacionService {
         return cf;
     }
 
+    /** Tiquete de la compra marketplace. Sin certificado queda PENDIENTE y no se llama a Hacienda. */
+    @Transactional
+    public ComprobanteFiscal emitirTiqueteDeCompra(Long compraId) {
+        ComprobanteFiscal cf = emisionSupport.emitirTiqueteDeCompra(compraId);
+        if (cf == null || !ComprobanteFiscal.ESTADO_PENDIENTE.equals(cf.getEstado())) {
+            return cf;
+        }
+        if (cf.getEmpresa() != null && cf.getEmpresa().isConfiguracionFiscalCompleta()) {
+            procesarAsync(cf.getId());
+        }
+        return cf;
+    }
+
     @Async("taskExecutor")
     @Transactional
     public void procesarAsync(Long comprobanteId) {

@@ -1,11 +1,12 @@
 package com.hotclick.model;
 import com.hotclick.utils.Constants;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Comprobante electrónico emitido a Hacienda CR (XML 4.3).
+ * Comprobante electrónico emitido a Hacienda CR (XML 4.4).
  * Los XML se almacenan en Supabase Storage (path), no como TEXT en BD.
  *
  * Tipos: '01'=Factura, '04'=Tiquete, '02'=NDebito, '03'=NCredito
@@ -42,6 +43,12 @@ public class ComprobanteFiscal {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_pedido")
     private Pedido pedido;
+
+    /** Compra marketplace: un tiquete de HotClick cubre todos los paquetes. */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_compra")
+    private Compra compra;
 
     @Column(name = "tipo", nullable = false, length = 2)
     private String tipo = TIPO_TIQUETE;
@@ -114,6 +121,9 @@ public class ComprobanteFiscal {
 
     public Pedido getPedido() { return pedido; }
     public void setPedido(Pedido pedido) { this.pedido = pedido; }
+
+    public Compra getCompra() { return compra; }
+    public void setCompra(Compra compra) { this.compra = compra; }
 
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }

@@ -5,6 +5,7 @@ import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteFiscalRepository;
+import com.hotclick.repository.PedidoRepository;
 import com.hotclick.security.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,17 +33,20 @@ public class FacturacionContingenciaService {
 
     private final ColaFacturacionOfflineTxOps txOps;
     private final ComprobanteFiscalRepository comprobanteRepo;
+    private final PedidoRepository pedidoRepository;
     private final XmlFacturaBuilder xmlBuilder;
     private final FirmaDigitalService firmaService;
     private final HaciendaApiClient haciendaClient;
 
     public FacturacionContingenciaService(ColaFacturacionOfflineTxOps txOps,
                                            ComprobanteFiscalRepository comprobanteRepo,
+                                           PedidoRepository pedidoRepository,
                                            XmlFacturaBuilder xmlBuilder,
                                            FirmaDigitalService firmaService,
                                            HaciendaApiClient haciendaClient) {
         this.txOps           = txOps;
         this.comprobanteRepo = comprobanteRepo;
+        this.pedidoRepository = pedidoRepository;
         this.xmlBuilder       = xmlBuilder;
         this.firmaService     = firmaService;
         this.haciendaClient   = haciendaClient;
@@ -87,7 +91,7 @@ public class FacturacionContingenciaService {
             Empresa empresa = cf.getEmpresa();
             Pedido pedido = cf.getPedido();
 
-            String xmlSinFirmar = xmlBuilder.construir(cf, empresa, pedido);
+            String xmlSinFirmar = xmlDe(cf, empresa, pedido);
             String xmlFirmado = firmaService.firmar(xmlSinFirmar, empresa);
 
             // Fuera de transacción de BD a propósito: puede tardar varios segundos
@@ -107,5 +111,13 @@ public class FacturacionContingenciaService {
         } finally {
             TenantContext.clear();
         }
+    }
+
+    private String xmlDe(ComprobanteFiscal cf, Empresa empresa, Pedido pedido) {
+        if (cf.getCompra() != null && cf.getCompra().getId() != null) {
+            List<Pedido> paquetes = pedidoRepository.findByCompra_IdOrderByNumeroPaqueteAsc(cf.getCompra().getId());
+            return xmlBuilder.construir(cf, empresa, paquetes);
+        }
+        return xmlBuilder.construir(cf, empresa, pedido);
     }
 }

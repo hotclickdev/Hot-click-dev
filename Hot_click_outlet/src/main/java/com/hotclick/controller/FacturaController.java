@@ -1,19 +1,16 @@
 package com.hotclick.controller;
 
+import com.hotclick.dto.ComprobanteEmitido;
 import com.hotclick.model.ComprobanteFiscal;
-import com.hotclick.repository.ComprobanteFiscalRepository;
-import com.hotclick.security.CompanyScope;
 import com.hotclick.service.FacturacionService;
+import com.hotclick.service.facturacion.FacturaConsultaService;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -21,15 +18,12 @@ import java.util.Map;
 public class FacturaController {
 
     private final FacturacionService facturacionService;
-    private final ComprobanteFiscalRepository comprobanteRepo;
-    private final CompanyScope companyScope;
+    private final FacturaConsultaService consultaService;
 
     public FacturaController(FacturacionService facturacionService,
-                              ComprobanteFiscalRepository comprobanteRepo,
-                              CompanyScope companyScope) {
+                              FacturaConsultaService consultaService) {
         this.facturacionService = facturacionService;
-        this.comprobanteRepo    = comprobanteRepo;
-        this.companyScope       = companyScope;
+        this.consultaService = consultaService;
     }
 
     /**
@@ -57,51 +51,24 @@ public class FacturaController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
-    public ResponseEntity<Page<ComprobanteFiscal>> listar(
+    public ResponseEntity<Page<ComprobanteEmitido>> listar(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
-
-        Long empresaId = companyScope.getCurrentEmpresaId();
-        LocalDateTime desde = fechaDesde != null ? fechaDesde.atStartOfDay() : null;
-        LocalDateTime hasta = fechaHasta != null ? fechaHasta.atTime(23, 59, 59) : null;
-        Page<ComprobanteFiscal> pagina = comprobanteRepo.findByEmpresaIdConFiltros(
-            empresaId, estado, desde, hasta,
-            PageRequest.of(page, size, Sort.by("fechaEmision").descending())
-        );
-        return ResponseEntity.ok(pagina);
+        return ResponseEntity.ok(consultaService.listar(page, size, estado, fechaDesde, fechaHasta));
     }
 
-    /**
-     * Detalle de un comprobante por ID — verifica que pertenece al tenant.
-     */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
-    public ResponseEntity<ComprobanteFiscal> detalle(@PathVariable Long id) {
-        ComprobanteFiscal cf = comprobanteRepo.findById(id)
-            .orElseThrow(() -> new java.util.NoSuchElementException("Comprobante no encontrado: " + id));
-        companyScope.assertCanAccess(cf.getEmpresa().getId());
-        return ResponseEntity.ok(cf);
+    public ResponseEntity<ComprobanteEmitido> detalle(@PathVariable Long id) {
+        return ResponseEntity.ok(consultaService.detalle(id));
     }
 
-    /**
-     * Estado actual del comprobante (para polling del frontend).
-     */
     @GetMapping("/{id}/estado")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
-    public ResponseEntity<Map<String, Object>> estado(@PathVariable Long id) {
-        ComprobanteFiscal cf = comprobanteRepo.findById(id)
-            .orElseThrow(() -> new java.util.NoSuchElementException("Comprobante no encontrado: " + id));
-        companyScope.assertCanAccess(cf.getEmpresa().getId());
-        return ResponseEntity.ok(Map.of(
-            "id",               cf.getId(),
-            "estado",           cf.getEstado(),
-            "ambiente",         cf.getAmbiente(),
-            "claveNumerica",    cf.getClaveNumerica(),
-            "intentosEnvio",    cf.getIntentosEnvio(),
-            "mensajeHacienda",  cf.getMensajeHacienda() != null ? cf.getMensajeHacienda() : ""
-        ));
+    public ResponseEntity<ComprobanteEmitido> estado(@PathVariable Long id) {
+        return ResponseEntity.ok(consultaService.detalle(id));
     }
 }

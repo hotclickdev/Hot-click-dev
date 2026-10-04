@@ -14,22 +14,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Gestiona el token OAuth2 de Hacienda CR (ATV).
+ * Token OAuth2 de Hacienda CR (ATV), grant_type=password.
+ * Si la empresa no tiene usuario y clave cifrados, devuelve cadena vacía y no llama al IdP.
+ * El token no se escribe en el log.
  *
- * ESTADO: STUB — retorna token vacío hasta que las credenciales estén configuradas.
- *
- * URLs de Hacienda:
+ * URLs:
  *   STAG: https://idp.comprobanteselectronicos.go.cr/auth/realms/rut-stag/protocol/openid-connect/token
  *   PROD: https://idp.comprobanteselectronicos.go.cr/auth/realms/rut/protocol/openid-connect/token
  *
- * El token expira cada ~30 minutos. Se cachea por empresaId para evitar llamadas innecesarias.
- * Al expirar, se renueva automáticamente antes del siguiente envío.
- *
- * Implementación completa (F12.5):
- *   1. Descifrar empresa.claveHaciendaEnc con TotpSecretEncryptionService
- *   2. POST al endpoint de token con grant_type=password
- *   3. Cachear { token, expiry } por empresaId
- *   4. En getToken(): si expiry < now + 5min, renovar antes de retornar
+ * El token expira cada ~30 minutos. Se cachea por empresa y se renueva si faltan menos de 5 minutos.
  */
 @Service
 public class HaciendaTokenService {
@@ -59,11 +52,11 @@ public class HaciendaTokenService {
      * Retorna el Bearer token para la empresa dada.
      * Usa el cache y renueva automáticamente si está por expirar.
      *
-     * @return token string, o cadena vacía si las credenciales no están configuradas (stub)
+     * @return token, o cadena vacía si la empresa no tiene usuario y clave de ATV
      */
     public String getToken(Empresa empresa) {
         if (!tieneCredenciales(empresa)) {
-            log.warn("[hacienda-token] empresa={} sin credenciales — stub activo", empresa.getId());
+            log.warn("[hacienda-token] empresa={} sin credenciales de ATV", empresa.getId());
             return "";
         }
 
