@@ -166,7 +166,7 @@ function GaleriaProducto({
 }
 
 function Stock({ stock }: { stock: number }) {
-  const clase = stock <= 0 ? 'text-hc-danger' : stock <= STOCK_BAJO ? 'text-hc-warning' : 'text-hc-success-text'
+  const clase = stock <= 0 ? 'text-hc-danger' : stock <= STOCK_BAJO ? 'text-hc-n-600' : 'text-hc-success-text'
   const texto = stock <= 0 ? 'Agotado' : stock <= STOCK_BAJO ? `Quedan ${stock}` : `${stock} disponibles`
   return (
     <p className={`flex items-center gap-[6px] text-[13px] font-medium lg:text-[14px] ${clase}`}>
