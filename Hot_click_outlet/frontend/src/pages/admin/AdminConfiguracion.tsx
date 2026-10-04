@@ -169,7 +169,7 @@ export default function AdminConfiguracion() {
         textarea.cfg-input { resize:vertical; line-height:1.5; }
       `}</style>
 
-      <div style={{ maxWidth: '880px' }}>
+      <div className="max-w-full min-w-0" style={{ maxWidth: '880px' }}>
         <div style={{ marginBottom: '24px' }}>
           <h1 style={{ fontFamily: F.display, fontWeight: 700, fontSize: '21px', color: 'var(--hc-text)', letterSpacing: '-0.025em', margin: 0 }}>
             {t('adminConfig.title')}

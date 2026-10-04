@@ -118,14 +118,14 @@ export default function AdminHomepage() {
     <div className="max-w-3xl mx-auto py-8 px-4 space-y-8">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-black" style={{ color: 'var(--hc-text)' }}>Homepage</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
             Controlá qué aparece en el carousel y las categorías de la página principal.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex max-w-full flex-wrap gap-2">
           <button type="button"
             onClick={handleReset}
             disabled={saving || loadingConfig}
