@@ -124,6 +124,9 @@ public class ProductoRequestDTO {
     @Size(max = 50, message = "El código de barras no puede superar 50 caracteres")
     private String barcode;
 
+    @Pattern(regexp = "^(\\d{13})?$", message = "El código CAByS debe tener 13 dígitos")
+    private String codigoCabys;
+
     @Min(value = 0, message = "Los días de garantía no pueden ser negativos")
     private Integer garantiaDias;
 
@@ -209,4 +212,6 @@ public class ProductoRequestDTO {
     public void setBarcode(String v) { this.barcode = v; }
     public Integer getGarantiaDias() { return garantiaDias; }
     public void setGarantiaDias(Integer v) { this.garantiaDias = v; }
+    public String getCodigoCabys() { return codigoCabys; }
+    public void setCodigoCabys(String v) { this.codigoCabys = v; }
 }

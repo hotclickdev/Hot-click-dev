@@ -42,6 +42,24 @@ public class SupabaseStorageService {
         return uploadHelper.subirCertificado(file, empresaId, bucket);
     }
 
+    @CircuitBreaker(name = "s3", fallbackMethod = "subirXmlPrivadoFallback")
+    @Retry(name = "s3")
+    public String subirXmlPrivado(byte[] xml, String key) {
+        return uploadHelper.subirXmlPrivado(xml, key, bucket);
+    }
+
+    @CircuitBreaker(name = "s3", fallbackMethod = "subirImagenPrivadaFallback")
+    @Retry(name = "s3")
+    public String subirImagenPrivada(MultipartFile file, String key) throws IOException {
+        return uploadHelper.subirImagenPrivada(file, key, bucket);
+    }
+
+    @CircuitBreaker(name = "s3", fallbackMethod = "leerPrivadoFallback")
+    @Retry(name = "s3")
+    public byte[] leerPrivado(String key) {
+        return uploadHelper.leerPrivado(key, bucket);
+    }
+
     public String subirImagen(MultipartFile file) throws IOException {
         return subirImagen(file, "productos");
     }
@@ -82,6 +100,24 @@ public class SupabaseStorageService {
 
     private String subirCertificadoFallback(MultipartFile file, Long empresaId, Throwable t) {
         log.error("[s3-circuit] OPEN subirCertificado empresa={}: {}", empresaId, t.getMessage());
+        throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
+            "Servicio de almacenamiento no disponible temporalmente");
+    }
+
+    private String subirXmlPrivadoFallback(byte[] xml, String key, Throwable t) {
+        log.error("[s3-circuit] OPEN subirXmlPrivado key={}: {}", key, t.getMessage());
+        throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
+            "Servicio de almacenamiento no disponible temporalmente");
+    }
+
+    private String subirImagenPrivadaFallback(MultipartFile file, String key, Throwable t) {
+        log.error("[s3-circuit] OPEN subirImagenPrivada: {}", t.getMessage());
+        throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
+            "Servicio de almacenamiento no disponible temporalmente");
+    }
+
+    private byte[] leerPrivadoFallback(String key, Throwable t) {
+        log.error("[s3-circuit] OPEN leerPrivado: {}", t.getMessage());
         throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
             "Servicio de almacenamiento no disponible temporalmente");
     }

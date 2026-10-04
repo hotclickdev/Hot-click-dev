@@ -4016,3 +4016,74 @@ CREATE TABLE IF NOT EXISTS hot_click_embudo_sesion_tb (
 
 CREATE INDEX IF NOT EXISTS idx_embudo_sesion_actualizado
     ON hot_click_embudo_sesion_tb (actualizado_en);
+
+-- V144: slug de categoría para landings /comprar/{slug}
+ALTER TABLE hot_click_categoria_tb
+  ADD COLUMN IF NOT EXISTS slug VARCHAR(120);
+
+WITH normalizado AS (
+  SELECT id_categoria,
+         NULLIF(
+           trim(both '-' from regexp_replace(
+             translate(lower(nombre_categoria),
+               'áéíóúüñàèìòùäëïöâêîôûãõçÁÉÍÓÚÜÑ',
+               'aeiouunaeiouaeioaeiouaocaeiouun'),
+             '[^a-z0-9]+', '-', 'g')),
+           '') AS base
+  FROM hot_click_categoria_tb
+),
+con_base AS (
+  SELECT id_categoria, COALESCE(base, 'categoria') AS base
+  FROM normalizado
+),
+numerado AS (
+  SELECT id_categoria, base,
+         row_number() OVER (PARTITION BY base ORDER BY id_categoria) AS n
+  FROM con_base
+)
+UPDATE hot_click_categoria_tb c
+SET slug = CASE
+  WHEN n.n = 1 THEN left(n.base, 120)
+  ELSE left(n.base, 100) || '-c' || n.id_categoria
+END
+FROM numerado n
+WHERE c.id_categoria = n.id_categoria
+  AND (c.slug IS NULL OR trim(c.slug) = '');
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_categoria_slug
+  ON hot_click_categoria_tb (slug);
+
+-- V145: CAByS de 13 dígitos en el producto, tiquete ligado a la compra
+-- y compras de proveedores para el consolidado del D-105.
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS codigo_cabys VARCHAR(13);
+
+ALTER TABLE hot_click_comprobante_fiscal_tb
+    ADD COLUMN IF NOT EXISTS fk_id_compra BIGINT REFERENCES hot_click_compra_tb(id_compra);
+
+CREATE INDEX IF NOT EXISTS idx_comprobante_compra
+    ON hot_click_comprobante_fiscal_tb (fk_id_compra);
+
+CREATE TABLE IF NOT EXISTS hot_click_compra_d105_tb (
+    id_compra_d105      BIGSERIAL    PRIMARY KEY,
+    clave_numerica      VARCHAR(50)  NOT NULL UNIQUE,
+    tipo_documento      VARCHAR(2)   NOT NULL CHECK (tipo_documento IN ('01', '03')),
+    fecha_emision       DATE         NOT NULL,
+    anio                INTEGER      NOT NULL,
+    trimestre           VARCHAR(2)   NOT NULL CHECK (trimestre IN ('Q1', 'Q2', 'Q3', 'Q4')),
+    emisor_cedula       VARCHAR(20)  NOT NULL,
+    emisor_nombre       VARCHAR(200) NOT NULL,
+    subtotal_neto       INTEGER      NOT NULL,
+    total_impuesto      INTEGER      NOT NULL,
+    total_comprobante   INTEGER      NOT NULL,
+    xml_path            VARCHAR(500),
+    fk_id_usuario_carga BIGINT       REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL,
+    fecha_carga         TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_compra_d105_trimestre
+    ON hot_click_compra_d105_tb (anio, trimestre);
+
+-- V146: foto privada del comprobante de compra. La ruta no se devuelve al cliente.
+ALTER TABLE hot_click_compra_d105_tb
+    ADD COLUMN IF NOT EXISTS foto_path VARCHAR(500);

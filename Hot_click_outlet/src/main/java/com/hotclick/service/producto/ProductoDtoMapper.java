@@ -60,6 +60,7 @@ public class ProductoDtoMapper {
         if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(), 500));
         if (dto.getSku()                != null) p.setSku(sanitizer.cleanWithLimit(dto.getSku(), 50));
         aplicarBarcode(dto, p);
+        aplicarCabys(dto, p);
         if (dto.getGarantiaDias()       != null) p.setGarantiaDias(dto.getGarantiaDias());
         if (dto.getEsPersonalizado()    != null) p.setEsPersonalizado(dto.getEsPersonalizado());
         if (Boolean.TRUE.equals(dto.getEsPersonalizado())) {
@@ -83,6 +84,20 @@ public class ProductoDtoMapper {
             p.setMarca(marcaRepository.findById(mid)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Marca", mid)));
         }
+    }
+
+    /** Vacío borra el CAByS; omitido (null) no cambia el valor guardado. */
+    private void aplicarCabys(ProductoRequestDTO dto, Producto p) {
+        if (dto.getCodigoCabys() == null) return;
+        String cabys = dto.getCodigoCabys().trim();
+        if (cabys.isEmpty()) {
+            p.setCodigoCabys(null);
+            return;
+        }
+        if (!cabys.matches("\\d{13}")) {
+            throw new IllegalArgumentException("El código CAByS debe tener 13 dígitos");
+        }
+        p.setCodigoCabys(cabys);
     }
 
     /** Vacío borra el código; omitido (null) no cambia el valor guardado. */

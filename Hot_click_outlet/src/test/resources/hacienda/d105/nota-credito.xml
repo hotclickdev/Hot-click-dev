@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NotaCreditoElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica">
+  <Clave>50631032600310112345600100001030000000022111111111</Clave>
+  <FechaEmision>2026-03-31T18:30:00-06:00</FechaEmision>
+  <Emisor>
+    <Nombre>Proveedor SA</Nombre>
+    <Identificacion>
+      <Tipo>02</Tipo>
+      <Numero>3101999888</Numero>
+    </Identificacion>
+  </Emisor>
+  <ResumenFactura>
+    <TotalVentaNeta>2000.00</TotalVentaNeta>
+    <TotalImpuesto>260.00</TotalImpuesto>
+    <TotalComprobante>2260.00</TotalComprobante>
+  </ResumenFactura>
+</NotaCreditoElectronica>

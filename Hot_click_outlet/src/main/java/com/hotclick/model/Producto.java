@@ -264,6 +264,10 @@ public class Producto extends BaseEntity {
     @Column(name = "codigo_tarifa_iva", length = 2, columnDefinition = "VARCHAR(2) DEFAULT '08'")
     private String codigoTarifaIva = "08";
 
+    /** Catálogo CAByS de Hacienda: exactamente 13 dígitos. Sin este código no se emite el tiquete. */
+    @Column(name = "codigo_cabys", length = 13)
+    private String codigoCabys;
+
     // ── Calificación de producto (F-rating) ──────────────────────────────────
     @Column(name = "rating_promedio", precision = 3, scale = 2, columnDefinition = "NUMERIC(3,2) DEFAULT 0.00")
     private java.math.BigDecimal ratingPromedio = java.math.BigDecimal.ZERO;
@@ -531,6 +535,9 @@ public class Producto extends BaseEntity {
 
     public String getCodigoTarifaIva() { return codigoTarifaIva != null ? codigoTarifaIva : "08"; }
     public void setCodigoTarifaIva(String v) { this.codigoTarifaIva = v; }
+
+    public String getCodigoCabys() { return codigoCabys; }
+    public void setCodigoCabys(String v) { this.codigoCabys = v; }
 
     /** Precio efectivo para el cliente: precioOferta si está en oferta, sino precioVenta */
     public Integer getPrecioEfectivo() {

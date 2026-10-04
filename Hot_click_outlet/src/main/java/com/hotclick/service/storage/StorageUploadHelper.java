@@ -1,12 +1,16 @@
 package com.hotclick.service.storage;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -14,6 +18,9 @@ import java.util.UUID;
  * Extraído bit-idéntico de SupabaseStorageService — no cambia comportamiento.
  */
 public class StorageUploadHelper {
+
+    private static final int MAX_FOTO_BYTES = 10 * 1024 * 1024;
+    private static final Set<String> FOTOS_COMPRA = Set.of("jpg", "jpeg", "png", "webp");
 
     private final S3Client s3Client;
     private final StorageImageValidator validator;
@@ -53,6 +60,67 @@ public class StorageUploadHelper {
         );
 
         return path;
+    }
+
+    /** XML privado (compras D-105). La clave del objeto la arma el llamador; no es pública. */
+    public String subirXmlPrivado(byte[] xml, String key, String bucket) {
+        if (xml == null || xml.length == 0) {
+            throw new IllegalArgumentException("El XML está vacío");
+        }
+        if (xml.length > 2 * 1024 * 1024) {
+            throw new IllegalArgumentException("El XML no puede superar 2 MB");
+        }
+        validarClave(key);
+        s3Client.putObject(
+            PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType("application/xml")
+                .build(),
+            RequestBody.fromBytes(xml)
+        );
+        return key;
+    }
+
+    /** Foto de una compra D-105. Sin ACL pública: solo se lee con la clave guardada en base. */
+    public String subirImagenPrivada(MultipartFile file, String key, String bucket) throws IOException {
+        validarClave(key);
+        byte[] bytes = validator.validarArchivo(file);
+        String ext = StorageUrlHelper.obtenerExtension(file.getOriginalFilename());
+        if (!FOTOS_COMPRA.contains(ext)) {
+            throw new IllegalArgumentException("La foto debe ser JPG, PNG o WebP");
+        }
+        bytes = validator.sanitizarImagen(bytes, ext);
+        s3Client.putObject(
+            PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType(StorageUrlHelper.ALLOWED_EXTENSIONS.get(ext))
+                .build(),
+            RequestBody.fromBytes(bytes)
+        );
+        return key;
+    }
+
+    public byte[] leerPrivado(String key, String bucket) {
+        validarClave(key);
+        try (var objeto = s3Client.getObject(GetObjectRequest.builder().bucket(bucket).key(key).build())) {
+            byte[] bytes = objeto.readNBytes(MAX_FOTO_BYTES + 1);
+            if (bytes.length > MAX_FOTO_BYTES) {
+                throw new IllegalArgumentException("El archivo guardado es demasiado grande");
+            }
+            return bytes;
+        } catch (NoSuchKeyException e) {
+            throw new RecursoNoEncontradoException("No se encontró el archivo");
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudo leer el archivo");
+        }
+    }
+
+    private static void validarClave(String key) {
+        if (key == null || key.isBlank() || key.contains("..") || key.startsWith("/")) {
+            throw new IllegalArgumentException("La ruta del archivo no es válida");
+        }
     }
 
     public String subirImagen(MultipartFile file, String carpeta, String bucket, String publicUrl) throws IOException {

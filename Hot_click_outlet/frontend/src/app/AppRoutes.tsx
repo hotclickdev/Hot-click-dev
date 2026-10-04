@@ -98,11 +98,14 @@ const AdminReportesProducto = lazy(() => import('@/pages/admin/AdminReportesProd
 const AdminSoporteTickets = lazy(() => import('@/pages/admin/AdminSoporteTickets'))
 const AdminAiControl = lazy(() => import('@/pages/admin/AdminAiControl'))
 const AdminFacturas = lazy(() => import('@/pages/admin/AdminFacturas'))
+const AdminComprasD105 = lazy(() => import('@/pages/admin/AdminComprasD105'))
 const AdminConfigFiscal = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
 const EmpresaSelectionPage = lazy(() => import('@/pages/EmpresaSelectionPage'))
 const BlogPage = lazy(() => import('@/pages/BlogPage'))
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage = lazy(() => import('@/pages/EmprendimientosPage'))
+const SectorLandingPage = lazy(() => import('@/pages/seo/SectorLandingPage'))
+const ProvinciaLandingPage = lazy(() => import('@/pages/seo/ProvinciaLandingPage'))
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
 const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
 const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
@@ -202,6 +205,10 @@ export default function AppRoutes() {
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
       <Route path="/encargo/:token" element={<EncargoPublicPage />} />
       <Route path="/servicios" element={<ServiciosHotPage />} />
+      <Route path="/servicios/buscar-producto" element={<ServiciosHotPage />} />
+      <Route path="/servicios/digitalizar-inventario" element={<ServiciosHotPage />} />
+      <Route path="/comprar/:slug" element={<SectorLandingPage />} />
+      <Route path="/tiendas/:provincia" element={<ProvinciaLandingPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route path="/emprende" element={<EmprendePage />} />
@@ -276,6 +283,7 @@ export default function AppRoutes() {
             <Route path="pagos" element={<AdminPagos />} />
             <Route path="payouts" element={<AdminPayouts />} />
             <Route path="facturas" element={<AdminFacturas />} />
+            <Route path="compras-d105" element={<AdminComprasD105 />} />
             <Route path="config-fiscal" element={<AdminConfigFiscal />} />
             <Route path="saas-billing" element={<AdminBillingPlataforma />} />
             <Route path="saas-billing/:id" element={<AdminBillingEmpresa />} />

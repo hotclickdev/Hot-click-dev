@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
+  <Clave>50615022600310112345600100001010000000015123456789</Clave>
+  <FechaEmision>2026-02-15T10:00:00-06:00</FechaEmision>
+  <Emisor>
+    <Nombre>Proveedor SA</Nombre>
+    <Identificacion>
+      <Tipo>02</Tipo>
+      <Numero>3101999888</Numero>
+    </Identificacion>
+  </Emisor>
+  <ResumenFactura>
+    <TotalVentaNeta>10000.00</TotalVentaNeta>
+    <TotalImpuesto>1300.00</TotalImpuesto>
+    <TotalComprobante>11300.00</TotalComprobante>
+  </ResumenFactura>
+</FacturaElectronica>

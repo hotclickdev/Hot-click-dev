@@ -139,6 +139,7 @@ function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
     { to: '/admin/inventario/paquetes', label: 'Paquetes inventario', icon: 'clipboard' },
     { to: '/admin/offline/cola', label: t('admin.sidebar.colaOffline'), icon: 'clipboard' },
     { to: '/admin/facturas', label: t('admin.sidebar.comprobantesElectronicos'), icon: 'clipboard', permiso: 'global.metrics' },
+    { to: '/admin/compras-d105', label: t('admin.sidebar.comprasProveedores'), icon: 'clipboard', permiso: 'global.metrics' },
     { to: '/admin/config-fiscal', label: t('admin.sidebar.configFiscal'), icon: 'config', permiso: 'global.metrics' },
   ]
 }

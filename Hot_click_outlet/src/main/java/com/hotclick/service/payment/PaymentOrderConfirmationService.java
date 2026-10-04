@@ -40,12 +40,20 @@ public class PaymentOrderConfirmationService {
     /** Confirma todos los paquetes de la compra cobrada por {@code pago}. */
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
+        Long compraId = null;
+        boolean recienConfirmada = false;
         for (Pedido pedido : CompraPaquetes.paquetesDe(pago.getPedido(), pedidoRepository)) {
-            confirmarPaquete(pedido, pago, paymentServiceSelf, eventPublisher);
+            if (confirmarPaquete(pedido, pago, paymentServiceSelf, eventPublisher)) {
+                recienConfirmada = true;
+                if (compraId == null) compraId = pedido.getCompraId();
+            }
+        }
+        if (recienConfirmada && compraId != null && eventPublisher != null) {
+            eventPublisher.publishEvent(new CompraPagadaEvent(compraId));
         }
     }
 
-    private void confirmarPaquete(Pedido pedido, Pago pago, Object paymentServiceSelf,
+    private boolean confirmarPaquete(Pedido pedido, Pago pago, Object paymentServiceSelf,
                                   ApplicationEventPublisher eventPublisher) {
         Hibernate.initialize(pedido.getItems());
 
@@ -53,7 +61,7 @@ public class PaymentOrderConfirmationService {
         if (YA_CONFIRMADOS.contains(pedido.getEstadoPedido())
             || pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0) {
             log.info("confirmarPedido ignorado — pedido {} ya está confirmado", pedido.getNumeroPedido());
-            return;
+            return false;
         }
 
         stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
@@ -74,5 +82,6 @@ public class PaymentOrderConfirmationService {
         encargoService.marcarPagadosPorPedido(pedido.getId());
         paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
         posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
+        return true;
     }
 }
