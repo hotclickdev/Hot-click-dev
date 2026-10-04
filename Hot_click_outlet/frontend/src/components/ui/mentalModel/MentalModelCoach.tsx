@@ -4,6 +4,7 @@ import useAuthStore from '@/store/authStore'
 import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import useTenantStore from '@/store/tenantStore'
 import { estiloHueco, estiloTooltip, rectDeAncla, type MmRect } from './mmOverlay'
+import { tourPantallaActiva } from '@/prototipo/compartido/tourSellerSenal'
 import {
   autoSpotlightOmitido,
   esRutaConCoach,
@@ -72,6 +73,7 @@ export default function MentalModelCoach() {
   // Primera visita / cambio de pestaña: welcome (una vez) o spotlight de la ruta.
   useEffect(() => {
     if (mmApagado()) return
+    if (tourPantallaActiva()) return
     if (!esRutaConCoach(path)) return
 
     if (esVisitante) {
@@ -115,12 +117,13 @@ export default function MentalModelCoach() {
   useEffect(() => {
     if (fase !== 'spotlight' || pasos.length === 0) return
     const ancla = pasos[pasoIdx]?.ancla ?? ''
-    recalcular(ancla)
     const onMove = () => recalcular(ancla)
+    const frame = window.requestAnimationFrame(onMove)
     window.addEventListener('scroll', onMove, true)
     window.addEventListener('resize', onMove)
     const id = window.setInterval(onMove, 400)
     return () => {
+      window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', onMove, true)
       window.removeEventListener('resize', onMove)
       window.clearInterval(id)

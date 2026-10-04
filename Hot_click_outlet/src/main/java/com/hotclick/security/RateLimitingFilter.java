@@ -120,7 +120,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // QR de pago POS público: cada POST crea checkout o intento en ONVO/Stripe
         new PrefixLimit("/api/pos/qr/pago/", null, 10, 60),
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
-        new PrefixLimit("/api/qr/", null, 10, 60)
+        new PrefixLimit("/api/qr/", null, 10, 60),
+        new PrefixLimit("/api/public/invitaciones/", null, 8, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -134,6 +135,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/marcas/publicas",             60,  60),
         new GetLimit("/api/categorias",                  60,  60),
         new GetLimit("/api/blog/publico",                60,  60),
+        new GetLimit("/api/public/invitaciones",         20,  60),
         new GetLimit("/api/public",                      60,  60),
         new GetLimit("/api/tienda",                     120,  60),
         new GetLimit("/api/productos",                  120,  60)

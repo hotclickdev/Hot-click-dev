@@ -4003,3 +4003,28 @@ CREATE INDEX IF NOT EXISTS idx_pedido_compra ON hot_click_pedido_tb (fk_id_compr
 
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS fk_id_compra BIGINT REFERENCES hot_click_compra_tb(id_compra);
 CREATE INDEX IF NOT EXISTS idx_pago_compra ON hot_click_pago_tb (fk_id_compra);
+
+-- V150: invitación de propietario (enlace de un solo uso)
+CREATE TABLE IF NOT EXISTS hot_click_invitacion_propietario_tb (
+    id_invitacion     BIGSERIAL    PRIMARY KEY,
+    fk_id_empresa     BIGINT       NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
+    token_hash        VARCHAR(64)  NOT NULL,
+    correo_destino    VARCHAR(200),
+    telefono_destino  VARCHAR(30),
+    fk_id_creada_por  BIGINT       REFERENCES hot_click_usuario_tb(id_usuario),
+    expira_en         TIMESTAMP    NOT NULL,
+    usada_en          TIMESTAMP,
+    fk_id_usada_por   BIGINT       REFERENCES hot_click_usuario_tb(id_usuario),
+    revocada_en       TIMESTAMP,
+    fecha_creacion    TIMESTAMP    NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_invitacion_propietario_token
+    ON hot_click_invitacion_propietario_tb (token_hash);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_invitacion_propietario_activa
+    ON hot_click_invitacion_propietario_tb (fk_id_empresa)
+    WHERE usada_en IS NULL AND revocada_en IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_invitacion_propietario_empresa
+    ON hot_click_invitacion_propietario_tb (fk_id_empresa);

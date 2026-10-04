@@ -5,8 +5,11 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
+import com.hotclick.repository.BodegaRepository;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.ProductoService;
+import com.hotclick.service.producto.ProductoWriteOperations;
+import com.hotclick.utils.Constants;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.producto.EmpresaDestinoAlta;
 import com.hotclick.service.producto.ProductoAccessGuard;
@@ -37,6 +40,7 @@ public class ProductoCreateHandler {
     @Autowired private ProductoIdempotencyService productoIdempotencyService;
     @Autowired private EmpresaDestinoAlta empresaDestinoAlta;
     @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
+    @Autowired private BodegaRepository bodegaRepository;
 
     public ResponseEntity<ResponseDTO> crearProducto(
             @Valid ProductoRequestDTO dto, String idempotencyKey, Long empresaId) {
@@ -53,6 +57,9 @@ public class ProductoCreateHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
         tenantService.verificarLimiteProductos(empresa.getId());
+        if (bodegaRepository.countByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO) == 0) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(ProductoWriteOperations.MSG_SIN_BODEGA));
+        }
         return persistirAlta(dto, idempotencyKey, empresa);
     }
 

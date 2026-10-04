@@ -21,6 +21,9 @@ import java.util.UUID;
 @Component
 public class ProductoWriteOperations {
 
+    public static final String MSG_SIN_BODEGA =
+        "Creá una bodega antes de publicar un producto. Sin bodega no hay dónde guardar el inventario.";
+
     @Autowired private ProductoRepository productoRepository;
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private BodegaRepository bodegaRepository;
@@ -33,6 +36,10 @@ public class ProductoWriteOperations {
     @Transactional
     public Producto crearProducto(Object source, ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
         cacheEvictor.evictProductosPublicos();
+        if (empresa != null
+                && bodegaRepository.countByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO) == 0) {
+            throw new IllegalArgumentException(MSG_SIN_BODEGA);
+        }
         if (dto.getCategoriaId() == null)
             throw new IllegalArgumentException("Debe seleccionar una categoría");
 
@@ -46,8 +53,13 @@ public class ProductoWriteOperations {
             .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
 
         if (dto.getBodegaId() != null) {
-            p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
+            Bodega elegida = bodegaRepository.findById(dto.getBodegaId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId()));
+            if (empresa != null && (elegida.getEmpresa() == null
+                    || !empresa.getId().equals(elegida.getEmpresa().getId()))) {
+                throw new IllegalArgumentException("Esa bodega no pertenece a tu negocio.");
+            }
+            p.setBodega(elegida);
         } else if (empresa != null) {
             List<Bodega> bodsEmpresa = bodegaRepository
                 .findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresa.getId(), Constants.ESTADO_ACTIVO);

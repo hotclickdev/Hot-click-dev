@@ -5,6 +5,8 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.EmpresaAdminService;
 import com.hotclick.service.ImpersonacionService;
 import com.hotclick.service.UbicacionDespachoService;
+import com.hotclick.service.invitacion.InvitacionPropietarioService;
+import com.hotclick.service.invitacion.NegocioPreparadoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,11 +30,26 @@ public class EmpresaController {
     @Autowired private EmpresaAdminService empresaAdminService;
     @Autowired private ImpersonacionService impersonacionService;
     @Autowired private UbicacionDespachoService ubicacionDespachoService;
+    @Autowired private NegocioPreparadoService negocioPreparadoService;
+    @Autowired private InvitacionPropietarioService invitacionPropietarioService;
 
     @GetMapping
     public ResponseDTO listar(@RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "100") int size) {
         return ResponseDTO.success("Empresas", empresaAdminService.listar(page, size));
+    }
+
+    /** Negocio vacío, sin propietario. Después se llena y se asigna con un enlace. */
+    @PostMapping
+    public ResponseEntity<ResponseDTO> crear(@RequestBody Map<String, String> body) {
+        if (body == null) body = Map.of();
+        Map<String, Object> data = negocioPreparadoService.crear(
+            body.get("nombreEmpresa"),
+            body.get("nombreComercial"),
+            body.get("correoEmpresa"),
+            body.get("telefonoEmpresa"),
+            body.get("plan"));
+        return ResponseEntity.ok(ResponseDTO.success("Negocio creado", data));
     }
 
     @GetMapping("/sin-ubicacion")
@@ -130,6 +147,30 @@ public class EmpresaController {
      * ImpersonacionController bajo /api/impersonacion (no /api/admin/**), porque
      * el token de soporte no tiene ROLE_ADMIN.
      */
+    @GetMapping("/{id}/invitacion-propietario")
+    public ResponseEntity<ResponseDTO> invitacion(@PathVariable Long id) {
+        companyScope.assertCanAccess(id);
+        return ResponseEntity.ok(ResponseDTO.success(
+            "Invitación", invitacionPropietarioService.estado(id)));
+    }
+
+    @PostMapping("/{id}/invitacion-propietario")
+    public ResponseEntity<ResponseDTO> crearInvitacion(@PathVariable Long id,
+                                                       @RequestBody(required = false) Map<String, String> body) {
+        companyScope.assertCanAccess(id);
+        Map<String, String> datos = body == null ? Map.of() : body;
+        Map<String, Object> data = invitacionPropietarioService.generar(
+            id, datos.get("correo"), datos.get("telefono"), companyScope.getCurrentUserId());
+        return ResponseEntity.ok(ResponseDTO.success("Enlace listo", data));
+    }
+
+    @DeleteMapping("/{id}/invitacion-propietario")
+    public ResponseEntity<ResponseDTO> revocarInvitacion(@PathVariable Long id) {
+        companyScope.assertCanAccess(id);
+        invitacionPropietarioService.revocar(id);
+        return ResponseEntity.ok(ResponseDTO.success("Enlace revocado", null));
+    }
+
     @PostMapping("/{id}/impersonar")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> impersonar(@PathVariable Long id) {

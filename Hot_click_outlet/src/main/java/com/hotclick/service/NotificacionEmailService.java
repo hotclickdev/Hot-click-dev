@@ -227,5 +227,10 @@ public class NotificacionEmailService {
 
     }
 
+    @Async
+    public void enviarInvitacionPropietario(String correo, String nombreEmpresa, String url) {
+        negocioEmailSender.enviarInvitacionPropietario(correo, nombreEmpresa, url);
+    }
+
 }
 

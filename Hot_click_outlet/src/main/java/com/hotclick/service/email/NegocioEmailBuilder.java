@@ -218,4 +218,16 @@ public class NegocioEmailBuilder {
             + layout.cta("https://hotclick.lat/admin", "Ver métodos de cobro")
             + layout.footer("Si no fuiste vos, escribinos ya.");
     }
+
+    public String buildInvitacionPropietario(String nombreEmpresa, String url) {
+        return layout.abrirHtml()
+            + layout.header("Te dejaron un negocio listo", "Creá tu cuenta para quedar como propietario")
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 20px;color:#4D5560;font-size:14px;line-height:1.6'>Te asignaron <strong style='color:#14171C'>"
+            + layout.esc(nombreEmpresa)
+            + "</strong> en HotClick. El enlace es personal, vence en 7 días y se puede usar una sola vez.</p>"
+            + layout.cta(url, "Aceptar el negocio")
+            + "<p style='margin:16px 0 0;color:#6E7682;font-size:12px;line-height:1.6'>Si no esperabas este mensaje, ignorá el correo. Nadie más puede entrar con tu enlace.</p>"
+            + layout.footer("¿Tenés alguna pregunta?");
+    }
 }

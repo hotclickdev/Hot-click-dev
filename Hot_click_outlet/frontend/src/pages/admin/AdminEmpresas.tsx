@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { adminService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import EmpresaList from './empresas/EmpresaList'
+import CrearNegocioForm from './empresas/CrearNegocioForm'
 import { useEmpresasSinUbicacion } from './empresas/useEmpresasSinUbicacion'
 import {
   listaEmpresasDesdeRespuesta,
@@ -51,6 +52,9 @@ export default function AdminEmpresas() {
       saving={saving}
       onToggleVisibilidad={toggleVisibilidad}
       sinUbicacion={sinUbicacion}
+      encabezadoExtra={(
+        <CrearNegocioForm onCreada={() => { void obtenerListaEmpresas().then(setEmpresas).catch(() => undefined) }} />
+      )}
     />
   )
 }

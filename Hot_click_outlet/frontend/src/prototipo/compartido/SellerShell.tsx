@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import VendedorAvisos from '@/app/VendedorAvisos'
+import TourCoachmark from './TourCoachmark'
 import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -33,6 +34,7 @@ export default function SellerShell({ sinNav = false }: Props) {
               <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
             </div>
             <VendedorAvisos />
+            <TourCoachmark />
             <Outlet />
           </div>
         </div>

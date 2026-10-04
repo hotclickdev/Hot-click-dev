@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
+import { reabrirGuiaTour } from '@/prototipo/compartido/useTourSeller'
 import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { RUTA_EMPRENDEDOR, WHATSAPP_SOPORTE } from '../constants'
 
@@ -32,6 +34,7 @@ const PREGUNTAS = [
  */
 export default function AyudaPage() {
   const [abierta, setAbierta] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   return (
     <EmprendedorPageFrame titulo="Ayuda y Soporte" volverA={`${RUTA_EMPRENDEDOR}/opciones`}>
@@ -64,6 +67,16 @@ export default function AyudaPage() {
           )
         })}
       </ListaStagger>
+      <button
+        type="button"
+        className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface px-5 py-4 text-[14px] font-bold md:text-[15px]"
+        onClick={() => {
+          reabrirGuiaTour()
+          navigate(RUTA_EMPRENDEDOR)
+        }}
+      >
+        Ver guía de nuevo
+      </button>
       <a
         href={`https://wa.me/${WHATSAPP_SOPORTE}`}
         target="_blank"

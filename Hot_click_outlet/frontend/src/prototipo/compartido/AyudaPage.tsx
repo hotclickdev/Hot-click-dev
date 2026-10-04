@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Boton, EncabezadoPagina } from './ui'
+import { reabrirGuiaTour } from './useTourSeller'
 import { useSellerRuta } from './SellerPlanContext'
 import EntradaPagina from './motion/EntradaPagina'
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
@@ -17,6 +19,7 @@ const FAQS = [
  */
 export default function AyudaPage() {
   const ruta = useSellerRuta()
+  const navigate = useNavigate()
   const [abierta, setAbierta] = useState<string | null>(null)
   return (
     <EntradaPagina>
@@ -38,7 +41,16 @@ export default function AyudaPage() {
             </ItemListaStagger>
           ))}
         </ListaStagger>
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col gap-3">
+          <Boton
+            variante="contorno"
+            onClick={() => {
+              reabrirGuiaTour()
+              navigate(ruta(''))
+            }}
+          >
+            Ver guía de nuevo
+          </Boton>
           <Boton to="https://wa.me/50686667888">Escribinos por WhatsApp</Boton>
         </div>
       </main>

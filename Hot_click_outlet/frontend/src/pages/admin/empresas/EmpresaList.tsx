@@ -1,4 +1,4 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { letraDe } from '@/prototipo/admin/adminData'
 import {
   AdminBadge,
@@ -133,13 +133,14 @@ export type EmpresaListProps = {
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
   /** Negocios activos sin ubicación de despacho: aviso arriba y badge en su fila. */
   sinUbicacion?: readonly EmpresaSinUbicacion[]
+  encabezadoExtra?: ReactNode
 }
 
 /**
  * Lista de tiendas (Figma 42:128) con datos reales.
  */
 export default function EmpresaList({
-  empresas, loading, saving, onToggleVisibilidad, sinUbicacion = SIN_UBICACION_VACIO,
+  empresas, loading, saving, onToggleVisibilidad, sinUbicacion = SIN_UBICACION_VACIO, encabezadoExtra,
 }: EmpresaListProps) {
   const sinUbicacionIds = useMemo(() => idsSinUbicacion(sinUbicacion), [sinUbicacion])
   const [search, setSearch] = useState('')
@@ -164,6 +165,7 @@ export default function EmpresaList({
           {empresasOperables(empresas).length} tiendas en el marketplace
           {internas > 0 ? ` · ${internas} interna de plataforma oculta` : ''}
         </p>
+        {encabezadoExtra ? <div className="mt-3">{encabezadoExtra}</div> : null}
       </header>
       <AvisoEmpresasSinUbicacion empresas={sinUbicacion} />
       <AdminSearchField

@@ -47,6 +47,11 @@ export const adminService = {
     api.put(`/admin/empresas/${id}/visibilidad`, { visibilidadPublica }),
   impersonarEmpresa: (id: Id) => api.post(`/admin/empresas/${id}/impersonar`),
   invitarMiembroEmpresa: (id: Id, body: JsonBody) => api.post(`/admin/empresas/${id}/equipo`, body),
+  crearEmpresa: (body: JsonBody) => api.post('/admin/empresas', body),
+  getInvitacionPropietario: (id: Id) => api.get(`/admin/empresas/${id}/invitacion-propietario`),
+  crearInvitacionPropietario: (id: Id, body: JsonBody) =>
+    api.post(`/admin/empresas/${id}/invitacion-propietario`, body),
+  revocarInvitacionPropietario: (id: Id) => api.delete(`/admin/empresas/${id}/invitacion-propietario`),
   cambiarRolMiembroEmpresa: (id: Id, miembroId: Id, rolEnEmpresa: string) =>
     api.put(`/admin/empresas/${id}/equipo/${miembroId}/rol`, { rolEnEmpresa }),
   eliminarMiembroEmpresa: (id: Id, miembroId: Id) => api.delete(`/admin/empresas/${id}/equipo/${miembroId}`),

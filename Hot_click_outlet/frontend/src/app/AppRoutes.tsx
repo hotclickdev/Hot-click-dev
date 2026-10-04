@@ -131,6 +131,7 @@ const POSPagoPage = lazy(() => import('@/pages/pos/POSPagoPage'))
 const SelfCheckoutPage = lazy(() => import('@/pages/SelfCheckoutPage'))
 const RegistrarNegocioPage = lazy(() => import('@/pages/RegistrarNegocioPage'))
 const RegistroEmpresaPage = lazy(() => import('@/pages/RegistroEmpresaPage'))
+const InvitacionPropietarioPage = lazy(() => import('@/pages/InvitacionPropietarioPage'))
 const ActivarPlanPage = lazy(() => import('@/pages/registro-empresa/ActivarPlanPage'))
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 
@@ -184,6 +185,7 @@ export default function AppRoutes() {
         </>
       )}
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
+      <Route path="/invitacion/:token" element={<InvitacionPropietarioPage />} />
       <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
       <Route path="/mode-select" element={<ModeSelector />} />

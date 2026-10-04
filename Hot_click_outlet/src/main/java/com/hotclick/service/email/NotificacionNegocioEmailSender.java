@@ -146,4 +146,15 @@ public class NotificacionNegocioEmailSender {
             log.error("No se pudo enviar email de cambio de cobro a {}: {}", correo, e.getMessage());
         }
     }
+
+    public void enviarInvitacionPropietario(String correo, String nombreEmpresa, String url) {
+        try {
+            resendEmailService.send(correo,
+                "Te asignaron " + emailLayoutHelper.esc(nombreEmpresa) + " en HotClick",
+                negocioEmailBuilder.buildInvitacionPropietario(nombreEmpresa, url));
+            log.info("Email invitación de propietario enviado");
+        } catch (Exception e) {
+            log.error("No se pudo enviar la invitación de propietario: {}", e.getMessage());
+        }
+    }
 }

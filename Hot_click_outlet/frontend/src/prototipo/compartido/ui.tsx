@@ -64,7 +64,7 @@ export function Boton({
     return <a href={to} className={clase} target="_blank" rel="noreferrer" {...attrs}>{children}</a>
   }
   if (to && !disabled) {
-    return <Link to={to} className={clase} {...attrs}>{children}</Link>
+    return <Link to={to} className={clase} onClick={onClick} {...attrs}>{children}</Link>
   }
   return (
     <button type={type} onClick={onClick} disabled={disabled} className={clase} {...attrs}>
@@ -112,6 +112,7 @@ type CampoProps = {
   maxLength?: number
   clearable?: boolean
   loading?: boolean
+  help?: ReactNode
 }
 
 export function Campo(props: CampoProps) {

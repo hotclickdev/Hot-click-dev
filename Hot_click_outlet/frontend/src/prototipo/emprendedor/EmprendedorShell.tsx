@@ -4,6 +4,7 @@ import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
+import TourCoachmark from '@/prototipo/compartido/TourCoachmark'
 import EmprendedorBottomNav from './EmprendedorBottomNav'
 import EmprendedorSidebar from './EmprendedorSidebar'
 
@@ -37,6 +38,7 @@ export default function EmprendedorShell({ conNav = false, sinCabecera = false }
               </div>
             )}
             <VendedorAvisos />
+            <TourCoachmark />
             <Outlet />
           </div>
         </div>

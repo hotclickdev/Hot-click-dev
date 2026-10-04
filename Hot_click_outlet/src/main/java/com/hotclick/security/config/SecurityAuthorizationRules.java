@@ -122,6 +122,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/public/encargos").permitAll()
             .requestMatchers(GET,  "/api/public/encargos/**").permitAll()
             .requestMatchers(POST, "/api/public/encargos/*/checkout").permitAll()
+            .requestMatchers(GET,  "/api/public/invitaciones/**").permitAll()
+            .requestMatchers(POST, "/api/public/invitaciones/*/aceptar").permitAll()
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -200,6 +202,8 @@ final class SecurityAuthorizationRules {
             // Billing de plataforma — ADMIN only (distinto de /api/billing self-serve)
             .requestMatchers("/api/admin/billing/**").hasRole(Constants.ROL_ADMIN)
             // Staff por permiso global.* (ADMIN tiene todos; SUPPORT/FINANCE/TRUST el suyo)
+            .requestMatchers(POST, "/api/admin/empresas").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_COMPANIES)
             .requestMatchers("/api/admin/empresas/**").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_COMPANIES)
             .requestMatchers("/api/admin/solicitudes-aprobacion/**").hasAnyAuthority(
@@ -258,7 +262,8 @@ final class SecurityAuthorizationRules {
                 "/admin/billing", "/admin/billing/**",
                 "/admin/offline", "/admin/offline/**",
                 "/admin/gift-cards", "/admin/gift-cards/**",
-                "/checkout/qr", "/checkout/qr/**").permitAll()
+                "/checkout/qr", "/checkout/qr/**",
+                "/invitacion", "/invitacion/**").permitAll()
             .anyRequest().authenticated();
     }
 }

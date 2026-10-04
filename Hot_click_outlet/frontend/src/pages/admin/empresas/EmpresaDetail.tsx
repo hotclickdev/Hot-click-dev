@@ -17,6 +17,7 @@ import TabPedidos from './TabPedidos'
 import TabProductos, { TabProductosToolbar } from './TabProductos'
 import TabResumen from './TabResumen'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import AsignarPropietarioPanel from './AsignarPropietarioPanel'
 import type { Id } from '@/types/api'
 
 function DetailHeader({
@@ -166,6 +167,7 @@ export default function EmpresaDetail({
         onCambiarEstado={onCambiarEstado}
         onImpersonar={onImpersonar}
       />
+      <AsignarPropietarioPanel empresa={selected} />
       <DetailTabs tab={tab} detail={detail} onTab={onTab} />
 
       <div className="space-y-4">

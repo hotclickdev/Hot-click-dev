@@ -6,7 +6,7 @@ import EnlacePrimario from '../ui/EnlacePrimario'
 import AvisoFaltaUbicacion from '../ui/AvisoFaltaUbicacion'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
-import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
+import TourChecklist from '@/prototipo/compartido/TourChecklist'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
@@ -31,7 +31,7 @@ export default function MenuPage() {
       <EntradaPagina className="flex w-full flex-col items-center gap-2 md:items-stretch">
         <HeroMarca />
         <AvisoFaltaUbicacion className="mb-2" />
-        <OnboardingPrimeraVez rol="emprendedor" />
+        <TourChecklist />
         <ListaStagger className="flex w-full flex-col gap-2">
           {ACCIONES_BASE.map((accion) => (
             <ItemMenu key={accion.to}>
