@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import BrandLogo from '@/components/ui/BrandLogo'
 import useAuthStore from '@/store/authStore'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
-import { Boton } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
+import InicioMovil from './InicioMovil'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
@@ -27,8 +26,8 @@ type AccionMenu = {
 }
 
 /**
- * Menú principal PYME / Negocio Plus (Figma 305:229 / 305:636).
- * Una sola EntradaPagina; layouts móvil/desktop como variantes responsive.
+ * Inicio PYME / Negocio Plus (Figma 305:229 / 305:636).
+ * En celular es `InicioMovil` (empieza por «Por despachar»); desde md se mantiene la grilla de escritorio.
  */
 export default function MenuPage() {
   const plan = useSellerPlan()
@@ -46,47 +45,7 @@ export default function MenuPage() {
 
   return (
     <EntradaPagina>
-      <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center px-6 pb-8 pt-[90px] md:hidden">
-        <HeroMenu badge={plan.badge} />
-        <OnboardingPrimeraVez rol={plan.id} />
-        <ListaStagger className="mt-12 flex w-full flex-col gap-3">
-          {acciones.map((accion) => (
-            <ItemMenu key={accion.segmento}>
-              {accion.conBadge ? (
-                <Link
-                  to={ruta(accion.segmento)}
-                  className="relative flex min-h-[52px] w-full items-center justify-center rounded-[10px] border border-hc-border bg-hc-surface px-5 text-[15px] font-bold text-hc-text"
-                >
-                  {accion.titulo}
-                  {pendientesEncargos > 0 ? (
-                    <span className="absolute right-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
-                      {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : (
-                <Boton
-                  variante="contorno"
-                  to={ruta(accion.segmento)}
-                  dataMm={accion.segmento === 'productos' ? 'seller-menu-productos' : undefined}
-                >
-                  {accion.titulo}
-                </Boton>
-              )}
-            </ItemMenu>
-          ))}
-          <ItemMenu>
-            <Boton variante="oscuro" to="/admin/pos" dataMm="seller-menu-pos">
-              Abrí la caja (POS)
-            </Boton>
-          </ItemMenu>
-          <ItemMenu>
-            <Boton variante="contorno" to={ruta('pedidos')} dataMm="seller-menu-pedidos">
-              Mirá los pedidos
-            </Boton>
-          </ItemMenu>
-        </ListaStagger>
-      </div>
+      <InicioMovil base={plan.basePath} rol={plan.id} />
 
       <div className="hidden px-12 py-12 md:block">
         <div className="mb-2">
@@ -154,26 +113,5 @@ function ItemMenu({ children }: { children: ReactNode }) {
         {children}
       </motion.div>
     </ItemListaStagger>
-  )
-}
-
-function HeroMenu({ badge }: { badge: string }) {
-  return (
-    <div className="relative flex w-full flex-col items-center">
-      <div
-        className="pointer-events-none absolute left-1/2 top-6 size-[120px] -translate-x-1/2 rounded-full opacity-70"
-        style={{ background: 'radial-gradient(circle, var(--hc-danger-bg), transparent 70%)' }}
-        aria-hidden
-      />
-      <BrandLogo size={45} wordmarkSize={30} />
-      <div className="mt-2">
-        <span className="inline-flex rounded-[5px] bg-[var(--hc-danger-bg)] px-2.5 py-1 text-[9px] font-bold text-hc-primary">
-          {badge}
-        </span>
-      </div>
-      <p className="mt-2 text-center text-[9px] font-medium tracking-[0.18em] text-hc-muted">
-        OUTLET & MARKETPLACE
-      </p>
-    </div>
   )
 }

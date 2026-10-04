@@ -5,6 +5,7 @@ import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
+import InicioMovil from '@/prototipo/compartido/InicioMovil'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
@@ -26,8 +27,12 @@ export default function MenuPage() {
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
 
   return (
-    <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16 md:max-w-[480px] md:items-stretch md:px-16 md:py-12">
-      <EntradaPagina className="flex w-full flex-col items-center gap-2 md:items-stretch">
+    <>
+      <EntradaPagina>
+        <InicioMovil base={RUTA_EMPRENDEDOR} rol="emprendedor" />
+      </EntradaPagina>
+      <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16 max-md:hidden md:max-w-[480px] md:items-stretch md:px-16 md:py-12">
+        <EntradaPagina className="flex w-full flex-col items-center gap-2 md:items-stretch">
         <HeroMarca />
         <OnboardingPrimeraVez rol="emprendedor" />
         <ListaStagger className="flex w-full flex-col gap-2">
@@ -62,8 +67,9 @@ export default function MenuPage() {
             </Link>
           </ItemMenu>
         </ListaStagger>
-      </EntradaPagina>
-    </main>
+        </EntradaPagina>
+      </main>
+    </>
   )
 }
 

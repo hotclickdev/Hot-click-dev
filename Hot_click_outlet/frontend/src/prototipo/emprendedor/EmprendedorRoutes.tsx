@@ -94,6 +94,7 @@ export default function EmprendedorRoutes() {
         <Route path="tienda" element={page(TiendaPublicaPage)} />
         <Route path="reportes" element={page(ReportesPage)} />
         <Route path="opciones" element={page(OpcionesPage)} />
+        <Route path="pedidos" element={page(PedidosPage)} />
       </Route>
       <Route element={<EmprendedorShell />}>
         <Route path="productos/:id/editar" element={page(EditarProductoPage)} />
@@ -124,7 +125,6 @@ export default function EmprendedorRoutes() {
         <Route path="proximamente/reportes" element={<Navigate to={`${RUTA_EMPRENDEDOR}/reportes`} replace />} />
         <Route path="proximamente/negocio" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/negocio`} replace />} />
         <Route path="proximamente" element={page(ProximamentePage)} />
-        <Route path="pedidos" element={page(PedidosPage)} />
         <Route path="pedidos/:id" element={page(DetallePedidoPage)} />
       </Route>
     </Routes>

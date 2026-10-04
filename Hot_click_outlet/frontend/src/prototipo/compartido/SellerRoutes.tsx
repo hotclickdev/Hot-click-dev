@@ -71,6 +71,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="opciones" element={page(OpcionesPage)} />
         <Route path="recoleccion" element={page(RecoleccionSellerPage)} />
         <Route path="encargos" element={page(EncargosSellerPage)} />
+        <Route path="pedidos" element={page(PedidosPage)} />
       </Route>
       <Route path="login" element={<Navigate to="/login" replace />} />
       <Route path="registro" element={<Navigate to="/registro" replace />} />
@@ -95,7 +96,6 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="negocio" element={page(DatosNegocioPage)} />
         <Route path="plan" element={page(CompararPlanesPage)} />
         <Route path="plan/actualizado" element={page(PlanActualizadoPage)} />
-        <Route path="pedidos" element={page(PedidosPage)} />
         <Route path="pedidos/:id" element={page(PedidoDetallePage)} />
         {extra}
       </Route>
