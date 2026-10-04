@@ -60,7 +60,7 @@ export default function AdminNuevoProducto() {
 
   useEffect(() => {
     setLoadingCatalog(true) // eslint-disable-line react-hooks/set-state-in-effect -- carga de catálogo al montar
-    cargarCatalogoWizard({ setCategories, setBodegas, setMarcas, setLoadingCatalog, toast })
+    void cargarCatalogoWizard({ setCategories, setBodegas, setMarcas, setLoadingCatalog, toast })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => programarAutoGuardado(form, draftTimerRef, setTieneBorrador, setAutoSaveLabel), [form])

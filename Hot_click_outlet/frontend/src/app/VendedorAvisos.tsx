@@ -17,7 +17,7 @@ export default function VendedorAvisos() {
 
   useEffect(() => {
     if (!esUsuarioSistema(userRole) || !empresaId) return
-    import('@/services/api').then(({ default: api }) => {
+    void import('@/services/api').then(({ default: api }) => {
       api.get<unknown>('/empresa/perfil')
         .then(({ data }) => aplicarPerfil(data))
         .catch((err: unknown) => console.error('[VendedorAvisos] perfil', err))

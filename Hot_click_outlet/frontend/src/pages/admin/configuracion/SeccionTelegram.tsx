@@ -39,7 +39,7 @@ export default function SeccionTelegram({ toast }: { toast: ToastFn }) {
     setCargando(false)
   }
 
-  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- estado Telegram al montar
+  useEffect(() => { void cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- estado Telegram al montar
 
   const conectar = async () => {
     setGenerando(true)
@@ -58,7 +58,7 @@ export default function SeccionTelegram({ toast }: { toast: ToastFn }) {
       await telegramService.desvincular()
       setLink(null); setQr(null)
       toast({ message: 'Telegram desvinculado', type: 'success' })
-      cargar()
+      void cargar()
     } catch { toast({ message: 'No se pudo desvincular', type: 'error' }) }
   }
 
@@ -66,7 +66,7 @@ export default function SeccionTelegram({ toast }: { toast: ToastFn }) {
     try {
       await telegramService.revocarMiembro(usuarioId)
       toast({ message: 'Acceso revocado', type: 'success' })
-      cargar()
+      void cargar()
     } catch { toast({ message: 'No se pudo revocar', type: 'error' }) }
   }
 

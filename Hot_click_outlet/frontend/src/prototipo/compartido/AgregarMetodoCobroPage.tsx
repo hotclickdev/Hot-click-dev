@@ -62,7 +62,7 @@ export function AgregarMetodoCobroPage({
   useEffect(() => {
     if (!idEditar) return
     let vivo = true
-    cargarMetodosCobro()
+    void cargarMetodosCobro()
       .then((carga) => {
         if (!vivo) return
         const actual = carga.metodos.find((m) => m.id === idEditar)

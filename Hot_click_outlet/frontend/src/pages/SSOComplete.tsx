@@ -30,7 +30,7 @@ export default function SSOComplete() {
     if (attempted.current) return
     attempted.current = true
 
-    ;(async () => {
+    void (async () => {
       try {
         // Intentar el template con email claim; si no existe (dev/sin configurar) usar el default.
         const clerkToken = await getToken({ template: 'hotclick-session' })

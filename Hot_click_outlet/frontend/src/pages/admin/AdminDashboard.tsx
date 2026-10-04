@@ -89,7 +89,7 @@ function DashboardDecision() {
   }
 
   useEffect(() => {
-    Promise.all([
+    void Promise.all([
       adminService.getDashboard().catch((err: unknown) => { console.error(err); return { data: {} } }),
       ventaService.getAll().catch((err: unknown) => { console.error(err); return { data: [] } }),
       userRole === 'ADMIN'
@@ -113,7 +113,7 @@ function DashboardDecision() {
         setServerStatus({ up: false, ms: null })
       }
     }
-    check()
+    void check()
     const interval = setInterval(check, HEALTH_POLL_MS)
     return () => clearInterval(interval)
   }, [userRole])

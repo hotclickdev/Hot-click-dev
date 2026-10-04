@@ -80,7 +80,7 @@ export function useAdminProductsCrud(deps: Pick<AdminProductsActionsDeps,
       }
       editInitialFormRef.current = null
       setModalOpen(false)
-      load()
+      void load()
     } catch (err: unknown) {
       const msg = mensajeErrorProducto(err, 'Error al guardar')
       const accion = accionErrorProducto(err)
@@ -123,7 +123,7 @@ export function useAdminProductsCrud(deps: Pick<AdminProductsActionsDeps,
 
   const handleImportBulk = useCallback(async (rows: unknown[]) => {
     await productService.importBulk(rows)
-    load(0)
+    void load(0)
   }, [load])
 
   const handleOfertaRapida = useCallback(async (producto: ProductoAdmin) => {
@@ -137,7 +137,7 @@ export function useAdminProductsCrud(deps: Pick<AdminProductsActionsDeps,
         return
       }
       toast({ message: `Oferta de ${PCT_OFERTA_RAPIDA}% aplicada`, type: 'success' })
-      load()
+      void load()
     } catch (err: unknown) {
       toast({ message: mensajeErrorProducto(err, 'No se pudo enviar la oferta'), type: 'error' })
     }

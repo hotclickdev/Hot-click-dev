@@ -30,7 +30,7 @@ export default function AdminClientes() {
   const [correo, setCorreo]     = useState('')
   const [saving, setSaving]     = useState(false)
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { void cargar() }, [])
 
   async function cargar() {
     setLoading(true)
@@ -51,7 +51,7 @@ export default function AdminClientes() {
       await crmService.crearCliente({ nombre: nombre.trim(), telefono: telefono.trim(), correo: correo.trim() })
       showToast(t('adminClientes.clientCreated'), 'success')
       setNombre(''); setTelefono(''); setCorreo(''); setShowNuevo(false)
-      cargar()
+      void cargar()
     } catch (err: unknown) {
       showToast(mensajeErrorCliente(err, t('adminClientes.errorCreate')), 'error')
     } finally {
@@ -175,7 +175,7 @@ export default function AdminClientes() {
       )}
 
       {selectedId && (
-        <ClienteDetailModal clienteId={selectedId} onClose={() => { setSelectedId(null); cargar() }} />
+        <ClienteDetailModal clienteId={selectedId} onClose={() => { setSelectedId(null); void cargar() }} />
       )}
     </div>
   )

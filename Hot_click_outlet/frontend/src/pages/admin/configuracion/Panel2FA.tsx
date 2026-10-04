@@ -102,7 +102,7 @@ export default function Panel2FA({ enabled, loading, toast, onEnabled, onDisable
     finally { setWorking(false) }
   }
   const cancel = () => { setStep('idle'); resetCode(); setPassword(''); setQrData(null); setQrDataUrl(null) }
-  const copyAllCodes = () => { navigator.clipboard.writeText(recoveryCodes!.join('\n')); setCopiedAll(true); toast({ message: t('adminConfig.tfaCopiedToast'), type: 'success' }) }
+  const copyAllCodes = () => { void navigator.clipboard.writeText(recoveryCodes!.join('\n')); setCopiedAll(true); toast({ message: t('adminConfig.tfaCopiedToast'), type: 'success' }) }
   const downloadCodes = () => {
     const blob = new Blob(['HotClick — Códigos de recuperación 2FA\n','========================================\n','Guardá estos códigos en un lugar seguro.\nCada código solo se puede usar una vez.\n\n',recoveryCodes!.join('\n'),'\n'],{type:'text/plain'})
     const url = URL.createObjectURL(blob); const a = document.createElement('a')
@@ -126,7 +126,7 @@ export default function Panel2FA({ enabled, loading, toast, onEnabled, onDisable
               <TfaSetupStep
                 t={t} qrData={qrData} qrDataUrl={qrDataUrl} copiedAll={copiedAll}
                 codeStr={codeStr} working={working} {...otpProps}
-                onCopySecret={() => { navigator.clipboard.writeText(qrData.secret as string); toast({ message: t('adminConfig.tfaKeyCopied'), type: 'success' }) }}
+                onCopySecret={() => { void navigator.clipboard.writeText(qrData.secret as string); toast({ message: t('adminConfig.tfaKeyCopied'), type: 'success' }) }}
                 onActivate={activate} onCancel={cancel}
               />
             )}

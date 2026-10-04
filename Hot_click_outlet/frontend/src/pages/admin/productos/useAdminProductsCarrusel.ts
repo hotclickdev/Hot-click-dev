@@ -65,7 +65,7 @@ export function useAdminProductsCarrusel(deps: Pick<AdminProductsActionsDeps, 'p
       ))
     } catch {
       toast({ message: 'Error al reordenar el carrusel', type: 'error' })
-      load()
+      void load()
     }
   }, [products, setProducts, toast, load])
 

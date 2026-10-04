@@ -16,7 +16,7 @@ export default function SuperAdminNotificaciones() {
 
   useEffect(() => {
     let cancelado = false
-    Promise.all([
+    void Promise.all([
       aprobacionService.listEmpresas().catch((err: unknown) => {
         console.error(err)
         return { data: [] }
