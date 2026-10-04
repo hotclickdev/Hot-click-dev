@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import useChatStore from '@/store/chatStore'
@@ -15,12 +15,28 @@ import { useHayBarraInferior } from './flotantes/barraInferiorStore'
  * `scroll-padding-bottom` del alto que ocupa (barra + botón + márgenes): una tarjeta que recibe foco
  * o a la que se salta no queda debajo. El hueco al final de la página lo pone `MainLayout`.
  */
+function useOcultoAlBajar() {
+  const [oculto, setOculto] = useState(false)
+  useEffect(() => {
+    let ultimo = window.scrollY
+    const alScroll = () => {
+      const y = window.scrollY
+      setOculto(y > ultimo && y > 80)
+      ultimo = y
+    }
+    window.addEventListener('scroll', alScroll, { passive: true })
+    return () => window.removeEventListener('scroll', alScroll)
+  }, [])
+  return oculto
+}
+
 export default function WhatsAppFab() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const chatOpen = useChatStore((s) => s.isOpen)
   const hayBarra = useHayBarraInferior()
   const visible = !chatOpen
+  const ocultoAlBajar = useOcultoAlBajar()
   useEffect(() => {
     if (!visible) return
     const html = document.documentElement
@@ -42,7 +58,7 @@ export default function WhatsAppFab() {
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
-      className={`fixed right-4 z-40 block size-14 rounded-full transition-transform active:scale-95 ${bottomMovil} lg:bottom-4 ${esFichaProducto(pathname) || esLandingPlan(pathname) ? 'max-lg:hidden' : ''}`}
+      className={`fixed right-4 z-40 block size-14 rounded-full transition-transform active:scale-95 ${bottomMovil} lg:bottom-4 ${esFichaProducto(pathname) || esLandingPlan(pathname) ? 'max-lg:hidden' : ''} ${ocultoAlBajar ? 'max-lg:pointer-events-none max-lg:translate-y-24 max-lg:opacity-0' : ''}`}
     >
       {/* El SVG de Figma (80 × 80) incluye la sombra: 12 px a cada lado, 8 arriba y 16 abajo. */}
       <img

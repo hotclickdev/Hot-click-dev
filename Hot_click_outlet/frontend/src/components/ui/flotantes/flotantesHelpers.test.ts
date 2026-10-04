@@ -41,8 +41,11 @@ describe('whatsappOculto', () => {
     }
   })
   it('las pantallas de rol y de captación de vendedores no cambian', () => {
-    for (const ruta of ['/emprendedor/pedidos', '/pyme', '/negocio-plus/panel', '/para-emprendedores', '/para-pymes', '/emprende', '/negocio-plus-plan']) {
+    for (const ruta of ['/para-emprendedores', '/para-pymes', '/emprende', '/negocio-plus-plan']) {
       expect(whatsappOculto(ruta, false, false)).toBe(false)
+    }
+    for (const ruta of ['/emprendedor/pedidos', '/pyme', '/negocio-plus/panel']) {
+      expect(whatsappOculto(ruta, false, false)).toBe(true)
     }
     expect(whatsappOculto('/registro-empresa', false, false)).toBe(true)
     expect(whatsappOculto('/registrar-negocio', false, false)).toBe(true)

@@ -100,6 +100,7 @@ export function whatsappOculto(
   if (['/login', '/registro', '/carrito', '/checkout'].includes(pathname)) return true
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return true
   if (pathname.startsWith('/registro-empresa') || pathname.startsWith('/registrar-negocio')) return true
+  if (pathname.startsWith('/emprendedor') || pathname.startsWith('/pyme') || (pathname.startsWith('/negocio-plus') && !pathname.startsWith('/negocio-plus-plan'))) return true
   if (pathname.startsWith('/pos')) return true
   if (esTienda || esPrototipo) return true
   if (esRutaSinCambio(pathname)) return false
