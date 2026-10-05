@@ -84,13 +84,16 @@ class TelegramFlujoProductoUiHelper {
         support.guardar(v, e);
         bot.enviarMensaje(v.getChatId(),
             "📷 Mandame de 1 a " + MAX_FOTOS + " fotos del producto, una por mensaje.\n"
-            + "La primera será la imagen principal. Cuando termines tocá *Listo*.",
+            + "La primera será la imagen principal. Cuando termines tocá *Listo* (o escribilo).",
             tecladoFotos(0));
     }
 
     List<List<Map<String, Object>>> tecladoFotos(int cuantas) {
+        String etiqueta = cuantas > 0
+            ? "✅ Listo (" + cuantas + " foto" + (cuantas == 1 ? "" : "s") + ")"
+            : "✅ Listo";
         List<List<Map<String, Object>>> teclado = new ArrayList<>();
-        if (cuantas > 0) teclado.add(List.of(TelegramClienteBotService.boton("✅ Listo (" + cuantas + " foto" + (cuantas == 1 ? "" : "s") + ")", "prd:fok")));
+        teclado.add(List.of(TelegramClienteBotService.boton(etiqueta, "prd:fok")));
         teclado.add(List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR), TelegramTeclado.botonMenu()));
         return teclado;
     }

@@ -16,6 +16,8 @@ public class VentaRequestDTO {
     private String notas;
     private Integer costoEnvio;
     private String estadoInicial;
+    /** ONLINE, POS o TELEGRAM. Vacío conserva el default del pedido. */
+    private String origen;
     private List<ItemVentaDTO> items;
 
     public Long getClienteId() { return clienteId; }
@@ -47,6 +49,9 @@ public class VentaRequestDTO {
 
     public String getEstadoInicial() { return estadoInicial; }
     public void setEstadoInicial(String estadoInicial) { this.estadoInicial = estadoInicial; }
+
+    public String getOrigen() { return origen; }
+    public void setOrigen(String origen) { this.origen = origen; }
 
     public List<ItemVentaDTO> getItems() { return items; }
     public void setItems(List<ItemVentaDTO> items) { this.items = items; }

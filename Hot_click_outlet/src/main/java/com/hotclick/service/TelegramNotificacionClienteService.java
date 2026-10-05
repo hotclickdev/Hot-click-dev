@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Notificaciones proactivas por Telegram a los dueños/equipo de cada negocio.
@@ -47,18 +49,30 @@ public class TelegramNotificacionClienteService {
     @Async
     public void notificarVenta(Long empresaId, String numeroPedido, Integer total,
                                String metodoPago, String cliente, String origen) {
+        notificarVenta(empresaId, numeroPedido, total, metodoPago, cliente, origen, null);
+    }
+
+    @Async
+    public void notificarVenta(Long empresaId, String numeroPedido, Integer total,
+                               String metodoPago, String cliente, String origen, String detalle) {
         if (!bot.isConfigured() || empresaId == null) return;
         try {
-            String titulo = "POS".equals(origen) ? "💵 *Venta en el punto de venta*" : "🛒 *Nueva venta en tu tienda*";
-            String texto = titulo + "\n\n"
-                + "Pedido: *" + esc(numeroPedido) + "*\n"
-                + "Cliente: " + esc(cliente != null ? cliente : "Mostrador") + "\n"
-                + "Total: *" + FormatoColones.colones(total) + "*\n"
-                + "Pago: " + esc(metodoPago != null ? metodoPago : "—");
-            enviarATodos(empresaId, texto);
+            StringBuilder texto = new StringBuilder(tituloVenta(origen))
+                .append("\n\nPedido: *").append(esc(numeroPedido)).append("*\n")
+                .append("Cliente: ").append(esc(cliente != null ? cliente : "Mostrador")).append("\n");
+            if (detalle != null && !detalle.isBlank()) texto.append(detalle).append('\n');
+            texto.append("Total: *").append(FormatoColones.colones(total)).append("*\n")
+                .append("Pago: ").append(esc(metodoPago != null ? metodoPago : "—"));
+            enviarATodos(empresaId, texto.toString());
         } catch (Exception e) {
             log.error("[telegram-notif] fallo notificando venta {} — {}", numeroPedido, e.getMessage());
         }
+    }
+
+    private static String tituloVenta(String origen) {
+        if ("POS".equals(origen)) return "💵 *Venta en el punto de venta*";
+        if ("TELEGRAM".equals(origen)) return "🛒 *Venta registrada desde Telegram*";
+        return "🛒 *Nueva venta en tu tienda*";
     }
 
     // ── Aprobación de productos / promociones ──────────────────────────────────
@@ -159,9 +173,11 @@ public class TelegramNotificacionClienteService {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void enviarATodos(Long empresaId, String texto) {
-        List<TelegramVinculacion> destinos = vinculacionRepository.findActivasPorEmpresa(empresaId);
-        for (TelegramVinculacion v : destinos) {
-            bot.enviarMensaje(v.getChatId(), texto);
+        Set<Long> chats = new HashSet<>();
+        for (TelegramVinculacion v : vinculacionRepository.findActivasPorEmpresa(empresaId)) {
+            Long chatId = v.getChatId();
+            if (chatId == null || !chats.add(chatId)) continue;
+            bot.enviarMensaje(chatId, texto);
         }
     }
 

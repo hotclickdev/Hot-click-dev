@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,19 +69,46 @@ class TelegramFlujoVentaTextoHelper {
                 + esc((String) prod.get("nombre_producto")) + "*. Escribí una cantidad menor o /cancelar.");
             return;
         }
-        TelegramFlujoEstado.ItemBorrador existente = e.getItemsSeguro().stream()
-            .filter(i -> e.getPid().equals(i.getPid())).findFirst().orElse(null);
-        if (existente != null) existente.setC(existente.getC() + cant);
-        else e.getItemsSeguro().add(new TelegramFlujoEstado.ItemBorrador(e.getPid(), cant));
+        boolean yaEstaba = e.getItemsSeguro().stream().anyMatch(i -> mismoProducto(e.getPid(), i.getPid()));
+        fijarCantidad(e, cant);
         e.setPid(null);
         e.setP(P_VTA_PRODUCTO);
         support.guardar(v, e);
+        String verbo = yaEstaba ? "Cantidad actualizada: *" : "Agregado: *";
         bot.enviarMensaje(v.getChatId(),
-            "Agregado: *" + cant + " × " + esc((String) prod.get("nombre_producto")) + "*\n\n" + catalog.resumenItems(e, empresaId),
+            verbo + cant + " × " + esc((String) prod.get("nombre_producto")) + "*\n\n" + catalog.resumenItems(e, empresaId),
             List.of(List.of(
                 TelegramClienteBotService.boton("➕ Agregar otro", "vta:add"),
                 TelegramClienteBotService.boton("✅ Continuar", "vta:cont")),
                 List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
+    }
+
+    /** La cantidad escrita es la de la línea. Un reintento de Telegram no la suma. */
+    static void fijarCantidad(TelegramFlujoEstado e, int cant) {
+        Long pid = e.getPid();
+        if (pid == null) return;
+        for (TelegramFlujoEstado.ItemBorrador item : e.getItemsSeguro()) {
+            if (mismoProducto(pid, item.getPid())) {
+                item.setC(cant);
+                return;
+            }
+        }
+        e.getItemsSeguro().add(new TelegramFlujoEstado.ItemBorrador(pid, cant));
+    }
+
+    /** Una línea por producto. Si hubo duplicados, gana la última cantidad, no la suma. */
+    static Map<Long, Integer> cantidadesIndicadas(List<TelegramFlujoEstado.ItemBorrador> items) {
+        Map<Long, Integer> porProducto = new LinkedHashMap<>();
+        if (items == null) return porProducto;
+        for (TelegramFlujoEstado.ItemBorrador item : items) {
+            if (item.getPid() == null || item.getC() == null || item.getC() <= 0) continue;
+            porProducto.put(item.getPid(), item.getC());
+        }
+        return porProducto;
+    }
+
+    static boolean mismoProducto(Long a, Long b) {
+        return a != null && b != null && a.longValue() == b.longValue();
     }
 
     private void manejarBuscarCliente(TelegramVinculacion v, Long empresaId, String texto) {

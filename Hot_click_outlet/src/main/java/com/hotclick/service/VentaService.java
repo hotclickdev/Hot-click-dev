@@ -120,6 +120,9 @@ public class VentaService {
         pedido.setEstadoPedido(estadoInicial != null && !estadoInicial.isBlank()
             ? estadoInicial
             : Constants.PEDIDO_COMPLETADO);
+        if (dto.getOrigen() != null && !dto.getOrigen().isBlank()) {
+            pedido.setOrigen(dto.getOrigen());
+        }
 
         Pedido nuevo = pedidoService.crearPedido(pedido);
 

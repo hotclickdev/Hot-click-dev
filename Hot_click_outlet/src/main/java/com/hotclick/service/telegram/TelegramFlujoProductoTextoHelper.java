@@ -75,7 +75,13 @@ class TelegramFlujoProductoTextoHelper {
     }
 
     static boolean esListo(String texto) {
-        return texto != null && "listo".equalsIgnoreCase(texto.trim());
+        if (texto == null) return false;
+        String limpio = texto.trim().toLowerCase(java.util.Locale.ROOT)
+            .replace("✅", "")
+            .replaceAll("[^a-záéíóúüñ\\s]", " ")
+            .trim()
+            .replaceAll("\\s+", " ");
+        return "listo".equals(limpio) || limpio.startsWith("listo ");
     }
 
     private void manejarNombre(TelegramVinculacion v, TelegramFlujoEstado e,

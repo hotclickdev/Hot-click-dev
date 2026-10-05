@@ -69,23 +69,25 @@ class TelegramFlujoVentaConfirmHelper {
         // PAGADO y no COMPLETADO: las vistas del bot y las finanzas filtran IN ('PAGADO','ENTREGADO')
         dto.setEstadoInicial(Constants.PEDIDO_PAGADO);
         dto.setNotas("Venta registrada por Telegram");
+        dto.setOrigen("TELEGRAM");
         List<VentaRequestDTO.ItemVentaDTO> items = new ArrayList<>();
-        for (TelegramFlujoEstado.ItemBorrador ib : e.getItemsSeguro()) {
+        TelegramFlujoVentaTextoHelper.cantidadesIndicadas(e.getItemsSeguro()).forEach((pid, cant) -> {
             VentaRequestDTO.ItemVentaDTO item = new VentaRequestDTO.ItemVentaDTO();
-            item.setProductoId(ib.getPid());
-            item.setCantidad(ib.getC());
+            item.setProductoId(pid);
+            item.setCantidad(cant);
             items.add(item);
-        }
+        });
         dto.setItems(items);
 
         try {
             // REQUIRES_NEW via self-proxy: si la venta falla (p.ej. stock), solo se
             // revierte su transacción — la del webhook sigue viva para guardar el
             // borrador intacto y responder al usuario.
+            String resumen = catalog.resumenItems(e, empresaId);
             Pedido pedido = flujo.crearVentaTx(dto, v.getUsuario().getCorreo(), empresaId);
             support.limpiar(v);
             bot.enviarMensaje(v.getChatId(), "✅ Venta *" + esc(pedido.getNumeroPedido()) + "* registrada.\n\n"
-                + "Total: *" + colones(pedido.getTotalPedido()) + "*\n"
+                + resumen
                 + "Utilidad: *" + colones(pedido.getUtilidadBruta()) + "*\n\n"
                 + "Ya aparece en 💰 Ventas de hoy y en Finanzas.",
                 List.of(List.of(TelegramClienteBotService.boton("📋 Menú", "menu"))));

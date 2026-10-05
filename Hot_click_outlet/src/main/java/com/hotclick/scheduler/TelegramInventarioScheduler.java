@@ -3,6 +3,7 @@ package com.hotclick.scheduler;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.service.TelegramClienteBotService;
+import com.hotclick.service.telegram.TelegramFlujoSupport;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +12,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Chequeo semanal de inventario por Telegram — lunes 9:00 AM hora de Costa Rica.
@@ -53,9 +56,11 @@ public class TelegramInventarioScheduler {
         long inicio = System.currentTimeMillis();
         int enviados = 0;
 
+        Set<Long> chats = new HashSet<>();
         for (TelegramVinculacion v : vinculacionRepository.findByEstadoAndChatIdIsNotNull(TelegramVinculacion.ACTIVA)) {
             try {
-                if (v.getEmpresaActivaId() == null) continue;
+                if (v.getEmpresaActivaId() == null || v.getChatId() == null) continue;
+                if (!chats.add(v.getChatId())) continue;
                 if (enviarChequeoA(v)) enviados++;
             } catch (Exception e) {
                 log.error("[telegram-chequeo] fallo con chat {} — {}", v.getChatId(), e.getMessage());
@@ -75,8 +80,10 @@ public class TelegramInventarioScheduler {
 
         for (Map<String, Object> p : productos) {
             String nombre = String.valueOf(p.get("nombre_producto"));
-            sb.append("• ").append(esc(nombre)).append(" — *").append(p.get("stock_actual")).append("*\n");
-            String etiqueta = "✏️ " + (nombre.length() > 28 ? nombre.substring(0, 28) + "…" : nombre);
+            String sku = TelegramFlujoSupport.skuTexto(p.get("sku"));
+            sb.append("• ").append(esc(TelegramFlujoSupport.nombreConSku(nombre, sku)))
+                .append(" — *").append(p.get("stock_actual")).append("*\n");
+            String etiqueta = "✏️ " + TelegramFlujoSupport.etiquetaConSku(nombre, sku, 30);
             teclado.add(List.of(TelegramClienteBotService.boton(etiqueta, "chk:" + p.get("id_producto"))));
         }
         sb.append("\n¿Coincide con lo que tenés físicamente? Si algo no calza, tocá el producto y escribí la cantidad real.");
@@ -88,7 +95,7 @@ public class TelegramInventarioScheduler {
     private List<Map<String, Object>> productosAConfirmar(Long empresaId) {
         // Prioriza stock bajo, luego menor existencia; con pocos productos entra todo
         return jdbc.queryForList("""
-            SELECT id_producto, nombre_producto, stock_actual
+            SELECT id_producto, nombre_producto, stock_actual, sku
             FROM hot_click_producto_tb
             WHERE fk_id_empresa = ? AND fk_id_estado = 1
             ORDER BY CASE WHEN stock_actual <= COALESCE(stock_minimo, 3) THEN 0 ELSE 1 END,

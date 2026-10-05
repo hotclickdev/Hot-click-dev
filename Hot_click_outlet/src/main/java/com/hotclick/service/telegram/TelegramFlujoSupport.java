@@ -145,6 +145,30 @@ public class TelegramFlujoSupport {
         return s.length() <= max ? s : s.substring(0, max - 1) + "…";
     }
 
+    /** Si hay SKU y el nombre no lo trae, se agrega para no mezclar productos duplicados. */
+    public static String nombreConSku(String nombre, String sku) {
+        String limpio = nombre == null ? "" : nombre;
+        if (skuYaVaEn(limpio, sku)) return limpio;
+        return limpio + " (" + sku.trim() + ")";
+    }
+
+    /** SKU al inicio: el recorte del botón no se lo come. */
+    public static String etiquetaConSku(String nombre, String sku, int max) {
+        String limpio = nombre == null ? "" : nombre;
+        if (skuYaVaEn(limpio, sku)) return recortar(limpio, max);
+        return recortar(sku.trim() + " · " + limpio, max);
+    }
+
+    public static String skuTexto(Object sku) {
+        if (sku == null) return null;
+        String texto = String.valueOf(sku).trim();
+        return texto.isEmpty() ? null : texto;
+    }
+
+    private static boolean skuYaVaEn(String nombre, String sku) {
+        return sku == null || sku.isBlank() || nombre.contains(sku.trim());
+    }
+
     public static String colones(Object monto) {
         long valor = monto instanceof Number n ? n.longValue() : 0;
         return String.format("₡%,d", valor);

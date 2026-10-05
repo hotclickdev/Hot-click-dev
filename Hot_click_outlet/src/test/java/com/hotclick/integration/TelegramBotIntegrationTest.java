@@ -316,7 +316,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<List<Map<String, Object>>>> teclado =
             ArgumentCaptor.forClass((Class) List.class);
-        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Chequeo semanal"), teclado.capture());
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("SKU-TECLADO-RGB"), teclado.capture());
         assertThat(teclado.getValue().get(0).get(0).get("callback_data")).isEqualTo("chkok");
         assertThat(teclado.getValue()).hasSize(2); // "todo correcto" + 1 producto
     }
@@ -615,7 +615,71 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
             .isEqualTo(TelegramVinculacion.REVOCADA);
     }
 
+    @Test
+    @DisplayName("Venta: repetir la cantidad no la multiplica y confirmar dos veces no crea otro pedido")
+    void venta_cantidadIndicada_noSeMultiplica() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar naranja", 12, 3);
+
+        long update = System.nanoTime();
+        postSinLimite(callback(CHAT_ID, "vta:new"));
+        postSinLimite(callback(CHAT_ID, "vta:p:" + p.getId()));
+        postSinLimite(mensajeConId(CHAT_ID, "2", update));
+        postSinLimite(mensajeConId(CHAT_ID, "2", update + 1));
+        postSinLimite(callback(CHAT_ID, "vta:cont"));
+        postSinLimite(callback(CHAT_ID, "vta:pay:SINPE"));
+        postSinLimite(callback(CHAT_ID, "vta:nocli"));
+
+        String confirmar = callbackConId(CHAT_ID, "vta:ok", update + 2);
+        postSinLimite(confirmar);
+        postSinLimite(confirmar);
+
+        assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(10);
+        Number cantidad = jdbcTemplate.queryForObject(
+            "SELECT SUM(cantidad) FROM hot_click_pedido_item_tb WHERE fk_id_producto = ?",
+            Number.class, p.getId());
+        Number pedidos = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_pedido_item_tb WHERE fk_id_producto = ?",
+            Number.class, p.getId());
+        assertThat(cantidad.intValue()).isEqualTo(2);
+        assertThat(pedidos.intValue()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("menu y Listo escritos se entienden, sin quedarse trabado en el flujo")
+    void menuYListo_textoLibre() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        guardarBorradorEnPasoFotos(v);
+
+        postSinLimite(mensajeTexto(CHAT_ID, "Listo"));
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("al menos una foto"), any());
+
+        clearInvocations(bot);
+        postSinLimite(mensajeTexto(CHAT_ID, "Menu"));
+        assertThat(vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto()).isNull();
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Qué querés ver"), any());
+    }
+
+    @Test
+    @DisplayName("Dos vinculaciones del mismo chat reciben una sola notificación de venta")
+    void notificacionVenta_mismoChat_unaSolaVez() {
+        Rol rolUser = obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1);
+        Usuario socio = crearUsuario("tg-socio-dup@test.cr", "Socio Dup", rolUser);
+        crearMiembro(socio, empresa, "ADMIN");
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        vincularDirecto(socio, empresa, CHAT_ID);
+
+        notificacionService.notificarVenta(empresa.getId(), "ORD-DUP-1", 1_000, "SINPE", "Ana", "ONLINE");
+
+        verify(bot, timeout(3000).times(1)).enviarMensaje(eq(CHAT_ID), contains("ORD-DUP-1"));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void postSinLimite(String body) throws Exception {
+        jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
+        postUpdate(body);
+    }
 
     private void postUpdate(String body) throws Exception {
         mockMvc.perform(post(WEBHOOK)
@@ -629,6 +693,18 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         return """
             {"message":{"chat":{"id":%d,"type":"private"},"from":{"username":"tester"},"text":"%s"}}
             """.formatted(chatId, texto);
+    }
+
+    private String mensajeConId(long chatId, String texto, long updateId) {
+        return """
+            {"update_id":%d,"message":{"message_id":%d,"chat":{"id":%d,"type":"private"},"from":{"username":"tester"},"text":"%s"}}
+            """.formatted(updateId, updateId, chatId, texto);
+    }
+
+    private String callbackConId(long chatId, String data, long updateId) {
+        return """
+            {"update_id":%d,"callback_query":{"id":"cb-%d","data":"%s","message":{"message_id":1,"chat":{"id":%d,"type":"private"}}}}
+            """.formatted(updateId, updateId, data, chatId);
     }
 
     private String callback(long chatId, String data) {

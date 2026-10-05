@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
+import com.hotclick.model.PedidoItem;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.service.pedido.PedidoDespachoVerificador;
@@ -80,7 +81,8 @@ public class PedidoService {
                 TelegramTexto.escaparMarkdown(metodo), TelegramTexto.escaparMarkdown(saved.getEstadoPedido())));
         if (saved.getEmpresa() != null) {
             telegramNotificacionClienteService.notificarVenta(saved.getEmpresa().getId(),
-                saved.getNumeroPedido(), saved.getTotalPedido(), metodo, cliente, saved.getOrigen());
+                saved.getNumeroPedido(), saved.getTotalPedido(), metodo, cliente, saved.getOrigen(),
+                detalleItems(saved));
         }
         return saved;
     }
@@ -264,5 +266,24 @@ public class PedidoService {
         if (saved.getClienteNombre() != null) return saved.getClienteNombre();
         if (saved.getUsuarioFinal() != null) return saved.getUsuarioFinal().getNombre();
         return "Invitado";
+    }
+
+    private static String detalleItems(Pedido pedido) {
+        if (pedido.getItems() == null || !Hibernate.isInitialized(pedido.getItems()) || pedido.getItems().isEmpty()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (PedidoItem item : pedido.getItems()) {
+            if (!sb.isEmpty()) sb.append('\n');
+            int cantidad = item.getCantidad() != null ? item.getCantidad() : 1;
+            sb.append("• ").append(cantidad).append(" × ").append(TelegramTexto.escaparMarkdown(nombreItem(item)));
+        }
+        return sb.toString();
+    }
+
+    private static String nombreItem(PedidoItem item) {
+        if (item.getProducto() == null || !Hibernate.isInitialized(item.getProducto())) return "Producto";
+        String nombre = item.getProducto().getNombreProducto();
+        return nombre != null ? nombre : "Producto";
     }
 }

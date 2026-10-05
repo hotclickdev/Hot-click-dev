@@ -42,7 +42,7 @@ public class TelegramStockCheckService {
         }
 
         List<Map<String, Object>> filas = jdbc.queryForList("""
-            SELECT id_producto, nombre_producto, stock_actual
+            SELECT id_producto, nombre_producto, stock_actual, sku
             FROM hot_click_producto_tb
             WHERE fk_id_empresa = ? AND fk_id_estado = 1
             ORDER BY nombre_producto ASC
@@ -86,7 +86,7 @@ public class TelegramStockCheckService {
             return;
         }
         List<Map<String, Object>> filas = jdbc.queryForList(
-            "SELECT nombre_producto, stock_actual FROM hot_click_producto_tb WHERE id_producto = ? AND fk_id_empresa = ?",
+            "SELECT nombre_producto, stock_actual, sku FROM hot_click_producto_tb WHERE id_producto = ? AND fk_id_empresa = ?",
             productoId, empresaId);
         if (filas.isEmpty()) {
             bot.enviarMensaje(v.getChatId(), "Ese producto no pertenece a tu negocio activo.",
@@ -95,8 +95,11 @@ public class TelegramStockCheckService {
         }
         v.setContexto(CTX_AJUSTE + productoId);
         vinculacionRepository.save(v);
+        String nombre = TelegramFlujoSupport.nombreConSku(
+            String.valueOf(filas.get(0).get("nombre_producto")),
+            TelegramFlujoSupport.skuTexto(filas.get(0).get("sku")));
         bot.enviarMensaje(v.getChatId(),
-            "¿Cuántas unidades de *" + datosQuery.esc(String.valueOf(filas.get(0).get("nombre_producto")))
+            "¿Cuántas unidades de *" + datosQuery.esc(nombre)
                 + "* tenés realmente? (el sistema dice " + filas.get(0).get("stock_actual")
                 + ")\n\nEscribí solo el número, o /cancelar para salir.",
             TelegramTeclado.cancelarYMenu("chk:x"));
@@ -160,7 +163,9 @@ public class TelegramStockCheckService {
     }
 
     private static String etiquetaProducto(Map<String, Object> p) {
-        String nombre = TelegramFlujoSupport.recortar(String.valueOf(p.get("nombre_producto")), 28);
+        String nombre = TelegramFlujoSupport.etiquetaConSku(
+            String.valueOf(p.get("nombre_producto")),
+            TelegramFlujoSupport.skuTexto(p.get("sku")), 24);
         return nombre + " · x" + p.get("stock_actual");
     }
 }

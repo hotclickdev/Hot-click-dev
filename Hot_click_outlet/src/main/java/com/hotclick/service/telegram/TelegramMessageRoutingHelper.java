@@ -58,8 +58,13 @@ class TelegramMessageRoutingHelper {
 
     /** @return true si el mensaje fue consumido. */
     boolean manejarComandoSlash(TelegramVinculacion v, long chatId, String texto) {
+        if (esMenu(texto)) {
+            v.setContexto(null);
+            vinculacionRepository.save(v);
+            menuBuilder.mostrarMenu(v);
+            return true;
+        }
         switch (texto) {
-            case "/menu", "/ayuda", "/help" -> { menuBuilder.mostrarMenu(v); return true; }
             case "/empresa"                 -> { empresaContext.mostrarSelectorEmpresa(v); return true; }
             case "/cancelar"                -> {
                 v.setContexto(null);
@@ -99,5 +104,12 @@ class TelegramMessageRoutingHelper {
         String nombreUsuario = v.getUsuario() != null ? v.getUsuario().getNombre() : null;
         boolean puedeGestionar = telegramFlujoService.esPropietarioOAdmin(v.getUsuario(), empresaId);
         self.responderConIa(chatId, empresaId, texto, nombreUsuario, puedeGestionar);
+    }
+
+    static boolean esMenu(String texto) {
+        if (texto == null) return false;
+        String t = texto.trim().toLowerCase(java.util.Locale.ROOT);
+        return t.equals("/menu") || t.equals("menu") || t.equals("menú")
+            || t.equals("/ayuda") || t.equals("/help") || t.equals("ayuda");
     }
 }
