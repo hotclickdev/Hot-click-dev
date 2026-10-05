@@ -1,0 +1,1 @@
+import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{n as t,s as n}from"./vendor-clerk-BDL62cJd.js";import{a as r}from"./vendor-react-Cx5TfIMO.js";var i=e(n(),1),a=`pk_test_placeholder`;function o(){return(0,i.jsx)(t,{publishableKey:a,children:(0,i.jsx)(r,{})})}export{o as default};
