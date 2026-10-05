@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
-import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import { ICONOS_CATALOGO } from './iconosCatalogo'
 
 /**
@@ -10,13 +9,12 @@ import { ICONOS_CATALOGO } from './iconosCatalogo'
  * - `categoria` (`43:1531`): flecha, título de la categoría y buscador "Buscar en …".
  */
 export default function EncabezadoCatalogoMovil({
-  modo, titulo, search, setSearch, onAtras, onBuscarConFoto, sinResultados = false, children,
+  modo, titulo, search, setSearch, onBuscarConFoto, sinResultados = false, children,
 }: {
   modo: 'busqueda' | 'categoria'
   titulo: string
   search: string
   setSearch: (valor: string) => void
-  onAtras: () => void
   onBuscarConFoto: () => void
   /** Búsqueda sin resultados (`27:804`): el buscador muestra una × para borrar y no hay fila "Entendí". */
   sinResultados?: boolean
@@ -24,17 +22,11 @@ export default function EncabezadoCatalogoMovil({
   children?: ReactNode
 }) {
   const { t } = useTranslation()
-  const botonAtras = (
-    <button type="button" onClick={onAtras} aria-label={t('search.back')} className="flex shrink-0 text-hc-n-900">
-      <IconoFigma src={ICONOS_COMPRADOR.barraAtras} size={22} />
-    </button>
-  )
 
   if (modo === 'busqueda') {
     return (
       <div className="flex flex-col gap-3 border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 lg:hidden">
         <div className="flex items-center gap-[10px]">
-          {botonAtras}
           <div className={`flex min-w-0 flex-1 items-center gap-2 rounded-[12px] bg-hc-n-100 pl-3 ${sinResultados ? 'py-3 pr-[10px]' : 'py-[6px] pr-[6px]'}`}>
             <IconoFigma src={ICONOS_CATALOGO.lupa18} size={18} className="text-hc-n-500" />
             <input
@@ -68,10 +60,7 @@ export default function EncabezadoCatalogoMovil({
 
   return (
     <div className="flex flex-col gap-3 border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 lg:hidden">
-      <div className="flex items-center gap-[10px]">
-        {botonAtras}
-        <h1 className="font-display text-[20px] font-bold leading-[normal] text-hc-n-900">{titulo}</h1>
-      </div>
+      <h1 className="font-display text-[20px] font-bold leading-[normal] text-hc-n-900">{titulo}</h1>
       <label className="flex items-center gap-[10px] rounded-[12px] bg-hc-n-100 px-[14px] py-3">
         <IconoFigma src={ICONOS_CATALOGO.lupa18} size={18} className="text-hc-n-500" />
         <input

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import DOMPurify from 'dompurify'
+import { usePublicarMigas } from '@/components/comprador/header/migasContexto'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
@@ -78,6 +79,8 @@ export default function BlogPostPage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
   }, [slug])
+
+  usePublicarMigas({ actual: post?.titulo || undefined })
 
   if (loading) {
     return (

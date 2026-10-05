@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { usePublicarMigas } from '@/components/comprador/header/migasContexto'
 import useTiendaStore from '@/store/tiendaStore'
 import tiendaService from '@/services/tiendaService'
 import { formatPrice } from '@/utils/format'
@@ -25,6 +26,7 @@ export default function TiendaProductoPage() {
   const [cantidad, setCantidad] = useState(1)
   const [agregado, setAgregado] = useState(false)
   const [imgActiva, setImgActiva] = useState(0)
+  usePublicarMigas({ actual: producto?.titulo || producto?.nombre || undefined })
 
   useEffect(() => {
     setLoading(true)

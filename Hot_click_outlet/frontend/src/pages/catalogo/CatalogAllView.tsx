@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { RefObject } from 'react'
 import Chip from '@/components/comprador/Chip'
+import { usePublicarMigas } from '@/components/comprador/header/migasContexto'
 import { RetryBanner } from '@/components/ui/RetryBanner'
 import { RUTA_BUSCAR_FOTO } from '@/pages/buscar/rutasBuscar'
 import CatalogProductGrid from './CatalogProductGrid'
@@ -78,11 +79,10 @@ export default function CatalogAllView({
     else setExtras((prev) => ({ ...prev, retiroEnTienda: false }))
   }
 
-  const volver = () => {
-    const historial = globalThis.history?.state as { idx?: number } | null
-    if ((historial?.idx ?? 0) > 0) navigate(-1)
-    else navigate('/')
-  }
+  usePublicarMigas({
+    categoriaNombre: category ? (activeCatName ?? undefined) : undefined,
+    categoriaId: category || undefined,
+  })
 
   const propsFiltros = {
     priceMin, priceMax, setPriceMin, setPriceMax,
@@ -103,7 +103,6 @@ export default function CatalogAllView({
         titulo={tituloCategoria}
         search={search}
         setSearch={setSearch}
-        onAtras={volver}
         onBuscarConFoto={() => navigate(RUTA_BUSCAR_FOTO)}
         sinResultados={sinResultados}
       >

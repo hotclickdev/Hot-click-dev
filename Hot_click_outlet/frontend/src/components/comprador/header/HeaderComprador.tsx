@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import BarraInterna from './BarraInterna'
 import BarraMarca from './BarraMarca'
 import HeaderEscritorio from './HeaderEscritorio'
@@ -17,6 +17,8 @@ type HeaderCompradorProps = {
   barraInterna?: DatosBarraInterna
   /** Centra el logo cuando `movil` es `marca`. */
   marcaCentrada?: boolean
+  /** Fila de migas y flechas, pegada al encabezado. */
+  children?: ReactNode
 }
 
 /** Figma `12:809` / `12:551`: al scrollear el header gana una sombra suave. */
@@ -56,6 +58,7 @@ export default function HeaderComprador({
   escritorio = 'completo',
   barraInterna,
   marcaCentrada,
+  children,
 }: HeaderCompradorProps) {
   const scrolleado = useScrolleado()
   return (
@@ -64,6 +67,7 @@ export default function HeaderComprador({
     >
       <CromoMovil movil={movil} onBuscarConFoto={onBuscarConFoto} barraInterna={barraInterna} marcaCentrada={marcaCentrada} />
       <CromoEscritorio escritorio={escritorio} onBuscarConFoto={onBuscarConFoto} />
+      {children}
     </header>
   )
 }
