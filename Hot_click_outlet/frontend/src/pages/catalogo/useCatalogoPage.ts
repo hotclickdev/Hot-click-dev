@@ -27,7 +27,7 @@ export function useCatalogoPage() {
   const [extras, setExtras] = useState<FiltrosExtra>(FILTROS_EXTRA_VACIOS)
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
   const filtros = useCatalogoFiltros(searchParams, setSearchParams)
-  const data = useCatalogoFetch(toast, filtros.page, filtros.setPage, filtros.sort)
+  const data = useCatalogoFetch(toast, filtros.page, filtros.setPage, filtros.sort, filtros.search)
   const derived = useCatalogoDerived({ ...data, ...filtros, extras })
   const limpiarFiltrosBase = filtros.clearFilters
   const clearFilters = useCallback(() => {

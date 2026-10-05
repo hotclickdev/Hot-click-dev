@@ -1,9 +1,8 @@
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import type { Producto, ProductoBackend } from '@/types/producto'
+import { TAMANO_BUSQUEDA } from '@/pages/catalogo/buscarExplorar'
 import { getBrandCache, getProductCache, setBrandCache, setProductCache, type MarcaBusqueda } from './searchPanelHelpers'
-
-const TAMANO_PAGINA = 48
 
 let vuelo: Promise<void> | null = null
 
@@ -27,7 +26,7 @@ export function asegurarCatalogoBusqueda(): Promise<void> {
   vuelo = Promise.all([
     getProductCache()
       ? Promise.resolve()
-      : productService.getAll(0, TAMANO_PAGINA).then(({ data }) => { setProductCache(productosDesdeRespuesta(data)) }),
+      : productService.getAll(0, TAMANO_BUSQUEDA).then(({ data }) => { setProductCache(productosDesdeRespuesta(data)) }),
     getBrandCache()
       ? Promise.resolve()
       : marcaService.getPublicas().then((respuesta) => { setBrandCache(marcasDesdeRespuesta(respuesta.data)) }),

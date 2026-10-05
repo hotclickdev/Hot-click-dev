@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { coincideBusqueda, normalizarBusqueda } from './catalogoFiltros'
+import type { Producto } from '@/types/producto'
+import { coincideBusqueda, normalizarBusqueda, sortCatalogo } from './catalogoFiltros'
 
 describe('búsqueda del catálogo sin tildes (Figma 26:722)', () => {
   it('normaliza tildes y mayúsculas', () => {
@@ -19,5 +20,33 @@ describe('búsqueda del catálogo sin tildes (Figma 26:722)', () => {
   it('filtra por palabras: alcanza con que una esté en el producto', () => {
     expect(coincideBusqueda({ nombre: 'Taza personalizada', marcaNombre: '', empresaNombre: null }, 'regalo para mi mamá taza')).toBe(true)
     expect(coincideBusqueda({ nombre: 'Taza personalizada', marcaNombre: '', empresaNombre: null }, 'sds')).toBe(false)
+  })
+  it('categoría y descripción cuentan, y una palabra corta no entra dentro de otra', () => {
+    expect(coincideBusqueda({
+      nombre: 'Taza personalizada con nombre y color', marcaNombre: '', empresaNombre: 'Casa Luna 506',
+      categoriaNombre: 'Regalos', descripcion: 'Regalo para mamá',
+    }, 'regalo para mi mamá')).toBe(true)
+    expect(coincideBusqueda({ nombre: 'Radiador', marcaNombre: '', empresaNombre: null }, 'día')).toBe(false)
+    expect(coincideBusqueda({ nombre: 'Diario de viaje', marcaNombre: '', empresaNombre: null }, 'día')).toBe(false)
+    expect(coincideBusqueda({ nombre: 'Crema de día', marcaNombre: '', empresaNombre: null }, 'día')).toBe(true)
+  })
+})
+
+describe('orden del catálogo con búsqueda', () => {
+  const item = (id: number, nombre: string, precio: number, extra: Partial<Producto> = {}): Producto =>
+    ({ id, nombre, precio, stock: 4, marcaNombre: '', empresaNombre: null, ...extra }) as Producto
+
+  it('el orden por defecto pone primero el que coincide en más palabras', () => {
+    const taza = item(1, 'Taza personalizada', 1000)
+    const regalo = item(2, 'Regalo para mamá', 9000, { categoriaNombre: 'Regalos' })
+    const orden = sortCatalogo([taza, regalo], 'default', null, () => 0, 'regalo para mi mamá taza')
+    expect(orden.map((producto) => producto.id)).toEqual([2, 1])
+  })
+
+  it('si el visitante pide precio, el precio manda', () => {
+    const taza = item(1, 'Taza personalizada', 1000)
+    const regalo = item(2, 'Regalo para mamá', 9000, { categoriaNombre: 'Regalos' })
+    const orden = sortCatalogo([regalo, taza], 'price_asc', null, () => 0, 'regalo para mi mamá taza')
+    expect(orden.map((producto) => producto.id)).toEqual([1, 2])
   })
 })

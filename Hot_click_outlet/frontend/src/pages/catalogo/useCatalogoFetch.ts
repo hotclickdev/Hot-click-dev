@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateA
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import { colapsarGruposVariante } from './catalogoHelpers'
+import { TAMANO_BUSQUEDA } from './buscarExplorar'
 import { PAGE_SIZE } from './catalogoFiltros'
 import type { Producto, ProductoBackend } from '@/types/producto'
 import type { CatalogCategoria, CatalogMarca } from './catalogoTipos'
@@ -34,6 +35,7 @@ export function useCatalogoFetch(
   page: number,
   setPage: Dispatch<SetStateAction<number>>,
   sort = 'default',
+  busqueda = '',
 ) {
   const [products, setProducts] = useState<Producto[]>([])
   const [categories, setCategories] = useState<CatalogCategoria[]>([])
@@ -42,11 +44,12 @@ export function useCatalogoFetch(
   const [error, setError] = useState(false)
   const [, setTotalPages] = useState(1)
   const paraVos = sort === 'para_vos'
-  const pageSize = paraVos ? PARA_VOS_FETCH_SIZE : PAGE_SIZE
+  const buscando = busqueda.trim().length >= 2
+  const pageSize = paraVos ? PARA_VOS_FETCH_SIZE : buscando ? TAMANO_BUSQUEDA : PAGE_SIZE
 
   const fetchProducts = useCallback(async (p = 0) => {
     setLoading(true)
-    const pageToFetch = paraVos ? 0 : p
+    const pageToFetch = paraVos || buscando ? 0 : p
     try {
       const { data } = await productService.getAll(pageToFetch, pageSize)
       const content = colapsarGruposVariante(listaDesdeRespuesta(data).map(normalizeProduct) as Producto[])
@@ -75,7 +78,7 @@ export function useCatalogoFetch(
     } finally {
       setLoading(false)
     }
-  }, [toast, setPage, paraVos, pageSize])
+  }, [toast, setPage, paraVos, pageSize, buscando])
 
   const initialPageRef = useRef(page)
   const sortRef = useRef(sort)

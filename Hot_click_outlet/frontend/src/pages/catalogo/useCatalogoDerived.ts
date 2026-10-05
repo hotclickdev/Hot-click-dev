@@ -65,7 +65,7 @@ export function useCatalogoDerived({
         (a, b) => rankScoreParaVos(b, scores, viewed) - rankScoreParaVos(a, scores, viewed),
       )
     }
-    return sortCatalogo(lista, sort, gustosScores, (p, scores) => rankScoreParaVos(p, scores))
+    return sortCatalogo(lista, sort, gustosScores, (p, scores) => rankScoreParaVos(p, scores), search)
   }, [
     products, search, categoryScope, marcasFilter, sort, gustosScores, gustosPerfil,
     categories, filterStock, filterCond, priceMin, priceMax, filterTalla, extras,

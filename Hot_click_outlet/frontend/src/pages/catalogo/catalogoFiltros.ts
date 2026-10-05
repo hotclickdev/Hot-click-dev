@@ -1,5 +1,5 @@
 import type { Producto } from '@/types/producto'
-import { camposCoincidenConsulta } from './buscarExplorar'
+import { camposCoincidenConsulta, compararPorConsulta, textosBusquedaProducto } from './buscarExplorar'
 
 
 
@@ -120,13 +120,16 @@ export function normalizarBusqueda(texto: string): string {
 
 
 
-/** El producto coincide con la búsqueda por nombre, marca o tienda, sin distinguir tildes. */
+/** Mismos textos que la lupa: nombre, categoría, marca, descripción y tienda. */
 
-export function coincideBusqueda(p: Pick<Producto, 'nombre' | 'marcaNombre' | 'empresaNombre'>, search: string): boolean {
+export function coincideBusqueda(
+  p: Pick<Producto, 'nombre' | 'marcaNombre' | 'empresaNombre'> & Partial<Pick<Producto, 'categoriaNombre' | 'descripcion'>>,
+  search: string,
+): boolean {
 
   if (!normalizarBusqueda(search)) return true
 
-  return camposCoincidenConsulta([p.nombre, p.marcaNombre, p.empresaNombre], search)
+  return camposCoincidenConsulta(textosBusquedaProducto(p), search)
 
 }
 
@@ -192,6 +195,8 @@ export function sortCatalogo(
 
   affinityOf: (producto: Producto, scores: Map<string, number>) => number,
 
+  consulta = '',
+
 ): Producto[] {
 
   return lista.sort((a, b) => {
@@ -207,6 +212,8 @@ export function sortCatalogo(
     if (sort === 'price_desc') return b.precio - a.precio
 
     if (sort === 'name')       return a.nombre?.localeCompare(b.nombre)
+
+    if (consulta.trim()) return compararPorConsulta(a, b, consulta)
 
     return 0
 

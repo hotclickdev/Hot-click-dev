@@ -19,6 +19,8 @@ const LARGO_MINIMO_PALABRA = 4
 const LARGO_MINIMO_CONSULTA = 3
 /** Tope de lo que se manda al catálogo, al asistente y a recientes. */
 export const LARGO_MAXIMO_CONSULTA = 120
+/** Misma ventana para la lupa y para /productos?search=, así el conteo coincide. */
+export const TAMANO_BUSQUEDA = 48
 
 export function hayFiltrosExtra(f: FiltrosExtra): boolean {
   return f.tiendas.size > 0 || f.hechoAPedido || f.retiroEnTienda
@@ -81,8 +83,36 @@ function normalizar(texto: string): string {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 }
 
+function tokensDe(textoNormalizado: string): string[] {
+  return textoNormalizado.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+}
+
+/** Igual al token, o prefijo si la consulta tiene al menos 4 letras. «día» no entra en «diario» ni en «radiador». */
+function tokenContiene(token: string, palabra: string): boolean {
+  if (token === palabra) return true
+  return palabra.length >= LARGO_MINIMO_PALABRA && token.startsWith(palabra)
+}
+
+function textoContienePalabra(textoNormalizado: string, palabra: string): boolean {
+  return tokensDe(textoNormalizado).some((token) => tokenContiene(token, palabra))
+}
+
+function textoContieneConsulta(textoNormalizado: string, consultaNormalizada: string): boolean {
+  if (consultaNormalizada.includes(' ')) return textoNormalizado.includes(consultaNormalizada)
+  return textoContienePalabra(textoNormalizado, consultaNormalizada)
+}
+
 function coincide(texto: string | null | undefined, consulta: string): boolean {
-  return Boolean(texto) && normalizar(texto as string).includes(consulta)
+  if (!texto) return false
+  const q = normalizar(consulta)
+  return q.length >= 2 && textoContieneConsulta(normalizar(texto), q)
+}
+
+/** Si hay palabras de 4+ letras, las de 3 no alcanzan solas para marcar un producto. */
+function palabrasParaEmparejar(consulta: string): string[] {
+  const todas = palabrasSignificativas(consulta)
+  const largas = todas.filter((palabra) => palabra.length >= LARGO_MINIMO_PALABRA)
+  return largas.length > 0 ? largas : todas
 }
 
 /** Quita caracteres de control y recorta. El texto se muestra como texto, nunca como HTML. */
@@ -103,31 +133,44 @@ export function palabrasSignificativas(consulta: string): string[] {
   return salida
 }
 
+/** Nombre, categoría, marca, descripción y tienda: la lupa y el catálogo miran los mismos textos. */
+export function textosBusquedaProducto(producto: {
+  nombre?: string | null
+  categoriaNombre?: string | null
+  marcaNombre?: string | null
+  descripcion?: string | null
+  empresaNombre?: string | null
+}): (string | null | undefined)[] {
+  return [producto.nombre, producto.categoriaNombre, producto.marcaNombre, producto.descripcion, producto.empresaNombre]
+}
+
 /** La frase completa o alguna de sus palabras aparece en alguno de los textos. */
 export function camposCoincidenConsulta(campos: (string | null | undefined)[], consulta: string): boolean {
   const q = normalizar(consulta)
   if (q.length < 2) return false
   const textos = campos.filter((campo): campo is string => Boolean(campo?.trim())).map((campo) => normalizar(campo))
-  if (textos.some((texto) => texto.includes(q))) return true
-  const palabras = palabrasSignificativas(consulta)
+  if (textos.some((texto) => textoContieneConsulta(texto, q))) return true
+  const palabras = palabrasParaEmparejar(consulta)
   if (palabras.length === 0) return false
-  const junto = textos.join(' ')
-  return palabras.some((palabra) => junto.includes(palabra))
+  return palabras.some((palabra) => textos.some((texto) => textoContienePalabra(texto, palabra)))
 }
 
 export function productoCoincideConsulta(producto: Producto, consulta: string): boolean {
-  return camposCoincidenConsulta(
-    [producto.nombre, producto.categoriaNombre, producto.marcaNombre, producto.descripcion, producto.empresaNombre],
-    consulta,
-  )
+  return camposCoincidenConsulta(textosBusquedaProducto(producto), consulta)
 }
 
 function puntajeConsulta(producto: Producto, consulta: string): number {
-  const junto = normalizar([producto.nombre, producto.categoriaNombre, producto.marcaNombre, producto.descripcion, producto.empresaNombre].filter(Boolean).join(' '))
+  const junto = normalizar(textosBusquedaProducto(producto).filter(Boolean).join(' '))
   const q = normalizar(consulta)
-  const frase = q.length >= 2 && junto.includes(q) ? 10 : 0
-  const palabras = palabrasSignificativas(consulta).filter((palabra) => junto.includes(palabra)).length
+  const frase = q.length >= 2 && textoContieneConsulta(junto, q) ? 10 : 0
+  const palabras = palabrasParaEmparejar(consulta).filter((palabra) => textoContienePalabra(junto, palabra)).length
   return frase + palabras
+}
+
+/** El que coincide en más palabras va primero. Empate: nombre. */
+export function compararPorConsulta(a: Producto, b: Producto, consulta: string): number {
+  return puntajeConsulta(b, consulta) - puntajeConsulta(a, consulta)
+    || (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
 }
 
 /** Productos que contienen la frase o alguna palabra, los que más coinciden primero. */
@@ -135,7 +178,7 @@ export function filtrarProductosConsulta(productos: Producto[], consulta: string
   if (normalizar(consulta).length < 2) return []
   return productos
     .filter((producto) => productoCoincideConsulta(producto, consulta))
-    .sort((a, b) => puntajeConsulta(b, consulta) - puntajeConsulta(a, consulta) || (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'))
+    .sort((a, b) => compararPorConsulta(a, b, consulta))
 }
 
 function agregarSugerencia(texto: string, consulta: string, maximo: number, salida: string[], vistas: Set<string>) {
@@ -165,7 +208,7 @@ export function sugerenciasBusqueda(consulta: string, productos: Producto[], max
   sugerenciasPorFragmento(consulta, productos, consulta, maximo, salida, vistas)
   if (salida.length >= maximo) return salida
   const completa = normalizar(consulta)
-  for (const palabra of palabrasSignificativas(consulta)) {
+  for (const palabra of palabrasParaEmparejar(consulta)) {
     if (palabra === completa) continue
     sugerenciasPorFragmento(palabra, productos, consulta, maximo, salida, vistas)
     if (salida.length >= maximo) break

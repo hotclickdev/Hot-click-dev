@@ -77,6 +77,24 @@ describe('filtrarProductosConsulta', () => {
     expect(filtrarProductosConsulta(catalogo, 'sds')).toEqual([])
     expect(palabrasSignificativas('regalo para mi mamá')).toEqual(['regalo', 'mama'])
   })
+  it('una palabra corta no coincide dentro de otra', () => {
+    const textos = [
+      p(10, 'Radiador de auto'),
+      p(11, 'Diario de viaje'),
+      p(12, 'Crema de día'),
+    ]
+    expect(filtrarProductosConsulta(textos, 'día').map((producto) => producto.id)).toEqual([12])
+    expect(filtrarProductosConsulta(textos, 'sérum facial de día')).toEqual([])
+  })
+  it('categoría y descripción cuentan igual que el nombre, y gana quien coincide en más palabras', () => {
+    const taza = p(4, 'Taza personalizada con nombre y color', {
+      categoriaNombre: 'Regalos', descripcion: 'Regalo para mamá', empresaNombre: 'Casa Luna 506',
+    })
+    const otro = p(5, 'Sérum facial de día', { categoriaNombre: 'Cuidado' })
+    expect(filtrarProductosConsulta([taza, otro], 'regalo para mi mamá').map((producto) => producto.id)).toEqual([4])
+    const sueltos = [p(1, 'Taza personalizada'), p(2, 'Regalo para mamá', { categoriaNombre: 'Regalos' })]
+    expect(filtrarProductosConsulta(sueltos, 'regalo para mi mamá taza').map((producto) => producto.id)).toEqual([2, 1])
+  })
   it('recorta controles y un texto enorme antes de navegar o guardar', () => {
     expect(recortarConsulta('  taza\u0000\n ')).toBe('taza')
     expect(recortarConsulta('a'.repeat(200))).toHaveLength(120)

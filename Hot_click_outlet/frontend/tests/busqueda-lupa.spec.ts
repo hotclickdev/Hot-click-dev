@@ -85,6 +85,8 @@ test.describe('Lupa: resultados, seguridad y navegación', () => {
     await buscador.fill('regalo para mi mamá')
     await panel.getByRole('button', { name: /Ver el resultado de/ }).click()
     await expect(page).toHaveURL(/\/productos\?search=regalo(%20|\+)para(%20|\+)mi(%20|\+)mam/)
+    await expect(page.getByText('Taza personalizada con nombre y color')).toBeVisible()
+    await expect(page.getByText('Sérum facial de día')).toHaveCount(0)
 
     await page.goto('/')
     await buscador.fill('regalo')
