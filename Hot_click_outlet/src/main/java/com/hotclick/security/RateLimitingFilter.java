@@ -101,6 +101,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/cart/abandoned",          new Limit(10,   60)),
         // Uploads públicos — limitar para evitar abuso de almacenamiento y costos S3
         Map.entry("/api/servicios/fotos",                             new Limit(10,  60)),
+        // Crear la solicitud también es público. Sin tope, un clic repetido llena la tabla.
+        Map.entry("/api/servicios",                                   new Limit(5,   60)),
         Map.entry("/api/public/encargos/imagenes",                    new Limit(10,  60)),
         Map.entry("/api/public/encargos",                             new Limit(5,   60)),
         Map.entry("/api/recolecciones",                               new Limit(10,  60)),

@@ -18,7 +18,9 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @DisplayName("B\u00fasqueda por foto - tienda y categor\u00eda de cada resultado (Figma 27:882)")
@@ -52,5 +54,28 @@ class ShoppingAssistantImageSearchHandlerTest {
         List<Map<String, Object>> productos = (List<Map<String, Object>>) body.get("productos");
         assertThat(productos.get(0)).containsEntry("empresaNombre", "Casa Luna").containsEntry("categoria", "Muebles");
         assertThat(productos.get(1)).containsEntry("empresaNombre", null).containsEntry("categoria", "Muebles");
+    }
+
+    @Test
+    @DisplayName("La etiqueta de Vision entra a la búsqueda aunque no haya entidades web")
+    void buscaConEtiquetaCuandoNoHayEntidadesWeb() {
+        ShoppingAssistantTenantGuard guard = mock(ShoppingAssistantTenantGuard.class);
+        VectorSearchService vector = mock(VectorSearchService.class);
+        GoogleVisionService vision = mock(GoogleVisionService.class);
+        ProductoCatalogQueries queries = mock(ProductoCatalogQueries.class);
+
+        Empresa empresa = new Empresa();
+        empresa.setId(1L);
+        when(guard.requireEmpresaActivaForImageSearch("hotclick")).thenReturn(empresa);
+        GoogleVisionService.VisionResult resultado = new GoogleVisionService.VisionResult();
+        resultado.etiquetas.add("Sillón verde");
+        when(vision.analizar(anyString())).thenReturn(resultado);
+        when(vector.buscarSimilares(anyLong(), anyString(), anyInt(), anyBoolean())).thenReturn(List.of());
+        when(queries.tiendasVisibles(anyCollection())).thenReturn(Map.of());
+
+        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries);
+        handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "hotclick", null);
+
+        verify(vector).buscarSimilares(eq(1L), eq("Sillón verde"), eq(5), anyBoolean());
     }
 }

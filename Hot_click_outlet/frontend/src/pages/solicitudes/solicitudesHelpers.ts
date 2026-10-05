@@ -29,16 +29,20 @@ export function claveLinea(estado?: string): string {
   }
 }
 
-/** `fotosUrls` llega como texto JSON con un arreglo de URLs; cualquier otra forma se ignora. */
+/** `fotosUrls` llega como texto JSON con un arreglo de URLs https; cualquier otra forma se ignora. */
 export function fotosDeSolicitud(fotosUrls: string | null | undefined): string[] {
   if (!fotosUrls) return []
   try {
     const parsed: unknown = JSON.parse(fotosUrls)
-    return Array.isArray(parsed) ? parsed.filter((u): u is string => typeof u === 'string') : []
+    return Array.isArray(parsed) ? urlsFotoHttps(parsed) : []
   } catch {
-    // Antes de la subida múltiple el campo era una sola URL de texto plano.
-    return /^https?:\/\//.test(fotosUrls) || fotosUrls.startsWith('data:') ? [fotosUrls] : []
+    return urlsFotoHttps([fotosUrls])
   }
+}
+
+/** El panel pinta estas URLs en un `<img>`. Solo https: nada de javascript: ni data:. */
+export function urlsFotoHttps(urls: unknown[]): string[] {
+  return urls.filter((u): u is string => typeof u === 'string' && /^https:\/\//i.test(u.trim()))
 }
 
 export function solicitudPorId(solicitudes: SolicitudBusqueda[], id: string | null): SolicitudBusqueda | null {

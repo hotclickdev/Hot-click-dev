@@ -26,6 +26,9 @@ describe('fotos de la solicitud', () => {
 
   it('acepta una URL suelta de solicitudes antiguas y rechaza basura', () => {
     expect(fotosDeSolicitud('https://a/viejo.jpg')).toEqual(['https://a/viejo.jpg'])
+    expect(fotosDeSolicitud('http://a/viejo.jpg')).toEqual([])
+    expect(fotosDeSolicitud('javascript:alert(1)')).toEqual([])
+    expect(fotosDeSolicitud('data:image/png;base64,aaaa')).toEqual([])
     expect(fotosDeSolicitud('no es url')).toEqual([])
     expect(fotosDeSolicitud(null)).toEqual([])
   })

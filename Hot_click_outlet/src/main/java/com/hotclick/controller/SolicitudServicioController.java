@@ -8,6 +8,7 @@ import com.hotclick.repository.SolicitudServicioRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.service.TurnstileFormGuard;
+import com.hotclick.service.solicitud.SolicitudServicioEntrada;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,26 +70,26 @@ public class SolicitudServicioController {
             return ResponseEntity.badRequest().body(ResponseDTO.error(TurnstileFormGuard.MSG_ANTI_BOT));
         }
         try {
-            String descripcion = body.get("descripcion");
-            if (descripcion == null || descripcion.isBlank())
-                return ResponseEntity.badRequest().body(ResponseDTO.error("La descripción es requerida"));
-
+            SolicitudServicioEntrada.Datos datos = SolicitudServicioEntrada.validar(body);
             SolicitudServicio s = new SolicitudServicio();
 
             if (userDetails != null) {
                 usuarioRepo.findByCorreo(userDetails.getUsername()).ifPresent(s::setUsuario);
             }
 
-            s.setDescripcion(descripcion.trim());
-            s.setPresupuesto(body.getOrDefault("presupuesto", null));
-            s.setFotosUrls(body.getOrDefault("fotosUrls", null));
-            s.setNombreContacto(body.getOrDefault("nombreContacto", null));
-            s.setTelefonoContacto(body.getOrDefault("telefonoContacto", null));
+            s.setDescripcion(datos.descripcion());
+            s.setPresupuesto(datos.presupuesto());
+            s.setFotosUrls(datos.fotosUrls());
+            s.setNombreContacto(datos.nombre());
+            s.setTelefonoContacto(datos.telefono());
 
             SolicitudServicio guardada = solicitudRepo.save(s);
             return ResponseEntity.ok(ResponseDTO.success("Solicitud enviada con éxito", guardada));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Error: " + e.getMessage()));
+            log.error("[servicios] No se pudo crear la solicitud: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se pudo enviar la solicitud"));
         }
     }
 

@@ -6,9 +6,12 @@ import Seo from '@/components/seo/Seo'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
+import useAuthStore from '@/store/authStore'
 import { formatPrice } from '@/utils/format'
 import { ICONOS_CATALOGO } from '@/pages/catalogo/iconosCatalogo'
 import { etiquetaParecido, leerRespuestaFoto, validarFoto, type RespuestaFoto } from './busquedaFoto'
+import PreguntaResultadoFoto, { type PasoResultadoFoto } from './PreguntaResultadoFoto'
+import { descripcionSolicitudFoto } from './solicitudDesdeFoto'
 import { SLUG_MARKETPLACE } from './rutasBuscar'
 
 type Estado = 'inicio' | 'buscando' | 'listo' | 'error' | 'formato' | 'pesada'
@@ -24,13 +27,16 @@ const BOTON_SECUNDARIO = `${BOTON} border border-hc-n-200 bg-hc-n-0 text-hc-n-90
  */
 export default function BusquedaFotoPage() {
   const { t } = useTranslation()
+  const userName = useAuthStore((s) => s.userName)
   const camaraRef = useRef<HTMLInputElement>(null)
   const galeriaRef = useRef<HTMLInputElement>(null)
+  const archivoRef = useRef<File | null>(null)
   const [vista, setVista] = useState<string | null>(null)
   const [estado, setEstado] = useState<Estado>('inicio')
   const [arrastrando, setArrastrando] = useState(false)
   const [respuesta, setRespuesta] = useState<RespuestaFoto>({ categoriaDetectada: '', etiquetas: [], productos: [] })
   const [descartadas, setDescartadas] = useState<Set<string>>(new Set())
+  const [paso, setPaso] = useState<PasoResultadoFoto>('cerrada')
 
   useEffect(() => () => { if (vista) URL.revokeObjectURL(vista) }, [vista])
 
@@ -40,14 +46,20 @@ export default function BusquedaFotoPage() {
       setEstado(valida)
       return
     }
+    archivoRef.current = archivo
     setVista(URL.createObjectURL(archivo))
     setDescartadas(new Set())
+    setRespuesta({ categoriaDetectada: '', etiquetas: [], productos: [] })
+    setPaso('cerrada')
     setEstado('buscando')
     try {
       const data = await shoppingAssistantService.searchByImage({ empresaSlug: SLUG_MARKETPLACE, imageFile: archivo })
-      setRespuesta(leerRespuestaFoto(data))
+      const leida = leerRespuestaFoto(data)
+      setRespuesta(leida)
+      setPaso(leida.productos.length > 0 ? 'producto' : 'solicitud')
       setEstado('listo')
     } catch {
+      setPaso('solicitud')
       setEstado('error')
     }
   }
@@ -179,10 +191,11 @@ export default function BusquedaFotoPage() {
               </>
             )}
             {estado === 'error' && <p className="rounded-[12px] bg-hc-danger-bg px-3 py-[10px] text-[13px] text-hc-danger">{t('search.photoError')}</p>}
-            {estado === 'listo' && (
+            {(estado === 'listo' || estado === 'error') && (
               <>
-                <h2 className="font-display text-[16px] font-bold text-hc-n-900">{t('search.photoSimilar')}</h2>
-                {respuesta.productos.length === 0 && <p className="text-[14px] text-hc-n-600">{t('search.photoNone')}</p>}
+                {respuesta.productos.length > 0 && (
+                  <h2 className="font-display text-[16px] font-bold text-hc-n-900">{t('search.photoSimilar')}</h2>
+                )}
                 {respuesta.productos.map((p) => {
                   const rotulo = etiquetaParecido(p, respuesta.categoriaDetectada)
                   const muyParecido = rotulo === 'muyParecido'
@@ -202,6 +215,16 @@ export default function BusquedaFotoPage() {
                     </Link>
                   )
                 })}
+                <PreguntaResultadoFoto
+                  paso={paso}
+                  sinParecidos={estado === 'error' || respuesta.productos.length === 0}
+                  analisisFallo={estado === 'error'}
+                  archivo={archivoRef.current}
+                  descripcion={descripcionSolicitudFoto(etiquetas, respuesta.productos.length > 0, estado === 'error')}
+                  nombre={userName}
+                  onPaso={setPaso}
+                />
+                <div className="h-52 lg:hidden" aria-hidden="true" />
               </>
             )}
           </section>

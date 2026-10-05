@@ -1,4 +1,5 @@
 import type { Id } from '@/types/api'
+import { urlsFotoHttps } from '@/pages/solicitudes/solicitudesHelpers'
 
 export const ESTADOS = ['PENDIENTE', 'EN_BUSQUEDA', 'ENCONTRADO', 'NO_ENCONTRADO', 'CANCELADO'] as const
 export type EstadoServicio = (typeof ESTADOS)[number]
@@ -47,7 +48,7 @@ export function parseFotosUrls(fotosUrls: string | null | undefined): string[] {
   if (!fotosUrls) return []
   try {
     const parsed: unknown = JSON.parse(fotosUrls)
-    return Array.isArray(parsed) ? parsed as string[] : []
+    return Array.isArray(parsed) ? urlsFotoHttps(parsed) : []
   } catch {
     return []
   }
