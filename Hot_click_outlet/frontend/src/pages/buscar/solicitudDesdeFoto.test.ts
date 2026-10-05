@@ -14,6 +14,13 @@ describe('descripcionSolicitudFoto', () => {
   })
 })
 
+describe('telefonoSolicitudFoto', () => {
+  it('normaliza el número local y rechaza uno corto', async () => {
+    const { telefonoSolicitudFoto } = await import('./solicitudDesdeFoto')
+    expect(telefonoSolicitudFoto('8888 8888')).toBe('+50688888888')
+    expect(telefonoSolicitudFoto('123')).toBeNull()
+  })
+})
 describe('urlDeFotoSubida', () => {
   it('lee la url del sobre ya abierto o la url directa', () => {
     expect(urlDeFotoSubida({ url: 'https://cdn.example/foto.jpg' })).toBe('https://cdn.example/foto.jpg')

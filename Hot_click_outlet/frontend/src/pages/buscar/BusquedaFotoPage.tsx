@@ -28,6 +28,7 @@ const BOTON_SECUNDARIO = `${BOTON} border border-hc-n-200 bg-hc-n-0 text-hc-n-90
 export default function BusquedaFotoPage() {
   const { t } = useTranslation()
   const userName = useAuthStore((s) => s.userName)
+  const tieneSesion = useAuthStore((s) => Boolean(s.token))
   const camaraRef = useRef<HTMLInputElement>(null)
   const galeriaRef = useRef<HTMLInputElement>(null)
   const archivoRef = useRef<File | null>(null)
@@ -222,6 +223,7 @@ export default function BusquedaFotoPage() {
                   archivo={archivoRef.current}
                   descripcion={descripcionSolicitudFoto(etiquetas, respuesta.productos.length > 0, estado === 'error')}
                   nombre={userName}
+                  tieneSesion={tieneSesion}
                   onPaso={setPaso}
                 />
                 <div className="h-52 lg:hidden" aria-hidden="true" />

@@ -5,7 +5,7 @@ import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import TurnstileCampo from '@/components/security/TurnstileCampo'
 import { useTurnstileForm } from '@/hooks/useTurnstileForm'
 import { mensajeErrorApi } from '@/utils/mensajeErrorApi'
-import { SolicitudFotoError, enviarSolicitudDesdeFoto } from './solicitudDesdeFoto'
+import { SolicitudFotoError, enviarSolicitudDesdeFoto, telefonoSolicitudFoto } from './solicitudDesdeFoto'
 
 export type PasoResultadoFoto = 'producto' | 'solicitud' | 'enviando' | 'enviada' | 'esEste' | 'cerrada'
 
@@ -22,13 +22,16 @@ type Props = {
   archivo: File | null
   descripcion: string
   nombre: string | null
+  /** Con sesión el teléfono ya está en la cuenta. Sin sesión hay que pedirlo. */
+  tieneSesion: boolean
   onPaso: (paso: PasoResultadoFoto) => void
 }
 
 /** Confirmación en la misma pantalla (derivada de la tarjeta de `/buscar/foto`, Figma `27:882`). */
-export default function PreguntaResultadoFoto({ paso, sinParecidos, analisisFallo = false, archivo, descripcion, nombre, onPaso }: Props) {
+export default function PreguntaResultadoFoto({ paso, sinParecidos, analisisFallo = false, archivo, descripcion, nombre, tieneSesion, onPaso }: Props) {
   const { t } = useTranslation()
   const [error, setError] = useState('')
+  const [telefono, setTelefono] = useState('')
   const enviandoRef = useRef(false)
   const { turnstileRef, turnstileToken, setTurnstileToken, resetTurnstile, turnstileSiteKey, turnstileBloqueaSubmit } = useTurnstileForm()
 
@@ -56,13 +59,15 @@ export default function PreguntaResultadoFoto({ paso, sinParecidos, analisisFall
     ? t('search.photoAskMatchSub')
     : t(analisisFallo ? 'search.photoAskRequestFailSub' : sinParecidos ? 'search.photoAskRequestEmptySub' : 'search.photoAskRequestSub')
 
+  const tel = tieneSesion ? null : telefonoSolicitudFoto(telefono)
+
   const mandar = async () => {
-    if (!archivo || enviandoRef.current) return
+    if (!archivo || enviandoRef.current || (!tieneSesion && !tel)) return
     enviandoRef.current = true
     setError('')
     onPaso('enviando')
     try {
-      await enviarSolicitudDesdeFoto(archivo, descripcion, nombre, turnstileToken)
+      await enviarSolicitudDesdeFoto(archivo, descripcion, nombre, tel, turnstileToken)
       resetTurnstile()
       onPaso('enviada')
     } catch (err: unknown) {
@@ -78,6 +83,22 @@ export default function PreguntaResultadoFoto({ paso, sinParecidos, analisisFall
       <h2 className="font-display text-[15px] font-bold text-hc-n-900">{titulo}</h2>
       <p className="text-[13px] leading-[18px] text-hc-n-600">{detalle}</p>
       {error && <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-3 py-[10px] text-[13px] text-hc-danger">{error}</p>}
+      {!preguntaProducto && !tieneSesion && (
+        <div className="flex flex-col gap-[6px]">
+          <label htmlFor="foto-telefono" className="text-[13px] font-semibold text-hc-n-900">{t('search.photoRequestPhone')}</label>
+          <input
+            id="foto-telefono"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder={t('search.photoRequestPhonePh')}
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            className="w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 text-[14px] leading-5 text-hc-n-900 outline-none placeholder:text-hc-n-500 focus:border-hc-blue-600 focus:shadow-[0_0_0_3px_var(--hc-blue-100)]"
+          />
+          <p className="text-[12px] leading-[17px] text-hc-n-600">{t('search.photoRequestPhoneHint')}</p>
+        </div>
+      )}
       {!preguntaProducto && turnstileBloqueaSubmit && (
         <p className="text-[12px] leading-[17px] text-hc-n-600">{t('search.photoRequestChecking')}</p>
       )}
@@ -92,7 +113,7 @@ export default function PreguntaResultadoFoto({ paso, sinParecidos, analisisFall
           </>
         ) : (
           <>
-            <button type="button" className={PRIMARIO} disabled={enviando || turnstileBloqueaSubmit || !archivo} onClick={() => { void mandar() }}>
+            <button type="button" className={PRIMARIO} disabled={enviando || turnstileBloqueaSubmit || !archivo || (!tieneSesion && !tel)} onClick={() => { void mandar() }}>
               {enviando ? t('search.photoRequestSending') : t('search.photoAskRequestYes')}
             </button>
             <button type="button" className={SECUNDARIO} disabled={enviando} onClick={() => onPaso('cerrada')}>{t('search.photoAskRequestNo')}</button>
