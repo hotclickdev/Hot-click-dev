@@ -3,8 +3,11 @@ import { estaDisponible, subtotalRecuperado, unidadesPorAgregar } from './useCar
 import type { ProductoRecuperado } from './useCarritoRecuperado'
 import type { Producto } from '@/types/producto'
 
+let siguienteClave = 0
+
 function linea(cantidad: number, producto: Partial<Producto> | null): ProductoRecuperado {
-  return { clave: String(Math.random()), nombre: 'X', imagen: '', cantidad, producto: producto as Producto | null }
+  siguienteClave += 1
+  return { clave: `linea-${siguienteClave}`, nombre: 'X', imagen: '', cantidad, producto: producto as Producto | null }
 }
 
 describe('carrito recuperado', () => {

@@ -22,6 +22,7 @@ class ChatLegalGuardTest {
     @Test
     void bloqueaSiDiceSerMenor() {
         assertThat(ChatLegalGuard.revisar("tengo 12 años y quiero comprar")).isEqualTo(ChatLegalGuard.Motivo.MENOR);
+        assertThat(ChatLegalGuard.revisar("TENGO 12 AÑOS")).isEqualTo(ChatLegalGuard.Motivo.MENOR);
         assertThat(ChatLegalGuard.revisar("soy menor de edad")).isEqualTo(ChatLegalGuard.Motivo.MENOR);
         assertThat(ChatLegalGuard.revisar("tengo 19 años")).isEqualTo(ChatLegalGuard.Motivo.OK);
     }

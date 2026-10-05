@@ -13,7 +13,7 @@ public final class ChatLegalGuard {
 
     private static final Pattern DIGITOS = Pattern.compile("\\d{13,19}");
     private static final Pattern EDAD = Pattern.compile(
-        "(?i)(?:tengo|tenes|tenés|cumplo|soy de)\\s*(\\d{1,2})\\s*a[nñ]os");
+        "(?iu)(?:tengo|tenes|tenés|cumplo|soy de)\\s*(\\d{1,2})\\s*a[nñ]os");
     private static final Pattern MENOR_FRASE = Pattern.compile(
         "(?i)(?:soy menor|menor de edad|tengo menos de (?:13|15|16|17|18))");
 

@@ -117,7 +117,7 @@ export function fechaEntregaCompra(compra: CompraCliente): string | null {
   const fechas = compra.paquetes
     .map((paquete) => paquete.fechaEntregaReal)
     .filter((fecha): fecha is string => Boolean(fecha))
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
   return fechas.at(-1) ?? null
 }
 

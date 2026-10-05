@@ -19,5 +19,16 @@ class SeoSlugsTest {
         assertTrue(SeoSlugs.esSeguro("san-jose"));
         assertFalse(SeoSlugs.esSeguro("San José"));
         assertFalse(SeoSlugs.esSeguro("../admin"));
+        assertFalse(SeoSlugs.esSeguro("-san"));
+        assertFalse(SeoSlugs.esSeguro("san-"));
+        assertFalse(SeoSlugs.esSeguro("san--jose"));
+    }
+
+    @Test
+    void slugLargoNoRevientaLaPila() {
+        String largo = "a-b".repeat(5_000);
+        assertTrue(SeoSlugs.esSeguro(largo));
+        assertEquals("a".repeat(100), SeoSlugs.desde("Á".repeat(10_000)));
+        assertEquals("", SeoSlugs.desde("---"));
     }
 }
