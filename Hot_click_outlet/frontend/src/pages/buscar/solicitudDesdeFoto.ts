@@ -1,4 +1,8 @@
+import { normalizarTelefono } from '@/pages/servicios/serviciosHelpers'
 import { servicioService } from '@/services/servicioService'
+
+const TELEFONO_DIGITOS_MIN = 7
+const TELEFONO_DIGITOS_MAX = 15
 
 /** Prefijo para que el admin distinga estas solicitudes de las de Servicios HOT. */
 export const PREFIJO_SOLICITUD_FOTO = '[Búsqueda por foto]'
@@ -15,6 +19,14 @@ function motivoSolicitud(habiaParecidos: boolean, falloAnalisis: boolean): strin
   if (falloAnalisis) return 'No se pudo comparar la foto con el catálogo.'
   if (habiaParecidos) return 'Las opciones parecidas no eran el producto.'
   return 'No había un producto parecido en el catálogo.'
+}
+
+/** Teléfono listo para la solicitud, o null si no alcanza. Sin sesión es obligatorio. */
+export function telefonoSolicitudFoto(texto: string): string | null {
+  const digitos = texto.replace(/\D/g, '')
+  if (digitos.length < TELEFONO_DIGITOS_MIN || digitos.length > TELEFONO_DIGITOS_MAX) return null
+  const normalizado = normalizarTelefono(texto)
+  return normalizado.length <= 30 ? normalizado : null
 }
 
 /** La subida responde `{ url }` (el interceptor ya quitó el sobre) o la URL directa. */
@@ -41,6 +53,7 @@ export async function enviarSolicitudDesdeFoto(
   archivo: File,
   descripcion: string,
   nombre: string | null,
+  telefono: string | null,
   turnstileToken: string,
 ): Promise<void> {
   const fd = new FormData()
@@ -52,6 +65,7 @@ export async function enviarSolicitudDesdeFoto(
     descripcion,
     presupuesto: '',
     nombreContacto: nombre ?? '',
+    ...(telefono ? { telefonoContacto: telefono } : {}),
     fotosUrls: JSON.stringify([url]),
     ...(turnstileToken ? { turnstileToken } : {}),
   })

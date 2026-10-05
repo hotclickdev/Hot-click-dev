@@ -91,10 +91,11 @@ test.describe('Buscar con una foto', () => {
       }
       if (url.pathname === '/api/servicios' && route.request().method() === 'POST') {
         servicios += 1
-        const body = route.request().postDataJSON() as { descripcion?: string; fotosUrls?: string }
+        const body = route.request().postDataJSON() as { descripcion?: string; fotosUrls?: string; telefonoContacto?: string }
         expect(body.descripcion).toContain('[Búsqueda por foto]')
         expect(body.descripcion).toContain('Reloj')
         expect(body.fotosUrls).toContain('https://cdn.example/foto.jpg')
+        expect(body.telefonoContacto).toBe('+50688888888')
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id: 1 } }) })
         return
       }
@@ -104,6 +105,8 @@ test.describe('Buscar con una foto', () => {
     await page.goto('/buscar/foto', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type=file]').last().setInputFiles({ name: 'reloj.png', mimeType: 'image/png', buffer: PNG })
     await expect(page.getByRole('heading', { name: '¿Mandamos una solicitud para buscarlo?' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sí, mandar solicitud' })).toBeDisabled()
+    await page.getByLabel('Teléfono').fill('8888 8888')
     await page.getByRole('button', { name: 'Sí, mandar solicitud' }).click()
     await expect(page.getByText('Listo. Ya mandamos la solicitud.')).toBeVisible()
     await expect(page).toHaveURL(/\/buscar\/foto$/)
@@ -134,8 +137,9 @@ test.describe('Buscar con una foto', () => {
       }
       if (url.pathname === '/api/servicios' && route.request().method() === 'POST') {
         servicios += 1
-        const body = route.request().postDataJSON() as { descripcion?: string }
+        const body = route.request().postDataJSON() as { descripcion?: string; telefonoContacto?: string }
         expect(body.descripcion).toContain('Las opciones parecidas no eran el producto')
+        expect(body.telefonoContacto).toBe('+50688888888')
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { id: 2 } }) })
         return
       }
@@ -152,6 +156,7 @@ test.describe('Buscar con una foto', () => {
     await page.locator('input[type=file]').last().setInputFiles({ name: 'taza.png', mimeType: 'image/png', buffer: PNG })
     await page.getByRole('button', { name: 'No es este' }).click()
     await expect(page.getByRole('heading', { name: '¿Mandamos una solicitud para encontrarlo?' })).toBeVisible()
+    await page.getByLabel('Teléfono').fill('8888 8888')
     await page.getByRole('button', { name: 'Sí, mandar solicitud' }).click()
     await expect(page.getByText('Listo. Ya mandamos la solicitud.')).toBeVisible()
     await expect(page).toHaveURL(/\/buscar\/foto/)
