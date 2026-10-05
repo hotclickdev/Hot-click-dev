@@ -1,6 +1,5 @@
 package com.hotclick.rag.controller.shoppingassistant;
 
-import com.hotclick.model.Empresa;
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.VectorSearchService;
 import com.hotclick.service.GoogleVisionService;
@@ -70,7 +69,8 @@ public class ShoppingAssistantImageSearchHandler {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El archivo no es una imagen válida");
         }
 
-        Empresa empresa = tenantGuard.requireEmpresaActivaForImageSearch(empresaSlug);
+        boolean marketplace = MarketplaceCatalogo.esMarketplace(empresaSlug);
+        Long empresaId = idEmpresaParaBusqueda(empresaSlug, marketplace);
 
         GoogleVisionService.VisionResult vision;
         try {
@@ -88,8 +88,7 @@ public class ShoppingAssistantImageSearchHandler {
 
         List<ProductoContexto> productos = query.isBlank()
             ? List.of()
-            : vectorSearchService.buscarSimilares(
-                empresa.getId(), query, 5, MarketplaceCatalogo.esMarketplace(empresaSlug));
+            : vectorSearchService.buscarSimilares(empresaId, query, 5, marketplace);
 
         // Asignar porcentajes de similitud decrecientes (sin image embeddings, es estimación)
         int[] simScores = SIM_SCORES;
@@ -123,9 +122,20 @@ public class ShoppingAssistantImageSearchHandler {
         result.put("encontrado", !productosConSim.isEmpty());
 
         log.debug("[img-search] empresa={} etiqueta='{}' resultados={}",
-            empresa.getId(), etiquetaPrincipal, productosConSim.size());
+            empresaId, etiquetaPrincipal, productosConSim.size());
 
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * En el marketplace la búsqueda no filtra por empresa. Si no existe la fila
+     * con slug {@code hotclick}, igual hay que analizar la foto.
+     */
+    private Long idEmpresaParaBusqueda(String empresaSlug, boolean marketplace) {
+        if (marketplace) {
+            return null;
+        }
+        return tenantGuard.requireEmpresaActivaForImageSearch(empresaSlug).getId();
     }
 
     private String buildImageQuery(GoogleVisionService.VisionResult vision) {
