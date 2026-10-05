@@ -16,8 +16,9 @@ Si el usuario pide commit (o el agente está a punto de `git commit`):
 
 | Área | Comando |
 |------|---------|
-| Frontend `.ts`/`.tsx` | `ReadLints` en archivos tocados + `pnpm test` (Vitest) en `Hot_click_outlet/frontend`. Si cambió tipos/imports: `pnpm typecheck`. |
+| Frontend `.ts`/`.tsx` | `ReadLints` en archivos tocados + `pnpm test` (Vitest) en `Hot_click_outlet/frontend`. Si cambió tipos/imports: `pnpm typecheck`. Si el diff toca `frontend/src/**`, seguí `.cursor/skills/gh-e3-static/SKILL.md`: `pnpm build` y el mismo commit incluye `src/main/resources/static/`. |
 | Backend `.java` | `.\maven\bin\mvn -pl Hot_click_outlet test` o `-Dtest=Clase1,Clase2` de las clases tocadas. |
 | Ambos | los dos. E2E Playwright solo si el usuario lo pide o el diff toca specs en `frontend/tests/`. |
+| Cualquier diff | Antes del commit, aplicá cada skill de `.cursor/skills/github-acciones/SKILL.md` cuyo disparador coincida. Un E4 en verde no reemplaza el build de E3. |
 
 Si algo falla: arreglar, re-correr, **recién entonces** `git add` + `git commit`. Nunca `--no-verify`.
