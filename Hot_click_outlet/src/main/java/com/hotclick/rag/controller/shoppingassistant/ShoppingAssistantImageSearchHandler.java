@@ -138,6 +138,9 @@ public class ShoppingAssistantImageSearchHandler {
         if (!vision.labelsFisicos.isEmpty()) {
             vision.labelsFisicos.stream().limit(2).forEach(partes::add);
         }
+        // bestGuessLabels quedan en etiquetas. Sin esto, una foto reconocida
+        // buscaba con query vacía y el catálogo devolvía cero productos.
+        vision.etiquetas.stream().limit(2).filter(e -> !partes.contains(e)).forEach(partes::add);
         return String.join(" ", partes);
     }
 }
