@@ -1,0 +1,12 @@
+---
+description: Antes de commit o PR, cumplir la skill de cada check de GitHub que el diff dispara
+alwaysApply: true
+---
+
+# Checks de GitHub antes de commit
+
+Antes de `git commit` o de abrir un pull request, leé `.cursor/skills/github-acciones/SKILL.md` y aplicá cada skill cuyo disparador coincida con el diff.
+
+Si el diff toca `Hot_click_outlet/frontend/src/**`, el mismo commit incluye el `pnpm build` de `.cursor/skills/gh-e3-static/SKILL.md` y la carpeta `Hot_click_outlet/src/main/resources/static/`. Sin eso el check E3 sale en rojo y producción sirve JavaScript viejo.
+
+No uses un label `skip-*` para evitar ese build.

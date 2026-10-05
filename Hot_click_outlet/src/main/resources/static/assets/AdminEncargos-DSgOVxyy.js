@@ -1,0 +1,1 @@
+import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{s as t}from"./vendor-clerk-Mp7sx3iH.js";import{C as n}from"./index-BYQzH3t8.js";import{t as r}from"./EncargosPanel-CeolV_iW.js";var i=e(t(),1);function a(){return(0,i.jsx)(n,{children:(0,i.jsx)(`div`,{className:`p-4 sm:p-6 max-w-5xl`,children:(0,i.jsx)(r,{})})})}export{a as default};

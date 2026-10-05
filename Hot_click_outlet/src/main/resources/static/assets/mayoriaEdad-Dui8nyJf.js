@@ -1,0 +1,1 @@
+var e=`hotclick-declara-mayoria-edad`;function t(t){typeof sessionStorage>`u`||(t?sessionStorage.setItem(e,`1`):sessionStorage.removeItem(e))}function n(){return typeof sessionStorage>`u`?!1:sessionStorage.getItem(e)===`1`}function r(e){return!!(e&&e.includes(`HotClick solo admite personas mayores de 18 años.`))}export{t as n,n as r,r as t};
