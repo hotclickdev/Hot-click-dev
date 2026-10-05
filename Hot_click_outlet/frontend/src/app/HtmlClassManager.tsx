@@ -13,7 +13,7 @@ function aplicarMetaThemeColor(tema: 'dark' | 'light') {
 
 /**
  * Aplica tema, tipografía, contraste, motion e idioma al `<html>`.
- * Marketplace / auth / tienda pública / pago QR fuerzan claro; el panel sigue la preferencia.
+ * La preferencia claro/oscuro vale en marketplace, cliente, tienda y paneles.
  */
 export default function HtmlClassManager() {
   const { pathname } = useLocation()

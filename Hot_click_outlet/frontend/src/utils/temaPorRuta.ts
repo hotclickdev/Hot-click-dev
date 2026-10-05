@@ -1,10 +1,8 @@
 /**
- * Rutas del panel (admin / vendedor / caja) pueden usar el tema del usuario.
- * El resto de la app (marketplace, login, tienda pública, pago QR…) fuerza claro
- * para no romper contraste ni flujos de cliente.
+ * Claro u oscuro es una preferencia de quien navega, en toda la app:
+ * marketplace, cliente, tienda, login y los paneles.
  *
- * `html.high-contrast` es ortogonal: se aplica desde uiStore aunque la ruta
- * fuerce light (la preferencia dark queda en store para al volver al panel).
+ * `html.high-contrast` es ortogonal: se aplica junto con esa preferencia.
  */
 const PREFIJOS_PANEL = [
   '/admin',
@@ -22,8 +20,7 @@ export function esRutaTemaPanel(pathname: string): boolean {
 }
 
 /** Tema efectivo a aplicar en `<html>` (no muta la preferencia guardada). */
-export function temaEfectivoParaRuta(pathname: string, preferencia: string): 'dark' | 'light' {
-  if (!esRutaTemaPanel(pathname)) return 'light'
+export function temaEfectivoParaRuta(_pathname: string, preferencia: string): 'dark' | 'light' {
   return preferencia === 'dark' ? 'dark' : 'light'
 }
 
@@ -44,7 +41,7 @@ export function aplicarClasesTemaHtml(
 /** `--hc-bg` claro (`--hc-n-50`) — barra del navegador / PWA chrome. */
 export const COLOR_CHROME_CLARO = '#F8F9FB'
 /** `--hc-bg` en `html.dark` (tokens). */
-export const COLOR_CHROME_OSCURO = '#0E1116'
+export const COLOR_CHROME_OSCURO = '#050608'
 
 /** Hex para `<meta name="theme-color">` según tema efectivo. */
 export function colorChromeParaTema(tema: 'dark' | 'light'): string {

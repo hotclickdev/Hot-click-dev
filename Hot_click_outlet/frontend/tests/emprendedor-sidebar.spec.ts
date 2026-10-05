@@ -91,11 +91,11 @@ test.describe('Sidebar emprendedor', () => {
     await expect(toggle).toBeVisible()
 
     const bgClaro = await shell.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
-    expect(bgClaro.toUpperCase()).not.toBe('#0E1116')
+    expect(bgClaro.toUpperCase()).not.toBe('#050608')
 
     await toggle.click()
     await expect(page.locator('html')).toHaveClass(/dark/)
     const bgOscuro = await shell.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
-    expect(bgOscuro.toUpperCase()).toBe('#0E1116')
+    expect(bgOscuro.toUpperCase()).toBe('#050608')
   })
 })

@@ -113,7 +113,7 @@ test.describe('Admin IT — Panel Admin Figma', () => {
     await toggle.click()
     await expect(page.locator('html')).toHaveClass(/dark/)
     const bgOscuro = await panel.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-bg').trim())
-    expect(bgOscuro.toUpperCase()).toBe('#0E1116')
+    expect(bgOscuro.toUpperCase()).toBe('#050608')
 
     const texto = await panel.evaluate((el) => getComputedStyle(el).getPropertyValue('--hc-text').trim())
     expect(texto.toUpperCase()).toBe('#F4F6F9')

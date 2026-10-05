@@ -32,7 +32,7 @@ describe('temaPorRuta', () => {
     expect(esRutaTemaPanel('/negocio-plus/sucursales')).toBe(true)
   })
 
-  it('fuerza claro en marketplace, auth, tienda y pago público', () => {
+  it('sigue distinguiendo las rutas de panel', () => {
     expect(esRutaTemaPanel('/')).toBe(false)
     expect(esRutaTemaPanel('/login')).toBe(false)
     expect(esRutaTemaPanel('/registro')).toBe(false)
@@ -42,24 +42,28 @@ describe('temaPorRuta', () => {
     expect(esRutaTemaPanel('/checkout')).toBe(false)
   })
 
-  it('respeta preferencia dark solo en panel', () => {
+  it('respeta claro u oscuro en la tienda, el cliente y los paneles', () => {
     expect(temaEfectivoParaRuta('/admin', 'dark')).toBe('dark')
-    expect(temaEfectivoParaRuta('/login', 'dark')).toBe('light')
+    expect(temaEfectivoParaRuta('/', 'dark')).toBe('dark')
+    expect(temaEfectivoParaRuta('/login', 'dark')).toBe('dark')
+    expect(temaEfectivoParaRuta('/tienda/demo', 'dark')).toBe('dark')
+    expect(temaEfectivoParaRuta('/checkout', 'dark')).toBe('dark')
     expect(temaEfectivoParaRuta('/emprendedor', 'light')).toBe('light')
+    expect(temaEfectivoParaRuta('/productos', 'light')).toBe('light')
   })
 
   it('mapea theme-color al --hc-bg de cada tema', () => {
     expect(colorChromeParaTema('light')).toBe(COLOR_CHROME_CLARO)
     expect(colorChromeParaTema('dark')).toBe(COLOR_CHROME_OSCURO)
     expect(COLOR_CHROME_CLARO).toBe('#F8F9FB')
-    expect(COLOR_CHROME_OSCURO).toBe('#0E1116')
+    expect(COLOR_CHROME_OSCURO).toBe('#050608')
   })
 
   it('alto contraste es ortogonal al lock de ruta', () => {
     const cl = classListFake(['dark'])
-    expect(aplicarClasesTemaHtml(cl as unknown as DOMTokenList, '/login', 'dark', true)).toBe('light')
-    expect(cl.has('light')).toBe(true)
-    expect(cl.has('dark')).toBe(false)
+    expect(aplicarClasesTemaHtml(cl as unknown as DOMTokenList, '/login', 'dark', true)).toBe('dark')
+    expect(cl.has('dark')).toBe(true)
+    expect(cl.has('light')).toBe(false)
     expect(cl.has('high-contrast')).toBe(true)
 
     expect(aplicarClasesTemaHtml(cl as unknown as DOMTokenList, '/admin', 'dark', true)).toBe('dark')
