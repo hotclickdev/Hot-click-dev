@@ -2,41 +2,24 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
 import useChatStore from '@/store/chatStore'
-import { sugerenciasBusqueda } from '@/pages/catalogo/buscarExplorar'
+import { filtrarProductosConsulta, LARGO_MAXIMO_CONSULTA, recortarConsulta, sugerenciasBusqueda } from '@/pages/catalogo/buscarExplorar'
 import { RUTA_BUSCAR_FOTO } from '@/pages/buscar/rutasBuscar'
-import { productService, normalizeProduct } from '@/services/productService'
-import { marcaService } from '@/services/marcaService'
 import { analytics } from '@/utils/analytics'
+import { asegurarCatalogoBusqueda } from './searchPanelCatalogo'
 import { useBuscarNegocios } from '@/components/comprador/negocios/useBuscarNegocios'
 import { rutaTienda } from '@/components/comprador/negocios/negociosPublicos'
 import type { NegocioPublico } from '@/services/negocioService'
-import type { Producto, ProductoBackend } from '@/types/producto'
+import type { Producto } from '@/types/producto'
 import {
   getRecent,
   saveRecent,
   getProductCache,
-  setProductCache,
   getBrandCache,
-  setBrandCache,
   RECENT_KEY,
   type MarcaBusqueda,
 } from './searchPanelHelpers'
 
-const SEARCH_PAGE_SIZE = 48
 const FILTER_DEBOUNCE_MS = 300
-
-function productosDesdeRespuesta(data: unknown): Producto[] {
-  const pagina = data as { content?: unknown }
-  const fuente = pagina.content ?? data ?? []
-  if (!Array.isArray(fuente)) return []
-  return fuente.map((item) => normalizeProduct(item as ProductoBackend) as Producto)
-}
-
-function marcasDesdeRespuesta(data: unknown): MarcaBusqueda[] {
-  const envelope = data as { data?: unknown }
-  const brands = envelope?.data ?? data ?? []
-  return Array.isArray(brands) ? brands as MarcaBusqueda[] : []
-}
 
 /** Estado y handlers del panel de búsqueda híbrida: productos en vivo, sugerencias, asistente y foto. */
 export function useSearchPanel() {
@@ -45,7 +28,8 @@ export function useSearchPanel() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [query, setQuery] = useState('')
+  const [query, setQueryState] = useState('')
+  const setQuery = (valor: string) => setQueryState(valor.slice(0, LARGO_MAXIMO_CONSULTA))
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [allProducts, setAllProducts] = useState<Producto[]>(getProductCache() ?? [])
   const [allBrands, setAllBrands] = useState<MarcaBusqueda[]>(getBrandCache() ?? [])
@@ -62,7 +46,7 @@ export function useSearchPanel() {
   }, [query])
 
   useEffect(() => {
-    if (!searchOpen) { setQuery(''); setDebouncedQuery(''); return }
+    if (!searchOpen) { setQueryState(''); setDebouncedQuery(''); return }
     setRecent(getRecent())
 
     const cachedProducts = getProductCache()
@@ -79,23 +63,12 @@ export function useSearchPanel() {
     }
 
     setLoading(true)
-    Promise.all([
-      needsProducts ? productService.getAll(0, SEARCH_PAGE_SIZE).then(({ data }) => {
-        const products = productosDesdeRespuesta(data)
-        setProductCache(products)
-        setAllProducts(products)
-      }) : Promise.resolve(),
-      needsBrands ? marcaService.getPublicas().then((r) => {
-        const brands = marcasDesdeRespuesta(r.data)
-        setBrandCache(brands)
-        setAllBrands(getBrandCache() ?? [])
-      }) : Promise.resolve(),
-    ])
-      .catch((err: unknown) => { console.error('[useSearchPanel] productos/marcas', err) })
-      .finally(() => {
-        setLoading(false)
-        setTimeout(() => inputRef.current?.focus(), 60)
-      })
+    asegurarCatalogoBusqueda().finally(() => {
+      setAllProducts(getProductCache() ?? [])
+      setAllBrands(getBrandCache() ?? [])
+      setLoading(false)
+      setTimeout(() => inputRef.current?.focus(), 60)
+    })
   }, [searchOpen])
 
   useEffect(() => {
@@ -112,15 +85,10 @@ export function useSearchPanel() {
     return allBrands.filter((b) => b.nombreMarca?.toLowerCase().includes(q)).slice(0, 3)
   }, [q, allBrands])
 
-  const todosLosResultados = useMemo(() => {
-    if (!q) return []
-    return allProducts.filter((p) =>
-      p.nombre?.toLowerCase().includes(q) ||
-      p.categoriaNombre?.toLowerCase().includes(q) ||
-      p.marcaNombre?.toLowerCase().includes(q) ||
-      p.descripcion?.toLowerCase().includes(q)
-    )
-  }, [q, allProducts])
+  const todosLosResultados = useMemo(
+    () => filtrarProductosConsulta(allProducts, debouncedQuery),
+    [debouncedQuery, allProducts],
+  )
   const productResults = useMemo(() => todosLosResultados.slice(0, 6), [todosLosResultados])
 
   useEffect(() => {
@@ -150,7 +118,7 @@ export function useSearchPanel() {
   const close = () => setSearchOpen(false)
 
   const preguntarAsistente = () => {
-    const texto = query.trim()
+    const texto = recortarConsulta(query)
     close()
     useChatStore.getState().open(texto || null)
   }
@@ -161,9 +129,10 @@ export function useSearchPanel() {
   }
 
   const elegirSugerencia = (texto: string) => {
-    saveRecent(texto)
+    const segura = recortarConsulta(texto)
+    if (segura) saveRecent(segura)
     close()
-    navigate(`/productos?search=${encodeURIComponent(texto)}`)
+    navigate(`/productos?search=${encodeURIComponent(segura)}`)
   }
 
   const selectBrand = (brand: MarcaBusqueda) => {
@@ -173,19 +142,19 @@ export function useSearchPanel() {
   }
 
   const selectNegocio = (negocio: NegocioPublico) => {
-    saveRecent(query.trim() || negocio.nombre)
+    saveRecent(recortarConsulta(query) || negocio.nombre)
     close()
     navigate(rutaTienda(negocio))
   }
 
   const selectProduct = (product: Producto) => {
-    saveRecent(query.trim() || product.nombre)
+    saveRecent(recortarConsulta(query) || product.nombre)
     close()
     navigate(`/productos/${product.id}`)
   }
 
   const viewAll = () => {
-    const trimmed = query.trim()
+    const trimmed = recortarConsulta(query)
     if (trimmed) saveRecent(trimmed)
     close()
     navigate(trimmed ? `/productos?search=${encodeURIComponent(trimmed)}` : '/productos')

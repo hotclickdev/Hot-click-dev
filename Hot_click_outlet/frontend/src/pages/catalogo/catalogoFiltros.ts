@@ -1,4 +1,5 @@
 import type { Producto } from '@/types/producto'
+import { camposCoincidenConsulta } from './buscarExplorar'
 
 
 
@@ -123,11 +124,9 @@ export function normalizarBusqueda(texto: string): string {
 
 export function coincideBusqueda(p: Pick<Producto, 'nombre' | 'marcaNombre' | 'empresaNombre'>, search: string): boolean {
 
-  const q = normalizarBusqueda(search)
+  if (!normalizarBusqueda(search)) return true
 
-  if (!q) return true
-
-  return [p.nombre, p.marcaNombre, p.empresaNombre].some((t) => Boolean(t) && normalizarBusqueda(String(t)).includes(q))
+  return camposCoincidenConsulta([p.nombre, p.marcaNombre, p.empresaNombre], search)
 
 }
 

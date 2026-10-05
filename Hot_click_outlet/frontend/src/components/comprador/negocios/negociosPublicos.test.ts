@@ -74,6 +74,11 @@ describe('negocios públicos · piezas', () => {
   it('buscador: estado vacío cuando no hay productos ni negocios', () => {
     const html = render(createElement(SearchPanelBody, modelo({ query: 'zzqx' })))
     expect(html).toContain('No encontramos productos ni negocios para “zzqx”')
+    expect(html).toContain('Preguntale al asistente')
+    expect(html).toContain('Buscar con una foto')
+    const hostil = render(createElement(SearchPanelBody, modelo({ query: '<img src=x onerror=alert(1)>' })))
+    expect(hostil).not.toContain('<img')
+    expect(hostil).toContain('&lt;img')
   })
 
   it('buscador: mientras cargan los negocios no muestra el vacío', () => {

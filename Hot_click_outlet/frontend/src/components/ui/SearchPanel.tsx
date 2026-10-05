@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { LARGO_MAXIMO_CONSULTA } from '@/pages/catalogo/buscarExplorar'
 import { useSearchPanel } from './searchPanel/useSearchPanel'
 import { SearchPanelBody } from './searchPanel/SearchPanelBody'
 import CloseIcon from '@/components/ui/CloseIcon'
@@ -59,7 +60,7 @@ export default function SearchPanel() {
                     ref={panel.inputRef}
                     type="search"
                     value={panel.query}
-                    onChange={(e) => panel.setQuery(e.target.value)}
+                    onChange={(e) => panel.setQuery(e.target.value.slice(0, LARGO_MAXIMO_CONSULTA))}
                     onKeyDown={(e) => { if (e.key === 'Enter') panel.viewAll() }}
                     placeholder={t('search.placeholder')}
                     aria-label={t('search.inputLabel')}

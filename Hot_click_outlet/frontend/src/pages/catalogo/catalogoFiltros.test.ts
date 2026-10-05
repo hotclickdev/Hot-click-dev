@@ -16,4 +16,8 @@ describe('búsqueda del catálogo sin tildes (Figma 26:722)', () => {
     expect(coincideBusqueda({ nombre: 'Taza', marcaNombre: '', empresaNombre: null }, 'qqzzxx')).toBe(false)
     expect(coincideBusqueda({ nombre: 'Taza', marcaNombre: '', empresaNombre: null }, '  ')).toBe(true)
   })
+  it('filtra por palabras: alcanza con que una esté en el producto', () => {
+    expect(coincideBusqueda({ nombre: 'Taza personalizada', marcaNombre: '', empresaNombre: null }, 'regalo para mi mamá taza')).toBe(true)
+    expect(coincideBusqueda({ nombre: 'Taza personalizada', marcaNombre: '', empresaNombre: null }, 'sds')).toBe(false)
+  })
 })

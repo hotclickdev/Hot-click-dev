@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Producto } from '@/types/producto'
 import {
-  busquedasRelacionadas, chipsEntendi, filtrarExtras, FILTROS_EXTRA_VACIOS, leerRangoPrecio,
-  partirCoincidencia, sugerenciasBusqueda, tiendasDelCatalogo,
+  busquedasRelacionadas, chipsEntendi, filtrarExtras, filtrarProductosConsulta, FILTROS_EXTRA_VACIOS, leerRangoPrecio,
+  palabrasSignificativas, partirCoincidencia, recortarConsulta, sugerenciasBusqueda, tiendasDelCatalogo,
 } from './buscarExplorar'
 
 const p = (id: number, nombre: string, extra: Partial<Producto> = {}): Producto =>
@@ -58,6 +58,28 @@ describe('sugerenciasBusqueda', () => {
   })
   it('no sugiere con menos de 2 letras', () => {
     expect(sugerenciasBusqueda('s', catalogo)).toEqual([])
+  })
+  it('si la frase no está en un producto, sugiere por cada palabra', () => {
+    const regalos = [
+      p(8, 'Regalo personalizado para mamá', { categoriaNombre: 'Regalos' }),
+      p(9, 'Sérum facial de día', { categoriaNombre: 'Cuidado' }),
+    ]
+    expect(sugerenciasBusqueda('regalo para mi mamá', regalos)).toEqual(['regalos', 'regalo personalizado para mamá'])
+    expect(sugerenciasBusqueda('sds zzqx', regalos)).toEqual([])
+  })
+})
+
+describe('filtrarProductosConsulta', () => {
+  it('encuentra por una palabra aunque el resto de la frase no esté en el catálogo', () => {
+    expect(filtrarProductosConsulta(catalogo, 'regalo para mi mamá taza').map((producto) => producto.id)).toEqual([3])
+  })
+  it('sin una palabra del catálogo no devuelve productos', () => {
+    expect(filtrarProductosConsulta(catalogo, 'sds')).toEqual([])
+    expect(palabrasSignificativas('regalo para mi mamá')).toEqual(['regalo', 'mama'])
+  })
+  it('recorta controles y un texto enorme antes de navegar o guardar', () => {
+    expect(recortarConsulta('  taza\u0000\n ')).toBe('taza')
+    expect(recortarConsulta('a'.repeat(200))).toHaveLength(120)
   })
 })
 

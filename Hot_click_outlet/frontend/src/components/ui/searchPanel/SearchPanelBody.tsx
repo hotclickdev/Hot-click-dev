@@ -6,7 +6,7 @@ import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import { fotoProducto, nombreVendedor } from '@/components/comprador/productCardHelpers'
 import FilaNegocio from '@/components/comprador/negocios/FilaNegocio'
 import { highlight } from './searchPanelHighlight'
-import type { SearchPanelModel } from './useSearchPanel'
+import type { CuerpoResultadosBusqueda } from './useResultadosBusqueda'
 
 function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
@@ -22,12 +22,12 @@ export function SearchPanelBody({
   query, loading, recent, productResults, negocioResults, cargandoNegocios, totalResultados, sugerencias,
   selectProduct, selectNegocio, viewAll, clearRecent, setQuery,
   preguntarAsistente, buscarConFoto, elegirSugerencia,
-}: SearchPanelModel) {
+}: CuerpoResultadosBusqueda) {
   const { t } = useTranslation()
   const consulta = query.trim()
 
   return (
-    <div className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-4 pb-4 pt-1">
+    <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-4 pb-4 pt-1">
       {consulta && (
         <button
           type="button"
