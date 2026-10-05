@@ -131,7 +131,7 @@ export default function TiendaHomePage() {
           {catalogoNuevo && <TiendaCatalogoNuevo nombre={nombre} />}
           {busquedaVacia && <TiendaCatalogoBusquedaVacia onLimpiar={limpiarFiltros} />}
           {!loading && !loadError && productos.length > 0 && (
-            <div className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 lg:grid-cols-[repeat(auto-fill,167px)] lg:justify-start lg:gap-x-4 lg:gap-y-5">
+            <div className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 sm:grid-cols-[repeat(auto-fill,167px)] sm:justify-start sm:gap-x-4 sm:gap-y-5">
               {productos.map((p) => (
                 <TiendaProductoCard
                   key={p.id}
