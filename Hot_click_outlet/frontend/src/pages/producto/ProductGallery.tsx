@@ -1,8 +1,6 @@
 import { useRef, useState, type TouchEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
-import { puedeVolverAtras } from '@/components/comprador/header/headerHelpers'
 import OptimizedImage from '@/components/ui/OptimizedImage'
 import { useToast } from '@/components/ui/Toast'
 import useWishlistStore from '@/store/wishlistStore'
@@ -37,7 +35,6 @@ type ProductGalleryProps = {
 
 export default function ProductGallery({ product, galeria, activeImg, onSelectImg, compacta = false, cubierta = false }: ProductGalleryProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const toast = useToast()
   const toggleWishlist = useWishlistStore((s) => s.toggle)
   const isLiked = useWishlistStore((s) => s.isLiked)
@@ -51,8 +48,8 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
   const estiloBoton = compacta ? 'estado' : 'principal'
   const tamanoIcono = compacta ? 18 : 19.2
   const iconos = compacta
-    ? { atras: ICONOS_PRODUCTO.atras, compartir: ICONOS_PRODUCTO.compartir, favorito: ICONOS_PRODUCTO.favorito }
-    : { atras: ICONOS_PRODUCTO.atras19, compartir: ICONOS_PRODUCTO.compartir19, favorito: ICONOS_PRODUCTO.favorito19 }
+    ? { compartir: ICONOS_PRODUCTO.compartir, favorito: ICONOS_PRODUCTO.favorito }
+    : { compartir: ICONOS_PRODUCTO.compartir19, favorito: ICONOS_PRODUCTO.favorito19 }
 
   function onTouchStart(e: TouchEvent) {
     touchStartX.current = e.touches[0]?.clientX ?? null
@@ -67,11 +64,6 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
     if (Math.abs(dx) < SWIPE_MIN_PX) return
     if (dx < 0) onSelectImg(Math.min(activeImg + 1, galeria.length - 1))
     else onSelectImg(Math.max(activeImg - 1, 0))
-  }
-
-  function volver() {
-    if (puedeVolverAtras(window.history.state)) navigate(-1)
-    else navigate('/productos')
   }
 
   async function compartir() {
@@ -140,11 +132,8 @@ export default function ProductGallery({ product, galeria, activeImg, onSelectIm
         {cubierta && <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-hc-n-0 lg:hidden" />}
 
         <div
-          className={`absolute inset-x-4 flex items-center justify-between lg:hidden ${compacta ? 'top-3' : 'top-4'}`}
+          className={`absolute inset-x-4 flex items-center justify-end lg:hidden ${compacta ? 'top-3' : 'top-4'}`}
         >
-          <BotonCirculoGaleria onClick={volver} etiqueta={t('common.back')} estilo={estiloBoton}>
-            <IconoFigma src={iconos.atras} size={tamanoIcono} />
-          </BotonCirculoGaleria>
           <div className={`flex items-center ${compacta ? 'gap-2' : 'gap-[10px]'}`}>
             <BotonCirculoGaleria onClick={() => void compartir()} etiqueta={t('product.share')} estilo={estiloBoton}>
               <IconoFigma src={iconos.compartir} size={tamanoIcono} />

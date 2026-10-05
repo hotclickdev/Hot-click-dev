@@ -15,6 +15,7 @@ import SiteVerification from '@/utils/siteVerification'
 import HtmlClassManager from '@/app/HtmlClassManager'
 import ConfigMovimiento from '@/app/ConfigMovimiento'
 import AppRoutes from '@/app/AppRoutes'
+import { MigasProvider } from '@/components/comprador/header/migasContexto'
 import ErrorBoundaryPorArea from '@/app/ErrorBoundaryPorArea'
 import useAuthStore from '@/store/authStore'
 import {
@@ -52,6 +53,7 @@ export default function App() {
           <PageProgressBar />
           <ScrollToTop />
           <AvisoSinConexion />
+          <MigasProvider>
           <Suspense fallback={<CargaDeRuta />}>
             <PageFade>
             <ErrorBoundaryPorArea>
@@ -59,6 +61,7 @@ export default function App() {
             </ErrorBoundaryPorArea>
           </PageFade>
           </Suspense>
+          </MigasProvider>
           <ConditionalWhatsAppFab />
           <AccessibilityPanel />
           <ConditionalChatModal />

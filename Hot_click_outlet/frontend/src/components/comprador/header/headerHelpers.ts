@@ -7,11 +7,20 @@ export function inicialesDe(nombre: string | null | undefined): string {
   return (primera[0] + palabras[palabras.length - 1][0]).toUpperCase()
 }
 
-/**
- * Indica si el historial del navegador permite volver sin salir del sitio.
- * `idx` lo guarda React Router en `history.state`; en la primera entrada vale 0.
- */
+/** `idx` lo guarda React Router en `history.state`; en la primera entrada vale 0. */
+export function indiceHistorial(estadoHistorial: unknown): number | null {
+  if (!estadoHistorial || typeof estadoHistorial !== 'object' || !('idx' in estadoHistorial)) return null
+  const idx = (estadoHistorial as { idx?: unknown }).idx
+  return typeof idx === 'number' ? idx : null
+}
+
+/** Verdadero si hay una entrada previa en esta visita, sin salir del sitio. */
 export function puedeVolverAtras(estadoHistorial: unknown): boolean {
-  const idx = (estadoHistorial as { idx?: unknown } | null)?.idx
-  return typeof idx === 'number' && idx > 0
+  const idx = indiceHistorial(estadoHistorial)
+  return idx != null && idx > 0
+}
+
+/** Hay una entrada adelante solo si el índice actual quedó detrás del máximo de esta visita. */
+export function puedeAvanzar(indice: number | null, indiceMaximo: number): boolean {
+  return indice != null && indice < indiceMaximo
 }

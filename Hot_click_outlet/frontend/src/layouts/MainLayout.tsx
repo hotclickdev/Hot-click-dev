@@ -2,6 +2,7 @@ import { useLayoutEffect, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import HeaderComprador from '@/components/comprador/header/HeaderComprador'
+import FilaRegreso from '@/components/comprador/header/FilaRegreso'
 import type { DestinoAtras, EncabezadoEscritorio, EncabezadoMovil } from '@/components/comprador/header/tiposHeader'
 import BarraInferior from '@/components/comprador/BarraInferior'
 import FooterComprador from '@/components/comprador/FooterComprador'
@@ -88,6 +89,8 @@ export default function MainLayout(props: MainLayoutProps) {
     return () => publicarBarraInferior(false)
   }, [barraInferior])
 
+  const esCheckout = pathname.startsWith('/checkout')
+
   return (
     <div className={`hc-figma-ui flex min-h-screen flex-col overflow-x-clip ${fondo === 'blanco' ? 'bg-hc-n-0' : 'bg-hc-n-50'}`}>
       <a
@@ -102,7 +105,13 @@ export default function MainLayout(props: MainLayoutProps) {
         escritorio={encabezadoEscritorio}
         barraInterna={props.variante === 'interna' ? { titulo: props.titulo, atras: props.atras, acciones: props.acciones, esTituloPrincipal: props.esTituloPrincipal } : undefined}
         marcaCentrada={props.variante === 'marca' ? props.marcaCentrada : undefined}
-      />
+      >
+        <FilaRegreso
+          conLogoMovil={variante === 'propia' && !esCheckout}
+          ocultarEnMovil={esCheckout}
+          atras={props.variante === 'interna' ? props.atras : undefined}
+        />
+      </HeaderComprador>
       <main id="main-content" className="flex-1" tabIndex={-1}>
         <ReturnVisitorBanner />
         {children}

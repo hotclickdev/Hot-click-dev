@@ -29,7 +29,6 @@ export default function TiendaLayout() {
   const [infoEstado, setInfoEstado] = useState('cargando')
   const cantidadCarrito = totalItems()
   const esPerfil = useMatch({ path: '/tienda/:slug', end: true }) !== null
-  const esExito = useMatch({ path: '/tienda/:slug/checkout/exito', end: true }) !== null
 
   const cargarInfo = useCallback(() => {
     setInfoEstado('cargando')
@@ -94,8 +93,6 @@ export default function TiendaLayout() {
         nombre={nombre}
         logoUrl={empresaVista?.logoUrl}
         cantidadCarrito={cantidadCarrito}
-        soloEscritorio={esPerfil}
-        conAtras={!esPerfil && !esExito}
       />
       <main className={`flex-1 ${esPerfil && cantidadCarrito > 0 ? 'pb-24 md:pb-0' : ''}`}>
         <Outlet />

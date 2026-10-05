@@ -5,7 +5,7 @@ import Spinner from '@/components/ui/Spinner'
 import {
   esProductoCotizable, parecidosDisponibles, parseTallas, seoDesdeProducto, tabsDesdeProducto,
 } from './producto/productoHelpers'
-import ProductBreadcrumb from './producto/ProductBreadcrumb'
+import { usePublicarMigas } from '@/components/comprador/header/migasContexto'
 import ProductGallery from './producto/ProductGallery'
 import ProductInfo from './producto/ProductInfo'
 import ProductTabs from './producto/ProductTabs'
@@ -32,6 +32,11 @@ export default function ProductDetailPage() {
     turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   } = useProductDetail(id, t)
   const masDeLaMarca = useMasDeLaMarca(product)
+  usePublicarMigas({
+    actual: product?.titulo || product?.nombre || undefined,
+    categoriaNombre: product?.categoriaNombre || undefined,
+    categoriaId: product?.categoriaId,
+  })
 
   // Figma 28:839: la ficha dibuja su propia barra (atrás, compartir, favorito sobre la foto) y una barra
   // de compra fija, así que no lleva barra superior ni inferior en móvil. En desktop usa el header completo.
@@ -87,9 +92,7 @@ export default function ProductDetailPage() {
       <ProductDetailSeo product={product} seoTitle={seoTitle} seoDescription={seoDescription} />
       <div className="bg-hc-n-0 pb-[83px] lg:bg-transparent lg:pb-0">
         <div className="lg:mx-auto lg:w-[calc(100%-4rem)] lg:max-w-[1200px] lg:pt-5">
-          <ProductBreadcrumb product={product} />
-
-          <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,644px)_minmax(360px,1fr)] lg:items-start lg:gap-12 lg:pb-10">
+          <div className="lg:grid lg:grid-cols-[minmax(0,644px)_minmax(360px,1fr)] lg:items-start lg:gap-12 lg:pb-10">
             <ProductGallery
               product={product}
               galeria={galeria}
