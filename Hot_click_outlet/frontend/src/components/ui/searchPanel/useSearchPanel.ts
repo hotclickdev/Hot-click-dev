@@ -63,7 +63,7 @@ export function useSearchPanel() {
     }
 
     setLoading(true)
-    asegurarCatalogoBusqueda().finally(() => {
+    void asegurarCatalogoBusqueda().finally(() => {
       setAllProducts(getProductCache() ?? [])
       setAllBrands(getBrandCache() ?? [])
       setLoading(false)
