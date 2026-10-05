@@ -58,6 +58,7 @@ class TelegramMessageRoutingHelper {
 
     /** @return true si el mensaje fue consumido. */
     boolean manejarComandoSlash(TelegramVinculacion v, long chatId, String texto) {
+        if (texto == null) return false;
         if (esMenu(texto)) {
             v.setContexto(null);
             vinculacionRepository.save(v);

@@ -48,6 +48,12 @@ class TelegramVentaCantidadTest {
     }
 
     @Test
+    void textoNuloNoEsUnComando() {
+        var routing = new TelegramMessageRoutingHelper();
+        assertThat(routing.manejarComandoSlash(null, 1L, null)).isFalse();
+    }
+
+    @Test
     void menuSinBarraTambienAbreElMenu() {
         assertThat(TelegramMessageRoutingHelper.esMenu("Menu")).isTrue();
         assertThat(TelegramMessageRoutingHelper.esMenu("menú")).isTrue();
