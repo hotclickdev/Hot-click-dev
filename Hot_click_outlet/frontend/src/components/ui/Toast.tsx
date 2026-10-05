@@ -7,6 +7,9 @@ import { varianteDeRuta, type VariantePieza } from './varianteVisitante'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
 
+/** Duración por defecto de un toast que se cierra solo. */
+export const DURACION_TOAST_MS = 5000
+
 type ToastAccion = { label: string; onClick: () => void }
 
 type ToastItem = {
@@ -18,6 +21,13 @@ type ToastItem = {
 }
 
 type ShowToastFn = (opts: { message: string; type?: ToastType; duration?: number; accion?: ToastAccion }) => void
+
+/** null = queda hasta la X. Si no, milisegundos hasta ocultarlo. Los errores solo se van si el llamador pasa `duration`. */
+export function msCierreToast(type: ToastType, duration: number | undefined, tieneAccion: boolean): number | null {
+  if (tieneAccion) return null
+  if (type === 'error' && duration == null) return null
+  return duration ?? DURACION_TOAST_MS
+}
 
 function tipoGlifoToast(type: ToastType) {
   if (type === 'success') return 'check'
@@ -32,7 +42,8 @@ let toastId = 0
 
 /**
  * Toasts según Brand Book cap. 7.5: esquina inferior izquierda, fondo neutro 900,
- * radio 12, 5 s (los errores persisten hasta que el usuario los descarte),
+ * radio 12, 5 s (los errores persisten hasta que el usuario los descarte,
+ * salvo que el llamador pase `duration`),
  * máximo 3 apilados, icono con color semántico + texto (el color nunca es el
  * único indicador, cap. 9). En móvil se elevan sobre el BottomNav.
  */
@@ -43,16 +54,17 @@ let toastId = 0
 export function ToastProvider({ children, variantePorRuta = false }: { children: ReactNode; variantePorRuta?: boolean }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const toast = useCallback<ShowToastFn>(({ message, type = 'info', duration = 5000, accion }) => {
+  const toast = useCallback<ShowToastFn>(({ message, type = 'info', duration, accion }) => {
     const id = ++toastId
     // ⚠️ COMPARTIDO: la variante se fija al crear el toast, según la ruta (visitante = Figma, paneles = clásica).
     const variante: VariantePieza = variantePorRuta
       ? varianteDeRuta(globalThis.location?.pathname ?? '/', useAuthStore.getState().userRole)
       : 'clasica'
     setToasts((prev) => [...prev, { id, message, type, accion, variante }].slice(-3))
-    if (type !== 'error' && !accion) {
+    const ms = msCierreToast(type, duration, Boolean(accion))
+    if (ms != null) {
       const filterOut = (prev: ToastItem[]) => prev.filter((t) => t.id !== id)
-      setTimeout(() => setToasts(filterOut), duration)
+      setTimeout(() => setToasts(filterOut), ms)
     }
   }, [variantePorRuta])
 

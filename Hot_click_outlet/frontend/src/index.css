@@ -110,15 +110,28 @@
 /* ── Modo oscuro — Brand Book cap. 8: la marca sube un paso de luminosidad ── */
 html.dark {
   --hc-surface-2: var(--hc-surface-raised);
-  --hc-surface-3: #262D38;
+  --hc-surface-3: #232830;
   --hc-text-2: var(--hc-text-secondary);
   --hc-muted: var(--hc-text-secondary);
   --hc-accent: var(--hc-link);
   --hc-accent-hover: var(--hc-blue-300);
   --hc-shadow: rgba(0, 0, 0, 0.55);
-  --hc-glass-bg: rgba(22, 27, 34, 0.70);
+  --hc-glass-bg: rgba(12, 14, 18, 0.70);
   --hc-glass-border: rgba(244, 246, 249, 0.08);
-  --hc-glass-strong-bg: rgba(22, 27, 34, 0.86);
+  --hc-glass-strong-bg: rgba(12, 14, 18, 0.86);
+  --color-hc-bg: var(--hc-bg);
+  --color-hc-surface: var(--hc-surface);
+  --color-hc-surface-2: var(--hc-surface-2);
+  --color-hc-border: var(--hc-border);
+  --color-hc-text: var(--hc-text);
+  --color-hc-muted: var(--hc-muted);
+  --color-hc-primary: var(--hc-primary);
+  --color-hc-primary-text: var(--hc-primary-text);
+  --color-hc-accent: var(--hc-accent);
+  --color-hc-success: var(--hc-success);
+  --color-hc-success-text: var(--hc-success-text);
+  --color-hc-danger: var(--hc-danger);
+  --color-hc-warning: var(--hc-warning);
   --hc-glass-strong-border: rgba(244, 246, 249, 0.12);
   --hc-scrollbar: rgba(244, 246, 249, 0.14);
   --hc-scrollbar-hover: rgba(244, 246, 249, 0.28);
@@ -643,16 +656,16 @@ html.dark .hc-isotipo-placa {
 
 html.dark .hc-sistema-theme,
 html.dark .hc-superadmin-theme {
-  --hc-surface-2: #1E242E;
-  --hc-surface-3: #262D38;
+  --hc-surface-2: #14171C;
+  --hc-surface-3: #232830;
   --hc-text-2:    #A7B0BC;
   --hc-muted:     #A7B0BC;
   --hc-accent:       #7AA3F2;
   --hc-accent-hover: #97B7F3;
   --hc-shadow: rgba(0, 0, 0, 0.55);
-  --hc-glass-bg: rgba(22, 27, 34, 0.70);
+  --hc-glass-bg: rgba(12, 14, 18, 0.70);
   --hc-glass-border: rgba(244, 246, 249, 0.08);
-  --hc-glass-strong-bg: rgba(22, 27, 34, 0.86);
+  --hc-glass-strong-bg: rgba(12, 14, 18, 0.86);
   --hc-glass-strong-border: rgba(244, 246, 249, 0.12);
   --hc-scrollbar: rgba(244, 246, 249, 0.14);
   --hc-scrollbar-hover: rgba(244, 246, 249, 0.28);
@@ -688,9 +701,9 @@ html.dark .hc-superadmin-theme {
 :root tr:hover { background-color: var(--hc-surface-2) !important; }
 
 /* ── DARK MODE: remap hardcoded Tailwind → paleta Brand Book ── */
-html.dark [class*="bg-[#0a0a0b]"]   { background-color: #0E1116 !important; }
-html.dark [class*="bg-[#111114]"]   { background-color: #161B22 !important; }
-html.dark [class*="bg-[#1a1a1f]"]   { background-color: #1E242E !important; }
+html.dark [class*="bg-[#0a0a0b]"]   { background-color: #050608 !important; }
+html.dark [class*="bg-[#111114]"]   { background-color: #0C0E12 !important; }
+html.dark [class*="bg-[#1a1a1f]"]   { background-color: #14171C !important; }
 html.dark [class*="text-[#e8e8ed]"] { color: #F4F6F9 !important; }
 html.dark [class*="text-[#8e8e9a]"] { color: #A7B0BC !important; }
 html.dark [class*="border-white/"]  { border-color: var(--hc-border) !important; }
@@ -724,13 +737,13 @@ html.dark [class*="hover:text-white"]:hover { color: #ffffff !important; }
 /* No unsetear chrome dentro de paneles con tema propio (seller / admin /
    drawers). Sin exclusión, aside/header pierden bg-hc-surface y el texto
    claro queda sobre canvas claro. */
-html.dark header:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *)),
-html.dark aside:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *)),
-html.dark footer:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *)) {
+html.dark header:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *, .hc-figma-ui, .hc-figma-ui *, .hc-tenant-theme, .hc-tenant-theme *)),
+html.dark aside:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *, .hc-figma-ui, .hc-figma-ui *, .hc-tenant-theme, .hc-tenant-theme *)),
+html.dark footer:not(:is(.hc-seller-theme *, .hc-sistema-theme *, .hc-superadmin-theme *, .hc-drawer-surface, .hc-drawer-surface *, .hc-figma-ui, .hc-figma-ui *, .hc-tenant-theme, .hc-tenant-theme *)) {
   background-color: unset !important;
   border-color: unset !important;
 }
-html.dark .hc-bottom-nav      { background-color: rgba(14,17,22,0.97) !important; border-top-color: var(--hc-border) !important; }
+html.dark .hc-bottom-nav      { background-color: rgba(5,6,8,0.97) !important; border-top-color: var(--hc-border) !important; }
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea,
 html.dark select { background-color: unset !important; color: unset !important; border-color: unset !important; }
@@ -816,6 +829,57 @@ html.dark .hc-seller-theme select {
 html.dark .hc-seller-theme th,
 html.dark .hc-seller-theme td { color: var(--hc-text) !important; }
 html.dark .hc-seller-theme tr:hover { background-color: var(--hc-surface-2) !important; }
+
+/* Negro tinta en la tienda y el cliente: la escala n-* de Figma es clara.
+   text-hc-n-0 se queda blanco (botones). El QR y la perilla llevan .hc-papel-blanco.
+   [class~="bg-hc-n-0"] no alcanza a "lg:bg-hc-n-0": en desktop esa hoja seguía blanca
+   y el texto ya remapeado (#F4F6F9) quedaba ilegible. */
+html.dark [class~="bg-hc-n-0"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #14171C !important; }
+@media (min-width: 64rem) {
+  html.dark [class~="lg:bg-hc-n-0"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #14171C !important; }
+  /* Hero del home: en claro es la hoja blanca de Figma (n-0). En oscuro es el lienzo,
+     y la columna izquierda (bg-hc-n-0 + lg:bg-transparent) no debe quedarse en tarjeta. */
+  .hc-banda-home { background-color: var(--hc-n-0); }
+  html.dark .hc-banda-home { background-color: var(--hc-bg); }
+  html.dark .hc-banda-home > [class~="bg-hc-n-0"][class~="lg:bg-transparent"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) {
+    background-color: transparent !important;
+  }
+}
+html.dark [class~="bg-hc-n-50"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #050608 !important; }
+html.dark [class~="bg-hc-n-100"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #232830 !important; }
+html.dark [class~="bg-hc-n-200"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #232830 !important; }
+html.dark [class~="bg-hc-blue-50"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #13203A !important; }
+html.dark [class~="bg-hc-red-50"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #3A1513 !important; }
+html.dark [class~="bg-hc-red-500"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #F0524A !important; }
+html.dark [class~="bg-hc-n-900"][class~="text-hc-n-0"] {
+  background-color: #F4F6F9 !important;
+  color: #14171C !important;
+  border-color: #F4F6F9 !important;
+}
+html.dark [class*="border-hc-n-100"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { border-color: #10141A !important; }
+html.dark [class*="border-hc-n-200"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { border-color: #10141A !important; }
+html.dark [class*="border-hc-n-300"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { border-color: #1C2430 !important; }
+html.dark [class*="border-hc-blue-100"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { border-color: #1A2744 !important; }
+html.dark [class*="border-hc-n-0"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { border-color: #10141A !important; }
+html.dark [class~="text-hc-n-900"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { color: #F4F6F9 !important; }
+html.dark [class~="text-hc-n-600"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { color: #A7B0BC !important; }
+html.dark [class~="text-hc-n-500"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { color: #A7B0BC !important; }
+html.dark [class~="text-hc-n-400"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { color: #5C6571 !important; }
+html.dark [class~="text-hc-blue-600"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { color: #7AA3F2 !important; }
+html.dark [class~="text-hc-red-600"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { color: #F0524A !important; }
+html.dark [class~="hover:bg-hc-n-50"]:hover,
+html.dark [class~="hover:bg-hc-n-100"]:hover { background-color: #232830 !important; }
+html.dark [class~="hover:text-hc-n-900"]:hover { color: #FFFFFF !important; }
+html.dark [class~="placeholder:text-hc-n-500"]::placeholder,
+html.dark [class~="placeholder:text-hc-n-400"]::placeholder,
+html.dark [class~="placeholder:text-hc-n-300"]::placeholder { color: #5C6571; }
+html.dark :is(.hc-figma-ui, .hc-tenant-theme) input:not([type="checkbox"]):not([type="radio"]):not(.hc-input-libre),
+html.dark :is(.hc-figma-ui, .hc-tenant-theme) textarea:not(.hc-input-libre),
+html.dark :is(.hc-figma-ui, .hc-tenant-theme) select {
+  background-color: #0C0E12 !important;
+  color: #F4F6F9 !important;
+  border-color: #232830 !important;
+}
 
 /* Superficies Tailwind `bg-white` dentro del panel: siguen el canvas oscuro.
    QR / preview Google: marcar `.hc-papel-blanco` (el código tiene que ir sobre blanco). */

@@ -49,9 +49,9 @@ describe('contraste de tokens (WCAG 2.x)', () => {
     for (const texto of ['hc-n-600', 'hc-red-600']) {
       for (const fondo of FONDOS) expect(contraste(token(texto), token(fondo)), `${texto} / ${fondo}`).toBeGreaterThanOrEqual(4.5)
     }
-    // Primario como texto en el tema superadmin (#C4181E) y en oscuro (#F0524A sobre #161B22).
+    // Primario como texto en el tema superadmin (#C4181E) y en oscuro (#F0524A sobre #0C0E12).
     expect(contraste('#C4181E', token('hc-n-0'))).toBeGreaterThanOrEqual(4.5)
-    expect(contraste('#F0524A', '#161B22')).toBeGreaterThanOrEqual(4.5)
+    expect(contraste('#F0524A', '#0C0E12')).toBeGreaterThanOrEqual(4.5)
     expect(CSS).toMatch(/--hc-primary-text:\s*var\(--hc-red-600\)/)
   })
 
@@ -59,9 +59,9 @@ describe('contraste de tokens (WCAG 2.x)', () => {
     for (const fondo of [...FONDOS, 'hc-success-bg']) {
       expect(contraste(token('hc-success-text'), token(fondo)), `hc-success-text / ${fondo}`).toBeGreaterThanOrEqual(4.5)
     }
-    // Crema de Sistema (#ede5da) y superficies oscuras (#161B22, #0E1116, success-bg oscuro #10301F).
+    // Crema de Sistema (#ede5da) y superficies oscuras (#0C0E12, #050608, success-bg oscuro #10301F).
     expect(contraste(token('hc-success-text'), '#EDE5DA')).toBeGreaterThanOrEqual(4.5)
-    for (const fondo of ['#161B22', '#0E1116', '#10301F']) expect(contraste('#3DCB82', fondo)).toBeGreaterThanOrEqual(4.5)
+    for (const fondo of ['#0C0E12', '#050608', '#10301F']) expect(contraste('#3DCB82', fondo)).toBeGreaterThanOrEqual(4.5)
     expect(CSS.match(/--hc-success-text:\s*#107142/g)?.length).toBe(3)
     expect(CSS.match(/--hc-success-text:\s*#3DCB82/g)?.length).toBe(2)
   })

@@ -314,6 +314,20 @@
     "precioComision": "{{comision}}% commission per sale (minimum ₡{{minimo}}, payment gateway included)",
     "ctaFinalTitle": "Ready to sell with no monthly fee?"
   },
+  "planesPublicos": {
+    "metaTitle": "The three plans to sell on HotClick",
+    "metaDescription": "Emprendedor with no monthly fee, PYME, and Negocio Plus. Pick a plan and open its page.",
+    "titulo": "Choose how you want to sell",
+    "intro": "All three plans are here. Open the one that fits: each has its own page, and signup is the same.",
+    "conocer": "See {{plan}}",
+    "empezar": "Start with {{plan}}",
+    "verLosTres": "See all three plans",
+    "precio": {
+      "emprendimientos": "₡0/mo",
+      "pymes": "₡9,900/mo",
+      "negocio-plus": "₡24,900/mo"
+    }
+  },
   "pyme": {
     "heroBadge": "For businesses that already sell and need a team",
     "heroSecondary": "Just starting out, no monthly fee",

@@ -1,29 +1,37 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Seo from '@/components/seo/Seo'
 import Chip from '@/components/comprador/Chip'
 import CategoryTile from '@/components/comprador/CategoryTile'
 import IconoFigma from '@/components/comprador/IconoFigma'
-import { useCategoriasCatalogo } from '@/components/comprador/useCategoriasCatalogo'
 import useChatStore from '@/store/chatStore'
 import { ICONOS_CATALOGO } from '@/pages/catalogo/iconosCatalogo'
 import { CLASE_GRILLA_TARJETAS } from '@/pages/catalogo/catalogoGrilla'
-import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '@/components/comprador/negocios/negociosPublicos'
+import { PLANES_DIRECTORIO, type AliasPlan } from '@/components/comprador/negocios/negociosPublicos'
 import { filtrarCategorias } from './categoriasFiltro'
+import { rutaCategoriasPlan } from './categoriasPorPlan'
+import { useCategoriasPorPlan } from './useCategoriasPorPlan'
 
 /**
  * Pestaña Categorías (Figma `43:1454`): barra propia con título y buscador, chip "No sé qué busco" que abre
  * el asistente y categorías reales con foto y cantidad; cada una abre el catálogo filtrado.
  * Si lo escrito no coincide con ninguna categoría, Enter lo busca como producto en el catálogo.
+ * «Todos» muestra el catálogo completo; cada plan filtra la grilla en esta misma ruta (`?plan=`).
  */
 export default function CategoriasPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { categorias, cargando } = useCategoriasCatalogo()
+  const [params, setParams] = useSearchParams()
+  const { categorias, cargando, error, plan } = useCategoriasPorPlan(params.get('plan'))
   const [texto, setTexto] = useState('')
   const visibles = useMemo(() => filtrarCategorias(categorias, texto), [categorias, texto])
+
+  const elegirPlan = (alias: AliasPlan | null) => {
+    const consulta = rutaCategoriasPlan(alias).split('?')[1] ?? ''
+    setParams(new URLSearchParams(consulta), { replace: true })
+  }
 
   const alBuscar = (e: FormEvent) => {
     e.preventDefault()
@@ -59,13 +67,19 @@ export default function CategoriasPage() {
           </div>
           <nav aria-label={t('negocios.navAria')} className="flex flex-col gap-2">
             <h2 className="text-[13px] font-semibold leading-[normal] text-hc-n-600">{t('negocios.navAria')}</h2>
-            <div className="flex flex-wrap gap-2">
-              {PLANES_DIRECTORIO.map((p) => <Chip key={p.alias} texto={t(p.nav)} to={rutaDirectorioPlan(p.alias)} />)}
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t('negocios.filtrarPlan')}>
+              <Chip texto={t('negocios.todos')} negrita activo={!plan} onClick={() => elegirPlan(null)} />
+              {PLANES_DIRECTORIO.map((p) => (
+                <Chip key={p.alias} texto={t(p.nav)} negrita activo={plan?.alias === p.alias} onClick={() => elegirPlan(p.alias)} />
+              ))}
             </div>
           </nav>
           {cargando && <p className="text-[14px] text-hc-n-600">{t('products.loading')}</p>}
-          {!cargando && visibles.length === 0 && (
-            <p className="text-[14px] text-hc-n-600">{t('products.categoriesEmpty')}</p>
+          {error && <p className="text-[14px] text-hc-n-600">{t('products.errorLoadCategories')}</p>}
+          {!cargando && !error && visibles.length === 0 && (
+            <p className="text-[14px] text-hc-n-600">
+              {plan && !texto.trim() ? t('negocios.sinPlan', { plan: t(plan.titulo) }) : t('products.categoriesEmpty')}
+            </p>
           )}
           <div className={`${CLASE_GRILLA_TARJETAS} lg:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]`}>
             {visibles.map((c) => (

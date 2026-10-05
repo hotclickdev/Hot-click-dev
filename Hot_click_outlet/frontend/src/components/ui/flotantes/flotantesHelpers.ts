@@ -55,7 +55,7 @@ export function espacioReservadoMovil({ hayBarra, fabVisible }: EspacioFlotante)
  */
 const PREFIJOS_SIN_CAMBIO = [
   '/emprendedor', '/pyme', '/negocio-plus', '/seleccionar-negocio', '/mode-select', '/registrar-negocio',
-  '/registro-empresa', '/emprende', '/para-emprendedores', '/para-pymes', '/visitante',
+  '/registro-empresa', '/emprende', '/para-emprendedores', '/para-pymes', '/planes', '/visitante',
 ]
 
 function esRutaSinCambio(pathname: string): boolean {

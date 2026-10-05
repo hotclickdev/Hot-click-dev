@@ -4,6 +4,7 @@ import type { FiltrosExtra, TiendaCatalogo } from './buscarExplorar'
 import type { CatalogCategoria, CatalogCounts } from './catalogoTipos'
 import Casilla from './Casilla'
 import FiltrosHoja from './FiltrosHoja'
+import RangoPrecio from './RangoPrecio'
 
 export type FiltrosPanelProps = {
   priceMin: string
@@ -26,21 +27,6 @@ export type FiltrosPanelProps = {
   variante?: 'hoja' | 'columna'
 }
 
-function CampoPrecioColumna({ etiqueta, valor, onCambiar }: { etiqueta: string; valor: string; onCambiar: (v: string) => void }) {
-  return (
-    <input
-      type="number"
-      inputMode="numeric"
-      min={0}
-      value={valor}
-      onChange={(e) => onCambiar(e.target.value)}
-      placeholder="₡0"
-      aria-label={etiqueta}
-      className="hc-input-libre w-full min-w-0 flex-1 rounded-[9px] border border-hc-n-200 bg-hc-n-0 px-[10px] py-2 font-display text-[13px] font-semibold leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-900"
-    />
-  )
-}
-
 function GrupoColumna({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <fieldset className="flex flex-col gap-[10px] border-t border-hc-n-200 px-4 py-[14px] first:border-t-0">
@@ -52,7 +38,7 @@ function GrupoColumna({ titulo, children }: { titulo: string; children: ReactNod
 
 /** Columna de filtros de desktop (Figma `30:1899`, 260 px): casillas en lugar de chips e interruptores. */
 function FiltrosColumna({
-  priceMin, priceMax, setPriceMin, setPriceMax,
+  priceMin, priceMax, setPriceMin, setPriceMax, precioTope,
   categories, categoryTotalCount, category, setCategory,
   tiendas, extras, setExtras, soloConStock, setSoloConStock, hayRetiro,
 }: FiltrosPanelProps) {
@@ -83,10 +69,7 @@ function FiltrosColumna({
         </GrupoColumna>
       )}
       <GrupoColumna titulo={t('products.priceShort')}>
-        <div className="flex gap-2">
-          <CampoPrecioColumna etiqueta={t('products.priceMin')} valor={priceMin} onCambiar={setPriceMin} />
-          <CampoPrecioColumna etiqueta={t('products.priceMax')} valor={priceMax} onCambiar={setPriceMax} />
-        </div>
+        <RangoPrecio tope={precioTope ?? 0} priceMin={priceMin} priceMax={priceMax} setPriceMin={setPriceMin} setPriceMax={setPriceMax} />
       </GrupoColumna>
       {tiendas.length > 0 && (
         <GrupoColumna titulo={t('products.store')}>

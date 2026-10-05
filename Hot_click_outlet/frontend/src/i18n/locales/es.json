@@ -314,6 +314,20 @@
     "precioComision": "Comisión {{comision}}% por venta (mínimo ₡{{minimo}}, incluye la pasarela de pago)",
     "ctaFinalTitle": "¿Listo para vender sin mensualidad?"
   },
+  "planesPublicos": {
+    "metaTitle": "Los tres planes para vender en HotClick",
+    "metaDescription": "Emprendedor sin mensualidad, PYME y Negocio Plus. Elegí el plan y entrá a su página.",
+    "titulo": "Elegí cómo querés vender",
+    "intro": "Los tres planes están acá. Entrá al que te sirva: cada uno tiene su página, y el alta es la misma.",
+    "conocer": "Conocer {{plan}}",
+    "empezar": "Empezar con {{plan}}",
+    "verLosTres": "Ver los tres planes",
+    "precio": {
+      "emprendimientos": "₡0/mes",
+      "pymes": "₡9.900/mes",
+      "negocio-plus": "₡24.900/mes"
+    }
+  },
   "pyme": {
     "heroBadge": "Para negocios que ya venden y necesitan equipo",
     "heroSecondary": "Recién arranco, sin mensualidad",

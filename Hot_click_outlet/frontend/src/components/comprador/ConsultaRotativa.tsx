@@ -33,7 +33,7 @@ export default function ConsultaRotativa({ onEnviar, className = '' }: ConsultaR
   return (
     <form
       onSubmit={enviar}
-      className={`flex h-12 items-center gap-[10px] rounded-[12px] border-[1.5px] border-hc-blue-100 bg-hc-n-0 py-[6px] pl-[14px] pr-[6px] ${className}`}
+      className={`flex h-12 items-center gap-[10px] rounded-[12px] border-[1.5px] border-hc-blue-600 bg-hc-n-0 py-[6px] pl-[14px] pr-[6px] shadow-[0_0_0_3px_var(--hc-blue-100)] ${className}`}
     >
       <IconoFigma src={ICONOS_COMPRADOR.consultaDestello} size={18} className="text-hc-blue-600" />
       <div className="relative h-[22px] min-w-0 flex-1 overflow-hidden">
@@ -50,7 +50,7 @@ export default function ConsultaRotativa({ onEnviar, className = '' }: ConsultaR
           <button
             type="button"
             onClick={() => onEnviar(pregunta)}
-            className="absolute inset-0 whitespace-nowrap text-left text-[14px] text-hc-n-600 transition-opacity ease-out motion-reduce:transition-none"
+            className="absolute inset-0 whitespace-nowrap text-left text-[14px] font-semibold text-hc-blue-600 transition-opacity ease-out motion-reduce:transition-none"
             style={{ opacity: saliendo ? 0 : 1, transitionDuration: `${SALIDA_PREGUNTA_MS}ms` }}
           >
             <FraseEscalera key={indice} texto={pregunta} />

@@ -71,7 +71,7 @@ export default function HomePage() {
 
       <section
         aria-labelledby="home-titulo"
-        className="flex flex-col lg:flex-row lg:gap-14 lg:bg-hc-n-0 lg:px-8 lg:pb-10 lg:pt-9 xl:px-[max(120px,calc((100%_-_1200px)/2))]"
+        className="hc-banda-home flex flex-col lg:flex-row lg:gap-14 lg:px-8 lg:pb-10 lg:pt-9 xl:px-[max(120px,calc((100%_-_1200px)/2))]"
       >
         <div className="flex flex-col gap-3 bg-hc-n-0 py-[18px] lg:w-[420px] lg:shrink-0 lg:gap-4 lg:bg-transparent lg:p-0">
           <div className="flex flex-col gap-1 px-4 lg:gap-4 lg:px-0">
@@ -127,7 +127,7 @@ export default function HomePage() {
               titulo={t('home.compra.categorias')}
               accion={{ texto: t('home.compra.todas'), textoDesktop: t('home.compra.todasDesktop'), to: '/categorias' }}
             />
-            <ul className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-[18px] lg:grid-cols-[repeat(6,minmax(0,167px))] lg:gap-x-4">
+            <ul className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-[18px] sm:grid-cols-[repeat(auto-fill,167px)] sm:justify-start sm:gap-x-4 lg:grid-cols-[repeat(6,minmax(0,167px))] lg:justify-between lg:gap-x-4">
               {categorias.slice(0, MAX_CATEGORIAS_HOME).map((c) => (
                 <li key={c.id}>
                   <CategoryTile nombre={c.nombre} cantidad={c.cantidad} fotoUrl={c.fotoUrl} to={rutaCategoria(c.id)} />
@@ -149,7 +149,7 @@ export default function HomePage() {
             titulo={t('home.compra.nuevos')}
             accion={{ texto: t('home.compra.verTodo'), textoDesktop: t('home.compra.verCatalogo'), to: '/productos' }}
           />
-          <ul className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 lg:grid-cols-[repeat(6,minmax(0,167px))] lg:gap-x-4">
+          <ul className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 sm:grid-cols-[repeat(auto-fill,167px)] sm:justify-start sm:gap-x-4 lg:grid-cols-[repeat(6,minmax(0,167px))] lg:justify-between lg:gap-x-4">
             {nuevos.map((p, i) => (
               <li key={p.id} className={i >= 4 ? 'hidden lg:block' : undefined}>
                 <ProductCard product={p} className="h-full" />

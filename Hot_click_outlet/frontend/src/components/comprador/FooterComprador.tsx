@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
-import { RUTA_VENDE } from './header/useHeaderComprador'
+import { bannerMuestraSinMensualidad, destinoBannerPlanes } from './negocios/negociosPublicos'
 import { abrirAccesibilidad } from '@/components/ui/accessibility/abrirAccesibilidadApi'
 import { abrirPreferenciasCookies } from '@/components/ui/cookies/preferenciasCookiesApi'
 
@@ -30,16 +30,21 @@ const ACCIONES: ReadonlyArray<{ clave: string; abrir: () => void }> = [
 
 function BannerVendedor() {
   const { t } = useTranslation()
+  const { pathname, search } = useLocation()
+  const destino = destinoBannerPlanes(pathname, search)
+  const sinMensualidad = bannerMuestraSinMensualidad(destino)
   return (
     <Link
-      to={RUTA_VENDE}
+      to={destino}
       className="flex flex-col gap-[2px] bg-hc-blue-900 p-4 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-[22px] xl:px-[max(120px,calc((100%_-_1200px)/2))]"
     >
       <span className="flex flex-col gap-[2px] whitespace-nowrap">
         <span className="text-[12px] leading-[14px] text-hc-blue-100 lg:text-[13px] lg:leading-[15px]">{t('comprador.footer.bannerPregunta')}</span>
         <span className="flex items-center gap-1 font-display text-[15px] font-semibold leading-[19px] text-hc-n-0 lg:text-[18px] lg:leading-[23px]">
           <span className="lg:hidden">{t('comprador.footer.bannerTitulo')}</span>
-          <span className="hidden lg:inline">{t('comprador.footer.bannerTituloDesktop')}</span>
+          <span className="hidden lg:inline">
+            {t(sinMensualidad ? 'comprador.footer.bannerTituloDesktop' : 'comprador.footer.bannerTitulo')}
+          </span>
           <IconoFigma src={ICONOS_COMPRADOR.bannerFlecha} size={16} className="lg:hidden" />
         </span>
       </span>

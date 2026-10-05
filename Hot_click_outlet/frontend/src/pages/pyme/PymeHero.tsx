@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
+import { RUTA_COMPARAR_PLANES } from '@/components/comprador/negocios/negociosPublicos'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
 import PymeHeroPanel from './PymeHeroPanel'
 
@@ -76,6 +77,10 @@ export default function PymeHero() {
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
             <Link to="/para-emprendedores" style={{ color: 'var(--hc-text)' }}>
               {t('pyme.heroSecondary')}
+            </Link>
+            {' · '}
+            <Link to={RUTA_COMPARAR_PLANES} className="font-semibold text-hc-blue-600">
+              {t('planesPublicos.verLosTres')}
             </Link>
           </p>
         </div>

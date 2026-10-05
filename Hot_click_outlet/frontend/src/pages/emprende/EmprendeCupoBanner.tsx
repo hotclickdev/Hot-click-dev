@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { RUTA_COMPARAR_PLANES } from '@/components/comprador/negocios/negociosPublicos'
 import useCupoEmprende from './useCupoEmprende'
 
 type Props = {
@@ -32,7 +33,7 @@ export default function EmprendeCupoBanner({ compact = false }: Props) {
       </p>
       {lleno && !compact ? (
         <Link
-          to="#pyme"
+          to={RUTA_COMPARAR_PLANES}
           className="inline-flex mt-3 text-sm font-semibold min-h-[44px] items-center"
           style={{ color: 'var(--hc-primary-text)' }}
         >

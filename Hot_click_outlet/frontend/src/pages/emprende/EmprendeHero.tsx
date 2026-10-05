@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
+import { RUTA_COMPARAR_PLANES } from '@/components/comprador/negocios/negociosPublicos'
 import { PLAN_EMPRENDEDOR } from './emprendePrecios'
 
 /** Hero de /emprende. Visitante ve la propuesta completa; dueño ya logueado ve una versión corta. */
@@ -77,6 +78,9 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
           {t('emprende.ctaCrear')}
         </Link>
       </motion.div>
+      <Link to={RUTA_COMPARAR_PLANES} className="mt-4 inline-flex text-sm font-semibold text-hc-blue-600">
+        {t('planesPublicos.verLosTres')}
+      </Link>
     </header>
   )
 }

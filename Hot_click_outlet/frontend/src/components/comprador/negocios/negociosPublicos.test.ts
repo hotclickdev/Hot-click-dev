@@ -4,7 +4,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
 import i18n from '@/i18n'
 import type { NegocioPublico } from '@/services/negocioService'
-import { PLANES_DIRECTORIO, normalizarListaNegocios, planDesdeParam, rutaDirectorioPlan, rutaTienda } from './negociosPublicos'
+import {
+  PLANES_DIRECTORIO, bannerMuestraSinMensualidad, destinoBannerPlanes, normalizarListaNegocios,
+  planDesdeParam, rutaConocerPlanes, rutaDirectorioPlan, rutaRegistroPlan, rutaTienda,
+} from './negociosPublicos'
 import { claveBusquedaNegocios } from './useBuscarNegocios'
 import InsigniaPlan from './InsigniaPlan'
 import FilaNegocio from './FilaNegocio'
@@ -22,6 +25,25 @@ describe('negocios públicos · directorio por plan', () => {
   it('rutas: directorio filtrado y tienda por slug', () => {
     expect(rutaDirectorioPlan('pymes')).toBe('/emprendimientos?plan=pymes')
     expect(rutaTienda({ slug: 'casa luna' })).toBe('/tienda/casa%20luna')
+  })
+
+  it('conocer planes: los tres, o la landing del chip', () => {
+    expect(rutaConocerPlanes(null)).toBe('/planes')
+    expect(rutaConocerPlanes('emprendimientos')).toBe('/planes')
+    expect(rutaConocerPlanes('oro')).toBe('/planes')
+    expect(rutaConocerPlanes('pymes')).toBe('/para-pymes')
+    expect(rutaConocerPlanes('negocio-plus')).toBe('/negocio-plus-plan')
+    expect(rutaRegistroPlan('pymes')).toBe('/registro-empresa?plan=pyme')
+  })
+
+  it('el banner del pie sigue el directorio y no promete mensualidad cero en un plan de pago', () => {
+    expect(destinoBannerPlanes('/productos', '')).toBe('/planes')
+    expect(destinoBannerPlanes('/emprendimientos', '')).toBe('/planes')
+    expect(destinoBannerPlanes('/emprendimientos', '?plan=emprendimientos')).toBe('/planes')
+    expect(destinoBannerPlanes('/emprendimientos', '?plan=pymes')).toBe('/para-pymes')
+    expect(bannerMuestraSinMensualidad('/planes')).toBe(true)
+    expect(bannerMuestraSinMensualidad('/para-pymes')).toBe(false)
+    expect(bannerMuestraSinMensualidad('/negocio-plus-plan')).toBe(false)
   })
 
   it('planDesdeParam: solo alias conocidos', () => {
@@ -74,6 +96,11 @@ describe('negocios públicos · piezas', () => {
   it('buscador: estado vacío cuando no hay productos ni negocios', () => {
     const html = render(createElement(SearchPanelBody, modelo({ query: 'zzqx' })))
     expect(html).toContain('No encontramos productos ni negocios para “zzqx”')
+    expect(html).toContain('Preguntale al asistente')
+    expect(html).toContain('Buscar con una foto')
+    const hostil = render(createElement(SearchPanelBody, modelo({ query: '<img src=x onerror=alert(1)>' })))
+    expect(hostil).not.toContain('<img')
+    expect(hostil).toContain('&lt;img')
   })
 
   it('buscador: mientras cargan los negocios no muestra el vacío', () => {

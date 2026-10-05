@@ -314,6 +314,20 @@
     "precioComision": "Comissão {{comision}}% por venda (mínimo ₡{{minimo}}, gateway de pagamento incluído)",
     "ctaFinalTitle": "Pronto para vender sem mensalidade?"
   },
+  "planesPublicos": {
+    "metaTitle": "Os três planos para vender no HotClick",
+    "metaDescription": "Emprendedor sem mensalidade, PYME e Negocio Plus. Escolha o plano e entre na página dele.",
+    "titulo": "Escolha como você quer vender",
+    "intro": "Os três planos estão aqui. Entre no que serve para você: cada um tem a sua página, e o cadastro é o mesmo.",
+    "conocer": "Conhecer {{plan}}",
+    "empezar": "Começar com {{plan}}",
+    "verLosTres": "Ver os três planos",
+    "precio": {
+      "emprendimientos": "₡0/mês",
+      "pymes": "₡9.900/mês",
+      "negocio-plus": "₡24.900/mês"
+    }
+  },
   "pyme": {
     "heroBadge": "Para negócios que já vendem e precisam de equipe",
     "heroSecondary": "Estou começando agora, sem mensalidade",

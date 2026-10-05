@@ -115,6 +115,7 @@ const ProvinciaLandingPage = lazy(() => import('@/pages/seo/ProvinciaLandingPage
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
 const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
 const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
+const PlanesComparativaPage = lazy(() => import('@/pages/planes/PlanesComparativaPage'))
 const AdminPOS = lazy(() => import('@/pages/admin/pos/AdminPOS'))
 const AdminPOSCaja = lazy(() => import('@/pages/admin/pos/AdminPOSCaja'))
 const AdminPOSHistorial = lazy(() => import('@/pages/admin/pos/AdminPOSHistorial'))
@@ -227,6 +228,7 @@ export default function AppRoutes() {
       <Route path="/para-emprendedores" element={<Navigate to="/emprende" replace />} />
       <Route path="/para-pymes" element={<PymeLandingPage />} />
       <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
+      <Route path="/planes" element={<PlanesComparativaPage />} />
       <Route path="/emprendimientos" element={<EmprendimientosPage />} />
 
       <Route path="/admin/*" element={<AdminRoleSwitch />}>

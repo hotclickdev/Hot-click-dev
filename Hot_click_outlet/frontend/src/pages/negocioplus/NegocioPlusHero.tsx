@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
+import { RUTA_COMPARAR_PLANES } from '@/components/comprador/negocios/negociosPublicos'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
 
 const copy = PLAN_LANDING_COPY.plus
@@ -66,6 +67,9 @@ export default function NegocioPlusHero() {
             {t('negocioPlus.heroCta')}
           </Link>
         </motion.div>
+        <Link to={RUTA_COMPARAR_PLANES} className="text-sm font-semibold text-white">
+          {t('planesPublicos.verLosTres')}
+        </Link>
       </div>
 
       <div className="flex items-center justify-center p-8 sm:p-14" style={{ backgroundColor: '#fff' }}>

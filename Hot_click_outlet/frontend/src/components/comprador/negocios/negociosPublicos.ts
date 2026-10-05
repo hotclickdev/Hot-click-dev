@@ -19,6 +19,41 @@ export function rutaDirectorioPlan(alias: AliasPlan): string {
   return `/emprendimientos?plan=${alias}`
 }
 
+/** Comparativa pública de los tres planes. El alta sigue siendo una sola. */
+export const RUTA_COMPARAR_PLANES = '/planes'
+
+/** Landing larga de cada plan y el `?plan=` que entiende el alta. */
+export const LANDING_POR_PLAN = {
+  emprendimientos: { pagina: '/emprende', registro: 'emprendedor' },
+  pymes: { pagina: '/para-pymes', registro: 'pyme' },
+  'negocio-plus': { pagina: '/negocio-plus-plan', registro: 'negocio-plus' },
+} as const satisfies Record<AliasPlan, { pagina: string; registro: 'emprendedor' | 'pyme' | 'negocio-plus' }>
+
+export function rutaRegistroPlan(alias: AliasPlan): string {
+  return `/registro-empresa?plan=${LANDING_POR_PLAN[alias].registro}`
+}
+
+/**
+ * "Conocé los planes" dentro del directorio.
+ * Todos y Emprendimientos abren los tres; Pymes y Negocio Plus abren su landing.
+ */
+export function rutaConocerPlanes(planParam: string | null | undefined): string {
+  const plan = planDesdeParam(planParam)
+  if (!plan || plan.alias === 'emprendimientos') return RUTA_COMPARAR_PLANES
+  return LANDING_POR_PLAN[plan.alias].pagina
+}
+
+/** Fuera del directorio el banner abre la comparativa. Adentro respeta el chip activo. */
+export function destinoBannerPlanes(pathname: string, search: string): string {
+  if (pathname !== '/emprendimientos') return RUTA_COMPARAR_PLANES
+  return rutaConocerPlanes(new URLSearchParams(search).get('plan'))
+}
+
+/** "Sin mensualidad" solo cuando el clic no entra directo a un plan de pago. */
+export function bannerMuestraSinMensualidad(destino: string): boolean {
+  return destino !== LANDING_POR_PLAN.pymes.pagina && destino !== LANDING_POR_PLAN['negocio-plus'].pagina
+}
+
 /** `?plan=` del directorio: solo alias conocidos; cualquier otro valor es "todos". */
 export function planDesdeParam(valor: string | null | undefined) {
   return PLANES_DIRECTORIO.find((p) => p.alias === valor) ?? null

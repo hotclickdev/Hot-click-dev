@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import Casilla from './Casilla'
 import RangoPrecio from './RangoPrecio'
@@ -10,25 +10,6 @@ function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
       <legend className="float-left w-full text-[14px] font-semibold leading-[normal] text-hc-n-900">{titulo}</legend>
       {children}
     </fieldset>
-  )
-}
-
-function CampoPrecio({ etiqueta, valor, onCambiar }: { etiqueta: string; valor: string; onCambiar: (v: string) => void }) {
-  const id = useId()
-  return (
-    <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-[2px] rounded-[10px] border border-hc-n-200 bg-hc-n-0 px-3 py-2">
-      <span className="text-[11px] leading-[normal] text-hc-n-600">{etiqueta}</span>
-      <input
-        id={id}
-        type="number"
-        inputMode="numeric"
-        min={0}
-        value={valor}
-        onChange={(e) => onCambiar(e.target.value)}
-        placeholder="₡0"
-        className="hc-input-libre w-full bg-transparent font-display text-[14px] font-semibold leading-[18px] text-hc-n-900 outline-none placeholder:text-hc-n-900"
-      />
-    </label>
   )
 }
 
@@ -68,10 +49,6 @@ export default function FiltrosHoja({
   return (
     <div className="flex flex-col">
       <Grupo titulo={t('products.priceShort')}>
-        <div className="flex gap-[10px]">
-          <CampoPrecio etiqueta={t('products.priceMin')} valor={priceMin} onCambiar={setPriceMin} />
-          <CampoPrecio etiqueta={t('products.priceMax')} valor={priceMax} onCambiar={setPriceMax} />
-        </div>
         <RangoPrecio tope={precioTope ?? 0} priceMin={priceMin} priceMax={priceMax} setPriceMin={setPriceMin} setPriceMax={setPriceMax} />
       </Grupo>
 

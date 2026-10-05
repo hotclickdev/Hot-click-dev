@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Chip from '../Chip'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import MarcaComprador from './MarcaComprador'
 import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '../negocios/negociosPublicos'
 import { rutaCategoria, useHeaderComprador } from './useHeaderComprador'
@@ -20,7 +21,8 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
     <div className="flex flex-col gap-3 border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 leading-[normal] lg:hidden">
       <div className="flex items-center justify-between">
         <MarcaComprador tamano="movil" />
-        <div className="flex items-center gap-[18px] text-hc-n-900">
+        <div className="flex items-center gap-2 text-hc-n-900">
+          <ThemeToggle className="min-h-11 min-w-11" />
           <Link to="/wishlist" aria-label={t('comprador.header.favoritos')} className="flex">
             <IconoFigma src={ICONOS_COMPRADOR.headerFavoritos} size={22} />
           </Link>
@@ -62,7 +64,7 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
 
       <nav aria-label={t('comprador.header.categoriasAria')} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
         {PLANES_DIRECTORIO.map((p) => (
-          <Chip key={p.alias} texto={t(p.nav)} to={rutaDirectorioPlan(p.alias)} />
+          <Chip key={p.alias} texto={t(p.nav)} to={rutaDirectorioPlan(p.alias)} negrita />
         ))}
         {categorias.length > 0 && <span aria-hidden="true" className="h-5 w-px shrink-0 bg-hc-n-200" />}
         {categorias.map((categoria) => (

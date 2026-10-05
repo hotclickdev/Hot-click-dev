@@ -11,6 +11,9 @@ export const PARA_VOS_FETCH_SIZE = 100
 
 type ToastCatalogo = (opts: { message: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => void
 
+/** Estos errores de carga se ocultan solos; el resto de errores sigue hasta la X. */
+const DURACION_ERROR_CARGA_MS = 5000
+
 type PaginaProductos = {
   content?: unknown
   totalElements?: number
@@ -66,7 +69,7 @@ export function useCatalogoFetch(
         setPage(pageToFetch)
       }
     } catch {
-      toast({ message: 'Error al cargar productos', type: 'error' })
+      toast({ message: 'Error al cargar productos', type: 'error', duration: DURACION_ERROR_CARGA_MS })
       setError(true)
       setProducts([])
     } finally {
@@ -88,12 +91,12 @@ export function useCatalogoFetch(
   useEffect(() => {
     productService.getCategories()
       .then(({ data }) => setCategories((data ?? []) as CatalogCategoria[]))
-      .catch(() => toast({ message: 'Error al cargar categorías', type: 'error' }))
+      .catch(() => toast({ message: 'Error al cargar categorías', type: 'error', duration: DURACION_ERROR_CARGA_MS }))
     marcaService.getPublicas().then((r) => {
       const data = r.data as { data?: unknown } | undefined
       const ms = data?.data ?? data ?? []
       setMarcas(Array.isArray(ms) ? ms as CatalogMarca[] : [])
-    }).catch(() => toast({ message: 'Error al cargar marcas', type: 'error' }))
+    }).catch(() => toast({ message: 'Error al cargar marcas', type: 'error', duration: DURACION_ERROR_CARGA_MS }))
   }, [toast])
 
   const retry = useCallback(() => fetchProducts(page), [fetchProducts, page])

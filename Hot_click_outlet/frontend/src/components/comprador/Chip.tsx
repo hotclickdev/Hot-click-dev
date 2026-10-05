@@ -12,6 +12,10 @@ type ChipProps = {
   className?: string
   /** Chip de filtro: expone `aria-pressed` en el botón. */
   presionado?: boolean
+  /** Filtro elegido: fondo n-100 (en oscuro, la pastilla más clara de la fila). */
+  activo?: boolean
+  /** Peso 700. Lo usan los tres enlaces de plan del directorio. */
+  negrita?: boolean
 }
 
 const ESTILOS: Record<ChipVariante, string> = {
@@ -20,15 +24,20 @@ const ESTILOS: Record<ChipVariante, string> = {
   seleccionado: 'border-hc-blue-600 bg-hc-blue-600 text-hc-n-0',
 }
 
+const ESTILO_ACTIVO = 'border-hc-n-200 bg-hc-n-100 text-hc-n-900'
+
 /** Chip de categoría, de consulta sugerida al asistente o de filtro activo (Figma `5:44`, `28:1318`). */
-export default function Chip({ texto, variante = 'categoria', to, onClick, className = '', presionado }: ChipProps) {
-  const clases = `flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] font-medium leading-[normal] ${ESTILOS[variante]} ${className}`
+export default function Chip({ texto, variante = 'categoria', to, onClick, className = '', presionado, activo = false, negrita = false }: ChipProps) {
+  const peso = negrita ? 'font-bold' : 'font-medium'
+  const estilo = activo && variante === 'categoria' ? ESTILO_ACTIVO : ESTILOS[variante]
+  const clases = `flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full border px-[14px] py-2 text-[13px] ${peso} leading-[normal] ${estilo} ${className}`
   const contenido = (
     <>
       {variante === 'asistente' && <IconoFigma src={ICONOS_COMPRADOR.chipAsistente} size={14} />}
       {texto}
     </>
   )
-  if (to) return <Link to={to} className={clases}>{contenido}</Link>
-  return <button type="button" onClick={onClick} aria-pressed={presionado} className={clases}>{contenido}</button>
+  if (to) return <Link to={to} aria-current={activo ? 'page' : undefined} className={clases}>{contenido}</Link>
+  const ariaPressed = presionado ?? (activo ? true : undefined)
+  return <button type="button" onClick={onClick} aria-pressed={ariaPressed} className={clases}>{contenido}</button>
 }
