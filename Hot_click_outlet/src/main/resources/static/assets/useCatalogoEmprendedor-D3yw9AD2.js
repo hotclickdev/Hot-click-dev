@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-kLhinWNJ.js";function t(){return e()}export{t};
