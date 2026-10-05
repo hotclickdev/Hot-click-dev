@@ -16,10 +16,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,13 +39,10 @@ class ShoppingAssistantImageSearchHandlerTest {
         GoogleVisionService vision = mock(GoogleVisionService.class);
         ProductoCatalogQueries queries = mock(ProductoCatalogQueries.class);
 
-        Empresa empresa = new Empresa();
-        empresa.setId(1L);
-        when(guard.requireEmpresaActivaForImageSearch("hotclick")).thenReturn(empresa);
         GoogleVisionService.VisionResult resultado = new GoogleVisionService.VisionResult();
         resultado.labelsFisicos.add("Chair");
         when(vision.analizar(anyString())).thenReturn(resultado);
-        when(vector.buscarSimilares(anyLong(), anyString(), anyInt(), anyBoolean())).thenReturn(List.of(
+        when(vector.buscarSimilares(nullable(Long.class), anyString(), anyInt(), anyBoolean())).thenReturn(List.of(
             new ProductoContexto(10L, "Silla", "S1", 5000, null, null, 3, null, "Muebles", null, null),
             new ProductoContexto(11L, "Banco", "B1", 4000, null, null, 2, null, "Muebles", null, null)));
         when(queries.tiendasVisibles(anyCollection())).thenReturn(Map.of(10L, "Casa Luna"));
@@ -54,6 +53,7 @@ class ShoppingAssistantImageSearchHandlerTest {
         List<Map<String, Object>> productos = (List<Map<String, Object>>) body.get("productos");
         assertThat(productos.get(0)).containsEntry("empresaNombre", "Casa Luna").containsEntry("categoria", "Muebles");
         assertThat(productos.get(1)).containsEntry("empresaNombre", null).containsEntry("categoria", "Muebles");
+        verify(guard, never()).requireEmpresaActivaForImageSearch(anyString());
     }
 
     @Test
@@ -64,18 +64,39 @@ class ShoppingAssistantImageSearchHandlerTest {
         GoogleVisionService vision = mock(GoogleVisionService.class);
         ProductoCatalogQueries queries = mock(ProductoCatalogQueries.class);
 
-        Empresa empresa = new Empresa();
-        empresa.setId(1L);
-        when(guard.requireEmpresaActivaForImageSearch("hotclick")).thenReturn(empresa);
         GoogleVisionService.VisionResult resultado = new GoogleVisionService.VisionResult();
         resultado.etiquetas.add("Sillón verde");
         when(vision.analizar(anyString())).thenReturn(resultado);
-        when(vector.buscarSimilares(anyLong(), anyString(), anyInt(), anyBoolean())).thenReturn(List.of());
+        when(vector.buscarSimilares(nullable(Long.class), anyString(), anyInt(), anyBoolean())).thenReturn(List.of());
         when(queries.tiendasVisibles(anyCollection())).thenReturn(Map.of());
 
         ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries);
         handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "hotclick", null);
 
-        verify(vector).buscarSimilares(eq(1L), eq("Sillón verde"), eq(5), anyBoolean());
+        verify(vector).buscarSimilares(isNull(), eq("Sillón verde"), eq(5), eq(true));
+        verify(guard, never()).requireEmpresaActivaForImageSearch(anyString());
+    }
+
+    @Test
+    @DisplayName("Una tienda concreta sigue exigiendo que esa empresa esté activa")
+    void tiendaAjenaExigeEmpresaActiva() {
+        ShoppingAssistantTenantGuard guard = mock(ShoppingAssistantTenantGuard.class);
+        VectorSearchService vector = mock(VectorSearchService.class);
+        GoogleVisionService vision = mock(GoogleVisionService.class);
+        ProductoCatalogQueries queries = mock(ProductoCatalogQueries.class);
+
+        Empresa empresa = new Empresa();
+        empresa.setId(7L);
+        when(guard.requireEmpresaActivaForImageSearch("casa-luna")).thenReturn(empresa);
+        GoogleVisionService.VisionResult resultado = new GoogleVisionService.VisionResult();
+        resultado.labelsFisicos.add("Chair");
+        when(vision.analizar(anyString())).thenReturn(resultado);
+        when(vector.buscarSimilares(eq(7L), anyString(), anyInt(), eq(false))).thenReturn(List.of());
+        when(queries.tiendasVisibles(anyCollection())).thenReturn(Map.of());
+
+        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries);
+        handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "casa-luna", null);
+
+        verify(vector).buscarSimilares(eq(7L), eq("Chair"), eq(5), eq(false));
     }
 }
