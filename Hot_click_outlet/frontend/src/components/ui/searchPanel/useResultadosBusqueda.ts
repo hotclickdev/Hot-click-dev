@@ -42,7 +42,7 @@ function useCatalogoParaBusqueda(activo: boolean) {
     }
     let vigente = true
     setCargando(true)
-    asegurarCatalogoBusqueda().finally(() => {
+    void asegurarCatalogoBusqueda().finally(() => {
       if (!vigente) return
       setProductos(getProductCache() ?? [])
       setCargando(false)
