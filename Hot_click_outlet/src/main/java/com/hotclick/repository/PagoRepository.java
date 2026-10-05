@@ -73,4 +73,25 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId)")
     long countByProveedorAndEmpresa(@Param("proveedor") String proveedor, @Param("empresaId") Long empresaId);
+
+    // ── Regla anti-bot de reservas (QA-CONC-4) ───────────────────────────────
+
+    @Query("SELECT p.id FROM Pago p WHERE p.id IN :ids AND p.estadoPago = 'PENDIENTE'")
+    List<Long> findIdsPendientesIn(@Param("ids") java.util.Collection<Long> ids);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Pago p WHERE p.id = :id")
+    Optional<Pago> findByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * Pagos pendientes con la marca anti-bot vencida: {@code fechaExpiracion} pasada y creados
+     * hace poco. Los SINPE normales (24 h o sin expiración) quedan fuera por {@code desde}; un
+     * pago de tarjeta sin marca vence a creación + 30 min y para entonces ya lo canceló
+     * {@link #findExpiradosPendientesByEmpresa} en la misma corrida. Orden por id = orden de lock estable.
+     */
+    @Query("SELECT p.id FROM Pago p WHERE p.estadoPago = 'PENDIENTE' AND p.fechaExpiracion < :ahora "
+        + "AND p.fechaCreacion > :desde AND p.pedido.empresa.id = :empresaId ORDER BY p.id")
+    List<Long> findIdsReservaMarcadaVencidaByEmpresa(@Param("ahora") LocalDateTime ahora,
+                                                     @Param("desde") LocalDateTime desde,
+                                                     @Param("empresaId") Long empresaId);
 }

@@ -38,6 +38,7 @@ public class SinpeCheckoutService {
     @Autowired private StockReservationService   stockReservationService;
     @Autowired private CheckoutGrupoFactory      checkoutGrupoFactory;
     @Autowired private GuestCancelTokenService   guestCancelTokenService;
+    @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Transactional
@@ -68,7 +69,9 @@ public class SinpeCheckoutService {
         pago.setPedido(principal);
         pago.setUsuario(usuario);
         pago.setEstado(Constants.ESTADO_ACTIVO);
-        pagoRepository.save(pago);
+        pago = pagoRepository.save(pago);
+        boolean invitado = correoUsuario == null || "anonymousUser".equals(correoUsuario);
+        reservaAntiBot.registrar(usuario, invitado, req, grupo.pedidos(), pago);
 
         log.info("Checkout {} iniciado: pedido={} paquetes={} total={}",
             proveedorEfectivo, principal.getNumeroPedido(), grupo.subpedidos().size(), grupo.totalCobro());

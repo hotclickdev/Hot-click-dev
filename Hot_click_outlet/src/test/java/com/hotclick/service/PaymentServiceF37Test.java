@@ -63,6 +63,7 @@ class PaymentServiceF37Test {
     @Mock EncargoService             encargoService;
     @Mock AtribucionPedidoService    atribucionPedidoService;
 
+    @Mock com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @InjectMocks CheckoutValidator              checkoutValidator;
     @InjectMocks GuestUserResolver              guestUserResolver;
     @InjectMocks StockReservationService        stockReservationService;
@@ -116,6 +117,7 @@ class PaymentServiceF37Test {
         PedidoGrupoService pedidoGrupoService = new PedidoGrupoService(pedidoRepository, pagoRepository);
 
         service = new PaymentService();
+        ReflectionTestUtils.setField(service, "reservaAntiBot", reservaAntiBot);
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
