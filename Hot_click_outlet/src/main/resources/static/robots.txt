@@ -9,6 +9,7 @@ Allow: /blog
 Allow: /emprendimientos
 Allow: /comprar
 Allow: /tiendas
+Allow: /planes
 Allow: /para-pymes
 Allow: /negocio-plus-plan
 Allow: /llms.txt

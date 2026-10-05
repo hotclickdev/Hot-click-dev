@@ -847,6 +847,9 @@ html.dark [class~="bg-hc-n-0"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { 
 }
 html.dark [class~="bg-hc-n-50"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #050608 !important; }
 html.dark [class~="bg-hc-n-100"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #232830 !important; }
+/* Foto de categoría: el marco es #14171C. El blanco puro lo vacía un filtro en el body
+   (en la hoja de estilos, url(#…) se resuelve mal y Chrome pinta la X rota). */
+html.dark span.hc-marco-foto[class~="bg-hc-n-100"]:not(.hc-papel-blanco) { background-color: #14171C !important; }
 html.dark [class~="bg-hc-n-200"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #232830 !important; }
 html.dark [class~="bg-hc-blue-50"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #13203A !important; }
 html.dark [class~="bg-hc-red-50"]:not(:is(.hc-papel-blanco, .hc-papel-blanco *)) { background-color: #3A1513 !important; }
