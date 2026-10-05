@@ -1,5 +1,6 @@
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import { IconoFlechaAtras } from './iconosRecuperar'
 import { PASOS, type Paso } from './recuperarHelpers'
 
@@ -15,6 +16,7 @@ export function BarraRecuperar({ onVolver }: { onVolver: () => void }) {
           <IconoFlechaAtras />
         </button>
         <p className="flex-1 font-display text-[17px] font-bold text-hc-n-900">{t('forgot.title')}</p>
+        <ThemeToggle className="min-h-11 min-w-11 shrink-0" />
       </div>
     </header>
   )

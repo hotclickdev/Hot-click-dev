@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import MarcaComprador from './MarcaComprador'
 import { inicialesDe } from './headerHelpers'
 import { useConsultaBuscador, useHeaderComprador } from './useHeaderComprador'
@@ -37,7 +38,8 @@ export default function HeaderEscritorioCompacto({ filaCarrito = false }: { fila
           className="hc-input-libre min-w-px flex-1 bg-transparent text-[14px] text-hc-n-900 placeholder:text-hc-n-500 focus:outline-none"
         />
       </form>
-      <div className="flex shrink-0 items-center gap-5 text-hc-n-900">
+      <div className="flex shrink-0 items-center gap-3 text-hc-n-900">
+        <ThemeToggle className="min-h-11 min-w-11" />
         <Link to={rutaCuenta} aria-label={t('comprador.header.miCuenta')} className="flex">
           {conSesion && inicialesDe(nombreUsuario) ? (
             <span className="flex size-8 items-center justify-center rounded-full bg-hc-blue-600 font-display text-[12px] font-bold text-hc-n-0">

@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-Cv-sh4Dc.js";function t(){return e()}export{t};
