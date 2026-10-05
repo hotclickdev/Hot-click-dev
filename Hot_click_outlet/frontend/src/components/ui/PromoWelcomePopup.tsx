@@ -96,6 +96,7 @@ export default function PromoWelcomePopup() {
     <HojaInferior
       abierta={visible}
       onCerrar={dismiss}
+      dejarVerPagina
       titulo={(
         <div className="flex items-center gap-2">
           <img src={ICONOS_ESTADOS.promoRegalo} alt="" width={24} height={24} className="block size-6 shrink-0" />
