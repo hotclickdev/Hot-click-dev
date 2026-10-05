@@ -9,13 +9,16 @@ type HojaInferiorProps = {
   titulo: ReactNode
   children: ReactNode
   className?: string
+  /** El cupón de bienvenida deja ver la página actual. El resto usa el velo n/900. */
+  dejarVerPagina?: boolean
 }
 
 /**
  * Hoja inferior del comprador (Figma `45:1612`, `26:888`): velo n/900,
- * esquinas de 22 px y agarradera de 40 × 4.
+ * esquinas de 22 px y agarradera de 40 × 4. Con `dejarVerPagina` el velo
+ * no tapa inicio, productos ni el resto de la pantalla abierta.
  */
-export default function HojaInferior({ abierta, onCerrar, titulo, children, className = '' }: HojaInferiorProps) {
+export default function HojaInferior({ abierta, onCerrar, titulo, children, className = '', dejarVerPagina = false }: HojaInferiorProps) {
   const { t } = useTranslation()
   const idTitulo = useId()
   const hojaRef = useRef<HTMLDivElement>(null)
@@ -38,7 +41,12 @@ export default function HojaInferior({ abierta, onCerrar, titulo, children, clas
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
-      <button type="button" aria-label={t('comprador.hoja.cerrar')} onClick={onCerrar} className="absolute inset-0 bg-hc-n-900" />
+      <button
+        type="button"
+        aria-label={t('comprador.hoja.cerrar')}
+        onClick={onCerrar}
+        className={`absolute inset-0 ${dejarVerPagina ? 'bg-transparent' : 'bg-hc-n-900'}`}
+      />
       <div
         ref={hojaRef}
         role="dialog"
