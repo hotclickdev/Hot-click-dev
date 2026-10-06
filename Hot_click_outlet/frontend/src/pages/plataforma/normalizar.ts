@@ -80,6 +80,23 @@ export function ipValida(valor: string): boolean {
   return IPV6.test(limpio)
 }
 
+export function tituloAlerta(fila: Fila): string {
+  const tipo = texto(fila.titulo, texto(fila.alertType, texto(fila.tipo, 'Alerta')))
+  const gravedad = texto(fila.severity, '')
+  return gravedad ? `${tipo} · ${gravedad}` : tipo
+}
+
+export function detalleAlerta(fila: Fila): string {
+  const base = texto(fila.detalle, texto(fila.message, texto(fila.mensaje, '')))
+  const ip = ipDeFila(fila)
+  if (!ip || base.includes(ip)) return base
+  return base ? `${base} · ${ip}` : ip
+}
+
+export function ipDeFila(fila: Fila): string {
+  return texto(fila.ipAddress, texto(fila.ip, ''))
+}
+
 function esObjeto(valor: unknown): valor is Fila {
   return valor != null && typeof valor === 'object' && !Array.isArray(valor)
 }

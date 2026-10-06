@@ -26,6 +26,7 @@ export const ventaService = {
 export const adminService = {
   getDashboard: () => api.get('/admin/dashboard'),
   getUsers: () => api.get('/admin/usuarios'),
+  getOperadores: () => api.get('/admin/usuarios/operadores'),
   getPendingUsers: () => api.get('/admin/usuarios/pendientes'),
   approveUser: (id: Id, body: JsonBody = { rol: 'USUARIO_FINAL' }) => api.put(`/admin/usuarios/${id}/aprobar`, body),
   rejectUser: (id: Id) => api.put(`/admin/usuarios/${id}/rechazar`),
@@ -35,7 +36,8 @@ export const adminService = {
   unblockUser: (id: Id) => api.put(`/admin/usuarios/${id}/desbloquear`),
   deleteUser: (id: Id) => api.delete(`/admin/usuarios/${id}`),
   restoreUser: (id: Id) => api.put(`/admin/usuarios/${id}/restaurar`),
-  getEmpresas: () => api.get('/admin/empresas'),
+  getEmpresas: (params?: { page?: number; size?: number }) =>
+    api.get('/admin/empresas', params ? { params } : undefined),
   getEmpresasSinUbicacion: () => api.get('/admin/empresas/sin-ubicacion'),
   getEmpresa: (id: Id) => api.get(`/admin/empresas/${id}`),
   getEmpresaTab: (id: Id, tab: string, params?: Record<string, unknown>) =>

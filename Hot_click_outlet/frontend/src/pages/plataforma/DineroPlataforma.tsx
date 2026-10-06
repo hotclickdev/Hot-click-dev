@@ -4,7 +4,7 @@ import { adminBillingService } from '@/services/adminBillingService'
 import { paymentService } from '@/services/paymentService'
 import { walletService } from '@/services/walletService'
 import { filasDe, idSeguro, texto, type Fila } from './normalizar'
-import { Aviso, Carga, FilaDecision, Segmento, TARJETA } from './piezas'
+import { Aviso, Carga, Chip, Encabezado, FilaDecision, Metrica, Segmento } from './piezas'
 
 const VISTAS = [
   { id: 'cobros', label: 'Cobros', to: '/plataforma/dinero/cobros' },
@@ -17,8 +17,8 @@ export default function DineroPlataforma() {
   const navigate = useNavigate()
   const vista = VISTAS.find((v) => path.endsWith(v.id))?.id ?? 'cobros'
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <h1 className="font-display text-[22px] font-bold text-hc-n-900">Dinero</h1>
+    <div className="flex flex-col gap-4">
+      <Encabezado titulo="Dinero" detalle="Cobros, retiros y la mensualidad." />
       <Segmento
         opciones={VISTAS.map(({ id, label }) => ({ id, label }))}
         valor={vista}
@@ -50,21 +50,35 @@ function Cobros() {
   if (filas.length === 0) return <Aviso>Nada pendiente.</Aviso>
   return (
     <div className="flex flex-col gap-3">
+      <Metrica icono="dinero" etiqueta="Cobros por revisar" valor={String(filas.length)} />
+      <div className="grid gap-3 lg:grid-cols-2">
       {filas.map((fila) => {
         const id = idSeguro(fila)
         if (!id) return null
         return (
           <FilaDecision
             key={id}
+            icono="dinero"
             titulo={texto(fila.pedidoNumero, texto(fila.id, 'Comprobante'))}
-            meta={texto(fila.estado, 'PENDIENTE')}
+            meta={metaMonto(fila, texto(fila.estado, 'PENDIENTE'))}
             onAprobar={async () => { await paymentService.aprobarComprobante(id); setMarca((n) => n + 1) }}
             onRechazar={async (motivo) => { await paymentService.rechazarComprobante(id, motivo); setMarca((n) => n + 1) }}
           />
         )
       })}
+      </div>
     </div>
   )
+}
+
+function montoVisible(fila: Fila): string {
+  const monto = texto(fila.monto, texto(fila.montoColones, texto(fila.precioMensual, '')))
+  return monto ? `₡${monto}` : '—'
+}
+
+function metaMonto(fila: Fila, resto: string): string {
+  const monto = texto(fila.monto, texto(fila.montoColones, texto(fila.precioMensual, '')))
+  return monto ? `₡${monto} · ${resto}` : resto
 }
 
 function Liquidaciones() {
@@ -83,21 +97,29 @@ function Liquidaciones() {
   if (filas.length === 0) return <Aviso>Nada pendiente. Los retiros bajo el umbral se aprueban solos.</Aviso>
   return (
     <div className="flex flex-col gap-3">
+      <Metrica icono="dinero" etiqueta="Retiros por revisar" valor={String(filas.length)} />
+      <div className="grid gap-3 lg:grid-cols-2">
       {filas.map((fila) => {
         const id = idSeguro(fila)
         if (!id) return null
         return (
           <FilaDecision
             key={id}
+            icono="dinero"
             titulo={texto(fila.monto, texto(fila.id, 'Retiro'))}
-            meta={texto(fila.estado, 'Pendiente')}
+            meta={metaMonto(fila, texto(fila.estado, 'Pendiente'))}
             onAprobar={async () => { await walletService.adminAprobar(id, 'Aprobado en consola'); setMarca((n) => n + 1) }}
             onRechazar={async (motivo) => { await walletService.adminRechazar(id, motivo); setMarca((n) => n + 1) }}
           />
         )
       })}
+      </div>
     </div>
   )
+}
+
+function inicial(nombre: string): string {
+  return nombre.trim().slice(0, 1).toUpperCase() || 'N'
 }
 
 function Suscripciones() {
@@ -112,13 +134,26 @@ function Suscripciones() {
   if (estado === 'error') return <Aviso>No se pudieron cargar las suscripciones.</Aviso>
   if (filas.length === 0) return <Aviso>No hay suscripciones para revisar.</Aviso>
   return (
-    <ul className="flex flex-col gap-3">
+    <div className="overflow-hidden rounded-[14px] border border-hc-n-200 bg-white">
+      <div className="flex items-center justify-between border-b border-hc-n-200 bg-hc-n-50 px-4 py-3">
+        <h2 className="font-display text-[17px] font-bold">Suscripciones</h2>
+        <Chip tono="azul">{`${filas.length} en lista`}</Chip>
+      </div>
+      <div className="grid grid-cols-[1fr_7rem_6rem] gap-2 px-4 py-2 text-xs font-semibold text-hc-n-600">
+        <span>Negocio</span><span>Monto</span><span>Estado</span>
+      </div>
       {filas.map((fila) => (
-        <li key={idSeguro(fila) ?? texto(fila.nombre)} className={TARJETA}>
-          <p className="font-semibold">{texto(fila.nombreComercial, texto(fila.nombre, 'Negocio'))}</p>
-          <p className="text-xs text-hc-n-600">{texto(fila.estado, texto(fila.plan, '—'))}</p>
-        </li>
+        <div key={idSeguro(fila) ?? texto(fila.nombre)} className="grid grid-cols-[1fr_7rem_6rem] items-center gap-2 border-t border-hc-n-200 px-4 py-3">
+          <span className="flex items-center gap-2 font-semibold">
+            <span className="grid size-8 place-items-center rounded-lg bg-hc-blue-50 font-display text-xs font-bold text-hc-blue-600">
+              {inicial(texto(fila.nombreComercial, texto(fila.nombre, 'N')))}
+            </span>
+            {texto(fila.nombreComercial, texto(fila.nombre, 'Negocio'))}
+          </span>
+          <span className="text-sm">{montoVisible(fila)}</span>
+          <Chip tono="ok">{texto(fila.estado, texto(fila.plan, 'Activa'))}</Chip>
+        </div>
       ))}
-    </ul>
+    </div>
   )
 }

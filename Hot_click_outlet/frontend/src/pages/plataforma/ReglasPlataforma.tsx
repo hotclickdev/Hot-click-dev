@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { billingService } from '@/services/billingService'
 import { adminService } from '@/services/orderService'
 import { flagService } from '@/services/flagService'
 import { filasDe, texto, type Fila } from './normalizar'
-import { Aviso, Carga, Segmento, TARJETA } from './piezas'
+import { Aviso, Carga, Chip, Encabezado, MarcoIcono, Segmento, TARJETA } from './piezas'
 
 type CargaEstado = 'carga' | 'listo' | 'error'
 
 export default function ReglasPlataforma() {
   const [vista, setVista] = useState<'planes' | 'accesos' | 'tecnico'>('planes')
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <h1 className="font-display text-[22px] font-bold text-hc-n-900">Plataforma</h1>
+    <div className="flex flex-col gap-4">
+      <Encabezado titulo="Reglas" detalle="Planes, operadores e interruptores." />
       <Segmento
         opciones={[{ id: 'planes', label: 'Planes' }, { id: 'accesos', label: 'Accesos' }, { id: 'tecnico', label: 'Técnico' }]}
         valor={vista}
@@ -21,9 +20,7 @@ export default function ReglasPlataforma() {
       {vista === 'planes' && <Planes />}
       {vista === 'accesos' && <Accesos />}
       {vista === 'tecnico' && <Tecnico />}
-      <p className="text-xs text-hc-n-600">
-        La comisión del plan no se edita desde Dinero. <Link to="/plataforma/negocios" className="font-semibold text-hc-blue-600">Ver negocios</Link>
-      </p>
+      <p className="text-xs text-hc-n-600">La comisión del plan se lee aquí. Dinero no la edita.</p>
     </div>
   )
 }
@@ -33,32 +30,47 @@ function Planes() {
   if (estado === 'carga') return <Carga />
   if (estado === 'error') return <Aviso>No se pudieron cargar los planes.</Aviso>
   return (
-    <ul className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
+    <div className="flex items-end justify-between rounded-[16px] bg-hc-blue-50 px-5 py-4">
+      <h2 className="font-display text-[17px] font-bold">Planes publicados</h2>
+      <p className="font-display text-[40px] font-extrabold leading-none text-hc-blue-600">{filas.length}</p>
+    </div>
+    <ul className="grid gap-3 sm:grid-cols-3">
       {filas.map((fila) => (
         <li key={texto(fila.nombre, texto(fila.id, 'plan'))} className={TARJETA}>
-          <p className="font-display text-[17px] font-bold">{texto(fila.nombre, 'Plan')}</p>
-          <p className="text-xs text-hc-n-600">
-            Comisión {texto(fila.comisionPorcentaje, texto(fila.comision, '—'))} · mensualidad {texto(fila.precioMensual, texto(fila.precio, '—'))}
-          </p>
+          <MarcoIcono id="reglas" />
+          <p className="mt-3 font-display text-[17px] font-bold">{texto(fila.nombre, 'Plan')}</p>
+          <p className="mt-2 font-display text-[26px] font-extrabold leading-none">{porcentaje(fila.comisionPorcentaje ?? fila.comision)}</p>
+          <p className="mt-1 text-xs text-hc-n-600">Comisión · mensualidad {plata(fila.precioMensual ?? fila.precio)}</p>
         </li>
       ))}
     </ul>
+    </div>
   )
 }
 
 function Accesos() {
-  const { filas, estado } = useLista(adminService.getUsers)
+  const { filas, estado } = useLista(adminService.getOperadores)
   if (estado === 'carga') return <Carga />
   if (estado === 'error') return <Aviso>No se pudieron cargar los accesos.</Aviso>
-  const staff = filas.filter((fila) => JSON.stringify(fila.roles ?? fila.rol ?? '').includes('ADMIN'))
+  if (filas.length === 0) return <Aviso>No hay operadores de plataforma.</Aviso>
   return (
-    <ul className="flex flex-col gap-3">
-      {(staff.length > 0 ? staff : filas.slice(0, 20)).map((fila) => (
-        <li key={texto(fila.correo, texto(fila.id, 'user'))} className={TARJETA}>
-          <p className="font-semibold">{texto(fila.nombre, 'Usuario')}</p>
-          <p className="text-xs text-hc-n-600">{texto(fila.correo, '')}</p>
-        </li>
-      ))}
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {filas.map((fila) => {
+        const nombre = texto(fila.nombre, 'Operador')
+        return (
+          <li key={texto(fila.id, texto(fila.correo, 'user'))} className={`${TARJETA} flex items-center gap-3`}>
+            <span className="grid size-11 place-items-center rounded-xl bg-hc-blue-50 font-display text-sm font-bold text-hc-blue-600">
+              {nombre.trim().slice(0, 1).toUpperCase()}
+            </span>
+            <span>
+              <span className="block font-semibold">{nombre}</span>
+              <span className="text-xs text-hc-n-600">{texto(fila.correo, '')}</span>
+            </span>
+            <Chip tono="azul">{texto(fila.rol, 'ADMIN')}</Chip>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -69,15 +81,30 @@ function Tecnico() {
   if (estado === 'error') return <Aviso>No se pudieron cargar los interruptores.</Aviso>
   if (filas.length === 0) return <Aviso>No hay interruptores en la lista.</Aviso>
   return (
-    <ul className="flex flex-col gap-3">
-      {filas.map((fila) => (
-        <li key={texto(fila.nombre, texto(fila.flag, texto(fila.id, 'flag')))} className={TARJETA}>
-          <p className="font-semibold">{texto(fila.nombre, texto(fila.flag, 'Interruptor'))}</p>
-          <p className="text-xs text-hc-n-600">{fila.activo === true || fila.on === true ? 'Encendido' : 'Apagado'}</p>
-        </li>
-      ))}
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {filas.map((fila) => {
+        const activo = fila.activo === true || fila.on === true
+        return (
+          <li key={texto(fila.nombre, texto(fila.flag, texto(fila.id, 'flag')))} className={`${TARJETA} flex items-center justify-between gap-3`}>
+            <p className="font-semibold">{texto(fila.nombre, texto(fila.flag, 'Interruptor'))}</p>
+            <Chip tono={activo ? 'ok' : 'neutro'}>{activo ? 'Encendido' : 'Apagado'}</Chip>
+          </li>
+        )
+      })}
     </ul>
   )
+}
+
+function porcentaje(valor: unknown): string {
+  const crudo = texto(valor, '')
+  if (!crudo) return '—'
+  return crudo.includes('%') ? crudo : `${crudo}%`
+}
+
+function plata(valor: unknown): string {
+  const n = typeof valor === 'number' ? valor : Number(texto(valor, ''))
+  if (!texto(valor, '') || !Number.isFinite(n)) return '—'
+  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(n)
 }
 
 function useLista(cargar: () => Promise<{ data: unknown }>) {

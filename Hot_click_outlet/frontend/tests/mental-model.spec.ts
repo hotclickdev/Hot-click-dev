@@ -72,7 +72,7 @@ test.describe('Mental Model coach', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Estadísticas' })).toBeVisible()
     await expect(page.getByRole('heading', { name: /Bienvenido/i })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toHaveCount(0)
     await expect(page.locator('#mm-titulo')).toHaveCount(0)

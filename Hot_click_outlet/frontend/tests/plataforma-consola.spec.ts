@@ -77,19 +77,26 @@ test.describe('Consola de plataforma', () => {
       localStorage.setItem('hotclick-auth', JSON.stringify(sesion))
       localStorage.setItem('hc-mm-v1-off', '1')
       localStorage.setItem('hc-admin-tour-v4-done', '1')
+      localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
+        analytics: false,
+        advertising: false,
+        functional: true,
+        timestamp: Date.now(),
+      }))
     }, auth('ADMIN'))
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/plataforma', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Estadísticas' })).toBeVisible()
     const nav = page.getByRole('navigation', { name: 'Dominios de HotClick' })
-    for (const nombre of ['Inicio', 'Negocios', 'Moderación', 'Dinero', 'Operación', 'Seguridad', 'IA', 'Plataforma']) {
+    for (const nombre of ['Estadísticas', 'Tiendas', 'Revisar', 'Dinero', 'Campo', 'Acceso', 'IA', 'Reglas']) {
       await expect(nav.getByRole('link', { name: nombre })).toBeVisible()
     }
-    await expect(page.getByRole('link', { name: 'Negocios por admitir' })).toBeVisible()
+    await expect(page.getByText('Visitas').first()).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Altas' })).toHaveCount(0)
     await expect(page.getByText('Tiendas activas')).toHaveCount(0)
 
-    await nav.getByRole('link', { name: 'Negocios' }).click()
+    await nav.getByRole('link', { name: 'Tiendas', exact: true }).click()
     await expect(page.getByRole('link', { name: 'Taller Sol' })).toBeVisible()
     await page.getByRole('link', { name: 'Taller Sol' }).click()
     await expect(page.getByRole('heading', { name: 'Taller Sol' })).toBeVisible()

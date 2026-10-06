@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AdminUsuarioService {
@@ -24,6 +26,11 @@ public class AdminUsuarioService {
     @Transactional(readOnly = true)
     public List<Usuario> listarTodos() {
         return usuarioRepository.findAllWithRolesOrderByIdDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listarOperadores() {
+        return usuarioRepository.findOperadores().stream().map(this::filaOperador).toList();
     }
 
     @Transactional(readOnly = true)
@@ -118,5 +125,21 @@ public class AdminUsuarioService {
         Usuario usuario = usuario(id);
         usuario.setEstado(estado);
         usuarioRepository.save(usuario);
+    }
+
+    private Map<String, Object> filaOperador(Usuario usuario) {
+        Map<String, Object> fila = new LinkedHashMap<>();
+        fila.put("id", usuario.getId());
+        fila.put("nombre", nombreVisible(usuario));
+        fila.put("correo", usuario.getCorreo());
+        fila.put("rol", Constants.ROL_ADMIN);
+        return fila;
+    }
+
+    private String nombreVisible(Usuario usuario) {
+        String nombre = usuario.getNombre() == null ? "" : usuario.getNombre().trim();
+        String apellido = usuario.getApellidoPaterno() == null ? "" : usuario.getApellidoPaterno().trim();
+        String junto = (nombre + " " + apellido).trim();
+        return junto.isEmpty() ? "Operador" : junto;
     }
 }

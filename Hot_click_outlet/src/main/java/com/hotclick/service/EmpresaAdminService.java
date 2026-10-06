@@ -234,6 +234,8 @@ public class EmpresaAdminService {
         m.put("estado", p.getEstadoPedido());
         m.put("cliente", nombreClientePedido(p));
         m.put("metodoPago", p.getMetodoPago());
+        m.put("numeroGuia", p.getNumeroGuia());
+        m.put("origen", p.getOrigen());
         // Compras con productos de varios vendedores comparten este código — un pago, un paquete por vendedor.
         // Se expone para que el vendedor sepa que su subpedido es parte de un pago agrupado (ver PedidoGrupoService).
         m.put("grupoPago", p.getGrupoPago());

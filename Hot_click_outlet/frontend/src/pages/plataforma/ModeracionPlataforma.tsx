@@ -4,14 +4,15 @@ import { aprobacionService } from '@/services/aprobacionService'
 import { reporteProductoService } from '@/services/moderacionService'
 import { testimonioService } from '@/services/testimonioService'
 import { filasDe, idSeguro, texto, type Fila } from './normalizar'
-import { Aviso, Carga, FilaDecision, Segmento, TARJETA } from './piezas'
+import { IconoDominio } from './iconos'
+import { Aviso, Carga, Chip, Encabezado, FilaDecision, MarcoIcono, Segmento, TARJETA } from './piezas'
 
 export default function ModeracionPlataforma() {
   const navigate = useNavigate()
   const reportes = useLocation().pathname.endsWith('/reportes')
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <h1 className="font-display text-[22px] font-bold text-hc-n-900">Moderación</h1>
+    <div className="flex flex-col gap-4">
+      <Encabezado titulo="Revisar" detalle="Qué se publica y qué se retira." />
       <Segmento
         opciones={[{ id: 'cola', label: 'Cola' }, { id: 'reportes', label: 'Reportes' }]}
         valor={reportes ? 'reportes' : 'cola'}
@@ -45,13 +46,12 @@ function Cola() {
   }, [marca])
 
   if (!listo) return <Carga />
-  const vacia = grupos.every((g) => g.filas.length === 0 && !g.fallo)
+  const total = grupos.reduce((suma, grupo) => suma + grupo.filas.length, 0)
   return (
     <div className="flex flex-col gap-4">
-      {vacia && <Aviso>Nada pendiente.</Aviso>}
+      <Tablero grupos={grupos} total={total} />
       {grupos.map((grupo) => (
         <section key={grupo.titulo} className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-hc-n-600">{grupo.titulo}</h2>
           {grupo.fallo && <Aviso>{`No se pudo cargar ${grupo.titulo}.`}</Aviso>}
           {grupo.filas.map((fila) => (
             <Decision key={`${grupo.titulo}-${idSeguro(fila)}`} grupo={grupo.titulo} fila={fila} onListo={() => setMarca((n) => n + 1)} />
@@ -62,6 +62,39 @@ function Cola() {
   )
 }
 
+function Tablero({ grupos, total }: { grupos: Array<{ titulo: string; filas: Fila[]; fallo: boolean }>; total: number }) {
+  return (
+    <div className="overflow-hidden rounded-[14px] border border-hc-n-200 bg-white">
+      <div className="flex items-center justify-between border-b border-hc-n-200 bg-hc-n-50 px-4 py-3">
+        <h2 className="font-display text-[17px] font-bold">Colas</h2>
+        <Chip tono={total > 0 ? 'alerta' : 'ok'}>{total > 0 ? `${total} en espera` : 'Al día'}</Chip>
+      </div>
+      <div className="grid grid-cols-[1fr_5rem_6rem] gap-2 px-4 py-2 text-xs font-semibold text-hc-n-600">
+        <span>Cola</span><span>En espera</span><span>Estado</span>
+      </div>
+      {grupos.map((grupo) => (
+        <div key={grupo.titulo} className="grid grid-cols-[1fr_5rem_6rem] items-center gap-2 border-t border-hc-n-200 px-4 py-3">
+          <span className="flex items-center gap-2 font-semibold">
+            <span className="grid size-8 place-items-center rounded-lg bg-hc-blue-50 text-hc-blue-600">
+              <IconoDominio id={iconoGrupo(grupo.titulo)} className="size-4" />
+            </span>
+            {grupo.titulo}
+          </span>
+          <span className="font-display text-lg font-extrabold">{grupo.filas.length}</span>
+          <Chip tono={grupo.filas.length > 0 ? 'alerta' : 'ok'}>{grupo.filas.length > 0 ? 'Revisar' : 'Al día'}</Chip>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function iconoGrupo(titulo: string): string {
+  if (titulo === 'Negocios') return 'negocios'
+  if (titulo === 'Ofertas') return 'dinero'
+  if (titulo === 'Métodos de cobro') return 'dinero'
+  return 'moderacion'
+}
+
 function Decision({ grupo, fila, onListo }: { grupo: string; fila: Fila; onListo: () => void }) {
   const id = idSeguro(fila)
   if (!id) return null
@@ -69,11 +102,18 @@ function Decision({ grupo, fila, onListo }: { grupo: string; fila: Fila; onListo
   return (
     <FilaDecision
       titulo={titulo}
-      meta={texto(fila.estado, grupo)}
+      icono={iconoGrupo(grupo)}
+      meta={metaDecision(grupo, fila)}
       onAprobar={async () => { await aprobar(grupo, id); onListo() }}
       onRechazar={async (motivo) => { await rechazar(grupo, id, motivo); onListo() }}
     />
   )
+}
+
+function metaDecision(grupo: string, fila: Fila): string {
+  const quien = texto(fila.correo, texto(fila.usuarioNombre, texto(fila.nombreEmpresa, grupo)))
+  const que = texto(fila.titulo, texto(fila.nombre, texto(fila.estado, grupo)))
+  return `${quien} · ${que}`
 }
 
 function aprobar(grupo: string, id: string) {
@@ -101,12 +141,15 @@ function Reportes() {
         const id = idSeguro(fila)
         if (!id) return null
         return (
-          <li key={id} className={TARJETA}>
+          <li key={id} className={`${TARJETA} flex items-start gap-3`}>
+            <MarcoIcono id="moderacion" />
+            <div>
             <p className="font-display text-[17px] font-bold">{texto(fila.productoNombre, 'Producto')}</p>
             <p className="mt-1 text-xs text-hc-n-600">{texto(fila.motivo, 'Sin motivo')} · {texto(fila.detalle, '')}</p>
             <button type="button" className="mt-3 text-sm font-semibold text-hc-blue-600" onClick={() => void resolver(id, false, recargar)}>
               Resolver
             </button>
+            </div>
           </li>
         )
       })}

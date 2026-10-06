@@ -1,10 +1,54 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { IconoDominio } from './iconos'
 
 export const TARJETA = 'rounded-[14px] border border-hc-n-200 bg-white p-3.5'
 export const TITULO = 'font-display text-[17px] font-bold leading-6 text-hc-n-900'
 export const BOTON_PRIMARIO = 'inline-flex h-12 items-center justify-center rounded-xl bg-hc-primary px-4 text-[15px] font-semibold text-white disabled:opacity-60'
 export const BOTON_SECUNDARIO = 'inline-flex h-12 items-center justify-center rounded-xl border border-hc-n-200 bg-white px-4 text-sm font-semibold text-hc-n-900 disabled:opacity-60'
+
+export function MarcoIcono({ id }: { id: string }) {
+  return (
+    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-hc-blue-50 text-hc-blue-600">
+      <IconoDominio id={id} />
+    </span>
+  )
+}
+
+const TONO_CHIP = {
+  neutro: 'bg-hc-n-100 text-hc-n-600',
+  ok: 'bg-hc-success-bg text-hc-success-text',
+  alerta: 'bg-hc-danger-bg text-hc-primary-text',
+  azul: 'bg-hc-blue-50 text-hc-blue-600',
+} as const
+
+export function Chip({ children, tono = 'neutro' }: { children: string; tono?: keyof typeof TONO_CHIP }) {
+  return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONO_CHIP[tono]}`}>{children}</span>
+}
+
+export function Metrica({ icono, etiqueta, valor }: { icono: string; etiqueta: string; valor: string }) {
+  return (
+    <article className={`${TARJETA} flex items-center gap-3`}>
+      <MarcoIcono id={icono} />
+      <span className="min-w-0">
+        <span className="block text-xs font-semibold text-hc-n-600">{etiqueta}</span>
+        <span className="mt-1 block font-display text-[22px] font-extrabold leading-none tracking-tight text-hc-n-900">{valor}</span>
+      </span>
+    </article>
+  )
+}
+
+export function Encabezado({ titulo, detalle, marca }: { titulo: string; detalle?: string; marca?: string }) {
+  return (
+    <header className="flex flex-wrap items-end justify-between gap-3 rounded-[16px] bg-hc-blue-50 px-5 py-4">
+      <div>
+        <h1 className="font-display text-[28px] font-extrabold leading-8 text-hc-n-900">{titulo}</h1>
+        {detalle && <p className="mt-1 max-w-xl text-sm text-hc-n-600">{detalle}</p>}
+      </div>
+      {marca && <p className="font-display text-[40px] font-extrabold leading-none text-hc-blue-600">{marca}</p>}
+    </header>
+  )
+}
 
 export function Segmento({ opciones, valor, onChange }: {
   opciones: Array<{ id: string; label: string }>
@@ -47,9 +91,10 @@ export function EnlaceDominio({ to, children }: { to: string; children: string }
   )
 }
 
-export function FilaDecision({ titulo, meta, onAprobar, onRechazar }: {
+export function FilaDecision({ titulo, meta, icono = 'moderacion', onAprobar, onRechazar }: {
   titulo: string
   meta: string
+  icono?: string
   onAprobar: () => Promise<void>
   onRechazar: (motivo: string) => Promise<void>
 }) {
@@ -72,8 +117,16 @@ export function FilaDecision({ titulo, meta, onAprobar, onRechazar }: {
 
   return (
     <article className={TARJETA}>
-      <h3 className={TITULO}>{titulo}</h3>
-      <p className="mt-1 text-xs leading-5 text-hc-n-600">{meta}</p>
+      <div className="flex items-start gap-3">
+        <MarcoIcono id={icono} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className={TITULO}>{titulo}</h3>
+            <Chip tono="alerta">Pendiente</Chip>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-hc-n-600">{meta}</p>
+        </div>
+      </div>
       <label className="mt-3 block text-xs font-semibold text-hc-n-600">
         Motivo si rechazás
         <input

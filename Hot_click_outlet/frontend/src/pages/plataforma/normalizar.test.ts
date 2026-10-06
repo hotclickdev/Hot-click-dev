@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   contarAtrasadas,
   destinoPlataformaDesdeAdmin,
+  detalleAlerta,
   filtrarNegocios,
   idSeguro,
+  ipDeFila,
   ipValida,
+  tituloAlerta,
 } from './normalizar'
 
 const NEGOCIOS = [
@@ -41,5 +44,13 @@ describe('consola de plataforma', () => {
     expect(ipValida('abc')).toBe(false)
     expect(ipValida('999.1.1.1')).toBe(false)
     expect(ipValida('no es ip')).toBe(false)
+  })
+
+  it('lee la alerta y la IP con los nombres del API', () => {
+    const fila = { alertType: 'JWT_SCANNING', severity: 'MEDIUM', message: 'Tokens inválidos', ipAddress: '127.0.0.1' }
+    expect(tituloAlerta(fila)).toBe('JWT_SCANNING · MEDIUM')
+    expect(detalleAlerta(fila)).toBe('Tokens inválidos · 127.0.0.1')
+    expect(ipDeFila({ ipAddress: '10.0.0.8' })).toBe('10.0.0.8')
+    expect(ipDeFila({ id: 3 })).toBe('')
   })
 })

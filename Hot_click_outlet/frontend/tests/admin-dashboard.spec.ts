@@ -86,10 +86,10 @@ test.describe('Admin IT — consola en reconstrucción', () => {
     await entrarDashboard(page)
 
     await expect(page).toHaveURL(/\/plataforma\/?$/)
-    await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Estadísticas' })).toBeVisible()
     const nav = page.getByRole('navigation', { name: 'Dominios de HotClick' })
-    await expect(nav.getByRole('link', { name: 'Negocios', exact: true })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'Moderación', exact: true })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Tiendas', exact: true })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Revisar', exact: true })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Panel Admin' })).toHaveCount(0)
     await expect(page.getByText('Tiendas activas')).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toHaveCount(0)
@@ -98,7 +98,7 @@ test.describe('Admin IT — consola en reconstrucción', () => {
 
   test('alterna modo oscuro desde el sidebar', async ({ page }) => {
     await entrarDashboard(page)
-    const toggle = page.locator('aside.hc-admin-sidebar').filter({ visible: true }).getByRole('button', { name: 'Cambiar tema' })
+    const toggle = page.getByRole('button', { name: 'Cambiar tema' })
     await expect(toggle).toBeVisible()
 
     const panel = page.locator('.hc-superadmin-theme')
@@ -116,7 +116,7 @@ test.describe('Admin IT — consola en reconstrucción', () => {
 
   test('el inicio no usa las tarjetas del panel viejo', async ({ page }) => {
     await entrarDashboard(page)
-    await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Estadísticas' })).toBeVisible()
     await expect(page.getByText('Tiendas activas')).toHaveCount(0)
   })
 })

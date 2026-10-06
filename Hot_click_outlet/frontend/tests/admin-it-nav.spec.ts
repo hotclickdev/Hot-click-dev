@@ -45,21 +45,21 @@ async function entrarPanel(page: Page, rol: string) {
   await page.goto('/admin', { waitUntil: 'domcontentloaded' })
 }
 
-function sidebarVisible(page: Page) {
-  return page.locator('aside.hc-admin-sidebar').filter({ visible: true })
+function barraDominios(page: Page) {
+  return page.getByRole('navigation', { name: 'Dominios de HotClick' })
 }
 
 test.describe('Admin IT — nav por jobs', () => {
   test('ADMIN agrupa por job; IA y Fiscal arrancan colapsados', async ({ page }) => {
     await entrarPanel(page, 'ADMIN')
-    const sidebar = sidebarVisible(page)
+    const sidebar = barraDominios(page)
 
     await expect(page).toHaveURL(/\/plataforma/)
-    for (const nombre of ['Inicio', 'Negocios', 'Moderación', 'Dinero', 'Operación', 'Seguridad', 'IA', 'Plataforma']) {
+    for (const nombre of ['Estadísticas', 'Tiendas', 'Revisar', 'Dinero', 'Campo', 'Acceso', 'IA', 'Reglas']) {
       await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
     }
     await expect(sidebar.getByRole('link', { name: 'Más herramientas' })).toHaveCount(0)
-    await expect(sidebar.getByRole('link', { name: 'Tiendas' })).toHaveCount(0)
+    await expect(sidebar.getByRole('link', { name: 'Moderación' })).toHaveCount(0)
 
     const primary = await page.locator('.hc-superadmin-theme').evaluate((el) =>
       getComputedStyle(el).getPropertyValue('--hc-primary').trim(),

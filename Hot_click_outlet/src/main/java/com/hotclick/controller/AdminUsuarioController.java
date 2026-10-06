@@ -27,6 +27,11 @@ public class AdminUsuarioController {
         return ResponseDTO.success("Usuarios", adminUsuarioService.listarTodos());
     }
 
+    @GetMapping("/operadores")
+    public ResponseDTO listarOperadores() {
+        return ResponseDTO.success("Operadores", adminUsuarioService.listarOperadores());
+    }
+
     @GetMapping("/pendientes")
     public ResponseDTO listarPendientes() {
         return ResponseDTO.success("Usuarios pendientes", adminUsuarioService.listarPendientes());

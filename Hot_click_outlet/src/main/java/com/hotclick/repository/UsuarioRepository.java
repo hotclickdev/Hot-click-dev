@@ -88,6 +88,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.roles ORDER BY u.id DESC")
     List<Usuario> findAllWithRolesOrderByIdDesc();
 
+    @Query("SELECT DISTINCT u FROM Usuario u JOIN FETCH u.roles r WHERE r.nombreRol = 'ADMIN' ORDER BY u.id DESC")
+    List<Usuario> findOperadores();
+
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.estado = 1")
     long countUsuariosActivos();
 
