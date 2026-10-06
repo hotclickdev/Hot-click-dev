@@ -63,8 +63,8 @@ export function ScrollToTop() {
   useEffect(() => {
     captureAttributionFromLocation(search, pathname)
     trackPageView(pathname)
-    if (!pathname.startsWith('/admin') && !pathname.startsWith('/pos')) analytics.visita()
-    if (pathname.startsWith('/admin') || pathname.startsWith('/pos') || esRutaClaudeclick(pathname)) return
+    if (!pathname.startsWith('/admin') && !pathname.startsWith('/plataforma') && !pathname.startsWith('/pos')) analytics.visita()
+    if (pathname.startsWith('/admin') || pathname.startsWith('/plataforma') || pathname.startsWith('/pos') || esRutaClaudeclick(pathname)) return
     const ficha = pathname.match(/^\/productos\/([^/]+)/)
     trackAiPage(surfaceFromPath(pathname), ficha?.[1])
   }, [pathname, search])
@@ -99,7 +99,7 @@ export function ConditionalWhatsAppFab() {
 export function ConditionalChatModal() {
   const { pathname } = useLocation()
   if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
-  if (pathname.startsWith('/pos')) return null
+  if (pathname.startsWith('/pos') || pathname.startsWith('/plataforma')) return null
   if (/^\/productos\/[^/]+/.test(pathname)) return null
   return <ChatModal />
 }

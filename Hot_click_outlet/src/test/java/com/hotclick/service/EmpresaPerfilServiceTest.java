@@ -53,6 +53,7 @@ class EmpresaPerfilServiceTest {
         body.put("numeroWhatsapp", "50688887777");
         body.put("footerTexto", "Hecho en Pérez Zeledón");
         body.put("colorAcento", "#0EA5E9");
+        body.put("ogImagenUrl", "https://cdn.example/portada.jpg");
 
         Map<String, Object> out = service.update(1L, body);
 
@@ -64,6 +65,8 @@ class EmpresaPerfilServiceTest {
         assertThat(e.getDescripcion()).isEqualTo("No borrar [FOTOS][][/FOTOS]");
         assertThat(out.get("tagline")).isEqualTo("Café de especialidad");
         assertThat(out.get("footerTexto")).isEqualTo("Hecho en Pérez Zeledón");
+        assertThat(e.getOgImagenUrl()).isEqualTo("https://cdn.example/portada.jpg");
+        assertThat(out.get("ogImagenUrl")).isEqualTo("https://cdn.example/portada.jpg");
         assertThat(out.get("colorAcento")).isEqualTo("#0EA5E9");
     }
 
@@ -268,6 +271,20 @@ class EmpresaPerfilServiceTest {
                 .thenReturn(new ImageModerationService.ModerationResult(false, "contenido no permitido"));
 
         assertThatThrownBy(() -> service.subirLogo(1L, file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Imagen rechazada");
+        verify(supabaseStorageService, never()).subirImagen(any(), any());
+        verify(empresaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("subirPortada rechaza imagen insegura y no toca el logo")
+    void subir_portada_rechazada() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(imageModerationService.moderar(file))
+                .thenReturn(new ImageModerationService.ModerationResult(false, "contenido no permitido"));
+
+        assertThatThrownBy(() -> service.subirPortada(1L, file))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Imagen rechazada");
         verify(supabaseStorageService, never()).subirImagen(any(), any());

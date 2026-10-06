@@ -33,6 +33,7 @@ export type PedidoEmprendedor = {
   pagaAlRetirar?: boolean
   fecha: string
   direccion: string
+  origen?: string
   productos: { id: string; nombre: string; cantidad: number; precio: number }[]
 }
 
@@ -42,6 +43,8 @@ export type BodegaEmprendedor = {
   ubicacion: string
   productos: number
   principal: boolean
+  latitud?: number | null
+  longitud?: number | null
 }
 
 export type FormProducto = {

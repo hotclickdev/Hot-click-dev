@@ -17,7 +17,7 @@ export function aplicarSwUpdate(recargar = true): Promise<void> {
  * una venta en la caja POS ni un formulario del panel. Aprobado por el usuario el 2-oct-2026.
  */
 const PREFIJOS_SOLO_PROMPT = [
-  '/admin', '/emprendedor', '/pyme', '/negocio-plus', '/pos', '/caja', '/checkout/qr',
+  '/admin', '/plataforma', '/emprendedor', '/pyme', '/negocio-plus', '/pos', '/caja', '/checkout/qr',
   '/seleccionar-negocio', '/mode-select', '/registrar-negocio', '/registro-empresa', '/visitante', '/prototipo',
 ] as const
 

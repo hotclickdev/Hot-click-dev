@@ -139,10 +139,11 @@ public class SinpeController {
     @PostMapping("/admin/comprobantes/{id}/rechazar")
     public ResponseEntity<ResponseDTO> rechazar(
             @PathVariable Long id,
-            @RequestParam(required = false) String motivo) {
+            @RequestParam(required = false) String motivo,
+            @RequestBody(required = false) Map<String, String> body) {
         try {
             String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            sinpeService.rechazar(id, motivo, adminEmail, null);
+            sinpeService.rechazar(id, AdminPagoController.motivoEscrito(motivo, body), adminEmail, null);
             return ResponseEntity.ok(ResponseDTO.success("Comprobante rechazado", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));

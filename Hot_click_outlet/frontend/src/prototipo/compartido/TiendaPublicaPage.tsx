@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatoColon } from '@/theme/formatoColon'
-import { useCuentaVendedor } from '@/prototipo/emprendedor/hooks/useCuentaVendedor'
 import Miniatura from '@/prototipo/emprendedor/ui/Miniatura'
+import VitrinaEditable from './VitrinaEditable'
 import BadgeEstado from '@/prototipo/emprendedor/ui/BadgeEstado'
 import { Chip } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
@@ -25,7 +25,6 @@ const FILTROS = ['Todos', 'Tecnología', 'Ropa'] as const
 export default function TiendaPublicaPage() {
   const ruta = useSellerRuta()
   const { seller: productos, cargando, error } = useCatalogoVendedor()
-  const { tienda, inicial } = useCuentaVendedor()
   const [filtro, setFiltro] = useState<string>('Todos')
   const publicados = useMemo(
     () => productos.filter((item) => item.estado === 'Publicado'),
@@ -44,14 +43,7 @@ export default function TiendaPublicaPage() {
         Así te ven los compradores
       </div>
       <EntradaPagina>
-        <div className="h-24 bg-hc-surface-2" aria-hidden />
-        <div className="flex items-start gap-4 px-5 pt-0">
-          <div className="-mt-8 flex size-16 items-center justify-center rounded-full bg-hc-primary text-xl font-bold text-white">{inicial}</div>
-          <div className="pt-2">
-            <h1 className="font-display text-lg font-bold">Tienda {tienda}</h1>
-            <p className="text-xs text-hc-muted">Outlet oficial</p>
-          </div>
-        </div>
+        <VitrinaEditable />
         <div className="px-5 pt-4">
           <Link to={ruta('proximamente')} className="inline-flex min-h-8 items-center rounded-full border border-hc-border px-4 text-xs font-medium">
             + Seguir tienda

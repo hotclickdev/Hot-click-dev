@@ -37,6 +37,9 @@ public class RecoleccionCreateRequest {
     @Size(max = 2000)
     private String notas;
 
+    /** Bodega del vendedor que se marca como punto de recolección. */
+    private Long bodegaId;
+
     public String getZona() { return zona; }
     public void setZona(String zona) { this.zona = zona; }
 
@@ -72,4 +75,7 @@ public class RecoleccionCreateRequest {
 
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
+
+    public Long getBodegaId() { return bodegaId; }
+    public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 }

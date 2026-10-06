@@ -87,7 +87,7 @@ export function whatsappOculto(
 ): boolean {
   if (pantallaSinConexion || pathname === '/sin-conexion') return true
   if (['/login', '/registro', '/carrito', '/checkout'].includes(pathname)) return true
-  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return true
+  if (pathname.startsWith('/admin') || pathname.startsWith('/plataforma') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return true
   if (pathname.startsWith('/pos')) return true
   if (esTienda || esPrototipo) return true
   if (esRutaSinCambio(pathname)) return false

@@ -65,6 +65,7 @@ public class EmpresaPerfilService {
         if (body.containsKey("colorSecundario")) e.setColorSecundario(body.get("colorSecundario"));
         if (body.containsKey("colorAcento")) e.setColorAcento(body.get("colorAcento"));
         if (body.containsKey("logoUrl")) e.setLogoUrl(body.get("logoUrl"));
+        if (body.containsKey("ogImagenUrl")) e.setOgImagenUrl(portada(body.get("ogImagenUrl")));
         if (body.containsKey("tagline")) e.setTagline(body.get("tagline"));
         if (body.containsKey("footerTexto")) e.setFooterTexto(body.get("footerTexto"));
         empresaRepository.save(e);
@@ -101,16 +102,33 @@ public class EmpresaPerfilService {
     }
 
     public String subirLogo(Long empresaId, MultipartFile file) throws java.io.IOException {
+        return guardarImagen(empresaId, file, true);
+    }
+
+    /** Portada de la vitrina. No reemplaza el logo. */
+    public String subirPortada(Long empresaId, MultipartFile file) throws java.io.IOException {
+        return guardarImagen(empresaId, file, false);
+    }
+
+    private String guardarImagen(Long empresaId, MultipartFile file, boolean logo) throws java.io.IOException {
         var mod = imageModerationService.moderar(file);
         if (!mod.safe()) {
             throw new IllegalArgumentException("Imagen rechazada: " + mod.reason());
         }
         String url = supabaseStorageService.subirImagen(file, "Empredimientos");
         empresaRepository.findById(empresaId).ifPresent(emp -> {
-            emp.setLogoUrl(url);
+            if (logo) emp.setLogoUrl(url);
+            else emp.setOgImagenUrl(url);
             empresaRepository.save(emp);
         });
-        log.info("[empresa/logo] Logo subido para empresa {}: {}", empresaId, url);
+        log.info("[empresa/imagen] {} subida para empresa {}: {}", logo ? "Logo" : "Portada", empresaId, url);
+        return url;
+    }
+
+    private static String portada(String url) {
+        if (url != null && url.length() > 500) {
+            throw new IllegalArgumentException("La portada no puede superar 500 caracteres.");
+        }
         return url;
     }
 
@@ -157,6 +175,7 @@ public class EmpresaPerfilService {
         m.put("telefonoEmpresa", e.getTelefonoEmpresa());
         m.put("descripcion", e.getDescripcion());
         m.put("logoUrl", e.getLogoUrl());
+        m.put("ogImagenUrl", e.getOgImagenUrl());
         m.put("colorPrimario", e.getColorPrimario());
         m.put("colorSecundario", e.getColorSecundario());
         m.put("colorAcento", e.getColorAcento());

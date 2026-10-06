@@ -78,6 +78,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PATCH,  "/api/productos/*/visibilidad-catalogo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, API_PRODUCTO_POR_ID).hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST,   "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(GET, "/api/division-territorial").permitAll()
             .requestMatchers(GET, "/api/categorias").permitAll()
             .requestMatchers(GET, "/api/categorias/**").permitAll()
             .requestMatchers(GET, "/api/convenios/publicos").permitAll()
@@ -184,6 +185,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            .requestMatchers(POST, "/api/empresa/perfil/portada").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             // Gestión de equipo — accesible para EMPRENDEDOR de la misma empresa
             .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST,   "/api/empresa/equipo").hasRole(Constants.ROL_EMPRENDEDOR)

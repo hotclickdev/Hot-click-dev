@@ -65,19 +65,37 @@ public class EmpresaAdminService {
     }
 
     public void cambiarEstado(Long id, String nuevoEstado) {
+        cambiarEstado(id, nuevoEstado, null);
+    }
+
+    public void cambiarEstado(Long id, String nuevoEstado, String motivo) {
         if (nuevoEstado == null || !ESTADOS_VALIDOS.contains(nuevoEstado)) {
             throw new IllegalArgumentException("Estado inválido");
+        }
+        if (exigeMotivo(nuevoEstado) && (motivo == null || motivo.isBlank())) {
+            throw new IllegalArgumentException("Motivo obligatorio para suspender o inactivar");
         }
         empresa(id);
         if ("ACTIVO".equals(nuevoEstado)) {
             empresaAprobacionService.aprobarYPublicar(id);
+            auditarEstado(id, nuevoEstado, motivo);
             return;
         }
         Empresa empresa = empresa(id);
         empresa.setEstadoEmpresa(nuevoEstado);
-        // Al apagar la cuenta, el catálogo también queda oculto (el dueño no puede republicarlo).
         empresa.setVisibilidadPublica(false);
         empresaRepository.save(empresa);
+        auditarEstado(id, nuevoEstado, motivo);
+    }
+
+    private static boolean exigeMotivo(String estado) {
+        return "SUSPENDIDO".equals(estado) || "INACTIVO".equals(estado);
+    }
+
+    private void auditarEstado(Long id, String estado, String motivo) {
+        String detalle = motivo == null || motivo.isBlank() ? estado : estado + ": " + motivo.trim();
+        auditoriaAdminRegistroService.registrarSiAdmin(
+            "EMPRESA_CAMBIO_ESTADO", "EMPRESA", id, id, detalle);
     }
 
     @CacheEvict(value = "tenantInfo", key = "#id")

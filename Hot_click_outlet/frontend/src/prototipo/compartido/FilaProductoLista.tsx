@@ -45,7 +45,7 @@ export default function FilaProductoLista({ producto, to }: Props) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{producto.nombre}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <Tag>{producto.categoria}</Tag>
+            {producto.esPersonalizado ? <Tag>Personalizado</Tag> : <Tag>{producto.categoria}</Tag>}
             <span className="text-[13px] font-bold">
               {precioLabel ?? formatoColon(producto.precio)}
             </span>

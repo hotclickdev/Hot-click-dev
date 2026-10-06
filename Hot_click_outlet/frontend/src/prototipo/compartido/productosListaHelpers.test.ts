@@ -35,6 +35,17 @@ describe('productosListaHelpers', () => {
     expect(grupos.find((g) => g.titulo === 'Tecnología')?.items.map((p) => p.id)).toEqual(['2'])
   })
 
+  it('en Todos muestra personalizados y no esconde Otras categorías', () => {
+    const grupos = gruposProductosVisibles([
+      ...lista,
+      item({ id: '4', nombre: 'Cuadro', esPersonalizado: true, categoria: 'Otro' }),
+      item({ id: '5', nombre: 'Lámpara', categoria: 'Otro' }),
+    ], 'Todos')
+    expect(grupos.map((g) => g.titulo)).toEqual(['Personalizados', 'Recién agregados', 'Tecnología', 'Ropa', 'Otros'])
+    expect(grupos[0].items.map((p) => p.id)).toEqual(['4'])
+    expect(grupos.find((g) => g.titulo === 'Otros')?.items.map((p) => p.id)).toEqual(['5'])
+  })
+
   it('aProductoListaItem normaliza recienAgregado', () => {
     expect(aProductoListaItem({
       id: 'x',

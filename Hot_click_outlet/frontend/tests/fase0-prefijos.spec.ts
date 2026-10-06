@@ -103,13 +103,13 @@ test.describe('Fase 0 — URLs por rol', () => {
     await expect(page.getByRole('heading', { name: 'Mis Productos' })).toBeVisible()
   })
 
-  test('ADMIN se queda en /admin, no en /emprendedor', async ({ page }) => {
+  test('ADMIN entra a la consola, no al área del vendedor', async ({ page }) => {
     await sesion(page, 'ADMIN')
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/admin\/?$/)
+    await expect(page).toHaveURL(/\/plataforma\/?$/)
     await page.goto('/emprendedor', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/admin/)
+    await expect(page).toHaveURL(/\/plataforma/)
   })
 
   test('PYME en /emprendedor pasa a /pyme', async ({ page }) => {

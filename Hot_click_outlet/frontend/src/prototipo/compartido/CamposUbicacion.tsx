@@ -1,7 +1,7 @@
-import { PROVINCIAS_CR, cantonesDe } from '@/utils/divisionTerritorialCR'
+import { useDivisionTerritorial } from '@/utils/useDivisionTerritorial'
 import { Campo } from './ui'
 import CampoSelectAnimado from './motion/CampoSelectAnimado'
-import { conProvincia, type ErroresUbicacion, type UbicacionDespacho } from './ubicacionDespachoHelpers'
+import { conCanton, conProvincia, type ErroresUbicacion, type UbicacionDespacho } from './ubicacionDespachoHelpers'
 
 type Props = Readonly<{
   ubicacion: UbicacionDespacho
@@ -11,26 +11,41 @@ type Props = Readonly<{
 }>
 
 /**
- * Ubicación de despacho de una bodega: provincia, cantón, dirección exacta y retiro en sitio.
+ * Ubicación de despacho de una bodega: provincia, cantón y distrito del IGN, dirección exacta y retiro en sitio.
  */
 export default function CamposUbicacion({ ubicacion, onChange, errores = {} }: Props) {
+  const territorio = useDivisionTerritorial()
+  const distritos = territorio.distritosDe(ubicacion.provincia, ubicacion.canton)
   return (
     <>
+      {territorio.error && (
+        <p className="mb-3 text-xs text-hc-muted" role="status">
+          No se pudo cargar la división del IGN. Los distritos no están disponibles.
+        </p>
+      )}
       <CampoSelectAnimado
         etiqueta="Provincia"
         valor={ubicacion.provincia}
-        opciones={PROVINCIAS_CR}
+        opciones={territorio.provincias}
         onChange={(provincia) => onChange(conProvincia(ubicacion, provincia))}
         errorMensaje={errores.provincia}
       />
       <CampoSelectAnimado
         etiqueta="Cantón"
         valor={ubicacion.canton}
-        opciones={cantonesDe(ubicacion.provincia)}
-        onChange={(canton) => onChange({ ...ubicacion, canton })}
+        opciones={territorio.cantonesDe(ubicacion.provincia)}
+        onChange={(canton) => onChange(conCanton(ubicacion, canton))}
         placeholder={ubicacion.provincia ? 'Elegí una opción' : 'Primero elegí la provincia'}
         deshabilitado={!ubicacion.provincia}
         errorMensaje={errores.canton}
+      />
+      <CampoSelectAnimado
+        etiqueta="Distrito"
+        valor={ubicacion.distrito ?? ''}
+        opciones={distritos}
+        onChange={(distrito) => onChange({ ...ubicacion, distrito })}
+        placeholder={ubicacion.canton ? 'Elegí una opción' : 'Primero elegí el cantón'}
+        deshabilitado={!ubicacion.canton || distritos.length === 0}
       />
       <Campo
         etiqueta="Dirección exacta"

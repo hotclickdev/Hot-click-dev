@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import PinBodegaLista from './PinBodegaLista'
 import { Boton } from './ui'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
@@ -10,6 +11,8 @@ export type BodegaListaItem = {
   ubicacion: string
   productos: number
   principal: boolean
+  latitud?: number | null
+  longitud?: number | null
 }
 
 export type BodegasListaVariante = 'emp' | 'seller'
@@ -72,6 +75,7 @@ function TarjetaEmp({ bodega }: { bodega: BodegaListaItem }) {
       <div className="flex flex-col gap-1">
         <p className="text-[15px] font-semibold text-hc-text">{bodega.nombre}</p>
         <p className="text-[13px] text-hc-muted">{detalleEmp(bodega)}</p>
+        <PinBodegaLista bodega={bodega} />
       </div>
     </div>
   )
@@ -79,13 +83,14 @@ function TarjetaEmp({ bodega }: { bodega: BodegaListaItem }) {
 
 function TarjetaSeller({ bodega }: { bodega: BodegaListaItem }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-hc-surface-2 p-3.5">
+    <div className="flex items-start gap-3 rounded-xl bg-hc-surface-2 p-3.5">
       <span className="flex size-11 items-center justify-center rounded-full bg-hc-surface text-sm font-bold">
         {bodega.nombre.slice(0, 1)}
       </span>
       <div className="flex-1">
         <p className="text-sm font-medium">{bodega.nombre}</p>
         <p className="text-xs text-hc-muted">{bodega.ubicacion || 'Sin ubicación'}</p>
+        <PinBodegaLista bodega={bodega} />
       </div>
       {bodega.principal ? (
         <span

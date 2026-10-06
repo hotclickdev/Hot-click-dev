@@ -44,6 +44,7 @@ const VALIDACIONES_API = new Set([
   'La dirección es obligatoria',
   'El teléfono es obligatorio',
   TELEFONO_INVALIDO,
+  'La ubicación del mapa no es válida',
 ])
 
 /** Valor de PhoneField (`+50688881234`, `+506 8888-1234`…) → `+` y solo dígitos; vacío si no hay número. */

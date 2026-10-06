@@ -9,7 +9,7 @@ const HTTP_ERROR_SERVIDOR = 500
 const LARGO_REFERENCIA = 8
 
 /** Áreas de panel (admin, POS, planes de negocio): conservan su propio error boundary. */
-const PREFIJOS_PANEL = ['/admin', '/pos', '/emprendedor', '/pyme', '/negocio-plus', '/prototipo']
+const PREFIJOS_PANEL = ['/admin', '/plataforma', '/pos', '/emprendedor', '/pyme', '/negocio-plus', '/prototipo']
 
 type ErrorHttp = { response?: { status?: number; headers?: Record<string, unknown> } }
 

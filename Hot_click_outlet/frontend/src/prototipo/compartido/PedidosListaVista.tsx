@@ -12,6 +12,7 @@ import {
   filtrarPedidos,
   estiloEstadoPedido,
 } from './pedidosListaHelpers'
+import { etiquetaOrigenPedido } from './ventaLlegada'
 
 export type PedidosListaVariante = 'emp' | 'seller'
 
@@ -145,6 +146,7 @@ function TarjetaPedido({
       <p className={emp ? 'text-[11px] text-hc-muted' : 'mt-2 text-xs text-hc-muted'}>
         {pedido.cliente}
       </p>
+      <p className="text-[11px] text-hc-blue-600">Llegó por {etiquetaOrigenPedido(pedido.origen)}</p>
       {sucursalLinea ? (
         <p className="mt-1 text-xs text-hc-muted">{sucursalLinea}</p>
       ) : null}

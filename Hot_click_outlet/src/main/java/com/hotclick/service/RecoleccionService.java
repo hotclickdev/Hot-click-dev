@@ -5,8 +5,10 @@ import com.hotclick.dto.RecoleccionRechazarRequest;
 import com.hotclick.dto.RecoleccionTarifaRequest;
 import com.hotclick.dto.SolicitudRecoleccionDto;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.SolicitudRecoleccion;
+import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.SolicitudRecoleccionRepository;
 import com.hotclick.security.CompanyScope;
@@ -24,6 +26,7 @@ public class RecoleccionService {
 
     private final SolicitudRecoleccionRepository repo;
     private final EmpresaRepository empresaRepo;
+    private final BodegaRepository bodegaRepo;
     private final CompanyScope companyScope;
     private final InputSanitizer sanitizer;
     private final ModeracionAvisoService moderacionAvisoService;
@@ -32,12 +35,14 @@ public class RecoleccionService {
     public RecoleccionService(
             SolicitudRecoleccionRepository repo,
             EmpresaRepository empresaRepo,
+            BodegaRepository bodegaRepo,
             CompanyScope companyScope,
             InputSanitizer sanitizer,
             ModeracionAvisoService moderacionAvisoService,
             ModeracionAdminAvisoService moderacionAdminAvisoService) {
         this.repo = repo;
         this.empresaRepo = empresaRepo;
+        this.bodegaRepo = bodegaRepo;
         this.companyScope = companyScope;
         this.sanitizer = sanitizer;
         this.moderacionAvisoService = moderacionAvisoService;
@@ -59,6 +64,7 @@ public class RecoleccionService {
         s.setUsuario(companyScope.getCurrentUser());
         s.setZona(ZonaLogistica.GAM);
         aplicarDirecciones(s, req);
+        marcarBodega(s, req.getBodegaId());
         s.setEstado(SolicitudRecoleccion.ESTADO_PENDIENTE);
         SolicitudRecoleccion guardada = repo.save(s);
         moderacionAdminAvisoService.avisarRecoleccion(
@@ -131,6 +137,16 @@ public class RecoleccionService {
         if (req.getNotas() != null && !req.getNotas().isBlank()) {
             s.setNotas(sanitizer.cleanWithLimit(req.getNotas(), 2000));
         }
+    }
+
+    private void marcarBodega(SolicitudRecoleccion solicitud, Long bodegaId) {
+        if (bodegaId == null) return;
+        Bodega bodega = bodegaRepo.findById(bodegaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
+        companyScope.assertCanAccessNullable(bodega.getEmpresaId());
+        solicitud.setBodega(bodega);
+        solicitud.setLatitud(bodega.getLatitud());
+        solicitud.setLongitud(bodega.getLongitud());
     }
 
     private SolicitudRecoleccion cargar(Long id) {

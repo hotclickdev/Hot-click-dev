@@ -54,8 +54,7 @@ export const paymentService = {
 
   /** Rechaza un pago SINPE (solo admin). */
   rechazarSinpe(pagoId: Id, motivo?: string) {
-    return api.post(`/admin/pagos/${pagoId}/rechazar-sinpe`, null,
-      motivo ? { params: { motivo } } : undefined)
+    return api.post(`/admin/pagos/${pagoId}/rechazar-sinpe`, { motivo: motivo || null })
   },
 
   // ── SINPE Móvil — flujo completo ─────────────────────────────────────────
@@ -106,8 +105,7 @@ export const paymentService = {
 
   /** Rechaza un comprobante SINPE con motivo opcional. */
   rechazarComprobante(comprobanteId: Id, motivo?: string) {
-    const params = motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''
-    return api.post(`/sinpe/admin/comprobantes/${comprobanteId}/rechazar${params}`)
+    return api.post(`/sinpe/admin/comprobantes/${comprobanteId}/rechazar`, { motivo: motivo || null })
   },
 
   kpisAdmin() {

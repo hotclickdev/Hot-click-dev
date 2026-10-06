@@ -13,6 +13,7 @@ import EsqueletoCatalogo from './EsqueletoCatalogo'
 import TiendaCatalogoError from './TiendaCatalogoError'
 import TiendaCatalogoNuevo from './TiendaCatalogoNuevo'
 import TiendaCatalogoBusquedaVacia from './TiendaCatalogoBusquedaVacia'
+import { descripcionVisible } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 
@@ -70,6 +71,7 @@ export default function TiendaHomePage() {
   const catalogoNuevo = !loading && !loadError && productos.length === 0 && !hayFiltro
   const busquedaVacia = !loading && !loadError && productos.length === 0 && hayFiltro
   const nombre = (empresa?.nombreComercial ?? slug) as string
+  const sobreNosotros = descripcionVisible(empresa?.descripcion ?? '')
 
   const buscar = (e: FormEvent) => {
     e.preventDefault()
@@ -101,14 +103,14 @@ export default function TiendaHomePage() {
 
   return (
     <div>
-      <TiendaPortada nombre={nombre} />
+      <TiendaPortada nombre={nombre} portadaUrl={empresa?.ogImagenUrl} />
       <TiendaEncabezadoNegocio empresa={empresa} nombre={nombre} />
 
       <div className="mx-auto grid max-w-[1232px] grid-cols-1 px-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:pb-14 lg:pt-8">
-        {empresa?.descripcion && (
+        {sobreNosotros && (
           <section className="flex flex-col gap-2 pb-[6px] pt-[18px] lg:col-start-1 lg:row-start-1 lg:gap-5 lg:pb-0 lg:pt-0">
             <h2 className={TITULO_SECCION}>{t('tienda.sobreNosotros')}</h2>
-            <p className="text-sm leading-[21px] text-hc-n-600 wrap-anywhere">{empresa.descripcion}</p>
+            <p className="text-sm leading-[21px] text-hc-n-600 wrap-anywhere">{sobreNosotros}</p>
           </section>
         )}
 

@@ -98,7 +98,8 @@ public class AdminPagoController {
         long fallidos   = pagoRepository.countByEstadoPagoAndEmpresa("FALLIDO",   empresaId);
         long stripe     = pagoRepository.countByProveedorAndEmpresa("STRIPE",  empresaId);
         long sinpe      = pagoRepository.countByProveedorAndEmpresa("SINPE",   empresaId);
-        long webhooksErr= webhookEventRepository.countByProcesado(false);
+        boolean verPlataforma = companyScope.isAdminIT() && !companyScope.isImpersonating();
+        long webhooksErr = verPlataforma ? webhookEventRepository.countByProcesado(false) : 0;
 
         double tasaExito = total > 0 ? Math.round((double) capturados / total * 1000.0) / 10.0 : 0.0;
 
@@ -138,9 +139,10 @@ public class AdminPagoController {
     @PostMapping("/pagos/{pagoId}/rechazar-sinpe")
     public ResponseEntity<ResponseDTO> rechazarSinpe(
             @PathVariable Long pagoId,
-            @RequestParam(required = false) String motivo) {
+            @RequestParam(required = false) String motivo,
+            @RequestBody(required = false) Map<String, String> body) {
         try {
-            paymentService.rechazarSinpe(pagoId, motivo);
+            paymentService.rechazarSinpe(pagoId, motivoEscrito(motivo, body));
             return ResponseEntity.ok(ResponseDTO.success("Pago SINPE rechazado", null));
         } catch (SecurityException e) {
             return prohibido(e);
@@ -149,5 +151,13 @@ public class AdminPagoController {
 
     private static ResponseEntity<ResponseDTO> prohibido(SecurityException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
+    }
+
+    /** El motivo va en el cuerpo. El query queda solo para clientes viejos. */
+    static String motivoEscrito(String query, Map<String, String> body) {
+        String delCuerpo = body == null ? null : body.get("motivo");
+        if (delCuerpo != null && !delCuerpo.isBlank()) return delCuerpo.trim();
+        if (query != null && !query.isBlank()) return query.trim();
+        return null;
     }
 }

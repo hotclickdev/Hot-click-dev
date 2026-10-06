@@ -9,6 +9,18 @@ type BodegaApi = {
   nombreBodega?: string
   direccionExacta?: string
   encargadoNombre?: string
+  telefono?: string
+  latitud?: number | string | null
+  longitud?: number | string | null
+}
+
+function numeroMapa(valor: number | string | null | undefined): number | null {
+  if (typeof valor === 'number' && Number.isFinite(valor)) return valor
+  if (typeof valor === 'string' && valor.trim()) {
+    const n = Number(valor)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
 }
 
 function listaBodegas(data: unknown): BodegaApi[] {
@@ -26,6 +38,8 @@ export function aBodegaEmprendedor(b: BodegaApi, indice: number): BodegaEmprende
     ubicacion: b.direccionExacta ?? '',
     productos: 0,
     principal: indice === 0,
+    latitud: numeroMapa(b.latitud),
+    longitud: numeroMapa(b.longitud),
   }
 }
 
@@ -36,6 +50,10 @@ export async function cargarBodegasVendedor(): Promise<BodegaEmprendedor[]> {
 
 export async function crearBodegaVendedor(form: FormBodega) {
   await warehouseService.create(payloadCrearBodega(form))
+}
+
+export async function guardarPinBodega(id: string, latitud: number, longitud: number) {
+  await warehouseService.update(id, { latitud: String(latitud), longitud: String(longitud) })
 }
 
 export async function cargarEstadoUbicacionDespacho(): Promise<EstadoUbicacionDespacho> {

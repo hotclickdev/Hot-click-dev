@@ -81,6 +81,8 @@ export type CheckoutFormState = {
   setProvincia: (value: string) => void
   canton: string
   setCanton: (value: string) => void
+  distrito: string
+  setDistrito: Dispatch<SetStateAction<string>>
   direccionPedido: string
   direccionError: string
   setDireccionError: Dispatch<SetStateAction<string>>
@@ -141,11 +143,17 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
 
   // Destino: define cuál de los dos envíos normales se ofrece (dentro o fuera del GAM, Figma 37:1689).
   const [provincia, setProvinciaState] = useState('')
-  const [canton, setCanton] = useState('')
+  const [canton, setCantonState] = useState('')
+  const [distrito, setDistrito] = useState('')
   const destinoGAM = esDestinoGAM(provincia, canton)
   function setProvincia(value: string) {
     setProvinciaState(value)
-    setCanton('')
+    setCantonState('')
+    setDistrito('')
+  }
+  function setCanton(value: string) {
+    setCantonState(value)
+    setDistrito('')
   }
 
   const [metodoEnvioBase, setMetodoEnvioPorPaqueteState] = useState<Record<string, string>>({})
@@ -327,7 +335,9 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setProvincia,
     canton,
     setCanton,
-    direccionPedido: direccionCompleta(direccion, canton, provincia),
+    distrito,
+    setDistrito,
+    direccionPedido: direccionCompleta(direccion, canton, provincia, distrito),
     direccionError,
     setDireccionError,
     direccionDirty,

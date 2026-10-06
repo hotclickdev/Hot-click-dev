@@ -5,6 +5,7 @@ import { ItemListaStagger, ListaStagger } from '@/prototipo/compartido/motion/Li
 import { EASE_PREMIUM } from '@/prototipo/compartido/motion/formularioMotionTokens'
 import { ETIQUETA_ESTADO, type SolicitudRecoleccion } from './recoleccionTipos'
 import { formatoTarifa } from './recoleccionHelpers'
+import { urlGoogleMaps } from '@/utils/mapaGoogle'
 
 type Props = Readonly<{
   solicitudes: SolicitudRecoleccion[]
@@ -18,6 +19,21 @@ const CLASE_CTA_SECUNDARIO =
   'flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border py-3.5 text-[13px] font-medium text-hc-text disabled:opacity-40'
 const CLASE_CANCELAR_INICIAL =
   'mt-3 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-primary py-3.5 text-[13px] font-medium text-hc-primary-text disabled:opacity-40'
+
+function EnlaceMapa({ latitud, longitud }: { latitud?: number | null; longitud?: number | null }) {
+  if (latitud == null || longitud == null) return null
+  return (
+    <a
+      href={urlGoogleMaps(latitud, longitud)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-1 inline-block text-xs font-semibold"
+      style={{ color: 'var(--hc-link)' }}
+    >
+      Ver bodega en Google Maps
+    </a>
+  )
+}
 
 function resumirDireccion(direccion: string, max = 80): string {
   const texto = direccion.trim()
@@ -121,6 +137,8 @@ export default function RecoleccionLista({ solicitudes, onCancelar, cancelandoId
             <p className="text-sm font-bold text-hc-primary-text">{formatoTarifa(s.tarifaColones)}</p>
           </div>
           <p className="mt-2 text-xs text-hc-muted">Recolección: {s.direccionRecoleccion}</p>
+          {s.bodegaNombre ? <p className="text-xs text-hc-muted">Bodega: {s.bodegaNombre}</p> : null}
+          <EnlaceMapa latitud={s.latitud} longitud={s.longitud} />
           <p className="text-xs text-hc-muted">Entrega: {s.direccionEntrega}</p>
           {s.notasAdmin ? <p className="mt-2 text-xs">Nota HOTCLICK: {s.notasAdmin}</p> : null}
           {s.estado === 'PENDIENTE' && onCancelar ? (

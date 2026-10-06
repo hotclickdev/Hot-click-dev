@@ -34,6 +34,9 @@ describe('ubicaciones de Costa Rica', () => {
 
   it('arma la dirección del pedido como señas, cantón y provincia', () => {
     expect(direccionCompleta(' casa verde ', 'Escazú', 'San José')).toBe('casa verde, Escazú, San José')
+    expect(direccionCompleta('casa verde', 'Escazú', 'San José', 'San Rafael')).toBe('casa verde, San Rafael, Escazú, San José')
+    expect(esDestinoGAM('San Jose', 'Escazu')).toBe(true)
+    expect(esDestinoGAM('Heredia', 'Belen')).toBe(true)
     expect(direccionCompleta('', '', '')).toBe('')
   })
 })

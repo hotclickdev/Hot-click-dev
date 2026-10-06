@@ -8,5 +8,6 @@ public record UbicacionDespachoAlta(
     String provincia,
     String canton,
     String direccionExacta,
-    Boolean permiteRetiroCliente
+    Boolean permiteRetiroCliente,
+    String distrito
 ) {}

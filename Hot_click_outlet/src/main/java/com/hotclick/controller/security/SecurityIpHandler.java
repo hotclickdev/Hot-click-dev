@@ -3,6 +3,7 @@ package com.hotclick.controller.security;
 import com.hotclick.model.IpBloqueada;
 import com.hotclick.repository.IpBloqueadaRepository;
 import com.hotclick.repository.SecurityAuditLogRepository;
+import com.hotclick.security.ClientIpResolver;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,27 +75,32 @@ class SecurityIpHandler {
     ResponseEntity<Map<String, Object>> bloquearIp(Map<String, String> body) {
         String ip     = body.get("ip");
         String motivo = body.getOrDefault("motivo", "Bloqueada manualmente");
-        if (ip == null || ip.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "IP requerida"));
+        String limpia = ip == null ? "" : ip.trim();
+        if (!ClientIpResolver.isIpLiteral(limpia)) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "IP inválida"));
         }
         String quien = SecurityContextHolder.getContext().getAuthentication().getName();
-        IpBloqueada bloqueo = ipBloqueadaRepo.findByIpAddressAndActivaTrue(ip)
+        IpBloqueada bloqueo = ipBloqueadaRepo.findByIpAddressAndActivaTrue(limpia)
             .orElse(new IpBloqueada());
-        bloqueo.setIpAddress(ip.trim());
+        bloqueo.setIpAddress(limpia);
         bloqueo.setMotivo(motivo);
         bloqueo.setBloqueadaPor(quien);
         bloqueo.setFechaBloqueo(LocalDateTime.now(Constants.ZONA_CR));
         bloqueo.setActiva(true);
         ipBloqueadaRepo.save(bloqueo);
-        log.warn("[SEC] IP bloqueada: {} por {}", ip, quien);
+        log.warn("[SEC] IP bloqueada: {} por {}", limpia, quien);
         return ResponseEntity.ok(Map.of("success", true, "message", "IP bloqueada"));
     }
 
     ResponseEntity<Map<String, Object>> desbloquearIp(String ip) {
-        ipBloqueadaRepo.findByIpAddressAndActivaTrue(ip).ifPresent(b -> {
+        String limpia = ip == null ? "" : ip.trim();
+        if (!ClientIpResolver.isIpLiteral(limpia)) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "IP inválida"));
+        }
+        ipBloqueadaRepo.findByIpAddressAndActivaTrue(limpia).ifPresent(b -> {
             b.setActiva(false);
             ipBloqueadaRepo.save(b);
-            log.info("[SEC] IP desbloqueada: {}", ip);
+            log.info("[SEC] IP desbloqueada: {}", limpia);
         });
         return ResponseEntity.ok(Map.of("success", true, "message", "IP desbloqueada"));
     }

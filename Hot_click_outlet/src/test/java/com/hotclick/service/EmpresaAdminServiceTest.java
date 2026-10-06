@@ -14,6 +14,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +26,7 @@ class EmpresaAdminServiceTest {
 
     @Mock EmpresaRepository empresaRepository;
     @Mock EmpresaAprobacionService empresaAprobacionService;
+    @Mock AuditoriaAdminRegistroService auditoriaAdminRegistroService;
 
     @InjectMocks EmpresaAdminService service;
 
@@ -46,7 +49,7 @@ class EmpresaAdminServiceTest {
         e.setVisibilidadPublica(true);
         when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
 
-        service.cambiarEstado(3L, "INACTIVO");
+        service.cambiarEstado(3L, "INACTIVO", "cierre pedido por el operador");
 
         assertThat(e.getEstadoEmpresa()).isEqualTo("INACTIVO");
         assertThat(e.getVisibilidadPublica()).isFalse();
@@ -61,12 +64,23 @@ class EmpresaAdminServiceTest {
         e.setVisibilidadPublica(true);
         when(empresaRepository.findById(4L)).thenReturn(Optional.of(e));
 
-        service.cambiarEstado(4L, "SUSPENDIDO");
+        service.cambiarEstado(4L, "SUSPENDIDO", "incumple el catalogo");
 
         assertThat(e.getEstadoEmpresa()).isEqualTo("SUSPENDIDO");
         assertThat(e.getVisibilidadPublica()).isFalse();
         verify(empresaRepository).save(e);
         verify(empresaAprobacionService, never()).aprobarYPublicar(4L);
+        verify(auditoriaAdminRegistroService).registrarSiAdmin(
+            eq("EMPRESA_CAMBIO_ESTADO"), eq("EMPRESA"), eq(4L), eq(4L), contains("incumple"));
+    }
+
+    @Test
+    @DisplayName("suspender sin motivo no toca la empresa")
+    void suspenderSinMotivoRechaza() {
+        assertThatThrownBy(() -> service.cambiarEstado(4L, "SUSPENDIDO"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Motivo");
+        verify(empresaRepository, never()).findById(4L);
     }
 
     @Test
@@ -83,7 +97,7 @@ class EmpresaAdminServiceTest {
     void empresaAusente() {
         when(empresaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.cambiarEstado(99L, "SUSPENDIDO"))
+        assertThatThrownBy(() -> service.cambiarEstado(99L, "SUSPENDIDO", "no existe"))
             .isInstanceOf(RecursoNoEncontradoException.class);
         verify(empresaAprobacionService, never()).aprobarYPublicar(99L);
     }

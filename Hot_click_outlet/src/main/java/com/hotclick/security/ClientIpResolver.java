@@ -152,7 +152,7 @@ public class ClientIpResolver {
         return ipv4WithPort ? value.substring(0, colon) : value;
     }
 
-    static boolean isIpLiteral(String value) {
+    public static boolean isIpLiteral(String value) {
         if (value == null || value.isEmpty() || value.length() > MAX_IP_LENGTH) return false;
         if (value.indexOf(':') < 0) return IPV4.matcher(value).matches();
         return IPV6_CHARS.matcher(value).matches() && parsesAsIpv6Literal(value);

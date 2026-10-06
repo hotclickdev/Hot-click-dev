@@ -54,44 +54,24 @@ test.describe('Admin IT — nav por jobs', () => {
     await entrarPanel(page, 'ADMIN')
     const sidebar = sidebarVisible(page)
 
-    await expect(sidebar.getByText('Admin', { exact: true }).first()).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Inicio' }).locator('svg')).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Tiendas' }).locator('svg')).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Usuarios' })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Moderación' })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Config' })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Más herramientas' })).toBeVisible()
-    await expect(sidebar.getByRole('button', { name: /abastecimiento/i })).toBeVisible()
-    await expect(sidebar.getByRole('button', { name: /plataforma/i })).toBeVisible()
-    await expect(sidebar.getByRole('button', { name: /finanzas/i })).toBeVisible()
-    await expect(sidebar.getByRole('button', { name: /^ia$/i })).toBeVisible()
-    await expect(sidebar.getByRole('button', { name: /fiscal/i })).toBeVisible()
-    await expect(sidebar.getByRole('button', { name: /^sistema$/i })).toHaveCount(0)
+    await expect(page).toHaveURL(/\/plataforma/)
+    for (const nombre of ['Inicio', 'Negocios', 'Moderación', 'Dinero', 'Operación', 'Seguridad', 'IA', 'Plataforma']) {
+      await expect(sidebar.getByRole('link', { name: nombre })).toBeVisible()
+    }
+    await expect(sidebar.getByRole('link', { name: 'Más herramientas' })).toHaveCount(0)
+    await expect(sidebar.getByRole('link', { name: 'Tiendas' })).toHaveCount(0)
 
-    await expect(sidebar.getByRole('link', { name: 'Compras' })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'AI Copilot' })).toHaveCount(0)
-    await expect(sidebar.getByRole('link', { name: 'Comprobantes Electrónicos' })).toHaveCount(0)
-
-    const fondoSidebar = await sidebar.evaluate((el) => getComputedStyle(el).backgroundColor)
-    expect(fondoSidebar).not.toBe('rgb(20, 23, 28)')
     const primary = await page.locator('.hc-superadmin-theme').evaluate((el) =>
       getComputedStyle(el).getPropertyValue('--hc-primary').trim(),
     )
-    expect(primary.toLowerCase()).toBe('#e31e24')
-
-    await sidebar.getByRole('button', { name: /^ia$/i }).click()
-    await expect(sidebar.getByRole('link', { name: 'AI Copilot' })).toBeVisible()
-
-    await sidebar.getByRole('button', { name: /fiscal/i }).click()
-    await expect(sidebar.getByRole('link', { name: 'Comprobantes Electrónicos' })).toBeVisible()
+    expect(primary.toLowerCase()).toBe('#e73b33')
   })
 
-  test('POS chrome es claro, sin terminal n-900', async ({ page }) => {
+  test('ADMIN en /admin/pos no abre la caja', async ({ page }) => {
     await entrarPanel(page, 'ADMIN')
     await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('POS', { exact: true })).toBeVisible()
-    const fondo = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor)
-    expect(fondo).not.toBe('rgb(8, 8, 12)')
+    await expect(page).toHaveURL(/\/plataforma/)
+    await expect(page.getByRole('heading', { name: 'Caja (POS)' })).toHaveCount(0)
   })
 
   test('EMPRENDEDOR en /admin sale a /emprendedor, no al menú IT', async ({ page }) => {
@@ -119,13 +99,8 @@ test.describe('Admin IT — nav por jobs', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin/ayuda', { waitUntil: 'domcontentloaded' })
 
-    await expect(page).toHaveURL(/\/admin\/ayuda/)
-    const nav = page.getByRole('navigation', { name: 'Navegación sistema' })
-    await expect(nav.getByRole('link', { name: 'Inicio' }).locator('svg')).toBeVisible()
-    await expect(nav.getByRole('group', { name: 'Vender' })).toBeVisible()
-    await expect(nav.getByRole('group', { name: 'Catálogo' })).toBeVisible()
-    await expect(nav.getByRole('group', { name: 'Mi negocio' })).toBeVisible()
-    await expect(nav.getByRole('group', { name: 'Más' })).toBeVisible()
-    await expect(nav.getByRole('link', { name: 'Ayuda' })).toHaveAttribute('aria-current', 'page')
+    await expect(page).toHaveURL(/\/emprendedor\/opciones\/ayuda/)
+    await expect(page.getByRole('link', { name: 'Más herramientas' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Moderación' })).toHaveCount(0)
   })
 })

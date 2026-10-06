@@ -5,6 +5,7 @@ import { useSellerRuta } from './SellerPlanContext'
 import { crearBodegaVendedor } from './bodegasVendedorApi'
 import FormularioPorPasos from './FormularioPorPasos'
 import CamposUbicacion from './CamposUbicacion'
+import MapaGoogleBodega from './MapaGoogleBodega'
 import PhoneField from '@/components/ui/PhoneField'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
 import {
@@ -92,11 +93,21 @@ export function NuevaBodegaPage({
           />
         ) : null}
         {idPaso === 'ubicacion' ? (
-          <CamposUbicacion
-            ubicacion={form.ubicacion}
-            onChange={setUbicacion}
-            errores={intentoUbicacion ? erroresUbicacion(form.ubicacion) : undefined}
-          />
+          <>
+            <CamposUbicacion
+              ubicacion={form.ubicacion}
+              onChange={setUbicacion}
+              errores={intentoUbicacion ? erroresUbicacion(form.ubicacion) : undefined}
+            />
+            <MapaGoogleBodega
+              latitud={form.ubicacion.latitud ?? null}
+              longitud={form.ubicacion.longitud ?? null}
+              onCambio={(latitud, longitud) => setForm((prev) => ({
+                ...prev,
+                ubicacion: { ...prev.ubicacion, latitud, longitud },
+              }))}
+            />
+          </>
         ) : null}
         {idPaso === 'telefono' ? (
           <PhoneField label="Teléfono de la bodega" value={form.telefono} onChange={setCampo('telefono')} required forceDialCode />

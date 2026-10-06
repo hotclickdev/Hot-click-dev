@@ -2,6 +2,7 @@ package com.hotclick.dto;
 
 import com.hotclick.model.SolicitudRecoleccion;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class SolicitudRecoleccionDto {
@@ -22,6 +23,10 @@ public class SolicitudRecoleccionDto {
     private String notasAdmin;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaCotizacion;
+    private Long bodegaId;
+    private String bodegaNombre;
+    private BigDecimal latitud;
+    private BigDecimal longitud;
 
     public static SolicitudRecoleccionDto from(SolicitudRecoleccion s) {
         SolicitudRecoleccionDto dto = new SolicitudRecoleccionDto();
@@ -43,6 +48,12 @@ public class SolicitudRecoleccionDto {
         dto.notasAdmin = s.getNotasAdmin();
         dto.fechaCreacion = s.getFechaCreacion();
         dto.fechaCotizacion = s.getFechaCotizacion();
+        if (s.getBodega() != null) {
+            dto.bodegaId = s.getBodega().getId();
+            dto.bodegaNombre = s.getBodega().getNombreBodega();
+        }
+        dto.latitud = s.getLatitud();
+        dto.longitud = s.getLongitud();
         return dto;
     }
 
@@ -62,4 +73,8 @@ public class SolicitudRecoleccionDto {
     public String getNotasAdmin() { return notasAdmin; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public LocalDateTime getFechaCotizacion() { return fechaCotizacion; }
+    public Long getBodegaId() { return bodegaId; }
+    public String getBodegaNombre() { return bodegaNombre; }
+    public BigDecimal getLatitud() { return latitud; }
+    public BigDecimal getLongitud() { return longitud; }
 }

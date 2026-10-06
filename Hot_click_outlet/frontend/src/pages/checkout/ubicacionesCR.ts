@@ -26,10 +26,18 @@ const CANTONES_GAM: Record<string, string[]> = {
   Heredia: ['Heredia', 'Barva', 'Santo Domingo', 'Santa Bárbara', 'San Rafael', 'San Isidro', 'Belén', 'Flores', 'San Pablo'],
 }
 
+function sinTildes(valor: string): string {
+  return valor.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+}
+
 /** Sin destino elegido se asume GAM (es la opción que Figma muestra por defecto). */
 export function esDestinoGAM(provincia: string, canton: string): boolean {
   if (!provincia || !canton) return true
-  return CANTONES_GAM[provincia]?.includes(canton) ?? false
+  const claveProvincia = sinTildes(provincia)
+  const nombre = Object.keys(CANTONES_GAM).find((item) => sinTildes(item) === claveProvincia)
+  if (!nombre) return false
+  const claveCanton = sinTildes(canton)
+  return CANTONES_GAM[nombre].some((item) => sinTildes(item) === claveCanton)
 }
 
 export const PROVINCIAS_CR = Object.keys(UBICACIONES_CR)
@@ -38,7 +46,7 @@ export function cantonesDeProvincia(provincia: string): string[] {
   return UBICACIONES_CR[provincia] ?? []
 }
 
-/** Dirección completa para el pedido: "señas, cantón, provincia". */
-export function direccionCompleta(senas: string, canton: string, provincia: string): string {
-  return [senas.trim(), canton, provincia].filter(Boolean).join(', ')
+/** Dirección completa para el pedido: "señas, distrito, cantón, provincia". */
+export function direccionCompleta(senas: string, canton: string, provincia: string, distrito = ''): string {
+  return [senas.trim(), distrito.trim(), canton, provincia].filter(Boolean).join(', ')
 }

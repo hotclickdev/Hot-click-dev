@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Campo } from '@/prototipo/compartido/ui'
 import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
+import PickupRecoleccion from './PickupRecoleccion'
 import { ZONA_FUERA_GAM, ZONA_GAM } from './zonaLogistica'
 import { PASOS_RECOLECCION, validarPasoRecoleccion } from './recoleccionPasos'
 import type { RecoleccionCreatePayload } from './recoleccionTipos'
@@ -66,27 +67,7 @@ export default function RecoleccionFormulario({ enviando, onEnviar }: Props) {
           </div>
         </fieldset>
       ) : null}
-      {idPaso === 'pickup' ? (
-        <>
-          <Campo
-            etiqueta="Dirección de recolección"
-            value={form.direccionRecoleccion}
-            onChange={(v) => setCampo('direccionRecoleccion', v)}
-            placeholder="Provincia, cantón, señas"
-          />
-          <Campo
-            etiqueta="Quién entrega el paquete"
-            value={form.contactoRecoleccion}
-            onChange={(v) => setCampo('contactoRecoleccion', v)}
-          />
-          <Campo
-            etiqueta="Teléfono de recolección"
-            value={form.telefonoRecoleccion}
-            onChange={(v) => setCampo('telefonoRecoleccion', v)}
-            type="tel"
-          />
-        </>
-      ) : null}
+      {idPaso === 'pickup' ? <PickupRecoleccion form={form} onChange={setForm} /> : null}
       {idPaso === 'entrega' ? (
         <>
           <Campo

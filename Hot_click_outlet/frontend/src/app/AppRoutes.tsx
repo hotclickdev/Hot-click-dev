@@ -4,12 +4,21 @@ import { ProtectedRoute, AdminHomeRoute } from '@/app/routeGuards'
 import AdminRoleSwitch from '@/app/AdminRoleSwitch'
 import PrototipoRedirect from '@/app/PrototipoRedirect'
 import { CajaAcceso, hijosCaja } from '@/app/CajaShell'
+import PlataformaAcceso from '@/app/PlataformaAcceso'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const ClerkShell = CLERK_ENABLED ? lazy(() => import('@/components/auth/ClerkShell')) : null
 const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : null
 const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
 
+const InicioPlataforma = lazy(() => import('@/pages/plataforma/InicioPlataforma'))
+const NegociosPlataforma = lazy(() => import('@/pages/plataforma/NegociosPlataforma'))
+const ModeracionPlataforma = lazy(() => import('@/pages/plataforma/ModeracionPlataforma'))
+const DineroPlataforma = lazy(() => import('@/pages/plataforma/DineroPlataforma'))
+const OperacionPlataforma = lazy(() => import('@/pages/plataforma/OperacionPlataforma'))
+const SeguridadPlataforma = lazy(() => import('@/pages/plataforma/SeguridadPlataforma'))
+const IaPlataforma = lazy(() => import('@/pages/plataforma/IaPlataforma'))
+const ReglasPlataforma = lazy(() => import('@/pages/plataforma/ReglasPlataforma'))
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const VisitanteDeprecatedRedirect = lazy(() => import('@/prototipo/visitante/visitanteDeprecado'))
 const EmprendedorArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.EmprendedorArea })))
@@ -149,6 +158,21 @@ export default function AppRoutes() {
       <Route path="/para-pymes" element={<PymeLandingPage />} />
       <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
       <Route path="/emprendimientos" element={<EmprendimientosPage />} />
+
+      <Route path="/plataforma" element={<PlataformaAcceso />}>
+        <Route index element={<InicioPlataforma />} />
+        <Route path="negocios" element={<NegociosPlataforma />} />
+        <Route path="negocios/:id" element={<NegociosPlataforma />} />
+        <Route path="moderacion" element={<ModeracionPlataforma />} />
+        <Route path="moderacion/reportes" element={<ModeracionPlataforma />} />
+        <Route path="dinero" element={<DineroPlataforma />} />
+        <Route path="dinero/:vista" element={<DineroPlataforma />} />
+        <Route path="operacion" element={<OperacionPlataforma />} />
+        <Route path="operacion/:vista" element={<OperacionPlataforma />} />
+        <Route path="seguridad" element={<SeguridadPlataforma />} />
+        <Route path="ia" element={<IaPlataforma />} />
+        <Route path="reglas" element={<ReglasPlataforma />} />
+      </Route>
 
       <Route path="/caja" element={<CajaAcceso />}>
         {hijosCaja()}

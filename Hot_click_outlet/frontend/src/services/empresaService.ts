@@ -15,6 +15,7 @@ export type EmpresaPerfilUpdate = {
   colorSecundario?: string
   colorAcento?: string
   logoUrl?: string
+  ogImagenUrl?: string
   tagline?: string
   footerTexto?: string
 }
@@ -25,6 +26,10 @@ export const empresaService = {
   updatePerfil: (body: EmpresaPerfilUpdate | JsonBody) => api.put('/empresa/perfil', body),
   uploadLogo: (formData: FormData) =>
     api.post('/empresa/perfil/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  uploadPortada: (formData: FormData) =>
+    api.post('/empresa/perfil/portada', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   setVisibilidad: (visibilidadPublica: boolean) =>

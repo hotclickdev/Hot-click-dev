@@ -7,6 +7,7 @@ import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.CoordenadaMapa;
 import com.hotclick.utils.InputSanitizer;
 import com.hotclick.utils.TelefonoBodega;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -59,7 +61,10 @@ public class BodegaController {
             m.put("encargadoNombre", b.getEncargadoNombre());
             m.put("provincia", b.getProvincia());
             m.put("canton", b.getCanton());
+            m.put("distrito", b.getDistrito());
             m.put("permiteRetiroCliente", b.getPermiteRetiroCliente());
+            m.put("latitud", b.getLatitud());
+            m.put("longitud", b.getLongitud());
             m.put("horarioApertura", horaTexto(b.getHorarioApertura()));
             m.put("horarioCierre", horaTexto(b.getHorarioCierre()));
             m.put("estado", b.getEstado());
@@ -110,7 +115,9 @@ public class BodegaController {
             b.setEncargadoNombre(body.getOrDefault("encargadoNombre", ""));
             b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
             b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
+            b.setDistrito(sanitizer.normalizeGeo(body.get("distrito")));
             b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
+            aplicarCoordenadas(b, body);
             b.setHorarioApertura(parseHora(body.get("horarioApertura"), "de apertura"));
             b.setHorarioCierre(parseHora(body.get("horarioCierre"), "de cierre"));
             b.setEstado(Constants.ESTADO_ACTIVO);
@@ -198,8 +205,12 @@ public class BodegaController {
                 b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
             if (body.containsKey("canton"))
                 b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
+            if (body.containsKey("distrito"))
+                b.setDistrito(sanitizer.normalizeGeo(body.get("distrito")));
             if (body.containsKey("permiteRetiroCliente"))
                 b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
+            if (body.containsKey("latitud") || body.containsKey("longitud"))
+                aplicarCoordenadas(b, body);
             if (body.containsKey("horarioApertura"))
                 b.setHorarioApertura(parseHora(body.get("horarioApertura"), "de apertura"));
             if (body.containsKey("horarioCierre"))
@@ -230,6 +241,21 @@ public class BodegaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    private static void aplicarCoordenadas(Bodega bodega, Map<String, String> body) {
+        String latitud = body.get("latitud");
+        String longitud = body.get("longitud");
+        boolean vacio = (latitud == null || latitud.isBlank()) && (longitud == null || longitud.isBlank());
+        if (vacio) {
+            bodega.setLatitud(null);
+            bodega.setLongitud(null);
+            return;
+        }
+        BigDecimal[] punto = CoordenadaMapa.parsear(latitud, longitud);
+        if (punto == null) throw new IllegalArgumentException("La ubicación del mapa no es válida");
+        bodega.setLatitud(punto[0]);
+        bodega.setLongitud(punto[1]);
     }
 
     /** Acepta "HH:mm" o "HH:mm:ss"; vacío deja el horario sin definir. */

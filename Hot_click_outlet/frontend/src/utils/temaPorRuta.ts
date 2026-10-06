@@ -6,6 +6,7 @@
  */
 const PREFIJOS_PANEL = [
   '/admin',
+  '/plataforma',
   '/emprendedor',
   '/pyme',
   '/negocio-plus',

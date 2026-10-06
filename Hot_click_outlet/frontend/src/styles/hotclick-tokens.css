@@ -104,8 +104,8 @@
   --hc-dur-slow: 320ms;
 }
 
-/* ---------- Super Admin (rol ADMIN · Figma CLAUDECLICK 41:128) ----------
-   Manual de Marca: rojo #E31E24, azul #0D47A1, navy #0B132B.
+/* ---------- Super Admin (rol ADMIN · Figma TmxYFj2nauu10WZnZ0t6yt página 4:2) ----------
+   Manual de marca: rojo #E73B33, azul #1747A8, texto #14171C.
    Fondo blanco / n-50 — NUNCA la paleta crema de .hc-sistema-theme.
    Modo oscuro: html.dark .hc-superadmin-theme más abajo. */
 .hc-superadmin-theme {
@@ -115,25 +115,25 @@
   --hc-surface-raised: #FFFFFF;
   --hc-surface-2:      #F8F9FB;
   --hc-surface-3:      #F1F3F6;
-  --hc-text:           #0B132B;
+  --hc-text:           #14171C;
   --hc-text-secondary: #4D5560;
   --hc-text-disabled:  #9AA1AE;
   --hc-muted:          #4D5560;
-  --hc-border:         #E6E6E6;
+  --hc-border:         #E4E7EC;
   --hc-border-strong:  #CDD2DB;
-  --hc-primary:        #E31E24;
-  --hc-primary-text:   #C4181E;
-  --hc-primary-hover:  #C4181E;
-  --hc-primary-press:  #A11418;
-  --hc-link:           #0D47A1;
-  --hc-accent:         #0D47A1;
-  --hc-accent-hover:   #0A3780;
+  --hc-primary:        #E73B33;
+  --hc-primary-text:   #D02A23;
+  --hc-primary-hover:  #D02A23;
+  --hc-primary-press:  #AE211C;
+  --hc-link:           #1747A8;
+  --hc-accent:         #1747A8;
+  --hc-accent-hover:   #143A8C;
   --hc-focus-ring:     #3F6CDE;
   --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
   --hc-success-text: #107142;  /* éxito como texto: AA sobre blanco, n-100, success-bg y el crema de Sistema */
   --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
-  --hc-danger:  #E31E24;  --hc-danger-bg:  #FEF2F1;
-  --hc-info:    #0D47A1;  --hc-info-bg:    #EFF4FE;
+  --hc-danger:  #E73B33;  --hc-danger-bg:  #FEF2F1;
+  --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
   --hc-shadow-1: 0 1px 2px rgba(11,19,43,.06);
   --hc-shadow-2: 0 2px 8px rgba(11,19,43,.08);
   --hc-shadow-3: 0 12px 32px rgba(11,19,43,.14);

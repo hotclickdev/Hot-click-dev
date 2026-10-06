@@ -12,6 +12,10 @@ export type SolicitudRecoleccion = {
   contactoEntrega: string
   telefonoEntrega: string
   notas?: string | null
+  bodegaId?: number | null
+  bodegaNombre?: string | null
+  latitud?: number | null
+  longitud?: number | null
   estado: EstadoRecoleccion | string
   tarifaColones?: number | null
   notasAdmin?: string | null
@@ -28,6 +32,7 @@ export type RecoleccionCreatePayload = {
   contactoEntrega: string
   telefonoEntrega: string
   notas?: string
+  bodegaId?: number
 }
 
 export const ESTADOS_RECOLECCION = ['PENDIENTE', 'COTIZADA', 'RECHAZADA', 'CANCELADA'] as const

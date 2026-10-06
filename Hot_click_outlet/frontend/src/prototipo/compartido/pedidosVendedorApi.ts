@@ -33,6 +33,7 @@ export function aPedidoEmprendedor(p: Pedido): PedidoEmprendedor {
     pagaAlRetirar: pagaAlRetirar(estadoCrudo, datos),
     fecha: String(p.fechaCreacion ?? p.fechaPedido ?? ''),
     direccion: direccionDePedido(p),
+    origen: p.origen,
     productos: lineas(p.items),
   }
 }
@@ -46,6 +47,7 @@ export function aPedidoSeller(p: PedidoEmprendedor): PedidoMock {
     pagaAlRetirar: p.pagaAlRetirar,
     fecha: p.fecha,
     direccion: p.direccion,
+    origen: p.origen,
     items: p.productos.map((item) => ({
       nombre: item.nombre,
       cantidad: item.cantidad,

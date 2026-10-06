@@ -2,9 +2,11 @@ package com.hotclick.service;
 
 import com.hotclick.dto.RecoleccionCreateRequest;
 import com.hotclick.dto.RecoleccionTarifaRequest;
+import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.SolicitudRecoleccion;
 import com.hotclick.model.Usuario;
+import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.SolicitudRecoleccionRepository;
 import com.hotclick.security.CompanyScope;
@@ -19,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +37,7 @@ class RecoleccionServiceTest {
 
     @Mock SolicitudRecoleccionRepository repo;
     @Mock EmpresaRepository empresaRepo;
+    @Mock BodegaRepository bodegaRepo;
     @Mock CompanyScope companyScope;
     @Mock InputSanitizer sanitizer;
     @Mock ModeracionAvisoService moderacionAvisoService;
@@ -82,6 +86,32 @@ class RecoleccionServiceTest {
         assertThat(cap.getValue().getZona()).isEqualTo(ZonaLogistica.GAM);
         assertThat(cap.getValue().getDireccionEntrega()).contains("Escazú");
         verify(moderacionAdminAvisoService).avisarRecoleccion(1L, "Taller CR");
+    }
+
+    @Test
+    @DisplayName("crear copia el pin de la bodega marcada")
+    void crear_marcaBodega() {
+        when(sanitizer.cleanWithLimit(any(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        when(companyScope.getCurrentEmpresaIdOrOwn()).thenReturn(9L);
+        when(empresaRepo.findById(9L)).thenReturn(Optional.of(empresa));
+        when(companyScope.getCurrentUser()).thenReturn(new Usuario());
+        Bodega bodega = new Bodega();
+        bodega.setId(4L);
+        bodega.setNombreBodega("Bodega Central");
+        bodega.setEmpresa(empresa);
+        bodega.setLatitud(new BigDecimal("9.92806900"));
+        bodega.setLongitud(new BigDecimal("-84.09072500"));
+        when(bodegaRepo.findById(4L)).thenReturn(Optional.of(bodega));
+        when(repo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        RecoleccionCreateRequest req = requestBase();
+        req.setBodegaId(4L);
+        var dto = service.crear(req);
+
+        assertThat(dto.getBodegaId()).isEqualTo(4L);
+        assertThat(dto.getBodegaNombre()).isEqualTo("Bodega Central");
+        assertThat(dto.getLatitud()).isEqualByComparingTo("9.92806900");
+        assertThat(dto.getLongitud()).isEqualByComparingTo("-84.09072500");
     }
 
     @Test

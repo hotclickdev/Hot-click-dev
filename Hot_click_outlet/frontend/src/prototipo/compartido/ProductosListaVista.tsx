@@ -156,14 +156,7 @@ function ListadoGruposSeller({
   filtro: string
   hrefProducto: (id: string) => string
 }) {
-  const grupos =
-    filtro === 'Todos'
-      ? [
-          { titulo: 'Recién agregados', items: productos.filter((p) => p.reciente) },
-          { titulo: 'Tecnología', items: productos.filter((p) => p.categoria === 'Tecnología') },
-          { titulo: 'Ropa', items: productos.filter((p) => p.categoria === 'Ropa') },
-        ]
-      : [{ titulo: filtro, items: productos }]
+  const grupos = gruposProductosVisibles(productos, filtro)
 
   return (
     <div className="mt-6 space-y-5">

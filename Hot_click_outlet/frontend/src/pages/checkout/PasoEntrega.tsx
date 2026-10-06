@@ -5,6 +5,7 @@ import { formatPrice } from '@/utils/format'
 import { Campo, CampoSelector, CampoTexto } from './PiezasCheckout'
 import { WHATSAPP, bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
+import { useDivisionTerritorial } from '@/utils/useDivisionTerritorial'
 import { PROVINCIAS_CR, cantonesDeProvincia } from './ubicacionesCR'
 import type { OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 import type { CheckoutFormState } from './useCheckoutForm'
@@ -175,25 +176,35 @@ type PasoEntregaProps = {
 /** Dirección de entrega (provincia, cantón, señas) y entrega por paquete. Figma `29:1248`, `51:2000`, `30:2420`. */
 export default function PasoEntrega({ form, escritorio, onElegirEnvio }: PasoEntregaProps) {
   const { t } = useTranslation()
+  const territorio = useDivisionTerritorial()
   const { paquetes, metodoEnvioPorPaquete, necesitaDireccion, costoEnvio, envioVaria } = form
   const varios = paquetes.length > 1
   const errorDireccion = form.direccionDirty ? form.direccionError : ''
+  const provincias = territorio.listo ? territorio.provincias : PROVINCIAS_CR
+  const cantones = territorio.listo ? territorio.cantonesDe(form.provincia) : cantonesDeProvincia(form.provincia)
+  const distritos = territorio.distritosDe(form.provincia, form.canton)
 
   const direccion = necesitaDireccion && (
     <div className={escritorio ? 'flex flex-col gap-[14px]' : 'flex flex-col gap-3'}>
       {!escritorio && <h2 className="font-display text-[16px] font-semibold leading-5 tracking-normal text-hc-n-900">{t('checkout.f.direccionTitulo')}</h2>}
+      {territorio.error && <p className="text-[12px] leading-[15px] text-hc-n-600" role="status">{t('checkout.f.divisionNoDisponible')}</p>}
       <div className={`flex items-start ${escritorio ? 'gap-[14px]' : 'gap-[10px]'}`}>
         <Campo etiqueta={t('checkout.f.provincia')} error={form.direccionDirty && !form.provincia ? t('checkout.f.provinciaRequerida') : ''}>
           {({ id, describedBy }) => (
-            <CampoSelector id={id} describedBy={describedBy} escritorio={escritorio} valor={form.provincia} opciones={PROVINCIAS_CR} placeholder={t('checkout.f.elegir')} onCambiar={form.setProvincia} />
+            <CampoSelector id={id} describedBy={describedBy} escritorio={escritorio} valor={form.provincia} opciones={provincias} placeholder={t('checkout.f.elegir')} onCambiar={form.setProvincia} />
           )}
         </Campo>
         <Campo etiqueta={t('checkout.f.canton')} error={form.direccionDirty && form.provincia && !form.canton ? t('checkout.f.cantonRequerido') : ''}>
           {({ id, describedBy }) => (
-            <CampoSelector id={id} describedBy={describedBy} escritorio={escritorio} valor={form.canton} opciones={cantonesDeProvincia(form.provincia)} placeholder={t('checkout.f.elegir')} onCambiar={form.setCanton} deshabilitado={!form.provincia} />
+            <CampoSelector id={id} describedBy={describedBy} escritorio={escritorio} valor={form.canton} opciones={cantones} placeholder={t('checkout.f.elegir')} onCambiar={form.setCanton} deshabilitado={!form.provincia} />
           )}
         </Campo>
       </div>
+      <Campo etiqueta={t('checkout.f.distrito')}>
+        {({ id, describedBy }) => (
+          <CampoSelector id={id} describedBy={describedBy} escritorio={escritorio} valor={form.distrito} opciones={distritos} placeholder={t('checkout.f.elegir')} onCambiar={form.setDistrito} deshabilitado={!form.canton || distritos.length === 0} />
+        )}
+      </Campo>
       <Campo etiqueta={t('checkout.f.senas')} error={errorDireccion}>
         {({ id, describedBy }) => (
           <CampoTexto

@@ -4,7 +4,7 @@ import { requiereDireccion } from './paquetesCompra'
 export type PasoCompra = 1 | 2 | 3
 export type MetodoPago = 'SINPE' | 'TILOPAY' | 'EFECTIVO'
 export type DatosCompra = { correo: string; telefono: string; nombre: string }
-export type DireccionCompra = { provincia: string; canton: string; senas: string }
+export type DireccionCompra = { provincia: string; canton: string; senas: string; distrito?: string }
 export type CampoCompra = keyof DatosCompra | keyof DireccionCompra | 'comprobante'
 export type ErroresCompra = Partial<Record<CampoCompra, string>>
 
@@ -38,7 +38,7 @@ export function erroresPago(metodoPago: MetodoPago, comprobante: File | null, t:
 }
 
 export function textoDireccion(direccion: DireccionCompra): string {
-  return [direccion.senas.trim(), direccion.canton, direccion.provincia].filter(Boolean).join(', ')
+  return [direccion.senas.trim(), direccion.distrito?.trim(), direccion.canton, direccion.provincia].filter(Boolean).join(', ')
 }
 
 /** Con varios paquetes el backend devuelve `<compra>-1`; al cliente se le muestra el número de la compra. */

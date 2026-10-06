@@ -63,6 +63,14 @@ describe('payloadUbicacion', () => {
   it('manda permiteRetiroCliente=false cuando el retiro está apagado', () => {
     expect(payloadUbicacion({ ...COMPLETA, permiteRetiroCliente: false }).permiteRetiroCliente).toBe('false')
   })
+
+  it('incluye el pin solo cuando latitud y longitud son números', () => {
+    expect(payloadUbicacion({ ...COMPLETA, latitud: 9.928069, longitud: -84.090725 })).toMatchObject({
+      latitud: '9.928069',
+      longitud: '-84.090725',
+    })
+    expect(payloadUbicacion({ ...COMPLETA, latitud: 9.9 }).latitud).toBeUndefined()
+  })
 })
 
 describe('payloadUbicacionRegistro', () => {

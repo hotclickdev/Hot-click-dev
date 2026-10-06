@@ -58,16 +58,18 @@ public class BodegaDespachoInicialService {
         if (cruda == null) return Optional.empty();
         String provincia = sanitizer.normalizeGeo(sanitizer.clean(cruda.provincia()));
         String canton    = sanitizer.normalizeGeo(sanitizer.clean(cruda.canton()));
+        String distrito  = sanitizer.normalizeGeo(sanitizer.clean(cruda.distrito()));
         String direccion = textoLimpio(cruda.direccionExacta());
-        if (provincia.isEmpty() && canton.isEmpty() && direccion.isEmpty()) return Optional.empty();
+        if (provincia.isEmpty() && canton.isEmpty() && direccion.isEmpty() && distrito.isEmpty()) return Optional.empty();
         if (provincia.isEmpty() || canton.isEmpty() || direccion.isEmpty()) {
             throw new IllegalArgumentException(MENSAJE_UBICACION_INCOMPLETA);
         }
         exigirLargo(provincia, MAX_PROVINCIA, "La provincia");
         exigirLargo(canton, MAX_CANTON, "El cantón");
+        exigirLargo(distrito, MAX_CANTON, "El distrito");
         exigirLargo(direccion, MAX_DIRECCION_EXACTA, "La dirección exacta");
         boolean retiro = Boolean.TRUE.equals(cruda.permiteRetiroCliente());
-        return Optional.of(new UbicacionDespachoAlta(provincia, canton, direccion, retiro));
+        return Optional.of(new UbicacionDespachoAlta(provincia, canton, direccion, retiro, distrito));
     }
 
     /**
@@ -82,6 +84,7 @@ public class BodegaDespachoInicialService {
         bodega.setTelefono(recortar(telefonoDe(empresa, admin), MAX_TELEFONO));
         bodega.setProvincia(ubicacion.provincia());
         bodega.setCanton(ubicacion.canton());
+        bodega.setDistrito(ubicacion.distrito());
         bodega.setDireccionExacta(ubicacion.direccionExacta());
         bodega.setPermiteRetiroCliente(Boolean.TRUE.equals(ubicacion.permiteRetiroCliente()));
         bodega.setEstado(Constants.ESTADO_ACTIVO);

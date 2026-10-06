@@ -33,22 +33,29 @@ export function filtrarProductos(
   return productos.filter((p) => p.categoria === filtro)
 }
 
+function esCategoriaConGrupo(categoria: CategoriaProducto): boolean {
+  return categoria === 'Tecnología' || categoria === 'Ropa'
+}
+
+/** En Todos, personalizados y el resto de categorías salen en su grupo. Nada queda fuera. */
 export function gruposProductosVisibles(
   productos: ProductoListaItem[],
   filtro: string,
 ): GrupoProductos[] {
   if (filtro !== 'Todos') return [{ titulo: filtro, items: productos }]
-  return [
-    { titulo: 'Recién agregados', items: productos.filter((p) => p.reciente) },
+  const personalizados = productos.filter((p) => p.esPersonalizado)
+  const catalogo = productos.filter((p) => !p.esPersonalizado)
+  const grupos: GrupoProductos[] = [
+    { titulo: 'Personalizados', items: personalizados },
+    { titulo: 'Recién agregados', items: catalogo.filter((p) => p.reciente) },
+    { titulo: 'Tecnología', items: catalogo.filter((p) => p.categoria === 'Tecnología' && !p.reciente) },
+    { titulo: 'Ropa', items: catalogo.filter((p) => p.categoria === 'Ropa' && !p.reciente) },
     {
-      titulo: 'Tecnología',
-      items: productos.filter((p) => p.categoria === 'Tecnología' && !p.reciente),
+      titulo: 'Otros',
+      items: catalogo.filter((p) => !esCategoriaConGrupo(p.categoria) && !p.reciente),
     },
-    {
-      titulo: 'Ropa',
-      items: productos.filter((p) => p.categoria === 'Ropa' && !p.reciente),
-    },
-  ].filter((grupo) => grupo.items.length > 0)
+  ]
+  return grupos.filter((grupo) => grupo.items.length > 0)
 }
 
 export function aProductoListaItem(p: {

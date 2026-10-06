@@ -11,7 +11,7 @@ import FilaChips from '../ui/FilaChips'
 import Miniatura from '../ui/Miniatura'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
-import { useCuentaVendedor } from '../hooks/useCuentaVendedor'
+import VitrinaEditable from '@/prototipo/compartido/VitrinaEditable'
 import type { ProductoEmprendedor } from '../types'
 
 const FILTROS = ['Todos', 'Tecnología', 'Ropa'] as const
@@ -21,7 +21,6 @@ const FILTROS = ['Todos', 'Tecnología', 'Ropa'] as const
  */
 export default function TiendaPublicaPage() {
   const { productos, cargando, error } = useCatalogoEmprendedor()
-  const { tienda, inicial } = useCuentaVendedor()
   const [filtro, setFiltro] = useState<string>('Todos')
   const [seguir, setSeguir] = useState(false)
   const publicados = useMemo(
@@ -42,8 +41,10 @@ export default function TiendaPublicaPage() {
         <p className="text-[10px] font-medium text-white">Así te ven los compradores</p>
       </div>
       <EntradaPagina>
-        <div className="h-24 bg-gradient-to-r from-hc-primary to-[var(--hc-red-700)]" />
-        <CabeceraTienda tienda={tienda} inicial={inicial} seguir={seguir} onSeguir={() => setSeguir((v) => !v)} />
+        <VitrinaEditable />
+        <div className="px-5">
+          <BotonSeguir seguir={seguir} onSeguir={() => setSeguir((v) => !v)} />
+        </div>
         <div className="flex flex-col gap-[18px] px-5 pb-10 pt-2">
           <div className="flex items-center gap-2 rounded-xl bg-hc-surface-2 px-3.5 py-3">
             <span className="size-3.5 overflow-hidden">
@@ -90,38 +91,17 @@ export default function TiendaPublicaPage() {
   )
 }
 
-function CabeceraTienda({
-  tienda,
-  inicial,
-  seguir,
-  onSeguir,
-}: {
-  tienda: string
-  inicial: string
-  seguir: boolean
-  onSeguir: () => void
-}) {
+function BotonSeguir({ seguir, onSeguir }: { seguir: boolean; onSeguir: () => void }) {
   return (
-    <div className="px-5">
-      <div className="flex gap-3">
-        <div className="-mt-8 flex size-16 items-center justify-center rounded-2xl border-4 border-white bg-hc-surface text-2xl font-bold text-hc-primary">
-          {inicial}
-        </div>
-        <div className="pt-9">
-          <p className="text-[15px] font-bold">Tienda {tienda}</p>
-          <p className="text-[10px] text-hc-muted">Outlet oficial</p>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onSeguir}
-        className={`mt-4 min-h-11 rounded-full px-4 py-2 text-[11px] font-bold ${
-          seguir ? 'border border-hc-border bg-hc-surface text-hc-text' : 'bg-hc-primary text-white'
-        }`}
-      >
-        {seguir ? 'Siguiendo' : '+ Seguir tienda'}
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onSeguir}
+      className={`mt-4 min-h-11 rounded-full px-4 py-2 text-[11px] font-bold ${
+        seguir ? 'border border-hc-border bg-hc-surface text-hc-text' : 'bg-hc-primary text-white'
+      }`}
+    >
+      {seguir ? 'Siguiendo' : '+ Seguir tienda'}
+    </button>
   )
 }
 

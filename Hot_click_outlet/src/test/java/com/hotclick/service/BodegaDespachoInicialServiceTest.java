@@ -46,26 +46,27 @@ class BodegaDespachoInicialServiceTest {
     @DisplayName("Sin ningún campo de ubicación → vacío (payload viejo)")
     void normalizar_sinCampos_vacio() {
         assertThat(service.normalizar(null)).isEmpty();
-        assertThat(service.normalizar(new UbicacionDespachoAlta(null, " ", "", true))).isEmpty();
+        assertThat(service.normalizar(new UbicacionDespachoAlta(null, " ", "", true, null))).isEmpty();
     }
 
     @Test
     @DisplayName("Normaliza provincia y cantón como BodegaController y limpia HTML de la dirección")
     void normalizar_completa_normaliza() {
         Optional<UbicacionDespachoAlta> r = service.normalizar(new UbicacionDespachoAlta(
-            " San José ", "Pérez Zeledón", "<b>200 m norte</b> de la iglesia", null));
+            " San José ", "Pérez Zeledón", "<b>200 m norte</b> de la iglesia", null, "San Sebastián"));
 
         assertThat(r).isPresent();
         assertThat(r.get().provincia()).isEqualTo("SAN JOSE");
         assertThat(r.get().canton()).isEqualTo("PEREZ ZELEDON");
         assertThat(r.get().direccionExacta()).isEqualTo("200 m norte de la iglesia");
         assertThat(r.get().permiteRetiroCliente()).isFalse();
+        assertThat(r.get().distrito()).isEqualTo("SAN SEBASTIAN");
     }
 
     @Test
     @DisplayName("Ubicación a medias → IllegalArgumentException")
     void normalizar_aMedias_rechaza() {
-        var sinCanton = new UbicacionDespachoAlta("Heredia", "", "Del parque 100 m sur", false);
+        var sinCanton = new UbicacionDespachoAlta("Heredia", "", "Del parque 100 m sur", false, null);
         assertThatThrownBy(() -> service.normalizar(sinCanton))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage(BodegaDespachoInicialService.MENSAJE_UBICACION_INCOMPLETA);
@@ -74,8 +75,8 @@ class BodegaDespachoInicialServiceTest {
     @Test
     @DisplayName("Provincia de más de 50 o dirección de más de 255 caracteres → rechaza")
     void normalizar_largos_rechaza() {
-        var provinciaLarga = new UbicacionDespachoAlta("P".repeat(51), "Belén", "Centro", false);
-        var direccionLarga = new UbicacionDespachoAlta("Heredia", "Belén", "d".repeat(256), false);
+        var provinciaLarga = new UbicacionDespachoAlta("P".repeat(51), "Belén", "Centro", false, null);
+        var direccionLarga = new UbicacionDespachoAlta("Heredia", "Belén", "d".repeat(256), false, null);
 
         assertThatThrownBy(() -> service.normalizar(provinciaLarga))
             .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("50");
@@ -92,7 +93,7 @@ class BodegaDespachoInicialServiceTest {
         when(bodegaRepository.save(any(Bodega.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Bodega b = service.crear(empresa, admin,
-            new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", true));
+            new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", true, null));
 
         verify(tenantService).verificarLimiteBodegas(7L);
         assertThat(b.getNombreBodega()).isEqualTo("Despacho Tienda Tica");
@@ -112,7 +113,7 @@ class BodegaDespachoInicialServiceTest {
         when(bodegaRepository.save(any(Bodega.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Bodega b = service.crear(empresa("Tienda", null), admin,
-            new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", false));
+            new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", false, null));
 
         assertThat(b.getTelefono()).isEqualTo("88887777");
     }
@@ -122,7 +123,7 @@ class BodegaDespachoInicialServiceTest {
     void crear_limitePlan_noGuarda() {
         doThrow(new PlanLimitException("límite", "bodegas", "upgrade"))
             .when(tenantService).verificarLimiteBodegas(7L);
-        var ubicacion = new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", false);
+        var ubicacion = new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", false, null);
         Empresa empresa = empresa("Tienda", "22223333");
 
         assertThatThrownBy(() -> service.crear(empresa, new Usuario(), ubicacion))

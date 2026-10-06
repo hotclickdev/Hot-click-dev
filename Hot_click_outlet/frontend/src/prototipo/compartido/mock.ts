@@ -40,6 +40,7 @@ export type PedidoMock = {
   fecha: string
   direccion: string
   sucursal?: string
+  origen?: string
   items: ItemPedido[]
 }
 

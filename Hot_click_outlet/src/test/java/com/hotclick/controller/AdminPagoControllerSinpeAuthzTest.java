@@ -43,7 +43,7 @@ class AdminPagoControllerSinpeAuthzTest {
         doThrow(new SecurityException("No tienes permiso para aprobar tu propia compra"))
             .when(paymentService).rechazarSinpe(9L, null);
 
-        ResponseEntity<ResponseDTO> resp = controller.rechazarSinpe(9L, null);
+        ResponseEntity<ResponseDTO> resp = controller.rechazarSinpe(9L, null, null);
 
         assertEquals(403, resp.getStatusCode().value());
         assertFalse(resp.getBody().isSuccess());

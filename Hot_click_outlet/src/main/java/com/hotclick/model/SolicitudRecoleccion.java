@@ -3,6 +3,7 @@ package com.hotclick.model;
 import com.hotclick.utils.Constants;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +27,16 @@ public class SolicitudRecoleccion {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_usuario")
     private Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_bodega")
+    private Bodega bodega;
+
+    @Column(name = "latitud", precision = 10, scale = 8)
+    private BigDecimal latitud;
+
+    @Column(name = "longitud", precision = 11, scale = 8)
+    private BigDecimal longitud;
 
     @Column(name = "zona", nullable = false, length = 20)
     private String zona;
@@ -74,6 +85,15 @@ public class SolicitudRecoleccion {
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+
+    public Bodega getBodega() { return bodega; }
+    public void setBodega(Bodega bodega) { this.bodega = bodega; }
+
+    public BigDecimal getLatitud() { return latitud; }
+    public void setLatitud(BigDecimal latitud) { this.latitud = latitud; }
+
+    public BigDecimal getLongitud() { return longitud; }
+    public void setLongitud(BigDecimal longitud) { this.longitud = longitud; }
 
     public String getZona() { return zona; }
     public void setZona(String zona) { this.zona = zona; }

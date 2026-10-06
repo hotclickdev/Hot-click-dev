@@ -41,6 +41,19 @@ function armarReceiptQr(
 
 export type ReportePendientePos = { mensaje: string }
 
+/** Si el turno ya estaba abierto, lo devuelve para seguir a la venta. */
+async function turnoYaAbierto(err: unknown): Promise<PosTurno | null> {
+  const msg = mensajeErrorPos(err).toLowerCase()
+  const yaAbierto = msg.includes('turno') || msg.includes('caja') || statusErrorPos(err) === 409
+  if (!yaAbierto) return null
+  try {
+    return (await posService.getCajaActiva() as PosTurno | null | undefined) ?? null
+  } catch (recoverErr: unknown) {
+    console.error(recoverErr)
+    return null
+  }
+}
+
 /**
  * Estado y handlers del POS — bit-idéntico al orquestador original.
  */
@@ -71,18 +84,32 @@ export function useAdminPOS() {
   const limpiarReportePendiente = () => setReportePendiente(null)
 
   useEffect(() => {
+    let vivo = true
     const init = async () => {
       try {
         // posService ya hace .then(r => r.data), así que res ES el turno directamente
         const t = await posService.getCajaActiva() as PosTurno | null | undefined
-        setTurno(t ?? null)
-        setStep(t ? 'venta' : 'apertura')
+        if (!vivo) return
+        if (t) { setTurno(t); setStep('venta'); return }
       } catch {
-        // 404 = no hay turno activo; otros errores muestran apertura igual
+        // 404 = no hay turno. Se abre solo, sin pedir el conteo de billetes.
+      }
+      if (!vivo) return
+      try {
+        const turnoData = await posService.abrirCaja({ montoInicial: 0 } as JsonBody) as PosTurno
+        if (!vivo) return
+        setTurno(turnoData)
+        setStep('venta')
+      } catch (err: unknown) {
+        const recuperado = await turnoYaAbierto(err)
+        if (!vivo) return
+        if (recuperado) { setTurno(recuperado); setStep('venta'); return }
+        toastErrorConReporte(mensajeErrorPos(err) || 'Error al abrir turno')
         setStep('apertura')
       }
     }
     void init()
+    return () => { vivo = false }
   }, [])
 
   const agregarProducto = useCallback((producto: ProductoEntradaCarrito) => {
@@ -120,17 +147,10 @@ export function useAdminPOS() {
       const turnoData = await posService.abrirCaja({ montoInicial } as JsonBody) as PosTurno
       setTurno(turnoData)
       setStep('venta')
-      showToast('Turno abierto — ¡a vender!', 'success')
     } catch (err: unknown) {
-      const msg = mensajeErrorPos(err)
-      // Si ya existe un turno abierto, obtenerlo en vez de bloquearse
-      if (msg.toLowerCase().includes('turno') || msg.toLowerCase().includes('caja') || statusErrorPos(err) === 409) {
-        try {
-          const t = await posService.getCajaActiva() as PosTurno | null | undefined
-          if (t) { setTurno(t); setStep('venta'); showToast('Turno existente recuperado', 'info'); return }
-        } catch (recoverErr: unknown) { console.error(recoverErr) }
-      }
-      toastErrorConReporte(msg || 'Error al abrir turno')
+      const recuperado = await turnoYaAbierto(err)
+      if (recuperado) { setTurno(recuperado); setStep('venta'); return }
+      toastErrorConReporte(mensajeErrorPos(err) || 'Error al abrir turno')
     } finally {
       setSaving(false)
     }

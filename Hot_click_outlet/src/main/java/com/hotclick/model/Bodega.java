@@ -51,6 +51,9 @@ public class Bodega extends BaseEntity {
     @Column(name = "canton", length = 100)
     private String canton;
 
+    @Column(name = "distrito", length = 100)
+    private String distrito;
+
     /** Si el negocio habilita esta bodega como punto de retiro para clientes finales. */
     @Column(name = "permite_retiro_cliente", nullable = false)
     private Boolean permiteRetiroCliente = false;
@@ -106,6 +109,9 @@ public class Bodega extends BaseEntity {
 
     public String getCanton() { return canton; }
     public void setCanton(String canton) { this.canton = canton; }
+
+    public String getDistrito() { return distrito; }
+    public void setDistrito(String distrito) { this.distrito = distrito; }
 
     public Boolean getPermiteRetiroCliente() { return permiteRetiroCliente != null ? permiteRetiroCliente : false; }
     public void setPermiteRetiroCliente(Boolean permiteRetiroCliente) { this.permiteRetiroCliente = permiteRetiroCliente; }

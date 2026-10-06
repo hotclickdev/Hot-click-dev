@@ -7,7 +7,7 @@ import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { ROLES_POS, esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
 import { adminAVendedor, vendedorSeQuedaEnAdmin } from '@/app/rolPaths'
 import { useTenantPlanListo } from '@/app/useTenantPlanListo'
-import { esRutaTenantOpsParaAdmin } from '@/layouts/admin/adminItJobs'
+import { destinoPlataformaDesdeAdmin } from '@/pages/plataforma/normalizar'
 
 function SpinnerRuta() {
   return (
@@ -42,10 +42,8 @@ export default function AdminRoleSwitch() {
     return <Navigate to={`/caja${sub}${search}`} replace />
   }
 
-  // Operador de plataforma: fuera de ops de negocio.
-  // No usar `isAdmin`/`ADMIN_ROLES` — incluye vendedores y rompería el remap a seller.
-  if (esStaffPlataforma(rol) && esRutaTenantOpsParaAdmin(pathname)) {
-    return <Navigate to="/admin" replace />
+  if (esStaffPlataforma(rol) && pathname.startsWith('/admin')) {
+    return <Navigate to={`${destinoPlataformaDesdeAdmin(pathname)}${search}`} replace />
   }
 
   if (esUsuarioSistema(rol) && !vendedorSeQuedaEnAdmin(pathname)) {

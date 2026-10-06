@@ -27,6 +27,8 @@ export type EmpresaPerfil = {
   colorPrimario?: string
   colorSecundario?: string
   logoUrl?: string | null
+  ogImagenUrl?: string | null
+  tagline?: string | null
   planSaas?: string
   estadoEmpresa?: string
   visibilidadPublica?: boolean

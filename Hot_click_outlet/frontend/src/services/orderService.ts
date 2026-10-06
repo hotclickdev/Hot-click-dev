@@ -41,8 +41,8 @@ export const adminService = {
   getEmpresaTab: (id: Id, tab: string, params?: Record<string, unknown>) =>
     api.get(`/admin/empresas/${id}/${tab}`, params ? { params } : undefined),
   setEmpresaPlan: (id: Id, plan: string) => api.put(`/admin/empresas/${id}/plan`, { plan }),
-  setEmpresaEstado: (id: Id, estadoEmpresa: string) =>
-    api.put(`/admin/empresas/${id}/estado`, { estadoEmpresa }),
+  setEmpresaEstado: (id: Id, estadoEmpresa: string, motivo?: string) =>
+    api.put(`/admin/empresas/${id}/estado`, { estadoEmpresa, motivo: motivo ?? null }),
   setEmpresaVisibilidad: (id: Id, visibilidadPublica: boolean) =>
     api.put(`/admin/empresas/${id}/visibilidad`, { visibilidadPublica }),
   impersonarEmpresa: (id: Id) => api.post(`/admin/empresas/${id}/impersonar`),

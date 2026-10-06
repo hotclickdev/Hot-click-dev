@@ -1,1 +1,0 @@
-import{o as e}from"./planPaths-C6kFR7vr.js";function t(e){return e===`/prototipo`||e.startsWith(`/prototipo/`)}function n(e){return e===`/visitante`||e.startsWith(`/visitante/`)}function r(t){return e(t)}function i(e){return t(e)||n(e)||r(e)}export{n as i,t as n,r,i as t};

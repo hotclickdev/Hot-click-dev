@@ -52,7 +52,7 @@ public class EmpresaController {
     public ResponseEntity<ResponseDTO> cambiarEstado(@PathVariable Long id,
                                                      @RequestBody Map<String, String> body) {
         companyScope.assertCanAccess(id);
-        empresaAdminService.cambiarEstado(id, body.get("estadoEmpresa"));
+        empresaAdminService.cambiarEstado(id, body.get("estadoEmpresa"), body.get("motivo"));
         return ResponseEntity.ok(ResponseDTO.success("Estado actualizado", null));
     }
 

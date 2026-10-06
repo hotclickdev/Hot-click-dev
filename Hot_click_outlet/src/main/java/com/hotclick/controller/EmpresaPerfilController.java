@@ -89,6 +89,21 @@ public class EmpresaPerfilController {
         }
     }
 
+    @PostMapping("/portada")
+    public ResponseEntity<ResponseDTO> subirPortada(@RequestParam("file") MultipartFile file) {
+        Long empresaId = empresaIdO403();
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        try {
+            String url = empresaPerfilService.subirPortada(empresaId, file);
+            return ResponseEntity.ok(ResponseDTO.success("Portada subida", url));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("[empresa/portada] Error al subir portada: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir la portada"));
+        }
+    }
+
     private Long empresaIdO403() {
         return companyScope.getCurrentEmpresaIdOrOwn();
     }

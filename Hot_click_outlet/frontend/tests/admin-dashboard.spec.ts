@@ -85,8 +85,11 @@ test.describe('Admin IT — consola en reconstrucción', () => {
   test('muestra el aviso y no el panel viejo', async ({ page }) => {
     await entrarDashboard(page)
 
+    await expect(page).toHaveURL(/\/plataforma\/?$/)
     await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
-    await expect(page.getByText(/ventanas anteriores del admin se retiraron/i)).toBeVisible()
+    const nav = page.getByRole('navigation', { name: 'Dominios de HotClick' })
+    await expect(nav.getByRole('link', { name: 'Negocios', exact: true })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Moderación', exact: true })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Panel Admin' })).toHaveCount(0)
     await expect(page.getByText('Tiendas activas')).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toHaveCount(0)

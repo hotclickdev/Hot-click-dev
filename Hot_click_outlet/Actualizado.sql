@@ -4135,3 +4135,17 @@ CREATE INDEX IF NOT EXISTS idx_compra_d105_trimestre
 -- V153: foto privada del comprobante de compra. La ruta no se devuelve al cliente.
 ALTER TABLE hot_click_compra_d105_tb
     ADD COLUMN IF NOT EXISTS foto_path VARCHAR(500);
+
+-- V154: pin de Google Maps en la bodega y en la recolección que la marca.
+ALTER TABLE hot_click_bodega_tb
+    ADD COLUMN IF NOT EXISTS latitud NUMERIC(10, 8),
+    ADD COLUMN IF NOT EXISTS longitud NUMERIC(11, 8);
+
+ALTER TABLE hot_click_solicitud_recoleccion_tb
+    ADD COLUMN IF NOT EXISTS fk_id_bodega BIGINT REFERENCES hot_click_bodega_tb(id_bodega) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS latitud NUMERIC(10, 8),
+    ADD COLUMN IF NOT EXISTS longitud NUMERIC(11, 8);
+
+-- V155: distrito de la bodega, tomado de la división territorial del IGN.
+ALTER TABLE hot_click_bodega_tb
+    ADD COLUMN IF NOT EXISTS distrito VARCHAR(100);
