@@ -50,7 +50,7 @@ export default function MenuPage() {
             </ItemMenu>
           ))}
           <ItemMenu>
-            <EnlacePrimario to="/admin/pos" variante="oscuro" dataMm="seller-menu-pos">
+            <EnlacePrimario to={`${RUTA_EMPRENDEDOR}/pos`} variante="oscuro" dataMm="seller-menu-pos">
               Abrí la caja (POS)
             </EnlacePrimario>
           </ItemMenu>

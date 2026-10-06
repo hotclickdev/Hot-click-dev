@@ -25,57 +25,20 @@ export type TourStep = {
 
 const COLOR = 'var(--hc-primary)'
 
-/** Tour corto Super Admin: sin Finanzas ni Copilot (no son su modelo mental). */
+/** Tour de plataforma: las ventanas viejas ya no existen. */
 export const STEPS_SUPER_ADMIN: TourStep[] = [
   {
     type: 'welcome',
     icono: 'bolsa',
-    title: 'Panel Super Admin',
-    desc: 'Recorrido corto de la plataforma: tiendas, usuarios, moderación y configuración.',
-    color: COLOR,
-  },
-  {
-    path: '/admin',
-    icono: 'casa',
-    title: 'Panel Admin',
-    subtitle: 'Vista general',
-    desc: 'KPIs de la plataforma, carga masiva y tiendas recientes.',
-    tip: 'Empezá por Carga masiva o Moderación según lo que tengas pendiente.',
-    color: COLOR,
-    demo: { type: 'kpis', items: [
-      { label: 'Tiendas activas', value: '24' },
-      { label: 'Pendientes', value: '3' },
-    ] },
-  },
-  {
-    path: '/admin/aprobaciones',
-    icono: 'lista',
-    title: 'Moderación',
-    subtitle: 'Cola de revisión',
-    desc: 'Aprobá negocios y promociones. Pausado de productos se gestiona en Empresas.',
-    color: COLOR,
-  },
-  {
-    path: '/admin/empresas',
-    icono: 'edificio',
-    title: 'Tiendas',
-    subtitle: 'Negocios en la plataforma',
-    desc: 'Buscá, filtrá y abrí el detalle de cada tienda.',
-    color: COLOR,
-  },
-  {
-    path: '/admin/configuracion',
-    icono: 'edificio',
-    title: 'Configuración',
-    subtitle: 'Ajustes de plataforma',
-    desc: 'Comisión, categorías, política y métodos de pago.',
+    title: 'Consola de plataforma',
+    desc: 'Las ventanas anteriores se retiraron. La consola nueva se construye por dominios.',
     color: COLOR,
   },
   {
     type: 'done',
     icono: 'check',
     title: 'Listo',
-    desc: 'Podés volver a ver la guía por pantalla desde el botón de ayuda.',
+    desc: 'Cuando la consola nueva esté lista, el recorrido va a cubrir cada dominio.',
     color: COLOR,
   },
 ]

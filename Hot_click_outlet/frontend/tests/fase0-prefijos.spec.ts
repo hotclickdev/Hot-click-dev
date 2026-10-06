@@ -75,14 +75,14 @@ test('prefijos y redirects de Fase 0 son deterministas', () => {
   expect(prefijoPorPlan('NEGOCIO_PLUS')).toBe('/negocio-plus')
   expect(rutaPanelPorRol('ADMIN')).toBe('/admin')
   expect(rutaPanelPorRol('EMPRENDEDOR', 'PYME')).toBe('/pyme')
-  expect(rutaPanelPorRol('CAJERO')).toBe('/admin/pos')
+  expect(rutaPanelPorRol('CAJERO')).toBe('/caja')
   expect(destinoPrototipo('/prototipo')).toBe('/visitante')
   expect(destinoPrototipo('/prototipo/visitante/shop')).toBe('/visitante/shop')
   expect(destinoPrototipo('/prototipo/emprendedor/productos')).toBe('/emprendedor/productos')
   expect(destinoPrototipo('/prototipo/pyme/equipo')).toBe('/pyme/equipo')
   expect(destinoPrototipo('/prototipo/admin/dashboard')).toBe('/admin/dashboard')
   expect(rutaSellerDesdeAdmin('/admin/productos', '', 'EMPRENDEDOR')).toBe('/emprendedor/productos')
-  expect(vendedorSeQuedaEnAdmin('/admin/pos')).toBe(true)
+  expect(vendedorSeQuedaEnAdmin('/admin/pos')).toBe(false)
   expect(vendedorSeQuedaEnAdmin('/admin/productos')).toBe(false)
   expect(esRutaVisitanteFigma('/')).toBe(false)
   expect(esRutaVisitanteFigma('/visitante')).toBe(true)
@@ -118,10 +118,10 @@ test.describe('Fase 0 — URLs por rol', () => {
     await expect(page).toHaveURL(/\/pyme\/productos/)
   })
 
-  test('POS de EMPRENDEDOR se queda en /admin/pos', async ({ page }) => {
+  test('POS de EMPRENDEDOR sale de /admin hacia su prefijo', async ({ page }) => {
     await sesion(page, 'EMPRENDEDOR')
     await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/admin\/pos/)
+    await expect(page).toHaveURL(/\/emprendedor\/pos/)
   })
 
   test('anónimo en Figma vendedor va a login', async ({ page }) => {

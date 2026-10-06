@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { rutasCajaRelativas } from '@/app/CajaShell'
 import EmprendedorShell from './EmprendedorShell'
 import { RUTA_EMPRENDEDOR } from './constants'
 
@@ -65,8 +66,7 @@ export default function EmprendedorRoutes() {
     <Routes>
       <Route path="login" element={<Navigate to="/login" replace />} />
       <Route path="registro" element={<Navigate to="/registro" replace />} />
-      <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
-      <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
+      {rutasCajaRelativas()}
       <Route path="bodegas" element={<Navigate to="opciones/bodegas" replace />} />
       <Route path="bodegas/nueva" element={<Navigate to="opciones/bodegas/nueva" replace />} />
       <Route path="negocio" element={<Navigate to="opciones/negocio" replace />} />

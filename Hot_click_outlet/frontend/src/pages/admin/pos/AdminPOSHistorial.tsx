@@ -1,6 +1,7 @@
 import { Fragment, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useBaseCaja } from './baseCaja'
 import { posService } from '@/services/posService'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -23,6 +24,7 @@ function dentroDelFiltro(fechaStr: string | number | Date | undefined, filtro: s
 
 export default function AdminPOSHistorial() {
   const { t, i18n } = useTranslation()
+  const baseCaja = useBaseCaja()
   const [ventas, setVentas]   = useState<PosVenta[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro]   = useState('hoy')
@@ -84,7 +86,7 @@ export default function AdminPOSHistorial() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
+          <Link to={baseCaja} className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
             <TextoFlecha dir="atras">{t('pos.common.volverAlPos')}</TextoFlecha>
           </Link>
           <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>{t('pos.historial.title')}</h1>

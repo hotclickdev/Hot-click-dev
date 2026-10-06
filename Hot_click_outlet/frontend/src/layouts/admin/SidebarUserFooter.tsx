@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next'
 import { PLAN_LABELS } from './adminSidebarTheme'
 import ModeSwitcherWrapper from './ModeSwitcherWrapper'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import { prefijoPorPlan } from '@/utils/planPaths'
 
 export type SidebarUserFooterProps = {
   esSistema: boolean
@@ -34,7 +35,7 @@ export default function SidebarUserFooter({
       {esSistema ? (
         <>
           <NavLink
-            to="/admin/pos"
+            to={`${prefijoPorPlan(planNombre)}/pos`}
             className="flex items-center justify-center px-3 py-[11px] rounded-[10px] text-sm font-semibold transition-colors hover:bg-[var(--hc-surface-2)]"
             style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
           >

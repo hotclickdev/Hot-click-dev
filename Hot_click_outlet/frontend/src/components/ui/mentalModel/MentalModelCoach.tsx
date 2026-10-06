@@ -93,6 +93,7 @@ export default function MentalModelCoach() {
     }
 
     if (!path.startsWith('/admin')) return
+    if (!guiaPara(path, userRole)) return
     if (!welcomeHecho()) {
       const t = setTimeout(() => setFase('welcome'), 600)
       return () => clearTimeout(t)

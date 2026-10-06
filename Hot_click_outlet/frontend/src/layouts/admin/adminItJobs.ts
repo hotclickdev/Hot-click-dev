@@ -123,74 +123,13 @@ export function leerSeccionesColapsadas(userRole?: string | null): Set<string> {
   }
 }
 
-function seccionOperarPlataforma(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.OPERAR },
-    { to: '/admin/payouts', label: t('admin.sidebar.retirosBilletera'), icon: 'card', permiso: 'global.metrics' },
-    { to: '/admin/saas-billing', label: t('admin.sidebar.billingPlataforma'), icon: 'card', permiso: 'global.metrics' },
-    { to: '/admin/pagos', label: t('admin.sidebar.pagosWebhooks'), icon: 'card', permiso: 'global.metrics' },
-    { to: '/admin/ads', label: t('admin.sidebar.adsMetricas'), icon: 'chart', permiso: 'global.metrics' },
-    { to: '/admin/embudo', label: t('admin.sidebar.porQueNoCompran'), icon: 'chart', permiso: 'global.metrics' },
-    { to: '/admin/recolecciones', label: t('admin.sidebar.recoleccionEntrega'), icon: 'clipboard', permiso: 'global.companies' },
-    { to: '/admin/reportes-producto', label: t('admin.sidebar.productosReportados'), icon: 'shield', permiso: 'global.approvals' },
-    { to: '/admin/soporte', label: t('admin.sidebar.inboxSoporte'), icon: 'help', permiso: 'global.companies' },
-    { to: '/admin/servicios', label: t('admin.sidebar.serviciosHot'), icon: 'wrench', permiso: 'global.companies' },
-    { to: '/admin/inventario/captura', label: 'Captura inventario', icon: 'box' },
-    { to: '/admin/inventario/paquetes', label: 'Paquetes inventario', icon: 'clipboard' },
-    { to: '/admin/offline/cola', label: t('admin.sidebar.colaOffline'), icon: 'clipboard' },
-    { to: '/admin/facturas', label: t('admin.sidebar.comprobantesElectronicos'), icon: 'clipboard', permiso: 'global.metrics' },
-    { to: '/admin/compras-d105', label: t('admin.sidebar.comprasProveedores'), icon: 'clipboard', permiso: 'global.metrics' },
-    { to: '/admin/config-fiscal', label: t('admin.sidebar.configFiscal'), icon: 'config', permiso: 'global.metrics' },
-  ]
-}
-
-function seccionMarketplaceCms(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.MARKETPLACE },
-    { to: '/admin/homepage', label: t('admin.sidebar.homepageCarousel'), icon: 'home' },
-    { to: '/admin/categorias', label: t('admin.sidebar.categorias'), icon: 'tag' },
-    { to: '/admin/marcas', label: t('admin.sidebar.marcas'), icon: 'marca' },
-    { to: '/admin/cupones', label: t('admin.sidebar.descuentos'), icon: 'coupon' },
-  ]
-}
-
-function seccionSistemaPlataforma(t: TFunction): SidebarLink[] {
-  return [
-    { section: ADMIN_IT_SECCION.SISTEMA },
-    { to: '/admin/security', label: t('admin.sidebar.securityCenter'), icon: 'shield' },
-    { to: '/admin/auditorias', label: t('admin.sidebar.auditorias'), icon: 'clipboard' },
-    { to: '/admin/superadmin', label: t('admin.sidebar.featureFlags'), icon: 'config' },
-    { to: '/admin/observabilidad', label: t('admin.sidebar.observabilidad'), icon: 'chart' },
-    { to: '/admin/ai-control', label: t('admin.sidebar.controlIa'), icon: 'ai' },
-    { to: '/admin/multipais', label: t('admin.sidebar.multipais'), icon: 'globe' },
-  ]
-}
-
 /**
- * Núcleo Figma Super Admin:
- * Inicio · Tiendas · Usuarios · Moderación · Config · Más herramientas.
- */
-function seccionNucleoFigma(t: TFunction): SidebarLink[] {
-  return [
-    { to: '/admin', label: t('admin.sidebar.inicio'), icon: 'home', exact: true },
-    { to: '/admin/empresas', label: t('admin.sidebar.tiendas'), icon: 'empresa', permiso: 'global.companies' },
-    { to: '/admin/usuarios', label: t('admin.sidebar.usuarios'), icon: 'users' },
-    { to: '/admin/aprobaciones', label: t('admin.sidebar.moderacion'), icon: 'check', permiso: 'global.approvals' },
-    { to: '/admin/configuracion', label: t('admin.sidebar.config'), icon: 'config' },
-    { to: '/admin/herramientas', label: t('admin.sidebar.masHerramientas'), icon: 'wrench' },
-  ]
-}
-
-/**
- * Sidebar Admin IT: operador de plataforma (sin ops de tienda propia).
- * Staff se filtra con {@link filtrarLinksPorPermiso}.
+ * Sidebar de plataforma: las ventanas viejas se retiraron.
+ * Queda el inicio hasta construir la consola por dominios.
  */
 export function buildAdminItLinks(t: TFunction): SidebarLink[] {
   return [
-    ...seccionNucleoFigma(t),
-    ...seccionOperarPlataforma(t),
-    ...seccionMarketplaceCms(t),
-    ...seccionSistemaPlataforma(t),
+    { to: '/admin', label: t('admin.sidebar.inicio'), icon: 'home', exact: true },
   ]
 }
 

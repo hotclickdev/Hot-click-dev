@@ -6,12 +6,14 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
 describe('productos personalizados — wiring estático', () => {
-  it('expone ruta pública /encargo/:token y admin /encargos', () => {
+  it('expone la ruta pública /encargo/:token y encargos del vendedor', () => {
     const routes = readFileSync(resolve(root, 'src/app/AppRoutes.tsx'), 'utf8')
     expect(routes).toContain('/encargo/:token')
-    expect(routes).toContain('path="encargos"')
     expect(routes).toContain('EncargoPublicPage')
-    expect(routes).toContain('AdminEncargos')
+    const emprendedor = readFileSync(resolve(root, 'src/prototipo/emprendedor/EmprendedorRoutes.tsx'), 'utf8')
+    expect(emprendedor).toContain('path="encargos"')
+    const seller = readFileSync(resolve(root, 'src/prototipo/compartido/SellerRoutes.tsx'), 'utf8')
+    expect(seller).toContain('path="encargos"')
   })
 
   it('wizard incluye toggle de producto personalizado', () => {

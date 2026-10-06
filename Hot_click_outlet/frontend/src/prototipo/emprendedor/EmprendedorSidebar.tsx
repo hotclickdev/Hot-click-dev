@@ -27,7 +27,7 @@ function gruposNav(pendientesEncargos: number): readonly GrupoNav[] {
     titulo: 'Operar',
     items: [
       { to: RUTA_EMPRENDEDOR, etiqueta: 'Inicio', Icono: HomeIcon, end: true },
-      { to: '/admin/pos', etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
+        { to: `${RUTA_EMPRENDEDOR}/pos`, etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
       { to: `${RUTA_EMPRENDEDOR}/pedidos`, etiqueta: 'Pedidos', Icono: ClipboardDocumentListIcon },
       {
         to: `${RUTA_EMPRENDEDOR}/recoleccion`,

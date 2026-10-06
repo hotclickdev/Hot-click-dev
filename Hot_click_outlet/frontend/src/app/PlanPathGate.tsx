@@ -43,7 +43,7 @@ export default function PlanPathGate({
   }
   if (esStaffPlataforma(userRole)) return <Navigate to="/admin" replace />
   if (ROLES_POS.has(userRole ?? '') && !esUsuarioSistema(userRole)) {
-    return <Navigate to="/admin/pos" replace />
+    return <Navigate to="/caja" replace />
   }
   if (!esUsuarioSistema(userRole)) return <Navigate to="/" replace />
   if (esperando) return <SpinnerRuta />

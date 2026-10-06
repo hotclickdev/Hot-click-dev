@@ -18,10 +18,6 @@ import SeccionDatos from './configuracion/SeccionDatos'
 import SeccionApariencia from './configuracion/SeccionApariencia'
 import SeccionSistema from './configuracion/SeccionSistema'
 import SeccionComision from './configuracion/SeccionComision'
-import SuperAdminConfig from './configuracion/SuperAdminConfig'
-import SuperAdminMetodosPago from './configuracion/SuperAdminMetodosPago'
-import SuperAdminNotificaciones from './configuracion/SuperAdminNotificaciones'
-import SuperAdminPolitica from './configuracion/SuperAdminPolitica'
 import {
   F, UserIcon, StoreIcon, ShieldIcon, BellIcon, SendIcon, DatabaseIcon, PaletteIcon, CogIcon, CardIcon, BoxIcon,
 } from './configuracion/configUi'
@@ -87,11 +83,6 @@ export default function AdminConfiguracion() {
     : allNav.filter(n => !n.soloEmprendedor)
 
   const go = (id: string) => { setSection(id); setAnimKey(k => k + 1) }
-  const seccionFigma = searchParams.get('seccion')
-  if (userRole === 'ADMIN' && !seccionFigma) return <SuperAdminConfig />
-  if (userRole === 'ADMIN' && seccionFigma === 'politica') return <SuperAdminPolitica />
-  if (userRole === 'ADMIN' && seccionFigma === 'pagos-metodos') return <SuperAdminMetodosPago />
-  if (userRole === 'ADMIN' && seccionFigma === 'alertas') return <SuperAdminNotificaciones />
 
   return (
     <>

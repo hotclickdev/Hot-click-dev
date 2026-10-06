@@ -5,6 +5,7 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import useRutaPanel from '@/app/useRutaPanel'
 
 export type AdminMobileHeaderProps = {
   etiquetaChrome: 'Admin' | 'Sistema'
@@ -27,6 +28,7 @@ export default function AdminMobileHeader({
   setDrawerOpen,
 }: AdminMobileHeaderProps) {
   const esAdmin = etiquetaChrome === 'Admin'
+  const rutaCaja = `${useRutaPanel()}/pos`
   return (
     <header
       className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 backdrop-blur-xl flex items-center gap-2.5 px-4"
@@ -66,7 +68,7 @@ export default function AdminMobileHeader({
       <div className="flex-1" />
       <ThemeToggle className="min-h-11 min-w-11 flex items-center justify-center shrink-0" />
       {mostrarCaja && (
-        <NavLink to="/admin/pos"
+        <NavLink to={rutaCaja}
           className="text-[13px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0 transition-colors hover:bg-[var(--hc-surface-2)]"
           style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
         >

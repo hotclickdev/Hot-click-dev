@@ -37,20 +37,13 @@ export function rutaConPrefijo(prefijo: string, resto = '', search = ''): string
 export function rutaPanelPorRol(rol: string | null | undefined, planNombre?: string | null): string {
   if (rol === 'ADMIN') return ADMIN_BASE
   if (ROLES_VENDEDOR.has(rol ?? '')) return prefijoPorPlan(planNombre)
-  if (ROLES_POS.has(rol ?? '')) return `${ADMIN_BASE}/pos`
+  if (ROLES_POS.has(rol ?? '')) return '/caja'
   return '/'
 }
 
-/** Caja y herramientas reales (marca, plan, copilot) se quedan en `/admin`. */
-export function vendedorSeQuedaEnAdmin(pathname: string): boolean {
-  return (
-    pathname.startsWith('/admin/pos')
-    || pathname.startsWith('/admin/configuracion')
-    || pathname.startsWith('/admin/billing')
-    || pathname.startsWith('/admin/copilot')
-    || pathname.startsWith('/admin/mi-empresa')
-    || pathname.startsWith('/admin/ayuda')
-  )
+/** El vendedor no se queda en `/admin`: todo se remapea a su prefijo. */
+export function vendedorSeQuedaEnAdmin(_pathname: string): boolean {
+  return false
 }
 
 export function rutaSellerDesdeAdmin(

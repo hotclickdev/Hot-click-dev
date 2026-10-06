@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useBaseCaja } from './baseCaja'
 import { posService } from '@/services/posService'
 import { useToast } from '@/components/ui/Toast'
 import ConteoEfectivo from './ConteoEfectivo'
@@ -15,6 +16,7 @@ import type { JsonBody } from '@/types/api'
 
 export default function AdminPOSCaja() {
   const { t } = useTranslation()
+  const baseCaja = useBaseCaja()
   const { showToast } = useToast()
   const [turno, setTurno]     = useState<PosTurno | null>(null)
   const [loading, setLoading] = useState(true)
@@ -92,7 +94,7 @@ export default function AdminPOSCaja() {
             </p>
           </div>
         </div>
-        <Link to="/admin/pos"
+        <Link to={baseCaja}
           className="block w-full py-4 rounded-2xl font-black text-center text-base"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>
           <TextoFlecha dir="atras">{t('pos.common.volverAlPos')}</TextoFlecha>
@@ -118,7 +120,7 @@ export default function AdminPOSCaja() {
             {t('pos.caja.abriDesdePos')}
           </p>
         </div>
-        <Link to="/admin/pos"
+        <Link to={baseCaja}
           className="flex w-full py-4 rounded-2xl font-black items-center justify-center gap-1 text-base"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>
           {t('pos.caja.irAlPos')} <TrustGlyph tipo="adelante" className="w-3.5 h-3.5" /> {t('pos.caja.abrirTurnoHint')}
@@ -136,7 +138,7 @@ export default function AdminPOSCaja() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
+          <Link to={baseCaja} className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
             <TextoFlecha dir="atras">{t('pos.common.volverAlPos')}</TextoFlecha>
           </Link>
           <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>{t('pos.caja.title')}</h1>

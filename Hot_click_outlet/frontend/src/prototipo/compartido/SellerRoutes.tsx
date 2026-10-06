@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import SellerShell from './SellerShell'
+import { rutasCajaRelativas } from '@/app/CajaShell'
 
 const MenuPage = lazy(() => import('./MenuPage'))
 const ProductosPage = lazy(() => import('./ProductosPage'))
@@ -74,8 +75,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
       </Route>
       <Route path="login" element={<Navigate to="/login" replace />} />
       <Route path="registro" element={<Navigate to="/registro" replace />} />
-      <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
-      <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
+      {rutasCajaRelativas()}
       <Route element={<SellerShell sinNav />}>
         <Route path="productos/:id" element={page(ProductoDetallePage)} />
         <Route path="productos/:id/editar" element={page(ProductoFormPage)} />

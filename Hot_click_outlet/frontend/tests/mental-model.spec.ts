@@ -60,7 +60,7 @@ async function mockApi(page: Page) {
 }
 
 test.describe('Mental Model coach', () => {
-  test('primera visita a /admin muestra overlay; Omitir deja clic en Carga masiva; segunda visita no muestra', async ({ page }) => {
+  test('el admin de plataforma no ve el tour del panel viejo', async ({ page }) => {
     await mockApi(page)
     await page.addInitScript((auth) => {
       localStorage.setItem('hotclick-auth', JSON.stringify(auth))
@@ -72,38 +72,9 @@ test.describe('Mental Model coach', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByRole('heading', { name: /Bienvenido/i })).toBeVisible({ timeout: 8000 })
-    await page.getByRole('button', { name: 'Omitir por ahora' }).click()
+    await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
     await expect(page.getByRole('heading', { name: /Bienvenido/i })).toHaveCount(0)
-
-    const carga = page.getByRole('link', { name: 'Carga masiva de productos' })
-    await expect(carga).toBeVisible()
-    await carga.click()
-    await expect(page).toHaveURL(/\/admin\/productos\/carga-masiva/)
-
-    await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Panel Admin' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /Bienvenido/i })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Omitir' })).toHaveCount(0)
-  })
-
-  test('Hacer el tour abre spotlight sobre Carga masiva', async ({ page }) => {
-    await mockApi(page)
-    await page.addInitScript((auth) => {
-      localStorage.setItem('hotclick-auth', JSON.stringify(auth))
-      localStorage.removeItem('hc-admin-tour-v4-done')
-      localStorage.removeItem('hc-mm-v1-off')
-      localStorage.removeItem('hc-mm-v1-welcome-done')
-      localStorage.removeItem('hc-mm-v1:/admin')
-    }, payloadAuth())
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-
-    await expect(page.getByRole('heading', { name: /Bienvenido/i })).toBeVisible({ timeout: 8000 })
-    await page.getByRole('button', { name: 'Hacer el tour' }).click()
-    await expect(page.locator('#mm-titulo')).toHaveText('Carga masiva')
-    await expect(page.getByText(/subís muchos productos/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Omitir' }).click()
-    await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toHaveCount(0)
+    await expect(page.locator('#mm-titulo')).toHaveCount(0)
   })
 })

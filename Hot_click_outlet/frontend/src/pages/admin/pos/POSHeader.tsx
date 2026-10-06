@@ -6,6 +6,7 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import useRutaPanel from '@/app/useRutaPanel'
 import useAuthStore from '@/store/authStore'
+import { useBaseCaja } from './baseCaja'
 import type { PosStep, PosTurno } from './posHelpers'
 import { posUi } from './posApariencia'
 import PosReporteModal from './PosReporteModal'
@@ -21,6 +22,7 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
 }) {
   const { t } = useTranslation()
   const rutaPanel = useRutaPanel()
+  const baseCaja = useBaseCaja()
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const enVenta = step === 'venta'
@@ -75,7 +77,7 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
       <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
 
       <Link
-        to="/admin/pos/historial"
+        to={`${baseCaja}/historial`}
         className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)] sm:block"
         style={chipSec}
       >

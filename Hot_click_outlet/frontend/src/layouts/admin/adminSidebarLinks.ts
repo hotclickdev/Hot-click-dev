@@ -40,9 +40,9 @@ export function buildSistemaLinks(t: TFunction): SidebarLink[] {
 
 function linksPos(t: TFunction): SidebarLink[] {
   return [
-    { to: '/admin/pos', label: t('admin.sidebar.cajaRegistradora'), icon: 'pos' },
-    { to: '/admin/pos/caja', label: t('admin.sidebar.cuadreCaja'), icon: 'chart' },
-    { to: '/admin/pos/historial', label: t('admin.sidebar.historialVentas'), icon: 'clipboard' },
+    { to: '/caja', label: t('admin.sidebar.cajaRegistradora'), icon: 'pos' },
+    { to: '/caja/caja', label: t('admin.sidebar.cuadreCaja'), icon: 'chart' },
+    { to: '/caja/historial', label: t('admin.sidebar.historialVentas'), icon: 'clipboard' },
   ]
 }
 

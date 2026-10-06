@@ -18,9 +18,7 @@ import { RUTA_SISTEMA_VISIBILIDAD } from '@/utils/rutaTienda'
 import { buildSidebarLinks } from './admin/adminSidebarLinks'
 import SidebarContent, { type RoleBadge } from './admin/SidebarContent'
 import AdminMobileHeader from './admin/AdminMobileHeader'
-import AdminBottomNav from '@/prototipo/admin/AdminBottomNav'
 import { etiquetaChromeAdmin } from './admin/adminChrome'
-import { moderacionService } from '@/services/moderacionService'
 import type { SidebarLink } from './admin/adminItJobs'
 
 const ROLE_BADGES: Record<string, RoleBadge> = {
@@ -47,7 +45,6 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   const visibilidadPublica = useTenantStore((s) => s.visibilidadPublica)
   const [drawerOpen,    setDrawerOpen]    = useState(false)
   const [searchOpen,    setSearchOpen]    = useState(false)
-  const [moderacionTotal, setModeracionTotal] = useState(0)
 
   // Cargar info del tenant (plan, límites, features) al montar el panel admin
   useEffect(() => {
@@ -56,15 +53,6 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     loadTenantUso()
     return () => clearTenant()
   }, [empresaId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (userRole !== 'ADMIN') return
-    let cancelado = false
-    moderacionService.resumen()
-      .then((r) => { if (!cancelado) setModeracionTotal(r.total) })
-      .catch(() => { if (!cancelado) setModeracionTotal(0) })
-    return () => { cancelado = true }
-  }, [userRole, location.pathname])
 
   // Atajo global Cmd+K / Ctrl+K
   useEffect(() => {
@@ -75,11 +63,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     return () => globalThis.removeEventListener('keydown', handler)
   }, [])
 
-  const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole, permissions).map((link) =>
-    link.to === '/admin/aprobaciones' && moderacionTotal > 0
-      ? { ...link, badge: moderacionTotal }
-      : link,
-  )
+  const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole, permissions)
   const handleLogout = () => { logout(); navigate('/') }
 
   // Cargar estado de empresa para mostrar banners de aprobación / visibilidad
@@ -178,7 +162,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className={`flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8 ${esSuperAdmin && !modoCaptura ? 'pb-20 md:pb-6' : ''}`}
+          className="flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8"
         >
           {/* Banner: negocio pendiente de aprobación */}
           {estadoEmpresa === 'PENDIENTE_APROBACION' && estadoPlan !== 'PRUEBA_CERRADA' && (
@@ -236,7 +220,6 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
       {/* Coach Mental Model (welcome + spotlight) + tour legacy opcional */}
       <MentalModelCoach />
       <AppTour />
-      {esSuperAdmin ? <AdminBottomNav /> : null}
     </div>
   )
 }

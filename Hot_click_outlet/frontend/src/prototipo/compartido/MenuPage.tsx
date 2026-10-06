@@ -76,7 +76,7 @@ export default function MenuPage() {
             </ItemMenu>
           ))}
           <ItemMenu>
-            <Boton variante="oscuro" to="/admin/pos" dataMm="seller-menu-pos">
+            <Boton variante="oscuro" to={ruta('pos')} dataMm="seller-menu-pos">
               Abrí la caja (POS)
             </Boton>
           </ItemMenu>
@@ -119,7 +119,7 @@ export default function MenuPage() {
         <ListaStagger className="mt-8 flex flex-wrap gap-5">
           <ItemMenu>
             <Link
-              to="/admin/pos"
+              to={ruta('pos')}
               data-mm="seller-menu-pos"
               className="flex min-h-[52px] min-w-[280px] items-center justify-center rounded-[10px] bg-hc-primary px-5 text-[15px] font-bold text-white"
             >

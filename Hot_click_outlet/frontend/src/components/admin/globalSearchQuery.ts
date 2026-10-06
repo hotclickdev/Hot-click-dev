@@ -67,7 +67,7 @@ export function mapearClientesBusqueda(clienList: unknown[]): ItemBusquedaGlobal
       sub: c.correo,
       meta: `${c.puntosFidelidad ?? 0} pts`,
       icono: 'clientes', iconColor: 'rgba(151,183,243,',
-      path: `/admin/usuarios`,
+      path: `/admin/clientes`,
     }
   })
 }

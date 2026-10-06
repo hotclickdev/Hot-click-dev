@@ -1,5 +1,6 @@
 import { lazy, type ReactNode } from 'react'
 import { Navigate, Route } from 'react-router-dom'
+import { rutasCajaRelativas } from '@/app/CajaShell'
 import SellerPagePad from '@/app/SellerPagePad'
 import {
   AdminBlogRoute,
@@ -103,8 +104,7 @@ export function rutasSellerExternas() {
     <>
       <Route path="login" element={<Navigate to="/login" replace />} />
       <Route path="registro" element={<Navigate to="/registro" replace />} />
-      <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
-      <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
+      {rutasCajaRelativas()}
     </>
   )
 }

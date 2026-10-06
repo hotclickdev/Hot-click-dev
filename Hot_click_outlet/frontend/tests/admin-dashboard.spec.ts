@@ -81,24 +81,16 @@ async function entrarDashboard(page: Page) {
   await page.goto('/admin', { waitUntil: 'domcontentloaded' })
 }
 
-test.describe('Admin IT — Panel Admin Figma', () => {
-  test('muestra KPIs de plataforma, carga masiva y tiendas recientes', async ({ page }) => {
+test.describe('Admin IT — consola en reconstrucción', () => {
+  test('muestra el aviso y no el panel viejo', async ({ page }) => {
     await entrarDashboard(page)
 
-    await expect(page.getByRole('heading', { name: 'Panel Admin' })).toBeVisible()
-    await expect(page.getByText('Vista general de HotClick')).toBeVisible()
-    await expect(page.getByText('Tiendas activas')).toBeVisible()
-    await expect(page.getByText('Vendedores')).toBeVisible()
-    await expect(page.getByText('Productos publicados')).toBeVisible()
-    await expect(page.getByText('Ventas totales')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toBeVisible()
-    await expect(page.locator('[data-mm="mas-herramientas"]')).toBeVisible()
-    await expect(page.getByText('QA2 Emprendedor')).toBeVisible()
-    await expect(page.getByText('Activa', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
+    await expect(page.getByText(/ventanas anteriores del admin se retiraron/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Panel Admin' })).toHaveCount(0)
+    await expect(page.getByText('Tiendas activas')).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toHaveCount(0)
     await expect(page.locator('.hc-superadmin-theme')).toBeAttached()
-
-    await page.getByRole('link', { name: 'Carga masiva de productos' }).click()
-    await expect(page).toHaveURL(/\/admin\/productos\/carga-masiva/)
   })
 
   test('alterna modo oscuro desde el sidebar', async ({ page }) => {
@@ -119,11 +111,9 @@ test.describe('Admin IT — Panel Admin Figma', () => {
     expect(texto.toUpperCase()).toBe('#F4F6F9')
   })
 
-  test('dashboard usa tarjetas claras', async ({ page }) => {
+  test('el inicio no usa las tarjetas del panel viejo', async ({ page }) => {
     await entrarDashboard(page)
-    await expect(page.getByText('Tiendas activas')).toBeVisible()
-    const kpi = page.getByText('Tiendas activas').locator('xpath=ancestor::div[contains(@class,"rounded")][1]')
-    const bg = await kpi.evaluate((el) => getComputedStyle(el).backgroundColor)
-    expect(bg).not.toBe('rgb(17, 17, 20)')
+    await expect(page.getByRole('heading', { name: 'Consola de plataforma' })).toBeVisible()
+    await expect(page.getByText('Tiendas activas')).toHaveCount(0)
   })
 })

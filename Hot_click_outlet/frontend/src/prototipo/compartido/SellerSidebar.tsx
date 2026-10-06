@@ -39,7 +39,7 @@ function gruposSeller(
     {
       titulo: 'Operar',
       items: [
-        { to: '/admin/pos', etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
+        { to: ruta('pos'), etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
         { to: ruta('pedidos'), etiqueta: 'Pedidos', Icono: ClipboardDocumentListIcon },
         { to: ruta('tienda'), etiqueta: 'Tienda', Icono: BuildingStorefrontIcon },
         { to: ruta('recoleccion'), etiqueta: 'Recolección', Icono: TruckIcon },

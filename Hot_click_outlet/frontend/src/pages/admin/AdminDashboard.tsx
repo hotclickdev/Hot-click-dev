@@ -26,7 +26,6 @@ import {
   CoinIcon,
   MonitorIcon,
   PackageIcon,
-  PeopleIcon,
 } from './dashboard/dashboardIcons'
 import {
   HEALTH_POLL_MS,
@@ -36,7 +35,6 @@ import {
   buildSalesLast7,
 } from './dashboard/dashboardHelpers'
 import type { DashboardStats, UsuarioDashboard, VentaDashboard } from './dashboard/dashboardHelpers'
-import SuperAdminHome from './dashboard/SuperAdminHome'
 import { esStaffPlataforma } from '@/utils/sistemaUser'
 import {
   metricasDecision,
@@ -67,8 +65,19 @@ function statsDesdeRespuesta(data: unknown): DashboardStats {
 
 export default function AdminDashboard() {
   const userRole = useAuthStore((s) => s.userRole)
-  if (esStaffPlataforma(userRole)) return <SuperAdminHome />
+  if (esStaffPlataforma(userRole)) return <ConsolaEnReconstruccion />
   return <DashboardDecision />
+}
+
+function ConsolaEnReconstruccion() {
+  return (
+    <div className="mx-auto max-w-lg py-16">
+      <h1 className="font-display text-2xl font-bold text-hc-text">Consola de plataforma</h1>
+      <p className="mt-3 text-sm text-hc-muted">
+        Las ventanas anteriores del admin se retiraron. La consola nueva se construye por dominios, según la arquitectura acordada.
+      </p>
+    </div>
+  )
 }
 
 function DashboardDecision() {
@@ -221,7 +230,6 @@ function accesosRapidos(t: TFunction, userRole: string | null): AccesoRapido[] {
     { to: '/admin/pedidos', label: t('admin.orders.title'), icon: <ClipboardQLIcon />, roles: ['ADMIN', 'EMPRENDEDOR'], highlight: true },
     { to: '/admin/pos', label: t('admin.dashboard.posCash'), icon: <MonitorIcon />, roles: ['EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'] },
     { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
-    { to: '/admin/usuarios', label: t('admin.users.title'), icon: <PeopleIcon />, roles: ['ADMIN'] },
     { to: '/admin/finanzas', label: t('admin.finanzas.title'), icon: <CoinIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
     { to: '/admin/reportes', label: t('admin.reportes.title'), icon: <BarChartIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
     { to: RUTA_SISTEMA_MARCA, label: t('admin.dashboard.myBrand'), icon: <PackageIcon />, roles: ['EMPRENDEDOR'] },

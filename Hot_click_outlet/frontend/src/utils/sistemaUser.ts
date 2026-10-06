@@ -9,7 +9,7 @@ export const ROLES_VENDEDOR = new Set<string>([
   'LECTOR',
 ])
 
-/** Caja: POSShell en `/admin/pos`. No entran al shell Figma vendedor. */
+/** Caja: POSShell en `/caja`. No entran al shell Figma vendedor. */
 export const ROLES_POS = new Set<string>(['CAJERO', 'GERENTE', 'SUPERVISOR'])
 
 /** Staff de plataforma (sin bypass CompanyScope; menú por global.*). V132: vacío. */

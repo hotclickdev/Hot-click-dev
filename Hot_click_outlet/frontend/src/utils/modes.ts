@@ -41,23 +41,16 @@ export function getAvailableModes(rol: string, permissions: string[] = [], opts:
     })
   }
 
-  if (puedeUsarCaja(rol, permissions)) {
+  if (puedeUsarCaja(rol, permissions) && rol !== 'ADMIN') {
+    const path = ROLES_VENDEDOR.has(rol)
+      ? `${prefijoPorPlan(opts.planNombre)}/pos`
+      : '/caja'
     modes.push({
       id: 'pos',
       label: 'Caja registradora (POS)',
       sub: 'Registra ventas en punto de venta',
-      path: '/admin/pos',
+      path,
       icon: 'pos',
-    })
-  }
-
-  if (rol === 'ADMIN') {
-    modes.push({
-      id: 'security',
-      label: 'Seguridad',
-      sub: 'Centro de seguridad y auditoría',
-      path: '/admin/security',
-      icon: 'security',
     })
   }
 

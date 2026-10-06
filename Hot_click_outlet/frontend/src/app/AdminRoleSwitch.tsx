@@ -1,7 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
 import AdminLayout from '@/layouts/AdminLayout'
-import POSShell from '@/layouts/POSShell'
 import AdminErrorBoundary from '@/app/AdminErrorBoundary'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
@@ -23,8 +22,8 @@ function SpinnerRuta() {
 
 /**
  * `/admin/*`: Super Admin (plataforma) en AdminLayout.
- * El vendedor va al prefijo de su plan, salvo POS / config / billing / copilot.
- * ADMIN no opera rutas de tienda propia (POS, catálogo, finanzas…).
+ * El vendedor va al prefijo de su plan. La caja vive en ese prefijo o en `/caja`.
+ * ADMIN no opera rutas de tienda.
  */
 export default function AdminRoleSwitch() {
   const { token, userRole } = useAuthStore()
@@ -36,23 +35,17 @@ export default function AdminRoleSwitch() {
   }
   const rol = userRole ?? ''
   const isAdmin = ADMIN_ROLES.has(rol)
-  const isPOS = ROLES_POS.has(rol)
-  if (!isAdmin && !isPOS) return <Navigate to="/" replace />
+  if (!isAdmin && !ROLES_POS.has(rol)) return <Navigate to="/" replace />
 
-  // Operador de plataforma (ADMIN + staff): fuera de ops de negocio (antes del POSShell).
+  if (ROLES_POS.has(rol) && !esUsuarioSistema(rol) && pathname.startsWith('/admin')) {
+    const sub = pathname.startsWith('/admin/pos') ? pathname.slice('/admin/pos'.length) : ''
+    return <Navigate to={`/caja${sub}${search}`} replace />
+  }
+
+  // Operador de plataforma: fuera de ops de negocio.
   // No usar `isAdmin`/`ADMIN_ROLES` — incluye vendedores y rompería el remap a seller.
   if (esStaffPlataforma(rol) && esRutaTenantOpsParaAdmin(pathname)) {
     return <Navigate to="/admin" replace />
-  }
-
-  if (pathname.startsWith('/admin/pos')) {
-    return (
-      <AdminErrorBoundary>
-        <POSShell>
-          <Outlet />
-        </POSShell>
-      </AdminErrorBoundary>
-    )
   }
 
   if (esUsuarioSistema(rol) && !vendedorSeQuedaEnAdmin(pathname)) {

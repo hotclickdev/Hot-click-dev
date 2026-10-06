@@ -56,27 +56,6 @@ function guiasVisitante(segmento: string, pasos: readonly MmPaso[]): MmGuia[] {
 export const MM_GUIAS: readonly MmGuia[] = [
   {
     path: '/admin',
-    roles: ['ADMIN'],
-    pasos: [
-      {
-        ancla: 'carga-masiva',
-        titulo: 'Carga masiva',
-        texto: 'Desde acá subís muchos productos de una vez a una tienda.',
-      },
-      {
-        ancla: 'mas-herramientas',
-        titulo: 'Más herramientas',
-        texto: 'Marcas, garantías, clientes y el resto de utilidades de plataforma.',
-      },
-      {
-        ancla: 'tiendas-recientes',
-        titulo: 'Tiendas recientes',
-        texto: 'Entrá a la lista de tiendas para aprobar, filtrar o suspender.',
-      },
-    ],
-  },
-  {
-    path: '/admin',
     roles: ['EMPRENDEDOR', 'GERENTE', 'SUPERVISOR'],
     pasos: [
       {
@@ -88,55 +67,6 @@ export const MM_GUIAS: readonly MmGuia[] = [
         ancla: 'nuevo-producto',
         titulo: 'Agregar producto',
         texto: 'Creá o editá el catálogo desde Productos.',
-      },
-    ],
-  },
-  {
-    path: '/admin/empresas',
-    roles: ['ADMIN'],
-    pasos: [
-      {
-        ancla: 'buscar-tienda',
-        titulo: 'Buscar tiendas',
-        texto: 'Filtrá por nombre o vendedor y usá los chips de estado.',
-      },
-    ],
-  },
-  {
-    path: '/admin/usuarios',
-    roles: ['ADMIN'],
-    pasos: [
-      {
-        ancla: 'filtro-usuarios',
-        titulo: 'Filtros de usuarios',
-        texto: 'Separá vendedores, compradores y pendientes con los chips.',
-      },
-    ],
-  },
-  {
-    path: '/admin/aprobaciones',
-    roles: ['ADMIN'],
-    pasos: [
-      {
-        ancla: 'tab-empresas',
-        titulo: 'Cola de moderación',
-        texto: 'Empezá por negocios nuevos y promociones. El catálogo se abre al aprobar el negocio.',
-      },
-      {
-        ancla: 'aprobar-primero',
-        titulo: 'Aprobar o rechazar',
-        texto: 'Cada tarjeta tiene las acciones. Empezá por la primera pendiente.',
-      },
-    ],
-  },
-  {
-    path: '/admin/configuracion',
-    roles: ['ADMIN'],
-    pasos: [
-      {
-        ancla: 'config-menu',
-        titulo: 'Ajustes de plataforma',
-        texto: 'Comisión, categorías, política y métodos de pago viven acá.',
       },
     ],
   },

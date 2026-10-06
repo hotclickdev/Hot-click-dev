@@ -101,9 +101,9 @@ function hasAdminCredentials() {
 test.describe('Smoke público', () => {
   test('Admin sin sesión conserva redirect en login', async ({ page }) => {
     const guards = attachGuards(page)
-    await page.goto('/admin/usuarios', { waitUntil: 'domcontentloaded' })
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/login\?redirect=/)
-    expect(decodeURIComponent(page.url())).toMatch(/\/admin\/usuarios/)
+    expect(decodeURIComponent(page.url())).toMatch(/\/admin/)
     guards.assertClean()
   })
 
