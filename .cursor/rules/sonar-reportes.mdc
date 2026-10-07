@@ -1,0 +1,14 @@
+---
+description: Qué mide cada reporte de SonarCloud y cómo dejar el tablero en verde
+alwaysApply: false
+---
+
+# Reportes de Sonar
+
+Cuando pidan el tablero, el quality gate o que Sonar quede en verde, seguí [`docs/sonar/INSTRUCCION_REPORTES.md`](../../docs/sonar/INSTRUCCION_REPORTES.md).
+
+Verde = quality gate Passed y las letras de seguridad, hotspots, confiabilidad y mantenibilidad en A.
+
+- El gate mira el código nuevo. Las letras miran todo el historial.
+- No pongas una entidad JPA en `@RequestBody`.
+- Una excepción de regla va en `sonar-project.properties`, con glob de un archivo y el porqué. No apagues la regla en todo el repo.

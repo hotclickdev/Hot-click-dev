@@ -2,6 +2,7 @@ package com.hotclick.controller;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
+import com.hotclick.dto.BlogEntradaDatos;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.BlogEntrada;
 import com.hotclick.repository.BlogEntradaRepository;
@@ -52,17 +53,18 @@ public class BlogController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
-    public ResponseEntity<ResponseDTO> crear(@RequestBody BlogEntrada entrada) {
-        var textMod = textModerationService.moderar(entrada.getTitulo(), entrada.getResumen(), entrada.getContenido());
-        if (!textMod.safe())
+    public ResponseEntity<ResponseDTO> crear(@RequestBody BlogEntradaDatos datos) {
+        if (!textoPermitido(datos))
             return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido de la publicación no está permitido en la plataforma"));
-        sanitizarEntrada(entrada);
+        BlogEntrada entrada = new BlogEntrada();
+        copiarTexto(entrada, datos);
+        entrada.setPublicado(datos.publicado());
         entrada.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
         entrada.setEstado(1);
         if (entrada.getSlug() == null || entrada.getSlug().isBlank()) {
             entrada.setSlug(slugify(entrada.getTitulo()));
         }
-        if (Boolean.TRUE.equals(entrada.getPublicado()) && entrada.getFechaPublicacion() == null) {
+        if (Boolean.TRUE.equals(entrada.getPublicado())) {
             entrada.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         }
         return ResponseEntity.ok(ResponseDTO.success("Creado", repo.save(entrada)));
@@ -70,33 +72,29 @@ public class BlogController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
-    public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody BlogEntrada datos) {
-        var textMod = textModerationService.moderar(datos.getTitulo(), datos.getResumen(), datos.getContenido());
-        if (!textMod.safe())
+    public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody BlogEntradaDatos datos) {
+        if (!textoPermitido(datos))
             return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido de la publicación no está permitido en la plataforma"));
-        sanitizarEntrada(datos);
         BlogEntrada e = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
-        e.setTitulo(datos.getTitulo());
-        if (datos.getSlug() != null && !datos.getSlug().isBlank()) {
-            e.setSlug(sanitizer.cleanSlug(datos.getSlug()));
-        }
-        e.setResumen(datos.getResumen());
-        e.setContenido(datos.getContenido());
-        e.setImagenUrl(datos.getImagenUrl());
         boolean wasDraft = !Boolean.TRUE.equals(e.getPublicado());
-        e.setPublicado(datos.getPublicado());
-        if (Boolean.TRUE.equals(datos.getPublicado()) && wasDraft) {
+        copiarTexto(e, datos);
+        e.setPublicado(datos.publicado());
+        if (Boolean.TRUE.equals(datos.publicado()) && wasDraft) {
             e.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         }
         return ResponseEntity.ok(ResponseDTO.success("Actualizado", repo.save(e)));
     }
 
-    private void sanitizarEntrada(BlogEntrada e) {
-        if (e.getTitulo()    != null) e.setTitulo(sanitizer.cleanWithLimit(e.getTitulo(), 200));
-        if (e.getResumen()   != null) e.setResumen(sanitizer.cleanWithLimit(e.getResumen(), 400));
-        if (e.getContenido() != null) e.setContenido(sanitizer.cleanRichText(e.getContenido()));
-        if (e.getImagenUrl() != null) e.setImagenUrl(sanitizer.cleanWithLimit(e.getImagenUrl(), 500));
-        if (e.getSlug()      != null) e.setSlug(sanitizer.cleanSlug(e.getSlug()));
+    private boolean textoPermitido(BlogEntradaDatos datos) {
+        return textModerationService.moderar(datos.titulo(), datos.resumen(), datos.contenido()).safe();
+    }
+
+    private void copiarTexto(BlogEntrada e, BlogEntradaDatos datos) {
+        e.setTitulo(datos.titulo() == null ? null : sanitizer.cleanWithLimit(datos.titulo(), 200));
+        e.setResumen(datos.resumen() == null ? null : sanitizer.cleanWithLimit(datos.resumen(), 400));
+        e.setContenido(datos.contenido() == null ? null : sanitizer.cleanRichText(datos.contenido()));
+        e.setImagenUrl(datos.imagenUrl() == null ? null : sanitizer.cleanWithLimit(datos.imagenUrl(), 500));
+        if (datos.slug() != null && !datos.slug().isBlank()) e.setSlug(sanitizer.cleanSlug(datos.slug()));
     }
 
     @DeleteMapping("/{id}")
