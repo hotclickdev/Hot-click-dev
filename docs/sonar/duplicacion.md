@@ -1,6 +1,6 @@
 # Duplicación
 
-Se enfoca en líneas de código repetidas.
+Instrucción obligatoria. Se enfoca en líneas de código repetidas. No se entrega un cambio que pase de 3 % de duplicados en el código nuevo.
 
 Verde en el quality gate: duplicados del código nuevo bajo 3 %. En el tablero general, este proyecto ronda 0,8 %.
 

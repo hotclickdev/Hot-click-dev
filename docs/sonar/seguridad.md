@@ -1,6 +1,8 @@
 # Seguridad
 
-Se enfoca en fallos que un atacante podría usar: una entidad de base de datos en el cuerpo del request, un secreto en el código, inyección, una ruta que escapa del directorio.
+Instrucción obligatoria. Se enfoca en fallos que un atacante podría usar: una entidad de base de datos en el cuerpo del request, un secreto en el código, inyección, una ruta que escapa del directorio. No se entrega código que deje esta letra por debajo de A.
+
+Si esta regla no se entiende, buscarla en https://rules.sonarsource.com/ antes de seguir.
 
 Verde: letra **A**. Cero avisos de seguridad, también los bajos. Un aviso bajo deja la letra en B. Un aviso alto la deja en D.
 

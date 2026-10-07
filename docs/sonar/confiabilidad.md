@@ -1,6 +1,8 @@
 # Confiabilidad
 
-Se enfoca en bugs: una promesa sin manejo si falla, comparar una fecha u otro valor con `==`, un hilo que se interrumpe y no se restaura, un null que revienta en caliente.
+Instrucción obligatoria. Se enfoca en bugs: una promesa sin manejo si falla, comparar una fecha u otro valor con `==`, un hilo que se interrumpe y no se restaura, un null que reviente en caliente. No se entrega un bug nuevo de confiabilidad.
+
+Si la regla no se entiende, buscarla en https://rules.sonarsource.com/ antes de seguir.
 
 Verde: letra **A**.
 

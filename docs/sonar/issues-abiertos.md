@@ -1,6 +1,6 @@
 # Issues abiertos
 
-Se enfoca en cuántos avisos siguen abiertos en todo el historial.
+Instrucción obligatoria. Se enfoca en cuántos avisos siguen abiertos en todo el historial. Este número no autoriza a ignorar un fallo nuevo.
 
 No es una nota y no es un semáforo. Puede subir aunque las letras sigan en A. No se usa para decidir si el deploy está verde.
 

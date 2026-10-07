@@ -1,6 +1,8 @@
 # Excepciones de una regla
 
-Se enfoca en cómo callar un aviso que no aplica, sin apagar la regla en todo el repo.
+Instrucción obligatoria. Se enfoca en cómo callar un aviso que no aplica, sin apagar la regla en todo el repo. No se apaga una regla en todo el proyecto para esconder un fallo. Si el motivo no se puede escribir en una línea, la excepción no se hace y se corrige el código.
+
+Si no se entiende la regla que se quiere exceptuar, leerla en https://rules.sonarsource.com/ antes de tocarla.
 
 El archivo que Sonar lee es `sonar-project.properties`, en la raíz.
 

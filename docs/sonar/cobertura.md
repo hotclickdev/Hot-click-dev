@@ -1,6 +1,6 @@
 # Cobertura
 
-Se enfoca en cuántas líneas ejecutan las pruebas.
+Instrucción obligatoria. Se enfoca en cuántas líneas ejecutan las pruebas. No se quita `sonar.coverage.exclusions` sin publicar el informe de pruebas en el mismo cambio.
 
 Hoy está en 0 % porque `sonar-project.properties` la excluye con `sonar.coverage.exclusions=**/*`. Esa exclusión existe para que la falta de informe de cobertura no frene el quality gate.
 

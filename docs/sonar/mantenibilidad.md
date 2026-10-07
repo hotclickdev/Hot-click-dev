@@ -1,6 +1,6 @@
 # Mantenibilidad
 
-Se enfoca en qué tan difícil es leer el código: funciones largas, nombres opacos, duplicación, anidación.
+Instrucción obligatoria. Se enfoca en qué tan difícil es leer el código: funciones largas, nombres opacos, duplicación, anidación. No se entrega un cambio que saque esta letra de A.
 
 Verde: letra **A**. La A se mantiene mientras la deuda sea menos del 5 % del código. El conteo puede subir y la letra seguir en A.
 

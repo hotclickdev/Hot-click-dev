@@ -1,6 +1,8 @@
 # Quality gate
 
-Se enfoca en el cambio nuevo: si este commit cumple las condiciones antes de darlo por bueno.
+Instrucción obligatoria. Se enfoca en el cambio nuevo: si este commit cumple las condiciones antes de darlo por bueno. No se entrega si el gate queda en Failed.
+
+Si esta condición no se entiende, leer https://docs.sonarsource.com/sonarqube-cloud/standards/managing-quality-gates/ antes de seguir.
 
 Verde: **Passed**. Todas las condiciones en OK.
 
