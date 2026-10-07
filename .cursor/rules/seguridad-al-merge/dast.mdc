@@ -1,0 +1,15 @@
+---
+description: En el merge a master, ZAP baseline corre contra la app encendida con perfil dev.
+globs: .github/workflows/seguridad-al-merge.yml,scripts/eng-gates/dast-zap-baseline.sh
+alwaysApply: false
+---
+
+# DAST en el merge
+
+`.github/workflows/seguridad-al-merge.yml` arranca Postgres, la app con perfil `dev`, y `scripts/eng-gates/dast-zap-baseline.sh`.
+
+El escaneo es sin sesión: portada, salud y lo que el spider alcance en `http://127.0.0.1:8080`. No reemplaza una prueba con JWT de dos negocios.
+
+ZAP con `-I`: un aviso no rompe el merge. Un fallo (código 2 o más) sí. El HTML queda como artefacto `zap-baseline`.
+
+Si el diff toca cabeceras, login o pagos, hay que leer ese artefacto antes de dar el release por cerrado. No se baja una regla de ZAP para pintar el check de verde.

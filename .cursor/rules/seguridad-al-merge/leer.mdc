@@ -1,0 +1,23 @@
+---
+description: Al mergear a master, amenazas, DAST y pentest. Los agentes lo siguen al tocar auth, tenant, Stripe o el copilot.
+alwaysApply: true
+---
+
+# Seguridad al merge
+
+Detalle en esta carpeta: `amenazas.mdc`, `dast.mdc`, `pentest.mdc`, `practicas.mdc`. Sonar, gitleaks y osv-scanner siguen igual.
+
+Si el cambio toca login, roles, tenant, Stripe o el copilot (`security/`, `service/stripe/`, `service/copilot/`, `AiCopilotController`, `AiCopilotService`):
+
+1. Actualiza la fila en `docs/security/amenazas-activas.md` en el mismo cambio. Sin fila, no se entrega.
+2. El `empresaId` del copilot sale de la sesión (`TenantContext` o el vínculo ya resuelto en el servidor). El JSON de la tool no lleva `empresaId`, `empresa_id`, `tenantId` ni `fk_id_empresa`.
+3. Una mutación del copilot solo se propone hasta que una persona confirma.
+
+En el merge a `master`, GitHub corre `.github/workflows/seguridad-al-merge.yml`:
+
+- Falla si esas superficies cambiaron y el markdown de amenazas no.
+- Falla si el copilot declara esos ids en argumentos.
+- Comprueba `docs/security/pentest.md`. `pendiente` no bloquea el merge del día. `vigente` exige fecha, alcance (login, tenant, stripe, copilot) y `altos-abiertos: 0`.
+- En el push a `master`, OWASP ZAP baseline contra la app en perfil `dev`. Falla si ZAP marca un fallo.
+
+No marques `vigente` sin una pasada real. No agregues el label `skip-seguridad-merge`.

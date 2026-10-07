@@ -1,0 +1,16 @@
+---
+description: Prácticas al escribir auth, tenant, Stripe o copilot. El control queda en código y en un test.
+globs: Hot_click_outlet/src/main/java/com/hotclick/security/**,Hot_click_outlet/src/main/java/com/hotclick/service/stripe/**,Hot_click_outlet/src/main/java/com/hotclick/service/copilot/**,Hot_click_outlet/src/main/java/com/hotclick/controller/AiCopilotController.java
+alwaysApply: false
+---
+
+# Prácticas en estas superficies
+
+- El test del abuso va en el mismo cambio. Si tocas `service/stripe/`, tiene que existir un `*Stripe*Test*` o `*Webhook*Test*` que rechace un payload sin firma.
+- SQL del copilot filtra con `fk_id_empresa = ?` y el id de la sesión. Un id que venga en el mensaje se ignora.
+- Webhook nuevo: se verifica la firma antes de crear pedidos, marcar pagos o cambiar suscripciones.
+- Endpoint público de login, pagos o copilot: rate limit ya existente, no un límite nuevo en memoria por instancia.
+- No se loguea el texto completo del chat ni cuerpos de webhook. El log lleva ids y el motivo.
+- Secretos solo en entorno. Nada de claves en `VITE_` salvo las publishable que el repo ya usa.
+- Acción de GitHub nueva: el `uses` se fija por SHA, como el resto de `.github/workflows/`.
+- No se debilita Sonar, gitleaks ni osv-scanner para hacer pasar el cambio.

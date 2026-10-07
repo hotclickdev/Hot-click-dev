@@ -1,0 +1,18 @@
+---
+description: La fila de abuso se actualiza en el mismo cambio que login, tenant, Stripe o el copilot.
+globs: Hot_click_outlet/src/main/java/com/hotclick/security/**,Hot_click_outlet/src/main/java/com/hotclick/service/stripe/**,Hot_click_outlet/src/main/java/com/hotclick/service/copilot/**,Hot_click_outlet/src/main/java/com/hotclick/controller/AiCopilotController.java,Hot_click_outlet/src/main/java/com/hotclick/service/AiCopilotService.java,docs/security/amenazas-activas.md
+alwaysApply: false
+---
+
+# Amenazas
+
+`docs/security/amenazas-activas.md` es la lista. Cada fila tiene id, superficie, abuso, control, prueba y estado (`cubierto`, `hueco` o `solo-prompt`).
+
+En el mismo cambio que el código:
+
+- Fila nueva si el abuso no estaba.
+- Si el control ya tiene test, estado `cubierto` y el nombre del test en la columna prueba.
+- `solo-prompt` no es un control. El texto del system prompt no cierra la fila.
+- Un `hueco` se deja escrito. No se borra para que el merge pase.
+
+El id del negocio del copilot no se lee de `args` ni del body del chat. Entra por el parámetro que ya resolvió el servidor.

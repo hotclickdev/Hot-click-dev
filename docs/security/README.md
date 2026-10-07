@@ -28,6 +28,8 @@
 | [future-improvements.md](./future-improvements.md) | Backlog priorizado de mejoras de seguridad |
 | [security-roadmap.md](./security-roadmap.md) | Roadmap estratégico de seguridad |
 | [dependency-scanning.md](./dependency-scanning.md) | Gate CI osv-scanner (Maven + pnpm): HIGH/CRITICAL, allowlist, cómo leer fallos |
+| [amenazas-activas.md](./amenazas-activas.md) | Abusos de login, tenant, Stripe y copilot. El merge exige actualizarla si cambia ese código |
+| [pentest.md](./pentest.md) | Registro de la pasada humana. `pendiente` no bloquea el merge; `vigente` exige fecha, alcance y altos en cero |
 
 ---
 
