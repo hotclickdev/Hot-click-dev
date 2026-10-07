@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { IconoDominio } from './iconos'
 
@@ -28,11 +28,11 @@ export function Chip({ children, tono = 'neutro' }: { children: string; tono?: k
 
 export function Metrica({ icono, etiqueta, valor }: { icono: string; etiqueta: string; valor: string }) {
   return (
-    <article className={`${TARJETA} flex items-center gap-3`}>
+    <article className={`${TARJETA} flex min-w-0 items-center gap-3`}>
       <MarcoIcono id={icono} />
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block text-xs font-semibold text-hc-n-600">{etiqueta}</span>
-        <span className="mt-1 block font-display text-[22px] font-extrabold leading-none tracking-tight text-hc-n-900">{valor}</span>
+        <span className="mt-1 block whitespace-nowrap font-display text-[22px] font-extrabold leading-none tracking-tight text-hc-n-900">{valor}</span>
       </span>
     </article>
   )
@@ -40,13 +40,22 @@ export function Metrica({ icono, etiqueta, valor }: { icono: string; etiqueta: s
 
 export function Encabezado({ titulo, detalle, marca }: { titulo: string; detalle?: string; marca?: string }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-3 rounded-[16px] bg-hc-blue-50 px-5 py-4">
+    <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="font-display text-[28px] font-extrabold leading-8 text-hc-n-900">{titulo}</h1>
         {detalle && <p className="mt-1 max-w-xl text-sm text-hc-n-600">{detalle}</p>}
       </div>
       {marca && <p className="font-display text-[40px] font-extrabold leading-none text-hc-blue-600">{marca}</p>}
     </header>
+  )
+}
+
+export function Marco({ principal, lado }: { principal: ReactNode; lado: ReactNode }) {
+  return (
+    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="flex min-w-0 flex-col gap-4">{principal}</div>
+      <aside className="flex flex-col gap-3">{lado}</aside>
+    </div>
   )
 }
 
@@ -76,11 +85,11 @@ export function Segmento({ opciones, valor, onChange }: {
 }
 
 export function Aviso({ children }: { children: string }) {
-  return <p className="rounded-xl border border-hc-n-200 bg-hc-n-50 px-3 py-3 text-sm text-hc-n-600">{children}</p>
+  return <p className={`${TARJETA} text-sm text-hc-n-600`}>{children}</p>
 }
 
 export function Carga() {
-  return <p className="text-sm text-hc-n-600">Cargando…</p>
+  return <p className={`${TARJETA} text-sm text-hc-n-600`}>Cargando…</p>
 }
 
 export function EnlaceDominio({ to, children }: { to: string; children: string }) {

@@ -1,7 +1,6 @@
 package com.hotclick.service;
 
 import com.hotclick.model.AuditoriaAdmin;
-import com.hotclick.model.Usuario;
 import com.hotclick.repository.AuditoriaAdminRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
@@ -33,10 +32,9 @@ public class AuditoriaAdminRegistroService {
 
     /** Registra siempre, con el usuario autenticado (ADMIN, EMPRENDEDOR o miembro) como actor. */
     public void registrar(String accion, String entidad, Long entidadId, Long empresaId, String detalle) {
-        Usuario actor = companyScope.getCurrentUser();
         AuditoriaAdmin audit = new AuditoriaAdmin();
-        audit.setAdminId(actor != null ? actor.getId() : null);
-        audit.setAdminEmail(actor != null ? actor.getCorreo() : null);
+        audit.setAdminId(companyScope.idActorAuditoria());
+        audit.setAdminEmail(companyScope.correoActorAuditoria());
         audit.setAccion(accion);
         audit.setEntidad(entidad);
         audit.setEntidadId(entidadId);

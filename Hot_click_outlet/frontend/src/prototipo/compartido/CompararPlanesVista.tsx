@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
 import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
@@ -37,6 +38,8 @@ export default function CompararPlanesVista({
   const [cargando, setCargando] = useState(true)
   const [paso, setPaso] = useState(0)
   const [planElegido, setPlanElegido] = useState<PlanUi | null>(null)
+  const [params] = useSearchParams()
+  const planPedido = (params.get('plan') ?? '').toUpperCase()
   const {
     loadingPlan,
     error,
@@ -62,6 +65,13 @@ export default function CompararPlanesVista({
   useEffect(() => {
     if (pagoPendiente) setPaso(2)
   }, [pagoPendiente])
+
+  useEffect(() => {
+    const pedido = planes.find((plan) => plan.nombreApi.toUpperCase() === planPedido)
+    if (!pedido || pedido.nombreApi.toUpperCase() === planActualApi.toUpperCase()) return
+    setPlanElegido(pedido)
+    setPaso(1)
+  }, [planPedido, planes, planActualApi])
 
   const idPaso = PASOS_CAMBIAR_PLAN[paso]?.id
   const confirmando = loadingPlan !== null

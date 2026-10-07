@@ -5,14 +5,14 @@ import { reporteProductoService } from '@/services/moderacionService'
 import { testimonioService } from '@/services/testimonioService'
 import { filasDe, idSeguro, texto, type Fila } from './normalizar'
 import { IconoDominio } from './iconos'
-import { Aviso, Carga, Chip, Encabezado, FilaDecision, MarcoIcono, Segmento, TARJETA } from './piezas'
+import { Aviso, Carga, Chip, Encabezado, FilaDecision, Marco, MarcoIcono, Segmento, TARJETA } from './piezas'
 
 export default function ModeracionPlataforma() {
   const navigate = useNavigate()
   const reportes = useLocation().pathname.endsWith('/reportes')
   return (
     <div className="flex flex-col gap-4">
-      <Encabezado titulo="Revisar" detalle="Qué se publica y qué se retira." />
+      <Encabezado titulo="Revisar" detalle="Cola: un negocio pide entrar, una oferta, una cuenta para cobrar o un testimonio. Reportes: un comprador marcó un producto y hay que decidir si se retira." />
       <Segmento
         opciones={[{ id: 'cola', label: 'Cola' }, { id: 'reportes', label: 'Reportes' }]}
         valor={reportes ? 'reportes' : 'cola'}
@@ -48,17 +48,22 @@ function Cola() {
   if (!listo) return <Carga />
   const total = grupos.reduce((suma, grupo) => suma + grupo.filas.length, 0)
   return (
-    <div className="flex flex-col gap-4">
-      <Tablero grupos={grupos} total={total} />
-      {grupos.map((grupo) => (
-        <section key={grupo.titulo} className="flex flex-col gap-3">
-          {grupo.fallo && <Aviso>{`No se pudo cargar ${grupo.titulo}.`}</Aviso>}
-          {grupo.filas.map((fila) => (
-            <Decision key={`${grupo.titulo}-${idSeguro(fila)}`} grupo={grupo.titulo} fila={fila} onListo={() => setMarca((n) => n + 1)} />
+    <Marco
+      principal={
+        <div className="flex flex-col gap-4">
+          {grupos.map((grupo) => (
+            <section key={grupo.titulo} className="flex flex-col gap-3">
+              {grupo.fallo && <Aviso>{`No se pudo cargar ${grupo.titulo}.`}</Aviso>}
+              {grupo.filas.map((fila) => (
+                <Decision key={`${grupo.titulo}-${idSeguro(fila)}`} grupo={grupo.titulo} fila={fila} onListo={() => setMarca((n) => n + 1)} />
+              ))}
+            </section>
           ))}
-        </section>
-      ))}
-    </div>
+          {total === 0 && <Aviso>Nada en la cola. Acá llegan negocios por aprobar, ofertas, cuentas de cobro y testimonios.</Aviso>}
+        </div>
+      }
+      lado={<Tablero grupos={grupos} total={total} />}
+    />
   )
 }
 
@@ -134,7 +139,7 @@ function Reportes() {
   const { filas, listo, fallo, recargar } = useReportes()
   if (!listo) return <Carga />
   if (fallo) return <Aviso>No se pudieron cargar los reportes.</Aviso>
-  if (filas.length === 0) return <Aviso>Nada pendiente.</Aviso>
+  if (filas.length === 0) return <Aviso>Nadie reportó un producto. Cuando un comprador marca uno, el motivo y el producto aparecen acá para resolverlo.</Aviso>
   return (
     <ul className="flex flex-col gap-3">
       {filas.map((fila) => {

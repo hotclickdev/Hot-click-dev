@@ -13,6 +13,7 @@ import com.hotclick.security.JwtUtil;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ public class ImpersonacionService {
     @Autowired private JwtUtil jwtUtil;
     @Autowired private CompanyScope companyScope;
 
+    @Transactional
     public Map<String, Object> iniciar(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));

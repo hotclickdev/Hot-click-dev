@@ -2,16 +2,19 @@ package com.hotclick.service.wallet;
 
 import com.hotclick.model.PayoutRequest;
 import com.hotclick.model.WalletTransaccion;
+import com.hotclick.repository.MetodoCobroRepository;
 import com.hotclick.repository.PayoutRequestRepository;
 import com.hotclick.repository.WalletRepository;
 import com.hotclick.repository.WalletTransaccionRepository;
 import com.hotclick.service.ModeracionAvisoService;
+import com.hotclick.service.consola.QuincenaCalculo;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -22,15 +25,18 @@ public class WalletPayoutAdminService {
     private final WalletRepository walletRepo;
     private final WalletTransaccionRepository txRepo;
     private final PayoutRequestRepository payoutRepo;
+    private final MetodoCobroRepository metodoRepo;
     private final ModeracionAvisoService moderacionAvisoService;
 
     public WalletPayoutAdminService(WalletRepository walletRepo,
                                     WalletTransaccionRepository txRepo,
                                     PayoutRequestRepository payoutRepo,
+                                    MetodoCobroRepository metodoRepo,
                                     ModeracionAvisoService moderacionAvisoService) {
         this.walletRepo = walletRepo;
         this.txRepo     = txRepo;
         this.payoutRepo = payoutRepo;
+        this.metodoRepo = metodoRepo;
         this.moderacionAvisoService = moderacionAvisoService;
     }
 
@@ -43,6 +49,7 @@ public class WalletPayoutAdminService {
             !PayoutRequest.EN_PROCESO.equals(pr.getEstado())) {
             throw new IllegalStateException("El payout ya fue " + pr.getEstado());
         }
+        exigirCuentaAprobada(pr.getEmpresaId());
 
         int filas = walletRepo.confirmarPayout(pr.getEmpresaId(), pr.getMonto());
         if (filas == 0) {
@@ -73,6 +80,18 @@ public class WalletPayoutAdminService {
         moderacionAvisoService.avisarAprobado(
             pr.getEmpresaId(), "Tu retiro", "Retiro #" + pr.getId() + " · ₡" + pr.getMonto());
         return pr;
+    }
+
+    private void exigirCuentaAprobada(Long empresaId) {
+        var activos = metodoRepo.findActivosByEmpresaId(empresaId);
+        if (activos.isEmpty()) return;
+        var cuenta = activos.stream().filter(metodo -> !metodo.isEnRevision()).findFirst().orElse(null);
+        if (cuenta == null) {
+            throw new IllegalStateException("No hay cuenta de cobro aprobada.");
+        }
+        if (QuincenaCalculo.registradaEnQuincena(cuenta.getFechaCreacion(), LocalDate.now(Constants.ZONA_CR))) {
+            throw new IllegalStateException("La cuenta se registró en esta quincena. Entra en la siguiente.");
+        }
     }
 
     @Transactional

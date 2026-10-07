@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.SancionPlataformaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +26,17 @@ public class EmpresaPerfilService {
     @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private TotpSecretEncryptionService encryptionService;
     @Autowired private ImageModerationService imageModerationService;
+    @Autowired private SancionPlataformaRepository sancionRepo;
+    @Autowired private AuditoriaAdminRegistroService auditoria;
 
     public Map<String, Object> obtener(Long empresaId) {
-        return toSafeMap(empresa(empresaId));
+        Map<String, Object> mapa = toSafeMap(empresa(empresaId));
+        sancionRepo.findFirstByEmpresaIdAndActivaTrueOrderByCreadaDesc(empresaId).ifPresent(fila -> {
+            mapa.put("sancionNivel", fila.getNivelAplicado());
+            mapa.put("sancionMotivo", fila.getMotivo());
+            mapa.put("sancionFin", fila.getFin());
+        });
+        return mapa;
     }
 
     public Map<String, Object> updateFiscal(Long empresaId, Map<String, String> body, boolean puedeActivarProd) {
@@ -53,6 +62,7 @@ public class EmpresaPerfilService {
 
     public Map<String, Object> update(Long empresaId, Map<String, String> body) {
         Empresa e = empresa(empresaId);
+        String nombreAntes = e.getNombreComercial();
         if (body.containsKey("nombreComercial")) e.setNombreComercial(body.get("nombreComercial"));
         if (body.containsKey("descripcion")) e.setDescripcion(body.get("descripcion"));
         if (body.containsKey("telefonoEmpresa")) e.setTelefonoEmpresa(body.get("telefonoEmpresa"));
@@ -69,6 +79,10 @@ public class EmpresaPerfilService {
         if (body.containsKey("tagline")) e.setTagline(body.get("tagline"));
         if (body.containsKey("footerTexto")) e.setFooterTexto(body.get("footerTexto"));
         empresaRepository.save(e);
+        if (body.containsKey("nombreComercial") && !java.util.Objects.equals(nombreAntes, e.getNombreComercial())) {
+            auditoria.registrar("NOMBRE_TIENDA", "EMPRESA", empresaId, empresaId,
+                nombreAntes + " → " + e.getNombreComercial());
+        }
         return toSafeMap(e);
     }
 
@@ -77,7 +91,11 @@ public class EmpresaPerfilService {
         Empresa e = empresa(empresaId);
         asegurarCuentaActivaParaCatalogo(e);
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
-        e.setVisibilidadPublica(Boolean.parseBoolean(val.toString()));
+        boolean visible = Boolean.parseBoolean(val.toString());
+        if (visible && sancionRepo.existsByEmpresaIdAndActivaTrue(empresaId)) {
+            throw new IllegalArgumentException("Hay una sanción vigente. El catálogo sigue oculto.");
+        }
+        e.setVisibilidadPublica(visible);
         empresaRepository.save(e);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("visibilidadPublica", e.getVisibilidadPublica());

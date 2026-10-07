@@ -4,6 +4,7 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.SancionPlataformaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,8 @@ class EmpresaPerfilServiceTest {
     @Mock SupabaseStorageService supabaseStorageService;
     @Mock TotpSecretEncryptionService encryptionService;
     @Mock ImageModerationService imageModerationService;
+    @Mock SancionPlataformaRepository sancionRepo;
+    @Mock AuditoriaAdminRegistroService auditoria;
 
     @InjectMocks EmpresaPerfilService service;
 

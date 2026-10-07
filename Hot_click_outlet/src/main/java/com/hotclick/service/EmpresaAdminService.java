@@ -9,6 +9,7 @@ import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.SancionPlataformaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ public class EmpresaAdminService {
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private ProductoRepository productoRepository;
+    @Autowired private SancionPlataformaRepository sancionRepo;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private PlanRepository planRepository;
@@ -109,6 +111,8 @@ public class EmpresaAdminService {
         empresa.setPlan(plan);
         empresa.setPlanSaas(nombrePlan);
         empresaRepository.save(empresa);
+        auditoriaAdminRegistroService.registrarSiAdmin(
+            "EMPRESA_CAMBIO_PLAN", "EMPRESA", id, id, "convenio: " + nombrePlan);
         return nombrePlan;
     }
 
@@ -116,6 +120,9 @@ public class EmpresaAdminService {
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
         Empresa empresa = empresa(id);
         boolean visible = Boolean.parseBoolean(val.toString());
+        if (visible && sancionRepo.existsByEmpresaIdAndActivaTrue(id)) {
+            throw new IllegalArgumentException("Hay una sanción vigente. El catálogo sigue oculto.");
+        }
         empresa.setVisibilidadPublica(visible);
         empresaRepository.save(empresa);
         return visible;

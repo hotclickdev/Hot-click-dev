@@ -22,32 +22,24 @@ export default function ImpersonacionBanner() {
       // el token expira solo (30 min); no bloquear la salida por un error de auditoría
     } finally {
       salirImpersonacion()
-      navigate('/admin/empresas')
+      navigate('/plataforma')
     }
   }
 
   return (
     <div
-      className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
-      style={{ backgroundColor: '#78350f', borderBottom: '1px solid #d97706' }}
+      className="flex items-center justify-between gap-3 border-b border-hc-primary bg-hc-primary px-4 py-2.5 text-sm text-white"
       data-mm="impersonacion-banner"
     >
-      <div className="flex items-center gap-2 min-w-0">
-        <svg className="w-4 h-4 shrink-0" style={{ color: '#fde68a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21c0-4.418 3.582-7 8-7s8 2.582 8 7" />
-        </svg>
-        <span style={{ color: '#fff' }} className="truncate">
-          Estás viendo como <strong>{empresaNombre || 'esta empresa'}</strong> — modo soporte
-        </span>
-      </div>
+      <p className="min-w-0 truncate">
+        Usted es el administrador, no el usuario. Está en <strong>{empresaNombre || 'esta tienda'}</strong>.
+      </p>
       <button type="button"
         onClick={salir}
         disabled={saliendo}
-        className="shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
-        style={{ backgroundColor: '#fde68a', color: '#1a1a1a' }}
+        className="shrink-0 rounded-lg bg-white px-3 py-1 text-xs font-semibold text-hc-primary disabled:opacity-60"
       >
-        {saliendo ? 'Volviendo…' : 'Volver a admin'}
+        {saliendo ? 'Volviendo…' : 'Salir a la consola'}
       </button>
     </div>
   )

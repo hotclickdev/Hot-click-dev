@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { recoleccionService } from '@/services/recoleccionService'
+import { consolaService } from './consola'
 import { servicioService } from '@/services/servicioService'
 import { soporteService } from '@/services/soporteService'
 import { urlGoogleMaps } from '@/utils/mapaGoogle'
@@ -9,16 +10,16 @@ import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Encabezado, Marco
 
 export default function OperacionPlataforma() {
   const navigate = useNavigate()
-  const campo = useLocation().pathname.includes('/campo')
+  const atencion = useLocation().pathname.endsWith('/atencion')
   return (
     <div className="flex flex-col gap-4">
-      <Encabezado titulo="Campo" detalle="Tickets, servicios y recolecciones." />
+      <Encabezado titulo="Campo" detalle="Lo que pasa fuera de la pantalla. Atención son los tickets. Campo es la ruta del mensajero: cada recolección y el efectivo que trae." />
       <Segmento
         opciones={[{ id: 'atencion', label: 'Atención' }, { id: 'campo', label: 'Campo' }]}
-        valor={campo ? 'campo' : 'atencion'}
-        onChange={(id) => navigate(id === 'campo' ? '/plataforma/operacion/campo' : '/plataforma/operacion/atencion')}
+        valor={atencion ? 'atencion' : 'campo'}
+        onChange={(id) => navigate(id === 'atencion' ? '/plataforma/operacion/atencion' : '/plataforma/operacion/campo')}
       />
-      {campo ? <Campo /> : <Atencion />}
+      {atencion ? <Atencion /> : <Campo />}
     </div>
   )
 }
@@ -36,7 +37,7 @@ function Atencion() {
   if (estado === 'carga') return <Carga />
   if (estado === 'error') return <Aviso>No se pudieron cargar los tickets.</Aviso>
   const abiertos = filas.filter((f) => texto(f.estado).toUpperCase() !== 'RESUELTO')
-  if (abiertos.length === 0) return <Aviso>Nada pendiente.</Aviso>
+  if (abiertos.length === 0) return <Aviso>No hay tickets abiertos. Cuando un vendedor o un comprador pide ayuda, el caso aparece acá para asignárselo y resolverlo.</Aviso>
   return (
     <div className="flex flex-col gap-3">
     <CifraSeccion titulo="Tickets abiertos" valor={String(abiertos.length)} />
@@ -105,6 +106,10 @@ function Campo() {
   if (!listo) return <Carga />
   return (
     <div className="flex flex-col gap-4">
+      <section className={TARJETA}>
+        <h2 className="font-display text-[17px] font-bold">Qué es Campo</h2>
+        <p className="mt-2 text-sm text-hc-n-600">Es la ruta del mensajero. Cada recolección es una parada, con la bodega y la guía. El efectivo que anota se compara con el pedido: si no cuadra, ese día no sale en la quincena hacia el banco.</p>
+      </section>
       {fallos.map((nombre) => <Aviso key={nombre}>{`No se pudo cargar ${nombre}.`}</Aviso>)}
       <TablaConteo
         titulo="En campo"
@@ -139,6 +144,7 @@ function Campo() {
             {texto(fila.numeroGuia, texto(fila.guia, '')) ? ` · guía ${texto(fila.numeroGuia, texto(fila.guia))}` : ''}
           </p>
           <EnlaceBodega fila={fila} />
+          <EfectivoMensajero id={idSeguro(fila)} anotado={texto(fila.efectivoAnotado)} />
         </article>
       ))}
       </div>
@@ -170,6 +176,41 @@ function TablaConteo({ titulo, filas }: { titulo: string; filas: Array<{ nombre:
           <Chip tono={fila.cuenta > 0 ? 'azul' : 'ok'}>{fila.cuenta > 0 ? 'Ver' : 'Al día'}</Chip>
         </div>
       ))}
+    </div>
+  )
+}
+
+function EfectivoMensajero({ id, anotado }: { id: string | null; anotado: string }) {
+  const [monto, setMonto] = useState(anotado)
+  const [error, setError] = useState('')
+  const [aviso, setAviso] = useState('')
+  if (!id) return null
+  const recoleccionId = id
+  async function guardar() {
+    setError('')
+    setAviso('')
+    const valor = Number(monto)
+    if (!Number.isInteger(valor) || valor < 0) {
+      setError('Anotá el efectivo en colones enteros.')
+      return
+    }
+    try {
+      await consolaService.efectivo(recoleccionId, valor)
+      setAviso('Anotado. Si no cuadra con el pedido, no sale del banco.')
+    } catch (err) {
+      console.error(err)
+      setError('No se pudo anotar el efectivo.')
+    }
+  }
+  return (
+    <div className="mt-3">
+      <label className="block text-xs font-semibold text-hc-n-600">
+        Efectivo del mensajero
+        <input value={monto} onChange={(e) => setMonto(e.target.value)} inputMode="numeric" className="mt-1 h-12 w-full rounded-xl border border-hc-n-200 px-3 text-sm" />
+      </label>
+      <button type="button" className={`${BOTON_SECUNDARIO} mt-2 h-10`} onClick={() => void guardar()}>Anotar</button>
+      {error && <p className="mt-1 text-sm text-hc-primary-text">{error}</p>}
+      {aviso && <p className="mt-1 text-sm">{aviso}</p>}
     </div>
   )
 }

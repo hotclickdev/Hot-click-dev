@@ -10,9 +10,11 @@ export function useCola(clave: string, cargar: () => Promise<{ data: unknown }>)
   const [estado, setEstado] = useState<Estado>('carga')
   const [mensaje, setMensaje] = useState('')
 
-  const recargar = useCallback(() => {
-    setEstado('carga')
-    setMensaje('')
+  const recargar = useCallback((opciones?: { silencio?: boolean }) => {
+    if (!opciones?.silencio) {
+      setEstado('carga')
+      setMensaje('')
+    }
     cargarRef.current()
       .then((respuesta) => {
         setFilas(filasDe(respuesta.data))

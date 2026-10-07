@@ -18,6 +18,7 @@ public class ProductoUpdater {
     @Autowired private ProductoDtoMapper dtoMapper;
     @Autowired private ProductoCacheEvictor cacheEvictor;
     @Autowired private ProductoGuardadoNotifier guardadoNotifier;
+    @Autowired private ProductoCambioAuditoria cambioAuditoria;
 
     public Producto actualizarProducto(Object source, Long id, ProductoRequestDTO dto, String adminCorreo) {
         // Leer empresaId una sola vez antes del loop: evita LazyInitializationException
@@ -28,6 +29,9 @@ public class ProductoUpdater {
             try {
                 Producto p = productoRepository.findById(id)
                     .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
+                String nombreAntes = p.getNombreProducto();
+                Integer precioAntes = p.getPrecioVenta();
+                Integer stockAntes = p.getStockActual();
                 dtoMapper.mapDtoToProducto(dto, p);
                 if (dto.getCategoriaId() != null) {
                     p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
@@ -38,6 +42,7 @@ public class ProductoUpdater {
                         .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
                 }
                 Producto saved = productoRepository.save(p);
+                cambioAuditoria.anotar(saved, empresaId, nombreAntes, precioAntes, stockAntes);
                 cacheEvictor.evictDashboard(empresaId);
                 cacheEvictor.evictProductosPublicos();
                 guardadoNotifier.publish(source, saved, empresaId);

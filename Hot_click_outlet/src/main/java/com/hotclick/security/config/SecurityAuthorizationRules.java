@@ -126,6 +126,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/public/encargos").permitAll()
             .requestMatchers(GET,  "/api/public/encargos/**").permitAll()
             .requestMatchers(POST, "/api/public/encargos/*/checkout").permitAll()
+            .requestMatchers(POST, "/api/public/tienda-rapida/**").permitAll()
             // Seguimiento de pedido sin cuenta — solo lectura por token aleatorio (nunca por id)
             .requestMatchers(GET,  "/api/public/pedidos/seguimiento/*").permitAll()
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -206,6 +207,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/auditorias/**").hasRole(Constants.ROL_ADMIN)
             // Billing de plataforma — ADMIN only (distinto de /api/billing self-serve)
             .requestMatchers("/api/admin/billing/**").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers("/api/admin/consola/**").hasRole(Constants.ROL_ADMIN)
             // Staff por permiso global.* (ADMIN tiene todos; SUPPORT/FINANCE/TRUST el suyo)
             .requestMatchers("/api/admin/empresas/**").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_COMPANIES)

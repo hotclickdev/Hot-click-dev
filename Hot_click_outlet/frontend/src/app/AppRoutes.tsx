@@ -13,12 +13,19 @@ const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : 
 
 const InicioPlataforma = lazy(() => import('@/pages/plataforma/InicioPlataforma'))
 const NegociosPlataforma = lazy(() => import('@/pages/plataforma/NegociosPlataforma'))
+const PedidosPlataforma = lazy(() => import('@/pages/plataforma/PedidosPlataforma'))
+const PedidoDetalle = lazy(() => import('@/pages/plataforma/PedidoDetalle'))
+const CompradorPlataforma = lazy(() => import('@/pages/plataforma/CompradorPlataforma'))
 const ModeracionPlataforma = lazy(() => import('@/pages/plataforma/ModeracionPlataforma'))
 const DineroPlataforma = lazy(() => import('@/pages/plataforma/DineroPlataforma'))
 const OperacionPlataforma = lazy(() => import('@/pages/plataforma/OperacionPlataforma'))
 const SeguridadPlataforma = lazy(() => import('@/pages/plataforma/SeguridadPlataforma'))
 const IaPlataforma = lazy(() => import('@/pages/plataforma/IaPlataforma'))
 const ReglasPlataforma = lazy(() => import('@/pages/plataforma/ReglasPlataforma'))
+const CrmPlataforma = lazy(() => import('@/pages/plataforma/CrmPlataforma'))
+const ControlPlataforma = lazy(() => import('@/pages/plataforma/ControlPlataforma'))
+const CuentaPlataforma = lazy(() => import('@/pages/plataforma/CuentaPlataforma'))
+const TiendaRapidaPage = lazy(() => import('@/pages/plataforma/TiendaRapidaPage'))
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const VisitanteDeprecatedRedirect = lazy(() => import('@/prototipo/visitante/visitanteDeprecado'))
 const EmprendedorArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.EmprendedorArea })))
@@ -145,6 +152,7 @@ export default function AppRoutes() {
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
       <Route path="/encargo/:token" element={<EncargoPublicPage />} />
       <Route path="/seguimiento/:token" element={<SeguimientoPedidoPage />} />
+      <Route path="/tienda-rapida/:token" element={<TiendaRapidaPage />} />
       <Route path="/servicios" element={<ServiciosHotPage />} />
       <Route path="/servicios/buscar-producto" element={<ServiciosHotPage />} />
       <Route path="/servicios/digitalizar-inventario" element={<ServiciosHotPage />} />
@@ -163,10 +171,16 @@ export default function AppRoutes() {
         <Route index element={<InicioPlataforma />} />
         <Route path="negocios" element={<NegociosPlataforma />} />
         <Route path="negocios/:id" element={<NegociosPlataforma />} />
+        <Route path="pedidos" element={<PedidosPlataforma />} />
+        <Route path="pedidos/:id" element={<PedidoDetalle />} />
+        <Route path="compradores/:id" element={<CompradorPlataforma />} />
         <Route path="moderacion" element={<ModeracionPlataforma />} />
         <Route path="moderacion/reportes" element={<ModeracionPlataforma />} />
         <Route path="dinero" element={<DineroPlataforma />} />
         <Route path="dinero/:vista" element={<DineroPlataforma />} />
+        <Route path="crm" element={<CrmPlataforma />} />
+        <Route path="control" element={<ControlPlataforma />} />
+        <Route path="cuenta" element={<CuentaPlataforma />} />
         <Route path="operacion" element={<OperacionPlataforma />} />
         <Route path="operacion/:vista" element={<OperacionPlataforma />} />
         <Route path="seguridad" element={<SeguridadPlataforma />} />

@@ -87,9 +87,9 @@ test.describe('Consola de plataforma', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/plataforma', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByRole('heading', { name: 'Estadísticas' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Inicio' })).toBeVisible()
     const nav = page.getByRole('navigation', { name: 'Dominios de HotClick' })
-    for (const nombre of ['Estadísticas', 'Tiendas', 'Revisar', 'Dinero', 'Campo', 'Acceso', 'IA', 'Reglas']) {
+    for (const nombre of ['Inicio', 'Tiendas', 'Pedidos', 'Quincena', 'Revisar', 'CRM', 'Control', 'Campo', 'Acceso', 'IA', 'Reglas']) {
       await expect(nav.getByRole('link', { name: nombre })).toBeVisible()
     }
     await expect(page.getByText('Visitas').first()).toBeVisible()
@@ -102,6 +102,37 @@ test.describe('Consola de plataforma', () => {
     await expect(page.getByRole('heading', { name: 'Taller Sol' })).toBeVisible()
     await page.getByRole('button', { name: 'Suspender' }).click()
     await expect(page.getByText('Escribí el motivo antes de suspender o inactivar.')).toBeVisible()
+  })
+
+  test('cada ventana del mapa abre su título', async ({ page }) => {
+    await mockApi(page)
+    await page.addInitScript((sesion) => {
+      localStorage.setItem('hotclick-auth', JSON.stringify(sesion))
+      localStorage.setItem('hc-mm-v1-off', '1')
+      localStorage.setItem('hc-admin-tour-v4-done', '1')
+      localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
+        analytics: false, advertising: false, functional: true, timestamp: Date.now(),
+      }))
+    }, auth('ADMIN'))
+    const rutas: Array<[string, string]> = [
+      ['/plataforma/pedidos', 'Pedidos'],
+      ['/plataforma/dinero', 'Quincena'],
+      ['/plataforma/moderacion', 'Revisar'],
+      ['/plataforma/crm', 'CRM'],
+      ['/plataforma/control', 'Control'],
+      ['/plataforma/operacion', 'Campo'],
+      ['/plataforma/seguridad', 'Acceso'],
+      ['/plataforma/ia', 'IA'],
+      ['/plataforma/reglas', 'Reglas'],
+      ['/plataforma/cuenta', 'Cuenta'],
+    ]
+    for (const [ruta, titulo] of rutas) {
+      await page.setViewportSize({ width: 1440, height: 900 })
+      await page.goto(ruta, { waitUntil: 'domcontentloaded' })
+      await expect(page.getByRole('heading', { name: titulo, exact: true })).toBeVisible()
+      await page.setViewportSize({ width: 390, height: 844 })
+      await expect(page.getByRole('heading', { name: titulo, exact: true })).toBeVisible()
+    }
   })
 
   test('el vendedor no entra a la consola', async ({ page }) => {

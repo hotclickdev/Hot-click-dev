@@ -1,0 +1,1 @@
+import{t as e}from"./api-Bb36gnhc.js";var t={listar:(t=0,n=100)=>e.get(`/admin/billing/empresas`,{params:{page:t,size:n}}),detalle:t=>e.get(`/admin/billing/empresas/${t}`)};export{t};

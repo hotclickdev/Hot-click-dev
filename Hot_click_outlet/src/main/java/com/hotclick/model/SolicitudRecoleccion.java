@@ -77,6 +77,10 @@ public class SolicitudRecoleccion {
     @Column(name = "fecha_cotizacion")
     private LocalDateTime fechaCotizacion;
 
+    /** Efectivo que el mensajero anotó al recolectar. No se gira por el banco. */
+    @Column(name = "efectivo_anotado")
+    private Integer efectivoAnotado;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -145,4 +149,6 @@ public class SolicitudRecoleccion {
 
     public LocalDateTime getFechaCotizacion() { return fechaCotizacion; }
     public void setFechaCotizacion(LocalDateTime fechaCotizacion) { this.fechaCotizacion = fechaCotizacion; }
+    public Integer getEfectivoAnotado() { return efectivoAnotado; }
+    public void setEfectivoAnotado(Integer efectivoAnotado) { this.efectivoAnotado = efectivoAnotado; }
 }

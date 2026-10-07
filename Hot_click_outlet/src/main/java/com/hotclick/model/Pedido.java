@@ -134,6 +134,13 @@ public class Pedido extends BaseEntity {
     @Column(name = "direccion_entrega", length = 500)
     private String direccionEntrega;
 
+    /** REEMBOLSO o CAMBIO anotado por el operador. No mueve plata. */
+    @Column(name = "resolucion_operador", length = 20)
+    private String resolucionOperador;
+
+    @Column(name = "resolucion_nota", length = 500)
+    private String resolucionNota;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_empresa")
@@ -300,4 +307,8 @@ public class Pedido extends BaseEntity {
     public void setClienteTel(String v) { this.clienteTel = v; }
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String v) { this.direccionEntrega = v; }
+    public String getResolucionOperador() { return resolucionOperador; }
+    public void setResolucionOperador(String v) { this.resolucionOperador = v; }
+    public String getResolucionNota() { return resolucionNota; }
+    public void setResolucionNota(String v) { this.resolucionNota = v; }
 }

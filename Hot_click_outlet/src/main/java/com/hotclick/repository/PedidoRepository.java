@@ -227,4 +227,45 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         @Param("desde") java.time.LocalDateTime desde,
         @Param("hasta") java.time.LocalDateTime hasta,
         @Param("estados") java.util.Collection<String> estados);
+
+    @Query("""
+        SELECT DISTINCT p FROM Pedido p
+        JOIN FETCH p.empresa
+        WHERE p.fechaPedido >= :desde AND p.fechaPedido < :hasta
+          AND p.estadoPedido IN :estados
+        """)
+    List<Pedido> findConEmpresaEnPeriodo(
+        @Param("desde") java.time.LocalDateTime desde,
+        @Param("hasta") java.time.LocalDateTime hasta,
+        @Param("estados") Collection<String> estados);
+
+    @Query("""
+        SELECT p FROM Pedido p
+        JOIN FETCH p.empresa
+        WHERE p.estadoPedido = 'PAGADO' AND p.fechaEnvio IS NULL AND p.fechaPedido < :limite
+        """)
+    List<Pedido> findPagadosSinMovimiento(@Param("limite") java.time.LocalDateTime limite);
+
+    @Query("""
+        SELECT DISTINCT p FROM Pedido p
+        LEFT JOIN FETCH p.items i
+        LEFT JOIN FETCH i.producto
+        LEFT JOIN FETCH p.usuarioFinal
+        LEFT JOIN FETCH p.empresa
+        WHERE p.id = :id
+        """)
+    java.util.Optional<Pedido> findParaConsola(@Param("id") Long id);
+
+    @Query("""
+        SELECT p FROM Pedido p
+        LEFT JOIN FETCH p.empresa
+        WHERE p.usuarioFinal.id = :usuarioId
+        ORDER BY p.fechaPedido DESC
+        """)
+    List<Pedido> findPorComprador(@Param("usuarioId") Long usuarioId);
+
+    long countByEstadoPedido(String estadoPedido);
+
+    @Query("SELECT p.empresa.id, COALESCE(SUM(p.totalPedido), 0) FROM Pedido p WHERE p.empresa IS NOT NULL GROUP BY p.empresa.id")
+    List<Object[]> sumVentasPorEmpresa();
 }

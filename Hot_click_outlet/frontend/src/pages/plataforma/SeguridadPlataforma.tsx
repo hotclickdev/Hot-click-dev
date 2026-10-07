@@ -49,15 +49,16 @@ export default function SeguridadPlataforma() {
   if (!listo) return <Carga />
   return (
     <div className="flex flex-col gap-4">
-      <Encabezado titulo="Acceso" detalle="Alertas, sesiones, cuentas e IPs." marca={String(alertas.length)} />
+      <Encabezado titulo="Acceso" detalle="Quién entra a HotClick, qué alerta quedó abierta y qué dirección se bloquea." marca={String(alertas.length)} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Metrica icono="seguridad" etiqueta="Alertas abiertas" valor={String(alertas.length)} />
         <Metrica icono="moderacion" etiqueta="IPs bloqueadas" valor={String(ips.length)} />
       </div>
       {fallos.map((nombre) => <Aviso key={nombre}>{`No se pudo cargar ${nombre}.`}</Aviso>)}
-      <section className="grid gap-3 lg:grid-cols-2">
-        <h2 className="text-sm font-semibold text-hc-n-600 lg:col-span-2">Alertas</h2>
-        {alertas.length === 0 && <div className="lg:col-span-2"><Aviso>Nada pendiente.</Aviso></div>}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <section className="grid gap-3 sm:grid-cols-2">
+        <h2 className="text-sm font-semibold text-hc-n-600 sm:col-span-2">Alertas</h2>
+        {alertas.length === 0 && <div className="sm:col-span-2"><Aviso>Nada pendiente.</Aviso></div>}
         {alertas.map((fila) => {
           const id = idSeguro(fila)
           if (!id) return null
@@ -99,6 +100,7 @@ export default function SeguridadPlataforma() {
           })}
         </ul>
       </section>
+      </div>
       <Movimiento />
       <Cuentas />
       <Sospechosas />
@@ -152,11 +154,14 @@ function Movimiento() {
       <TablaEventos eventos={eventos} />
       <h2 className="font-display text-[17px] font-bold">Sesiones activas</h2>
       {sesiones.length === 0 && <Aviso>No hay sesiones activas en la lista.</Aviso>}
+      <ul className="grid gap-3 sm:grid-cols-2">
       {sesiones.map((fila) => (
-        <p key={texto(fila.id, texto(fila.email, texto(fila.correo, 'sesion')))} className="text-sm text-hc-n-900">
-          {texto(fila.email, texto(fila.correo, texto(fila.usuario, 'Sesión')))} · {texto(fila.ip, texto(fila.ipAddress, ''))}
-        </p>
+        <li key={texto(fila.id, texto(fila.email, texto(fila.correo, 'sesion')))} className={TARJETA}>
+          <p className="font-semibold">{texto(fila.email, texto(fila.correo, texto(fila.usuario, 'Sesión')))}</p>
+          <p className="mt-1 text-xs text-hc-n-600">{texto(fila.ip, texto(fila.ipAddress, 'Sin IP'))}</p>
+        </li>
       ))}
+      </ul>
     </div>
   )
 }

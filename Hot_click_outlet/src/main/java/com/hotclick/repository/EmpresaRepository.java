@@ -79,6 +79,13 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     List<Empresa> findByEstadoEmpresaOrderByFechaRegistroAsc(String estadoEmpresa);
 
+    @Query("""
+        SELECT e FROM Empresa e
+        WHERE LOWER(COALESCE(e.nombreComercial, e.nombreEmpresa)) LIKE LOWER(CONCAT('%', :q, '%'))
+        ORDER BY e.id ASC
+        """)
+    List<Empresa> buscarPorNombre(@Param("q") String q, Pageable pageable);
+
     List<Empresa> findAllByOrderByFechaRegistroDesc();
 
     Optional<Empresa> findFirstByEstadoEmpresaOrderByIdAsc(String estadoEmpresa);

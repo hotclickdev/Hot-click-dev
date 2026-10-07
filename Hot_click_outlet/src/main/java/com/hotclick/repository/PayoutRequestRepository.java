@@ -20,6 +20,15 @@ public interface PayoutRequestRepository extends JpaRepository<PayoutRequest, Lo
 
     boolean existsByEmpresaIdAndEstadoIn(Long empresaId, List<String> estados);
 
+    @Query("""
+        SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM PayoutRequest p
+        WHERE p.empresaId = :empresaId AND p.estado = 'PAGADO'
+          AND p.fechaPago >= :desde AND p.fechaPago < :hasta
+        """)
+    boolean hayPagadoEnPeriodo(@Param("empresaId") Long empresaId,
+                               @Param("desde") java.time.LocalDateTime desde,
+                               @Param("hasta") java.time.LocalDateTime hasta);
+
     /**
      * SELECT FOR UPDATE — serializa aprobaciones/rechazos concurrentes del mismo payout.
      *

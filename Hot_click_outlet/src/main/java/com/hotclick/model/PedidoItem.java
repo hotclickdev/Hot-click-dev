@@ -31,6 +31,9 @@ public class PedidoItem extends BaseEntity {
     @Column(name = "utilidad_item", nullable = false)
     private Integer utilidadItem;
 
+    @Column(name = "sin_inventario", nullable = false)
+    private boolean sinInventario = false;
+
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "fk_id_pedido", nullable = false)
@@ -66,4 +69,6 @@ public class PedidoItem extends BaseEntity {
 
     public Producto getProducto() { return producto; }
     public void setProducto(Producto producto) { this.producto = producto; }
+    public boolean isSinInventario() { return sinInventario; }
+    public void setSinInventario(boolean sinInventario) { this.sinInventario = sinInventario; }
 }

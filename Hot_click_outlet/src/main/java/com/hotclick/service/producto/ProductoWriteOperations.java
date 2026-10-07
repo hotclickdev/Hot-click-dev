@@ -8,6 +8,7 @@ import com.hotclick.model.Producto;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.SancionPlataformaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.UbicacionDespachoService;
 import com.hotclick.utils.Constants;
@@ -30,12 +31,16 @@ public class ProductoWriteOperations {
     @Autowired private ProductoGuardadoNotifier guardadoNotifier;
     @Autowired private UbicacionDespachoService ubicacionDespachoService;
     @Autowired private SkuAsignador skuAsignador;
+    @Autowired private SancionPlataformaRepository sancionRepo;
 
     @Transactional
     public Producto crearProducto(Object source, ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
         cacheEvictor.evictProductosPublicos();
         if (dto.getCategoriaId() == null)
             throw new IllegalArgumentException("Debe seleccionar una categoría");
+        if (empresa != null && sancionRepo.existsByEmpresaIdAndActivaTrue(empresa.getId())) {
+            throw new IllegalArgumentException("Esta tienda tiene una sanción vigente y no puede publicar.");
+        }
 
         Producto p = new Producto();
         dtoMapper.mapDtoToProducto(dto, p);

@@ -165,6 +165,26 @@ public class CompanyScope {
         return user != null ? user.getId() : null;
     }
 
+    /** En una visita de soporte, la auditoría queda a nombre del administrador. */
+    public Long idActorAuditoria() {
+        String jwt = extractRawJwt();
+        if (jwt != null && jwtUtil.isImpersonationToken(jwt)) {
+            Long original = jwtUtil.extractAdminOriginalId(jwt);
+            if (original != null) return original;
+        }
+        return getCurrentUserId();
+    }
+
+    public String correoActorAuditoria() {
+        String jwt = extractRawJwt();
+        if (jwt != null && jwtUtil.isImpersonationToken(jwt)) {
+            String correo = jwtUtil.extractAdminOriginalCorreo(jwt);
+            if (correo != null && !correo.isBlank()) return correo;
+        }
+        Usuario user = getCurrentUser();
+        return user != null ? user.getCorreo() : null;
+    }
+
     /**
      * Empresa para crear recursos de tenant.
      * ADMIN y staff de plataforma → siempre null: no crean en un negocio ajeno.

@@ -1,0 +1,1 @@
+function e(e,t){let n=e.replace(/\D/g,``);if(n.length<8)return null;let r=n.startsWith(`506`)?n:`506${n}`;return r.length<11?null:`https://wa.me/${r}?text=${encodeURIComponent(t)}`}export{e as t};

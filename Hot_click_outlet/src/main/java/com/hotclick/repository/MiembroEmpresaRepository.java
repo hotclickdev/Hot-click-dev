@@ -28,4 +28,11 @@ public interface MiembroEmpresaRepository extends JpaRepository<MiembroEmpresa, 
 
     @Query("SELECT COUNT(m) FROM MiembroEmpresa m WHERE m.usuario.id = :usuarioId AND m.estado = 1")
     long countEmpresasByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    @Query("""
+        SELECT m.empresa.id, u.nombre, u.apellidoPaterno, u.telefono, u.correo
+        FROM MiembroEmpresa m JOIN m.usuario u
+        WHERE m.rolEnEmpresa = 'PROPIETARIO' AND m.estado = 1
+        """)
+    List<Object[]> propietariosParaConsola();
 }
