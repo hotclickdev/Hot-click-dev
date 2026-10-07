@@ -5,10 +5,14 @@ alwaysApply: false
 
 # Reportes de Sonar
 
-Cuando pidan el tablero, el quality gate o que Sonar quede en verde, seguí [`docs/sonar/INSTRUCCION_REPORTES.md`](../../docs/sonar/INSTRUCCION_REPORTES.md).
+Cuando pidan el tablero, el quality gate o que Sonar quede en verde, leé el archivo del cuadro que corresponda. El índice está en [`docs/sonar/INSTRUCCION_REPORTES.md`](../../docs/sonar/INSTRUCCION_REPORTES.md).
 
-Verde = quality gate Passed y las letras de seguridad, hotspots, confiabilidad y mantenibilidad en A.
-
-- El gate mira el código nuevo. Las letras miran todo el historial.
-- No pongas una entidad JPA en `@RequestBody`.
-- Una excepción de regla va en `sonar-project.properties`, con glob de un archivo y el porqué. No apagues la regla en todo el repo.
+- [`docs/sonar/quality-gate.md`](../../docs/sonar/quality-gate.md) — el cambio nuevo pasa o no.
+- [`docs/sonar/seguridad.md`](../../docs/sonar/seguridad.md) — fallos que un atacante podría usar.
+- [`docs/sonar/hotspots.md`](../../docs/sonar/hotspots.md) — sitios sospechosos por revisar.
+- [`docs/sonar/confiabilidad.md`](../../docs/sonar/confiabilidad.md) — bugs.
+- [`docs/sonar/mantenibilidad.md`](../../docs/sonar/mantenibilidad.md) — deuda de lectura.
+- [`docs/sonar/issues-abiertos.md`](../../docs/sonar/issues-abiertos.md) — el conteo, no la nota.
+- [`docs/sonar/duplicacion.md`](../../docs/sonar/duplicacion.md) — líneas repetidas.
+- [`docs/sonar/cobertura.md`](../../docs/sonar/cobertura.md) — líneas que tocan las pruebas.
+- [`docs/sonar/excepciones.md`](../../docs/sonar/excepciones.md) — cómo anotar una excepción en `sonar-project.properties`.
