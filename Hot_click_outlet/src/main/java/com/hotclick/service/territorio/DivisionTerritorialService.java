@@ -11,6 +11,8 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Catálogo oficial de provincia, cantón y distrito.
@@ -29,8 +31,8 @@ public class DivisionTerritorialService {
 
     private final RestTemplate http;
     private final ObjectMapper mapper = new ObjectMapper();
-    private volatile List<ProvinciaDivision> cache;
-    private volatile long cacheEn;
+    private final AtomicReference<List<ProvinciaDivision>> cache = new AtomicReference<>();
+    private final AtomicLong cacheEn = new AtomicLong();
 
     public DivisionTerritorialService() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -41,11 +43,11 @@ public class DivisionTerritorialService {
 
     public List<ProvinciaDivision> catalogo() {
         long ahora = System.currentTimeMillis();
-        List<ProvinciaDivision> vigente = cache;
-        if (vigente != null && ahora - cacheEn < CACHE_MS) return vigente;
-        List<ProvinciaDivision> fresco = descargar();
-        cache = fresco;
-        cacheEn = ahora;
+        List<ProvinciaDivision> vigente = cache.get();
+        if (vigente != null && ahora - cacheEn.get() < CACHE_MS) return vigente;
+        List<ProvinciaDivision> fresco = List.copyOf(descargar());
+        cache.set(fresco);
+        cacheEn.set(ahora);
         return fresco;
     }
 

@@ -13,6 +13,12 @@
       "reason": "Mismo caso que GHSA-4r6h-8v6p-xvw6: rango vulnerable '< 0.20.2', instalamos 0.20.3 desde cdn.sheetjs.com.",
       "acceptedAt": "2026-09-24",
       "expiresOn": "2026-12-31"
+    },
+    {
+      "id": "GHSA-pc63-qcmh-9cmg",
+      "reason": "Spring MVC 6.2.19 llega con Boot 3.5. El parche OSS es Framework 7.0.9 (Boot 4). En 6.2 el fix 6.2.20 es solo soporte enterprise. HotClick no usa XsltView ni un view name tomado del request: el API responde JSON y el sitio es la SPA.",
+      "acceptedAt": "2026-10-06",
+      "expiresOn": "2027-03-31"
     }
   ]
 }

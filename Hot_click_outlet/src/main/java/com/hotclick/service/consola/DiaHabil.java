@@ -11,9 +11,14 @@ public final class DiaHabil {
 
     public static LocalDateTime haceUno(LocalDateTime ahora) {
         LocalDate dia = ahora.toLocalDate().minusDays(1);
-        while (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) {
+        while (esFinDeSemana(dia)) {
             dia = dia.minusDays(1);
         }
         return dia.atTime(ahora.toLocalTime());
+    }
+
+    private static boolean esFinDeSemana(LocalDate dia) {
+        DayOfWeek dow = dia.getDayOfWeek();
+        return DayOfWeek.SATURDAY.equals(dow) || DayOfWeek.SUNDAY.equals(dow);
     }
 }

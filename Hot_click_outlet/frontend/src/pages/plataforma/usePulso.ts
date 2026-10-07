@@ -23,10 +23,29 @@ export function usePulso(dias: 7 | 30) {
   const [pulso, setPulso] = useState<Pulso | null>(null)
   useEffect(() => {
     let vivo = true
-    armarPulso(dias).then((siguiente) => { if (vivo) setPulso(siguiente) })
+    armarPulso(dias).then(
+      (siguiente) => { if (vivo) setPulso(siguiente) },
+      () => { if (vivo) setPulso(pulsoVacio()) },
+    )
     return () => { vivo = false }
   }, [dias])
   return pulso
+}
+
+function pulsoVacio(): Pulso {
+  return {
+    visitas: null,
+    producto: null,
+    carrito: null,
+    pago: null,
+    pedidos: null,
+    alertas: null,
+    activos: null,
+    revision: null,
+    suspendidos: null,
+    actividad: [],
+    tiendas: [],
+  }
 }
 
 async function armarPulso(dias: 7 | 30): Promise<Pulso> {
