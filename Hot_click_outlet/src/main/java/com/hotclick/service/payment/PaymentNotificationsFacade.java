@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Map;
 
@@ -53,15 +55,40 @@ public class PaymentNotificationsFacade {
         // avisar a nadie. Si falla, se revierte todo (pedido, Pago, stock) y no sale ningún aviso.
         aggregatorService.acreditarVentaEnTransaccion(pedido);
         touchUsuarioFinalForAsync(pedido);
+        // Los avisos salen recién cuando el cobro hizo COMMIT: si la transacción se revierte
+        // (stock, gift card, cupón…), el comprador no recibe un "pedido confirmado" falso.
+        String proveedor = pago.getProveedor();
+        despuesDelCommit(() -> avisarPedidoPagado(pedido, pago, proveedor));
+    }
+
+    private void avisarPedidoPagado(Pedido pedido, Pago pago, String proveedor) {
         ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
             "numeroPedido", pedido.getNumeroPedido(),
             "total",        pedido.getTotalPedido(),
-            "proveedor",    pago.getProveedor()
+            "proveedor",    proveedor
         ));
         capturarPedidoPagado(pedido, pago);
-        log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
+        log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), proveedor);
+    }
+
+    /** Corre la acción después del COMMIT de la transacción actual; sin transacción, en el momento. */
+    private static void despuesDelCommit(Runnable accion) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            accion.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    accion.run();
+                } catch (RuntimeException e) {
+                    log.error("[pago] Avisos post-commit fallaron: {}", e.getMessage(), e);
+                }
+            }
+        });
     }
 
     private void capturarPedidoPagado(Pedido pedido, Pago pago) {
