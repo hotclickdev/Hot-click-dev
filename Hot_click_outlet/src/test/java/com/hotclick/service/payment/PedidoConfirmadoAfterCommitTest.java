@@ -96,4 +96,15 @@ class PedidoConfirmadoAfterCommitTest {
         verify(ga4, times(1)).enviarPurchase(pedido);
         verify(aggregator, times(1)).acreditarVentaEnTransaccion(pedido);
     }
+
+    @Test
+    void sinProveedorNiTotal_igualSalenTodosLosAvisos() {
+        // Sonar S2259 (PR #136): Map.of no admite null; un Pago sin proveedor cortaba los avisos posteriores.
+        pago.setProveedor(null);
+        pedido.setTotalPedido(null);
+        tx.executeWithoutResult(st -> facade.onPedidoConfirmado(pedido, pago));
+        verify(plugins, times(1)).dispatch(any(), eq("pedido.pagado"), anyMap());
+        verify(posthog, times(1)).capturarPedidoPagado(pedido, pago);
+        verify(ga4, times(1)).enviarPurchase(pedido);
+    }
 }

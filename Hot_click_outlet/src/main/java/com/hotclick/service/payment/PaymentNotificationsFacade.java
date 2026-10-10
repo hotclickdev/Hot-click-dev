@@ -64,11 +64,12 @@ public class PaymentNotificationsFacade {
     private void avisarPedidoPagado(Pedido pedido, Pago pago, String proveedor) {
         ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
-        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
-            "numeroPedido", pedido.getNumeroPedido(),
-            "total",        pedido.getTotalPedido(),
-            "proveedor",    proveedor
-        ));
+        // HashMap y no Map.of: un proveedor o total null no puede cortar con NPE los avisos que siguen.
+        Map<String, Object> datos = new java.util.HashMap<>();
+        datos.put("numeroPedido", pedido.getNumeroPedido());
+        datos.put("total",        pedido.getTotalPedido());
+        datos.put("proveedor",    proveedor);
+        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", datos);
         capturarPedidoPagado(pedido, pago);
         log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), proveedor);
     }
