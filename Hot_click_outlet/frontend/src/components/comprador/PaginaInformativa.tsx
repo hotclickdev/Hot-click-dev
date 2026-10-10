@@ -62,7 +62,7 @@ export default function PaginaInformativa({ titulo, encabezado, subtitulo, indic
 /** Bloque con título de sección en Sora 17 (Figma `28:1690`, `28:1738`). */
 export function BloqueInformativo({ id, titulo, children }: { id?: string; titulo: string; children: ReactNode }) {
   return (
-    <section id={id} className="flex scroll-mt-20 flex-col gap-[10px] px-4 pb-2 pt-[18px] lg:px-0">
+    <section id={id} tabIndex={-1} className="flex scroll-mt-32 flex-col outline-none gap-[10px] px-4 pb-2 pt-[18px] lg:px-0">
       <h2 className="leading-[normal] font-display text-[17px] font-bold text-hc-n-900">{titulo}</h2>
       {children}
     </section>
