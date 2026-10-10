@@ -9,6 +9,7 @@ import TiendaPortada from './TiendaPortada'
 import TiendaEncabezadoNegocio from './TiendaEncabezadoNegocio'
 import TiendaComoComprarle from './TiendaComoComprarle'
 import TiendaProductoCard from './TiendaProductoCard'
+import { VerPedidoEscritorio } from './TiendaBarraPedido'
 import EsqueletoCatalogo from './EsqueletoCatalogo'
 import TiendaCatalogoError from './TiendaCatalogoError'
 import TiendaCatalogoNuevo from './TiendaCatalogoNuevo'
@@ -29,7 +30,7 @@ const TITULO_SECCION = 'font-display text-[17px] font-bold leading-[normal] text
 export default function TiendaHomePage() {
   const { t } = useTranslation()
   const { slug } = useParams()
-  const { agregarAlCarrito, empresa } = useTiendaStore()
+  const { agregarAlCarrito, empresa, totalItems, totalImporte } = useTiendaStore()
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<CategoriaTienda[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,7 +117,10 @@ export default function TiendaHomePage() {
 
         <section className="flex flex-col gap-3 pb-[6px] pt-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:gap-4 lg:pb-0 lg:pt-0">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <h2 className="font-display text-[17px] font-bold leading-[normal] text-hc-n-900 lg:text-[22px] lg:leading-7">{catalogoNuevo ? t('tienda.productos') : t('tienda.productosTotal', { total: totalProductos })}</h2>
+            <div className="flex items-center justify-between gap-3 lg:justify-start lg:gap-4">
+              <h2 className="font-display text-[17px] font-bold leading-[normal] text-hc-n-900 lg:text-[22px] lg:leading-7">{catalogoNuevo ? t('tienda.productos') : t('tienda.productosTotal', { total: totalProductos })}</h2>
+              <VerPedidoEscritorio slug={slug as string} cantidad={totalItems()} total={totalImporte()} />
+            </div>
             {!catalogoNuevo && !loadError && (
               <BuscadorTienda nombre={nombre} busqueda={busqueda} onBusqueda={setBusqueda} onBuscar={buscar} />
             )}
