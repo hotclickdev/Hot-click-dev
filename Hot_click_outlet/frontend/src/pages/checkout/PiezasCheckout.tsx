@@ -130,12 +130,14 @@ type CampoTextoProps = {
   inputMode?: 'text' | 'tel' | 'email' | 'numeric'
   maxLength?: number
   placeholder?: string
+  /** Dato fijo de la cuenta: se ve pero no se edita. */
+  soloLectura?: boolean
 }
 
 /** Campo de texto: con ícono en móvil, sin ícono en escritorio (Figma `28:1112`, `30:2410`). */
-export function CampoTexto({ id, describedBy, valor, onCambiar, onBlur, icono, escritorio, error, tipo = 'text', autoComplete, inputMode, maxLength, placeholder }: CampoTextoProps) {
+export function CampoTexto({ id, describedBy, valor, onCambiar, onBlur, icono, escritorio, error, tipo = 'text', autoComplete, inputMode, maxLength, placeholder, soloLectura }: CampoTextoProps) {
   return (
-    <div className={claseCaja(escritorio, Boolean(error))}>
+    <div className={`${claseCaja(escritorio, Boolean(error))} ${soloLectura ? '!bg-hc-n-50' : ''}`}>
       {icono && !escritorio && <IconoFigma src={icono} size={18} className="text-hc-n-500" />}
       <input
         id={id}
@@ -149,6 +151,7 @@ export function CampoTexto({ id, describedBy, valor, onCambiar, onBlur, icono, e
         inputMode={inputMode}
         maxLength={maxLength}
         placeholder={placeholder}
+        readOnly={soloLectura}
         className="hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[18px] text-hc-n-900 outline-none placeholder:text-hc-n-500"
       />
     </div>

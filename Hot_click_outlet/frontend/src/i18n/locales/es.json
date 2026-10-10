@@ -1425,7 +1425,11 @@
       "lineaGift": "Tarjeta de regalo {{codigo}}",
       "lineaDescuento": "Descuento ({{porcentaje}}%)",
       "totalRestante": "Total restante a pagar",
-      "notaRestante": "Pagás el resto con SINPE Móvil o tarjeta. Si la tarjeta de regalo cubre todo, el pedido queda pagado sin otro método."
+      "notaRestante": "Pagás el resto con SINPE Móvil o tarjeta. Si la tarjeta de regalo cubre todo, el pedido queda pagado sin otro método.",
+      "unicoTitulo": "Tarjeta de regalo o cupón",
+      "unicoPlaceholder": "Ingresá el código",
+      "unicoAria": "Código de tarjeta de regalo o cupón",
+      "unicoInvalido": "Ese código no es una tarjeta de regalo ni un cupón válido."
     },
     "shippingVaries": "Varía",
     "encomiendaNote": "El costo de encomienda no lo cobra HotClick — lo paga directo a la empresa de transporte al recibir.",
@@ -1519,7 +1523,14 @@
       "entrega": "Entrega",
       "pago": "Pago",
       "sesionGift": "Las tarjetas de regalo requieren sesión iniciada.",
-      "waInternacional": "Hola HotClick, consulto un envío internacional."
+      "waInternacional": "Hola HotClick, consulto un envío internacional.",
+      "sinEntregaLocal": "Este negocio no hace entrega local.",
+      "encomiendaNombre": "¿Por cuál encomienda?",
+      "encomiendaAyuda": "Ej.: Correos de Costa Rica, Transportes Mena… La tienda despacha ahí.",
+      "sinpeTarjeta": "SINPE / Tarjeta",
+      "sinpeTarjetaSub": "SINPE Móvil al {{numero}} o tarjeta. El pago con tarjeta se habilita pronto.",
+      "sinpeTarjetaSubTilopay": "SINPE Móvil o tarjeta, en la pasarela segura.",
+      "correoCuenta": "Correo de tu cuenta"
     },
     "giftPagado": {
       "titulo": "¡Pedido confirmado!",

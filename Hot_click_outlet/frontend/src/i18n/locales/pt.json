@@ -1425,7 +1425,11 @@
       "lineaGift": "Cartão-presente {{codigo}}",
       "lineaDescuento": "Desconto ({{porcentaje}}%)",
       "totalRestante": "Total restante a pagar",
-      "notaRestante": "Pague o restante com SINPE Móvil ou cartão. Se o cartão-presente cobrir tudo, o pedido fica pago sem outro método."
+      "notaRestante": "Pague o restante com SINPE Móvil ou cartão. Se o cartão-presente cobrir tudo, o pedido fica pago sem outro método.",
+      "unicoTitulo": "Cartão-presente ou cupom",
+      "unicoPlaceholder": "Digite o código",
+      "unicoAria": "Código de cartão-presente ou cupom",
+      "unicoInvalido": "Esse código não é um cartão-presente nem cupom válido."
     },
     "shippingVaries": "Varia",
     "encomiendaNote": "A HotClick não cobra o frete — você paga diretamente à transportadora na entrega.",
@@ -1519,7 +1523,14 @@
       "entrega": "Entrega",
       "pago": "Pagamento",
       "sesionGift": "Os gift cards exigem sessão iniciada.",
-      "waInternacional": "Olá HotClick, tenho uma dúvida sobre envio internacional."
+      "waInternacional": "Olá HotClick, tenho uma dúvida sobre envio internacional.",
+      "sinEntregaLocal": "Este negócio não faz entrega local.",
+      "encomiendaNombre": "Qual transportadora?",
+      "encomiendaAyuda": "Ex.: Correos de Costa Rica. A loja despacha lá.",
+      "sinpeTarjeta": "SINPE / Cartão",
+      "sinpeTarjetaSub": "SINPE Móvil para {{numero}} ou cartão. Cartão em breve.",
+      "sinpeTarjetaSubTilopay": "SINPE Móvil ou cartão, no gateway seguro.",
+      "correoCuenta": "E-mail da sua conta"
     },
     "giftPagado": {
       "titulo": "Pedido confirmado!",

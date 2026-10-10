@@ -39,6 +39,8 @@ export type ItemCheckout = {
   precioVenta?: number
   bodegaId?: unknown
   bodegaPermiteRetiro?: boolean
+  /** Bodega pública del producto (incluye si acepta efectivo). */
+  bodega?: { aceptaEfectivo?: boolean } | null
   bodegaNombre?: string
   bodegaDireccion?: string
   bodegaTelefono?: string
@@ -215,4 +217,17 @@ export function validateGuestPhone(
 ): string {
   if (metodoEnvio === 'RETIRO_EN_TIENDA') return ''
   return validatePhone(v, t)
+}
+
+/** Agrega a las notas del pedido la encomienda que eligió el comprador en cada paquete. */
+export function notasConEncomienda(
+  notas: string,
+  paquetes: PaqueteCheckout[],
+  metodos: Record<string, string>,
+  encomiendas: Record<string, string>,
+): string {
+  const lineas = paquetes
+    .filter((p) => metodos[p.bodegaId] === 'ENCOMIENDA_PROPIA' && encomiendas[p.bodegaId]?.trim())
+    .map((p) => `Encomienda ${p.empresaNombre || p.bodegaNombre}: ${encomiendas[p.bodegaId].trim()}`)
+  return [notas.trim(), ...lineas].filter(Boolean).join(' | ')
 }

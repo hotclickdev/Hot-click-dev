@@ -1425,7 +1425,11 @@
       "lineaGift": "Gift card {{codigo}}",
       "lineaDescuento": "Discount ({{porcentaje}}%)",
       "totalRestante": "Remaining total to pay",
-      "notaRestante": "Pay the rest with SINPE Móvil or card. If the gift card covers everything, the order is paid with no other method."
+      "notaRestante": "Pay the rest with SINPE Móvil or card. If the gift card covers everything, the order is paid with no other method.",
+      "unicoTitulo": "Gift card or coupon",
+      "unicoPlaceholder": "Enter the code",
+      "unicoAria": "Gift card or coupon code",
+      "unicoInvalido": "That code isn't a valid gift card or coupon."
     },
     "shippingVaries": "Varies",
     "encomiendaNote": "HotClick does not charge the shipping fee — you pay it directly to the courier on delivery.",
@@ -1519,7 +1523,14 @@
       "entrega": "Delivery",
       "pago": "Payment",
       "sesionGift": "Gift cards require a signed-in account.",
-      "waInternacional": "Hi HotClick, I have a question about international shipping."
+      "waInternacional": "Hi HotClick, I have a question about international shipping.",
+      "sinEntregaLocal": "This business doesn't do local delivery.",
+      "encomiendaNombre": "Which courier?",
+      "encomiendaAyuda": "E.g. Correos de Costa Rica. The store ships there.",
+      "sinpeTarjeta": "SINPE / Card",
+      "sinpeTarjetaSub": "SINPE Móvil to {{numero}} or card. Card payments coming soon.",
+      "sinpeTarjetaSubTilopay": "SINPE Móvil or card, on the secure gateway.",
+      "correoCuenta": "Your account email"
     },
     "giftPagado": {
       "titulo": "Order confirmed!",

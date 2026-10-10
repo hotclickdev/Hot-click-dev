@@ -55,6 +55,7 @@ public class SinpeCheckoutService {
         CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
             req, reservation, bodegaDefault, proveedorEfectivo, usuario, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         Pedido principal = grupo.principal();
+        exigirEfectivoAceptado(proveedorEfectivo, grupo.pedidos());
         atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());
 
         // SINPE es manual: no fechaExpiracion; el cleanup TTL excluye este proveedor.
@@ -82,5 +83,15 @@ public class SinpeCheckoutService {
         response.setCancelToken(guestCancelTokenService.emitir(principal.getNumeroPedido()));
         response.setPaquetes(CheckoutGrupoFactory.resumen(grupo.pedidos()));
         return response;
+    }
+
+    /** Efectivo solo si todas las bodegas del pedido lo aceptan; si no, se revierte la transacción. */
+    static void exigirEfectivoAceptado(String proveedor, java.util.List<Pedido> pedidos) {
+        if (!"EFECTIVO".equalsIgnoreCase(proveedor)) return;
+        boolean todas = pedidos.stream()
+            .allMatch(p -> p.getBodega() != null && Boolean.TRUE.equals(p.getBodega().getAceptaEfectivo()));
+        if (!todas) {
+            throw new IllegalStateException("Algún negocio de tu carrito no acepta efectivo. Pagá con SINPE / Tarjeta.");
+        }
     }
 }

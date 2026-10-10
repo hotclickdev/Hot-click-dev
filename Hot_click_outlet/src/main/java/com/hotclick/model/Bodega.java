@@ -58,6 +58,10 @@ public class Bodega extends BaseEntity {
     @Column(name = "permite_retiro_cliente", nullable = false)
     private Boolean permiteRetiroCliente = false;
 
+    /** Si el negocio acepta pago en efectivo contra entrega para pedidos de esta bodega. */
+    @Column(name = "acepta_efectivo", nullable = false)
+    private Boolean aceptaEfectivo = false;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
@@ -115,6 +119,8 @@ public class Bodega extends BaseEntity {
 
     public Boolean getPermiteRetiroCliente() { return permiteRetiroCliente != null ? permiteRetiroCliente : false; }
     public void setPermiteRetiroCliente(Boolean permiteRetiroCliente) { this.permiteRetiroCliente = permiteRetiroCliente; }
+    public Boolean getAceptaEfectivo() { return aceptaEfectivo != null ? aceptaEfectivo : false; }
+    public void setAceptaEfectivo(Boolean aceptaEfectivo) { this.aceptaEfectivo = aceptaEfectivo; }
 
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }

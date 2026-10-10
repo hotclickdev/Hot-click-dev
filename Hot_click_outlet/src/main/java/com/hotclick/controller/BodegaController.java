@@ -63,6 +63,7 @@ public class BodegaController {
             m.put("canton", b.getCanton());
             m.put("distrito", b.getDistrito());
             m.put("permiteRetiroCliente", b.getPermiteRetiroCliente());
+            m.put("aceptaEfectivo", b.getAceptaEfectivo());
             m.put("latitud", b.getLatitud());
             m.put("longitud", b.getLongitud());
             m.put("horarioApertura", horaTexto(b.getHorarioApertura()));
@@ -117,6 +118,7 @@ public class BodegaController {
             b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
             b.setDistrito(sanitizer.normalizeGeo(body.get("distrito")));
             b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
+            b.setAceptaEfectivo(Boolean.parseBoolean(body.get("aceptaEfectivo")));
             aplicarCoordenadas(b, body);
             b.setHorarioApertura(parseHora(body.get("horarioApertura"), "de apertura"));
             b.setHorarioCierre(parseHora(body.get("horarioCierre"), "de cierre"));
@@ -209,6 +211,8 @@ public class BodegaController {
                 b.setDistrito(sanitizer.normalizeGeo(body.get("distrito")));
             if (body.containsKey("permiteRetiroCliente"))
                 b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
+            if (body.containsKey("aceptaEfectivo"))
+                b.setAceptaEfectivo(Boolean.parseBoolean(body.get("aceptaEfectivo")));
             if (body.containsKey("latitud") || body.containsKey("longitud"))
                 aplicarCoordenadas(b, body);
             if (body.containsKey("horarioApertura"))

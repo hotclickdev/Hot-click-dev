@@ -98,15 +98,41 @@ type PaqueteEntregaProps = {
   varios: boolean
   destinoGAM: boolean
   onElegir: (valor: string) => void
+  encomienda: string
+  onEncomienda: (nombre: string) => void
 }
 
-function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGAM, onElegir }: PaqueteEntregaProps) {
+/** Sin retiro: se avisa en vez de ofrecer una opción que la tienda no da. */
+function SinEntregaLocal() {
+  const { t } = useTranslation()
+  return <p className="px-[14px] pb-3 pt-1 text-[12px] leading-4 text-hc-n-600 lg:p-0">{t('checkout.f.sinEntregaLocal')}</p>
+}
+
+/** Con encomienda el comprador dice cuál usa, así la tienda sabe dónde despachar. */
+function CampoEncomienda({ paquete, escritorio, valor, onCambiar }: { paquete: PaqueteCheckout; escritorio: boolean; valor: string; onCambiar: (v: string) => void }) {
+  const { t } = useTranslation()
+  return (
+    <div className={escritorio ? '' : 'border-t border-hc-n-200 px-[14px] py-3'}>
+      <Campo etiqueta={t('checkout.f.encomiendaNombre')} ayuda={t('checkout.f.encomiendaAyuda')}>
+        {({ id, describedBy }) => (
+          <CampoTexto id={`${id}-${paquete.bodegaId}`} describedBy={describedBy} escritorio={escritorio} valor={valor} maxLength={80} onCambiar={onCambiar} />
+        )}
+      </Campo>
+    </div>
+  )
+}
+
+function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGAM, onElegir, encomienda, onEncomienda }: PaqueteEntregaProps) {
   const { t } = useTranslation()
   const normalDescartado = destinoGAM ? 'ENVIO_NORMAL_FUERA_GAM' : 'ENVIO_NORMAL_GAM'
   const opciones = opcionesEnvio(bodegaRetiroDePaquete(paquete)).filter((o) => o.value !== normalDescartado && !(o.value === 'ENVIO_RAPIDO' && !destinoGAM))
   const titulo = t('cart.paquete', { n: numero, negocio: paquete.empresaNombre || paquete.bodegaNombre })
   const conteo = t('cart.paqueteProductos', { count: paquete.items.length })
   const nombre = `envio-${paquete.bodegaId}`
+  const hayRetiro = opciones.some((o) => o.value === 'RETIRO_EN_TIENDA')
+  const campoEncomienda = metodo === 'ENCOMIENDA_PROPIA'
+    ? <CampoEncomienda paquete={paquete} escritorio={escritorio} valor={encomienda} onCambiar={onEncomienda} />
+    : null
 
   if (escritorio) {
     return (
@@ -121,7 +147,9 @@ function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGA
             <OpcionPastilla key={opcion.value} opcion={opcion} nombre={nombre} activa={metodo === opcion.value} conNotaRetiro={varios} onElegir={() => onElegir(opcion.value)} />
           ))}
         </div>
-        {varios && opciones.some((o) => o.value === 'RETIRO_EN_TIENDA') && <NotaDistancia escritorio />}
+        {varios && hayRetiro && <NotaDistancia escritorio />}
+        {!hayRetiro && <SinEntregaLocal />}
+        {campoEncomienda}
       </section>
     )
   }
@@ -141,6 +169,8 @@ function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGA
       {opciones.map((opcion) => (
         <OpcionFila key={opcion.value} opcion={opcion} nombre={nombre} activa={metodo === opcion.value} conNotaRetiro={varios} onElegir={() => onElegir(opcion.value)} />
       ))}
+      {campoEncomienda}
+      {!hayRetiro && <SinEntregaLocal />}
     </section>
   )
 }
@@ -245,6 +275,8 @@ export default function PasoEntrega({ form, escritorio, onElegirEnvio }: PasoEnt
           destinoGAM={form.destinoGAM}
           metodo={metodoEnvioPorPaquete[paquete.bodegaId] ?? ''}
           onElegir={(valor) => onElegirEnvio(paquete.bodegaId, valor)}
+          encomienda={form.encomiendaPorPaquete[paquete.bodegaId] ?? ''}
+          onEncomienda={(nombre) => form.setEncomiendaPaquete(paquete.bodegaId, nombre)}
         />
       ))}
       <p className="text-[12px] leading-4 text-hc-n-600">{escritorio ? t('checkout.f.encomiendaNotaEscritorio') : t('checkout.f.retiroNotaPie')}</p>
