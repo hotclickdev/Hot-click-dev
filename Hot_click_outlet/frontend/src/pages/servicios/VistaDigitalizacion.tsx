@@ -1,5 +1,4 @@
 import FormularioBusqueda from './FormularioBusqueda'
-import TituloVista from './TituloVista'
 import type { FormularioBusquedaProps } from './FormularioBusqueda'
 
 const INCLUSIONES = [
@@ -24,9 +23,8 @@ const BENEFICIOS = [
  */
 export default function VistaDigitalizacion(props: FormularioBusquedaProps) {
   return (
-    <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
+    <div className="flex flex-col leading-[normal]">
       <section className="flex flex-col gap-4 bg-hc-n-0 px-4 py-5 lg:mt-6 lg:rounded-[16px]">
-        <TituloVista>Digitalizá tu inventario</TituloVista>
         <p className="text-[15px] font-medium leading-[22px] text-hc-n-900">
           Vamos a tu local, registramos tus productos y los dejamos listos para vender en HOTCLICK.
         </p>
