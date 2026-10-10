@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 import { consolaService, objetoDe } from './consola'
 import { texto } from './normalizar'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga } from './piezas'
-import { RUTA_ONBOARDING_RAPIDO, motivoEnlace } from './tiendaRapida'
+import { RUTA_ONBOARDING_RAPIDO, camposDelError, erroresPaso1, motivoEnlace, type ErroresPaso1 } from './tiendaRapida'
 import EnlaceNoVigente from './EnlaceNoVigente'
 
 type Invitacion = {
@@ -31,6 +31,7 @@ export default function TiendaRapidaPage() {
   const [telefono, setTelefono] = useState('')
   const [clave, setClave] = useState('')
   const [aviso, setAviso] = useState('')
+  const [erroresServidor, setErroresServidor] = useState<ErroresPaso1>({})
   const [ocupado, setOcupado] = useState(false)
   const [lista, setLista] = useState(false)
 
@@ -65,8 +66,8 @@ export default function TiendaRapidaPage() {
 
   async function guardar() {
     if (!invitacion) return
-    if (cedula.replace(/\D/g, '').length < 9) {
-      setAviso('La cédula va con 9 a 12 dígitos.')
+    if (Object.keys(erroresPaso1(persona, cedula)).length > 0) {
+      setPaso(1)
       return
     }
     if (!correo.includes('@') || clave.length < 8) {
@@ -94,6 +95,11 @@ export default function TiendaRapidaPage() {
         setEstado('error')
         return
       }
+      const campos = camposDelError(err)
+      if (campos.persona || campos.cedula) {
+        setErroresServidor(campos)
+        setPaso(1)
+      }
       setAviso(mensajeDe(err, 'No se pudieron guardar los datos.'))
     } finally {
       setOcupado(false)
@@ -118,9 +124,10 @@ export default function TiendaRapidaPage() {
             paso={paso}
             setPaso={setPaso}
             persona={persona}
-            setPersona={setPersona}
+            setPersona={(v) => { setPersona(v); setErroresServidor({}) }}
             cedula={cedula}
-            setCedula={setCedula}
+            setCedula={(v) => { setCedula(v); setErroresServidor({}) }}
+            erroresServidor={erroresServidor}
             correo={correo}
             setCorreo={setCorreo}
             telefono={telefono}
@@ -142,6 +149,7 @@ export default function TiendaRapidaPage() {
 function Formulario(props: {
   invitacion: Invitacion
   paso: number
+  erroresServidor: ErroresPaso1
   setPaso: (paso: number) => void
   persona: string
   setPersona: (valor: string) => void
@@ -175,18 +183,30 @@ function Formulario(props: {
   )
 }
 
-function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso }: {
+function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso, erroresServidor }: Readonly<{
   persona: string
   setPersona: (valor: string) => void
   cedula: string
   setCedula: (valor: string) => void
   setPaso: (paso: number) => void
-}) {
+  erroresServidor: ErroresPaso1
+}>) {
+  const { t } = useTranslation()
+  const [tocado, setTocado] = useState({ persona: false, cedula: false })
+  const errores = erroresPaso1(persona, cedula)
+  const valido = Object.keys(errores).length === 0
+  const errorDe = (campo: keyof ErroresPaso1) => {
+    const local = tocado[campo] ? errores[campo] : undefined
+    const texto = erroresServidor[campo] ?? local
+    return texto ? t(texto, { defaultValue: texto }) : undefined
+  }
   return (
     <div>
-      <Campo etiqueta="Nombre completo" valor={persona} onChange={setPersona} />
-      <Campo etiqueta="Cédula" valor={cedula} onChange={setCedula} />
-      <button type="button" className={`${BOTON_PRIMARIO} mt-4 w-full`} onClick={() => setPaso(2)}>Siguiente</button>
+      <Campo etiqueta="Nombre completo" valor={persona} onChange={setPersona} error={errorDe('persona')}
+        onBlur={() => setTocado((x) => ({ ...x, persona: true }))} />
+      <Campo etiqueta="Cédula" valor={cedula} onChange={setCedula} error={errorDe('cedula')}
+        onBlur={() => setTocado((x) => ({ ...x, cedula: true }))} />
+      <button type="button" className={`${BOTON_PRIMARIO} mt-4 w-full`} disabled={!valido} onClick={() => setPaso(2)}>Siguiente</button>
     </div>
   )
 }
@@ -257,12 +277,15 @@ function Listo({ negocio }: { negocio: string }) {
   )
 }
 
-function Campo({ etiqueta, valor, onChange, secreto = false }: {
+function Campo({ etiqueta, valor, onChange, secreto = false, error, onBlur }: Readonly<{
   etiqueta: string
   valor: string
   onChange: (valor: string) => void
   secreto?: boolean
-}) {
+  error?: string
+  onBlur?: () => void
+}>) {
+  const id = `campo-${etiqueta.toLowerCase().replace(/\W+/g, '-')}`
   return (
     <label className="mt-3 block text-xs font-semibold text-hc-n-600">
       {etiqueta}
@@ -270,9 +293,13 @@ function Campo({ etiqueta, valor, onChange, secreto = false }: {
         type={secreto ? 'password' : 'text'}
         value={valor}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
         autoComplete={secreto ? 'new-password' : 'on'}
-        className="mt-1 h-12 w-full rounded-xl border border-hc-n-200 px-3 text-sm outline-none focus:border-hc-blue-600 focus:ring-2 focus:ring-hc-blue-100"
+        className={`mt-1 h-12 w-full rounded-xl border px-3 text-sm outline-none focus:border-hc-blue-600 focus:ring-2 focus:ring-hc-blue-100 ${error ? 'border-hc-red-500' : 'border-hc-n-200'}`}
       />
+      {error && <span id={`${id}-error`} role="alert" className="mt-1 block text-xs font-normal text-hc-red-600">{error}</span>}
     </label>
   )
 }
