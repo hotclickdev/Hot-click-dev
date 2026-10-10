@@ -38,33 +38,21 @@ public class ProductoCatalogQueries {
         Producto base = productoRepository.findById(id).orElse(null);
         if (base == null) return List.of();
 
+        // Misma regla que el catálogo público (ProductoRepository.CATALOGO_PUBLICO): antes estas consultas
+        // solo miraban estado y stock, y se colaban negocios ocultos, internos o inactivos.
         List<Producto> result = new ArrayList<>();
-
-        // Primero intentar misma categoría
         if (base.getCategoria() != null) {
-            List<Producto> sameCategory = productoRepository
-                .findByCategoriaIdAndEstadoAndStockActualGreaterThan(
-                    base.getCategoria().getId(), Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, limit + 1))
-                .getContent().stream()
-                .filter(p -> !p.getId().equals(id))
-                .limit(limit)
-                .toList();
-            result.addAll(sameCategory);
+            result.addAll(productoRepository.findRecomendacionesPublicas(
+                Constants.ESTADO_ACTIVO, base.getCategoria().getId(), id, limit));
         }
-
-        // Rellenar con productos de cualquier categoría si faltan
         if (result.size() < limit) {
-            int needed = limit - result.size() + 1;
             Set<Long> exclude = new HashSet<>();
-            exclude.add(id);
             result.forEach(p -> exclude.add(p.getId()));
-            List<Producto> general = productoRepository
-                .findByEstadoAndStockActualGreaterThan(Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, needed * 3))
-                .getContent().stream()
+            productoRepository.findRecomendacionesPublicas(Constants.ESTADO_ACTIVO, null, id, limit + exclude.size())
+                .stream()
                 .filter(p -> !exclude.contains(p.getId()))
-                .limit(needed)
-                .toList();
-            result.addAll(general);
+                .limit((long) limit - result.size())
+                .forEach(result::add);
         }
 
         return result.stream().limit(limit).toList();

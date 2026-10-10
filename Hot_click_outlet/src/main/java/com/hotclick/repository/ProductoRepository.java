@@ -17,6 +17,15 @@ import java.util.Optional;
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
+    /**
+     * Regla de visibilidad del catálogo público (alias p = producto, e = empresa): producto visible y no vendido,
+     * negocio ACTIVO y con visibilidad pública (excluye la tienda interna de plataforma y negocios ocultos).
+     */
+    String CATALOGO_PUBLICO =
+        "p.visible_catalogo = TRUE AND p.vendido = FALSE " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE";
+
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Producto p WHERE p.id = :id")
     Optional<Producto> findByIdForUpdate(@Param("id") Long id);
@@ -58,21 +67,28 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.fk_id_estado = :estado " +
-        "AND p.visible_catalogo = TRUE " +
-        "AND p.vendido = FALSE " +
-        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+        "WHERE p.fk_id_estado = :estado AND " + CATALOGO_PUBLICO + " " +
         "ORDER BY p.id_producto DESC",
         countQuery =
         "SELECT COUNT(*) FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.fk_id_estado = :estado " +
-        "AND p.visible_catalogo = TRUE " +
-        "AND p.vendido = FALSE " +
-        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
+        "WHERE p.fk_id_estado = :estado AND " + CATALOGO_PUBLICO)
     Page<Producto> findByEstadoAndEmpresaAprobada(@Param("estado") Integer estado, Pageable pageable);
 
     Page<Producto> findByEstadoAndStockActualGreaterThan(Integer estado, Integer stock, Pageable pageable);
+
+    /**
+     * Recomendaciones de /productos/{id} con la misma regla que el catálogo público ({@link #CATALOGO_PUBLICO}):
+     * sin negocios ocultos, internos ni inactivos, sin productos ocultos o vendidos. Excluye el producto base.
+     */
+    @Query(nativeQuery = true, value =
+        "SELECT p.* FROM hot_click_producto_tb p " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "WHERE p.fk_id_estado = :estado AND p.stock_actual > 0 AND p.id_producto <> :excluir " +
+        "AND (CAST(:catId AS BIGINT) IS NULL OR p.fk_id_categoria = :catId) AND " + CATALOGO_PUBLICO + " " +
+        "ORDER BY p.id_producto DESC LIMIT :limite")
+    List<Producto> findRecomendacionesPublicas(@Param("estado") Integer estado, @Param("catId") Long catId,
+                                               @Param("excluir") Long excluir, @Param("limite") int limite);
 
     Page<Producto> findByCategoriaIdAndEstado(Long categoriaId, Integer estado, Pageable pageable);
 
