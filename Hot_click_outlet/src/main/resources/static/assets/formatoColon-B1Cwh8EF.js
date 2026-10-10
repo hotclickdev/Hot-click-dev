@@ -1,1 +1,0 @@
-import{Pt as e}from"./index-DHodVQ-w.js";function t(t){return e(Math.round(t??0))}export{t};
