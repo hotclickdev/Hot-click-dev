@@ -63,6 +63,7 @@ public class SecurityAuditService {
         String sev = severity.name();
         String evt = type.name();
         String meta = toJson(metadata);
+        endpoint = com.hotclick.security.RutaLogSegura.enmascarar(endpoint); // QA-122-2: sin token de enlace en log ni tabla
 
         // Structured log — always committed even if DB save fails
         log.info("[SEC] type={} severity={} userId={} email={} ip={} endpoint={} meta={}",
@@ -144,7 +145,7 @@ public class SecurityAuditService {
 
     public void logRateLimitTriggered(String ip, String endpoint) {
         Map<String, Object> meta = new HashMap<>();
-        meta.put("path", endpoint);
+        meta.put("path", com.hotclick.security.RutaLogSegura.enmascarar(endpoint));
         log(SecurityEventType.RATE_LIMIT_TRIGGERED, SecurityEventSeverity.MEDIUM,
             null, null, ip, null, endpoint, meta);
     }

@@ -207,8 +207,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             if (limit != null) {
                 String key = "ip:" + ip + ":" + bucket;
                 if (!rateLimiter.tryAcquire(key, limit.maxRequests(), limit.windowSeconds())) {
-                    log.warn("[RATE-LIMIT] ip={} path={}", ip, path);
-                    try { auditService.logRateLimitTriggered(ip, path); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+                    log.warn("[RATE-LIMIT] ip={} path={}", ip, RutaLogSegura.enmascarar(path));
+                    try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                     response.setStatus(429);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.getWriter().write(
@@ -222,8 +222,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 if (path.startsWith(gl.prefix())) {
                     String key = "ip:" + ip + ":GET:" + gl.prefix();
                     if (!rateLimiter.tryAcquire(key, gl.maxRequests(), gl.windowSeconds())) {
-                        log.warn("[RATE-LIMIT] GET ip={} path={}", ip, path);
-                        try { auditService.logRateLimitTriggered(ip, path); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+                        log.warn("[RATE-LIMIT] GET ip={} path={}", ip, RutaLogSegura.enmascarar(path));
+                        try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                         response.setStatus(429);
                         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                         response.getWriter().write(
