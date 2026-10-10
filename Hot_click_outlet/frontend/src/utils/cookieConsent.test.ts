@@ -40,13 +40,14 @@ describe('parseCookieConsent', () => {
     })
   })
 
-  it('si el consentimiento viejo no trae publicidad, usa el valor de análisis', () => {
+  it('publicidad siempre queda en false (sin Meta Pixel), aunque el consentimiento viejo la traiga', () => {
     const parsed = parseCookieConsent(JSON.stringify({
       analytics: true,
       functional: true,
       timestamp: 10,
     }))
-    expect(parsed?.advertising).toBe(true)
+    expect(parsed?.advertising).toBe(false)
+    expect(parseCookieConsent(JSON.stringify({ analytics: true, advertising: true }))?.advertising).toBe(false)
   })
 
   it('rechaza JSON inválido o sin análisis', () => {
