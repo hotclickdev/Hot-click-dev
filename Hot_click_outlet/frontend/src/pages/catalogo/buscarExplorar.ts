@@ -1,4 +1,5 @@
 import type { Producto } from '@/types/producto'
+import { palabraEnTexto } from './sinonimosBusqueda'
 
 export type FiltrosExtra = {
   tiendas: Set<string>
@@ -112,7 +113,8 @@ export function camposCoincidenConsulta(campos: (string | null | undefined)[], c
   const palabras = palabrasSignificativas(consulta)
   if (palabras.length === 0) return false
   const junto = textos.join(' ')
-  return palabras.some((palabra) => junto.includes(palabra))
+  const tokens = junto.split(/[^\p{L}\p{N}]+/u)
+  return palabras.some((palabra) => palabraEnTexto(palabra, junto, tokens))
 }
 
 export function productoCoincideConsulta(producto: Producto, consulta: string): boolean {
@@ -126,7 +128,8 @@ function puntajeConsulta(producto: Producto, consulta: string): number {
   const junto = normalizar([producto.nombre, producto.categoriaNombre, producto.marcaNombre, producto.descripcion, producto.empresaNombre].filter(Boolean).join(' '))
   const q = normalizar(consulta)
   const frase = q.length >= 2 && junto.includes(q) ? 10 : 0
-  const palabras = palabrasSignificativas(consulta).filter((palabra) => junto.includes(palabra)).length
+  const tokens = junto.split(/[^\p{L}\p{N}]+/u)
+  const palabras = palabrasSignificativas(consulta).reduce((n, palabra) => n + (junto.includes(palabra) ? 2 : palabraEnTexto(palabra, junto, tokens) ? 1 : 0), 0)
   return frase + palabras
 }
 
