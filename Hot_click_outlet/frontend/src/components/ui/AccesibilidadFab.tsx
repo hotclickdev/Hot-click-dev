@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import useChatStore from '@/store/chatStore'
 import { abrirAccesibilidad } from './accessibility/abrirAccesibilidadApi'
-import { esFichaProducto } from './flotantes/flotantesHelpers'
+import { pantallaConCtaFija } from './flotantes/flotantesHelpers'
+import IconoAccesibilidad from './accessibility/IconoAccesibilidad'
 import { useHayBarraInferior } from './flotantes/barraInferiorStore'
 
 /**
@@ -28,15 +29,9 @@ export default function AccesibilidadFab() {
       onClick={abrirAccesibilidad}
       aria-label={label}
       title={label}
-      className={`fixed right-[22px] z-40 flex size-11 items-center justify-center rounded-full border border-hc-n-200 bg-hc-n-0 text-hc-blue-600 shadow-md transition-transform active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600 ${bottomMovil} lg:bottom-[84px] ${esFichaProducto(pathname) ? 'max-lg:hidden' : ''}`}
+      className={`fixed right-[22px] z-40 flex size-11 items-center justify-center rounded-full border border-hc-n-200 bg-hc-n-0 text-hc-blue-600 shadow-md transition-transform active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600 ${bottomMovil} lg:bottom-[84px] ${pantallaConCtaFija(pathname) ? 'max-lg:hidden' : ''}`}
     >
-      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="4.5" r="1.8" fill="currentColor" stroke="none" />
-        <path d="M5 8.5c2.3.7 4.6 1 7 1s4.7-.3 7-1" />
-        <path d="M12 9.5v5" />
-        <path d="M12 14.5l-3 6" />
-        <path d="M12 14.5l3 6" />
-      </svg>
+      <IconoAccesibilidad />
     </button>
   )
 }

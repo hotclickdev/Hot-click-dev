@@ -24,6 +24,16 @@ export function esFichaProducto(pathname: string): boolean {
   return /^\/productos\/[^/]+/.test(pathname)
 }
 
+/**
+ * Pantallas con CTA fija abajo (ficha, carrito, checkout, alta y wizards): ahí no hay flotantes en móvil;
+ * accesibilidad pasa a un ícono de 44 px en la cabecera (boceto demo-0410 · 05).
+ */
+export function pantallaConCtaFija(pathname: string): boolean {
+  return esFichaProducto(pathname)
+    || /^\/(carrito|checkout|pago|registro-empresa|registro|registrar-negocio)(\/|$)/.test(pathname)
+    || /^\/tienda\/[^/]+\/(carrito|checkout|producto)/.test(pathname)
+}
+
 /** 83 px con barra (Figma); 16 px si la pantalla no tiene barra inferior. */
 export function bottomWhatsappPx(hayBarra: boolean): number {
   return hayBarra ? ALTO_BARRA_INFERIOR + SEPARACION_FLOTANTE : SEPARACION_FLOTANTE
