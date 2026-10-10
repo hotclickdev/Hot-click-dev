@@ -52,6 +52,12 @@ export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, secc
       indiceEnFila
     >
       <div className="flex flex-col bg-hc-n-50 pb-8 lg:bg-transparent">
+        {/* [REVISIÓN LEGAL] Aviso visible hasta que un abogado valide el texto. TODO copy Producto. */}
+        <div className="px-4 pt-[18px] lg:px-0">
+          <p role="note" className="rounded-2xl border border-hc-n-200 bg-hc-n-0 px-[14px] py-3 text-[12px] leading-[18px] text-hc-n-600">
+            <strong className="font-semibold text-hc-n-900">[REVISIÓN LEGAL]</strong> Este texto está en revisión. Si tenés dudas sobre un caso puntual, escribinos antes de comprar.
+          </p>
+        </div>
         {intro && (
           <div className="px-4 pt-[18px] lg:px-0">
             <TarjetaLegal>{intro}</TarjetaLegal>
