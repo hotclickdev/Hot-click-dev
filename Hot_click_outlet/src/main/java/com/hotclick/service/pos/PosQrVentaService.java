@@ -228,7 +228,9 @@ public class PosQrVentaService {
             log.warn("[POS-QR] Token {} no encontrado al vincular pedido {}", posQrToken, pedidoId);
             return;
         }
-        String rechazo = motivoRechazoVinculo(sesion, pedido);
+        String rechazo = esCompraDeVariosPaquetes(pedido)
+            ? "la compra trae paquetes de varios negocios"
+            : motivoRechazoVinculo(sesion, pedido);
         if (rechazo != null) {
             log.warn("[POS-QR] Sesión {} no se vincula a pedido {}: {}", posQrToken, pedidoId, rechazo);
             return;
@@ -236,6 +238,12 @@ public class PosQrVentaService {
         sesion.setPedidoId(pedidoId);
         posQrRepo.save(sesion);
         log.info("[POS-QR] Sesión {} vinculada a pedido tienda {}", posQrToken, pedidoId);
+    }
+
+    /** Un QR de mesa es de un solo negocio: una compra con varios paquetes (grupo_pago) no se vincula. */
+    private boolean esCompraDeVariosPaquetes(Pedido pedido) {
+        String grupo = pedido.getGrupoPago();
+        return grupo != null && !grupo.isBlank() && pedidoRepository.findByGrupoPagoOrderByIdAsc(grupo).size() > 1;
     }
 
     static String motivoRechazoVinculo(PosQrSesion sesion, Pedido pedido) {

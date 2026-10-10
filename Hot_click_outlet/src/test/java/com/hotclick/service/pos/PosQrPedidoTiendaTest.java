@@ -162,6 +162,24 @@ class PosQrPedidoTiendaTest {
         assertThat(PosQrSessionService.cantidadDe(Map.of())).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("Un QR de mesa no se vincula a una compra con paquetes de varios negocios (merge 89c1795b2, L7)")
+    void noVinculaCompraMultiNegocio() {
+        PosQrSesion sesion = sesionPendiente();
+        when(posQrRepo.findByToken("tokencarrito01")).thenReturn(Optional.of(sesion));
+        Pedido principal = pedido(88L, EMPRESA_QR, TOTAL_QR);
+        principal.setGrupoPago("GP-MULTI");
+        Pedido deOtroNegocio = pedido(89L, 99L, 5000);
+        deOtroNegocio.setGrupoPago("GP-MULTI");
+        when(pedidoRepository.findById(88L)).thenReturn(Optional.of(principal));
+        when(pedidoRepository.findByGrupoPagoOrderByIdAsc("GP-MULTI")).thenReturn(java.util.List.of(principal, deOtroNegocio));
+
+        service.vincularPedidoTienda("tokencarrito01", 88L);
+
+        assertThat(sesion.getPedidoId()).isNull();
+        verify(posQrRepo, never()).save(any());
+    }
+
     private static PosQrSesion sesionPendiente() {
         Empresa empresa = new Empresa();
         empresa.setId(EMPRESA_QR);
