@@ -79,7 +79,8 @@ export default defineConfig({
         skipWaiting: false,
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png}', '*.svg'],
-        globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**'],
+        // email/: íconos de los correos, no son de la app. Si un precache falla, el SW no se instala (QA-PROD-2).
+        globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**', 'email/**'],
         runtimeCaching: [
           // /api/inventario → NetworkOnly: lookup de barcode y stock deben ser en vivo.
           // Cachear aquí mostraría cantidades o matches obsoletos en captura offline.

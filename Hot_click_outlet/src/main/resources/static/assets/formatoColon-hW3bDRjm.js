@@ -1,0 +1,1 @@
+import{Nt as e}from"./index-FXrUsjVR.js";function t(t){return e(Math.round(t??0))}export{t};

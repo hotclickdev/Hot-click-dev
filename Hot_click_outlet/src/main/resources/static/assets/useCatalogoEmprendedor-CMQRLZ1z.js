@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-C-SOrg9m.js";function t(){return e()}export{t};
