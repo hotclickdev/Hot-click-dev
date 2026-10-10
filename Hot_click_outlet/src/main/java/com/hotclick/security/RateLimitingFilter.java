@@ -74,12 +74,20 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     @Autowired private ClientIpResolver     clientIpResolver;
 
     private record Limit(int maxRequests, int windowSeconds) {}
-    /** {@code sufijo} null = cualquier ruta bajo el prefijo. */
-    private record PrefixLimit(String prefix, String sufijo, int maxRequests, int windowSeconds) {
+    /**
+     * {@code sufijo} null = cualquier ruta bajo el prefijo.
+     * {@code porRecurso} true = bucket por IP + path completo (un cupo por pedido/pago);
+     * false = bucket por IP + prefijo (PUB-08: cambiar token/id no abre otro cupo).
+     */
+    private record PrefixLimit(String prefix, String sufijo, int maxRequests, int windowSeconds, boolean porRecurso) {
+        PrefixLimit(String prefix, String sufijo, int maxRequests, int windowSeconds) {
+            this(prefix, sufijo, maxRequests, windowSeconds, false);
+        }
         boolean aplica(String path) {
             return path.startsWith(prefix) && (sufijo == null || path.endsWith(sufijo));
         }
-        String bucket() {
+        String bucket(String path) {
+            if (porRecurso) return path;
             return sufijo == null ? prefix : prefix + "*" + sufijo;
         }
     }
@@ -125,11 +133,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     // Matched in order — first prefix wins. Keep this list short.
     private static final List<PrefixLimit> PREFIX_LIMITS = List.of(
         // Prevent admins from accidentally spamming customers with email notifications.
-        new PrefixLimit("/api/pedidos/", "/notificar", 5, 60),   // 5 notificar calls/min per IP
+        new PrefixLimit("/api/pedidos/", "/notificar", 5, 60, true),   // 5 notificar calls/min per IP
         // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
-        new PrefixLimit("/api/payments/tilopay/", null, 10, 60),
+        new PrefixLimit("/api/payments/tilopay/", null, 10, 60, true),
         // QR de pago POS público: cada POST crea checkout o intento en ONVO/Stripe
-        new PrefixLimit("/api/pos/qr/pago/", null, 10, 60),
+        new PrefixLimit("/api/pos/qr/pago/", null, 10, 60, true),
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
         new PrefixLimit("/api/qr/", null, 10, 60),
         // "Avisame cuando vuelva" es publico y solo pide un email: sin limite se insertan filas sin fin.
@@ -184,9 +192,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 for (PrefixLimit pl : PREFIX_LIMITS) {
                     if (pl.aplica(path)) {
                         limit = new Limit(pl.maxRequests(), pl.windowSeconds());
-                        // PUB-08: un bucket por IP + prefijo (+ sufijo), no por path completo.
+                        // PUB-08: un bucket por IP + prefijo (+ sufijo), salvo reglas porRecurso (por pedido/pago).
                         // Con el path completo cada token/id nuevo abria un bucket y el tope no limitaba nada.
-                        bucket = pl.bucket();
+                        bucket = pl.bucket(path);
                         break;
                     }
                 }

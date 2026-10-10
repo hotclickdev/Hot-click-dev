@@ -77,4 +77,45 @@ class RateLimitPrefijoTest extends BaseIntegrationTest {
         }
         assertThat(status(get("/api/public/tienda-rapida/tokZ_abcdefghijklmnopqr").with(desde(ip)))).isEqualTo(429);
     }
+
+    /** Reglas porRecurso: cada pedido/pago tiene su propio cupo por IP; el mismo recurso pasado el tope da 429. */
+    private void cupoPorRecurso(String ip, int max, String urlA, String urlB) throws Exception {
+        for (int i = 0; i < max; i++) {
+            assertThat(status(post(urlA).with(desde(ip)).contentType(MediaType.APPLICATION_JSON).content("{}")))
+                .as("A intento %d", i + 1).isNotEqualTo(429);
+        }
+        // Otro pedido desde la misma IP: cupo propio, no 429.
+        for (int i = 0; i < max; i++) {
+            assertThat(status(post(urlB).with(desde(ip)).contentType(MediaType.APPLICATION_JSON).content("{}")))
+                .as("B intento %d", i + 1).isNotEqualTo(429);
+        }
+        assertThat(status(post(urlA).with(desde(ip)).contentType(MediaType.APPLICATION_JSON).content("{}")))
+            .as("A pasado el tope").isEqualTo(429);
+        assertThat(status(post(urlB).with(desde(ip)).contentType(MediaType.APPLICATION_JSON).content("{}")))
+            .as("B pasado el tope").isEqualTo(429);
+    }
+
+    @Test
+    @DisplayName("/api/pedidos/{id}/notificar: cupo por pedido + IP (5)")
+    void notificar_porPedido() throws Exception {
+        cupoPorRecurso("203.0.113.21", 5, "/api/pedidos/910001/notificar", "/api/pedidos/910002/notificar");
+    }
+
+    @Test
+    @DisplayName("Tilopay confirmar: cupo por pedido + IP (10)")
+    void tilopayConfirmar_porPedido() throws Exception {
+        cupoPorRecurso("203.0.113.22", 10, "/api/payments/tilopay/confirmar/910001", "/api/payments/tilopay/confirmar/910002");
+    }
+
+    @Test
+    @DisplayName("Tilopay reintentar: cupo por pedido + IP (10)")
+    void tilopayReintentar_porPedido() throws Exception {
+        cupoPorRecurso("203.0.113.23", 10, "/api/payments/tilopay/reintentar/910001", "/api/payments/tilopay/reintentar/910002");
+    }
+
+    @Test
+    @DisplayName("Pago QR POS: cupo por sesion de pago + IP (10)")
+    void qrPago_porSesion() throws Exception {
+        cupoPorRecurso("203.0.113.24", 10, "/api/pos/qr/pago/tokA_abcdefghijkl/intent", "/api/pos/qr/pago/tokB_abcdefghijkl/intent");
+    }
 }
