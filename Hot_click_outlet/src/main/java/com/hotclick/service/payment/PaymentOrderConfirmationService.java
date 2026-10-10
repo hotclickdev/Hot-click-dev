@@ -68,6 +68,19 @@ public class PaymentOrderConfirmationService {
             paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
             posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
         }
+        publicarCompraPagada(principal, eventPublisher);
+    }
+
+    /**
+     * Tiquete electrónico de la compra (D-105): {@code TiqueteCompraListener} lo emite después del
+     * COMMIT. Se publica una sola vez, solo cuando esta llamada confirmó el grupo; las confirmaciones
+     * repetidas salen antes por la guarda de idempotencia y la emisión también es idempotente.
+     */
+    private void publicarCompraPagada(Pedido principal, ApplicationEventPublisher eventPublisher) {
+        Long compraId = principal.getCompraId();
+        if (compraId != null && eventPublisher != null) {
+            eventPublisher.publishEvent(new CompraPagadaEvent(compraId));
+        }
     }
 
     /**
