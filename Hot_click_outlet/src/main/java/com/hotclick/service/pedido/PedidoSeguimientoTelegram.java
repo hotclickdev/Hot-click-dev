@@ -50,6 +50,8 @@ public class PedidoSeguimientoTelegram {
             if (pedido == null || pedido.getUsuarioFinal() == null || !bot.isConfigured()) return;
             vinculaciones.findByUsuarioId(pedido.getUsuarioFinal().getId())
                 .filter(v -> TelegramVinculacion.ACTIVA.equals(v.getEstado()) && v.getChatId() != null)
+                // El chat del propio vendedor de ese pedido ya recibe su confirmación: no duplicar.
+                .filter(v -> v.getEmpresaActivaId() == null || !v.getEmpresaActivaId().equals(pedido.getEmpresaId()))
                 .ifPresent(v -> bot.enviarMensaje(v.getChatId(), texto(pedido)));
         } catch (RuntimeException e) {
             log.warn("[seguimiento] aviso Telegram no enviado para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
