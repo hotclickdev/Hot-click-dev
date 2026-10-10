@@ -233,6 +233,8 @@ function Abiertas({ filas }: { filas: Fila[] }) {
   )
 }
 
+const TONO_ENLACE: Record<string, 'azul' | 'ok' | 'alerta'> = { VIGENTE: 'azul', USADO: 'ok' }
+
 function FilaAbierta({ fila }: { fila: Fila }) {
   const { t } = useTranslation()
   const id = texto(fila.id)
@@ -274,7 +276,7 @@ function FilaAbierta({ fila }: { fila: Fila }) {
         </span>
         <span className="flex flex-wrap items-center gap-2">
           <Chip tono={estado === 'VENCIDA' ? 'alerta' : estado === 'LISTA' ? 'ok' : 'azul'}>{etiquetaRapida(estado)}</Chip>
-          <Chip tono={estadoEnlace === 'VIGENTE' ? 'azul' : estadoEnlace === 'USADO' ? 'ok' : 'alerta'}>
+          <Chip tono={TONO_ENLACE[estadoEnlace] ?? 'alerta'}>
             {t(`negocioRapido.admin.estadoEnlace.${estadoEnlace}`, { defaultValue: estadoEnlace })}
           </Chip>
         </span>

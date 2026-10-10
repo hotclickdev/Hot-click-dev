@@ -190,7 +190,7 @@ function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso }: {
   )
 }
 
-function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave, acepto, setAcepto, aviso, ocupado, onGuardar, setPaso }: {
+function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave, acepto, setAcepto, aviso, ocupado, onGuardar, setPaso }: Readonly<{
   correo: string
   setCorreo: (valor: string) => void
   telefono: string
@@ -203,7 +203,7 @@ function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave,
   ocupado: boolean
   onGuardar: () => void
   setPaso: (paso: number) => void
-}) {
+}>) {
   const { t } = useTranslation()
   return (
     <div>

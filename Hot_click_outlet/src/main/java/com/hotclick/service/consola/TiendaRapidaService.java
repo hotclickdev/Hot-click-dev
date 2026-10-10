@@ -281,7 +281,7 @@ public class TiendaRapidaService {
             case "USADO" -> throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Este enlace ya se usó.");
             case "REVOCADO" -> throw new EnlaceNoVigenteException(HttpStatus.GONE, "Este enlace fue anulado.");
             case "VENCIDO" -> throw new EnlaceNoVigenteException(HttpStatus.GONE, "Este enlace venció.");
-            default -> { }
+            default -> { /* VIGENTE: se puede usar */ }
         }
     }
 

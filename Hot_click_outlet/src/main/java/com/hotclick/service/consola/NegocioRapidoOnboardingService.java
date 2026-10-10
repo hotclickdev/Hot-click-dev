@@ -25,8 +25,16 @@ import java.util.Set;
 @Service
 public class NegocioRapidoOnboardingService {
 
-    public static final List<String> PASOS = List.of("BODEGA", "PRODUCTO", "NEGOCIO", "COBRO");
-    private static final Set<String> OMITIBLES = Set.of("NEGOCIO", "COBRO");
+    private static final String BODEGA = "BODEGA";
+    private static final String PRODUCTO = "PRODUCTO";
+    private static final String NEGOCIO = "NEGOCIO";
+    private static final String COBRO = "COBRO";
+    private static final String HECHO = "HECHO";
+    private static final String OMITIDO = "OMITIDO";
+    private static final String PENDIENTE = "PENDIENTE";
+
+    public static final List<String> PASOS = List.of(BODEGA, PRODUCTO, NEGOCIO, COBRO);
+    private static final Set<String> OMITIBLES = Set.of(NEGOCIO, COBRO);
 
     private final TiendaRapidaRepository rapidas;
     private final BodegaRepository bodegas;
@@ -55,15 +63,15 @@ public class NegocioRapidoOnboardingService {
         }
         Map<String, String> estados = estados(fila, empresaId);
         for (String anterior : PASOS.subList(0, PASOS.indexOf(p))) {
-            if ("PENDIENTE".equals(estados.get(anterior))) {
+            if (PENDIENTE.equals(estados.get(anterior))) {
                 throw new IllegalStateException("Primero completá el paso " + anterior + ".");
             }
         }
         String a = accion == null ? "" : accion.trim().toUpperCase();
-        if (!"HECHO".equals(a) && !"OMITIR".equals(a)) throw new IllegalArgumentException("Acción no válida.");
+        if (!HECHO.equals(a) && !"OMITIR".equals(a)) throw new IllegalArgumentException("Acción no válida.");
         Set<String> hechos = hechos(fila);
         hechos.removeIf(h -> h.startsWith(p + ":"));
-        hechos.add(p + ":" + ("HECHO".equals(a) ? "HECHO" : "OMITIDO"));
+        hechos.add(p + ":" + (HECHO.equals(a) ? HECHO : OMITIDO));
         fila.setOnboardingHechos(String.join(",", hechos));
         return vista(fila, empresaId);
     }
@@ -81,12 +89,18 @@ public class NegocioRapidoOnboardingService {
     private Map<String, String> estados(TiendaRapida fila, Long empresaId) {
         Set<String> hechos = hechos(fila);
         Map<String, String> out = new LinkedHashMap<>();
-        out.put("BODEGA", bodegas.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO) > 0 ? "HECHO" : "PENDIENTE");
-        out.put("PRODUCTO", productos.countProductosActivosByEmpresaId(empresaId) > 0 ? "HECHO" : "PENDIENTE");
-        for (String p : List.of("NEGOCIO", "COBRO")) {
-            out.put(p, hechos.contains(p + ":HECHO") ? "HECHO" : hechos.contains(p + ":OMITIDO") ? "OMITIDO" : "PENDIENTE");
+        out.put(BODEGA, bodegas.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO) > 0 ? HECHO : PENDIENTE);
+        out.put(PRODUCTO, productos.countProductosActivosByEmpresaId(empresaId) > 0 ? HECHO : PENDIENTE);
+        for (String p : List.of(NEGOCIO, COBRO)) {
+            out.put(p, estadoManual(hechos, p));
         }
         return out;
+    }
+
+    private static String estadoManual(Set<String> hechos, String paso) {
+        if (hechos.contains(paso + ":" + HECHO)) return HECHO;
+        if (hechos.contains(paso + ":" + OMITIDO)) return OMITIDO;
+        return PENDIENTE;
     }
 
     private Map<String, Object> vista(TiendaRapida fila, Long empresaId) {
@@ -98,10 +112,10 @@ public class NegocioRapidoOnboardingService {
             String estado = estados.get(p);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("paso", p);
-            m.put("estado", bloqueado && "PENDIENTE".equals(estado) ? "BLOQUEADO" : estado);
+            m.put("estado", bloqueado && PENDIENTE.equals(estado) ? "BLOQUEADO" : estado);
             m.put("omitible", OMITIBLES.contains(p));
             pasos.add(m);
-            if ("PENDIENTE".equals(estado)) {
+            if (PENDIENTE.equals(estado)) {
                 if (siguiente == null) siguiente = p;
                 bloqueado = true;
             }

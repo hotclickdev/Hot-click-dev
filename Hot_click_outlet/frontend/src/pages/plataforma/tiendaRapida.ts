@@ -60,7 +60,11 @@ export function pasosDe(data: unknown): PasoOnboarding[] {
     : []
   return lista
     .filter((p): p is Record<string, unknown> => !!p && typeof p === 'object')
-    .map((p) => ({ paso: String(p.paso ?? ''), estado: String(p.estado ?? 'PENDIENTE'), omitible: p.omitible === true }))
+    .map((p) => ({
+      paso: typeof p.paso === 'string' ? p.paso : '',
+      estado: typeof p.estado === 'string' ? p.estado : 'PENDIENTE',
+      omitible: p.omitible === true,
+    }))
     .filter((p) => p.paso in DESTINO_PASO)
 }
 
