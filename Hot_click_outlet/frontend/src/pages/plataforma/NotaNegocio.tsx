@@ -63,7 +63,7 @@ export function NotaNegocio({ empresaId, negocio, filas, onGuardada }: {
             type="button"
             disabled={!empresaId || ocupado}
             onClick={() => void elegir(accion.id)}
-            className="rounded-[14px] border border-hc-n-200 bg-white px-3 py-3 text-left transition-all duration-300 hover:scale-[1.03] hover:border-hc-blue-600 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:scale-100"
+            className="rounded-[14px] border border-hc-n-200 bg-hc-surface px-3 py-3 text-left transition-all duration-300 hover:scale-[1.03] hover:border-hc-blue-600 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:scale-100"
           >
             <span className="block text-sm font-semibold">{accion.label}</span>
             <span className="mt-1 block text-xs font-normal text-hc-n-600">{accion.accion}</span>
