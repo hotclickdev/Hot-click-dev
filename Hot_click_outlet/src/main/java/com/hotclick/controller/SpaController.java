@@ -176,6 +176,7 @@ public class SpaController {
         "/planes",
         "/vender",
         "/emprendimientos",
+        "/emprendimientos/{slug}",
         "/negocios",
         "/404",
         "/seleccionar-negocio",
