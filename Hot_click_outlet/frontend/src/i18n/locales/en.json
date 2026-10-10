@@ -4602,6 +4602,9 @@
       "revocar": "Revoke link",
       "copiar": "Copy link",
       "unSoloUso": "The link works once and expires in 72 hours."
+    },
+    "menu": {
+      "armarTienda": "SET UP YOUR STORE"
     }
   }
 }

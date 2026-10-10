@@ -4602,6 +4602,9 @@
       "revocar": "Anular link",
       "copiar": "Copiar link",
       "unSoloUso": "O link funciona uma vez e expira em 72 horas."
+    },
+    "menu": {
+      "armarTienda": "MONTE SUA LOJA"
     }
   }
 }

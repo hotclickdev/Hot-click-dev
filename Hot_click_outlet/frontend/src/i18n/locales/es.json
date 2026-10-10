@@ -4602,6 +4602,9 @@
       "revocar": "Anular enlace",
       "copiar": "Copiar enlace",
       "unSoloUso": "El enlace sirve una sola vez y vence en 72 horas."
+    },
+    "menu": {
+      "armarTienda": "ARMÁ TU TIENDA"
     }
   }
 }
