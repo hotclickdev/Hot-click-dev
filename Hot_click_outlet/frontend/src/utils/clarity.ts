@@ -1,4 +1,4 @@
-import { getCookieConsent } from '@/components/ui/CookieBanner'
+import { getCookieConsent } from '@/utils/cookieConsent'
 
 const CLARITY_ID = import.meta.env.VITE_CLARITY_ID
 
