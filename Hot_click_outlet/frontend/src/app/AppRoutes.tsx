@@ -74,6 +74,7 @@ const EmprendimientosPage = lazy(() => import('@/pages/EmprendimientosPage'))
 const SectorLandingPage = lazy(() => import('@/pages/seo/SectorLandingPage'))
 const ProvinciaLandingPage = lazy(() => import('@/pages/seo/ProvinciaLandingPage'))
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
+const VenderPage = lazy(() => import('@/pages/vender/VenderPage'))
 const PlanesPage = lazy(() => import('@/pages/planes/PlanesPage'))
 const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
 const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
@@ -167,6 +168,7 @@ export default function AppRoutes() {
       <Route path="/para-emprendedores" element={<Navigate to="/emprende" replace />} />
       <Route path="/para-pymes" element={<PymeLandingPage />} />
       <Route path="/planes" element={<PlanesPage />} />
+      <Route path="/vender" element={<VenderPage />} />
       <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
       <Route path="/negocios" element={<EmprendimientosPage />} />
       <Route path="/emprendimientos" element={<RedirigirConQuery a="/negocios" />} />
