@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.dto.stock.AjusteEntradaRequest;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.MovimientoStock;
 import com.hotclick.repository.ProductoRepository;
@@ -8,6 +9,9 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.StockService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,6 +30,11 @@ import java.util.Optional;
 @RequestMapping("/api/stock")
 @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
 public class StockController {
+
+    private static final Logger log = LoggerFactory.getLogger(StockController.class);
+    static final String CANTIDAD_INVALIDA = "La cantidad debe estar entre 1 y 100000";
+    static final String NOTAS_LARGAS = "Las notas admiten hasta 500 caracteres";
+    static final String ERROR_GENERICO = "No se pudo ajustar el stock";
 
     private final StockService stockService;
     private final ProductoRepository productoRepository;
@@ -58,17 +67,26 @@ public class StockController {
     @PostMapping("/ajuste-entrada/{productoId}")
     public ResponseEntity<ResponseDTO> ajustarEntrada(
             @PathVariable Long productoId,
-            @RequestBody Map<String, Object> body,
+            @Valid @RequestBody AjusteEntradaRequest body,
             @AuthenticationPrincipal UserDetails userDetails) {
         ResponseEntity<ResponseDTO> denegado = verificarProducto(productoId);
         if (denegado != null) return denegado;
+        // SEC02-01: chequeo de servidor ademas de la validacion del bean (llamadas directas / sin @Valid).
+        Integer cantidad = body == null ? null : body.cantidad();
+        if (cantidad == null || cantidad < AjusteEntradaRequest.CANTIDAD_MIN || cantidad > AjusteEntradaRequest.CANTIDAD_MAX) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(CANTIDAD_INVALIDA));
+        }
+        String notas = body.notas() == null ? "" : body.notas();
+        if (notas.length() > AjusteEntradaRequest.NOTAS_MAX) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(NOTAS_LARGAS));
+        }
         try {
-            int cantidad = Integer.parseInt(body.get("cantidad").toString());
-            String notas = body.getOrDefault("notas", "").toString();
             stockService.ajustarEntrada(productoId, cantidad, notas, userDetails.getUsername());
             return ResponseEntity.ok(ResponseDTO.success("Stock actualizado", null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (RuntimeException e) {
+            // SEC02-03: nunca devolver el mensaje crudo de la excepcion.
+            log.warn("[stock] ajuste-entrada rechazado producto={} causa={}", productoId, e.getClass().getSimpleName());
+            return ResponseEntity.badRequest().body(ResponseDTO.error(ERROR_GENERICO));
         }
     }
 
@@ -96,9 +114,17 @@ public class StockController {
         map.put("stockReservadoAntes",   m.getStockReservadoAntes());
         map.put("stockReservadoDespues", m.getStockReservadoDespues());
         map.put("referencia",            m.getReferencia());
-        map.put("operadorCorreo",        m.getOperadorCorreo());
+        map.put("operadorCorreo",        enmascararCorreo(m.getOperadorCorreo()));
         map.put("fechaMovimiento",       m.getFechaMovimiento());
         map.put("notas",                 m.getNotas());
         return map;
+    }
+
+    /** SEC02-02: "juan@dominio.cr" -> "j***@dominio.cr"; sin '@' -> "***". */
+    static String enmascararCorreo(String correo) {
+        if (correo == null || correo.isBlank()) return correo;
+        int at = correo.indexOf('@');
+        if (at <= 0) return "***";
+        return correo.charAt(0) + "***" + correo.substring(at);
     }
 }
