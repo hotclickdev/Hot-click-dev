@@ -72,7 +72,7 @@ public class TestimonioService {
 
         Long compras = repo.countCompra(productoId, usuario.getId());
         if (compras == null || compras == 0)
-            throw new IllegalArgumentException("Solo puedes reseñar productos que hayas comprado");
+            throw new IllegalArgumentException("Solo puedes reseñar productos de un pedido ya entregado");
 
         long resenasPrevias = repo.countByUsuarioIdAndProductoIdAndTipo(usuario.getId(), productoId, "RESENA");
         if (resenasPrevias >= TestimonioResenaSupport.MAX_RESENAS_POR_PRODUCTO)

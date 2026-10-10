@@ -23,7 +23,7 @@ public interface TestimonioRepository extends JpaRepository<Testimonio, Long> {
     @Query("SELECT COUNT(pi) FROM PedidoItem pi " +
            "WHERE pi.producto.id = :productoId " +
            "AND pi.pedido.usuarioFinal.id = :usuarioId " +
-           "AND pi.pedido.estadoPedido IN ('PAGADO','EN_PREPARACION','ENVIADO','ENTREGADO','LISTO_RETIRO')")
+           "AND pi.pedido.estadoPedido IN ('ENTREGADO','COMPLETADO')")
     Long countCompra(@Param("productoId") Long productoId, @Param("usuarioId") Long usuarioId);
 
     @Query("SELECT AVG(t.calificacion) FROM Testimonio t " +
