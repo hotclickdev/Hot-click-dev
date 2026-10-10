@@ -1,0 +1,1 @@
+var e=`hotclick-declara-mayoria-edad`;function t(t){typeof sessionStorage>`u`||(t?sessionStorage.setItem(e,`1`):sessionStorage.removeItem(e))}export{t};
