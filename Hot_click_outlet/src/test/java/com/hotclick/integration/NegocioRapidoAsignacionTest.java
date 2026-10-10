@@ -234,4 +234,64 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
             .content(aceptarBody(true, "legado-nr@test.cr"))).andExpect(status().isOk());
         mockMvc.perform(get(PUBLICO + viejo)).andExpect(status().isConflict());
     }
+
+    @Test
+    @DisplayName("QA-122-1: 10 usos simultáneos del mismo enlace → 1 éxito, 9 × 409, un dueño y una aceptación")
+    void aceptarConcurrente() throws Exception {
+        JsonNode creada = crear("Concurrencia SA");
+        String token = creada.path("token").asText();
+        long id = creada.path("id").asLong();
+        int hilos = 10;
+        java.util.concurrent.CyclicBarrier barrera = new java.util.concurrent.CyclicBarrier(hilos);
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(hilos);
+        java.util.List<java.util.concurrent.Future<Integer>> res = new java.util.ArrayList<>();
+        for (int i = 0; i < hilos; i++) {
+            final int n = i;
+            res.add(pool.submit(() -> {
+                String body = aceptarBody(true, "conc" + n + "-nr@test.cr");
+                barrera.await();
+                return mockMvc.perform(post(PUBLICO + token).contentType(MediaType.APPLICATION_JSON)
+                        .with(r -> { r.setRemoteAddr("198.51.100." + (n + 1)); return r; })
+                        .content(body))
+                    .andReturn().getResponse().getStatus();
+            }));
+        }
+        java.util.List<Integer> codigos = new java.util.ArrayList<>();
+        for (var f : res) codigos.add(f.get(60, java.util.concurrent.TimeUnit.SECONDS));
+        pool.shutdown();
+
+        assertThat(codigos).as("códigos %s", codigos).containsOnly(200, 409);
+        assertThat(codigos.stream().filter(c -> c == 200).count()).isEqualTo(1);
+        assertThat(codigos.stream().filter(c -> c == 409).count()).isEqualTo(9);
+
+        TiendaRapida fila = rapidas.findById(id).orElseThrow();
+        assertThat(fila.getUsadoEn()).isNotNull();
+        assertThat(fila.getAceptadoEn()).isNotNull();
+        String correoDueno = jdbcTemplate.queryForObject(
+            "SELECT u.correo FROM hot_click_tienda_rapida_tb t JOIN hot_click_usuario_tb u ON u.id_usuario = t.fk_id_usuario "
+                + "WHERE t.id_tienda_rapida = ?", String.class, id);
+        long duenos = java.util.stream.IntStream.range(0, hilos)
+            .filter(n -> usuarioRepository.findByCorreo("conc" + n + "-nr@test.cr").isPresent()).count();
+        assertThat(duenos).isEqualTo(1);
+        assertThat(correoDueno).matches("conc\\d-nr@test.cr");
+        Integer aceptaciones = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_tienda_rapida_tb WHERE fk_id_empresa = ? AND aceptado_en IS NOT NULL",
+            Integer.class, jdbcTemplate.queryForObject(
+                "SELECT fk_id_empresa FROM hot_click_tienda_rapida_tb WHERE id_tienda_rapida = ?", Long.class, id));
+        assertThat(aceptaciones).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("QA-122-3: sin permiso, los POST de admin dan 403 JSON directo (no sendError → /error → 405)")
+    void postSinPermisoEs403Directo() throws Exception {
+        Usuario emp = crearUsuario("emp403-nr@test.cr", "Emp NR", obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5));
+        String tokenEmp = "Bearer " + jwtUtil.generateToken(emp.getCorreo(), emp.getId(), Constants.ROL_EMPRENDEDOR);
+        for (String ruta : java.util.List.of(ADMIN_API, ADMIN_API + "/1/regenerar", ADMIN_API + "/1/revocar")) {
+            var resp = mockMvc.perform(post(ruta).header("Authorization", tokenEmp)
+                    .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden()).andReturn().getResponse();
+            assertThat(resp.getErrorMessage()).as("sin sendError en %s", ruta).isNull();
+            assertThat(resp.getContentAsString()).contains("\"success\":false");
+        }
+    }
 }

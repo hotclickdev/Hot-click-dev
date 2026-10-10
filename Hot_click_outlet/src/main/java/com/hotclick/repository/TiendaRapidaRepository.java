@@ -22,7 +22,7 @@ public interface TiendaRapidaRepository extends JpaRepository<TiendaRapida, Long
     Optional<TiendaRapida> findFirstByEmpresaIdOrderByCreadaDesc(Long empresaId);
 
     /** Consume el enlace en una sola sentencia: solo una petición concurrente obtiene 1. */
-    @Modifying(flushAutomatically = true, clearAutomatically = false)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE TiendaRapida t SET t.usadoEn = :ahora WHERE t.id = :id AND t.usadoEn IS NULL "
          + "AND t.revocadoEn IS NULL AND t.enlaceVence > :ahora")
     int consumir(@Param("id") Long id, @Param("ahora") LocalDateTime ahora);

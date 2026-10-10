@@ -148,11 +148,17 @@ public class TiendaRapidaService {
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         TiendaRapida fila = cerrarUna(exigir(token), ahora);
         exigirVigente(fila, ahora);
-        aplicarDatos(fila, persona, cedula, correo, telefono, clave);
-        if (rapidas.consumir(fila.getId(), ahora) != 1) {
+        // QA-122-1: se consume ANTES de tocar datos. El UPDATE condicional (usado_en IS NULL, sin revocar,
+        // sin vencer) es atómico: con dos usos simultáneos, el segundo espera el lock de la fila y, al
+        // reevaluar, ve usado_en puesto → 0 filas. Después se relee la fila (la consulta limpia el contexto).
+        Long id = fila.getId();
+        int consumidas = rapidas.consumir(id, ahora);
+        fila = rapidas.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Ese enlace no está vigente."));
+        if (consumidas != 1) {
+            exigirVigente(fila, ahora);
             throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Este enlace ya se usó.");
         }
-        fila.setUsadoEn(ahora);
+        aplicarDatos(fila, persona, cedula, correo, telefono, clave);
         fila.setAceptadoEn(ahora);
         fila.setAceptadoIpHash(ipHash);
         fila.setAceptadoPor(fila.getUsuario().getId());

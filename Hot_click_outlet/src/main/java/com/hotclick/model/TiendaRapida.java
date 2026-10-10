@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "hot_click_tienda_rapida_tb")
 public class TiendaRapida {
 
@@ -57,7 +58,8 @@ public class TiendaRapida {
     @Column(name = "enlace_vence")
     private LocalDateTime enlaceVence;
 
-    @Column(name = "usado_en")
+    /** Solo lo escribe {@code TiendaRapidaRepository.consumir} (UPDATE condicional): la entidad nunca lo pisa ni lo vuelve a null (QA-122-1). */
+    @Column(name = "usado_en", insertable = false, updatable = false)
     private LocalDateTime usadoEn;
 
     @Column(name = "revocado_en")
