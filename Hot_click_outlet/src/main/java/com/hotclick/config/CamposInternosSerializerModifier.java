@@ -37,7 +37,7 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
      * mostrar de dónde sale el paquete (nombre, provincia, cantón) y ofrecer retiro en tienda.
      * Lista blanca: cualquier campo nuevo de Bodega queda oculto al público hasta que se agregue acá.
      */
-    static final Set<String> BODEGA_PUBLICOS = Set.of("id", "nombreBodega", "provincia", "canton", "permiteRetiroCliente");
+    static final Set<String> BODEGA_PUBLICOS = Set.of("id", "nombreBodega", "provincia", "canton", "permiteRetiroCliente", "aceptaEfectivo");
 
     /** El checkout la muestra para retiro en tienda; sin retiro no hay motivo para publicarla. */
     static final Set<String> BODEGA_SOLO_CON_RETIRO = Set.of("direccionExacta");

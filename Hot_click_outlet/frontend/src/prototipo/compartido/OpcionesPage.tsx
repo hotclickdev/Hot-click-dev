@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { FilaOpcion } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
@@ -8,6 +7,7 @@ import MmGuiaToggle from './MmGuiaToggle'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import { EASE_PREMIUM } from './motion/formularioMotionTokens'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 /**
  * Opciones de cuenta (Figma 61:467). Extra: Equipo vs Sucursales.
@@ -15,13 +15,11 @@ import { EASE_PREMIUM } from './motion/formularioMotionTokens'
 export default function OpcionesPage() {
   const plan = useSellerPlan()
   const ruta = useSellerRuta()
-  const navigate = useNavigate()
-  const logout = useAuthStore((s) => s.logout)
+  const cerrarSesionCompleta = useCerrarSesion()
   const userName = useAuthStore((s) => s.userName) ?? plan.usuario
 
   function cerrarSesion() {
-    logout()
-    navigate('/login', { replace: true })
+    cerrarSesionCompleta()
   }
 
   return (

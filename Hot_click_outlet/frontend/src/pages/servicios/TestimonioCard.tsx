@@ -154,7 +154,7 @@ export default function TestimonioCard({ p, onEnviado }: { p: ProductoParaResena
             <div className="flex items-center gap-3">
               <StarPicker value={calificacion} onChange={setCalificacion} />
               {calificacion > 0 && (
-                <span className="text-[13px] font-semibold text-hc-warning">{RATING_LABELS[calificacion]}</span>
+                <span className="text-[13px] font-semibold text-hc-blue-600">{RATING_LABELS[calificacion]}</span>
               )}
             </div>
           </div>

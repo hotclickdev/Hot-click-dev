@@ -65,6 +65,9 @@ public class StorefrontGuestOrderService {
         if (bodega == null) {
             return null;
         }
+        exigirEfectivoAceptado(dto.getMetodoPago(), bodega);
+        exigirRetiroDisponible(dto.getMetodoEnvio(),
+            bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
 
         Usuario usuario = usuarioRepository.findByCorreo(dto.getCorreoCliente())
             .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
@@ -159,9 +162,30 @@ public class StorefrontGuestOrderService {
         }
     }
 
+    /** Efectivo solo si la bodega que despacha lo acepta; la UI ya lo oculta, esto cierra la llamada directa. */
+    static void exigirEfectivoAceptado(String metodoPago, Bodega bodega) {
+        if (!"EFECTIVO".equalsIgnoreCase(metodoPago)) return;
+        if (bodega == null || !Boolean.TRUE.equals(bodega.getAceptaEfectivo())) {
+            throw new IllegalArgumentException("Este negocio no acepta efectivo. Pagá con SINPE / Tarjeta.");
+        }
+    }
+
+    /** Retiro solo si alguna bodega activa de la tienda lo permite (misma regla que publica la info de la tienda). */
+    static void exigirRetiroDisponible(String metodoEnvio, List<Bodega> bodegas) {
+        if (!StorefrontPedidoDTO.ENVIO_RETIRO.equalsIgnoreCase(metodoEnvio)) return;
+        boolean hay = bodegas != null && bodegas.stream().anyMatch(b -> Boolean.TRUE.equals(b.getPermiteRetiroCliente()));
+        if (!hay) {
+            throw new IllegalArgumentException("Este negocio no ofrece retiro en tienda.");
+        }
+    }
+
     private Bodega resolverBodega(Empresa empresa) {
+        // La Empresa llega desacoplada (la carga el interceptor por slug): su bodega es un
+        // proxy sin sesión. Se recarga dentro de la transacción para leer aceptaEfectivo (QA-114-1).
         if (empresa.getBodegaVentaOnline() != null) {
-            return empresa.getBodegaVentaOnline();
+            Long id = empresa.getBodegaVentaOnline().getId();
+            Bodega fresca = bodegaRepository.findById(id).orElse(null);
+            if (fresca != null) return fresca;
         }
         List<Bodega> bodegas = bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO);
         return bodegas.isEmpty() ? null : bodegas.get(0);

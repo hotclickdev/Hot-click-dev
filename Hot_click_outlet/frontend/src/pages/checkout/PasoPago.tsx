@@ -11,20 +11,26 @@ import { SINPE_NUMERO, copiarNumeroSinpe } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { CodigosPedido } from './useCodigosPedido'
+import { efectivoDisponible, metodoPagoPrincipal, tilopayActivo } from './pagoPrincipal'
 
 type MetodoId = 'SINPE' | 'TILOPAY' | 'EFECTIVO'
 
-/** El color de cada ícono es el del trazo exportado de Figma (`29:1373`, `29:1394`, `29:1402`). */
-const METODOS: { id: MetodoId; icono: string; color: string; titulo: string; subtitulo: string; subtituloEscritorio: string }[] = [
-  { id: 'SINPE', icono: ICONOS_CHECKOUT.pagoSinpe, color: 'text-hc-blue-600', titulo: 'sinpe', subtitulo: 'sinpeSub', subtituloEscritorio: 'sinpeSub' },
-  { id: 'TILOPAY', icono: ICONOS_CHECKOUT.pagoTarjeta, color: 'text-hc-n-600', titulo: 'tarjetaMovil', subtitulo: 'tarjetaSubMovil', subtituloEscritorio: 'tarjetaSub' },
-  { id: 'EFECTIVO', icono: ICONOS_CHECKOUT.pagoEfectivo, color: 'text-hc-n-600', titulo: 'efectivo', subtitulo: 'efectivoSub', subtituloEscritorio: 'efectivoSub' },
-]
+type Metodo = { id: MetodoId; icono: string; color: string; titulo: string; subtitulo: string }
+
+/** Una sola opción «SINPE / Tarjeta» y Efectivo solo si todos los negocios lo aceptan. */
+function metodosDisponibles(conEfectivo: boolean): Metodo[] {
+  const principal: Metodo = {
+    id: metodoPagoPrincipal(), icono: ICONOS_CHECKOUT.pagoSinpe, color: 'text-hc-blue-600',
+    titulo: 'sinpeTarjeta', subtitulo: tilopayActivo() ? 'sinpeTarjetaSubTilopay' : 'sinpeTarjetaSub',
+  }
+  const efectivo: Metodo = { id: 'EFECTIVO', icono: ICONOS_CHECKOUT.pagoEfectivo, color: 'text-hc-n-600', titulo: 'efectivo', subtitulo: 'efectivoSub' }
+  return conEfectivo ? [principal, efectivo] : [principal]
+}
 
 const TAMANO_MAXIMO_COMPROBANTE = 5 * 1024 * 1024
 
 /** Instrucciones SINPE y selector del comprobante (Figma `29:1379`). El comprobante se sube al confirmar el pedido. */
-function InstruccionesSinpe({ form, total, token }: { form: CheckoutFormState; total: number; token: string | null }) {
+function InstruccionesSinpe({ form, total }: { form: CheckoutFormState; total: number }) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [copiado, setCopiado] = useState(false)
@@ -75,23 +81,16 @@ function InstruccionesSinpe({ form, total, token }: { form: CheckoutFormState; t
         {form.sinpeImagen ? t('checkout.f.comprobanteElegido', { nombre: form.sinpeImagen.name }) : t('checkout.f.subirComprobante')}
       </button>
       {form.sinpeImagenErr && <p role="alert" className="text-[12px] leading-4 text-hc-danger">{form.sinpeImagenErr}</p>}
-      <DatosRemitente form={form} token={token} />
+      <DatosRemitente form={form} />
     </div>
   )
 }
 
-/** Cédula (y nombre si hay sesión) que SINPE exige para identificar al remitente; no están en Figma. */
-function DatosRemitente({ form, token }: { form: CheckoutFormState; token: string | null }) {
+/** Cédula que SINPE exige para identificar al remitente (el nombre va en «Tus datos»); no está en Figma. */
+function DatosRemitente({ form }: { form: CheckoutFormState }) {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-3 border-t border-hc-n-200 pt-3">
-      {token && (
-        <Campo etiqueta={t('checkout.f.nombre')} error={form.sinpeNombreErr}>
-          {({ id, describedBy }) => (
-            <CampoTexto id={id} describedBy={describedBy} escritorio autoComplete="name" valor={form.sinpeNombre} error={Boolean(form.sinpeNombreErr)} onCambiar={(v) => { form.setSinpeNombre(v); if (form.sinpeNombreErr) form.setSinpeNombreErr('') }} />
-          )}
-        </Campo>
-      )}
       <Campo etiqueta={t('checkout.f.cedula')} error={form.sinpeCedulaErr}>
         {({ id, describedBy }) => (
           <CampoTexto id={id} describedBy={describedBy} escritorio inputMode="numeric" maxLength={12} valor={form.sinpeCedula} error={Boolean(form.sinpeCedulaErr)} onCambiar={(v) => { form.setSinpeCedula(v.replace(/\D/g, '')); if (form.sinpeCedulaErr) form.setSinpeCedulaErr('') }} />
@@ -109,9 +108,10 @@ type MetodosPagoProps = {
 }
 
 /** Métodos de pago: lista en móvil (Figma `29:1370`) y tres tarjetas en escritorio (`30:2473`). */
-export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps) {
+export function MetodosPago({ form, total, escritorio }: MetodosPagoProps) {
   const { t } = useTranslation()
   const rapido = Object.values(form.metodoEnvioPorPaquete).includes('ENVIO_RAPIDO')
+  const METODOS = metodosDisponibles(efectivoDisponible(form.paquetes.flatMap((p) => p.items)))
 
   if (escritorio) {
     return (
@@ -124,14 +124,14 @@ export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps
               <label key={metodo.id} className={`flex min-w-px flex-1 flex-col items-start gap-1 rounded-[12px] p-[14px] leading-[normal] ${bloqueado ? 'cursor-not-allowed opacity-45' : 'cursor-pointer'} ${activo ? 'border-2 border-hc-blue-600 bg-hc-blue-50' : 'border border-hc-n-200 bg-hc-n-0'}`}>
                 <input type="radio" name="pago" value={metodo.id} checked={activo} disabled={bloqueado} onChange={() => form.setMetodoPago(metodo.id)} className="sr-only" />
                 <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
-                <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.id === 'SINPE' ? 'sinpe' : metodo.id === 'TILOPAY' ? 'tarjeta' : 'efectivo'}`)}</span>
-                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtituloEscritorio}`, { numero: SINPE_NUMERO })}</span>
+                <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
+                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>
               </label>
             )
           })}
         </div>
-        {bloqueadoAviso(rapido, t)}
-        {form.metodoPago === 'SINPE' && <InstruccionesSinpe form={form} total={total} token={token} />}
+        {METODOS.length > 1 && bloqueadoAviso(rapido, t)}
+        {form.metodoPago === 'SINPE' && <InstruccionesSinpe form={form} total={total} />}
         {form.metodoPago === 'EFECTIVO' && <NotaEfectivo />}
       </div>
     )
@@ -143,6 +143,7 @@ export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps
         const activo = form.metodoPago === metodo.id
         const bloqueado = metodo.id === 'EFECTIVO' && rapido
         const esSinpe = metodo.id === 'SINPE'
+        const esPrincipal = metodo.id !== 'EFECTIVO'
         return (
           <div key={metodo.id} className={`flex flex-col gap-3 rounded-[14px] p-[14px] leading-[normal] ${activo ? 'border-2 border-hc-blue-600 bg-hc-blue-50' : 'border border-hc-n-200 bg-hc-n-0'} ${bloqueado ? 'opacity-45' : ''}`}>
             <label className={`flex items-center gap-3 ${bloqueado ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
@@ -160,10 +161,10 @@ export function MetodosPago({ form, token, total, escritorio }: MetodosPagoProps
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
                 {!(esSinpe && activo) && <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>}
               </span>
-              {esSinpe && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success-text">{t('checkout.f.masUsado')}</span>}
+              {esPrincipal && METODOS.length > 1 && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success-text">{t('checkout.f.masUsado')}</span>}
             </label>
             {bloqueado && <p className="text-[12px] leading-4 text-hc-warning">{t('checkout.f.efectivoNoRapido')}</p>}
-            {esSinpe && activo && <InstruccionesSinpe form={form} total={total} token={token} />}
+            {esSinpe && activo && <InstruccionesSinpe form={form} total={total} />}
             {metodo.id === 'EFECTIVO' && activo && <NotaEfectivo />}
           </div>
         )
@@ -189,44 +190,31 @@ type CodigosCheckoutProps = {
   giftCard: number
 }
 
-/** Tarjeta de regalo (con sesión) y cupón: Figma `55:2220` (válida) y `55:2284` (inválida). */
+/** Tarjeta de regalo o cupón en un solo campo con «Aplicar» (Figma `55:2220` válida, `55:2284` inválida). */
 export function CodigosCheckout({ codigos, token, descuento, giftCard }: CodigosCheckoutProps) {
   const { t } = useTranslation()
+  const esGift = codigos.gcEstado === 'valid'
+  const estado = esGift ? 'valid' : codigos.cuponEstado
   return (
-    <TarjetaCodigos titulo={t(token ? 'checkout.codigo.titulo' : 'checkout.codigo.cuponTitulo')}>
-      {token && (
-        <CampoCodigo
-          valor={codigos.gcInput}
-          estado={codigos.gcEstado}
-          placeholder={t('checkout.codigo.giftPlaceholder')}
-          ariaLabel={t('checkout.codigo.giftAria')}
-          maxLength={30}
-          onCambiar={codigos.cambiarGiftCard}
-          onAplicar={codigos.validarGiftCard}
-          onQuitar={codigos.quitarGiftCard}
-          invalido={{ titulo: t('checkout.codigo.giftInvalidoTitulo'), ayuda: t('checkout.codigo.giftInvalidoAyuda') }}
-          detalleValido={(
-            <>
-              <TituloValido texto={t('checkout.codigo.giftValidoTitulo')} />
-              <LineaCodigo etiqueta={t('checkout.codigo.saldoDisponible')} valor={formatPrice(codigos.gcSaldo)} />
-              <LineaCodigo etiqueta={t('checkout.codigo.seAplica')} valor={formatoRebaja(giftCard)} rebaja />
-              <LineaCodigo etiqueta={t('checkout.codigo.saldoRestante')} valor={formatPrice(saldoRestanteGiftCard(codigos.gcSaldo, giftCard))} />
-            </>
-          )}
-          t={t}
-        />
-      )}
+    <TarjetaCodigos titulo={t(token ? 'checkout.codigo.unicoTitulo' : 'checkout.codigo.cuponTitulo')}>
       <CampoCodigo
         valor={codigos.cuponInput}
-        estado={codigos.cuponEstado}
-        placeholder={t('checkout.codigo.cuponPlaceholder')}
-        ariaLabel={t('checkout.codigo.cuponAria')}
-        maxLength={20}
-        onCambiar={codigos.cambiarCupon}
-        onAplicar={codigos.validarCupon}
-        onQuitar={codigos.quitarCupon}
-        invalido={{ titulo: codigos.cuponError || t('checkout.codigo.cuponInvalidoTitulo') }}
-        detalleValido={(
+        estado={estado}
+        placeholder={t(token ? 'checkout.codigo.unicoPlaceholder' : 'checkout.codigo.cuponPlaceholder')}
+        ariaLabel={t(token ? 'checkout.codigo.unicoAria' : 'checkout.codigo.cuponAria')}
+        maxLength={30}
+        onCambiar={token ? codigos.cambiarCodigo : codigos.cambiarCupon}
+        onAplicar={token ? codigos.aplicarCodigo : codigos.validarCupon}
+        onQuitar={() => codigos.cambiarCodigo('')}
+        invalido={{ titulo: codigos.cuponError || t(token ? 'checkout.codigo.unicoInvalido' : 'checkout.codigo.cuponInvalidoTitulo') }}
+        detalleValido={esGift ? (
+          <>
+            <TituloValido texto={t('checkout.codigo.giftValidoTitulo')} />
+            <LineaCodigo etiqueta={t('checkout.codigo.saldoDisponible')} valor={formatPrice(codigos.gcSaldo)} />
+            <LineaCodigo etiqueta={t('checkout.codigo.seAplica')} valor={formatoRebaja(giftCard)} rebaja />
+            <LineaCodigo etiqueta={t('checkout.codigo.saldoRestante')} valor={formatPrice(saldoRestanteGiftCard(codigos.gcSaldo, giftCard))} />
+          </>
+        ) : (
           <>
             <TituloValido texto={t('checkout.codigo.cuponValidoTitulo')} />
             <LineaCodigo etiqueta={t('checkout.codigo.cuponDescuento', { porcentaje: codigos.cuponDescuento })} valor={formatoRebaja(descuento)} rebaja />

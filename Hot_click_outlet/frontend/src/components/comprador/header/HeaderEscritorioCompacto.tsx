@@ -21,7 +21,7 @@ export default function HeaderEscritorioCompacto({ filaCarrito = false }: { fila
   const buscar = (evento: FormEvent) => {
     evento.preventDefault()
     const texto = consulta.trim()
-    navigate(texto ? `/productos?search=${encodeURIComponent(texto)}` : '/productos')
+    navigate(texto ? `/productos?search=${encodeURIComponent(texto)}` : '/categorias')
   }
 
   return (

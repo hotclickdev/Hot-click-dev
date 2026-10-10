@@ -16,7 +16,7 @@ export default function StarPicker({ value, onChange }: { value: number; onChang
           className="rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hc-blue-600"
           aria-label={`${s} estrella${s === 1 ? '' : 's'}`}
         >
-          <svg className={`size-7 transition-colors duration-100 ${s <= active ? 'text-hc-warning' : 'text-hc-n-400'}`}
+          <svg className={`size-7 transition-colors duration-100 ${s <= active ? 'text-hc-blue-600' : 'text-hc-n-400'}`}
             viewBox="0 0 20 20"
             fill={s <= active ? 'currentColor' : 'none'}
             stroke="currentColor"

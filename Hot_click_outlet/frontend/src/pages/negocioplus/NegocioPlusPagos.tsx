@@ -56,7 +56,7 @@ export default function NegocioPlusPagos() {
         className="relative flex flex-wrap items-center justify-center gap-6 rounded-2xl px-6 py-10"
         style={{ backgroundColor: '#eff4fe' }}
       >
-        <SucursalCard nombre="Sucursal Centro" monto="₡320k" rotate="rotate-3" />
+        <SucursalCard nombre="Sucursal Centro" monto="₡ ···" rotate="rotate-3" />
 
         <div className="flex flex-col items-center gap-3">
           <Chip icon="reloj" label={t('negocioPlus.pagosAprobacionSegundos')} rotate="-rotate-2" />
@@ -71,7 +71,7 @@ export default function NegocioPlusPagos() {
               <TrustGlyph tipo="check" className="w-6 h-6" />
             </span>
             <p className="text-sm font-semibold text-center" style={{ color: '#14171c' }}>{t('negocioPlus.pagosAprobado')}</p>
-            <p className="text-[13px]" style={{ color: 'var(--hc-blue-600)', fontFamily: 'var(--hc-font-mono)' }}>₡24.900</p>
+            <p className="text-[13px]" style={{ color: 'var(--hc-blue-600)', fontFamily: 'var(--hc-font-mono)' }}>₡ ···</p>
             <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px]" style={{ backgroundColor: '#f1f3f6', color: 'rgba(20,23,28,0.6)' }}>
               {t('negocioPlus.pagosSinpeVerificado')}
             </span>
@@ -80,7 +80,7 @@ export default function NegocioPlusPagos() {
           <Chip icon="campana" label={t('negocioPlus.pagosNuevaVenta')} rotate="-rotate-1" />
         </div>
 
-        <SucursalCard nombre="Sucursal Norte" monto="₡410k" rotate="-rotate-3" />
+        <SucursalCard nombre="Sucursal Norte" monto="₡ ···" rotate="-rotate-3" />
 
         <div className="flex flex-col gap-3">
           <Chip icon="rayo" label={t('negocioPlus.pagosTarjetaMinutos')} rotate="rotate-1" />

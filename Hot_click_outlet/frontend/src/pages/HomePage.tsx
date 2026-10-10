@@ -21,6 +21,7 @@ import EncabezadoSeccion from './home/compra/EncabezadoSeccion'
 import TarjetaAsistente from './home/compra/TarjetaAsistente'
 import SeguiDondeLoDejaste from './home/compra/SeguiDondeLoDejaste'
 import FranjaConfianza from './home/compra/FranjaConfianza'
+import BannerDescubrir from './home/compra/BannerDescubrir'
 import {
   CHIPS_ASISTENTE, MAX_CATEGORIAS_HOME, MAX_NUEVOS, elegirDestacados, elegirNuevos,
 } from './home/homeCompraHelpers'
@@ -112,6 +113,7 @@ export default function HomePage() {
               </li>
             ))}
           </ul>
+          <BannerDescubrir productos={[...destacados, ...nuevos]} />
         </div>
       </section>
 

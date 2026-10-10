@@ -9,9 +9,9 @@ const destino = `/registro-empresa?plan=${copy.query}`
 type Sucursal = { nombreKey: string; detalleKey: string; monto: string }
 
 const SUCURSALES: Sucursal[] = [
-  { nombreKey: 'panelSucursalCentro', detalleKey: 'panelSucursalCentroDetalle', monto: '₡320k' },
-  { nombreKey: 'panelSucursalNorte', detalleKey: 'panelSucursalNorteDetalle', monto: '₡410k' },
-  { nombreKey: 'panelSucursalSur', detalleKey: 'panelSucursalSurDetalle', monto: '₡150k' },
+  { nombreKey: 'panelSucursalCentro', detalleKey: 'panelSucursalCentroDetalle', monto: '₡ ···' },
+  { nombreKey: 'panelSucursalNorte', detalleKey: 'panelSucursalNorteDetalle', monto: '₡ ···' },
+  { nombreKey: 'panelSucursalSur', detalleKey: 'panelSucursalSurDetalle', monto: '₡ ···' },
 ]
 
 /** Hero de /negocio-plus-plan: mensaje ejecutivo (fondo oscuro) + preview del panel multi-sucursal. */

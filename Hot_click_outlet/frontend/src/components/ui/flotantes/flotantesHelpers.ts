@@ -1,5 +1,5 @@
 /**
- * Botón flotante del sistema (WhatsApp). El de accesibilidad con el isotipo se retiró: ahora se abre desde el pie.
+ * Botones flotantes del sistema: WhatsApp y, encima, accesibilidad (`AccesibilidadFab`, 10-oct-2026).
  *
  * Móvil con barra inferior: 56 px a 16 px sobre la barra de 67 px
  * (Figma `52:2418`: x 318, y 705 en un lienzo de 390 × 844) y a 16 px del borde derecho.
@@ -22,6 +22,16 @@ export const ESPACIO_SIN_BARRA = SEPARACION_FLOTANTE + TAMANO_WHATSAPP + SEPARAC
 /** Ficha de producto: en móvil la barra de compra (83 px) ocupa el borde inferior. */
 export function esFichaProducto(pathname: string): boolean {
   return /^\/productos\/[^/]+/.test(pathname)
+}
+
+/**
+ * Pantallas con CTA fija abajo (ficha, carrito, checkout, alta y wizards): ahí no hay flotantes en móvil;
+ * accesibilidad pasa a un ícono de 44 px en la cabecera (boceto demo-0410 · 05).
+ */
+export function pantallaConCtaFija(pathname: string): boolean {
+  return esFichaProducto(pathname)
+    || /^\/(carrito|checkout|pago|registro-empresa|registro|registrar-negocio)(\/|$)/.test(pathname)
+    || /^\/tienda\/[^/]+\/(carrito|checkout|producto)/.test(pathname)
 }
 
 /** 83 px con barra (Figma); 16 px si la pantalla no tiene barra inferior. */

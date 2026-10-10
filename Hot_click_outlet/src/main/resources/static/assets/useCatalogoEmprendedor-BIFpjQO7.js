@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-DK_gRnxa.js";function t(){return e()}export{t};

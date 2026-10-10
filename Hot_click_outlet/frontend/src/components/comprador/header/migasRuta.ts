@@ -121,7 +121,7 @@ function migasTienda(pathname: string, etiquetas: EtiquetasMigas, extra: ExtraMi
     return pasosTienda(etiquetas, nombre, perfil, { clave: 'carrito', to: `${perfil}/carrito` }, { clave: 'checkout' })
   }
   if (resto === '/checkout/exito') return pasosTienda(etiquetas, nombre, perfil, { clave: 'pagoListo' })
-  return resolver([inicio(), { clave: 'tiendas', to: '/emprendimientos' }, { clave: 'tienda' }], etiquetas)
+  return resolver([inicio(), { clave: 'tiendas', to: '/negocios' }, { clave: 'tienda' }], etiquetas)
     .map((miga, i) => (i === 2 ? { etiqueta: nombre } : miga))
 }
 
@@ -202,6 +202,7 @@ const EXACTAS: Record<string, Paso[]> = {
   '/envios': [inicio(), { clave: 'envios' }],
   '/cookies': [inicio(), { clave: 'cookies' }],
   '/acuerdo-vendedores': [inicio(), { clave: 'acuerdo' }],
+  '/negocios': [inicio(), { clave: 'emprendimientos' }],
   '/emprendimientos': [inicio(), { clave: 'emprendimientos' }],
   '/pago/exito': [inicio(), { clave: 'pagoListo' }],
   '/pago/cancelado': [inicio(), { clave: 'pago' }],

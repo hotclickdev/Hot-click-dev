@@ -3,25 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="theme-color" content="#F8F9FB" />
-    <script>
-      /* Evita FOUC: dark solo en panel; marketplace/auth arrancan claros. */
-      (function () {
-        try {
-          var path = location.pathname || '/'
-          var panel =
-            path === '/admin' || path.indexOf('/admin/') === 0 ||
-            path === '/emprendedor' || path.indexOf('/emprendedor/') === 0 ||
-            path === '/pyme' || path.indexOf('/pyme/') === 0 ||
-            path === '/negocio-plus' || path.indexOf('/negocio-plus/') === 0
-          var saved = JSON.parse(localStorage.getItem('hotclick-ui') || '{}')
-          var theme = saved.state && saved.state.theme
-          var dark = panel && theme === 'dark'
-          document.documentElement.classList.add(dark ? 'dark' : 'light')
-          var meta = document.querySelector('meta[name="theme-color"]')
-          if (meta) meta.setAttribute('content', dark ? '#0E1116' : '#F8F9FB')
-        } catch (_) { /* ignore */ }
-      })()
-    </script>
+    <script src="/js/theme-init.js"></script>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
@@ -190,7 +172,7 @@
           "name": "¿Puedo vender mis productos en HOTCLICK?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Sí, podés registrar tu emprendimiento gratis. Sin comisiones el primer mes y tu tienda activa en 24 horas."
+            "text": "Sí, podés registrar tu negocio en HOTCLICK. Elegí un plan en /planes y empezá a publicar tus productos."
           }
         },
         {
@@ -298,7 +280,6 @@
     </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-      <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
   </body>
 </html>
 
