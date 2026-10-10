@@ -18,6 +18,8 @@ import java.util.Map;
 
 /**
  * Distributed IP-level rate limiter (fixed-window, per POST).
+ * Clave: IP del cliente (ClientIpResolver, solo cree X-Forwarded-For de proxies de confianza)
+ * + path exacto, o + prefijo/sufijo para PREFIX_LIMITS (todas las rutas con id comparten bucket).
  * State is stored in hot_click_rate_limit_tb — safe for multi-pod.
  *
  * Fail-open: if DB fails the request passes. Auth endpoints have account
@@ -58,6 +60,7 @@ import java.util.Map;
  *   /api/categorias/**             →  60 / 60s
  *   /api/blog/publico/**           →  60 / 60s
  *   /api/public/pedidos/seguimiento/** → 20 / 60s
+ *   /api/public/tienda-rapida/**   →  30 / 60s
  *   /api/public/**                 →  60 / 60s
  *   /api/tienda/**                 → 120 / 60s
  *   /api/productos/**              → 120 / 60s
@@ -75,6 +78,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private record PrefixLimit(String prefix, String sufijo, int maxRequests, int windowSeconds) {
         boolean aplica(String path) {
             return path.startsWith(prefix) && (sufijo == null || path.endsWith(sufijo));
+        }
+        String bucket() {
+            return sufijo == null ? prefix : prefix + "*" + sufijo;
         }
     }
     private record GetLimit(String prefix, int maxRequests, int windowSeconds) {}
@@ -147,6 +153,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/blog/publico",                60,  60),
         // Seguimiento por token: más estricto que el resto de /api/public (dificulta adivinar tokens).
         new GetLimit("/api/public/pedidos/seguimiento",  20,  60),
+        // PUB-09: lectura del enlace de tienda rapida por token (un SELECT por request).
+        new GetLimit("/api/public/tienda-rapida/",       30,  60),
         new GetLimit("/api/public",                      60,  60),
         new GetLimit("/api/tienda",                     120,  60),
         new GetLimit("/api/productos",                  120,  60)
@@ -168,6 +176,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if ("POST".equalsIgnoreCase(method)) {
             String ip    = clientIpResolver.resolve(request);
             Limit  limit = LIMITS.get(path);
+            String bucket = path;
 
             // Exact-path check
             if (limit == null) {
@@ -175,13 +184,16 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 for (PrefixLimit pl : PREFIX_LIMITS) {
                     if (pl.aplica(path)) {
                         limit = new Limit(pl.maxRequests(), pl.windowSeconds());
+                        // PUB-08: un bucket por IP + prefijo (+ sufijo), no por path completo.
+                        // Con el path completo cada token/id nuevo abria un bucket y el tope no limitaba nada.
+                        bucket = pl.bucket();
                         break;
                     }
                 }
             }
 
             if (limit != null) {
-                String key = "ip:" + ip + ":" + path;
+                String key = "ip:" + ip + ":" + bucket;
                 if (!rateLimiter.tryAcquire(key, limit.maxRequests(), limit.windowSeconds())) {
                     log.warn("[RATE-LIMIT] ip={} path={}", ip, path);
                     try { auditService.logRateLimitTriggered(ip, path); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
