@@ -43,6 +43,7 @@ public class PedidoService {
     @Autowired private PedidoDetailMapper pedidoDetailMapper;
     @Autowired private PedidoPagoManualService pedidoPagoManualService;
     @Autowired private PedidoDespachoVerificador despachoVerificador;
+    @Autowired(required = false) private com.hotclick.service.pedido.PedidoSeguimientoTelegram seguimientoTelegram;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -146,8 +147,10 @@ public class PedidoService {
         // Inicializar proxy LAZY de usuarioFinal para que el @Async email no falle
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); } // evita LazyInitializationException al serializar la respuesta
-        if (nota != null && !nota.isBlank()) {
+        // Seguimiento: el comprador recibe aviso en cada cambio real de estado (o cuando hay nota).
+        if (!mismoEstado || (nota != null && !nota.isBlank())) {
             notificacionEmailService.enviarSeguimientoEstado(pedido, nota);
+            if (seguimientoTelegram != null) { seguimientoTelegram.avisar(pedido); }
         }
         if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)) {
             n8nWebhookService.notificarPedidoEntregado(pedido);
