@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "hot_click_tienda_rapida_tb")
 public class TiendaRapida {
 
@@ -41,7 +42,8 @@ public class TiendaRapida {
     @Column(name = "vence", nullable = false)
     private LocalDateTime vence;
 
-    @Column(name = "token", nullable = false, length = 64)
+    /** Solo enlaces de V157 (anteriores a V159). Los nuevos guardan únicamente {@link #tokenHash}. */
+    @Column(name = "token", length = 64)
     private String token;
 
     @Column(name = "estado", nullable = false, length = 20)
@@ -50,7 +52,58 @@ public class TiendaRapida {
     @Column(name = "creada", nullable = false)
     private LocalDateTime creada;
 
+    @Column(name = "token_hash", length = 64, unique = true)
+    private String tokenHash;
+
+    @Column(name = "enlace_vence")
+    private LocalDateTime enlaceVence;
+
+    /** Solo lo escribe {@code TiendaRapidaRepository.consumir} (UPDATE condicional): la entidad nunca lo pisa ni lo vuelve a null (QA-122-1). */
+    @Column(name = "usado_en", insertable = false, updatable = false)
+    private LocalDateTime usadoEn;
+
+    @Column(name = "revocado_en")
+    private LocalDateTime revocadoEn;
+
+    @Column(name = "creado_por")
+    private Long creadoPor;
+
+    @Column(name = "aceptado_en")
+    private LocalDateTime aceptadoEn;
+
+    @Column(name = "aceptado_ip_hash", length = 64)
+    private String aceptadoIpHash;
+
+    @Column(name = "aceptado_por")
+    private Long aceptadoPor;
+
+    @Column(name = "version_legal", length = 20)
+    private String versionLegal;
+
+    @Column(name = "onboarding_hechos", length = 120)
+    private String onboardingHechos;
+
     public Long getId() { return id; }
+    public String getTokenHash() { return tokenHash; }
+    public void setTokenHash(String tokenHash) { this.tokenHash = tokenHash; }
+    public LocalDateTime getEnlaceVence() { return enlaceVence; }
+    public void setEnlaceVence(LocalDateTime enlaceVence) { this.enlaceVence = enlaceVence; }
+    public LocalDateTime getUsadoEn() { return usadoEn; }
+    public void setUsadoEn(LocalDateTime usadoEn) { this.usadoEn = usadoEn; }
+    public LocalDateTime getRevocadoEn() { return revocadoEn; }
+    public void setRevocadoEn(LocalDateTime revocadoEn) { this.revocadoEn = revocadoEn; }
+    public Long getCreadoPor() { return creadoPor; }
+    public void setCreadoPor(Long creadoPor) { this.creadoPor = creadoPor; }
+    public LocalDateTime getAceptadoEn() { return aceptadoEn; }
+    public void setAceptadoEn(LocalDateTime aceptadoEn) { this.aceptadoEn = aceptadoEn; }
+    public String getAceptadoIpHash() { return aceptadoIpHash; }
+    public void setAceptadoIpHash(String aceptadoIpHash) { this.aceptadoIpHash = aceptadoIpHash; }
+    public Long getAceptadoPor() { return aceptadoPor; }
+    public void setAceptadoPor(Long aceptadoPor) { this.aceptadoPor = aceptadoPor; }
+    public String getVersionLegal() { return versionLegal; }
+    public void setVersionLegal(String versionLegal) { this.versionLegal = versionLegal; }
+    public String getOnboardingHechos() { return onboardingHechos; }
+    public void setOnboardingHechos(String onboardingHechos) { this.onboardingHechos = onboardingHechos; }
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public Usuario getUsuario() { return usuario; }

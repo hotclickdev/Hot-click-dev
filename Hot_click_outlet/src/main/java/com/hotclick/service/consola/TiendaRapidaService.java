@@ -1,5 +1,6 @@
 package com.hotclick.service.consola;
 
+import com.hotclick.exception.EnlaceNoVigenteException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
@@ -12,6 +13,7 @@ import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.TiendaRapidaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,36 +65,118 @@ public class TiendaRapidaService {
 
     @Transactional
     public Map<String, Object> crear(String negocio, String persona, String telefono, Integer dias) {
+        return crear(negocio, persona, telefono, dias, null);
+    }
+
+    /**
+     * Crea el negocio y su enlace de asignación de un solo uso. El token solo viaja en esta
+     * respuesta; en la base queda su SHA-256.
+     */
+    @Transactional
+    public Map<String, Object> crear(String negocio, String persona, String telefono, Integer dias, Long creadoPor) {
         String nombre = TiendaRapidaReglas.nombre(negocio, "El negocio");
         String dueno = TiendaRapidaReglas.nombre(persona, "La persona");
         String cel = TiendaRapidaReglas.telefono(telefono);
         int plazo = TiendaRapidaReglas.dias(dias);
         String token = tokenNuevo();
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
-        Empresa empresa = guardarEmpresa(nombre, cel, token);
-        Usuario usuario = guardarUsuario(dueno, cel, token, empresa);
+        String semilla = tokenNuevo();
+        Empresa empresa = guardarEmpresa(nombre, cel, semilla);
+        Usuario usuario = guardarUsuario(dueno, cel, semilla, empresa);
         miembros.save(new MiembroEmpresa(usuario, empresa, "PROPIETARIO"));
-        return mapa(guardarFila(empresa, usuario, dueno, cel, plazo, token, ahora), true);
+        TiendaRapida fila = guardarFila(empresa, usuario, dueno, cel, plazo, token, ahora);
+        fila.setCreadoPor(creadoPor);
+        return conToken(mapa(fila, true), token);
+    }
+
+    /** Nuevo enlace para una asignación aún no aceptada; el anterior deja de servir. */
+    @Transactional
+    public Map<String, Object> regenerar(Long id) {
+        TiendaRapida fila = rapidas.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe esa tienda rápida."));
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        cerrarUna(fila, ahora);
+        if (fila.getUsadoEn() != null) {
+            throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Ese negocio ya fue asignado.");
+        }
+        if (TiendaRapidaReglas.VENCIDA.equals(fila.getEstado())) {
+            throw new EnlaceNoVigenteException(HttpStatus.GONE, "El plazo de esa tienda ya se cumplió.");
+        }
+        String token = tokenNuevo();
+        fila.setToken(null);
+        fila.setTokenHash(TiendaRapidaReglas.hashToken(token));
+        fila.setEnlaceVence(vencimientoEnlace(ahora, fila.getVence()));
+        fila.setRevocadoEn(null);
+        return conToken(mapa(fila, true), token);
+    }
+
+    /** Anula el enlace vigente sin tocar el negocio. */
+    @Transactional
+    public Map<String, Object> revocar(Long id) {
+        TiendaRapida fila = rapidas.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe esa tienda rápida."));
+        if (fila.getUsadoEn() != null) {
+            throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Ese negocio ya fue asignado.");
+        }
+        if (fila.getRevocadoEn() == null) fila.setRevocadoEn(LocalDateTime.now(Constants.ZONA_CR));
+        return mapa(fila, true);
     }
 
     @Transactional
     public Map<String, Object> ver(String token) {
-        TiendaRapida fila = exigir(token);
-        return mapa(cerrarUna(fila, LocalDateTime.now(Constants.ZONA_CR)), false);
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        TiendaRapida fila = cerrarUna(exigir(token), ahora);
+        exigirVigente(fila, ahora);
+        Map<String, Object> datos = mapa(fila, false);
+        datos.put("versionLegal", TiendaRapidaReglas.VERSION_LEGAL);
+        return datos;
     }
 
+    /**
+     * Quien abre el enlace acepta ser dueño o representante legal y responsable de la marca,
+     * completa sus datos y el enlace queda consumido (una sola vez, en la misma transacción).
+     */
     @Transactional
-    public Map<String, Object> completar(String token, String persona, String cedula,
-                                         String correo, String telefono, String clave) {
-        TiendaRapida fila = cerrarUna(exigir(token), LocalDateTime.now(Constants.ZONA_CR));
-        if (TiendaRapidaReglas.VENCIDA.equals(fila.getEstado())) {
-            throw new IllegalArgumentException("Este plazo ya se cumplió.");
+    public Map<String, Object> aceptar(String token, boolean acepto, String versionLegal, String ipHash,
+                                       String persona, String cedula, String correo, String telefono, String clave) {
+        if (!acepto) {
+            throw new IllegalArgumentException("Para seguir tenés que aceptar ser el dueño o representante legal del negocio.");
         }
-        if (TiendaRapidaReglas.LISTA.equals(fila.getEstado())) {
-            throw new IllegalArgumentException("Esos datos ya quedaron guardados.");
+        if (versionLegal != null && !versionLegal.isBlank() && !TiendaRapidaReglas.VERSION_LEGAL.equals(versionLegal)) {
+            throw new IllegalArgumentException("El texto que aceptaste cambió. Recargá la página.");
+        }
+        exigirPaso1(persona, cedula);
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        TiendaRapida fila = cerrarUna(exigir(token), ahora);
+        exigirVigente(fila, ahora);
+        // QA-122-1: se consume ANTES de tocar datos. El UPDATE condicional (usado_en IS NULL, sin revocar,
+        // sin vencer) es atómico: con dos usos simultáneos, el segundo espera el lock de la fila y, al
+        // reevaluar, ve usado_en puesto → 0 filas. Después se relee la fila (la consulta limpia el contexto).
+        Long id = fila.getId();
+        int consumidas = rapidas.consumir(id, ahora);
+        fila = rapidas.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Ese enlace no está vigente."));
+        if (consumidas != 1) {
+            exigirVigente(fila, ahora);
+            throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Este enlace ya se usó.");
         }
         aplicarDatos(fila, persona, cedula, correo, telefono, clave);
-        return mapa(fila, false);
+        fila.setAceptadoEn(ahora);
+        fila.setAceptadoIpHash(ipHash);
+        fila.setAceptadoPor(fila.getUsuario().getId());
+        fila.setVersionLegal(TiendaRapidaReglas.VERSION_LEGAL);
+        Map<String, Object> datos = mapa(fila, false);
+        datos.put("correo", fila.getUsuario().getCorreo());
+        return datos;
+    }
+
+    /** Paso 1 del enlace: nombre y cédula obligatorios, con error por campo (400). */
+    static void exigirPaso1(String persona, String cedula) {
+        java.util.Map<String, String> errores = new java.util.LinkedHashMap<>();
+        try { TiendaRapidaReglas.nombre(persona, "El nombre"); } catch (IllegalArgumentException e) { errores.put("persona", e.getMessage()); }
+        try { TiendaRapidaReglas.cedula(cedula); } catch (IllegalArgumentException e) { errores.put("cedula", e.getMessage()); }
+        if (!errores.isEmpty()) {
+            throw new com.hotclick.exception.CamposInvalidosException("Revisá tu nombre y tu cédula.", errores);
+        }
     }
 
     private void aplicarDatos(TiendaRapida fila, String persona, String cedula,
@@ -139,7 +223,8 @@ public class TiendaRapidaService {
         fila.setTelefono(cel);
         fila.setDias(plazo);
         fila.setVence(ahora.plusDays(plazo));
-        fila.setToken(token);
+        fila.setTokenHash(TiendaRapidaReglas.hashToken(token));
+        fila.setEnlaceVence(vencimientoEnlace(ahora, fila.getVence()));
         fila.setEstado(TiendaRapidaReglas.ESPERANDO);
         fila.setCreada(ahora);
         return rapidas.save(fila);
@@ -193,8 +278,46 @@ public class TiendaRapidaService {
     }
 
     private TiendaRapida exigir(String token) {
-        return rapidas.findByToken(TiendaRapidaReglas.token(token))
+        String limpio = TiendaRapidaReglas.token(token);
+        String hash = TiendaRapidaReglas.hashToken(limpio);
+        return rapidas.findByTokenHash(hash)
+            .or(() -> rapidas.findByToken(limpio).map(fila -> migrarEnlaceViejo(fila, hash)))
             .orElseThrow(() -> new RecursoNoEncontradoException("Ese enlace no está vigente."));
+    }
+
+    /** Enlaces de V157 guardaban el token en claro: al primer uso pasan a hash. */
+    private static TiendaRapida migrarEnlaceViejo(TiendaRapida fila, String hash) {
+        fila.setTokenHash(hash);
+        fila.setToken(null);
+        if (fila.getEnlaceVence() == null) fila.setEnlaceVence(fila.getVence());
+        return fila;
+    }
+
+    private static void exigirVigente(TiendaRapida fila, LocalDateTime ahora) {
+        switch (estadoEnlace(fila, ahora)) {
+            case "USADO" -> throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Este enlace ya se usó.");
+            case "REVOCADO" -> throw new EnlaceNoVigenteException(HttpStatus.GONE, "Este enlace fue anulado.");
+            case "VENCIDO" -> throw new EnlaceNoVigenteException(HttpStatus.GONE, "Este enlace venció.");
+            default -> { /* VIGENTE: se puede usar */ }
+        }
+    }
+
+    static String estadoEnlace(TiendaRapida fila, LocalDateTime ahora) {
+        if (fila.getUsadoEn() != null || TiendaRapidaReglas.LISTA.equals(fila.getEstado())) return "USADO";
+        if (fila.getRevocadoEn() != null) return "REVOCADO";
+        LocalDateTime vence = fila.getEnlaceVence() != null ? fila.getEnlaceVence() : fila.getVence();
+        if (TiendaRapidaReglas.VENCIDA.equals(fila.getEstado()) || !vence.isAfter(ahora)) return "VENCIDO";
+        return "VIGENTE";
+    }
+
+    private static LocalDateTime vencimientoEnlace(LocalDateTime ahora, LocalDateTime venceTienda) {
+        LocalDateTime enlace = ahora.plusHours(TiendaRapidaReglas.HORAS_ENLACE);
+        return venceTienda != null && venceTienda.isBefore(enlace) ? venceTienda : enlace;
+    }
+
+    private static Map<String, Object> conToken(Map<String, Object> datos, String token) {
+        datos.put("token", token);
+        return datos;
     }
 
     private Map<String, Object> mapa(TiendaRapida fila, boolean conEnlace) {
@@ -210,7 +333,11 @@ public class TiendaRapidaService {
         mapa.put("diasRestantes", restantes);
         mapa.put("vence", fila.getVence().toString());
         mapa.put("estado", fila.getEstado());
-        if (conEnlace) mapa.put("token", fila.getToken());
+        if (conEnlace) {
+            mapa.put("estadoEnlace", estadoEnlace(fila, ahora));
+            mapa.put("enlaceVence", fila.getEnlaceVence() == null ? null : fila.getEnlaceVence().toString());
+            mapa.put("aceptadoEn", fila.getAceptadoEn() == null ? null : fila.getAceptadoEn().toString());
+        }
         return mapa;
     }
 
