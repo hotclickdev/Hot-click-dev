@@ -7,13 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRoot, Tab
 
 function Miniatura({ url, alt }: { url: string | null; alt: string }) {
   if (!url) {
-    return <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-xl bg-hc-n-100 text-xs text-hc-n-400">—</span>
+    return <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-xl bg-hc-n-100 text-xs text-hc-n-600">—</span>
   }
   return <img src={url} alt={alt} loading="lazy" decoding="async" className="size-12 shrink-0 rounded-xl border border-hc-n-200 object-cover" />
 }
 
 function Productos({ compra }: { compra: Compra }) {
-  if (compra.lineas.length === 0) return <span className="text-hc-n-500">—</span>
+  if (compra.lineas.length === 0) return <span className="text-hc-n-600">—</span>
   return (
     <ul className="flex flex-col gap-2">
       {compra.lineas.map((l, i) => (
@@ -21,7 +21,7 @@ function Productos({ compra }: { compra: Compra }) {
           <Miniatura url={l.imagenUrl} alt={textoOGuion(l.nombre)} />
           <span className="min-w-0">
             <span className="block truncate font-semibold text-hc-n-900">{textoOGuion(l.nombre)}</span>
-            {l.descripcion && <span className="block max-w-[38ch] truncate text-xs text-hc-n-500">{l.descripcion}</span>}
+            {l.descripcion && <span className="block max-w-[38ch] truncate text-xs text-hc-n-600">{l.descripcion}</span>}
             <span className="block text-xs text-hc-n-600">
               {numeroOGuion(l.cantidad)} × {montoOGuion(l.precioUnitario)}
             </span>
@@ -55,7 +55,7 @@ export default function ComprasLista({ compras, ocultar = [] }: { compras: Compr
               <div className="flex items-start justify-between gap-2">
                 <span>
                   <span className="block font-display text-[15px] font-bold text-hc-n-900">{textoOGuion(c.numeroPedido)}</span>
-                  <span className="block text-xs text-hc-n-500">{fechaOGuion(c.fecha)}</span>
+                  <span className="block text-xs text-hc-n-600">{fechaOGuion(c.fecha)}</span>
                 </span>
                 <Badge tono={tonoEstado(c.estado)}>{etiquetaEstado(c.estado)}</Badge>
               </div>
@@ -89,7 +89,7 @@ export default function ComprasLista({ compras, ocultar = [] }: { compras: Compr
                 <TableRow key={c.id}>
                   <TableCell>
                     <span className="block font-semibold text-hc-n-900">{textoOGuion(c.numeroPedido)}</span>
-                    <span className="block text-xs text-hc-n-500">{fechaOGuion(c.fecha)}</span>
+                    <span className="block text-xs text-hc-n-600">{fechaOGuion(c.fecha)}</span>
                   </TableCell>
                   <TableCell className="whitespace-normal"><Productos compra={c} /></TableCell>
                   {verNegocio && <TableCell><Negocio compra={c} /></TableCell>}

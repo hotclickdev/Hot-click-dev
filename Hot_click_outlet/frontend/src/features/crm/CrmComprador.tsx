@@ -16,14 +16,14 @@ export default function CrmComprador() {
 
   return (
     <section className="flex flex-col gap-4">
-      <header>
+      <div>
         <p className="text-xs font-semibold text-hc-n-600">Comprador</p>
         <h1 className="font-display text-[28px] font-extrabold leading-8 text-hc-n-900">{textoOGuion(ficha.nombre)}</h1>
-      </header>
+      </div>
       <Card className="grid gap-2 text-sm sm:grid-cols-3">
-        <p><span className="block text-xs text-hc-n-500">Correo</span>{textoOGuion(ficha.correo)}</p>
-        <p><span className="block text-xs text-hc-n-500">Teléfono</span>{textoOGuion(ficha.telefono)}</p>
-        <p><span className="block text-xs text-hc-n-500">Cliente desde</span>{fechaOGuion(ficha.fechaRegistro)}</p>
+        <p><span className="block text-xs text-hc-n-600">Correo</span>{textoOGuion(ficha.correo)}</p>
+        <p><span className="block text-xs text-hc-n-600">Teléfono</span>{textoOGuion(ficha.telefono)}</p>
+        <p><span className="block text-xs text-hc-n-600">Cliente desde</span>{fechaOGuion(ficha.fechaRegistro)}</p>
       </Card>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi etiqueta="Pedidos" valor={numeroOGuion(ficha.resumen.pedidos)} />

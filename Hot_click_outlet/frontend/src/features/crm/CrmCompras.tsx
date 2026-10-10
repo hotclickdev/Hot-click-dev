@@ -19,12 +19,12 @@ export default function CrmCompras() {
 
   return (
     <section className="flex flex-col gap-4">
-      <header>
+      <div>
         <h1 className="font-display text-[28px] font-extrabold leading-8 text-hc-n-900">Compras</h1>
         <p className="mt-1 max-w-2xl text-sm text-hc-n-600">
           Qué compró cada persona y en qué negocio, con la foto y el texto del producto. Los montos son los guardados en cada pedido.
         </p>
-      </header>
+      </div>
       {query.isLoading && <CargaCrm />}
       {query.isError && <AvisoCrm>No se pudieron cargar las compras.</AvisoCrm>}
       {query.isSuccess && result.data.length === 0 && <AvisoCrm>Todavía no hay compras.</AvisoCrm>}

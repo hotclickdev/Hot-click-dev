@@ -20,7 +20,7 @@ export function Kpi({ etiqueta, valor, detalle }: { etiqueta: string; valor: str
     <Card>
       <p className="text-xs font-semibold text-hc-n-600">{etiqueta}</p>
       <p className="mt-1 whitespace-nowrap font-display text-[22px] font-extrabold leading-7 text-hc-n-900">{valor}</p>
-      {detalle && <p className="mt-1 text-xs text-hc-n-500">{detalle}</p>}
+      {detalle && <p className="mt-1 text-xs text-hc-n-600">{detalle}</p>}
     </Card>
   )
 }

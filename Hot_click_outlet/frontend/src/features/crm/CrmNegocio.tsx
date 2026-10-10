@@ -17,10 +17,10 @@ export default function CrmNegocio() {
 
   return (
     <section className="flex flex-col gap-4">
-      <header className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
         {ficha.logoUrl
           ? <img src={ficha.logoUrl} alt="" className="size-14 rounded-[14px] border border-hc-n-200 object-cover" />
-          : <span aria-hidden="true" className="grid size-14 place-items-center rounded-[14px] bg-hc-n-100 text-hc-n-400">—</span>}
+          : <span aria-hidden="true" className="grid size-14 place-items-center rounded-[14px] bg-hc-n-100 text-hc-n-600">—</span>}
         <div className="min-w-0">
           <p className="text-xs font-semibold text-hc-n-600">Negocio</p>
           <h1 className="truncate font-display text-[28px] font-extrabold leading-8 text-hc-n-900">{textoOGuion(ficha.nombre)}</h1>
@@ -29,7 +29,7 @@ export default function CrmNegocio() {
             <Badge tono={ficha.estado === 'ACTIVO' ? 'ok' : 'neutro'}>{textoOGuion(ficha.estado)}</Badge>
           </p>
         </div>
-      </header>
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Kpi etiqueta="Pedidos" valor={numeroOGuion(ficha.resumen.pedidos)} />
         <Kpi etiqueta="Total pagado" valor={montoOGuion(ficha.resumen.totalPagado)} detalle={`${numeroOGuion(ficha.resumen.pedidosPagados)} pagados`} />
