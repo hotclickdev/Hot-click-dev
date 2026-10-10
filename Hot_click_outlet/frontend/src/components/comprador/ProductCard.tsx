@@ -8,6 +8,7 @@ import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import favoritoActivo from '@/assets/figma/comprador/favorito-activo.svg'
 import { useAgregarAlPedido } from './useAgregarAlPedido'
+import { SIZES_TARJETA, srcSetResponsivo } from '@/utils/imagenResponsiva'
 import { fotoProducto, insigniaTarjeta, nombreVendedor, precioDesde, precioListaTachado, tarjetaAgotada } from './productCardHelpers'
 
 type ProductCardProps = {
@@ -46,7 +47,7 @@ export default function ProductCard({ product, className = '', priority = false 
     <article className={`relative flex flex-col overflow-hidden rounded-[14px] border border-hc-n-200 bg-hc-n-0 ${className}`}>
       <Link to={destino} state={{ product }} className="relative block aspect-square w-[calc(100%+2px)] shrink-0 overflow-hidden bg-hc-n-100" tabIndex={-1} aria-hidden="true">
         {foto && (
-          <img src={foto} alt="" className="size-full object-cover" loading={priority ? 'eager' : 'lazy'} decoding="async" />
+          <img src={foto} srcSet={srcSetResponsivo(foto)} sizes={SIZES_TARJETA} width={400} height={400} alt="" className="size-full object-cover" loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : 'auto'} decoding="async" />
         )}
         {insignia && (
           <span className={`${CLASE_INSIGNIA} ${COLOR_INSIGNIA[insignia.tipo]}`}>
