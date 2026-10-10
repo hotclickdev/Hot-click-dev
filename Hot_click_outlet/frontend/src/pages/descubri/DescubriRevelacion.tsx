@@ -31,7 +31,7 @@ export default function DescubriRevelacion({ onDone }: DescubriRevelacionProps) 
 
   return (
     <div
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-hc-n-0/95 px-6 text-center leading-[normal]"
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-hc-surface/95 px-6 text-center leading-[normal]"
       role="status"
       aria-live="polite"
       data-testid="descubri-revelacion"
