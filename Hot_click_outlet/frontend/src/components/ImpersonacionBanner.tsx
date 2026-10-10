@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import { adminService } from '@/services/orderService'
 import Modal from '@/components/ui/Modal'
+import { sinPuntoDoble } from '@/utils/sinPuntoDoble'
 
 /** Largo mínimo del motivo; igual que ImpersonacionService.MOTIVO_ESCRITURA_MIN en el backend. */
 export const MOTIVO_ESCRITURA_MIN = 15
@@ -19,6 +20,7 @@ function mensajeDe(err: unknown, fallo: string): string {
  * Banner persistente mientras un ADMIN ve un negocio en modo soporte.
  * Solo lectura por defecto (banner rojo); en modo escritura usa los tokens de advertencia.
  */
+
 export default function ImpersonacionBanner() {
   const { t } = useTranslation()
   const impersonando = useAuthStore((s) => s.impersonando)
@@ -89,7 +91,7 @@ export default function ImpersonacionBanner() {
             <>
               <strong>{t('impersonacion.modoEscritura')}</strong>{' '}
               {t('impersonacion.escrituraAuditada', { negocio: empresaNombre || t('impersonacion.estaTienda') })}
-              {horaFin ? ` ${t('impersonacion.venceA', { hora: horaFin })}` : ''}
+              {horaFin ? ` ${sinPuntoDoble(t('impersonacion.venceA', { hora: horaFin }))}` : ''}
             </>
           ) : (
             <>
