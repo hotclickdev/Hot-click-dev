@@ -20,7 +20,7 @@ describe('negocios públicos · directorio por plan', () => {
   })
 
   it('rutas: directorio filtrado y tienda por slug', () => {
-    expect(rutaDirectorioPlan('pymes')).toBe('/emprendimientos?plan=pymes')
+    expect(rutaDirectorioPlan('pymes')).toBe('/negocios?plan=pymes')
     expect(rutaTienda({ slug: 'casa luna' })).toBe('/tienda/casa%20luna')
   })
 

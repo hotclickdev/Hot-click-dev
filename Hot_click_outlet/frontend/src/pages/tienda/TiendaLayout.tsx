@@ -88,12 +88,15 @@ export default function TiendaLayout() {
           </script>
         </Helmet>
       )}
-      <TiendaHeader
-        slug={slug as string}
-        nombre={nombre}
-        logoUrl={empresaVista?.logoUrl}
-        cantidadCarrito={cantidadCarrito}
-      />
+      {/* Al pagar no se repite el bloque de la tienda: el nombre va junto a cada producto del resumen. */}
+      {!pathname.includes('/checkout') && (
+        <TiendaHeader
+          slug={slug as string}
+          nombre={nombre}
+          logoUrl={empresaVista?.logoUrl}
+          cantidadCarrito={cantidadCarrito}
+        />
+      )}
       <main className={`flex-1 ${esPerfil && cantidadCarrito > 0 ? 'pb-24 md:pb-0' : ''}`}>
         <Outlet />
       </main>

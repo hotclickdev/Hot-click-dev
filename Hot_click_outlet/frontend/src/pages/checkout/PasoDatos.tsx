@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
+import useAuthStore from '@/store/authStore'
 import { Campo, CampoTexto } from './PiezasCheckout'
 import { formatoTelefonoCampo, telefonoDesdeCampo } from './pasosCheckoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
@@ -12,9 +13,10 @@ type PasoDatosProps = {
   escritorio: boolean
 }
 
-/** Datos de contacto: correo, teléfono y nombre (Figma `28:1107`, `30:2400`). Con sesión solo el teléfono. */
+/** Datos de contacto: nombre, correo y teléfono (Figma `28:1107`, `30:2400`). Con sesión el correo es el de la cuenta. */
 export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
   const { t } = useTranslation()
+  const correoCuenta = useAuthStore((s) => s.userEmail)
   const separacion = escritorio ? 'gap-[14px]' : 'gap-4'
 
   const telefono = token
@@ -40,10 +42,35 @@ export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
     </Campo>
   )
 
+  const campoNombre = (
+    <Campo etiqueta={t('checkout.f.nombre')} error={form.sinpeNombreErr}>
+      {({ id, describedBy }) => (
+        <CampoTexto
+          id={id}
+          describedBy={describedBy}
+          escritorio={escritorio}
+          icono={ICONOS_CHECKOUT.campoUsuario}
+          autoComplete="name"
+          valor={form.sinpeNombre}
+          error={Boolean(form.sinpeNombreErr)}
+          onCambiar={(valor) => { form.setSinpeNombre(valor); if (form.sinpeNombreErr) form.setSinpeNombreErr('') }}
+        />
+      )}
+    </Campo>
+  )
   if (token) {
+    const campoCorreoCuenta = (
+      <Campo etiqueta={t('checkout.f.correoCuenta')}>
+        {({ id, describedBy }) => (
+          <CampoTexto id={id} describedBy={describedBy} escritorio={escritorio} icono={ICONOS_CHECKOUT.campoCorreo} tipo="email" valor={correoCuenta ?? ''} soloLectura onCambiar={() => undefined} />
+        )}
+      </Campo>
+    )
     return (
       <div className={`flex flex-col ${separacion}`}>
         {!escritorio && <h2 className="font-display text-[18px] font-bold leading-[23px] tracking-normal text-hc-n-900">{t('checkout.f.tusDatos')}</h2>}
+        {campoNombre}
+        {campoCorreoCuenta}
         {campoTelefono}
       </div>
     )
@@ -68,22 +95,6 @@ export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
             if (form.guestEmailDirty) form.setGuestEmailError(form.validateGuestEmail(valor))
           }}
           onBlur={() => { form.setGuestEmailDirty(true); form.setGuestEmailError(form.validateGuestEmail(form.guestEmail)) }}
-        />
-      )}
-    </Campo>
-  )
-  const campoNombre = (
-    <Campo etiqueta={t('checkout.f.nombre')} error={form.sinpeNombreErr}>
-      {({ id, describedBy }) => (
-        <CampoTexto
-          id={id}
-          describedBy={describedBy}
-          escritorio={escritorio}
-          icono={ICONOS_CHECKOUT.campoUsuario}
-          autoComplete="name"
-          valor={form.sinpeNombre}
-          error={Boolean(form.sinpeNombreErr)}
-          onCambiar={(valor) => { form.setSinpeNombre(valor); if (form.sinpeNombreErr) form.setSinpeNombreErr('') }}
         />
       )}
     </Campo>

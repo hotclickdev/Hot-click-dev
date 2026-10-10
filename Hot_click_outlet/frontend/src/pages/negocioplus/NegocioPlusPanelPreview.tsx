@@ -62,10 +62,10 @@ export default function NegocioPlusPanelPreview() {
 function PreviewPos() {
   return (
     <div className="flex flex-col gap-2 text-[13px]" style={{ color: '#14171c' }}>
-      <div className="flex justify-between"><span>Sucursal Centro x3</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.6)' }}>₡24.900</span></div>
-      <div className="flex justify-between"><span>Sucursal Norte x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.6)' }}>₡14.200</span></div>
+      <div className="flex justify-between"><span>Sucursal Centro x3</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.6)' }}>₡ ···</span></div>
+      <div className="flex justify-between"><span>Sucursal Norte x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.6)' }}>₡ ···</span></div>
       <div className="flex justify-between pt-[10px] border-t font-semibold" style={{ borderColor: 'var(--hc-n-200)' }}>
-        <span>Total</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-blue-600)' }}>₡39.100</span>
+        <span>Total</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-blue-600)' }}>₡ ···</span>
       </div>
       <span className="mt-1 py-2.5 rounded-md text-center text-white text-[13px] font-semibold" style={{ backgroundColor: 'var(--hc-blue-600)' }}>Cobrar</span>
     </div>
@@ -91,7 +91,7 @@ function PreviewTelegram() {
       </div>
       <div className="flex items-center gap-2 rounded-md px-3 py-2.5 text-white text-xs" style={{ backgroundColor: '#229ed9' }}>
         <TrustGlyph tipo="tarjeta" className="w-3.5 h-3.5 shrink-0" />
-        <span>Venta registrada: ₡24.900 (Centro)</span>
+        <span>Venta registrada: ₡ ··· (Centro)</span>
       </div>
     </div>
   )

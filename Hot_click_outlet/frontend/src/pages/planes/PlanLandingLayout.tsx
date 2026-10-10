@@ -38,7 +38,7 @@ function ListaPuntos({ planId }: { planId: LandingPlanId }) {
     <ul className="flex flex-col gap-3 max-w-xl mx-auto sm:mx-0">
       {textos.map((punto) => (
         <li key={punto} className="flex gap-2 text-sm" style={{ color: 'var(--hc-text)' }}>
-          <span className="shrink-0 mt-0.5" style={{ color: 'var(--hc-success, #22c55e)' }}>
+          <span className="shrink-0 mt-0.5" style={{ color: 'var(--hc-success, #178A50)' }}>
             <TrustGlyph tipo="check" className="w-4 h-4" />
           </span>
           {punto}

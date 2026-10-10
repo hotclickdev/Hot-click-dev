@@ -15,6 +15,7 @@ import { pasoMaximoCheckout, useVolver } from './pasosCheckoutHelpers'
 import { useCodigosPedido } from './useCodigosPedido'
 import { useEsDesktop } from './useEsDesktop'
 import type { ItemCheckout } from './checkoutHelpers'
+import { metodoPagoPrincipal } from './pagoPrincipal'
 import type { CheckoutFormState } from './useCheckoutForm'
 
 type CheckoutLayoutProps = {
@@ -96,7 +97,7 @@ export default function CheckoutLayout({
 
   function elegirEnvio(bodegaId: string, valor: string) {
     form.setMetodoEnvioPaquete(bodegaId, valor)
-    if (valor === 'ENVIO_RAPIDO' && form.metodoPago === 'EFECTIVO') form.setMetodoPago('TILOPAY')
+    if (valor === 'ENVIO_RAPIDO' && form.metodoPago === 'EFECTIVO') form.setMetodoPago(metodoPagoPrincipal())
   }
 
   /** Datos de contacto: correo, teléfono y nombre (invitado) o solo teléfono (con sesión). */

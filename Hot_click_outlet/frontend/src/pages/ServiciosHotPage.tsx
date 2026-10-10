@@ -15,6 +15,7 @@ import FormularioBusqueda from './servicios/FormularioBusqueda'
 import VistaGarantia from './servicios/VistaGarantia'
 import VistaTestimonio from './servicios/VistaTestimonio'
 import VistaDigitalizacion from './servicios/VistaDigitalizacion'
+import ServicioHot from './servicios/ServicioHot'
 import MisSolicitudesVista from './solicitudes/MisSolicitudesVista'
 import { estadoVisual } from './solicitudes/solicitudesHelpers'
 import {
@@ -56,7 +57,7 @@ const TITULO_VISTA: Record<VistaServicios, string> = {
 }
 
 /** En escritorio la barra interna no se dibuja y estas vistas no repiten el título (P06): el h1 queda para lectores de pantalla. */
-const VISTAS_H1_OCULTO_ESCRITORIO: ReadonlySet<VistaServicios> = new Set(['busqueda', 'garantia'])
+const VISTAS_H1_OCULTO_ESCRITORIO: ReadonlySet<VistaServicios> = new Set(['busqueda', 'garantia', 'inventario', 'testimonio'])
 
 function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) {
   const { t } = useTranslation()
@@ -208,11 +209,12 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
       {VISTAS_H1_OCULTO_ESCRITORIO.has(vista) && <h1 className="sr-only max-lg:hidden">{TITULO_VISTA[vista]}</h1>}
       {vista === 'inicio' && <ServiciosInicio irA={irA} solicitudesEnCurso={solicitudesEnCurso} />}
       {vista === 'busqueda' && (
-        <div className="lg:mx-auto lg:w-full lg:max-w-[560px]">
-          <FormularioBusqueda {...propsFormulario} mostrarPasos />
-        </div>
+        <ServicioHot vista="busqueda" irA={irA} ctaFija pasos={['Enviás la foto', 'Lo buscamos', 'Te contactamos']}>
+          <FormularioBusqueda {...propsFormulario} />
+        </ServicioHot>
       )}
       {vista === 'garantia' && (
+        <ServicioHot vista="garantia" irA={irA} pasos={['Elegís el producto', 'Contás la falla', 'Te damos seguimiento']}>
         <VistaGarantia
           token={token}
           volver={volver}
@@ -220,8 +222,10 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
           loadingGarantias={loadingGarantias}
           onReportado={() => qc.invalidateQueries({ queryKey: ['mis-garantias'] })}
         />
+        </ServicioHot>
       )}
       {vista === 'testimonio' && (
+        <ServicioHot vista="testimonio" irA={irA} pasos={['Elegís la compra', 'Calificás', 'Enviás tu opinión']}>
         <VistaTestimonio
           token={token}
           volver={volver}
@@ -229,8 +233,13 @@ function ServiciosHotVistas({ vistaInicial }: { vistaInicial: VistaServicios }) 
           loadingResenar={loadingResenar}
           refetchResenar={refetchResenar}
         />
+        </ServicioHot>
       )}
-      {vista === 'inventario' && <VistaDigitalizacion {...propsFormulario} />}
+      {vista === 'inventario' && (
+        <ServicioHot vista="inventario" irA={irA} ctaFija pasos={['Nos contás', 'Visitamos tu local', 'Quedás listo para vender']}>
+          <VistaDigitalizacion {...propsFormulario} />
+        </ServicioHot>
+      )}
     </MainLayout>
   )
 }

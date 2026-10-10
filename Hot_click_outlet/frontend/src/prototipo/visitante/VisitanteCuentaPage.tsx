@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom'
 import VisitanteMain, { VisitanteMenuRow, VisitanteTitulo } from './VisitantePiezas'
 import { visitanteRuta } from './visitanteMock'
 import useAuthStore from '@/store/authStore'
 import MmGuiaToggle from '@/prototipo/compartido/MmGuiaToggle'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 const MENU = [
   { to: visitanteRuta('pedidos'), label: 'Mis pedidos', dataMm: 'vis-cuenta-pedidos' },
@@ -17,11 +17,10 @@ const MENU = [
  * Account Visitante (Figma 121:160).
  */
 export default function VisitanteCuentaPage() {
-  const navigate = useNavigate()
   const userName = useAuthStore((s) => s.userName) as string | null
   const userEmail = useAuthStore((s) => s.userEmail) as string | null
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated) as () => boolean
-  const logout = useAuthStore((s) => s.logout) as () => void
+  const cerrarSesionCompleta = useCerrarSesion()
   const nombre = userName || 'Visitante'
   const correo = userEmail || 'Iniciá sesión para ver tu cuenta'
   const inicial = nombre.slice(0, 1).toUpperCase()
@@ -53,7 +52,7 @@ export default function VisitanteCuentaPage() {
       {isAuthenticated() ? (
         <VisitanteMenuRow
           peligro
-          onClick={() => { logout(); navigate('/') }}
+          onClick={() => cerrarSesionCompleta}
         >
           Cerrar sesión
         </VisitanteMenuRow>

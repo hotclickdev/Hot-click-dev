@@ -14,28 +14,28 @@ export type FilaTarifa = {
   href?: { url: string; ariaLabel: string }
 }
 
-/** Tarifas de la página de envíos. Los tiempos salen de `config/tiemposEnvio.ts` (D13, confirmados el 2-oct-2026); los montos, del contenido existente. No alterar sin avisar al negocio. */
+/** Tarifas de la página de envíos. Los tiempos salen de `config/tiemposEnvio.ts` (D13, confirmados el 2-oct-2026); los montos no se publican fijos: se calculan en el carrito ([PENDIENTE] decisión del dueño). No alterar sin avisar al negocio. */
 export const TARIFAS: FilaTarifa[] = [
   {
     id: 'rapido',
     nombre: 'Envío rápido GAM',
     tiempo: TEXTO_TIEMPO_ENVIO.rapido,
     nota: 'pago previo',
-    precio: '₡5.000',
+    precio: 'Se calcula en el carrito',
   },
   {
     id: 'normal-gam',
     nombre: 'Envío normal GAM',
     tiempo: TEXTO_TIEMPO_ENVIO.normalGam,
     nota: 'estimado',
-    precio: '~₡4.000',
+    precio: 'Se calcula en el carrito',
   },
   {
     id: 'fuera-gam',
     nombre: 'Fuera de la GAM',
     tiempo: TEXTO_TIEMPO_ENVIO.fueraGam,
     nota: 'estimado',
-    precio: '~₡4.000',
+    precio: 'Se calcula en el carrito',
   },
   {
     id: 'encomienda',

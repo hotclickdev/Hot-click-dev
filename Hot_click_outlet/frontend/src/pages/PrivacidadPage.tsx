@@ -54,7 +54,7 @@ const secciones = [
         </ul>
         <p>Adicionalmente, HotClick utiliza los siguientes proveedores que actúan como encargados del tratamiento:</p>
         <ul>
-          <li><strong>Tilopay, Stripe y ONVO:</strong> cobro con tarjeta. HotClick no guarda el número de tarjeta ni el código de seguridad.</li>
+          <li><strong>Tilopay y ONVO:</strong> cobro con tarjeta y de mensualidades. HotClick no guarda el número de tarjeta ni el código de seguridad.</li>
           <li><strong>SINPE Móvil:</strong> el comprobante que sube el cliente puede incluir nombre, teléfono y cédula del remitente, solo para verificar el pago.</li>
           <li><strong>SendGrid:</strong> correos transaccionales del pedido.</li>
           <li><strong>Clerk:</strong> inicio de sesión con Google, Microsoft o Apple.</li>

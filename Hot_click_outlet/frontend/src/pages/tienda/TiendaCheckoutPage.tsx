@@ -7,6 +7,7 @@ import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
+import { efectivoDisponible } from '@/pages/checkout/pagoPrincipal'
 import TiendaCheckoutDireccion from './TiendaCheckoutDireccion'
 import {
   METODO_ENVIO_DOMICILIO,
@@ -15,16 +16,12 @@ import {
 } from './tiendaCheckoutValidacion'
 import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
 
-const METODOS_PAGO = [
-  { value: 'SINPE_MOVIL', label: 'SINPE Móvil' },
-  { value: 'EFECTIVO', label: 'Efectivo al recibir' },
-  { value: 'TRANSFERENCIA', label: 'Transferencia bancaria' },
-]
+/** Una sola opción «SINPE / Tarjeta» (como el marketplace); efectivo solo si la tienda lo acepta. */
+const PAGO_PRINCIPAL = { value: 'SINPE_MOVIL', label: 'SINPE / Tarjeta' }
+const PAGO_EFECTIVO = { value: 'EFECTIVO', label: 'Efectivo al recibir' }
 
-const METODOS_ENVIO = [
-  { value: METODO_ENVIO_DOMICILIO, label: 'Envío a domicilio' },
-  { value: METODO_ENVIO_RETIRO, label: 'Retiro en tienda' },
-]
+const ENVIO_DOMICILIO = { value: METODO_ENVIO_DOMICILIO, label: 'Envío a domicilio' }
+const ENVIO_RETIRO = { value: METODO_ENVIO_RETIRO, label: 'Retiro en tienda' }
 
 type FormCheckout = {
   nombreCliente: string
@@ -56,7 +53,11 @@ export default function TiendaCheckoutPage() {
   })
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [encomienda, setEncomienda] = useState('')
   const set = (key: keyof FormCheckout, val: string) => setForm((f) => ({ ...f, [key]: val }))
+  const hayRetiro = Boolean(empresa?.retiro)
+  const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
+  const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -69,7 +70,8 @@ export default function TiendaCheckoutPage() {
     setEnviando(true)
     setError(null)
     try {
-      const resultado = await tiendaService.crearPedido(slug as string, { ...form, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
+      const notas = [form.notas.trim(), encomienda.trim() ? `Encomienda: ${encomienda.trim()}` : ''].filter(Boolean).join(' | ')
+      const resultado = await tiendaService.crearPedido(slug as string, { ...form, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
       vaciarCarrito()
       const qs = new URLSearchParams({ orden: resultado.numeroPedido ?? '' })
       navigate(`/tienda/${slug}/checkout/exito?${qs}`, { replace: true, state: { total: resultado.total } })
@@ -104,9 +106,6 @@ export default function TiendaCheckoutPage() {
     <div className="mx-auto max-w-[1232px] px-4 py-5 lg:py-8">
       <div className="mb-4 flex flex-col gap-1">
         <TituloTienda>Finalizar pedido</TituloTienda>
-        <p className="text-[13px] leading-[18px] text-hc-n-600">
-          Pedido de {empresa?.nombreComercial ?? slug} en HotClick. No se mezcla con el pedido del marketplace.
-        </p>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
         <div className="flex flex-col gap-4">
@@ -126,11 +125,17 @@ export default function TiendaCheckoutPage() {
           </fieldset>
           <fieldset className={`${CLASE_TARJETA} flex flex-col gap-[14px] p-4`}>
             <legend className="float-left mb-1 w-full font-display text-[16px] font-bold tracking-normal text-hc-n-900">Envío y pago</legend>
-            <GrupoOpciones label="Método de envío" name="metodoEnvio" opciones={METODOS_ENVIO} valor={form.metodoEnvio} onChange={(v) => set('metodoEnvio', v)} />
+            <GrupoOpciones label="Método de envío" name="metodoEnvio" opciones={metodosEnvio} valor={form.metodoEnvio} onChange={(v) => set('metodoEnvio', v)} />
+            {!hayRetiro && <p className="text-[12px] leading-4 text-hc-n-600">Este negocio no hace entrega local.</p>}
             {form.metodoEnvio === METODO_ENVIO_DOMICILIO && (
               <TiendaCheckoutDireccion value={form.direccionEntrega} onChange={(valor) => set('direccionEntrega', valor)} />
             )}
-            <GrupoOpciones label="Método de pago" name="metodoPago" opciones={METODOS_PAGO} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
+            {form.metodoEnvio === METODO_ENVIO_DOMICILIO && (
+              <Campo etiqueta="¿Por cuál encomienda? (opcional)" ayuda="Ej.: Correos de Costa Rica. La tienda despacha ahí.">
+                {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.paqueteTienda} value={encomienda} onChange={setEncomienda} />}
+              </Campo>
+            )}
+            <GrupoOpciones label="Método de pago" name="metodoPago" opciones={metodosPago} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
             <Campo etiqueta="Notas adicionales">
               {({ id }) => (
                 <textarea
@@ -151,7 +156,10 @@ export default function TiendaCheckoutPage() {
             <div className="flex flex-col gap-2 px-[14px] py-[14px] leading-[normal]">
               {carrito.map(({ producto, cantidad }) => (
                 <div key={producto.id} className="flex justify-between gap-4 text-[13px] text-hc-n-600">
-                  <span className="truncate">{producto.nombre} × {cantidad}</span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate">{producto.nombre} × {cantidad}</span>
+                    <span className="truncate text-[11px] text-hc-n-600">{empresa?.nombreComercial ?? slug}</span>
+                  </span>
                   <span className="shrink-0 font-medium text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
                 </div>
               ))}
@@ -164,9 +172,19 @@ export default function TiendaCheckoutPage() {
           {error && (
             <p role="alert" className="rounded-[12px] border border-hc-danger/20 bg-hc-danger-bg px-[14px] py-3 text-[13px] leading-[18px] text-hc-danger">{error}</p>
           )}
-          <BotonTienda variante="primario" type="submit" disabled={enviando}>
+          {/* Copy de Producto (ENTREGA_0410 §2.4). */}
+          <p className="text-[12px] leading-4 text-hc-n-600">
+            <span className="sm:hidden">Con tu compra ayudás a emprendimientos y negocios de Costa Rica. ¡Gracias!</span>
+            <span className="hidden sm:inline">Con tu compra ayudás a emprendimientos y negocios de Costa Rica a crecer. Cada producto lo vende una tienda local y HotClick te acompaña si necesitás ayuda con tu pedido.</span>
+          </p>
+          {/* Siempre rojo de marca (#E73B33): el color de la tienda no aplica a la acción de pago. */}
+          <button
+            type="submit"
+            disabled={enviando}
+            className="flex min-h-[48px] w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 text-[15px] font-semibold text-hc-n-0 disabled:opacity-60"
+          >
             {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}
-          </BotonTienda>
+          </button>
           <BotonTienda variante="secundario" to={`/tienda/${slug}/carrito`}>Volver al pedido</BotonTienda>
         </div>
       </form>

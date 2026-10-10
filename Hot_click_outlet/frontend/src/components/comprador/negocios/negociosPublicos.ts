@@ -16,7 +16,7 @@ export const ETIQUETA_PLAN: Record<PlanPublico, string> = {
 }
 
 export function rutaDirectorioPlan(alias: AliasPlan): string {
-  return `/emprendimientos?plan=${alias}`
+  return `/negocios?plan=${alias}`
 }
 
 /** `?plan=` del directorio: solo alias conocidos; cualquier otro valor es "todos". */

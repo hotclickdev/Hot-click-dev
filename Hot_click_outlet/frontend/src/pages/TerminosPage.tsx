@@ -25,12 +25,11 @@ const clausulas = [
     title: 'Naturaleza Jurídica de la Plataforma',
     content: (
       <>
-        <p>HotClick opera bajo un <strong>modelo comercial híbrido</strong> que comprende dos modalidades diferenciadas:</p>
+        <p>HotClick opera como <strong>marketplace</strong>: cada producto lo vende un negocio independiente.</p>
         <ul>
-          <li><strong>Venta directa HotClick:</strong> HotClick adquiere productos de diversas marcas en canales de liquidación y outlets, y los comercializa directamente al consumidor final bajo su propia marca y responsabilidad. En estas transacciones, HotClick actúa como vendedor y la relación contractual se perfecciona entre HotClick y el Cliente.</li>
           <li><strong>Marketplace de emprendedores:</strong> HotClick pone a disposición su plataforma tecnológica para que negocios y emprendedores costarricenses publiquen y vendan sus propios productos con su nombre de marca. En estas transacciones, el contrato de compraventa se perfecciona entre el Cliente y el Vendedor correspondiente, actuando HotClick únicamente como intermediario tecnológico.</li>
         </ul>
-        <p>En cada producto publicado se indicará claramente si es vendido directamente por HotClick o por un vendedor del marketplace.</p>
+        <p>En cada producto publicado se indica qué tienda lo vende.</p>
         <BloqueIdentidad />
       </>
     ),
@@ -51,7 +50,7 @@ const clausulas = [
     num: 'CLÁUSULA TERCERA',
     title: 'Condiciones Económicas y Comisiones (Vendedores)',
     content: (
-      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva según el plan contratado: plan Emprendedor (sin membresía) 9% del total bruto del pedido con un mínimo de ₡700; planes PYME y Negocio Plus 4% del total bruto además de la mensualidad publicada. HotClick gestiona la pasarela de pagos (incluidos los costos de ONVO) y retiene los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
+      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva según el plan contratado: porcentajes [PENDIENTE] que se publican en /planes antes de contratar, además de la mensualidad del plan cuando corresponda. HotClick gestiona la pasarela de pagos (Tilopay para tarjeta y ONVO para las mensualidades) y retiene los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
     ),
   },
   {
@@ -76,7 +75,7 @@ const clausulas = [
     content: (
       <>
         <p>Los precios se expresan en colones costarricenses (₡) e incluyen los impuestos aplicables. El costo de envío se muestra antes de confirmar el pago.</p>
-        <p>HotClick acepta SINPE Móvil y tarjetas Visa y Mastercard. El cobro con tarjeta lo procesan pasarelas certificadas (Tilopay, Stripe u ONVO, según el medio activo en el checkout). HotClick no recopila, no almacena ni tiene acceso al número completo de la tarjeta, la fecha de vencimiento ni el código de seguridad (CVV/CVC).</p>
+        <p>HotClick acepta SINPE Móvil y tarjetas Visa y Mastercard. El cobro con tarjeta lo procesan pasarelas certificadas (Tilopay para pagos con tarjeta y ONVO para las mensualidades de los planes). HotClick no recopila, no almacena ni tiene acceso al número completo de la tarjeta, la fecha de vencimiento ni el código de seguridad (CVV/CVC).</p>
         <p>Cuando procede un reembolso, vuelve por el mismo medio usado para pagar.</p>
       </>
     ),

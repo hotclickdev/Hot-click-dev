@@ -128,7 +128,7 @@ function BuscadorEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
     evento.preventDefault()
     cerrar()
     const texto = recortarConsulta(consulta)
-    navigate(texto ? `/productos?search=${encodeURIComponent(texto)}` : '/productos')
+    navigate(texto ? `/productos?search=${encodeURIComponent(texto)}` : '/categorias')
   }
 
   return (

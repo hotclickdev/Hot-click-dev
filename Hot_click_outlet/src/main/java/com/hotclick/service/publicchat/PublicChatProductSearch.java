@@ -123,7 +123,7 @@ public class PublicChatProductSearch {
                                                      String raw, int offset,
                                                      Long maxBudget, Set<String> negations,
                                                      boolean preferirPersonalizado) {
-        List<String> userTerms = resolverTerminosUsuario(tsQuery, raw);
+        List<String> userTerms = sinRegaloGenerico(resolverTerminosUsuario(tsQuery, raw));
         List<String> synonymBoost = intentHelper.expandSynonyms(userTerms);
 
         List<Map<String, Object>> porTs = buscarPorTsvector(
@@ -149,6 +149,17 @@ public class PublicChatProductSearch {
                 return negations.stream().noneMatch(text::contains);
             })
             .toList();
+    }
+
+    private static final Set<String> REGALO_GENERICO = Set.of("regalo", "regalos", "obsequio", "detalle", "gift", "presente");
+
+    /** "Regalo para papá" no trae lo mismo que "regalo para mamá": con otro término, "regalo" no busca solo. */
+    static List<String> sinRegaloGenerico(List<String> terminos) {
+        if (terminos == null || terminos.size() < 2) return terminos;
+        List<String> resto = terminos.stream()
+            .filter(t -> !REGALO_GENERICO.contains(t.toLowerCase(java.util.Locale.ROOT)))
+            .toList();
+        return resto.isEmpty() ? terminos : resto;
     }
 
     private List<String> resolverTerminosUsuario(String tsQuery, String raw) {

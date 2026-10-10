@@ -60,7 +60,7 @@ public class PublicChatDiscoveryHandler {
             showAll || showOffers ? "" : intentHelper.buildTsQuery(userMessage));
 
         if (mostrarFichas && page.isEmpty()) {
-            enviarSinResultado(emitter, isEnglish);
+            enviarSinResultado(emitter, isEnglish, intentHelper.userTerms(userMessage));
             return;
         }
         streamVenta(emitter, userMessage, page, history, empresaId, marketplace, context,
@@ -124,10 +124,8 @@ public class PublicChatDiscoveryHandler {
         }
     }
 
-    private void enviarSinResultado(SseEmitter emitter, boolean isEnglish) throws Exception {
-        String noResult = isEnglish
-            ? "I didn't find products for that. Could you describe what you're looking for? Example: living room, kitchen, bedroom…"
-            : "No encontré productos para eso. ¿Podés describirlo con otras palabras? Ej: sala, cocina, jardín, dormitorio…";
+    private void enviarSinResultado(SseEmitter emitter, boolean isEnglish, List<String> terminos) throws Exception {
+        String noResult = mensajeSinResultado(isEnglish, terminos);
         emitter.send(SseEmitter.event().name("delta").data(objectMapper.writeValueAsString(Map.of("text", noResult))));
         List<String> opts = isEnglish
             ? List.of("Show popular items", "What's on sale?")
@@ -152,5 +150,18 @@ public class PublicChatDiscoveryHandler {
         emitter.send(SseEmitter.event().name("delta").data(objectMapper.writeValueAsString(Map.of("text", texto))));
         emitter.send(SseEmitter.event().name("done").data(objectMapper.writeValueAsString(Map.of("opts", smartOpts))));
         emitter.complete();
+    }
+
+    /** Sin resultados: dice qué se buscó y pide un dato concreto. */
+    static String mensajeSinResultado(boolean isEnglish, List<String> terminos) {
+        String que = terminos == null || terminos.isEmpty() ? "" : String.join(" ", terminos);
+        if (isEnglish) {
+            return que.isEmpty()
+                ? "I didn't find products for that. What will you use it for, and what's your budget?"
+                : "We don't have products for \"" + que + "\" right now. What exactly do you need? I can look for something similar.";
+        }
+        return que.isEmpty()
+            ? "No encontré productos para eso. ¿Para qué lo vas a usar y cuánto querés gastar?"
+            : "Por ahora no tenemos productos de «" + que + "» en el catálogo. ¿Qué necesitás exactamente? Así te busco algo parecido.";
     }
 }

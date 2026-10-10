@@ -97,7 +97,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/contacto",                new Limit(5,    60)),
         Map.entry("/api/telegram/vincular",       new Limit(5,    60)),
         Map.entry("/api/pedidos",                 new Limit(15,   60)),
-        Map.entry("/api/payment/checkout",        new Limit(3,    60)),
+        Map.entry("/api/payments/checkout",       new Limit(3,    60)),
+        Map.entry("/api/payments/guest-checkout", new Limit(3,    60)),
+        Map.entry("/api/public/embudo",           new Limit(60,   60)),
         Map.entry("/api/cart/abandoned",          new Limit(10,   60)),
         // Uploads públicos — limitar para evitar abuso de almacenamiento y costos S3
         Map.entry("/api/servicios/fotos",                             new Limit(10,  60)),
@@ -127,7 +129,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
         new PrefixLimit("/api/qr/", null, 10, 60),
         // "Avisame cuando vuelva" es publico y solo pide un email: sin limite se insertan filas sin fin.
-        new PrefixLimit("/api/productos/", "/avisar-reposicion", 5, 60)
+        new PrefixLimit("/api/productos/", "/avisar-reposicion", 5, 60),
+        // Pedido de tienda propia (público, crea usuario invitado y pedido)
+        new PrefixLimit("/api/tienda/", "/pedidos", 5, 60),
+        // Completar la tienda rápida por token
+        new PrefixLimit("/api/public/tienda-rapida/", null, 5, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -143,6 +149,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/blog/publico",                60,  60),
         // Seguimiento por token: más estricto que el resto de /api/public (dificulta adivinar tokens).
         new GetLimit("/api/public/pedidos/seguimiento",  20,  60),
+        new GetLimit("/api/public/tienda-rapida",        20,  60),
+        new GetLimit("/api/division-territorial",        60,  60),
         new GetLimit("/api/public",                      60,  60),
         new GetLimit("/api/tienda",                     120,  60),
         new GetLimit("/api/productos",                  120,  60)
