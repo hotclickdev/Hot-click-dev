@@ -1,7 +1,9 @@
 /**
  * Atribución first/last touch (UTM + click ids). Cookie de primera parte, 90 días.
- * Medición propia: no depende del consentimiento de analytics/Meta.
+ * Solo se guarda con consentimiento de análisis (ver utils/rastreoAnalitica.ts); sin él, no se crea nada.
  */
+
+import { hayConsentimientoAnalitica } from '@/utils/rastreoAnalitica'
 
 const COOKIE_NAME = 'hc_attr'
 const STORAGE_KEY = 'hotclick-attribution'
@@ -75,6 +77,7 @@ function parseSnapshot(raw: string | null): AttributionSnapshot {
 }
 
 function persist(snapshot: AttributionSnapshot) {
+  if (!hayConsentimientoAnalitica()) return
   const json = JSON.stringify(snapshot)
   try {
     localStorage.setItem(STORAGE_KEY, json)
