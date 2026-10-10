@@ -12,6 +12,12 @@ const INCLUSIONES = [
   'Preparación del inventario para que el negocio pueda comenzar a vender en HOTCLICK.',
 ]
 
+const BENEFICIOS = [
+  { titulo: 'En tu local', texto: 'Escaneamos y registramos sin que muevas nada.' },
+  { titulo: 'Con o sin código', texto: 'Creamos SKU y etiquetas para lo que no tiene.' },
+  { titulo: 'Listo para vender', texto: 'Cargamos todo a tu catálogo de HOTCLICK.' },
+]
+
 /**
  * Solicitud de digitalización y etiquetado de inventario. Figma solo dibuja la opción en el inicio (`28:1429`):
  * el contenido y el formulario se conservan con el estilo del formulario de `28:1486`.
@@ -19,21 +25,22 @@ const INCLUSIONES = [
 export default function VistaDigitalizacion(props: FormularioBusquedaProps) {
   return (
     <div className="flex flex-col leading-[normal] lg:mx-auto lg:w-full lg:max-w-[560px]">
-      <section className="flex flex-col gap-3 bg-hc-n-0 px-4 py-5 lg:mt-6 lg:rounded-[16px]">
+      <section className="flex flex-col gap-4 bg-hc-n-0 px-4 py-5 lg:mt-6 lg:rounded-[16px]">
         <TituloVista>Digitalizá tu inventario</TituloVista>
-        <p className="text-[14px] leading-5 text-hc-n-600">
-          ¿Tu negocio no tiene un inventario digital o algunos productos no tienen código de barras? No hay problema.
-          HOTCLICK puede ayudarte a digitalizar tu inventario directamente en tu local.
+        <p className="text-[15px] font-medium leading-[22px] text-hc-n-900">
+          Vamos a tu local, registramos tus productos y los dejamos listos para vender en HOTCLICK.
         </p>
-        <p className="text-[14px] leading-5 text-hc-n-600">
-          Nuestro equipo puede escanear los productos que ya cuentan con código de barras y registrar manualmente
-          aquellos que no tengan uno. Para los productos sin código, HOTCLICK puede generar un SKU interno único y
-          crear una etiqueta con código de barras utilizando una impresora portátil, permitiendo que esos productos
-          puedan ser escaneados posteriormente.
-        </p>
-        <div>
-          <p className="mb-2 text-[13px] font-semibold text-hc-n-900">El servicio puede incluir:</p>
-          <ul className="flex flex-col gap-[6px]">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {BENEFICIOS.map((b) => (
+            <li key={b.titulo} className="flex flex-col gap-0.5 rounded-[12px] border border-hc-n-200 p-3">
+              <span className="text-[13px] font-semibold text-hc-n-900">{b.titulo}</span>
+              <span className="text-[12px] leading-4 text-hc-n-600">{b.texto}</span>
+            </li>
+          ))}
+        </ul>
+        <details className="rounded-[12px] border border-hc-n-200 px-3 py-2">
+          <summary className="flex min-h-[40px] cursor-pointer items-center text-[13px] font-semibold text-hc-blue-600">Qué incluye el servicio</summary>
+          <ul className="flex flex-col gap-[6px] pb-2 pt-1">
             {INCLUSIONES.map((item) => (
               <li key={item} className="flex gap-2 text-[13px] leading-[18px] text-hc-n-600">
                 <span aria-hidden="true" className="shrink-0 font-bold text-hc-blue-600">·</span>
@@ -41,13 +48,12 @@ export default function VistaDigitalizacion(props: FormularioBusquedaProps) {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="rounded-[16px] bg-hc-n-100 p-4 text-[12px] leading-[17px] text-hc-n-600">
-          <strong className="font-semibold text-hc-n-900">Importante:</strong> los códigos de barras originales de los
-          fabricantes se conservan sin modificaciones. Para productos sin código usamos SKU internos HOTCLICK
-          (por ejemplo HC-000001, HC-000002). Estos identificadores no se presentan como códigos comerciales
-          oficiales del fabricante.
-        </div>
+          <p className="pb-2 text-[12px] leading-[17px] text-hc-n-600">
+            Los códigos de barras del fabricante se conservan. Para productos sin código usamos SKU internos HOTCLICK
+            (HC-000001…), que no son códigos comerciales oficiales.
+          </p>
+        </details>
+        <p className="text-[13px] text-hc-n-600">Completá el formulario de abajo y te contactamos para coordinar la visita.</p>
       </section>
 
       <FormularioBusqueda
