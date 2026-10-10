@@ -6,6 +6,13 @@ import { IcoSrv } from './servicios/IcoSrv'
 import { TARIFAS, type FilaTarifa } from './envios/enviosData'
 import { SITE_URL, faqItems, shippingJsonLd } from './envios/enviosHelpers'
 
+/** Transparencia para quien compra: qué pasa después de pagar. */
+const PASOS = [
+  { titulo: 'Pagás y confirmamos', texto: 'Ves el costo de envío en el carrito antes de pagar. Te confirmamos el pedido por correo.' },
+  { titulo: 'La tienda prepara', texto: 'Cada negocio alista tu paquete y te avisamos cuando sale.' },
+  { titulo: 'Te llega o lo retirás', texto: 'Seguís el estado en Mis pedidos, con guía si va por Correos.' },
+]
+
 const HREF_WA = 'https://wa.me/50686667888'
 const CLASE_LINK = 'font-medium text-hc-blue-600 underline'
 
@@ -64,7 +71,8 @@ export default function EnviosPage() {
       titulo="Envíos"
       encabezado="Así llega tu pedido"
       subtitulo="Enviamos a todo Costa Rica. El costo se muestra en el carrito antes de pagar."
-      indice={[{ id: 'tarifas', texto: 'Tarifas' }, { id: 'preguntas', texto: 'Preguntas' }]}
+      indice={[{ id: 'como', texto: 'Cómo funciona' }, { id: 'tarifas', texto: 'Tarifas' }, { id: 'preguntas', texto: 'Preguntas' }]}
+      ancha
     >
       <Helmet>
         <title>Envíos a todo Costa Rica — HotClick</title>
@@ -73,6 +81,21 @@ export default function EnviosPage() {
         <script type="application/ld+json">{JSON.stringify(shippingJsonLd)}</script>
       </Helmet>
 
+      <BloqueInformativo id="como" titulo="Cómo funciona">
+        <ol className="m-0 grid list-none gap-3 p-0 md:grid-cols-3">
+          {PASOS.map((p, i) => (
+            <li key={p.titulo} className="flex gap-3 rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-hc-blue-50 font-display text-[13px] font-bold text-hc-blue-600">{i + 1}</span>
+              <span className="flex flex-col gap-1">
+                <span className="text-[14px] font-semibold text-hc-n-900">{p.titulo}</span>
+                <span className="text-[13px] leading-[18px] text-hc-n-600">{p.texto}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </BloqueInformativo>
+
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <BloqueInformativo id="tarifas" titulo="Tarifas">
         <ul className="m-0 flex list-none flex-col rounded-[16px] border border-hc-n-200 bg-hc-n-0 px-4 py-1">
           {TARIFAS.map((f, i) => <Fila key={f.id} fila={f} primera={i === 0} />)}
@@ -102,6 +125,7 @@ export default function EnviosPage() {
           </p>
         </div>
       </BloqueInformativo>
+      </div>
       <div className="h-6" aria-hidden="true" />
     </PaginaInformativa>
   )
