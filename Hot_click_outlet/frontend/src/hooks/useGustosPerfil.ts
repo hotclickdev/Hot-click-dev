@@ -24,7 +24,7 @@ export function useGustosPerfil(enabled = true) {
   useEffect(() => {
     if (!enabled) return
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !visitorId) {
       setPerfil(loadGustos())
       setSource('local')
       return
