@@ -89,6 +89,9 @@ class PaymentServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Por defecto cada confirmación/fallo gana su UPDATE condicional (la carrera se prueba en TilopayDobleConfirmacionTest).
+        lenient().when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
+        lenient().when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
         testUser = new Usuario();
         testUser.setId(1L);
         testUser.setCorreo(CORREO);
@@ -194,16 +197,30 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("checkout → ENVIO_A_DOMICILIO suma ₡2000 al total")
-    void checkout_envioADomicilio_addsCostoEnvio() throws Exception {
+    @DisplayName("checkout → ENVIO_NORMAL_GAM suma ₡4000 al total")
+    void checkout_envioNormal_addsCostoEnvio() throws Exception {
         setupCheckoutMocks();
 
         PaymentCheckoutRequest req = buildRequest(1);
-        req.setMetodoEnvio(Constants.ENVIO_DOMICILIO);
+        req.setMetodoEnvio("ENVIO_NORMAL_GAM");
 
         PaymentCheckoutResponse resp = service.checkout(req, CORREO);
 
-        assertThat(resp.getTotal()).isEqualTo(25000 + 2000);
+        assertThat(resp.getTotal()).isEqualTo(25000 + 4000);
+    }
+
+    @Test
+    @DisplayName("checkout → método de envío desconocido o de pedidos manuales se rechaza (no cae en ₡0)")
+    void checkout_metodoEnvioDesconocido_rechazado() {
+        setupCheckoutMocks();
+
+        for (String metodo : List.of("GRATIS", Constants.ENVIO_DOMICILIO)) {
+            PaymentCheckoutRequest req = buildRequest(1);
+            req.setMetodoEnvio(metodo);
+            assertThatThrownBy(() -> service.checkout(req, CORREO))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Método de envío no válido");
+        }
     }
 
     @Test

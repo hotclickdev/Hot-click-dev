@@ -8,7 +8,13 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "hot_click_producto_tb")
+@EntityListeners(com.hotclick.service.reposicion.ProductoStockListener.class)
 public class Producto extends BaseEntity {
+
+    /** Stock disponible al cargarse de la BD; lo usa {@code ProductoStockListener} para detectar 0 → más de 0. */
+    @Transient
+    @JsonIgnore
+    private Integer stockDisponibleAlCargar;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -321,6 +327,18 @@ public class Producto extends BaseEntity {
 
     public Integer getStockReservado() { return stockReservado != null ? stockReservado : 0; }
     public void setStockReservado(Integer stockReservado) { this.stockReservado = stockReservado; }
+
+    /** Guarda el stock disponible tal como vino de la BD (lo llama el entity listener en @PostLoad). */
+    public void recordarStockDisponibleCargado() { this.stockDisponibleAlCargar = getStockDisponibleSeguro(); }
+
+    /** true si el producto estaba agotado al cargarse y ahora tiene stock disponible. */
+    public boolean volvioAHaberStock() {
+        return stockDisponibleAlCargar != null && stockDisponibleAlCargar <= 0 && getStockDisponibleSeguro() > 0;
+    }
+
+    private int getStockDisponibleSeguro() {
+        return (stockActual != null ? stockActual : 0) - getStockReservado();
+    }
 
     public Integer getStockDisponible() { return getStockActual() - getStockReservado(); }
 

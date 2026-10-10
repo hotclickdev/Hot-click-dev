@@ -331,6 +331,9 @@ const VISITANTE_SIN_COACH = [
   '/visitante/asistente',
 ] as const
 
+/** QA-122-5: el onboarding guiado ya tiene su única CTA roja («Seguir»); ahí no se abre la bienvenida ni el spotlight. */
+const RUTAS_SIN_COACH = ['/emprendedor/negocio-rapido']
+
 /**
  * QA-130-5: en «Ver como el negocio» (soporte) no hay bienvenida ni spotlight: taparían el banner de
  * impersonación y saludarían al admin como si fuera el dueño.
@@ -340,6 +343,8 @@ export function coachPermitido(pathname: string, impersonando: boolean): boolean
 }
 
 export function esRutaConCoach(pathname: string): boolean {
+  const sinQuery = pathname.split('?')[0].replace(/\/$/, '')
+  if (RUTAS_SIN_COACH.includes(sinQuery)) return false
   if (pathname.startsWith('/admin') || esRutaVendedor(pathname)) return true
   if (!esRutaVisitante(pathname)) return false
   const limpio = pathname.split('?')[0].replace(/\/$/, '') || '/visitante'

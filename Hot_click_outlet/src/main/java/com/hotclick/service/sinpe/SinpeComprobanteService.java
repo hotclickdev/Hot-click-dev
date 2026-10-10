@@ -95,7 +95,7 @@ public class SinpeComprobanteService {
             throw new IllegalStateException("El pedido no está en estado PENDIENTE_APROBACION");
         }
 
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
+        Pago pago = pagoDeLaCompra(pedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
@@ -136,7 +136,7 @@ public class SinpeComprobanteService {
         comprobante.setAdminEmail(adminEmail);
         comprobanteRepository.save(comprobante);
 
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId()).orElse(null);
+        Pago pago = pagoDeLaCompra(pedido).orElse(null);
         if (pago != null) {
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
@@ -157,6 +157,15 @@ public class SinpeComprobanteService {
             "Pedido " + pedido.getNumeroPedido() + " rechazado. Motivo: " + motivo);
 
         log.info("Comprobante SINPE rechazado por {}: pedido={}", adminEmail, pedido.getNumeroPedido());
+    }
+
+    /**
+     * El Pago de una compra multinegocio vive en el paquete principal: desde cualquier paquete
+     * se llega a él por grupo_pago y, para compras del modelo anterior, por la compra.
+     */
+    private java.util.Optional<Pago> pagoDeLaCompra(Pedido pedido) {
+        java.util.Optional<Pago> pago = pedidoGrupoService.pagoDelGrupo(pedido);
+        return pago.isPresent() ? pago : com.hotclick.service.payment.CompraPaquetes.pagoDe(pedido, pagoRepository);
     }
 
     @Transactional(readOnly = true)

@@ -33,7 +33,7 @@ public class MaxRequestBodySizeFilter extends OncePerRequestFilter {
 
         if (!isMultipart && request.getContentLengthLong() > MAX_BODY_BYTES) {
             log.warn("[BODY-TOO-LARGE] ip={} path={} length={}",
-                request.getRemoteAddr(), request.getRequestURI(), request.getContentLengthLong());
+                request.getRemoteAddr(), RutaLogSegura.enmascarar(request.getRequestURI()), request.getContentLengthLong());
             response.setStatus(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.getWriter().write(

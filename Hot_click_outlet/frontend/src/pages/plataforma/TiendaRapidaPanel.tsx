@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { consolaService } from './consola'
 import { filasDe, texto, type Fila } from './normalizar'
@@ -201,6 +202,7 @@ function PasoPlazo({ dias, setDias, negocio, persona, onAtras, onCrear, ocupado,
 }
 
 function PasoListo({ creada }: { creada: Creada }) {
+  const { t } = useTranslation()
   const url = enlaceTiendaRapida(creada.token)
   const enlace = enlaceWhatsapp(creada.telefono, mensajeTiendaRapida(creada.persona, creada.negocio, creada.dias, url))
   return (
@@ -208,6 +210,7 @@ function PasoListo({ creada }: { creada: Creada }) {
       <p className="font-display text-[40px] font-extrabold leading-none text-hc-success-text">Lista</p>
       <h2 className="mt-2 font-display text-[17px] font-bold">{creada.negocio} quedó por {creada.dias} días</h2>
       <p className="mt-1 text-sm text-hc-n-600">El enlace abre los datos de {creada.persona}. Usted puede cargar los productos desde la ficha.</p>
+      <p className="mt-1 text-xs text-hc-n-600">{t('negocioRapido.admin.unSoloUso')}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {enlace && (
           <a className={BOTON_PRIMARIO} href={enlace} target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
@@ -224,32 +227,82 @@ function Abiertas({ filas }: { filas: Fila[] }) {
     <section className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold text-hc-n-600">Ya abiertas</h2>
       <ul className="flex flex-col gap-2">
-        {filas.map((fila) => <FilaAbierta key={texto(fila.id, texto(fila.token))} fila={fila} />)}
+        {filas.map((fila) => <FilaAbierta key={texto(fila.id)} fila={fila} />)}
       </ul>
     </section>
   )
 }
 
+const TONO_ENLACE: Record<string, 'azul' | 'ok' | 'alerta'> = { VIGENTE: 'azul', USADO: 'ok' }
+
 function FilaAbierta({ fila }: { fila: Fila }) {
-  const token = texto(fila.token)
-  const url = enlaceTiendaRapida(token)
-  const enlace = enlaceWhatsapp(
-    texto(fila.telefono),
-    mensajeTiendaRapida(texto(fila.persona), texto(fila.negocio), Number(fila.dias) || 30, url),
-  )
+  const { t } = useTranslation()
+  const id = texto(fila.id)
+  const [estadoEnlace, setEstadoEnlace] = useState(texto(fila.estadoEnlace, 'VIGENTE'))
+  const [tokenNuevo, setTokenNuevo] = useState('')
+  const [ocupado, setOcupado] = useState(false)
+  const [aviso, setAviso] = useState('')
+  const url = tokenNuevo ? enlaceTiendaRapida(tokenNuevo) : ''
+  const enlace = url
+    ? enlaceWhatsapp(texto(fila.telefono), mensajeTiendaRapida(texto(fila.persona), texto(fila.negocio), Number(fila.dias) || 30, url))
+    : ''
   const estado = texto(fila.estado)
+  const asignable = estadoEnlace !== 'USADO' && estado !== 'VENCIDA'
+
+  async function accion(tipo: 'regenerar' | 'revocar') {
+    setOcupado(true)
+    setAviso('')
+    try {
+      const respuesta = tipo === 'regenerar'
+        ? await consolaService.regenerarRapida(id)
+        : await consolaService.revocarRapida(id)
+      const datos = (respuesta.data ?? {}) as Fila
+      setEstadoEnlace(texto(datos.estadoEnlace, tipo === 'regenerar' ? 'VIGENTE' : 'REVOCADO'))
+      setTokenNuevo(tipo === 'regenerar' ? texto(datos.token) : '')
+    } catch (err) {
+      console.error(err)
+      setAviso(mensajeDe(err, 'No se pudo cambiar el enlace.'))
+    } finally {
+      setOcupado(false)
+    }
+  }
+
   return (
-    <li className={`${TARJETA} flex flex-wrap items-center justify-between gap-2`}>
-      <span>
-        <span className="block font-semibold">{texto(fila.negocio, 'Tienda')}</span>
-        <span className="text-xs text-hc-n-600">{texto(fila.persona)} · {texto(fila.diasRestantes, '0')} días</span>
-      </span>
-      <span className="flex items-center gap-2">
-        <Chip tono={estado === 'VENCIDA' ? 'alerta' : estado === 'LISTA' ? 'ok' : 'azul'}>{etiquetaRapida(estado)}</Chip>
-        {enlace && estado !== 'VENCIDA' && (
-          <a className="text-sm font-semibold text-hc-blue-600" href={enlace} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-        )}
-      </span>
+    <li className={`${TARJETA} flex flex-col gap-2`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span>
+          <span className="block font-semibold">{texto(fila.negocio, 'Tienda')}</span>
+          <span className="text-xs text-hc-n-600">{texto(fila.persona)} · {texto(fila.diasRestantes, '0')} días</span>
+        </span>
+        <span className="flex flex-wrap items-center gap-2">
+          <Chip tono={estado === 'VENCIDA' ? 'alerta' : estado === 'LISTA' ? 'ok' : 'azul'}>{etiquetaRapida(estado)}</Chip>
+          <Chip tono={TONO_ENLACE[estadoEnlace] ?? 'alerta'}>
+            {t(`negocioRapido.admin.estadoEnlace.${estadoEnlace}`, { defaultValue: estadoEnlace })}
+          </Chip>
+        </span>
+      </div>
+      {asignable && (
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <button type="button" className="font-semibold text-hc-blue-600 disabled:opacity-60" disabled={ocupado} onClick={() => void accion('regenerar')}>
+            {t('negocioRapido.admin.regenerar')}
+          </button>
+          {estadoEnlace === 'VIGENTE' && (
+            <button type="button" className="font-semibold text-hc-n-600 disabled:opacity-60" disabled={ocupado} onClick={() => void accion('revocar')}>
+              {t('negocioRapido.admin.revocar')}
+            </button>
+          )}
+          {enlace && (
+            <a className="font-semibold text-hc-blue-600" href={enlace} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          )}
+          {url && (
+            <button type="button" className="font-semibold text-hc-blue-600" onClick={() => void navigator.clipboard?.writeText(url)}>
+              {t('negocioRapido.admin.copiar')}
+            </button>
+          )}
+        </div>
+      )}
+      {url && <p className="text-xs text-hc-n-600">{t('negocioRapido.admin.unSoloUso')}</p>}
+      {aviso && <p className="text-sm text-hc-primary-text">{aviso}</p>}
     </li>
   )
 }
