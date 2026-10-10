@@ -1,7 +1,17 @@
 package com.hotclick.service.consola;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+
 /** Datos que acepta una tienda temporal: plazo, persona y el enlace. */
 public final class TiendaRapidaReglas {
+
+    /** Vigencia del enlace de asignación (independiente del plazo de la tienda). */
+    public static final int HORAS_ENLACE = 72;
+    /** Versión del texto legal de aceptación (Acuerdo para Vendedores, legal-final del 10/10/2026). Subirla cuando Legal lo cambie. */
+    public static final String VERSION_LEGAL = "2026-10-10";
 
     public static final int DIAS_CORTO = 30;
     public static final int DIAS_LARGO = 60;
@@ -37,8 +47,8 @@ public final class TiendaRapidaReglas {
     }
 
     public static String cedula(String valor) {
-        String digitos = valor == null ? "" : valor.replaceAll("\\D", "");
-        if (digitos.length() < 9 || digitos.length() > 12) {
+        String digitos = com.hotclick.utils.CedulaCr.normalizarONulo(valor);
+        if (digitos == null) {
             throw new IllegalArgumentException("La cédula va con 9 a 12 dígitos.");
         }
         return digitos;
@@ -64,5 +74,15 @@ public final class TiendaRapidaReglas {
             throw new IllegalArgumentException("Ese enlace no sirve.");
         }
         return valor;
+    }
+
+    /** SHA-256 en hex del token del enlace: en la base solo queda esto. */
+    public static String hashToken(String token) {
+        try {
+            byte[] d = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(d);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

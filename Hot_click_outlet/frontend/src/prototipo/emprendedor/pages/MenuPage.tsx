@@ -1,10 +1,13 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import AvisoFaltaUbicacion from '../ui/AvisoFaltaUbicacion'
 import { RUTA_EMPRENDEDOR } from '../constants'
+import { consolaService } from '@/pages/plataforma/consola'
+import { RUTA_ONBOARDING_RAPIDO, onboardingPendiente } from '@/pages/plataforma/tiendaRapida'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
@@ -25,6 +28,17 @@ const ACCIONES_BASE = [
  */
 export default function MenuPage() {
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
+  const { t } = useTranslation()
+  const [armarTienda, setArmarTienda] = useState(false)
+
+  useEffect(() => {
+    let vivo = true
+    // 404 = el negocio no vino de un enlace de asignación: no se muestra nada.
+    consolaService.onboardingRapido()
+      .then((r) => { if (vivo) setArmarTienda(onboardingPendiente(r.data)) })
+      .catch(() => { /* sin onboarding de negocio rápido */ })
+    return () => { vivo = false }
+  }, [])
 
   return (
     <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16 md:max-w-[480px] md:items-stretch md:px-16 md:py-12">
@@ -33,6 +47,17 @@ export default function MenuPage() {
         <AvisoFaltaUbicacion className="mb-2" />
         <OnboardingPrimeraVez rol="emprendedor" />
         <ListaStagger className="flex w-full flex-col gap-2">
+          {armarTienda && (
+            <ItemMenu>
+              <Link
+                to={RUTA_ONBOARDING_RAPIDO}
+                data-mm="seller-menu-negocio-rapido"
+                className="relative flex h-[54px] w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface text-sm font-bold"
+              >
+                {t('negocioRapido.menu.armarTienda')}
+              </Link>
+            </ItemMenu>
+          )}
           {ACCIONES_BASE.map((accion) => (
             <ItemMenu key={accion.to}>
               <Link

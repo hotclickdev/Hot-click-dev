@@ -18,13 +18,15 @@ const OPCIONES = [
 
 type Props = Readonly<{
   baseNuevo: string
+  /** Query que se conserva al elegir el tipo (p. ej. vuelta al onboarding). */
+  sufijo?: string
   cabecera?: ReactNode
 }>
 
 /**
  * Primer paso al agregar: catálogo vs personalizado.
  */
-export default function ElegirTipoProductoMenu({ baseNuevo, cabecera }: Props) {
+export default function ElegirTipoProductoMenu({ baseNuevo, cabecera, sufijo = '' }: Props) {
   return (
     <div className="flex flex-col gap-4">
       {cabecera}
@@ -47,7 +49,7 @@ export default function ElegirTipoProductoMenu({ baseNuevo, cabecera }: Props) {
             }}
           >
             <TarjetaOpcion
-              to={`${baseNuevo}/${opcion.path}`}
+              to={`${baseNuevo}/${opcion.path}${sufijo}`}
               titulo={opcion.titulo}
               ayuda={opcion.ayuda}
               data-mm="seller-elegir-tipo-producto"

@@ -4557,5 +4557,71 @@
     "enResultados": "Matching businesses",
     "verTodos": "See all businesses",
     "sinPlan": "There are no {{plan}} stores on HotClick yet."
+  },
+  "negocioRapido": {
+    "aceptar": {
+      "titulo": "Business responsibility",
+      "casilla": "I declare that I am the owner or legal representative of this business and responsible for the brand.",
+      "legal": "El Vendedor debe suministrar información veraz y mantenerla actualizada. La aceptación de este Acuerdo por medios electrónicos tiene plena validez conforme a la Ley N.° 8454 de Certificados, Firmas Digitales y Documentos Electrónicos.",
+      "legalEnlace": "Acuerdo para Vendedores de HotClick",
+      "falta": "To continue you must accept being the owner or legal representative of the business."
+    },
+    "enlace": {
+      "usado": "This link was already used. If you are the owner, sign in with your email and password.",
+      "vencido": "This link expired or was revoked. Ask HotClick for a new one.",
+      "noVigente": "This link is not valid."
+    },
+    "listo": {
+      "entrar": "Sign in and set up my store"
+    },
+    "onboarding": {
+      "titulo": "Set up your store step by step",
+      "sub": "Your progress is saved; come back anytime.",
+      "completo": "Your store has what it needs to start.",
+      "error": "Your progress could not be loaded.",
+      "seguir": "Continue",
+      "hecho": "I already did it",
+      "omitir": "Skip for now",
+      "irPanel": "Go to my dashboard",
+      "estado": {
+        "HECHO": "Done",
+        "OMITIDO": "Skipped",
+        "PENDIENTE": "Pending",
+        "BLOQUEADO": "Later"
+      },
+      "paso": {
+        "BODEGA": {
+          "titulo": "Create your warehouse",
+          "texto": "The place your orders ship from."
+        },
+        "PRODUCTO": {
+          "titulo": "Add your first product",
+          "texto": "It can be a regular or a custom product."
+        },
+        "NEGOCIO": {
+          "titulo": "Complete your business details",
+          "texto": "Logo, description and store contact details."
+        },
+        "COBRO": {
+          "titulo": "Set up how you get paid",
+          "texto": "The account HotClick pays you to."
+        }
+      }
+    },
+    "admin": {
+      "estadoEnlace": {
+        "VIGENTE": "Link active",
+        "USADO": "Assigned",
+        "VENCIDO": "Link expired",
+        "REVOCADO": "Link revoked"
+      },
+      "regenerar": "New link",
+      "revocar": "Revoke link",
+      "copiar": "Copy link",
+      "unSoloUso": "The link works once and expires in 72 hours."
+    },
+    "menu": {
+      "armarTienda": "SET UP YOUR STORE"
+    }
   }
 }
