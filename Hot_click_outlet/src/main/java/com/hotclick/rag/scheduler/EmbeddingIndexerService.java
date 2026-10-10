@@ -8,10 +8,11 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 
@@ -129,7 +130,9 @@ public class EmbeddingIndexerService {
     // el hilo del request HTTP ejecutará la indexación sincrónicamente. Esto es
     // aceptable dado el volumen actual de HOTCLICK.
 
-    @EventListener
+    // Solo después del COMMIT: si el guardado hace rollback no se indexa un producto que no existe.
+    // fallbackExecution=true cubre publicaciones fuera de transacción (se indexan igual).
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     @Async("taskExecutor")
     public void onProductoGuardado(ProductoGuardadoEvent event) {
         if (event.getEmpresaId() == null) {

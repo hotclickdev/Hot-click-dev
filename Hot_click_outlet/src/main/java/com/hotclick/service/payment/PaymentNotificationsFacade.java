@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Map;
 
@@ -53,15 +55,41 @@ public class PaymentNotificationsFacade {
         // avisar a nadie. Si falla, se revierte todo (pedido, Pago, stock) y no sale ningún aviso.
         aggregatorService.acreditarVentaEnTransaccion(pedido);
         touchUsuarioFinalForAsync(pedido);
+        // Los avisos salen recién cuando el cobro hizo COMMIT: si la transacción se revierte
+        // (stock, gift card, cupón…), el comprador no recibe un "pedido confirmado" falso.
+        // Los datos del webhook se leen acá, donde pedido y pago ya se validaron no nulos.
+        Map<String, Object> datos = new java.util.HashMap<>(); // admite null, a diferencia de Map.of
+        datos.put("numeroPedido", pedido.getNumeroPedido());
+        datos.put("total",        pedido.getTotalPedido());
+        datos.put("proveedor",    pago.getProveedor());
+        Long empresaId = pedido.getEmpresaId();
+        despuesDelCommit(() -> avisarPedidoPagado(pedido, pago, empresaId, datos));
+    }
+
+    private void avisarPedidoPagado(Pedido pedido, Pago pago, Long empresaId, Map<String, Object> datos) {
         ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
-        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
-            "numeroPedido", pedido.getNumeroPedido(),
-            "total",        pedido.getTotalPedido(),
-            "proveedor",    pago.getProveedor()
-        ));
+        webhookDispatcher.dispatch(empresaId, "pedido.pagado", datos);
         capturarPedidoPagado(pedido, pago);
-        log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
+        log.info("Pedido {} confirmado PAGADO via {}", datos.get("numeroPedido"), datos.get("proveedor"));
+    }
+
+    /** Corre la acción después del COMMIT de la transacción actual; sin transacción, en el momento. */
+    private static void despuesDelCommit(Runnable accion) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            accion.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    accion.run();
+                } catch (RuntimeException e) {
+                    log.error("[pago] Avisos post-commit fallaron: {}", e.getMessage(), e);
+                }
+            }
+        });
     }
 
     private void capturarPedidoPagado(Pedido pedido, Pago pago) {

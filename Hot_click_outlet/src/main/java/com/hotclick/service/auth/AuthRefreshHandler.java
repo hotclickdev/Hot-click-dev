@@ -6,6 +6,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.SecurityAuditService;
+import com.hotclick.service.TokenRevocadoService;
 import com.hotclick.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,6 +26,7 @@ public class AuthRefreshHandler {
 
     @Autowired private JwtUtil                     jwtUtil;
     @Autowired private RefreshTokenService         refreshTokenService;
+    @Autowired private TokenRevocadoService        tokenRevocadoService;
     @Autowired private AuthSupport                 authSupport;
     @Autowired private SecurityAuditService        securityAuditService;
     @Autowired private UsuarioService              usuarioService;
@@ -74,9 +76,21 @@ public class AuthRefreshHandler {
         } else {
             revocarFamiliaSiAutenticado(httpRequest);
         }
+        revocarAccessToken(httpRequest);
         refreshTokenService.clearCookie(response);
         AuthAuditSupport.run(log, () -> securityAuditService.logLogout(null, null, httpRequest));
         return ResponseEntity.ok(ResponseDTO.success("Sesión cerrada correctamente", null));
+    }
+
+    /** Al cerrar sesión el access token (normal o de soporte) queda en la denylist hasta su exp. */
+    private void revocarAccessToken(HttpServletRequest request) {
+        String auth = request.getHeader("Authorization");
+        if (auth == null || !auth.startsWith("Bearer ")) return;
+        try {
+            tokenRevocadoService.revocar(auth.substring(7), TokenRevocadoService.MOTIVO_LOGOUT);
+        } catch (Exception e) {
+            log.debug("Logout: no se pudo revocar el access token: {}", e.getMessage());
+        }
     }
 
     private void revocarFamiliaSiAutenticado(HttpServletRequest request) {

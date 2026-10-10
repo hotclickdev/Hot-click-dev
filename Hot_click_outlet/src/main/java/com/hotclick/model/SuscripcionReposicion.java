@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 /**
  * Interés de un cliente en que le avisen cuando un producto agotado vuelva
  * a tener stock ("Avisame cuando vuelva", ficha de producto agotado en Figma).
- * El envío automático del correo al reponer stock queda pendiente
- * (NUEVO · por programar); esta entidad solo persiste la suscripción.
+ * Al reponer stock, {@code AvisoReposicionService} envía un correo por suscripción
+ * pendiente y la marca (notificado + fecha_notificacion).
  */
 @Entity
 @Table(name = "hot_click_suscripcion_reposicion_tb")

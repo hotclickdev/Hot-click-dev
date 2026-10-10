@@ -17,9 +17,8 @@ import java.util.Map;
 
 /**
  * "Avisame cuando vuelva" — guarda el interés de un cliente en un producto
- * agotado. El disparo automático del correo cuando el producto vuelve a
- * tener stock queda pendiente (NUEVO · por programar); ver ADR en el
- * commit de esta feature.
+ * agotado. El correo al reponer stock lo envía
+ * {@link com.hotclick.service.reposicion.AvisoReposicionService} después del commit.
  */
 @Service
 public class SuscripcionReposicionService {
@@ -54,6 +53,8 @@ public class SuscripcionReposicionService {
             s.setCorreo(correo);
             repo.save(s);
             log.info("[avisar-reposicion] producto {} — nueva suscripción", productoId);
+        } else {
+            rearmarSiYaFueAvisada(productoId, correo, producto);
         }
 
         Map<String, Object> out = new LinkedHashMap<>();
@@ -61,5 +62,20 @@ public class SuscripcionReposicionService {
         out.put("correo", correo);
         out.put("yaEstabaSuscrito", yaExiste);
         return out;
+    }
+
+    /**
+     * Quien ya recibió el aviso y se vuelve a suscribir porque el producto se agotó otra vez
+     * queda pendiente de nuevo: recibirá un aviso en la próxima reposición.
+     */
+    private void rearmarSiYaFueAvisada(Long productoId, String correo, Producto producto) {
+        if (producto.getStockDisponible() > 0) return;
+        repo.findByProducto_IdAndCorreoIgnoreCase(productoId, correo)
+            .filter(SuscripcionReposicion::isNotificado)
+            .ifPresent(s -> {
+                s.setNotificado(false);
+                s.setFechaNotificacion(null);
+                repo.save(s);
+            });
     }
 }

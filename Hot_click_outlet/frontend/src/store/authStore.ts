@@ -35,6 +35,9 @@ type AuthState = {
   roles: string[]
   correoVerificado: boolean
   impersonando: boolean
+  /** Sesión de soporte: LECTURA por defecto; ESCRITURA tras pedirla con motivo (vence sola). */
+  impersonacionModo: ModoImpersonacion | null
+  impersonacionEscrituraHasta: number | null
   adminOriginal: SesionGuardada | null
   isAuthenticated: () => boolean
   isAdmin: () => boolean
@@ -49,7 +52,10 @@ type AuthState = {
   logout: () => void
   impersonar: (data: AuthResponse) => void
   salirImpersonacion: () => void
+  habilitarEscrituraImpersonacion: (accessToken: string, expiraEn: number | null) => void
 }
+
+export type ModoImpersonacion = 'LECTURA' | 'ESCRITURA'
 
 function parseJwtClaims(token: string): JwtClaims {
   try {
@@ -76,6 +82,8 @@ const useAuthStore = create<AuthState>()(
       roles:         [],
       correoVerificado: true,
       impersonando:  false,
+      impersonacionModo: null,
+      impersonacionEscrituraHasta: null,
       adminOriginal: null,
 
       isAuthenticated: () => !!get().token,
@@ -105,6 +113,8 @@ const useAuthStore = create<AuthState>()(
           roles:        rol ? [rol] : [],
           correoVerificado: data.correoVerificado ?? true,
           impersonando:  false,
+          impersonacionModo: null,
+          impersonacionEscrituraHasta: null,
           adminOriginal: null,
         })
         syncSentryUser({
@@ -149,6 +159,8 @@ const useAuthStore = create<AuthState>()(
           roles:        [],
           correoVerificado: true,
           impersonando:  false,
+          impersonacionModo: null,
+          impersonacionEscrituraHasta: null,
           adminOriginal: null,
         })
       },
@@ -167,6 +179,8 @@ const useAuthStore = create<AuthState>()(
         set({
           adminOriginal,
           impersonando:  true,
+          impersonacionModo: data.modo === 'ESCRITURA' ? 'ESCRITURA' : 'LECTURA',
+          impersonacionEscrituraHasta: null,
           token:         data.accessToken,
           userId:        state.userId,
           userEmail:     state.userEmail,
@@ -183,7 +197,13 @@ const useAuthStore = create<AuthState>()(
       salirImpersonacion: () => {
         const original = get().adminOriginal
         if (!original) return
-        set({ ...original, impersonando: false, adminOriginal: null })
+        set({ ...original, impersonando: false, impersonacionModo: null,
+          impersonacionEscrituraHasta: null, adminOriginal: null })
+      },
+
+      habilitarEscrituraImpersonacion: (accessToken, expiraEn) => {
+        if (!get().impersonando) return
+        set({ token: accessToken, impersonacionModo: 'ESCRITURA', impersonacionEscrituraHasta: expiraEn })
       },
     }),
     {
@@ -201,6 +221,8 @@ const useAuthStore = create<AuthState>()(
         roles: state.roles,
         correoVerificado: state.correoVerificado,
         impersonando: state.impersonando,
+        impersonacionModo: state.impersonacionModo,
+        impersonacionEscrituraHasta: state.impersonacionEscrituraHasta,
         adminOriginal: state.adminOriginal,
       }),
     }
