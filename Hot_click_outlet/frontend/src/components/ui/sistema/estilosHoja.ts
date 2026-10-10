@@ -6,3 +6,6 @@ export const BOTON_HOJA_PRIMARIO = `${BASE_BOTON_HOJA} bg-hc-red-500 text-hc-n-0
 
 /** Título de hoja: ícono de 24 + Sora Bold 17 (Figma `51:2171`). */
 export const TITULO_HOJA = 'font-display text-[17px] font-bold leading-[normal] tracking-normal text-hc-n-900'
+
+/** Velo semitransparente del tema (`--hc-overlay`): la página sigue visible detrás de la hoja inferior. */
+export const VELO_HOJA = 'bg-[var(--hc-overlay)]'

@@ -35,6 +35,9 @@ export default function HtmlClassManager() {
     html.classList.toggle('reduce-motion', reduceMotion)
     // El filtro de color se retiró de la interfaz: se limpia cualquiera que haya quedado de una sesión anterior.
     html.style.filter = ''
+    // theme-init.js pinta el fondo oscuro antes del CSS; desde acá mandan los tokens del tema.
+    html.style.backgroundColor = ''
+    html.style.colorScheme = ''
   }, [pathname, theme, fontSize, highContrast, reduceMotion])
 
   useEffect(() => {
