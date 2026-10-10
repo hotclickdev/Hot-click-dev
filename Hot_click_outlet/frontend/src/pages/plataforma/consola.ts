@@ -22,8 +22,14 @@ export const consolaService = {
   crearRapida: (negocio: string, persona: string, telefono: string, dias: number) =>
     api.post('/admin/consola/tiendas-rapidas', { negocio, persona, telefono, dias }),
   verRapida: (token: string) => api.get(`/public/tienda-rapida/${token}`),
-  completarRapida: (token: string, datos: { persona: string; cedula: string; correo: string; telefono: string; clave: string }) =>
-    api.post(`/public/tienda-rapida/${token}`, datos),
+  completarRapida: (token: string, datos: {
+    persona: string; cedula: string; correo: string; telefono: string; clave: string; acepto: boolean; versionLegal: string
+  }) => api.post(`/public/tienda-rapida/${token}`, datos),
+  regenerarRapida: (id: string) => api.post(`/admin/consola/tiendas-rapidas/${id}/regenerar`),
+  revocarRapida: (id: string) => api.post(`/admin/consola/tiendas-rapidas/${id}/revocar`),
+  onboardingRapido: () => api.get('/emprendedor/negocio-rapido/onboarding'),
+  marcarPasoRapido: (paso: string, accion: 'HECHO' | 'OMITIR') =>
+    api.put(`/emprendedor/negocio-rapido/onboarding/${paso}`, { accion }),
 }
 
 export function objetoDe(data: unknown): Record<string, unknown> {

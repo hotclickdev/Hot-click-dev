@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { consolaService, objetoDe } from './consola'
 import { texto } from './normalizar'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga } from './piezas'
+import { RUTA_ONBOARDING_RAPIDO, motivoEnlace } from './tiendaRapida'
 
 type Invitacion = {
   negocio: string
@@ -11,10 +13,14 @@ type Invitacion = {
   dias: number
   diasRestantes: number
   estado: string
+  versionLegal: string
 }
 
 export default function TiendaRapidaPage() {
   const { token = '' } = useParams()
+  const { t } = useTranslation()
+  const [motivo, setMotivo] = useState<'usado' | 'vencido' | 'noVigente'>('noVigente')
+  const [acepto, setAcepto] = useState(false)
   const [invitacion, setInvitacion] = useState<Invitacion | null>(null)
   const [estado, setEstado] = useState<'carga' | 'listo' | 'error'>('carga')
   const [paso, setPaso] = useState(1)
@@ -27,11 +33,10 @@ export default function TiendaRapidaPage() {
   const [ocupado, setOcupado] = useState(false)
   const [lista, setLista] = useState(false)
 
+  const tokenValido = /^[A-Za-z0-9_-]{20,64}$/.test(token)
+
   useEffect(() => {
-    if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) {
-      setEstado('error')
-      return
-    }
+    if (!tokenValido) return
     consolaService.verRapida(token)
       .then((respuesta) => {
         const fila = objetoDe(respuesta.data)
@@ -42,6 +47,7 @@ export default function TiendaRapidaPage() {
           dias: Number(fila.dias) || 30,
           diasRestantes: Number(fila.diasRestantes) || 0,
           estado: texto(fila.estado),
+          versionLegal: texto(fila.versionLegal),
         }
         setInvitacion(datos)
         setPersona(datos.persona)
@@ -51,9 +57,10 @@ export default function TiendaRapidaPage() {
       })
       .catch((err: unknown) => {
         console.error(err)
+        setMotivo(motivoEnlace(err))
         setEstado('error')
       })
-  }, [token])
+  }, [token, tokenValido])
 
   async function guardar() {
     if (!invitacion) return
@@ -65,16 +72,27 @@ export default function TiendaRapidaPage() {
       setAviso('El correo y una contraseña de 8 caracteres son obligatorios.')
       return
     }
+    if (!acepto) {
+      setAviso(t('negocioRapido.aceptar.falta'))
+      return
+    }
     setOcupado(true)
     setAviso('')
     try {
       await consolaService.completarRapida(token, {
         persona: persona.trim(), cedula: cedula.trim(), correo: correo.trim(), telefono: telefono.trim(), clave,
+        acepto, versionLegal: invitacion.versionLegal,
       })
       setLista(true)
       setPaso(3)
     } catch (err) {
       console.error(err)
+      const causa = motivoEnlace(err)
+      if (causa !== 'noVigente') {
+        setMotivo(causa)
+        setEstado('error')
+        return
+      }
       setAviso(mensajeDe(err, 'No se pudieron guardar los datos.'))
     } finally {
       setOcupado(false)
@@ -85,8 +103,8 @@ export default function TiendaRapidaPage() {
     <main className="min-h-screen bg-hc-n-50 px-4 py-10">
       <div className="mx-auto flex w-full max-w-md flex-col gap-4">
         <p className="font-display text-sm font-bold tracking-wide text-hc-blue-600">HOTCLICK</p>
-        {estado === 'carga' && <Carga />}
-        {estado === 'error' && <Aviso>Ese enlace no está vigente.</Aviso>}
+        {estado === 'carga' && tokenValido && <Carga />}
+        {(estado === 'error' || !tokenValido) && <Aviso>{t(`negocioRapido.enlace.${motivo}`)}</Aviso>}
         {estado === 'listo' && invitacion && invitacion.estado === 'VENCIDA' && (
           <Aviso>{`El plazo de ${invitacion.negocio} ya se cumplió.`}</Aviso>
         )}
@@ -108,6 +126,8 @@ export default function TiendaRapidaPage() {
             setTelefono={setTelefono}
             clave={clave}
             setClave={setClave}
+            acepto={acepto}
+            setAcepto={setAcepto}
             aviso={aviso}
             ocupado={ocupado}
             onGuardar={() => void guardar()}
@@ -132,6 +152,8 @@ function Formulario(props: {
   setTelefono: (valor: string) => void
   clave: string
   setClave: (valor: string) => void
+  acepto: boolean
+  setAcepto: (valor: boolean) => void
   aviso: string
   ocupado: boolean
   onGuardar: () => void
@@ -168,27 +190,45 @@ function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso }: {
   )
 }
 
-function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave, aviso, ocupado, onGuardar, setPaso }: {
+function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave, acepto, setAcepto, aviso, ocupado, onGuardar, setPaso }: {
   correo: string
   setCorreo: (valor: string) => void
   telefono: string
   setTelefono: (valor: string) => void
   clave: string
   setClave: (valor: string) => void
+  acepto: boolean
+  setAcepto: (valor: boolean) => void
   aviso: string
   ocupado: boolean
   onGuardar: () => void
   setPaso: (paso: number) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div>
       <Campo etiqueta="Correo" valor={correo} onChange={setCorreo} />
       <Campo etiqueta="Teléfono" valor={telefono} onChange={setTelefono} />
       <Campo etiqueta="Contraseña" valor={clave} onChange={setClave} secreto />
+      <fieldset className="mt-4 rounded-[14px] border border-hc-n-200 bg-hc-n-50 p-3">
+        <legend className="px-1 font-display text-sm font-bold text-hc-n-900">{t('negocioRapido.aceptar.titulo')}</legend>
+        <p className="text-xs leading-5 text-hc-n-600">{t('negocioRapido.aceptar.legal')}</p>
+        <label className="mt-2 flex items-start gap-2 text-sm text-hc-n-900">
+          <input
+            type="checkbox"
+            checked={acepto}
+            onChange={(e) => setAcepto(e.target.checked)}
+            required
+            aria-required="true"
+            className="mt-0.5 size-5 shrink-0 accent-hc-blue-600"
+          />
+          <span>{t('negocioRapido.aceptar.casilla')}</span>
+        </label>
+      </fieldset>
       {aviso && <p className="mt-2 text-sm text-hc-primary-text">{aviso}</p>}
       <div className="mt-4 flex gap-2">
         <button type="button" className={BOTON_SECUNDARIO} onClick={() => setPaso(1)} disabled={ocupado}>Atrás</button>
-        <button type="button" className={`${BOTON_PRIMARIO} flex-1`} onClick={onGuardar} disabled={ocupado}>
+        <button type="button" className={`${BOTON_PRIMARIO} flex-1`} onClick={onGuardar} disabled={ocupado || !acepto}>
           {ocupado ? 'Guardando…' : 'Guardar mis datos'}
         </button>
       </div>
@@ -197,12 +237,15 @@ function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave,
 }
 
 function Listo({ negocio }: { negocio: string }) {
+  const { t } = useTranslation()
   return (
     <section className="hc-escalon-palabra rounded-[16px] border border-hc-n-200 bg-white p-4" style={{ animationDuration: '420ms' }}>
       <p className="font-display text-[40px] font-extrabold leading-none text-hc-success-text">Listo</p>
       <h1 className="mt-2 font-display text-[22px] font-extrabold leading-7">{negocio}</h1>
       <p className="mt-2 text-sm text-hc-n-600">Sus datos quedaron guardados. HotClick sigue cargando los productos de la tienda.</p>
-      <a className={`${BOTON_PRIMARIO} mt-4 w-full`} href="/login">Entrar</a>
+      <a className={`${BOTON_PRIMARIO} mt-4 w-full`} href={`/login?redirect=${encodeURIComponent(RUTA_ONBOARDING_RAPIDO)}`}>
+        {t('negocioRapido.listo.entrar')}
+      </a>
     </section>
   )
 }

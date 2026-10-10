@@ -4541,5 +4541,67 @@
     "enResultados": "Negócios que correspondem",
     "verTodos": "Ver todos os negócios",
     "sinPlan": "Ainda não há lojas {{plan}} na HotClick."
+  },
+  "negocioRapido": {
+    "aceptar": {
+      "titulo": "Responsabilidade pelo negócio",
+      "casilla": "Declaro que sou o dono ou representante legal deste negócio e responsável pela marca.",
+      "legal": "[REVISIÓN LEGAL] Texto provisório pendente de revisão jurídica. Ao aceitar, você confirma que tem autorização para administrar este negócio na HotClick e que as informações que enviar são suas ou você tem permissão para usá-las.",
+      "falta": "Para continuar você precisa aceitar ser o dono ou representante legal do negócio."
+    },
+    "enlace": {
+      "usado": "Este link já foi usado. Se você é o dono, entre com seu e-mail e senha.",
+      "vencido": "Este link expirou ou foi anulado. Peça um novo à HotClick.",
+      "noVigente": "Este link não é válido."
+    },
+    "listo": {
+      "entrar": "Entrar e montar minha loja"
+    },
+    "onboarding": {
+      "titulo": "Monte sua loja passo a passo",
+      "sub": "Seu progresso fica salvo; volte quando quiser.",
+      "completo": "Sua loja tem o necessário para começar.",
+      "error": "Não foi possível carregar seu progresso.",
+      "seguir": "Continuar",
+      "hecho": "Já concluí",
+      "omitir": "Pular por enquanto",
+      "irPanel": "Ir para meu painel",
+      "estado": {
+        "HECHO": "Pronto",
+        "OMITIDO": "Pulado",
+        "PENDIENTE": "Pendente",
+        "BLOQUEADO": "Depois"
+      },
+      "paso": {
+        "BODEGA": {
+          "titulo": "Crie seu depósito",
+          "texto": "O lugar de onde saem seus pedidos."
+        },
+        "PRODUCTO": {
+          "titulo": "Adicione seu primeiro produto",
+          "texto": "Pode ser um produto normal ou personalizado."
+        },
+        "NEGOCIO": {
+          "titulo": "Complete os dados do negócio",
+          "texto": "Logo, descrição e dados de contato da loja."
+        },
+        "COBRO": {
+          "titulo": "Configure como você recebe",
+          "texto": "A conta onde a HotClick deposita para você."
+        }
+      }
+    },
+    "admin": {
+      "estadoEnlace": {
+        "VIGENTE": "Link ativo",
+        "USADO": "Atribuída",
+        "VENCIDO": "Link expirado",
+        "REVOCADO": "Link anulado"
+      },
+      "regenerar": "Novo link",
+      "revocar": "Anular link",
+      "copiar": "Copiar link",
+      "unSoloUso": "O link funciona uma vez e expira em 72 horas."
+    }
   }
 }

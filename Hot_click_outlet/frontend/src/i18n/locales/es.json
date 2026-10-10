@@ -4541,5 +4541,67 @@
     "enResultados": "Negocios que coinciden",
     "verTodos": "Ver todos los negocios",
     "sinPlan": "Todavía no hay tiendas {{plan}} en HotClick."
+  },
+  "negocioRapido": {
+    "aceptar": {
+      "titulo": "Responsabilidad del negocio",
+      "casilla": "Declaro que soy el dueño o representante legal de este negocio y responsable de la marca.",
+      "legal": "[REVISIÓN LEGAL] Texto pendiente de revisión legal. Al aceptar, confirmás que tenés facultades para administrar este negocio en HotClick y que la información que cargues es tuya o tenés permiso para usarla.",
+      "falta": "Para seguir tenés que aceptar ser el dueño o representante legal del negocio."
+    },
+    "enlace": {
+      "usado": "Este enlace ya se usó. Si sos el dueño, entrá con tu correo y contraseña.",
+      "vencido": "Este enlace venció o fue anulado. Pedile a HotClick uno nuevo.",
+      "noVigente": "Ese enlace no está vigente."
+    },
+    "listo": {
+      "entrar": "Entrar y armar mi tienda"
+    },
+    "onboarding": {
+      "titulo": "Armá tu tienda paso a paso",
+      "sub": "Tu avance queda guardado; podés volver cuando quieras.",
+      "completo": "Tu tienda tiene lo necesario para empezar.",
+      "error": "No se pudo cargar tu avance.",
+      "seguir": "Seguir",
+      "hecho": "Ya lo completé",
+      "omitir": "Omitir por ahora",
+      "irPanel": "Ir a mi panel",
+      "estado": {
+        "HECHO": "Listo",
+        "OMITIDO": "Omitido",
+        "PENDIENTE": "Pendiente",
+        "BLOQUEADO": "Después"
+      },
+      "paso": {
+        "BODEGA": {
+          "titulo": "Creá tu bodega",
+          "texto": "El lugar desde donde salen tus pedidos."
+        },
+        "PRODUCTO": {
+          "titulo": "Agregá tu primer producto",
+          "texto": "Puede ser un producto normal o uno personalizado."
+        },
+        "NEGOCIO": {
+          "titulo": "Completá los datos del negocio",
+          "texto": "Logo, descripción y datos de contacto de la tienda."
+        },
+        "COBRO": {
+          "titulo": "Configurá cómo cobrás",
+          "texto": "La cuenta donde HotClick te deposita."
+        }
+      }
+    },
+    "admin": {
+      "estadoEnlace": {
+        "VIGENTE": "Enlace vigente",
+        "USADO": "Asignada",
+        "VENCIDO": "Enlace vencido",
+        "REVOCADO": "Enlace anulado"
+      },
+      "regenerar": "Nuevo enlace",
+      "revocar": "Anular enlace",
+      "copiar": "Copiar enlace",
+      "unSoloUso": "El enlace sirve una sola vez y vence en 72 horas."
+    }
   }
 }
