@@ -12,6 +12,7 @@ import { initAnalytics } from '@/utils/initAnalytics'
 import { identifyUser, analytics } from '@/utils/analytics'
 import { trackPageView } from '@/utils/ga4'
 import { captureAttributionFromLocation } from '@/utils/attribution'
+import { sincronizarRastreoConConsentimiento } from '@/utils/rastreoAnalitica'
 import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
 import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
@@ -204,6 +205,10 @@ export function ServiceWorkerRefresh() {
 
 /** Inicializa GA4 / PostHog / Clarity una vez al montar si hay consentimiento. */
 export function AnalyticsInit() {
+  // Sin consentimiento de análisis se borran las cookies propias de medición; si se acepta después,
+  // la medición arranca desde la próxima página (no se recupera lo anterior).
+  useEffect(() => sincronizarRastreoConConsentimiento(), [])
+
   useEffect(() => {
     initAnalytics()
     const sesion = useAuthStore.getState()

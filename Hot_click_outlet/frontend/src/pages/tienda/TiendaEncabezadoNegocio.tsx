@@ -6,8 +6,8 @@ import { ICONOS_TIENDA } from './iconosTienda'
 import { contactoVisible, inicialesNegocio, mesAnioCorto, urlInstagram } from './tiendaHelpers'
 import { useCompartirTienda } from './useCompartirTienda'
 
-const CLASE_ACCION = 'flex flex-1 items-center justify-center gap-[6px] rounded-[11px] px-3 py-[11px] text-[13px] font-semibold leading-[normal] lg:flex-none lg:gap-2 lg:rounded-[12px] lg:px-4 lg:text-sm'
-const CLASE_ACCION_SECUNDARIA = `${CLASE_ACCION} border border-[var(--t-border)] bg-[var(--t-surface)] text-hc-n-900`
+const CLASE_ACCION = 'flex min-h-11 flex-1 items-center justify-center gap-[6px] rounded-[11px] px-3 py-[11px] text-[13px] font-semibold leading-[normal] lg:flex-none lg:gap-2 lg:rounded-[12px] lg:px-4 lg:text-sm'
+export const CLASE_ACCION_SECUNDARIA = `${CLASE_ACCION} border border-[var(--t-border)] bg-[var(--t-surface)] text-hc-n-900`
 
 function Dato({ icono, children }: { icono: string; children: ReactNode }) {
   return (
@@ -40,6 +40,8 @@ function Logo({ nombre, logoUrl }: { nombre: string; logoUrl?: string | null }) 
 /**
  * Encabezado del negocio (Figma `29:934` móvil, `29:2357` escritorio): logo flotante sobre la portada,
  * nombre, descripción corta, datos, sello de factura electrónica y acciones.
+ * Boceto 13 (demo-0410): WhatsApp, Instagram y Compartir son secundarios (borde, 44 px); la única CTA roja
+ * de la tienda es «Ver pedido» (`TiendaBarraPedido`).
  * WhatsApp e Instagram solo aparecen si el plan lo permite (PYME / NEGOCIO_PLUS); en EMPRENDEDOR queda Compartir.
  */
 export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: EmpresaTiendaPublica | null; nombre: string }) {
@@ -81,8 +83,7 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
               href={`https://wa.me/${whatsapp}?text=${textoWhatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${CLASE_ACCION} text-white`}
-              style={{ backgroundColor: 'var(--t-accent)' }}
+              className={CLASE_ACCION_SECUNDARIA}
             >
               <IconoFigma src={ICONOS_TIENDA.accionWhatsapp} size={16} className="lg:!size-[18px]" />
               WhatsApp

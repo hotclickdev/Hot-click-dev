@@ -5,7 +5,7 @@ import {
   addResetAdapter,
   setAnalyticsConsent,
 } from '@/utils/analytics'
-import { getCookieConsent } from '@/components/ui/CookieBanner'
+import { getCookieConsent } from '@/utils/cookieConsent'
 
 let adapterRegistrado = false
 

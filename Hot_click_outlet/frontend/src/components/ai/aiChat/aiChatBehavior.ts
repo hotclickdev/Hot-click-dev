@@ -1,4 +1,5 @@
 import type { AiChatSurface } from './chatSurface'
+import { hayConsentimientoAnalitica } from '@/utils/rastreoAnalitica'
 
 /**
  * Cookie compacta de comportamiento del chat (sin PII, sin historial de mensajes).
@@ -34,6 +35,7 @@ function vacio(): AiBehavior {
 }
 
 function escribir(data: AiBehavior) {
+  if (!hayConsentimientoAnalitica()) return
   try {
     const value = encodeURIComponent(JSON.stringify(data))
     document.cookie = `${COOKIE}=${value}; path=/; max-age=${MAX_AGE_SEC}; SameSite=Lax`

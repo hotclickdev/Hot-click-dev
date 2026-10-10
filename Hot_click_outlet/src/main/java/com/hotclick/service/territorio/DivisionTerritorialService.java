@@ -35,6 +35,9 @@ public class DivisionTerritorialService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicReference<List<ProvinciaDivision>> cache = new AtomicReference<>();
     private final AtomicLong cacheEn = new AtomicLong();
+    /** Si el IGN fallo hace menos de 60 s (y no hay copia local), no se reintenta en cada request. */
+    private static final long ESPERA_FALLO_MS = Duration.ofSeconds(60).toMillis();
+    private final AtomicLong falloEn = new AtomicLong();
     private final java.util.concurrent.locks.ReentrantLock recargando = new java.util.concurrent.locks.ReentrantLock();
 
     public DivisionTerritorialService() {
@@ -63,10 +66,16 @@ public class DivisionTerritorialService {
     }
 
     private List<ProvinciaDivision> recargar(long ahora) {
+        if (ahora - falloEn.get() < ESPERA_FALLO_MS) {
+            List<ProvinciaDivision> vieja = cache.get();
+            if (vieja != null) return vieja;
+            throw new IllegalStateException("El IGN fallo hace poco; se reintenta en un minuto");
+        }
         List<ProvinciaDivision> fresco;
         try {
             fresco = List.copyOf(descargar());
         } catch (RuntimeException e) {
+            falloEn.set(ahora);
             log.warn("IGN no disponible, uso la copia local: {}", e.getMessage());
             fresco = copiaLocal();
             if (fresco.isEmpty()) throw e;

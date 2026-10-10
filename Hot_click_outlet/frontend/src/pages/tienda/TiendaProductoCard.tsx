@@ -6,7 +6,8 @@ import { esProductoCotizable, textoPrecioProducto } from '@/utils/precioProducto
 import TiendaPlaceholder from './TiendaPlaceholder'
 import type { Producto } from '@/types/producto'
 
-const CLASE_AGREGAR = 'flex size-8 shrink-0 items-center justify-center rounded-[10px] text-white transition-colors'
+/** Boceto 13: el «+» es secundario (borde n200, 44 × 44) para que «Ver pedido» sea la única CTA roja. */
+const CLASE_AGREGAR = 'flex size-11 shrink-0 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 text-hc-n-900 transition-colors hover:bg-hc-n-50'
 
 /**
  * Tarjeta de producto de la tienda del vendedor (Figma `5:23`, 167x280): misma geometría que la del
@@ -56,7 +57,7 @@ export default function TiendaProductoCard({
             {textoPrecioProducto(producto)}
           </p>
           {esProductoCotizable(producto) ? (
-            <Link to={destino} aria-label={`Personalizar ${nombre}`} className={`${CLASE_AGREGAR} bg-hc-red-500`} style={{ backgroundColor: 'var(--t-primary)' }}>
+            <Link to={destino} aria-label={`Personalizar ${nombre}`} className={CLASE_AGREGAR}>
               <IconoFigma src={ICONOS_COMPRADOR.agregar} size={16} />
             </Link>
           ) : (
@@ -64,8 +65,7 @@ export default function TiendaProductoCard({
               type="button"
               onClick={() => onAgregar(producto)}
               aria-label={agregado ? `Agregado al pedido: ${nombre}` : `Agregar al pedido: ${nombre}`}
-              className={CLASE_AGREGAR}
-              style={{ backgroundColor: agregado ? 'var(--hc-success)' : 'var(--t-primary)' }}
+              className={`${CLASE_AGREGAR} ${agregado ? 'text-hc-success-text' : ''}`}
             >
               <IconoFigma src={agregado ? ICONOS_COMPRADOR.agregadoCheck : ICONOS_COMPRADOR.agregar} size={16} />
             </button>

@@ -1,5 +1,7 @@
 export const COOKIE_CONSENT_KEY = 'hotclick-cookie-consent'
 export const EVENTO_ABRIR_PREFERENCIAS_COOKIES = 'hotclick-abrir-preferencias-cookies'
+/** Se emite (detail: CookieConsent) cada vez que se guarda una elección del banner o de la hoja de preferencias. */
+export const EVENTO_CONSENTIMIENTO_CAMBIADO = 'hotclick-consentimiento-cambiado'
 export const VIGENCIA_CONSENTIMIENTO_MS = 365 * 24 * 60 * 60 * 1000
 
 export type CookieConsent = {
@@ -9,8 +11,13 @@ export type CookieConsent = {
   timestamp: number
 }
 
-export function consentDesdeCategorias(analytics: boolean, advertising: boolean): CookieConsent {
-  return { analytics, advertising, functional: true, timestamp: Date.now() }
+/**
+ * Sin publicidad (decisión del dueño): `advertising` se guarda siempre en false. El parámetro queda para
+ * no romper a quien lo llama; «Aceptar todas» solo activa análisis.
+ */
+export function consentDesdeCategorias(analytics: boolean, advertising?: boolean): CookieConsent {
+  void advertising
+  return { analytics, advertising: false, functional: true, timestamp: Date.now() }
 }
 
 export function parseCookieConsent(raw: string): CookieConsent | null {
@@ -22,7 +29,7 @@ export function parseCookieConsent(raw: string): CookieConsent | null {
     const analytics = obj.analytics
     return {
       analytics,
-      advertising: typeof obj.advertising === 'boolean' ? obj.advertising : analytics,
+      advertising: false,
       functional: obj.functional === true,
       timestamp: typeof obj.timestamp === 'number' ? obj.timestamp : Date.now(),
     }
@@ -42,6 +49,7 @@ export function getCookieConsent(): CookieConsent | null {
 
 export function setCookieConsent(value: CookieConsent) {
   localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(value))
+  globalThis.dispatchEvent?.(new CustomEvent(EVENTO_CONSENTIMIENTO_CAMBIADO, { detail: value }))
 }
 
 export function abrirPreferenciasCookies() {

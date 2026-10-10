@@ -1,0 +1,1 @@
+import{a as e}from"./rolldown-runtime-Cyuzqnbw.js";import{r as t}from"./vendor-clerk-MNPf1zau.js";import{Qt as n}from"./index-BAAGOlac.js";var r=e(t(),1);function i({className:e=`w-8 h-8 opacity-30`}){return(0,r.jsx)(n,{tipo:`paquete`,className:e})}export{i as t};

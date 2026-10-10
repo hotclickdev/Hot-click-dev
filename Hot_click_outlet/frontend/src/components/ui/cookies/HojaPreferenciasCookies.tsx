@@ -12,7 +12,8 @@ type HojaPreferenciasCookiesProps = {
   analiticaInicial: boolean
   onCerrar: () => void
   onGuardar: (analitica: boolean) => void
-  onAceptarTodo: () => void
+  /** Guarda solo las esenciales: sin análisis ni publicidad (no se carga ningún script opcional). */
+  onSoloEsenciales: () => void
 }
 
 const FILA = 'flex flex-col gap-[6px] border-t border-hc-n-200 px-5 py-[14px]'
@@ -23,8 +24,9 @@ const BOTON = 'flex w-full items-center justify-center rounded-[12px] py-[14px] 
 /**
  * Preferencias de cookies (Figma `45:2166`): hoja que arranca a 90 px del borde superior, con
  * esenciales (siempre activas), análisis (interruptor) y publicidad (no se usa).
+ * Boceto 14 (demo-0410): «Solo esenciales» y «Guardar preferencias» (n900, no rojo); el cuerpo largo vive acá.
  */
-export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onCerrar, onGuardar, onAceptarTodo }: HojaPreferenciasCookiesProps) {
+export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onCerrar, onGuardar, onSoloEsenciales }: HojaPreferenciasCookiesProps) {
   const { t } = useTranslation()
   const idTitulo = useId()
   const hojaRef = useRef<HTMLDivElement>(null)
@@ -61,6 +63,7 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
         <div className="flex flex-col gap-1 px-5 pb-[6px] pt-5">
           <h2 id={idTitulo} className="font-display text-[18px] font-bold leading-[23px] tracking-normal text-hc-n-900">{t('cookies.preferenciasTitulo')}</h2>
           <p className="text-[13px] leading-[18px] text-hc-n-600">{t('cookies.preferenciasSubtitulo')}</p>
+          <p className="text-[12px] leading-[17px] text-hc-n-600">{t('cookies.body')}</p>
         </div>
 
         <section className={FILA}>
@@ -93,12 +96,14 @@ export default function HojaPreferenciasCookies({ abierta, analiticaInicial, onC
         <div className="flex-1" />
 
         <div className="flex flex-col gap-[10px] border-t border-hc-n-200 px-5 pb-7 pt-3">
-          <button type="button" onClick={() => onGuardar(analitica)} className={`${BOTON} bg-hc-red-500 text-hc-n-0 hover:bg-hc-red-600`}>
-            {t('cookies.guardarPreferencias')}
-          </button>
-          <button type="button" onClick={onAceptarTodo} className={`${BOTON} border border-hc-n-200 bg-hc-n-0 text-hc-n-900 hover:bg-hc-n-50`}>
-            {t('cookies.acceptAll')}
-          </button>
+          <div className="flex gap-[10px]">
+            <button type="button" onClick={onSoloEsenciales} className={`${BOTON} border border-hc-n-200 bg-hc-n-0 text-hc-n-900 hover:bg-hc-n-50`}>
+              {t('cookies.essentialOnly')}
+            </button>
+            <button type="button" onClick={() => onGuardar(analitica)} className={`${BOTON} bg-hc-n-900 text-hc-n-0 hover:opacity-90`}>
+              {t('cookies.guardarPreferencias')}
+            </button>
+          </div>
           <p className="text-[11px] leading-[15px] text-hc-n-600">
             {t('cookies.leyTexto')}{' '}
             <Link to="/cookies" onClick={onCerrar} className="underline underline-offset-2">{t('cookies.verPolitica')}</Link>

@@ -20,6 +20,7 @@ import {
   SWIPES_PARA_REVELAR,
   type GustosPerfil,
 } from '@/utils/gustos'
+import { diversificarDescubri } from '@/utils/diversificarDescubri'
 import { useGustosPerfil } from '@/hooks/useGustosPerfil'
 import type { CatalogCategoria } from '@/pages/catalogo/catalogoTipos'
 import type { Producto, ProductoBackend } from '@/types/producto'
@@ -105,7 +106,7 @@ export default function DescubriPage() {
 
   const armarMazo = useCallback((prods: Producto[]) => {
     const p = loadGustos()
-    const noVistos = prods.filter((prod) => !productoYaVisto(prod.id, p))
+    const noVistos = diversificarDescubri(prods.filter((prod) => !productoYaVisto(prod.id, p)))
     setDeck(noVistos)
     setIndice(0)
     setLikes(0)
@@ -146,9 +147,9 @@ export default function DescubriPage() {
     if (!hasGustos(perfil) && likedProducts.length === 0) return []
     const viewed = loadRecentlyViewedIds()
     const ranked = hasGustos(perfil)
-      ? products
+      ? diversificarDescubri(products
         .filter((p) => productoEsRelacionado(p, perfil, categories))
-        .sort((a, b) => rankScoreParaVos(b, perfil.scores, viewed) - rankScoreParaVos(a, perfil.scores, viewed))
+        .sort((a, b) => rankScoreParaVos(b, perfil.scores, viewed) - rankScoreParaVos(a, perfil.scores, viewed)))
       : []
 
     const likedIds = new Set(likedProducts.map((p) => String(p.id)))

@@ -1,0 +1,394 @@
+{
+ "success": true,
+ "data": {
+  "content": [
+   {
+    "id": 561,
+    "nombreProducto": "Carreta personalizada con nombre",
+    "precioVenta": 1,
+    "stock": 0,
+    "imagenPrincipalUrl": "https://example.invalid/img/561.jpg",
+    "empresaId": 50,
+    "empresaNombre": "Casa Sarchí Souvenirs",
+    "empresaSlug": "casa-sarchi-souvenirs",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 121,
+     "nombreCategoria": "Artesanías"
+    }
+   },
+   {
+    "id": 560,
+    "nombreProducto": "Florero típico",
+    "precioVenta": 12500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/560.jpg",
+    "empresaId": 50,
+    "empresaNombre": "Casa Sarchí Souvenirs",
+    "empresaSlug": "casa-sarchi-souvenirs",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 119,
+     "nombreCategoria": "Decoración del Hogar"
+    }
+   },
+   {
+    "id": 559,
+    "nombreProducto": "Bolso de palma",
+    "precioVenta": 14500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/559.jpg",
+    "empresaId": 50,
+    "empresaNombre": "Casa Sarchí Souvenirs",
+    "empresaSlug": "casa-sarchi-souvenirs",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 108,
+     "nombreCategoria": "Ropa y Moda"
+    }
+   },
+   {
+    "id": 558,
+    "nombreProducto": "Taza de recuerdo Costa Rica",
+    "precioVenta": 5900,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/558.jpg",
+    "empresaId": 50,
+    "empresaNombre": "Casa Sarchí Souvenirs",
+    "empresaSlug": "casa-sarchi-souvenirs",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 121,
+     "nombreCategoria": "Artesanías"
+    }
+   },
+   {
+    "id": 557,
+    "nombreProducto": "Camino corto 70 cm",
+    "precioVenta": 8900,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/557.jpg",
+    "empresaId": 50,
+    "empresaNombre": "Casa Sarchí Souvenirs",
+    "empresaSlug": "casa-sarchi-souvenirs",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 119,
+     "nombreCategoria": "Decoración del Hogar"
+    }
+   },
+   {
+    "id": 556,
+    "nombreProducto": "Maceta pintada a mano",
+    "precioVenta": 9800,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/556.jpg",
+    "empresaId": 50,
+    "empresaNombre": "Casa Sarchí Souvenirs",
+    "empresaSlug": "casa-sarchi-souvenirs",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 121,
+     "nombreCategoria": "Artesanías"
+    }
+   },
+   {
+    "id": 555,
+    "nombreProducto": "Plato decorado de carreta",
+    "precioVenta": 11500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/555.jpg",
+    "empresaId": 50,
+    "empresaNombre": "Casa Sarchí Souvenirs",
+    "empresaSlug": "casa-sarchi-souvenirs",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 121,
+     "nombreCategoria": "Artesanías"
+    }
+   },
+   {
+    "id": 554,
+    "nombreProducto": "Tamaleada para tu evento",
+    "precioVenta": 1,
+    "stock": 0,
+    "imagenPrincipalUrl": "https://example.invalid/img/554.jpg",
+    "empresaId": 49,
+    "empresaNombre": "Sabores de Guanacaste",
+    "empresaSlug": "sabores-de-guanacaste",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 553,
+    "nombreProducto": "Mix de hojas para ensalada 150 g",
+    "precioVenta": 2200,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/553.jpg",
+    "empresaId": 49,
+    "empresaNombre": "Sabores de Guanacaste",
+    "empresaSlug": "sabores-de-guanacaste",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 552,
+    "nombreProducto": "Vinagre de banano 350 ml",
+    "precioVenta": 2800,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/552.jpg",
+    "empresaId": 49,
+    "empresaNombre": "Sabores de Guanacaste",
+    "empresaSlug": "sabores-de-guanacaste",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 551,
+    "nombreProducto": "Ají molido 80 g",
+    "precioVenta": 1900,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/551.jpg",
+    "empresaId": 49,
+    "empresaNombre": "Sabores de Guanacaste",
+    "empresaSlug": "sabores-de-guanacaste",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 550,
+    "nombreProducto": "Tortillas palmeadas, 10 unidades",
+    "precioVenta": 2500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/550.jpg",
+    "empresaId": 49,
+    "empresaNombre": "Sabores de Guanacaste",
+    "empresaSlug": "sabores-de-guanacaste",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 549,
+    "nombreProducto": "Cajetas de leche, 10 unidades",
+    "precioVenta": 3800,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/549.jpg",
+    "empresaId": 49,
+    "empresaNombre": "Sabores de Guanacaste",
+    "empresaSlug": "sabores-de-guanacaste",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 548,
+    "nombreProducto": "Tamales, piña de 2",
+    "precioVenta": 5500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/548.jpg",
+    "empresaId": 49,
+    "empresaNombre": "Sabores de Guanacaste",
+    "empresaSlug": "sabores-de-guanacaste",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 547,
+    "nombreProducto": "Caja regalo Costa Rica para empresas",
+    "precioVenta": 1,
+    "stock": 0,
+    "imagenPrincipalUrl": "https://example.invalid/img/547.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 546,
+    "nombreProducto": "Camiseta Pura Vida surf",
+    "precioVenta": 12900,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/546.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 108,
+     "nombreCategoria": "Ropa y Moda"
+    }
+   },
+   {
+    "id": 545,
+    "nombreProducto": "Salero de barro",
+    "precioVenta": 4500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/545.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 121,
+     "nombreCategoria": "Artesanías"
+    }
+   },
+   {
+    "id": 544,
+    "nombreProducto": "Granola con nibs de cacao 200 g",
+    "precioVenta": 4500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/544.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 543,
+    "nombreProducto": "Funda de cojín con motivo de carreta",
+    "precioVenta": 9500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/543.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 119,
+     "nombreCategoria": "Decoración del Hogar"
+    }
+   },
+   {
+    "id": 542,
+    "nombreProducto": "Taza chorotega",
+    "precioVenta": 8500,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/542.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 121,
+     "nombreCategoria": "Artesanías"
+    }
+   },
+   {
+    "id": 541,
+    "nombreProducto": "Miel con polen 350 g",
+    "precioVenta": 6900,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/541.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 540,
+    "nombreProducto": "Café de Dota 500 g",
+    "precioVenta": 8900,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/540.jpg",
+    "empresaId": 48,
+    "empresaNombre": "Mercado Pura Vida",
+    "empresaSlug": "mercado-pura-vida",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 539,
+    "nombreProducto": "Café para oficina con tu marca",
+    "precioVenta": 1,
+    "stock": 0,
+    "imagenPrincipalUrl": "https://example.invalid/img/539.jpg",
+    "empresaId": 47,
+    "empresaNombre": "Tostadora Tarrazú",
+    "empresaSlug": "tostadora-tarrazu",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   },
+   {
+    "id": 538,
+    "nombreProducto": "Prensa francesa 350 ml",
+    "precioVenta": 13900,
+    "stock": 25,
+    "imagenPrincipalUrl": "https://example.invalid/img/538.jpg",
+    "empresaId": 47,
+    "empresaNombre": "Tostadora Tarrazú",
+    "empresaSlug": "tostadora-tarrazu",
+    "estado": 1,
+    "visibleCatalogo": true,
+    "categoria": {
+     "id": 109,
+     "nombreCategoria": "Comidas y Bebidas"
+    }
+   }
+  ],
+  "totalElements": 24,
+  "number": 0,
+  "size": 24
+ }
+}

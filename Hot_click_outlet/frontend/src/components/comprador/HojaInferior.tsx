@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { VELO_HOJA } from '@/components/ui/sistema/estilosHoja'
 
 type HojaInferiorProps = {
   abierta: boolean
@@ -14,7 +15,7 @@ type HojaInferiorProps = {
 }
 
 /**
- * Hoja inferior del comprador (Figma `45:1612`, `26:888`): velo n/900,
+ * Hoja inferior del comprador (Figma `45:1612`, `26:888`): velo semitransparente `--hc-overlay`,
  * esquinas de 22 px y agarradera de 40 × 4. Con `dejarVerPagina` el velo
  * no tapa inicio, productos ni el resto de la pantalla abierta.
  */
@@ -45,7 +46,7 @@ export default function HojaInferior({ abierta, onCerrar, titulo, children, clas
         type="button"
         aria-label={t('comprador.hoja.cerrar')}
         onClick={onCerrar}
-        className={`absolute inset-0 ${dejarVerPagina ? 'bg-transparent' : 'bg-hc-n-900'}`}
+        className={`absolute inset-0 ${dejarVerPagina ? 'bg-transparent' : VELO_HOJA}`}
       />
       <div
         ref={hojaRef}

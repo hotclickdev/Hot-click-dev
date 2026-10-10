@@ -247,6 +247,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/error", "/error/**").permitAll()
             .requestMatchers("/sw.js", "/manifest.webmanifest", "/workbox-*.js",
                 "/registerSW.js", "/vite.svg", "/robots.txt", "/llms.txt", "/opensearch.xml").permitAll()
+            // Íconos de los correos (EmailLayoutHelper): públicos para Gmail. Antes daban 401, y como el
+            // service worker los precacheaba, su instalación fallaba en todas las páginas (QA-PROD-2).
+            .requestMatchers(GET, "/email/*.png").permitAll()
             .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png",
                 "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
                 "/images/**", "/assets/**", "/brand/**", "/admin/**",
