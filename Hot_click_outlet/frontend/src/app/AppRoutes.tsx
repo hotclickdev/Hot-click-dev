@@ -24,6 +24,11 @@ const SeguridadPlataforma = lazy(() => import('@/pages/plataforma/SeguridadPlata
 const IaPlataforma = lazy(() => import('@/pages/plataforma/IaPlataforma'))
 const ReglasPlataforma = lazy(() => import('@/pages/plataforma/ReglasPlataforma'))
 const CrmPlataforma = lazy(() => import('@/pages/plataforma/CrmPlataforma'))
+// CRM fase 0–1: chunk propio (Refine + piezas shadcn/Tremor) que solo baja al entrar.
+const CrmLayout = lazy(() => import('@/features/crm/CrmLayout'))
+const CrmCompras = lazy(() => import('@/features/crm/CrmCompras'))
+const CrmComprador = lazy(() => import('@/features/crm/CrmComprador'))
+const CrmNegocio = lazy(() => import('@/features/crm/CrmNegocio'))
 const ControlPlataforma = lazy(() => import('@/pages/plataforma/ControlPlataforma'))
 const CuentaPlataforma = lazy(() => import('@/pages/plataforma/CuentaPlataforma'))
 const TiendaRapidaPage = lazy(() => import('@/pages/plataforma/TiendaRapidaPage'))
@@ -185,7 +190,12 @@ export default function AppRoutes() {
         <Route path="moderacion/reportes" element={<ModeracionPlataforma />} />
         <Route path="dinero" element={<DineroPlataforma />} />
         <Route path="dinero/:vista" element={<DineroPlataforma />} />
-        <Route path="crm" element={<CrmPlataforma />} />
+        <Route path="crm" element={<CrmLayout />}>
+          <Route index element={<CrmPlataforma />} />
+          <Route path="compras" element={<CrmCompras />} />
+          <Route path="compradores/:id" element={<CrmComprador />} />
+          <Route path="negocios/:id" element={<CrmNegocio />} />
+        </Route>
         <Route path="control" element={<ControlPlataforma />} />
         <Route path="cuenta" element={<CuentaPlataforma />} />
         <Route path="operacion" element={<OperacionPlataforma />} />

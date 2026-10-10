@@ -63,6 +63,7 @@ export function destinoPlataformaDesdeAdmin(pathname: string): string {
     ['/admin/security', '/plataforma/seguridad'],
     ['/admin/ai-control', '/plataforma/ia'],
     ['/admin/superadmin', '/plataforma/reglas'],
+    ['/admin/crm', '/plataforma/crm'],
   ]
   for (const [desde, hacia] of alias) {
     if (pathname === desde || pathname.startsWith(`${desde}/`)) return hacia
