@@ -28,6 +28,7 @@ class StorefrontPedidoEfectivoTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        jdbcTemplate.update("DELETE FROM hot_click_movimiento_stock_tb");
         pedidoRepository.deleteAll();
         productoRepository.deleteAll();
         categoriaRepository.deleteAll();
