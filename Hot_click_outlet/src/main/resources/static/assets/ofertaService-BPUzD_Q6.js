@@ -1,0 +1,1 @@
+import{t as e}from"./api-BI8sgqGF.js";var t={aplicar:(t,n,r)=>e.patch(`/productos/${t}/oferta`,{enOferta:n,porcentajeDescuento:r}),misPendientes:()=>e.get(`/mis-solicitudes/ofertas`)};export{t};

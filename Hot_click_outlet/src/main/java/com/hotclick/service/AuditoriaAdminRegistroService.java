@@ -43,4 +43,36 @@ public class AuditoriaAdminRegistroService {
         audit.setFecha(LocalDateTime.now(Constants.ZONA_CR));
         auditoriaAdminRepository.save(audit);
     }
+
+    /**
+     * Escritura hecha dentro de «Ver como el negocio»: actor = admin original (claims del token
+     * de soporte), empresa vista, método, ruta y status HTTP. La fecha es la del registro.
+     */
+    public void registrarEscrituraImpersonacion(Long adminOriginalId, String adminOriginalCorreo,
+                                                Long empresaId, String metodo, String ruta, int status) {
+        registrarEscrituraImpersonacion(adminOriginalId, adminOriginalCorreo, empresaId, metodo, ruta, status,
+            "IMPERSONACION_ESCRITURA", null, null);
+    }
+
+    /**
+     * QA-130-3: misma fila para escrituras aceptadas y rechazadas en solo lectura
+     * ({@code IMPERSONACION_ESCRITURA_RECHAZADA}), con el id de sesión de soporte y el motivo.
+     */
+    public void registrarEscrituraImpersonacion(Long adminOriginalId, String adminOriginalCorreo,
+                                                Long empresaId, String metodo, String ruta, int status,
+                                                String accion, String sesion, String motivo) {
+        AuditoriaAdmin audit = new AuditoriaAdmin();
+        audit.setAdminId(adminOriginalId);
+        audit.setAdminEmail(adminOriginalCorreo);
+        audit.setAccion(accion);
+        audit.setEntidad("HTTP");
+        audit.setEmpresaId(empresaId);
+        audit.setEntidadId(empresaId);
+        String detalle = metodo + " " + ruta + " -> " + status + " (empresa " + empresaId + ")"
+            + (sesion != null ? " [sesión " + sesion + "]" : "")
+            + (motivo != null ? " Motivo: " + motivo : "");
+        audit.setDetalle(detalle.length() > 500 ? detalle.substring(0, 500) : detalle);
+        audit.setFecha(LocalDateTime.now(Constants.ZONA_CR));
+        auditoriaAdminRepository.save(audit);
+    }
 }

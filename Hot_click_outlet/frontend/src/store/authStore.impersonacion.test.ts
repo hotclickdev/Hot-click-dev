@@ -115,4 +115,25 @@ describe('authStore impersonación', () => {
     useAuthStore.getState().login(authData({ refreshToken: 'should-not-store' }))
     expect(useAuthStore.getState()).not.toHaveProperty('refreshToken')
   })
+  it('impersonar arranca en solo lectura; habilitar escritura cambia token y modo; salir limpia', () => {
+    useAuthStore.getState().login(authData())
+    useAuthStore.getState().impersonar({ accessToken: 'imp.lectura', rol: 'EMPRENDEDOR', empresaId: 7 })
+    expect(useAuthStore.getState().impersonacionModo).toBe('LECTURA')
+
+    useAuthStore.getState().habilitarEscrituraImpersonacion('imp.escritura', 1_700_000_000_000)
+    expect(useAuthStore.getState().token).toBe('imp.escritura')
+    expect(useAuthStore.getState().impersonacionModo).toBe('ESCRITURA')
+    expect(useAuthStore.getState().impersonacionEscrituraHasta).toBe(1_700_000_000_000)
+
+    useAuthStore.getState().salirImpersonacion()
+    expect(useAuthStore.getState().impersonacionModo).toBeNull()
+    expect(useAuthStore.getState().impersonacionEscrituraHasta).toBeNull()
+  })
+
+  it('habilitar escritura sin sesión de soporte no cambia nada', () => {
+    useAuthStore.getState().login(authData({ accessToken: 'admin.token' }))
+    useAuthStore.getState().habilitarEscrituraImpersonacion('otro', null)
+    expect(useAuthStore.getState().token).toBe('admin.token')
+    expect(useAuthStore.getState().impersonacionModo).toBeNull()
+  })
 })

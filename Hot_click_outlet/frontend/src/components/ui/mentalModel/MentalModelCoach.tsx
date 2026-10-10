@@ -6,7 +6,7 @@ import useTenantStore from '@/store/tenantStore'
 import { estiloHueco, estiloTooltip, rectDeAncla, type MmRect } from './mmOverlay'
 import {
   autoSpotlightOmitido,
-  esRutaConCoach,
+  coachPermitido,
   esRutaVendedor,
   esRutaVisitante,
   guiaPara,
@@ -34,6 +34,7 @@ export default function MentalModelCoach() {
   const userName = useAuthStore((s) => s.userName)
   const permissions = useAuthStore((s) => s.permissions)
   const empresaSlug = useAuthStore((s) => s.empresaSlug)
+  const impersonando = useAuthStore((s) => s.impersonando)
   const planNombre = useTenantStore((s) => s.planNombre)
 
   const [fase, setFase] = useState<Fase>('idle')
@@ -72,7 +73,7 @@ export default function MentalModelCoach() {
   // Primera visita / cambio de pestaña: welcome (una vez) o spotlight de la ruta.
   useEffect(() => {
     if (mmApagado()) return
-    if (!esRutaConCoach(path)) return
+    if (!coachPermitido(path, impersonando)) return
 
     if (esVisitante) {
       if (!welcomeVisitanteHecho()) {
@@ -100,7 +101,7 @@ export default function MentalModelCoach() {
     }
     const t = setTimeout(() => iniciarSpotlight(false), 800)
     return () => clearTimeout(t)
-  }, [path, esSeller, esVisitante, iniciarSpotlight])
+  }, [path, esSeller, esVisitante, iniciarSpotlight, impersonando])
 
   useEffect(() => {
     const handler = () => {
@@ -145,7 +146,7 @@ export default function MentalModelCoach() {
     return () => window.removeEventListener('keydown', onKey)
   }, [fase, cerrarSpotlight, esSeller, esVisitante])
 
-  if (fase === 'idle' || mmApagado()) return null
+  if (fase === 'idle' || mmApagado() || impersonando) return null
 
   if (fase === 'welcome' || fase === 'modos') {
     const varianteWelcome = esVisitante ? 'visitante' : esSeller ? 'seller' : 'admin'
