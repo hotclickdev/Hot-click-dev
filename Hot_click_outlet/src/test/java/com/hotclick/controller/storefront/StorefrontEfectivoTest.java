@@ -17,9 +17,9 @@ class StorefrontEfectivoTest {
     @Test
     void rechazaEfectivoSiLaBodegaNoLoAcepta() {
         assertThatThrownBy(() -> StorefrontGuestOrderService.exigirEfectivoAceptado("EFECTIVO", bodega(false)))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> StorefrontGuestOrderService.exigirEfectivoAceptado("efectivo", bodega(null)))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -33,7 +33,7 @@ class StorefrontEfectivoTest {
         Bodega sin = new Bodega();
         sin.setPermiteRetiroCliente(false);
         assertThatThrownBy(() -> StorefrontGuestOrderService.exigirRetiroDisponible("RETIRO", java.util.List.of(sin)))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(IllegalArgumentException.class);
         Bodega con = new Bodega();
         con.setPermiteRetiroCliente(true);
         assertThatCode(() -> StorefrontGuestOrderService.exigirRetiroDisponible("RETIRO", java.util.List.of(sin, con))).doesNotThrowAnyException();
