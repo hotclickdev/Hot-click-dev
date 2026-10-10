@@ -10,6 +10,7 @@ import CloseIcon from '@/components/ui/CloseIcon'
 import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 type PlanSaas = {
   id: Id
@@ -136,7 +137,7 @@ export default function AdminPlanes() {
   const [planes, setPlanes] = useState<PlanSaas[]>([])
   const [cargando, setCargando] = useState(true)
   const { planNombre, estadoPlan, trialDias } = useTenantStore()
-  const { logout } = useAuthStore()
+  const cerrarSesionCompleta = useCerrarSesion()
   const navigate = useNavigate()
   const {
     loadingPlan,
@@ -149,8 +150,7 @@ export default function AdminPlanes() {
   } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion' })
 
   function handleLogout() {
-    logout()
-    navigate('/')
+    cerrarSesionCompleta()
   }
 
   useEffect(() => {

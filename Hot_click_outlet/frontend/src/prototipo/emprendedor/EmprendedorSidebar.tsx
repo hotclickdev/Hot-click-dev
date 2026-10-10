@@ -12,7 +12,6 @@ import {
   TruckIcon,
 } from '@heroicons/react/24/outline'
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import useAuthStore from '@/store/authStore'
@@ -20,6 +19,7 @@ import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from '@/prototipo/co
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { RUTA_EMPRENDEDOR } from './constants'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 function gruposNav(pendientesEncargos: number): readonly GrupoNav[] {
   return [
@@ -69,15 +69,13 @@ const CUENTA: readonly ItemNav[] = [
  * Sidebar desktop Emprendimiento. Agrupa Operar / Inventario / Negocio.
  */
 export default function EmprendedorSidebar() {
-  const navigate = useNavigate()
   const userName = useAuthStore((s) => s.userName) ?? 'Emprendedor'
-  const logout = useAuthStore((s) => s.logout)
+  const cerrarSesionCompleta = useCerrarSesion()
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
   const grupos = useMemo(() => gruposNav(pendientesEncargos), [pendientesEncargos])
 
   function cerrarSesion() {
-    logout()
-    navigate('/login', { replace: true })
+    cerrarSesionCompleta()
   }
 
   return (

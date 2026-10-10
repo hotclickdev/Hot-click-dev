@@ -1,11 +1,10 @@
-import { useNavigate } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 export default function CuentaPlataforma() {
-  const navigate = useNavigate()
   const nombre = useAuthStore((s) => s.userName)
   const correo = useAuthStore((s) => s.userEmail)
-  const logout = useAuthStore((s) => s.logout)
+  const cerrarSesionCompleta = useCerrarSesion()
   const visible = nombre?.trim() || 'Administrador'
 
   return (
@@ -22,7 +21,7 @@ export default function CuentaPlataforma() {
         <button
           type="button"
           className="mt-4 h-12 w-full rounded-xl bg-hc-primary text-[15px] font-semibold text-white"
-          onClick={() => { logout(); navigate('/login') }}
+          onClick={() => cerrarSesionCompleta}
         >
           Salir
         </button>
