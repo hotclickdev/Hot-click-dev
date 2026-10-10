@@ -1,7 +1,9 @@
 package com.hotclick.security;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.SecurityAuditService;
+import com.hotclick.service.TokenRevocadoService;
 import com.hotclick.service.SecurityDetectionService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -28,6 +30,8 @@ import java.time.Instant;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 public class JwtRequestFilter extends OncePerRequestFilter {
 
@@ -38,6 +42,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Autowired private SecurityAuditService   auditService;
     @Autowired private SecurityDetectionService detectionService;
     @Autowired private Cache<String, UserDetails> userDetailsCache;
+    @Autowired private TokenRevocadoService   tokenRevocadoService;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
+
+    /** Rutas de escritura permitidas en modo solo lectura de «Ver como el negocio». */
+    private static final Pattern RUTAS_PERMITIDAS_SOLO_LECTURA =
+        Pattern.compile("^/api/impersonacion/\\d+/(finalizar|escritura)$|^/api/auth/logout$");
+    private static final Set<String> METODOS_ESCRITURA = Set.of("POST", "PUT", "PATCH", "DELETE");
+    static final String MSG_SOLO_LECTURA =
+        "Modo solo lectura: estás viendo este negocio como soporte. Para hacer cambios, habilitá el modo escritura con un motivo.";
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
@@ -82,6 +95,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
                 UserDetails userDetails = userDetailsCache.get(username,
                         k -> userDetailsService.loadUserByUsername(k));
+                if (jwtUtil.validateToken(jwt, username) && tokenRevocadoService.estaRevocado(jwtUtil.extractJti(jwt))) {
+                    log.debug("[JWT] Token revocado (jti) from ip={}", request.getRemoteAddr());
+                    try {
+                        auditService.logTokenRejected(request.getRemoteAddr(),
+                            request.getHeader("User-Agent"), request.getServletPath(), "TokenRevocado");
+                    } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
+                    chain.doFilter(request, response);
+                    return;
+                }
                 if (jwtUtil.validateToken(jwt, username)) {
                     // Soporte: authorities del claim rol (EMPRENDEDOR), no roles de BD del ADMIN.
                     Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
@@ -101,7 +123,46 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 SecurityContextHolder.clearContext();
             }
         }
+        if (SecurityContextHolder.getContext().getAuthentication() != null
+                && jwt != null && METODOS_ESCRITURA.contains(request.getMethod())
+                && jwtUtil.isImpersonationToken(jwt)) {
+            filtrarEscrituraImpersonacion(jwt, request, response, chain);
+            return;
+        }
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Soporte en modo lectura: 403 salvo finalizar/escritura/logout. En modo escritura deja
+     * pasar y audita cada request con el admin original, la empresa, método, ruta y status.
+     */
+    private void filtrarEscrituraImpersonacion(String jwt, HttpServletRequest request,
+                                               HttpServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        String ruta = request.getRequestURI().substring(request.getContextPath().length());
+        if (RUTAS_PERMITIDAS_SOLO_LECTURA.matcher(ruta).matches()) {
+            chain.doFilter(request, response);
+            return;
+        }
+        if (!jwtUtil.isImpersonationWriteMode(jwt)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false,\"code\":\"IMPERSONACION_SOLO_LECTURA\",\"message\":\""
+                + MSG_SOLO_LECTURA + "\"}");
+            return;
+        }
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            try {
+                auditoriaAdminRegistroService.registrarEscrituraImpersonacion(
+                    jwtUtil.extractAdminOriginalId(jwt), jwtUtil.extractAdminOriginalCorreo(jwt),
+                    jwtUtil.extractEmpresaId(jwt), request.getMethod(), ruta, response.getStatus());
+            } catch (Exception ae) {
+                log.error("[impersonacion] no se pudo auditar {} {}: {}", request.getMethod(), ruta, ae.toString());
+            }
+        }
     }
 
     /**

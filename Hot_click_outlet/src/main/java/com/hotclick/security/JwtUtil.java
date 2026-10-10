@@ -113,6 +113,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
+                .setId(java.util.UUID.randomUUID().toString())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiresIn))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -186,7 +187,45 @@ public class JwtUtil {
         claims.put("impersonando", true);
         claims.put("adminOriginalId", adminOriginalId);
         claims.put("adminOriginalCorreo", adminOriginalCorreo);
+        claims.put(CLAIM_MODO_IMPERSONACION, MODO_LECTURA);
         return createToken(claims, correoAdmin, IMPERSONATION_EXPIRATION);
+    }
+
+    public static final String CLAIM_MODO_IMPERSONACION = "modoImpersonacion";
+    public static final String MODO_LECTURA = "LECTURA";
+    public static final String MODO_ESCRITURA = "ESCRITURA";
+    /** Duración máxima del modo escritura (10 min), nunca más allá del vencimiento de la sesión de soporte. */
+    public static final long IMPERSONATION_WRITE_EXPIRATION = 600_000L;
+
+    /**
+     * Reemite un token de soporte en modo escritura con los mismos claims de tenant y
+     * admin original; vence a los 10 min o al vencer la sesión original, lo que pase antes.
+     */
+    public String generateImpersonationWriteToken(String tokenOriginal) {
+        Claims c = extractAllClaims(tokenOriginal);
+        Map<String, Object> claims = new HashMap<>();
+        for (String k : List.of("userId", "rol", "empresaId", "empresaSlug", "impersonando",
+                "adminOriginalId", "adminOriginalCorreo")) {
+            if (c.get(k) != null) claims.put(k, c.get(k));
+        }
+        claims.put(CLAIM_MODO_IMPERSONACION, MODO_ESCRITURA);
+        long restante = c.getExpiration().getTime() - System.currentTimeMillis();
+        long vida = Math.max(1_000L, Math.min(IMPERSONATION_WRITE_EXPIRATION, restante));
+        return createToken(claims, c.getSubject(), vida);
+    }
+
+    /** True solo para tokens de soporte en modo escritura; un token de soporte sin claim es lectura. */
+    public boolean isImpersonationWriteMode(String token) {
+        try {
+            return MODO_ESCRITURA.equals(extractAllClaims(token).get(CLAIM_MODO_IMPERSONACION));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** jti del token, o null si es un token viejo emitido antes de que existiera. */
+    public String extractJti(String token) {
+        return extractClaim(token, Claims::getId);
     }
 
     public boolean isImpersonationToken(String token) {
