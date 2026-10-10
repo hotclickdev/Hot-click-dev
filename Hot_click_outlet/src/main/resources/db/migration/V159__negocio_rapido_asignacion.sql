@@ -1,4 +1,4 @@
--- V158: el enlace de la tienda rápida pasa a ser de un solo uso, con vencimiento propio,
+-- V159: el enlace de la tienda rápida pasa a ser de un solo uso, con vencimiento propio,
 -- guardado como hash, revocable, con la aceptación de responsabilidad y el avance del onboarding.
 -- Extiende hot_click_tienda_rapida_tb (V157); no crea tablas nuevas.
 

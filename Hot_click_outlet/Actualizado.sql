@@ -4213,7 +4213,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_tienda_rapida_token
 CREATE INDEX IF NOT EXISTS idx_tienda_rapida_empresa
     ON hot_click_tienda_rapida_tb (fk_id_empresa);
 
--- V158: enlace de asignación de un solo uso (hash), aceptación y onboarding del negocio rápido.
+-- V159: enlace de asignación de un solo uso (hash), aceptación y onboarding del negocio rápido.
 
 ALTER TABLE hot_click_tienda_rapida_tb ALTER COLUMN token DROP NOT NULL;
 

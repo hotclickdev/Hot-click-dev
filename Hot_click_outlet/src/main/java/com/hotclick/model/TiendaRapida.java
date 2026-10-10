@@ -41,7 +41,7 @@ public class TiendaRapida {
     @Column(name = "vence", nullable = false)
     private LocalDateTime vence;
 
-    /** Solo enlaces de V157 (anteriores a V158). Los nuevos guardan únicamente {@link #tokenHash}. */
+    /** Solo enlaces de V157 (anteriores a V159). Los nuevos guardan únicamente {@link #tokenHash}. */
     @Column(name = "token", length = 64)
     private String token;
 
