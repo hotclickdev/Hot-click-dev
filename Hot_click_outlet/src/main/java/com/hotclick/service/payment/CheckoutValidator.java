@@ -12,10 +12,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Service
 public class CheckoutValidator {
 
     private static final Logger log = LoggerFactory.getLogger(CheckoutValidator.class);
+
+    /**
+     * Métodos de envío que puede elegir el comprador en el checkout (restaurado de antes del merge 89c1795b2).
+     * Un valor fuera de la lista caía en el {@code default -> 0} de {@code OrderPricingService.calcularCostoEnvio}
+     * (envío gratis). ENVIO_A_DOMICILIO queda solo para pedidos manuales del panel ({@code PedidoManualFactory}).
+     */
+    static final Set<String> METODOS_ENVIO_CHECKOUT = Set.of(
+        Constants.ENVIO_RETIRO, Constants.ENVIO_ENCOMIENDA,
+        "ENVIO_NORMAL_GAM", "ENVIO_NORMAL_FUERA_GAM", "ENVIO_RAPIDO");
 
     @Autowired private BodegaRepository bodegaRepository;
 
@@ -70,8 +81,19 @@ public class CheckoutValidator {
         }
     }
 
-    /** El retiro en tienda es por paquete: lo decide la bodega de origen de ese paquete. */
+    public static void assertMetodoEnvioValido(String metodoEnvio) {
+        if (metodoEnvio == null) return; // el planner usa RETIRO_EN_TIENDA por defecto
+        if (!METODOS_ENVIO_CHECKOUT.contains(metodoEnvio)) {
+            throw new IllegalArgumentException("Método de envío no válido: " + metodoEnvio);
+        }
+    }
+
+    /**
+     * Valida el envío de un paquete: el método tiene que ser uno del checkout y, si es retiro en tienda,
+     * la bodega de origen de ese paquete tiene que permitirlo.
+     */
     public void validarRetiroPaquete(String metodoEnvio, Bodega bodega) {
+        assertMetodoEnvioValido(metodoEnvio);
         if (Constants.ENVIO_RETIRO.equals(metodoEnvio) && !Boolean.TRUE.equals(bodega.getPermiteRetiroCliente())) {
             String tienda = bodega.getEmpresa() != null && bodega.getEmpresa().getNombreEmpresa() != null
                 ? bodega.getEmpresa().getNombreEmpresa() : bodega.getNombreBodega();
