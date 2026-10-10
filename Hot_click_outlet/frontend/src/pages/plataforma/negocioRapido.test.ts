@@ -43,10 +43,38 @@ describe('negocio rápido: pasos del onboarding', () => {
   })
 
   it('cada paso reutiliza el flujo existente del panel', () => {
-    expect(destinoPaso('BODEGA')).toBe('/emprendedor/opciones/bodegas/nueva')
-    expect(destinoPaso('PRODUCTO')).toBe('/emprendedor/productos/nuevo')
+    expect(destinoPaso('BODEGA')).toBe('/emprendedor/opciones/bodegas/nueva?volver=negocio-rapido')
+    expect(destinoPaso('PRODUCTO')).toBe('/emprendedor/productos/nuevo?volver=negocio-rapido')
     expect(destinoPaso('NEGOCIO')).toBe('/emprendedor/opciones/negocio')
     expect(destinoPaso('COBRO')).toBe('/emprendedor/opciones/cobro')
     expect(destinoPaso('X')).toBe('/emprendedor')
+  })
+})
+
+describe('negocio rápido: vuelta al onboarding y menú', () => {
+  it('solo la clave permitida vuelve al onboarding; el resto sigue igual (sin open redirect)', async () => {
+    const { rutaVolver, SUFIJO_VOLVER_ONBOARDING } = await import('./tiendaRapida')
+    expect(rutaVolver(SUFIJO_VOLVER_ONBOARDING)).toBe(RUTA_ONBOARDING_RAPIDO)
+    expect(rutaVolver('')).toBeNull()
+    expect(rutaVolver('?volver=https://evil.example')).toBeNull()
+    expect(rutaVolver('?volver=//evil.example')).toBeNull()
+    expect(rutaVolver('?volver=/emprendedor/pedidos')).toBeNull()
+    expect(rutaVolver('?volver=__proto__')).toBeNull()
+    expect(rutaVolver('?volver=toString')).toBeNull()
+  })
+
+  it('los pasos de bodega y producto abren el wizard con la vuelta', () => {
+    expect(destinoPaso('BODEGA')).toContain('?volver=negocio-rapido')
+    expect(destinoPaso('PRODUCTO')).toContain('?volver=negocio-rapido')
+    expect(destinoPaso('NEGOCIO')).not.toContain('volver')
+  })
+
+  it('el acceso del menú se muestra solo con onboarding pendiente', async () => {
+    const { onboardingPendiente } = await import('./tiendaRapida')
+    const pasos = [{ paso: 'BODEGA', estado: 'PENDIENTE', omitible: false }]
+    expect(onboardingPendiente({ completo: false, pasos })).toBe(true)
+    expect(onboardingPendiente({ completo: true, pasos })).toBe(false)
+    expect(onboardingPendiente({ completo: false, pasos: [] })).toBe(false)
+    expect(onboardingPendiente(undefined)).toBe(false)
   })
 })

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { rutaVolver } from '@/pages/plataforma/tiendaRapida'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import { Boton } from '@/prototipo/compartido/ui'
 import { RUTA_EMPRENDEDOR } from '../constants'
@@ -23,13 +24,14 @@ const AUTO_CIERRE_EXITO_MS = 2200
  */
 export default function AgregarProductoPage({ personalizado = false }: Props) {
   const navigate = useNavigate()
+  const volver = rutaVolver(useLocation().search)
   const form = useFormProductoVendedor(personalizado)
   const pasos = useMemo(() => pasosProducto(personalizado, false), [personalizado])
   const idPaso = pasos[form.paso]?.id
   const [exito, setExito] = useState(false)
 
   function irAProductos() {
-    navegarConTransicion(() => navigate(`${RUTA_EMPRENDEDOR}/productos`))
+    navegarConTransicion(() => navigate(volver ?? `${RUTA_EMPRENDEDOR}/productos`))
   }
 
   useEffect(() => {
