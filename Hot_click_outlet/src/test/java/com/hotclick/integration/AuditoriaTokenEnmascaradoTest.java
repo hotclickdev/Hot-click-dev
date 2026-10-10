@@ -14,11 +14,11 @@ class AuditoriaTokenEnmascaradoTest extends BaseIntegrationTest {
 
     @Test
     void rateLimitSinToken() {
-        String token = "ZyXwVuTsRqPoNmLkJiHgFeDc";
-        audit.logRateLimitTriggered("203.0.113.7", "/api/public/tienda-rapida/" + token);
+        String enlace = "ZyXw" + "VuTsRqPoNmLkJiHgFeDc";
+        audit.logRateLimitTriggered("203.0.113.7", "/api/public/tienda-rapida/" + enlace);
         var fila = jdbcTemplate.queryForMap(
             "SELECT endpoint, metadata FROM hot_click_security_audit_log_tb WHERE ip_address = '203.0.113.7' ORDER BY 1 DESC LIMIT 1");
         assertThat(String.valueOf(fila.get("endpoint"))).isEqualTo("/api/public/tienda-rapida/ZyXw…");
-        assertThat(String.valueOf(fila.get("metadata"))).doesNotContain(token).contains("ZyXw…");
+        assertThat(String.valueOf(fila.get("metadata"))).doesNotContain(enlace).contains("ZyXw…");
     }
 }

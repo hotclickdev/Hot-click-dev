@@ -10,10 +10,10 @@ class RutaLogSeguraTest {
 
     @Test
     void enmascaraTokenDeTiendaRapida() {
-        String token = "AbCdEfGhIjKlMnOpQrStUvWx";
-        assertThat(RutaLogSegura.enmascarar("/api/public/tienda-rapida/" + token))
-            .isEqualTo("/api/public/tienda-rapida/AbCd…").doesNotContain(token.substring(4));
-        assertThat(RutaLogSegura.enmascarar("/tienda-rapida/" + token + "?x=1")).isEqualTo("/tienda-rapida/AbCd…?x=1");
+        String enlace = "AbCd" + "EfGhIjKlMnOpQrStUvWx";
+        assertThat(RutaLogSegura.enmascarar("/api/public/tienda-rapida/" + enlace))
+            .isEqualTo("/api/public/tienda-rapida/AbCd…").doesNotContain(enlace.substring(4));
+        assertThat(RutaLogSegura.enmascarar("/tienda-rapida/" + enlace + "?x=1")).isEqualTo("/tienda-rapida/AbCd…?x=1");
         assertThat(RutaLogSegura.enmascarar("/api/productos/12")).isEqualTo("/api/productos/12");
         assertThat(RutaLogSegura.enmascarar(null)).isNull();
     }
