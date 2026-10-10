@@ -1,0 +1,1 @@
+import{t as e}from"./api-BgvDJbMj.js";var t={crear:t=>e.post(`/recolecciones`,t),listar:()=>e.get(`/recolecciones`),indicarTarifa:(t,n,r)=>e.put(`/recolecciones/${t}/tarifa`,{tarifaColones:n,notasAdmin:r||null}),rechazar:(t,n)=>e.put(`/recolecciones/${t}/rechazar`,{motivo:n}),cancelar:t=>e.put(`/recolecciones/${t}/cancelar`)};export{t};
