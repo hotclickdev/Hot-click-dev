@@ -55,6 +55,8 @@ export const adminService = {
   // Fuera de /admin/** a propósito: quien cierra la sesión está autenticado como
   // el usuario impersonado, no como ADMIN (ver ImpersonacionController en el backend).
   finalizarImpersonacion: (id: Id) => api.post(`/impersonacion/${id}/finalizar`),
+  habilitarEscrituraImpersonacion: (id: Id, motivo: string) =>
+    api.post(`/impersonacion/${id}/escritura`, { motivo }),
   getUsuario: (id: Id) => api.get(`/usuarios/${id}`),
   updateUsuario: (id: Id, body: JsonBody) => api.put(`/usuarios/${id}`, body),
   health: () => api.get('/health'),

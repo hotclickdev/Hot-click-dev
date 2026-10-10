@@ -331,6 +331,14 @@ const VISITANTE_SIN_COACH = [
   '/visitante/asistente',
 ] as const
 
+/**
+ * QA-130-5: en «Ver como el negocio» (soporte) no hay bienvenida ni spotlight: taparían el banner de
+ * impersonación y saludarían al admin como si fuera el dueño.
+ */
+export function coachPermitido(pathname: string, impersonando: boolean): boolean {
+  return !impersonando && esRutaConCoach(pathname)
+}
+
 export function esRutaConCoach(pathname: string): boolean {
   if (pathname.startsWith('/admin') || esRutaVendedor(pathname)) return true
   if (!esRutaVisitante(pathname)) return false

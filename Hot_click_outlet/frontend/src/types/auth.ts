@@ -16,6 +16,8 @@ export type AuthResponse = {
   empresaNombre?: string | null
   permisos?: string[]
   correoVerificado?: boolean
+  /** Solo en «Ver como el negocio»: modo de la sesión de soporte. */
+  modo?: 'LECTURA' | 'ESCRITURA'
 }
 
 export type JwtClaims = {

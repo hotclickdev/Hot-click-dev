@@ -4557,5 +4557,20 @@
     "enResultados": "Matching businesses",
     "verTodos": "See all businesses",
     "sinPlan": "There are no {{plan}} stores on HotClick yet."
+  },
+  "impersonacion": {
+    "soloLectura": "Read only: changes are not saved.",
+    "habilitarEscritura": "Enable changes",
+    "modoEscritura": "Write mode on.",
+    "escrituraAuditada": "Every change in {{negocio}} is logged in the audit trail under your user.",
+    "estaTienda": "this store",
+    "venceA": "Ends at {{hora}}.",
+    "tituloEscritura": "Enable changes in this business",
+    "explicacionEscritura": "Changes are logged in the audit trail with your user and the reason. Write mode ends after 10 minutes.",
+    "motivo": "Reason",
+    "motivoMin": "At least {{min}} characters. For example, the ticket number and what you will fix.",
+    "confirmarEscritura": "Enable changes",
+    "habilitando": "Enabling…",
+    "errorEscritura": "Write mode could not be enabled."
   }
 }

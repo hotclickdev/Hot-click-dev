@@ -4557,5 +4557,20 @@
     "enResultados": "Negócios que correspondem",
     "verTodos": "Ver todos os negócios",
     "sinPlan": "Ainda não há lojas {{plan}} na HotClick."
+  },
+  "impersonacion": {
+    "soloLectura": "Somente leitura: as alterações não são salvas.",
+    "habilitarEscritura": "Habilitar alterações",
+    "modoEscritura": "Modo de edição ativo.",
+    "escrituraAuditada": "Cada alteração em {{negocio}} fica na auditoria com seu usuário.",
+    "estaTienda": "esta loja",
+    "venceA": "Termina às {{hora}}.",
+    "tituloEscritura": "Habilitar alterações neste negócio",
+    "explicacionEscritura": "As alterações ficam na auditoria com seu usuário e o motivo. O modo de edição termina em 10 minutos.",
+    "motivo": "Motivo",
+    "motivoMin": "Mínimo de {{min}} caracteres. Por exemplo, o número do ticket e o que vai corrigir.",
+    "confirmarEscritura": "Habilitar alterações",
+    "habilitando": "Habilitando…",
+    "errorEscritura": "Não foi possível habilitar o modo de edição."
   }
 }

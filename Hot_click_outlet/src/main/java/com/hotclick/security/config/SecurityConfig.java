@@ -146,6 +146,13 @@ public class SecurityConfig {
 
         http.exceptionHandling(ex -> ex
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+            // QA-122-3: el handler por defecto hace sendError(403) y el contenedor reenvía el POST a /error,
+            // que no acepta POST → 405. Se escribe el 403 en JSON directo, sin pasar por /error.
+            .accessDeniedHandler((req, res, e) -> {
+                res.setStatus(HttpStatus.FORBIDDEN.value());
+                res.setContentType("application/json;charset=UTF-8");
+                res.getWriter().write("{\"success\":false,\"message\":\"Acceso denegado\"}");
+            })
         );
         // Orden: BlockedIp(~300) → MaxBodySize(~350) → Internal(~400) → RateLimiting(~500) → Jwt(~700) → Tenant(~900)
         http.addFilterBefore(blockedIpFilter, CsrfFilter.class);
