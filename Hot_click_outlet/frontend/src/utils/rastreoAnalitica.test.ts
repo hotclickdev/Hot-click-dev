@@ -53,7 +53,7 @@ const generar = () => {
   captureAttributionFromLocation('?utm_source=ig&utm_campaign=oct', '/')
   trackAiPage('home')
 }
-const nombres = () => [...doc.jar.keys()].sort()
+const nombres = () => [...doc.jar.keys()].sort((a, b) => a.localeCompare(b))
 
 describe('rastreo de analítica según consentimiento', () => {
   it('sin consentimiento no crea cookies ni la clave de atribución', () => {
