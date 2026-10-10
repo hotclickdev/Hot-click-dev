@@ -1,0 +1,1 @@
+import{Pt as e}from"./index-DzZoO0CF.js";function t(t){return e(Math.round(t??0))}export{t};
