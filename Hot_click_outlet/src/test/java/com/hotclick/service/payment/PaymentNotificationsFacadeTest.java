@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
@@ -34,6 +35,7 @@ class PaymentNotificationsFacadeTest {
     @Mock WebhookDispatcherService webhookDispatcher;
     @Mock AggregatorService aggregatorService;
     @Mock PostHogCaptureService postHogCaptureService;
+    @Mock com.hotclick.service.TelegramService telegramService;
 
     @InjectMocks PaymentNotificationsFacade facade;
 
@@ -99,5 +101,14 @@ class PaymentNotificationsFacadeTest {
         Pago pago = new Pago();
         pago.setProveedor("STRIPE");
         return pago;
+    }
+
+    @Test
+    @DisplayName("pago fallido alerta por Telegram con el numero de pedido")
+    void fallidoAlertaTelegram() {
+        Pedido pedido = pedidoPagado();
+        facade.onPagoFallido(pedido, "tarjeta rechazada");
+        verify(telegramService).enviar(contains("Pago fallido"));
+        verify(notificacionEmailService).enviarPagoFallido(pedido, "tarjeta rechazada");
     }
 }

@@ -6,8 +6,10 @@ import com.hotclick.service.AggregatorService;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.VentaAvisoService;
+import com.hotclick.service.TelegramService;
 import com.hotclick.service.WebhookDispatcherService;
 import com.hotclick.service.analytics.PostHogCaptureService;
+import com.hotclick.service.telegram.TelegramTexto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ public class PaymentNotificationsFacade {
     @Autowired private WebhookDispatcherService webhookDispatcher;
     @Autowired private AggregatorService        aggregatorService;
     @Autowired(required = false) private PostHogCaptureService postHogCaptureService;
+    @Autowired(required = false) private TelegramService telegramService;
     @Autowired(required = false) private com.hotclick.service.analytics.MetaConversionApiService metaConversionApiService;
     @Autowired(required = false) private com.hotclick.service.analytics.Ga4MeasurementProtocolService ga4MeasurementProtocolService;
 
@@ -80,6 +83,20 @@ public class PaymentNotificationsFacade {
         if (pedido == null) return;
         touchUsuarioFinalForAsync(pedido);
         notificacionEmailService.enviarPagoFallido(pedido, motivo);
+        alertarPagoFallido(pedido, motivo);
+    }
+
+    /** Alerta interna al canal de Telegram del equipo. Sin datos personales del comprador. */
+    private void alertarPagoFallido(Pedido pedido, String motivo) {
+        if (telegramService == null) return;
+        try {
+            telegramService.enviar(String.format("*Pago fallido*\nPedido: %s\nEmpresa: %s\nMotivo: %s",
+                TelegramTexto.escaparMarkdown(String.valueOf(pedido.getNumeroPedido())),
+                TelegramTexto.escaparMarkdown(String.valueOf(pedido.getEmpresaId())),
+                TelegramTexto.escaparMarkdown(motivo == null ? "sin motivo" : motivo)));
+        } catch (RuntimeException e) {
+            log.warn("[pago-fallido] no se pudo alertar por Telegram: {}", e.getMessage());
+        }
     }
 
     /**
