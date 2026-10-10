@@ -13,5 +13,6 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | copilot-sesion | copilot | Chat sin negocio resuelto | `TenantContext` nulo corta antes de Claude | `AiCopilotServiceChatStreamTest` | cubierto |
 | copilot-args | copilot | El modelo manda `empresaId` en la tool | el schema no tiene ese campo; el id entra por la sesión | gate `seguridad-merge` | cubierto |
 | copilot-mutacion | copilot | El modelo aplica un cambio de pedido | `proponer_*` y confirmación por botón | sin test de que no ejecuta | hueco |
+| tenant-stock | tenant | Un comprador o el negocio A lee el historial o suma stock a un producto del B por `/api/stock` | rol ADMIN/EMPRENDEDOR en `SecurityAuthorizationRules` y `@PreAuthorize`, `CompanyScope` sobre la empresa del producto | `StockControllerAutorizacionTest`, `StockSeguridadIntegrationTest` | cubierto |
 | auth-rutas-publicas | login | Rutas SPA nuevas (`/planes`, `/negocios`) abren datos privados | solo `permitAll` de la página; las APIs siguen con su regla | `gate-authz` | cubierto |
 | pago-efectivo | tenant | Checkout en efectivo con una bodega que no lo acepta | `SinpeCheckoutService.exigirEfectivoAceptado` | `EfectivoAceptadoTest` | cubierto |

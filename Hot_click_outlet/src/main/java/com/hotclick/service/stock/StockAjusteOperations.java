@@ -31,8 +31,16 @@ public class StockAjusteOperations {
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
             throw new IllegalStateException("Producto no activo");
         }
+        if (cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+        }
         int actAntes   = producto.getStockActual();
-        int actDespues = actAntes + cantidad;
+        int actDespues;
+        try {
+            actDespues = Math.addExact(actAntes, cantidad);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("La cantidad excede el maximo de stock");
+        }
         producto.setStockActual(actDespues);
         productoRepository.save(producto);
 

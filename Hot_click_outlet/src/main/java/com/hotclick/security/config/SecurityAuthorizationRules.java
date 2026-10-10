@@ -78,6 +78,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PATCH,  "/api/productos/*/visibilidad-catalogo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, API_PRODUCTO_POR_ID).hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST,   "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // SEC-02: stock solo ADMIN/EMPRENDEDOR; la empresa se valida en StockController
+            .requestMatchers("/api/stock/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(GET, "/api/division-territorial").permitAll()
             .requestMatchers(GET, "/api/categorias").permitAll()
             .requestMatchers(GET, "/api/categorias/**").permitAll()
