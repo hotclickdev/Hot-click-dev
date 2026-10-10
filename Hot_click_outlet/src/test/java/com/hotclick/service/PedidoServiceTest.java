@@ -195,8 +195,8 @@ class PedidoServiceTest {
     // ── cambiarEstado ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("cambiarEstado → actualiza estadoPedido, sin email si no hay nota")
-    void cambiarEstado_sinNota_noEnviaEmail() {
+    @DisplayName("cambiarEstado → actualiza estadoPedido, avisa al comprador aunque no haya nota")
+    void cambiarEstado_sinNota_avisaCambioDeEstado() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
@@ -204,7 +204,7 @@ class PedidoServiceTest {
         Pedido result = service.cambiarEstado(1L, Constants.PEDIDO_ENVIADO, null);
 
         assertThat(result.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENVIADO);
-        verify(notificacionEmailService, never()).enviarSeguimientoEstado(any(), any());
+        verify(notificacionEmailService).enviarSeguimientoEstado(pedido, null);
         verify(n8nWebhookService, never()).notificarPedidoEntregado(any());
     }
 
