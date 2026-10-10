@@ -75,7 +75,9 @@ export default function PlataformaShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh bg-hc-n-100 text-hc-n-900">
       <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="flex min-h-dvh">
-        <nav aria-label="Dominios de HotClick" className="sticky top-0 hidden h-dvh w-[232px] shrink-0 flex-col bg-hc-blue-600 px-3 py-4 text-white md:flex">
+        {/* QA-131-2: el fondo azul acompaña todo el alto de la página; el menú queda fijo arriba. */}
+        <div className="hidden w-[232px] shrink-0 bg-hc-blue-600 md:block" data-testid="barra-admin">
+        <nav aria-label="Dominios de HotClick" className="sticky top-0 flex h-dvh flex-col px-3 py-4 text-white">
           <div className="mb-5 flex items-center gap-2 px-2">
             <span className="grid size-9 place-items-center rounded-xl bg-white">
               <HotClickMark size={22} />
@@ -88,8 +90,9 @@ export default function PlataformaShell({ children }: { children: ReactNode }) {
             ))}
           </div>
         </nav>
+        </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-hc-n-200 bg-white px-4">
+          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-hc-n-200 bg-hc-surface px-4">
             <span className="md:hidden"><HotClickMark size={26} /></span>
             <form onSubmit={buscar} className="min-w-0 flex-1">
               <label className="sr-only" htmlFor="buscar-negocio">Buscar tienda</label>
@@ -103,7 +106,7 @@ export default function PlataformaShell({ children }: { children: ReactNode }) {
             </form>
             <CuentaUsuario />
           </header>
-          <nav aria-label="Dominios, vista compacta" className="flex gap-1 overflow-x-auto border-b border-hc-n-200 bg-white px-3 py-2 md:hidden">
+          <nav aria-label="Dominios, vista compacta" className="flex gap-1 overflow-x-auto border-b border-hc-n-200 bg-hc-surface px-3 py-2 md:hidden">
             {NAV.map((item) => (
               <ItemNav key={`m-${item.to}`} item={item} cuenta={'badge' in item ? cuentas[item.badge] : undefined} compacto />
             ))}
@@ -164,7 +167,7 @@ function CuentaUsuario() {
         aria-expanded={abierta}
         aria-haspopup="menu"
         onClick={() => setAbierta((v) => !v)}
-        className="flex h-11 items-center gap-2 rounded-xl border border-hc-n-200 bg-white pl-1.5 pr-3"
+        className="flex h-11 items-center gap-2 rounded-xl border border-hc-n-200 bg-hc-surface pl-1.5 pr-3 text-hc-n-900"
       >
         <span className="grid size-8 place-items-center rounded-lg bg-hc-blue-600 font-display text-sm font-bold text-white">{inicial}</span>
         <span className="hidden text-left sm:block">
@@ -173,7 +176,7 @@ function CuentaUsuario() {
         </span>
       </button>
       {abierta && (
-        <div role="menu" className="absolute right-0 top-12 z-30 w-64 rounded-[14px] border border-hc-n-200 bg-white p-3">
+        <div role="menu" className="absolute right-0 top-12 z-30 w-64 rounded-[14px] border border-hc-n-200 bg-hc-surface p-3">
           <p className="font-display text-base font-bold">{visible}</p>
           <p className="truncate text-xs text-hc-n-600">{correo}</p>
           <p className="mt-2 text-xs font-semibold text-hc-blue-600">Usted es el administrador, no un vendedor.</p>

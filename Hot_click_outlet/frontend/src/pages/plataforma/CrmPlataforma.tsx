@@ -16,7 +16,7 @@ const BANDEJAS = [
 ] as const
 
 const FILTROS = [
-  { id: 'genera', label: 'Por lo que generan' },
+  { id: 'genera', label: 'Por lo pagado' },
   { id: 'proceso', label: 'En proceso' },
   { id: 'activos', label: 'Ya inscritos' },
 ]
@@ -42,7 +42,7 @@ export default function CrmPlataforma() {
       <div>
         <h1 className="font-display text-[28px] font-extrabold leading-8">CRM</h1>
         <p className="mt-1 max-w-2xl text-sm text-hc-n-600">
-          Quién está detrás de cada negocio, cuánto genera y quién sigue en proceso de inscripción. El mensaje previo se abre en WhatsApp: HotClick no lo envía solo.
+          Quién está detrás de cada negocio, cuánto tiene pagado y pendiente de cobro, y quién sigue en proceso de inscripción. El mensaje previo se abre en WhatsApp: HotClick no lo envía solo.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
@@ -80,9 +80,9 @@ function Lista({ contactos, activo, onElegir }: {
 }) {
   if (contactos.length === 0) return <Aviso>Nadie en este filtro.</Aviso>
   return (
-    <div className="overflow-hidden rounded-[14px] border border-hc-n-200 bg-white">
+    <div className="overflow-hidden rounded-[14px] border border-hc-n-200 bg-hc-surface">
       <div className="grid grid-cols-[1.1fr_1fr_6.5rem] gap-2 border-b border-hc-n-200 bg-hc-n-50 px-4 py-2 text-xs font-semibold text-hc-n-600">
-        <span>Persona</span><span>Negocio</span><span>Genera</span>
+        <span>Persona</span><span>Negocio</span><span className="text-right">Pagado</span>
       </div>
       <ul>
         {contactos.map((fila) => (
@@ -90,7 +90,7 @@ function Lista({ contactos, activo, onElegir }: {
             <button
               type="button"
               onClick={() => onElegir(fila.empresaId)}
-              className={`grid w-full grid-cols-[1.1fr_1fr_6.5rem] items-center gap-2 border-t border-hc-n-200 px-4 py-3 text-left ${fila.empresaId === activo ? 'bg-hc-blue-50' : 'bg-white'}`}
+              className={`grid w-full grid-cols-[1.1fr_1fr_6.5rem] items-center gap-2 border-t border-hc-n-200 px-4 py-3 text-left ${fila.empresaId === activo ? 'bg-hc-blue-50' : 'bg-hc-surface'}`}
             >
               <span className="min-w-0">
                 <span className="block truncate font-semibold">{fila.persona}</span>
@@ -98,7 +98,10 @@ function Lista({ contactos, activo, onElegir }: {
                 <Chip tono={fila.enProceso ? 'alerta' : 'ok'}>{fila.estado}</Chip>
               </span>
               <span className="truncate text-sm">{fila.negocio}</span>
-              <span className="whitespace-nowrap font-display text-sm font-bold">{colones(fila.genera)}</span>
+              <span className="whitespace-nowrap text-right">
+                <span className="block font-display text-sm font-bold">{colones(fila.pagado)}</span>
+                {fila.pendiente > 0 && <span className="block text-xs text-hc-n-600">Pendiente {colones(fila.pendiente)}</span>}
+              </span>
             </button>
           </li>
         ))}
@@ -168,11 +171,11 @@ function Borrador({ titulo, detalle, persona, negocio, telefono, enProceso, empr
       {negocio && <p className="mt-3 text-sm font-semibold">{persona} · {negocio}</p>}
       <label className="mt-3 block text-xs font-semibold text-hc-n-600">
         Teléfono
-        <input value={numero} onChange={(e) => setNumero(e.target.value)} inputMode="tel" className="mt-1 h-12 w-full rounded-xl border border-hc-n-200 px-3 text-sm" />
+        <input value={numero} onChange={(e) => setNumero(e.target.value)} inputMode="tel" className="mt-1 h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3 text-hc-n-900 text-sm" />
       </label>
       <label className="mt-2 block text-xs font-semibold text-hc-n-600">
         Mensaje
-        <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="mt-1 min-h-24 w-full rounded-xl border border-hc-n-200 px-3 py-2 text-sm" />
+        <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="mt-1 min-h-24 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3 text-hc-n-900 py-2 text-sm" />
       </label>
       {aviso && <p className="mt-2 text-sm text-hc-primary-text">{aviso}</p>}
       <button type="button" className={`${BOTON_PRIMARIO} mt-3`} onClick={() => void abrir()}>Abrir WhatsApp</button>
@@ -218,7 +221,7 @@ function AlguienNuevo() {
       <Campo etiqueta="Teléfono" valor={telefono} onChange={setTelefono} />
       <label className="mt-2 block text-xs font-semibold text-hc-n-600">
         Mensaje
-        <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="mt-1 min-h-20 w-full rounded-xl border border-hc-n-200 px-3 py-2 text-sm" />
+        <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="mt-1 min-h-20 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3 text-hc-n-900 py-2 text-sm" />
       </label>
       {aviso && <p className="mt-2 text-sm text-hc-primary-text">{aviso}</p>}
       <button type="button" className={`${BOTON_SECUNDARIO} mt-3`} onClick={abrir}>Abrir WhatsApp</button>
@@ -230,7 +233,7 @@ function Campo({ etiqueta, valor, onChange }: { etiqueta: string; valor: string;
   return (
     <label className="mt-2 block text-xs font-semibold text-hc-n-600">
       {etiqueta}
-      <input value={valor} onChange={(e) => onChange(e.target.value)} className="mt-1 h-12 w-full rounded-xl border border-hc-n-200 px-3 text-sm" />
+      <input value={valor} onChange={(e) => onChange(e.target.value)} className="mt-1 h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3 text-hc-n-900 text-sm" />
     </label>
   )
 }
