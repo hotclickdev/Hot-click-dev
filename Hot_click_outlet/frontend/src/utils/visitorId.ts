@@ -1,3 +1,5 @@
+import { hayConsentimientoAnalitica } from '@/utils/rastreoAnalitica'
+
 const COOKIE_NAME = 'hotclick_visitor_id'
 const COOKIE_DAYS = 365
 
@@ -27,8 +29,10 @@ function generateUUID() {
 /**
  * Lee la cookie hotclick_visitor_id.
  * Si no existe, genera un UUID v4 y la persiste por 365 días.
+ * Sin consentimiento de análisis no crea ni devuelve nada (null).
  */
-export function getOrCreateVisitorId() {
+export function getOrCreateVisitorId(): string | null {
+  if (!hayConsentimientoAnalitica()) return null
   let id = getCookie(COOKIE_NAME)
   if (!id) {
     id = generateUUID()

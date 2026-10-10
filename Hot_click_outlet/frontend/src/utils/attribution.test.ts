@@ -21,6 +21,8 @@ describe('attribution', () => {
   beforeEach(() => {
     store.clear()
     ;(document as { cookie: string }).cookie = ''
+    // La atribución solo se guarda con consentimiento de análisis (rastreoAnalitica.test.ts cubre el caso sin él).
+    store.set('hotclick-cookie-consent', JSON.stringify({ analytics: true, advertising: false, functional: true, timestamp: Date.now() }))
   })
 
   it('guarda first y last touch desde UTM', () => {
