@@ -10,8 +10,8 @@ public final class TiendaRapidaReglas {
 
     /** Vigencia del enlace de asignación (independiente del plazo de la tienda). */
     public static final int HORAS_ENLACE = 72;
-    /** Versión del texto legal de aceptación (placeholder [REVISIÓN LEGAL]). Subirla cuando Legal lo cambie. */
-    public static final String VERSION_LEGAL = "2026-10-borrador";
+    /** Versión del texto legal de aceptación (Acuerdo para Vendedores, legal-final del 10/10/2026). Subirla cuando Legal lo cambie. */
+    public static final String VERSION_LEGAL = "2026-10-10";
 
     public static final int DIAS_CORTO = 30;
     public static final int DIAS_LARGO = 60;

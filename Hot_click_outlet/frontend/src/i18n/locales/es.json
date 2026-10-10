@@ -4562,7 +4562,8 @@
     "aceptar": {
       "titulo": "Responsabilidad del negocio",
       "casilla": "Declaro que soy el dueño o representante legal de este negocio y responsable de la marca.",
-      "legal": "[REVISIÓN LEGAL] Texto pendiente de revisión legal. Al aceptar, confirmás que tenés facultades para administrar este negocio en HotClick y que la información que cargues es tuya o tenés permiso para usarla.",
+      "legal": "El Vendedor debe suministrar información veraz y mantenerla actualizada. La aceptación de este Acuerdo por medios electrónicos tiene plena validez conforme a la Ley N.° 8454 de Certificados, Firmas Digitales y Documentos Electrónicos.",
+      "legalEnlace": "Acuerdo para Vendedores de HotClick",
       "falta": "Para seguir tenés que aceptar ser el dueño o representante legal del negocio."
     },
     "enlace": {

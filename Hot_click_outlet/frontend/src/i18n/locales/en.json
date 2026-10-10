@@ -4562,7 +4562,8 @@
     "aceptar": {
       "titulo": "Business responsibility",
       "casilla": "I declare that I am the owner or legal representative of this business and responsible for the brand.",
-      "legal": "[REVISIÓN LEGAL] Placeholder text pending legal review. By accepting, you confirm you are authorized to manage this business on HotClick and that the information you upload is yours or you have permission to use it.",
+      "legal": "El Vendedor debe suministrar información veraz y mantenerla actualizada. La aceptación de este Acuerdo por medios electrónicos tiene plena validez conforme a la Ley N.° 8454 de Certificados, Firmas Digitales y Documentos Electrónicos.",
+      "legalEnlace": "Acuerdo para Vendedores de HotClick",
       "falta": "To continue you must accept being the owner or legal representative of the business."
     },
     "enlace": {

@@ -13,10 +13,12 @@ describe('negocio rápido: enlace de asignación', () => {
     expect(motivoEnlace(null)).toBe('noVigente')
   })
 
-  it('el texto legal es un placeholder marcado [REVISIÓN LEGAL] en es, en y pt', () => {
+  it('QA-122-4: el texto legal sale del Acuerdo para Vendedores (legal-final), sin marcador, en es, en y pt', () => {
     for (const locale of [es, en, pt]) {
-      const nr = (locale as { negocioRapido: { aceptar: { legal: string; casilla: string } } }).negocioRapido
-      expect(nr.aceptar.legal.startsWith('[REVISIÓN LEGAL]')).toBe(true)
+      const nr = (locale as { negocioRapido: { aceptar: { legal: string; legalEnlace: string; casilla: string } } }).negocioRapido
+      expect(nr.aceptar.legal).not.toContain('[REVISIÓN LEGAL]')
+      expect(nr.aceptar.legal).toContain('Ley N.° 8454')
+      expect(nr.aceptar.legalEnlace).toBe('Acuerdo para Vendedores de HotClick')
       expect(nr.aceptar.casilla.length).toBeGreaterThan(20)
     }
   })
