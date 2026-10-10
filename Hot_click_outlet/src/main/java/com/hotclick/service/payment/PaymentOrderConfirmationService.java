@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Confirma el pago de un checkout. Un checkout multivendedor tiene N subpedidos bajo un mismo
@@ -27,6 +28,11 @@ import java.util.List;
 public class PaymentOrderConfirmationService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentOrderConfirmationService.class);
+
+    /** Estados posteriores al pago: confirmar de nuevo descontaría stock y cupones otra vez. */
+    static final Set<String> YA_CONFIRMADOS = Set.of(
+        Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
+        Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
 
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private CuponService               cuponService;
@@ -46,15 +52,25 @@ public class PaymentOrderConfirmationService {
         }
         List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
 
-        // Idempotencia: si el principal ya está pagado, el grupo entero ya se procesó.
-        if (Constants.PEDIDO_PAGADO.equals(principal.getEstadoPedido())) {
-            log.info("confirmarPedido ignorado — pedido {} ya está PAGADO", principal.getNumeroPedido());
+        // Idempotencia rápida: si el principal ya figura confirmado, el grupo entero ya se procesó.
+        if (YA_CONFIRMADOS.contains(principal.getEstadoPedido())) {
+            log.info("confirmarPedido ignorado — pedido {} ya está confirmado", principal.getNumeroPedido());
             return;
         }
 
-        marcarCuponUsadoUnaVez(grupo);
-
+        boolean cuponMarcado = false;
         for (Pedido pedido : grupo) {
+            // Idempotencia atómica: retorno de Tilopay, webhook, cleanup o admin pueden llegar a la vez
+            // con una copia vieja del pedido; solo quien gana el UPDATE condicional aplica los efectos.
+            if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0) {
+                log.info("confirmarPedido ignorado — pedido {} ya fue confirmado por otro proceso",
+                    pedido.getNumeroPedido());
+                continue;
+            }
+            if (!cuponMarcado) {
+                marcarCuponUsadoUnaVez(grupo);
+                cuponMarcado = true;
+            }
             Hibernate.initialize(pedido.getItems());
             stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
 

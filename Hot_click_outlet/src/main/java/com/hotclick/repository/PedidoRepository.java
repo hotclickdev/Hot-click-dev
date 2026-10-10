@@ -17,6 +17,14 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Optional<Pedido> findByNumeroPedido(String numeroPedido);
 
+    /**
+     * Reclama el paquete para confirmar su pago: devuelve 1 solo a la primera confirmación
+     * (webhook o retorno de Tilopay, cleanup, admin o SINPE); las demás esperan el lock de fila y ven 0.
+     */
+    @Modifying
+    @Query("UPDATE Pedido p SET p.estadoPedido = 'PAGADO' WHERE p.id = :id AND p.estadoPedido NOT IN :yaConfirmados")
+    int reclamarParaConfirmar(@Param("id") Long id, @Param("yaConfirmados") Collection<String> yaConfirmados);
+
     List<Pedido> findByGrupoPagoOrderByIdAsc(String grupoPago);
 
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
