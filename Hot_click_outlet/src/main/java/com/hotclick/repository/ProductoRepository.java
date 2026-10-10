@@ -18,6 +18,10 @@ import java.util.Optional;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    /** SEC-02: empresa duenia del producto, sin cargar la entidad. */
+    @Query("SELECT p.empresa.id FROM Producto p WHERE p.id = :id")
+    Optional<Long> findEmpresaIdByProductoId(@Param("id") Long id);
+
     @Query("SELECT p FROM Producto p WHERE p.id = :id")
     Optional<Producto> findByIdForUpdate(@Param("id") Long id);
 
