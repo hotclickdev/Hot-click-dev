@@ -15,3 +15,4 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | copilot-mutacion | copilot | El modelo aplica un cambio de pedido | `proponer_*` y confirmación por botón | sin test de que no ejecuta | hueco |
 | auth-rutas-publicas | login | Rutas SPA nuevas (`/planes`, `/negocios`) abren datos privados | solo `permitAll` de la página; las APIs siguen con su regla | `gate-authz` | cubierto |
 | pago-efectivo | tenant | Checkout en efectivo con una bodega que no lo acepta | `SinpeCheckoutService.exigirEfectivoAceptado` | `EfectivoAceptadoTest` | cubierto |
+| csp-sin-pixel | login | Script o píxel de terceros (Meta) cargado desde la CSP envía datos de navegación sin consentimiento | `SecurityHeadersWriter`: sin `connect.facebook.net` ni `graph.facebook.com`; `img-src` sin `*.facebook.com`; solo queda `frame-src www.facebook.com` para videos embebidos | `CspSinMetaPixelTest` | cubierto |
