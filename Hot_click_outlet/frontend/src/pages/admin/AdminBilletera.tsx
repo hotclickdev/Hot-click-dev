@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { walletService } from '@/services/walletService'
 import Spinner from '@/components/ui/Spinner'
@@ -8,6 +8,8 @@ import PayoutModal from './billetera/PayoutModal'
 import BilleteraMovimientosTable from './billetera/BilleteraMovimientosTable'
 import BilleteraRetirosTable from './billetera/BilleteraRetirosTable'
 import type { WalletPayout, WalletSaldo, WalletTx } from './billetera/billeteraHelpers'
+import { resumenVentas, textoTasa } from './billetera/resumenVentas'
+import { fmt } from './billetera/billeteraHelpers'
 
 type TabBilletera = 'movimientos' | 'retiros'
 
@@ -53,6 +55,7 @@ export default function AdminBilletera() {
 
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
 
+  const resumen = resumenVentas(txs)
   const hayPayoutActivo = payouts.some((p) => p.estado === 'PENDIENTE' || p.estado === 'EN_PROCESO')
 
   return (
@@ -95,13 +98,16 @@ export default function AdminBilletera() {
           </div>
           <div className="bg-red-500/8 rounded-xl p-3">
             <p className="text-red-400 text-xs mb-1">{t('adminBilletera.platformFee')}</p>
-            <p className="font-semibold text-red-300">− 2%</p>
+            <p className="font-semibold text-red-300">{textoTasa(resumen.tasaPlataforma)}</p>
           </div>
           <div className="bg-red-500/8 rounded-xl p-3">
             <p className="text-red-400 text-xs mb-1">{t('adminBilletera.gatewayFee')}</p>
-            <p className="font-semibold text-red-300">− 3%</p>
+            <p className="font-semibold text-red-300">{textoTasa(resumen.tasaPasarela)}</p>
           </div>
         </div>
+        <p className="text-xs text-hc-muted mt-3" data-testid="resumen-ventas">
+          Ventas en esta página: {resumen.ventas} · Vendido ₡{fmt(resumen.bruto)} · Te queda ₡{fmt(resumen.neto)}. Los porcentajes salen de tus ventas reales.
+        </p>
         <p className="text-xs text-hc-muted mt-3">
           {t('adminBilletera.netExplainer')}
         </p>
