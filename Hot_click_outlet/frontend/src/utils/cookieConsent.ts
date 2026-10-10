@@ -11,8 +11,13 @@ export type CookieConsent = {
   timestamp: number
 }
 
-export function consentDesdeCategorias(analytics: boolean, advertising: boolean): CookieConsent {
-  return { analytics, advertising, functional: true, timestamp: Date.now() }
+/**
+ * Sin publicidad (decisión del dueño): `advertising` se guarda siempre en false. El parámetro queda para
+ * no romper a quien lo llama; «Aceptar todas» solo activa análisis.
+ */
+export function consentDesdeCategorias(analytics: boolean, advertising?: boolean): CookieConsent {
+  void advertising
+  return { analytics, advertising: false, functional: true, timestamp: Date.now() }
 }
 
 export function parseCookieConsent(raw: string): CookieConsent | null {
@@ -24,7 +29,7 @@ export function parseCookieConsent(raw: string): CookieConsent | null {
     const analytics = obj.analytics
     return {
       analytics,
-      advertising: typeof obj.advertising === 'boolean' ? obj.advertising : analytics,
+      advertising: false,
       functional: obj.functional === true,
       timestamp: typeof obj.timestamp === 'number' ? obj.timestamp : Date.now(),
     }

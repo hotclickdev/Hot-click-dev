@@ -1,5 +1,5 @@
 import { addAdapter, EVENTO, setAnalyticsConsent, type PropsAnalitica } from '@/utils/analytics'
-import { getCookieConsent } from '@/components/ui/CookieBanner'
+import { getCookieConsent } from '@/utils/cookieConsent'
 
 const GA4_ID = import.meta.env.VITE_GA4_ID
 
