@@ -1,5 +1,5 @@
 /**
- * Botón flotante del sistema (WhatsApp). El de accesibilidad con el isotipo se retiró: ahora se abre desde el pie.
+ * Botones flotantes del sistema: WhatsApp y, encima, accesibilidad (`AccesibilidadFab`, 10-oct-2026).
  *
  * Móvil con barra inferior: 56 px a 16 px sobre la barra de 67 px
  * (Figma `52:2418`: x 318, y 705 en un lienzo de 390 × 844) y a 16 px del borde derecho.
