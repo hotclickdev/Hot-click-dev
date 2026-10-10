@@ -3,7 +3,9 @@ package com.hotclick.service.consola;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
+import com.hotclick.repository.CrmPedidoRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.service.crm.CrmAdminService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,24 +23,33 @@ public class ConsolaCrmContactos {
     private final EmpresaRepository empresas;
     private final PedidoRepository pedidos;
     private final MiembroEmpresaRepository miembros;
+    private final CrmPedidoRepository crmPedidos;
 
     public ConsolaCrmContactos(EmpresaRepository empresas,
                                PedidoRepository pedidos,
-                               MiembroEmpresaRepository miembros) {
+                               MiembroEmpresaRepository miembros,
+                               CrmPedidoRepository crmPedidos) {
         this.empresas = empresas;
         this.pedidos = pedidos;
         this.miembros = miembros;
+        this.crmPedidos = crmPedidos;
     }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listar() {
         Map<Long, Long> ventas = ventas();
+        Map<Long, long[]> cobro = pagadoYPendiente();
         Map<Long, Dueno> duenos = duenos();
         List<Map<String, Object>> filas = new ArrayList<>();
         for (Empresa empresa : empresas.findAllByOrderByFechaRegistroDesc()) {
-            filas.add(fila(empresa, ventas, duenos));
+            Map<String, Object> f = fila(empresa, ventas, duenos);
+            long[] pp = cobro.getOrDefault(empresa.getId(), new long[] {0L, 0L});
+            f.put("pagado", pp[0]);
+            f.put("pendiente", pp[1]);
+            filas.add(f);
         }
-        filas.sort(Comparator.comparingLong(ConsolaCrmContactos::genera).reversed());
+        filas.sort(Comparator.comparingLong(ConsolaCrmContactos::pagado).reversed()
+            .thenComparing(Comparator.comparingLong(ConsolaCrmContactos::genera).reversed()));
         return filas;
     }
 
@@ -65,6 +76,22 @@ public class ConsolaCrmContactos {
             if (id != null) mapa.put(id, largo(fila[1]));
         }
         return mapa;
+    }
+
+    /** QA-131-3: «genera» mezclaba pagados y pendientes; se separan con el criterio de pagado del CRM. */
+    private Map<Long, long[]> pagadoYPendiente() {
+        Map<Long, long[]> mapa = new HashMap<>();
+        for (Object[] fila : crmPedidos.pagadoYPendientePorEmpresa(
+                CrmAdminService.ESTADOS_PAGADOS, CrmAdminService.ESTADOS_PENDIENTES)) {
+            Long id = idDe(fila[0]);
+            if (id != null) mapa.put(id, new long[] {largo(fila[1]), largo(fila[2])});
+        }
+        return mapa;
+    }
+
+    private static long pagado(Map<String, Object> fila) {
+        Object valor = fila.get("pagado");
+        return valor instanceof Number numero ? numero.longValue() : 0L;
     }
 
     private Map<Long, Dueno> duenos() {

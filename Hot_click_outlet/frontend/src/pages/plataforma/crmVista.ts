@@ -9,13 +9,17 @@ export type Contacto = {
   estado: string
   enProceso: boolean
   genera: number
+  /** QA-131-3: pedidos pagados (mismo criterio que «Total pagado» del detalle). */
+  pagado: number
+  /** Pedidos todavía sin cobrar (pendiente, comprobante o aprobación). Cancelados no suman. */
+  pendiente: number
 }
 
 export function contactosDe(filas: Fila[]): Contacto[] {
   return filas.flatMap((fila) => {
     const empresaId = texto(fila.empresaId)
     if (!/^[1-9]\d*$/.test(empresaId)) return []
-    const genera = typeof fila.genera === 'number' && Number.isFinite(fila.genera) ? fila.genera : 0
+    const genera = monto(fila.genera)
     return [{
       empresaId,
       persona: texto(fila.persona, 'Sin usuario en la ficha'),
@@ -25,6 +29,8 @@ export function contactosDe(filas: Fila[]): Contacto[] {
       estado: texto(fila.estado, 'En proceso'),
       enProceso: fila.enProceso === true,
       genera,
+      pagado: monto(fila.pagado),
+      pendiente: monto(fila.pendiente),
     }]
   })
 }
@@ -35,7 +41,7 @@ export function filtrarContactos(filas: Contacto[], filtro: string): Contacto[] 
     : filtro === 'activos'
       ? filas.filter((fila) => !fila.enProceso && fila.estado === 'Activo')
       : filas
-  return [...lista].sort((a, b) => b.genera - a.genera || a.negocio.localeCompare(b.negocio, 'es'))
+  return [...lista].sort((a, b) => b.pagado - a.pagado || b.pendiente - a.pendiente || a.negocio.localeCompare(b.negocio, 'es'))
 }
 
 export function mensajePrevio(persona: string, negocio: string, enProceso: boolean): string {
@@ -46,4 +52,8 @@ export function mensajePrevio(persona: string, negocio: string, enProceso: boole
     return `${saludo} Vi que ${negocio} está en proceso de inscripción. Si te falta algo para entrar, escribime por acá.`
   }
   return `${saludo} Te escribo por ${negocio}.`
+}
+
+function monto(valor: unknown): number {
+  return typeof valor === 'number' && Number.isFinite(valor) ? valor : 0
 }

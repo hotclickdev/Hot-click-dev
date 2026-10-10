@@ -2,10 +2,10 @@ import { useState, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { IconoDominio } from './iconos'
 
-export const TARJETA = 'rounded-[14px] border border-hc-n-200 bg-white p-3.5'
+export const TARJETA = 'rounded-[14px] border border-hc-n-200 bg-hc-surface p-3.5'
 export const TITULO = 'font-display text-[17px] font-bold leading-6 text-hc-n-900'
 export const BOTON_PRIMARIO = 'inline-flex h-12 items-center justify-center rounded-xl bg-hc-primary px-4 text-[15px] font-semibold text-white disabled:opacity-60'
-export const BOTON_SECUNDARIO = 'inline-flex h-12 items-center justify-center rounded-xl border border-hc-n-200 bg-white px-4 text-sm font-semibold text-hc-n-900 disabled:opacity-60'
+export const BOTON_SECUNDARIO = 'inline-flex h-12 items-center justify-center rounded-xl border border-hc-n-200 bg-hc-surface px-4 text-sm font-semibold text-hc-n-900 disabled:opacity-60'
 
 export function MarcoIcono({ id }: { id: string }) {
   return (
