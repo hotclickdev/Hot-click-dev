@@ -89,6 +89,9 @@ class PaymentServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Por defecto cada confirmación/fallo gana su UPDATE condicional (la carrera se prueba en TilopayDobleConfirmacionTest).
+        lenient().when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
+        lenient().when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
         testUser = new Usuario();
         testUser.setId(1L);
         testUser.setCorreo(CORREO);
