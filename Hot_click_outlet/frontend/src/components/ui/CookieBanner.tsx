@@ -110,7 +110,7 @@ function CuerpoBanner({
           </p>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
             {t('cookies.body')}{' '}
-            <Link to="/cookies" className="underline underline-offset-2 transition-opacity hover:opacity-80" style={{ color: 'var(--hc-accent)' }}>
+            <Link to="/cookies" className="underline underline-offset-2 transition-opacity hover:opacity-80" style={{ color: 'var(--hc-accent-hover)' }}>
               {t('cookies.moreInfo')}
             </Link>
           </p>
@@ -249,7 +249,7 @@ function BotonPrimario({ onClick, children }: { onClick: () => void; children: s
       onClick={onClick}
       className="flex-1 rounded-xl px-5 py-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 sm:flex-none"
       style={{
-        background: 'var(--hc-accent)',
+        background: 'var(--hc-accent-hover)',
         boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 40%, transparent)',
       }}
     >
