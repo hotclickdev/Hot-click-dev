@@ -57,21 +57,21 @@ public class PaymentNotificationsFacade {
         touchUsuarioFinalForAsync(pedido);
         // Los avisos salen recién cuando el cobro hizo COMMIT: si la transacción se revierte
         // (stock, gift card, cupón…), el comprador no recibe un "pedido confirmado" falso.
-        String proveedor = pago.getProveedor();
-        despuesDelCommit(() -> avisarPedidoPagado(pedido, pago, proveedor));
-    }
-
-    private void avisarPedidoPagado(Pedido pedido, Pago pago, String proveedor) {
-        ventaAvisoService.avisarVentaConfirmada(pedido);
-        n8nWebhookService.notificarPedidoNuevo(pedido);
-        // HashMap y no Map.of: un proveedor o total null no puede cortar con NPE los avisos que siguen.
-        Map<String, Object> datos = new java.util.HashMap<>();
+        // Los datos del webhook se leen acá, donde pedido y pago ya se validaron no nulos.
+        Map<String, Object> datos = new java.util.HashMap<>(); // admite null, a diferencia de Map.of
         datos.put("numeroPedido", pedido.getNumeroPedido());
         datos.put("total",        pedido.getTotalPedido());
-        datos.put("proveedor",    proveedor);
-        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", datos);
+        datos.put("proveedor",    pago.getProveedor());
+        Long empresaId = pedido.getEmpresaId();
+        despuesDelCommit(() -> avisarPedidoPagado(pedido, pago, empresaId, datos));
+    }
+
+    private void avisarPedidoPagado(Pedido pedido, Pago pago, Long empresaId, Map<String, Object> datos) {
+        ventaAvisoService.avisarVentaConfirmada(pedido);
+        n8nWebhookService.notificarPedidoNuevo(pedido);
+        webhookDispatcher.dispatch(empresaId, "pedido.pagado", datos);
         capturarPedidoPagado(pedido, pago);
-        log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), proveedor);
+        log.info("Pedido {} confirmado PAGADO via {}", datos.get("numeroPedido"), datos.get("proveedor"));
     }
 
     /** Corre la acción después del COMMIT de la transacción actual; sin transacción, en el momento. */
