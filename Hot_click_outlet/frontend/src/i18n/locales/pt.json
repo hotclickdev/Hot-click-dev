@@ -184,7 +184,7 @@
       "1 depósito e 1 caixa POS",
       "Pagamentos com cartão e SINPE",
       "Envios na Costa Rica",
-      "Comissão 9% por venda (mín. ₡700)"
+      "Comissão por venda: [PENDIENTE]"
     ],
     "planPymeBadge": "Para crescer",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 depósitos e 2 caixas",
       "Compras e estoque",
       "IA e relatórios avançados",
-      "₡9.900/mês + 4% por venda"
+      "Mensalidade e comissão: [PENDIENTE]"
     ],
     "planPlusBadge": "Para operar de verdade",
     "planPlusTitle": "Negocio Plus",
@@ -206,18 +206,18 @@
       "Multi-filial e pedidos por local",
       "CRM de clientes",
       "IA sem limite",
-      "₡24.900/mês + 4% por venda"
+      "Mensalidade e comissão: [PENDIENTE]"
     ],
     "pymeCta": "Criar meu negócio",
     "plusCta": "Criar meu negócio",
     "faqTitle": "Perguntas frequentes",
     "faqSub": "O que mais perguntam antes de se cadastrar.",
     "faq1q": "Cobram algo no cadastro?",
-    "faq1a": "Não. A mensalidade é ₡0. O HotClick fica com 9% de cada venda (mínimo ₡700), um percentual que já inclui o custo do gateway de pagamento. Esses valores podem mudar; você sempre vai vê-los atualizados aqui antes de vender.",
+    "faq1a": "Nada é cobrado ao se cadastrar. A comissão por venda está [PENDIENTE] e você a verá aqui antes de vender.",
     "faq2q": "O que acontece se as vagas grátis acabarem?",
     "faq2a": "Avisamos ali em cima e o botão passa a oferecer PYME ou Negocio Plus. Seu cadastro não é fechado.",
     "faq3q": "Como eu recebo as vendas?",
-    "faq3a": "Por cartão ou SINPE. O HotClick retém 9% (mínimo ₡700) por venda, já com o gateway de pagamento incluído.",
+    "faq3a": "Com cartão ou SINPE dentro do HotClick. A comissão por venda está [PENDIENTE] e você a vê antes de vender.",
     "faq4q": "Posso crescer depois?",
     "faq4a": "Sim, você pode migrar para PYME ou Negocio Plus quando precisar, sem perder seu catálogo nem seus pedidos.",
     "galeriaCaption": "Comércios e empreendimentos: o mesmo tipo de negócio que você pode vender no HotClick.",

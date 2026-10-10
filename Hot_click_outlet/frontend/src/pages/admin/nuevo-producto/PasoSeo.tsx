@@ -83,7 +83,7 @@ export default function PasoSeo({ form, setForm, seoLang, setSeoLang, seoAuto, s
           <CharCounter current={currentSeo.description.length} max={160} min={120} />
         </div>
         <textarea className={ta} style={inpStyle} rows={3} value={currentSeo.description} maxLength={160}
-          placeholder={isEs ? 'Descripción | Precio: ₡X | Envíos a todo Costa Rica' : 'Description | Free shipping'}
+          placeholder={isEs ? 'Descripción | Precio: ₡X | Envíos a todo Costa Rica' : 'Description | Shipping across Costa Rica'}
           onChange={e => handleDescChange(e.target.value)} />
       </div>
       {form.nombre && (

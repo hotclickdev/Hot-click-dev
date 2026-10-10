@@ -184,7 +184,7 @@
       "1 warehouse and 1 POS till",
       "Card and SINPE payments",
       "Shipping across Costa Rica",
-      "9% sales fee (min ₡700)"
+      "Commission per sale: [PENDIENTE]"
     ],
     "planPymeBadge": "To grow",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 warehouses and 2 tills",
       "Purchasing and inventory",
       "AI and advanced reports",
-      "₡9,900/mo + 4% per sale"
+      "Monthly fee and commission: [PENDIENTE]"
     ],
     "planPlusBadge": "To operate at scale",
     "planPlusTitle": "Negocio Plus",
@@ -206,18 +206,18 @@
       "Multi-branch and orders per location",
       "Customer CRM",
       "Unlimited AI",
-      "₡24,900/mo + 4% per sale"
+      "Monthly fee and commission: [PENDIENTE]"
     ],
     "pymeCta": "Create my business",
     "plusCta": "Create my business",
     "faqTitle": "Frequently asked questions",
     "faqSub": "What people ask before signing up.",
     "faq1q": "Do you charge anything to sign up?",
-    "faq1a": "No. Membership is ₡0. HotClick keeps 9% of each sale (minimum ₡700), a percentage that already includes the payment gateway cost. These amounts can change; you'll always see the current ones here before you sell.",
+    "faq1a": "Nothing is charged when you sign up. The commission per sale is [PENDIENTE] and you will see it here before selling.",
     "faq2q": "What happens if the free slots fill up?",
     "faq2a": "We'll let you know above and the button will offer PYME or Negocio Plus instead. Your signup won't be closed.",
     "faq3q": "How do I get paid?",
-    "faq3a": "By card or SINPE. HotClick withholds 9% (minimum ₡700) per sale, with the payment gateway already included.",
+    "faq3a": "By card or SINPE inside HotClick. The commission per sale is [PENDIENTE] and you see it before selling.",
     "faq4q": "Can I upgrade later?",
     "faq4a": "Yes, you can move to PYME or Negocio Plus whenever you need to, without losing your catalog or orders.",
     "galeriaCaption": "Shops and small businesses: the same kind of store you can sell on HotClick.",

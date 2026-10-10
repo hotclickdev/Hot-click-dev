@@ -48,22 +48,23 @@ const FILAS: Fila[] = [
 ]
 
 const POR_QUE = [
-  { titulo: 'No competimos con tu tienda', texto: 'Tu página, tus redes y tu local siguen siendo tuyos. HotClick es un canal más que te trae compradores nuevos.' },
-  { titulo: 'Un ingreso extra', texto: 'Publicás una vez y vendés también en el marketplace, con pago y envío resueltos.' },
-  { titulo: 'Transparente para quien compra', texto: 'El comprador ve cómo paga, cómo llega su pedido y qué garantía tiene antes de comprar.' },
+  { titulo: 'Tu tienda sigue siendo tuya', texto: 'Seguí vendiendo en tu local, en tu feria o en tus redes. HotClick suma compradores que hoy no te encuentran.' },
+  { titulo: 'Hecho para Costa Rica', texto: 'Precios en colones, envíos dentro del país y pagos con tarjeta procesados con Tilopay.' },
+  { titulo: 'Cobrá en persona con la misma cuenta', texto: 'La caja (POS) viene incluida en todos los planes.' },
+  { titulo: 'Reglas claras', texto: 'Antes de registrarte ves cuánto pagás de mensualidad y de comisión. No hay costos escondidos.' },
 ]
 
 const COMPARACION = [
-  { otros: 'Ventas por redes sociales: pedidos sueltos por mensaje, sin cobro ni seguimiento.', nosotros: 'Catálogo, carrito, cobro y estado del pedido en un solo lugar.' },
-  { otros: 'Marketplaces masivos: competís por precio contra miles de vendedores.', nosotros: 'Vitrina de negocios de Costa Rica, con tu marca visible en cada producto.' },
-  { otros: 'Tienda propia aparte: tenés que conseguir todo el tráfico vos.', nosotros: 'Complementa tu tienda: te suma visitas del marketplace sin reemplazarla.' },
+  { otros: 'Otros marketplaces venden sus propios productos y compiten con vos.', nosotros: 'En HotClick vendés vos.' },
+  { otros: 'Algunas plataformas cobran mensualidad aunque no vendás.', nosotros: 'Con el plan Emprendedor solo pagás comisión cuando vendés. [PENDIENTE]' },
+  { otros: 'Inventario, caja y tienda en línea en tres herramientas separadas.', nosotros: 'Todo en un solo lugar.' },
 ]
 
 const PASOS_COMPRA = [
   'Encuentra tu producto en el marketplace o en tu tienda.',
-  'Paga con SINPE o tarjeta dentro de HotClick.',
+  'Ve qué tienda lo vende y el precio final con envío antes de pagar.',
   'Vos preparás el pedido y le avisamos cuando sale.',
-  'Sigue su envío y tiene garantía de devolución.',
+  'Si algo sale mal, HotClick recibe su reclamo y le da seguimiento con la tienda.',
 ]
 
 /** /planes: los tres planes juntos, por qué vender aquí y comparación con datos reales del plan. */
@@ -91,13 +92,13 @@ export default function PlanesPage() {
         <header className="flex flex-col gap-3 text-center">
           <h1 className="font-display text-[28px] font-bold leading-tight text-hc-n-900 lg:text-[40px]">Vendé también en HotClick</h1>
           <p className="mx-auto max-w-[640px] text-[15px] leading-6 text-hc-n-600">
-            Elegí el plan que va con tu negocio. Podés empezar en uno y cambiar cuando crezcas.
+            No venimos a competir con tu tienda. Somos un canal más de venta para tu negocio.
           </p>
         </header>
 
         <section aria-labelledby="por-que" className="flex flex-col gap-4">
           <h2 id="por-que" className="font-display text-[20px] font-bold text-hc-n-900">¿Por qué vender en HotClick?</h2>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {POR_QUE.map((p) => (
               <div key={p.titulo} className="rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4">
                 <h3 className="font-sans text-[15px] font-semibold text-hc-n-900">{p.titulo}</h3>

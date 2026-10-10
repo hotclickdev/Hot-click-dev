@@ -172,9 +172,10 @@ export default function TiendaCheckoutPage() {
           {error && (
             <p role="alert" className="rounded-[12px] border border-hc-danger/20 bg-hc-danger-bg px-[14px] py-3 text-[13px] leading-[18px] text-hc-danger">{error}</p>
           )}
-          {/* TODO copy Producto: mensaje de confianza provisorio. */}
+          {/* Copy de Producto (ENTREGA_0410 §2.4). */}
           <p className="text-[12px] leading-4 text-hc-n-600">
-            Con tu compra ayudás a emprendimientos y negocios de Costa Rica a crecer y ofrecer un mejor servicio.
+            <span className="sm:hidden">Con tu compra ayudás a emprendimientos y negocios de Costa Rica. ¡Gracias!</span>
+            <span className="hidden sm:inline">Con tu compra ayudás a emprendimientos y negocios de Costa Rica a crecer. Cada producto lo vende una tienda local y HotClick te acompaña si necesitás ayuda con tu pedido.</span>
           </p>
           {/* Siempre rojo de marca (#E73B33): el color de la tienda no aplica a la acción de pago. */}
           <button

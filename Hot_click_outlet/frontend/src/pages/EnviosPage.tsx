@@ -70,7 +70,7 @@ export default function EnviosPage() {
     <PaginaInformativa
       titulo="Envíos"
       encabezado="Así llega tu pedido"
-      subtitulo="Enviamos a todo Costa Rica. El costo se muestra en el carrito antes de pagar."
+      subtitulo="Antes de pagar ves el costo y el tiempo estimado. Hoy no ofrecemos envío gratis."
       indice={[{ id: 'como', texto: 'Cómo funciona' }, { id: 'tarifas', texto: 'Tarifas' }, { id: 'preguntas', texto: 'Preguntas' }]}
       ancha
     >
