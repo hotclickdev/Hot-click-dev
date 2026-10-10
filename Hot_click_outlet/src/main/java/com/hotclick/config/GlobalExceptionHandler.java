@@ -70,6 +70,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
     }
 
+    /** Enlace de asignación de negocio usado (409), vencido o revocado (410). */
+    @ExceptionHandler(com.hotclick.exception.EnlaceNoVigenteException.class)
+    public ResponseEntity<ResponseDTO> handleEnlaceNoVigente(com.hotclick.exception.EnlaceNoVigenteException ex) {
+        return ResponseEntity.status(ex.getStatus()).body(ResponseDTO.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(PlanLimitException.class)
     public ResponseEntity<Object> handlePlanLimit(PlanLimitException ex) {
         log.warn("[plan-limit] entidad={} msg={}", ex.getEntidad(), ex.getMessage());
