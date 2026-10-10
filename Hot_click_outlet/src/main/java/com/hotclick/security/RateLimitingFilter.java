@@ -127,7 +127,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
         new PrefixLimit("/api/qr/", null, 10, 60),
         // "Avisame cuando vuelva" es publico y solo pide un email: sin limite se insertan filas sin fin.
-        new PrefixLimit("/api/productos/", "/avisar-reposicion", 5, 60)
+        new PrefixLimit("/api/productos/", "/avisar-reposicion", 5, 60),
+        // Tienda rapida: enlace publico que crea cuenta y guarda clave (bcrypt); sin tope se puede martillar.
+        new PrefixLimit("/api/public/tienda-rapida/", null, 10, 60)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
@@ -140,6 +142,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/convenios/publicos",          60,  60),
         new GetLimit("/api/marcas/publicas",             60,  60),
         new GetLimit("/api/categorias",                  60,  60),
+        // Proxy al IGN (ArcGIS): sin tope, cada miss de cache hace hasta 5 llamadas externas.
+        new GetLimit("/api/division-territorial",       30,  60),
         new GetLimit("/api/blog/publico",                60,  60),
         // Seguimiento por token: más estricto que el resto de /api/public (dificulta adivinar tokens).
         new GetLimit("/api/public/pedidos/seguimiento",  20,  60),

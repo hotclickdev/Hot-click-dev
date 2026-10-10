@@ -33,6 +33,9 @@ public class DivisionTerritorialService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicReference<List<ProvinciaDivision>> cache = new AtomicReference<>();
     private final AtomicLong cacheEn = new AtomicLong();
+    /** Si el IGN fallo hace menos de 60 s, no se reintenta en cada request. */
+    private static final long ESPERA_FALLO_MS = Duration.ofSeconds(60).toMillis();
+    private final AtomicLong falloEn = new AtomicLong();
 
     public DivisionTerritorialService() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -45,7 +48,18 @@ public class DivisionTerritorialService {
         long ahora = System.currentTimeMillis();
         List<ProvinciaDivision> vigente = cache.get();
         if (vigente != null && ahora - cacheEn.get() < CACHE_MS) return vigente;
-        List<ProvinciaDivision> fresco = List.copyOf(descargar());
+        if (ahora - falloEn.get() < ESPERA_FALLO_MS) {
+            if (vigente != null) return vigente;
+            throw new IllegalStateException("El IGN fallo hace poco; se reintenta en un minuto");
+        }
+        List<ProvinciaDivision> fresco;
+        try {
+            fresco = List.copyOf(descargar());
+        } catch (RuntimeException e) {
+            falloEn.set(ahora);
+            if (vigente != null) return vigente;
+            throw e;
+        }
         cache.set(fresco);
         cacheEn.set(ahora);
         return fresco;
