@@ -26,6 +26,7 @@ export default function TiendaRapidaPage() {
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [lista, setLista] = useState(false)
+  const [acepta, setAcepta] = useState(false)
 
   useEffect(() => {
     if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) {
@@ -59,6 +60,10 @@ export default function TiendaRapidaPage() {
     if (!invitacion) return
     if (cedula.replace(/\D/g, '').length < 9) {
       setAviso('La cédula va con 9 a 12 dígitos.')
+      return
+    }
+    if (!acepta) {
+      setAviso('Confirmá que sos la persona dueña o representante legal del negocio.')
       return
     }
     if (!correo.includes('@') || clave.length < 8) {
@@ -108,6 +113,8 @@ export default function TiendaRapidaPage() {
             setTelefono={setTelefono}
             clave={clave}
             setClave={setClave}
+            acepta={acepta}
+            setAcepta={setAcepta}
             aviso={aviso}
             ocupado={ocupado}
             onGuardar={() => void guardar()}
@@ -132,6 +139,8 @@ function Formulario(props: {
   setTelefono: (valor: string) => void
   clave: string
   setClave: (valor: string) => void
+  acepta: boolean
+  setAcepta: (valor: boolean) => void
   aviso: string
   ocupado: boolean
   onGuardar: () => void
@@ -168,7 +177,10 @@ function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso }: {
   )
 }
 
-function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave, aviso, ocupado, onGuardar, setPaso }: {
+function PasoCuenta({ invitacion, correo, setCorreo, telefono, setTelefono, clave, setClave, acepta, setAcepta, aviso, ocupado, onGuardar, setPaso }: {
+  invitacion: Invitacion
+  acepta: boolean
+  setAcepta: (valor: boolean) => void
   correo: string
   setCorreo: (valor: string) => void
   telefono: string
@@ -185,6 +197,11 @@ function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave,
       <Campo etiqueta="Correo" valor={correo} onChange={setCorreo} />
       <Campo etiqueta="Teléfono" valor={telefono} onChange={setTelefono} />
       <Campo etiqueta="Contraseña" valor={clave} onChange={setClave} secreto />
+      {/* [REVISIÓN LEGAL] TODO copy Producto: texto de aceptación provisorio. */}
+      <label className="mt-4 flex items-start gap-2 text-sm text-hc-n-900">
+        <input type="checkbox" checked={acepta} onChange={(e) => setAcepta(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-hc-blue-600" />
+        <span>Acepto ser la persona dueña o representante legal de {invitacion.negocio} y responder por lo que se venda en su tienda.</span>
+      </label>
       {aviso && <p className="mt-2 text-sm text-hc-primary-text">{aviso}</p>}
       <div className="mt-4 flex gap-2">
         <button type="button" className={BOTON_SECUNDARIO} onClick={() => setPaso(1)} disabled={ocupado}>Atrás</button>
@@ -201,11 +218,29 @@ function Listo({ negocio }: { negocio: string }) {
     <section className="hc-escalon-palabra rounded-[16px] border border-hc-n-200 bg-white p-4" style={{ animationDuration: '420ms' }}>
       <p className="font-display text-[40px] font-extrabold leading-none text-hc-success-text">Listo</p>
       <h1 className="mt-2 font-display text-[22px] font-extrabold leading-7">{negocio}</h1>
-      <p className="mt-2 text-sm text-hc-n-600">Sus datos quedaron guardados. HotClick sigue cargando los productos de la tienda.</p>
-      <a className={`${BOTON_PRIMARIO} mt-4 w-full`} href="/login">Entrar</a>
+      <p className="mt-2 text-sm text-hc-n-600">Sus datos quedaron guardados. Siga estos pasos para dejar la tienda lista:</p>
+      <ol className="mt-3 flex flex-col gap-2">
+        {PASOS_INICIO.map((p, i) => (
+          <li key={p.titulo} className="flex gap-3 rounded-xl border border-hc-n-200 p-3">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-hc-blue-50 text-sm font-bold text-hc-blue-600">{i + 1}</span>
+            <span className="flex flex-col">
+              <span className="text-sm font-semibold text-hc-n-900">{p.titulo}</span>
+              <span className="text-xs text-hc-n-600">{p.texto}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <a className={`${BOTON_PRIMARIO} mt-4 w-full`} href="/login?redirect=%2Fadmin%2Fbodegas">Entrar y empezar</a>
     </section>
   )
 }
+
+/** Recorrido guiado después de aceptar: bodega, luego productos (normal o personalizado). */
+const PASOS_INICIO = [
+  { titulo: 'Entrar a su panel', texto: 'Con el correo y la contraseña que acaba de crear.' },
+  { titulo: 'Revisar su bodega', texto: 'Desde dónde despacha y si permite retiro o pago en efectivo.' },
+  { titulo: 'Revisar o crear productos', texto: 'Normales o personalizados. HotClick ya pudo haber cargado algunos.' },
+]
 
 function Campo({ etiqueta, valor, onChange, secreto = false }: {
   etiqueta: string
