@@ -135,7 +135,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.items i " +
            "LEFT JOIN FETCH i.producto pr " +
-           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido = 'ENTREGADO'")
+           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido IN ('ENTREGADO','COMPLETADO')")
     List<Pedido> findEntregadosConItemsByUsuarioId(@Param("usuarioId") Long usuarioId);
 
     @Query("SELECT DISTINCT p FROM Pedido p " +
