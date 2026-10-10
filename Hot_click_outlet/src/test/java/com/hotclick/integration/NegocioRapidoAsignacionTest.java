@@ -294,4 +294,44 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
             assertThat(resp.getContentAsString()).contains("\"success\":false");
         }
     }
+
+    @Test
+    @DisplayName("Paso 1: nombre y cédula vacíos o inválidos → 400 con error por campo y el enlace sigue vigente")
+    void paso1Obligatorio() throws Exception {
+        String token = crear("Paso Uno SA").path("token").asText();
+        for (String[] caso : new String[][] { {"", ""}, {"  ", "12345678"}, {"Ana Mora", "1234567890123"} }) {
+            Map<String, Object> body = new java.util.HashMap<>(json.readValue(aceptarBody(true, "p1-nr@test.cr"), Map.class));
+            body.put("persona", caso[0]);
+            body.put("cedula", caso[1]);
+            mockMvc.perform(post(PUBLICO + token).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.data.campos.cedula").exists());
+        }
+        Map<String, Object> soloNombre = new java.util.HashMap<>(json.readValue(aceptarBody(true, "p1-nr@test.cr"), Map.class));
+        soloNombre.put("persona", "");
+        mockMvc.perform(post(PUBLICO + token).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(soloNombre)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.data.campos.persona").exists())
+            .andExpect(jsonPath("$.data.campos.cedula").doesNotExist());
+        mockMvc.perform(get(PUBLICO + token)).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Slug: aceptar el enlace conserva el slug original; solo lleva sufijo si otro negocio ya lo usa")
+    void slugSeConserva() throws Exception {
+        JsonNode creada = crear("Dulcería Sol");
+        long empresaId = empresaDe(creada.path("id").asLong());
+        assertThat(empresas.findById(empresaId).orElseThrow().getSlug()).isEqualTo("dulceria-sol");
+        mockMvc.perform(post(PUBLICO + creada.path("token").asText()).contentType(MediaType.APPLICATION_JSON)
+            .content(aceptarBody(true, "slug-nr@test.cr"))).andExpect(status().isOk());
+        assertThat(empresas.findById(empresaId).orElseThrow().getSlug()).isEqualTo("dulceria-sol");
+
+        JsonNode otra = crear("Dulcería Sol");
+        assertThat(empresas.findById(empresaDe(otra.path("id").asLong())).orElseThrow().getSlug()).isEqualTo("dulceria-sol-2");
+    }
+
+    private long empresaDe(long idRapida) {
+        return jdbcTemplate.queryForObject(
+            "SELECT fk_id_empresa FROM hot_click_tienda_rapida_tb WHERE id_tienda_rapida = ?", Long.class, idRapida);
+    }
 }

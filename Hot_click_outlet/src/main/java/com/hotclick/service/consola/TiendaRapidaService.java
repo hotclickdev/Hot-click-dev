@@ -145,6 +145,7 @@ public class TiendaRapidaService {
         if (versionLegal != null && !versionLegal.isBlank() && !TiendaRapidaReglas.VERSION_LEGAL.equals(versionLegal)) {
             throw new IllegalArgumentException("El texto que aceptaste cambió. Recargá la página.");
         }
+        exigirPaso1(persona, cedula);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         TiendaRapida fila = cerrarUna(exigir(token), ahora);
         exigirVigente(fila, ahora);
@@ -166,6 +167,16 @@ public class TiendaRapidaService {
         Map<String, Object> datos = mapa(fila, false);
         datos.put("correo", fila.getUsuario().getCorreo());
         return datos;
+    }
+
+    /** Paso 1 del enlace: nombre y cédula obligatorios, con error por campo (400). */
+    static void exigirPaso1(String persona, String cedula) {
+        java.util.Map<String, String> errores = new java.util.LinkedHashMap<>();
+        try { TiendaRapidaReglas.nombre(persona, "El nombre"); } catch (IllegalArgumentException e) { errores.put("persona", e.getMessage()); }
+        try { TiendaRapidaReglas.cedula(cedula); } catch (IllegalArgumentException e) { errores.put("cedula", e.getMessage()); }
+        if (!errores.isEmpty()) {
+            throw new com.hotclick.exception.CamposInvalidosException("Revisá tu nombre y tu cédula.", errores);
+        }
     }
 
     private void aplicarDatos(TiendaRapida fila, String persona, String cedula,

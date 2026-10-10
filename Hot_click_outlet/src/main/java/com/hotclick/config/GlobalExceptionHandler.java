@@ -76,6 +76,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatus()).body(ResponseDTO.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(com.hotclick.exception.CamposInvalidosException.class)
+    public ResponseEntity<ResponseDTO> handleCamposInvalidos(com.hotclick.exception.CamposInvalidosException ex) {
+        return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage(), java.util.Map.of("campos", ex.getCampos())));
+    }
+
     @ExceptionHandler(PlanLimitException.class)
     public ResponseEntity<Object> handlePlanLimit(PlanLimitException ex) {
         log.warn("[plan-limit] entidad={} msg={}", ex.getEntidad(), ex.getMessage());
