@@ -1,3 +1,4 @@
+import RedirigirConQuery from '@/app/RedirigirConQuery'
 import { lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute, AdminHomeRoute } from '@/app/routeGuards'
@@ -167,7 +168,8 @@ export default function AppRoutes() {
       <Route path="/para-pymes" element={<PymeLandingPage />} />
       <Route path="/planes" element={<PlanesPage />} />
       <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
-      <Route path="/emprendimientos" element={<EmprendimientosPage />} />
+      <Route path="/negocios" element={<EmprendimientosPage />} />
+      <Route path="/emprendimientos" element={<RedirigirConQuery a="/negocios" />} />
 
       <Route path="/plataforma" element={<PlataformaAcceso />}>
         <Route index element={<InicioPlataforma />} />

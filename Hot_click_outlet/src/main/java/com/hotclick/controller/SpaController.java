@@ -175,6 +175,7 @@ public class SpaController {
         "/negocio-plus-plan",
         "/planes",
         "/emprendimientos",
+        "/negocios",
         "/404",
         "/seleccionar-negocio",
         "/admin/compras",

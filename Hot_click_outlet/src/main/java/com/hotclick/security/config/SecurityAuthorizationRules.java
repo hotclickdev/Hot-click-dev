@@ -257,7 +257,7 @@ final class SecurityAuthorizationRules {
                 "/carrito", "/login", "/recuperar-contrasena", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan", "/planes",
-                "/emprendimientos",
+                "/emprendimientos", "/negocios",
                 "/comprar", "/comprar/**",
                 "/tiendas", "/tiendas/**",
                 "/404",
