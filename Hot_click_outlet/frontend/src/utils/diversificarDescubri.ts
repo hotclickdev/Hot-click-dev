@@ -22,6 +22,36 @@ export function claveCategoria(p: ProductoDiversificable): string | null {
   return nombre ? `n:${nombre.toLowerCase()}` : null
 }
 
+function agruparPorNegocio<T extends ProductoDiversificable>(productos: readonly T[]): Map<string, T[]> {
+  const grupos = new Map<string, T[]>()
+  for (const p of productos) {
+    const k = claveNegocio(p)
+    const g = grupos.get(k)
+    if (g) g.push(p)
+    else grupos.set(k, [p])
+  }
+  return grupos
+}
+
+/** Orden de negocios: por relevancia de su mejor producto, sin repetir categoría en los primeros 3 si se puede. */
+function ordenarNegocios<T extends ProductoDiversificable>(grupos: Map<string, T[]>): string[] {
+  const pendientes = [...grupos.keys()]
+  const categoriaDe = (k: string) => claveCategoria(grupos.get(k)![0])
+  const orden: string[] = []
+  const usadas = new Set<string>()
+  while (orden.length < PRIMEROS_SIN_CATEGORIA_REPETIDA && pendientes.length > 0) {
+    const libre = pendientes.findIndex((k) => {
+      const cat = categoriaDe(k)
+      return cat === null || !usadas.has(cat)
+    })
+    const [k] = pendientes.splice(Math.max(libre, 0), 1) // pocas categorías: se repite antes que dejar huecos
+    const cat = categoriaDe(k)
+    if (cat) usadas.add(cat)
+    orden.push(k)
+  }
+  return [...orden, ...pendientes]
+}
+
 /**
  * Reordena una lista ya ordenada por relevancia para que Descubrí no arranque con un solo negocio o categoría:
  * - primera ronda: un producto por negocio (el más relevante de cada uno);
@@ -30,33 +60,11 @@ export function claveCategoria(p: ProductoDiversificable): string | null {
  * Mantiene el orden de relevancia dentro de cada negocio, es determinista y no pierde ni duplica productos.
  */
 export function diversificarDescubri<T extends ProductoDiversificable>(productos: readonly T[]): T[] {
-  const grupos = new Map<string, T[]>()
-  for (const p of productos) {
-    const k = claveNegocio(p)
-    const g = grupos.get(k)
-    if (g) g.push(p)
-    else grupos.set(k, [p])
-  }
-
-  // Orden de negocios en la primera ronda: por relevancia de su mejor producto, con la regla de categoría al inicio.
-  const pendientes = [...grupos.keys()]
-  const orden: string[] = []
-  const categoriasUsadas = new Set<string>()
-  while (orden.length < PRIMEROS_SIN_CATEGORIA_REPETIDA && pendientes.length > 0) {
-    let idx = pendientes.findIndex((k) => {
-      const cat = claveCategoria(grupos.get(k)![0])
-      return cat === null || !categoriasUsadas.has(cat)
-    })
-    if (idx < 0) idx = 0 // pocas categorías: se repite antes que dejar huecos
-    const [k] = pendientes.splice(idx, 1)
-    const cat = claveCategoria(grupos.get(k)![0])
-    if (cat) categoriasUsadas.add(cat)
-    orden.push(k)
-  }
-  orden.push(...pendientes)
-
+  const grupos = agruparPorNegocio(productos)
+  const orden = ordenarNegocios(grupos)
+  const rondas = Math.max(0, ...[...grupos.values()].map((g) => g.length))
   const out: T[] = []
-  for (let ronda = 0; out.length < productos.length; ronda++) {
+  for (let ronda = 0; ronda < rondas; ronda++) {
     for (const k of orden) {
       const p = grupos.get(k)![ronda]
       if (p) out.push(p)

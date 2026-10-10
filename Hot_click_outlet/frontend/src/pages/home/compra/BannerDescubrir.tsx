@@ -55,16 +55,12 @@ export default function BannerDescubrir({ productos }: { productos: Producto[] }
         .hc-entra{animation:hc-entra .45s ease}
         @media (prefers-reduced-motion: reduce){.hc-entra{animation:none}}
       `}</style>
-      <div
-        role="group"
-        aria-roledescription="slide"
-        aria-label={`${activo % total + 1} de ${total}: ${slide.titulo}`}
-        className="flex items-center justify-between gap-4 px-5 pt-5 lg:px-6"
+      <div className="flex items-center justify-between gap-4 px-5 pt-5 lg:px-6"
       >
         <Link
           key={slide.clave}
           to={slide.to}
-          aria-label={`${slide.cta}: ${slide.titulo}`}
+          aria-label={`${slide.cta}: ${slide.titulo} (${activo % total + 1} de ${total})`}
           className="hc-entra group flex min-w-0 flex-1 items-center justify-between gap-4 rounded-[12px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-hc-n-0"
         >
           <span aria-live="polite" className="flex min-w-0 flex-col items-start">

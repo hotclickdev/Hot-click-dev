@@ -43,7 +43,7 @@ describe('diversificarDescubri', () => {
     const lista = [p(1, 'a', 1), p(2, 'b', 1), p(3, 'a', 2), p(4, 'c', 1), p(5, 'b', 3)]
     const a = diversificarDescubri(lista)
     expect(ids(diversificarDescubri(lista))).toEqual(ids(a))
-    expect([...ids(a)].sort()).toEqual([1, 2, 3, 4, 5])
+    expect([...ids(a)].sort((x, y) => Number(x) - Number(y))).toEqual([1, 2, 3, 4, 5])
     expect(diversificarDescubri([])).toEqual([])
   })
 })
