@@ -49,6 +49,8 @@ En la columna "¿Podría hacer falta?":
 | Clases `hc-btn*` para el visitante | `components/ui/Button.tsx` | Botones del Brand Book anterior (ghost con borde, success verde claro) | `25dbbe4e` | No. Visitante: primario rojo de 48, secundario borde n200, ghost texto b600 |
 | Barra roja con brillo para el visitante | `components/ui/PageProgressBar.tsx` | Línea `--hc-primary` con `box-shadow` al navegar | `65a5d3e9` | No. Visitante: línea azul b600 sin brillo (Figma no tiene barra) |
 | Botones "Tomar foto" y "Galería" en escritorio | `pages/buscar/BusquedaFotoPage.tsx` | En escritorio el navegador ignora `capture`, así que ambos abrían el mismo selector de archivos | este commit | No. En escritorio quedan "Elegir una foto" (principal) y "Explorar el catálogo" (secundario), y la zona acepta arrastrar. En móvil siguen los dos, como en Figma `27:882` |
+| Abanico de 4 cartas giradas en el banner rotativo de la home | `pages/home/compra/BannerDescubrir.tsx` | Cada tarjeta (Emprendimientos, Productos, Negocios destacados) mostraba 4 fotos en abanico y un CTA al directorio (`/negocios`, `/descubri`) | feat/descubri-banner-ajustes (10-oct-2026) | No (pedido del dueño). Ahora va un negocio o producto por slide, con su foto y nombre; el clic lleva solo a `/tienda/<slug>` o `/productos/<id>` |
+| Velo opaco n900 de la hoja inferior | `components/comprador/HojaInferior.tsx` | Tapaba toda la página en negro detrás de hojas como «¡Tus favoritos te esperan!» | feat/descubri-banner-ajustes (10-oct-2026) | No. Ahora usa el token `--hc-overlay` (semitransparente) y la página se ve detrás |
 
 ## Hace falta agregar (Figma lo pide y el sistema no lo tiene)
 
