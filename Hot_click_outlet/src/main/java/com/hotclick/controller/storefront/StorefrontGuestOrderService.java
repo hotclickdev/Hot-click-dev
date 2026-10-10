@@ -65,6 +65,7 @@ public class StorefrontGuestOrderService {
         if (bodega == null) {
             return null;
         }
+        exigirEfectivoAceptado(dto.getMetodoPago(), bodega);
 
         Usuario usuario = usuarioRepository.findByCorreo(dto.getCorreoCliente())
             .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
@@ -156,6 +157,14 @@ public class StorefrontGuestOrderService {
             notificacionEmailService.enviarConfirmacionPedido(guardado);
         } catch (Exception ex) {
             log.warn("Email confirmación falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+        }
+    }
+
+    /** Efectivo solo si la bodega que despacha lo acepta; la UI ya lo oculta, esto cierra la llamada directa. */
+    static void exigirEfectivoAceptado(String metodoPago, Bodega bodega) {
+        if (!"EFECTIVO".equalsIgnoreCase(metodoPago)) return;
+        if (bodega == null || !Boolean.TRUE.equals(bodega.getAceptaEfectivo())) {
+            throw new IllegalStateException("Este negocio no acepta efectivo. Pagá con SINPE / Tarjeta.");
         }
     }
 
