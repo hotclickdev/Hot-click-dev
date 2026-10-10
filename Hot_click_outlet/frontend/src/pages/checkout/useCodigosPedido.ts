@@ -48,7 +48,24 @@ export function useCodigosPedido(token: string | null) {
     s.setGcCodigo(null)
   }, [s])
 
+  /** Un solo campo: con sesión prueba primero como tarjeta de regalo y si no, como cupón. */
+  const cambiarCodigo = useCallback((valor: string) => {
+    cambiarCupon(valor)
+    cambiarGiftCard(valor)
+  }, [cambiarCupon, cambiarGiftCard])
+
+  const aplicarCodigo = useCallback(async () => {
+    if (token) {
+      await validarGiftCard()
+      if (usePedidoExtrasStore.getState().gcEstado === 'valid') return
+      s.setGcEstado('idle')
+    }
+    await validarCupon()
+  }, [token, validarGiftCard, validarCupon, s])
+
   return {
+    cambiarCodigo,
+    aplicarCodigo,
     cuponInput,
     cuponEstado: s.cuponEstado,
     cuponError: s.cuponError,

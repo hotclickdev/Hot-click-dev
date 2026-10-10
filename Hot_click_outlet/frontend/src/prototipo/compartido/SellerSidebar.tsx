@@ -10,7 +10,6 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import useAuthStore from '@/store/authStore'
@@ -19,6 +18,7 @@ import NegocioPertenenciaChip from './NegocioPertenenciaChip'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from './PrototipoSidebarNav'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import type { PlanConfig } from './plan'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 function itemPlanExtra(ruta: (segmento?: string) => string, plan: PlanConfig): ItemNav {
   const esPlus = plan.id === 'negocioPlus'
@@ -76,9 +76,8 @@ function gruposSeller(
 export default function SellerSidebar() {
   const plan = useSellerPlan()
   const ruta = useSellerRuta()
-  const navigate = useNavigate()
   const userName = useAuthStore((s) => s.userName) ?? plan.usuario
-  const logout = useAuthStore((s) => s.logout)
+  const cerrarSesionCompleta = useCerrarSesion()
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
   const grupos = useMemo(
     () => gruposSeller(ruta, plan, pendientesEncargos),
@@ -86,8 +85,7 @@ export default function SellerSidebar() {
   )
 
   function cerrarSesion() {
-    logout()
-    navigate('/login', { replace: true })
+    cerrarSesionCompleta()
   }
 
   return (

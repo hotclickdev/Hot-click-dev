@@ -16,11 +16,11 @@ function PreviewPos() {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-2 text-[13px]" style={{ color: '#14171c' }}>
-      <div className="flex justify-between"><span>Camiseta básica x2</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡17.800</span></div>
-      <div className="flex justify-between"><span>Termo 1L x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡6.500</span></div>
-      <div className="flex justify-between"><span>Set de oficina x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡14.200</span></div>
+      <div className="flex justify-between"><span>Camiseta básica x2</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡ ···</span></div>
+      <div className="flex justify-between"><span>Termo 1L x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡ ···</span></div>
+      <div className="flex justify-between"><span>Set de oficina x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡ ···</span></div>
       <div className="flex justify-between pt-[10px] border-t font-semibold" style={{ borderColor: '#e4e7ec' }}>
-        <span>Total</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-primary-text)' }}>₡38.500</span>
+        <span>Total</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'var(--hc-primary-text)' }}>₡ ···</span>
       </div>
       <span className="mt-1 py-2.5 rounded-lg text-center text-white text-[13px] font-semibold" style={{ backgroundColor: 'var(--hc-primary)' }}>
         {t('pyme.panelPosCobrar')}

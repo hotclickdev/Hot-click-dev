@@ -39,7 +39,7 @@ describe('migasDeRuta', () => {
   it('arma el perfil del negocio y sus subpantallas', () => {
     expect(migasDeRuta('/tienda/luna', '', etiquetas, { nombreTienda: 'Luna' })).toEqual([
       { etiqueta: 'inicio', to: '/' },
-      { etiqueta: 'tiendas', to: '/emprendimientos' },
+      { etiqueta: 'tiendas', to: '/negocios' },
       { etiqueta: 'Luna' },
     ])
     expect(migasDeRuta('/tienda/luna/carrito', '', etiquetas, { nombreTienda: 'Luna' })).toEqual([

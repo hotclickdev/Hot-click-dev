@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/ui/Toast'
 import PageProgressBar from '@/components/ui/PageProgressBar'
 import { VarianteVisitanteProvider } from '@/components/ui/VarianteVisitanteProvider'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
+import AccesibilidadFab from '@/components/ui/AccesibilidadFab'
 import CookieBanner from '@/components/ui/CookieBanner'
 import HojaAgregado from '@/components/comprador/HojaAgregado'
 import AvisoSinConexion from '@/components/comprador/estados/AvisoSinConexion'
@@ -63,6 +64,7 @@ export default function App() {
           </Suspense>
           </MigasProvider>
           <ConditionalWhatsAppFab />
+          <AccesibilidadFab />
           <AccessibilityPanel />
           <ConditionalChatModal />
           <AbandonedCartWatcher />

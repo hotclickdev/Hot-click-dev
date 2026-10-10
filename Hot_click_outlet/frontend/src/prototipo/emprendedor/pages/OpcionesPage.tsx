@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom'
 import FilaOpcion from '../ui/FilaOpcion'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import useAuthStore from '@/store/authStore'
 import MmGuiaToggle from '@/prototipo/compartido/MmGuiaToggle'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 const OPCIONES = [
   { to: '/opciones/perfil', etiqueta: 'Editar perfil' },
@@ -23,13 +23,11 @@ const OPCIONES = [
  * Paso 7 Opciones (Figma 20:2).
  */
 export default function OpcionesPage() {
-  const navigate = useNavigate()
-  const logout = useAuthStore((s) => s.logout)
+  const cerrarSesionCompleta = useCerrarSesion()
   const userName = useAuthStore((s) => s.userName) ?? 'Tu cuenta'
 
   function cerrarSesion() {
-    logout()
-    navigate('/login', { replace: true })
+    cerrarSesionCompleta()
   }
 
   return (

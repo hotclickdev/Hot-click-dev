@@ -1,0 +1,1 @@
+function e(){return!1}function t(){return e()?`TILOPAY`:`SINPE`}function n(e){return e.length>0&&e.every(e=>(e.bodegaAceptaEfectivo??e.bodega?.aceptaEfectivo)===!0)}export{t as n,e as r,n as t};

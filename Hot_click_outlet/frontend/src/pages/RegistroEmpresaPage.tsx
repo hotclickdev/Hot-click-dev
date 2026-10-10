@@ -26,11 +26,12 @@ import { useUbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
 import {
   MENSAJE_UBICACION_INCOMPLETA,
   payloadUbicacionRegistro,
+  ubicacionIniciada,
 } from '@/prototipo/compartido/ubicacionDespachoHelpers'
 
 const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
-  'Datos básicos de tu negocio.',
+  'Solo el nombre: el resto lo completás después.',
   'Con estos datos iniciás sesión en el panel.',
 ]
 const STEP_LABELS = ['Tu empresa', 'Tu cuenta']
@@ -104,7 +105,8 @@ export default function RegistroEmpresaPage() {
       setError('El nombre del negocio es requerido')
       return
     }
-    if (!ubicacion.validar()) {
+    // Registro corto: la ubicación es opcional acá; si empezó a llenarla, tiene que quedar completa.
+    if (ubicacionIniciada(ubicacion.ubicacion) && !ubicacion.validar()) {
       setError(MENSAJE_UBICACION_INCOMPLETA)
       return
     }
@@ -144,7 +146,7 @@ export default function RegistroEmpresaPage() {
         passwordAdmin:        form.passwordAdmin,
         telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
         inscritoTributacion:  form.inscritoTributacion,
-        ...payloadUbicacionRegistro(ubicacion.ubicacion),
+        ...(ubicacionIniciada(ubicacion.ubicacion) ? payloadUbicacionRegistro(ubicacion.ubicacion) : {}),
         declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
       })

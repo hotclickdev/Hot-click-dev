@@ -6,6 +6,7 @@ import useAuthStore from '@/store/authStore'
 import { moderacionService } from '@/services/moderacionService'
 import { consolaService } from './consola'
 import { IconoDominio } from './iconos'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', to: '/plataforma', exact: true },
@@ -147,14 +148,13 @@ function CuentaUsuario() {
   const navigate = useNavigate()
   const nombre = useAuthStore((s) => s.userName)
   const correo = useAuthStore((s) => s.userEmail)
-  const logout = useAuthStore((s) => s.logout)
+  const cerrarSesionCompleta = useCerrarSesion()
   const [abierta, setAbierta] = useState(false)
   const visible = nombre?.trim() || correo || 'Administrador'
   const inicial = visible.slice(0, 1).toUpperCase()
 
   function salir() {
-    logout()
-    navigate('/login')
+    cerrarSesionCompleta()
   }
 
   return (

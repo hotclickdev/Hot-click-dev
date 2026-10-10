@@ -23,7 +23,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     eyebrow: 'Para empezar',
     headline: 'Publicá y cobrá en HotClick',
     subheadline: 'Sin mensualidad: solo una comisión cuando vendés.',
-    precio: '₡0/mes · comisión 9% por venta (mín. ₡700, incluye la pasarela de pago)',
+    precio: '₡0/mes · comisión por venta [PENDIENTE]',
     ctaLabel: 'Crear mi negocio',
     paraQuienSi: [
       'Vendés en feria, Instagram o WhatsApp',
@@ -34,7 +34,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Ya tenés equipo y varias bodegas — mirá PYME',
     ],
     faq: [
-      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: 'No. La membresía es ₡0. HotClick se queda un 9% de cada venta (mínimo ₡700), un porcentaje que ya incluye el costo de la pasarela de pago. Estos montos pueden cambiar; siempre los vas a ver actualizados acá.' },
+      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: 'No. La membresía es ₡0. La comisión por venta está [PENDIENTE]; siempre la vas a ver actualizada acá antes de vender.' },
       { pregunta: '¿Hay cupo limitado?', respuesta: 'Sí, los primeros 70 registros del mes entran gratis. Si se llena, podés seguir con PYME.' },
     ],
   },
@@ -45,7 +45,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     eyebrow: 'Para crecer',
     headline: 'Operá el negocio en un solo panel',
     subheadline: 'Equipo, inventario y caja, por ₡9.900 al mes.',
-    precio: '₡9.900/mes + 4% por venta',
+    precio: '₡9.900/mes + comisión por venta [PENDIENTE]',
     ctaLabel: 'Suscribirme a PYME — ₡9.900/mes',
     paraQuienSi: [
       'Ya vendés seguido, con 2 a 5 personas en el equipo',
@@ -56,7 +56,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Recién arrancás y vendés poco — probá Emprendedor sin mensualidad',
     ],
     faq: [
-      { pregunta: '¿Por qué pagar si el otro plan es gratis?', respuesta: 'El gratis cobra 8% y se queda en 50 productos, sin compras. PYME baja la comisión a 4% y suma equipo, compras, gift cards e IA.' },
+      { pregunta: '¿Por qué pagar si el otro plan es gratis?', respuesta: 'El gratis se queda en 50 productos y sin compras. PYME suma equipo, compras, gift cards e IA. Comisiones: [PENDIENTE].' },
       { pregunta: '¿Cuándo se activa mi suscripción?', respuesta: 'Al confirmar el pago con la pasarela, tu plan PYME queda activo de inmediato.' },
     ],
   },
@@ -67,7 +67,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     eyebrow: 'Para operar en serio',
     headline: 'Todas las sucursales en un panel',
     subheadline: 'Pedidos por local, equipo sin tope y CRM.',
-    precio: '₡24.900/mes + 4% por venta',
+    precio: '₡24.900/mes + comisión por venta [PENDIENTE]',
     ctaLabel: 'Suscribirme a Negocio Plus — ₡24.900/mes',
     paraQuienSi: [
       'Tenés más de un local',

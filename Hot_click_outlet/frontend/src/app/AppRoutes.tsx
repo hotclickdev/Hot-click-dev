@@ -1,3 +1,4 @@
+import RedirigirConQuery, { RedirigirEmprendimientoATienda } from '@/app/RedirigirConQuery'
 import { lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute, AdminHomeRoute } from '@/app/routeGuards'
@@ -73,6 +74,8 @@ const EmprendimientosPage = lazy(() => import('@/pages/EmprendimientosPage'))
 const SectorLandingPage = lazy(() => import('@/pages/seo/SectorLandingPage'))
 const ProvinciaLandingPage = lazy(() => import('@/pages/seo/ProvinciaLandingPage'))
 const EmprendePage = lazy(() => import('@/pages/EmprendePage'))
+const VenderPage = lazy(() => import('@/pages/vender/VenderPage'))
+const PlanesPage = lazy(() => import('@/pages/planes/PlanesPage'))
 const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
 const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
 const ModeSelector = lazy(() => import('@/pages/auth/ModeSelector'))
@@ -164,8 +167,12 @@ export default function AppRoutes() {
       {/* Alias de marketing: /para-emprendedores apunta a la misma landing, sin fragmentar SEO. */}
       <Route path="/para-emprendedores" element={<Navigate to="/emprende" replace />} />
       <Route path="/para-pymes" element={<PymeLandingPage />} />
+      <Route path="/planes" element={<PlanesPage />} />
+      <Route path="/vender" element={<VenderPage />} />
       <Route path="/negocio-plus-plan" element={<NegocioPlusLandingPage />} />
-      <Route path="/emprendimientos" element={<EmprendimientosPage />} />
+      <Route path="/negocios" element={<EmprendimientosPage />} />
+      <Route path="/emprendimientos" element={<RedirigirConQuery a="/negocios" />} />
+      <Route path="/emprendimientos/:slug" element={<RedirigirEmprendimientoATienda />} />
 
       <Route path="/plataforma" element={<PlataformaAcceso />}>
         <Route index element={<InicioPlataforma />} />

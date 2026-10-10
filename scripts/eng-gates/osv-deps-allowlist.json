@@ -19,6 +19,12 @@
       "reason": "Spring MVC 6.2.19 llega con Boot 3.5. El parche OSS es Framework 7.0.9 (Boot 4). En 6.2 el fix 6.2.20 es solo soporte enterprise. HotClick no usa XsltView ni un view name tomado del request: el API responde JSON y el sitio es la SPA.",
       "acceptedAt": "2026-10-06",
       "expiresOn": "2027-03-31"
+    },
+    {
+      "id": "GHSA-j9f9-w8pj-32f8",
+      "reason": "CVE-2026-47890: solo afecta SSE que envía fragmentos de vista (ModelAndView por SseEmitter/Flux). HotClick no usa ModelAndView; el SSE del copilot envía texto/JSON plano, que ya escapa CR/LF. El fix OSS es Framework 7.0.9 (Boot 4, salto de major); 6.2.20 es solo soporte enterprise.",
+      "acceptedAt": "2026-10-10",
+      "expiresOn": "2027-03-31"
     }
   ]
 }

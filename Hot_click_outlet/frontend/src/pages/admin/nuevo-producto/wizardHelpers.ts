@@ -273,19 +273,19 @@ export function seoByLangAuto(nombre: string, descripcion: string, precioVenta: 
   if (seoAuto.en) {
     next.en = {
       title: nombreSafe ? `${nombreSafe} | HotClick Outlet`.slice(0, 60) : '',
-      description: desc ? `${desc} | Free shipping in Costa Rica | HotClick`.slice(0, 160) : '',
+      description: desc ? `${desc} | Shipping across Costa Rica | HotClick`.slice(0, 160) : '',
     }
   }
   if (seoAuto.pt) {
     next.pt = {
       title: nombreSafe ? `${nombreSafe} | HotClick Outlet`.slice(0, 60) : '',
-      description: desc ? `${desc} | Envio grátis pelo Costa Rica | HotClick`.slice(0, 160) : '',
+      description: desc ? `${desc} | Envio para todo o Costa Rica | HotClick`.slice(0, 160) : '',
     }
   }
   if (seoAuto.fr) {
     next.fr = {
       title: nombreSafe ? `${nombreSafe} | HotClick Outlet`.slice(0, 60) : '',
-      description: desc ? `${desc} | Livraison gratuite au Costa Rica | HotClick`.slice(0, 160) : '',
+      description: desc ? `${desc} | Livraison partout au Costa Rica | HotClick`.slice(0, 160) : '',
     }
   }
   return next

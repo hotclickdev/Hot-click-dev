@@ -540,8 +540,9 @@ export function scanSellerRouteMap({ appRoutes = '', planPaths = '' }) {
   if (!planPaths.includes('opciones')) {
     broken.push('planPaths no anida Emprendedor en opciones/*');
   }
-  if (!planPaths.includes('/admin/pos')) {
-    broken.push('planPaths no deja POS seller en /admin/pos');
+  // df3127371 movió la caja de los roles POS a /caja; cualquiera de las dos rutas mantiene el POS alcanzable.
+  if (!planPaths.includes('/admin/pos') && !planPaths.includes("'/caja'")) {
+    broken.push('planPaths no deja POS seller en /admin/pos ni /caja');
   }
   return { ok: broken.length === 0, broken };
 }

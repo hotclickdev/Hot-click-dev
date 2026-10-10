@@ -1,1 +1,0 @@
-var e=`/emprende`,t=`/emprendimientos`,n=`/productos?vista=emprendimientos`;export{e as n,t as r,n as t};

@@ -298,7 +298,7 @@ export function generateFAQJsonLd() {
         name: '¿Cómo puedo vender mis productos en HOTCLICK?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Registrá tu emprendimiento en HOTCLICK gratis. Sin comisiones el primer mes, tu tienda activa en 24 horas. Visitá la sección "Vendé con nosotros" para comenzar.',
+          text: 'Registrá tu negocio en HOTCLICK y elegí tu plan en /planes para comenzar.',
         },
       },
       {

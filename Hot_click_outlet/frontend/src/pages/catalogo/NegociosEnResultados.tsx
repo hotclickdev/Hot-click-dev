@@ -21,7 +21,7 @@ export default function NegociosEnResultados({ consulta }: { consulta: string })
     <section aria-labelledby="negocios-resultados" className="flex flex-col gap-2 leading-[normal]">
       <div className="flex items-center justify-between gap-3">
         <h2 id="negocios-resultados" className="text-[13px] font-semibold text-hc-n-600">{t('negocios.enResultados')}</h2>
-        <Link to="/emprendimientos" className="flex shrink-0 items-center gap-0.5 text-[13px] font-semibold text-hc-blue-600">
+        <Link to="/negocios" className="flex shrink-0 items-center gap-0.5 text-[13px] font-semibold text-hc-blue-600">
           {t('negocios.verTodos')}
           <IconoFigma src={ICONOS_COMPRADOR.verTodo} size={14} />
         </Link>

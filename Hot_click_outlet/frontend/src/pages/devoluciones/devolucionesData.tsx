@@ -22,7 +22,7 @@ export const returnPolicyJsonLd = {
 }
 
 export const resumen = [
-  { icono: 'inicioCaja', title: '8 días hábiles', desc: 'Desde la confirmación del pago' },
+  { icono: 'inicioCaja', title: '8 días hábiles [REVISIÓN LEGAL]', desc: 'Desde la confirmación del pago' },
   { icono: 'encargoChat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
   { icono: 'inicioEscudo', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
 ] as const
@@ -35,8 +35,8 @@ export const sections = [
       <>
         <p>En HotClick distinguimos dos protecciones:</p>
         <ul>
-          <li><strong>Derecho de retracto:</strong> <strong>8 días hábiles</strong> desde la confirmación del pago (Ley N.° 7472). Se ejerce en la plataforma o por el mismo medio de la compra, y el reembolso vuelve por el mismo medio de pago.</li>
-          <li><strong>Garantía del producto:</strong> hasta <strong>40 días</strong> desde la recepción por defectos de fabricación o fallos de funcionamiento.</li>
+          <li><strong>Derecho de retracto:</strong> <strong>8 días hábiles</strong> [REVISIÓN LEGAL] desde la confirmación del pago (Ley N.° 7472). Se ejerce en la plataforma o por el mismo medio de la compra, y el reembolso vuelve por el mismo medio de pago.</li>
+          <li><strong>Garantía del producto:</strong> hasta <strong>40 días</strong> [REVISIÓN LEGAL] desde la recepción por defectos de fabricación o fallos de funcionamiento.</li>
         </ul>
         <p>Dado que HotClick es un marketplace que conecta compradores con emprendedores costarricenses, el proceso se coordina con el vendedor; HotClick media si hace falta.</p>
       </>
@@ -53,7 +53,7 @@ export const sections = [
           <li><strong>Producto incorrecto:</strong> recibiste un artículo diferente al que compraste (modelo, color, talla u otro).</li>
           <li><strong>Producto incompleto:</strong> faltaron partes, accesorios o piezas que se anunciaban incluidas.</li>
           <li><strong>Producto no conforme:</strong> el artículo difiere significativamente de la descripción o imágenes del anuncio.</li>
-          <li><strong>Derecho de retracto (Ley N.° 7472):</strong> arrepentimiento de compra dentro de los 8 días hábiles desde la confirmación del pago.</li>
+          <li><strong>Derecho de retracto (Ley N.° 7472):</strong> arrepentimiento de compra dentro de los 8 días hábiles [REVISIÓN LEGAL] desde la confirmación del pago.</li>
         </ul>
       </>
     ),
@@ -82,7 +82,7 @@ export const sections = [
         <p>Seguí estos pasos para iniciar una devolución:</p>
         <ul>
           <li>
-            <strong>Paso 1 — Avisar en el mismo medio:</strong> dentro de los 8 días hábiles desde la confirmación del pago, escribí desde <Link to="/mis-pedidos" className="font-semibold text-hc-blue-600">Mis Pedidos</Link> o al correo {IDENTIDAD_COMERCIANTE.correo}. WhatsApp sirve para consultas.
+            <strong>Paso 1 — Avisar en el mismo medio:</strong> dentro de los 8 días hábiles [REVISIÓN LEGAL] desde la confirmación del pago, escribí desde <Link to="/mis-pedidos" className="font-semibold text-hc-blue-600">Mis Pedidos</Link> o al correo {IDENTIDAD_COMERCIANTE.correo}. WhatsApp sirve para consultas.
           </li>
           <li>
             <strong>Paso 2 — Describir el problema:</strong> indicá el número de pedido, el motivo de la devolución y adjuntá fotos o video que muestren el problema.
@@ -105,7 +105,7 @@ export const sections = [
       <>
         <p>Los reembolsos se procesan de la siguiente manera según el método de pago original:</p>
         <ul>
-          <li><strong>Tarjeta (Tilopay, Stripe u ONVO):</strong> el reembolso vuelve a la misma tarjeta en 5 a 10 días hábiles, según el banco emisor.</li>
+          <li><strong>Tarjeta (Tilopay):</strong> el reembolso vuelve a la misma tarjeta en un plazo [PENDIENTE], según el banco emisor.</li>
 
           <li><strong>SINPE Móvil:</strong> el reembolso se hace por SINPE al número registrado en un plazo de 1 a 3 días hábiles.</li>
         </ul>

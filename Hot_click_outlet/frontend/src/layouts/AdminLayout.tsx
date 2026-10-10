@@ -20,6 +20,7 @@ import SidebarContent, { type RoleBadge } from './admin/SidebarContent'
 import AdminMobileHeader from './admin/AdminMobileHeader'
 import { etiquetaChromeAdmin } from './admin/adminChrome'
 import type { SidebarLink } from './admin/adminItJobs'
+import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
 const ROLE_BADGES: Record<string, RoleBadge> = {
   ADMIN:       { label: 'Admin',       color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
@@ -36,7 +37,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   const permissions = useAuthStore((s) => s.permissions)
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
   const empresaId = useAuthStore((s) => s.empresaId)
-  const logout = useAuthStore((s) => s.logout)
+  const cerrarSesionCompleta = useCerrarSesion()
   const loadTenantInfo = useTenantStore((s) => s.loadTenantInfo)
   const loadTenantUso = useTenantStore((s) => s.loadTenantUso)
   const clearTenant = useTenantStore((s) => s.clear)
@@ -64,7 +65,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   }, [])
 
   const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole, permissions)
-  const handleLogout = () => { logout(); navigate('/') }
+  const handleLogout = () => cerrarSesionCompleta
 
   // Cargar estado de empresa para mostrar banners de aprobación / visibilidad
   useEffect(() => {

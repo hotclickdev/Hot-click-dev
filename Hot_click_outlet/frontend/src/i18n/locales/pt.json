@@ -184,7 +184,7 @@
       "1 depósito e 1 caixa POS",
       "Pagamentos com cartão e SINPE",
       "Envios na Costa Rica",
-      "Comissão 9% por venda (mín. ₡700)"
+      "Comissão por venda: [PENDIENTE]"
     ],
     "planPymeBadge": "Para crescer",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 depósitos e 2 caixas",
       "Compras e estoque",
       "IA e relatórios avançados",
-      "₡9.900/mês + 4% por venda"
+      "Mensalidade e comissão: [PENDIENTE]"
     ],
     "planPlusBadge": "Para operar de verdade",
     "planPlusTitle": "Negocio Plus",
@@ -206,18 +206,18 @@
       "Multi-filial e pedidos por local",
       "CRM de clientes",
       "IA sem limite",
-      "₡24.900/mês + 4% por venda"
+      "Mensalidade e comissão: [PENDIENTE]"
     ],
     "pymeCta": "Criar meu negócio",
     "plusCta": "Criar meu negócio",
     "faqTitle": "Perguntas frequentes",
     "faqSub": "O que mais perguntam antes de se cadastrar.",
     "faq1q": "Cobram algo no cadastro?",
-    "faq1a": "Não. A mensalidade é ₡0. O HotClick fica com 9% de cada venda (mínimo ₡700), um percentual que já inclui o custo do gateway de pagamento. Esses valores podem mudar; você sempre vai vê-los atualizados aqui antes de vender.",
+    "faq1a": "Nada é cobrado ao se cadastrar. A comissão por venda está [PENDIENTE] e você a verá aqui antes de vender.",
     "faq2q": "O que acontece se as vagas grátis acabarem?",
     "faq2a": "Avisamos ali em cima e o botão passa a oferecer PYME ou Negocio Plus. Seu cadastro não é fechado.",
     "faq3q": "Como eu recebo as vendas?",
-    "faq3a": "Por cartão ou SINPE. O HotClick retém 9% (mínimo ₡700) por venda, já com o gateway de pagamento incluído.",
+    "faq3a": "Com cartão ou SINPE dentro do HotClick. A comissão por venda está [PENDIENTE] e você a vê antes de vender.",
     "faq4q": "Posso crescer depois?",
     "faq4a": "Sim, você pode migrar para PYME ou Negocio Plus quando precisar, sem perder seu catálogo nem seus pedidos.",
     "galeriaCaption": "Comércios e empreendimentos: o mesmo tipo de negócio que você pode vender no HotClick.",
@@ -350,7 +350,7 @@
     "panelTelegramTitulo": "Telegram: bot e avisos",
     "panelTelegramDesc": "Receba alertas de vendas e estoque baixo direto no seu Telegram, sem entrar no painel.",
     "panelTelegramAlerta1": "Garrafa térmica 1L com só 3 unidades",
-    "panelTelegramAlerta2": "Venda registrada: ₡8.900",
+    "panelTelegramAlerta2": "Venda registrada no seu painel",
     "pagoTitle": "Seus clientes pagam como quiserem",
     "pagoSub": "Cartão ou SINPE — nós verificamos cada pagamento por você. Sem precisar checar comprovantes manualmente.",
     "pagoAprobado": "Pagamento aprovado",
@@ -368,7 +368,7 @@
     "comoEntras2Desc": "Com o gateway ONVO que o painel já usa.",
     "comoEntras3Titulo": "Você entra com o PYME ativo",
     "comoEntras3Desc": "Equipe, estoque e caixa, prontos para operar.",
-    "comparativaNota": "Em uma venda de ₡50.000: Emprendedor fica com ₡4.000 de comissão, PYME fica com ₡2.000 mais a mensalidade.",
+    "comparativaNota": "Comissão por venda e mensalidade: [PENDIENTE]. Você vai vê-las aqui antes de vender.",
     "faqTitle": "Perguntas frequentes",
     "faq2q": "Quanto preciso vender para valer a pena?",
     "faq2a": "Se você vende com frequência, a comissão menor recupera a mensalidade rápido. Se vende pouco, o Emprendedor vale mais a pena.",
@@ -1425,7 +1425,11 @@
       "lineaGift": "Cartão-presente {{codigo}}",
       "lineaDescuento": "Desconto ({{porcentaje}}%)",
       "totalRestante": "Total restante a pagar",
-      "notaRestante": "Pague o restante com SINPE Móvil ou cartão. Se o cartão-presente cobrir tudo, o pedido fica pago sem outro método."
+      "notaRestante": "Pague o restante com SINPE Móvil ou cartão. Se o cartão-presente cobrir tudo, o pedido fica pago sem outro método.",
+      "unicoTitulo": "Cartão-presente ou cupom",
+      "unicoPlaceholder": "Digite o código",
+      "unicoAria": "Código de cartão-presente ou cupom",
+      "unicoInvalido": "Esse código não é um cartão-presente nem cupom válido."
     },
     "shippingVaries": "Varia",
     "encomiendaNote": "A HotClick não cobra o frete — você paga diretamente à transportadora na entrega.",
@@ -1519,7 +1523,14 @@
       "entrega": "Entrega",
       "pago": "Pagamento",
       "sesionGift": "Os gift cards exigem sessão iniciada.",
-      "waInternacional": "Olá HotClick, tenho uma dúvida sobre envio internacional."
+      "waInternacional": "Olá HotClick, tenho uma dúvida sobre envio internacional.",
+      "sinEntregaLocal": "Este negócio não faz entrega local.",
+      "encomiendaNombre": "Qual transportadora?",
+      "encomiendaAyuda": "Ex.: Correos de Costa Rica. A loja despacha lá.",
+      "sinpeTarjeta": "SINPE / Cartão",
+      "sinpeTarjetaSub": "SINPE Móvil para {{numero}} ou cartão. Cartão em breve.",
+      "sinpeTarjetaSubTilopay": "SINPE Móvil ou cartão, no gateway seguro.",
+      "correoCuenta": "E-mail da sua conta"
     },
     "giftPagado": {
       "titulo": "Pedido confirmado!",
@@ -1656,6 +1667,10 @@
       "tituloRevision": "Seu pagamento está sendo analisado",
       "textoAprobado": "Seu banco já confirmou o pagamento. Estamos registrando seu pedido — você receberá um e-mail em alguns minutos.",
       "textoRevision": "A confirmação pode levar mais alguns minutos. Enviaremos um e-mail quando for processada."
+    },
+    "asistente": {
+      "boton": "Dúvidas sobre sua compra? Pergunte ao assistente",
+      "mensaje": "Acabei de comprar. Qual o próximo passo?"
     }
   },
   "nosotros": {
@@ -1843,7 +1858,8 @@
     "whatsappConsult": "Consultar um produto pelo WhatsApp",
     "whatsappGreeting": "Olá HotClick, consulto um produto.",
     "newComingSoon": "NOVO · em breve",
-    "sending": "Enviando…"
+    "sending": "Enviando…",
+    "accesibilidadAbrir": "Idioma e acessibilidade"
   },
   "admin": {
     "sidebar": {
