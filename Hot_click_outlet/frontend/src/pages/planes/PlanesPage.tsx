@@ -59,6 +59,13 @@ const COMPARACION = [
   { otros: 'Tienda propia aparte: tenés que conseguir todo el tráfico vos.', nosotros: 'Complementa tu tienda: te suma visitas del marketplace sin reemplazarla.' },
 ]
 
+const PASOS_COMPRA = [
+  'Encuentra tu producto en el marketplace o en tu tienda.',
+  'Paga con SINPE o tarjeta dentro de HotClick.',
+  'Vos preparás el pedido y le avisamos cuando sale.',
+  'Sigue su envío y tiene garantía de devolución.',
+]
+
 /** /planes: los tres planes juntos, por qué vender aquí y comparación con datos reales del plan. */
 export default function PlanesPage() {
   const [planes, setPlanes] = useState<PlanApi[]>([])
@@ -161,6 +168,18 @@ export default function PlanesPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section aria-labelledby="como-compra" className="flex flex-col gap-4">
+          <h2 id="como-compra" className="font-display text-[20px] font-bold text-hc-n-900">Cómo funciona para quien te compra</h2>
+          <ol className="grid gap-3 md:grid-cols-4">
+            {PASOS_COMPRA.map((p, i) => (
+              <li key={p} className="flex gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-hc-blue-50 font-display text-[13px] font-bold text-hc-blue-600">{i + 1}</span>
+                <span className="text-[14px] leading-5 text-hc-n-900">{p}</span>
+              </li>
+            ))}
+          </ol>
         </section>
 
         <div className="flex justify-center">

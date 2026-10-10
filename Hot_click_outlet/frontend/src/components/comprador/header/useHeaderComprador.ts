@@ -6,7 +6,7 @@ import useUiStore from '@/store/uiStore'
 import useRutaPanel from '@/app/useRutaPanel'
 import { useCategoriasCatalogo } from '../useCategoriasCatalogo'
 
-export const RUTA_VENDE = '/emprende'
+export const RUTA_VENDE = '/planes'
 export const RUTA_SERVICIOS_HOT = '/servicios'
 export const RUTA_CATEGORIAS = '/categorias'
 
