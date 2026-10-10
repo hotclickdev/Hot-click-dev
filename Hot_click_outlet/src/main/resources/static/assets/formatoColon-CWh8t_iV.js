@@ -1,0 +1,1 @@
+import{Pt as e}from"./index-LhP55dV-.js";function t(t){return e(Math.round(t??0))}export{t};
