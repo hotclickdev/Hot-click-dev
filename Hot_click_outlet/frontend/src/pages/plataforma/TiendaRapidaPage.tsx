@@ -5,6 +5,7 @@ import { consolaService, objetoDe } from './consola'
 import { texto } from './normalizar'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga } from './piezas'
 import { RUTA_ONBOARDING_RAPIDO, motivoEnlace } from './tiendaRapida'
+import EnlaceNoVigente from './EnlaceNoVigente'
 
 type Invitacion = {
   negocio: string
@@ -104,7 +105,7 @@ export default function TiendaRapidaPage() {
       <div className="mx-auto flex w-full max-w-md flex-col gap-4">
         <p className="font-display text-sm font-bold tracking-wide text-hc-blue-600">HOTCLICK</p>
         {estado === 'carga' && tokenValido && <Carga />}
-        {(estado === 'error' || !tokenValido) && <Aviso>{t(`negocioRapido.enlace.${motivo}`)}</Aviso>}
+        {(estado === 'error' || !tokenValido) && <EnlaceNoVigente motivo={tokenValido ? motivo : 'noVigente'} />}
         {estado === 'listo' && invitacion && invitacion.estado === 'VENCIDA' && (
           <Aviso>{`El plazo de ${invitacion.negocio} ya se cumplió.`}</Aviso>
         )}
@@ -212,7 +213,13 @@ function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave,
       <Campo etiqueta="Contraseña" valor={clave} onChange={setClave} secreto />
       <fieldset className="mt-4 rounded-[14px] border border-hc-n-200 bg-hc-n-50 p-3">
         <legend className="px-1 font-display text-sm font-bold text-hc-n-900">{t('negocioRapido.aceptar.titulo')}</legend>
-        <p className="text-xs leading-5 text-hc-n-600">{t('negocioRapido.aceptar.legal')}</p>
+        <p className="text-xs leading-5 text-hc-n-600">
+          <a href="/acuerdo-vendedores" target="_blank" rel="noopener noreferrer" className="font-semibold text-hc-n-900 underline underline-offset-2">
+            {t('negocioRapido.aceptar.legalEnlace')}
+          </a>
+          {'. '}
+          {t('negocioRapido.aceptar.legal')}
+        </p>
         <label className="mt-2 flex items-start gap-2 text-sm text-hc-n-900">
           <input
             type="checkbox"
