@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.dto.stock.AjusteEntradaRequest;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.security.CompanyScope;
@@ -14,7 +15,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +57,7 @@ class StockControllerAutorizacionTest {
     void duenio_200() {
         when(stockService.historialPorProducto(10L)).thenReturn(List.of());
         assertThat(controller.historial(10L).getStatusCode().value()).isEqualTo(200);
-        assertThat(controller.ajustarEntrada(10L, Map.of("cantidad", 3), yo).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller.ajustarEntrada(10L, new AjusteEntradaRequest(3, null), yo).getStatusCode().value()).isEqualTo(200);
         verify(stockService).ajustarEntrada(10L, 3, "", "duenio@test.cr");
     }
 
@@ -66,7 +66,7 @@ class StockControllerAutorizacionTest {
     void otraEmpresa_403() {
         doThrow(new TenantAccessDeniedException("Acceso denegado")).when(companyScope).assertCanAccessNullable(1L);
         ResponseEntity<ResponseDTO> h = controller.historial(10L);
-        ResponseEntity<ResponseDTO> a = controller.ajustarEntrada(10L, Map.of("cantidad", 3), yo);
+        ResponseEntity<ResponseDTO> a = controller.ajustarEntrada(10L, new AjusteEntradaRequest(3, null), yo);
         assertThat(h.getStatusCode().value()).isEqualTo(403);
         assertThat(a.getStatusCode().value()).isEqualTo(403);
         verify(stockService, never()).historialPorProducto(anyLong());
