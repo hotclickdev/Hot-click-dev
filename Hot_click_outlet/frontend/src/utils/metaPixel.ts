@@ -1,5 +1,5 @@
 import { addAdapter, EVENTO, type PropsAnalitica } from '@/utils/analytics'
-import { getCookieConsent } from '@/components/ui/CookieBanner'
+import { getCookieConsent } from '@/utils/cookieConsent'
 import { attributionEventId } from '@/utils/attribution'
 
 const PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined
