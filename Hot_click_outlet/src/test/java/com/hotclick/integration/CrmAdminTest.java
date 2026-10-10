@@ -180,6 +180,17 @@ class CrmAdminTest extends BaseIntegrationTest {
             .andExpect(status().isNotFound());
     }
 
+
+    @Test
+    @DisplayName("QA-131-3: la consola separa lo pagado de lo pendiente por negocio (montos de los pedidos)")
+    void consolaContactos_pagadoYPendiente() throws Exception {
+        crearPedido("CRM-CANC", bodegaRepository.findAll().get(0), Constants.PEDIDO_CANCELADO, 5000);
+        mockMvc.perform(get("/api/admin/consola/crm").header("Authorization", adminToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.contactos[?(@.empresaId == " + empresa.getId() + ")].pagado").value(org.hamcrest.Matchers.contains(60000)))
+            .andExpect(jsonPath("$.data.contactos[?(@.empresaId == " + empresa.getId() + ")].pendiente").value(org.hamcrest.Matchers.contains(9900)));
+    }
+
     private Pedido crearPedido(String numero, Bodega bodega, String estado, int total) {
         Pedido p = new Pedido();
         p.setNumeroPedido(numero);

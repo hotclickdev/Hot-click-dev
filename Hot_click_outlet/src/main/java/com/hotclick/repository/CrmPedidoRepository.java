@@ -55,4 +55,14 @@ public interface CrmPedidoRepository extends Repository<Pedido, Long> {
 
     @Query("SELECT COUNT(DISTINCT p.usuarioFinal.id) FROM Pedido p WHERE p.empresa.id = :id")
     long compradoresDistintosDeNegocio(@Param("id") Long empresaId);
+
+    /** QA-131-3: por negocio, [empresaId, total pagado, total pendiente de cobro] con los montos guardados en cada pedido. */
+    @Query("""
+        SELECT p.empresa.id,
+               COALESCE(SUM(CASE WHEN p.estadoPedido IN :pagados THEN p.totalPedido ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN p.estadoPedido IN :pendientes THEN p.totalPedido ELSE 0 END), 0)
+        FROM Pedido p WHERE p.empresa IS NOT NULL GROUP BY p.empresa.id
+        """)
+    List<Object[]> pagadoYPendientePorEmpresa(@Param("pagados") Collection<String> pagados,
+                                              @Param("pendientes") Collection<String> pendientes);
 }

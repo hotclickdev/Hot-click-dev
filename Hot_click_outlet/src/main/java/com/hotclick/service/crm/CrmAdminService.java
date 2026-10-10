@@ -38,10 +38,14 @@ public class CrmAdminService {
     public static final int TAMANO_MAX = 50;
 
     /** Mismo criterio de «pedido pagado» que AdsMetricasService. */
-    static final Set<String> ESTADOS_PAGADOS = Set.of(
+    public static final Set<String> ESTADOS_PAGADOS = Set.of(
         Constants.PEDIDO_PAGADO, Constants.PEDIDO_CONFIRMADO, Constants.PEDIDO_PREPARANDO,
         Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_ENVIADO, Constants.PEDIDO_LISTO_RETIRO,
         Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
+
+    /** Pedidos todavía sin cobrar (QA-131-3): se muestran aparte de lo pagado; cancelados no suman. */
+    public static final Set<String> ESTADOS_PENDIENTES = Set.of(
+        Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_PENDIENTE_COMPROBANTE, Constants.PEDIDO_PENDIENTE_APROBACION);
 
     @Autowired private CrmPedidoRepository crmPedidoRepository;
     @Autowired private UsuarioRepository usuarioRepository;
