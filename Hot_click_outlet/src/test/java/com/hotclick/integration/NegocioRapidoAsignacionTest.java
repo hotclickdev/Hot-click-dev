@@ -214,4 +214,24 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
 
         mockMvc.perform(get(ONBOARDING).header("Authorization", userToken)).andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("Enlace viejo de V157 con token en claro: al abrirlo pasa a hash y exige la aceptación")
+    void enlaceV157EnClaro() throws Exception {
+        JsonNode creada = crear("Legado Uno");
+        long id = creada.path("id").asLong();
+        String viejo = "PlainTokenV157abcdefghij";
+        jdbcTemplate.update("UPDATE hot_click_tienda_rapida_tb SET token = ?, token_hash = NULL, enlace_vence = NULL "
+            + "WHERE id_tienda_rapida = ?", viejo, id);
+        mockMvc.perform(get(PUBLICO + viejo)).andExpect(status().isOk());
+        TiendaRapida fila = rapidas.findById(id).orElseThrow();
+        assertThat(fila.getToken()).isNull();
+        assertThat(fila.getTokenHash()).isEqualTo(TiendaRapidaReglas.hashToken(viejo));
+        assertThat(fila.getEnlaceVence()).isEqualTo(fila.getVence());
+        mockMvc.perform(post(PUBLICO + viejo).contentType(MediaType.APPLICATION_JSON)
+            .content(aceptarBody(false, "legado-nr@test.cr"))).andExpect(status().isBadRequest());
+        mockMvc.perform(post(PUBLICO + viejo).contentType(MediaType.APPLICATION_JSON)
+            .content(aceptarBody(true, "legado-nr@test.cr"))).andExpect(status().isOk());
+        mockMvc.perform(get(PUBLICO + viejo)).andExpect(status().isConflict());
+    }
 }
