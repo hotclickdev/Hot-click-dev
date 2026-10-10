@@ -121,13 +121,13 @@ export default function HomePage() {
           <SeguiDondeLoDejaste />
         </div>
         {categorias.length > 0 && (
-          <section aria-labelledby="home-categorias" className="order-2 flex flex-col gap-[14px] px-4 pb-[6px] pt-6 lg:order-1 lg:gap-[18px] lg:px-8 lg:pb-2 lg:pt-11 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
+          <section aria-labelledby="home-categorias" className="order-2 flex flex-col gap-5 px-4 pb-4 pt-8 lg:order-1 lg:gap-6 lg:px-8 lg:pb-4 lg:pt-11 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
             <EncabezadoSeccion
               id="home-categorias"
               titulo={t('home.compra.categorias')}
               accion={{ texto: t('home.compra.todas'), textoDesktop: t('home.compra.todasDesktop'), to: '/categorias' }}
             />
-            <ul className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-[18px] lg:grid-cols-[repeat(6,minmax(0,167px))] lg:gap-x-4">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-6 lg:gap-x-5 lg:gap-y-6">
               {categorias.slice(0, MAX_CATEGORIAS_HOME).map((c) => (
                 <li key={c.id}>
                   <CategoryTile nombre={c.nombre} cantidad={c.cantidad} fotoUrl={c.fotoUrl} to={rutaCategoria(c.id)} />
@@ -143,13 +143,13 @@ export default function HomePage() {
       </section>
 
       {nuevos.length > 0 && (
-        <section aria-labelledby="home-nuevos" className="flex flex-col gap-[14px] px-4 pb-[6px] pt-6 lg:gap-[18px] lg:px-8 lg:pb-2 lg:pt-11 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
+        <section aria-labelledby="home-nuevos" className="flex flex-col gap-5 px-4 pb-8 pt-8 lg:gap-6 lg:px-8 lg:pb-10 lg:pt-12 xl:px-[max(120px,calc((100%_-_1200px)/2))]">
           <EncabezadoSeccion
             id="home-nuevos"
             titulo={t('home.compra.nuevos')}
             accion={{ texto: t('home.compra.verTodo'), textoDesktop: t('home.compra.verCatalogo'), to: '/productos' }}
           />
-          <ul className="grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-4 lg:grid-cols-[repeat(6,minmax(0,167px))] lg:gap-x-4">
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-5 lg:grid-cols-6 lg:gap-x-5 lg:gap-y-6">
             {nuevos.map((p, i) => (
               <li key={p.id} className={i >= 4 ? 'hidden lg:block' : undefined}>
                 <ProductCard product={p} className="h-full" />

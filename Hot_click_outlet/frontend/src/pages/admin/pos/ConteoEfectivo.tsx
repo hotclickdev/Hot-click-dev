@@ -38,7 +38,7 @@ export default function ConteoEfectivo({ label, onTotal, totalColor = '#34d399' 
                   className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center transition-colors hover:bg-[var(--hc-surface)]"
                   style={{ color: 'var(--hc-muted)' }}>−</button>
                 <input
-                  type="number" min={0} value={qty}
+                  type="number" min={0} value={qty} inputMode="numeric" enterKeyHint="done"
                   onChange={e => setQty(d.v, Math.max(0, Number.parseInt(e.target.value) || 0))}
                   className="w-14 text-center text-sm font-bold rounded-lg outline-none py-1.5"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}

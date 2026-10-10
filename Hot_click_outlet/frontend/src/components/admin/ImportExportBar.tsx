@@ -86,7 +86,8 @@ export default function ImportExportBar({
         <button type="button"
           onClick={bar.handleExportExcel}
           disabled={!data.length}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a7a4a]/20 hover:bg-[#1a7a4a]/30 border border-[#1a7a4a]/40 text-[#4ade80] text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
           title="Exportar como Excel"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

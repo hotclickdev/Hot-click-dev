@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
@@ -8,6 +8,8 @@ import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
 import TiendaCheckoutDireccion from './TiendaCheckoutDireccion'
+import TiendaCheckoutMovil from './TiendaCheckoutMovil'
+import { metodosPagoVisibles, pagoTrasCambioEnvio } from './tiendaCheckoutPasos'
 import {
   METODO_ENVIO_DOMICILIO,
   METODO_ENVIO_RETIRO,
@@ -58,8 +60,12 @@ export default function TiendaCheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const set = (key: keyof FormCheckout, val: string) => setForm((f) => ({ ...f, [key]: val }))
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  useEffect(() => {
+    const siguiente = pagoTrasCambioEnvio(form.metodoEnvio, form.metodoPago)
+    if (siguiente !== form.metodoPago) set('metodoPago', siguiente)
+  }, [form.metodoEnvio, form.metodoPago])
+
+  const enviarPedido = async () => {
     if (carrito.length === 0) return
     const errorForm = mensajeErrorCheckout(form)
     if (errorForm) {
@@ -86,6 +92,11 @@ export default function TiendaCheckoutPage() {
     }
   }
 
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    void enviarPedido()
+  }
+
   if (carrito.length === 0) {
     return (
       <div className="py-10">
@@ -108,7 +119,30 @@ export default function TiendaCheckoutPage() {
           Pedido de {empresa?.nombreComercial ?? slug} en HotClick. No se mezcla con el pedido del marketplace.
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
+      <TiendaCheckoutMovil
+        nombre={form.nombreCliente}
+        correo={form.correoCliente}
+        telefono={form.telefonoCliente}
+        metodoEnvio={form.metodoEnvio}
+        metodoPago={form.metodoPago}
+        notas={form.notas}
+        envios={METODOS_ENVIO}
+        pagos={METODOS_PAGO}
+        lineas={carrito.flatMap(({ producto, cantidad }) => (
+          producto.id == null ? [] : [{
+            id: producto.id,
+            nombre: producto.nombre,
+            cantidad,
+            subtotal: producto.precio * cantidad,
+          }]
+        ))}
+        total={totalImporte()}
+        enviando={enviando}
+        error={error}
+        onCampo={set}
+        onConfirmar={() => { void enviarPedido() }}
+      />
+      <form onSubmit={handleSubmit} className="hidden flex-col gap-4 md:flex lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
         <div className="flex flex-col gap-4">
           <fieldset className={`${CLASE_TARJETA} flex flex-col gap-[14px] p-4`}>
             <legend className="float-left mb-1 w-full font-display text-[16px] font-bold tracking-normal text-hc-n-900">Tus datos</legend>
@@ -130,7 +164,7 @@ export default function TiendaCheckoutPage() {
             {form.metodoEnvio === METODO_ENVIO_DOMICILIO && (
               <TiendaCheckoutDireccion value={form.direccionEntrega} onChange={(valor) => set('direccionEntrega', valor)} />
             )}
-            <GrupoOpciones label="Método de pago" name="metodoPago" opciones={METODOS_PAGO} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
+            <GrupoOpciones label="Método de pago" name="metodoPago" opciones={metodosPagoVisibles(form.metodoEnvio, METODOS_PAGO)} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
             <Campo etiqueta="Notas adicionales">
               {({ id }) => (
                 <textarea

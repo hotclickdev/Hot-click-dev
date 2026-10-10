@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { billingService, type CambiarPlanResultado } from '@/services/billingService'
 import useTenantStore from '@/store/tenantStore'
 import type { Id } from '@/types/api'
-import { esBajada, excesosAlBajar, type ExcesoPlan, type LimitesPlan } from './bajarPlanHelpers'
+import { esBajada, excesosAlBajar, excesosDeRespuesta, type ExcesoPlan, type LimitesPlan } from './bajarPlanHelpers'
+import { usoDelTenant } from './usoDelTenant'
 
 function mensajeErrorPlan(err: unknown, fallback: string): string {
   if (typeof err !== 'object' || err === null || !('response' in err)) return fallback
@@ -11,10 +12,24 @@ function mensajeErrorPlan(err: unknown, fallback: string): string {
   return typeof error === 'string' && error ? error : fallback
 }
 
+/** Excesos que manda el backend cuando rechaza una bajada (HTTP 409). */
+function excesosDeError(err: unknown): ExcesoPlan[] {
+  if (typeof err !== 'object' || err === null || !('response' in err)) return []
+  return excesosDeRespuesta((err as { response?: { data?: unknown } }).response?.data)
+}
+
 /** Plan de destino con sus límites, para revisar una bajada antes de llamar al backend. */
 export type DestinoPlan = LimitesPlan & { nombre: string }
 
 export type BajadaBloqueada = { plan: string; excesos: ExcesoPlan[] }
+
+/** Bajar con más uso del permitido: no se borra nada, se bloquea y se avisa qué ajustar. */
+async function revisarBajada(destino: DestinoPlan, etiqueta: string): Promise<BajadaBloqueada | null> {
+  if (!esBajada(useTenantStore.getState().planNombre, destino.nombre)) return null
+  await useTenantStore.getState().loadTenantUso()
+  const excesos = excesosAlBajar(destino, usoDelTenant(useTenantStore.getState()))
+  return excesos.length > 0 ? { plan: etiqueta, excesos } : null
+}
 
 export type PagoOnvoPendiente = {
   subscriptionId: string
@@ -51,16 +66,11 @@ export function useCambiarPlan({ rutaExito }: Options) {
     setError(null)
     setBajadaBloqueada(null)
     try {
-      if (destino && esBajada(useTenantStore.getState().planNombre, destino.nombre)) {
-        // Bajar con más uso del permitido: no se borra nada, se bloquea y se avisa qué ajustar.
-        await useTenantStore.getState().loadTenantUso()
-        const { usoProductos, usoUsuarios } = useTenantStore.getState()
-        const excesos = excesosAlBajar(destino, { productos: usoProductos, usuarios: usoUsuarios })
-        if (excesos.length > 0) {
-          setBajadaBloqueada({ plan: etiquetaDestino ?? destino.nombre, excesos })
-          setLoadingPlan(null)
-          return
-        }
+      const bloqueo = destino ? await revisarBajada(destino, etiquetaDestino ?? destino.nombre) : null
+      if (bloqueo) {
+        setBajadaBloqueada(bloqueo)
+        setLoadingPlan(null)
+        return
       }
       const { data } = await billingService.cambiarPlan(planId)
       const result = data as CambiarPlanResultado
@@ -91,7 +101,12 @@ export function useCambiarPlan({ rutaExito }: Options) {
       setError('Respuesta inesperada al cambiar de plan')
       setLoadingPlan(null)
     } catch (e: unknown) {
-      setError(mensajeErrorPlan(e, 'Error al cambiar el plan'))
+      const excesosServidor = excesosDeError(e)
+      if (excesosServidor.length > 0) {
+        setBajadaBloqueada({ plan: etiquetaDestino ?? destino?.nombre ?? '', excesos: excesosServidor })
+      } else {
+        setError(mensajeErrorPlan(e, 'Error al cambiar el plan'))
+      }
       setLoadingPlan(null)
     }
   }, [irAExito, loadTenantInfo])

@@ -5,6 +5,8 @@ import useAuthStore from '@/store/authStore'
 import useTenantStore from '@/store/tenantStore'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import { mensajeErrorAuth } from './auth/authHelpers'
+import { isTokenAlive } from '@/utils/authToken'
+import { RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { rutaPanelPorRol } from '@/utils/planPaths'
 import type { AuthResponse } from '@/types/auth'
 import type { Id } from '@/types/api'
@@ -26,6 +28,7 @@ export default function EmpresaSelectionPage() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const loginStore = useAuthStore((s) => s.login)
+  const token = useAuthStore((s) => s.token)
 
   // Data passed from LoginPage via router state
   const { empresas = [], tempToken = '' } = (location.state ?? {}) as EmpresaSelectionState
@@ -52,7 +55,7 @@ export default function EmpresaSelectionPage() {
   }
 
   if (!tempToken || empresas.length === 0) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={isTokenAlive(token) ? RUTA_REGISTRAR_NEGOCIO : '/login'} replace />
   }
 
   return (

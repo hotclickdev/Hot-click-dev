@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BuildingStorefrontIcon, ComputerDesktopIcon, CubeIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
@@ -15,14 +15,25 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
   const { t } = useTranslation()
   const registro = `/registro-empresa?plan=${QUERY_REGISTRO[plan]}`
   const foto = FOTO_HERO[plan]
+  const poster = plan === 'emprendedor' ? FOTO_HERO.pyme.src : FOTO_HERO.emprendedor.src
   const nombre = t(`planes.${plan}.nombre`)
+  const heroCta = useRef<HTMLAnchorElement>(null)
+  const [heroVisible, setHeroVisible] = useState(true)
+
+  useEffect(() => {
+    const nodo = heroCta.current
+    if (!nodo) return undefined
+    const obs = new IntersectionObserver(([entrada]) => setHeroVisible(entrada.isIntersecting), { threshold: 0.5 })
+    obs.observe(nodo)
+    return () => obs.disconnect()
+  }, [])
 
   return (
-    <div className="bg-hc-n-50 font-[family-name:var(--hc-font-text)] text-hc-n-900" data-testid={`landing-${plan}`}>
+    <div className="bg-hc-n-50 pb-24 font-[family-name:var(--hc-font-text)] text-hc-n-900 md:pb-0" data-testid={`landing-${plan}`}>
       {/* Hero */}
       <section className="mx-auto grid max-w-[1200px] items-center gap-6 px-4 pb-8 pt-6 lg:grid-cols-[1fr_480px] lg:gap-12 lg:px-6 lg:pb-14 lg:pt-12">
         <div className="flex flex-col gap-4">
-          <SegmentoPlanes actual={plan} />
+          <div className="max-md:hidden"><SegmentoPlanes actual={plan} /></div>
           <h1 className="font-[family-name:var(--hc-font-display)] text-[30px] font-extrabold leading-[36px] lg:text-[44px] lg:leading-[52px]">
             {t('planes.landing.planLabel')} <span className="text-hc-red-600">{nombre}</span>
           </h1>
@@ -31,7 +42,7 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
             {t(`planes.${plan}.punto.montos`).replace('[PENDIENTE]', '').trim()} <Pendiente />
           </p>
           <div className="flex flex-col gap-2.5 sm:flex-row">
-            <Link to={registro} className="inline-flex h-12 items-center justify-center rounded-[12px] bg-hc-red-500 px-6 text-[15px] font-semibold text-white no-underline hover:bg-hc-red-600">
+            <Link ref={heroCta} to={registro} className="inline-flex h-12 items-center justify-center rounded-[12px] bg-hc-red-500 px-6 text-[15px] font-semibold text-white no-underline hover:bg-hc-red-600">
               {t(`planes.${plan}.cta`)}
             </Link>
             <a href="#comparar-planes" className="inline-flex h-12 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-6 text-[15px] font-semibold text-hc-n-900 no-underline hover:bg-hc-n-50">
@@ -40,11 +51,11 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
           </div>
           <p className="text-[12px] text-hc-n-600">{t('planes.nota.cambio')} {t('planes.nota.montos')}</p>
         </div>
-        <img src={foto.src} alt={foto.alt} className="aspect-[4/3] w-full rounded-[16px] border border-hc-n-200 object-cover" loading="eager" />
+        <img src={foto.src} alt={foto.alt} className="aspect-[4/3] max-h-[200px] w-full rounded-[16px] border border-hc-n-200 object-cover md:max-h-none" loading="eager" />
       </section>
 
-      {/* Qué incluye */}
-      <section className="mx-auto max-w-[1200px] px-4 pb-8 lg:px-6 lg:pb-12">
+      {/* Qué incluye: en celular lo repite la tarjeta de plan, así que solo se ve en escritorio. */}
+      <section className="mx-auto hidden max-w-[1200px] px-4 pb-8 md:block lg:px-6 lg:pb-12">
         <div className="rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4 lg:p-6">
           <h2 className="font-[family-name:var(--hc-font-display)] text-[20px] font-bold lg:text-[24px]">{t('planes.subtitulo')}</h2>
           <ul className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -61,13 +72,14 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
       <section className="mx-auto grid max-w-[1200px] gap-4 px-4 pb-8 lg:grid-cols-2 lg:px-6 lg:pb-12">
         <ol className="flex flex-col gap-2.5">
           {[
-            { n: 1, k: 'registroVendedor.paso1.titulo' },
-            { n: 2, k: 'registroVendedor.paso2.titulo' },
-            { n: 3, k: 'registroVendedor.paso3.titulo' },
+            { n: 1, texto: 'Elegí tu plan y creá la cuenta' },
+            { n: 2, texto: 'Subí tus productos con foto' },
+            { n: 3, texto: 'Recibí el pedido y cobrá' },
           ].map((p) => (
             <li key={p.n} className="flex items-center gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-3.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-hc-blue-50 text-[14px] font-bold text-hc-blue-600">{p.n}</span>
-              <span className="text-[15px] font-semibold">{t(p.k)}</span>
+              {/* TODO copy Producto */}
+              <span className="text-[15px] font-semibold">{p.texto}</span>
             </li>
           ))}
           <li className="text-[13px] text-hc-n-600">{t('registroVendedor.revision.texto')}</li>
@@ -77,7 +89,7 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
           src="/emprende/recorrido.mp4"
           controls
           preload="none"
-          poster={foto.src}
+          poster={poster}
           aria-label={nombre}
         />
       </section>
@@ -132,9 +144,10 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
         <div className="flex flex-col items-start gap-3 rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-5 lg:flex-row lg:items-center lg:justify-between lg:p-6">
           <div>
             <p className="font-[family-name:var(--hc-font-display)] text-[20px] font-bold">{t('registroVendedor.paso1.titulo')}</p>
-            <p className="text-[14px] text-hc-n-600">{t(`planes.${plan}.pitch`)}</p>
+            <p className="text-[14px] text-hc-n-600 md:hidden">{t('planes.nota.montos')}</p>
+            <p className="hidden text-[14px] text-hc-n-600 md:block">{t(`planes.${plan}.pitch`)}</p>
           </div>
-          <Link to={registro} className="inline-flex h-12 items-center justify-center rounded-[12px] bg-hc-red-500 px-6 text-[15px] font-semibold text-white no-underline hover:bg-hc-red-600">
+          <Link to={registro} className="inline-flex h-12 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-6 text-[15px] font-semibold text-hc-n-900 no-underline hover:bg-hc-n-50 md:border-0 md:bg-hc-red-500 md:text-white md:hover:bg-hc-red-600">
             {t(`planes.${plan}.cta`)}
           </Link>
         </div>
@@ -151,6 +164,13 @@ export default function PlanLanding({ plan }: { plan: PlanLandingId }) {
           </a>
         </div>
       </section>
+      {heroVisible ? null : (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-hc-n-200 bg-hc-n-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden">
+          <Link to={registro} className="flex h-12 items-center justify-center rounded-[12px] bg-hc-red-500 text-[15px] font-semibold text-white no-underline">
+            {t('planes.landing.empezarCon', { plan: nombre })}
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
@@ -288,7 +308,7 @@ function ComparativaMovil({ plan }: { plan: PlanLandingId }) {
           <div className="p-4">
             <Link
               to={`/registro-empresa?plan=${QUERY_REGISTRO[elegido]}`}
-              className="flex h-12 w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-6 text-[16px] font-semibold text-white no-underline hover:bg-hc-red-600"
+              className="flex h-12 w-full items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-6 text-[16px] font-semibold text-hc-n-900 no-underline"
             >
               {t('planes.landing.empezarCon', { plan: nombre })}
             </Link>

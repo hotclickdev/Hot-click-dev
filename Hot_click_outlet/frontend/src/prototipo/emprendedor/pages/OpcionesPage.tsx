@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import FilaOpcion from '../ui/FilaOpcion'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
+import FilaModoOscuro from '@/prototipo/compartido/FilaModoOscuro'
 import MmGuiaToggle from '@/prototipo/compartido/MmGuiaToggle'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
@@ -26,6 +28,9 @@ export default function OpcionesPage() {
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
   const userName = useAuthStore((s) => s.userName) ?? 'Tu cuenta'
+  const features = useTenantStore((s) => s.features)
+  const planCargado = useTenantStore((s) => s.loaded)
+  const telegramBloqueado = planCargado && features.telegram === false
 
   function cerrarSesion() {
     logout()
@@ -49,6 +54,7 @@ export default function OpcionesPage() {
           </div>
         </div>
         <MmGuiaToggle />
+        <FilaModoOscuro />
         <ListaStagger className="mt-2">
           {OPCIONES.map((item) => (
             <ItemListaStagger key={item.to}>
@@ -56,6 +62,9 @@ export default function OpcionesPage() {
                 to={`${RUTA_EMPRENDEDOR}${item.to}`}
                 etiqueta={item.etiqueta}
                 dataMm={'dataMm' in item ? item.dataMm : undefined}
+                bloqueo={item.to === '/opciones/telegram' && telegramBloqueado
+                  ? { to: `${RUTA_EMPRENDEDOR}/opciones/plan`, texto: 'Mejorar plan' }
+                  : undefined}
               />
             </ItemListaStagger>
           ))}

@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { formatoColon } from '@/theme/formatoColon'
 import { Chip } from './ui'
 import EntradaPagina from './motion/EntradaPagina'
@@ -10,7 +10,9 @@ import type { PedidoMock } from './mock'
 import {
   FILTROS_PEDIDOS,
   filtrarPedidos,
+  filtroPedidosDesdeBusqueda,
   estiloEstadoPedido,
+  type FiltroPedidos,
 } from './pedidosListaHelpers'
 
 export type PedidosListaVariante = 'emp' | 'seller'
@@ -37,7 +39,8 @@ export default function PedidosListaVista({
   variante = 'seller',
   mostrarSucursal = 'nunca',
 }: Props) {
-  const [filtro, setFiltro] = useState<(typeof FILTROS_PEDIDOS)[number]>('Todos')
+  const { search } = useLocation()
+  const [filtro, setFiltro] = useState<FiltroPedidos>(() => filtroPedidosDesdeBusqueda(search))
   const visibles = useMemo(() => filtrarPedidos(pedidos, filtro), [pedidos, filtro])
   const emp = variante === 'emp'
   const mainClass = emp

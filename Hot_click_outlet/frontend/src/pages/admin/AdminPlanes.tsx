@@ -76,7 +76,7 @@ function PlanCard({ plan, planActual, esCurrent, loading, onSelect }: {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 flex-1">
+      <div className="grid flex-1 grid-cols-2 gap-2 md:flex md:flex-col">
         <Feature ok label={plan.maxProductos === -1 ? 'Productos sin límite' : `Hasta ${plan.maxProductos} productos`} />
         <Feature ok label={plan.maxUsuarios === -1 ? 'Usuarios sin límite' : `Equipo de ${plan.maxUsuarios} usuario${(plan.maxUsuarios ?? 0) > 1 ? 's' : ''}`} />
         {/* El POS va en los tres planes (decisión 3-oct-2026): no depende de tienePos del API. */}
@@ -149,7 +149,7 @@ export default function AdminPlanes() {
         </div>
         <button type="button"
           onClick={() => navigate('/admin/billing/suscripcion')}
-          className="text-sm px-4 py-2 rounded-xl transition-opacity hover:opacity-70"
+          className="hidden text-sm px-4 py-2 rounded-xl transition-opacity hover:opacity-70 md:inline-flex"
           style={{ color: 'var(--hc-accent)', border: '1px solid var(--hc-accent)' }}
         >
           Ver suscripción
@@ -183,6 +183,15 @@ export default function AdminPlanes() {
           />
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => navigate('/admin/billing/suscripcion')}
+        className="flex min-h-14 w-full items-center justify-between border-b border-hc-n-200 text-left text-sm font-medium text-hc-n-900 md:hidden"
+      >
+        Ver suscripción
+        <span aria-hidden>›</span>
+      </button>
 
       {cargando ? (
         <div className="flex justify-center py-16">

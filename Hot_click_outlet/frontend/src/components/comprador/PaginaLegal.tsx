@@ -50,6 +50,7 @@ export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, secc
       subtitulo={subtitulo}
       indice={secciones.map((s) => ({ id: s.id, texto: s.title }))}
       indiceEnFila
+      indiceEnHoja
     >
       <div className="flex flex-col bg-hc-n-50 pb-8 lg:bg-transparent">
         {intro && (

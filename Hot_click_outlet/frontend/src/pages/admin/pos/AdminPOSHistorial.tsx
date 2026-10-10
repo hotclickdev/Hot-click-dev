@@ -7,6 +7,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle'
 import type { Id } from '@/types/api'
 import type { PosVenta } from './posHelpers'
 import PosReporteModal from './PosReporteModal'
+import { ocultarEnMovilSiHayPanel, useCabeceraPanelEnPos } from './useCabeceraPanelEnPos'
 
 const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -28,6 +29,7 @@ export default function AdminPOSHistorial() {
   const [filtro, setFiltro]   = useState('hoy')
   const [expanded, setExpanded] = useState<Id | null | undefined>(null)
   const [reporteAbierto, setReporteAbierto] = useState(false)
+  const ocultarTemaSiHayPanel = ocultarEnMovilSiHayPanel(useCabeceraPanelEnPos())
 
   const localeFecha = i18n.language?.startsWith('en') ? 'en-CR' : i18n.language?.startsWith('pt') ? 'pt-BR' : 'es-CR'
   const fmtDate = (d: string | number | Date | null | undefined) =>
@@ -90,11 +92,11 @@ export default function AdminPOSHistorial() {
           <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>{t('pos.historial.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <ThemeToggle className="min-h-11 min-w-11 flex shrink-0 items-center justify-center" />
-          <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
+          <ThemeToggle className={`min-h-11 min-w-11 flex shrink-0 items-center justify-center ${ocultarTemaSiHayPanel}`} />
+          <div className="flex max-w-full overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--hc-border)' }}>
             {FILTROS.map(f => (
               <button type="button" key={f.key} onClick={() => setFiltro(f.key)}
-                className="px-3 py-1.5 text-xs font-medium transition-all"
+                className="shrink-0 px-3 py-1.5 text-xs font-medium transition-all"
                 style={{
                   backgroundColor: filtro === f.key ? 'var(--hc-accent)' : 'var(--hc-surface)',
                   color: filtro === f.key ? '#fff' : 'var(--hc-muted)',

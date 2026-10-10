@@ -17,7 +17,12 @@ export default function CompararPlanesPage() {
       planActualApi={mapSellerPlanIdToApi(plan.id)}
       rutaExito={ruta('plan/actualizado')}
       variante="seller"
-      rutaAjuste={{ productos: ruta('productos'), usuarios: ruta('equipo') }}
+      rutaAjuste={{
+        productos: ruta('productos'),
+        bodegas: ruta('bodegas'),
+        cajas: '/admin/pos',
+        usuarios: ruta('equipo'),
+      }}
       renderShell={({ children, error }) => (
         <ShellPlanes ruta={ruta} error={error}>{children}</ShellPlanes>
       )}

@@ -18,6 +18,12 @@ type Props = Readonly<{
   clearable?: boolean
   loading?: boolean
   help?: ReactNode
+  inputMode?: 'none' | 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url'
+  autoComplete?: string
+  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'
+  autoCapitalize?: string
+  pattern?: string
+  prefijo?: string
 }>
 
 /**
@@ -37,6 +43,12 @@ export default function CampoAnimado({
   clearable = false,
   loading = false,
   help,
+  inputMode,
+  autoComplete,
+  enterKeyHint,
+  autoCapitalize,
+  pattern,
+  prefijo,
 }: Props) {
   const controlado = Boolean(onChange) || readOnly
   const texto = controlado ? (value ?? '') : undefined
@@ -62,8 +74,14 @@ export default function CampoAnimado({
           {etiqueta}
         </span>
         <div className="relative flex items-center gap-2">
+          {prefijo ? <span className="text-sm font-semibold text-hc-text">{prefijo}</span> : null}
           <input
             type={type}
+            inputMode={inputMode}
+            autoComplete={autoComplete}
+            enterKeyHint={enterKeyHint}
+            autoCapitalize={autoCapitalize}
+            pattern={pattern}
             defaultValue={controlado ? undefined : defaultValue}
             value={texto}
             onChange={onChange && !readOnly ? (e) => onChange(e.target.value) : undefined}

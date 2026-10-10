@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import Badge from '@/components/ui/Badge'
+import HojaInferior from '@/components/comprador/HojaInferior'
 import {
   ESTADO_BADGE,
   PLAN_COLORS,
@@ -139,10 +141,11 @@ function AccionesUsuario({
   onDelete: (u: UsuarioAdmin) => void
   onRestore: (u: UsuarioAdmin) => void
 }) {
-  if (isDeleted) {
-    return <button type="button" onClick={() => onRestore(u)} className={BTN_OK}>Restaurar</button>
-  }
-  return (
+  const [abierta, setAbierta] = useState(false)
+  const cerrar = () => setAbierta(false)
+  const botones = isDeleted ? (
+    <button type="button" onClick={() => onRestore(u)} className={BTN_OK}>Restaurar</button>
+  ) : (
     <>
       {estadoStr === 'PENDIENTE' && (
         <>
@@ -159,6 +162,15 @@ function AccionesUsuario({
       <button type="button" onClick={() => onDelete(u)} className={BTN_DANGER}>
         Eliminar
       </button>
+    </>
+  )
+  return (
+    <>
+      <div className="hidden flex-wrap gap-1 md:flex">{botones}</div>
+      <button type="button" className="inline-flex size-11 items-center justify-center rounded-full text-lg md:hidden" aria-label="Acciones" onClick={() => setAbierta(true)}>⋯</button>
+      <HojaInferior abierta={abierta} onCerrar={cerrar} titulo="Acciones">
+        <div className="flex flex-col gap-2 p-4" onClick={cerrar}>{botones}</div>
+      </HojaInferior>
     </>
   )
 }

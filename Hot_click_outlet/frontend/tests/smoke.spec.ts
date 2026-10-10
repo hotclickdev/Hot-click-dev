@@ -259,7 +259,8 @@ test.describe('Smoke público', () => {
     await page.goto('/pago/exito', { waitUntil: 'domcontentloaded' })
     await cerrarOverlays(page)
     await expect(page.locator('body')).not.toContainText(/pedido\s*#4021/i)
-    await expect(page.getByRole('heading', { name: 'No pudimos procesar el pago' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'No encontramos ese pedido' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('link', { name: 'Ver mis pedidos' })).toBeVisible()
     guards.assertClean()
   })
 

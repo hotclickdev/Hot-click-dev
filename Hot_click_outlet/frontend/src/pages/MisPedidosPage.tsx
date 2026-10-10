@@ -2,10 +2,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
-import Spinner from '@/components/ui/Spinner'
+import EstadoError from '@/components/comprador/estados/EstadoError'
 import useAuthStore from '@/store/authStore'
 import { orderService } from '@/services/orderService'
-import { useToast } from '@/components/ui/Toast'
 import ListaPedidosComprador from './pedidos/ListaPedidosComprador'
 import DetallePedidoComprador from './pedidos/DetallePedidoComprador'
 import PedidosEmptyState from './pedidos/PedidosEmptyState'
@@ -20,12 +19,13 @@ import { etiquetaPedido } from './perfil/cuenta/cuentaHelpers'
 export default function MisPedidosPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const toast = useToast()
   const [busqueda] = useSearchParams()
   const userId = useAuthStore((s) => s.userId)
   const token = useAuthStore((s) => s.token)
   const [orders, setOrders] = useState<PedidoCliente[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorCarga, setErrorCarga] = useState(false)
+  const [intento, setIntento] = useState(0)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [filtro, setFiltro] = useState<FiltroPedidos>('todos')
@@ -34,24 +34,40 @@ export default function MisPedidosPage() {
     if (!token) { navigate('/login'); return }
     if (!userId) return
     let cancelado = false
+    setLoading(true)
+    setErrorCarga(false)
     orderService.getByUser(userId, page)
       .then(({ data }) => {
         if (cancelado) return
         const { pedidos, totalPages: paginas } = pedidosDesdeRespuesta(data)
+        setErrorCarga(false)
         setOrders(pedidos)
         setTotalPages(paginas)
       })
-      .catch(() => { if (!cancelado) toast({ message: t('common.error'), type: 'error' }) })
+      .catch(() => { if (!cancelado) setErrorCarga(true) })
       .finally(() => { if (!cancelado) setLoading(false) })
-    return () => { cancelado = true }
-  }, [userId, token, page, navigate, toast, t])
+    const limite = window.setTimeout(() => {
+      if (!cancelado) { setErrorCarga(true); setLoading(false) }
+    }, 20_000)
+    return () => { cancelado = true; window.clearTimeout(limite) }
+  }, [userId, token, page, navigate, intento])
 
   const pedidos = useMemo(() => pedidosDelComprador(orders), [orders])
   const numeroDetalle = busqueda.get('pedido')
   const detalle = pedidoPorNumero(pedidos, numeroDetalle)
 
   const cuerpo = (() => {
-    if (loading) return <div className="flex justify-center py-16"><Spinner variante="figma" /></div>
+    if (loading) return <ListaSkeleton />
+    if (errorCarga) {
+      return (
+        <EstadoError
+          nivel="h2"
+          titulo={t('common.error')}
+          texto={t('misPedidos.errorCarga', { defaultValue: 'No pudimos cargar tus pedidos.' })}
+          accion={{ texto: t('comun.reintentar', { defaultValue: 'Reintentar' }), onClick: () => setIntento((n) => n + 1) }}
+        />
+      )
+    }
     if (numeroDetalle) {
       return detalle
         ? <DetallePedidoComprador pedido={detalle} />
@@ -86,5 +102,15 @@ export default function MisPedidosPage() {
     <MainLayout variante="interna" titulo={titulo} esTituloPrincipal atras={numeroDetalle ? '/mis-pedidos' : '/perfil'} barraInferior={!numeroDetalle}>
       {cuerpo}
     </MainLayout>
+  )
+}
+
+function ListaSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 px-4 py-4" aria-busy="true" aria-live="polite">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="h-20 animate-pulse rounded-[14px] bg-hc-n-100" />
+      ))}
+    </div>
   )
 }

@@ -1,8 +1,9 @@
 import { Campo } from './ui'
 import FilaChips from '@/prototipo/emprendedor/ui/FilaChips'
+import CampoPrecioColon from './CampoPrecioColon'
 import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
 import ChipsCategoriaVendedor from './ChipsCategoriaVendedor'
-import StepperNumero from './motion/StepperNumero'
+import HojaCategoriaVendedor from './HojaCategoriaVendedor'
 import ZonaFotoProducto from './ZonaFotoProducto'
 import type { ModoPrecioPersonalizado } from './personalizadoProductoHelpers'
 
@@ -89,7 +90,8 @@ export default function PasosProductoVendedor({
             estado={nombre.trim() ? 'ok' : 'idle'}
             clearable
           />
-          <div>
+          <HojaCategoriaVendedor categoriaId={categoriaId} onChange={onCategoriaChange} />
+          <div className="hidden md:block">
             <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
             <ChipsCategoriaVendedor categoriaId={categoriaId} onChange={onCategoriaChange} />
           </div>
@@ -97,18 +99,8 @@ export default function PasosProductoVendedor({
       ) : null}
       {idPaso === 'precios' ? (
         <div className="flex flex-col gap-3">
-          <StepperNumero
-            etiqueta="Precio de compra"
-            value={compra}
-            onChange={onCompraChange}
-            placeholder={editar ? undefined : '₡ 0'}
-          />
-          <StepperNumero
-            etiqueta="Precio de venta"
-            value={venta}
-            onChange={onVentaChange}
-            placeholder={editar ? undefined : '₡ 0'}
-          />
+          <CampoPrecioColon etiqueta="Precio de compra" value={compra} onChange={onCompraChange} />
+          <CampoPrecioColon etiqueta="Precio de venta" value={venta} onChange={onVentaChange} />
         </div>
       ) : null}
       {idPaso === 'cobro' ? (
@@ -142,8 +134,8 @@ export default function PasosProductoVendedor({
               etiqueta="Stock disponible"
               value={stock}
               onChange={onStockChange}
-              type="number"
-              placeholder={editar ? undefined : 'Ej: 10'}
+              inputMode="numeric"
+              pattern="[0-9]*"
               estado={stock.trim() ? 'ok' : 'idle'}
             />
           ) : (

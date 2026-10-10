@@ -51,7 +51,7 @@ export default function PlanActualizadoPage() {
           <div className="size-20 animate-pulse rounded-full bg-hc-surface-2" aria-hidden />
           <h1 className="font-display text-lg font-bold md:text-[22px]">Confirmando tu pago…</h1>
           <p className="text-[13px] text-hc-muted md:text-sm">
-            Estamos esperando la confirmación de ONVO.
+            Estamos confirmando tu pago.
           </p>
         </EmprendedorCard>
       </main>

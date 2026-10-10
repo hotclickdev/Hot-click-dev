@@ -4,7 +4,7 @@ import { estiloMarcaTienda } from './tiendaTheme'
 export default function EsqueletoTiendaLayout() {
   return (
     <div className="hc-tenant-theme min-h-screen bg-hc-n-50" style={estiloMarcaTienda(null)} aria-busy="true">
-      <div className="h-[150px] animate-pulse bg-hc-n-200 lg:h-[220px]" />
+      <div className="h-[120px] animate-pulse bg-hc-n-200 lg:h-[220px]" />
       <div className="mx-auto max-w-[1232px] px-4">
         <div className="-mt-[34px] size-[76px] animate-pulse rounded-[21px] border-[3px] border-hc-n-0 bg-hc-n-200" />
         <div className="mt-3 h-6 w-1/2 animate-pulse rounded-md bg-hc-n-200" />

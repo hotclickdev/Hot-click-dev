@@ -30,6 +30,7 @@ export default function RegistroEmpresaPage() {
   const token = useAuthStore((s) => s.token)
   const userRole = useAuthStore((s) => s.userRole)
   const empresaId = useAuthStore((s) => s.empresaId)
+  const userEmail = useAuthStore((s) => s.userEmail)
 
   const planInicial = leerPlanQuery(searchParams.toString())
   const [plan, setPlan] = useState<PlanQueryId>(planInicial ?? 'emprendedor')
@@ -42,14 +43,15 @@ export default function RegistroEmpresaPage() {
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance | null>(null)
   const [form, setForm] = useState<RegistroEmpresaForm>({
-    nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
+    nombreEmpresa: '', correoEmpresa: userEmail ?? '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
     inscritoTributacion: true,
   })
 
   if (destinoPost) return <Navigate to={destinoPost} replace />
   const destino = destinoVender({ tokenVivo: isTokenAlive(token), rol: userRole, empresaId })
-  if (fase !== 'listo' && destino !== RUTA_REGISTRO_EMPRESA) return <Navigate to={destino} replace />
+  const conSesion = destino === RUTA_REGISTRAR_NEGOCIO
+  if (fase !== 'listo' && destino !== RUTA_REGISTRO_EMPRESA && !conSesion) return <Navigate to={destino} replace />
 
   const planElegido = planAlta(plan)
   const paso = fase === 'plan' ? 0 : fase === 'negocio' ? 1 : 2
@@ -71,11 +73,19 @@ export default function RegistroEmpresaPage() {
 
   const validar = (): string => {
     if (!form.nombreEmpresa.trim()) return 'Escribí el nombre de tu negocio.'
-    if (!form.correoAdmin.trim()) return 'Escribí tu correo para entrar al panel.'
-    if (form.passwordAdmin.length < MIN_PASSWORD) return `La contraseña necesita al menos ${MIN_PASSWORD} caracteres.`
+    if (!conSesion && !form.correoAdmin.trim()) return 'Escribí tu correo para entrar al panel.'
+    if (!conSesion && form.passwordAdmin.length < MIN_PASSWORD) return `La contraseña necesita al menos ${MIN_PASSWORD} caracteres.`
     if (!consentimientos.terminos) return 'Aceptá los Términos y la Política de Privacidad para continuar.'
     if (!consentimientos.acuerdo) return 'Para continuar, aceptá el Acuerdo de Vendedores.'
     return ''
+  }
+
+  const terminarAlta = (authData: NonNullable<ReturnType<typeof authDataRegistroEmpresa>>) => {
+    const siguiente = destinoTrasAlta(plan)
+    if (siguiente) setDestinoPost(siguiente)
+    else setFase('listo')
+    loginStore(authData)
+    authService.registrarConsentimiento('VENDEDOR')
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -85,6 +95,20 @@ export default function RegistroEmpresaPage() {
     if (problema) return
     setLoading(true)
     try {
+      if (conSesion) {
+        const { data } = await authService.upgradeEmprendedor({
+          nombreEmpresa: form.nombreEmpresa.trim(),
+          correoEmpresa: form.correoEmpresa.trim().toLowerCase() || undefined,
+          telefonoEmpresa: form.telefonoEmpresa.trim() || undefined,
+        })
+        const authData = authDataRegistroEmpresa(data)
+        if (!authData?.accessToken) {
+          setError('No pudimos terminar el registro. Intentá de nuevo.')
+          return
+        }
+        terminarAlta(authData)
+        return
+      }
       const { data } = await authService.registroEmpresa({
         nombreEmpresa: form.nombreEmpresa.trim(),
         correoEmpresa: form.correoEmpresa.trim().toLowerCase() || undefined,
@@ -102,12 +126,8 @@ export default function RegistroEmpresaPage() {
         resetTurnstile()
         return
       }
-      const siguiente = destinoTrasAlta(plan)
-      if (siguiente) setDestinoPost(siguiente)
-      else setFase('listo')
-      loginStore(authData)
       authService.registrarConsentimiento('REGISTRO')
-      authService.registrarConsentimiento('VENDEDOR')
+      terminarAlta(authData)
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, '') || 'No pudimos crear tu cuenta. Revisá los datos e intentá de nuevo.')
       resetTurnstile()
@@ -125,7 +145,11 @@ export default function RegistroEmpresaPage() {
       />
       <div className="min-h-screen bg-hc-n-50 font-[family-name:var(--hc-font-text)] text-hc-n-900">
         <AltaHeader
-          derecha={fase === 'listo' ? null : (
+          ayuda={fase !== 'listo'}
+          atras={fase === 'listo' ? undefined : { to: conSesion ? '/' : '/registro', label: conSesion ? 'Volver al inicio' : 'Volver a crear cuenta de comprador' }}
+          derecha={fase === 'listo' ? null : conSesion ? (
+            <Link to="/" className="font-semibold text-hc-blue-600">Hacer esto después</Link>
+          ) : (
             <>¿Ya tenés cuenta?{' '}
               <Link to={rutaLoginConRetorno(RUTA_REGISTRAR_NEGOCIO)} className="font-semibold text-hc-blue-600">Ingresar</Link>
             </>
@@ -152,6 +176,7 @@ export default function RegistroEmpresaPage() {
               onCambiarPlan={() => setFase('plan')}
               onAtras={() => setFase('plan')}
               onSubmit={handleSubmit}
+              conSesion={conSesion}
             />
           ) : null}
           {fase === 'listo' ? <PasoListo nombreNegocio={form.nombreEmpresa.trim()} /> : null}

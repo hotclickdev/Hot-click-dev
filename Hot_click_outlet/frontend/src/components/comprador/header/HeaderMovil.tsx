@@ -1,11 +1,12 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { esLandingPlan } from '@/components/ui/flotantes/flotantesHelpers'
 import { useTranslation } from 'react-i18next'
 import Chip from '../Chip'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import MarcaComprador from './MarcaComprador'
 import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '../negocios/negociosPublicos'
-import { rutaCategoria, useHeaderComprador } from './useHeaderComprador'
+import { RUTA_SERVICIOS_HOT, rutaCategoria, useHeaderComprador } from './useHeaderComprador'
 
 type HeaderMovilProps = {
   onBuscarConFoto: () => void
@@ -14,6 +15,8 @@ type HeaderMovilProps = {
 /** Header móvil del comprador (Figma `7:3`). */
 export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
+  const landing = esLandingPlan(pathname)
   const { cantidadPedido, categorias, abrirBusqueda } = useHeaderComprador()
 
   return (
@@ -39,7 +42,7 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
         </div>
       </div>
 
-      <div className="flex w-full items-center gap-[10px] rounded-[12px] bg-hc-n-100 py-[6px] pl-[14px] pr-[6px]">
+      {landing ? null : <div className="flex w-full items-center gap-[10px] rounded-[12px] bg-hc-n-100 py-[6px] pl-[14px] pr-[6px]">
         <button
           type="button"
           onClick={abrirBusqueda}
@@ -58,9 +61,11 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
         >
           <IconoFigma src={ICONOS_COMPRADOR.buscarFoto} size={18} />
         </button>
-      </div>
+      </div>}
 
-      <nav aria-label={t('comprador.header.categoriasAria')} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+      {landing ? null : <nav aria-label={t('comprador.header.categoriasAria')} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+        <Chip texto={t('comprador.header.servicios')} to={RUTA_SERVICIOS_HOT} />
+        <span aria-hidden="true" className="h-5 w-px shrink-0 bg-hc-n-200" />
         {PLANES_DIRECTORIO.map((p) => (
           <Chip key={p.alias} texto={t(p.nav)} to={rutaDirectorioPlan(p.alias)} />
         ))}
@@ -68,7 +73,7 @@ export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
         {categorias.map((categoria) => (
           <Chip key={categoria.id} texto={categoria.nombre} to={rutaCategoria(categoria.id)} />
         ))}
-      </nav>
+      </nav>}
     </div>
   )
 }

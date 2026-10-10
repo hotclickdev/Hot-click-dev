@@ -4,6 +4,7 @@ import facturaService from '@/services/facturaService'
 import type { FacturaFiltros } from '@/services/facturaService'
 import { empresaService } from '@/services/empresaService'
 import { useToast } from '@/components/ui/Toast'
+import ChipsPeriodo from './ChipsPeriodo'
 import type { Pagina } from '@/types/api'
 
 type ComprobanteAdmin = {
@@ -130,6 +131,8 @@ export default function AdminFacturas() {
         </div>
       </div>
 
+      <ChipsPeriodo desde={fechaDesde} hasta={fechaHasta} onChange={(d, h) => { setFechaDesde(d); setFechaHasta(h) }} />
+
       {/* Filtros */}
       <div className="flex flex-wrap items-end gap-3 rounded-[14px] p-4"
         style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', boxShadow: 'var(--hc-shadow-1)' }}>
@@ -142,13 +145,13 @@ export default function AdminFacturas() {
             {Object.keys(ESTADO_TOKENS).map((e) => <option key={e} value={e}>{e}</option>)}
           </select>
         </div>
-        <div>
+        <div className="hidden md:block">
           <label htmlFor="facturas-desde" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Desde</label>
           <input id="facturas-desde" type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)}
             className="rounded-lg px-3 py-1.5 text-sm"
             style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)', color: 'var(--hc-text)', fontFamily: 'var(--hc-font-text)' }} />
         </div>
-        <div>
+        <div className="hidden md:block">
           <label htmlFor="facturas-hasta" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--hc-muted)' }}>Hasta</label>
           <input id="facturas-hasta" type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)}
             className="rounded-lg px-3 py-1.5 text-sm"

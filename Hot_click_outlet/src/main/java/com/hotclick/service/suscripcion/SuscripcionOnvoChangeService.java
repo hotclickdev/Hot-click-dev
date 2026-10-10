@@ -9,6 +9,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.TenantService;
 import com.hotclick.service.billing.BillingLedgerWriter;
 import com.hotclick.service.onvo.OnvoBillingClient;
 import com.hotclick.utils.Constants;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -43,6 +45,7 @@ public class SuscripcionOnvoChangeService {
     private final OnvoBillingClient onvoBilling;
     private final OnvoService onvoService;
     private final SuscripcionPlanSupport planSupport;
+    private final TenantService tenantService;
     private final SuscripcionOnvoChangeService self;
 
     @Autowired(required = false)
@@ -54,6 +57,7 @@ public class SuscripcionOnvoChangeService {
                                         OnvoBillingClient onvoBilling,
                                         OnvoService onvoService,
                                         SuscripcionPlanSupport planSupport,
+                                        TenantService tenantService,
                                         @Lazy SuscripcionOnvoChangeService self) {
         this.suscripcionRepo = suscripcionRepo;
         this.empresaRepo = empresaRepo;
@@ -61,6 +65,7 @@ public class SuscripcionOnvoChangeService {
         this.onvoBilling = onvoBilling;
         this.onvoService = onvoService;
         this.planSupport = planSupport;
+        this.tenantService = tenantService;
         this.self = self;
     }
 
@@ -75,6 +80,7 @@ public class SuscripcionOnvoChangeService {
         if (planDestino.getNombre().equalsIgnoreCase(planActual)) {
             throw new IllegalArgumentException("Ya tenés el plan " + planDestino.getNombre());
         }
+        validarBajadaPermitida(empresaId, planActual, planDestino);
 
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
         if (tieneStripeActivo(sub)) {
@@ -91,6 +97,15 @@ public class SuscripcionOnvoChangeService {
             return cambiarPlanExistente(empresaId, sub, planDestino, priceId);
         }
         return altaPlanPago(empresaId, empresa, planDestino, priceId, sub);
+    }
+
+    private void validarBajadaPermitida(Long empresaId, String planActual, Plan planDestino) {
+        if (!BajadaPlanPolicy.esBajada(planActual, planDestino.getNombre())) return;
+        List<BajadaPlanPolicy.ExcesoPlan> excesos =
+            BajadaPlanPolicy.excesos(planDestino, tenantService.usoActual(empresaId));
+        if (!excesos.isEmpty()) {
+            throw new BajadaPlanBloqueadaException(planDestino.getNombre(), excesos);
+        }
     }
 
     private String resolverPriceId(String planNombre) {

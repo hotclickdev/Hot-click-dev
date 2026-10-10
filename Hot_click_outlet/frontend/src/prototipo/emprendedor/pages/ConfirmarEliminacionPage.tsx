@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 import { borrarProductoVendedor, mensajeErrorProducto } from '@/prototipo/compartido/catalogoVendedorApi'
+import HojaInferior from '@/components/comprador/HojaInferior'
 import ConfirmarEliminarProductoVista from '@/prototipo/compartido/ConfirmarEliminarProductoVista'
 
 /**
@@ -31,7 +32,8 @@ export default function ConfirmarEliminacionPage() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col items-center px-5 pb-16 pt-36 text-center">
+    <HojaInferior abierta titulo="Eliminar producto" onCerrar={() => navigate(`${RUTA_EMPRENDEDOR}/productos`)}>
+      <div className="px-5 pb-8 text-center">
       <ConfirmarEliminarProductoVista
         nombre={nombre}
         cargando={cargando}
@@ -40,6 +42,7 @@ export default function ConfirmarEliminacionPage() {
         onEliminar={() => void eliminar()}
         onCancelar={() => navigate(`${RUTA_EMPRENDEDOR}/productos/${id}/editar`)}
       />
-    </main>
+      </div>
+    </HojaInferior>
   )
 }

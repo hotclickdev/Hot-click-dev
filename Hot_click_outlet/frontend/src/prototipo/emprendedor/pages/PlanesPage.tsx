@@ -20,6 +20,12 @@ export default function PlanesPage() {
       planActualApi={actual}
       rutaExito={`${RUTA_EMPRENDEDOR}/opciones/plan/actualizado`}
       variante="emp"
+      rutaAjuste={{
+        productos: `${RUTA_EMPRENDEDOR}/productos`,
+        bodegas: `${RUTA_EMPRENDEDOR}/opciones/bodegas`,
+        cajas: '/admin/pos',
+        usuarios: `${RUTA_EMPRENDEDOR}/opciones/equipo`,
+      }}
       renderShell={({ children, error }) => (
         <ShellPlanes error={error}>{children}</ShellPlanes>
       )}

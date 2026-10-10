@@ -35,7 +35,7 @@ export default function PasoNueva({ flujo }: { flujo: RecuperarContrasena }) {
       <TituloRecuperar>{t('forgot.newTitle')}</TituloRecuperar>
       <CampoRecuperar etiqueta={t('forgot.newPassword')} icono={<IconoCandado />} final={botonOjo}
         type={tipo} value={nueva} onChange={e => setNueva(e.target.value)}
-        required maxLength={CONTRASENA_MAX} autoComplete="new-password" autoFocus
+        required maxLength={CONTRASENA_MAX} autoComplete="new-password" enterKeyHint="next" autoCapitalize="off" autoFocus
         aria-describedby="requisitos-contrasena" />
       <ul id="requisitos-contrasena" className="flex w-full flex-col gap-[6px]">
         <Requisito cumple={req.largo} texto={t('forgot.reqLength')} />
@@ -44,7 +44,7 @@ export default function PasoNueva({ flujo }: { flujo: RecuperarContrasena }) {
       </ul>
       <CampoRecuperar etiqueta={t('forgot.repeatPassword')} icono={<IconoCandado />}
         type={tipo} value={repetir} onChange={e => setRepetir(e.target.value)}
-        required maxLength={CONTRASENA_MAX} autoComplete="new-password" />
+        required maxLength={CONTRASENA_MAX} autoComplete="new-password" enterKeyHint="done" autoCapitalize="off" />
       <ErrorRecuperar mensaje={error} />
       <BotonRecuperar disabled={cargando || !contrasenaAceptable(nueva, correo) || !repetir}>
         {cargando ? t('forgot.saving') : t('forgot.save')}

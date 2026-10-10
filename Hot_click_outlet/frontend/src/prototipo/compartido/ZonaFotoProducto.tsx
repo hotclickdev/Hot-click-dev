@@ -2,9 +2,9 @@ import { useCallback, useId, useRef, useState, type DragEvent } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { useToast } from '@/components/ui/Toast'
 import { mensajeErrorProducto } from './catalogoVendedorApi'
+import { comprimirFotoProducto } from './comprimirFotoProducto'
 import { ACCEPT_FOTO_PRODUCTO, errorValidacionFoto, subirFotoProducto } from './subirFotoProducto'
 import { clasesZonaFotoDrag } from './zonaFotoProductoDrag'
-import iconCamara from './assets/icon-camara.svg'
 
 type Props = Readonly<{
   imagenUrl: string
@@ -14,7 +14,7 @@ type Props = Readonly<{
 }>
 
 /**
- * Zona para subir y previsualizar la foto de un producto (emprendedor / PYME).
+ * Foto del producto: cámara, galería (varias) y miniaturas en 4 columnas.
  */
 export default function ZonaFotoProducto({
   imagenUrl,
@@ -22,119 +22,147 @@ export default function ZonaFotoProducto({
   className = '',
   bordeDiscontinuo = false,
 }: Props) {
-  const inputId = useId()
-  const inputRef = useRef<HTMLInputElement>(null)
+  const camaraId = useId()
+  const galeriaId = useId()
+  const camaraRef = useRef<HTMLInputElement>(null)
+  const galeriaRef = useRef<HTMLInputElement>(null)
   const profundidadDrag = useRef(0)
   const toast = useToast()
   const reducedMotion = useReducedMotion() ?? false
   const [subiendo, setSubiendo] = useState(false)
   const [arrastrando, setArrastrando] = useState(false)
+  const [extras, setExtras] = useState<string[]>([])
+  const urls = [imagenUrl, ...extras].filter(Boolean)
 
-  const abrirPicker = useCallback(() => {
-    if (subiendo) return
-    inputRef.current?.click()
-  }, [subiendo])
-
-  const subir = useCallback(async (file?: File) => {
-    if (!file) return
-    const error = errorValidacionFoto(file)
-    if (error) {
-      toast({ message: error, type: 'error' })
-      return
-    }
+  const subirVarias = useCallback(async (files: FileList | File[] | null) => {
+    const lista = files ? [...files] : []
+    if (lista.length === 0 || subiendo) return
     setSubiendo(true)
     try {
-      const url = await subirFotoProducto(file)
-      if (url) onImagenChange(url)
-      else toast({ message: 'No se recibió la URL de la foto.', type: 'error' })
+      const nuevas: string[] = []
+      for (const file of lista) {
+        const error = errorValidacionFoto(file)
+        if (error) {
+          toast({ message: error, type: 'error' })
+          continue
+        }
+        const comprimida = await comprimirFotoProducto(file)
+        const url = await subirFotoProducto(comprimida)
+        if (url) nuevas.push(url)
+      }
+      if (nuevas.length === 0) return
+      if (!imagenUrl) {
+        onImagenChange(nuevas[0])
+        setExtras((prev) => [...prev, ...nuevas.slice(1)])
+      } else {
+        setExtras((prev) => [...prev, ...nuevas])
+      }
     } catch (err: unknown) {
       toast({ message: mensajeErrorProducto(err, 'No se pudo subir la foto.'), type: 'error' })
     } finally {
       setSubiendo(false)
-      if (inputRef.current) inputRef.current.value = ''
+      if (camaraRef.current) camaraRef.current.value = ''
+      if (galeriaRef.current) galeriaRef.current.value = ''
     }
-  }, [onImagenChange, toast])
+  }, [imagenUrl, onImagenChange, subiendo, toast])
 
   const resetDrag = () => {
     profundidadDrag.current = 0
     setArrastrando(false)
   }
 
-  const alEntrarDrag = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    if (subiendo) return
-    profundidadDrag.current += 1
-    setArrastrando(true)
-  }
-
-  const alSobreDrag = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    if (subiendo) return
-    e.dataTransfer.dropEffect = 'copy'
-  }
-
-  const alSalirDrag = () => {
-    profundidadDrag.current = Math.max(0, profundidadDrag.current - 1)
-    if (profundidadDrag.current === 0) setArrastrando(false)
-  }
-
   const alSoltar = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     resetDrag()
-    if (subiendo) return
-    void subir(e.dataTransfer.files?.[0])
+    void subirVarias(e.dataTransfer.files)
   }
 
-  const layout = bordeDiscontinuo
-    ? 'flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed py-8'
-    : 'mb-6 flex min-h-[118px] flex-col items-center justify-center rounded-xl px-4 py-6'
+  function quitar(url: string) {
+    if (url === imagenUrl) {
+      const [primera, ...resto] = extras
+      onImagenChange(primera ?? '')
+      setExtras(resto)
+      return
+    }
+    setExtras((prev) => prev.filter((u) => u !== url))
+  }
 
   const dragClass = clasesZonaFotoDrag({ arrastrando, reducedMotion, bordeDiscontinuo })
 
   return (
     <div
-      className={`${layout} ${dragClass} ${className}`.trim()}
-      onDragEnter={alEntrarDrag}
-      onDragOver={alSobreDrag}
-      onDragLeave={alSalirDrag}
+      className={`flex flex-col gap-3 ${dragClass} ${className}`.trim()}
+      onDragEnter={(e) => {
+        e.preventDefault()
+        if (subiendo) return
+        profundidadDrag.current += 1
+        setArrastrando(true)
+      }}
+      onDragOver={(e) => {
+        e.preventDefault()
+        if (!subiendo) e.dataTransfer.dropEffect = 'copy'
+      }}
+      onDragLeave={() => {
+        profundidadDrag.current = Math.max(0, profundidadDrag.current - 1)
+        if (profundidadDrag.current === 0) setArrastrando(false)
+      }}
       onDrop={alSoltar}
     >
       <input
-        id={inputId}
-        ref={inputRef}
+        id={camaraId}
+        ref={camaraRef}
         type="file"
-        accept={ACCEPT_FOTO_PRODUCTO}
+        accept="image/*"
+        capture="environment"
         className="sr-only"
         disabled={subiendo}
-        onChange={(e) => void subir(e.target.files?.[0])}
+        onChange={(e) => void subirVarias(e.target.files)}
       />
-      {imagenUrl ? (
-        <>
-          <img src={imagenUrl} alt="Vista previa del producto" className="h-20 w-20 rounded-xl object-cover" />
-          <button
-            type="button"
-            onClick={abrirPicker}
-            disabled={subiendo}
-            className="mt-2 cursor-pointer rounded-full border border-hc-border px-3 py-1 text-xs font-medium text-hc-accent"
-          >
-            {subiendo ? 'Subiendo…' : 'Cambiar foto'}
-          </button>
-        </>
-      ) : (
+      <input
+        id={galeriaId}
+        ref={galeriaRef}
+        type="file"
+        accept={ACCEPT_FOTO_PRODUCTO}
+        multiple
+        className="sr-only"
+        disabled={subiendo}
+        onChange={(e) => void subirVarias(e.target.files)}
+      />
+      {urls.length > 0 ? (
+        <ul className="grid grid-cols-4 gap-2">
+          {urls.map((url) => (
+            <li key={url} className="relative">
+              <img src={url} alt="" className="aspect-square w-full rounded-xl object-cover" />
+              <button
+                type="button"
+                onClick={() => quitar(url)}
+                className="absolute right-1 top-1 flex size-7 items-center justify-center rounded-full bg-hc-surface text-xs font-bold text-hc-text"
+                aria-label="Quitar foto"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={abrirPicker}
           disabled={subiendo}
-          className="flex cursor-pointer flex-col items-center gap-2"
-          aria-label="Agregar foto del producto"
+          onClick={() => camaraRef.current?.click()}
+          className="flex min-h-12 items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface px-3 text-center text-[13px] font-semibold text-hc-text disabled:opacity-60"
         >
-          <span className="relative mb-0 block size-[26px] overflow-clip">
-            <img src={iconCamara} alt="" width={26} height={26} className="size-full" />
-          </span>
-          <p className="text-sm font-medium text-hc-muted">{subiendo ? 'Subiendo…' : 'Agregar foto'}</p>
-          <p className="text-xs text-hc-muted">JPG, PNG o WebP, máx. 10 MB</p>
+          {subiendo ? 'Subiendo…' : 'Tomar foto'}
         </button>
-      )}
+        <button
+          type="button"
+          disabled={subiendo}
+          onClick={() => galeriaRef.current?.click()}
+          className="flex min-h-12 items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface px-3 text-center text-[13px] font-medium text-hc-text"
+        >
+          Elegir de la galería
+        </button>
+      </div>
     </div>
   )
 }

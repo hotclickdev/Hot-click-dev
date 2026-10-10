@@ -97,7 +97,7 @@ export default function SeccionTelegram({ toast }: { toast: ToastFn }) {
       {!estado?.configurado ? (
         <Block label="No disponible todavía">
           <p style={{ fontSize: '13px', color: 'var(--hc-muted)', fontFamily: F.body, margin: 0 }}>
-            El bot de Telegram aún no está habilitado en el servidor. Escribinos si querés activarlo para tu negocio.
+            Todavía no podés vincular Telegram desde acá. Escribinos y lo activamos para tu negocio.
           </p>
         </Block>
       ) : estado?.vinculado ? (

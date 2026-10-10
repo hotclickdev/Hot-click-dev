@@ -332,6 +332,8 @@ function TotalesTicket(props: TicketProps & { bloqueado?: boolean }) {
         <span className="shrink-0 text-xs text-hc-muted">{t('pos.venta.descuentoColon')}</span>
         <input
           type="number"
+          inputMode="decimal"
+          enterKeyHint="done"
           min={0}
           value={props.descuento || ''}
           placeholder="0"

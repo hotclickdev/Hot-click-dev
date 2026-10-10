@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useToast } from '@/components/ui/Toast'
+import ChipsPeriodo from './ChipsPeriodo'
 import AdminPageHeader from '@/prototipo/admin/AdminPageHeader'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import {
@@ -143,7 +144,10 @@ export default function AdminAuditorias() {
             ))}
           </select>
         </label>
-        <label className="block text-xs font-semibold text-hc-muted">
+        <div className="md:col-span-2">
+          <ChipsPeriodo desde={desde} hasta={hasta} onChange={(d, h) => { setDesde(d); setHasta(h) }} />
+        </div>
+        <label className="hidden text-xs font-semibold text-hc-muted md:block">
           Desde
           <input
             type="date"
@@ -152,7 +156,7 @@ export default function AdminAuditorias() {
             className="mt-1 w-full rounded-xl border border-hc-border bg-hc-surface px-3 py-2 text-sm text-hc-text"
           />
         </label>
-        <label className="block text-xs font-semibold text-hc-muted">
+        <label className="hidden text-xs font-semibold text-hc-muted md:block">
           Hasta
           <input
             type="date"

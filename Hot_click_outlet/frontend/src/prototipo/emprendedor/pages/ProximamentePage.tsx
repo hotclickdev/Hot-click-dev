@@ -10,7 +10,7 @@ export default function ProximamentePage() {
   return (
     <EntradaPagina>
       <main className="flex min-h-dvh flex-col items-center gap-[18px] px-5 pt-8 text-center">
-        <div className="w-full">
+        <div className="w-full max-md:hidden">
           <Link to={`${RUTA_EMPRENDEDOR}/opciones`} className="flex size-11 items-center" aria-label="Volver">
             <ChevronLeftIcon className="size-5" />
           </Link>

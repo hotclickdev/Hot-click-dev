@@ -4,6 +4,15 @@ export const FILTROS_PEDIDOS = ['Todos', 'Pendientes', 'Enviados', 'Entregados']
 
 export type FiltroPedidos = (typeof FILTROS_PEDIDOS)[number]
 
+/** Parámetro de URL para abrir Pedidos ya filtrado, por ejemplo desde «Despachar» en Inicio. */
+export const PARAM_FILTRO_PEDIDOS = 'filtro'
+
+/** Lee `?filtro=pendientes|enviados|entregados|todos` (sin distinguir mayúsculas); cualquier otro valor es «Todos». */
+export function filtroPedidosDesdeBusqueda(busqueda: string): FiltroPedidos {
+  const valor = new URLSearchParams(busqueda).get(PARAM_FILTRO_PEDIDOS)?.trim().toLowerCase()
+  return FILTROS_PEDIDOS.find((filtro) => filtro.toLowerCase() === valor) ?? 'Todos'
+}
+
 export function filtrarPedidos(pedidos: PedidoMock[], filtro: string): PedidoMock[] {
   if (filtro === 'Todos') return pedidos
   // Pendientes = sin despachar: con pago confirmado ('Pendiente') o esperando el pago.

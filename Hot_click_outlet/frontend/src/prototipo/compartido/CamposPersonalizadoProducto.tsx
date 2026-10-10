@@ -1,4 +1,4 @@
-import StepperNumero from './motion/StepperNumero'
+import CampoPrecioColon from './CampoPrecioColon'
 import type { ModoPrecioPersonalizado } from './personalizadoProductoHelpers'
 import { MODOS_PRECIO_PERSONALIZADO } from './personalizadoProductoHelpers'
 
@@ -56,14 +56,14 @@ export default function CamposPersonalizadoProducto({
       </div>
       {modoPrecio === 'FIJO' && onCompraChange && onVentaChange ? (
         <div className="grid grid-cols-2 gap-2">
-          <StepperNumero etiqueta="Precio compra" value={compra} onChange={onCompraChange} placeholder="₡ 0" />
-          <StepperNumero etiqueta="Precio venta" value={venta} onChange={onVentaChange} placeholder="₡ 0" />
+          <CampoPrecioColon etiqueta="Precio compra" value={compra} onChange={onCompraChange} />
+          <CampoPrecioColon etiqueta="Precio venta" value={venta} onChange={onVentaChange} />
         </div>
       ) : null}
       {modoPrecio === 'RANGO' && onPrecioMinChange && onPrecioMaxChange ? (
         <div className="grid grid-cols-2 gap-2">
-          <StepperNumero etiqueta="Precio mínimo" value={precioMin} onChange={onPrecioMinChange} placeholder="₡ 5.000" />
-          <StepperNumero etiqueta="Precio máximo" value={precioMax} onChange={onPrecioMaxChange} placeholder="₡ 25.000" />
+          <CampoPrecioColon etiqueta="Precio mínimo" value={precioMin} onChange={onPrecioMinChange} />
+          <CampoPrecioColon etiqueta="Precio máximo" value={precioMax} onChange={onPrecioMaxChange} />
         </div>
       ) : null}
       {modoPrecio === 'COTIZACION' ? (

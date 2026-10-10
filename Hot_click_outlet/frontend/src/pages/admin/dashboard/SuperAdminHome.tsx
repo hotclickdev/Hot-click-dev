@@ -4,8 +4,8 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import Spinner from '@/components/ui/Spinner'
 import { formatoEntero, letraDe } from '@/prototipo/admin/adminData'
 import {
-  AdminDarkButton,
   AdminEntityRow,
+  AdminPrimaryButton,
   AdminSecondaryButton,
   AdminStatCard,
 } from '@/prototipo/admin/AdminUi'
@@ -72,9 +72,9 @@ export default function SuperAdminHome() {
       <CabeceraPanel />
       <KpisPanel kpis={kpis} />
       <div className="flex flex-col gap-3 md:flex-row md:max-w-2xl">
-        <AdminDarkButton to="/admin/empresas" dataMm="ver-tiendas">
+        <AdminPrimaryButton to="/admin/empresas" dataMm="ver-tiendas">
           Ver tiendas
-        </AdminDarkButton>
+        </AdminPrimaryButton>
         <AdminSecondaryButton to="/admin/aprobaciones" dataMm="moderacion">
           Moderación
         </AdminSecondaryButton>

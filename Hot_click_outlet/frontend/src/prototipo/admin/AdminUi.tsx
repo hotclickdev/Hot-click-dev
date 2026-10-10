@@ -248,9 +248,9 @@ export function AdminMenuRow({
   )
 }
 
-export function AdminPrimaryButton({ children, to, onClick, type }: Omit<ActionProps, 'className'>) {
+export function AdminPrimaryButton({ children, to, onClick, type, dataMm }: Omit<ActionProps, 'className'>) {
   return (
-    <Action to={to} onClick={onClick} type={type} className={`${BTN} bg-hc-primary text-white`}>
+    <Action to={to} onClick={onClick} type={type} dataMm={dataMm} className={`${BTN} bg-hc-primary text-white`}>
       {children}
     </Action>
   )

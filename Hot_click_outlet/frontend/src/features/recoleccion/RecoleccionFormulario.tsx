@@ -105,6 +105,9 @@ export default function RecoleccionFormulario({ enviando, onEnviar }: Props) {
             value={form.telefonoEntrega}
             onChange={(v) => setCampo('telefonoEntrega', v)}
             type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            enterKeyHint="next"
           />
         </>
       ) : null}

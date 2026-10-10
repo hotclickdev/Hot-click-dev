@@ -47,7 +47,7 @@ export default function DetalleProductoPage() {
           <button
             type="button"
             onClick={() => navigate(`${RUTA_EMPRENDEDOR}/tienda`)}
-            className="absolute left-5 top-5 flex size-9 items-center justify-center rounded-full bg-hc-surface"
+            className="absolute left-5 top-5 hidden size-9 items-center justify-center rounded-full bg-hc-surface md:flex"
             aria-label="Volver"
           >
             <ChevronLeftIcon className="size-5" />

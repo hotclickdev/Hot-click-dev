@@ -94,7 +94,7 @@ export function PerfilPage({
           enviando={guardando}
         >
           {idPaso === 'persona' ? (
-            <Campo etiqueta="Nombre completo" value={nombre} onChange={setNombre} />
+            <Campo etiqueta="Nombre completo" value={nombre} onChange={setNombre} autoComplete="name" autoCapitalize="words" enterKeyHint="next" />
           ) : null}
           {idPaso === 'tienda' ? (
             <Campo etiqueta="Nombre de tu tienda" value={tienda} onChange={setTienda} />
@@ -102,8 +102,8 @@ export function PerfilPage({
           {idPaso === 'contacto' ? (
             <>
               {/* El correo es el usuario de acceso: no se guarda desde acá (antes se podía escribir y se perdía al guardar). */}
-              <Campo etiqueta="Correo" value={correo} type="email" readOnly />
-              <Campo etiqueta="Teléfono" value={telefono} onChange={setTelefono} type="tel" />
+              <Campo etiqueta="Correo" value={correo} type="email" readOnly autoComplete="email" inputMode="email" />
+              <Campo etiqueta="Teléfono" value={telefono} onChange={setTelefono} type="tel" inputMode="tel" autoComplete="tel" enterKeyHint="done" />
             </>
           ) : null}
         </FormularioPorPasos>

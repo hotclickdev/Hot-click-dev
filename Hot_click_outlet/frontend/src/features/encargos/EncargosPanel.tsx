@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import Spinner from '@/components/ui/Spinner'
+import EstadoError from '@/components/comprador/estados/EstadoError'
 import { useToast } from '@/components/ui/Toast'
 import {
   encargoService,
@@ -13,6 +14,16 @@ import EncargoDetalle from './EncargoDetalle'
 import { formatPrice } from '@/utils/format'
 
 const FILTROS = ['TODOS', 'PENDIENTE', 'APROBADO', 'PENDIENTE_PAGO', 'PAGADO', 'RECHAZADO', 'VENCIDO'] as const
+
+const ETIQUETA_ESTADO: Record<string, string> = {
+  TODOS: 'Todos',
+  PENDIENTE: 'Pendiente',
+  APROBADO: 'Aprobado',
+  PENDIENTE_PAGO: 'Pendiente de pago',
+  PAGADO: 'Pagado',
+  RECHAZADO: 'Rechazado',
+  VENCIDO: 'Vencido',
+}
 
 type Props = Readonly<{
   titulo?: string
@@ -28,6 +39,7 @@ export default function EncargosPanel({
   subtitulo = 'Revisá referencias, cotizá con precio y enviá el link de pago.',
   mostrarKpis = true,
 }: Props) {
+  const { t } = useTranslation()
   const toast = useToast()
   const qc = useQueryClient()
   const [filtro, setFiltro] = useState<string>('PENDIENTE')
@@ -37,7 +49,7 @@ export default function EncargosPanel({
   const [motivo, setMotivo] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const { data, isLoading } = useEncargos(filtro)
+  const { data, isLoading, isError, refetch } = useEncargos(filtro)
   const { data: kpis } = useEncargosKpis()
   const lista = useMemo(() => data ?? [], [data])
 
@@ -124,32 +136,39 @@ export default function EncargosPanel({
 
       {mostrarKpis && kpis ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <KpiCard label="Pendientes" valor={kpis.pendientes} destacado />
+          <KpiCard label="Pendientes" valor={kpis.pendientes} />
           <KpiCard label="Por pagar" valor={kpis.pendientePago} />
           <KpiCard label="Pagados" valor={kpis.pagados} />
           <KpiCard label="Ticket prom." valor={formatPrice(kpis.ticketPromedioCotizado)} />
         </div>
       ) : null}
 
-      <div data-mm="seller-encargos-filtros" className="flex flex-wrap gap-2">
+      <div data-mm="seller-encargos-filtros" className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0">
         {FILTROS.map((f) => (
           <button
             key={f}
             type="button"
             onClick={() => setFiltro(f)}
-            className="text-xs px-3 py-1.5 rounded-full border"
-            style={{
-              borderColor: filtro === f ? 'var(--hc-accent)' : 'var(--hc-border)',
-              background: filtro === f ? 'rgba(231,59,51,0.08)' : 'transparent',
-            }}
+            className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs ${
+              filtro === f ? 'border-hc-n-900 bg-hc-n-900 text-white' : 'border-hc-n-200 bg-hc-n-0 text-hc-n-900'
+            }`}
           >
-            {f}
+            {t(`pedidos.estado.${f}`, { defaultValue: ETIQUETA_ESTADO[f] ?? f })}
           </button>
         ))}
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner /></div>
+        <div className="flex flex-col gap-3 py-4" aria-busy="true">
+          {[0, 1, 2].map((i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-hc-n-100" />)}
+        </div>
+      ) : isError ? (
+        <EstadoError
+          nivel="h2"
+          titulo={t('common.error', { defaultValue: 'No pudimos cargar' })}
+          texto={t('encargos.errorCarga', { defaultValue: 'No pudimos cargar los encargos.' })}
+          accion={{ texto: t('comun.reintentar', { defaultValue: 'Reintentar' }), onClick: () => { void refetch() } }}
+        />
       ) : lista.length === 0 ? (
         <EstadoVacioConversacional
           titulo="No hay encargos en este filtro"
@@ -170,7 +189,7 @@ export default function EncargosPanel({
                     <div>
                       <p className="font-medium text-sm">{e.productoNombre || `Producto #${e.productoId}`}</p>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                        {e.nombreCliente} · {e.estado}
+                        {e.nombreCliente} · {t(`pedidos.estado.${e.estado}`, { defaultValue: ETIQUETA_ESTADO[e.estado] ?? e.estado })}
                         {e.estadoFulfillment ? ` · ${e.estadoFulfillment}` : ''}
                       </p>
                     </div>
@@ -209,9 +228,9 @@ export default function EncargosPanel({
   )
 }
 
-function KpiCard({ label, valor, destacado }: { label: string; valor: number | string; destacado?: boolean }) {
+function KpiCard({ label, valor }: { label: string; valor: number | string }) {
   return (
-    <div className="rounded-xl border p-3" style={{ borderColor: 'var(--hc-border)', background: destacado ? 'rgba(231,59,51,0.06)' : undefined }}>
+    <div className="rounded-xl border border-hc-n-200 bg-hc-n-0 p-3">
       <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>{label}</p>
       <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>{valor}</p>
     </div>

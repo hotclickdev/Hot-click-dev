@@ -79,7 +79,7 @@ export function BotonRecuperar({ children, disabled }: { children: ReactNode; di
   return (
     <button type="submit" disabled={disabled}
       className="flex w-full items-center justify-center rounded-[12px] bg-hc-red-500 py-[14px] text-[15px] font-semibold text-hc-n-0
-        transition-colors hover:bg-hc-red-600 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-hc-red-500">
+        transition-colors hover:bg-hc-red-600 disabled:cursor-not-allowed disabled:bg-hc-n-100 disabled:text-hc-n-400 disabled:hover:bg-hc-n-100">
       {children}
     </button>
   )

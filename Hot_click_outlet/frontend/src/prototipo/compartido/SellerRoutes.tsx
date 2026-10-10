@@ -1,6 +1,8 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import EstadoError from '@/components/comprador/estados/EstadoError'
 import SellerShell from './SellerShell'
+import { useSellerRuta } from './SellerPlanContext'
 
 const MenuPage = lazy(() => import('./MenuPage'))
 const ProductosPage = lazy(() => import('./ProductosPage'))
@@ -20,7 +22,6 @@ const AyudaPage = lazy(() => import('./AyudaPage'))
 const ConsultasPage = lazy(() => import('./ConsultasPage'))
 const ProximamentePage = lazy(() => import('./ProximamentePage'))
 const CarritoPage = lazy(() => import('./CarritoPage'))
-const CompraOkPage = lazy(() => import('./CompraOkPage'))
 const BodegasPage = lazy(() => import('./BodegasPage'))
 const NuevaBodegaPage = lazy(() => import('./NuevaBodegaPage'))
 const DatosNegocioPage = lazy(() => import('./DatosNegocioPage'))
@@ -46,6 +47,23 @@ function LazyPage({ children }: { children: ReactNode }) {
   return <Suspense fallback={<SpinnerRuta />}>{children}</Suspense>
 }
 
+function IrATienda() {
+  const ruta = useSellerRuta()
+  return <Navigate to={ruta('tienda')} replace />
+}
+
+function RutaPanelDesconocida() {
+  const ruta = useSellerRuta()
+  return (
+    <EstadoError
+      titulo="No encontramos esa pantalla"
+      texto="El enlace no existe en este panel."
+      accion={{ texto: 'Volver al inicio', to: ruta() }}
+      enlace={{ texto: 'Ayuda', to: ruta('ayuda') }}
+    />
+  )
+}
+
 function page(Comp: ComponentType) {
   return (
     <LazyPage>
@@ -63,25 +81,28 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
       <Route element={<SellerShell />}>
         <Route index element={page(MenuPage)} />
         <Route path="productos" element={page(ProductosPage)} />
-        <Route path="productos/nuevo" element={page(ElegirTipoProductoPage)} />
-        <Route path="productos/nuevo/catalogo" element={page(ProductoFormPage)} />
-        <Route path="productos/nuevo/personalizado" element={<LazyPage><ProductoFormPage personalizado /></LazyPage>} />
         <Route path="reportes" element={page(ReportesPage)} />
         <Route path="tienda" element={page(TiendaPublicaPage)} />
         <Route path="opciones" element={page(OpcionesPage)} />
         <Route path="recoleccion" element={page(RecoleccionSellerPage)} />
         <Route path="encargos" element={page(EncargosSellerPage)} />
+        <Route path="pedidos" element={page(PedidosPage)} />
       </Route>
       <Route path="login" element={<Navigate to="/login" replace />} />
       <Route path="registro" element={<Navigate to="/registro" replace />} />
       <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
       <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
+      <Route element={<SellerShell sinNav sinCabecera />}>
+        <Route path="productos/nuevo" element={page(ElegirTipoProductoPage)} />
+        <Route path="productos/nuevo/catalogo" element={page(ProductoFormPage)} />
+        <Route path="productos/nuevo/personalizado" element={<LazyPage><ProductoFormPage personalizado /></LazyPage>} />
+        <Route path="productos/:id/editar" element={page(ProductoFormPage)} />
+      </Route>
       <Route element={<SellerShell sinNav />}>
         <Route path="productos/:id" element={page(ProductoDetallePage)} />
-        <Route path="productos/:id/editar" element={page(ProductoFormPage)} />
         <Route path="productos/:id/eliminar" element={page(EliminarProductoPage)} />
         <Route path="carrito" element={page(CarritoPage)} />
-        <Route path="compra-ok" element={page(CompraOkPage)} />
+        <Route path="compra-ok" element={<IrATienda />} />
         <Route path="perfil" element={page(PerfilPage)} />
         <Route path="notificaciones" element={page(NotificacionesPage)} />
         <Route path="telegram" element={page(TelegramVincularPage)} />
@@ -95,9 +116,9 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="negocio" element={page(DatosNegocioPage)} />
         <Route path="plan" element={page(CompararPlanesPage)} />
         <Route path="plan/actualizado" element={page(PlanActualizadoPage)} />
-        <Route path="pedidos" element={page(PedidosPage)} />
         <Route path="pedidos/:id" element={page(PedidoDetallePage)} />
         {extra}
+        <Route path="*" element={page(RutaPanelDesconocida)} />
       </Route>
     </Routes>
   )

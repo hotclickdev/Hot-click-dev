@@ -3,7 +3,7 @@ import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_TIENDA } from './iconosTienda'
 import { useCompartirTienda } from './useCompartirTienda'
 
-const CLASE_BOTON = 'absolute top-4 flex size-10 items-center justify-center rounded-full bg-[var(--t-surface)] text-hc-n-900 md:hidden'
+const CLASE_BOTON = 'absolute top-4 flex size-11 items-center justify-center rounded-full bg-[var(--t-surface)] text-hc-n-900 md:hidden'
 
 /**
  * Portada del perfil (Figma `29:923`, 150 de alto en móvil; `29:2355`, 220 en escritorio).
@@ -19,7 +19,7 @@ export default function TiendaPortada({ nombre }: { nombre: string }) {
   }
 
   return (
-    <div className="relative h-[150px] w-full overflow-hidden lg:h-[220px]" style={{ backgroundColor: 'var(--t-secondary)' }}>
+    <div className="relative h-[120px] w-full overflow-hidden lg:h-[220px]" style={{ backgroundColor: 'var(--t-secondary)' }}>
       <button type="button" onClick={volver} aria-label="Volver" className={`${CLASE_BOTON} left-4`}>
         <IconoFigma src={ICONOS_TIENDA.portadaAtras} size={19} />
       </button>

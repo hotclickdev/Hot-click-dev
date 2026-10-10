@@ -18,13 +18,16 @@ type TenantState = {
   features: TenantFeatures
   usoProductos: number
   usoUsuarios: number
+  usoBodegas: number
+  usoCajas: number
   loaded: boolean
   loading: boolean
   loadError: boolean
   estadoEmpresa: string | null
   visibilidadPublica: boolean | null
   loadTenantInfo: () => Promise<void>
-  loadTenantUso: () => Promise<void>
+  /** `true` si el uso se leyó bien; `false` si falló (el uso previo queda como estaba). */
+  loadTenantUso: () => Promise<boolean>
   setEmpresaStatus: (status: { estadoEmpresa?: string | null; visibilidadPublica?: boolean }) => void
   hasFeature: (feature: string) => boolean
   isAtLimit: (entidad: 'productos' | 'usuarios') => boolean
@@ -71,6 +74,8 @@ const useTenantStore = create<TenantState>((set, get) => ({
   // Uso actual (cargado por separado)
   usoProductos: 0,
   usoUsuarios:  0,
+  usoBodegas:   0,
+  usoCajas:     0,
 
   loaded: false,
   loading: false,
@@ -113,8 +118,16 @@ const useTenantStore = create<TenantState>((set, get) => ({
   loadTenantUso: async () => {
     try {
       const { data } = await api.get<TenantUso>('/tenant/uso')
-      set({ usoProductos: data.productos ?? 0, usoUsuarios: data.usuarios ?? 0 })
-    } catch { /* silencioso */ }
+      set({
+        usoProductos: data.productos ?? 0,
+        usoUsuarios: data.usuarios ?? 0,
+        usoBodegas: data.bodegas ?? 0,
+        usoCajas: data.cajas ?? 0,
+      })
+      return true
+    } catch {
+      return false
+    }
   },
 
   setEmpresaStatus: ({ estadoEmpresa, visibilidadPublica }) => set({
@@ -165,7 +178,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
   clear: () => set({
     planNombre: 'FREE', planId: null, estadoPlan: 'ACTIVO',
     trialDias: -1, fechaVenc: null, features: {},
-    usoProductos: 0, usoUsuarios: 0,
+    usoProductos: 0, usoUsuarios: 0, usoBodegas: 0, usoCajas: 0,
     loaded: false, loading: false, loadError: false,
     estadoEmpresa: null, visibilidadPublica: null,
   }),

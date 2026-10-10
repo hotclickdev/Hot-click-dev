@@ -17,12 +17,13 @@ export default function PasoCorreo({ flujo }: { flujo: RecuperarContrasena }) {
       <TextoRecuperar>{t('forgot.emailText')}</TextoRecuperar>
       <CampoRecuperar etiqueta={t('forgot.emailLabel')} icono={<IconoSobre />}
         type="email" value={correo} onChange={e => setCorreo(e.target.value)}
-        required maxLength={150} autoComplete="email" autoFocus={!correo} />
+        required maxLength={150} autoComplete="email" inputMode="email" enterKeyHint="go" autoFocus={!correo} />
       <ErrorRecuperar mensaje={error} />
+      {!correo.trim() && !error ? <p className="text-[12px] leading-4 text-hc-n-600">Escribí tu correo para continuar.</p> : null}
       <BotonRecuperar disabled={cargando || !correo.trim()}>
         {cargando ? t('forgot.sending') : t('forgot.sendCode')}
       </BotonRecuperar>
-      <Link to="/login" state={{ correo: correo.trim() }} className="text-[14px] font-semibold text-hc-blue-600 hover:underline">
+      <Link to="/login" state={{ correo: correo.trim() }} className="inline-flex min-h-11 items-center text-[14px] font-semibold text-hc-blue-600 hover:underline">
         {t('forgot.backToLogin')}
       </Link>
       <NotaRecuperar>{t('forgot.emailNote')}</NotaRecuperar>

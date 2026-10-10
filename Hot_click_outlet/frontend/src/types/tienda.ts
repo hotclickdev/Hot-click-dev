@@ -64,4 +64,6 @@ export type TenantInfo = {
 export type TenantUso = {
   productos?: number
   usuarios?: number
+  bodegas?: number
+  cajas?: number
 }
