@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-BUR1dClE.js";function t(){return e()}export{t};

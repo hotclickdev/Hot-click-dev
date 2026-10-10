@@ -1,0 +1,1 @@
+import{o as e}from"./rolldown-runtime-CMxvf4Kt.js";import{r as t}from"./vendor-clerk-BU15XHjt.js";import{r as n}from"./SellerPlanContext-fGdGXmtg.js";import{t as r}from"./RecoleccionPage-B7ywEJRP.js";var i=e(t(),1);function a(){return(0,i.jsx)(r,{volverA:n()()})}export{a as default};

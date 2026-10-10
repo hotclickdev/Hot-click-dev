@@ -1,0 +1,1 @@
+import{Pt as e}from"./index-BPt2YT8d.js";function t(t){return e(Math.round(t??0))}export{t};
