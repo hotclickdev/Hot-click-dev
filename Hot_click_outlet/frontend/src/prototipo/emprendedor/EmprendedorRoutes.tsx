@@ -34,6 +34,7 @@ const DetallePedidoPage = lazy(() => import('./pages/DetallePedidoPage'))
 const DatosNegocioPage = lazy(() => import('./pages/DatosNegocioPage'))
 const PlanesPage = lazy(() => import('./pages/PlanesPage'))
 const PlanActualizadoPage = lazy(() => import('./pages/PlanActualizadoPage'))
+const NegocioRapidoOnboardingPage = lazy(() => import('./pages/NegocioRapidoOnboardingPage'))
 
 function SpinnerRuta() {
   return (
@@ -81,6 +82,7 @@ export default function EmprendedorRoutes() {
       <Route element={<EmprendedorShell conNav />}>
         <Route index element={page(MenuPage)} />
         <Route path="productos" element={page(ProductosPage)} />
+        <Route path="negocio-rapido" element={page(NegocioRapidoOnboardingPage)} />
         <Route path="encargos" element={page(EncargosPage)} />
         <Route path="recoleccion" element={page(RecoleccionPage)} />
         <Route path="productos/vacio" element={page(ProductosVacioPage)} />
