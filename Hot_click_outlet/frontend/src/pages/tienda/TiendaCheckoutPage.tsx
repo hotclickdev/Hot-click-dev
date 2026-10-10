@@ -158,7 +158,7 @@ export default function TiendaCheckoutPage() {
                 <div key={producto.id} className="flex justify-between gap-4 text-[13px] text-hc-n-600">
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate">{producto.nombre} × {cantidad}</span>
-                    <span className="truncate text-[11px] text-hc-n-500">{empresa?.nombreComercial ?? slug}</span>
+                    <span className="truncate text-[11px] text-hc-n-600">{empresa?.nombreComercial ?? slug}</span>
                   </span>
                   <span className="shrink-0 font-medium text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
                 </div>
