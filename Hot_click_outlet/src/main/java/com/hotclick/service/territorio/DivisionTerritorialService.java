@@ -8,6 +8,8 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +47,18 @@ public class DivisionTerritorialService {
         long ahora = System.currentTimeMillis();
         List<ProvinciaDivision> vigente = cache.get();
         if (vigente != null && ahora - cacheEn.get() < CACHE_MS) return vigente;
-        List<ProvinciaDivision> fresco = List.copyOf(descargar());
+        List<ProvinciaDivision> fresco;
+        try {
+            fresco = List.copyOf(descargar());
+        } catch (RuntimeException e) {
+            log.warn("IGN no disponible, uso la copia local: {}", e.getMessage());
+            fresco = copiaLocal();
+            if (fresco.isEmpty()) throw e;
+            // Reintenta el IGN en 30 minutos en vez de 12 horas.
+            cache.set(fresco);
+            cacheEn.set(ahora - CACHE_MS + Duration.ofMinutes(30).toMillis());
+            return fresco;
+        }
         cache.set(fresco);
         cacheEn.set(ahora);
         return fresco;
@@ -65,6 +78,21 @@ public class DivisionTerritorialService {
         }
         log.info("División territorial del IGN: {} provincias", catalogo.size());
         return catalogo;
+    }
+
+    /** Copia del IGN incluida en el jar (src/main/resources/territorio/distritos-ign.json). */
+    List<ProvinciaDivision> copiaLocal() {
+        try (InputStream in = getClass().getResourceAsStream("/territorio/distritos-ign.json")) {
+            if (in == null) return List.of();
+            List<FilaDivision> filas = new ArrayList<>();
+            for (JsonNode fila : mapper.readTree(in)) {
+                filas.add(new FilaDivision(fila.path(0).asText(""), fila.path(1).asText(""), fila.path(2).asText("")));
+            }
+            return CatalogoDivisionTerritorial.armar(filas);
+        } catch (IOException e) {
+            log.warn("No se pudo leer la copia local de la división territorial: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     private int leerPagina(List<FilaDivision> filas, int offset) {
