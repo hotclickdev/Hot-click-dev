@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.AuditoriaAdmin;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
@@ -49,6 +50,10 @@ public class ImpersonacionService {
 
         Usuario objetivo = propietario.getUsuario();
         Usuario admin = companyScope.getCurrentUser();
+        // QA-130-4: un admin de plataforma no entra como soporte al negocio de otro admin.
+        if (esAdmin(objetivo) && !objetivo.getId().equals(admin.getId())) {
+            throw new TenantAccessDeniedException("No podés ver como negocio la empresa de otro administrador");
+        }
         String nombreAdmin = admin.getNombre() != null ? admin.getNombre() : admin.getCorreo().split("@")[0];
 
         String token = jwtUtil.generateImpersonationToken(
@@ -57,7 +62,7 @@ public class ImpersonacionService {
 
         registrarAuditoria(admin.getId(), admin.getCorreo(), "IMPERSONACION_INICIO", empresaId,
             "Admin " + admin.getCorreo() + " vio como negocio a " + objetivo.getCorreo()
-                + " (" + empresa.getNombreEmpresa() + ")");
+                + " (" + empresa.getNombreEmpresa() + ")" + sesion(token));
 
         Map<String, Object> data = new HashMap<>();
         data.put("accessToken", token);
@@ -85,9 +90,14 @@ public class ImpersonacionService {
         }
         Long adminId = jwtUtil.extractAdminOriginalId(rawToken);
         String adminCorreo = jwtUtil.extractAdminOriginalCorreo(rawToken);
+        // QA-130-2: la empresa auditada es la de la sesión (token), no la del path.
+        Long empresaSesion = jwtUtil.extractEmpresaId(rawToken);
+        Long empresaAuditada = empresaSesion != null ? empresaSesion : empresaId;
         tokenRevocadoService.revocar(rawToken, TokenRevocadoService.MOTIVO_IMPERSONACION_FIN);
-        registrarAuditoria(adminId, adminCorreo, "IMPERSONACION_FIN", empresaId,
-            "Admin " + adminCorreo + " finalizó impersonación de empresa " + empresaId);
+        String nota = empresaSesion != null && !empresaSesion.equals(empresaId)
+            ? " (la ruta decía empresa " + empresaId + ")" : "";
+        registrarAuditoria(adminId, adminCorreo, "IMPERSONACION_FIN", empresaAuditada,
+            "Admin " + adminCorreo + " finalizó impersonación de empresa " + empresaAuditada + nota + sesion(rawToken));
     }
 
     /**
@@ -111,15 +121,25 @@ public class ImpersonacionService {
         if (motivoLimpio.length() > 300) motivoLimpio = motivoLimpio.substring(0, 300);
         Long adminId = jwtUtil.extractAdminOriginalId(rawToken);
         String adminCorreo = jwtUtil.extractAdminOriginalCorreo(rawToken);
-        String nuevo = jwtUtil.generateImpersonationWriteToken(rawToken);
+        String nuevo = jwtUtil.generateImpersonationWriteToken(rawToken, motivoLimpio);
         tokenRevocadoService.revocar(rawToken, TokenRevocadoService.MOTIVO_IMPERSONACION_ESCRITURA);
         registrarAuditoria(adminId, adminCorreo, "IMPERSONACION_ESCRITURA_HABILITADA", empresaId,
-            "Admin " + adminCorreo + " habilitó escritura en empresa " + empresaId + ". Motivo: " + motivoLimpio);
+            "Admin " + adminCorreo + " habilitó escritura en empresa " + empresaId + ". Motivo: " + motivoLimpio
+                + sesion(rawToken));
         Map<String, Object> data = new HashMap<>();
         data.put("accessToken", nuevo);
         data.put("modo", JwtUtil.MODO_ESCRITURA);
         data.put("expiraEn", jwtUtil.extractExpiration(nuevo).getTime());
         return data;
+    }
+
+    private String sesion(String token) {
+        String id = jwtUtil.extractSesionSoporte(token);
+        return id != null ? " [sesión " + id + "]" : "";
+    }
+
+    private static boolean esAdmin(Usuario u) {
+        return u.getRoles() != null && u.getRoles().stream().anyMatch(r -> Constants.ROL_ADMIN.equals(r.getNombreRol()));
     }
 
     private void registrarAuditoria(Long adminId, String adminCorreo, String accion, Long empresaId, String detalle) {

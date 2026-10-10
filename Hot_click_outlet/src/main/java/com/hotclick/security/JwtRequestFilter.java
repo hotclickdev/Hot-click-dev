@@ -145,6 +145,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
         if (!jwtUtil.isImpersonationWriteMode(jwt)) {
+            try {
+                auditoriaAdminRegistroService.registrarEscrituraImpersonacion(
+                    jwtUtil.extractAdminOriginalId(jwt), jwtUtil.extractAdminOriginalCorreo(jwt),
+                    jwtUtil.extractEmpresaId(jwt), request.getMethod(), ruta, HttpServletResponse.SC_FORBIDDEN,
+                    "IMPERSONACION_ESCRITURA_RECHAZADA", jwtUtil.extractSesionSoporte(jwt), null);
+            } catch (Exception ae) {
+                log.error("[impersonacion] no se pudo auditar el rechazo {} {}: {}", request.getMethod(), ruta, ae.toString());
+            }
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setCharacterEncoding("UTF-8");
             response.setContentType("application/json");
@@ -158,7 +166,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 auditoriaAdminRegistroService.registrarEscrituraImpersonacion(
                     jwtUtil.extractAdminOriginalId(jwt), jwtUtil.extractAdminOriginalCorreo(jwt),
-                    jwtUtil.extractEmpresaId(jwt), request.getMethod(), ruta, response.getStatus());
+                    jwtUtil.extractEmpresaId(jwt), request.getMethod(), ruta, response.getStatus(),
+                    "IMPERSONACION_ESCRITURA", jwtUtil.extractSesionSoporte(jwt), jwtUtil.extractMotivoEscritura(jwt));
             } catch (Exception ae) {
                 log.error("[impersonacion] no se pudo auditar {} {}: {}", request.getMethod(), ruta, ae.toString());
             }

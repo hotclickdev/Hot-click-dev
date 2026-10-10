@@ -56,6 +56,7 @@ class ImpersonacionSeguraTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         bodegaRepository.deleteAll();
+        miembroEmpresaRepository.deleteAll();
         auditoriaAdminRepository.deleteAll();
         tokenRevocadoRepository.deleteAll();
         empresaRepository.deleteAll();
@@ -136,6 +137,68 @@ class ImpersonacionSeguraTest extends BaseIntegrationTest {
         tokenRevocadoRepository.save(new TokenRevocado("vigente", ahora.plusMinutes(10), "LOGOUT", ahora));
         assertThat(tokenRevocadoService.purgarVencidos()).isEqualTo(1);
         assertThat(tokenRevocadoRepository.findAll()).extracting(TokenRevocado::getJti).containsExactly("vigente");
+    }
+
+
+    @Test
+    @DisplayName("QA-130-1: sin rol, POST impersonar da 403 JSON directo (no 405 vía /error)")
+    void impersonar_sinPermiso403() throws Exception {
+        var resp = mockMvc.perform(post("/api/admin/empresas/" + empresa.getId() + "/impersonar")
+                .header("Authorization", userToken))
+            .andExpect(status().isForbidden()).andReturn().getResponse();
+        assertThat(resp.getErrorMessage()).isNull();
+        assertThat(resp.getContentAsString()).contains("\"success\":false");
+    }
+
+    @Test
+    @DisplayName("QA-130-2: finalizar audita la empresa del token aunque la ruta diga otra")
+    void finalizar_auditaEmpresaDelToken() throws Exception {
+        long otra = empresa.getId() + 999;
+        mockMvc.perform(post("/api/impersonacion/" + otra + "/finalizar")
+            .header("Authorization", tokenSoporte)).andExpect(status().isOk());
+        assertThat(auditoriaAdminRepository.findAll()).anySatisfy(a -> {
+            assertThat(a.getAccion()).isEqualTo("IMPERSONACION_FIN");
+            assertThat(a.getEmpresaId()).isEqualTo(empresa.getId());
+            assertThat(a.getEntidadId()).isEqualTo(empresa.getId());
+        });
+    }
+
+    @Test
+    @DisplayName("QA-130-3: el rechazo en solo lectura queda auditado y todas las filas llevan el id de sesión")
+    void auditoria_rechazosYSesion() throws Exception {
+        crearBodega(tokenSoporte).andExpect(status().isForbidden());
+        String sesion = jwtUtil.extractSesionSoporte(tokenSoporte.substring(7));
+        assertThat(sesion).isNotBlank();
+        String body = pedirEscritura(tokenSoporte, "Ticket 456: ajustar bodega principal")
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String tokenEscritura = "Bearer " + JsonPath.read(body, "$.data.accessToken");
+        crearBodega(tokenEscritura);
+
+        List<AuditoriaAdmin> audit = auditoriaAdminRepository.findAll();
+        assertThat(audit).anySatisfy(a -> {
+            assertThat(a.getAccion()).isEqualTo("IMPERSONACION_ESCRITURA_RECHAZADA");
+            assertThat(a.getAdminId()).isEqualTo(adminUser.getId());
+            assertThat(a.getEmpresaId()).isEqualTo(empresa.getId());
+            assertThat(a.getDetalle()).startsWith("POST /api/bodegas -> 403").contains("[sesión " + sesion + "]");
+        });
+        assertThat(audit).anySatisfy(a -> {
+            assertThat(a.getAccion()).isEqualTo("IMPERSONACION_ESCRITURA");
+            assertThat(a.getDetalle()).contains("[sesión " + sesion + "]").contains("Ticket 456");
+        });
+        assertThat(audit).filteredOn(a -> a.getAccion().equals("IMPERSONACION_ESCRITURA_HABILITADA"))
+            .allSatisfy(a -> assertThat(a.getDetalle()).contains("[sesión " + sesion + "]"));
+    }
+
+    @Test
+    @DisplayName("QA-130-4: un admin no puede ver como negocio la empresa de otro ADMIN (403)")
+    void impersonar_otroAdminBloqueado() throws Exception {
+        com.hotclick.model.Usuario otroAdmin = crearUsuario("otro-admin-imp@hotclick.cr", "Otro Admin",
+            obtenerOCrearRol(Constants.ROL_ADMIN, 10));
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(otroAdmin, empresa, "PROPIETARIO"));
+        mockMvc.perform(post("/api/admin/empresas/" + empresa.getId() + "/impersonar")
+                .header("Authorization", adminToken))
+            .andExpect(status().isForbidden());
+        assertThat(auditoriaAdminRepository.findAll()).noneMatch(a -> "IMPERSONACION_INICIO".equals(a.getAccion()));
     }
 
     private void assertNoAutenticado(ResultActions r) throws Exception {

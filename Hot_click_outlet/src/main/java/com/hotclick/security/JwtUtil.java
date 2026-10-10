@@ -188,11 +188,16 @@ public class JwtUtil {
         claims.put("adminOriginalId", adminOriginalId);
         claims.put("adminOriginalCorreo", adminOriginalCorreo);
         claims.put(CLAIM_MODO_IMPERSONACION, MODO_LECTURA);
+        claims.put(CLAIM_SESION_SOPORTE, java.util.UUID.randomUUID().toString());
         return createToken(claims, correoAdmin, IMPERSONATION_EXPIRATION);
     }
 
     public static final String CLAIM_MODO_IMPERSONACION = "modoImpersonacion";
     public static final String MODO_LECTURA = "LECTURA";
+    /** Id de la sesión de soporte: une inicio, escrituras (aceptadas y rechazadas) y fin en la auditoría. */
+    public static final String CLAIM_SESION_SOPORTE = "sesionSoporte";
+    /** Motivo con el que se habilitó la escritura; se repite en cada fila de escritura auditada. */
+    public static final String CLAIM_MOTIVO_ESCRITURA = "motivoEscritura";
     public static final String MODO_ESCRITURA = "ESCRITURA";
     /** Duración máxima del modo escritura (10 min), nunca más allá del vencimiento de la sesión de soporte. */
     public static final long IMPERSONATION_WRITE_EXPIRATION = 600_000L;
@@ -202,13 +207,18 @@ public class JwtUtil {
      * admin original; vence a los 10 min o al vencer la sesión original, lo que pase antes.
      */
     public String generateImpersonationWriteToken(String tokenOriginal) {
+        return generateImpersonationWriteToken(tokenOriginal, null);
+    }
+
+    public String generateImpersonationWriteToken(String tokenOriginal, String motivo) {
         Claims c = extractAllClaims(tokenOriginal);
         Map<String, Object> claims = new HashMap<>();
         for (String k : List.of("userId", "rol", "empresaId", "empresaSlug", "impersonando",
-                "adminOriginalId", "adminOriginalCorreo")) {
+                "adminOriginalId", "adminOriginalCorreo", CLAIM_SESION_SOPORTE)) {
             if (c.get(k) != null) claims.put(k, c.get(k));
         }
         claims.put(CLAIM_MODO_IMPERSONACION, MODO_ESCRITURA);
+        if (motivo != null) claims.put(CLAIM_MOTIVO_ESCRITURA, motivo);
         long restante = c.getExpiration().getTime() - System.currentTimeMillis();
         long vida = Math.max(1_000L, Math.min(IMPERSONATION_WRITE_EXPIRATION, restante));
         return createToken(claims, c.getSubject(), vida);
@@ -220,6 +230,25 @@ public class JwtUtil {
             return MODO_ESCRITURA.equals(extractAllClaims(token).get(CLAIM_MODO_IMPERSONACION));
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /** Id de la sesión de soporte (o el jti si el token es anterior a ese claim). */
+    public String extractSesionSoporte(String token) {
+        try {
+            Object s = extractAllClaims(token).get(CLAIM_SESION_SOPORTE);
+            return s != null ? s.toString() : extractJti(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public String extractMotivoEscritura(String token) {
+        try {
+            Object m = extractAllClaims(token).get(CLAIM_MOTIVO_ESCRITURA);
+            return m != null ? m.toString() : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
