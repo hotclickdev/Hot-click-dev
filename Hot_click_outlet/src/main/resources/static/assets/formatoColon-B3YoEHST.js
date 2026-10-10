@@ -1,0 +1,1 @@
+import{Pt as e}from"./index-B1BURDar.js";function t(t){return e(Math.round(t??0))}export{t};
