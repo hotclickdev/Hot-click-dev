@@ -1,3 +1,4 @@
+import AsistentePostCompra from '@/components/ai/AsistentePostCompra'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
@@ -102,6 +103,7 @@ export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoPr
         <button type="button" onClick={() => globalThis.print()} className="mt-1 text-[13px] font-medium text-hc-n-600 underline-offset-2 hover:underline">
           {t('payment.print')}
         </button>
+        <AsistentePostCompra metodo={pagoData?.proveedor} numeroPedido={numeroPedido ?? undefined} />
       </div>
 
       {!token && (

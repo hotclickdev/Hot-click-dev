@@ -1667,6 +1667,10 @@
       "tituloRevision": "Seu pagamento está sendo analisado",
       "textoAprobado": "Seu banco já confirmou o pagamento. Estamos registrando seu pedido — você receberá um e-mail em alguns minutos.",
       "textoRevision": "A confirmação pode levar mais alguns minutos. Enviaremos um e-mail quando for processada."
+    },
+    "asistente": {
+      "boton": "Dúvidas sobre sua compra? Pergunte ao assistente",
+      "mensaje": "Acabei de comprar. Qual o próximo passo?"
     }
   },
   "nosotros": {

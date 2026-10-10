@@ -1667,6 +1667,10 @@
       "tituloRevision": "Your payment is being reviewed",
       "textoAprobado": "Your bank has already confirmed the payment. We're recording your order — you'll get an email in a few minutes.",
       "textoRevision": "Confirmation may take a few more minutes. We'll email you once it's processed."
+    },
+    "asistente": {
+      "boton": "Questions about your order? Ask the assistant",
+      "mensaje": "I just bought. What's next with my order?"
     }
   },
   "nosotros": {
