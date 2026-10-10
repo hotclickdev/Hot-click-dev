@@ -13,7 +13,6 @@ import EmprendimientosVacio from './emprendimientos/EmprendimientosVacio'
 import BuscarNegocio from './emprendimientos/BuscarNegocio'
 import NegocioCard from './emprendimientos/NegocioCard'
 import { categoriasDirectorio, negociosDesdeProductos, type NegocioDirectorio } from './emprendimientos/directorioHelpers'
-import TiendasDirectorio from './seo/TiendasDirectorio'
 
 const TAM_PAGINA = 100
 const MAX_PAGINAS = 10
@@ -171,7 +170,6 @@ export default function EmprendimientosPage() {
             </>
           )}
         </div>
-        <TiendasDirectorio />
       </div>
     </MainLayout>
   )

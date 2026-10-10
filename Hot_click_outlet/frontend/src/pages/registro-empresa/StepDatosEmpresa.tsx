@@ -68,12 +68,22 @@ export default function StepDatosEmpresa({
     <motion.form key="s0" {...STEP_MOTION} onSubmit={onSubmit} className="space-y-4">
       <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
         value={form.nombreEmpresa} onChange={onCampo('nombreEmpresa')} required />
-      <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
-        value={form.correoEmpresa} onChange={onCampo('correoEmpresa')} hint="Opcional" />
-      <PhoneField label="Teléfono del negocio"
-        value={form.telefonoEmpresa} onChange={onTelefono} />
-      <UbicacionDespachoFieldset form={ubicacion} />
-      <AvisoTributacion inscrito={form.inscritoTributacion} onChange={onInscritoTributacionChange} />
+      <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+        Con el nombre alcanza para empezar. Ubicación, contacto y datos de facturación los completás después en tu panel.
+      </p>
+      <details className="rounded-[10px] border px-3 py-2" style={{ borderColor: 'var(--hc-border)' }}>
+        <summary className="cursor-pointer text-sm font-semibold" style={{ color: 'var(--hc-text)', minHeight: 44, display: 'flex', alignItems: 'center' }}>
+          Agregar más datos ahora (opcional)
+        </summary>
+        <div className="space-y-4 pt-3">
+          <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
+            value={form.correoEmpresa} onChange={onCampo('correoEmpresa')} hint="Opcional" />
+          <PhoneField label="Teléfono del negocio"
+            value={form.telefonoEmpresa} onChange={onTelefono} />
+          <UbicacionDespachoFieldset form={ubicacion} />
+          <AvisoTributacion inscrito={form.inscritoTributacion} onChange={onInscritoTributacionChange} />
+        </div>
+      </details>
       {error && <ErrMsg>{error}</ErrMsg>}
       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
         style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>

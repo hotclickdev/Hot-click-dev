@@ -7,7 +7,7 @@ import org.springframework.http.MediaType;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** POST publico de tienda rapida: tope de 10 por minuto por IP. */
+/** POST publico de tienda rapida: tope de 5 por minuto por IP (el 11 sigue dando 429). */
 @DisplayName("Tienda rapida publica: rate limit por IP")
 class TiendaRapidaRateLimitTest extends BaseIntegrationTest {
 

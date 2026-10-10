@@ -17,6 +17,7 @@ import {
 } from './checkoutHelpers'
 import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
+import { metodoPagoPrincipal } from './pagoPrincipal'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
@@ -33,6 +34,9 @@ export type CheckoutFormState = {
   paquetes: PaqueteCheckout[]
   metodoEnvioPorPaquete: Record<string, string>
   setMetodoEnvioPaquete: (bodegaId: string, value: string) => void
+  /** Nombre de la encomienda que eligió el comprador, por paquete (solo ENCOMIENDA_PROPIA). */
+  encomiendaPorPaquete: Record<string, string>
+  setEncomiendaPaquete: (bodegaId: string, nombre: string) => void
   /** true si algún paquete necesita dirección de entrega (no todos van a retiro en tienda). */
   necesitaDireccion: boolean
   /** true si algún paquete usa un método cuyo costo no cobra HotClick (ej. encomienda) — el total mostrado no lo incluye. */
@@ -165,8 +169,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     }
     return resultado
   }, [metodoEnvioBase, destinoGAM])
-  // Figma 29:1344 abre con SINPE Móvil seleccionado.
-  const [metodoPago, setMetodoPago] = useState('SINPE')
+  // Abre con «SINPE / Tarjeta» (SINPE hasta que Tilopay esté activo).
+  const [metodoPago, setMetodoPago] = useState<string>(metodoPagoPrincipal)
   // R3: el paso del checkout móvil vive en `?paso=`; el guard de CheckoutLayout impide saltar pasos.
   const [searchParams, setSearchParams] = useSearchParams()
   const paso = pasoDesdeQuery(searchParams.get('paso'))
@@ -192,6 +196,11 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items])
+
+  const [encomiendaPorPaquete, setEncomiendaPorPaquete] = useState<Record<string, string>>({})
+  function setEncomiendaPaquete(bodegaId: string, nombre: string) {
+    setEncomiendaPorPaquete((prev) => ({ ...prev, [bodegaId]: nombre }))
+  }
 
   function setMetodoEnvioPaquete(bodegaId: string, value: string) {
     setMetodoEnvioPorPaqueteState((prev) => ({ ...prev, [bodegaId]: value }))
@@ -233,7 +242,9 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     gcInput, setGcInput, gcEstado, setGcEstado, gcSaldo, setGcSaldo, gcCodigo, setGcCodigo,
   } = usePedidoExtrasStore()
 
-  const [sinpeNombre, setSinpeNombre] = useState('')
+  // Con sesión el nombre arranca con el de la cuenta (se puede corregir en «Tus datos»).
+  const nombreCuenta = useAuthStore((s) => s.userName)
+  const [sinpeNombre, setSinpeNombre] = useState(() => nombreCuenta ?? '')
   const [sinpeCedula, setSinpeCedula] = useState('')
   const [sinpeTelefono, setSinpeTelefono] = useState('')
   const [sinpeEmail, setSinpeEmail] = useState('')
@@ -293,6 +304,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     paquetes,
     metodoEnvioPorPaquete,
     setMetodoEnvioPaquete,
+    encomiendaPorPaquete,
+    setEncomiendaPaquete,
     necesitaDireccion,
     envioVaria,
     paso,

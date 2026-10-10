@@ -6,6 +6,7 @@ export type ProductoRelacion = {
   nombre?: string
   nombreBodega?: string
   permiteRetiroCliente?: boolean
+  aceptaEfectivo?: boolean
   direccionExacta?: string
   telefono?: string
   provincia?: string | null

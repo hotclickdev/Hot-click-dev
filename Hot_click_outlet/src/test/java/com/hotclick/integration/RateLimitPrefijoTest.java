@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 /**
  * PUB-08: el tope por prefijo cuenta por IP + prefijo, no por path completo (cambiar el token/id no abre otro bucket).
- * PUB-09: GET /api/public/tienda-rapida/{token} tiene su propio tope (30/min por IP).
+ * PUB-09: GET /api/public/tienda-rapida/{token} tiene su propio tope (20/min por IP).
  * Cada test usa una IP publica distinta (peer no confiable: X-Forwarded-For se ignora).
  */
 @DisplayName("[PUB-08/09] Rate limit por IP + prefijo")
@@ -36,9 +36,9 @@ class RateLimitPrefijoTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST tienda-rapida: 10 tokens distintos agotan el tope, el 11 da 429")
+    @DisplayName("POST tienda-rapida: 5 tokens distintos agotan el tope, el 6 da 429")
     void tiendaRapida_tokensDistintos() throws Exception {
-        topePorPrefijo("203.0.113.11", 10, i -> "/api/public/tienda-rapida/tokenInexistente_" + i + "_abcdefghijklmnop");
+        topePorPrefijo("203.0.113.11", 5, i -> "/api/public/tienda-rapida/tokenInexistente_" + i + "_abcdefghijklmnop");
     }
 
     @Test
@@ -57,7 +57,7 @@ class RateLimitPrefijoTest extends BaseIntegrationTest {
     @DisplayName("X-Forwarded-For falso desde un peer no confiable no rota el bucket")
     void xffFalsoNoRota() throws Exception {
         String ip = "203.0.113.14";
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             int s = status(post("/api/public/tienda-rapida/t" + i + "_abcdefghijklmnopqrs").with(desde(ip))
                 .header("X-Forwarded-For", "198.51.100." + i).contentType(MediaType.APPLICATION_JSON).content("{}"));
             assertThat(s).isNotEqualTo(429);
@@ -68,10 +68,10 @@ class RateLimitPrefijoTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("PUB-09: GET tienda-rapida/{token} -> 429 al intento 31")
-    void getTiendaRapida_30() throws Exception {
+    @DisplayName("PUB-09: GET tienda-rapida/{token} -> 429 al intento 21")
+    void getTiendaRapida_20() throws Exception {
         String ip = "203.0.113.15";
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 20; i++) {
             assertThat(status(get("/api/public/tienda-rapida/tok" + i + "_abcdefghijklmnopqr").with(desde(ip))))
                 .as("GET %d", i + 1).isNotEqualTo(429);
         }

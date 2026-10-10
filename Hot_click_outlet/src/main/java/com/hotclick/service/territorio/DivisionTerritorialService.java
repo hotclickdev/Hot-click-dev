@@ -8,6 +8,8 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +35,10 @@ public class DivisionTerritorialService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicReference<List<ProvinciaDivision>> cache = new AtomicReference<>();
     private final AtomicLong cacheEn = new AtomicLong();
-    /** Si el IGN fallo hace menos de 60 s, no se reintenta en cada request. */
+    /** Si el IGN fallo hace menos de 60 s (y no hay copia local), no se reintenta en cada request. */
     private static final long ESPERA_FALLO_MS = Duration.ofSeconds(60).toMillis();
     private final AtomicLong falloEn = new AtomicLong();
+    private final java.util.concurrent.locks.ReentrantLock recargando = new java.util.concurrent.locks.ReentrantLock();
 
     public DivisionTerritorialService() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -48,8 +51,24 @@ public class DivisionTerritorialService {
         long ahora = System.currentTimeMillis();
         List<ProvinciaDivision> vigente = cache.get();
         if (vigente != null && ahora - cacheEn.get() < CACHE_MS) return vigente;
-        if (ahora - falloEn.get() < ESPERA_FALLO_MS) {
+        // Single-flight: una sola descarga a la vez. Con copia vieja, los demás la usan sin esperar.
+        if (!recargando.tryLock()) {
             if (vigente != null) return vigente;
+            recargando.lock();
+        }
+        try {
+            List<ProvinciaDivision> otra = cache.get();
+            if (otra != null && System.currentTimeMillis() - cacheEn.get() < CACHE_MS) return otra;
+            return recargar(ahora);
+        } finally {
+            recargando.unlock();
+        }
+    }
+
+    private List<ProvinciaDivision> recargar(long ahora) {
+        if (ahora - falloEn.get() < ESPERA_FALLO_MS) {
+            List<ProvinciaDivision> vieja = cache.get();
+            if (vieja != null) return vieja;
             throw new IllegalStateException("El IGN fallo hace poco; se reintenta en un minuto");
         }
         List<ProvinciaDivision> fresco;
@@ -57,8 +76,13 @@ public class DivisionTerritorialService {
             fresco = List.copyOf(descargar());
         } catch (RuntimeException e) {
             falloEn.set(ahora);
-            if (vigente != null) return vigente;
-            throw e;
+            log.warn("IGN no disponible, uso la copia local: {}", e.getMessage());
+            fresco = copiaLocal();
+            if (fresco.isEmpty()) throw e;
+            // Reintenta el IGN en 30 minutos en vez de 12 horas.
+            cache.set(fresco);
+            cacheEn.set(ahora - CACHE_MS + Duration.ofMinutes(30).toMillis());
+            return fresco;
         }
         cache.set(fresco);
         cacheEn.set(ahora);
@@ -79,6 +103,21 @@ public class DivisionTerritorialService {
         }
         log.info("División territorial del IGN: {} provincias", catalogo.size());
         return catalogo;
+    }
+
+    /** Copia del IGN incluida en el jar (src/main/resources/territorio/distritos-ign.json). */
+    List<ProvinciaDivision> copiaLocal() {
+        try (InputStream in = getClass().getResourceAsStream("/territorio/distritos-ign.json")) {
+            if (in == null) return List.of();
+            List<FilaDivision> filas = new ArrayList<>();
+            for (JsonNode fila : mapper.readTree(in)) {
+                filas.add(new FilaDivision(fila.path(0).asText(""), fila.path(1).asText(""), fila.path(2).asText("")));
+            }
+            return CatalogoDivisionTerritorial.armar(filas);
+        } catch (IOException e) {
+            log.warn("No se pudo leer la copia local de la división territorial: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     private int leerPagina(List<FilaDivision> filas, int offset) {

@@ -69,11 +69,27 @@ final class PublicChatSynonymExpander {
             Map.entry("metalico",   List.of("acero","hierro","metal","aluminio","inoxidable")),
             Map.entry("plastico",   List.of("plastico","pvc","sintetico","resina")),
             Map.entry("pequeno",    List.of("mini","compacto","chico","pequeño","portatil")),
-            Map.entry("grande",     List.of("grande","xl","xxl","amplio","extra"))
+            Map.entry("grande",     List.of("grande","xl","xxl","amplio","extra")),
+            Map.entry("carro",      List.of("auto","vehiculo","automovil","carro","llanta","volante","asiento","parabrisas")),
+            Map.entry("auto",       List.of("carro","vehiculo","automovil","llanta","volante")),
+            Map.entry("vehiculo",   List.of("carro","auto","automovil")),
+            Map.entry("moto",       List.of("motocicleta","casco","moto")),
+            Map.entry("perro",      List.of("mascota","canino","perro","correa","collar")),
+            Map.entry("gato",       List.of("mascota","felino","gato","rascador","arena")),
+            Map.entry("mascota",    List.of("perro","gato","mascota","correa","collar")),
+            Map.entry("papa",       List.of("hombre","caballero","papa","padre","billetera","reloj","herramienta","parrilla")),
+            Map.entry("padre",      List.of("hombre","caballero","papa","billetera","reloj","herramienta")),
+            Map.entry("mama",       List.of("mujer","dama","mama","madre","cartera","bolso","joyeria","perfume")),
+            Map.entry("madre",      List.of("mujer","dama","mama","cartera","joyeria")),
+            Map.entry("celular",    List.of("telefono","smartphone","funda","cargador","iphone","android")),
+            Map.entry("telefono",   List.of("celular","smartphone","funda","cargador"))
         ));
 
         List<String> extra = new ArrayList<>();
-        for (String t : terms) {
+        for (String crudo : terms) {
+            // Las claves van sin tildes: "papá", "baño" y "niño" también tienen que encontrarse.
+            String t = java.text.Normalizer.normalize(crudo, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(java.util.Locale.ROOT);
             if (syn.containsKey(t)) extra.addAll(syn.get(t));
             if (t.equals("kitchen")) extra.addAll(List.of(COCINA,COMEDOR));
             if (t.equals("bedroom")) extra.addAll(List.of(DORMITORIO,"cama",CUARTO));

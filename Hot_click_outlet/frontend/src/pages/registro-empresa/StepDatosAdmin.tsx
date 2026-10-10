@@ -43,13 +43,13 @@ export default function StepDatosAdmin({
           Negocio: <strong style={{ color: 'var(--hc-text)' }}>{form.nombreEmpresa}</strong>
         </span>
       </div>
-      <Input label="Tu nombre completo" placeholder="Ana García"
-        value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} maxLength={100} />
+      <Input label="Tu nombre completo *" placeholder="Ana García"
+        value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} required maxLength={100} />
       <Input label="Tu correo *" type="email" placeholder="ana@miempresa.com"
         value={form.correoAdmin} onChange={onCampo('correoAdmin')} required maxLength={150} />
       <Input label="Contraseña *" type="password" placeholder={`Mínimo ${MIN_PASSWORD} caracteres`}
         value={form.passwordAdmin} onChange={onCampo('passwordAdmin')} required minLength={MIN_PASSWORD} maxLength={128} />
-      <PhoneField label="Teléfono personal"
+      <PhoneField label="Teléfono personal (opcional)"
         value={form.telefonoAdmin} onChange={onTelefono} />
       {error && <ErrMsg>{error}</ErrMsg>}
 

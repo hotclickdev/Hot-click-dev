@@ -13,4 +13,6 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | copilot-sesion | copilot | Chat sin negocio resuelto | `TenantContext` nulo corta antes de Claude | `AiCopilotServiceChatStreamTest` | cubierto |
 | copilot-args | copilot | El modelo manda `empresaId` en la tool | el schema no tiene ese campo; el id entra por la sesión | gate `seguridad-merge` | cubierto |
 | copilot-mutacion | copilot | El modelo aplica un cambio de pedido | `proponer_*` y confirmación por botón | sin test de que no ejecuta | hueco |
-| publico-tienda-rapida | login | Martillar el enlace público de tienda rápida (bcrypt y alta de cuenta) | `PrefixLimit` 10/min por IP en `RateLimitingFilter`; token de 144 bits | `TiendaRapidaRateLimitTest` | cubierto |
+| publico-tienda-rapida | login | Martillar el enlace público de tienda rápida (bcrypt y alta de cuenta) | `PrefixLimit` 5/min por IP + prefijo y GET 20/min en `RateLimitingFilter`; token de 144 bits | `TiendaRapidaRateLimitTest` | cubierto |
+| auth-rutas-publicas | login | Rutas SPA nuevas (`/planes`, `/negocios`) abren datos privados | solo `permitAll` de la página; las APIs siguen con su regla | `gate-authz` | cubierto |
+| pago-efectivo | tenant | Checkout en efectivo con una bodega que no lo acepta | `SinpeCheckoutService.exigirEfectivoAceptado` | `EfectivoAceptadoTest` | cubierto |

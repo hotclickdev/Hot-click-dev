@@ -10,6 +10,7 @@ import CheckoutTilopayCard from './checkout/CheckoutTilopayCard'
 import CheckoutLayout from './checkout/CheckoutLayout'
 import { useCheckoutForm } from './checkout/useCheckoutForm'
 import { useCheckoutActions } from './checkout/useCheckoutActions'
+import { notasConEncomienda } from './checkout/checkoutHelpers'
 
 /**
  * Checkout de producción: mismos side effects de pago; layout TypeScript Figma.
@@ -50,7 +51,7 @@ export default function CheckoutPage() {
     totalFinal: form.totalFinal,
     metodoEnvio: form.metodoEnvio,
     metodoPago: form.metodoPago,
-    notas: form.notas,
+    notas: notasConEncomienda(form.notas, form.paquetes, form.metodoEnvioPorPaquete, form.encomiendaPorPaquete),
     telefono: form.telefono,
     direccion: form.direccion,
     direccionPedido: form.direccionPedido,

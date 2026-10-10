@@ -120,3 +120,8 @@ export function payloadUbicacionRegistro(ubicacion: UbicacionDespacho): Ubicacio
   if (distrito) cuerpo.distrito = distrito
   return cuerpo
 }
+
+/** Si el usuario empezó a llenar la ubicación (en el registro corto es opcional). */
+export function ubicacionIniciada(ubicacion: UbicacionDespacho): boolean {
+  return Boolean(ubicacion.provincia || ubicacion.canton || ubicacion.direccionExacta.trim() || ubicacion.distrito?.trim())
+}

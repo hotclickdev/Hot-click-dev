@@ -27,9 +27,9 @@ export default function PymeHeroPanel() {
         </div>
 
         {[
-          { nombre: 'Camiseta básica', detalle: 'Ropa · 40 unid.', precio: '₡8.900' },
-          { nombre: 'Termo 1L', detalle: 'Hogar · 15 unid.', precio: '₡6.500' },
-          { nombre: 'Set de oficina', detalle: 'Accesorios · 22 unid.', precio: '₡14.200' },
+          { nombre: 'Camiseta básica', detalle: 'Ropa · 40 unid.', precio: '₡ ···' },
+          { nombre: 'Termo 1L', detalle: 'Hogar · 15 unid.', precio: '₡ ···' },
+          { nombre: 'Set de oficina', detalle: 'Accesorios · 22 unid.', precio: '₡ ···' },
         ].map((item, i) => (
           <div key={item.nombre}>
             {i > 0 ? <div className="h-px mb-4 -mt-1" style={{ backgroundColor: 'var(--hc-border)' }} /> : null}

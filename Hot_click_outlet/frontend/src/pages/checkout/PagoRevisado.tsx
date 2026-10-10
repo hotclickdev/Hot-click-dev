@@ -1,3 +1,4 @@
+import AsistentePostCompra from '@/components/ai/AsistentePostCompra'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
@@ -68,6 +69,7 @@ export default function PagoRevisado({ numeroPedido, cantidadPaquetes, esInvitad
           <Link to="/productos" className="flex w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-[16px] py-[13px] text-[14px] font-semibold text-hc-n-0">
             {t('compra.revisado.seguirComprando')}
           </Link>
+          <AsistentePostCompra metodo="SINPE" numeroPedido={numeroPedido} />
           <a
             href={`https://wa.me/${WHATSAPP}?text=${mensajeSoporte}`}
             target="_blank"

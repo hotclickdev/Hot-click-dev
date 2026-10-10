@@ -52,7 +52,7 @@ export default function ProvinciaLandingPage() {
           <>
             <h1 className="text-3xl font-black" style={{ color: 'var(--hc-text)' }}>Sin tiendas en esta provincia</h1>
             <p className="mt-3" style={{ color: 'var(--hc-muted)' }}>{descripcion}</p>
-            <Link to="/emprendimientos" className="inline-block mt-6 underline">Ver negocios en HotClick</Link>
+            <Link to="/negocios" className="inline-block mt-6 underline">Ver negocios en HotClick</Link>
           </>
         )}
         {data && (

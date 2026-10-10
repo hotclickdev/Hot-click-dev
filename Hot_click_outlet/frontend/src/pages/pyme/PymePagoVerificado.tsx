@@ -28,7 +28,7 @@ export default function PymePagoVerificado() {
           <div className="h-20" style={{ backgroundColor: 'var(--hc-n-100, #f1f3f6)' }} />
           <div className="p-2.5">
             <p className="text-xs font-semibold" style={{ color: '#14171c' }}>{t('pyme.pagoProductoA')}</p>
-            <p className="text-[11px]" style={{ color: 'rgba(20,23,28,0.6)', fontFamily: 'var(--hc-font-mono)' }}>₡8.900</p>
+            <p className="text-[11px]" style={{ color: 'rgba(20,23,28,0.6)', fontFamily: 'var(--hc-font-mono)' }}>₡ ···</p>
           </div>
         </motion.div>
 
@@ -52,7 +52,7 @@ export default function PymePagoVerificado() {
               <TrustGlyph tipo="check" className="w-6 h-6 text-hc-primary" />
             </span>
             <p className="text-sm font-semibold text-center" style={{ color: '#14171c' }}>{t('pyme.pagoAprobado')}</p>
-            <p className="text-sm" style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}>₡8.500</p>
+            <p className="text-sm" style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}>₡ ···</p>
             <span
               className="mt-2 px-2.5 py-1 rounded-full text-[10px] inline-flex items-center gap-1"
               style={{ backgroundColor: 'var(--hc-n-100, #f1f3f6)', color: 'rgba(20,23,28,0.6)' }}
@@ -74,7 +74,7 @@ export default function PymePagoVerificado() {
           <div className="h-20" style={{ backgroundColor: 'var(--hc-n-100, #f1f3f6)' }} />
           <div className="p-2.5">
             <p className="text-xs font-semibold" style={{ color: '#14171c' }}>{t('pyme.pagoProductoB')}</p>
-            <p className="text-[11px]" style={{ color: 'rgba(20,23,28,0.6)', fontFamily: 'var(--hc-font-mono)' }}>₡6.500</p>
+            <p className="text-[11px]" style={{ color: 'rgba(20,23,28,0.6)', fontFamily: 'var(--hc-font-mono)' }}>₡ ···</p>
           </div>
         </motion.div>
       </div>

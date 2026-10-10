@@ -7,6 +7,10 @@ import { formatPrice } from '@/utils/format'
 import TiendaPlaceholder from './TiendaPlaceholder'
 import TiendaBuyActions from './TiendaBuyActions'
 import { BotonTienda } from './PiezasTienda'
+import PreguntaProducto from '@/pages/producto/PreguntaProducto'
+import OpinionesProducto from '@/pages/producto/OpinionesProducto'
+import ProductVideo from '@/pages/producto/ProductVideo'
+import CarruselProductos from '@/pages/producto/CarruselProductos'
 import type { Producto } from '@/types/producto'
 
 /** Productos con 3 o menos se anuncian como "Quedan N" en ámbar (mismo umbral que la ficha del marketplace). */
@@ -26,6 +30,7 @@ export default function TiendaProductoPage() {
   const [cantidad, setCantidad] = useState(1)
   const [agregado, setAgregado] = useState(false)
   const [imgActiva, setImgActiva] = useState(0)
+  const [masDeLaTienda, setMasDeLaTienda] = useState<Producto[]>([])
   usePublicarMigas({ actual: producto?.titulo || producto?.nombre || undefined })
 
   useEffect(() => {
@@ -35,6 +40,19 @@ export default function TiendaProductoPage() {
       .catch(() => navigate(`/tienda/${slug}`, { replace: true }))
       .finally(() => setLoading(false))
   }, [slug, productoId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // «Más de esta tienda»: misma tienda, sin el producto actual (como la ficha del marketplace).
+  useEffect(() => {
+    let vivo = true
+    tiendaService.getProductos(slug as string, { size: 12 })
+      .then((r) => {
+        if (!vivo) return
+        const lista = ((r as { content?: Producto[] }).content ?? []) as Producto[]
+        setMasDeLaTienda(lista.filter((p) => String(p.id) !== String(productoId)))
+      })
+      .catch(() => { if (vivo) setMasDeLaTienda([]) })
+    return () => { vivo = false }
+  }, [slug, productoId])
 
   const handleAgregar = () => {
     if (!producto) return
@@ -101,12 +119,27 @@ export default function TiendaProductoPage() {
               onComprarAhora={handleComprarAhora}
             />
           </div>
+          <div className="-mx-4 lg:mx-0">
+            <PreguntaProducto product={producto} />
+          </div>
           {stockDisponible <= 0 && (
             <div className="mt-2">
               <BotonTienda variante="secundario" to={`/tienda/${slug}`}>Ver otros productos de la tienda</BotonTienda>
             </div>
           )}
         </div>
+      </div>
+      {/* Igual que la ficha del marketplace: opiniones, video y más productos (mockup ficha-video). */}
+      <div className="mt-2 lg:mt-10">
+        {stockDisponible > 0 && <OpinionesProducto productoId={producto.id} />}
+        <ProductVideo videoUrl={producto.videoUrl} titulo={producto.titulo || producto.nombre || ''} tienda={producto.empresaNombre} portada={producto.imagenUrl} />
+        <CarruselProductos
+          id="mas-de-la-tienda"
+          titulo="Más de esta tienda"
+          productos={masDeLaTienda}
+          variante="sangrado"
+          accion={{ texto: 'Ver todos', to: `/tienda/${slug}` }}
+        />
       </div>
       <div className="lg:hidden">
         <TiendaBuyActions

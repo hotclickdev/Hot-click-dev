@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import useAuthStore from '@/store/authStore'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
+import { isTokenAlive } from '@/utils/authToken'
 import EmprendeHub from './emprende/EmprendeHub'
 import EmprendeLanding from './emprende/EmprendeLanding'
 
@@ -10,7 +11,9 @@ import EmprendeLanding from './emprende/EmprendeLanding'
 export default function EmprendePage() {
   const { t } = useTranslation()
   const userRole = useAuthStore((s) => s.userRole)
-  const yaEsDuenio = esUsuarioSistema(userRole)
+  const token = useAuthStore((s) => s.token)
+  // Sin sesión viva se ve la landing pública: nunca atajos al panel.
+  const yaEsDuenio = isTokenAlive(token) && esUsuarioSistema(userRole)
 
   return (
     <MainLayout>
