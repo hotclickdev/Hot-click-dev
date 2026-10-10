@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.util.List;
@@ -18,6 +19,7 @@ public class StorefrontPedidoDTO {
     public static final int TELEFONO_MIN_DIGITOS = 8;
 
     @NotBlank(message = "El nombre del cliente es requerido")
+    @Size(max = 120, message = "El nombre no puede superar 120 caracteres")
     private String nombreCliente;
 
     @Email(message = "Correo inválido")
@@ -33,20 +35,24 @@ public class StorefrontPedidoDTO {
 
     /** SINPE_MOVIL | EFECTIVO | TRANSFERENCIA */
     @NotBlank(message = "Método de pago requerido")
+    @Pattern(regexp = "(?i)SINPE_MOVIL|EFECTIVO|TRANSFERENCIA", message = "Método de pago no válido")
     private String metodoPago;
 
     /** DOMICILIO | RETIRO */
     @NotBlank(message = "Método de envío requerido")
+    @Pattern(regexp = "(?i)DOMICILIO|RETIRO", message = "Método de envío no válido")
     private String metodoEnvio;
 
+    @Size(max = 1000, message = "Las notas no pueden superar 1000 caracteres")
     private String notas;
 
     @NotEmpty(message = "El pedido debe tener al menos un producto")
-    private List<ItemDTO> items;
+    @Size(max = 50, message = "El pedido no puede tener más de 50 productos distintos")
+    private List<@jakarta.validation.Valid ItemDTO> items;
 
     public record ItemDTO(
             @NotNull Long productoId,
-            @Positive int cantidad
+            @Positive @jakarta.validation.constraints.Max(999) int cantidad
     ) {}
 
     public String getNombreCliente() { return nombreCliente; }

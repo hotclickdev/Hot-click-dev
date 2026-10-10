@@ -27,4 +27,16 @@ class StorefrontEfectivoTest {
         assertThatCode(() -> StorefrontGuestOrderService.exigirEfectivoAceptado("EFECTIVO", bodega(true))).doesNotThrowAnyException();
         assertThatCode(() -> StorefrontGuestOrderService.exigirEfectivoAceptado("SINPE_MOVIL", bodega(false))).doesNotThrowAnyException();
     }
+
+    @Test
+    void rechazaRetiroSiNingunaBodegaLoOfrece() {
+        Bodega sin = new Bodega();
+        sin.setPermiteRetiroCliente(false);
+        assertThatThrownBy(() -> StorefrontGuestOrderService.exigirRetiroDisponible("RETIRO", java.util.List.of(sin)))
+            .isInstanceOf(IllegalStateException.class);
+        Bodega con = new Bodega();
+        con.setPermiteRetiroCliente(true);
+        assertThatCode(() -> StorefrontGuestOrderService.exigirRetiroDisponible("RETIRO", java.util.List.of(sin, con))).doesNotThrowAnyException();
+        assertThatCode(() -> StorefrontGuestOrderService.exigirRetiroDisponible("DOMICILIO", java.util.List.of())).doesNotThrowAnyException();
+    }
 }

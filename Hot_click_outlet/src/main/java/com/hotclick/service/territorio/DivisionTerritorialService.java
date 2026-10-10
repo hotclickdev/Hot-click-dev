@@ -35,6 +35,7 @@ public class DivisionTerritorialService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicReference<List<ProvinciaDivision>> cache = new AtomicReference<>();
     private final AtomicLong cacheEn = new AtomicLong();
+    private final java.util.concurrent.locks.ReentrantLock recargando = new java.util.concurrent.locks.ReentrantLock();
 
     public DivisionTerritorialService() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -47,6 +48,21 @@ public class DivisionTerritorialService {
         long ahora = System.currentTimeMillis();
         List<ProvinciaDivision> vigente = cache.get();
         if (vigente != null && ahora - cacheEn.get() < CACHE_MS) return vigente;
+        // Single-flight: una sola descarga a la vez. Con copia vieja, los demás la usan sin esperar.
+        if (!recargando.tryLock()) {
+            if (vigente != null) return vigente;
+            recargando.lock();
+        }
+        try {
+            List<ProvinciaDivision> otra = cache.get();
+            if (otra != null && System.currentTimeMillis() - cacheEn.get() < CACHE_MS) return otra;
+            return recargar(ahora);
+        } finally {
+            recargando.unlock();
+        }
+    }
+
+    private List<ProvinciaDivision> recargar(long ahora) {
         List<ProvinciaDivision> fresco;
         try {
             fresco = List.copyOf(descargar());

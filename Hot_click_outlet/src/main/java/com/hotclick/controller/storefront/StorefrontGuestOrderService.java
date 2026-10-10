@@ -66,6 +66,8 @@ public class StorefrontGuestOrderService {
             return null;
         }
         exigirEfectivoAceptado(dto.getMetodoPago(), bodega);
+        exigirRetiroDisponible(dto.getMetodoEnvio(),
+            bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
 
         Usuario usuario = usuarioRepository.findByCorreo(dto.getCorreoCliente())
             .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
@@ -165,6 +167,15 @@ public class StorefrontGuestOrderService {
         if (!"EFECTIVO".equalsIgnoreCase(metodoPago)) return;
         if (bodega == null || !Boolean.TRUE.equals(bodega.getAceptaEfectivo())) {
             throw new IllegalStateException("Este negocio no acepta efectivo. Pagá con SINPE / Tarjeta.");
+        }
+    }
+
+    /** Retiro solo si alguna bodega activa de la tienda lo permite (misma regla que publica la info de la tienda). */
+    static void exigirRetiroDisponible(String metodoEnvio, List<Bodega> bodegas) {
+        if (!StorefrontPedidoDTO.ENVIO_RETIRO.equalsIgnoreCase(metodoEnvio)) return;
+        boolean hay = bodegas != null && bodegas.stream().anyMatch(b -> Boolean.TRUE.equals(b.getPermiteRetiroCliente()));
+        if (!hay) {
+            throw new IllegalStateException("Este negocio no ofrece retiro en tienda.");
         }
     }
 
