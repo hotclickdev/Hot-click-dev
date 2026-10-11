@@ -256,6 +256,8 @@ final class SecurityAuthorizationRules {
                 "/visitante", "/visitante/**", "/emprendedor", "/emprendedor/**",
                 "/pyme", "/pyme/**", "/negocio-plus", "/negocio-plus/**",
                 "/prototipo", "/prototipo/**",
+                // Páginas del panel de plataforma (solo HTML del SPA): los datos van por /api/admin/**, que sigue ADMIN.
+                "/plataforma", "/plataforma/**",
                 "/nosotros", "/productos", "/productos/**", "/descubri", "/categorias", "/buscar/foto", "/informacion", "/contacto",
                 "/carrito", "/login", "/recuperar-contrasena", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",

@@ -23,7 +23,7 @@ public final class SpaVisitanteFallback {
     /** Prefijos que nunca entran al fallback: API, actuator, errores y paneles/flujos de rol. */
     private static final List<String> PREFIJOS_EXCLUIDOS = List.of(
         "/api", "/actuator", "/error", "/ws", "/oauth2", "/login/oauth2", "/webhooks",
-        "/admin", "/emprendedor", "/pyme", "/negocio-plus", "/pos", "/caja",
+        "/admin", "/plataforma", "/emprendedor", "/pyme", "/negocio-plus", "/pos", "/caja",
         "/visitante", "/prototipo", "/swagger-ui", "/v3/api-docs");
 
     /** Matcher para Spring Security: navegación HTML de visitante a una ruta sin regla propia. */
