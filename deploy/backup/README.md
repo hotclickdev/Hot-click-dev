@@ -1,5 +1,7 @@
 # Backup de Postgres (Lightsail → Google Drive)
 
+> **Cuenta de Google: `hotclick.cr@gmail.com`.** El proyecto de Google Cloud, la carpeta de Drive y la autorización de rclone son de esa cuenta. Entrá siempre con ella (en una ventana privada, si tenés otra sesión abierta).
+
 El backup diario lo hace el server con el timer `hotclick-db-backup`. GitHub Actions solo lo verifica desde afuera.
 
 ```
@@ -18,6 +20,7 @@ Un fallo en el server deja la unidad `failed` y avisa por Telegram si está conf
   - Subir a una carpeta de «Mi unidad», aunque esté compartida con él, falla con `403 storageQuotaExceeded: Service Accounts do not have storage quota`.
   - Solo funciona dentro de una **unidad compartida** (Google Workspace, pago) o con delegación de dominio (también Workspace).
   - Además, desde abril de 2025 los service accounts nuevos ya no pueden ser dueños de archivos en Drive.
+  - **Compartir la carpeta con el service account como Editor NO funciona en el Drive gratis de `hotclick.cr@gmail.com`:** el service account puede ver la carpeta, pero al subir da error de cuota. Por eso se usa OAuth.
   - El código lo soporta: `GDRIVE_SA_JSON` + `GDRIVE_SHARED_DRIVE_ID`, para el día que haya Workspace.
 - **Recomendado: OAuth con tu propia cuenta**, gratis y dentro de los 15 GB de Drive:
   - Un cliente OAuth propio, con scope `drive.file`: rclone solo ve y toca los archivos que él mismo creó, nada más de tu Drive.
@@ -32,12 +35,13 @@ Un fallo en el server deja la unidad `failed` y avisa por Telegram si está conf
 3. El contenido completo del archivo es el secreto de GitHub **`BACKUP_AGE_IDENTITY`**.
 
 ### 2. Proyecto de Google Cloud y cliente OAuth (gratis)
-1. Entrá a https://console.cloud.google.com/ con la cuenta de Google donde van a quedar los backups y creá el proyecto `hotclick-backups`.
+1. Entrá a https://console.cloud.google.com/ como **`hotclick.cr@gmail.com`** y creá el proyecto `hotclick-backups`.
 2. En «APIs y servicios» → «Biblioteca», habilitá la **Google Drive API**.
 3. Configurá la pantalla de consentimiento («Google Auth Platform»):
-   - Tipo **External**, nombre `hotclick-backup`, tu correo de soporte y de contacto.
+   - Tipo **External**, nombre `hotclick-backup`.
    - En «Data access», agregá el scope `https://www.googleapis.com/auth/drive.file`.
-   - En «Audience», agregate como test user.
+   - En «Audience», agregá **`hotclick.cr@gmail.com`** como test user.
+   - Correo de soporte y de contacto: `hotclick.cr@gmail.com`.
 4. En «Clients», hacé «Create client» de tipo **Desktop app**. Anotá el client ID y el client secret.
 5. **En «Audience», hacé «PUBLISH APP» (pasar a *In production*).**
    - Si queda en *Testing*, el refresh token **vence a los 7 días** y el backup deja de subir.
@@ -49,7 +53,7 @@ Un fallo en el server deja la unidad `failed` y avisa por Telegram si está conf
 # rclone: https://rclone.org/downloads/
 # El blob fija el scope drive.file (con solo "client_id client_secret" rclone pediría acceso total)
 rclone authorize drive "$(printf '{"scope":"drive.file","client_id":"%s","client_secret":"%s"}' '<CLIENT_ID>' '<CLIENT_SECRET>' | base64 -w0)"
-# Abre el navegador, aceptás, e imprime un JSON {"access_token":...,"refresh_token":...}.
+# Abre el navegador: iniciá sesión como hotclick.cr@gmail.com (no otra cuenta), aceptá, e imprime un JSON {"access_token":...,"refresh_token":...}.
 # Ese JSON en una sola línea es GDRIVE_RCLONE_TOKEN.
 
 # Con drive.file, rclone no ve carpetas creadas a mano en la web: la carpeta la crea rclone.
@@ -59,7 +63,7 @@ export RCLONE_CONFIG_GDTMP_TYPE=drive RCLONE_CONFIG_GDTMP_SCOPE=drive.file \
 rclone mkdir gdtmp:hotclick-db-backups
 rclone lsjson gdtmp: --dirs-only | grep -A3 hotclick-db-backups   # el "ID" es GDRIVE_FOLDER_ID
 ```
-- La carpeta `hotclick-db-backups` aparece en «Mi unidad», en la web.
+- La carpeta `hotclick-db-backups` aparece en «Mi unidad» de `hotclick.cr@gmail.com`, en la web.
 - No le pongas otros archivos. Igual, la retención solo borra `hotclick-*.dump.age`, y con `drive.file` rclone ni siquiera ve lo demás.
 
 ### 4. Server (Lightsail)
