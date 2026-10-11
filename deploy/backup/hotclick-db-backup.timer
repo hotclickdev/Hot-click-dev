@@ -1,0 +1,11 @@
+[Unit]
+Description=HotClick: backup diario de Postgres a las 23:30 de Costa Rica (05:30 UTC)
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+Unit=hotclick-db-backup.service
+
+[Install]
+WantedBy=timers.target
