@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 source "$ROOT/scripts/eng-gates/restore-drill-lib.sh"
 
 uso() {
-  echo "uso: $0 verify <archivo.sql.gz>" >&2
+  echo "uso: $0 verify <archivo.dump|.sql.gz>" >&2
   echo "     $0 restore <archivo.sql.gz>   # requiere DRILL_ALLOW_RESTORE=1 y DATABASE_URL local" >&2
   echo "     $0 drill <archivo.sql.gz>     # verify + restore + tablas" >&2
   echo "     $0 refuse-prod                # selftest: URL de prod debe fallar" >&2
@@ -32,6 +32,7 @@ case "$cmd" in
     restore_drill_verify "$file"
     restore_drill_restore "$file"
     restore_drill_check_tables
+    restore_drill_sanity
     echo "S8 OK: restore drill contra destino throwaway"
     ;;
   refuse-prod)

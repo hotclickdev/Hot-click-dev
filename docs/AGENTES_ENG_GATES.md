@@ -18,7 +18,7 @@ Los scripts viven en `scripts/eng-gates/` (Node 22, sin dependencias). Tests: `n
 | E11 | `gate-sensitive.yml` | PR que toca `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` en `src/main/java` | Liviano: exige que exista un test nominal (`*Payment*Test*.java`, etc.). No corre Maven. | `skip-sensitive-gate` |
 | DOC1 | `docs-stack.yml` | Semanal (lunes) + `workflow_dispatch` | Regenera `docs/GENERATED_STACK.md` (Java/Flyway/React/módulos), artifact, issue semanal, PR si el fingerprint cambió. Parches seguros de README/ESTADO_ACTUAL solo con `--apply-safe-docs`. | — |
 | SCALE1 | `gate-scale.yml` | PR Java/TS/static + semanal | Diff: `findAll`/listas sin Pageable, N+1, I/O bloqueante en controllers (FAIL P1); `@Transactional` gordo / imports pesados (WARN). Semanal: issue de hotspots por tamaño + `findAll`. | `skip-scale-gate` |
-| D5 | `backup.yml` → job `verify-backup` | Schedule / `workflow_dispatch` (igual que el dump) | Tras el artifact de `pg_dump`, falla si el dump no existe o pesa &lt; 1 KB. Abre/comenta issue `[D5] Backup diario…`. | — |
+| D5 | `backup.yml` → job `verify-offsite` | Schedule 07:30 UTC / `workflow_dispatch` | El backup lo hace el server (timer `hotclick-db-backup`, ver `deploy/backup/README.md`). D5 baja el último `.dump.age` de S3, exige < 26 h, lo descifra y corre `pg_restore --list` + lectura completa + datos de tablas clave. Avisa por Telegram. | — |
 | — | `eng-gates-selftest.yml` | PR que toca scripts/workflows de gates | `node --test` de los gates | — |
 
 ## Cómo saltear un gate
@@ -47,8 +47,9 @@ Secretos que **ya** usa el repo y siguen igual:
 | Secreto | Workflow | Notas |
 | --- | --- | --- |
 | `GITHUB_TOKEN` | todos | Automático. Comentarios de PR / issues D5 / labels |
-| `SUPABASE_BACKUP_URL` | `backup.yml` | URL de `pg_dump`. D5 no inventa credenciales: si falta, el dump (y D5) fallan |
-| `SUPABASE_DB_PASSWORD` | `backup.yml` | `PGPASSWORD` del dump |
+| `BACKUP_READ_AWS_ACCESS_KEY_ID` / `BACKUP_READ_AWS_SECRET_ACCESS_KEY` | `backup.yml`, `restore-drill.yml` | Clave IAM solo List/Get del prefijo de backups. Si falta, D5 y S8 fallan |
+| `BACKUP_AGE_IDENTITY` | `backup.yml`, `restore-drill.yml` | Clave privada age para descifrar el backup (la pública vive en el server) |
+| `vars.BACKUP_S3_URI` (variable) | `backup.yml`, `restore-drill.yml` | `s3://<bucket>/postgres` |
 | `SONAR_TOKEN` | `sonarcloud.yml` | Sin esto Sonar no publica; no lo usan los gates ola 1. El job reintenta 1 vez si sonarcloud.io responde 503 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | `ci.yml` | Notificaciones de CI; no los usan los gates |
 | `SENTRY_DSN` / `VITE_SENTRY_DSN` | app / `ci.yml` | El gate E3 pone `VITE_SENTRY_DSN=""` a propósito (bundle determinista). No commitear el DSN |
@@ -81,8 +82,8 @@ node scripts/eng-gates/gate-sensitive.mjs
 
 PR_TITLE='Bump axios from 1.7.0 to 1.7.1' node scripts/eng-gates/dependabot-triage.mjs
 
-# D5 contra un directorio con un .sql.gz de prueba
-bash scripts/eng-gates/verify-backup.sh /tmp/backup-artifact 1024
+# D5 contra un dump local (pg_dump -Fc)
+bash scripts/eng-gates/backup-offsite.sh verify /tmp/hotclick.dump
 
 node --test scripts/eng-gates/eng-gates.test.mjs
 
@@ -141,7 +142,7 @@ Checklist del menú original vs `master`. El tablero UI es I1 (`agentes-dashboar
 | D2 | Hunter IDOR diario | `hunter-idor.yml` | master (ola 2) |
 | D3 | SPA stale diario | `spa-stale.yml` | master (ola 3) |
 | D4 | Sentry digest | `sentry-digest.yml` | master (ola 3) |
-| D5 | Backup dump no vacío | `backup.yml` `verify-backup` | master (ola 1) |
+| D5 | Backup off-site reciente y legible | `backup.yml` `verify-offsite` | master (ola 1) |
 | D6 | Flake hunter CI | `flake-hunter.yml` | master (ola 4) |
 | D7 | i18n ES/EN/PT diario | `i18n-drift.yml` | master (ola 4) |
 | D8 | Secrets en docs | `secrets-in-docs.yml` | master (ola 4) |

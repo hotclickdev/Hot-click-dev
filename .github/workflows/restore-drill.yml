@@ -2,8 +2,8 @@ name: S8 — Weekly restore drill
 
 on:
   schedule:
-    # Domingo 01:00 America/Costa_Rica = 07:00 UTC (después del backup 06:00 UTC)
-    - cron: '0 7 * * 0'
+    # Domingo 02:00 America/Costa_Rica = 08:00 UTC (después del timer del server 05:30 UTC)
+    - cron: '0 8 * * 0'
   workflow_dispatch:
     inputs:
       use_fixture:
@@ -26,7 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        # Misma versión mayor que prod (postgres:18) + pgvector (V62 crea la extensión vector).
+        image: pgvector/pgvector:pg18
         env:
           POSTGRES_USER: drill
           POSTGRES_PASSWORD: drill_local_only
@@ -39,7 +40,7 @@ jobs:
           --health-timeout 5s
           --health-retries 8
     env:
-      # Destino SOLO local. Nunca SUPABASE_BACKUP_URL.
+      # Destino SOLO local (service throwaway). Nunca una URL de prod.
       DATABASE_URL: postgresql://drill:drill_local_only@127.0.0.1:5432/restore_drill
       DRILL_ALLOW_RESTORE: '1'
       PGPASSWORD: drill_local_only
@@ -47,18 +48,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Install postgresql-client
-        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client --quiet
+      - name: Instalar age y cliente Postgres 18
+        run: bash scripts/eng-gates/install-pg18-client.sh
 
-      - name: Obtener dump (artifact o fixture)
+      - name: Obtener dump (S3 cifrado o fixture)
         id: dump
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_FIXTURE: ${{ github.event.inputs.use_fixture || 'false' }}
+          BACKUP_S3_URI: ${{ vars.BACKUP_S3_URI }}
+          AWS_DEFAULT_REGION: ${{ vars.BACKUP_AWS_REGION || 'us-east-2' }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_READ_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_READ_AWS_SECRET_ACCESS_KEY }}
+          BACKUP_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_IDENTITY }}
+          # El drill semanal mira hasta 8 días atrás (el diario D5 exige 26 h).
+          MAX_AGE_HOURS: '192'
         run: bash scripts/eng-gates/fetch-backup-dump.sh
 
-      - name: Restore drill (throwaway)
-        run: bash scripts/eng-gates/restore-drill.sh drill "${{ steps.dump.outputs.file }}"
+      - name: Restore drill (throwaway) + conteo de filas
+        env:
+          DUMP_FILE: ${{ steps.dump.outputs.file }}
+          DRILL_REQUIRE_ROWS: ${{ steps.dump.outputs.source != 'fixture' && '1' || '0' }}
+        run: bash scripts/eng-gates/restore-drill.sh drill "$DUMP_FILE"
+
+      - name: Borrar el dump descifrado
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/backup-offsite"
 
   open-p0:
     name: S8 Issue P0 si el restore falla
@@ -77,3 +91,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node scripts/eng-gates/restore-drill-issue.mjs
+
+      - name: Aviso Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEXTO: "❌ S8 restore drill FALLÓ: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: bash scripts/eng-gates/telegram-aviso.sh "$TEXTO"

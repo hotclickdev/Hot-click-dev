@@ -14,7 +14,7 @@ const body = [
   '',
   '### Qué revisar',
   '- ¿Existe un artifact `.sql.gz` de `Daily DB Backup`?',
-  '- ¿`SUPABASE_BACKUP_URL` / `SUPABASE_DB_PASSWORD` están en el repo? (S8 no los inventa; si faltan, el dump diario falla)',
+  '- ¿Están `vars.BACKUP_S3_URI` y los secretos `BACKUP_READ_AWS_ACCESS_KEY_ID`, `BACKUP_READ_AWS_SECRET_ACCESS_KEY` y `BACKUP_AGE_IDENTITY`? ¿Corrió el timer `hotclick-db-backup` en el server? (ver deploy/backup/README.md)',
   '- ¿El dump menciona `hot_click_usuario_tb` / `pedido` / `producto`?',
   '- ¿`psql` en el contenedor local falló por extensiones/roles?',
   '',
