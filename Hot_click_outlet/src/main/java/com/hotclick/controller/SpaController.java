@@ -189,6 +189,8 @@ public class SpaController {
         "/seguimiento/{token}",
         "/admin",
         "/admin/{*path}",
+        "/plataforma",
+        "/plataforma/{*path}",
         "/visitante",
         "/visitante/{*path}",
         "/emprendedor",
