@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Backup diario de Postgres (Lightsail, Docker) -> pg_dump -Fc -> verificación -> age -> S3.
+# Backup diario de Postgres (Lightsail, Docker) -> pg_dump -Fc -> verificación -> age -> Google Drive (rclone).
 # Lo corre el timer systemd hotclick-db-backup.timer. Cualquier fallo sale con código != 0
 # (systemd lo marca failed) y avisa por Telegram si hay token configurado.
 #
@@ -7,8 +7,8 @@
 #   PG_CONTAINER        contenedor de Postgres (default hotclick-postgres; vacío = pg_dump local, solo tests)
 #   PG_DB, PG_USER      base y usuario dentro del contenedor
 #   AGE_RECIPIENT       clave PÚBLICA age (age1...). La privada nunca está en el server.
-#   BACKUP_S3_URI       s3://bucket/prefijo   (clave IAM solo PutObject sobre ese prefijo)
-#   BACKUP_LOCAL_DIR    solo tests: copia local en vez de S3 (excluyente con BACKUP_S3_URI)
+#   GDRIVE_FOLDER_ID + credenciales de Drive (ver gdrive-rclone-env.sh: OAuth recomendado o SA en unidad compartida)
+#   RETENTION_DAYS      borra backups hotclick-*.dump.age más viejos que esto (default 35). Nada más.
 #   MIN_BYTES           tamaño mínimo del dump (default 65536)
 #   REQUIRED_TABLES     tablas que deben tener TABLE DATA en el dump
 #   TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID  opcionales, para el aviso de fallo
@@ -22,9 +22,14 @@ AGE_RECIPIENT="${AGE_RECIPIENT:?AGE_RECIPIENT requerido (clave pública age1...)
 MIN_BYTES="${MIN_BYTES:-65536}"
 REQUIRED_TABLES="${REQUIRED_TABLES:-hot_click_usuario_tb hot_click_pedido_tb hot_click_producto_tb hot_click_pago_tb}"
 WORK_DIR="${WORK_DIR:-/var/tmp/hotclick-backup}"
+RETENTION_DAYS="${RETENTION_DAYS:-35}"
+LIB="${GDRIVE_LIB:-$(dirname "$(readlink -f "$0")")/gdrive-rclone-env.sh}"
 
-if [[ -z "${BACKUP_S3_URI:-}" && -z "${BACKUP_LOCAL_DIR:-}" ]]; then
-  echo "FAIL: falta BACKUP_S3_URI (destino off-server)" >&2; exit 1
+# shellcheck source=deploy/backup/gdrive-rclone-env.sh
+source "$LIB"
+gdrive_rclone_env   # falla si faltan GDRIVE_FOLDER_ID o credenciales (destino off-server obligatorio)
+if ! [[ "$RETENTION_DAYS" =~ ^[0-9]+$ ]] || (( RETENTION_DAYS < 7 )); then
+  echo "FAIL: RETENTION_DAYS inválido (mínimo 7)" >&2; exit 1
 fi
 if [[ "$AGE_RECIPIENT" != age1* ]]; then
   echo "FAIL: AGE_RECIPIENT no es una clave pública age (age1...)" >&2; exit 1
@@ -78,12 +83,16 @@ pg pg_restore -f /dev/null < "$DUMP"
 age -r "$AGE_RECIPIENT" -o "$ENC" "$DUMP"
 rm -f "$DUMP"
 
-# 5. Subida off-server. Ruta por fecha; la clave IAM no puede listar, leer ni borrar.
-KEY="$(date -u +%Y/%m)/hotclick-$STAMP.dump.age"
-if [[ -n "${BACKUP_S3_URI:-}" ]]; then
-  aws s3 cp --only-show-errors "$ENC" "${BACKUP_S3_URI%/}/$KEY"
-else
-  mkdir -p "$BACKUP_LOCAL_DIR/$(dirname "$KEY")"
-  cp "$ENC" "$BACKUP_LOCAL_DIR/$KEY"
+# 5. Subida a Google Drive (carpeta GDRIVE_FOLDER_ID). Nombre plano con fecha UTC.
+NAME="hotclick-$STAMP.dump.age"
+rclone copyto --retries 3 "$ENC" "gd:$NAME"
+# Confirmar que quedó arriba con el mismo tamaño
+REMOTE_SIZE="$(rclone lsf gd: --files-only --max-depth 1 --format s --include "$NAME")"
+if [[ "$REMOTE_SIZE" != "$(stat -c%s "$ENC")" ]]; then
+  echo "FAIL: $NAME no está en Drive o tiene otro tamaño (${REMOTE_SIZE:-ausente})" >&2; false
 fi
-echo "OK backup $KEY ($SIZE bytes sin cifrar, $(stat -c%s "$ENC") cifrado)"
+
+# 6. Retención: solo archivos hotclick-*.dump.age con más de RETENTION_DAYS días. Nunca otros archivos.
+#    (Drive los manda a la papelera; Google la vacía sola a los 30 días.)
+rclone delete gd: --max-depth 1 --include 'hotclick-*.dump.age' --min-age "${RETENTION_DAYS}d"
+echo "OK backup $NAME ($SIZE bytes sin cifrar, $(stat -c%s "$ENC") cifrado); retención ${RETENTION_DAYS} d"

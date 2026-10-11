@@ -18,7 +18,7 @@ Los scripts viven en `scripts/eng-gates/` (Node 22, sin dependencias). Tests: `n
 | E11 | `gate-sensitive.yml` | PR que toca `Payment*` / `Auth*` / `Pos*` / `Sinpe*` / `Wallet*` en `src/main/java` | Liviano: exige que exista un test nominal (`*Payment*Test*.java`, etc.). No corre Maven. | `skip-sensitive-gate` |
 | DOC1 | `docs-stack.yml` | Semanal (lunes) + `workflow_dispatch` | Regenera `docs/GENERATED_STACK.md` (Java/Flyway/React/módulos), artifact, issue semanal, PR si el fingerprint cambió. Parches seguros de README/ESTADO_ACTUAL solo con `--apply-safe-docs`. | — |
 | SCALE1 | `gate-scale.yml` | PR Java/TS/static + semanal | Diff: `findAll`/listas sin Pageable, N+1, I/O bloqueante en controllers (FAIL P1); `@Transactional` gordo / imports pesados (WARN). Semanal: issue de hotspots por tamaño + `findAll`. | `skip-scale-gate` |
-| D5 | `backup.yml` → job `verify-offsite` | Schedule 07:30 UTC / `workflow_dispatch` | El backup lo hace el server (timer `hotclick-db-backup`, ver `deploy/backup/README.md`). D5 baja el último `.dump.age` de S3, exige < 26 h, lo descifra y corre `pg_restore --list` + lectura completa + datos de tablas clave. Avisa por Telegram. | — |
+| D5 | `backup.yml` → job `verify-offsite` | Schedule 07:30 UTC / `workflow_dispatch` | El backup lo hace el server (timer `hotclick-db-backup`, ver `deploy/backup/README.md`). D5 baja el último `.dump.age` de Google Drive (rclone), exige < 26 h, lo descifra y corre `pg_restore --list` + lectura completa + datos de tablas clave. Avisa por Telegram. | — |
 | — | `eng-gates-selftest.yml` | PR que toca scripts/workflows de gates | `node --test` de los gates | — |
 
 ## Cómo saltear un gate
@@ -47,9 +47,10 @@ Secretos que **ya** usa el repo y siguen igual:
 | Secreto | Workflow | Notas |
 | --- | --- | --- |
 | `GITHUB_TOKEN` | todos | Automático. Comentarios de PR / issues D5 / labels |
-| `BACKUP_READ_AWS_ACCESS_KEY_ID` / `BACKUP_READ_AWS_SECRET_ACCESS_KEY` | `backup.yml`, `restore-drill.yml` | Clave IAM solo List/Get del prefijo de backups. Si falta, D5 y S8 fallan |
+| `GDRIVE_CLIENT_ID` / `GDRIVE_CLIENT_SECRET` / `GDRIVE_RCLONE_TOKEN` | `backup.yml`, `restore-drill.yml` | OAuth del dueño (scope drive.file) para leer la carpeta de backups. Recomendado. Si faltan (y no hay SA), D5 y S8 fallan |
+| `GDRIVE_SA_JSON` (+ `vars.GDRIVE_SHARED_DRIVE_ID`) | `backup.yml`, `restore-drill.yml` | Alternativa: service account, solo con unidad compartida de Workspace (un SA no tiene cuota en Mi unidad) |
 | `BACKUP_AGE_IDENTITY` | `backup.yml`, `restore-drill.yml` | Clave privada age para descifrar el backup (la pública vive en el server) |
-| `vars.BACKUP_S3_URI` (variable) | `backup.yml`, `restore-drill.yml` | `s3://<bucket>/postgres` |
+| `vars.GDRIVE_FOLDER_ID` (variable) | `backup.yml`, `restore-drill.yml` | Id de la carpeta de backups en Drive |
 | `SONAR_TOKEN` | `sonarcloud.yml` | Sin esto Sonar no publica; no lo usan los gates ola 1. El job reintenta 1 vez si sonarcloud.io responde 503 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | `ci.yml` | Notificaciones de CI; no los usan los gates |
 | `SENTRY_DSN` / `VITE_SENTRY_DSN` | app / `ci.yml` | El gate E3 pone `VITE_SENTRY_DSN=""` a propósito (bundle determinista). No commitear el DSN |

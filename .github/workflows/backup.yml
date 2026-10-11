@@ -1,7 +1,7 @@
 name: Daily DB Backup
 
 # El backup lo hace el server (timer systemd hotclick-db-backup, 05:30 UTC):
-# pg_dump -Fc dentro de Docker -> pg_restore --list -> age (clave pública) -> S3 (clave solo PutObject).
+# pg_dump -Fc dentro de Docker -> pg_restore --list -> age (clave pública) -> Google Drive (rclone).
 # Este workflow es el verificador off-site: baja el último .dump.age, lo descifra y valida el TOC.
 # Falla si faltan secretos, si no hay backup de las últimas 26 h o si el dump no se puede leer.
 on:
@@ -22,16 +22,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      BACKUP_S3_URI: ${{ vars.BACKUP_S3_URI }}
-      AWS_DEFAULT_REGION: ${{ vars.BACKUP_AWS_REGION || 'us-east-2' }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_READ_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_READ_AWS_SECRET_ACCESS_KEY }}
+      GDRIVE_FOLDER_ID: ${{ vars.GDRIVE_FOLDER_ID }}
+      GDRIVE_SHARED_DRIVE_ID: ${{ vars.GDRIVE_SHARED_DRIVE_ID }}
+      # Uno de los dos modos (gdrive-rclone-env.sh): OAuth (recomendado) o service account en unidad compartida
+      GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+      GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+      GDRIVE_RCLONE_TOKEN: ${{ secrets.GDRIVE_RCLONE_TOKEN }}
+      GDRIVE_SA_JSON: ${{ secrets.GDRIVE_SA_JSON }}
       BACKUP_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_IDENTITY }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Instalar age y cliente Postgres 18
+      - name: Instalar age, rclone y cliente Postgres 18
         run: bash scripts/eng-gates/install-pg18-client.sh
 
       - name: Bajar el último backup

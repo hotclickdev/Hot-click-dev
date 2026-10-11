@@ -48,17 +48,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Instalar age y cliente Postgres 18
+      - name: Instalar age, rclone y cliente Postgres 18
         run: bash scripts/eng-gates/install-pg18-client.sh
 
-      - name: Obtener dump (S3 cifrado o fixture)
+      - name: Obtener dump (Google Drive cifrado o fixture)
         id: dump
         env:
           USE_FIXTURE: ${{ github.event.inputs.use_fixture || 'false' }}
-          BACKUP_S3_URI: ${{ vars.BACKUP_S3_URI }}
-          AWS_DEFAULT_REGION: ${{ vars.BACKUP_AWS_REGION || 'us-east-2' }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_READ_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_READ_AWS_SECRET_ACCESS_KEY }}
+          GDRIVE_FOLDER_ID: ${{ vars.GDRIVE_FOLDER_ID }}
+          GDRIVE_SHARED_DRIVE_ID: ${{ vars.GDRIVE_SHARED_DRIVE_ID }}
+          # Uno de los dos modos (gdrive-rclone-env.sh): OAuth (recomendado) o service account en unidad compartida
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_RCLONE_TOKEN: ${{ secrets.GDRIVE_RCLONE_TOKEN }}
+          GDRIVE_SA_JSON: ${{ secrets.GDRIVE_SA_JSON }}
           BACKUP_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_IDENTITY }}
           # El drill semanal mira hasta 8 días atrás (el diario D5 exige 26 h).
           MAX_AGE_HOURS: '192'

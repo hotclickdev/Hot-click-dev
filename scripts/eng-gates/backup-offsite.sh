@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Verificación off-site del backup de Postgres (lado CI).
-#   fetch-latest <dir>   baja el .dump.age más nuevo de BACKUP_S3_URI (falla si tiene > MAX_AGE_HOURS)
+#   fetch-latest <dir>   baja de Google Drive (rclone) el hotclick-*.dump.age más nuevo (falla si tiene > MAX_AGE_HOURS)
 #   decrypt <in> <out>   descifra con la identidad age de BACKUP_AGE_IDENTITY (secreto)
 #   verify <dump>        tamaño mínimo + pg_restore --list + TABLE DATA de las tablas clave + lectura completa
 # Falla fuerte si faltan secretos: nunca "pasa" sin haber visto un backup real.
@@ -21,26 +21,20 @@ need() {
 }
 
 fetch_latest() {
-  local dir="$1" key ts age_h
-  need BACKUP_S3_URI AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
-  local bucket="${BACKUP_S3_URI#s3://}"; bucket="${bucket%%/*}"
-  local prefix="${BACKUP_S3_URI#s3://"$bucket"}"; prefix="${prefix#/}"; prefix="${prefix%/}"
-  # listado del mes actual y del anterior (el día 1 el último puede estar en el mes previo)
-  local listado="" p
-  for p in "$(date -u +%Y/%m)" "$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y/%m)"; do
-    listado+="$(aws s3api list-objects-v2 --bucket "$bucket" --prefix "${prefix:+$prefix/}$p/" \
-      --query 'Contents[].[LastModified,Key]' --output text 2>/dev/null | grep -v '^None$' || true)"$'\n'
-  done
-  read -r ts key < <(printf '%s' "$listado" | grep '\.dump\.age$' | sort -r | head -n1) || true
-  [[ -n "${key:-}" ]] || fail "no hay ningún .dump.age en ${BACKUP_S3_URI} para este mes ni el anterior"
-  age_h=$(( ( $(date -u +%s) - $(date -u -d "$ts" +%s) ) / 3600 ))
-  (( age_h <= MAX_AGE_HOURS )) || fail "el último backup ($key) tiene ${age_h} h (> ${MAX_AGE_HOURS} h): el timer del server no está subiendo"
+  local dir="$1" name epoch age_h
+  # shellcheck source=deploy/backup/gdrive-rclone-env.sh
+  source "$(dirname "$0")/../../deploy/backup/gdrive-rclone-env.sh"
+  gdrive_rclone_env || fail "configuración de Google Drive incompleta (ver arriba)"
+  name="$(gdrive_latest)" || fail "no se pudo listar la carpeta de Drive (credenciales o GDRIVE_FOLDER_ID)"
+  [[ -n "$name" ]] || fail "no hay ningún hotclick-*.dump.age en la carpeta de Drive"
+  epoch="$(gdrive_epoch_de "$name")" || fail "nombre de backup inesperado: $name"
+  age_h=$(( ( $(date -u +%s) - epoch ) / 3600 ))
+  (( age_h <= MAX_AGE_HOURS )) || fail "el último backup ($name) tiene ${age_h} h (> ${MAX_AGE_HOURS} h): el timer del server no está subiendo"
   mkdir -p "$dir"
-  local dest; dest="$dir/$(basename "$key")"
-  aws s3 cp --only-show-errors "s3://$bucket/$key" "$dest"
-  echo "file=$dest" >> "$OUT"
-  echo "key=$key" >> "$OUT"
-  echo "Último backup: $key (${age_h} h, $(stat -c%s "$dest") bytes cifrado)"
+  rclone copyto --retries 3 "gd:$name" "$dir/$name" || fail "no se pudo bajar $name"
+  echo "file=$dir/$name" >> "$OUT"
+  echo "key=$name" >> "$OUT"
+  echo "Último backup: $name (${age_h} h, $(stat -c%s "$dir/$name") bytes cifrado)"
 }
 
 decrypt() {
