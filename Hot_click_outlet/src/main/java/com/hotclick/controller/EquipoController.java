@@ -42,7 +42,7 @@ public class EquipoController {
         if (denegado != null) return denegado;
         Usuario currentUser = companyScope.getCurrentUser();
         if (currentUser == null || currentUser.getEmpresa() == null) {
-            return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+            return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         }
         ResponseEntity<ResponseDTO> invalido = validarInvitacion(body);
         if (invalido != null) return invalido;
@@ -64,7 +64,7 @@ public class EquipoController {
         if (denegado != null) return denegado;
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) {
-            return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+            return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         }
         String nuevoRol = body.get("rolEnEmpresa");
         if (nuevoRol == null || !ROLES_PERMITIDOS.contains(nuevoRol)) {
@@ -80,7 +80,7 @@ public class EquipoController {
         if (denegado != null) return denegado;
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) {
-            return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+            return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         }
         equipoService.eliminar(id, empresaId, companyScope.getCurrentUserId());
         return ResponseEntity.ok(ResponseDTO.success("Miembro eliminado del equipo", null));

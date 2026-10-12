@@ -55,7 +55,7 @@ public class EmprendedorRegistroService {
 
         // Correo del admin ya registrado
         if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase()))
-            throw new IllegalArgumentException("El correo ya está registrado");
+            throw new com.hotclick.exception.CorreoYaRegistradoException();
 
         // Generar slug si no viene
         String slug = dto.getSlug() != null && !dto.getSlug().isBlank()
