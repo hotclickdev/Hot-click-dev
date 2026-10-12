@@ -115,6 +115,9 @@ public class AdminAsignarController {
             usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
             usuario.setEstado(Constants.ESTADO_ACTIVO);
             usuario.setIntentosFallidos(0);
+            // P9-02: el vendedor no prueba que el correo sea del cliente; queda sin verificar
+            // hasta que el dueño real del correo restablezca su contraseña.
+            usuario.setCorreoVerificado(false);
 
             Optional<Rol> rolOpt = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);
             rolOpt.ifPresent(rol -> usuario.getRoles().add(rol));

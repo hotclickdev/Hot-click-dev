@@ -81,6 +81,7 @@ public class PasswordResetService {
         }
 
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
+        usuario.setCorreoVerificado(true); // el código llegó a su correo: lo prueba
         usuario.setBloqueadoHasta(null);
         usuario.setIntentosFallidos(0);
         // Si alguien más tenía una sesión abierta (p.ej. cuenta comprometida), este reset la tumba.
