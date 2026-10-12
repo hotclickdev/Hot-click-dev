@@ -22,10 +22,10 @@ public class BillingRenewalScheduler {
 
     private final SuscripcionService suscripcionService;
 
-    private final com.hotclick.service.suscripcion.SuscripcionTilopayService tilopayBilling;
+    private final com.hotclick.service.suscripcion.RenovacionesTilopayService tilopayBilling;
 
     public BillingRenewalScheduler(SuscripcionService suscripcionService,
-                                   com.hotclick.service.suscripcion.SuscripcionTilopayService tilopayBilling) {
+                                   com.hotclick.service.suscripcion.RenovacionesTilopayService tilopayBilling) {
         this.suscripcionService = suscripcionService;
         this.tilopayBilling = tilopayBilling;
     }
