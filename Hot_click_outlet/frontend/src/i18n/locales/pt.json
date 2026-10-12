@@ -2987,6 +2987,8 @@
     "sysResetItem5": "Publicações, depoimentos e prêmios",
     "sysResetKeep": "Usuários, funções e estrutura de tabelas são preservados",
     "sysResetInputLabel": "Digite ELIMINAR para confirmar",
+    "sysResetPasswordLabel": "Sua senha",
+    "sysResetPasswordHelp": "Por segurança, digite a senha que você usa para entrar no HotClick.",
     "sysResetCancel": "Cancelar",
     "sysResetDeleting": "Excluindo...",
     "sysResetConfirm": "Sim, excluir tudo",
