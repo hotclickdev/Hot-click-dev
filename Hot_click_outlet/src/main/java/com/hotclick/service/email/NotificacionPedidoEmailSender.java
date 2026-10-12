@@ -37,7 +37,8 @@ public class NotificacionPedidoEmailSender {
     private void enviarConfirmacionAlCliente(Pedido pedido) {
         Usuario cliente = pedido.getUsuarioFinal();
         if (cliente == null) return;
-        if (cliente.getCorreo() != null && !cliente.getCorreo().isBlank()) {
+        // POS sin cliente: «mostrador@hotclick.internal» no es una casilla real; enviarle rebota en SendGrid.
+        if (cliente.getCorreo() != null && !cliente.getCorreo().isBlank() && !cliente.getCorreo().endsWith(".internal")) {
             try {
                 resendEmailService.send(
                     cliente.getCorreo(),
