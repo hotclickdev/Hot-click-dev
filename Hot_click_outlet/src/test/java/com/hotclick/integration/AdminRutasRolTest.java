@@ -40,6 +40,7 @@ class AdminRutasRolTest extends BaseIntegrationTest {
         "GET /api/admin/mesas", "POST /api/admin/mesas", "PUT /api/admin/mesas/{id}",
         "POST /api/admin/mesas/{id}/regenerar-token", "DELETE /api/admin/mesas/{id}",
         "POST /api/admin/productos/generar-ia", "POST /api/admin/reset-datos",
+        "POST /api/admin/reset-codigo", "GET /api/admin/reset-confirmacion",
         // Reglas propias anteriores (authenticated + @PreAuthorize EMPRENDEDOR/ADMIN, scope en controlador)
         "GET /api/admin/gift-cards", "POST /api/admin/gift-cards", "DELETE /api/admin/gift-cards/{id}",
         "GET /api/admin/executive/dashboard", "POST /api/admin/executive/ai-summary",
