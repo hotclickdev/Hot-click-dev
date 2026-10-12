@@ -23,6 +23,15 @@ public class OrderPricingService {
      *
      * @param gcSaldoRestante saldo de la tarjeta de regalo que aún no usaron otros paquetes del mismo checkout
      */
+    /** CMP-2: el cupón pedido tiene que valer para al menos uno de los negocios del checkout. */
+    public void exigirCuponValido(String codigoCupon, java.util.Collection<Long> empresaIds) {
+        if (codigoCupon == null || codigoCupon.isBlank()) return;
+        for (Long empresaId : empresaIds) {
+            if (cuponService.validarParaEmpresa(codigoCupon, empresaId).isPresent()) return;
+        }
+        throw new IllegalArgumentException("El cupón no es válido o ya venció.");
+    }
+
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio, int gcSaldoRestante) {
         int costoEnvio = calcularCostoEnvio(metodoEnvio);

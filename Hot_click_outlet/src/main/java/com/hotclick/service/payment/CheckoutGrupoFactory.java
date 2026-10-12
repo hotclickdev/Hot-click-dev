@@ -54,6 +54,18 @@ public class CheckoutGrupoFactory {
             checkoutValidator.assertBodegaTenant(paquete.bodega(), paquete.bodega().getId());
             checkoutValidator.validarRetiroPaquete(paquete.metodoEnvio(), paquete.bodega());
         }
+        java.util.Set<Long> empresas = new java.util.LinkedHashSet<>();
+        for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
+            empresas.add(paquete.bodega().getEmpresa() != null ? paquete.bodega().getEmpresa().getId() : null);
+        }
+        // CMP-4: la bodega pedida en el body tiene que ser de uno de los negocios del carrito.
+        if (req.getBodegaId() != null && bodegaDefault != null) {
+            Long empresaBodega = bodegaDefault.getEmpresa() != null ? bodegaDefault.getEmpresa().getId() : null;
+            if (!empresas.contains(empresaBodega)) {
+                throw new IllegalArgumentException("La bodega elegida no corresponde a los productos del pedido.");
+            }
+        }
+        orderPricingService.exigirCuponValido(req.getCodigoCupon(), empresas);
 
         String grupoPago = "GP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
         int gcRestante = saldoGiftCard(req);
