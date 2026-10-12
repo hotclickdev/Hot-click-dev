@@ -63,9 +63,8 @@ public class PedidoController {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Estado inicial no permitido para un pedido manual."));
         }
         // P7-02: vendedor sin negocio → 403 (null solo para ADMIN de plataforma).
-        Long eid = companyScope.requireEmpresaIdOrAdmin();
-        // tenant-global-ok: carga la empresa propia por id; null solo ADMIN
-        Empresa empresa = eid != null ? empresaRepository.findById(eid).orElseThrow() : null;
+        companyScope.requireEmpresaIdOrAdmin();
+        Empresa empresa = empresaDelScope();
         try {
             Pedido nuevo = pedidoService.crearPedidoManual(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
