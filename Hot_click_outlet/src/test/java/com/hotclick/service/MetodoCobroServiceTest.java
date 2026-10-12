@@ -14,7 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -39,12 +38,14 @@ class MetodoCobroServiceTest {
     @Mock CompanyScope companyScope;
     @Mock InputSanitizer sanitizer;
     @Mock MetodoCobroCambioService cambioService;
-    @InjectMocks MetodoCobroService service;
+    MetodoCobroService service;
 
     private Empresa empresa;
 
     @BeforeEach
     void setUp() {
+        service = new MetodoCobroService(repo, empresaRepo, companyScope, sanitizer,
+            new MetodoCobroAltaService(repo, cambioService));
         empresa = new Empresa();
         empresa.setId(9L);
         empresa.setNombreEmpresa("Taller CR");
