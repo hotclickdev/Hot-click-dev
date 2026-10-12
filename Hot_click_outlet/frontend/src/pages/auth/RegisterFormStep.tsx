@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Turnstile } from '@marsidev/react-turnstile'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
+import { useClerkDisponible } from '@/components/auth/clerkDisponibleContext'
 import MarcaComprador from '@/components/comprador/header/MarcaComprador'
 import PhoneField from '@/components/ui/PhoneField'
 import { IcoCandado, IcoSobre, IcoUsuario } from '../perfil/cuenta/iconosCuenta'
@@ -16,7 +17,6 @@ import { guardarDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 /** Texto del campo de cuenta (Figma `28:1183`). Misma clase que `campoCuenta.ts`. */
 const CLASE_ENTRADA = 'hc-input-libre min-w-0 flex-1 bg-transparent text-[15px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-500'
 
-const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
 type RegisterFormStepProps = PropsCarritoRecuperable & {
@@ -44,6 +44,7 @@ export default function RegisterFormStep({
 }: RegisterFormStepProps) {
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const [declaraMayoriaEdad, setDeclaraMayoriaEdad] = useState(false)
+  const clerkEnabled = useClerkDisponible()
 
   if (modo === 'emprendedor') {
     return (
@@ -63,7 +64,7 @@ export default function RegisterFormStep({
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-3 px-4 pb-2 pt-[18px] leading-[normal]">
-        {CLERK_ENABLED && (
+        {clerkEnabled && (
           <>
             <SocialLoginButtons mode="signUp" variante="figma" />
             <div className="flex items-center gap-[10px]">
