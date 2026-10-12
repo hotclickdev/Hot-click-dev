@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-DcZpP-fz.js";function t(){return e()}export{t};
