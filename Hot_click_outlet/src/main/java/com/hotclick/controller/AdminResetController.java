@@ -70,6 +70,13 @@ public class AdminResetController {
         org.slf4j.LoggerFactory.getLogger(AdminResetController.class).warn(
             "[reset-datos] empresa={} borrada por usuario={}", empresaId, actor != null ? actor.getId() : null);
 
+        // Encargos (FK a pedido y producto, sin ON DELETE; sus eventos caen en cascada) y reportes de
+        // producto (FK sin ON DELETE): sin esto el borrado de productos daba 500 (revisión seg 063eb7f0d).
+        jdbc.update("DELETE FROM hot_click_encargo_tb WHERE fk_id_empresa = ? OR fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId, empresaId);
+        jdbc.update("DELETE FROM hot_click_reporte_producto_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+
         // Hijos de pedido
         jdbc.update("DELETE FROM hot_click_pago_tb WHERE fk_id_pedido IN " +
             "(SELECT id_pedido FROM hot_click_pedido_tb WHERE fk_id_empresa = ?)", empresaId);
