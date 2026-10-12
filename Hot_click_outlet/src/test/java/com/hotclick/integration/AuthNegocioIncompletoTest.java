@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Cuenta con registro de negocio a medias: códigos claros (403 EMPRESA_REQUERIDA / 409 CORREO_YA_REGISTRADO) y alta atómica. */
 @DisplayName("Negocio incompleto: códigos de error claros y alta atómica")
-class NegocioIncompletoTest extends BaseIntegrationTest {
+class AuthNegocioIncompletoTest extends BaseIntegrationTest {
 
     @MockitoBean private TurnstileService turnstileService;
     @MockitoSpyBean private BodegaDespachoInicialService bodegaDespachoInicialService;
