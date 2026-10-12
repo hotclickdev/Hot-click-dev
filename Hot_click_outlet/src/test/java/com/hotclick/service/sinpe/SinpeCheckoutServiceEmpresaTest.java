@@ -137,6 +137,6 @@ class SinpeCheckoutServiceEmpresaTest {
         assertThat(captor.getAllValues()).allMatch(p -> p.getEmpresa() == empresa);
         assertThat(captor.getValue().getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         assertThat(resp.getCancelToken()).isEqualTo("tok-test");
-        assertThat(resp.getProveedor()).isEqualTo(Constants.PROVEEDOR_SINPE);
+        assertThat(resp.getProveedor()).isEqualTo("EFECTIVO"); // el front muestra la pantalla de efectivo
     }
 }

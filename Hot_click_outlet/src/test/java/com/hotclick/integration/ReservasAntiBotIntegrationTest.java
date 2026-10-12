@@ -40,7 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Regla anti-bot de reservas (QA-CONC-4) de punta a punta: checkout de invitado real
- * (efectivo: flujo manual sin pasarela; el SINPE manual ya no crea pedidos) + scheduler de expiración con reloj controlable.
+ * (efectivo: flujo manual sin pasarela y sin TTL; el SINPE manual ya no crea pedidos) + scheduler de
+ * expiración con reloj controlable.
  */
 @DisplayName("[QA-CONC-4] Regla anti-bot de reservas — checkout + liberación diferida")
 class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
@@ -134,8 +135,8 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         reservar("203.0.113.10", 5);
         reservar("203.0.113.10", 5);
         assertThat(reservado()).isEqualTo(10);
-        assertThat(pagosPendientes()).allSatisfy(p ->
-            assertThat(p.getFechaExpiracion()).isAfter(LocalDateTime.now(Constants.ZONA_CR).plusHours(23)));
+        // Efectivo es manual: sin marca anti-bot no tiene vencimiento.
+        assertThat(pagosPendientes()).allSatisfy(p -> assertThat(p.getFechaExpiracion()).isNull());
 
         avanzar(20);
         cleanup.ejecutar();
@@ -154,7 +155,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         assertThat(reservado()).isEqualTo(15);
 
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
-        assertThat(pagosPendientes().stream().filter(p -> p.getFechaExpiracion().isBefore(ahora.plusMinutes(16))))
+        assertThat(pagosPendientes().stream().filter(p -> p.getFechaExpiracion() != null && p.getFechaExpiracion().isBefore(ahora.plusMinutes(16))))
             .hasSize(3);
 
         avanzar(10);

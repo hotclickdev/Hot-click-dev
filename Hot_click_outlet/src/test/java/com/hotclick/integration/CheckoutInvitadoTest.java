@@ -196,6 +196,81 @@ class CheckoutInvitadoTest extends BaseIntegrationTest {
         mockMvc.perform(post("/api/payments/cancel/" + numero)).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    @DisplayName("Correo con cuenta: 409 CUENTA_EXISTENTE, no se crea pedido ni se pega a la cuenta")
+    void correoConCuentaExigeIniciarSesion() throws Exception {
+        long antes = pedidoRepository.count();
+        checkout("/api/payments/guest-checkout", "TILOPAY", testUser.getCorreo().toUpperCase())
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.data.codigo").value("CUENTA_EXISTENTE"))
+            .andExpect(jsonPath("$.data.siguientePaso").value("/login?redirect=%2Fcheckout"));
+        bodega.setAceptaEfectivo(true);
+        bodegaRepository.saveAndFlush(bodega);
+        checkout("/api/sinpe/guest-checkout", "EFECTIVO", testUser.getCorreo())
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.data.codigo").value("CUENTA_EXISTENTE"));
+        assertThat(pedidoRepository.count()).isEqualTo(antes);
+        assertThat(reservado()).isZero();
+    }
+
+    @Test
+    @DisplayName("Mismo precio con tarjeta o SINPE/efectivo aunque el negocio tenga % de descuento SINPE")
+    void mismoPrecioSinDescuentoPorMetodo() throws Exception {
+        empresa.setPctDescuentoSinpe(new java.math.BigDecimal("10"));
+        empresaRepository.saveAndFlush(empresa);
+        bodega.setAceptaEfectivo(true);
+        bodegaRepository.saveAndFlush(bodega);
+        String tarjeta = com.jayway.jsonpath.JsonPath.read(
+            checkout("/api/payments/guest-checkout", "TILOPAY", "p1" + System.nanoTime() + "@test.cr")
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(), "$.data.numeroPedido");
+        String efectivo = com.jayway.jsonpath.JsonPath.read(
+            checkout("/api/sinpe/guest-checkout", "EFECTIVO", "p2" + System.nanoTime() + "@test.cr")
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(), "$.data.numeroPedido");
+        int totalTarjeta = pedidoRepository.findByNumeroPedido(tarjeta).orElseThrow().getTotalPedido();
+        int totalEfectivo = pedidoRepository.findByNumeroPedido(efectivo).orElseThrow().getTotalPedido();
+        assertThat(totalTarjeta).isEqualTo(producto.getPrecioVenta());
+        assertThat(totalEfectivo).isEqualTo(totalTarjeta);
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder estado(String numero, String remoto) {
+        return get("/api/payments/status/" + numero).with(r -> { r.setRemoteAddr(remoto); return r; });
+    }
+
+    @Test
+    @DisplayName("Estado de pago: tercero 404, invitado con token firmado 200, dueño 200, otro usuario 404")
+    void estadoPagoSoloDuenoOTokenFirmado() throws Exception {
+        String respuesta = checkout("/api/payments/guest-checkout", "TILOPAY", "e" + System.nanoTime() + "@test.cr")
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String numero = com.jayway.jsonpath.JsonPath.read(respuesta, "$.data.numeroPedido");
+        String token = com.jayway.jsonpath.JsonPath.read(respuesta, "$.data.cancelToken");
+
+        mockMvc.perform(estado(numero, "10.8.0.1")).andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.data").doesNotExist());
+        mockMvc.perform(estado(numero, "10.8.0.1").param("token", "falso")).andExpect(status().isNotFound());
+        mockMvc.perform(estado(numero, "10.8.0.1").header("Authorization", userToken)).andExpect(status().isNotFound());
+        mockMvc.perform(estado(numero, "10.8.0.1").param("token", token)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.numeroPedido").value(numero));
+
+        String propio = com.jayway.jsonpath.JsonPath.read(mockMvc.perform(post("/api/payments/checkout")
+                .header("Authorization", userToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(r -> { r.setRemoteAddr("10.8.0.2"); return r; })
+                .content(cuerpo("TILOPAY", testUser.getCorreo())))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(), "$.data.numeroPedido");
+        mockMvc.perform(estado(propio, "10.8.0.2").header("Authorization", userToken)).andExpect(status().isOk());
+        mockMvc.perform(estado(propio, "10.8.0.2")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Estado de pago: tope por IP => 429")
+    void estadoPagoTopePorIp() throws Exception {
+        String remoto = "10.8.1." + (++ip);
+        for (int i = 0; i < 60; i++) {
+            mockMvc.perform(estado("ORD-NOEXISTE0002", remoto)).andExpect(status().isNotFound());
+        }
+        mockMvc.perform(estado("ORD-NOEXISTE0002", remoto)).andExpect(status().isTooManyRequests());
+    }
+
     private int reservado() {
         return productoRepository.findById(producto.getId()).orElseThrow().getStockReservado();
     }
