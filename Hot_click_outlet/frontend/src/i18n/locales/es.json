@@ -3089,7 +3089,12 @@
     "datosCleanOk": "Operación completada",
     "datosCleanError": "Error en la operación",
     "saveBtn": "Guardar cambios",
-    "savedLabel": "Guardado"
+    "savedLabel": "Guardado",
+    "sysResetCodeLabel": "Código de confirmación",
+    "sysResetCodeSend": "Enviar código",
+    "sysResetCodeResend": "Reenviar",
+    "sysResetCodeHelp": "Entrás con Google u otra cuenta: te mandamos un código de 6 dígitos a tu correo verificado.",
+    "sysResetCodeSent": "Te enviamos un código a tu correo."
   },
   "adminFinanzas": {
     "title": "Finanzas",

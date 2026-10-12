@@ -3089,7 +3089,12 @@
     "datosCleanInactiveDesc": "Deactivates all products with zero stock",
     "datosCleanInactiveBtn": "Archive",
     "datosCleanOk": "Operation completed",
-    "datosCleanError": "Operation failed"
+    "datosCleanError": "Operation failed",
+    "sysResetCodeLabel": "Confirmation code",
+    "sysResetCodeSend": "Send code",
+    "sysResetCodeResend": "Resend",
+    "sysResetCodeHelp": "You sign in with Google or another account: we send a 6-digit code to your verified email.",
+    "sysResetCodeSent": "We sent a code to your email."
   },
   "adminFinanzas": {
     "title": "Finances",

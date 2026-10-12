@@ -3089,7 +3089,12 @@
     "datosCleanInactiveDesc": "Desativa todos os produtos com estoque zero",
     "datosCleanInactiveBtn": "Arquivar",
     "datosCleanOk": "Operação concluída",
-    "datosCleanError": "Erro na operação"
+    "datosCleanError": "Erro na operação",
+    "sysResetCodeLabel": "Código de confirmação",
+    "sysResetCodeSend": "Enviar código",
+    "sysResetCodeResend": "Reenviar",
+    "sysResetCodeHelp": "Você entra com Google ou outra conta: enviamos um código de 6 dígitos para seu e-mail verificado.",
+    "sysResetCodeSent": "Enviamos um código para seu e-mail."
   },
   "adminFinanzas": {
     "title": "Finanças",
