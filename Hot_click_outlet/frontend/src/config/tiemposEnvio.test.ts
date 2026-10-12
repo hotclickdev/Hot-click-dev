@@ -15,7 +15,7 @@ describe('tiempos de envío: una sola fuente (D13)', () => {
     expect(TIEMPOS_ENVIO_PROVISIONALES).toBe(json.provisional)
     // Confirmados por el negocio el 2-oct-2026.
     expect(TIEMPOS_ENVIO_PROVISIONALES).toBe(false)
-    expect(TIEMPOS_ENVIO).toEqual({ rapido: { desdeMin: 30, hastaHoras: 2 }, normalGam: { desdeDias: 2, hastaDias: 4 }, fueraGam: { desdeDias: 3, hastaDias: 4 } })
+    expect(TIEMPOS_ENVIO).toEqual({ rapido: { desdeMin: 30, hastaHoras: 2, ventanaDesdeHora: 8, ventanaHastaHora: 19 }, normalGam: { desdeDias: 2, hastaDias: 4 }, fueraGam: { desdeDias: 3, hastaDias: 4 } })
   })
 
   it('/envios y el checkout muestran el mismo texto que la config', () => {
