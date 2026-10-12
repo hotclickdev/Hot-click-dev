@@ -31,6 +31,13 @@ public class RefreshToken {
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
+    /** P1-03: negocio activo elegido por el usuario (null = el principal de la cuenta). */
+    @Column(name = "fk_id_empresa_activa")
+    private Long empresaActivaId;
+
+    public Long getEmpresaActivaId()             { return empresaActivaId; }
+    public void setEmpresaActivaId(Long v)       { this.empresaActivaId = v; }
+
     public boolean isExpired()  { return LocalDateTime.now(Constants.ZONA_CR).isAfter(expiresAt); }
     public boolean isRevoked()  { return revokedAt != null; }
     public boolean isValid()    { return !isExpired() && !isRevoked(); }

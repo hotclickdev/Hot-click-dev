@@ -46,7 +46,14 @@ public class RefreshTokenService {
     @Transactional
     public RefreshToken crear(Usuario usuario) {
         repo.revokeAllByUsuario(usuario, LocalDateTime.now(Constants.ZONA_CR));
-        return persistNew(usuario);
+        return persistNew(usuario, null);
+    }
+
+    /** P1-03: nueva sesión de refresh atada al negocio elegido (cambiar-negocio / seleccionar-empresa). */
+    @Transactional
+    public RefreshToken crear(Usuario usuario, Long empresaActivaId) {
+        repo.revokeAllByUsuario(usuario, LocalDateTime.now(Constants.ZONA_CR));
+        return persistNew(usuario, empresaActivaId);
     }
 
     /**
@@ -76,7 +83,7 @@ public class RefreshTokenService {
 
         existing.setRevokedAt(LocalDateTime.now(Constants.ZONA_CR));
         repo.save(existing);
-        return persistNew(existing.getUsuario());
+        return persistNew(existing.getUsuario(), existing.getEmpresaActivaId());
     }
 
     @Transactional(readOnly = true)
@@ -133,12 +140,13 @@ public class RefreshTokenService {
         }
     }
 
-    private RefreshToken persistNew(Usuario usuario) {
+    private RefreshToken persistNew(Usuario usuario, Long empresaActivaId) {
         String raw = UUID.randomUUID().toString();
         RefreshToken rt = new RefreshToken();
         rt.setToken(hashToken(raw));
         rt.setRawToken(raw);
         rt.setUsuario(usuario);
+        rt.setEmpresaActivaId(empresaActivaId);
         rt.setExpiresAt(LocalDateTime.now(Constants.ZONA_CR).plusDays(REFRESH_EXPIRY_DAYS));
         RefreshToken saved = repo.save(rt);
         saved.setRawToken(raw);

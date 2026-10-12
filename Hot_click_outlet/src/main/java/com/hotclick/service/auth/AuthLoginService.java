@@ -41,16 +41,17 @@ public class AuthLoginService {
         return loginHandler.changePassword(body, request);
     }
 
-    public ResponseEntity<?> cambiarNegocio(Map<String, Object> body, HttpServletRequest request) {
-        return tenantSwitchHandler.cambiarNegocio(body, request);
+    public ResponseEntity<?> cambiarNegocio(Map<String, Object> body, HttpServletRequest request,
+                                            jakarta.servlet.http.HttpServletResponse response) {
+        return tenantSwitchHandler.cambiarNegocio(body, request, response);
     }
 
     public ResponseEntity<?> misNegocios(HttpServletRequest request) {
         return tenantSwitchHandler.misNegocios(request);
     }
 
-    public ResponseEntity<?> seleccionarEmpresa(Map<String, Object> body) {
-        return tenantSwitchHandler.seleccionarEmpresa(body);
+    public ResponseEntity<?> seleccionarEmpresa(Map<String, Object> body, jakarta.servlet.http.HttpServletResponse response) {
+        return tenantSwitchHandler.seleccionarEmpresa(body, response);
     }
 
     public ResponseEntity<?> verify2FA(Map<String, String> body, HttpServletRequest httpRequest) {
