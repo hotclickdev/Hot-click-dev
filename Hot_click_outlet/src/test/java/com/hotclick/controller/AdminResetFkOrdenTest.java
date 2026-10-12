@@ -22,12 +22,17 @@ class AdminResetFkOrdenTest {
     @Mock JdbcTemplate jdbc;
     @Mock CompanyScope companyScope;
     @Mock PropietarioGuard propietarioGuard;
+    @Mock org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     @InjectMocks AdminResetController controller;
 
     @Test
     void borraEncargoYReporteProductoAntesDePedidoYProducto() {
         when(companyScope.getCurrentEmpresaId()).thenReturn(5L);
-        controller.resetearDatos();
+        com.hotclick.model.Usuario dueno = new com.hotclick.model.Usuario();
+        dueno.setContrasenaHash("hash");
+        when(companyScope.getCurrentUser()).thenReturn(dueno);
+        when(passwordEncoder.matches("clave", "hash")).thenReturn(true);
+        controller.resetearDatos(java.util.Map.of("password", "clave"));
 
         List<String> sql = new ArrayList<>();
         mockingDetails(jdbc).getInvocations().forEach(inv -> {
@@ -40,6 +45,19 @@ class AdminResetFkOrdenTest {
         int producto = indice(sql, "DELETE FROM hot_click_producto_tb ");
         assertThat(encargo).isNotNegative().isLessThan(pedido).isLessThan(producto);
         assertThat(reporte).isNotNegative().isLessThan(producto);
+    }
+
+    @Test
+    void sinPasswordOIncorrecta_noBorraNada() {
+        when(companyScope.getCurrentEmpresaId()).thenReturn(5L);
+        com.hotclick.model.Usuario dueno = new com.hotclick.model.Usuario();
+        dueno.setContrasenaHash("hash");
+        when(companyScope.getCurrentUser()).thenReturn(dueno);
+        when(passwordEncoder.matches("mala", "hash")).thenReturn(false);
+
+        assertThat(controller.resetearDatos(null).getStatusCode().value()).isEqualTo(400);
+        assertThat(controller.resetearDatos(java.util.Map.of("password", "mala")).getStatusCode().value()).isEqualTo(400);
+        verifyNoInteractions(jdbc);
     }
 
     private static int indice(List<String> sql, String prefijo) {

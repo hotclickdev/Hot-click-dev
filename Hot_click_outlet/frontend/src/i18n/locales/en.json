@@ -2983,6 +2983,8 @@
     "sysResetItem5": "Publications, testimonials and awards",
     "sysResetKeep": "Users, roles and table structure are preserved",
     "sysResetInputLabel": "Type ELIMINAR to confirm",
+    "sysResetPasswordLabel": "Your password",
+    "sysResetPasswordHelp": "For security, enter the password you use to sign in to HotClick.",
     "sysResetCancel": "Cancel",
     "sysResetDeleting": "Deleting...",
     "sysResetConfirm": "Yes, delete everything",

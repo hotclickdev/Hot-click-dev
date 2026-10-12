@@ -138,6 +138,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new PrefixLimit("/api/pedidos/", "/notificar", 5, 60, true),   // 5 notificar calls/min per IP
         // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
         new PrefixLimit("/api/payments/tilopay/", null, 10, 60, true),
+        // Borrado de datos con contraseña: frena adivinar la contraseña por esta ruta
+        new PrefixLimit("/api/admin/reset-", null, 10, 300, true),
         // QR de pago POS público: cada POST crea checkout o intento en ONVO/Stripe
         new PrefixLimit("/api/pos/qr/pago/", null, 10, 60, true),
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE

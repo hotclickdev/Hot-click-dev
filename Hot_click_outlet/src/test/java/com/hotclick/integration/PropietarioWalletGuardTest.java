@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("P9-04 / P10-02 | reset-datos y retiros solo del PROPIETARIO")
@@ -61,8 +62,16 @@ class PropietarioWalletGuardTest extends BaseIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON).content(payout)).andReturn().getResponse().getStatus();
         assertThat(st).as("el propietario pasa el guard").isNotEqualTo(403);
         // En H2 falta alguna tabla del borrado (BadSqlGrammar); acá solo importa que el guard deja pasar.
-        int reset = mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", tokenDueno))
+        // (c) sin contraseña o con contraseña mala no borra
+        mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", tokenDueno))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", tokenDueno)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"password\":\"mala\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.data.codigo").value("PASSWORD_INCORRECTA"));
+        int reset = mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", tokenDueno)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"password\":\"Test1234!\"}"))
             .andReturn().getResponse().getStatus();
-        assertThat(reset).isNotEqualTo(403);
+        assertThat(reset).isNotEqualTo(403).isNotEqualTo(400);
     }
 }

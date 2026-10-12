@@ -34,10 +34,27 @@ public class AdminResetController {
     @Autowired private CompanyScope  companyScope;
     @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
     @Autowired private ResetPlataformaKeepQaService resetPlataformaKeepQaService;
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    static final String PASSWORD_INCORRECTA = "PASSWORD_INCORRECTA";
+
+    /** Borrado de datos: exige volver a escribir la contraseña del usuario que lo pide (seg-altos-2 (c)). */
+    private ResponseEntity<ResponseDTO> exigirPassword(Map<String, String> body) {
+        String password = body == null ? null : body.get("password");
+        var actor = companyScope.getCurrentUser();
+        if (password == null || password.isEmpty() || actor == null || actor.getContrasenaHash() == null
+                || !passwordEncoder.matches(password, actor.getContrasenaHash())) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                "Contraseña incorrecta. Escribí tu contraseña para confirmar.", Map.of("codigo", PASSWORD_INCORRECTA)));
+        }
+        return null;
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/reset-plataforma-qa")
     public ResponseEntity<ResponseDTO> resetearPlataformaQa(@RequestBody(required = false) Map<String, String> body) {
+        ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
+        if (sinPassword != null) return sinPassword;
         String confirmacion = body == null ? null : body.get("confirmacion");
         if (!ResetPlataformaKeepQaService.CONFIRMACION.equals(confirmacion)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(
@@ -52,10 +69,12 @@ public class AdminResetController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping("/reset-datos")
     @Transactional
-    public ResponseEntity<ResponseDTO> resetearDatos() {
+    public ResponseEntity<ResponseDTO> resetearDatos(@RequestBody(required = false) Map<String, String> body) {
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) {
             if (companyScope.isAdminIT()) {
+                ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
+                if (sinPassword != null) return sinPassword;
                 Map<String, Object> resumen = resetPlataformaKeepQaService.ejecutar();
                 return ResponseEntity.ok(ResponseDTO.success(
                     "Se borraron tiendas, usuarios y productos. Quedan admin, las 3 cuentas QA y el mostrador POS.",
@@ -66,6 +85,8 @@ public class AdminResetController {
         }
         // P9-04: solo el PROPIETARIO (no LECTOR/EDITOR ni sesión de soporte) borra los datos del negocio.
         propietarioGuard.exigirPropietario(empresaId);
+        ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
+        if (sinPassword != null) return sinPassword;
         var actor = companyScope.getCurrentUser();
         org.slf4j.LoggerFactory.getLogger(AdminResetController.class).warn(
             "[reset-datos] empresa={} borrada por usuario={}", empresaId, actor != null ? actor.getId() : null);
