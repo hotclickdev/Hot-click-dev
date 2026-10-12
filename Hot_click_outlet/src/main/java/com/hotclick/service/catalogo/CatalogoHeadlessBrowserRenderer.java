@@ -53,8 +53,11 @@ public class CatalogoHeadlessBrowserRenderer {
         try {
             driver = new ChromeDriver(options);
             driver.manage().timeouts().pageLoadTimeout(TIMEOUT_NAVEGADOR);
+            UrlExternaSegura.validar(url);
             driver.get(url);
             Thread.sleep(4_000);
+            // P11-01: si la página redirigió (HTTP o JS) a un destino interno, se descarta.
+            UrlExternaSegura.validar(driver.getCurrentUrl());
             return driver.getPageSource();
         } finally {
             if (driver != null) {

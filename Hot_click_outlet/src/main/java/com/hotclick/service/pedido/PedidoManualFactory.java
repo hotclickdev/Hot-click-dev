@@ -34,13 +34,22 @@ public class PedidoManualFactory {
     @Autowired private N8nWebhookService n8nWebhookService;
     @Autowired private PedidoPagoManualService pedidoPagoManualService;
 
-    public Pedido crearPedidoManual(ManualPedidoDTO dto, Empresa empresa) {
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + dto.getUsuarioId()));
+    /** P7-02: estados con los que un pedido manual de /api/pedidos/manual puede nacer (los de la UI). */
+    public static final java.util.Set<String> ESTADOS_INICIALES = java.util.Set.of(
+        Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_PAGADO, "EN_PREPARACION");
+    static final String MSG_CLIENTE = "Cliente no encontrado. Búscalo en tus clientes o créalo primero.";
 
-        Long bodegaId = dto.getBodegaId() != null ? dto.getBodegaId() : 1L;
-        Bodega bodega = bodegaRepository.findById(bodegaId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada"));
+    public Pedido crearPedidoManual(ManualPedidoDTO dto, Empresa empresa) {
+        Long empresaId = empresa != null ? empresa.getId() : null; // null solo ADMIN de plataforma
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+            .orElseThrow(() -> new RecursoNoEncontradoException(MSG_CLIENTE));
+        if (empresaId != null && !usuarioRepository.esClienteDeEmpresa(usuario.getId(), empresaId)) {
+            // P7-02: mismo mensaje que si no existiera, para no enumerar usuarios de otros negocios.
+            throw new RecursoNoEncontradoException(MSG_CLIENTE);
+        }
+
+        Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
+        String estadoInicial = dto.getEstadoPedido() != null ? dto.getEstadoPedido() : Constants.PEDIDO_PENDIENTE;
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
@@ -50,7 +59,7 @@ public class PedidoManualFactory {
         pedido.setMetodoEnvio(dto.getMetodoEnvio() != null ? dto.getMetodoEnvio() : Constants.ENVIO_RETIRO);
         pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "SINPE");
         pedido.setCostoEnvio(dto.getCostoEnvio() != null ? dto.getCostoEnvio() : 0);
-        pedido.setEstadoPedido(dto.getEstadoPedido() != null ? dto.getEstadoPedido() : Constants.PEDIDO_PENDIENTE);
+        pedido.setEstadoPedido(estadoInicial);
         pedido.setNotas(dto.getNotas());
         if (dto.getOrigen() != null) pedido.setOrigen(dto.getOrigen());
         pedido.setDescuentoTotal(0);
@@ -70,11 +79,20 @@ public class PedidoManualFactory {
 
         for (ManualPedidoDTO.ItemDTO itemDto : dto.getItems()) {
             Producto producto = productoMap.get(itemDto.getProductoId());
-            if (producto == null) throw new RecursoNoEncontradoException("Producto", itemDto.getProductoId());
+            if (producto == null || (empresaId != null && (producto.getEmpresa() == null
+                    || !empresaId.equals(producto.getEmpresa().getId())))) {
+                throw new RecursoNoEncontradoException("Producto", itemDto.getProductoId());
+            }
 
-            int precio   = itemDto.getPrecioUnitario() != null ? itemDto.getPrecioUnitario() : producto.getPrecioVenta();
-            int costo    = producto.getPrecioCompra();
+            int precioCatalogo = producto.getPrecioVenta() != null ? producto.getPrecioVenta() : 0;
+            int precio   = itemDto.getPrecioUnitario() != null ? itemDto.getPrecioUnitario() : precioCatalogo;
+            // P7-02: el vendedor puede rebajar su precio, no inflarlo ni dejarlo negativo.
+            if (precio < 0 || precio > precioCatalogo) {
+                throw new IllegalArgumentException("El precio debe estar entre 0 y el precio de venta del producto.");
+            }
+            int costo    = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
+            if (cantidad < 1) throw new IllegalArgumentException("La cantidad debe ser al menos 1.");
 
             PedidoItem item = new PedidoItem();
             item.setPedido(pedido);
@@ -108,5 +126,20 @@ public class PedidoManualFactory {
             n8nWebhookService.notificarPedidoNuevo(saved);
         }
         return saved;
+    }
+
+    /** P7-02: la bodega debe ser del negocio; si la pedida no lo es (la UI manda 1), se usa la primera del negocio. */
+    private Bodega resolverBodega(Long bodegaId, Long empresaId) {
+        if (empresaId == null) {
+            return bodegaRepository.findById(bodegaId != null ? bodegaId : 1L)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada"));
+        }
+        if (bodegaId != null) {
+            Bodega b = bodegaRepository.findById(bodegaId).orElse(null);
+            if (b != null && b.getEmpresa() != null && empresaId.equals(b.getEmpresa().getId())) return b;
+        }
+        return bodegaRepository.findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresaId, Constants.ESTADO_ACTIVO)
+            .stream().findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Tu negocio no tiene una bodega activa."));
     }
 }

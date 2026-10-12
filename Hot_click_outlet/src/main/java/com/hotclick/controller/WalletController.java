@@ -19,6 +19,9 @@ import java.util.Map;
 @RequestMapping("/api")
 public class WalletController {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.hotclick.security.PropietarioGuard propietarioGuard;
+
     private final WalletService walletService;
     private final CompanyScope  companyScope;
 
@@ -62,6 +65,7 @@ public class WalletController {
     @PreAuthorize("hasAnyRole('EMPRENDEDOR')")
     public ResponseEntity<PayoutRequest> solicitarPayout(@RequestBody PayoutRequestDTO dto) {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        propietarioGuard.exigirPropietario(empresaId); // P10-02
         validate(dto);
         PayoutRequest pr = walletService.solicitarPayout(
             empresaId,

@@ -166,6 +166,19 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
            nativeQuery = true)
     List<Object[]> statsPorUsuario(@Param("userId") Long userId);
 
+    /** P8-01: mismas estadísticas pero solo con pedidos de un negocio. */
+    @Query(value = "SELECT COUNT(p.id_pedido), COALESCE(SUM(p.total_pedido), 0) " +
+                   "FROM hot_click_pedido_tb p " +
+                   "WHERE p.fk_id_usuario_final = :userId AND p.fk_id_empresa = :empresaId " +
+                   "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO')",
+           nativeQuery = true)
+    List<Object[]> statsPorUsuarioYEmpresa(@Param("userId") Long userId, @Param("empresaId") Long empresaId);
+
+    /** P8-01: historial del cliente solo en un negocio. */
+    @Query("SELECT p FROM Pedido p WHERE p.usuarioFinal.id = :usuarioId AND p.empresa.id = :empresaId ORDER BY p.fechaPedido DESC")
+    Page<Pedido> findByUsuarioFinalIdAndEmpresaIdOrderByFechaPedidoDesc(@Param("usuarioId") Long usuarioId,
+            @Param("empresaId") Long empresaId, Pageable pageable);
+
     /**
      * Reporte IVA — agregados financieros del período (ventas POS + e-commerce).
      * Orden de columnas: cantidadVentas, ventasTotales, subtotal, costoEnvio, cmv,

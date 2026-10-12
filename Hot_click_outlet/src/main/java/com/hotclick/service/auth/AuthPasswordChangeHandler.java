@@ -25,6 +25,7 @@ public class AuthPasswordChangeHandler {
     @Autowired private RefreshTokenService         refreshTokenService;
     @Autowired private SecurityAuditService        securityAuditService;
     @Autowired private AuthSupport                 authSupport;
+    @Autowired private com.github.benmanes.caffeine.cache.Cache<String, org.springframework.security.core.userdetails.UserDetails> userDetailsCache;
 
     public ResponseEntity<ResponseDTO> changePassword(Map<String, String> body, HttpServletRequest request) {
         String actual = body.get("contrasenaActual");
@@ -39,7 +40,10 @@ public class AuthPasswordChangeHandler {
                 return ResponseEntity.status(401).body(ResponseDTO.error("La contraseña actual es incorrecta"));
             }
             usuario.setContrasenaHash(passwordEncoder.encode(nueva));
+            // P1-02: todo access token emitido antes de ahora deja de valer (incluido el robado).
+            usuario.setSesionesInvalidadasEn(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
             usuarioService.guardar(usuario);
+            userDetailsCache.invalidate(usuario.getCorreo());
             // Revocar todos los refresh tokens para forzar re-login en otros dispositivos
             refreshTokenService.revocarTodosDeUsuario(usuario);
             AuthAuditSupport.run(log, () -> securityAuditService.logPasswordChanged(usuario.getId(), usuario.getCorreo(), request));

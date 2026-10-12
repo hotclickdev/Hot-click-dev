@@ -57,11 +57,23 @@ public class PedidoController {
     @PostMapping("/manual")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crearPedidoManual(@Valid @RequestBody ManualPedidoDTO dto) {
+        // P7-02: el cliente no elige ENTREGADO u otros estados finales.
+        if (dto.getEstadoPedido() != null
+                && !com.hotclick.service.pedido.PedidoManualFactory.ESTADOS_INICIALES.contains(dto.getEstadoPedido())) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Estado inicial no permitido para un pedido manual."));
+        }
+        // P7-02: vendedor sin negocio → 403 (null solo para ADMIN de plataforma).
+        companyScope.requireEmpresaIdOrAdmin();
+        Empresa empresa = empresaDelScope();
         try {
-            Pedido nuevo = pedidoService.crearPedidoManual(dto, empresaDelScope());
+            Pedido nuevo = pedidoService.crearPedidoManual(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
-        } catch (Exception e) {
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se pudo crear el pedido."));
         }
     }
 

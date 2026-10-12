@@ -93,8 +93,11 @@ public class AdminAsignarController {
                 ? "tel_" + telefono.replaceAll("[^0-9]", "") + "_" + UUID.randomUUID().toString().substring(0, 6) + "@hotclick.noemail"
                 : correo;
 
-            if (usuarioRepository.existsByCorreo(correoFinal)) {
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Ya existe un usuario con ese correo"));
+            // P9-02: no se crea ni se reclama una cuenta existente; el vendedor usa la búsqueda de clientes.
+            if (usuarioRepository.existsByCorreo(correoFinal.toLowerCase(java.util.Locale.ROOT))
+                    || usuarioRepository.existsByCorreo(correoFinal)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(
+                    "No se pudo crear el cliente con ese correo. Búscalo en tus clientes existentes."));
             }
 
             String ident = telefono.isBlank()
@@ -115,6 +118,9 @@ public class AdminAsignarController {
             usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
             usuario.setEstado(Constants.ESTADO_ACTIVO);
             usuario.setIntentosFallidos(0);
+            // P9-02: el vendedor no prueba que el correo sea del cliente; queda sin verificar
+            // hasta que el dueño real del correo restablezca su contraseña.
+            usuario.setCorreoVerificado(false);
 
             Optional<Rol> rolOpt = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);
             rolOpt.ifPresent(rol -> usuario.getRoles().add(rol));
