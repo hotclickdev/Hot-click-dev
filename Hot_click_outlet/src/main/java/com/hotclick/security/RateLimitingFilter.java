@@ -149,7 +149,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // Pedido de tienda propia (público, crea usuario invitado y pedido)
         new PrefixLimit("/api/tienda/", "/pedidos", 5, 60),
         // Completar la tienda rápida por token
-        new PrefixLimit("/api/public/tienda-rapida/", null, 5, 60)
+        new PrefixLimit("/api/public/tienda-rapida/", null, 5, 60),
+        // P8-02: WhatsApp manual del CRM (sale del número de la plataforma): 20/hora por IP
+        new PrefixLimit("/api/crm/clientes/", "/whatsapp", 20, 3600)
     );
 
     // GET limits for public endpoints vulnerable to scraping or external-API abuse.
