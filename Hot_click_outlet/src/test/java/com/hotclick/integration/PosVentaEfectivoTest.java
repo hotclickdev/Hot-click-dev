@@ -106,4 +106,16 @@ class PosVentaEfectivoTest extends BaseIntegrationTest {
             .andExpect(status().isOk());
         assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockActual()).isEqualTo(4);
     }
+
+    @Test
+    @DisplayName("ESC-2 | dos ventas seguidas sin mostrador sembrado reutilizan el mismo Cliente Mostrador")
+    void mostradorIdempotente() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/api/pos/venta").header("Authorization", token)
+                    .contentType(MediaType.APPLICATION_JSON).content(body()))
+                .andExpect(status().isOk());
+        }
+        assertThat(usuarioRepository.findAll().stream()
+            .filter(u -> "mostrador@hotclick.internal".equals(u.getCorreo())).count()).isEqualTo(1);
+    }
 }
