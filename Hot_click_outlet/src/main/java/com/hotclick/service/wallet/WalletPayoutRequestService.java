@@ -58,21 +58,12 @@ public class WalletPayoutRequestService {
     }
 
     public MetodoCobro cuentaVerificada(Long empresaId) {
-        return buscarCuentaVerificada(empresaId).orElseThrow(() -> new IllegalStateException(
-            "Registra tu cuenta SINPE Móvil o IBAN y espera su verificación para recibir pagos."));
+        return new CuentaCobroVerificada(metodoRepo).exigir(empresaId);
     }
 
-    /**
-     * Cuenta de cobro apta para recibir dinero: activa, SINPE o IBAN, sin cambio en revisión y
-     * registrada antes de la quincena en curso (misma regla que la aprobación de payouts).
-     */
+    /** Regla única de cuenta apta para pagos: {@link CuentaCobroVerificada} (compartida con seg-altos-2). */
     public Optional<MetodoCobro> buscarCuentaVerificada(Long empresaId) {
-        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
-        return metodoRepo.findActivosByEmpresaId(empresaId).stream()
-            .filter(m -> !m.isEnRevision())
-            .filter(m -> MetodoCobro.TIPO_SINPE.equals(m.getTipo()) || MetodoCobro.TIPO_IBAN.equals(m.getTipo()))
-            .filter(m -> !QuincenaCalculo.registradaEnQuincena(m.getFechaCreacion(), hoy))
-            .findFirst();
+        return new CuentaCobroVerificada(metodoRepo).buscar(empresaId);
     }
 
     /** Retiene saldo y crea el payout hacia la cuenta verificada. Usado por retiros manuales y liquidaciones. */
