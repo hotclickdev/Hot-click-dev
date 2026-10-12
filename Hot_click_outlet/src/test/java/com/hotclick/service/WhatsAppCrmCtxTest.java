@@ -41,4 +41,17 @@ class WhatsAppCrmCtxTest {
         assertThat(WhatsAppService.validarCtxCrm("REACTIVACION", Map.of("diasInactivo", "30", "productos", "Camisa azul, Gorra")))
             .containsEntry("diasInactivo", "30");
     }
+
+    @Test
+    void limitePorNegocio_429() {
+        WhatsAppService svc = new WhatsAppService();
+        com.hotclick.repository.WaMensajeLogRepository repo = org.mockito.Mockito.mock(com.hotclick.repository.WaMensajeLogRepository.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "waLogRepo", repo);
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "maxCrmPorHoraNegocio", 3);
+        org.mockito.Mockito.when(repo.countByEmpresaTiposDesde(org.mockito.ArgumentMatchers.eq(5L),
+            org.mockito.ArgumentMatchers.anyCollection(), org.mockito.ArgumentMatchers.any())).thenReturn(2L, 3L);
+        svc.exigirCupoNegocio(5L);
+        assertThatThrownBy(() -> svc.exigirCupoNegocio(5L))
+            .isInstanceOf(com.hotclick.exception.CrmWhatsAppLimiteException.class);
+    }
 }

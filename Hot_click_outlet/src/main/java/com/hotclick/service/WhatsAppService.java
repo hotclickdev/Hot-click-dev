@@ -29,6 +29,10 @@ public class WhatsAppService {
 
     @Autowired private GeminiService geminiService;
     @Autowired private WhatsAppMessageSender messageSender;
+    @Autowired private com.hotclick.repository.WaMensajeLogRepository waLogRepo;
+    /** P8-02: tope de WhatsApp manuales del CRM por negocio por hora (además del límite por IP). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.crm.whatsapp.max-por-hora-negocio:30}")
+    private int maxCrmPorHoraNegocio = 30;
 
     // ── API pública ───────────────────────────────────────────────────────────
 
@@ -157,6 +161,7 @@ public class WhatsAppService {
                                   Map<String, String> ctxExtra) {
         if (u.getTelefono() == null) throw new IllegalStateException("El cliente no tiene teléfono registrado");
         Map<String, String> extra = validarCtxCrm(escenario, ctxExtra);
+        exigirCupoNegocio(empresaId);
 
         Map<String, String> ctx = new LinkedHashMap<>(extra);
         ctx.put("nombre",   u.getNombre());
@@ -185,5 +190,16 @@ public class WhatsAppService {
             limpio.put(e.getKey(), v);
         }
         return limpio;
+    }
+
+    /** P8-02: límite por negocio. Cuenta los envíos de escenarios CRM de la última hora. */
+    void exigirCupoNegocio(Long empresaId) {
+        if (empresaId == null) return;
+        long ultimaHora = waLogRepo.countByEmpresaTiposDesde(empresaId, ESCENARIOS_CRM,
+            java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).minusHours(1));
+        if (ultimaHora >= maxCrmPorHoraNegocio) {
+            throw new com.hotclick.exception.CrmWhatsAppLimiteException(
+                "Llegaste al límite de " + maxCrmPorHoraNegocio + " mensajes de WhatsApp por hora. Probá más tarde.");
+        }
     }
 }
