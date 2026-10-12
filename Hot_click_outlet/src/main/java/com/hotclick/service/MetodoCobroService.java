@@ -21,12 +21,15 @@ public class MetodoCobroService {
     private final EmpresaRepository empresaRepo;
     private final CompanyScope companyScope;
     private final InputSanitizer sanitizer;
+    private final MetodoCobroCambioService cambioService;
 
     public MetodoCobroService(
             MetodoCobroRepository repo,
             EmpresaRepository empresaRepo,
             CompanyScope companyScope,
-            InputSanitizer sanitizer) {
+            InputSanitizer sanitizer,
+            MetodoCobroCambioService cambioService) {
+        this.cambioService = cambioService;
         this.repo = repo;
         this.empresaRepo = empresaRepo;
         this.companyScope = companyScope;
@@ -61,7 +64,12 @@ public class MetodoCobroService {
         m.setMascara(MetodoCobroFormato.mascara(tipo, destino));
         m.setPredeterminado(primero);
         m.setActivo(true);
-        return MetodoCobroDto.from(repo.save(m));
+        MetodoCobro guardado = repo.save(m);
+        if (MetodoCobro.TIPO_SINPE.equals(tipo) || MetodoCobro.TIPO_IBAN.equals(tipo)) {
+            // seg-altos-2 (d): los pagos solo salen a cuentas SINPE/IBAN aprobadas por ADMIN.
+            cambioService.solicitarAlta(guardado);
+        }
+        return MetodoCobroDto.from(guardado);
     }
 
     @Transactional

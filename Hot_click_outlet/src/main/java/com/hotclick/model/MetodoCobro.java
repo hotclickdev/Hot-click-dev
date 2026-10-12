@@ -19,6 +19,8 @@ public class MetodoCobro {
     public static final String TIPO_TARJETA = "TARJETA";
     public static final String TIPO_SOLICITUD = "METODO_COBRO";
     public static final String ACCION_CAMBIO = "UPDATE_SENSIBLE";
+    /** Alta de cuenta SINPE/IBAN: no recibe pagos hasta que ADMIN la apruebe (seg-altos-2 (d)). */
+    public static final String ACCION_ALTA = "ALTA_CUENTA";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

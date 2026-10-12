@@ -38,6 +38,7 @@ class MetodoCobroServiceTest {
     @Mock EmpresaRepository empresaRepo;
     @Mock CompanyScope companyScope;
     @Mock InputSanitizer sanitizer;
+    @Mock MetodoCobroCambioService cambioService;
     @InjectMocks MetodoCobroService service;
 
     private Empresa empresa;
@@ -75,6 +76,8 @@ class MetodoCobroServiceTest {
         verify(repo).save(cap.capture());
         assertThat(cap.getValue().getDestino()).isEqualTo("88880000");
         assertThat(cap.getValue().getTipo()).isEqualTo(MetodoCobro.TIPO_SINPE);
+        // seg-altos-2 (d): el alta SINPE queda pendiente de aprobación
+        verify(cambioService).solicitarAlta(cap.getValue());
     }
 
     @Test

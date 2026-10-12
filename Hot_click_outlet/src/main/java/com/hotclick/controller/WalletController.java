@@ -22,6 +22,9 @@ public class WalletController {
     @org.springframework.beans.factory.annotation.Autowired
     private com.hotclick.security.PropietarioGuard propietarioGuard;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.hotclick.service.wallet.CuentaCobroVerificada cuentaCobroVerificada;
+
     private final WalletService walletService;
     private final CompanyScope  companyScope;
 
@@ -67,12 +70,15 @@ public class WalletController {
         Long empresaId = companyScope.getCurrentEmpresaId();
         propietarioGuard.exigirPropietario(empresaId); // P10-02
         validate(dto);
+        // seg-altos-2 (d): el destino es siempre la cuenta SINPE/IBAN aprobada; lo enviado por el cliente se ignora.
+        com.hotclick.model.MetodoCobro cuenta = cuentaCobroVerificada.exigir(empresaId);
+        boolean sinpe = com.hotclick.model.MetodoCobro.TIPO_SINPE.equals(cuenta.getTipo());
         PayoutRequest pr = walletService.solicitarPayout(
             empresaId,
             dto.monto(),
-            dto.metodo(),
-            dto.destinoSinpe(),
-            dto.destinoIban(),
+            sinpe ? PayoutRequest.METODO_SINPE : PayoutRequest.METODO_TRANSFERENCIA,
+            sinpe ? cuenta.getDestino() : null,
+            sinpe ? null : cuenta.getDestino(),
             dto.nombreTitular(),
             dto.bancoDestino(),
             dto.notas()

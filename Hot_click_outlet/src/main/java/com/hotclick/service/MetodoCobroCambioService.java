@@ -124,6 +124,11 @@ public class MetodoCobroCambioService {
         MetodoCobro metodo = metodoRepo.findActivoById(sol.getIdEntidad()).orElse(null);
         if (metodo != null) {
             metodo.setEnRevision(false);
+            if (MetodoCobro.ACCION_ALTA.equals(sol.getAccionSolicitada())) {
+                // Alta rechazada: la cuenta nunca fue válida, se desactiva.
+                metodo.setActivo(false);
+                metodo.setPredeterminado(false);
+            }
             metodoRepo.save(metodo);
         }
         resolver(sol, RECHAZADO, comentario);
@@ -150,17 +155,29 @@ public class MetodoCobroCambioService {
         }
     }
 
+    /** Alta de cuenta SINPE/IBAN: queda en revisión hasta que ADMIN la apruebe; solo entonces recibe pagos. */
+    @Transactional
+    public void solicitarAlta(MetodoCobro metodo) {
+        metodo.setEnRevision(true);
+        metodoRepo.save(metodo);
+        guardarSolicitud(metodo, metodo.getDestino(), MetodoCobro.ACCION_ALTA, "Alta de cuenta de cobro");
+    }
+
     private void guardarSolicitud(MetodoCobro metodo, String destinoNuevo) {
+        guardarSolicitud(metodo, destinoNuevo, MetodoCobro.ACCION_CAMBIO, "Cambio de destino de cobro");
+    }
+
+    private void guardarSolicitud(MetodoCobro metodo, String destinoNuevo, String accion, String motivo) {
         Usuario pide = companyScope.getCurrentUser();
         if (pide == null) {
             throw new IllegalStateException("Necesitás iniciar sesión para pedir el cambio.");
         }
         SolicitudAprobacion sol = new SolicitudAprobacion();
         sol.setTipoEntidad(MetodoCobro.TIPO_SOLICITUD);
-        sol.setAccionSolicitada(MetodoCobro.ACCION_CAMBIO);
+        sol.setAccionSolicitada(accion);
         sol.setIdEntidad(metodo.getId());
         sol.setDatosSnapshot(snapshotJson(metodo, destinoNuevo));
-        sol.setMotivoPeticion("Cambio de destino de cobro");
+        sol.setMotivoPeticion(motivo);
         sol.setEstadoSolicitud(PENDIENTE);
         sol.setEmpresa(metodo.getEmpresa());
         sol.setUsuarioPide(pide);
