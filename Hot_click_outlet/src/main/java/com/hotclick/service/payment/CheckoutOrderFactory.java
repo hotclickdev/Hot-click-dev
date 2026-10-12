@@ -62,6 +62,10 @@ public class CheckoutOrderFactory {
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(pricing.totalConGC());
         pedido.setCostoEnvio(pricing.costoEnvio());
+        if ("ENVIO_RAPIDO".equals(metodoEnvio)) {
+            // Uber Flash 8:00–19:00: fuera de la ventana el pedido queda en cola para el día siguiente.
+            pedido.setFechaEntregaEstimada(com.hotclick.config.TiemposEnvio.diaSalidaRapido(pedido.getFechaPedido()));
+        }
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal - pricing.descuento());
         pedido.setDescuentoTotal(pricing.descuento());

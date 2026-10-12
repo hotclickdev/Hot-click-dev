@@ -75,11 +75,11 @@ describe('opcionesEntrega', () => {
     expect(opcionesEntrega(mezclado).some((o) => o.metodo === ENVIO.RETIRO)).toBe(false)
   })
 
-  it('la encomienda muestra "Varía" y no suma al total', () => {
+  it('la encomienda cuesta ₡2.000 (lo de la encomienda se paga aparte)', () => {
     const [paquete] = agruparPaquetes([item(1, 7)])
     const encomienda = opcionesEntrega(paquete).find((o) => o.metodo === ENVIO.ENCOMIENDA)
-    expect(encomienda?.precio).toBeNull()
-    expect(envioTotal([paquete], { [paquete.clave]: ENVIO.ENCOMIENDA })).toBe(0)
+    expect(encomienda?.precio).toBe(2000)
+    expect(envioTotal([paquete], { [paquete.clave]: ENVIO.ENCOMIENDA })).toBe(2000)
   })
 })
 

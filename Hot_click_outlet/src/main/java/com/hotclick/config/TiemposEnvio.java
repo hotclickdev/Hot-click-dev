@@ -22,6 +22,8 @@ public final class TiemposEnvio {
                           int fueraGamDesde, int fueraGamHasta) {}
 
     private static final Valores VALORES = cargar();
+    /** Ventana del envío rápido (Uber Flash), horas en Costa Rica: [desde, hasta). */
+    private static final int[] VENTANA_RAPIDO = cargarVentanaRapido();
 
     private TiemposEnvio() {}
 
@@ -94,5 +96,39 @@ public final class TiemposEnvio {
             throw new IllegalStateException(RECURSO + ": " + grupo + "." + campo + " debe ser un entero positivo");
         }
         return n.asInt();
+    }
+
+    /** Hora (inclusive) desde la que sale el envío rápido. */
+    public static int ventanaRapidoDesde() { return VENTANA_RAPIDO[0]; }
+    /** Hora (exclusiva) hasta la que sale el envío rápido. */
+    public static int ventanaRapidoHasta() { return VENTANA_RAPIDO[1]; }
+
+    /**
+     * Día en que sale un envío rápido pedido en {@code ahora} (hora de Costa Rica): hoy si cae en la
+     * ventana; si entra después del cierre, al día siguiente; si entra antes de abrir, ese mismo día.
+     */
+    public static java.time.LocalDate diaSalidaRapido(java.time.LocalDateTime ahora) {
+        int h = ahora.getHour();
+        if (h >= VENTANA_RAPIDO[1]) return ahora.toLocalDate().plusDays(1);
+        return ahora.toLocalDate();
+    }
+
+    /** true si el pedido rápido queda en cola (fuera de la ventana). */
+    public static boolean rapidoEnCola(java.time.LocalDateTime ahora) {
+        int h = ahora.getHour();
+        return h < VENTANA_RAPIDO[0] || h >= VENTANA_RAPIDO[1];
+    }
+
+    static int[] cargarVentanaRapido() {
+        try (InputStream in = TiemposEnvio.class.getClassLoader().getResourceAsStream(RECURSO)) {
+            if (in == null) throw new IllegalStateException("Falta " + RECURSO + " en el classpath");
+            JsonNode raiz = new ObjectMapper().readTree(in);
+            int desde = entero(raiz, "rapido", "ventanaDesdeHora");
+            int hasta = entero(raiz, "rapido", "ventanaHastaHora");
+            if (desde >= hasta || hasta > 24) throw new IllegalStateException(RECURSO + ": ventana del rápido inválida");
+            return new int[]{desde, hasta};
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo leer " + RECURSO, e);
+        }
     }
 }
