@@ -6,12 +6,13 @@ import TwoFaEmailOtpStep from './auth/TwoFaEmailOtpStep'
 import TwoFaTotpStep from './auth/TwoFaTotpStep'
 import { useLoginFlow } from './auth/useLoginFlow'
 import LoginPageLayout from './auth/LoginPageLayout'
+import { useClerkDisponible } from '@/components/auth/clerkDisponibleContext'
 
-const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
 export default function LoginPage() {
   const flow = useLoginFlow()
+  const clerkEnabled = useClerkDisponible()
   const {
     step, setStep, loading, correo, setCorreo, contrasena, setContrasena,
     code2FA, setCode2FA, useRecovery, setUseRecovery, recoveryInput, setRecoveryInput,
@@ -34,7 +35,7 @@ export default function LoginPage() {
             needsPasswordReset={needsPasswordReset}
             resendLoading={resendLoading} loading={loading}
             turnstileToken={turnstileToken} turnstileRef={turnstileRef}
-            turnstileSiteKey={TURNSTILE_SITE_KEY} clerkEnabled={CLERK_ENABLED}
+            turnstileSiteKey={TURNSTILE_SITE_KEY} clerkEnabled={clerkEnabled}
             setTurnstileToken={setTurnstileToken}
             onSubmit={handleLogin}
             onResendVerification={handleResendVerification}
