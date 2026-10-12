@@ -76,6 +76,8 @@ public class VentaService {
             Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
 
+            // IDOR-11: no se vende (ni se descuenta stock de) un producto de otro negocio
+            com.hotclick.service.pos.PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), empresaId);
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
 
             validarProductoParaVenta(producto, cantidad, desdeCarrito);

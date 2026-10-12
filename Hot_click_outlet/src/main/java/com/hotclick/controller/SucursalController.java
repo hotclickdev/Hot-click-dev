@@ -36,7 +36,7 @@ public class SucursalController {
         try {
             return ResponseEntity.ok(ResponseDTO.success(
                 "Sucursales obtenidas",
-                sucursalService.listar(companyScope.requireEmpresaIdOrGlobalAdmin())
+                sucursalService.listar(companyScope.requireEmpresaIdOrAdmin())
             ));
         } catch (Exception e) {
             log.error("[sucursales] {}", e.getMessage(), e);

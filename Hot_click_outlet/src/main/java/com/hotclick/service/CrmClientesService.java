@@ -97,7 +97,10 @@ public class CrmClientesService {
 
     @Transactional(readOnly = true)
     public Object historialWa(Long id, Long empresaId) {
-        if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId)) {
+        boolean permitido = empresaId == null
+            ? crmAccessGuard.esAdminGlobal() // IDOR-05
+            : pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId);
+        if (!permitido) {
             throw new TenantAccessDeniedException("Cliente no pertenece a esta empresa");
         }
         return waLogRepository.findByUsuarioIdOrderByFechaEnvioDesc(id, PageRequest.of(0, 20));

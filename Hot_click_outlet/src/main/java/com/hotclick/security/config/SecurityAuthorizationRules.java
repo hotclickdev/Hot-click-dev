@@ -78,6 +78,14 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PATCH,  "/api/productos/*/visibilidad-catalogo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, API_PRODUCTO_POR_ID).hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST,   "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // IDOR-vendedor: escrituras de varios segmentos (p. ej. /{id}/imagenes/{imgId}) también exigen rol
+            .requestMatchers(PUT,    "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PATCH,  "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(DELETE, "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // IDOR-02 / IDOR-05: ventas y CRM del negocio, nunca para compradores
+            .requestMatchers("/api/ventas", "/api/ventas/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, "ROLE_" + Constants.ROL_EMPRENDEDOR, "pos.usar")
+            .requestMatchers("/api/crm/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // SEC-02: stock solo ADMIN/EMPRENDEDOR; la empresa se valida en StockController
             .requestMatchers("/api/stock/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(GET, "/api/division-territorial").permitAll()

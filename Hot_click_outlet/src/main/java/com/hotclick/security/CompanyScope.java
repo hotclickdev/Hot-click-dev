@@ -73,19 +73,16 @@ public class CompanyScope {
     }
 
     /**
-     * Empresa para endpoints de gestión del negocio. Devuelve null SOLO para IT Admin / staff de
-     * plataforma sin impersonar (vista global). Cualquier otra cuenta sin empresa recibe 403
-     * EMPRESA_REQUERIDA: nunca se devuelve un listado sin filtrar.
+     * IDOR-vendedor: empresa para endpoints de gestión. La vista global (null) es SOLO para un ADMIN
+     * explícito sin impersonar. Cualquier otro usuario sin empresa (vendedor sin negocio, comprador,
+     * staff no admin) → 403. Nunca tratar {@code empresaId == null} como "ver todo".
      */
-    public Long requireEmpresaIdOrGlobalAdmin() {
-        Usuario user = getCurrentUser();
-        if (user != null && !isImpersonating() && (isAdminIT(user) || isPlatformStaff(user))) return null;
-        Long id = getCurrentEmpresaIdOrOwn();
-        if (id == null) throw new com.hotclick.exception.EmpresaRequeridaException();
-        return id;
+    public Long requireEmpresaIdOrAdmin() {
+        if (isAdminIT() && !isImpersonating()) return null;
+        return requireEmpresaId();
     }
 
-    /** Igual que {@link #requireEmpresaIdOrGlobalAdmin()} pero sin excepción para admins: siempre exige empresa. */
+    /** Empresa del tenant, nunca null (ADMIN impersonando incluido); sin empresa → 403. */
     public Long requireEmpresaId() {
         Long id = getCurrentEmpresaIdOrOwn();
         if (id == null) throw new com.hotclick.exception.EmpresaRequeridaException();

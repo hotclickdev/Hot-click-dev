@@ -18,7 +18,7 @@ public class DashboardController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<ResponseDTO> getDashboard() {
-        Long empresaId = companyScope.requireEmpresaIdOrGlobalAdmin();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         return ResponseEntity.ok(
             ResponseDTO.success("Dashboard", dashboardService.obtenerMetricas(empresaId))
         );

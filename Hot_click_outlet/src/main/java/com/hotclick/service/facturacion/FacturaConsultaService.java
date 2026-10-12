@@ -31,7 +31,7 @@ public class FacturaConsultaService {
     @Transactional(readOnly = true)
     public Page<ComprobanteEmitido> listar(int page, int size, String estado,
                                             LocalDate fechaDesde, LocalDate fechaHasta) {
-        Long empresaId = companyScope.requireEmpresaIdOrGlobalAdmin();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         if (empresaId == null) { // solo IT Admin / staff: comprobantes de la plataforma
             empresaId = Constants.EMPRESA_PLATAFORMA_ID;
         }

@@ -262,7 +262,7 @@ public class PedidoController {
     @GetMapping("/pendientes")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> listarPendientes() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin(); // IDOR-06
         return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes",
             pedidoService.listarPendientes(empresaId)));
     }
@@ -301,7 +301,7 @@ public class PedidoController {
     }
 
     private Object listarConDetalles() {
-        Long empresaId = companyScope.requireEmpresaIdOrGlobalAdmin();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         return empresaId != null
             ? pedidoService.listarTodosConDetallesByEmpresa(empresaId)
             : pedidoService.listarTodosConDetalles();
