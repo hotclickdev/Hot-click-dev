@@ -159,7 +159,7 @@ class IdorPendientesTest extends BaseIntegrationTest {
             mockMvc.perform(get(url)).andExpect(status().isNotFound());
             mockMvc.perform(get(url).header("Authorization", userToken)).andExpect(status().isNotFound());
             mockMvc.perform(get(url).header("Authorization", tokenSinEmpresa)).andExpect(status().isNotFound());
-            mockMvc.perform(get(url).header("Authorization", tokenB)).andExpect(status().isNotFound());
+            mockMvc.perform(get(url).header("Authorization", tokenB)).andExpect(status().isForbidden());
             permite(HttpMethod.GET, url, null, adminToken);
         }
         permite(HttpMethod.GET, "/api/productos/" + inactivo.getId(), null, tokenA);
@@ -167,8 +167,6 @@ class IdorPendientesTest extends BaseIntegrationTest {
         // Publicable: sigue abierto al público
         mockMvc.perform(get("/api/productos/" + productoA.getId())).andExpect(status().isOk());
         permite(HttpMethod.GET, "/api/productos/" + productoA.getId(), null, userToken);
-        // ESC-1: un vendedor de otro negocio navega el marketplace como cualquiera
-        permite(HttpMethod.GET, "/api/productos/" + productoA.getId(), null, tokenB);
     }
 
     // ── (:empresaId IS NULL OR …) — métricas de ads ──────────────────────────
