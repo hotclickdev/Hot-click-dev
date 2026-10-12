@@ -288,7 +288,9 @@ public class BodegaController {
     }
 
     private static ResponseEntity<ResponseDTO> sinEmpresa() {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(MENSAJE_SIN_EMPRESA));
+        // Código estable para que el front muestre "Completá los datos de tu negocio".
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(MENSAJE_SIN_EMPRESA,
+            java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
     }
 
     private static ResponseEntity<ResponseDTO> errorGuardar(String accion, Exception e) {
