@@ -145,6 +145,18 @@ class AdminRutasRolTest extends BaseIntegrationTest {
     // ── P9-02 ────────────────────────────────────────────────────────────────
 
     @Test
+    @DisplayName("P9-02 lateral | POST /api/crm/clientes con correo existente → 409, no 500")
+    void crmCrearClienteCorreoExistente409() throws Exception {
+        String hashAntes = clienteB.getContrasenaHash();
+        mockMvc.perform(post("/api/crm/clientes").header("Authorization", tokenA)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Otro\",\"correo\":\"Cliente-Zeta-B@test.cr\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message", containsString("clientes existentes")));
+        assertThat(usuarioRepository.findById(clienteB.getId()).orElseThrow().getContrasenaHash()).isEqualTo(hashAntes);
+    }
+
+    @Test
     @DisplayName("P9-02 | crear-cliente con correo que ya tiene cuenta → 409 genérico, sin tocar la cuenta")
     void crearClienteCorreoExistente409() throws Exception {
         String hashAntes = clienteB.getContrasenaHash();
