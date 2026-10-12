@@ -139,10 +139,6 @@ public class Empresa {
     @Column(name = "frecuencia_payout", nullable = false, length = 10)
     private String frecuenciaPayout = "QUINCENAL";
 
-    /** Uno de los primeros N negocios: Emprendedor sin mensualidad (V168). */
-    @Column(name = "emprendedor_cupo_gratis", nullable = false)
-    private Boolean emprendedorCupoGratis = false;
-
     @Column(name = "fecha_venc_plan")
     private LocalDate fechaVencPlan;
 
@@ -420,6 +416,4 @@ public class Empresa {
     public void setDiaCobro(Integer diaCobro) { this.diaCobro = diaCobro; }
     public String getFrecuenciaPayout() { return frecuenciaPayout; }
     public void setFrecuenciaPayout(String frecuenciaPayout) { this.frecuenciaPayout = frecuenciaPayout; }
-    public Boolean getEmprendedorCupoGratis() { return emprendedorCupoGratis; }
-    public void setEmprendedorCupoGratis(Boolean v) { this.emprendedorCupoGratis = v; }
 }

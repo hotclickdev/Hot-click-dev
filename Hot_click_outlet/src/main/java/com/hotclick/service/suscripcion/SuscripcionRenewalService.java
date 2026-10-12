@@ -33,14 +33,20 @@ public class SuscripcionRenewalService {
         return n;
     }
 
-    /** Expira PAST_DUE con fecha_fin pasada → degrada a FREE. */
+    /** Días de gracia tras una mensualidad impaga (12-oct-2026: 7). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.billing.dias-gracia:7}")
+    private int diasGracia;
+
+    /** Expira PAST_DUE cuya fecha_fin + días de gracia ya pasó → degrada a FREE. */
     @Transactional
     public int expirarPastDueVencidos() {
+        // La consulta compara fecha_fin < límite: con gracia, el límite se corre N días hacia atrás.
         LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
-        List<Long> empresaIds = suscripcionRepo.findEmpresaIdsPastDueVencidos(hoy);
+        LocalDate limite = hoy.minusDays(Math.max(0, diasGracia));
+        List<Long> empresaIds = suscripcionRepo.findEmpresaIdsPastDueVencidos(limite);
         if (empresaIds.isEmpty()) return 0;
 
-        int n = suscripcionRepo.expirarPastDueBatch(hoy);
+        int n = suscripcionRepo.expirarPastDueBatch(limite);
         planSupport.degradarPlanBatchConCache(empresaIds, hoy);
         log.info("[billing] {} PAST_DUE expirado(s) — {} empresa(s) degradadas", n, empresaIds.size());
         return n;
