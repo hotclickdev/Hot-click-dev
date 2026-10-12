@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-CiRKy-M5.js";function t(){return e()}export{t};
