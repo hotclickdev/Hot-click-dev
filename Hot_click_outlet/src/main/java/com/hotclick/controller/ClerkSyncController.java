@@ -53,25 +53,42 @@ public class ClerkSyncController {
             return ResponseEntity.status(401).body(ResponseDTO.error("Token de Clerk sin subject"));
         }
 
-        String emailFromJwt = Optional.ofNullable(clerkJwt.getClaimAsString("email"))
-            .orElse("").toLowerCase().trim();
-        String emailFromBody = Optional.ofNullable(body.get("email")).orElse("").toLowerCase().trim();
-        String email = emailFromJwt.isBlank() ? emailFromBody : emailFromJwt;
-        if (email.isBlank()) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Email requerido"));
+        // P1-01: la identidad sale SOLO del token verificado. email y clerkUserId del body se ignoran.
+        String email = emailVerificado(clerkJwt);
+        if (email == null) {
+            log.warn("[clerk-sync] Rechazado: token sin email verificado. clerkUserId={} bodyEmail={}",
+                clerkUserId, body.containsKey("email") ? "presente(ignorado)" : "ausente");
+            return ResponseEntity.status(401).body(ResponseDTO.error(
+                "El token de Clerk no trae un correo verificado. Verificá tu correo e intentá de nuevo."));
         }
 
         try {
             return ResponseEntity.ok(ResponseDTO.success("ok", clerkSyncService.sync(
-                clerkUserId, email, !emailFromJwt.isBlank(),
+                clerkUserId, email,
                 Optional.ofNullable(body.get("nombre")).orElse(""),
                 Optional.ofNullable(body.get("apellido")).orElse(""),
                 Optional.ofNullable(body.get("fotoUrl")).orElse(""),
                 MayoriaEdad.desdeTexto(body.get("declaraMayoriaEdad")))));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (ClerkSyncService.ClerkVinculoConflictoException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    /**
+     * Correo del claim {@code email} (o {@code email_address}) solo si el claim {@code email_verified}
+     * es verdadero. Plantilla de Clerk «hotclick-session»:
+     * {@code {"email": "{{user.primary_email_address}}", "email_verified": "{{user.email_verified}}"}}.
+     */
+    static String emailVerificado(Jwt jwt) {
+        String email = Optional.ofNullable(jwt.getClaimAsString("email"))
+            .or(() -> Optional.ofNullable(jwt.getClaimAsString("email_address")))
+            .orElse("").toLowerCase().trim();
+        Object verificado = jwt.getClaims().get("email_verified");
+        boolean ok = Boolean.TRUE.equals(verificado) || "true".equalsIgnoreCase(String.valueOf(verificado));
+        return (!email.isBlank() && email.contains("@") && ok) ? email : null;
     }
 }

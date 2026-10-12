@@ -11,7 +11,10 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.PremioService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.hotclick.security.CompanyScope;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -29,6 +32,20 @@ public class PremioController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private CompanyScope companyScope;
+
+    /** SEG-2: el usuarioId del path tiene que ser el del token (o ADMIN). */
+    private boolean esPropioOAdmin(Long usuarioId) {
+        if (companyScope.isAdminIT()) return true;
+        Long actual = companyScope.getCurrentUserId();
+        return actual != null && actual.equals(usuarioId);
+    }
+
+    private static ResponseEntity<ResponseDTO> prohibido() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error("Acceso denegado"));
+    }
+
     @GetMapping("/premios")
     public ResponseEntity<ResponseDTO> listarPremios() {
         List<Premio> premios = premioRepository.findByActivoTrueAndEstado(Constants.ESTADO_ACTIVO);
@@ -37,6 +54,7 @@ public class PremioController {
 
     @GetMapping("/giros-disponibles/{usuarioId}")
     public ResponseEntity<ResponseDTO> girosDisponibles(@PathVariable Long usuarioId) {
+        if (!esPropioOAdmin(usuarioId)) return prohibido();
         Long giros = premioService.contarGirosPendientes(usuarioId);
         return ResponseEntity.ok(ResponseDTO.success("Giros disponibles", giros));
     }
@@ -45,6 +63,8 @@ public class PremioController {
     public ResponseEntity<ResponseDTO> girar(
             @PathVariable Long giroId,
             @PathVariable Long usuarioId) {
+        if (!esPropioOAdmin(usuarioId)) return prohibido();
+        if (!premioService.giroEsDe(giroId, usuarioId)) return prohibido();
         try {
             Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
@@ -57,11 +77,13 @@ public class PremioController {
 
     @GetMapping("/historial/{usuarioId}")
     public ResponseEntity<ResponseDTO> historial(@PathVariable Long usuarioId) {
+        if (!esPropioOAdmin(usuarioId)) return prohibido();
         return ResponseEntity.ok(ResponseDTO.success("Historial de giros",
             premioService.historialGiros(usuarioId)));
     }
 
     @PostMapping("/admin/asignar-giro/{usuarioId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> asignarGiro(
             @PathVariable Long usuarioId,
             @RequestParam String tipoOrigen) {
@@ -69,7 +91,9 @@ public class PremioController {
             Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             GiroRuleta giro = premioService.asignarGiro(usuario, tipoOrigen);
-            return ResponseEntity.ok(ResponseDTO.success("Giro asignado", giro));
+            // No serializar la entidad (incluye el Usuario completo)
+            return ResponseEntity.ok(ResponseDTO.success("Giro asignado", java.util.Map.of(
+                "id", giro.getId(), "usuarioId", usuarioId, "tipoOrigen", String.valueOf(giro.getTipoOrigen()))));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

@@ -130,6 +130,14 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
            "u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")
     List<Usuario> buscarClientes(@Param("q") String q);
 
+    /** P9-01: misma búsqueda global, paginada (solo ADMIN de plataforma). */
+    @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
+           "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 AND (" +
+           "LOWER(u.nombre) LIKE LOWER(CONCAT('%',:q,'%')) OR " +
+           "LOWER(u.correo) LIKE LOWER(CONCAT('%',:q,'%')) OR " +
+           "u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")
+    List<Usuario> buscarClientes(@Param("q") String q, org.springframework.data.domain.Pageable pageable);
+
     /** F29 — Búsqueda de clientes acotada a una empresa (tenant-scoped CRM), incluye registrados manualmente. */
     @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
            "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 " +
@@ -139,6 +147,23 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
            " OR LOWER(u.correo) LIKE LOWER(CONCAT('%',:q,'%')) " +
            " OR u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")
     List<Usuario> buscarClientesByEmpresa(@Param("q") String q, @Param("empresaId") Long empresaId);
+
+    /** P9-01: el usuario es comprador de la empresa (compró ahí o la empresa lo registró). */
+    @Query("SELECT COUNT(u) > 0 FROM Usuario u WHERE u.id = :usuarioId AND (" +
+           "EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "OR u.empresaRegistro.id = :empresaId)")
+    boolean esClienteDeEmpresa(@Param("usuarioId") Long usuarioId, @Param("empresaId") Long empresaId);
+
+    /** P9-01: búsqueda del vendedor, acotada a su empresa y paginada. */
+    @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
+           "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 " +
+           "AND (EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "     OR u.empresaRegistro.id = :empresaId) " +
+           "AND (LOWER(u.nombre) LIKE LOWER(CONCAT('%',:q,'%')) " +
+           " OR LOWER(u.correo) LIKE LOWER(CONCAT('%',:q,'%')) " +
+           " OR u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")
+    List<Usuario> buscarClientesByEmpresa(@Param("q") String q, @Param("empresaId") Long empresaId,
+                                          org.springframework.data.domain.Pageable pageable);
 
     /** Updates TOTP replay-protection fields atomically after a successful TOTP verify. */
     @Modifying

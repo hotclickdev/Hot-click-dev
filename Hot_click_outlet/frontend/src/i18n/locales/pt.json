@@ -3030,6 +3030,7 @@
     "comisionSinpeHint": "0 = só badge informativo. Se > 0, aplica no checkout.",
     "comisionSinpePctLabel": "% desconto SINPE",
     "comisionSave": "Salvar comissão",
+    "comisionSoloLectura": "A HotClick define essas taxas. Fale com o suporte se precisar de uma alteração.",
     "comisionSaving": "Salvando…",
     "comisionSaved": "Comissão atualizada",
     "comisionErrorLoad": "Não foi possível carregar a comissão",

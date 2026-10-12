@@ -124,6 +124,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/ai/**").authenticated()
             .requestMatchers("/api/tenant/**").authenticated()
             .requestMatchers(GET, "/api/ruleta/premios").permitAll()
+            .requestMatchers("/api/ruleta/admin/**").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/contacto").permitAll()
             // Servicios HOT — fotos y solicitudes son públicas; gestión requiere ADMIN
             .requestMatchers(POST, "/api/servicios/fotos").permitAll()
@@ -236,9 +237,21 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/auth/mis-negocios").authenticated()
             .requestMatchers("/api/auth/cambiar-negocio").authenticated()
             .requestMatchers("/api/auth/nuevo-negocio").authenticated()
-            // Dashboard y KPIs — ADMIN y EMPRENDEDOR
-            .requestMatchers("/api/admin/**").hasAnyRole(
-                Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // P9-01/SEG-3: /api/admin/** es ADMIN por defecto. Lista blanca explícita de lo que un
+            // EMPRENDEDOR puede usar, siempre acotado a su empresa en el controlador (CompanyScope).
+            // Agregar una ruta acá exige que el controlador filtre por empresa; ver AdminRutasRolTest.
+            .requestMatchers(GET,  "/api/admin/dashboard").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers("/api/admin/ads/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(GET,  "/api/admin/configuracion/comision").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(GET,  "/api/admin/configuracion/comision/sugerido").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers("/api/admin/asignar/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(GET,  "/api/admin/finanzas/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/admin/importar/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers("/api/admin/mesas", "/api/admin/mesas/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/admin/productos/generar-ia").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/admin/reset-datos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Resto de /api/admin/** (plataforma) — solo ADMIN
+            .requestMatchers("/api/admin/**").hasRole(Constants.ROL_ADMIN)
             // Pedidos admin — ADMIN, EMPRENDEDOR
             // Pedidos — roles de empresa + API keys con scope read:pedidos o write:pedidos
             .requestMatchers(GET,    "/api/pedidos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

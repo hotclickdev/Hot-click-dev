@@ -91,6 +91,13 @@ public class PremioService {
         return premios.get(premios.size() - 1);
     }
 
+    /** SEG-2: el giro pertenece a ese usuario. */
+    public boolean giroEsDe(Long giroId, Long usuarioId) {
+        return giroRuletaRepository.findById(giroId)
+            .map(g -> g.getUsuarioFinal() != null && usuarioId.equals(g.getUsuarioFinal().getId()))
+            .orElse(false);
+    }
+
     public Long contarGirosPendientes(Long usuarioId) {
         return giroRuletaRepository.countByUsuarioFinalIdAndUsadoFalse(usuarioId);
     }
