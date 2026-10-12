@@ -176,6 +176,7 @@ public class AdsMetricasService {
                                       int montoCrc, String notas, String fuente) {
         String canalN = canal == null || canal.isBlank() ? "meta" : canal.trim().toLowerCase(Locale.ROOT);
         String campanaN = campana == null || campana.isBlank() ? "sin_campana" : campana.trim();
+        // tenant-global-ok: AdsMetricasController pasa requireEmpresaIdOrAdmin: null (gasto de plataforma) solo ADMIN
         AdsGastoDiario g = (empresaId == null
             ? gastoRepo.findPlataformaByFechaAndCanalAndCampana(fecha, canalN, campanaN)
             : gastoRepo.findByEmpresa_IdAndFechaAndCanalAndCampana(empresaId, fecha, canalN, campanaN))

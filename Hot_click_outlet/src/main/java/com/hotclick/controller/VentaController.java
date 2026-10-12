@@ -64,6 +64,7 @@ public class VentaController {
     @GetMapping("/clientes")
     public ResponseEntity<ResponseDTO> buscarClientes(@RequestParam(required = false) String q) {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
+        // tenant-global-ok: empresaId de requireEmpresaIdOrAdmin: null solo ADMIN
         List<Usuario> todos = empresaId != null
             ? usuarioRepository.findTop500ByEmpresaIdOrderByIdDesc(empresaId)
             : usuarioRepository.findTop500ByOrderByIdDesc();

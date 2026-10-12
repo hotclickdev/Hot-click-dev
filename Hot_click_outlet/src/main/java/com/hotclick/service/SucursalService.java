@@ -39,6 +39,7 @@ public class SucursalService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listar(Long empresaId) {
+        // tenant-global-ok: SucursalController pasa requireEmpresaIdOrAdmin: null solo ADMIN
         List<Sucursal> lista = empresaId != null
             ? sucursalRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO)
             : sucursalRepository.findByEstado(Constants.ESTADO_ACTIVO);

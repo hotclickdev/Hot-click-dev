@@ -29,6 +29,7 @@ public class PedidoDetailMapper {
 
     public List<Map<String, Object>> listarResumenPaginadoPorEmpresa(int page, int size, Long empresaId) {
         var pageable = PageRequest.of(page, size, Sort.by("fechaPedido").descending());
+        // tenant-global-ok: VentaController pasa requireEmpresaIdOrAdmin; listarResumenPaginado(null) no tiene llamadores HTTP
         var content = empresaId != null
             ? pedidoRepository.findByEmpresaIdOrderByFechaPedidoDesc(empresaId, pageable).getContent()
             : pedidoRepository.findAllByOrderByFechaPedidoDesc(pageable).getContent();

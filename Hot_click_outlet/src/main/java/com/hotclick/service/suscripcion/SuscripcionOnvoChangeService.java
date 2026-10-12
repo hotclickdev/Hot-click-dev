@@ -242,6 +242,7 @@ public class SuscripcionOnvoChangeService {
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionId(onvoSubId)
+            // tenant-global-ok: webhook de pago: null solo evita buscar por empresa (Optional.empty)
             .or(() -> empresaId != null
                 ? suscripcionRepo.findActivaByEmpresaId(empresaId)
                 : Optional.empty())

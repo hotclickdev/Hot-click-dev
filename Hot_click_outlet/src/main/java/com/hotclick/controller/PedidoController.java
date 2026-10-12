@@ -297,11 +297,13 @@ public class PedidoController {
 
     private Empresa empresaDelScope() {
         Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+        // tenant-global-ok: resuelve la entidad Empresa del scope; null no amplía ningún listado
         return eid != null ? empresaRepository.findById(eid).orElse(null) : null;
     }
 
     private Object listarConDetalles() {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
+        // tenant-global-ok: empresaId de requireEmpresaIdOrAdmin: null solo ADMIN
         return empresaId != null
             ? pedidoService.listarTodosConDetallesByEmpresa(empresaId)
             : pedidoService.listarTodosConDetalles();

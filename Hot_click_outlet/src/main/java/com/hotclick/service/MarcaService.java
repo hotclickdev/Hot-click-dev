@@ -49,6 +49,7 @@ public class MarcaService {
         }
         Usuario admin = usuarioRepository.findByCorreo(correoAdmin)
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+        // tenant-global-ok: resuelve la entidad Empresa al crear; null no amplía ningún listado
         Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
         Long eid = empresa != null ? empresa.getId() : null;
         if (eid != null && !adminIt
@@ -90,6 +91,7 @@ public class MarcaService {
                                              Long empresaId, boolean adminIt) {
         Usuario admin = usuarioRepository.findByCorreo(correoAdmin)
             .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
+        // tenant-global-ok: resuelve la entidad Empresa; null no amplía ningún listado
         Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
         Long eid = empresa != null ? empresa.getId() : null;
         boolean limitado = eid != null && !adminIt;
@@ -136,10 +138,12 @@ public class MarcaService {
 
     private boolean nombreDuplicado(String nombre, Long empresaId, Long idExcluido) {
         if (idExcluido == null) {
+            // tenant-global-ok: chequeo de nombre duplicado; no devuelve datos
             return empresaId != null
                 ? marcaRepository.existsByNombreMarcaAndEmpresaIdAndEstado(nombre, empresaId, Constants.ESTADO_ACTIVO)
                 : marcaRepository.existsByNombreMarcaAndEstado(nombre, Constants.ESTADO_ACTIVO);
         }
+        // tenant-global-ok: chequeo de nombre duplicado; no devuelve datos
         return empresaId != null
             ? marcaRepository.existsByNombreMarcaAndEmpresaIdAndEstadoAndIdNot(
                 nombre, empresaId, Constants.ESTADO_ACTIVO, idExcluido)

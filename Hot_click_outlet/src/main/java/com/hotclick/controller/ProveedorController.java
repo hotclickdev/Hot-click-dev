@@ -33,6 +33,7 @@ public class ProveedorController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> listar() {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
+        // tenant-global-ok: empresaId de requireEmpresaIdOrAdmin: null solo ADMIN
         var lista = empresaId != null
             ? proveedorRepository.findByEmpresa_IdAndEstadoOrderByNombreAsc(empresaId, Constants.ESTADO_ACTIVO)
             : proveedorRepository.findByEstadoOrderByNombreAsc(Constants.ESTADO_ACTIVO);

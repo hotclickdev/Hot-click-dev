@@ -58,11 +58,26 @@ public class ProductoAccessGuard {
         getAccessibleProducto(productoId);
     }
 
+    /**
+     * IDOR-10: el detalle por id es público, pero solo para productos publicables: activos, visibles en
+     * catálogo y de un negocio ACTIVO con visibilidad pública (o de plataforma, sin empresa).
+     * Lo demás → 404 salvo para el dueño o un ADMIN. Un vendedor de otro negocio sigue recibiendo 403.
+     */
     public void assertCanAccessProductoDetalle(Producto producto) {
+        if (companyScope.isAdminIT()) return;
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId != null) {
             companyScope.assertCanAccessNullable(
                 producto.getEmpresa() != null ? producto.getEmpresa().getId() : null);
+            return;
         }
+        if (!productoRepository.esPublicable(producto.getId())) {
+            throw new RecursoNoEncontradoException("Producto no encontrado");
+        }
+    }
+
+    /** IDOR-09: empresa de la sesión, nunca null (también para ADMIN); sin empresa → 403. */
+    public Long requireEmpresaId() {
+        return companyScope.requireEmpresaId();
     }
 }

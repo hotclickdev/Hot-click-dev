@@ -30,7 +30,7 @@ public class AdsMetricasController {
             @RequestParam(required = false) String desde,
             @RequestParam(required = false) String hasta,
             @RequestParam(defaultValue = "7") int ventanaDias) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin(); // null solo ADMIN (vista global)
         LocalDate hastaD = parseOr(hasta, LocalDate.now(Constants.ZONA_CR));
         LocalDate desdeD = parseOr(desde, hastaD.minusDays(29));
         int ventana = ventanaDias == 1 || ventanaDias == 28 ? ventanaDias : 7;
@@ -42,7 +42,7 @@ public class AdsMetricasController {
     public ResponseEntity<?> listarGastos(
             @RequestParam(required = false) String desde,
             @RequestParam(required = false) String hasta) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin(); // null solo ADMIN (vista global)
         LocalDate hastaD = parseOr(hasta, LocalDate.now(Constants.ZONA_CR));
         LocalDate desdeD = parseOr(desde, hastaD.minusDays(29));
         return ResponseEntity.ok(ResponseDTO.success("OK",
@@ -51,7 +51,7 @@ public class AdsMetricasController {
 
     @PostMapping("/gastos")
     public ResponseEntity<?> crearGasto(@RequestBody Map<String, Object> body) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin(); // null solo ADMIN (vista global)
         String fecha = str(body.get("fecha"));
         String campana = str(body.get("campana"));
         if (fecha == null || campana == null) {
@@ -76,7 +76,7 @@ public class AdsMetricasController {
 
     @DeleteMapping("/gastos/{id}")
     public ResponseEntity<?> eliminarGasto(@PathVariable Long id) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin(); // null solo ADMIN (vista global)
         try {
             adsMetricasService.eliminarGasto(id, empresaId);
             return ResponseEntity.ok(ResponseDTO.success("Gasto eliminado", null));

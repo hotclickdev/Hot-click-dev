@@ -138,6 +138,7 @@ public class CuponService {
             codigo = sb.toString();
             intentos++;
             if (intentos > 20) throw new IllegalStateException("No se pudo generar código único");
+            // tenant-global-ok: solo comprueba unicidad del código generado; no devuelve datos
             boolean existe = empresaId != null
                 ? cuponRepository.findByCodigoAndEmpresaId(codigo, empresaId).isPresent()
                 : cuponRepository.findByCodigo(codigo).isPresent();

@@ -285,4 +285,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query("SELECT p FROM Producto p JOIN p.empresa e WHERE p.enOferta = true AND p.visibleCatalogo = true AND p.estado = 1 AND e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true")
     List<Producto> findByEnOfertaTrueAndVisibleCatalogoTrue();
+
+    /** IDOR-10: mismo criterio que el catálogo público (activo, visible y negocio ACTIVO y público, o de plataforma). */
+    @Query("SELECT COUNT(p) > 0 FROM Producto p LEFT JOIN p.empresa e WHERE p.id = :id AND p.estado = 1 "
+        + "AND p.visibleCatalogo = TRUE AND (e IS NULL OR (e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = TRUE))")
+    boolean esPublicable(@Param("id") Long id);
 }

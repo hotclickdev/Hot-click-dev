@@ -178,6 +178,7 @@ public class ProductoWriteHandler {
             boolean enOferta = Boolean.TRUE.equals(body.get("enOferta"));
             Integer pct = body.get("porcentajeDescuento") != null
                 ? ((Number) body.get("porcentajeDescuento")).intValue() : null;
+            // tenant-global-ok: empresaId de requireEmpresaIdOrAdmin: null solo ADMIN
             List<Producto> productos = empresaId != null
                 ? productoRepository.findByCategoriaIdAndEmpresaId(categoriaId, empresaId)
                 : productoRepository.findByCategoriaId(categoriaId);
