@@ -46,6 +46,7 @@ public class CategoriaController {
         Long empresaId = companyScope.getCurrentEmpresaId();
         // Incluye las categorías propias del negocio (legado, de antes de que la creación
         // pasara a ser exclusiva de ADMIN) más las globales (empresa = NULL) creadas por ADMIN.
+        // tenant-global-ok: sin empresa devuelve solo las categorías públicas (dato público)
         var cats = empresaId != null
             ? categoriaRepository.findByEmpresaIdOrNoEmpresaAndEstado(empresaId, Constants.ESTADO_ACTIVO)
             : categoriaRepository.findPublicasByEstado(Constants.ESTADO_ACTIVO);

@@ -139,6 +139,7 @@ public class AdminAsignarController {
             dto.setItems(items);
 
             Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+            // tenant-global-ok: controlador solo ADMIN; carga la empresa por id, no lista nada
             com.hotclick.model.Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
 
             com.hotclick.model.Pedido pedido = pedidoService.crearPedidoManual(dto, empresa);

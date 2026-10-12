@@ -25,6 +25,7 @@ public class DashboardService {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private PedidoRepository pedidoRepository;
 
+    // tenant-global-ok: clave de caché; DashboardController pasa requireEmpresaIdOrAdmin (null solo ADMIN)
     @Cacheable(value = "dashboard-metricas", key = "#empresaId != null ? #empresaId.toString() : 'global'")
     @Transactional(readOnly = true)
     public DashboardDTO obtenerMetricas(Long empresaId) {

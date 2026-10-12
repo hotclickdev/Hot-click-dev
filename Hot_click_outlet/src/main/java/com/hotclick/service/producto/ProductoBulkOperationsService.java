@@ -35,6 +35,7 @@ public class ProductoBulkOperationsService {
 
     public int archivarSinStock() {
         Long empresaId = productoAccessGuard.requireEmpresaIdOrAdmin();
+        // tenant-global-ok: empresaId de requireEmpresaIdOrAdmin: null solo ADMIN
         List<Producto> sinStock = empresaId != null
             ? productoRepository.findActivosSinStockByEmpresaId(empresaId)
             : productoRepository.findActivosSinStock();
@@ -46,6 +47,7 @@ public class ProductoBulkOperationsService {
     public int ajustarPrecios(double porcentaje) {
         double multiplicador = 1.0 + porcentaje / 100.0;
         Long empresaId = productoAccessGuard.requireEmpresaIdOrAdmin();
+        // tenant-global-ok: ajustar-precios es solo ADMIN y usa requireEmpresaIdOrAdmin
         List<Producto> productos = empresaId != null
             ? productoRepository.findActivosByEmpresaId(empresaId)
             : productoRepository.findAllActivos();
@@ -61,11 +63,11 @@ public class ProductoBulkOperationsService {
     }
 
     public BulkImportResult importar(List<ProductoRequestDTO> dtos, String adminCorreo) {
-        Long empresaId = productoAccessGuard.getCurrentEmpresaIdOrOwn();
-        if (empresaId != null) {
-            tenantService.verificarLimiteProductosBulk(empresaId, dtos.size());
-        }
-        Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
+        // IDOR-09: la empresa sale siempre de la sesión; sin empresa → 403 (nunca productos huérfanos)
+        Long empresaId = productoAccessGuard.requireEmpresaId();
+        tenantService.verificarLimiteProductosBulk(empresaId, dtos.size());
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new com.hotclick.exception.EmpresaRequeridaException());
         int ok = 0;
         int errors = 0;
         StringBuilder errMsg = new StringBuilder();

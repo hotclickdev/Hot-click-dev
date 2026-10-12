@@ -44,6 +44,7 @@ public class ProductoCatalogHandler {
         var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE_PUBLIC));
         // Si hay empresaId en el JWT (contexto admin de ese negocio) → mostrar sus propios productos
         // Si es público (sin empresa, incluye ADMIN sin empresa) → catálogo filtrado (negocios aprobados y visibles)
+        // tenant-global-ok: catálogo público: la rama nula usa el filtro de negocios aprobados y visibles
         var productos = empresaId != null
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)
             : productoService.listarTodosActivos(pageable);
@@ -54,6 +55,7 @@ public class ProductoCatalogHandler {
         // Gestión: sin empresa → 403 EMPRESA_REQUERIDA (nunca el catálogo global con costos).
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE));
+        // tenant-global-ok: empresaId de requireEmpresaIdOrAdmin: null solo ADMIN
         var productos = empresaId != null
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)
             : productoService.listarTodosActivos(pageable);
@@ -169,6 +171,7 @@ public class ProductoCatalogHandler {
     public ResponseEntity<ResponseDTO> enOferta() {
         try {
             Long empresaId = companyScope.getCurrentEmpresaId();
+            // tenant-global-ok: ofertas públicas: la rama nula solo trae productos visibles en catálogo
             List<Producto> lista = empresaId != null
                 ? productoRepository.findByEnOfertaTrueAndEmpresaIdAndVisibleCatalogoTrue(empresaId)
                 : productoRepository.findByEnOfertaTrueAndVisibleCatalogoTrue();

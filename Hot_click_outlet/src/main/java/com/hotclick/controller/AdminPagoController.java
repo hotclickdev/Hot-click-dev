@@ -88,6 +88,7 @@ public class AdminPagoController {
     @GetMapping("/pagos/kpis")
     public ResponseEntity<ResponseDTO> kpis() {
         Long empresaId  = empresaPagos();
+        // tenant-global-ok: empresaId viene de empresaPagos(): null solo ADMIN o staff con global.metrics
         long total      = empresaId == null ? pagoRepository.count()
                             : pagoRepository.countByEstadoPagoAndEmpresa("CAPTURADO", empresaId)
                             + pagoRepository.countByEstadoPagoAndEmpresa("PENDIENTE", empresaId)

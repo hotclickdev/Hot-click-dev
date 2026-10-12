@@ -107,6 +107,7 @@ public class BodegaController {
             if (body.get("telefono") == null || body.get("telefono").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El teléfono es obligatorio"));
             String telefono = TelefonoBodega.normalizar(body.get("telefono"));
+            // tenant-global-ok: eid null solo si esAdminSinImpersonar (SEC-11); resuelve la entidad, no lista
             var empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             Bodega b = new Bodega();
             b.setNombreBodega(body.get("nombreBodega").trim());
@@ -148,6 +149,7 @@ public class BodegaController {
             .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
         // Verifica que el lote completo quepa dentro del plan antes de procesar (HTTP 403 si no)
         if (eid2 != null) tenantService.verificarLimiteBodegasBulk(eid2, items.size());
+        // tenant-global-ok: eid2 null solo si esAdminSinImpersonar (SEC-11); resuelve la entidad, no lista
         var empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
         int ok = 0; int errors = 0;
         for (Map<String, String> item : items) {

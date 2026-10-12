@@ -32,6 +32,7 @@ public class CrmClientesService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listar(Long empresaId) {
+        // tenant-global-ok: CrmController pasa requireEmpresaIdOrAdmin: null solo ADMIN
         List<Usuario> clientes = empresaId != null
             ? usuarioRepository.findClientesByEmpresa(empresaId)
             : usuarioRepository.findClientes();
@@ -40,6 +41,7 @@ public class CrmClientesService {
 
     @Transactional
     public Map<String, Object> crear(String nombre, String telefono, String correo, Long empresaId) {
+        // tenant-global-ok: resuelve la entidad Empresa; null no amplía ningún listado
         Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
         Usuario saved = usuarioService.crearClienteRapido(nombre, telefono, correo, empresa);
         return crmClienteMapper.toClienteMapSimple(saved);
@@ -48,6 +50,7 @@ public class CrmClientesService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> buscar(String q, Long empresaId) {
         if (q == null || q.trim().length() < 2) return List.of();
+        // tenant-global-ok: CrmController pasa requireEmpresaIdOrAdmin: null solo ADMIN
         List<Usuario> clientes = empresaId != null
             ? usuarioRepository.buscarClientesByEmpresa(q.trim(), empresaId)
             : usuarioRepository.buscarClientes(q.trim());
@@ -97,6 +100,7 @@ public class CrmClientesService {
 
     @Transactional(readOnly = true)
     public Object historialWa(Long id, Long empresaId) {
+        // tenant-global-ok: la rama nula exige crmAccessGuard.esAdminGlobal()
         boolean permitido = empresaId == null
             ? crmAccessGuard.esAdminGlobal() // IDOR-05
             : pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId);

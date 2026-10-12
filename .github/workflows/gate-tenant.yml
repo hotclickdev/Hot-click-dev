@@ -41,3 +41,6 @@ jobs:
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/eng-gates/gate-tenant.mjs
+
+      - name: Empresa nula nunca ve todo (IDOR-vendedor)
+        run: node scripts/eng-gates/gate-tenant-global.mjs
