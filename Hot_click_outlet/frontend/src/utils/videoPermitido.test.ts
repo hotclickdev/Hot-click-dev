@@ -11,7 +11,7 @@ describe('esVideoPermitido (ESC-4)', () => {
   })
   it('rechaza otros dominios, http y trucos de host', () => {
     expect(esVideoPermitido('https://ejemplo-qa-test.com/video.mp4')).toBe(false)
-    expect(esVideoPermitido('http://www.youtube.com/watch?v=abc')).toBe(false)
+    expect(esVideoPermitido('http://www.youtube.com/watch?v=abc')).toBe(false) // NOSONAR: http intencional, el test comprueba que se rechaza
     expect(esVideoPermitido('https://youtube.com.evil.com/x')).toBe(false)
     expect(esVideoPermitido('https://evil.com@youtube.com/x')).toBe(false)
     expect(esVideoPermitido('no es url')).toBe(false)

@@ -61,4 +61,11 @@ public interface WalletTransaccionRepository extends JpaRepository<WalletTransac
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE WalletTransaccion t SET t.payoutLiquidacionId = NULL WHERE t.payoutLiquidacionId = :payoutId AND t.tipo <> 'RETENCION_PAYOUT'")
     int liberarLiquidacion(@Param("payoutId") Long payoutId);
+
+    /** Marca en lote los movimientos cubiertos por una liquidación (una sentencia). */
+    @org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+    @org.springframework.data.jpa.repository.Query(
+        "UPDATE WalletTransaccion t SET t.payoutLiquidacionId = :payoutId WHERE t.id IN :ids")
+    int marcarLiquidados(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids,
+                         @org.springframework.data.repository.query.Param("payoutId") Long payoutId);
 }

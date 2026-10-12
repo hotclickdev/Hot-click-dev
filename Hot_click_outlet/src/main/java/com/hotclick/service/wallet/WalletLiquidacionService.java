@@ -90,8 +90,8 @@ public class WalletLiquidacionService {
         }
         PayoutRequest pr = payoutService.retenerYCrear(empresaId, monto, tipoLiquidacion, cuenta.get(),
             cubiertos.size() + " movimientos hasta " + hasta.toLocalDate());
-        for (WalletTransaccion t : cubiertos) t.setPayoutLiquidacionId(pr.getId());
-        txRepo.saveAll(cubiertos);
+        // SCALE1: un solo UPDATE para todos los movimientos cubiertos (no un save por fila).
+        txRepo.marcarLiquidados(cubiertos.stream().map(WalletTransaccion::getId).toList(), pr.getId());
         return Optional.of(pr);
     }
 

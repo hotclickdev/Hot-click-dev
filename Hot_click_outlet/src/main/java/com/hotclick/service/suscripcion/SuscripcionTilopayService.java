@@ -87,16 +87,32 @@ public class SuscripcionTilopayService {
     }
 
     CobroSuscripcion crearCobro(Long empresaId, Plan plan, String motivo) {
+        return cobroRepo.save(nuevoCobro(empresaId, plan, motivo, diaCobro(empresaId)));
+    }
+
+    /** Arma el cobro sin guardarlo; el día de cobro lo pasa quien ya tiene la empresa cargada. */
+    CobroSuscripcion nuevoCobro(Long empresaId, Plan plan, String motivo, int dia) {
         CobroSuscripcion c = new CobroSuscripcion();
         c.setEmpresaId(empresaId);
         c.setPlanId(plan.getId());
         long precio = plan.getPrecioMensual().longValue();
         c.setMontoCrc(CobroSuscripcion.MOTIVO_ALTA.equals(motivo)
-            ? ProrrateoSuscripcion.montoAlta(prorrateo, precio, c.getFechaCreacion().toLocalDate(), diaCobro(empresaId))
+            ? ProrrateoSuscripcion.montoAlta(prorrateo, precio, c.getFechaCreacion().toLocalDate(), dia)
             : precio);
         c.setMotivo(motivo);
         c.setOrderNumber("SUB-" + empresaId + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase());
-        return cobroRepo.save(c);
+        return c;
+    }
+
+    /** Escritura en lote de una corrida de renovaciones (dos sentencias batch, no una por negocio). */
+    @Transactional
+    public void guardarRenovaciones(List<CobroSuscripcion> cobros, List<Suscripcion> pasanAPastDue) {
+        if (!cobros.isEmpty()) cobroRepo.saveAll(cobros);
+        if (!pasanAPastDue.isEmpty()) suscripcionRepo.saveAll(pasanAPastDue);
+    }
+
+    int diaDe(Empresa empresa) {
+        return empresa != null && empresa.getDiaCobro() != null ? empresa.getDiaCobro() : diaCobroDefault;
     }
 
     /** Confirma con Tilopay (nunca con lo que diga el navegador) y activa/renueva el plan. */
@@ -156,7 +172,7 @@ public class SuscripcionTilopayService {
     }
 
     private int diaCobro(Long empresaId) {
-        return empresaRepo.findById(empresaId).map(Empresa::getDiaCobro).orElse(null) instanceof Integer d ? d : diaCobroDefault;
+        return diaDe(empresaRepo.findById(empresaId).orElse(null));
     }
 
     /** Próxima fecha de cobro con el día del negocio (13 o 28), al menos ~un mes después de hoy. */
@@ -166,50 +182,19 @@ public class SuscripcionTilopayService {
         return siguiente.withDayOfMonth(Math.min(dia, siguiente.lengthOfMonth()));
     }
 
-    /**
-     * Día de cobro: a cada suscripción de pago con fecha_fin hoy o antes le abre un cobro de RENOVACION
-     * (si no tiene uno pendiente) y la pasa a PAST_DUE hasta que pague.
-     */
-    @Transactional
-    public int generarRenovaciones(LocalDate hoy) {
-        int n = 0;
-        for (Suscripcion sub : suscripcionRepo.findVigentesConPlanYEmpresa()) {
-            Plan plan = sub.getPlan();
-            if (plan == null || plan.getPrecioMensual() == null || plan.getPrecioMensual() <= 0) continue;
-            if (sub.getFechaFin() == null || sub.getFechaFin().isAfter(hoy)) continue;
-            if (!"ACTIVO".equals(sub.getEstado()) && !"PAST_DUE".equals(sub.getEstado())) continue;
-            Long empresaId = sub.getEmpresa().getId();
-            if (Boolean.TRUE.equals(sub.getCancelarAlVencer())) continue;
-            if (cobroRepo.findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(
-                    empresaId, CobroSuscripcion.PENDIENTE, CobroSuscripcion.MOTIVO_RENOVACION).isEmpty()) {
-                crearCobro(empresaId, plan, CobroSuscripcion.MOTIVO_RENOVACION);
-                n++;
-            }
-            if ("ACTIVO".equals(sub.getEstado())) {
-                sub.setEstado("PAST_DUE");
-                suscripcionRepo.save(sub);
-                ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_COBRO_FALLIDO,
-                    BillingLedger.PROVEEDOR_TILOPAY, "renov-" + sub.getId() + "-" + hoy, null, "crc",
-                    "Mensualidad pendiente de pago");
-            }
-        }
-        if (n > 0) log.info("[billing-tilopay] {} cobro(s) de renovación generados", n);
-        return n;
-    }
-
     /** Cobro de renovación pendiente para mostrar "Pagar mensualidad" en el panel. */
     @Transactional(readOnly = true)
     public Optional<Map<String, Object>> pendiente(Long empresaId) {
-        return cobroRepo.findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(
-                empresaId, CobroSuscripcion.PENDIENTE, CobroSuscripcion.MOTIVO_RENOVACION)
-            .map(c -> {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("orderNumber", c.getOrderNumber());
-                m.put("montoCrc", c.getMontoCrc());
-                m.put("moneda", "CRC");
-                m.put("proveedor", Constants.PROVEEDOR_TILOPAY);
-                m.put("sdkToken", tilopayService.loginSdk());
-                return m;
-            });
+        Optional<CobroSuscripcion> cobro = cobroRepo.findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(
+            empresaId, CobroSuscripcion.PENDIENTE, CobroSuscripcion.MOTIVO_RENOVACION);
+        if (cobro.isEmpty()) return Optional.empty();
+        CobroSuscripcion c = cobro.get();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("orderNumber", c.getOrderNumber());
+        m.put("montoCrc", c.getMontoCrc());
+        m.put("moneda", "CRC");
+        m.put("proveedor", Constants.PROVEEDOR_TILOPAY);
+        m.put("sdkToken", tilopayService.loginSdk());
+        return Optional.of(m);
     }
 }

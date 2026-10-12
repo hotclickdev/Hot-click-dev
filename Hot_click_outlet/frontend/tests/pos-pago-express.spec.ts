@@ -7,43 +7,33 @@ const ITEMS_QR = [
   { productoId: 11, nombre: 'Teclado mecánico', cantidad: 1, precioUnitario: 12000, imagen: null },
 ]
 
-async function mockPagoExpress(page: Page, opts?: { intentOk?: boolean }) {
-  const intentOk = opts?.intentOk === true
+/** Cobro con tarjeta del QR de caja por Tilopay (ONVO/Stripe retirados del POS). */
+async function mockPagoExpress(page: Page, opts?: { tilopayOk?: boolean; onTilopay?: () => void }) {
+  const tilopayOk = opts?.tilopayOk === true
 
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const method = route.request().method()
 
-    if (path.includes('/pos/qr/pago/tokencarrito01/intent') && method === 'POST') {
-      if (intentOk) {
+    if (path.endsWith('/pos/qr/pago/tokencarrito01/tilopay') && method === 'POST') {
+      opts?.onTilopay?.()
+      if (tilopayOk) {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            paymentIntentId: 'pi_mock_pos_01',
-            publishableKey: 'onvo_pk_test_mock',
-          }),
+          body: JSON.stringify({ orderNumber: 'POSQR-1-mock', montoCrc: 17000, sdkToken: 'tlpy_sdk_mock' }),
         })
         return
       }
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'ONVO_PUBLISHABLE_KEY no configurado' }),
+        body: JSON.stringify({ error: 'Tilopay no está configurado' }),
       })
       return
     }
 
-    if (path.includes('/pos/qr/pago/tokencarrito01/stripe') && method === 'POST') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ checkoutUrl: 'https://pay.onvo.test/checkout-mock' }),
-      })
-      return
-    }
-
-    if (path.includes('/pos/qr/pago/') && !path.endsWith('/estado') && !path.endsWith('/stripe') && !path.endsWith('/intent')) {
+    if (path.includes('/pos/qr/pago/') && !path.endsWith('/estado') && !path.includes('/tilopay')) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -92,49 +82,46 @@ test.describe('POS pago express', () => {
     expect(page.url()).not.toContain('/carrito')
   })
 
-  test('intent ok sin SDK cae a hosted y no navega al carrito', async ({ page }) => {
-    await mockPagoExpress(page, { intentOk: true })
+  test('Tilopay ok monta el formulario de tarjeta y no navega al carrito', async ({ page }) => {
+    let llamadas = 0
+    await mockPagoExpress(page, { tilopayOk: true, onTilopay: () => { llamadas += 1 } })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
 
     await expect(page).toHaveURL(/\/pos\/pago\/tokencarrito01/)
     await expect(page.getByText('Demo POS')).toBeVisible()
-    await expect(page.getByRole('button', { name: /Pagar/i })).toBeVisible()
+    await expect.poll(() => llamadas).toBeGreaterThan(0)
+    await expect(page.getByText(/No se pudo iniciar el cobro con tarjeta|Card payment could not/i)).toHaveCount(0)
     expect(page.url()).not.toContain('/carrito')
   })
 
-  test('al pulsar pagar llama al endpoint hosted', async ({ page }) => {
-    await mockPagoExpress(page)
+  test('al pulsar pagar llama al endpoint de Tilopay (no a /stripe)', async ({ page }) => {
+    let llamadas = 0
+    let stripe = false
+    await mockPagoExpress(page, { onTilopay: () => { llamadas += 1 } })
+    await page.route('**/api/pos/qr/pago/tokencarrito01/stripe', async (route) => {
+      stripe = true
+      await route.fulfill({ status: 404, body: '' })
+    })
     await page.setViewportSize({ width: 390, height: 844 })
 
-    let stripeLlamado = false
-    await page.route('**/api/pos/qr/pago/tokencarrito01/stripe', async (route) => {
-      stripeLlamado = true
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ checkoutUrl: 'https://pay.onvo.test/checkout-mock' }),
-      })
-    })
-
     await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
+    // Al cargar se pide el cobro (StrictMode en dev puede pedirlo dos veces); falla y aparece el botón.
+    await expect(page.getByText(/No se pudo iniciar el cobro con tarjeta|Card payment could not/i)).toBeVisible()
+    const antes = llamadas
+    expect(antes).toBeGreaterThan(0)
     await page.getByRole('button', { name: /Pagar/i }).click()
-    await expect.poll(() => stripeLlamado).toBe(true)
+    await expect.poll(() => llamadas).toBeGreaterThan(antes)
+    expect(stripe).toBe(false)
     expect(page.url()).not.toContain('/carrito')
   })
 
-  test('si hosted falla, muestra error y reportar problema', async ({ page }) => {
+  test('si Tilopay falla, muestra error y reportar problema', async ({ page }) => {
     await mockPagoExpress(page)
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.route('**/api/pos/qr/pago/tokencarrito01/stripe', async (route) => {
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'ONVO no está configurado' }),
-      })
-    })
 
     await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByText(/No se pudo iniciar el cobro con tarjeta|Card payment could not/i)).toBeVisible()
     await page.getByRole('button', { name: /Pagar/i }).click()
     await expect(page.getByText(/No se pudo iniciar el cobro con tarjeta|Card payment could not/i)).toBeVisible()
     await expect(page.getByRole('button', { name: /Reportar|reportar|problema/i })).toBeVisible()
