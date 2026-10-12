@@ -39,9 +39,7 @@ public class MetodoCobroService {
     @Transactional(readOnly = true)
     public List<MetodoCobroDto> listar() {
         Long empresaId = exigirEmpresaId();
-        return repo.findActivosByEmpresaId(empresaId).stream()
-                .map(MetodoCobroDto::from)
-                .toList();
+        return MetodoCobroDto.deLista(repo.findActivosByEmpresaId(empresaId));
     }
 
     @Transactional

@@ -29,14 +29,7 @@ public class CrmClientesService {
     @Autowired private WhatsAppService whatsAppService;
     @Autowired private CrmAccessGuard crmAccessGuard;
     @Autowired private CrmClienteMapper crmClienteMapper;
-    @Autowired private com.hotclick.repository.ClienteEmpresaRepository clienteEmpresaRepository;
-
-    /** Ficha del cliente en este negocio; se crea al primer uso (V171). */
-    private com.hotclick.model.ClienteEmpresa fichaNegocio(Long empresaId, Long usuarioId) {
-        return clienteEmpresaRepository.findByEmpresaIdAndUsuarioId(empresaId, usuarioId)
-            .orElseGet(() -> clienteEmpresaRepository.save(
-                new com.hotclick.model.ClienteEmpresa(empresaId, usuarioId, com.hotclick.model.ClienteEmpresa.ORIGEN_COMPRA)));
-    }
+    @Autowired private ClienteEmpresaFichaService fichas;
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listar(Long empresaId) {
@@ -53,8 +46,7 @@ public class CrmClientesService {
         Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
         Usuario saved = usuarioService.crearClienteRapido(nombre, telefono, correo, empresa);
         if (empresa != null) {
-            clienteEmpresaRepository.save(new com.hotclick.model.ClienteEmpresa(
-                empresa.getId(), saved.getId(), com.hotclick.model.ClienteEmpresa.ORIGEN_MANUAL));
+            fichas.registrarManual(empresa.getId(), saved.getId());
         }
         return crmClienteMapper.toClienteMapSimple(saved);
     }
@@ -96,13 +88,13 @@ public class CrmClientesService {
         if (!CrmClienteMapper.esClientePropio(c, empresaId)) {
             // P8-01 (V171): el negocio que no lo registró guarda notas/puntos/segmento en su propia ficha.
             if (body.containsKey("limiteCredito")) throw new TenantAccessDeniedException(MSG_COMPARTIDO);
-            com.hotclick.model.ClienteEmpresa f = fichaNegocio(empresaId, id);
+            com.hotclick.model.ClienteEmpresa f = fichas.obtenerOCrear(empresaId, id);
             if (body.containsKey("segmento")) f.setSegmento((String) body.get("segmento"));
             if (body.containsKey("notasInternas")) f.setNotasInternas((String) body.get("notasInternas"));
             if (body.containsKey("puntosFidelidad")) {
                 f.setPuntosFidelidad(Math.max(0, Integer.parseInt(body.get("puntosFidelidad").toString())));
             }
-            clienteEmpresaRepository.save(f);
+            fichas.guardar(f);
             return crmClienteMapper.toClienteMapSimple(c, empresaId);
         }
         Usuario u = c;
@@ -122,9 +114,9 @@ public class CrmClientesService {
     public int ajustarPuntos(Long id, Long empresaId, int delta) {
         Usuario c = clienteDeEmpresa(id, empresaId);
         if (!CrmClienteMapper.esClientePropio(c, empresaId)) {
-            com.hotclick.model.ClienteEmpresa f = fichaNegocio(empresaId, id);
+            com.hotclick.model.ClienteEmpresa f = fichas.obtenerOCrear(empresaId, id);
             f.setPuntosFidelidad(Math.max(0, f.getPuntosFidelidad() + delta));
-            clienteEmpresaRepository.save(f);
+            fichas.guardar(f);
             return f.getPuntosFidelidad();
         }
         Usuario u = c;
