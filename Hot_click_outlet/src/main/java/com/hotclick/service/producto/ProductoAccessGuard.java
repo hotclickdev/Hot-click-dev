@@ -68,6 +68,8 @@ public class ProductoAccessGuard {
         Long empresaId = companyScope.getCurrentEmpresaId();
         Long duenoId = producto.getEmpresa() != null ? producto.getEmpresa().getId() : null;
         if (empresaId != null && empresaId.equals(duenoId)) return;
+        // F28: un vendedor de otro negocio sigue recibiendo 403 (la respuesta del panel trae campos internos).
+        if (empresaId != null) companyScope.assertCanAccessNullable(duenoId);
         // ESC-1: borrado (estado 2), inactivo, oculto o de negocio no aprobado → 404 para todos los demás.
         if (!productoRepository.esPublicable(producto.getId())) {
             throw new RecursoNoEncontradoException("Producto no encontrado");
