@@ -66,11 +66,9 @@ public class ProductoAccessGuard {
     public void assertCanAccessProductoDetalle(Producto producto) {
         if (companyScope.isAdminIT()) return;
         Long empresaId = companyScope.getCurrentEmpresaId();
-        if (empresaId != null) {
-            companyScope.assertCanAccessNullable(
-                producto.getEmpresa() != null ? producto.getEmpresa().getId() : null);
-            return;
-        }
+        Long duenoId = producto.getEmpresa() != null ? producto.getEmpresa().getId() : null;
+        if (empresaId != null && empresaId.equals(duenoId)) return;
+        // ESC-1: borrado (estado 2), inactivo, oculto o de negocio no aprobado → 404 para todos los demás.
         if (!productoRepository.esPublicable(producto.getId())) {
             throw new RecursoNoEncontradoException("Producto no encontrado");
         }

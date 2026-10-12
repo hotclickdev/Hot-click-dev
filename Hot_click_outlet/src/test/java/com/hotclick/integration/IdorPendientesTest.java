@@ -139,6 +139,9 @@ class IdorPendientesTest extends BaseIntegrationTest {
         Producto inactivo = crearProducto("Inactivo A", "SKU-IDOR-IN", empresaA, 3);
         inactivo.setEstado(0);
         productoRepository.saveAndFlush(inactivo);
+        Producto borrado = crearProducto("Borrado A", "SKU-IDOR-BO", empresaA, 3);
+        borrado.setEstado(Constants.ESTADO_ELIMINADO);
+        productoRepository.saveAndFlush(borrado);
         Producto oculto = crearProducto("Oculto A", "SKU-IDOR-OC", empresaA, 3);
         oculto.setVisibleCatalogo(false);
         productoRepository.saveAndFlush(oculto);
@@ -151,12 +154,12 @@ class IdorPendientesTest extends BaseIntegrationTest {
         empresaRepository.saveAndFlush(invisible);
         Producto deInvisible = crearProducto("De Invisible", "SKU-IDOR-IV", invisible, 3);
 
-        for (Producto p : new Producto[]{inactivo, oculto, deNoAprobado, deInvisible}) {
+        for (Producto p : new Producto[]{inactivo, borrado, oculto, deNoAprobado, deInvisible}) {
             String url = "/api/productos/" + p.getId();
             mockMvc.perform(get(url)).andExpect(status().isNotFound());
             mockMvc.perform(get(url).header("Authorization", userToken)).andExpect(status().isNotFound());
             mockMvc.perform(get(url).header("Authorization", tokenSinEmpresa)).andExpect(status().isNotFound());
-            mockMvc.perform(get(url).header("Authorization", tokenB)).andExpect(status().isForbidden());
+            mockMvc.perform(get(url).header("Authorization", tokenB)).andExpect(status().isNotFound());
             permite(HttpMethod.GET, url, null, adminToken);
         }
         permite(HttpMethod.GET, "/api/productos/" + inactivo.getId(), null, tokenA);
@@ -164,6 +167,8 @@ class IdorPendientesTest extends BaseIntegrationTest {
         // Publicable: sigue abierto al público
         mockMvc.perform(get("/api/productos/" + productoA.getId())).andExpect(status().isOk());
         permite(HttpMethod.GET, "/api/productos/" + productoA.getId(), null, userToken);
+        // ESC-1: un vendedor de otro negocio navega el marketplace como cualquiera
+        permite(HttpMethod.GET, "/api/productos/" + productoA.getId(), null, tokenB);
     }
 
     // ── (:empresaId IS NULL OR …) — métricas de ads ──────────────────────────
