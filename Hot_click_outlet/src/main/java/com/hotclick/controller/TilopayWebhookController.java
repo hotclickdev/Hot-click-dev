@@ -49,7 +49,9 @@ public class TilopayWebhookController {
                 orderNumber,
                 body != null ? "{\"payload\":\"" + body.toString().replace("\"", "'") + "\"}" : "{}");
         } catch (Exception e) {
-            log.error("[tilopay-webhook] Error: {}", e.getMessage());
+            // QA-CONC-1: si no se pudo procesar, 5xx para que Tilopay reintente (antes 200 y el pago quedaba PENDIENTE).
+            log.error("[tilopay-webhook] Error order={}: {}", orderNumber, e.getMessage(), e);
+            return ResponseEntity.status(503).body(Map.of("status", "retry"));
         }
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
