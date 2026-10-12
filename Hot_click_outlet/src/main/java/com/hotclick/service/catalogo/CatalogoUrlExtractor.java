@@ -81,11 +81,12 @@ public class CatalogoUrlExtractor {
         return productos;
     }
 
+    static final int MAX_HTML_BYTES = 5 * 1024 * 1024;
+
     private String descargarHtml(String rawUrl) throws Exception {
-        Document doc = Jsoup.connect(rawUrl)
-            .userAgent("Mozilla/5.0 (compatible; HotClickBot/1.0)")
-            .timeout(12_000)
-            .get();
+        UrlExternaSegura.Respuesta r = UrlExternaSegura.descargar(
+            rawUrl, MAX_HTML_BYTES, 12_000, "Mozilla/5.0 (compatible; HotClickBot/1.0)");
+        Document doc = Jsoup.parse(new java.io.ByteArrayInputStream(r.cuerpo()), null, r.urlFinal());
         return doc.html();
     }
 

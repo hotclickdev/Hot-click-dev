@@ -3,31 +3,13 @@ package com.hotclick.service.catalogo;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URI;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 @Service
 public class CatalogoImportValidator {
 
-    private static final Pattern ALLOWED_SCHEMES = Pattern.compile(
-        "^https?$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
-    private static final Set<String> BLOCKED_HOSTS = Set.of(
-        "localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "::1"
-    );
-
+    /** P11-01: https, DNS resuelto y sin destinos internos (ver {@link UrlExternaSegura}). */
     public void validarUrl(String rawUrl) {
-        if (rawUrl == null || rawUrl.isBlank()) {
-            throw new IllegalArgumentException("Ingresá una URL válida.");
-        }
-        URI uri = URI.create(rawUrl.trim());
-        if (!ALLOWED_SCHEMES.matcher(uri.getScheme() != null ? uri.getScheme() : "").matches()) {
-            throw new IllegalArgumentException("Solo se permiten URLs http o https.");
-        }
-        String host = uri.getHost() != null ? uri.getHost().toLowerCase() : "";
-        if (BLOCKED_HOSTS.contains(host) || host.startsWith("192.168.") || host.startsWith("10.")) {
-            throw new IllegalArgumentException("URL no permitida.");
-        }
+        UrlExternaSegura.validar(rawUrl);
     }
 
     public void validarPdf(MultipartFile archivo) {
