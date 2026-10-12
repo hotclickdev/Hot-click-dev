@@ -43,7 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/registro-empresa")
-    public ResponseEntity<ResponseDTO> registroEmpresa(@RequestBody RegistroEmpresaDTO dto, HttpServletRequest httpRequest) {
+    public ResponseEntity<ResponseDTO> registroEmpresa(@org.springframework.validation.annotation.Validated({jakarta.validation.groups.Default.class, RegistroEmpresaDTO.AltaCuenta.class}) @RequestBody RegistroEmpresaDTO dto, HttpServletRequest httpRequest) {
         return authRegistrationService.registroEmpresa(dto, httpRequest);
     }
 
@@ -81,7 +81,7 @@ public class AuthController {
     // ── Crear segundo negocio desde cuenta existente ──────────────────────────
 
     @PostMapping("/nuevo-negocio")
-    public ResponseEntity<?> nuevoNegocio(@RequestBody RegistroEmpresaDTO dto, HttpServletRequest request) {
+    public ResponseEntity<?> nuevoNegocio(@org.springframework.validation.annotation.Validated @RequestBody RegistroEmpresaDTO dto, HttpServletRequest request) {
         return authRegistrationService.nuevoNegocio(dto, request);
     }
 
