@@ -1,1 +1,0 @@
-var e=`https://sdk.onvopay.com/sdk.js`,t={borderColor:`#e5e7eb`,background:`#ffffff`,colorScheme:`light`},n=null;function r(){return window.onvo?Promise.resolve():n||(n=new Promise((t,n)=>{let r=document.createElement(`script`);r.src=e,r.async=!0,r.onload=()=>t(),r.onerror=()=>n(Error(`onvo_sdk`)),document.head.appendChild(r)}),n)}export{r as n,t};
