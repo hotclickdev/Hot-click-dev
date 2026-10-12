@@ -36,13 +36,24 @@ public class AuthVerificationHandler {
             emailVerificationService.iniciarRegistro(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código de verificación enviado a tu correo", null));
         } catch (Exception e) {
-            String msg = e.getMessage();
-            if (msg == null || msg.isBlank()) {
-                msg = "Error al enviar el código. Revisá que el correo sea válido e intentá de nuevo.";
-            }
             log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ResponseDTO.error(msg));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(mensajePublico(e)));
         }
+    }
+
+    static final String MSG_GENERICO = "No se pudo enviar el código. Revisá tus datos e intentá de nuevo.";
+    static final String MSG_CONTRASENA = "La contraseña debe tener entre 8 y 128 caracteres";
+
+    /**
+     * ESC-3: solo los mensajes de validación propios llegan al cliente. Errores de base de datos,
+     * de integraciones o inesperados (con SQL, tablas o datos personales) quedan en el log.
+     */
+    static String mensajePublico(Exception e) {
+        boolean propio = e instanceof IllegalArgumentException || e instanceof IllegalStateException
+            || e instanceof com.hotclick.exception.IntegracionExternaException;
+        String msg = e.getMessage();
+        if (!propio || msg == null || msg.isBlank() || msg.length() > 200) return MSG_GENERICO;
+        return msg;
     }
 
     /** Alta nueva (trae contraseña): exige 18 años y hashea. Reenvío solo con correo: no. */
@@ -50,6 +61,9 @@ public class AuthVerificationHandler {
         String clave = usuario.getContrasenaHash();
         if (clave == null || clave.isBlank()) {
             return;
+        }
+        if (clave.length() < AuthSupport.CONTRASENA_MIN || clave.length() > AuthSupport.CONTRASENA_MAX) {
+            throw new IllegalArgumentException(MSG_CONTRASENA);
         }
         MayoriaEdad.exigir(usuario.getDeclaraMayoriaEdad());
         usuario.setContrasenaHash(passwordEncoder.encode(clave));
