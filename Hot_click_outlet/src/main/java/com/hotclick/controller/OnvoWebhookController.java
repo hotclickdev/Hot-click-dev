@@ -81,11 +81,7 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] checkout-session.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
-                    if (posQrVentaService.completarSiPagoPasarela(sessionId)) {
-                        log.info("[onvo-webhook] Pago POS QR confirmado session={}", sessionId);
-                    } else {
-                        onvoPaymentProvider.procesarPagoExitoso(sessionId, payload, "webhook");
-                    }
+                    onvoPaymentProvider.procesarPagoExitoso(sessionId, payload, "webhook");
                 }
                 case "payment-intent.succeeded" -> {
                     String intentId = data.path("id").asText(null);
@@ -93,11 +89,8 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] payment-intent.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
-                    if (posQrVentaService.completarSiPagoPasarela(intentId)) {
-                        log.info("[onvo-webhook] Pago POS QR confirmado intent={}", intentId);
-                    } else {
-                        log.debug("[onvo-webhook] payment-intent.succeeded sin sesión POS: {}", intentId);
-                    }
+                    // El POS ya no cobra por ONVO (Tilopay); aquí no se completa ninguna sesión POS.
+                    log.debug("[onvo-webhook] payment-intent.succeeded: {}", intentId);
                 }
                 case "payment-intent.failed" -> {
                     String motivo = data.path("error").path("message").asText("sin_detalle");

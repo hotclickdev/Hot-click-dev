@@ -58,27 +58,12 @@ public class PosQrService {
     }
 
     @Transactional
-    public String crearStripeCheckout(String token) {
-        return ventaService.crearStripeCheckout(token);
-    }
-
-    @Transactional
-    public Map<String, Object> iniciarTilopay(String token) {
-        return ventaService.iniciarTilopay(token);
+    public Map<String, Object> iniciarTilopay(String token, String metodo) {
+        return ventaService.iniciarTilopay(token, metodo);
     }
 
     public boolean confirmarTilopay(String token) {
         return ventaService.confirmarTilopay(token);
-    }
-
-    public Map<String, String> crearPaymentIntent(String token) {
-        return ventaService.crearPaymentIntent(token);
-    }
-
-    @Transactional
-    public Map<String, String> iniciarSinpeOnvo(String token, String telefono, String cedula,
-                                               String nombre, String email) {
-        return ventaService.iniciarSinpeOnvo(token, telefono, cedula, nombre, email);
     }
 
     @Transactional
