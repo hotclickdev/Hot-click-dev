@@ -132,7 +132,7 @@ public class StockReservationService {
     }
 
     /** ESC-1/IDOR-10: equivale a ProductoRepository.esPublicable sobre la entidad ya bloqueada. */
-    static boolean esPublicableEnMemoria(Producto p) {
+    public static boolean esPublicableEnMemoria(Producto p) {
         if (p.getEstado() == null || p.getEstado() != com.hotclick.utils.Constants.ESTADO_ACTIVO) return false;
         if (!Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
         com.hotclick.model.Empresa e = p.getEmpresa();
