@@ -41,7 +41,8 @@ public class StockReservationService {
             Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProductoId()));
 
-            if (!Boolean.TRUE.equals(p.getVisibleCatalogo()) || Boolean.TRUE.equals(p.getVendido())) {
+            // ESC-1: mismo criterio que el catálogo público (activo, visible, negocio ACTIVO y público).
+            if (!esPublicableEnMemoria(p) || Boolean.TRUE.equals(p.getVendido())) {
                 throw new IllegalStateException("Producto no disponible: " + p.getNombreProducto());
             }
             // Validar contra stockDisponible (stockActual - stockReservado)
@@ -128,5 +129,13 @@ public class StockReservationService {
             }
         }
         log.info("Reservas liberadas para pedido {}", pedido.getNumeroPedido());
+    }
+
+    /** ESC-1/IDOR-10: equivale a ProductoRepository.esPublicable sobre la entidad ya bloqueada. */
+    static boolean esPublicableEnMemoria(Producto p) {
+        if (p.getEstado() == null || p.getEstado() != com.hotclick.utils.Constants.ESTADO_ACTIVO) return false;
+        if (!Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
+        com.hotclick.model.Empresa e = p.getEmpresa();
+        return e == null || ("ACTIVO".equals(e.getEstadoEmpresa()) && Boolean.TRUE.equals(e.getVisibilidadPublica()));
     }
 }
