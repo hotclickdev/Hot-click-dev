@@ -46,6 +46,13 @@ import static org.mockito.Mockito.when;
 class PosVentaServicePreciosTest {
 
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock ClienteMostradorResolver clienteMostradorResolver;
+
+    @org.junit.jupiter.api.BeforeEach
+    void mostradorDelegaAlRepo() {
+        org.mockito.Mockito.lenient().when(clienteMostradorResolver.mostrador())
+            .thenAnswer(i -> usuarioRepository.findById(Constants.ID_USUARIO_MOSTRADOR).orElseThrow());
+    }
     @Mock private EmpresaRepository empresaRepository;
     @Mock private BodegaRepository bodegaRepository;
     @Mock private ProductoRepository productoRepository;
