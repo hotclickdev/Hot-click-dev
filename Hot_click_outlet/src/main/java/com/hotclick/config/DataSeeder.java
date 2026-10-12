@@ -61,34 +61,40 @@ public class DataSeeder implements ApplicationRunner {
         asignarPlanesDemo();
     }
 
+    // Montos de planes desde configuración (application.properties); ver finanzas/planes_pendientes.md.
+    @Value("${hotclick.planes.emprendedor.precio-mensual-crc}") private int empPrecio;
+    @Value("${hotclick.planes.emprendedor.comision-pct}") private BigDecimal empPct;
+    @Value("${hotclick.planes.emprendedor.comision-minima-crc}") private int empMin;
+    @Value("${hotclick.planes.pyme.precio-mensual-crc}") private int pymePrecio;
+    @Value("${hotclick.planes.pyme.comision-pct}") private BigDecimal pymePct;
+    @Value("${hotclick.planes.pyme.comision-minima-crc}") private int pymeMin;
+    @Value("${hotclick.planes.negocio-plus.precio-mensual-crc}") private int plusPrecio;
+    @Value("${hotclick.planes.negocio-plus.comision-pct}") private BigDecimal plusPct;
+    @Value("${hotclick.planes.negocio-plus.comision-minima-crc}") private int plusMin;
+
     private void seedPlanesSaas() {
-        seedPlan(
-            "EMPRENDEDOR",
-            "Plan gratuito. Comisión 9% por venta (mín. ₡600), cubre pasarela Tilopay y plataforma.",
-            BigDecimal.ZERO, new BigDecimal("9.00"), 0,
+        seedPlan("EMPRENDEDOR", "Comisión por venta. Sin mensualidad para los primeros negocios.",
+            BigDecimal.ZERO, empPct, empMin, empPrecio,
             2, 50, 1, 1,
-            false, false, false, true, false, false, 0, false
-        );
-        seedPlan(
-            "PYME",
-            "Plan para negocios en crecimiento. ₡9.900/mes + 6% por venta (cubre Tilopay).",
-            new BigDecimal("11.99"), new BigDecimal("6.00"), 9900,
+            false, false, false, true, false, false, 0, false);
+        seedPlan("PYME", "Mensualidad + comisión por venta.",
+            new BigDecimal("11.99"), pymePct, pymeMin, pymePrecio,
             5, 500, 2, 2,
-            true, false, true, true, true, false, 80, true
-        );
-        seedPlan(
-            "NEGOCIO_PLUS",
-            "Plan completo. ₡24.900/mes + 6% por venta (cubre Tilopay).",
-            new BigDecimal("19.99"), new BigDecimal("6.00"), 24900,
+            true, false, true, true, true, false, 80, true);
+        seedPlan("NEGOCIO_PLUS", "Mensualidad + comisión por venta sin tope.",
+            new BigDecimal("19.99"), plusPct, plusMin, plusPrecio,
             -1, -1, -1, -1,
-            true, true, true, true, true, false, -1, true
-        );
+            true, true, true, true, true, false, -1, true);
         backfillSinPlan();
     }
 
+    /**
+     * Crea el plan si no existe. Si ya existe NO toca precio ni comisión: esos valores
+     * viven en la BD (V168) y se cambian ahí, no en código.
+     */
     private void seedPlan(
         String nombre, String descripcion,
-        BigDecimal precioUsd, BigDecimal comision, int precioMensualCrc,
+        BigDecimal precioUsd, BigDecimal comision, int comisionMinimaCrc, int precioMensualCrc,
         int maxUsuarios, int maxProductos, int maxBodegas, int maxCajas,
         boolean pos, boolean crm, boolean compras, boolean reportes,
         boolean ai, boolean api, int creditosAi, boolean giftCards
@@ -96,25 +102,8 @@ public class DataSeeder implements ApplicationRunner {
         var existente = planRepository.findByNombre(nombre);
         if (existente.isPresent()) {
             Plan p = existente.get();
-            boolean dirty = false;
             if (!Boolean.TRUE.equals(p.getActivo())) {
                 p.setActivo(true);
-                dirty = true;
-            }
-            if (p.getComisionPorcentaje() == null
-                    || p.getComisionPorcentaje().compareTo(comision) != 0) {
-                p.setComisionPorcentaje(comision);
-                dirty = true;
-            }
-            if (p.getPrecioMensual() == null || p.getPrecioMensual() != precioMensualCrc) {
-                p.setPrecioMensual(precioMensualCrc);
-                dirty = true;
-            }
-            if (descripcion != null && !descripcion.equals(p.getDescripcion())) {
-                p.setDescripcion(descripcion);
-                dirty = true;
-            }
-            if (dirty) {
                 planRepository.save(p);
             }
             return;
@@ -125,6 +114,7 @@ public class DataSeeder implements ApplicationRunner {
         plan.setPrecioMensual(precioMensualCrc);
         plan.setPrecioUsd(precioUsd);
         plan.setComisionPorcentaje(comision);
+        plan.setComisionMinimaCrc(comisionMinimaCrc);
         plan.setMaxUsuarios(maxUsuarios);
         plan.setMaxProductos(maxProductos);
         plan.setMaxBodegas(maxBodegas);
