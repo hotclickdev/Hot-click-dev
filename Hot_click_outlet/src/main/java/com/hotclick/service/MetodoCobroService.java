@@ -21,15 +21,15 @@ public class MetodoCobroService {
     private final EmpresaRepository empresaRepo;
     private final CompanyScope companyScope;
     private final InputSanitizer sanitizer;
-    private final MetodoCobroCambioService cambioService;
+    private final MetodoCobroAltaService alta;
 
     public MetodoCobroService(
             MetodoCobroRepository repo,
             EmpresaRepository empresaRepo,
             CompanyScope companyScope,
             InputSanitizer sanitizer,
-            MetodoCobroCambioService cambioService) {
-        this.cambioService = cambioService;
+            MetodoCobroAltaService alta) {
+        this.alta = alta;
         this.repo = repo;
         this.empresaRepo = empresaRepo;
         this.companyScope = companyScope;
@@ -64,7 +64,7 @@ public class MetodoCobroService {
         m.setMascara(MetodoCobroFormato.mascara(tipo, destino));
         m.setPredeterminado(primero);
         m.setActivo(true);
-        return MetodoCobroDto.from(guardarConRevision(m));
+        return MetodoCobroDto.from(alta.guardar(m));
     }
 
     @Transactional
@@ -88,14 +88,5 @@ public class MetodoCobroService {
             throw new IllegalStateException("Tu cuenta no tiene un negocio asociado");
         }
         return empresaId;
-    }
-
-    /** Guarda el método; SINPE/IBAN quedan en revisión: los pagos solo salen a cuentas aprobadas por ADMIN (seg-altos-2 d). */
-    private MetodoCobro guardarConRevision(MetodoCobro m) {
-        MetodoCobro guardado = repo.save(m);
-        if (MetodoCobro.TIPO_SINPE.equals(m.getTipo()) || MetodoCobro.TIPO_IBAN.equals(m.getTipo())) {
-            cambioService.solicitarAlta(guardado);
-        }
-        return guardado;
     }
 }
