@@ -100,8 +100,10 @@ public class SuscripcionBillingService {
         Plan plan = planRepo.findById(planId)
             .orElseThrow(() -> new NoSuchElementException("Plan no encontrado: " + planId));
         String priceId = stripeService.getPriceIdForPlan(plan.getNombre());
-        if (priceId == null)
-            throw new IllegalArgumentException("Plan " + plan.getNombre() + " sin precio Stripe");
+        if (priceId == null) {
+            log.warn("[billing] plan {} sin precio configurado; checkout bloqueado (empresa={})", plan.getNombre(), empresaId);
+            throw new com.hotclick.exception.PlanNoDisponibleException();
+        }
         return new String[]{empresa.getCorreoEmpresa(), empresa.getNombreEmpresa(),
                              empresa.getStripeCustomerId(), priceId};
     }

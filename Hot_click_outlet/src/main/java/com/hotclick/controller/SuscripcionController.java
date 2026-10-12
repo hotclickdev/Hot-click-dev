@@ -105,9 +105,11 @@ public class SuscripcionController {
         try {
             String url = suscripcionService.crearCheckoutUrl(empresaId, planId);
             return ResponseEntity.ok(Map.of("checkoutUrl", url));
+        } catch (com.hotclick.exception.PlanNoDisponibleException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "codigo", "PLAN_SIN_PRECIO"));
         } catch (StripeException e) {
             log.error("[billing] Error creando checkout empresa={}: {}", empresaId, e.getMessage());
-            return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe: " + e.getMessage()));
+            return ResponseEntity.status(502).body(Map.of("error", "El cobro no está disponible en este momento. Intentá más tarde."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
