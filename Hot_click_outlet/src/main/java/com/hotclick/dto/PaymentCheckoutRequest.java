@@ -141,7 +141,7 @@ public class PaymentCheckoutRequest {
         public Integer getPrecioUnitarioOverride() { return precioUnitarioOverride; }
         /**
          * P6-02: sin setter de bean a propósito (solo lo asigna Java para el encargo cotizado).
-         * El @JsonIgnore del campo sigue siendo necesario; {@code PrecioOverrideCheckoutTest} falla si se quita.
+         * El @JsonIgnore del campo sigue siendo necesario; {@code PrecioOverridePaymentCheckoutTest} falla si se quita.
          */
         public void asignarPrecioCotizado(Integer precioCotizado) {
             this.precioUnitarioOverride = precioCotizado;
