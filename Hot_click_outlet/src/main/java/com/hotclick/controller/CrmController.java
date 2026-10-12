@@ -110,6 +110,8 @@ public class CrmController {
                 crmClientesService.enviarWhatsApp(id, companyScope.requireEmpresaIdOrAdmin(), escenario, ctxExtra)));
         } catch (TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.CrmWhatsAppLimiteException e) {
+            return ResponseEntity.status(429).body(ResponseDTO.error(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
