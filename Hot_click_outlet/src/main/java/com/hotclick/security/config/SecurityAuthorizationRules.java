@@ -145,6 +145,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // P4-02: el resto de la gestión de encargos (kpis, eventos, fulfillment) también solo vendedor/admin,
+            // en el filtro: si no, el @Valid del body responde 400 al comprador antes del @PreAuthorize.
+            .requestMatchers("/api/encargos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Recolección / entrega GAM — vendedor solicita; admin IT cotiza tarifa
             .requestMatchers(POST, "/api/recolecciones").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(GET,  "/api/recolecciones").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
