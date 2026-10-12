@@ -32,6 +32,7 @@ public class AdminResetController {
 
     @Autowired private JdbcTemplate  jdbc;
     @Autowired private CompanyScope  companyScope;
+    @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
     @Autowired private ResetPlataformaKeepQaService resetPlataformaKeepQaService;
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -63,6 +64,11 @@ public class AdminResetController {
             return ResponseEntity.badRequest().body(ResponseDTO.error(
                 "Esta acción requiere estar dentro del contexto de un negocio."));
         }
+        // P9-04: solo el PROPIETARIO (no LECTOR/EDITOR ni sesión de soporte) borra los datos del negocio.
+        propietarioGuard.exigirPropietario(empresaId);
+        var actor = companyScope.getCurrentUser();
+        org.slf4j.LoggerFactory.getLogger(AdminResetController.class).warn(
+            "[reset-datos] empresa={} borrada por usuario={}", empresaId, actor != null ? actor.getId() : null);
 
         // Hijos de pedido
         jdbc.update("DELETE FROM hot_click_pago_tb WHERE fk_id_pedido IN " +
