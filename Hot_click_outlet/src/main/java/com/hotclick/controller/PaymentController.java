@@ -22,6 +22,14 @@ import java.util.Map;
 @RequestMapping("/api/payments")
 public class PaymentController {
 
+    @Autowired private com.hotclick.service.payment.CheckoutIdempotencia checkoutIdempotencia;
+
+    private static String identidadCheckout() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "anon";
+    }
+
+
     @Autowired
     private PaymentService paymentService;
 
@@ -53,7 +61,13 @@ public class PaymentController {
     }
 
     @PostMapping("/checkout")
-    public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
+    public ResponseEntity<ResponseDTO> checkoutIdempotente(@Valid @RequestBody PaymentCheckoutRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        String clave = checkoutIdempotencia.clave("/payments/checkout", identidadCheckout(), idempotencyKey, request);
+        return checkoutIdempotencia.ejecutar(clave, () -> checkout(request));
+    }
+
+    public ResponseEntity<ResponseDTO> checkout(PaymentCheckoutRequest request) {
         try {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
@@ -107,7 +121,13 @@ public class PaymentController {
     }
 
     @PostMapping("/guest-checkout")
-    public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest request) {
+    public ResponseEntity<ResponseDTO> guestCheckoutIdempotente(@Valid @RequestBody PaymentCheckoutRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        String clave = checkoutIdempotencia.clave("/payments/guest-checkout", identidadCheckout(), idempotencyKey, request);
+        return checkoutIdempotencia.ejecutar(clave, () -> guestCheckout(request));
+    }
+
+    public ResponseEntity<ResponseDTO> guestCheckout(PaymentCheckoutRequest request) {
         try {
             String correo = request.getGuestEmail() == null ? "" : request.getGuestEmail().trim().toLowerCase(Locale.ROOT);
             if (!correo.isEmpty() && !rateLimiter.tryAcquire("guest-checkout:email:" + correo, GUEST_EMAIL_MAX, GUEST_EMAIL_VENTANA_S)) {

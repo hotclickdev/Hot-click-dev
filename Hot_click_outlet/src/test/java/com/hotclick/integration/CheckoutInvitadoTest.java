@@ -141,6 +141,8 @@ class CheckoutInvitadoTest extends BaseIntegrationTest {
         return mockMvc.perform(post(url)
             .contentType(MediaType.APPLICATION_JSON)
             .header("X-Forwarded-For", "10.9.0." + (++ip))
+            // QA-CONC-2: cada intento es un pago distinto (si no, el checkout idempotente devuelve el primero)
+            .header("Idempotency-Key", "test-" + ip)
             .content(cuerpo(provider, correo)));
     }
 
@@ -273,5 +275,18 @@ class CheckoutInvitadoTest extends BaseIntegrationTest {
 
     private int reservado() {
         return productoRepository.findById(producto.getId()).orElseThrow().getStockReservado();
+    }
+
+    @Test
+    @DisplayName("QA-CONC-2 | doble clic (mismo cuerpo, sin clave) → un solo pedido")
+    void dobleClicUnSoloPedido() throws Exception {
+        String correo = "doble" + System.nanoTime() + "@test.cr";
+        long antes = pedidoRepository.count();
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/api/payments/guest-checkout").contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Forwarded-For", "10.9.1.1").content(cuerpo("TILOPAY", correo)))
+                .andExpect(status().isOk());
+        }
+        org.assertj.core.api.Assertions.assertThat(pedidoRepository.count()).isEqualTo(antes + 1);
     }
 }

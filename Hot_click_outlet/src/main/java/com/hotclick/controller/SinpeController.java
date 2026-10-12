@@ -20,6 +20,14 @@ import java.util.Map;
 @RequestMapping("/api/sinpe")
 public class SinpeController {
 
+    @Autowired private com.hotclick.service.payment.CheckoutIdempotencia checkoutIdempotencia;
+
+    private static String identidadCheckout() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "anon";
+    }
+
+
     /**
      * El SINPE entra a la cuenta de HotClick, la compra puede traer paquetes de varios negocios y la lista
      * no se filtra por empresa (datos personales del remitente): revisar comprobantes es solo de plataforma.
@@ -31,7 +39,13 @@ public class SinpeController {
 
     // ── Checkout autenticado ───────────────────────────────────────────────────
     @PostMapping("/checkout")
-    public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest req) {
+    public ResponseEntity<ResponseDTO> checkoutIdempotente(@Valid @RequestBody PaymentCheckoutRequest req,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        String clave = checkoutIdempotencia.clave("/sinpe/checkout", identidadCheckout(), idempotencyKey, req);
+        return checkoutIdempotencia.ejecutar(clave, () -> checkout(req));
+    }
+
+    public ResponseEntity<ResponseDTO> checkout(PaymentCheckoutRequest req) {
         try {
             String correo = SecurityContextHolder.getContext().getAuthentication().getName();
             var res = sinpeService.checkout(req, correo);
@@ -49,7 +63,13 @@ public class SinpeController {
 
     // ── Checkout invitado ──────────────────────────────────────────────────────
     @PostMapping("/guest-checkout")
-    public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest req) {
+    public ResponseEntity<ResponseDTO> guestCheckoutIdempotente(@Valid @RequestBody PaymentCheckoutRequest req,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        String clave = checkoutIdempotencia.clave("/sinpe/guest-checkout", identidadCheckout(), idempotencyKey, req);
+        return checkoutIdempotencia.ejecutar(clave, () -> guestCheckout(req));
+    }
+
+    public ResponseEntity<ResponseDTO> guestCheckout(PaymentCheckoutRequest req) {
         try {
             var res = sinpeService.checkout(req, null);
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));
