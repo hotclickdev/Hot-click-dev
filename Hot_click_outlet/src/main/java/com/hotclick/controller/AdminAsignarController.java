@@ -51,8 +51,8 @@ public class AdminAsignarController {
         }
         String texto = q.trim();
         org.springframework.data.domain.Pageable top = org.springframework.data.domain.PageRequest.of(0, MAX_RESULTADOS);
-        List<Usuario> encontrados = empresaId == null
-            ? usuarioRepository.buscarClientes(texto, top) // tenant-global-ok: requireEmpresaIdOrAdmin → null solo ADMIN
+        List<Usuario> encontrados = empresaId == null // tenant-global-ok: requireEmpresaIdOrAdmin, null solo ADMIN
+            ? usuarioRepository.buscarClientes(texto, top)
             : usuarioRepository.buscarClientesByEmpresa(texto, empresaId, top);
         return ResponseDTO.success("Resultados", encontrados.stream().map(AdminAsignarController::resumen).toList());
     }
