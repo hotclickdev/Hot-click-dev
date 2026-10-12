@@ -99,20 +99,18 @@ public class SuscripcionController {
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
 
-    /** Genera URL de Stripe Checkout para suscribirse a un plan. */
+    /** Checkout de plan: con precios reales (V168) cobra con Tilopay; Stripe ya no se usa (ESC-5). */
     @PostMapping("/checkout/{planId}")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> crearCheckout(@PathVariable Long planId) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         try {
-            String url = suscripcionService.crearCheckoutUrl(empresaId, planId);
-            return ResponseEntity.ok(Map.of("checkoutUrl", url));
+            return ResponseEntity.ok(suscripcionTilopayService.iniciarCambioPlan(empresaId, planId));
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
             return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "codigo", "PLAN_SIN_PRECIO"));
-        } catch (StripeException e) {
-            log.error("[billing] Error creando checkout empresa={}: {}", empresaId, e.getMessage());
-            return ResponseEntity.status(502).body(Map.of("error", "El cobro no está disponible en este momento. Intentá más tarde."));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "Plan no encontrado"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -177,6 +175,8 @@ public class SuscripcionController {
             out.put("status", "ACTIVO".equals(r.get("estado")) ? "activado" : "requiere_pago");
             out.put("planNombre", r.get("plan"));
             return ResponseEntity.ok(out);
+        } catch (com.hotclick.exception.PlanNoDisponibleException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "codigo", "PLAN_SIN_PRECIO"));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (SecurityException e) {

@@ -7,7 +7,18 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.hotclick.exception.PlanNoDisponibleException;
+import com.hotclick.model.Plan;
+import com.hotclick.repository.*;
+import com.hotclick.service.TilopayService;
+import com.hotclick.service.billing.BillingLedgerWriter;
+import java.util.Map;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class SuscripcionTilopayServiceTest {
 
@@ -42,5 +53,33 @@ class SuscripcionTilopayServiceTest {
         assertThat(SuscripcionTilopayService.proximoCobro(LocalDate.of(2026, 10, 12), 28)).isEqualTo(LocalDate.of(2026, 11, 28));
         assertThat(SuscripcionTilopayService.proximoCobro(LocalDate.of(2026, 10, 12), 13)).isEqualTo(LocalDate.of(2026, 11, 13));
         assertThat(SuscripcionTilopayService.proximoCobro(LocalDate.of(2027, 1, 30), 28)).isEqualTo(LocalDate.of(2027, 2, 28));
+    }
+
+    @Test
+    void esc5_precioRealCobraConTilopay_sinPrecioDa409() {
+        CobroSuscripcionRepository cobroRepo = mock(CobroSuscripcionRepository.class);
+        PlanRepository planRepo = mock(PlanRepository.class);
+        TilopayService tilopay = mock(TilopayService.class);
+        when(tilopay.loginSdk()).thenReturn("tok");
+        when(cobroRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        SuscripcionTilopayService svc = new SuscripcionTilopayService(cobroRepo, planRepo,
+            mock(EmpresaRepository.class), mock(SuscripcionRepository.class), tilopay,
+            mock(SuscripcionOnvoChangeService.class), mock(BillingLedgerWriter.class), 28);
+
+        Plan pyme = new Plan();
+        pyme.setId(2L);
+        pyme.setNombre("PYME");
+        pyme.setPrecioMensual(12_900);
+        when(planRepo.findById(2L)).thenReturn(Optional.of(pyme));
+        Map<String, Object> r = svc.iniciarCambioPlan(5L, 2L);
+        assertThat(r).containsEntry("estado", "PENDIENTE_PAGO").containsEntry("montoCrc", 12_900L)
+            .containsEntry("proveedor", "TILOPAY");
+
+        Plan sinPrecio = new Plan();
+        sinPrecio.setId(3L);
+        sinPrecio.setNombre("X");
+        sinPrecio.setPrecioMensual(null);
+        when(planRepo.findById(3L)).thenReturn(Optional.of(sinPrecio));
+        assertThatThrownBy(() -> svc.iniciarCambioPlan(5L, 3L)).isInstanceOf(PlanNoDisponibleException.class);
     }
 }

@@ -62,7 +62,9 @@ public class SuscripcionTilopayService {
         if (Boolean.FALSE.equals(plan.getActivo())) {
             throw new IllegalArgumentException("Plan no disponible");
         }
-        long precio = plan.getPrecioMensual() == null ? 0L : plan.getPrecioMensual().longValue();
+        // ESC-5: plan sin precio definido por HOT_CLICK (null) → no se cobra ni se inventa monto.
+        if (plan.getPrecioMensual() == null) throw new com.hotclick.exception.PlanNoDisponibleException();
+        long precio = plan.getPrecioMensual().longValue();
         Map<String, Object> r = new LinkedHashMap<>();
         if (precio <= 0) {
             planLocal.aplicarPlanLocal(empresaId, plan.getNombre(), null);
