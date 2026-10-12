@@ -38,4 +38,5 @@ UPDATE hot_click_suscripcion_tb s
 
 -- Negocios que quedaron esperando membresía por falta de cupo: mientras la mensualidad de Emprendedor
 -- desde el negocio 71 no tenga monto, no hay nada que cobrar y quedan activos.
-UPDATE hot_click_empresa_tb SET estado_plan = 'ACTIVO' WHERE estado_plan = 'REQUIERE_MEMBRESIA';
+-- (decisión 12-oct) y recuperan la visibilidad pública que les apagó el bloqueo.
+UPDATE hot_click_empresa_tb SET estado_plan = 'ACTIVO', visibilidad_publica = true WHERE estado_plan = 'REQUIERE_MEMBRESIA';

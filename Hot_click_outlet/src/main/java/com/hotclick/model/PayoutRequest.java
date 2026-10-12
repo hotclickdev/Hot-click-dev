@@ -13,6 +13,10 @@ public class PayoutRequest {
     public static final String PAGADO      = "PAGADO";
     public static final String RECHAZADO   = "RECHAZADO";
 
+    public static final String LIQ_MANUAL         = "MANUAL";
+    public static final String LIQ_TARJETA        = "TARJETA";
+    public static final String LIQ_CONTRA_ENTREGA = "CONTRA_ENTREGA";
+
     public static final String METODO_SINPE         = "SINPE";
     public static final String METODO_TRANSFERENCIA = "TRANSFERENCIA";
 
@@ -63,6 +67,13 @@ public class PayoutRequest {
     @Column(name = "fecha_pago")
     private LocalDateTime fechaPago;
 
+    /** MANUAL | TARJETA (quincenal/mensual) | CONTRA_ENTREGA (día siguiente). V169. */
+    @Column(name = "tipo_liquidacion", nullable = false, length = 15)
+    private String tipoLiquidacion = LIQ_MANUAL;
+
+    @Column(name = "fk_id_metodo_cobro")
+    private Long metodoCobroId;
+
     // Getters/Setters
     public Long getId()                             { return id; }
     public void setId(Long v)                       { this.id = v; }
@@ -108,4 +119,8 @@ public class PayoutRequest {
 
     public LocalDateTime getFechaPago()             { return fechaPago; }
     public void setFechaPago(LocalDateTime v)       { this.fechaPago = v; }
+    public String getTipoLiquidacion() { return tipoLiquidacion; }
+    public void setTipoLiquidacion(String v) { this.tipoLiquidacion = v; }
+    public Long getMetodoCobroId() { return metodoCobroId; }
+    public void setMetodoCobroId(Long v) { this.metodoCobroId = v; }
 }
