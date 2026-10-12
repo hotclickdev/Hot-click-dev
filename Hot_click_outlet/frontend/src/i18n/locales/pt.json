@@ -2987,6 +2987,8 @@
     "sysResetItem5": "Publicações, depoimentos e prêmios",
     "sysResetKeep": "Usuários, funções e estrutura de tabelas são preservados",
     "sysResetInputLabel": "Digite ELIMINAR para confirmar",
+    "sysResetPasswordLabel": "Sua senha",
+    "sysResetPasswordHelp": "Por segurança, digite a senha que você usa para entrar no HotClick.",
     "sysResetCancel": "Cancelar",
     "sysResetDeleting": "Excluindo...",
     "sysResetConfirm": "Sim, excluir tudo",
@@ -3091,7 +3093,12 @@
     "datosCleanInactiveDesc": "Desativa todos os produtos com estoque zero",
     "datosCleanInactiveBtn": "Arquivar",
     "datosCleanOk": "Operação concluída",
-    "datosCleanError": "Erro na operação"
+    "datosCleanError": "Erro na operação",
+    "sysResetCodeLabel": "Código de confirmação",
+    "sysResetCodeSend": "Enviar código",
+    "sysResetCodeResend": "Reenviar",
+    "sysResetCodeHelp": "Você entra com Google ou outra conta: enviamos um código de 6 dígitos para seu e-mail verificado.",
+    "sysResetCodeSent": "Enviamos um código para seu e-mail."
   },
   "adminFinanzas": {
     "title": "Finanças",

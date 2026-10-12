@@ -47,6 +47,7 @@ class CrmClienteCompartidoTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        jdbcTemplate.update("DELETE FROM hot_click_cliente_empresa_tb");
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
         usuarioRepository.findAll().forEach(u -> { u.setEmpresaRegistro(null); usuarioRepository.save(u); });
@@ -61,12 +62,25 @@ class CrmClienteCompartidoTest extends BaseIntegrationTest {
             .andExpect(content().string(not(containsString("nota secreta"))))
             .andExpect(jsonPath("$.data.puntosFidelidad").value(0))
             .andExpect(jsonPath("$.data.pedidos[*].numeroPedido", contains("P801-B")));
+        // P8-01 residual: contacto enmascarado en la ficha compartida
+        mockMvc.perform(get(ficha).header("Authorization", tokenB))
+            .andExpect(jsonPath("$.data.correo").value("p***@test.cr"))
+            .andExpect(jsonPath("$.data.compartido").value(true));
+        // V171: B guarda sus notas/puntos en su propia ficha, sin tocar las de A; crédito sigue 403
         mockMvc.perform(put(ficha).header("Authorization", tokenB).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"notasInternas\":\"pisado por B\",\"puntosFidelidad\":0}"))
+                .content("{\"notasInternas\":\"nota de B\",\"puntosFidelidad\":5}"))
+            .andExpect(status().isOk());
+        mockMvc.perform(put(ficha).header("Authorization", tokenB).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"limiteCredito\":1000}"))
             .andExpect(status().isForbidden());
+        mockMvc.perform(get(ficha).header("Authorization", tokenB))
+            .andExpect(jsonPath("$.data.notasInternas").value("nota de B"))
+            .andExpect(jsonPath("$.data.puntosFidelidad").value(5));
         mockMvc.perform(get(ficha).header("Authorization", tokenA))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.notasInternas").value("nota secreta de A"))
+            .andExpect(jsonPath("$.data.puntosFidelidad").value(77))
+            .andExpect(jsonPath("$.data.correo").value("p801-cli@test.cr"))
             .andExpect(jsonPath("$.data.pedidos[*].numeroPedido", contains("P801-A")));
     }
 

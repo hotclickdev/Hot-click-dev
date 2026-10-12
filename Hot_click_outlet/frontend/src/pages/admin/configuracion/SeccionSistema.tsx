@@ -20,7 +20,13 @@ export default function SeccionSistema({ toast }: { toast: ToastFn }) {
   const [checking,  setChecking]  = useState(false)
   const [resetModal,  setResetModal]  = useState(false)
   const [resetInput,  setResetInput]  = useState('')
+  const [resetPassword, setResetPassword] = useState('')
   const [resetting,   setResetting]   = useState(false)
+  // Cuentas SSO (sin contraseña propia) confirman con un código que llega al correo verificado.
+  const [metodoConfirmacion, setMetodoConfirmacion] = useState<'PASSWORD' | 'CODIGO'>('PASSWORD')
+  const [resetCodigo, setResetCodigo] = useState('')
+  const [enviandoCodigo, setEnviandoCodigo] = useState(false)
+  const [codigoEnviado, setCodigoEnviado] = useState(false)
 
   const checkHealth = async () => {
     setChecking(true)
@@ -37,12 +43,26 @@ export default function SeccionSistema({ toast }: { toast: ToastFn }) {
     setRestoring(true)
     setTimeout(() => { localStorage.removeItem('hotclick-ui'); toast({ message: t('adminConfig.sysRestoreToast'), type: 'success' }); setRestoring(false) }, 700)
   }
-  const openResetModal  = () => { setResetInput(''); setResetModal(true) }
-  const closeResetModal = () => { setResetModal(false); setResetInput('') }
+  const openResetModal  = () => {
+    setResetInput(''); setResetPassword(''); setResetCodigo(''); setCodigoEnviado(false); setResetModal(true)
+    adminService.resetConfirmacion().then(setMetodoConfirmacion).catch(() => setMetodoConfirmacion('PASSWORD'))
+  }
+  const closeResetModal = () => { setResetModal(false); setResetInput(''); setResetPassword(''); setResetCodigo('') }
+  const conCodigo = metodoConfirmacion === 'CODIGO'
+  const puedeBorrar = resetInput === 'ELIMINAR' && (conCodigo ? resetCodigo.trim().length === 6 : resetPassword.length > 0)
+  const enviarCodigo = async () => {
+    setEnviandoCodigo(true)
+    try { await adminService.resetEnviarCodigo(); setCodigoEnviado(true); toast({ message: t('adminConfig.sysResetCodeSent'), type: 'success' }) }
+    catch (err: unknown) { toast({ message: mensajeErrorConfig(err, t('adminConfig.sysResetError')), type: 'error' }) }
+    finally { setEnviandoCodigo(false) }
+  }
   const handleReset = async () => {
-    if (resetInput !== 'ELIMINAR') return
+    if (!puedeBorrar) return
     setResetting(true)
-    try { await adminService.resetDatos(); toast({ message: t('adminConfig.sysResetToast'), type: 'success' }); closeResetModal() }
+    try {
+      await adminService.resetDatos(conCodigo ? { codigo: resetCodigo.trim() } : { password: resetPassword })
+      toast({ message: t('adminConfig.sysResetToast'), type: 'success' }); closeResetModal()
+    }
     catch (err: unknown) { toast({ message: mensajeErrorConfig(err, t('adminConfig.sysResetError')), type: 'error' }) }
     finally { setResetting(false) }
   }
@@ -198,13 +218,36 @@ export default function SeccionSistema({ toast }: { toast: ToastFn }) {
             <div style={{ padding: '0 24px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label htmlFor="cfg-reset-confirm" className="cfg-label">{t('adminConfig.sysResetInputLabel')}</label>
               <StyledInput id="cfg-reset-confirm" value={resetInput} onChange={e => setResetInput(e.target.value)} placeholder="ELIMINAR" autoFocus
-                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter' && resetInput === 'ELIMINAR') void handleReset() }}
+                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter' && puedeBorrar) void handleReset() }}
                 style={{ textTransform: 'uppercase', letterSpacing: '0.08em', borderColor: resetInput === 'ELIMINAR' ? 'rgba(239,68,68,0.5)' : undefined }} />
+              {conCodigo ? (
+                <>
+                  <label htmlFor="cfg-reset-codigo" className="cfg-label" style={{ marginTop: '8px' }}>{t('adminConfig.sysResetCodeLabel')}</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <StyledInput id="cfg-reset-codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={resetCodigo}
+                      onChange={e => setResetCodigo(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter' && puedeBorrar) void handleReset() }} />
+                    <button type="button" onClick={() => void enviarCodigo()} disabled={enviandoCodigo} className="cfg-btn cfg-btn-ghost" style={{ flexShrink: 0, fontSize: '12px' }}>
+                      {enviandoCodigo ? <Spinner size={'xs' as 'sm'} /> : null}
+                      {codigoEnviado ? t('adminConfig.sysResetCodeResend') : t('adminConfig.sysResetCodeSend')}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--hc-muted)', margin: 0, fontFamily: F.body }}>{t('adminConfig.sysResetCodeHelp')}</p>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="cfg-reset-password" className="cfg-label" style={{ marginTop: '8px' }}>{t('adminConfig.sysResetPasswordLabel')}</label>
+                  <StyledInput id="cfg-reset-password" type="password" autoComplete="current-password" value={resetPassword}
+                    onChange={e => setResetPassword(e.target.value)}
+                    onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter' && puedeBorrar) void handleReset() }} />
+                  <p style={{ fontSize: '11px', color: 'var(--hc-muted)', margin: 0, fontFamily: F.body }}>{t('adminConfig.sysResetPasswordHelp')}</p>
+                </>
+              )}
             </div>
             <div style={{ padding: '0 24px 24px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button type="button" onClick={closeResetModal} disabled={resetting} className="cfg-btn cfg-btn-ghost">{t('adminConfig.sysResetCancel')}</button>
-              <button type="button" onClick={handleReset} disabled={resetInput !== 'ELIMINAR' || resetting} className="cfg-btn"
-                style={{ background: resetInput === 'ELIMINAR' ? '#dc2626' : 'rgba(239,68,68,0.15)', color: resetInput === 'ELIMINAR' ? '#fff' : '#f87171', boxShadow: resetInput === 'ELIMINAR' ? '0 2px 14px rgba(220,38,38,0.4)' : 'none', opacity: (resetInput !== 'ELIMINAR' || resetting) ? 0.5 : 1, cursor: (resetInput !== 'ELIMINAR' || resetting) ? 'not-allowed' : 'pointer' }}>
+              <button type="button" onClick={handleReset} disabled={!puedeBorrar || resetting} className="cfg-btn"
+                style={{ background: puedeBorrar ? '#dc2626' : 'rgba(239,68,68,0.15)', color: puedeBorrar ? '#fff' : '#f87171', boxShadow: puedeBorrar ? '0 2px 14px rgba(220,38,38,0.4)' : 'none', opacity: (!puedeBorrar || resetting) ? 0.5 : 1, cursor: (!puedeBorrar || resetting) ? 'not-allowed' : 'pointer' }}>
                 {resetting ? <Spinner size={'xs' as 'sm'} /> : <SkullIcon style={{ width: '14px', height: '14px' }} />}
                 {resetting ? t('adminConfig.sysResetDeleting') : t('adminConfig.sysResetConfirm')}
               </button>

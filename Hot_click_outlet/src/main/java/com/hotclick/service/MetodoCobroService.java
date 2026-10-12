@@ -21,12 +21,15 @@ public class MetodoCobroService {
     private final EmpresaRepository empresaRepo;
     private final CompanyScope companyScope;
     private final InputSanitizer sanitizer;
+    private final MetodoCobroAltaService alta;
 
     public MetodoCobroService(
             MetodoCobroRepository repo,
             EmpresaRepository empresaRepo,
             CompanyScope companyScope,
-            InputSanitizer sanitizer) {
+            InputSanitizer sanitizer,
+            MetodoCobroAltaService alta) {
+        this.alta = alta;
         this.repo = repo;
         this.empresaRepo = empresaRepo;
         this.companyScope = companyScope;
@@ -61,7 +64,7 @@ public class MetodoCobroService {
         m.setMascara(MetodoCobroFormato.mascara(tipo, destino));
         m.setPredeterminado(primero);
         m.setActivo(true);
-        return MetodoCobroDto.from(repo.save(m));
+        return MetodoCobroDto.from(alta.guardar(m));
     }
 
     @Transactional

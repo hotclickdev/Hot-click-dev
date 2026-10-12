@@ -34,10 +34,73 @@ public class AdminResetController {
     @Autowired private CompanyScope  companyScope;
     @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
     @Autowired private ResetPlataformaKeepQaService resetPlataformaKeepQaService;
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Autowired private com.hotclick.service.ResetDatosCodigoService resetDatosCodigo;
+
+    static final String PASSWORD_INCORRECTA = "PASSWORD_INCORRECTA";
+    static final String CODIGO_INCORRECTO = "CODIGO_INCORRECTO";
+    static final String METODO_PASSWORD = "PASSWORD";
+    static final String METODO_CODIGO = "CODIGO";
+
+    /** Cuenta que entra solo por SSO (Clerk): su contraseña interna es aleatoria y nadie la conoce. */
+    static boolean esCuentaSso(com.hotclick.model.Usuario u) {
+        return u != null && u.getClerkUserId() != null && !u.getClerkUserId().isBlank();
+    }
+
+    /** El front pregunta cómo confirmar: contraseña o código por correo (cuentas SSO). */
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @org.springframework.web.bind.annotation.GetMapping("/reset-confirmacion")
+    public ResponseEntity<ResponseDTO> metodoConfirmacion() {
+        var actor = companyScope.getCurrentUser();
+        return ResponseEntity.ok(ResponseDTO.success("Confirmación",
+            Map.of("metodo", esCuentaSso(actor) ? METODO_CODIGO : METODO_PASSWORD)));
+    }
+
+    /** Cuenta SSO: envía el código de confirmación al correo verificado. */
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PostMapping("/reset-codigo")
+    public ResponseEntity<ResponseDTO> enviarCodigo() {
+        var actor = companyScope.getCurrentUser();
+        if (!esCuentaSso(actor)) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Confirmá con tu contraseña."));
+        }
+        if (!Boolean.TRUE.equals(actor.getCorreoVerificado())) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                "Tu correo no está verificado. Verificalo antes de borrar datos."));
+        }
+        resetDatosCodigo.enviar(actor);
+        return ResponseEntity.ok(ResponseDTO.success("Te enviamos un código a tu correo.", null));
+    }
+
+    /** Borrado de datos: exige volver a escribir la contraseña del usuario que lo pide (seg-altos-2 (c)). */
+    private ResponseEntity<ResponseDTO> exigirPassword(Map<String, String> body) {
+        String password = body == null ? null : body.get("password");
+        var actor = companyScope.getCurrentUser();
+        String codigo = body == null ? null : body.get("codigo");
+        if (esCuentaSso(actor) && codigo != null && !codigo.isBlank()) {
+            // Cuenta SSO: confirma con el código que llegó a su correo verificado (un solo uso).
+            if (!Boolean.TRUE.equals(actor.getCorreoVerificado())) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error(
+                    "Tu correo no está verificado.", Map.of("codigo", CODIGO_INCORRECTO)));
+            }
+            if (resetDatosCodigo.canjear(actor, codigo.trim())) return null;
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                "Código incorrecto o vencido. Pedí uno nuevo.", Map.of("codigo", CODIGO_INCORRECTO)));
+        }
+        if (password == null || password.isEmpty() || actor == null || actor.getContrasenaHash() == null
+                || !passwordEncoder.matches(password, actor.getContrasenaHash())) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                "Contraseña incorrecta. Escribí tu contraseña para confirmar.", Map.of("codigo", PASSWORD_INCORRECTA)));
+        }
+        return null;
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/reset-plataforma-qa")
     public ResponseEntity<ResponseDTO> resetearPlataformaQa(@RequestBody(required = false) Map<String, String> body) {
+        ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
+        if (sinPassword != null) return sinPassword;
         String confirmacion = body == null ? null : body.get("confirmacion");
         if (!ResetPlataformaKeepQaService.CONFIRMACION.equals(confirmacion)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(
@@ -52,10 +115,12 @@ public class AdminResetController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping("/reset-datos")
     @Transactional
-    public ResponseEntity<ResponseDTO> resetearDatos() {
+    public ResponseEntity<ResponseDTO> resetearDatos(@RequestBody(required = false) Map<String, String> body) {
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) {
             if (companyScope.isAdminIT()) {
+                ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
+                if (sinPassword != null) return sinPassword;
                 Map<String, Object> resumen = resetPlataformaKeepQaService.ejecutar();
                 return ResponseEntity.ok(ResponseDTO.success(
                     "Se borraron tiendas, usuarios y productos. Quedan admin, las 3 cuentas QA y el mostrador POS.",
@@ -66,9 +131,20 @@ public class AdminResetController {
         }
         // P9-04: solo el PROPIETARIO (no LECTOR/EDITOR ni sesión de soporte) borra los datos del negocio.
         propietarioGuard.exigirPropietario(empresaId);
+        ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
+        if (sinPassword != null) return sinPassword;
         var actor = companyScope.getCurrentUser();
         org.slf4j.LoggerFactory.getLogger(AdminResetController.class).warn(
             "[reset-datos] empresa={} borrada por usuario={}", empresaId, actor != null ? actor.getId() : null);
+
+        // Encargos (FK a pedido y producto, sin ON DELETE; sus eventos caen en cascada) y reportes de
+        // producto (FK sin ON DELETE): sin esto el borrado de productos daba 500 (revisión seg 063eb7f0d).
+        jdbc.update("DELETE FROM hot_click_encargo_tb WHERE fk_id_empresa = ? OR fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId, empresaId);
+        jdbc.update("DELETE FROM hot_click_reporte_producto_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        // Fichas CRM del negocio (V171); los usuarios se conservan.
+        jdbc.update("DELETE FROM hot_click_cliente_empresa_tb WHERE fk_id_empresa = ?", empresaId);
 
         // Hijos de pedido
         jdbc.update("DELETE FROM hot_click_pago_tb WHERE fk_id_pedido IN " +

@@ -2987,6 +2987,8 @@
     "sysResetItem5": "Publications, testimonials and awards",
     "sysResetKeep": "Users, roles and table structure are preserved",
     "sysResetInputLabel": "Type ELIMINAR to confirm",
+    "sysResetPasswordLabel": "Your password",
+    "sysResetPasswordHelp": "For security, enter the password you use to sign in to HotClick.",
     "sysResetCancel": "Cancel",
     "sysResetDeleting": "Deleting...",
     "sysResetConfirm": "Yes, delete everything",
@@ -3091,7 +3093,12 @@
     "datosCleanInactiveDesc": "Deactivates all products with zero stock",
     "datosCleanInactiveBtn": "Archive",
     "datosCleanOk": "Operation completed",
-    "datosCleanError": "Operation failed"
+    "datosCleanError": "Operation failed",
+    "sysResetCodeLabel": "Confirmation code",
+    "sysResetCodeSend": "Send code",
+    "sysResetCodeResend": "Resend",
+    "sysResetCodeHelp": "You sign in with Google or another account: we send a 6-digit code to your verified email.",
+    "sysResetCodeSent": "We sent a code to your email."
   },
   "adminFinanzas": {
     "title": "Finances",

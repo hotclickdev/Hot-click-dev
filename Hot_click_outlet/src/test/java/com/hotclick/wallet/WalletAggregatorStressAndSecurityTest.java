@@ -50,7 +50,8 @@ import static org.assertj.core.api.Assertions.*;
  */
 class WalletAggregatorStressAndSecurityTest extends BaseIntegrationTest {
 
-    private static final long EMPRESA_PAYOUT       = 901L;
+    /** Empresa real con cuenta SINPE aprobada (seg-altos-2 (d): sin cuenta no se aprueba el payout). */
+    private long EMPRESA_PAYOUT;
     private static final long EMPRESA_IDEMPOTENCIA = 902L;
     private static final int  PCT_SAAS             = 2;
     private static final int  PCT_GW               = 3;
@@ -60,9 +61,28 @@ class WalletAggregatorStressAndSecurityTest extends BaseIntegrationTest {
     @Autowired private WalletTransaccionRepository txRepo;
     @Autowired private PayoutRequestRepository     payoutRepo;
     @Autowired private com.hotclick.service.wallet.WalletPayoutRequestService payoutRequestService;
+    @Autowired private com.hotclick.repository.MetodoCobroRepository metodoCobroRepository;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
 
     @BeforeEach
     void setUp() {
+        com.hotclick.model.Empresa e = new com.hotclick.model.Empresa();
+        e.setNombreEmpresa("payout-stress");
+        e.setNombreComercial("payout-stress");
+        e.setSlug("payout-stress-" + System.nanoTime());
+        e.setCorreoEmpresa("payout-stress@test.cr");
+        e.setEstadoEmpresa("ACTIVO");
+        e.setFechaRegistro(LocalDateTime.now());
+        e = empresaRepository.saveAndFlush(e);
+        EMPRESA_PAYOUT = e.getId();
+        com.hotclick.model.MetodoCobro cuenta = new com.hotclick.model.MetodoCobro();
+        cuenta.setEmpresa(e);
+        cuenta.setTipo(com.hotclick.model.MetodoCobro.TIPO_SINPE);
+        cuenta.setDestino("88888888");
+        cuenta.setMascara("••••-8888");
+        cuenta.setActivo(true);
+        cuenta.setFechaCreacion(LocalDateTime.now().minusMonths(2));
+        metodoCobroRepository.saveAndFlush(cuenta);
         cleanWalletTables();
         // Seed wallet con ₡10,000 disponible para tests de payout
         jdbcTemplate.update("""
@@ -76,6 +96,8 @@ class WalletAggregatorStressAndSecurityTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         cleanWalletTables();
+        metodoCobroRepository.deleteAll();
+        empresaRepository.deleteById(EMPRESA_PAYOUT);
     }
 
     private void cleanWalletTables() {

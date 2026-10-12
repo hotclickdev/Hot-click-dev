@@ -60,7 +60,12 @@ export const adminService = {
   getUsuario: (id: Id) => api.get(`/usuarios/${id}`),
   updateUsuario: (id: Id, body: JsonBody) => api.put(`/usuarios/${id}`, body),
   health: () => api.get('/health'),
-  resetDatos: () => api.post('/admin/reset-datos'),
+  /** Exige la contraseña del usuario (seg-altos-2 (c)). */
+  // Confirmación: contraseña, o código por correo en cuentas que solo entran por SSO.
+  resetDatos: (confirmacion: { password?: string; codigo?: string }) => api.post('/admin/reset-datos', confirmacion),
+  resetConfirmacion: () =>
+    api.get<{ data?: { metodo?: 'PASSWORD' | 'CODIGO' } }>('/admin/reset-confirmacion').then(r => r.data?.data?.metodo ?? 'PASSWORD'),
+  resetEnviarCodigo: () => api.post('/admin/reset-codigo'),
   resetPlataformaQa: (confirmacion: string) =>
     api.post('/admin/reset-plataforma-qa', { confirmacion }),
   borrarPedidosCancelados: () => api.delete('/admin/pedidos/cancelados'),

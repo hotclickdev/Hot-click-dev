@@ -48,6 +48,10 @@ public class UsuarioService {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre es requerido");
         }
+        if (correo != null && !correo.isBlank()
+                && usuarioRepository.existsByCorreo(correo.trim().toLowerCase(java.util.Locale.ROOT))) {
+            throw new com.hotclick.exception.ClienteCorreoExistenteException();
+        }
         String[] partes = nombre.trim().split("\\s+", 2);
         Usuario u = new Usuario();
         u.setNombre(partes[0]);

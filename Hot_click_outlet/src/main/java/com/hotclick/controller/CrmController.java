@@ -44,9 +44,15 @@ public class CrmController {
         if (nombre == null || nombre.isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));
         }
-        return ResponseEntity.ok(ResponseDTO.success("Cliente registrado",
-            crmClientesService.crear(nombre, body.get("telefono"), body.get("correo"),
-                companyScope.getCurrentEmpresaIdOrOwn())));
+        try {
+            return ResponseEntity.ok(ResponseDTO.success("Cliente registrado",
+                crmClientesService.crear(nombre, body.get("telefono"), body.get("correo"),
+                    companyScope.getCurrentEmpresaIdOrOwn())));
+        } catch (com.hotclick.exception.ClienteCorreoExistenteException e) {
+            // revisión seg 063eb7f0d: antes 500 por unique; ahora 409 como asignar/crear-cliente.
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT)
+                .body(ResponseDTO.error(e.getMessage()));
+        }
     }
 
     @GetMapping("/buscar")

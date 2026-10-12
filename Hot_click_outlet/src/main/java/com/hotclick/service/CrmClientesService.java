@@ -29,6 +29,7 @@ public class CrmClientesService {
     @Autowired private WhatsAppService whatsAppService;
     @Autowired private CrmAccessGuard crmAccessGuard;
     @Autowired private CrmClienteMapper crmClienteMapper;
+    @Autowired private ClienteEmpresaFichaService fichas;
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listar(Long empresaId) {
@@ -44,6 +45,9 @@ public class CrmClientesService {
         // tenant-global-ok: resuelve la entidad Empresa; null no amplía ningún listado
         Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
         Usuario saved = usuarioService.crearClienteRapido(nombre, telefono, correo, empresa);
+        if (empresa != null) {
+            fichas.registrarManual(empresa.getId(), saved.getId());
+        }
         return crmClienteMapper.toClienteMapSimple(saved);
     }
 
@@ -80,7 +84,20 @@ public class CrmClientesService {
 
     @Transactional
     public Map<String, Object> actualizar(Long id, Long empresaId, Map<String, Object> body) {
-        Usuario u = clientePropio(id, empresaId);
+        Usuario c = clienteDeEmpresa(id, empresaId);
+        if (!CrmClienteMapper.esClientePropio(c, empresaId)) {
+            // P8-01 (V171): el negocio que no lo registró guarda notas/puntos/segmento en su propia ficha.
+            if (body.containsKey("limiteCredito")) throw new TenantAccessDeniedException(MSG_COMPARTIDO);
+            com.hotclick.model.ClienteEmpresa f = fichas.obtenerOCrear(empresaId, id);
+            if (body.containsKey("segmento")) f.setSegmento((String) body.get("segmento"));
+            if (body.containsKey("notasInternas")) f.setNotasInternas((String) body.get("notasInternas"));
+            if (body.containsKey("puntosFidelidad")) {
+                f.setPuntosFidelidad(Math.max(0, Integer.parseInt(body.get("puntosFidelidad").toString())));
+            }
+            fichas.guardar(f);
+            return crmClienteMapper.toClienteMapSimple(c, empresaId);
+        }
+        Usuario u = c;
         if (body.containsKey("segmento")) u.setSegmento((String) body.get("segmento"));
         if (body.containsKey("notasInternas")) u.setNotasInternas((String) body.get("notasInternas"));
         if (body.containsKey("limiteCredito")) {
@@ -95,7 +112,14 @@ public class CrmClientesService {
 
     @Transactional
     public int ajustarPuntos(Long id, Long empresaId, int delta) {
-        Usuario u = clientePropio(id, empresaId);
+        Usuario c = clienteDeEmpresa(id, empresaId);
+        if (!CrmClienteMapper.esClientePropio(c, empresaId)) {
+            com.hotclick.model.ClienteEmpresa f = fichas.obtenerOCrear(empresaId, id);
+            f.setPuntosFidelidad(Math.max(0, f.getPuntosFidelidad() + delta));
+            fichas.guardar(f);
+            return f.getPuntosFidelidad();
+        }
+        Usuario u = c;
         int nuevos = Math.max(0, u.getPuntosFidelidad() + delta);
         u.setPuntosFidelidad(nuevos);
         usuarioRepository.save(u);
@@ -106,7 +130,10 @@ public class CrmClientesService {
     public Map<String, String> enviarWhatsApp(Long id, Long empresaId, String escenario, Map<String, String> ctxExtra) {
         Usuario u = clienteDeEmpresa(id, empresaId);
         String textoEnviado = whatsAppService.enviarDesdecrm(u, empresaId, escenario, ctxExtra);
-        return Map.of("texto", textoEnviado, "telefono", u.getTelefono() != null ? u.getTelefono() : "");
+        String tel = CrmClienteMapper.esClientePropio(u, empresaId)
+            ? (u.getTelefono() != null ? u.getTelefono() : "")
+            : CrmClienteMapper.enmascararTelefono(u.getTelefono());
+        return Map.of("texto", textoEnviado, "telefono", tel);
     }
 
     @Transactional(readOnly = true)
@@ -122,14 +149,7 @@ public class CrmClientesService {
     }
 
     static final String MSG_COMPARTIDO =
-        "Este cliente lo registró otro negocio: no puedes cambiar sus notas, puntos ni crédito.";
-
-    /** P8-01: notas/segmento/crédito/puntos viven en el usuario global; solo el negocio de registro los cambia. */
-    private Usuario clientePropio(Long id, Long empresaId) {
-        Usuario u = clienteDeEmpresa(id, empresaId);
-        if (!CrmClienteMapper.esClientePropio(u, empresaId)) throw new TenantAccessDeniedException(MSG_COMPARTIDO);
-        return u;
-    }
+        "Este cliente lo registró otro negocio: no puedes cambiar su crédito.";
 
     private Usuario clienteDeEmpresa(Long id, Long empresaId) {
         Usuario u = usuarioRepository.findById(id)

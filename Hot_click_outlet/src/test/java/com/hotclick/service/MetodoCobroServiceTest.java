@@ -14,7 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,12 +37,15 @@ class MetodoCobroServiceTest {
     @Mock EmpresaRepository empresaRepo;
     @Mock CompanyScope companyScope;
     @Mock InputSanitizer sanitizer;
-    @InjectMocks MetodoCobroService service;
+    @Mock MetodoCobroCambioService cambioService;
+    MetodoCobroService service;
 
     private Empresa empresa;
 
     @BeforeEach
     void setUp() {
+        service = new MetodoCobroService(repo, empresaRepo, companyScope, sanitizer,
+            new MetodoCobroAltaService(repo, cambioService));
         empresa = new Empresa();
         empresa.setId(9L);
         empresa.setNombreEmpresa("Taller CR");
@@ -75,6 +77,8 @@ class MetodoCobroServiceTest {
         verify(repo).save(cap.capture());
         assertThat(cap.getValue().getDestino()).isEqualTo("88880000");
         assertThat(cap.getValue().getTipo()).isEqualTo(MetodoCobro.TIPO_SINPE);
+        // seg-altos-2 (d): el alta SINPE queda pendiente de aprobación
+        verify(cambioService).solicitarAlta(cap.getValue());
     }
 
     @Test
