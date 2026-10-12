@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { borrarBorrador } from '@/pages/checkout/borradorCheckout'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import { usePayment, tilopayCardDesdePago } from '@/hooks/usePayment'
@@ -26,7 +27,7 @@ export default function CheckoutPage() {
 
   const { clearCart: clearCartFn } = useCartStore()
   useEffect(() => {
-    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCartFn()
+    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') { clearCartFn(); borrarBorrador() }
   }, [estado, clearCartFn])
 
   useEffect(() => {

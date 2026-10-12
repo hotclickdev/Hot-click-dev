@@ -71,6 +71,7 @@ class SinpeCheckoutServiceEmpresaTest {
         bodega = new Bodega();
         bodega.setId(1L);
         bodega.setEmpresa(empresa);
+        bodega.setAceptaEfectivo(true);
         bodega.setPermiteRetiroCliente(true);
 
         usuario = new Usuario();
@@ -107,7 +108,7 @@ class SinpeCheckoutServiceEmpresaTest {
     }
 
     @Test
-    @DisplayName("checkout SINPE asigna pedido.empresa desde bodega")
+    @DisplayName("checkout manual (efectivo) asigna pedido.empresa desde bodega")
     void checkout_asignaEmpresaDeBodega() {
         when(usuarioRepository.findByCorreo("buyer@hotclick.cr")).thenReturn(Optional.of(usuario));
         when(bodegaRepository.findById(1L)).thenReturn(Optional.of(bodega));
@@ -123,6 +124,7 @@ class SinpeCheckoutServiceEmpresaTest {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setBodegaId(1L);
         req.setMetodoEnvio("RETIRO_EN_TIENDA");
+        req.setProvider("EFECTIVO"); // SINPE manual ya no crea pedidos; este flujo queda solo para efectivo
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(1);

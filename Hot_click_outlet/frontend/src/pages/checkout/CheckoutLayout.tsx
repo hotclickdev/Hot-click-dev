@@ -15,7 +15,7 @@ import { pasoMaximoCheckout, useVolver } from './pasosCheckoutHelpers'
 import { useCodigosPedido } from './useCodigosPedido'
 import { useEsDesktop } from './useEsDesktop'
 import type { ItemCheckout } from './checkoutHelpers'
-import { metodoPagoPrincipal } from './pagoPrincipal'
+import { esMetodoTilopay, metodoPagoPrincipal, usePagosTarjetaDisponibles } from './pagoPrincipal'
 import type { CheckoutFormState } from './useCheckoutForm'
 
 type CheckoutLayoutProps = {
@@ -129,6 +129,8 @@ export default function CheckoutLayout({
     return !errSenas && Boolean(form.provincia) && Boolean(form.canton)
   }
 
+  const tarjetaDisponible = usePagosTarjetaDisponibles()
+
   function enfocarPrimerError() {
     requestAnimationFrame(() => {
       const campo = document.querySelector<HTMLElement>('[aria-invalid="true"]')
@@ -138,6 +140,8 @@ export default function CheckoutLayout({
   }
 
   function pagar() {
+    // Sin credenciales Tilopay no se crea el pedido: el aviso ya se muestra en el método de pago.
+    if (esMetodoTilopay(form.metodoPago) && tarjetaDisponible === false) return
     if (!form.aceptaDatos) {
       setConsentimientoPendiente(true)
       return

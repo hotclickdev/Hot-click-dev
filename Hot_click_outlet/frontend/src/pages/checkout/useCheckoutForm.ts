@@ -18,6 +18,7 @@ import {
 import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
 import { metodoPagoPrincipal } from './pagoPrincipal'
+import { guardarBorrador, leerBorrador } from './borradorCheckout'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
@@ -146,9 +147,10 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const SHIPPING_OPTIONS = opcionesEnvio(bodegaRetiro)
 
   // Destino: define cuál de los dos envíos normales se ofrece (dentro o fuera del GAM, Figma 37:1689).
-  const [provincia, setProvinciaState] = useState('')
-  const [canton, setCantonState] = useState('')
-  const [distrito, setDistrito] = useState('')
+  const [borrador] = useState(leerBorrador)
+  const [provincia, setProvinciaState] = useState(borrador.provincia ?? '')
+  const [canton, setCantonState] = useState(borrador.canton ?? '')
+  const [distrito, setDistrito] = useState(borrador.distrito ?? '')
   const destinoGAM = esDestinoGAM(provincia, canton)
   function setProvincia(value: string) {
     setProvinciaState(value)
@@ -244,7 +246,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
 
   // Con sesión el nombre arranca con el de la cuenta (se puede corregir en «Tus datos»).
   const nombreCuenta = useAuthStore((s) => s.userName)
-  const [sinpeNombre, setSinpeNombre] = useState(() => nombreCuenta ?? '')
+  const [sinpeNombre, setSinpeNombre] = useState(() => borrador.nombre || nombreCuenta || '')
   const [sinpeCedula, setSinpeCedula] = useState('')
   const [sinpeTelefono, setSinpeTelefono] = useState('')
   const [sinpeEmail, setSinpeEmail] = useState('')
@@ -257,10 +259,10 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [sinpeUploadError, setSinpeUploadError] = useState('')
   const sinpeInputRef = useRef<HTMLInputElement | null>(null)
 
-  const [telefono, setTelefono] = useState('')
+  const [telefono, setTelefono] = useState(borrador.telefono ?? '')
   const [telefonoError, setTelefonoError] = useState('')
   const [telefonoDirty, setTelefonoDirty] = useState(false)
-  const [direccion, setDireccion] = useState('')
+  const [direccion, setDireccion] = useState(borrador.direccion ?? '')
   const [direccionError, setDireccionError] = useState('')
   const [direccionDirty, setDireccionDirty] = useState(false)
 
@@ -280,14 +282,19 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     return () => { cancelado = true }
   }, [authToken, userId])
 
-  const [guestEmail, setGuestEmail] = useState('')
+  const [guestEmail, setGuestEmail] = useState(borrador.correo ?? '')
   const [guestEmailError, setGuestEmailError] = useState('')
   const [guestEmailDirty, setGuestEmailDirty] = useState(false)
-  const [guestPhone, setGuestPhone] = useState('')
+  const [guestPhone, setGuestPhone] = useState(borrador.telefonoInvitado ?? '')
   const [guestPhoneError, setGuestPhoneError] = useState('')
   const [guestPhoneDirty, setGuestPhoneDirty] = useState(false)
 
   const [aceptaDatos, setAceptaDatos] = useState(false)
+
+  // Borrador sin datos de pago: si va a «Ingresar» o vuelve de Tilopay con error, no pierde lo escrito.
+  useEffect(() => {
+    guardarBorrador({ nombre: sinpeNombre, correo: guestEmail, telefonoInvitado: guestPhone, telefono, direccion, provincia, canton, distrito })
+  }, [sinpeNombre, guestEmail, guestPhone, telefono, direccion, provincia, canton, distrito])
 
   const costoEnvio = paquetes.reduce((sum, p) => sum + (SHIPPING_COSTS[metodoEnvioPorPaquete[p.bodegaId]] ?? 0), 0)
   const subtotalCart = total()

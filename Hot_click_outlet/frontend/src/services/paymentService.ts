@@ -36,6 +36,11 @@ export const paymentService = {
     return api.post('/payments/guest-checkout', payload)
   },
 
+  /** Público: si la pasarela Tilopay tiene credenciales. */
+  disponibilidad() {
+    return api.get<{ tilopay: boolean }>('/payments/disponibilidad')
+  },
+
   /** Cancela pedido de invitado y libera stock. Requiere cancelToken del checkout. */
   guestCancelarPedido(numeroPedido: string, cancelToken?: string | null) {
     const token = cancelToken

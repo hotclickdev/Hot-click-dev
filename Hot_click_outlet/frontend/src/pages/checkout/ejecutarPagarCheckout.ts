@@ -1,5 +1,4 @@
 import { authService } from '@/services/authService'
-import i18n from '@/i18n'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
@@ -105,8 +104,6 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     metodoPago,
     sinpeNombre,
     sinpeCedula,
-    setSinpeNombreErr,
-    setSinpeCedulaErr,
     telefono,
     metodoEnvio,
     paquetes,
@@ -147,23 +144,6 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     }
   }
 
-  if (metodoPago === 'SINPE') {
-    let valid = true
-    if (sinpeNombre.trim()) {
-      setSinpeNombreErr('')
-    } else {
-      setSinpeNombreErr(i18n.t('checkout.errores.nombreRequerido'))
-      valid = false
-    }
-    if (sinpeCedula.trim()) {
-      setSinpeCedulaErr('')
-    } else {
-      setSinpeCedulaErr(i18n.t('checkout.errores.cedulaRequerida'))
-      valid = false
-    }
-    if (!valid) return
-  }
-
   authService.registrarConsentimiento('CHECKOUT')
   guardarUltimoPedido({
     unidades: items.reduce((s, i) => s + (i.cantidad ?? 0), 0),
@@ -190,7 +170,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     resumenEnvios ? `Envío: ${resumenEnvios}` : '',
   ].filter(Boolean).join(' | ')
 
-  const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
+  // SINPE manual ya no existe en el checkout: solo efectivo usa el flujo manual; SINPE Móvil va por Tilopay.
+  const isManual = metodoPago === 'EFECTIVO'
   analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + (i.cantidad as number), 0))
   const atrib = attributionForCheckout()
   const metaCookies = readMetaCookies()
@@ -205,7 +186,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       notas: notasFull || null,
       // B17: la dirección también viaja aparte para que el pedido la guarde y los correos digan «Enviamos a …».
       direccionEntrega: necesitaDireccion && direccion ? (direccionPedido || direccion).slice(0, 500) : null,
-      provider: metodoPago,
+      // SINPE Móvil y Tarjeta se cobran los dos en Tilopay.
+      provider: metodoPago === 'TILOPAY_SINPE' ? 'TILOPAY' : metodoPago,
       items: items.map((i) => ({
         productoId: i.id,
         cantidad: i.cantidad,
@@ -236,7 +218,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       ...(token
         ? {}
         : {
-            guestEmail: metodoPago === 'SINPE' ? (sinpeEmail.trim() || guestEmail.trim()) : guestEmail.trim(),
+            guestEmail: guestEmail.trim(),
             guestPhone: guestPhone || sinpeTelefono || null,
           }),
     },

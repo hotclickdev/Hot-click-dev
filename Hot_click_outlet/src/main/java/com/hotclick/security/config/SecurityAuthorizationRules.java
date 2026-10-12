@@ -48,6 +48,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()
             .requestMatchers(GET,  "/api/payments/status/*").permitAll()
+            .requestMatchers(GET,  "/api/payments/disponibilidad").permitAll()
             .requestMatchers(POST, "/api/payments/tilopay/confirmar/*").permitAll()
             .requestMatchers(POST, "/api/payments/tilopay/reintentar/*").permitAll()
             // SINPE — invitados

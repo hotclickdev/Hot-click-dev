@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { borrarBorrador } from '@/pages/checkout/borradorCheckout'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -29,6 +30,7 @@ export default function TilopayRespuestaPage() {
       const { destino, numeroPedido, motivo } = await resolverRespuestaTilopay(search)
       if (destino === 'exito') {
         clearCart()
+        borrarBorrador()
         const q = numeroPedido ? `?order=${encodeURIComponent(numeroPedido)}` : ''
         navigate(`/pago/exito${q}`, { replace: true })
         return

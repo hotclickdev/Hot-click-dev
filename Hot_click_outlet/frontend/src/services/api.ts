@@ -5,6 +5,12 @@ import type { AuthPersistido } from '@/types/auth'
 import type { ResponseDTO } from '@/types/api'
 import { quitarContentTypeSiFormData } from './apiMultipart'
 
+/** Rutas donde se puede comprar sin cuenta. */
+const RUTAS_INVITADO = ['/carrito', '/checkout', '/pago/']
+export function esRutaInvitado(pathname: string): boolean {
+  return RUTAS_INVITADO.some((r) => pathname === r || pathname.startsWith(r.endsWith('/') ? r : `${r}/`))
+}
+
 type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
 const api = axios.create({
@@ -69,6 +75,13 @@ api.interceptors.response.use(
       }
 
       localStorage.removeItem('hotclick-auth')
+      // Sesión vencida en una ruta que admite invitado (carrito, checkout, pago): seguir como invitado.
+      // Sin token el backend trata el pedido como invitado; nunca mandamos a /login a mitad de la compra.
+      if (hadSession && esRutaInvitado(globalThis.location.pathname)) {
+        useAuthStore.getState().logout()
+        delete original.headers.Authorization
+        return api(original)
+      }
       if (hadSession) {
         const dest = `${globalThis.location.pathname}${globalThis.location.search}`
         globalThis.location.href = rutaLoginConRetorno(dest)

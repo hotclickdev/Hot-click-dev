@@ -1,6 +1,7 @@
 package com.hotclick.service.payment;
 
 import com.hotclick.dto.PaymentCheckoutRequest;
+import com.hotclick.exception.PagosNoDisponiblesException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
 import com.hotclick.payment.PaymentProviderFactory;
@@ -29,6 +30,7 @@ public class CheckoutValidator {
         "ENVIO_NORMAL_GAM", "ENVIO_NORMAL_FUERA_GAM", "ENVIO_RAPIDO");
 
     @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private com.hotclick.service.TilopayService tilopayService;
 
     @Value("${payments.onvo.enabled:false}")
     private boolean onvoEnabled;
@@ -44,6 +46,13 @@ public class CheckoutValidator {
         if (Constants.PROVEEDOR_ONVO.equals(provider) && !onvoEnabled) {
             throw new IllegalArgumentException(
                 "ONVO no está habilitado. Usá TILOPAY para pagos con tarjeta.");
+        }
+        if (Constants.PROVEEDOR_SINPE.equals(provider)) {
+            throw new IllegalArgumentException("SINPE manual no está disponible. Pagá con SINPE Móvil o tarjeta por la pasarela.");
+        }
+        // Sin credenciales Tilopay no se crea ningún pedido ni reserva (nunca un éxito simulado en prod).
+        if (Constants.PROVEEDOR_TILOPAY.equals(provider) && !tilopayService.isPagosDisponibles()) {
+            throw new PagosNoDisponiblesException();
         }
         if (!providerFactory.soporta(provider)) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);

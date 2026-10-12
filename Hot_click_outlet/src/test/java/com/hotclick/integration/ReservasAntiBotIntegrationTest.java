@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Regla anti-bot de reservas (QA-CONC-4) de punta a punta: checkout de invitado real
- * (SINPE, sin pasarela externa) + scheduler de expiración con reloj controlable.
+ * (efectivo: flujo manual sin pasarela; el SINPE manual ya no crea pedidos) + scheduler de expiración con reloj controlable.
  */
 @DisplayName("[QA-CONC-4] Regla anti-bot de reservas — checkout + liberación diferida")
 class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
@@ -91,6 +91,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         bodega.setEmpresa(empresa);
         bodega.setEstado(Constants.ESTADO_ACTIVO);
         bodega.setPermiteRetiroCliente(true);
+        bodega.setAceptaEfectivo(true);
         bodega = bodegaRepository.saveAndFlush(bodega);
 
         producto = new Producto();
@@ -206,10 +207,10 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
 
     private void reservar(String ip, int unidades) throws Exception {
         String body = """
-            {"bodegaId":%d,"metodoEnvio":"%s","provider":"SINPE","guestEmail":"bot%d@test.cr",
+            {"bodegaId":%d,"metodoEnvio":"%s","provider":"EFECTIVO","guestEmail":"bot%d@test.cr",
              "guestPhone":"8888%04d","items":[{"productoId":%d,"cantidad":%d}]}
             """.formatted(bodega.getId(), Constants.ENVIO_RETIRO, ++correo, correo, producto.getId(), unidades);
-        mockMvc.perform(post("/api/payments/guest-checkout")
+        mockMvc.perform(post("/api/sinpe/guest-checkout")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-Forwarded-For", ip)
                 .content(body))

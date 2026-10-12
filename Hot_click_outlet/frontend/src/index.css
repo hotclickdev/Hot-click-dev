@@ -690,7 +690,7 @@ html.dark .hc-superadmin-theme {
    rediseño de Figma); no debe pintarse de `--hc-surface`. */
 :root input:not([type="checkbox"]):not([type="radio"]):not(.hc-input-libre),
 :root textarea:not(.hc-input-libre),
-:root select {
+:root select:not(.hc-input-libre) {
   background-color: var(--hc-surface) !important;
   color: var(--hc-text) !important;
   border-color: var(--hc-border) !important;
@@ -788,12 +788,12 @@ html.dark .hc-superadmin-theme footer {
   border-color: var(--hc-border) !important;
   color: var(--hc-text);
 }
-html.dark .hc-sistema-theme input:not([type="checkbox"]):not([type="radio"]),
-html.dark .hc-sistema-theme textarea,
-html.dark .hc-sistema-theme select,
-html.dark .hc-superadmin-theme input:not([type="checkbox"]):not([type="radio"]),
-html.dark .hc-superadmin-theme textarea,
-html.dark .hc-superadmin-theme select {
+html.dark .hc-sistema-theme input:not([type="checkbox"]):not([type="radio"]):not(.hc-input-libre),
+html.dark .hc-sistema-theme textarea:not(.hc-input-libre),
+html.dark .hc-sistema-theme select:not(.hc-input-libre),
+html.dark .hc-superadmin-theme input:not([type="checkbox"]):not([type="radio"]):not(.hc-input-libre),
+html.dark .hc-superadmin-theme textarea:not(.hc-input-libre),
+html.dark .hc-superadmin-theme select:not(.hc-input-libre) {
   background-color: var(--hc-surface) !important;
   color: var(--hc-text) !important;
   border-color: var(--hc-border) !important;
@@ -819,9 +819,9 @@ html.dark .hc-seller-theme footer {
   border-color: var(--hc-border) !important;
   color: var(--hc-text);
 }
-html.dark .hc-seller-theme input:not([type="checkbox"]):not([type="radio"]),
-html.dark .hc-seller-theme textarea,
-html.dark .hc-seller-theme select {
+html.dark .hc-seller-theme input:not([type="checkbox"]):not([type="radio"]):not(.hc-input-libre),
+html.dark .hc-seller-theme textarea:not(.hc-input-libre),
+html.dark .hc-seller-theme select:not(.hc-input-libre) {
   background-color: var(--hc-surface) !important;
   color: var(--hc-text) !important;
   border-color: var(--hc-border) !important;
@@ -878,7 +878,7 @@ html.dark [class~="placeholder:text-hc-n-400"]::placeholder,
 html.dark [class~="placeholder:text-hc-n-300"]::placeholder { color: #5C6571; }
 html.dark :is(.hc-figma-ui, .hc-tenant-theme) input:not([type="checkbox"]):not([type="radio"]):not(.hc-input-libre),
 html.dark :is(.hc-figma-ui, .hc-tenant-theme) textarea:not(.hc-input-libre),
-html.dark :is(.hc-figma-ui, .hc-tenant-theme) select {
+html.dark :is(.hc-figma-ui, .hc-tenant-theme) select:not(.hc-input-libre) {
   background-color: #0C0E12 !important;
   color: #F4F6F9 !important;
   border-color: #232830 !important;

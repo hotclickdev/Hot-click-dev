@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { borrarBorrador } from '@/pages/checkout/borradorCheckout'
 import { Navigate, useSearchParams, useLocation } from 'react-router-dom'
 import { usePayment } from '@/hooks/usePayment'
 import useCartStore from '@/store/cartStore'
@@ -49,7 +50,7 @@ export default function PaymentStatusPage() {
 
   useEffect(() => {
     if (destinoVisitante) return
-    if (estado === 'success') clearCart()
+    if (estado === 'success') { clearCart(); borrarBorrador() }
   }, [estado, clearCart, destinoVisitante])
 
   useEffect(() => {

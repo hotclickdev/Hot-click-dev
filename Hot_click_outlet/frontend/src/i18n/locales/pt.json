@@ -1530,6 +1530,10 @@
       "sinpeTarjeta": "SINPE / Cartão",
       "sinpeTarjetaSub": "SINPE Móvil para {{numero}} ou cartão. Cartão em breve.",
       "sinpeTarjetaSubTilopay": "SINPE Móvil ou cartão, no gateway seguro.",
+      "tarjetaNoDisponible": "Pagamentos com cartão e SINPE Móvil não estão disponíveis no momento. Tente mais tarde ou fale conosco pelo WhatsApp.",
+      "tarjetaCreditoDebito": "Crédito ou débito",
+      "sinpeMovilSub": "Pelo app do seu banco",
+      "avisoTilopay": "Vamos levar você ao Tilopay para pagar com segurança.",
       "correoCuenta": "E-mail da sua conta"
     },
     "giftPagado": {

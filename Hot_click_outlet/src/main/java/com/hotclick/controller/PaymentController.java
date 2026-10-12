@@ -5,6 +5,10 @@ import jakarta.validation.Valid;
 import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.dto.PaymentStatusResponse;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.PagosNoDisponiblesException;
+import com.hotclick.security.RateLimiter;
+import com.hotclick.service.TilopayService;
+import java.util.Locale;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.payment.TilopayConfirmacionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +28,31 @@ public class PaymentController {
     @Autowired
     private TilopayConfirmacionService tilopayConfirmacionService;
 
+    @Autowired
+    private TilopayService tilopayService;
+
+    @Autowired
+    private RateLimiter rateLimiter;
+
+    /** Tope por correo del checkout invitado (el filtro ya limita por IP). */
+    static final int GUEST_EMAIL_MAX = 5;
+    static final int GUEST_EMAIL_VENTANA_S = 600;
+
+    /** Público: el front avisa antes de crear el pedido si la pasarela no tiene credenciales. */
+    @GetMapping("/disponibilidad")
+    public ResponseEntity<ResponseDTO> disponibilidad() {
+        return ResponseEntity.ok(ResponseDTO.success("Disponibilidad de pagos",
+            Map.of("tilopay", tilopayService.isPagosDisponibles())));
+    }
+
     @PostMapping("/checkout")
     public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
         try {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (PagosNoDisponiblesException e) {
+            return ResponseEntity.status(503).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -65,8 +88,15 @@ public class PaymentController {
     @PostMapping("/guest-checkout")
     public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest request) {
         try {
+            String correo = request.getGuestEmail() == null ? "" : request.getGuestEmail().trim().toLowerCase(Locale.ROOT);
+            if (!correo.isEmpty() && !rateLimiter.tryAcquire("guest-checkout:email:" + correo, GUEST_EMAIL_MAX, GUEST_EMAIL_VENTANA_S)) {
+                return ResponseEntity.status(429).body(ResponseDTO.error(
+                    "Demasiados intentos. Esperá un momento antes de volver a intentar."));
+            }
             PaymentCheckoutResponse response = paymentService.checkout(request, null);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (PagosNoDisponiblesException e) {
+            return ResponseEntity.status(503).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

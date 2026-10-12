@@ -1,14 +1,28 @@
+import { useQuery } from '@tanstack/react-query'
+import { paymentService } from '@/services/paymentService'
+
 /**
- * Pago principal «SINPE / Tarjeta».
- * Mientras la API de Tilopay no esté lista, usa el flujo SINPE que ya funciona (comprobante).
- * Con VITE_TILOPAY_ACTIVO=true pasa a la pasarela Tilopay, que cobra SINPE y tarjeta.
+ * Pago principal «SINPE / Tarjeta»: siempre la pasarela Tilopay (cobra SINPE Móvil y tarjeta).
+ * El SINPE manual con comprobante ya no se ofrece en el checkout.
  */
-export function tilopayActivo(): boolean {
-  return import.meta.env.VITE_TILOPAY_ACTIVO === 'true'
+export function metodoPagoPrincipal(): 'TILOPAY' {
+  return 'TILOPAY'
 }
 
-export function metodoPagoPrincipal(): 'SINPE' | 'TILOPAY' {
-  return tilopayActivo() ? 'TILOPAY' : 'SINPE'
+/** Tarjeta y SINPE Móvil: los dos van a la pasarela Tilopay. */
+export function esMetodoTilopay(metodo: string): boolean {
+  return metodo === 'TILOPAY' || metodo === 'TILOPAY_SINPE'
+}
+
+/** `false` solo si el backend confirma que Tilopay no tiene credenciales; mientras carga, `null`. */
+export function usePagosTarjetaDisponibles(): boolean | null {
+  const { data } = useQuery({
+    queryKey: ['pagos-disponibilidad'],
+    queryFn: async () => (await paymentService.disponibilidad()).data,
+    staleTime: 60_000,
+    retry: 1,
+  })
+  return data ? data.tilopay !== false : null
 }
 
 type ItemConBodega = { bodega?: { aceptaEfectivo?: boolean } | null; bodegaAceptaEfectivo?: boolean }
