@@ -51,7 +51,7 @@ public class PremioController {
             ResultadoRuleta resultado = premioService.girar(giroId, usuario);
             return ResponseEntity.ok(ResponseDTO.success("Premio obtenido", resultado));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -71,7 +71,7 @@ public class PremioController {
             GiroRuleta giro = premioService.asignarGiro(usuario, tipoOrigen);
             return ResponseEntity.ok(ResponseDTO.success("Giro asignado", giro));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

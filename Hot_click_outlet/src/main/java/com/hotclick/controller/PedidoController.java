@@ -61,7 +61,7 @@ public class PedidoController {
             Pedido nuevo = pedidoService.crearPedidoManual(dto, empresaDelScope());
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -79,7 +79,7 @@ public class PedidoController {
             Pedido nuevo = pedidoService.crearPedido(pedido);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -139,7 +139,7 @@ public class PedidoController {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(404).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -158,7 +158,7 @@ public class PedidoController {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(404).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -202,7 +202,7 @@ public class PedidoController {
                     return resultado;
                 });
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -231,7 +231,7 @@ public class PedidoController {
                     return resultado;
                 });
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -255,7 +255,7 @@ public class PedidoController {
                     return resultado;
                 });
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -275,7 +275,7 @@ public class PedidoController {
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             throw e;
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 

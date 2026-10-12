@@ -104,7 +104,7 @@ public class ProductoCatalogHandler {
             var movimientos = stockService.historialPorProducto(id);
             return ResponseEntity.ok(ResponseDTO.success("OK", movimientos));
         } catch (Exception e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -140,7 +140,7 @@ public class ProductoCatalogHandler {
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
         } catch (Exception e) {
-            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(404).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -177,7 +177,7 @@ public class ProductoCatalogHandler {
                 : productoRepository.findByEnOfertaTrueAndVisibleCatalogoTrue();
             return ResponseEntity.ok(ResponseDTO.success("Ofertas", lista));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

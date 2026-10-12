@@ -96,7 +96,7 @@ public class AdminAsignarController {
             Usuario saved = usuarioRepository.save(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Cliente creado", saved));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -145,7 +145,7 @@ public class AdminAsignarController {
             com.hotclick.model.Pedido pedido = pedidoService.crearPedidoManual(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Compra registrada correctamente", pedido));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

@@ -76,7 +76,7 @@ public class PosQrController {
                 "pedidoId",  sesion.getPedidoId() != null ? sesion.getPedidoId() : 0
             )));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -88,7 +88,7 @@ public class PosQrController {
             posQrService.cancelar(token, empresaId);
             return ResponseEntity.ok(ResponseDTO.success("Sesión cancelada", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 

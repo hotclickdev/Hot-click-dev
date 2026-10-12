@@ -46,7 +46,7 @@ public class PaymentController {
             PaymentStatusResponse response = paymentService.consultarEstado(numeroPedido);
             return ResponseEntity.ok(ResponseDTO.success("Estado del pago", response));
         } catch (Exception e) {
-            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(404).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -61,7 +61,7 @@ public class PaymentController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -93,7 +93,7 @@ public class PaymentController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -108,7 +108,7 @@ public class PaymentController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -125,7 +125,7 @@ public class PaymentController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

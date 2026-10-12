@@ -67,7 +67,7 @@ public class MarcaController {
                 nombre, body.get("logoUrl"), userDetails.getUsername(),
                 companyScope.getCurrentEmpresaIdOrOwn(), companyScope.isAdminIT())));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -78,7 +78,7 @@ public class MarcaController {
             companyScope.assertCanAccessNullable(m.getEmpresaId());
             return ResponseEntity.ok(ResponseDTO.success("Marca actualizada", marcaService.actualizar(m, body)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -118,7 +118,7 @@ public class MarcaController {
             marcaService.eliminar(m);
             return ResponseEntity.ok(ResponseDTO.success("Marca eliminada", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }
