@@ -19,6 +19,7 @@ import { useMasDeLaMarca } from './producto/useMasDeLaMarca'
 import { useProductDetail } from './producto/useProductDetail'
 import HojaAgregadoAlPedido from '@/components/comprador/HojaAgregadoAlPedido'
 import { Helmet } from 'react-helmet-async'
+import { useVisitaCategoria } from '@/services/categoriasTop'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -32,6 +33,7 @@ export default function ProductDetailPage() {
     turnstileRef, setTurnstileToken, turnstileSiteKey, turnstileBloqueaSubmit,
   } = useProductDetail(id, t)
   const masDeLaMarca = useMasDeLaMarca(product)
+  useVisitaCategoria(product?.categoriaId)
   usePublicarMigas({
     actual: product?.titulo || product?.nombre || undefined,
     categoriaNombre: product?.categoriaNombre || undefined,

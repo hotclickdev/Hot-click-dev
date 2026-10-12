@@ -4,7 +4,6 @@ import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import useUiStore from '@/store/uiStore'
 import useRutaPanel from '@/app/useRutaPanel'
-import { useCategoriasCatalogo } from '../useCategoriasCatalogo'
 
 export const RUTA_VENDE = '/vender'
 export const RUTA_SERVICIOS_HOT = '/servicios'
@@ -22,7 +21,6 @@ export function useHeaderComprador() {
   const tienePanel = useAuthStore((s) => Boolean(s.token) && ADMIN_ROLES.has(s.userRole ?? ''))
   const rutaPanel = useRutaPanel()
   const setSearchOpen = useUiStore((s) => s.setSearchOpen)
-  const { categorias } = useCategoriasCatalogo()
 
   return {
     cantidadPedido,
@@ -30,7 +28,6 @@ export function useHeaderComprador() {
     nombreUsuario,
     rutaPanel: tienePanel ? rutaPanel : null,
     rutaCuenta: conSesion ? '/perfil' : '/login',
-    categorias,
     abrirBusqueda: () => setSearchOpen(true),
   }
 }

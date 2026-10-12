@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useVisitaCategoria } from '@/services/categoriasTop'
 import { useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import useChatStore from '@/store/chatStore'
@@ -27,6 +28,7 @@ export function useCatalogoPage() {
   const [extras, setExtras] = useState<FiltrosExtra>(FILTROS_EXTRA_VACIOS)
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
   const filtros = useCatalogoFiltros(searchParams, setSearchParams)
+  useVisitaCategoria(Number(filtros.category) || null)
   const data = useCatalogoFetch(toast, filtros.page, filtros.setPage, filtros.sort)
   const derived = useCatalogoDerived({ ...data, ...filtros, extras })
   const limpiarFiltrosBase = filtros.clearFilters

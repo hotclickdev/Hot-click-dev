@@ -5,14 +5,13 @@ import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import MarcaComprador from './MarcaComprador'
+import { useCategoriasTop } from '@/services/categoriasTop'
 import { PLANES_DIRECTORIO, rutaDirectorioPlan } from '../negocios/negociosPublicos'
 import { LARGO_MAXIMO_CONSULTA, recortarConsulta } from '@/pages/catalogo/buscarExplorar'
 import DesplegableBusqueda from './DesplegableBusqueda'
 import {
   RUTA_CATEGORIAS, RUTA_SERVICIOS_HOT, RUTA_VENDE, rutaCategoria, useConsultaBuscador, useHeaderComprador,
 } from './useHeaderComprador'
-
-const CATEGORIAS_VISIBLES_ESCRITORIO = 6
 
 type HeaderEscritorioProps = {
   onBuscarConFoto: () => void
@@ -21,7 +20,8 @@ type HeaderEscritorioProps = {
 /** Header desktop del comprador (Figma `9:172`). */
 export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioProps) {
   const { t } = useTranslation()
-  const { cantidadPedido, conSesion, rutaCuenta, rutaPanel, categorias } = useHeaderComprador()
+  const { cantidadPedido, conSesion, rutaCuenta, rutaPanel } = useHeaderComprador()
+  const categorias = useCategoriasTop()
 
   return (
     <div className="hidden flex-col gap-[14px] border-b border-hc-n-200 bg-hc-n-0 px-8 pt-4 leading-[normal] lg:flex xl:px-[max(120px,calc((100%_-_1200px)/2))]">
@@ -74,10 +74,10 @@ export default function HeaderEscritorio({ onBuscarConFoto }: HeaderEscritorioPr
             {t(p.nav)}
           </Link>
         ))}
-        <span aria-hidden="true" className="h-4 w-px shrink-0 bg-hc-n-200" />
-        {/* Las categorías que no caben pasan a una segunda línea oculta: nunca empujan "Servicios HOT". */}
+        {categorias.length > 0 && <span aria-hidden="true" className="h-4 w-px shrink-0 bg-hc-n-200" />}
+        {/* Hasta 3 categorías raíz más visitadas (o con más productos). Si no caben pasan a una segunda línea oculta. */}
         <div className="flex h-[18px] min-w-0 flex-1 flex-wrap items-center gap-x-[26px] overflow-hidden">
-          {categorias.slice(0, CATEGORIAS_VISIBLES_ESCRITORIO).map((categoria) => (
+          {categorias.map((categoria) => (
             <Link
               key={categoria.id}
               to={rutaCategoria(categoria.id)}

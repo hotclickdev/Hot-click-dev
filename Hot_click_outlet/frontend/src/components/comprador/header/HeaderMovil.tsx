@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Chip from '../Chip'
+import { useCategoriasTop } from '@/services/categoriasTop'
 import IconoFigma from '../IconoFigma'
 import { ICONOS_COMPRADOR } from '../iconosComprador'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -15,7 +16,8 @@ type HeaderMovilProps = {
 /** Header móvil del comprador (Figma `7:3`). */
 export default function HeaderMovil({ onBuscarConFoto }: HeaderMovilProps) {
   const { t } = useTranslation()
-  const { cantidadPedido, categorias, abrirBusqueda } = useHeaderComprador()
+  const { cantidadPedido, abrirBusqueda } = useHeaderComprador()
+  const categorias = useCategoriasTop()
 
   return (
     <div className="flex flex-col gap-3 border-b border-hc-n-200 bg-hc-n-0 px-4 py-3 leading-[normal] lg:hidden">
