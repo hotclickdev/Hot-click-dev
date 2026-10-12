@@ -17,6 +17,22 @@ public class CrmClienteMapper {
     @Autowired private PedidoRepository pedidoRepository;
 
     public Map<String, Object> toClienteMap(Usuario usuario) {
+        return toClienteMap(usuario, null);
+    }
+
+    /** P8-01: el cliente es "propio" si se registró en ese negocio (o mira el ADMIN, empresaId null). */
+    public static boolean esClientePropio(Usuario usuario, Long empresaId) {
+        return empresaId == null || (usuario.getEmpresaRegistro() != null
+            && empresaId.equals(usuario.getEmpresaRegistro().getId()));
+    }
+
+    /**
+     * P8-01: con empresaId de un vendedor, las estadísticas cuentan solo sus pedidos y los campos
+     * globales del usuario (notas, crédito, puntos, segmento manual) se ocultan si el cliente lo
+     * registró otro negocio.
+     */
+    public Map<String, Object> toClienteMap(Usuario usuario, Long empresaId) {
+        boolean propio = esClientePropio(usuario, empresaId);
         Map<String, Object> cliente = new LinkedHashMap<>();
         cliente.put("id", usuario.getId());
         cliente.put("nombre", usuario.getNombre());
@@ -25,15 +41,18 @@ public class CrmClienteMapper {
         cliente.put("telefono", usuario.getTelefono());
         cliente.put("fechaRegistro", usuario.getFechaRegistro());
         cliente.put("fechaUltimoAcceso", usuario.getFechaUltimoAcceso());
-        cliente.put("puntosFidelidad", usuario.getPuntosFidelidad());
-        cliente.put("limiteCredito", usuario.getLimiteCredito());
-        cliente.put("saldoCredito", usuario.getSaldoCredito());
-        cliente.put("notasInternas", usuario.getNotasInternas());
+        cliente.put("puntosFidelidad", propio ? usuario.getPuntosFidelidad() : 0);
+        cliente.put("limiteCredito", propio ? usuario.getLimiteCredito() : null);
+        cliente.put("saldoCredito", propio ? usuario.getSaldoCredito() : null);
+        cliente.put("notasInternas", propio ? usuario.getNotasInternas() : null);
+        cliente.put("compartido", !propio);
 
-        int numPedidos = usuario.getNumPedidosHist();
-        int totalCompras = usuario.getTotalComprasHist();
+        int numPedidos = empresaId == null ? usuario.getNumPedidosHist() : 0;
+        int totalCompras = empresaId == null ? usuario.getTotalComprasHist() : 0;
         if (numPedidos == 0) {
-            List<Object[]> stats = pedidoRepository.statsPorUsuario(usuario.getId());
+            List<Object[]> stats = empresaId == null
+                ? pedidoRepository.statsPorUsuario(usuario.getId())
+                : pedidoRepository.statsPorUsuarioYEmpresa(usuario.getId(), empresaId);
             if (!stats.isEmpty()) {
                 Object[] row = stats.get(0);
                 numPedidos = row[0] != null ? ((Number) row[0]).intValue() : 0;
@@ -43,12 +62,22 @@ public class CrmClienteMapper {
         cliente.put("numPedidosHist", numPedidos);
         cliente.put("totalComprasHist", totalCompras);
 
-        String segmento = usuario.getSegmento();
+        String segmento = propio ? usuario.getSegmento() : null;
         if (segmento == null || segmento.isBlank()) {
             segmento = calcularSegmento(numPedidos, totalCompras, usuario.getFechaUltimoAcceso());
         }
         cliente.put("segmento", segmento);
         return cliente;
+    }
+
+    /** P8-01: versión acotada al negocio (oculta puntos y segmento de clientes compartidos). */
+    public Map<String, Object> toClienteMapSimple(Usuario usuario, Long empresaId) {
+        if (esClientePropio(usuario, empresaId)) return toClienteMapSimple(usuario);
+        Map<String, Object> m = new LinkedHashMap<>(toClienteMapSimple(usuario));
+        m.put("puntosFidelidad", 0);
+        m.put("segmento", "NUEVO");
+        m.put("compartido", true);
+        return m;
     }
 
     public Map<String, Object> toClienteMapSimple(Usuario usuario) {

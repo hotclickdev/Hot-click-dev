@@ -36,7 +36,7 @@ public class CrmClientesService {
         List<Usuario> clientes = empresaId != null
             ? usuarioRepository.findClientesByEmpresa(empresaId)
             : usuarioRepository.findClientes();
-        return clientes.stream().map(crmClienteMapper::toClienteMap).toList();
+        return clientes.stream().map(u -> crmClienteMapper.toClienteMap(u, empresaId)).toList();
     }
 
     @Transactional
@@ -54,22 +54,33 @@ public class CrmClientesService {
         List<Usuario> clientes = empresaId != null
             ? usuarioRepository.buscarClientesByEmpresa(q.trim(), empresaId)
             : usuarioRepository.buscarClientes(q.trim());
-        return clientes.stream().limit(20).map(crmClienteMapper::toClienteMapSimple).toList();
+        return clientes.stream().limit(20).map(u -> crmClienteMapper.toClienteMapSimple(u, empresaId)).toList();
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> detalle(Long id, Long empresaId) {
         Usuario u = clienteDeEmpresa(id, empresaId);
-        Map<String, Object> data = crmClienteMapper.toClienteMap(u);
-        data.put("pedidos", pedidoRepository
-            .findByUsuarioFinalIdOrderByFechaPedidoDesc(id, PageRequest.of(0, 10))
-            .getContent());
+        Map<String, Object> data = crmClienteMapper.toClienteMap(u, empresaId);
+        // P8-01: el vendedor ve solo los pedidos hechos en su negocio.
+        data.put("pedidos", (empresaId == null
+            ? pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(id, PageRequest.of(0, 10))
+            : pedidoRepository.findByUsuarioFinalIdAndEmpresaIdOrderByFechaPedidoDesc(id, empresaId, PageRequest.of(0, 10)))
+            .getContent().stream().map(p -> {
+                // Solo lo que usa la ficha: evita serializar la entidad (proxies lazy y datos de más).
+                Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("id", p.getId());
+                m.put("numeroPedido", p.getNumeroPedido());
+                m.put("fechaPedido", p.getFechaPedido());
+                m.put("totalPedido", p.getTotalPedido());
+                m.put("estadoPedido", p.getEstadoPedido());
+                return m;
+            }).toList());
         return data;
     }
 
     @Transactional
     public Map<String, Object> actualizar(Long id, Long empresaId, Map<String, Object> body) {
-        Usuario u = clienteDeEmpresa(id, empresaId);
+        Usuario u = clientePropio(id, empresaId);
         if (body.containsKey("segmento")) u.setSegmento((String) body.get("segmento"));
         if (body.containsKey("notasInternas")) u.setNotasInternas((String) body.get("notasInternas"));
         if (body.containsKey("limiteCredito")) {
@@ -84,7 +95,7 @@ public class CrmClientesService {
 
     @Transactional
     public int ajustarPuntos(Long id, Long empresaId, int delta) {
-        Usuario u = clienteDeEmpresa(id, empresaId);
+        Usuario u = clientePropio(id, empresaId);
         int nuevos = Math.max(0, u.getPuntosFidelidad() + delta);
         u.setPuntosFidelidad(nuevos);
         usuarioRepository.save(u);
@@ -108,6 +119,16 @@ public class CrmClientesService {
             throw new TenantAccessDeniedException("Cliente no pertenece a esta empresa");
         }
         return waLogRepository.findByUsuarioIdOrderByFechaEnvioDesc(id, PageRequest.of(0, 20));
+    }
+
+    static final String MSG_COMPARTIDO =
+        "Este cliente lo registró otro negocio: no puedes cambiar sus notas, puntos ni crédito.";
+
+    /** P8-01: notas/segmento/crédito/puntos viven en el usuario global; solo el negocio de registro los cambia. */
+    private Usuario clientePropio(Long id, Long empresaId) {
+        Usuario u = clienteDeEmpresa(id, empresaId);
+        if (!CrmClienteMapper.esClientePropio(u, empresaId)) throw new TenantAccessDeniedException(MSG_COMPARTIDO);
+        return u;
     }
 
     private Usuario clienteDeEmpresa(Long id, Long empresaId) {
