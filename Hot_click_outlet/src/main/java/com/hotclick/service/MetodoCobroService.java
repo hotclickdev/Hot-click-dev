@@ -39,7 +39,9 @@ public class MetodoCobroService {
     @Transactional(readOnly = true)
     public List<MetodoCobroDto> listar() {
         Long empresaId = exigirEmpresaId();
-        return MetodoCobroDto.deLista(repo.findActivosByEmpresaId(empresaId));
+        return repo.findActivosByEmpresaId(empresaId).stream()
+                .map(MetodoCobroDto::from)
+                .toList();
     }
 
     @Transactional
@@ -62,12 +64,7 @@ public class MetodoCobroService {
         m.setMascara(MetodoCobroFormato.mascara(tipo, destino));
         m.setPredeterminado(primero);
         m.setActivo(true);
-        MetodoCobro guardado = repo.save(m);
-        if (MetodoCobro.TIPO_SINPE.equals(tipo) || MetodoCobro.TIPO_IBAN.equals(tipo)) {
-            // seg-altos-2 (d): los pagos solo salen a cuentas SINPE/IBAN aprobadas por ADMIN.
-            cambioService.solicitarAlta(guardado);
-        }
-        return MetodoCobroDto.from(guardado);
+        return MetodoCobroDto.from(guardarConRevision(m));
     }
 
     @Transactional
@@ -91,5 +88,14 @@ public class MetodoCobroService {
             throw new IllegalStateException("Tu cuenta no tiene un negocio asociado");
         }
         return empresaId;
+    }
+
+    /** Guarda el método; SINPE/IBAN quedan en revisión: los pagos solo salen a cuentas aprobadas por ADMIN (seg-altos-2 d). */
+    private MetodoCobro guardarConRevision(MetodoCobro m) {
+        MetodoCobro guardado = repo.save(m);
+        if (MetodoCobro.TIPO_SINPE.equals(m.getTipo()) || MetodoCobro.TIPO_IBAN.equals(m.getTipo())) {
+            cambioService.solicitarAlta(guardado);
+        }
+        return guardado;
     }
 }

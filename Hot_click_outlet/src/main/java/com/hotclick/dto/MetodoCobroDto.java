@@ -13,11 +13,6 @@ public class MetodoCobroDto {
     private boolean predeterminado;
     private boolean enRevision;
 
-    /** Lista de DTOs en el mismo orden. */
-    public static java.util.List<MetodoCobroDto> deLista(java.util.List<MetodoCobro> metodos) {
-        return metodos.stream().map(MetodoCobroDto::from).toList();
-    }
-
     public static MetodoCobroDto from(MetodoCobro m) {
         MetodoCobroDto dto = new MetodoCobroDto();
         dto.id = m.getId();
