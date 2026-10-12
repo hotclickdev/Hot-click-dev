@@ -2,24 +2,20 @@ import { useState } from 'react'
 import { useSignIn, useSignUp } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
+import { BotonGoogle } from './BotonGoogle'
+import { iniciarGoogle, type ClienteOAuthClerk } from './googleOAuth'
 
 type SocialMode = 'signIn' | 'signUp'
 
 /** `figma`: solo el botón "Continuar con Google" del Figma `28:1175` (sin separador ni proveedores próximos). */
 type SocialVariante = 'clasica' | 'figma'
 
-type ClerkSocialClient = {
-  authenticateWithRedirect: (opts: {
-    strategy: 'oauth_google'
-    redirectUrl: string
-    redirectUrlComplete: string
-  }) => Promise<unknown>
-}
+type ClerkSocialClient = ClienteOAuthClerk
 
-function mensajeErrorSocial(err: unknown): string {
-  if (!err || typeof err !== 'object') return 'Error al conectar con Google. Intentá de nuevo.'
+function mensajeErrorSocial(err: unknown, porDefecto: string): string {
+  if (!err || typeof err !== 'object') return porDefecto
   const e = err as { errors?: { message?: string }[]; message?: string }
-  return e.errors?.[0]?.message || e.message || 'Error al conectar con Google. Intentá de nuevo.'
+  return e.errors?.[0]?.message || e.message || porDefecto
 }
 
 const ACTIVE_PROVIDERS = [
@@ -79,19 +75,15 @@ export default function SocialLoginButtons({ mode = 'signIn', variante = 'clasic
     if (!isLoaded || loading) return
     const client = mode === 'signUp' ? signUp : signIn
     if (!client) {
-      toast({ message: 'Error al inicializar autenticación social. Recargá la página.', type: 'error' })
+      toast({ message: t('login.googleNoDisponible'), type: 'error' })
       return
     }
     setError('')
     setLoading(providerId)
     try {
-      await client.authenticateWithRedirect({
-        strategy: `oauth_${providerId}` as 'oauth_google',
-        redirectUrl:         `${globalThis.location.origin}/sso-callback`,
-        redirectUrlComplete: `${globalThis.location.origin}/sso-complete`,
-      })
+      await iniciarGoogle(client, globalThis.location.origin)
     } catch (err: unknown) {
-      const msg = mensajeErrorSocial(err)
+      const msg = mensajeErrorSocial(err, t('login.googleError'))
       setError(msg)
       setLoading(null)
     }
@@ -101,15 +93,7 @@ export default function SocialLoginButtons({ mode = 'signIn', variante = 'clasic
     return (
       <div className="flex flex-col gap-2">
         {error && <p role="alert" className="text-[13px] leading-[18px] text-hc-danger">{error}</p>}
-        <button
-          type="button"
-          disabled={!!loading}
-          onClick={() => handleSocial('google')}
-          className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[13px] text-[14px] font-semibold leading-[normal] text-hc-n-900 disabled:opacity-50"
-        >
-          <span aria-hidden="true" className="flex size-[18px] items-center justify-center rounded-full bg-hc-n-100 text-[11px] font-bold text-hc-blue-600">G</span>
-          {t('login.google')}
-        </button>
+        <BotonGoogle etiqueta={t('login.google')} cargando={loading === 'google'} onClick={() => { void handleSocial('google') }} />
       </div>
     )
   }
