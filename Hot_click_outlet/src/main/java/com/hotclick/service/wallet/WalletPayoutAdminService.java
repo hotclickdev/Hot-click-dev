@@ -84,7 +84,8 @@ public class WalletPayoutAdminService {
 
     private void exigirCuentaAprobada(Long empresaId) {
         var activos = metodoRepo.findActivosByEmpresaId(empresaId);
-        if (activos.isEmpty()) return;
+        // seg-altos-2 (d): sin cuenta registrada no se paga (antes pasaba de largo).
+        if (activos.isEmpty()) throw new IllegalStateException("No hay cuenta de cobro aprobada.");
         var cuenta = activos.stream().filter(metodo -> !metodo.isEnRevision()).findFirst().orElse(null);
         if (cuenta == null) {
             throw new IllegalStateException("No hay cuenta de cobro aprobada.");
