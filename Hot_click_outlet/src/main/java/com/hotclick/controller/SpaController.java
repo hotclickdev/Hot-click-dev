@@ -155,6 +155,7 @@ public class SpaController {
         "/pago/exito",
         "/pago/cancelado",
         "/pago/tilopay/respuesta",
+        "/billing/tilopay/respuesta",
         "/ayuda",
         "/registro-empresa/activar-plan",
         "/nosotros",

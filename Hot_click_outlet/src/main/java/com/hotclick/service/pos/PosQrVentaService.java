@@ -34,6 +34,7 @@ public class PosQrVentaService {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private StripeService         stripeService;
     @Autowired private OnvoService           onvoService;
+    @Autowired private com.hotclick.service.TilopayService tilopayService;
     @Autowired private PosQrSessionService   sessionService;
     @Autowired private PosQrVentaCompletionService completionService;
     @Autowired private TurnoCajaService       turnoCajaService;
@@ -190,6 +191,57 @@ public class PosQrVentaService {
             throw new IntegracionExternaException("onvo", IntegracionExternaException.Tipo.IO_ERROR,
                 "Error al crear intención de pago: " + e.getMessage(), e);
         }
+    }
+
+    static final String PREFIJO_TILOPAY = "POSQR-";
+
+    /**
+     * Cobro con tarjeta por Tilopay (reemplaza ONVO): devuelve los datos del SDK embebido.
+     * El número de orden queda en la sesión para confirmar contra Tilopay al volver.
+     */
+    @Transactional
+    public Map<String, Object> iniciarTilopay(String token) {
+        PosQrSesion sesion = sessionService.findSesionActiva(token);
+        exigirMetodoPasarela(sesion);
+        elegirMetodo(sesion, PosQrMetodos.TARJETA);
+        if (!tilopayService.isPagosDisponibles()) {
+            throw new IllegalStateException("Pagos con tarjeta no están disponibles.");
+        }
+        String order = sesion.getStripeSessionId();
+        if (order == null || !order.startsWith(PREFIJO_TILOPAY)) {
+            order = PREFIJO_TILOPAY + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+            sesion.setStripeSessionId(order);
+            posQrRepo.save(sesion);
+        }
+        Map<String, Object> r = new java.util.LinkedHashMap<>();
+        r.put("orderNumber", order);
+        r.put("montoCrc", sesion.getTotal());
+        r.put("moneda", "CRC");
+        r.put("sdkToken", tilopayService.loginSdk());
+        return r;
+    }
+
+    /** Confirma el cobro Tilopay del QR consultando a Tilopay (monto, CRC y orden exactos). */
+    @Transactional
+    public boolean confirmarTilopay(String token) {
+        PosQrSesion sesion = posQrRepo.findByToken(token).orElseThrow(java.util.NoSuchElementException::new);
+        if ("PAGADO".equals(sesion.getEstado())) return true;
+        String order = sesion.getStripeSessionId();
+        if (order == null || !order.startsWith(PREFIJO_TILOPAY) || sesion.getTotal() == null) return false;
+        com.hotclick.service.TilopayService.ConsultaResultado c = tilopayService.consultarTransaccion(order);
+        if (!coincideTilopay(order, sesion.getTotal(), c, tilopayService.isMockMode())) {
+            log.warn("[POS-QR] Tilopay no confirmó token={} order={}", token, order);
+            return false;
+        }
+        return completarSiPagoPasarela(order);
+    }
+
+    static boolean coincideTilopay(String order, long monto, com.hotclick.service.TilopayService.ConsultaResultado c, boolean mock) {
+        if (c == null || !c.aprobada()) return false;
+        if (c.simulada()) return mock;
+        return c.amount() != null && c.amount().compareTo(java.math.BigDecimal.valueOf(monto)) == 0
+            && c.currency() != null && "CRC".equalsIgnoreCase(c.currency().trim())
+            && c.orderNumber() != null && order.equals(c.orderNumber().trim());
     }
 
     @Transactional

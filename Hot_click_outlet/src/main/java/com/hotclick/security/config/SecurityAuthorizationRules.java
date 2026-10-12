@@ -42,6 +42,8 @@ final class SecurityAuthorizationRules {
             // POS QR pago — rutas públicas (cliente escanea QR)
             .requestMatchers(GET,  "/api/pos/qr/pago/**").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/stripe").permitAll()
+            .requestMatchers(POST, "/api/pos/qr/pago/*/tilopay").permitAll()
+            .requestMatchers(POST, "/api/pos/qr/pago/*/tilopay/confirmar").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/intent").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/sinpe-onvo").permitAll()
             // Compra sin registro (invitados)
@@ -278,7 +280,7 @@ final class SecurityAuthorizationRules {
                 "/404",
                 "/seleccionar-negocio", "/mode-select", "/registrar-negocio",
                 "/sso-callback", "/sso-complete",
-                "/checkout", "/pago/exito", "/pago/cancelado", "/pago/tilopay/respuesta",
+                "/checkout", "/pago/exito", "/pago/cancelado", "/pago/tilopay/respuesta", "/billing/tilopay/respuesta",
                 "/ayuda", "/registro-empresa/activar-plan",
                 "/pos/pago", "/pos/pago/**",
                 "/recuperar-carrito", "/recuperar-carrito/**",

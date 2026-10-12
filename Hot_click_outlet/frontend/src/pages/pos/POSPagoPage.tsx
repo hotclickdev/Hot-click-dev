@@ -1,12 +1,13 @@
-import { useState, type ReactNode } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import PosPagoMonto from '@/features/pos-pago/PosPagoMonto'
 import PosPagoMetodo from '@/features/pos-pago/PosPagoMetodo'
 import PosPagoPedido from '@/features/pos-pago/PosPagoPedido'
 import PosPagoEstado from '@/features/pos-pago/PosPagoEstado'
 import PosPagoSinpe from '@/features/pos-pago/PosPagoSinpe'
-import PosPagoOnvoEmbed from '@/features/pos-pago/PosPagoOnvoEmbed'
+import PosPagoTilopayEmbed from '@/features/pos-pago/PosPagoTilopayEmbed'
+import { posService } from '@/services/posService'
 import PosPagoReporteModal from '@/features/pos-pago/PosPagoReporteModal'
 import PosPagoCta from '@/features/pos-pago/PosPagoCta'
 import { usePosPagoQr } from '@/features/pos-pago/usePosPagoQr'
@@ -21,7 +22,7 @@ import type { TFunction } from 'i18next'
 /** Token legacy del flujo carrito; ya no se escribe desde esta página. */
 export const POS_QR_TOKEN_KEY = 'hc-pos-qr-token'
 
-const USA_EMBED_ONVO = true
+const USA_EMBED_TARJETA = true
 
 /** "Cobro #P-3391 · Caja principal"; sin número de cobro no hay línea. */
 function textoCobro(t: TFunction, numero?: string | null, caja?: string | null): string | null {
@@ -38,7 +39,7 @@ function textoCobro(t: TFunction, numero?: string | null, caja?: string | null):
 export default function POSPagoPage() {
   const { token } = useParams()
   const { t } = useTranslation()
-  const [modoEmbed, setModoEmbed] = useState(USA_EMBED_ONVO)
+  const [modoEmbed, setModoEmbed] = useState(USA_EMBED_TARJETA)
   const [sinpeIniciado, setSinpeIniciado] = useState(false)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const [metodoElegido, setMetodoElegido] = useState<MetodoQr | null>(null)
@@ -53,6 +54,17 @@ export default function POSPagoPage() {
     reintentar,
     marcarExitoEmbed,
   } = usePosPagoQr(token)
+
+  // Retorno del SDK Tilopay (?tilopay=1): el backend confirma con Tilopay antes de dar por pagado.
+  const [searchParams] = useSearchParams()
+  const confirmando = useRef(false)
+  useEffect(() => {
+    if (!token || searchParams.get('tilopay') !== '1' || confirmando.current) return
+    confirmando.current = true
+    posService.confirmarTilopayQr(token)
+      .then(({ pagado }) => { if (pagado) marcarExitoEmbed(); else void recargar() })
+      .catch(() => { void recargar() })
+  }, [token, searchParams, marcarExitoEmbed, recargar])
 
   const restante = useCuentaRegresiva(vista === 'resumen' ? info?.expiracion : undefined, () => void recargar())
 
@@ -121,12 +133,7 @@ export default function POSPagoPage() {
 
       {esTarjeta && modoEmbed ? (
         <div className="mt-auto px-4 pb-6">
-          <PosPagoOnvoEmbed
-            token={token!}
-            total={info.total ?? 0}
-            onSuccess={marcarExitoEmbed}
-            onFallback={() => setModoEmbed(false)}
-          />
+          <PosPagoTilopayEmbed token={token!} onFallback={() => setModoEmbed(false)} />
         </div>
       ) : null}
 

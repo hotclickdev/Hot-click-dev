@@ -63,6 +63,14 @@ public class PosQrService {
     }
 
     @Transactional
+    public Map<String, Object> iniciarTilopay(String token) {
+        return ventaService.iniciarTilopay(token);
+    }
+
+    public boolean confirmarTilopay(String token) {
+        return ventaService.confirmarTilopay(token);
+    }
+
     public Map<String, String> crearPaymentIntent(String token) {
         return ventaService.crearPaymentIntent(token);
     }
