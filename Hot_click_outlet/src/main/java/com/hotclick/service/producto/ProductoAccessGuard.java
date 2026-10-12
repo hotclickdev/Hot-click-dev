@@ -26,6 +26,11 @@ public class ProductoAccessGuard {
         return companyScope.getCurrentEmpresaIdOrOwn();
     }
 
+    /** Empresa de gestión: null solo para IT Admin/staff; sin empresa → 403 EMPRESA_REQUERIDA. */
+    public Long requireEmpresaIdOrAdmin() {
+        return companyScope.requireEmpresaIdOrAdmin();
+    }
+
     public boolean hasRole(String role) {
         return companyScope.hasRole(role);
     }

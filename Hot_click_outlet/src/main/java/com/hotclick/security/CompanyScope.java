@@ -72,6 +72,23 @@ public class CompanyScope {
         }
     }
 
+    /**
+     * IDOR-vendedor: empresa para endpoints de gestión. La vista global (null) es SOLO para un ADMIN
+     * explícito sin impersonar. Cualquier otro usuario sin empresa (vendedor sin negocio, comprador,
+     * staff no admin) → 403. Nunca tratar {@code empresaId == null} como "ver todo".
+     */
+    public Long requireEmpresaIdOrAdmin() {
+        if (isAdminIT() && !isImpersonating()) return null;
+        return requireEmpresaId();
+    }
+
+    /** Empresa del tenant, nunca null (ADMIN impersonando incluido); sin empresa → 403. */
+    public Long requireEmpresaId() {
+        Long id = getCurrentEmpresaIdOrOwn();
+        if (id == null) throw new com.hotclick.exception.EmpresaRequeridaException();
+        return id;
+    }
+
     /** True si el JWT actual es una sesión de soporte (ver como negocio). */
     public boolean isImpersonating() {
         String jwt = extractRawJwt();

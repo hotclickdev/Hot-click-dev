@@ -75,7 +75,7 @@ public class RecoleccionService {
 
     @Transactional(readOnly = true)
     public List<SolicitudRecoleccionDto> listar() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         List<SolicitudRecoleccion> lista = empresaId == null
                 ? repo.findAllConEmpresa()
                 : repo.findByEmpresaIdConEmpresa(empresaId);

@@ -18,9 +18,15 @@ public class CrmAccessGuard {
         return !companyScope.isAdminIT() && !tenantService.tieneFeature("crm");
     }
 
+    /** ADMIN sin impersonar: único caso en que una empresa nula significa "todos". */
+    public boolean esAdminGlobal() {
+        return companyScope.isAdminIT();
+    }
+
     /** Un cliente "pertenece" a la empresa si compró ahí, o si la empresa lo registró manualmente (CRM). */
     public boolean clientePerteneceAEmpresa(Usuario usuario, Long empresaId) {
-        if (empresaId == null) return true;
+        // IDOR-05: empresa nula = acceso global SOLO para ADMIN explícito, nunca para un vendedor sin negocio
+        if (empresaId == null) return esAdminGlobal();
         if (usuario.getEmpresaRegistro() != null && empresaId.equals(usuario.getEmpresaRegistro().getId())) return true;
         return pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(usuario.getId(), empresaId);
     }

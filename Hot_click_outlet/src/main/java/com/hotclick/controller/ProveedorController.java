@@ -32,7 +32,7 @@ public class ProveedorController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> listar() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         var lista = empresaId != null
             ? proveedorRepository.findByEmpresa_IdAndEstadoOrderByNombreAsc(empresaId, Constants.ESTADO_ACTIVO)
             : proveedorRepository.findByEstadoOrderByNombreAsc(Constants.ESTADO_ACTIVO);

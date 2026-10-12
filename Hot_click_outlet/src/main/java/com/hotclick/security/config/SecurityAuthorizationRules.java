@@ -59,7 +59,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/tienda/*/pedidos").permitAll()
             .requestMatchers("/tienda", "/tienda/**").permitAll()
             // Catálogo público - solo GETs específicos
-            .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
+            .requestMatchers(GET, "/api/productos/admin/todos").hasAnyRole("ADMIN", "EMPRENDEDOR")
             .requestMatchers(GET, "/api/productos/pos/**").authenticated()
             .requestMatchers(GET, "/api/productos").permitAll()
             .requestMatchers(GET, "/api/productos/destacados").permitAll()
@@ -78,6 +78,16 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PATCH,  "/api/productos/*/visibilidad-catalogo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, API_PRODUCTO_POR_ID).hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST,   "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // IDOR-vendedor: escrituras de varios segmentos (p. ej. /{id}/imagenes/{imgId}) también exigen rol
+            .requestMatchers(PUT,    "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PATCH,  "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(DELETE, "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // IDOR-02 / IDOR-05: ventas y CRM del negocio, nunca para compradores
+            .requestMatchers("/api/ventas", "/api/ventas/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, "ROLE_" + Constants.ROL_EMPRENDEDOR, "pos.usar")
+            .requestMatchers("/api/crm/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // SEC-02: stock solo ADMIN/EMPRENDEDOR; la empresa se valida en StockController
+            .requestMatchers("/api/stock/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(GET, "/api/division-territorial").permitAll()
             .requestMatchers(GET, "/api/categorias").permitAll()
             .requestMatchers(GET, "/api/categorias/**").permitAll()

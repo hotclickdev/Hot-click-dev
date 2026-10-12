@@ -42,7 +42,7 @@ public class AdminPagoController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = empresaPagos();
         Pageable pageable = PageRequest.of(page, Math.min(size, 100));
         Page<?> resultado = pagoRepository
             .buscarPagosByEmpresa(proveedor, estadoPago, empresaId, pageable)
@@ -87,7 +87,7 @@ public class AdminPagoController {
      */
     @GetMapping("/pagos/kpis")
     public ResponseEntity<ResponseDTO> kpis() {
-        Long empresaId  = companyScope.getCurrentEmpresaId();
+        Long empresaId  = empresaPagos();
         long total      = empresaId == null ? pagoRepository.count()
                             : pagoRepository.countByEstadoPagoAndEmpresa("CAPTURADO", empresaId)
                             + pagoRepository.countByEstadoPagoAndEmpresa("PENDIENTE", empresaId)
@@ -159,5 +159,14 @@ public class AdminPagoController {
         if (delCuerpo != null && !delCuerpo.isBlank()) return delCuerpo.trim();
         if (query != null && !query.isBlank()) return query.trim();
         return null;
+    }
+
+    /**
+     * IDOR-07: vista global de pagos solo para ADMIN o staff de plataforma (la regla exige global.metrics).
+     * Un EMPRENDEDOR sin empresa recibe 403 en vez de los pagos de todos los negocios.
+     */
+    private Long empresaPagos() {
+        if (companyScope.isPlatformStaff() && !companyScope.isImpersonating()) return null;
+        return companyScope.requireEmpresaIdOrAdmin();
     }
 }

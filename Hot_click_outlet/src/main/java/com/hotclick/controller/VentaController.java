@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ventas")
+@org.springframework.security.access.prepost.PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
 public class VentaController {
 
     @Autowired private VentaService ventaService;
@@ -34,8 +35,8 @@ public class VentaController {
     public ResponseEntity<ResponseDTO> listarVentas(
             @RequestParam(defaultValue = "0")   int page,
             @RequestParam(defaultValue = "300") int size) {
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin(); // IDOR-02: sin empresa → 403
         try {
-            Long empresaId = companyScope.getCurrentEmpresaId();
             return ResponseEntity.ok(ResponseDTO.success("Ventas",
                 pedidoService.listarResumenPaginadoPorEmpresa(page, size, empresaId)));
         } catch (Exception e) {
@@ -47,8 +48,8 @@ public class VentaController {
     public ResponseEntity<ResponseDTO> crearVenta(
             @RequestBody VentaRequestDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
+        Long empresaId = companyScope.requireEmpresaId(); // sin empresa → 403 (antes 400)
         try {
-            Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
             Pedido nuevo = ventaService.crearVenta(dto, userDetails.getUsername(), empresaId);
             return ResponseEntity.ok(ResponseDTO.success("Venta creada exitosamente", nuevo.getId()));
         } catch (StockInsuficienteException e) {
@@ -62,7 +63,7 @@ public class VentaController {
 
     @GetMapping("/clientes")
     public ResponseEntity<ResponseDTO> buscarClientes(@RequestParam(required = false) String q) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         List<Usuario> todos = empresaId != null
             ? usuarioRepository.findTop500ByEmpresaIdOrderByIdDesc(empresaId)
             : usuarioRepository.findTop500ByOrderByIdDesc();

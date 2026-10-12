@@ -34,7 +34,7 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> listar() {
         return ResponseEntity.ok(ResponseDTO.success("OK",
-            crmClientesService.listar(companyScope.getCurrentEmpresaId())));
+            crmClientesService.listar(companyScope.requireEmpresaIdOrAdmin())));
     }
 
     @PostMapping
@@ -53,14 +53,14 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> buscar(@RequestParam String q) {
         return ResponseEntity.ok(ResponseDTO.success("OK",
-            crmClientesService.buscar(q, companyScope.getCurrentEmpresaId())));
+            crmClientesService.buscar(q, companyScope.requireEmpresaIdOrAdmin())));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ResponseDTO.success("OK",
-            crmClientesService.detalle(id, companyScope.getCurrentEmpresaId())));
+            crmClientesService.detalle(id, companyScope.requireEmpresaIdOrAdmin())));
     }
 
     @PutMapping("/{id}")
@@ -68,7 +68,7 @@ public class CrmController {
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Cliente actualizado",
-                crmClientesService.actualizar(id, companyScope.getCurrentEmpresaId(), body)));
+                crmClientesService.actualizar(id, companyScope.requireEmpresaIdOrAdmin(), body)));
         } catch (TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (RuntimeException e) {
@@ -81,7 +81,7 @@ public class CrmController {
     public ResponseEntity<?> ajustarPuntos(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             int delta = Integer.parseInt(body.getOrDefault("delta", "0").toString());
-            int nuevos = crmClientesService.ajustarPuntos(id, companyScope.getCurrentEmpresaId(), delta);
+            int nuevos = crmClientesService.ajustarPuntos(id, companyScope.requireEmpresaIdOrAdmin(), delta);
             return ResponseEntity.ok(ResponseDTO.success("Puntos actualizados", Map.of("puntosFidelidad", nuevos)));
         } catch (TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
@@ -101,7 +101,7 @@ public class CrmController {
             @SuppressWarnings("unchecked")
             Map<String, String> ctxExtra = (Map<String, String>) body.getOrDefault("ctx", Map.of());
             return ResponseEntity.ok(ResponseDTO.success("Mensaje enviado",
-                crmClientesService.enviarWhatsApp(id, companyScope.getCurrentEmpresaId(), escenario, ctxExtra)));
+                crmClientesService.enviarWhatsApp(id, companyScope.requireEmpresaIdOrAdmin(), escenario, ctxExtra)));
         } catch (TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (RuntimeException e) {
@@ -116,6 +116,6 @@ public class CrmController {
             return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         }
         return ResponseEntity.ok(ResponseDTO.success("OK",
-            crmClientesService.historialWa(id, companyScope.getCurrentEmpresaId())));
+            crmClientesService.historialWa(id, companyScope.requireEmpresaIdOrAdmin())));
     }
 }
