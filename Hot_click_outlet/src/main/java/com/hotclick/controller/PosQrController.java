@@ -116,6 +116,30 @@ public class PosQrController {
         }
     }
 
+    /** Cliente inicia cobro con tarjeta por Tilopay (SDK embebido). Reemplaza ONVO. */
+    @PostMapping("/pago/{token}/tilopay")
+    public ResponseEntity<?> iniciarTilopay(@PathVariable String token) {
+        try {
+            return ResponseEntity.ok(posQrService.iniciarTilopay(token));
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
+        } catch (IllegalStateException e) {
+            log.warn("[POS-QR] Tilopay no iniciado token={}: {}", token, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
+        }
+    }
+
+    /** Al volver del SDK: el backend consulta a Tilopay; el navegador no decide si se pagó. */
+    @PostMapping("/pago/{token}/tilopay/confirmar")
+    public ResponseEntity<?> confirmarTilopay(@PathVariable String token) {
+        try {
+            boolean pagado = posQrService.confirmarTilopay(token);
+            return ResponseEntity.ok(Map.of("pagado", pagado));
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
+        }
+    }
+
     /** Cliente crea sesión de pago ONVO (checkout hospedado) y recibe la URL. */
     @PostMapping("/pago/{token}/stripe")
     public ResponseEntity<?> iniciarStripe(@PathVariable String token) {
