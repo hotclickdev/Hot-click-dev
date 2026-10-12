@@ -18,6 +18,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa LEFT JOIN FETCH u.roles WHERE u.correo = :correo")
     Optional<Usuario> findByCorreo(@Param("correo") String correo);
 
+    /** ¿Hay una cuenta real (no fila de invitado «GUEST-») con ese correo? Sin distinguir mayúsculas. */
+    @Query("SELECT COUNT(u) > 0 FROM Usuario u WHERE LOWER(u.correo) = LOWER(:correo)"
+         + " AND (u.identificacion IS NULL OR u.identificacion NOT LIKE 'GUEST-%')")
+    boolean existeCuentaRealConCorreo(@Param("correo") String correo);
+
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE u.identificacion = :identificacion")
     Optional<Usuario> findByIdentificacion(@Param("identificacion") String identificacion);
 

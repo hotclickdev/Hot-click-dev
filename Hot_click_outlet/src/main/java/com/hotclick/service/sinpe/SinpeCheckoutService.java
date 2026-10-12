@@ -49,7 +49,8 @@ public class SinpeCheckoutService {
             throw new IllegalArgumentException("SINPE manual no está disponible. Pagá con SINPE Móvil o tarjeta por la pasarela.");
         }
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
-        Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
+        boolean autenticado = correoUsuario != null && !"anonymousUser".equals(correoUsuario);
+        Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone(), autenticado);
 
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
         Bodega bodegaDefault = checkoutValidator.loadBodega(bodegaId);

@@ -38,6 +38,13 @@ public class PaymentController {
     static final int GUEST_EMAIL_MAX = 5;
     static final int GUEST_EMAIL_VENTANA_S = 600;
 
+    /** Consultas de estado por IP (la página de vuelta sondea cada pocos segundos). */
+    static final int STATUS_MAX = 60;
+    static final int STATUS_VENTANA_S = 60;
+
+    @Autowired
+    private com.hotclick.security.ClientIpResolver clientIpResolver;
+
     /** Público: el front avisa antes de crear el pedido si la pasarela no tiene credenciales. */
     @GetMapping("/disponibilidad")
     public ResponseEntity<ResponseDTO> disponibilidad() {
@@ -51,6 +58,10 @@ public class PaymentController {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (com.hotclick.exception.CuentaExistenteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage(), Map.of(
+                "codigo", com.hotclick.exception.CuentaExistenteException.CODIGO,
+                "siguientePaso", com.hotclick.exception.CuentaExistenteException.SIGUIENTE_PASO)));
         } catch (PagosNoDisponiblesException e) {
             return ResponseEntity.status(503).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -61,12 +72,22 @@ public class PaymentController {
     }
 
     @GetMapping("/status/{numeroPedido}")
-    public ResponseEntity<ResponseDTO> consultarEstado(@PathVariable String numeroPedido) {
+    public ResponseEntity<ResponseDTO> consultarEstado(@PathVariable String numeroPedido,
+                                                       @RequestParam(required = false) String token,
+                                                       jakarta.servlet.http.HttpServletRequest httpRequest) {
+        // Público (la vuelta de Tilopay puede no traer sesión), pero con tope por IP contra enumeración.
+        String ip = clientIpResolver.resolve(httpRequest);
+        if (!rateLimiter.tryAcquire("payment-status:ip:" + ip, STATUS_MAX, STATUS_VENTANA_S)) {
+            return ResponseEntity.status(429).body(ResponseDTO.error("Demasiadas consultas. Esperá un momento."));
+        }
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        String correo = auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()) ? auth.getName() : null;
+        boolean esAdmin = auth != null && auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
         try {
-            PaymentStatusResponse response = paymentService.consultarEstado(numeroPedido);
+            PaymentStatusResponse response = paymentService.consultarEstado(numeroPedido, correo, esAdmin, token);
             return ResponseEntity.ok(ResponseDTO.success("Estado del pago", response));
         } catch (Exception e) {
-            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(404).body(ResponseDTO.error("Pedido no encontrado"));
         }
     }
 
@@ -95,6 +116,10 @@ public class PaymentController {
             }
             PaymentCheckoutResponse response = paymentService.checkout(request, null);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (com.hotclick.exception.CuentaExistenteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage(), Map.of(
+                "codigo", com.hotclick.exception.CuentaExistenteException.CODIGO,
+                "siguientePaso", com.hotclick.exception.CuentaExistenteException.SIGUIENTE_PASO)));
         } catch (PagosNoDisponiblesException e) {
             return ResponseEntity.status(503).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {

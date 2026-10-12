@@ -2,15 +2,11 @@ package com.hotclick.service.payment;
 
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.model.Bodega;
-import com.hotclick.model.Empresa;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.GiftCardService;
-import com.hotclick.service.wallet.ComisionPrecioMath;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
 
 @Service
 public class OrderPricingService {
@@ -43,8 +39,8 @@ public class OrderPricingService {
             }
         }
 
-        int base = subtotal - descuento + costoEnvio;
-        descuento += descuentoSinpeSiAplica(req.getProvider(), bodega, base);
+        // Decisión del dueño (oct-2026): mismo precio con tarjeta o SINPE. El cupón se aplica acá, en el
+        // backend, antes de cobrar; este total es el que se manda a Tilopay y el que ve el comprador.
         int total = Math.max(0, subtotal - descuento + costoEnvio);
 
         int    gcMonto  = 0;
@@ -60,19 +56,6 @@ public class OrderPricingService {
 
         return new OrderPricingResult(
             costoEnvio, descuento, codigoCuponAplicado, gcMonto, gcCodigo, total, totalConGC, pagoGC);
-    }
-
-    private int descuentoSinpeSiAplica(String provider, Bodega bodega, int base) {
-        if (provider == null || bodega == null || bodega.getEmpresa() == null) {
-            return 0;
-        }
-        String p = provider.toUpperCase();
-        if (!Constants.PROVEEDOR_SINPE.equals(p) && !"EFECTIVO".equals(p)) {
-            return 0;
-        }
-        Empresa empresa = bodega.getEmpresa();
-        BigDecimal pct = empresa.getPctDescuentoSinpe();
-        return (int) ComisionPrecioMath.descuentoSinpe(base, pct);
     }
 
     /** La encomienda la cobra la empresa de transporte al retirar en la terminal: no se cobra en el checkout. */

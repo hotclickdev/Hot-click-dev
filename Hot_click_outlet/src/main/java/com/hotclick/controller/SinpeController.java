@@ -36,6 +36,10 @@ public class SinpeController {
             String correo = SecurityContextHolder.getContext().getAuthentication().getName();
             var res = sinpeService.checkout(req, correo);
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));
+        } catch (com.hotclick.exception.CuentaExistenteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage(), Map.of(
+                "codigo", com.hotclick.exception.CuentaExistenteException.CODIGO,
+                "siguientePaso", com.hotclick.exception.CuentaExistenteException.SIGUIENTE_PASO)));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -49,6 +53,10 @@ public class SinpeController {
         try {
             var res = sinpeService.checkout(req, null);
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));
+        } catch (com.hotclick.exception.CuentaExistenteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage(), Map.of(
+                "codigo", com.hotclick.exception.CuentaExistenteException.CODIGO,
+                "siguientePaso", com.hotclick.exception.CuentaExistenteException.SIGUIENTE_PASO)));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

@@ -61,7 +61,7 @@ public class PaymentService {
 
         String provider = checkoutValidator.resolveProvider(req, providerFactory);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
-        Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
+        Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone(), !esInvitado(correoUsuario));
 
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
         Bodega bodegaDefault = checkoutValidator.loadBodega(bodegaId);
@@ -148,9 +148,17 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public PaymentStatusResponse consultarEstado(String numeroPedido) {
+    public PaymentStatusResponse consultarEstado(String numeroPedido, String correoSesion, boolean esAdmin, String tokenPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        // Solo el dueño del pedido, un ADMIN o el invitado con el token firmado del pedido. A cualquier
+        // otro le decimos «no encontrado» (no confirmamos que el número exista ni mostramos la tarjeta).
+        boolean dueno = correoSesion != null && pedido.getUsuarioFinal() != null
+            && correoSesion.equalsIgnoreCase(pedido.getUsuarioFinal().getCorreo());
+        boolean conToken = tokenPedido != null && guestCancelTokenService.esValido(numeroPedido, tokenPedido);
+        if (!dueno && !esAdmin && !conToken) {
+            throw new RecursoNoEncontradoException("Pedido no encontrado");
+        }
         Pago pago = pedidoGrupoService.pagoDelGrupo(pedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
         return buildStatusResponse(pago);
