@@ -24,6 +24,9 @@ export function urlGoogleMaps(latitud: number, longitud: number): string {
   return `https://www.google.com/maps/search/?api=1&query=${latitud},${longitud}`
 }
 
+/** Vista previa con OpenStreetMap (decisión: Leaflet/OSM, sin APIs pagas). La CSP solo permite este frame. */
 export function urlMapaIncrustado(latitud: number, longitud: number): string {
-  return `https://maps.google.com/maps?q=${latitud},${longitud}&z=16&output=embed`
+  const d = 0.005
+  const bbox = [longitud - d, latitud - d, longitud + d, latitud + d].map(n => n.toFixed(6)).join(',')
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitud},${longitud}`
 }
