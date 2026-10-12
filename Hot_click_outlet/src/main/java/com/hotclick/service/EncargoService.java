@@ -175,7 +175,7 @@ public class EncargoService {
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(producto.getId());
         item.setCantidad(1);
-        item.setPrecioUnitarioOverride(encargo.getPrecioCotizado());
+        item.asignarPrecioCotizado(encargo.getPrecioCotizado());
         item.setPersonalizacion(personalizacionDesdeEncargo(encargo));
 
         PaymentCheckoutRequest checkoutReq = new PaymentCheckoutRequest();
