@@ -93,8 +93,11 @@ public class AdminAsignarController {
                 ? "tel_" + telefono.replaceAll("[^0-9]", "") + "_" + UUID.randomUUID().toString().substring(0, 6) + "@hotclick.noemail"
                 : correo;
 
-            if (usuarioRepository.existsByCorreo(correoFinal)) {
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Ya existe un usuario con ese correo"));
+            // P9-02: no se crea ni se reclama una cuenta existente; el vendedor usa la búsqueda de clientes.
+            if (usuarioRepository.existsByCorreo(correoFinal.toLowerCase(java.util.Locale.ROOT))
+                    || usuarioRepository.existsByCorreo(correoFinal)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(
+                    "No se pudo crear el cliente con ese correo. Búscalo en tus clientes existentes."));
             }
 
             String ident = telefono.isBlank()
