@@ -108,4 +108,15 @@ class ClerkSyncTakeoverTest extends BaseIntegrationTest {
         sync("t6", "{}").andExpect(status().isOk());
         victimaIntacta();
     }
+
+    @Test
+    @DisplayName("sin token (ni cuerpo) → 401, no 500")
+    void sinToken401() throws Exception {
+        mockMvc.perform(post("/api/auth/clerk-sync")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/auth/clerk-sync").contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+            .content("{}")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/auth/clerk-sync").header("Authorization", "Basic x")
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isUnauthorized());
+    }
 }
