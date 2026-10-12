@@ -4644,5 +4644,10 @@
     "texto": "Sua conta ainda não tem um negócio associado. Termine o cadastro para gerenciar seus produtos, vendas e depósitos.",
     "cta": "Completar meu negócio",
     "volver": "Voltar à loja"
+  },
+  "billing": {
+    "tilopayConfirmando": "Confirmando o pagamento do seu plano…",
+    "tilopayNoConfirmado": "Não conseguimos confirmar o pagamento. Tente novamente.",
+    "volverPlanes": "Voltar aos planos"
   }
 }

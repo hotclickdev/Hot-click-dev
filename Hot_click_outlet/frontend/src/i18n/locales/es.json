@@ -4644,5 +4644,10 @@
     "texto": "Tu cuenta todavía no tiene un negocio asociado. Terminá el registro para administrar tus productos, ventas y bodegas.",
     "cta": "Completar mi negocio",
     "volver": "Volver a la tienda"
+  },
+  "billing": {
+    "tilopayConfirmando": "Confirmando el pago de tu plan…",
+    "tilopayNoConfirmado": "No pudimos confirmar el pago. No se te cobró de más; intentá de nuevo.",
+    "volverPlanes": "Volver a planes"
   }
 }
