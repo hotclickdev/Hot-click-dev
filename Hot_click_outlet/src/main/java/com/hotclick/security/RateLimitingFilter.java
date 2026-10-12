@@ -210,6 +210,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                     log.warn("[RATE-LIMIT] ip={} path={}", ip, RutaLogSegura.enmascarar(path));
                     try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                     response.setStatus(429);
+                    response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.getWriter().write(
                         "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
@@ -225,6 +226,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                         log.warn("[RATE-LIMIT] GET ip={} path={}", ip, RutaLogSegura.enmascarar(path));
                         try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                         response.setStatus(429);
+                        response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
                         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                         response.getWriter().write(
                             "{\"success\":false,\"message\":\"Demasiadas solicitudes. Esperá un momento antes de volver a intentar.\"}");
