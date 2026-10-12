@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth, useUser } from '@clerk/react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
 import { authService } from '@/services/authService'
 import { leoDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 import type { AuthResponse } from '@/types/auth'
-import { sincronizarClerk, type SsoClerkPayload } from './sso/ssoClerkSync'
+import { sincronizarClerk, type SsoClerkPayload, type SsoClerkResultado } from './sso/ssoClerkSync'
 
 /**
  * After Clerk completes the OAuth flow, this page:
  *   1. Gets the Clerk session token.
- *   2. POSTs to /api/auth/clerk-sync with the token + user details.
+ *   2. POSTs to /api/auth/clerk-sync with the token + profile (identity comes only from the verified token).
  *   3. Stores the returned app JWT in authStore (same as email/password login).
  *   4. Signs out of Clerk (our app manages its own JWT session).
  *   5. Redirects to the app.
@@ -23,11 +24,12 @@ export default function SSOComplete() {
   const navigate    = useNavigate()
   const login       = useAuthStore((s) => s.login)
   const toast       = useToast()
+  const { t }       = useTranslation()
   const attempted   = useRef(false)
   const [fase, setFase] = useState<'conectando' | 'edad'>('conectando')
   const [declara, setDeclara] = useState(false)
   const [error, setError] = useState('')
-  const [pendiente, setPendiente] = useState<{ token: string; payload: SsoClerkPayload } | null>(null)
+  const [pendiente, setPendiente] = useState<{ token: string; payload: SsoClerkPayload; email: string } | null>(null)
 
   const terminarOk = async (data: AuthResponse, email: string) => {
     login(data)
@@ -35,6 +37,12 @@ export default function SSOComplete() {
     toast({ message: `¡Bienvenido, ${data.nombre || email}!`, type: 'success' })
     const isNewUser = !data.empresaId && data.rol === 'USUARIO_FINAL'
     navigate(isNewUser ? '/registrar-negocio' : '/', { replace: true })
+  }
+
+  const mensajeFallo = (r: Extract<SsoClerkResultado, { ok: false; requiereEdad: false }>) => {
+    if (r.codigo === 'vinculo-conflicto') return t('login.googleVinculado')
+    if (r.codigo === 'correo-no-verificado') return t('login.googleCorreoNoVerificado')
+    return r.message
   }
 
   const fallar = async (msg: string) => {
@@ -61,12 +69,10 @@ export default function SSOComplete() {
 
         const email    = user.primaryEmailAddress?.emailAddress ?? ''
         const payload: SsoClerkPayload = {
-          email,
           nombre: user.firstName ?? '',
           apellido: user.lastName ?? '',
           fotoUrl: user.imageUrl ?? '',
         }
-        if (!email) throw new Error('No se pudo obtener el email de tu cuenta Google')
 
         const yaDeclaro = leoDeclaraMayoriaEdad()
         const resultado = await sincronizarClerk(clerkToken, payload, yaDeclaro)
@@ -75,13 +81,13 @@ export default function SSOComplete() {
           return
         }
         if (resultado.requiereEdad) {
-          setPendiente({ token: clerkToken, payload })
+          setPendiente({ token: clerkToken, payload, email })
           setFase('edad')
           return
         }
-        await fallar(resultado.message)
+        await fallar(mensajeFallo(resultado))
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Error al conectar tu cuenta social. Intentá de nuevo.'
+        const msg = err instanceof Error ? err.message : t('login.googleError')
         await fallar(msg)
       }
     })()
@@ -93,14 +99,14 @@ export default function SSOComplete() {
     authService.registrarConsentimiento('MAYORIA_EDAD')
     const resultado = await sincronizarClerk(pendiente.token, pendiente.payload, true)
     if (resultado.ok) {
-      await terminarOk(resultado.data, pendiente.payload.email)
+      await terminarOk(resultado.data, pendiente.email)
       return
     }
     if (resultado.requiereEdad) {
       setError('Debe declarar que es mayor de 18 años.')
       return
     }
-    await fallar(resultado.message)
+    await fallar(mensajeFallo(resultado))
   }
 
   if (fase === 'edad') {
