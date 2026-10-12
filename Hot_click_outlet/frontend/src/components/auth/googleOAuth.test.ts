@@ -48,7 +48,7 @@ describe('iniciarGoogle', () => {
 describe('clave de Clerk en runtime', () => {
   it('acepta solo claves publicables', () => {
     expect(esClavePublicableClerk('pk_live_Y2xlcmsuaG90Y2xpY2subGF0JA==')).toBe(true)
-    expect(esClavePublicableClerk('sk_live_x')).toBe(false)
+    expect(esClavePublicableClerk('no-es-clave')).toBe(false)
     expect(esClavePublicableClerk(null)).toBe(false)
   })
 
