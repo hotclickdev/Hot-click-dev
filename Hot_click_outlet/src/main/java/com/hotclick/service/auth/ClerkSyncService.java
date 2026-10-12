@@ -27,11 +27,16 @@ public class ClerkSyncService {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private AuthSupport authSupport;
 
-    public AuthResponse sync(String clerkUserId, String email, boolean emailVinoEnJwt,
+    /** P1-01: la cuenta ya está vinculada a otro usuario de Clerk; nunca se re-vincula. */
+    public static class ClerkVinculoConflictoException extends RuntimeException {
+        public ClerkVinculoConflictoException(String msg) { super(msg); }
+    }
+
+    /**
+     * @param email correo VERIFICADO tomado del token de Clerk (nunca del body).
+     */
+    public AuthResponse sync(String clerkUserId, String email,
                              String nombre, String apellido, String fotoUrl, boolean declaraMayoriaEdad) {
-        if (!emailVinoEnJwt) {
-            log.warn("[clerk-sync] JWT sin claim 'email' — usando email del body (configura el JWT template). clerkUserId={}", clerkUserId);
-        }
         Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl, declaraMayoriaEdad);
         usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now(Constants.ZONA_CR));
         usuario = usuarioRepository.findByCorreo(usuario.getCorreo())
@@ -46,7 +51,12 @@ public class ClerkSyncService {
                                  boolean declaraMayoriaEdad) {
         Optional<Usuario> byClerk = usuarioRepository.findByClerkUserId(clerkUserId);
         if (byClerk.isPresent()) {
-            return rechazarSiCerrada(byClerk.get());
+            Usuario u = rechazarSiCerrada(byClerk.get());
+            if (u.getCorreo() != null && !u.getCorreo().equalsIgnoreCase(email)) {
+                log.warn("[clerk-sync] clerkId={} ya vinculado a otra cuenta (id={}); correo del token distinto",
+                    clerkUserId, u.getId());
+            }
+            return u;
         }
         Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email);
         if (byEmail.isPresent()) {
@@ -67,6 +77,12 @@ public class ClerkSyncService {
         boolean hasElevatedRole = u.getRoles().stream()
             .map(Rol::getNombreRol)
             .anyMatch(r -> Constants.ROL_ADMIN.equals(r) || Constants.ROL_EMPRENDEDOR.equals(r));
+        if (u.getClerkUserId() != null && !u.getClerkUserId().equals(clerkUserId)) {
+            log.warn("[clerk-sync] P1-01 rechazado: cuenta id={} ya vinculada a otro clerkId; intento con clerkId={}",
+                u.getId(), clerkUserId);
+            throw new ClerkVinculoConflictoException(
+                "Esta cuenta ya está vinculada a otro inicio de sesión social. Ingresá con tu método habitual.");
+        }
         if (hasElevatedRole && u.getClerkUserId() == null) {
             log.warn("[clerk-sync] Blocked Clerk merge for elevated account email={} clerkId={}", email, clerkUserId);
             throw new SecurityException("Esta cuenta requiere verificación adicional para vincular login social. Usá tu contraseña.");
