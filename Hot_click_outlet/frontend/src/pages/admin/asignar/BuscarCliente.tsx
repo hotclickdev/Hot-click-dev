@@ -30,7 +30,7 @@ export default function BuscarCliente({ onSelect }: { onSelect: (usuario: Client
 
   const buscar = useCallback((valor: string) => {
     if (timerRef.current !== null) clearTimeout(timerRef.current)
-    if (valor.trim().length < 2) { setResultados([]); return }
+    if (valor.trim().length < 3) { setResultados([]); return }
     timerRef.current = setTimeout(async () => {
       setBuscando(true)
       try {
@@ -149,7 +149,7 @@ function PanelBuscar({ q, onQ, buscando, resultados, onSelect, onCrear }: {
         </div>
       )}
 
-      {q.trim().length >= 2 && !buscando && resultados.length === 0 && (
+      {q.trim().length >= 3 && !buscando && resultados.length === 0 && (
         <div className="text-sm text-center py-4" style={{ color: 'var(--hc-muted)' }}>
           Sin resultados. Podés{' '}
           <button type="button" onClick={onCrear} className="underline" style={{ color: 'var(--hc-accent)' }}>

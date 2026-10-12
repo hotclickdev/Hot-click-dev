@@ -3030,6 +3030,7 @@
     "comisionSinpeHint": "0 = info badge only. If > 0, applied at checkout.",
     "comisionSinpePctLabel": "SINPE discount %",
     "comisionSave": "Save fees",
+    "comisionSoloLectura": "HotClick sets these fees. Contact support if you need a change.",
     "comisionSaving": "Saving…",
     "comisionSaved": "Fees updated",
     "comisionErrorLoad": "Could not load fee settings",

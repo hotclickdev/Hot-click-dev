@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { paymentService } from '@/services/paymentService'
 import Spinner from '@/components/ui/Spinner'
+import useAuthStore from '@/store/authStore'
 import { Block, FormGroup, StyledInput, SectionHeader, mensajeErrorConfig } from './configUi'
 import {
   COMISION_GATEWAY_FIJO_DEFAULT,
@@ -21,6 +22,8 @@ type SeccionComisionProps = {
  */
 export default function SeccionComision({ toast }: SeccionComisionProps) {
   const { t } = useTranslation()
+  // SEG-1: solo la plataforma (ADMIN) cambia la comisión; el vendedor la ve en solo lectura.
+  const puedeEditar = useAuthStore(st => st.userRole === 'ADMIN')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [pctTarjeta, setPctTarjeta] = useState(String(COMISION_GATEWAY_PCT_DEFAULT))
@@ -101,6 +104,7 @@ export default function SeccionComision({ toast }: SeccionComisionProps) {
               max={98}
               step="0.01"
               value={pctTarjeta}
+              disabled={!puedeEditar}
               onChange={(e) => setPctTarjeta(e.target.value)}
             />
           </FormGroup>
@@ -110,6 +114,7 @@ export default function SeccionComision({ toast }: SeccionComisionProps) {
               min={0}
               step={1}
               value={fijoCrc}
+              disabled={!puedeEditar}
               onChange={(e) => setFijoCrc(e.target.value)}
             />
           </FormGroup>
@@ -127,21 +132,26 @@ export default function SeccionComision({ toast }: SeccionComisionProps) {
             max={50}
             step="0.1"
             value={pctSinpe}
+            disabled={!puedeEditar}
             onChange={(e) => setPctSinpe(e.target.value)}
           />
         </FormGroup>
       </Block>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          className="cfg-btn cfg-btn-primary"
-          disabled={saving}
-          onClick={() => void onGuardar()}
-        >
-            {saving ? t('adminConfig.comisionSaving') : t('adminConfig.comisionSave')}
-        </button>
-      </div>
+      {puedeEditar ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            className="cfg-btn cfg-btn-primary"
+            disabled={saving}
+            onClick={() => void onGuardar()}
+          >
+              {saving ? t('adminConfig.comisionSaving') : t('adminConfig.comisionSave')}
+          </button>
+        </div>
+      ) : (
+        <p className="text-sm" role="note">{t('adminConfig.comisionSoloLectura')}</p>
+      )}
     </div>
   )
 }
