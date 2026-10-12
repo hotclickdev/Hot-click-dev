@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UrlExternaSeguraTest {
 
     @AfterEach
-    void restaurar() { UrlExternaSegura.resolver = InetAddress::getAllByName; }
+    void restaurar() { UrlExternaSegura.RESOLVER.set(InetAddress::getAllByName); }
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -26,23 +26,23 @@ class UrlExternaSeguraTest {
         "https://example.com:8080/", "https://user@example.com/"
     })
     void rechazaDestinosInternosYEsquemas(String url) {
-        UrlExternaSegura.resolver = h -> h.matches("[a-z.]+") && !h.equals("localhost")
-            ? new InetAddress[]{InetAddress.getByName("93.184.216.34")} : InetAddress.getAllByName(h);
+        UrlExternaSegura.RESOLVER.set(h -> h.matches("[a-z.]+") && !h.equals("localhost")
+            ? new InetAddress[]{InetAddress.getByName("93.184.216.34")} : InetAddress.getAllByName(h));
         assertThatThrownBy(() -> UrlExternaSegura.validar(url)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     @DisplayName("un nombre público que resuelve a IP interna (rebinding/DNS) se rechaza")
     void dnsAInterna() {
-        UrlExternaSegura.resolver = h -> new InetAddress[]{
-            InetAddress.getByName("93.184.216.34"), InetAddress.getByName("169.254.169.254")};
+        UrlExternaSegura.RESOLVER.set(h -> new InetAddress[]{
+            InetAddress.getByName("93.184.216.34"), InetAddress.getByName("169.254.169.254")});
         assertThatThrownBy(() -> UrlExternaSegura.validar("https://tienda.example.com/"))
             .hasMessage(UrlExternaSegura.MSG_NO_PERMITIDA);
     }
 
     @Test
     void aceptaHttpsPublico() {
-        UrlExternaSegura.resolver = h -> new InetAddress[]{InetAddress.getByName("93.184.216.34")};
+        UrlExternaSegura.RESOLVER.set(h -> new InetAddress[]{InetAddress.getByName("93.184.216.34")});
         assertThat(UrlExternaSegura.validar("https://tienda.example.com/catalogo").getHost())
             .isEqualTo("tienda.example.com");
     }

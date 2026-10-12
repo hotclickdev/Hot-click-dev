@@ -9,7 +9,10 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * P11-01: descarga de URLs externas sin SSRF. Solo https al puerto 443; el host se resuelve
@@ -24,9 +27,25 @@ public final class UrlExternaSegura {
 
     /** Resolución DNS reemplazable en tests. */
     public interface Resolver { InetAddress[] resolver(String host) throws UnknownHostException; }
-    static volatile Resolver resolver = InetAddress::getAllByName;
+    static final AtomicReference<Resolver> RESOLVER = new AtomicReference<>(InetAddress::getAllByName);
 
-    public record Respuesta(byte[] cuerpo, String contentType, String urlFinal) {}
+    public record Respuesta(byte[] cuerpo, String contentType, String urlFinal) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Respuesta r && Arrays.equals(cuerpo, r.cuerpo)
+                && Objects.equals(contentType, r.contentType) && Objects.equals(urlFinal, r.urlFinal);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * Objects.hash(contentType, urlFinal) + Arrays.hashCode(cuerpo);
+        }
+
+        @Override
+        public String toString() {
+            return "Respuesta[bytes=" + (cuerpo == null ? 0 : cuerpo.length) + ", contentType=" + contentType + ", urlFinal=" + urlFinal + "]";
+        }
+    }
 
     private UrlExternaSegura() {}
 
@@ -49,7 +68,7 @@ public final class UrlExternaSegura {
         if (host == null || host.isBlank()) throw new IllegalArgumentException("Ingresá una URL válida.");
         InetAddress[] ips;
         try {
-            ips = resolver.resolver(host.toLowerCase(Locale.ROOT));
+            ips = RESOLVER.get().resolver(host.toLowerCase(Locale.ROOT));
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("No se pudo encontrar ese sitio.");
         }
