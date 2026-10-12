@@ -50,7 +50,7 @@ public interface WalletTransaccionRepository extends JpaRepository<WalletTransac
     List<Long> findEmpresasConCreditosSinLiquidar(@Param("hasta") LocalDateTime hasta);
 
     /** De los pedidos dados, cuáles se cobraron contra entrega (metodoPago EFECTIVO). */
-    @Query("SELECT p.id FROM Pedido p WHERE p.id IN :ids AND UPPER(p.metodoPago) = 'EFECTIVO'")
+    @Query("SELECT p.id FROM Pedido p WHERE p.id IN :ids AND UPPER(p.metodoPago) IN ('EFECTIVO', 'CONTRA_ENTREGA', 'CONTRAENTREGA')")
     List<Long> findPedidosContraEntrega(@Param("ids") Collection<Long> ids);
 
     /** Payout rechazado: sus movimientos vuelven a quedar sin liquidar para la próxima corrida. */

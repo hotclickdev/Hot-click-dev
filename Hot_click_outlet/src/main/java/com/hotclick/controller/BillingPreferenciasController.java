@@ -28,8 +28,11 @@ public class BillingPreferenciasController {
 
     private final CompanyScope companyScope;
     private final EmpresaRepository empresaRepository;
+    private final com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica;
 
-    public BillingPreferenciasController(CompanyScope companyScope, EmpresaRepository empresaRepository) {
+    public BillingPreferenciasController(CompanyScope companyScope, EmpresaRepository empresaRepository,
+                                         com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica) {
+        this.contraEntregaPolitica = contraEntregaPolitica;
         this.companyScope = companyScope;
         this.empresaRepository = empresaRepository;
     }
@@ -67,11 +70,12 @@ public class BillingPreferenciasController {
         return empresaRepository.findById(id).orElseThrow(); // tenant-global-ok: id del scope, nunca del cliente
     }
 
-    private static Map<String, Object> mapa(Empresa e) {
+    private Map<String, Object> mapa(Empresa e) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("diaCobro", e.getDiaCobro());
         m.put("frecuenciaPayout", e.getFrecuenciaPayout());
         m.put("contraEntrega", "DIA_SIGUIENTE");
+        m.put("contraEntregaEnvioNormal", contraEntregaPolitica.modoNormal());
         return m;
     }
 }
