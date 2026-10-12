@@ -276,3 +276,24 @@ test('SCALE1 weekly ranks findAll-heavy files', () => {
   assert.equal(rows[0].path, 'Fat.java');
   assert.equal(rows[0].findAll, 2);
 });
+
+// ── Gate «empresa nula = ver todo» (IDOR-vendedor) ──────────────────────────
+import { escanearFuente } from './gate-tenant-global.mjs';
+
+test('tenant-global: ternario empresa nula sin justificar falla', () => {
+  const src = 'var l = empresaId != null\n    ? repo.findByEmpresaId(empresaId)\n    : repo.findAll();';
+  assert.equal(escanearFuente(src).length, 1);
+  assert.equal(escanearFuente('Long x = eid == null ? a : b;').length, 1);
+  assert.equal(escanearFuente('if (empresaId == null) return true;').length, 1);
+});
+
+test('tenant-global: con «tenant-global-ok: motivo» pasa; sin motivo no', () => {
+  const ok = '// tenant-global-ok: null solo ADMIN (requireEmpresaIdOrAdmin)\nvar l = empresaId != null ? a : b;';
+  assert.equal(escanearFuente(ok).length, 0);
+  assert.equal(escanearFuente('// tenant-global-ok:\nvar l = empresaId != null ? a : b;').length, 1);
+});
+
+test('tenant-global: chequeos que no son ternario no cuentan', () => {
+  assert.equal(escanearFuente('if (empresaId == null) throw new X();').length, 0);
+  assert.equal(escanearFuente('// empresaId != null ? a : b').length, 0);
+});
