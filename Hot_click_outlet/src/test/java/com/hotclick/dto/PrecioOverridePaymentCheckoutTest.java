@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** P6-02: el JSON público del checkout nunca fija el precio unitario. */
-class PrecioOverrideCheckoutTest {
+class PrecioOverridePaymentCheckoutTest {
 
     @Test
     void jsonNoPuedeFijarPrecio() throws Exception {
