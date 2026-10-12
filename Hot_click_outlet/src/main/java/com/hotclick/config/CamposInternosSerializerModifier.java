@@ -11,6 +11,8 @@ import com.hotclick.model.Cotizacion;
 import com.hotclick.model.CotizacionItem;
 import com.hotclick.model.EncargoPersonalizado;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Pedido;
+import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.service.contacto.ContactoTextoFiltro;
 
@@ -57,6 +59,10 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
     static final Set<String> ENCARGO_TEXTO_VENDEDOR = Set.of("mensajeVendedor", "motivoRechazo", "productoNombre");
     static final Set<String> COTIZACION_TEXTO_VENDEDOR = Set.of("observaciones", "terminos", "mensajeEnviado");
     static final Set<String> COTIZACION_ITEM_TEXTO = Set.of("nombre", "descripcion");
+
+    /** P7-01: costo y margen del vendedor; el comprador ve su pedido sin ellos. */
+    static final Set<String> PEDIDO_INTERNOS = Set.of("costoTotalProductos", "utilidadBruta");
+    static final Set<String> PEDIDO_ITEM_INTERNOS = Set.of("costoUnitarioMomento", "utilidadItem");
 
     private final transient LongNullablePredicate puedeVerInternos;
     private final transient LongNullablePredicate permiteContactoPublico;
@@ -105,6 +111,15 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
         }
         if (Bodega.class.isAssignableFrom(tipo)) {
             return filtrarBodega(props);
+        }
+        if (Pedido.class.isAssignableFrom(tipo)) {
+            return envolver(props, PEDIDO_INTERNOS, bean -> puedeVerInternos.test(((Pedido) bean).getEmpresaId()));
+        }
+        if (PedidoItem.class.isAssignableFrom(tipo)) {
+            return envolver(props, PEDIDO_ITEM_INTERNOS, bean -> {
+                Pedido p = ((PedidoItem) bean).getPedido();
+                return p != null && puedeVerInternos.test(p.getEmpresaId());
+            });
         }
         if (Empresa.class.isAssignableFrom(tipo)) {
             return envolver(props, EMPRESA_CONTACTO, bean -> {
