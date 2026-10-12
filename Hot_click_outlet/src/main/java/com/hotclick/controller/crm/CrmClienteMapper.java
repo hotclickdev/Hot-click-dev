@@ -47,10 +47,10 @@ public class CrmClienteMapper {
         cliente.put("notasInternas", propio ? usuario.getNotasInternas() : null);
         cliente.put("compartido", !propio);
 
-        int numPedidos = empresaId == null ? usuario.getNumPedidosHist() : 0;
-        int totalCompras = empresaId == null ? usuario.getTotalComprasHist() : 0;
+        int numPedidos = empresaId == null ? usuario.getNumPedidosHist() : 0; // tenant-global-ok: null solo ADMIN (requireEmpresaIdOrAdmin en CrmController)
+        int totalCompras = empresaId == null ? usuario.getTotalComprasHist() : 0; // tenant-global-ok: null solo ADMIN (requireEmpresaIdOrAdmin en CrmController)
         if (numPedidos == 0) {
-            List<Object[]> stats = empresaId == null
+            List<Object[]> stats = empresaId == null // tenant-global-ok: null solo ADMIN (requireEmpresaIdOrAdmin en CrmController)
                 ? pedidoRepository.statsPorUsuario(usuario.getId())
                 : pedidoRepository.statsPorUsuarioYEmpresa(usuario.getId(), empresaId);
             if (!stats.isEmpty()) {

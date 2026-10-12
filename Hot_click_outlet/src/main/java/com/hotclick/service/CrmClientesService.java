@@ -62,7 +62,7 @@ public class CrmClientesService {
         Usuario u = clienteDeEmpresa(id, empresaId);
         Map<String, Object> data = crmClienteMapper.toClienteMap(u, empresaId);
         // P8-01: el vendedor ve solo los pedidos hechos en su negocio.
-        data.put("pedidos", (empresaId == null
+        data.put("pedidos", (empresaId == null // tenant-global-ok: null solo ADMIN (requireEmpresaIdOrAdmin en CrmController)
             ? pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(id, PageRequest.of(0, 10))
             : pedidoRepository.findByUsuarioFinalIdAndEmpresaIdOrderByFechaPedidoDesc(id, empresaId, PageRequest.of(0, 10)))
             .getContent().stream().map(p -> {

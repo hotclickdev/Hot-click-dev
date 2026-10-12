@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("P9-04 / P10-02 | reset-datos y retiros solo del PROPIETARIO")
-class PropietarioGuardTest extends BaseIntegrationTest {
+class PropietarioWalletGuardTest extends BaseIntegrationTest {
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
