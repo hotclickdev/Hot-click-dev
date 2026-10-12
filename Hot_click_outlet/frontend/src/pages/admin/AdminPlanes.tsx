@@ -7,7 +7,7 @@ import { esUsuarioSistema } from '@/utils/sistemaUser'
 import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
-import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
+import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
 import { useCerrarSesion } from '@/hooks/useCerrarSesion'
@@ -145,7 +145,6 @@ export default function AdminPlanes() {
     setError,
     pagoPendiente,
     seleccionarPlan,
-    irAExito,
     cancelarPago,
   } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion' })
 
@@ -197,13 +196,7 @@ export default function AdminPlanes() {
               Cancelar
             </button>
           </div>
-          <OnvoSuscripcionEmbed
-            subscriptionId={pagoPendiente.subscriptionId}
-            customerId={pagoPendiente.customerId}
-            publishableKey={pagoPendiente.publishableKey}
-            onSuccess={() => { void irAExito() }}
-            onError={(msg) => setError(msg)}
-          />
+          <TilopaySuscripcionEmbed pago={pagoPendiente} />
         </div>
       )}
 

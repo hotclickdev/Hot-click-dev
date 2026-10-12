@@ -9,7 +9,14 @@ export type CambiarPlanResultado = {
   planNombre?: string
   mensaje?: string
   mock?: boolean
+  /** Tilopay (reemplaza ONVO): datos para abrir el SDK embebido. */
+  proveedor?: 'TILOPAY'
+  orderNumber?: string
+  montoCrc?: number
+  sdkToken?: string
 }
+
+export type ConfirmarCobroPlan = { estado: 'ACTIVO' | 'NO_CONFIRMADO' }
 
 export const billingService = {
   getPlanes: () => api.get('/billing/planes'),
@@ -20,4 +27,6 @@ export const billingService = {
   cambiarPlan: (planId: Id) => api.post<CambiarPlanResultado>(`/billing/cambiar-plan/${planId}`),
   crearPortal: () => api.post('/billing/portal'),
   cancelar: (inmediata = false) => api.post(`/billing/cancelar?inmediata=${inmediata}`),
+  confirmarCobroTilopay: (orderNumber: string) =>
+    api.post<ConfirmarCobroPlan>(`/billing/tilopay/confirmar/${encodeURIComponent(orderNumber)}`),
 }
