@@ -20,6 +20,8 @@ export function destinoVender({ tokenVivo, rol, empresaId, planNombre }: {
 }
 
 function yaTieneNegocio(rol: string | null | undefined, empresaId: number | null | undefined) {
-  if (rol === 'EMPRENDEDOR' || rol === 'ADMIN') return true
+  if (rol === 'ADMIN') return true
+  // EMPRENDEDOR sin empresa (alta a medias) vuelve a /registrar-negocio a terminarla.
+  if (rol === 'EMPRENDEDOR') return Boolean(empresaId)
   return Boolean(empresaId) && rol !== 'USUARIO_FINAL'
 }

@@ -11,6 +11,8 @@ import {
 } from '@/app/rolPaths'
 import { useTenantPlanListo } from '@/app/useTenantPlanListo'
 import VerificacionCorreoBanner from '@/components/ui/VerificacionCorreoBanner'
+import CompletaTuNegocio from '@/components/vendedor/CompletaTuNegocio'
+import { debeCompletarNegocio } from '@/app/negocioIncompleto'
 
 function SpinnerRuta() {
   return (
@@ -35,6 +37,7 @@ export default function PlanPathGate({
 }) {
   const token = useAuthStore((s) => s.token)
   const userRole = useAuthStore((s) => s.userRole)
+  const empresaId = useAuthStore((s) => s.empresaId)
   const { pathname, search } = useLocation()
   const { planNombre, esperando } = useTenantPlanListo()
 
@@ -46,6 +49,8 @@ export default function PlanPathGate({
     return <Navigate to="/caja" replace />
   }
   if (!esUsuarioSistema(userRole)) return <Navigate to="/" replace />
+  // Vendedor sin negocio (registro a medias): nunca el panel ni un catálogo general.
+  if (debeCompletarNegocio(userRole, empresaId)) return <CompletaTuNegocio />
   if (esperando) return <SpinnerRuta />
 
   const correcto = prefijoVendedor(planNombre)
