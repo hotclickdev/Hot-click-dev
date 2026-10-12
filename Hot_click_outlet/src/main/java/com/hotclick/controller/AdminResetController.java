@@ -97,6 +97,8 @@ public class AdminResetController {
             "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId, empresaId);
         jdbc.update("DELETE FROM hot_click_reporte_producto_tb WHERE fk_id_producto IN " +
             "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        // Fichas CRM del negocio (V171); los usuarios se conservan.
+        jdbc.update("DELETE FROM hot_click_cliente_empresa_tb WHERE fk_id_empresa = ?", empresaId);
 
         // Hijos de pedido
         jdbc.update("DELETE FROM hot_click_pago_tb WHERE fk_id_pedido IN " +

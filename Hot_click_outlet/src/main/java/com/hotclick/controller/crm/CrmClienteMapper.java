@@ -15,6 +15,29 @@ import java.util.Map;
 public class CrmClienteMapper {
 
     @Autowired private PedidoRepository pedidoRepository;
+    @Autowired(required = false) private com.hotclick.repository.ClienteEmpresaRepository clienteEmpresaRepository;
+
+    /** Ficha del negocio para un cliente compartido (vacía si aún no hay fila). */
+    private com.hotclick.model.ClienteEmpresa fichaNegocio(Usuario usuario, Long empresaId) {
+        if (clienteEmpresaRepository == null || empresaId == null) return new com.hotclick.model.ClienteEmpresa();
+        return clienteEmpresaRepository.findByEmpresaIdAndUsuarioId(empresaId, usuario.getId())
+            .orElseGet(com.hotclick.model.ClienteEmpresa::new);
+    }
+
+    /** P8-01 residual: en ficha compartida el contacto va enmascarado ("j***@gmail.com"). */
+    public static String enmascararCorreo(String correo) {
+        if (correo == null || correo.isBlank()) return "";
+        int at = correo.indexOf('@');
+        if (at <= 0) return "***";
+        return correo.charAt(0) + "***" + correo.substring(at);
+    }
+
+    /** "****5678": deja los últimos 4 dígitos. */
+    public static String enmascararTelefono(String telefono) {
+        if (telefono == null || telefono.isBlank()) return "";
+        String d = telefono.replaceAll("[^0-9]", "");
+        return d.length() <= 4 ? "****" : "****" + d.substring(d.length() - 4);
+    }
 
     public Map<String, Object> toClienteMap(Usuario usuario) {
         return toClienteMap(usuario, null);
@@ -33,18 +56,19 @@ public class CrmClienteMapper {
      */
     public Map<String, Object> toClienteMap(Usuario usuario, Long empresaId) {
         boolean propio = esClientePropio(usuario, empresaId);
+        com.hotclick.model.ClienteEmpresa ficha = propio ? null : fichaNegocio(usuario, empresaId);
         Map<String, Object> cliente = new LinkedHashMap<>();
         cliente.put("id", usuario.getId());
         cliente.put("nombre", usuario.getNombre());
         cliente.put("apellidoPaterno", usuario.getApellidoPaterno());
-        cliente.put("correo", usuario.getCorreo());
-        cliente.put("telefono", usuario.getTelefono());
+        cliente.put("correo", propio ? usuario.getCorreo() : enmascararCorreo(usuario.getCorreo()));
+        cliente.put("telefono", propio ? usuario.getTelefono() : enmascararTelefono(usuario.getTelefono()));
         cliente.put("fechaRegistro", usuario.getFechaRegistro());
         cliente.put("fechaUltimoAcceso", usuario.getFechaUltimoAcceso());
-        cliente.put("puntosFidelidad", propio ? usuario.getPuntosFidelidad() : 0);
+        cliente.put("puntosFidelidad", propio ? usuario.getPuntosFidelidad() : ficha.getPuntosFidelidad());
         cliente.put("limiteCredito", propio ? usuario.getLimiteCredito() : null);
         cliente.put("saldoCredito", propio ? usuario.getSaldoCredito() : null);
-        cliente.put("notasInternas", propio ? usuario.getNotasInternas() : null);
+        cliente.put("notasInternas", propio ? usuario.getNotasInternas() : ficha.getNotasInternas());
         cliente.put("compartido", !propio);
 
         int numPedidos = empresaId == null ? usuario.getNumPedidosHist() : 0; // tenant-global-ok: null solo ADMIN (requireEmpresaIdOrAdmin en CrmController)
@@ -62,7 +86,7 @@ public class CrmClienteMapper {
         cliente.put("numPedidosHist", numPedidos);
         cliente.put("totalComprasHist", totalCompras);
 
-        String segmento = propio ? usuario.getSegmento() : null;
+        String segmento = propio ? usuario.getSegmento() : ficha.getSegmento();
         if (segmento == null || segmento.isBlank()) {
             segmento = calcularSegmento(numPedidos, totalCompras, usuario.getFechaUltimoAcceso());
         }
@@ -73,9 +97,12 @@ public class CrmClienteMapper {
     /** P8-01: versión acotada al negocio (oculta puntos y segmento de clientes compartidos). */
     public Map<String, Object> toClienteMapSimple(Usuario usuario, Long empresaId) {
         if (esClientePropio(usuario, empresaId)) return toClienteMapSimple(usuario);
+        com.hotclick.model.ClienteEmpresa ficha = fichaNegocio(usuario, empresaId);
         Map<String, Object> m = new LinkedHashMap<>(toClienteMapSimple(usuario));
-        m.put("puntosFidelidad", 0);
-        m.put("segmento", "NUEVO");
+        m.put("correo", enmascararCorreo(usuario.getCorreo()));
+        m.put("telefono", enmascararTelefono(usuario.getTelefono()));
+        m.put("puntosFidelidad", ficha.getPuntosFidelidad());
+        m.put("segmento", ficha.getSegmento() != null ? ficha.getSegmento() : "NUEVO");
         m.put("compartido", true);
         return m;
     }
