@@ -4638,5 +4638,11 @@
     "menu": {
       "armarTienda": "SET UP YOUR STORE"
     }
+  },
+  "completaNegocio": {
+    "titulo": "Complete your business details",
+    "texto": "Your account doesn't have a business yet. Finish signing up to manage your products, sales and warehouses.",
+    "cta": "Complete my business",
+    "volver": "Back to the store"
   }
 }

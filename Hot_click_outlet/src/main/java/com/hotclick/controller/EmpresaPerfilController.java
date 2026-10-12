@@ -30,14 +30,14 @@ public class EmpresaPerfilController {
     @GetMapping
     public ResponseEntity<ResponseDTO> get() {
         Long empresaId = empresaIdO403();
-        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         return ResponseEntity.ok(ResponseDTO.success("Perfil empresa", empresaPerfilService.obtener(empresaId)));
     }
 
     @PutMapping("/fiscal")
     public ResponseEntity<ResponseDTO> updateFiscal(@RequestBody Map<String, String> body) {
         Long empresaId = empresaIdO403();
-        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         return ResponseEntity.ok(ResponseDTO.success("Configuración fiscal guardada",
             empresaPerfilService.updateFiscal(empresaId, body, companyScope.isAdminIT())));
     }
@@ -45,7 +45,7 @@ public class EmpresaPerfilController {
     @PostMapping("/cert-p12")
     public ResponseEntity<ResponseDTO> subirCertP12(@RequestParam("file") MultipartFile file) {
         Long empresaId = empresaIdO403();
-        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         try {
             empresaPerfilService.subirCertP12(empresaId, file);
             return ResponseEntity.ok(ResponseDTO.success("Certificado subido", Map.of("certSubido", true)));
@@ -60,14 +60,14 @@ public class EmpresaPerfilController {
     @PutMapping
     public ResponseEntity<ResponseDTO> update(@RequestBody Map<String, String> body) {
         Long empresaId = empresaIdO403();
-        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         return ResponseEntity.ok(ResponseDTO.success("Perfil actualizado", empresaPerfilService.update(empresaId, body)));
     }
 
     @PutMapping("/visibilidad")
     public ResponseEntity<ResponseDTO> toggleVisibilidad(@RequestBody Map<String, Object> body) {
         Long empresaId = empresaIdO403();
-        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         Map<String, Object> data = empresaPerfilService.toggleVisibilidad(empresaId, body.get("visibilidadPublica"));
         String msg = Boolean.TRUE.equals(data.get("visibilidadPublica"))
             ? "Tu negocio ahora es visible al público" : "Tu negocio está en modo invisible";
@@ -77,7 +77,7 @@ public class EmpresaPerfilController {
     @PostMapping("/logo")
     public ResponseEntity<ResponseDTO> subirLogo(@RequestParam("file") MultipartFile file) {
         Long empresaId = empresaIdO403();
-        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         try {
             String url = empresaPerfilService.subirLogo(empresaId, file);
             return ResponseEntity.ok(ResponseDTO.success("Logo subido", url));
@@ -92,7 +92,7 @@ public class EmpresaPerfilController {
     @PostMapping("/portada")
     public ResponseEntity<ResponseDTO> subirPortada(@RequestParam("file") MultipartFile file) {
         Long empresaId = empresaIdO403();
-        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         try {
             String url = empresaPerfilService.subirPortada(empresaId, file);
             return ResponseEntity.ok(ResponseDTO.success("Portada subida", url));

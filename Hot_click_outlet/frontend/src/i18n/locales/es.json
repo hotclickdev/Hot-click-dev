@@ -4638,5 +4638,11 @@
     "menu": {
       "armarTienda": "ARMÁ TU TIENDA"
     }
+  },
+  "completaNegocio": {
+    "titulo": "Completá los datos de tu negocio",
+    "texto": "Tu cuenta todavía no tiene un negocio asociado. Terminá el registro para administrar tus productos, ventas y bodegas.",
+    "cta": "Completar mi negocio",
+    "volver": "Volver a la tienda"
   }
 }
