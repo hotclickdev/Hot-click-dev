@@ -47,6 +47,10 @@ public class SuscripcionBillingService {
         if (existente.isPresent()) {
             return existente.get();
         }
+        // P10-03: un solo trial por empresa. Sin esto, al expirar (o cancelar) se podía pedir otro.
+        if (suscripcionRepo.existsByEmpresa_IdAndTrialEndIsNotNull(empresaId)) {
+            throw new IllegalStateException("Este negocio ya usó su período de prueba.");
+        }
 
         Plan planPro = planRepo.findByNombre("PRO")
             .orElseGet(() -> planRepo.findAll().stream()
