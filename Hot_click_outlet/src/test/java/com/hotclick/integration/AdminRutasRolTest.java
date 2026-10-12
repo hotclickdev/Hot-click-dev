@@ -56,6 +56,7 @@ class AdminRutasRolTest extends BaseIntegrationTest {
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private GiroRuletaRepository giroRuletaRepository;
+    @Autowired private MarcaRepository marcaRepository;
     @Autowired @Qualifier("requestMappingHandlerMapping") private RequestMappingHandlerMapping mappings;
 
     private Empresa empresaA;
@@ -87,6 +88,7 @@ class AdminRutasRolTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         giroRuletaRepository.deleteAll();
+        marcaRepository.deleteAll();
         usuarioRepository.findAll().forEach(u -> { u.setEmpresa(null); u.setEmpresaRegistro(null); usuarioRepository.save(u); });
         empresaRepository.deleteAll();
     }
@@ -120,6 +122,24 @@ class AdminRutasRolTest extends BaseIntegrationTest {
         }
         assertThat(revisadas).as("se enumeraron rutas /api/admin").isGreaterThan(50);
         assertThat(abiertas).as("rutas /api/admin alcanzables por EMPRENDEDOR sin estar en la lista blanca").isEmpty();
+    }
+
+    // ── P4-01 ────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("P4-01 | marcas: comprador y vendedor sin negocio → 403; vendedor crea marca de su negocio")
+    void marcasSoloVendedorConNegocio() throws Exception {
+        String body = "{\"nombreMarca\":\"MarcaP401\"}";
+        for (String t : new String[]{userToken, tokenSinEmpresa}) {
+            mockMvc.perform(post("/api/marcas").header("Authorization", t)
+                    .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/marcas/bulk").header("Authorization", t)
+                    .contentType(MediaType.APPLICATION_JSON).content("[" + body + "]")).andExpect(status().isForbidden());
+        }
+        mockMvc.perform(post("/api/marcas").header("Authorization", tokenA)
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.empresaId").value(empresaA.getId().intValue()));
     }
 
     // ── P9-02 ────────────────────────────────────────────────────────────────
