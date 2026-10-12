@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,6 +20,8 @@ class PropietarioWalletGuardTest extends BaseIntegrationTest {
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private CodigoOtpRepository codigoOtpRepository;
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     private Empresa emp;
     private String tokenDueno, tokenLector, tokenEditor;
@@ -37,6 +40,7 @@ class PropietarioWalletGuardTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        codigoOtpRepository.deleteAll();
         miembroEmpresaRepository.deleteAll();
         usuarioRepository.findAll().forEach(u -> { u.setEmpresa(null); usuarioRepository.save(u); });
         empresaRepository.deleteAll();
@@ -73,5 +77,45 @@ class PropietarioWalletGuardTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"password\":\"Test1234!\"}"))
             .andReturn().getResponse().getStatus();
         assertThat(reset).isNotEqualTo(403).isNotEqualTo(400);
+    }
+
+    @Test
+    void cuentaSsoConfirmaConCodigoDelCorreo() throws Exception {
+        Rol rolEmp = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5);
+        Usuario u = crearUsuario("p904-sso@test.cr", "SSO", rolEmp);
+        u.setEmpresa(emp);
+        u.setClerkUserId("user_sso904");
+        u.setCorreoVerificado(true);
+        u = usuarioRepository.saveAndFlush(u);
+        miembroEmpresaRepository.saveAndFlush(new MiembroEmpresa(u, emp, "PROPIETARIO"));
+        String token = "Bearer " + jwtUtil.generateToken(u.getCorreo(), u.getId(), Constants.ROL_EMPRENDEDOR, emp.getId(), emp.getSlug());
+
+        mockMvc.perform(get("/api/admin/reset-confirmacion").header("Authorization", token))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.metodo").value("CODIGO"));
+        mockMvc.perform(get("/api/admin/reset-confirmacion").header("Authorization", tokenDueno))
+            .andExpect(jsonPath("$.data.metodo").value("PASSWORD"));
+        jdbcTemplate.update("INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado) "
+            + "SELECT 'RESET_DATOS', 600, 6, 1 WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_DATOS')");
+        mockMvc.perform(post("/api/admin/reset-codigo").header("Authorization", token)).andExpect(status().isOk());
+
+        // El código llega por correo (hasheado en BD): para el test se fija uno conocido.
+        Long uid = u.getId();
+        CodigoOtp otp = codigoOtpRepository.findAll().stream()
+            .filter(o -> uid.equals(o.getUsuario().getId())).reduce((a, b) -> b).orElseThrow();
+        otp.setCodigoHash(passwordEncoder.encode("123456"));
+        codigoOtpRepository.saveAndFlush(otp);
+
+        mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"codigo\":\"000000\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.data.codigo").value("CODIGO_INCORRECTO"));
+        int reset = mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"codigo\":\"123456\"}"))
+            .andReturn().getResponse().getStatus();
+        assertThat(reset).isNotEqualTo(403).isNotEqualTo(400);
+        // un solo uso
+        mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"codigo\":\"123456\"}"))
+            .andExpect(status().isBadRequest());
     }
 }

@@ -250,6 +250,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/mesas", "/api/admin/mesas/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/admin/productos/generar-ia").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/admin/reset-datos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // seg-altos-2 (c): cómo confirma el borrado (contraseña o código por correo para cuentas SSO)
+            .requestMatchers(GET, "/api/admin/reset-confirmacion").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/admin/reset-codigo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Resto de /api/admin/** (plataforma) — solo ADMIN
             .requestMatchers("/api/admin/**").hasRole(Constants.ROL_ADMIN)
             // Pedidos admin — ADMIN, EMPRENDEDOR
