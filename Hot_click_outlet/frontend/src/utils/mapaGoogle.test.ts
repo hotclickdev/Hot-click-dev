@@ -20,3 +20,12 @@ describe('puntoDesdeEnlaceGoogle', () => {
     expect(urlGoogleMaps(9.9, -84.1)).toContain('query=9.9,-84.1')
   })
 })
+
+describe('urlMapaIncrustado (MAN-3)', () => {
+  it('usa el embed de OpenStreetMap con el pin, no Google Maps', async () => {
+    const { urlMapaIncrustado } = await import('./mapaGoogle')
+    const url = urlMapaIncrustado(10.3238, -84.4271)
+    expect(url.startsWith('https://www.openstreetmap.org/export/embed.html?')).toBe(true)
+    expect(url).toContain('marker=10.3238,-84.4271')
+  })
+})

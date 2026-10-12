@@ -47,6 +47,7 @@ class PedidoServiceTest {
     @Mock private ObjectMapper              objectMapper;
     @Mock private PedidoPagoManualService   pedidoPagoManualService;
     @Mock private PedidoGrupoService        pedidoGrupoService;
+    @Mock private com.hotclick.service.payment.StockReservationService stockReservationService;
 
     @InjectMocks private PedidoManualFactory         pedidoManualFactory;
     @InjectMocks private PedidoNotificacionAppender  pedidoNotificacionAppender;
@@ -68,6 +69,7 @@ class PedidoServiceTest {
         ReflectionTestUtils.setField(service, "pedidoNotificacionAppender", pedidoNotificacionAppender);
         ReflectionTestUtils.setField(service, "pedidoDetailMapper", pedidoDetailMapper);
         ReflectionTestUtils.setField(service, "pedidoPagoManualService", pedidoPagoManualService);
+        ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(service, "despachoVerificador", new PedidoDespachoVerificador(pedidoGrupoService));
         // Por defecto el pedido tiene un Pago CAPTURADO; los tests de "sin pago" lo cambian.
         lenient().when(pedidoGrupoService.pagoDelGrupo(any())).thenReturn(Optional.of(pago(Constants.PAGO_CAPTURADO)));
@@ -626,5 +628,26 @@ class PedidoServiceTest {
         p.setCostoEnvio(0);
         p.setItems(new ArrayList<>());
         return p;
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PENDIENTE", "PENDIENTE_COMPROBANTE", "PENDIENTE_APROBACION"})
+    @DisplayName("CMP-1 | cancelar un pedido sin pagar libera su reserva de stock")
+    void cancelarSinPagarLiberaReserva(String estado) {
+        Pedido pedido = buildPedido(estado);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, null);
+        verify(stockReservationService).liberarReservas(pedido);
+    }
+
+    @Test
+    @DisplayName("CMP-1 | cancelar un pedido ya cancelado no libera dos veces")
+    void cancelarDosVecesNoLibera() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_CANCELADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        lenient().when(pedidoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        try { service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, null); } catch (RuntimeException ignored) { }
+        verify(stockReservationService, never()).liberarReservas(any());
     }
 }

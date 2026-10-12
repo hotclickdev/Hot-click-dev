@@ -1,6 +1,7 @@
 import { ta, inpStyle as taStyle } from '../nuevo-producto/productFormUi'
 import { setField } from './productoFormCampos'
 import type { BloqueFormProps } from './BloquePrecios'
+import { esVideoPermitido, MENSAJE_VIDEO_NO_PERMITIDO } from '@/utils/videoPermitido'
 
 function BadgeConContenido({ visible }: { visible: boolean }) {
   if (!visible) return null
@@ -17,6 +18,7 @@ function etiquetaVideo(url: string | null | undefined) {
 
 export default function BloqueContenido({ form, setForm }: BloqueFormProps) {
   const video = etiquetaVideo(form.videoUrl)
+  const videoInvalido = !esVideoPermitido(form.videoUrl)
   return (
     <div className="pt-4 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
       <div className="flex items-center gap-2">
@@ -68,9 +70,13 @@ export default function BloqueContenido({ form, setForm }: BloqueFormProps) {
           value={form.videoUrl}
           onChange={(e) => setField(setForm, 'videoUrl', e.target.value)}
           placeholder="YouTube, TikTok o Instagram..."
+          aria-invalid={videoInvalido}
           className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none transition-all"
           style={taStyle}
         />
+        {videoInvalido && (
+          <p role="alert" className="text-xs" style={{ color: 'var(--hc-danger)' }}>{MENSAJE_VIDEO_NO_PERMITIDO}</p>
+        )}
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Pega el link de YouTube, TikTok o Instagram. Se mostrará como video embed en la página de detalle.</p>
       </div>
     </div>

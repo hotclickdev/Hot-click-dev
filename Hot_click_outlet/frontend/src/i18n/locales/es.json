@@ -3471,7 +3471,7 @@
       "cargandoPasarela": "Preparando pago seguro…",
       "pagar": "Pagar ₡{{monto}}",
       "procesando": "Redirigiendo al pago…",
-      "hostedAviso": "Visa, Mastercard, Apple Pay y Google Pay según tu dispositivo",
+      "hostedAviso": "Visa o Mastercard · pago seguro con Tilopay",
       "walletsAviso": "Apple Pay, Google Pay o tarjeta en un solo paso",
       "exitoTitulo": "Pago recibido",
       "exitoDesc": "El cajero ya puede ver la confirmación. ¡Gracias!",
@@ -3481,19 +3481,19 @@
       "errorTitulo": "No se puede pagar",
       "errorPagoTitulo": "No se pudo iniciar el pago",
       "errorPagoDesc": "No se pudo iniciar el cobro con tarjeta. Pedile al cajero un QR nuevo o pagá con SINPE.",
-      "errorSinpeDesc": "No se pudo registrar el SINPE. Revisá los datos o pedile al cajero un QR nuevo.",
+      "errorSinpeDesc": "No se pudieron obtener los datos del SINPE. Intentá de nuevo o pedile al cajero un QR nuevo.",
       "qrInvalido": "Este código ya no es válido. Pedile uno nuevo al cajero.",
       "sinItems": "Este QR no tiene productos.",
       "yaPagadoTitulo": "Pago ya completado",
       "yaPagadoDesc": "Este código ya se usó. Pedile uno nuevo al cajero si necesitás pagar otra vez.",
       "sinpeTitulo": "Pagá con SINPE Móvil",
-      "sinpeInstruccion": "Enviá el monto exacto al número de ONVO. El cajero ve el pago cuando ONVO lo confirma.",
+      "sinpeInstruccion": "Enviá el monto exacto al número que te mostramos. El pago se confirma solo cuando Tilopay lo recibe.",
       "sinpeAvisoCajero": "No hace falta avisarle al cajero: el pago se confirma solo.",
       "sinpeNombre": "Nombre completo",
       "sinpeCedula": "Cédula",
       "sinpeTelefono": "Tu número SINPE (8 dígitos)",
-      "sinpeRegistrar": "Registrar SINPE en ONVO",
-      "sinpeEsperando": "Esperando que ONVO reciba el SINPE…",
+      "sinpeRegistrar": "Ver datos para el SINPE",
+      "sinpeEsperando": "Esperando que Tilopay reciba el SINPE…",
       "reportarError": "Reportar un problema",
       "vence": "Este cobro vence en {{tiempo}}",
       "elegirMetodo": "Elegí cómo pagar",
@@ -3508,9 +3508,9 @@
       "copiar": "Copiar",
       "copiado": "Copiado",
       "sinpePaso1": "Enviá {{monto}} a este número",
-      "sinpePaso1Nota": "Es el número de cobro SINPE de la pasarela (Onvo), no el de la tienda.",
-      "sinpePaso2": "En el detalle escribí",
-      "sinpePaso3": "Registrá tu nombre, cédula y teléfono",
+      "sinpePaso1Nota": "Es el número de cobro SINPE de la pasarela (Tilopay), no el de la tienda.",
+      "sinpePaso2": "En el detalle escribí este código",
+      "sinpePaso3": "No hace falta registrar nada más: la pantalla cambia sola cuando llega el pago.",
       "registrarPago": "Registrar mi pago",
       "registrarPagoDesc": "Con los datos de la cuenta que hizo el SINPE",
       "esperandoTitulo": "Esperando tu pago",
@@ -3530,7 +3530,8 @@
       "comprobanteCaja": "Caja",
       "comprobanteMetodo": "Método",
       "comprobanteReferencia": "Referencia",
-      "imprimirComprobante": "Imprimir o guardar en PDF"
+      "imprimirComprobante": "Imprimir o guardar en PDF",
+      "sinpeDniIntro": "Para darte los datos del SINPE, la pasarela (Tilopay) pide tu cédula."
     },
     "recibo": {
       "ventaRegistrada": "Venta registrada",
@@ -4649,5 +4650,10 @@
     "texto": "Tu cuenta todavía no tiene un negocio asociado. Terminá el registro para administrar tus productos, ventas y bodegas.",
     "cta": "Completar mi negocio",
     "volver": "Volver a la tienda"
+  },
+  "billing": {
+    "tilopayConfirmando": "Confirmando el pago de tu plan…",
+    "tilopayNoConfirmado": "No pudimos confirmar el pago. No se te cobró de más; intentá de nuevo.",
+    "volverPlanes": "Volver a planes"
   }
 }

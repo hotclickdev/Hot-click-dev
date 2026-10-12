@@ -1,30 +1,25 @@
 package com.hotclick.service.pos;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.repository.PosQrSesionRepository;
-import com.hotclick.service.OnvoService;
-import com.hotclick.service.StripeService;
+import com.hotclick.service.TilopayService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("QR de caja: pago con el método elegido")
+@DisplayName("QR de caja: pago con el método elegido (Tilopay)")
 class PosQrMetodosPagoTest {
     @Mock PosQrSesionRepository posQrRepo;
-    @Mock StripeService stripeService;
-    @Mock OnvoService onvoService;
+    @Mock TilopayService tilopayService;
     @Mock PosQrSessionService sessionService;
     @Mock PosQrVentaCompletionService completionService;
     @InjectMocks PosQrVentaService service;
@@ -34,42 +29,27 @@ class PosQrMetodosPagoTest {
     void sinpeEnCobroMixto() {
         PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", "TARJETA,SINPE");
         when(sessionService.findSesionActiva("tok")).thenReturn(s);
-        when(sessionService.getMapper()).thenReturn(new ObjectMapper());
-        when(onvoService.isMockMode()).thenReturn(false);
-        when(onvoService.crearPaymentIntent(eq(5000), any(), any()))
-            .thenReturn(new OnvoService.OnvoPaymentIntent("onvo_pi"));
-        when(onvoService.crearMetodoPagoSinpe(any(), any(), any(), any()))
-            .thenReturn(new OnvoService.OnvoPaymentMethod("onvo_pm"));
-        ReflectionTestUtils.setField(service, "onvoSinpeDestino", "+50670196686");
-
-        service.iniciarSinpeOnvo("tok", "8888-0000", "101110111", "Ana Perez", null);
-
+        when(tilopayService.isPagosDisponibles()).thenReturn(true);
+        service.iniciarTilopay("tok", "SINPE");
         assertThat(s.getMetodoPago()).isEqualTo("SINPE");
     }
 
     @Test
-    @DisplayName("SINPE no habilitado por la caja: se rechaza")
+    @DisplayName("SINPE no habilitado por la caja: queda en tarjeta")
     void sinpeNoHabilitado() {
         PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", "TARJETA");
         when(sessionService.findSesionActiva("tok")).thenReturn(s);
-        assertThatThrownBy(() -> service.iniciarSinpeOnvo("tok", "8888-0000", "101110111", "Ana", null))
-            .isInstanceOf(IllegalStateException.class);
+        when(tilopayService.isPagosDisponibles()).thenReturn(true);
+        service.iniciarTilopay("tok", "SINPE");
+        assertThat(s.getMetodoPago()).isEqualTo("TARJETA");
     }
 
     @Test
-    @DisplayName("Checkout hospedado deja el cobro fijo en tarjeta")
-    void hostedFijaTarjeta() {
-        PosQrSesion s = PosQrMetodosTest.sesion("SINPE", "SINPE,TARJETA");
+    @DisplayName("Sin pasarela disponible: se rechaza")
+    void sinPasarela() {
+        PosQrSesion s = PosQrMetodosTest.sesion("SINPE", "SINPE");
         when(sessionService.findSesionActiva("tok")).thenReturn(s);
-        when(sessionService.getMapper()).thenReturn(new ObjectMapper());
-        when(onvoService.isMockMode()).thenReturn(false);
-        when(onvoService.crearCheckoutSession(eq(5000), any(), any(), any(), any(), any()))
-            .thenReturn(new OnvoService.OnvoCheckoutSession("onvo_cs", "https://pay.onvo.test/cs"));
-        ReflectionTestUtils.setField(service, "appUrl", "https://hotclick.lat");
-
-        service.crearStripeCheckout("tok");
-
-        assertThat(s.getMetodoPago()).isEqualTo("TARJETA");
-        assertThat(PosQrMetodos.deSesion(s)).containsExactly("TARJETA");
+        lenient().when(tilopayService.isPagosDisponibles()).thenReturn(false);
+        assertThatThrownBy(() -> service.iniciarTilopay("tok", "SINPE")).isInstanceOf(IllegalStateException.class);
     }
 }

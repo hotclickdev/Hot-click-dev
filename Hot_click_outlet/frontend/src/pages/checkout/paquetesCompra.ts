@@ -11,10 +11,10 @@ export const ENVIO = {
   RAPIDO: 'ENVIO_RAPIDO',
 } as const
 
-/** Mismos montos que el backend; la encomienda se paga al retirar y aquí vale 0. */
+/** Mismos montos que el backend. Encomienda ₡2.000; lo que cobre la encomienda lo paga el comprador aparte. */
 export const COSTO_ENVIO: Record<string, number> = {
   [ENVIO.RETIRO]: 0,
-  [ENVIO.ENCOMIENDA]: 0,
+  [ENVIO.ENCOMIENDA]: 2000,
   [ENVIO.NORMAL_GAM]: 4000,
   [ENVIO.NORMAL_FUERA_GAM]: 4000,
   [ENVIO.RAPIDO]: 5000,
@@ -151,7 +151,7 @@ export function opcionesEntrega(paquete: PaqueteCompra): OpcionEntrega[] {
   if (!paquete.fueraGam) {
     opciones.push({ metodo: ENVIO.RAPIDO, precio: COSTO_ENVIO[ENVIO.RAPIDO], requiereDireccion: true })
   }
-  opciones.push({ metodo: ENVIO.ENCOMIENDA, precio: null, requiereDireccion: true })
+  opciones.push({ metodo: ENVIO.ENCOMIENDA, precio: COSTO_ENVIO[ENVIO.ENCOMIENDA], requiereDireccion: true })
   if (paquete.retiro) {
     opciones.push({ metodo: ENVIO.RETIRO, precio: 0, requiereDireccion: false, retiro: paquete.retiro })
   }

@@ -94,7 +94,7 @@ public class ExtraccionController {
 
             return ResponseEntity.ok(ResponseDTO.success("Análisis completado", resultado));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -121,7 +121,7 @@ public class ExtraccionController {
 
             return ResponseEntity.ok(ResponseDTO.success("Búsqueda completada", resultado));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 

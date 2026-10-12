@@ -24,8 +24,8 @@ export function copiarNumeroSinpe(): Promise<boolean> {
 
 export const SHIPPING_COSTS: Record<string, number> = {
   RETIRO_EN_TIENDA:       0,
-  // La empresa de encomienda le cobra al cliente directo al recibir — HotClick no cobra este envío.
-  ENCOMIENDA_PROPIA:      0,
+  // ₡2.000 de HotClick; lo que cobre la encomienda lo paga el cliente aparte al retirar.
+  ENCOMIENDA_PROPIA:   2000,
   ENVIO_NORMAL_GAM:    4000,
   ENVIO_NORMAL_FUERA_GAM: 4000,
   ENVIO_RAPIDO:        5000,

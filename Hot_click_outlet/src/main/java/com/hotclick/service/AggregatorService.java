@@ -38,16 +38,16 @@ public class AggregatorService {
 
     private static final Logger log = LoggerFactory.getLogger(AggregatorService.class);
 
-    /** Reserva contable estimada ONVO tarjeta (~3.9% + fijo amortizado). */
+    /** Reserva contable estimada de la pasarela (Tilopay). La paga HotClick: no se descuenta al vendedor. */
     @Value("${hotclick.comision.gateway.pct:4}")
     private int pctGateway;
 
-    /** Fallback si la empresa no tiene plan: Emprendedor 8%. */
-    @Value("${hotclick.comision.fallback.pct:8}")
+    /** Fallback si la empresa no tiene plan (Emprendedor). */
+    @Value("${hotclick.comision.fallback.pct:9}")
     private BigDecimal pctFallback;
 
-    /** Mínimo por pedido en plan EMPRENDEDOR (cubre US$0.35 ONVO en tickets chicos). */
-    @Value("${hotclick.comision.emprendedor.min.crc:400}")
+    /** Mínimo por venta si la empresa no tiene plan; con plan manda comision_minima_crc. */
+    @Value("${hotclick.comision.emprendedor.min.crc:700}")
     private long minimoEmprendedorCrc;
 
     private final WalletService walletService;
@@ -74,6 +74,10 @@ public class AggregatorService {
         long bruto = pedido.getTotalPedido() != null ? pedido.getTotalPedido() : 0L;
         if (empresaId == null) {
             log.warn("[aggregator] Pedido {} sin empresa — no se acredita wallet", pedido.getId());
+            return;
+        }
+        if (esEfectivoPos(pedido)) {
+            log.info("[aggregator] Pedido {} POS en efectivo: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
             return;
         }
         if (bruto <= 0) {
@@ -111,6 +115,10 @@ public class AggregatorService {
 
         if (empresaId == null) {
             log.warn("[aggregator] Pedido {} sin empresa — no se acredita wallet", pedido.getId());
+            return;
+        }
+        if (esEfectivoPos(pedido)) {
+            log.info("[aggregator] Pedido {} POS en efectivo: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
             return;
         }
         if (bruto <= 0) {
@@ -172,10 +180,13 @@ public class AggregatorService {
         BigDecimal pct = plan != null && plan.getComisionPorcentaje() != null
             ? plan.getComisionPorcentaje()
             : pctFallback;
-        boolean min = AggregatorCommissionMath.aplicaMinimoEmprendedor(nombrePlan);
+        // Mínimo por venta del plan (V168: ₡700 en los tres); sin plan, el de configuración.
+        long minimo = plan != null && plan.getComisionMinimaCrc() != null
+            ? plan.getComisionMinimaCrc() : minimoEmprendedorCrc;
+        boolean min = minimo > 0;
         Resultado resultado = AggregatorCommissionMath.calcular(
-            bruto, pct, min, minimoEmprendedorCrc, pctGateway);
-        return new DetalleComision(nombrePlan, pct, min ? minimoEmprendedorCrc : 0, resultado);
+            bruto, pct, min, minimo, pctGateway);
+        return new DetalleComision(nombrePlan, pct, min ? minimo : 0, resultado);
     }
 
     private static String nombrePlan(Empresa empresa, Plan plan) {
@@ -186,5 +197,11 @@ public class AggregatorService {
             return empresa.getPlanSaas();
         }
         return AggregatorCommissionMath.PLAN_EMPRENDEDOR;
+    }
+
+    /** Decisión HOT_CLICK 12-oct-2026: el efectivo cobrado en el POS no se acredita ni se liquida. */
+    public static boolean esEfectivoPos(Pedido pedido) {
+        return pedido != null && "POS".equalsIgnoreCase(pedido.getOrigen())
+            && pedido.getMetodoPago() != null && "EFECTIVO".equalsIgnoreCase(pedido.getMetodoPago().trim());
     }
 }

@@ -83,6 +83,8 @@ public class OrderPricingService {
             case "ENVIO_NORMAL_GAM"        -> 4000;
             case "ENVIO_NORMAL_FUERA_GAM"  -> 4000;
             case "ENVIO_A_DOMICILIO"       -> 2000;
+            // Encomienda ₡2.000 (12-oct-2026); lo que cobre la encomienda lo paga el comprador aparte.
+            case "ENCOMIENDA_PROPIA"       -> 2000;
             default                        -> 0;
         };
     }

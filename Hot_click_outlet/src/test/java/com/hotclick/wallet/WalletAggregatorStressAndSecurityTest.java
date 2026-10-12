@@ -59,6 +59,7 @@ class WalletAggregatorStressAndSecurityTest extends BaseIntegrationTest {
     @Autowired private WalletRepository            walletRepo;
     @Autowired private WalletTransaccionRepository txRepo;
     @Autowired private PayoutRequestRepository     payoutRepo;
+    @Autowired private com.hotclick.service.wallet.WalletPayoutRequestService payoutRequestService;
 
     @BeforeEach
     void setUp() {
@@ -97,9 +98,12 @@ class WalletAggregatorStressAndSecurityTest extends BaseIntegrationTest {
     @DisplayName("PASO B — Solo 1 de 10 aprobaciones concurrentes del mismo payout tiene éxito")
     void pasob_aprobacion_payout_concurrente_no_duplica_pago() throws Exception {
         // 1. Crear payout ₡10,000 — mueve saldo disponible → retenido
-        PayoutRequest pr = walletService.solicitarPayout(
-            EMPRESA_PAYOUT, 10_000L, "SINPE", "88888888",
-            null, "Test Emprendedor", null, "retiro test");
+        // V169: el destino sale de la cuenta de cobro verificada; aquí una cuenta en memoria.
+        com.hotclick.model.MetodoCobro cuenta = new com.hotclick.model.MetodoCobro();
+        cuenta.setTipo(com.hotclick.model.MetodoCobro.TIPO_SINPE);
+        cuenta.setDestino("88888888");
+        PayoutRequest pr = payoutRequestService.retenerYCrear(
+            EMPRESA_PAYOUT, 10_000L, PayoutRequest.LIQ_MANUAL, cuenta, "retiro test");
         Long payoutId = pr.getId();
 
         Wallet pre = walletRepo.findByEmpresaId(EMPRESA_PAYOUT).orElseThrow();

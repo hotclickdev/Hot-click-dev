@@ -41,7 +41,7 @@ public class ProductoImagenController {
             var img = imagenService.agregar(productoId, url, posicion, esPrincipal);
             return ResponseEntity.ok(ResponseDTO.success("Imagen agregada", img));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -55,7 +55,7 @@ public class ProductoImagenController {
             imagenService.eliminar(imagenId, productoId);
             return ResponseEntity.ok(ResponseDTO.success("Imagen eliminada", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -72,7 +72,7 @@ public class ProductoImagenController {
             var imagenes = imagenService.sincronizar(productoId, urls);
             return ResponseEntity.ok(ResponseDTO.success("Imágenes sincronizadas", imagenes));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

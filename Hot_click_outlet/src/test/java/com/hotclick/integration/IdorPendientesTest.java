@@ -139,6 +139,9 @@ class IdorPendientesTest extends BaseIntegrationTest {
         Producto inactivo = crearProducto("Inactivo A", "SKU-IDOR-IN", empresaA, 3);
         inactivo.setEstado(0);
         productoRepository.saveAndFlush(inactivo);
+        Producto borrado = crearProducto("Borrado A", "SKU-IDOR-BO", empresaA, 3);
+        borrado.setEstado(Constants.ESTADO_ELIMINADO);
+        productoRepository.saveAndFlush(borrado);
         Producto oculto = crearProducto("Oculto A", "SKU-IDOR-OC", empresaA, 3);
         oculto.setVisibleCatalogo(false);
         productoRepository.saveAndFlush(oculto);
@@ -151,7 +154,7 @@ class IdorPendientesTest extends BaseIntegrationTest {
         empresaRepository.saveAndFlush(invisible);
         Producto deInvisible = crearProducto("De Invisible", "SKU-IDOR-IV", invisible, 3);
 
-        for (Producto p : new Producto[]{inactivo, oculto, deNoAprobado, deInvisible}) {
+        for (Producto p : new Producto[]{inactivo, borrado, oculto, deNoAprobado, deInvisible}) {
             String url = "/api/productos/" + p.getId();
             mockMvc.perform(get(url)).andExpect(status().isNotFound());
             mockMvc.perform(get(url).header("Authorization", userToken)).andExpect(status().isNotFound());

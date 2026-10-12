@@ -29,10 +29,13 @@ public class SuscripcionController {
     private final SuscripcionService suscripcionService;
     private final PlanRepository planRepo;
     private final AuthSupport authSupport;
+    private final com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService;
 
     public SuscripcionController(SuscripcionService suscripcionService,
                                   PlanRepository planRepo,
-                                  AuthSupport authSupport) {
+                                  AuthSupport authSupport,
+                                  com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService) {
+        this.suscripcionTilopayService = suscripcionTilopayService;
         this.suscripcionService = suscripcionService;
         this.planRepo           = planRepo;
         this.authSupport        = authSupport;
@@ -96,18 +99,18 @@ public class SuscripcionController {
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
 
-    /** Genera URL de Stripe Checkout para suscribirse a un plan. */
+    /** Checkout de plan: con precios reales (V168) cobra con Tilopay; Stripe ya no se usa (ESC-5). */
     @PostMapping("/checkout/{planId}")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> crearCheckout(@PathVariable Long planId) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         try {
-            String url = suscripcionService.crearCheckoutUrl(empresaId, planId);
-            return ResponseEntity.ok(Map.of("checkoutUrl", url));
-        } catch (StripeException e) {
-            log.error("[billing] Error creando checkout empresa={}: {}", empresaId, e.getMessage());
-            return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe: " + e.getMessage()));
+            return ResponseEntity.ok(suscripcionTilopayService.iniciarCambioPlan(empresaId, planId));
+        } catch (com.hotclick.exception.PlanNoDisponibleException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "codigo", "PLAN_SIN_PRECIO"));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "Plan no encontrado"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -167,7 +170,13 @@ public class SuscripcionController {
                     return ResponseEntity.badRequest().body(Map.of("error", "Verificá tu correo antes de activar un plan de pago"));
                 }
             }
-            return ResponseEntity.ok(suscripcionService.cambiarPlanOnvo(empresaId, planId));
+            Map<String, Object> r = suscripcionTilopayService.iniciarCambioPlan(empresaId, planId);
+            Map<String, Object> out = new java.util.LinkedHashMap<>(r);
+            out.put("status", "ACTIVO".equals(r.get("estado")) ? "activado" : "requiere_pago");
+            out.put("planNombre", r.get("plan"));
+            return ResponseEntity.ok(out);
+        } catch (com.hotclick.exception.PlanNoDisponibleException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "codigo", "PLAN_SIN_PRECIO"));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (SecurityException e) {
@@ -176,5 +185,31 @@ public class SuscripcionController {
             log.error("[billing] Error cambiando plan empresa={}: {}", empresaId, e.getMessage());
             return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
         }
+    }
+
+    /** Confirma con Tilopay el cobro de mensualidad (alta o renovación) del propio negocio. */
+    @PostMapping("/tilopay/confirmar/{orderNumber}")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> confirmarTilopay(@PathVariable String orderNumber) {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        try {
+            return ResponseEntity.ok(suscripcionTilopayService.confirmar(empresaId, orderNumber));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "Cobro no encontrado"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Mensualidad pendiente (renovación) para pagar desde el panel. */
+    @GetMapping("/tilopay/pendiente")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> cobroPendiente() {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        return suscripcionTilopayService.pendiente(empresaId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.noContent().build());
     }
 }

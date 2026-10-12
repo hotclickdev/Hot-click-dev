@@ -33,6 +33,9 @@ public class PedidoService {
 
     private static final Pattern GUIA_VALIDA = Pattern.compile("[A-Z0-9-]{3,40}");
 
+    private static final java.util.Set<String> RESERVA_ACTIVA = java.util.Set.of(
+        Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_PENDIENTE_COMPROBANTE, Constants.PEDIDO_PENDIENTE_APROBACION);
+
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private N8nWebhookService n8nWebhookService;
@@ -43,6 +46,7 @@ public class PedidoService {
     @Autowired private PedidoDetailMapper pedidoDetailMapper;
     @Autowired private PedidoPagoManualService pedidoPagoManualService;
     @Autowired private PedidoDespachoVerificador despachoVerificador;
+    @Autowired private com.hotclick.service.payment.StockReservationService stockReservationService;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -137,7 +141,14 @@ public class PedidoService {
                 pedidoPagoManualService.confirmar(pedido, estadoActual, referenciaPago);
             }
         }
+        // CMP-1: cancelar un pedido que todavía no pagó devuelve sus unidades reservadas.
+        // (Un pedido PAGADO ya consumió stockActual; su reposición es otra decisión.)
+        boolean liberarReserva = Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado
+            && RESERVA_ACTIVA.contains(estadoActual);
         pedido.setEstadoPedido(nuevoEstado);
+        if (liberarReserva) {
+            stockReservationService.liberarReservas(pedido);
+        }
         if (nota != null && !nota.isBlank()) {
             pedidoNotificacionAppender.appendNotificacion(pedido, nuevoEstado, nota);
         }

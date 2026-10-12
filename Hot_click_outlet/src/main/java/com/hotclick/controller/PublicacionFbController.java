@@ -26,7 +26,7 @@ public class PublicacionFbController {
                 : service.listarTodas();
             return ResponseEntity.ok(ResponseDTO.success("Publicaciones FB", data));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -39,7 +39,7 @@ public class PublicacionFbController {
             var pub = service.crearOActualizar(productoId, notas);
             return ResponseEntity.ok(ResponseDTO.success("Publicación generada", pub));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -49,7 +49,7 @@ public class PublicacionFbController {
             var pub = service.marcarPublicado(id);
             return ResponseEntity.ok(ResponseDTO.success("Marcado como publicado", pub));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -59,7 +59,7 @@ public class PublicacionFbController {
             service.eliminar(id);
             return ResponseEntity.ok(ResponseDTO.success("Publicación eliminada", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

@@ -36,10 +36,13 @@ public class SinpeController {
             String correo = SecurityContextHolder.getContext().getAuthentication().getName();
             var res = sinpeService.checkout(req, correo);
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));
+        } catch (com.hotclick.exception.StockInsuficienteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }
 
@@ -49,10 +52,13 @@ public class SinpeController {
         try {
             var res = sinpeService.checkout(req, null);
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));
+        } catch (com.hotclick.exception.StockInsuficienteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }
 
@@ -71,10 +77,13 @@ public class SinpeController {
             return ResponseEntity.ok(ResponseDTO.success("Comprobante recibido. En revisión.", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.StockInsuficienteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }
 
@@ -93,10 +102,13 @@ public class SinpeController {
             return ResponseEntity.ok(ResponseDTO.success("Comprobante recibido. En revisión.", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.StockInsuficienteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }
 
@@ -130,7 +142,7 @@ public class SinpeController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -150,7 +162,7 @@ public class SinpeController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

@@ -64,7 +64,7 @@ public class AuthRegistrationService {
             return ResponseEntity.ok(ResponseDTO.success(
                 "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -133,7 +133,7 @@ public class AuthRegistrationService {
             usuarioRepository.save(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Correo verificado correctamente", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 

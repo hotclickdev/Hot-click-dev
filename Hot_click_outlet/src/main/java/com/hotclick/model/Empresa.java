@@ -131,6 +131,14 @@ public class Empresa {
     @Column(name = "estado_plan", length = 20)
     private String estadoPlan = "ACTIVO";
 
+    /** Día de cobro de la mensualidad: 28 (por defecto) o 13 (V168). */
+    @Column(name = "dia_cobro", nullable = false)
+    private Integer diaCobro = 28;
+
+    /** Pago periódico de ventas con tarjeta: QUINCENAL o MENSUAL (V168). */
+    @Column(name = "frecuencia_payout", nullable = false, length = 10)
+    private String frecuenciaPayout = "QUINCENAL";
+
     @Column(name = "fecha_venc_plan")
     private LocalDate fechaVencPlan;
 
@@ -404,4 +412,8 @@ public class Empresa {
         long dias = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(Constants.ZONA_CR), trialHasta);
         return Math.max(0, dias);
     }
+    public Integer getDiaCobro() { return diaCobro; }
+    public void setDiaCobro(Integer diaCobro) { this.diaCobro = diaCobro; }
+    public String getFrecuenciaPayout() { return frecuenciaPayout; }
+    public void setFrecuenciaPayout(String frecuenciaPayout) { this.frecuenciaPayout = frecuenciaPayout; }
 }

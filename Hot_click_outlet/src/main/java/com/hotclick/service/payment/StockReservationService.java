@@ -25,6 +25,18 @@ public class StockReservationService {
     private static final Logger log = LoggerFactory.getLogger(StockReservationService.class);
 
     @Autowired private ProductoRepository productoRepository;
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
+
+    /**
+     * QA-CONC-1: si el Producto ya estaba en el contexto (cargado con los ítems del pedido), la consulta
+     * FOR UPDATE devuelve esa instancia con datos y @Version viejos → OptimisticLock al hacer flush.
+     * Con el lock ya tomado, refrescar trae la fila actual y las confirmaciones quedan en serie.
+     */
+    private Producto bloquearActual(Long id, java.util.function.Supplier<RuntimeException> siFalta) {
+        Producto p = productoRepository.findByIdForUpdate(id).orElseThrow(siFalta);
+        if (entityManager != null && entityManager.contains(p)) entityManager.refresh(p);
+        return p;
+    }
 
     /**
      * Valida y RESERVA stock con bloqueo pesimista.
@@ -41,7 +53,8 @@ public class StockReservationService {
             Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProductoId()));
 
-            if (!Boolean.TRUE.equals(p.getVisibleCatalogo()) || Boolean.TRUE.equals(p.getVendido())) {
+            // ESC-1: mismo criterio que el catálogo público (activo, visible, negocio ACTIVO y público).
+            if (!esPublicableEnMemoria(p) || Boolean.TRUE.equals(p.getVendido())) {
                 throw new IllegalStateException("Producto no disponible: " + p.getNombreProducto());
             }
             // Validar contra stockDisponible (stockActual - stockReservado)
@@ -78,8 +91,8 @@ public class StockReservationService {
      */
     public void confirmAndConsumeStock(Pedido pedido, Object eventSource, ApplicationEventPublisher eventPublisher) {
         for (PedidoItem item : pedido.getItems()) {
-            Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado al confirmar pago"));
+            Producto producto = bloquearActual(item.getProducto().getId(),
+                () -> new RecursoNoEncontradoException("Producto no encontrado al confirmar pago"));
 
             int cantidad   = item.getCantidad();
             int nuevoStock = producto.getStockActual() - cantidad;
@@ -116,9 +129,10 @@ public class StockReservationService {
 
         for (PedidoItem item : pedido.getItems()) {
             try {
-                Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId())
-                    .orElse(null);
-                if (producto == null) continue;
+                Producto producto;
+                try {
+                    producto = bloquearActual(item.getProducto().getId(), () -> new RecursoNoEncontradoException("Producto"));
+                } catch (RecursoNoEncontradoException e) { continue; }
 
                 int nuevoReservado = Math.max(0, producto.getStockReservado() - item.getCantidad());
                 producto.setStockReservado(nuevoReservado);
@@ -128,5 +142,13 @@ public class StockReservationService {
             }
         }
         log.info("Reservas liberadas para pedido {}", pedido.getNumeroPedido());
+    }
+
+    /** ESC-1/IDOR-10: equivale a ProductoRepository.esPublicable sobre la entidad ya bloqueada. */
+    public static boolean esPublicableEnMemoria(Producto p) {
+        if (p.getEstado() == null || p.getEstado() != com.hotclick.utils.Constants.ESTADO_ACTIVO) return false;
+        if (!Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
+        com.hotclick.model.Empresa e = p.getEmpresa();
+        return e == null || ("ACTIVO".equals(e.getEstadoEmpresa()) && Boolean.TRUE.equals(e.getVisibilidadPublica()));
     }
 }

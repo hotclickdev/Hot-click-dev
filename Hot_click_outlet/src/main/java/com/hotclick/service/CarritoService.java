@@ -56,7 +56,10 @@ public class CarritoService {
         Producto producto = productoRepository.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
 
-        if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
+        // ESC-1: solo productos publicables de este mismo comercio (ni borrados, ni ocultos, ni de otro negocio).
+        if (producto.getEstado() != Constants.ESTADO_ACTIVO
+                || !empresaId.equals(producto.getEmpresaId())
+                || !com.hotclick.service.payment.StockReservationService.esPublicableEnMemoria(producto)) {
             throw new IllegalStateException("Producto no disponible");
         }
         if (Boolean.TRUE.equals(producto.getEsUnico()) && Boolean.TRUE.equals(producto.getVendido())) {

@@ -58,8 +58,29 @@ public class CupoEmprendedorService {
             aplicarPlanGratis(empresa);
             return ResultadoAltaCupo.gratis(estadoPublico());
         }
+        // Sin cupo: Emprendedor puede tener mensualidad (12-oct-2026), pero el monto lo fija HOT_CLICK.
+        // Mientras esté vacío no hay nada que cobrar y el negocio entra igual que con cupo.
+        if (mensualidadSinCupo().isEmpty()) {
+            aplicarPlanGratis(empresa);
+            return ResultadoAltaCupo.gratis(estadoPublico());
+        }
         aplicarRequiereMembresia(empresa);
         return ResultadoAltaCupo.pago(estadoPublico());
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${hotclick.planes.emprendedor.mensualidad-desde-cupo-crc:}")
+    private String mensualidadDesdeCupo = "";
+
+    /** Mensualidad de Emprendedor para negocios sin cupo; vacía = HOT_CLICK aún no la fijó (no se cobra). */
+    public OptionalInt mensualidadSinCupo() {
+        String v = mensualidadDesdeCupo == null ? "" : mensualidadDesdeCupo.trim();
+        if (v.isEmpty()) return OptionalInt.empty();
+        try {
+            int n = Integer.parseInt(v);
+            return n > 0 ? OptionalInt.of(n) : OptionalInt.empty();
+        } catch (NumberFormatException e) {
+            return OptionalInt.empty();
+        }
     }
 
     public static boolean esDemo(String correoEmpresa) {

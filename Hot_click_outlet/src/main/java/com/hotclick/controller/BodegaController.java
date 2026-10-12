@@ -245,7 +245,7 @@ public class BodegaController {
         } catch (AccessDeniedException | com.hotclick.exception.TenantAccessDeniedException e) {
             throw e;
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 

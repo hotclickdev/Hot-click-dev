@@ -51,6 +51,7 @@ public class PosVentaService {
     @Autowired private TelegramNotificacionClienteService telegramNotificacionClienteService;
     @Autowired private VentaAvisoService ventaAvisoService;
     @Autowired private CompanyScope companyScope;
+    @Autowired private ClienteMostradorResolver clienteMostradorResolver;
 
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
@@ -79,10 +80,8 @@ public class PosVentaService {
     }
 
     private Usuario resolverCliente(Long clienteId) {
-        Long id = clienteId != null ? clienteId : Constants.ID_USUARIO_MOSTRADOR;
-        return usuarioRepository.findById(id)
-            .orElseGet(() -> usuarioRepository.findById(Constants.ID_USUARIO_MOSTRADOR)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario mostrador (id=999) no encontrado")));
+        if (clienteId == null) return clienteMostradorResolver.mostrador();
+        return usuarioRepository.findById(clienteId).orElseGet(clienteMostradorResolver::mostrador);
     }
 
     private Bodega resolverBodega(Long bodegaId, Long empresaId) {

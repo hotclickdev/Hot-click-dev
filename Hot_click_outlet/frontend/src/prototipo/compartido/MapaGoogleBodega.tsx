@@ -47,7 +47,7 @@ export default function MapaGoogleBodega({ latitud, longitud, onCambio }: Props)
       <p className="text-sm font-semibold text-hc-text">Punto en Google Maps</p>
       {hayPin ? (
         <iframe
-          title="Ubicación de la bodega en Google Maps"
+          title="Ubicación de la bodega en el mapa"
           src={urlMapaIncrustado(latitud, longitud)}
           className="h-48 w-full rounded-[14px] border border-hc-border"
           loading="lazy"

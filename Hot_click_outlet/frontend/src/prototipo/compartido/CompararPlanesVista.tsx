@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
-import OnvoSuscripcionEmbed from '@/features/billing/OnvoSuscripcionEmbed'
+import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
 import type { Id } from '@/types/api'
@@ -46,7 +46,6 @@ export default function CompararPlanesVista({
     setError,
     pagoPendiente,
     seleccionarPlan,
-    irAExito,
     cancelarPago,
   } = useCambiarPlan({ rutaExito })
 
@@ -102,13 +101,7 @@ export default function CompararPlanesVista({
             <p className="text-sm font-semibold">
               Pagar {pagoPendiente.planNombre ?? planElegido?.nombre}
             </p>
-            <OnvoSuscripcionEmbed
-              subscriptionId={pagoPendiente.subscriptionId}
-              customerId={pagoPendiente.customerId}
-              publishableKey={pagoPendiente.publishableKey}
-              onSuccess={() => { void irAExito() }}
-              onError={(msg) => setError(msg)}
-            />
+            <TilopaySuscripcionEmbed pago={pagoPendiente} />
           </div>
           {emp ? (
             <button

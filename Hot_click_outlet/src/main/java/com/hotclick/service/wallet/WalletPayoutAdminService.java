@@ -116,6 +116,7 @@ public class WalletPayoutAdminService {
         txLib.setReferenciaId(pr.getId());
         txLib.setDescripcion("Retiro rechazado — fondos liberados — payout #" + pr.getId());
         txRepo.save(txLib);
+        txRepo.liberarLiquidacion(pr.getId());
 
         pr.setEstado(PayoutRequest.RECHAZADO);
         pr.setNotasAdmin(notasAdmin);

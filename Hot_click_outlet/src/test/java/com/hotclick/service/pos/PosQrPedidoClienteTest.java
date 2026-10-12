@@ -38,6 +38,13 @@ import static org.mockito.Mockito.when;
 class PosQrPedidoClienteTest {
 
     @Mock UsuarioRepository usuarioRepo;
+    @Mock ClienteMostradorResolver clienteMostradorResolver;
+
+    @org.junit.jupiter.api.BeforeEach
+    void mostradorDelegaAlRepo() {
+        org.mockito.Mockito.lenient().when(clienteMostradorResolver.mostrador())
+            .thenAnswer(i -> usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR).orElseThrow());
+    }
     @Mock BodegaRepository bodegaRepo;
     @Mock ProductoRepository productoRepo;
     @Mock PedidoRepository pedidoRepo;

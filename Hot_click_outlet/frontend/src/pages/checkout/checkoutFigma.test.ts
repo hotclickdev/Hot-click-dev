@@ -83,7 +83,7 @@ describe('paquetes con el envío elegido', () => {
   it('suma el costo del método de cada paquete y marca la encomienda como variable', () => {
     const paquetes = paquetesDesdeItems([itemA, itemB])
     const resumen = paquetesConEnvioElegido(paquetes, { A: 'ENVIO_RAPIDO', B: 'ENCOMIENDA_PROPIA' })
-    expect(resumen.map((p) => p.envio)).toEqual([5000, 0])
+    expect(resumen.map((p) => p.envio)).toEqual([5000, 2000])
     expect(resumen.map((p) => p.envioVaria)).toEqual([false, true])
     expect(resumen[0].negocio).toBe('Casa Luna')
   })

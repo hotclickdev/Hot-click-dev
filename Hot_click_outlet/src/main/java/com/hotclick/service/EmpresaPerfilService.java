@@ -66,7 +66,15 @@ public class EmpresaPerfilService {
         if (body.containsKey("nombreComercial")) e.setNombreComercial(body.get("nombreComercial"));
         if (body.containsKey("descripcion")) e.setDescripcion(body.get("descripcion"));
         if (body.containsKey("telefonoEmpresa")) e.setTelefonoEmpresa(body.get("telefonoEmpresa"));
-        if (body.containsKey("correoEmpresa")) e.setCorreoEmpresa(body.get("correoEmpresa"));
+        if (body.containsKey("correoEmpresa")) {
+            String correo = body.get("correoEmpresa");
+            // ESC-6: correo de otro negocio → 400 claro (antes el índice único daba 500).
+            if (correo != null && !correo.equalsIgnoreCase(e.getCorreoEmpresa())
+                    && empresaRepository.existsByCorreoEmpresa(correo)) {
+                throw new IllegalArgumentException("Ese correo ya lo usa otro negocio.");
+            }
+            e.setCorreoEmpresa(correo);
+        }
         if (body.containsKey("numeroWhatsapp")) e.setNumeroWhatsapp(body.get("numeroWhatsapp"));
         if (body.containsKey("categoriaNegocio")) e.setCategoriaNegocio(body.get("categoriaNegocio"));
         if (body.containsKey("instagram")) e.setInstagram(body.get("instagram"));

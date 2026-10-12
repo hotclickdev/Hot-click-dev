@@ -57,18 +57,21 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/pos/qr/pago/{token}/intent → público, sin token (no 401)")
-    void posQrPaymentIntent_public_noAuth() throws Exception {
+    @DisplayName("POST /api/pos/qr/pago/{token}/tilopay → público, sin token (no 401)")
+    void posQrTilopay_public_noAuth() throws Exception {
         // Token inexistente: negocio responde 404; Spring Security no debe bloquear con 401
-        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/intent"))
+        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/tilopay"))
             .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("POST /api/pos/qr/pago/{token}/stripe → público, sin token (no 401)")
-    void posQrStripeCheckout_public_noAuth() throws Exception {
-        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/stripe"))
-            .andExpect(status().isNotFound());
+    @DisplayName("ONVO fuera del POS: /intent, /stripe y /sinpe-onvo ya no existen")
+    void posQrOnvo_eliminado() throws Exception {
+        for (String ruta : new String[]{"intent", "stripe", "sinpe-onvo"}) {
+            mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/" + ruta))
+                .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                    .isIn(404, 405));
+        }
     }
 
     // ── Endpoints autenticados — requieren JWT válido ─────────────────────────
