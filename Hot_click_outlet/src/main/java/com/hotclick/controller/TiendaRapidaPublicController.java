@@ -1,6 +1,8 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.dto.TiendaRapidaAceptarDTO;
+import jakarta.validation.Valid;
 import com.hotclick.security.ClientIpResolver;
 import com.hotclick.service.consola.IpConsentimientoHasher;
 import com.hotclick.service.consola.TiendaRapidaService;
@@ -13,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public/tienda-rapida")
@@ -36,16 +37,10 @@ public class TiendaRapidaPublicController {
 
     /** Acepta la responsabilidad del negocio, guarda los datos y consume el enlace. */
     @PostMapping("/{token}")
-    public ResponseEntity<ResponseDTO> aceptar(@PathVariable String token, @RequestBody Map<String, Object> body,
+    public ResponseEntity<ResponseDTO> aceptar(@PathVariable String token, @Valid @RequestBody TiendaRapidaAceptarDTO body,
                                                HttpServletRequest request) {
-        boolean acepto = Boolean.TRUE.equals(body.get("acepto"));
         return ResponseEntity.ok(ResponseDTO.success("Datos guardados", tiendas.aceptar(
-            token, acepto, texto(body.get("versionLegal")), hasher.hash(ips.resolve(request)),
-            texto(body.get("persona")), texto(body.get("cedula")), texto(body.get("correo")),
-            texto(body.get("telefono")), texto(body.get("clave")))));
-    }
-
-    private static String texto(Object valor) {
-        return valor == null ? null : valor.toString();
+            token, Boolean.TRUE.equals(body.acepto()), body.versionLegal(), hasher.hash(ips.resolve(request)),
+            body.persona(), body.cedula(), body.correo(), body.telefono(), body.clave())));
     }
 }
