@@ -29,15 +29,17 @@ public class ClerkSyncController {
 
     @PostMapping("/clerk-sync")
     public ResponseEntity<ResponseDTO> clerkSync(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestBody Map<String, String> body) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody(required = false) Map<String, String> bodyOpcional) {
 
+        Map<String, String> body = bodyOpcional == null ? Map.of() : bodyOpcional;
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // Sin token es falta de autenticación (401), no error del servidor ni del cuerpo.
+            return ResponseEntity.status(401).body(ResponseDTO.error("Token de Clerk requerido"));
+        }
         if (!clerkTokenService.isConfigured()) {
             return ResponseEntity.status(503)
                 .body(ResponseDTO.error("Autenticación social no disponible (CLERK_JWKS_URI no configurado)"));
-        }
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Token de Clerk requerido"));
         }
 
         Jwt clerkJwt;

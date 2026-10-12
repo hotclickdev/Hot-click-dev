@@ -43,7 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/registro-empresa")
-    public ResponseEntity<ResponseDTO> registroEmpresa(@RequestBody RegistroEmpresaDTO dto, HttpServletRequest httpRequest) {
+    public ResponseEntity<ResponseDTO> registroEmpresa(@org.springframework.validation.annotation.Validated({jakarta.validation.groups.Default.class, RegistroEmpresaDTO.AltaCuenta.class}) @RequestBody RegistroEmpresaDTO dto, HttpServletRequest httpRequest) {
         return authRegistrationService.registroEmpresa(dto, httpRequest);
     }
 
@@ -60,8 +60,9 @@ public class AuthController {
     // ── Cambiar negocio activo desde sesión ya autenticada ───────────────────
 
     @PostMapping("/cambiar-negocio")
-    public ResponseEntity<?> cambiarNegocio(@RequestBody Map<String, Object> body, HttpServletRequest request) {
-        return authLoginService.cambiarNegocio(body, request);
+    public ResponseEntity<?> cambiarNegocio(@RequestBody Map<String, Object> body, HttpServletRequest request,
+                                            jakarta.servlet.http.HttpServletResponse response) {
+        return authLoginService.cambiarNegocio(body, request, response);
     }
 
     // ── Listar negocios del usuario autenticado ───────────────────────────────
@@ -74,14 +75,15 @@ public class AuthController {
     // ── Seleccionar empresa tras login multi-negocio ──────────────────────────
 
     @PostMapping("/seleccionar-empresa")
-    public ResponseEntity<?> seleccionarEmpresa(@RequestBody Map<String, Object> body) {
-        return authLoginService.seleccionarEmpresa(body);
+    public ResponseEntity<?> seleccionarEmpresa(@RequestBody Map<String, Object> body,
+                                                jakarta.servlet.http.HttpServletResponse response) {
+        return authLoginService.seleccionarEmpresa(body, response);
     }
 
     // ── Crear segundo negocio desde cuenta existente ──────────────────────────
 
     @PostMapping("/nuevo-negocio")
-    public ResponseEntity<?> nuevoNegocio(@RequestBody RegistroEmpresaDTO dto, HttpServletRequest request) {
+    public ResponseEntity<?> nuevoNegocio(@org.springframework.validation.annotation.Validated @RequestBody RegistroEmpresaDTO dto, HttpServletRequest request) {
         return authRegistrationService.nuevoNegocio(dto, request);
     }
 

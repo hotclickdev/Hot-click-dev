@@ -1,6 +1,7 @@
 package com.hotclick.service.auth;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.security.JwtUtil;
@@ -30,6 +31,8 @@ public class AuthRefreshHandler {
     @Autowired private AuthSupport                 authSupport;
     @Autowired private SecurityAuditService        securityAuditService;
     @Autowired private UsuarioService              usuarioService;
+    @Autowired private com.hotclick.repository.MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
 
     public ResponseEntity<?> refresh(Map<String, String> body,
                                      HttpServletRequest request,
@@ -48,11 +51,25 @@ public class AuthRefreshHandler {
             }
             Usuario usuario = rt.getUsuario();
             String rol = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
+            Long empresaId = usuario.getEmpresaId();
             String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug() : null;
+            // P1-03: si el usuario eligió otro negocio, se mantiene ese negocio y el rol de su
+            // membresía, siempre que siga activa. Si ya no lo está, vuelve al negocio principal.
+            if (rt.getEmpresaActivaId() != null) {
+                MiembroEmpresa m = miembroEmpresaRepository
+                    .findByUsuarioIdAndEmpresaIdAndEstado(usuario.getId(), rt.getEmpresaActivaId(), 1).orElse(null);
+                com.hotclick.model.Empresa activa = m == null ? null
+                    : empresaRepository.findById(rt.getEmpresaActivaId()).orElse(null);
+                if (activa != null) {
+                    rol = RolMembresia.paraJwt(m, usuario);
+                    empresaId = activa.getId();
+                    empresaSlug = activa.getSlug();
+                }
+            }
             List<String> permisos = authSupport.permisosDe(usuario.getId());
             String newAccessToken = jwtUtil.generateTokenFull(
                 usuario.getCorreo(), usuario.getId(), rol,
-                usuario.getEmpresaId(), empresaSlug, permisos
+                empresaId, empresaSlug, permisos
             );
             return ResponseEntity.ok(Map.of(
                 "accessToken", newAccessToken,

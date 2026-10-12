@@ -7,6 +7,10 @@ import jakarta.validation.constraints.Size;
 
 public class RegistroEmpresaDTO {
 
+    /** Grupo de validación de los datos de la cuenta nueva (solo registro-empresa). */
+    public interface AltaCuenta {}
+
+
     @NotBlank(message = "El nombre de empresa es obligatorio")
     @Size(min = 2, max = 150, message = "El nombre de empresa debe tener entre 2 y 150 caracteres")
     private String nombreEmpresa;
@@ -14,35 +18,34 @@ public class RegistroEmpresaDTO {
     @Size(max = 150, message = "El nombre comercial no puede superar 150 caracteres")
     private String nombreComercial;
 
-    @Pattern(regexp = "^[a-z0-9\\-]{2,80}$", message = "El slug solo puede contener letras minúsculas, números y guiones (2–80 caracteres)")
+    @Pattern(regexp = "^$|^[a-z0-9\\-]{2,80}$", message = "El slug solo puede contener letras minúsculas, números y guiones (2–80 caracteres)")
     private String slug;
 
     @Email(message = "Correo de empresa inválido")
     @Size(max = 150, message = "El correo de empresa no puede superar 150 caracteres")
     private String correoEmpresa;
 
-    @Pattern(regexp = "^[0-9+\\-\\s()]{7,20}$", message = "Teléfono de empresa inválido (7–20 dígitos)")
+    @Pattern(regexp = "^$|^[0-9+\\-\\s()]{7,20}$", message = "Teléfono de empresa inválido (7–20 dígitos)")
     private String telefonoEmpresa;
 
-    @NotBlank(message = "El nombre del administrador es obligatorio")
-    @Size(min = 2, max = 100, message = "El nombre del administrador debe tener entre 2 y 100 caracteres")
+    @NotBlank(message = "El nombre del administrador es obligatorio", groups = AltaCuenta.class)
+    @Size(min = 2, max = 100, message = "El nombre del administrador debe tener entre 2 y 100 caracteres", groups = AltaCuenta.class)
     private String nombreAdmin;
 
-    @NotBlank(message = "El correo del administrador es obligatorio")
-    @Email(message = "Correo de administrador inválido")
-    @Size(max = 150, message = "El correo del administrador no puede superar 150 caracteres")
+    @NotBlank(message = "El correo del administrador es obligatorio", groups = AltaCuenta.class)
+    @Email(message = "Correo de administrador inválido", groups = AltaCuenta.class)
+    @Size(max = 150, message = "El correo del administrador no puede superar 150 caracteres", groups = AltaCuenta.class)
     private String correoAdmin;
 
     // Mismo criterio que RegisterRequest.contrasena: bcrypt solo usa los primeros
     // 72 bytes, el 128 es tope de request (docs/plan-argon2id-hashing-contrasenas.md).
-    // OJO: /auth/registro-empresa y /auth/nuevo-negocio reciben este DTO sin @Valid,
-    // así que hoy estas restricciones no se aplican; el único chequeo real es el
-    // "length() < 8" de EmprendedorRegistroService.registrar().
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 128, message = "La contraseña debe tener entre 8 y 128 caracteres")
+    // P2-01: /auth/registro-empresa valida Default + AltaCuenta; /auth/nuevo-negocio (usuario ya
+    // autenticado, no manda datos de cuenta) valida solo Default.
+    @NotBlank(message = "La contraseña es obligatoria", groups = AltaCuenta.class)
+    @Size(min = 8, max = 128, message = "La contraseña debe tener entre 8 y 128 caracteres", groups = AltaCuenta.class)
     private String passwordAdmin;
 
-    @Pattern(regexp = "^[0-9+\\-\\s()]{7,20}$", message = "Teléfono de administrador inválido (7–20 dígitos)")
+    @Pattern(regexp = "^$|^[0-9+\\-\\s()]{7,20}$", message = "Teléfono de administrador inválido (7–20 dígitos)", groups = AltaCuenta.class)
     private String telefonoAdmin;
 
     public String getNombreEmpresa()   { return nombreEmpresa; }

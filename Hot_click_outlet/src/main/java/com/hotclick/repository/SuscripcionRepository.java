@@ -63,4 +63,7 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     @Transactional
     @Query("UPDATE Suscripcion s SET s.estado = 'VENCIDO' WHERE s.estado = 'PAST_DUE' AND s.fechaFin < :hoy")
     int expirarPastDueBatch(@Param("hoy") LocalDate hoy);
+
+    /** P10-03: la empresa ya tuvo un trial alguna vez (el registro queda aunque expire o se cancele). */
+    boolean existsByEmpresa_IdAndTrialEndIsNotNull(Long empresaId);
 }

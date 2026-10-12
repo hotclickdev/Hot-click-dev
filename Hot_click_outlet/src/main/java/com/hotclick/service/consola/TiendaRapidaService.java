@@ -138,7 +138,7 @@ public class TiendaRapidaService {
      */
     @Transactional
     public Map<String, Object> aceptar(String token, boolean acepto, String versionLegal, String ipHash,
-                                       String persona, String cedula, String correo, String telefono, String clave) {
+                                       String persona, String cedula, String correo, String telefono) {
         if (!acepto) {
             throw new IllegalArgumentException("Para seguir tenés que aceptar ser el dueño o representante legal del negocio.");
         }
@@ -159,13 +159,14 @@ public class TiendaRapidaService {
             exigirVigente(fila, ahora);
             throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Este enlace ya se usó.");
         }
-        aplicarDatos(fila, persona, cedula, correo, telefono, clave);
+        aplicarDatos(fila, persona, cedula, correo, telefono);
         fila.setAceptadoEn(ahora);
         fila.setAceptadoIpHash(ipHash);
         fila.setAceptadoPor(fila.getUsuario().getId());
         fila.setVersionLegal(TiendaRapidaReglas.VERSION_LEGAL);
         Map<String, Object> datos = mapa(fila, false);
         datos.put("correo", fila.getUsuario().getCorreo());
+        datos.put("siguiente", "DEFINIR_CLAVE");
         return datos;
     }
 
@@ -180,7 +181,7 @@ public class TiendaRapidaService {
     }
 
     private void aplicarDatos(TiendaRapida fila, String persona, String cedula,
-                              String correo, String telefono, String clave) {
+                              String correo, String telefono) {
         String dueno = TiendaRapidaReglas.nombre(persona, "El nombre");
         String id = TiendaRapidaReglas.cedula(cedula);
         String mail = TiendaRapidaReglas.correo(correo);
@@ -202,8 +203,10 @@ public class TiendaRapidaService {
         usuario.setIdentificacion(id);
         usuario.setCorreo(mail);
         usuario.setTelefono(cel);
-        usuario.setContrasenaHash(claves.encode(TiendaRapidaReglas.clave(clave)));
-        usuario.setCorreoVerificado(true);
+        // Clave aleatoria e inutilizable: el dueño define la suya con el código de recuperación que
+        // llega a ese correo, lo que además prueba que el correo es suyo.
+        usuario.setContrasenaHash(claves.encode(tokenNuevo()));
+        usuario.setCorreoVerificado(false);
         empresa.setCorreoEmpresa(mail);
         empresa.setTelefonoEmpresa(cel);
         empresa.setRucCedula(id);

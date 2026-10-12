@@ -29,6 +29,10 @@ public class WhatsAppService {
 
     @Autowired private GeminiService geminiService;
     @Autowired private WhatsAppMessageSender messageSender;
+    @Autowired private com.hotclick.repository.WaMensajeLogRepository waLogRepo;
+    /** P8-02: tope de WhatsApp manuales del CRM por negocio por hora (además del límite por IP). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.crm.whatsapp.max-por-hora-negocio:30}")
+    private int maxCrmPorHoraNegocio = 30;
 
     // ── API pública ───────────────────────────────────────────────────────────
 
@@ -140,21 +144,62 @@ public class WhatsAppService {
             WaPlantilla.varianteAleatoria("NUEVO_PEDIDO_ADMIN"), ctx);
     }
 
+    /** P8-02: escenarios que un negocio puede mandar a mano desde el CRM (sin plantillas de admin). */
+    static final java.util.Set<String> ESCENARIOS_CRM =
+        java.util.Set.of("REACTIVACION", "CARRITO_ABANDONADO", "POST_ENTREGA_RESENA");
+    /** P8-02: claves de contexto que el negocio puede completar; nombre/segmento/puntos los pone el servidor. */
+    static final java.util.Set<String> CTX_CRM = java.util.Set.of("diasInactivo", "productos");
+    private static final int CTX_MAX = 300;
+    private static final java.util.regex.Pattern URL = java.util.regex.Pattern.compile(
+        "(?i)(https?://|www\\.|\\b[a-z0-9-]+\\.(com|net|org|io|co|cr|ly|me|app|link|xyz|info|site|online|shop|store)\\b)");
+
     /**
-     * Envío manual desde el CRM — admite cualquier escenario y contexto adicional.
-     * Devuelve el texto enviado para mostrarlo en el timeline del CRM.
+     * Envío manual desde el CRM: solo escenarios de {@link #ESCENARIOS_CRM} y claves de
+     * {@link #CTX_CRM}, sin enlaces (P8-02). Devuelve el texto enviado para el timeline del CRM.
      */
     public String enviarDesdecrm(Usuario u, Long empresaId, String escenario,
                                   Map<String, String> ctxExtra) {
         if (u.getTelefono() == null) throw new IllegalStateException("El cliente no tiene teléfono registrado");
+        Map<String, String> extra = validarCtxCrm(escenario, ctxExtra);
+        exigirCupoNegocio(empresaId);
 
-        Map<String, String> ctx = new LinkedHashMap<>();
+        Map<String, String> ctx = new LinkedHashMap<>(extra);
         ctx.put("nombre",   u.getNombre());
         ctx.put("segmento", WhatsAppHelpers.segmento(u));
         ctx.put("puntos",   String.valueOf(u.getPuntosFidelidad()));
-        if (ctxExtra != null) ctx.putAll(ctxExtra);
 
         WaPlantilla plantilla = WaPlantilla.varianteAleatoria(escenario);
         return messageSender.enviar(u, empresaId, null, plantilla, ctx);
+    }
+
+    static Map<String, String> validarCtxCrm(String escenario, Map<String, ?> ctxExtra) {
+        if (escenario == null || !ESCENARIOS_CRM.contains(escenario)) {
+            throw new IllegalArgumentException("Escenario de WhatsApp no permitido");
+        }
+        Map<String, String> limpio = new LinkedHashMap<>();
+        if (ctxExtra == null) return limpio;
+        for (Map.Entry<String, ?> e : ctxExtra.entrySet()) {
+            if (!CTX_CRM.contains(e.getKey())) {
+                throw new IllegalArgumentException("Dato de mensaje no permitido: " + e.getKey());
+            }
+            if (!(e.getValue() instanceof String v)) {
+                throw new IllegalArgumentException("Dato de mensaje inválido: " + e.getKey());
+            }
+            if (v.length() > CTX_MAX) throw new IllegalArgumentException("Dato de mensaje demasiado largo: " + e.getKey());
+            if (URL.matcher(v).find()) throw new IllegalArgumentException("El mensaje no puede incluir enlaces");
+            limpio.put(e.getKey(), v);
+        }
+        return limpio;
+    }
+
+    /** P8-02: límite por negocio. Cuenta los envíos de escenarios CRM de la última hora. */
+    void exigirCupoNegocio(Long empresaId) {
+        if (empresaId == null) return;
+        long ultimaHora = waLogRepo.countByEmpresaTiposDesde(empresaId, ESCENARIOS_CRM,
+            java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).minusHours(1));
+        if (ultimaHora >= maxCrmPorHoraNegocio) {
+            throw new com.hotclick.exception.CrmWhatsAppLimiteException(
+                "Llegaste al límite de " + maxCrmPorHoraNegocio + " mensajes de WhatsApp por hora. Probá más tarde.");
+        }
     }
 }

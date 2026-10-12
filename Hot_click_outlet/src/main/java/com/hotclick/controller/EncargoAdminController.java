@@ -15,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/encargos")
+@org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')") // P4-02 / SEG-4
 public class EncargoAdminController {
 
     @Autowired private EncargoService encargoService;

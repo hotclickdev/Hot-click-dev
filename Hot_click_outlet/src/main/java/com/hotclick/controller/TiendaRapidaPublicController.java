@@ -1,9 +1,15 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.dto.TiendaRapidaAceptarDTO;
+import jakarta.validation.Valid;
 import com.hotclick.security.ClientIpResolver;
 import com.hotclick.service.consola.IpConsentimientoHasher;
 import com.hotclick.service.consola.TiendaRapidaService;
+import com.hotclick.service.PasswordResetService;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public/tienda-rapida")
@@ -22,9 +27,13 @@ public class TiendaRapidaPublicController {
     private final TiendaRapidaService tiendas;
     private final ClientIpResolver ips;
     private final IpConsentimientoHasher hasher;
+    private final PasswordResetService claves;
+    private static final Logger log = LoggerFactory.getLogger(TiendaRapidaPublicController.class);
 
-    public TiendaRapidaPublicController(TiendaRapidaService tiendas, ClientIpResolver ips, IpConsentimientoHasher hasher) {
+    public TiendaRapidaPublicController(TiendaRapidaService tiendas, ClientIpResolver ips, IpConsentimientoHasher hasher,
+                                        PasswordResetService claves) {
         this.tiendas = tiendas;
+        this.claves = claves;
         this.ips = ips;
         this.hasher = hasher;
     }
@@ -36,16 +45,18 @@ public class TiendaRapidaPublicController {
 
     /** Acepta la responsabilidad del negocio, guarda los datos y consume el enlace. */
     @PostMapping("/{token}")
-    public ResponseEntity<ResponseDTO> aceptar(@PathVariable String token, @RequestBody Map<String, Object> body,
+    public ResponseEntity<ResponseDTO> aceptar(@PathVariable String token, @Valid @RequestBody TiendaRapidaAceptarDTO body,
                                                HttpServletRequest request) {
-        boolean acepto = Boolean.TRUE.equals(body.get("acepto"));
-        return ResponseEntity.ok(ResponseDTO.success("Datos guardados", tiendas.aceptar(
-            token, acepto, texto(body.get("versionLegal")), hasher.hash(ips.resolve(request)),
-            texto(body.get("persona")), texto(body.get("cedula")), texto(body.get("correo")),
-            texto(body.get("telefono")), texto(body.get("clave")))));
-    }
-
-    private static String texto(Object valor) {
-        return valor == null ? null : valor.toString();
+        Map<String, Object> datos = tiendas.aceptar(
+            token, Boolean.TRUE.equals(body.acepto()), body.versionLegal(), hasher.hash(ips.resolve(request)),
+            body.persona(), body.cedula(), body.correo(), body.telefono());
+        // Ya confirmado: se manda el código para definir la contraseña. Si el correo falla, la tienda
+        // queda guardada y el dueño puede pedirlo de nuevo en /recuperar-contrasena.
+        try {
+            claves.enviarCodigo(String.valueOf(datos.get("correo")));
+        } catch (RuntimeException e) {
+            log.warn("[tienda-rapida] no se pudo enviar el código para definir la clave: {}", e.getClass().getSimpleName());
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Datos guardados", datos));
     }
 }

@@ -43,10 +43,13 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5);
+        jdbcTemplate.update("INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado) "
+            + "SELECT 'RESET_PASSWORD', 600, 6, 1 WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_PASSWORD')");
     }
 
     @AfterEach
     void tearDown() {
+        jdbcTemplate.update("DELETE FROM hot_click_codigo_otp_tb");
         rapidas.deleteAll();
         bodegas.deleteAll();
         miembroEmpresaRepository.deleteAll();
@@ -118,7 +121,8 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
                 .with(r -> { r.setRemoteAddr("203.0.113.9"); return r; })
                 .content(aceptarBody(true, "ana-nr@test.cr")))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.estado").value("LISTA"));
+            .andExpect(jsonPath("$.data.estado").value("LISTA"))
+            .andExpect(jsonPath("$.data.siguiente").value("DEFINIR_CLAVE"));
 
         TiendaRapida fila = rapidas.findByTokenHash(TiendaRapidaReglas.hashToken(token)).orElseThrow();
         assertThat(fila.getUsadoEn()).isNotNull();
@@ -133,6 +137,13 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
         Usuario dueno = usuarioRepository.findByCorreo("ana-nr@test.cr").orElseThrow();
         assertThat(dueno.getEmpresa().getId()).isEqualTo(fila.getEmpresa().getId());
         assertThat(dueno.getRoles()).anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
+        // La contraseña ya no viaja por el enlace: una "clave" enviada se ignora, el correo queda sin
+        // verificar y sale el código de recuperación para que el dueño defina la suya.
+        assertThat(passwordEncoder.matches("clave-segura-1", dueno.getContrasenaHash())).isFalse();
+        assertThat(dueno.getCorreoVerificado()).isFalse();
+        Integer codigos = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_codigo_otp_tb WHERE fk_id_usuario = ?", Integer.class, dueno.getId());
+        assertThat(codigos).isEqualTo(1);
 
         mockMvc.perform(post(PUBLICO + token).contentType(MediaType.APPLICATION_JSON)
             .content(aceptarBody(true, "otra-nr@test.cr"))).andExpect(status().isConflict());

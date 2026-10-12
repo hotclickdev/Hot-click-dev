@@ -35,7 +35,10 @@ public class AuthTenantSwitchHandler {
     @Autowired private EmpresaRepository           empresaRepository;
     @Autowired private AuthSupport                 authSupport;
 
-    public ResponseEntity<?> cambiarNegocio(Map<String, Object> body, HttpServletRequest request) {
+    // P1-03: RolMembresia lee Usuario.roles (lazy); sin transacción daba LazyInitializationException.
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<?> cambiarNegocio(Map<String, Object> body, HttpServletRequest request,
+                                            jakarta.servlet.http.HttpServletResponse response) {
         try {
             Usuario currentUser = authSupport.usuarioFromRequest(request);
             Long empresaId = Long.parseLong(body.get("empresaId").toString());
@@ -51,7 +54,7 @@ public class AuthTenantSwitchHandler {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             String rol = RolMembresia.paraJwt(membresia, currentUser);
             String accessToken = jwtUtil.generateToken(currentUser.getCorreo(), currentUser.getId(), rol, empresaId, empresa.getSlug());
-            refreshTokenService.crear(currentUser);
+            entregarRefresh(response, refreshTokenService.crear(currentUser, empresaId));
             String nombre = currentUser.getNombre() != null ? currentUser.getNombre() : currentUser.getCorreo().split("@")[0];
             AuthResponse resp = new AuthResponse(accessToken, null, currentUser.getId(), currentUser.getCorreo(), rol, nombre);
             resp.setEmpresaId(empresaId);
@@ -89,7 +92,10 @@ public class AuthTenantSwitchHandler {
         }
     }
 
-    public ResponseEntity<?> seleccionarEmpresa(Map<String, Object> body) {
+    // P1-03: RolMembresia lee Usuario.roles (lazy); sin transacción daba LazyInitializationException.
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<?> seleccionarEmpresa(Map<String, Object> body,
+                                                jakarta.servlet.http.HttpServletResponse response) {
         String tempToken = (String) body.get("tempToken");
         Object empresaIdRaw = body.get("empresaId");
         if (tempToken == null || empresaIdRaw == null)
@@ -112,7 +118,7 @@ public class AuthTenantSwitchHandler {
             // en esa empresa (no el rol global de la cuenta)
             String rol          = RolMembresia.paraJwt(membresia, usuario);
             String accessToken = jwtUtil.generateToken(usuario.getCorreo(), userId, rol, empresaId, empresa.getSlug());
-            refreshTokenService.crear(usuario);
+            entregarRefresh(response, refreshTokenService.crear(usuario, empresaId));
             String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
             AuthResponse resp  = new AuthResponse(accessToken, null, userId, usuario.getCorreo(), rol, nombre);
             resp.setEmpresaId(empresaId);
@@ -125,4 +131,13 @@ public class AuthTenantSwitchHandler {
         }
     }
 
+    /**
+     * P1-03: antes se creaba un refresh nuevo (revocando el de la cookie) sin entregarlo, y el
+     * siguiente refresh se tomaba como reuso. Ahora la cookie se reemplaza por el token atado al negocio.
+     */
+    private void entregarRefresh(jakarta.servlet.http.HttpServletResponse response, com.hotclick.model.RefreshToken rt) {
+        if (response != null && rt != null && rt.getRawToken() != null) {
+            refreshTokenService.writeCookie(response, rt.getRawToken());
+        }
+    }
 }
