@@ -38,6 +38,7 @@ public class PosQrPedidoFactory {
     private static final Logger log = LoggerFactory.getLogger(PosQrPedidoFactory.class);
 
     @Autowired private UsuarioRepository                  usuarioRepo;
+    @Autowired private ClienteMostradorResolver           clienteMostradorResolver;
     @Autowired private BodegaRepository                   bodegaRepo;
     @Autowired private ProductoRepository                 productoRepo;
     @Autowired private PedidoRepository                   pedidoRepo;
@@ -84,10 +85,8 @@ public class PosQrPedidoFactory {
     }
 
     Usuario resolverCliente(Long clienteId) {
-        Long id = clienteId != null ? clienteId : Constants.ID_USUARIO_MOSTRADOR;
-        return usuarioRepo.findById(id)
-            .orElseGet(() -> usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario mostrador no encontrado")));
+        if (clienteId == null) return clienteMostradorResolver.mostrador();
+        return usuarioRepo.findById(clienteId).orElseGet(clienteMostradorResolver::mostrador);
     }
 
     Bodega resolverBodega(Long bodegaId, Long empresaId) {
