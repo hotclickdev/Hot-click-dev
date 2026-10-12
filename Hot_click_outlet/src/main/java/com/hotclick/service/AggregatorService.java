@@ -76,6 +76,10 @@ public class AggregatorService {
             log.warn("[aggregator] Pedido {} sin empresa — no se acredita wallet", pedido.getId());
             return;
         }
+        if (esEfectivoPos(pedido)) {
+            log.info("[aggregator] Pedido {} POS en efectivo: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
+            return;
+        }
         if (bruto <= 0) {
             log.warn("[aggregator] Pedido {} total ≤ 0 — no se acredita wallet", pedido.getId());
             return;
@@ -111,6 +115,10 @@ public class AggregatorService {
 
         if (empresaId == null) {
             log.warn("[aggregator] Pedido {} sin empresa — no se acredita wallet", pedido.getId());
+            return;
+        }
+        if (esEfectivoPos(pedido)) {
+            log.info("[aggregator] Pedido {} POS en efectivo: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
             return;
         }
         if (bruto <= 0) {
@@ -189,5 +197,11 @@ public class AggregatorService {
             return empresa.getPlanSaas();
         }
         return AggregatorCommissionMath.PLAN_EMPRENDEDOR;
+    }
+
+    /** Decisión HOT_CLICK 12-oct-2026: el efectivo cobrado en el POS no se acredita ni se liquida. */
+    public static boolean esEfectivoPos(Pedido pedido) {
+        return pedido != null && "POS".equalsIgnoreCase(pedido.getOrigen())
+            && pedido.getMetodoPago() != null && "EFECTIVO".equalsIgnoreCase(pedido.getMetodoPago().trim());
     }
 }

@@ -73,6 +73,22 @@ class WalletLiquidacionTest {
     }
 
     @Test
+    void efectivoPos_noEntraEnNingunPayout() {
+        when(txRepo.findPedidosPosEfectivo(anyCollection())).thenReturn(List.of(2L));
+        assertThat(service.liquidar(EMP, PayoutRequest.LIQ_TARJETA, CORTE)).isEmpty(); // solo quedaba la devolución
+        assertThat(service.liquidar(EMP, PayoutRequest.LIQ_CONTRA_ENTREGA, CORTE).orElseThrow().getMonto()).isEqualTo(8_100L);
+    }
+
+    @Test
+    void aggregator_noAcreditaEfectivoPos() {
+        com.hotclick.model.Pedido p = new com.hotclick.model.Pedido();
+        p.setOrigen("POS"); p.setMetodoPago("EFECTIVO");
+        assertThat(com.hotclick.service.AggregatorService.esEfectivoPos(p)).isTrue();
+        p.setMetodoPago("SINPE");
+        assertThat(com.hotclick.service.AggregatorService.esEfectivoPos(p)).isFalse();
+    }
+
+    @Test
     void nuncaMasQueElSaldoDisponible() {
         when(walletRepo.findSaldoDisponible(EMP)).thenReturn(Optional.of(5_000L));
         assertThat(service.liquidar(EMP, PayoutRequest.LIQ_CONTRA_ENTREGA, CORTE).orElseThrow().getMonto())

@@ -61,11 +61,15 @@ public class WalletLiquidacionService {
             if (WalletTransaccion.CREDITO_VENTA.equals(t.getTipo()) && t.getReferenciaId() != null) pedidoIds.add(t.getReferenciaId());
         }
         Set<Long> cod = pedidoIds.isEmpty() ? Set.of() : new HashSet<>(txRepo.findPedidosContraEntrega(pedidoIds));
+        Set<Long> posEfectivo = pedidoIds.isEmpty() ? Set.of() : new HashSet<>(txRepo.findPedidosPosEfectivo(pedidoIds));
 
         List<WalletTransaccion> cubiertos = new ArrayList<>();
         long neto = 0;
         for (WalletTransaccion t : pendientes) {
             boolean esVenta = WalletTransaccion.CREDITO_VENTA.equals(t.getTipo());
+            if (esVenta && t.getReferenciaId() != null && posEfectivo.contains(t.getReferenciaId())) {
+                continue; // efectivo POS: no va en ningún payout
+            }
             if (esVenta) {
                 boolean esCod = t.getReferenciaId() != null && cod.contains(t.getReferenciaId());
                 if (esCod != contraEntrega) continue;
