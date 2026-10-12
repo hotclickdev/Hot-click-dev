@@ -6,11 +6,12 @@ import AdminRoleSwitch from '@/app/AdminRoleSwitch'
 import PrototipoRedirect from '@/app/PrototipoRedirect'
 import { CajaAcceso, hijosCaja } from '@/app/CajaShell'
 import PlataformaAcceso from '@/app/PlataformaAcceso'
+import { RequiereClerk } from '@/components/auth/ClerkDisponible'
 
-const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-const ClerkShell = CLERK_ENABLED ? lazy(() => import('@/components/auth/ClerkShell')) : null
-const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : null
-const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
+// La clave de Clerk se resuelve en runtime dentro de ClerkShell (static/ va sin VITE_*).
+const ClerkShell = lazy(() => import('@/components/auth/ClerkShell'))
+const SSOCallback = lazy(() => import('@/pages/SSOCallback'))
+const SSOComplete = lazy(() => import('@/pages/SSOComplete'))
 
 const InicioPlataforma = lazy(() => import('@/pages/plataforma/InicioPlataforma'))
 const NegociosPlataforma = lazy(() => import('@/pages/plataforma/NegociosPlataforma'))
@@ -127,19 +128,12 @@ export default function AppRoutes() {
       <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
       <Route path="/pago/tilopay/respuesta" element={<TilopayRespuestaPage />} />
 
-      {CLERK_ENABLED && ClerkShell && SSOCallback && SSOComplete ? (
-        <Route element={<ClerkShell />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/registro" element={<RegisterPage />} />
-          <Route path="/sso-callback" element={<SSOCallback />} />
-          <Route path="/sso-complete" element={<SSOComplete />} />
-        </Route>
-      ) : (
-        <>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/registro" element={<RegisterPage />} />
-        </>
-      )}
+      <Route element={<ClerkShell />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/sso-callback" element={<RequiereClerk><SSOCallback /></RequiereClerk>} />
+        <Route path="/sso-complete" element={<RequiereClerk><SSOComplete /></RequiereClerk>} />
+      </Route>
       <Route path="/recuperar-contrasena" element={<RecuperarContrasenaPage />} />
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
       <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
