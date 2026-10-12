@@ -39,12 +39,15 @@ public class SuscripcionTilopayService {
     private final SuscripcionOnvoChangeService planLocal;
     private final BillingLedgerWriter ledgerWriter;
     private final int diaCobroDefault;
+    private final String prorrateo;
 
     public SuscripcionTilopayService(CobroSuscripcionRepository cobroRepo, PlanRepository planRepo,
                                      EmpresaRepository empresaRepo, SuscripcionRepository suscripcionRepo,
                                      TilopayService tilopayService, SuscripcionOnvoChangeService planLocal,
                                      BillingLedgerWriter ledgerWriter,
-                                     @Value("${hotclick.billing.dia-cobro-default:28}") int diaCobroDefault) {
+                                     @Value("${hotclick.billing.dia-cobro-default:28}") int diaCobroDefault,
+                                     @Value("${hotclick.billing.prorrateo:DIAS}") String prorrateo) {
+        this.prorrateo = prorrateo;
         this.cobroRepo = cobroRepo;
         this.planRepo = planRepo;
         this.empresaRepo = empresaRepo;
@@ -87,7 +90,10 @@ public class SuscripcionTilopayService {
         CobroSuscripcion c = new CobroSuscripcion();
         c.setEmpresaId(empresaId);
         c.setPlanId(plan.getId());
-        c.setMontoCrc(plan.getPrecioMensual().longValue());
+        long precio = plan.getPrecioMensual().longValue();
+        c.setMontoCrc(CobroSuscripcion.MOTIVO_ALTA.equals(motivo)
+            ? ProrrateoSuscripcion.montoAlta(prorrateo, precio, c.getFechaCreacion().toLocalDate(), diaCobro(empresaId))
+            : precio);
         c.setMotivo(motivo);
         c.setOrderNumber("SUB-" + empresaId + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase());
         return cobroRepo.save(c);
@@ -135,8 +141,11 @@ public class SuscripcionTilopayService {
         Plan plan = planRepo.findById(cobro.getPlanId()).orElseThrow();
         planLocal.aplicarPlanLocal(empresaId, plan.getNombre(), null);
         Empresa empresa = empresaRepo.findById(empresaId).orElseThrow();
-        LocalDate fin = proximoCobro(LocalDate.now(Constants.ZONA_CR),
-            empresa.getDiaCobro() != null ? empresa.getDiaCobro() : diaCobroDefault);
+        int dia = empresa.getDiaCobro() != null ? empresa.getDiaCobro() : diaCobroDefault;
+        // El alta prorrateada cubre hasta el próximo día de cobro, contado desde que se creó el cobro.
+        LocalDate fin = CobroSuscripcion.MOTIVO_ALTA.equals(cobro.getMotivo())
+            ? ProrrateoSuscripcion.finPrimerPeriodo(prorrateo, cobro.getFechaCreacion().toLocalDate(), dia)
+            : proximoCobro(LocalDate.now(Constants.ZONA_CR), dia);
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElseThrow();
         sub.setFechaFin(fin);
         suscripcionRepo.save(sub);
@@ -144,6 +153,10 @@ public class SuscripcionTilopayService {
         empresaRepo.save(empresa);
         ledgerWriter.registrar(empresa, sub, BillingLedger.TIPO_COBRO_OK, BillingLedger.PROVEEDOR_TILOPAY,
             cobro.getOrderNumber(), null, "crc", "Mensualidad " + plan.getNombre() + " pagada con Tilopay");
+    }
+
+    private int diaCobro(Long empresaId) {
+        return empresaRepo.findById(empresaId).map(Empresa::getDiaCobro).orElse(null) instanceof Integer d ? d : diaCobroDefault;
     }
 
     /** Próxima fecha de cobro con el día del negocio (13 o 28), al menos ~un mes después de hoy. */
