@@ -64,7 +64,7 @@ class SuscripcionTilopayServiceTest {
         when(cobroRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         SuscripcionTilopayService svc = new SuscripcionTilopayService(cobroRepo, planRepo,
             mock(EmpresaRepository.class), mock(SuscripcionRepository.class), tilopay,
-            mock(SuscripcionOnvoChangeService.class), mock(BillingLedgerWriter.class), 28);
+            mock(SuscripcionOnvoChangeService.class), mock(BillingLedgerWriter.class), 28, "NINGUNO");
 
         Plan pyme = new Plan();
         pyme.setId(2L);
@@ -81,5 +81,18 @@ class SuscripcionTilopayServiceTest {
         sinPrecio.setPrecioMensual(null);
         when(planRepo.findById(3L)).thenReturn(Optional.of(sinPrecio));
         assertThatThrownBy(() -> svc.iniciarCambioPlan(5L, 3L)).isInstanceOf(PlanNoDisponibleException.class);
+    }
+
+    @Test
+    void prorrateoPorDias_primerPeriodoHastaElDiaDeCobro() {
+        LocalDate hoy = LocalDate.of(2026, 10, 12);
+        assertThat(ProrrateoSuscripcion.siguienteDiaCobro(hoy, 28)).isEqualTo(LocalDate.of(2026, 10, 28));
+        assertThat(ProrrateoSuscripcion.siguienteDiaCobro(LocalDate.of(2026, 10, 28), 28)).isEqualTo(LocalDate.of(2026, 11, 28));
+        // 16 de 30 días → ceil(12900 * 16 / 30)
+        assertThat(ProrrateoSuscripcion.montoAlta("DIAS", 12_900, hoy, 28)).isEqualTo(6_880L);
+        assertThat(ProrrateoSuscripcion.montoAlta(null, 12_900, hoy, 28)).isEqualTo(6_880L);
+        assertThat(ProrrateoSuscripcion.montoAlta("NINGUNO", 12_900, hoy, 28)).isEqualTo(12_900L);
+        assertThat(ProrrateoSuscripcion.montoAlta("DIAS", 12_900, LocalDate.of(2026, 9, 28), 28)).isEqualTo(12_900L);
+        assertThat(ProrrateoSuscripcion.finPrimerPeriodo("NINGUNO", hoy, 28)).isEqualTo(LocalDate.of(2026, 11, 28));
     }
 }
