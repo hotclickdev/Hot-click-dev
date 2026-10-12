@@ -1,0 +1,1 @@
+import{Ft as e}from"./index-B8NKeBvE.js";function t(t){return e(Math.round(t??0))}export{t};
