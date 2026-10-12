@@ -94,6 +94,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/public/branding").permitAll()
             .requestMatchers(POST, "/api/public/chat").permitAll()
             .requestMatchers(POST, "/api/public/embudo").permitAll()
+            .requestMatchers(POST, "/api/public/categorias/*/visita").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/chat").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/search-by-image").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/feedback").permitAll()

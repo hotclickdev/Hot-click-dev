@@ -38,6 +38,7 @@ public class CategoriaController {
     @Autowired private CompanyScope        companyScope;
     @Autowired private InputSanitizer      sanitizer;
     @Autowired private CategoriaCatalogoQueries categoriaCatalogoQueries;
+    @Autowired private com.hotclick.service.categoria.CategoriaVisitaService categoriaVisitaService;
 
     // Sin @Cacheable: el resultado varía según el usuario autenticado (empresa) vs público.
     // Cachear con clave única causaría que un usuario contamine el caché del otro.
@@ -57,6 +58,12 @@ public class CategoriaController {
     public ResponseEntity<ResponseDTO> listarPublicas() {
         var cats = categoriaRepository.findPublicasByEstado(Constants.ESTADO_ACTIVO);
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
+    }
+
+    /** Hasta 3 categorías raíz para la barra del header: más visitadas (30 días) o con más productos. Caché 300s. */
+    @GetMapping("/publicas/top")
+    public ResponseEntity<ResponseDTO> listarTop() {
+        return ResponseEntity.ok(ResponseDTO.success("Categorías top", categoriaVisitaService.top()));
     }
 
     @GetMapping("/publicas/con-productos")

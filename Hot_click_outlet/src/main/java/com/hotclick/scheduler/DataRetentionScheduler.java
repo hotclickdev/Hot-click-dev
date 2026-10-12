@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
  *   - hot_click_cola_facturacion_offline_tb:     30 días (estado COMPLETADO o AGOTADO)
  *
  *   - hot_click_embudo_sesion_tb:                90 días (sesión anónima del embudo)
+ *   - hot_click_categoria_visita_dia_tb:         90 días (contador agregado; el ranking mira 30)
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
@@ -67,6 +68,7 @@ public class DataRetentionScheduler {
         total += marcarEncargosVencidos();
         total += limpiarEncargosViejos();
         total += limpiarEmbudoSesiones();
+        total += limpiarVisitasCategoria();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -211,6 +213,18 @@ public class DataRetentionScheduler {
             return n;
         } catch (Exception e) {
             log.warn("[retention] encargos limpieza: {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    private int limpiarVisitasCategoria() {
+        try {
+            int n = jdbc.update("DELETE FROM hot_click_categoria_visita_dia_tb WHERE dia < ?",
+                java.time.LocalDate.now(Constants.ZONA_CR).minusDays(90));
+            if (n > 0) log.info("[retention] categoria_visita_dia: {} eliminados (> 90 días)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] categoria_visita_dia: tabla no disponible, omitiendo — {}", e.getMessage());
             return 0;
         }
     }
