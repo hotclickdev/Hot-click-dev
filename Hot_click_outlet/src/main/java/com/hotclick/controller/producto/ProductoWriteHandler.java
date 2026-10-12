@@ -109,6 +109,8 @@ public class ProductoWriteHandler {
         try {
             int archivados = productoBulkOperationsService.archivarSinStock();
             return ResponseEntity.ok(ResponseDTO.success(archivados + " productos desactivados", null));
+        } catch (TenantAccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Error: " + e.getMessage()));
         }
@@ -171,8 +173,8 @@ public class ProductoWriteHandler {
 
     /** Aplicar oferta a todos los productos de una categoría */
     public ResponseEntity<ResponseDTO> aplicarOfertaCategoria(Long categoriaId, Map<String, Object> body) {
+        Long empresaId = companyScope.requireEmpresaIdOrGlobalAdmin();
         try {
-            Long empresaId = companyScope.getCurrentEmpresaId();
             boolean enOferta = Boolean.TRUE.equals(body.get("enOferta"));
             Integer pct = body.get("porcentajeDescuento") != null
                 ? ((Number) body.get("porcentajeDescuento")).intValue() : null;

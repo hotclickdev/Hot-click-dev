@@ -51,7 +51,8 @@ public class ProductoCatalogHandler {
     }
 
     public ResponseEntity<ResponseDTO> listarTodosAdmin(int page, int size) {
-        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        // Gestión: sin empresa → 403 EMPRESA_REQUERIDA (nunca el catálogo global con costos).
+        Long empresaId = companyScope.requireEmpresaIdOrGlobalAdmin();
         var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE));
         var productos = empresaId != null
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)

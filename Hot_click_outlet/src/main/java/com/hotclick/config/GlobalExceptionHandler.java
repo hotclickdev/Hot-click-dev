@@ -47,6 +47,13 @@ public class GlobalExceptionHandler {
 
     // ── Dominio ───────────────────────────────────────────────────────────────
 
+    @ExceptionHandler(com.hotclick.exception.EmpresaRequeridaException.class)
+    public ResponseEntity<ResponseDTO> handleEmpresaRequerida(com.hotclick.exception.EmpresaRequeridaException ex) {
+        log.warn("Cuenta sin empresa en endpoint de negocio");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+    }
+
     @ExceptionHandler(TenantAccessDeniedException.class)
     public ResponseEntity<ResponseDTO> handleTenantDenied(TenantAccessDeniedException ex) {
         log.warn("Tenant access denied: {}", ex.getMessage());

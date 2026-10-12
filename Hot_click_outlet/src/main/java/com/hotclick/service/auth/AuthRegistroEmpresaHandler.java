@@ -50,6 +50,10 @@ public class AuthRegistroEmpresaHandler {
             AuthResponse authResponse = authSupport.buildAuthResponse(emprendedor);
             Map<String, Object> resultado = buildRegistroResultado(authResponse, otpEnviado, otpError);
             return ResponseEntity.ok(ResponseDTO.success("Empresa registrada exitosamente", resultado));
+        } catch (com.hotclick.exception.CorreoYaRegistradoException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(e.getMessage(),
+                Map.of("codigo", com.hotclick.exception.CorreoYaRegistradoException.CODIGO,
+                       "siguientePaso", com.hotclick.exception.CorreoYaRegistradoException.SIGUIENTE_PASO)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
