@@ -30,10 +30,13 @@ public class PaymentController {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (com.hotclick.exception.StockInsuficienteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }
 
@@ -67,10 +70,13 @@ public class PaymentController {
         try {
             PaymentCheckoutResponse response = paymentService.checkout(request, null);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (com.hotclick.exception.StockInsuficienteException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }
 
