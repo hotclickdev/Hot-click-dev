@@ -77,8 +77,24 @@ class CupoEmprendedorServiceTest {
     }
 
     @Test
-    @DisplayName("Sin filas en RETURNING, requiere membresía")
+    @DisplayName("Cupo lleno y sin mensualidad fijada: entra activo, no hay nada que cobrar")
+    void cupoLlenoSinMensualidadEntraActivo() {
+        stubPlan();
+        when(jdbc.query(contains("RETURNING usados"), any(RowMapper.class)))
+            .thenReturn(List.of());
+        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
+            .thenReturn(CupoEmprendedorEstado.of(70, 70));
+
+        Empresa empresa = new Empresa();
+        service.aplicarAlta(empresa, "nueva@correo.com");
+
+        assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
+    }
+
+    @Test
+    @DisplayName("Cupo lleno con mensualidad fijada: requiere membresía")
     void cupoLlenoRequiereMembresia() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "mensualidadDesdeCupo", "1");
         stubPlan();
         when(jdbc.query(contains("RETURNING usados"), any(RowMapper.class)))
             .thenReturn(List.of());
