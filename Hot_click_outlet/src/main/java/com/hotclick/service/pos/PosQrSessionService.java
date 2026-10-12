@@ -18,7 +18,6 @@ import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,8 +45,6 @@ public class PosQrSessionService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Value("${onvo.sinpe-destino:+50670196686}")
-    private String onvoSinpeDestino;
 
     @Transactional
     public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
@@ -225,10 +222,8 @@ public class PosQrSessionService {
 
     String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
         if (PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
-            if (onvoSinpeDestino != null && !onvoSinpeDestino.isBlank()) {
-                return onvoSinpeDestino;
-            }
-            return "+50670196686";
+            // SINPE por Tilopay: el número, el monto y el código los da el SDK al iniciar el pago.
+            return "";
         }
         return numeroSinpe(empresa);
     }

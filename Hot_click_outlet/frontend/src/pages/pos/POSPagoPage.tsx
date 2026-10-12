@@ -48,9 +48,7 @@ export default function POSPagoPage() {
     info,
     vista,
     mensajeError,
-    iniciandoPago,
     recargar,
-    pagarHosted,
     reintentar,
     marcarExitoEmbed,
   } = usePosPagoQr(token)
@@ -150,28 +148,24 @@ export default function POSPagoPage() {
 
       {esTarjeta && !modoEmbed ? (
         <div className="mt-auto">
-          {mensajeError === 'pago_fallido' ? (
-            <p className="px-4 pb-3 text-center text-[13px] text-hc-red-600">
-              {t('pos.pago.errorPagoDesc')}
-            </p>
-          ) : null}
+          <p className="px-4 pb-3 text-center text-[13px] text-hc-red-600">
+            {t('pos.pago.errorPagoDesc')}
+          </p>
+          {/* Sin checkout hospedado (era ONVO): se reintenta el formulario de Tilopay. */}
           <PosPagoCta
             monto={info.total ?? 0}
-            cargando={iniciandoPago}
-            onClick={() => void pagarHosted()}
+            onClick={() => setModoEmbed(true)}
             avisoKey="pos.pago.hostedAviso"
           />
-          {mensajeError === 'pago_fallido' ? (
-            <div className="bg-hc-n-0 px-4 pb-6">
-              <button
-                type="button"
-                onClick={() => setReporteAbierto(true)}
-                className="min-h-[46px] w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-hc-n-900"
-              >
-                {t('pos.pago.reportarError')}
-              </button>
-            </div>
-          ) : null}
+          <div className="bg-hc-n-0 px-4 pb-6">
+            <button
+              type="button"
+              onClick={() => setReporteAbierto(true)}
+              className="min-h-[46px] w-full rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-hc-n-900"
+            >
+              {t('pos.pago.reportarError')}
+            </button>
+          </div>
         </div>
       ) : null}
 

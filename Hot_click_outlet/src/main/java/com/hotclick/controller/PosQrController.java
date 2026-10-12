@@ -6,7 +6,6 @@ import com.hotclick.security.JwtUtil;
 import com.hotclick.service.PosQrService;
 import com.hotclick.service.TurnoCajaService;
 import com.hotclick.service.pos.PosQrSessionService;
-import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,11 +115,12 @@ public class PosQrController {
         }
     }
 
-    /** Cliente inicia cobro con tarjeta por Tilopay (SDK embebido). Reemplaza ONVO. */
+    /** Cliente inicia cobro por Tilopay (SDK embebido): tarjeta o, con ?metodo=SINPE, SINPE Móvil. */
     @PostMapping("/pago/{token}/tilopay")
-    public ResponseEntity<?> iniciarTilopay(@PathVariable String token) {
+    public ResponseEntity<?> iniciarTilopay(@PathVariable String token,
+                                            @RequestParam(name = "metodo", required = false) String metodo) {
         try {
-            return ResponseEntity.ok(posQrService.iniciarTilopay(token));
+            return ResponseEntity.ok(posQrService.iniciarTilopay(token, metodo));
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         } catch (IllegalStateException e) {
@@ -137,66 +137,6 @@ public class PosQrController {
             return ResponseEntity.ok(Map.of("pagado", pagado));
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
-        }
-    }
-
-    /** Cliente crea sesión de pago ONVO (checkout hospedado) y recibe la URL. */
-    @PostMapping("/pago/{token}/stripe")
-    public ResponseEntity<?> iniciarStripe(@PathVariable String token) {
-        try {
-            String checkoutUrl = posQrService.crearStripeCheckout(token);
-            return ResponseEntity.ok(Map.of("checkoutUrl", checkoutUrl));
-        } catch (java.util.NoSuchElementException e) {
-            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
-        } catch (IllegalStateException e) {
-            log.warn("[POS-QR] Pago tarjeta no iniciado token={}: {}", token, e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
-        } catch (Exception e) {
-            log.error("[POS-QR] Error iniciando pago tarjeta token={}: {}", token, e.getMessage(), e);
-            Sentry.captureException(e);
-            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago"));
-        }
-    }
-
-    /** Cliente crea payment intent ONVO para SDK embebido (wallets + tarjeta). */
-    @PostMapping("/pago/{token}/intent")
-    public ResponseEntity<?> iniciarPaymentIntent(@PathVariable String token) {
-        try {
-            return ResponseEntity.ok(posQrService.crearPaymentIntent(token));
-        } catch (java.util.NoSuchElementException e) {
-            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
-        } catch (IllegalStateException e) {
-            log.warn("[POS-QR] Payment intent no iniciado token={}: {}", token, e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
-        } catch (Exception e) {
-            log.error("[POS-QR] Error iniciando payment intent token={}: {}", token, e.getMessage(), e);
-            Sentry.captureException(e);
-            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago"));
-        }
-    }
-
-    /** Cliente registra SINPE Móvil en ONVO (número destino de la pasarela). */
-    @PostMapping("/pago/{token}/sinpe-onvo")
-    public ResponseEntity<?> iniciarSinpeOnvo(@PathVariable String token,
-                                              @RequestBody(required = false) Map<String, String> body) {
-        try {
-            Map<String, String> datos = body != null ? body : Map.of();
-            return ResponseEntity.ok(posQrService.iniciarSinpeOnvo(
-                token,
-                datos.get("telefono"),
-                datos.get("cedula"),
-                datos.get("nombre"),
-                datos.get("email")));
-        } catch (java.util.NoSuchElementException e) {
-            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            log.warn("[POS-QR] SINPE ONVO no iniciado token={}: {}", token, e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error",
-                e.getMessage() != null ? e.getMessage() : "No se pudo iniciar el SINPE"));
-        } catch (Exception e) {
-            log.error("[POS-QR] Error iniciando SINPE ONVO token={}: {}", token, e.getMessage(), e);
-            Sentry.captureException(e);
-            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago"));
         }
     }
 

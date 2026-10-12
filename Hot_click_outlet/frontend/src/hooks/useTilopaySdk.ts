@@ -23,7 +23,12 @@ export type TilopayInitOptions = {
 type TilopayApi = {
   Init: (options: TilopayInitOptions) => Promise<unknown>
   startPayment: () => Promise<unknown>
+  updateOptions?: (options: Record<string, unknown>) => Promise<unknown>
+  getSinpeMovil?: () => Promise<TilopaySinpeDatos | undefined>
 }
+
+/** Respuesta de Tilopay.getSinpeMovil(): número destino, monto exacto y código para el detalle. */
+export type TilopaySinpeDatos = { message?: string; code?: string; amount?: number; number?: string }
 
 declare global {
   interface Window {
@@ -109,5 +114,19 @@ export function useTilopaySdk() {
     return tilopay.startPayment()
   }, [])
 
-  return { init, startPayment }
+  /**
+   * SINPE Móvil por Tilopay: manda la cédula (obligatoria) y pide los datos de la transferencia.
+   * getSinpeMovil también arranca la escucha del pago en Tilopay. Sin respuesta = error.
+   */
+  const iniciarSinpe = useCallback(async (typeDni: number, dni: string): Promise<TilopaySinpeDatos> => {
+    if (!listoRef.current) throw new Error('Tilopay no inicializado')
+    const tilopay = obtenerTilopay()
+    if (!tilopay.updateOptions || !tilopay.getSinpeMovil) throw new Error('SINPE Móvil no disponible')
+    await tilopay.updateOptions({ typeDni, dni })
+    const datos = await tilopay.getSinpeMovil()
+    if (!datos?.number || !datos?.code) throw new Error('SINPE Móvil no disponible')
+    return datos
+  }, [])
+
+  return { init, startPayment, iniciarSinpe }
 }

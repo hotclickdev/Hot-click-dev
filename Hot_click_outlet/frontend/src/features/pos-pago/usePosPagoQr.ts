@@ -31,7 +31,6 @@ export function usePosPagoQr(token: string | undefined) {
   // Sin token la vista arranca en error: el efecto de carga no llama a setState de forma síncrona.
   const [vista, setVista] = useState<PosPagoVista>(token ? 'cargando' : 'error')
   const [mensajeError, setMensajeError] = useState<string | null>(token ? null : 'token_faltante')
-  const [iniciandoPago, setIniciandoPago] = useState(false)
   const pollCount = useRef(0)
 
   const aplicarInfo = useCallback((data: QrPagoInfo) => {
@@ -82,20 +81,6 @@ export function usePosPagoQr(token: string | undefined) {
     return () => window.clearInterval(id)
   }, [token, vista])
 
-  const pagarHosted = useCallback(async () => {
-    if (!token) return
-    setIniciandoPago(true)
-    setMensajeError(null)
-    try {
-      const { checkoutUrl } = await posService.iniciarStripeQr(token) as { checkoutUrl?: string }
-      if (!checkoutUrl) throw new Error('sin_url')
-      window.location.href = checkoutUrl
-    } catch {
-      setMensajeError('pago_fallido')
-      setIniciandoPago(false)
-    }
-  }, [token])
-
   const reintentar = useCallback(() => {
     setMensajeError(null)
     setVista('resumen')
@@ -114,9 +99,7 @@ export function usePosPagoQr(token: string | undefined) {
     info,
     vista,
     mensajeError,
-    iniciandoPago,
     recargar: cargarInfo,
-    pagarHosted,
     reintentar,
     marcarExitoEmbed,
   }
