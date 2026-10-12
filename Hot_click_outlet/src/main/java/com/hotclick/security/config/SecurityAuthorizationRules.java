@@ -59,7 +59,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/tienda/*/pedidos").permitAll()
             .requestMatchers("/tienda", "/tienda/**").permitAll()
             // Catálogo público - solo GETs específicos
-            .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
+            .requestMatchers(GET, "/api/productos/admin/todos").hasAnyRole("ADMIN", "EMPRENDEDOR")
             .requestMatchers(GET, "/api/productos/pos/**").authenticated()
             .requestMatchers(GET, "/api/productos").permitAll()
             .requestMatchers(GET, "/api/productos/destacados").permitAll()

@@ -272,6 +272,8 @@ public class PedidoController {
     public ResponseEntity<ResponseDTO> listarTodos() {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Pedidos", listarConDetalles()));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -299,7 +301,7 @@ public class PedidoController {
     }
 
     private Object listarConDetalles() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.requireEmpresaIdOrGlobalAdmin();
         return empresaId != null
             ? pedidoService.listarTodosConDetallesByEmpresa(empresaId)
             : pedidoService.listarTodosConDetalles();

@@ -72,6 +72,26 @@ public class CompanyScope {
         }
     }
 
+    /**
+     * Empresa para endpoints de gestión del negocio. Devuelve null SOLO para IT Admin / staff de
+     * plataforma sin impersonar (vista global). Cualquier otra cuenta sin empresa recibe 403
+     * EMPRESA_REQUERIDA: nunca se devuelve un listado sin filtrar.
+     */
+    public Long requireEmpresaIdOrGlobalAdmin() {
+        Usuario user = getCurrentUser();
+        if (user != null && !isImpersonating() && (isAdminIT(user) || isPlatformStaff(user))) return null;
+        Long id = getCurrentEmpresaIdOrOwn();
+        if (id == null) throw new com.hotclick.exception.EmpresaRequeridaException();
+        return id;
+    }
+
+    /** Igual que {@link #requireEmpresaIdOrGlobalAdmin()} pero sin excepción para admins: siempre exige empresa. */
+    public Long requireEmpresaId() {
+        Long id = getCurrentEmpresaIdOrOwn();
+        if (id == null) throw new com.hotclick.exception.EmpresaRequeridaException();
+        return id;
+    }
+
     /** True si el JWT actual es una sesión de soporte (ver como negocio). */
     public boolean isImpersonating() {
         String jwt = extractRawJwt();

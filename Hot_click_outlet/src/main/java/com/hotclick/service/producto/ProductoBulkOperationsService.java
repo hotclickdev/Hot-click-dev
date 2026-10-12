@@ -34,7 +34,7 @@ public class ProductoBulkOperationsService {
     }
 
     public int archivarSinStock() {
-        Long empresaId = productoAccessGuard.getCurrentEmpresaId();
+        Long empresaId = productoAccessGuard.requireEmpresaIdOrGlobalAdmin();
         List<Producto> sinStock = empresaId != null
             ? productoRepository.findActivosSinStockByEmpresaId(empresaId)
             : productoRepository.findActivosSinStock();
@@ -45,7 +45,7 @@ public class ProductoBulkOperationsService {
 
     public int ajustarPrecios(double porcentaje) {
         double multiplicador = 1.0 + porcentaje / 100.0;
-        Long empresaId = productoAccessGuard.getCurrentEmpresaId();
+        Long empresaId = productoAccessGuard.requireEmpresaIdOrGlobalAdmin();
         List<Producto> productos = empresaId != null
             ? productoRepository.findActivosByEmpresaId(empresaId)
             : productoRepository.findAllActivos();

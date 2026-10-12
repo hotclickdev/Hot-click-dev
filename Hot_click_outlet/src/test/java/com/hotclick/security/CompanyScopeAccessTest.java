@@ -154,6 +154,26 @@ class CompanyScopeAccessTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
+    @Test
+    @DisplayName("IDOR-vendedor: requireEmpresaIdOrAdmin → null solo para ADMIN; EMPRENDEDOR sin empresa → 403")
+    void requireEmpresaIdOrAdmin_soloAdminVeTodo() {
+        autenticar(usuarioConRol(Constants.ROL_ADMIN, null));
+        assertThat(companyScope.requireEmpresaIdOrAdmin()).isNull();
+
+        autenticar(usuarioConRol("EMPRENDEDOR", null));
+        assertThatThrownBy(() -> companyScope.requireEmpresaIdOrAdmin())
+            .isInstanceOf(TenantAccessDeniedException.class);
+        assertThatThrownBy(() -> companyScope.requireEmpresaId())
+            .isInstanceOf(TenantAccessDeniedException.class);
+
+        autenticar(usuarioConRol(Constants.ROL_USUARIO_FINAL, null));
+        assertThatThrownBy(() -> companyScope.requireEmpresaIdOrAdmin())
+            .isInstanceOf(TenantAccessDeniedException.class);
+
+        autenticar(usuarioConRol("EMPRENDEDOR", 10L));
+        assertThat(companyScope.requireEmpresaIdOrAdmin()).isEqualTo(10L);
+    }
+
     private static Usuario usuarioConRol(String rolNombre, Long empresaId) {
         Empresa emp = null;
         if (empresaId != null) {
