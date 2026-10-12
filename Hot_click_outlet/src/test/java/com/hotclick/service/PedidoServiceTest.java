@@ -165,7 +165,7 @@ class PedidoServiceTest {
 
         assertThatThrownBy(() -> service.crearPedidoManual(dto, null))
             .isInstanceOf(RuntimeException.class)
-            .hasMessageContaining("999");
+            .hasMessageContaining("Cliente no encontrado");
     }
 
     @Test
