@@ -52,6 +52,7 @@ public class AuthRegistrationService {
             MayoriaEdad.exigir(req.getDeclaraMayoriaEdad());
             Usuario usuario = new Usuario();
             usuario.setNombre(req.getNombre().trim());
+            usuario.setApellidoPaterno(""); // P1-04: la columna es NOT NULL; antes daba 500 con el SQL
             usuario.setCorreo(req.getCorreo().trim().toLowerCase());
             usuario.setContrasenaHash(passwordEncoder.encode(req.getContrasena()));
             if (req.getTelefono() != null) usuario.setTelefono(req.getTelefono().trim());
@@ -64,7 +65,7 @@ public class AuthRegistrationService {
             return ResponseEntity.ok(ResponseDTO.success(
                 "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeSeguro(e, "No se pudo completar el registro. Revisá los datos e intentá de nuevo.")));
         }
     }
 
@@ -111,10 +112,8 @@ public class AuthRegistrationService {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            String msg = e.getMessage();
-            log.error("[reenviar-codigo-negocio] {}", msg, e);
-            return ResponseEntity.badRequest().body(ResponseDTO.error(
-                msg != null && !msg.isBlank() ? msg : "Error al reenviar el código"));
+            log.error("[reenviar-codigo-negocio] {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeSeguro(e, "Error al reenviar el código")));
         }
     }
 
@@ -133,11 +132,26 @@ public class AuthRegistrationService {
             usuarioRepository.save(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Correo verificado correctamente", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeSeguro(e, "No se pudo verificar el correo")));
         }
     }
 
     public ResponseEntity<?> nuevoNegocio(RegistroEmpresaDTO dto, HttpServletRequest request) {
         return nuevoNegocioHandler.nuevoNegocio(dto, request);
+    }
+
+    /**
+     * P1-04: al cliente solo llegan mensajes de reglas de negocio; errores de base de datos, SQL o
+     * constraints se registran en el log y el cliente recibe un texto genérico.
+     */
+    static String mensajeSeguro(Exception e, String generico) {
+        boolean deNegocio = e instanceof IllegalArgumentException || e instanceof IllegalStateException
+            || e.getClass().getName().startsWith("com.hotclick.");
+        String msg = e.getMessage();
+        if (!deNegocio || msg == null || msg.isBlank()) {
+            if (!deNegocio) log.warn("[auth-registro] error técnico ocultado al cliente: {}", e.toString());
+            return generico;
+        }
+        return msg;
     }
 }
