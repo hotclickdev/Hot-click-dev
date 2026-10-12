@@ -79,7 +79,7 @@ public class AuthVerificationHandler {
             Usuario nuevo = emailVerificationService.verificarYRegistrar(correo.trim(), codigo.trim());
             return ResponseEntity.ok(ResponseDTO.success("Cuenta creada exitosamente", authSupport.buildAuthResponse(nuevo)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

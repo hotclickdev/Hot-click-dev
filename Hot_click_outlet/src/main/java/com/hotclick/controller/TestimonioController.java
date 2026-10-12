@@ -110,7 +110,7 @@ public class TestimonioController {
                 comentario.length() > 200 ? comentario.substring(0, 200) + "..." : comentario));
             return ResponseEntity.ok(ResponseDTO.success("Testimonio enviado, pendiente de aprobación", t));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -150,7 +150,7 @@ public class TestimonioController {
                 comentario.length() > 200 ? comentario.substring(0, 200) + "..." : comentario));
             return ResponseEntity.ok(ResponseDTO.success("Reseña enviada, pendiente de aprobación", t));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -166,7 +166,7 @@ public class TestimonioController {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Aprobado", testimonioService.aprobar(id)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -176,7 +176,7 @@ public class TestimonioController {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Rechazado", testimonioService.rechazar(id)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }

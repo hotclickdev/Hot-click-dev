@@ -94,7 +94,7 @@ public class CategoriaController {
             }
             return ResponseEntity.ok(ResponseDTO.success("Categoría creada", categoriaRepository.save(cat)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -158,7 +158,7 @@ public class CategoriaController {
             }
             return ResponseEntity.ok(ResponseDTO.success("Categoría actualizada", categoriaRepository.save(cat)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -174,7 +174,7 @@ public class CategoriaController {
             categoriaRepository.save(cat);
             return ResponseEntity.ok(ResponseDTO.success("Categoría eliminada", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 

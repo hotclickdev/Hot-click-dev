@@ -31,7 +31,7 @@ public class PedidoTenantResponder {
         } catch (PedidoNoDespachableException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 }
