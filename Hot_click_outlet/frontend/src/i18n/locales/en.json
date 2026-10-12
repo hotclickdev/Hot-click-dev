@@ -1556,6 +1556,9 @@
       "nombreRequerido": "Full name is required",
       "cedulaRequerida": "ID number is required",
       "cuponInvalido": "Invalid or unavailable code"
+    },
+    "cuentaExistente": {
+      "ingresar": "Log in"
     }
   },
   "payment": {
@@ -1632,18 +1635,7 @@
       "textoSinpe": "We received your SINPE Móvil receipt. Confirmation may take a few more minutes; we email you when it is processed."
     },
     "sinpe": {
-      "titulo": "Order registered: make your SINPE payment",
-      "sub": "Transfer the exact amount and upload a photo of the receipt.",
-      "numero": "SINPE number",
-      "titular": "Account holder",
-      "referencia": "Reference",
       "montoExacto": "Exact amount",
-      "tusDatos": "Your transfer details",
-      "seleccionar": "Choose the receipt image",
-      "vistaPrevia": "Receipt preview",
-      "subiendo": "Uploading receipt…",
-      "enviar": "Send receipt",
-      "verificacion": "Your payment will be verified by an administrator. The order expires in 72 hours if it is not confirmed.",
       "avisarWhatsapp": "Also notify by WhatsApp",
       "metodo": "Method",
       "efectivoTitulo": "Order registered!",

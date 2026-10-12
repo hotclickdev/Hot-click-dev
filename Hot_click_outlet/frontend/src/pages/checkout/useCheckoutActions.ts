@@ -2,15 +2,9 @@ import { useCallback } from 'react'
 import { ejecutarValidarGiftCard } from './ejecutarValidarGiftCard'
 import { ejecutarValidarCupon } from './ejecutarValidarCupon'
 import { ejecutarValidateDomicilio, ejecutarPagarCheckout } from './ejecutarPagarCheckout'
-import { ejecutarSubirComprobante, ejecutarSinpeWhatsApp } from './ejecutarSubirComprobante'
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import type { CheckoutPayload } from '@/types/pedido'
 import type { Dispatch, SetStateAction } from 'react'
-
-type PagoDataAcciones = {
-  numeroPedido?: string
-  proveedor?: string
-}
 
 type CheckoutActionsDeps = {
   token: string | null
@@ -24,12 +18,7 @@ type CheckoutActionsDeps = {
   direccionPedido?: string
   guestEmail: string
   guestPhone: string
-  sinpeNombre: string
-  sinpeCedula: string
-  sinpeTelefono: string
-  sinpeEmail: string
-  sinpeImagen: File | null
-  pagoData: PagoDataAcciones | null
+  nombreComprador: string
   aceptaDatos: boolean
   bodegaRetiro: BodegaRetiro | null
   cuponCodigo: string | null
@@ -39,7 +28,7 @@ type CheckoutActionsDeps = {
   paquetes: PaqueteCheckout[]
   metodoEnvioPorPaquete: Record<string, string>
   necesitaDireccion: boolean
-  iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
+  iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isManual?: boolean) => void
   validatePhone: (v: string) => string
   validateAddress: (v: string) => string
   validateGuestEmail: (v: string) => string
@@ -58,11 +47,7 @@ type CheckoutActionsDeps = {
   setGuestEmailDirty: Dispatch<SetStateAction<boolean>>
   setGuestPhoneError: Dispatch<SetStateAction<string>>
   setGuestPhoneDirty: Dispatch<SetStateAction<boolean>>
-  setSinpeNombreErr: Dispatch<SetStateAction<string>>
-  setSinpeCedulaErr: Dispatch<SetStateAction<string>>
-  setSinpeImagenErr: Dispatch<SetStateAction<string>>
-  setSinpeUploadEstado: Dispatch<SetStateAction<string>>
-  setSinpeUploadError: Dispatch<SetStateAction<string>>
+  setNombreCompradorErr: Dispatch<SetStateAction<string>>
 }
 
 /**
@@ -81,12 +66,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     direccionPedido,
     guestEmail,
     guestPhone,
-    sinpeNombre,
-    sinpeCedula,
-    sinpeTelefono,
-    sinpeEmail,
-    sinpeImagen,
-    pagoData,
+    nombreComprador,
     aceptaDatos,
     bodegaRetiro,
     cuponCodigo,
@@ -115,11 +95,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setGuestEmailDirty,
     setGuestPhoneError,
     setGuestPhoneDirty,
-    setSinpeNombreErr,
-    setSinpeCedulaErr,
-    setSinpeImagenErr,
-    setSinpeUploadEstado,
-    setSinpeUploadError,
+    setNombreCompradorErr,
   } = deps
 
   const validarGiftCard = useCallback(async () => {
@@ -161,11 +137,11 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     ejecutarPagarCheckout({
       aceptaDatos, validateDomicilio, token, validateGuestEmail, validatePhone, guestEmail,
       setGuestEmailError, setGuestEmailDirty, guestPhone, setGuestPhoneError, setGuestPhoneDirty,
-      metodoPago, sinpeNombre, sinpeCedula,
-      setSinpeNombreErr, setSinpeCedulaErr, telefono,
+      metodoPago, nombreComprador,
+      setNombreCompradorErr, telefono,
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
-      notas, direccion, direccionPedido, sinpeEmail, totalFinal, items, bodegaRetiro,
-      cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago,
+      notas, direccion, direccionPedido, totalFinal, items, bodegaRetiro,
+      cuponCodigo, gcCodigo, iniciarPago,
     })
   }, [
     aceptaDatos,
@@ -180,10 +156,8 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setGuestPhoneError,
     setGuestPhoneDirty,
     metodoPago,
-    sinpeNombre,
-    sinpeCedula,
-    setSinpeNombreErr,
-    setSinpeCedulaErr,
+    nombreComprador,
+    setNombreCompradorErr,
     telefono,
     metodoEnvio,
     paquetes,
@@ -192,38 +166,12 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     notas,
     direccion,
     direccionPedido,
-    sinpeEmail,
     totalFinal,
     items,
     bodegaRetiro,
     cuponCodigo,
     gcCodigo,
-    sinpeTelefono,
     iniciarPago,
-  ])
-
-  const handleSinpeWhatsApp = useCallback(() => {
-    ejecutarSinpeWhatsApp({ pagoData, sinpeNombre, sinpeCedula, sinpeTelefono, totalFinal })
-  }, [pagoData, sinpeNombre, sinpeCedula, sinpeTelefono, totalFinal])
-
-  const handleSubirComprobante = useCallback(async () => {
-    await ejecutarSubirComprobante({
-      sinpeImagen, sinpeNombre, sinpeCedula, sinpeTelefono, pagoData,
-      token, sinpeEmail, guestEmail,
-      setSinpeImagenErr, setSinpeUploadEstado, setSinpeUploadError,
-    })
-  }, [
-    sinpeImagen,
-    sinpeNombre,
-    sinpeCedula,
-    sinpeTelefono,
-    pagoData,
-    token,
-    sinpeEmail,
-    guestEmail,
-    setSinpeImagenErr,
-    setSinpeUploadEstado,
-    setSinpeUploadError,
   ])
 
   return {
@@ -231,7 +179,5 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     validarCupon,
     validateDomicilio,
     handlePagar,
-    handleSinpeWhatsApp,
-    handleSubirComprobante,
   }
 }

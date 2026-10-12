@@ -62,10 +62,8 @@ type PagarCheckoutDeps = {
   setGuestPhoneError: (v: string) => void
   setGuestPhoneDirty: (v: boolean) => void
   metodoPago: string
-  sinpeNombre: string
-  sinpeCedula: string
-  setSinpeNombreErr: (v: string) => void
-  setSinpeCedulaErr: (v: string) => void
+  nombreComprador: string
+  setNombreCompradorErr: (v: string) => void
   telefono: string
   metodoEnvio: string
   paquetes: PaqueteCheckout[]
@@ -75,14 +73,12 @@ type PagarCheckoutDeps = {
   direccion: string
   /** Dirección completa (señas, cantón, provincia) que viaja en las notas del pedido. */
   direccionPedido?: string
-  sinpeEmail: string
   totalFinal: number
   items: ItemCheckout[]
   bodegaRetiro: BodegaRetiro | null
   cuponCodigo: string | null
   gcCodigo: string | null
-  sinpeTelefono: string
-  iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
+  iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isManual?: boolean) => void
 }
 
 /**
@@ -102,8 +98,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     setGuestPhoneError,
     setGuestPhoneDirty,
     metodoPago,
-    sinpeNombre,
-    sinpeCedula,
+    nombreComprador,
     telefono,
     metodoEnvio,
     paquetes,
@@ -112,13 +107,11 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     notas,
     direccion,
     direccionPedido,
-    sinpeEmail,
     totalFinal,
     items,
     bodegaRetiro,
     cuponCodigo,
     gcCodigo,
-    sinpeTelefono,
     iniciarPago,
   } = deps
 
@@ -148,8 +141,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   guardarUltimoPedido({
     unidades: items.reduce((s, i) => s + (i.cantidad ?? 0), 0),
     total: totalFinal,
-    nombre: sinpeNombre.trim(),
-    correo: guestEmail.trim() || sinpeEmail.trim(),
+    nombre: nombreComprador.trim(),
+    correo: guestEmail.trim(),
     paquetes: paquetes.map((p) => ({
       negocio: p.empresaNombre || p.bodegaNombre,
       productos: p.items.length,
@@ -166,7 +159,6 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     notas.trim(),
     necesitaDireccion && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
     necesitaDireccion && direccion ? `Dirección: ${direccionPedido || direccion}` : '',
-    metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
     resumenEnvios ? `Envío: ${resumenEnvios}` : '',
   ].filter(Boolean).join(' | ')
 
@@ -219,7 +211,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
         ? {}
         : {
             guestEmail: guestEmail.trim(),
-            guestPhone: guestPhone || sinpeTelefono || null,
+            guestPhone: guestPhone || null,
           }),
     },
     !token,

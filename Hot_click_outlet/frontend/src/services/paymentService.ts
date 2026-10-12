@@ -16,8 +16,10 @@ export const paymentService = {
    * Consulta el estado del pago de un pedido.
    * @param {string} numeroPedido
    */
+  /** Solo el dueño (sesión) o el invitado con el token firmado del pedido (guardado al pagar). */
   consultarEstado(numeroPedido: string) {
-    return api.get(`/payments/status/${numeroPedido}`)
+    const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(`hc-cancel-token:${numeroPedido}`) : null
+    return api.get(`/payments/status/${encodeURIComponent(numeroPedido)}`, token ? { params: { token } } : undefined)
   },
 
   /**
@@ -62,36 +64,16 @@ export const paymentService = {
     return api.post(`/admin/pagos/${pagoId}/rechazar-sinpe`, { motivo: motivo || null })
   },
 
-  // ── SINPE Móvil — flujo completo ─────────────────────────────────────────
+  // ── Checkout manual (efectivo) ───────────────────────────────────────────
 
-  /** Checkout SINPE autenticado → crea pedido en PENDIENTE_COMPROBANTE. */
+  /** Checkout manual autenticado (hoy solo efectivo; SINPE Móvil y Tarjeta van por Tilopay). */
   sinpeCheckout(payload: CheckoutPayload) {
     return api.post('/sinpe/checkout', payload)
   },
 
-  /** Checkout SINPE para invitados. */
+  /** Checkout manual para invitados (hoy solo efectivo). */
   guestSinpeCheckout(payload: CheckoutPayload) {
     return api.post('/sinpe/guest-checkout', payload)
-  },
-
-  /**
-   * Sube el comprobante de pago SINPE (autenticado).
-   * FormData fields: imagen, nombreRemitente, cedulaRemitente?, telefonoRemitente?
-   */
-  subirComprobanteSinpe(numeroPedido: string, formData: FormData) {
-    return api.post(`/sinpe/${numeroPedido}/comprobante`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
-
-  /**
-   * Sube el comprobante de pago SINPE (invitado).
-   * FormData fields: imagen, nombreRemitente, correoUsuario, cedulaRemitente?, telefonoRemitente?
-   */
-  guestSubirComprobanteSinpe(numeroPedido: string, formData: FormData) {
-    return api.post(`/sinpe/guest/${numeroPedido}/comprobante`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
   },
 
   // ── Admin SINPE — comprobantes (nuevo flujo) ──────────────────────────────
@@ -139,13 +121,6 @@ export const paymentService = {
   /** Solicita un nuevo sdkToken para reintentar un pago Tilopay. */
   reintentarTilopay(numeroPedido: string) {
     return api.post(`/payments/tilopay/reintentar/${encodeURIComponent(numeroPedido)}`)
-  },
-
-  /** Público: `{ "7": 5 }` = el negocio 7 descuenta 5% al pagar con SINPE o efectivo. */
-  getDescuentosSinpe(empresaIds: number[]) {
-    return api.get<Record<string, number>>('/public/descuentos-sinpe', {
-      params: { empresas: empresaIds.join(',') },
-    })
   },
 
   /** Comisión de pasarela (admin) — opcional; el UI tolera 404. */

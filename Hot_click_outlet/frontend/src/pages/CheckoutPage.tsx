@@ -6,7 +6,7 @@ import { usePayment, tilopayCardDesdePago } from '@/hooks/usePayment'
 import CheckoutEmpty from './checkout/CheckoutEmpty'
 import CheckoutLoading from './checkout/CheckoutLoading'
 import CheckoutPaidGiftCard from './checkout/CheckoutPaidGiftCard'
-import CheckoutSinpePending from './checkout/CheckoutSinpePending'
+import CheckoutEfectivoPendiente from './checkout/CheckoutEfectivoPendiente'
 import CheckoutTilopayCard from './checkout/CheckoutTilopayCard'
 import CheckoutLayout from './checkout/CheckoutLayout'
 import { useCheckoutForm } from './checkout/useCheckoutForm'
@@ -20,14 +20,14 @@ import { notasConEncomienda } from './checkout/checkoutHelpers'
 export default function CheckoutPage() {
   const { items, total, toWhatsAppMessage } = useCartStore()
   const { token } = useAuthStore()
-  const { estado, pagoData, error, intentos, maxIntentos, iniciarPago, reset } = usePayment()
+  const { estado, pagoData, error, errorCodigo, intentos, maxIntentos, iniciarPago, reset } = usePayment()
   const errorBannerRef = useRef<HTMLDivElement | null>(null)
 
   const form = useCheckoutForm({ items, total })
 
   const { clearCart: clearCartFn } = useCartStore()
   useEffect(() => {
-    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') { clearCartFn(); borrarBorrador() }
+    if (estado === 'gift_card_paid' || estado === 'pedido_manual') { clearCartFn(); borrarBorrador() }
   }, [estado, clearCartFn])
 
   useEffect(() => {
@@ -35,18 +35,14 @@ export default function CheckoutPage() {
   }, [])
 
   useEffect(() => {
-    if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid' || estado === 'tilopay_card') {
+    if (estado === 'pedido_manual' || estado === 'gift_card_paid' || estado === 'tilopay_card') {
       globalThis.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (estado === 'failed') {
       errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [estado])
 
-  const {
-    handlePagar,
-    handleSinpeWhatsApp,
-    handleSubirComprobante,
-  } = useCheckoutActions({
+  const { handlePagar } = useCheckoutActions({
     token,
     items,
     totalFinal: form.totalFinal,
@@ -58,12 +54,7 @@ export default function CheckoutPage() {
     direccionPedido: form.direccionPedido,
     guestEmail: form.guestEmail,
     guestPhone: form.guestPhone,
-    sinpeNombre: form.sinpeNombre,
-    sinpeCedula: form.sinpeCedula,
-    sinpeTelefono: form.sinpeTelefono,
-    sinpeEmail: form.sinpeEmail,
-    sinpeImagen: form.sinpeImagen,
-    pagoData,
+    nombreComprador: form.nombreComprador,
     aceptaDatos: form.aceptaDatos,
     bodegaRetiro: form.bodegaRetiro,
     cuponCodigo: form.cuponCodigo,
@@ -92,11 +83,7 @@ export default function CheckoutPage() {
     setGuestEmailDirty: form.setGuestEmailDirty,
     setGuestPhoneError: form.setGuestPhoneError,
     setGuestPhoneDirty: form.setGuestPhoneDirty,
-    setSinpeNombreErr: form.setSinpeNombreErr,
-    setSinpeCedulaErr: form.setSinpeCedulaErr,
-    setSinpeImagenErr: form.setSinpeImagenErr,
-    setSinpeUploadEstado: form.setSinpeUploadEstado,
-    setSinpeUploadError: form.setSinpeUploadError,
+    setNombreCompradorErr: form.setNombreCompradorErr,
   })
 
   if (estado === 'tilopay_card') {
@@ -106,25 +93,12 @@ export default function CheckoutPage() {
     }
   }
 
-  if (estado === 'sinpe_pendiente') {
+  if (estado === 'pedido_manual') {
     return (
-      <CheckoutSinpePending
+      <CheckoutEfectivoPendiente
         pagoData={pagoData}
         totalFinal={Number(form.totalFinal) || Number(pagoData?.total) || 0}
-        sinpeNombre={form.sinpeNombre}
-        sinpeCedula={form.sinpeCedula}
-        sinpeTelefono={form.sinpeTelefono}
-        sinpeImagen={form.sinpeImagen}
-        setSinpeImagen={form.setSinpeImagen}
-        sinpeImagenErr={form.sinpeImagenErr}
-        setSinpeImagenErr={form.setSinpeImagenErr}
-        sinpeUploadEstado={form.sinpeUploadEstado}
-        setSinpeUploadEstado={form.setSinpeUploadEstado}
-        sinpeUploadError={form.sinpeUploadError}
-        setSinpeUploadError={form.setSinpeUploadError}
-        sinpeInputRef={form.sinpeInputRef}
-        onSubirComprobante={handleSubirComprobante}
-        onSinpeWhatsApp={handleSinpeWhatsApp}
+        nombreComprador={form.nombreComprador}
       />
     )
   }
@@ -144,6 +118,7 @@ export default function CheckoutPage() {
       form={form}
       estado={estado}
       error={error}
+      errorCodigo={errorCodigo}
       intentos={intentos}
       maxIntentos={maxIntentos}
       errorBannerRef={errorBannerRef}

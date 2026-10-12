@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, useCallback, type Dispatch, type SetStateAction, type RefObject } from 'react'
+import { useState, useMemo, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
@@ -50,27 +50,10 @@ export type CheckoutFormState = {
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
   setNotas: (value: string) => void
-  sinpeNombre: string
-  setSinpeNombre: Dispatch<SetStateAction<string>>
-  sinpeCedula: string
-  setSinpeCedula: Dispatch<SetStateAction<string>>
-  sinpeTelefono: string
-  setSinpeTelefono: Dispatch<SetStateAction<string>>
-  sinpeEmail: string
-  setSinpeEmail: Dispatch<SetStateAction<string>>
-  sinpeNombreErr: string
-  setSinpeNombreErr: Dispatch<SetStateAction<string>>
-  sinpeCedulaErr: string
-  setSinpeCedulaErr: Dispatch<SetStateAction<string>>
-  sinpeImagen: File | null
-  setSinpeImagen: Dispatch<SetStateAction<File | null>>
-  sinpeImagenErr: string
-  setSinpeImagenErr: Dispatch<SetStateAction<string>>
-  sinpeUploadEstado: string
-  setSinpeUploadEstado: Dispatch<SetStateAction<string>>
-  sinpeUploadError: string
-  setSinpeUploadError: Dispatch<SetStateAction<string>>
-  sinpeInputRef: RefObject<HTMLInputElement | null>
+  nombreComprador: string
+  setNombreComprador: Dispatch<SetStateAction<string>>
+  nombreCompradorErr: string
+  setNombreCompradorErr: Dispatch<SetStateAction<string>>
   telefono: string
   setTelefono: Dispatch<SetStateAction<string>>
   telefonoError: string
@@ -171,7 +154,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     }
     return resultado
   }, [metodoEnvioBase, destinoGAM])
-  // Abre con «SINPE / Tarjeta» (SINPE hasta que Tilopay esté activo).
+  // Abre con Tarjeta (Tilopay); SINPE Móvil también va por Tilopay.
   const [metodoPago, setMetodoPago] = useState<string>(metodoPagoPrincipal)
   // R3: el paso del checkout móvil vive en `?paso=`; el guard de CheckoutLayout impide saltar pasos.
   const [searchParams, setSearchParams] = useSearchParams()
@@ -246,18 +229,9 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
 
   // Con sesión el nombre arranca con el de la cuenta (se puede corregir en «Tus datos»).
   const nombreCuenta = useAuthStore((s) => s.userName)
-  const [sinpeNombre, setSinpeNombre] = useState(() => borrador.nombre || nombreCuenta || '')
-  const [sinpeCedula, setSinpeCedula] = useState('')
-  const [sinpeTelefono, setSinpeTelefono] = useState('')
-  const [sinpeEmail, setSinpeEmail] = useState('')
-  const [sinpeNombreErr, setSinpeNombreErr] = useState('')
-  const [sinpeCedulaErr, setSinpeCedulaErr] = useState('')
+  const [nombreComprador, setNombreComprador] = useState(() => borrador.nombre || nombreCuenta || '')
+  const [nombreCompradorErr, setNombreCompradorErr] = useState('')
 
-  const [sinpeImagen, setSinpeImagen] = useState<File | null>(null)
-  const [sinpeImagenErr, setSinpeImagenErr] = useState('')
-  const [sinpeUploadEstado, setSinpeUploadEstado] = useState('idle')
-  const [sinpeUploadError, setSinpeUploadError] = useState('')
-  const sinpeInputRef = useRef<HTMLInputElement | null>(null)
 
   const [telefono, setTelefono] = useState(borrador.telefono ?? '')
   const [telefonoError, setTelefonoError] = useState('')
@@ -293,8 +267,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
 
   // Borrador sin datos de pago: si va a «Ingresar» o vuelve de Tilopay con error, no pierde lo escrito.
   useEffect(() => {
-    guardarBorrador({ nombre: sinpeNombre, correo: guestEmail, telefonoInvitado: guestPhone, telefono, direccion, provincia, canton, distrito })
-  }, [sinpeNombre, guestEmail, guestPhone, telefono, direccion, provincia, canton, distrito])
+    guardarBorrador({ nombre: nombreComprador, correo: guestEmail, telefonoInvitado: guestPhone, telefono, direccion, provincia, canton, distrito })
+  }, [nombreComprador, guestEmail, guestPhone, telefono, direccion, provincia, canton, distrito])
 
   const costoEnvio = paquetes.reduce((sum, p) => sum + (SHIPPING_COSTS[metodoEnvioPorPaquete[p.bodegaId]] ?? 0), 0)
   const subtotalCart = total()
@@ -321,27 +295,10 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setMetodoPago,
     notas,
     setNotas,
-    sinpeNombre,
-    setSinpeNombre,
-    sinpeCedula,
-    setSinpeCedula,
-    sinpeTelefono,
-    setSinpeTelefono,
-    sinpeEmail,
-    setSinpeEmail,
-    sinpeNombreErr,
-    setSinpeNombreErr,
-    sinpeCedulaErr,
-    setSinpeCedulaErr,
-    sinpeImagen,
-    setSinpeImagen,
-    sinpeImagenErr,
-    setSinpeImagenErr,
-    sinpeUploadEstado,
-    setSinpeUploadEstado,
-    sinpeUploadError,
-    setSinpeUploadError,
-    sinpeInputRef,
+    nombreComprador,
+    setNombreComprador,
+    nombreCompradorErr,
+    setNombreCompradorErr,
     telefono,
     setTelefono,
     telefonoError,

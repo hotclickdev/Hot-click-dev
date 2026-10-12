@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
-import { WHATSAPP } from './checkoutHelpers'
+import { CODIGO_CUENTA_EXISTENTE, WHATSAPP } from './checkoutHelpers'
+import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import type { ReactNode, RefObject } from 'react'
 import type { TFunction } from 'i18next'
 
@@ -65,9 +66,24 @@ function ErrorPago({
   )
 }
 
+const RUTA_LOGIN_CHECKOUT = rutaLoginConRetorno('/checkout')
+
+function ErrorCuentaExistente({ errorStr }: { errorStr: string }) {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-3">
+      <p>{errorStr}</p>
+      <Link to={RUTA_LOGIN_CHECKOUT} className="flex min-h-12 w-full items-center justify-center rounded-[12px] border border-hc-n-300 bg-hc-n-0 px-4 text-[15px] font-semibold text-hc-n-900 hover:bg-hc-n-50">
+        {t('checkout.cuentaExistente.ingresar')}
+      </Link>
+    </div>
+  )
+}
+
 type CheckoutPayErrorProps = {
   estado: string
   error: unknown
+  codigo?: string | null
   intentos: number
   maxIntentos: number
   onPagar: () => void
@@ -80,6 +96,7 @@ type CheckoutPayErrorProps = {
 export default function CheckoutPayError({
   estado,
   error,
+  codigo = null,
   intentos,
   maxIntentos,
   onPagar,
@@ -106,7 +123,9 @@ export default function CheckoutPayError({
     >
       <div className="rounded-[12px] border border-hc-danger/20 bg-hc-danger-bg px-[14px] py-3 text-[13px] leading-[18px] text-hc-danger">
         <p className="mb-1 font-semibold">{t('checkout.payError')}</p>
-        {isStockError
+        {codigo === CODIGO_CUENTA_EXISTENTE
+          ? <ErrorCuentaExistente errorStr={errorStr} />
+          : isStockError
           ? <ErrorStock productoBloqueado={stockMatch?.[1] ?? null} rutaCarrito={rutaCarrito} />
           : (
             <ErrorPago

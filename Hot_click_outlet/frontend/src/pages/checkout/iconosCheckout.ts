@@ -10,7 +10,6 @@ import cupon from '@/assets/figma/checkout/cupon.svg'
 import pagoEfectivo from '@/assets/figma/checkout/pago-efectivo.svg'
 import pagoSinpe from '@/assets/figma/checkout/pago-sinpe.svg'
 import pagoTarjeta from '@/assets/figma/checkout/pago-tarjeta.svg'
-import subirComprobante from '@/assets/figma/checkout/subir-comprobante.svg'
 import chevronDerecha from '@/assets/figma/checkout/chevron-derecha.svg'
 import envioInternacional from '@/assets/figma/checkout/envio-internacional.svg'
 import carritoVacio from '@/assets/figma/checkout/carrito-vacio.svg'
@@ -41,7 +40,6 @@ export const ICONOS_CHECKOUT = {
   pagoEfectivo,
   pagoSinpe,
   pagoTarjeta,
-  subirComprobante,
   cantidadMas,
   cantidadMenos,
   carritoVacio,

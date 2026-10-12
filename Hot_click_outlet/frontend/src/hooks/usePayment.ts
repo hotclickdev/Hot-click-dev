@@ -39,12 +39,15 @@ export type TilopayCardPayload = {
   orderNumber: string
 }
 
-function mensajeError(err: unknown, respaldo: string): string {
-  if (!err || typeof err !== 'object' || !('response' in err)) return respaldo
-  const data = (err as { response?: { data?: { message?: string } | string } }).response?.data
-  if (typeof data === 'string') return data
-  if (data && typeof data === 'object' && data.message) return data.message
-  return respaldo
+export type DetalleErrorPago = { mensaje: string; codigo: string | null }
+
+/** Mensaje del servidor (p. ej. 503 «pagos no disponibles», 409 «cuenta existente») y su código, si lo trae. */
+export function detalleErrorPago(err: unknown, respaldo: string): DetalleErrorPago {
+  if (!err || typeof err !== 'object' || !('response' in err)) return { mensaje: respaldo, codigo: null }
+  const data = (err as { response?: { data?: { message?: string; data?: { codigo?: unknown } } | string } }).response?.data
+  if (typeof data === 'string') return { mensaje: data || respaldo, codigo: null }
+  const codigo = data && typeof data === 'object' && typeof data.data?.codigo === 'string' ? data.data.codigo : null
+  return { mensaje: (data && typeof data === 'object' && data.message) || respaldo, codigo }
 }
 
 function esCheckoutTilopayEmbebido(data: PagoData): boolean {
@@ -83,19 +86,21 @@ export function usePayment() {
   const [estado, setEstado] = useState('idle')
   const [pagoData, setPagoData] = useState<PagoData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [errorCodigo, setErrorCodigo] = useState<string | null>(null)
   const [intentos, setIntentos] = useState(0)
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const iniciarPago = useCallback(async (checkoutPayload: CheckoutPayload, isGuest: boolean = false, isSinpe: boolean = false) => {
+  const iniciarPago = useCallback(async (checkoutPayload: CheckoutPayload, isGuest: boolean = false, isManual: boolean = false) => {
     sessionStorage.setItem(GUEST_KEY, isGuest ? '1' : '0')
     sincronizarRetornoPagoAlIniciar(globalThis.location.pathname)
     setEstado('loading')
     setError(null)
+    setErrorCodigo(null)
     setIntentos((i: number) => i + 1)
     try {
       let method
-      if (isSinpe) {
+      if (isManual) {
         method = isGuest ? paymentService.guestSinpeCheckout : paymentService.sinpeCheckout
       } else {
         method = isGuest ? paymentService.guestCheckout : paymentService.checkout
@@ -113,7 +118,7 @@ export function usePayment() {
       } else if (esCheckoutTilopayEmbebido(data)) {
         setEstado('tilopay_card')
       } else if (!data.redirectUrl || data.proveedor === 'SINPE' || data.proveedor === 'EFECTIVO') {
-        setEstado('sinpe_pendiente')
+        setEstado('pedido_manual')
       } else {
         setEstado('redirecting')
         if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current)
@@ -128,7 +133,9 @@ export function usePayment() {
         globalThis.location.href = data.redirectUrl
       }
     } catch (err: unknown) {
-      setError(mensajeError(err, 'No se pudo iniciar el pago. Intenta de nuevo.'))
+      const detalle = detalleErrorPago(err, 'No se pudo iniciar el pago. Intenta de nuevo.')
+      setError(detalle.mensaje)
+      setErrorCodigo(detalle.codigo)
       setEstado('failed')
     }
   }, [])
@@ -237,6 +244,7 @@ export function usePayment() {
     estado,
     pagoData,
     error,
+    errorCodigo,
     intentos,
     maxIntentos: MAX_INTENTOS,
     iniciarPago,

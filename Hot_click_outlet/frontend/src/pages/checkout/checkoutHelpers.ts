@@ -4,11 +4,11 @@ import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
 import type { Id } from '@/types/api'
 
 export const WHATSAPP = '50686667888'
-export const SINPE_NUMERO = formatTelefonoCR('86667888')
-export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
+/** El correo ya tiene cuenta: la compra de invitado no se pega a esa cuenta, hay que iniciar sesión (409). */
+export const CODIGO_CUENTA_EXISTENTE = 'CUENTA_EXISTENTE'
 export const BODEGA_DEFAULT = 1
 
-/** Copia el número SINPE (solo dígitos) al portapapeles. */
+/** Copia un texto al portapapeles. */
 export async function copiarTexto(texto: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(texto)
@@ -16,10 +16,6 @@ export async function copiarTexto(texto: string): Promise<boolean> {
   } catch {
     return false
   }
-}
-
-export function copiarNumeroSinpe(): Promise<boolean> {
-  return copiarTexto(SINPE_NUMERO.replace(/\D/g, ''))
 }
 
 export const SHIPPING_COSTS: Record<string, number> = {

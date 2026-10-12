@@ -1556,6 +1556,9 @@
       "nombreRequerido": "O nome completo é obrigatório",
       "cedulaRequerida": "O número do documento é obrigatório",
       "cuponInvalido": "Código inválido ou indisponível"
+    },
+    "cuentaExistente": {
+      "ingresar": "Entrar"
     }
   },
   "payment": {
@@ -1632,18 +1635,7 @@
       "textoSinpe": "Recebemos o seu comprovante do SINPE Móvil. A confirmação pode levar alguns minutos; enviamos um e-mail quando for processada."
     },
     "sinpe": {
-      "titulo": "Pedido registrado: faça o seu SINPE",
-      "sub": "Transfira o valor exato e envie a foto do comprovante.",
-      "numero": "Número SINPE",
-      "titular": "Titular",
-      "referencia": "Referência",
       "montoExacto": "Valor exato",
-      "tusDatos": "Seus dados da transferência",
-      "seleccionar": "Escolher a imagem do comprovante",
-      "vistaPrevia": "Pré-visualização do comprovante",
-      "subiendo": "Enviando comprovante…",
-      "enviar": "Enviar comprovante",
-      "verificacion": "O seu pagamento será verificado por um administrador. O pedido expira em 72 horas se não for confirmado.",
       "avisarWhatsapp": "Avisar também pelo WhatsApp",
       "metodo": "Método",
       "efectivoTitulo": "Pedido registrado!",

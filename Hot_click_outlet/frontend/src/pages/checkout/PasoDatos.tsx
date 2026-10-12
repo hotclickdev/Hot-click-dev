@@ -43,7 +43,7 @@ export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
   )
 
   const campoNombre = (
-    <Campo etiqueta={t('checkout.f.nombre')} error={form.sinpeNombreErr}>
+    <Campo etiqueta={t('checkout.f.nombre')} error={form.nombreCompradorErr}>
       {({ id, describedBy }) => (
         <CampoTexto
           id={id}
@@ -51,9 +51,9 @@ export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
           escritorio={escritorio}
           icono={ICONOS_CHECKOUT.campoUsuario}
           autoComplete="name"
-          valor={form.sinpeNombre}
-          error={Boolean(form.sinpeNombreErr)}
-          onCambiar={(valor) => { form.setSinpeNombre(valor); if (form.sinpeNombreErr) form.setSinpeNombreErr('') }}
+          valor={form.nombreComprador}
+          error={Boolean(form.nombreCompradorErr)}
+          onCambiar={(valor) => { form.setNombreComprador(valor); if (form.nombreCompradorErr) form.setNombreCompradorErr('') }}
         />
       )}
     </Campo>
@@ -100,7 +100,8 @@ export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
     </Campo>
   )
   const entrar = (
-    <Link to={rutaLoginConRetorno('/checkout')} className="font-semibold text-hc-blue-600">{t('checkout.f.ingresar')}</Link>
+    // Diseño `diseno/checkout`: «Ingresar» es secundario (outline); el único botón rojo es pagar.
+    <Link to={rutaLoginConRetorno('/checkout')} className="inline-flex min-h-9 items-center rounded-[10px] border border-hc-n-300 bg-hc-n-0 px-3 font-semibold text-hc-n-900 hover:bg-hc-n-50">{t('checkout.f.ingresar')}</Link>
   )
 
   if (escritorio) {
@@ -111,6 +112,10 @@ export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
           {campoTelefono}
         </div>
         {campoNombre}
+        <p className="flex items-center gap-[6px] text-[14px] leading-[normal] text-hc-n-600">
+          {t('checkout.f.yaTenesCuenta')}
+          {entrar}
+        </p>
       </div>
     )
   }

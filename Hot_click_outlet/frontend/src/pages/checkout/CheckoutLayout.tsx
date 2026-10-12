@@ -27,6 +27,7 @@ type CheckoutLayoutProps = {
   intentos: number
   maxIntentos: number
   errorBannerRef: RefObject<HTMLDivElement | null>
+  errorCodigo?: string | null
   toWhatsAppMessage: () => string
   onPagar: () => void
 }
@@ -55,7 +56,7 @@ function TarjetaPaso({ numero, titulo, subtitulo, children }: { numero: number; 
  * tarjetas y resumen lateral en escritorio (`30:2385`). Mismos datos y pago que el checkout original.
  */
 export default function CheckoutLayout({
-  token, items, form, estado, error, intentos, maxIntentos, errorBannerRef, toWhatsAppMessage, onPagar,
+  token, items, form, estado, error, errorCodigo = null, intentos, maxIntentos, errorBannerRef, toWhatsAppMessage, onPagar,
 }: CheckoutLayoutProps) {
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
@@ -77,7 +78,7 @@ export default function CheckoutLayout({
       telefono: form.telefono,
       guestEmail: form.guestEmail,
       guestPhone: form.guestPhone,
-      nombre: form.sinpeNombre,
+      nombre: form.nombreComprador,
       direccion: form.direccion,
       provincia: form.provincia,
       canton: form.canton,
@@ -111,12 +112,12 @@ export default function CheckoutLayout({
     }
     const errCorreo = form.validateGuestEmail(form.guestEmail)
     const errTelefono = requiereEntrega ? form.validatePhone(form.guestPhone) : ''
-    const errNombre = form.sinpeNombre.trim() ? '' : t('checkout.f.nombreRequerido')
+    const errNombre = form.nombreComprador.trim() ? '' : t('checkout.f.nombreRequerido')
     form.setGuestEmailError(errCorreo)
     form.setGuestEmailDirty(true)
     form.setGuestPhoneError(errTelefono)
     form.setGuestPhoneDirty(true)
-    form.setSinpeNombreErr(errNombre)
+    form.setNombreCompradorErr(errNombre)
     return !errCorreo && !errTelefono && !errNombre
   }
 
@@ -163,6 +164,7 @@ export default function CheckoutLayout({
     <CheckoutPayError
       estado={estado}
       error={error}
+      codigo={errorCodigo}
       intentos={intentos}
       maxIntentos={maxIntentos}
       onPagar={pagar}
