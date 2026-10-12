@@ -69,6 +69,10 @@ public class Plan {
     @Column(name = "comision_porcentaje", nullable = false, precision = 5, scale = 2)
     private java.math.BigDecimal comisionPorcentaje = java.math.BigDecimal.ZERO;
 
+    /** Comisión mínima por venta en colones (V168). */
+    @Column(name = "comision_minima_crc", nullable = false)
+    private Integer comisionMinimaCrc = 0;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -130,4 +134,6 @@ public class Plan {
     public boolean estaEnLimite(int uso, int limite) {
         return limite != -1 && uso >= limite;
     }
+    public Integer getComisionMinimaCrc() { return comisionMinimaCrc; }
+    public void setComisionMinimaCrc(Integer v) { this.comisionMinimaCrc = v; }
 }
