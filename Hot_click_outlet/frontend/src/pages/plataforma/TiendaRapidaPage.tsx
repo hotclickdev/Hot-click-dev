@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 import { consolaService, objetoDe } from './consola'
 import { texto } from './normalizar'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga } from './piezas'
-import { RUTA_ONBOARDING_RAPIDO, camposDelError, erroresPaso1, motivoEnlace, type ErroresPaso1 } from './tiendaRapida'
+import { camposDelError, erroresPaso1, motivoEnlace, type ErroresPaso1 } from './tiendaRapida'
 import EnlaceNoVigente from './EnlaceNoVigente'
 
 type Invitacion = {
@@ -29,7 +29,6 @@ export default function TiendaRapidaPage() {
   const [cedula, setCedula] = useState('')
   const [correo, setCorreo] = useState('')
   const [telefono, setTelefono] = useState('')
-  const [clave, setClave] = useState('')
   const [aviso, setAviso] = useState('')
   const [erroresServidor, setErroresServidor] = useState<ErroresPaso1>({})
   const [ocupado, setOcupado] = useState(false)
@@ -70,8 +69,8 @@ export default function TiendaRapidaPage() {
       setPaso(1)
       return
     }
-    if (!correo.includes('@') || clave.length < 8) {
-      setAviso('El correo y una contraseña de 8 caracteres son obligatorios.')
+    if (!correo.includes('@')) {
+      setAviso(t('negocioRapido.aceptar.correoFalta'))
       return
     }
     if (!acepto) {
@@ -82,7 +81,7 @@ export default function TiendaRapidaPage() {
     setAviso('')
     try {
       await consolaService.completarRapida(token, {
-        persona: persona.trim(), cedula: cedula.trim(), correo: correo.trim(), telefono: telefono.trim(), clave,
+        persona: persona.trim(), cedula: cedula.trim(), correo: correo.trim(), telefono: telefono.trim(),
         acepto, versionLegal: invitacion.versionLegal,
       })
       setLista(true)
@@ -116,7 +115,7 @@ export default function TiendaRapidaPage() {
           <Aviso>{`El plazo de ${invitacion.negocio} ya se cumplió.`}</Aviso>
         )}
         {estado === 'listo' && invitacion && invitacion.estado !== 'VENCIDA' && (lista || paso === 3) && (
-          <Listo negocio={invitacion.negocio} />
+          <Listo negocio={invitacion.negocio} correo={correo} />
         )}
         {estado === 'listo' && invitacion && invitacion.estado !== 'VENCIDA' && !lista && paso < 3 && (
           <Formulario
@@ -132,8 +131,6 @@ export default function TiendaRapidaPage() {
             setCorreo={setCorreo}
             telefono={telefono}
             setTelefono={setTelefono}
-            clave={clave}
-            setClave={setClave}
             acepto={acepto}
             setAcepto={setAcepto}
             aviso={aviso}
@@ -159,8 +156,6 @@ function Formulario(props: {
   setCorreo: (valor: string) => void
   telefono: string
   setTelefono: (valor: string) => void
-  clave: string
-  setClave: (valor: string) => void
   acepto: boolean
   setAcepto: (valor: boolean) => void
   aviso: string
@@ -211,13 +206,11 @@ function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso, errore
   )
 }
 
-function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave, acepto, setAcepto, aviso, ocupado, onGuardar, setPaso }: Readonly<{
+function PasoCuenta({ correo, setCorreo, telefono, setTelefono, acepto, setAcepto, aviso, ocupado, onGuardar, setPaso }: Readonly<{
   correo: string
   setCorreo: (valor: string) => void
   telefono: string
   setTelefono: (valor: string) => void
-  clave: string
-  setClave: (valor: string) => void
   acepto: boolean
   setAcepto: (valor: boolean) => void
   aviso: string
@@ -230,7 +223,7 @@ function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave,
     <div>
       <Campo etiqueta="Correo" valor={correo} onChange={setCorreo} />
       <Campo etiqueta="Teléfono" valor={telefono} onChange={setTelefono} />
-      <Campo etiqueta="Contraseña" valor={clave} onChange={setClave} secreto />
+      <p className="mt-3 text-xs text-hc-n-600">{t('negocioRapido.aceptar.claveCorreo')}</p>
       <fieldset className="mt-4 rounded-[14px] border border-hc-n-200 bg-hc-n-50 p-3">
         <legend className="px-1 font-display text-sm font-bold text-hc-n-900">{t('negocioRapido.aceptar.titulo')}</legend>
         <p className="text-xs leading-5 text-hc-n-600">
@@ -263,15 +256,15 @@ function PasoCuenta({ correo, setCorreo, telefono, setTelefono, clave, setClave,
   )
 }
 
-function Listo({ negocio }: { negocio: string }) {
+function Listo({ negocio, correo }: { negocio: string; correo: string }) {
   const { t } = useTranslation()
   return (
     <section className="hc-escalon-palabra rounded-[16px] border border-hc-n-200 bg-white p-4" style={{ animationDuration: '420ms' }}>
       <p className="font-display text-[40px] font-extrabold leading-none text-hc-success-text">Listo</p>
       <h1 className="mt-2 font-display text-[22px] font-extrabold leading-7">{negocio}</h1>
-      <p className="mt-2 text-sm text-hc-n-600">Sus datos quedaron guardados. HotClick sigue cargando los productos de la tienda.</p>
-      <a className={`${BOTON_PRIMARIO} mt-4 w-full`} href={`/login?redirect=${encodeURIComponent(RUTA_ONBOARDING_RAPIDO)}`}>
-        {t('negocioRapido.listo.entrar')}
+      <p className="mt-2 text-sm text-hc-n-600">{t('negocioRapido.listo.revisaCorreo', { correo: correo || t('negocioRapido.listo.tuCorreo') })}</p>
+      <a className={`${BOTON_PRIMARIO} mt-4 w-full`} href="/recuperar-contrasena">
+        {t('negocioRapido.listo.definirClave')}
       </a>
     </section>
   )

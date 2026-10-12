@@ -23,7 +23,7 @@ export const consolaService = {
     api.post('/admin/consola/tiendas-rapidas', { negocio, persona, telefono, dias }),
   verRapida: (token: string) => api.get(`/public/tienda-rapida/${token}`),
   completarRapida: (token: string, datos: {
-    persona: string; cedula: string; correo: string; telefono: string; clave: string; acepto: boolean; versionLegal: string
+    persona: string; cedula: string; correo: string; telefono: string; acepto: boolean; versionLegal: string
   }) => api.post(`/public/tienda-rapida/${token}`, datos),
   regenerarRapida: (id: string) => api.post(`/admin/consola/tiendas-rapidas/${id}/regenerar`),
   revocarRapida: (id: string) => api.post(`/admin/consola/tiendas-rapidas/${id}/revocar`),
