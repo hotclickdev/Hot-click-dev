@@ -53,6 +53,7 @@ public class ProductoDtoMapper {
         if (dto.getMetaDescriptionEn()  != null) p.setMetaDescriptionEn(sanitizer.cleanWithLimit(dto.getMetaDescriptionEn(), 160));
         if (dto.getMetaDescriptionPt()  != null) p.setMetaDescriptionPt(sanitizer.cleanWithLimit(dto.getMetaDescriptionPt(), 160));
         if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(sanitizer.cleanWithLimit(dto.getMetaDescriptionFr(), 160));
+        if (dto.getVideoUrl()           != null) com.hotclick.utils.VideoUrlPermitida.exigir(dto.getVideoUrl());
         if (dto.getVideoUrl()           != null) p.setVideoUrl(sanitizer.cleanWithLimit(dto.getVideoUrl(), 500));
         if (dto.getTalla()              != null) p.setTalla(sanitizer.cleanWithLimit(dto.getTalla(), 20));
         if (dto.getGrupoVarianteId()    != null) p.setGrupoVarianteId(sanitizer.cleanWithLimit(dto.getGrupoVarianteId(), 64));
