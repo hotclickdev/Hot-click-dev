@@ -94,9 +94,13 @@ class PropietarioWalletGuardTest extends BaseIntegrationTest {
             .andExpect(status().isOk()).andExpect(jsonPath("$.data.metodo").value("CODIGO"));
         mockMvc.perform(get("/api/admin/reset-confirmacion").header("Authorization", tokenDueno))
             .andExpect(jsonPath("$.data.metodo").value("PASSWORD"));
-        jdbcTemplate.update("INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado) "
-            + "SELECT 'RESET_DATOS', 600, 6, 1 WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_DATOS')");
+        // Base dev vacía con baseline posterior a V171_1: el tipo RESET_DATOS no existe y se crea solo.
+        jdbcTemplate.update("DELETE FROM hot_click_codigo_otp_tb WHERE fk_id_tipo_otp IN "
+            + "(SELECT id_tipo_otp FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_DATOS')");
+        jdbcTemplate.update("DELETE FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_DATOS'");
         mockMvc.perform(post("/api/admin/reset-codigo").header("Authorization", token)).andExpect(status().isOk());
+        assertThat(jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_DATOS'", Integer.class)).isEqualTo(1);
 
         // El código llega por correo (hasheado en BD): para el test se fija uno conocido.
         Long uid = u.getId();
