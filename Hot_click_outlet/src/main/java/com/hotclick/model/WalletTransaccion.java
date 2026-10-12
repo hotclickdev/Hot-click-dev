@@ -60,6 +60,10 @@ public class WalletTransaccion {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
 
+    /** Liquidación (payout) que cubrió este movimiento; null = sin liquidar. V169. */
+    @Column(name = "fk_id_payout_liquidacion")
+    private Long payoutLiquidacionId;
+
     // Getters/Setters
     public Long getId()                         { return id; }
     public void setId(Long v)                   { this.id = v; }
@@ -96,4 +100,6 @@ public class WalletTransaccion {
 
     public LocalDateTime getFechaCreacion()     { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime v) { this.fechaCreacion = v; }
+    public Long getPayoutLiquidacionId() { return payoutLiquidacionId; }
+    public void setPayoutLiquidacionId(Long v) { this.payoutLiquidacionId = v; }
 }

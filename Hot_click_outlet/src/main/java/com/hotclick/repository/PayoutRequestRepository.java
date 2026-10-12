@@ -46,4 +46,6 @@ public interface PayoutRequestRepository extends JpaRepository<PayoutRequest, Lo
     @Query(value = "SELECT * FROM hot_click_payout_request_tb WHERE id_payout = :id FOR UPDATE",
            nativeQuery = true)
     Optional<PayoutRequest> findByIdForUpdate(@Param("id") Long id);
+
+    boolean existsByEmpresaIdAndTipoLiquidacionAndEstadoIn(Long empresaId, String tipoLiquidacion, List<String> estados);
 }
