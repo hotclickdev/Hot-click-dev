@@ -32,6 +32,7 @@ public class PasswordResetService {
     @Autowired private OtpService otpService;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private RefreshTokenService refreshTokenService;
+    @Autowired private com.github.benmanes.caffeine.cache.Cache<String, org.springframework.security.core.userdetails.UserDetails> userDetailsCache;
 
     /**
      * Paso 1: envía el código al correo si la cuenta existe y está verificada.
@@ -88,6 +89,7 @@ public class PasswordResetService {
         usuario.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
         usuarioRepository.save(usuario);
         refreshTokenService.revocarTodosDeUsuario(usuario);
+        userDetailsCache.invalidate(usuario.getCorreo()); // P1-02
         return Optional.of(usuario);
     }
 

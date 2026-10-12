@@ -104,6 +104,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     chain.doFilter(request, response);
                     return;
                 }
+                if (fueInvalidadoPorCambioDeSesion(userDetails, jwt)) {
+                    // P1-02: token emitido antes de un cambio/reset de contraseña.
+                    log.debug("[JWT] Token anterior a sesionesInvalidadasEn from ip={}", request.getRemoteAddr());
+                    chain.doFilter(request, response);
+                    return;
+                }
                 if (jwtUtil.validateToken(jwt, username)) {
                     // Soporte: authorities del claim rol (EMPRENDEDOR), no roles de BD del ADMIN.
                     Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
@@ -185,10 +191,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
         try {
             Instant emitidoEn = jwtUtil.extractIssuedAt(jwt).toInstant();
-            Instant cortadoEn = hud.getSesionesInvalidadasEn().atZone(Constants.ZONA_CR).toInstant();
+            // iat tiene precisión de segundos: se compara a segundos para no tumbar el token nuevo.
+            Instant cortadoEn = hud.getSesionesInvalidadasEn().atZone(Constants.ZONA_CR).toInstant()
+                .truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
             return emitidoEn.isBefore(cortadoEn);
         } catch (Exception e) {
-            return false;
+            return true; // P1-02: si no se puede leer iat, no se confía en el token
         }
     }
 }
