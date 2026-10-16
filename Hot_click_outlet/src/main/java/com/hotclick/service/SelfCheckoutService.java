@@ -116,7 +116,8 @@ public class SelfCheckoutService {
         pedido.setUsuarioFinal(proxy);
         pedido.setBodega(bodega);
         pedido.setEmpresa(empresa);
-        pedido.setOrigen("QR");
+        // QR de mesa: el cliente pide y paga en el local → venta presencial (chk_pedido_origen)
+        pedido.setOrigen(OrigenPedido.POS.codigo());
         pedido.setMesaNombre(mesa.getNombre());
         pedido.setClienteNombre(clienteNombre);
         pedido.setClienteTel(clienteTel);

@@ -1,5 +1,6 @@
 package com.hotclick.service.pos;
 
+import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.PosVentaDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
@@ -148,7 +149,7 @@ public class PosVentaService {
         pedido.setUsuarioFinal(cliente);
         pedido.setBodega(bodega);
         pedido.setEmpresa(empresa);
-        pedido.setOrigen("POS");
+        pedido.setOrigen(OrigenPedido.POS.codigo());
         pedido.setEstadoPedido("ENTREGADO");
         pedido.setMetodoEnvio("RETIRO");
         pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");

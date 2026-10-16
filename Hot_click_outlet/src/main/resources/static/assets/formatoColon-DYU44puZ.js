@@ -1,0 +1,1 @@
+import{Rt as e}from"./index-CCCCIOw4.js";function t(t){return e(Math.round(t??0))}export{t};

@@ -22,7 +22,7 @@ function Glifo({ etiqueta, disabled, onClick, children }: { etiqueta: string; di
  * escritorio): cantidad + "Agregar · ₡total" y "Comprar ahora" debajo. La lógica es la de siempre.
  */
 export default function TiendaBuyActions({
-  variante, slug, stockDisponible, cantidad, onCantidad, total, agregado, onAgregar, onComprarAhora,
+  variante, slug, stockDisponible, cantidad, onCantidad, total, agregado, onAgregar, onComprarAhora, cotizarHref,
 }: {
   variante: 'barra' | 'inline'
   slug: string
@@ -33,9 +33,24 @@ export default function TiendaBuyActions({
   agregado: boolean
   onAgregar: () => void
   onComprarAhora: () => void
+  /** Producto «A cotizar»: sin compra directa (cobraría ₡1); solo se solicita cotización. */
+  cotizarHref?: string
 }) {
-  if (stockDisponible <= 0) return null
   const esBarra = variante === 'barra'
+  if (cotizarHref) {
+    const cotizar = (
+      <Link
+        to={cotizarHref}
+        className="flex w-full items-center justify-center rounded-[12px] bg-[var(--t-primary)] py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0"
+      >
+        Solicitar cotización
+      </Link>
+    )
+    return esBarra
+      ? <div className="fixed inset-x-0 bottom-0 z-40 border-t border-hc-n-200 bg-hc-n-0 px-4 pb-6 pt-3">{cotizar}</div>
+      : cotizar
+  }
+  if (stockDisponible <= 0) return null
 
   const fila = (
     <div className="flex items-center gap-[10px]">
