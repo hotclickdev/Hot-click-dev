@@ -42,7 +42,7 @@ public class ContactoTextoPublico {
     }
 
     public String video(Long empresaId, String url) {
-        return url == null || !filtra(empresaId) ? url : ContactoTextoFiltro.videoPermitido(url);
+        return url == null || !filtra(empresaId) ? url : ContactoTextoFiltro.videoSinRedes(url);
     }
 
     /** Enmascara las filas cuyo {@code plan_empresa} no permite contacto directo (falta la columna = se enmascara). */

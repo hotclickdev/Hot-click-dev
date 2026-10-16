@@ -267,6 +267,15 @@ public final class ContactoTextoFiltro {
      * Solo enlaces a un video concreto (YouTube watch/shorts/youtu.be, Instagram /reel/ o /p/,
      * TikTok /video/, Vimeo con id). Perfiles, canales, inicios y "otra red" devuelven null.
      */
+    /**
+     * LAN-4: lo que ve el público de un negocio sin contacto directo (Emprendedor): solo YouTube.
+     * Instagram, TikTok y Vimeo llevan a la cuenta del vendedor fuera de HotClick.
+     */
+    public static String videoSinRedes(String url) {
+        String u = videoPermitido(url);
+        return u != null && !com.hotclick.utils.VideoUrlPermitida.esRedSocial(u) ? u : null;
+    }
+
     public static String videoPermitido(String url) {
         if (url == null) return null;
         String u = url.trim();
