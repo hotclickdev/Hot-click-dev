@@ -1,1 +1,0 @@
-import{Rt as e}from"./index-CqAlM0r2.js";function t(t){return e(Math.round(t??0))}export{t};
