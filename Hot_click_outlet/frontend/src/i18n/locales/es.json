@@ -4677,5 +4677,10 @@
     "tilopayConfirmando": "Confirmando el pago de tu plan…",
     "tilopayNoConfirmado": "No pudimos confirmar el pago. No se te cobró de más; intentá de nuevo.",
     "volverPlanes": "Volver a planes"
+  },
+  "planPendiente": {
+    "pyme": "Tu plan Pyme se activa apenas se confirme el pago. Mientras tanto tu tienda funciona con las funciones de Emprendedor.",
+    "negocioPlus": "Tu plan Negocio Plus se activa apenas se confirme el pago. Mientras tanto tu tienda funciona con las funciones de Emprendedor.",
+    "cta": "Completar pago"
   }
 }

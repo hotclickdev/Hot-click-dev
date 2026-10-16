@@ -17,3 +17,8 @@ export function nombrePlanVisible(plan: string): string {
     .map((p) => p[0]!.toUpperCase() + p.slice(1))
     .join(' ')
 }
+
+/** Clave i18n del aviso «se activa apenas se confirme el pago» (texto de Producto, 16-oct-2026). */
+export function clavePlanPendiente(plan: string): string {
+  return plan.toUpperCase().replace(/\s+/g, '_') === 'NEGOCIO_PLUS' ? 'planPendiente.negocioPlus' : 'planPendiente.pyme'
+}

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '@/services/api'
-import { nombrePlanVisible, planPorCompletar } from './planPendiente'
+import { useTranslation } from 'react-i18next'
+import { clavePlanPendiente, planPorCompletar } from './planPendiente'
 
 /** Plan nuevo elegido sin pagar: «Completá el pago» lleva a la pantalla de planes (neutral de pasarela). */
 export default function PlanPendienteBanner({ rutaPlan }: { rutaPlan: string }) {
+  const { t } = useTranslation()
   const [plan, setPlan] = useState<string | null>(null)
 
   useEffect(() => {
@@ -22,8 +24,8 @@ export default function PlanPendienteBanner({ rutaPlan }: { rutaPlan: string }) 
       style={{ background: 'var(--hc-warning-bg, #FDF3DC)', color: 'var(--hc-warning, #9A6700)', borderBottom: '1px solid var(--hc-border)' }}
       role="status"
     >
-      <span>Elegiste el plan {nombrePlanVisible(plan)} y falta el pago.</span>
-      <Link to={rutaPlan} className="font-semibold underline">Completar pago</Link>
+      <span>{t(clavePlanPendiente(plan))}</span>
+      <Link to={rutaPlan} className="font-semibold underline">{t('planPendiente.cta')}</Link>
     </div>
   )
 }

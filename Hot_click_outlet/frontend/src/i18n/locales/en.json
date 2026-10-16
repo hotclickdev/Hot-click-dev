@@ -4677,5 +4677,10 @@
     "tilopayConfirmando": "Confirming your plan payment…",
     "tilopayNoConfirmado": "We couldn't confirm the payment. Please try again.",
     "volverPlanes": "Back to plans"
+  },
+  "planPendiente": {
+    "pyme": "Your Pyme plan activates as soon as the payment is confirmed. Until then, your store runs with the Emprendedor features.",
+    "negocioPlus": "Your Negocio Plus plan activates as soon as the payment is confirmed. Until then, your store runs with the Emprendedor features.",
+    "cta": "Complete payment"
   }
 }
