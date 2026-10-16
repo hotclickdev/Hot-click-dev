@@ -105,10 +105,16 @@ public class StorefrontController {
             .orElseGet(() -> ResponseEntity.notFound().<ResponseDTO>build());
     }
 
+    static final int MAX_CATEGORIAS = 100;
+
     @GetMapping("/categorias")
     public ResponseEntity<ResponseDTO> categorias(HttpServletRequest request) {
         Long empresaId = empresaId(request);
-        List<Categoria> cats = categoriaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO);
+        // Filtro de la tienda: categorías que tienen productos visibles (también las de plataforma), no solo las propias.
+        List<Categoria> cats = productoRepository.findCategoriasCatalogoPublico(empresaId, PageRequest.of(0, MAX_CATEGORIAS)).stream()
+            .filter(c -> c.getEstado() == null || c.getEstado() == Constants.ESTADO_ACTIVO)
+            .sorted(java.util.Comparator.comparing(c -> c.getNombreCategoria() == null ? "" : c.getNombreCategoria().toLowerCase()))
+            .toList();
         return ResponseEntity.ok(ResponseDTO.success("Categorías obtenidas", cats));
     }
 
