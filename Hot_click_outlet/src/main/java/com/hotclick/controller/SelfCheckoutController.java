@@ -70,7 +70,7 @@ public class SelfCheckoutController {
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            log.error("[self-checkout] Error creando pedido token={}: {}", token, e.getMessage(), e);
+            log.error("[self-checkout] Error creando pedido: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al procesar el pedido"));
         }
     }

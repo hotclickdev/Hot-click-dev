@@ -52,7 +52,7 @@ public class StripePosCheckoutClient {
             .build();
 
         Session session = Session.create(params);
-        log.info("[stripe-pos] Checkout session {} creada para empresa={} token={}", session.getId(), empresaId, posQrToken);
+        log.info("[stripe-pos] Checkout session {} creada para empresa={}", session.getId(), empresaId);
         return session.getUrl();
     }
 

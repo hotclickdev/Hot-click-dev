@@ -113,7 +113,7 @@ public class HaciendaContribuyenteService {
 
     @SuppressWarnings("unused")
     private ContribuyenteDTO fallbackConsulta(String cedula, Throwable ex) {
-        log.warn("Fallback Hacienda contribuyente para {}: {}", cedula, ex.getMessage());
+        log.warn("Fallback Hacienda contribuyente: {}", ex.getMessage());
         return new ContribuyenteDTO(cedula, null, null, "SERVICIO_NO_DISPONIBLE", null, false);
     }
 }
