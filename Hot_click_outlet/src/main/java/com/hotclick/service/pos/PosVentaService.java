@@ -89,7 +89,7 @@ public class PosVentaService {
      * Ítem 7 (producto 565): un producto eliminado (estado ≠ activo) no se vende en caja.
      * NP-11: un personalizado «a cotizar» no tiene precio (el sistema lo guarda en ₡1): no se vende por POS.
      */
-    static void exigirVendiblePorPos(Producto producto) {
+    public static void exigirVendiblePorPos(Producto producto) {
         if (producto.getEstado() == null || producto.getEstado() != Constants.ESTADO_ACTIVO) {
             throw new IllegalStateException("«" + producto.getNombreProducto() + "» fue eliminado y no se puede vender.");
         }

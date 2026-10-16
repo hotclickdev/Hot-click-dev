@@ -74,6 +74,7 @@ public class PosQrSessionService {
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", usuarioId));
         Empresa empresa  = empresaRepo.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
+        exigirNegocioAprobado(empresa);
 
         int total = 0;
         for (Map<String, Object> item : items) {
@@ -81,6 +82,7 @@ public class PosQrSessionService {
             int cantidad = cantidadDe(item);
             var producto = productoRepo.findById(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+            PosVentaService.exigirVendiblePorPos(producto);
             Integer precioObj = producto.getPrecioEfectivo();
             if (precioObj == null) {
                 throw new IllegalStateException("Producto sin precio de venta: " + productoId);
@@ -120,6 +122,15 @@ public class PosQrSessionService {
         log.info("[POS-QR] Sesión {} creada por usuario={} empresa={} método={} total={}",
             saved.getToken(), usuarioId, empresaId, metodoPago, total);
         return saved;
+    }
+
+    public static final String MSG_NO_APROBADO =
+        "Tu negocio todavía no está aprobado: por ahora en la caja solo podés registrar ventas en efectivo. "
+            + "El cobro con tarjeta o SINPE por QR se habilita cuando lo aprobemos.";
+
+    /** NP-13: el cobro QR (Tilopay/SINPE) solo para negocios aprobados; el efectivo del POS sigue disponible. */
+    static void exigirNegocioAprobado(Empresa empresa) {
+        if (!"ACTIVO".equals(empresa.getEstadoEmpresa())) throw new IllegalStateException(MSG_NO_APROBADO);
     }
 
     @Transactional(readOnly = true)
