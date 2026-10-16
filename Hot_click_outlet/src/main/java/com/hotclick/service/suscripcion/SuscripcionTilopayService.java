@@ -36,14 +36,14 @@ public class SuscripcionTilopayService {
     private final EmpresaRepository empresaRepo;
     private final SuscripcionRepository suscripcionRepo;
     private final TilopayService tilopayService;
-    private final SuscripcionOnvoChangeService planLocal;
+    private final PlanPagoConfirmado planLocal;
     private final BillingLedgerWriter ledgerWriter;
     private final int diaCobroDefault;
     private final String prorrateo;
 
     public SuscripcionTilopayService(CobroSuscripcionRepository cobroRepo, PlanRepository planRepo,
                                      EmpresaRepository empresaRepo, SuscripcionRepository suscripcionRepo,
-                                     TilopayService tilopayService, SuscripcionOnvoChangeService planLocal,
+                                     TilopayService tilopayService, PlanPagoConfirmado planLocal,
                                      BillingLedgerWriter ledgerWriter,
                                      @Value("${hotclick.billing.dia-cobro-default:28}") int diaCobroDefault,
                                      @Value("${hotclick.billing.prorrateo:DIAS}") String prorrateo) {
@@ -70,7 +70,7 @@ public class SuscripcionTilopayService {
         long precio = plan.getPrecioMensual().longValue();
         Map<String, Object> r = new LinkedHashMap<>();
         if (precio <= 0) {
-            planLocal.aplicarPlanLocal(empresaId, plan.getNombre(), null);
+            planLocal.planPagoConfirmado(empresaId, plan.getNombre(), "SIN_COBRO", null);
             r.put("estado", "ACTIVO");
             r.put("plan", plan.getNombre());
             return r;
@@ -155,7 +155,7 @@ public class SuscripcionTilopayService {
 
     private void activarPeriodo(Long empresaId, CobroSuscripcion cobro) {
         Plan plan = planRepo.findById(cobro.getPlanId()).orElseThrow();
-        planLocal.aplicarPlanLocal(empresaId, plan.getNombre(), null);
+        planLocal.planPagoConfirmado(empresaId, plan.getNombre(), Constants.PROVEEDOR_TILOPAY, cobro.getOrderNumber());
         Empresa empresa = empresaRepo.findById(empresaId).orElseThrow();
         int dia = empresa.getDiaCobro() != null ? empresa.getDiaCobro() : diaCobroDefault;
         // El alta prorrateada cubre hasta el próximo día de cobro, contado desde que se creó el cobro.
