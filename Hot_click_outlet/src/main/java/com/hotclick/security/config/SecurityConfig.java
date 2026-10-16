@@ -128,7 +128,8 @@ public class SecurityConfig {
             TenantFilter tenantFilter,
             InternalSecretFilter internalSecretFilter,
             BlockedIpFilter blockedIpFilter,
-            MaxRequestBodySizeFilter maxRequestBodySizeFilter) throws Exception {
+            MaxRequestBodySizeFilter maxRequestBodySizeFilter,
+            org.springframework.beans.factory.ObjectProvider<com.hotclick.security.staging.StagingAuthConfig.StagingJwtFilterHolder> stagingAuth) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
@@ -161,6 +162,11 @@ public class SecurityConfig {
         http.addFilterBefore(rateLimitingFilter, CsrfFilter.class);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(tenantFilter, UsernamePasswordAuthenticationFilter.class);
+        // Solo staging (perfil + STAGING_AUTH_ENABLED=true + STAGING_JWT_SECRET); en default/prod no existe el bean.
+        var holder = stagingAuth.getIfAvailable();
+        if (holder != null && holder.filter() != null) {
+            http.addFilterBefore(holder.filter(), UsernamePasswordAuthenticationFilter.class);
+        }
         return http.build();
     }
 }
