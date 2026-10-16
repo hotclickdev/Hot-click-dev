@@ -1,6 +1,7 @@
 import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
 import { PHONE_FIELD_COUNTRIES } from './phoneFieldCountries'
+import { pegadoTelefonoCR } from '@/utils/telefono'
 import './PhoneField.css'
 import { useId, type CSSProperties, type ReactNode } from 'react'
 
@@ -68,7 +69,19 @@ export default function PhoneField({
         onChange={onChange}
         disabled={disabled}
         forceDialCode={forceDialCode}
-        inputProps={{ id: idCampo, 'aria-required': required || undefined, 'aria-invalid': error ? true : undefined }}
+        inputProps={{
+          id: idCampo,
+          'aria-required': required || undefined,
+          'aria-invalid': error ? true : undefined,
+          // Pyme: pegar «+506 8888-1234» borraba el número; se normaliza a +506 + 8 dígitos.
+          onPaste: (ev) => {
+            const normal = pegadoTelefonoCR(ev.clipboardData.getData('text'))
+            if (normal && onChange) {
+              ev.preventDefault()
+              onChange(normal)
+            }
+          },
+        }}
         inputStyle={{
           backgroundColor: fondo,
           border,
