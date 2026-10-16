@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import useAuthStore from '@/store/authStore'
 import { adminService } from '@/services/orderService'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useLocation, useParams, useNavigate } from 'react-router-dom'
+import { itemsPedido, lineaCompraDirecta, lineasCheckout, totalLineas } from './compraDirecta'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
 import { Campo } from '@/pages/checkout/PiezasCheckout'
@@ -44,7 +45,10 @@ type FormCheckout = {
 export default function TiendaCheckoutPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
-  const { carrito, totalImporte, itemsParaPedido, vaciarCarrito, empresa } = useTiendaStore()
+  const { carrito: carritoTienda, vaciarCarrito, empresa } = useTiendaStore()
+  const location = useLocation()
+  const directa = lineaCompraDirecta(location.state)
+  const carrito = lineasCheckout(carritoTienda, directa)
   // Con sesión, los datos de la cuenta arrancan prellenados (se pueden corregir).
   const nombreCuenta = useAuthStore((s) => s.userName)
   const correoCuenta = useAuthStore((s) => s.userEmail)
@@ -91,8 +95,9 @@ export default function TiendaCheckoutPage() {
     setError(null)
     try {
       const notas = [form.notas.trim(), encomienda.trim() ? `Encomienda: ${encomienda.trim()}` : ''].filter(Boolean).join(' | ')
-      const resultado = await tiendaService.crearPedido(slug as string, { ...form, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
-      vaciarCarrito()
+      const resultado = await tiendaService.crearPedido(slug as string, { ...form, notas, items: itemsPedido(carrito) }) as { numeroPedido?: string; total?: number }
+      // S1-16: una compra directa no toca el carrito (los otros productos siguen ahí).
+      if (!directa) vaciarCarrito()
       const qs = new URLSearchParams({ orden: resultado.numeroPedido ?? '' })
       navigate(`/tienda/${slug}/checkout/exito?${qs}`, { replace: true, state: { total: resultado.total } })
     } catch (err: unknown) {
@@ -189,7 +194,7 @@ export default function TiendaCheckoutPage() {
               </div>
               <div className="mt-1 flex items-center justify-between border-t border-hc-n-200 pt-3 text-hc-n-900">
                 <span className="text-[15px] font-semibold">Total</span>
-                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte() + costoEnvio)}</span>
+                <span className="font-display text-[17px] font-bold">{formatPrice(totalLineas(carrito) + costoEnvio)}</span>
               </div>
             </div>
           </section>
