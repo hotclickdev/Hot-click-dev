@@ -6,6 +6,7 @@ import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import { mensajeErrorAuth } from './authHelpers'
+import { telefonoOpcional } from '@/pages/registro-empresa/registroEmpresaHelpers'
 import EmprendimientoHeader from './emprendimiento/EmprendimientoHeader'
 import EmprendimientoProgreso from './emprendimiento/EmprendimientoProgreso'
 import EmprendimientoPasoNegocio from './emprendimiento/EmprendimientoPasoNegocio'
@@ -79,11 +80,11 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
       const { data } = await authService.registroEmpresa({
         nombreEmpresa:   form.nombreEmpresa.trim(),
         correoEmpresa:   form.correoEmpresa.trim().toLowerCase() || undefined,
-        telefonoEmpresa: form.telefonoEmpresa.trim() || undefined,
+        telefonoEmpresa: telefonoOpcional(form.telefonoEmpresa),
         nombreAdmin:     form.nombreAdmin.trim() || undefined,
         correoAdmin:     form.correoAdmin.trim().toLowerCase(),
         passwordAdmin:   form.passwordAdmin,
-        telefonoAdmin:   form.telefonoAdmin.trim() || undefined,
+        telefonoAdmin:   telefonoOpcional(form.telefonoAdmin),
         ...payloadUbicacionRegistro(ubicacion.ubicacion),
         declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
