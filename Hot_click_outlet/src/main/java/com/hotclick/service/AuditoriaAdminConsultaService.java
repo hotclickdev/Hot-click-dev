@@ -8,10 +8,6 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import jakarta.persistence.criteria.Predicate;
-import java.util.ArrayList;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,9 +64,13 @@ public class AuditoriaAdminConsultaService {
         String accionFiltro = blankToNull(accion);
         String emailFiltro = blankToNull(adminEmail);
 
-        Page<AuditoriaAdmin> result = auditoriaRepo.findAll(
-                filtro(accionFiltro, emailFiltro, empresaId, desde, hasta),
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fecha")));
+        Page<AuditoriaAdmin> result = auditoriaRepo.buscar(
+                accionFiltro,
+                emailFiltro,
+                empresaId,
+                desde,
+                hasta,
+                PageRequest.of(page, size));
 
         Map<Long, String> nombres = nombresEmpresa(result.getContent());
         List<AuditoriaAdminDto> content = result.getContent().stream()
@@ -87,26 +87,6 @@ public class AuditoriaAdminConsultaService {
         resp.put("desdeEfectivo", desde.toString());
         resp.put("hastaEfectivo", hasta.toString());
         return resp;
-    }
-
-    /**
-     * BUG-S1-10: la consulta JPQL con «:adminEmail IS NULL OR LOWER(... :adminEmail ...)» daba 500 en
-     * Postgres cuando el filtro venía nulo (el parámetro sin tipo se manda como bytea y
-     * {@code lower(bytea)} no existe). Solo se agregan los filtros presentes.
-     */
-    static Specification<AuditoriaAdmin> filtro(String accion, String adminEmail, Long empresaId,
-                                                LocalDateTime desde, LocalDateTime hasta) {
-        return (root, query, cb) -> {
-            List<Predicate> p = new ArrayList<>();
-            if (accion != null) p.add(cb.equal(root.get("accion"), accion));
-            if (adminEmail != null) {
-                p.add(cb.like(cb.lower(root.get("adminEmail")), "%" + adminEmail.toLowerCase() + "%"));
-            }
-            if (empresaId != null) p.add(cb.equal(root.get("empresaId"), empresaId));
-            p.add(cb.greaterThanOrEqualTo(root.get("fecha"), desde));
-            p.add(cb.lessThanOrEqualTo(root.get("fecha"), hasta));
-            return cb.and(p.toArray(new Predicate[0]));
-        };
     }
 
     @Transactional(readOnly = true)
