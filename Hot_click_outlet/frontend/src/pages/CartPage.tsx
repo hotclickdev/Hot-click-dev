@@ -13,6 +13,7 @@ import { abandonedCartService } from '@/services/abandonedCartService'
 import AvisoVariosEmprendimientos from '@/components/comprador/AvisoVariosEmprendimientos'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { cantidadEmprendimientos } from '@/pages/checkout/checkoutHelpers'
+import { usePagoPorTienda } from '@/features/pagoPorTienda/pagoPorTienda'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import { totalesConCodigos, useCodigosPedido } from '@/pages/checkout/useCodigosPedido'
 import { useEsDesktop } from '@/pages/checkout/useEsDesktop'
@@ -167,6 +168,7 @@ export default function CartPage() {
     </button>
   )
   const emprendimientos = cantidadEmprendimientos(items)
+  const pagoPorTienda = usePagoPorTienda()
   const tarjetas = paquetes.map((paquete, indice) => (
     <PaqueteCarritoTarjeta
       key={paquete.clave}
@@ -193,7 +195,7 @@ export default function CartPage() {
                 <h2 className="font-display text-[18px] font-bold tracking-normal text-hc-n-900">{t('cart.paquetes', { count: paquetes.length })}</h2>
                 <span className="ml-auto">{botonVaciar}</span>
               </div>
-              <AvisoVariosEmprendimientos cantidadNegocios={emprendimientos} />
+              <AvisoVariosEmprendimientos cantidadNegocios={emprendimientos} pagoPorTienda={pagoPorTienda} />
               <p className="text-[13px] leading-[normal] text-hc-n-600">{t('cart.paquetesNotaEscritorio')}</p>
               {tarjetas}
               {/* Sin frame desktop en Figma para esta tarjeta: se conserva la función (recuperar carrito) en la columna de productos. */}
@@ -229,7 +231,7 @@ export default function CartPage() {
             {botonVaciar}
           </div>
           <p className="text-[12px] leading-4 text-hc-n-600">{t('cart.paquetesNota')}</p>
-          <AvisoVariosEmprendimientos cantidadNegocios={emprendimientos} />
+          <AvisoVariosEmprendimientos cantidadNegocios={emprendimientos} pagoPorTienda={pagoPorTienda} />
         </div>
         {tarjetas}
         <NotasPedido notas={notas} onCambiar={setNotas} />
