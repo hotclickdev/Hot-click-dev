@@ -40,7 +40,7 @@ function SinFoto({ nombre, className }: { nombre: string; className: string }) {
       <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-full bg-hc-n-0 font-display text-[34px] font-extrabold leading-none text-hc-blue-600 dark:bg-[#161B22] dark:text-[#6EA0FF]">
         {iniciales(nombre)}
       </span>
-      <span aria-hidden="true" className="text-[10px] font-bold uppercase text-hc-n-500 dark:text-[#9DA7B3]">{t('home.carrusel.sinFotoRotulo')}</span>
+      <span aria-hidden="true" className="text-[10px] font-bold uppercase text-hc-n-600 dark:text-[#9DA7B3]">{t('home.carrusel.sinFotoRotulo')}</span>
     </span>
   )
 }
