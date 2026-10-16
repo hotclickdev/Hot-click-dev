@@ -6,6 +6,10 @@ import {
 } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
 import { leerExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
 
+/** NP-9: texto neutro; antes mostraba archivos de demo («logo-qa2.png») que el negocio no subió. */
+export const PLACEHOLDER_LOGO = 'Todavía no subiste un logo'
+export const PLACEHOLDER_BANNER = 'Todavía no subiste un banner'
+
 export const CATEGORIAS_NEGOCIO = ['Tecnología', 'Ropa', 'Hogar'] as const
 
 export type FormNegocio = {

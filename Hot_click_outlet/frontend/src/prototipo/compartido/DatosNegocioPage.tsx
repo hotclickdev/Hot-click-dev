@@ -11,6 +11,8 @@ import { useSellerRuta } from './SellerPlanContext'
 import iconCamara from './assets/icon-camara.svg'
 import {
   CATEGORIAS_NEGOCIO,
+  PLACEHOLDER_BANNER,
+  PLACEHOLDER_LOGO,
   FORM_NEGOCIO_INICIAL,
   type FormNegocio,
   bodyPerfilDesdeForm,
@@ -113,8 +115,8 @@ export function DatosNegocioPage({
                   </Chip>
                 ))}
               </div>
-              <Archivo etiqueta="Logo del negocio" nombre="logo-qa2.png" />
-              <Archivo etiqueta="Banner de portada" nombre="banner-qa2.jpg" />
+              <Archivo etiqueta="Logo del negocio" nombre={PLACEHOLDER_LOGO} />
+              <Archivo etiqueta="Banner de portada" nombre={PLACEHOLDER_BANNER} />
             </>
           ) : null}
           {idPaso === 'contacto' ? (
