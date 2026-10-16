@@ -95,6 +95,10 @@ public class StorefrontGuestOrderService {
                 throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
             }
 
+            if (producto.esACotizar()) {
+                throw new IllegalArgumentException("«" + producto.getNombreProducto() + "» es a cotizar: solicitá una cotización al vendedor");
+            }
+
             String ref = "STOREFRONT-" + empresa.getSlug();
             stockService.reservar(producto, item.cantidad(), ref, dto.getCorreoCliente());
 
