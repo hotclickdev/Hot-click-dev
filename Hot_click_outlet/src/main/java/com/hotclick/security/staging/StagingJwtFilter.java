@@ -25,6 +25,9 @@ import java.util.List;
  */
 public class StagingJwtFilter extends OncePerRequestFilter {
 
+    /** Marca para que JwtRequestFilter no reprocese (ni cuente como inválido) un token de staging válido. */
+    public static final String ATTR_STAGING_AUTH = "hotclick.staging.auth";
+
 
     private final SecretKey key;
 
@@ -50,9 +53,11 @@ public class StagingJwtFilter extends OncePerRequestFilter {
                 if (email == null || role == null || !role.matches("[A-Z_]{2,40}")) {
                     throw new JwtException("claims");
                 }
-                var auth = new UsernamePasswordAuthenticationToken(email, null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                var principal = new com.hotclick.security.HotclickUserDetails(email, "", authorities, null);
+                var auth = new UsernamePasswordAuthenticationToken(principal, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                req.setAttribute(ATTR_STAGING_AUTH, Boolean.TRUE);
             } catch (JwtException | IllegalArgumentException e) {
                 // No es un token de staging: sigue la cadena normal (JwtRequestFilter decide).
                 SecurityContextHolder.clearContext();
