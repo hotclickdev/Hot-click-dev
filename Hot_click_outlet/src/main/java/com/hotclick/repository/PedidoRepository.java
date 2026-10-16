@@ -289,4 +289,19 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     @Query("SELECT p.empresa.id, COALESCE(SUM(p.totalPedido), 0) FROM Pedido p WHERE p.empresa IS NOT NULL GROUP BY p.empresa.id")
     List<Object[]> sumVentasPorEmpresa();
+
+    /** NP-22: pedidos de tienda propia pendientes, sin pago en pasarela, con reserva vencida. */
+    @Query("""
+        SELECT p FROM Pedido p
+        WHERE p.empresa.id = :empresaId
+          AND p.estadoPedido = 'PENDIENTE'
+          AND p.fechaPedido < :corte
+          AND p.metodoPago IN ('SINPE_MOVIL', 'TRANSFERENCIA', 'EFECTIVO')
+          AND p.metodoEnvio IN ('DOMICILIO', 'RETIRO')
+          AND NOT EXISTS (SELECT 1 FROM Pago g WHERE g.pedido = p)
+        ORDER BY p.fechaPedido ASC
+        """)
+    List<Pedido> findTiendaPendientesVencidos(@Param("empresaId") Long empresaId,
+                                              @Param("corte") java.time.LocalDateTime corte,
+                                              Pageable pageable);
 }
