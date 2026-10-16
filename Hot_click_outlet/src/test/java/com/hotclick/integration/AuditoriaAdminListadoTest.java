@@ -3,7 +3,6 @@ package com.hotclick.integration;
 import com.hotclick.model.AuditoriaAdmin;
 import com.hotclick.repository.AuditoriaAdminRepository;
 import com.hotclick.utils.Constants;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +19,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuditoriaAdminListadoTest extends BaseIntegrationTest {
 
     @Autowired private AuditoriaAdminRepository auditoriaAdminRepository;
-
-    @AfterEach
-    void limpiar() {
-        auditoriaAdminRepository.deleteAll(auditoriaAdminRepository.findAll().stream()
-                .filter(a -> a.getEmpresaId() != null && (a.getEmpresaId() == 9101L || a.getEmpresaId() == 9102L)).toList());
-    }
 
     private void fila(String accion, String email, Long empresaId) {
         AuditoriaAdmin a = new AuditoriaAdmin();
