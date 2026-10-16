@@ -12,3 +12,13 @@ describe('Datos del negocio sin archivos de demo (NP-9)', () => {
     expect(PLACEHOLDER_BANNER).not.toMatch(/\.(png|jpe?g)$/)
   })
 })
+
+describe('errorWhatsappNegocio (Pyme)', () => {
+  it('rechaza texto y acepta 8 dígitos con o sin +506', async () => {
+    const { errorWhatsappNegocio } = await import('./datosNegocioHelpers')
+    expect(errorWhatsappNegocio('QA-TEST abc')).not.toBeNull()
+    expect(errorWhatsappNegocio('8888')).not.toBeNull()
+    expect(errorWhatsappNegocio('+506 8888-1234')).toBeNull()
+    expect(errorWhatsappNegocio('')).toBeNull()
+  })
+})

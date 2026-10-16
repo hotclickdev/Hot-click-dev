@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { empresaService } from '@/services/empresaService'
+import { digitosTelefonoCR } from '@/utils/telefono'
 import { unwrapEmpresa } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
 import { guardarExtrasLocal, limpiarExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
 import FormularioPorPasos from './FormularioPorPasos'
@@ -19,6 +20,7 @@ import {
   extrasDesdeForm,
   formConExtrasOffline,
   formDesdeEmpresa,
+  errorWhatsappNegocio,
 } from './datosNegocioHelpers'
 
 const PASOS: readonly PasoFormulario[] = [
@@ -63,6 +65,7 @@ export function DatosNegocioPage({
   function validar(i: number): string | null {
     const id = PASOS[i]?.id
     if (id === 'identidad' && !form.nombre.trim()) return 'El nombre del negocio es requerido'
+    if (id === 'contacto') return errorWhatsappNegocio(form.whatsapp)
     return null
   }
 
@@ -124,7 +127,7 @@ export function DatosNegocioPage({
               <Campo
                 etiqueta="WhatsApp de contacto"
                 value={form.whatsapp}
-                onChange={setCampo('whatsapp')}
+                onChange={(v) => setCampo('whatsapp')(digitosTelefonoCR(v))}
                 type="tel"
               />
               <Campo

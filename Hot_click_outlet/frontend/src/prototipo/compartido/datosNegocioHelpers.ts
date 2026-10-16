@@ -1,3 +1,4 @@
+import { digitosTelefonoCR } from '@/utils/telefono'
 import {
   descripcionSinTagFotos,
   descripcionVisible,
@@ -89,4 +90,12 @@ export function bodyPerfilDesdeForm(form: FormNegocio, descRaw: string) {
     instagram: form.instagram.trim(),
     zonaEnvio: form.zona.trim(),
   }
+}
+
+/** WhatsApp del negocio: vacío o 8 dígitos de Costa Rica (acepta pegar +506 / 506 / guiones). */
+export function errorWhatsappNegocio(valor: string): string | null {
+  const texto = (valor ?? '').trim()
+  if (!texto) return null
+  if (/[^\d\s+()-]/.test(texto)) return 'El WhatsApp solo puede tener números (8 dígitos, ej. 8888-1234)'
+  return digitosTelefonoCR(texto).length === 8 ? null : 'El WhatsApp debe tener 8 dígitos (ej. 8888-1234)'
 }
