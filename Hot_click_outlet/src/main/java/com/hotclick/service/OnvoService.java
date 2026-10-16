@@ -199,6 +199,21 @@ public class OnvoService {
         }
     }
 
+    /**
+     * WH-1: lee la checkout session directamente de ONVO (GET). El webhook usa solo esta
+     * respuesta, nunca el cuerpo recibido. Vacío si no se pudo leer (falla cerrado).
+     */
+    public Map<?, ?> obtenerCheckoutSession(String sessionId) {
+        if (mockMode || sessionId == null || !sessionId.matches("[A-Za-z0-9_\\-]{1,100}")) return Map.of();
+        try {
+            Map<?, ?> body = getOnvo("/checkout-sessions/" + sessionId);
+            return body == null ? Map.of() : body;
+        } catch (HttpClientErrorException e) {
+            log.warn("[onvo] No se pudo leer checkout session: {}", e.getStatusCode());
+            return Map.of();
+        }
+    }
+
     @SuppressWarnings("rawtypes")
     private Map<?, ?> getOnvo(String path) {
         HttpHeaders headers = new HttpHeaders();

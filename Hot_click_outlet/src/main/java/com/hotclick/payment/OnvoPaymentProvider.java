@@ -58,7 +58,8 @@ public class OnvoPaymentProvider implements PaymentProvider {
 
         Map<String, String> metadata = Map.of(
             "pedidoId",     String.valueOf(pedido.getId()),
-            "numeroPedido", pedido.getNumeroPedido()
+            "numeroPedido", pedido.getNumeroPedido(),
+            "empresaId",    String.valueOf(pedido.getEmpresaId())
         );
 
         OnvoService.OnvoCheckoutSession session = onvoService.crearCheckoutSession(
@@ -74,6 +75,52 @@ public class OnvoPaymentProvider implements PaymentProvider {
      * Procesa el evento checkout-session.succeeded del webhook de ONVO.
      * Es idempotente: si el sessionId ya fue procesado, no hace nada.
      */
+    /** Resultado de la verificación contra ONVO. */
+    public enum Verificacion { OK, DUPLICADO, NO_PAGADO, NO_ENCONTRADO, DATOS_DISTINTOS }
+
+    /**
+     * WH-1: valida estado, monto, moneda y empresaId de la sesión leída de ONVO contra el pago local.
+     * Solo si todo coincide confirma el pedido (idempotente por sessionId).
+     */
+    @Transactional
+    public Verificacion procesarPagoVerificado(String sessionId, Map<?, ?> sesionOnvo, String ipOrigen) {
+        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(sessionId, "checkout-session.succeeded")) {
+            return Verificacion.DUPLICADO;
+        }
+        if (sesionOnvo == null || sesionOnvo.isEmpty()) return Verificacion.NO_ENCONTRADO;
+        String status = String.valueOf(sesionOnvo.get("status"));
+        if (!"succeeded".equalsIgnoreCase(status) && !"paid".equalsIgnoreCase(status)
+                && !"completed".equalsIgnoreCase(status)) {
+            return Verificacion.NO_PAGADO;
+        }
+        Pago pago = pagoRepository.findByMerchantToken(sessionId).orElse(null);
+        if (pago == null || pago.getPedido() == null) return Verificacion.NO_ENCONTRADO;
+        if (!coincide(pago, sesionOnvo)) {
+            log.warn("[onvo] Datos de sesión no coinciden con el pago local: pedido={}", pago.getPedido().getNumeroPedido());
+            return Verificacion.DATOS_DISTINTOS;
+        }
+        procesarPagoExitoso(sessionId, "{\"verificado\":\"GET ONVO\"}", ipOrigen);
+        return Verificacion.OK;
+    }
+
+    static boolean coincide(Pago pago, Map<?, ?> s) {
+        Object monto = s.get("totalAmount") != null ? s.get("totalAmount") : s.get("amount");
+        Object moneda = s.get("currency");
+        Object meta = s.get("metadata");
+        Object empresaMeta = meta instanceof Map<?, ?> m ? m.get("empresaId") : null;
+        Long empresaLocal = pago.getPedido().getEmpresaId();
+        Integer montoLocal = pago.getMonto() != null ? pago.getMonto() : pago.getPedido().getTotalPedido();
+        if (monto == null || montoLocal == null || moneda == null || empresaMeta == null || empresaLocal == null) {
+            return false;
+        }
+        long montoOnvo;
+        try { montoOnvo = new java.math.BigDecimal(String.valueOf(monto)).longValueExact(); }
+        catch (ArithmeticException | NumberFormatException e) { return false; }
+        return montoOnvo == montoLocal.longValue()
+            && "CRC".equalsIgnoreCase(String.valueOf(moneda))
+            && String.valueOf(empresaLocal).equals(String.valueOf(empresaMeta));
+    }
+
     @Transactional
     public void procesarPagoExitoso(String checkoutSessionId, String rawBody, String ipOrigen) {
         if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(

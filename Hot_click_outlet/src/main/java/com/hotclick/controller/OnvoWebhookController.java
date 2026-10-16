@@ -48,11 +48,29 @@ public class OnvoWebhookController {
         this.objectMapper = objectMapper;
     }
 
+    /** WH-1: tope de cuerpo y de intentos (además del límite en nginx). */
+    static final int MAX_BODY_BYTES = 64 * 1024;
+    static final int MAX_INTENTOS_POR_MINUTO = 120;
+    private final java.util.concurrent.atomic.AtomicLong ventana = new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicInteger intentos = new java.util.concurrent.atomic.AtomicInteger();
+
+    boolean dentroDelLimite() {
+        long minuto = System.currentTimeMillis() / 60_000;
+        if (ventana.getAndSet(minuto) != minuto) intentos.set(0);
+        return intentos.incrementAndGet() <= MAX_INTENTOS_POR_MINUTO;
+    }
+
     @PostMapping("/onvo")
     public ResponseEntity<Map<String, String>> recibirWebhookOnvo(
             @RequestBody String payload,
             @RequestHeader(value = "X-Webhook-Secret", required = false) String secretHeader) {
 
+        if (!dentroDelLimite()) {
+            return ResponseEntity.status(429).body(Map.of("error", "too many requests"));
+        }
+        if (payload != null && payload.getBytes(StandardCharsets.UTF_8).length > MAX_BODY_BYTES) {
+            return ResponseEntity.status(413).body(Map.of("error", "payload too large"));
+        }
         if (!secretValido(secretHeader)) {
             log.warn("[onvo-webhook] Secret inválido o no configurado");
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
@@ -81,7 +99,17 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] checkout-session.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
-                    onvoPaymentProvider.procesarPagoExitoso(sessionId, payload, "webhook");
+                    // WH-1: se consulta la sesión con un GET a ONVO y se usa solo esa respuesta.
+                    var v = onvoPaymentProvider.procesarPagoVerificado(
+                        sessionId, onvoService.obtenerCheckoutSession(sessionId), "webhook");
+                    if (v == OnvoPaymentProvider.Verificacion.DATOS_DISTINTOS
+                            || v == OnvoPaymentProvider.Verificacion.NO_PAGADO
+                            || v == OnvoPaymentProvider.Verificacion.NO_ENCONTRADO) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "not verified"));
+                    }
+                    if (v == OnvoPaymentProvider.Verificacion.DUPLICADO) {
+                        return ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
+                    }
                 }
                 case "payment-intent.succeeded" -> {
                     String intentId = data.path("id").asText(null);
