@@ -104,6 +104,7 @@ class SinpeCheckoutServiceEmpresaTest {
         ReflectionTestUtils.setField(service, "checkoutGrupoFactory", checkoutGrupoFactory);
         ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
         ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
+        ReflectionTestUtils.setField(service, "sinpeManualHabilitado", true); // flujo legacy (apagado en prod)
     }
 
     @Test

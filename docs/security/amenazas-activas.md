@@ -85,4 +85,5 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | Equipo | contraseña de miembro mínimo 8 | Mitigado |
 | NP-3 | rate limit `/api/auth/reenviar-codigo-negocio` 3/5 min | Mitigado |
 | P12-06 / QA-PROD-7 | facebook.com en frame-src se mantiene (embeds FB en ficha); `*.amazonaws.com` sin acotar (falta confirmar host del bucket/presigned) | Abierto (bajo) |
+| Checkout SINPE manual | `hotclick.checkout.sinpe-manual.habilitado=false` por defecto: `/payments/sinpe/checkout` rechaza proveedor SINPE/nulo (sin comprobantes nuevos); efectivo sigue. `GET /api/public/checkout-config` solo expone un booleano | Mitigado |
 | ESC-7, CMP-2, PAG-8, ESC-9, QA-CONC-6, `ex.getMessage()` | No abordados en esta rama | Abierto |
