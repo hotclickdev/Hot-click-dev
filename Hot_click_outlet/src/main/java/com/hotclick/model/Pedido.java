@@ -255,6 +255,28 @@ public class Pedido extends BaseEntity {
     @PrePersist
     void asegurarTokenSeguimiento() {
         if (tokenSeguimiento == null) tokenSeguimiento = TokenSeguimientoPedido.generar();
+        normalizarOrigen();
+    }
+
+    /**
+     * HOTFIX chk_pedido_origen: última barrera antes del INSERT/UPDATE. Alias conocidos se mapean
+     * (TIENDA_WEB→ONLINE, QR→POS, TELEGRAM→MANUAL…); un valor desconocido o nulo queda ONLINE con aviso,
+     * en vez de tumbar el checkout con un 500.
+     */
+    @PreUpdate
+    void normalizarOrigen() {
+        OrigenPedido o;
+        try {
+            o = OrigenPedido.normalizar(origen);
+        } catch (IllegalArgumentException e) {
+            o = null;
+        }
+        if (o == null) {
+            org.slf4j.LoggerFactory.getLogger(Pedido.class)
+                .warn("Pedido {}: origen '{}' no permitido por chk_pedido_origen; se guarda ONLINE", numeroPedido, origen);
+            o = OrigenPedido.ONLINE;
+        }
+        origen = o.codigo();
     }
 
     public Usuario getUsuarioFinal() { return usuarioFinal; }
