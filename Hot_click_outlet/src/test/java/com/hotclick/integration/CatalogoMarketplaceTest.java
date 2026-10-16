@@ -231,6 +231,36 @@ class CatalogoMarketplaceTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Pausable Admin')]").exists());
     }
 
+    // ── BUG-S1-12: suspender saca los productos de TODO lo público, aunque estuviera cacheado ──
+    @Test
+    @DisplayName("BUG-S1-12 | Suspender la empresa la saca del catálogo, la búsqueda, destacados y carrusel aunque estuvieran en caché")
+    void suspenderEmpresa_saleDeTodoLoPublicoAunqueEsteCacheado() throws Exception {
+        Empresa activa = crearEmpresa("Tienda Suspendible", "mkt-susp", "mkt-susp@test.cr", "ACTIVO", true);
+        Producto p = crearProducto("Prod Suspendible", "SKU-MKT-S1", activa, true);
+        p.setDestacado(true);
+        p.setEnCarrusel(true);
+        productoRepository.saveAndFlush(p);
+        String[] publicas = {
+            "/api/productos?size=50", "/api/productos/destacados", "/api/productos/carrusel",
+        };
+        // llena el caché «productos-publicos» con el producto visible
+        mockMvc.perform(get(publicas[0])).andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Suspendible')]").exists());
+        mockMvc.perform(get(publicas[1])).andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[?(@.nombreProducto == 'Prod Suspendible')]").exists());
+
+        mockMvc.perform(put("/api/admin/empresas/" + activa.getId() + "/estado")
+                .header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"estadoEmpresa\":\"SUSPENDIDO\",\"motivo\":\"QA BUG-S1-12\"}"))
+            .andExpect(status().isOk());
+
+        for (String url : publicas) {
+            String body = mockMvc.perform(get(url)).andReturn().getResponse().getContentAsString();
+            assertTrue(!body.contains("Prod Suspendible"), "sigue visible en " + url + ": " + body);
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private Empresa crearEmpresa(String nombre, String slug, String correo,
