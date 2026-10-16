@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, proveedorDe } from './pagoPrincipal'
-import { metodosDisponibles } from './PasoPago'
+import { metodosDisponibles } from './metodosPago'
 
 describe('pago sin SINPE manual', () => {
   it('SINPE y Tarjeta van a la pasarela; efectivo queda como efectivo', () => {
