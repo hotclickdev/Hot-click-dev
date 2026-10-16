@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode, type RefObject } from 'react'
+import { useTarifasEnvio } from '@/config/tarifasEnvio'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -63,7 +64,8 @@ export default function CheckoutLayout({
   const { setPaso } = form
   const [consentimientoPendiente, setConsentimientoPendiente] = useState(false)
 
-  const paquetesResumen = useMemo(() => paquetesConEnvioElegido(form.paquetes, form.metodoEnvioPorPaquete), [form.paquetes, form.metodoEnvioPorPaquete])
+  const tarifasEnvio = useTarifasEnvio()
+  const paquetesResumen = useMemo(() => paquetesConEnvioElegido(form.paquetes, form.metodoEnvioPorPaquete, tarifasEnvio), [form.paquetes, form.metodoEnvioPorPaquete, tarifasEnvio])
   const unidades = items.reduce((suma, item) => suma + (item.cantidad ?? 0), 0)
   const ocupado = estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos
   const requiereEntrega = form.paquetes.some((p) => form.metodoEnvioPorPaquete[p.bodegaId] !== 'RETIRO_EN_TIENDA')
@@ -138,14 +140,19 @@ export default function CheckoutLayout({
   }
 
   function pagar() {
-    if (!form.aceptaDatos) {
-      setConsentimientoPendiente(true)
-      return
+    // QA-COM-013: marcar todos los campos que faltan (en español), aunque falte el consentimiento.
+    let camposOk = true
+    if (esDesktop) {
+      const datosOk = validarDatos()
+      const entregaOk = validarEntrega()
+      camposOk = datosOk && entregaOk
     }
-    if (esDesktop && !(validarDatos() && validarEntrega())) {
+    if (!form.aceptaDatos) setConsentimientoPendiente(true)
+    if (!camposOk) {
       enfocarPrimerError()
       return
     }
+    if (!form.aceptaDatos) return
     onPagar()
   }
 
