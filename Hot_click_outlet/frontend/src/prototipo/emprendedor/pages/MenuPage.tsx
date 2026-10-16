@@ -11,13 +11,14 @@ import { RUTA_ONBOARDING_RAPIDO, onboardingPendiente } from '@/pages/plataforma/
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
+import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
 import { EASE_PREMIUM } from '@/prototipo/compartido/motion/formularioMotionTokens'
 
 const ACCIONES_BASE = [
-  { to: `${RUTA_EMPRENDEDOR}/productos`, etiqueta: 'PRODUCTOS SUBIDOS' },
-  { to: `${RUTA_EMPRENDEDOR}/encargos`, etiqueta: 'ENCARGOS', conBadge: true },
+  { to: `${RUTA_EMPRENDEDOR}/productos`, etiqueta: 'PRODUCTOS SUBIDOS', conteo: 'productos' },
+  { to: `${RUTA_EMPRENDEDOR}/encargos`, etiqueta: 'ENCARGOS', conteo: 'encargos' },
   { to: `${RUTA_EMPRENDEDOR}/recoleccion`, etiqueta: 'RECOLECCIÓN Y ENTREGA' },
   { to: `${RUTA_EMPRENDEDOR}/reportes`, etiqueta: 'VER REPORTES' },
   { to: `${RUTA_EMPRENDEDOR}/opciones`, etiqueta: 'OPCIONES' },
@@ -28,6 +29,12 @@ const ACCIONES_BASE = [
  */
 export default function MenuPage() {
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
+  // QA-NEG-031: cada tarjeta muestra su conteo real (0 si no hay), no un número vacío.
+  const { productos, cargando: cargandoProductos } = useCatalogoEmprendedor()
+  const conteos: Record<string, number | null> = {
+    productos: cargandoProductos ? null : productos.length,
+    encargos: pendientesEncargos,
+  }
   const { t } = useTranslation()
   const [armarTienda, setArmarTienda] = useState(false)
 
@@ -66,9 +73,14 @@ export default function MenuPage() {
                 className="relative flex h-[54px] w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface text-sm font-bold"
               >
                 {accion.etiqueta}
-                {'conBadge' in accion && accion.conBadge && pendientesEncargos > 0 ? (
-                  <span className="absolute right-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
-                    {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
+                {'conteo' in accion && conteos[accion.conteo] != null ? (
+                  <span
+                    aria-label={`${conteos[accion.conteo]}`}
+                    className={`absolute right-4 flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                      accion.conteo === 'encargos' && (conteos.encargos ?? 0) > 0 ? 'bg-hc-primary text-white' : 'bg-[var(--hc-n-100)] text-hc-n-900'
+                    }`}
+                  >
+                    {(conteos[accion.conteo] ?? 0) > 99 ? '99+' : conteos[accion.conteo]}
                   </span>
                 ) : null}
               </Link>

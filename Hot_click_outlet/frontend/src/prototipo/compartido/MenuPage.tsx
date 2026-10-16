@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import useAuthStore from '@/store/authStore'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
+import { useCatalogoVendedor } from './useCatalogoVendedor'
 import { Boton } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
@@ -35,6 +36,13 @@ export default function MenuPage() {
   const ruta = useSellerRuta()
   const userName = useAuthStore((s) => s.userName) ?? plan.usuario
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
+  // QA-NEG-031: «Productos subidos» y «Encargos» muestran su conteo real, 0 si no hay.
+  const { productos, cargando: cargandoProductos } = useCatalogoVendedor()
+  const conteo = (segmento: string): number | null => {
+    if (segmento === 'productos') return cargandoProductos ? null : productos.length
+    if (segmento === 'encargos') return pendientesEncargos
+    return null
+  }
   const esPlus = plan.id === 'negocioPlus'
   const acciones: AccionMenu[] = esPlus
     ? [
@@ -52,17 +60,14 @@ export default function MenuPage() {
         <ListaStagger className="mt-12 flex w-full flex-col gap-3">
           {acciones.map((accion) => (
             <ItemMenu key={accion.segmento}>
-              {accion.conBadge ? (
+              {conteo(accion.segmento) != null ? (
                 <Link
                   to={ruta(accion.segmento)}
+                  data-mm={accion.segmento === 'productos' ? 'seller-menu-productos' : undefined}
                   className="relative flex min-h-[52px] w-full items-center justify-center rounded-[10px] border border-hc-border bg-hc-surface px-5 text-[15px] font-bold text-hc-text"
                 >
                   {accion.titulo}
-                  {pendientesEncargos > 0 ? (
-                    <span className="absolute right-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
-                      {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
-                    </span>
-                  ) : null}
+                  <BadgeConteo n={conteo(accion.segmento) ?? 0} resaltar={accion.conBadge === true} className="absolute right-4" />
                 </Link>
               ) : (
                 <Boton
@@ -107,10 +112,8 @@ export default function MenuPage() {
               >
                 <p className="text-base font-bold">{accion.titulo}</p>
                 <p className="mt-2 text-[13px] text-hc-muted">{accion.detalle}</p>
-                {accion.conBadge && pendientesEncargos > 0 ? (
-                  <span className="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
-                    {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
-                  </span>
+                {conteo(accion.segmento) != null ? (
+                  <BadgeConteo n={conteo(accion.segmento) ?? 0} resaltar={accion.conBadge === true} className="absolute right-4 top-4" />
                 ) : null}
               </Link>
             </ItemMenu>
@@ -175,5 +178,15 @@ function HeroMenu({ badge }: { badge: string }) {
         OUTLET & MARKETPLACE
       </p>
     </div>
+  )
+}
+
+/** Conteo de una tarjeta del menú; resaltado (rojo) solo si hay encargos pendientes. */
+function BadgeConteo({ n, resaltar, className }: { n: number; resaltar: boolean; className: string }) {
+  const color = resaltar && n > 0 ? 'bg-hc-primary text-white' : 'bg-[var(--hc-n-100)] text-hc-text'
+  return (
+    <span className={`${className} flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${color}`}>
+      {n > 99 ? '99+' : n}
+    </span>
   )
 }
