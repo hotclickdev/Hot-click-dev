@@ -20,4 +20,13 @@ public class S3Config {
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
     }
+
+    /** PAG-9: URLs firmadas de corta duración para objetos del bucket privado. */
+    @Bean
+    public software.amazon.awssdk.services.s3.presigner.S3Presigner s3Presigner() {
+        return software.amazon.awssdk.services.s3.presigner.S3Presigner.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build();
+    }
 }
