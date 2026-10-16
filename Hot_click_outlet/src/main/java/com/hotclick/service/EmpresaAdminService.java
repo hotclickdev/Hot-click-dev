@@ -128,6 +128,20 @@ public class EmpresaAdminService {
         return visible;
     }
 
+    /** Pausa o reanuda los cobros en línea del negocio. Queda auditado. */
+    public boolean cambiarCobrosPausados(Long id, Object val) {
+        if (!(val instanceof Boolean pausar)) {
+            throw new IllegalArgumentException("Campo cobrosPausados requerido (true o false)");
+        }
+        Empresa empresa = empresa(id);
+        empresa.setCobrosPausados(pausar);
+        empresaRepository.save(empresa);
+        auditoriaAdminRegistroService.registrarSiAdmin(
+            pausar ? "EMPRESA_COBROS_PAUSADOS" : "EMPRESA_COBROS_REANUDADOS", "EMPRESA", id, id,
+            pausar ? "Pausada" : "Reanudada");
+        return pausar;
+    }
+
     public List<Map<String, Object>> productos(Long id, int page, int size) {
         empresa(id);
         int pageSize = Math.min(Math.max(size, 1), MAX_TAB_PRODUCTOS);

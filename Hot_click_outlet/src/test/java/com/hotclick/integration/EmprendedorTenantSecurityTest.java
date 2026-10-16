@@ -184,6 +184,17 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
             .andExpect(status().isForbidden());
     }
 
+    @Test
+    @DisplayName("Pausa de cobros: un emprendedor no puede pausar ni reanudar su propio negocio → 403")
+    void emprendedorA_cannotPausarCobros() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .put("/api/admin/empresas/" + empresaA.getId() + "/cobros-pausados")
+                .header("Authorization", tokenA)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"cobrosPausados\":false}"))
+            .andExpect(status().isForbidden());
+    }
+
     // ── T-SEC-011: EmprendedorA no puede ver lista global de usuarios ─────────
     @Test
     @DisplayName("T-SEC-011 | CRÍTICO — EmprendedorA no puede listar todos los usuarios → 403")
