@@ -18,10 +18,14 @@ public interface AuditoriaAdminRepository extends JpaRepository<AuditoriaAdmin, 
 
     Page<AuditoriaAdmin> findAllByOrderByFechaDesc(Pageable pageable);
 
+    /**
+     * {@code accion} y {@code adminEmail} llegan como '' (nunca null): un String null se enlaza sin tipo y
+     * PostgreSQL lo toma como bytea → «function lower(bytea) does not exist». Ver AuditoriaAdminConsultaService.
+     */
     @Query("""
         SELECT a FROM AuditoriaAdmin a
-        WHERE (:accion IS NULL OR a.accion = :accion)
-          AND (:adminEmail IS NULL OR LOWER(a.adminEmail) LIKE LOWER(CONCAT('%', :adminEmail, '%')))
+        WHERE (:accion = '' OR a.accion = :accion)
+          AND (:adminEmail = '' OR LOWER(a.adminEmail) LIKE LOWER(CONCAT('%', :adminEmail, '%')))
           AND (:empresaId IS NULL OR a.empresaId = :empresaId)
           AND a.fecha >= :desde
           AND a.fecha <= :hasta

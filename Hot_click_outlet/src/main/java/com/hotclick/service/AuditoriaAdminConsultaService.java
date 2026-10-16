@@ -61,8 +61,9 @@ public class AuditoriaAdminConsultaService {
             desde = limiteRetencion;
         }
 
-        String accionFiltro = blankToNull(accion);
-        String emailFiltro = blankToNull(adminEmail);
+        // '' en vez de null: ver AuditoriaAdminRepository.buscar (lower(bytea) en PostgreSQL).
+        String accionFiltro = filtroTexto(accion);
+        String emailFiltro = filtroTexto(adminEmail);
 
         Page<AuditoriaAdmin> result = auditoriaRepo.buscar(
                 accionFiltro,
@@ -143,10 +144,8 @@ public class AuditoriaAdminConsultaService {
                 nombreEmpresa);
     }
 
-    private static String blankToNull(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
+    /** Filtro de texto para {@code buscar}: recortado, '' si viene vacío. Nunca null. */
+    static String filtroTexto(String v) {
+        return v == null ? "" : v.trim();
     }
 }
