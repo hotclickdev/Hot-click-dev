@@ -186,6 +186,27 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("BUG-S1-13: negocio normal (sin enlace de asignación) recibe 200 «no aplica», no 404")
+    void negocioNormalNoAplica() throws Exception {
+        Empresa e = new Empresa();
+        e.setNombreEmpresa("Negocio Normal NR");
+        e.setSlug("negocio-normal-nr");
+        e.setCorreoEmpresa("normal-nr@test.cr");
+        e.setEstadoEmpresa("PENDIENTE_APROBACION");
+        e.setFechaRegistro(java.time.LocalDateTime.now());
+        e = empresas.saveAndFlush(e);
+        Usuario u = crearUsuario("normal-nr-u@test.cr", "Normal NR", obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5));
+        u.setEmpresa(e);
+        u = usuarioRepository.saveAndFlush(u);
+        String sesion = "Bearer " + jwtUtil.generateToken(u.getCorreo(), u.getId(),
+            Constants.ROL_EMPRENDEDOR, e.getId(), e.getSlug());
+        mockMvc.perform(get(ONBOARDING).header("Authorization", sesion)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.aplica").value(false))
+            .andExpect(jsonPath("$.data.completo").value(true))
+            .andExpect(jsonPath("$.data.pasos").isEmpty());
+    }
+
+    @Test
     @DisplayName("Onboarding: bodega primero, después producto; negocio y cobro no se adelantan")
     void ordenDelOnboarding() throws Exception {
         String token = crear("Dulces Ana").path("token").asText();
