@@ -54,6 +54,7 @@ public class SuscripcionController {
             m.put("precioMensual", p.getPrecioMensual());
             m.put("precioUsd", p.getPrecioUsd());
             m.put("comisionPorcentaje", p.getComisionPorcentaje());
+            m.put("comisionMinimaCrc", p.getComisionMinimaCrc());
             m.put("maxUsuarios", p.getMaxUsuarios());
             m.put("maxProductos", p.getMaxProductos());
             m.put("maxBodegas", p.getMaxBodegas());
