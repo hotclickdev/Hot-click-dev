@@ -136,7 +136,7 @@ export default function TiendaProductoPage() {
         <CarruselProductos
           id="mas-de-la-tienda"
           titulo="Más de esta tienda"
-          productos={masDeLaTienda}
+          productos={masDeLaTienda.map((p) => ({ ...p, empresaNombre: p.empresaNombre || producto.empresaNombre }))}
           variante="sangrado"
           accion={{ texto: 'Ver todos', to: `/tienda/${slug}` }}
         />
