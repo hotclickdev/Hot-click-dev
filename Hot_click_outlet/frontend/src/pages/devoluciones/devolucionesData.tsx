@@ -105,7 +105,7 @@ export const sections = [
       <>
         <p>Los reembolsos se procesan de la siguiente manera según el método de pago original:</p>
         <ul>
-          <li><strong>Tarjeta (Tilopay):</strong> el reembolso vuelve a la misma tarjeta en un plazo [PENDIENTE], según el banco emisor.</li>
+          <li><strong>Tarjeta (Tilopay):</strong> el reembolso vuelve a la misma tarjeta en el plazo que defina el banco emisor.</li>
 
           <li><strong>SINPE Móvil:</strong> el reembolso se hace por SINPE al número registrado en un plazo de 1 a 3 días hábiles.</li>
         </ul>

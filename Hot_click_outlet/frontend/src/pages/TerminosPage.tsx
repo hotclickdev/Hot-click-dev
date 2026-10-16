@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { COMISION_MINIMA_CRC, PLAN_PRECIOS, colones } from '@/config/planesPrecios'
 import { Helmet } from 'react-helmet-async'
 import PaginaLegal, { type EnlaceLegal } from '@/components/comprador/PaginaLegal'
 import BloqueIdentidad from '@/legal/BloqueIdentidad'
@@ -50,7 +51,7 @@ const clausulas = [
     num: 'CLÁUSULA TERCERA',
     title: 'Condiciones Económicas y Comisiones (Vendedores)',
     content: (
-      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva según el plan contratado: porcentajes [PENDIENTE] que se publican en /planes antes de contratar, además de la mensualidad del plan cuando corresponda. HotClick gestiona la pasarela de pagos (Tilopay para tarjeta y ONVO para las mensualidades) y retiene los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
+      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva según el plan contratado: porcentajes que se publican en /planes antes de contratar (hoy: Emprendedor {PLAN_PRECIOS.EMPRENDEDOR.comisionPct} %, PYME {PLAN_PRECIOS.PYME.comisionPct} % y Negocio Plus {PLAN_PRECIOS.NEGOCIO_PLUS.comisionPct} % por venta, con un mínimo de {colones(COMISION_MINIMA_CRC)} por venta), además de la mensualidad del plan cuando corresponda. HotClick gestiona la pasarela de pagos (Tilopay para tarjeta y ONVO para las mensualidades) y retiene los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
     ),
   },
   {
