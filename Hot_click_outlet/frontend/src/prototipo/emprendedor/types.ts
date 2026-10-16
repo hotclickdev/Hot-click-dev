@@ -1,6 +1,7 @@
 import type { EstadoPedidoVendedor } from '@/prototipo/compartido/estadoPedidoVendedor'
 
-export type CategoriaProducto = 'Tecnología' | 'Ropa' | 'Otro'
+/** Nombre real de la categoría del producto (NP-10: antes se forzaba a Tecnología/Ropa/Otro). */
+export type CategoriaProducto = string
 
 export type EstadoPublicacion = 'Publicado' | 'Pausado'
 
