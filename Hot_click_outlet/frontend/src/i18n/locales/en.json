@@ -4605,7 +4605,9 @@
     "enlace": {
       "usado": "This link was already used. If you are the owner, sign in with your email and password.",
       "vencido": "This link expired or was revoked. Ask HotClick for a new one.",
-      "noVigente": "This link is not valid."
+      "noVigente": "This link is not valid.",
+      "titulo": "Link not available",
+      "ayudaNoVigente": "If you were invited to HotClick, ask whoever sent you the link for a new one."
     },
     "listo": {
       "entrar": "Sign in and set up my store",

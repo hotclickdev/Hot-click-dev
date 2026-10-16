@@ -12,7 +12,10 @@ export default function EnlaceNoVigente({ motivo }: Readonly<{ motivo: 'usado' |
   const destino = motivo === 'usado' ? `/login?redirect=${encodeURIComponent(RUTA_ONBOARDING_RAPIDO)}` : '/login'
   return (
     <>
+      {/* LAN-10: la página tenía solo el aviso, sin título. */}
+      <h1 className="font-display text-[22px] font-extrabold leading-7 text-hc-n-900">{t('negocioRapido.enlace.titulo')}</h1>
       <Aviso>{t(`negocioRapido.enlace.${motivo}`)}</Aviso>
+      {motivo === 'noVigente' && <p className="text-sm text-hc-n-600">{t('negocioRapido.enlace.ayudaNoVigente')}</p>}
       <Link to={destino} className={BOTON_PRIMARIO}>{t('footer.iniciarSesion')}</Link>
     </>
   )

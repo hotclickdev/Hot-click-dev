@@ -4605,7 +4605,9 @@
     "enlace": {
       "usado": "Este enlace ya se usó. Si sos el dueño, entrá con tu correo y contraseña.",
       "vencido": "Este enlace venció o fue anulado. Pedile a HotClick uno nuevo.",
-      "noVigente": "Ese enlace no está vigente."
+      "noVigente": "Ese enlace no está vigente.",
+      "titulo": "Enlace no disponible",
+      "ayudaNoVigente": "Si te invitaron a HotClick, pedile a quien te mandó el enlace uno nuevo."
     },
     "listo": {
       "entrar": "Entrar y armar mi tienda",
