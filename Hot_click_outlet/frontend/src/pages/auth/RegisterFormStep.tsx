@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import AccesoCuentaExistente from '@/pages/registro-empresa/AccesoCuentaExistente'
 import { Turnstile } from '@marsidev/react-turnstile'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 import { useClerkDisponible } from '@/components/auth/clerkDisponibleContext'
@@ -103,6 +104,7 @@ export default function RegisterFormStep({
         {error && (
           <div role="alert" className="rounded-[10px] bg-[color-mix(in_srgb,var(--hc-danger)_7%,transparent)] px-3 py-[10px] text-[13px] leading-[18px] text-hc-danger">{error}</div>
         )}
+        <AccesoCuentaExistente error={error} />
 
         <label className="flex cursor-pointer items-start gap-[10px] text-[12px] leading-[17px] text-hc-n-600">
           <input type="checkbox" required checked={aceptaTerminos} onChange={(e) => setAceptaTerminos(e.target.checked)}
