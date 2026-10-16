@@ -32,3 +32,31 @@ export const AVISO_SIN_CONTRA_ENTREGA: Record<Exclude<MotivoSinContraEntrega, nu
   negocio: 'Contra entrega no está disponible porque uno de los negocios de tu carrito no lo acepta.',
   minimo: 'Contra entrega no está disponible porque tu pedido no llega al mínimo de uno de los negocios.',
 }
+
+/**
+ * Decisión del dueño (16-oct-2026): el cargo de envío contra entrega se cobra por pedido y POR NEGOCIO
+ * (no por bodega). El monto llega de la config del checkout (`contraEntregaCargoPorNegocio`); si no
+ * viene, no se muestra ningún monto. El total final lo calcula el backend.
+ */
+type PaqueteNegocio = { bodegaId: string; empresaNombre?: string | null; items: { empresaId?: number | string | null }[] }
+
+export function negociosDelPedido(paquetes: PaqueteNegocio[]): number {
+  const claves = new Set(paquetes.map((p) => {
+    const id = p.items.find((i) => i.empresaId != null)?.empresaId
+    return id != null ? `id:${id}` : p.empresaNombre ? `n:${p.empresaNombre}` : `b:${p.bodegaId}`
+  }))
+  return claves.size
+}
+
+export type CargoContraEntrega = { porNegocio: number; negocios: number; total: number }
+
+export function cargoContraEntrega(paquetes: PaqueteNegocio[], porNegocio: number | null | undefined): CargoContraEntrega | null {
+  if (typeof porNegocio !== 'number' || !Number.isFinite(porNegocio) || porNegocio < 0) return null
+  const negocios = negociosDelPedido(paquetes)
+  return { porNegocio, negocios, total: porNegocio * negocios }
+}
+
+export function textoCargoContraEntrega(c: CargoContraEntrega, formato: (n: number) => string): string {
+  const base = `Envío contra entrega: ${formato(c.porNegocio)} por negocio`
+  return c.negocios > 1 ? `${base} · ${c.negocios} negocios = ${formato(c.total)}` : base
+}

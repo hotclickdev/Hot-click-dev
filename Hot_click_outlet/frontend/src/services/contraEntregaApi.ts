@@ -11,7 +11,9 @@ import api from '@/services/api'
  * 2. Configuración del negocio (panel):
  *      GET  /api/negocio/contra-entrega → { acepta: boolean, minimo: number | null }
  *      PUT  /api/negocio/contra-entrega   { acepta: boolean, minimo: number | null } → mismo cuerpo
- * El cargo de contra entrega (₡4.000 en la lámina) NO se escribe acá: lo calcula el backend.
+ * 3. Cargo (decisión del dueño, 16-oct-2026): por pedido y POR NEGOCIO. Llega en la config del checkout:
+ *      GET /api/public/checkout-config → { contraEntregaNormal, contraEntregaCargoPorNegocio: number }
+ *    El monto no se escribe en el front; el total final lo calcula el backend.
  */
 export type ConfigContraEntrega = { acepta: boolean; minimo: number | null }
 

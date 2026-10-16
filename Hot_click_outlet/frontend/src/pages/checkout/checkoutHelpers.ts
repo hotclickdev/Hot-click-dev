@@ -52,6 +52,8 @@ export type ItemCheckout = {
     encargoToken?: string
   }
   cartLineId?: string
+  /** Negocio dueño: agrupa el cargo de contra entrega por negocio (contrato supuesto). */
+  empresaId?: number | string | null
   /** S2 contra entrega por negocio (contrato supuesto en services/contraEntregaApi). */
   empresaAceptaContraEntrega?: boolean
   empresaContraEntregaMinimo?: number | null
