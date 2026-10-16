@@ -57,4 +57,21 @@ class RedaccionLogTest {
         MensajeEnmascaradoConverter c = new MensajeEnmascaradoConverter();
         assertThat(c.convert(ev)).isEqualTo("Comprobante pedido=ORD-1 cedula=[CEDULA]");
     }
+
+    @Test
+    @DisplayName("%exSeguro tapa los datos dentro del mensaje de la excepción y de su causa")
+    void converterExcepcion() {
+        LoggerContext ctx = new LoggerContext();
+        RuntimeException causa = new IllegalStateException("payout rechazado iban=" + IBAN_FALSO.replace(" ", ""));
+        RuntimeException ex = new RuntimeException("falló cedula=1-2345-6789 token=abcdef123456", causa);
+        LoggingEvent ev = new LoggingEvent("x", ctx.getLogger("t"), Level.ERROR, "error", ex, null);
+        ExcepcionEnmascaradaConverter c = new ExcepcionEnmascaradaConverter();
+        c.setContext(ctx);
+        c.setOptionList(java.util.List.of("30"));
+        c.start();
+        String traza = c.convert(ev);
+        assertThat(traza)
+            .contains("RuntimeException", "IllegalStateException", "[CEDULA]", "[IBAN]")
+            .doesNotContain("2345-6789", "abcdef123456", "CR0000");
+    }
 }

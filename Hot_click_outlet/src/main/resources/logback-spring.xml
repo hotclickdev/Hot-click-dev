@@ -3,9 +3,10 @@
 
   <!-- LOG-1: el mensaje pasa por RedaccionLog (IBAN, cédula, onboardingUrl, secretos) antes de escribirse. -->
   <conversionRule conversionWord="msgSeguro" converterClass="com.hotclick.logging.MensajeEnmascaradoConverter" />
+  <conversionRule conversionWord="exSeguro" converterClass="com.hotclick.logging.ExcepcionEnmascaradaConverter" />
 
   <!-- QA-CONC-6: el stack completo ya va a Sentry; en el log se recorta a 30 líneas por excepción. -->
-  <property name="PATRON" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:--}] %logger{36} - %msgSeguro%n%ex{30}" />
+  <property name="PATRON" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:--}] %logger{36} - %msgSeguro%n%exSeguro{30}" />
   <!-- Carpeta de archivos rotados; en el contenedor /tmp siempre se puede escribir. -->
   <property name="LOG_DIR" value="${LOG_PATH:-/tmp/hotclick-logs}" />
 
