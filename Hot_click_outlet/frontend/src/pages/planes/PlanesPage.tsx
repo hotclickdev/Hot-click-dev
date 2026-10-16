@@ -46,7 +46,7 @@ const FILAS: Fila[] = [
   { etiqueta: 'Productos publicados', valor: (p) => limite(p.maxProductos) },
   { etiqueta: 'Usuarios del equipo', valor: (p) => limite(p.maxUsuarios) },
   { etiqueta: 'Bodegas o sucursales', valor: (p) => limite(p.maxBodegas) },
-  { etiqueta: 'Caja (punto de venta)', valor: (p) => (p.tienePos ? `Sí · ${limite(p.maxCajas)} cajas` : '—') },
+  { etiqueta: 'Caja (punto de venta)', valor: (p) => (p.tienePos ? `Sí · ${limite(p.maxCajas)} ${p.maxCajas === 1 ? 'caja' : 'cajas'}` : '—') },
   { etiqueta: 'Reportes de ventas', valor: (p) => si(p.tieneReportes) },
   { etiqueta: 'Asistente con IA', valor: (p) => (p.tieneAi ? (p.maxCreditosAi < 0 ? 'Sí · sin límite' : `Sí · ${p.maxCreditosAi} créditos`) : '—') },
   { etiqueta: 'Compras a proveedores', valor: (p) => si(p.tieneCompras) },
