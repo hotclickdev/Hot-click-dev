@@ -10,6 +10,7 @@ const OPCIONES = [
   { to: '/opciones/perfil', etiqueta: 'Editar perfil' },
   { to: '/opciones/notificaciones', etiqueta: 'Notificaciones' },
   { to: '/opciones/cobro', etiqueta: 'Métodos de cobro' },
+  { to: '/opciones/contra-entrega', etiqueta: 'Contra entrega' },
   { to: '/opciones/telegram', etiqueta: 'Telegram' },
   { to: '/opciones/ayuda', etiqueta: 'Ayuda y soporte' },
   { to: '/opciones/consultas', etiqueta: 'Consultas con Hot' },

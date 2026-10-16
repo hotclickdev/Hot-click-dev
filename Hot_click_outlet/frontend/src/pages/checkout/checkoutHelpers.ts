@@ -52,6 +52,9 @@ export type ItemCheckout = {
     encargoToken?: string
   }
   cartLineId?: string
+  /** S2 contra entrega por negocio (contrato supuesto en services/contraEntregaApi). */
+  empresaAceptaContraEntrega?: boolean
+  empresaContraEntregaMinimo?: number | null
 }
 
 /** Un paquete = los productos de una misma bodega de origen. Cada uno se despacha y cobra el envío por separado. */

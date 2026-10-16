@@ -1,0 +1,40 @@
+import { describe, expect, it } from 'vitest'
+import { AVISO_SIN_CONTRA_ENTREGA, estadoContraEntrega } from './contraEntregaPorNegocio'
+import { configDesdeFormulario, leerMinimo } from '@/prototipo/compartido/contraEntregaConfigHelpers'
+
+const normal = ['ENVIO_NORMAL_GAM', 'ENVIO_NORMAL_GAM']
+const acepta = (minimo: number | null = null) => ({ empresaAceptaContraEntrega: true, empresaContraEntregaMinimo: minimo })
+
+describe('S2 contra entrega por negocio', () => {
+  it('se ofrece si los 2 negocios la aceptan', () => {
+    expect(estadoContraEntrega([{ subtotal: 21500, items: [acepta()] }, { subtotal: 20900, items: [acepta()] }], normal, true))
+      .toEqual({ disponible: true, motivo: null })
+  })
+
+  it('si uno no la acepta, se oculta para todo el pedido y se explica', () => {
+    const e = estadoContraEntrega([{ subtotal: 21500, items: [acepta()] }, { subtotal: 20900, items: [{ empresaAceptaContraEntrega: false }] }], normal, true)
+    expect(e).toEqual({ disponible: false, motivo: 'negocio' })
+    expect(AVISO_SIN_CONTRA_ENTREGA.negocio).toContain('uno de los negocios de tu carrito no lo acepta')
+  })
+
+  it('respeta el pedido mínimo del negocio', () => {
+    expect(estadoContraEntrega([{ subtotal: 5000, items: [acepta(10000)] }], ['ENVIO_NORMAL_GAM'], true).motivo).toBe('minimo')
+    expect(estadoContraEntrega([{ subtotal: 15000, items: [acepta(10000)] }], ['ENVIO_NORMAL_GAM'], true).disponible).toBe(true)
+  })
+
+  it('sin config global o con envío que no es normal no se ofrece (sin aviso de negocio)', () => {
+    expect(estadoContraEntrega([{ subtotal: 1, items: [acepta()] }], normal, false)).toEqual({ disponible: false, motivo: null })
+    expect(estadoContraEntrega([{ subtotal: 1, items: [acepta()] }], ['ENVIO_RAPIDO'], true)).toEqual({ disponible: false, motivo: null })
+  })
+
+  it('backend actual (sin el campo por negocio): manda la config global como antes', () => {
+    expect(estadoContraEntrega([{ subtotal: 1, items: [{}] }], ['ENVIO_NORMAL_GAM'], true).disponible).toBe(true)
+  })
+
+  it('el formulario del negocio lee el mínimo opcional', () => {
+    expect(leerMinimo('')).toEqual({ minimo: null, error: null })
+    expect(leerMinimo('₡10.000')).toEqual({ minimo: 10000, error: null })
+    expect(leerMinimo('diez').error).toBeTruthy()
+    expect(configDesdeFormulario(false, '5000').config).toEqual({ acepta: false, minimo: null })
+  })
+})
