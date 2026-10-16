@@ -36,7 +36,7 @@ import java.util.Map;
  *   /api/auth/reset-password     →  5 / 60s
  *   /api/auth/registro-empresa   →  5 / 60s
  *   /api/auth/register           →  5 / 3600s
- *   /api/auth/send-verification  →  5 / 60s
+ *   /api/auth/send-verification  → 10 / 900s (alta de comprador + reenvío; anti-enumeración)
  *   /api/auth/refresh            → 30 / 60s
  *   /api/auth/change-password    →  5 / 300s
  *
@@ -104,7 +104,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/reset-password",     new Limit(5,    60)),
         Map.entry("/api/auth/registro-empresa",   new Limit(5,    60)),
         Map.entry("/api/auth/register",           new Limit(5,  3600)),
-        Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
+        Map.entry("/api/auth/send-verification",  new Limit(10,  900)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
         // General
