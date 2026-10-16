@@ -1,1 +1,0 @@
-import{Lt as e}from"./index-5lht3KpZ.js";function t(t){return e(Math.round(t??0))}export{t};

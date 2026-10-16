@@ -1,0 +1,1 @@
+function e(){return`SINPE`}function t(e){return e.length>0&&e.every(e=>(e.bodegaAceptaEfectivo??e.bodega?.aceptaEfectivo)===!0)}export{e as n,t};

@@ -1,0 +1,1 @@
+import{Lt as e}from"./index-CqakinA_.js";function t(t){return e(Math.round(t??0))}export{t};
