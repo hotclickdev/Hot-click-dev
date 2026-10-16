@@ -219,7 +219,7 @@ export default function AdminPlanes() {
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
+        Los precios están en colones (CRC). El cobro mensual se procesa con Tilopay.
         Podés cancelar en cualquier momento desde la sección de suscripción.
       </p>
 

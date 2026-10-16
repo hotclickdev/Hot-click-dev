@@ -184,7 +184,7 @@
       "1 warehouse and 1 POS till",
       "Card and SINPE payments",
       "Shipping across Costa Rica",
-      "Commission per sale: [PENDIENTE]"
+      "Commission: 9% per sale (₡700 minimum)"
     ],
     "planPymeBadge": "To grow",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 warehouses and 2 tills",
       "Purchasing and inventory",
       "AI and advanced reports",
-      "Monthly fee and commission: [PENDIENTE]"
+      "₡12,900/month + 7% per sale (₡700 minimum)"
     ],
     "planPlusBadge": "To operate at scale",
     "planPlusTitle": "Negocio Plus",
@@ -206,18 +206,18 @@
       "Multi-branch and orders per location",
       "Customer CRM",
       "Unlimited AI",
-      "Monthly fee and commission: [PENDIENTE]"
+      "₡28,900/month + 7% per sale (₡700 minimum)"
     ],
     "pymeCta": "Create my business",
     "plusCta": "Create my business",
     "faqTitle": "Frequently asked questions",
     "faqSub": "What people ask before signing up.",
     "faq1q": "Do you charge anything to sign up?",
-    "faq1a": "Nothing is charged when you sign up. The commission per sale is [PENDIENTE] and you will see it here before selling.",
+    "faq1a": "Nothing is charged when you sign up. The commission is 9% per sale, with a ₡700 minimum, and you will see it here before selling.",
     "faq2q": "What happens if the free slots fill up?",
     "faq2a": "We'll let you know above and the button will offer PYME or Negocio Plus instead. Your signup won't be closed.",
     "faq3q": "How do I get paid?",
-    "faq3a": "By card or SINPE inside HotClick. The commission per sale is [PENDIENTE] and you see it before selling.",
+    "faq3a": "By card or SINPE inside HotClick. The commission is 9% per sale (₡700 minimum) and you see it before selling.",
     "faq4q": "Can I upgrade later?",
     "faq4a": "Yes, you can move to PYME or Negocio Plus whenever you need to, without losing your catalog or orders.",
     "galeriaCaption": "Shops and small businesses: the same kind of store you can sell on HotClick.",
@@ -365,17 +365,17 @@
     "comoEntras1Titulo": "You sign up",
     "comoEntras1Desc": "Create your account in minutes.",
     "comoEntras2Titulo": "You pay the monthly fee",
-    "comoEntras2Desc": "With the ONVO gateway the panel already uses.",
+    "comoEntras2Desc": "With the Tilopay gateway the panel already uses.",
     "comoEntras3Titulo": "You're in with PYME active",
     "comoEntras3Desc": "Team, inventory, and register, ready to operate.",
-    "comparativaNota": "Commission per sale and monthly fee: [PENDIENTE]. You'll see them here before selling.",
+    "comparativaNota": "PYME: ₡12,900/month + 7% per sale. Emprendedor: no monthly fee + 9% per sale. Both with a ₡700 minimum per sale.",
     "faqTitle": "Frequently asked questions",
     "faq2q": "How much do I need to sell for it to be worth it?",
     "faq2a": "If you sell regularly, the lower commission recovers the monthly fee fast. If you sell little, Emprendedor suits you better.",
     "faq3q": "What if I need more than one location?",
     "faq3a": "Check out Negocio Plus, which has no limit on locations.",
     "faq4q": "How is the monthly fee charged?",
-    "faq4a": "With the ONVO gateway the panel already uses, charged automatically every month.",
+    "faq4a": "With the Tilopay gateway the panel already uses, charged automatically every month.",
     "ctaFinalTitle": "Ready to run everything from one panel?"
   },
   "negocioPlus": {

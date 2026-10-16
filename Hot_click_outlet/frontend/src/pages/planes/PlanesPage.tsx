@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
+import { COMISION_MINIMA_CRC, PLAN_PRECIOS, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
 type PlanApi = {
   nombre: string
@@ -17,11 +18,14 @@ type PlanApi = {
   tieneAi: boolean
   tieneGiftCards: boolean
   maxCreditosAi: number
+  precioMensual?: number
+  comisionPorcentaje?: number
+  comisionMinimaCrc?: number
 }
 
-type PlanVista = { clave: string; titulo: string; para: string; detalle: string; destacado?: boolean }
+type PlanVista = { clave: ClavePlan; titulo: string; para: string; detalle: string; destacado?: boolean }
 
-/** Las tres tarjetas. Montos y comisiones: [PENDIENTE] hasta que Producto los confirme. */
+/** Las tres tarjetas. Montos y comisiones: de `GET /api/planes`; respaldo en config/planesPrecios. */
 const PLANES: PlanVista[] = [
   { clave: 'EMPRENDEDOR', titulo: 'Emprendedor', para: 'Para quien vende desde la casa, redes o ferias.', detalle: '/emprende' },
   { clave: 'PYME', titulo: 'Pyme', para: 'Para negocios con local, equipo y caja.', detalle: '/para-pymes', destacado: true },
@@ -29,6 +33,11 @@ const PLANES: PlanVista[] = [
 ]
 
 type Fila = { etiqueta: string; valor: (p: PlanApi) => string }
+
+const respaldo = (p: PlanApi) => PLAN_PRECIOS[p.nombre as ClavePlan]
+const mensualDe = (p: PlanApi) => p.precioMensual ?? respaldo(p)?.mensualCrc ?? 0
+const comisionDe = (p: PlanApi) => Number(p.comisionPorcentaje ?? respaldo(p)?.comisionPct ?? 0)
+const minimaDe = (p: PlanApi) => p.comisionMinimaCrc ?? COMISION_MINIMA_CRC
 
 const limite = (n: number) => (n < 0 ? 'Ilimitado' : String(n))
 const si = (b: boolean) => (b ? 'Sí' : '—')
@@ -43,8 +52,8 @@ const FILAS: Fila[] = [
   { etiqueta: 'Compras a proveedores', valor: (p) => si(p.tieneCompras) },
   { etiqueta: 'Clientes (CRM)', valor: (p) => si(p.tieneCrm) },
   { etiqueta: 'Tarjetas de regalo', valor: (p) => si(p.tieneGiftCards) },
-  { etiqueta: 'Mensualidad', valor: () => '[PENDIENTE]' },
-  { etiqueta: 'Comisión por venta', valor: () => '[PENDIENTE]' },
+  { etiqueta: 'Mensualidad', valor: (p) => textoMensualidad(mensualDe(p)) },
+  { etiqueta: 'Comisión por venta', valor: (p) => textoComision(comisionDe(p), minimaDe(p)) },
 ]
 
 const POR_QUE = [
@@ -56,7 +65,7 @@ const POR_QUE = [
 
 const COMPARACION = [
   { otros: 'Otros marketplaces venden sus propios productos y compiten con vos.', nosotros: 'En HotClick vendés vos.' },
-  { otros: 'Algunas plataformas cobran mensualidad aunque no vendás.', nosotros: 'Con el plan Emprendedor solo pagás comisión cuando vendés. [PENDIENTE]' },
+  { otros: 'Algunas plataformas cobran mensualidad aunque no vendás.', nosotros: `Con el plan Emprendedor solo pagás comisión cuando vendés: ${PLAN_PRECIOS.EMPRENDEDOR.comisionPct}% por venta.` },
   { otros: 'Inventario, caja y tienda en línea en tres herramientas separadas.', nosotros: 'Todo en un solo lugar.' },
 ]
 
@@ -118,7 +127,7 @@ export default function PlanesPage() {
               >
                 <h3 className="font-display text-[22px] font-bold">{plan.titulo}</h3>
                 <p className={`text-[14px] leading-5 ${plan.destacado ? 'text-hc-n-0/85' : 'text-hc-n-600'}`}>{plan.para}</p>
-                <p className="font-display text-[18px] font-semibold">[PENDIENTE]</p>
+                <p className="font-display text-[18px] font-semibold">{(() => { const d = dePlan(plan.clave); return d ? `${textoMensualidad(mensualDe(d))} + ${textoComision(comisionDe(d), minimaDe(d))}` : textoPlan(plan.clave) })()}</p>
                 <Link
                   to={plan.detalle}
                   className={`mt-auto flex min-h-[44px] items-center justify-center rounded-[12px] text-[14px] font-semibold ${plan.destacado ? 'bg-hc-n-0 text-hc-blue-600' : 'border border-hc-n-200 text-hc-blue-600'}`}
