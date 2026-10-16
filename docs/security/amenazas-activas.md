@@ -74,7 +74,7 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | ID | Cambio | Estado |
 |---|---|---|
 | SEG-F (P6-01) | `GuestCheckoutGuard`: Turnstile opcional (`hotclick.checkout.turnstile.habilitado`), tope 3 u/producto y 6 u pendientes por IP/correo en 30 min | Mitigado (pendiente prod) |
-| H1 (S1-56) | `POST /api/tienda/{slug}/pedidos` (tienda propia, anónimo) reservaba hasta 999 u por producto 72 h. Ahora `GuestCheckoutGuard.ejecutarTienda`: 3 u por producto, 6 u pendientes por IP/correo en 30 min, `Idempotency-Key` o huella; `@Max(3)` en `StorefrontPedidoDTO.ItemDTO`. TTL de la reserva (`hotclick.tienda.reserva.horas`, 72 h) sin cambiar: decisión del dueño (cancela también pedidos en efectivo/transferencia) | `StorefrontPedidoInvitadoTopesTest` (6 casos) | Mitigado (pendiente prod) |
+| H1 (S1-56) | `POST /api/tienda/{slug}/pedidos` (tienda propia, anónimo) reservaba hasta 999 u por producto 72 h. Ahora `GuestCheckoutGuard.ejecutarTienda`: 3 u por producto, 6 u pendientes por IP/correo en 30 min, `Idempotency-Key` o huella; `@Max(3)` en `StorefrontPedidoDTO.ItemDTO`. TTL de la reserva (`hotclick.tienda.reserva.horas`, 72 h) sin cambiar: decisión del dueño (cancela también pedidos en efectivo/transferencia). Prueba: `StorefrontPedidoInvitadoTopesTest` (6 casos) | Mitigado (pendiente prod) |
 | PAG-4 (QA-CONC-2) | Idempotencia del guest-checkout (`Idempotency-Key` o hash IP+correo+carrito, 120 s, futuros compartidos) | Mitigado |
 | CMP-4 | `CheckoutGrupoFactory.exigirBodegaDeLaTienda` → 400 con bodega de otro negocio | Mitigado |
 | SEG-E (P5-01) | CRM listar/ver/editar/puntos con `verificarFeature`; sucursales con feature `sucursales`; CRM buscar/crear abiertos para POS (decisión) | Mitigado |
