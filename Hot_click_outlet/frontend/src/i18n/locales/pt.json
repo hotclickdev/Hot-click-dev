@@ -497,12 +497,12 @@
         "producto": "Produto"
       },
       "posicion": "{{tipo}} {{x}} de {{n}}",
-      "posicionBloque": "Bloco {{x}} de {{n}}",
-      "pausado": "Pausado · {{x}} de {{n}}",
+      "pausado": "Pausado · {{tipo}} {{x}} de {{n}}",
+      "pausadoSolo": "Pausado",
       "pausar": "Pausar carrossel",
       "reanudar": "Retomar carrossel",
       "sinFoto": "Ainda sem foto",
-      "sinFotoRotulo": "HOTCLICK · SEM FOTO"
+      "sinFotoRotulo": "SEM FOTO"
     },
     "badge": "Tecnologia premium na Costa Rica",
     "seoTitle": "HotClick — Loja online para comprar na Costa Rica",

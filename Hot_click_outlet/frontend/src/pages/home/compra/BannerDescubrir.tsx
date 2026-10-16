@@ -32,7 +32,7 @@ function useReduceMotion(): boolean {
   return reduce
 }
 
-/** Placeholder de marca: monograma b600 sobre b50 y «HOTCLICK · SIN FOTO». Nunca un hueco. */
+/** Placeholder de marca: monograma b600 sobre b50 y el rótulo «SIN FOTO». Nunca un hueco. */
 function SinFoto({ nombre, className }: { nombre: string; className: string }) {
   const { t } = useTranslation()
   return (
@@ -61,12 +61,21 @@ function Foto({ src, nombre, lazy }: { src: string | null; nombre: string; lazy:
   )
 }
 
-/** Descubrí: 2 fotos del catálogo apiladas, solo de ilustración. */
-function FotosDescubri({ fotos, nombre }: { fotos: string[]; nombre: string }) {
+/**
+ * Descubrí: 2 fotos del catálogo apiladas, solo de ilustración. Sin fotos sanas, ilustración de marca
+ * (isotipo sobre b50), nunca el placeholder «SIN FOTO»: Descubrí no es un elemento que «no tenga foto».
+ */
+function FotosDescubri({ fotos }: { fotos: string[] }) {
   const [rotas, setRotas] = useState<string[]>([])
   const sanas = fotos.filter((f) => !rotas.includes(f))
   const medida = 'size-[110px] lg:size-[220px]'
-  if (sanas.length === 0) return <SinFoto nombre={nombre} className={medida} />
+  if (sanas.length === 0) {
+    return (
+      <span aria-hidden="true" data-testid="carrusel-ilustracion-marca" className={`flex ${medida} shrink-0 items-center justify-center rounded-[14px] border border-hc-blue-100 bg-hc-blue-50 dark:border-[#30363D] dark:bg-[#0D1117]`}>
+        <img src="/brand/hotclick-isotipo.png" alt="" className="w-3/5 object-contain" />
+      </span>
+    )
+  }
   return (
     <span aria-hidden="true" className={`relative ${medida} shrink-0`}>
       {sanas[1] && (
@@ -145,9 +154,9 @@ export default function BannerDescubrir({ bloques, cargando = false }: { bloques
   const cta = t(`home.carrusel.bloque.${bloque.tipo}.cta`)
   const Icono = ICONO[bloque.tipo]
   const tipoCorto = t(`home.carrusel.tipo.${bloque.tipo}`)
-  const textoPosicion = bloque.tipo === 'descubri'
-    ? t('home.carrusel.posicionBloque', { x: actual.bloque + 1, n: nBloques })
-    : t('home.carrusel.posicion', { tipo: tipoCorto, x, n })
+  /** Descubrí no lleva contador (un solo slide); Negocio y Producto: «Negocio 1 de 2», «Producto 1 de 3». */
+  const esDescubri = bloque.tipo === 'descubri'
+  const textoPosicion = esDescubri ? '' : t('home.carrusel.posicion', { tipo: tipoCorto, x, n })
   /** Pausa visible (▶ y «Pausado · x de n»): botón o toque; hover, foco y pestaña oculta pausan sin cambiar el control. */
   const enPausa = pausaBoton || toque
   const lazy = actual.bloque > 0 || actual.elemento > 0
@@ -186,7 +195,7 @@ export default function BannerDescubrir({ bloques, cargando = false }: { bloques
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerCancel={() => { inicio.current = null }}
-      className="mx-4 touch-pan-y overflow-hidden rounded-[16px] border border-hc-n-200 bg-hc-n-0 text-hc-n-900 dark:border-[#30363D] dark:bg-[var(--hc-surface,#161B22)] dark:text-[#E6EDF3] lg:mx-0"
+      className="mx-4 scroll-mt-[186px] touch-pan-y overflow-hidden rounded-[16px] border border-hc-n-200 bg-hc-n-0 text-hc-n-900 dark:border-[#30363D] dark:bg-[var(--hc-surface,#161B22)] dark:text-[#E6EDF3] lg:mx-0 lg:scroll-mt-[125px]"
     >
       <style>{`
         @keyframes hc-carrusel-entra{from{opacity:0;transform:translateY(6px)}}
@@ -207,8 +216,8 @@ export default function BannerDescubrir({ bloques, cargando = false }: { bloques
             key={el.clave}
             role="group"
             aria-roledescription={t('home.carrusel.diapositiva')}
-            aria-label={`${etiqueta}, ${x} de ${n}`}
-            className={`flex min-w-0 flex-1 items-center gap-4 p-5 lg:gap-10 lg:px-10 lg:py-8 ${reduce ? '' : 'hc-carrusel-entra'}`}
+            aria-label={esDescubri ? etiqueta : `${etiqueta}, ${x} de ${n}`}
+            className={`flex min-w-0 flex-1 items-center gap-3 p-5 lg:gap-10 lg:px-10 lg:py-8 ${reduce ? '' : 'hc-carrusel-entra'}`}
           >
             <div className="flex min-w-0 flex-1 flex-col items-start">
               <span className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[.06em] text-hc-blue-600 dark:text-[#6EA0FF]">
@@ -216,16 +225,16 @@ export default function BannerDescubrir({ bloques, cargando = false }: { bloques
                 {etiqueta}
               </span>
               <h3 className="mt-1 line-clamp-2 font-display text-[20px] font-bold leading-[1.2] lg:text-[28px]">{titulo}</h3>
-              {detalle && <p className="mt-1 w-full truncate text-[14px] text-hc-n-600 dark:text-[#9DA7B3]">{detalle}</p>}
+              {detalle && <p className={`mt-1 w-full text-[14px] text-hc-n-600 dark:text-[#9DA7B3] ${esDescubri ? 'line-clamp-2 leading-[1.5]' : 'truncate'}`}>{detalle}</p>}
               <Link
                 to={el.to}
-                className={`mt-3 inline-flex min-h-[44px] items-center rounded-full bg-hc-red-500 px-4 text-[15px] font-bold text-hc-n-0 ${FOCO}`}
+                className={`mt-3 inline-flex min-h-[44px] items-center whitespace-nowrap rounded-full bg-hc-red-500 px-3.5 text-[15px] lg:px-4 font-bold text-hc-n-0 ${FOCO}`}
               >
                 {cta} →
               </Link>
             </div>
             {bloque.tipo === 'descubri'
-              ? <FotosDescubri fotos={bloque.fotos ?? []} nombre="HotClick" />
+              ? <FotosDescubri fotos={bloque.fotos ?? []} />
               : <Foto key={el.clave} src={el.foto} nombre={el.titulo} lazy={lazy} />}
           </div>
         </div>
@@ -253,7 +262,7 @@ export default function BannerDescubrir({ bloques, cargando = false }: { bloques
             })}
           </div>
           <p className="min-w-0 flex-1 truncate text-center text-[13px] text-hc-n-600 dark:text-[#9DA7B3]">
-            {enPausa ? t('home.carrusel.pausado', bloque.tipo === 'descubri' ? { x: actual.bloque + 1, n: nBloques } : { x, n }) : textoPosicion}
+            {enPausa ? (esDescubri ? t('home.carrusel.pausadoSolo') : t('home.carrusel.pausado', { tipo: tipoCorto, x, n })) : textoPosicion}
           </p>
           <button
             type="button"
