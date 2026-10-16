@@ -23,7 +23,12 @@ class MetodoCobroFormatoTest {
 
     @Test
     void tarjeta_solo_ultimos_4() {
-        assertThat(MetodoCobroFormato.limpiarDestino("TARJETA", "4111111111114412")).isEqualTo("4412");
+        assertThat(MetodoCobroFormato.limpiarDestino("TARJETA", "4412")).isEqualTo("4412");
+        assertThatThrownBy(() -> MetodoCobroFormato.limpiarDestino("TARJETA", "4111111111114412"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("solo los últimos 4");
+        assertThatThrownBy(() -> MetodoCobroFormato.limpiarDestino("TARJETA", "12345"))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThat(MetodoCobroFormato.mascara("TARJETA", "4412")).isEqualTo("•••• 4412");
     }
 
