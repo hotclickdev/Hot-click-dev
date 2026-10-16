@@ -7,8 +7,8 @@ import EntradaPagina from './motion/EntradaPagina'
 const CHIPS = ['Inventario', 'Finanzas', 'Características', 'Mejoras', 'Problemas'] as const
 
 /**
- * Consultas con Hot (Figma 61:514). S1-22 (NP-7/NP-8): sin la conversación de demo («₡145.000
- * vendidos», productos ajenos); solo el saludo, igual que el panel Emprendedor. No llama al copilot.
+ * Consultas con Hot (Figma 61:514). S1-22 (NP-7/NP-8): sin la conversación de demo (ventas
+ * de otro negocio, productos ajenos); solo el saludo, igual que el panel Emprendedor. No llama al copilot.
  */
 export default function ConsultasPage() {
   const ruta = useSellerRuta()
