@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * SEC-05: confirmación manual del pago ({@code → PAGADO}) desde el cambio de estado.
  *
  * <ul>
- *   <li>Solo para métodos manuales (efectivo / contra entrega, SINPE, transferencia). Un pedido de
+ *   <li>Solo para efectivo / contra entrega (QA-NEG-023: SINPE solo lo confirma ONVO). Un pedido de
  *       tarjeta (TILOPAY, STRIPE, ONVO) o con un {@link Pago} de pasarela nunca se marca a mano.</li>
  *   <li>Exige una referencia del pago (máx. {@value #LARGO_MAXIMO_REFERENCIA} caracteres) o, en SINPE,
  *       un comprobante subido por el cliente que queda aprobado por quien confirma.</li>
@@ -51,8 +51,9 @@ public class PedidoPagoManualService {
     public static final String ACCION_AUDITORIA = "PEDIDO_PAGO_MANUAL";
 
     /** Métodos que se cobran fuera de la pasarela y por eso se pueden confirmar a mano. */
-    static final Set<String> METODOS_MANUALES = Set.of(
-        "EFECTIVO", "CONTRA_ENTREGA", Constants.PROVEEDOR_SINPE, "SINPE_MOVIL", "TRANSFERENCIA");
+    // QA-NEG-023: a mano solo se confirma el cobro en efectivo (contra entrega o al retirar).
+    // SINPE lo confirma únicamente ONVO; la transferencia tampoco se marca a mano.
+    static final Set<String> METODOS_MANUALES = Set.of("EFECTIVO", "CONTRA_ENTREGA");
 
     /** Único método que se cobra al retirar: con retiro en tienda pasa a ENTREGADO sin PAGADO previo. */
     static final Set<String> METODOS_COBRO_AL_RETIRAR = Set.of("EFECTIVO");
@@ -64,13 +65,13 @@ public class PedidoPagoManualService {
         Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO);
 
     public static final String MENSAJE_METODO_NO_MANUAL =
-        "Este pedido no se puede marcar como pagado a mano: solo los pagos en efectivo, SINPE o transferencia. "
-            + "Los pagos con tarjeta los confirma la pasarela.";
+        "Este pedido no se puede marcar como pagado a mano: solo los cobros en efectivo (contra entrega o al retirar). "
+            + "Los pagos con tarjeta o SINPE los confirma la pasarela.";
     public static final String MENSAJE_PAGO_PASARELA =
         "Este pedido se paga con %s: el pago lo confirma la pasarela y no se puede marcar como pagado a mano.";
     public static final String MENSAJE_REFERENCIA_REQUERIDA =
         "Para marcar el pedido como pagado indicá la referencia del pago "
-            + "(número de SINPE o de transferencia, o quién recibió el efectivo).";
+            + "(por ejemplo, quién recibió el efectivo).";
     public static final String MENSAJE_REFERENCIA_LARGA =
         "La referencia del pago no puede superar " + LARGO_MAXIMO_REFERENCIA + " caracteres.";
     public static final String MENSAJE_GRUPO_OTROS_NEGOCIOS =

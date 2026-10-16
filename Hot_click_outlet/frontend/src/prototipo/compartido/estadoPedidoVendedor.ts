@@ -58,11 +58,14 @@ export function puedeCancelar(estado: EstadoPedidoVendedor): boolean {
   return estado === 'Esperando pago'
 }
 
-/** Pedido de la tienda propia (SINPE/transferencia coordinado con el vendedor, sin pasarela): el vendedor confirma el pago. */
+/**
+ * QA-NEG-023: el vendedor confirma a mano solo el cobro en efectivo (contra entrega o al retirar).
+ * SINPE lo confirma únicamente ONVO; tarjeta y transferencia, nunca a mano. Mismo criterio que el
+ * backend (`PedidoPagoManualService.METODOS_MANUALES`).
+ */
 export function confirmaPagoManual(estado: EstadoPedidoVendedor, datos?: DatosEntregaPedido): boolean {
   const pago = normalizar(datos?.metodoPago)
-  const envio = normalizar(datos?.metodoEnvio)
-  return estado === 'Esperando pago' && (pago === 'SINPE_MOVIL' || pago === 'TRANSFERENCIA') && (envio === 'DOMICILIO' || envio === 'RETIRO')
+  return estado === 'Esperando pago' && (pago === 'EFECTIVO' || pago === 'CONTRA_ENTREGA')
 }
 
 export function puedeDespachar(estado: EstadoPedidoVendedor): boolean {

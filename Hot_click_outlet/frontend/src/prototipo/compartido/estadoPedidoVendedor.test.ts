@@ -111,9 +111,13 @@ describe('NP-18 controles de estado del vendedor', () => {
     expect(puedeCancelar('Enviado')).toBe(false)
   })
 
-  it('confirmar pago solo en pedidos de tienda propia sin pasarela', async () => {
+  it('confirmar pago solo en cobros en efectivo (QA-NEG-023)', async () => {
     const { confirmaPagoManual } = await import('./estadoPedidoVendedor')
-    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'SINPE_MOVIL', metodoEnvio: 'DOMICILIO' })).toBe(true)
+    // QA-NEG-023: SINPE solo lo confirma ONVO; transferencia tampoco a mano.
+    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'SINPE_MOVIL', metodoEnvio: 'DOMICILIO' })).toBe(false)
+    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'TRANSFERENCIA', metodoEnvio: 'RETIRO' })).toBe(false)
+    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'EFECTIVO', metodoEnvio: 'ENVIO_A_DOMICILIO' })).toBe(true)
+    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'contra_entrega', metodoEnvio: 'DOMICILIO' })).toBe(true)
     expect(confirmaPagoManual('Esperando pago', { metodoPago: 'TILOPAY', metodoEnvio: 'ENVIO_NORMAL_GAM' })).toBe(false)
     expect(confirmaPagoManual('Pendiente', { metodoPago: 'SINPE_MOVIL', metodoEnvio: 'RETIRO' })).toBe(false)
   })
