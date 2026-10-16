@@ -1,4 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import useAuthStore from '@/store/authStore'
+import { adminService } from '@/services/orderService'
 import { useParams, useNavigate } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
@@ -43,15 +45,31 @@ export default function TiendaCheckoutPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { carrito, totalImporte, itemsParaPedido, vaciarCarrito, empresa } = useTiendaStore()
+  // Con sesión, los datos de la cuenta arrancan prellenados (se pueden corregir).
+  const nombreCuenta = useAuthStore((s) => s.userName)
+  const correoCuenta = useAuthStore((s) => s.userEmail)
+  const userId = useAuthStore((s) => s.userId)
+  const authToken = useAuthStore((s) => s.token)
   const [form, setForm] = useState<FormCheckout>({
-    nombreCliente: '',
-    correoCliente: '',
+    nombreCliente: nombreCuenta ?? '',
+    correoCliente: correoCuenta ?? '',
     telefonoCliente: '',
     direccionEntrega: '',
     metodoPago: 'SINPE_MOVIL',
     metodoEnvio: METODO_ENVIO_DOMICILIO,
     notas: '',
   })
+  useEffect(() => {
+    if (!authToken || !userId) return
+    let cancelado = false
+    adminService.getUsuario(userId).then(({ data }) => {
+      if (cancelado) return
+      const telefono = (data as { data?: { telefono?: string } })?.data?.telefono
+      // Solo completa si el comprador todavía no escribió nada.
+      if (telefono) setForm((f) => (f.telefonoCliente ? f : { ...f, telefonoCliente: telefono }))
+    }).catch(() => { /* prellenado best-effort */ })
+    return () => { cancelado = true }
+  }, [authToken, userId])
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [encomienda, setEncomienda] = useState('')
