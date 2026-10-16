@@ -44,10 +44,15 @@ public class AuthRegistrationService {
     @Autowired private TurnstileService             turnstileService;
     @Autowired private SecurityAuditService         securityAuditService;
 
+    /** Piso de tiempo del alta: un duplicado tarda lo mismo que un alta nueva (0 = sin piso). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.registro.respuesta-min-ms:900}")
+    long respuestaMinMs;
+
     public ResponseEntity<ResponseDTO> register(RegisterRequest req, HttpServletRequest httpRequest) {
         if (!turnstileService.verify(req.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
+        long inicio = System.nanoTime();
         try {
             MayoriaEdad.exigir(req.getDeclaraMayoriaEdad());
             Usuario usuario = new Usuario();
@@ -66,6 +71,8 @@ public class AuthRegistrationService {
                 "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeSeguro(e, "No se pudo completar el registro. Revisá los datos e intentá de nuevo.")));
+        } finally {
+            com.hotclick.security.RespuestaUniforme.esperarMinimo(inicio, respuestaMinMs);
         }
     }
 

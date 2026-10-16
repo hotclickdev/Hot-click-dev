@@ -27,17 +27,28 @@ public class AuthVerificationHandler {
     @Autowired private TurnstileService            turnstileService;
     @Autowired private SecurityAuditService        securityAuditService;
 
+    /** Piso de tiempo del alta: un duplicado tarda lo mismo que un alta nueva (0 = sin piso). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.registro.respuesta-min-ms:900}")
+    long respuestaMinMs;
+
     public ResponseEntity<ResponseDTO> sendVerification(Usuario usuario, String turnstileToken, HttpServletRequest httpRequest) {
         if (!turnstileService.verify(turnstileToken, securityAuditService.getIp(httpRequest))) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
+        long inicio = System.nanoTime();
         try {
             prepararAltaSiAplica(usuario);
             emailVerificationService.iniciarRegistro(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código de verificación enviado a tu correo", null));
+        } catch (com.hotclick.exception.RegistroDuplicadoException e) {
+            // Sin correo ni cédula en el log: es un caso esperado y el log no debe servir de oráculo.
+            log.info("[send-verification] alta rechazada por duplicado");
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajePublico(e)));
+        } finally {
+            com.hotclick.security.RespuestaUniforme.esperarMinimo(inicio, respuestaMinMs);
         }
     }
 
