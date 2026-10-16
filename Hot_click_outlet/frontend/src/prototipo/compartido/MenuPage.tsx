@@ -7,6 +7,7 @@ import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { Boton } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
+import EnlaceMiTienda from '@/components/sistema/EnlaceMiTienda'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import { EASE_PREMIUM } from './motion/formularioMotionTokens'
@@ -49,6 +50,7 @@ export default function MenuPage() {
       <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center px-6 pb-8 pt-[90px] md:hidden">
         <HeroMenu badge={plan.badge} />
         <OnboardingPrimeraVez rol={plan.id} />
+        <EnlaceMiTienda className="mt-6" />
         <ListaStagger className="mt-12 flex w-full flex-col gap-3">
           {acciones.map((accion) => (
             <ItemMenu key={accion.segmento}>
@@ -97,6 +99,7 @@ export default function MenuPage() {
         <h1 className="font-display text-[30px] font-bold">Hola, {userName}</h1>
         <p className="mt-1 text-base text-hc-muted">Así va tu tienda hoy</p>
         <OnboardingPrimeraVez rol={plan.id} />
+        <EnlaceMiTienda className="mt-6 max-w-xl" />
         <ListaStagger className={`mt-8 grid gap-6 ${esPlus ? 'grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
           {acciones.map((accion) => (
             <ItemMenu key={accion.segmento}>
