@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { debeAutoActualizar } from './swUpdate'
+import { crearLimitadorChequeo, debeAutoActualizar, debeMostrarAvisoSw, INTERVALO_MIN_CHEQUEO_MS, posponerAvisoSw, POSPONER_AVISO_MS } from './swUpdate'
 
 describe('SW · auto-actualización solo para visitantes sin sesión', () => {
   it('visitante sin sesión en rutas de vitrina: se actualiza solo', () => {
@@ -31,5 +31,27 @@ describe('SW · auto-actualización solo para visitantes sin sesión', () => {
     expect(debeAutoActualizar('/administracion-publica', false)).toBe(true)
     expect(debeAutoActualizar('/admin/', false)).toBe(false)
     expect(debeAutoActualizar('/productos?search=sofa', false)).toBe(true)
+  })
+})
+
+describe('SW · aviso «Hay una versión nueva» sin repetirse', () => {
+  function memoria() {
+    const m = new Map<string, string>()
+    return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, v) } }
+  }
+
+  it('«Ahora no» lo pospone 6 h; después vuelve a avisar', () => {
+    const s = memoria()
+    expect(debeMostrarAvisoSw(1_000, s)).toBe(true)
+    posponerAvisoSw(1_000, s)
+    expect(debeMostrarAvisoSw(1_000 + 60_000, s)).toBe(false)
+    expect(debeMostrarAvisoSw(1_000 + POSPONER_AVISO_MS + 1, s)).toBe(true)
+  })
+
+  it('al volver a foco chequea como mucho cada 10 min', () => {
+    const toca = crearLimitadorChequeo()
+    expect(toca(INTERVALO_MIN_CHEQUEO_MS)).toBe(true)
+    expect(toca(INTERVALO_MIN_CHEQUEO_MS + 5_000)).toBe(false)
+    expect(toca(INTERVALO_MIN_CHEQUEO_MS * 2 + 1)).toBe(true)
   })
 })
