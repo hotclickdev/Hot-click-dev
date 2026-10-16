@@ -35,8 +35,25 @@ public class SolicitudAprobacionController {
     public ResponseDTO listar() {
         List<Empresa> pendientes = empresaRepository
             .findByEstadoEmpresaOrderByFechaRegistroDesc("PENDIENTE_APROBACION");
-        List<Map<String, Object>> result = pendientes.stream().map(solicitudAprobacionMapper::toMap).toList();
+        // Una fila rota (plan/usuario inconsistente) no debe vaciar la cola entera con un 500.
+        List<Map<String, Object>> result = pendientes.stream().map(this::filaSegura).toList();
         return ResponseDTO.success("Solicitudes pendientes", result);
+    }
+
+    private Map<String, Object> filaSegura(Empresa e) {
+        try {
+            return solicitudAprobacionMapper.toMap(e);
+        } catch (RuntimeException ex) {
+            org.slf4j.LoggerFactory.getLogger(SolicitudAprobacionController.class)
+                .warn("[moderacion] Empresa {} con datos inconsistentes en la cola: {}", e.getId(), ex.getClass().getSimpleName());
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", e.getId());
+            m.put("nombreEmpresa", e.getNombreEmpresa());
+            m.put("nombreComercial", e.getNombreComercial());
+            m.put("slug", e.getSlug());
+            m.put("estadoEmpresa", e.getEstadoEmpresa());
+            return m;
+        }
     }
 
     @GetMapping("/stats")
