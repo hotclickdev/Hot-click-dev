@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import AccesoCuentaExistente from '@/pages/registro-empresa/AccesoCuentaExistente'
 import { motion } from 'framer-motion'
 import { Turnstile } from '@marsidev/react-turnstile'
 import Input from '@/components/ui/Input'
@@ -52,6 +53,7 @@ export default function StepDatosAdmin({
       <PhoneField label="Teléfono personal (opcional)"
         value={form.telefonoAdmin} onChange={onTelefono} />
       {error && <ErrMsg>{error}</ErrMsg>}
+      <AccesoCuentaExistente error={error} />
 
       <label style={{
         display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem',
