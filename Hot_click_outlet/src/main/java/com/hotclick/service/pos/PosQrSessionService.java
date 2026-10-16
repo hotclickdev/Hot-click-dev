@@ -158,8 +158,7 @@ public class PosQrSessionService {
             ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
         r.put("logoUrl",      empresa.getLogoUrl());
         r.put("colorPrimario", empresa.getColorPrimario());
-        // SINPE: número de teléfono y referencia (primeros 8 chars del token)
-        r.put("sinpeNumero",  destinoSinpe(sesion, empresa));
+        // Sin número SINPE: solo ONVO lo muestra (regla del dueño). Queda la referencia.
         r.put("sinpeRef",     sesion.getToken().substring(0, 8).toUpperCase());
         return r;
     }
@@ -217,7 +216,9 @@ public class PosQrSessionService {
         r.put("metodoPago", sesion.getMetodoPago());
         r.put("metodosHabilitados", PosQrMetodos.deSesion(sesion));
         r.put("expiracion", sesion.getFechaExpiracion().toString());
-        r.put("sinpeNumero", destinoSinpe(sesion, exigirEmpresa(sesion)));
+        exigirEmpresa(sesion);
+        // Sin número SINPE: solo ONVO lo muestra (regla del dueño).
+        r.put("sinpeNumero", "");
         return r;
     }
 
@@ -227,21 +228,6 @@ public class PosQrSessionService {
             throw new RecursoNoEncontradoException("Empresa de la sesión QR", sesion.getToken());
         }
         return empresa;
-    }
-
-    String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
-        if (PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
-            // SINPE por Tilopay: el número, el monto y el código los da el SDK al iniciar el pago.
-            return "";
-        }
-        return numeroSinpe(empresa);
-    }
-
-    static String numeroSinpe(Empresa empresa) {
-        if (empresa == null) return "";
-        if (tieneTexto(empresa.getNumeroWhatsapp())) return empresa.getNumeroWhatsapp().trim();
-        if (tieneTexto(empresa.getTelefonoEmpresa())) return empresa.getTelefonoEmpresa().trim();
-        return "";
     }
 
     private void exigirItemsDelNegocio(Long empresaId, List<Map<String, Object>> items) {

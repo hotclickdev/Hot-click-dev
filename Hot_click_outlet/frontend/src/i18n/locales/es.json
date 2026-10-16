@@ -3457,8 +3457,6 @@
       "pagoTarjeta": "Pago con tarjeta",
       "instruccionTarjeta": "Pedile al cliente que escanee el código con la cámara del celular",
       "instruccionSinpe": "Pedile al cliente que escanee y pague con SINPE Móvil",
-      "sinpeA": "SINPE Móvil a:",
-      "configWhatsapp": "Número SINPE no configurado",
       "referencia": "Referencia:",
       "montoExacto": "Monto exacto:",
       "esperandoConfirmacion": "Esperando confirmación del pago del cliente…",
