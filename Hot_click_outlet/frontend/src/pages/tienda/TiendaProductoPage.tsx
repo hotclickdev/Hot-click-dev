@@ -103,8 +103,15 @@ export default function TiendaProductoPage() {
           <h1 className="font-display text-[22px] font-bold leading-7 tracking-normal text-hc-n-900 wrap-anywhere lg:text-[32px] lg:leading-[38px]">
             {producto.nombre}
           </h1>
-          <PrecioProducto producto={producto} />
-          <Stock stock={stockDisponible} />
+          {/* «A cotizar» (QA-COM-002, producto 599): sin precio (₡1 de relleno) ni stock; solo «Pedir cotización». */}
+          {cotizarHref ? (
+            <p className="font-display text-[26px] font-extrabold leading-[33px] text-hc-n-900 lg:text-[34px] lg:leading-[43px]">A cotizar</p>
+          ) : (
+            <>
+              <PrecioProducto producto={producto} />
+              <Stock stock={stockDisponible} />
+            </>
+          )}
           {producto.descripcion && (
             <p className="text-[14px] leading-[21px] text-hc-n-600 wrap-anywhere lg:text-[15px] lg:leading-[23px]">{producto.descripcion}</p>
           )}
@@ -125,7 +132,7 @@ export default function TiendaProductoPage() {
           <div className="-mx-4 lg:mx-0">
             <PreguntaProducto product={producto} />
           </div>
-          {stockDisponible <= 0 && (
+          {stockDisponible <= 0 && !cotizarHref && (
             <div className="mt-2">
               <BotonTienda variante="secundario" to={`/tienda/${slug}`}>Ver otros productos de la tienda</BotonTienda>
             </div>

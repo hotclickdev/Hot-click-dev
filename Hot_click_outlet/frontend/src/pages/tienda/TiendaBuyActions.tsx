@@ -43,7 +43,7 @@ export default function TiendaBuyActions({
         to={cotizarHref}
         className="flex w-full items-center justify-center rounded-[12px] bg-[var(--t-primary)] py-[14px] text-[15px] font-semibold leading-[normal] text-hc-n-0"
       >
-        Solicitar cotización
+        Pedir cotización
       </Link>
     )
     return esBarra
