@@ -120,8 +120,8 @@ public class CheckoutGrupoFactory {
     public static List<PaymentCheckoutResponse.Paquete> resumen(List<Pedido> pedidos) {
         return pedidos.stream().map(p -> {
             Bodega b = p.getBodega();
-            String tienda = p.getEmpresa() != null && p.getEmpresa().getNombreEmpresa() != null
-                ? p.getEmpresa().getNombreEmpresa() : (b != null ? b.getNombreBodega() : "HotClick");
+            // Nombre visible del negocio (EmpresaNombre); nunca el nombre interno de la bodega (NP-19).
+            String tienda = com.hotclick.utils.EmpresaNombre.mostrar(p.getEmpresa(), "HotClick");
             String origen = b != null && b.getProvincia() != null && !b.getProvincia().isBlank() ? b.getProvincia() : null;
             return new PaymentCheckoutResponse.Paquete(p.getNumeroPedido(), tienda, origen,
                 p.getMetodoEnvio(), p.getCostoEnvio(), p.getTotalPedido());
