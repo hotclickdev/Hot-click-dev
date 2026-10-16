@@ -25,8 +25,7 @@ class TiendaRapidaReglasTest {
     }
 
     @Test
-    void laCedulaYElEnlaceTienenFormaCerrada() {
-        assertThat(TiendaRapidaReglas.cedula("1-2345-6789")).isEqualTo("123456789");
+    void elEnlaceTieneFormaCerrada() {
         assertThatThrownBy(() -> TiendaRapidaReglas.token("corto")).isInstanceOf(IllegalArgumentException.class);
     }
 }

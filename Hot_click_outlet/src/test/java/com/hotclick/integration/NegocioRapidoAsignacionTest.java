@@ -71,7 +71,7 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
 
     private String aceptarBody(boolean acepto, String correo) throws Exception {
         return json.writeValueAsString(Map.of("acepto", acepto, "versionLegal", TiendaRapidaReglas.VERSION_LEGAL,
-            "persona", "Ana Mora Solís", "cedula", "112340567", "correo", correo,
+            "persona", "Ana Mora Solís", "correo", correo,
             "telefono", "88887777", "clave", "clave-segura-1"));
     }
 
@@ -307,23 +307,17 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Paso 1: nombre y cédula vacíos o inválidos → 400 con error por campo y el enlace sigue vigente")
+    @DisplayName("Paso 1: sin cédula (decisión del dueño); nombre vacío → 400 con error por campo y el enlace sigue vigente")
     void paso1Obligatorio() throws Exception {
         String token = crear("Paso Uno SA").path("token").asText();
-        for (String[] caso : new String[][] { {"", ""}, {"  ", "12345678"}, {"Ana Mora", "1234567890123"} }) {
+        for (String nombre : new String[] {"", "  "}) {
             Map<String, Object> body = new java.util.HashMap<>(json.readValue(aceptarBody(true, "p1-nr@test.cr"), Map.class));
-            body.put("persona", caso[0]);
-            body.put("cedula", caso[1]);
+            body.put("persona", nombre);
             mockMvc.perform(post(PUBLICO + token).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.data.campos.cedula").exists());
+                .andExpect(jsonPath("$.data.campos.persona").exists())
+                .andExpect(jsonPath("$.data.campos.cedula").doesNotExist());
         }
-        Map<String, Object> soloNombre = new java.util.HashMap<>(json.readValue(aceptarBody(true, "p1-nr@test.cr"), Map.class));
-        soloNombre.put("persona", "");
-        mockMvc.perform(post(PUBLICO + token).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(soloNombre)))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.data.campos.persona").exists())
-            .andExpect(jsonPath("$.data.campos.cedula").doesNotExist());
         mockMvc.perform(get(PUBLICO + token)).andExpect(status().isOk());
     }
 

@@ -12,7 +12,6 @@ public record TiendaRapidaAceptarDTO(
     Boolean acepto,
     @Size(max = 40) String versionLegal,
     @Size(max = 150) String persona,
-    @Size(max = 30) String cedula,
     @Size(max = 150) String correo,
     @Size(max = 30) String telefono
 ) {}

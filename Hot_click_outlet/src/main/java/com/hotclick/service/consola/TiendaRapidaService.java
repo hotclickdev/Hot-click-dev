@@ -138,14 +138,14 @@ public class TiendaRapidaService {
      */
     @Transactional
     public Map<String, Object> aceptar(String token, boolean acepto, String versionLegal, String ipHash,
-                                       String persona, String cedula, String correo, String telefono) {
+                                       String persona, String correo, String telefono) {
         if (!acepto) {
             throw new IllegalArgumentException("Para seguir tenés que aceptar ser el dueño o representante legal del negocio.");
         }
         if (versionLegal != null && !versionLegal.isBlank() && !TiendaRapidaReglas.VERSION_LEGAL.equals(versionLegal)) {
             throw new IllegalArgumentException("El texto que aceptaste cambió. Recargá la página.");
         }
-        exigirPaso1(persona, cedula);
+        exigirPaso1(persona);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         TiendaRapida fila = cerrarUna(exigir(token), ahora);
         exigirVigente(fila, ahora);
@@ -159,7 +159,7 @@ public class TiendaRapidaService {
             exigirVigente(fila, ahora);
             throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Este enlace ya se usó.");
         }
-        aplicarDatos(fila, persona, cedula, correo, telefono);
+        aplicarDatos(fila, persona, correo, telefono);
         fila.setAceptadoEn(ahora);
         fila.setAceptadoIpHash(ipHash);
         fila.setAceptadoPor(fila.getUsuario().getId());
@@ -170,20 +170,17 @@ public class TiendaRapidaService {
         return datos;
     }
 
-    /** Paso 1 del enlace: nombre y cédula obligatorios, con error por campo (400). */
-    static void exigirPaso1(String persona, String cedula) {
+    /** Paso 1 del enlace: nombre obligatorio, con error por campo (400). Sin cédula (decisión del dueño, 16-oct). */
+    static void exigirPaso1(String persona) {
         java.util.Map<String, String> errores = new java.util.LinkedHashMap<>();
         try { TiendaRapidaReglas.nombre(persona, "El nombre"); } catch (IllegalArgumentException e) { errores.put("persona", e.getMessage()); }
-        try { TiendaRapidaReglas.cedula(cedula); } catch (IllegalArgumentException e) { errores.put("cedula", e.getMessage()); }
         if (!errores.isEmpty()) {
-            throw new com.hotclick.exception.CamposInvalidosException("Revisá tu nombre y tu cédula.", errores);
+            throw new com.hotclick.exception.CamposInvalidosException("Revisá tu nombre.", errores);
         }
     }
 
-    private void aplicarDatos(TiendaRapida fila, String persona, String cedula,
-                              String correo, String telefono) {
+    private void aplicarDatos(TiendaRapida fila, String persona, String correo, String telefono) {
         String dueno = TiendaRapidaReglas.nombre(persona, "El nombre");
-        String id = TiendaRapidaReglas.cedula(cedula);
         String mail = TiendaRapidaReglas.correo(correo);
         String cel = TiendaRapidaReglas.telefono(telefono);
         Usuario usuario = fila.getUsuario();
@@ -194,13 +191,9 @@ public class TiendaRapidaService {
         if (empresas.existsByCorreoEmpresa(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
             throw com.hotclick.exception.RegistroDuplicadoException.porCorreo();
         }
-        if (usuarios.existsByIdentificacion(id) && !id.equals(usuario.getIdentificacion())) {
-            throw com.hotclick.exception.RegistroDuplicadoException.porCedula();
-        }
         String[] partes = partes(dueno);
         usuario.setNombre(partes[0]);
         usuario.setApellidoPaterno(partes[1]);
-        usuario.setIdentificacion(id);
         usuario.setCorreo(mail);
         usuario.setTelefono(cel);
         // Clave aleatoria e inutilizable: el dueño define la suya con el código de recuperación que
@@ -209,9 +202,6 @@ public class TiendaRapidaService {
         usuario.setCorreoVerificado(false);
         empresa.setCorreoEmpresa(mail);
         empresa.setTelefonoEmpresa(cel);
-        empresa.setRucCedula(id);
-        empresa.setCedulaJuridica(id);
-        empresa.setTipoCedula(id.length() > 9 ? "02" : "01");
         fila.setPersona(dueno);
         fila.setTelefono(cel);
         fila.setEstado(TiendaRapidaReglas.LISTA);
