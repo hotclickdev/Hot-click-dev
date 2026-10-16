@@ -39,6 +39,9 @@ export type PedidoMock = {
   pagaAlRetirar?: boolean
   fecha: string
   direccion: string
+  telefono?: string
+  correo?: string
+  confirmaPago?: boolean
   sucursal?: string
   origen?: string
   items: ItemPedido[]

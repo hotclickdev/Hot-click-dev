@@ -61,6 +61,17 @@ public class PedidoDetailMapper {
             .map(this::mapPedidoDetalle).toList();
     }
 
+    static String nombreCliente(Pedido p) {
+        if (p.getClienteNombre() != null && !p.getClienteNombre().isBlank()) return p.getClienteNombre();
+        return p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre() : "—";
+    }
+
+    static String telefonoCliente(Pedido p) {
+        if (p.getClienteTel() != null && !p.getClienteTel().isBlank()) return p.getClienteTel();
+        String tel = p.getUsuarioFinal() != null ? p.getUsuarioFinal().getTelefono() : null;
+        return tel != null ? tel : "";
+    }
+
     public Map<String, Object> mapPedidoDetalle(Pedido p) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id",            p.getId());
@@ -81,9 +92,10 @@ public class PedidoDetailMapper {
                 new TypeReference<List<Map<String, Object>>>() {}));
         } catch (Exception e) { log.warn("notificaciones parse error: {}", e.getMessage()); m.put("notificaciones", List.of()); }
         m.put("clienteId",     p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()       : null);
-        m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()   : "—");
+        // NP-18: invitado de la tienda propia: nombre y teléfono que escribió en el pedido (el listado ya es del negocio).
+        m.put("nombreCliente", nombreCliente(p));
         m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo()   : "—");
-        m.put("clienteTel",    p.getUsuarioFinal() != null ? p.getUsuarioFinal().getTelefono() : "");
+        m.put("clienteTel",    telefonoCliente(p));
         List<Map<String, Object>> items = p.getItems().stream().map(i -> {
             Map<String, Object> im = new LinkedHashMap<>();
             im.put("productoId",      i.getProducto() != null ? i.getProducto().getId() : null);

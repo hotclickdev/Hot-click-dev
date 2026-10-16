@@ -63,6 +63,9 @@ export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, e
           <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
             <p className="text-[13px] font-medium text-hc-n-900">{pedido.cliente}</p>
             <p className="text-[12px] leading-4 text-hc-n-600">{pedido.direccion || '—'}</p>
+            {pedido.telefono || pedido.correo ? (
+              <p className="text-[12px] leading-4 text-hc-n-600">{[pedido.telefono, pedido.correo].filter(Boolean).join(' · ')}</p>
+            ) : null}
           </div>
         </div>
       </section>
