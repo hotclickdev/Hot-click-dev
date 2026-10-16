@@ -72,7 +72,7 @@ public class ReservaTiendaVencidaService {
             stockReservationService.liberarReservas(pedido);
             log.info("[reserva-tienda] Pedido {} cancelado: reserva vencida ({} h)", pedido.getNumeroPedido(), horas);
         }
-        if (!vencidos.isEmpty()) pedidoRepository.saveAll(vencidos);
+        // Entidades administradas dentro de la transacción: el cambio de estado se guarda al confirmar.
         return vencidos.size();
     }
 }
