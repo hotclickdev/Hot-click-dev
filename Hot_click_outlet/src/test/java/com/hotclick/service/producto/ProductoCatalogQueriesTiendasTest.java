@@ -47,14 +47,20 @@ class ProductoCatalogQueriesTiendasTest {
     @Test
     @DisplayName("Vendedor: siempre el nombre de la tienda (nunca la bodega); el enlace solo si es pública")
     void nombreSiempreDeLaTienda() {
-        ProductoCatalogQueries queries = new ProductoCatalogQueries(mock(ProductoRepository.class));
+        ProductoRepository repo = mock(ProductoRepository.class);
+        ProductoCatalogQueries queries = new ProductoCatalogQueries(repo);
         ReflectionTestUtils.setField(queries, "empresaPrincipalId", 1L);
-        Producto noPublica = producto(11L, 8L, false, "t8");
-        queries.poblarBadgeEmpresa(noPublica);
+        when(repo.findById(11L)).thenReturn(java.util.Optional.of(producto(11L, 8L, false, "t8")));
+        when(repo.findById(10L)).thenReturn(java.util.Optional.of(producto(10L, 7L, true, "t7")));
+        Producto noPublica = new Producto();
+        noPublica.setId(11L);
+        queries.poblarVendedorFicha(noPublica);
         assertThat(noPublica.getEmpresaNombre()).isEqualTo("Tienda 8");
         assertThat(noPublica.getEmpresaSlug()).isNull();
-        Producto publica = producto(10L, 7L, true, "t7");
-        queries.poblarBadgeEmpresa(publica);
+        Producto publica = new Producto();
+        publica.setId(10L);
+        queries.poblarVendedorFicha(publica);
+        assertThat(publica.getEmpresaNombre()).isEqualTo("Tienda 7");
         assertThat(publica.getEmpresaSlug()).isEqualTo("t7");
     }
 

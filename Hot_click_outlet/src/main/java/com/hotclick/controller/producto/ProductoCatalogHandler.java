@@ -135,7 +135,9 @@ public class ProductoCatalogHandler {
             Producto producto = productoService.buscarPorId(id);
             productoAccessGuard.assertCanAccessProductoDetalle(producto);
             // La ficha muestra el mismo nombre de vendedor que la tienda (nunca la bodega interna).
-            if (catalogQueries != null) catalogQueries.poblarBadgeEmpresa(producto);
+            if (catalogQueries != null) {
+                try { catalogQueries.poblarVendedorFicha(producto); } catch (RuntimeException ignored) { /* la ficha sale igual */ }
+            }
             return ResponseEntity.ok(ResponseDTO.success("Producto encontrado", producto));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));

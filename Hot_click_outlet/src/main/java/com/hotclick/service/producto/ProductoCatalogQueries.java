@@ -144,18 +144,33 @@ public class ProductoCatalogQueries {
         if (ids == null || ids.isEmpty()) return tiendas;
         for (Producto p : productoRepository.findAllById(ids)) {
             poblarBadgeEmpresa(p);
-            // Solo tiendas públicas con enlace (las no públicas no se anuncian).
-            if (p.getEmpresaSlug() != null && p.getEmpresaNombre() != null) tiendas.put(p.getId(), p.getEmpresaNombre());
+            if (p.getEmpresaNombre() != null) tiendas.put(p.getId(), p.getEmpresaNombre());
         }
         return tiendas;
     }
 
+    /**
+     * Ficha pública: nombre de la tienda (y enlace si es pública) en el producto que se devuelve, leyendo el negocio
+     * dentro de una transacción (el producto de la ficha puede venir sin la relación cargada). Best-effort.
+     */
+    @Transactional(readOnly = true)
+    public void poblarVendedorFicha(Producto destino) {
+        if (destino == null || destino.getId() == null) return;
+        productoRepository.findById(destino.getId()).ifPresent(cargado -> {
+            var e = cargado.getEmpresa();
+            if (e == null || e.getId().equals(empresaPrincipalId)) return;
+            // La ficha ya pasó el guard de acceso: el vendedor es siempre el nombre de la tienda (nunca la bodega);
+            // el enlace a la tienda, solo si es pública y tiene slug.
+            destino.setEmpresaNombre(com.hotclick.utils.EmpresaNombre.mostrar(e, null));
+            destino.setEmpresaSlug(Boolean.TRUE.equals(e.getVisibilidadPublica()) ? e.getSlug() : null);
+        });
+    }
+
     public void poblarBadgeEmpresa(Producto p) {
         var e = p.getEmpresa();
-        if (e == null || e.getId().equals(empresaPrincipalId)) return;
-        // Nombre del vendedor: siempre el de la tienda (nunca la bodega interna), con la misma regla que la tienda.
+        if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
+        if (e.getId().equals(empresaPrincipalId)) return;
         p.setEmpresaNombre(com.hotclick.utils.EmpresaNombre.mostrar(e, null));
-        // El enlace a la tienda solo si es pública y tiene slug.
-        if (Boolean.TRUE.equals(e.getVisibilidadPublica()) && e.getSlug() != null) p.setEmpresaSlug(e.getSlug());
+        p.setEmpresaSlug(e.getSlug());
     }
 }
