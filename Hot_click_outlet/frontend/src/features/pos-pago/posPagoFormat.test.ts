@@ -10,7 +10,6 @@ import {
   metodoActivo,
   metodosDisponibles,
   nombreItem,
-  sinpeNumeroVisible,
   tituloYCodigo,
   VIGENCIA_QR_MINUTOS,
 } from './posPagoFormat'
@@ -43,22 +42,17 @@ describe('tituloYCodigo', () => {
   })
 })
 
-describe('sinpeNumeroVisible', () => {
-  it('quita el prefijo +506 y usa el formato único 8888-1234', () => {
-    expect(sinpeNumeroVisible('+506 7019-6686')).toBe('7019-6686')
-    expect(sinpeNumeroVisible('50670196686')).toBe('7019-6686')
-    expect(sinpeNumeroVisible('7019-6686')).toBe('7019-6686')
-    expect(sinpeNumeroVisible(undefined)).toBe('')
-  })
-})
-
 describe('metodosDisponibles', () => {
   it('usa los métodos que habilitó la caja, sin repetir ni desconocidos', () => {
     expect(metodosDisponibles({ metodoPago: 'TARJETA', metodosHabilitados: ['TARJETA', 'SINPE', 'SINPE', 'EFECTIVO'] }))
-      .toEqual(['TARJETA', 'SINPE'])
+      .toEqual(['TARJETA'])
   })
   it('sesión anterior: solo su método', () => {
-    expect(metodosDisponibles({ metodoPago: 'SINPE' })).toEqual(['SINPE'])
+    expect(metodosDisponibles({ metodoPago: 'TARJETA' })).toEqual(['TARJETA'])
+  })
+  it('sin ONVO en vivo no ofrece SINPE (nunca se muestra un número SINPE fuera de ONVO)', () => {
+    expect(metodosDisponibles({ metodoPago: 'SINPE' })).toEqual([])
+    expect(metodosDisponibles({ metodoPago: 'SINPE', metodosHabilitados: ['SINPE'] })).toEqual([])
     expect(metodosDisponibles(null)).toEqual([])
   })
 })

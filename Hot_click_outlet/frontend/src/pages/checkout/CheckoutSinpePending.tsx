@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction, type RefObject } from 'react'
+import { useEffect, useRef, type Dispatch, type SetStateAction, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
@@ -8,7 +8,6 @@ import { BotonPago, MarcoPago } from '@/pages/pago/PiezasPago'
 import { formatPrice } from '@/utils/format'
 import { formatTelefonoCR } from '@/utils/telefono'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
-import { SINPE_NUMERO, SINPE_TITULAR, copiarNumeroSinpe } from './checkoutHelpers'
 
 type PagoDataSinpe = {
   numeroPedido?: string
@@ -82,7 +81,6 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
   } = props
   const { t } = useTranslation()
   const token = useAuthStore((s) => s.token)
-  const [copiado, setCopiado] = useState(false)
   const autoEnviado = useRef(false)
 
   // Si el comprobante ya se eligió en el paso de pago, se envía solo al registrar el pedido.
@@ -110,13 +108,6 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
     )
   }
 
-  async function copiar() {
-    if (await copiarNumeroSinpe()) {
-      setCopiado(true)
-      setTimeout(() => setCopiado(false), 1_800)
-    }
-  }
-
   return (
     <MarcoPago>
       <div className="flex flex-col gap-[14px] px-4 pb-6 pt-8 leading-[normal]">
@@ -131,17 +122,6 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
             <h2 className="min-w-0 flex-1 font-sans text-[14px] font-semibold tracking-normal text-hc-n-900">{t('checkout.f.sinpe')}</h2>
           </div>
           <div className="flex flex-col gap-2 rounded-[10px] bg-hc-n-0 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[13px] text-hc-n-600">{t('payment.sinpe.numero')}</span>
-              <span className="flex items-center gap-2">
-                <span className="font-display text-[15px] font-bold text-hc-n-900">{SINPE_NUMERO}</span>
-                <button type="button" onClick={copiar} aria-label={t('checkout.f.copiarSinpe')} className="relative flex size-4 items-center justify-center text-hc-blue-600 after:absolute after:-inset-2">
-                  <IconoFigma src={ICONOS_CHECKOUT.copiar} size={16} />
-                </button>
-                {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success-text">{t('checkout.f.copiado')}</span>}
-              </span>
-            </div>
-            <FilaDato etiqueta={t('payment.sinpe.titular')} valor={SINPE_TITULAR} />
             {pagoData?.numeroPedido && <FilaDato etiqueta={t('payment.sinpe.referencia')} valor={pagoData.numeroPedido} mono />}
             <div className="flex items-center justify-between border-t border-hc-n-200 pt-2">
               <span className="text-[13px] font-semibold text-hc-n-600">{t('payment.sinpe.montoExacto')}</span>

@@ -6,7 +6,6 @@ import type { PaqueteCarrito } from '@/pages/carrito/cartHelpers'
 import { CampoCodigo, LineaCodigo, TarjetaCodigos, TituloValido } from './CodigoDescuento'
 import { formatoRebaja, saldoRestanteGiftCard } from './codigoDescuentoHelpers'
 import { formatPrice } from '@/utils/format'
-import { SINPE_NUMERO } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { CodigosPedido } from './useCodigosPedido'
@@ -41,7 +40,7 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
                 <input type="radio" name="pago" value={metodo.id} checked={activo} disabled={bloqueado} onChange={() => form.setMetodoPago(metodo.id)} className="sr-only" />
                 <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
-                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>
+                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`)}</span>
               </label>
             )
           })}
@@ -73,7 +72,7 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
               <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
               <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
-                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>
+                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`)}</span>
               </span>
               {esPrincipal && METODOS.length > 1 && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success-text">{t('checkout.f.masUsado')}</span>}
             </label>
