@@ -27,6 +27,7 @@ public class PaymentController {
     @PostMapping("/checkout")
     public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
         try {
+            com.hotclick.service.envio.ContraEntregaPolitica.validarCheckout(request);
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));

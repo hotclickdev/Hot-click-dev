@@ -26,6 +26,30 @@ public class ContraEntregaPolitica {
         return metodoEnvio != null && metodoEnvio.toUpperCase().startsWith("ENVIO_NORMAL");
     }
 
+    /**
+     * Contra entrega solo con Envío Normal: si el provider es CONTRA_ENTREGA, el método principal
+     * y todos los paquetes deben ser ENVIO_NORMAL*. Lanza IllegalArgumentException (→ 400).
+     */
+    public static void validarCheckout(com.hotclick.dto.PaymentCheckoutRequest req) {
+        if (req == null || req.getProvider() == null
+                || !"CONTRA_ENTREGA".equalsIgnoreCase(req.getProvider().trim())) {
+            return;
+        }
+        String msg = "Contra entrega solo está disponible con envío normal.";
+        boolean hayMetodo = false;
+        if (req.getMetodoEnvio() != null && !req.getMetodoEnvio().isBlank()) {
+            hayMetodo = true;
+            if (!esEnvioNormal(req.getMetodoEnvio())) throw new IllegalArgumentException(msg);
+        }
+        if (req.getEnvios() != null) {
+            for (var p : req.getEnvios()) {
+                hayMetodo = true;
+                if (p == null || !esEnvioNormal(p.getMetodoEnvio())) throw new IllegalArgumentException(msg);
+            }
+        }
+        if (!hayMetodo) throw new IllegalArgumentException(msg);
+    }
+
     /** Monto que el mensajero cobra al entregar (0 si el envío no es Normal contra entrega). */
     public long montoAlEntregar(String metodoEnvio, long totalPedido, long costoEnvio) {
         if (!esEnvioNormal(metodoEnvio)) return 0;
