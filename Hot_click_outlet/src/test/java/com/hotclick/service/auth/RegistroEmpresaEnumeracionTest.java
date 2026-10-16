@@ -1,7 +1,6 @@
 package com.hotclick.service.auth;
 
 import com.hotclick.dto.RegistroEmpresaDTO;
-import com.hotclick.exception.CorreoYaRegistradoException;
 import com.hotclick.exception.RegistroDuplicadoException;
 import com.hotclick.service.EmprendedorRegistroService;
 import com.hotclick.service.SecurityAuditService;
@@ -16,7 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@DisplayName("S1-18 | registro-empresa: mismo 400, mismo texto y mismo piso de tiempo exista o no la cuenta")
+@DisplayName("S1-18 | registro-empresa: correo ya registrado con enlace de recuperar y piso de tiempo")
 class RegistroEmpresaEnumeracionTest {
 
     private AuthRegistroEmpresaHandler handler(EmprendedorRegistroService reg, long minMs) {
@@ -37,24 +36,20 @@ class RegistroEmpresaEnumeracionTest {
     }
 
     @Test
-    void correoDeCuentaYCorreoDeEmpresaRespondenIgual() throws Exception {
-        EmprendedorRegistroService porCuenta = mock(EmprendedorRegistroService.class);
-        when(porCuenta.registrar(any())).thenThrow(new CorreoYaRegistradoException());
-        EmprendedorRegistroService porEmpresa = mock(EmprendedorRegistroService.class);
-        when(porEmpresa.registrar(any())).thenThrow(new RegistroDuplicadoException(RegistroDuplicadoException.MENSAJE_EMPRESA));
-
-        var r1 = handler(porCuenta, 0).registroEmpresa(dto(), new MockHttpServletRequest());
-        var r2 = handler(porEmpresa, 0).registroEmpresa(dto(), new MockHttpServletRequest());
-        assertThat(r1.getStatusCode().value()).isEqualTo(400).isEqualTo(r2.getStatusCode().value());
-        assertThat(r1.getBody().getMessage()).isEqualTo(r2.getBody().getMessage())
-            .contains("¿Ya tenés cuenta? Iniciá sesión o recuperá tu contraseña");
-        assertThat(r1.getBody().getData()).isNull();
+    void correoYaRegistradoSoloConEnlaceDeRecuperar() throws Exception {
+        EmprendedorRegistroService reg = mock(EmprendedorRegistroService.class);
+        when(reg.registrar(any())).thenThrow(RegistroDuplicadoException.porCorreo());
+        var r = handler(reg, 0).registroEmpresa(dto(), new MockHttpServletRequest());
+        assertThat(r.getStatusCode().value()).isEqualTo(400);
+        assertThat(r.getBody().getMessage()).isEqualTo(RegistroDuplicadoException.MENSAJE_CORREO);
+        // Ningún otro dato: ni negocio, ni plan.
+        assertThat(r.getBody().getData()).isEqualTo(java.util.Map.of("recuperar", RegistroDuplicadoException.RUTA_RECUPERAR));
     }
 
     @Test
     void duplicadoEsperaElPiso() throws Exception {
         EmprendedorRegistroService reg = mock(EmprendedorRegistroService.class);
-        when(reg.registrar(any())).thenThrow(new CorreoYaRegistradoException());
+        when(reg.registrar(any())).thenThrow(RegistroDuplicadoException.porCorreo());
         long t0 = System.nanoTime();
         handler(reg, 200).registroEmpresa(dto(), new MockHttpServletRequest());
         assertThat((System.nanoTime() - t0) / 1_000_000L).isGreaterThanOrEqualTo(195L);

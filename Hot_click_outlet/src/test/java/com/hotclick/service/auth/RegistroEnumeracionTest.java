@@ -50,8 +50,8 @@ class RegistroEnumeracionTest {
     }
 
     @Test
-    @DisplayName("correo duplicado y cédula duplicada dan la misma excepción y el mismo mensaje genérico")
-    void mismoMensajeParaCorreoYCedula() {
+    @DisplayName("correo duplicado → «ya está registrado» con solo el enlace de recuperar; cédula → genérico")
+    void correoSeDiceCedulaNo() {
         when(usuarioRepository.existsByCorreoAndEstadoNot(eq("ya@test.cr"), anyInt())).thenReturn(true);
         Throwable porCorreo = catchThrowable(() -> usuarioService.registrarPendiente(alta("ya@test.cr", null)));
 
@@ -59,9 +59,11 @@ class RegistroEnumeracionTest {
         when(usuarioRepository.existsByIdentificacionAndEstadoNot(eq("101110111"), anyInt())).thenReturn(true);
         Throwable porCedula = catchThrowable(() -> usuarioService.registrarPendiente(alta("nuevo@test.cr", "101110111")));
 
-        assertThat(porCorreo).isExactlyInstanceOf(RegistroDuplicadoException.class);
-        assertThat(porCedula).isExactlyInstanceOf(RegistroDuplicadoException.class);
-        assertThat(porCorreo.getMessage()).isEqualTo(porCedula.getMessage()).isEqualTo(RegistroDuplicadoException.MENSAJE);
+        assertThat(porCorreo).isExactlyInstanceOf(RegistroDuplicadoException.class).hasMessage(RegistroDuplicadoException.MENSAJE_CORREO);
+        assertThat(((RegistroDuplicadoException) porCorreo).datosRespuesta())
+            .containsOnlyKeys("recuperar").containsEntry("recuperar", RegistroDuplicadoException.RUTA_RECUPERAR);
+        assertThat(porCedula).isExactlyInstanceOf(RegistroDuplicadoException.class).hasMessage(RegistroDuplicadoException.MENSAJE);
+        assertThat(((RegistroDuplicadoException) porCedula).datosRespuesta()).isNull();
         assertThat(porCedula.getMessage()).doesNotContainIgnoringCase("identificación").doesNotContainIgnoringCase("cédula");
     }
 
@@ -75,8 +77,8 @@ class RegistroEnumeracionTest {
     }
 
     @Test
-    @DisplayName("send-verification: los dos duplicados responden 400 con el mismo cuerpo")
-    void handlerMismoStatusYCuerpo() throws Exception {
+    @DisplayName("send-verification: correo → 400 + enlace recuperar; cédula → 400 genérico sin datos")
+    void handlerMismoStatus() throws Exception {
         AuthVerificationHandler handler = new AuthVerificationHandler();
         EmailVerificationService ev = mock(EmailVerificationService.class);
         TurnstileService ts = mock(TurnstileService.class);
@@ -84,12 +86,16 @@ class RegistroEnumeracionTest {
         ReflectionTestUtils.setField(handler, "emailVerificationService", ev);
         ReflectionTestUtils.setField(handler, "turnstileService", ts);
         ReflectionTestUtils.setField(handler, "securityAuditService", mock(SecurityAuditService.class));
-        doThrow(new RegistroDuplicadoException()).when(ev).iniciarRegistro(any());
+        doThrow(RegistroDuplicadoException.porCorreo()).doThrow(RegistroDuplicadoException.porCedula())
+            .when(ev).iniciarRegistro(any());
 
         var r1 = handler.sendVerification(alta("ya@test.cr", null), null, new MockHttpServletRequest());
         var r2 = handler.sendVerification(alta("nuevo@test.cr", "101110111"), null, new MockHttpServletRequest());
         assertThat(r1.getStatusCode().value()).isEqualTo(400).isEqualTo(r2.getStatusCode().value());
-        assertThat(r1.getBody().getMessage()).isEqualTo(r2.getBody().getMessage()).isEqualTo(RegistroDuplicadoException.MENSAJE);
+        assertThat(r1.getBody().getMessage()).isEqualTo(RegistroDuplicadoException.MENSAJE_CORREO);
+        assertThat(r1.getBody().getData()).isEqualTo(java.util.Map.of("recuperar", RegistroDuplicadoException.RUTA_RECUPERAR));
+        assertThat(r2.getBody().getMessage()).isEqualTo(RegistroDuplicadoException.MENSAJE);
+        assertThat(r2.getBody().getData()).isNull();
     }
 
     @Test
@@ -103,7 +109,7 @@ class RegistroEnumeracionTest {
         ReflectionTestUtils.setField(handler, "turnstileService", ts);
         ReflectionTestUtils.setField(handler, "securityAuditService", mock(SecurityAuditService.class));
         ReflectionTestUtils.setField(handler, "respuestaMinMs", 200L);
-        doThrow(new RegistroDuplicadoException()).when(ev).iniciarRegistro(any());
+        doThrow(RegistroDuplicadoException.porCorreo()).when(ev).iniciarRegistro(any());
 
         long t0 = System.nanoTime();
         handler.sendVerification(alta("ya@test.cr", null), null, new MockHttpServletRequest());
@@ -120,7 +126,7 @@ class RegistroEnumeracionTest {
     }
 
     @Test
-    @DisplayName("EmailVerificationService: correo ACTIVO da el mismo error genérico")
+    @DisplayName("EmailVerificationService: correo ACTIVO → «ya está registrado»")
     void correoActivoGenerico() {
         UsuarioService us = mock(UsuarioService.class);
         Usuario activo = alta("ya@test.cr", null);
@@ -129,27 +135,74 @@ class RegistroEnumeracionTest {
         EmailVerificationService ev = new EmailVerificationService();
         ReflectionTestUtils.setField(ev, "usuarioService", us);
         Throwable t = catchThrowable(() -> ev.iniciarRegistro(alta("ya@test.cr", null)));
-        assertThat(t).isExactlyInstanceOf(RegistroDuplicadoException.class);
+        assertThat(t).isExactlyInstanceOf(RegistroDuplicadoException.class).hasMessage(RegistroDuplicadoException.MENSAJE_CORREO);
+    }
+
+    private static RateLimitingFilter filtro(RateLimiter rl, com.hotclick.security.ClientIpResolver ip) {
+        RateLimitingFilter f = new RateLimitingFilter();
+        ReflectionTestUtils.setField(f, "rateLimiter", rl);
+        ReflectionTestUtils.setField(f, "clientIpResolver", ip);
+        ReflectionTestUtils.setField(f, "auditService", mock(SecurityAuditService.class));
+        return f;
     }
 
     @Test
-    @DisplayName("rate limit por IP en /api/auth/send-verification y /api/auth/register: 429 al agotar el cupo")
-    void rateLimitPorIp() throws Exception {
-        for (String ruta : new String[]{"/api/auth/send-verification", "/api/auth/register"}) {
-            RateLimitingFilter filtro = new RateLimitingFilter();
+    @DisplayName("todas las altas: 5 por 15 min por IP → 429")
+    void rateLimit15Min() throws Exception {
+        for (String ruta : new String[]{"/api/auth/send-verification", "/api/auth/register",
+                "/api/auth/registro-empresa", "/api/public/tienda-rapida/tok123"}) {
             RateLimiter rl = mock(RateLimiter.class);
-            com.hotclick.security.ClientIpResolver ip = mock(com.hotclick.security.ClientIpResolver.class);
-            when(ip.resolve(any())).thenReturn("203.0.113.9");
-            when(rl.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(false);
-            ReflectionTestUtils.setField(filtro, "rateLimiter", rl);
-            ReflectionTestUtils.setField(filtro, "clientIpResolver", ip);
-            ReflectionTestUtils.setField(filtro, "auditService", mock(SecurityAuditService.class));
-
+            when(rl.tryAcquire(org.mockito.ArgumentMatchers.endsWith(":altas-dia"), anyInt(), anyInt())).thenReturn(true);
+            when(rl.tryAcquire(org.mockito.ArgumentMatchers.argThat(k -> k != null && !k.endsWith(":altas-dia")), anyInt(), anyInt())).thenReturn(false);
             MockHttpServletRequest req = new MockHttpServletRequest("POST", ruta);
+            req.setRemoteAddr("203.0.113.9");
             MockHttpServletResponse res = new MockHttpServletResponse();
-            filtro.doFilter(req, res, new MockFilterChain());
+            filtro(rl, new com.hotclick.security.ClientIpResolver("127.0.0.1/32")).doFilter(req, res, new MockFilterChain());
             assertThat(res.getStatus()).as(ruta).isEqualTo(429);
-            verify(rl).tryAcquire(eq("ip:203.0.113.9:" + ruta), anyInt(), anyInt());
+            verify(rl).tryAcquire(org.mockito.ArgumentMatchers.startsWith("ip:203.0.113.9:"), eq(5), eq(900));
         }
+    }
+
+    @Test
+    @DisplayName("tope diario: 20 altas por IP y día, compartido entre rutas")
+    void topeDiario() throws Exception {
+        RateLimiter rl = mock(RateLimiter.class);
+        when(rl.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(false);
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/auth/register");
+        req.setRemoteAddr("203.0.113.9");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        filtro(rl, new com.hotclick.security.ClientIpResolver("127.0.0.1/32")).doFilter(req, res, new MockFilterChain());
+        assertThat(res.getStatus()).isEqualTo(429);
+        verify(rl).tryAcquire("ip:203.0.113.9:altas-dia", 20, 86_400);
+    }
+
+    @Test
+    @DisplayName("IP real: X-Forwarded-For falso desde un cliente que no es el proxy se ignora")
+    void xffFalsoIgnorado() throws Exception {
+        RateLimiter rl = mock(RateLimiter.class);
+        when(rl.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/auth/register");
+        req.setRemoteAddr("198.51.100.7");
+        req.addHeader("X-Forwarded-For", "1.2.3.4");
+        req.addHeader("X-Real-IP", "1.2.3.4");
+        filtro(rl, new com.hotclick.security.ClientIpResolver("127.0.0.1/32")).doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+        verify(rl).tryAcquire("ip:198.51.100.7:/api/auth/register", 5, 900);
+        verify(rl, org.mockito.Mockito.never()).tryAcquire(org.mockito.ArgumentMatchers.contains("1.2.3.4"), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("IP real: detrás de nginx (127.0.0.1) dos clientes distintos cuentan por separado")
+    void detrasDelProxyCuentaPorCliente() throws Exception {
+        RateLimiter rl = mock(RateLimiter.class);
+        when(rl.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
+        RateLimitingFilter f = filtro(rl, new com.hotclick.security.ClientIpResolver("127.0.0.1/32"));
+        for (String cliente : new String[]{"203.0.113.10", "203.0.113.11"}) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/auth/register");
+            req.setRemoteAddr("127.0.0.1");
+            req.addHeader("X-Forwarded-For", cliente);
+            f.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+        }
+        verify(rl).tryAcquire("ip:203.0.113.10:/api/auth/register", 5, 900);
+        verify(rl).tryAcquire("ip:203.0.113.11:/api/auth/register", 5, 900);
     }
 }
