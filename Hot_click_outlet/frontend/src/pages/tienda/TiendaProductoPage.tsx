@@ -87,6 +87,8 @@ export default function TiendaProductoPage() {
   const imagenes = [producto.imagenUrl, ...(((producto as Producto & { imagenesAdicionales?: string[] }).imagenesAdicionales) ?? [])].filter(Boolean) as string[]
   const stockDisponible = producto.stock ?? 0
   const precioUnitario = producto.enOferta && producto.precioOferta ? producto.precioOferta : producto.precio
+  // «A cotizar»: la cotización se pide en la ficha del marketplace (flujo de encargo con referencias).
+  const cotizarHref = producto.esPersonalizado && producto.modoPrecioPersonalizado === 'COTIZACION' ? `/productos/${producto.id}` : undefined
 
   return (
     <div className="mx-auto max-w-[1232px] bg-hc-n-0 pb-32 lg:bg-transparent lg:px-4 lg:py-8 lg:pb-12">
@@ -117,6 +119,7 @@ export default function TiendaProductoPage() {
               agregado={agregado}
               onAgregar={handleAgregar}
               onComprarAhora={handleComprarAhora}
+              cotizarHref={cotizarHref}
             />
           </div>
           <div className="-mx-4 lg:mx-0">
@@ -152,6 +155,7 @@ export default function TiendaProductoPage() {
           agregado={agregado}
           onAgregar={handleAgregar}
           onComprarAhora={handleComprarAhora}
+          cotizarHref={cotizarHref}
         />
       </div>
     </div>
