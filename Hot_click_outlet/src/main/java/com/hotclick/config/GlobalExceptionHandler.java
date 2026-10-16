@@ -179,13 +179,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ResponseDTO> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage()));
+        // Texto de librerías (p. ej. conversión, JDBC) no llega al cliente: ErrorPublico lo filtra.
+        return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(ex)));
     }
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ResponseDTO> handleIllegalState(IllegalStateException ex) {
         if (ex.getCause() == null) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(ex)));
         }
         log.error("Unhandled state [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
         Sentry.captureException(ex);
@@ -196,9 +197,8 @@ public class GlobalExceptionHandler {
     /** Recurso no encontrado (Optional.get() sin valor, etc.) */
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ResponseDTO> handleNotFound(NoSuchElementException ex) {
-        String msg = ex.getMessage();
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ResponseDTO.error(msg != null ? msg : "Recurso no encontrado"));
+                .body(ResponseDTO.error(mensajeNoEncontrado(ex.getMessage())));
     }
 
     // ── Autenticación ─────────────────────────────────────────────────────────
@@ -265,5 +265,14 @@ public class GlobalExceptionHandler {
         Sentry.captureException(ex);
         return ResponseEntity.internalServerError()
                 .body(ResponseDTO.error("Error interno del servidor"));
+    }
+
+    /** «No value present» de Optional y textos técnicos no se muestran tal cual. */
+    static String mensajeNoEncontrado(String msg) {
+        if (msg == null || msg.isBlank() || "No value present".equals(msg) || msg.length() > 200
+                || msg.toLowerCase(java.util.Locale.ROOT).contains("exception")) {
+            return "Recurso no encontrado";
+        }
+        return msg;
     }
 }

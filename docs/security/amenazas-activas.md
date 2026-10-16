@@ -87,4 +87,9 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | P12-06 / QA-PROD-7 | facebook.com en frame-src se mantiene (embeds FB en ficha); `*.amazonaws.com` sin acotar (falta confirmar host del bucket/presigned) | Abierto (bajo) |
 | Checkout SINPE manual | `hotclick.checkout.sinpe-manual.habilitado=false` por defecto: `/payments/sinpe/checkout` rechaza proveedor SINPE/nulo (sin comprobantes nuevos); efectivo sigue. `GET /api/public/checkout-config` solo expone un booleano | Mitigado |
 | LAN-5 | `SecurityAuthorizationRules`: GET público solo para imágenes/video sueltos de `/emprende/*` y `/servicios/*` (archivos estáticos de marketing, sin datos) | Mitigado |
-| ESC-7, CMP-2, PAG-8, ESC-9, QA-CONC-6, `ex.getMessage()` | No abordados en esta rama | Abierto |
+| ESC-7 | `GET /api/pedidos/{id}` inexistente → 404 (no 500): `buscarPorId` con `noRollbackFor` | Mitigado |
+| CMP-2 | Cupón que no aplica a ningún negocio del carrito → 400 | Mitigado |
+| PAG-8 | El comprador cancela SINPE/efectivo en PENDIENTE_COMPROBANTE; se libera la reserva | Mitigado |
+| ESC-9 CSV | Plantilla CSV sin IA; errores de fila → 400 | Mitigado |
+| QA-CONC-6 | logback: stack recortado `%ex{30}`, archivo rotado en prod (10 MB, 7 días, 200 MB) | Mitigado |
+| `ex.getMessage()` | `GlobalExceptionHandler`: IllegalArgument/IllegalState pasan por `ErrorPublico`; «No value present» → «Recurso no encontrado». Quedan otros `getMessage()` en handlers de excepciones propias (com.hotclick.exception) | Mitigado (parcial) |
