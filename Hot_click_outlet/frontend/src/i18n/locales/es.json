@@ -2229,6 +2229,8 @@
     "detalle": {
       "titulo": "Pedido {{numero}}",
       "pagadoCon": "{{fecha}} · pagado con {{metodo}}",
+      "pagoPendienteCon": "{{fecha}} · pago pendiente ({{metodo}})",
+      "pagoPendiente": "{{fecha}} · pago pendiente",
       "productos": "Productos ({{count}})",
       "envio": "Envío",
       "envioPorPaquete": "Envío · {{paquetes}} × {{costo}}",
