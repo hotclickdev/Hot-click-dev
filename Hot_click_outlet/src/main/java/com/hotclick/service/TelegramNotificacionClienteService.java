@@ -71,7 +71,7 @@ public class TelegramNotificacionClienteService {
 
     private static String tituloVenta(String origen) {
         if ("POS".equals(origen)) return "💵 *Venta en el punto de venta*";
-        if ("TELEGRAM".equals(origen)) return "🛒 *Venta registrada desde Telegram*";
+        if ("MANUAL".equals(origen)) return "📝 *Venta registrada por el negocio*";
         return "🛒 *Nueva venta en tu tienda*";
     }
 

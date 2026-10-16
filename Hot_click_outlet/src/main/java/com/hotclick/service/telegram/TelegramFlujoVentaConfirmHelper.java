@@ -1,5 +1,6 @@
 package com.hotclick.service.telegram;
 
+import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.TelegramFlujoEstado;
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.StockInsuficienteException;
@@ -69,7 +70,8 @@ class TelegramFlujoVentaConfirmHelper {
         // PAGADO y no COMPLETADO: las vistas del bot y las finanzas filtran IN ('PAGADO','ENTREGADO')
         dto.setEstadoInicial(Constants.PEDIDO_PAGADO);
         dto.setNotas("Venta registrada por Telegram");
-        dto.setOrigen("TELEGRAM");
+        // El negocio registra la venta por el bot: es manual, no una compra web (chk_pedido_origen)
+        dto.setOrigen(OrigenPedido.MANUAL.codigo());
         List<VentaRequestDTO.ItemVentaDTO> items = new ArrayList<>();
         TelegramFlujoVentaTextoHelper.cantidadesIndicadas(e.getItemsSeguro()).forEach((pid, cant) -> {
             VentaRequestDTO.ItemVentaDTO item = new VentaRequestDTO.ItemVentaDTO();

@@ -1,5 +1,6 @@
 package com.hotclick.controller.storefront;
 
+import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.StorefrontPedidoDTO;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -119,7 +120,7 @@ public class StorefrontGuestOrderService {
         pedido.setCostoEnvio(0);
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         pedido.setEstado(Constants.ESTADO_ACTIVO);
-        pedido.setOrigen("TIENDA_WEB");
+        pedido.setOrigen(OrigenPedido.ONLINE.codigo());
         pedido.setClienteNombre(dto.getNombreCliente());
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));

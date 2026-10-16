@@ -74,7 +74,7 @@ public class Pedido extends BaseEntity {
     private BigDecimal margenGananciaPedido;
 
     @Column(name = "origen", length = 20)
-    private String origen = "ONLINE";
+    private String origen = OrigenPedido.ONLINE.codigo();
 
     // VARCHAR(30) desde V146: PENDIENTE_COMPROBANTE (21) no cabía en 20.
     @Column(name = "estado_pedido", length = 30)
