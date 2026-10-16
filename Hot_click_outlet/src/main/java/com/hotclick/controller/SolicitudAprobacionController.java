@@ -36,9 +36,12 @@ public class SolicitudAprobacionController {
         List<Empresa> pendientes = empresaRepository
             .findByEstadoEmpresaOrderByFechaRegistroDesc("PENDIENTE_APROBACION");
         // Una fila rota (plan/usuario inconsistente) no debe vaciar la cola entera con un 500.
-        List<Map<String, Object>> result = pendientes.stream().map(this::filaSegura).toList();
+        List<Map<String, Object>> result = pendientes.stream().limit(MAX_COLA_NEGOCIOS).map(this::filaSegura).toList();
         return ResponseDTO.success("Solicitudes pendientes", result);
     }
+
+    /** Tope de la cola (SCALE1): más de 500 negocios pendientes a la vez se revisan por tandas. */
+    static final int MAX_COLA_NEGOCIOS = 500;
 
     private Map<String, Object> filaSegura(Empresa e) {
         try {
