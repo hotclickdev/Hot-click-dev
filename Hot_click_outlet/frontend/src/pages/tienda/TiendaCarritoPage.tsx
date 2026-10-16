@@ -1,4 +1,7 @@
 import { useParams } from 'react-router-dom'
+import useAuthStore from '@/store/authStore'
+import { topeStock } from '@/utils/stock'
+import { llegoAlTopeInvitado, maxCantidadTienda, mensajeTopeInvitado } from '@/utils/topeInvitado'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
@@ -76,6 +79,8 @@ function LineaPedido({
   onCantidad: (id: Id, cantidad: number) => void
   onQuitar: (id: Id) => void
 }) {
+  const invitado = !useAuthStore((st) => st.token)
+  const stock = topeStock(producto.stock)
   return (
     <li className="flex items-start gap-3 border-t border-hc-n-200 px-[14px] py-[14px] first:border-t-0 lg:items-center lg:gap-4 lg:px-[18px]">
       <FotoTienda src={producto.imagenUrl} tamano="size-[60px] lg:size-[72px]" />
@@ -85,6 +90,7 @@ function LineaPedido({
         <div className="flex items-center gap-3">
           <CantidadTienda
             cantidad={cantidad}
+            max={maxCantidadTienda(stock, invitado)}
             etiquetaMenos={`Uno menos de ${producto.nombre}`}
             etiquetaMas={`Uno más de ${producto.nombre}`}
             onCambiar={(c) => onCantidad(producto.id as Id, c)}
@@ -98,6 +104,9 @@ function LineaPedido({
             <IconoFigma src={ICONOS_CHECKOUT.eliminar} size={16} />
           </button>
         </div>
+        {llegoAlTopeInvitado(cantidad, stock, invitado) && (
+          <p role="status" className="text-[12px] leading-[16px] text-hc-n-600">{mensajeTopeInvitado()}</p>
+        )}
       </div>
       <p className="shrink-0 font-display text-[15px] font-bold leading-[normal] text-hc-n-900 lg:text-[17px]">{formatPrice(producto.precio * cantidad)}</p>
     </li>

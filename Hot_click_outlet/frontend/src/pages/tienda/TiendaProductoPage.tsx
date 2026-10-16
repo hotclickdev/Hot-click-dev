@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import useAuthStore from '@/store/authStore'
+import { llegoAlTopeInvitado, maxCantidadTienda, mensajeTopeInvitado } from '@/utils/topeInvitado'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePublicarMigas } from '@/components/comprador/header/migasContexto'
 import useTiendaStore from '@/store/tiendaStore'
@@ -25,6 +27,7 @@ export default function TiendaProductoPage() {
   const { slug, productoId } = useParams()
   const navigate = useNavigate()
   const { agregarAlCarrito } = useTiendaStore()
+  const invitado = !useAuthStore((st) => st.token)
   const [producto, setProducto] = useState<Producto | null>(null)
   const [loading, setLoading] = useState(true)
   const [cantidad, setCantidad] = useState(1)
@@ -113,6 +116,8 @@ export default function TiendaProductoPage() {
               variante="inline"
               slug={slug as string}
               stockDisponible={stockDisponible}
+              maxCantidad={maxCantidadTienda(stockDisponible, invitado)}
+              avisoTope={llegoAlTopeInvitado(cantidad, stockDisponible, invitado) ? mensajeTopeInvitado() : null}
               cantidad={cantidad}
               onCantidad={setCantidad}
               total={formatPrice(precioUnitario * cantidad)}
@@ -149,6 +154,8 @@ export default function TiendaProductoPage() {
           variante="barra"
           slug={slug as string}
           stockDisponible={stockDisponible}
+          maxCantidad={maxCantidadTienda(stockDisponible, invitado)}
+          avisoTope={llegoAlTopeInvitado(cantidad, stockDisponible, invitado) ? mensajeTopeInvitado() : null}
           cantidad={cantidad}
           onCantidad={setCantidad}
           total={formatPrice(precioUnitario * cantidad)}
