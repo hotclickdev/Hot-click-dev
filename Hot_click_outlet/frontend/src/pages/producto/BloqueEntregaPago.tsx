@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
-import { SHIPPING_COSTS } from '@/pages/checkout/checkoutHelpers'
+import { costoDeEnvio, useTarifasEnvio } from '@/config/tarifasEnvio'
 import { formatPrice } from '@/utils/format'
 import { ICONOS_PRODUCTO } from './iconosProducto'
 
@@ -10,11 +10,12 @@ import { ICONOS_PRODUCTO } from './iconosProducto'
  */
 export default function BloqueEntregaPago() {
   const { t } = useTranslation()
+  const tarifas = useTarifasEnvio()
   const filas = [
     {
       icono: ICONOS_PRODUCTO.envio,
       titulo: t('product.envioTitulo'),
-      detalle: t('product.envioDetalle', { monto: formatPrice(SHIPPING_COSTS.ENVIO_NORMAL_GAM) }),
+      detalle: t('product.envioDetalle', { monto: formatPrice(costoDeEnvio(tarifas, 'ENVIO_NORMAL_GAM')) }),
     },
     {
       icono: ICONOS_PRODUCTO.pagoSeguro,

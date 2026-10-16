@@ -1,4 +1,4 @@
-import { SHIPPING_COSTS } from '@/pages/checkout/checkoutHelpers'
+import { costoDeEnvio, type TarifasEnvio } from '@/config/tarifasEnvio'
 export const METODO_ENVIO_DOMICILIO = 'DOMICILIO'
 export const METODO_ENVIO_RETIRO = 'RETIRO'
 
@@ -6,9 +6,13 @@ export const METODO_ENVIO_RETIRO = 'RETIRO'
 export const TELEFONO_MIN_DIGITOS = 8
 
 export const MSG_DIRECCION_DOMICILIO = 'Indicá la dirección de entrega para el envío a domicilio.'
+export const MSG_NOMBRE = 'Indicá tu nombre.'
+export const MSG_CORREO = 'Indicá un correo válido, por ejemplo juan@ejemplo.com.'
 export const MSG_TELEFONO = 'Indicá un teléfono de contacto (mínimo 8 dígitos).'
 
 export type FormCheckoutTienda = {
+  nombreCliente?: string
+  correoCliente?: string
   metodoEnvio: string
   direccionEntrega: string
   telefonoCliente: string
@@ -27,12 +31,14 @@ export function faltaTelefono(telefono: string): boolean {
 }
 
 export function mensajeErrorCheckout(form: FormCheckoutTienda): string | null {
+  if (form.nombreCliente !== undefined && !form.nombreCliente.trim()) return MSG_NOMBRE
+  if (form.correoCliente !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correoCliente.trim())) return MSG_CORREO
   if (faltaTelefono(form.telefonoCliente)) return MSG_TELEFONO
   if (faltaDireccionDomicilio(form.metodoEnvio, form.direccionEntrega)) return MSG_DIRECCION_DOMICILIO
   return null
 }
 
 /** Envío a domicilio = Envío Normal GAM de la misma tabla que usa el servidor (`OrderPricingService`). */
-export function costoEnvioTienda(metodoEnvio: string): number {
-  return metodoEnvio === METODO_ENVIO_DOMICILIO ? SHIPPING_COSTS.ENVIO_NORMAL_GAM : 0
+export function costoEnvioTienda(metodoEnvio: string, tarifas: TarifasEnvio): number {
+  return metodoEnvio === METODO_ENVIO_DOMICILIO ? costoDeEnvio(tarifas, 'ENVIO_NORMAL_GAM') : 0
 }

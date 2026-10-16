@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useTarifasEnvio } from '@/config/tarifasEnvio'
 import useAuthStore from '@/store/authStore'
 import { adminService } from '@/services/orderService'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -75,7 +76,8 @@ export default function TiendaCheckoutPage() {
   const [encomienda, setEncomienda] = useState('')
   const set = (key: keyof FormCheckout, val: string) => setForm((f) => ({ ...f, [key]: val }))
   const hayRetiro = Boolean(empresa?.retiro)
-  const costoEnvio = costoEnvioTienda(form.metodoEnvio)
+  const tarifasEnvio = useTarifasEnvio()
+  const costoEnvio = costoEnvioTienda(form.metodoEnvio, tarifasEnvio)
   const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
   const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
 
@@ -127,7 +129,7 @@ export default function TiendaCheckoutPage() {
       <div className="mb-4 flex flex-col gap-1">
         <TituloTienda>Finalizar pedido</TituloTienda>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
+      <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
         <div className="flex flex-col gap-4">
           <fieldset className={`${CLASE_TARJETA} flex flex-col gap-[14px] p-4`}>
             <legend className="float-left mb-1 w-full font-display text-[16px] font-bold tracking-normal text-hc-n-900">Tus datos</legend>

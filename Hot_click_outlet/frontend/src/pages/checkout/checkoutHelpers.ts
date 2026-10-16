@@ -16,14 +16,6 @@ export async function copiarTexto(texto: string): Promise<boolean> {
   }
 }
 
-export const SHIPPING_COSTS: Record<string, number> = {
-  RETIRO_EN_TIENDA:       0,
-  // ₡2.000 de HotClick; lo que cobre la encomienda lo paga el cliente aparte al retirar.
-  ENCOMIENDA_PROPIA:   2000,
-  ENVIO_NORMAL_GAM:    4000,
-  ENVIO_NORMAL_FUERA_GAM: 4000,
-  ENVIO_RAPIDO:        5000,
-}
 
 export type ItemCheckout = {
   id?: Id

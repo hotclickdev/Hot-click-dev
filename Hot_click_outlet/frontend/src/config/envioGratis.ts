@@ -5,7 +5,7 @@ import { envioGratis } from '../../../src/main/resources/config/tiempos-envio.js
  * los tiempos de envío (`src/main/resources/config/tiempos-envio.json`, clave `envioGratis.desdeColones`).
  *
  * HOY es `null`: el checkout cobra tarifa fija (`OrderPricingService.calcularCostoEnvio`,
- * `checkoutHelpers.SHIPPING_COSTS`), así que no se promete envío gratis en ningún lado.
+ * `GET /api/public/envio/tarifas`), así que no se promete envío gratis en ningún lado.
  * Un valor nulo, no numérico o ≤ 0 se trata como "sin envío gratis".
  */
 export function normalizarUmbralEnvioGratis(valor: unknown): number | null {
