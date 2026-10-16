@@ -1,3 +1,4 @@
+import SeccionNoDisponible from '@/prototipo/compartido/SeccionNoDisponible'
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { rutasCajaRelativas } from '@/app/CajaShell'
@@ -122,6 +123,7 @@ export default function EmprendedorRoutes() {
       <Route element={<EmprendedorShell sinCabecera />}>
         <Route path="pedidos/:id" element={page(DetallePedidoPage)} />
       </Route>
+      <Route path="*" element={<SeccionNoDisponible volverA={RUTA_EMPRENDEDOR} />} />
     </Routes>
   )
 }

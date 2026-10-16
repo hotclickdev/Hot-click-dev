@@ -1,3 +1,5 @@
+import SeccionNoDisponible from './SeccionNoDisponible'
+import { RUTA_PANEL_VENDEDOR } from '@/utils/destinoVender'
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import SellerShell from './SellerShell'
@@ -99,6 +101,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="pedidos/:id" element={page(PedidoDetallePage)} />
         {extra}
       </Route>
+      <Route path="*" element={<SeccionNoDisponible volverA={RUTA_PANEL_VENDEDOR} />} />
     </Routes>
   )
 }
