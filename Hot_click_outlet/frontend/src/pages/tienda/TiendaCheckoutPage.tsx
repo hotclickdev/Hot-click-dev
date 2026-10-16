@@ -12,6 +12,7 @@ import TiendaCheckoutDireccion from './TiendaCheckoutDireccion'
 import {
   METODO_ENVIO_DOMICILIO,
   METODO_ENVIO_RETIRO,
+  costoEnvioTienda,
   mensajeErrorCheckout,
 } from './tiendaCheckoutValidacion'
 import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
@@ -56,6 +57,7 @@ export default function TiendaCheckoutPage() {
   const [encomienda, setEncomienda] = useState('')
   const set = (key: keyof FormCheckout, val: string) => setForm((f) => ({ ...f, [key]: val }))
   const hayRetiro = Boolean(empresa?.retiro)
+  const costoEnvio = costoEnvioTienda(form.metodoEnvio)
   const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
   const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
 
@@ -163,9 +165,13 @@ export default function TiendaCheckoutPage() {
                   <span className="shrink-0 font-medium text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
                 </div>
               ))}
+              <div className="flex justify-between gap-4 text-[13px] text-hc-n-600">
+                <span>Envío</span>
+                <span className="shrink-0 font-medium text-hc-n-900">{costoEnvio > 0 ? formatPrice(costoEnvio) : 'Gratis'}</span>
+              </div>
               <div className="mt-1 flex items-center justify-between border-t border-hc-n-200 pt-3 text-hc-n-900">
                 <span className="text-[15px] font-semibold">Total</span>
-                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte())}</span>
+                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte() + costoEnvio)}</span>
               </div>
             </div>
           </section>
