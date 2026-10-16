@@ -250,6 +250,12 @@ public class Producto extends BaseEntity {
     @Column(name = "modo_precio_personalizado", length = 20)
     private String modoPrecioPersonalizado;
 
+    /** Producto «A cotizar»: su precio de venta es un placeholder (₡1) y no se puede comprar directo. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean esACotizar() {
+        return Boolean.TRUE.equals(esPersonalizado) && "COTIZACION".equalsIgnoreCase(modoPrecioPersonalizado);
+    }
+
     @Column(name = "precio_personalizado_min")
     private Integer precioPersonalizadoMin;
 

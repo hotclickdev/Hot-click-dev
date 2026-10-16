@@ -1,0 +1,1 @@
+import{Lt as e}from"./index-Djk6_ocz.js";function t(t){return e(Math.round(t??0))}export{t};

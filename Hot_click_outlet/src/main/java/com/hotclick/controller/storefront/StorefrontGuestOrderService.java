@@ -1,5 +1,6 @@
 package com.hotclick.controller.storefront;
 
+import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.StorefrontPedidoDTO;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -94,6 +95,10 @@ public class StorefrontGuestOrderService {
                 throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
             }
 
+            if (producto.esACotizar()) {
+                throw new IllegalArgumentException("«" + producto.getNombreProducto() + "» es a cotizar: solicitá una cotización al vendedor");
+            }
+
             String ref = "STOREFRONT-" + empresa.getSlug();
             stockService.reservar(producto, item.cantidad(), ref, dto.getCorreoCliente());
 
@@ -119,7 +124,7 @@ public class StorefrontGuestOrderService {
         pedido.setCostoEnvio(0);
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         pedido.setEstado(Constants.ESTADO_ACTIVO);
-        pedido.setOrigen("TIENDA_WEB");
+        pedido.setOrigen(OrigenPedido.ONLINE.codigo());
         pedido.setClienteNombre(dto.getNombreCliente());
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));

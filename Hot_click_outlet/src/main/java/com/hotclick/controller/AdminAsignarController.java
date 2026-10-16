@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Rol;
@@ -137,7 +138,7 @@ public class AdminAsignarController {
 
     /**
      * Registra una compra externa en la cuenta del usuario.
-     * Crea un pedido con origen=ASIGNACION_MANUAL y estado=ENTREGADO
+     * Crea un pedido con origen=MANUAL y estado=ENTREGADO
      * para que aparezca en mis-pedidos, reseñas y garantías.
      */
     @PostMapping("/compra")
@@ -167,7 +168,7 @@ public class AdminAsignarController {
             dto.setMetodoEnvio(Constants.ENVIO_RETIRO);
             dto.setMetodoPago(metodoPago);
             dto.setEstadoPedido(Constants.PEDIDO_ENTREGADO);
-            dto.setOrigen("ASIGNACION_MANUAL");
+            dto.setOrigen(OrigenPedido.MANUAL.codigo());
             dto.setNotas(notas);
             dto.setCostoEnvio(0);
 
