@@ -188,14 +188,14 @@ public class TiendaRapidaService {
         String cel = TiendaRapidaReglas.telefono(telefono);
         Usuario usuario = fila.getUsuario();
         if (usuarios.existsByCorreo(mail) && !mail.equalsIgnoreCase(usuario.getCorreo())) {
-            throw new com.hotclick.exception.RegistroDuplicadoException();
+            throw com.hotclick.exception.RegistroDuplicadoException.porCorreo();
         }
         Empresa empresa = fila.getEmpresa();
         if (empresas.existsByCorreoEmpresa(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
-            throw new com.hotclick.exception.RegistroDuplicadoException();
+            throw com.hotclick.exception.RegistroDuplicadoException.porCorreo();
         }
         if (usuarios.existsByIdentificacion(id) && !id.equals(usuario.getIdentificacion())) {
-            throw new com.hotclick.exception.RegistroDuplicadoException();
+            throw com.hotclick.exception.RegistroDuplicadoException.porCedula();
         }
         String[] partes = partes(dueno);
         usuario.setNombre(partes[0]);

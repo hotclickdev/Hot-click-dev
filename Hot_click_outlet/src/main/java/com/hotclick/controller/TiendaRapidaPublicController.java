@@ -54,6 +54,8 @@ public class TiendaRapidaPublicController {
         long inicio = System.nanoTime();
         try {
             return aceptarSinPiso(token, body, request);
+        } catch (com.hotclick.exception.RegistroDuplicadoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(), e.datosRespuesta()));
         } finally {
             com.hotclick.security.RespuestaUniforme.esperarMinimo(inicio, respuestaMinMs);
         }

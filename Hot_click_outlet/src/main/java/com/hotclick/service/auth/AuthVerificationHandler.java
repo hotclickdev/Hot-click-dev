@@ -42,8 +42,8 @@ public class AuthVerificationHandler {
             return ResponseEntity.ok(ResponseDTO.success("Código de verificación enviado a tu correo", null));
         } catch (com.hotclick.exception.RegistroDuplicadoException e) {
             // Sin correo ni cédula en el log: es un caso esperado y el log no debe servir de oráculo.
-            log.info("[send-verification] alta rechazada por duplicado");
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            log.info("[send-verification] alta rechazada por duplicado ({})", e.isPorCorreo() ? "correo" : "cedula");
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(), e.datosRespuesta()));
         } catch (Exception e) {
             log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajePublico(e)));

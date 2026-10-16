@@ -55,10 +55,10 @@ public class AuthRegistroEmpresaHandler {
             AuthResponse authResponse = authSupport.buildAuthResponse(emprendedor);
             Map<String, Object> resultado = buildRegistroResultado(authResponse, otpEnviado, otpError);
             return ResponseEntity.ok(ResponseDTO.success("Empresa registrada exitosamente", resultado));
-        } catch (com.hotclick.exception.CorreoYaRegistradoException | com.hotclick.exception.RegistroDuplicadoException e) {
-            // S1-18: 400 y el mismo texto exista o no la cuenta; sin código ni siguiente paso que la delaten.
-            log.info("[registro-empresa] alta rechazada por duplicado");
-            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.exception.RegistroDuplicadoException.MENSAJE_EMPRESA));
+        } catch (com.hotclick.exception.RegistroDuplicadoException e) {
+            // S1-18: correo → «ya está registrado» + solo el enlace de recuperar; cédula → genérico. Sin PII en el log.
+            log.info("[registro-empresa] alta rechazada por duplicado ({})", e.isPorCorreo() ? "correo" : "cedula");
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(), e.datosRespuesta()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

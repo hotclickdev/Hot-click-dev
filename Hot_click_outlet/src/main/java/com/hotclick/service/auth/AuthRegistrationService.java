@@ -69,6 +69,8 @@ public class AuthRegistrationService {
                 nuevo.getTelefono() != null ? nuevo.getTelefono() : "—"));
             return ResponseEntity.ok(ResponseDTO.success(
                 "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
+        } catch (com.hotclick.exception.RegistroDuplicadoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(), e.datosRespuesta()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeSeguro(e, "No se pudo completar el registro. Revisá los datos e intentá de nuevo.")));
         } finally {

@@ -55,7 +55,7 @@ public class EmprendedorRegistroService {
 
         // Correo del admin ya registrado
         if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase()))
-            throw new com.hotclick.exception.CorreoYaRegistradoException();
+            throw com.hotclick.exception.RegistroDuplicadoException.porCorreo();
 
         // Generar slug si no viene
         String slug = dto.getSlug() != null && !dto.getSlug().isBlank()
@@ -68,7 +68,7 @@ public class EmprendedorRegistroService {
             ? dto.getCorreoEmpresa().trim().toLowerCase()
             : dto.getCorreoAdmin().trim().toLowerCase();
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa))
-            throw new com.hotclick.exception.RegistroDuplicadoException(com.hotclick.exception.RegistroDuplicadoException.MENSAJE_EMPRESA);
+            throw com.hotclick.exception.RegistroDuplicadoException.porCorreo();
 
         Optional<UbicacionDespachoAlta> ubicacion = bodegaDespachoInicialService.normalizar(dto.ubicacionDespacho());
 
