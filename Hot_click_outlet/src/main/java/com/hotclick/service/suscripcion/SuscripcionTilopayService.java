@@ -197,4 +197,36 @@ public class SuscripcionTilopayService {
         m.put("sdkToken", tilopayService.loginSdk());
         return Optional.of(m);
     }
+
+    /** Días que el aviso «Completá el pago» sigue visible tras elegir un plan de pago sin pagarlo. */
+    static final long DIAS_AVISO_PLAN_PENDIENTE = 7;
+
+    /**
+     * Plan nuevo elegido y no pagado (cobro de ALTA pendiente, reciente, distinto del plan actual).
+     * Neutral de pasarela: solo dice qué plan falta pagar; el pago se abre desde la pantalla de planes.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Map<String, Object>> planNuevoPendiente(Long empresaId) {
+        Optional<CobroSuscripcion> cobro = cobroRepo.findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(
+            empresaId, CobroSuscripcion.PENDIENTE, CobroSuscripcion.MOTIVO_ALTA);
+        if (cobro.isEmpty()) return Optional.empty();
+        Plan plan = planRepo.findById(cobro.get().getPlanId()).orElse(null);
+        Empresa empresa = empresaRepo.findById(empresaId).orElse(null);
+        String planActual = empresa == null ? null
+            : empresa.getPlan() != null ? empresa.getPlan().getNombre() : empresa.getPlanSaas();
+        if (!avisarPlanPendiente(cobro.get().getFechaCreacion(), LocalDateTime.now(Constants.ZONA_CR),
+                plan == null ? null : plan.getNombre(), planActual)) {
+            return Optional.empty();
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("plan", plan.getNombre());
+        m.put("motivo", CobroSuscripcion.MOTIVO_ALTA);
+        return Optional.of(m);
+    }
+
+    static boolean avisarPlanPendiente(LocalDateTime creado, LocalDateTime ahora, String planPendiente, String planActual) {
+        if (planPendiente == null || creado == null) return false;
+        if (creado.isBefore(ahora.minusDays(DIAS_AVISO_PLAN_PENDIENTE))) return false;
+        return planActual == null || !planActual.equalsIgnoreCase(planPendiente);
+    }
 }

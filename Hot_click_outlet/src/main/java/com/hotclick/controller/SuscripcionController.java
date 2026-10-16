@@ -213,4 +213,15 @@ public class SuscripcionController {
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
     }
+
+    /** Plan nuevo elegido sin pagar: el panel muestra «Completá el pago» (204 si no hay). */
+    @GetMapping("/plan-pendiente")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> planPendiente() {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        return suscripcionTilopayService.planNuevoPendiente(empresaId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.noContent().build());
+    }
 }
