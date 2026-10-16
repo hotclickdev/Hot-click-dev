@@ -27,6 +27,15 @@ public class OrderPricingService {
      *
      * @param gcSaldoRestante saldo de la tarjeta de regalo que aún no usaron otros paquetes del mismo checkout
      */
+    public static final String MSG_CUPON_INVALIDO = "El cupón no es válido para estos productos. Quitalo o probá con otro.";
+
+    /** CMP-2: un cupón escrito que no aplica a ningún negocio del carrito se rechaza (antes se ignoraba en silencio). */
+    public void exigirCuponValido(String codigoCupon, java.util.Collection<Long> empresaIds) {
+        if (codigoCupon == null || codigoCupon.isBlank()) return;
+        boolean aplica = empresaIds.stream().anyMatch(id -> cuponService.validarParaEmpresa(codigoCupon, id).isPresent());
+        if (!aplica) throw new IllegalArgumentException(MSG_CUPON_INVALIDO);
+    }
+
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio, int gcSaldoRestante) {
         int costoEnvio = calcularCostoEnvio(metodoEnvio);
