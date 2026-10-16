@@ -27,6 +27,7 @@ const AgregarMetodoCobroPage = lazy(() => import('./pages/AgregarMetodoCobroPage
 const AyudaPage = lazy(() => import('./pages/AyudaPage'))
 const ConsultasHotPage = lazy(() => import('./pages/ConsultasHotPage'))
 const ProximamentePage = lazy(() => import('./pages/ProximamentePage'))
+const ActivarCobrosPage = lazy(() => import('@/features/cobros/ActivarCobrosPage'))
 const BodegasPage = lazy(() => import('./pages/BodegasPage'))
 const NuevaBodegaPage = lazy(() => import('./pages/NuevaBodegaPage'))
 const PedidosPage = lazy(() => import('./pages/PedidosPage'))
@@ -103,6 +104,7 @@ export default function EmprendedorRoutes() {
         <Route path="opciones/notificaciones" element={page(NotificacionesPage)} />
         <Route path="opciones/telegram" element={page(TelegramPage)} />
         <Route path="opciones/cobro" element={page(CobroPage)} />
+        <Route path="opciones/activar-cobros" element={<LazyPage><ActivarCobrosPage volverA={`${RUTA_EMPRENDEDOR}/opciones`} rutaSoporte={`${RUTA_EMPRENDEDOR}/opciones/ayuda`} /></LazyPage>} />
         <Route path="opciones/cobro/nuevo" element={page(AgregarMetodoCobroPage)} />
         <Route path="opciones/ayuda" element={page(AyudaPage)} />
         <Route path="opciones/consultas" element={page(ConsultasHotPage)} />
