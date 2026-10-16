@@ -166,7 +166,8 @@ public class PedidoService {
         return pedido;
     }
 
-    @Transactional(readOnly = true)
+    // ESC-7: el «no existe» no marca rollback-only la transacción del llamador (si no, 500 en vez de 404).
+    @Transactional(readOnly = true, noRollbackFor = RecursoNoEncontradoException.class)
     public Pedido buscarPorId(Long id) {
         return pedidoRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
