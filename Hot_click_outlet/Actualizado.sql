@@ -3886,7 +3886,7 @@ WHERE nombre_rol IN ('CAJERO', 'INVENTARIO', 'CONTABILIDAD', 'GERENTE', 'SUPERVI
   AND (descripcion IS NULL OR descripcion NOT LIKE '%ELIMINADO%');
 
 
--- V133: comisi?n Tilopay absorbida en precio + descuento SINPE opcional por empresa
+-- V133: comisi?n de pasarela absorbida en precio + descuento SINPE opcional por empresa
 ALTER TABLE hot_click_empresa_tb
     ADD COLUMN IF NOT EXISTS pct_comision_tarjeta NUMERIC(5,2) NOT NULL DEFAULT 4.80;
 

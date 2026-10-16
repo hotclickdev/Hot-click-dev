@@ -55,7 +55,7 @@ Tras las correcciones, los 13 pasan; quedan los 37 preexistentes.
 
 Se mantienen los estados de `INVENTORY.md` (32 PASS agent verified, 58 PARTIAL). Esta auditoría **no sube ninguna pantalla a PASS definitivo**: confirmó de forma independiente `28:1083` y `28:839` (siguen PARTIAL por las diferencias deliberadas ya documentadas) y no encontró regresiones estructurales en las 48 rutas. Las páginas sin frame (Devoluciones, Información, Contacto, Términos, Privacidad, Nosotros, Ayuda, Cookies como página) no son OLD_DESIGN según el criterio (no existe referencia Figma): quedan sin migrar a la espera de diseño.
 
-No verificado en esta auditoría: pantallas con datos reales (backend), correos en Gmail y Outlook, pagos reales (Tilopay, Stripe), impresión, y la comparación píxel a píxel de las demás pantallas.
+No verificado en esta auditoría: pantallas con datos reales (backend), correos en Gmail y Outlook, pagos reales con tarjeta, impresión, y la comparación píxel a píxel de las demás pantallas.
 
 ## TODOs para cerrar la migración
 

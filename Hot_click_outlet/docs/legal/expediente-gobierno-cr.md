@@ -82,7 +82,7 @@ Finalidades: crear la cuenta, cobrar, facturar, entregar, gestionar devoluciones
 
 ### Encargados que hay que declarar
 
-Tilopay, Stripe y ONVO (tarjeta); SINPE Móvil (verificación del comprobante); SendGrid (correo); Clerk (login social); Correos de Costa Rica (entrega); Amazon Web Services (archivos); Anthropic (chat); Sentry (errores); Google Analytics 4, PostHog, Microsoft Clarity y Meta (medición y anuncios, con consentimiento).
+Stripe y ONVO (tarjeta); SINPE Móvil (verificación del comprobante); SendGrid (correo); Clerk (login social); Correos de Costa Rica (entrega); Amazon Web Services (archivos); Anthropic (chat); Sentry (errores); Google Analytics 4, PostHog, Microsoft Clarity y Meta (medición y anuncios, con consentimiento).
 
 En compras del marketplace, el vendedor recibe nombre, teléfono y dirección para entregar. Eso ya está en la política de privacidad y en el acuerdo de vendedores: no puede usar esos datos para publicidad propia sin un consentimiento aparte.
 
@@ -115,7 +115,7 @@ Cubierto en la rama `legal/cumplimiento-cr`:
 - El chat indica que es un asistente de inteligencia artificial.
 - Lista interna de multas: `docs/legal/checklist-multas-y-cumplimiento.md`.
 - Retracto de 8 días hábiles desde la confirmación del pago, por el mismo medio, con reembolso al mismo medio. La garantía comercial de 40 días por defectos se mantiene y no sustituye al retracto.
-- Medios de pago descritos como SINPE Móvil y tarjeta (Tilopay, Stripe u ONVO), sin guardar el número de tarjeta.
+- Medios de pago descritos como SINPE Móvil y tarjeta (Stripe u ONVO), sin guardar el número de tarjeta.
 - Canal de reclamo en la plataforma. La cláusula del marketplace ya no dice que HotClick queda exenta de toda responsabilidad.
 - Privacidad y cookies visibles también en el pie de la tienda en el teléfono.
 

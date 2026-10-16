@@ -42,7 +42,7 @@ HotClick es dos negocios en uno, en Costa Rica, en colones enteros.
 
    Hay textos de marketing y seeders viejos con otra comisión (9%, mínimo ₡600 o ₡700). El panel tiene que leer el plan de la base, no un número escrito en la landing.
 
-2. **Marketplace.** El cliente es la persona que compra en `hotclick.lat` o en `/tienda/:slug`. Paga con tarjeta (Stripe / Tilopay), SINPE o, en caja, efectivo y QR (ONVO). La entrega en la GAM puede ir por recolección de HotClick; afuera, por Correos de Costa Rica o por el propio vendedor. El carrito puede traer productos de varias tiendas: cada dueño ve solo lo suyo.
+2. **Marketplace.** El cliente es la persona que compra en `hotclick.lat` o en `/tienda/:slug`. Paga con tarjeta (pasarela, ONVO pendiente), SINPE o, en caja, efectivo y QR (ONVO). La entrega en la GAM puede ir por recolección de HotClick; afuera, por Correos de Costa Rica o por el propio vendedor. El carrito puede traer productos de varias tiendas: cada dueño ve solo lo suyo.
 
 El dueño entra por `/emprendedor`, `/pyme` o `/negocio-plus`. La caja vive en `/caja` o en el prefijo del plan. El operador de HotClick entra por `/plataforma` con rol `ADMIN`.
 

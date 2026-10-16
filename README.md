@@ -12,7 +12,7 @@ Este documento está escrito para dos lecturas. Quien dirige el producto puede q
 
 HOTCLICK es un SaaS multi-tenant. Cada negocio opera aislado del resto. La plataforma conserva el catálogo propio y, además, publica las tiendas de terceros en el mismo marketplace.
 
-El comprador recorre el catálogo, arma el carrito y paga con tarjeta (Tilopay), SINPE Móvil o continúa la compra por WhatsApp. El vendedor administra productos, inventario, pedidos, caja y su marca. La operación de plataforma aprueba negocios, liquida pagos, factura y supervisa la seguridad.
+El comprador recorre el catálogo, arma el carrito y paga con SINPE Móvil, efectivo o continúa la compra por WhatsApp. El vendedor administra productos, inventario, pedidos, caja y su marca. La operación de plataforma aprueba negocios, liquida pagos, factura y supervisa la seguridad.
 
 | Plan | Espacio del vendedor | Alcance |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ El comprador recorre el catálogo, arma el carrito y paga con tarjeta (Tilopay),
 | PyME | `/pyme` | Reportes, compras, tarjetas de regalo y herramientas de inteligencia artificial, según el plan. |
 | Negocio Plus | `/negocio-plus` | Operación más amplia: sucursales, bodegas y el resto de capacidades del catálogo de planes. |
 
-La suscripción de los planes de pago se cobra con ONVO. El checkout de la tienda no usa ONVO: ahí el cobro es Tilopay, SINPE Móvil o WhatsApp. Stripe permanece en el backend para cobros y precios recurrentes anteriores.
+La suscripción de los planes de pago se cobra con ONVO. El checkout de la tienda cobra hoy con SINPE Móvil, efectivo o WhatsApp; el pago con tarjeta queda para ONVO marketplace (pendiente) y, sin pasarela conectada, se rechaza con un mensaje claro. Stripe permanece en el backend para cobros y precios recurrentes anteriores.
 
 Cada negocio numera sus SKU con el formato `E{empresa}-0001`. El identificador global lo ve la administración. El comprador no ve el SKU. El código de barras (EAN/UPC) es opcional al crear o editar un producto.
 

@@ -83,7 +83,7 @@ Veredictos "agent verified" (sin QA independiente). Móvil medido en 390x844 con
 | Checkout escritorio | `/checkout` | `30:2385` | PARTIAL | Posiciones y tamaños medidos iguales. Diferencias: el pago SINPE despliega instrucciones/cédula debajo; el atajo internacional y el consentimiento no están en el frame. |
 | Tarjeta de regalo válida / inválida | `/checkout` (paso 3 con sesión) | `55:2220`, `55:2284` | PARTIAL | Tarjeta de códigos y resumen con "Total restante" y nota; el frame usa una barra "Pago · paso 3 de 3" y un número de pedido previo al pago que no existen en el flujo. |
 | Pago exitoso | `/pago/exito?order=` | `29:1932` | PARTIAL | Móvil igual al frame con los datos que hay. Nombre, correo y paquetes vienen del resumen guardado al pagar (`sessionStorage`). Perdidos: garantía de 40 días, `AIPostPaySection`, "Imprimir", desglose método/tarjeta. "Ver mi pedido" para invitado requiere `tokenSeguimiento` del backend; "Crear mi cuenta con un toque" lleva a `/registro` (el frame lo marca NUEVO · por programar). Escritorio: REQUIRES_DESIGN_REFERENCE. |
-| Pago fallido / cancelado | `/pago/cancelado`, error de pago | `29:1999` | PARTIAL | Móvil igual; reintento Tilopay intacto. Escritorio: REQUIRES_DESIGN_REFERENCE. |
+| Pago fallido / cancelado | `/pago/cancelado`, error de pago | `29:1999` | PARTIAL | Móvil igual; «Reintentar» vuelve al checkout (sin reintento embebido de pasarela). Escritorio: REQUIRES_DESIGN_REFERENCE. |
 | Pago en revisión (SINPE y timeout) | `/checkout` (estado), `/pago/exito` (timeout) | `45:1640` | PASS móvil | Diferencia de píxeles solo en antialias. La pantalla previa (transferencia + comprobante) no tiene frame: se rehízo con el estilo del paso de pago (REQUIRES_DESIGN_REFERENCE). Si el comprobante ya se eligió en el paso de pago, se envía solo. |
 | Recuperar carrito | `/recuperar-carrito/:token` | `29:2036` | PARTIAL | Igual al frame; "Disponible · quedan N" solo si el backend devuelve `stock`. Se conservó "Explorar productos nuevos". |
 | Despacho del vendedor | `/emprendedor/pedidos/:id` | `37:1780` | PARTIAL | Productos, dirección y guía de Correos con `PUT /pedidos/:id/guia` (deja ENVIADO y avisa al cliente). Faltan datos del backend: "Paquete N de M", forma de entrega y "Tu pago por este paquete" (comisión). El frame marca todo NUEVO · por programar. |
@@ -112,7 +112,7 @@ Spec: `tests/pdp-agregar-hoja.spec.ts`.
 - eslint sobre lo tocado: sin errores nuevos. Queda el error `react-hooks/set-state-in-effect` de `useCheckoutForm.ts` que ya existía en la base (efecto de métodos de envío por paquete).
 - `npx vite build --outDir "$TEMP/chk-build-check" --emptyOutDir`: OK.
 - Se corrigió además un archivo que quedó con codificación inválida (`PaymentStatusPage.tsx`, reescrito en UTF-8).
-- Sin pantalla de Figma, quedan con el estilo anterior: `CheckoutPaidGiftCard`, `CheckoutTilopayCard`, `CheckoutLoading`, `CheckoutEmpty` y `PagoLoading` (REQUIRES_DESIGN_REFERENCE).
+- Sin pantalla de Figma, quedan con el estilo anterior: `CheckoutPaidGiftCard`, `CheckoutLoading`, `CheckoutEmpty` y `PagoLoading` (REQUIRES_DESIGN_REFERENCE).
 
 ## P03 · implementación de CHECKOUT (2-oct-2026)
 
