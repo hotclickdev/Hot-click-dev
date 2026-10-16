@@ -68,3 +68,21 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | refresh-pierde-negocio | tenant | P1-03: el refresh emitía el JWT con el negocio principal y el rol global, sin importar el negocio elegido. Además cambiar-negocio y seleccionar-empresa creaban un refresh sin entregarlo (el siguiente refresh se tomaba como reuso) y fallaban con LazyInitialization | V172 `fk_id_empresa_activa` en el refresh token; `RefreshTokenService.crear(usuario, empresaId)` y la rotación conserva el negocio; `AuthTenantSwitchHandler` (@Transactional) escribe la cookie nueva; `AuthRefreshHandler` revalida la membresía activa y si ya no existe vuelve al negocio principal | `AuthRefreshNegocioActivoTest` | cubierto |
 | tienda-rapida-sin-clave | La contraseña viajaba en claro en el JSON del enlace público de tienda rápida y el correo quedaba verificado sin prueba | Se quitó `clave` del DTO; la cuenta queda con clave aleatoria y correo sin verificar; se envía el código RESET_PASSWORD y el dueño la define en /recuperar-contrasena (eso verifica el correo) | `NegocioRapidoAsignacionTest` | cubierto |
 | clerk-sync-sin-token | POST /api/auth/clerk-sync sin Authorization daba 500 (MissingRequestHeader) | Header y cuerpo opcionales; sin Bearer → 401 antes de cualquier otra rama | `ClerkSyncTakeoverTest.sinToken401` | cubierto |
+
+## Reverificación QA 16-10-2026 (rama fix/reverificacion-1610)
+
+| ID | Cambio | Estado |
+|---|---|---|
+| SEG-F (P6-01) | `GuestCheckoutGuard`: Turnstile opcional (`hotclick.checkout.turnstile.habilitado`), tope 3 u/producto y 6 u pendientes por IP/correo en 30 min | Mitigado (pendiente prod) |
+| PAG-4 (QA-CONC-2) | Idempotencia del guest-checkout (`Idempotency-Key` o hash IP+correo+carrito, 120 s, futuros compartidos) | Mitigado |
+| CMP-4 | `CheckoutGrupoFactory.exigirBodegaDeLaTienda` → 400 con bodega de otro negocio | Mitigado |
+| SEG-E (P5-01) | CRM listar/ver/editar/puntos con `verificarFeature`; sucursales con feature `sucursales`; CRM buscar/crear abiertos para POS (decisión) | Mitigado |
+| LAN-4 | Videos IG/TikTok/FB rechazados en backend para planes sin contacto directo; serializer los oculta | Mitigado |
+| NP-11/POS 565 | POS rechaza productos borrados y COTIZACION | Mitigado |
+| NP-13 | `CobroNegocioGuard` (neutral de pasarela): negocio no aprobado no cobra por QR/en línea | Mitigado |
+| QA-CONC-5 / CMP-3 | `PaginacionLimiteFilter`: page 0-10000, size 1-10000 en /api/** → 400 | Mitigado |
+| Health | `/api/health` ya no expone `whatsappModo` | Mitigado |
+| Equipo | contraseña de miembro mínimo 8 | Mitigado |
+| NP-3 | rate limit `/api/auth/reenviar-codigo-negocio` 3/5 min | Mitigado |
+| P12-06 / QA-PROD-7 | facebook.com en frame-src se mantiene (embeds FB en ficha); `*.amazonaws.com` sin acotar (falta confirmar host del bucket/presigned) | Abierto (bajo) |
+| ESC-7, CMP-2, PAG-8, ESC-9, QA-CONC-6, `ex.getMessage()` | No abordados en esta rama | Abierto |
