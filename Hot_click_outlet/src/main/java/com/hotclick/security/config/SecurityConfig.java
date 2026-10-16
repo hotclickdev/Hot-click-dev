@@ -165,7 +165,7 @@ public class SecurityConfig {
         // Solo staging (perfil + STAGING_AUTH_ENABLED=true + STAGING_JWT_SECRET); en default/prod no existe el bean.
         var holder = stagingAuth.getIfAvailable();
         if (holder != null && holder.filter() != null) {
-            http.addFilterBefore(holder.filter(), UsernamePasswordAuthenticationFilter.class);
+            http.addFilterBefore(holder.filter(), JwtRequestFilter.class);
         }
         return http.build();
     }

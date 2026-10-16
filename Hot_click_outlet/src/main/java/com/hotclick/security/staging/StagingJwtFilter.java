@@ -25,7 +25,6 @@ import java.util.List;
  */
 public class StagingJwtFilter extends OncePerRequestFilter {
 
-    public static final String HEADER = "X-Staging-Auth";
 
     private final SecretKey key;
 
@@ -36,7 +35,8 @@ public class StagingJwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
-        String raw = req.getHeader(HEADER);
+        String h = req.getHeader("Authorization");
+        String raw = h != null && h.startsWith("Bearer ") ? h.substring(7) : null;
         if (raw != null && !raw.isBlank()
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
@@ -54,8 +54,8 @@ public class StagingJwtFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("ROLE_" + role)));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (JwtException | IllegalArgumentException e) {
-                res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                // No es un token de staging: sigue la cadena normal (JwtRequestFilter decide).
+                SecurityContextHolder.clearContext();
             }
         }
         chain.doFilter(req, res);
