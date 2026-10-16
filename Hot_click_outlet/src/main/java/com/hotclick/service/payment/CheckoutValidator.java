@@ -39,13 +39,20 @@ public class CheckoutValidator {
         }
     }
 
+    /** Allowlist del checkout público. STRIPE queda fuera; ONVO solo con hotclick.onvo flag. */
+    static final java.util.Set<String> PROVEEDORES_CHECKOUT = java.util.Set.of(
+        Constants.PROVEEDOR_TILOPAY, Constants.PROVEEDOR_SINPE, Constants.PROVEEDOR_ONVO);
+
     public String resolveProvider(PaymentCheckoutRequest req, PaymentProviderFactory providerFactory) {
-        String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "STRIPE";
+        if (req.getProvider() == null || req.getProvider().isBlank()) {
+            throw new IllegalArgumentException("Elegí un método de pago");
+        }
+        String provider = req.getProvider().trim().toUpperCase();
         if (Constants.PROVEEDOR_ONVO.equals(provider) && !onvoEnabled) {
             throw new IllegalArgumentException(
                 "ONVO no está habilitado. Usá TILOPAY para pagos con tarjeta.");
         }
-        if (!providerFactory.soporta(provider)) {
+        if (!PROVEEDORES_CHECKOUT.contains(provider) || !providerFactory.soporta(provider)) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);
         }
         return provider;

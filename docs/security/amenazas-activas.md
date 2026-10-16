@@ -93,3 +93,4 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | ESC-9 CSV | Plantilla CSV sin IA; errores de fila → 400 | Mitigado |
 | QA-CONC-6 | logback: stack recortado `%ex{30}`, archivo rotado en prod (10 MB, 7 días, 200 MB) | Mitigado |
 | `ex.getMessage()` | `GlobalExceptionHandler`: IllegalArgument/IllegalState pasan por `ErrorPublico`; «No value present» → «Recurso no encontrado». Quedan otros `getMessage()` en handlers de excepciones propias (com.hotclick.exception) | Mitigado (parcial) |
+| Checkout proveedor | `PaymentProviderFactory`/`CheckoutValidator` sin default STRIPE: proveedor nulo/vacío → 400 «Elegí un método de pago»; allowlist TILOPAY/SINPE, ONVO solo con `payments.onvo.enabled` | Mitigado |
