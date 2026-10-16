@@ -1,103 +1,273 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import type { Producto } from '@/types/producto'
-import { negocioService } from '@/services/negocioService'
-import { normalizarListaNegocios } from '@/components/comprador/negocios/negociosPublicos'
-import { slidesNegocios, slidesProductos } from './bannerSlides'
+import { useTranslation } from 'react-i18next'
+import { ArrowLongRightIcon, BuildingStorefrontIcon, PauseIcon, PlayIcon } from '@heroicons/react/16/solid'
+import { StarIcon } from '@heroicons/react/24/outline'
+import {
+  REANUDAR_MS, ROTACION_MS, anterior, direccionSwipe, iniciales, siguiente,
+  type BloqueCarrusel, type ElementoCarrusel, type Posicion, type TipoBloque,
+} from './bannerSlides'
 
-const ROTACION_MS = 6000
+const ICONO: Record<TipoBloque, typeof PauseIcon> = {
+  descubri: ArrowLongRightIcon,
+  negocio: BuildingStorefrontIcon,
+  producto: StarIcon,
+}
 
-const negociosDe = (plan?: string) => ({
-  queryKey: ['home', 'banner', 'negocios', plan ?? 'todos'],
-  queryFn: () => negocioService.buscar({ plan, limite: 8 }).then((r) => normalizarListaNegocios(r.data)),
-  staleTime: 60_000,
-})
+/** Foco visible (HANDOFF §6): anillo de 2 px b600 + halo. */
+const FOCO = 'outline-none focus-visible:ring-2 focus-visible:ring-hc-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-hc-blue-100 dark:focus-visible:ring-[#6EA0FF]'
+/** Alto fijo del slide por breakpoint, para que no salte el layout (CLS ≈ 0). */
+const ALTO_SLIDE = 'h-[230px] lg:h-[330px]'
+
+function useReduceMotion(): boolean {
+  const consulta = '(prefers-reduced-motion: reduce)'
+  const [reduce, setReduce] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(consulta).matches)
+  useEffect(() => {
+    const mq = window.matchMedia?.(consulta)
+    if (!mq) return
+    const cambio = () => setReduce(mq.matches)
+    mq.addEventListener?.('change', cambio)
+    return () => mq.removeEventListener?.('change', cambio)
+  }, [])
+  return reduce
+}
+
+/** Placeholder de marca: monograma b600 sobre b50 y «HOTCLICK · SIN FOTO». Nunca un hueco. */
+function SinFoto({ nombre, className }: { nombre: string; className: string }) {
+  const { t } = useTranslation()
+  return (
+    <span role="img" aria-label={t('home.carrusel.sinFoto')} className={`flex shrink-0 flex-col items-center justify-center gap-1.5 rounded-[14px] border border-hc-blue-100 bg-hc-blue-50 dark:border-[#30363D] dark:bg-[#0D1117] ${className}`}>
+      <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-full bg-hc-n-0 font-display text-[34px] font-extrabold leading-none text-hc-blue-600 dark:bg-[#161B22] dark:text-[#6EA0FF]">
+        {iniciales(nombre)}
+      </span>
+      <span aria-hidden="true" className="text-[10px] font-bold uppercase text-hc-n-500 dark:text-[#9DA7B3]">{t('home.carrusel.sinFotoRotulo')}</span>
+    </span>
+  )
+}
+
+/** Foto del slide; si falta o falla al cargar (`onError`), placeholder de marca. */
+function Foto({ src, nombre, lazy }: { src: string | null; nombre: string; lazy: boolean }) {
+  const [rota, setRota] = useState<string | null>(null)
+  const medida = 'size-[110px] lg:size-[220px]'
+  if (!src || rota === src) return <SinFoto nombre={nombre} className={medida} />
+  return (
+    <img
+      src={src}
+      alt=""
+      loading={lazy ? 'lazy' : undefined}
+      onError={() => setRota(src)}
+      className={`${medida} shrink-0 rounded-[14px] border border-hc-n-200 bg-hc-n-100 object-cover dark:border-[#30363D]`}
+    />
+  )
+}
+
+/** Descubrí: 2 fotos del catálogo apiladas, solo de ilustración. */
+function FotosDescubri({ fotos, nombre }: { fotos: string[]; nombre: string }) {
+  const [rotas, setRotas] = useState<string[]>([])
+  const sanas = fotos.filter((f) => !rotas.includes(f))
+  const medida = 'size-[110px] lg:size-[220px]'
+  if (sanas.length === 0) return <SinFoto nombre={nombre} className={medida} />
+  return (
+    <span aria-hidden="true" className={`relative ${medida} shrink-0`}>
+      {sanas[1] && (
+        <img src={sanas[1]} alt="" onError={() => setRotas((r) => [...r, sanas[1]])}
+          className="absolute inset-0 size-full rotate-6 rounded-[14px] border border-hc-n-200 bg-hc-n-100 object-cover dark:border-[#30363D]" />
+      )}
+      <img src={sanas[0]} alt="" onError={() => setRotas((r) => [...r, sanas[0]])}
+        className="absolute inset-0 size-full -rotate-3 rounded-[14px] border border-hc-n-200 bg-hc-n-100 object-cover dark:border-[#30363D]" />
+    </span>
+  )
+}
 
 /**
- * Banner rotativo de la home (bajo «Destacados de la semana»): Emprendimientos, Productos y Negocios destacados.
- * Cambia cada 6 s, con puntos, pausa al pasar el mouse o con foco y sin animación con prefers-reduced-motion.
- * Un solo negocio o producto por slide, con su foto y su nombre; el clic lleva solo a su tienda o a su ficha.
+ * Carrusel del inicio (HANDOFF carrusel-inicio, aprobado 16-oct-2026): 3 bloques —Descubrí, Negocio destacado y
+ * Producto destacado—, un punto por bloque, barrita «X de N», pausa visible, swipe y teclado.
+ * Solo enlaza a /descubri, /tienda/<slug> o /productos/<id>: nunca contacto del emprendedor.
  */
-export default function BannerDescubrir({ productos }: { productos: Producto[] }) {
-  const emprendimientos = useQuery(negociosDe('emprendimientos')).data ?? []
-  const negocios = (useQuery(negociosDe()).data ?? []).filter((n) => n.plan !== 'EMPRENDEDOR')
-  const slides = [
-    ...slidesNegocios('Emprendimientos destacados', 'Ver tienda', emprendimientos, productos),
-    ...slidesProductos('Productos destacados', 'Ver producto', productos),
-    ...slidesNegocios('Negocios destacados', 'Ver tienda', negocios, productos),
-  ]
+export default function BannerDescubrir({ bloques, cargando = false }: { bloques: BloqueCarrusel[]; cargando?: boolean }) {
+  const { t } = useTranslation()
+  const reduce = useReduceMotion()
+  const [pos, setPos] = useState<Posicion>({ bloque: 0, elemento: 0 })
+  const [pausaBoton, setPausaBoton] = useState(false)
+  const [hover, setHover] = useState(false)
+  const [foco, setFoco] = useState(false)
+  const [toque, setToque] = useState(false)
+  const [oculta, setOculta] = useState(() => typeof document !== 'undefined' && document.hidden)
+  const [manual, setManual] = useState(false)
+  const timerToque = useRef<number | undefined>(undefined)
+  const inicio = useRef<{ x: number; y: number } | null>(null)
 
-  const [activo, setActivo] = useState(0)
-  const [pausa, setPausa] = useState(false)
-  const total = slides.length
+  const nBloques = bloques.length
+  const totalElementos = bloques.reduce((n, b) => n + b.elementos.length, 0)
+  const conControles = nBloques > 1
+  const actual = bloques[pos.bloque] ? pos : { bloque: 0, elemento: 0 }
+
   useEffect(() => {
-    if (pausa || total < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const id = window.setInterval(() => setActivo((i) => (i + 1) % total), ROTACION_MS)
-    return () => window.clearInterval(id)
-  }, [pausa, total])
+    const cambio = () => setOculta(document.hidden)
+    document.addEventListener('visibilitychange', cambio)
+    return () => document.removeEventListener('visibilitychange', cambio)
+  }, [])
+  useEffect(() => () => window.clearTimeout(timerToque.current), [])
 
-  if (total === 0) return null
-  const slide = slides[activo % total]
+  const pausado = pausaBoton || hover || foco || toque || oculta
+  const rota = conControles && totalElementos > 1 && !reduce && !pausado
+
+  useEffect(() => {
+    if (!rota) return
+    const id = window.setTimeout(() => {
+      setManual(false)
+      setPos((p) => siguiente(bloques, bloques[p.bloque] ? p : { bloque: 0, elemento: 0 }))
+    }, ROTACION_MS)
+    return () => window.clearTimeout(id)
+  }, [rota, pos, bloques])
+
+  /** Toque o swipe: pausa y se reanuda sola a los 10 s sin interacción. */
+  const pausarPorToque = useCallback(() => {
+    setToque(true)
+    window.clearTimeout(timerToque.current)
+    timerToque.current = window.setTimeout(() => setToque(false), REANUDAR_MS)
+  }, [])
+
+  const ir = useCallback((p: Posicion) => { setManual(true); setPos(p) }, [])
+
+  if (cargando) {
+    return <div aria-hidden="true" className={`mx-4 rounded-[16px] bg-hc-n-100 dark:bg-[#161B22] lg:mx-0 ${ALTO_SLIDE}`} />
+  }
+  if (nBloques === 0) return null
+
+  const bloque = bloques[actual.bloque]
+  const el: ElementoCarrusel = bloque.elementos[actual.elemento] ?? bloque.elementos[0]
+  const n = bloque.elementos.length
+  const x = actual.elemento + 1
+  const etiqueta = t(`home.carrusel.bloque.${bloque.tipo}.etiqueta`)
+  const titulo = bloque.tipo === 'descubri' ? t('home.carrusel.bloque.descubri.titulo') : el.titulo
+  const detalle = bloque.tipo === 'descubri' ? t('home.carrusel.bloque.descubri.detalle') : el.detalle
+  const cta = t(`home.carrusel.bloque.${bloque.tipo}.cta`)
+  const Icono = ICONO[bloque.tipo]
+  const tipoCorto = t(`home.carrusel.tipo.${bloque.tipo}`)
+  const textoPosicion = bloque.tipo === 'descubri'
+    ? t('home.carrusel.posicionBloque', { x: actual.bloque + 1, n: nBloques })
+    : t('home.carrusel.posicion', { tipo: tipoCorto, x, n })
+  /** Pausa visible (▶ y «Pausado · x de n»): botón o toque; hover, foco y pestaña oculta pausan sin cambiar el control. */
+  const enPausa = pausaBoton || toque
+  const lazy = actual.bloque > 0 || actual.elemento > 0
+  const slideId = 'hc-carrusel-slide'
+
+  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    if (!conControles && totalElementos < 2) return
+    if (e.key === 'ArrowRight') { e.preventDefault(); ir(siguiente(bloques, actual)) }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); ir(anterior(bloques, actual)) }
+  }
+  const onPointerDown = (e: PointerEvent<HTMLElement>) => {
+    // Puntos y pausa tienen su propia acción: tocarlos no cuenta como toque de pausa ni inicia un swipe.
+    if ((e.target as HTMLElement).closest('button')) return
+    if (e.pointerType !== 'mouse') pausarPorToque()
+    inicio.current = { x: e.clientX, y: e.clientY }
+  }
+  const onPointerUp = (e: PointerEvent<HTMLElement>) => {
+    const ini = inicio.current
+    inicio.current = null
+    if (!ini || totalElementos < 2) return
+    const dir = direccionSwipe(e.clientX - ini.x, e.clientY - ini.y)
+    if (dir === 0) return
+    pausarPorToque()
+    ir(dir === 1 ? siguiente(bloques, actual) : anterior(bloques, actual))
+  }
 
   return (
     <section
-      aria-roledescription="carrusel"
-      aria-label="Destacados"
-      onMouseEnter={() => setPausa(true)}
-      onMouseLeave={() => setPausa(false)}
-      onFocus={() => setPausa(true)}
-      onBlur={() => setPausa(false)}
-      className="mx-4 overflow-hidden rounded-[14px] border border-[#2a3142] bg-[#1c2130] text-hc-n-0 lg:mx-0"
+      aria-roledescription={t('home.carrusel.rol')}
+      aria-label={t('home.carrusel.region')}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setFoco(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFoco(false) }}
+      onKeyDown={onKeyDown}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => { inicio.current = null }}
+      className="mx-4 touch-pan-y overflow-hidden rounded-[16px] border border-hc-n-200 bg-hc-n-0 text-hc-n-900 dark:border-[#30363D] dark:bg-[var(--hc-surface,#161B22)] dark:text-[#E6EDF3] lg:mx-0"
     >
       <style>{`
-        @keyframes hc-entra{from{opacity:0;transform:translateY(6px)}}
-        .hc-entra{animation:hc-entra .45s ease}
-        @media (prefers-reduced-motion: reduce){.hc-entra{animation:none}}
+        @keyframes hc-carrusel-entra{from{opacity:0;transform:translateY(6px)}}
+        .hc-carrusel-entra{animation:hc-carrusel-entra .3s ease-out}
+        @media (prefers-reduced-motion: reduce){.hc-carrusel-entra{animation:none}}
       `}</style>
-      <div className="flex items-center justify-between gap-4 px-5 pt-5 lg:px-6"
-      >
-        <Link
-          key={slide.clave}
-          to={slide.to}
-          aria-label={`${slide.cta}: ${slide.titulo} (${activo % total + 1} de ${total})`}
-          className="hc-entra group flex min-w-0 flex-1 items-center justify-between gap-4 rounded-[12px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-hc-n-0"
-        >
-          <span aria-live="polite" className="flex min-w-0 flex-col items-start">
-            <span className="text-[11px] font-bold uppercase tracking-[.08em] text-[#ff6b63]">{slide.etiqueta}</span>
-            <span className="mt-1 line-clamp-2 font-display text-[18px] font-bold leading-[1.15] lg:text-[20px]">{slide.titulo}</span>
-            <span className="mb-3 mt-1 min-h-[18px] truncate text-[13px] text-[#c3cad8]">{slide.detalle}</span>
-            <span className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[12px] bg-hc-red-500 px-4 font-display text-[14px] font-semibold text-hc-n-0">
-              {slide.cta} →
-            </span>
-          </span>
-          {slide.foto && (
-            <img
-              src={slide.foto}
-              alt=""
-              loading="lazy"
-              className="size-[96px] shrink-0 rounded-[14px] border border-[#2a3142] bg-[#232938] object-cover sm:size-[120px]"
-            />
-          )}
-        </Link>
-      </div>
-      {total > 1 ? (
-        <div role="tablist" aria-label="Elegir destacado" className="flex gap-1.5 px-5 pb-4 pt-3 lg:px-6">
-          {slides.map((s, j) => (
-            <button
-              key={s.clave}
-              type="button"
-              role="tab"
-              aria-selected={j === activo % total}
-              aria-label={`${s.etiqueta}: ${s.titulo}`}
-              onClick={() => setActivo(j)}
-              className="flex h-6 items-center"
-            >
-              <span className={`block h-2 rounded-full transition-[width] duration-300 motion-reduce:transition-none ${j === activo % total ? 'w-[22px] bg-hc-red-500' : 'w-2 bg-[#3a4256]'}`} />
-            </button>
-          ))}
+      <div className={`relative flex flex-col ${ALTO_SLIDE}`}>
+        {n > 1 && (
+          <div aria-hidden="true" className="mx-5 mt-3 flex gap-1">
+            {bloque.elementos.map((e, j) => (
+              <span key={e.clave} className={`h-[3px] flex-1 rounded-full ${j === actual.elemento ? 'bg-[var(--hc-n-700)] dark:bg-[#E6EDF3]' : j < actual.elemento ? 'bg-hc-n-400' : 'bg-hc-n-200 dark:bg-[#30363D]'}`} />
+            ))}
+          </div>
+        )}
+        <div aria-live={manual ? 'polite' : 'off'} className="flex min-h-0 flex-1">
+          <div
+            id={slideId}
+            key={el.clave}
+            role="group"
+            aria-roledescription={t('home.carrusel.diapositiva')}
+            aria-label={`${etiqueta}, ${x} de ${n}`}
+            className={`flex min-w-0 flex-1 items-center gap-4 p-5 lg:gap-10 lg:px-10 lg:py-8 ${reduce ? '' : 'hc-carrusel-entra'}`}
+          >
+            <div className="flex min-w-0 flex-1 flex-col items-start">
+              <span className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[.06em] text-hc-blue-600 dark:text-[#6EA0FF]">
+                <Icono aria-hidden="true" className="size-4 shrink-0" />
+                {etiqueta}
+              </span>
+              <h3 className="mt-1 line-clamp-2 font-display text-[20px] font-bold leading-[1.2] lg:text-[28px]">{titulo}</h3>
+              {detalle && <p className="mt-1 w-full truncate text-[14px] text-hc-n-600 dark:text-[#9DA7B3]">{detalle}</p>}
+              <Link
+                to={el.to}
+                className={`mt-3 inline-flex min-h-[44px] items-center rounded-full bg-hc-red-500 px-4 text-[15px] font-bold text-hc-n-0 ${FOCO}`}
+              >
+                {cta} →
+              </Link>
+            </div>
+            {bloque.tipo === 'descubri'
+              ? <FotosDescubri fotos={bloque.fotos ?? []} nombre="HotClick" />
+              : <Foto key={el.clave} src={el.foto} nombre={el.titulo} lazy={lazy} />}
+          </div>
         </div>
-      ) : <div className="h-5" />}
+      </div>
+      {conControles && (
+        <div className="flex h-[50px] items-center gap-2 border-t border-hc-n-100 pl-1 pr-1 dark:border-[#30363D]">
+          <div role="tablist" aria-label={t('home.carrusel.puntos')} className="flex items-center">
+            {bloques.map((b, j) => {
+              const sel = j === actual.bloque
+              return (
+                <button
+                  key={b.tipo}
+                  type="button"
+                  role="tab"
+                  aria-selected={sel}
+                  aria-controls={slideId}
+                  aria-label={t(`home.carrusel.bloque.${b.tipo}.etiqueta`)}
+                  tabIndex={0}
+                  onClick={() => ir({ bloque: j, elemento: 0 })}
+                  className={`flex size-11 items-center justify-center rounded-full ${FOCO}`}
+                >
+                  <span className={`block h-2 rounded-full ${sel ? 'w-6 bg-hc-blue-600 dark:bg-[#6EA0FF]' : 'w-2 bg-hc-n-300 dark:bg-[#30363D]'}`} />
+                </button>
+              )
+            })}
+          </div>
+          <p className="min-w-0 flex-1 truncate text-center text-[13px] text-hc-n-600 dark:text-[#9DA7B3]">
+            {enPausa ? t('home.carrusel.pausado', bloque.tipo === 'descubri' ? { x: actual.bloque + 1, n: nBloques } : { x, n }) : textoPosicion}
+          </p>
+          <button
+            type="button"
+            aria-label={enPausa ? t('home.carrusel.reanudar') : t('home.carrusel.pausar')}
+            aria-pressed={enPausa}
+            onClick={() => {
+              if (enPausa) { setPausaBoton(false); setToque(false); window.clearTimeout(timerToque.current) } else setPausaBoton(true)
+            }}
+            className={`flex size-11 items-center justify-center rounded-full text-[var(--hc-n-700)] dark:text-[#E6EDF3] ${FOCO}`}
+          >
+            {enPausa ? <PlayIcon aria-hidden="true" className="size-4" /> : <PauseIcon aria-hidden="true" className="size-4" />}
+          </button>
+        </div>
+      )}
     </section>
   )
 }
