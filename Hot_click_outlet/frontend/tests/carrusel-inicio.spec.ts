@@ -72,6 +72,8 @@ for (const ancho of [390, 1440]) {
         await c.getByRole('tab', { name: nombre }).click()
         await c.getByRole('button', { name: /Pausar carrusel/ }).click().catch(() => {})
         await page.mouse.move(0, 0)
+        await c.evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }))
+        await page.waitForTimeout(400)
         await c.screenshot({ path: `${process.env.CARRUSEL_SHOTS}/carrusel-${ancho}-${nombre.split(' ')[0]}.png`, animations: 'disabled' })
         await c.getByRole('button', { name: /Reanudar carrusel/ }).click().catch(() => {})
       }
@@ -126,11 +128,11 @@ test('autoavance de 6 s, pausa con el botón y el texto «Pausado»', async ({ p
   await expect(c.getByRole('tab', { name: 'Negocio destacado' })).toHaveAttribute('aria-selected', 'true')
   await expect(c.locator('[aria-live]')).toHaveAttribute('aria-live', 'off')
   await c.getByRole('button', { name: 'Pausar carrusel' }).click()
-  await expect(c.getByText('Pausado · 1 de 2')).toBeVisible()
+  await expect(c.getByText('Pausado · Negocio 1 de 2')).toBeVisible()
   await c.getByRole('button', { name: 'Reanudar carrusel' }).blur()
   await page.mouse.move(0, 0)
   await page.clock.runFor(20_000)
-  await expect(c.getByText('Pausado · 1 de 2')).toBeVisible()
+  await expect(c.getByText('Pausado · Negocio 1 de 2')).toBeVisible()
 })
 
 test('teclado ←/→ y swipe cambian de elemento', async ({ page }) => {
@@ -143,7 +145,7 @@ test('teclado ←/→ y swipe cambian de elemento', async ({ page }) => {
   await expect(c.getByRole('group')).toHaveAttribute('aria-label', 'Negocio destacado, 1 de 2')
   await expect(c.locator('[aria-live]')).toHaveAttribute('aria-live', 'polite')
   await page.keyboard.press('ArrowLeft')
-  await expect(c.getByRole('group')).toHaveAttribute('aria-label', /Descubrí, 1 de 1/)
+  await expect(c.getByRole('group')).toHaveAttribute('aria-label', 'Descubrí')
   const box = (await c.boundingBox())!
   const y = box.y + 80
   await c.dispatchEvent('pointerdown', { clientX: box.x + 300, clientY: y, pointerType: 'touch', isPrimary: true })
@@ -162,3 +164,41 @@ test('prefers-reduced-motion: no avanza solo', async ({ page }) => {
   await page.clock.runFor(15_000)
   await expect(c.getByRole('tab', { name: 'Descubrí' })).toHaveAttribute('aria-selected', 'true')
 })
+
+for (const ancho of [390, 1440]) {
+  test(`${ancho}: correcciones de Diseño — contadores, Descubrí sin «SIN FOTO», CTA en 1 línea, texto ≤ 2 líneas, etiqueta visible`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 900 })
+    await mock(page)
+    await page.goto('/')
+    const c = carrusel(page)
+    await expect(c).toBeVisible()
+    const barra = c.locator('p.text-center')
+    // Descubrí: sin contador; ilustración de marca (las fotos de example.com fallan) y nunca «SIN FOTO».
+    await expect(barra).toHaveText('')
+    await expect(c.getByTestId('carrusel-ilustracion-marca')).toBeVisible()
+    await expect(c.getByText(/SIN FOTO/)).toHaveCount(0)
+    const cta = c.getByRole('link', { name: /Empezar a descubrir/ })
+    expect((await cta.boundingBox())!.height).toBeLessThanOrEqual(46)
+    const detalle = c.getByText('Productos de emprendedores de todo el país, uno por uno.')
+    const lineas = await detalle.evaluate((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)))
+    expect(lineas).toBeLessThanOrEqual(2)
+    const titulo = c.getByRole('heading')
+    const lt = await titulo.evaluate((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)))
+    expect(lt).toBeLessThanOrEqual(2)
+    expect(lineas + lt).toBeGreaterThan(0)
+    // Negocio y Producto: «Negocio 1 de 2» y «Producto 1 de 3»; el placeholder dice solo «SIN FOTO».
+    await c.getByRole('tab', { name: 'Negocio destacado' }).click()
+    await expect(barra).toHaveText('Negocio 1 de 2')
+    await expect(c.getByText('SIN FOTO', { exact: true })).toBeVisible()
+    await c.getByRole('tab', { name: 'Producto destacado' }).click()
+    await expect(barra).toHaveText('Producto 1 de 3')
+    // La etiqueta no queda tapada por el header fijo (chips) al llevar el carrusel a la vista.
+    await c.getByRole('tab', { name: 'Descubrí' }).click()
+    await c.evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }))
+    await page.waitForTimeout(400)
+    const eb = (await c.getByText('Descubrí', { exact: true }).first().boundingBox())!
+    const libre = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('section[aria-roledescription="carrusel"]'), { x: eb.x + 4, y: eb.y + eb.height / 2 })
+    expect(libre).toBeTruthy()
+    if (ancho === 1440) console.log('ANCHO_CARRUSEL', (await c.boundingBox())!.width, 'COLUMNA', await c.evaluate((e) => e.parentElement!.getBoundingClientRect().width), 'MAIN', await page.evaluate(() => document.querySelector('main')?.getBoundingClientRect().width))
+  })
+}
