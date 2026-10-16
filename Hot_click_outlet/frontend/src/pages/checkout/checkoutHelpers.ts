@@ -93,7 +93,8 @@ export function bodegaRetiroDesdeItems(items: ItemCheckout[]): BodegaRetiro | nu
   return bodegasEnCarrito.length === 1 && items.length > 0 && items.every((i) => i.bodegaPermiteRetiro)
     ? {
         id: bodegasEnCarrito[0],
-        nombre: items[0].bodegaNombre || 'la tienda',
+        // QA-COM-009: el comprador ve la tienda, no el nombre interno de la bodega.
+        nombre: items[0].empresaNombre?.trim() || 'la tienda',
         direccion: items[0].bodegaDireccion,
         telefono: items[0].bodegaTelefono,
       }
@@ -132,13 +133,13 @@ export function paquetesDesdeItems(items: ItemCheckout[]): PaqueteCheckout[] {
 
 /** Cantidad de emprendimientos distintos representados en el carrito — dispara el aviso de varios vendedores. */
 export function cantidadEmprendimientos(items: ItemCheckout[]): number {
-  const nombres = new Set(items.map((i) => i.empresaNombre || i.bodegaNombre).filter(Boolean))
+  const nombres = new Set(items.map((i) => i.empresaNombre || (i.bodegaId != null ? `bodega-${i.bodegaId}` : '')).filter(Boolean))
   return nombres.size
 }
 
 export function bodegaRetiroDePaquete(paquete: PaqueteCheckout): BodegaRetiro | null {
   return paquete.bodegaPermiteRetiro
-    ? { id: paquete.bodegaId, nombre: paquete.bodegaNombre, direccion: paquete.bodegaDireccion, telefono: paquete.bodegaTelefono }
+    ? { id: paquete.bodegaId, nombre: paquete.empresaNombre?.trim() || 'la tienda', direccion: paquete.bodegaDireccion, telefono: paquete.bodegaTelefono }
     : null
 }
 
@@ -228,6 +229,6 @@ export function notasConEncomienda(
 ): string {
   const lineas = paquetes
     .filter((p) => metodos[p.bodegaId] === 'ENCOMIENDA_PROPIA' && encomiendas[p.bodegaId]?.trim())
-    .map((p) => `Encomienda ${p.empresaNombre || p.bodegaNombre}: ${encomiendas[p.bodegaId].trim()}`)
+    .map((p) => `Encomienda ${p.empresaNombre?.trim() || 'la tienda'}: ${encomiendas[p.bodegaId].trim()}`)
   return [notas.trim(), ...lineas].filter(Boolean).join(' | ')
 }

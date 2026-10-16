@@ -2,6 +2,7 @@ import { authService } from '@/services/authService'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
+import { nombreVendedor } from '@/components/comprador/productCardHelpers'
 import { BODEGA_DEFAULT, bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import { guardarUltimoPedido } from '@/utils/ultimoPedido'
@@ -12,7 +13,7 @@ import { PAGO_EFECTIVO, proveedorDe } from './pagoPrincipal'
 function opcionesParaLabel(p: PaqueteCheckout, metodo: string): string {
   const opciones = opcionesEnvio(bodegaRetiroDePaquete(p))
   const label = opciones.find((o) => o.value === metodo)?.label
-  return label ? `${p.bodegaNombre}: ${label}` : ''
+  return label ? `${nombreVendedor(p)}: ${label}` : ''
 }
 
 type ValidateDomicilioDeps = {
@@ -152,7 +153,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     nombre: sinpeNombre.trim(),
     correo: guestEmail.trim() || sinpeEmail.trim(),
     paquetes: paquetes.map((p) => ({
-      negocio: p.empresaNombre || p.bodegaNombre,
+      negocio: nombreVendedor(p),
       productos: p.items.length,
       metodoEnvio: metodoEnvioPorPaquete[p.bodegaId],
     })),
