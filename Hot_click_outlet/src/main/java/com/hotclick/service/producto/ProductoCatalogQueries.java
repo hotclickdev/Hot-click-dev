@@ -34,6 +34,14 @@ public class ProductoCatalogQueries {
 
     @Cacheable(value = "productos-publicos", key = "'rec-' + #id + '-' + #limit")
     @Transactional(readOnly = true)
+    /** VIS-3c: mismo filtro que el catálogo público: visible en catálogo y negocio ACTIVO + visible. */
+    static boolean esPublico(Producto p) {
+        if (p == null || !Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
+        var e = p.getEmpresa() != null ? p.getEmpresa() : (p.getBodega() != null ? p.getBodega().getEmpresa() : null);
+        return e != null && "ACTIVO".equals(String.valueOf(e.getEstadoEmpresa()))
+            && !Boolean.FALSE.equals(e.getVisibilidadPublica());
+    }
+
     public List<Producto> getRecomendaciones(Long id, int limit) {
         Producto base = productoRepository.findById(id).orElse(null);
         if (base == null) return List.of();
@@ -47,6 +55,7 @@ public class ProductoCatalogQueries {
                     base.getCategoria().getId(), Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, limit + 1))
                 .getContent().stream()
                 .filter(p -> !p.getId().equals(id))
+                .filter(ProductoCatalogQueries::esPublico)
                 .limit(limit)
                 .toList();
             result.addAll(sameCategory);
@@ -62,6 +71,7 @@ public class ProductoCatalogQueries {
                 .findByEstadoAndStockActualGreaterThan(Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, needed * 3))
                 .getContent().stream()
                 .filter(p -> !exclude.contains(p.getId()))
+                .filter(ProductoCatalogQueries::esPublico)
                 .limit(needed)
                 .toList();
             result.addAll(general);

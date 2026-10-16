@@ -107,14 +107,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
+        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 AND p.visible_catalogo = TRUE " +
         "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
     List<Producto> findDestacadosPublicos(@Param("estado") Integer estado);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado " +
+        "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado AND p.visible_catalogo = TRUE " +
         "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
         "ORDER BY p.orden_carrusel ASC NULLS LAST")
     List<Producto> findCarruselPublico(@Param("estado") Integer estado);
