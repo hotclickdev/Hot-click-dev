@@ -124,13 +124,11 @@ public class PosQrSessionService {
         return saved;
     }
 
-    public static final String MSG_NO_APROBADO =
-        "Tu negocio todavía no está aprobado: por ahora en la caja solo podés registrar ventas en efectivo. "
-            + "El cobro con tarjeta o SINPE por QR se habilita cuando lo aprobemos.";
+    public static final String MSG_NO_APROBADO = com.hotclick.service.payment.CobroNegocioGuard.MSG_NO_APROBADO;
 
-    /** NP-13: el cobro QR (Tilopay/SINPE) solo para negocios aprobados; el efectivo del POS sigue disponible. */
+    /** NP-13: delega en el guard neutral de pasarela. */
     static void exigirNegocioAprobado(Empresa empresa) {
-        if (!"ACTIVO".equals(empresa.getEstadoEmpresa())) throw new IllegalStateException(MSG_NO_APROBADO);
+        com.hotclick.service.payment.CobroNegocioGuard.exigirNegocioAprobado(empresa);
     }
 
     @Transactional(readOnly = true)
