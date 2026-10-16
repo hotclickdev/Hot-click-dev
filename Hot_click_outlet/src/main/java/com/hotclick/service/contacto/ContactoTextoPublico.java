@@ -17,6 +17,13 @@ public class ContactoTextoPublico {
      * Columna SQL con el plan efectivo del dueño del producto (alias {@code p} = hot_click_producto_tb).
      * Se agrega a los SELECT de fichas del chat público para enmascarar sin otra consulta.
      */
+    /** Nombre visible (misma regla que {@code EmpresaNombre.mostrar}) y slug, solo si el negocio es público. */
+    public static final String SQL_NEGOCIO_PRODUCTO =
+        "(SELECT COALESCE(NULLIF(TRIM(e.nombre_comercial), ''), e.nombre_empresa) FROM hot_click_empresa_tb e"
+            + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE AND e.slug IS NOT NULL) AS empresa_nombre,"
+            + " (SELECT e.slug FROM hot_click_empresa_tb e"
+            + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE) AS empresa_slug";
+
     public static final String SQL_PLAN_PRODUCTO =
         "(SELECT COALESCE(pl.nombre, e.plan_saas) FROM hot_click_empresa_tb e"
             + " LEFT JOIN hot_click_plan_tb pl ON pl.id_plan = e.fk_id_plan"

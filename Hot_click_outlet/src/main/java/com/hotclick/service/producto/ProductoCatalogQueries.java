@@ -153,8 +153,7 @@ public class ProductoCatalogQueries {
         var e = p.getEmpresa();
         if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
         if (e.getId().equals(empresaPrincipalId)) return;
-        var nombre = e.getNombreComercial() != null ? e.getNombreComercial() : e.getNombreEmpresa();
-        p.setEmpresaNombre(nombre);
+        p.setEmpresaNombre(com.hotclick.utils.EmpresaNombre.mostrar(e, null));
         p.setEmpresaSlug(e.getSlug());
     }
 }
