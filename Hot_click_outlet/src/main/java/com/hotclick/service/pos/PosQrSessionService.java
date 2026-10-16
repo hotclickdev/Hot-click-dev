@@ -221,10 +221,7 @@ public class PosQrSessionService {
     }
 
     String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
-        if (PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
-            // SINPE por Tilopay: el número, el monto y el código los da el SDK al iniciar el pago.
-            return "";
-        }
+        // Sin pasarela conectada, SINPE Móvil va directo al número del negocio y lo confirma el cajero.
         return numeroSinpe(empresa);
     }
 

@@ -58,12 +58,8 @@ public class PosQrService {
     }
 
     @Transactional
-    public Map<String, Object> iniciarTilopay(String token, String metodo) {
-        return ventaService.iniciarTilopay(token, metodo);
-    }
-
-    public boolean confirmarTilopay(String token) {
-        return ventaService.confirmarTilopay(token);
+    public Map<String, Object> iniciarPagoPasarela(String token, String metodo) {
+        return ventaService.iniciarPagoPasarela(token, metodo);
     }
 
     @Transactional

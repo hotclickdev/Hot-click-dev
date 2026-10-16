@@ -26,7 +26,6 @@ public class PosQrVentaService {
 
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired private PedidoRepository pedidoRepository;
-    @Autowired private com.hotclick.service.TilopayService tilopayService;
     @Autowired private PosQrSessionService   sessionService;
     @Autowired private PosQrVentaCompletionService completionService;
     @Autowired private TurnoCajaService       turnoCajaService;
@@ -44,63 +43,19 @@ public class PosQrVentaService {
         }
     }
 
-    static final String PREFIJO_TILOPAY = "POSQR-";
-
     /**
-     * Cobro con tarjeta por Tilopay (reemplaza ONVO): devuelve los datos del SDK embebido.
-     * El número de orden queda en la sesión para confirmar contra Tilopay al volver.
+     * Inicio del cobro con pasarela (tarjeta o SINPE Móvil) desde el QR. No hay pasarela conectada
+     * (ONVO marketplace pendiente): se rechaza con un mensaje claro. El webhook de la
+     * pasarela que se conecte completa la venta con {@link #completarSiPagoPasarela(String)}.
      */
-    @Transactional
-    public Map<String, Object> iniciarTilopay(String token) {
-        return iniciarTilopay(token, PosQrMetodos.TARJETA);
-    }
-
-    /** Tarjeta o SINPE Móvil por el SDK de Tilopay. SINPE ya no pasa por ONVO. */
-    @Transactional
-    public Map<String, Object> iniciarTilopay(String token, String metodo) {
-        String elegido = PosQrMetodos.SINPE.equals(metodo) ? PosQrMetodos.SINPE : PosQrMetodos.TARJETA;
+    public Map<String, Object> iniciarPagoPasarela(String token, String metodo) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
         exigirMetodoPasarela(sesion);
-        elegirMetodo(sesion, elegido);
-        if (!tilopayService.isPagosDisponibles()) {
-            throw new IllegalStateException("Los pagos en línea no están disponibles.");
-        }
-        String order = sesion.getStripeSessionId();
-        if (order == null || !order.startsWith(PREFIJO_TILOPAY)) {
-            order = PREFIJO_TILOPAY + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
-            sesion.setStripeSessionId(order);
-            posQrRepo.save(sesion);
-        }
-        Map<String, Object> r = new java.util.LinkedHashMap<>();
-        r.put("orderNumber", order);
-        r.put("montoCrc", sesion.getTotal());
-        r.put("moneda", "CRC");
-        r.put("sdkToken", tilopayService.loginSdk());
-        return r;
+        throw new IllegalStateException(MENSAJE_SIN_PASARELA);
     }
 
-    /** Confirma el cobro Tilopay del QR consultando a Tilopay (monto, CRC y orden exactos). */
-    @Transactional
-    public boolean confirmarTilopay(String token) {
-        PosQrSesion sesion = posQrRepo.findByToken(token).orElseThrow(java.util.NoSuchElementException::new);
-        if ("PAGADO".equals(sesion.getEstado())) return true;
-        String order = sesion.getStripeSessionId();
-        if (order == null || !order.startsWith(PREFIJO_TILOPAY) || sesion.getTotal() == null) return false;
-        com.hotclick.service.TilopayService.ConsultaResultado c = tilopayService.consultarTransaccion(order);
-        if (!coincideTilopay(order, sesion.getTotal(), c, tilopayService.isMockMode())) {
-            log.warn("[POS-QR] Tilopay no confirmó token={} order={}", token, order);
-            return false;
-        }
-        return completarSiPagoPasarela(order);
-    }
-
-    static boolean coincideTilopay(String order, long monto, com.hotclick.service.TilopayService.ConsultaResultado c, boolean mock) {
-        if (c == null || !c.aprobada()) return false;
-        if (c.simulada()) return mock;
-        return c.amount() != null && c.amount().compareTo(java.math.BigDecimal.valueOf(monto)) == 0
-            && c.currency() != null && "CRC".equalsIgnoreCase(c.currency().trim())
-            && c.orderNumber() != null && order.equals(c.orderNumber().trim());
-    }
+    static final String MENSAJE_SIN_PASARELA =
+        "El pago en línea no está disponible por ahora. Pagale al cajero con otro método.";
 
     @Transactional
     public boolean completarSiPagoPasarela(String pasarelaSessionId) {
@@ -242,19 +197,9 @@ public class PosQrVentaService {
         return body;
     }
 
+    /** Sin pasarela conectada no hay consulta activa: la venta solo la completa el webhook de la pasarela. */
     private boolean pagoPasarelaConfirmado(PosQrSesion sesion) {
-        if (sesion == null || !esMetodoPasarela(sesion)) return false;
-        String pasarelaId = sesion.getStripeSessionId();
-        if (pasarelaId == null) return false;
-        try {
-            // Tarjeta y SINPE Móvil van por Tilopay: se confirma consultando la orden (monto, CRC y orden).
-            if (!pasarelaId.startsWith(PREFIJO_TILOPAY) || sesion.getTotal() == null) return false;
-            return coincideTilopay(pasarelaId, sesion.getTotal(), tilopayService.consultarTransaccion(pasarelaId),
-                tilopayService.isMockMode());
-        } catch (Exception e) {
-            log.warn("[POS-QR] Error verificando pasarela {}: {}", pasarelaId, e.getMessage());
-            return false;
-        }
+        return false;
     }
 
     @Transactional

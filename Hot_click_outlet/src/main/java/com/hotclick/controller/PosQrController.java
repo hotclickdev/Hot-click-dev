@@ -115,28 +115,17 @@ public class PosQrController {
         }
     }
 
-    /** Cliente inicia cobro por Tilopay (SDK embebido): tarjeta o, con ?metodo=SINPE, SINPE Móvil. */
-    @PostMapping("/pago/{token}/tilopay")
-    public ResponseEntity<?> iniciarTilopay(@PathVariable String token,
-                                            @RequestParam(name = "metodo", required = false) String metodo) {
+    /** Cliente inicia cobro con pasarela (tarjeta o SINPE Móvil). Sin pasarela conectada responde 400 con mensaje claro. */
+    @PostMapping("/pago/{token}/pasarela")
+    public ResponseEntity<?> iniciarPagoPasarela(@PathVariable String token,
+                                                 @RequestParam(name = "metodo", required = false) String metodo) {
         try {
-            return ResponseEntity.ok(posQrService.iniciarTilopay(token, metodo));
+            return ResponseEntity.ok(posQrService.iniciarPagoPasarela(token, metodo));
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         } catch (IllegalStateException e) {
-            log.warn("[POS-QR] Tilopay no iniciado token={}: {}", token, e.getMessage());
+            log.warn("[POS-QR] Pago con pasarela no iniciado token={}: {}", token, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
-        }
-    }
-
-    /** Al volver del SDK: el backend consulta a Tilopay; el navegador no decide si se pagó. */
-    @PostMapping("/pago/{token}/tilopay/confirmar")
-    public ResponseEntity<?> confirmarTilopay(@PathVariable String token) {
-        try {
-            boolean pagado = posQrService.confirmarTilopay(token);
-            return ResponseEntity.ok(Map.of("pagado", pagado));
-        } catch (java.util.NoSuchElementException e) {
-            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         }
     }
 

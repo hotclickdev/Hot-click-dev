@@ -3,7 +3,6 @@ package com.hotclick.service.pos;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.repository.PosQrSesionRepository;
-import com.hotclick.service.TilopayService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,54 +20,21 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** POS QR: tarjeta y SINPE Móvil por Tilopay (ONVO fuera del POS). */
+/** POS QR: cobro con pasarela (sin pasarela conectada) y cierre por webhook. */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Pago POS QR (Tilopay)")
+@DisplayName("Pago POS QR (pasarela)")
 class PosQrVentaServiceTest {
 
     @Mock PosQrSesionRepository posQrRepo;
-    @Mock TilopayService tilopayService;
     @Mock PosQrSessionService sessionService;
     @Mock PosQrVentaCompletionService completionService;
     @InjectMocks PosQrVentaService service;
 
     @Test
-    @DisplayName("SINPE inicia por Tilopay: fija el método y una orden POSQR-")
-    void sinpeIniciaPorTilopay() {
+    @DisplayName("Sin pasarela, el poll no da por pagada la sesión aunque tenga un id de pasarela")
+    void sinPasarelaPollNoPaga() {
         PosQrSesion sesion = sesionTarjeta();
-        sesion.setMetodosHabilitados("TARJETA,SINPE");
-        when(sessionService.findSesionActiva("tokentarjetaqr01")).thenReturn(sesion);
-        when(tilopayService.isPagosDisponibles()).thenReturn(true);
-        when(tilopayService.loginSdk()).thenReturn("sdk");
-
-        Map<String, Object> r = service.iniciarTilopay("tokentarjetaqr01", "SINPE");
-
-        assertThat(sesion.getMetodoPago()).isEqualTo("SINPE");
-        assertThat((String) r.get("orderNumber")).startsWith(PosQrVentaService.PREFIJO_TILOPAY);
-        assertThat(r).containsEntry("montoCrc", 5000).containsEntry("sdkToken", "sdk");
-    }
-
-    @Test
-    @DisplayName("Poll confirma con Tilopay (monto, CRC y orden) y marca PAGADO")
-    void pollTilopayMarcaPagado() {
-        PosQrSesion sesion = sesionTarjeta();
-        sesion.setMetodoPago("SINPE");
         sesion.setStripeSessionId("POSQR-ABC");
-        sesion.setFechaExpiracion(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));
-        when(posQrRepo.findByToken("tokentarjetaqr01")).thenReturn(Optional.of(sesion));
-        when(tilopayService.consultarTransaccion("POSQR-ABC")).thenReturn(new TilopayService.ConsultaResultado(
-            true, "1", "ok", "auth", new BigDecimal("5000"), "CRC", "POSQR-ABC", false));
-        when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(1);
-
-        assertThat(service.verificarEstado("tokentarjetaqr01")).isEqualTo("PAGADO");
-        verify(completionService).completarVentaTarjeta(sesion);
-    }
-
-    @Test
-    @DisplayName("Un id que no es de Tilopay (ONVO viejo) no se da por pagado")
-    void idNoTilopayNoPaga() {
-        PosQrSesion sesion = sesionTarjeta();
-        sesion.setStripeSessionId("onvo_pi_viejo");
         sesion.setFechaExpiracion(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));
         when(posQrRepo.findByToken("tokentarjetaqr01")).thenReturn(Optional.of(sesion));
 
