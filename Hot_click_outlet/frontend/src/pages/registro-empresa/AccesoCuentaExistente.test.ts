@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { muestraAccesoCuentaExistente } from './AccesoCuentaExistente'
+import { muestraAccesoCuentaExistente } from './accesoCuentaExistente'
 
 describe('AccesoCuentaExistente', () => {
   it('aparece solo con «Ese correo ya está registrado.»', () => {

@@ -1,11 +1,5 @@
 import { Link } from 'react-router-dom'
-
-/** Texto exacto que el backend devuelve cuando el correo ya tiene cuenta (RegistroDuplicadoException). */
-export const MENSAJE_CORREO_REGISTRADO = 'Ese correo ya está registrado.'
-
-export function muestraAccesoCuentaExistente(error: string | null | undefined): boolean {
-  return !!error && error.includes(MENSAJE_CORREO_REGISTRADO)
-}
+import { muestraAccesoCuentaExistente } from './accesoCuentaExistente'
 
 /** Único enlace permitido bajo «Ese correo ya está registrado.»: recuperar la cuenta (el código va a ese correo). */
 export default function AccesoCuentaExistente({ error }: { error: string | null | undefined }) {
