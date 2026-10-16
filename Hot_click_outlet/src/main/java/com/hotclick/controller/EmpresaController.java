@@ -82,6 +82,15 @@ public class EmpresaController {
         return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("cobrosPausados", pausados)));
     }
 
+    @PutMapping("/{id}/tienda-pausada")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO> cambiarTiendaPausada(@PathVariable Long id,
+                                                            @RequestBody Map<String, Object> body) {
+        boolean pausada = empresaAdminService.cambiarTiendaPausada(id, body.get("tiendaPausada"));
+        return ResponseEntity.ok(ResponseDTO.success(pausada ? "Tienda pausada" : "Tienda reanudada",
+            Map.of("tiendaPausada", pausada)));
+    }
+
     @GetMapping("/{id}/productos")
     public ResponseEntity<ResponseDTO> productos(
             @PathVariable Long id,

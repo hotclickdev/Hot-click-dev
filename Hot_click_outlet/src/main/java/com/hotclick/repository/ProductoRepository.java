@@ -108,7 +108,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
-        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND e.tienda_pausada = FALSE")
     List<Producto> findDestacadosPublicos(@Param("estado") Integer estado);
 
     @Query(nativeQuery = true, value =

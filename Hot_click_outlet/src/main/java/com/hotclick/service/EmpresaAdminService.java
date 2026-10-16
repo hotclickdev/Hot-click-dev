@@ -142,6 +142,21 @@ public class EmpresaAdminService {
         return pausar;
     }
 
+    /** Pausa o reanuda la tienda pública (410 TIENDA_PAUSADA). Queda auditado. */
+    @CacheEvict(value = "tenantInfo", key = "#id")
+    public boolean cambiarTiendaPausada(Long id, Object val) {
+        if (!(val instanceof Boolean pausar)) {
+            throw new IllegalArgumentException("Campo tiendaPausada requerido (true o false)");
+        }
+        Empresa empresa = empresa(id);
+        empresa.setTiendaPausada(pausar);
+        empresaRepository.save(empresa);
+        auditoriaAdminRegistroService.registrarSiAdmin(
+            pausar ? "EMPRESA_TIENDA_PAUSADA" : "EMPRESA_TIENDA_REANUDADA", "EMPRESA", id, id,
+            pausar ? "Pausada" : "Reanudada");
+        return pausar;
+    }
+
     public List<Map<String, Object>> productos(Long id, int page, int size) {
         empresa(id);
         int pageSize = Math.min(Math.max(size, 1), MAX_TAB_PRODUCTOS);

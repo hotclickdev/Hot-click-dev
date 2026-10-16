@@ -126,6 +126,14 @@ class EmpresaAdminServiceTest {
             eq("EMPRESA_COBROS_PAUSADOS"), eq("EMPRESA"), eq(5L), eq(5L), eq("Pausada"));
     }
 
+    @Test
+    @DisplayName("Pausa de tienda: sin booleano → 400 y no guarda")
+    void tiendaPausadaSinBooleanoRechaza() {
+        assertThatThrownBy(() -> service.cambiarTiendaPausada(6L, "x"))
+            .isInstanceOf(IllegalArgumentException.class);
+        verify(empresaRepository, never()).findById(6L);
+    }
+
     private static Empresa empresa(long id, String estado) {
         Empresa e = new Empresa();
         e.setId(id);
