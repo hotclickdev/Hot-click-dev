@@ -123,4 +123,10 @@ public class PayoutRequest {
     public void setTipoLiquidacion(String v) { this.tipoLiquidacion = v; }
     public Long getMetodoCobroId() { return metodoCobroId; }
     public void setMetodoCobroId(Long v) { this.metodoCobroId = v; }
+
+    /** Sin IBAN ni destino: el toString puede terminar en un log (auditoría IBAN/SINPE). */
+    @Override
+    public String toString() {
+        return "PayoutRequest{id=" + getId() + "}";
+    }
 }
