@@ -42,6 +42,7 @@ class PedidoRecibidoEmailTest {
         Pedido p = new Pedido();
         p.setNumeroPedido("ORD-TEST-1");
         p.setTotalPedido(15000);
+        p.setMetodoEnvio("ENVIO_NORMAL_GAM");
         Usuario u = new Usuario();
         u.setNombre("Ana");
         u.setCorreo(correo);
