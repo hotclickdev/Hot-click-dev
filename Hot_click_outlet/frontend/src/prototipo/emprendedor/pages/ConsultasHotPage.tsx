@@ -9,8 +9,8 @@ import { RUTA_EMPRENDEDOR } from '../constants'
 const CHIPS = ['Inventario', 'Finanzas', 'Características', 'Mejoras', 'Problemas'] as const
 
 // NP-7/NP-8: sin datos de demo de otro negocio (productos, ventas). Solo el saludo.
-export const CONVERSACION = [
-  { de: 'bot' as const, texto: '¡Hola! Soy el asistente de HotClick. Puedo ayudarte con inventario, finanzas, características, mejoras o problemas de tu tienda. ¿Qué necesitás?' },
+export const CONVERSACION: Array<{ de: 'bot' | 'user'; texto: string }> = [
+  { de: 'bot', texto: '¡Hola! Soy el asistente de HotClick. Puedo ayudarte con inventario, finanzas, características, mejoras o problemas de tu tienda. ¿Qué necesitás?' },
 ]
 
 export const RESPUESTA_SIN_COPILOT = 'Todavía no puedo leer los datos de tu tienda desde acá. Revisá Productos y Finanzas en tu panel, o escribinos por Ayuda.'
