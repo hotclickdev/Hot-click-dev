@@ -48,6 +48,11 @@ public class SolicitudAprobacionController {
         return ResponseDTO.success("Stats aprobacion", data);
     }
 
+    @GetMapping("/{id}/cuenta-cobro")
+    public ResponseEntity<ResponseDTO> cuentaCobro(@PathVariable Long id) {
+        return solicitudEmpresaHandler.cuentaCobro(id);
+    }
+
     @PutMapping("/{id}/aprobar")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id) {
         return solicitudEmpresaHandler.aprobar(id);
