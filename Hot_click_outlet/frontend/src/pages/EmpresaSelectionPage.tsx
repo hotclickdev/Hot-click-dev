@@ -8,6 +8,8 @@ import { mensajeErrorAuth } from './auth/authHelpers'
 import { rutaPanelPorRol } from '@/utils/planPaths'
 import type { AuthResponse } from '@/types/auth'
 import type { Id } from '@/types/api'
+import { useToast } from '@/components/ui/Toast'
+import { TEXTOS_MULTINEGOCIO as T, nombrePlan } from '@/features/multinegocio/multinegocioTextos'
 
 type EmpresaOpcion = {
   id: Id
@@ -15,6 +17,8 @@ type EmpresaOpcion = {
   slug?: string
   logoUrl?: string | null
   estadoEmpresa?: string
+  /** S2 multinegocio: plan del negocio, si el backend lo manda. */
+  planNombre?: string | null
 }
 
 type EmpresaSelectionState = {
@@ -26,6 +30,7 @@ export default function EmpresaSelectionPage() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const loginStore = useAuthStore((s) => s.login)
+  const toast = useToast()
 
   // Data passed from LoginPage via router state
   const { empresas = [], tempToken = '' } = (location.state ?? {}) as EmpresaSelectionState
@@ -44,6 +49,7 @@ export default function EmpresaSelectionPage() {
       if (authData.empresaId) {
         await useTenantStore.getState().loadTenantInfo()
       }
+      if (empresa.nombre) toast({ message: T.entraste(empresa.nombre), type: 'success' })
       navigate(rutaPanelPorRol(authData.rol, useTenantStore.getState().planNombre), { replace: true })
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, 'Error al seleccionar el negocio'))
@@ -69,10 +75,10 @@ export default function EmpresaSelectionPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>
-            Seleccioná tu negocio
+            {T.elegirTitulo}
           </h1>
           <p className="text-sm mt-2" style={{ color: 'var(--hc-muted)' }}>
-            Tenés acceso a {empresas.length} negocios. ¿A cuál entrás hoy?
+            {T.elegirSubtitulo}
           </p>
         </div>
 
@@ -111,8 +117,13 @@ export default function EmpresaSelectionPage() {
                   <span className="text-xs font-mono" style={{ color: 'var(--hc-muted)' }}>
                     @{emp.slug}
                   </span>
+                  {nombrePlan(emp.planNombre) && (
+                    <span className="text-xs px-2 py-0.5 rounded-[5px] bg-hc-danger-bg text-hc-primary font-bold">
+                      {T.plan(nombrePlan(emp.planNombre) as string)}
+                    </span>
+                  )}
                   {emp.estadoEmpresa === 'PENDIENTE_APROBACION' && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-medium">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-hc-warning-bg text-hc-warning font-medium">
                       Pendiente aprobación
                     </span>
                   )}
@@ -124,7 +135,7 @@ export default function EmpresaSelectionPage() {
                 {loading === emp.id
                   ? <div className="w-5 h-5 border-2 rounded-full animate-spin"
                       style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
-                  : <TrustGlyph tipo="adelante" className="w-5 h-5" />
+                  : <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}>{T.entrar}<TrustGlyph tipo="adelante" className="w-5 h-5" /></span>
                 }
               </div>
             </button>
@@ -132,7 +143,7 @@ export default function EmpresaSelectionPage() {
         </div>
 
         {error && (
-          <p className="mt-4 text-sm text-center text-red-400">{error}</p>
+          <p role="alert" className="mt-4 text-sm text-center text-hc-danger">{error}</p>
         )}
 
         <p className="mt-6 text-center text-xs" style={{ color: 'var(--hc-muted)' }}>

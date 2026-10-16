@@ -11,6 +11,7 @@ import { RequiereClerk } from '@/components/auth/ClerkDisponible'
 // La clave de Clerk se resuelve en runtime dentro de ClerkShell (static/ va sin VITE_*).
 const ClerkShell = lazy(() => import('@/components/auth/ClerkShell'))
 const SSOCallback = lazy(() => import('@/pages/SSOCallback'))
+const SinAccesoNegocioPage = lazy(() => import('@/features/multinegocio/SinAccesoNegocioPage'))
 const SSOComplete = lazy(() => import('@/pages/SSOComplete'))
 
 const InicioPlataforma = lazy(() => import('@/pages/plataforma/InicioPlataforma'))
@@ -142,6 +143,7 @@ export default function AppRoutes() {
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
       <Route path="/mode-select" element={<ModeSelector />} />
       <Route path="/seleccionar-negocio" element={<EmpresaSelectionPage />} />
+      <Route path="/negocio/sin-acceso" element={<SinAccesoNegocioPage />} />
       <Route path="/nosotros" element={<NosotrosPage />} />
       <Route path="/ayuda" element={<AyudaPage />} />
       <Route path="/contacto" element={<ContactoPage />} />
