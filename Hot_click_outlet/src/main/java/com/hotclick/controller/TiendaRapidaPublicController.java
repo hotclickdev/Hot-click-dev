@@ -30,6 +30,10 @@ public class TiendaRapidaPublicController {
     private final PasswordResetService claves;
     private static final Logger log = LoggerFactory.getLogger(TiendaRapidaPublicController.class);
 
+    /** S1-18: piso de tiempo al aceptar; un correo o cédula ya usados tardan lo mismo que un alta nueva. */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.registro.respuesta-min-ms:900}")
+    long respuestaMinMs;
+
     public TiendaRapidaPublicController(TiendaRapidaService tiendas, ClientIpResolver ips, IpConsentimientoHasher hasher,
                                         PasswordResetService claves) {
         this.tiendas = tiendas;
@@ -47,6 +51,15 @@ public class TiendaRapidaPublicController {
     @PostMapping("/{token}")
     public ResponseEntity<ResponseDTO> aceptar(@PathVariable String token, @Valid @RequestBody TiendaRapidaAceptarDTO body,
                                                HttpServletRequest request) {
+        long inicio = System.nanoTime();
+        try {
+            return aceptarSinPiso(token, body, request);
+        } finally {
+            com.hotclick.security.RespuestaUniforme.esperarMinimo(inicio, respuestaMinMs);
+        }
+    }
+
+    private ResponseEntity<ResponseDTO> aceptarSinPiso(String token, TiendaRapidaAceptarDTO body, HttpServletRequest request) {
         Map<String, Object> datos = tiendas.aceptar(
             token, Boolean.TRUE.equals(body.acepto()), body.versionLegal(), hasher.hash(ips.resolve(request)),
             body.persona(), body.cedula(), body.correo(), body.telefono());
