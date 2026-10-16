@@ -38,6 +38,7 @@ public class ProductoCatalogHandler {
     @Autowired private StockService        stockService;
     @Autowired private ProductoAccessGuard productoAccessGuard;
     @Autowired private ContactoTextoPublico contactoTexto;
+    @Autowired(required = false) private com.hotclick.service.producto.ProductoCatalogQueries catalogQueries;
 
     public ResponseEntity<ResponseDTO> listarProductos(int page, int size) {
         var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE_PUBLIC));
@@ -133,6 +134,8 @@ public class ProductoCatalogHandler {
         try {
             Producto producto = productoService.buscarPorId(id);
             productoAccessGuard.assertCanAccessProductoDetalle(producto);
+            // La ficha muestra el mismo nombre de vendedor que la tienda (nunca la bodega interna).
+            if (catalogQueries != null) catalogQueries.poblarBadgeEmpresa(producto);
             return ResponseEntity.ok(ResponseDTO.success("Producto encontrado", producto));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));

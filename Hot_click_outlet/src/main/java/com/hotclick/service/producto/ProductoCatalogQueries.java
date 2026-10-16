@@ -144,16 +144,18 @@ public class ProductoCatalogQueries {
         if (ids == null || ids.isEmpty()) return tiendas;
         for (Producto p : productoRepository.findAllById(ids)) {
             poblarBadgeEmpresa(p);
-            if (p.getEmpresaNombre() != null) tiendas.put(p.getId(), p.getEmpresaNombre());
+            // Solo tiendas públicas con enlace (las no públicas no se anuncian).
+            if (p.getEmpresaSlug() != null && p.getEmpresaNombre() != null) tiendas.put(p.getId(), p.getEmpresaNombre());
         }
         return tiendas;
     }
 
     public void poblarBadgeEmpresa(Producto p) {
         var e = p.getEmpresa();
-        if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
-        if (e.getId().equals(empresaPrincipalId)) return;
+        if (e == null || e.getId().equals(empresaPrincipalId)) return;
+        // Nombre del vendedor: siempre el de la tienda (nunca la bodega interna), con la misma regla que la tienda.
         p.setEmpresaNombre(com.hotclick.utils.EmpresaNombre.mostrar(e, null));
-        p.setEmpresaSlug(e.getSlug());
+        // El enlace a la tienda solo si es pública y tiene slug.
+        if (Boolean.TRUE.equals(e.getVisibilidadPublica()) && e.getSlug() != null) p.setEmpresaSlug(e.getSlug());
     }
 }
