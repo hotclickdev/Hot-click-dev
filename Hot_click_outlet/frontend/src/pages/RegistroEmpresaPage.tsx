@@ -17,6 +17,7 @@ import {
 import RegistroEmpresaAside from './registro-empresa/RegistroEmpresaAside'
 import StepDatosEmpresa from './registro-empresa/StepDatosEmpresa'
 import StepDatosAdmin from './registro-empresa/StepDatosAdmin'
+import EmprendimientoPasoVerificar from './auth/emprendimiento/EmprendimientoPasoVerificar'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
@@ -31,10 +32,11 @@ import {
   ubicacionIniciada,
 } from '@/prototipo/compartido/ubicacionDespachoHelpers'
 
-const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
+const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso', 'Verificá tu correo']
 const STEP_DESCS = [
   'Solo el nombre: el resto lo completás después.',
   'Con estos datos iniciás sesión en el panel.',
+  'Último paso: confirmá que el correo es tuyo.',
 ]
 const STEP_LABELS = ['Tu empresa', 'Tu cuenta']
 
@@ -92,9 +94,15 @@ export default function RegistroEmpresaPage() {
     inscritoTributacion: false,
   })
   const ubicacion = useUbicacionDespachoForm()
+  // BUG-S1-08: el registro manda un código al correo; se pide acá antes de entrar al panel.
+  const [correoReg, setCorreoReg] = useState('')
+  const [otpFallo, setOtpFallo] = useState(false)
+  const [codigoVerif, setCodigoVerif] = useState('')
+  const [reenvioLoad, setReenvioLoad] = useState(false)
 
   const destino = destinoVender({ tokenVivo: isTokenAlive(token), rol: userRole, empresaId })
-  if (destino !== RUTA_REGISTRO_EMPRESA) {
+  // Con la sesión recién creada el destino ya no es el registro: no redirigir mientras pide el código.
+  if (destino !== RUTA_REGISTRO_EMPRESA && step !== 2) {
     return <Navigate to={destino} replace />
   }
 
@@ -155,12 +163,9 @@ export default function RegistroEmpresaPage() {
       const authData = authDataRegistroEmpresa(data)
       if (authData?.accessToken) {
         loginStore(authData)
-        if (planPago && planQuery) {
-          navigate(`/registro-empresa/activar-plan?plan=${planQuery}`)
-          return
-        }
-        toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
-        navigate(RUTA_PANEL_VENDEDOR)
+        setCorreoReg(form.correoAdmin.trim().toLowerCase())
+        setOtpFallo(authData.otpEnviado === false)
+        setStep(2)
         return
       }
       setError('Registro incompleto. Intentá de nuevo.')
@@ -171,6 +176,49 @@ export default function RegistroEmpresaPage() {
       resetTurnstile()
     } finally {
       setLoading(false)
+    }
+  }
+
+  const entrarAlPanel = () => {
+    if (planPago && planQuery) {
+      navigate(`/registro-empresa/activar-plan?plan=${planQuery}`)
+      return
+    }
+    navigate(RUTA_PANEL_VENDEDOR)
+  }
+
+  const handleVerificar = async (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (codigoVerif.trim().length !== 6) {
+      setError('Ingresá el código de 6 dígitos')
+      return
+    }
+    setLoading(true)
+    try {
+      await authService.verificarCorreoNegocio(correoReg, codigoVerif.trim())
+      useAuthStore.getState().setCorreoVerificado(true)
+      toast({ message: '¡Correo verificado! Bienvenido a tu panel.', type: 'success' })
+      entrarAlPanel()
+    } catch (err: unknown) {
+      setError(mensajeErrorAuth(err, 'Código incorrecto o expirado') || 'Código incorrecto o expirado')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReenviar = async () => {
+    setReenvioLoad(true)
+    setError('')
+    try {
+      await authService.reenviarCodigoNegocio()
+      setOtpFallo(false)
+      setCodigoVerif('')
+      toast({ message: `Código reenviado a ${correoReg}`, type: 'success' })
+    } catch (err: unknown) {
+      toast({ message: mensajeErrorAuth(err, 'Error al reenviar el código') || 'Error al reenviar el código', type: 'error' })
+    } finally {
+      setReenvioLoad(false)
     }
   }
 
@@ -255,7 +303,7 @@ export default function RegistroEmpresaPage() {
                   </p>
                 </div>
 
-                <BarraProgreso step={step} />
+                {step < 2 && <BarraProgreso step={step} />}
 
                 <AnimatePresence mode="wait">
                   {step === 0 && (
@@ -287,6 +335,15 @@ export default function RegistroEmpresaPage() {
                       onTurnstileToken={setTurnstileToken}
                       onSubmit={handleSubmit}
                       onAtras={() => { setStep(0); setError('') }}
+                    />
+                  )}
+                  {step === 2 && (
+                    <EmprendimientoPasoVerificar
+                      key="s2"
+                      correoReg={correoReg} otpFalló={otpFallo} codigoVerif={codigoVerif}
+                      error={error} loading={loading} reenvioLoad={reenvioLoad}
+                      setCodigoVerif={setCodigoVerif}
+                      onSubmit={handleVerificar} onReenviar={handleReenviar}
                     />
                   )}
                 </AnimatePresence>
