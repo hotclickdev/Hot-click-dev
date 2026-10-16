@@ -153,7 +153,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
            "WHERE p.empresa.id = :empresaId AND p.estadoPedido = 'ENTREGADO'")
     List<Pedido> findEntregadosConItemsByEmpresaId(@Param("empresaId") Long empresaId);
 
-    @Query("SELECT p FROM Pedido p LEFT JOIN FETCH p.items i LEFT JOIN FETCH i.producto " +
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items i LEFT JOIN FETCH i.producto LEFT JOIN FETCH p.usuarioFinal " +
            "WHERE p.empresa.id = :empresaId AND p.origen = :origen " +
            "ORDER BY p.fechaPedido DESC")
     List<Pedido> findByEmpresaIdAndOrigenOrderByFechaPedidoDesc(

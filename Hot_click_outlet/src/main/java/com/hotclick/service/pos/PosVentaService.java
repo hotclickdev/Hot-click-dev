@@ -75,8 +75,37 @@ public class PosVentaService {
         return saved;
     }
 
-    public List<Pedido> historial(Long empresaId) {
-        return pedidoRepository.findByEmpresaIdAndOrigenOrderByFechaPedidoDesc(empresaId, "POS");
+    /**
+     * NP-12: antes devolvía las entidades y Jackson tocaba relaciones LAZY fuera de la transacción → 500.
+     * Ahora arma solo lo que muestra el historial, dentro de una transacción de lectura y con una sola consulta.
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> historial(Long empresaId) {
+        return pedidoRepository.findByEmpresaIdAndOrigenOrderByFechaPedidoDesc(empresaId, "POS").stream()
+            .map(PosVentaService::aFilaHistorial).toList();
+    }
+
+    static java.util.Map<String, Object> aFilaHistorial(Pedido p) {
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", p.getId());
+        m.put("numeroPedido", p.getNumeroPedido());
+        m.put("fechaPedido", p.getFechaPedido());
+        m.put("metodoPago", p.getMetodoPago());
+        m.put("totalPedido", p.getTotalPedido());
+        m.put("descuentoTotal", p.getDescuentoTotal());
+        m.put("usuarioFinal", p.getUsuarioFinal() != null
+            ? java.util.Map.of("nombre", java.util.Objects.toString(p.getUsuarioFinal().getNombre(), "")) : null);
+        List<java.util.Map<String, Object>> items = new ArrayList<>();
+        for (PedidoItem i : p.getItems() != null ? p.getItems() : List.<PedidoItem>of()) {
+            java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+            it.put("producto", i.getProducto() != null
+                ? java.util.Map.of("nombreProducto", java.util.Objects.toString(i.getProducto().getNombreProducto(), "")) : null);
+            it.put("cantidad", i.getCantidad());
+            it.put("subtotalItem", i.getSubtotalItem());
+            items.add(it);
+        }
+        m.put("items", items);
+        return m;
     }
 
     private Usuario resolverCliente(Long clienteId) {
