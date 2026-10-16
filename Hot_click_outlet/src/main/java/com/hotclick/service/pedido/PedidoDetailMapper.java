@@ -85,6 +85,7 @@ public class PedidoDetailMapper {
         m.put("costoEnvio",    p.getCostoEnvio());
         m.put("numeroGuia",    p.getNumeroGuia());
         m.put("notas",         p.getNotas());
+        m.put("direccionEntrega", p.getDireccionEntrega());
         try {
             String rawN = p.getNotificaciones();
             m.put("notificaciones", objectMapper.readValue(

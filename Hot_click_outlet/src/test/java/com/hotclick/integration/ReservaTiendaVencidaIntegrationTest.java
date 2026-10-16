@@ -51,6 +51,7 @@ class ReservaTiendaVencidaIntegrationTest extends BaseIntegrationTest {
         Assertions.assertEquals(0, productoRepository.findById(p.getId()).orElseThrow().getStockReservado());
         Pedido pedido = pedidoRepository.findAll().get(0);
         Assertions.assertEquals(Constants.PEDIDO_CANCELADO, pedido.getEstadoPedido());
+        Assertions.assertEquals("San José, centro", pedido.getDireccionEntrega()); // NP-18
     }
 
     private org.springframework.test.web.servlet.ResultActions pedir(String slug, Producto p, String metodo) throws Exception {
