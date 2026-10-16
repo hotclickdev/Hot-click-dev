@@ -24,7 +24,7 @@ describe('clavePlanPendiente', () => {
       expect(json.planPendiente.pyme).toMatch(/Pyme/)
       expect(json.planPendiente.negocioPlus).toMatch(/Negocio Plus/)
     }
-    const es = (await import('../../i18n/locales/es.json')).default as Record<string, Record<string, string>>
+    const es = (await import('../../i18n/locales/es.json')).default as unknown as Record<string, Record<string, string>>
     expect(es.planPendiente.pyme).toBe('Tu plan Pyme se activa apenas se confirme el pago. Mientras tanto tu tienda funciona con las funciones de Emprendedor.')
   })
 })
