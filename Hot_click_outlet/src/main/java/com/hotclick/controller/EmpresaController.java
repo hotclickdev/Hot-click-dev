@@ -26,6 +26,7 @@ public class EmpresaController {
 
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaAdminService empresaAdminService;
+    @Autowired private com.hotclick.service.negocio.EmpresaDestacadoService empresaDestacadoService;
     @Autowired private ImpersonacionService impersonacionService;
     @Autowired private UbicacionDespachoService ubicacionDespachoService;
 
@@ -79,7 +80,7 @@ public class EmpresaController {
     public ResponseEntity<ResponseDTO> cambiarDestacado(@PathVariable Long id,
                                                         @RequestBody Map<String, Object> body) {
         companyScope.assertCanAccess(id);
-        Map<String, Object> r = empresaAdminService.cambiarDestacado(id, body.get("destacado"), body.get("orden"));
+        Map<String, Object> r = empresaDestacadoService.cambiar(id, body.get("destacado"), body.get("orden"));
         String msg = Boolean.TRUE.equals(r.get("destacado")) ? "Negocio destacado en el inicio" : "Negocio quitado del inicio";
         return ResponseEntity.ok(ResponseDTO.success(msg, r));
     }

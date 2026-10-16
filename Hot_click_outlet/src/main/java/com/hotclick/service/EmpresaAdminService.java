@@ -128,37 +128,6 @@ public class EmpresaAdminService {
         return visible;
     }
 
-    /**
-     * Carrusel del inicio: el superadmin destaca o quita un negocio. Solo se destacan negocios activos y visibles;
-     * {@code orden} opcional (menor primero). Devuelve el estado guardado.
-     */
-    public Map<String, Object> cambiarDestacado(Long id, Object val, Object orden) {
-        if (val == null) throw new IllegalArgumentException("Campo destacado requerido");
-        Empresa empresa = empresa(id);
-        boolean destacar = Boolean.parseBoolean(val.toString());
-        Integer posicion = null;
-        if (orden != null && !orden.toString().isBlank()) {
-            try {
-                posicion = Integer.valueOf(orden.toString().trim());
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("El orden tiene que ser un número");
-            }
-            if (posicion < 0 || posicion > 999) throw new IllegalArgumentException("El orden va de 0 a 999");
-        }
-        if (destacar && (!"ACTIVO".equals(empresa.getEstadoEmpresa()) || !Boolean.TRUE.equals(empresa.getVisibilidadPublica()))) {
-            throw new IllegalArgumentException("Solo se pueden destacar negocios activos y visibles al público.");
-        }
-        if (destacar && !Boolean.TRUE.equals(empresa.getDestacado())) empresa.setDestacadoDesde(java.time.LocalDateTime.now());
-        if (!destacar) empresa.setDestacadoDesde(null);
-        empresa.setDestacado(destacar);
-        empresa.setDestacadoOrden(destacar ? posicion : null);
-        empresaRepository.save(empresa);
-        Map<String, Object> r = new HashMap<>();
-        r.put("destacado", destacar);
-        r.put("destacadoOrden", empresa.getDestacadoOrden());
-        return r;
-    }
-
     public List<Map<String, Object>> productos(Long id, int page, int size) {
         empresa(id);
         int pageSize = Math.min(Math.max(size, 1), MAX_TAB_PRODUCTOS);
