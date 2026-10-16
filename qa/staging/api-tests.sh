@@ -5,7 +5,7 @@ BASE="${BASE_URL:-http://localhost:8080}"
 FAIL=0
 
 b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-# JWT HS256 de prueba (Backend confirmado): el filtro staging lee Authorization: Bearer y los claims email y role.
+# JWT HS256 de prueba. TODO(Backend): ajustar claims (sub/email/role) a lo que lea el filtro del perfil staging.
 jwt() {
   local email="$1" role="$2" now; now=$(date +%s)
   local h p s
@@ -35,15 +35,18 @@ check "destacar sin token → 401/403"        '401|403' PATCH /api/productos/920
 check "control: destacar como admin → 200"      200 PATCH /api/productos/9201/destacado "$ADMIN"     '{"destacado":true}'
 
 echo "== Contra entrega =="
-# Backend: envío normal = metodoEnvio que empieza con ENVIO_NORMAL (ContraEntregaPolitica). provider CONTRA_ENTREGA es el valor
-# que ya usa PedidoPagoManualService, PERO /api/payments/checkout todavía no valida contra entrega vs metodoEnvio → este caso hoy NO da 400 (pendiente).
+# Confirmado por Backend: provider CONTRA_ENTREGA; envío normal = valores ENVIO_NORMAL*.
+# El metodoEnvio del caso 400 NO debe empezar con ENVIO_NORMAL.
+METODO_NO_NORMAL="EXPRESS"
+[[ "$METODO_NO_NORMAL" == ENVIO_NORMAL* ]] && { echo "FAIL config: METODO_NO_NORMAL no puede empezar con ENVIO_NORMAL"; exit 1; }
 check "contra entrega con envío no normal → 400" 400 POST /api/payments/checkout "$COMPRADOR" \
-  '{"provider":"CONTRA_ENTREGA","bodegaId":9301,"metodoEnvio":"EXPRESS","direccionEntrega":"Dirección ficticia, San José","items":[{"productoId":9201,"cantidad":1}]}'
+  '{"provider":"CONTRA_ENTREGA","bodegaId":9301,"metodoEnvio":"'"$METODO_NO_NORMAL"'","direccionEntrega":"Dirección ficticia, San José","items":[{"productoId":9201,"cantidad":1}]}'
 
 echo "== Tienda pausada =="
-# Backend: ruta confirmada GET /api/tienda/{slug} (StorefrontController). La pausa implementada (feat/pausa-cobros-tienda,
-# columna cobros_pausados) solo bloquea el pago en línea con 400; no oculta la tienda ni la saca de destacados (pendiente S3-35).
-check "tienda pausada no se expone → 404/410/403" '404|410|403' GET /api/tienda/tienda-pausada
+# Ruta pública confirmada: /api/tienda/{slug}.
+# Backend: tienda pausada (columna tienda_pausada, V181) → 410 con {"code":"TIENDA_PAUSADA"}; excluida de /api/productos/destacados.
+check "tienda pausada → 410 TIENDA_PAUSADA" 410 GET /api/tienda/tienda-pausada
+jq -e '.code == "TIENDA_PAUSADA"' /tmp/resp.json >/dev/null || { echo "FAIL falta code TIENDA_PAUSADA"; FAIL=1; }
 check "control: tienda activa → 200"              200           GET /api/tienda/tienda-activa
 check "compra en tienda pausada → 4xx"     '400|403|404|409|422' POST /api/payments/checkout "$COMPRADOR" \
   '{"provider":"CONTRA_ENTREGA","metodoEnvio":"ENVIO_NORMAL","direccionEntrega":"Dirección ficticia, San José","items":[{"productoId":9202,"cantidad":1}]}'

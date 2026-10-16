@@ -13,13 +13,14 @@ Backend lo implementa en su rama `feat/staging-backend` (incluye `application-st
 2. **Autenticación de prueba solo en staging** (camino alternativo, amenaza `staging-auth-jwt` en
    `docs/security/amenazas-activas.md`):
    - Filtro que acepta JWT HS256 firmados con `STAGING_JWT_SECRET`, mapeando `email`→usuario y `role`→`ROLE_*`.
-   - Se registra **solo si** el perfil `staging` está activo **Y** `STAGING_JWT_SECRET` está presente
-     (`@Profile("staging")` + condición sobre la variable). Si falta cualquiera, el filtro no existe.
-   - **La app NO arranca** si `STAGING_JWT_SECRET` existe sin el perfil `staging` activo. Eso cubre el
-     perfil default (con el que corre prod) y cualquier perfil `prod`.
-   - **Test obligatorio** (Backend): con perfil default y `STAGING_JWT_SECRET` seteada, el contexto falla
-     al arrancar; con `staging` sin la variable, el filtro no se registra.
-   - `STAGING_JWT_SECRET` **nunca** va en el `.env` de prod ni en secrets del repo: el workflow la genera
+   - Se registra **solo si** se cumplen las tres: perfil `staging` activo **Y** `STAGING_AUTH_ENABLED=true`
+     **Y** `STAGING_JWT_SECRET` presente (`@Profile("staging")` + condiciones sobre ambas variables).
+     Si falta cualquiera, el filtro no existe.
+   - **La app NO arranca** si `STAGING_AUTH_ENABLED` o `STAGING_JWT_SECRET` (cualquiera de las dos) existe
+     sin el perfil `staging` activo. Eso cubre el perfil default (con el que corre prod) y cualquier `prod`.
+   - **Test obligatorio** (Backend): con perfil default y cada una de las variables seteada, el contexto
+     falla al arrancar; con `staging` y una de las dos faltando, el filtro no se registra.
+   - `STAGING_AUTH_ENABLED` y `STAGING_JWT_SECRET` **nunca** van en el `.env` de prod ni en secrets del repo: el workflow la genera
      en cada corrida (`openssl rand`) y muere con el runner.
 3. **Seed** `qa/staging/seed-staging.sql` (en `feat/staging-backend`): completar los INSERT con tablas/columnas reales e IDs fijos
    (usuarios 9001-9003, empresas 9101 activa / 9102 pausada, productos 9201/9202, bodega 9301). IBAN solo `CR00 0000 0000 0000 0000 00`.

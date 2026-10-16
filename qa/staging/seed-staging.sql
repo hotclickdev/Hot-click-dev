@@ -10,7 +10,7 @@
 --   usuario 9002 vendedor@staging.test    rol EMPRENDEDOR (dueño de empresa 9101)
 --   usuario 9003 comprador@staging.test   rol CLIENTE
 --   empresa 9101 slug 'tienda-activa'   estado APROBADO
---   empresa 9102 slug 'tienda-pausada'  estado PAUSADO, visible_catalogo = FALSE
+--   empresa 9102 slug 'tienda-pausada'  estado_empresa ACTIVO, visibilidad_publica TRUE, tienda_pausada TRUE (→ 410)
 --   producto 9201 de 9101 (stock 50), producto 9202 de 9102 (stock 50)
 --   bodega 9301 de 9101
 BEGIN;
