@@ -27,6 +27,7 @@ const AgregarMetodoCobroPage = lazy(() => import('./pages/AgregarMetodoCobroPage
 const AyudaPage = lazy(() => import('./pages/AyudaPage'))
 const ConsultasHotPage = lazy(() => import('./pages/ConsultasHotPage'))
 const ProximamentePage = lazy(() => import('./pages/ProximamentePage'))
+const FuncionNoIncluidaPage = lazy(() => import('./pages/FuncionNoIncluidaPage'))
 const BodegasPage = lazy(() => import('./pages/BodegasPage'))
 const NuevaBodegaPage = lazy(() => import('./pages/NuevaBodegaPage'))
 const PedidosPage = lazy(() => import('./pages/PedidosPage'))
@@ -117,6 +118,9 @@ export default function EmprendedorRoutes() {
         <Route path="proximamente/reportes" element={<Navigate to={`${RUTA_EMPRENDEDOR}/reportes`} replace />} />
         <Route path="proximamente/negocio" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/negocio`} replace />} />
         <Route path="proximamente" element={page(ProximamentePage)} />
+        {/* QA-NEG-016: CRM y sucursales no están en el plan Emprendedor; por dirección, aviso sin datos. */}
+        <Route path="crm/*" element={<LazyPage><FuncionNoIncluidaPage funcion="CRM" /></LazyPage>} />
+        <Route path="sucursales/*" element={<LazyPage><FuncionNoIncluidaPage funcion="Sucursales" /></LazyPage>} />
         <Route path="pedidos" element={page(PedidosPage)} />
       </Route>
       <Route element={<EmprendedorShell sinCabecera />}>
