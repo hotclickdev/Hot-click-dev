@@ -1,1 +1,0 @@
-import{Lt as e}from"./index-D49wYAWq.js";function t(t){return e(Math.round(t??0))}export{t};
