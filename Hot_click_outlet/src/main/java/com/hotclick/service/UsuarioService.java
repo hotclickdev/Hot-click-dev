@@ -73,10 +73,10 @@ public class UsuarioService {
     @Transactional
     public Usuario registrarUsuario(Usuario usuario) {
         if (usuarioRepository.existsByCorreoAndEstadoNot(usuario.getCorreo(), Constants.ESTADO_ELIMINADO)) {
-            throw new IllegalArgumentException("El correo ya está registrado");
+            throw new com.hotclick.exception.RegistroDuplicadoException();
         }
         if (usuarioRepository.existsByIdentificacionAndEstadoNot(usuario.getIdentificacion(), Constants.ESTADO_ELIMINADO)) {
-            throw new IllegalArgumentException("La identificación ya está registrada");
+            throw new com.hotclick.exception.RegistroDuplicadoException();
         }
         Optional<Rol> rolDefault = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);
         if (rolDefault.isPresent()) {
@@ -148,10 +148,10 @@ public class UsuarioService {
     @Transactional
     public Usuario registrarSolicitud(Usuario usuario) {
         if (usuarioRepository.existsByCorreoAndEstadoNot(usuario.getCorreo(), Constants.ESTADO_ELIMINADO)) {
-            throw new IllegalArgumentException("El correo ya está registrado");
+            throw new com.hotclick.exception.RegistroDuplicadoException();
         }
         if (usuarioRepository.existsByIdentificacionAndEstadoNot(usuario.getIdentificacion(), Constants.ESTADO_ELIMINADO)) {
-            throw new IllegalArgumentException("La identificación ya está registrada");
+            throw new com.hotclick.exception.RegistroDuplicadoException();
         }
         usuario.setId(null);
         usuario.getRoles().clear();
@@ -168,11 +168,11 @@ public class UsuarioService {
     @Transactional
     public Usuario registrarPendiente(Usuario usuario) {
         if (usuarioRepository.existsByCorreoAndEstadoNot(usuario.getCorreo().trim(), Constants.ESTADO_ELIMINADO)) {
-            throw new IllegalArgumentException("El correo ya está registrado");
+            throw new com.hotclick.exception.RegistroDuplicadoException();
         }
         if (usuario.getIdentificacion() != null && !usuario.getIdentificacion().isBlank()
                 && usuarioRepository.existsByIdentificacionAndEstadoNot(usuario.getIdentificacion().trim(), Constants.ESTADO_ELIMINADO)) {
-            throw new IllegalArgumentException("La identificación ya está registrada");
+            throw new com.hotclick.exception.RegistroDuplicadoException();
         }
         Optional<Rol> rolDefault = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);
         usuario.setId(null);
