@@ -74,7 +74,7 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
         {form.metodo === 'TRANSFERENCIA' && (
           <>
             <label htmlFor="bil-iban" className="block text-xs text-hc-muted mb-1">IBAN</label>
-            <input id="bil-iban" className="input-base w-full mb-3" placeholder="CR21 0152 0200 1026 2840 66"
+            <input id="bil-iban" className="input-base w-full mb-3" placeholder="CR00 0000 0000 0000 0000 00"
               value={form.destinoIban} onChange={set('destinoIban')} />
             <label htmlFor="bil-titular" className="block text-xs text-hc-muted mb-1">Nombre del titular</label>
             <input id="bil-titular" className="input-base w-full mb-3"
