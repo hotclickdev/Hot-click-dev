@@ -20,6 +20,7 @@ public class AdminComisionController {
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private CompanyScope companyScope;
+    @Autowired private com.hotclick.service.AuditoriaAdminRegistroService auditoria;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> obtener() {
@@ -42,6 +43,7 @@ public class AdminComisionController {
         }
         Empresa empresa = empresaRepository.findById(destino)
             .orElseThrow(() -> new IllegalStateException("Empresa no encontrada: " + destino));
+        String antes = resumen(empresa);
         try {
             if (body.get("pctComisionTarjeta") != null) {
                 empresa.setPctComisionTarjeta(porcentaje(body.get("pctComisionTarjeta")));
@@ -58,6 +60,9 @@ public class AdminComisionController {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Valores de comisión fuera de rango (0 a 50 %)"));
         }
         empresaRepository.save(empresa);
+        // AUD-1: todo cambio de comisión queda auditado (antes → después).
+        auditoria.registrar("COMISION_ACTUALIZADA", "EMPRESA", destino, destino,
+            antes + " -> " + resumen(empresa));
         return ResponseEntity.ok(ResponseDTO.success("Comisión actualizada", toMap(empresa)));
     }
 
@@ -73,6 +78,11 @@ public class AdminComisionController {
         data.put("pct", empresa.getPctComisionTarjeta());
         data.put("fijo", empresa.getMontoFijoComisionCrc());
         return ResponseEntity.ok(ResponseDTO.success("Precio sugerido", data));
+    }
+
+    private static String resumen(Empresa e) {
+        return "tarjeta=" + e.getPctComisionTarjeta() + "% fijo=" + e.getMontoFijoComisionCrc()
+            + " sinpe=" + e.getPctDescuentoSinpe() + "%";
     }
 
     private static final BigDecimal PCT_MAX = new BigDecimal("50");
