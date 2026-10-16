@@ -46,8 +46,27 @@ public class CheckoutGrupoFactory {
         }
     }
 
+    /**
+     * CMP-4: la {@code bodegaId} del body tiene que ser de un negocio que vende algo del carrito.
+     * Si no se mandó (default HotClick) o la bodega no tiene negocio, no se exige.
+     */
+    static void exigirBodegaDeLaTienda(PaymentCheckoutRequest req, java.util.Map<Long, com.hotclick.model.Producto> productos,
+                                       Bodega bodega) {
+        if (req.getBodegaId() == null || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
+        Long empresaBodega = bodega.getEmpresa().getId();
+        boolean coincide = productos.values().stream()
+            .anyMatch(p -> empresaBodega.equals(empresaDe(p)));
+        if (!coincide) throw new IllegalArgumentException("La bodega elegida no es de la tienda de estos productos.");
+    }
+
+    private static Long empresaDe(com.hotclick.model.Producto p) {
+        if (p.getEmpresa() != null) return p.getEmpresa().getId();
+        return p.getBodega() != null && p.getBodega().getEmpresa() != null ? p.getBodega().getEmpresa().getId() : null;
+    }
+
     public Grupo crear(PaymentCheckoutRequest req, StockReservationResult reservation, Bodega bodegaDefault,
                        String provider, Usuario usuario, String estadoInicial) {
+        exigirBodegaDeLaTienda(req, reservation.productosMap(), bodegaDefault);
         List<CheckoutPaquetesPlanner.Paquete> paquetes =
             planner.planificar(req, reservation.productosMap(), bodegaDefault);
         for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
