@@ -62,14 +62,14 @@ public class EmpresaPerfilService {
 
     static final String MSG_WHATSAPP = "El WhatsApp solo puede tener números (8 dígitos, ej. 8888-1234).";
 
-    /** Pyme: WhatsApp aceptaba texto («QA-TEST abc»). Vacío → null; 8 dígitos CR (con o sin +506); o internacional +E.164. */
+    /** Pyme: WhatsApp aceptaba texto («QA-TEST abc»). Vacío → null; 8 dígitos CR o 506+8 (solo dígitos); o internacional +E.164. */
     static String normalizarWhatsapp(String valor) {
         if (valor == null || valor.isBlank()) return null;
         String t = valor.trim();
         if (!t.matches("[\\d\\s+()\\-]+")) throw new IllegalArgumentException(MSG_WHATSAPP);
         String d = t.replaceAll("\\D", "");
-        if (d.length() == 11 && d.startsWith("506")) d = d.substring(3);
-        if (d.length() == 8) return d;
+        // Se guarda como venía (8 dígitos o 506 + 8), solo con dígitos: el formato existente no cambia.
+        if (d.length() == 8 || (d.length() == 11 && d.startsWith("506"))) return d;
         if (t.startsWith("+") && d.length() >= 10 && d.length() <= 15) return "+" + d;
         throw new IllegalArgumentException(MSG_WHATSAPP);
     }
