@@ -10,6 +10,14 @@ public class RegistroDuplicadoException extends IllegalArgumentException {
     public static final String MENSAJE =
         "No pudimos completar el registro; si ya tenés cuenta, iniciá sesión o recuperá el acceso";
 
+    /** Alta de negocio: mismo texto exista o no la cuenta, con la salida para quien ya la tiene. */
+    public static final String MENSAJE_EMPRESA =
+        "No pudimos completar el registro. ¿Ya tenés cuenta? Iniciá sesión o recuperá tu contraseña";
+
+    public RegistroDuplicadoException(String mensaje) {
+        super(mensaje);
+    }
+
     public RegistroDuplicadoException() {
         super(MENSAJE);
     }

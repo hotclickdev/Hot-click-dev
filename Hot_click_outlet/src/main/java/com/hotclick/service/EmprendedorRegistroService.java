@@ -68,7 +68,7 @@ public class EmprendedorRegistroService {
             ? dto.getCorreoEmpresa().trim().toLowerCase()
             : dto.getCorreoAdmin().trim().toLowerCase();
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa))
-            throw new IllegalArgumentException("Ya existe una empresa registrada con ese correo");
+            throw new com.hotclick.exception.RegistroDuplicadoException(com.hotclick.exception.RegistroDuplicadoException.MENSAJE_EMPRESA);
 
         Optional<UbicacionDespachoAlta> ubicacion = bodegaDespachoInicialService.normalizar(dto.ubicacionDespacho());
 
