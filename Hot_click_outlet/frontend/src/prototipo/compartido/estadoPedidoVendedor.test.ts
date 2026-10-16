@@ -85,7 +85,7 @@ describe('efectivo con retiro (paga al retirar)', () => {
   it.each([
     ['EFECTIVO', 'ENVIO_A_DOMICILIO', 'PENDIENTE_COMPROBANTE'],
     ['SINPE', 'RETIRO_EN_TIENDA', 'PENDIENTE_COMPROBANTE'],
-    ['TILOPAY', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
+    ['ONVO', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
     ['EFECTIVO', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
   ])('%s + %s en %s sigue en "Esperando pago"', (metodoPago, metodoEnvio, estado) => {
     expect(pagaAlRetirar(estado, { metodoPago, metodoEnvio })).toBe(false)

@@ -22,9 +22,4 @@ export const posService = {
   infoQrSesion:   (token: string)          => publicApi.get(`/pos/qr/pago/${token}`).then(r => r.data),
   estadoQrSesion: (token: string)          => publicApi.get(`/pos/qr/pago/${token}/estado`).then(r => r.data),
   comprobanteQrSesion: (token: string)     => publicApi.get(`/pos/qr/pago/${token}/comprobante`).then(r => r.data),
-  // Tarjeta y SINPE Móvil por Tilopay (ONVO ya no se usa en el POS)
-  iniciarTilopayQr: (token: string, metodo?: 'TARJETA' | 'SINPE') =>
-    publicApi.post(`/pos/qr/pago/${token}/tilopay`, null, { params: metodo ? { metodo } : undefined }).then(r => r.data),
-  confirmarTilopayQr: (token: string)      =>
-    publicApi.post<{ pagado: boolean }>(`/pos/qr/pago/${token}/tilopay/confirmar`).then(r => r.data),
 }

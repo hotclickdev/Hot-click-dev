@@ -50,7 +50,7 @@ const clausulas = [
     num: 'CLÁUSULA TERCERA',
     title: 'Condiciones Económicas y Comisiones (Vendedores)',
     content: (
-      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva según el plan contratado: porcentajes [PENDIENTE] que se publican en /planes antes de contratar, además de la mensualidad del plan cuando corresponda. HotClick gestiona la pasarela de pagos (Tilopay para tarjeta y ONVO para las mensualidades) y retiene los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
+      <p>El Vendedor acepta que el uso de los servicios de intermediación de la Plataforma está sujeto al pago de una comisión por transacción efectiva según el plan contratado: porcentajes [PENDIENTE] que se publican en /planes antes de contratar, además de la mensualidad del plan cuando corresponda. HotClick gestiona la pasarela de pagos (ONVO) y retiene los montos correspondientes a sus honorarios antes de liquidar los saldos netos a favor del Vendedor, en los plazos y formas pactados internamente.</p>
     ),
   },
   {
@@ -75,7 +75,7 @@ const clausulas = [
     content: (
       <>
         <p>Los precios se expresan en colones costarricenses (₡) e incluyen los impuestos aplicables. El costo de envío se muestra antes de confirmar el pago.</p>
-        <p>HotClick acepta SINPE Móvil y tarjetas Visa y Mastercard. El cobro con tarjeta lo procesan pasarelas certificadas (Tilopay para pagos con tarjeta y ONVO para las mensualidades de los planes). HotClick no recopila, no almacena ni tiene acceso al número completo de la tarjeta, la fecha de vencimiento ni el código de seguridad (CVV/CVC).</p>
+        <p>HotClick acepta SINPE Móvil y tarjetas Visa y Mastercard. El cobro con tarjeta lo procesa una pasarela certificada (ONVO), también para las mensualidades de los planes. HotClick no recopila, no almacena ni tiene acceso al número completo de la tarjeta, la fecha de vencimiento ni el código de seguridad (CVV/CVC).</p>
         <p>Cuando procede un reembolso, vuelve por el mismo medio usado para pagar.</p>
       </>
     ),

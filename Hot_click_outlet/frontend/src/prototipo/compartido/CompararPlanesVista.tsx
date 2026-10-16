@@ -1,10 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
-import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
-import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
+import FormularioPorPasos from './FormularioPorPasos'
 import type { Id } from '@/types/api'
 import {
   mapApiPlanToUi,
@@ -44,9 +42,7 @@ export default function CompararPlanesVista({
     loadingPlan,
     error,
     setError,
-    pagoPendiente,
     seleccionarPlan,
-    cancelarPago,
   } = useCambiarPlan({ rutaExito })
 
   useEffect(() => {
@@ -60,10 +56,6 @@ export default function CompararPlanesVista({
       .catch(() => setError('No se pudieron cargar los planes'))
       .finally(() => setCargando(false))
   }, [setError])
-
-  useEffect(() => {
-    if (pagoPendiente) setPaso(2)
-  }, [pagoPendiente])
 
   useEffect(() => {
     const pedido = planes.find((plan) => plan.nombreApi.toUpperCase() === planPedido)
@@ -84,39 +76,6 @@ export default function CompararPlanesVista({
   async function confirmarCambio() {
     if (!planElegido) return
     await seleccionarPlan(planElegido.id)
-  }
-
-  function volverDesdePago() {
-    cancelarPago()
-    setPaso(1)
-  }
-
-  if (paso === 2 && pagoPendiente) {
-    return renderShell({
-      error,
-      children: (
-        <>
-          <ProgresoPasos indice={2} total={TOTAL_PASOS_PLAN} titulo="Pago" />
-          <div className="space-y-3 rounded-xl border border-hc-border p-4">
-            <p className="text-sm font-semibold">
-              Pagar {pagoPendiente.planNombre ?? planElegido?.nombre}
-            </p>
-            <TilopaySuscripcionEmbed pago={pagoPendiente} />
-          </div>
-          {emp ? (
-            <button
-              type="button"
-              onClick={volverDesdePago}
-              className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border py-3.5 text-[13px] font-medium text-hc-text"
-            >
-              Atrás
-            </button>
-          ) : (
-            <Boton variante="contorno" onClick={volverDesdePago}>Atrás</Boton>
-          )}
-        </>
-      ),
-    })
   }
 
   return renderShell({

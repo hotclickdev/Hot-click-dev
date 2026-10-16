@@ -10,34 +10,23 @@ function mensajeErrorPlan(err: unknown, fallback: string): string {
   return typeof error === 'string' && error ? error : fallback
 }
 
-export type PagoPlanPendiente = {
-  orderNumber: string
-  montoCrc: number
-  sdkToken: string
-  planNombre?: string
-}
-
-/** Dónde volver tras confirmar el cobro en /billing/tilopay/respuesta. */
-export const CLAVE_RUTA_EXITO_PLAN = 'hc_plan_ruta_exito'
-
 type Options = {
   /** Ruta absoluta o relativa a la pantalla de éxito tras activar. */
   rutaExito: string
 }
 
 /**
- * Orquesta POST /billing/cambiar-plan y el cobro Tilopay si hace falta.
+ * Orquesta POST /billing/cambiar-plan. Un plan de pago sin pasarela conectada vuelve 409 con un
+ * mensaje claro, que queda en `error`.
  */
 export function useCambiarPlan({ rutaExito }: Options) {
   const navigate = useNavigate()
   const loadTenantInfo = useTenantStore((s) => s.loadTenantInfo)
   const [loadingPlan, setLoadingPlan] = useState<Id | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [pagoPendiente, setPagoPendiente] = useState<PagoPlanPendiente | null>(null)
 
   const irAExito = useCallback(async () => {
     await loadTenantInfo()
-    setPagoPendiente(null)
     setLoadingPlan(null)
     navigate(rutaExito)
   }, [loadTenantInfo, navigate, rutaExito])
@@ -49,14 +38,8 @@ export function useCambiarPlan({ rutaExito }: Options) {
       const { data } = await billingService.cambiarPlan(planId)
       const result = data as CambiarPlanResultado
 
-      if (result.status === 'requiere_pago' && result.orderNumber && result.sdkToken && result.montoCrc) {
-        sessionStorage.setItem(CLAVE_RUTA_EXITO_PLAN, rutaExito)
-        setPagoPendiente({
-          orderNumber: result.orderNumber,
-          montoCrc: result.montoCrc,
-          sdkToken: result.sdkToken,
-          planNombre: result.planNombre,
-        })
+      if (result.status === 'requiere_pago') {
+        setError(result.mensaje || 'Los pagos en línea no están disponibles por ahora. Tu plan actual sigue igual.')
         setLoadingPlan(null)
         return
       }
@@ -79,19 +62,13 @@ export function useCambiarPlan({ rutaExito }: Options) {
       setError(mensajeErrorPlan(e, 'Error al cambiar el plan'))
       setLoadingPlan(null)
     }
-  }, [irAExito, loadTenantInfo, rutaExito])
-
-  const cancelarPago = useCallback(() => {
-    setPagoPendiente(null)
-  }, [])
+  }, [irAExito, loadTenantInfo])
 
   return {
     loadingPlan,
     error,
     setError,
-    pagoPendiente,
     seleccionarPlan,
     irAExito,
-    cancelarPago,
   }
 }

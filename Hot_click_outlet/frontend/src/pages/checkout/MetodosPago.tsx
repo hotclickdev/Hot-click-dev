@@ -31,8 +31,9 @@ function useMetodos(efectivoDisponible: boolean): Metodo[] {
       detalleMovil: null, tituloDesktop: t('compra.pago.sinpe'), detalleDesktop: t('compra.pago.sinpeDetalle'), deshabilitado: false,
     },
     {
-      valor: 'TILOPAY', icono: ICONOS_COMPRA.tarjeta, colorIcono: 'text-hc-n-600', titulo: t('compra.pago.tarjeta'),
-      detalleMovil: t('compra.pago.tarjetaDetalle'), tituloDesktop: t('compra.pago.tarjetaCorto'), detalleDesktop: t('compra.pago.tarjetaDetalleCorto'), deshabilitado: false,
+      // Sin pasarela de tarjeta conectada (ONVO marketplace pendiente): visible pero deshabilitada.
+      valor: 'TARJETA', icono: ICONOS_COMPRA.tarjeta, colorIcono: 'text-hc-n-600', titulo: t('compra.pago.tarjeta'),
+      detalleMovil: t('compra.pago.tarjetaDetalle'), tituloDesktop: t('compra.pago.tarjetaCorto'), detalleDesktop: t('compra.pago.tarjetaDetalleCorto'), deshabilitado: true,
     },
     {
       valor: 'EFECTIVO', icono: ICONOS_COMPRA.efectivo, colorIcono: 'text-hc-n-600', titulo: t('compra.pago.efectivo'),

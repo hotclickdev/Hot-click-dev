@@ -11,9 +11,9 @@ import { SINPE_NUMERO, copiarNumeroSinpe } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { CodigosPedido } from './useCodigosPedido'
-import { efectivoDisponible, metodoPagoPrincipal, tilopayActivo } from './pagoPrincipal'
+import { efectivoDisponible, metodoPagoPrincipal } from './pagoPrincipal'
 
-type MetodoId = 'SINPE' | 'TILOPAY' | 'EFECTIVO'
+type MetodoId = 'SINPE' | 'EFECTIVO'
 
 type Metodo = { id: MetodoId; icono: string; color: string; titulo: string; subtitulo: string }
 
@@ -21,7 +21,7 @@ type Metodo = { id: MetodoId; icono: string; color: string; titulo: string; subt
 function metodosDisponibles(conEfectivo: boolean): Metodo[] {
   const principal: Metodo = {
     id: metodoPagoPrincipal(), icono: ICONOS_CHECKOUT.pagoSinpe, color: 'text-hc-blue-600',
-    titulo: 'sinpeTarjeta', subtitulo: tilopayActivo() ? 'sinpeTarjetaSubTilopay' : 'sinpeTarjetaSub',
+    titulo: 'sinpeTarjeta', subtitulo: 'sinpeTarjetaSub',
   }
   const efectivo: Metodo = { id: 'EFECTIVO', icono: ICONOS_CHECKOUT.pagoEfectivo, color: 'text-hc-n-600', titulo: 'efectivo', subtitulo: 'efectivoSub' }
   return conEfectivo ? [principal, efectivo] : [principal]

@@ -1,12 +1,11 @@
 import { useRef, useEffect } from 'react'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
-import { usePayment, tilopayCardDesdePago } from '@/hooks/usePayment'
+import { usePayment } from '@/hooks/usePayment'
 import CheckoutEmpty from './checkout/CheckoutEmpty'
 import CheckoutLoading from './checkout/CheckoutLoading'
 import CheckoutPaidGiftCard from './checkout/CheckoutPaidGiftCard'
 import CheckoutSinpePending from './checkout/CheckoutSinpePending'
-import CheckoutTilopayCard from './checkout/CheckoutTilopayCard'
 import CheckoutLayout from './checkout/CheckoutLayout'
 import { useCheckoutForm } from './checkout/useCheckoutForm'
 import { useCheckoutActions } from './checkout/useCheckoutActions'
@@ -19,7 +18,7 @@ import { notasConEncomienda } from './checkout/checkoutHelpers'
 export default function CheckoutPage() {
   const { items, total, toWhatsAppMessage } = useCartStore()
   const { token } = useAuthStore()
-  const { estado, pagoData, error, intentos, maxIntentos, iniciarPago, reset } = usePayment()
+  const { estado, pagoData, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const errorBannerRef = useRef<HTMLDivElement | null>(null)
 
   const form = useCheckoutForm({ items, total })
@@ -34,7 +33,7 @@ export default function CheckoutPage() {
   }, [])
 
   useEffect(() => {
-    if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid' || estado === 'tilopay_card') {
+    if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid') {
       globalThis.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (estado === 'failed') {
       errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -97,13 +96,6 @@ export default function CheckoutPage() {
     setSinpeUploadEstado: form.setSinpeUploadEstado,
     setSinpeUploadError: form.setSinpeUploadError,
   })
-
-  if (estado === 'tilopay_card') {
-    const payload = tilopayCardDesdePago(pagoData)
-    if (payload) {
-      return <CheckoutTilopayCard payload={payload} onVolver={reset} />
-    }
-  }
 
   if (estado === 'sinpe_pendiente') {
     return (

@@ -11,7 +11,7 @@ type Props = {
   etiqueta?: string
   /** Ícono del botón (Figma lo dibuja solo en SINPE). */
   icono?: string
-  avisoKey?: 'pos.pago.hostedAviso' | 'pos.pago.walletsAviso'
+  avisoKey?: 'pos.pago.walletsAviso'
 }
 
 /** Pie de pago (Figma `29:1819`): botón rojo de 46 y "Pago protegido por HotClick". */

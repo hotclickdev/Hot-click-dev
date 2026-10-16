@@ -120,22 +120,6 @@ export const paymentService = {
     return api.get(`/admin/webhooks?${queryString}`)
   },
 
-  // ── Tilopay ──────────────────────────────────────────────────────────────
-
-  /**
-   * Confirma el retorno de Tilopay (query params del redirect SDK).
-   * @param numeroPedido número de pedido HotClick
-   * @param queryParams code, order, description, etc.
-   */
-  confirmarTilopay(numeroPedido: string, queryParams: Record<string, string> = {}) {
-    return api.post(`/payments/tilopay/confirmar/${encodeURIComponent(numeroPedido)}`, queryParams)
-  },
-
-  /** Solicita un nuevo sdkToken para reintentar un pago Tilopay. */
-  reintentarTilopay(numeroPedido: string) {
-    return api.post(`/payments/tilopay/reintentar/${encodeURIComponent(numeroPedido)}`)
-  },
-
   /** Público: `{ "7": 5 }` = el negocio 7 descuenta 5% al pagar con SINPE o efectivo. */
   getDescuentosSinpe(empresaIds: number[]) {
     return api.get<Record<string, number>>('/public/descuentos-sinpe', {

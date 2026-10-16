@@ -5,7 +5,6 @@ import { AnimatePresence } from 'framer-motion'
 import useAuthStore from '@/store/authStore'
 import { billingService } from '@/services/billingService'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
-import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
 import EmprendimientoPasoVerificar from '@/pages/auth/emprendimiento/EmprendimientoPasoVerificar'
 import { useVerificarCorreoOtp } from '@/hooks/useVerificarCorreoOtp'
 import { RUTA_PANEL_VENDEDOR } from '@/utils/destinoVender'
@@ -30,8 +29,8 @@ export default function ActivarPlanPage() {
   const [intentado, setIntentado] = useState(false)
 
   const {
-    loadingPlan, error: errorCobro, pagoPendiente,
-    seleccionarPlan, cancelarPago,
+    loadingPlan, error: errorCobro,
+    seleccionarPlan,
   } = useCambiarPlan({ rutaExito: RUTA_PANEL_VENDEDOR })
 
   useEffect(() => {
@@ -90,27 +89,10 @@ export default function ActivarPlanPage() {
                   onSubmit={otp.verificar}
                   onReenviar={otp.reenviar}
                 />
-              ) : pagoPendiente ? (
-                <div key="pago" className="space-y-4">
-                  <div className="text-center mb-2">
-                    <h2 className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>Activá tu plan {pagoPendiente.planNombre}</h2>
-                    <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Confirmá el pago para activar tu suscripción.</p>
-                  </div>
-                  <TilopaySuscripcionEmbed pago={pagoPendiente} />
-                  {errorCobro && <p className="text-sm text-center text-red-500">{errorCobro}</p>}
-                  <button
-                    type="button"
-                    onClick={cancelarPago}
-                    className="w-full text-center text-xs py-1.5"
-                    style={{ color: 'var(--hc-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    Volver
-                  </button>
-                </div>
               ) : (
                 <div key="cargando" className="text-center py-6">
                   <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-                    {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorPlan || 'Un momento…')}
+                    {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorCobro || errorPlan || 'Un momento…')}
                   </p>
                 </div>
               )}

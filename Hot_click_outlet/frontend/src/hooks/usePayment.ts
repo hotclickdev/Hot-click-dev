@@ -30,15 +30,6 @@ type PagoData = {
   cancelToken?: string
 }
 
-export type TilopayCardPayload = {
-  numeroPedido: string
-  sdkToken: string
-  monto: number
-  moneda: 'CRC'
-  redirectUrl?: string
-  orderNumber: string
-}
-
 function mensajeError(err: unknown, respaldo: string): string {
   if (!err || typeof err !== 'object' || !('response' in err)) return respaldo
   const data = (err as { response?: { data?: { message?: string } | string } }).response?.data
@@ -47,37 +38,8 @@ function mensajeError(err: unknown, respaldo: string): string {
   return respaldo
 }
 
-function esCheckoutTilopayEmbebido(data: PagoData): boolean {
-  if (data.proveedor !== 'TILOPAY') return false
-  return Boolean(data.modoEmbebido || data.sdkToken)
-}
-
-/** Monto que devolvió el servidor. No se inventa un 0 si falta. */
-export function montoCobroServidor(data: PagoData | null): number | null {
-  if (!data) return null
-  const bruto = data.monto ?? data.total
-  if (bruto == null || !Number.isFinite(bruto) || bruto <= 0) return null
-  return bruto
-}
-
-/** Payload tipado para el formulario embebido Tilopay. Solo colones, monto del servidor. */
-export function tilopayCardDesdePago(data: PagoData | null): TilopayCardPayload | null {
-  const monto = montoCobroServidor(data)
-  if (!data?.sdkToken || !data.numeroPedido || monto == null) return null
-  const moneda = (data.moneda || 'CRC').toUpperCase()
-  if (moneda !== 'CRC') return null
-  return {
-    numeroPedido: data.numeroPedido,
-    sdkToken: data.sdkToken,
-    monto,
-    moneda: 'CRC',
-    redirectUrl: data.redirectUrl,
-    orderNumber: data.orderNumber || data.numeroPedido,
-  }
-}
-
 /**
- * Flujo de pago Tilopay/SINPE/gift card. Mismo orden de llamadas que el hook original.
+ * Flujo de pago pasarela/SINPE/gift card. Mismo orden de llamadas que el hook original.
  */
 export function usePayment() {
   const [estado, setEstado] = useState('idle')
@@ -110,8 +72,6 @@ export function usePayment() {
       }
       if (data.proveedor === 'GIFT_CARD') {
         setEstado('gift_card_paid')
-      } else if (esCheckoutTilopayEmbebido(data)) {
-        setEstado('tilopay_card')
       } else if (!data.redirectUrl || data.proveedor === 'SINPE' || data.proveedor === 'EFECTIVO') {
         setEstado('sinpe_pendiente')
       } else {

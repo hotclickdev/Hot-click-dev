@@ -49,7 +49,7 @@ const FILAS: Fila[] = [
 
 const POR_QUE = [
   { titulo: 'Tu tienda sigue siendo tuya', texto: 'Seguí vendiendo en tu local, en tu feria o en tus redes. HotClick suma compradores que hoy no te encuentran.' },
-  { titulo: 'Hecho para Costa Rica', texto: 'Precios en colones, envíos dentro del país y pagos con tarjeta procesados con Tilopay.' },
+  { titulo: 'Hecho para Costa Rica', texto: 'Precios en colones, envíos dentro del país y pagos con tarjeta procesados por una pasarela certificada.' },
   { titulo: 'Cobrá en persona con la misma cuenta', texto: 'La caja (POS) viene incluida en todos los planes.' },
   { titulo: 'Reglas claras', texto: 'Antes de registrarte ves cuánto pagás de mensualidad y de comisión. No hay costos escondidos.' },
 ]

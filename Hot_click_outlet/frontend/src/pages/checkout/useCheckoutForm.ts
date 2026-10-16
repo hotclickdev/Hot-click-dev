@@ -169,7 +169,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     }
     return resultado
   }, [metodoEnvioBase, destinoGAM])
-  // Abre con «SINPE / Tarjeta» (SINPE hasta que Tilopay esté activo).
+  // Abre con «SINPE / Tarjeta» (SINPE hasta que haya pasarela de tarjeta).
   const [metodoPago, setMetodoPago] = useState<string>(metodoPagoPrincipal)
   // R3: el paso del checkout móvil vive en `?paso=`; el guard de CheckoutLayout impide saltar pasos.
   const [searchParams, setSearchParams] = useSearchParams()

@@ -65,8 +65,6 @@ const CookiesPage = lazy(() => import('@/pages/CookiesPage'))
 
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
-const TilopayRespuestaPage = lazy(() => import('@/pages/pago/TilopayRespuestaPage'))
-const SuscripcionTilopayRespuestaPage = lazy(() => import('@/pages/pago/SuscripcionTilopayRespuestaPage'))
 const RecuperarCarritoPage = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -127,8 +125,6 @@ export default function AppRoutes() {
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/pago/exito" element={<PaymentStatusPage />} />
       <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
-      <Route path="/pago/tilopay/respuesta" element={<TilopayRespuestaPage />} />
-      <Route path="/billing/tilopay/respuesta" element={<ProtectedRoute><SuscripcionTilopayRespuestaPage /></ProtectedRoute>} />
 
       <Route element={<ClerkShell />}>
         <Route path="/login" element={<LoginPage />} />

@@ -1,14 +1,9 @@
 /**
  * Pago principal «SINPE / Tarjeta».
- * Mientras la API de Tilopay no esté lista, usa el flujo SINPE que ya funciona (comprobante).
- * Con VITE_TILOPAY_ACTIVO=true pasa a la pasarela Tilopay, que cobra SINPE y tarjeta.
+ * Sin pasarela de tarjeta conectada (ONVO marketplace pendiente) usa el flujo SINPE que ya funciona.
  */
-export function tilopayActivo(): boolean {
-  return import.meta.env.VITE_TILOPAY_ACTIVO === 'true'
-}
-
-export function metodoPagoPrincipal(): 'SINPE' | 'TILOPAY' {
-  return tilopayActivo() ? 'TILOPAY' : 'SINPE'
+export function metodoPagoPrincipal(): 'SINPE' {
+  return 'SINPE'
 }
 
 type ItemConBodega = { bodega?: { aceptaEfectivo?: boolean } | null; bodegaAceptaEfectivo?: boolean }

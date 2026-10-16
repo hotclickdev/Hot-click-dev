@@ -33,7 +33,7 @@ export type ConfigComision = {
   pctDescuentoSinpe: number
 }
 
-/** Normaliza la respuesta del API o usa defaults Tilopay. */
+/** Normaliza la respuesta del API o usa los defaults de la pasarela. */
 export function parseConfigComision(raw: unknown): ConfigComision {
   const o = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {}
   const pct = Number(o.pctComisionTarjeta ?? o.porcentaje)

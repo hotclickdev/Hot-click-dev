@@ -7,7 +7,6 @@ import { esUsuarioSistema } from '@/utils/sistemaUser'
 import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
-import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
 import { useCerrarSesion } from '@/hooks/useCerrarSesion'
@@ -143,9 +142,7 @@ export default function AdminPlanes() {
     loadingPlan,
     error,
     setError,
-    pagoPendiente,
     seleccionarPlan,
-    cancelarPago,
   } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion' })
 
   function handleLogout() {
@@ -183,20 +180,6 @@ export default function AdminPlanes() {
       {error && (
         <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
           {error}
-        </div>
-      )}
-
-      {pagoPendiente && (
-        <div className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-              Pagar plan {pagoPendiente.planNombre ?? ''}
-            </p>
-            <button type="button" onClick={cancelarPago} className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-              Cancelar
-            </button>
-          </div>
-          <TilopaySuscripcionEmbed pago={pagoPendiente} />
         </div>
       )}
 
