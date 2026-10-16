@@ -55,6 +55,12 @@ public class NotificacionEmailService {
 
 
 
+    /** MAN-6: «Recibimos tu pedido» con el pago todavía pendiente. */
+    @Async
+    public void enviarPedidoRecibido(Pedido pedido) {
+        pedidoEmailSender.enviarPedidoRecibido(pedido);
+    }
+
     @Async
 
     public void enviarConfirmacionPedido(Pedido pedido) {

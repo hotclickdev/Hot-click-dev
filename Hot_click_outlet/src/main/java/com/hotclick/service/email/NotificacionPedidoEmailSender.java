@@ -53,6 +53,38 @@ public class NotificacionPedidoEmailSender {
         whatsAppService.enviarConfirmacionPedido(pedido);
     }
 
+    /** MAN-6: aviso al comprador apenas se crea el pedido, con el pago pendiente. Fallas al log, sin correo ni llave. */
+    public void enviarPedidoRecibido(Pedido pedido) {
+        Usuario cliente = pedido.getUsuarioFinal();
+        if (cliente == null || cliente.getCorreo() == null || cliente.getCorreo().isBlank()
+                || cliente.getCorreo().endsWith(".internal")) {
+            return;
+        }
+        try {
+            resendEmailService.send(cliente.getCorreo(), asuntoPedidoRecibido(pedido), htmlPedidoRecibido(pedido, cliente));
+            log.info("[MAN-6] correo de pedido recibido enviado para {}", pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.error("[MAN-6] no se pudo enviar el correo de pedido recibido {}: {}", pedido.getNumeroPedido(),
+                e.getClass().getSimpleName());
+        }
+    }
+
+    static String asuntoPedidoRecibido(Pedido pedido) {
+        return "Recibimos tu pedido " + pedido.getNumeroPedido() + " — HotClick";
+    }
+
+    static String htmlPedidoRecibido(Pedido pedido, Usuario cliente) {
+        String nombre = org.springframework.web.util.HtmlUtils.htmlEscape(cliente.getNombre() != null ? cliente.getNombre() : "");
+        String numero = org.springframework.web.util.HtmlUtils.htmlEscape(String.valueOf(pedido.getNumeroPedido()));
+        String total = pedido.getTotalPedido() != null
+            ? "₡" + String.format(java.util.Locale.ROOT, "%,d", pedido.getTotalPedido()).replace(',', '.') : "";
+        return "<p>Hola " + nombre + ",</p>"
+            + "<p>Recibimos tu pedido <strong>" + numero + "</strong>"
+            + (total.isEmpty() ? "" : " por <strong>" + total + "</strong>") + ".</p>"
+            + "<p>El pago está pendiente. Te escribimos apenas se confirme.</p>"
+            + "<p>Podés ver el estado en «Mis pedidos».</p>";
+    }
+
     public void enviarNotificacionGuia(Pedido pedido) {
         Usuario cliente = pedido.getUsuarioFinal();
         if (cliente == null) return;
