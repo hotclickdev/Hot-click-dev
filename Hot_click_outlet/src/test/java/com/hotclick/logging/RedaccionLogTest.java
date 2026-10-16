@@ -67,11 +67,38 @@ class RedaccionLogTest {
         LoggingEvent ev = new LoggingEvent("x", ctx.getLogger("t"), Level.ERROR, "error", ex, null);
         ExcepcionEnmascaradaConverter c = new ExcepcionEnmascaradaConverter();
         c.setContext(ctx);
-        c.setOptionList(java.util.List.of("30"));
+        c.setOptionList(java.util.List.of("12"));
         c.start();
         String traza = c.convert(ev);
         assertThat(traza)
             .contains("RuntimeException", "IllegalStateException", "[CEDULA]", "[IBAN]")
             .doesNotContain("2345-6789", "abcdef123456", "CR0000");
+    }
+
+    @Test
+    @DisplayName("%exSeguro{12} recorta igual que %rEx{12} y enmascara")
+    void recorteIgualQueRex() {
+        LoggerContext ctx = new LoggerContext();
+        RuntimeException ex = profunda(40, "cedula=1-2345-6789");
+        LoggingEvent ev = new LoggingEvent("x", ctx.getLogger("t"), Level.ERROR, "error", ex, null);
+
+        var rex = new ch.qos.logback.classic.pattern.RootCauseFirstThrowableProxyConverter();
+        ExcepcionEnmascaradaConverter seguro = new ExcepcionEnmascaradaConverter();
+        for (var c : new ch.qos.logback.classic.pattern.ThrowableProxyConverter[]{rex, seguro}) {
+            c.setContext(ctx);
+            c.setOptionList(java.util.List.of("12"));
+            c.start();
+        }
+        String original = rex.convert(ev);
+        String enmascarada = seguro.convert(ev);
+        assertThat(enmascarada).isEqualTo(RedaccionLog.enmascarar(original));
+        assertThat(enmascarada).doesNotContain("2345-6789");
+        long frames = enmascarada.lines().filter(l -> l.trim().startsWith("at ")).count();
+        assertThat(frames).isLessThanOrEqualTo(12);
+    }
+
+    private static RuntimeException profunda(int n, String msg) {
+        if (n == 0) return new RuntimeException(msg);
+        return profunda(n - 1, msg);
     }
 }
