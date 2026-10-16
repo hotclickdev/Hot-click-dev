@@ -19,7 +19,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     /**
      * Reclama el paquete para confirmar su pago: devuelve 1 solo a la primera confirmación
-     * (webhook o retorno de Tilopay, cleanup, admin o SINPE); las demás esperan el lock de fila y ven 0.
+     * (webhook o retorno de la pasarela, cleanup, admin o SINPE); las demás esperan el lock de fila y ven 0.
      */
     @Modifying
     @Query("UPDATE Pedido p SET p.estadoPedido = 'PAGADO' WHERE p.id = :id AND p.estadoPedido NOT IN :yaConfirmados")

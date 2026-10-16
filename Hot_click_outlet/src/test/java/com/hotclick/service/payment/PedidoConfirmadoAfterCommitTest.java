@@ -59,7 +59,7 @@ class PedidoConfirmadoAfterCommitTest {
         pedido.setNumeroPedido("ORD-1");
         pedido.setTotalPedido(1000);
         pago = new Pago();
-        pago.setProveedor("TILOPAY");
+        pago.setProveedor("ONVO");
     }
 
     @AfterEach

@@ -480,7 +480,7 @@ class PedidoServiceTest {
     }
 
     @ParameterizedTest(name = "cambiarEstado → ENTREGADO sin pago se rechaza: {0} + {1} (SEC-06 / QA-B02-2)")
-    @CsvSource({"TILOPAY,ENVIO_A_DOMICILIO", "TILOPAY,RETIRO_EN_TIENDA", "SINPE,RETIRO_EN_TIENDA", "EFECTIVO,ENVIO_A_DOMICILIO",
+    @CsvSource({"ONVO,ENVIO_A_DOMICILIO", "ONVO,RETIRO_EN_TIENDA", "SINPE,RETIRO_EN_TIENDA", "EFECTIVO,ENVIO_A_DOMICILIO",
         "CONTRA_ENTREGA,RETIRO_EN_TIENDA"})
     void cambiarEstado_entregadoSinPago_rechaza(String metodo, String envio) {
         Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);

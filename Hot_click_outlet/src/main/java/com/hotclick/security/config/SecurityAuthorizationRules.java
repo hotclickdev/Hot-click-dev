@@ -42,16 +42,13 @@ final class SecurityAuthorizationRules {
             // POS QR pago — rutas públicas (cliente escanea QR)
             .requestMatchers(GET,  "/api/pos/qr/pago/**").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/stripe").permitAll()
-            .requestMatchers(POST, "/api/pos/qr/pago/*/tilopay").permitAll()
-            .requestMatchers(POST, "/api/pos/qr/pago/*/tilopay/confirmar").permitAll()
+            .requestMatchers(POST, "/api/pos/qr/pago/*/pasarela").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/intent").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/sinpe-onvo").permitAll()
             // Compra sin registro (invitados)
             .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()
             .requestMatchers(GET,  "/api/payments/status/*").permitAll()
-            .requestMatchers(POST, "/api/payments/tilopay/confirmar/*").permitAll()
-            .requestMatchers(POST, "/api/payments/tilopay/reintentar/*").permitAll()
             // SINPE — invitados
             .requestMatchers(POST, "/api/sinpe/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/sinpe/guest/*/comprobante").permitAll()
@@ -299,7 +296,7 @@ final class SecurityAuthorizationRules {
                 "/404",
                 "/seleccionar-negocio", "/mode-select", "/registrar-negocio",
                 "/sso-callback", "/sso-complete",
-                "/checkout", "/pago/exito", "/pago/cancelado", "/pago/tilopay/respuesta", "/billing/tilopay/respuesta",
+                "/checkout", "/pago/exito", "/pago/cancelado",
                 "/ayuda", "/registro-empresa/activar-plan",
                 "/pos/pago", "/pos/pago/**",
                 "/recuperar-carrito", "/recuperar-carrito/**",

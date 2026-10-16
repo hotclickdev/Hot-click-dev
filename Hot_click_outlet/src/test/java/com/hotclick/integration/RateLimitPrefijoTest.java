@@ -102,20 +102,8 @@ class RateLimitPrefijoTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Tilopay confirmar: cupo por pedido + IP (10)")
-    void tilopayConfirmar_porPedido() throws Exception {
-        cupoPorRecurso("203.0.113.22", 10, "/api/payments/tilopay/confirmar/910001", "/api/payments/tilopay/confirmar/910002");
-    }
-
-    @Test
-    @DisplayName("Tilopay reintentar: cupo por pedido + IP (10)")
-    void tilopayReintentar_porPedido() throws Exception {
-        cupoPorRecurso("203.0.113.23", 10, "/api/payments/tilopay/reintentar/910001", "/api/payments/tilopay/reintentar/910002");
-    }
-
-    @Test
     @DisplayName("Pago QR POS: cupo por sesion de pago + IP (10)")
     void qrPago_porSesion() throws Exception {
-        cupoPorRecurso("203.0.113.24", 10, "/api/pos/qr/pago/tokA_abcdefghijkl/tilopay", "/api/pos/qr/pago/tokB_abcdefghijkl/tilopay");
+        cupoPorRecurso("203.0.113.24", 10, "/api/pos/qr/pago/tokA_abcdefghijkl/pasarela", "/api/pos/qr/pago/tokB_abcdefghijkl/pasarela");
     }
 }

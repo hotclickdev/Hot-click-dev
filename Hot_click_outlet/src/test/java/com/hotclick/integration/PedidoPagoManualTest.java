@@ -80,10 +80,10 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     // ── SEC-05: ataques ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Ataque: pedido de Tilopay con Pago pendiente → PAGADO a mano (aun con referencia) = 400, nada cambia")
-    void tilopay_conPago_noSeMarcaPagado() throws Exception {
-        Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE, Constants.PROVEEDOR_TILOPAY);
-        Pago pago = crearPago(p, Constants.PROVEEDOR_TILOPAY);
+    @DisplayName("Ataque: pedido de pasarela (ONVO) con Pago pendiente → PAGADO a mano (aun con referencia) = 400, nada cambia")
+    void pasarela_conPago_noSeMarcaPagado() throws Exception {
+        Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE, Constants.PROVEEDOR_ONVO);
+        Pago pago = crearPago(p, Constants.PROVEEDOR_ONVO);
 
         cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\",\"referencia\":\"TX-falsa\"}")
             .andExpect(status().isBadRequest())
@@ -96,15 +96,15 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Ataque: pedido de tarjeta sin Pago (TILOPAY/STRIPE) → PAGADO a mano = 400")
+    @DisplayName("Ataque: pedido de tarjeta sin Pago (ONVO/STRIPE) → PAGADO a mano = 400")
     void metodoTarjeta_sinPago_noSeMarcaPagado() throws Exception {
-        Pedido tilopay = crearPedido(empresa, Constants.PEDIDO_PENDIENTE, "tilopay");
+        Pedido onvo = crearPedido(empresa, Constants.PEDIDO_PENDIENTE, "onvo");
         Pedido stripe = crearPedido(empresa, Constants.PEDIDO_PENDIENTE, Constants.PROVEEDOR_STRIPE);
 
-        cambiar(tokenEmp, tilopay, "{\"estado\":\"PAGADO\",\"referencia\":\"123\"}").andExpect(status().isBadRequest());
+        cambiar(tokenEmp, onvo, "{\"estado\":\"PAGADO\",\"referencia\":\"123\"}").andExpect(status().isBadRequest());
         cambiar(tokenEmp, stripe, "{\"estado\":\"PAGADO\",\"referencia\":\"123\"}").andExpect(status().isBadRequest());
 
-        assertEstado(tilopay, Constants.PEDIDO_PENDIENTE);
+        assertEstado(onvo, Constants.PEDIDO_PENDIENTE);
         assertEstado(stripe, Constants.PEDIDO_PENDIENTE);
     }
 
@@ -300,12 +300,12 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     }
 
     @ParameterizedTest(name = "QA-B02-2: {0} + {1} sin pago → ENTREGADO = 400")
-    @CsvSource({"TILOPAY,ENVIO_A_DOMICILIO", "TILOPAY,RETIRO_EN_TIENDA", "EFECTIVO,ENVIO_A_DOMICILIO", "SINPE,RETIRO_EN_TIENDA"})
+    @CsvSource({"ONVO,ENVIO_A_DOMICILIO", "ONVO,RETIRO_EN_TIENDA", "EFECTIVO,ENVIO_A_DOMICILIO", "SINPE,RETIRO_EN_TIENDA"})
     void qaB02_2_entregadoSinPago(String metodo, String envio) throws Exception {
         Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE, metodo);
         p.setMetodoEnvio(envio);
         pedidoRepository.saveAndFlush(p);
-        if (Constants.PROVEEDOR_TILOPAY.equals(metodo)) crearPago(p, Constants.PROVEEDOR_TILOPAY);
+        if (Constants.PROVEEDOR_ONVO.equals(metodo)) crearPago(p, Constants.PROVEEDOR_ONVO);
 
         cambiar(tokenEmp, p, "{\"estado\":\"ENTREGADO\"}").andExpect(status().isBadRequest());
         assertEstado(p, Constants.PEDIDO_PENDIENTE);
@@ -325,12 +325,12 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     // ── SEC-09: el despacho mira el Pago, no el estado del pedido ─────────────
 
     @Test
-    @DisplayName("SEC-09: pedido de Tilopay con estado PAGADO forzado y Pago PENDIENTE → guía, envío, ENVIADO y ENTREGADO = 409")
-    void sec09_estadoPagadoForzado_tilopayPendiente() throws Exception {
-        Pedido p = crearPedido(empresa, Constants.PEDIDO_PAGADO, Constants.PROVEEDOR_TILOPAY);
+    @DisplayName("SEC-09: pedido de pasarela (ONVO) con estado PAGADO forzado y Pago PENDIENTE → guía, envío, ENVIADO y ENTREGADO = 409")
+    void sec09_estadoPagadoForzado_pasarelaPendiente() throws Exception {
+        Pedido p = crearPedido(empresa, Constants.PEDIDO_PAGADO, Constants.PROVEEDOR_ONVO);
         p.setMetodoEnvio(Constants.ENVIO_DOMICILIO);
         pedidoRepository.saveAndFlush(p);
-        crearPago(p, Constants.PROVEEDOR_TILOPAY);
+        crearPago(p, Constants.PROVEEDOR_ONVO);
 
         guia(tokenEmp, p, "RR1").andExpect(status().isConflict());
         mockMvc.perform(put("/api/pedidos/" + p.getId() + "/envio").header("Authorization", tokenEmp)
@@ -346,8 +346,8 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     @Test
     @DisplayName("SEC-09: con Pago CAPTURADO la guía se asigna (200) aunque sea el mismo pedido")
     void sec09_pagoCapturado_despacha() throws Exception {
-        Pedido p = crearPedido(empresa, Constants.PEDIDO_PAGADO, Constants.PROVEEDOR_TILOPAY);
-        crearPago(p, Constants.PROVEEDOR_TILOPAY, Constants.PAGO_CAPTURADO);
+        Pedido p = crearPedido(empresa, Constants.PEDIDO_PAGADO, Constants.PROVEEDOR_ONVO);
+        crearPago(p, Constants.PROVEEDOR_ONVO, Constants.PAGO_CAPTURADO);
         guia(tokenEmp, p, "RR100000003CR").andExpect(status().isOk());
         assertEstado(p, Constants.PEDIDO_ENVIADO);
     }
@@ -377,8 +377,8 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     void sec09_telegram() {
         Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "SINPE");
         crearPago(p, Constants.PROVEEDOR_SINPE);
-        Pedido forzado = crearPedido(empresa, Constants.PEDIDO_PAGADO, Constants.PROVEEDOR_TILOPAY);
-        crearPago(forzado, Constants.PROVEEDOR_TILOPAY);
+        Pedido forzado = crearPedido(empresa, Constants.PEDIDO_PAGADO, Constants.PROVEEDOR_ONVO);
+        crearPago(forzado, Constants.PROVEEDOR_ONVO);
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> telegramFlujoService.asignarGuiaTx(p.getId(), "RR1"))
             .isInstanceOf(com.hotclick.exception.PedidoNoDespachableException.class);
@@ -427,12 +427,12 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     }
 
     @ParameterizedTest(name = "PENDIENTE_COMPROBANTE → ENTREGADO con {0} + {1} = 400 (solo efectivo + retiro)")
-    @CsvSource({"TILOPAY,RETIRO_EN_TIENDA", "SINPE,RETIRO_EN_TIENDA", "EFECTIVO,ENVIO_A_DOMICILIO", "CONTRA_ENTREGA,RETIRO_EN_TIENDA"})
+    @CsvSource({"ONVO,RETIRO_EN_TIENDA", "SINPE,RETIRO_EN_TIENDA", "EFECTIVO,ENVIO_A_DOMICILIO", "CONTRA_ENTREGA,RETIRO_EN_TIENDA"})
     void entregadoDesdeComprobante_otrosMetodos_400(String metodo, String envio) throws Exception {
         Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, metodo);
         p.setMetodoEnvio(envio);
         pedidoRepository.saveAndFlush(p);
-        Pago pago = crearPago(p, Constants.PROVEEDOR_TILOPAY.equals(metodo) ? Constants.PROVEEDOR_TILOPAY : Constants.PROVEEDOR_SINPE);
+        Pago pago = crearPago(p, Constants.PROVEEDOR_ONVO.equals(metodo) ? Constants.PROVEEDOR_ONVO : Constants.PROVEEDOR_SINPE);
 
         cambiar(tokenEmp, p, "{\"estado\":\"ENTREGADO\"}").andExpect(status().isBadRequest());
         assertEstado(p, Constants.PEDIDO_PENDIENTE_COMPROBANTE);

@@ -89,7 +89,7 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] payment-intent.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
-                    // El POS ya no cobra por ONVO (Tilopay); aquí no se completa ninguna sesión POS.
+                    // El POS no cobra por este webhook; aquí no se completa ninguna sesión POS.
                     log.debug("[onvo-webhook] payment-intent.succeeded: {}", intentId);
                 }
                 case "payment-intent.failed" -> {

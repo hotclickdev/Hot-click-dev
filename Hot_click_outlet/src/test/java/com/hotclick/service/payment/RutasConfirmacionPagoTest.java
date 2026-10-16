@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Toda ruta que confirma un pago (Tilopay, SINPE admin, comprobante SINPE, pago manual del panel,
+ * Toda ruta que confirma un pago (pasarela, SINPE admin, comprobante SINPE, pago manual del panel,
  * Stripe) pasa por {@link PaymentOrderConfirmationService#confirmarPedido}, que reclama cada paquete
  * con reclamarParaConfirmar. Si alguien consume stock o acredita la billetera por fuera, este test
  * lo marca: ese camino quedaría sin la idempotencia atómica.
@@ -52,7 +52,6 @@ class RutasConfirmacionPagoTest {
         assertThat(leer("service/sinpe/SinpeComprobanteService.java")).contains("paymentService.confirmarPedido(");
         assertThat(leer("service/pedido/PedidoPagoManualService.java")).contains("paymentService.confirmarPedido(");
         assertThat(leer("payment/StripePaymentProvider.java")).contains("paymentService.confirmarPedido(");
-        assertThat(leer("service/payment/TilopayConfirmacionService.java")).contains("paymentService.confirmarPedido(");
         assertThat(leer("service/PaymentService.java")).contains("orderConfirmationService.confirmarPedido(");
     }
 

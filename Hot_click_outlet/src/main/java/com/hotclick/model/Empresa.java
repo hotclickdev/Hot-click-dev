@@ -204,13 +204,13 @@ public class Empresa {
     @Column(name = "locale_codigo", length = 10)
     private String localeCodigo = "es-CR";
 
-    // ── Comisión Tilopay absorbida en precio (V133) ──────────────────────────
+    // ── Comisión de pasarela absorbida en precio (V133) ──────────────────────────
 
     /** % estimado pasarela tarjeta (p.ej. 4.80 con IVA sobre comisión). */
     @Column(name = "pct_comision_tarjeta", precision = 5, scale = 2, nullable = false)
     private java.math.BigDecimal pctComisionTarjeta = java.math.BigDecimal.valueOf(4.80);
 
-    /** Cargo fijo Tilopay en CRC (aprox. US$0.35). */
+    /** Cargo fijo de la pasarela en CRC. */
     @Column(name = "monto_fijo_comision_crc", nullable = false)
     private Integer montoFijoComisionCrc = 200;
 

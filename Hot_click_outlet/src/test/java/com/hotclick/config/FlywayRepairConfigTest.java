@@ -76,7 +76,7 @@ class FlywayRepairConfigTest {
     void ultimaVersionMigracion_comparaComoEntero() {
         assertEquals(140, FlywayRepairConfig.ultimaVersionMigracion(List.of(
             "V13__solicitud_garantia.sql",
-            "V136__comision_tilopay_empresa.sql",
+            "V136__comision_pasarela_empresa.sql",
             "V140__correo_verificado_usuario.sql"
         )));
     }

@@ -1,7 +1,6 @@
 package com.hotclick.service.payment;
 
 import com.hotclick.model.Empresa;
-import com.hotclick.model.Pago;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
@@ -31,7 +30,6 @@ class PaymentExpirationCleanupSinpeExcludeTest {
     @Mock private PagoRepository pagoRepository;
     @Mock private PedidoRepository pedidoRepository;
     @Mock private StockReservationService stockReservationService;
-    @Mock private TilopayConfirmacionService tilopayConfirmacionService;
 
     @Mock private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Mock private com.hotclick.service.payment.ReservaSospechosaLiberador reservaSospechosaLiberador;
@@ -60,6 +58,5 @@ class PaymentExpirationCleanupSinpeExcludeTest {
         verify(pagoRepository, never()).saveAll(any());
         verify(pedidoRepository, never()).saveAll(any());
         verify(stockReservationService, never()).liberarReservas(any());
-        verify(tilopayConfirmacionService, never()).intentarConfirmarSiAprobado(any(Pago.class));
     }
 }

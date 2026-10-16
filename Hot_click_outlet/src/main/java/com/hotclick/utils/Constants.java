@@ -96,7 +96,6 @@ public class Constants {
     public static final String PROVEEDOR_STRIPE  = "STRIPE";
     public static final String PROVEEDOR_SINPE   = "SINPE";
     public static final String PROVEEDOR_ONVO    = "ONVO";
-    public static final String PROVEEDOR_TILOPAY = "TILOPAY";
     /** Pago registrado a mano (efectivo, SINPE o transferencia fuera de la pasarela), sin cobro de la plataforma. */
     public static final String PROVEEDOR_MANUAL = "MANUAL";
 

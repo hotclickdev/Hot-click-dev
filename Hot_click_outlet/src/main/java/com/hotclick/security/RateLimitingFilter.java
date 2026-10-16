@@ -45,7 +45,6 @@ import java.util.Map;
  *   /api/contacto                →  5 / 60s
  *   /api/pedidos                 → 15 / 60s
  *   /api/payment/checkout        →  3 / 60s
- *   /api/payments/tilopay/**     → 10 / 60s (confirmar/reintentar públicos)
  *
  *   AI (IP-level; per-empresa burst in AiCopilotController)
  *   ────────────────────────────────────────────
@@ -136,8 +135,6 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final List<PrefixLimit> PREFIX_LIMITS = List.of(
         // Prevent admins from accidentally spamming customers with email notifications.
         new PrefixLimit("/api/pedidos/", "/notificar", 5, 60, true),   // 5 notificar calls/min per IP
-        // Tilopay confirm/retry are permitAll — throttle abuse / DoS to Tilopay API
-        new PrefixLimit("/api/payments/tilopay/", null, 10, 60, true),
         // Borrado de datos con contraseña: frena adivinar la contraseña por esta ruta
         new PrefixLimit("/api/admin/reset-", null, 10, 300, true),
         // QR de pago POS público: cada POST crea checkout o intento en ONVO/Stripe

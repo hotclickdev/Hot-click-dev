@@ -60,7 +60,7 @@ public class PaymentOrderConfirmationService {
 
         boolean cuponMarcado = false;
         for (Pedido pedido : grupo) {
-            // Idempotencia atómica: retorno de Tilopay, webhook, cleanup o admin pueden llegar a la vez
+            // Idempotencia atómica: retorno de la pasarela, webhook, cleanup o admin pueden llegar a la vez
             // con una copia vieja del pedido; solo quien gana el UPDATE condicional aplica los efectos.
             if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0) {
                 log.info("confirmarPedido ignorado — pedido {} ya fue confirmado por otro proceso",

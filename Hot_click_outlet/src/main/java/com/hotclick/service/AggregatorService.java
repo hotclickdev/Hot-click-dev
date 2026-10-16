@@ -38,7 +38,7 @@ public class AggregatorService {
 
     private static final Logger log = LoggerFactory.getLogger(AggregatorService.class);
 
-    /** Reserva contable estimada de la pasarela (Tilopay). La paga HotClick: no se descuenta al vendedor. */
+    /** Reserva contable estimada de la pasarela de pago. La paga HotClick: no se descuenta al vendedor. */
     @Value("${hotclick.comision.gateway.pct:4}")
     private int pctGateway;
 

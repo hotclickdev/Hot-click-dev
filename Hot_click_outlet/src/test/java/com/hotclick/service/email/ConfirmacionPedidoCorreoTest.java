@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/** MAN-6: al confirmarse el pago (Tilopay → onPedidoConfirmado → avisarVentaConfirmada) sale el correo al comprador. */
+/** MAN-6: al confirmarse el pago (pasarela → onPedidoConfirmado → avisarVentaConfirmada) sale el correo al comprador. */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MAN-6 | correo de confirmación del pedido")
 class ConfirmacionPedidoCorreoTest {

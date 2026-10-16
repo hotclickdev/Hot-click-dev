@@ -42,7 +42,7 @@ class OnvoWebhookPosQrTest {
     }
 
     @Test
-    @DisplayName("El webhook ONVO ya no completa sesiones POS (el POS cobra con Tilopay)")
+    @DisplayName("El webhook ONVO no completa sesiones POS")
     void webhookOnvoNoTocaPos() {
         ResponseEntity<Map<String, String>> res = controller.recibirWebhookOnvo(
             "{\"type\":\"payment-intent.succeeded\",\"data\":{\"id\":\"pi_pos\"}}",
