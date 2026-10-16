@@ -68,7 +68,7 @@ export default function ActivarCobrosPage({ volverA, rutaSoporte }: { volverA: s
   }
 
   const vista = cuenta ? VISTAS_ESTADO[cuenta.estado] : null
-  const detalle = cuenta?.estado === 'PAUSADA' ? detallePausada(cuenta.pausadaEl) : cuenta?.estado === 'SUSPENDIDA' ? DETALLE_SUSPENDIDA : null
+  const detalle = cuenta?.estado === 'PAUSADA' ? detallePausada(cuenta.pausadaEl, cuenta.motivoPausa) : cuenta?.estado === 'SUSPENDIDA' ? DETALLE_SUSPENDIDA : null
 
   return (
     <EntradaPagina>
@@ -85,10 +85,18 @@ export default function ActivarCobrosPage({ volverA, rutaSoporte }: { volverA: s
               </span>
             </div>
             <p className={`rounded-[12px] px-3.5 py-3 text-[13px] ${CAJAS[vista.caja]}`}>
+              {vista.titulo && <b className="mb-1 block text-[14px]">{vista.titulo}</b>}
               {vista.mensaje}
               {detalle && <span className="mt-1 block text-[12px] text-hc-muted">{detalle}</span>}
             </p>
-            <ol aria-label="Pasos para activar cobros" className="flex flex-col gap-3 rounded-[12px] border border-hc-border bg-hc-surface p-4">
+            {vista.queHacer && (
+              <div className="flex flex-col gap-1 rounded-[12px] border border-hc-border bg-hc-surface p-4">
+                <b className="text-[13px]">¿Qué podés hacer?</b>
+                <span className="text-[13px]">{vista.queHacer}</span>
+              </div>
+            )}
+            {vista.quien && <p className="text-[11px] text-hc-muted">Quién: {vista.quien}</p>}
+            {!vista.queHacer && <ol aria-label="Pasos para activar cobros" className="flex flex-col gap-3 rounded-[12px] border border-hc-border bg-hc-surface p-4">
               {PASOS_COBRO.map((p, i) => {
                 const hecho = i < vista.paso
                 const actual = i === vista.paso
@@ -104,7 +112,7 @@ export default function ActivarCobrosPage({ volverA, rutaSoporte }: { volverA: s
                   </li>
                 )
               })}
-            </ol>
+            </ol>}
             {vista.conFrecuencia && cuenta.frecuencia && (
               <div className="flex flex-col gap-1 rounded-[12px] border border-hc-border bg-hc-surface p-4">
                 <span className="text-[12px] text-hc-muted">Liquidación</span>
@@ -118,8 +126,7 @@ export default function ActivarCobrosPage({ volverA, rutaSoporte }: { volverA: s
               {vista.cta === 'activar' && <Boton onClick={() => abrirOnvo(cobrosOnvoApi.activar)} disabled={ocupado}>Activar cobros</Boton>}
               {vista.cta === 'continuar' && <Boton onClick={() => abrirOnvo(cobrosOnvoApi.enlace)} disabled={ocupado}>Continuar en ONVO</Boton>}
               {vista.secundaria === 'reenviar' && <Boton variante="contorno" onClick={reenviar} disabled={ocupado}>Reenviar enlace</Boton>}
-              {vista.secundaria === 'soporte' && <Boton variante="contorno" to={rutaSoporte}>Escribir a soporte</Boton>}
-              {vista.secundaria === 'ir-onvo' && <Boton variante="contorno" onClick={() => abrirOnvo(cobrosOnvoApi.enlace)} disabled={ocupado}>Ir a ONVO</Boton>}
+              {vista.secundaria === 'soporte' && <Boton to={rutaSoporte}>Escribir a soporte de HotClick</Boton>}
             </div>
           </div>
         )}

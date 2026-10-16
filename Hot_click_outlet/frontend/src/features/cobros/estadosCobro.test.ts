@@ -25,7 +25,7 @@ describe('S2-25 Activar cobros', () => {
   })
 
   it('normaliza la respuesta del contrato supuesto', () => {
-    expect(normalizarCuenta({ data: { estado: 'ACTIVA', frecuencia: 'MENSUAL' } })).toEqual({ estado: 'ACTIVA', frecuencia: 'MENSUAL', pausadaEl: null })
+    expect(normalizarCuenta({ data: { estado: 'ACTIVA', frecuencia: 'MENSUAL' } })).toEqual({ estado: 'ACTIVA', frecuencia: 'MENSUAL', pausadaEl: null, motivoPausa: null })
     expect(normalizarCuenta({ estado: 'RARO' }).estado).toBe('SIN_CUENTA')
   })
 })
