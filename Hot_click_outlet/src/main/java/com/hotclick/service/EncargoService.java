@@ -181,7 +181,7 @@ public class EncargoService {
         PaymentCheckoutRequest checkoutReq = new PaymentCheckoutRequest();
         checkoutReq.setBodegaId(producto.getBodega().getId());
         checkoutReq.setMetodoEnvio(req.getMetodoEnvio());
-        checkoutReq.setProvider(req.getProvider() != null ? req.getProvider() : "STRIPE");
+        checkoutReq.setProvider(req.getProvider());
         checkoutReq.setGuestEmail(encargo.getEmail());
         checkoutReq.setGuestPhone(encargo.getTelefono());
         checkoutReq.setNotas(req.getNotas());

@@ -8,8 +8,8 @@ public class EncargoCheckoutRequest {
     @NotBlank(message = "El método de envío es requerido")
     private String metodoEnvio;
 
-    /** STRIPE o SINPE */
-    private String provider = "STRIPE";
+    /** Proveedor de pago elegido por el cliente. Sin valor el checkout se rechaza (no hay pasarela por defecto). */
+    private String provider;
 
     @Size(max = 500)
     private String notas;

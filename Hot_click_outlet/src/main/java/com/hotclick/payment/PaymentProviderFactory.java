@@ -23,8 +23,11 @@ public class PaymentProviderFactory {
     }
 
     public PaymentProvider get(String nombre) {
-        String key = (nombre != null) ? nombre.toUpperCase() : "STRIPE";
-        PaymentProvider provider = registry.get(key);
+        // Sin default: un pago sin proveedor nunca cae en una pasarela por omisión.
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("Elegí un método de pago disponible para completar la compra.");
+        }
+        PaymentProvider provider = registry.get(nombre.trim().toUpperCase());
         if (provider == null) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + nombre
                 + ". Disponibles: " + registry.keySet());

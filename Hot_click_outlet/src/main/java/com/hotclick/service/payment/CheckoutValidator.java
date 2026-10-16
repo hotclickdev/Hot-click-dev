@@ -28,6 +28,10 @@ public class CheckoutValidator {
         Constants.ENVIO_RETIRO, Constants.ENVIO_ENCOMIENDA,
         "ENVIO_NORMAL_GAM", "ENVIO_NORMAL_FUERA_GAM", "ENVIO_RAPIDO");
 
+    static final String MENSAJE_SIN_METODO = "Elegí un método de pago disponible para completar la compra.";
+    static final String MENSAJE_PASARELA_NO_DISPONIBLE =
+        "El pago con tarjeta no está disponible por ahora. Elegí otro método de pago.";
+
     @Autowired private BodegaRepository bodegaRepository;
 
     @Value("${payments.onvo.enabled:false}")
@@ -40,13 +44,16 @@ public class CheckoutValidator {
     }
 
     public String resolveProvider(PaymentCheckoutRequest req, PaymentProviderFactory providerFactory) {
-        String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "STRIPE";
+        // Sin proveedor no hay default (antes caía en Stripe): se rechaza con un mensaje claro.
+        if (req.getProvider() == null || req.getProvider().isBlank()) {
+            throw new IllegalArgumentException(MENSAJE_SIN_METODO);
+        }
+        String provider = req.getProvider().trim().toUpperCase(java.util.Locale.ROOT);
         if (Constants.PROVEEDOR_ONVO.equals(provider) && !onvoEnabled) {
-            throw new IllegalArgumentException(
-                "ONVO no está habilitado. Usá TILOPAY para pagos con tarjeta.");
+            throw new IllegalArgumentException(MENSAJE_PASARELA_NO_DISPONIBLE);
         }
         if (!providerFactory.soporta(provider)) {
-            throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);
+            throw new IllegalArgumentException(MENSAJE_SIN_METODO);
         }
         return provider;
     }
