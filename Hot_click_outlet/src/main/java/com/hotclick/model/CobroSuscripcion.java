@@ -4,7 +4,7 @@ import com.hotclick.utils.Constants;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/** Intento de cobro de mensualidad con Tilopay (V170). */
+/** Intento de cobro de mensualidad con la pasarela (tabla de V170). */
 @Entity
 @Table(name = "hot_click_cobro_suscripcion_tb")
 public class CobroSuscripcion {

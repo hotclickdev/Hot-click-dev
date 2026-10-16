@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Planes 12-oct: montos desde configuración y mínimo ₡700 en los tres planes")
-class PlanesTilopayTest extends BaseIntegrationTest {
+class PlanesMontosTest extends BaseIntegrationTest {
 
     @Autowired private PlanRepository planRepository;
     @Autowired private EmpresaRepository empresaRepository;

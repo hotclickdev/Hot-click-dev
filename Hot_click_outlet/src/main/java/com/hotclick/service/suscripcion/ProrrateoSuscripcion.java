@@ -28,7 +28,7 @@ public final class ProrrateoSuscripcion {
     }
 
     public static LocalDate finPrimerPeriodo(String modo, LocalDate desde, int dia) {
-        return porDias(modo) ? siguienteDiaCobro(desde, dia) : SuscripcionTilopayService.proximoCobro(desde, dia);
+        return porDias(modo) ? siguienteDiaCobro(desde, dia) : SuscripcionCambioPlanService.proximoCobro(desde, dia);
     }
 
     /** Monto del alta en colones, redondeado hacia arriba. Nunca supera el precio mensual. */
