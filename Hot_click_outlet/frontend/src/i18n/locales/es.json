@@ -184,7 +184,7 @@
       "1 bodega y 1 caja POS",
       "Pagos con tarjeta y SINPE",
       "Envíos a Costa Rica",
-      "Comisión: 9% por venta (mínimo ₡700)"
+      "Comisión: {{pct}}% por venta (mínimo {{minimo}})"
     ],
     "planPymeBadge": "Para crecer",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 bodegas y 2 cajas",
       "Compras e inventario",
       "IA y reportes avanzados",
-      "₡12.900/mes + 7% por venta (mínimo ₡700)"
+      "{{mensual}}/mes + {{pct}}% por venta (mínimo {{minimo}})"
     ],
     "planPlusBadge": "Para operar en serio",
     "planPlusTitle": "Negocio Plus",
@@ -206,7 +206,7 @@
       "Multi-sucursal y pedidos por local",
       "CRM de clientes",
       "IA sin límite",
-      "₡28.900/mes + 7% por venta (mínimo ₡700)"
+      "{{mensual}}/mes + {{pct}}% por venta (mínimo {{minimo}})"
     ],
     "pymeCta": "Crear mi negocio",
     "plusCta": "Crear mi negocio",
@@ -368,7 +368,7 @@
     "comoEntras2Desc": "Con la pasarela Tilopay que ya usa el panel.",
     "comoEntras3Titulo": "Entrás al panel con PYME activo",
     "comoEntras3Desc": "Equipo, inventario y caja, listos para operar.",
-    "comparativaNota": "PYME: ₡12.900/mes + 7% por venta. Emprendedor: sin mensualidad + 9% por venta. Ambos con mínimo de ₡700 por venta.",
+    "comparativaNota": "PYME: {{pymeMensual}}/mes + {{pymePct}}% por venta. Emprendedor: sin mensualidad + {{emprendedorPct}}% por venta. Ambos con mínimo de {{minimo}} por venta.",
     "faqTitle": "Preguntas frecuentes",
     "faq2q": "¿Cuánto necesito vender para que convenga?",
     "faq2a": "Si vendés seguido, la comisión más baja recupera la mensualidad rápido. Si vendés poco, Emprendedor te conviene más.",

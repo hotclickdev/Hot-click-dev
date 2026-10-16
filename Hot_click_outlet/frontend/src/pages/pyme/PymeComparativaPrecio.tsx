@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
+import { COMISION_MINIMA_CRC, PLAN_PRECIOS, colones } from '@/config/planesPrecios'
 
 const copy = PLAN_LANDING_COPY.pyme
 // copy.precio ya viene aprobado con los montos correctos: "₡12.900/mes + 7% por venta (mínimo ₡700)" (config/planesPrecios)
@@ -21,7 +22,12 @@ export default function PymeComparativaPrecio() {
         <p className="text-base sm:text-lg font-medium">+ {comisionVenta}</p>
       </div>
       <p className="text-sm max-w-2xl" style={{ color: 'var(--hc-text)', fontFamily: 'var(--hc-font-mono)' }}>
-        {t('pyme.comparativaNota')}
+        {t('pyme.comparativaNota', {
+          pymeMensual: colones(PLAN_PRECIOS.PYME.mensualCrc),
+          pymePct: PLAN_PRECIOS.PYME.comisionPct,
+          emprendedorPct: PLAN_PRECIOS.EMPRENDEDOR.comisionPct,
+          minimo: colones(COMISION_MINIMA_CRC),
+        })}
       </p>
     </div>
   )

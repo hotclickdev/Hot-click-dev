@@ -184,7 +184,7 @@
       "1 depósito e 1 caixa POS",
       "Pagamentos com cartão e SINPE",
       "Envios na Costa Rica",
-      "Comissão: 9% por venda (mínimo ₡700)"
+      "Comissão: {{pct}}% por venda (mínimo {{minimo}})"
     ],
     "planPymeBadge": "Para crescer",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 depósitos e 2 caixas",
       "Compras e estoque",
       "IA e relatórios avançados",
-      "₡12.900/mês + 7% por venda (mínimo ₡700)"
+      "{{mensual}}/mês + {{pct}}% por venda (mínimo {{minimo}})"
     ],
     "planPlusBadge": "Para operar de verdade",
     "planPlusTitle": "Negocio Plus",
@@ -206,7 +206,7 @@
       "Multi-filial e pedidos por local",
       "CRM de clientes",
       "IA sem limite",
-      "₡28.900/mês + 7% por venda (mínimo ₡700)"
+      "{{mensual}}/mês + {{pct}}% por venda (mínimo {{minimo}})"
     ],
     "pymeCta": "Criar meu negócio",
     "plusCta": "Criar meu negócio",
@@ -368,7 +368,7 @@
     "comoEntras2Desc": "Com o gateway Tilopay que o painel já usa.",
     "comoEntras3Titulo": "Você entra com o PYME ativo",
     "comoEntras3Desc": "Equipe, estoque e caixa, prontos para operar.",
-    "comparativaNota": "PYME: ₡12.900/mês + 7% por venda. Emprendedor: sem mensalidade + 9% por venda. Ambos com mínimo de ₡700 por venda.",
+    "comparativaNota": "PYME: {{pymeMensual}}/mês + {{pymePct}}% por venda. Emprendedor: sem mensalidade + {{emprendedorPct}}% por venda. Ambos com mínimo de {{minimo}} por venda.",
     "faqTitle": "Perguntas frequentes",
     "faq2q": "Quanto preciso vender para valer a pena?",
     "faq2a": "Se você vende com frequência, a comissão menor recupera a mensalidade rápido. Se vende pouco, o Emprendedor vale mais a pena.",

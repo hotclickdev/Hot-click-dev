@@ -184,7 +184,7 @@
       "1 warehouse and 1 POS till",
       "Card and SINPE payments",
       "Shipping across Costa Rica",
-      "Commission: 9% per sale (₡700 minimum)"
+      "Commission: {{pct}}% per sale ({{minimo}} minimum)"
     ],
     "planPymeBadge": "To grow",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 warehouses and 2 tills",
       "Purchasing and inventory",
       "AI and advanced reports",
-      "₡12,900/month + 7% per sale (₡700 minimum)"
+      "{{mensual}}/month + {{pct}}% per sale ({{minimo}} minimum)"
     ],
     "planPlusBadge": "To operate at scale",
     "planPlusTitle": "Negocio Plus",
@@ -206,7 +206,7 @@
       "Multi-branch and orders per location",
       "Customer CRM",
       "Unlimited AI",
-      "₡28,900/month + 7% per sale (₡700 minimum)"
+      "{{mensual}}/month + {{pct}}% per sale ({{minimo}} minimum)"
     ],
     "pymeCta": "Create my business",
     "plusCta": "Create my business",
@@ -368,7 +368,7 @@
     "comoEntras2Desc": "With the Tilopay gateway the panel already uses.",
     "comoEntras3Titulo": "You're in with PYME active",
     "comoEntras3Desc": "Team, inventory, and register, ready to operate.",
-    "comparativaNota": "PYME: ₡12,900/month + 7% per sale. Emprendedor: no monthly fee + 9% per sale. Both with a ₡700 minimum per sale.",
+    "comparativaNota": "PYME: {{pymeMensual}}/month + {{pymePct}}% per sale. Emprendedor: no monthly fee + {{emprendedorPct}}% per sale. Both with a {{minimo}} minimum per sale.",
     "faqTitle": "Frequently asked questions",
     "faq2q": "How much do I need to sell for it to be worth it?",
     "faq2a": "If you sell regularly, the lower commission recovers the monthly fee fast. If you sell little, Emprendedor suits you better.",
