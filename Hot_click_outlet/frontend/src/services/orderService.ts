@@ -47,6 +47,9 @@ export const adminService = {
     api.put(`/admin/empresas/${id}/estado`, { estadoEmpresa, motivo: motivo ?? null }),
   setEmpresaVisibilidad: (id: Id, visibilidadPublica: boolean) =>
     api.put(`/admin/empresas/${id}/visibilidad`, { visibilidadPublica }),
+  /** Carrusel del inicio: solo superadmin; el backend rechaza negocios no activos u ocultos. */
+  setEmpresaDestacado: (id: Id, destacado: boolean) =>
+    api.put(`/admin/empresas/${id}/destacado`, { destacado }),
   impersonarEmpresa: (id: Id) => api.post(`/admin/empresas/${id}/impersonar`),
   invitarMiembroEmpresa: (id: Id, body: JsonBody) => api.post(`/admin/empresas/${id}/equipo`, body),
   cambiarRolMiembroEmpresa: (id: Id, miembroId: Id, rolEnEmpresa: string) =>

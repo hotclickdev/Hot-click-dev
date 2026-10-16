@@ -73,6 +73,17 @@ public class EmpresaController {
         return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("visibilidadPublica", visible)));
     }
 
+    /** Carrusel del inicio: destacar o quitar un negocio (solo superadmin; solo negocios activos y visibles). */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/destacado")
+    public ResponseEntity<ResponseDTO> cambiarDestacado(@PathVariable Long id,
+                                                        @RequestBody Map<String, Object> body) {
+        companyScope.assertCanAccess(id);
+        Map<String, Object> r = empresaAdminService.cambiarDestacado(id, body.get("destacado"), body.get("orden"));
+        String msg = Boolean.TRUE.equals(r.get("destacado")) ? "Negocio destacado en el inicio" : "Negocio quitado del inicio";
+        return ResponseEntity.ok(ResponseDTO.success(msg, r));
+    }
+
     @GetMapping("/{id}/productos")
     public ResponseEntity<ResponseDTO> productos(
             @PathVariable Long id,
