@@ -12,10 +12,9 @@ COPY pom.xml .
 # en esta capa separada de COPY src, que es lo único que buscábamos acá.
 RUN mvn dependency:resolve dependency:resolve-plugins -q
 COPY src ./src
-# maven.test.skip (no solo -DskipTests) porque hay tests de src/test que no compilan
-# contra el código actual (ApiKeyCacheTest y varios de integración referencian clases
-# que ya no existen) — -DskipTests solo salta la ejecución, no la compilación.
-RUN mvn clean package -Dmaven.test.skip=true -q
+# -DskipTests: los tests ya compilan (mvn test completo en verde, 16-10-2026); se compilan en el build
+# para detectar roturas, pero no se ejecutan aquí (los corre CI).
+RUN mvn clean package -DskipTests -q
 
 FROM eclipse-temurin:21-jre-alpine
 # Chromium empaquetado para Alpine (musl) — usado por CatalogoImportService como
