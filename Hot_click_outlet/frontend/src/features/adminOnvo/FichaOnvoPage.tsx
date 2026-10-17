@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { adminOnvoApi, type NegocioOnvoDetalle } from './adminOnvoApi'
-import { CONCILIACION, porcentajeNoCoincide, validarMotivo, validarPorcentaje, vistaEstado } from './adminOnvoHelpers'
+import { CONCILIACION, MOTIVO_MAX, porcentajeNoCoincide, validarMotivo, validarPorcentaje, vistaEstado } from './adminOnvoHelpers'
 import { errorOnvo } from './erroresOnvo'
 
 type Confirmacion = { tipo: 'registrar' } | { tipo: 'comision'; nuevo: number } | { tipo: 'pausar' } | null
@@ -95,7 +95,7 @@ export default function FichaOnvoPage() {
               <h2 id="conf-titulo" className="font-display text-[18px] font-bold">¿Pausar los cobros de {n.nombre}?</h2>
               <p className="text-[13px]">Mientras esté pausado, sus clientes no pueden pagar en línea. Los pedidos ya pagados no cambian.</p>
               <label className="flex flex-col gap-1 text-[13px] font-semibold">Motivo (lo ve el negocio) <span className="sr-only">obligatorio</span>
-                <input value={motivo} onChange={(ev) => setMotivo(ev.target.value)} placeholder="Mínimo 3 caracteres" className="min-h-11 rounded-xl border border-hc-border px-3 font-normal" />
+                <input value={motivo} onChange={(ev) => setMotivo(ev.target.value)} placeholder="Mínimo 3 caracteres" maxLength={MOTIVO_MAX} className="min-h-11 rounded-xl border border-hc-border px-3 font-normal" />
               </label>
               <button type="button" className={BTN1} disabled={ocupado || validarMotivo(motivo) !== null} onClick={() => ejecutar(() => adminOnvoApi.pausar(n.id, motivo.trim()), 'Cobros pausados.')}>Pausar cobros</button>
             </>)}

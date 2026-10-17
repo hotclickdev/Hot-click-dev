@@ -1,7 +1,8 @@
 import api from '@/services/api'
 
 /**
- * S2-29 / S3-22 · Sección ONVO del admin — CONTRATO SUPUESTO (sin backend todavía; S3-07 y ramas feat/s2-*).
+ * S2-29 / S3-22 · Sección ONVO del admin. La lista y la ficha (`/api/plataforma/onvo/negocios`) siguen SUPUESTAS:
+ * Backend las deja para un PR siguiente a #197 (la tabla V183 ya trae pct_comision, frecuencia_pendiente y onvo_account_id).
  *
  *   GET  /api/plataforma/onvo/negocios?estado=   → { conciliadoEl: string|null, negocios: NegocioOnvo[] }
  *   GET  /api/plataforma/onvo/negocios/{id}      → NegocioOnvoDetalle
@@ -10,8 +11,8 @@ import api from '@/services/api'
  *   PUT  /api/plataforma/onvo/negocios/{id}/comision   { porcentaje }
  * REAL (master, #154): pausar y reanudar los cobros en línea usan el endpoint del admin de empresas:
  *   PUT  /api/admin/empresas/{id}/cobros-pausados      { cobrosPausados: true|false, motivo? }  (solo ADMIN)
- *        → 200 { success, message, data: { cobrosPausados } }; 400 si falta el booleano.
- *   Hoy el backend no guarda `motivo` (solo audita «Pausada»/«Reanudada»); se manda igual para S3-23.
+ *        → 200 { success, message, data: { cobrosPausados } }; 400 si falta el booleano o si `motivo` no tiene 3 a 300 caracteres.
+ *   Con #197 el backend guarda `motivo` al pausar, lo borra al reanudar y lo devuelve como `motivoPausa` en /api/negocio/onvo/estado.
  * Errores: el backend traduce la respuesta de ONVO a un `codigo` (ver erroresOnvo.ts); la UI nunca muestra el código.
  * IBAN: solo llega enmascarado (últimos 4) desde el backend; el front no lo desenmascara.
  * Los porcentajes del plan llegan del backend (`porcentajePlan`); el front no los escribe.

@@ -27,5 +27,7 @@ describe('S2-29 / S3-22 sección ONVO del admin', () => {
     expect(validarPorcentaje('120').error).toBeTruthy()
     expect(validarMotivo('ab')).toBeTruthy()
     expect(validarMotivo('Fotos con marcas')).toBeNull()
+    expect(validarMotivo('x'.repeat(300))).toBeNull()
+    expect(validarMotivo('x'.repeat(301))).toBeTruthy()
   })
 })

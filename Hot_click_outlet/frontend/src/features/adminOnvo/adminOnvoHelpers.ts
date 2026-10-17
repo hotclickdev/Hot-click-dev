@@ -34,6 +34,11 @@ export function validarPorcentaje(texto: string): { valor: number | null; error:
   return { valor: n, error: null }
 }
 
+/** Igual que el 400 de `PUT /api/admin/empresas/{id}/cobros-pausados` (#197): motivo de 3 a 300 caracteres. */
+export const MOTIVO_MAX = 300
+
 export function validarMotivo(motivo: string): string | null {
-  return motivo.trim().length >= 3 ? null : 'El motivo necesita al menos 3 caracteres.'
+  const largo = motivo.trim().length
+  if (largo < 3) return 'El motivo necesita al menos 3 caracteres.'
+  return largo > MOTIVO_MAX ? `El motivo puede tener hasta ${MOTIVO_MAX} caracteres.` : null
 }
