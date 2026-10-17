@@ -229,6 +229,7 @@ public class EmpresaAdminService {
         m.put("visibilidadPublica", Boolean.TRUE.equals(e.getVisibilidadPublica()));
         m.put("destacado", Boolean.TRUE.equals(e.getDestacado()));
         m.put("destacadoOrden", e.getDestacadoOrden());
+        m.put("destacadoDesde", e.getDestacadoDesde());
         m.put("fechaRegistro", e.getFechaRegistro());
         m.put("fechaAprobacion", e.getFechaAprobacion());
         m.put("logoUrl", e.getLogoUrl());

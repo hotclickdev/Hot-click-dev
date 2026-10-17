@@ -43,6 +43,7 @@ public class EmpresaDestacadoService {
         Map<String, Object> r = new HashMap<>();
         r.put("destacado", destacar);
         r.put("destacadoOrden", empresa.getDestacadoOrden());
+        r.put("destacadoDesde", empresa.getDestacadoDesde());
         return r;
     }
 
