@@ -8,7 +8,7 @@ import useCartStore from '@/store/cartStore'
 import useTenantStore from '@/store/tenantStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
-import { destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
+import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
 import { correoDesdeEstado } from './recuperar/recuperarHelpers'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
@@ -227,6 +227,12 @@ export function useLoginFlow() {
         }
       } catch { /* no cart */ }
       navigate(dest, { replace: true })
+      return
+    }
+
+    // (d) Vendedor/staff con ?redirect= explícito (p. ej. desde un enlace del panel): respetarlo.
+    if (debeRespetarRedirect(params.get('redirect'), from)) {
+      navigate(from, { replace: true })
       return
     }
 

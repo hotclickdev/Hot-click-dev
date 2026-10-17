@@ -1,4 +1,5 @@
 import { formatoColon } from '@/theme/formatoColon'
+import { COMISION_MINIMA_CRC, PLAN_PRECIOS, textoComision, type ClavePlan } from '@/config/planesPrecios'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import type { Id } from '@/types/api'
 import type { PlanId } from './plan'
@@ -12,25 +13,34 @@ export type PlanUi = {
   cta: string | null
 }
 
+/** Beneficios sin montos: la comisión, los productos y las bodegas salen del plan del API (NP-1/NP-2). */
 export const BENEFICIOS_PLAN: Record<string, readonly string[]> = {
-  EMPRENDEDOR: [
-    'Hasta 20 productos publicados',
-    'Reportes básicos',
-    'Comisión 8% por venta (mín. ₡400)',
-    '1 bodega',
-  ],
-  PYME: [
-    'Productos ilimitados',
-    'Gestión de equipo (varios usuarios)',
-    '₡9.900/mes + 4% por venta',
-    'Reportes avanzados',
-  ],
-  NEGOCIO_PLUS: [
-    'Todo lo de PYME',
-    'Multi-sucursal',
-    '₡24.900/mes + 4% por venta',
-    'Soporte prioritario',
-  ],
+  EMPRENDEDOR: ['Reportes básicos'],
+  PYME: ['Gestión de equipo (varios usuarios)', 'Reportes avanzados'],
+  NEGOCIO_PLUS: ['Todo lo de PYME', 'Multi-sucursal', 'Soporte prioritario'],
+}
+
+export type PlanApiTuPlan = {
+  id: Id
+  nombre: string
+  precioMensual?: number
+  comisionPorcentaje?: number | string
+  comisionMinimaCrc?: number
+  maxProductos?: number
+  maxBodegas?: number
+}
+
+function beneficiosDesdeApi(p: PlanApiTuPlan): string[] {
+  const respaldo = PLAN_PRECIOS[p.nombre as ClavePlan]
+  const pct = p.comisionPorcentaje != null ? Number(p.comisionPorcentaje) : respaldo?.comisionPct
+  const lista: string[] = []
+  if (p.maxProductos != null) lista.push(p.maxProductos < 0 ? 'Productos ilimitados' : `Hasta ${p.maxProductos} productos publicados`)
+  if (pct != null && !Number.isNaN(pct)) {
+    const c = textoComision(pct, p.comisionMinimaCrc ?? COMISION_MINIMA_CRC)
+    lista.push(`Comisión ${c}`)
+  }
+  if (p.maxBodegas != null) lista.push(p.maxBodegas < 0 ? 'Bodegas sin límite' : p.maxBodegas === 1 ? '1 bodega' : `${p.maxBodegas} bodegas`)
+  return [...lista, ...(BENEFICIOS_PLAN[p.nombre] ?? [])]
 }
 
 export const CTA_PLAN: Record<string, string> = {
@@ -58,11 +68,7 @@ export function mapSellerPlanIdToApi(id: PlanId): string {
   return 'EMPRENDEDOR'
 }
 
-export function mapApiPlanToUi(p: {
-  id: Id
-  nombre: string
-  precioMensual?: number
-}): PlanUi {
+export function mapApiPlanToUi(p: PlanApiTuPlan): PlanUi {
   return {
     id: p.id,
     nombreApi: p.nombre,
@@ -70,9 +76,14 @@ export function mapApiPlanToUi(p: {
     precio: Number(p.precioMensual ?? 0) === 0
       ? 'Gratis'
       : `${formatoColon(Number(p.precioMensual))}/mes`,
-    beneficios: BENEFICIOS_PLAN[p.nombre] ?? [],
+    beneficios: beneficiosDesdeApi(p),
     cta: CTA_PLAN[p.nombre] ?? `Cambiar a ${p.nombre}`,
   }
+}
+
+/** NP-3: antes de confirmar un plan de pago hay que verificar el correo (el backend devuelve 400 si no). */
+export function requiereVerificarCorreo(plan: PlanUi | null, correoVerificado: boolean | null | undefined): boolean {
+  return plan != null && plan.precio !== 'Gratis' && correoVerificado !== true
 }
 
 export function validarPasoElegirPlan(

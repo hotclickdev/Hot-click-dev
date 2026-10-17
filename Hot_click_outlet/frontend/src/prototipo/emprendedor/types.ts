@@ -1,6 +1,7 @@
 import type { EstadoPedidoVendedor } from '@/prototipo/compartido/estadoPedidoVendedor'
 
-export type CategoriaProducto = 'Tecnología' | 'Ropa' | 'Otro'
+/** Nombre real de la categoría del producto (NP-10: antes se forzaba a Tecnología/Ropa/Otro). */
+export type CategoriaProducto = string
 
 export type EstadoPublicacion = 'Publicado' | 'Pausado'
 
@@ -33,6 +34,11 @@ export type PedidoEmprendedor = {
   pagaAlRetirar?: boolean
   fecha: string
   direccion: string
+  /** NP-18: contacto del cliente (invitado incluido); solo llega en pedidos del propio negocio. */
+  telefono?: string
+  correo?: string
+  /** Pedido de tienda propia esperando que el vendedor confirme el pago. */
+  confirmaPago?: boolean
   origen?: string
   productos: { id: string; nombre: string; cantidad: number; precio: number }[]
 }

@@ -1,4 +1,5 @@
 import type { Producto, ProductoBackend } from '@/types/producto'
+import { nombreVendedor } from '@/components/comprador/productCardHelpers'
 import type { ItemCarrito } from '@/types/carrito'
 import { SHIPPING_COSTS, paquetesDesdeItems } from '@/pages/checkout/checkoutHelpers'
 import type { ItemCheckout, PaqueteCheckout } from '@/pages/checkout/checkoutHelpers'
@@ -75,7 +76,7 @@ export function paquetesConEnvioElegido(paquetes: PaqueteCheckout[], metodos: Re
     const metodo = metodos[paquete.bodegaId] ?? 'ENVIO_NORMAL_GAM'
     return {
       clave: paquete.bodegaId,
-      negocio: paquete.empresaNombre || paquete.bodegaNombre,
+      negocio: nombreVendedor(paquete),
       items: paquete.items as ItemCarrito[],
       subtotal: paquete.subtotal,
       envio: SHIPPING_COSTS[metodo] ?? 0,
@@ -89,7 +90,7 @@ export function paquetesConEnvioElegido(paquetes: PaqueteCheckout[], metodos: Re
 export function paquetesDelCarrito(items: ItemCarrito[]): PaqueteCarrito[] {
   return paquetesDesdeItems(items as ItemCheckout[]).map((paquete) => ({
     clave: paquete.bodegaId,
-    negocio: paquete.empresaNombre || paquete.bodegaNombre,
+    negocio: nombreVendedor(paquete),
     items: paquete.items as ItemCarrito[],
     subtotal: paquete.subtotal,
     envio: SHIPPING_COSTS.ENVIO_NORMAL_GAM,

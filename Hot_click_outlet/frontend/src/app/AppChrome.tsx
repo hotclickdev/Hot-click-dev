@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { posponerAvisoSw } from '@/app/swUpdate'
 import { useLocation, useNavigationType } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
@@ -166,7 +167,7 @@ export function ServiceWorkerRefresh() {
           <button
             type="button"
             className="flex-1 rounded-[12px] border border-hc-n-200 px-3 py-[11px] text-[14px] font-semibold text-hc-n-900"
-            onClick={() => setDisponible(false)}
+            onClick={() => { posponerAvisoSw(); setDisponible(false) }}
           >
             Ahora no
           </button>
@@ -194,7 +195,7 @@ export function ServiceWorkerRefresh() {
         <button
           type="button"
           className="min-h-11 flex-1 rounded-[14px] border border-hc-border px-3 text-sm font-medium text-hc-muted"
-          onClick={() => setDisponible(false)}
+          onClick={() => { posponerAvisoSw(); setDisponible(false) }}
         >
           Ahora no
         </button>

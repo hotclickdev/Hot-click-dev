@@ -25,7 +25,6 @@ public class HealthController {
         response.put("timestamp", LocalDateTime.now(Constants.ZONA_CR).toString());
         response.put("service", "HOT_CLICK Outlet");
         response.put("version", "1.1");
-        response.put("whatsappModo", whatsAppOperacionStatus.modo());
         return response;
     }
 }

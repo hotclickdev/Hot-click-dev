@@ -76,7 +76,7 @@ public class DataSeeder implements ApplicationRunner {
         seedPlan("EMPRENDEDOR", "Comisión por venta. Sin mensualidad para los primeros negocios.",
             BigDecimal.ZERO, empPct, empMin, empPrecio,
             2, 50, 1, 1,
-            false, false, false, true, false, false, 0, false);
+            true /*pos (V174)*/, false, false, true, false, false, 0, false);
         seedPlan("PYME", "Mensualidad + comisión por venta.",
             new BigDecimal("11.99"), pymePct, pymeMin, pymePrecio,
             5, 500, 2, 2,

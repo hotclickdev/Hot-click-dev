@@ -1,0 +1,1 @@
+var e=`Todavía no tenés avisos`,t=`Acá vas a ver los avisos de cobro, stock y ventas de tu negocio.`;export{e as n,t};

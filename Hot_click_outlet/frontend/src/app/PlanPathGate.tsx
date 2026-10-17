@@ -11,6 +11,7 @@ import {
 } from '@/app/rolPaths'
 import { useTenantPlanListo } from '@/app/useTenantPlanListo'
 import VerificacionCorreoBanner from '@/components/ui/VerificacionCorreoBanner'
+import PlanPendienteBanner from '@/components/ui/PlanPendienteBanner'
 import CompletaTuNegocio from '@/components/vendedor/CompletaTuNegocio'
 import { debeCompletarNegocio } from '@/app/negocioIncompleto'
 
@@ -61,6 +62,7 @@ export default function PlanPathGate({
   return (
     <>
       <VerificacionCorreoBanner />
+      <PlanPendienteBanner rutaPlan={`${prefijo}/plan`} />
       {children}
     </>
   )

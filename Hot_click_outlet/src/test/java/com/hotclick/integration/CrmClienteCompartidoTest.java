@@ -21,6 +21,8 @@ class CrmClienteCompartidoTest extends BaseIntegrationTest {
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private PlanRepository planRepository;
+    private Plan planCrm;
 
     private Empresa empA, empB;
     private Usuario cliente;
@@ -52,6 +54,8 @@ class CrmClienteCompartidoTest extends BaseIntegrationTest {
         bodegaRepository.deleteAll();
         usuarioRepository.findAll().forEach(u -> { u.setEmpresaRegistro(null); usuarioRepository.save(u); });
         empresaRepository.deleteAll();
+        if (planCrm != null) planRepository.deleteById(planCrm.getId());
+        planCrm = null;
     }
 
     @Test
@@ -92,6 +96,14 @@ class CrmClienteCompartidoTest extends BaseIntegrationTest {
         e.setCorreoEmpresa(slug + "@test.cr");
         e.setEstadoEmpresa("ACTIVO");
         e.setFechaRegistro(LocalDateTime.now());
+        // SEG-E: el CRM exige plan con tieneCrm.
+        if (planCrm == null) {
+            Plan p = new Plan();
+            p.setNombre("P801_CRM");
+            p.setTieneCrm(true);
+            planCrm = planRepository.saveAndFlush(p);
+        }
+        e.setPlan(planCrm);
         return empresaRepository.saveAndFlush(e);
     }
 

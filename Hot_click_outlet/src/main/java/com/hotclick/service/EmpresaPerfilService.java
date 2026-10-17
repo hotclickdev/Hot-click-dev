@@ -60,6 +60,20 @@ public class EmpresaPerfilService {
         log.info("[empresa/cert-p12] Cert subido empresa={}: {}", empresaId, path);
     }
 
+    static final String MSG_WHATSAPP = "El WhatsApp solo puede tener números (8 dígitos, ej. 8888-1234).";
+
+    /** Pyme: WhatsApp aceptaba texto («QA-TEST abc»). Vacío → null; 8 dígitos CR o 506+8 (solo dígitos); o internacional +E.164. */
+    static String normalizarWhatsapp(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        String t = valor.trim();
+        if (!t.matches("[\\d\\s+()\\-]+")) throw new IllegalArgumentException(MSG_WHATSAPP);
+        String d = t.replaceAll("\\D", "");
+        // Se guarda como venía (8 dígitos o 506 + 8), solo con dígitos: el formato existente no cambia.
+        if (d.length() == 8 || (d.length() == 11 && d.startsWith("506"))) return d;
+        if (t.startsWith("+") && d.length() >= 10 && d.length() <= 15) return "+" + d;
+        throw new IllegalArgumentException(MSG_WHATSAPP);
+    }
+
     public Map<String, Object> update(Long empresaId, Map<String, String> body) {
         Empresa e = empresa(empresaId);
         String nombreAntes = e.getNombreComercial();
@@ -75,7 +89,7 @@ public class EmpresaPerfilService {
             }
             e.setCorreoEmpresa(correo);
         }
-        if (body.containsKey("numeroWhatsapp")) e.setNumeroWhatsapp(body.get("numeroWhatsapp"));
+        if (body.containsKey("numeroWhatsapp")) e.setNumeroWhatsapp(normalizarWhatsapp(body.get("numeroWhatsapp")));
         if (body.containsKey("categoriaNegocio")) e.setCategoriaNegocio(body.get("categoriaNegocio"));
         if (body.containsKey("instagram")) e.setInstagram(body.get("instagram"));
         if (body.containsKey("zonaEnvio")) e.setZonaEnvio(body.get("zonaEnvio"));

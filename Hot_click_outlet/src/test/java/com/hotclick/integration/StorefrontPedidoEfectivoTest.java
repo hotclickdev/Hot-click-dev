@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * aceptaEfectivo de la bodega de venta online de una Empresa desacoplada). Ahora: 200 si la
  * bodega acepta efectivo y 400 limpio si no.
  */
+@org.springframework.test.context.TestPropertySource(properties = "hotclick.envio.normal.contra-entrega.habilitada=false") // sin contra entrega: solo cuenta lo que acepta la tienda
 @DisplayName("[QA-114-1] Pedido de tienda propia con efectivo")
 class StorefrontPedidoEfectivoTest extends BaseIntegrationTest {
 

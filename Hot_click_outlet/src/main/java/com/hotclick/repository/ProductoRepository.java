@@ -247,6 +247,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     Page<Producto> findCatalogoPublicoByEmpresaAndNombre(
             @Param("empresaId") Long empresaId, @Param("q") String q, Pageable pageable);
 
+    /** Categorías con productos visibles en la tienda (propias o de plataforma): las que el filtro puede mostrar. */
+    @Query("SELECT DISTINCT p.categoria FROM Producto p WHERE p.empresa.id = :empresaId AND p.categoria IS NOT NULL " +
+           "AND p.estado = 1 AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false")
+    List<com.hotclick.model.Categoria> findCategoriasCatalogoPublico(@Param("empresaId") Long empresaId, Pageable pageable);
+
     /** Catálogo de una tienda filtrado por categoría. */
     @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.categoria.id = :catId " +
            "AND p.estado = 1 AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false ORDER BY p.id DESC")

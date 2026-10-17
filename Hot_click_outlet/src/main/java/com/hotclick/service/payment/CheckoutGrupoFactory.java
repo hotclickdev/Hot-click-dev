@@ -46,14 +46,36 @@ public class CheckoutGrupoFactory {
         }
     }
 
+    /**
+     * CMP-4: la {@code bodegaId} del body tiene que ser de un negocio que vende algo del carrito.
+     * Si no se mandó (default HotClick) o la bodega no tiene negocio, no se exige.
+     */
+    static void exigirBodegaDeLaTienda(PaymentCheckoutRequest req, java.util.Map<Long, com.hotclick.model.Producto> productos,
+                                       Bodega bodega) {
+        if (req.getBodegaId() == null || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
+        Long empresaBodega = bodega.getEmpresa().getId();
+        boolean coincide = productos.values().stream()
+            .anyMatch(p -> empresaBodega.equals(empresaDe(p)));
+        if (!coincide) throw new IllegalArgumentException("La bodega elegida no es de la tienda de estos productos.");
+    }
+
+    private static Long empresaDe(com.hotclick.model.Producto p) {
+        if (p.getEmpresa() != null) return p.getEmpresa().getId();
+        return p.getBodega() != null && p.getBodega().getEmpresa() != null ? p.getBodega().getEmpresa().getId() : null;
+    }
+
     public Grupo crear(PaymentCheckoutRequest req, StockReservationResult reservation, Bodega bodegaDefault,
                        String provider, Usuario usuario, String estadoInicial) {
+        exigirBodegaDeLaTienda(req, reservation.productosMap(), bodegaDefault);
         List<CheckoutPaquetesPlanner.Paquete> paquetes =
             planner.planificar(req, reservation.productosMap(), bodegaDefault);
         for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
             checkoutValidator.assertBodegaTenant(paquete.bodega(), paquete.bodega().getId());
             checkoutValidator.validarRetiroPaquete(paquete.metodoEnvio(), paquete.bodega());
         }
+        orderPricingService.exigirCuponValido(req.getCodigoCupon(), paquetes.stream()
+            .map(p -> p.bodega().getEmpresa() != null ? p.bodega().getEmpresa().getId() : null)
+            .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new)));
 
         String grupoPago = "GP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
         int gcRestante = saldoGiftCard(req);
@@ -98,8 +120,8 @@ public class CheckoutGrupoFactory {
     public static List<PaymentCheckoutResponse.Paquete> resumen(List<Pedido> pedidos) {
         return pedidos.stream().map(p -> {
             Bodega b = p.getBodega();
-            String tienda = p.getEmpresa() != null && p.getEmpresa().getNombreEmpresa() != null
-                ? p.getEmpresa().getNombreEmpresa() : (b != null ? b.getNombreBodega() : "HotClick");
+            // Nombre visible del negocio (EmpresaNombre); nunca el nombre interno de la bodega (NP-19).
+            String tienda = com.hotclick.utils.EmpresaNombre.mostrar(p.getEmpresa(), "HotClick");
             String origen = b != null && b.getProvincia() != null && !b.getProvincia().isBlank() ? b.getProvincia() : null;
             return new PaymentCheckoutResponse.Paquete(p.getNumeroPedido(), tienda, origen,
                 p.getMetodoEnvio(), p.getCostoEnvio(), p.getTotalPedido());
