@@ -9,7 +9,7 @@ import api from '@/services/api'
  *   POST   /api/admin/contracargos/{id}/pruebas   multipart `archivo` (PDF o imagen; almacenamiento privado)
  *   DELETE /api/admin/contracargos/{id}/pruebas/{pruebaId}
  *   POST   /api/admin/contracargos/{id}/responder
- * Plazo de 3 días y retención (US$45) los informa ONVO: llegan del backend. Sin monto: «monto a definir por HOT_CLICK».
+ * Plazo y retención los informa ONVO (S5-05): llegan del backend; el front no escribe ni plazo ni monto. Rutas reales en #202 (501 `PENDIENTE_DECISION_DUENO` hasta entonces). Sin monto: «monto a definir por HOT_CLICK».
  * Pendiente (S5-05): quién asume el contracargo.
  */
 export type EstadoContracargo = 'ABIERTO' | 'ENVIADO' | 'GANADO' | 'PERDIDO'

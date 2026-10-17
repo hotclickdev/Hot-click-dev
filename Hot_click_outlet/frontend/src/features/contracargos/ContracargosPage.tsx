@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatPrice } from '@/utils/format'
+import { mensajeErrorContrato } from '@/utils/erroresContrato'
 import { CHIP, contracargosApi, cuentaRegresiva, pruebaValida, textoRetencion, type Contracargo } from './contracargosApi'
 
 const CHIPC = 'inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-semibold'
@@ -13,12 +14,12 @@ export default function ContracargosPage() {
 
 function Lista() {
   const [lista, setLista] = useState<Contracargo[] | null>(null)
-  const [error, setError] = useState(false)
-  useEffect(() => { contracargosApi.listar().then(setLista).catch(() => setError(true)) }, [])
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => { contracargosApi.listar().then(setLista).catch((e: unknown) => setError(mensajeErrorContrato(e) ?? 'No se pudieron cargar los contracargos.')) }, [])
   return (
     <main className="mx-auto flex max-w-[760px] flex-col gap-3 px-4 py-6">
       <h1 className="font-display text-[22px] font-bold">Contracargos</h1>
-      {error && <p role="alert" className="text-[13px] text-hc-primary-text">No se pudieron cargar los contracargos.</p>}
+      {error && <p role="alert" className="text-[13px] text-hc-primary-text">{error}</p>}
       {lista?.length === 0 && <p className="text-[13px] text-hc-n-600">No hay contracargos.</p>}
       {lista?.map((c) => (
         <Link key={c.id} to={`/plataforma/contracargos/${c.id}`} className="flex items-center justify-between gap-2 rounded-[14px] border border-hc-n-200 bg-white p-4 text-[13px]">
@@ -37,13 +38,13 @@ function Detalle({ id }: { id: string }) {
   const [ahora, setAhora] = useState(() => Date.now())
   const input = useRef<HTMLInputElement>(null)
 
-  const cargar = useCallback(() => { contracargosApi.detalle(id).then(setC).catch(() => setError('No se pudo cargar el contracargo.')) }, [id])
+  const cargar = useCallback(() => { contracargosApi.detalle(id).then(setC).catch((e: unknown) => setError(mensajeErrorContrato(e) ?? 'No se pudo cargar el contracargo.')) }, [id])
   useEffect(() => { cargar() }, [cargar])
   useEffect(() => { const t = setInterval(() => setAhora(Date.now()), 60_000); return () => clearInterval(t) }, [])
 
   async function correr(accion: () => Promise<void>, fallo: string) {
     setOcupado(true); setError(null)
-    try { await accion(); cargar() } catch { setError(fallo) } finally { setOcupado(false) }
+    try { await accion(); cargar() } catch (e: unknown) { setError(mensajeErrorContrato(e) ?? fallo) } finally { setOcupado(false) }
   }
 
   if (!c) return <main className="p-6 text-[13px]">{error ?? 'Cargando…'}</main>
@@ -57,7 +58,7 @@ function Detalle({ id }: { id: string }) {
         <section className="rounded-[14px] border border-hc-warning/50 bg-hc-warning-bg/40 p-4" aria-live="polite">
           <p className="text-[12px] text-hc-n-600">Tiempo para responder a ONVO</p>
           <p className="font-display text-[28px] font-bold text-hc-warning">{restante ?? 'Plazo vencido'}</p>
-          {c.venceEl && <p className="text-[12px] text-hc-n-600">Vence el {new Date(c.venceEl).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })} · plazo de 3 días de ONVO</p>}
+          {c.venceEl && <p className="text-[12px] text-hc-n-600">Vence el {new Date(c.venceEl).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' })} · plazo que informa ONVO</p>}
         </section>
       )}
       {c.estado === 'GANADO' && <p role="status" className="rounded-[12px] bg-hc-success-bg px-3.5 py-3 text-[13px] text-hc-success-text">ONVO resolvió a favor del negocio. Se libera la retención de {retencion}.</p>}
