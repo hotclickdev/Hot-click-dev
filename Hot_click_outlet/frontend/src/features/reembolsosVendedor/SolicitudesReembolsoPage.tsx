@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { formatPrice } from '@/utils/format'
 import { EncabezadoPagina } from '@/prototipo/compartido/ui'
 import { chipDe, solicitudesApi, textoAlerta, validarMotivoRechazo, type SolicitudReembolso } from './solicitudesApi'
+import { mensajeErrorContrato } from '@/utils/erroresContrato'
 
 type Conf = { tipo: 'aprobar' | 'rechazar'; s: SolicitudReembolso } | null
 const BTN2 = 'flex min-h-11 flex-1 items-center justify-center rounded-xl border border-hc-blue-600 text-[14px] font-semibold text-hc-blue-600 disabled:opacity-50'
@@ -18,7 +19,7 @@ export default function SolicitudesReembolsoPage() {
   const cancelar = useRef<HTMLButtonElement>(null)
 
   const cargar = useCallback(() => {
-    solicitudesApi.listar(vista).then((l) => { setLista(l); if (vista === 'pendientes') setPendientes(l.length) }).catch(() => setError('No pudimos cargar las solicitudes.'))
+    solicitudesApi.listar(vista).then((l) => { setLista(l); if (vista === 'pendientes') setPendientes(l.length) }).catch((e: unknown) => setError(mensajeErrorContrato(e) ?? 'No pudimos cargar las solicitudes.'))
   }, [vista])
   useEffect(() => { cargar() }, [cargar])
   useEffect(() => { if (conf) cancelar.current?.focus() }, [conf])
@@ -30,7 +31,7 @@ export default function SolicitudesReembolsoPage() {
     try {
       if (conf.tipo === 'aprobar') await solicitudesApi.aprobar(conf.s.id); else await solicitudesApi.rechazar(conf.s.id, motivo.trim())
       setConf(null); setMotivo(''); cargar()
-    } catch { setError('No pudimos guardar tu respuesta. Probá de nuevo.'); setConf(null) } finally { setOcupado(false) }
+    } catch (e: unknown) { setError(mensajeErrorContrato(e) ?? 'No pudimos guardar tu respuesta. Probá de nuevo.'); setConf(null) } finally { setOcupado(false) }
   }
 
   const alerta = vista === 'pendientes' && lista ? textoAlerta(lista.filter((s) => s.vencePronto).length) : null

@@ -1,7 +1,7 @@
 import api from '@/services/api'
 
 /**
- * S5-22 · Solicitudes de reembolso (vendedor) — CONTRATO SUPUESTO.
+ * S5-22 · Solicitudes de reembolso (vendedor) · rutas reales en #202 (501 `PENDIENTE_DECISION_DUENO` hasta S5-05).
  *   GET  /api/negocio/reembolsos?vista=pendientes|historial →
  *        [{ id, numero, monto, comprador, producto, motivo, estado, vencePronto: boolean, fecha, detalle }]
  *   POST /api/negocio/reembolsos/{id}/aprobar
