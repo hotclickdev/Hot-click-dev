@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import type { EstadoCompraDirecta } from './compraDirecta'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePublicarMigas } from '@/components/comprador/header/migasContexto'
 import useTiendaStore from '@/store/tiendaStore'
@@ -63,8 +64,9 @@ export default function TiendaProductoPage() {
 
   const handleComprarAhora = () => {
     if (!producto) return
-    if (!agregado) agregarAlCarrito(producto, cantidad)
-    navigate(`/tienda/${slug}/checkout`)
+    // S1-16: no se agrega al carrito; el checkout recibe solo esta línea.
+    const state: EstadoCompraDirecta = { compraDirecta: { producto, cantidad } }
+    navigate(`/tienda/${slug}/checkout`, { state })
   }
 
   if (loading) {
