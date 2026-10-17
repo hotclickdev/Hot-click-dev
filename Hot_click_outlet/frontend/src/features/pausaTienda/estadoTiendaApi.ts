@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import useAuthStore from '@/store/authStore'
 
 /**
  * Panel del vendedor · CONTRATO SUPUESTO (feat/pausa-cobros-tienda):
@@ -35,6 +36,12 @@ const VIGENCIA_MS = 30_000
 
 export function olvidarEstadoTienda() { enCurso = null }
 
+/** Al cerrar sesión o cambiar de cuenta/negocio no se reutiliza el estado de la sesión anterior. */
+useAuthStore.subscribe((s, previo) => {
+  const cerroSesion = Boolean(previo.token) && !s.token
+  if (cerroSesion || s.userId !== previo.userId || s.empresaId !== previo.empresaId) olvidarEstadoTienda()
+})
+
 export const estadoTiendaApi = {
   pedir: () => api.get('/negocio/estado-tienda').then((r) => normalizarEstadoTienda(r.data)),
   obtener: (): Promise<EstadoTienda> => {
@@ -46,7 +53,9 @@ export const estadoTiendaApi = {
   },
   pagarMensualidad: () => api.post('/negocio/mensualidad/pago').then((r) => {
     const d = (r.data && typeof r.data === 'object' && 'data' in r.data ? r.data.data : r.data) as { url?: unknown } | null
-    return typeof d?.url === 'string' ? d.url : null
+    const url = typeof d?.url === 'string' ? d.url : null
+    if (url) olvidarEstadoTienda() // pago iniciado con éxito: al volver se consulta el estado de nuevo
+    return url
   }),
 }
 
