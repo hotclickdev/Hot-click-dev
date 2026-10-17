@@ -12,6 +12,7 @@ public final class StagingAuthGuard {
 
     public static final String ENABLED = "STAGING_AUTH_ENABLED";
     public static final String VAR_LLAVE_JWT = "STAGING_JWT_SECRET";
+    public static final String FLYWAY_BASELINE = "STAGING_FLYWAY_BASELINE";
 
     private StagingAuthGuard() {}
 
@@ -30,6 +31,11 @@ public final class StagingAuthGuard {
         if (!staging && (hayEnabled || haySecret)) {
             throw new IllegalStateException(ENABLED + "/" + VAR_LLAVE_JWT
                 + " solo se permiten con el perfil staging. Quitalos del entorno.");
+        }
+        String baseline = env.getProperty(FLYWAY_BASELINE);
+        if (!staging && baseline != null && !baseline.isBlank()) {
+            throw new IllegalStateException(FLYWAY_BASELINE
+                + " solo se permite con el perfil staging. Quitalo del entorno.");
         }
         if (!staging) {
             return false;

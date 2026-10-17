@@ -57,4 +57,13 @@ class StagingAuthGuardTest {
         assertThat(StagingAuthGuard.validar(env("staging")
             .withProperty("STAGING_AUTH_ENABLED", "true").withProperty("STAGING_JWT_SECRET", SECRETO))).isTrue();
     }
+
+    @Test
+    void baseline_flyway_fuera_de_staging_no_arranca() {
+        assertThatThrownBy(() -> StagingAuthGuard.validar(env().withProperty("STAGING_FLYWAY_BASELINE", "179")))
+            .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> StagingAuthGuard.validar(env("prod").withProperty("STAGING_FLYWAY_BASELINE", "179")))
+            .isInstanceOf(IllegalStateException.class);
+        assertThat(StagingAuthGuard.validar(env("staging").withProperty("STAGING_FLYWAY_BASELINE", "179"))).isFalse();
+    }
 }

@@ -33,3 +33,8 @@ Backend lo implementa en su rama `feat/staging-backend` (incluye `application-st
 
 ## Nunca
 Volcados de prod, datos/IBAN reales, secrets del repo, conexión al servidor de prod.
+
+## Nota: Flyway baseline y seed (backend)
+- `application-staging.properties` usa `spring.flyway.baseline-on-migrate=true` y `spring.flyway.baseline-version=${STAGING_FLYWAY_BASELINE}` (solo perfil staging; nunca en `application.properties`).
+- `STAGING_FLYWAY_BASELINE` fuera del perfil staging hace que la app no arranque (`StagingAuthGuard`).
+- El seed `seed-staging.sql` **no se pudo probar** sobre el esquema de baseline: falta `qa/staging/schema-baseline.sql`, que sale del runbook con OK del dueño. Probar el seed cuando exista (V1 no crea las tablas base y V62 requiere pgvector).
