@@ -177,6 +177,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ResponseDTO.error("Formato de datos inválido"));
     }
 
+    /** S2 · Contra entrega rechazada por el negocio: 400 con código estable para el frontend. */
+    @ExceptionHandler(com.hotclick.exception.ContraEntregaNoDisponibleException.class)
+    public ResponseEntity<Object> handleContraEntrega(com.hotclick.exception.ContraEntregaNoDisponibleException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", false);
+        body.put("code", ex.getCodigo());
+        body.put("message", ex.getMessage());
+        body.put("data", Map.of("codigo", ex.getCodigo()));
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ResponseDTO> handleIllegalArgument(IllegalArgumentException ex) {
         // Texto de librerías (p. ej. conversión, JDBC) no llega al cliente: ErrorPublico lo filtra.

@@ -97,6 +97,14 @@ public class Empresa {
     @Column(name = "tienda_pausada", nullable = false)
     private Boolean tiendaPausada = false;
 
+    /** S2 · Contra entrega por negocio (V184). TRUE por defecto: manda la config global. */
+    @Column(name = "acepta_contra_entrega", nullable = false)
+    private Boolean aceptaContraEntrega = true;
+
+    /** S2 · Pedido mínimo (₡) para contra entrega; null = sin mínimo. Lo define el negocio. */
+    @Column(name = "contra_entrega_minimo_crc")
+    private Integer contraEntregaMinimoCrc;
+
     @Column(name = "fk_id_estado", nullable = false)
     private Integer estado = 1;
 
@@ -304,6 +312,12 @@ public class Empresa {
 
     public boolean isTiendaPausada() { return Boolean.TRUE.equals(tiendaPausada); }
     public void setTiendaPausada(Boolean tiendaPausada) { this.tiendaPausada = Boolean.TRUE.equals(tiendaPausada); }
+
+    public boolean isAceptaContraEntrega() { return !Boolean.FALSE.equals(aceptaContraEntrega); }
+    public void setAceptaContraEntrega(Boolean acepta) { this.aceptaContraEntrega = !Boolean.FALSE.equals(acepta); }
+
+    public Integer getContraEntregaMinimoCrc() { return contraEntregaMinimoCrc; }
+    public void setContraEntregaMinimoCrc(Integer minimo) { this.contraEntregaMinimoCrc = minimo; }
 
     public boolean isCobrosPausados() { return Boolean.TRUE.equals(cobrosPausados); }
     public void setCobrosPausados(Boolean cobrosPausados) { this.cobrosPausados = Boolean.TRUE.equals(cobrosPausados); }
