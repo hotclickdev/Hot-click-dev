@@ -174,3 +174,14 @@ describe('mensajeErrorGuardarBodega', () => {
     expect(mensajeErrorGuardarBodega(null)).toBe(ERROR_GUARDAR_BODEGA)
   })
 })
+
+describe('QA-NEG-055 límite de bodegas al abrir el formulario', () => {
+  it('avisa cuando ya se usaron todas las del plan', async () => {
+    const { avisoLimiteBodegas } = await import('./nuevaBodegaHelpers')
+    expect(avisoLimiteBodegas(1, 1)).toContain('(1/1)')
+    expect(avisoLimiteBodegas(0, 1)).toBeNull()
+    expect(avisoLimiteBodegas(5, -1)).toBeNull()
+    expect(avisoLimiteBodegas(null, 1)).toBeNull()
+    expect(avisoLimiteBodegas(1, null)).toBeNull()
+  })
+})

@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import useTenantStore from '@/store/tenantStore'
 import { useNavigate } from 'react-router-dom'
 import { Campo, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
-import { crearBodegaVendedor } from './bodegasVendedorApi'
+import { cargarBodegasVendedor, crearBodegaVendedor } from './bodegasVendedorApi'
 import FormularioPorPasos from './FormularioPorPasos'
 import CamposUbicacion from './CamposUbicacion'
 import MapaGoogleBodega from './MapaGoogleBodega'
 import PhoneField from '@/components/ui/PhoneField'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
 import {
-  FORM_BODEGA_INICIAL, mensajeErrorGuardarBodega, validarPasoBodega,
+  FORM_BODEGA_INICIAL, avisoLimiteBodegas, mensajeErrorGuardarBodega, validarPasoBodega,
   type FormBodega, type PasoBodega,
 } from './nuevaBodegaHelpers'
 import { erroresUbicacion, type UbicacionDespacho } from './ubicacionDespachoHelpers'
@@ -42,6 +43,23 @@ export function NuevaBodegaPage({
   const [intentoUbicacion, setIntentoUbicacion] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
+  const [usadas, setUsadas] = useState<number | null>(null)
+  const maxBodegas = useTenantStore((s) => (s.loaded && !s.loadError ? s.maxBodegas : null))
+  const loadTenantInfo = useTenantStore((s) => s.loadTenantInfo)
+  const tenantCargado = useTenantStore((s) => s.loaded)
+  const avisoLimite = avisoLimiteBodegas(usadas, maxBodegas)
+
+  useEffect(() => {
+    if (!tenantCargado) void loadTenantInfo()
+  }, [tenantCargado, loadTenantInfo])
+
+  useEffect(() => {
+    let vivo = true
+    cargarBodegasVendedor()
+      .then((lista) => { if (vivo) setUsadas(lista.length) })
+      .catch(() => { /* sin dato no se bloquea: el backend igual valida el límite */ })
+    return () => { vivo = false }
+  }, [])
   const idPaso = PASOS[paso]?.id
   const destino = rutaExito ?? volverA
 
@@ -55,6 +73,7 @@ export function NuevaBodegaPage({
 
   function validar(i: number): string | null {
     const id = PASOS[i]?.id
+    if (avisoLimite) return avisoLimite
     if (id === 'ubicacion') setIntentoUbicacion(true)
     return validarPasoBodega(id, form)
   }
@@ -75,6 +94,11 @@ export function NuevaBodegaPage({
 
   const wizard = (
     <div className="w-full max-w-[640px]">
+      {avisoLimite ? (
+        <p role="alert" className="mb-4 rounded-xl border border-hc-border bg-hc-surface p-3 text-sm text-hc-danger">
+          {avisoLimite}
+        </p>
+      ) : null}
       <FormularioPorPasos
         pasos={PASOS}
         pasoActual={paso}
