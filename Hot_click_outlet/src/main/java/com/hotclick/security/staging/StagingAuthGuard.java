@@ -11,7 +11,7 @@ import org.springframework.core.env.Profiles;
 public final class StagingAuthGuard {
 
     public static final String ENABLED = "STAGING_AUTH_ENABLED";
-    public static final String SECRET = "STAGING_JWT_SECRET";
+    public static final String VAR_LLAVE_JWT = "STAGING_JWT_SECRET";
 
     private StagingAuthGuard() {}
 
@@ -20,7 +20,7 @@ public final class StagingAuthGuard {
         boolean staging = env.acceptsProfiles(Profiles.of("staging"));
         boolean prod = env.acceptsProfiles(Profiles.of("prod", "production"));
         String enabled = env.getProperty(ENABLED);
-        String secret = env.getProperty(SECRET);
+        String secret = env.getProperty(VAR_LLAVE_JWT);
         boolean hayEnabled = enabled != null && !enabled.isBlank();
         boolean haySecret = secret != null && !secret.isBlank();
 
@@ -28,7 +28,7 @@ public final class StagingAuthGuard {
             throw new IllegalStateException("Los perfiles staging y prod no pueden estar activos juntos.");
         }
         if (!staging && (hayEnabled || haySecret)) {
-            throw new IllegalStateException(ENABLED + "/" + SECRET
+            throw new IllegalStateException(ENABLED + "/" + VAR_LLAVE_JWT
                 + " solo se permiten con el perfil staging. Quitalos del entorno.");
         }
         if (!staging) {
@@ -36,10 +36,10 @@ public final class StagingAuthGuard {
         }
         boolean activo = "true".equalsIgnoreCase(enabled == null ? "" : enabled.trim());
         if (activo && !haySecret) {
-            throw new IllegalStateException(ENABLED + "=true requiere " + SECRET + ".");
+            throw new IllegalStateException(ENABLED + "=true requiere " + VAR_LLAVE_JWT + ".");
         }
         if (activo && secret.getBytes(java.nio.charset.StandardCharsets.UTF_8).length < 32) {
-            throw new IllegalStateException(SECRET + " debe tener al menos 32 bytes (HS256).");
+            throw new IllegalStateException(VAR_LLAVE_JWT + " debe tener al menos 32 bytes (HS256).");
         }
         return activo;
     }

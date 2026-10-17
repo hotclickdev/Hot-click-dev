@@ -14,7 +14,7 @@ public class StagingAuthConfig {
         if (!StagingAuthGuard.validar(env)) {
             return new StagingJwtFilterHolder(null);
         }
-        return new StagingJwtFilterHolder(new StagingJwtFilter(env.getProperty(StagingAuthGuard.SECRET)));
+        return new StagingJwtFilterHolder(new StagingJwtFilter(env.getProperty(StagingAuthGuard.VAR_LLAVE_JWT)));
     }
 
     /** Contenedor para que el filtro no se registre solo en Tomcat (se agrega a la cadena de seguridad). */
