@@ -31,3 +31,16 @@ describe('tienda pausada (410 TIENDA_PAUSADA)', () => {
     expect(normalizarEstadoTienda({}).montoMensualidad).toBeNull()
   })
 })
+
+describe('una sola consulta del estado de pausa', () => {
+  it('comparte la misma promesa entre los dos paneles', async () => {
+    const { vi } = await import('vitest')
+    const { estadoTiendaApi, olvidarEstadoTienda } = await import('./estadoTiendaApi')
+    olvidarEstadoTienda()
+    const espia = vi.spyOn(estadoTiendaApi, 'pedir').mockResolvedValue(normalizarEstadoTienda({ estado: 'PAUSADA' }))
+    const [a, b] = await Promise.all([estadoTiendaApi.obtener(), estadoTiendaApi.obtener()])
+    expect(a).toBe(b)
+    expect(espia).toHaveBeenCalledTimes(1)
+    espia.mockRestore(); olvidarEstadoTienda()
+  })
+})

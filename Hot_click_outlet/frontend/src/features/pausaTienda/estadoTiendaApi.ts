@@ -29,8 +29,21 @@ export function normalizarEstadoTienda(data: unknown): EstadoTienda {
   }
 }
 
+/** Una sola consulta compartida: el menú monta el panel en móvil y escritorio a la vez. */
+let enCurso: { promesa: Promise<EstadoTienda>; desde: number } | null = null
+const VIGENCIA_MS = 30_000
+
+export function olvidarEstadoTienda() { enCurso = null }
+
 export const estadoTiendaApi = {
-  obtener: () => api.get('/negocio/estado-tienda').then((r) => normalizarEstadoTienda(r.data)),
+  pedir: () => api.get('/negocio/estado-tienda').then((r) => normalizarEstadoTienda(r.data)),
+  obtener: (): Promise<EstadoTienda> => {
+    if (enCurso && Date.now() - enCurso.desde < VIGENCIA_MS) return enCurso.promesa
+    const promesa = estadoTiendaApi.pedir()
+    promesa.catch(() => { if (enCurso?.promesa === promesa) enCurso = null })
+    enCurso = { promesa, desde: Date.now() }
+    return promesa
+  },
   pagarMensualidad: () => api.post('/negocio/mensualidad/pago').then((r) => {
     const d = (r.data && typeof r.data === 'object' && 'data' in r.data ? r.data.data : r.data) as { url?: unknown } | null
     return typeof d?.url === 'string' ? d.url : null
