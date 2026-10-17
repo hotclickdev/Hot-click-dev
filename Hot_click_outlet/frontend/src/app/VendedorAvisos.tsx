@@ -5,6 +5,7 @@ import useTenantStore from '@/store/tenantStore'
 import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
 import { RUTA_SISTEMA_VISIBILIDAD } from '@/utils/rutaTienda'
+import BannerCobrosActivos from '@/features/bannerCobros/BannerCobrosActivos'
 
 /**
  * Banners de aprobación / visibilidad en el shell Figma del vendedor.
@@ -63,7 +64,7 @@ export default function VendedorAvisos() {
       </div>
     )
   }
-  return null
+  return <BannerCobrosActivos />
 }
 
 function aplicarPerfil(data: unknown) {
