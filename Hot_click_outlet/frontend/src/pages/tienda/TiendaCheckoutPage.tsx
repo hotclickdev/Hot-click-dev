@@ -87,7 +87,7 @@ export default function TiendaCheckoutPage() {
       setError(AVISO_SIN_METODOS_PAGO)
       return
     }
-    const errorForm = mensajeErrorCheckout({ ...form, metodoPago })
+    const errorForm = mensajeErrorCheckout(form)
     if (errorForm) {
       setError(errorForm)
       return
