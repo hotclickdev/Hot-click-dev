@@ -92,6 +92,7 @@ public class AuthNuevoNegocioHandler {
     /** Códigos estables para «Crear otro negocio» (Frontend #172, punto 10). */
     public static final String CODIGO_NOMBRE_EN_USO = "NOMBRE_NEGOCIO_EN_USO";
     public static final String CODIGO_CUPO_NEGOCIOS = "CUPO_NEGOCIOS";
+    public static final String CODIGO_CORREO_EN_USO = "CORREO_NEGOCIO_EN_USO";
 
     static ResponseEntity<java.util.Map<String, Object>> conCodigo(int status, String code, String message) {
         java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
@@ -113,7 +114,7 @@ public class AuthNuevoNegocioHandler {
         }
         String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase();
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa)) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Ese correo de negocio ya está en uso"));
+            return conCodigo(400, CODIGO_CORREO_EN_USO, "Ese correo de negocio ya está en uso");
         }
         return null;
     }

@@ -238,6 +238,19 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("Multinegocio: correo de negocio ya usado → 400 CORREO_NEGOCIO_EN_USO")
+    void multinegocio_correoEnUso400() throws Exception {
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaA, "PROPIETARIO"));
+        mockMvc.perform(post("/api/auth/nuevo-negocio").header("Authorization", tokenA)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreEmpresa\":\"Negocio Correo Repetido\",\"correoEmpresa\":\"" + empresaA.getCorreoEmpresa().toUpperCase() + "\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value("CORREO_NEGOCIO_EN_USO"));
+        miembroEmpresaRepository.deleteAll();
+    }
+
+    @Test
     @DisplayName("Multinegocio: con 20 negocios, «Crear otro» → 409 CUPO_NEGOCIOS")
     void multinegocio_cupoDeNegocios409() throws Exception {
         miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaA, "PROPIETARIO"));
