@@ -22,10 +22,18 @@ public class PaymentController {
     private PaymentService paymentService;
 
     @Autowired
+    private com.hotclick.repository.ProductoRepository productoRepository;
+
+    @Autowired
     private TilopayConfirmacionService tilopayConfirmacionService;
 
     @PostMapping("/checkout")
-    public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
+    public ResponseEntity<?> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
+        if (hayTiendaPausada(request)) {
+            return ResponseEntity.status(409).body(java.util.Map.of(
+                "success", false, "code", "TIENDA_PAUSADA",
+                "message", "Esta tienda está pausada por ahora. No se puede comprar."));
+        }
         try {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
@@ -38,6 +46,15 @@ public class PaymentController {
             org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
+    }
+
+    /** Pausa de tienda: ningún producto de una tienda pausada se puede comprar (409 TIENDA_PAUSADA). */
+    private boolean hayTiendaPausada(PaymentCheckoutRequest request) {
+        if (request.getItems() == null) return false;
+        return request.getItems().stream()
+            .filter(i -> i != null && i.getProductoId() != null)
+            .map(i -> productoRepository.findById(i.getProductoId()).orElse(null))
+            .anyMatch(p -> p != null && p.getEmpresa() != null && p.getEmpresa().isTiendaPausada());
     }
 
     @GetMapping("/status/{numeroPedido}")
