@@ -49,7 +49,7 @@ public class AuthTenantSwitchHandler {
                 .findByUsuarioIdAndEmpresaIdAndEstado(currentUser.getId(), empresaId, 1)
                 .orElse(null);
             if (membresia == null)
-                return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
+                return ResponseEntity.status(403).body(sinAccesoNegocio());
             Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             String rol = RolMembresia.paraJwt(membresia, currentUser);
@@ -111,7 +111,7 @@ public class AuthTenantSwitchHandler {
                 .findByUsuarioIdAndEmpresaIdAndEstado(userId, empresaId, 1)
                 .orElse(null);
             if (membresia == null)
-                return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
+                return ResponseEntity.status(403).body(sinAccesoNegocio());
             Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             // Generar JWT apuntando a la empresa seleccionada, con el rol QUE TIENE
@@ -139,5 +139,14 @@ public class AuthTenantSwitchHandler {
         if (response != null && rt != null && rt.getRawToken() != null) {
             refreshTokenService.writeCookie(response, rt.getRawToken());
         }
+    }
+
+    /** 403 estable para el front: {success:false, code:"SIN_ACCESO_NEGOCIO", message}. */
+    static Map<String, Object> sinAccesoNegocio() {
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("success", false);
+        m.put("code", "SIN_ACCESO_NEGOCIO");
+        m.put("message", "No tenés acceso a ese negocio");
+        return m;
     }
 }

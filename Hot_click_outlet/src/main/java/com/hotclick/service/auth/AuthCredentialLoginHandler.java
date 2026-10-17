@@ -49,6 +49,7 @@ public class AuthCredentialLoginHandler {
     @Autowired private PasswordEncoder             passwordEncoder;
     @Autowired private WebAuthnService             webAuthnService;
     @Autowired private MiembroEmpresaRepository    miembroEmpresaRepository;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
     @Autowired private SecurityAuditService        securityAuditService;
     @Autowired private SecurityDetectionService    securityDetectionService;
     @Autowired private TurnstileService            turnstileService;
@@ -181,9 +182,23 @@ public class AuthCredentialLoginHandler {
         ));
     }
 
+    /** planNombre normalizado (EMPRENDEDOR, PYME, NEGOCIO_PLUS…); null si el negocio no tiene plan. */
+    private Map<Long, String> planesPorEmpresa(List<MiembroEmpresa> membresías) {
+        List<Long> ids = membresías.stream().map(m -> m.getEmpresa().getId()).toList();
+        Map<Long, String> r = new HashMap<>();
+        for (Object[] fila : empresaRepository.findPlanNombrePorIds(ids)) {
+            String n = (String) fila[1];
+            if (n != null && !n.isBlank()) {
+                r.put((Long) fila[0], n.trim().toUpperCase(java.util.Locale.ROOT).replaceAll("[\\s-]+", "_"));
+            }
+        }
+        return r;
+    }
+
     private ResponseEntity<?> respuestaMultiEmpresa(Usuario usuario) {
         List<MiembroEmpresa> membresías = miembroEmpresaRepository.findByUsuarioIdAndEstado(usuario.getId(), 1);
         if (membresías.size() <= 1) return null;
+        Map<Long, String> planes = planesPorEmpresa(membresías);
         List<Map<String, Object>> empresas = membresías.stream().map(m -> {
             Map<String, Object> e = new HashMap<>();
             e.put("id", m.getEmpresa().getId());
@@ -192,6 +207,7 @@ public class AuthCredentialLoginHandler {
             e.put("slug", m.getEmpresa().getSlug());
             e.put("estadoEmpresa", m.getEmpresa().getEstadoEmpresa());
             e.put("rol", m.getRolEnEmpresa());
+            e.put("planNombre", planes.get(m.getEmpresa().getId()));
             return e;
         }).toList();
         String selToken = jwtUtil.generateEmpresaSelectionToken(usuario.getCorreo(), usuario.getId());
