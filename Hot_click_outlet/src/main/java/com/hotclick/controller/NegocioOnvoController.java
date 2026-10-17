@@ -81,7 +81,7 @@ public class NegocioOnvoController {
         Long empresaId = companyScope.requireEmpresaId();
         if (!esPropietario(empresaId)) return soloPropietario();
         try {
-            Object valor = body != null ? body.get("frecuencia") : null;
+            Object valor = body == null ? null : (body.get("frecuencia") != null ? body.get("frecuencia") : body.get("frecuenciaLiquidacion"));
             return ResponseEntity.ok(ResponseDTO.success("Frecuencia guardada",
                 service.cambiarFrecuencia(empresaId, valor, companyScope.getCurrentUserId())));
         } catch (IllegalArgumentException e) {

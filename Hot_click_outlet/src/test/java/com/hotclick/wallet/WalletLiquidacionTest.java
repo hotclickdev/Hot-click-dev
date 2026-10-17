@@ -120,4 +120,19 @@ class WalletLiquidacionTest {
         s.ejecutarPara(LocalDate.of(2026, 10, 16));
         verify(liq).liquidar(eq(EMP), eq(PayoutRequest.LIQ_TARJETA), any());
     }
+
+    @Test
+    void scheduler_sinFrecuenciaElegida_noAsumeQuincenal() {
+        WalletLiquidacionService liq = mock(WalletLiquidacionService.class);
+        EmpresaRepository empresaRepo = mock(EmpresaRepository.class);
+        Empresa e = new Empresa();
+        assertThat(e.getFrecuenciaPayout()).isNull();
+        when(empresaRepo.findById(EMP)).thenReturn(Optional.of(e));
+        when(liq.empresasConVentasSinLiquidar(any())).thenReturn(List.of(EMP));
+        LiquidacionWalletScheduler s = new LiquidacionWalletScheduler(liq, empresaRepo, "1,16", "1");
+
+        s.ejecutarPara(LocalDate.of(2026, 10, 16)); // día de corte quincenal
+        verify(liq).liquidar(eq(EMP), eq(PayoutRequest.LIQ_CONTRA_ENTREGA), any());
+        verify(liq, never()).liquidar(eq(EMP), eq(PayoutRequest.LIQ_TARJETA), any());
+    }
 }

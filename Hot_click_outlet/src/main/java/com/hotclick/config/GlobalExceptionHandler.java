@@ -88,6 +88,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage(), java.util.Map.of("campos", ex.getCampos())));
     }
 
+    /** Alta de negocio sin frecuencia de liquidación válida: 400 con código estable, nunca 500. */
+    @ExceptionHandler(com.hotclick.exception.FrecuenciaPayoutInvalidaException.class)
+    public ResponseEntity<Object> handleFrecuenciaInvalida(com.hotclick.exception.FrecuenciaPayoutInvalidaException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", false);
+        body.put("code", com.hotclick.exception.FrecuenciaPayoutInvalidaException.CODIGO);
+        body.put("message", ex.getMessage());
+        body.put("data", Map.of("codigo", com.hotclick.exception.FrecuenciaPayoutInvalidaException.CODIGO));
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(PlanLimitException.class)
     public ResponseEntity<Object> handlePlanLimit(PlanLimitException ex) {
         log.warn("[plan-limit] entidad={} msg={}", ex.getEntidad(), ex.getMessage());

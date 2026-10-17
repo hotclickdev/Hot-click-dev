@@ -97,6 +97,7 @@ public class CatalogoLocalSeeder implements ApplicationRunner {
 
     private Empresa crearEmpresa() {
         Empresa empresa = new Empresa();
+        empresa.setFrecuenciaPayout("QUINCENAL"); // dato de prueba local/QA; en altas reales la elige el negocio
         empresa.setNombreEmpresa("Café Local Demo");
         empresa.setNombreComercial("Café Local Demo");
         empresa.setSlug(SLUG_EMPRESA);

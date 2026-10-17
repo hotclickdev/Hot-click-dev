@@ -45,3 +45,30 @@ Body `{ "cobrosPausados": true, "motivo": "texto" }`. `motivo` opcional, 3 a 300
 
 ## Migración V183 (aditiva)
 Tabla `hot_click_negocio_onvo_cuenta_tb` (único por negocio + proveedor + modo; `pct_comision` y `tarifa_semanal_crc` NULL hasta que el admin los fije; sin onboardingUrl/IBAN/KYC) y columnas `cobros_pausa_motivo` (VARCHAR 300) y `cobros_pausados_el` (**TIMESTAMPTZ**, instante absoluto; se devuelve como `pausadaEl` en hora de Costa Rica con offset) en `hot_click_empresa_tb`.
+
+## Frecuencia obligatoria en toda alta de negocio (decisión del dueño, 16-oct-2026)
+
+Campo JSON único en **todos** los caminos de alta: **`frecuenciaLiquidacion`**, valores `QUINCENAL` o `MENSUAL`
+(se normaliza con trim y mayúsculas, así que `"mensual"` vale). Alias aceptado por compatibilidad: `frecuenciaPayout`.
+No hay valor por defecto.
+
+| Camino | Endpoint | Campo |
+| --- | --- | --- |
+| Registro público | `POST /api/auth/registro-empresa` | `frecuenciaLiquidacion` |
+| Cuenta existente (login social) | `POST /api/auth/upgrade-emprendedor` | `frecuenciaLiquidacion` |
+| «Crear otro negocio» | `POST /api/auth/nuevo-negocio` | `frecuenciaLiquidacion` |
+| Tienda rápida del admin | el admin la crea sin frecuencia (`POST /api/admin/consola/tiendas-rapidas`); la elige el dueño al aceptar en `POST /api/public/tienda-rapida/{token}` | `frecuenciaLiquidacion` |
+| Cambio posterior | `PUT /api/negocio/onvo/frecuencia` (`frecuencia`, también acepta `frecuenciaLiquidacion`) y `PUT /api/negocio/billing-preferencias` (`frecuenciaPayout`) | — |
+
+Si falta o no es válida → **400**, nada se crea:
+
+```json
+{ "success": false, "code": "FRECUENCIA_INVALIDA", "message": "Elegí cómo querés recibir tus pagos: QUINCENAL o MENSUAL.", "data": { "codigo": "FRECUENCIA_INVALIDA" } }
+```
+
+- Base de datos (V183): `frecuencia_payout` sin `DEFAULT` y sin `NOT NULL`; las filas existentes conservan su valor.
+  NULL = el negocio no eligió (p. ej. tienda rápida todavía sin aceptar).
+- Scheduler: sin frecuencia no asume ninguna; omite el payout de tarjeta de ese negocio y deja un WARN con su id.
+- Admin: `GET /api/admin/empresas` y `GET /api/admin/empresas/{id}` trae `frecuenciaLiquidacion` (o `null`) y `faltaFrecuencia: true|false`
+  para mostrar «Falta frecuencia».
+- **Despliegue:** sale junto con el PR de Frontend que manda `frecuenciaLiquidacion` en el alta; sin él, todo registro daría 400.

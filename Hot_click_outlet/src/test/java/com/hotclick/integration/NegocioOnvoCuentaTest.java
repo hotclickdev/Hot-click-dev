@@ -224,4 +224,11 @@ class NegocioOnvoCuentaTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/empresa/onvo/estado").header("Authorization", tokenPersonal))
             .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("Alta sin frecuencia de pago: queda en null, nunca QUINCENAL silencioso")
+    void altaSinFrecuencia_noQuedaEnQuincenal() {
+        Empresa recargada = empresaRepository.findById(empresa.getId()).orElseThrow();
+        assertThat(recargada.getFrecuenciaPayout()).isNull();
+    }
 }

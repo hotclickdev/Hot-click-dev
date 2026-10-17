@@ -232,6 +232,9 @@ public class EmpresaAdminService {
         m.put("fechaRegistro", e.getFechaRegistro());
         m.put("fechaAprobacion", e.getFechaAprobacion());
         m.put("logoUrl", e.getLogoUrl());
+        // Sin frecuencia elegida el scheduler omite el payout de tarjeta: el admin lo ve como «Falta frecuencia».
+        m.put("frecuenciaLiquidacion", e.getFrecuenciaPayout());
+        m.put("faltaFrecuencia", e.getFrecuenciaPayout() == null);
         return m;
     }
 

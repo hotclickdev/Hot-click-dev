@@ -110,7 +110,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @DisplayName("POST /api/auth/upgrade-emprendedor con ubicación → bodega ligada")
     void upgrade_conUbicacion_creaBodega() throws Exception {
         String body = """
-            {"nombreEmpresa":"Upgrade Ubic","correoEmpresa":"upgrade-ubic@test.cr",
+            {"frecuenciaLiquidacion":"QUINCENAL","nombreEmpresa":"Upgrade Ubic","correoEmpresa":"upgrade-ubic@test.cr",
              "telefonoEmpresa":"22225555","provincia":"Heredia","canton":"Belén",
              "direccionExacta":"Del Automercado 100 m sur","permiteRetiroCliente":false}
             """;
@@ -129,7 +129,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @DisplayName("POST /api/auth/upgrade-emprendedor sin ubicación (payload viejo) → 200 sin bodega")
     void upgrade_sinUbicacion_200() throws Exception {
         String body = """
-            {"nombreEmpresa":"Upgrade Viejo","correoEmpresa":"upgrade-viejo@test.cr"}
+            {"frecuenciaLiquidacion":"QUINCENAL","nombreEmpresa":"Upgrade Viejo","correoEmpresa":"upgrade-viejo@test.cr"}
             """;
         mockMvc.perform(post("/api/auth/upgrade-emprendedor")
                 .header("Authorization", userToken)
@@ -144,7 +144,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @DisplayName("POST /api/auth/nuevo-negocio con ubicación → bodega ligada")
     void nuevoNegocio_conUbicacion_creaBodega() throws Exception {
         String body = """
-            {"nombreEmpresa":"Segundo Ubic","correoEmpresa":"segundo-ubic@test.cr",
+            {"frecuenciaLiquidacion":"QUINCENAL","nombreEmpresa":"Segundo Ubic","correoEmpresa":"segundo-ubic@test.cr",
              "provincia":"Limón","canton":"Pococí","direccionExacta":"Guápiles centro"}
             """;
         mockMvc.perform(post("/api/auth/nuevo-negocio")
@@ -164,7 +164,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @DisplayName("POST /api/auth/nuevo-negocio con ubicación a medias → 400 y no crea negocio")
     void nuevoNegocio_ubicacionAMedias_400() throws Exception {
         String body = """
-            {"nombreEmpresa":"Medias","correoEmpresa":"medias-ubic@test.cr","canton":"Pococí"}
+            {"frecuenciaLiquidacion":"QUINCENAL","nombreEmpresa":"Medias","correoEmpresa":"medias-ubic@test.cr","canton":"Pococí"}
             """;
         mockMvc.perform(post("/api/auth/nuevo-negocio")
                 .header("Authorization", userToken)
@@ -178,7 +178,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @DisplayName("POST /api/auth/nuevo-negocio sin ubicación (payload viejo) → 200 sin bodega")
     void nuevoNegocio_sinUbicacion_200() throws Exception {
         String body = """
-            {"nombreEmpresa":"Viejo","correoEmpresa":"viejo-ubic@test.cr"}
+            {"frecuenciaLiquidacion":"QUINCENAL","nombreEmpresa":"Viejo","correoEmpresa":"viejo-ubic@test.cr"}
             """;
         mockMvc.perform(post("/api/auth/nuevo-negocio")
                 .header("Authorization", userToken)
@@ -215,6 +215,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
 
     private static RegistroEmpresaDTO dtoRegistro(String correo) {
         RegistroEmpresaDTO dto = new RegistroEmpresaDTO();
+        dto.setFrecuenciaLiquidacion("QUINCENAL");
         dto.setNombreEmpresa("Tienda Ubicación");
         dto.setCorreoEmpresa(correo);
         dto.setTelefonoEmpresa("22224444");

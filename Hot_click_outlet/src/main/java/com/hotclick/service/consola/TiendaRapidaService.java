@@ -138,7 +138,8 @@ public class TiendaRapidaService {
      */
     @Transactional
     public Map<String, Object> aceptar(String token, boolean acepto, String versionLegal, String ipHash,
-                                       String persona, String cedula, String correo, String telefono) {
+                                       String persona, String cedula, String correo, String telefono,
+                                       String frecuenciaLiquidacion) {
         if (!acepto) {
             throw new IllegalArgumentException("Para seguir tenés que aceptar ser el dueño o representante legal del negocio.");
         }
@@ -146,6 +147,8 @@ public class TiendaRapidaService {
             throw new IllegalArgumentException("El texto que aceptaste cambió. Recargá la página.");
         }
         exigirPaso1(persona, cedula);
+        // La tienda la crea el admin sin frecuencia (la elige el dueño, no el admin): se exige al aceptar.
+        String frecuenciaPayout = com.hotclick.exception.FrecuenciaPayoutInvalidaException.requerida(frecuenciaLiquidacion);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         TiendaRapida fila = cerrarUna(exigir(token), ahora);
         exigirVigente(fila, ahora);
@@ -160,6 +163,7 @@ public class TiendaRapidaService {
             throw new EnlaceNoVigenteException(HttpStatus.CONFLICT, "Este enlace ya se usó.");
         }
         aplicarDatos(fila, persona, cedula, correo, telefono);
+        fila.getEmpresa().setFrecuenciaPayout(frecuenciaPayout);
         fila.setAceptadoEn(ahora);
         fila.setAceptadoIpHash(ipHash);
         fila.setAceptadoPor(fila.getUsuario().getId());

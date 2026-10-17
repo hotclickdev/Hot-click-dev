@@ -72,7 +72,7 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
     private String aceptarBody(boolean acepto, String correo) throws Exception {
         return json.writeValueAsString(Map.of("acepto", acepto, "versionLegal", TiendaRapidaReglas.VERSION_LEGAL,
             "persona", "Ana Mora Solís", "cedula", "112340567", "correo", correo,
-            "telefono", "88887777", "clave", "clave-segura-1"));
+            "telefono", "88887777", "clave", "clave-segura-1", "frecuenciaLiquidacion", "MENSUAL"));
     }
 
     @Test
