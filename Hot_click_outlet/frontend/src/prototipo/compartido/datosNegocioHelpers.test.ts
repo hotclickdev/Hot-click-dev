@@ -150,3 +150,16 @@ describe('extrasDesdeForm', () => {
     ).toEqual({ categoria: 'Ropa', instagram: '@x', zona: 'GAM' })
   })
 })
+
+describe('QA-NEG-035 categoría del negocio', () => {
+  it('usa las categorías reales y conserva la actual', async () => {
+    const { opcionesCategoriaNegocio } = await import('./datosNegocioHelpers')
+    expect(opcionesCategoriaNegocio(['Artesanías', 'Ropa'], '')).toEqual(['Artesanías', 'Ropa'])
+    expect(opcionesCategoriaNegocio(['Artesanías'], 'Mascotas')).toEqual(['Mascotas', 'Artesanías'])
+    expect(opcionesCategoriaNegocio([], '')).toEqual(['Tecnología', 'Ropa', 'Hogar'])
+  })
+  it('un negocio sin categoría ya no queda como «Tecnología»', async () => {
+    const { formDesdeEmpresa } = await import('./datosNegocioHelpers')
+    expect(formDesdeEmpresa({ id: 1, nombreComercial: 'X' }).categoria).toBe('')
+  })
+})

@@ -11,7 +11,19 @@ import { leerExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
 export const PLACEHOLDER_LOGO = 'Todavía no subiste un logo'
 export const PLACEHOLDER_BANNER = 'Todavía no subiste un banner'
 
+/** Respaldo si GET /categorias no responde. */
 export const CATEGORIAS_NEGOCIO = ['Tecnología', 'Ropa', 'Hogar'] as const
+
+/**
+ * QA-NEG-035: las opciones salen de las categorías reales y siempre incluyen la que ya tiene el negocio;
+ * antes había 3 fijas y un negocio sin categoría se guardaba como «Tecnología».
+ */
+export function opcionesCategoriaNegocio(reales: readonly string[], actual: string): string[] {
+  const base = reales.length > 0 ? reales : CATEGORIAS_NEGOCIO
+  const lista = [...new Set(base.map((c) => c.trim()).filter(Boolean))]
+  const a = actual.trim()
+  return a && !lista.includes(a) ? [a, ...lista] : lista
+}
 
 export type FormNegocio = {
   nombre: string
@@ -27,7 +39,7 @@ export type ExtrasFormNegocio = Pick<FormNegocio, 'categoria' | 'instagram' | 'z
 export const FORM_NEGOCIO_INICIAL: FormNegocio = {
   nombre: '',
   descripcion: '',
-  categoria: CATEGORIAS_NEGOCIO[0],
+  categoria: '',
   whatsapp: '',
   instagram: '',
   zona: '',

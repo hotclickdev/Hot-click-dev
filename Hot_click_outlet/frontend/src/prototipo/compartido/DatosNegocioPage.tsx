@@ -10,8 +10,10 @@ import type { PasoFormulario } from './formularioPorPasosHelpers'
 import { Campo, Chip, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import iconCamara from './assets/icon-camara.svg'
+import { categoriaService } from '@/services/orderService'
+import { listaCategoriasVendedor, nombreCategoriaVendedor } from './categoriaVendedor'
 import {
-  CATEGORIAS_NEGOCIO,
+  opcionesCategoriaNegocio,
   PLACEHOLDER_BANNER,
   PLACEHOLDER_LOGO,
   FORM_NEGOCIO_INICIAL,
@@ -51,6 +53,15 @@ export function DatosNegocioPage({
   const [descRaw, setDescRaw] = useState('')
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
+  const [categoriasReales, setCategoriasReales] = useState<string[]>([])
+
+  useEffect(() => {
+    let vivo = true
+    categoriaService.getAll()
+      .then((res) => { if (vivo) setCategoriasReales(listaCategoriasVendedor(res.data).map(nombreCategoriaVendedor)) })
+      .catch(() => { /* respaldo: CATEGORIAS_NEGOCIO */ })
+    return () => { vivo = false }
+  }, [])
   const idPaso = PASOS[paso]?.id
   const destino = rutaExito ?? volverA
 
@@ -65,6 +76,7 @@ export function DatosNegocioPage({
   function validar(i: number): string | null {
     const id = PASOS[i]?.id
     if (id === 'identidad' && !form.nombre.trim()) return 'El nombre del negocio es requerido'
+    if (id === 'identidad' && !form.categoria.trim()) return 'Elegí la categoría principal de tu negocio'
     if (id === 'contacto') return errorWhatsappNegocio(form.whatsapp)
     return null
   }
@@ -108,7 +120,7 @@ export function DatosNegocioPage({
               <Campo etiqueta="Nombre del negocio" value={form.nombre} onChange={setCampo('nombre')} />
               <p className="mb-2 text-xs font-medium text-hc-muted">Categoría principal</p>
               <div className="mb-4 flex flex-wrap gap-2">
-                {CATEGORIAS_NEGOCIO.map((item) => (
+                {opcionesCategoriaNegocio(categoriasReales, form.categoria).map((item) => (
                   <Chip
                     key={item}
                     activo={form.categoria === item}
