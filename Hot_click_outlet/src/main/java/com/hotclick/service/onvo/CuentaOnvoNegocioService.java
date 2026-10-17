@@ -39,12 +39,13 @@ public class CuentaOnvoNegocioService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> estado(Long empresaId) {
-        Optional<NegocioOnvoCuenta> cuenta = cuenta(empresaId);
+        NegocioOnvoCuenta c = cuenta(empresaId).orElse(null);
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
         boolean pausadaPorHotClick = empresa != null && empresa.isCobrosPausados();
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("estado", pausadaPorHotClick ? "PAUSADA" : cuenta.map(NegocioOnvoCuenta::getEstado).orElse(NegocioOnvoCuenta.ESTADO_SIN_CUENTA));
-        m.put("frecuencia", cuenta.map(NegocioOnvoCuenta::getFrecuenciaLiquidacion).orElse(null));
+        String estadoCuenta = c != null ? c.getEstado() : NegocioOnvoCuenta.ESTADO_SIN_CUENTA;
+        m.put("estado", pausadaPorHotClick ? "PAUSADA" : estadoCuenta);
+        m.put("frecuencia", c != null ? c.getFrecuenciaLiquidacion() : null);
         m.put("pausadaEl", pausadaPorHotClick && empresa.getCobrosPausadosEl() != null
             ? empresa.getCobrosPausadosEl().atZone(com.hotclick.utils.Constants.ZONA_CR).toOffsetDateTime().toString() : null);
         m.put("motivoPausa", pausadaPorHotClick ? empresa.getCobrosPausaMotivo() : null);
