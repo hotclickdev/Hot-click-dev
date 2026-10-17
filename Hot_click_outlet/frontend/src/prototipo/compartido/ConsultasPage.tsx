@@ -1,14 +1,19 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CONVERSACION, RESPUESTA_SIN_COPILOT } from '../emprendedor/pages/ConsultasHotPage'
 import { useSellerRuta } from './SellerPlanContext'
 import EntradaPagina from './motion/EntradaPagina'
 
 const CHIPS = ['Inventario', 'Finanzas', 'Características', 'Mejoras', 'Problemas'] as const
 
 /**
- * Consultas con Hot (Figma 61:514).
+ * Consultas con Hot (Figma 61:514). S1-22 (NP-7/NP-8): sin la conversación de demo (ventas
+ * de otro negocio, productos ajenos); solo el saludo, igual que el panel Emprendedor. No llama al copilot.
  */
 export default function ConsultasPage() {
   const ruta = useSellerRuta()
+  const [texto, setTexto] = useState('')
+  const [mensajes, setMensajes] = useState(CONVERSACION)
   return (
     <EntradaPagina className="flex min-h-dvh flex-col">
       <main className="flex min-h-dvh flex-col">
@@ -26,14 +31,25 @@ export default function ConsultasPage() {
               <span key={chip} className="shrink-0 rounded-full border border-hc-border px-3 py-1.5 text-[11px]">{chip}</span>
             ))}
           </div>
-          <Burbuja lado="bot">Hola. Soy el asistente de HotClick. Puedo ayudarte con inventario, finanzas, características, mejoras o problemas de tu tienda. ¿Qué necesitás?</Burbuja>
-          <Burbuja lado="user">¿Cuántos productos me quedan por agotarse?</Burbuja>
-          <Burbuja lado="bot">Tenés 4 productos por agotarse: Auriculares Bluetooth X200, Cargador USB-C 30W y 2 más. ¿Querés que te arme la lista completa?</Burbuja>
-          <Burbuja lado="user">Sí, y decime cómo van mis ganancias este mes</Burbuja>
-          <Burbuja lado="bot">Este mes vendiste ₡145.000 y tenés ₡320.000 en ganancia potencial de productos publicados. Tu producto más vendido es Auriculares Bluetooth X200.</Burbuja>
+          {mensajes.map((msg, i) => (
+            <Burbuja key={`${msg.de}-${i}`} lado={msg.de}>{msg.texto}</Burbuja>
+          ))}
         </div>
-        <form className="flex items-center gap-2 border-t border-hc-border px-5 py-3" onSubmit={(evento) => evento.preventDefault()}>
-          <input className="min-h-11 flex-1 rounded-xl bg-hc-surface-2 px-3.5 text-sm" placeholder="Escribí tu consulta..." />
+        <form className="flex items-center gap-2 border-t border-hc-border px-5 py-3" onSubmit={(evento) => {
+            evento.preventDefault()
+            const consulta = texto.trim()
+            if (!consulta) return
+            setMensajes((prev) => [...prev, { de: 'user', texto: consulta }, { de: 'bot', texto: RESPUESTA_SIN_COPILOT }])
+            setTexto('')
+          }}
+        >
+          <input
+            className="min-h-11 flex-1 rounded-xl bg-hc-surface-2 px-3.5 text-sm"
+            placeholder="Escribí tu consulta..."
+            aria-label="Tu consulta"
+            value={texto}
+            onChange={(evento) => setTexto(evento.target.value)}
+          />
           <button type="submit" className="flex size-10 items-center justify-center rounded-full bg-hc-primary text-white" aria-label="Enviar">
             →
           </button>
