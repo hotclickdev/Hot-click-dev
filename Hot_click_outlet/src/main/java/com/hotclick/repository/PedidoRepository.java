@@ -304,4 +304,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findTiendaPendientesVencidos(@Param("empresaId") Long empresaId,
                                               @Param("corte") java.time.LocalDateTime corte,
                                               Pageable pageable);
+
+    /** Panel del negocio (estado de la tienda): pedidos del negocio en los estados dados. */
+    long countByEmpresa_IdAndEstadoPedidoIn(Long empresaId, java.util.Collection<String> estados);
 }
