@@ -77,7 +77,7 @@ public class EmpresaController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> cambiarCobrosPausados(@PathVariable Long id,
                                                              @RequestBody Map<String, Object> body) {
-        boolean pausados = empresaAdminService.cambiarCobrosPausados(id, body.get("cobrosPausados"));
+        boolean pausados = empresaAdminService.cambiarCobrosPausados(id, body.get("cobrosPausados"), body.get("motivo"));
         String msg = pausados ? "Cobros en línea pausados" : "Cobros en línea reanudados";
         return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("cobrosPausados", pausados)));
     }

@@ -83,6 +83,13 @@ public class Empresa {
     @Column(name = "cobros_pausados", nullable = false)
     private Boolean cobrosPausados = false;
 
+    /** V183: motivo que escribió el admin al pausar cobros (sin datos personales). */
+    @Column(name = "cobros_pausa_motivo", length = 300)
+    private String cobrosPausaMotivo;
+
+    @Column(name = "cobros_pausados_el")
+    private java.time.LocalDateTime cobrosPausadosEl;
+
     /** Tienda pausada por HotClick: /api/tienda/{slug} responde 410 TIENDA_PAUSADA. */
     @Column(name = "tienda_pausada", nullable = false)
     private Boolean tiendaPausada = false;
@@ -297,6 +304,10 @@ public class Empresa {
 
     public boolean isCobrosPausados() { return Boolean.TRUE.equals(cobrosPausados); }
     public void setCobrosPausados(Boolean cobrosPausados) { this.cobrosPausados = Boolean.TRUE.equals(cobrosPausados); }
+    public String getCobrosPausaMotivo() { return cobrosPausaMotivo; }
+    public void setCobrosPausaMotivo(String v) { this.cobrosPausaMotivo = v; }
+    public java.time.LocalDateTime getCobrosPausadosEl() { return cobrosPausadosEl; }
+    public void setCobrosPausadosEl(java.time.LocalDateTime v) { this.cobrosPausadosEl = v; }
 
     public Integer getEstado() { return estado; }
     public void setEstado(Integer estado) { this.estado = estado; }
