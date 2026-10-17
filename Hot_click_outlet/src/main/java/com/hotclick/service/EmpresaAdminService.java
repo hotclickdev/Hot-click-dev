@@ -232,6 +232,9 @@ public class EmpresaAdminService {
         m.put("fechaRegistro", e.getFechaRegistro());
         m.put("fechaAprobacion", e.getFechaAprobacion());
         m.put("logoUrl", e.getLogoUrl());
+        // Sin frecuencia elegida el scheduler omite el payout de tarjeta: el admin lo ve como «Falta frecuencia».
+        m.put("frecuenciaLiquidacion", e.getFrecuenciaPayout());
+        m.put("faltaFrecuencia", e.getFrecuenciaPayout() == null);
         return m;
     }
 
@@ -273,15 +276,27 @@ public class EmpresaAdminService {
 
     /** Pausa o reanuda los cobros en línea del negocio. Queda auditado. */
     public boolean cambiarCobrosPausados(Long id, Object val) {
+        return cambiarCobrosPausados(id, val, null);
+    }
+
+    /** Igual, con motivo opcional (3 a 300 caracteres) que ve el negocio y queda en la auditoría. */
+    public boolean cambiarCobrosPausados(Long id, Object val, Object motivoCrudo) {
         if (!(val instanceof Boolean pausar)) {
             throw new IllegalArgumentException("Campo cobrosPausados requerido (true o false)");
         }
+        String motivo = motivoCrudo == null ? null : motivoCrudo.toString().trim();
+        if (motivo != null && motivo.isEmpty()) motivo = null;
+        if (motivo != null && (motivo.length() < 3 || motivo.length() > 300)) {
+            throw new IllegalArgumentException("El motivo debe tener entre 3 y 300 caracteres");
+        }
         Empresa empresa = empresa(id);
         empresa.setCobrosPausados(pausar);
+        empresa.setCobrosPausaMotivo(pausar ? motivo : null);
+        empresa.setCobrosPausadosEl(pausar ? java.time.OffsetDateTime.now(com.hotclick.utils.Constants.ZONA_CR) : null);
         empresaRepository.save(empresa);
+        String detalle = (pausar ? "Pausada" : "Reanudada") + (motivo != null ? ": " + motivo : "");
         auditoriaAdminRegistroService.registrarSiAdmin(
-            pausar ? "EMPRESA_COBROS_PAUSADOS" : "EMPRESA_COBROS_REANUDADOS", "EMPRESA", id, id,
-            pausar ? "Pausada" : "Reanudada");
+            pausar ? "EMPRESA_COBROS_PAUSADOS" : "EMPRESA_COBROS_REANUDADOS", "EMPRESA", id, id, detalle);
         return pausar;
     }
 

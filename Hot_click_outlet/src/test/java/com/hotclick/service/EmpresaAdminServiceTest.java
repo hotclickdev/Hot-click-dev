@@ -31,6 +31,21 @@ class EmpresaAdminServiceTest {
     @InjectMocks EmpresaAdminService service;
 
     @Test
+    @DisplayName("Lista admin: negocio sin frecuencia → faltaFrecuencia=true («Falta frecuencia»); con frecuencia → false")
+    void listaMarcaFaltaFrecuencia() {
+        Empresa sin = empresa(1L, "ACTIVO");
+        Empresa con = empresa(2L, "ACTIVO");
+        con.setFrecuenciaPayout("MENSUAL");
+        when(empresaRepository.findAll(org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+            .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(sin, con)));
+
+        var filas = service.listar(0, 50);
+
+        assertThat(filas.get(0)).containsEntry("faltaFrecuencia", true).containsEntry("frecuenciaLiquidacion", null);
+        assertThat(filas.get(1)).containsEntry("faltaFrecuencia", false).containsEntry("frecuenciaLiquidacion", "MENSUAL");
+    }
+
+    @Test
     @DisplayName("ACTIVO delega en aprobarYPublicar, no solo pisa el string")
     void activoLlamaAprobarYPublicar() {
         Empresa e = empresa(8L, "INACTIVO");

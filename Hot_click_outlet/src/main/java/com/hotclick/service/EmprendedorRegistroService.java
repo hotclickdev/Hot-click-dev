@@ -52,6 +52,7 @@ public class EmprendedorRegistroService {
             throw new IllegalArgumentException("El correo del administrador es requerido");
         if (dto.getPasswordAdmin() == null || dto.getPasswordAdmin().length() < 8)
             throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres");
+        String frecuenciaPayout = com.hotclick.exception.FrecuenciaPayoutInvalidaException.requerida(dto.getFrecuenciaLiquidacion());
 
         // Correo del admin ya registrado
         if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase()))
@@ -74,6 +75,7 @@ public class EmprendedorRegistroService {
 
         // 1. Crear empresa
         Empresa empresa = new Empresa();
+        empresa.setFrecuenciaPayout(frecuenciaPayout);
         empresa.setNombreEmpresa(dto.getNombreEmpresa().trim());
         empresa.setNombreComercial(
             dto.getNombreComercial() != null && !dto.getNombreComercial().isBlank()
@@ -156,7 +158,8 @@ public class EmprendedorRegistroService {
                                         String correoEmpresa,
                                         String cedulaJuridica, Boolean inscritoHacienda,
                                         String regimenTributario, String nombreHacienda,
-                                        UbicacionDespachoAlta ubicacionDespacho) {
+                                        UbicacionDespachoAlta ubicacionDespacho,
+                                        String frecuenciaLiquidacion) {
         // Llega detached desde el request (open-in-view=false): sin recargar, getRoles() es lazy y falla.
         usuario = usuarioRepository.findById(usuario.getId()).orElse(usuario);
         if (usuario.getEmpresa() != null) {
@@ -167,6 +170,7 @@ public class EmprendedorRegistroService {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del negocio es requerido");
         }
+        String frecuenciaPayout = com.hotclick.exception.FrecuenciaPayoutInvalidaException.requerida(frecuenciaLiquidacion);
         Optional<UbicacionDespachoAlta> ubicacion = bodegaDespachoInicialService.normalizar(ubicacionDespacho);
 
         String slug     = uniqueSlug(slugify(nombre));
@@ -176,6 +180,7 @@ public class EmprendedorRegistroService {
 
         // 1. Crear empresa
         Empresa empresa = new Empresa();
+        empresa.setFrecuenciaPayout(frecuenciaPayout);
         empresa.setNombreEmpresa(nombre);
         empresa.setNombreComercial(
             (nombreComercial != null && !nombreComercial.isBlank())
