@@ -159,7 +159,8 @@ class NegocioVentasSemanaTest extends BaseIntegrationTest {
     }
 
     @Test
-    void minimoComision_salDelPlan_ySinMinimoEsNull() throws Exception {
+    @org.junit.jupiter.api.extension.ExtendWith(org.springframework.boot.test.system.OutputCaptureExtension.class)
+    void minimoComision_salDelPlan_ySinMinimoEsNull(org.springframework.boot.test.system.CapturedOutput salida) throws Exception {
         // El ₡700 viene de la configuración del plan (V168 lo carga en los planes); aquí, de la fila del plan.
         mockMvc.perform(get(URL).param("desde", "2026-10-12").header("Authorization", token))
             .andExpect(jsonPath("$.data.minimoComision").value(700));
@@ -169,6 +170,9 @@ class NegocioVentasSemanaTest extends BaseIntegrationTest {
         mockMvc.perform(get(URL).param("desde", "2026-10-12").header("Authorization", token))
             .andExpect(jsonPath("$.data.minimoComision").value(org.hamcrest.Matchers.nullValue()))
             .andExpect(jsonPath("$.data.ventas[1].minimoAplicado").value(false));
+        org.assertj.core.api.Assertions.assertThat(salida.getAll())
+            .contains("Configuración faltante: el plan id=" + plan.getId() + " nombre=Plan Ventas Test no tiene comisionMinimaCrc")
+            .doesNotContain("ventas-v@test.cr");
     }
 
     private com.hotclick.model.Producto producto(String nombre, String sku, com.hotclick.model.Categoria cat,

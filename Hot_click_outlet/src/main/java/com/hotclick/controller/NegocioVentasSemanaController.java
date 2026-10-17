@@ -40,6 +40,8 @@ public class NegocioVentasSemanaController {
     /** Tope de ventas por semana en la respuesta (protege el endpoint ante negocios muy grandes). */
     static final int MAX_LIST_VENTAS = 5000;
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(NegocioVentasSemanaController.class);
+
     private final CompanyScope companyScope;
     private final EmpresaRepository empresaRepository;
     private final WalletTransaccionRepository ledger;
@@ -65,8 +67,7 @@ public class NegocioVentasSemanaController {
 
         Plan plan = empresaRepository.findById(empresaId).map(Empresa::getPlan).orElse(null);
         BigDecimal pct = plan != null ? plan.getComisionPorcentaje() : null;
-        Integer minimo = plan != null && plan.getComisionMinimaCrc() != null && plan.getComisionMinimaCrc() > 0
-            ? plan.getComisionMinimaCrc() : null;
+        Integer minimo = minimoDelPlan(plan);
 
         List<WalletTransaccion> filas = ledger
             .findByEmpresaIdAndTipoAndFechaCreacionGreaterThanEqualAndFechaCreacionLessThanOrderByFechaCreacionAsc(
@@ -133,6 +134,19 @@ public class NegocioVentasSemanaController {
         Map<Long, String> etiqueta = new java.util.HashMap<>();
         nombres.forEach((id, lista) -> etiqueta.put(id, etiquetaProducto(lista)));
         return etiqueta;
+    }
+
+    /**
+     * Mínimo de comisión desde la configuración del plan (decisión del dueño: ₡700, cargado en V168).
+     * Si al plan le falta el valor (null o 0), devuelve null y deja un WARN con id y nombre del plan.
+     */
+    static Integer minimoDelPlan(Plan plan) {
+        if (plan == null) return null;
+        Integer m = plan.getComisionMinimaCrc();
+        if (m != null && m > 0) return m;
+        log.warn("[ventas-semana] Configuración faltante: el plan id={} nombre={} no tiene comisionMinimaCrc",
+            plan.getId(), plan.getNombre());
+        return null;
     }
 
     static String etiquetaProducto(List<String> nombres) {

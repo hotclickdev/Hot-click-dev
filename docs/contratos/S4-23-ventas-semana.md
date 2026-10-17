@@ -15,7 +15,7 @@
 | `bruto`, `comision` | lo que el ledger registró en la venta (`CREDITO_VENTA`: `total_bruto`, `comision_saas + comision_gw`). No se recalcula |
 | `neto` | `bruto - comision` |
 | `porcentaje` | `plan.comisionPorcentaje`; `null` sin plan |
-| `minimoComision` | `plan.comisionMinimaCrc`, la configuración del plan en la base. **Decisión del dueño: ₡700 por venta en todos los planes**, ya cargado en V168 para los planes vigentes, así que hoy devuelve `700`. No está fijo en el código. Es `null` solo si el negocio no tiene plan o si a su plan le falta el valor (columna en 0, el default de V168); nunca se devuelve `0` |
+| `minimoComision` | `plan.comisionMinimaCrc`, la configuración del plan en la base. **Decisión del dueño: ₡700 por venta en todos los planes**, ya cargado en V168 para los planes vigentes, así que hoy devuelve `700`. No está fijo en el código. Es `null` solo si el negocio no tiene plan o si a su plan le falta el valor (columna en 0, el default de V168); en ese caso se registra un WARN «Configuración faltante» con el id y el nombre del plan, sin datos personales. Nunca se devuelve `0` |
 | `comisionPorcentaje` | `bruto × porcentaje` redondeado, solo informativo; `null` sin plan |
 | `minimoAplicado` | el % daba menos que el mínimo y la comisión SaaS registrada llegó al mínimo |
 | `producto` | nombre del producto del pedido de la venta (`referencia_tipo = PEDIDO`). Si el pedido tiene varios productos: «Primero y N más». Es `null` si el movimiento no apunta a un pedido o el pedido no tiene ítems. Nunca es la descripción del ledger |
