@@ -30,9 +30,19 @@ public class CrmController {
     @Autowired private CrmAccessGuard crmAccessGuard;
     @Autowired private CrmClientesService crmClientesService;
 
+    /**
+     * SEG-E / P8-03: el módulo CRM (lista, ficha, edición, puntos, WhatsApp) solo con plan que lo incluya.
+     * {@code buscar} y {@code crear} quedan abiertos porque los usa la caja (POS) para asignar cliente,
+     * y el POS va en todos los planes (decisión del dueño, 16-oct-2026).
+     */
+    private static ResponseEntity<?> sinCrm() {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body(ResponseDTO.error(MSG_REQUIERE_CRM));
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> listar() {
+        if (crmAccessGuard.sinAccesoCrm()) return sinCrm();
         return ResponseEntity.ok(ResponseDTO.success("OK",
             crmClientesService.listar(companyScope.requireEmpresaIdOrAdmin())));
     }
@@ -65,6 +75,7 @@ public class CrmController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
+        if (crmAccessGuard.sinAccesoCrm()) return sinCrm();
         return ResponseEntity.ok(ResponseDTO.success("OK",
             crmClientesService.detalle(id, companyScope.requireEmpresaIdOrAdmin())));
     }
@@ -72,6 +83,7 @@ public class CrmController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        if (crmAccessGuard.sinAccesoCrm()) return sinCrm();
         try {
             return ResponseEntity.ok(ResponseDTO.success("Cliente actualizado",
                 crmClientesService.actualizar(id, companyScope.requireEmpresaIdOrAdmin(), body)));
@@ -85,6 +97,7 @@ public class CrmController {
     @PostMapping("/{id}/puntos")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> ajustarPuntos(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        if (crmAccessGuard.sinAccesoCrm()) return sinCrm();
         try {
             int delta = Integer.parseInt(body.getOrDefault("delta", "0").toString());
             int nuevos = crmClientesService.ajustarPuntos(id, companyScope.requireEmpresaIdOrAdmin(), delta);

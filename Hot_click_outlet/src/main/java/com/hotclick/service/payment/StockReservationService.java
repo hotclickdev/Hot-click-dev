@@ -57,6 +57,10 @@ public class StockReservationService {
             if (!esPublicableEnMemoria(p) || Boolean.TRUE.equals(p.getVendido())) {
                 throw new IllegalStateException("Producto no disponible: " + p.getNombreProducto());
             }
+            // HOTFIX: «A cotizar» nunca se cobra a ₡1; solo con un precio cotizado explícito.
+            if (p.esACotizar() && item.getPrecioUnitarioOverride() == null) {
+                throw new IllegalArgumentException("«" + p.getNombreProducto() + "» es a cotizar: solicitá una cotización al vendedor");
+            }
             // Validar contra stockDisponible (stockActual - stockReservado)
             if (p.getStockDisponible() < item.getCantidad()) {
                 throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), item.getCantidad());

@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
  * {@code hotclick.seed.catalogo-local=true}.
  */
 @Component
-@Profile({"test", "dev"})
+@Profile("(test | dev) & !prod & !production") // nunca en producción: crea negocio ACTIVO directo
 @ConditionalOnProperty(name = "hotclick.seed.catalogo-local", havingValue = "true")
 @Order(200)
 public class CatalogoLocalSeeder implements ApplicationRunner {
@@ -51,6 +51,12 @@ public class CatalogoLocalSeeder implements ApplicationRunner {
     private final CategoriaRepository categoriaRepository;
     private final UsuarioRepository usuarioRepository;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.core.env.Environment environment;
+
+    @org.springframework.beans.factory.annotation.Value("${app.url:http://localhost:3000}")
+    private String appUrl;
+
     public CatalogoLocalSeeder(
             ProductoRepository productoRepository,
             EmpresaRepository empresaRepository,
@@ -67,6 +73,10 @@ public class CatalogoLocalSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        if (environment != null && ClaveSemilla.esProduccion(appUrl, environment.getActiveProfiles())) {
+            LOG.error("[seed-catalogo] Entorno de producción: no se siembra el catálogo local.");
+            return;
+        }
         if (productoRepository.count() > 0) return;
         if (productoRepository.findBySku(SKU_DEMO).isPresent()) return;
         Usuario admin = usuarioRepository.findByCorreo(CORREO_ADMIN).orElse(null);

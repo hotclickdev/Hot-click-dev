@@ -1,5 +1,6 @@
 package com.hotclick.service.pedido;
 
+import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
@@ -61,7 +62,8 @@ public class PedidoManualFactory {
         pedido.setCostoEnvio(dto.getCostoEnvio() != null ? dto.getCostoEnvio() : 0);
         pedido.setEstadoPedido(estadoInicial);
         pedido.setNotas(dto.getNotas());
-        if (dto.getOrigen() != null) pedido.setOrigen(dto.getOrigen());
+        OrigenPedido origen = OrigenPedido.normalizar(dto.getOrigen());
+        if (origen != null) pedido.setOrigen(origen.codigo());
         pedido.setDescuentoTotal(0);
         pedido.setAplicaImpuesto(false);
         pedido.setMontoImpuesto(0);

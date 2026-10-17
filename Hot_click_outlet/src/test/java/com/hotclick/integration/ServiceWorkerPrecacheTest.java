@@ -50,6 +50,12 @@ class ServiceWorkerPrecacheTest extends BaseIntegrationTest {
     }
 
     @Test
+    void lan5_fotosDeEmprendeSonPublicas() throws Exception {
+        mockMvc.perform(get("/emprende/tienda.jpg")).andExpect(status().isOk());
+        mockMvc.perform(get("/emprende/recorrido.mp4")).andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("img-src permite https://i.ytimg.com (miniatura del video)")
     void cspMiniaturaYoutube() throws Exception {
         mockMvc.perform(get("/api/health"))

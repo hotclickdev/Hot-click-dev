@@ -31,7 +31,7 @@ public class PaymentUserCancellationService {
             throw new SecurityException("No tienes permiso para cancelar este pedido");
         }
 
-        if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
+        if (!cancelablePorComprador(pedido.getEstadoPedido())) {
             throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
         }
 
@@ -56,7 +56,7 @@ public class PaymentUserCancellationService {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
 
-        if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
+        if (!cancelablePorComprador(pedido.getEstadoPedido())) {
             throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
         }
 
@@ -69,5 +69,14 @@ public class PaymentUserCancellationService {
 
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado (invitado)", numeroPedido);
+    }
+
+    /**
+     * PAG-8: el SINPE o efectivo recién creado queda en PENDIENTE_COMPROBANTE; el comprador también puede cancelarlo
+     * (marcarFallido cancela el grupo y libera la reserva). Con comprobante en revisión ya decide el admin.
+     */
+    static boolean cancelablePorComprador(String estadoPedido) {
+        return Constants.PEDIDO_PENDIENTE.equals(estadoPedido)
+            || Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(estadoPedido);
     }
 }

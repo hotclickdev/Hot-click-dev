@@ -28,6 +28,8 @@ export type MmGuia = {
   /** Roles que ven esta guía. Vacío = todos los roles admin. */
   roles?: readonly string[]
   pasos: readonly MmPaso[]
+  /** Solo en esa ruta exacta (no en subrutas): la guía del inicio del panel no aplica a POS, Encargos, etc. (NP-21). */
+  soloExacta?: boolean
 }
 
 const ROLES_VENDEDOR = ['EMPRENDEDOR', 'GERENTE', 'SUPERVISOR'] as const
@@ -38,6 +40,7 @@ function guiasVendedor(segmento: string, pasos: readonly MmPaso[]): MmGuia[] {
     path: segmento ? `${base}/${segmento}` : base,
     roles: [...ROLES_VENDEDOR],
     pasos,
+    soloExacta: !segmento,
   }))
 }
 
@@ -199,7 +202,7 @@ export const MM_GUIAS: readonly MmGuia[] = [
     {
       ancla: 'seller-menu-productos',
       titulo: 'Productos',
-      texto: 'Empezá subiendo tu catálogo. Sin productos no hay ventas en la tienda ni en la caja.',
+      texto: 'Publicá y editá tu catálogo: lo que subas se vende en la tienda y en la caja.',
     },
     {
       ancla: 'seller-menu-pos',
@@ -361,7 +364,7 @@ export function guiaPara(pathname: string, rol: string | null | undefined): MmGu
   const candidatas = MM_GUIAS.filter((g) => {
     const base = g.path.replace(/\/$/, '') || '/admin'
     const coincide = path === base
-      || (base !== '/admin' && path.startsWith(`${base}/`))
+      || (base !== '/admin' && !g.soloExacta && path.startsWith(`${base}/`))
     if (!coincide) return false
     if (!g.roles || g.roles.length === 0) return true
     if (!rol) return false

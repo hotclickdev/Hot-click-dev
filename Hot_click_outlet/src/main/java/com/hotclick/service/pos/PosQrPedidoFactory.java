@@ -1,5 +1,6 @@
 package com.hotclick.service.pos;
 
+import com.hotclick.model.OrigenPedido;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
@@ -108,7 +109,7 @@ public class PosQrPedidoFactory {
         pedido.setUsuarioFinal(cliente);
         pedido.setBodega(bodega);
         pedido.setEmpresa(empresa);
-        pedido.setOrigen("POS");
+        pedido.setOrigen(OrigenPedido.POS.codigo());
         pedido.setEstadoPedido("ENTREGADO");
         pedido.setMetodoEnvio("RETIRO");
         pedido.setMetodoPago(metodoPago);

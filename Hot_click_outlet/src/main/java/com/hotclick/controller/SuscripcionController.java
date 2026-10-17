@@ -54,6 +54,7 @@ public class SuscripcionController {
             m.put("precioMensual", p.getPrecioMensual());
             m.put("precioUsd", p.getPrecioUsd());
             m.put("comisionPorcentaje", p.getComisionPorcentaje());
+            m.put("comisionMinimaCrc", p.getComisionMinimaCrc());
             m.put("maxUsuarios", p.getMaxUsuarios());
             m.put("maxProductos", p.getMaxProductos());
             m.put("maxBodegas", p.getMaxBodegas());
@@ -209,6 +210,17 @@ public class SuscripcionController {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         return suscripcionTilopayService.pendiente(empresaId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** Plan nuevo elegido sin pagar: el panel muestra «Completá el pago» (204 si no hay). */
+    @GetMapping("/plan-pendiente")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> planPendiente() {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        return suscripcionTilopayService.planNuevoPendiente(empresaId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
     }

@@ -5,15 +5,19 @@ import { billingService } from '@/services/billingService'
 import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
-import type { Id } from '@/types/api'
 import {
   mapApiPlanToUi,
+  type PlanApiTuPlan,
   PASOS_CAMBIAR_PLAN,
   TOTAL_PASOS_PLAN,
   validarPasoElegirPlan,
   type PlanUi,
 } from './planesPageHelpers'
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
+import useAuthStore from '@/store/authStore'
+import EmprendimientoPasoVerificar from '@/pages/auth/emprendimiento/EmprendimientoPasoVerificar'
+import { useVerificarCorreoOtp } from '@/hooks/useVerificarCorreoOtp'
+import { requiereVerificarCorreo } from './planesPageHelpers'
 
 export type CompararPlanesVariante = 'emp' | 'seller'
 
@@ -39,6 +43,9 @@ export default function CompararPlanesVista({
   const [paso, setPaso] = useState(0)
   const [planElegido, setPlanElegido] = useState<PlanUi | null>(null)
   const [params] = useSearchParams()
+  const correoVerificado = useAuthStore((s) => s.correoVerificado)
+  const userEmail = useAuthStore((s) => s.userEmail)
+  const otp = useVerificarCorreoOtp(userEmail ?? '')
   const planPedido = (params.get('plan') ?? '').toUpperCase()
   const {
     loadingPlan,
@@ -53,7 +60,7 @@ export default function CompararPlanesVista({
     billingService.getPlanes()
       .then(({ data }) => {
         const lista = Array.isArray(data)
-          ? data as Array<{ id: Id; nombre: string; precioMensual?: number }>
+          ? data as PlanApiTuPlan[]
           : []
         setPlanes(lista.map(mapApiPlanToUi))
       })
@@ -89,6 +96,26 @@ export default function CompararPlanesVista({
   function volverDesdePago() {
     cancelarPago()
     setPaso(1)
+  }
+
+  // NP-3: un plan de pago exige correo verificado; mismo paso de código + «Reenviar» que el registro.
+  if (paso === 1 && requiereVerificarCorreo(planElegido, correoVerificado || otp.verificado)) {
+    return renderShell({
+      error,
+      children: (
+        <EmprendimientoPasoVerificar
+          correoReg={userEmail ?? ''}
+          otpFalló={otp.otpFalló}
+          codigoVerif={otp.codigoVerif}
+          error={otp.error}
+          loading={otp.loading}
+          reenvioLoad={otp.reenvioLoad}
+          setCodigoVerif={otp.setCodigoVerif}
+          onSubmit={otp.verificar}
+          onReenviar={otp.reenviar}
+        />
+      ),
+    })
   }
 
   if (paso === 2 && pagoPendiente) {
