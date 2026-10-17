@@ -1,12 +1,14 @@
 import api from '@/services/api'
+import { codigoError, mensajeErrorContrato } from '@/utils/erroresContrato'
 
 /**
- * S5-21 · Pedir un reembolso (comprador) — CONTRATO SUPUESTO (backend S5-0x con ONVO).
+ * S5-21 · Pedir un reembolso (comprador). Rutas y validación reales en #202 (`docs/contratos/S5-esqueletos-pendientes-dueno.md`);
+ * hasta que el dueño decida (S5-05) responden 501 `PENDIENTE_DECISION_DUENO` → «Todavía no disponible».
  *   GET  /api/pedidos/{id}/reembolso → { elegible: boolean, numero, tienda, fechaLimite: string|null,
  *        items: [{ id, nombre, monto }], solicitud: null | { estado, monto, fechaEstimada: string|null,
  *        actualizadoEl: string|null, pasos: [{ clave: 'ENVIADA'|'APROBADA'|'EN_PROCESO'|'ACREDITADO', fecha: string|null }] } }
  *   POST /api/pedidos/{id}/reembolso { itemIds: string[], motivo: Motivo, detalle?: string }
- * Plazo: 30 días desde la compra (lo valida el backend). La fecha estimada la informa ONVO.
+ * Plazo: lo decide el dueño (S5-05) y lo valida el backend; el front solo muestra `fechaLimite` si llega. La fecha estimada la informa ONVO.
  * Pendiente (S5-05): quién paga el envío de la devolución y si se devuelve la comisión.
  */
 export const MOTIVOS = [
@@ -67,4 +69,26 @@ export function textoActualizado(iso: string | null, ahora = Date.now()): string
 
 export function etiquetaPaso(clave: PasoReembolso['clave'], tienda: string): string {
   return { ENVIADA: 'Solicitud enviada', APROBADA: `Aprobada por ${tienda}`, EN_PROCESO: 'En proceso con ONVO', ACREDITADO: 'Acreditado' }[clave]
+}
+
+export const PLAZO_POR_DEFINIR = 'plazo a definir por HotClick'
+
+/** «podés pedirlo hasta el …» solo con la fecha del backend; sin fecha no se inventa un plazo. */
+export function textoPlazo(fechaLimite: string | null): string {
+  return fechaLimite ? `podés pedirlo hasta el ${fechaLimite}` : PLAZO_POR_DEFINIR
+}
+
+const ERRORES_REEMBOLSO: Record<string, string> = {
+  PEDIDO_NO_ENCONTRADO: 'No encontramos ese pedido.',
+  SIN_ACCESO_PEDIDO: 'Este pedido no está en tu cuenta.',
+  SIN_ITEMS: 'Elegí al menos un producto.',
+  MOTIVO_INVALIDO: 'Elegí un motivo para seguir.',
+}
+
+/** Códigos de #202; si no es uno conocido, el texto de respaldo de la pantalla. */
+export function mensajeErrorReembolso(err: unknown, respaldo: string): string {
+  const contrato = mensajeErrorContrato(err)
+  if (contrato) return contrato
+  const code = codigoError(err)
+  return (code && ERRORES_REEMBOLSO[code]) || respaldo
 }

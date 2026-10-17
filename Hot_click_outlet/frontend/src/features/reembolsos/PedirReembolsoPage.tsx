@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatPrice } from '@/utils/format'
 import MainLayout from '@/layouts/MainLayout'
-import { MOTIVOS, etiquetaPaso, reembolsoApi, textoActualizado, totalSeleccion, validarSolicitud, type DatosReembolso, type Motivo } from './reembolsoApi'
+import { MOTIVOS, etiquetaPaso, mensajeErrorReembolso, reembolsoApi, textoActualizado, textoPlazo, totalSeleccion, validarSolicitud, type DatosReembolso, type Motivo } from './reembolsoApi'
 
 /** S5-21 · Pedir reembolso y ver su estado (láminas reembolso-390/1440). */
 function ContenidoReembolso() {
@@ -15,7 +15,7 @@ function ContenidoReembolso() {
   const [enviando, setEnviando] = useState(false)
 
   const cargar = useCallback(() => {
-    reembolsoApi.obtener(id).then(setDatos).catch(() => setError('No pudimos cargar tu pedido. Probá de nuevo en unos minutos.'))
+    reembolsoApi.obtener(id).then(setDatos).catch((e: unknown) => setError(mensajeErrorReembolso(e, 'No pudimos cargar tu pedido. Probá de nuevo en unos minutos.')))
   }, [id])
   useEffect(() => { cargar() }, [cargar])
 
@@ -25,7 +25,7 @@ function ContenidoReembolso() {
     if (e.items || e.motivo || !motivo) return
     setEnviando(true); setError(null)
     try { await reembolsoApi.pedir(id, { itemIds: ids, motivo }); cargar() }
-    catch { setError('No pudimos enviar la solicitud. Probá de nuevo.') }
+    catch (e: unknown) { setError(mensajeErrorReembolso(e, 'No pudimos enviar la solicitud. Probá de nuevo.')) }
     finally { setEnviando(false) }
   }
 
@@ -63,7 +63,7 @@ function ContenidoReembolso() {
 
   if (!datos.elegible) {
     return <main className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 py-6"><h1 className="font-display text-[22px] font-bold">Pedir reembolso</h1>
-      <p className="rounded-[12px] bg-hc-n-100 px-3.5 py-3 text-[13px]">Este pedido ya no se puede reembolsar: el plazo es de 30 días después de la compra.</p>
+      <p className="rounded-[12px] bg-hc-n-100 px-3.5 py-3 text-[13px]">Este pedido ya no se puede reembolsar porque venció el plazo{datos.fechaLimite ? ` (${datos.fechaLimite})` : ''}.</p>
       <Link to={volver} className="flex min-h-12 items-center justify-center rounded-xl border border-hc-blue-600 font-semibold text-hc-blue-600">Ver mi pedido</Link></main>
   }
 
@@ -71,7 +71,7 @@ function ContenidoReembolso() {
   return (
     <main className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 py-6">
       <h1 className="font-display text-[22px] font-bold">Pedir reembolso</h1>
-      <p className="text-[12px] text-hc-muted">Pedido #{datos.numero} · {datos.tienda} · podés pedirlo hasta 30 días después de la compra{datos.fechaLimite ? ` (hasta el ${datos.fechaLimite})` : ''}.</p>
+      <p className="text-[12px] text-hc-muted">Pedido #{datos.numero} · {datos.tienda} · {textoPlazo(datos.fechaLimite)}.</p>
       <fieldset className="flex flex-col gap-2" aria-invalid={!!errores.items}>
         <legend className="mb-1 text-[13px] font-bold">¿Qué querés devolver?</legend>
         {datos.items.map((i) => {
