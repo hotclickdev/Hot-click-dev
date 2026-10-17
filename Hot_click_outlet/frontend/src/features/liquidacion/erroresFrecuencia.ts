@@ -1,6 +1,9 @@
 import { codigoError, estadoError, mensajeErrorContrato } from '@/utils/erroresContrato'
 
-/** Errores de `GET/PUT /api/negocio/onvo/frecuencia` (contrato real de #197). */
+/**
+ * Errores de `GET/PUT /api/negocio/onvo/frecuencia`. Backend va a cambiar la frecuencia en #197 (sin valor por defecto;
+ * ausente o inválida → 400): cualquier 400 se muestra igual, sin depender del `code`.
+ */
 export const TEXTO_FRECUENCIA_NO_DISPONIBLE = 'Esta opción todavía no está disponible. Muy pronto vas a poder cambiarla desde acá.'
 export const TEXTO_FRECUENCIA_SOLO_PROPIETARIO = 'Solo la persona dueña del negocio puede ver y cambiar la frecuencia de liquidación.'
 export const TEXTO_FRECUENCIA_INVALIDA = 'Elegí quincenal o mensual.'
@@ -12,7 +15,7 @@ export function mensajeErrorCargaFrecuencia(err: unknown): string {
 }
 
 export function mensajeErrorGuardarFrecuencia(err: unknown): string {
-  if (codigoError(err) === 'FRECUENCIA_INVALIDA') return TEXTO_FRECUENCIA_INVALIDA
+  if (estadoError(err) === 400 || codigoError(err) === 'FRECUENCIA_INVALIDA') return TEXTO_FRECUENCIA_INVALIDA
   if (estadoError(err) === 403) return TEXTO_FRECUENCIA_SOLO_PROPIETARIO
   return mensajeErrorContrato(err) ?? TEXTO_FRECUENCIA_NO_GUARDADA
 }

@@ -1,8 +1,8 @@
 import api from '@/services/api'
 
 /**
- * S2-28 · Frecuencia de liquidación. Contrato real de #197 (`docs/contratos/S3-06-onvo-estado-frecuencia.md`):
- * `actual` llega `null` si el negocio no eligió; solo el propietario (personal → 403); 400 `FRECUENCIA_INVALIDA`.
+ * S2-28 · Frecuencia de liquidación — CONTRATO SUPUESTO. Backend la está cambiando en #197 (sin valor por defecto;
+ * ausente o inválida → 400): no se alinea a los campos de #197 hasta que se estabilice. Nunca se manda una frecuencia vacía.
  *   GET /api/negocio/onvo/frecuencia → { actual: 'QUINCENAL'|'MENSUAL', pendiente: 'QUINCENAL'|'MENSUAL'|null }
  *   PUT /api/negocio/onvo/frecuencia   { frecuencia } → mismo cuerpo, con `pendiente` hasta que el admin lo aplique en ONVO (S2-29)
  * En el registro (paso Cobros) el campo viaja como `frecuenciaLiquidacion` en el alta del negocio;
@@ -27,5 +27,7 @@ export function normalizarFrecuencia(data: unknown): EstadoFrecuencia {
 
 export const frecuenciaApi = {
   obtener: () => api.get('/negocio/onvo/frecuencia').then((r) => normalizarFrecuencia(r.data)),
-  cambiar: (frecuencia: Frecuencia) => api.put('/negocio/onvo/frecuencia', { frecuencia }).then((r) => normalizarFrecuencia(r.data)),
+  cambiar: (frecuencia: Frecuencia) => esFrecuencia(frecuencia)
+    ? api.put('/negocio/onvo/frecuencia', { frecuencia }).then((r) => normalizarFrecuencia(r.data))
+    : Promise.reject(new Error('Frecuencia vacía o inválida: no se envía')),
 }
