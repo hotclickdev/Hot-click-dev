@@ -68,4 +68,19 @@ public interface WalletTransaccionRepository extends JpaRepository<WalletTransac
         "UPDATE WalletTransaccion t SET t.payoutLiquidacionId = :payoutId WHERE t.id IN :ids")
     int marcarLiquidados(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids,
                          @org.springframework.data.repository.query.Param("payoutId") Long payoutId);
+
+    /**
+     * S6-18: ventas reales acreditadas (CREDITO_VENTA) en el rango, con el plan actual del negocio.
+     * Filas: [planNombre, planSaas, fechaCreacion, totalBruto, comisionSaas, comisionGw].
+     */
+    @Query("""
+        SELECT p.nombre, e.planSaas, t.fechaCreacion, t.totalBruto, t.comisionSaas, t.comisionGw
+          FROM WalletTransaccion t, Empresa e LEFT JOIN e.plan p
+         WHERE e.id = t.empresaId
+           AND t.tipo = 'CREDITO_VENTA'
+           AND t.fechaCreacion >= :desde
+           AND t.fechaCreacion < :hasta
+        """)
+    List<Object[]> findVentasConPlan(@Param("desde") LocalDateTime desde,
+                                     @Param("hasta") LocalDateTime hasta);
 }
