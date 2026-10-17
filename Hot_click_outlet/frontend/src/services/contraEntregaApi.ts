@@ -1,7 +1,9 @@
 import api from '@/services/api'
 
 /**
- * S2 · Contra entrega por negocio — CONTRATO SUPUESTO (el backend todavía no lo tiene; ramas feat/s2-*).
+ * S2 · Contra entrega por negocio. Contrato real de #211 (`docs/contratos/S2-contra-entrega-por-negocio.md`), que coincide con
+ * los supuestos 1 y 2. En productos públicos los campos se OMITEN cuando no hay valor (nunca null): sin campo → config global.
+ * El supuesto 3 (`contraEntregaCargoPorNegocio`) NO existe todavía (falta el monto del dueño): sin campo, no se muestra cargo.
  * Todo lo que depende del servidor vive acá para cambiarlo en un solo lugar cuando exista.
  *
  * Supuestos:

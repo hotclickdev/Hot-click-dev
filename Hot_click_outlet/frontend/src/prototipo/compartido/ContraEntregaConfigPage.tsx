@@ -2,11 +2,11 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { contraEntregaApi } from '@/services/contraEntregaApi'
 import { EncabezadoPagina, Boton } from './ui'
 import EntradaPagina from './motion/EntradaPagina'
-import { configDesdeFormulario } from './contraEntregaConfigHelpers'
+import { TEXTO_CE_NO_DISPONIBLE, configDesdeFormulario, mensajeErrorContraEntrega } from './contraEntregaConfigHelpers'
 
 /**
  * S2 · Contra entrega por negocio, configuración (lámina S2-contra-entrega, tercera pantalla).
- * Depende de GET/PUT /api/negocio/contra-entrega, que todavía no existe (contrato en services/contraEntregaApi).
+ * GET/PUT /api/negocio/contra-entrega: contrato real de #211 (solo propietario; 400 ACEPTA_INVALIDO / MINIMO_INVALIDO).
  * El cargo lo paga el cliente y lo calcula el backend; acá no se escribe ningún monto.
  */
 export default function ContraEntregaConfigPage({ volverA }: { volverA: string }) {
@@ -14,12 +14,13 @@ export default function ContraEntregaConfigPage({ volverA }: { volverA: string }
   const [minimo, setMinimo] = useState('')
   const [estado, setEstado] = useState<'cargando' | 'listo' | 'sin-servicio' | 'guardando' | 'guardado'>('cargando')
   const [error, setError] = useState<string | null>(null)
+  const [avisoCarga, setAvisoCarga] = useState(TEXTO_CE_NO_DISPONIBLE)
 
   useEffect(() => {
     let vivo = true
     contraEntregaApi.obtener()
       .then((c) => { if (!vivo) return; setAcepta(c.acepta); setMinimo(c.minimo ? String(c.minimo) : ''); setEstado('listo') })
-      .catch(() => { if (vivo) setEstado('sin-servicio') })
+      .catch((e: unknown) => { if (vivo) { setAvisoCarga(mensajeErrorContraEntrega(e, TEXTO_CE_NO_DISPONIBLE)); setEstado('sin-servicio') } })
     return () => { vivo = false }
   }, [])
 
@@ -32,8 +33,8 @@ export default function ContraEntregaConfigPage({ volverA }: { volverA: string }
     try {
       await contraEntregaApi.guardar(config)
       setEstado('guardado')
-    } catch {
-      setError('No se pudo guardar. Intentá de nuevo en un momento.')
+    } catch (e: unknown) {
+      setError(mensajeErrorContraEntrega(e, 'No se pudo guardar. Intentá de nuevo en un momento.'))
       setEstado('listo')
     }
   }
@@ -71,7 +72,7 @@ export default function ContraEntregaConfigPage({ volverA }: { volverA: string }
             <span className="text-[12px] text-hc-muted">Dejalo vacío si no querés mínimo.</span>
           </label>
           <p className="text-[12px] text-hc-muted">Si un carrito tiene un negocio que no acepta contra entrega, no se ofrece para ese pedido.</p>
-          {estado === 'sin-servicio' && <p role="status" className="text-[12px] text-hc-warning">Esta opción todavía no está disponible. Muy pronto vas a poder activarla desde acá.</p>}
+          {estado === 'sin-servicio' && <p role="status" className="text-[12px] text-hc-warning">{avisoCarga}</p>}
           {estado === 'guardado' && <p role="status" className="text-[12px] text-hc-success-text">Guardado.</p>}
           {error && <p role="alert" className="text-[12px] text-hc-danger">{error}</p>}
           <Boton type="submit" disabled={deshabilitado}>{estado === 'guardando' ? 'Guardando…' : 'Guardar'}</Boton>

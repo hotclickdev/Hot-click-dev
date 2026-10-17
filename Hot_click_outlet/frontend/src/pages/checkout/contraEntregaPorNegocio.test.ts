@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { AVISO_SIN_CONTRA_ENTREGA, cargoContraEntrega, estadoContraEntrega, negociosDelPedido, textoCargoContraEntrega } from './contraEntregaPorNegocio'
-import { configDesdeFormulario, leerMinimo } from '@/prototipo/compartido/contraEntregaConfigHelpers'
+import { TEXTO_SOLO_PROPIETARIO_CE, configDesdeFormulario, leerMinimo, mensajeErrorContraEntrega } from '@/prototipo/compartido/contraEntregaConfigHelpers'
 
 const normal = ['ENVIO_NORMAL_GAM', 'ENVIO_NORMAL_GAM']
 const acepta = (minimo: number | null = null) => ({ empresaAceptaContraEntrega: true, empresaContraEntregaMinimo: minimo })
@@ -53,5 +53,16 @@ describe('cargo de contra entrega por negocio (decisión del dueño)', () => {
     expect(textoCargoContraEntrega(c, fmt)).toBe('Envío contra entrega: ₡4000 por negocio · 2 negocios = ₡8000')
     expect(textoCargoContraEntrega(cargoContraEntrega([p('1', 10)], 4000)!, fmt)).toBe('Envío contra entrega: ₡4000 por negocio')
     expect(cargoContraEntrega([p('1', 10)], null)).toBeNull()
+  })
+
+  it('#211: mínimo 0 o mayor al tope no se manda; errores del backend', () => {
+    expect(leerMinimo('0').error).toBeTruthy()
+    expect(leerMinimo('100000001').error).toBeTruthy()
+    expect(leerMinimo('100000000')).toEqual({ minimo: 100000000, error: null })
+    const e = (status: number, code?: string) => ({ response: { status, data: { success: false, code } } })
+    expect(mensajeErrorContraEntrega(e(403, 'SOLO_PROPIETARIO'), 'x')).toBe(TEXTO_SOLO_PROPIETARIO_CE)
+    expect(mensajeErrorContraEntrega(e(400, 'MINIMO_INVALIDO'), 'x')).toContain('mayor a cero')
+    expect(mensajeErrorContraEntrega(e(400, 'ACEPTA_INVALIDO'), 'x')).toContain('aceptás')
+    expect(mensajeErrorContraEntrega(new Error('red'), 'respaldo')).toBe('respaldo')
   })
 })
