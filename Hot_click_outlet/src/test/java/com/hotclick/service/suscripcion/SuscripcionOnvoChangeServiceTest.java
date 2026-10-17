@@ -53,6 +53,11 @@ class SuscripcionOnvoChangeServiceTest {
             var field = SuscripcionOnvoChangeService.class.getDeclaredField("self");
             field.setAccessible(true);
             field.set(service, service);
+            var envField = SuscripcionOnvoChangeService.class.getDeclaredField("environment");
+            envField.setAccessible(true);
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles("test");
+            envField.set(service, env);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -124,6 +129,30 @@ class SuscripcionOnvoChangeServiceTest {
         assertThat(out.get("planNombre")).isEqualTo("PYME");
         assertThat(out.get("mock")).isEqualTo(true);
         verify(onvoService, never()).getPublishableKey();
+    }
+
+    @Test
+    @DisplayName("PAG-6: perfil prod/default + secreto vacío → error 400 y plan sin cambio")
+    void mockFueraDeDevTestFallaCerrado() throws Exception {
+        for (String[] perfiles : new String[][] { {}, {"prod"} }) {
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles(perfiles);
+            var envField = SuscripcionOnvoChangeService.class.getDeclaredField("environment");
+            envField.setAccessible(true);
+            envField.set(service, env);
+            when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+            when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
+            when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+            when(onvoBilling.isMockMode()).thenReturn(true);
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Pagos no configurados")
+                .hasNoCause();
+        }
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(empresaRepo, never()).save(any());
+        verify(suscripcionRepo, never()).save(any());
     }
 
     @Test
