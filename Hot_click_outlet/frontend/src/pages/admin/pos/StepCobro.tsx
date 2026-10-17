@@ -100,6 +100,9 @@ function LineasTicket({ items, descuento, total }: { items: ItemCarritoPos[]; de
   )
 }
 
+/** QA-NEG-056: SINPE solo dentro de ONVO; la caja no genera QR de SINPE. */
+const METODOS_CAJA = METODOS.filter((opcion) => opcion.id !== 'SINPE')
+
 function ChipsMetodo({ metodo, onChange }: { metodo: string; onChange: (id: string) => void }) {
   const { t } = useTranslation()
   const chipLabel: Record<string, string> = {
@@ -109,7 +112,7 @@ function ChipsMetodo({ metodo, onChange }: { metodo: string; onChange: (id: stri
   }
   return (
     <div className="flex flex-wrap gap-2">
-      {METODOS.map((opcion) => {
+      {METODOS_CAJA.map((opcion) => {
         const activo = metodo === opcion.id
         return (
           <button
@@ -260,6 +263,6 @@ function bordeInputCobro(puedeConfirmar: boolean, recibidoNum: number, faltante:
 
 function etiquetaConfirmarCobro(t: TFunction, loading: boolean, metodo: string) {
   if (loading) return t('pos.cobro.procesando')
-  if (metodo === 'SINPE' || metodo === 'TARJETA') return t('pos.cobro.generarQr')
+  if (metodo === 'TARJETA') return t('pos.cobro.generarQr')
   return t('pos.cobro.confirmarCobro')
 }
