@@ -59,7 +59,7 @@ export default function SeccionNotificaciones({ toast, soloVentas = false }: { t
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', fontSize: '13px', fontFamily: F.mono }}>
             <PhoneIcon style={{ width: '15px', height: '15px', flexShrink: 0 }} />
             <span style={{ flex: 1 }}>+506 8666-7888</span>
-            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>Andrés Zúñiga</span>
+            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>Admin HotClick</span>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '8px', fontFamily: F.body }}>{t('adminConfig.notifWaNote')}</p>
         </Block>
