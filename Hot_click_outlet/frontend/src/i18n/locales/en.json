@@ -470,6 +470,40 @@
     }
   },
   "home": {
+    "carrusel": {
+      "rol": "carousel",
+      "diapositiva": "slide",
+      "region": "Featured",
+      "puntos": "Carousel sections",
+      "bloque": {
+        "descubri": {
+          "etiqueta": "Discover",
+          "titulo": "Swipe and find something new",
+          "detalle": "Products from entrepreneurs across the country, one by one.",
+          "cta": "Start discovering"
+        },
+        "negocio": {
+          "etiqueta": "Featured business",
+          "cta": "View store"
+        },
+        "producto": {
+          "etiqueta": "Featured product",
+          "cta": "View product"
+        }
+      },
+      "tipo": {
+        "descubri": "Section",
+        "negocio": "Business",
+        "producto": "Product"
+      },
+      "posicion": "{{tipo}} {{x}} of {{n}}",
+      "pausado": "Paused · {{tipo}} {{x}} of {{n}}",
+      "pausadoSolo": "Paused",
+      "pausar": "Pause carousel",
+      "reanudar": "Resume carousel",
+      "sinFoto": "No photo yet",
+      "sinFotoRotulo": "NO PHOTO"
+    },
     "badge": "Premium technology in Costa Rica",
     "seoTitle": "HotClick — Online store to shop in Costa Rica",
     "seoDescription": "Shop online from entrepreneurs, SMEs and larger businesses in Costa Rica. SINPE or card. Shipping nationwide.",

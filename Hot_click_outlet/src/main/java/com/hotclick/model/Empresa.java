@@ -79,6 +79,16 @@ public class Empresa {
     @Column(name = "visibilidad_publica", nullable = false)
     private Boolean visibilidadPublica = true;
 
+    /** Carrusel del inicio: negocio destacado por el superadmin (V173). Solo se destacan negocios activos. */
+    @Column(name = "destacado", nullable = false)
+    private Boolean destacado = false;
+
+    @Column(name = "destacado_orden")
+    private Integer destacadoOrden;
+
+    @Column(name = "destacado_desde")
+    private java.time.LocalDateTime destacadoDesde;
+
     /** Pausa de cobros en línea decidida por HotClick (no por ONVO). */
     @Column(name = "cobros_pausados", nullable = false)
     private Boolean cobrosPausados = false;
@@ -444,4 +454,11 @@ public class Empresa {
     public void setDiaCobro(Integer diaCobro) { this.diaCobro = diaCobro; }
     public String getFrecuenciaPayout() { return frecuenciaPayout; }
     public void setFrecuenciaPayout(String frecuenciaPayout) { this.frecuenciaPayout = frecuenciaPayout; }
+
+    public Boolean getDestacado() { return destacado; }
+    public void setDestacado(Boolean destacado) { this.destacado = destacado; }
+    public Integer getDestacadoOrden() { return destacadoOrden; }
+    public void setDestacadoOrden(Integer destacadoOrden) { this.destacadoOrden = destacadoOrden; }
+    public java.time.LocalDateTime getDestacadoDesde() { return destacadoDesde; }
+    public void setDestacadoDesde(java.time.LocalDateTime destacadoDesde) { this.destacadoDesde = destacadoDesde; }
 }
