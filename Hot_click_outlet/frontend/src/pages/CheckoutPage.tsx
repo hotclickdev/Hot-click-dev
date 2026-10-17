@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import { usePayment, tilopayCardDesdePago } from '@/hooks/usePayment'
@@ -11,6 +12,7 @@ import CheckoutLayout from './checkout/CheckoutLayout'
 import { useCheckoutForm } from './checkout/useCheckoutForm'
 import { useCheckoutActions } from './checkout/useCheckoutActions'
 import { notasConEncomienda } from './checkout/checkoutHelpers'
+import { rutaEstadoPago } from '@/features/pagoPendiente/estadoPagoCheckout'
 
 /**
  * Checkout de producción: mismos side effects de pago; layout TypeScript Figma.
@@ -26,8 +28,16 @@ export default function CheckoutPage() {
 
   const { clearCart: clearCartFn } = useCartStore()
   useEffect(() => {
-    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCartFn()
+    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente' || estado === 'estado_pago_onvo') clearCartFn()
   }, [estado, clearCartFn])
+
+  // #207/#179: pago pendiente dentro de ONVO → página de estado. El token ya quedó en sessionStorage, no en la URL.
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (estado !== 'estado_pago_onvo') return
+    const ruta = rutaEstadoPago(pagoData)
+    if (ruta) navigate(ruta, { replace: true })
+  }, [estado, pagoData, navigate])
 
   useEffect(() => {
     globalThis.scrollTo({ top: 0, behavior: 'instant' })
@@ -130,7 +140,7 @@ export default function CheckoutPage() {
 
   if (estado === 'gift_card_paid') return <CheckoutPaidGiftCard pagoData={pagoData} />
 
-  if (estado === 'redirecting' || estado === 'loading') {
+  if (estado === 'redirecting' || estado === 'loading' || estado === 'estado_pago_onvo') {
     return <CheckoutLoading estado={estado} />
   }
 

@@ -6,6 +6,7 @@ import App from './App'
 import { registerSW } from 'virtual:pwa-register'
 import { PostHogProvider } from '@posthog/react'
 import { initSentry, syncSentryUser } from '@/utils/sentryClient'
+import { limpiarEventoPostHog } from '@/utils/privacidadUrl'
 import useAuthStore from '@/store/authStore'
 import { crearLimitadorChequeo, debeAutoActualizar, debeMostrarAvisoSw, registrarAplicarSwUpdate } from '@/app/swUpdate'
 
@@ -19,6 +20,8 @@ const posthogOptions = {
   api_host: import.meta.env.VITE_POSTHOG_HOST,
   defaults: '2026-05-30' as const,
   opt_out_capturing_by_default: true,
+  // El pageview automático manda la URL completa: se quita ?token= (estado del pago #207) y demás tokens.
+  before_send: limpiarEventoPostHog,
 }
 
 if ('serviceWorker' in navigator) {
