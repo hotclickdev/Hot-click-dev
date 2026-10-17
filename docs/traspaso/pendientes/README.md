@@ -5,7 +5,8 @@ Todos los bots están en pausa desde el 17-oct-2026, 2:13 am CR, por presupuesto
 | Archivo | Bot / área | Tipo |
 | --- | --- | --- |
 | [backend.md](backend.md) | Desarrollador Backend | Copia del informe |
-| [desarrollador.md](desarrollador.md) | Desarrollador (principal) | Resumen (falta su informe) |
+| [desarrollador.md](desarrollador.md) | Desarrollador (principal) | Copia del informe + corrección sobre #215 y #216 |
+| [sinpe-historial.md](sinpe-historial.md) | DevOps y Seguridad | Copia: opciones sobre el número SINPE en el historial público |
 | [frontend.md](frontend.md) | Desarrollador Frontend | Resumen (sin informe propio) |
 | [devops-seguridad.md](devops-seguridad.md) | DevOps y Seguridad | Copia |
 | [seguridad.md](seguridad.md) | Seguridad | Copia de los cierres S1–S6 |

@@ -2,7 +2,7 @@
 
 Se quedó sin presupuesto el 16-oct a las 11:11 pm CR. No dejó informe propio; esto sale del chat del equipo y de GitHub.
 
-- **Hotfix SINPE:** la rama local `fix/fe-sinpe-fuera-onvo` quedó vacía cuando Frontend paró. **Se reasignó al Desarrollador**, que la está trabajando ahora (a las 2:19 am CR ya tenía un commit de `static/`). Alcance:
+- **Hotfix SINPE:** se reasignó al Desarrollador (`fix/sinpe-fuera-onvo`, después de #178). Hay PRs duplicados, #215 y #216: ver `desarrollador.md`. Alcance:
   1. sacar el número y el titular de la pantalla sin token de ONVO, con el texto «Pago SINPE disponible pronto dentro de la pasarela segura» y sin pedir comprobantes;
   2. ocultar el QR SINPE en el POS (QA-NEG-056);
   3. mostrar con `rg` que no queda nada en `static/`, `src` ni i18n.
