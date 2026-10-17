@@ -121,4 +121,9 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
                           @Param("planBase") Plan planBase,
                           @Param("nombrePlan") String nombrePlan,
                           @Param("hoy") LocalDate hoy);
+
+    /** Multinegocio: nombre del plan de cada negocio sin cargar la relación LAZY. Filas [idEmpresa, plan.nombre]. */
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT e.id, p.nombre FROM Empresa e LEFT JOIN e.plan p WHERE e.id IN :ids")
+    java.util.List<Object[]> findPlanNombrePorIds(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);
 }
