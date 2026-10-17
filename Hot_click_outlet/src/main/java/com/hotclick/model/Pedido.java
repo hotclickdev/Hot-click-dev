@@ -15,6 +15,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "hot_click_pedido_tb")
+@EntityListeners(com.hotclick.service.pedido.NumeroPedidoTiendaListener.class)
 public class Pedido extends BaseEntity {
 
     @Id
@@ -24,6 +25,10 @@ public class Pedido extends BaseEntity {
 
     @Column(name = "numero_pedido", unique = true, nullable = false, length = 20)
     private String numeroPedido;
+
+    /** S4-20: número propio de la tienda (1, 2, 3…). NULL en pedidos anteriores a V182. */
+    @Column(name = "numero_tienda")
+    private Long numeroTienda;
 
     /** Subpedidos de un mismo checkout (uno por vendedor) comparten este valor y un único Pago. */
     @Column(name = "grupo_pago", length = 40)
@@ -174,6 +179,8 @@ public class Pedido extends BaseEntity {
 
     public String getNumeroPedido() { return numeroPedido; }
     public void setNumeroPedido(String numeroPedido) { this.numeroPedido = numeroPedido; }
+    public Long getNumeroTienda() { return numeroTienda; }
+    public void setNumeroTienda(Long numeroTienda) { this.numeroTienda = numeroTienda; }
 
     public LocalDateTime getFechaPedido() { return fechaPedido; }
     public void setFechaPedido(LocalDateTime fechaPedido) { this.fechaPedido = fechaPedido; }

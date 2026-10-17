@@ -37,6 +37,7 @@ public class PedidoDetailMapper {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id",            p.getId());
                 m.put("numeroPedido",  p.getNumeroPedido());
+                m.put("numeroTienda",  p.getNumeroTienda());
                 m.put("fechaCreacion", p.getFechaPedido());
                 m.put("estado",        p.getEstadoPedido());
                 m.put("total",         p.getTotalPedido());
@@ -76,6 +77,7 @@ public class PedidoDetailMapper {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id",            p.getId());
         m.put("numeroPedido",  p.getNumeroPedido());
+        m.put("numeroTienda",  p.getNumeroTienda());
         m.put("fechaCreacion", p.getFechaPedido());
         m.put("estado",        p.getEstadoPedido());
         m.put("total",         p.getTotalPedido());
