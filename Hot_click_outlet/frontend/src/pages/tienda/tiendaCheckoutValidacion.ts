@@ -1,3 +1,4 @@
+import { SHIPPING_COSTS } from '@/pages/checkout/checkoutHelpers'
 export const METODO_ENVIO_DOMICILIO = 'DOMICILIO'
 export const METODO_ENVIO_RETIRO = 'RETIRO'
 
@@ -29,4 +30,9 @@ export function mensajeErrorCheckout(form: FormCheckoutTienda): string | null {
   if (faltaTelefono(form.telefonoCliente)) return MSG_TELEFONO
   if (faltaDireccionDomicilio(form.metodoEnvio, form.direccionEntrega)) return MSG_DIRECCION_DOMICILIO
   return null
+}
+
+/** Envío a domicilio = Envío Normal GAM de la misma tabla que usa el servidor (`OrderPricingService`). */
+export function costoEnvioTienda(metodoEnvio: string): number {
+  return metodoEnvio === METODO_ENVIO_DOMICILIO ? SHIPPING_COSTS.ENVIO_NORMAL_GAM : 0
 }

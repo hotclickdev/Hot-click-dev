@@ -113,8 +113,8 @@ class PaymentServiceTest {
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
         testProducto.setBodega(testBodega);
 
-        when(providerFactory.soporta("STRIPE")).thenReturn(true);
-        when(providerFactory.get("STRIPE")).thenReturn(mockProvider);
+        when(providerFactory.soporta("TILOPAY")).thenReturn(true);
+        when(providerFactory.get("TILOPAY")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("TXN-123", REDIRECT));
 
@@ -518,7 +518,7 @@ class PaymentServiceTest {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setBodegaId(1L);
         req.setMetodoEnvio(Constants.ENVIO_RETIRO);
-        req.setProvider("STRIPE");
+        req.setProvider("TILOPAY");
 
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);

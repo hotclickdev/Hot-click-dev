@@ -1,7 +1,7 @@
 import type { PlanId } from './plan'
 
 export type EstadoProducto = 'Publicado' | 'Pausado'
-export type CategoriaProducto = 'Tecnología' | 'Ropa' | 'Otro'
+export type CategoriaProducto = string
 
 export type ProductoMock = {
   id: string
@@ -32,6 +32,8 @@ export type ItemPedido = {
 
 export type PedidoMock = {
   id: string
+  /** Código del pedido (ORD-…/POS-…); el id es interno y global (QA-NEG-061). */
+  numeroPedido?: string
   cliente: string
   total: number
   estado: EstadoPedido
@@ -39,6 +41,9 @@ export type PedidoMock = {
   pagaAlRetirar?: boolean
   fecha: string
   direccion: string
+  telefono?: string
+  correo?: string
+  confirmaPago?: boolean
   sucursal?: string
   origen?: string
   items: ItemPedido[]

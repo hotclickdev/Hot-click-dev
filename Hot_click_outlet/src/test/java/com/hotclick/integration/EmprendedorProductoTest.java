@@ -29,6 +29,8 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
     @Autowired private ProductoRepository  productoRepository;
     @Autowired private BodegaRepository    bodegaRepository;
     @Autowired private CategoriaRepository categoriaRepository;
+    @Autowired private TerminoProhibidoRepository terminoProhibidoRepository;
+    @Autowired private com.hotclick.service.moderacion.TerminosProhibidosService terminosProhibidosService;
 
     private Empresa   empresa;
     private Empresa   empresaOtra;
@@ -57,6 +59,7 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        terminoProhibidoRepository.deleteAll();
         productoRepository.deleteAll();
         categoriaRepository.deleteAll();
         bodegaRepository.deleteAll();
@@ -467,6 +470,89 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // ── QA-NEG-035: categoría obligatoria ───────────────────────────────────
+    @Test
+    @DisplayName("QA-NEG-035 | crear producto sin categoría → 400")
+    void creaProducto_sinCategoria_400() throws Exception {
+        String body = String.format("{\"nombreProducto\":\"Sin Cat\",\"precioVenta\":1000,\"precioCompra\":500,"
+            + "\"stockActual\":1,\"stockMinimo\":1,\"bodegaId\":%d}", bodega.getId());
+        mockMvc.perform(post("/api/productos").header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest());
+    }
+
+    // ── QA-NEG-038: términos prohibidos ─────────────────────────────────────
+    private void sembrarTerminosIniciales() {
+        for (String t : new String[] {"vape", "tabaco", "armas", "drogas"}) terminosProhibidosService.agregar(t);
+    }
+
+    @Test
+    @DisplayName("QA-NEG-038 | «Vape» en el nombre o «Tabáco» en la descripción → 400 con mensaje claro; sin términos → 200")
+    void creaProducto_terminoProhibido_400() throws Exception {
+        sembrarTerminosIniciales();
+        mockMvc.perform(post("/api/productos").header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(buildProductoBody("QA Vapeador cigarrillo electrónico", "SKU-VAPE-1", 9000, 5000, 2)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("«vape»")));
+
+        String conDescripcion = String.format(
+            "{\"nombreProducto\":\"Caja de regalo\",\"descripcionCorta\":\"Incluye TABÁCO artesanal\",\"precioVenta\":9000,"
+            + "\"precioCompra\":5000,\"stockActual\":2,\"stockMinimo\":1,\"categoriaId\":%d,\"bodegaId\":%d}",
+            categoria.getId(), bodega.getId());
+        mockMvc.perform(post("/api/productos").header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON).content(conDescripcion))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("«tabaco»")));
+
+        mockMvc.perform(post("/api/productos").header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(buildProductoBody("Armario de madera", "SKU-ARM-1", 9000, 5000, 2)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("QA-NEG-038 | editar un producto para que diga «drogas» → 400")
+    void editaProducto_terminoProhibido_400() throws Exception {
+        sembrarTerminosIniciales();
+        mockMvc.perform(put("/api/productos/" + productoPropio.getId()).header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(buildProductoBody("Zapato drogas", "SKU-ZAP-T01", 25000, 15000, 10)))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("QA-NEG-038 | la lista la edita solo el ADMIN: EMPRENDEDOR y USUARIO_FINAL → 403; ADMIN agrega, lista y quita")
+    void terminosProhibidos_soloAdmin() throws Exception {
+        mockMvc.perform(get("/api/admin/terminos-prohibidos").header("Authorization", tokenEmp))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/terminos-prohibidos").header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"termino\":\"zapato\"}"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/terminos-prohibidos").header("Authorization", userToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"termino\":\"zapato\"}"))
+            .andExpect(status().isForbidden());
+        org.assertj.core.api.Assertions.assertThat(terminoProhibidoRepository.count()).isZero();
+
+        mockMvc.perform(post("/api/admin/terminos-prohibidos").header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"termino\":\"Pirotécnia\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.termino").value("pirotecnia"));
+        mockMvc.perform(post("/api/admin/terminos-prohibidos").header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"termino\":\"  \"}"))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/admin/terminos-prohibidos").header("Authorization", adminToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[0].termino").value("pirotecnia"));
+
+        Long id = terminoProhibidoRepository.findByTermino("pirotecnia").orElseThrow().getId();
+        mockMvc.perform(delete("/api/admin/terminos-prohibidos/" + id).header("Authorization", tokenEmp))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/admin/terminos-prohibidos/" + id).header("Authorization", adminToken))
+            .andExpect(status().isOk());
+        org.assertj.core.api.Assertions.assertThat(terminoProhibidoRepository.count()).isZero();
+    }
 
     private String buildProductoBody(String nombre, String sku, int precio, int costo, int stock) {
         return String.format(

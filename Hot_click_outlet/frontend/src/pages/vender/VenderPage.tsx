@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { textoPlan, type ClavePlan } from '@/config/planesPrecios'
 import MainLayout from '@/layouts/MainLayout'
 
 type PlanPuente = { id: 'emprendedor' | 'pyme' | 'negocio-plus'; titulo: string; pitch: string; puntos: string[] }
 
-/** Copy de Producto (ENTREGA_0410 §2.2); límites provisionales. Montos: [PENDIENTE]. */
+/** Copy de Producto (ENTREGA_0410 §2.2); límites provisionales. Montos: config/planesPrecios. */
+const CLAVE: Record<PlanPuente['id'], ClavePlan> = { emprendedor: 'EMPRENDEDOR', pyme: 'PYME', 'negocio-plus': 'NEGOCIO_PLUS' }
 const PLANES: PlanPuente[] = [
   { id: 'emprendedor', titulo: 'Emprendedor', pitch: 'Empezá a vender en HotClick.', puntos: ['Hasta 50 productos', 'Cobrás con tarjeta y SINPE', 'Tus clientes te compran a través de HotClick'] },
   { id: 'pyme', titulo: 'Pyme', pitch: 'Para cuando tu negocio ya tiene clientes que te buscan.', puntos: ['Hasta 500 productos', 'Tu contacto visible en tu tienda', 'Dos bodegas, dos cajas y tu equipo'] },
@@ -88,7 +90,7 @@ export default function VenderPage() {
                       <li key={x} className="flex gap-2 text-[13px] text-hc-n-900"><span aria-hidden className="text-hc-blue-600">✓</span>{x}</li>
                     ))}
                   </ul>
-                  <span className="px-4 pb-4 text-[12px] text-hc-n-600">Mensualidad y comisión: [PENDIENTE]</span>
+                  <span className="px-4 pb-4 text-[12px] text-hc-n-600">{textoPlan(CLAVE[p.id])}</span>
                 </button>
               )
             })}
@@ -105,7 +107,7 @@ export default function VenderPage() {
               'Cada producto muestra qué tienda lo vende.',
               'El precio final y el costo de envío aparecen antes de pagar.',
               'Si algo sale mal, HotClick recibe el reclamo y le da seguimiento con la tienda.',
-              'Los pagos con tarjeta pasan por Tilopay. La tienda no ve los datos de la tarjeta.',
+              'Los pagos con tarjeta pasan por una pasarela de pago segura. La tienda no ve los datos de la tarjeta.',
             ].map((x) => (
               <li key={x} className="rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3 text-[14px] text-hc-n-900">{x}</li>
             ))}

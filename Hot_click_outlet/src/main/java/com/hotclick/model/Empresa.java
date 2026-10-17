@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "hot_click_empresa_tb")
+@EntityListeners(com.hotclick.service.producto.EmpresaVisibilidadListener.class)
 public class Empresa {
 
     @Id
@@ -416,4 +417,22 @@ public class Empresa {
     public void setDiaCobro(Integer diaCobro) { this.diaCobro = diaCobro; }
     public String getFrecuenciaPayout() { return frecuenciaPayout; }
     public void setFrecuenciaPayout(String frecuenciaPayout) { this.frecuenciaPayout = frecuenciaPayout; }
+
+    /** BUG-S1-12: si el negocio deja de ser público (o vuelve a serlo), el catálogo cacheado se descarta. */
+    @Transient
+    @JsonIgnore
+    private Boolean publicoCargado;
+
+    /** Mismo criterio que el catálogo público: ACTIVO y visibilidad pública no apagada. */
+    @JsonIgnore
+    public boolean esPublica() {
+        return "ACTIVO".equals(estadoEmpresa) && !Boolean.FALSE.equals(visibilidadPublica);
+    }
+
+    public void recordarPublicoCargado() { this.publicoCargado = esPublica(); }
+
+    @JsonIgnore
+    public boolean cambioVisibilidadPublica() {
+        return publicoCargado == null || publicoCargado != esPublica();
+    }
 }

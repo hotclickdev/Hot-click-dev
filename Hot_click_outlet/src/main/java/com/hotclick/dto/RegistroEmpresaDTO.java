@@ -57,7 +57,7 @@ public class RegistroEmpresaDTO {
     public String getCorreoEmpresa()   { return correoEmpresa; }
     public void setCorreoEmpresa(String v)   { this.correoEmpresa = v; }
     public String getTelefonoEmpresa() { return telefonoEmpresa; }
-    public void setTelefonoEmpresa(String v) { this.telefonoEmpresa = v; }
+    public void setTelefonoEmpresa(String v) { this.telefonoEmpresa = telefonoOpcional(v); }
     public String getNombreAdmin()     { return nombreAdmin; }
     public void setNombreAdmin(String v)     { this.nombreAdmin = v; }
     public String getCorreoAdmin()     { return correoAdmin; }
@@ -65,7 +65,7 @@ public class RegistroEmpresaDTO {
     public String getPasswordAdmin()   { return passwordAdmin; }
     public void setPasswordAdmin(String v)   { this.passwordAdmin = v; }
     public String getTelefonoAdmin()          { return telefonoAdmin; }
-    public void setTelefonoAdmin(String v)         { this.telefonoAdmin = v; }
+    public void setTelefonoAdmin(String v)         { this.telefonoAdmin = telefonoOpcional(v); }
 
     private String turnstileToken;
     public String getTurnstileToken() { return turnstileToken; }
@@ -104,5 +104,17 @@ public class RegistroEmpresaDTO {
 
     public UbicacionDespachoAlta ubicacionDespacho() {
         return new UbicacionDespachoAlta(provincia, canton, direccionExacta, permiteRetiroCliente, distrito);
+    }
+
+    /**
+     * BUG-S1-07: el teléfono es opcional. Vacío, solo espacios o solo el código de país
+     * («+506», «+506 ») cuentan como «sin teléfono» y no como número inválido.
+     */
+    static String telefonoOpcional(String v) {
+        if (v == null) return null;
+        String t = v.trim();
+        String compacto = t.replaceAll("\\s", "");
+        if (compacto.replaceAll("\\D", "").isEmpty() || compacto.matches("^\\+?\\d{1,3}$")) return null;
+        return t;
     }
 }

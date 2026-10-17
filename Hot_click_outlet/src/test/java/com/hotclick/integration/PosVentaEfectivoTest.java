@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -117,5 +118,42 @@ class PosVentaEfectivoTest extends BaseIntegrationTest {
         }
         assertThat(usuarioRepository.findAll().stream()
             .filter(u -> "mostrador@hotclick.internal".equals(u.getCorreo())).count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("QA-NEG-013/NP-11 | producto a cotizar (₡1) → la venta POS se rechaza y el stock no cambia")
+    void cotizable_noSeVende() throws Exception {
+        producto.setEsPersonalizado(true);
+        producto.setModoPrecioPersonalizado("COTIZACION");
+        producto.setPrecioVenta(1);
+        productoRepository.saveAndFlush(producto);
+
+        mockMvc.perform(post("/api/pos/venta").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON).content(body()))
+            .andExpect(status().is4xxClientError());
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockActual()).isEqualTo(5);
+        assertThat(pedidoRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("QA-NEG extra 26 | producto pausado: no sale en categorías, categoría ni búsqueda del POS y no se vende")
+    void pausado_fueraDelPos() throws Exception {
+        Long catId = producto.getCategoria().getId();
+        mockMvc.perform(get("/api/productos/pos/categoria/" + catId).header("Authorization", token))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(1));
+
+        producto.setVisibleCatalogo(false);
+        productoRepository.saveAndFlush(producto);
+
+        mockMvc.perform(get("/api/productos/pos/categorias").header("Authorization", token))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(0));
+        mockMvc.perform(get("/api/productos/pos/categoria/" + catId).header("Authorization", token))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(0));
+        mockMvc.perform(get("/api/productos/buscar").param("q", "Pos Prod").header("Authorization", token))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(0));
+        mockMvc.perform(post("/api/pos/venta").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON).content(body()))
+            .andExpect(status().is4xxClientError());
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockActual()).isEqualTo(5);
     }
 }

@@ -11,7 +11,7 @@ describe('tarjeta de producto del comprador', () => {
 
   it('usa el nombre del negocio y cae a la bodega', () => {
     expect(nombreVendedor({ empresaNombre: 'Casa Luna 506', bodegaNombre: 'Central' })).toBe('Casa Luna 506')
-    expect(nombreVendedor({ empresaNombre: '  ', bodegaNombre: 'Taller Ceiba' })).toBe('Taller Ceiba')
+    expect(nombreVendedor({ empresaNombre: '  ', bodegaNombre: 'Taller Ceiba' })).toBe('HotClick') // NP-19: nunca la bodega
     expect(nombreVendedor({})).toBe('HotClick')
   })
 

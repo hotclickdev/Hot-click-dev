@@ -41,12 +41,12 @@ describe('productosMasDeLaMarca', () => {
 })
 
 describe('totalMasDeLaMarca', () => {
-  it('descuenta el actual del total de la página', () => {
-    expect(totalMasDeLaMarca({ totalElements: 12 }, 5)).toBe(11)
+  it('cuenta el catálogo entero de la tienda (incluye el actual)', () => {
+    expect(totalMasDeLaMarca({ totalElements: 10 }, 5)).toBe(10) // NP-20: la tienda tiene 10
   })
-  it('sin totalElements usa los visibles', () => {
-    expect(totalMasDeLaMarca([p(1), p(2)], 2)).toBe(2)
-    expect(totalMasDeLaMarca({ totalElements: 1 }, 3)).toBe(3)
+  it('sin totalElements: visibles más el actual', () => {
+    expect(totalMasDeLaMarca([p(1), p(2)], 2)).toBe(3)
+    expect(totalMasDeLaMarca({ totalElements: 1 }, 3)).toBe(4)
   })
 })
 

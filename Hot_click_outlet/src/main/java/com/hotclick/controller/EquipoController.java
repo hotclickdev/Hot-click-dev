@@ -100,8 +100,8 @@ public class EquipoController {
         if (body.get("correo") == null || body.get("correo").isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El correo es requerido"));
         }
-        if (body.get("password") == null || body.get("password").length() < 6) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("La contraseña debe tener al menos 6 caracteres"));
+        if (body.get("password") == null || body.get("password").length() < 8) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("La contraseña debe tener al menos 8 caracteres"));
         }
         String rolEnEmpresa = body.getOrDefault("rolEnEmpresa", "EDITOR");
         if (!ROLES_PERMITIDOS.contains(rolEnEmpresa)) {

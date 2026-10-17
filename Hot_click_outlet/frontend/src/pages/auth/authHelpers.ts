@@ -1,5 +1,10 @@
 export { destinoPostLogin } from '@/utils/authRedirect'
 
+/** El login de cuentas internas respeta un ?redirect= explícito y ya saneado (no vuelve a /login ni a la raíz). */
+export function debeRespetarRedirect(redirectCrudo: string | null, destinoSaneado: string): boolean {
+  return Boolean(redirectCrudo) && destinoSaneado !== '/' && destinoSaneado !== '/login'
+}
+
 type AuthErrorBody = {
   response?: { data?: { message?: unknown }; status?: number }
 }

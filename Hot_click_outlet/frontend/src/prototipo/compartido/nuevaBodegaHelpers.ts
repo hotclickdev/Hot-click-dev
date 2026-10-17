@@ -124,3 +124,13 @@ export function payloadCrearBodega(form: FormBodega): Record<string, string> {
     ...(encargado ? { encargadoNombre: encargado } : {}),
   }
 }
+
+/**
+ * QA-NEG-055: el límite se revisa al abrir el formulario (paso 1), no recién al guardar en el paso 4.
+ * maxBodegas < 0 = sin límite. Devuelve el aviso o null.
+ */
+export function avisoLimiteBodegas(usadas: number | null, maxBodegas: number | null | undefined): string | null {
+  if (usadas == null || maxBodegas == null || maxBodegas < 0) return null
+  if (usadas < maxBodegas) return null
+  return `Llegaste al límite de bodegas de tu plan (${usadas}/${maxBodegas}). Para agregar otra, mejorá tu plan.`
+}

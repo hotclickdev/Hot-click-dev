@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-G91XLeES.js";function t(){return e()}export{t};

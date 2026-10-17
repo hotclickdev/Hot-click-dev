@@ -6,9 +6,9 @@ import { formatoColon } from '@/theme/formatoColon'
 import { EncabezadoPagina, Miniatura } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
-import { marcarPedidoEntregadoApi, marcarPedidoEnviadoApi } from './pedidosVendedorApi'
-import { mensajeErrorDespacho, puedeDespachar } from './estadoPedidoVendedor'
-import { estiloEstadoPedido } from './pedidosListaHelpers'
+import { cancelarPedidoVendedorApi, confirmarPagoVendedorApi, marcarPedidoEntregadoApi, marcarPedidoEnviadoApi } from './pedidosVendedorApi'
+import { mensajeErrorDespacho, puedeCancelar, puedeDespachar } from './estadoPedidoVendedor'
+import { estiloEstadoPedido, tituloPedido } from './pedidosListaHelpers'
 import type { PlanConfig } from './plan'
 import type { PedidoMock } from './mock'
 import EntradaPagina from './motion/EntradaPagina'
@@ -44,20 +44,24 @@ export default function PedidoDetallePage() {
     }
   }
 
-  async function marcarEntregado() {
+  async function cambiar(accion: (pedidoId: string) => Promise<void>, mensaje: string) {
     if (!id) return
     setMarcando(true)
     setErrorMarca(null)
     try {
-      await marcarPedidoEntregadoApi(id)
+      await accion(id)
       navigate(ruta('pedidos'))
     } catch (err: unknown) {
       console.error('[PedidoDetalle]', err)
-      setErrorMarca(mensajeErrorDespacho(err, 'No se pudo marcar el pedido como entregado.'))
+      setErrorMarca(mensajeErrorDespacho(err, mensaje))
     } finally {
       setMarcando(false)
     }
   }
+
+  const marcarEntregado = () => cambiar(marcarPedidoEntregadoApi, 'No se pudo marcar el pedido como entregado.')
+  const confirmarPago = () => cambiar(confirmarPagoVendedorApi, 'No se pudo confirmar el pago.')
+  const cancelarPedido = () => cambiar(cancelarPedidoVendedorApi, 'No se pudo cancelar el pedido.')
 
   function abrirConfirmacion() {
     setErrorMarca(null)
@@ -100,10 +104,10 @@ export default function PedidoDetallePage() {
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12 md:pt-12">
       <EntradaPagina>
         <div className="md:hidden">
-          <EncabezadoPagina titulo={`Pedido #${pedido.id}`} volverA={ruta('pedidos')} />
+          <EncabezadoPagina titulo={tituloPedido(pedido)} volverA={ruta('pedidos')} />
         </div>
         <header className="mb-5 hidden md:block">
-          <h1 className="font-display text-[28px] font-bold">Pedido #{pedido.id}</h1>
+          <h1 className="font-display text-[28px] font-bold">{tituloPedido(pedido)}</h1>
           {plan.id === 'negocioPlus' || pedido.sucursal ? (
             <p className="mt-1 text-sm text-hc-muted">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
           ) : null}
@@ -122,6 +126,8 @@ export default function PedidoDetallePage() {
             plan={plan}
             onConfirmarEnvio={abrirConfirmacion}
             onEntregar={() => void marcarEntregado()}
+            onConfirmarPago={() => void confirmarPago()}
+            onCancelar={() => void cancelarPedido()}
             marcando={marcando}
             errorMarca={errorMarca}
           />
@@ -165,6 +171,8 @@ function DetallePedidoContenido({
   plan,
   onConfirmarEnvio,
   onEntregar,
+  onConfirmarPago,
+  onCancelar,
   marcando,
   errorMarca,
 }: {
@@ -172,6 +180,8 @@ function DetallePedidoContenido({
   plan: PlanConfig
   onConfirmarEnvio: () => void
   onEntregar: () => void
+  onConfirmarPago: () => void
+  onCancelar: () => void
   marcando: boolean
   errorMarca: string | null
 }) {
@@ -190,6 +200,8 @@ function DetallePedidoContenido({
       </span>
       <dl className="mt-5 space-y-3 text-sm md:max-w-[760px]">
         <FilaDato label="Cliente" valor={pedido.cliente} />
+        {pedido.telefono ? <FilaDato label="Teléfono" valor={pedido.telefono} /> : null}
+        {pedido.correo ? <FilaDato label="Correo" valor={pedido.correo} /> : null}
         {plan.id === 'negocioPlus' || pedido.sucursal ? (
           <FilaDato label="Sucursal" valor={pedido.sucursal ?? '—'} />
         ) : null}
@@ -206,6 +218,19 @@ function DetallePedidoContenido({
         </div>
         {pedido.estado === 'Esperando pago' ? (
           <p role="status" className="mt-6 text-sm text-hc-muted">{t('despacho.esperandoPagoAyuda')}</p>
+        ) : null}
+        {puedeCancelar(pedido.estado) ? (
+          <div className="mt-6 flex flex-col gap-2">
+            {errorMarca ? <p role="alert" className="text-sm text-hc-danger">{errorMarca}</p> : null}
+            {pedido.confirmaPago ? (
+              <CtaEnvio variante="primario" disabled={marcando} onClick={onConfirmarPago}>
+                {marcando ? 'Guardando…' : 'Confirmar pago recibido'}
+              </CtaEnvio>
+            ) : null}
+            <CtaEnvio variante="contorno" disabled={marcando} onClick={onCancelar}>
+              Cancelar pedido
+            </CtaEnvio>
+          </div>
         ) : null}
         {entregar ? (
           <div className="mt-6">

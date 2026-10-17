@@ -32,6 +32,8 @@ public class ProductoWriteOperations {
     @Autowired private UbicacionDespachoService ubicacionDespachoService;
     @Autowired private SkuAsignador skuAsignador;
     @Autowired private SancionPlataformaRepository sancionRepo;
+    @Autowired private com.hotclick.service.moderacion.TerminosProhibidosService terminosProhibidos;
+    @Autowired(required = false) private com.hotclick.service.contacto.ContactoPublicoService contactoPublico;
 
     @Transactional
     public Producto crearProducto(Object source, ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
@@ -42,11 +44,15 @@ public class ProductoWriteOperations {
             throw new IllegalArgumentException("Esta tienda tiene una sanción vigente y no puede publicar.");
         }
 
+        if (contactoPublico != null && empresa != null && dto.getVideoUrl() != null) {
+            com.hotclick.utils.VideoUrlPermitida.exigirSegunPlan(dto.getVideoUrl(), contactoPublico.permiteContacto(empresa.getId()));
+        }
         Producto p = new Producto();
         dtoMapper.mapDtoToProducto(dto, p);
         p.setEstado(Constants.ESTADO_ACTIVO);
         p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
             .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
+        exigirSinTerminosProhibidos(terminosProhibidos, categoriaRepository, p);
 
         if (dto.getBodegaId() != null) {
             p.setBodega(bodegaRepository.findById(dto.getBodegaId())
@@ -151,5 +157,19 @@ public class ProductoWriteOperations {
         Producto saved = productoRepository.save(p);
         cacheEvictor.evictProductosPublicos();
         return saved;
+    }
+
+    /** QA-NEG-038: nombre, descripción y categoría sin términos prohibidos (400). */
+    static void exigirSinTerminosProhibidos(com.hotclick.service.moderacion.TerminosProhibidosService terminos,
+                                            CategoriaRepository categorias, Producto p) {
+        String categoria = null;
+        if (p.getCategoria() != null) {
+            // tenant-global-ok: la categoría es catálogo global de la plataforma (no de un negocio); solo se lee el nombre.
+            // El updater trabaja sin transacción: la categoría puede ser un proxy LAZY; el id sí se lee sin inicializar.
+            categoria = org.hibernate.Hibernate.isInitialized(p.getCategoria())
+                ? p.getCategoria().getNombreCategoria()
+                : categorias.findById(p.getCategoria().getId()).map(com.hotclick.model.Categoria::getNombreCategoria).orElse(null);
+        }
+        terminos.exigirPermitido(p.getNombreProducto(), p.getDescripcionCorta(), p.getDescripcionLarga(), categoria);
     }
 }

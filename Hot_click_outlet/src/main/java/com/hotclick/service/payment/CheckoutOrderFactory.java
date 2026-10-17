@@ -111,6 +111,10 @@ public class CheckoutOrderFactory {
             pi.setPedido(pedido);
             pi.setEstado(Constants.ESTADO_ACTIVO);
             pedido.getItems().add(pi);
+            if (pedido.getEmpresa() == null && p.getEmpresa() != null) {
+                // QA-NEG-007/027: bodega sin empresa → el pedido igual queda en el panel del negocio del producto.
+                pedido.setEmpresa(p.getEmpresa());
+            }
         }
         pedidoRepository.save(pedido);
         encargoService.crearEncargosDesdeCheckout(pedido, items, pedido.getUsuarioFinal());

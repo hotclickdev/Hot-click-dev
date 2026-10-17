@@ -43,6 +43,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * (SINPE, sin pasarela externa) + scheduler de expiración con reloj controlable.
  */
 @DisplayName("[QA-CONC-4] Regla anti-bot de reservas — checkout + liberación diferida")
+// QA-CONC-4 mide la liberación diferida con pedidos de 5 u: se suben los topes de invitado de SEG-F (GuestCheckoutGuard,
+// cubierto en GuestCheckoutGuardTest) para que no corten antes.
+@org.springframework.test.context.TestPropertySource(properties = {
+    "hotclick.checkout.invitado.max-unidades-por-producto=100",
+    "hotclick.checkout.invitado.max-unidades-pendientes=1000"})
 class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
 
     @Autowired private ReservaAntiBotService          reservaAntiBot;

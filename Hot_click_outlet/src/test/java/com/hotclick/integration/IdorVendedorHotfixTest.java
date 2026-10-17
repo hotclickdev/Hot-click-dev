@@ -185,6 +185,15 @@ class IdorVendedorHotfixTest extends BaseIntegrationTest {
     // ── IDOR-06 ───────────────────────────────────────────────────────────────
 
     @Test
+    @DisplayName("ESC-7: pedido inexistente o ajeno → 404/403, nunca 500")
+    void esc7_pedidoInexistenteNo500() throws Exception {
+        mockMvc.perform(get("/api/pedidos/999999").header("Authorization", tokenB))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/pedidos/" + pedidoA.getId()).header("Authorization", tokenB))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("IDOR-06 | /api/pedidos y /pendientes: comprador y sin empresa → 403; B no ve los de A")
     void idor06_pedidos() throws Exception {
         rechaza(HttpMethod.GET, "/api/pedidos", null, false);

@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   aProductoListaItem,
   filtrarProductos,
+  filtrosProductos,
   gruposProductosVisibles,
   type ProductoListaItem,
 } from './productosListaHelpers'
+import { mapCategoria } from './catalogoVendedorApi'
 
 function item(parcial: Partial<ProductoListaItem> & Pick<ProductoListaItem, 'id' | 'nombre'>): ProductoListaItem {
   return {
@@ -41,9 +43,17 @@ describe('productosListaHelpers', () => {
       item({ id: '4', nombre: 'Cuadro', esPersonalizado: true, categoria: 'Otro' }),
       item({ id: '5', nombre: 'Lámpara', categoria: 'Otro' }),
     ], 'Todos')
-    expect(grupos.map((g) => g.titulo)).toEqual(['Personalizados', 'Recién agregados', 'Tecnología', 'Ropa', 'Otros'])
+    expect(grupos.map((g) => g.titulo)).toEqual(['Personalizados', 'Recién agregados', 'Tecnología', 'Ropa', 'Otro'])
     expect(grupos[0].items.map((p) => p.id)).toEqual(['4'])
-    expect(grupos.find((g) => g.titulo === 'Otros')?.items.map((p) => p.id)).toEqual(['5'])
+    expect(grupos.find((g) => g.titulo === 'Otro')?.items.map((p) => p.id)).toEqual(['5'])
+  })
+
+  it('NP-10: usa la categoría real (Jardinería) en grupos y filtros', () => {
+    const conJardin = [...lista, item({ id: '6', nombre: 'Suculenta', categoria: 'Jardinería y Plantas' })]
+    expect(filtrosProductos(conJardin)).toEqual(['Todos', 'Recién agregados', 'Tecnología', 'Ropa', 'Jardinería y Plantas'])
+    expect(gruposProductosVisibles(conJardin, 'Todos').map((g) => g.titulo)).toContain('Jardinería y Plantas')
+    expect(mapCategoria('Jardinería y Plantas')).toBe('Jardinería y Plantas')
+    expect(mapCategoria(undefined)).toBe('Sin categoría')
   })
 
   it('aProductoListaItem normaliza recienAgregado', () => {

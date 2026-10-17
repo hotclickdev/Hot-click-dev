@@ -55,6 +55,7 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
     /** POS: solo categorías donde este negocio tiene al menos un producto activo. */
     @Query("SELECT DISTINCT c FROM Producto p JOIN p.categoria c "
         + "WHERE p.empresa.id = :empresaId AND p.estado = :estado AND c.estado = :estado "
+        + "AND (p.visibleCatalogo IS NULL OR p.visibleCatalogo = true) "
         + "ORDER BY c.nombreCategoria")
     List<Categoria> findConProductosDeEmpresa(
         @Param("empresaId") Long empresaId, @Param("estado") Integer estado);

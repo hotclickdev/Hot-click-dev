@@ -49,6 +49,15 @@ public class NegocioRapidoOnboardingService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> estado(Long empresaId) {
+        // BUG-S1-13: un negocio normal (no vino de un enlace de asignación) entra al panel con un
+        // 200 «no aplica» en vez de un 404 en cada carga del menú.
+        if (empresaId != null && rapidas.findFirstByEmpresaIdOrderByCreadaDesc(empresaId).isEmpty()) {
+            Map<String, Object> noAplica = new LinkedHashMap<>();
+            noAplica.put("aplica", false);
+            noAplica.put("completo", true);
+            noAplica.put("pasos", List.of());
+            return noAplica;
+        }
         return vista(fila(empresaId), empresaId);
     }
 

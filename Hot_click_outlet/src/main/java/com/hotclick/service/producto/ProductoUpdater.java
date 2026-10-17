@@ -13,12 +13,15 @@ import org.springframework.stereotype.Component;
 public class ProductoUpdater {
 
     @Autowired private ProductoRepository productoRepository;
+
+    @Autowired private com.hotclick.service.moderacion.TerminosProhibidosService terminosProhibidos;
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private ProductoDtoMapper dtoMapper;
     @Autowired private ProductoCacheEvictor cacheEvictor;
     @Autowired private ProductoGuardadoNotifier guardadoNotifier;
     @Autowired private ProductoCambioAuditoria cambioAuditoria;
+    @Autowired(required = false) private com.hotclick.service.contacto.ContactoPublicoService contactoPublico;
 
     public Producto actualizarProducto(Object source, Long id, ProductoRequestDTO dto, String adminCorreo) {
         // Leer empresaId una sola vez antes del loop: evita LazyInitializationException
@@ -32,11 +35,15 @@ public class ProductoUpdater {
                 String nombreAntes = p.getNombreProducto();
                 Integer precioAntes = p.getPrecioVenta();
                 Integer stockAntes = p.getStockActual();
+                if (contactoPublico != null && dto.getVideoUrl() != null) {
+                    com.hotclick.utils.VideoUrlPermitida.exigirSegunPlan(dto.getVideoUrl(), contactoPublico.permiteContacto(empresaId));
+                }
                 dtoMapper.mapDtoToProducto(dto, p);
                 if (dto.getCategoriaId() != null) {
                     p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
                         .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
                 }
+                ProductoWriteOperations.exigirSinTerminosProhibidos(terminosProhibidos, categoriaRepository, p);
                 if (dto.getBodegaId() != null) {
                     p.setBodega(bodegaRepository.findById(dto.getBodegaId())
                         .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));

@@ -1,3 +1,4 @@
+import { COMISION_MINIMA_CRC, textoComision } from '@/config/planesPrecios'
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { billingService } from '@/services/billingService'
@@ -28,17 +29,18 @@ type PlanSaas = {
   tieneAi?: boolean
   tieneApi?: boolean
   tieneGiftCards?: boolean
+  comisionMinimaCrc?: number
 }
 
 function listaPlanes(data: unknown): PlanSaas[] {
   return Array.isArray(data) ? data as PlanSaas[] : []
 }
 
+/** Mínimo por venta del API (V168–V172); si no viene, el confirmado por el dueño (₡700, todos los planes). */
 function etiquetaComision(plan: PlanSaas): string {
   const pct = Number(plan.comisionPorcentaje ?? 0)
-  const base = Number.isFinite(pct) && pct > 0 ? `${pct}% por venta` : 'Sin comisión por venta'
-  if (plan.nombre === 'EMPRENDEDOR') return `${base} (mín. ₡400)`
-  return base
+  if (!Number.isFinite(pct) || pct <= 0) return 'Sin comisión por venta'
+  return textoComision(pct, Number(plan.comisionMinimaCrc ?? COMISION_MINIMA_CRC))
 }
 
 function Feature({ ok, label }: { ok?: boolean; label: string }) {
@@ -219,7 +221,7 @@ export default function AdminPlanes() {
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
+        Los precios están en colones (CRC). El cobro mensual se procesa con Tilopay.
         Podés cancelar en cualquier momento desde la sección de suscripción.
       </p>
 

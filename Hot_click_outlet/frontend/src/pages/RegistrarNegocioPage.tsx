@@ -1,3 +1,4 @@
+import { telefonoOpcional } from '@/pages/registro-empresa/registroEmpresaHelpers'
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -91,6 +92,7 @@ export default function RegistrarNegocioPage() {
     try {
       const payload = {
         ...form,
+        telefonoEmpresa: telefonoOpcional(form.telefonoEmpresa),
         ...payloadUbicacionRegistro(ubicacion.ubicacion),
         ...(haciendaValida && {
           cedulaJuridica:    cedula.trim(),

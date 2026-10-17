@@ -1,4 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import useAuthStore from '@/store/authStore'
+import { adminService } from '@/services/orderService'
 import { useParams, useNavigate } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
@@ -12,13 +14,12 @@ import TiendaCheckoutDireccion from './TiendaCheckoutDireccion'
 import {
   METODO_ENVIO_DOMICILIO,
   METODO_ENVIO_RETIRO,
+  costoEnvioTienda,
   mensajeErrorCheckout,
 } from './tiendaCheckoutValidacion'
 import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
 
-/** Una sola opción «SINPE / Tarjeta» (como el marketplace); efectivo solo si la tienda lo acepta. */
-const PAGO_PRINCIPAL = { value: 'SINPE_MOVIL', label: 'SINPE / Tarjeta' }
-const PAGO_EFECTIVO = { value: 'EFECTIVO', label: 'Efectivo al recibir' }
+import { AVISO_SIN_METODOS_PAGO, metodoPagoVigente, metodosPagoTienda } from './pagosTienda'
 
 const ENVIO_DOMICILIO = { value: METODO_ENVIO_DOMICILIO, label: 'Envío a domicilio' }
 const ENVIO_RETIRO = { value: METODO_ENVIO_RETIRO, label: 'Retiro en tienda' }
@@ -42,26 +43,50 @@ export default function TiendaCheckoutPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { carrito, totalImporte, itemsParaPedido, vaciarCarrito, empresa } = useTiendaStore()
+  // Con sesión, los datos de la cuenta arrancan prellenados (se pueden corregir).
+  const nombreCuenta = useAuthStore((s) => s.userName)
+  const correoCuenta = useAuthStore((s) => s.userEmail)
+  const userId = useAuthStore((s) => s.userId)
+  const authToken = useAuthStore((s) => s.token)
   const [form, setForm] = useState<FormCheckout>({
-    nombreCliente: '',
-    correoCliente: '',
+    nombreCliente: nombreCuenta ?? '',
+    correoCliente: correoCuenta ?? '',
     telefonoCliente: '',
     direccionEntrega: '',
     metodoPago: 'SINPE_MOVIL',
     metodoEnvio: METODO_ENVIO_DOMICILIO,
     notas: '',
   })
+  useEffect(() => {
+    if (!authToken || !userId) return
+    let cancelado = false
+    adminService.getUsuario(userId).then(({ data }) => {
+      if (cancelado) return
+      const telefono = (data as { data?: { telefono?: string } })?.data?.telefono
+      // Solo completa si el comprador todavía no escribió nada.
+      if (telefono) setForm((f) => (f.telefonoCliente ? f : { ...f, telefonoCliente: telefono }))
+    }).catch(() => { /* prellenado best-effort */ })
+    return () => { cancelado = true }
+  }, [authToken, userId])
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [encomienda, setEncomienda] = useState('')
   const set = (key: keyof FormCheckout, val: string) => setForm((f) => ({ ...f, [key]: val }))
   const hayRetiro = Boolean(empresa?.retiro)
+  const costoEnvio = costoEnvioTienda(form.metodoEnvio)
   const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
-  const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
+  // SINPE con comprobante oculto hasta que ONVO esté en vivo (pagosTienda.SINPE_TIENDA_DISPONIBLE).
+  const metodosPago = metodosPagoTienda(efectivoDisponible(carrito.map((c) => c.producto)))
+  const metodoPago = metodoPagoVigente(form.metodoPago, metodosPago)
+  const sinMetodosPago = metodosPago.length === 0
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (carrito.length === 0) return
+    if (sinMetodosPago) {
+      setError(AVISO_SIN_METODOS_PAGO)
+      return
+    }
     const errorForm = mensajeErrorCheckout(form)
     if (errorForm) {
       setError(errorForm)
@@ -71,7 +96,7 @@ export default function TiendaCheckoutPage() {
     setError(null)
     try {
       const notas = [form.notas.trim(), encomienda.trim() ? `Encomienda: ${encomienda.trim()}` : ''].filter(Boolean).join(' | ')
-      const resultado = await tiendaService.crearPedido(slug as string, { ...form, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
+      const resultado = await tiendaService.crearPedido(slug as string, { ...form, metodoPago, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
       vaciarCarrito()
       const qs = new URLSearchParams({ orden: resultado.numeroPedido ?? '' })
       navigate(`/tienda/${slug}/checkout/exito?${qs}`, { replace: true, state: { total: resultado.total } })
@@ -135,7 +160,11 @@ export default function TiendaCheckoutPage() {
                 {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.paqueteTienda} value={encomienda} onChange={setEncomienda} />}
               </Campo>
             )}
-            <GrupoOpciones label="Método de pago" name="metodoPago" opciones={metodosPago} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
+            {sinMetodosPago ? (
+              <p role="alert" className="text-[12px] leading-4 text-hc-n-600">{AVISO_SIN_METODOS_PAGO}</p>
+            ) : (
+              <GrupoOpciones label="Método de pago" name="metodoPago" opciones={metodosPago} valor={metodoPago} onChange={(v) => set('metodoPago', v)} />
+            )}
             <Campo etiqueta="Notas adicionales">
               {({ id }) => (
                 <textarea
@@ -163,9 +192,13 @@ export default function TiendaCheckoutPage() {
                   <span className="shrink-0 font-medium text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
                 </div>
               ))}
+              <div className="flex justify-between gap-4 text-[13px] text-hc-n-600">
+                <span>Envío</span>
+                <span className="shrink-0 font-medium text-hc-n-900">{costoEnvio > 0 ? formatPrice(costoEnvio) : 'Gratis'}</span>
+              </div>
               <div className="mt-1 flex items-center justify-between border-t border-hc-n-200 pt-3 text-hc-n-900">
                 <span className="text-[15px] font-semibold">Total</span>
-                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte())}</span>
+                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte() + costoEnvio)}</span>
               </div>
             </div>
           </section>
@@ -180,7 +213,7 @@ export default function TiendaCheckoutPage() {
           {/* Siempre rojo de marca (#E73B33): el color de la tienda no aplica a la acción de pago. */}
           <button
             type="submit"
-            disabled={enviando}
+            disabled={enviando || sinMetodosPago}
             className="flex min-h-[48px] w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 text-[15px] font-semibold text-hc-n-0 disabled:opacity-60"
           >
             {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}

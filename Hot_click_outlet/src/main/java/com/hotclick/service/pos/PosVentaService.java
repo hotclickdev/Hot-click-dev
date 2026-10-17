@@ -76,8 +76,57 @@ public class PosVentaService {
         return saved;
     }
 
-    public List<Pedido> historial(Long empresaId) {
-        return pedidoRepository.findByEmpresaIdAndOrigenOrderByFechaPedidoDesc(empresaId, "POS");
+    /**
+     * NP-12: antes devolvía las entidades y Jackson tocaba relaciones LAZY fuera de la transacción → 500.
+     * Ahora arma solo lo que muestra el historial, dentro de una transacción de lectura y con una sola consulta.
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> historial(Long empresaId) {
+        return pedidoRepository.findByEmpresaIdAndOrigenOrderByFechaPedidoDesc(empresaId, "POS").stream()
+            .map(PosVentaService::aFilaHistorial).toList();
+    }
+
+    /**
+     * Ítem 7 (producto 565): un producto eliminado (estado ≠ activo) no se vende en caja.
+     * NP-11: un personalizado «a cotizar» no tiene precio (el sistema lo guarda en ₡1): no se vende por POS.
+     * QA-NEG extra 26: un producto pausado ({@code visibleCatalogo = false}) tampoco se vende en caja.
+     */
+    public static void exigirVendiblePorPos(Producto producto) {
+        if (producto.getEstado() == null || producto.getEstado() != Constants.ESTADO_ACTIVO) {
+            throw new IllegalStateException("«" + producto.getNombreProducto() + "» fue eliminado y no se puede vender.");
+        }
+        if (Boolean.TRUE.equals(producto.getEsPersonalizado())
+                && "COTIZACION".equalsIgnoreCase(producto.getModoPrecioPersonalizado())) {
+            throw new IllegalStateException("«" + producto.getNombreProducto()
+                + "» es a cotizar: no tiene precio para cobrarlo en caja. Ponele un precio fijo o vendelo como encargo.");
+        }
+        if (Boolean.FALSE.equals(producto.getVisibleCatalogo())) {
+            throw new IllegalStateException("«" + producto.getNombreProducto()
+                + "» está pausado. Activalo en tus productos para venderlo en caja.");
+        }
+    }
+
+    static java.util.Map<String, Object> aFilaHistorial(Pedido p) {
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", p.getId());
+        m.put("numeroPedido", p.getNumeroPedido());
+        m.put("fechaPedido", p.getFechaPedido());
+        m.put("metodoPago", p.getMetodoPago());
+        m.put("totalPedido", p.getTotalPedido());
+        m.put("descuentoTotal", p.getDescuentoTotal());
+        m.put("usuarioFinal", p.getUsuarioFinal() != null
+            ? java.util.Map.of("nombre", java.util.Objects.toString(p.getUsuarioFinal().getNombre(), "")) : null);
+        List<java.util.Map<String, Object>> items = new ArrayList<>();
+        for (PedidoItem i : p.getItems() != null ? p.getItems() : List.<PedidoItem>of()) {
+            java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+            it.put("producto", i.getProducto() != null
+                ? java.util.Map.of("nombreProducto", java.util.Objects.toString(i.getProducto().getNombreProducto(), "")) : null);
+            it.put("cantidad", i.getCantidad());
+            it.put("subtotalItem", i.getSubtotalItem());
+            items.add(it);
+        }
+        m.put("items", items);
+        return m;
     }
 
     private Usuario resolverCliente(Long clienteId) {
@@ -126,6 +175,7 @@ public class PosVentaService {
             Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
             PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), pedido.getEmpresa().getId());
+            exigirVendiblePorPos(producto);
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
             // Precio siempre del catálogo — no confiar en el body del cliente.
             Integer precioObj = producto.getPrecioEfectivo();
