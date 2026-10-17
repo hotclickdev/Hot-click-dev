@@ -61,6 +61,7 @@ public class StorefrontGuestOrderService {
         this.notificacionEmailService = notificacionEmailService;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Pedido crearPedido(Empresa empresa, StorefrontPedidoDTO dto) {
         Bodega bodega = resolverBodega(empresa);
         if (bodega == null) {
