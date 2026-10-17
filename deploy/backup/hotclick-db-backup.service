@@ -1,0 +1,22 @@
+[Unit]
+Description=HotClick: backup diario de Postgres (pg_dump -Fc + age + Google Drive)
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# Usuario del server que está en el grupo docker (ajustar: ec2-user / ubuntu).
+User=hotclick-backup
+Group=docker
+EnvironmentFile=/etc/hotclick/backup.env
+ExecStart=/usr/local/lib/hotclick/hotclick-db-backup.sh
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=2h
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+CacheDirectory=hotclick-backup
+Environment=WORK_DIR=/var/cache/hotclick-backup
+Environment=HOME=/var/cache/hotclick-backup
+ProtectHome=read-only

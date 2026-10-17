@@ -14,7 +14,7 @@ const body = [
   '',
   '### Qué revisar',
   '- ¿Existe un artifact `.sql.gz` de `Daily DB Backup`?',
-  '- ¿`SUPABASE_BACKUP_URL` / `SUPABASE_DB_PASSWORD` están en el repo? (S8 no los inventa; si faltan, el dump diario falla)',
+  '- ¿Están `vars.GDRIVE_FOLDER_ID`, `BACKUP_AGE_IDENTITY` y las credenciales de Drive (`GDRIVE_CLIENT_ID`/`GDRIVE_CLIENT_SECRET`/`GDRIVE_RCLONE_TOKEN`, o `GDRIVE_SA_JSON` + `vars.GDRIVE_SHARED_DRIVE_ID`)? ¿Corrió el timer `hotclick-db-backup` en el server? (ver deploy/backup/README.md)',
   '- ¿El dump menciona `hot_click_usuario_tb` / `pedido` / `producto`?',
   '- ¿`psql` en el contenedor local falló por extensiones/roles?',
   '',
