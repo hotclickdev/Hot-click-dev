@@ -470,6 +470,40 @@
     }
   },
   "home": {
+    "carrusel": {
+      "rol": "carrusel",
+      "diapositiva": "diapositiva",
+      "region": "Destacados",
+      "puntos": "Bloques del carrusel",
+      "bloque": {
+        "descubri": {
+          "etiqueta": "Descubrí",
+          "titulo": "Deslizá y encontrá algo nuevo",
+          "detalle": "Productos de emprendedores de todo el país, uno por uno.",
+          "cta": "Empezar a descubrir"
+        },
+        "negocio": {
+          "etiqueta": "Negocio destacado",
+          "cta": "Ver tienda"
+        },
+        "producto": {
+          "etiqueta": "Producto destacado",
+          "cta": "Ver producto"
+        }
+      },
+      "tipo": {
+        "descubri": "Bloque",
+        "negocio": "Negocio",
+        "producto": "Producto"
+      },
+      "posicion": "{{tipo}} {{x}} de {{n}}",
+      "pausado": "Pausado · {{tipo}} {{x}} de {{n}}",
+      "pausadoSolo": "Pausado",
+      "pausar": "Pausar carrusel",
+      "reanudar": "Reanudar carrusel",
+      "sinFoto": "Sin foto todavía",
+      "sinFotoRotulo": "SIN FOTO"
+    },
     "badge": "Tecnología premium en Costa Rica",
     "seoTitle": "HotClick — Tienda en línea para comprar en Costa Rica",
     "seoDescription": "Comprá en línea a emprendedores, pymes y negocios de Costa Rica con SINPE o tarjeta. Envío a todo el país. También podés vender tus productos en HotClick.",
