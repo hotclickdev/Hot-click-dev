@@ -1,5 +1,4 @@
 import { authService } from '@/services/authService'
-import i18n from '@/i18n'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
@@ -7,6 +6,7 @@ import { BODEGA_DEFAULT, bodegaRetiroDePaquete, opcionesEnvio } from './checkout
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import { guardarUltimoPedido } from '@/utils/ultimoPedido'
 import type { CheckoutPayload } from '@/types/pedido'
+import { PAGO_EFECTIVO, proveedorDe } from './pagoPrincipal'
 
 /** Etiqueta legible del método de envío elegido para un paquete, para el resumen en notas. */
 function opcionesParaLabel(p: PaqueteCheckout, metodo: string): string {
@@ -104,9 +104,6 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     setGuestPhoneDirty,
     metodoPago,
     sinpeNombre,
-    sinpeCedula,
-    setSinpeNombreErr,
-    setSinpeCedulaErr,
     telefono,
     metodoEnvio,
     paquetes,
@@ -147,22 +144,6 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     }
   }
 
-  if (metodoPago === 'SINPE') {
-    let valid = true
-    if (sinpeNombre.trim()) {
-      setSinpeNombreErr('')
-    } else {
-      setSinpeNombreErr(i18n.t('checkout.errores.nombreRequerido'))
-      valid = false
-    }
-    if (sinpeCedula.trim()) {
-      setSinpeCedulaErr('')
-    } else {
-      setSinpeCedulaErr(i18n.t('checkout.errores.cedulaRequerida'))
-      valid = false
-    }
-    if (!valid) return
-  }
 
   authService.registrarConsentimiento('CHECKOUT')
   guardarUltimoPedido({
@@ -186,11 +167,10 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     notas.trim(),
     necesitaDireccion && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
     necesitaDireccion && direccion ? `Dirección: ${direccionPedido || direccion}` : '',
-    metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
     resumenEnvios ? `Envío: ${resumenEnvios}` : '',
   ].filter(Boolean).join(' | ')
 
-  const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
+  const isManual = metodoPago === PAGO_EFECTIVO
   analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + (i.cantidad as number), 0))
   const atrib = attributionForCheckout()
   const metaCookies = readMetaCookies()
@@ -205,7 +185,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       notas: notasFull || null,
       // B17: la dirección también viaja aparte para que el pedido la guarde y los correos digan «Enviamos a …».
       direccionEntrega: necesitaDireccion && direccion ? (direccionPedido || direccion).slice(0, 500) : null,
-      provider: metodoPago,
+      provider: proveedorDe(metodoPago),
       items: items.map((i) => ({
         productoId: i.id,
         cantidad: i.cantidad,
@@ -236,7 +216,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       ...(token
         ? {}
         : {
-            guestEmail: metodoPago === 'SINPE' ? (sinpeEmail.trim() || guestEmail.trim()) : guestEmail.trim(),
+            guestEmail: guestEmail.trim() || sinpeEmail.trim(),
             guestPhone: guestPhone || sinpeTelefono || null,
           }),
     },

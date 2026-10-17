@@ -69,3 +69,30 @@ export const STEP_MOTION = {
   exit: { opacity: 0, x: -16 },
   transition: { duration: 0.2 },
 }
+
+/** Pyme: el campo «opcional» con solo el código de país (`+506`) se mandaba y el backend lo rechazaba. */
+export function telefonoOpcional(valor: string | null | undefined): string | undefined {
+  const t = (valor ?? '').trim()
+  const digitos = t.replace(/\D/g, '')
+  if (!digitos || /^\+?\d{1,3}$/.test(t.replace(/\s/g, ''))) return undefined
+  return t
+}
+
+/** Etiqueta visible del campo de clave (no es una credencial). */
+const ETIQUETA_CAMPO_CLAVE = 'Contraseña'
+
+const NOMBRES_CAMPO: Record<string, string> = {
+  telefonoAdmin: 'Teléfono personal',
+  telefonoEmpresa: 'Teléfono del negocio',
+  correoAdmin: 'Correo',
+  correoEmpresa: 'Correo del negocio',
+  nombreEmpresa: 'Nombre del negocio',
+  nombreAdmin: 'Tu nombre',
+  passwordAdmin: ETIQUETA_CAMPO_CLAVE,
+}
+
+/** Pyme: errores crudos «telefonoAdmin: …» → nombre legible del campo. */
+export function errorRegistroLegible(msg: string): string {
+  return msg.replace(/\b([a-zA-Z]+):\s*/g, (todo, campo: string) =>
+    NOMBRES_CAMPO[campo] ? `${NOMBRES_CAMPO[campo]}: ` : todo)
+}

@@ -1,3 +1,9 @@
+import { COMISION_MINIMA_CRC, PLAN_PRECIOS, colones, textoComision, textoMensualidad } from '@/config/planesPrecios'
+
+const PYME = PLAN_PRECIOS.PYME
+const PLUS = PLAN_PRECIOS.NEGOCIO_PLUS
+const EMP = PLAN_PRECIOS.EMPRENDEDOR
+
 export type LandingPlanId = 'emprendedor' | 'pyme' | 'plus'
 export type Tono = 'artesanal' | 'estandar' | 'ejecutivo'
 
@@ -23,7 +29,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     eyebrow: 'Para empezar',
     headline: 'Publicá y cobrá en HotClick',
     subheadline: 'Sin mensualidad: solo una comisión cuando vendés.',
-    precio: '₡0/mes · comisión por venta [PENDIENTE]',
+    precio: `₡0/mes · ${textoComision(EMP.comisionPct)}`,
     ctaLabel: 'Crear mi negocio',
     paraQuienSi: [
       'Vendés en feria, Instagram o WhatsApp',
@@ -34,7 +40,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Ya tenés equipo y varias bodegas — mirá PYME',
     ],
     faq: [
-      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: 'No. La membresía es ₡0. La comisión por venta está [PENDIENTE]; siempre la vas a ver actualizada acá antes de vender.' },
+      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: `No. La membresía es ₡0. Pagás ${EMP.comisionPct}% por venta, con un mínimo de ${colones(COMISION_MINIMA_CRC)}; siempre la vas a ver actualizada acá antes de vender.` },
       { pregunta: '¿Hay cupo limitado?', respuesta: 'Sí, los primeros 70 registros del mes entran gratis. Si se llena, podés seguir con PYME.' },
     ],
   },
@@ -44,9 +50,9 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     query: 'pyme',
     eyebrow: 'Para crecer',
     headline: 'Operá el negocio en un solo panel',
-    subheadline: 'Equipo, inventario y caja, por ₡9.900 al mes.',
-    precio: '₡9.900/mes + comisión por venta [PENDIENTE]',
-    ctaLabel: 'Suscribirme a PYME — ₡9.900/mes',
+    subheadline: `Equipo, inventario y caja, por ${colones(PYME.mensualCrc)} al mes.`,
+    precio: `${textoMensualidad(PYME.mensualCrc)} + ${textoComision(PYME.comisionPct)}`,
+    ctaLabel: `Suscribirme a PYME — ${textoMensualidad(PYME.mensualCrc)}`,
     paraQuienSi: [
       'Ya vendés seguido, con 2 a 5 personas en el equipo',
       'Tenés stock en una o dos bodegas',
@@ -56,7 +62,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Recién arrancás y vendés poco — probá Emprendedor sin mensualidad',
     ],
     faq: [
-      { pregunta: '¿Por qué pagar si el otro plan es gratis?', respuesta: 'El gratis se queda en 50 productos y sin compras. PYME suma equipo, compras, gift cards e IA. Comisiones: [PENDIENTE].' },
+      { pregunta: '¿Por qué pagar si el otro plan es gratis?', respuesta: `El gratis se queda en 50 productos y sin compras. PYME suma equipo, compras, gift cards e IA. Comisión: ${PYME.comisionPct}% por venta (mínimo ${colones(COMISION_MINIMA_CRC)}).` },
       { pregunta: '¿Cuándo se activa mi suscripción?', respuesta: 'Al confirmar el pago con la pasarela, tu plan PYME queda activo de inmediato.' },
     ],
   },
@@ -67,8 +73,8 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     eyebrow: 'Para operar en serio',
     headline: 'Todas las sucursales en un panel',
     subheadline: 'Pedidos por local, equipo sin tope y CRM.',
-    precio: '₡24.900/mes + comisión por venta [PENDIENTE]',
-    ctaLabel: 'Suscribirme a Negocio Plus — ₡24.900/mes',
+    precio: `${textoMensualidad(PLUS.mensualCrc)} + ${textoComision(PLUS.comisionPct)}`,
+    ctaLabel: `Suscribirme a Negocio Plus — ${textoMensualidad(PLUS.mensualCrc)}`,
     paraQuienSi: [
       'Tenés más de un local',
       'Tu equipo ya no cabe en 5 usuarios',

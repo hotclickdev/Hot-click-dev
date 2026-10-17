@@ -41,8 +41,24 @@ public class SinpeCheckoutService {
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
+    @Autowired(required = false) private com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica;
+
+    /** Decisión HOT_CLICK 16-oct-2026: sin SINPE manual con comprobante; solo botones de pasarela (y efectivo). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}")
+    private boolean sinpeManualHabilitado;
+
+    public static final String MSG_SINPE_MANUAL =
+        "El pago por SINPE con comprobante ya no está disponible. Elegí SINPE Móvil o Tarjeta: te llevamos a la pasarela de pago.";
+
+    static void exigirProveedorPermitido(String proveedor, boolean sinpeManualHabilitado) {
+        if (!sinpeManualHabilitado && (proveedor == null || Constants.PROVEEDOR_SINPE.equalsIgnoreCase(proveedor))) {
+            throw new IllegalStateException(MSG_SINPE_MANUAL);
+        }
+    }
+
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
+        exigirProveedorPermitido(req.getProvider(), sinpeManualHabilitado);
         checkoutValidator.validateCartNotEmpty(req);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
@@ -55,7 +71,8 @@ public class SinpeCheckoutService {
         CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
             req, reservation, bodegaDefault, proveedorEfectivo, usuario, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         Pedido principal = grupo.principal();
-        exigirEfectivoAceptado(proveedorEfectivo, grupo.pedidos());
+        exigirEfectivoAceptado(proveedorEfectivo, grupo.pedidos(),
+            contraEntregaPolitica == null || contraEntregaPolitica.habilitada());
         atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());
 
         // SINPE es manual: no fechaExpiracion; el cleanup TTL excluye este proveedor.
@@ -87,9 +104,16 @@ public class SinpeCheckoutService {
 
     /** Efectivo solo si todas las bodegas del pedido lo aceptan; si no, se revierte la transacción. */
     static void exigirEfectivoAceptado(String proveedor, java.util.List<Pedido> pedidos) {
+        exigirEfectivoAceptado(proveedor, pedidos, false);
+    }
+
+    /** Efectivo: la bodega lo acepta, o el paquete va por Envío Normal contra entrega (configurable). */
+    static void exigirEfectivoAceptado(String proveedor, java.util.List<Pedido> pedidos, boolean contraEntregaNormal) {
         if (!"EFECTIVO".equalsIgnoreCase(proveedor)) return;
         boolean todas = pedidos.stream()
-            .allMatch(p -> p.getBodega() != null && Boolean.TRUE.equals(p.getBodega().getAceptaEfectivo()));
+            .allMatch(p -> com.hotclick.service.envio.ContraEntregaPolitica.permiteEfectivo(
+                p.getBodega() != null && Boolean.TRUE.equals(p.getBodega().getAceptaEfectivo()),
+                p.getMetodoEnvio(), contraEntregaNormal));
         if (!todas) {
             throw new IllegalStateException("Algún negocio de tu carrito no acepta efectivo. Pagá con SINPE / Tarjeta.");
         }

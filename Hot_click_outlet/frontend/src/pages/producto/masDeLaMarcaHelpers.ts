@@ -37,10 +37,13 @@ export function productosMasDeLaMarca(data: unknown, actualId: Producto['id']): 
   return listaProductosDesdePagina(data).filter((p) => String(p.id) !== String(actualId))
 }
 
-/** Total del catálogo de la marca/tienda sin contar el producto actual (para "Ver los N"). */
+/**
+ * "Ver los N": N es el catálogo entero de la tienda (NP-20), porque el enlace abre la tienda y ahí
+ * también está el producto actual. Sin total de la API: los visibles más el actual.
+ */
 export function totalMasDeLaMarca(data: unknown, visibles: number): number {
   const total = data && typeof data === 'object' && 'totalElements' in data ? Number((data as { totalElements: unknown }).totalElements) : NaN
-  return Number.isFinite(total) && total > 0 ? Math.max(visibles, total - 1) : visibles
+  return Number.isFinite(total) && total > 0 ? Math.max(visibles + 1, total) : visibles + 1
 }
 
 /** Iniciales para el chip de la marca: "Joyería Valeria" → "JV". */

@@ -25,10 +25,13 @@ public class SucursalController {
 
     private final SucursalService sucursalService;
     private final CompanyScope companyScope;
+    private final com.hotclick.service.tenant.TenantLimitChecker tenantLimitChecker;
 
-    public SucursalController(SucursalService sucursalService, CompanyScope companyScope) {
+    public SucursalController(SucursalService sucursalService, CompanyScope companyScope,
+                              com.hotclick.service.tenant.TenantLimitChecker tenantLimitChecker) {
         this.sucursalService = sucursalService;
         this.companyScope = companyScope;
+        this.tenantLimitChecker = tenantLimitChecker;
     }
 
     @GetMapping
@@ -47,8 +50,10 @@ public class SucursalController {
 
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(@RequestBody Map<String, String> body) {
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        // SEG-E / P10-05: crear sucursales solo con plan multi-ubicación (PlanLimitException → 403).
+        tenantLimitChecker.verificarFeature(empresaId, "sucursales");
         try {
-            Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
             String ubicacion = body.get("ubicacion");
             if (ubicacion == null || ubicacion.isBlank()) {
                 ubicacion = body.get("direccion");

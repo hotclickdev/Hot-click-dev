@@ -68,3 +68,31 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | refresh-pierde-negocio | tenant | P1-03: el refresh emitía el JWT con el negocio principal y el rol global, sin importar el negocio elegido. Además cambiar-negocio y seleccionar-empresa creaban un refresh sin entregarlo (el siguiente refresh se tomaba como reuso) y fallaban con LazyInitialization | V172 `fk_id_empresa_activa` en el refresh token; `RefreshTokenService.crear(usuario, empresaId)` y la rotación conserva el negocio; `AuthTenantSwitchHandler` (@Transactional) escribe la cookie nueva; `AuthRefreshHandler` revalida la membresía activa y si ya no existe vuelve al negocio principal | `AuthRefreshNegocioActivoTest` | cubierto |
 | tienda-rapida-sin-clave | La contraseña viajaba en claro en el JSON del enlace público de tienda rápida y el correo quedaba verificado sin prueba | Se quitó `clave` del DTO; la cuenta queda con clave aleatoria y correo sin verificar; se envía el código RESET_PASSWORD y el dueño la define en /recuperar-contrasena (eso verifica el correo) | `NegocioRapidoAsignacionTest` | cubierto |
 | clerk-sync-sin-token | POST /api/auth/clerk-sync sin Authorization daba 500 (MissingRequestHeader) | Header y cuerpo opcionales; sin Bearer → 401 antes de cualquier otra rama | `ClerkSyncTakeoverTest.sinToken401` | cubierto |
+| pausa-tienda | tenant | Un vendedor pausa o reanuda su propia tienda/cobros, o un comprador compra en una tienda pausada | `PUT /api/admin/empresas/{id}/tienda-pausada` y `/cobros-pausados` con `@PreAuthorize ADMIN` y auditoría; `SlugTenantInterceptor` → 410 TIENDA_PAUSADA; checkout → 409 TIENDA_PAUSADA; destacados filtran `tienda_pausada` | `EmprendedorTenantSecurityTest` (403 y 410), `PaymentCheckoutTiendaPausadaTest` | cubierto |
+
+## Reverificación QA 16-10-2026 (rama fix/reverificacion-1610)
+
+| ID | Cambio | Estado |
+|---|---|---|
+| SEG-F (P6-01) | `GuestCheckoutGuard`: Turnstile opcional (`hotclick.checkout.turnstile.habilitado`), tope 3 u/producto y 6 u pendientes por IP/correo en 30 min | Mitigado (pendiente prod) |
+| H1 (S1-56) | `POST /api/tienda/{slug}/pedidos` (tienda propia, anónimo) reservaba hasta 999 u por producto 72 h. Ahora `GuestCheckoutGuard.ejecutarTienda`: 3 u por producto, 6 u pendientes por IP/correo en 30 min, `Idempotency-Key` o huella; `@Max(3)` en `StorefrontPedidoDTO.ItemDTO`. TTL de la reserva (`hotclick.tienda.reserva.horas`, 72 h) sin cambiar: decisión del dueño (cancela también pedidos en efectivo/transferencia). Prueba: `StorefrontPedidoInvitadoTopesTest` (6 casos) | Mitigado (pendiente prod) |
+| PAG-4 (QA-CONC-2) | Idempotencia del guest-checkout (`Idempotency-Key` o hash IP+correo+carrito, 120 s, futuros compartidos) | Mitigado |
+| CMP-4 | `CheckoutGrupoFactory.exigirBodegaDeLaTienda` → 400 con bodega de otro negocio | Mitigado |
+| SEG-E (P5-01) | CRM listar/ver/editar/puntos con `verificarFeature`; sucursales con feature `sucursales`; CRM buscar/crear abiertos para POS (decisión) | Mitigado |
+| LAN-4 | Videos IG/TikTok/FB rechazados en backend para planes sin contacto directo; serializer los oculta | Mitigado |
+| NP-11/POS 565 | POS rechaza productos borrados y COTIZACION | Mitigado |
+| NP-13 | `CobroNegocioGuard` (neutral de pasarela): negocio no aprobado no cobra por QR/en línea | Mitigado |
+| QA-CONC-5 / CMP-3 | `PaginacionLimiteFilter`: page 0-10000, size 1-10000 en /api/** → 400 | Mitigado |
+| Health | `/api/health` ya no expone `whatsappModo` | Mitigado |
+| Equipo | contraseña de miembro mínimo 8 | Mitigado |
+| NP-3 | rate limit `/api/auth/reenviar-codigo-negocio` 3/5 min | Mitigado |
+| P12-06 / QA-PROD-7 | facebook.com en frame-src se mantiene (embeds FB en ficha); `*.amazonaws.com` sin acotar (falta confirmar host del bucket/presigned) | Abierto (bajo) |
+| Checkout SINPE manual | `hotclick.checkout.sinpe-manual.habilitado=false` por defecto: `/payments/sinpe/checkout` rechaza proveedor SINPE/nulo (sin comprobantes nuevos); efectivo sigue. `GET /api/public/checkout-config` solo expone un booleano | Mitigado |
+| LAN-5 | `SecurityAuthorizationRules`: GET público solo para imágenes/video sueltos de `/emprende/*` y `/servicios/*` (archivos estáticos de marketing, sin datos) | Mitigado |
+| ESC-7 | `GET /api/pedidos/{id}` inexistente → 404 (no 500): `buscarPorId` con `noRollbackFor` | Mitigado |
+| CMP-2 | Cupón que no aplica a ningún negocio del carrito → 400 | Mitigado |
+| PAG-8 | El comprador cancela SINPE/efectivo en PENDIENTE_COMPROBANTE; se libera la reserva | Mitigado |
+| ESC-9 CSV | Plantilla CSV sin IA; errores de fila → 400 | Mitigado |
+| QA-CONC-6 | logback: stack recortado `%ex{30}`, archivo rotado en prod (10 MB, 7 días, 200 MB) | Mitigado |
+| `ex.getMessage()` | `GlobalExceptionHandler`: IllegalArgument/IllegalState pasan por `ErrorPublico`; «No value present» → «Recurso no encontrado». Quedan otros `getMessage()` en handlers de excepciones propias (com.hotclick.exception) | Mitigado (parcial) |
+| Checkout proveedor | `PaymentProviderFactory`/`CheckoutValidator` sin default STRIPE: proveedor nulo/vacío → 400 «Elegí un método de pago»; allowlist TILOPAY/SINPE, ONVO solo con `payments.onvo.enabled` | Mitigado |

@@ -10,6 +10,8 @@ import { prefijoPorPlan } from '@/utils/planPaths'
 import { filasDe, texto, type Fila } from './normalizar'
 import { CambioPlan } from './CambioPlan'
 import { NotaNegocio } from './NotaNegocio'
+import { aprobacionService } from '@/services/aprobacionService'
+import { cuentaAprobadaDe, esPendienteAprobacion, mensajeConfirmarAprobacion } from './fichaAprobacion'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Metrica, Segmento, TARJETA } from './piezas'
 
 function colones(valor: unknown): string {
@@ -89,6 +91,8 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
   const [ocupado, setOcupado] = useState(false)
   const plan = texto(fila.plan, texto(fila.planSaas, 'EMPRENDEDOR'))
   const visible = fila.visibilidadPublica === true
+  const destacado = fila.destacado === true
+  const puedeDestacar = visible && texto(fila.estadoEmpresa).toUpperCase() === 'ACTIVO'
 
   async function cambiarEstado(estadoEmpresa: string) {
     if ((estadoEmpresa === 'SUSPENDIDO' || estadoEmpresa === 'INACTIVO') && motivo.trim().length < 3) {
@@ -101,8 +105,29 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
     }, onCambio, setError, setOcupado, 'No se pudo cambiar el estado.')
   }
 
+  const pendiente = esPendienteAprobacion(fila.estadoEmpresa)
+  const negocio = texto(fila.nombreComercial, texto(fila.nombreEmpresa, 'la tienda'))
+
+  /** Aprobar (pendiente) o reactivar (suspendida): misma ruta que Moderación (correo + Telegram). */
+  async function aprobar(reactivar: boolean) {
+    await correr(async () => {
+      const cuenta = await aprobacionService.cuentaCobroEmpresa(id).then(cuentaAprobadaDe).catch(() => false)
+      if (!globalThis.confirm(mensajeConfirmarAprobacion(negocio, cuenta, reactivar))) return
+      await aprobacionService.aprobarEmpresa(id)
+    }, onCambio, setError, setOcupado, 'No se pudo aprobar el negocio.')
+  }
+
   return (
     <div className="grid gap-3 lg:grid-cols-2">
+      {pendiente && (
+        <div className={`${TARJETA} lg:col-span-2`}>
+          <p className="text-xs font-semibold text-hc-n-600">Pendiente de aprobación</p>
+          <p className="mt-2 text-sm text-hc-n-900">Al aprobarlo se publica y el vendedor recibe el aviso.</p>
+          <button type="button" className={`${BOTON_PRIMARIO} mt-3`} disabled={ocupado} onClick={() => void aprobar(false)}>
+            Aprobar negocio
+          </button>
+        </div>
+      )}
       <CambioPlan
         id={id}
         planActual={plan}
@@ -122,6 +147,15 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
         )}>{visible ? 'Ocultar catálogo' : 'Mostrar catálogo'}</button>
       </div>
       <div className={TARJETA}>
+        <p className="text-xs font-semibold text-hc-n-600">Inicio</p>
+        <p className="mt-2 font-display text-lg font-bold">{destacado ? 'Negocio destacado' : 'Sin destacar'}</p>
+        {!puedeDestacar && !destacado && <p className="mt-1 text-sm text-hc-n-600">Solo se destacan negocios activos con el catálogo visible.</p>}
+        <button type="button" className={`${BOTON_SECUNDARIO} mt-3 h-10`} disabled={ocupado || (!puedeDestacar && !destacado)} onClick={() => void correr(
+          () => adminService.setEmpresaDestacado(id, !destacado),
+          onCambio, setError, setOcupado, 'No se pudo cambiar el destacado.',
+        )}>{destacado ? 'Quitar del inicio' : 'Destacar en el inicio'}</button>
+      </div>
+      <div className={TARJETA}>
         <p className="text-xs font-semibold text-hc-n-600">Ver el negocio</p>
         <p className="mt-2 text-sm text-hc-n-900">Abre el panel de ese vendedor. Usted sigue siendo el administrador.</p>
         <button type="button" className={`${BOTON_PRIMARIO} mt-3`} disabled={ocupado} onClick={() => void verComo(id, plan, navigate, setError, setOcupado)}>
@@ -134,7 +168,7 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
           <input value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-2 h-12 w-full rounded-xl border border-hc-n-200 px-3 text-sm" />
         </label>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" className={BOTON_PRIMARIO} disabled={ocupado} onClick={() => void cambiarEstado('ACTIVO')}>Activar</button>
+          <button type="button" className={BOTON_PRIMARIO} disabled={ocupado} onClick={() => void aprobar(!pendiente)}>Activar</button>
           <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado} onClick={() => void cambiarEstado('SUSPENDIDO')}>Suspender</button>
           <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado} onClick={() => void cambiarEstado('INACTIVO')}>Inactivar</button>
         </div>

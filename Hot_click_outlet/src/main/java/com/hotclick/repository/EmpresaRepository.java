@@ -64,6 +64,22 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
         + "WHERE e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true AND e.slug IS NOT NULL ORDER BY e.id ASC")
     List<NegocioPublicoFila> findNegociosPublicos(Pageable pageable);
 
+    /**
+     * Candidatos del carrusel «Negocio destacado»: solo catálogo público (empresa ACTIVO y visible, con al menos
+     * un producto activo, visible_catalogo, con stock y sin vender). Incluye cuántos de esos productos tienen foto.
+     */
+    @Query("SELECT e.id AS id, e.slug AS slug, COALESCE(NULLIF(e.nombreComercial, ''), e.nombreEmpresa) AS nombre, "
+        + "e.logoUrl AS logoUrl, e.categoriaNegocio AS categoria, COALESCE(p.nombre, e.planSaas) AS plan, "
+        + "(SELECT COUNT(pr.id) FROM Producto pr WHERE pr.empresa = e AND pr.estado = 1 AND pr.visibleCatalogo = true "
+        + "AND pr.stockActual > 0 AND pr.vendido = false) AS productos, "
+        + "(SELECT COUNT(pf.id) FROM Producto pf WHERE pf.empresa = e AND pf.estado = 1 AND pf.visibleCatalogo = true "
+        + "AND pf.stockActual > 0 AND pf.vendido = false AND pf.imagenPrincipalUrl IS NOT NULL "
+        + "AND pf.imagenPrincipalUrl <> '') AS conFoto, "
+        + "e.destacado AS destacado, e.destacadoOrden AS destacadoOrden, e.destacadoDesde AS destacadoDesde "
+        + "FROM Empresa e LEFT JOIN e.plan p "
+        + "WHERE e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true AND e.slug IS NOT NULL ORDER BY e.id ASC")
+    List<NegocioDestacadoFila> findCandidatosDestacados(Pageable pageable);
+
     @Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.plan ORDER BY e.fechaRegistro DESC")
     List<Empresa> findAllWithPlanOrderByFechaRegistroDesc();
 

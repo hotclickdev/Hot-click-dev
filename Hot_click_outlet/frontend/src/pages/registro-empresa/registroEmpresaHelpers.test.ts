@@ -32,3 +32,19 @@ describe('MIN_PASSWORD', () => {
     expect(MIN_PASSWORD).toBe(8)
   })
 })
+
+describe('registro Pyme: opcional y errores legibles', () => {
+  it('teléfono con solo código de país no se envía', async () => {
+    const { telefonoOpcional, errorRegistroLegible } = await import('./registroEmpresaHelpers')
+    expect(telefonoOpcional('+506')).toBeUndefined()
+    expect(telefonoOpcional('+506 ')).toBeUndefined()
+    expect(telefonoOpcional('')).toBeUndefined()
+    expect(telefonoOpcional('+50688881234')).toBe('+50688881234')
+    expect(errorRegistroLegible('telefonoAdmin: formato inválido')).toBe('Teléfono personal: formato inválido')
+  })
+  it('ATV no viene premarcado', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync(new URL('../RegistroEmpresaPage.tsx', import.meta.url), 'utf8')
+    expect(src).toContain('inscritoTributacion: false')
+  })
+})

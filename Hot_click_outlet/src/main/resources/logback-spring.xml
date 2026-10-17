@@ -1,12 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+  <!-- QA-CONC-6: el stack completo ya va a Sentry; en el log se recorta a 30 líneas por excepción. -->
+  <property name="PATRON" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:--}] %logger{36} - %msg%n%ex{30}" />
+  <!-- Carpeta de archivos rotados; en el contenedor /tmp siempre se puede escribir. -->
+  <property name="LOG_DIR" value="${LOG_PATH:-/tmp/hotclick-logs}" />
+
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <!-- requestId injected by MdcRequestIdFilter; falls back to '-' when absent -->
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:--}] %logger{36} - %msg%n</pattern>
+      <pattern>${PATRON}</pattern>
     </encoder>
   </appender>
+
+  <springProfile name="prod | production">
+    <!-- Rotación con tope: 10 MB por archivo, 7 días, 200 MB en total. -->
+    <appender name="ARCHIVO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>${LOG_DIR}/hotclick.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+        <fileNamePattern>${LOG_DIR}/hotclick.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+        <maxFileSize>10MB</maxFileSize>
+        <maxHistory>7</maxHistory>
+        <totalSizeCap>200MB</totalSizeCap>
+      </rollingPolicy>
+      <encoder>
+        <pattern>${PATRON}</pattern>
+      </encoder>
+    </appender>
+    <root level="WARN">
+      <appender-ref ref="ARCHIVO" />
+    </root>
+    <logger name="com.hotclick">
+      <appender-ref ref="ARCHIVO" />
+    </logger>
+  </springProfile>
 
   <root level="WARN">
     <appender-ref ref="CONSOLE" />

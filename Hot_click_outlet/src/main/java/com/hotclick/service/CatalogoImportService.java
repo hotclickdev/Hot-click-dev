@@ -67,6 +67,9 @@ public class CatalogoImportService {
         validator.validarCsv(archivo);
         log.info("[import-csv] procesando {}", archivo.getOriginalFilename());
         String contenido = new String(archivo.getBytes(), detectarEncoding(archivo.getBytes()));
+        // ESC-9: la plantilla (nombreProducto, precioVenta, ...) se lee directo; solo otros formatos van a la IA.
+        var directo = CsvCatalogoParser.parsear(contenido);
+        if (directo.isPresent()) return directo.get();
         return claudeClient.extraerConClaude(truncar(contenido), "archivo CSV");
     }
 
