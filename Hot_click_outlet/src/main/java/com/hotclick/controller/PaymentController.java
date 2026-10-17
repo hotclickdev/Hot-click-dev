@@ -48,13 +48,16 @@ public class PaymentController {
         }
     }
 
+    private static final int MAX_ITEMS_PAUSA = 200;
+
     /** Pausa de tienda: ningún producto de una tienda pausada se puede comprar (409 TIENDA_PAUSADA). */
     private boolean hayTiendaPausada(PaymentCheckoutRequest request) {
         if (request.getItems() == null) return false;
-        java.util.List<Long> ids = request.getItems().stream()
+        var ids = request.getItems().stream()
             .filter(i -> i != null && i.getProductoId() != null)
             .map(PaymentCheckoutRequest.ItemDTO::getProductoId)
-            .distinct().toList();
+            .limit(MAX_ITEMS_PAUSA)
+            .collect(java.util.stream.Collectors.toSet());
         return !ids.isEmpty() && productoRepository.contarDeTiendasPausadas(ids) > 0;
     }
 

@@ -28,7 +28,7 @@ class PaymentCheckoutTiendaPausadaTest {
 
     @Test
     void compraEnTiendaPausada409ConCodigo() {
-        when(productoRepository.contarDeTiendasPausadas(List.of(9202L))).thenReturn(1L);
+        when(productoRepository.contarDeTiendasPausadas(java.util.Set.of(9202L))).thenReturn(1L);
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(9202L);
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
