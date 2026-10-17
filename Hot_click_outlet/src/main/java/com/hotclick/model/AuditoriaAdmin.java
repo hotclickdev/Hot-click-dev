@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.Immutable
 @Table(name = "hot_click_auditoria_admin_tb")
 public class AuditoriaAdmin {
 
