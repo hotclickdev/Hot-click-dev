@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { formatPrice } from '@/utils/format'
 import { Boton, EncabezadoPagina } from '@/prototipo/compartido/ui'
 import { useSellerRuta } from '@/prototipo/compartido/SellerPlanContext'
-import { FECHA_POR_DEFINIR, VISTA_ESTADO, mensualidadApi, textoAviso, type Mensualidad } from './mensualidadApi'
+import { FECHA_POR_DEFINIR, VISTA_ESTADO, mensajeErrorMensualidad, mensualidadApi, textoAviso, type Mensualidad } from './mensualidadApi'
 
 const CAJA = { info: 'bg-hc-blue-50 border-hc-blue-600/20', aviso: 'bg-hc-warning-bg border-hc-warning/30', mal: 'bg-hc-danger-bg border-hc-danger/30 text-hc-danger' }
 
@@ -15,7 +15,7 @@ export default function MensualidadPage() {
 
   useEffect(() => {
     let vivo = true
-    mensualidadApi.obtener().then((x) => { if (vivo) setM(x) }).catch(() => { if (vivo) setError('No pudimos cargar tu plan. Probá de nuevo en unos minutos.') })
+    mensualidadApi.obtener().then((x) => { if (vivo) setM(x) }).catch((e: unknown) => { if (vivo) setError(mensajeErrorMensualidad(e, 'No pudimos cargar tu plan. Probá de nuevo en unos minutos.')) })
     return () => { vivo = false }
   }, [])
 
@@ -24,7 +24,7 @@ export default function MensualidadPage() {
     try {
       const url = await mensualidadApi.pagar()
       if (url) window.location.assign(url); else setError('No pudimos abrir el pago. Probá de nuevo en unos minutos.')
-    } catch { setError('No pudimos abrir el pago. Probá de nuevo en unos minutos.') } finally { setOcupado(false) }
+    } catch (e: unknown) { setError(mensajeErrorMensualidad(e, 'No pudimos abrir el pago. Probá de nuevo en unos minutos.')) } finally { setOcupado(false) }
   }
 
   const v = m ? VISTA_ESTADO[m.estado] : null
@@ -38,7 +38,7 @@ export default function MensualidadPage() {
           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${v.clase}`}>● {v.chip}</span>
         </div>
         <section className="rounded-[16px] border border-hc-border bg-hc-surface p-4">
-          <p className="text-[12px] text-hc-muted">Plan {m.plan}</p>
+          <p className="text-[12px] text-hc-muted">{m.plan ? `Plan ${m.plan}` : 'Sin plan asignado'}</p>
           <p className="text-[12px] text-hc-muted">{v.etiquetaMonto}</p>
           <p className="font-display text-[32px] font-bold">{m.monto != null ? formatPrice(m.monto) : '—'}</p>
           <p className="text-[12px] text-hc-muted">
