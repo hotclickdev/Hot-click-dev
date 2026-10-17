@@ -1,7 +1,7 @@
 import api from '@/services/api'
 
 /**
- * S5-24 · Resumen de textos legales (DIS-4) — CONTRATO SUPUESTO.
+ * S5-24 · Resumen de textos legales (DIS-4). Rutas reales en #202: la pública responde 404 `SIN_RESUMEN_APROBADO` (se oculta) y la de admin 501 `PENDIENTE_DECISION_DUENO`.
  *   GET /api/public/legal/{documento}/resumen → { aprobado: boolean, version: string, puntos: string[] }
  *   GET /api/admin/legal/{documento}/resumen  → { aprobado, version, puntos, aprobadoPor: string|null, aprobadoEl: string|null }
  * El resumen se muestra solo si Legal lo aprobó para ESA versión; si cambia el texto completo, vuelve a ocultarse
