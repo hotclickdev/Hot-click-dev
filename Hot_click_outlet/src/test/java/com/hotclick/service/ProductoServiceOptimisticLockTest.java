@@ -48,6 +48,7 @@ class ProductoServiceOptimisticLockTest {
     @Mock ProductoCacheEvictor cacheEvictor;
     @Mock ProductoGuardadoNotifier guardadoNotifier;
     @Mock ProductoCambioAuditoria cambioAuditoria;
+    @Mock com.hotclick.service.moderacion.TerminosProhibidosService terminosProhibidos;
 
     @InjectMocks ProductoUpdater updater;
 
