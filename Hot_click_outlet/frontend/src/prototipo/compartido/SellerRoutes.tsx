@@ -11,6 +11,7 @@ const ProductoDetallePage = lazy(() => import('./ProductoDetallePage'))
 const EliminarProductoPage = lazy(() => import('./EliminarProductoPage'))
 const ReportesPage = lazy(() => import('./ReportesPage'))
 const TiendaPublicaPage = lazy(() => import('./TiendaPublicaPage'))
+const PanelVentasPage = lazy(() => import('@/features/ventas/PanelVentasPage'))
 const OpcionesPage = lazy(() => import('./OpcionesPage'))
 const PerfilPage = lazy(() => import('./PerfilPage'))
 const NotificacionesPage = lazy(() => import('./NotificacionesPage'))
@@ -70,6 +71,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="reportes" element={page(ReportesPage)} />
         <Route path="tienda" element={page(TiendaPublicaPage)} />
         <Route path="opciones" element={page(OpcionesPage)} />
+        <Route path="ventas-semana" element={page(PanelVentasPage)} />
         <Route path="recoleccion" element={page(RecoleccionSellerPage)} />
         <Route path="encargos" element={page(EncargosSellerPage)} />
       </Route>

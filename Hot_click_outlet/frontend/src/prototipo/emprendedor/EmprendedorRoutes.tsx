@@ -18,6 +18,7 @@ const TiendaPublicaPage = lazy(() => import('./pages/TiendaPublicaPage'))
 const DetalleProductoPage = lazy(() => import('./pages/DetalleProductoPage'))
 const CarritoPage = lazy(() => import('./pages/CarritoPage'))
 const CompraConfirmadaPage = lazy(() => import('./pages/CompraConfirmadaPage'))
+const PanelVentasPage = lazy(() => import('@/features/ventas/PanelVentasPage'))
 const OpcionesPage = lazy(() => import('./pages/OpcionesPage'))
 const PerfilPage = lazy(() => import('./pages/PerfilPage'))
 const NotificacionesPage = lazy(() => import('./pages/NotificacionesPage'))
@@ -92,6 +93,7 @@ export default function EmprendedorRoutes() {
         <Route path="tienda" element={page(TiendaPublicaPage)} />
         <Route path="reportes" element={page(ReportesPage)} />
         <Route path="opciones" element={page(OpcionesPage)} />
+        <Route path="ventas-semana" element={page(PanelVentasPage)} />
       </Route>
       <Route element={<EmprendedorShell />}>
         <Route path="productos/:id/editar" element={page(EditarProductoPage)} />
