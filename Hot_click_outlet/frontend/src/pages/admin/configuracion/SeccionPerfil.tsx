@@ -8,6 +8,7 @@ import { adminService } from '@/services/orderService'
 import useAuthStore from '@/store/authStore'
 import SeccionNotificaciones from './SeccionNotificaciones'
 import SeccionGuiasAyuda from './SeccionGuiasAyuda'
+import { mensajeErrorNuevoNegocio } from '@/features/multinegocio/multinegocioTextos'
 import {
   F, Block, FormGroup, StyledInput, SaveButton, LoadingSkeleton, SectionHeader, MailIcon, CheckIcon, mensajeErrorConfig,
 } from './configUi'
@@ -91,7 +92,7 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
       cerrarNuevoNegocio()
       navigate('/admin')
     } catch (err: unknown) {
-      toast({ message: mensajeErrorConfig(err, 'Error al crear el negocio'), type: 'error' })
+      toast({ message: mensajeErrorNuevoNegocio(err) ?? mensajeErrorConfig(err, 'Error al crear el negocio'), type: 'error' })
     } finally { setSavingNegocio(false) }
   }
 

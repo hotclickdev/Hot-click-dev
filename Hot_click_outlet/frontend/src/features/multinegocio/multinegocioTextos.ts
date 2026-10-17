@@ -1,4 +1,4 @@
-import { esSinAccesoNegocio } from '@/utils/erroresContrato'
+import { codigoError, esSinAccesoNegocio } from '@/utils/erroresContrato'
 
 /** Copy aprobado de S2 · Multinegocio (/workspace/contenido/sprint2/S2-multinegocio.md). */
 export const TEXTOS_MULTINEGOCIO = {
@@ -26,4 +26,23 @@ export function nombrePlan(plan: string | null | undefined): string | null {
  */
 export function mensajeSinAcceso(err: unknown): string | null {
   return esSinAccesoNegocio(err) ? `${TEXTOS_MULTINEGOCIO.sinAccesoTitulo}. ${TEXTOS_MULTINEGOCIO.sinAccesoCuerpo}` : null
+}
+
+export const TEXTO_NOMBRE_EN_USO = 'Ese nombre de negocio ya está en uso. Probá con otro.'
+export const TEXTO_CUPO_NEGOCIOS = 'Llegaste al máximo de negocios para tu cuenta.'
+
+/**
+ * Contrato de #176 (`POST /api/auth/nuevo-negocio`): 409 `NOMBRE_NEGOCIO_EN_USO` y 409 `CUPO_NEGOCIOS`.
+ * El tope de negocios lo decide el backend: para `CUPO_NEGOCIOS` se usa su `message` (trae el número) y, si falta,
+ * un texto sin número. Devuelve `null` si es otro error.
+ */
+export function mensajeErrorNuevoNegocio(err: unknown): string | null {
+  const code = codigoError(err)
+  if (code === 'NOMBRE_NEGOCIO_EN_USO') return TEXTO_NOMBRE_EN_USO
+  if (code === 'CUPO_NEGOCIOS') {
+    const r = (err as { response?: { data?: { message?: unknown } } }).response
+    const m = r?.data?.message
+    return typeof m === 'string' && m.trim() ? m.trim() : TEXTO_CUPO_NEGOCIOS
+  }
+  return null
 }
