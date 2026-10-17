@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
@@ -10,10 +10,12 @@ import { useDetalleCompra } from './pedidos/useDetalleCompra'
 
 function ContenidoCompra({ compra }: { compra: CompraCliente }) {
   const { t } = useTranslation()
+  const { id } = useParams<{ id: string }>()
   return (
     <div className="mx-auto flex max-w-[720px] flex-col gap-[12px] px-[16px] pb-[20px] pt-[14px]">
       <ResumenCompra compra={compra} />
       {compra.paquetes.map((paquete) => <TarjetaPaquete key={paquete.id} compra={compra} paquete={paquete} />)}
+      <Link to={`/mis-pedidos/${encodeURIComponent(id ?? '')}/reembolso`} className="flex min-h-11 items-center justify-center rounded-xl border border-hc-blue-600 text-[14px] font-semibold text-hc-blue-600">Pedir reembolso</Link>
       <p className="text-[12px] leading-[16px] text-hc-n-600">{t('misPedidos.detalle.pieAcciones')}</p>
     </div>
   )
