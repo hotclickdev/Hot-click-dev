@@ -22,12 +22,44 @@ public class NegocioOnvoController {
     private final CuentaOnvoNegocioService service;
     private final CompanyScope companyScope;
     private final PropietarioGuard propietarioGuard;
+    private final com.hotclick.service.onvo.OnvoOnboardingService onboarding;
 
     public NegocioOnvoController(CuentaOnvoNegocioService service, CompanyScope companyScope,
-                                 PropietarioGuard propietarioGuard) {
+                                 PropietarioGuard propietarioGuard,
+                                 com.hotclick.service.onvo.OnvoOnboardingService onboarding) {
         this.service = service;
         this.companyScope = companyScope;
         this.propietarioGuard = propietarioGuard;
+        this.onboarding = onboarding;
+    }
+
+    /** S3-07: crea la cuenta en ONVO → { url } de onboarding. 409 CUENTA_YA_EXISTE · 503 ONVO_NO_CONFIGURADO. */
+    @PostMapping("/activar")
+    public ResponseEntity<?> activar() {
+        Long empresaId = companyScope.requireEmpresaId();
+        if (!esPropietario(empresaId)) return soloPropietario();
+        return OnvoRespuestas.ejecutar(() -> ResponseEntity.ok(ResponseDTO.success("Cuenta ONVO creada",
+            onboarding.activar(empresaId, companyScope.getCurrentUserId()))));
+    }
+
+    /** S3-08: enlace vigente para «Continuar en ONVO». 409 SIN_CUENTA_ONVO · 503 ONVO_NO_CONFIGURADO. */
+    @PostMapping("/enlace")
+    public ResponseEntity<?> enlace() {
+        Long empresaId = companyScope.requireEmpresaId();
+        if (!esPropietario(empresaId)) return soloPropietario();
+        return OnvoRespuestas.ejecutar(() -> ResponseEntity.ok(ResponseDTO.success("Enlace de ONVO",
+            onboarding.enlace(empresaId))));
+    }
+
+    /** S3-08: reenvía el enlace al correo del negocio → 204. 409 SIN_CUENTA_ONVO · 503 ONVO_NO_CONFIGURADO. */
+    @PostMapping("/reenviar-enlace")
+    public ResponseEntity<?> reenviarEnlace() {
+        Long empresaId = companyScope.requireEmpresaId();
+        if (!esPropietario(empresaId)) return soloPropietario();
+        return OnvoRespuestas.ejecutar(() -> {
+            onboarding.reenviarEnlace(empresaId);
+            return ResponseEntity.noContent().build();
+        });
     }
 
     @GetMapping("/estado")

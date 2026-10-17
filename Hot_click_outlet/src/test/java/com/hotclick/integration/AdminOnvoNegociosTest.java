@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DisplayName("S2-29/S3-22 — admin de cuentas ONVO: lista y ficha (IBAN solo enmascarado)")
@@ -143,6 +145,46 @@ class AdminOnvoNegociosTest extends BaseIntegrationTest {
     void inexistente_404() throws Exception {
         mockMvc.perform(get("/api/admin/onvo/negocios/987654321").header("Authorization", adminToken))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void sinLlavesOnvo_failClosed503() throws Exception {
+        // Sin cliente real (llaves sandbox S2-01): nunca se simula una cuenta ni un enlace.
+        mockMvc.perform(post("/api/plataforma/onvo/negocios/" + sinCuenta.getId() + "/registrar").header("Authorization", adminToken))
+            .andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.code", is("ONVO_NO_CONFIGURADO")));
+        mockMvc.perform(post("/api/admin/onvo/negocios/" + conCuenta.getId() + "/reenviar-enlace").header("Authorization", adminToken))
+            .andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.code", is("ONVO_NO_CONFIGURADO")));
+        org.assertj.core.api.Assertions.assertThat(
+            cuentaRepository.findByEmpresaIdAndProveedorAndModo(sinCuenta.getId(), "ONVO", "TEST")).isEmpty();
+    }
+
+    @Test
+    void registrarConCuentaExistente_409_antesDeTocarOnvo() throws Exception {
+        mockMvc.perform(post("/api/admin/onvo/negocios/" + conCuenta.getId() + "/registrar").header("Authorization", adminToken))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code", is("CUENTA_YA_EXISTE")));
+    }
+
+    @Test
+    void comision_guardaYValida() throws Exception {
+        mockMvc.perform(put("/api/plataforma/onvo/negocios/" + sinCuenta.getId() + "/comision").header("Authorization", adminToken)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"porcentaje\":3.75}"))
+            .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/admin/onvo/negocios/" + sinCuenta.getId()).header("Authorization", adminToken))
+            .andExpect(jsonPath("$.data.porcentajeOnvo", is(3.75)));
+        for (String body : new String[]{"{}", "{\"porcentaje\":-1}", "{\"porcentaje\":100.5}", "{\"porcentaje\":\"abc\"}", "{\"porcentaje\":1.234}"}) {
+            mockMvc.perform(put("/api/admin/onvo/negocios/" + sinCuenta.getId() + "/comision").header("Authorization", adminToken)
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("PORCENTAJE_INVALIDO")));
+        }
+        mockMvc.perform(put("/api/admin/onvo/negocios/" + sinCuenta.getId() + "/comision").header("Authorization", tokenNegocio)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"porcentaje\":1}"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/plataforma/onvo/negocios").header("Authorization", tokenNegocio))
+            .andExpect(status().isForbidden());
     }
 
     private Empresa empresa(String nombre, String slug) {
