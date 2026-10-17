@@ -1,1 +1,0 @@
-import{o as e}from"./rolldown-runtime-CMxvf4Kt.js";import{s as t}from"./vendor-clerk-DL7QwBkg.js";import{t as n}from"./PantallaSinConexion-DnKk-QBd.js";var r=e(t(),1);function i(){return(0,r.jsx)(n,{})}export{i as default};
