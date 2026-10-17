@@ -2,6 +2,7 @@ import { useState, useRef, useMemo, useEffect, useCallback, type Dispatch, type 
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
+import { guardarDireccionRecordada, leerDireccionRecordada } from './direccionRecordada'
 import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
 import { adminService } from '@/services/orderService'
 import { paymentService } from '@/services/paymentService'
@@ -148,9 +149,12 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const SHIPPING_OPTIONS = opcionesEnvio(bodegaRetiro)
 
   // Destino: define cuál de los dos envíos normales se ofrece (dentro o fuera del GAM, Figma 37:1689).
-  const [provincia, setProvinciaState] = useState('')
-  const [canton, setCantonState] = useState('')
-  const [distrito, setDistrito] = useState('')
+  // S1-17: con sesión, la última dirección usada arranca precargada.
+  const userIdCuenta = useAuthStore((s) => s.userId)
+  const [recordada] = useState(() => leerDireccionRecordada(userIdCuenta))
+  const [provincia, setProvinciaState] = useState(recordada?.provincia ?? '')
+  const [canton, setCantonState] = useState(recordada?.canton ?? '')
+  const [distrito, setDistrito] = useState(recordada?.distrito ?? '')
   const destinoGAM = esDestinoGAM(provincia, canton)
   function setProvincia(value: string) {
     setProvinciaState(value)
@@ -257,7 +261,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [sinpeNombre, setSinpeNombre] = useState(() => nombreCuenta ?? '')
   const [sinpeCedula, setSinpeCedula] = useState('')
   const [sinpeTelefono, setSinpeTelefono] = useState('')
-  const [sinpeEmail, setSinpeEmail] = useState('')
+  const correoCuenta = useAuthStore((s) => s.userEmail)
+  const [sinpeEmail, setSinpeEmail] = useState(() => correoCuenta ?? '')
   const [sinpeNombreErr, setSinpeNombreErr] = useState('')
   const [sinpeCedulaErr, setSinpeCedulaErr] = useState('')
 
@@ -270,7 +275,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [telefono, setTelefono] = useState('')
   const [telefonoError, setTelefonoError] = useState('')
   const [telefonoDirty, setTelefonoDirty] = useState(false)
-  const [direccion, setDireccion] = useState('')
+  const [direccion, setDireccion] = useState(recordada?.direccion ?? '')
   const [direccionError, setDireccionError] = useState('')
   const [direccionDirty, setDireccionDirty] = useState(false)
 
@@ -290,7 +295,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     return () => { cancelado = true }
   }, [authToken, userId])
 
-  const [guestEmail, setGuestEmail] = useState('')
+  const [guestEmail, setGuestEmail] = useState(() => correoCuenta ?? '')
   const [guestEmailError, setGuestEmailError] = useState('')
   const [guestEmailDirty, setGuestEmailDirty] = useState(false)
   const [guestPhone, setGuestPhone] = useState('')
@@ -298,6 +303,12 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [guestPhoneDirty, setGuestPhoneDirty] = useState(false)
 
   const [aceptaDatos, setAceptaDatos] = useState(false)
+
+  // S1-17: recuerda la última elección del comprador con sesión (el invitado no guarda nada).
+  useEffect(() => {
+    if (!authToken) return
+    guardarDireccionRecordada(userIdCuenta, { provincia, canton, distrito, direccion })
+  }, [authToken, userIdCuenta, provincia, canton, distrito, direccion])
 
   const costoEnvio = paquetes.reduce((sum, p) => sum + (SHIPPING_COSTS[metodoEnvioPorPaquete[p.bodegaId]] ?? 0), 0)
   const subtotalCart = total()
