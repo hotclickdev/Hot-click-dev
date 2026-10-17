@@ -1,7 +1,9 @@
 package com.hotclick.controller;
 
+import com.hotclick.dto.NegocioDestacadoDTO;
 import com.hotclick.dto.NegocioPublicoDTO;
 import com.hotclick.service.negocio.DirectorioNegociosService;
+import com.hotclick.service.negocio.NegociosDestacadosService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,9 +24,17 @@ public class NegociosPublicController {
     static final int MAX_LIST_NEGOCIOS = DirectorioNegociosService.LIMITE_MAXIMO;
 
     private final DirectorioNegociosService directorio;
+    private final NegociosDestacadosService destacados;
 
-    public NegociosPublicController(DirectorioNegociosService directorio) {
+    public NegociosPublicController(DirectorioNegociosService directorio, NegociosDestacadosService destacados) {
         this.directorio = directorio;
+        this.destacados = destacados;
+    }
+
+    /** Carrusel del inicio: hasta 5 negocios destacados del catálogo público, con la foto ya resuelta. */
+    @GetMapping("/destacados")
+    public List<NegocioDestacadoDTO> destacados(@RequestParam(required = false) Integer limite) {
+        return destacados.listar(limite);
     }
 
     @GetMapping

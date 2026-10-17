@@ -32,8 +32,6 @@ public class ProductoCatalogQueries {
         this.productoRepository = productoRepository;
     }
 
-    @Cacheable(value = "productos-publicos", key = "'rec-' + #id + '-' + #limit")
-    @Transactional(readOnly = true)
     /** VIS-3c: mismo filtro que el catálogo público: visible en catálogo y negocio ACTIVO + visible. */
     static boolean esPublico(Producto p) {
         if (p == null || !Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
@@ -42,6 +40,8 @@ public class ProductoCatalogQueries {
             && !Boolean.FALSE.equals(e.getVisibilidadPublica());
     }
 
+    @Cacheable(value = "productos-publicos", key = "'rec-' + #id + '-' + #limit")
+    @Transactional(readOnly = true)
     public List<Producto> getRecomendaciones(Long id, int limit) {
         Producto base = productoRepository.findById(id).orElse(null);
         if (base == null) return List.of();

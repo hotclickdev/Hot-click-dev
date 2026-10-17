@@ -107,14 +107,22 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 AND p.visible_catalogo = TRUE " +
+        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
+        "AND p.visible_catalogo = TRUE AND p.vendido = FALSE " +
         "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND e.tienda_pausada = FALSE")
     List<Producto> findDestacadosPublicos(@Param("estado") Integer estado);
+
+    /** Foto de portada de un negocio del carrusel: primera foto de su catálogo público (destacados primero). */
+    @Query("SELECT p.imagenPrincipalUrl FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1 "
+        + "AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false "
+        + "AND p.imagenPrincipalUrl IS NOT NULL AND p.imagenPrincipalUrl <> '' ORDER BY p.destacado DESC, p.id DESC")
+    List<String> findFotosCatalogoPublico(@Param("empresaId") Long empresaId, Pageable pageable);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado AND p.visible_catalogo = TRUE " +
+        "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado " +
+        "AND p.visible_catalogo = TRUE AND p.vendido = FALSE " +
         "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
         "ORDER BY p.orden_carrusel ASC NULLS LAST")
     List<Producto> findCarruselPublico(@Param("estado") Integer estado);

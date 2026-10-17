@@ -91,6 +91,8 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
   const [ocupado, setOcupado] = useState(false)
   const plan = texto(fila.plan, texto(fila.planSaas, 'EMPRENDEDOR'))
   const visible = fila.visibilidadPublica === true
+  const destacado = fila.destacado === true
+  const puedeDestacar = visible && texto(fila.estadoEmpresa).toUpperCase() === 'ACTIVO'
 
   async function cambiarEstado(estadoEmpresa: string) {
     if ((estadoEmpresa === 'SUSPENDIDO' || estadoEmpresa === 'INACTIVO') && motivo.trim().length < 3) {
@@ -143,6 +145,15 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
           () => adminService.setEmpresaVisibilidad(id, !visible),
           onCambio, setError, setOcupado, 'No se pudo cambiar la visibilidad.',
         )}>{visible ? 'Ocultar catálogo' : 'Mostrar catálogo'}</button>
+      </div>
+      <div className={TARJETA}>
+        <p className="text-xs font-semibold text-hc-n-600">Inicio</p>
+        <p className="mt-2 font-display text-lg font-bold">{destacado ? 'Negocio destacado' : 'Sin destacar'}</p>
+        {!puedeDestacar && !destacado && <p className="mt-1 text-sm text-hc-n-600">Solo se destacan negocios activos con el catálogo visible.</p>}
+        <button type="button" className={`${BOTON_SECUNDARIO} mt-3 h-10`} disabled={ocupado || (!puedeDestacar && !destacado)} onClick={() => void correr(
+          () => adminService.setEmpresaDestacado(id, !destacado),
+          onCambio, setError, setOcupado, 'No se pudo cambiar el destacado.',
+        )}>{destacado ? 'Quitar del inicio' : 'Destacar en el inicio'}</button>
       </div>
       <div className={TARJETA}>
         <p className="text-xs font-semibold text-hc-n-600">Ver el negocio</p>

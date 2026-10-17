@@ -76,6 +76,9 @@ public class GuestCheckoutGuard {
     private final Map<String, Deque<Reserva>> reservas = new ConcurrentHashMap<>();
     private final Map<String, EnCurso> idempotencia = new ConcurrentHashMap<>();
 
+    /** Tope por producto para invitados (solo lectura, lo publica /api/public/checkout-config). */
+    public int getMaxPorProducto() { return maxPorProducto; }
+
     public GuestCheckoutGuard(TurnstileFormGuard turnstile, ClientIpResolver ipResolver, PedidoRepository pedidoRepository) {
         this.turnstile = turnstile;
         this.ipResolver = ipResolver;
