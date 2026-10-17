@@ -27,6 +27,7 @@ class StorefrontPedidoInvitadoTopesTest extends BaseIntegrationTest {
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private BodegaRepository    bodegaRepository;
     @Autowired private PedidoRepository    pedidoRepository;
+    @Autowired private com.hotclick.controller.storefront.StorefrontGuestOrderService guestOrderService;
 
     @AfterEach
     void tearDown() {
@@ -99,6 +100,23 @@ class StorefrontPedidoInvitadoTopesTest extends BaseIntegrationTest {
         assertThat(r2).isEqualTo(r1);
         assertThat(pedidoRepository.count()).isEqualTo(1);
         assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockReservado()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("7. SINPE con comprobante apagado (hasta ONVO en vivo) → 400, sin pedido ni reserva")
+    void sinpeTiendaApagado_400() throws Exception {
+        Producto p = preparar("sinpe-off");
+        org.springframework.test.util.ReflectionTestUtils.setField(guestOrderService, "sinpeComprobanteDisponible", false);
+        try {
+            mockMvc.perform(pedido("sinpe-off", "g@test.cr", "10.0.0.7", items(p.getId(), 1)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                    com.hotclick.controller.storefront.StorefrontGuestOrderService.MSG_SINPE_TIENDA_NO_DISPONIBLE));
+            assertThat(pedidoRepository.count()).isZero();
+            assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockReservado()).isZero();
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(guestOrderService, "sinpeComprobanteDisponible", true);
+        }
     }
 
     private static String items(Long id, int cantidad) {

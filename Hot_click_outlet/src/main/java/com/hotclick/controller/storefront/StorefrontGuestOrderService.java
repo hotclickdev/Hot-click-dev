@@ -61,8 +61,25 @@ public class StorefrontGuestOrderService {
         this.notificacionEmailService = notificacionEmailService;
     }
 
+    /**
+     * Decisión HOT_CLICK 16-oct-2026: el SINPE con comprobante de la tienda propia queda apagado hasta que
+     * ONVO esté en vivo (mismo interruptor que el checkout del marketplace). Apagado → 400.
+     */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}")
+    private boolean sinpeComprobanteDisponible;
+
+    public static final String MSG_SINPE_TIENDA_NO_DISPONIBLE =
+        "El pago por SINPE con comprobante todavía no está disponible en esta tienda. Elegí otro método de pago.";
+
+    static void exigirSinpeDisponible(String metodoPago, boolean disponible) {
+        if (!disponible && "SINPE_MOVIL".equalsIgnoreCase(metodoPago)) {
+            throw new IllegalArgumentException(MSG_SINPE_TIENDA_NO_DISPONIBLE);
+        }
+    }
+
     @org.springframework.transaction.annotation.Transactional
     public Pedido crearPedido(Empresa empresa, StorefrontPedidoDTO dto) {
+        exigirSinpeDisponible(dto.getMetodoPago(), sinpeComprobanteDisponible);
         Bodega bodega = resolverBodega(empresa);
         if (bodega == null) {
             return null;

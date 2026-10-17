@@ -19,9 +19,7 @@ import {
 } from './tiendaCheckoutValidacion'
 import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
 
-/** Una sola opción «SINPE / Tarjeta» (como el marketplace); efectivo solo si la tienda lo acepta. */
-const PAGO_PRINCIPAL = { value: 'SINPE_MOVIL', label: 'SINPE / Tarjeta' }
-const PAGO_EFECTIVO = { value: 'EFECTIVO', label: 'Efectivo al recibir' }
+import { AVISO_SIN_METODOS_PAGO, metodoPagoVigente, metodosPagoTienda } from './pagosTienda'
 
 const ENVIO_DOMICILIO = { value: METODO_ENVIO_DOMICILIO, label: 'Envío a domicilio' }
 const ENVIO_RETIRO = { value: METODO_ENVIO_RETIRO, label: 'Retiro en tienda' }
@@ -77,12 +75,19 @@ export default function TiendaCheckoutPage() {
   const hayRetiro = Boolean(empresa?.retiro)
   const costoEnvio = costoEnvioTienda(form.metodoEnvio)
   const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
-  const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
+  // SINPE con comprobante oculto hasta que ONVO esté en vivo (pagosTienda.SINPE_TIENDA_DISPONIBLE).
+  const metodosPago = metodosPagoTienda(efectivoDisponible(carrito.map((c) => c.producto)))
+  const metodoPago = metodoPagoVigente(form.metodoPago, metodosPago)
+  const sinMetodosPago = metodosPago.length === 0
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (carrito.length === 0) return
-    const errorForm = mensajeErrorCheckout(form)
+    if (sinMetodosPago) {
+      setError(AVISO_SIN_METODOS_PAGO)
+      return
+    }
+    const errorForm = mensajeErrorCheckout({ ...form, metodoPago })
     if (errorForm) {
       setError(errorForm)
       return
@@ -91,7 +96,7 @@ export default function TiendaCheckoutPage() {
     setError(null)
     try {
       const notas = [form.notas.trim(), encomienda.trim() ? `Encomienda: ${encomienda.trim()}` : ''].filter(Boolean).join(' | ')
-      const resultado = await tiendaService.crearPedido(slug as string, { ...form, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
+      const resultado = await tiendaService.crearPedido(slug as string, { ...form, metodoPago, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
       vaciarCarrito()
       const qs = new URLSearchParams({ orden: resultado.numeroPedido ?? '' })
       navigate(`/tienda/${slug}/checkout/exito?${qs}`, { replace: true, state: { total: resultado.total } })
@@ -155,7 +160,11 @@ export default function TiendaCheckoutPage() {
                 {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.paqueteTienda} value={encomienda} onChange={setEncomienda} />}
               </Campo>
             )}
-            <GrupoOpciones label="Método de pago" name="metodoPago" opciones={metodosPago} valor={form.metodoPago} onChange={(v) => set('metodoPago', v)} />
+            {sinMetodosPago ? (
+              <p role="alert" className="text-[12px] leading-4 text-hc-n-600">{AVISO_SIN_METODOS_PAGO}</p>
+            ) : (
+              <GrupoOpciones label="Método de pago" name="metodoPago" opciones={metodosPago} valor={metodoPago} onChange={(v) => set('metodoPago', v)} />
+            )}
             <Campo etiqueta="Notas adicionales">
               {({ id }) => (
                 <textarea
@@ -204,7 +213,7 @@ export default function TiendaCheckoutPage() {
           {/* Siempre rojo de marca (#E73B33): el color de la tienda no aplica a la acción de pago. */}
           <button
             type="submit"
-            disabled={enviando}
+            disabled={enviando || sinMetodosPago}
             className="flex min-h-[48px] w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 text-[15px] font-semibold text-hc-n-0 disabled:opacity-60"
           >
             {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}
