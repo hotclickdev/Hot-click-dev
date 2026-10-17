@@ -6,7 +6,7 @@
 -- IDs fijos que usa qa/staging/api-tests.sh (ci/staging 1024ebd9e):
 --   usuario 9001 admin@staging.test       rol ADMIN
 --   usuario 9002 vendedor@staging.test    rol EMPRENDEDOR (dueño de 9101)
---   usuario 9003 comprador@staging.test   rol USUARIO_FINAL (api-tests.sh firma el JWT con role CLIENTE; da igual para los 403)
+--   usuario 9003 comprador@staging.test   rol USUARIO_FINAL (api-tests.sh firma el JWT con role USUARIO_FINAL)
 --   empresa 9101 slug 'tienda-activa'   ACTIVO, visible
 --   empresa 9102 slug 'tienda-pausada'  ACTIVO, visible, tienda_pausada TRUE (→ 410 TIENDA_PAUSADA)
 --   producto 9201 de 9101 (stock 50), producto 9202 de 9102 (stock 50, destacado para probar que no sale)
