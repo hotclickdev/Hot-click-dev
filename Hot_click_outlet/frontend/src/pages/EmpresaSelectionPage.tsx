@@ -9,7 +9,7 @@ import { rutaPanelPorRol } from '@/utils/planPaths'
 import type { AuthResponse } from '@/types/auth'
 import type { Id } from '@/types/api'
 import { useToast } from '@/components/ui/Toast'
-import { TEXTOS_MULTINEGOCIO as T, nombrePlan } from '@/features/multinegocio/multinegocioTextos'
+import { TEXTOS_MULTINEGOCIO as T, mensajeSinAcceso, nombrePlan } from '@/features/multinegocio/multinegocioTextos'
 
 type EmpresaOpcion = {
   id: Id
@@ -52,7 +52,7 @@ export default function EmpresaSelectionPage() {
       if (empresa.nombre) toast({ message: T.entraste(empresa.nombre), type: 'success' })
       navigate(rutaPanelPorRol(authData.rol, useTenantStore.getState().planNombre), { replace: true })
     } catch (err: unknown) {
-      setError(mensajeErrorAuth(err, 'Error al seleccionar el negocio'))
+      setError(mensajeSinAcceso(err) ?? mensajeErrorAuth(err, 'Error al seleccionar el negocio'))
       setLoading(null)
     }
   }
