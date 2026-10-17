@@ -37,18 +37,19 @@ export const FOTOS_EMPRENDE = {
     claveAlt: 'emprende.fotoRegistroAlt',
   },
   feria1: {
-    local: '/emprende/feria-1.jpg',
+    // BUG-S1-03: feria-1/2/3.jpg no existen en public/emprende (daban 404); se usa la foto remota.
+    local: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&q=80',
     fallback: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&q=80',
     claveAlt: 'emprende.fotoFeria1Alt',
   },
   feria2: {
-    local: '/emprende/feria-2.jpg',
-    fallback: 'https://images.unsplash.com/photo-1506483255810-1c797d702389?w=800&q=80',
+    local: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80',
+    fallback: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80',
     claveAlt: 'emprende.fotoFeria2Alt',
   },
   feria3: {
-    local: '/emprende/feria-3.jpg',
-    fallback: 'https://images.unsplash.com/photo-1515165562839-978bb86d3fde?w=800&q=80',
+    local: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&q=80',
+    fallback: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&q=80',
     claveAlt: 'emprende.fotoFeria3Alt',
   },
 } as const satisfies Record<string, FotoEmprende>

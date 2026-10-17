@@ -251,7 +251,7 @@ class PaymentServiceTest {
 
         assertThatThrownBy(() -> service.checkout(buildRequest(3), CORREO))
             .isInstanceOf(StockInsuficienteException.class)
-            .hasMessageContaining("Stock insuficiente");
+            .hasMessageContaining("No hay suficientes unidades");
     }
 
     @Test

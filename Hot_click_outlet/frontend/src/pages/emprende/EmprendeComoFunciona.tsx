@@ -9,10 +9,12 @@ export default function EmprendeComoFunciona() {
   const { t } = useTranslation()
   const [reproduciendo, setReproduciendo] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  // BUG-S1-03: si el video no carga (antes daba 401), queda la portada sin un botón de play que no responde.
+  const [videoFallo, setVideoFallo] = useState(false)
 
   function reproducir() {
     setReproduciendo(true)
-    videoRef.current?.play()
+    videoRef.current?.play()?.catch(() => setVideoFallo(true))
   }
 
   return (
@@ -31,13 +33,16 @@ export default function EmprendeComoFunciona() {
       >
         <video
           ref={videoRef}
-          src="/emprende/recorrido.mp4"
           poster={FOTOS_EMPRENDE.tienda.local}
-          controls={reproduciendo}
+          preload="metadata"
+          onError={() => setVideoFallo(true)}
+          controls={reproduciendo && !videoFallo}
           playsInline
           className="w-full aspect-video object-cover"
-        />
-        {!reproduciendo ? (
+        >
+          <source src="/emprende/recorrido.mp4" type="video/mp4" onError={() => setVideoFallo(true)} />
+        </video>
+        {!reproduciendo && !videoFallo ? (
           <button
             type="button"
             onClick={reproducir}

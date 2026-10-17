@@ -1,3 +1,4 @@
+import EtiquetaEjemplo from './EtiquetaEjemplo'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import TrustGlyph from '@/components/ui/TrustGlyph'
@@ -66,6 +67,7 @@ function capitalize(s: string) {
 function PreviewPos() {
   return (
     <div className="flex flex-col gap-2 text-[13px]" style={{ color: '#14171c' }}>
+      <EtiquetaEjemplo />
       <div className="flex justify-between"><span>Aretes de feria x2</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡7.000</span></div>
       <div className="flex justify-between"><span>Bolso tejido x1</span><span style={{ fontFamily: 'var(--hc-font-mono)', color: 'rgba(20,23,28,0.7)' }}>₡12.000</span></div>
       <div className="flex justify-between pt-[10px] border-t font-semibold" style={{ borderColor: '#e8dcc8' }}>
@@ -79,6 +81,7 @@ function PreviewPos() {
 function PreviewCatalogo() {
   return (
     <div className="flex flex-col gap-2.5">
+      <EtiquetaEjemplo />
       <p className="text-[13px] font-semibold" style={{ color: '#14171c' }}>Publicar producto</p>
       <div className="flex items-center gap-2.5">
         <span className="w-[60px] h-[60px] rounded-lg shrink-0" style={{ backgroundColor: '#eadfc9' }} />
@@ -95,6 +98,7 @@ function PreviewCatalogo() {
 function PreviewTelegram() {
   return (
     <div className="flex flex-col gap-2">
+      <EtiquetaEjemplo />
       <div className="flex items-center gap-2 rounded-[10px] px-3 py-2.5 text-white text-xs" style={{ backgroundColor: '#229ed9' }}>
         <TrustGlyph tipo="tarjeta" className="w-3.5 h-3.5 shrink-0" />
         <span>Venta registrada: ₡7.000</span>

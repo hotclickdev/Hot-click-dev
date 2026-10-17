@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { motion, useReducedMotion } from 'framer-motion'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import EtiquetaEjemplo from './EtiquetaEjemplo'
 
 /** Composición de pago: mockup de teléfono con "pago aprobado" + chips flotantes. */
 export default function EmprendePagoFlexible() {
@@ -16,6 +17,7 @@ export default function EmprendePagoFlexible() {
         {t('emprende.pagoFlexibleSub')}
       </p>
 
+      <EtiquetaEjemplo className="-mb-6" />
       <div className="relative flex items-center justify-center gap-4 sm:gap-8 py-6 w-full max-w-3xl">
         <motion.div
           initial={{ opacity: 0, x: -20, rotate: -6 }}
