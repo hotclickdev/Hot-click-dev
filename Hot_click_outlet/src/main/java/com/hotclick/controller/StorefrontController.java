@@ -7,6 +7,7 @@ import com.hotclick.controller.storefront.StorefrontInfoMapper;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.security.SlugTenantInterceptor;
+import com.hotclick.service.payment.GuestCheckoutGuard;
 import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -14,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,17 +43,20 @@ public class StorefrontController {
     private final MarcaRepository     marcaRepository;
     private final StorefrontInfoMapper storefrontInfoMapper;
     private final StorefrontGuestOrderService storefrontGuestOrderService;
+    private final GuestCheckoutGuard guestCheckoutGuard;
 
     public StorefrontController(ProductoRepository productoRepository,
                                 CategoriaRepository categoriaRepository,
                                 MarcaRepository marcaRepository,
                                 StorefrontInfoMapper storefrontInfoMapper,
-                                StorefrontGuestOrderService storefrontGuestOrderService) {
+                                StorefrontGuestOrderService storefrontGuestOrderService,
+                                GuestCheckoutGuard guestCheckoutGuard) {
         this.productoRepository  = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.marcaRepository     = marcaRepository;
         this.storefrontInfoMapper = storefrontInfoMapper;
         this.storefrontGuestOrderService = storefrontGuestOrderService;
+        this.guestCheckoutGuard = guestCheckoutGuard;
     }
 
     // ── Info pública de la tienda ────────────────────────────────────────────
@@ -141,24 +144,27 @@ public class StorefrontController {
      * (el estado pasa a PAGADO y el flujo existente llama descontarPorVenta).
      */
     @PostMapping("/pedidos")
-    @Transactional
     public ResponseEntity<ResponseDTO> crearPedido(
             HttpServletRequest request,
             @Valid @RequestBody StorefrontPedidoDTO dto) {
 
         Empresa empresa = empresa(request);
-        Pedido guardado = storefrontGuestOrderService.crearPedido(empresa, dto);
-        if (guardado == null) {
-            return ResponseEntity.badRequest()
-                .body(ResponseDTO.error("Esta tienda no tiene bodega configurada para ventas online"));
-        }
-
-        Map<String, Object> resp = Map.of(
-            "numeroPedido", guardado.getNumeroPedido(),
-            "estadoPedido", guardado.getEstadoPedido(),
-            "total",        guardado.getTotalPedido()
-        );
-        return ResponseEntity.ok(ResponseDTO.success("Pedido creado correctamente", resp));
+        // H1 (S1-56): topes de invitado e idempotencia fuera de la transacción del pedido.
+        java.util.concurrent.atomic.AtomicReference<Long> creado = new java.util.concurrent.atomic.AtomicReference<>();
+        return guestCheckoutGuard.ejecutarTienda(empresa.getId(), dto, request, () -> {
+            Pedido guardado = storefrontGuestOrderService.crearPedido(empresa, dto);
+            if (guardado == null) {
+                return ResponseEntity.badRequest()
+                    .body(ResponseDTO.error("Esta tienda no tiene bodega configurada para ventas online"));
+            }
+            creado.set(guardado.getId());
+            Map<String, Object> resp = Map.of(
+                "numeroPedido", guardado.getNumeroPedido(),
+                "estadoPedido", guardado.getEstadoPedido(),
+                "total",        guardado.getTotalPedido()
+            );
+            return ResponseEntity.ok(ResponseDTO.success("Pedido creado correctamente", resp));
+        }, creado::get);
     }
 
     // ── Helpers privados ─────────────────────────────────────────────────────
