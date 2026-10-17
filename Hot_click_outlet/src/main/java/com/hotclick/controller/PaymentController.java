@@ -51,10 +51,11 @@ public class PaymentController {
     /** Pausa de tienda: ningún producto de una tienda pausada se puede comprar (409 TIENDA_PAUSADA). */
     private boolean hayTiendaPausada(PaymentCheckoutRequest request) {
         if (request.getItems() == null) return false;
-        return request.getItems().stream()
+        java.util.List<Long> ids = request.getItems().stream()
             .filter(i -> i != null && i.getProductoId() != null)
-            .map(i -> productoRepository.findById(i.getProductoId()).orElse(null))
-            .anyMatch(p -> p != null && p.getEmpresa() != null && p.getEmpresa().isTiendaPausada());
+            .map(PaymentCheckoutRequest.ItemDTO::getProductoId)
+            .distinct().toList();
+        return !ids.isEmpty() && productoRepository.contarDeTiendasPausadas(ids) > 0;
     }
 
     @GetMapping("/status/{numeroPedido}")
