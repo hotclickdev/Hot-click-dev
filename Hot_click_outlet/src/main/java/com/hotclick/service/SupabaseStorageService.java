@@ -49,6 +49,11 @@ public class SupabaseStorageService {
         return uploadHelper.subirXmlPrivado(xml, key, bucket);
     }
 
+    /** PAG-9: sube un objeto privado a otro bucket (el privado de comprobantes). */
+    public String subirImagenPrivadaEn(MultipartFile file, String key, String bucketDestino) throws IOException {
+        return uploadHelper.subirImagenPrivada(file, key, bucketDestino);
+    }
+
     @CircuitBreaker(name = "s3", fallbackMethod = "subirImagenPrivadaFallback")
     @Retry(name = "s3")
     public String subirImagenPrivada(MultipartFile file, String key) throws IOException {
