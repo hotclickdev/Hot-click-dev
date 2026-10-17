@@ -8,16 +8,15 @@ import { RUTA_EMPRENDEDOR } from '../constants'
 
 const CHIPS = ['Inventario', 'Finanzas', 'Características', 'Mejoras', 'Problemas'] as const
 
-const CONVERSACION = [
-  { de: 'bot' as const, texto: '¡Hola! Soy el asistente de HotClick. Puedo ayudarte con inventario, finanzas, características, mejoras o problemas de tu tienda. ¿Qué necesitás?' },
-  { de: 'user' as const, texto: '¿Cuántos productos me quedan por agotarse?' },
-  { de: 'bot' as const, texto: 'Tenés 4 productos por agotarse: Auriculares Bluetooth X200, Cargador USB-C 30W y 2 más. ¿Querés que te arme la lista completa?' },
-  { de: 'user' as const, texto: 'Sí, y decime cómo van mis ganancias este mes' },
-  { de: 'bot' as const, texto: 'Este mes vendiste ₡145.000 y tenés ₡320.000 en ganancia potencial de productos publicados. Tu producto más vendido es Auriculares Bluetooth X200.' },
+// NP-7/NP-8: sin datos de demo de otro negocio (productos, ventas). Solo el saludo.
+export const CONVERSACION: Array<{ de: 'bot' | 'user'; texto: string }> = [
+  { de: 'bot', texto: '¡Hola! Soy el asistente de HotClick. Puedo ayudarte con inventario, finanzas, características, mejoras o problemas de tu tienda. ¿Qué necesitás?' },
 ]
 
+export const RESPUESTA_SIN_COPILOT = 'Todavía no puedo leer los datos de tu tienda desde acá. Revisá Productos y Finanzas en tu panel, o escribinos por Ayuda.'
+
 /**
- * Paso 9 Consultas con Hot (Figma 30:128). Conversación del mock; no llama al copilot.
+ * Paso 9 Consultas con Hot (Figma 30:128). Sin conversación de demo; no llama al copilot.
  */
 export default function ConsultasHotPage() {
   const [texto, setTexto] = useState('')
@@ -60,7 +59,7 @@ export default function ConsultasHotPage() {
             setMensajes((prev) => [
               ...prev,
               { de: 'user', texto: texto.trim() },
-              { de: 'bot', texto: 'En el prototipo esta conversación es de Figma. El copilot de admin vive en /admin/copilot.' },
+              { de: 'bot', texto: RESPUESTA_SIN_COPILOT },
             ])
             setTexto('')
           }}

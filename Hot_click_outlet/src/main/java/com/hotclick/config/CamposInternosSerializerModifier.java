@@ -90,7 +90,7 @@ public class CamposInternosSerializerModifier extends BeanSerializerModifier {
                 if (PRODUCTO_TEXTO_LIBRE.contains(p.getName())) {
                     resultado.add(new CampoTextoFiltrado(p, filtrar, ContactoTextoFiltro::ocultar));
                 } else if ("videoUrl".equals(p.getName())) {
-                    resultado.add(new CampoTextoFiltrado(p, filtrar, ContactoTextoFiltro::videoPermitido));
+                    resultado.add(new CampoTextoFiltrado(p, filtrar, ContactoTextoFiltro::videoSinRedes));
                 } else {
                     resultado.add(p);
                 }

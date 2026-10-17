@@ -9,6 +9,8 @@ import { Miniatura } from '../perfil/cuenta/piezasCuenta'
 import ChipEstadoPedido from './ChipEstadoPedido'
 import { estadoDePedido, itemsDePedido, notificacionesDePedido, ESTADO_LABELS } from './pedidoHelpers'
 import type { PedidoCliente } from './pedidoHelpers'
+import { estadoPaquete } from './paquetePedido'
+import { nombreMetodoPago } from './textosPedido'
 import {
   cantidadProductos, diasDeGarantia, envioDelPedido, nombreTienda, paquetesEntregados, subtotalProductos, urlRastreo,
   type PedidoComprador,
@@ -142,7 +144,8 @@ function PaqueteDetalle({ paquete, numero, total, pedidoNumero }: { paquete: Ped
 export default function DetallePedidoComprador({ pedido }: { pedido: PedidoComprador }) {
   const { t, i18n } = useTranslation()
   const { total: envioTotal, igual } = envioDelPedido(pedido)
-  const metodo = pedido.paquetes.find((p) => p.metodoPago)?.metodoPago
+  const metodo = nombreMetodoPago(t, pedido.paquetes.find((p) => p.metodoPago)?.metodoPago)
+  const pagoPendiente = pedido.paquetes.some((p) => estadoPaquete(p) === 'pendiente')
   const fecha = fechaConAnio(pedido.fecha, i18n.language)
   const varios = pedido.paquetes.length > 1
   const productos = cantidadProductos(pedido)
@@ -151,7 +154,9 @@ export default function DetallePedidoComprador({ pedido }: { pedido: PedidoCompr
       <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-[2px]">
-            <p className="text-[12px] text-hc-n-600">{metodo ? t('pedidoDetalle.fechaPagadoCon', { fecha, metodo }) : fecha}</p>
+            <p className="text-[12px] text-hc-n-600">{pagoPendiente
+              ? (metodo ? t('misPedidos.detalle.pagoPendienteCon', { fecha, metodo }) : t('misPedidos.detalle.pagoPendiente', { fecha }))
+              : (metodo ? t('pedidoDetalle.fechaPagadoCon', { fecha, metodo }) : fecha)}</p>
             <h2 className="font-display text-[16px] font-semibold text-hc-n-900">
               {varios
                 ? t('misPedidos.resumenPaquetes', { paquetes: t('misPedidos.paquetes', { count: pedido.paquetes.length }), entregados: t('misPedidos.paquetesEntregados', { count: paquetesEntregados(pedido) }) })

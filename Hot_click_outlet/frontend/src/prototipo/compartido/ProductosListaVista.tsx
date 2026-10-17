@@ -7,7 +7,7 @@ import ListadoFeedback from './ListadoFeedback'
 import { Chip } from './ui'
 import FilaProductoLista from './FilaProductoLista'
 import {
-  FILTROS_PRODUCTOS,
+  filtrosProductos,
   filtrarProductos,
   gruposProductosVisibles,
   type ProductoListaItem,
@@ -41,6 +41,7 @@ export default function ProductosListaVista({
 }: Props) {
   const [filtro, setFiltro] = useState<string>('Todos')
   const visibles = useMemo(() => filtrarProductos(productos, filtro), [productos, filtro])
+  const filtros = useMemo(() => filtrosProductos(productos), [productos])
   const vacio = !cargando && productos.length === 0
   const emp = variante === 'emp'
   const mainClass = emp
@@ -55,10 +56,10 @@ export default function ProductosListaVista({
         {emp && vacio ? null : <BotonesAgregarProducto baseNuevo={baseNuevo} />}
 
         {emp ? (
-          !vacio ? <FilaChipsFiltro valor={filtro} onChange={setFiltro} /> : null
+          !vacio ? <FilaChipsFiltro filtros={filtros} valor={filtro} onChange={setFiltro} /> : null
         ) : (
           <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
-            {FILTROS_PRODUCTOS.map((item) => (
+            {filtros.map((item) => (
               <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>
                 {item}
               </Chip>
@@ -102,15 +103,17 @@ export default function ProductosListaVista({
 }
 
 function FilaChipsFiltro({
+  filtros,
   valor,
   onChange,
 }: {
+  filtros: string[]
   valor: string
   onChange: (v: string) => void
 }) {
   return (
     <div className="flex gap-2 overflow-x-auto">
-      {FILTROS_PRODUCTOS.map((item) => (
+      {filtros.map((item) => (
         <Chip key={item} activo={valor === item} onClick={() => onChange(item)}>
           {item}
         </Chip>

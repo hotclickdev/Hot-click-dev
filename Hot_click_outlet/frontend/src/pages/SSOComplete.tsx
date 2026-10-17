@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import { authService } from '@/services/authService'
 import { leoDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 import type { AuthResponse } from '@/types/auth'
+import { obtenerTokenSesion } from './sso/tokenSesionClerk'
 import { sincronizarClerk, type SsoClerkPayload, type SsoClerkResultado } from './sso/ssoClerkSync'
 
 /**
@@ -62,10 +63,7 @@ export default function SSOComplete() {
 
     void (async () => {
       try {
-        const clerkToken = await getToken({ template: 'hotclick-session' })
-          .catch(() => null)
-          ?? await getToken()
-        if (!clerkToken) throw new Error('No se pudo obtener el token de sesión de Clerk')
+        const clerkToken = await obtenerTokenSesion(getToken)
 
         const email    = user.primaryEmailAddress?.emailAddress ?? ''
         const payload: SsoClerkPayload = {

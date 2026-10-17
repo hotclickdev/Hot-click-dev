@@ -241,15 +241,15 @@ class PaymentServiceF37Test {
         when(productoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(pedidoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(pagoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(providerFactory.soporta("PAYPAL")).thenReturn(true);
-        when(providerFactory.get("PAYPAL")).thenReturn(mockProvider);
+        when(providerFactory.soporta("TILOPAY")).thenReturn(true);
+        when(providerFactory.get("TILOPAY")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("PAY-001", "https://paypal.com/pay"));
         when(cuponService.validarCodigo(any())).thenReturn(Optional.empty());
         doNothing().when(webhookDispatcher).dispatch(any(), anyString(), any());
 
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
-        req.setProvider("PAYPAL");
+        req.setProvider("TILOPAY");
         req.setGuestEmail("buyer@test.cr");
         req.setMetodoEnvio("RETIRO_EN_TIENDA");
         req.setItems(List.of(

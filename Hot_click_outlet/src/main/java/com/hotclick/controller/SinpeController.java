@@ -28,6 +28,8 @@ public class SinpeController {
 
     @Autowired
     private SinpeService sinpeService;
+    @Autowired
+    private com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard;
 
     // ── Checkout autenticado ───────────────────────────────────────────────────
     @PostMapping("/checkout")
@@ -48,7 +50,12 @@ public class SinpeController {
 
     // ── Checkout invitado ──────────────────────────────────────────────────────
     @PostMapping("/guest-checkout")
-    public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest req) {
+    public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest req,
+                                                     jakarta.servlet.http.HttpServletRequest http) {
+        return guestCheckoutGuard.ejecutar(req, http, () -> guestCheckoutSinGuard(req));
+    }
+
+    private ResponseEntity<ResponseDTO> guestCheckoutSinGuard(PaymentCheckoutRequest req) {
         try {
             var res = sinpeService.checkout(req, null);
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));

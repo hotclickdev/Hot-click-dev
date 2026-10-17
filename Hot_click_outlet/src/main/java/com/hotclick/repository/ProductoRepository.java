@@ -107,14 +107,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
+        "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 AND p.visible_catalogo = TRUE " +
         "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND e.tienda_pausada = FALSE")
     List<Producto> findDestacadosPublicos(@Param("estado") Integer estado);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado " +
+        "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado AND p.visible_catalogo = TRUE " +
         "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
         "ORDER BY p.orden_carrusel ASC NULLS LAST")
     List<Producto> findCarruselPublico(@Param("estado") Integer estado);
@@ -238,6 +238,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
            "AND LOWER(p.nombreProducto) LIKE LOWER(CONCAT('%',:q,'%')) ORDER BY p.id DESC")
     Page<Producto> findCatalogoPublicoByEmpresaAndNombre(
             @Param("empresaId") Long empresaId, @Param("q") String q, Pageable pageable);
+
+    /** Categorías con productos visibles en la tienda (propias o de plataforma): las que el filtro puede mostrar. */
+    @Query("SELECT DISTINCT p.categoria FROM Producto p WHERE p.empresa.id = :empresaId AND p.categoria IS NOT NULL " +
+           "AND p.estado = 1 AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false")
+    List<com.hotclick.model.Categoria> findCategoriasCatalogoPublico(@Param("empresaId") Long empresaId, Pageable pageable);
 
     /** Catálogo de una tienda filtrado por categoría. */
     @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.categoria.id = :catId " +

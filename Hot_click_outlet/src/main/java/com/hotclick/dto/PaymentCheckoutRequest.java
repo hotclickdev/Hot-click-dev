@@ -108,6 +108,11 @@ public class PaymentCheckoutRequest {
     public String getCodigoGiftCard() { return codigoGiftCard; }
     public void setCodigoGiftCard(String codigoGiftCard) { this.codigoGiftCard = codigoGiftCard; }
 
+    /** Token del widget Turnstile (opcional; solo se exige con hotclick.checkout.turnstile.habilitado). */
+    private String turnstileToken;
+    public String getTurnstileToken() { return turnstileToken; }
+    public void setTurnstileToken(String turnstileToken) { this.turnstileToken = turnstileToken; }
+
     public String getPosQrToken() { return posQrToken; }
     public void setPosQrToken(String posQrToken) { this.posQrToken = posQrToken; }
 

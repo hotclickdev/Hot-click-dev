@@ -34,7 +34,7 @@ import java.util.function.UnaryOperator;
  * Nunca corre contra producción, aunque alguien active el perfil {@code dev} ahí.
  */
 @Component
-@Profile("dev")
+@Profile("dev & !prod & !production") // nunca en producción: crea cuentas con estado ACTIVO directo
 @Order(110)
 public class QaCuentasSeeder implements ApplicationRunner {
 

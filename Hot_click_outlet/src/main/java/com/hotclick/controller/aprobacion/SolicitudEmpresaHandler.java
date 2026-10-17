@@ -40,6 +40,17 @@ public class SolicitudEmpresaHandler {
         this.telegramNotificacionClienteService = telegramNotificacionClienteService;
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.wallet.CuentaCobroVerificada cuentaCobroVerificada;
+
+    /** Ficha de tienda: avisar antes de aprobar si el negocio no tiene cuenta de cobro aprobada. */
+    public ResponseEntity<ResponseDTO> cuentaCobro(Long id) {
+        ResponseEntity<ResponseDTO> denied = solicitudAdminGuard.denyIfNotAdmin();
+        if (denied != null) return denied;
+        boolean aprobada = cuentaCobroVerificada != null && cuentaCobroVerificada.buscar(id).isPresent();
+        return ResponseEntity.ok(ResponseDTO.success("Cuenta de cobro", java.util.Map.of("aprobada", aprobada)));
+    }
+
     public ResponseEntity<ResponseDTO> aprobar(Long id) {
         ResponseEntity<ResponseDTO> denied = solicitudAdminGuard.denyIfNotAdmin();
         if (denied != null) return denied;

@@ -27,6 +27,9 @@ public class PaymentController {
     @Autowired
     private TilopayConfirmacionService tilopayConfirmacionService;
 
+    @Autowired
+    private com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard;
+
     @PostMapping("/checkout")
     public ResponseEntity<?> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
         if (hayTiendaPausada(request)) {
@@ -87,7 +90,12 @@ public class PaymentController {
     }
 
     @PostMapping("/guest-checkout")
-    public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest request) {
+    public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest request,
+                                                     jakarta.servlet.http.HttpServletRequest http) {
+        return guestCheckoutGuard.ejecutar(request, http, () -> guestCheckoutSinGuard(request));
+    }
+
+    private ResponseEntity<ResponseDTO> guestCheckoutSinGuard(PaymentCheckoutRequest request) {
         try {
             PaymentCheckoutResponse response = paymentService.checkout(request, null);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));

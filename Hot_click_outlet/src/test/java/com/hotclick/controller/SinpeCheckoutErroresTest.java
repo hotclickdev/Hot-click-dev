@@ -20,6 +20,10 @@ class SinpeCheckoutErroresTest {
     private SinpeController controller(SinpeService service) {
         SinpeController c = new SinpeController();
         ReflectionTestUtils.setField(c, "sinpeService", service);
+        com.hotclick.service.payment.GuestCheckoutGuard guard = mock(com.hotclick.service.payment.GuestCheckoutGuard.class);
+        when(guard.ejecutar(any(), any(), any())).thenAnswer(inv ->
+            ((java.util.function.Supplier<?>) inv.getArgument(2)).get());
+        ReflectionTestUtils.setField(c, "guestCheckoutGuard", guard);
         return c;
     }
 
@@ -27,7 +31,7 @@ class SinpeCheckoutErroresTest {
     void stockInsuficiente409() {
         SinpeService s = mock(SinpeService.class);
         when(s.checkout(any(), isNull())).thenThrow(new StockInsuficienteException("Taza", 7, 99));
-        var res = controller(s).guestCheckout(new PaymentCheckoutRequest());
+        var res = controller(s).guestCheckout(new PaymentCheckoutRequest(), null);
         assertThat(res.getStatusCode().value()).isEqualTo(409);
         assertThat(res.getBody().getMessage()).contains("Taza").doesNotContain("7").doesNotContain("99");
     }
@@ -36,7 +40,7 @@ class SinpeCheckoutErroresTest {
     void inesperado500Generico() {
         SinpeService s = mock(SinpeService.class);
         when(s.checkout(any(), isNull())).thenThrow(new RuntimeException("SQL insert into hot_click_pedido_tb"));
-        var res = controller(s).guestCheckout(new PaymentCheckoutRequest());
+        var res = controller(s).guestCheckout(new PaymentCheckoutRequest(), null);
         assertThat(res.getStatusCode().value()).isEqualTo(500);
         assertThat(res.getBody().getMessage()).doesNotContain("hot_click");
     }

@@ -38,16 +38,14 @@ public class ProductoCatalogHandler {
     @Autowired private StockService        stockService;
     @Autowired private ProductoAccessGuard productoAccessGuard;
     @Autowired private ContactoTextoPublico contactoTexto;
+    @Autowired(required = false) private com.hotclick.service.producto.ProductoCatalogQueries catalogQueries;
 
     public ResponseEntity<ResponseDTO> listarProductos(int page, int size) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
         var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE_PUBLIC));
-        // Si hay empresaId en el JWT (contexto admin de ese negocio) → mostrar sus propios productos
-        // Si es público (sin empresa, incluye ADMIN sin empresa) → catálogo filtrado (negocios aprobados y visibles)
-        // tenant-global-ok: catálogo público: la rama nula usa el filtro de negocios aprobados y visibles
-        var productos = empresaId != null
-            ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)
-            : productoService.listarTodosActivos(pageable);
+        // VIS-3a: endpoint público (home, buscador, carrito). Siempre el catálogo público, también con JWT de vendedor;
+        // la gestión de un negocio usa /admin/todos.
+        // tenant-global-ok: catálogo público filtrado (visible_catalogo + negocio ACTIVO y visible)
+        var productos = productoService.listarTodosActivos(pageable);
         return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
     }
 
@@ -136,6 +134,10 @@ public class ProductoCatalogHandler {
         try {
             Producto producto = productoService.buscarPorId(id);
             productoAccessGuard.assertCanAccessProductoDetalle(producto);
+            // La ficha muestra el mismo nombre de vendedor que la tienda (nunca la bodega interna).
+            if (catalogQueries != null) {
+                try { catalogQueries.poblarVendedorFicha(producto); } catch (RuntimeException ignored) { /* la ficha sale igual */ }
+            }
             return ResponseEntity.ok(ResponseDTO.success("Producto encontrado", producto));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));

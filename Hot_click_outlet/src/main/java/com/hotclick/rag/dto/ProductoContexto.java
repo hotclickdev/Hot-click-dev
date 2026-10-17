@@ -26,15 +26,31 @@ public record ProductoContexto(
     Integer precioPersonalizadoMax,
     String  instruccionesPersonalizacion,
     String  precioEtiqueta,
-    String  descripcionLarga
+    String  descripcionLarga,
+    /** Nombre visible del negocio (EmpresaNombre) y slug para el enlace /tienda/{slug}; null si no es público. */
+    String  empresaNombre,
+    String  empresaSlug
 ) {
+    /** Sin datos del negocio. */
+    public ProductoContexto(Long id, String nombre, String sku, Integer precio,
+                            String descripcionCorta, String imagenUrl, Integer stock,
+                            String tags, String categoria, String especificaciones, String comoUsar,
+                            Boolean esPersonalizado, String modoPrecioPersonalizado,
+                            Integer precioPersonalizadoMin, Integer precioPersonalizadoMax,
+                            String instruccionesPersonalizacion, String precioEtiqueta, String descripcionLarga) {
+        this(id, nombre, sku, precio, descripcionCorta, imagenUrl, stock, tags, categoria,
+            especificaciones, comoUsar, esPersonalizado, modoPrecioPersonalizado,
+            precioPersonalizadoMin, precioPersonalizadoMax, instruccionesPersonalizacion,
+            precioEtiqueta, descripcionLarga, null, null);
+    }
+
     /** Constructor de catálogo simple (tests / productos sin personalización). */
     public ProductoContexto(Long id, String nombre, String sku, Integer precio,
                             String descripcionCorta, String imagenUrl, Integer stock,
                             String tags, String categoria, String especificaciones, String comoUsar) {
         this(id, nombre, sku, precio, descripcionCorta, imagenUrl, stock, tags, categoria,
             especificaciones, comoUsar, false, null, null, null, null,
-            precio != null && precio > 0 ? "₡" + precio : "A cotizar", null);
+            precio != null && precio > 0 ? "₡" + precio : "A cotizar", null, null, null);
     }
 
     /** Constructor con campos de personalizado (sin descripción larga). */
@@ -47,6 +63,6 @@ public record ProductoContexto(
         this(id, nombre, sku, precio, descripcionCorta, imagenUrl, stock, tags, categoria,
             especificaciones, comoUsar, esPersonalizado, modoPrecioPersonalizado,
             precioPersonalizadoMin, precioPersonalizadoMax, instruccionesPersonalizacion,
-            precioEtiqueta, null);
+            precioEtiqueta, null, null, null);
     }
 }

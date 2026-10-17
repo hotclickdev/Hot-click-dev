@@ -1,7 +1,7 @@
 import type { PlanId } from './plan'
 
 export type EstadoProducto = 'Publicado' | 'Pausado'
-export type CategoriaProducto = 'Tecnología' | 'Ropa' | 'Otro'
+export type CategoriaProducto = string
 
 export type ProductoMock = {
   id: string
@@ -39,6 +39,9 @@ export type PedidoMock = {
   pagaAlRetirar?: boolean
   fecha: string
   direccion: string
+  telefono?: string
+  correo?: string
+  confirmaPago?: boolean
   sucursal?: string
   origen?: string
   items: ItemPedido[]
