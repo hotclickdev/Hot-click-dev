@@ -3,6 +3,7 @@ import { paymentService } from '../services/paymentService'
 import type { CheckoutPayload } from '@/types/pedido'
 import { sincronizarRetornoPagoAlIniciar } from '@/prototipo/visitante/pagoRetornoVisitante'
 import { POS_QR_TOKEN_KEY } from '@/pages/pos/POSPagoPage'
+import { guardarTokenEstadoPago, rutaEstadoPago } from '@/features/pagoPendiente/estadoPagoCheckout'
 
 const MAX_INTENTOS = 3
 const POLL_INTERVAL_MS = 3000
@@ -28,6 +29,8 @@ type PagoData = {
   monto?: number
   moneda?: string
   cancelToken?: string
+  /** #207: token de solo lectura para la página de estado del pago. Nunca va a la URL ni a analítica. */
+  estadoPagoToken?: string
 }
 
 export type TilopayCardPayload = {
@@ -105,6 +108,7 @@ export function usePayment() {
       if (data.cancelToken && data.numeroPedido) {
         sessionStorage.setItem(`hc-cancel-token:${data.numeroPedido}`, data.cancelToken)
       }
+      guardarTokenEstadoPago(data, sessionStorage)
       if (sessionStorage.getItem(POS_QR_TOKEN_KEY)) {
         sessionStorage.removeItem(POS_QR_TOKEN_KEY)
       }
@@ -112,6 +116,9 @@ export function usePayment() {
         setEstado('gift_card_paid')
       } else if (esCheckoutTilopayEmbebido(data)) {
         setEstado('tilopay_card')
+      } else if (rutaEstadoPago(data)) {
+        // Pago pendiente dentro de ONVO: la página de estado (#179) lee el token de sessionStorage.
+        setEstado('estado_pago_onvo')
       } else if (!data.redirectUrl || data.proveedor === 'SINPE' || data.proveedor === 'EFECTIVO') {
         setEstado('sinpe_pendiente')
       } else {

@@ -1,5 +1,6 @@
 import type { ErrorEvent } from '@sentry/react'
 import * as Sentry from '@sentry/react'
+import { limpiarTokensProfundo } from '@/utils/privacidadUrl'
 
 const IGNORE_ERRORS = [
   'ResizeObserver loop',
@@ -37,7 +38,18 @@ export function beforeSend(event: ErrorEvent): ErrorEvent | null {
     if (origin && file.startsWith(origin)) return true
     return file.includes('/assets/') || file.includes('/src/')
   })
-  return hasAppFrame ? event : null
+  // Nunca mandar tokens de pedido (?token=, estadoPagoToken, cancelToken) en request.url ni breadcrumbs.
+  return hasAppFrame ? limpiarTokensProfundo(event) : null
+}
+
+/** Breadcrumbs de navegación/fetch sin tokens en la URL (from/to/url). */
+export function beforeBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | null {
+  return limpiarTokensProfundo(breadcrumb)
+}
+
+/** Transacciones de browserTracing: el nombre/URL de la página tampoco lleva el token. */
+export function beforeSendTransaction<T>(event: T): T {
+  return limpiarTokensProfundo(event)
 }
 
 export function initSentry() {
@@ -51,6 +63,8 @@ export function initSentry() {
     ignoreErrors: IGNORE_ERRORS,
     denyUrls: DENY_URLS,
     beforeSend,
+    beforeBreadcrumb,
+    beforeSendTransaction,
   })
 }
 
