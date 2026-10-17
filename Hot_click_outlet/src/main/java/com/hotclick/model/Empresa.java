@@ -93,6 +93,13 @@ public class Empresa {
     @Column(name = "cobros_pausados", nullable = false)
     private Boolean cobrosPausados = false;
 
+    /** V183: motivo que escribió el admin al pausar cobros (sin datos personales). */
+    @Column(name = "cobros_pausa_motivo", length = 300)
+    private String cobrosPausaMotivo;
+
+    @Column(name = "cobros_pausados_el")
+    private java.time.OffsetDateTime cobrosPausadosEl;
+
     /** Tienda pausada por HotClick: /api/tienda/{slug} responde 410 TIENDA_PAUSADA. */
     @Column(name = "tienda_pausada", nullable = false)
     private Boolean tiendaPausada = false;
@@ -153,9 +160,12 @@ public class Empresa {
     @Column(name = "dia_cobro", nullable = false)
     private Integer diaCobro = 28;
 
-    /** Pago periódico de ventas con tarjeta: QUINCENAL o MENSUAL (V168). */
-    @Column(name = "frecuencia_payout", nullable = false, length = 10)
-    private String frecuenciaPayout = "QUINCENAL";
+    /**
+     * Pago periódico de ventas con tarjeta: QUINCENAL o MENSUAL (V168). Sin valor por defecto
+     * (decisión del dueño, V183): null = el negocio todavía no eligió.
+     */
+    @Column(name = "frecuencia_payout", length = 10)
+    private String frecuenciaPayout;
 
     @Column(name = "fecha_venc_plan")
     private LocalDate fechaVencPlan;
@@ -307,6 +317,10 @@ public class Empresa {
 
     public boolean isCobrosPausados() { return Boolean.TRUE.equals(cobrosPausados); }
     public void setCobrosPausados(Boolean cobrosPausados) { this.cobrosPausados = Boolean.TRUE.equals(cobrosPausados); }
+    public String getCobrosPausaMotivo() { return cobrosPausaMotivo; }
+    public void setCobrosPausaMotivo(String v) { this.cobrosPausaMotivo = v; }
+    public java.time.OffsetDateTime getCobrosPausadosEl() { return cobrosPausadosEl; }
+    public void setCobrosPausadosEl(java.time.OffsetDateTime v) { this.cobrosPausadosEl = v; }
 
     public Integer getEstado() { return estado; }
     public void setEstado(Integer estado) { this.estado = estado; }

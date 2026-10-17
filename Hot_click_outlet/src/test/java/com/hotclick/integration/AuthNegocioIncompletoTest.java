@@ -74,7 +74,7 @@ class AuthNegocioIncompletoTest extends BaseIntegrationTest {
     @DisplayName("registro-empresa con correo que ya tiene cuenta → 409 CORREO_YA_REGISTRADO con el siguiente paso")
     void registro_correoExistente_409() throws Exception {
         mockMvc.perform(post("/api/auth/registro-empresa").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombreEmpresa\":\"Tienda X\",\"correoEmpresa\":\"tiendax@test.cr\",\"telefonoEmpresa\":\"22224444\","
+                .content("{\"frecuenciaLiquidacion\":\"QUINCENAL\",\"nombreEmpresa\":\"Tienda X\",\"correoEmpresa\":\"tiendax@test.cr\",\"telefonoEmpresa\":\"22224444\","
                     + "\"nombreAdmin\":\"Ana\",\"correoAdmin\":\"incompleto@test.cr\",\"passwordAdmin\":\"Clave1234!\","
                     + "\"declaraMayoriaEdad\":true,\"turnstileToken\":\"ok\"}"))
             .andExpect(status().isConflict())
@@ -88,6 +88,7 @@ class AuthNegocioIncompletoTest extends BaseIntegrationTest {
     void registro_fallaAMitad_rollbackCompleto() {
         doThrow(new IllegalStateException("falla simulada")).when(bodegaDespachoInicialService).crear(any(), any(), any());
         RegistroEmpresaDTO dto = new RegistroEmpresaDTO();
+        dto.setFrecuenciaLiquidacion("QUINCENAL");
         dto.setNombreEmpresa("Tienda Atomica");
         dto.setCorreoEmpresa("atomica@test.cr");
         dto.setTelefonoEmpresa("22224444");
