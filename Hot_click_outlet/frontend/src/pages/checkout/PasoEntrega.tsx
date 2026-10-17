@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { nombreVendedor } from '@/components/comprador/productCardHelpers'
 import AvisoVariosEmprendimientos from '@/components/comprador/AvisoVariosEmprendimientos'
 import IconoFigma from '@/components/comprador/IconoFigma'
@@ -266,6 +267,7 @@ export default function PasoEntrega({ form, escritorio, onElegirEnvio }: PasoEnt
         {varios && !escritorio && <p className="text-[13px] leading-[18px] text-hc-n-600">{t('checkout.f.tiendasTexto', { count: paquetes.length })}</p>}
       </div>
       <AvisoVariosEmprendimientos cantidadNegocios={paquetes.length} />
+      <Link to="/envios" className="inline-flex min-h-11 items-center text-[13px] font-semibold text-hc-blue-600 underline">¿Cómo se calcula el envío?</Link>
       {paquetes.map((paquete, indice) => (
         <PaqueteEntrega
           key={paquete.bodegaId}
