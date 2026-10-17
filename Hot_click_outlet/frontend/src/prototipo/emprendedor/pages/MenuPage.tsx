@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import AvisoFaltaUbicacion from '../ui/AvisoFaltaUbicacion'
+import EnlaceMiTienda from '@/components/sistema/EnlaceMiTienda'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { consolaService } from '@/pages/plataforma/consola'
 import { RUTA_ONBOARDING_RAPIDO, onboardingPendiente } from '@/pages/plataforma/tiendaRapida'
@@ -45,6 +46,7 @@ export default function MenuPage() {
       <EntradaPagina className="flex w-full flex-col items-center gap-2 md:items-stretch">
         <HeroMarca />
         <AvisoFaltaUbicacion className="mb-2" />
+        <EnlaceMiTienda className="mb-2" />
         <OnboardingPrimeraVez rol="emprendedor" />
         <ListaStagger className="flex w-full flex-col gap-2">
           {armarTienda && (
