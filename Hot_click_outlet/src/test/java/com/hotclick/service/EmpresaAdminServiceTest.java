@@ -102,6 +102,38 @@ class EmpresaAdminServiceTest {
         verify(empresaAprobacionService, never()).aprobarYPublicar(99L);
     }
 
+    @Test
+    @DisplayName("Pausa de cobros: sin booleano → 400 (IllegalArgumentException) y no guarda")
+    void pausaSinBooleanoRechaza() {
+        assertThatThrownBy(() -> service.cambiarCobrosPausados(5L, "si"))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.cambiarCobrosPausados(5L, null))
+            .isInstanceOf(IllegalArgumentException.class);
+        verify(empresaRepository, never()).findById(5L);
+    }
+
+    @Test
+    @DisplayName("Pausa de cobros: pausa, guarda y audita")
+    void pausaGuardaYAudita() {
+        Empresa e = empresa(5L, "ACTIVO");
+        when(empresaRepository.findById(5L)).thenReturn(Optional.of(e));
+
+        assertThat(service.cambiarCobrosPausados(5L, true)).isTrue();
+
+        assertThat(e.isCobrosPausados()).isTrue();
+        verify(empresaRepository).save(e);
+        verify(auditoriaAdminRegistroService).registrarSiAdmin(
+            eq("EMPRESA_COBROS_PAUSADOS"), eq("EMPRESA"), eq(5L), eq(5L), eq("Pausada"));
+    }
+
+    @Test
+    @DisplayName("Pausa de tienda: sin booleano → 400 y no guarda")
+    void tiendaPausadaSinBooleanoRechaza() {
+        assertThatThrownBy(() -> service.cambiarTiendaPausada(6L, "x"))
+            .isInstanceOf(IllegalArgumentException.class);
+        verify(empresaRepository, never()).findById(6L);
+    }
+
     private static Empresa empresa(long id, String estado) {
         Empresa e = new Empresa();
         e.setId(id);
