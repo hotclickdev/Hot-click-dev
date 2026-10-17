@@ -20,6 +20,15 @@ class CheckoutConfigPublicoControllerTest {
         var body = new CheckoutConfigPublicoController(politica, guard).config().getBody();
 
         assertThat(body).containsEntry("maxUnidadesPorProducto", 3).containsEntry("contraEntregaNormal", true);
-        assertThat(body.keySet()).containsExactlyInAnyOrder("contraEntregaNormal", "maxUnidadesPorProducto");
+        assertThat(body.keySet()).containsExactlyInAnyOrder("contraEntregaNormal", "maxUnidadesPorProducto", "pagoPorTienda");
+        assertThat(body).containsEntry("pagoPorTienda", false);
+    }
+
+    @Test
+    void pagoPorTiendaSaleDeLaConfiguracion() {
+        ContraEntregaPolitica politica = mock(ContraEntregaPolitica.class);
+        GuestCheckoutGuard guard = mock(GuestCheckoutGuard.class);
+        var body = new CheckoutConfigPublicoController(politica, guard, true).config().getBody();
+        assertThat(body).containsEntry("pagoPorTienda", true);
     }
 }
