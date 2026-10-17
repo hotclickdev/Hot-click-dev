@@ -1515,7 +1515,7 @@
       "gratis": "Grátis",
       "pagoTitulo": "Como você quer pagar?",
       "sinpe": "SINPE Móvil",
-      "sinpeSub": "Para {{numero}} · você envia o comprovante",
+      "sinpeSub": "Pagamento SINPE disponível em breve dentro do gateway seguro",
       "tarjeta": "Cartão",
       "tarjetaSub": "Visa ou Mastercard",
       "tarjetaMovil": "Cartão de crédito ou débito",
@@ -1572,7 +1572,7 @@
       "contraEntrega": "Pagamento na entrega",
       "contraEntregaSub": "Pague em dinheiro ao receber (Envio Normal).",
       "sinpeTarjeta": "SINPE / Cartão",
-      "sinpeTarjetaSub": "SINPE Móvil para {{numero}} ou cartão. Cartão em breve.",
+      "sinpeTarjetaSub": "Pagamento SINPE disponível em breve dentro do gateway seguro",
       "sinpeTarjetaSubTilopay": "SINPE Móvil ou cartão, no gateway seguro.",
       "correoCuenta": "E-mail da sua conta"
     },
@@ -1672,6 +1672,7 @@
       "textoSinpe": "Recebemos o seu comprovante do SINPE Móvil. A confirmação pode levar alguns minutos; enviamos um e-mail quando for processada."
     },
     "sinpe": {
+      "pasarelaPronto": "Pagamento SINPE disponível em breve dentro do gateway seguro",
       "titulo": "Pedido registrado: faça o seu SINPE",
       "sub": "Transfira o valor exato e envie a foto do comprovante.",
       "numero": "Número SINPE",
@@ -4120,7 +4121,7 @@
       "titulo": "Como você quer pagar?",
       "tituloDesktop": "Pagamento",
       "sinpe": "SINPE Móvil",
-      "sinpeDetalle": "Para 8666-7888 · você envia o comprovante",
+      "sinpeDetalle": "Pagamento SINPE disponível em breve dentro do gateway seguro",
       "masUsado": "Mais usado",
       "tarjeta": "Cartão de crédito ou débito",
       "tarjetaDetalle": "Visa ou Mastercard · pagamento protegido",
@@ -4129,7 +4130,7 @@
       "efectivo": "Dinheiro",
       "efectivoDetalle": "Ao retirar na loja",
       "sinpePaso1": "1. Envie {{monto}} para",
-      "sinpePasos23": "2. Na descrição, coloque o número do seu pedido. 3. Envie o comprovante e confirmamos em minutos.",
+      "sinpePasos23": "Pagamento SINPE disponível em breve dentro do gateway seguro",
       "copiarNumero": "Copiar número SINPE",
       "numeroCopiado": "Número copiado",
       "numeroNoCopiado": "Não foi possível copiar o número",

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import TextoFlecha from '@/components/ui/TextoFlecha'
-import { METODOS, formatMontoPos, sugerirMontos, descomponer, type ItemCarritoPos, type PayloadCobroPos } from './posHelpers'
+import { METODOS_CAJA, formatMontoPos, sugerirMontos, descomponer, type ItemCarritoPos, type PayloadCobroPos } from './posHelpers'
 import { MetodoPagoIcon } from './posIcons'
 
 export default function StepCobro({ total, cartItems, descuento, onBack, onConfirmar, loading }: {
@@ -45,7 +45,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
             onRecibido={setRecibido}
           />
         )}
-        {(metodo === 'SINPE' || metodo === 'TARJETA') && <AvisoQr metodo={metodo} />}
+        {metodo === 'TARJETA' && <AvisoQr metodo={metodo} />}
         <button
           type="button"
           onClick={() => onConfirmar({ metodoPago: metodo, montoRecibido: metodo === 'EFECTIVO' ? recibidoNum : null })}
@@ -109,7 +109,7 @@ function ChipsMetodo({ metodo, onChange }: { metodo: string; onChange: (id: stri
   }
   return (
     <div className="flex flex-wrap gap-2">
-      {METODOS.map((opcion) => {
+      {METODOS_CAJA.map((opcion) => {
         const activo = metodo === opcion.id
         return (
           <button
@@ -260,6 +260,6 @@ function bordeInputCobro(puedeConfirmar: boolean, recibidoNum: number, faltante:
 
 function etiquetaConfirmarCobro(t: TFunction, loading: boolean, metodo: string) {
   if (loading) return t('pos.cobro.procesando')
-  if (metodo === 'SINPE' || metodo === 'TARJETA') return t('pos.cobro.generarQr')
+  if (metodo === 'TARJETA') return t('pos.cobro.generarQr')
   return t('pos.cobro.confirmarCobro')
 }

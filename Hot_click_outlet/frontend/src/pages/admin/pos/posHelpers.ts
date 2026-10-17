@@ -25,6 +25,9 @@ export const METODOS = [
   { id: 'TARJETA',  label: 'Tarjeta',     iconId: 'tarjeta',  color: '#7aa3ff', desc: 'QR a la pasarela' },
 ]
 
+/** Métodos que la caja ofrece: SINPE solo se cobra dentro de ONVO, así que la caja no genera QR SINPE (QA-NEG-056). */
+export const METODOS_CAJA = METODOS.filter((m) => m.id !== 'SINPE')
+
 export type PosStep = 'loading' | 'apertura' | 'venta' | 'cobro' | 'qr' | 'recibo'
 
 export type ItemCarritoPos = {
