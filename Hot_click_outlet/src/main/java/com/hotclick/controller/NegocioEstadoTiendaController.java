@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,7 +26,7 @@ import java.util.Map;
 @PreAuthorize("hasRole('EMPRENDEDOR')")
 public class NegocioEstadoTiendaController {
 
-    static final List<String> EN_CURSO = List.of(
+    static final java.util.Set<String> EN_CURSO = java.util.Set.of(
         Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_PENDIENTE_COMPROBANTE, Constants.PEDIDO_PENDIENTE_APROBACION,
         Constants.PEDIDO_CONFIRMADO, Constants.PEDIDO_PAGADO, Constants.PEDIDO_PREPARANDO,
         Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO, Constants.PEDIDO_ENVIADO);
