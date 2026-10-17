@@ -27,3 +27,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_onvo_cuenta_empresa_proveedor_modo
 -- Motivo y fecha de la pausa de cobros por HotClick (#154): se muestran al negocio y quedan en la auditoría.
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS cobros_pausa_motivo VARCHAR(300);
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS cobros_pausados_el TIMESTAMPTZ;
+
+-- Frecuencia de pago sin valor por defecto (decisión del dueño, 16-oct): nadie queda en QUINCENAL sin elegirlo.
+-- No toca filas existentes. Se quita también el NOT NULL para que un alta sin frecuencia quede en NULL
+-- ("sin elegir") en vez de fallar; el CHECK de V168 sigue validando QUINCENAL/MENSUAL cuando hay valor.
+-- Reversa (manual): ALTER TABLE hot_click_empresa_tb ALTER COLUMN frecuencia_payout SET DEFAULT 'QUINCENAL';
+ALTER TABLE hot_click_empresa_tb ALTER COLUMN frecuencia_payout DROP DEFAULT;
+ALTER TABLE hot_click_empresa_tb ALTER COLUMN frecuencia_payout DROP NOT NULL;

@@ -150,9 +150,12 @@ public class Empresa {
     @Column(name = "dia_cobro", nullable = false)
     private Integer diaCobro = 28;
 
-    /** Pago periódico de ventas con tarjeta: QUINCENAL o MENSUAL (V168). */
-    @Column(name = "frecuencia_payout", nullable = false, length = 10)
-    private String frecuenciaPayout = "QUINCENAL";
+    /**
+     * Pago periódico de ventas con tarjeta: QUINCENAL o MENSUAL (V168). Sin valor por defecto
+     * (decisión del dueño, V183): null = el negocio todavía no eligió.
+     */
+    @Column(name = "frecuencia_payout", length = 10)
+    private String frecuenciaPayout;
 
     @Column(name = "fecha_venc_plan")
     private LocalDate fechaVencPlan;

@@ -62,7 +62,12 @@ public class LiquidacionWalletScheduler {
     }
 
     boolean esDiaDeCorteTarjeta(Long empresaId, int dia) {
-        String frecuencia = empresaRepo.findById(empresaId).map(Empresa::getFrecuenciaPayout).orElse("QUINCENAL");
+        String frecuencia = empresaRepo.findById(empresaId).map(Empresa::getFrecuenciaPayout).orElse(null);
+        if (frecuencia == null) {
+            // Sin frecuencia elegida no se asume QUINCENAL (decisión del dueño): el saldo queda retenido hasta que elija.
+            log.warn("[liquidacion] empresa={} sin frecuencia de pago elegida: payout de tarjeta omitido", empresaId);
+            return false;
+        }
         return "MENSUAL".equals(frecuencia) ? diasMensual.contains(dia) : diasQuincenal.contains(dia);
     }
 
