@@ -57,11 +57,29 @@ public class CuentaOnvoNegocioService {
         return frecuenciaDe(cuenta(empresaId).orElse(null));
     }
 
-    /** @throws IllegalArgumentException si la frecuencia no es QUINCENAL ni MENSUAL. */
+    /** Código estable (Frontend #170) para frecuencia ausente o inválida. */
+    public static final String CODIGO_FRECUENCIA_INVALIDA = "FRECUENCIA_INVALIDA";
+
+    /**
+     * Decisión del dueño: no hay frecuencia por defecto; el negocio elige QUINCENAL o MENSUAL y es obligatorio.
+     * Usar también en el alta del negocio cuando el registro la pida.
+     *
+     * @return la frecuencia normalizada (QUINCENAL | MENSUAL)
+     * @throws IllegalArgumentException si falta, viene vacía o no es QUINCENAL ni MENSUAL.
+     */
+    public static String exigirFrecuencia(Object valor) {
+        if (!(valor instanceof String texto) || texto.isBlank()) {
+            throw new IllegalArgumentException("La frecuencia de liquidación es obligatoria: QUINCENAL o MENSUAL");
+        }
+        String f = texto.trim().toUpperCase(Locale.ROOT);
+        if (!FRECUENCIAS.contains(f)) throw new IllegalArgumentException("La frecuencia debe ser QUINCENAL o MENSUAL");
+        return f;
+    }
+
+    /** @throws IllegalArgumentException si la frecuencia falta o no es QUINCENAL ni MENSUAL. */
     @Transactional
     public Map<String, Object> cambiarFrecuencia(Long empresaId, Object valor, Long actor) {
-        String f = valor == null ? "" : valor.toString().trim().toUpperCase(Locale.ROOT);
-        if (!FRECUENCIAS.contains(f)) throw new IllegalArgumentException("La frecuencia debe ser QUINCENAL o MENSUAL");
+        String f = exigirFrecuencia(valor);
         NegocioOnvoCuenta c = cuenta(empresaId).orElseGet(() -> {
             NegocioOnvoCuenta n = new NegocioOnvoCuenta();
             n.setEmpresaId(empresaId);

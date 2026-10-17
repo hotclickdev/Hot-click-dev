@@ -52,7 +52,7 @@ public class NegocioOnvoController {
         } catch (IllegalArgumentException e) {
             Map<String, Object> err = new java.util.LinkedHashMap<>();
             err.put("success", false);
-            err.put("code", "FRECUENCIA_INVALIDA");
+            err.put("code", CuentaOnvoNegocioService.CODIGO_FRECUENCIA_INVALIDA);
             err.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(err);
         }

@@ -132,6 +132,34 @@ class NegocioOnvoCuentaTest extends BaseIntegrationTest {
     }
 
     @Test
+    void frecuenciaObligatoria_sinDefault_400() throws Exception {
+        for (String body : new String[]{"{}", "{\"frecuencia\":null}", "{\"frecuencia\":\"\"}",
+                "{\"frecuencia\":\"  \"}", "{\"frecuencia\":1}", "{\"frecuencia\":[\"MENSUAL\"]}"}) {
+            cambiar(tokenDueno, body).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("FRECUENCIA_INVALIDA"));
+        }
+        mockMvc.perform(put("/api/negocio/onvo/frecuencia").header("Authorization", tokenDueno))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("FRECUENCIA_INVALIDA"));
+        // Nada se guardó: sin elección la frecuencia sigue en null (no hay valor por defecto).
+        mockMvc.perform(get("/api/negocio/onvo/frecuencia").header("Authorization", tokenDueno))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.actual").doesNotExist())
+            .andExpect(jsonPath("$.data.pendiente").doesNotExist());
+        org.junit.jupiter.api.Assertions.assertTrue(
+            cuentaRepository.count() == 0, "una frecuencia inválida no debe crear la cuenta");
+    }
+
+    @Test
+    void exigirFrecuencia_normaliza() {
+        org.junit.jupiter.api.Assertions.assertEquals("MENSUAL",
+            com.hotclick.service.onvo.CuentaOnvoNegocioService.exigirFrecuencia(" mensual "));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+            () -> com.hotclick.service.onvo.CuentaOnvoNegocioService.exigirFrecuencia(null));
+    }
+
+    @Test
     void personalDelNegocio_403() throws Exception {
         mockMvc.perform(get("/api/negocio/onvo/estado").header("Authorization", tokenPersonal))
             .andExpect(status().isForbidden());
