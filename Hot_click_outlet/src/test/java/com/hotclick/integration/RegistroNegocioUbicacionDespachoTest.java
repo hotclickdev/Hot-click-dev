@@ -143,6 +143,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/auth/nuevo-negocio con ubicación → bodega ligada")
     void nuevoNegocio_conUbicacion_creaBodega() throws Exception {
+        darNegocioPrevio();
         String body = """
             {"nombreEmpresa":"Segundo Ubic","correoEmpresa":"segundo-ubic@test.cr",
              "provincia":"Limón","canton":"Pococí","direccionExacta":"Guápiles centro"}
@@ -163,6 +164,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/auth/nuevo-negocio con ubicación a medias → 400 y no crea negocio")
     void nuevoNegocio_ubicacionAMedias_400() throws Exception {
+        darNegocioPrevio();
         String body = """
             {"nombreEmpresa":"Medias","correoEmpresa":"medias-ubic@test.cr","canton":"Pococí"}
             """;
@@ -177,6 +179,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/auth/nuevo-negocio sin ubicación (payload viejo) → 200 sin bodega")
     void nuevoNegocio_sinUbicacion_200() throws Exception {
+        darNegocioPrevio();
         String body = """
             {"nombreEmpresa":"Viejo","correoEmpresa":"viejo-ubic@test.cr"}
             """;
@@ -248,5 +251,16 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
         b.setEmpresa(empresa);
         b.setEstado(Constants.ESTADO_ACTIVO);
         bodegaRepository.saveAndFlush(b);
+    }
+    /** S2-multinegocio: «Crear otro» exige al menos un negocio previo del usuario. */
+    private void darNegocioPrevio() {
+        Empresa previa = new Empresa();
+        previa.setNombreEmpresa("Negocio Previo Ubic");
+        previa.setSlug("negocio-previo-ubic");
+        previa.setCorreoEmpresa("previo-ubic@test.cr");
+        previa.setEstadoEmpresa("ACTIVO");
+        previa.setFechaRegistro(LocalDateTime.now());
+        previa = empresaRepository.saveAndFlush(previa);
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(testUser, previa, "PROPIETARIO"));
     }
 }

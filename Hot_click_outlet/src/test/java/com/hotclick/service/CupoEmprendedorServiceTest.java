@@ -63,8 +63,7 @@ class CupoEmprendedorServiceTest {
     void reservaExitosaEsGratis() {
         stubPlan();
         when(jdbc.update(contains("usados < limite"))).thenReturn(1);
-        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
-            .thenReturn(CupoEmprendedorEstado.of(1, 70));
+        when(jdbc.queryForObject(contains("SELECT usados"), eq(Integer.class))).thenReturn(1);
 
         Empresa empresa = new Empresa();
         ResultadoAltaCupo alta = service.aplicarAlta(empresa, "tienda@correo.com");
