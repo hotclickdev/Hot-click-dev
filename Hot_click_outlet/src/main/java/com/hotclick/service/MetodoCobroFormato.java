@@ -114,12 +114,18 @@ public final class MetodoCobroFormato {
         return limpio;
     }
 
+    /**
+     * PCI-1: la API solo acepta los últimos 4 dígitos. Un PAN completo (o cualquier
+     * cosa con más de 4 dígitos) se rechaza con 400 sin recortarlo ni guardarlo.
+     */
     private static String limpiarTarjeta(String raw) {
         String digitos = raw.replaceAll("\\D", "");
-        if (digitos.length() < 4) {
-            throw new IllegalArgumentException("Indicá al menos los últimos 4 dígitos.");
+        if (digitos.length() > 4) {
+            throw new IllegalArgumentException("Enviá solo los últimos 4 dígitos de la tarjeta.");
         }
-        // Solo guardamos últimos 4 como referencia (no PAN completo).
-        return digitos.substring(digitos.length() - 4);
+        if (digitos.length() < 4) {
+            throw new IllegalArgumentException("Indicá los últimos 4 dígitos.");
+        }
+        return digitos;
     }
 }
