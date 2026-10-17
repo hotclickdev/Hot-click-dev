@@ -37,3 +37,17 @@ describe('pedidosListaHelpers', () => {
     expect(estiloEstadoPedido('Esperando pago').color).toBe('var(--hc-warning)')
   })
 })
+
+describe('QA-NEG-061/027 título y hora del pedido', () => {
+  it('usa el código ORD y no el id global', async () => {
+    const { tituloPedido } = await import('./pedidosListaHelpers')
+    expect(tituloPedido({ id: '56', numeroPedido: 'ORD-0F62293FA211' })).toBe('Pedido ORD-0F62293FA211')
+    expect(tituloPedido({ id: '56' })).toBe('Pedido #56')
+  })
+  it('muestra fecha y hora de Costa Rica', async () => {
+    const { fechaHoraPedido } = await import('./pedidosListaHelpers')
+    expect(fechaHoraPedido('2026-10-16T23:05:00Z')).toBe('16/10/2026 17:05')
+    expect(fechaHoraPedido('')).toBe('')
+    expect(fechaHoraPedido('nada')).toBe('')
+  })
+})

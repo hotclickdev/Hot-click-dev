@@ -32,6 +32,8 @@ export type ItemPedido = {
 
 export type PedidoMock = {
   id: string
+  /** Código del pedido (ORD-…/POS-…); el id es interno y global (QA-NEG-061). */
+  numeroPedido?: string
   cliente: string
   total: number
   estado: EstadoPedido

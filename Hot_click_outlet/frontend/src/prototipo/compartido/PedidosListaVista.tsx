@@ -11,6 +11,8 @@ import {
   FILTROS_PEDIDOS,
   filtrarPedidos,
   estiloEstadoPedido,
+  fechaHoraPedido,
+  tituloPedido,
 } from './pedidosListaHelpers'
 import { etiquetaOrigenPedido } from './ventaLlegada'
 
@@ -134,7 +136,7 @@ function TarjetaPedido({
     >
       <div className="flex items-center justify-between">
         <p className={emp ? 'text-[13px] font-bold' : 'text-sm font-medium'}>
-          Pedido #{pedido.id}
+          {tituloPedido(pedido)}
         </p>
         <span
           className="rounded-full px-2.5 py-1 text-[10px] font-medium"
@@ -145,7 +147,11 @@ function TarjetaPedido({
       </div>
       <p className={emp ? 'text-[11px] text-hc-muted' : 'mt-2 text-xs text-hc-muted'}>
         {pedido.cliente}
+        {pedido.correo ? ` · ${pedido.correo}` : ''}
       </p>
+      {fechaHoraPedido(pedido.fecha) ? (
+        <p className="text-[11px] text-hc-muted">{fechaHoraPedido(pedido.fecha)}</p>
+      ) : null}
       <p className="text-[11px] text-hc-blue-600">Llegó por {etiquetaOrigenPedido(pedido.origen)}</p>
       {sucursalLinea ? (
         <p className="mt-1 text-xs text-hc-muted">{sucursalLinea}</p>

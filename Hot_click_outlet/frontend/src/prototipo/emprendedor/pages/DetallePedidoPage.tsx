@@ -9,6 +9,7 @@ import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { usePedidosEmprendedor } from '../hooks/usePedidosEmprendedor'
 import DespacharPedidoVista from './DespacharPedidoVista'
+import { tituloPedido } from '@/prototipo/compartido/pedidosListaHelpers'
 
 /**
  * Detalle de pedido y despacho (Figma `37:1780`, antes 128:157 / 352:10640).
@@ -78,7 +79,7 @@ export default function DetallePedidoPage() {
   }
 
   return (
-    <EmprendedorPageFrame titulo={puedeDespachar(pedido.estado) && !pedido.pagaAlRetirar ? t('despacho.titulo') : `Pedido #${pedido.id}`} volverA={`${RUTA_EMPRENDEDOR}/pedidos`}>
+    <EmprendedorPageFrame titulo={puedeDespachar(pedido.estado) && !pedido.pagaAlRetirar ? t('despacho.titulo') : tituloPedido(pedido)} volverA={`${RUTA_EMPRENDEDOR}/pedidos`}>
       <DespacharPedidoVista pedido={pedido} guia={guia} onGuia={setGuia} marcando={marcando} error={errorMarca} onMarcar={() => void marcarEnviado()} onEntregar={() => void marcarEntregado()} onCancelar={() => void cambiar(cancelarPedidoVendedorApi)} onConfirmarPago={() => void cambiar(confirmarPagoVendedorApi)} />
     </EmprendedorPageFrame>
   )

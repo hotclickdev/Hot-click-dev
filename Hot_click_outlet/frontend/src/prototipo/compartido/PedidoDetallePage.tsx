@@ -8,7 +8,7 @@ import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { usePedidosEmprendedor } from '@/prototipo/emprendedor/hooks/usePedidosEmprendedor'
 import { cancelarPedidoVendedorApi, confirmarPagoVendedorApi, marcarPedidoEntregadoApi, marcarPedidoEnviadoApi } from './pedidosVendedorApi'
 import { mensajeErrorDespacho, puedeCancelar, puedeDespachar } from './estadoPedidoVendedor'
-import { estiloEstadoPedido } from './pedidosListaHelpers'
+import { estiloEstadoPedido, tituloPedido } from './pedidosListaHelpers'
 import type { PlanConfig } from './plan'
 import type { PedidoMock } from './mock'
 import EntradaPagina from './motion/EntradaPagina'
@@ -104,10 +104,10 @@ export default function PedidoDetallePage() {
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12 md:pt-12">
       <EntradaPagina>
         <div className="md:hidden">
-          <EncabezadoPagina titulo={`Pedido #${pedido.id}`} volverA={ruta('pedidos')} />
+          <EncabezadoPagina titulo={tituloPedido(pedido)} volverA={ruta('pedidos')} />
         </div>
         <header className="mb-5 hidden md:block">
-          <h1 className="font-display text-[28px] font-bold">Pedido #{pedido.id}</h1>
+          <h1 className="font-display text-[28px] font-bold">{tituloPedido(pedido)}</h1>
           {plan.id === 'negocioPlus' || pedido.sucursal ? (
             <p className="mt-1 text-sm text-hc-muted">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
           ) : null}

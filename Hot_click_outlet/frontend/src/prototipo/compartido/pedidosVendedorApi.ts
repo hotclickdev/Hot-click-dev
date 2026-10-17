@@ -33,6 +33,7 @@ export function aPedidoEmprendedor(p: Pedido): PedidoEmprendedor {
   const estado = estadoPedidoVendedor(estadoCrudo, datos)
   return {
     id: String(p.id ?? ''),
+    numeroPedido: p.numeroPedido || undefined,
     cliente: p.nombreCliente ?? 'Cliente',
     total: Number(p.total ?? p.totalPedido ?? 0),
     estado,
@@ -50,6 +51,7 @@ export function aPedidoEmprendedor(p: Pedido): PedidoEmprendedor {
 export function aPedidoSeller(p: PedidoEmprendedor): PedidoMock {
   return {
     id: p.id,
+    numeroPedido: p.numeroPedido,
     cliente: p.cliente,
     total: p.total,
     estado: p.estado,

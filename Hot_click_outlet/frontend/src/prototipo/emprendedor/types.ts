@@ -26,6 +26,8 @@ export type ProductoEmprendedor = {
 
 export type PedidoEmprendedor = {
   id: string
+  /** Código del pedido (ORD-…/POS-…); el id es interno y global (QA-NEG-061). */
+  numeroPedido?: string
   cliente: string
   total: number
   /** 'Pendiente' = pago confirmado, por despachar (ver estadoPedidoVendedor). */
