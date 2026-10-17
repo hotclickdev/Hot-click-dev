@@ -52,6 +52,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         String grupoVarianteId, Integer estado, Boolean visibleCatalogo);
 
     @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND p.empresa.id = :empresaId " +
+           "AND (p.visibleCatalogo IS NULL OR p.visibleCatalogo = true) " +
            "AND (LOWER(p.nombreProducto) LIKE LOWER(CONCAT('%',:q,'%')) OR p.sku = :q OR p.barcode = :q)")
     List<Producto> buscarPorTextoOCodigoEnEmpresa(
             @Param("q") String q, @Param("empresaId") Long empresaId, Pageable pageable);
@@ -281,6 +282,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query("SELECT p FROM Producto p WHERE p.categoria.id = :catId AND p.empresa.id = :empId AND p.estado = 1")
     List<Producto> findByCategoriaIdAndEmpresaId(@Param("catId") Long catId, @Param("empId") Long empId);
+
+    /** POS (QA-NEG extra 26): solo productos activos y no pausados ({@code visibleCatalogo = false}). */
+    @Query("SELECT p FROM Producto p WHERE p.categoria.id = :catId AND p.empresa.id = :empId AND p.estado = 1 "
+         + "AND (p.visibleCatalogo IS NULL OR p.visibleCatalogo = true)")
+    List<Producto> findVendiblesPosPorCategoria(@Param("catId") Long catId, @Param("empId") Long empId);
 
     @Query("SELECT p FROM Producto p WHERE p.categoria.id = :catId AND p.estado = 1")
     List<Producto> findByCategoriaId(@Param("catId") Long catId);

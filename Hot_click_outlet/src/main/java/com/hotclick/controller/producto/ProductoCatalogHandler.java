@@ -76,7 +76,7 @@ public class ProductoCatalogHandler {
         if (empresaId == null) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida en el contexto"));
         }
-        var productos = productoRepository.findByCategoriaIdAndEmpresaId(catId, empresaId);
+        var productos = productoRepository.findVendiblesPosPorCategoria(catId, empresaId);
         return ResponseEntity.ok(ResponseDTO.success("OK", productos));
     }
 

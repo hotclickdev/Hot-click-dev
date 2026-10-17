@@ -89,6 +89,7 @@ public class PosVentaService {
     /**
      * Ítem 7 (producto 565): un producto eliminado (estado ≠ activo) no se vende en caja.
      * NP-11: un personalizado «a cotizar» no tiene precio (el sistema lo guarda en ₡1): no se vende por POS.
+     * QA-NEG extra 26: un producto pausado ({@code visibleCatalogo = false}) tampoco se vende en caja.
      */
     public static void exigirVendiblePorPos(Producto producto) {
         if (producto.getEstado() == null || producto.getEstado() != Constants.ESTADO_ACTIVO) {
@@ -98,6 +99,10 @@ public class PosVentaService {
                 && "COTIZACION".equalsIgnoreCase(producto.getModoPrecioPersonalizado())) {
             throw new IllegalStateException("«" + producto.getNombreProducto()
                 + "» es a cotizar: no tiene precio para cobrarlo en caja. Ponele un precio fijo o vendelo como encargo.");
+        }
+        if (Boolean.FALSE.equals(producto.getVisibleCatalogo())) {
+            throw new IllegalStateException("«" + producto.getNombreProducto()
+                + "» está pausado. Activalo en tus productos para venderlo en caja.");
         }
     }
 
