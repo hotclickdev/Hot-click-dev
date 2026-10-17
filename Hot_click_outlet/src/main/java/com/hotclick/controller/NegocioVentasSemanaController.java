@@ -37,6 +37,9 @@ import java.util.Map;
 @PreAuthorize("hasRole('EMPRENDEDOR')")
 public class NegocioVentasSemanaController {
 
+    /** Tope de ventas por semana en la respuesta (protege el endpoint ante negocios muy grandes). */
+    static final int MAX_LIST_VENTAS = 5000;
+
     private final CompanyScope companyScope;
     private final EmpresaRepository empresaRepository;
     private final WalletTransaccionRepository ledger;
@@ -66,7 +69,8 @@ public class NegocioVentasSemanaController {
         long tBruto = 0, tComision = 0, conMinimo = 0;
         for (WalletTransaccion t : ledger
                 .findByEmpresaIdAndTipoAndFechaCreacionGreaterThanEqualAndFechaCreacionLessThanOrderByFechaCreacionAsc(
-                    empresaId, WalletTransaccion.CREDITO_VENTA, lunes.atStartOfDay(), domingo.plusDays(1).atStartOfDay())) {
+                    empresaId, WalletTransaccion.CREDITO_VENTA, lunes.atStartOfDay(), domingo.plusDays(1).atStartOfDay(),
+                    org.springframework.data.domain.PageRequest.of(0, MAX_LIST_VENTAS))) {
             long bruto = n(t.getTotalBruto());
             long comision = n(t.getComisionSaas()) + n(t.getComisionGw());
             Long porPct = pct != null ? BigDecimal.valueOf(bruto).multiply(pct)

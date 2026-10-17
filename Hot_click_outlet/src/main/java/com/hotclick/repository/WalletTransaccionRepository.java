@@ -71,5 +71,5 @@ public interface WalletTransaccionRepository extends JpaRepository<WalletTransac
 
     /** S4-23: movimientos de un tipo del negocio en [desde, hasta), en orden cronológico. */
     List<WalletTransaccion> findByEmpresaIdAndTipoAndFechaCreacionGreaterThanEqualAndFechaCreacionLessThanOrderByFechaCreacionAsc(
-        Long empresaId, String tipo, LocalDateTime desde, LocalDateTime hasta);
+        Long empresaId, String tipo, LocalDateTime desde, LocalDateTime hasta, Pageable pagina);
 }
