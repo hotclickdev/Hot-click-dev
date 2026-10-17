@@ -1,13 +1,14 @@
 import api from '@/services/api'
 
 /**
- * S6-20 · Banner «Ya podés cobrar en línea» — CONTRATO SUPUESTO (backend ONVO marketplace).
- *   GET /api/empresa/onvo/estado → { estado: 'SIN_REGISTRAR'|'PENDIENTE'|'ACTIVA'|'PAUSADA'|'RECHAZADA' }
- * Si el endpoint real se llama distinto, solo cambia esta capa. Si falla, no se muestra nada.
+ * S6-20 · Banner «Ya podés cobrar en línea». Contrato real de #197 (`docs/contratos/S3-06-onvo-estado-frecuencia.md`):
+ *   GET /api/negocio/onvo/estado (alias /api/empresa/onvo/estado) →
+ *     { estado: 'SIN_CUENTA'|'ONBOARDING_PENDIENTE'|'EN_REVISION'|'ACTIVA'|'PAUSADA'|'SUSPENDIDA', frecuencia, pausadaEl, motivoPausa }
+ * Mismo enum que S2-25. Solo el propietario lo puede leer (el personal recibe 403): si falla, no se muestra nada.
  * El banner se cierra por negocio y queda guardado en localStorage (solo una bandera, sin datos personales).
  */
-export type EstadoOnvo = 'SIN_REGISTRAR' | 'PENDIENTE' | 'ACTIVA' | 'PAUSADA' | 'RECHAZADA'
-const ESTADOS: EstadoOnvo[] = ['SIN_REGISTRAR', 'PENDIENTE', 'ACTIVA', 'PAUSADA', 'RECHAZADA']
+export type EstadoOnvo = 'SIN_CUENTA' | 'ONBOARDING_PENDIENTE' | 'EN_REVISION' | 'ACTIVA' | 'PAUSADA' | 'SUSPENDIDA'
+const ESTADOS: EstadoOnvo[] = ['SIN_CUENTA', 'ONBOARDING_PENDIENTE', 'EN_REVISION', 'ACTIVA', 'PAUSADA', 'SUSPENDIDA']
 
 export function normalizarEstadoOnvo(data: unknown): EstadoOnvo | null {
   const root = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
@@ -17,7 +18,7 @@ export function normalizarEstadoOnvo(data: unknown): EstadoOnvo | null {
 }
 
 export const bannerCobrosApi = {
-  estado: () => api.get('/empresa/onvo/estado').then((r) => normalizarEstadoOnvo(r.data)),
+  estado: () => api.get('/negocio/onvo/estado').then((r) => normalizarEstadoOnvo(r.data)),
 }
 
 export const claveCerrado = (empresaId: string | number) => `hc.bannerCobros.cerrado.${empresaId}`
