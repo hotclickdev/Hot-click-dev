@@ -14,6 +14,7 @@ import type { PedidoMock } from './mock'
 import EntradaPagina from './motion/EntradaPagina'
 import EstadoVacioConversacional from './motion/EstadoVacioConversacional'
 import { EASE_PREMIUM } from './motion/formularioMotionTokens'
+import { etiquetaPedido } from '@/utils/numeroPedidoTienda'
 
 /**
  * Detalle de pedido (Figma 127:290 / 126:297) — API real.
@@ -104,10 +105,10 @@ export default function PedidoDetallePage() {
     <main className="px-5 pb-8 pt-[60px] md:px-12 md:py-12 md:pt-12">
       <EntradaPagina>
         <div className="md:hidden">
-          <EncabezadoPagina titulo={`Pedido #${pedido.id}`} volverA={ruta('pedidos')} />
+          <EncabezadoPagina titulo={etiquetaPedido(pedido)} volverA={ruta('pedidos')} />
         </div>
         <header className="mb-5 hidden md:block">
-          <h1 className="font-display text-[28px] font-bold">Pedido #{pedido.id}</h1>
+          <h1 className="font-display text-[28px] font-bold">{etiquetaPedido(pedido)}</h1>
           {plan.id === 'negocioPlus' || pedido.sucursal ? (
             <p className="mt-1 text-sm text-hc-muted">{pedido.sucursal ?? 'Sucursal no asignada'}</p>
           ) : null}

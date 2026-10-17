@@ -1,6 +1,7 @@
 import type { Variants } from 'framer-motion'
 import { formatPrice } from '@/utils/format'
 import { isoDay } from '../sistema-inicio/sistemaInicioHelpers'
+import { numeroVisiblePedido } from '@/utils/numeroPedidoTienda'
 
 /** Roles that see the first-run setup banner. */
 export const ROLES_NEGOCIO = new Set<string>(['EMPRENDEDOR'])
@@ -22,6 +23,9 @@ export const stagger: { container: Variants; item: Variants } = {
 /** Resumen de venta/pedido que consume el dashboard admin. */
 export type VentaDashboard = {
   id?: number | string
+  numeroPedido?: string
+  /** S4-20: número propio de la tienda; `null` en pedidos viejos. */
+  numeroTienda?: number | null
   estado?: string
   total?: number
   fechaCreacion?: string
@@ -55,6 +59,18 @@ export type DashboardStats = {
   usuariosPendientes?: number
   stockBajo?: number
   categorias?: CategoriaConteo[]
+  /** S4-20: `data.ultimoPedido.numeroTienda` (contrato de #194). */
+  ultimoPedido?: UltimoPedidoDashboard | null
+}
+
+/** `DashboardDTO.UltimoPedidoDTO` del backend; sin `id`. */
+export type UltimoPedidoDashboard = {
+  numeroPedido?: string
+  numeroTienda?: number | null
+  fechaPedido?: string
+  estadoPedido?: string
+  totalPedido?: number
+  clienteNombre?: string
 }
 
 export type SalesDay = {
@@ -118,7 +134,7 @@ export function buildActivity(ventas: VentaDashboard[], users: UsuarioDashboard[
     items.push({
       type: 'sale',
       id: `sale-${v.id}`,
-      title: `Nueva venta #${v.id}`,
+      title: `Nueva venta${numeroVisiblePedido(v) ? ` ${numeroVisiblePedido(v)}` : ''}`,
       desc: `${v.nombreCliente ?? v.cliente?.nombre ?? 'Cliente'} — ${formatPrice(v.total ?? 0)}`,
       date: v.fechaCreacion,
       badge: v.estado,
