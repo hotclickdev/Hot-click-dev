@@ -1627,7 +1627,9 @@
       "verPedido": "View my order",
       "guardarTitulo": "Save this order in your account",
       "guardarTexto": "With one tap we create your account with this email: follow the shipment, buy again and save favorites.",
-      "guardarBoton": "Create my account in one tap"
+      "guardarBoton": "Create my account in one tap",
+      "yaTenesCuenta": "Already have an account?",
+      "iniciarSesionMisPedidos": "Sign in to see your purchases in “My orders”"
     },
     "fallo": {
       "titulo": "We could not process the payment",
