@@ -29,7 +29,7 @@ class TerminosProhibidosServiceTest {
 
     @Test
     void coincideAlInicioDePalabra_enNombreDescripcionOCategoria() {
-        when(repo.findAll()).thenReturn(List.of(t("vape"), t("tabaco"), t("armas"), t("drogas")));
+        when(repo.findTop500ByOrderByTerminoAsc()).thenReturn(List.of(t("vape"), t("tabaco"), t("armas"), t("drogas")));
         assertThat(service.terminoEncontrado("Vapeador", null, null, null)).contains("vape");
         assertThat(service.terminoEncontrado("Caja", "con Tabáco", null, null)).contains("tabaco");
         assertThat(service.terminoEncontrado("Caja", null, null, "Armas y defensa")).contains("armas");

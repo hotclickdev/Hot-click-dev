@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TerminoProhibidoRepository extends JpaRepository<TerminoProhibido, Long> {
-    List<TerminoProhibido> findAllByOrderByTerminoAsc();
+    /** Lista acotada (la edita el ADMIN a mano; cientos como mucho). */
+    List<TerminoProhibido> findTop500ByOrderByTerminoAsc();
     Optional<TerminoProhibido> findByTermino(String termino);
 }

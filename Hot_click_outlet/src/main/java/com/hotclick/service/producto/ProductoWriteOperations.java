@@ -164,6 +164,7 @@ public class ProductoWriteOperations {
                                             CategoriaRepository categorias, Producto p) {
         String categoria = null;
         if (p.getCategoria() != null) {
+            // tenant-global-ok: la categoría es catálogo global de la plataforma (no de un negocio); solo se lee el nombre.
             // El updater trabaja sin transacción: la categoría puede ser un proxy LAZY; el id sí se lee sin inicializar.
             categoria = org.hibernate.Hibernate.isInitialized(p.getCategoria())
                 ? p.getCategoria().getNombreCategoria()

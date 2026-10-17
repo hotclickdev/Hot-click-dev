@@ -38,7 +38,7 @@ public class TerminosProhibidosService {
 
     @Transactional(readOnly = true)
     public List<TerminoProhibido> listar() {
-        return repo.findAllByOrderByTerminoAsc();
+        return repo.findTop500ByOrderByTerminoAsc();
     }
 
     @Transactional
@@ -58,16 +58,18 @@ public class TerminosProhibidosService {
         repo.deleteById(id);
     }
 
-    /** Primer término prohibido presente en alguno de los textos, o vacío. */
+    /** Primer término prohibido presente en alguno de los textos, o vacío. Una sola consulta acotada. */
     @Transactional(readOnly = true)
     public Optional<String> terminoEncontrado(String... textos) {
-        StringBuilder sb = new StringBuilder(" ");
-        for (String t : textos) sb.append(normalizar(t)).append(' ');
-        String texto = sb.toString();
-        for (TerminoProhibido tp : repo.findAll()) {
-            if (texto.contains(" " + tp.getTermino())) return Optional.of(tp.getTermino());
-        }
-        return Optional.empty();
+        List<String> terminos = repo.findTop500ByOrderByTerminoAsc().stream().map(TerminoProhibido::getTermino).toList();
+        return primerTermino(terminos, textos);
+    }
+
+    /** Puro, sin base de datos: un término coincide al inicio de una palabra del texto normalizado. */
+    static Optional<String> primerTermino(List<String> terminos, String... textos) {
+        String texto = " " + java.util.Arrays.stream(textos).map(TerminosProhibidosService::normalizar)
+            .collect(java.util.stream.Collectors.joining(" ")) + " ";
+        return terminos.stream().filter(t -> texto.contains(" " + t)).findFirst();
     }
 
     /** 400 con mensaje claro si el producto trae un término prohibido. */
