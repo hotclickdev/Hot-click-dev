@@ -1,13 +1,14 @@
 import api from '@/services/api'
 
 /**
- * S4-22 · Pago pendiente SINPE — CONTRATO SUPUESTO (backend en S4-06/S4-08, todavía no existe).
+ * S4-22 · Pago pendiente SINPE de ONVO. Contrato real de #207 (`docs/contratos/S4-22-estado-pago-publico.md`).
+ * El token es `estadoPagoToken` (del checkout; distinto del `cancelToken`). Token inválido o pedido inexistente → 404.
  *
  *   GET /api/public/pedidos/{numero}/estado-pago?token=…  →
  *     { estado: 'PENDIENTE'|'CONFIRMADO'|'VENCIDO', numero, tienda, correo, cantidadProductos,
  *       subtotal, envioEtiqueta, envio, total, reservadoHasta: string|null }
- * `reservadoHasta` lo da ONVO; mientras no se publique el plazo llega null y la UI dice
- * «plazo según ONVO (por confirmar)». Montos: todos vienen del backend.
+ * `reservadoHasta`: ISO con zona CR, o null si no hay plazo configurado (`hotclick.sinpe.plazo-minutos` sin valor):
+ * con null la UI no muestra ningún plazo. CANCELADO y FALLIDO llegan como VENCIDO. Montos: todos vienen del backend.
  */
 export type EstadoPago = 'PENDIENTE' | 'CONFIRMADO' | 'VENCIDO'
 
