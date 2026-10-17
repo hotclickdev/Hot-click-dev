@@ -9,6 +9,8 @@ import { WHATSAPP_HOTCLICK, urlWhatsApp } from '@/pages/carrito/cartHelpers'
 import type { ChangeEvent, FormEvent } from 'react'
 import type { UbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
 import type { RegistroEmpresaForm } from './registroEmpresaHelpers'
+import CampoFrecuenciaAlta from '@/features/liquidacion/CampoFrecuenciaAlta'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
 
 const MENSAJE_WA_TRIBUTACION =
   'Hola HotClick, quiero vender pero aún no estoy inscrito en Tributación Directa. ¿Me ayudan con el proceso de inscripción?'
@@ -55,6 +57,7 @@ function AvisoTributacion({ inscrito, onChange }: { inscrito: boolean; onChange:
 
 export default function StepDatosEmpresa({
   form, ubicacion, error, onCampo, onTelefono, onInscritoTributacionChange, onSubmit,
+  frecuencia, errorFrecuencia, onFrecuencia, onFrecuenciaInvalida,
 }: {
   form: RegistroEmpresaForm
   ubicacion: UbicacionDespachoForm
@@ -63,14 +66,19 @@ export default function StepDatosEmpresa({
   onTelefono: (val: string) => void
   onInscritoTributacionChange: (v: boolean) => void
   onSubmit: (e: FormEvent) => void
+  frecuencia: Frecuencia | null
+  errorFrecuencia: string | null
+  onFrecuencia: (f: Frecuencia) => void
+  onFrecuenciaInvalida: () => void
 }) {
   return (
     <motion.form key="s0" {...STEP_MOTION} onSubmit={onSubmit} className="space-y-4">
       <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
         value={form.nombreEmpresa} onChange={onCampo('nombreEmpresa')} required />
       <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-        Con el nombre alcanza para empezar. Ubicación, contacto y datos de facturación los completás después en tu panel.
+        Con el nombre y la frecuencia de pago alcanza para empezar. Ubicación, contacto y datos de facturación los completás después en tu panel.
       </p>
+      <CampoFrecuenciaAlta valor={frecuencia} onCambiar={onFrecuencia} error={errorFrecuencia} onInvalido={onFrecuenciaInvalida} />
       <details className="rounded-[10px] border px-3 py-2" style={{ borderColor: 'var(--hc-border)' }}>
         <summary className="cursor-pointer text-sm font-semibold" style={{ color: 'var(--hc-text)', minHeight: 44, display: 'flex', alignItems: 'center' }}>
           Agregar más datos ahora (opcional)

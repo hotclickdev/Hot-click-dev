@@ -1,4 +1,6 @@
 import api from '@/services/api'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
+import { conFrecuenciaAlta } from '@/features/liquidacion/frecuenciaAlta'
 
 export const consolaService = {
   buscar: (q: string) => api.get('/admin/consola/buscar', { params: { q } }),
@@ -19,8 +21,8 @@ export const consolaService = {
     api.post('/admin/consola/notas', { empresaId, nota, proximaAccion, bandeja }),
   efectivo: (id: string, monto: number) => api.put(`/admin/consola/recolecciones/${id}/efectivo`, { monto }),
   rapidas: () => api.get('/admin/consola/tiendas-rapidas'),
-  crearRapida: (negocio: string, persona: string, telefono: string, dias: number) =>
-    api.post('/admin/consola/tiendas-rapidas', { negocio, persona, telefono, dias }),
+  crearRapida: (negocio: string, persona: string, telefono: string, dias: number, frecuencia: Frecuencia | null) =>
+    api.post('/admin/consola/tiendas-rapidas', conFrecuenciaAlta({ negocio, persona, telefono, dias }, frecuencia)),
   verRapida: (token: string) => api.get(`/public/tienda-rapida/${token}`),
   completarRapida: (token: string, datos: {
     persona: string; cedula: string; correo: string; telefono: string; acepto: boolean; versionLegal: string

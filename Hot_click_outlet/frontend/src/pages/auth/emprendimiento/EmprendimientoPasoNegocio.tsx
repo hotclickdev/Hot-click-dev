@@ -7,12 +7,15 @@ import UbicacionDespachoFieldset from '@/components/registro/UbicacionDespachoFi
 import type { ChangeEvent, Dispatch, FormEvent, SetStateAction } from 'react'
 import type { UbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
 import type { FormEmprendimiento } from '../EmprendimientoForm'
+import CampoFrecuenciaAlta from '@/features/liquidacion/CampoFrecuenciaAlta'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
 
 /**
  * Paso 0 — datos del negocio.
  */
 export default function EmprendimientoPasoNegocio({
   form, ubicacion, error, actualizarCampo, setForm, onSubmit,
+  frecuencia, errorFrecuencia, onFrecuencia, onFrecuenciaInvalida,
 }: {
   form: FormEmprendimiento
   ubicacion: UbicacionDespachoForm
@@ -20,6 +23,10 @@ export default function EmprendimientoPasoNegocio({
   actualizarCampo: (field: keyof FormEmprendimiento) => (e: ChangeEvent<HTMLInputElement>) => void
   setForm: Dispatch<SetStateAction<FormEmprendimiento>>
   onSubmit: (e: FormEvent) => void
+  frecuencia: Frecuencia | null
+  errorFrecuencia: string | null
+  onFrecuencia: (f: Frecuencia) => void
+  onFrecuenciaInvalida: () => void
 }) {
   return (
     <motion.form key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
@@ -32,6 +39,7 @@ export default function EmprendimientoPasoNegocio({
       <PhoneField label="Teléfono del negocio"
         value={form.telefonoEmpresa} onChange={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))} />
       <UbicacionDespachoFieldset form={ubicacion} />
+      <CampoFrecuenciaAlta valor={frecuencia} onCambiar={onFrecuencia} error={errorFrecuencia} onInvalido={onFrecuenciaInvalida} />
       {error && <ErrMsg>{error}</ErrMsg>}
       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
         style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>

@@ -20,6 +20,9 @@ import {
 } from '@/prototipo/compartido/ubicacionDespachoHelpers'
 import type { Id, JsonBody } from '@/types/api'
 import type { AuthResponse } from '@/types/auth'
+import CampoFrecuenciaAlta from '@/features/liquidacion/CampoFrecuenciaAlta'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
+import { conFrecuenciaAlta, errorFrecuenciaAlta, esErrorFrecuenciaAlta } from '@/features/liquidacion/frecuenciaAlta'
 
 type ToastFn = (opts: { message: string; type?: 'success' | 'error' | 'warning' | 'info' }) => void
 type CampoPerfil = 'nombre' | 'apellidoPaterno' | 'apellidoMaterno' | 'telefono'
@@ -45,6 +48,8 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
   const [negocioTelefono,  setNegocioTelefono]     = useState('')
   const [savingNegocio,    setSavingNegocio]       = useState(false)
   const negocioUbicacion = useUbicacionDespachoForm()
+  const [negocioFrecuencia, setNegocioFrecuencia] = useState<Frecuencia | null>(null)
+  const [errorFrecuencia,   setErrorFrecuencia]   = useState<string | null>(null)
 
   useEffect(() => {
     if (!userId) return
@@ -69,6 +74,8 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
     setNegocioNombre('')
     setNegocioCorreo('')
     setNegocioTelefono('')
+    setNegocioFrecuencia(null)
+    setErrorFrecuencia(null)
     negocioUbicacion.reiniciar()
   }
 
@@ -77,14 +84,24 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
     if (!negocioNombre.trim()) return
     if (!negocioCorreo.trim()) { toast({ message: 'El correo oficial del negocio es requerido', type: 'error' }); return }
     if (!negocioUbicacion.validar()) { toast({ message: MENSAJE_UBICACION_INCOMPLETA, type: 'error' }); return }
+    const faltaFrecuencia = errorFrecuenciaAlta(negocioFrecuencia)
+    setErrorFrecuencia(faltaFrecuencia)
+    if (faltaFrecuencia) return
     setSavingNegocio(true)
     try {
-      const { data } = await authService.nuevoNegocio({
+      // 400 FRECUENCIA_INVALIDA: el aviso queda junto al selector, sin toast.
+      const respuesta = await authService.nuevoNegocio(conFrecuenciaAlta({
         nombreEmpresa:   negocioNombre.trim(),
         correoEmpresa:   negocioCorreo.trim().toLowerCase(),
         telefonoEmpresa: negocioTelefono.trim() || undefined,
         ...payloadUbicacionRegistro(negocioUbicacion.ubicacion),
+      }, negocioFrecuencia)).catch((err: unknown) => {
+        if (!esErrorFrecuenciaAlta(err)) throw err
+        setErrorFrecuencia(errorFrecuenciaAlta(null))
+        return null
       })
+      if (!respuesta) return
+      const { data } = respuesta
       const authData = (data as { data?: AuthResponse })?.data ?? (data as AuthResponse)
       storeLogin(authData as AuthResponse)
       toast({ message: '¡Negocio creado! Ahora estás trabajando en el nuevo negocio.', type: 'success' })
@@ -224,6 +241,12 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
                 </div>
               </div>
               <UbicacionDespachoFieldset form={negocioUbicacion} />
+              <CampoFrecuenciaAlta
+                valor={negocioFrecuencia}
+                onCambiar={(f) => { setNegocioFrecuencia(f); setErrorFrecuencia(null) }}
+                error={errorFrecuencia}
+                onInvalido={() => setErrorFrecuencia(errorFrecuenciaAlta(negocioFrecuencia))}
+              />
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="submit"

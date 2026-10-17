@@ -22,6 +22,9 @@ import { mensajeErrorAuth } from './auth/authHelpers'
 import type { AuthResponse } from '@/types/auth'
 import type { FormNegocio, ContribuyenteHacienda } from './registrar-negocio/registrarNegocioTypes'
 import type { JsonBody } from '@/types/api'
+import CampoFrecuenciaAlta from '@/features/liquidacion/CampoFrecuenciaAlta'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
+import { conFrecuenciaAlta, errorFrecuenciaAlta, esErrorFrecuenciaAlta } from '@/features/liquidacion/frecuenciaAlta'
 
 /** Página de registro de negocio — orquesta estado, envío y secciones visuales. */
 export default function RegistrarNegocioPage() {
@@ -50,6 +53,8 @@ export default function RegistrarNegocioPage() {
   const [error,         setError]         = useState('')
   const [aceptaAcuerdo, setAceptaAcuerdo] = useState(false)
   const ubicacion = useUbicacionDespachoForm()
+  const [frecuencia, setFrecuencia] = useState<Frecuencia | null>(null)
+  const [errorFrecuencia, setErrorFrecuencia] = useState<string | null>(null)
 
   const destino = destinoVender({ tokenVivo: true, rol: userRole, empresaId })
   if (destino !== RUTA_REGISTRAR_NEGOCIO) {
@@ -82,6 +87,9 @@ export default function RegistrarNegocioPage() {
     if (!aceptaAcuerdo) { setError('Debés aceptar el Acuerdo de Vendedores para continuar'); return }
     if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
     if (!ubicacion.validar()) { setError(MENSAJE_UBICACION_INCOMPLETA); return }
+    const faltaFrecuencia = errorFrecuenciaAlta(frecuencia)
+    setErrorFrecuencia(faltaFrecuencia)
+    if (faltaFrecuencia) { setError(''); return }
     if (cedula && !haciendaValida) {
       setError('Verificá tu inscripción en Hacienda antes de continuar')
       return
@@ -89,7 +97,7 @@ export default function RegistrarNegocioPage() {
     setError(''); setLoading(true)
     authService.registrarConsentimiento('VENDEDOR')
     try {
-      const payload = {
+      const payload = conFrecuenciaAlta({
         ...form,
         ...payloadUbicacionRegistro(ubicacion.ubicacion),
         ...(haciendaValida && {
@@ -98,13 +106,14 @@ export default function RegistrarNegocioPage() {
           regimenTributario: haciendaResult!.regimen,
           nombreHacienda:    haciendaResult!.nombre,
         }),
-      }
+      }, frecuencia)
       const { data } = await authService.upgradeEmprendedor(payload as JsonBody)
       login((data as AuthResponse & { data?: AuthResponse })?.data ?? (data as AuthResponse))
       toast({ message: '¡Negocio registrado! Bienvenido al panel de emprendedor.', type: 'success' })
       navigate(RUTA_PANEL_VENDEDOR, { replace: true })
     } catch (err: unknown) {
-      setError(mensajeErrorAuth(err, 'Error al registrar el negocio'))
+      if (esErrorFrecuenciaAlta(err)) setErrorFrecuencia(errorFrecuenciaAlta(null))
+      else setError(mensajeErrorAuth(err, 'Error al registrar el negocio'))
     } finally { setLoading(false) }
   }
 
@@ -120,6 +129,12 @@ export default function RegistrarNegocioPage() {
               onTelefono={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))}
             />
             <UbicacionDespachoFieldset form={ubicacion} />
+            <CampoFrecuenciaAlta
+              valor={frecuencia}
+              onCambiar={(f) => { setFrecuencia(f); setErrorFrecuencia(null) }}
+              error={errorFrecuencia}
+              onInvalido={() => setErrorFrecuencia(errorFrecuenciaAlta(frecuencia))}
+            />
             <HaciendaVerificacion
               cedula={cedula}
               setCedula={setCedula}
