@@ -85,6 +85,7 @@ public class DashboardService {
     private UltimoPedidoDTO mapUltimoPedido(Pedido p) {
         UltimoPedidoDTO up = new UltimoPedidoDTO();
         up.setNumeroPedido(p.getNumeroPedido());
+        up.setNumeroTienda(p.getNumeroTienda());
         up.setFechaPedido(p.getFechaPedido());
         up.setEstadoPedido(p.getEstadoPedido());
         up.setTotalPedido(p.getTotalPedido());

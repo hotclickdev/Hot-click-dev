@@ -61,6 +61,7 @@ public class DashboardDTO {
 
     public static class UltimoPedidoDTO {
         private String numeroPedido;
+        private Long numeroTienda;
         private LocalDateTime fechaPedido;
         private String estadoPedido;
         private Integer totalPedido;
@@ -70,6 +71,8 @@ public class DashboardDTO {
 
         public String getNumeroPedido() { return numeroPedido; }
         public void setNumeroPedido(String numeroPedido) { this.numeroPedido = numeroPedido; }
+        public Long getNumeroTienda() { return numeroTienda; }
+        public void setNumeroTienda(Long numeroTienda) { this.numeroTienda = numeroTienda; }
 
         public LocalDateTime getFechaPedido() { return fechaPedido; }
         public void setFechaPedido(LocalDateTime fechaPedido) { this.fechaPedido = fechaPedido; }
