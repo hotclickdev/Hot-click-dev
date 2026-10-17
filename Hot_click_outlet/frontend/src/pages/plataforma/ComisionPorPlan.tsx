@@ -30,7 +30,6 @@ export default function ComisionPorPlan() {
 
   useEffect(() => {
     let vivo = true
-    setEstado('carga')
     cargarComisionPorPlan(rango)
       .then((d) => { if (vivo) { setDatos(d); setEstado('listo') } })
       .catch((err: unknown) => {
@@ -44,7 +43,10 @@ export default function ComisionPorPlan() {
     e.preventDefault()
     const motivo = errorRango(borrador)
     setErrorForm(motivo)
-    if (!motivo) setRango({ ...borrador })
+    if (!motivo) {
+      setEstado('carga')
+      setRango({ ...borrador })
+    }
   }
 
   const filtro = (
