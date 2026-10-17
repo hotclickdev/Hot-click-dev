@@ -5,6 +5,7 @@ import IconoFigma from '@/components/comprador/IconoFigma'
 import useAuthStore from '@/store/authStore'
 import { leerUltimoPedido } from '@/utils/ultimoPedido'
 import { ICONOS_PAGO } from './iconosPago'
+import IniciarSesionInvitado from './IniciarSesionInvitado'
 import { BotonPago, IconoEstado, MarcoPago } from './PiezasPago'
 import type { PagoResumen } from './pagoHelpers'
 
@@ -115,6 +116,9 @@ export default function PagoExito({ pagoData, numeroPedido, token }: PagoExitoPr
             </h2>
             <p className="text-[13px] leading-[18px] text-hc-n-600">{t('payment.exito.guardarTexto')}</p>
             <BotonPago to="/registro" variante="azul">{t('payment.exito.guardarBoton')}</BotonPago>
+          </div>
+          <div className="pt-3">
+            <IniciarSesionInvitado />
           </div>
         </section>
       )}

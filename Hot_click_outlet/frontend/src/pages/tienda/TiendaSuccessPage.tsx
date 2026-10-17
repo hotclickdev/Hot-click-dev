@@ -2,6 +2,8 @@ import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_PAGO } from '@/pages/pago/iconosPago'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
+import useAuthStore from '@/store/authStore'
+import IniciarSesionInvitado from '@/pages/pago/IniciarSesionInvitado'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
 import { enlaceWhatsappSoporte } from '@/components/comprador/estados/falloServidorHelpers'
@@ -18,6 +20,7 @@ export default function TiendaSuccessPage() {
   const { state } = useLocation()
   const [params] = useSearchParams()
   const { empresa } = useTiendaStore()
+  const token = useAuthStore((s) => s.token)
   const numeroPedido = (params.get('orden') || state?.numeroPedido || '').trim()
   const total = state?.total
   // Con plan PYME o NEGOCIO_PLUS se escribe al vendedor; en EMPRENDEDOR la consulta va a HotClick.
@@ -82,6 +85,9 @@ export default function TiendaSuccessPage() {
         )}
         <BotonTienda variante="primario" to={`/tienda/${slug}`}>Seguir comprando</BotonTienda>
       </div>
+
+      {/* S4-19: invitado → siempre la invitación neutra a iniciar sesión (no revela si el correo tiene cuenta). */}
+      {!token && <IniciarSesionInvitado />}
     </div>
   )
 }
