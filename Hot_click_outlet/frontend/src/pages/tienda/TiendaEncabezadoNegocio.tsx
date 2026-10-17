@@ -48,7 +48,9 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
   const { t } = useTranslation()
   const compartir = useCompartirTienda(nombre)
   // WhatsApp e Instagram solo con plan PYME o NEGOCIO_PLUS (contactoDirecto del backend).
-  const { whatsapp, instagram } = contactoVisible(empresa)
+  // Tienda pausada: sin redes ni Compartir (handoff extra §2).
+  const pausada = empresa?.pausada === true
+  const { whatsapp, instagram } = pausada ? { whatsapp: null, instagram: null } : contactoVisible(empresa)
   const desde = mesAnioCorto(empresa?.enHotclickDesde)
   const textoWhatsapp = encodeURIComponent(t('tienda.waTexto', { nombre }))
 
@@ -95,10 +97,10 @@ export default function TiendaEncabezadoNegocio({ empresa, nombre }: { empresa: 
               Instagram
             </a>
           )}
-          <button type="button" onClick={compartir} className={CLASE_ACCION_SECUNDARIA}>
+          {!pausada && <button type="button" onClick={compartir} className={CLASE_ACCION_SECUNDARIA}>
             <IconoFigma src={ICONOS_TIENDA.accionCompartir} size={16} className="lg:!size-[18px]" />
             {t('tienda.compartir')}
-          </button>
+          </button>}
         </div>
       </div>
     </section>

@@ -4,6 +4,7 @@ import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import useWishlistStore from '@/store/wishlistStore'
 import { esProductoCotizable, textoPrecioProducto } from '@/utils/precioProducto'
 import TiendaPlaceholder from './TiendaPlaceholder'
+import { CHIP_AGOTADO } from '@/features/pausaTienda/tiendaPausada'
 import type { Producto } from '@/types/producto'
 
 /** Boceto 13: el «+» es secundario (borde n200, 44 × 44) para que «Ver pedido» sea la única CTA roja. */
@@ -14,8 +15,10 @@ const CLASE_AGREGAR = 'flex size-11 shrink-0 items-center justify-center rounded
  * comprador, pero el botón suma al pedido aislado de esta tienda y los productos a cotizar abren su ficha.
  */
 export default function TiendaProductoCard({
-  slug, producto, vendedor, agregado, onAgregar,
+  slug, producto, vendedor, agregado, onAgregar, agotado = false,
 }: {
+  /** Tienda pausada: chip AGOTADO y sin «Agregar». */
+  agotado?: boolean
   slug: string
   producto: Producto
   vendedor: string
@@ -38,6 +41,7 @@ export default function TiendaProductoCard({
             </div>
             )}
       </Link>
+      {agotado && <span className="absolute left-2 top-2 rounded-full border border-hc-n-200 bg-hc-surface px-2.5 py-0.5 text-[11px] font-bold text-hc-n-900">{CHIP_AGOTADO}</span>}
       <button
         type="button"
         onClick={() => toggleFavorito(producto)}
@@ -56,7 +60,7 @@ export default function TiendaProductoCard({
           <p className="whitespace-nowrap font-display text-[15px] font-bold leading-[normal] text-hc-n-900">
             {textoPrecioProducto(producto)}
           </p>
-          {esProductoCotizable(producto) ? (
+          {agotado ? null : esProductoCotizable(producto) ? (
             <Link to={destino} aria-label={`Personalizar ${nombre}`} className={CLASE_AGREGAR}>
               <IconoFigma src={ICONOS_COMPRADOR.agregar} size={16} />
             </Link>

@@ -11,6 +11,7 @@ import TiendaHeader from './TiendaHeader'
 import TiendaFooter from './TiendaFooter'
 import TiendaBarraPedido from './TiendaBarraPedido'
 import TiendaNoDisponible from './TiendaNoDisponible'
+import { esTiendaPausada, infoTiendaPausada } from '@/features/pausaTienda/tiendaPausada'
 import TiendaInfoError from './TiendaInfoError'
 import EsqueletoTiendaLayout from './EsqueletoTiendaLayout'
 import type { EmpresaTiendaPublica } from '@/types/tienda'
@@ -38,6 +39,11 @@ export default function TiendaLayout() {
         setInfoEstado('lista')
       })
       .catch((err: unknown) => {
+        if (esTiendaPausada(err)) {
+          setEmpresa(slug as string, infoTiendaPausada<EmpresaTiendaPublica>(err, slug as string))
+          setInfoEstado('lista')
+          return
+        }
         console.error('[TiendaLayout] getInfo', err)
         setInfoEstado(estadoTrasFalloInfo(err))
       })

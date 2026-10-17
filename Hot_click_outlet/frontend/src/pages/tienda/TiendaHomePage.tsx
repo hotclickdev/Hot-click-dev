@@ -9,6 +9,8 @@ import TiendaPortada from './TiendaPortada'
 import TiendaEncabezadoNegocio from './TiendaEncabezadoNegocio'
 import TiendaComoComprarle from './TiendaComoComprarle'
 import TiendaProductoCard from './TiendaProductoCard'
+import AvisoTiendaPausada from '@/features/pausaTienda/AvisoTiendaPausada'
+import { esTiendaPausada, productosTiendaPausada } from '@/features/pausaTienda/tiendaPausada'
 import { VerPedidoEscritorio } from './TiendaBarraPedido'
 import EsqueletoCatalogo from './EsqueletoCatalogo'
 import TiendaCatalogoError from './TiendaCatalogoError'
@@ -54,6 +56,11 @@ export default function TiendaHomePage() {
         setPage(p)
       })
       .catch((err: unknown) => {
+        if (esTiendaPausada(err)) {
+          const lista = productosTiendaPausada<Producto>(err)
+          setProductos(lista); setTotalPages(1); setTotalProductos(lista.length); setPage(0)
+          return
+        }
         console.error('[TiendaHomePage] productos', err)
         setLoadError(true)
         setProductos([])
@@ -106,6 +113,7 @@ export default function TiendaHomePage() {
     <div>
       <TiendaPortada nombre={nombre} portadaUrl={empresa?.ogImagenUrl} />
       <TiendaEncabezadoNegocio empresa={empresa} nombre={nombre} />
+      {empresa?.pausada && <div className="mx-auto max-w-[1232px] px-4 pt-3"><AvisoTiendaPausada /></div>}
 
       <div className="mx-auto grid max-w-[1232px] grid-cols-1 px-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:pb-14 lg:pt-8">
         {sobreNosotros && (
@@ -146,6 +154,7 @@ export default function TiendaHomePage() {
                   vendedor={nombre}
                   agregado={!!agregados[String(p.id)]}
                   onAgregar={handleAgregar}
+                  agotado={empresa?.pausada === true}
                 />
               ))}
             </div>

@@ -11,6 +11,8 @@ import PreguntaProducto from '@/pages/producto/PreguntaProducto'
 import OpinionesProducto from '@/pages/producto/OpinionesProducto'
 import ProductVideo from '@/pages/producto/ProductVideo'
 import CarruselProductos from '@/pages/producto/CarruselProductos'
+import AvisoTiendaPausada from '@/features/pausaTienda/AvisoTiendaPausada'
+import { BOTON_NO_DISPONIBLE, CHIP_AGOTADO, esTiendaPausada, productoTiendaPausada } from '@/features/pausaTienda/tiendaPausada'
 import type { Producto } from '@/types/producto'
 
 /** Productos con 3 o menos se anuncian como "Quedan N" en ámbar (mismo umbral que la ficha del marketplace). */
@@ -24,7 +26,9 @@ const STOCK_BAJO = 3
 export default function TiendaProductoPage() {
   const { slug, productoId } = useParams()
   const navigate = useNavigate()
-  const { agregarAlCarrito } = useTiendaStore()
+  const { agregarAlCarrito, empresa } = useTiendaStore()
+  const [pausadaPorApi, setPausadaPorApi] = useState(false)
+  const pausada = pausadaPorApi || empresa?.pausada === true
   const [producto, setProducto] = useState<Producto | null>(null)
   const [loading, setLoading] = useState(true)
   const [cantidad, setCantidad] = useState(1)
@@ -37,7 +41,11 @@ export default function TiendaProductoPage() {
     setLoading(true)
     tiendaService.getProducto(slug as string, productoId as string)
       .then((p) => setProducto(p ?? null))
-      .catch(() => navigate(`/tienda/${slug}`, { replace: true }))
+      .catch((err: unknown) => {
+        const p = esTiendaPausada(err) ? productoTiendaPausada<Producto>(err) : null
+        if (p) { setProducto(p); setPausadaPorApi(true); return }
+        navigate(`/tienda/${slug}`, { replace: true })
+      })
       .finally(() => setLoading(false))
   }, [slug, productoId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -55,7 +63,7 @@ export default function TiendaProductoPage() {
   }, [slug, productoId])
 
   const handleAgregar = () => {
-    if (!producto) return
+    if (!producto || pausada) return
     agregarAlCarrito(producto, cantidad)
     setAgregado(true)
     setTimeout(() => setAgregado(false), 1500)
@@ -108,7 +116,8 @@ export default function TiendaProductoPage() {
           {producto.descripcion && (
             <p className="text-[14px] leading-[21px] text-hc-n-600 wrap-anywhere lg:text-[15px] lg:leading-[23px]">{producto.descripcion}</p>
           )}
-          <div className="hidden lg:block">
+          {pausada && (<><span className="w-fit rounded-full border border-hc-n-200 bg-hc-surface px-2.5 py-0.5 text-[11px] font-bold">{CHIP_AGOTADO}</span><AvisoTiendaPausada /></>)}
+          <div className={pausada ? 'hidden' : 'hidden lg:block'}>
             <TiendaBuyActions
               variante="inline"
               slug={slug as string}
@@ -144,7 +153,12 @@ export default function TiendaProductoPage() {
           accion={{ texto: 'Ver todos', to: `/tienda/${slug}` }}
         />
       </div>
-      <div className="lg:hidden">
+      {pausada && (
+        <div className="sticky bottom-0 z-10 bg-[var(--t-surface)] p-4 lg:static lg:mx-auto lg:max-w-[1232px]">
+          <button type="button" disabled className="flex min-h-12 w-full items-center justify-center rounded-xl border border-hc-n-200 text-[15px] font-semibold text-hc-n-600">{BOTON_NO_DISPONIBLE}</button>
+        </div>
+      )}
+      <div className={pausada ? 'hidden' : 'lg:hidden'}>
         <TiendaBuyActions
           variante="barra"
           slug={slug as string}
