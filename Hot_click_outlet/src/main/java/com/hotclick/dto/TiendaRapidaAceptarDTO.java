@@ -14,5 +14,7 @@ public record TiendaRapidaAceptarDTO(
     @Size(max = 150) String persona,
     @Size(max = 30) String cedula,
     @Size(max = 150) String correo,
-    @Size(max = 30) String telefono
+    @Size(max = 30) String telefono,
+    /** QUINCENAL o MENSUAL, obligatorio (400 FRECUENCIA_INVALIDA si falta). Alias aceptado: frecuenciaPayout. */
+    @com.fasterxml.jackson.annotation.JsonAlias("frecuenciaPayout") @Size(max = 12) String frecuenciaLiquidacion
 ) {}

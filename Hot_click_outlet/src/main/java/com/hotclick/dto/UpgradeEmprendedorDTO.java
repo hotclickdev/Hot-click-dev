@@ -52,4 +52,10 @@ public class UpgradeEmprendedorDTO {
     public UbicacionDespachoAlta ubicacionDespacho() {
         return new UbicacionDespachoAlta(provincia, canton, direccionExacta, permiteRetiroCliente, distrito);
     }
+
+    /** QUINCENAL o MENSUAL, obligatorio (400 FRECUENCIA_INVALIDA si falta). Alias aceptado: frecuenciaPayout. */
+    @com.fasterxml.jackson.annotation.JsonAlias("frecuenciaPayout")
+    private String frecuenciaLiquidacion;
+    public String getFrecuenciaLiquidacion() { return frecuenciaLiquidacion; }
+    public void setFrecuenciaLiquidacion(String v) { this.frecuenciaLiquidacion = v; }
 }
