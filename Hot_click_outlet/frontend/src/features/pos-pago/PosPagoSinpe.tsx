@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
 import { formatPrice } from '@/utils/format'
 import { useTilopaySdk, type TilopaySinpeDatos } from '@/hooks/useTilopaySdk'
-import { sinpeNumeroVisible } from './posPagoFormat'
 import type { QrPagoInfo } from './posPagoTypes'
 import PosPagoReporteModal from './PosPagoReporteModal'
 import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
@@ -93,7 +92,6 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
             <p className="text-[14px] leading-[16px] text-hc-n-600">
               {t('pos.pago.sinpePaso1', { monto: formatPrice(datos.amount ?? info.total ?? 0) })}
             </p>
-            <ValorCopiable valor={sinpeNumeroVisible(datos.number ?? '')} />
             <p className="text-[12px] leading-[14px] text-hc-n-600">{t('pos.pago.sinpePaso1Nota')}</p>
           </Paso>
           <Paso numero={2}>

@@ -27,6 +27,15 @@ public class OrderPricingService {
      *
      * @param gcSaldoRestante saldo de la tarjeta de regalo que aún no usaron otros paquetes del mismo checkout
      */
+    public static final String MSG_CUPON_INVALIDO = "El cupón no es válido para estos productos. Quitalo o probá con otro.";
+
+    /** CMP-2: un cupón escrito que no aplica a ningún negocio del carrito se rechaza (antes se ignoraba en silencio). */
+    public void exigirCuponValido(String codigoCupon, java.util.Collection<Long> empresaIds) {
+        if (codigoCupon == null || codigoCupon.isBlank()) return;
+        boolean aplica = empresaIds.stream().anyMatch(id -> cuponService.validarParaEmpresa(codigoCupon, id).isPresent());
+        if (!aplica) throw new IllegalArgumentException(MSG_CUPON_INVALIDO);
+    }
+
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio, int gcSaldoRestante) {
         int costoEnvio = calcularCostoEnvio(metodoEnvio);
@@ -73,6 +82,18 @@ public class OrderPricingService {
         Empresa empresa = bodega.getEmpresa();
         BigDecimal pct = empresa.getPctDescuentoSinpe();
         return (int) ComisionPrecioMath.descuentoSinpe(base, pct);
+    }
+
+    /** Métodos de envío con tarifa propia; el resto cuesta 0 (retiro). */
+    public static final java.util.List<String> METODOS_ENVIO = java.util.List.of(
+        "RETIRO_EN_TIENDA", "ENCOMIENDA_PROPIA", "ENVIO_A_DOMICILIO",
+        "ENVIO_NORMAL_GAM", "ENVIO_NORMAL_FUERA_GAM", "ENVIO_RAPIDO");
+
+    /** Tabla de envío para el frontend: la única fuente es {@link #calcularCostoEnvio}. */
+    public java.util.Map<String, Integer> tarifasEnvio() {
+        java.util.Map<String, Integer> r = new java.util.LinkedHashMap<>();
+        for (String m : METODOS_ENVIO) r.put(m, calcularCostoEnvio(m));
+        return r;
     }
 
     /** La encomienda la cobra la empresa de transporte al retirar en la terminal: no se cobra en el checkout. */

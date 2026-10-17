@@ -40,10 +40,29 @@ export function pieTarjeta(t: Traducir, compra: CompraCliente, idioma: string): 
   return t(`misPedidos.pie.${estado}`)
 }
 
-/** «24 set. 2026 · pagado con SINPE Móvil». */
+/** Alias de método que llegan del API con otro nombre (la tienda manda SINPE_MOVIL). */
+const ALIAS_METODO: Record<string, string> = { SINPE_MOVIL: 'SINPE', CONTRA_ENTREGA: 'EFECTIVO' }
+
+/** Nombre legible del método de pago; nunca el código crudo («SINPE_MOVIL»). */
+export function nombreMetodoPago(t: Traducir, metodoPago?: string): string {
+  if (!metodoPago) return ''
+  const codigo = metodoPago.trim().toUpperCase()
+  return t(`misPedidos.metodoPago.${ALIAS_METODO[codigo] ?? codigo}`, { defaultValue: '' })
+}
+
+/**
+ * «24 set. 2026 · pagado con SINPE Móvil» solo cuando el pago está confirmado; mientras algún paquete
+ * siga pendiente de pago: «24 set. 2026 · pago pendiente (SINPE Móvil)».
+ */
 export function pagadoCon(t: Traducir, compra: CompraCliente, idioma: string): string {
   const fecha = fechaCorta(compra.fecha, idioma)
-  const metodo = compra.metodoPago ? t(`misPedidos.metodoPago.${compra.metodoPago}`, { defaultValue: '' }) : ''
+  const metodo = nombreMetodoPago(t, compra.metodoPago)
+  const pendiente = compra.paquetes.some((p) => estadoPaquete(p) === 'pendiente')
+  if (pendiente) {
+    return metodo
+      ? t('misPedidos.detalle.pagoPendienteCon', { fecha, metodo })
+      : t('misPedidos.detalle.pagoPendiente', { fecha })
+  }
   return metodo ? t('misPedidos.detalle.pagadoCon', { fecha, metodo }) : fecha
 }
 

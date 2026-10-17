@@ -1,6 +1,8 @@
 import type { Producto, ProductoBackend } from '@/types/producto'
+import { nombreVendedor } from '@/components/comprador/productCardHelpers'
 import type { ItemCarrito } from '@/types/carrito'
-import { SHIPPING_COSTS, paquetesDesdeItems } from '@/pages/checkout/checkoutHelpers'
+import { paquetesDesdeItems } from '@/pages/checkout/checkoutHelpers'
+import { costoDeEnvio, type TarifasEnvio } from '@/config/tarifasEnvio'
 import type { ItemCheckout, PaqueteCheckout } from '@/pages/checkout/checkoutHelpers'
 
 export const WHATSAPP_HOTCLICK = '50686667888'
@@ -70,15 +72,15 @@ export type PaqueteCarrito = {
 }
 
 /** Paquetes del checkout con el envío del método elegido en cada uno (resumen de Figma `29:1408`, `30:2492`). */
-export function paquetesConEnvioElegido(paquetes: PaqueteCheckout[], metodos: Record<string, string>): PaqueteCarrito[] {
+export function paquetesConEnvioElegido(paquetes: PaqueteCheckout[], metodos: Record<string, string>, tarifas: TarifasEnvio): PaqueteCarrito[] {
   return paquetes.map((paquete) => {
     const metodo = metodos[paquete.bodegaId] ?? 'ENVIO_NORMAL_GAM'
     return {
       clave: paquete.bodegaId,
-      negocio: paquete.empresaNombre || paquete.bodegaNombre,
+      negocio: nombreVendedor(paquete),
       items: paquete.items as ItemCarrito[],
       subtotal: paquete.subtotal,
-      envio: SHIPPING_COSTS[metodo] ?? 0,
+      envio: costoDeEnvio(tarifas, metodo),
       metodo,
       envioVaria: metodo === 'ENCOMIENDA_PROPIA',
     }
@@ -86,13 +88,13 @@ export function paquetesConEnvioElegido(paquetes: PaqueteCheckout[], metodos: Re
 }
 
 /** Agrupa el carrito por paquete (misma regla del checkout) y estima el envío normal de cada uno. */
-export function paquetesDelCarrito(items: ItemCarrito[]): PaqueteCarrito[] {
+export function paquetesDelCarrito(items: ItemCarrito[], tarifas: TarifasEnvio): PaqueteCarrito[] {
   return paquetesDesdeItems(items as ItemCheckout[]).map((paquete) => ({
     clave: paquete.bodegaId,
-    negocio: paquete.empresaNombre || paquete.bodegaNombre,
+    negocio: nombreVendedor(paquete),
     items: paquete.items as ItemCarrito[],
     subtotal: paquete.subtotal,
-    envio: SHIPPING_COSTS.ENVIO_NORMAL_GAM,
+    envio: costoDeEnvio(tarifas, 'ENVIO_NORMAL_GAM'),
   }))
 }
 

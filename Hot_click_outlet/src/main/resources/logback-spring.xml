@@ -1,12 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <!-- requestId injected by MdcRequestIdFilter; falls back to '-' when absent -->
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:--}] %logger{36} - %msg%n</pattern>
-    </encoder>
-  </appender>
+  <!-- LOG-1: el mensaje y la traza pasan por RedaccionLog (IBAN, cédula, onboardingUrl, secretos). -->
+  <conversionRule conversionWord="msgSeguro" converterClass="com.hotclick.logging.MensajeEnmascaradoConverter" />
+  <!-- exSeguro = %rEx enmascarado: causa raíz primero y el mismo recorte de líneas. -->
+  <conversionRule conversionWord="exSeguro" converterClass="com.hotclick.logging.ExcepcionEnmascaradaConverter" />
+
+  <!--
+    S1-65 / QA-CONC-6 (propuesta DevOps, /workspace/infra/S1-65-rotacion-logs.md): solo consola, Docker
+    rota la salida (json-file 20m x 3). Stack recortado a 12 líneas por causa, igual que %rEx{12};
+    el stack completo va a Sentry.
+  -->
+  <property name="PATRON" value="%d{ISO8601} %-5level [%thread] [%X{requestId:--}] %logger{36} - %msgSeguro%n%exSeguro{12}" />
+
+  <!-- Prod hoy corre con el perfil "default" (sin SPRING_PROFILES_ACTIVE). -->
+  <springProfile name="default | prod | production">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <!-- requestId lo pone MdcRequestIdFilter; '-' si no hay -->
+        <pattern>${PATRON}</pattern>
+      </encoder>
+    </appender>
+  </springProfile>
+
+  <springProfile name="!default &amp; !prod &amp; !production">
+    <!-- Dev/test: mismo formato y el mismo enmascarado. -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>${PATRON}</pattern>
+      </encoder>
+    </appender>
+  </springProfile>
 
   <root level="WARN">
     <appender-ref ref="CONSOLE" />

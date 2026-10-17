@@ -25,3 +25,12 @@ describe('formatTelefonoCR (R2: 8888-1234)', () => {
     expect(digitosTelefonoCR('8888-1234')).toBe('88881234')
   })
 })
+
+describe('pegadoTelefonoCR (Pyme +506)', () => {
+  it('normaliza el pegado con o sin prefijo', async () => {
+    const { pegadoTelefonoCR } = await import('./telefono')
+    expect(pegadoTelefonoCR('+506 8888-1234')).toBe('+50688881234')
+    expect(pegadoTelefonoCR('8888 1234')).toBe('+50688881234')
+    expect(pegadoTelefonoCR('+1 305 555 1234')).toBeNull()
+  })
+})

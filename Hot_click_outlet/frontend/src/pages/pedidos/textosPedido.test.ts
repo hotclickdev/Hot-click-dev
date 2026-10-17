@@ -125,6 +125,15 @@ describe('textos del paquete', () => {
     expect(lineaGuia(t, paquete(1), 'es')).toBeNull()
   })
 
+  it('pago pendiente: no dice «pagado con» y el método sale legible (SINPE_MOVIL)', () => {
+    const pend = compra([paquete(1, { estadoPedido: 'PENDIENTE', metodoPago: 'SINPE_MOVIL' })])
+    pend.metodoPago = 'SINPE_MOVIL'
+    expect(pagadoCon(t, pend, 'es')).toBe('24 set. 2026 · pago pendiente (SINPE Móvil)')
+    const pagado = compra([paquete(1, { estadoPedido: 'PAGADO' })])
+    pagado.metodoPago = 'SINPE_MOVIL'
+    expect(pagadoCon(t, pagado, 'es')).toBe('24 set. 2026 · pagado con SINPE Móvil')
+  })
+
   it('caja sin guía según el estado', () => {
     expect(textoSinGuia(t, paquete(2, { estadoPedido: 'PAGADO' }))).toContain('Tienda 2 está preparando tu paquete')
     expect(textoSinGuia(t, paquete(2, { estadoPedido: 'PENDIENTE' }))).toBe('Guía pendiente: estamos confirmando tu pago.')

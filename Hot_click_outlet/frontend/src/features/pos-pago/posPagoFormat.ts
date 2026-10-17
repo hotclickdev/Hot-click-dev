@@ -1,5 +1,4 @@
 import { formatMiles } from '@/utils/format'
-import { formatTelefonoCR } from '@/utils/telefono'
 import type { MetodoQr, QrPagoInfo } from './posPagoTypes'
 
 export function formatColones(monto: number | undefined | null): string {
@@ -22,12 +21,17 @@ export function tituloYCodigo(nombre: string): { titulo: string; codigo: string 
   return { titulo: match[1].trim(), codigo: match[2].trim() }
 }
 
-/** Número SINPE sin el prefijo del país (`+506 7019-6686` -> `7019-6686`), con el formato único `8888-1234`. */
-export function sinpeNumeroVisible(numero: string | undefined | null): string {
-  return formatTelefonoCR(numero)
-}
+/**
+ * El número SINPE solo lo muestra ONVO. Hasta que ONVO esté en vivo, el QR del POS
+ * no ofrece SINPE aunque la caja lo tenga habilitado.
+ */
+export const SINPE_POS_DISPONIBLE = false
 
 const METODOS_QR: readonly MetodoQr[] = ['SINPE', 'TARJETA']
+
+function ofrecible(m: MetodoQr): boolean {
+  return m !== 'SINPE' || SINPE_POS_DISPONIBLE
+}
 
 function esMetodoQr(valor: unknown): valor is MetodoQr {
   return typeof valor === 'string' && (METODOS_QR as readonly string[]).includes(valor)
@@ -40,10 +44,10 @@ function esMetodoQr(valor: unknown): valor is MetodoQr {
 export function metodosDisponibles(info: Pick<QrPagoInfo, 'metodoPago' | 'metodosHabilitados'> | null | undefined): MetodoQr[] {
   const lista: MetodoQr[] = []
   for (const m of info?.metodosHabilitados ?? []) {
-    if (esMetodoQr(m) && !lista.includes(m)) lista.push(m)
+    if (esMetodoQr(m) && ofrecible(m) && !lista.includes(m)) lista.push(m)
   }
   const principal = info?.metodoPago
-  if (lista.length === 0 && esMetodoQr(principal)) lista.push(principal)
+  if (lista.length === 0 && esMetodoQr(principal) && ofrecible(principal)) lista.push(principal)
   return lista
 }
 

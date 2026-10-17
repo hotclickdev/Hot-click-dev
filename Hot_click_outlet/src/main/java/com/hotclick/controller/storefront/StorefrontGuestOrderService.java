@@ -61,12 +61,14 @@ public class StorefrontGuestOrderService {
         this.notificacionEmailService = notificacionEmailService;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Pedido crearPedido(Empresa empresa, StorefrontPedidoDTO dto) {
         Bodega bodega = resolverBodega(empresa);
         if (bodega == null) {
             return null;
         }
-        exigirEfectivoAceptado(dto.getMetodoPago(), bodega);
+        exigirEfectivoAceptado(dto.getMetodoPago(), bodega, dto.getMetodoEnvio(),
+            contraEntregaPolitica == null || contraEntregaPolitica.habilitada());
         exigirRetiroDisponible(dto.getMetodoEnvio(),
             bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
 
@@ -117,17 +119,19 @@ public class StorefrontGuestOrderService {
         pedido.setMetodoPago(dto.getMetodoPago());
         pedido.setMetodoEnvio(dto.getMetodoEnvio());
         pedido.setSubtotal(subtotal);
-        pedido.setTotalPedido(subtotal);
+        int costoEnvio = costoEnvioTienda(dto.getMetodoEnvio(), orderPricingService);
+        pedido.setTotalPedido(subtotal + costoEnvio);
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal);
         pedido.setDescuentoTotal(0);
-        pedido.setCostoEnvio(0);
+        pedido.setCostoEnvio(costoEnvio);
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedido.setOrigen(OrigenPedido.ONLINE.codigo());
         pedido.setClienteNombre(dto.getNombreCliente());
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));
+        pedido.setDireccionEntrega(dto.getDireccionEntrega()); // NP-18: el vendedor ve a dónde enviar
         return pedido;
     }
 
@@ -168,9 +172,25 @@ public class StorefrontGuestOrderService {
     }
 
     /** Efectivo solo si la bodega que despacha lo acepta; la UI ya lo oculta, esto cierra la llamada directa. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.payment.OrderPricingService orderPricingService;
+
+    /** (a) Envío a domicilio = Envío Normal de HotClick: el costo sale de la misma tabla del marketplace. */
+    static int costoEnvioTienda(String metodoEnvio, com.hotclick.service.payment.OrderPricingService pricing) {
+        if (pricing == null || !StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(metodoEnvio)) return 0;
+        return pricing.calcularCostoEnvio("ENVIO_NORMAL_GAM");
+    }
+
     static void exigirEfectivoAceptado(String metodoPago, Bodega bodega) {
+        exigirEfectivoAceptado(metodoPago, bodega, null, false);
+    }
+
+    static void exigirEfectivoAceptado(String metodoPago, Bodega bodega, String metodoEnvio, boolean contraEntregaNormal) {
         if (!"EFECTIVO".equalsIgnoreCase(metodoPago)) return;
-        if (bodega == null || !Boolean.TRUE.equals(bodega.getAceptaEfectivo())) {
+        boolean acepta = bodega != null && Boolean.TRUE.equals(bodega.getAceptaEfectivo());
+        if (!com.hotclick.service.envio.ContraEntregaPolitica.permiteEfectivo(acepta, metodoEnvio, contraEntregaNormal)) {
             throw new IllegalArgumentException("Este negocio no acepta efectivo. Pagá con SINPE / Tarjeta.");
         }
     }

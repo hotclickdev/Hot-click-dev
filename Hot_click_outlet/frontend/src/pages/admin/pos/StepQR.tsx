@@ -26,7 +26,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
   loadingConfirm: boolean
 }) {
   const { t } = useTranslation()
-  const { token, metodoPago, total, sinpeNumero } = qrData
+  const { token, metodoPago, total } = qrData
   const qrUrl = enlacePagoPosQr(token)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [paid, setPaid] = useState(false)
@@ -79,7 +79,6 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
         <MontoACobrar total={total} />
         {esSinpe ? (
           <DetalleSinpe
-            sinpeNumero={sinpeNumero || t('pos.qr.configWhatsapp')}
             referencia={(token ?? '').substring(0, 8).toUpperCase()}
             monto={`₡${formatMontoPos(total)}`}
           />
@@ -189,14 +188,12 @@ function MontoACobrar({ total }: { total: number }) {
   )
 }
 
-function DetalleSinpe({ sinpeNumero, referencia, monto }: {
-  sinpeNumero: string
+function DetalleSinpe({ referencia, monto }: {
   referencia: string
   monto: string
 }) {
   const { t } = useTranslation()
   const filas = [
-    { id: 'sinpe', label: t('pos.qr.sinpeA'), value: sinpeNumero, resalte: false },
     { id: 'ref', label: t('pos.qr.referencia'), value: referencia, resalte: false },
     { id: 'monto', label: t('pos.qr.montoExacto'), value: monto, resalte: true },
   ]

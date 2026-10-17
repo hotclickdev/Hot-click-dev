@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTarifasEnvio } from '@/config/tarifasEnvio'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -86,7 +87,8 @@ export default function CartPage() {
     if (items.length === 0) reiniciarExtras()
   }, [items.length, reiniciarExtras])
 
-  const paquetes = useMemo(() => paquetesDelCarrito(items), [items])
+  const tarifasEnvio = useTarifasEnvio()
+  const paquetes = useMemo(() => paquetesDelCarrito(items, tarifasEnvio), [items, tarifasEnvio])
   const idsEnCarrito = useMemo(() => new Set(items.map((item) => item.id)), [items])
   const unidades = items.reduce((suma, item) => suma + item.cantidad, 0)
   const subtotal = total()

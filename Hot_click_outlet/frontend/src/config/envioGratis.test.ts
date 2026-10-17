@@ -19,7 +19,7 @@ describe('envío gratis · config compartida', () => {
   })
 
   it('hoy no hay umbral: el checkout cobra tarifa fija y no hay que prometer envío gratis', () => {
-    // Si esto cambia, primero hay que aplicar el envío gratis en OrderPricingService y en SHIPPING_COSTS.
+    // Si esto cambia, primero hay que aplicar el envío gratis en OrderPricingService (el frontend lee sus tarifas).
     expect(config.envioGratis.desdeColones).toBeNull()
     expect(UMBRAL_ENVIO_GRATIS).toBeNull()
     expect(leer('../pages/checkout/checkoutHelpers.ts')).not.toMatch(/envioGratis|ENVIO_GRATIS/i)

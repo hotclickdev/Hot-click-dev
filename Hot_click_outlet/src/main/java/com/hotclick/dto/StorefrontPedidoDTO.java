@@ -17,6 +17,8 @@ public class StorefrontPedidoDTO {
     public static final String ENVIO_RETIRO = "RETIRO";
     /** Mínimo de dígitos para contactar al comprador (CR: 8 locales). */
     public static final int TELEFONO_MIN_DIGITOS = 8;
+    /** H1 (S1-56): tope por producto para invitados, igual al default de hotclick.checkout.invitado.max-unidades-por-producto. */
+    public static final int MAX_UNIDADES_INVITADO = 3;
 
     @NotBlank(message = "El nombre del cliente es requerido")
     @Size(max = 120, message = "El nombre no puede superar 120 caracteres")
@@ -52,7 +54,8 @@ public class StorefrontPedidoDTO {
 
     public record ItemDTO(
             @NotNull Long productoId,
-            @Positive @jakarta.validation.constraints.Max(999) int cantidad
+            @Positive @jakarta.validation.constraints.Max(value = MAX_UNIDADES_INVITADO,
+                message = "Como invitado podés pedir hasta 3 unidades de un mismo producto") int cantidad
     ) {}
 
     public String getNombreCliente() { return nombreCliente; }

@@ -4,6 +4,7 @@ import { Boton } from '@/prototipo/compartido/ui'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
+import { MENSAJE_404, TITULO_404, estadoEditor } from './editarProductoEstado'
 import { guardarProductoVendedor, mensajeErrorProducto } from '@/prototipo/compartido/catalogoVendedorApi'
 import FormularioPorPasos from '@/prototipo/compartido/FormularioPorPasos'
 import PasosProductoVendedor from '@/prototipo/compartido/PasosProductoVendedor'
@@ -22,7 +23,7 @@ const AUTO_CIERRE_EXITO_MS = 2200
 export default function EditarProductoPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const { productos, cargando } = useCatalogoEmprendedor()
+  const { productos, cargando, error } = useCatalogoEmprendedor()
   const original = useMemo(() => productos.find((p) => p.id === id), [productos, id])
   const esPersonalizado = original?.esPersonalizado === true
   const form = useFormProductoVendedor(esPersonalizado)
@@ -62,7 +63,9 @@ export default function EditarProductoPage() {
     setIniciado(true)
   }, [original, iniciado, cargarDesde])
 
-  if (cargando) {
+  const estado = estadoEditor(cargando, error, Boolean(original))
+
+  if (estado === 'cargando') {
     return (
       <main className="px-5 py-8">
         <CabeceraAtras titulo="Editar Producto" to={`${RUTA_EMPRENDEDOR}/productos`} />
@@ -71,11 +74,21 @@ export default function EditarProductoPage() {
     )
   }
 
-  if (!original) {
+  if (estado === 'error' || !original) {
     return (
       <main className="px-5 py-8">
         <CabeceraAtras titulo="Editar Producto" to={`${RUTA_EMPRENDEDOR}/productos`} />
-        <p className="mt-6 text-sm text-hc-muted">No encontramos ese producto.</p>
+        {estado === 'error' ? (
+          <p role="alert" className="mt-6 text-sm text-hc-muted">{error}</p>
+        ) : (
+          <section role="alert" className="mt-6 flex flex-col gap-2">
+            <h2 className="text-base font-bold">{TITULO_404}</h2>
+            <p className="text-sm text-hc-muted">{MENSAJE_404}</p>
+          </section>
+        )}
+        <div className="mt-4">
+          <Boton variante="suave" to={`${RUTA_EMPRENDEDOR}/productos`}>Volver a mis productos</Boton>
+        </div>
       </main>
     )
   }

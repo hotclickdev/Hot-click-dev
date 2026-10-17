@@ -1,4 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useTarifasEnvio } from '@/config/tarifasEnvio'
+import useAuthStore from '@/store/authStore'
+import { adminService } from '@/services/orderService'
 import { useParams, useNavigate } from 'react-router-dom'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
@@ -12,6 +15,7 @@ import TiendaCheckoutDireccion from './TiendaCheckoutDireccion'
 import {
   METODO_ENVIO_DOMICILIO,
   METODO_ENVIO_RETIRO,
+  costoEnvioTienda,
   mensajeErrorCheckout,
 } from './tiendaCheckoutValidacion'
 import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
@@ -42,20 +46,38 @@ export default function TiendaCheckoutPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { carrito, totalImporte, itemsParaPedido, vaciarCarrito, empresa } = useTiendaStore()
+  // Con sesión, los datos de la cuenta arrancan prellenados (se pueden corregir).
+  const nombreCuenta = useAuthStore((s) => s.userName)
+  const correoCuenta = useAuthStore((s) => s.userEmail)
+  const userId = useAuthStore((s) => s.userId)
+  const authToken = useAuthStore((s) => s.token)
   const [form, setForm] = useState<FormCheckout>({
-    nombreCliente: '',
-    correoCliente: '',
+    nombreCliente: nombreCuenta ?? '',
+    correoCliente: correoCuenta ?? '',
     telefonoCliente: '',
     direccionEntrega: '',
     metodoPago: 'SINPE_MOVIL',
     metodoEnvio: METODO_ENVIO_DOMICILIO,
     notas: '',
   })
+  useEffect(() => {
+    if (!authToken || !userId) return
+    let cancelado = false
+    adminService.getUsuario(userId).then(({ data }) => {
+      if (cancelado) return
+      const telefono = (data as { data?: { telefono?: string } })?.data?.telefono
+      // Solo completa si el comprador todavía no escribió nada.
+      if (telefono) setForm((f) => (f.telefonoCliente ? f : { ...f, telefonoCliente: telefono }))
+    }).catch(() => { /* prellenado best-effort */ })
+    return () => { cancelado = true }
+  }, [authToken, userId])
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [encomienda, setEncomienda] = useState('')
   const set = (key: keyof FormCheckout, val: string) => setForm((f) => ({ ...f, [key]: val }))
   const hayRetiro = Boolean(empresa?.retiro)
+  const tarifasEnvio = useTarifasEnvio()
+  const costoEnvio = costoEnvioTienda(form.metodoEnvio, tarifasEnvio)
   const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
   const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
 
@@ -107,7 +129,7 @@ export default function TiendaCheckoutPage() {
       <div className="mb-4 flex flex-col gap-1">
         <TituloTienda>Finalizar pedido</TituloTienda>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
+      <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
         <div className="flex flex-col gap-4">
           <fieldset className={`${CLASE_TARJETA} flex flex-col gap-[14px] p-4`}>
             <legend className="float-left mb-1 w-full font-display text-[16px] font-bold tracking-normal text-hc-n-900">Tus datos</legend>
@@ -163,9 +185,13 @@ export default function TiendaCheckoutPage() {
                   <span className="shrink-0 font-medium text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
                 </div>
               ))}
+              <div className="flex justify-between gap-4 text-[13px] text-hc-n-600">
+                <span>Envío</span>
+                <span className="shrink-0 font-medium text-hc-n-900">{costoEnvio > 0 ? formatPrice(costoEnvio) : 'Gratis'}</span>
+              </div>
               <div className="mt-1 flex items-center justify-between border-t border-hc-n-200 pt-3 text-hc-n-900">
                 <span className="text-[15px] font-semibold">Total</span>
-                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte())}</span>
+                <span className="font-display text-[17px] font-bold">{formatPrice(totalImporte() + costoEnvio)}</span>
               </div>
             </div>
           </section>

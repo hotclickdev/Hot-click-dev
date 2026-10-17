@@ -80,4 +80,10 @@ public class MetodoCobro {
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    /** Sin IBAN ni destino: el toString puede terminar en un log (auditoría IBAN/SINPE). */
+    @Override
+    public String toString() {
+        return "MetodoCobro{id=" + getId() + "}";
+    }
 }

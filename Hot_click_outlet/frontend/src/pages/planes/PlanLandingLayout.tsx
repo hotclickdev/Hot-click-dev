@@ -5,6 +5,7 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
 import EmprendeCupoBanner from '../emprende/EmprendeCupoBanner'
 import EmprendeSeccion from '../emprende/EmprendeSeccion'
 import { PLAN_LANDING_COPY, type LandingPlanId } from './planLandingCopy'
+import { COMISION_MINIMA_CRC, PLAN_PRECIOS, colones, type ClavePlan } from '@/config/planesPrecios'
 
 const TONO_VARS: Record<string, CSSProperties> = {
   artesanal: {
@@ -24,13 +25,20 @@ const TONO_VARS: Record<string, CSSProperties> = {
   } as CSSProperties,
 }
 
+/** Montos de la lista de puntos: salen de config/planesPrecios, no del JSON de traducciones. */
+function valoresPlan(planId: LandingPlanId) {
+  const clave: ClavePlan = planId === 'emprendedor' ? 'EMPRENDEDOR' : planId === 'pyme' ? 'PYME' : 'NEGOCIO_PLUS'
+  const p = PLAN_PRECIOS[clave]
+  return { mensual: colones(p.mensualCrc), pct: p.comisionPct, minimo: colones(COMISION_MINIMA_CRC) }
+}
+
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 function ListaPuntos({ planId }: { planId: LandingPlanId }) {
   const { t } = useTranslation()
-  const puntos = t(`emprende.plan${capitalize(planId)}Puntos`, { returnObjects: true })
+  const puntos = t(`emprende.plan${capitalize(planId)}Puntos`, { returnObjects: true, ...valoresPlan(planId) })
   if (!Array.isArray(puntos)) return null
   const textos = puntos.filter((p): p is string => typeof p === 'string')
 

@@ -33,6 +33,10 @@ public class PaymentNotificationsFacade {
 
     public void onPedidoCreado(Pedido pedido, String provider) {
         if (pedido == null) return;
+        // MAN-6: antes no salía ningún correo hasta confirmar el pago; el comprador no sabía que su pedido existía.
+        // Se manda después del COMMIT: si el checkout se revierte, no llega un «recibimos tu pedido» falso.
+        touchUsuarioFinalForAsync(pedido);
+        despuesDelCommit(() -> notificacionEmailService.enviarPedidoRecibido(pedido));
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.creado", Map.of(
             "numeroPedido", pedido.getNumeroPedido(),
             "total",        pedido.getTotalPedido(),

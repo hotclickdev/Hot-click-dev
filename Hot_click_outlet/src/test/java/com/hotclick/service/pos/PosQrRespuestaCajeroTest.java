@@ -34,7 +34,7 @@ class PosQrRespuestaCajeroTest {
         assertThat(r.get("token")).isEqualTo("tokentarjetaqr01");
         assertThat(r.get("total")).isEqualTo(5000);
         assertThat(r.get("metodoPago")).isEqualTo("TARJETA");
-        assertThat(r.get("sinpeNumero")).isEqualTo("50688881111");
+        assertThat(r.get("sinpeNumero")).isEqualTo("");
         assertThat(r.get("expiracion")).isNotNull();
     }
 }

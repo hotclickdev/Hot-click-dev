@@ -4,11 +4,9 @@ import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
 import type { Id } from '@/types/api'
 
 export const WHATSAPP = '50686667888'
-export const SINPE_NUMERO = formatTelefonoCR('86667888')
-export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 export const BODEGA_DEFAULT = 1
 
-/** Copia el número SINPE (solo dígitos) al portapapeles. */
+/** Copia un texto al portapapeles. */
 export async function copiarTexto(texto: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(texto)
@@ -18,18 +16,6 @@ export async function copiarTexto(texto: string): Promise<boolean> {
   }
 }
 
-export function copiarNumeroSinpe(): Promise<boolean> {
-  return copiarTexto(SINPE_NUMERO.replace(/\D/g, ''))
-}
-
-export const SHIPPING_COSTS: Record<string, number> = {
-  RETIRO_EN_TIENDA:       0,
-  // ₡2.000 de HotClick; lo que cobre la encomienda lo paga el cliente aparte al retirar.
-  ENCOMIENDA_PROPIA:   2000,
-  ENVIO_NORMAL_GAM:    4000,
-  ENVIO_NORMAL_FUERA_GAM: 4000,
-  ENVIO_RAPIDO:        5000,
-}
 
 export type ItemCheckout = {
   id?: Id

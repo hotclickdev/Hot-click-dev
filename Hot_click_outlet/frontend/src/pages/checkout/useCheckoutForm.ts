@@ -1,12 +1,13 @@
 import { useState, useRef, useMemo, useEffect, useCallback, type Dispatch, type SetStateAction, type RefObject } from 'react'
+import { costoDeEnvio, useTarifasEnvio } from '@/config/tarifasEnvio'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
 import { adminService } from '@/services/orderService'
+import { paymentService } from '@/services/paymentService'
 import {
   BODEGA_DEFAULT,
-  SHIPPING_COSTS,
   bodegaRetiroDePaquete,
   bodegaRetiroDesdeItems,
   opcionesEnvio,
@@ -46,6 +47,7 @@ export type CheckoutFormState = {
   /** Cambia `?paso=` (R3): agrega al historial salvo `reemplazar`. */
   setPaso: (paso: number, opciones?: OpcionesPaso) => void
   metodoPago: string
+  contraEntregaHabilitada: boolean
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
   setNotas: (value: string) => void
@@ -169,8 +171,16 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     }
     return resultado
   }, [metodoEnvioBase, destinoGAM])
-  // Abre con «SINPE / Tarjeta» (SINPE hasta que Tilopay esté activo).
+  // Abre con SINPE Móvil (pasarela). Sin SINPE manual con comprobante.
   const [metodoPago, setMetodoPago] = useState<string>(metodoPagoPrincipal)
+  const [contraEntregaHabilitada, setContraEntregaHabilitada] = useState(false)
+  useEffect(() => {
+    let vivo = true
+    paymentService.getCheckoutConfig()
+      .then(({ data }) => { if (vivo) setContraEntregaHabilitada(data?.contraEntregaNormal === true) })
+      .catch(() => { /* sin config: sin contra entrega */ })
+    return () => { vivo = false }
+  }, [])
   // R3: el paso del checkout móvil vive en `?paso=`; el guard de CheckoutLayout impide saltar pasos.
   const [searchParams, setSearchParams] = useSearchParams()
   const paso = pasoDesdeQuery(searchParams.get('paso'))
@@ -289,7 +299,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
 
   const [aceptaDatos, setAceptaDatos] = useState(false)
 
-  const costoEnvio = paquetes.reduce((sum, p) => sum + (SHIPPING_COSTS[metodoEnvioPorPaquete[p.bodegaId]] ?? 0), 0)
+  const tarifasEnvio = useTarifasEnvio()
+  const costoEnvio = paquetes.reduce((sum, p) => sum + costoDeEnvio(tarifasEnvio, metodoEnvioPorPaquete[p.bodegaId]), 0)
   const subtotalCart = total()
   const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
   const baseConCupon = subtotalCart - descuentoMonto + costoEnvio
@@ -312,6 +323,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setPaso,
     metodoPago,
     setMetodoPago,
+    contraEntregaHabilitada,
     notas,
     setNotas,
     sinpeNombre,

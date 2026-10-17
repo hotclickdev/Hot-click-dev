@@ -74,6 +74,7 @@ public class PosQrSessionService {
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", usuarioId));
         Empresa empresa  = empresaRepo.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
+        exigirNegocioAprobado(empresa);
 
         int total = 0;
         for (Map<String, Object> item : items) {
@@ -81,6 +82,7 @@ public class PosQrSessionService {
             int cantidad = cantidadDe(item);
             var producto = productoRepo.findById(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+            PosVentaService.exigirVendiblePorPos(producto);
             Integer precioObj = producto.getPrecioEfectivo();
             if (precioObj == null) {
                 throw new IllegalStateException("Producto sin precio de venta: " + productoId);
@@ -122,6 +124,13 @@ public class PosQrSessionService {
         return saved;
     }
 
+    public static final String MSG_NO_APROBADO = com.hotclick.service.payment.CobroNegocioGuard.MSG_NO_APROBADO;
+
+    /** NP-13: delega en el guard neutral de pasarela. */
+    static void exigirNegocioAprobado(Empresa empresa) {
+        com.hotclick.service.payment.CobroNegocioGuard.exigirNegocioAprobado(empresa);
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> getInfoPublica(String token) {
         PosQrSesion sesion = findSesionActiva(token);
@@ -149,8 +158,7 @@ public class PosQrSessionService {
             ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
         r.put("logoUrl",      empresa.getLogoUrl());
         r.put("colorPrimario", empresa.getColorPrimario());
-        // SINPE: número de teléfono y referencia (primeros 8 chars del token)
-        r.put("sinpeNumero",  destinoSinpe(sesion, empresa));
+        // Sin número SINPE: solo ONVO lo muestra (regla del dueño). Queda la referencia.
         r.put("sinpeRef",     sesion.getToken().substring(0, 8).toUpperCase());
         return r;
     }
@@ -208,7 +216,9 @@ public class PosQrSessionService {
         r.put("metodoPago", sesion.getMetodoPago());
         r.put("metodosHabilitados", PosQrMetodos.deSesion(sesion));
         r.put("expiracion", sesion.getFechaExpiracion().toString());
-        r.put("sinpeNumero", destinoSinpe(sesion, exigirEmpresa(sesion)));
+        exigirEmpresa(sesion);
+        // Sin número SINPE: solo ONVO lo muestra (regla del dueño).
+        r.put("sinpeNumero", "");
         return r;
     }
 
@@ -218,21 +228,6 @@ public class PosQrSessionService {
             throw new RecursoNoEncontradoException("Empresa de la sesión QR", sesion.getToken());
         }
         return empresa;
-    }
-
-    String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
-        if (PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
-            // SINPE por Tilopay: el número, el monto y el código los da el SDK al iniciar el pago.
-            return "";
-        }
-        return numeroSinpe(empresa);
-    }
-
-    static String numeroSinpe(Empresa empresa) {
-        if (empresa == null) return "";
-        if (tieneTexto(empresa.getNumeroWhatsapp())) return empresa.getNumeroWhatsapp().trim();
-        if (tieneTexto(empresa.getTelefonoEmpresa())) return empresa.getTelefonoEmpresa().trim();
-        return "";
     }
 
     private void exigirItemsDelNegocio(Long empresaId, List<Map<String, Object>> items) {

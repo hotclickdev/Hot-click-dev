@@ -11,7 +11,8 @@ export function stockEscaso(product: Pick<Producto, 'stock'>): number | null {
 }
 
 export function nombreVendedor(product: Partial<Pick<Producto, 'empresaNombre' | 'bodegaNombre'>>): string {
-  return product.empresaNombre?.trim() || product.bodegaNombre?.trim() || 'HotClick'
+  // NP-19: la bodega es un nombre interno; en público solo el nombre de la tienda.
+  return product.empresaNombre?.trim() || 'HotClick'
 }
 
 export function fotoProducto(product: Partial<Pick<Producto, 'imagenUrl' | 'imagenPrincipalUrl'>>): string | null {

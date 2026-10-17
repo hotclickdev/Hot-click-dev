@@ -40,7 +40,7 @@ class AuditoriaAdminConsultaServiceTest {
     @DisplayName("listar clampa desde al límite de retención de 90 días")
     void listar_clampaRetencion() {
         AuditoriaAdmin fila = fila(1L, "APROBAR_SINPE", 7L);
-        when(auditoriaRepo.buscar(isNull(), isNull(), isNull(), any(), any(), any()))
+        when(auditoriaRepo.buscar(eq(""), eq(""), isNull(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(fila)));
         Empresa emp = new Empresa();
         emp.setId(7L);
@@ -51,7 +51,7 @@ class AuditoriaAdminConsultaServiceTest {
         Map<String, Object> resp = service.listar(null, null, null, muyViejo, null, 0, 20);
 
         ArgumentCaptor<LocalDateTime> desdeCap = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(auditoriaRepo).buscar(isNull(), isNull(), isNull(), desdeCap.capture(), any(), any());
+        verify(auditoriaRepo).buscar(eq(""), eq(""), isNull(), desdeCap.capture(), any(), any());
         LocalDateTime limite = LocalDateTime.now(Constants.ZONA_CR)
                 .minusDays(Constants.DIAS_RETENCION_AUDITORIA_ADMIN);
         assertThat(desdeCap.getValue()).isAfterOrEqualTo(limite.minusMinutes(1));

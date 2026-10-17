@@ -184,7 +184,7 @@
       "1 depósito e 1 caixa POS",
       "Pagamentos com cartão e SINPE",
       "Envios na Costa Rica",
-      "Comissão por venda: [PENDIENTE]"
+      "Comissão: {{pct}}% por venda (mínimo {{minimo}})"
     ],
     "planPymeBadge": "Para crescer",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 depósitos e 2 caixas",
       "Compras e estoque",
       "IA e relatórios avançados",
-      "Mensalidade e comissão: [PENDIENTE]"
+      "{{mensual}}/mês + {{pct}}% por venda (mínimo {{minimo}})"
     ],
     "planPlusBadge": "Para operar de verdade",
     "planPlusTitle": "Negocio Plus",
@@ -206,18 +206,18 @@
       "Multi-filial e pedidos por local",
       "CRM de clientes",
       "IA sem limite",
-      "Mensalidade e comissão: [PENDIENTE]"
+      "{{mensual}}/mês + {{pct}}% por venda (mínimo {{minimo}})"
     ],
     "pymeCta": "Criar meu negócio",
     "plusCta": "Criar meu negócio",
     "faqTitle": "Perguntas frequentes",
     "faqSub": "O que mais perguntam antes de se cadastrar.",
     "faq1q": "Cobram algo no cadastro?",
-    "faq1a": "Nada é cobrado ao se cadastrar. A comissão por venda está [PENDIENTE] e você a verá aqui antes de vender.",
+    "faq1a": "Nada é cobrado ao se cadastrar. A comissão é de 9% por venda, com mínimo de ₡700, e você a verá aqui antes de vender.",
     "faq2q": "O que acontece se as vagas grátis acabarem?",
     "faq2a": "Avisamos ali em cima e o botão passa a oferecer PYME ou Negocio Plus. Seu cadastro não é fechado.",
     "faq3q": "Como eu recebo as vendas?",
-    "faq3a": "Com cartão ou SINPE dentro do HotClick. A comissão por venda está [PENDIENTE] e você a vê antes de vender.",
+    "faq3a": "Com cartão ou SINPE dentro do HotClick. A comissão é de 9% por venda (mínimo ₡700) e você a vê antes de vender.",
     "faq4q": "Posso crescer depois?",
     "faq4a": "Sim, você pode migrar para PYME ou Negocio Plus quando precisar, sem perder seu catálogo nem seus pedidos.",
     "galeriaCaption": "Comércios e empreendimentos: o mesmo tipo de negócio que você pode vender no HotClick.",
@@ -365,17 +365,17 @@
     "comoEntras1Titulo": "Você se cadastra",
     "comoEntras1Desc": "Cria sua conta em minutos.",
     "comoEntras2Titulo": "Você paga a mensalidade",
-    "comoEntras2Desc": "Com o gateway ONVO que o painel já usa.",
+    "comoEntras2Desc": "Com o gateway Tilopay que o painel já usa.",
     "comoEntras3Titulo": "Você entra com o PYME ativo",
     "comoEntras3Desc": "Equipe, estoque e caixa, prontos para operar.",
-    "comparativaNota": "Comissão por venda e mensalidade: [PENDIENTE]. Você vai vê-las aqui antes de vender.",
+    "comparativaNota": "PYME: {{pymeMensual}}/mês + {{pymePct}}% por venda. Emprendedor: sem mensalidade + {{emprendedorPct}}% por venda. Ambos com mínimo de {{minimo}} por venda.",
     "faqTitle": "Perguntas frequentes",
     "faq2q": "Quanto preciso vender para valer a pena?",
     "faq2a": "Se você vende com frequência, a comissão menor recupera a mensalidade rápido. Se vende pouco, o Emprendedor vale mais a pena.",
     "faq3q": "E se eu precisar de mais de uma unidade?",
     "faq3a": "Veja o Negocio Plus, que não tem limite de unidades.",
     "faq4q": "Como a mensalidade é cobrada?",
-    "faq4a": "Com o gateway ONVO que o painel já usa, cobrada automaticamente todo mês.",
+    "faq4a": "Com o gateway Tilopay que o painel já usa, cobrada automaticamente todo mês.",
     "ctaFinalTitle": "Pronto para operar tudo em um painel?"
   },
   "negocioPlus": {
@@ -1481,7 +1481,7 @@
       "gratis": "Grátis",
       "pagoTitulo": "Como você quer pagar?",
       "sinpe": "SINPE Móvil",
-      "sinpeSub": "Para {{numero}} · você envia o comprovante",
+      "sinpeSub": "Você envia o comprovante",
       "tarjeta": "Cartão",
       "tarjetaSub": "Visa ou Mastercard",
       "tarjetaMovil": "Cartão de crédito ou débito",
@@ -1489,9 +1489,8 @@
       "efectivo": "Dinheiro",
       "efectivoSub": "Na retirada na loja",
       "masUsado": "Mais usado",
-      "sinpePaso1": "1. Envie {{monto}} para",
+      "sinpePaso1": "1. Envie {{monto}} por SINPE Móvil.",
       "sinpePaso2": "2. Na descrição coloque o número do pedido. 3. Envie o comprovante e confirmamos em minutos.",
-      "copiarSinpe": "Copiar número SINPE",
       "copiado": "Copiado",
       "subirComprobante": "Enviar comprovante",
       "comprobanteElegido": "Comprovante: {{nombre}}",
@@ -1531,8 +1530,14 @@
       "sinEntregaLocal": "Este negócio não faz entrega local.",
       "encomiendaNombre": "Qual transportadora?",
       "encomiendaAyuda": "Ex.: Correos de Costa Rica. A loja despacha lá.",
+      "pagoSinpe": "SINPE Móvil",
+      "pagoSinpeSub": "Pague com SINPE Móvil no gateway seguro.",
+      "pagoTarjeta": "Cartão",
+      "pagoTarjetaSub": "Crédito ou débito, no gateway seguro.",
+      "contraEntrega": "Pagamento na entrega",
+      "contraEntregaSub": "Pague em dinheiro ao receber (Envio Normal).",
       "sinpeTarjeta": "SINPE / Cartão",
-      "sinpeTarjetaSub": "SINPE Móvil para {{numero}} ou cartão. Cartão em breve.",
+      "sinpeTarjetaSub": "SINPE Móvil ou cartão. O pagamento com cartão estará disponível em breve.",
       "sinpeTarjetaSubTilopay": "SINPE Móvil ou cartão, no gateway seguro.",
       "correoCuenta": "E-mail da sua conta"
     },
@@ -1634,8 +1639,6 @@
     "sinpe": {
       "titulo": "Pedido registrado: faça o seu SINPE",
       "sub": "Transfira o valor exato e envie a foto do comprovante.",
-      "numero": "Número SINPE",
-      "titular": "Titular",
       "referencia": "Referência",
       "montoExacto": "Valor exato",
       "tusDatos": "Seus dados da transferência",
@@ -2223,6 +2226,8 @@
     "detalle": {
       "titulo": "Pedido {{numero}}",
       "pagadoCon": "{{fecha}} · pago com {{metodo}}",
+      "pagoPendienteCon": "{{fecha}} · pagamento pendente ({{metodo}})",
+      "pagoPendiente": "{{fecha}} · pagamento pendente",
       "productos": "Produtos ({{count}})",
       "envio": "Frete",
       "envioPorPaquete": "Frete · {{paquetes}} × {{costo}}",
@@ -3452,8 +3457,6 @@
       "pagoTarjeta": "Pagamento com cartão",
       "instruccionTarjeta": "Peça ao cliente para escanear o código com a câmera do celular",
       "instruccionSinpe": "Peça ao cliente para escanear e pagar com SINPE Móvil",
-      "sinpeA": "SINPE Móvil para:",
-      "configWhatsapp": "Número SINPE não configurado",
       "referencia": "Referência:",
       "montoExacto": "Valor exato:",
       "esperandoConfirmacion": "Aguardando o cliente pagar no carrinho…",
@@ -4086,11 +4089,8 @@
       "tarjetaDetalleCorto": "Visa ou Mastercard",
       "efectivo": "Dinheiro",
       "efectivoDetalle": "Ao retirar na loja",
-      "sinpePaso1": "1. Envie {{monto}} para",
+      "sinpePaso1": "1. Envie {{monto}} por SINPE Móvil.",
       "sinpePasos23": "2. Na descrição, coloque o número do seu pedido. 3. Envie o comprovante e confirmamos em minutos.",
-      "copiarNumero": "Copiar número SINPE",
-      "numeroCopiado": "Número copiado",
-      "numeroNoCopiado": "Não foi possível copiar o número",
       "subirComprobante": "Enviar comprovante",
       "comprobanteListo": "Comprovante: {{nombre}}",
       "comprobanteRequerido": "Envie o comprovante do SINPE para confirmar seu pagamento",
@@ -4599,7 +4599,9 @@
     "enlace": {
       "usado": "Este link já foi usado. Se você é o dono, entre com seu e-mail e senha.",
       "vencido": "Este link expirou ou foi anulado. Peça um novo à HotClick.",
-      "noVigente": "Este link não é válido."
+      "noVigente": "Este link não é válido.",
+      "titulo": "Link indisponível",
+      "ayudaNoVigente": "Se você foi convidado para a HotClick, peça um novo link a quem o enviou."
     },
     "listo": {
       "entrar": "Entrar e montar minha loja",
@@ -4667,5 +4669,10 @@
     "tilopayConfirmando": "Confirmando o pagamento do seu plano…",
     "tilopayNoConfirmado": "Não conseguimos confirmar o pagamento. Tente novamente.",
     "volverPlanes": "Voltar aos planos"
+  },
+  "planPendiente": {
+    "pyme": "Seu plano Pyme é ativado assim que o pagamento for confirmado. Enquanto isso, sua loja funciona com os recursos do Emprendedor.",
+    "negocioPlus": "Seu plano Negocio Plus é ativado assim que o pagamento for confirmado. Enquanto isso, sua loja funciona com os recursos do Emprendedor.",
+    "cta": "Concluir pagamento"
   }
 }
