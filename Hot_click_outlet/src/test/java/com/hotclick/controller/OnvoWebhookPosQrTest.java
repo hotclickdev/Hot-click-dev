@@ -23,6 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"unchecked", "rawtypes"})
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("Webhook ONVO: POS QR vs tienda")
 class OnvoWebhookPosQrTest {
 
@@ -55,12 +57,44 @@ class OnvoWebhookPosQrTest {
     @Test
     @DisplayName("Pago de tienda sigue el flujo ONVO normal")
     void pagoTiendaSiNoEsPosQr() {
+        when(onvoService.obtenerCheckoutSession("sess_tienda")).thenReturn((Map) Map.of("status", "succeeded"));
+        when(onvoPaymentProvider.procesarPagoVerificado(eq("sess_tienda"), any(), eq("webhook")))
+            .thenReturn(OnvoPaymentProvider.Verificacion.OK);
         ResponseEntity<Map<String, String>> res = controller.recibirWebhookOnvo(
             "{\"type\":\"checkout-session.succeeded\",\"data\":{\"id\":\"sess_tienda\"}}",
             "secret-onvo");
         assertThat(res.getStatusCode().value()).isEqualTo(200);
         verify(posQrVentaService, never()).completarSiPagoPasarela(any());
-        verify(onvoPaymentProvider).procesarPagoExitoso(eq("sess_tienda"), any(), eq("webhook"));
+        verify(onvoPaymentProvider).procesarPagoVerificado(eq("sess_tienda"), any(), eq("webhook"));
+    }
+
+    private ResponseEntity<Map<String, String>> sesion(OnvoPaymentProvider.Verificacion v) {
+        when(onvoPaymentProvider.procesarPagoVerificado(eq("sess_x"), any(), eq("webhook"))).thenReturn(v);
+        return controller.recibirWebhookOnvo(
+            "{\"type\":\"checkout-session.succeeded\",\"data\":{\"id\":\"sess_x\",\"amount\":1}}", "secret-onvo");
+    }
+
+    @Test
+    @DisplayName("WH-1: monto/moneda/empresa distintos o no pagado en ONVO → 400")
+    void noVerificado400() {
+        assertThat(sesion(OnvoPaymentProvider.Verificacion.DATOS_DISTINTOS).getStatusCode().value()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("WH-1: evento duplicado → 200 duplicate, sin reprocesar")
+    void duplicado() {
+        var res = sesion(OnvoPaymentProvider.Verificacion.DUPLICADO);
+        assertThat(res.getStatusCode().value()).isEqualTo(200);
+        assertThat(res.getBody()).containsEntry("status", "duplicate");
+    }
+
+    @Test
+    @DisplayName("WH-1: cuerpo > 64 KB → 413 sin parsear; secreto inválido → 401")
+    void tamanoYSecreto() {
+        String grande = "{\"x\":\"" + "a".repeat(64 * 1024) + "\"}";
+        assertThat(controller.recibirWebhookOnvo(grande, "secret-onvo").getStatusCode().value()).isEqualTo(413);
+        assertThat(controller.recibirWebhookOnvo("{}", "malo").getStatusCode().value()).isEqualTo(401);
+        verify(onvoPaymentProvider, never()).procesarPagoVerificado(any(), any(), any());
     }
 
     @Test
