@@ -22,11 +22,15 @@ function Glifo({ etiqueta, disabled, onClick, children }: { etiqueta: string; di
  * escritorio): cantidad + "Agregar · ₡total" y "Comprar ahora" debajo. La lógica es la de siempre.
  */
 export default function TiendaBuyActions({
-  variante, slug, stockDisponible, cantidad, onCantidad, total, agregado, onAgregar, onComprarAhora, cotizarHref,
+  variante, slug, stockDisponible, maxCantidad = stockDisponible, avisoTope, cantidad, onCantidad, total, agregado, onAgregar, onComprarAhora, cotizarHref,
 }: {
   variante: 'barra' | 'inline'
   slug: string
   stockDisponible: number
+  /** Máximo elegible (stock o, para invitados, el tope de GuestCheckoutGuard). */
+  maxCantidad?: number
+  /** Aviso en español cuando se llegó al tope del invitado. */
+  avisoTope?: string | null
   cantidad: number
   onCantidad: (cantidad: number) => void
   total: string
@@ -57,7 +61,7 @@ export default function TiendaBuyActions({
       <div className="flex shrink-0 items-center gap-[14px] rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3 text-[16px] font-semibold leading-[normal] text-hc-n-900">
         <Glifo etiqueta="Uno menos" disabled={cantidad <= 1} onClick={() => onCantidad(Math.max(1, cantidad - 1))}>−</Glifo>
         <span aria-live="polite" className="min-w-[7px] text-center text-[15px]">{cantidad}</span>
-        <Glifo etiqueta="Uno más" disabled={cantidad >= stockDisponible} onClick={() => onCantidad(Math.min(stockDisponible, cantidad + 1))}>+</Glifo>
+        <Glifo etiqueta="Uno más" disabled={cantidad >= maxCantidad} onClick={() => onCantidad(Math.min(maxCantidad, cantidad + 1))}>+</Glifo>
       </div>
       <button
         type="button"
@@ -89,10 +93,15 @@ export default function TiendaBuyActions({
     </div>
   )
 
+  const aviso = avisoTope ? (
+    <p role="status" className="text-[12px] leading-[16px] text-hc-n-600">{avisoTope}</p>
+  ) : null
+
   if (esBarra) {
     return (
       <div className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-2 border-t border-hc-n-200 bg-hc-n-0 px-4 pb-6 pt-3">
         {fila}
+        {aviso}
         {comprar}
       </div>
     )
@@ -100,6 +109,7 @@ export default function TiendaBuyActions({
   return (
     <div className="mt-2 flex flex-col gap-3">
       {fila}
+      {aviso}
       {comprar}
     </div>
   )

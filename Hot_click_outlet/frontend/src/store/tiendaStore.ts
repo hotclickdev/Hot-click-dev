@@ -5,6 +5,11 @@ import type { ItemCarritoTienda } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import type { LineaPedido } from '@/types/pedido'
+import useAuthStore from '@/store/authStore'
+import { limitarCantidadInvitado } from '@/utils/topeInvitado'
+
+/** Tope de GuestCheckoutGuard: sin sesión, máximo 3 unidades por producto en el carrito de la tienda. */
+const esInvitado = () => !useAuthStore.getState().isAuthenticated()
 
 type TiendaState = {
   slug: string | null
@@ -59,12 +64,12 @@ const useTiendaStore = create<TiendaState>()(
           set({
             carrito: carrito.map(i =>
               i.producto.id === producto.id
-                ? { ...i, cantidad: i.cantidad + cantidad }
+                ? { ...i, cantidad: limitarCantidadInvitado(i.cantidad + cantidad, esInvitado()) }
                 : i
             ),
           })
         } else {
-          set({ carrito: [...carrito, { producto, cantidad }] })
+          set({ carrito: [...carrito, { producto, cantidad: limitarCantidadInvitado(cantidad, esInvitado()) }] })
         }
       },
 
@@ -78,7 +83,7 @@ const useTiendaStore = create<TiendaState>()(
         }
         set({
           carrito: get().carrito.map(i =>
-            i.producto.id === productoId ? { ...i, cantidad } : i
+            i.producto.id === productoId ? { ...i, cantidad: limitarCantidadInvitado(cantidad, esInvitado()) } : i
           ),
         })
       },
