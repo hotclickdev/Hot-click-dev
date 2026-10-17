@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { EncabezadoPagina, Boton } from '@/prototipo/compartido/ui'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { cobrosOnvoApi, type CuentaCobros } from './cobrosOnvoApi'
+import { mensajeErrorEstadoCobros } from './erroresCobros'
 import {
   DETALLE_SUSPENDIDA, PASOS_COBRO, TEXTO_PRIVACIDAD, VISTAS_ESTADO, detallePausada, textoFrecuencia, type Tono,
 } from './estadosCobro'
@@ -30,7 +31,7 @@ export default function ActivarCobrosPage({ volverA, rutaSoporte }: { volverA: s
   const cargar = useCallback((enfocar: boolean) => {
     cobrosOnvoApi.estado()
       .then((c) => { setCuenta(c); setError(null); if (enfocar) requestAnimationFrame(() => chipRef.current?.focus()) })
-      .catch(() => setError('Todavía no podemos mostrar el estado de tus cobros. Probá de nuevo en un rato.'))
+      .catch((e: unknown) => setError(mensajeErrorEstadoCobros(e)))
   }, [])
 
   useEffect(() => {

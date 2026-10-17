@@ -1,8 +1,10 @@
 import api from '@/services/api'
 
 /**
- * S2-25 · Activar cobros con ONVO — CONTRATO SUPUESTO. El backend todavía no lo tiene (ramas feat/s2-*,
- * S2-11 modelo negocio_onvo_cuenta, S2-13 OnvoMarketplaceClient). Todo el acceso al servidor queda acá.
+ * S2-25 · Activar cobros con ONVO. Todo el acceso al servidor queda acá.
+ * GET /estado: contrato real de #197 (`docs/contratos/S3-06-onvo-estado-frecuencia.md`, alias /api/empresa/onvo/*);
+ * solo el propietario (el personal recibe 403). POST /activar, /enlace y /reenviar-enlace siguen SUPUESTOS:
+ * Backend los deja para cuando exista OnvoMarketplaceClient (S2-13) y las llaves sandbox (S2-01).
  *
  *   GET  /api/negocio/onvo/estado          → { estado, frecuencia, pausadaEl?, motivoPausa? }  (motivoPausa: S3-23)
  *   POST /api/negocio/onvo/activar         → { url }   (HotClick crea la cuenta y devuelve el enlace de onboarding)
