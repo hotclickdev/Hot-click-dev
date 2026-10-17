@@ -47,9 +47,10 @@ public class VectorSearchService {
                p.tags,
                c.nombre_categoria AS nombre_categoria,
                %s,
+               %s,
                LEFT(COALESCE(p.especificaciones, ''), 600) AS especificaciones,
                LEFT(COALESCE(p.como_usar, ''), 400) AS como_usar
-        """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
+        """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO, ContactoTextoPublico.SQL_NEGOCIO_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private static final String SELECT_ASESOR = """
         SELECT p.id_producto,
@@ -63,9 +64,10 @@ public class VectorSearchService {
                p.tags,
                c.nombre_categoria AS nombre_categoria,
                %s,
+               %s,
                LEFT(COALESCE(p.especificaciones, ''), 1500) AS especificaciones,
                LEFT(COALESCE(p.como_usar, ''), 800) AS como_usar
-        """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
+        """.formatted(ContactoTextoPublico.SQL_PLAN_PRODUCTO, ContactoTextoPublico.SQL_NEGOCIO_PRODUCTO) + ChatPrecioPersonalizado.fragmentoSelectSql();
 
     private final EmbeddingService embeddingService;
     private final JdbcTemplate jdbc;
@@ -289,7 +291,9 @@ public class VectorSearchService {
             max,
             instrucciones == null || instrucciones.isBlank() ? null : instrucciones,
             etiqueta,
-            t(oculta, columnaOpcional(rs, "descripcion_larga"))
+            t(oculta, columnaOpcional(rs, "descripcion_larga")),
+            columnaOpcional(rs, "empresa_nombre"),
+            columnaOpcional(rs, "empresa_slug")
         );
     }
 

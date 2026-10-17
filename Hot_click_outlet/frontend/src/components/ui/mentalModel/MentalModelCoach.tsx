@@ -15,6 +15,7 @@ import {
   marcarWelcomeSellerHecho,
   marcarWelcomeVisitanteHecho,
   mmApagado,
+  setMmApagado,
   welcomeHecho,
   welcomeSellerHecho,
   welcomeVisitanteHecho,
@@ -201,7 +202,11 @@ export default function MentalModelCoach() {
           <div className="ml-auto flex gap-2">
             <button
               type="button"
-              onClick={cerrarSpotlight}
+              onClick={() => {
+                // Omitir = no volver a mostrar guías en otras pantallas (se reactivan desde Ayuda).
+                setMmApagado(true)
+                cerrarSpotlight()
+              }}
               className="min-h-10 rounded-xl bg-hc-surface-2 px-3 text-xs font-medium text-hc-muted"
             >
               Omitir

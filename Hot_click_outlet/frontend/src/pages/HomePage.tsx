@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService } from '@/services/productService'
+import { negocioService } from '@/services/negocioService'
 import useChatStore from '@/store/chatStore'
 import Chip from '@/components/comprador/Chip'
 import ProductCard from '@/components/comprador/ProductCard'
@@ -22,6 +23,7 @@ import TarjetaAsistente from './home/compra/TarjetaAsistente'
 import SeguiDondeLoDejaste from './home/compra/SeguiDondeLoDejaste'
 import FranjaConfianza from './home/compra/FranjaConfianza'
 import BannerDescubrir from './home/compra/BannerDescubrir'
+import { MAX_POR_BLOQUE, armarBloques } from './home/compra/bannerSlides'
 import {
   CHIPS_ASISTENTE, MAX_CATEGORIAS_HOME, MAX_NUEVOS, elegirDestacados, elegirNuevos,
 } from './home/homeCompraHelpers'
@@ -51,9 +53,18 @@ export default function HomePage() {
     staleTime: VIGENCIA_MS,
   })
 
+  // Carrusel: negocios destacados del catálogo público; un error se trata como bloque vacío (HANDOFF §6).
+  const negociosDestacadosQuery = useQuery({
+    queryKey: ['home', 'carrusel', 'negocios', MAX_POR_BLOQUE],
+    queryFn: () => negocioService.destacados(MAX_POR_BLOQUE).then((r) => (Array.isArray(r.data) ? r.data : [])),
+    staleTime: VIGENCIA_MS,
+  })
   const catalogo = catalogoQuery.data ?? []
   const destacados = elegirDestacados(destacadosQuery.data ?? [], catalogo)
   const nuevos = elegirNuevos(catalogo, destacados, MAX_NUEVOS)
+  // Bloque «Producto destacado»: solo `GET /productos/destacados` (sin rellenar con nuevos ni catálogo).
+  const bloquesCarrusel = armarBloques(destacadosQuery.data ?? [], negociosDestacadosQuery.data ?? [], catalogo)
+  const cargandoCarrusel = catalogoQuery.isPending || destacadosQuery.isPending || negociosDestacadosQuery.isPending
   const preguntar = (texto: string) => abrirChat(texto)
   const referenciaFallo = useMemo(() => referenciaDelError(catalogoQuery.error), [catalogoQuery.error])
 
@@ -113,7 +124,7 @@ export default function HomePage() {
               </li>
             ))}
           </ul>
-          <BannerDescubrir productos={[...destacados, ...nuevos]} />
+          <BannerDescubrir bloques={bloquesCarrusel} cargando={cargandoCarrusel} />
         </div>
       </section>
 

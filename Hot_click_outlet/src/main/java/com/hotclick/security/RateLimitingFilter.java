@@ -105,6 +105,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/registro-empresa",   new Limit(5,    60)),
         Map.entry("/api/auth/register",           new Limit(5,  3600)),
         Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
+        Map.entry("/api/auth/reenviar-codigo-negocio", new Limit(3, 300)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
         // General

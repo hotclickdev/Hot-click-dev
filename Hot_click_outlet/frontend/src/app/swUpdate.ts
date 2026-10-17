@@ -43,3 +43,37 @@ export function debeAutoActualizar(ruta: string, haySesion: boolean): boolean {
   if (/^\/tienda\/[^/]+\/(carrito|checkout|pago)(\/|$)/.test(limpia)) return false
   return true
 }
+
+/** «Ahora no» pospone el aviso: sin esto, la versión en espera se volvía a anunciar en cada recarga o foco. */
+const CLAVE_POSPUESTO = 'hc-sw-aviso-pospuesto'
+export const POSPONER_AVISO_MS = 6 * 60 * 60 * 1000
+/** Mínimo entre chequeos al volver a foco (antes cada cambio de pestaña consultaba). */
+export const INTERVALO_MIN_CHEQUEO_MS = 10 * 60 * 1000
+
+type Almacen = Pick<Storage, 'getItem' | 'setItem'>
+
+function almacen(): Almacen | null {
+  try { return globalThis.localStorage ?? null } catch { return null }
+}
+
+export function posponerAvisoSw(ahora = Date.now(), store: Almacen | null = almacen()): void {
+  try { store?.setItem(CLAVE_POSPUESTO, String(ahora)) } catch { /* sin storage: solo esta vista */ }
+}
+
+/** ¿Se muestra el aviso? No si el usuario lo pospuso hace menos de {@link POSPONER_AVISO_MS}. */
+export function debeMostrarAvisoSw(ahora = Date.now(), store: Almacen | null = almacen()): boolean {
+  let valor: string | null
+  try { valor = store?.getItem(CLAVE_POSPUESTO) ?? null } catch { valor = null }
+  const pospuesto = Number(valor)
+  return !(Number.isFinite(pospuesto) && pospuesto > 0 && ahora - pospuesto < POSPONER_AVISO_MS)
+}
+
+/** Limita los chequeos de versión al volver a foco. Devuelve una función que dice si toca chequear ahora. */
+export function crearLimitadorChequeo(intervalo = INTERVALO_MIN_CHEQUEO_MS): (ahora?: number) => boolean {
+  let ultimo = 0
+  return (ahora = Date.now()) => {
+    if (ahora - ultimo < intervalo) return false
+    ultimo = ahora
+    return true
+  }
+}

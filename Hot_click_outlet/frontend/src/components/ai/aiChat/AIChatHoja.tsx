@@ -35,18 +35,22 @@ function ProductoRecomendado({ producto, onAdd }: { producto: AiChatProducto; on
       <Link to={destino} className="size-16 shrink-0 overflow-hidden rounded-[10px] bg-hc-n-100" tabIndex={-1} aria-hidden="true">
         {imagen && <img src={imagen} alt="" className="size-full object-cover" loading="lazy" />}
       </Link>
-      <Link to={destino} className="flex min-w-0 flex-1 flex-col gap-[2px]">
-        <span className="line-clamp-2 text-[13px] font-medium leading-[17px] text-hc-n-900">{producto.nombre}</span>
-        <span className="truncate text-[11px] leading-[normal] text-hc-n-600">{nombreVendedor(producto)}</span>
-        <span className="flex items-center gap-[6px] leading-[normal]">
+      <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+        <Link to={destino} className="line-clamp-2 text-[13px] font-medium leading-[17px] text-hc-n-900">{producto.nombre}</Link>
+        {producto.empresaSlug ? (
+          <Link to={`/tienda/${producto.empresaSlug}`} className="truncate text-[11px] leading-[normal] text-hc-n-600 underline-offset-2 hover:underline">{nombreVendedor(producto)}</Link>
+        ) : (
+          <span className="truncate text-[11px] leading-[normal] text-hc-n-600">{nombreVendedor(producto)}</span>
+        )}
+        <Link to={destino} className="flex items-center gap-[6px] leading-[normal]">
           <span className="font-display text-[14px] font-bold text-hc-n-900">{etiquetaPrecioChat(producto)}</span>
           {producto.esPersonalizado && (
             <span className="rounded-full bg-hc-warning-bg px-[6px] py-[2px] text-[10px] font-semibold text-hc-warning">
               {t('comprador.tarjeta.hechoAPedido')}
             </span>
           )}
-        </span>
-      </Link>
+        </Link>
+      </div>
       {encargo ? (
         <Link to={destino} className={`${claseBoton} bg-hc-red-500 text-hc-n-0`}>
           {t('chat.quote')}

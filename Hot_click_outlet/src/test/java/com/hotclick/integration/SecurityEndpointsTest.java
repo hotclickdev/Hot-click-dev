@@ -21,7 +21,7 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     void healthCheck_public_noAuth() throws Exception {
         mockMvc.perform(get("/api/health"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.whatsappModo").exists());
+            .andExpect(jsonPath("$.whatsappModo").doesNotExist());
     }
 
     @Test

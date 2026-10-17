@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { empresaService } from '@/services/empresaService'
+import { digitosTelefonoCR } from '@/utils/telefono'
 import { unwrapEmpresa } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
 import { guardarExtrasLocal, limpiarExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
 import FormularioPorPasos from './FormularioPorPasos'
@@ -11,12 +12,15 @@ import { useSellerRuta } from './SellerPlanContext'
 import iconCamara from './assets/icon-camara.svg'
 import {
   CATEGORIAS_NEGOCIO,
+  PLACEHOLDER_BANNER,
+  PLACEHOLDER_LOGO,
   FORM_NEGOCIO_INICIAL,
   type FormNegocio,
   bodyPerfilDesdeForm,
   extrasDesdeForm,
   formConExtrasOffline,
   formDesdeEmpresa,
+  errorWhatsappNegocio,
 } from './datosNegocioHelpers'
 
 const PASOS: readonly PasoFormulario[] = [
@@ -61,6 +65,7 @@ export function DatosNegocioPage({
   function validar(i: number): string | null {
     const id = PASOS[i]?.id
     if (id === 'identidad' && !form.nombre.trim()) return 'El nombre del negocio es requerido'
+    if (id === 'contacto') return errorWhatsappNegocio(form.whatsapp)
     return null
   }
 
@@ -113,8 +118,8 @@ export function DatosNegocioPage({
                   </Chip>
                 ))}
               </div>
-              <Archivo etiqueta="Logo del negocio" nombre="logo-qa2.png" />
-              <Archivo etiqueta="Banner de portada" nombre="banner-qa2.jpg" />
+              <Archivo etiqueta="Logo del negocio" nombre={PLACEHOLDER_LOGO} />
+              <Archivo etiqueta="Banner de portada" nombre={PLACEHOLDER_BANNER} />
             </>
           ) : null}
           {idPaso === 'contacto' ? (
@@ -122,7 +127,7 @@ export function DatosNegocioPage({
               <Campo
                 etiqueta="WhatsApp de contacto"
                 value={form.whatsapp}
-                onChange={setCampo('whatsapp')}
+                onChange={(v) => setCampo('whatsapp')(digitosTelefonoCR(v))}
                 type="tel"
               />
               <Campo

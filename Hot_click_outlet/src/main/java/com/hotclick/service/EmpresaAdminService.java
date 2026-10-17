@@ -227,6 +227,8 @@ public class EmpresaAdminService {
         m.put("planSaas", e.getPlanSaas());
         m.put("estadoEmpresa", e.getEstadoEmpresa());
         m.put("visibilidadPublica", Boolean.TRUE.equals(e.getVisibilidadPublica()));
+        m.put("destacado", Boolean.TRUE.equals(e.getDestacado()));
+        m.put("destacadoOrden", e.getDestacadoOrden());
         m.put("fechaRegistro", e.getFechaRegistro());
         m.put("fechaAprobacion", e.getFechaAprobacion());
         m.put("logoUrl", e.getLogoUrl());
@@ -267,5 +269,34 @@ public class EmpresaAdminService {
         String apellido = p.getUsuarioFinal().getApellidoPaterno() != null
             ? p.getUsuarioFinal().getApellidoPaterno() : "";
         return p.getUsuarioFinal().getNombre() + " " + apellido;
+    }
+
+    /** Pausa o reanuda los cobros en línea del negocio. Queda auditado. */
+    public boolean cambiarCobrosPausados(Long id, Object val) {
+        if (!(val instanceof Boolean pausar)) {
+            throw new IllegalArgumentException("Campo cobrosPausados requerido (true o false)");
+        }
+        Empresa empresa = empresa(id);
+        empresa.setCobrosPausados(pausar);
+        empresaRepository.save(empresa);
+        auditoriaAdminRegistroService.registrarSiAdmin(
+            pausar ? "EMPRESA_COBROS_PAUSADOS" : "EMPRESA_COBROS_REANUDADOS", "EMPRESA", id, id,
+            pausar ? "Pausada" : "Reanudada");
+        return pausar;
+    }
+
+    /** Pausa o reanuda la tienda pública (410 TIENDA_PAUSADA). Queda auditado. */
+    @CacheEvict(value = "tenantInfo", key = "#id")
+    public boolean cambiarTiendaPausada(Long id, Object val) {
+        if (!(val instanceof Boolean pausar)) {
+            throw new IllegalArgumentException("Campo tiendaPausada requerido (true o false)");
+        }
+        Empresa empresa = empresa(id);
+        empresa.setTiendaPausada(pausar);
+        empresaRepository.save(empresa);
+        auditoriaAdminRegistroService.registrarSiAdmin(
+            pausar ? "EMPRESA_TIENDA_PAUSADA" : "EMPRESA_TIENDA_REANUDADA", "EMPRESA", id, id,
+            pausar ? "Pausada" : "Reanudada");
+        return pausar;
     }
 }

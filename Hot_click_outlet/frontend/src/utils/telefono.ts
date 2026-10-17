@@ -25,3 +25,10 @@ export function formatTelefonoCR(valor: string | null | undefined): string {
   const d = digitosTelefonoCR(texto)
   return d.length > 4 ? `${d.slice(0, 4)}-${d.slice(4)}` : d
 }
+
+/** Texto pegado en un campo de teléfono: si es un número de CR (8 dígitos, con o sin +506) devuelve `+506XXXXXXXX`. */
+export function pegadoTelefonoCR(texto: string | null | undefined): string | null {
+  const solo = (texto ?? '').replace(/\D/g, '')
+  const esCR = solo.length === DIGITOS_CR || (solo.length === DIGITOS_CR + 3 && solo.startsWith('506'))
+  return esCR ? `${PREFIJO_CR}${digitosTelefonoCR(solo)}` : null
+}

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { nombreVendedor } from '@/components/comprador/productCardHelpers'
 import AvisoVariosEmprendimientos from '@/components/comprador/AvisoVariosEmprendimientos'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { formatPrice } from '@/utils/format'
@@ -126,7 +127,7 @@ function PaqueteEntrega({ paquete, numero, escritorio, metodo, varios, destinoGA
   const { t } = useTranslation()
   const normalDescartado = destinoGAM ? 'ENVIO_NORMAL_FUERA_GAM' : 'ENVIO_NORMAL_GAM'
   const opciones = opcionesEnvio(bodegaRetiroDePaquete(paquete)).filter((o) => o.value !== normalDescartado && !(o.value === 'ENVIO_RAPIDO' && !destinoGAM))
-  const titulo = t('cart.paquete', { n: numero, negocio: paquete.empresaNombre || paquete.bodegaNombre })
+  const titulo = t('cart.paquete', { n: numero, negocio: nombreVendedor(paquete) })
   const conteo = t('cart.paqueteProductos', { count: paquete.items.length })
   const nombre = `envio-${paquete.bodegaId}`
   const hayRetiro = opciones.some((o) => o.value === 'RETIRO_EN_TIENDA')

@@ -108,13 +108,21 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.destacado = TRUE AND p.fk_id_estado = :estado AND p.stock_actual > 0 " +
-        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
+        "AND p.visible_catalogo = TRUE AND p.vendido = FALSE " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND e.tienda_pausada = FALSE")
     List<Producto> findDestacadosPublicos(@Param("estado") Integer estado);
+
+    /** Foto de portada de un negocio del carrusel: primera foto de su catálogo público (destacados primero). */
+    @Query("SELECT p.imagenPrincipalUrl FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1 "
+        + "AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false "
+        + "AND p.imagenPrincipalUrl IS NOT NULL AND p.imagenPrincipalUrl <> '' ORDER BY p.destacado DESC, p.id DESC")
+    List<String> findFotosCatalogoPublico(@Param("empresaId") Long empresaId, Pageable pageable);
 
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.en_carrusel = TRUE AND p.fk_id_estado = :estado " +
+        "AND p.visible_catalogo = TRUE AND p.vendido = FALSE " +
         "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
         "ORDER BY p.orden_carrusel ASC NULLS LAST")
     List<Producto> findCarruselPublico(@Param("estado") Integer estado);
@@ -239,6 +247,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     Page<Producto> findCatalogoPublicoByEmpresaAndNombre(
             @Param("empresaId") Long empresaId, @Param("q") String q, Pageable pageable);
 
+    /** Categorías con productos visibles en la tienda (propias o de plataforma): las que el filtro puede mostrar. */
+    @Query("SELECT DISTINCT p.categoria FROM Producto p WHERE p.empresa.id = :empresaId AND p.categoria IS NOT NULL " +
+           "AND p.estado = 1 AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false")
+    List<com.hotclick.model.Categoria> findCategoriasCatalogoPublico(@Param("empresaId") Long empresaId, Pageable pageable);
+
     /** Catálogo de una tienda filtrado por categoría. */
     @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.categoria.id = :catId " +
            "AND p.estado = 1 AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false ORDER BY p.id DESC")
@@ -290,4 +303,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT COUNT(p) > 0 FROM Producto p LEFT JOIN p.empresa e WHERE p.id = :id AND p.estado = 1 "
         + "AND p.visibleCatalogo = TRUE AND (e IS NULL OR (e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = TRUE))")
     boolean esPublicable(@Param("id") Long id);
+
+    /** Pausa de tienda: ¿algún producto del carrito es de una tienda pausada? (una sola consulta). */
+    @Query(nativeQuery = true, value =
+        "SELECT COUNT(*) FROM hot_click_producto_tb p " +
+        "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
+        "WHERE p.id_producto IN (:ids) AND e.tienda_pausada = TRUE")
+    long contarDeTiendasPausadas(@Param("ids") java.util.Collection<Long> ids);
 }

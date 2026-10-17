@@ -17,7 +17,14 @@ export type ProductoListaItem = {
 
 export type FiltroProductos = 'Todos' | 'Recién agregados' | CategoriaProducto
 
-export const FILTROS_PRODUCTOS = ['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const
+/** Chips de filtro: Todos, Recién agregados y las categorías reales del catálogo. */
+export function filtrosProductos(productos: ProductoListaItem[]): string[] {
+  return ['Todos', 'Recién agregados', ...categoriasEnOrden(productos.filter((p) => !p.esPersonalizado))]
+}
+
+function categoriasEnOrden(productos: ProductoListaItem[]): string[] {
+  return [...new Set(productos.map((p) => p.categoria))]
+}
 
 export type GrupoProductos = {
   titulo: string
@@ -33,10 +40,6 @@ export function filtrarProductos(
   return productos.filter((p) => p.categoria === filtro)
 }
 
-function esCategoriaConGrupo(categoria: CategoriaProducto): boolean {
-  return categoria === 'Tecnología' || categoria === 'Ropa'
-}
-
 /** En Todos, personalizados y el resto de categorías salen en su grupo. Nada queda fuera. */
 export function gruposProductosVisibles(
   productos: ProductoListaItem[],
@@ -48,12 +51,10 @@ export function gruposProductosVisibles(
   const grupos: GrupoProductos[] = [
     { titulo: 'Personalizados', items: personalizados },
     { titulo: 'Recién agregados', items: catalogo.filter((p) => p.reciente) },
-    { titulo: 'Tecnología', items: catalogo.filter((p) => p.categoria === 'Tecnología' && !p.reciente) },
-    { titulo: 'Ropa', items: catalogo.filter((p) => p.categoria === 'Ropa' && !p.reciente) },
-    {
-      titulo: 'Otros',
-      items: catalogo.filter((p) => !esCategoriaConGrupo(p.categoria) && !p.reciente),
-    },
+    ...categoriasEnOrden(catalogo).map((cat) => ({
+      titulo: cat,
+      items: catalogo.filter((p) => p.categoria === cat && !p.reciente),
+    })),
   ]
   return grupos.filter((grupo) => grupo.items.length > 0)
 }

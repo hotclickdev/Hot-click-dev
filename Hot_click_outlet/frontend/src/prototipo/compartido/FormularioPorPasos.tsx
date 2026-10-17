@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   type PasoFormulario,
@@ -10,6 +10,7 @@ import {
   siguientePasoSiValido,
 } from './formularioPorPasosHelpers'
 import './motion/formularioMotion.css'
+import { finalArmado } from './pasosAntiDobleClic'
 import PasoAnimado from './motion/PasoAnimado'
 import StepperDotLine from './motion/StepperDotLine'
 import { useDireccionPaso } from './motion/useDireccionPaso'
@@ -68,9 +69,15 @@ export default function FormularioPorPasos({
   const indiceBarra = indice + progresoOffset
   const direccion = useDireccionPaso(pasoActual)
   const bloqueado = enviando || transicionando || saliendo
+  const llegadaPasoRef = useRef(0)
+  const finalizandoRef = useRef(false)
+  useEffect(() => {
+    llegadaPasoRef.current = Date.now()
+  }, [indice])
 
   async function continuar() {
-    if (bloqueado) return
+    if (bloqueado || finalizandoRef.current) return
+    if (ultimo && !finalArmado(llegadaPasoRef.current, Date.now())) return
     const fallo = validarPaso(indice)
     if (fallo) {
       setError(fallo)
@@ -84,9 +91,11 @@ export default function FormularioPorPasos({
     if (ultimo) {
       setSuccessFlash(true)
       setSaliendo(true)
+      finalizandoRef.current = true
       try {
         await onFinalizar()
       } finally {
+        finalizandoRef.current = false
         setSaliendo(false)
         setSuccessFlash(false)
       }

@@ -3,7 +3,7 @@ import { listaPedidosDesdeRespuesta } from '@/pages/admin/ordenes/ordenesHelpers
 import type { Pedido, ItemPedido } from '@/types/pedido'
 import type { PedidoEmprendedor } from '@/prototipo/emprendedor/types'
 import type { PedidoMock } from '@/prototipo/compartido/mock'
-import { estadoPedidoVendedor, pagaAlRetirar } from './estadoPedidoVendedor'
+import { confirmaPagoManual, estadoPedidoVendedor, pagaAlRetirar } from './estadoPedidoVendedor'
 import type { DespachoPaquete } from '@/prototipo/emprendedor/pages/despacho/despachoPaquete'
 
 function lineas(items: ItemPedido[] | undefined): PedidoEmprendedor['productos'] {
@@ -22,17 +22,26 @@ function direccionDePedido(p: Pedido): string {
   return ''
 }
 
+/** «—» y vacíos del backend cuentan como sin dato. */
+export function contacto(valor: unknown): string | undefined {
+  return typeof valor === 'string' && valor.trim() && valor.trim() !== '—' ? valor.trim() : undefined
+}
+
 export function aPedidoEmprendedor(p: Pedido): PedidoEmprendedor {
   const estadoCrudo = p.estado ?? p.estadoPedido
   const datos = { metodoPago: p.metodoPago, metodoEnvio: p.metodoEnvio }
+  const estado = estadoPedidoVendedor(estadoCrudo, datos)
   return {
     id: String(p.id ?? ''),
     cliente: p.nombreCliente ?? 'Cliente',
     total: Number(p.total ?? p.totalPedido ?? 0),
-    estado: estadoPedidoVendedor(estadoCrudo, datos),
+    estado,
+    confirmaPago: confirmaPagoManual(estado, datos),
     pagaAlRetirar: pagaAlRetirar(estadoCrudo, datos),
     fecha: String(p.fechaCreacion ?? p.fechaPedido ?? ''),
     direccion: direccionDePedido(p),
+    telefono: contacto((p as Pedido & { clienteTel?: unknown }).clienteTel),
+    correo: contacto((p as Pedido & { clienteCorreo?: unknown }).clienteCorreo),
     origen: p.origen,
     productos: lineas(p.items),
   }
@@ -47,6 +56,9 @@ export function aPedidoSeller(p: PedidoEmprendedor): PedidoMock {
     pagaAlRetirar: p.pagaAlRetirar,
     fecha: p.fecha,
     direccion: p.direccion,
+    telefono: p.telefono,
+    correo: p.correo,
+    confirmaPago: p.confirmaPago,
     origen: p.origen,
     items: p.productos.map((item) => ({
       nombre: item.nombre,
@@ -59,6 +71,16 @@ export function aPedidoSeller(p: PedidoEmprendedor): PedidoMock {
 export async function cargarPedidosVendedor(): Promise<Pedido[]> {
   const { data } = await orderService.getAll()
   return listaPedidosDesdeRespuesta(data)
+}
+
+/** Cancela un pedido sin pago confirmado; el backend libera la reserva de stock. */
+export async function cancelarPedidoVendedorApi(id: string) {
+  await orderService.updateStatus(id, 'CANCELADO')
+}
+
+/** Pedido de tienda propia: el vendedor confirma que recibió el pago (mismo PUT de estado que usa Admin). */
+export async function confirmarPagoVendedorApi(id: string) {
+  await orderService.updateStatus(id, 'PAGADO')
 }
 
 export async function marcarPedidoEnviadoApi(id: string) {

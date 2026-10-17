@@ -26,6 +26,7 @@ public class EmpresaController {
 
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaAdminService empresaAdminService;
+    @Autowired private com.hotclick.service.negocio.EmpresaDestacadoService empresaDestacadoService;
     @Autowired private ImpersonacionService impersonacionService;
     @Autowired private UbicacionDespachoService ubicacionDespachoService;
 
@@ -71,6 +72,35 @@ public class EmpresaController {
         boolean visible = empresaAdminService.cambiarVisibilidad(id, body.get("visibilidadPublica"));
         String msg = visible ? "Negocio visible al público" : "Negocio oculto al público";
         return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("visibilidadPublica", visible)));
+    }
+
+    /** Carrusel del inicio: destacar o quitar un negocio (solo superadmin; solo negocios activos y visibles). */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/destacado")
+    public ResponseEntity<ResponseDTO> cambiarDestacado(@PathVariable Long id,
+                                                        @RequestBody Map<String, Object> body) {
+        companyScope.assertCanAccess(id);
+        Map<String, Object> r = empresaDestacadoService.cambiar(id, body.get("destacado"), body.get("orden"));
+        String msg = Boolean.TRUE.equals(r.get("destacado")) ? "Negocio destacado en el inicio" : "Negocio quitado del inicio";
+        return ResponseEntity.ok(ResponseDTO.success(msg, r));
+    }
+
+    @PutMapping("/{id}/cobros-pausados")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO> cambiarCobrosPausados(@PathVariable Long id,
+                                                             @RequestBody Map<String, Object> body) {
+        boolean pausados = empresaAdminService.cambiarCobrosPausados(id, body.get("cobrosPausados"));
+        String msg = pausados ? "Cobros en línea pausados" : "Cobros en línea reanudados";
+        return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("cobrosPausados", pausados)));
+    }
+
+    @PutMapping("/{id}/tienda-pausada")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO> cambiarTiendaPausada(@PathVariable Long id,
+                                                            @RequestBody Map<String, Object> body) {
+        boolean pausada = empresaAdminService.cambiarTiendaPausada(id, body.get("tiendaPausada"));
+        return ResponseEntity.ok(ResponseDTO.success(pausada ? "Tienda pausada" : "Tienda reanudada",
+            Map.of("tiendaPausada", pausada)));
     }
 
     @GetMapping("/{id}/productos")
