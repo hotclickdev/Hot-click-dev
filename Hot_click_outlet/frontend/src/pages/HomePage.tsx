@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { soloPublicables } from '@/pages/plataforma/destacados'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -56,7 +57,7 @@ export default function HomePage() {
   // Carrusel: negocios destacados del catálogo público; un error se trata como bloque vacío (HANDOFF §6).
   const negociosDestacadosQuery = useQuery({
     queryKey: ['home', 'carrusel', 'negocios', MAX_POR_BLOQUE],
-    queryFn: () => negocioService.destacados(MAX_POR_BLOQUE).then((r) => (Array.isArray(r.data) ? r.data : [])),
+    queryFn: () => negocioService.destacados(MAX_POR_BLOQUE).then((r) => (Array.isArray(r.data) ? soloPublicables(r.data) : [])),
     staleTime: VIGENCIA_MS,
   })
   const catalogo = catalogoQuery.data ?? []

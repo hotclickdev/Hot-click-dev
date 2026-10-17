@@ -15,6 +15,9 @@ export type NegocioPublico = {
 
 /** Negocio de `GET /api/public/negocios/destacados` (carrusel del inicio): foto ya resuelta, sin contacto. */
 export type NegocioDestacado = {
+  /** Defensa: el backend ya excluye pausadas/no aprobadas (feat/pausa-cobros-tienda). */
+  pausada?: boolean
+  estado?: string
   slug: string
   nombre: string
   categoria: string

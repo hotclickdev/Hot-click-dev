@@ -6,6 +6,7 @@ import { FichaTienda } from './FichaTienda'
 import TiendaRapidaPanel from './TiendaRapidaPanel'
 import { Aviso, BOTON_PRIMARIO, Carga, Chip, Encabezado, MarcoIcono, Segmento, TARJETA } from './piezas'
 import { useCola } from './useCola'
+import { ETIQUETA_DESTACADO, contarDestacados, filtrarPorDestacado, textoOrden } from './destacados'
 
 const FILTROS = [
   { id: 'todos', label: 'Todos' },
@@ -51,19 +52,30 @@ export default function NegociosPlataforma() {
 function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: number; onRapida: () => void }) {
   const [params] = useSearchParams()
   const [filtro, setFiltro] = useState('todos')
+  const [filtroDestacado, setFiltroDestacado] = useState('todos')
   const consulta = params.get('q') ?? ''
   const { filas, estado, mensaje, recargar } = useCola('negocios', () => adminService.getEmpresas())
   useEffect(() => {
     if (marca === 0) return
     recargar({ silencio: true })
   }, [marca, recargar])
-  const visibles = useMemo(() => filtrarNegocios(filas, filtro, consulta), [filas, filtro, consulta])
+  const porEstado = useMemo(() => filtrarNegocios(filas, filtro, consulta), [filas, filtro, consulta])
+  const conteo = useMemo(() => contarDestacados(porEstado), [porEstado])
+  const visibles = useMemo(() => filtrarPorDestacado(porEstado, filtroDestacado), [porEstado, filtroDestacado])
 
   return (
     <div className="flex flex-col gap-4">
       <Encabezado titulo="Tiendas" detalle="Plan, estado y catálogo. La ficha se abre al lado." />
       <button type="button" className={BOTON_PRIMARIO} onClick={onRapida}>Crear tienda rápida</button>
       <Segmento opciones={FILTROS} valor={filtro} onChange={setFiltro} />
+      <div role="group" aria-label="Filtrar por destacado" className="flex flex-wrap gap-2">
+        {([['todos', 'Todos'], ['destacados', 'Destacados'], ['sin-destacar', 'Sin destacar']] as const).map(([valor, etiqueta]) => (
+          <button key={valor} type="button" aria-pressed={filtroDestacado === valor} onClick={() => setFiltroDestacado(valor)}
+            className={`inline-flex min-h-11 items-center rounded-full border px-3 text-[13px] font-semibold ${filtroDestacado === valor ? 'border-hc-blue-600 bg-hc-blue-600 text-white' : 'border-hc-n-200 bg-hc-surface text-hc-n-900'}`}>
+            {etiqueta} · {conteo[valor]}
+          </button>
+        ))}
+      </div>
       {estado === 'carga' && <Carga />}
       {estado === 'error' && <Aviso>{mensaje}</Aviso>}
       {estado === 'listo' && visibles.length === 0 && <Aviso>Nada en este filtro.</Aviso>}
@@ -82,6 +94,8 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
                     <Chip tono="azul">{texto(fila.plan, texto(fila.planSaas, 'Sin plan'))}</Chip>
                     <Chip tono={texto(fila.estadoEmpresa).toUpperCase() === 'ACTIVO' ? 'ok' : 'alerta'}>{etiquetaEstado(texto(fila.estadoEmpresa, '—'))}</Chip>
                     <Chip>{fila.visibilidadPublica === true ? 'Catálogo visible' : 'Catálogo oculto'}</Chip>
+                    {fila.destacado === true && <Chip tono="azul">{ETIQUETA_DESTACADO}</Chip>}
+                    {fila.destacado === true && textoOrden(fila) && <Chip>{`Orden ${textoOrden(fila)}`}</Chip>}
                   </span>
                 </span>
               </Link>
