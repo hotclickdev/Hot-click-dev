@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +39,7 @@ public class ReembolsoCompradorController {
         ResponseEntity<Map<String, Object>> denegado = exigirComprador(id);
         if (denegado != null) return denegado;
         Object items = body != null ? body.get("itemIds") : null;
-        if (!(items instanceof List<?> l) || l.isEmpty()) {
+        if (!(items instanceof java.util.Collection<?> l) || l.isEmpty()) {
             return PendienteDecision.error(HttpStatus.BAD_REQUEST, "SIN_ITEMS", "Elegí al menos un producto");
         }
         Object motivo = body.get("motivo");
