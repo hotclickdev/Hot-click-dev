@@ -53,8 +53,13 @@ public class AuthNuevoNegocioHandler {
     public ResponseEntity<?> nuevoNegocio(RegistroEmpresaDTO dto, HttpServletRequest request) {
         try {
             Usuario currentUser = authSupport.usuarioFromRequest(request);
-            if (miembroEmpresaRepository.countEmpresasByUsuarioId(currentUser.getId()) >= 20) {
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Alcanzaste el límite de 20 negocios por cuenta"));
+            long negocios = miembroEmpresaRepository.countEmpresasByUsuarioId(currentUser.getId());
+            if (negocios < 1) {
+                // S2-multinegocio: «Crear otro» solo para cuentas que ya tienen al menos un negocio.
+                return ResponseEntity.status(403).body(ResponseDTO.error("Esta opción es para cuentas que ya tienen un negocio."));
+            }
+            if (negocios >= 20) {
+                return conCodigo(409, CODIGO_CUPO_NEGOCIOS, "Alcanzaste el límite de 20 negocios por cuenta");
             }
 
             ResponseEntity<?> validacion = validarDto(dto);
@@ -84,6 +89,19 @@ public class AuthNuevoNegocioHandler {
         }
     }
 
+    /** Códigos estables para «Crear otro negocio» (Frontend #172, punto 10). */
+    public static final String CODIGO_NOMBRE_EN_USO = "NOMBRE_NEGOCIO_EN_USO";
+    public static final String CODIGO_CUPO_NEGOCIOS = "CUPO_NEGOCIOS";
+    public static final String CODIGO_CORREO_EN_USO = "CORREO_NEGOCIO_EN_USO";
+
+    static ResponseEntity<java.util.Map<String, Object>> conCodigo(int status, String code, String message) {
+        java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("success", false);
+        body.put("code", code);
+        body.put("message", message);
+        return ResponseEntity.status(status).body(body);
+    }
+
     private ResponseEntity<?> validarDto(RegistroEmpresaDTO dto) {
         if (dto.getNombreEmpresa() == null || dto.getNombreEmpresa().isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre del negocio es requerido"));
@@ -91,11 +109,24 @@ public class AuthNuevoNegocioHandler {
         if (dto.getCorreoEmpresa() == null || dto.getCorreoEmpresa().isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El correo oficial del negocio es requerido"));
         }
+        if (nombreEnUso(dto.getNombreEmpresa())) {
+            return conCodigo(409, CODIGO_NOMBRE_EN_USO, "Ese nombre de negocio ya está en uso. Probá con otro.");
+        }
         String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase();
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa)) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Ese correo de negocio ya está en uso"));
+            return conCodigo(400, CODIGO_CORREO_EN_USO, "Ese correo de negocio ya está en uso");
         }
         return null;
+    }
+
+    /**
+     * Nombre único normalizado (mayúsculas, tildes, espacios). Chequeo en Java mientras no esté
+     * feat/negocio-nombre-unico (columna nombre_normalizado + índice único) del Desarrollador.
+     */
+    boolean nombreEnUso(String nombre) {
+        String n = com.hotclick.service.negocio.NombreNegocioNormalizador.normalizar(nombre);
+        return empresaRepository.findAllNombres().stream()
+            .anyMatch(x -> n.equals(com.hotclick.service.negocio.NombreNegocioNormalizador.normalizar(x)));
     }
 
     private AltaNegocio crearEmpresa(RegistroEmpresaDTO dto) {
@@ -112,6 +143,9 @@ public class AuthNuevoNegocioHandler {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
+        // TODO(#41): plan inicial del negocio nuevo sin decidir. Hoy entra como Emprendedor y cuenta
+        // para el cupo de 70 (reserva atómica). Pyme/Negocio Plus: cada empresa tiene su propia
+        // suscripción (Suscripcion por empresa_id), se cobra por separado al cambiar de plan.
         ResultadoAltaCupo cupo = cupoEmprendedorService.aplicarAlta(empresa, correoEmpresa);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));

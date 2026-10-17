@@ -20,9 +20,10 @@ public class CupoEmprendedorService {
     private static final Logger log = LoggerFactory.getLogger(CupoEmprendedorService.class);
     private static final String SQL_ESTADO =
         "SELECT usados, limite FROM hot_click_cupo_emprendedor_tb WHERE id = 1";
+    /** Atómico en cualquier motor: el UPDATE condicional toma el lock de la fila; 1 fila = cupo reservado. */
     private static final String SQL_RESERVAR =
         "UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 "
-            + "WHERE id = 1 AND usados < limite RETURNING usados";
+            + "WHERE id = 1 AND usados < limite";
 
     private final JdbcTemplate jdbcTemplate;
     private final PlanRepository planRepository;
@@ -90,10 +91,11 @@ public class CupoEmprendedorService {
 
     OptionalInt reservarCupoGratis() {
         try {
-            List<Integer> filas = jdbcTemplate.query(
-                SQL_RESERVAR, (rs, rowNum) -> rs.getInt("usados"));
-            if (filas.isEmpty()) return OptionalInt.empty();
-            return OptionalInt.of(filas.get(0));
+            int filas = jdbcTemplate.update(SQL_RESERVAR);
+            if (filas != 1) return OptionalInt.empty();
+            Integer usados = jdbcTemplate.queryForObject(
+                "SELECT usados FROM hot_click_cupo_emprendedor_tb WHERE id = 1", Integer.class);
+            return OptionalInt.of(usados == null ? 0 : usados);
         } catch (DataAccessException ex) {
             log.warn("[cupo-emprendedor] no se pudo reservar cupo — {}", ex.getMessage());
             return OptionalInt.empty();

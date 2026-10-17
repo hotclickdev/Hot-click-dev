@@ -29,6 +29,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
     @Autowired private com.hotclick.repository.PagoRepository pagoRepository;
     @Autowired private BodegaRepository      bodegaRepository;
     @Autowired private CategoriaRepository   categoriaRepository;
+    @Autowired private com.hotclick.repository.MiembroEmpresaRepository miembroEmpresaRepository;
 
     // ── Datos de las dos empresas ─────────────────────────────────────────────
     private Empresa empresaA;
@@ -69,6 +70,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDownTenants() {
+        miembroEmpresaRepository.deleteAll();
         pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         productoRepository.deleteAll();
@@ -184,6 +186,33 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
             .andExpect(status().isForbidden());
     }
 
+    // ── S2-multinegocio ───────────────────────────────────────────────────────
+    @Test
+    @DisplayName("Multinegocio: con el token del negocio A no se entra al negocio C de la misma cuenta → 403")
+    void multinegocio_aisladoEntreNegociosDeLaMismaCuenta() throws Exception {
+        Empresa empresaC = crearEmpresa("Empresa Gamma", "empresa-gamma", "gamma@test.cr");
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaA, "PROPIETARIO"));
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaC, "PROPIETARIO"));
+        String tokenSoloA = "Bearer " + jwtUtil.generateToken(emprendedorA.getCorreo(), emprendedorA.getId(),
+            Constants.ROL_EMPRENDEDOR, empresaA.getId(), empresaA.getSlug());
+
+        mockMvc.perform(get("/api/admin/empresas/" + empresaC.getId()).header("Authorization", tokenSoloA))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/admin/empresas/" + empresaB.getId()).header("Authorization", tokenSoloA))
+            .andExpect(status().isForbidden());
+        miembroEmpresaRepository.deleteAll();
+    }
+
+    @Test
+    @DisplayName("Multinegocio: «Crear otro negocio» sin negocio previo → 403")
+    void multinegocio_crearOtroSinNegocioPrevio403() throws Exception {
+        String tokenSinNegocio = "Bearer " + jwtUtil.generateToken(emprendedorB.getCorreo(), emprendedorB.getId(), Constants.ROL_EMPRENDEDOR);
+        mockMvc.perform(post("/api/auth/nuevo-negocio").header("Authorization", tokenSinNegocio)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreEmpresa\":\"Negocio Nuevo QA\",\"correoEmpresa\":\"nuevo-qa@test.cr\"}"))
+            .andExpect(status().isForbidden());
+    }
+
     @Test
     @DisplayName("Pausa de cobros: un emprendedor no puede pausar ni reanudar su propio negocio → 403")
     void emprendedorA_cannotPausarCobros() throws Exception {
@@ -193,6 +222,51 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .content("{\"cobrosPausados\":false}"))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Multinegocio: nombre repetido (mayúsculas, tildes, espacios) → 409")
+    void multinegocio_nombreRepetidoNormalizado409() throws Exception {
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaA, "PROPIETARIO"));
+        mockMvc.perform(post("/api/auth/nuevo-negocio").header("Authorization", tokenA)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreEmpresa\":\"  EMPRESA   Álpha \",\"correoEmpresa\":\"otro-alpha@test.cr\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value("NOMBRE_NEGOCIO_EN_USO"));
+        miembroEmpresaRepository.deleteAll();
+    }
+
+    @Test
+    @DisplayName("Multinegocio: correo de negocio ya usado → 400 CORREO_NEGOCIO_EN_USO")
+    void multinegocio_correoEnUso400() throws Exception {
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaA, "PROPIETARIO"));
+        mockMvc.perform(post("/api/auth/nuevo-negocio").header("Authorization", tokenA)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreEmpresa\":\"Negocio Correo Repetido\",\"correoEmpresa\":\"" + empresaA.getCorreoEmpresa().toUpperCase() + "\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value("CORREO_NEGOCIO_EN_USO"));
+        miembroEmpresaRepository.deleteAll();
+    }
+
+    @Test
+    @DisplayName("Multinegocio: con 20 negocios, «Crear otro» → 409 CUPO_NEGOCIOS")
+    void multinegocio_cupoDeNegocios409() throws Exception {
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaA, "PROPIETARIO"));
+        for (int i = 0; i < 19; i++) {
+            Empresa extra = crearEmpresa("Cupo Extra " + i, "cupo-extra-" + i, "cupo-extra-" + i + "@test.cr");
+            miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, extra, "PROPIETARIO"));
+        }
+        try {
+            mockMvc.perform(post("/api/auth/nuevo-negocio").header("Authorization", tokenA)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"nombreEmpresa\":\"Negocio 21\",\"correoEmpresa\":\"negocio-21@test.cr\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CUPO_NEGOCIOS"));
+        } finally {
+            miembroEmpresaRepository.deleteAll();
+        }
     }
 
     @Test
