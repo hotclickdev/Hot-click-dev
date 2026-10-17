@@ -71,7 +71,7 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="reportes" element={page(ReportesPage)} />
         <Route path="tienda" element={page(TiendaPublicaPage)} />
         <Route path="opciones" element={page(OpcionesPage)} />
-        <Route path="opciones/mensualidad" element={page(MensualidadPage)} />
+        <Route path="mensualidad" element={page(MensualidadPage)} />
         <Route path="recoleccion" element={page(RecoleccionSellerPage)} />
         <Route path="encargos" element={page(EncargosSellerPage)} />
       </Route>
