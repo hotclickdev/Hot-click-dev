@@ -36,7 +36,7 @@ const Estado = ({ error, vacio }: { error: boolean; vacio: boolean }) => error ?
 export default function FacturacionPage() {
   const [pestana, setPestana] = useState<Pestana>('por-facturar')
   return (
-    <main className="mx-auto flex max-w-[1232px] flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex max-w-[1232px] flex-col gap-4 px-4 pt-6 pb-10">
       <h1 className="font-display text-[22px] font-bold">Facturación</h1>
       <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-hc-n-200">
         {PESTANAS.map(([id, texto]) => (
