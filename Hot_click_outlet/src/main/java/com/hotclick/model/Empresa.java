@@ -79,6 +79,14 @@ public class Empresa {
     @Column(name = "visibilidad_publica", nullable = false)
     private Boolean visibilidadPublica = true;
 
+    /** Pausa de cobros en línea decidida por HotClick (no por ONVO). */
+    @Column(name = "cobros_pausados", nullable = false)
+    private Boolean cobrosPausados = false;
+
+    /** Tienda pausada por HotClick: /api/tienda/{slug} responde 410 TIENDA_PAUSADA. */
+    @Column(name = "tienda_pausada", nullable = false)
+    private Boolean tiendaPausada = false;
+
     @Column(name = "fk_id_estado", nullable = false)
     private Integer estado = 1;
 
@@ -283,6 +291,12 @@ public class Empresa {
 
     public Boolean getVisibilidadPublica() { return visibilidadPublica; }
     public void setVisibilidadPublica(Boolean visibilidadPublica) { this.visibilidadPublica = visibilidadPublica; }
+
+    public boolean isTiendaPausada() { return Boolean.TRUE.equals(tiendaPausada); }
+    public void setTiendaPausada(Boolean tiendaPausada) { this.tiendaPausada = Boolean.TRUE.equals(tiendaPausada); }
+
+    public boolean isCobrosPausados() { return Boolean.TRUE.equals(cobrosPausados); }
+    public void setCobrosPausados(Boolean cobrosPausados) { this.cobrosPausados = Boolean.TRUE.equals(cobrosPausados); }
 
     public Integer getEstado() { return estado; }
     public void setEstado(Integer estado) { this.estado = estado; }
