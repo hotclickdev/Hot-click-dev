@@ -10,7 +10,8 @@ import { SINPE_NUMERO } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { CodigosPedido } from './useCodigosPedido'
-import { PAGO_EFECTIVO, contraEntregaDisponible, efectivoDisponible } from './pagoPrincipal'
+import { PAGO_EFECTIVO, efectivoDisponible } from './pagoPrincipal'
+import { AVISO_SIN_CONTRA_ENTREGA, cargoContraEntrega, estadoContraEntrega, textoCargoContraEntrega } from './contraEntregaPorNegocio'
 import { metodosDisponibles } from './metodosPago'
 
 type MetodosPagoProps = {
@@ -24,10 +25,14 @@ type MetodosPagoProps = {
 export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
   const { t } = useTranslation()
   const rapido = Object.values(form.metodoEnvioPorPaquete).includes('ENVIO_RAPIDO')
-  const METODOS = metodosDisponibles(
-    efectivoDisponible(form.paquetes.flatMap((p) => p.items)),
-    contraEntregaDisponible(Object.values(form.metodoEnvioPorPaquete), form.contraEntregaHabilitada),
-  )
+  const contraEntrega = estadoContraEntrega(form.paquetes, Object.values(form.metodoEnvioPorPaquete), form.contraEntregaHabilitada)
+  const METODOS = metodosDisponibles(efectivoDisponible(form.paquetes.flatMap((p) => p.items)), contraEntrega.disponible)
+  const cargoCE = contraEntrega.disponible && form.metodoPago === PAGO_EFECTIVO ? cargoContraEntrega(form.paquetes, form.contraEntregaCargoPorNegocio) : null
+  const avisoContraEntrega = contraEntrega.motivo ? (
+    <p role="note" className="rounded-[8px] bg-hc-blue-50 px-3 py-2 text-[12px] leading-4 text-hc-n-900">{AVISO_SIN_CONTRA_ENTREGA[contraEntrega.motivo]}</p>
+  ) : cargoCE ? (
+    <p role="note" className="rounded-[8px] bg-hc-blue-50 px-3 py-2 text-[12px] leading-4 text-hc-n-900">{textoCargoContraEntrega(cargoCE, (n) => formatPrice(n))}</p>
+  ) : null
 
   if (escritorio) {
     return (
@@ -47,6 +52,7 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
           })}
         </div>
         {METODOS.length > 1 && bloqueadoAviso(rapido, t)}
+        {avisoContraEntrega}
         {form.metodoPago === PAGO_EFECTIVO && <NotaEfectivo />}
       </div>
     )
@@ -82,6 +88,7 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
           </div>
         )
       })}
+      {avisoContraEntrega}
     </div>
   )
 }

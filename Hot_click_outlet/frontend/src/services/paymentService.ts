@@ -145,7 +145,7 @@ export const paymentService = {
 
   /** Público: opciones del checkout por configuración (contra entrega en Envío Normal). */
   getCheckoutConfig() {
-    return api.get<{ contraEntregaNormal?: boolean }>('/public/checkout-config')
+    return api.get<{ contraEntregaNormal?: boolean; contraEntregaCargoPorNegocio?: number }>('/public/checkout-config')
   },
 
   /** Comisión de pasarela (admin) — opcional; el UI tolera 404. */

@@ -48,6 +48,8 @@ export type CheckoutFormState = {
   setPaso: (paso: number, opciones?: OpcionesPaso) => void
   metodoPago: string
   contraEntregaHabilitada: boolean
+  /** Cargo de contra entrega por negocio, de la config del checkout (null = no vino). */
+  contraEntregaCargoPorNegocio: number | null
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
   setNotas: (value: string) => void
@@ -174,10 +176,16 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   // Abre con SINPE Móvil (pasarela). Sin SINPE manual con comprobante.
   const [metodoPago, setMetodoPago] = useState<string>(metodoPagoPrincipal)
   const [contraEntregaHabilitada, setContraEntregaHabilitada] = useState(false)
+  const [contraEntregaCargoPorNegocio, setCargoCE] = useState<number | null>(null)
   useEffect(() => {
     let vivo = true
     paymentService.getCheckoutConfig()
-      .then(({ data }) => { if (vivo) setContraEntregaHabilitada(data?.contraEntregaNormal === true) })
+      .then(({ data }) => {
+        if (!vivo) return
+        setContraEntregaHabilitada(data?.contraEntregaNormal === true)
+        const cargo = data?.contraEntregaCargoPorNegocio
+        setCargoCE(typeof cargo === 'number' ? cargo : null)
+      })
       .catch(() => { /* sin config: sin contra entrega */ })
     return () => { vivo = false }
   }, [])
@@ -323,6 +331,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     metodoPago,
     setMetodoPago,
     contraEntregaHabilitada,
+    contraEntregaCargoPorNegocio,
     notas,
     setNotas,
     sinpeNombre,
