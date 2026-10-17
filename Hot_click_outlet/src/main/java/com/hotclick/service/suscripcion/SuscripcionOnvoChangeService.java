@@ -32,7 +32,7 @@ import java.util.Optional;
  * (excepto modo mock, que aplica al instante).
  */
 @Service
-public class SuscripcionOnvoChangeService {
+public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
 
     private static final Logger log = LoggerFactory.getLogger(SuscripcionOnvoChangeService.class);
     private static final String PLAN_GRATIS = "EMPRENDEDOR";
@@ -207,6 +207,15 @@ public class SuscripcionOnvoChangeService {
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción activa", empresaId));
         sub.setCancelarAlVencer(true);
         suscripcionRepo.save(sub);
+    }
+
+    /** Implementación actual del puerto: aplica el plan localmente (sin depender de la pasarela). */
+    @Override
+    @Transactional
+    @CacheEvict(value = "tenantInfo", key = "#empresaId")
+    public void planPagoConfirmado(Long empresaId, String planNombre, String proveedor, String referencia) {
+        log.info("[plan-pago] Plan {} confirmado empresa={} proveedor={} ref={}", planNombre, empresaId, proveedor, referencia);
+        aplicarPlanLocal(empresaId, planNombre, null);
     }
 
     @Transactional

@@ -59,6 +59,14 @@ public class SlugTenantInterceptor implements HandlerInterceptor {
         String slug = pathVars.get("slug");
         Empresa empresa = empresaRepository.findBySlug(slug).orElse(null);
 
+        if (empresa != null && "ACTIVO".equals(empresa.getEstadoEmpresa()) && empresa.isTiendaPausada()) {
+            response.setStatus(HttpStatus.GONE.value());
+            response.setContentType("application/json");
+            response.getWriter().write(
+                "{\"success\":false,\"code\":\"TIENDA_PAUSADA\",\"message\":\"Esta tienda está pausada por ahora.\"}");
+            return false;
+        }
+
         if (empresa == null
                 || !"ACTIVO".equals(empresa.getEstadoEmpresa())
                 || !Boolean.TRUE.equals(empresa.getVisibilidadPublica())) {

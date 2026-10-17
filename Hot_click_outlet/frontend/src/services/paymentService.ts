@@ -143,6 +143,11 @@ export const paymentService = {
     })
   },
 
+  /** Público: opciones del checkout por configuración (contra entrega en Envío Normal). */
+  getCheckoutConfig() {
+    return api.get<{ contraEntregaNormal?: boolean }>('/public/checkout-config')
+  },
+
   /** Comisión de pasarela (admin) — opcional; el UI tolera 404. */
   getConfigComision() {
     return api.get('/admin/configuracion/comision')

@@ -7,7 +7,7 @@ import { registerSW } from 'virtual:pwa-register'
 import { PostHogProvider } from '@posthog/react'
 import { initSentry, syncSentryUser } from '@/utils/sentryClient'
 import useAuthStore from '@/store/authStore'
-import { debeAutoActualizar, registrarAplicarSwUpdate } from '@/app/swUpdate'
+import { crearLimitadorChequeo, debeAutoActualizar, debeMostrarAvisoSw, registrarAplicarSwUpdate } from '@/app/swUpdate'
 
 initSentry()
 const sesion = useAuthStore.getState()
@@ -32,7 +32,8 @@ if ('serviceWorker' in navigator) {
         void updateSW(true)
         return
       }
-      globalThis.dispatchEvent(new CustomEvent('sw-update-available'))
+      // Si el usuario dijo «Ahora no», no se vuelve a anunciar en cada recarga o foco.
+      if (debeMostrarAvisoSw()) globalThis.dispatchEvent(new CustomEvent('sw-update-available'))
     },
     onOfflineReady() {},
     onRegistered(swRegistration) {
@@ -41,8 +42,9 @@ if ('serviceWorker' in navigator) {
         setInterval(() => { void swRegistration.update() }, 60 * 60 * 1000)
         // Pestañas de larga duración (ej. caja POS abierta todo el día) no
         // esperan la hora completa: al volver a foco, chequean de una vez.
+        const tocaChequear = crearLimitadorChequeo()
         document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') void swRegistration.update()
+          if (document.visibilityState === 'visible' && tocaChequear()) void swRegistration.update()
         })
       }
     },

@@ -102,3 +102,28 @@ describe('efectivo con retiro (paga al retirar)', () => {
     expect(envio.pagaAlRetirar).toBe(false)
   })
 })
+
+describe('NP-18 controles de estado del vendedor', () => {
+  it('solo se cancela lo que espera pago', async () => {
+    const { puedeCancelar } = await import('./estadoPedidoVendedor')
+    expect(puedeCancelar('Esperando pago')).toBe(true)
+    expect(puedeCancelar('Pendiente')).toBe(false)
+    expect(puedeCancelar('Enviado')).toBe(false)
+  })
+
+  it('confirmar pago solo en pedidos de tienda propia sin pasarela', async () => {
+    const { confirmaPagoManual } = await import('./estadoPedidoVendedor')
+    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'SINPE_MOVIL', metodoEnvio: 'DOMICILIO' })).toBe(true)
+    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'TILOPAY', metodoEnvio: 'ENVIO_NORMAL_GAM' })).toBe(false)
+    expect(confirmaPagoManual('Pendiente', { metodoPago: 'SINPE_MOVIL', metodoEnvio: 'RETIRO' })).toBe(false)
+  })
+})
+
+describe('NP-18 contacto del cliente', () => {
+  it('«—» y vacío cuentan como sin dato', async () => {
+    const { contacto } = await import('./pedidosVendedorApi')
+    expect(contacto('88887777')).toBe('88887777')
+    expect(contacto('—')).toBeUndefined()
+    expect(contacto('')).toBeUndefined()
+  })
+})

@@ -15,6 +15,17 @@ public class ContraEntregaPolitica {
 
     private final String modoNormal;
 
+    /** Decisión HOT_CLICK 16-oct-2026: Envío Normal = contra entrega, configurable. */
+    @Value("${hotclick.envio.normal.contra-entrega.habilitada:true}")
+    private boolean habilitada = true;
+
+    public boolean habilitada() { return habilitada; }
+
+    /** Efectivo permitido: la bodega lo acepta, o es Envío Normal con contra entrega habilitada. */
+    public static boolean permiteEfectivo(boolean bodegaAcepta, String metodoEnvio, boolean contraEntregaNormal) {
+        return bodegaAcepta || (contraEntregaNormal && esEnvioNormal(metodoEnvio));
+    }
+
     public ContraEntregaPolitica(@Value("${hotclick.envio.normal.contra-entrega:PEDIDO_COMPLETO}") String modoNormal) {
         String m = modoNormal == null ? "" : modoNormal.trim().toUpperCase();
         this.modoNormal = SOLO_ENVIO.equals(m) ? SOLO_ENVIO : PEDIDO_COMPLETO;
@@ -23,7 +34,10 @@ public class ContraEntregaPolitica {
     public String modoNormal() { return modoNormal; }
 
     public static boolean esEnvioNormal(String metodoEnvio) {
-        return metodoEnvio != null && metodoEnvio.toUpperCase().startsWith("ENVIO_NORMAL");
+        if (metodoEnvio == null) return false;
+        String m = metodoEnvio.toUpperCase();
+        // La tienda pública manda DOMICILIO: es el Envío Normal de HotClick.
+        return m.startsWith("ENVIO_NORMAL") || "DOMICILIO".equals(m);
     }
 
     /**

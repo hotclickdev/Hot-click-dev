@@ -17,6 +17,9 @@ type DespacharPedidoVistaProps = {
   onMarcar: () => void
   /** Efectivo con retiro: entregar (el backend registra el cobro). */
   onEntregar?: () => void
+  /** NP-18: pedido sin pago confirmado. */
+  onCancelar?: () => void
+  onConfirmarPago?: () => void
 }
 
 const MAX_GUIA = 100
@@ -28,7 +31,7 @@ const MAX_GUIA = 100
  * Sin pago confirmado ('Esperando pago') no se ofrece despachar: el backend respondería 409.
  * Efectivo con retiro (`pagaAlRetirar`) no se despacha: se ofrece "Marcar entregado" y el backend registra el cobro.
  */
-export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, error, onMarcar, onEntregar }: DespacharPedidoVistaProps) {
+export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, error, onMarcar, onEntregar, onCancelar, onConfirmarPago }: DespacharPedidoVistaProps) {
   const { t } = useTranslation()
   const entregar = puedeDespachar(pedido.estado) && pedido.pagaAlRetirar === true
   const pendiente = puedeDespachar(pedido.estado) && !entregar
@@ -63,6 +66,9 @@ export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, e
           <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
             <p className="text-[13px] font-medium text-hc-n-900">{pedido.cliente}</p>
             <p className="text-[12px] leading-4 text-hc-n-600">{pedido.direccion || '—'}</p>
+            {pedido.telefono || pedido.correo ? (
+              <p className="text-[12px] leading-4 text-hc-n-600">{[pedido.telefono, pedido.correo].filter(Boolean).join(' · ')}</p>
+            ) : null}
           </div>
         </div>
       </section>
@@ -71,6 +77,22 @@ export default function DespacharPedidoVista({ pedido, guia, onGuia, marcando, e
         <p role="status" className="rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] text-[13px] leading-[18px] text-hc-n-600">
           {t('despacho.esperandoPagoAyuda')}
         </p>
+      )}
+
+      {esperandoPago && (onCancelar || onConfirmarPago) && (
+        <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
+          {error && <p role="alert" className="text-[12px] leading-4 text-hc-danger">{error}</p>}
+          {pedido.confirmaPago && onConfirmarPago && (
+            <button type="button" disabled={marcando} onClick={onConfirmarPago} className="flex min-h-11 items-center justify-center rounded-[12px] bg-hc-red-500 px-4 text-[14px] font-semibold text-hc-n-0 disabled:opacity-60">
+              {marcando ? 'Guardando…' : 'Confirmar pago recibido'}
+            </button>
+          )}
+          {onCancelar && (
+            <button type="button" disabled={marcando} onClick={onCancelar} className="flex min-h-11 items-center justify-center rounded-[12px] border border-hc-n-200 bg-hc-n-0 px-4 text-[14px] font-semibold text-hc-n-900 disabled:opacity-40">
+              Cancelar pedido
+            </button>
+          )}
+        </section>
       )}
 
       {entregar && (

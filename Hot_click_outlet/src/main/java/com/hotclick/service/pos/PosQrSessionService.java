@@ -74,6 +74,7 @@ public class PosQrSessionService {
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", usuarioId));
         Empresa empresa  = empresaRepo.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
+        exigirNegocioAprobado(empresa);
 
         int total = 0;
         for (Map<String, Object> item : items) {
@@ -81,6 +82,7 @@ public class PosQrSessionService {
             int cantidad = cantidadDe(item);
             var producto = productoRepo.findById(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+            PosVentaService.exigirVendiblePorPos(producto);
             Integer precioObj = producto.getPrecioEfectivo();
             if (precioObj == null) {
                 throw new IllegalStateException("Producto sin precio de venta: " + productoId);
@@ -120,6 +122,13 @@ public class PosQrSessionService {
         log.info("[POS-QR] Sesión {} creada por usuario={} empresa={} método={} total={}",
             saved.getToken(), usuarioId, empresaId, metodoPago, total);
         return saved;
+    }
+
+    public static final String MSG_NO_APROBADO = com.hotclick.service.payment.CobroNegocioGuard.MSG_NO_APROBADO;
+
+    /** NP-13: delega en el guard neutral de pasarela. */
+    static void exigirNegocioAprobado(Empresa empresa) {
+        com.hotclick.service.payment.CobroNegocioGuard.exigirNegocioAprobado(empresa);
     }
 
     @Transactional(readOnly = true)

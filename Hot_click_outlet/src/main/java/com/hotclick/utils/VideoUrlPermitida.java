@@ -32,6 +32,28 @@ public final class VideoUrlPermitida {
         }
     }
 
+    public static final String MENSAJE_PLAN = "En el plan Emprendedor el video tiene que ser de YouTube. Instagram y TikTok van desde el plan Pyme.";
+
+    private static final Set<String> HOSTS_YOUTUBE = Set.of(
+        "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtube-nocookie.com");
+
+    /** LAN-4: true si la URL es de una red social (no YouTube). Vacío o inválido = false. */
+    public static boolean esRedSocial(String url) {
+        if (url == null || url.isBlank()) return false;
+        try {
+            String host = new URI(url.trim()).getHost();
+            return host != null && !HOSTS_YOUTUBE.contains(host.toLowerCase(Locale.ROOT));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** LAN-4: si el plan no permite contacto directo (Emprendedor), solo YouTube. */
+    public static void exigirSegunPlan(String url, boolean permiteRedes) {
+        exigir(url);
+        if (!permiteRedes && esRedSocial(url)) throw new IllegalArgumentException(MENSAJE_PLAN);
+    }
+
     public static void exigir(String url) {
         if (!esPermitida(url)) throw new IllegalArgumentException(MENSAJE);
     }
