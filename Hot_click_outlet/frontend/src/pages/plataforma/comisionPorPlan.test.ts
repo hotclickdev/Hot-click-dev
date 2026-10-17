@@ -5,6 +5,7 @@ import {
   cargarComisionPorPlan,
   errorRango,
   etiquetaSemana,
+  fechaLegible,
   filasPorSemana,
   leerComisionPorPlan,
   mensajeErrorComision,
@@ -33,7 +34,8 @@ afterEach(() => { vi.restoreAllMocks() })
 
 describe('S6-18 capa de API', () => {
   it('llama a la ruta del contrato y solo manda las fechas que hay', async () => {
-    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: respuesta })
+    // El interceptor de api desenvuelve el ResponseDTO: el servicio recibe `data` directo.
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: respuesta.data })
     const datos = await cargarComisionPorPlan({ desde: '2026-08-21' })
     expect(RUTA_COMISION_POR_PLAN).toBe('/admin/finanzas/comision-por-plan')
     expect(get).toHaveBeenCalledWith('/admin/finanzas/comision-por-plan', { params: { desde: '2026-08-21' } })
@@ -44,6 +46,7 @@ describe('S6-18 capa de API', () => {
 
   it('lee el ResponseDTO sin inventar montos', () => {
     const d = leerComisionPorPlan(respuesta)
+    expect(leerComisionPorPlan(respuesta.data)).toEqual(d)
     expect(d).toMatchObject({ desde: '2026-08-21', hasta: '2026-10-16', moneda: 'CRC' })
     expect(d.filas[0]).toEqual(respuesta.data.filas[0])
     const roto = leerComisionPorPlan({ data: { filas: [{ semana: '2026-10-05', plan: 'PYME' }, null] } })
@@ -82,5 +85,7 @@ describe('S6-18 capa de API', () => {
     expect(nombrePlanComision('SIN_PLAN')).toBe('Sin plan')
     expect(nombrePlanComision('PLAN_RARO')).toBe('PLAN_RARO')
     expect(etiquetaSemana('2026-10-05')).toMatch(/^Semana del 5 oct/)
+    expect(fechaLegible('2026-10-16')).toMatch(/^16 oct/)
+    expect(fechaLegible('no')).toBe('no')
   })
 })

@@ -59,10 +59,17 @@ function cadena(valor: unknown, defecto = ''): string {
   return typeof valor === 'string' ? valor : defecto
 }
 
-/** Lee `data` del `ResponseDTO`; tolera campos ausentes sin inventar montos (ausente = 0, no estimado). */
+function objeto(valor: unknown): Record<string, unknown> | null {
+  return valor && typeof valor === 'object' && !Array.isArray(valor) ? valor as Record<string, unknown> : null
+}
+
+/**
+ * Lee el `data` del contrato. El interceptor de `api` ya desenvuelve el `ResponseDTO`, así que llega
+ * `{ desde, hasta, moneda, filas }`; también acepta el sobre completo. Campos ausentes = 0, nunca estimados.
+ */
 export function leerComisionPorPlan(respuesta: unknown): ComisionPorPlan {
-  const raiz = respuesta && typeof respuesta === 'object' ? respuesta as Record<string, unknown> : {}
-  const data = raiz.data && typeof raiz.data === 'object' ? raiz.data as Record<string, unknown> : {}
+  const raiz = objeto(respuesta) ?? {}
+  const data = 'filas' in raiz ? raiz : objeto(raiz.data) ?? {}
   const filas = Array.isArray(data.filas) ? data.filas : []
   return {
     desde: cadena(data.desde),
@@ -158,12 +165,16 @@ export function nombrePlanComision(plan: string): string {
   return NOMBRES_PLAN[plan.toUpperCase()] ?? plan
 }
 
-/** «Semana del 5 oct 2026» a partir del lunes ISO, sin desfase de zona. */
+/** «5 oct 2026» a partir de `YYYY-MM-DD`, sin desfase de zona. */
+export function fechaLegible(iso: string): string {
+  if (!fechaValida(iso)) return iso
+  const d = new Date(`${iso}T12:00:00Z`)
+  return new Intl.DateTimeFormat('es-CR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(d).replace(/\./g, '')
+}
+
+/** «Semana del 5 oct 2026» a partir del lunes ISO. */
 export function etiquetaSemana(lunes: string): string {
-  if (!fechaValida(lunes)) return lunes
-  const d = new Date(`${lunes}T12:00:00Z`)
-  const texto = new Intl.DateTimeFormat('es-CR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(d)
-  return `Semana del ${texto.replace(/\./g, '')}`
+  return fechaValida(lunes) ? `Semana del ${fechaLegible(lunes)}` : lunes
 }
 
 export function colonesComision(monto: number, moneda = 'CRC'): string {

@@ -4,6 +4,7 @@ import {
   colonesComision,
   errorRango,
   etiquetaSemana,
+  fechaLegible,
   filasPorSemana,
   mensajeErrorComision,
   nombrePlanComision,
@@ -96,7 +97,7 @@ function Tablero({ datos }: { datos: Datos }) {
 
   return (
     <>
-      <p className="text-sm text-hc-n-600">Del {datos.desde} al {datos.hasta}</p>
+      <p className="text-sm text-hc-n-600">Del {fechaLegible(datos.desde)} al {fechaLegible(datos.hasta)}</p>
       <div className="grid gap-3 sm:grid-cols-3">
         <Metrica icono="dinero" etiqueta="Comisión HotClick" valor={plata(total.comisionSaas)} />
         <Metrica icono="dinero" etiqueta="Pasarela" valor={plata(total.comisionPasarela)} />
