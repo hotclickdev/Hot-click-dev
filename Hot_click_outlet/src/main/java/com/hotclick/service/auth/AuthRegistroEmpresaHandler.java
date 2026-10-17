@@ -31,10 +31,15 @@ public class AuthRegistroEmpresaHandler {
     @Autowired private TurnstileService            turnstileService;
     @Autowired private AuthSupport                 authSupport;
 
+    /** Piso de tiempo del alta: un correo ya usado tarda lo mismo que un alta nueva (0 = sin piso). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.registro.respuesta-min-ms:900}")
+    long respuestaMinMs;
+
     public ResponseEntity<ResponseDTO> registroEmpresa(RegistroEmpresaDTO dto, HttpServletRequest httpRequest) {
         if (!turnstileService.verify(dto.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
+        long inicio = System.nanoTime();
         try {
             MayoriaEdad.exigir(dto.getDeclaraMayoriaEdad());
             Usuario emprendedor = emprendedorRegistroService.registrar(dto);
@@ -50,15 +55,17 @@ public class AuthRegistroEmpresaHandler {
             AuthResponse authResponse = authSupport.buildAuthResponse(emprendedor);
             Map<String, Object> resultado = buildRegistroResultado(authResponse, otpEnviado, otpError);
             return ResponseEntity.ok(ResponseDTO.success("Empresa registrada exitosamente", resultado));
-        } catch (com.hotclick.exception.CorreoYaRegistradoException e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(e.getMessage(),
-                Map.of("codigo", com.hotclick.exception.CorreoYaRegistradoException.CODIGO,
-                       "siguientePaso", com.hotclick.exception.CorreoYaRegistradoException.SIGUIENTE_PASO)));
+        } catch (com.hotclick.exception.RegistroDuplicadoException e) {
+            // S1-18: correo → «ya está registrado» + solo el enlace de recuperar; cédula → genérico. Sin PII en el log.
+            log.info("[registro-empresa] alta rechazada por duplicado ({})", e.isPorCorreo() ? "correo" : "cedula");
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(), e.datosRespuesta()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             log.error("[registro-empresa] {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al registrar la empresa"));
+        } finally {
+            com.hotclick.security.RespuestaUniforme.esperarMinimo(inicio, respuestaMinMs);
         }
     }
 

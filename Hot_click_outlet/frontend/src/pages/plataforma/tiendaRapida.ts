@@ -75,22 +75,13 @@ export function onboardingPendiente(data: unknown): boolean {
   return d.completo === false && pasosDe(data).length > 0
 }
 
-/** Mismo texto que el backend (TiendaRapidaReglas.cedula) y que ya mostraba esta pantalla. */
-export const AVISO_CEDULA_FORMATO = 'La cédula va con 9 a 12 dígitos.'
+export type ErroresPaso1 = { persona?: string }
 
-export type ErroresPaso1 = { persona?: string; cedula?: string }
-
-/**
- * Paso 1 del enlace: nombre (2–80) y cédula física, jurídica o DIMEX (9–12 dígitos, como CedulaCr del backend).
- * Devuelve claves i18n existentes para «falta» y el aviso de formato para la cédula mal cargada.
- */
-export function erroresPaso1(persona: string, cedula: string): ErroresPaso1 {
+/** Paso 1 del enlace: solo el nombre (2–80). Sin cédula: decisión del dueño, 16-oct-2026. */
+export function erroresPaso1(persona: string): ErroresPaso1 {
   const errores: ErroresPaso1 = {}
   const nombre = persona.replace(/[<>]/g, '').trim()
   if (nombre.length < 2 || nombre.length > 80) errores.persona = 'checkout.errores.nombreRequerido'
-  const digitos = cedula.replace(/\D/g, '')
-  if (!digitos) errores.cedula = 'checkout.errores.cedulaRequerida'
-  else if (digitos.length < 9 || digitos.length > 12) errores.cedula = AVISO_CEDULA_FORMATO
   return errores
 }
 
@@ -103,6 +94,5 @@ export function camposDelError(err: unknown): ErroresPaso1 {
   const c = campos as Record<string, unknown>
   const r: ErroresPaso1 = {}
   if (typeof c.persona === 'string') r.persona = c.persona
-  if (typeof c.cedula === 'string') r.cedula = c.cedula
   return r
 }

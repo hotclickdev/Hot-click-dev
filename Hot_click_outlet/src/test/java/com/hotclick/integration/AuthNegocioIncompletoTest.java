@@ -1,7 +1,6 @@
 package com.hotclick.integration;
 
 import com.hotclick.dto.RegistroEmpresaDTO;
-import com.hotclick.exception.CorreoYaRegistradoException;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.service.BodegaDespachoInicialService;
@@ -71,15 +70,16 @@ class AuthNegocioIncompletoTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("registro-empresa con correo que ya tiene cuenta → 409 CORREO_YA_REGISTRADO con el siguiente paso")
-    void registro_correoExistente_409() throws Exception {
+    @DisplayName("S1-18: registro-empresa con correo que ya tiene cuenta → 400 «ya está registrado» con solo el enlace de recuperar")
+    void registro_correoExistente_generico() throws Exception {
         mockMvc.perform(post("/api/auth/registro-empresa").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombreEmpresa\":\"Tienda X\",\"correoEmpresa\":\"tiendax@test.cr\",\"telefonoEmpresa\":\"22224444\","
                     + "\"nombreAdmin\":\"Ana\",\"correoAdmin\":\"incompleto@test.cr\",\"passwordAdmin\":\"Clave1234!\","
                     + "\"declaraMayoriaEdad\":true,\"turnstileToken\":\"ok\"}"))
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.data.codigo").value(CorreoYaRegistradoException.CODIGO))
-            .andExpect(jsonPath("$.data.siguientePaso").value(CorreoYaRegistradoException.SIGUIENTE_PASO));
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(com.hotclick.exception.RegistroDuplicadoException.MENSAJE_CORREO))
+            .andExpect(jsonPath("$.data.recuperar").value(com.hotclick.exception.RegistroDuplicadoException.RUTA_RECUPERAR))
+            .andExpect(jsonPath("$.data.length()").value(1));
         assertThat(empresaRepository.findAll()).noneMatch(e -> "tiendax@test.cr".equals(e.getCorreoEmpresa()));
     }
 

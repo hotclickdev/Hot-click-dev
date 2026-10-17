@@ -35,7 +35,7 @@ public class EmailVerificationService {
             if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ELIMINADO) {
                 pendiente = null; // cuenta eliminada → permitir nuevo registro con ese correo
             } else if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ACTIVO) {
-                throw new IllegalArgumentException("El correo ya está registrado");
+                throw com.hotclick.exception.RegistroDuplicadoException.porCorreo();
             } else {
                 // Cuenta existe pero está PENDIENTE → reenviar código
                 otpService.enviarOtp(pendiente, Constants.OTP_TIPO_REGISTRO);

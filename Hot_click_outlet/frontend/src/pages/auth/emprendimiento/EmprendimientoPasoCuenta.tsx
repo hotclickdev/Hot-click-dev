@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import AccesoCuentaExistente from '@/pages/registro-empresa/AccesoCuentaExistente'
 import { motion } from 'framer-motion'
 import PhoneField from '@/components/ui/PhoneField'
 import Input from '@/components/ui/Input'
@@ -51,6 +52,7 @@ export default function EmprendimientoPasoCuenta({
       <PhoneField label="Teléfono personal"
         value={form.telefonoAdmin} onChange={(val) => setForm(p => ({ ...p, telefonoAdmin: val }))} />
       {error && <ErrMsg>{error}</ErrMsg>}
+      <AccesoCuentaExistente error={error} />
 
       {/* Consentimiento informado — Ley 8968 */}
       <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem', borderRadius: 10, border: `1px solid ${aceptaTerminos ? 'var(--hc-accent)' : 'var(--hc-border)'}`, background: aceptaTerminos ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'var(--hc-surface-2)', transition: 'all 0.15s' }}>

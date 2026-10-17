@@ -26,7 +26,6 @@ export default function TiendaRapidaPage() {
   const [estado, setEstado] = useState<'carga' | 'listo' | 'error'>('carga')
   const [paso, setPaso] = useState(1)
   const [persona, setPersona] = useState('')
-  const [cedula, setCedula] = useState('')
   const [correo, setCorreo] = useState('')
   const [telefono, setTelefono] = useState('')
   const [aviso, setAviso] = useState('')
@@ -65,7 +64,7 @@ export default function TiendaRapidaPage() {
 
   async function guardar() {
     if (!invitacion) return
-    if (Object.keys(erroresPaso1(persona, cedula)).length > 0) {
+    if (Object.keys(erroresPaso1(persona)).length > 0) {
       setPaso(1)
       return
     }
@@ -81,7 +80,7 @@ export default function TiendaRapidaPage() {
     setAviso('')
     try {
       await consolaService.completarRapida(token, {
-        persona: persona.trim(), cedula: cedula.trim(), correo: correo.trim(), telefono: telefono.trim(),
+        persona: persona.trim(), correo: correo.trim(), telefono: telefono.trim(),
         acepto, versionLegal: invitacion.versionLegal,
       })
       setLista(true)
@@ -95,7 +94,7 @@ export default function TiendaRapidaPage() {
         return
       }
       const campos = camposDelError(err)
-      if (campos.persona || campos.cedula) {
+      if (campos.persona) {
         setErroresServidor(campos)
         setPaso(1)
       }
@@ -124,8 +123,6 @@ export default function TiendaRapidaPage() {
             setPaso={setPaso}
             persona={persona}
             setPersona={(v) => { setPersona(v); setErroresServidor({}) }}
-            cedula={cedula}
-            setCedula={(v) => { setCedula(v); setErroresServidor({}) }}
             erroresServidor={erroresServidor}
             correo={correo}
             setCorreo={setCorreo}
@@ -150,8 +147,6 @@ function Formulario(props: {
   setPaso: (paso: number) => void
   persona: string
   setPersona: (valor: string) => void
-  cedula: string
-  setCedula: (valor: string) => void
   correo: string
   setCorreo: (valor: string) => void
   telefono: string
@@ -178,17 +173,15 @@ function Formulario(props: {
   )
 }
 
-function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso, erroresServidor }: Readonly<{
+function PasoIdentidad({ persona, setPersona, setPaso, erroresServidor }: Readonly<{
   persona: string
   setPersona: (valor: string) => void
-  cedula: string
-  setCedula: (valor: string) => void
   setPaso: (paso: number) => void
   erroresServidor: ErroresPaso1
 }>) {
   const { t } = useTranslation()
-  const [tocado, setTocado] = useState({ persona: false, cedula: false })
-  const errores = erroresPaso1(persona, cedula)
+  const [tocado, setTocado] = useState({ persona: false })
+  const errores = erroresPaso1(persona)
   const valido = Object.keys(errores).length === 0
   const errorDe = (campo: keyof ErroresPaso1) => {
     const local = tocado[campo] ? errores[campo] : undefined
@@ -199,8 +192,6 @@ function PasoIdentidad({ persona, setPersona, cedula, setCedula, setPaso, errore
     <div>
       <Campo etiqueta="Nombre completo" valor={persona} onChange={setPersona} error={errorDe('persona')}
         onBlur={() => setTocado((x) => ({ ...x, persona: true }))} />
-      <Campo etiqueta="Cédula" valor={cedula} onChange={setCedula} error={errorDe('cedula')}
-        onBlur={() => setTocado((x) => ({ ...x, cedula: true }))} />
       <button type="button" className={`${BOTON_PRIMARIO} mt-4 w-full`} disabled={!valido} onClick={() => setPaso(2)}>Siguiente</button>
     </div>
   )

@@ -1,0 +1,1 @@
+import{Lt as e}from"./index-CTLlY5Cx.js";function t(t){return e(Math.round(t??0))}export{t};

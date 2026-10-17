@@ -46,14 +46,6 @@ public final class TiendaRapidaReglas {
         return digitos;
     }
 
-    public static String cedula(String valor) {
-        String digitos = com.hotclick.utils.CedulaCr.normalizarONulo(valor);
-        if (digitos == null) {
-            throw new IllegalArgumentException("La cédula va con 9 a 12 dígitos.");
-        }
-        return digitos;
-    }
-
     public static String correo(String valor) {
         String limpio = valor == null ? "" : valor.trim().toLowerCase();
         if (limpio.length() > 100 || !limpio.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {

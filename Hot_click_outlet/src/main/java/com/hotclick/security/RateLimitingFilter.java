@@ -34,9 +34,9 @@ import java.util.Map;
  *   /api/auth/2fa/email/send     →  3 / 300s
  *   /api/auth/verify-code        →  5 / 60s
  *   /api/auth/reset-password     →  5 / 60s
- *   /api/auth/registro-empresa   →  5 / 60s
- *   /api/auth/register           →  5 / 3600s
- *   /api/auth/send-verification  →  5 / 60s
+ *   /api/auth/registro-empresa   →  5 / 900s + 20/día (S1-18, todas las altas)
+ *   /api/auth/register           →  5 / 900s + 20/día
+ *   /api/auth/send-verification  →  5 / 900s + 20/día (alta de comprador + reenvío)
  *   /api/auth/refresh            → 30 / 60s
  *   /api/auth/change-password    →  5 / 300s
  *
@@ -93,6 +93,22 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
     private record GetLimit(String prefix, int maxRequests, int windowSeconds) {}
 
+    /** S1-18: tope diario por IP compartido por todas las altas (comprador, negocio, tienda rápida). */
+    static final int ALTAS_POR_DIA = 20;
+
+    static boolean esAlta(String path) {
+        return "/api/auth/register".equals(path) || "/api/auth/send-verification".equals(path)
+            || "/api/auth/registro-empresa".equals(path) || path.startsWith("/api/public/tienda-rapida/");
+    }
+
+    private static void responder429(HttpServletResponse response) throws IOException {
+        response.setStatus(429);
+        response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write(
+            "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
+    }
+
     // Exact-path limits (POST only)
     private static final Map<String, Limit> LIMITS = Map.ofEntries(
         // Auth
@@ -102,9 +118,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/2fa/email/send",     new Limit(3,   300)),
         Map.entry("/api/auth/verify-code",        new Limit(5,    60)),
         Map.entry("/api/auth/reset-password",     new Limit(5,    60)),
-        Map.entry("/api/auth/registro-empresa",   new Limit(5,    60)),
-        Map.entry("/api/auth/register",           new Limit(5,  3600)),
-        Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
+        Map.entry("/api/auth/registro-empresa",   new Limit(5,   900)),
+        Map.entry("/api/auth/register",           new Limit(5,   900)),
+        Map.entry("/api/auth/send-verification",  new Limit(5,   900)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
         // General
@@ -149,7 +165,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         // Pedido de tienda propia (público, crea usuario invitado y pedido)
         new PrefixLimit("/api/tienda/", "/pedidos", 5, 60),
         // Completar la tienda rápida por token
-        new PrefixLimit("/api/public/tienda-rapida/", null, 5, 60),
+        new PrefixLimit("/api/public/tienda-rapida/", null, 5, 900),
         // P8-02: WhatsApp manual del CRM (sale del número de la plataforma): 20/hora por IP
         new PrefixLimit("/api/crm/clientes/", "/whatsapp", 20, 3600)
     );
@@ -208,16 +224,19 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 }
             }
 
+            if (esAlta(path) && !rateLimiter.tryAcquire("ip:" + ip + ":altas-dia", ALTAS_POR_DIA, 86_400)) {
+                // Pico de altas: sin IP, correo ni cédula en el log (S1-18).
+                log.warn("[REGISTRO-PICO] tope diario de altas alcanzado path={}", RutaLogSegura.enmascarar(path));
+                responder429(response);
+                return;
+            }
             if (limit != null) {
                 String key = "ip:" + ip + ":" + bucket;
                 if (!rateLimiter.tryAcquire(key, limit.maxRequests(), limit.windowSeconds())) {
                     log.warn("[RATE-LIMIT] ip={} path={}", ip, RutaLogSegura.enmascarar(path));
                     try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
-                    response.setStatus(429);
-                    response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write(
-                        "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
+                    if (esAlta(path)) log.warn("[REGISTRO-PICO] tope de 15 min alcanzado path={}", RutaLogSegura.enmascarar(path));
+                    responder429(response);
                     return;
                 }
             }
