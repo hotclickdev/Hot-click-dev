@@ -1,16 +1,19 @@
 import { useTranslation } from 'react-i18next'
 import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
+import { AVISO_CARGO_POR_TIENDA, debeAvisarCargoPorTienda } from '@/features/pagoPorTienda/pagoPorTienda'
 
 type AvisoVariosEmprendimientosProps = {
   cantidadNegocios: number
   className?: string
+  /** S2-27: con pago por tienda (ONVO), avisa que habrá un cargo por cada una. */
+  pagoPorTienda?: boolean
 }
 
 /** Figma `40:1350`: solo aparece con productos de 2 o más emprendimientos. */
 export const MIN_NEGOCIOS_AVISO = 2
 
-export default function AvisoVariosEmprendimientos({ cantidadNegocios, className = '' }: AvisoVariosEmprendimientosProps) {
+export default function AvisoVariosEmprendimientos({ cantidadNegocios, className = '', pagoPorTienda = false }: AvisoVariosEmprendimientosProps) {
   const { t } = useTranslation()
   if (cantidadNegocios < MIN_NEGOCIOS_AVISO) return null
 
@@ -40,6 +43,9 @@ export default function AvisoVariosEmprendimientos({ cantidadNegocios, className
           </div>
         </div>
       ))}
+      {debeAvisarCargoPorTienda(pagoPorTienda, cantidadNegocios) && (
+        <p className="text-[12px] font-semibold leading-[16px] text-hc-n-900">{AVISO_CARGO_POR_TIENDA}</p>
+      )}
     </section>
   )
 }
