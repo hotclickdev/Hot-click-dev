@@ -6,6 +6,9 @@ import { filasDe, texto, type Fila } from './normalizar'
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO, Chip, TARJETA } from './piezas'
 import { enlaceWhatsapp } from './whatsapp'
 import { PLAZOS, enlaceTiendaRapida, etiquetaRapida, mensajeTiendaRapida } from './tiendaRapida'
+import SelectorFrecuencia from '@/features/liquidacion/SelectorFrecuencia'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
+import { errorFrecuenciaAlta, esErrorFrecuenciaAlta } from '@/features/liquidacion/frecuenciaAlta'
 
 type Creada = { token: string; empresaId: string; negocio: string; persona: string; telefono: string; dias: number }
 
@@ -15,6 +18,8 @@ export default function TiendaRapidaPanel({ onCerrar }: { onCerrar: () => void }
   const [persona, setPersona] = useState('')
   const [telefono, setTelefono] = useState('')
   const [dias, setDias] = useState<number>(30)
+  const [frecuencia, setFrecuencia] = useState<Frecuencia | null>(null)
+  const [errorFrecuencia, setErrorFrecuencia] = useState<string | null>(null)
   const [creada, setCreada] = useState<Creada | null>(null)
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState(false)
@@ -27,10 +32,13 @@ export default function TiendaRapidaPanel({ onCerrar }: { onCerrar: () => void }
   }, [creada])
 
   async function crear() {
+    const faltaFrecuencia = errorFrecuenciaAlta(frecuencia)
+    setErrorFrecuencia(faltaFrecuencia)
+    if (faltaFrecuencia) return
     setOcupado(true)
     setAviso('')
     try {
-      const respuesta = await consolaService.crearRapida(negocio.trim(), persona.trim(), telefono.trim(), dias)
+      const respuesta = await consolaService.crearRapida(negocio.trim(), persona.trim(), telefono.trim(), dias, frecuencia)
       const fila = respuesta.data
       if (!fila || typeof fila !== 'object') throw new Error('vacio')
       const datos = fila as Fila
@@ -45,7 +53,8 @@ export default function TiendaRapidaPanel({ onCerrar }: { onCerrar: () => void }
       setPaso(4)
     } catch (err) {
       console.error(err)
-      setAviso(mensajeDe(err, 'No se pudo crear la tienda.'))
+      if (esErrorFrecuenciaAlta(err)) setErrorFrecuencia(errorFrecuenciaAlta(null))
+      else setAviso(mensajeDe(err, 'No se pudo crear la tienda.'))
     } finally {
       setOcupado(false)
     }
@@ -72,6 +81,8 @@ export default function TiendaRapidaPanel({ onCerrar }: { onCerrar: () => void }
         {paso === 3 && (
           <PasoPlazo
             dias={dias} setDias={setDias} negocio={negocio} persona={persona}
+            frecuencia={frecuencia} errorFrecuencia={errorFrecuencia}
+            onFrecuencia={(f) => { setFrecuencia(f); setErrorFrecuencia(null) }}
             onAtras={() => setPaso(2)} onCrear={() => void crear()} ocupado={ocupado} aviso={aviso}
           />
         )}
@@ -159,8 +170,11 @@ function PasoPersona({ persona, setPersona, telefono, setTelefono, onAtras, onSi
   )
 }
 
-function PasoPlazo({ dias, setDias, negocio, persona, onAtras, onCrear, ocupado, aviso }: {
+function PasoPlazo({ dias, setDias, negocio, persona, frecuencia, errorFrecuencia, onFrecuencia, onAtras, onCrear, ocupado, aviso }: {
   dias: number
+  frecuencia: Frecuencia | null
+  errorFrecuencia: string | null
+  onFrecuencia: (f: Frecuencia) => void
   setDias: (valor: number) => void
   negocio: string
   persona: string
@@ -189,6 +203,10 @@ function PasoPlazo({ dias, setDias, negocio, persona, onAtras, onCrear, ocupado,
             <span className="mt-1 block text-sm text-hc-n-600">días</span>
           </button>
         ))}
+      </div>
+      <div className="mt-4">
+        <p className="mb-2 text-sm text-hc-n-600">Frecuencia de liquidación del negocio: la que pidió {persona}.</p>
+        <SelectorFrecuencia valor={frecuencia} onCambiar={onFrecuencia} error={errorFrecuencia} deshabilitado={ocupado} />
       </div>
       {aviso && <p className="mt-2 text-sm text-hc-primary-text">{aviso}</p>}
       <div className="mt-4 flex gap-2">

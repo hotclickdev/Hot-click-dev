@@ -20,6 +20,8 @@ import {
   MENSAJE_UBICACION_INCOMPLETA,
   payloadUbicacionRegistro,
 } from '@/prototipo/compartido/ubicacionDespachoHelpers'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
+import { conFrecuenciaAlta, errorFrecuenciaAlta, esErrorFrecuenciaAlta } from '@/features/liquidacion/frecuenciaAlta'
 
 export type FormEmprendimiento = {
   nombreEmpresa: string
@@ -58,12 +60,17 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
   })
   const ubicacion = useUbicacionDespachoForm()
+  const [frecuencia, setFrecuencia] = useState<Frecuencia | null>(null)
+  const [errorFrecuencia, setErrorFrecuencia] = useState<string | null>(null)
   const actualizarCampo = (field: keyof FormEmprendimiento) => (e: ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [field]: e.target.value }))
 
   const handleNext = (e: FormEvent) => {
     e.preventDefault(); setError('')
     if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
     if (!ubicacion.validar()) { setError(MENSAJE_UBICACION_INCOMPLETA); return }
+    const faltaFrecuencia = errorFrecuenciaAlta(frecuencia)
+    setErrorFrecuencia(faltaFrecuencia)
+    if (faltaFrecuencia) return
     setStep(1)
   }
 
@@ -72,11 +79,13 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     if (!form.correoAdmin.trim()) { setError('El correo es requerido'); return }
     if (form.passwordAdmin.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
     if (!aceptaTerminos || !declaraMayoriaEdad) { setError('Debe aceptar los términos y declarar que es mayor de 18 años'); return }
+    const faltaFrecuencia = errorFrecuenciaAlta(frecuencia)
+    if (faltaFrecuencia) { setErrorFrecuencia(faltaFrecuencia); setStep(0); return }
     setLoading(true)
     authService.registrarConsentimiento('REGISTRO')
     authService.registrarConsentimiento('MAYORIA_EDAD')
     try {
-      const { data } = await authService.registroEmpresa({
+      const { data } = await authService.registroEmpresa(conFrecuenciaAlta({
         nombreEmpresa:   form.nombreEmpresa.trim(),
         correoEmpresa:   form.correoEmpresa.trim().toLowerCase() || undefined,
         telefonoEmpresa: form.telefonoEmpresa.trim() || undefined,
@@ -87,7 +96,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
         ...payloadUbicacionRegistro(ubicacion.ubicacion),
         declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
-      })
+      }, frecuencia))
       const authData = authDataRegistro(data)
       if (authData?.accessToken) {
         loginStore(authData)
@@ -96,7 +105,8 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
         setStep(2)
       }
     } catch (err: unknown) {
-      setError(mensajeErrorAuth(err, 'Error al registrar. Intentá de nuevo.') || 'Error al registrar. Intentá de nuevo.')
+      if (esErrorFrecuenciaAlta(err)) { setErrorFrecuencia(errorFrecuenciaAlta(null)); setStep(0) }
+      else setError(mensajeErrorAuth(err, 'Error al registrar. Intentá de nuevo.') || 'Error al registrar. Intentá de nuevo.')
       turnstileRef.current?.reset()
       setTurnstileToken('')
     } finally { setLoading(false) }
@@ -149,7 +159,10 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
             {step === 0 && (
               <EmprendimientoPasoNegocio
                 form={form} ubicacion={ubicacion} error={error} actualizarCampo={actualizarCampo}
-                setForm={setForm} onSubmit={handleNext} />
+                setForm={setForm} onSubmit={handleNext}
+                frecuencia={frecuencia} errorFrecuencia={errorFrecuencia}
+                onFrecuencia={(f) => { setFrecuencia(f); setErrorFrecuencia(null) }}
+                onFrecuenciaInvalida={() => setErrorFrecuencia(errorFrecuenciaAlta(frecuencia))} />
             )}
             {step === 1 && (
               <EmprendimientoPasoCuenta
