@@ -31,10 +31,16 @@ public class ContraEntregaPolitica {
      * (null = sin mínimo). Sin negocio (pedido viejo o principal) no restringe: manda la config global.
      */
     public static boolean negocioPermite(com.hotclick.model.Empresa empresa, Integer subtotal) {
-        if (empresa == null) return true;
-        if (!empresa.isAceptaContraEntrega()) return false;
+        return motivoRechazoNegocio(empresa, subtotal) == null;
+    }
+
+    /** null si el negocio permite contra entrega para ese subtotal; si no, el código del rechazo. */
+    public static String motivoRechazoNegocio(com.hotclick.model.Empresa empresa, Integer subtotal) {
+        if (empresa == null) return null;
+        if (!empresa.isAceptaContraEntrega()) return com.hotclick.exception.ContraEntregaNoDisponibleException.NO_ACEPTADA;
         Integer minimo = empresa.getContraEntregaMinimoCrc();
-        return minimo == null || minimo <= 0 || (subtotal != null && subtotal >= minimo);
+        boolean llega = minimo == null || minimo <= 0 || (subtotal != null && subtotal >= minimo);
+        return llega ? null : com.hotclick.exception.ContraEntregaNoDisponibleException.MINIMO;
     }
 
     public ContraEntregaPolitica(@Value("${hotclick.envio.normal.contra-entrega:PEDIDO_COMPLETO}") String modoNormal) {

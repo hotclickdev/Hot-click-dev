@@ -27,8 +27,20 @@ Si el producto no los trae (producto del negocio principal o de una tienda no p�
 
 El efectivo por Envío Normal (contra entrega, no porque la bodega acepte efectivo) se rechaza si algún negocio del pedido no la acepta o si el subtotal de su paquete (productos, sin envío) no llega a su mínimo:
 
-- Checkout SINPE/EFECTIVO multi-negocio: `400` "Algún negocio de tu carrito no acepta efectivo…". Se revierte la transacción.
-- Tienda pública (`/api/tienda/{slug}` pedido de invitado): `400` "Contra entrega no está disponible para este negocio o tu pedido no llega a su mínimo…". Se revierte.
+Cuando el efectivo entra por Envío Normal contra entrega (no porque la bodega acepte efectivo) y el negocio lo rechaza, los dos checkouts responden `400` con código estable y se revierte la transacción:
+
+```json
+{ "success": false, "code": "CONTRA_ENTREGA_NO_ACEPTADA", "message": "Este negocio no acepta contra entrega. Pagá con SINPE / Tarjeta.", "data": { "codigo": "CONTRA_ENTREGA_NO_ACEPTADA" } }
+```
+
+| `code` (= `data.codigo`) | Cuándo |
+| --- | --- |
+| `CONTRA_ENTREGA_NO_ACEPTADA` | El negocio tiene `acepta = false`. |
+| `CONTRA_ENTREGA_MINIMO` | El negocio acepta, pero el subtotal de su paquete es menor que su `minimo`. |
+
+- Checkout SINPE/EFECTIVO multi-negocio: se revisa paquete por paquete; el primero que falla define el código.
+- Tienda pública (`/api/tienda/{slug}` pedido de invitado): mismos códigos.
+- Si el efectivo no está permitido por otra razón (ni la bodega lo acepta ni hay Envío Normal contra entrega), sigue el `400` genérico "Algún negocio de tu carrito no acepta efectivo…", sin código.
 - Si la bodega acepta efectivo (retiro/pago en bodega), la config de contra entrega no aplica.
 
 ## Migración

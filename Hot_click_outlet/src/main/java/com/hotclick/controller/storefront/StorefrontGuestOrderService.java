@@ -205,13 +205,9 @@ public class StorefrontGuestOrderService {
         if (!"EFECTIVO".equalsIgnoreCase(metodoPago)) return;
         if (bodega != null && Boolean.TRUE.equals(bodega.getAceptaEfectivo())) return;
         if (!com.hotclick.service.envio.ContraEntregaPolitica.esEnvioNormal(metodoEnvio)) return;
-        if (!com.hotclick.service.envio.ContraEntregaPolitica.negocioPermite(empresa, subtotal)) {
-            throw new IllegalArgumentException(MSG_CONTRA_ENTREGA_NEGOCIO);
-        }
+        String motivo = com.hotclick.service.envio.ContraEntregaPolitica.motivoRechazoNegocio(empresa, subtotal);
+        if (motivo != null) throw new com.hotclick.exception.ContraEntregaNoDisponibleException(motivo);
     }
-
-    static final String MSG_CONTRA_ENTREGA_NEGOCIO =
-        "Contra entrega no está disponible para este negocio o tu pedido no llega a su mínimo. Pagá con SINPE / Tarjeta.";
 
     /** Retiro solo si alguna bodega activa de la tienda lo permite (misma regla que publica la info de la tienda). */
     static void exigirRetiroDisponible(String metodoEnvio, List<Bodega> bodegas) {

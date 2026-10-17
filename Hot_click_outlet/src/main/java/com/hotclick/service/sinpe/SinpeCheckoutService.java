@@ -110,6 +110,15 @@ public class SinpeCheckoutService {
     /** Efectivo: la bodega lo acepta, o el paquete va por Envío Normal contra entrega (configurable). */
     static void exigirEfectivoAceptado(String proveedor, java.util.List<Pedido> pedidos, boolean contraEntregaNormal) {
         if (!"EFECTIVO".equalsIgnoreCase(proveedor)) return;
+        if (contraEntregaNormal) {
+            // S2: si el efectivo entra por Envío Normal contra entrega, el rechazo del negocio lleva código estable.
+            for (Pedido p : pedidos) {
+                boolean bodegaAcepta = p.getBodega() != null && Boolean.TRUE.equals(p.getBodega().getAceptaEfectivo());
+                if (bodegaAcepta || !com.hotclick.service.envio.ContraEntregaPolitica.esEnvioNormal(p.getMetodoEnvio())) continue;
+                String motivo = com.hotclick.service.envio.ContraEntregaPolitica.motivoRechazoNegocio(p.getEmpresa(), p.getSubtotal());
+                if (motivo != null) throw new com.hotclick.exception.ContraEntregaNoDisponibleException(motivo);
+            }
+        }
         boolean todas = pedidos.stream()
             .allMatch(p -> com.hotclick.service.envio.ContraEntregaPolitica.permiteEfectivo(
                 p.getBodega() != null && Boolean.TRUE.equals(p.getBodega().getAceptaEfectivo()),

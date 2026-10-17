@@ -31,14 +31,16 @@ class ContraEntregaNegocioCheckoutTest {
     void unNegocioNoAcepta_seRechazaTodoElPedido() {
         assertThatThrownBy(() -> SinpeCheckoutService.exigirEfectivoAceptado("EFECTIVO",
                 List.of(pedido(false, true, null, 1000), pedido(false, false, null, 1000)), true))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(com.hotclick.exception.ContraEntregaNoDisponibleException.class)
+            .extracting("codigo").isEqualTo("CONTRA_ENTREGA_NO_ACEPTADA");
     }
 
     @Test
     void bajoElMinimo_seRechaza_yEnElMinimoPasa() {
         assertThatThrownBy(() -> SinpeCheckoutService.exigirEfectivoAceptado("EFECTIVO",
                 List.of(pedido(false, true, 5000, 4999)), true))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(com.hotclick.exception.ContraEntregaNoDisponibleException.class)
+            .extracting("codigo").isEqualTo("CONTRA_ENTREGA_MINIMO");
         assertThatCode(() -> SinpeCheckoutService.exigirEfectivoAceptado("EFECTIVO",
                 List.of(pedido(false, true, 5000, 5000)), true)).doesNotThrowAnyException();
     }
