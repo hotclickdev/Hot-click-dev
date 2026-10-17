@@ -1,7 +1,10 @@
 import api from '@/services/api'
+import { estadoError, mensajeErrorContrato } from '@/utils/erroresContrato'
 
 /**
- * S4-23 / S4-15 / S4-10 · Panel de ventas con bruto, comisión y neto — CONTRATO SUPUESTO (backend S4-09/S4-13/S4-15).
+ * S4-23 / S4-15 / S4-10 · Panel de ventas con bruto, comisión y neto. Contrato real de #203 (`docs/contratos/S4-23-ventas-semana.md`).
+ * Sin plan, `porcentaje`, `minimoComision` y `comisionPorcentaje` llegan `null`: se muestran como pendientes, nunca como ₡0.
+ * `producto` es la descripción del movimiento del ledger (desvío del contrato). Comprador → 403.
  *   GET /api/negocio/ventas/semana?desde=YYYY-MM-DD →
  *     { desde, hasta, porcentaje, minimoComision, ventas: [{ id, fecha, producto, bruto, comisionPorcentaje,
  *       minimoAplicado: boolean, comision, neto }], totales: { bruto, comision, neto, conMinimo, cantidad } }
@@ -9,7 +12,7 @@ import api from '@/services/api'
  * Todos los montos y el % vienen del backend; el front no calcula cobros. Corte de semana: pendiente del dueño.
  */
 export type VentaSemana = {
-  id: string; fecha: string; producto: string; bruto: number; comisionPorcentaje: number
+  id: string; fecha: string; producto: string; bruto: number; comisionPorcentaje: number | null
   minimoAplicado: boolean; comision: number; neto: number
 }
 export type SemanaVentas = {
@@ -25,7 +28,7 @@ export function normalizarSemana(data: unknown): SemanaVentas {
   const d = ((data && typeof data === 'object' && 'data' in data ? (data as { data: unknown }).data : data) ?? {}) as Record<string, unknown>
   const ventas = (Array.isArray(d.ventas) ? d.ventas : []).map((x) => {
     const v = (x ?? {}) as Record<string, unknown>
-    return { id: String(v.id ?? ''), fecha: s(v.fecha), producto: s(v.producto), bruto: n(v.bruto), comisionPorcentaje: n(v.comisionPorcentaje), minimoAplicado: v.minimoAplicado === true, comision: n(v.comision), neto: n(v.neto) }
+    return { id: String(v.id ?? ''), fecha: s(v.fecha), producto: s(v.producto), bruto: n(v.bruto), comisionPorcentaje: typeof v.comisionPorcentaje === 'number' && Number.isFinite(v.comisionPorcentaje) ? v.comisionPorcentaje : null, minimoAplicado: v.minimoAplicado === true, comision: n(v.comision), neto: n(v.neto) }
   })
   const t = (d.totales ?? {}) as Record<string, unknown>
   return {
@@ -51,11 +54,19 @@ export function lunesDe(fecha: Date, semanas = 0): string {
 
 /** «Comisión mínima: ₡X por venta…» con un ejemplo calculado con el % del plan (si el backend lo manda). */
 export function explicacionMinimo(porcentaje: number | null, minimo: number | null, fmt: (v: number) => string): string | null {
-  if (minimo == null) return null
+  if (minimo == null || minimo <= 0) return null
   const base = `Comisión mínima: ${fmt(minimo)} por venta. La paga el negocio.`
   if (porcentaje == null || porcentaje <= 0) return base
   const ejemploBruto = Math.ceil((minimo / (porcentaje / 100)) / 1000) * 1000 / 2
   const pct = Math.round(ejemploBruto * porcentaje / 100)
   if (pct >= minimo) return `${base} Si el ${porcentaje} % da menos, se cobra ${fmt(minimo)}.`
   return `${base} Si el ${porcentaje} % da menos, se cobra ${fmt(minimo)}. Ej.: venta ${fmt(ejemploBruto)} → ${porcentaje} % = ${fmt(pct)} → se cobra ${fmt(minimo)} por mínimo.`
+}
+
+export const TEXTO_PENDIENTE = 'Pendiente'
+
+/** 403 = la cuenta no tiene negocio (comprador); el resto, error de carga. */
+export function mensajeErrorVentas(err: unknown): string {
+  if (estadoError(err) === 403) return 'Esta sección es solo para cuentas de negocio.'
+  return mensajeErrorContrato(err) ?? 'No pudimos cargar tus ventas. Probá de nuevo en unos minutos.'
 }

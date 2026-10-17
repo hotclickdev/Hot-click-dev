@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { explicacionMinimo, lunesDe, normalizarSemana } from './ventasSemanaApi'
+import { explicacionMinimo, lunesDe, mensajeErrorVentas, normalizarSemana } from './ventasSemanaApi'
 
 const fmt = (v: number) => `₡${v}`
 
@@ -18,5 +18,17 @@ describe('S4-23 panel de ventas', () => {
   it('semana desde el lunes', () => {
     expect(lunesDe(new Date(2026, 9, 16))).toBe('2026-10-12')
     expect(lunesDe(new Date(2026, 9, 16), -1)).toBe('2026-10-05')
+  })
+
+  it('#203: sin plan los valores llegan null y no se muestran como ₡0', () => {
+    const s = normalizarSemana({ data: { desde: '2026-10-12', hasta: '2026-10-18', porcentaje: null, minimoComision: null, ventas: [{ id: 81, fecha: '2026-10-14T09:00', producto: 'Venta pedido ORD-1', bruto: 4000, comisionPorcentaje: null, minimoAplicado: false, comision: 800, neto: 3200 }], totales: { bruto: 4000, comision: 800, neto: 3200, conMinimo: 0, cantidad: 1 } } })
+    expect(s.ventas[0].comisionPorcentaje).toBeNull()
+    expect(s.porcentaje).toBeNull()
+    expect(explicacionMinimo(5, 0, (v) => `₡${v}`)).toBeNull()
+  })
+
+  it('#203: 403 de una cuenta sin negocio', () => {
+    expect(mensajeErrorVentas({ response: { status: 403 } })).toBe('Esta sección es solo para cuentas de negocio.')
+    expect(mensajeErrorVentas(new Error('red'))).toContain('No pudimos cargar tus ventas')
   })
 })

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { formatPrice } from '@/utils/format'
 import { EncabezadoPagina } from '@/prototipo/compartido/ui'
-import { explicacionMinimo, lunesDe, ventasSemanaApi, type SemanaVentas } from './ventasSemanaApi'
+import { TEXTO_PENDIENTE, explicacionMinimo, lunesDe, mensajeErrorVentas, ventasSemanaApi, type SemanaVentas } from './ventasSemanaApi'
 
 const fmt = (v: number) => formatPrice(v)
 
@@ -9,13 +9,13 @@ const fmt = (v: number) => formatPrice(v)
 export default function PanelVentasPage() {
   const [offset, setOffset] = useState(0)
   const [semana, setSemana] = useState<SemanaVentas | null>(null)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let vivo = true
     ventasSemanaApi.semana(lunesDe(new Date(), offset))
-      .then((s) => { if (vivo) { setSemana(s); setError(false) } })
-      .catch(() => { if (vivo) setError(true) })
+      .then((s) => { if (vivo) { setSemana(s); setError(null) } })
+      .catch((e: unknown) => { if (vivo) setError(mensajeErrorVentas(e)) })
     return () => { vivo = false }
   }, [offset])
 
@@ -28,7 +28,7 @@ export default function PanelVentasPage() {
         <p className="text-[13px] text-hc-muted">{semana?.desde && semana?.hasta ? `Semana del ${semana.desde} al ${semana.hasta}` : 'Semana'}</p>
         <button type="button" aria-label="Semana siguiente" disabled={offset >= 0} onClick={() => setOffset((o) => Math.min(0, o + 1))} className="flex size-11 items-center justify-center rounded-xl border border-hc-border disabled:opacity-40">›</button>
       </div>
-      {error && <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-3.5 py-3 text-[13px] text-hc-danger">No pudimos cargar tus ventas. Probá de nuevo en unos minutos.</p>}
+      {error && <p role="alert" className="rounded-[12px] bg-hc-danger-bg px-3.5 py-3 text-[13px] text-hc-danger">{error}</p>}
       {semana && (
         <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
           <div className="flex flex-col gap-3">
@@ -56,7 +56,7 @@ export default function PanelVentasPage() {
                     {semana.ventas.map((v) => (
                       <tr key={v.id} className="border-t border-hc-border">
                         <td className="p-3">{v.fecha}</td><td className="p-3">{v.producto}</td><td className="p-3">{fmt(v.bruto)}</td>
-                        <td className="p-3">{fmt(v.comisionPorcentaje)}</td>
+                        <td className="p-3">{v.comisionPorcentaje != null ? fmt(v.comisionPorcentaje) : TEXTO_PENDIENTE}</td>
                         <td className="p-3">{v.minimoAplicado && semana.minimoComision != null ? `Sí · ${fmt(semana.minimoComision)}` : '—'}</td>
                         <td className="p-3">{fmt(v.comision)}</td><td className="p-3 font-semibold">{fmt(v.neto)}</td>
                       </tr>
