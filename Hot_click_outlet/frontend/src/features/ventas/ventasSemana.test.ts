@@ -31,4 +31,12 @@ describe('S4-23 panel de ventas', () => {
     expect(mensajeErrorVentas({ response: { status: 403 } })).toBe('Esta sección es solo para cuentas de negocio.')
     expect(mensajeErrorVentas(new Error('red'))).toContain('No pudimos cargar tus ventas')
   })
+
+  it('#203 (3da61998c): producto null y minimoComision tal cual del plan', () => {
+    const s = normalizarSemana({ data: { porcentaje: 5, minimoComision: 700, ventas: [{ id: 1, producto: null, bruto: 4000, comisionPorcentaje: 200, minimoAplicado: true, comision: 700, neto: 3300 }, { id: 2, producto: 'Café de altura y 1 más', bruto: 1 }], totales: {} } })
+    expect(s.ventas[0].producto).toBeNull()
+    expect(s.ventas[1].producto).toBe('Café de altura y 1 más')
+    expect(s.minimoComision).toBe(700)
+    expect(normalizarSemana({ data: { minimoComision: 850, ventas: [], totales: {} } }).minimoComision).toBe(850)
+  })
 })

@@ -55,7 +55,7 @@ export default function PanelVentasPage() {
                   <tbody>
                     {semana.ventas.map((v) => (
                       <tr key={v.id} className="border-t border-hc-border">
-                        <td className="p-3">{v.fecha}</td><td className="p-3">{v.producto}</td><td className="p-3">{fmt(v.bruto)}</td>
+                        <td className="p-3">{v.fecha}</td><td className="p-3">{v.producto ?? '—'}</td><td className="p-3">{fmt(v.bruto)}</td>
                         <td className="p-3">{v.comisionPorcentaje != null ? fmt(v.comisionPorcentaje) : TEXTO_PENDIENTE}</td>
                         <td className="p-3">{v.minimoAplicado && semana.minimoComision != null ? `Sí · ${fmt(semana.minimoComision)}` : '—'}</td>
                         <td className="p-3">{fmt(v.comision)}</td><td className="p-3 font-semibold">{fmt(v.neto)}</td>

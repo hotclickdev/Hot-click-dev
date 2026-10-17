@@ -4,7 +4,9 @@ import { estadoError, mensajeErrorContrato } from '@/utils/erroresContrato'
 /**
  * S4-23 / S4-15 / S4-10 · Panel de ventas con bruto, comisión y neto. Contrato real de #203 (`docs/contratos/S4-23-ventas-semana.md`).
  * Sin plan, `porcentaje`, `minimoComision` y `comisionPorcentaje` llegan `null`: se muestran como pendientes, nunca como ₡0.
- * `producto` es la descripción del movimiento del ledger (desvío del contrato). Comprador → 403.
+ * `producto` es el nombre del producto del pedido («Primero y N más») o null si el movimiento no apunta a un pedido.
+ * `minimoComision` es la configuración del plan tal cual (hoy ₡700); null solo sin plan o sin el valor: nunca se escribe en el front.
+ * Comprador → 403.
  *   GET /api/negocio/ventas/semana?desde=YYYY-MM-DD →
  *     { desde, hasta, porcentaje, minimoComision, ventas: [{ id, fecha, producto, bruto, comisionPorcentaje,
  *       minimoAplicado: boolean, comision, neto }], totales: { bruto, comision, neto, conMinimo, cantidad } }
@@ -12,7 +14,7 @@ import { estadoError, mensajeErrorContrato } from '@/utils/erroresContrato'
  * Todos los montos y el % vienen del backend; el front no calcula cobros. Corte de semana: pendiente del dueño.
  */
 export type VentaSemana = {
-  id: string; fecha: string; producto: string; bruto: number; comisionPorcentaje: number | null
+  id: string; fecha: string; producto: string | null; bruto: number; comisionPorcentaje: number | null
   minimoAplicado: boolean; comision: number; neto: number
 }
 export type SemanaVentas = {
@@ -28,7 +30,7 @@ export function normalizarSemana(data: unknown): SemanaVentas {
   const d = ((data && typeof data === 'object' && 'data' in data ? (data as { data: unknown }).data : data) ?? {}) as Record<string, unknown>
   const ventas = (Array.isArray(d.ventas) ? d.ventas : []).map((x) => {
     const v = (x ?? {}) as Record<string, unknown>
-    return { id: String(v.id ?? ''), fecha: s(v.fecha), producto: s(v.producto), bruto: n(v.bruto), comisionPorcentaje: typeof v.comisionPorcentaje === 'number' && Number.isFinite(v.comisionPorcentaje) ? v.comisionPorcentaje : null, minimoAplicado: v.minimoAplicado === true, comision: n(v.comision), neto: n(v.neto) }
+    return { id: String(v.id ?? ''), fecha: s(v.fecha), producto: typeof v.producto === 'string' && v.producto.trim() ? v.producto : null, bruto: n(v.bruto), comisionPorcentaje: typeof v.comisionPorcentaje === 'number' && Number.isFinite(v.comisionPorcentaje) ? v.comisionPorcentaje : null, minimoAplicado: v.minimoAplicado === true, comision: n(v.comision), neto: n(v.neto) }
   })
   const t = (d.totales ?? {}) as Record<string, unknown>
   return {
