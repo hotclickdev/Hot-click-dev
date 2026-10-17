@@ -5,11 +5,8 @@ import com.hotclick.repository.TerminoProhibidoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.Normalizer;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * QA-NEG-038: productos con términos prohibidos (lista inicial aprobada: vape, tabaco, armas, drogas)
@@ -21,8 +18,6 @@ import java.util.regex.Pattern;
 public class TerminosProhibidosService {
 
     static final int MAX_LARGO = 80;
-    private static final Pattern MARCAS = Pattern.compile("\\p{M}+");
-    private static final Pattern NO_ALFANUM = Pattern.compile("[^a-z0-9]+");
 
     private final TerminoProhibidoRepository repo;
 
@@ -31,9 +26,7 @@ public class TerminosProhibidosService {
     }
 
     public static String normalizar(String texto) {
-        if (texto == null) return "";
-        String sinTildes = MARCAS.matcher(Normalizer.normalize(texto, Normalizer.Form.NFD)).replaceAll("");
-        return NO_ALFANUM.matcher(sinTildes.toLowerCase(Locale.ROOT)).replaceAll(" ").trim();
+        return CoincidenciaTerminos.normalizar(texto);
     }
 
     @Transactional(readOnly = true)
@@ -61,15 +54,7 @@ public class TerminosProhibidosService {
     /** Primer término prohibido presente en alguno de los textos, o vacío. Una sola consulta acotada. */
     @Transactional(readOnly = true)
     public Optional<String> terminoEncontrado(String... textos) {
-        List<String> terminos = repo.findTop500ByOrderByTerminoAsc().stream().map(TerminoProhibido::getTermino).toList();
-        return primerTermino(terminos, textos);
-    }
-
-    /** Puro, sin base de datos: un término coincide al inicio de una palabra del texto normalizado. */
-    static Optional<String> primerTermino(List<String> terminos, String... textos) {
-        String texto = " " + java.util.Arrays.stream(textos).map(TerminosProhibidosService::normalizar)
-            .collect(java.util.stream.Collectors.joining(" ")) + " ";
-        return terminos.stream().filter(t -> texto.contains(" " + t)).findFirst();
+        return CoincidenciaTerminos.primerTermino(repo.findTop500ByOrderByTerminoAsc(), textos);
     }
 
     /** 400 con mensaje claro si el producto trae un término prohibido. */
