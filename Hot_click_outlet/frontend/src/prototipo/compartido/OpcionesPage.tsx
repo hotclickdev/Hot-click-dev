@@ -74,6 +74,9 @@ export default function OpcionesPage() {
             <FilaOpcion to={ruta('plan')} label="Tu plan" />
           </ItemFila>
           <ItemFila>
+            <FilaOpcion to={ruta('mensualidad')} label="Mi plan y mensualidad" />
+          </ItemFila>
+          <ItemFila>
             <FilaOpcion label="Cerrar sesión" peligro onClick={cerrarSesion} />
           </ItemFila>
         </ListaStagger>
