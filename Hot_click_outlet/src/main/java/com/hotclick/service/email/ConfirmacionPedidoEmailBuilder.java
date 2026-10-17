@@ -50,8 +50,26 @@ class ConfirmacionPedidoEmailBuilder {
             + layout.tablaMontos(montos.toString())
             + "<p style=\"margin:0 0 18px;color:#4D5560;font-size:14px;line-height:20px\">" + entrega + "</p>"
             + layout.cta(layout.urlSeguimiento(pedido), "Ver mi pedido")
+            + avisoCuentaRegistrada(cliente)
             + layout.notaPequena("Garantía de 40 días activa: si tenés cualquier problema con tu pedido, escribinos por WhatsApp y lo resolvemos.")
             + layout.footer(EmailLayoutHelper.PREGUNTA_DUDAS);
+    }
+
+    /**
+     * S4-19: si el correo del pedido ya es de una cuenta real (no un invitado GUEST-), el aviso de iniciar
+     * sesión va solo dentro de este correo, que recibe el dueño de la casilla. La respuesta del checkout es
+     * la misma con o sin cuenta, así un tercero no averigua si el correo existe.
+     */
+    String avisoCuentaRegistrada(Usuario cliente) {
+        if (!esCuentaRegistrada(cliente)) return "";
+        return layout.enlaceSecundario(layout.urlSitio("/login?redirect=%2Fmis-pedidos"),
+                "Este correo ya tiene cuenta en HotClick: iniciá sesión para ver esta compra en «Mis pedidos»");
+    }
+
+    static boolean esCuentaRegistrada(Usuario cliente) {
+        if (cliente == null) return false;
+        String id = cliente.getIdentificacion();
+        return id != null && !id.isBlank() && !id.startsWith("GUEST-");
     }
 
     /** «Envío normal GAM. Enviamos a …» con la dirección guardada en el pedido (V148). */
