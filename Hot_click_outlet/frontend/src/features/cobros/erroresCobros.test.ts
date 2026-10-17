@@ -4,6 +4,7 @@ import { TEXTO_PENDIENTE_DUENO } from '@/utils/erroresContrato'
 
 describe('errores del estado de cobros ONVO (#197)', () => {
   it('403 del personal: solo el propietario', () => {
+    expect(mensajeErrorEstadoCobros({ response: { status: 403, data: { success: false, code: 'SOLO_PROPIETARIO', message: 'x' } } })).toBe(TEXTO_SOLO_PROPIETARIO)
     expect(mensajeErrorEstadoCobros({ response: { status: 403, data: { success: false } } })).toBe(TEXTO_SOLO_PROPIETARIO)
   })
   it('501 pendiente del dueño y errores de red', () => {

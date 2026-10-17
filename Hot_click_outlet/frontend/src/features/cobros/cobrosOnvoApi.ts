@@ -3,7 +3,7 @@ import api from '@/services/api'
 /**
  * S2-25 · Activar cobros con ONVO. Todo el acceso al servidor queda acá.
  * GET /estado: contrato real de #197 (`docs/contratos/S3-06-onvo-estado-frecuencia.md`, alias /api/empresa/onvo/*);
- * solo el propietario (el personal recibe 403). POST /activar, /enlace y /reenviar-enlace siguen SUPUESTOS:
+ * solo el propietario (el personal recibe 403 `SOLO_PROPIETARIO`). POST /activar, /enlace y /reenviar-enlace siguen SUPUESTOS:
  * Backend los deja para cuando exista OnvoMarketplaceClient (S2-13) y las llaves sandbox (S2-01).
  *
  *   GET  /api/negocio/onvo/estado          → { estado, frecuencia, pausadaEl? }
