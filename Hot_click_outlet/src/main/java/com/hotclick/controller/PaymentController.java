@@ -38,6 +38,7 @@ public class PaymentController {
                 "message", "Esta tienda está pausada por ahora. No se puede comprar."));
         }
         try {
+            com.hotclick.service.envio.ContraEntregaPolitica.validarCheckout(request);
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
