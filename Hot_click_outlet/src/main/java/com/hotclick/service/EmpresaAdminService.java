@@ -287,7 +287,7 @@ public class EmpresaAdminService {
         Empresa empresa = empresa(id);
         empresa.setCobrosPausados(pausar);
         empresa.setCobrosPausaMotivo(pausar ? motivo : null);
-        empresa.setCobrosPausadosEl(pausar ? java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR) : null);
+        empresa.setCobrosPausadosEl(pausar ? java.time.OffsetDateTime.now(com.hotclick.utils.Constants.ZONA_CR) : null);
         empresaRepository.save(empresa);
         String detalle = (pausar ? "Pausada" : "Reanudada") + (motivo != null ? ": " + motivo : "");
         auditoriaAdminRegistroService.registrarSiAdmin(

@@ -31,20 +31,23 @@ public class NegocioOnvoController {
     }
 
     @GetMapping("/estado")
-    public ResponseEntity<ResponseDTO> estado() {
-        Long empresaId = propio();
+    public ResponseEntity<?> estado() {
+        Long empresaId = companyScope.requireEmpresaId();
+        if (!esPropietario(empresaId)) return soloPropietario();
         return ResponseEntity.ok(ResponseDTO.success("Cuenta ONVO", service.estado(empresaId)));
     }
 
     @GetMapping("/frecuencia")
-    public ResponseEntity<ResponseDTO> frecuencia() {
-        Long empresaId = propio();
+    public ResponseEntity<?> frecuencia() {
+        Long empresaId = companyScope.requireEmpresaId();
+        if (!esPropietario(empresaId)) return soloPropietario();
         return ResponseEntity.ok(ResponseDTO.success("Frecuencia de liquidación", service.frecuencia(empresaId)));
     }
 
     @PutMapping("/frecuencia")
     public ResponseEntity<?> cambiarFrecuencia(@RequestBody(required = false) Map<String, Object> body) {
-        Long empresaId = propio();
+        Long empresaId = companyScope.requireEmpresaId();
+        if (!esPropietario(empresaId)) return soloPropietario();
         try {
             Object valor = body != null ? body.get("frecuencia") : null;
             return ResponseEntity.ok(ResponseDTO.success("Frecuencia guardada",
@@ -58,9 +61,19 @@ public class NegocioOnvoController {
         }
     }
 
-    private Long propio() {
-        Long empresaId = companyScope.requireEmpresaId();
-        propietarioGuard.exigirPropietario(empresaId);
-        return empresaId;
+    /** Código estable del 403 para el personal del negocio (Frontend). */
+    public static final String CODIGO_SOLO_PROPIETARIO = "SOLO_PROPIETARIO";
+
+    private boolean esPropietario(Long empresaId) {
+        return !companyScope.isImpersonating()
+            && propietarioGuard.esPropietario(companyScope.getCurrentUser(), empresaId);
+    }
+
+    static ResponseEntity<Map<String, Object>> soloPropietario() {
+        Map<String, Object> err = new java.util.LinkedHashMap<>();
+        err.put("success", false);
+        err.put("code", CODIGO_SOLO_PROPIETARIO);
+        err.put("message", PropietarioGuard.MSG);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body(err);
     }
 }

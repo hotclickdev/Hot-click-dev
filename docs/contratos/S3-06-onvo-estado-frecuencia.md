@@ -34,7 +34,8 @@ Body `{ "cobrosPausados": true, "motivo": "texto" }`. `motivo` opcional, 3 a 300
 | 400 `{success:false, code:"FRECUENCIA_INVALIDA", message}` | frecuencia ausente, vacía, no textual o distinta de QUINCENAL/MENSUAL (mismo código que Frontend #170) |
 | 400 | `motivo` de pausa con menos de 3 o más de 300 caracteres |
 | 401 | sin token |
-| 403 | personal del negocio, comprador, o vendedor llamando el endpoint de admin |
+| 403 `{success:false, code:"SOLO_PROPIETARIO", message}` | personal del negocio (o sesión de soporte) en `/api/negocio/onvo/*` |
+| 403 | comprador, o vendedor llamando el endpoint de admin |
 
 ## Fuera de este PR (dependen de ONVO o del dueño)
 - `POST /activar`, `/enlace`, `/reenviar-enlace`: necesitan `OnvoMarketplaceClient` (S2-13) y llaves sandbox (S2-01).
@@ -43,4 +44,4 @@ Body `{ "cobrosPausados": true, "motivo": "texto" }`. `motivo` opcional, 3 a 300
 - Lista de admin ONVO (punto 3 del pedido de Frontend): queda para un PR siguiente; la tabla V183 ya trae `pct_comision`, `frecuencia_pendiente` y `onvo_account_id`.
 
 ## Migración V183 (aditiva)
-Tabla `hot_click_negocio_onvo_cuenta_tb` (único por negocio + proveedor + modo; `pct_comision` y `tarifa_semanal_crc` NULL hasta que el admin los fije; sin onboardingUrl/IBAN/KYC) y columnas `cobros_pausa_motivo`, `cobros_pausados_el` en `hot_click_empresa_tb`.
+Tabla `hot_click_negocio_onvo_cuenta_tb` (único por negocio + proveedor + modo; `pct_comision` y `tarifa_semanal_crc` NULL hasta que el admin los fije; sin onboardingUrl/IBAN/KYC) y columnas `cobros_pausa_motivo` (VARCHAR 300) y `cobros_pausados_el` (**TIMESTAMPTZ**, instante absoluto; se devuelve como `pausadaEl` en hora de Costa Rica con offset) en `hot_click_empresa_tb`.

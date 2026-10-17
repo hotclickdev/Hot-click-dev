@@ -125,6 +125,17 @@ class NegocioOnvoCuentaTest extends BaseIntegrationTest {
     }
 
     @Test
+    void pausadaEl_timestamptz_seDevuelveEnHoraDeCostaRica() throws Exception {
+        empresa.setCobrosPausados(true);
+        empresa.setCobrosPausadosEl(java.time.OffsetDateTime.parse("2026-10-17T02:10:00Z"));
+        empresaRepository.saveAndFlush(empresa);
+        mockMvc.perform(get("/api/negocio/onvo/estado").header("Authorization", tokenDueno))
+            .andExpect(jsonPath("$.data.pausadaEl").value("2026-10-16T20:10-06:00"));
+        assertThat(empresaRepository.findById(empresa.getId()).orElseThrow().getCobrosPausadosEl().toInstant())
+            .isEqualTo(java.time.Instant.parse("2026-10-17T02:10:00Z"));
+    }
+
+    @Test
     void frecuenciaInvalida_400() throws Exception {
         cambiar(tokenDueno, "{\"frecuencia\":\"SEMANAL\"}").andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("FRECUENCIA_INVALIDA"));
@@ -162,8 +173,13 @@ class NegocioOnvoCuentaTest extends BaseIntegrationTest {
     @Test
     void personalDelNegocio_403() throws Exception {
         mockMvc.perform(get("/api/negocio/onvo/estado").header("Authorization", tokenPersonal))
-            .andExpect(status().isForbidden());
-        cambiar(tokenPersonal, "{\"frecuencia\":\"MENSUAL\"}").andExpect(status().isForbidden());
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("SOLO_PROPIETARIO"));
+        mockMvc.perform(get("/api/empresa/onvo/frecuencia").header("Authorization", tokenPersonal))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("SOLO_PROPIETARIO"));
+        cambiar(tokenPersonal, "{\"frecuencia\":\"MENSUAL\"}").andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("SOLO_PROPIETARIO"));
     }
 
     @Test
