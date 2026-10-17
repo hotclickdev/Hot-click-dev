@@ -3,6 +3,7 @@ package com.hotclick.service.payment;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.dto.StorefrontPedidoDTO;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.security.ClientIpResolver;
@@ -28,6 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -93,7 +95,47 @@ public class GuestCheckoutGuard {
         String ip = http != null ? ipResolver.resolve(http) : null;
         String correo = req.getGuestEmail() != null ? req.getGuestEmail().trim().toLowerCase(Locale.ROOT) : "";
         String clave = claveIdempotencia(http, ip, correo, req);
+        Map<Long, Integer> porProducto = new java.util.HashMap<>();
+        for (PaymentCheckoutRequest.ItemDTO i : req.getItems() != null ? req.getItems() : List.<PaymentCheckoutRequest.ItemDTO>of()) {
+            int c = i.getCantidad() != null ? i.getCantidad() : 0;
+            if (i.getProductoId() != null) porProducto.merge(i.getProductoId(), c, Integer::sum);
+        }
+        return idempotente(clave, ip, correo, porProducto, checkout, GuestCheckoutGuard::pedidoIdPago);
+    }
 
+    /**
+     * H1 (S1-56): pedido de invitado de la tienda propia (POST /api/tienda/{slug}/pedidos). Mismos topes
+     * (unidades por producto, unidades pendientes por IP y por correo en la ventana) e idempotencia que el
+     * checkout del marketplace; sin Turnstile porque ese formulario no lo envía.
+     */
+    public ResponseEntity<ResponseDTO> ejecutarTienda(Long empresaId, StorefrontPedidoDTO dto, HttpServletRequest http,
+                                                      Supplier<ResponseEntity<ResponseDTO>> checkout,
+                                                      Supplier<Long> pedidoCreado) {
+        String ip = http != null ? ipResolver.resolve(http) : null;
+        String correo = dto.getCorreoCliente() != null ? dto.getCorreoCliente().trim().toLowerCase(Locale.ROOT) : "";
+        Map<Long, Integer> porProducto = new java.util.HashMap<>();
+        if (dto.getItems() != null) {
+            for (StorefrontPedidoDTO.ItemDTO i : dto.getItems()) {
+                if (i != null && i.productoId() != null) porProducto.merge(i.productoId(), i.cantidad(), Integer::sum);
+            }
+        }
+        String header = http != null ? http.getHeader("Idempotency-Key") : null;
+        String clave;
+        if (header != null && !header.isBlank() && header.length() <= 128) {
+            clave = "t:" + empresaId + ":k:" + header.trim();
+        } else {
+            StringBuilder sb = new StringBuilder("tienda|").append(empresaId).append('|').append(ip).append('|')
+                .append(correo).append('|').append(dto.getMetodoPago()).append('|').append(dto.getMetodoEnvio()).append('|');
+            new java.util.TreeMap<>(porProducto).forEach((k, v) -> sb.append(k).append('x').append(v).append(';'));
+            clave = "t:" + sha(sb.toString());
+        }
+        return idempotente(clave, ip, correo, porProducto, checkout,
+            r -> r.getStatusCode().is2xxSuccessful() ? pedidoCreado.get() : null);
+    }
+
+    private ResponseEntity<ResponseDTO> idempotente(String clave, String ip, String correo, Map<Long, Integer> porProducto,
+                                                    Supplier<ResponseEntity<ResponseDTO>> checkout,
+                                                    Function<ResponseEntity<ResponseDTO>, Long> pedidoIdDe) {
         Instant ahora = clock.instant();
         purgarIdempotencia(ahora);
         CompletableFuture<ResponseEntity<ResponseDTO>> mio = new CompletableFuture<>();
@@ -102,7 +144,7 @@ public class GuestCheckoutGuard {
 
         ResponseEntity<ResponseDTO> respuesta;
         try {
-            respuesta = conCupo(req, ip, correo, checkout);
+            respuesta = conCupo(porProducto, ip, correo, checkout, pedidoIdDe);
         } catch (RuntimeException e) {
             idempotencia.remove(clave);
             mio.completeExceptionally(e);
@@ -113,15 +155,10 @@ public class GuestCheckoutGuard {
         return respuesta;
     }
 
-    private ResponseEntity<ResponseDTO> conCupo(PaymentCheckoutRequest req, String ip, String correo,
-                                                Supplier<ResponseEntity<ResponseDTO>> checkout) {
-        Map<Long, Integer> porProducto = new java.util.HashMap<>();
-        int unidades = 0;
-        for (PaymentCheckoutRequest.ItemDTO i : req.getItems() != null ? req.getItems() : List.<PaymentCheckoutRequest.ItemDTO>of()) {
-            int c = i.getCantidad() != null ? i.getCantidad() : 0;
-            unidades += c;
-            if (i.getProductoId() != null) porProducto.merge(i.getProductoId(), c, Integer::sum);
-        }
+    private ResponseEntity<ResponseDTO> conCupo(Map<Long, Integer> porProducto, String ip, String correo,
+                                                Supplier<ResponseEntity<ResponseDTO>> checkout,
+                                                Function<ResponseEntity<ResponseDTO>, Long> pedidoIdDe) {
+        int unidades = porProducto.values().stream().mapToInt(Integer::intValue).sum();
         if (porProducto.values().stream().anyMatch(c -> c > maxPorProducto)) {
             return ResponseEntity.status(429).body(ResponseDTO.error(String.format(MSG_TOPE_PRODUCTO, maxPorProducto)));
         }
@@ -134,8 +171,7 @@ public class GuestCheckoutGuard {
             }
         }
         ResponseEntity<ResponseDTO> r = checkout.get();
-        Long pedidoId = r.getStatusCode().is2xxSuccessful() && r.getBody() != null
-            && r.getBody().getData() instanceof PaymentCheckoutResponse pc ? pc.getPedidoId() : null;
+        Long pedidoId = pedidoIdDe.apply(r);
         if (pedidoId != null) {
             Reserva nueva = new Reserva(clock.instant(), pedidoId, unidades);
             for (String k : claves) {
@@ -144,6 +180,11 @@ public class GuestCheckoutGuard {
             }
         }
         return r;
+    }
+
+    private static Long pedidoIdPago(ResponseEntity<ResponseDTO> r) {
+        return r.getStatusCode().is2xxSuccessful() && r.getBody() != null
+            && r.getBody().getData() instanceof PaymentCheckoutResponse pc ? pc.getPedidoId() : null;
     }
 
     private int unidadesPendientes(String clave) {
