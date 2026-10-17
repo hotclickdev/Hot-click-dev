@@ -123,15 +123,40 @@ class NegocioMensualidadTest extends BaseIntegrationTest {
     @Test
     void personal_comprador_y_admin_403() throws Exception {
         mockMvc.perform(get("/api/negocio/mensualidad").header("Authorization", tokenPersonal))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code", is("SOLO_PROPIETARIO")));
+        mockMvc.perform(post("/api/negocio/mensualidad/pago").header("Authorization", tokenPersonal))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code", is("SOLO_PROPIETARIO")));
         mockMvc.perform(get("/api/negocio/mensualidad").header("Authorization", userToken))
             .andExpect(status().isForbidden());
     }
 
     @Test
-    void sinToken_401_y_sinPostDePago() throws Exception {
+    void sinToken_401() throws Exception {
         mockMvc.perform(get("/api/negocio/mensualidad")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/negocio/mensualidad/pago")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void pago_sinLlavesOnvo_failClosed503() throws Exception {
         mockMvc.perform(post("/api/negocio/mensualidad/pago").header("Authorization", tokenDueno))
-            .andExpect(status().is4xxClientError());
+            .andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.code", is("ONVO_NO_CONFIGURADO")))
+            .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void pago_planSinPrecio_409() throws Exception {
+        plan.setPrecioMensual(0);
+        planRepository.saveAndFlush(plan);
+        mockMvc.perform(post("/api/negocio/mensualidad/pago").header("Authorization", tokenDueno))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code", is("PLAN_SIN_PRECIO")));
+        empresa.setPlan(null);
+        empresaRepository.saveAndFlush(empresa);
+        mockMvc.perform(post("/api/negocio/mensualidad/pago").header("Authorization", tokenDueno))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code", is("PLAN_SIN_PRECIO")));
     }
 }

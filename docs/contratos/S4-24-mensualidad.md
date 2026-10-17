@@ -2,7 +2,7 @@
 
 `/api/billing/suscripcion` y `/api/billing/checkout/{planId}` pasan por Tilopay, que se va a quitar; este endpoint no los usa ni los toca.
 
-**Auth:** JWT de negocio (`EMPRENDEDOR`) y **solo el propietario**. El personal y los compradores reciben 403; sin token, 401. El negocio sale del token.
+**Auth:** JWT de negocio (`EMPRENDEDOR`) y **solo el propietario**. El personal recibe 403 `SOLO_PROPIETARIO`, los compradores 403 y sin token 401. El negocio sale del token.
 
 ## GET /api/negocio/mensualidad
 ```json
@@ -18,14 +18,22 @@
 - `monto`: `plan.precioMensual` (₡). `porcentaje` y `minimoComision`: `plan.comisionPorcentaje` y `plan.comisionMinimaCrc`. Sin plan, los tres van en `null`; nunca se inventan.
 - `fecha` (YYYY-MM-DD): `empresa.fechaVencPlan`. Con `ACTIVO` es el próximo vencimiento; con `PENDIENTE_PAGO`, la fecha en que venció. Si no está cargada, `null`. No se calcula a partir de `diaCobro`.
 
+## POST /api/negocio/mensualidad/pago  (esqueleto fail-closed)
+→ `{ "success": true, "data": { "url": "https://…" } }`, la URL del Checkout de ONVO por el precio del plan (`plan.precioMensual`, nunca otro monto). Solo se aceptan URLs https.
+- **Hoy siempre responde 503 `ONVO_NO_CONFIGURADO`.** Para que funcione hacen falta las llaves sandbox de ONVO (S2-01) y la implementación real de `MensualidadCheckoutClient`. No hay modo simulado (PAG-6).
+- 409 `PLAN_SIN_PRECIO` cuando no hay plan o el plan tiene precio `null` o `0`. Este chequeo va antes que el de ONVO.
+
 ## Errores
 | Código | Cuándo |
 |---|---|
 | 401 | sin token |
-| 403 | personal del negocio o comprador |
+| 403 `{success:false, code:"SOLO_PROPIETARIO", message}` | personal del negocio o sesión de soporte |
+| 403 | comprador |
+| 409 `{success:false, code:"PLAN_SIN_PRECIO", message}` | `POST /pago` sin precio que cobrar |
+| 503 `{success:false, code:"ONVO_NO_CONFIGURADO", message}` | `POST /pago` sin llaves de ONVO (hoy, siempre) |
 
-No hay 400: el endpoint no recibe parámetros.
+No hay 400: ningún endpoint recibe parámetros.
 
 ## Fuera de este PR
-- `POST /api/negocio/mensualidad/pago` → `{ url }` (Checkout de ONVO, 409 `PLAN_SIN_PRECIO`): necesita el cliente de ONVO y las llaves sandbox (S2-01). Hoy esa ruta no existe y responde 4xx.
+- El cobro real de `POST /pago`: necesita el cliente de ONVO y las llaves sandbox (S2-01).
 - `EN_GRACIA` y los días de gracia: decisión del dueño.

@@ -26,10 +26,39 @@ public class MensualidadNegocioService {
     /** Estados de plan que significan mensualidad sin pagar. */
     static final Set<String> PLAN_SIN_PAGAR = Set.of("VENCIDO", "PAST_DUE");
 
-    private final EmpresaRepository empresaRepository;
+    public static final String CODIGO_PLAN_SIN_PRECIO = "PLAN_SIN_PRECIO";
 
-    public MensualidadNegocioService(EmpresaRepository empresaRepository) {
+    /** El plan no tiene precio que cobrar (sin plan, precio null o 0): 409. */
+    public static class PlanSinPrecioException extends RuntimeException {
+        public PlanSinPrecioException() { super("Tu plan no tiene una mensualidad que pagar."); }
+    }
+
+    private final EmpresaRepository empresaRepository;
+    private final MensualidadCheckoutClient checkout;
+
+    public MensualidadNegocioService(EmpresaRepository empresaRepository, MensualidadCheckoutClient checkout) {
         this.empresaRepository = empresaRepository;
+        this.checkout = checkout;
+    }
+
+    /**
+     * Esqueleto fail-closed: con precio del plan pide el Checkout de ONVO; sin llaves responde 503.
+     * El monto es siempre {@code plan.precioMensual}; nunca se inventa.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> pagar(Long empresaId) {
+        Empresa e = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
+        Plan plan = e.getPlan();
+        if (plan == null || plan.getPrecioMensual() == null || plan.getPrecioMensual() <= 0) {
+            throw new PlanSinPrecioException();
+        }
+        if (!checkout.configurado()) throw new MensualidadCheckoutClient.NoConfiguradoException();
+        String url = checkout.crearCheckout(empresaId, plan.getNombre(), plan.getPrecioMensual());
+        if (url == null || !url.trim().toLowerCase().startsWith("https://")) {
+            throw new MensualidadCheckoutClient.NoConfiguradoException();
+        }
+        return Map.of("url", url.trim());
     }
 
     @Transactional(readOnly = true)
