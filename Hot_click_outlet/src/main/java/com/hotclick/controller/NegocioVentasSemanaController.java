@@ -43,12 +43,15 @@ public class NegocioVentasSemanaController {
     private final CompanyScope companyScope;
     private final EmpresaRepository empresaRepository;
     private final WalletTransaccionRepository ledger;
+    private final com.hotclick.repository.PedidoItemRepository pedidoItems;
 
     public NegocioVentasSemanaController(CompanyScope companyScope, EmpresaRepository empresaRepository,
-                                         WalletTransaccionRepository ledger) {
+                                         WalletTransaccionRepository ledger,
+                                         com.hotclick.repository.PedidoItemRepository pedidoItems) {
         this.companyScope = companyScope;
         this.empresaRepository = empresaRepository;
         this.ledger = ledger;
+        this.pedidoItems = pedidoItems;
     }
 
     @GetMapping("/semana")
@@ -65,12 +68,15 @@ public class NegocioVentasSemanaController {
         Integer minimo = plan != null && plan.getComisionMinimaCrc() != null && plan.getComisionMinimaCrc() > 0
             ? plan.getComisionMinimaCrc() : null;
 
+        List<WalletTransaccion> filas = ledger
+            .findByEmpresaIdAndTipoAndFechaCreacionGreaterThanEqualAndFechaCreacionLessThanOrderByFechaCreacionAsc(
+                empresaId, WalletTransaccion.CREDITO_VENTA, lunes.atStartOfDay(), domingo.plusDays(1).atStartOfDay(),
+                org.springframework.data.domain.PageRequest.of(0, MAX_LIST_VENTAS));
+        Map<Long, String> productoPorPedido = productos(filas, empresaId);
+
         List<Map<String, Object>> ventas = new ArrayList<>();
         long tBruto = 0, tComision = 0, conMinimo = 0;
-        for (WalletTransaccion t : ledger
-                .findByEmpresaIdAndTipoAndFechaCreacionGreaterThanEqualAndFechaCreacionLessThanOrderByFechaCreacionAsc(
-                    empresaId, WalletTransaccion.CREDITO_VENTA, lunes.atStartOfDay(), domingo.plusDays(1).atStartOfDay(),
-                    org.springframework.data.domain.PageRequest.of(0, MAX_LIST_VENTAS))) {
+        for (WalletTransaccion t : filas) {
             long bruto = n(t.getTotalBruto());
             long comision = n(t.getComisionSaas()) + n(t.getComisionGw());
             Long porPct = pct != null ? BigDecimal.valueOf(bruto).multiply(pct)
@@ -80,7 +86,8 @@ public class NegocioVentasSemanaController {
             Map<String, Object> v = new LinkedHashMap<>();
             v.put("id", t.getId());
             v.put("fecha", t.getFechaCreacion().toString());
-            v.put("producto", t.getDescripcion());
+            v.put("producto", WalletTransaccion.REF_PEDIDO.equals(t.getReferenciaTipo())
+                ? productoPorPedido.get(t.getReferenciaId()) : null);
             v.put("bruto", bruto);
             v.put("comisionPorcentaje", porPct);
             v.put("minimoAplicado", minimoAplicado);
@@ -105,6 +112,32 @@ public class NegocioVentasSemanaController {
         d.put("ventas", ventas);
         d.put("totales", totales);
         return ResponseEntity.ok(ResponseDTO.success("Ventas de la semana", d));
+    }
+
+    /**
+     * Nombre del producto vendido por pedido (un solo pedido → su producto; varios ítems → «Primero y N más»).
+     * Una sola consulta para toda la semana. Sin pedido o sin ítems, el pedido no aparece y {@code producto} es null.
+     */
+    private Map<Long, String> productos(List<WalletTransaccion> filas, Long empresaId) {
+        java.util.Set<Long> pedidoIds = new java.util.HashSet<>();
+        for (WalletTransaccion t : filas) {
+            if (WalletTransaccion.REF_PEDIDO.equals(t.getReferenciaTipo()) && t.getReferenciaId() != null) {
+                pedidoIds.add(t.getReferenciaId());
+            }
+        }
+        if (pedidoIds.isEmpty()) return Map.of();
+        Map<Long, List<String>> nombres = new LinkedHashMap<>();
+        for (Object[] r : pedidoItems.nombresProductoPorPedido(pedidoIds, empresaId)) {
+            nombres.computeIfAbsent((Long) r[0], k -> new ArrayList<>()).add((String) r[1]);
+        }
+        Map<Long, String> etiqueta = new java.util.HashMap<>();
+        nombres.forEach((id, lista) -> etiqueta.put(id, etiquetaProducto(lista)));
+        return etiqueta;
+    }
+
+    static String etiquetaProducto(List<String> nombres) {
+        if (nombres == null || nombres.isEmpty()) return null;
+        return nombres.size() == 1 ? nombres.get(0) : nombres.get(0) + " y " + (nombres.size() - 1) + " más";
     }
 
     private static long n(Long v) { return v == null ? 0L : v; }
