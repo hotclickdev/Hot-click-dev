@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import PaginaLegal, { type EnlaceLegal } from '@/components/comprador/PaginaLegal'
+import ResumenLegal from '@/features/legal/ResumenLegal'
 import BloqueIdentidad from '@/legal/BloqueIdentidad'
 import { IDENTIDAD_COMERCIANTE, POLITICAS_ACTUALIZADAS, POLITICAS_ACTUALIZADAS_ISO } from '@/legal/identidadComerciante'
 
@@ -163,6 +164,7 @@ export default function TerminosPage() {
         encabezado="Términos y Condiciones de Uso"
         subtitulo={`Contrato de Adhesión · Última actualización: ${POLITICAS_ACTUALIZADAS}`}
         intro={<p>Las presentes condiciones generales regulan el acceso, registro y uso de la plataforma web y de comercio electrónico denominada HotClick. Todo usuario que acceda, navegue o interactúe en la Plataforma se adhiere de pleno derecho a lo aquí estipulado.</p>}
+        resumen={<ResumenLegal documento="terminos" textoCompleto="los Términos y condiciones" ancla={`#${clausulas[0]?.id ?? ''}`} />}
         secciones={clausulas}
         pregunta="¿Preguntas sobre estos términos?"
         correo={IDENTIDAD_COMERCIANTE.correo}
