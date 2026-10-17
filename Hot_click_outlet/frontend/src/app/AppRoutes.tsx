@@ -15,6 +15,8 @@ const SSOComplete = lazy(() => import('@/pages/SSOComplete'))
 
 const InicioPlataforma = lazy(() => import('@/pages/plataforma/InicioPlataforma'))
 const NegociosPlataforma = lazy(() => import('@/pages/plataforma/NegociosPlataforma'))
+const NegociosOnvoPage = lazy(() => import('@/features/adminOnvo/NegociosOnvoPage'))
+const FichaOnvoPage = lazy(() => import('@/features/adminOnvo/FichaOnvoPage'))
 const PedidosPlataforma = lazy(() => import('@/pages/plataforma/PedidosPlataforma'))
 const PedidoDetalle = lazy(() => import('@/pages/plataforma/PedidoDetalle'))
 const CompradorPlataforma = lazy(() => import('@/pages/plataforma/CompradorPlataforma'))
@@ -179,6 +181,8 @@ export default function AppRoutes() {
         <Route index element={<InicioPlataforma />} />
         <Route path="negocios" element={<NegociosPlataforma />} />
         <Route path="negocios/:id" element={<NegociosPlataforma />} />
+        <Route path="onvo" element={<NegociosOnvoPage />} />
+        <Route path="onvo/:id" element={<FichaOnvoPage />} />
         <Route path="pedidos" element={<PedidosPlataforma />} />
         <Route path="pedidos/:id" element={<PedidoDetalle />} />
         <Route path="compradores/:id" element={<CompradorPlataforma />} />
