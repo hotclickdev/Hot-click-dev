@@ -220,8 +220,29 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
         mockMvc.perform(post("/api/auth/nuevo-negocio").header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombreEmpresa\":\"  EMPRESA   Álpha \",\"correoEmpresa\":\"otro-alpha@test.cr\"}"))
-            .andExpect(status().isConflict());
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value("NOMBRE_NEGOCIO_EN_USO"));
         miembroEmpresaRepository.deleteAll();
+    }
+
+    @Test
+    @DisplayName("Multinegocio: con 20 negocios, «Crear otro» → 409 CUPO_NEGOCIOS")
+    void multinegocio_cupoDeNegocios409() throws Exception {
+        miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, empresaA, "PROPIETARIO"));
+        for (int i = 0; i < 19; i++) {
+            Empresa extra = crearEmpresa("Cupo Extra " + i, "cupo-extra-" + i, "cupo-extra-" + i + "@test.cr");
+            miembroEmpresaRepository.saveAndFlush(new com.hotclick.model.MiembroEmpresa(emprendedorA, extra, "PROPIETARIO"));
+        }
+        try {
+            mockMvc.perform(post("/api/auth/nuevo-negocio").header("Authorization", tokenA)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"nombreEmpresa\":\"Negocio 21\",\"correoEmpresa\":\"negocio-21@test.cr\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CUPO_NEGOCIOS"));
+        } finally {
+            miembroEmpresaRepository.deleteAll();
+        }
     }
 
     // ── T-SEC-011: EmprendedorA no puede ver lista global de usuarios ─────────

@@ -59,7 +59,7 @@ public class AuthNuevoNegocioHandler {
                 return ResponseEntity.status(403).body(ResponseDTO.error("Esta opción es para cuentas que ya tienen un negocio."));
             }
             if (negocios >= 20) {
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Alcanzaste el límite de 20 negocios por cuenta"));
+                return conCodigo(409, CODIGO_CUPO_NEGOCIOS, "Alcanzaste el límite de 20 negocios por cuenta");
             }
 
             ResponseEntity<?> validacion = validarDto(dto);
@@ -89,6 +89,18 @@ public class AuthNuevoNegocioHandler {
         }
     }
 
+    /** Códigos estables para «Crear otro negocio» (Frontend #172, punto 10). */
+    public static final String CODIGO_NOMBRE_EN_USO = "NOMBRE_NEGOCIO_EN_USO";
+    public static final String CODIGO_CUPO_NEGOCIOS = "CUPO_NEGOCIOS";
+
+    static ResponseEntity<java.util.Map<String, Object>> conCodigo(int status, String code, String message) {
+        java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("success", false);
+        body.put("code", code);
+        body.put("message", message);
+        return ResponseEntity.status(status).body(body);
+    }
+
     private ResponseEntity<?> validarDto(RegistroEmpresaDTO dto) {
         if (dto.getNombreEmpresa() == null || dto.getNombreEmpresa().isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre del negocio es requerido"));
@@ -97,7 +109,7 @@ public class AuthNuevoNegocioHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El correo oficial del negocio es requerido"));
         }
         if (nombreEnUso(dto.getNombreEmpresa())) {
-            return ResponseEntity.status(409).body(ResponseDTO.error("Ese nombre de negocio ya está en uso. Probá con otro."));
+            return conCodigo(409, CODIGO_NOMBRE_EN_USO, "Ese nombre de negocio ya está en uso. Probá con otro.");
         }
         String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase();
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa)) {
