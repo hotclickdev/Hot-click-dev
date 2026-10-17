@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { EncabezadoPagina, Boton } from '@/prototipo/compartido/ui'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
-import SelectorFrecuencia, { OPCIONES_FRECUENCIA } from './SelectorFrecuencia'
+import SelectorFrecuencia, { ERROR_FRECUENCIA_OBLIGATORIA, OPCIONES_FRECUENCIA } from './SelectorFrecuencia'
 import { frecuenciaApi, type EstadoFrecuencia, type Frecuencia } from './frecuenciaApi'
 
 export function avisoCambioManual(actual: Frecuencia): string {
@@ -14,6 +14,7 @@ export default function LiquidacionPage({ volverA }: { volverA: string }) {
   const [estado, setEstado] = useState<EstadoFrecuencia | null>(null)
   const [elegida, setElegida] = useState<Frecuencia | null>(null)
   const [mensaje, setMensaje] = useState<string | null>(null)
+  const [errorFrecuencia, setErrorFrecuencia] = useState<string | null>(null)
   const [sinServicio, setSinServicio] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
@@ -25,11 +26,21 @@ export default function LiquidacionPage({ volverA }: { volverA: string }) {
     return () => { vivo = false }
   }, [])
 
+  function elegir(f: Frecuencia) {
+    setElegida(f)
+    setErrorFrecuencia(null)
+  }
+
   async function guardar(ev: FormEvent) {
     ev.preventDefault()
-    if (!elegida || !estado) return
+    if (!elegida) {
+      setErrorFrecuencia(ERROR_FRECUENCIA_OBLIGATORIA)
+      return
+    }
+    if (!estado) return
     setGuardando(true)
     setMensaje(null)
+    setErrorFrecuencia(null)
     try {
       setEstado(await frecuenciaApi.cambiar(elegida))
       setMensaje('Guardamos tu cambio.')
@@ -40,19 +51,21 @@ export default function LiquidacionPage({ volverA }: { volverA: string }) {
     }
   }
 
-  const cambio = estado && elegida && elegida !== estado.actual
+  const cambio = Boolean(estado && elegida && elegida !== estado.actual)
+  // Sin frecuencia previa: el botón queda habilitado para disparar la validación obligatoria.
+  const puedeGuardar = Boolean(estado) && !guardando && (estado?.actual == null || cambio)
   return (
     <EntradaPagina>
       <main className="px-5 pb-8 pt-[60px] md:max-w-[640px]">
         <EncabezadoPagina titulo="Liquidación" volverA={volverA} />
-        <form onSubmit={guardar} className="mt-4 flex flex-col gap-4">
-          <SelectorFrecuencia valor={elegida} onCambiar={setElegida} deshabilitado={!estado || guardando} />
-          {estado && (cambio || estado.pendiente) && (
+        <form onSubmit={guardar} className="mt-4 flex flex-col gap-4" noValidate>
+          <SelectorFrecuencia valor={elegida} onCambiar={elegir} deshabilitado={!estado || guardando} error={errorFrecuencia} />
+          {estado?.actual && (cambio || estado.pendiente) && (
             <p role="note" className="rounded-[8px] bg-hc-warning-bg px-3 py-2 text-[12px] text-hc-warning">{avisoCambioManual(estado.actual)}</p>
           )}
           {sinServicio && <p role="status" className="text-[12px] text-hc-warning">Esta opción todavía no está disponible. Muy pronto vas a poder cambiarla desde acá.</p>}
           {mensaje && <p role="status" className="text-[12px] text-hc-muted">{mensaje}</p>}
-          <Boton type="submit" disabled={!cambio || guardando}>{guardando ? 'Guardando…' : 'Guardar cambio'}</Boton>
+          <Boton type="submit" disabled={!puedeGuardar}>{guardando ? 'Guardando…' : 'Guardar cambio'}</Boton>
         </form>
       </main>
     </EntradaPagina>

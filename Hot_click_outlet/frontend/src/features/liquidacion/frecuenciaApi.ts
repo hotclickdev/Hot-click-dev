@@ -6,12 +6,11 @@ import api from '@/services/api'
  *   PUT /api/negocio/onvo/frecuencia   { frecuencia } → mismo cuerpo, con `pendiente` hasta que el admin lo aplique en ONVO (S2-29)
  * En el registro (paso Cobros) el campo viaja como `frecuenciaLiquidacion` en el alta del negocio;
  * ese cableado queda para cuando el backend lo acepte (el registro lo tiene el Desarrollador).
+ * Decisión del dueño: no hay valor por defecto; el negocio elige quincenal o mensual al registrarse.
+ * Cada pago de liquidación cuesta US$3 (tarifa de ONVO).
  */
 export type Frecuencia = 'QUINCENAL' | 'MENSUAL'
-export type EstadoFrecuencia = { actual: Frecuencia; pendiente: Frecuencia | null }
-
-/** Por defecto Quincenal (lo que hace ONVO hoy). Pendiente de confirmar con HOT_CLICK. */
-export const FRECUENCIA_POR_DEFECTO: Frecuencia = 'QUINCENAL'
+export type EstadoFrecuencia = { actual: Frecuencia | null; pendiente: Frecuencia | null }
 
 function esFrecuencia(v: unknown): v is Frecuencia {
   return v === 'QUINCENAL' || v === 'MENSUAL'
@@ -20,7 +19,7 @@ function esFrecuencia(v: unknown): v is Frecuencia {
 export function normalizarFrecuencia(data: unknown): EstadoFrecuencia {
   const d = (data && typeof data === 'object' && 'data' in data ? (data as { data: unknown }).data : data) as Record<string, unknown> | null
   return {
-    actual: esFrecuencia(d?.actual) ? d.actual : FRECUENCIA_POR_DEFECTO,
+    actual: esFrecuencia(d?.actual) ? d.actual : null,
     pendiente: esFrecuencia(d?.pendiente) ? d.pendiente : null,
   }
 }
