@@ -99,6 +99,16 @@ public class CuentaOnvoNegocioService {
         return frecuenciaDe(repo.save(c));
     }
 
+    /** Modo de ONVO en uso (TEST | LIVE): las cuentas se guardan por modo. */
+    public String modo() {
+        return modo;
+    }
+
+    /** Cuenta ONVO del negocio en el modo en uso, si existe. */
+    public Optional<NegocioOnvoCuenta> cuentaDe(Long empresaId) {
+        return cuenta(empresaId);
+    }
+
     private Optional<NegocioOnvoCuenta> cuenta(Long empresaId) {
         return repo.findByEmpresaIdAndProveedorAndModo(empresaId, PROVEEDOR, modo);
     }
