@@ -184,6 +184,44 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
             .andExpect(status().isForbidden());
     }
 
+    @Test
+    @DisplayName("Pausa de cobros: un emprendedor no puede pausar ni reanudar su propio negocio → 403")
+    void emprendedorA_cannotPausarCobros() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .put("/api/admin/empresas/" + empresaA.getId() + "/cobros-pausados")
+                .header("Authorization", tokenA)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"cobrosPausados\":false}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Tienda pausada: /api/tienda/{slug} → 410 TIENDA_PAUSADA y sus productos salen de destacados")
+    void tiendaPausada410YFueraDeDestacados() throws Exception {
+        productoA.setDestacado(true);
+        productoRepository.saveAndFlush(productoA);
+        empresaA.setTiendaPausada(true);
+        empresaRepository.saveAndFlush(empresaA);
+
+        mockMvc.perform(get("/api/tienda/empresa-alpha"))
+            .andExpect(status().isGone())
+            .andExpect(jsonPath("$.code").value("TIENDA_PAUSADA"));
+        org.assertj.core.api.Assertions.assertThat(
+                productoRepository.findDestacadosPublicos(Constants.ESTADO_ACTIVO))
+            .noneMatch(p -> p.getId().equals(productoA.getId()));
+        mockMvc.perform(get("/api/tienda/empresa-beta")).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Tienda pausada: un emprendedor no puede pausar su tienda → 403")
+    void emprendedorA_cannotPausarTienda() throws Exception {
+        mockMvc.perform(put("/api/admin/empresas/" + empresaA.getId() + "/tienda-pausada")
+                .header("Authorization", tokenA)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"tiendaPausada\":false}"))
+            .andExpect(status().isForbidden());
+    }
+
     // ── T-SEC-011: EmprendedorA no puede ver lista global de usuarios ─────────
     @Test
     @DisplayName("T-SEC-011 | CRÍTICO — EmprendedorA no puede listar todos los usuarios → 403")

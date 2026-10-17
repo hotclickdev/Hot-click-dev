@@ -22,13 +22,21 @@ public class PaymentController {
     private PaymentService paymentService;
 
     @Autowired
+    private com.hotclick.repository.ProductoRepository productoRepository;
+
+    @Autowired
     private TilopayConfirmacionService tilopayConfirmacionService;
 
     @Autowired
     private com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard;
 
     @PostMapping("/checkout")
-    public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
+    public ResponseEntity<?> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
+        if (hayTiendaPausada(request)) {
+            return ResponseEntity.status(409).body(java.util.Map.of(
+                "success", false, "code", "TIENDA_PAUSADA",
+                "message", "Esta tienda está pausada por ahora. No se puede comprar."));
+        }
         try {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
@@ -41,6 +49,19 @@ public class PaymentController {
             org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
+    }
+
+    private static final int MAX_ITEMS_PAUSA = 200;
+
+    /** Pausa de tienda: ningún producto de una tienda pausada se puede comprar (409 TIENDA_PAUSADA). */
+    private boolean hayTiendaPausada(PaymentCheckoutRequest request) {
+        if (request.getItems() == null) return false;
+        var ids = request.getItems().stream()
+            .filter(i -> i != null && i.getProductoId() != null)
+            .map(PaymentCheckoutRequest.ItemDTO::getProductoId)
+            .limit(MAX_ITEMS_PAUSA)
+            .collect(java.util.stream.Collectors.toSet());
+        return !ids.isEmpty() && productoRepository.contarDeTiendasPausadas(ids) > 0;
     }
 
     @GetMapping("/status/{numeroPedido}")

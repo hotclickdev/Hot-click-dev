@@ -52,6 +52,12 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 new IllegalStateException("ONVO_SECRET_KEY"));
         }
 
+        if (pedido.getEmpresa() != null && pedido.getEmpresa().isCobrosPausados()) {
+            // Sin sesión ni intención en ONVO: el comprador elige efectivo o contra entrega.
+            throw new IllegalArgumentException(
+                "Este negocio no acepta pagos en línea por ahora. Elegí otra forma de pago.");
+        }
+
         String descripcion = "Pedido HOTCLICK " + pedido.getNumeroPedido();
         String successUrl  = appUrl + "/pago/exito?order=" + pedido.getNumeroPedido();
         String cancelUrl   = appUrl + "/pago/cancelado?order=" + pedido.getNumeroPedido();
