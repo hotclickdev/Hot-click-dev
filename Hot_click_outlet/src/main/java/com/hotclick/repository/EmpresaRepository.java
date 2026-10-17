@@ -105,4 +105,8 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
                           @Param("planBase") Plan planBase,
                           @Param("nombrePlan") String nombrePlan,
                           @Param("hoy") LocalDate hoy);
+
+    /** Nombres de todos los negocios (para el chequeo de nombre único normalizado). */
+    @org.springframework.data.jpa.repository.Query("SELECT e.nombreEmpresa FROM Empresa e")
+    java.util.List<String> findAllNombres();
 }

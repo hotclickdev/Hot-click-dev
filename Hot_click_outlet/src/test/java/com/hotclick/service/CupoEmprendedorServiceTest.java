@@ -62,8 +62,7 @@ class CupoEmprendedorServiceTest {
     @DisplayName("Reserva atómica asigna plan gratis")
     void reservaExitosaEsGratis() {
         stubPlan();
-        when(jdbc.query(contains("RETURNING usados"), any(RowMapper.class)))
-            .thenReturn(List.of(1));
+        when(jdbc.update(contains("usados < limite"))).thenReturn(1);
         when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
             .thenReturn(CupoEmprendedorEstado.of(1, 70));
 
@@ -80,8 +79,7 @@ class CupoEmprendedorServiceTest {
     @DisplayName("Cupo lleno y sin mensualidad fijada: entra activo, no hay nada que cobrar")
     void cupoLlenoSinMensualidadEntraActivo() {
         stubPlan();
-        when(jdbc.query(contains("RETURNING usados"), any(RowMapper.class)))
-            .thenReturn(List.of());
+        when(jdbc.update(contains("usados < limite"))).thenReturn(0);
         when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
             .thenReturn(CupoEmprendedorEstado.of(70, 70));
 
@@ -96,8 +94,7 @@ class CupoEmprendedorServiceTest {
     void cupoLlenoRequiereMembresia() {
         org.springframework.test.util.ReflectionTestUtils.setField(service, "mensualidadDesdeCupo", "1");
         stubPlan();
-        when(jdbc.query(contains("RETURNING usados"), any(RowMapper.class)))
-            .thenReturn(List.of());
+        when(jdbc.update(contains("usados < limite"))).thenReturn(0);
         when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
             .thenReturn(CupoEmprendedorEstado.of(70, 70));
 
