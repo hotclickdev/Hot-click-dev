@@ -3,6 +3,7 @@ import { EncabezadoPagina, Boton } from '@/prototipo/compartido/ui'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import SelectorFrecuencia, { ERROR_FRECUENCIA_OBLIGATORIA, OPCIONES_FRECUENCIA } from './SelectorFrecuencia'
 import { frecuenciaApi, type EstadoFrecuencia, type Frecuencia } from './frecuenciaApi'
+import { mensajeErrorCargaFrecuencia, mensajeErrorGuardarFrecuencia } from './erroresFrecuencia'
 
 export function avisoCambioManual(actual: Frecuencia): string {
   const nombre = OPCIONES_FRECUENCIA.find((o) => o.valor === actual)?.titulo ?? actual
@@ -15,14 +16,14 @@ export default function LiquidacionPage({ volverA }: { volverA: string }) {
   const [elegida, setElegida] = useState<Frecuencia | null>(null)
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [errorFrecuencia, setErrorFrecuencia] = useState<string | null>(null)
-  const [sinServicio, setSinServicio] = useState(false)
+  const [sinServicio, setSinServicio] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
   useEffect(() => {
     let vivo = true
     frecuenciaApi.obtener()
       .then((e) => { if (vivo) { setEstado(e); setElegida(e.pendiente ?? e.actual) } })
-      .catch(() => { if (vivo) setSinServicio(true) })
+      .catch((e: unknown) => { if (vivo) setSinServicio(mensajeErrorCargaFrecuencia(e)) })
     return () => { vivo = false }
   }, [])
 
@@ -44,8 +45,8 @@ export default function LiquidacionPage({ volverA }: { volverA: string }) {
     try {
       setEstado(await frecuenciaApi.cambiar(elegida))
       setMensaje('Guardamos tu cambio.')
-    } catch {
-      setMensaje('No se pudo guardar. Intentá de nuevo en un momento.')
+    } catch (e: unknown) {
+      setMensaje(mensajeErrorGuardarFrecuencia(e))
     } finally {
       setGuardando(false)
     }
@@ -63,7 +64,7 @@ export default function LiquidacionPage({ volverA }: { volverA: string }) {
           {estado?.actual && (cambio || estado.pendiente) && (
             <p role="note" className="rounded-[8px] bg-hc-warning-bg px-3 py-2 text-[12px] text-hc-warning">{avisoCambioManual(estado.actual)}</p>
           )}
-          {sinServicio && <p role="status" className="text-[12px] text-hc-warning">Esta opción todavía no está disponible. Muy pronto vas a poder cambiarla desde acá.</p>}
+          {sinServicio && <p role="status" className="text-[12px] text-hc-warning">{sinServicio}</p>}
           {mensaje && <p role="status" className="text-[12px] text-hc-muted">{mensaje}</p>}
           <Boton type="submit" disabled={!puedeGuardar}>{guardando ? 'Guardando…' : 'Guardar cambio'}</Boton>
         </form>

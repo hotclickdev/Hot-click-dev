@@ -1,7 +1,8 @@
 import api from '@/services/api'
 
 /**
- * S2-28 · Frecuencia de liquidación — CONTRATO SUPUESTO (sin backend todavía; ramas feat/s2-*).
+ * S2-28 · Frecuencia de liquidación. Contrato real de #197 (`docs/contratos/S3-06-onvo-estado-frecuencia.md`):
+ * `actual` llega `null` si el negocio no eligió; solo el propietario (personal → 403); 400 `FRECUENCIA_INVALIDA`.
  *   GET /api/negocio/onvo/frecuencia → { actual: 'QUINCENAL'|'MENSUAL', pendiente: 'QUINCENAL'|'MENSUAL'|null }
  *   PUT /api/negocio/onvo/frecuencia   { frecuencia } → mismo cuerpo, con `pendiente` hasta que el admin lo aplique en ONVO (S2-29)
  * En el registro (paso Cobros) el campo viaja como `frecuenciaLiquidacion` en el alta del negocio;
