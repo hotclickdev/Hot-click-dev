@@ -1,8 +1,10 @@
 FROM python:3.11-slim
+RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY app.py .
-COPY config ./config
+COPY --chown=root:root app.py .
+COPY --chown=root:root config ./config
+USER 10001:10001
 EXPOSE 8001
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001"]
