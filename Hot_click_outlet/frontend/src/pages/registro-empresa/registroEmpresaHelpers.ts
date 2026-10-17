@@ -85,7 +85,7 @@ const NOMBRES_CAMPO: Record<string, string> = {
   correoEmpresa: 'Correo del negocio',
   nombreEmpresa: 'Nombre del negocio',
   nombreAdmin: 'Tu nombre',
-  passwordAdmin: 'Contraseña',
+  passwordAdmin: 'Contraseña', // NOSONAR: etiqueta del campo en la UI, no es una credencial
 }
 
 /** Pyme: errores crudos «telefonoAdmin: …» → nombre legible del campo. */
