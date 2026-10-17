@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { formatPrice } from '@/utils/format'
+import { mensajeErrorContrato } from '@/utils/erroresContrato'
 import {
   chipsConContador, datosTicoFactura, facturacionApi, validarClave, validarConsecutivo,
   type Acuerdo, type DetallePorFacturar, type Emitida, type FacturaNegocio, type PorFacturar,
@@ -24,13 +25,14 @@ function Chips({ chips, valor, onChange }: { chips: { id: string; texto: string;
 
 function useCarga<T>(fn: () => Promise<T[]>) {
   const [filas, setFilas] = useState<T[] | null>(null)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [marca, setMarca] = useState(0)
-  useEffect(() => { let vivo = true; fn().then((f) => { if (vivo) setFilas(f) }).catch(() => { if (vivo) setError(true) }); return () => { vivo = false } }, [marca]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { let vivo = true; fn().then((f) => { if (vivo) setFilas(f) }).catch((e: unknown) => { if (vivo) setError(mensajeErrorContrato(e) ?? 'No se pudo cargar.') }); return () => { vivo = false } }, [marca]) // eslint-disable-line react-hooks/exhaustive-deps
   return { filas, error, recargar: () => setMarca((m) => m + 1) }
 }
 
-const Estado = ({ error, vacio }: { error: boolean; vacio: boolean }) => error ? <p role="alert" className="text-[13px] text-hc-primary-text">No se pudo cargar.</p> : vacio ? <p className="text-[13px] text-hc-n-600">Nada en este filtro.</p> : null
+/** 501 PENDIENTE_DECISION_DUENO (#202) → «Todavía no disponible…»; otro error → «No se pudo cargar.». */
+const Estado = ({ error, vacio }: { error: string | null; vacio: boolean }) => error ? <p role="alert" className="text-[13px] text-hc-primary-text">{error}</p> : vacio ? <p className="text-[13px] text-hc-n-600">Nada en este filtro.</p> : null
 
 /** S5-20 · Admin → Facturación (4 pestañas). Facturación manual en TicoFactura; acá no se emite nada. */
 export default function FacturacionPage() {
@@ -120,7 +122,7 @@ function EmitidasTab() {
     if (!listo || !pdf || !xml) return
     setOcupado(true); setMsg(null)
     try { await facturacionApi.registrarEmision({ ...form, pdf, xml }); setMsg('Marcada como emitida.'); setForm({ pedidoId: '', clave: '', consecutivo: '' }); setPdf(null); setXml(null); recargar() }
-    catch { setMsg('No se pudo registrar la emisión.') } finally { setOcupado(false) }
+    catch (e: unknown) { setMsg(mensajeErrorContrato(e) ?? 'No se pudo registrar la emisión.') } finally { setOcupado(false) }
   }
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">

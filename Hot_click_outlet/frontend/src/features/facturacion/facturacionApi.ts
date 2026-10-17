@@ -1,7 +1,8 @@
 import api from '@/services/api'
 
 /**
- * S5-20 · Admin → Facturación — CONTRATO SUPUESTO. Solo ADMIN (los negocios reciben 403).
+ * S5-20 · Admin → Facturación. Rutas y validación reales en #202 (`docs/contratos/S5-esqueletos-pendientes-dueno.md`), pero
+ * responden 501 `PENDIENTE_DECISION_DUENO` hasta que el dueño decida (S1-07, S5-01, S5-04). Solo ADMIN (los negocios reciben 403).
  *   GET  /api/admin/facturacion/por-facturar        → [{ id, numero, negocio, fecha, total, estado: 'PAGADO'|'ENTREGADO', esteMes }]
  *   GET  /api/admin/facturacion/por-facturar/{id}   → { ..., comprador: { nombre, correoEnmascarado }, lineas: [{ descripcion, cabys: string|null, monto }] }
  *   GET  /api/admin/facturacion/emitidas            → [{ id, numero, negocio, consecutivo, clave, fecha, estado: 'EMITIDA'|'NOTA_CREDITO' }]
