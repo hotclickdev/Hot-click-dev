@@ -137,6 +137,16 @@ public class Producto extends BaseEntity {
     @Transient
     private String empresaSlug;
 
+    /** S2 · Contra entrega del negocio dueño; sin poblar no se serializa (el front usa la config global). */
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private Boolean empresaAceptaContraEntrega;
+
+    /** S2 · Mínimo (₡) del negocio para contra entrega; null = sin mínimo (no se serializa). */
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private Integer empresaContraEntregaMinimo;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
@@ -418,6 +428,12 @@ public class Producto extends BaseEntity {
 
     public String getEmpresaSlug() { return empresaSlug; }
     public void setEmpresaSlug(String empresaSlug) { this.empresaSlug = empresaSlug; }
+
+    public Boolean getEmpresaAceptaContraEntrega() { return empresaAceptaContraEntrega; }
+    public void setEmpresaAceptaContraEntrega(Boolean v) { this.empresaAceptaContraEntrega = v; }
+
+    public Integer getEmpresaContraEntregaMinimo() { return empresaContraEntregaMinimo; }
+    public void setEmpresaContraEntregaMinimo(Integer v) { this.empresaContraEntregaMinimo = v; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }

@@ -76,6 +76,7 @@ public class StorefrontGuestOrderService {
             .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
 
         Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
+        exigirContraEntregaNegocio(dto.getMetodoPago(), bodega, dto.getMetodoEnvio(), empresa, pedido.getSubtotal());
         Pedido guardado = pedidoRepository.save(pedido);
         notificarPedidoNuevo(guardado);
         return guardado;
@@ -194,6 +195,23 @@ public class StorefrontGuestOrderService {
             throw new IllegalArgumentException("Este negocio no acepta efectivo. Pagá con SINPE / Tarjeta.");
         }
     }
+
+    /**
+     * S2 · Contra entrega por negocio: si el efectivo entra por Envío Normal (no porque la bodega lo acepte),
+     * el negocio tiene que aceptarla y el pedido llegar a su mínimo. Corre dentro de la transacción (rollback).
+     */
+    static void exigirContraEntregaNegocio(String metodoPago, Bodega bodega, String metodoEnvio,
+                                           com.hotclick.model.Empresa empresa, Integer subtotal) {
+        if (!"EFECTIVO".equalsIgnoreCase(metodoPago)) return;
+        if (bodega != null && Boolean.TRUE.equals(bodega.getAceptaEfectivo())) return;
+        if (!com.hotclick.service.envio.ContraEntregaPolitica.esEnvioNormal(metodoEnvio)) return;
+        if (!com.hotclick.service.envio.ContraEntregaPolitica.negocioPermite(empresa, subtotal)) {
+            throw new IllegalArgumentException(MSG_CONTRA_ENTREGA_NEGOCIO);
+        }
+    }
+
+    static final String MSG_CONTRA_ENTREGA_NEGOCIO =
+        "Contra entrega no está disponible para este negocio o tu pedido no llega a su mínimo. Pagá con SINPE / Tarjeta.";
 
     /** Retiro solo si alguna bodega activa de la tienda lo permite (misma regla que publica la info de la tienda). */
     static void exigirRetiroDisponible(String metodoEnvio, List<Bodega> bodegas) {

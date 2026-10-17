@@ -113,7 +113,8 @@ public class SinpeCheckoutService {
         boolean todas = pedidos.stream()
             .allMatch(p -> com.hotclick.service.envio.ContraEntregaPolitica.permiteEfectivo(
                 p.getBodega() != null && Boolean.TRUE.equals(p.getBodega().getAceptaEfectivo()),
-                p.getMetodoEnvio(), contraEntregaNormal));
+                p.getMetodoEnvio(), contraEntregaNormal
+                    && com.hotclick.service.envio.ContraEntregaPolitica.negocioPermite(p.getEmpresa(), p.getSubtotal())));
         if (!todas) {
             throw new IllegalStateException("Algún negocio de tu carrito no acepta efectivo. Pagá con SINPE / Tarjeta.");
         }

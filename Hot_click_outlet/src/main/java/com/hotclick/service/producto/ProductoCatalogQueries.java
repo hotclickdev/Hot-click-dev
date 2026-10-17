@@ -163,6 +163,7 @@ public class ProductoCatalogQueries {
             // el enlace a la tienda, solo si es pública y tiene slug.
             destino.setEmpresaNombre(com.hotclick.utils.EmpresaNombre.mostrar(e, null));
             destino.setEmpresaSlug(Boolean.TRUE.equals(e.getVisibilidadPublica()) ? e.getSlug() : null);
+            poblarContraEntrega(destino, e);
         });
     }
 
@@ -172,5 +173,12 @@ public class ProductoCatalogQueries {
         if (e.getId().equals(empresaPrincipalId)) return;
         p.setEmpresaNombre(com.hotclick.utils.EmpresaNombre.mostrar(e, null));
         p.setEmpresaSlug(e.getSlug());
+        poblarContraEntrega(p, e);
+    }
+
+    /** S2 · Contra entrega por negocio: lo que el checkout necesita para ocultarla (la regla real la valida el backend). */
+    static void poblarContraEntrega(Producto p, com.hotclick.model.Empresa e) {
+        p.setEmpresaAceptaContraEntrega(e.isAceptaContraEntrega());
+        p.setEmpresaContraEntregaMinimo(e.isAceptaContraEntrega() ? e.getContraEntregaMinimoCrc() : null);
     }
 }
