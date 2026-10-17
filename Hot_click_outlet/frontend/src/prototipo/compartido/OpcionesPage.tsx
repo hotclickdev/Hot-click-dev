@@ -50,6 +50,9 @@ export default function OpcionesPage() {
             <FilaOpcion to={ruta('cobro')} label="Métodos de cobro" />
           </ItemFila>
           <ItemFila>
+            <FilaOpcion to={ruta('activar-cobros')} label="Activar cobros" />
+          </ItemFila>
+          <ItemFila>
             <FilaOpcion to={ruta('telegram')} label="Telegram" />
           </ItemFila>
           <ItemFila>
