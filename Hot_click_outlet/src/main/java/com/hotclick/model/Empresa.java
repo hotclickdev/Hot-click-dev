@@ -88,7 +88,7 @@ public class Empresa {
     private String cobrosPausaMotivo;
 
     @Column(name = "cobros_pausados_el")
-    private java.time.LocalDateTime cobrosPausadosEl;
+    private java.time.OffsetDateTime cobrosPausadosEl;
 
     /** Tienda pausada por HotClick: /api/tienda/{slug} responde 410 TIENDA_PAUSADA. */
     @Column(name = "tienda_pausada", nullable = false)
@@ -306,8 +306,8 @@ public class Empresa {
     public void setCobrosPausados(Boolean cobrosPausados) { this.cobrosPausados = Boolean.TRUE.equals(cobrosPausados); }
     public String getCobrosPausaMotivo() { return cobrosPausaMotivo; }
     public void setCobrosPausaMotivo(String v) { this.cobrosPausaMotivo = v; }
-    public java.time.LocalDateTime getCobrosPausadosEl() { return cobrosPausadosEl; }
-    public void setCobrosPausadosEl(java.time.LocalDateTime v) { this.cobrosPausadosEl = v; }
+    public java.time.OffsetDateTime getCobrosPausadosEl() { return cobrosPausadosEl; }
+    public void setCobrosPausadosEl(java.time.OffsetDateTime v) { this.cobrosPausadosEl = v; }
 
     public Integer getEstado() { return estado; }
     public void setEstado(Integer estado) { this.estado = estado; }

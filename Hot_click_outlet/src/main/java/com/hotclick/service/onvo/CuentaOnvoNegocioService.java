@@ -47,7 +47,7 @@ public class CuentaOnvoNegocioService {
         m.put("estado", pausadaPorHotClick ? "PAUSADA" : estadoCuenta);
         m.put("frecuencia", c != null ? c.getFrecuenciaLiquidacion() : null);
         m.put("pausadaEl", pausadaPorHotClick && empresa.getCobrosPausadosEl() != null
-            ? empresa.getCobrosPausadosEl().atZone(com.hotclick.utils.Constants.ZONA_CR).toOffsetDateTime().toString() : null);
+            ? empresa.getCobrosPausadosEl().atZoneSameInstant(com.hotclick.utils.Constants.ZONA_CR).toOffsetDateTime().toString() : null);
         m.put("motivoPausa", pausadaPorHotClick ? empresa.getCobrosPausaMotivo() : null);
         return m;
     }

@@ -26,4 +26,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_onvo_cuenta_empresa_proveedor_modo
 
 -- Motivo y fecha de la pausa de cobros por HotClick (#154): se muestran al negocio y quedan en la auditoría.
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS cobros_pausa_motivo VARCHAR(300);
-ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS cobros_pausados_el TIMESTAMP;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS cobros_pausados_el TIMESTAMPTZ;
