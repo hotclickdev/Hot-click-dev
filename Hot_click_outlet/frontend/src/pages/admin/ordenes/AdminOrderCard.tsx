@@ -10,6 +10,7 @@ import { mensajeWhatsAppPedido, numeroWhatsAppCliente } from './ordenesHelpers'
 import { WhatsAppIcon } from './orderCardIcons'
 import type { Id } from '@/types/api'
 import type { Pedido } from '@/types/pedido'
+import { etiquetaPedido, numeroVisiblePedido } from '@/utils/numeroPedidoTienda'
 
 export default function OrderCard({ order, onUpdate, onDelete }: {
   order: Pedido
@@ -65,7 +66,7 @@ export default function OrderCard({ order, onUpdate, onDelete }: {
           className="flex-1 min-w-0 flex flex-wrap items-center gap-3 px-2 py-2 text-left"
         >
           <div className="min-w-[110px]">
-            <p className="text-xs font-mono text-[var(--hc-muted)]">#{order.id}</p>
+            <p className="text-xs font-mono text-[var(--hc-muted)]">{numeroVisiblePedido(order) || '—'}</p>
             <p className="text-[11px] text-[var(--hc-muted)] mt-0.5">
               {order.fechaCreacion ? formatDate(order.fechaCreacion) : '—'}
             </p>
@@ -152,7 +153,7 @@ export default function OrderCard({ order, onUpdate, onDelete }: {
         onClose={() => setConfirmDelete(false)}
         onConfirm={doDelete}
         title="Eliminar pedido"
-        message={`¿Eliminar el pedido #${order.id}? Esta acción no se puede deshacer.`}
+        message={`¿Eliminar el ${etiquetaPedido(order).toLowerCase()}? Esta acción no se puede deshacer.`}
       />
     </div>
   )

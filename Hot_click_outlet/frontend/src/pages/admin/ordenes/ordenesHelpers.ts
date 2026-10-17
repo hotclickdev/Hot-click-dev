@@ -3,6 +3,7 @@ import type { Id } from '@/types/api'
 import type { ItemPedido, Pedido } from '@/types/pedido'
 import type { ProductoBackend } from '@/types/producto'
 import type { EstadoTono } from '@/components/ui/EstadoBadge'
+import { numeroVisiblePedido } from '@/utils/numeroPedidoTienda'
 
 export const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO']
 
@@ -163,9 +164,10 @@ export function numeroWhatsAppCliente(tel: string | number | null | undefined): 
 }
 
 export function mensajeWhatsAppPedido(order: Pedido, estado: string): string {
+  const numero = numeroVisiblePedido(order)
   const productos = (order.items ?? []).map((i: ItemPedido) => `• ${i.nombreProducto} ×${i.cantidad}`).join('\n')
   return [
-    `Hola ${order.nombreCliente ?? ''}, te escribimos de *HotClick* sobre tu pedido *#${order.id}*.`,
+    `Hola ${order.nombreCliente ?? ''}, te escribimos de *HotClick* sobre tu pedido${numero ? ` *${numero}*` : ''}.`,
     '',
     `Estado actual: *${order.estado ?? estado}*`,
     ...(productos ? ['\nProductos:', productos] : []),
