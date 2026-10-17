@@ -227,6 +227,8 @@ public class EmpresaAdminService {
         m.put("planSaas", e.getPlanSaas());
         m.put("estadoEmpresa", e.getEstadoEmpresa());
         m.put("visibilidadPublica", Boolean.TRUE.equals(e.getVisibilidadPublica()));
+        m.put("destacado", Boolean.TRUE.equals(e.getDestacado()));
+        m.put("destacadoOrden", e.getDestacadoOrden());
         m.put("fechaRegistro", e.getFechaRegistro());
         m.put("fechaAprobacion", e.getFechaAprobacion());
         m.put("logoUrl", e.getLogoUrl());
