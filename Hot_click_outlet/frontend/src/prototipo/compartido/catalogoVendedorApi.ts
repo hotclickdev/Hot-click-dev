@@ -28,11 +28,12 @@ function listaDesdeRespuesta(data: Producto[] | { content: Producto[] }): Produc
   return Array.isArray(data) ? data : data.content
 }
 
-function mapCategoria(nombre: string | undefined): ProductoEmprendedor['categoria'] {
-  const n = (nombre ?? '').toLowerCase()
-  if (n.includes('ropa') || n.includes('moda')) return 'Ropa'
-  if (n.includes('hogar') || n.includes('otro')) return 'Otro'
-  return 'Tecnología'
+export const SIN_CATEGORIA = 'Sin categoría'
+
+/** La categoría que eligió el vendedor, tal cual; nunca un valor por defecto inventado (NP-10). */
+export function mapCategoria(nombre: string | undefined | null): ProductoEmprendedor['categoria'] {
+  const n = (nombre ?? '').trim()
+  return n || SIN_CATEGORIA
 }
 
 /** Producto de API → fila Figma Emprendedor. */

@@ -53,6 +53,16 @@ class PlanesTilopayTest extends BaseIntegrationTest {
         assertThat(aggregatorService.detalleParaEmpresa(emp.getId(), 100_000).resultado().totalComision()).isEqualTo(9_000);
     }
 
+    @Test
+    void emprendedorIncluyeCajaPos() throws Exception {
+        // Auditoría §1: POS en todos los planes (DataSeeder + V174). features.pos sale de tiene_pos.
+        Plan emp = planRepository.findByNombre("EMPRENDEDOR").orElseThrow();
+        assertThat(emp.getTienePos()).isTrue();
+        assertThat(emp.getMaxCajas()).isEqualTo(1);
+        String sql = new String(getClass().getResourceAsStream("/db/migration/V174__emprendedor_incluye_pos.sql").readAllBytes());
+        assertThat(sql).contains("tiene_pos = TRUE").contains("nombre = 'EMPRENDEDOR'");
+    }
+
     private Empresa empresa(String slug, String plan) {
         Empresa e = new Empresa();
         e.setNombreEmpresa(slug); e.setNombreComercial(slug); e.setSlug(slug);

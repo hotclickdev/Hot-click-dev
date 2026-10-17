@@ -108,6 +108,8 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     setLoading(true)
     try {
       await authService.verificarCorreoNegocio(correoReg, codigoVerif.trim())
+      // El banner «Verificá tu correo» lee este estado: sin esto seguía apareciendo tras verificar.
+      useAuthStore.getState().setCorreoVerificado(true)
       toast({ message: '¡Correo verificado! Bienvenido a tu panel.', type: 'success' })
       navigate(RUTA_PANEL_VENDEDOR)
     } catch (err: unknown) {

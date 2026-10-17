@@ -40,8 +40,6 @@ public class ShoppingAssistantTenantGuard {
     }
 
     public static String nombreComercial(Empresa empresa) {
-        return empresa.getNombreComercial() != null
-            ? empresa.getNombreComercial()
-            : empresa.getNombreEmpresa();
+        return com.hotclick.utils.EmpresaNombre.mostrar(empresa, null);
     }
 }

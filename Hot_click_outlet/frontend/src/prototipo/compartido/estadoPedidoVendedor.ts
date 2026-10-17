@@ -53,6 +53,18 @@ export function estadoPedidoVendedor(estado?: string | null, datos?: DatosEntreg
  * 'Pendiente' = pago confirmado (o efectivo que se paga al retirar) y todavía sin despachar ni entregar.
  * Si el pedido se paga al retirar, la acción es "Marcar entregado" en vez de despachar.
  */
+/** Pedido sin pago confirmado: el vendedor puede cancelarlo (el backend devuelve la reserva de stock). */
+export function puedeCancelar(estado: EstadoPedidoVendedor): boolean {
+  return estado === 'Esperando pago'
+}
+
+/** Pedido de la tienda propia (SINPE/transferencia coordinado con el vendedor, sin pasarela): el vendedor confirma el pago. */
+export function confirmaPagoManual(estado: EstadoPedidoVendedor, datos?: DatosEntregaPedido): boolean {
+  const pago = normalizar(datos?.metodoPago)
+  const envio = normalizar(datos?.metodoEnvio)
+  return estado === 'Esperando pago' && (pago === 'SINPE_MOVIL' || pago === 'TRANSFERENCIA') && (envio === 'DOMICILIO' || envio === 'RETIRO')
+}
+
 export function puedeDespachar(estado: EstadoPedidoVendedor): boolean {
   return estado === 'Pendiente'
 }

@@ -11,6 +11,8 @@ import {
   authDataRegistroEmpresa,
   MIN_PASSWORD,
   type RegistroEmpresaForm,
+  telefonoOpcional,
+  errorRegistroLegible,
 } from './registro-empresa/registroEmpresaHelpers'
 import RegistroEmpresaAside from './registro-empresa/RegistroEmpresaAside'
 import StepDatosEmpresa from './registro-empresa/StepDatosEmpresa'
@@ -87,7 +89,7 @@ export default function RegistroEmpresaPage() {
   const [form, setForm] = useState<RegistroEmpresaForm>({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
-    inscritoTributacion: true,
+    inscritoTributacion: false,
   })
   const ubicacion = useUbicacionDespachoForm()
 
@@ -140,11 +142,11 @@ export default function RegistroEmpresaPage() {
       const { data } = await authService.registroEmpresa({
         nombreEmpresa:        form.nombreEmpresa.trim(),
         correoEmpresa:        form.correoEmpresa.trim().toLowerCase() || undefined,
-        telefonoEmpresa:      form.telefonoEmpresa.trim() || undefined,
+        telefonoEmpresa:      telefonoOpcional(form.telefonoEmpresa),
         nombreAdmin:          form.nombreAdmin.trim() || undefined,
         correoAdmin:          form.correoAdmin.trim().toLowerCase(),
         passwordAdmin:        form.passwordAdmin,
-        telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
+        telefonoAdmin:        telefonoOpcional(form.telefonoAdmin),
         inscritoTributacion:  form.inscritoTributacion,
         ...(ubicacionIniciada(ubicacion.ubicacion) ? payloadUbicacionRegistro(ubicacion.ubicacion) : {}),
         declaraMayoriaEdad: true,
@@ -165,7 +167,7 @@ export default function RegistroEmpresaPage() {
       resetTurnstile()
     } catch (err: unknown) {
       const msg = mensajeErrorAuth(err, '')
-      setError(msg || 'Error al registrar. Intentá de nuevo.')
+      setError(msg ? errorRegistroLegible(msg) : 'Error al registrar. Intentá de nuevo.')
       resetTurnstile()
     } finally {
       setLoading(false)
