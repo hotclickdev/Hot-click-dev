@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminBillingService } from '@/services/adminBillingService'
 import { auditoriaAdminService } from '@/services/auditoriaAdminService'
@@ -10,6 +10,8 @@ import { prefijoPorPlan } from '@/utils/planPaths'
 import { filasDe, texto, type Fila } from './normalizar'
 import { CambioPlan } from './CambioPlan'
 import { NotaNegocio } from './NotaNegocio'
+import { HojaConfirmacion } from './HojaConfirmacion'
+import { ETIQUETA_DESTACADO, ETIQUETA_SIN_DESTACAR, PRECIO_DESTACADO, confirmacionDestacado, textoDesde, textoOrden } from './destacados'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Metrica, Segmento, TARJETA } from './piezas'
 
 function colones(valor: unknown): string {
@@ -91,6 +93,8 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
   const visible = fila.visibilidadPublica === true
   const destacado = fila.destacado === true
   const puedeDestacar = visible && texto(fila.estadoEmpresa).toUpperCase() === 'ACTIVO'
+  const [confirmarDestacado, setConfirmarDestacado] = useState(false)
+  const cerrarConfirmacion = useCallback(() => setConfirmarDestacado(false), [])
 
   async function cambiarEstado(estadoEmpresa: string) {
     if ((estadoEmpresa === 'SUSPENDIDO' || estadoEmpresa === 'INACTIVO') && motivo.trim().length < 3) {
@@ -124,17 +128,36 @@ function Cuenta({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
         )}>{visible ? 'Ocultar catálogo' : 'Mostrar catálogo'}</button>
       </div>
       <div className={TARJETA}>
-        <p className="text-xs font-semibold text-hc-n-600">Inicio</p>
-        <p className="mt-2 font-display text-lg font-bold">{destacado ? 'Negocio destacado' : 'Sin destacar'}</p>
-        {!puedeDestacar && !destacado && <p className="mt-1 text-sm text-hc-n-600">Solo se destacan negocios activos con el catálogo visible.</p>}
-        <button type="button" className={`${BOTON_SECUNDARIO} mt-3 h-10`} disabled={ocupado || (!puedeDestacar && !destacado)} onClick={() => void correr(
-          () => adminService.setEmpresaDestacado(id, !destacado),
-          onCambio, setError, setOcupado, 'No se pudo cambiar el destacado.',
-        )}>{destacado ? 'Quitar del inicio' : 'Destacar en el inicio'}</button>
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-display text-[17px] font-bold">Destacar en el inicio</p>
+          <Chip tono={destacado ? 'azul' : 'neutro'}>{destacado ? ETIQUETA_DESTACADO : ETIQUETA_SIN_DESTACAR}</Chip>
+        </div>
+        <p className="mt-2 text-sm text-hc-n-900">Publicidad paga: el negocio aparece en el carrusel «Negocio destacado» del inicio. Precio: <span className="font-semibold text-hc-warning">{PRECIO_DESTACADO}</span>.</p>
+        {destacado && (
+          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+            {textoDesde(fila.destacadoDesde) && (<><dt className="text-hc-n-600">Desde</dt><dd className="font-semibold">{textoDesde(fila.destacadoDesde)}</dd></>)}
+            {textoOrden(fila, Number(fila.totalDestacados) || undefined) && (<><dt className="text-hc-n-600">Orden</dt><dd className="font-semibold">{textoOrden(fila, Number(fila.totalDestacados) || undefined)}</dd></>)}
+          </dl>
+        )}
+        <button type="button" className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border border-hc-blue-600 px-4 text-[15px] font-semibold text-hc-blue-600 disabled:opacity-50" disabled={ocupado || (!puedeDestacar && !destacado)} onClick={() => setConfirmarDestacado(true)}>
+          {destacado ? 'Quitar destacado' : 'Destacar negocio'}
+        </button>
+        <p className="mt-2 text-xs text-hc-n-600">Solo negocios Aprobados y con el catálogo visible.</p>
       </div>
+      {confirmarDestacado && (
+        <HojaConfirmacion
+          {...confirmacionDestacado(texto(fila.nombreComercial, texto(fila.nombreEmpresa, 'el negocio')), !destacado)}
+          ocupado={ocupado}
+          onCancelar={cerrarConfirmacion}
+          onConfirmar={() => void correr(
+            () => adminService.setEmpresaDestacado(id, !destacado),
+            () => { setConfirmarDestacado(false); onCambio() }, setError, setOcupado, 'No se pudo cambiar el destacado.',
+          )}
+        />
+      )}
       <div className={TARJETA}>
         <p className="text-xs font-semibold text-hc-n-600">Ver el negocio</p>
-        <p className="mt-2 text-sm text-hc-n-900">Abre el panel de ese vendedor. Usted sigue siendo el administrador.</p>
+        <p className="mt-2 text-sm text-hc-n-900">Abre el panel de ese vendedor. Vos seguís siendo el administrador.</p>
         <button type="button" className={`${BOTON_PRIMARIO} mt-3`} disabled={ocupado} onClick={() => void verComo(id, plan, navigate, setError, setOcupado)}>
           Ver como el negocio
         </button>
