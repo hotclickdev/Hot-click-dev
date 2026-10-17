@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import useAuthStore from '@/store/authStore'
-import { llegoAlTopeInvitado, maxCantidadTienda, mensajeTopeInvitado } from '@/utils/topeInvitado'
+import { llegoAlTopeInvitado, maxCantidadTienda, mensajeTopeInvitado, useTopeInvitado } from '@/utils/topeInvitado'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePublicarMigas } from '@/components/comprador/header/migasContexto'
 import useTiendaStore from '@/store/tiendaStore'
@@ -28,6 +28,7 @@ export default function TiendaProductoPage() {
   const navigate = useNavigate()
   const { agregarAlCarrito } = useTiendaStore()
   const invitado = !useAuthStore((st) => st.token)
+  useTopeInvitado() // re-renderiza cuando llega el tope de la config
   const [producto, setProducto] = useState<Producto | null>(null)
   const [loading, setLoading] = useState(true)
   const [cantidad, setCantidad] = useState(1)

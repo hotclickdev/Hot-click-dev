@@ -51,3 +51,18 @@ describe('tope de unidades del invitado (GuestCheckoutGuard)', () => {
     expect(useTiendaStore.getState().carrito[0].cantidad).toBe(5)
   })
 })
+
+describe('tope desde GET /api/public/checkout-config', () => {
+  it('usa maxUnidadesPorProducto si viene y 3 de respaldo si no', async () => {
+    const { topeDesdeConfig, TOPE_UNIDADES_INVITADO, useTopeInvitadoStore, maxCantidadTienda, mensajeTopeInvitado } = await import('./topeInvitado')
+    expect(topeDesdeConfig({ maxUnidadesPorProducto: 5 })).toBe(5)
+    expect(topeDesdeConfig({ data: { maxUnidadesPorProducto: 2 } })).toBe(2)
+    expect(topeDesdeConfig({})).toBe(TOPE_UNIDADES_INVITADO)
+    expect(topeDesdeConfig({ maxUnidadesPorProducto: 0 })).toBe(3)
+    expect(topeDesdeConfig(null)).toBe(3)
+    useTopeInvitadoStore.setState({ tope: 5 })
+    expect(maxCantidadTienda(10, true)).toBe(5)
+    expect(mensajeTopeInvitado()).toContain('hasta 5 unidades')
+    useTopeInvitadoStore.setState({ tope: 3 })
+  })
+})

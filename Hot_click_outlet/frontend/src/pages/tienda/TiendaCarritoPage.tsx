@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import { topeStock } from '@/utils/stock'
-import { llegoAlTopeInvitado, maxCantidadTienda, mensajeTopeInvitado } from '@/utils/topeInvitado'
+import { llegoAlTopeInvitado, maxCantidadTienda, mensajeTopeInvitado, useTopeInvitado } from '@/utils/topeInvitado'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import EstadoVacio from '@/components/comprador/estados/EstadoVacio'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
@@ -80,6 +80,7 @@ function LineaPedido({
   onQuitar: (id: Id) => void
 }) {
   const invitado = !useAuthStore((st) => st.token)
+  useTopeInvitado() // re-renderiza cuando llega el tope de la config
   const stock = topeStock(producto.stock)
   return (
     <li className="flex items-start gap-3 border-t border-hc-n-200 px-[14px] py-[14px] first:border-t-0 lg:items-center lg:gap-4 lg:px-[18px]">
