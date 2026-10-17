@@ -78,6 +78,9 @@ export function telefonoOpcional(valor: string | null | undefined): string | und
   return t
 }
 
+/** Etiqueta visible del campo de clave (no es una credencial). */
+const ETIQUETA_CAMPO_CLAVE = 'Contraseña'
+
 const NOMBRES_CAMPO: Record<string, string> = {
   telefonoAdmin: 'Teléfono personal',
   telefonoEmpresa: 'Teléfono del negocio',
@@ -85,7 +88,7 @@ const NOMBRES_CAMPO: Record<string, string> = {
   correoEmpresa: 'Correo del negocio',
   nombreEmpresa: 'Nombre del negocio',
   nombreAdmin: 'Tu nombre',
-  passwordAdmin: 'Contraseña',
+  passwordAdmin: ETIQUETA_CAMPO_CLAVE,
 }
 
 /** Pyme: errores crudos «telefonoAdmin: …» → nombre legible del campo. */
