@@ -4,12 +4,15 @@ import { DIAS_GRACIA_POR_DEFINIR, normalizarEstadoTienda, textoDiasGracia, texto
 
 const err410 = (data: unknown) => ({ response: { status: 410, data } })
 
-describe('tienda pausada (410 TIENDA_PAUSADA)', () => {
+describe('tienda pausada (410/409 TIENDA_PAUSADA)', () => {
   it('reconoce solo el 410 con code TIENDA_PAUSADA', () => {
     expect(esTiendaPausada(err410({ code: 'TIENDA_PAUSADA' }))).toBe(true)
     expect(esTiendaPausada(err410({ data: { code: 'TIENDA_PAUSADA' } }))).toBe(true)
     expect(esTiendaPausada(err410({ code: 'OTRA' }))).toBe(false)
     expect(esTiendaPausada({ response: { status: 404, data: { code: 'TIENDA_PAUSADA' } } })).toBe(false)
+    // checkout real (/api/payments/checkout): 409 con el mismo code
+    expect(esTiendaPausada({ response: { status: 409, data: { success: false, code: 'TIENDA_PAUSADA', message: 'x' } } })).toBe(true)
+    expect(esTiendaPausada({ response: { status: 409, data: { message: 'Stock insuficiente' } } })).toBe(false)
     expect(esTiendaPausada(null)).toBe(false)
   })
   it('usa lo que manda el backend y saca las redes', () => {

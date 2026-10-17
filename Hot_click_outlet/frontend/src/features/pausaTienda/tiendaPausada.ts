@@ -1,9 +1,10 @@
 /**
  * Tienda pausada al vencer la gracia · handoff /workspace/diseno/extra/HANDOFF_DEV.md §2.
- * CONTRATO (backend feat/pausa-cobros-tienda): una tienda pausada responde **410** con
- *   { "code": "TIENDA_PAUSADA", ...opcional: tienda: {nombreComercial, logoUrl, ...}, productos: [...], producto: {...} }
- * en /api/tienda/{slug}/** (info, productos, ficha, carrito/checkout). El backend ya la saca de destacados
- * y rechaza el carrito/checkout. Si manda `productos`, se muestran como AGOTADO; si no, quedan ocultos.
+ * CONTRATO REAL (master, #154 · SlugTenantInterceptor y PaymentController):
+ *   /api/tienda/{slug}/** → **410** { success: false, code: "TIENDA_PAUSADA", message }
+ *   POST /api/payments/checkout con un producto de tienda pausada → **409** { success: false, code: "TIENDA_PAUSADA", message }
+ * Hoy el 410 no trae `tienda` ni `productos`: el front muestra el slug y oculta los productos. Si el backend
+ * algún día manda `tienda`/`productos`/`producto` en el 410, se usan (productos como AGOTADO).
  * Las ventas que ya existen siguen su curso. El front solo refleja el estado del servidor.
  */
 export const CODIGO_TIENDA_PAUSADA = 'TIENDA_PAUSADA'
@@ -20,7 +21,7 @@ function cuerpo(err: unknown): Record<string, unknown> | null {
 
 export function esTiendaPausada(err: unknown): boolean {
   const r = (err as ErrAxios | null)?.response
-  if (r?.status !== 410) return false
+  if (r?.status !== 410 && r?.status !== 409) return false
   const c = cuerpo(err)
   const code = c?.code ?? (c?.data as Record<string, unknown> | undefined)?.code
   return code === CODIGO_TIENDA_PAUSADA
