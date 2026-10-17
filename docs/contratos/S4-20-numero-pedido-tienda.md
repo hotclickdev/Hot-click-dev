@@ -5,6 +5,7 @@ No hay endpoint nuevo. Se agrega el campo **`numeroTienda`** (entero, `null` en 
 | Método | Ruta | Auth/rol | Campo nuevo |
 |---|---|---|---|
 | GET | `/api/pedidos/{id}` | vendedor de la tienda del pedido, comprador dueño o ADMIN (sin cambios en el guard) | `data.numeroTienda` |
+| GET | `/api/pedidos` (lista del vendedor: solo su tienda; ADMIN ve todas) | vendedor (`EMPRENDEDOR`) o ADMIN; comprador → 403 | `data[].numeroTienda` |
 | GET | `/api/admin/dashboard` | vendedor de la tienda (scope del negocio) o ADMIN | `data.ultimoPedido.numeroTienda` |
 | Cualquier respuesta que serializa la entidad `Pedido` | | igual que hoy | `numeroTienda` |
 
@@ -27,5 +28,5 @@ No hay endpoint nuevo. Se agrega el campo **`numeroTienda`** (entero, `null` en 
 | Código | Cuándo |
 |---|---|
 | 401 | sin token |
-| 403 | pedido de otra tienda |
+| 403 | pedido de otra tienda; comprador en `GET /api/pedidos` |
 | 404 | pedido inexistente |

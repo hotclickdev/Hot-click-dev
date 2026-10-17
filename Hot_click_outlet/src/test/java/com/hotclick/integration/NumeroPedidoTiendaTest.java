@@ -135,4 +135,22 @@ class NumeroPedidoTiendaTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/pedidos/" + p.getId()).header("Authorization", tokenB))
             .andExpect(status().isForbidden());
     }
+
+    @Test
+    void listaDelVendedor_traeNumeroTienda_ySoloSusPedidos() throws Exception {
+        pedido(tiendaA, "ORD-LA1", null);
+        pedido(tiendaA, "ORD-LA2", null);
+        pedido(tiendaB, "ORD-LB1", null);
+        mockMvc.perform(get("/api/pedidos").header("Authorization", tokenA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[?(@.numeroPedido == 'ORD-LA1')].numeroTienda").value(org.hamcrest.Matchers.contains(1)))
+            .andExpect(jsonPath("$.data[?(@.numeroPedido == 'ORD-LA2')].numeroTienda").value(org.hamcrest.Matchers.contains(2)))
+            .andExpect(jsonPath("$.data[?(@.numeroPedido == 'ORD-LB1')]").isEmpty());
+    }
+
+    @Test
+    void listaDePedidos_comprador403() throws Exception {
+        mockMvc.perform(get("/api/pedidos").header("Authorization", userToken))
+            .andExpect(status().isForbidden());
+    }
 }
