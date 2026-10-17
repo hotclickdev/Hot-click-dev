@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 public class ProductoUpdater {
 
     @Autowired private ProductoRepository productoRepository;
+
+    @Autowired private com.hotclick.service.moderacion.TerminosProhibidosService terminosProhibidos;
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private ProductoDtoMapper dtoMapper;
@@ -41,6 +43,7 @@ public class ProductoUpdater {
                     p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
                         .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
                 }
+                ProductoWriteOperations.exigirSinTerminosProhibidos(terminosProhibidos, categoriaRepository, p);
                 if (dto.getBodegaId() != null) {
                     p.setBodega(bodegaRepository.findById(dto.getBodegaId())
                         .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));

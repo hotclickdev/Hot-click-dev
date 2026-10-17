@@ -32,6 +32,7 @@ public class ProductoWriteOperations {
     @Autowired private UbicacionDespachoService ubicacionDespachoService;
     @Autowired private SkuAsignador skuAsignador;
     @Autowired private SancionPlataformaRepository sancionRepo;
+    @Autowired private com.hotclick.service.moderacion.TerminosProhibidosService terminosProhibidos;
     @Autowired(required = false) private com.hotclick.service.contacto.ContactoPublicoService contactoPublico;
 
     @Transactional
@@ -51,6 +52,7 @@ public class ProductoWriteOperations {
         p.setEstado(Constants.ESTADO_ACTIVO);
         p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
             .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
+        exigirSinTerminosProhibidos(terminosProhibidos, categoriaRepository, p);
 
         if (dto.getBodegaId() != null) {
             p.setBodega(bodegaRepository.findById(dto.getBodegaId())
@@ -155,5 +157,18 @@ public class ProductoWriteOperations {
         Producto saved = productoRepository.save(p);
         cacheEvictor.evictProductosPublicos();
         return saved;
+    }
+
+    /** QA-NEG-038: nombre, descripción y categoría sin términos prohibidos (400). */
+    static void exigirSinTerminosProhibidos(com.hotclick.service.moderacion.TerminosProhibidosService terminos,
+                                            CategoriaRepository categorias, Producto p) {
+        String categoria = null;
+        if (p.getCategoria() != null) {
+            // El updater trabaja sin transacción: la categoría puede ser un proxy LAZY; el id sí se lee sin inicializar.
+            categoria = org.hibernate.Hibernate.isInitialized(p.getCategoria())
+                ? p.getCategoria().getNombreCategoria()
+                : categorias.findById(p.getCategoria().getId()).map(com.hotclick.model.Categoria::getNombreCategoria).orElse(null);
+        }
+        terminos.exigirPermitido(p.getNombreProducto(), p.getDescripcionCorta(), p.getDescripcionLarga(), categoria);
     }
 }
