@@ -14,6 +14,7 @@ const SSOCallback = lazy(() => import('@/pages/SSOCallback'))
 const SSOComplete = lazy(() => import('@/pages/SSOComplete'))
 
 const InicioPlataforma = lazy(() => import('@/pages/plataforma/InicioPlataforma'))
+const ContracargosPage = lazy(() => import('@/features/contracargos/ContracargosPage'))
 const NegociosPlataforma = lazy(() => import('@/pages/plataforma/NegociosPlataforma'))
 const PedidosPlataforma = lazy(() => import('@/pages/plataforma/PedidosPlataforma'))
 const PedidoDetalle = lazy(() => import('@/pages/plataforma/PedidoDetalle'))
@@ -179,6 +180,8 @@ export default function AppRoutes() {
         <Route index element={<InicioPlataforma />} />
         <Route path="negocios" element={<NegociosPlataforma />} />
         <Route path="negocios/:id" element={<NegociosPlataforma />} />
+        <Route path="contracargos" element={<ContracargosPage />} />
+        <Route path="contracargos/:id" element={<ContracargosPage />} />
         <Route path="pedidos" element={<PedidosPlataforma />} />
         <Route path="pedidos/:id" element={<PedidoDetalle />} />
         <Route path="compradores/:id" element={<CompradorPlataforma />} />
