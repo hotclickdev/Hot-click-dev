@@ -7,6 +7,7 @@ import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { Boton } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
+import PanelTiendaPausada from '@/features/pausaTienda/PanelTiendaPausada'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import { EASE_PREMIUM } from './motion/formularioMotionTokens'
@@ -49,6 +50,7 @@ export default function MenuPage() {
       <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center px-6 pb-8 pt-[90px] md:hidden">
         <HeroMenu badge={plan.badge} />
         <OnboardingPrimeraVez rol={plan.id} />
+        <div className="mt-6 w-full"><PanelTiendaPausada /></div>
         <ListaStagger className="mt-12 flex w-full flex-col gap-3">
           {acciones.map((accion) => (
             <ItemMenu key={accion.segmento}>
@@ -89,6 +91,7 @@ export default function MenuPage() {
       </div>
 
       <div className="hidden px-12 py-12 md:block">
+        <div className="mb-6 max-w-[560px]"><PanelTiendaPausada /></div>
         <div className="mb-2">
           <span className="inline-flex rounded-[5px] bg-[var(--hc-danger-bg)] px-2.5 py-1 text-[10px] font-bold text-hc-primary">
             {plan.badge}

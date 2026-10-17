@@ -17,6 +17,7 @@ import {
   costoEnvioTienda,
   mensajeErrorCheckout,
 } from './tiendaCheckoutValidacion'
+import { AVISO_TIENDA_PAUSADA, esTiendaPausada } from '@/features/pausaTienda/tiendaPausada'
 import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
 
 /** Una sola opción «SINPE / Tarjeta» (como el marketplace); efectivo solo si la tienda lo acepta. */
@@ -99,7 +100,7 @@ export default function TiendaCheckoutPage() {
       const data = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { message?: unknown; error?: unknown } } }).response?.data
         : undefined
-      const msg = (typeof data?.message === 'string' ? data.message : undefined)
+      const msg = esTiendaPausada(err) ? AVISO_TIENDA_PAUSADA : (typeof data?.message === 'string' ? data.message : undefined)
         ?? (typeof data?.error === 'string' ? data.error : undefined)
         ?? 'Error al procesar el pedido. Intenta de nuevo.'
       setError(msg)

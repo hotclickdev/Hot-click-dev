@@ -8,6 +8,8 @@ export type RetiroTienda = {
 }
 
 export type EmpresaTiendaPublica = {
+  /** Tienda pausada al vencer la gracia (410 TIENDA_PAUSADA); la marca el front, no viene en el JSON. */
+  pausada?: boolean
   slug?: string
   nombreComercial?: string
   logoUrl?: string | null
