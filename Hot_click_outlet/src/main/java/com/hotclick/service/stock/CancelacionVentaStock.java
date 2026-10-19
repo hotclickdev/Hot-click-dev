@@ -85,8 +85,8 @@ public class CancelacionVentaStock {
                 actAntes, actDespues, reservado, reservado, referencia, operador));
             movimientoSupport.publicarCambioStock(this, producto, actDespues);
         }
-        productoRepository.saveAll(productos);
-        movimientoStockRepository.saveAll(movimientos);
+        // Los productos están gestionados y bloqueados en esta transacción: se persisten al confirmar.
+        movimientoStockRepository.saveAllAndFlush(movimientos);
         log.info("Cancelación de venta {}: stock repuesto en {} producto(s)", referencia, productos.size());
         return true;
     }
