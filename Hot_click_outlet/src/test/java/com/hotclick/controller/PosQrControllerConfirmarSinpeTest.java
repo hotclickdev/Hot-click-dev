@@ -42,4 +42,12 @@ class PosQrControllerConfirmarSinpeTest {
         assertThat(body.getData()).isEqualTo(Map.of("codigo", "POS_CONFIRMAR_SINPE_NO_DISPONIBLE"));
         verifyNoInteractions(posQrService);
     }
+
+    @Test
+    @DisplayName("CONFIRMAR_SINPE_APAGADO queda fijo en true (candado: SINPE solo dentro de la pasarela)")
+    void constanteApagadoFijaEnTrue() {
+        Object valor = ReflectionTestUtils.getField(PosQrController.class, "CONFIRMAR_SINPE_APAGADO");
+
+        assertThat(valor).isEqualTo(Boolean.TRUE);
+    }
 }
