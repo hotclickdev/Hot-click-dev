@@ -73,7 +73,6 @@ export function useAdminPOS() {
   const [receipt, setReceipt]       = useState<PosVenta | null>(null)
   const [qrData, setQrData]         = useState<PosQrData | null>(null)
   const [loadingVenta, setLoadingVenta]     = useState(false)
-  const [loadingConfirm, setLoadingConfirm] = useState(false)
   const [reportePendiente, setReportePendiente] = useState<ReportePendientePos | null>(null)
 
   const toastErrorConReporte = (mensaje: string) => {
@@ -220,42 +219,27 @@ export function useAdminPOS() {
     }
   }
 
+  // Solo recibe la confirmación automática de la pasarela (sesión PAGADO).
+  // SINPE solo dentro de la pasarela: no hay confirmación manual del cajero.
   const handleQrConfirmSinpe = async (
-    token: string | null,
+    _token: string | null,
     autoConfirmed: boolean,
     numeroPedido = '—',
     metodoFinal?: string,
   ) => {
+    if (!autoConfirmed) return
+
     const receiptBase = armarReceiptQr(qrData, cartItems, autoConfirmed, numeroPedido, metodoFinal)
-
-    if (autoConfirmed) {
-      setReceipt(receiptBase)
-      setQrData(null)
-      setCartItems([])
-      setDescuento(0)
-      setStep('recibo')
-      const metodo = metodoFinal ?? qrData?.metodoPago
-      showToast(
-        metodo === 'SINPE' ? 'SINPE confirmado' : 'Pago con tarjeta confirmado',
-        'success',
-      )
-      return
-    }
-
-    setLoadingConfirm(true)
-    try {
-      await posService.confirmarSinpeQr(token as string, {})
-      setReceipt(receiptBase)
-      setQrData(null)
-      setCartItems([])
-      setDescuento(0)
-      setStep('recibo')
-      showToast('SINPE confirmado', 'success')
-    } catch (err: unknown) {
-      toastErrorConReporte(mensajeErrorPos(err, 'Error al confirmar SINPE'))
-    } finally {
-      setLoadingConfirm(false)
-    }
+    setReceipt(receiptBase)
+    setQrData(null)
+    setCartItems([])
+    setDescuento(0)
+    setStep('recibo')
+    const metodo = metodoFinal ?? qrData?.metodoPago
+    showToast(
+      metodo === 'SINPE' ? 'SINPE confirmado' : 'Pago con tarjeta confirmado',
+      'success',
+    )
   }
 
   const handleQrCancelar = async () => {
@@ -281,7 +265,6 @@ export function useAdminPOS() {
     receipt,
     qrData,
     loadingVenta,
-    loadingConfirm,
     reportePendiente,
     limpiarReportePendiente,
     subtotal,

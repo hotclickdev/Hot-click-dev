@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,10 @@ import java.util.Map;
 public class PosQrController {
 
     private static final Logger log = LoggerFactory.getLogger(PosQrController.class);
+
+    /** SINPE solo dentro de la pasarela ONVO: la confirmación manual del cajero está apagada. Revertir = poner false. */
+    static final boolean CONFIRMAR_SINPE_APAGADO = true;
+    static final String CODIGO_CONFIRMAR_SINPE_APAGADO = "POS_CONFIRMAR_SINPE_NO_DISPONIBLE";
 
     @Autowired private PosQrService    posQrService;
     @Autowired private JwtUtil         jwtUtil;
@@ -65,6 +70,12 @@ public class PosQrController {
     public ResponseEntity<?> confirmarSinpe(@PathVariable String token,
                                              @RequestBody(required = false) Map<String, Object> body,
                                              HttpServletRequest request) {
+        if (CONFIRMAR_SINPE_APAGADO) {
+            // Fail-closed: responde antes de leer la sesión o tocar la BD.
+            return ResponseEntity.status(HttpStatus.GONE).body(ResponseDTO.error(
+                "La confirmación manual de SINPE ya no está disponible. El pago se confirma solo cuando la pasarela lo verifica.",
+                Map.of("codigo", CODIGO_CONFIRMAR_SINPE_APAGADO)));
+        }
         try {
             Long usuarioId = extractUserId(request);
             Long empresaId = extractEmpresaId(request);
