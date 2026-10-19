@@ -23,6 +23,10 @@ public class VentaService {
 
     private static final Logger log = LoggerFactory.getLogger(VentaService.class);
 
+    /** Mismo texto para referencia inexistente y para referencia de otro negocio. */
+    private static final String MSG_CLIENTE = "Cliente no encontrado. Búscalo en tus clientes o créalo primero.";
+    private static final String MSG_CARRITO = "Carrito no encontrado";
+
     @Autowired private PedidoService               pedidoService;
     @Autowired private StockService                stockService;
     @Autowired private ProductoRepository          productoRepository;
@@ -49,8 +53,10 @@ public class VentaService {
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada: id=" + empresaId));
 
-        boolean desdeCarrito = dto.getCarritoId() != null;
-        Usuario usuario      = resolverUsuario(dto, correoOperador);
+        // Las referencias deben pertenecer al negocio de la sesión; se validan antes de cualquier efecto.
+        Carrito carritoOrigen = resolverCarrito(dto, empresaId);
+        boolean desdeCarrito  = carritoOrigen != null;
+        Usuario usuario      = resolverUsuario(dto, correoOperador, empresaId);
         Bodega  bodega       = resolverBodega(dto, empresaId);
 
         Pedido pedido = new Pedido();
@@ -133,7 +139,7 @@ public class VentaService {
         actualizarReferenciaMovimientos(items, nuevo.getNumeroPedido());
 
         if (desdeCarrito) {
-            convertirCarrito(dto.getCarritoId(), nuevo.getNumeroPedido());
+            convertirCarrito(carritoOrigen, nuevo.getNumeroPedido());
         }
 
         return nuevo;
@@ -174,24 +180,39 @@ public class VentaService {
         });
     }
 
-    private void convertirCarrito(Long carritoId, String numeroPedido) {
-        carritoRepository.findById(carritoId).ifPresent(carrito -> {
-            carrito.setEstadoCarrito(Constants.CARRITO_CONVERTIDO);
-            carrito.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-            carrito.getItems().clear();
-            carrito.setTotalCarrito(0);
-            carritoRepository.save(carrito);
-            log.info("Carrito id={} convertido por pedido {}", carritoId, numeroPedido);
-        });
+    private void convertirCarrito(Carrito carrito, String numeroPedido) {
+        carrito.setEstadoCarrito(Constants.CARRITO_CONVERTIDO);
+        carrito.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        carrito.getItems().clear();
+        carrito.setTotalCarrito(0);
+        carritoRepository.save(carrito);
+        log.info("Carrito id={} convertido por pedido {}", carrito.getId(), numeroPedido);
     }
 
-    private Usuario resolverUsuario(VentaRequestDTO dto, String correoOperador) {
+    /** Carrito del negocio y activo; null si la venta no declara carrito. */
+    private Carrito resolverCarrito(VentaRequestDTO dto, Long empresaId) {
+        if (dto.getCarritoId() == null) {
+            return null;
+        }
+        return carritoRepository.findByIdAndEmpresaId(dto.getCarritoId(), empresaId)
+            .filter(c -> Constants.CARRITO_ACTIVO.equals(c.getEstadoCarrito()))
+            .orElseThrow(() -> new IllegalArgumentException(MSG_CARRITO));
+    }
+
+    private Usuario resolverUsuario(VentaRequestDTO dto, String correoOperador, Long empresaId) {
         if (dto.getClienteId() != null) {
             return usuarioRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado: id=" + dto.getClienteId()));
+                .filter(u -> perteneceAlNegocio(u, empresaId))
+                .orElseThrow(() -> new IllegalArgumentException(MSG_CLIENTE));
         }
         return usuarioRepository.findByCorreo(correoOperador)
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario operador no encontrado: " + correoOperador));
+    }
+
+    /** Cliente del negocio: compró o fue registrado ahí, o la cuenta pertenece al negocio. */
+    private boolean perteneceAlNegocio(Usuario usuario, Long empresaId) {
+        return empresaId.equals(usuario.getEmpresaId())
+            || usuarioRepository.esClienteDeEmpresa(usuario.getId(), empresaId);
     }
 
     private String resolverMetodoEnvio(VentaRequestDTO dto) {
