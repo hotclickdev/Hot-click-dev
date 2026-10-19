@@ -375,3 +375,6 @@ Al agregar nuevas tablas de alto volumen (webhook logs, AI messages, etc.) agreg
 ## Optimistic locking en Producto
 
 `Producto` tiene campo `@Version Integer version`. Hibernate lanza `OptimisticLockException` si dos threads modifican el mismo producto simultáneamente. `StockService` debe capturar esta excepción y reintentar (máx 3 veces) antes de lanzar `StockInsuficienteException`.
+
+## Flujo de trabajo obligatorio (todos los agentes)
+Antes de cambiar código, crear ramas, commitear, subir, abrir o mergear un PR, o desplegar, cargá la skill `flujo-ci-cd` y seguila al pie de la letra. Resumen: nunca en `master`; una rama por tarea (`fix/*` o `feat/*`, nunca `hotfix/*`); verificación local; commit-gate; PR en borrador; checks de GitHub en verde; máximo 3 ciclos de corrección por tarea y después se frena y se reporta; merge solo con OK del dueño; deploy solo con la DoD del traspaso.
