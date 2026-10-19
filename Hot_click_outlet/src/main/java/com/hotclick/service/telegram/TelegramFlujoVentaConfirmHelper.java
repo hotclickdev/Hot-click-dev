@@ -4,6 +4,8 @@ import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.TelegramFlujoEstado;
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.exception.VentaMetodoRequierePasarelaException;
+import com.hotclick.service.VentaService;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.UsuarioRepository;
@@ -43,7 +45,7 @@ class TelegramFlujoVentaConfirmHelper {
         support.guardar(v, e);
         StringBuilder sb = new StringBuilder("🧾 *Confirmá la venta:*\n\n");
         sb.append(catalog.resumenItems(e, empresaId));
-        sb.append("\nPago: *").append(e.getPago() != null ? e.getPago() : "—").append("*\n");
+        sb.append("\nPago: *").append(VentaService.METODOS_VENTA_RESTRINGIDOS ? "Efectivo" : (e.getPago() != null ? e.getPago() : "—")).append("*\n");
         if (e.getCli() != null) {
             usuarioRepository.findById(e.getCli())
                 .ifPresent(c -> sb.append("Cliente: *").append(esc(support.nombreCompleto(c))).append("*\n"));
@@ -64,11 +66,24 @@ class TelegramFlujoVentaConfirmHelper {
             return;
         }
 
+        boolean soloEfectivo = VentaService.METODOS_VENTA_RESTRINGIDOS;
+        if (soloEfectivo && e.getPago() != null && !"EFECTIVO".equals(e.getPago())) {
+            // Borrador viejo (TTL 24 h) con un método ya no admitido: vuelve al paso de pago sin crear nada
+            e.setPago(null);
+            e.setP(P_VTA_PAGO);
+            support.guardar(v, e);
+            bot.enviarMensaje(v.getChatId(), TelegramFlujoVentaCallbackHelper.MSG_PAGO_NO_PERMITIDO, List.of(
+                List.of(TelegramClienteBotService.boton("Efectivo", "vta:pay:EFECTIVO"),
+                        TelegramClienteBotService.boton("Cancelar", BTN_CANCELAR))));
+            return;
+        }
+
         VentaRequestDTO dto = new VentaRequestDTO();
-        dto.setMetodoPago(e.getPago() != null ? e.getPago() : "EFECTIVO");
+        dto.setMetodoPago(soloEfectivo || e.getPago() == null ? "EFECTIVO" : e.getPago());
         dto.setClienteId(e.getCli());
-        // PAGADO y no COMPLETADO: las vistas del bot y las finanzas filtran IN ('PAGADO','ENTREGADO')
-        dto.setEstadoInicial(Constants.PEDIDO_PAGADO);
+        // El bot no manda tipo de entrega: es retiro, y el efectivo con retiro nace cerrado (ENTREGADO).
+        // Las vistas del bot y las finanzas filtran IN ('PAGADO','ENTREGADO')
+        dto.setEstadoInicial(soloEfectivo ? Constants.PEDIDO_ENTREGADO : Constants.PEDIDO_PAGADO);
         dto.setNotas("Venta registrada por Telegram");
         // El negocio registra la venta por el bot: es manual, no una compra web (chk_pedido_origen)
         dto.setOrigen(OrigenPedido.MANUAL.codigo());
@@ -93,6 +108,13 @@ class TelegramFlujoVentaConfirmHelper {
                 + "Utilidad: *" + colones(pedido.getUtilidadBruta()) + "*\n\n"
                 + "Ya aparece en 💰 Ventas de hoy y en Finanzas.",
                 List.of(List.of(TelegramClienteBotService.boton("📋 Menú", "menu"))));
+        } catch (VentaMetodoRequierePasarelaException ex) {
+            e.setPago(null);
+            e.setP(P_VTA_PAGO);
+            support.guardar(v, e);
+            bot.enviarMensaje(v.getChatId(), TelegramFlujoVentaCallbackHelper.MSG_PAGO_NO_PERMITIDO, List.of(
+                List.of(TelegramClienteBotService.boton("Efectivo", "vta:pay:EFECTIVO"),
+                        TelegramClienteBotService.boton("Cancelar", BTN_CANCELAR))));
         } catch (StockInsuficienteException ex) {
             bot.enviarMensaje(v.getChatId(), "⚠️ " + esc(ex.getMessage())
                 + "\n\nEl stock cambió desde que armaste la venta. Ajustá las cantidades:", List.of(

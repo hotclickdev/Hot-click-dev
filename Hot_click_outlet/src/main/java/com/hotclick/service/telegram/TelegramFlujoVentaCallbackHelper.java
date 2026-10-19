@@ -3,6 +3,7 @@ package com.hotclick.service.telegram;
 import com.hotclick.dto.TelegramFlujoEstado;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.service.TelegramClienteBotService;
+import com.hotclick.service.VentaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,15 @@ import static com.hotclick.service.telegram.TelegramFlujoSupport.*;
  */
 @Component
 class TelegramFlujoVentaCallbackHelper {
+
+    static final String MSG_PAGO_SOLO_EFECTIVO =
+        "Por el bot solo se registran ventas cobradas en efectivo. Si el cliente pagó con SINPE, "
+        + "tarjeta o transferencia, ese cobro se hace por la pasarela de pagos y no se anota acá. "
+        + "¿Te pagaron en efectivo?";
+    static final String MSG_PAGO_NO_PERMITIDO =
+        "Por el bot solo se registran ventas en efectivo. Los pagos con SINPE, tarjeta o transferencia "
+        + "se cobran por la pasarela de pagos. Si el cliente te pagó en efectivo, tocá Efectivo. "
+        + "Si no, cancelá esta venta y cobrá por la pasarela de pagos.";
 
     @Autowired private TelegramFlujoSupport              support;
     @Autowired private TelegramClienteBotService          bot;
@@ -50,6 +60,12 @@ class TelegramFlujoVentaCallbackHelper {
             }
             e.setP(P_VTA_PAGO);
             support.guardar(v, e);
+            if (VentaService.METODOS_VENTA_RESTRINGIDOS) {
+                bot.enviarMensaje(v.getChatId(), MSG_PAGO_SOLO_EFECTIVO, List.of(
+                    List.of(TelegramClienteBotService.boton("Efectivo", "vta:pay:EFECTIVO"),
+                            TelegramClienteBotService.boton("Cancelar", BTN_CANCELAR))));
+                return;
+            }
             bot.enviarMensaje(v.getChatId(), "¿Cómo te pagaron?", List.of(
                 List.of(TelegramClienteBotService.boton("📱 SINPE", "vta:pay:SINPE"),
                         TelegramClienteBotService.boton("💵 Efectivo", "vta:pay:EFECTIVO")),
@@ -61,7 +77,11 @@ class TelegramFlujoVentaCallbackHelper {
     void manejarPagoYCliente(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e, String sub) {
         if (sub.startsWith("pay:")) {
             String metodo = sub.substring(4);
-            if (!METODOS_PAGO.contains(metodo)) return;
+            if (!METODOS_PAGO.contains(metodo)) {
+                // Callback viejo o forzado: se avisa y el paso queda en pago
+                bot.enviarMensaje(v.getChatId(), MSG_PAGO_NO_PERMITIDO);
+                return;
+            }
             e.setPago(metodo);
             e.setP(P_VTA_CLIENTE);
             support.guardar(v, e);

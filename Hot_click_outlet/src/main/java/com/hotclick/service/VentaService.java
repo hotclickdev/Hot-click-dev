@@ -2,6 +2,9 @@ package com.hotclick.service;
 
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.VentaEstadoInicialInvalidoException;
+import com.hotclick.exception.VentaMetodoRequierePasarelaException;
+import com.hotclick.service.pedido.PedidoEstadoMaquina;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -17,11 +20,26 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class VentaService {
 
     private static final Logger log = LoggerFactory.getLogger(VentaService.class);
+
+    /** Revertible: con false vuelve el comportamiento anterior (el registro manual acepta cualquier método). */
+    public static final boolean METODOS_VENTA_RESTRINGIDOS = true;
+
+    /** Revertible: con false vuelve el comportamiento anterior (el estado inicial se toma tal cual llega). */
+    static final boolean ESTADO_INICIAL_VENTA_RESTRINGIDO = true;
+
+    private static final String METODO_EFECTIVO = "EFECTIVO";
+    private static final int LARGO_MAXIMO_ESTADO = 30;
+
+    public static final String MSG_METODO_REQUIERE_PASARELA =
+        "Las ventas registradas en el panel solo admiten efectivo. "
+        + "SINPE, tarjeta y transferencia se cobran por la pasarela de pagos.";
+    public static final String MSG_ESTADO_INICIAL_INVALIDO = "Estado inicial no válido.";
 
     @Autowired private PedidoService               pedidoService;
     @Autowired private StockService                stockService;
@@ -46,6 +64,10 @@ public class VentaService {
         if (empresaId == null) {
             throw new IllegalStateException("No se pudo determinar la empresa del usuario actual");
         }
+        // Validaciones puras: antes de cualquier consulta o efecto
+        String metodoPago = exigirMetodoVenta(dto.getMetodoPago());
+        validarVocabularioEstado(dto.getEstadoInicial());
+
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada: id=" + empresaId));
 
@@ -57,8 +79,9 @@ public class VentaService {
         pedido.setEmpresa(empresa);
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
-        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
-        pedido.setMetodoEnvio(resolverMetodoEnvio(dto));
+        String metodoEnvio = resolverMetodoEnvio(dto);
+        pedido.setMetodoPago(metodoPago);
+        pedido.setMetodoEnvio(metodoEnvio);
         pedido.setNotas(dto.getNotas());
         pedido.setAplicaImpuesto(false);
         pedido.setMontoImpuesto(0);
@@ -118,10 +141,7 @@ public class VentaService {
                 : BigDecimal.ZERO
         );
         pedido.setItems(items);
-        String estadoInicial = dto.getEstadoInicial();
-        pedido.setEstadoPedido(estadoInicial != null && !estadoInicial.isBlank()
-            ? estadoInicial
-            : Constants.PEDIDO_COMPLETADO);
+        pedido.setEstadoPedido(resolverEstadoInicial(metodoPago, metodoEnvio, dto.getEstadoInicial()));
         OrigenPedido origen = OrigenPedido.normalizar(dto.getOrigen());
         if (origen != null) {
             pedido.setOrigen(origen.codigo());
@@ -137,6 +157,73 @@ public class VentaService {
         }
 
         return nuevo;
+    }
+
+    // ── Reglas del registro manual (puras, sin consultas) ──────────────────────
+
+    /**
+     * Rechaza todo método distinto de EFECTIVO y devuelve el valor canónico a persistir.
+     * null, vacío o blanco siguen siendo efectivo. Debe correr antes de cualquier efecto.
+     */
+    public static String exigirMetodoVenta(String metodoPago) {
+        return exigirMetodoVenta(metodoPago, METODOS_VENTA_RESTRINGIDOS);
+    }
+
+    static String exigirMetodoVenta(String metodoPago, boolean restringido) {
+        if (!restringido) return metodoPago != null ? metodoPago : METODO_EFECTIVO;
+        if (metodoPago == null || metodoPago.isBlank()) return METODO_EFECTIVO;
+        if (!METODO_EFECTIVO.equals(metodoPago.trim().toUpperCase(Locale.ROOT))) {
+            throw new VentaMetodoRequierePasarelaException(MSG_METODO_REQUIERE_PASARELA);
+        }
+        return METODO_EFECTIVO;
+    }
+
+    private static void validarVocabularioEstado(String estadoSolicitado) {
+        if (ESTADO_INICIAL_VENTA_RESTRINGIDO) {
+            normalizarEstadoConocido(estadoSolicitado);
+        }
+    }
+
+    /** null/vacío devuelve null; desconocido o demasiado largo lanza la excepción propia. */
+    private static String normalizarEstadoConocido(String estadoSolicitado) {
+        if (estadoSolicitado == null || estadoSolicitado.isBlank()) return null;
+        if (estadoSolicitado.length() > LARGO_MAXIMO_ESTADO) {
+            throw new VentaEstadoInicialInvalidoException(MSG_ESTADO_INICIAL_INVALIDO);
+        }
+        try {
+            return PedidoEstadoMaquina.validarEstado(estadoSolicitado);
+        } catch (IllegalArgumentException e) {
+            throw new VentaEstadoInicialInvalidoException(MSG_ESTADO_INICIAL_INVALIDO);
+        }
+    }
+
+    /**
+     * Estado con el que nace la venta. Solo el efectivo con retiro puede nacer cerrado
+     * (COMPLETADO o ENTREGADO; sin estado, COMPLETADO); todo lo demás nace PENDIENTE.
+     */
+    public static String resolverEstadoInicial(String metodoCanonico, String metodoEnvioResuelto,
+                                               String estadoSolicitado) {
+        return resolverEstadoInicial(metodoCanonico, metodoEnvioResuelto, estadoSolicitado,
+            ESTADO_INICIAL_VENTA_RESTRINGIDO);
+    }
+
+    static String resolverEstadoInicial(String metodoCanonico, String metodoEnvioResuelto,
+                                        String estadoSolicitado, boolean restringido) {
+        if (!restringido) {
+            return estadoSolicitado != null && !estadoSolicitado.isBlank()
+                ? estadoSolicitado
+                : Constants.PEDIDO_COMPLETADO;
+        }
+        String estado = normalizarEstadoConocido(estadoSolicitado);
+        boolean efectivoConRetiro = METODO_EFECTIVO.equals(metodoCanonico)
+            && Constants.ENVIO_RETIRO.equals(metodoEnvioResuelto);
+        if (!efectivoConRetiro) return Constants.PEDIDO_PENDIENTE;
+        if (estado == null) return Constants.PEDIDO_COMPLETADO;
+        if (Constants.PEDIDO_COMPLETADO.equals(estado) || Constants.PEDIDO_ENTREGADO.equals(estado)
+                || Constants.PEDIDO_PENDIENTE.equals(estado)) {
+            return estado;
+        }
+        return Constants.PEDIDO_PENDIENTE;
     }
 
     // ── Validaciones ────────────────────────────────────────────────────────────
