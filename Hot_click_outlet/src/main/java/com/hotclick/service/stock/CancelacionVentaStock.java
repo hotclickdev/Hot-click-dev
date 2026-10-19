@@ -18,8 +18,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Cancelación de una venta registrada a mano que descontó stock al crearse y todavía no tiene cobro.
@@ -53,43 +56,39 @@ public class CancelacionVentaStock {
             }
         }
         String referencia = pedido.getNumeroPedido();
-        Map<Long, Boolean> conDescuento = new LinkedHashMap<>();
-        for (Long productoId : porProducto.keySet()) {
-            conDescuento.put(productoId, movimientoStockRepository.existsByTipoMovimientoAndReferenciaAndProductoId(
-                MovimientoStock.VENTA, referencia, productoId));
-        }
-        if (!conDescuento.containsValue(Boolean.TRUE)) return false;
+        Set<Long> conDescuento = movimientoStockRepository.productoIdsPorTipoYReferencia(MovimientoStock.VENTA, referencia);
+        if (porProducto.keySet().stream().noneMatch(conDescuento::contains)) return false;
+        Set<Long> yaRepuestos = movimientoStockRepository.productoIdsPorTipoYReferencia(
+            MovimientoStock.CANCELACION_VENTA, referencia);
 
+        List<Long> pendientes = porProducto.keySet().stream()
+            .filter(id -> conDescuento.contains(id) && !yaRepuestos.contains(id))
+            .sorted()
+            .toList();
+        if (pendientes.isEmpty()) return true;
+
+        // Bloqueo de fila de todos los productos en un solo SELECT FOR UPDATE (orden estable por id).
+        List<Producto> productos = productoRepository.findAllByIdsForUpdate(pendientes);
         String operador = operadorActual();
-        for (Map.Entry<Long, Integer> e : porProducto.entrySet()) {
-            Long productoId = e.getKey();
-            boolean yaRepuesto = movimientoStockRepository.existsByTipoMovimientoAndReferenciaAndProductoId(
-                MovimientoStock.CANCELACION_VENTA, referencia, productoId);
-            if (Boolean.TRUE.equals(conDescuento.get(productoId)) && !yaRepuesto) {
-                reponer(productoId, e.getValue(), referencia, operador);
+        List<MovimientoStock> movimientos = new ArrayList<>();
+        for (Producto producto : productos) {
+            if (entityManager != null && entityManager.contains(producto)) entityManager.refresh(producto);
+            int cantidad = porProducto.get(producto.getId());
+            int actAntes = producto.getStockActual();
+            int actDespues = actAntes + cantidad;
+            int reservado = producto.getStockReservado();
+            producto.setStockActual(actDespues);
+            if (Boolean.TRUE.equals(producto.getEsUnico())) {
+                producto.setVendido(false);
             }
+            movimientos.add(movimientoSupport.buildMovimiento(producto, MovimientoStock.CANCELACION_VENTA, cantidad,
+                actAntes, actDespues, reservado, reservado, referencia, operador));
+            movimientoSupport.publicarCambioStock(this, producto, actDespues);
         }
+        productoRepository.saveAll(productos);
+        movimientoStockRepository.saveAll(movimientos);
+        log.info("Cancelación de venta {}: stock repuesto en {} producto(s)", referencia, productos.size());
         return true;
-    }
-
-    private void reponer(Long productoId, int cantidad, String referencia, String operador) {
-        Producto producto = productoRepository.findByIdForUpdate(productoId).orElse(null);
-        if (producto == null) return;
-        if (entityManager != null && entityManager.contains(producto)) entityManager.refresh(producto);
-
-        int actAntes = producto.getStockActual();
-        int actDespues = actAntes + cantidad;
-        int reservado = producto.getStockReservado();
-        producto.setStockActual(actDespues);
-        if (Boolean.TRUE.equals(producto.getEsUnico())) {
-            producto.setVendido(false);
-        }
-        productoRepository.save(producto);
-
-        movimientoSupport.registrar(producto, MovimientoStock.CANCELACION_VENTA, cantidad,
-            actAntes, actDespues, reservado, reservado, referencia, operador);
-        movimientoSupport.publicarCambioStock(this, producto, actDespues);
-        log.info("Cancelación de venta: producto id={} actual {} -> {}", productoId, actAntes, actDespues);
     }
 
     private static String operadorActual() {
