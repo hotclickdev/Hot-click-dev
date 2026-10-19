@@ -9,6 +9,7 @@ public class MovimientoStock {
 
     // Tipos de movimiento
     public static final String VENTA               = "VENTA";
+    public static final String CANCELACION_VENTA   = "CANCELACION_VENTA";
     public static final String VENTA_POS           = "VENTA_POS";
     public static final String RESERVA             = "RESERVA";
     public static final String LIBERACION_RESERVA  = "LIBERACION_RESERVA";

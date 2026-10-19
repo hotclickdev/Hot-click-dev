@@ -47,6 +47,7 @@ public class PedidoService {
     @Autowired private PedidoPagoManualService pedidoPagoManualService;
     @Autowired private PedidoDespachoVerificador despachoVerificador;
     @Autowired private com.hotclick.service.payment.StockReservationService stockReservationService;
+    @Autowired private com.hotclick.service.stock.CancelacionVentaStock cancelacionVentaStock;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -147,7 +148,9 @@ public class PedidoService {
             && RESERVA_ACTIVA.contains(estadoActual);
         pedido.setEstadoPedido(nuevoEstado);
         if (liberarReserva) {
-            stockReservationService.liberarReservas(pedido);
+            if (!cancelacionVentaStock.reponerSiVentaManualSinCobro(pedido)) {
+                stockReservationService.liberarReservas(pedido);
+            }
         }
         if (nota != null && !nota.isBlank()) {
             pedidoNotificacionAppender.appendNotificacion(pedido, nuevoEstado, nota);
