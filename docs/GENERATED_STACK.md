@@ -1,9 +1,9 @@
 # Stack generado (DOC1)
 
 <!-- generated-by: scripts/eng-gates/stack-docs.mjs -->
-<!-- fingerprint: eyJqYXZhVmVyc2lvbiI6IjIxIiwic3ByaW5nQm9vdCI6IjMuNC40IiwicmVhY3QiOiIxOS4yLjUiLCJ2aXRlIjoiOC4wLjEwIiwiZmx5d2F5Q291bnQiOjEyOCwiZmx5d2F5TWF4IjoxMzAsImZseXdheUxhdGVzdCI6IlYxMzBfX3RpY2tldF9zb3BvcnRlX3ByaW9yaWRhZC5zcWwiLCJjb250cm9sbGVycyI6MTAzLCJzZXJ2aWNlcyI6MTU4LCJyZXBvc2l0b3JpZXMiOjgzLCJlbnRpdGllcyI6ODZ9 -->
+<!-- fingerprint: eyJqYXZhVmVyc2lvbiI6IjIxIiwic3ByaW5nQm9vdCI6IjMuNS4xNiIsInJlYWN0IjoiMTkuMi41Iiwidml0ZSI6IjguMC4xNiIsImZseXdheUNvdW50IjoxNjcsImZseXdheU1heCI6MTgxLCJmbHl3YXlMYXRlc3QiOiJWMTgxX19lbXByZXNhX3RpZW5kYV9wYXVzYWRhLnNxbCIsImNvbnRyb2xsZXJzIjoxMjUsInNlcnZpY2VzIjoyMTAsInJlcG9zaXRvcmllcyI6MTAwLCJlbnRpdGllcyI6MTAyfQ -->
 
-> Autogenerado el **2026-09-13** desde `pom.xml`, Flyway, `frontend/package.json` y conteos de Java.
+> Autogenerado el **2026-10-19** desde `pom.xml`, Flyway, `frontend/package.json` y conteos de Java.
 > No editar a mano. Corré `scripts/generate-stack-docs.sh`. **No incluye secretos.**
 
 ## Runtime (fuente: repo, no marketing)
@@ -11,43 +11,43 @@
 | Hecho | Valor | Fuente |
 | --- | --- | --- |
 | Java | **21** | `Hot_click_outlet/pom.xml` `java.version` |
-| Spring Boot | **3.4.4** | `spring-boot-starter-parent` |
+| Spring Boot | **3.5.16** | `spring-boot-starter-parent` |
 | React | **19.2.5** | `frontend/package.json` |
-| Vite | **8.0.10** | `frontend/package.json` |
+| Vite | **8.0.16** | `frontend/package.json` |
 | Node (engines) | >=22.13.0 | `frontend/package.json` |
 | Package manager | pnpm@11.1.2 | `frontend/package.json` |
-| Flyway archivos | **128** (`V1`–`V130`) | `src/main/resources/db/migration/` |
-| Última migración | `V130__ticket_soporte_prioridad.sql` | mismo dir |
-| Controllers | 103 | `*Controller.java` |
-| Services | 158 | `*Service.java` |
-| Repositories | 83 | `*Repository.java` |
-| Entidades `model/` | 86 | `com/hotclick/model` |
+| Flyway archivos | **167** (`V1`–`V181`) | `src/main/resources/db/migration/` |
+| Última migración | `V181__empresa_tienda_pausada.sql` | mismo dir |
+| Controllers | 125 | `*Controller.java` |
+| Services | 210 | `*Service.java` |
+| Repositories | 100 | `*Repository.java` |
+| Entidades `model/` | 102 | `com/hotclick/model` |
 
 ## Controllers más grandes (líneas)
 
 | Archivo | Líneas |
 | --- | --- |
-| `src/main/java/com/hotclick/controller/PedidoController.java` | 216 |
-| `src/main/java/com/hotclick/controller/ProductoFeedController.java` | 206 |
-| `src/main/java/com/hotclick/controller/AuthController.java` | 201 |
-| `src/main/java/com/hotclick/controller/PosQrController.java` | 195 |
-| `src/main/java/com/hotclick/controller/BodegaController.java` | 187 |
-| `src/main/java/com/hotclick/controller/SpaController.java` | 184 |
-| `src/main/java/com/hotclick/controller/ProductoController.java` | 183 |
-| `src/main/java/com/hotclick/controller/TestimonioController.java` | 183 |
+| `src/main/java/com/hotclick/controller/PedidoController.java` | 324 |
+| `src/main/java/com/hotclick/controller/BodegaController.java` | 322 |
+| `src/main/java/com/hotclick/controller/SpaController.java` | 246 |
+| `src/main/java/com/hotclick/controller/AdminResetController.java` | 232 |
+| `src/main/java/com/hotclick/controller/ProductoFeedController.java` | 229 |
+| `src/main/java/com/hotclick/controller/SuscripcionController.java` | 228 |
+| `src/main/java/com/hotclick/controller/AuthController.java` | 212 |
+| `src/main/java/com/hotclick/controller/AdminAsignarController.java` | 194 |
 
 ## Services más grandes (líneas)
 
 | Archivo | Líneas |
 | --- | --- |
-| `src/main/java/com/hotclick/service/EncargoService.java` | 464 |
-| `src/main/java/com/hotclick/service/pos/PosQrVentaService.java` | 360 |
-| `src/main/java/com/hotclick/service/suscripcion/SuscripcionOnvoChangeService.java` | 326 |
-| `src/main/java/com/hotclick/rag/service/VectorSearchService.java` | 319 |
-| `src/main/java/com/hotclick/service/OnvoService.java` | 280 |
-| `src/main/java/com/hotclick/service/MetodoCobroCambioService.java` | 251 |
-| `src/main/java/com/hotclick/service/pos/PosQrSessionService.java` | 243 |
-| `src/main/java/com/hotclick/service/EmpresaAdminService.java` | 242 |
+| `src/main/java/com/hotclick/service/inventario/InventarioPaqueteService.java` | 532 |
+| `src/main/java/com/hotclick/service/EncargoService.java` | 465 |
+| `src/main/java/com/hotclick/service/analytics/AdsMetricasService.java` | 407 |
+| `src/main/java/com/hotclick/service/consola/TiendaRapidaService.java` | 389 |
+| `src/main/java/com/hotclick/service/suscripcion/SuscripcionOnvoChangeService.java` | 349 |
+| `src/main/java/com/hotclick/service/pos/PosQrSessionService.java` | 339 |
+| `src/main/java/com/hotclick/rag/service/VectorSearchService.java` | 335 |
+| `src/main/java/com/hotclick/service/pos/PosQrVentaService.java` | 325 |
 
 ## Docs que suelen quedar viejos
 
