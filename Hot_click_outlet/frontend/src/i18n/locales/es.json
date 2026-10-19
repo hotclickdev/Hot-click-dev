@@ -3529,7 +3529,7 @@
       "reintentar": "Intentar de nuevo",
       "errorTitulo": "No se puede pagar",
       "errorPagoTitulo": "No se pudo iniciar el pago",
-      "errorPagoDesc": "No se pudo iniciar el cobro con tarjeta. Pedile al cajero un QR nuevo o pagá con SINPE.",
+      "errorPagoDesc": "No se pudo iniciar el cobro con tarjeta. Pedile al cajero un QR nuevo.",
       "errorSinpeDesc": "No se pudieron obtener los datos del SINPE. Intentá de nuevo o pedile al cajero un QR nuevo.",
       "qrInvalido": "Este código ya no es válido. Pedile uno nuevo al cajero.",
       "sinItems": "Este QR no tiene productos.",
