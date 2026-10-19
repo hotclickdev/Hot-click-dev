@@ -2,6 +2,7 @@ package com.hotclick.service.pos;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.exception.PosMetodoNoDisponibleException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -33,6 +34,9 @@ public class PosQrSessionService {
 
     /** Minutos que dura un cobro por QR. El texto «vencido» del comprador lo recibe en {@code vigenciaMinutos}. */
     public static final int VIGENCIA_MINUTOS = 30;
+
+    public static final String MSG_SINPE_NO_DISPONIBLE =
+        "SINPE ya no está disponible en el cobro QR del POS. Usá tarjeta.";
 
     private static final Logger log = LoggerFactory.getLogger(PosQrSessionService.class);
 
@@ -68,6 +72,10 @@ public class PosQrSessionService {
             throw new IllegalArgumentException("Método de pago debe ser SINPE o TARJETA");
         }
         List<String> habilitados = PosQrMetodos.normalizar(metodosPago, metodoPago);
+        // SINPE solo vive dentro de la pasarela ONVO: el cobro QR del POS lo rechaza (fail-closed).
+        if (habilitados.contains(PosQrMetodos.SINPE)) {
+            throw new PosMetodoNoDisponibleException(MSG_SINPE_NO_DISPONIBLE);
+        }
         exigirItemsDelNegocio(empresaId, items);
 
         Usuario usuario  = usuarioRepo.findById(usuarioId)
@@ -229,18 +237,12 @@ public class PosQrSessionService {
         return empresa;
     }
 
+    /** Siempre vacío: el WhatsApp o teléfono del negocio ya no se expone como destino SINPE (el campo se conserva por contrato). */
     String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
-        if (PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
-            // SINPE por Tilopay: el número, el monto y el código los da el SDK al iniciar el pago.
-            return "";
-        }
         return numeroSinpe(empresa);
     }
 
     static String numeroSinpe(Empresa empresa) {
-        if (empresa == null) return "";
-        if (tieneTexto(empresa.getNumeroWhatsapp())) return empresa.getNumeroWhatsapp().trim();
-        if (tieneTexto(empresa.getTelefonoEmpresa())) return empresa.getTelefonoEmpresa().trim();
         return "";
     }
 

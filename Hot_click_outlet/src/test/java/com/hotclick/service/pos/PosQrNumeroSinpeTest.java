@@ -6,29 +6,21 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Número SINPE del negocio en POS")
+@DisplayName("SINPE fuera del QR del POS: el número del negocio no se expone")
 class PosQrNumeroSinpeTest {
 
     @Test
-    @DisplayName("Usa WhatsApp del negocio, no el de HotClick")
-    void usaWhatsappDelNegocio() {
+    @DisplayName("Con WhatsApp y teléfono cargados, el destino SINPE sigue vacío")
+    void vacioAunqueHayaContacto() {
         Empresa e = new Empresa();
-        e.setNumeroWhatsapp("50688881111");
-        e.setTelefonoEmpresa("2222-3333");
-        assertThat(PosQrSessionService.numeroSinpe(e)).isEqualTo("50688881111");
+        e.setNumeroWhatsapp("WHATSAPP-DE-PRUEBA");
+        e.setTelefonoEmpresa("TELEFONO-DE-PRUEBA");
+        assertThat(PosQrSessionService.numeroSinpe(e)).isEmpty();
     }
 
     @Test
-    @DisplayName("Si no hay WhatsApp, usa el teléfono del negocio")
-    void usaTelefonoSiNoHayWhatsapp() {
-        Empresa e = new Empresa();
-        e.setTelefonoEmpresa("2222-3333");
-        assertThat(PosQrSessionService.numeroSinpe(e)).isEqualTo("2222-3333");
-    }
-
-    @Test
-    @DisplayName("Sin contacto no inventa el número de HotClick")
-    void vacioSinFallbackHotclick() {
+    @DisplayName("Sin contacto o sin empresa tampoco inventa un número")
+    void vacioSinContacto() {
         assertThat(PosQrSessionService.numeroSinpe(new Empresa())).isEmpty();
         assertThat(PosQrSessionService.numeroSinpe(null)).isEmpty();
     }

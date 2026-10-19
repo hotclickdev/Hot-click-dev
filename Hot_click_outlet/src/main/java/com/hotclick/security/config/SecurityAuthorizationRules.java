@@ -54,7 +54,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/payments/tilopay/reintentar/*").permitAll()
             // SINPE — invitados
             .requestMatchers(POST, "/api/sinpe/guest-checkout").permitAll()
-            .requestMatchers(POST, "/api/sinpe/guest/*/comprobante").permitAll()
+            // /api/sinpe/guest/*/comprobante ya no es público: la subida de comprobantes está apagada (410 en el controller).
             // Catálogo público por slug — tienda propia del emprendedor (sin JWT)
             // Tienda pública por slug — API y SPA (sin JWT)
             .requestMatchers(GET,  "/api/tienda/**").permitAll()

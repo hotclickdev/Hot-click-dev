@@ -20,7 +20,7 @@ class PosQrRespuestaCajeroTest {
     @DisplayName("Incluye token, total y método para armar el QR")
     void incluyeTokenTotalYMetodo() {
         Empresa empresa = new Empresa();
-        empresa.setNumeroWhatsapp("50688881111");
+        empresa.setNumeroWhatsapp("WHATSAPP-DE-PRUEBA");
 
         PosQrSesion sesion = new PosQrSesion();
         sesion.setToken("tokentarjetaqr01");
@@ -34,7 +34,7 @@ class PosQrRespuestaCajeroTest {
         assertThat(r.get("token")).isEqualTo("tokentarjetaqr01");
         assertThat(r.get("total")).isEqualTo(5000);
         assertThat(r.get("metodoPago")).isEqualTo("TARJETA");
-        assertThat(r.get("sinpeNumero")).isEqualTo("50688881111");
+        assertThat(r.get("sinpeNumero")).isEqualTo("");
         assertThat(r.get("expiracion")).isNotNull();
     }
 }
