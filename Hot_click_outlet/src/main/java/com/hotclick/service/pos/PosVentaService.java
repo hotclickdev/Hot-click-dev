@@ -2,6 +2,7 @@ package com.hotclick.service.pos;
 
 import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.PosVentaDTO;
+import com.hotclick.exception.PosMetodoRequierePasarelaException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -54,8 +55,27 @@ public class PosVentaService {
     @Autowired private CompanyScope companyScope;
     @Autowired private ClienteMostradorResolver clienteMostradorResolver;
 
+    /** Revertible: con false vuelve el comportamiento anterior (la venta directa acepta cualquier método). */
+    static final boolean METODOS_DIRECTOS_RESTRINGIDOS = true;
+
+    public static final String MSG_METODO_REQUIERE_PASARELA =
+        "La venta directa solo admite efectivo. SINPE y tarjeta se cobran por el QR de la caja.";
+
+    /** Rechaza todo método distinto de EFECTIVO; null o vacío siguen siendo efectivo. Debe correr antes de cualquier efecto. */
+    public static void exigirMetodoDirecto(String metodoPago) {
+        exigirMetodoDirecto(metodoPago, METODOS_DIRECTOS_RESTRINGIDOS);
+    }
+
+    static void exigirMetodoDirecto(String metodoPago, boolean restringido) {
+        if (!restringido || metodoPago == null || metodoPago.isBlank()) return;
+        if (!"EFECTIVO".equals(metodoPago.trim().toUpperCase(java.util.Locale.ROOT))) {
+            throw new PosMetodoRequierePasarelaException(MSG_METODO_REQUIERE_PASARELA);
+        }
+    }
+
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
+        exigirMetodoDirecto(dto.getMetodoPago());
         Usuario cliente = resolverCliente(dto.getClienteId());
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));

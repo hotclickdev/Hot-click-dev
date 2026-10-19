@@ -2,7 +2,9 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.PosVentaDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.PosMetodoRequierePasarelaException;
 import com.hotclick.exception.TenantAccessDeniedException;
+import java.util.Map;
 import com.hotclick.model.Pedido;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.pos.PosVentaService;
@@ -37,9 +39,13 @@ public class PosController {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El carrito no puede estar vacío"));
         }
         try {
+            PosVentaService.exigirMetodoDirecto(dto.getMetodoPago());
             Pedido saved = posVentaService.crearVenta(
                 dto, extractUserId(request), extractEmpresaId(request), extractCorreo(request));
             return ResponseEntity.ok(ResponseDTO.success("Venta registrada", saved));
+        } catch (PosMetodoRequierePasarelaException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(),
+                Map.of("codigo", PosMetodoRequierePasarelaException.CODIGO)));
         } catch (TenantAccessDeniedException | SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
