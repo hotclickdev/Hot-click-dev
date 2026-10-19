@@ -185,7 +185,7 @@ public class VentaService {
         carrito.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         carrito.getItems().clear();
         carrito.setTotalCarrito(0);
-        carritoRepository.save(carrito);
+        // Entidad gestionada dentro de la misma transacción: se persiste al confirmar.
         log.info("Carrito id={} convertido por pedido {}", carrito.getId(), numeroPedido);
     }
 
