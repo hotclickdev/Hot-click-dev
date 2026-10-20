@@ -65,3 +65,6 @@ Hot_click_outlet/.local-migrations/
 # Worktrees de agentes (Claude Code) — no subir a git
 .claude/worktrees/
 
+
+# Informes sensibles de los agentes (repo publico)
+reportes-privados/
