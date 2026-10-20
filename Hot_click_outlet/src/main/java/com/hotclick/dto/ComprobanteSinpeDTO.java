@@ -43,6 +43,8 @@ public class ComprobanteSinpeDTO {
     public Long    getId()                { return id; }
     public String  getNumeroPedido()      { return numeroPedido; }
     public String  getUrlComprobante()    { return urlComprobante; }
+    /** PAG-9: reemplaza la referencia privada por una URL firmada antes de responder. */
+    public ComprobanteSinpeDTO conUrl(String url) { this.urlComprobante = url; return this; }
     public String  getNombreRemitente()   { return nombreRemitente; }
     public String  getCedulaRemitente()   { return cedulaRemitente; }
     public String  getTelefonoRemitente() { return telefonoRemitente; }

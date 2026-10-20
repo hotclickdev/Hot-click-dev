@@ -34,6 +34,7 @@ public class SinpeComprobanteService {
     @Autowired private PagoRepository                pagoRepository;
     @Autowired private ComprobanteSinpeRepository    comprobanteRepository;
     @Autowired private SupabaseStorageService         storageService;
+    @Autowired private com.hotclick.service.storage.ComprobantePrivadoStorage comprobantePrivadoStorage;
     @Autowired private NotificacionEmailService       notificacionEmailService;
     @Autowired private PaymentService                paymentService;
     @Autowired private SinpeAuditSupport             auditSupport;
@@ -71,7 +72,7 @@ public class SinpeComprobanteService {
 
         String url;
         try {
-            url = storageService.subirImagen(archivo, "comprobantes-sinpe");
+            url = comprobantePrivadoStorage.subir(archivo, "comprobantes-sinpe");
         } catch (IOException e) {
             throw new IntegracionExternaException("storage", IntegracionExternaException.Tipo.IO_ERROR,
                 "Error al subir el comprobante: " + e.getMessage(), e);

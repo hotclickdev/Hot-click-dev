@@ -26,6 +26,8 @@ public class SinpeController {
      */
     static final String SOLO_PLATAFORMA = "hasRole('ADMIN') or hasAuthority('global.metrics')";
 
+    @Autowired private com.hotclick.service.storage.ComprobantePrivadoStorage comprobantePrivadoStorage;
+
     @Autowired
     private SinpeService sinpeService;
     @Autowired
@@ -127,7 +129,8 @@ public class SinpeController {
             @RequestParam(defaultValue = "0")          int page,
             @RequestParam(defaultValue = "20")         int size) {
         Page<ComprobanteSinpeDTO> resultado = sinpeService.listar(estado, PageRequest.of(page, Math.min(size, 50)))
-            .map(ComprobanteSinpeDTO::from);
+            .map(c -> ComprobanteSinpeDTO.from(c)
+                .conUrl(comprobantePrivadoStorage.urlParaVer(c.getUrlComprobante())));
         return ResponseEntity.ok(ResponseDTO.success("Comprobantes SINPE", Map.of(
             "content",       resultado.getContent(),
             "totalPages",    resultado.getTotalPages(),
