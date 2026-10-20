@@ -56,6 +56,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
 
+        // Staging: si StagingJwtFilter ya autenticó con un token de staging válido, no se reparsea
+        // ni se registra como JWT inválido (recordInvalidJwt). En default/prod el atributo nunca existe.
+        if (Boolean.TRUE.equals(request.getAttribute(com.hotclick.security.staging.StagingJwtFilter.ATTR_STAGING_AUTH))) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
         String username = null;
