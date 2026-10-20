@@ -4,6 +4,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.service.stock.CancelacionVentaStock;
 import com.hotclick.utils.Constants;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
@@ -31,15 +32,18 @@ public class ReservaTiendaVencidaService {
     private final EmpresaRepository empresaRepository;
     private final PedidoRepository pedidoRepository;
     private final StockReservationService stockReservationService;
+    private final CancelacionVentaStock cancelacionVentaStock;
     private final long horas;
 
     public ReservaTiendaVencidaService(EmpresaRepository empresaRepository,
                                        PedidoRepository pedidoRepository,
                                        StockReservationService stockReservationService,
+                                       CancelacionVentaStock cancelacionVentaStock,
                                        @Value("${hotclick.tienda.reserva.horas:72}") long horas) {
         this.empresaRepository = empresaRepository;
         this.pedidoRepository = pedidoRepository;
         this.stockReservationService = stockReservationService;
+        this.cancelacionVentaStock = cancelacionVentaStock;
         this.horas = Math.max(1, horas);
     }
 
@@ -69,7 +73,10 @@ public class ReservaTiendaVencidaService {
         List<Pedido> vencidos = pedidoRepository.findTiendaPendientesVencidos(empresaId, corte, PageRequest.of(0, LOTE));
         for (Pedido pedido : vencidos) {
             pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-            stockReservationService.liberarReservas(pedido);
+            // Misma regla que la cancelación manual: venta registrada a mano (descontó stock) se repone.
+            if (!cancelacionVentaStock.reponerSiVentaManualSinCobro(pedido)) {
+                stockReservationService.liberarReservas(pedido);
+            }
             log.info("[reserva-tienda] Pedido {} cancelado: reserva vencida ({} h)", pedido.getNumeroPedido(), horas);
         }
         // Entidades administradas dentro de la transacción: el cambio de estado se guarda al confirmar.

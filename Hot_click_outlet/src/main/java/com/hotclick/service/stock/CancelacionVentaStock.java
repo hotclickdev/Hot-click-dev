@@ -58,21 +58,30 @@ public class CancelacionVentaStock {
         String referencia = pedido.getNumeroPedido();
         Set<Long> conDescuento = movimientoStockRepository.productoIdsPorTipoYReferencia(MovimientoStock.VENTA, referencia);
         if (porProducto.keySet().stream().noneMatch(conDescuento::contains)) return false;
+
+        // Bloqueo de fila de todos los candidatos en un solo SELECT FOR UPDATE (orden estable por id).
+        // La consulta «ya repuesto» va DESPUÉS del bloqueo: una cancelación concurrente espera aquí y,
+        // al continuar, ve el movimiento que la otra confirmó (no repone dos veces).
+        List<Long> candidatos = porProducto.keySet().stream().filter(conDescuento::contains).sorted().toList();
+        // Los productos que el pedido ya trajo a la sesión pueden estar desfasados si otra cancelación
+        // confirmó mientras esta esperaba: se sueltan para que el SELECT FOR UPDATE los lea frescos
+        // (si no, Hibernate lanza un conflicto de versión en vez de esperar y releer).
+        if (entityManager != null) {
+            for (PedidoItem item : pedido.getItems()) {
+                Producto gestionado = item.getProducto();
+                if (gestionado != null && candidatos.contains(gestionado.getId()) && entityManager.contains(gestionado)) {
+                    entityManager.detach(gestionado);
+                }
+            }
+        }
+        List<Producto> bloqueados = productoRepository.findAllByIdsForUpdate(candidatos);
         Set<Long> yaRepuestos = movimientoStockRepository.productoIdsPorTipoYReferencia(
             MovimientoStock.CANCELACION_VENTA, referencia);
-
-        List<Long> pendientes = porProducto.keySet().stream()
-            .filter(id -> conDescuento.contains(id) && !yaRepuestos.contains(id))
-            .sorted()
-            .toList();
-        if (pendientes.isEmpty()) return true;
-
-        // Bloqueo de fila de todos los productos en un solo SELECT FOR UPDATE (orden estable por id).
-        List<Producto> productos = productoRepository.findAllByIdsForUpdate(pendientes);
+        List<Producto> productos = bloqueados.stream().filter(p -> !yaRepuestos.contains(p.getId())).toList();
+        if (productos.isEmpty()) return true;
         String operador = operadorActual();
         List<MovimientoStock> movimientos = new ArrayList<>();
         for (Producto producto : productos) {
-            if (entityManager != null && entityManager.contains(producto)) entityManager.refresh(producto);
             int cantidad = porProducto.get(producto.getId());
             int actAntes = producto.getStockActual();
             int actDespues = actAntes + cantidad;

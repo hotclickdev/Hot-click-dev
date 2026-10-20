@@ -26,6 +26,7 @@ class CancelacionVentaStockTest extends BaseIntegrationTest {
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private MovimientoStockRepository movimientoStockRepository;
     @Autowired private PagoRepository pagoRepository;
+    @Autowired private com.hotclick.service.payment.ReservaTiendaVencidaService reservaTiendaVencida;
 
     private Empresa emp;
     private Bodega bod;
@@ -153,6 +154,49 @@ class CancelacionVentaStockTest extends BaseIntegrationTest {
 
         assertThat(recargar(prod1).getStockActual()).isEqualTo(10);
         assertThat(movimientos(prod1, MovimientoStock.CANCELACION_VENTA)).isEqualTo(1);
+    }
+
+    @Test
+    void cancelacionesConcurrentesReponenUnaSolaVez() throws Exception {
+        Pedido venta = ventaDelPanel("PENDIENTE", new long[]{prod1.getId(), prod2.getId()}, new int[]{4, 2});
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        java.util.concurrent.CountDownLatch salida = new java.util.concurrent.CountDownLatch(1);
+        try {
+            List<java.util.concurrent.Future<Integer>> resultados = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                resultados.add(pool.submit(() -> {
+                    salida.await();
+                    return cancelar(venta.getId()).andReturn().getResponse().getStatus();
+                }));
+            }
+            salida.countDown();
+            for (java.util.concurrent.Future<Integer> r : resultados) {
+                assertThat(r.get(60, java.util.concurrent.TimeUnit.SECONDS)).isEqualTo(200);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        assertThat(recargar(prod1).getStockActual()).isEqualTo(10);
+        assertThat(recargar(prod2).getStockActual()).isEqualTo(10);
+        assertThat(movimientos(prod1, MovimientoStock.CANCELACION_VENTA)).isEqualTo(1);
+        assertThat(movimientos(prod2, MovimientoStock.CANCELACION_VENTA)).isEqualTo(1);
+    }
+
+    @Test
+    void elJobDe72HorasReponeLaVentaManualSinCobroYNoRepiteSiYaSeCancelo() throws Exception {
+        Pedido venta = ventaDelPanel("PENDIENTE", new long[]{prod1.getId()}, new int[]{4});
+        assertThat(recargar(prod1).getStockActual()).isEqualTo(6);
+
+        int canceladas = reservaTiendaVencida.ejecutar(LocalDateTime.now(Constants.ZONA_CR).plusHours(73));
+
+        assertThat(canceladas).isEqualTo(1);
+        assertThat(recargar(prod1).getStockActual()).isEqualTo(10);
+        assertThat(movimientos(prod1, MovimientoStock.CANCELACION_VENTA)).isEqualTo(1);
+        assertThat(pedidoRepository.findById(venta.getId()).orElseThrow().getEstadoPedido())
+            .isEqualTo(Constants.PEDIDO_CANCELADO);
+        // Ya cancelada: el job no la vuelve a tomar ni repone otra vez.
+        assertThat(reservaTiendaVencida.ejecutar(LocalDateTime.now(Constants.ZONA_CR).plusHours(80))).isZero();
+        assertThat(recargar(prod1).getStockActual()).isEqualTo(10);
     }
 
     @Test
