@@ -94,9 +94,9 @@
 
 | Medio de pago | Plazo estimado |
 | --- | --- |
-| Tarjeta Stripe | Cinco (5) a diez (10) días hábiles, sujeto a los plazos del banco emisor |
+| ONVO (tarjeta o SINPE Móvil por medio de ONVO) | Plazo a definir por HOT_CLICK; en tarjeta, sujeto además al banco emisor |
 
-| SINPE Móvil | Uno (1) a tres (3) días hábiles |
+[BORRADOR: requiere revisión de profesional colegiado]
 
 **Artículo 9. Confirmación.** HOTCLICK o el Vendedor, según corresponda, remitirán al Comprador una confirmación por correo electrónico una vez procesado el reembolso, indicando el monto acreditado y el medio de pago al que fue aplicado.
 

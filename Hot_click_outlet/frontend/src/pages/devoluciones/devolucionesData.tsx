@@ -103,13 +103,13 @@ export const sections = [
     title: '5. Reembolsos',
     content: (
       <>
-        <p>Los reembolsos se procesan de la siguiente manera según el método de pago original:</p>
+        <p>[BORRADOR: requiere revisión de profesional colegiado] Los reembolsos se hacen por el mismo medio de pago que usaste en la compra.</p>
         <ul>
-          <li><strong>Tarjeta (Tilopay):</strong> el reembolso vuelve a la misma tarjeta en un plazo [PENDIENTE], según el banco emisor.</li>
-
-          <li><strong>SINPE Móvil:</strong> el reembolso se hace por SINPE al número registrado en un plazo de 1 a 3 días hábiles.</li>
+          <li><strong>Pagos con ONVO (tarjeta o SINPE Móvil por medio de ONVO):</strong> el reembolso vuelve por ONVO al mismo medio de pago en un plazo a definir por HOT_CLICK. En pagos con tarjeta, el momento en que lo ves reflejado depende también de tu banco emisor.</li>
+          <li><strong>Monto:</strong> monto a definir por HOT_CLICK según el caso (retracto, garantía o producto no conforme), incluido si se reintegra el costo de envío.</li>
+          <li><strong>Retracto (Ley N.° 7472):</strong> si ejercés el retracto dentro del plazo legal, se te devuelve lo pagado conforme a la ley; el plazo de reintegro es a definir por HOT_CLICK con asesoría legal.</li>
         </ul>
-        <p>En todos los casos, recibirás una confirmación por correo electrónico cuando el reembolso sea procesado.</p>
+        <p>Cuando el reembolso quede procesado, te llega una confirmación por correo con el monto y el medio de pago.</p>
       </>
     ),
   },
