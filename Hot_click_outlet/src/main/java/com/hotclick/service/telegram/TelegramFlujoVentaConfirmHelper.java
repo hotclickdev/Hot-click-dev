@@ -40,7 +40,24 @@ class TelegramFlujoVentaConfirmHelper {
     @Autowired private TelegramFlujoVentaCatalogHelper catalog;
     @Autowired private TelegramAbusoService           abuso;
 
+    /** Deja el borrador en el paso de pago, sin pago fijado, y repite el aviso con el teclado de efectivo. */
+    private void volverAlPago(TelegramVinculacion v, TelegramFlujoEstado e) {
+        String texto = e.getPago() == null
+            ? TelegramFlujoVentaCallbackHelper.MSG_PAGO_SOLO_EFECTIVO
+            : TelegramFlujoVentaCallbackHelper.MSG_PAGO_NO_PERMITIDO;
+        e.setPago(null);
+        e.setP(P_VTA_PAGO);
+        support.guardar(v, e);
+        bot.enviarMensaje(v.getChatId(), texto, List.of(
+            List.of(TelegramClienteBotService.boton("Efectivo", "vta:pay:EFECTIVO"),
+                    TelegramClienteBotService.boton("Cancelar", BTN_CANCELAR))));
+    }
+
     void mostrarResumenVenta(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {
+        if (VentaService.METODOS_VENTA_RESTRINGIDOS && !"EFECTIVO".equals(e.getPago())) {
+            volverAlPago(v, e);
+            return;
+        }
         e.setP(P_VTA_CONFIRMAR);
         support.guardar(v, e);
         StringBuilder sb = new StringBuilder("🧾 *Confirmá la venta:*\n\n");
@@ -67,14 +84,9 @@ class TelegramFlujoVentaConfirmHelper {
         }
 
         boolean soloEfectivo = VentaService.METODOS_VENTA_RESTRINGIDOS;
-        if (soloEfectivo && e.getPago() != null && !"EFECTIVO".equals(e.getPago())) {
-            // Borrador viejo (TTL 24 h) con un método ya no admitido: vuelve al paso de pago sin crear nada
-            e.setPago(null);
-            e.setP(P_VTA_PAGO);
-            support.guardar(v, e);
-            bot.enviarMensaje(v.getChatId(), TelegramFlujoVentaCallbackHelper.MSG_PAGO_NO_PERMITIDO, List.of(
-                List.of(TelegramClienteBotService.boton("Efectivo", "vta:pay:EFECTIVO"),
-                        TelegramClienteBotService.boton("Cancelar", BTN_CANCELAR))));
+        if (soloEfectivo && !"EFECTIVO".equals(e.getPago())) {
+            // Sin efectivo elegido (borrador viejo, doble toque o botón de otra venta): vuelve al paso de pago sin crear nada
+            volverAlPago(v, e);
             return;
         }
 

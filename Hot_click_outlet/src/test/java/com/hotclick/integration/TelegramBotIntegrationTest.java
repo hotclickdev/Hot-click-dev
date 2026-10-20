@@ -719,6 +719,53 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("Venta por bot: confirmar sin pago elegido no registra nada y vuelve al paso de pago")
+    void bot_vtaOkSinPago_noRegistra() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar gris", 12, 3);
+
+        for (String paso : List.of(TelegramFlujoEstado.P_VTA_PAGO, TelegramFlujoEstado.P_VTA_CONFIRMAR)) {
+            clearInvocations(bot);
+            TelegramFlujoEstado estado = TelegramFlujoEstado.nuevaVenta(LocalDateTime.now(Constants.ZONA_CR));
+            estado.setItems(new java.util.ArrayList<>(List.of(new TelegramFlujoEstado.ItemBorrador(p.getId(), 1))));
+            estado.setPago(null);
+            estado.setP(paso);
+            v.setContexto(estado.serializar(objectMapper));
+            v = vinculacionRepository.saveAndFlush(v);
+
+            postSinLimite(callback(CHAT_ID, "vta:ok"));
+
+            assertThat(pedidoRepository.count()).isZero();
+            assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(12);
+            verify(bot, atLeastOnce()).enviarMensaje(eq(CHAT_ID), contains("pasarela de pagos"), any());
+            String contexto = vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto();
+            TelegramFlujoEstado guardado = TelegramFlujoEstado.deserializar(contexto, objectMapper).orElseThrow();
+            assertThat(guardado.getPago()).isNull();
+            assertThat(guardado.getP()).isEqualTo(TelegramFlujoEstado.P_VTA_PAGO);
+        }
+    }
+
+    @Test
+    @DisplayName("Venta por bot: dos confirmaciones seguidas sobre un borrador con pago no permitido no registran nada")
+    void bot_dobleVtaOkTrasSinpe_noRegistra() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar café", 12, 3);
+        TelegramFlujoEstado estado = TelegramFlujoEstado.nuevaVenta(LocalDateTime.now(Constants.ZONA_CR));
+        estado.setItems(new java.util.ArrayList<>(List.of(new TelegramFlujoEstado.ItemBorrador(p.getId(), 1))));
+        estado.setPago("SINPE");
+        estado.setP(TelegramFlujoEstado.P_VTA_CONFIRMAR);
+        v.setContexto(estado.serializar(objectMapper));
+        vinculacionRepository.saveAndFlush(v);
+
+        long update = System.nanoTime();
+        postSinLimite(callbackConId(CHAT_ID, "vta:ok", update));
+        postSinLimite(callbackConId(CHAT_ID, "vta:ok", update + 1));
+
+        assertThat(pedidoRepository.count()).isZero();
+        assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(12);
+    }
+
+    @Test
     @DisplayName("menu y Listo escritos se entienden, sin quedarse trabado en el flujo")
     void menuYListo_textoLibre() throws Exception {
         TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
