@@ -69,7 +69,6 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | tienda-rapida-sin-clave | La contraseña viajaba en claro en el JSON del enlace público de tienda rápida y el correo quedaba verificado sin prueba | Se quitó `clave` del DTO; la cuenta queda con clave aleatoria y correo sin verificar; se envía el código RESET_PASSWORD y el dueño la define en /recuperar-contrasena (eso verifica el correo) | `NegocioRapidoAsignacionTest` | cubierto |
 | clerk-sync-sin-token | POST /api/auth/clerk-sync sin Authorization daba 500 (MissingRequestHeader) | Header y cuerpo opcionales; sin Bearer → 401 antes de cualquier otra rama | `ClerkSyncTakeoverTest.sinToken401` | cubierto |
 | pausa-tienda | tenant | Un vendedor pausa o reanuda su propia tienda/cobros, o un comprador compra en una tienda pausada | `PUT /api/admin/empresas/{id}/tienda-pausada` y `/cobros-pausados` con `@PreAuthorize ADMIN` y auditoría; `SlugTenantInterceptor` → 410 TIENDA_PAUSADA; checkout → 409 TIENDA_PAUSADA; destacados filtran `tienda_pausada` | `EmprendedorTenantSecurityTest` (403 y 410), `PaymentCheckoutTiendaPausadaTest` | cubierto |
-| venta-manual-sin-pasarela | pagos | Venta registrada a mano como cobrada con un método electrónico sin verificación de la pasarela | Cierre fail-closed: solo cobro presencial; estado inicial validado; reversible | pruebas automáticas de rechazo sin efectos y de flujos legítimos | cubierto |
 
 ## Reverificación QA 16-10-2026 (rama fix/reverificacion-1610)
 
@@ -97,3 +96,4 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | QA-CONC-6 | logback: stack recortado `%ex{30}`, archivo rotado en prod (10 MB, 7 días, 200 MB) | Mitigado |
 | `ex.getMessage()` | `GlobalExceptionHandler`: IllegalArgument/IllegalState pasan por `ErrorPublico`; «No value present» → «Recurso no encontrado». Quedan otros `getMessage()` en handlers de excepciones propias (com.hotclick.exception) | Mitigado (parcial) |
 | Checkout proveedor | `PaymentProviderFactory`/`CheckoutValidator` sin default STRIPE: proveedor nulo/vacío → 400 «Elegí un método de pago»; allowlist TILOPAY/SINPE, ONVO solo con `payments.onvo.enabled` | Mitigado |
+| venta-manual-sin-pasarela | Registro manual de ventas sin verificación de la pasarela: cierre fail-closed por clase de método y estado, política compartida, origen y bodega acotados. Pruebas: `VentaSoloEfectivoTest`, `VentaEstadoInicialTest`, `TelegramBotIntegrationTest`, `MetodoPagoManualMatrizTest`, `VentaPanelEndpointTest` | parcial (ciclo 2/3) |

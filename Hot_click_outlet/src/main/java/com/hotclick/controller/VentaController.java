@@ -53,7 +53,12 @@ public class VentaController {
         Long empresaId = companyScope.requireEmpresaId(); // sin empresa → 403 (antes 400)
         try {
             Pedido nuevo = ventaService.crearVenta(dto, userDetails.getUsername(), empresaId);
-            return ResponseEntity.ok(ResponseDTO.success("Venta creada exitosamente", nuevo.getId()));
+            // Estado real persistido (no el pedido): el panel solo usa el éxito; el id se conserva.
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("id", nuevo.getId());
+            resultado.put("numeroPedido", nuevo.getNumeroPedido());
+            resultado.put("estadoPedido", nuevo.getEstadoPedido());
+            return ResponseEntity.ok(ResponseDTO.success("Venta creada exitosamente", resultado));
         } catch (StockInsuficienteException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (VentaMetodoRequierePasarelaException e) {

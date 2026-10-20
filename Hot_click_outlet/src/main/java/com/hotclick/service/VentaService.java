@@ -2,9 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
-import com.hotclick.exception.VentaEstadoInicialInvalidoException;
-import com.hotclick.exception.VentaMetodoRequierePasarelaException;
-import com.hotclick.service.pedido.PedidoEstadoMaquina;
+import com.hotclick.service.pedido.MetodoPagoManualPolicy;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -20,7 +18,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class VentaService {
@@ -33,13 +30,11 @@ public class VentaService {
     /** Revertible: con false vuelve el comportamiento anterior (el estado inicial se toma tal cual llega). */
     static final boolean ESTADO_INICIAL_VENTA_RESTRINGIDO = true;
 
-    private static final String METODO_EFECTIVO = "EFECTIVO";
-    private static final int LARGO_MAXIMO_ESTADO = 30;
+    public static final String MSG_METODO_REQUIERE_PASARELA = MetodoPagoManualPolicy.MSG_METODO_REQUIERE_PASARELA;
+    public static final String MSG_ESTADO_INICIAL_INVALIDO = MetodoPagoManualPolicy.MSG_ESTADO_INICIAL_INVALIDO;
 
-    public static final String MSG_METODO_REQUIERE_PASARELA =
-        "Las ventas registradas en el panel solo admiten efectivo. "
-        + "SINPE, tarjeta y transferencia se cobran por la pasarela de pagos.";
-    public static final String MSG_ESTADO_INICIAL_INVALIDO = "Estado inicial no válido.";
+    private static final java.util.Set<String> METODOS_ENVIO_PERMITIDOS = java.util.Set.of(
+        Constants.ENVIO_RETIRO, Constants.ENVIO_DOMICILIO, Constants.ENVIO_ENCOMIENDA);
 
     @Autowired private PedidoService               pedidoService;
     @Autowired private StockService                stockService;
@@ -142,10 +137,8 @@ public class VentaService {
         );
         pedido.setItems(items);
         pedido.setEstadoPedido(resolverEstadoInicial(metodoPago, metodoEnvio, dto.getEstadoInicial()));
-        OrigenPedido origen = OrigenPedido.normalizar(dto.getOrigen());
-        if (origen != null) {
-            pedido.setOrigen(origen.codigo());
-        }
+        // El origen no lo elige quien llama: toda venta registrada desde el panel o el asistente es MANUAL.
+        pedido.setOrigen(OrigenPedido.MANUAL.codigo());
 
         Pedido nuevo = pedidoService.crearPedido(pedido);
 
@@ -170,30 +163,12 @@ public class VentaService {
     }
 
     static String exigirMetodoVenta(String metodoPago, boolean restringido) {
-        if (!restringido) return metodoPago != null ? metodoPago : METODO_EFECTIVO;
-        if (metodoPago == null || metodoPago.isBlank()) return METODO_EFECTIVO;
-        if (!METODO_EFECTIVO.equals(metodoPago.trim().toUpperCase(Locale.ROOT))) {
-            throw new VentaMetodoRequierePasarelaException(MSG_METODO_REQUIERE_PASARELA);
-        }
-        return METODO_EFECTIVO;
+        return MetodoPagoManualPolicy.exigirEfectivo(metodoPago, restringido);
     }
 
     private static void validarVocabularioEstado(String estadoSolicitado) {
         if (ESTADO_INICIAL_VENTA_RESTRINGIDO) {
-            normalizarEstadoConocido(estadoSolicitado);
-        }
-    }
-
-    /** null/vacío devuelve null; desconocido o demasiado largo lanza la excepción propia. */
-    private static String normalizarEstadoConocido(String estadoSolicitado) {
-        if (estadoSolicitado == null || estadoSolicitado.isBlank()) return null;
-        if (estadoSolicitado.length() > LARGO_MAXIMO_ESTADO) {
-            throw new VentaEstadoInicialInvalidoException(MSG_ESTADO_INICIAL_INVALIDO);
-        }
-        try {
-            return PedidoEstadoMaquina.validarEstado(estadoSolicitado);
-        } catch (IllegalArgumentException e) {
-            throw new VentaEstadoInicialInvalidoException(MSG_ESTADO_INICIAL_INVALIDO);
+            MetodoPagoManualPolicy.normalizarEstadoConocido(estadoSolicitado);
         }
     }
 
@@ -209,21 +184,8 @@ public class VentaService {
 
     static String resolverEstadoInicial(String metodoCanonico, String metodoEnvioResuelto,
                                         String estadoSolicitado, boolean restringido) {
-        if (!restringido) {
-            return estadoSolicitado != null && !estadoSolicitado.isBlank()
-                ? estadoSolicitado
-                : Constants.PEDIDO_COMPLETADO;
-        }
-        String estado = normalizarEstadoConocido(estadoSolicitado);
-        boolean efectivoConRetiro = METODO_EFECTIVO.equals(metodoCanonico)
-            && Constants.ENVIO_RETIRO.equals(metodoEnvioResuelto);
-        if (!efectivoConRetiro) return Constants.PEDIDO_PENDIENTE;
-        if (estado == null) return Constants.PEDIDO_COMPLETADO;
-        if (Constants.PEDIDO_COMPLETADO.equals(estado) || Constants.PEDIDO_ENTREGADO.equals(estado)
-                || Constants.PEDIDO_PENDIENTE.equals(estado)) {
-            return estado;
-        }
-        return Constants.PEDIDO_PENDIENTE;
+        return MetodoPagoManualPolicy.estadoVentaPanel(metodoCanonico, metodoEnvioResuelto,
+            estadoSolicitado, restringido);
     }
 
     // ── Validaciones ────────────────────────────────────────────────────────────
@@ -282,7 +244,13 @@ public class VentaService {
     }
 
     private String resolverMetodoEnvio(VentaRequestDTO dto) {
-        if (dto.getMetodoEnvio() != null) return dto.getMetodoEnvio();
+        if (dto.getMetodoEnvio() != null && !dto.getMetodoEnvio().isBlank()) {
+            String envio = dto.getMetodoEnvio().trim();
+            if (!METODOS_ENVIO_PERMITIDOS.contains(envio)) {
+                throw new IllegalArgumentException("Método de envío no válido.");
+            }
+            return envio;
+        }
         if ("DOMICILIO".equalsIgnoreCase(dto.getTipoEntrega())) return Constants.ENVIO_DOMICILIO;
         return Constants.ENVIO_RETIRO;
     }
@@ -292,7 +260,7 @@ public class VentaService {
             Bodega bodega = bodegaRepository.findById(dto.getBodegaId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada: id=" + dto.getBodegaId()));
             // Evita que una empresa registre una venta contra la bodega de otra empresa.
-            if (bodega.getEmpresa() != null && !empresaId.equals(bodega.getEmpresa().getId())) {
+            if (bodega.getEmpresa() == null || !empresaId.equals(bodega.getEmpresa().getId())) {
                 throw new IllegalArgumentException("La bodega indicada no pertenece a tu empresa");
             }
             return bodega;
