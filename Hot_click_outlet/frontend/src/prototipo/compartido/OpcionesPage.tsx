@@ -47,6 +47,9 @@ export default function OpcionesPage() {
             <FilaOpcion to={ruta('notificaciones')} label="Notificaciones" />
           </ItemFila>
           <ItemFila>
+            <FilaOpcion to={ruta('reembolsos')} label="Reembolsos" />
+          </ItemFila>
+          <ItemFila>
             <FilaOpcion to={ruta('cobro')} label="Métodos de cobro" />
           </ItemFila>
           <ItemFila>
