@@ -13,6 +13,8 @@ type PaginaLegalProps = {
   /** Marco legal y fecha: "Ley N.° 8968 · Costa Rica · Actualizada el 5 de junio de 2025". */
   subtitulo: string
   intro?: ReactNode
+  /** S5-24: resumen aprobado por Legal arriba del texto (se oculta si no está aprobado). */
+  resumen?: ReactNode
   secciones: SeccionLegal[]
   /** Bloques extra después de las secciones (por ejemplo, la tabla de cookies). */
   anexo?: ReactNode
@@ -118,7 +120,7 @@ function HojaIndice({ abierta, onCerrar, children }: { abierta: boolean; onCerra
   )
 }
 
-export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, secciones, anexo, pregunta, correo, accion, enlaces }: PaginaLegalProps) {
+export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, resumen, secciones, anexo, pregunta, correo, accion, enlaces }: PaginaLegalProps) {
   const clave = secciones.map((s) => s.id).join('|')
   const ids = useMemo(() => clave.split('|'), [clave])
   const activa = useSeccionActiva(ids)
@@ -149,6 +151,7 @@ export default function PaginaLegal({ titulo, encabezado, subtitulo, intro, secc
             <strong className="font-semibold text-hc-n-900">[REVISIÓN LEGAL]</strong> Este texto está en revisión. Si tenés dudas sobre un caso puntual, escribinos antes de comprar.
           </p>
         </div>
+        {resumen && <div className="px-4 pt-[18px] lg:px-0">{resumen}</div>}
         {RESUMEN_APROBADO && intro && (
           <div className="px-4 pt-[18px] lg:px-0">
             <TarjetaLegal>{intro}</TarjetaLegal>
