@@ -50,9 +50,12 @@ public class PedidoPagoManualService {
     public static final int LARGO_MAXIMO_REFERENCIA = 100;
     public static final String ACCION_AUDITORIA = "PEDIDO_PAGO_MANUAL";
 
-    /** Métodos que se cobran fuera de la pasarela y por eso se pueden confirmar a mano. */
-    static final Set<String> METODOS_MANUALES = Set.of(
-        "EFECTIVO", "CONTRA_ENTREGA", Constants.PROVEEDOR_SINPE, "SINPE_MOVIL", "TRANSFERENCIA");
+    /**
+     * Métodos que se cobran en mano y por eso se pueden confirmar a mano. SINPE y transferencia NO están:
+     * SINPE solo existe dentro de la pasarela ONVO y un cobro electrónico nunca se confirma con una
+     * referencia de texto (G1: un vendedor podía comprarse a sí mismo y acreditarse saldo).
+     */
+    static final Set<String> METODOS_MANUALES = Set.of("EFECTIVO", "CONTRA_ENTREGA");
 
     /** Único método que se cobra al retirar: con retiro en tienda pasa a ENTREGADO sin PAGADO previo. */
     static final Set<String> METODOS_COBRO_AL_RETIRAR = Set.of("EFECTIVO");
@@ -64,13 +67,13 @@ public class PedidoPagoManualService {
         Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO);
 
     public static final String MENSAJE_METODO_NO_MANUAL =
-        "Este pedido no se puede marcar como pagado a mano: solo los pagos en efectivo, SINPE o transferencia. "
-            + "Los pagos con tarjeta los confirma la pasarela.";
+        "Este pedido no se puede marcar como pagado a mano: solo los pagos en efectivo. "
+            + "Los pagos electrónicos (tarjeta, SINPE, transferencia) los confirma la pasarela.";
     public static final String MENSAJE_PAGO_PASARELA =
         "Este pedido se paga con %s: el pago lo confirma la pasarela y no se puede marcar como pagado a mano.";
     public static final String MENSAJE_REFERENCIA_REQUERIDA =
         "Para marcar el pedido como pagado indicá la referencia del pago "
-            + "(número de SINPE o de transferencia, o quién recibió el efectivo).";
+            + "(quién recibió el efectivo).";
     public static final String MENSAJE_REFERENCIA_LARGA =
         "La referencia del pago no puede superar " + LARGO_MAXIMO_REFERENCIA + " caracteres.";
     public static final String MENSAJE_GRUPO_OTROS_NEGOCIOS =

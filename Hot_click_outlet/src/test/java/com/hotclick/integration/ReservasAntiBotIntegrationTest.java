@@ -11,6 +11,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.service.TilopayService;
 import com.hotclick.service.payment.PaymentExpirationCleanupService;
 import com.hotclick.service.payment.ReservaAntiBotService;
 import com.hotclick.service.payment.ReservaSospechosaLiberador;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -35,6 +37,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,6 +64,9 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
     @Autowired private CategoriaRepository            categoriaRepository;
     @Autowired private BodegaRepository               bodegaRepository;
     @Autowired private PlatformTransactionManager     txManager;
+    // G1: SINPE ya no entra por el checkout público; se usa TILOPAY y la pasarela responde "no aprobada"
+    // para que el liberador pueda cancelar (sin esto el modo mock aprobaría el cobro).
+    @MockitoBean private TilopayService               tilopayService;
 
     private Empresa empresa;
     private Bodega bodega;
@@ -71,6 +78,10 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
     void setUp() {
         reservaAntiBot.limpiar();
         reservaAntiBot.setClock(Clock.system(Constants.ZONA_CR));
+
+        when(tilopayService.loginSdk()).thenReturn("sdk-token-test");
+        when(tilopayService.consultarTransaccion(anyString()))
+            .thenReturn(new TilopayService.ConsultaResultado(false, "0", "No aprobada", null));
 
         empresa = new Empresa();
         empresa.setNombreEmpresa("AntiBot Inc");
@@ -138,8 +149,10 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         reservar("203.0.113.10", 5);
         reservar("203.0.113.10", 5);
         assertThat(reservado()).isEqualTo(10);
+        // El TTL real de la pasarela (Tilopay) es de 30 min; la intención sigue siendo que una reserva
+        // no marcada no se acorte a los 15 min de la regla anti-bot.
         assertThat(pagosPendientes()).allSatisfy(p ->
-            assertThat(p.getFechaExpiracion()).isAfter(LocalDateTime.now(Constants.ZONA_CR).plusHours(23)));
+            assertThat(p.getFechaExpiracion()).isAfter(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(29)));
 
         avanzar(20);
         cleanup.ejecutar();
@@ -174,10 +187,19 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         Producto p = productoRepository.findById(producto.getId()).orElseThrow();
         assertThat(p.getStockActual()).isEqualTo(50);
 
-        // una corrida más no vuelve a restar
-        avanzar(30);
+        // una corrida más no vuelve a restar (25 min: la reserva ajena de Tilopay vence a los 30 min, no a las 24 h de SINPE)
+        avanzar(25);
         cleanup.ejecutar();
         assertThat(reservado()).isEqualTo(3);
+
+        // pasados los 30 min de TTL de la pasarela, la reserva ajena también vence y no queda nada pendiente
+        avanzar(31);
+        cleanup.ejecutar();
+        assertThat(reservado()).isEqualTo(0);
+        assertThat(pagosPendientes()).isEmpty();
+        assertThat(pedidoRepository.findAll().stream()
+            .filter(x -> Constants.PEDIDO_CANCELADO.equals(x.getEstadoPedido()))).hasSize(4);
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockActual()).isEqualTo(50);
     }
 
     @Test
@@ -211,7 +233,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
 
     private void reservar(String ip, int unidades) throws Exception {
         String body = """
-            {"bodegaId":%d,"metodoEnvio":"%s","provider":"SINPE","guestEmail":"bot%d@test.cr",
+            {"bodegaId":%d,"metodoEnvio":"%s","provider":"TILOPAY","guestEmail":"bot%d@test.cr",
              "guestPhone":"8888%04d","items":[{"productoId":%d,"cantidad":%d}]}
             """.formatted(bodega.getId(), Constants.ENVIO_RETIRO, ++correo, correo, producto.getId(), unidades);
         mockMvc.perform(post("/api/payments/guest-checkout")
