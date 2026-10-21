@@ -54,6 +54,8 @@ public class AuthRegistroEmpresaHandler {
             return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(e.getMessage(),
                 Map.of("codigo", com.hotclick.exception.CorreoYaRegistradoException.CODIGO,
                        "siguientePaso", com.hotclick.exception.CorreoYaRegistradoException.SIGUIENTE_PASO)));
+        } catch (com.hotclick.exception.FrecuenciaPayoutInvalidaException e) {
+            throw e; // 400 FRECUENCIA_INVALIDA en GlobalExceptionHandler
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
