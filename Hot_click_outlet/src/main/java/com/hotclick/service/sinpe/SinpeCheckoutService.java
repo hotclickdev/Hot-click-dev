@@ -48,10 +48,12 @@ public class SinpeCheckoutService {
     private boolean sinpeManualHabilitado;
 
     public static final String MSG_SINPE_MANUAL =
-        "El pago por SINPE con comprobante ya no está disponible. Elegí SINPE Móvil o Tarjeta: te llevamos a la pasarela de pago.";
+        "Este checkout solo registra pagos en efectivo. Elegí SINPE Móvil o Tarjeta: te llevamos a la pasarela de pago.";
 
     static void exigirProveedorPermitido(String proveedor, boolean sinpeManualHabilitado) {
-        if (!sinpeManualHabilitado && (proveedor == null || Constants.PROVEEDOR_SINPE.equalsIgnoreCase(proveedor))) {
+        // G1: sin la bandera legacy esta ruta solo registra EFECTIVO. Cualquier otro valor (SINPE, null,
+        // TRANSFERENCIA, ONVO...) crearía un Pago SINPE pendiente confirmable a mano.
+        if (!sinpeManualHabilitado && (proveedor == null || !"EFECTIVO".equalsIgnoreCase(proveedor.trim()))) {
             throw new IllegalStateException(MSG_SINPE_MANUAL);
         }
     }
@@ -67,7 +69,7 @@ public class SinpeCheckoutService {
         Bodega bodegaDefault = checkoutValidator.loadBodega(bodegaId);
 
         StockReservationResult reservation = stockReservationService.reserveForCheckout(req.getItems());
-        String proveedorEfectivo = req.getProvider() != null ? req.getProvider() : Constants.PROVEEDOR_SINPE;
+        String proveedorEfectivo = req.getProvider() != null ? req.getProvider().trim() : Constants.PROVEEDOR_SINPE;
         CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
             req, reservation, bodegaDefault, proveedorEfectivo, usuario, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         Pedido principal = grupo.principal();

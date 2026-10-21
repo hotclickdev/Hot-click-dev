@@ -115,7 +115,7 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
         Pago pago = crearPago(p, Constants.PROVEEDOR_SINPE);
 
         cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\"}").andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("referencia")));
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("efectivo")));
         cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\",\"referencia\":\"   \"}").andExpect(status().isBadRequest());
 
         assertEstado(p, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
@@ -132,22 +132,22 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Ataque: pago SINPE de un grupo con pedidos de otro negocio → el vendedor no lo confirma (400); ADMIN sí")
+    @DisplayName("Ataque: pago en efectivo de un grupo con pedidos de otro negocio → el vendedor no lo confirma (400); ADMIN sí")
     void grupoMultinegocio_soloAdmin() throws Exception {
-        Pedido propio = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "SINPE");
-        Pedido ajeno = crearPedido(empresaOtra, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "SINPE");
+        Pedido propio = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "EFECTIVO");
+        Pedido ajeno = crearPedido(empresaOtra, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "EFECTIVO");
         propio.setGrupoPago("GRP-" + UUID.randomUUID());
         ajeno.setGrupoPago(propio.getGrupoPago());
         pedidoRepository.saveAndFlush(propio);
         pedidoRepository.saveAndFlush(ajeno);
         Pago pago = crearPago(propio, Constants.PROVEEDOR_SINPE);
 
-        cambiar(tokenEmp, propio, "{\"estado\":\"PAGADO\",\"referencia\":\"SINPE 555\"}")
+        cambiar(tokenEmp, propio, "{\"estado\":\"PAGADO\",\"referencia\":\"Recibido por Ana\"}")
             .andExpect(status().isBadRequest());
         assertEstado(propio, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         assertEstado(ajeno, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
 
-        cambiar(adminToken, propio, "{\"estado\":\"PAGADO\",\"referencia\":\"SINPE 555\"}")
+        cambiar(adminToken, propio, "{\"estado\":\"PAGADO\",\"referencia\":\"Recibido por Ana\"}")
             .andExpect(status().isOk());
         assertEstado(propio, Constants.PEDIDO_PAGADO);
         assertEstado(ajeno, Constants.PEDIDO_PAGADO);
@@ -157,12 +157,12 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     // ── SEC-05: casos legítimos ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("Legítimo: SINPE con referencia → PAGADO, Pago CAPTURADO, billetera acreditada y auditoría del EMPRENDEDOR")
-    void sinpe_conReferencia_sincronizaYAudita() throws Exception {
-        Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "SINPE");
+    @DisplayName("Legítimo: efectivo con referencia (Pago pendiente del checkout) → PAGADO, Pago CAPTURADO, billetera acreditada y auditoría del EMPRENDEDOR")
+    void efectivo_conReferencia_sincronizaYAudita() throws Exception {
+        Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "EFECTIVO");
         Pago pago = crearPago(p, Constants.PROVEEDOR_SINPE);
 
-        cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\",\"referencia\":\"SINPE 87654321\"}")
+        cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\",\"referencia\":\"Recibido por Ana\"}")
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.estadoPedido").value("PAGADO"));
 
@@ -177,13 +177,13 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
         assertThat(a.getAdminEmail()).isEqualTo("vend-pm@test.cr");
         assertThat(a.getEmpresaId()).isEqualTo(empresa.getId());
         assertThat(a.getEntidadId()).isEqualTo(p.getId());
-        assertThat(a.getDetalle()).contains("PENDIENTE_COMPROBANTE", "PAGADO", "SINPE", "SINPE 87654321");
+        assertThat(a.getDetalle()).contains("PENDIENTE_COMPROBANTE", "PAGADO", "EFECTIVO", "Recibido por Ana");
         assertThat(auditorias("PEDIDO_CAMBIO_ESTADO")).hasSize(1);
     }
 
     @Test
-    @DisplayName("Legítimo: SINPE en revisión con comprobante y sin referencia → PAGADO y comprobante APROBADO")
-    void sinpe_conComprobante_sinReferencia() throws Exception {
+    @DisplayName("Ataque G1: SINPE en revisión con comprobante y sin referencia → PAGADO = 400; comprobante y Pago intactos")
+    void sinpe_conComprobante_sinReferencia_400() throws Exception {
         Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_APROBACION, "SINPE");
         Pago pago = crearPago(p, Constants.PROVEEDOR_SINPE);
         ComprobanteSinpe c = new ComprobanteSinpe();
@@ -193,14 +193,30 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
         c.setFechaSubida(LocalDateTime.now());
         c = comprobanteRepository.saveAndFlush(c);
 
-        cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\"}").andExpect(status().isOk());
+        cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\"}").andExpect(status().isBadRequest());
 
-        assertEstado(p, Constants.PEDIDO_PAGADO);
-        assertThat(pagoRepository.findById(pago.getId()).orElseThrow().getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
-        ComprobanteSinpe actualizado = comprobanteRepository.findById(c.getId()).orElseThrow();
-        assertThat(actualizado.getEstado()).isEqualTo(Constants.COMPROBANTE_APROBADO);
-        assertThat(actualizado.getAdminEmail()).isEqualTo("vend-pm@test.cr");
-        assertThat(auditorias("PEDIDO_PAGO_MANUAL").get(0).getDetalle()).contains("comprobante SINPE #" + c.getId());
+        assertEstado(p, Constants.PEDIDO_PENDIENTE_APROBACION);
+        assertThat(pagoRepository.findById(pago.getId()).orElseThrow().getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+        assertThat(comprobanteRepository.findById(c.getId()).orElseThrow().getEstado()).isEqualTo(Constants.COMPROBANTE_PENDIENTE);
+        verifyNoInteractions(aggregatorService);
+    }
+
+    @ParameterizedTest(name = "[{index}] {0} + referencia libre → 400 para vendedor y admin, sin crédito a billetera")
+    @CsvSource({"SINPE", "SINPE_MOVIL", "sinpe-movil", "TRANSFERENCIA"})
+    @DisplayName("Ataque G1: pedido SINPE/transferencia con Pago pendiente no se marca PAGADO a mano")
+    void cobroElectronico_noSeConfirmaAMano(String metodo) throws Exception {
+        Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, metodo);
+        Pago pago = crearPago(p, Constants.PROVEEDOR_SINPE);
+
+        cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\",\"referencia\":\"REF-INVENTADA-123\"}")
+            .andExpect(status().isBadRequest());
+        cambiar(adminToken, p, "{\"estado\":\"PAGADO\",\"referencia\":\"REF-INVENTADA-123\"}")
+            .andExpect(status().isBadRequest());
+
+        assertEstado(p, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        assertThat(pagoRepository.findById(pago.getId()).orElseThrow().getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+        verifyNoInteractions(aggregatorService);
+        assertThat(auditorias("PEDIDO_PAGO_MANUAL")).isEmpty();
     }
 
     @Test
