@@ -97,6 +97,7 @@ class SinpeCheckoutServiceEmpresaTest {
 
         service = new SinpeCheckoutService();
         ReflectionTestUtils.setField(service, "reservaAntiBot", reservaAntiBot);
+        ReflectionTestUtils.setField(service, "autocompraGuard", guardAutocompra());
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
@@ -105,6 +106,13 @@ class SinpeCheckoutServiceEmpresaTest {
         ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
         ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
         ReflectionTestUtils.setField(service, "sinpeManualHabilitado", true); // flujo legacy (apagado en prod)
+    }
+
+    private static com.hotclick.service.pedido.AutocompraNegocioGuard guardAutocompra() {
+        com.hotclick.service.pedido.AutocompraNegocioGuard g = new com.hotclick.service.pedido.AutocompraNegocioGuard();
+        ReflectionTestUtils.setField(g, "miembroEmpresaRepository", org.mockito.Mockito.mock(MiembroEmpresaRepository.class));
+        ReflectionTestUtils.setField(g, "usuarioRepository", org.mockito.Mockito.mock(UsuarioRepository.class));
+        return g;
     }
 
     @Test
@@ -137,5 +145,31 @@ class SinpeCheckoutServiceEmpresaTest {
         assertThat(captor.getValue().getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         assertThat(resp.getCancelToken()).isEqualTo("tok-test");
         assertThat(resp.getProveedor()).isEqualTo(Constants.PROVEEDOR_SINPE);
+    }
+
+    @Test
+    @DisplayName("G1b: checkout efectivo de un usuario del negocio vendedor (logueado o invitado por correo) se bloquea")
+    void checkout_autocompra_403() {
+        usuario.setEmpresa(empresa); // el comprador es del negocio 7, dueño de la bodega
+        when(usuarioRepository.findByCorreo("buyer@hotclick.cr")).thenReturn(Optional.of(usuario));
+        when(bodegaRepository.findById(1L)).thenReturn(Optional.of(bodega));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PaymentCheckoutRequest req = new PaymentCheckoutRequest();
+        req.setBodegaId(1L);
+        req.setProvider("EFECTIVO");
+        req.setGuestEmail("buyer@hotclick.cr");
+        req.setMetodoEnvio("RETIRO_EN_TIENDA");
+        PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
+        item.setProductoId(10L);
+        item.setCantidad(1);
+        req.setItems(List.of(item));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.checkout(req, "anonymousUser"))
+            .as("invitado con el correo del dueño")
+            .isInstanceOf(com.hotclick.exception.AutocompraNegocioException.class);
+        verify(pagoRepository, org.mockito.Mockito.never()).save(any(Pago.class));
     }
 }
