@@ -7,6 +7,8 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.ComprobanteSinpeRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.exception.ContraEntregaSoloPlataformaException;
+import com.hotclick.service.AggregatorService;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.payment.PedidoGrupoService;
@@ -171,6 +173,7 @@ public class PedidoPagoManualService {
         Pago pago = pagoOpt.get();
         verificarGrupoPropio(pedido);
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return;
+        verificarSinContraEntregaNormal(pedido);
         if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
             throw new IllegalStateException(String.format(MENSAJE_PAGO_CERRADO,
                 String.valueOf(pago.getEstadoPago()).toLowerCase(Locale.ROOT)));
@@ -250,6 +253,17 @@ public class PedidoPagoManualService {
         if (pedido.getId() == null) return Optional.empty();
         return comprobanteRepository.findByPedidoId(pedido.getId())
             .filter(c -> Constants.COMPROBANTE_PENDIENTE.equals(c.getEstado()));
+    }
+
+    /**
+     * confirmarPedido confirma y acredita el grupo entero: si algún paquete es contra entrega de Envío
+     * Normal (la cobra el mensajero de HotClick), solo el ADMIN puede confirmar el pago.
+     */
+    private void verificarSinContraEntregaNormal(Pedido pedido) {
+        if (companyScope.isAdminIT()) return;
+        if (pedidoGrupoService.delGrupo(pedido).stream().anyMatch(AggregatorService::esContraEntregaEnvioNormal)) {
+            throw new ContraEntregaSoloPlataformaException();
+        }
     }
 
     private void verificarGrupoPropio(Pedido pedido) {

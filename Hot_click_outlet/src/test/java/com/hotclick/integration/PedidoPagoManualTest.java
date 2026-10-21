@@ -466,6 +466,71 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
         cambiar(tokenEmp, p, "{\"estado\":\"ENVIADO\"}").andExpect(status().isOk());
     }
 
+    @Test
+    @DisplayName("R1: grupo con paquete A (retiro) y B (Envío Normal contra entrega): el vendedor no confirma A por PAGADO ni por cobro al retirar (403) y nada se acredita; ADMIN sí")
+    void grupoConContraEntregaNormal_vendedorNoConfirmaPorOtroPaquete() throws Exception {
+        Pedido[] porPagado = grupoRetiroMasEnvioNormal();
+        cambiar(tokenEmp, porPagado[0], "{\"estado\":\"PAGADO\",\"referencia\":\"recibi\"}")
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.data.codigo").value("CONTRA_ENTREGA_SOLO_PLATAFORMA"));
+
+        Pedido[] porRetiro = grupoRetiroMasEnvioNormal();
+        cambiar(tokenEmp, porRetiro[0], "{\"estado\":\"ENTREGADO\"}")
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.data.codigo").value("CONTRA_ENTREGA_SOLO_PLATAFORMA"));
+
+        for (Pedido p : new Pedido[] {porPagado[0], porPagado[1], porRetiro[0], porRetiro[1]}) {
+            assertEstado(p, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        }
+        verifyNoInteractions(aggregatorService);
+
+        cambiar(adminToken, porPagado[0], "{\"estado\":\"PAGADO\",\"referencia\":\"plataforma\"}")
+            .andExpect(status().isOk());
+        assertEstado(porPagado[1], Constants.PEDIDO_PAGADO);
+        verify(aggregatorService).acreditarVentaEnTransaccion(argThat(x -> porPagado[1].getId().equals(x.getId())));
+    }
+
+    @Test
+    @DisplayName("R1: contra entrega con Envío Normal sin Pago (tienda propia, DOMICILIO): el vendedor confirma sin 403")
+    void contraEntregaDomicilioSinPago_vendedorConfirma() throws Exception {
+        Pedido p = crearPedido(empresa, Constants.PEDIDO_PENDIENTE, "CONTRA_ENTREGA");
+        p.setMetodoEnvio("DOMICILIO");
+        pedidoRepository.saveAndFlush(p);
+        cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\",\"referencia\":\"recibido\"}").andExpect(status().isOk());
+        assertEstado(p, Constants.PEDIDO_PAGADO);
+    }
+
+    @Test
+    @DisplayName("R1: si el Pago del grupo ya estaba CAPTURADO no hay 403 de más para el vendedor")
+    void grupoConContraEntregaNormal_pagoYaCapturado_sin403() throws Exception {
+        Pedido a = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "EFECTIVO");
+        Pedido b = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "CONTRA_ENTREGA");
+        b.setMetodoEnvio("ENVIO_NORMAL");
+        String grupo = "GRP-" + UUID.randomUUID();
+        a.setGrupoPago(grupo);
+        b.setGrupoPago(grupo);
+        pedidoRepository.saveAndFlush(a);
+        pedidoRepository.saveAndFlush(b);
+        crearPago(a, Constants.PROVEEDOR_SINPE, Constants.PAGO_CAPTURADO);
+
+        cambiar(tokenEmp, a, "{\"estado\":\"PAGADO\",\"referencia\":\"ya cobrado\"}").andExpect(status().isOk());
+        assertEstado(a, Constants.PEDIDO_PAGADO);
+    }
+
+    /** [0] = paquete A (efectivo + retiro, con el Pago del grupo), [1] = paquete B (contra entrega + Envío Normal), mismo negocio. */
+    private Pedido[] grupoRetiroMasEnvioNormal() {
+        Pedido a = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "EFECTIVO");
+        Pedido b = crearPedido(empresa, Constants.PEDIDO_PENDIENTE_COMPROBANTE, "CONTRA_ENTREGA");
+        b.setMetodoEnvio("ENVIO_NORMAL");
+        String grupo = "GRP-" + UUID.randomUUID();
+        a.setGrupoPago(grupo);
+        b.setGrupoPago(grupo);
+        pedidoRepository.saveAndFlush(a);
+        pedidoRepository.saveAndFlush(b);
+        crearPago(a, Constants.PROVEEDOR_SINPE);
+        return new Pedido[] {a, b};
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private org.springframework.test.web.servlet.ResultActions cambiar(String token, Pedido p, String json) throws Exception {
