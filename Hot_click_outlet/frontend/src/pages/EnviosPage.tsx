@@ -4,6 +4,7 @@ import PaginaInformativa, { BloqueInformativo } from '@/components/comprador/Pag
 import PreguntaFrecuente from '@/components/comprador/PreguntaFrecuente'
 import { IcoSrv } from './servicios/IcoSrv'
 import { TARIFAS, type FilaTarifa } from './envios/enviosData'
+import TarifasPorNegocio from '@/features/envios/TarifasPorNegocio'
 import { SITE_URL, faqItems, shippingJsonLd } from './envios/enviosHelpers'
 
 /** Recorrido del paquete (boceto demo-0410 · 03). Nombres de pasos provisorios. TODO copy Producto. */
@@ -101,9 +102,13 @@ export default function EnviosPage() {
 
       <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <BloqueInformativo id="tarifas" titulo="Opciones y costos">
-        <ul className="m-0 flex list-none flex-col rounded-[16px] border border-hc-n-200 bg-hc-n-0 px-4 py-1">
-          {TARIFAS.map((f, i) => <Fila key={f.id} fila={f} primera={i === 0} />)}
-        </ul>
+        <TarifasPorNegocio
+          respaldo={(
+            <ul className="m-0 flex list-none flex-col rounded-[16px] border border-hc-n-200 bg-hc-n-0 px-4 py-1">
+              {TARIFAS.map((f, i) => <Fila key={f.id} fila={f} primera={i === 0} />)}
+            </ul>
+          )}
+        />
       </BloqueInformativo>
 
       <BloqueInformativo id="preguntas" titulo="Preguntas frecuentes">
