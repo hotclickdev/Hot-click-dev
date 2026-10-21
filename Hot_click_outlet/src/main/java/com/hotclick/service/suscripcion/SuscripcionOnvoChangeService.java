@@ -278,19 +278,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
 
         sub.setOnvoSubscriptionId(onvoSubId);
-        sub.setPlan(plan);
-        sub.setEstado("ACTIVO");
-        sub.setCancelarAlVencer(false);
-        LocalDate fin = LocalDate.now(Constants.ZONA_CR).plusMonths(1);
-        sub.setFechaFin(fin);
         suscripcionRepo.save(sub);
-
         Empresa empresa = sub.getEmpresa();
-        empresa.setPlan(plan);
-        empresa.setPlanSaas(plan.getNombre());
-        empresa.setEstadoPlan("ACTIVO");
-        empresa.setFechaVencPlan(fin);
-        empresaRepo.save(empresa);
+        // WH-1: el único camino que activa un plan es el puerto PlanPagoConfirmado.
+        planPagoConfirmado(empresa.getId(), plan.getNombre(), "ONVO", onvoSubId);
         anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO confirmado");
         log.info("[billing-onvo] Webhook activó empresa={} plan={}", empresa.getId(), plan.getNombre());
     }
