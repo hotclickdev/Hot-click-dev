@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.PosMetodoNoDisponibleException;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.PosQrService;
@@ -53,6 +54,9 @@ public class PosQrController {
 
             return ResponseEntity.ok(ResponseDTO.success("QR generado",
                 posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, metodos, items, notas, clienteId, bodegaId)));
+        } catch (PosMetodoNoDisponibleException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(),
+                Map.of("codigo", PosMetodoNoDisponibleException.CODIGO)));
         } catch (Exception e) {
             log.error("[POS-QR] Error creando sesión: {}", e.getMessage(), e);
             String detalle = e.getMessage() != null ? e.getMessage() : "Error al generar QR";

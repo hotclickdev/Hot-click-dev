@@ -26,6 +26,16 @@ public class SinpeController {
      */
     static final String SOLO_PLATAFORMA = "hasRole('ADMIN') or hasAuthority('global.metrics')";
 
+    /** SINPE solo dentro de la pasarela ONVO: la subida de comprobantes (cliente e invitado) está apagada. Revertir = poner false. */
+    static final boolean SUBIDA_COMPROBANTES_APAGADA = true;
+    static final String CODIGO_COMPROBANTES_APAGADO = "SINPE_COMPROBANTE_NO_DISPONIBLE";
+
+    private static ResponseEntity<ResponseDTO> comprobantesApagado() {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.GONE).body(ResponseDTO.error(
+            "La subida de comprobantes SINPE ya no está disponible. Pagá con tarjeta o escribinos por el WhatsApp público de soporte.",
+            Map.of("codigo", CODIGO_COMPROBANTES_APAGADO)));
+    }
+
     @Autowired
     private SinpeService sinpeService;
     @Autowired
@@ -86,6 +96,9 @@ public class SinpeController {
             @RequestParam("nombreRemitente") String nombreRemitente,
             @RequestParam(value = "cedulaRemitente",   required = false) String cedulaRemitente,
             @RequestParam(value = "telefonoRemitente", required = false) String telefonoRemitente) {
+        if (SUBIDA_COMPROBANTES_APAGADA) {
+            return comprobantesApagado();
+        }
         try {
             String correo = SecurityContextHolder.getContext().getAuthentication().getName();
             sinpeService.subirComprobante(numeroPedido, imagen, nombreRemitente,
@@ -112,6 +125,9 @@ public class SinpeController {
             @RequestParam("correoUsuario")    String correoUsuario,
             @RequestParam(value = "cedulaRemitente",   required = false) String cedulaRemitente,
             @RequestParam(value = "telefonoRemitente", required = false) String telefonoRemitente) {
+        if (SUBIDA_COMPROBANTES_APAGADA) {
+            return comprobantesApagado();
+        }
         try {
             sinpeService.subirComprobante(numeroPedido, imagen, nombreRemitente,
                                           cedulaRemitente, telefonoRemitente, correoUsuario);
