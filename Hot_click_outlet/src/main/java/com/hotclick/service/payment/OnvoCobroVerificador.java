@@ -60,12 +60,13 @@ public final class OnvoCobroVerificador {
     }
 
     public static String mensajeAlerta(Pago pago, Map<?, ?> intent) {
-        String pedido = pago != null && pago.getPedido() != null ? pago.getPedido().getNumeroPedido() : "?";
+        // El merchantToken (sessionId) es columna del pago: no inicializa el pedido lazy fuera de transacción.
+        String sesion = pago != null ? pago.getMerchantToken() : "?";
         String esperado = pago != null && pago.getMonto() != null
             ? String.valueOf(pago.getMonto().longValue() * CENTIMOS_POR_COLON) : "?";
         String cobrado = intent != null && intent.get("amount") != null ? String.valueOf(intent.get("amount")) : "sin-monto";
         String moneda = intent != null && texto(intent, "currency") != null ? texto(intent, "currency") : "sin-moneda";
-        return "ONVO no coincide con el pedido=" + pedido
+        return "ONVO no coincide con el pago sessionId=" + sesion
             + " esperado=" + esperado + " CRC(céntimos) cobrado=" + cobrado + " " + moneda;
     }
 

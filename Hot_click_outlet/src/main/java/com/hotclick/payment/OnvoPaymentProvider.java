@@ -113,7 +113,8 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 return Verificacion.DATOS_DISTINTOS;
             }
             default -> {
-                log.info("[onvo] Sesión todavía sin cobro confirmado: pedido={}", pago.getPedido().getNumeroPedido());
+                // Sin transacción el pedido es un proxy lazy: se loguea la sesión, no el número de pedido.
+                log.info("[onvo] Sesión todavía sin cobro confirmado: sessionId={}", checkoutSessionId);
                 return Verificacion.NO_PAGADO;
             }
         }
