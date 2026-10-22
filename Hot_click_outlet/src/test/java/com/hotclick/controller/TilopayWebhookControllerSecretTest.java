@@ -83,4 +83,23 @@ class TilopayWebhookControllerSecretTest {
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
         verify(tilopayConfirmacionService).procesarWebhook(anyString(), anyString());
     }
+
+    @Test
+    @DisplayName("sin secret con dev+prod o dev+production → no acepta (perfil real)")
+    void sinSecret_devMasProd_rechaza() {
+        for (String[] perfiles : new String[][] {{"dev", "prod"}, {"dev", "production"}, {"test", "prod"},
+                {"dev", "PROD"}, {"dev", "Production"}, {"test", "Production"}}) {
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles(perfiles);
+            ReflectionTestUtils.setField(controller, "environment", env);
+            assertThat(controller.secretValido(null)).as(String.join("+", perfiles)).isFalse();
+        }
+        for (String perfil : new String[] {"dev", "test"}) {
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles(perfil);
+            ReflectionTestUtils.setField(controller, "environment", env);
+            assertThat(controller.secretValido(null)).as(perfil).isTrue();
+        }
+        verify(tilopayConfirmacionService, never()).procesarWebhook(any(), any());
+    }
 }
