@@ -4,7 +4,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +34,9 @@ class ClaveSemillaTest {
     @Test
     @DisplayName("Acepta una clave larga y variada")
     void aceptaClaveFuerte() {
-        assertThat(ClaveSemilla.esFuerte("Zq9#" + UUID.randomUUID())).isTrue();
+        // Fija a propósito: con un UUID aleatorio el test fallaba cuando el hex traía «abcd» o «1234»,
+        // que el validador rechaza con razón (secuencias obvias).
+        assertThat(ClaveSemilla.esFuerte("Zq9#" + "Kv7Mx3Pw8Rn2")).isTrue();
     }
 
     @Test
