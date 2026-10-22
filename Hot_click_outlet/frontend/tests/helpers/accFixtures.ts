@@ -85,9 +85,9 @@ export async function sembrarSesion(page: Page, opciones: { favoritos?: boolean;
     localStorage.setItem('hotclick-auth', JSON.stringify({
       state: {
         token, userId: usuario.id, userEmail: usuario.correo, userRole: 'USUARIO_FINAL', userName: usuario.nombre,
-        empresaId: null, empresaSlug: null, empresaNombre: null, permissions: [], roles: ['USUARIO_FINAL'], correoVerificado: true, impersonando: false, adminOriginal: null,
+        empresaId: null, empresaSlug: null, empresaNombre: null, permissions: [], roles: ['USUARIO_FINAL'], correoVerificado: true, impersonando: false,
       },
-      version: 0,
+      version: 1,
     }))
     if (favoritos) localStorage.setItem('hotclick-wishlist', JSON.stringify({ state: { items: favoritos }, version: 0 }))
   }, [USUARIO, opciones.favoritos ? PRODUCTOS_FAVORITOS : null, TOKEN_PRUEBA] as const)

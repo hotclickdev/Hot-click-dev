@@ -91,7 +91,7 @@ export default async function globalSetup() {
       permissions: Array.isArray(data.permisos) ? data.permisos as string[] : [],
       roles: data.rol ? [data.rol] : ['ADMIN'],
     },
-    version: 0,
+    version: 1,
   }
 
   await page.evaluate((payload) => {

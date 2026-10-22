@@ -22,7 +22,7 @@ function payloadAuth({ rol, empresaId = null }: { rol: string; empresaId?: numbe
       permissions: [],
       roles: [rol],
     },
-    version: 0,
+    version: 1,
   }
 }
 

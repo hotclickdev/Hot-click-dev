@@ -25,7 +25,7 @@ boolean isProduction = appUrl != null
 | `JWT_SECRET` < 64 chars | WARNING | CRITICAL | Log nivel correspondiente |
 | `TOTP_ENCRYPTION_KEY` vacío | WARNING | CRITICAL | Log nivel correspondiente |
 | `TOTP_ENCRYPTION_KEY` ≠ 64 hex chars | CRITICAL | CRITICAL | Log error siempre |
-| `CORS_ALLOWED_ORIGINS` contiene `localhost` en prod | — | WARNING | Log warning |
+| `CORS_ALLOWED_ORIGINS` vacío, con `*` o con `localhost`/`127.0.0.1` en prod | — | CRITICAL | Aborta el arranque |
 
 ### Output en startup
 

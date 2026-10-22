@@ -53,7 +53,7 @@ class AuthRefreshNegocioActivoTest extends BaseIntegrationTest {
         Cookie cookie = cambio.getResponse().getCookie("hotclick_refresh");
         assertThat(cookie).as("cambiar-negocio entrega el refresh nuevo").isNotNull();
 
-        MvcResult r1 = mockMvc.perform(post("/api/auth/refresh").cookie(cookie)
+        MvcResult r1 = mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000").cookie(cookie)
                 .contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andReturn();
         assertThat(r1.getResponse().getStatus()).as(r1.getResponse().getContentAsString()).isEqualTo(200);
@@ -63,7 +63,7 @@ class AuthRefreshNegocioActivoTest extends BaseIntegrationTest {
         mb.setEstado(0);
         miembroEmpresaRepository.saveAndFlush(mb);
         Cookie cookie2 = r1.getResponse().getCookie("hotclick_refresh");
-        MvcResult r2 = mockMvc.perform(post("/api/auth/refresh").cookie(cookie2)
+        MvcResult r2 = mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000").cookie(cookie2)
                 .contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isOk()).andReturn();
         JsonNode j2 = om.readTree(r2.getResponse().getContentAsString());

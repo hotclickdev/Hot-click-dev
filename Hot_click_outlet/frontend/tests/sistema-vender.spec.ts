@@ -24,7 +24,7 @@ function payloadAuth({ rol, permissions = [] }: { rol: string; permissions?: str
       permissions,
       roles: [rol],
     },
-    version: 0,
+    version: 1,
   }
 }
 

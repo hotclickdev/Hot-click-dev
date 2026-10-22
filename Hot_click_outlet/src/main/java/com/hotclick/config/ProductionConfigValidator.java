@@ -37,20 +37,23 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
 
-    @Value("${cors.allowed.origins:http://localhost:3000}")
+    @Value("${cors.allowed.origins:}")
     private String corsOrigins;
 
     @Value("${aws.s3.bucket:}")
     private String s3Bucket;
 
+    @Value("${spring.profiles.active:}")
+    private String perfilesActivos;
+
     @Override
     public void onApplicationEvent(@NonNull ApplicationStartedEvent event) {
-        boolean isProduction = appUrl != null
-            && appUrl.startsWith("https://")
-            && !appUrl.contains("localhost");
+        boolean isProduction = esProduccion(appUrl, perfilesActivos);
 
         List<String> criticals = new ArrayList<>();
         List<String> warnings  = new ArrayList<>();
+        // Fatales: en prod abortan el arranque (fail-closed), no solo se loguean.
+        List<String> fatales   = new ArrayList<>();
 
         // ── JWT secret strength ───────────────────────────────────────────────
         if (jwtSecret == null || jwtSecret.isBlank()) {
@@ -73,8 +76,11 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
         }
 
         // ── CORS sanity in production ─────────────────────────────────────────
-        if (isProduction && corsOrigins != null && corsOrigins.contains("localhost")) {
-            warnings.add("CORS_ALLOWED_ORIGINS contains 'localhost' in a production environment: " + corsOrigins);
+        // Fail-closed: en prod no se arranca con orígenes vacíos, '*' ni localhost/127.0.0.1.
+        String problemaCors = AllowedOrigins.problemaEnProduccion(corsOrigins);
+        if (isProduction && problemaCors != null) {
+            criticals.add(problemaCors + " en producción");
+            fatales.add(problemaCors);
         }
 
         // ── AWS Rekognition (moderación de imágenes) ──────────────────────────
@@ -110,5 +116,21 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
             log.error("[SECURITY CONFIG] {} critical security misconfiguration(s) detected in {} environment. " +
                 "Resolve immediately.", criticals.size(), isProduction ? "PRODUCTION" : "DEVELOPMENT");
         }
+
+        if (isProduction && !fatales.isEmpty()) {
+            throw new IllegalStateException("[SECURITY CONFIG] Arranque abortado: " + String.join("; ", fatales));
+        }
+    }
+
+    /**
+     * Prod si cualquiera de las dos señales lo indica: app.url https no-localhost, o un perfil activo
+     * "prod"/"production". Así un app.url mal puesto no apaga la validación en prod.
+     */
+    static boolean esProduccion(String appUrl, String perfiles) {
+        boolean porUrl = appUrl != null && appUrl.startsWith("https://") && !appUrl.contains("localhost");
+        boolean porPerfil = perfiles != null && java.util.Arrays.stream(perfiles.split(","))
+            .map(p -> p.trim().toLowerCase(java.util.Locale.ROOT))
+            .anyMatch(p -> p.equals("prod") || p.equals("production"));
+        return porUrl || porPerfil;
     }
 }

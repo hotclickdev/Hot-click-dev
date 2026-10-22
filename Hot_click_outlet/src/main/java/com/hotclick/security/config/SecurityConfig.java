@@ -49,8 +49,8 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
-    @Value("${cors.allowed.origins:http://localhost:3000,http://localhost:5173}")
-    private String allowedOrigins;
+    @Autowired
+    private com.hotclick.config.AllowedOrigins allowedOrigins;
 
     @Value("${security.password.bcrypt-cost:" + BCRYPT_COST_DEFAULT + "}")
     private int bcryptCost;
@@ -108,7 +108,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        config.setAllowedOrigins(allowedOrigins.lista().stream().filter(o -> !"*".equals(o)).toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(
             "Authorization", "Content-Type", "Accept", "Origin",

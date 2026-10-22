@@ -1,3 +1,4 @@
+import '@/test-utils/memoriaLocalStorage'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/utils/sentryClient', () => ({
@@ -135,5 +136,29 @@ describe('authStore impersonación', () => {
     useAuthStore.getState().habilitarEscrituraImpersonacion('otro', null)
     expect(useAuthStore.getState().token).toBe('admin.token')
     expect(useAuthStore.getState().impersonacionModo).toBeNull()
+  })
+
+  it('H-01: adminOriginal (token del admin) nunca llega a localStorage durante la impersonación', () => {
+    useAuthStore.getState().login(authData({ accessToken: 'admin.secreto' }))
+    useAuthStore.getState().impersonar({ accessToken: 'imp.token', rol: 'EMPRENDEDOR', empresaId: 7 })
+    expect(useAuthStore.getState().adminOriginal?.token).toBe('admin.secreto') // en memoria sí
+    const raw = localStorage.getItem('hotclick-auth') ?? ''
+    expect(raw).not.toContain('admin.secreto')
+    expect(JSON.parse(raw).state).not.toHaveProperty('adminOriginal')
+  })
+
+  it('H-01: tras recargar (sin adminOriginal en memoria) salir de la impersonación cierra la sesión', () => {
+    useAuthStore.setState({ impersonando: true, token: 'imp.token', userRole: 'EMPRENDEDOR', adminOriginal: null })
+    useAuthStore.getState().salirImpersonacion()
+    expect(useAuthStore.getState().token).toBeNull()
+    expect(useAuthStore.getState().impersonando).toBe(false)
+  })
+
+  it('H-01: migra el almacenamiento v0 descartando adminOriginal', async () => {
+    const opts = useAuthStore.persist.getOptions()
+    const migrado = await opts.migrate!({ token: 't', adminOriginal: { token: 'admin.secreto' } }, 0) as Record<string, unknown>
+    expect(migrado).not.toHaveProperty('adminOriginal')
+    expect(migrado.token).toBe('t')
+    expect(opts.version).toBe(1)
   })
 })

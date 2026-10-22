@@ -512,7 +512,7 @@ JWT_SECRET=[openssl rand -base64 64]
 INTERNAL_SECRET=[openssl rand -hex 32]
 TOTP_ENCRYPTION_KEY=[openssl rand -hex 32]
 APP_URL=https://hotclick.lat
-CORS_ALLOWED_ORIGINS=https://hotclick.lat,http://localhost:3000
+CORS_ALLOWED_ORIGINS=https://hotclick.lat
 
 # ── AWS S3 ────────────────────────────────────────────────────────────────────
 # Credenciales NO necesarias aquí — el EC2 usa el Instance Profile (IAM Role)

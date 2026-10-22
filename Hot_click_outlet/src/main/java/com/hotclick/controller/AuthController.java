@@ -96,11 +96,25 @@ public class AuthController {
 
     // ── Refresh access token ──────────────────────────────────────────────────
 
+    /** H-03: fuente única de orígenes, la misma que usa CORS en SecurityConfig. */
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.hotclick.config.AllowedOrigins allowedOrigins;
+
+    static final String MSG_ORIGEN = "No pudimos validar el origen de la solicitud. Volvé a iniciar sesión desde la app.";
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody(required = false) Map<String, String> body,
                                      HttpServletRequest request,
                                      HttpServletResponse response) {
+        // Fail-closed: la cookie de refresh solo se canjea desde un origen permitido (anti-CSRF / login-CSRF).
+        if (!origenPermitido(request.getHeader("Origin"))) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body(ResponseDTO.error(MSG_ORIGEN));
+        }
         return authLoginService.refresh(body, request, response);
+    }
+
+    boolean origenPermitido(String origin) {
+        return allowedOrigins != null && allowedOrigins.permite(origin);
     }
 
     // ── Logout — revoca refresh token ─────────────────────────────────────────

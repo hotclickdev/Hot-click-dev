@@ -196,7 +196,12 @@ const useAuthStore = create<AuthState>()(
 
       salirImpersonacion: () => {
         const original = get().adminOriginal
-        if (!original) return
+        if (!original) {
+          // H-01 quick win: la sesión del admin vive solo en memoria. Tras recargar ya no existe:
+          // cerramos la sesión de soporte (fail-closed) y el admin vuelve a entrar.
+          if (get().impersonando) get().logout()
+          return
+        }
         set({ ...original, impersonando: false, impersonacionModo: null,
           impersonacionEscrituraHasta: null, adminOriginal: null })
       },
@@ -208,6 +213,13 @@ const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'hotclick-auth',
+      version: 1,
+      // v0 guardaba adminOriginal (con el token del admin) en localStorage: se descarta.
+      migrate: (persisted) => {
+        const st = { ...(persisted as Record<string, unknown> | null ?? {}) }
+        delete st.adminOriginal
+        return st as unknown as AuthState
+      },
       partialize: (state) => ({
         token: state.token,
         userId: state.userId,
@@ -223,7 +235,7 @@ const useAuthStore = create<AuthState>()(
         impersonando: state.impersonando,
         impersonacionModo: state.impersonacionModo,
         impersonacionEscrituraHasta: state.impersonacionEscrituraHasta,
-        adminOriginal: state.adminOriginal,
+        // adminOriginal NUNCA se persiste: queda solo en memoria (H-01 quick win).
       }),
     }
   )

@@ -259,7 +259,7 @@ class AuthSecurityHardeningTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Refresh con token inválido → 401")
     void refreshInvalidToken_returns401() throws Exception {
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of(
                     "refreshToken", "not-a-real-uuid-refresh-token"
@@ -270,7 +270,7 @@ class AuthSecurityHardeningTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Refresh sin body → 400")
     void refreshEmptyBody_returns400() throws Exception {
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isBadRequest());

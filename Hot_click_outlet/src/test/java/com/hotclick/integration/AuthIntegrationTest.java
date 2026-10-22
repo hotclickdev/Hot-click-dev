@@ -108,6 +108,47 @@ class AuthIntegrationTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
+    // ── H-03: Origin en /refresh (fail-closed) ───────────────────────────────
+
+    @Test
+    @DisplayName("POST /api/auth/refresh sin Origin → 403 genérico")
+    void refresh_sinOrigin_403() throws Exception {
+        String rt = mapper.readTree(doLogin("testuser@hotclick.cr", "Test1234!")).path("refreshToken").asText();
+        mockMvc.perform(post("/api/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(Map.of("refreshToken", rt))))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.accessToken").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/refresh con otro puerto o barra final en Origin → 403 (solo coincidencia exacta)")
+    void refresh_originPuertoOBarra_403() throws Exception {
+        String rt = mapper.readTree(doLogin("testuser@hotclick.cr", "Test1234!")).path("refreshToken").asText();
+        for (String o : new String[]{"http://localhost:3001", "http://localhost", "http://localhost:3000/", "http://localhost:3000//"}) {
+            mockMvc.perform(post("/api/auth/refresh").header("Origin", o).contentType(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(Map.of("refreshToken", rt))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.accessToken").doesNotExist());
+        }
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/refresh con Origin ajeno → 403 genérico y no rota el token")
+    void refresh_originAjeno_403() throws Exception {
+        String rt = mapper.readTree(doLogin("testuser@hotclick.cr", "Test1234!")).path("refreshToken").asText();
+        for (String o : new String[]{"https://evil.example.com", "http://localhost:3000.evil.example.com", "null"}) {
+            mockMvc.perform(post("/api/auth/refresh").header("Origin", o).contentType(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(Map.of("refreshToken", rt))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.accessToken").doesNotExist());
+        }
+        // el token sigue siendo válido desde el origen permitido
+        mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(Map.of("refreshToken", rt))))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.accessToken").isNotEmpty());
+    }
+
     // ── Refresh token ─────────────────────────────────────────────────────────
 
     @Test
@@ -116,7 +157,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
         String loginBody = doLogin("testuser@hotclick.cr", "Test1234!");
         String refreshToken = mapper.readTree(loginBody).path("refreshToken").asText();
 
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
             .andExpect(status().isOk())
@@ -126,7 +167,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/auth/refresh → token inventado retorna 401")
     void refresh_invalidToken_returns401() throws Exception {
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of(
                     "refreshToken", "not-a-real-token-uuid"
@@ -137,7 +178,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/auth/refresh → sin body retorna 400")
     void refresh_missingBody_returns400() throws Exception {
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isBadRequest());
@@ -158,7 +199,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
             .andExpect(status().isOk());
 
         // Mismo token ya no puede refrescar
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh").header("Origin", "http://localhost:3000")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
             .andExpect(status().isUnauthorized());

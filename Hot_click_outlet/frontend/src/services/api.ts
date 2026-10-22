@@ -30,6 +30,43 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+const esRefresh = (url?: string) => !!url && url.includes('/auth/refresh')
+
+// Single-flight: los 401 concurrentes comparten UNA sola llamada a /auth/refresh,
+// así la rotación del refresh token no detecta un falso "reuso" y revoca la familia.
+let refreshEnCurso: Promise<string | null> | null = null
+
+export function refrescarUnaVez(): Promise<string | null> {
+  if (!refreshEnCurso) {
+    refreshEnCurso = axios
+      .post<{ accessToken?: string }>('/api/auth/refresh', {}, { withCredentials: true })
+      .then(({ data }) => {
+        if (!data?.accessToken) return null
+        useAuthStore.getState().updateAccessToken(data.accessToken)
+        cierreHecho = false
+        return data.accessToken
+      })
+      .catch(() => null)
+      .finally(() => { refreshEnCurso = null })
+  }
+  return refreshEnCurso
+}
+
+// Logout una sola vez aunque fallen varios requests a la vez.
+let cierreHecho = false
+function cerrarSesionUnaVez(hadSession: boolean) {
+  if (cierreHecho) return
+  cierreHecho = true
+  localStorage.removeItem('hotclick-auth')
+  if (hadSession) {
+    const dest = `${globalThis.location.pathname}${globalThis.location.search}`
+    globalThis.location.href = rutaLoginConRetorno(dest)
+  }
+}
+
+/** Solo para tests. */
+export function __resetAuthRefreshParaTests() { refreshEnCurso = null; cierreHecho = false }
+
 // Auto-unwrap ResponseDTO { success, message, data }
 // Responses sin ese shape (AuthResponse, Maps) pasan sin cambios
 api.interceptors.response.use(
@@ -47,32 +84,17 @@ api.interceptors.response.use(
     const status   = error.response?.status
     const original = error.config as RetryConfig | undefined
 
-    // Renueva el access token con la cookie HttpOnly (no localStorage)
-    if (status === 401 && original && !original._retry) {
+    // Renueva el access token con la cookie HttpOnly (no localStorage).
+    // No reintenta el propio /auth/refresh para evitar bucles.
+    if (status === 401 && original && !original._retry && !esRefresh(original.url)) {
       original._retry = true
-      const stored = getStored()
-      const hadSession = !!stored.token
-
-      try {
-        const { data } = await axios.post<{ accessToken?: string }>(
-          '/api/auth/refresh',
-          {},
-          { withCredentials: true },
-        )
-        if (data?.accessToken) {
-          useAuthStore.getState().updateAccessToken(data.accessToken)
-          original.headers.Authorization = `Bearer ${data.accessToken}`
-          return api(original)
-        }
-      } catch {
-        // Refresh falló → logout completo
+      const hadSession = !!getStored().token
+      const token = await refrescarUnaVez()
+      if (token) {
+        original.headers.Authorization = `Bearer ${token}`
+        return api(original)
       }
-
-      localStorage.removeItem('hotclick-auth')
-      if (hadSession) {
-        const dest = `${globalThis.location.pathname}${globalThis.location.search}`
-        globalThis.location.href = rutaLoginConRetorno(dest)
-      }
+      cerrarSesionUnaVez(hadSession)
     }
 
     return Promise.reject(error)
