@@ -18,6 +18,7 @@ class ProductionConfigValidatorCorsTest {
         ReflectionTestUtils.setField(v, "appUrl", appUrl);
         ReflectionTestUtils.setField(v, "corsOrigins", cors);
         ReflectionTestUtils.setField(v, "s3Bucket", "");
+        ReflectionTestUtils.setField(v, "tilopayWebhookSecret", "t".repeat(32)); // valor de test, no real
         // Unificado con fix/auth-enumeracion: clave WebAuthn válida para aislar el chequeo de CORS.
         ReflectionTestUtils.setField(v, "webauthnSyntheticKey", java.util.Base64.getEncoder().encodeToString(new byte[32]));
         return v;
@@ -58,7 +59,7 @@ class ProductionConfigValidatorCorsTest {
     @DisplayName("perfil prod/production con app.url localhost → igual aborta")
     void perfilProdAborta(String perfiles) {
         var v = validador("http://localhost:3000", "");
-        ReflectionTestUtils.setField(v, "perfilesActivos", perfiles);
+        ReflectionTestUtils.setField(v, "environment", entornoCon(perfiles));
         assertThatThrownBy(() -> v.onApplicationEvent(null))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("CORS_ALLOWED_ORIGINS");
     }
@@ -68,8 +69,17 @@ class ProductionConfigValidatorCorsTest {
     @DisplayName("perfil no prod con app.url localhost → no aborta")
     void perfilNoProdNoAborta(String perfiles) {
         var v = validador("http://localhost:3000", "");
-        ReflectionTestUtils.setField(v, "perfilesActivos", perfiles);
+        ReflectionTestUtils.setField(v, "environment", entornoCon(perfiles));
         assertThatCode(() -> v.onApplicationEvent(null)).doesNotThrowAnyException();
+    }
+
+    /** Environment con esos perfiles activos (separados por coma), como los vería Spring. */
+    static org.springframework.mock.env.MockEnvironment entornoCon(String perfiles) {
+        var env = new org.springframework.mock.env.MockEnvironment();
+        if (perfiles != null) {
+            env.setActiveProfiles(java.util.Arrays.stream(perfiles.split(",")).filter(x -> !x.isBlank()).toArray(String[]::new));
+        }
+        return env;
     }
 
     @org.junit.jupiter.api.Test

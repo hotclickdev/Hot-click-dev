@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.Environment;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
@@ -46,12 +47,18 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
     @Value("${aws.s3.bucket:}")
     private String s3Bucket;
 
-    @Value("${spring.profiles.active:}")
-    private String perfilesActivos;
+    // Perfiles efectivos (incluye spring.profiles.include, grupos y setAdditionalProfiles/setActiveProfiles).
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private Environment environment;
+
+    // Retiro de Tilopay (plan-retiro-tilopay.md): borrar este campo y su chequeo junto con la integración.
+    @Value("${tilopay.webhook-secret:}")
+    private String tilopayWebhookSecret;
 
     @Override
     public void onApplicationEvent(@NonNull ApplicationStartedEvent event) {
-        boolean isProduction = esProduccion(appUrl, perfilesActivos);
+        boolean isProduction = esProduccion(appUrl,
+            environment == null ? "" : String.join(",", environment.getActiveProfiles()));
 
         List<String> criticals = new ArrayList<>();
         List<String> warnings  = new ArrayList<>();
@@ -91,6 +98,13 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
         if (isProduction && problemaCors != null) {
             criticals.add(problemaCors + " en producción");
             fatales.add(problemaCors);
+        }
+
+        // ── Tilopay webhook secret (sin él, TilopayWebhookController rechaza todo) ──
+        String problemaTilopay = problemaTilopayWebhookSecret(tilopayWebhookSecret);
+        if (isProduction && problemaTilopay != null) {
+            criticals.add(problemaTilopay);
+            fatales.add(problemaTilopay);
         }
 
         // ── AWS Rekognition (moderación de imágenes) ──────────────────────────
@@ -137,10 +151,41 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
      * "prod"/"production". Así un app.url mal puesto no apaga la validación en prod.
      */
     static boolean esProduccion(String appUrl, String perfiles) {
-        boolean porUrl = appUrl != null && appUrl.startsWith("https://") && !appUrl.contains("localhost");
+        boolean porUrl = esUrlProduccion(appUrl);
         boolean porPerfil = perfiles != null && java.util.Arrays.stream(perfiles.split(","))
             .map(p -> p.trim().toLowerCase(java.util.Locale.ROOT))
             .anyMatch(p -> p.equals("prod") || p.equals("production"));
         return porUrl || porPerfil;
+    }
+
+    /**
+     * Fail-closed: toda URL que empieza con https:// (sin distinguir mayúsculas) es prod, salvo que el host
+     * sea explícitamente localhost, *.localhost o 127.0.0.1. Si no se puede parsear o no tiene host, es prod.
+     * Lo que no empieza con https:// (http://, vacío, basura) no es prod por URL; ahí decide el perfil.
+     */
+    static boolean esUrlProduccion(String appUrl) {
+        if (appUrl == null) return false;
+        String url = appUrl.trim();
+        if (!url.toLowerCase(java.util.Locale.ROOT).startsWith("https://")) return false;
+        String host;
+        try {
+            host = new java.net.URI(url).getHost();
+        } catch (java.net.URISyntaxException e) {
+            return true;
+        }
+        if (host == null || host.isEmpty()) return true;
+        host = host.toLowerCase(java.util.Locale.ROOT);
+        return !(host.equals("localhost") || host.endsWith(".localhost") || host.equals("127.0.0.1"));
+    }
+
+    static final int LARGO_MIN_TILOPAY_WEBHOOK_SECRET = 32;
+
+    /** Problema con TILOPAY_WEBHOOK_SECRET (vacío o con menos de 32 caracteres), o null. Nunca incluye el valor. */
+    static String problemaTilopayWebhookSecret(String secret) {
+        if (secret == null || secret.isBlank()) return "TILOPAY_WEBHOOK_SECRET vacío o ausente";
+        if (secret.trim().length() < LARGO_MIN_TILOPAY_WEBHOOK_SECRET) {
+            return "TILOPAY_WEBHOOK_SECRET demasiado corto (mínimo " + LARGO_MIN_TILOPAY_WEBHOOK_SECRET + " caracteres)";
+        }
+        return null;
     }
 }

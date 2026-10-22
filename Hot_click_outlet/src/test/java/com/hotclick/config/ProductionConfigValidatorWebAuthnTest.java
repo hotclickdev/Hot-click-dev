@@ -19,6 +19,7 @@ class ProductionConfigValidatorWebAuthnTest {
         ReflectionTestUtils.setField(v, "appUrl", appUrl);
         ReflectionTestUtils.setField(v, "corsOrigins", "https://hotclick.lat");
         ReflectionTestUtils.setField(v, "s3Bucket", "");
+        ReflectionTestUtils.setField(v, "tilopayWebhookSecret", "t".repeat(32)); // valor de test, no real
         ReflectionTestUtils.setField(v, "webauthnSyntheticKey", clave);
         return v;
     }
