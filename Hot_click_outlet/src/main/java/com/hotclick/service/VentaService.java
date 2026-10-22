@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.pedido.MetodoPagoManualPolicy;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -22,6 +23,18 @@ import java.util.List;
 public class VentaService {
 
     private static final Logger log = LoggerFactory.getLogger(VentaService.class);
+
+    /** Revertible: con false vuelve el comportamiento anterior (el registro manual acepta cualquier método). */
+    public static final boolean METODOS_VENTA_RESTRINGIDOS = true;
+
+    /** Revertible: con false vuelve el comportamiento anterior (el estado inicial se toma tal cual llega). */
+    static final boolean ESTADO_INICIAL_VENTA_RESTRINGIDO = true;
+
+    public static final String MSG_METODO_REQUIERE_PASARELA = MetodoPagoManualPolicy.MSG_METODO_REQUIERE_PASARELA;
+    public static final String MSG_ESTADO_INICIAL_INVALIDO = MetodoPagoManualPolicy.MSG_ESTADO_INICIAL_INVALIDO;
+
+    private static final java.util.Set<String> METODOS_ENVIO_PERMITIDOS = java.util.Set.of(
+        Constants.ENVIO_RETIRO, Constants.ENVIO_DOMICILIO, Constants.ENVIO_ENCOMIENDA);
 
     @Autowired private PedidoService               pedidoService;
     @Autowired private StockService                stockService;
@@ -46,6 +59,10 @@ public class VentaService {
         if (empresaId == null) {
             throw new IllegalStateException("No se pudo determinar la empresa del usuario actual");
         }
+        // Validaciones puras: antes de cualquier consulta o efecto
+        String metodoPago = exigirMetodoVenta(dto.getMetodoPago());
+        validarVocabularioEstado(dto.getEstadoInicial());
+
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada: id=" + empresaId));
 
@@ -57,8 +74,9 @@ public class VentaService {
         pedido.setEmpresa(empresa);
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
-        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
-        pedido.setMetodoEnvio(resolverMetodoEnvio(dto));
+        String metodoEnvio = resolverMetodoEnvio(dto);
+        pedido.setMetodoPago(metodoPago);
+        pedido.setMetodoEnvio(metodoEnvio);
         pedido.setNotas(dto.getNotas());
         pedido.setAplicaImpuesto(false);
         pedido.setMontoImpuesto(0);
@@ -118,14 +136,9 @@ public class VentaService {
                 : BigDecimal.ZERO
         );
         pedido.setItems(items);
-        String estadoInicial = dto.getEstadoInicial();
-        pedido.setEstadoPedido(estadoInicial != null && !estadoInicial.isBlank()
-            ? estadoInicial
-            : Constants.PEDIDO_COMPLETADO);
-        OrigenPedido origen = OrigenPedido.normalizar(dto.getOrigen());
-        if (origen != null) {
-            pedido.setOrigen(origen.codigo());
-        }
+        pedido.setEstadoPedido(resolverEstadoInicial(metodoPago, metodoEnvio, dto.getEstadoInicial()));
+        // El origen no lo elige quien llama: toda venta registrada desde el panel o el asistente es MANUAL.
+        pedido.setOrigen(OrigenPedido.MANUAL.codigo());
 
         Pedido nuevo = pedidoService.crearPedido(pedido);
 
@@ -137,6 +150,42 @@ public class VentaService {
         }
 
         return nuevo;
+    }
+
+    // ── Reglas del registro manual (puras, sin consultas) ──────────────────────
+
+    /**
+     * Rechaza todo método distinto de EFECTIVO y devuelve el valor canónico a persistir.
+     * null, vacío o blanco siguen siendo efectivo. Debe correr antes de cualquier efecto.
+     */
+    public static String exigirMetodoVenta(String metodoPago) {
+        return exigirMetodoVenta(metodoPago, METODOS_VENTA_RESTRINGIDOS);
+    }
+
+    static String exigirMetodoVenta(String metodoPago, boolean restringido) {
+        return MetodoPagoManualPolicy.exigirEfectivo(metodoPago, restringido);
+    }
+
+    private static void validarVocabularioEstado(String estadoSolicitado) {
+        if (ESTADO_INICIAL_VENTA_RESTRINGIDO) {
+            MetodoPagoManualPolicy.normalizarEstadoConocido(estadoSolicitado);
+        }
+    }
+
+    /**
+     * Estado con el que nace la venta. Solo el efectivo con retiro puede nacer cerrado
+     * (COMPLETADO o ENTREGADO; sin estado, COMPLETADO); todo lo demás nace PENDIENTE.
+     */
+    public static String resolverEstadoInicial(String metodoCanonico, String metodoEnvioResuelto,
+                                               String estadoSolicitado) {
+        return resolverEstadoInicial(metodoCanonico, metodoEnvioResuelto, estadoSolicitado,
+            ESTADO_INICIAL_VENTA_RESTRINGIDO);
+    }
+
+    static String resolverEstadoInicial(String metodoCanonico, String metodoEnvioResuelto,
+                                        String estadoSolicitado, boolean restringido) {
+        return MetodoPagoManualPolicy.estadoVentaPanel(metodoCanonico, metodoEnvioResuelto,
+            estadoSolicitado, restringido);
     }
 
     // ── Validaciones ────────────────────────────────────────────────────────────
@@ -195,7 +244,13 @@ public class VentaService {
     }
 
     private String resolverMetodoEnvio(VentaRequestDTO dto) {
-        if (dto.getMetodoEnvio() != null) return dto.getMetodoEnvio();
+        if (dto.getMetodoEnvio() != null && !dto.getMetodoEnvio().isBlank()) {
+            String envio = dto.getMetodoEnvio().trim();
+            if (!METODOS_ENVIO_PERMITIDOS.contains(envio)) {
+                throw new IllegalArgumentException("Método de envío no válido.");
+            }
+            return envio;
+        }
         if ("DOMICILIO".equalsIgnoreCase(dto.getTipoEntrega())) return Constants.ENVIO_DOMICILIO;
         return Constants.ENVIO_RETIRO;
     }
@@ -205,7 +260,7 @@ public class VentaService {
             Bodega bodega = bodegaRepository.findById(dto.getBodegaId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada: id=" + dto.getBodegaId()));
             // Evita que una empresa registre una venta contra la bodega de otra empresa.
-            if (bodega.getEmpresa() != null && !empresaId.equals(bodega.getEmpresa().getId())) {
+            if (bodega.getEmpresa() == null || !empresaId.equals(bodega.getEmpresa().getId())) {
                 throw new IllegalArgumentException("La bodega indicada no pertenece a tu empresa");
             }
             return bodega;

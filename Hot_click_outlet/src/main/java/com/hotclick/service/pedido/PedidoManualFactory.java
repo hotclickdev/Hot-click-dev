@@ -41,6 +41,11 @@ public class PedidoManualFactory {
     static final String MSG_CLIENTE = "Cliente no encontrado. Búscalo en tus clientes o créalo primero.";
 
     public Pedido crearPedidoManual(ManualPedidoDTO dto, Empresa empresa) {
+        return crearPedidoManual(dto, empresa, false);
+    }
+
+    /** {@code compraExterna}: asignación de una compra hecha fuera de la plataforma (método EXTERNO permitido). */
+    public Pedido crearPedidoManual(ManualPedidoDTO dto, Empresa empresa, boolean compraExterna) {
         Long empresaId = empresa != null ? empresa.getId() : null; // null solo ADMIN de plataforma
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
             .orElseThrow(() -> new RecursoNoEncontradoException(MSG_CLIENTE));
@@ -50,7 +55,9 @@ public class PedidoManualFactory {
         }
 
         Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
-        String estadoInicial = dto.getEstadoPedido() != null ? dto.getEstadoPedido() : Constants.PEDIDO_PENDIENTE;
+        // Solo el cobro presencial nace pagado o cerrado; el resto nace PENDIENTE y se confirma luego.
+        String estadoInicial = MetodoPagoManualPolicy.estadoPedidoManual(
+            dto.getMetodoPago(), dto.getEstadoPedido(), compraExterna);
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));

@@ -9,6 +9,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.TelegramClienteBotService;
+import com.hotclick.service.VentaService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,10 @@ public class TelegramFlujoSupport {
     public static final int  PAGINA          = 8;
     public static final int  MAX_FOTOS       = 5;
     public static final long MAX_FOTO_BYTES  = 10L * 1024 * 1024;
-    public static final List<String> METODOS_PAGO = List.of("SINPE", "EFECTIVO", "TARJETA");
+    /** Métodos de pago admitidos por el bot: sigue la restricción del registro manual de ventas. */
+    public static final List<String> METODOS_PAGO = VentaService.METODOS_VENTA_RESTRINGIDOS
+        ? List.of("EFECTIVO")
+        : List.of("SINPE", "EFECTIVO", "TARJETA");
 
     public static final String BTN_CANCELAR = "flx:x";
 

@@ -3,6 +3,8 @@ package com.hotclick.controller;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.exception.VentaEstadoInicialInvalidoException;
+import com.hotclick.exception.VentaMetodoRequierePasarelaException;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
@@ -51,9 +53,20 @@ public class VentaController {
         Long empresaId = companyScope.requireEmpresaId(); // sin empresa → 403 (antes 400)
         try {
             Pedido nuevo = ventaService.crearVenta(dto, userDetails.getUsername(), empresaId);
-            return ResponseEntity.ok(ResponseDTO.success("Venta creada exitosamente", nuevo.getId()));
+            // Estado real persistido (no el pedido): el panel solo usa el éxito; el id se conserva.
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("id", nuevo.getId());
+            resultado.put("numeroPedido", nuevo.getNumeroPedido());
+            resultado.put("estadoPedido", nuevo.getEstadoPedido());
+            return ResponseEntity.ok(ResponseDTO.success("Venta creada exitosamente", resultado));
         } catch (StockInsuficienteException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (VentaMetodoRequierePasarelaException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(),
+                Map.of("codigo", VentaMetodoRequierePasarelaException.CODIGO)));
+        } catch (VentaEstadoInicialInvalidoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage(),
+                Map.of("codigo", VentaEstadoInicialInvalidoException.CODIGO)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

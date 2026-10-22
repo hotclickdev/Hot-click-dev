@@ -97,6 +97,13 @@ public class PedidoService {
         return pedidoManualFactory.crearPedidoManual(dto, empresa);
     }
 
+    /** Asignación de compra externa: igual que el pedido manual, pero admite el método EXTERNO. */
+    @CacheEvict(value = "dashboard-metricas", key = "#empresa.id.toString()")
+    @Transactional
+    public Pedido crearCompraExterna(ManualPedidoDTO dto, Empresa empresa) {
+        return pedidoManualFactory.crearPedidoManual(dto, empresa, true);
+    }
+
     /** Cambio de estado sin referencia de pago (Telegram/copiloto): PAGADO manual queda rechazado (400). */
     @Transactional
     public Pedido cambiarEstado(Long id, String nuevoEstado, String nota) {

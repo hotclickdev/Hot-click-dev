@@ -64,7 +64,7 @@ export default function () {
       precioUnitario: null, // usa precio del sistema
     }],
     metodoPago:  'EFECTIVO',
-    metodoEnvio: 'RETIRO',
+    // Sin metodoEnvio: el servidor resuelve el retiro en tienda por defecto
     costoEnvio:  0,
     notas:       `VU-${__VU} iter-${__ITER}`,
   });

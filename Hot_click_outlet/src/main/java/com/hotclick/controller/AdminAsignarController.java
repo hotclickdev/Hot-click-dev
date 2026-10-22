@@ -184,7 +184,7 @@ public class AdminAsignarController {
             // tenant-global-ok: carga la empresa propia por id (o ninguna si es ADMIN), no lista nada
             com.hotclick.model.Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
 
-            com.hotclick.model.Pedido pedido = pedidoService.crearPedidoManual(dto, empresa);
+            com.hotclick.model.Pedido pedido = pedidoService.crearCompraExterna(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Compra registrada correctamente", pedido));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));

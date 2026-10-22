@@ -627,13 +627,17 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postSinLimite(mensajeConId(CHAT_ID, "2", update));
         postSinLimite(mensajeConId(CHAT_ID, "2", update + 1));
         postSinLimite(callback(CHAT_ID, "vta:cont"));
-        postSinLimite(callback(CHAT_ID, "vta:pay:SINPE"));
+        postSinLimite(callback(CHAT_ID, "vta:pay:EFECTIVO"));
         postSinLimite(callback(CHAT_ID, "vta:nocli"));
 
         String confirmar = callbackConId(CHAT_ID, "vta:ok", update + 2);
         postSinLimite(confirmar);
         postSinLimite(confirmar);
 
+        Pedido creado = pedidoRepository.findAll().get(0);
+        assertThat(creado.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENTREGADO);
+        assertThat(creado.getMetodoPago()).isEqualTo("EFECTIVO");
+        assertThat(creado.getOrigen()).isEqualTo(OrigenPedido.MANUAL.codigo());
         assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(10);
         Number cantidad = jdbcTemplate.queryForObject(
             "SELECT SUM(cantidad) FROM hot_click_pedido_item_tb WHERE fk_id_producto = ?",
@@ -643,6 +647,122 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
             Number.class, p.getId());
         assertThat(cantidad.intValue()).isEqualTo(2);
         assertThat(pedidos.intValue()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Venta por bot: un pago electronico no crea pedido, avisa y no fija el pago")
+    void bot_pagoElectronico_noCreaPedido() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar rosa", 12, 3);
+
+        for (String metodo : List.of("SINPE", "TARJETA")) {
+            clearInvocations(bot);
+            postSinLimite(callback(CHAT_ID, "vta:new"));
+            postSinLimite(callback(CHAT_ID, "vta:p:" + p.getId()));
+            postSinLimite(mensajeTexto(CHAT_ID, "2"));
+            postSinLimite(callback(CHAT_ID, "vta:cont"));
+            postSinLimite(callback(CHAT_ID, "vta:pay:" + metodo));
+
+            verify(bot, atLeastOnce()).enviarMensaje(eq(CHAT_ID), contains("pasarela de pagos"));
+            String contexto = vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto();
+            TelegramFlujoEstado estado = TelegramFlujoEstado.deserializar(contexto, objectMapper).orElseThrow();
+            assertThat(estado.getPago()).isNull();
+        }
+        assertThat(pedidoRepository.count()).isZero();
+        assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(12);
+    }
+
+    @Test
+    @DisplayName("Venta por bot: el teclado de pago ofrece solo Efectivo")
+    @SuppressWarnings("unchecked")
+    void bot_tecladoPago_soloEfectivo() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar verde", 12, 3);
+
+        postSinLimite(callback(CHAT_ID, "vta:new"));
+        postSinLimite(callback(CHAT_ID, "vta:p:" + p.getId()));
+        postSinLimite(mensajeTexto(CHAT_ID, "1"));
+        clearInvocations(bot);
+        postSinLimite(callback(CHAT_ID, "vta:cont"));
+
+        ArgumentCaptor<List<List<Map<String, Object>>>> teclado = ArgumentCaptor.forClass(List.class);
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("solo se registran ventas cobradas en efectivo"), teclado.capture());
+        List<String> datos = teclado.getValue().stream().flatMap(List::stream)
+            .map(b -> String.valueOf(b.get("callback_data"))).toList();
+        assertThat(datos).contains("vta:pay:EFECTIVO")
+            .doesNotContain("vta:pay:SINPE", "vta:pay:TARJETA");
+        assertThat(datos.stream().filter(d -> d.startsWith("vta:pay:")).count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Venta por bot: un borrador viejo con SINPE no se confirma y vuelve al paso de pago")
+    void bot_borradorConSinpe_noSeConfirma() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar azul", 12, 3);
+        TelegramFlujoEstado estado = TelegramFlujoEstado.nuevaVenta(LocalDateTime.now(Constants.ZONA_CR));
+        estado.setItems(new java.util.ArrayList<>(List.of(new TelegramFlujoEstado.ItemBorrador(p.getId(), 1))));
+        estado.setPago("SINPE");
+        estado.setP(TelegramFlujoEstado.P_VTA_CONFIRMAR);
+        v.setContexto(estado.serializar(objectMapper));
+        vinculacionRepository.saveAndFlush(v);
+
+        postSinLimite(callback(CHAT_ID, "vta:ok"));
+
+        assertThat(pedidoRepository.count()).isZero();
+        assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(12);
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("pasarela de pagos"), any());
+        verify(bot, never()).enviarMensaje(eq(CHAT_ID), contains("No pude registrar la venta"));
+        String contexto = vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto();
+        TelegramFlujoEstado guardado = TelegramFlujoEstado.deserializar(contexto, objectMapper).orElseThrow();
+        assertThat(guardado.getPago()).isNull();
+        assertThat(guardado.getP()).isEqualTo(TelegramFlujoEstado.P_VTA_PAGO);
+    }
+
+    @Test
+    @DisplayName("Venta por bot: confirmar sin pago elegido no registra nada y vuelve al paso de pago")
+    void bot_vtaOkSinPago_noRegistra() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar gris", 12, 3);
+
+        for (String paso : List.of(TelegramFlujoEstado.P_VTA_PAGO, TelegramFlujoEstado.P_VTA_CONFIRMAR)) {
+            clearInvocations(bot);
+            TelegramFlujoEstado estado = TelegramFlujoEstado.nuevaVenta(LocalDateTime.now(Constants.ZONA_CR));
+            estado.setItems(new java.util.ArrayList<>(List.of(new TelegramFlujoEstado.ItemBorrador(p.getId(), 1))));
+            estado.setPago(null);
+            estado.setP(paso);
+            v.setContexto(estado.serializar(objectMapper));
+            v = vinculacionRepository.saveAndFlush(v);
+
+            postSinLimite(callback(CHAT_ID, "vta:ok"));
+
+            assertThat(pedidoRepository.count()).isZero();
+            assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(12);
+            verify(bot, atLeastOnce()).enviarMensaje(eq(CHAT_ID), contains("pasarela de pagos"), any());
+            String contexto = vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto();
+            TelegramFlujoEstado guardado = TelegramFlujoEstado.deserializar(contexto, objectMapper).orElseThrow();
+            assertThat(guardado.getPago()).isNull();
+            assertThat(guardado.getP()).isEqualTo(TelegramFlujoEstado.P_VTA_PAGO);
+        }
+    }
+
+    @Test
+    @DisplayName("Venta por bot: dos confirmaciones seguidas sobre un borrador con pago no permitido no registran nada")
+    void bot_dobleVtaOkTrasSinpe_noRegistra() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar café", 12, 3);
+        TelegramFlujoEstado estado = TelegramFlujoEstado.nuevaVenta(LocalDateTime.now(Constants.ZONA_CR));
+        estado.setItems(new java.util.ArrayList<>(List.of(new TelegramFlujoEstado.ItemBorrador(p.getId(), 1))));
+        estado.setPago("SINPE");
+        estado.setP(TelegramFlujoEstado.P_VTA_CONFIRMAR);
+        v.setContexto(estado.serializar(objectMapper));
+        vinculacionRepository.saveAndFlush(v);
+
+        long update = System.nanoTime();
+        postSinLimite(callbackConId(CHAT_ID, "vta:ok", update));
+        postSinLimite(callbackConId(CHAT_ID, "vta:ok", update + 1));
+
+        assertThat(pedidoRepository.count()).isZero();
+        assertThat(productoRepository.findById(p.getId()).orElseThrow().getStockActual()).isEqualTo(12);
     }
 
     @Test
