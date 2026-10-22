@@ -1627,7 +1627,9 @@
       "verPedido": "Ver meu pedido",
       "guardarTitulo": "Guarde este pedido na sua conta",
       "guardarTexto": "Com um toque criamos sua conta com este e-mail: acompanhe o envio, repita compras e guarde favoritos.",
-      "guardarBoton": "Criar minha conta com um toque"
+      "guardarBoton": "Criar minha conta com um toque",
+      "yaTenesCuenta": "Já tem conta?",
+      "iniciarSesionMisPedidos": "Entre para ver suas compras em «Meus pedidos»"
     },
     "fallo": {
       "titulo": "Não conseguimos processar o pagamento",

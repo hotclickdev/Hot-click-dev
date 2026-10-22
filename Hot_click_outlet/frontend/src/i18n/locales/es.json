@@ -1627,7 +1627,9 @@
       "verPedido": "Ver mi pedido",
       "guardarTitulo": "Guardá este pedido en tu cuenta",
       "guardarTexto": "Con un toque creamos tu cuenta con este correo: seguís el envío, repetís compras y guardás favoritos.",
-      "guardarBoton": "Crear mi cuenta con un toque"
+      "guardarBoton": "Crear mi cuenta con un toque",
+      "yaTenesCuenta": "¿Ya tenés cuenta?",
+      "iniciarSesionMisPedidos": "Iniciá sesión para ver tus compras en «Mis pedidos»"
     },
     "fallo": {
       "titulo": "No pudimos procesar el pago",
