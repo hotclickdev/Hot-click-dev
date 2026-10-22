@@ -20,6 +20,18 @@ class ConfirmacionPedidoEmailBuilder {
     }
 
     String buildConfirmacionPedido(Pedido pedido, Usuario cliente) {
+        return cuerpo(pedido, cliente, true);
+    }
+
+    /**
+     * Pedido registrado que todavía no se cobró (efectivo o contra entrega en la tienda propia):
+     * mismo correo, pero sin «Total pagado» ni «Gracias por tu compra».
+     */
+    String buildPedidoRecibido(Pedido pedido, Usuario cliente) {
+        return cuerpo(pedido, cliente, false);
+    }
+
+    private String cuerpo(Pedido pedido, Usuario cliente, boolean pagado) {
         StringBuilder filas = new StringBuilder();
         for (PedidoItem item : pedido.getItems()) {
             String nombre = item.getProducto() != null ? layout.esc(item.getProducto().getNombreProducto()) : "Producto";
@@ -37,14 +49,19 @@ class ConfirmacionPedidoEmailBuilder {
         if (esEnvio) {
             montos.append(layout.filaMonto("Envío", layout.monto(pedido.getCostoEnvio()), false));
         }
-        montos.append(layout.filaMonto("Total pagado", layout.monto(pedido.getTotalPedido()), true));
+        montos.append(layout.filaMonto(pagado ? "Total pagado" : "Total a pagar al recibir",
+            layout.monto(pedido.getTotalPedido()), true));
 
         String nombreCliente = primerNombre(cliente.getNombre());
-        String saludo = nombreCliente.isEmpty() ? "¡Gracias por tu compra!" : "¡Gracias por tu compra, " + layout.esc(nombreCliente) + "!";
+        String saludo = pagado
+            ? (nombreCliente.isEmpty() ? "¡Gracias por tu compra!" : "¡Gracias por tu compra, " + layout.esc(nombreCliente) + "!")
+            : (nombreCliente.isEmpty() ? "Tu pedido quedó registrado" : "Tu pedido quedó registrado, " + layout.esc(nombreCliente));
+        String bajada = pagado
+            ? "Recibimos tu pedido #" + layout.esc(pedido.getNumeroPedido()) + ". Te avisamos por correo cuando salga."
+            : "Recibimos tu pedido #" + layout.esc(pedido.getNumeroPedido()) + ". Lo pagás al recibirlo.";
 
         return layout.abrirHtml()
-            + layout.headerConIcono(EmailLayoutHelper.FONDO_EXITO, "check", saludo,
-                "Recibimos tu pedido #" + layout.esc(pedido.getNumeroPedido()) + ". Te avisamos por correo cuando salga.")
+            + layout.headerConIcono(EmailLayoutHelper.FONDO_EXITO, "check", saludo, bajada)
             + layout.abrirCuerpo()
             + layout.caja(filas.toString())
             + layout.tablaMontos(montos.toString())
