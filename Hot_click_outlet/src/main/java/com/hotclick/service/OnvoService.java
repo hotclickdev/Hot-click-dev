@@ -5,7 +5,10 @@ import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -14,17 +17,19 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Cliente HTTP para la API de ONVO Pay (pasarela de tarjetas costarricense).
- * En modo mock (onvo.secret-key vacío) las operaciones retornan datos ficticios
- * para no requerir cuenta ONVO en desarrollo local.
+ * Sin onvo.secret-key, solo los perfiles dev y test simulan ONVO con datos ficticios.
+ * En cualquier otro perfil queda cerrado: ninguna operación crea cobros ni los da por pagados.
  */
 @Service
 public class OnvoService {
 
     private static final Logger log = LoggerFactory.getLogger(OnvoService.class);
     private static final String API_BASE = "https://api.onvopay.com/v1";
+    private static final Pattern ID_ONVO = Pattern.compile("[A-Za-z0-9_-]{1,100}");
 
     @Value("${onvo.secret-key:}")
     private String secretKey;
@@ -37,7 +42,11 @@ public class OnvoService {
 
     private final RestTemplate restTemplate;
 
+    @Autowired(required = false)
+    private Environment environment;
+
     private boolean mockMode = false;
+    private boolean pagosDisponibles = false;
 
     public OnvoService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -45,14 +54,32 @@ public class OnvoService {
 
     @PostConstruct
     public void init() {
-        if (secretKey == null || secretKey.isBlank()) {
-            mockMode = true;
-            log.warn("[onvo] ONVO_SECRET_KEY no configurado — modo MOCK activo. " +
-                     "Pagos con tarjeta lanzarán error hasta configurar la clave.");
+        boolean credenciales = secretKey != null && !secretKey.isBlank();
+        mockMode = !credenciales && perfilDeSimulacion();
+        pagosDisponibles = credenciales || mockMode;
+        if (mockMode) {
+            log.warn("[onvo] Sin ONVO_SECRET_KEY en perfil dev/test — modo simulado. No cobra tarjetas reales.");
+            return;
+        }
+        if (!credenciales) {
+            log.error("[ALERTA-PAGO] ONVO sin ONVO_SECRET_KEY fuera de dev/test. Pagos con tarjeta deshabilitados.");
             return;
         }
         log.info("[onvo] Cliente inicializado (live={})", !secretKey.startsWith("onvo_test_"));
     }
+
+    private boolean perfilDeSimulacion() {
+        return environment != null && environment.acceptsProfiles(Profiles.of("dev", "test"));
+    }
+
+    /** Sin llave fuera de dev/test: falla antes de tocar ONVO o de inventar un id. */
+    private void exigirPagosDisponibles() {
+        if (!pagosDisponibles) {
+            throw new IllegalStateException("ONVO no está configurado. No se procesó el pago.");
+        }
+    }
+
+    public boolean isPagosDisponibles() { return pagosDisponibles; }
 
     public String getWebhookSecret() { return webhookSecret; }
 
@@ -81,6 +108,7 @@ public class OnvoService {
         if (mockMode) {
             return new OnvoCheckoutSession("onvo_mock_" + System.currentTimeMillis(), successUrl);
         }
+        exigirPagosDisponibles();
 
         Map<String, Object> lineItem = Map.of(
             "quantity", 1,
@@ -116,6 +144,7 @@ public class OnvoService {
         if (mockMode) {
             return new OnvoPaymentIntent("onvo_pi_mock_" + System.currentTimeMillis());
         }
+        exigirPagosDisponibles();
 
         Map<String, Object> body = new HashMap<>();
         body.put("amount", totalColones * 100L);
@@ -142,6 +171,7 @@ public class OnvoService {
         if (mockMode) {
             return new OnvoPaymentMethod("onvo_pm_mock_" + System.currentTimeMillis());
         }
+        exigirPagosDisponibles();
         Map<String, Object> body = cuerpoMetodoSinpe(identificacion, numeroE164, nombre, email);
         try {
             return parsePaymentMethod(postOnvo("/payment-methods", body));
@@ -154,6 +184,7 @@ public class OnvoService {
     @Retry(name = "onvo")
     public void confirmarPaymentIntent(String intentId, String paymentMethodId) {
         if (mockMode) return;
+        exigirPagosDisponibles();
         try {
             postOnvo("/payment-intents/" + intentId + "/confirm",
                 Map.of("paymentMethodId", paymentMethodId));
@@ -187,7 +218,7 @@ public class OnvoService {
     @CircuitBreaker(name = "onvo", fallbackMethod = "paymentIntentStatusFallback")
     @Retry(name = "onvo")
     public String paymentIntentStatus(String intentId) {
-        if (mockMode || intentId == null || intentId.isBlank()) return "";
+        if (!consultable(intentId)) return "";
         try {
             Map<?, ?> body = getOnvo("/payment-intents/" + intentId);
             String status = body == null || body.get("status") == null
@@ -197,6 +228,40 @@ public class OnvoService {
             log.warn("[onvo] No se pudo leer payment intent {}: {}", intentId, e.getStatusCode());
             return "";
         }
+    }
+
+    /**
+     * Lee la checkout session en ONVO (GET /v1/checkout/sessions/{id}). La confirmación de un pedido
+     * usa esta respuesta, nunca el cuerpo del webhook. Vacío si ONVO no la tiene o no hay llave.
+     */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "lecturaFallback")
+    @Retry(name = "onvo")
+    public Map<?, ?> obtenerCheckoutSession(String sessionId) {
+        return leer("/checkout/sessions/", sessionId);
+    }
+
+    /** Lee el payment intent en ONVO (GET /v1/payment-intents/{id}): estado, monto en céntimos y moneda. */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "lecturaFallback")
+    @Retry(name = "onvo")
+    public Map<?, ?> obtenerPaymentIntent(String intentId) {
+        return leer("/payment-intents/", intentId);
+    }
+
+    /** 4xx (no existe o no es de esta cuenta) da vacío; 5xx y red se relanzan para reintentar después. */
+    private Map<?, ?> leer(String ruta, String id) {
+        if (!consultable(id)) return Map.of();
+        try {
+            Map<?, ?> body = getOnvo(ruta + id);
+            return body == null ? Map.of() : body;
+        } catch (HttpClientErrorException e) {
+            log.warn("[onvo] No se pudo leer {}{}: {}", ruta, id, e.getStatusCode());
+            return Map.of();
+        }
+    }
+
+    /** Mock o sin llave no consultan; el id viaja en la URL y solo se aceptan ids con forma de ONVO. */
+    private boolean consultable(String id) {
+        return !mockMode && pagosDisponibles && id != null && ID_ONVO.matcher(id).matches();
     }
 
     @SuppressWarnings("rawtypes")
@@ -261,6 +326,10 @@ public class OnvoService {
 
     private String paymentIntentStatusFallback(String intentId, Throwable t) {
         throw relanzarFalloOnvo("paymentIntentPagado", t);
+    }
+
+    private Map<?, ?> lecturaFallback(String id, Throwable t) {
+        throw relanzarFalloOnvo("lectura", t);
     }
 
     private OnvoCheckoutSession crearCheckoutSessionFallback(int totalColones, String descripcion,

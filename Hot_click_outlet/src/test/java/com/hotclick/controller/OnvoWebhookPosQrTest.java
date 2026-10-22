@@ -49,18 +49,20 @@ class OnvoWebhookPosQrTest {
             "secret-onvo");
         assertThat(res.getStatusCode().value()).isEqualTo(200);
         verify(posQrVentaService, never()).completarSiPagoPasarela(any());
-        verify(onvoPaymentProvider, never()).procesarPagoExitoso(any(), any(), any());
+        verify(onvoPaymentProvider, never()).procesarPagoVerificado(any(), any());
     }
 
     @Test
     @DisplayName("Pago de tienda sigue el flujo ONVO normal")
     void pagoTiendaSiNoEsPosQr() {
+        when(onvoPaymentProvider.procesarPagoVerificado("sess_tienda", "webhook"))
+            .thenReturn(OnvoPaymentProvider.Verificacion.OK);
         ResponseEntity<Map<String, String>> res = controller.recibirWebhookOnvo(
             "{\"type\":\"checkout-session.succeeded\",\"data\":{\"id\":\"sess_tienda\"}}",
             "secret-onvo");
         assertThat(res.getStatusCode().value()).isEqualTo(200);
         verify(posQrVentaService, never()).completarSiPagoPasarela(any());
-        verify(onvoPaymentProvider).procesarPagoExitoso(eq("sess_tienda"), any(), eq("webhook"));
+        verify(onvoPaymentProvider).procesarPagoVerificado(eq("sess_tienda"), eq("webhook"));
     }
 
     @Test
@@ -75,6 +77,6 @@ class OnvoWebhookPosQrTest {
         assertThat(res.getStatusCode().value()).isEqualTo(200);
         assertThat(res.getBody()).containsEntry("scope", "billing");
         verify(posQrVentaService, never()).completarSiPagoPasarela(any());
-        verify(onvoPaymentProvider, never()).procesarPagoExitoso(any(), any(), any());
+        verify(onvoPaymentProvider, never()).procesarPagoVerificado(any(), any());
     }
 }
