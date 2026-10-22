@@ -38,6 +38,7 @@ public class SinpeCheckoutService {
     @Autowired private StockReservationService   stockReservationService;
     @Autowired private CheckoutGrupoFactory      checkoutGrupoFactory;
     @Autowired private GuestCancelTokenService   guestCancelTokenService;
+    @Autowired private com.hotclick.service.pedido.AutocompraNegocioGuard autocompraGuard;
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
@@ -73,6 +74,9 @@ public class SinpeCheckoutService {
         CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
             req, reservation, bodegaDefault, proveedorEfectivo, usuario, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         Pedido principal = grupo.principal();
+        // G1b: el comprador (con sesion, o invitado identificado por su correo) no puede ser del negocio vendedor.
+        autocompraGuard.exigirNoEsDelNegocio(usuario, grupo.pedidos());
+        autocompraGuard.exigirCorreoNoEsDelNegocio(emailEfectivo, grupo.pedidos());
         exigirEfectivoAceptado(proveedorEfectivo, grupo.pedidos(),
             contraEntregaPolitica == null || contraEntregaPolitica.habilitada());
         atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());

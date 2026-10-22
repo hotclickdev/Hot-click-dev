@@ -1,6 +1,7 @@
 package com.hotclick.service.pedido;
 
 import com.hotclick.model.ComprobanteSinpe;
+import com.hotclick.model.OrigenPedido;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
@@ -88,6 +89,7 @@ public class PedidoPagoManualService {
     @Autowired @Lazy private PaymentService paymentService;
     @Autowired private AuditoriaAdminRegistroService auditoria;
     @Autowired private CompanyScope companyScope;
+    @Autowired private AutocompraNegocioGuard autocompraGuard;
 
     /**
      * Confirma el pago de {@code pedido} (que está en un estado sin pago confirmado). Deja el pedido
@@ -95,6 +97,7 @@ public class PedidoPagoManualService {
      */
     @Transactional
     public void confirmar(Pedido pedido, String estadoAnterior, String referenciaCruda) {
+        exigirCompradorAjeno(pedido);
         String metodo = normalizarMetodo(pedido.getMetodoPago());
         Optional<Pago> pagoOpt = pagoSinPasarela(pedido);
         if (!METODOS_MANUALES.contains(metodo)) {
@@ -135,6 +138,7 @@ public class PedidoPagoManualService {
      */
     @Transactional
     public void confirmarCobroAlRetirar(Pedido pedido, String estadoAnterior, String referenciaCruda) {
+        exigirCompradorAjeno(pedido);
         if (!esEfectivoConRetiro(pedido)) {
             throw new IllegalArgumentException(String.format(PedidoEstadoMaquina.MENSAJE_PRIMERO_PAGO,
                 estadoAnterior, Constants.PEDIDO_ENTREGADO));
@@ -149,6 +153,16 @@ public class PedidoPagoManualService {
         pedido.setEstadoPedido(Constants.PEDIDO_ENTREGADO);
         auditar(pedido, estadoAnterior, Constants.PEDIDO_ENTREGADO, normalizarMetodo(pedido.getMetodoPago()),
             "cobro en efectivo al retirar" + (referencia != null ? " · ref: " + referencia : ""));
+    }
+
+    /**
+     * G1b: el comprador de una compra online no puede ser del negocio vendedor (autocompra -> 403
+     * AUTOCOMPRA_NEGOCIO). Los pedidos POS/MANUAL quedan fuera: su cliente lo elige el negocio.
+     */
+    private void exigirCompradorAjeno(Pedido pedido) {
+        if (!OrigenPedido.ONLINE.codigo().equalsIgnoreCase(pedido.getOrigen())) return;
+        autocompraGuard.exigirNoEsDelNegocio(pedido.getUsuarioFinal(), pedido.getEmpresaId());
+        autocompraGuard.exigirNoEsDelNegocio(pedido.getUsuarioFinal(), pedidoGrupoService.delGrupo(pedido));
     }
 
     /** Efectivo con retiro en tienda. */
