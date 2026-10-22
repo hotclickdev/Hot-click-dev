@@ -3529,7 +3529,7 @@
       "reintentar": "Try again",
       "errorTitulo": "Cannot pay",
       "errorPagoTitulo": "Could not start payment",
-      "errorPagoDesc": "Card payment could not be started. Ask the cashier for a new QR or pay with SINPE.",
+      "errorPagoDesc": "Card payment could not be started. Ask the cashier for a new QR.",
       "errorSinpeDesc": "Couldn't get the SINPE details. Try again or ask the cashier for a new QR.",
       "qrInvalido": "This code is no longer valid. Ask the cashier for a new one.",
       "sinItems": "This QR has no products.",
