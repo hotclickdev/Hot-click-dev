@@ -44,6 +44,7 @@ const CategoriasPage = lazy(() => import('@/pages/buscar/CategoriasPage'))
 const BusquedaFotoPage = lazy(() => import('@/pages/buscar/BusquedaFotoPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const CartPage = lazy(() => import('@/pages/CartPage'))
+const PagoPendientePage = lazy(() => import('@/features/pagoPendiente/PagoPendientePage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const MisPedidosPage = lazy(() => import('@/pages/MisPedidosPage'))
 const DetallePedidoPage = lazy(() => import('@/pages/DetallePedidoPage'))
@@ -124,6 +125,7 @@ export default function AppRoutes() {
       <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
       <Route path="/mis-pedidos/:id" element={<ProtectedRoute><DetallePedidoPage /></ProtectedRoute>} />
       <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/checkout/pendiente/:numero" element={<PagoPendientePage />} />
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/pago/exito" element={<PaymentStatusPage />} />
       <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
