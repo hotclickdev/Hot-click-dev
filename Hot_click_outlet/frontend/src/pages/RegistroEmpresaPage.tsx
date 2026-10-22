@@ -30,10 +30,12 @@ import {
   payloadUbicacionRegistro,
   ubicacionIniciada,
 } from '@/prototipo/compartido/ubicacionDespachoHelpers'
+import type { Frecuencia } from '@/features/liquidacion/frecuenciaApi'
+import { conFrecuenciaAlta, errorFrecuenciaAlta, esErrorFrecuenciaAlta } from '@/features/liquidacion/frecuenciaAlta'
 
 const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
-  'Solo el nombre: el resto lo completás después.',
+  'El nombre y cada cuánto querés recibir tu plata; el resto lo completás después.',
   'Con estos datos iniciás sesión en el panel.',
 ]
 const STEP_LABELS = ['Tu empresa', 'Tu cuenta']
@@ -92,6 +94,8 @@ export default function RegistroEmpresaPage() {
     inscritoTributacion: false,
   })
   const ubicacion = useUbicacionDespachoForm()
+  const [frecuencia, setFrecuencia] = useState<Frecuencia | null>(null)
+  const [errorFrecuencia, setErrorFrecuencia] = useState<string | null>(null)
 
   const destino = destinoVender({ tokenVivo: isTokenAlive(token), rol: userRole, empresaId })
   if (destino !== RUTA_REGISTRO_EMPRESA) {
@@ -112,6 +116,9 @@ export default function RegistroEmpresaPage() {
       setError(MENSAJE_UBICACION_INCOMPLETA)
       return
     }
+    const faltaFrecuencia = errorFrecuenciaAlta(frecuencia)
+    setErrorFrecuencia(faltaFrecuencia)
+    if (faltaFrecuencia) return
     setStep(1)
   }
 
@@ -135,11 +142,17 @@ export default function RegistroEmpresaPage() {
       setError(`La contraseña debe tener al menos ${MIN_PASSWORD} caracteres`)
       return
     }
+    const faltaFrecuencia = errorFrecuenciaAlta(frecuencia)
+    if (faltaFrecuencia) {
+      setErrorFrecuencia(faltaFrecuencia)
+      setStep(0)
+      return
+    }
     setLoading(true)
     authService.registrarConsentimiento('REGISTRO')
     authService.registrarConsentimiento('MAYORIA_EDAD')
     try {
-      const { data } = await authService.registroEmpresa({
+      const { data } = await authService.registroEmpresa(conFrecuenciaAlta({
         nombreEmpresa:        form.nombreEmpresa.trim(),
         correoEmpresa:        form.correoEmpresa.trim().toLowerCase() || undefined,
         telefonoEmpresa:      telefonoOpcional(form.telefonoEmpresa),
@@ -151,7 +164,7 @@ export default function RegistroEmpresaPage() {
         ...(ubicacionIniciada(ubicacion.ubicacion) ? payloadUbicacionRegistro(ubicacion.ubicacion) : {}),
         declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
-      })
+      }, frecuencia))
       const authData = authDataRegistroEmpresa(data)
       if (authData?.accessToken) {
         loginStore(authData)
@@ -166,6 +179,12 @@ export default function RegistroEmpresaPage() {
       setError('Registro incompleto. Intentá de nuevo.')
       resetTurnstile()
     } catch (err: unknown) {
+      if (esErrorFrecuenciaAlta(err)) {
+        setErrorFrecuencia(errorFrecuenciaAlta(null))
+        setStep(0)
+        resetTurnstile()
+        return
+      }
       const msg = mensajeErrorAuth(err, '')
       setError(msg ? errorRegistroLegible(msg) : 'Error al registrar. Intentá de nuevo.')
       resetTurnstile()
@@ -267,6 +286,10 @@ export default function RegistroEmpresaPage() {
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoEmpresa: val }))}
                       onInscritoTributacionChange={(v) => setForm((p) => ({ ...p, inscritoTributacion: v }))}
+                      frecuencia={frecuencia}
+                      errorFrecuencia={errorFrecuencia}
+                      onFrecuencia={(f) => { setFrecuencia(f); setErrorFrecuencia(null) }}
+                      onFrecuenciaInvalida={() => setErrorFrecuencia(errorFrecuenciaAlta(frecuencia))}
                       onSubmit={handleNext}
                     />
                   )}
