@@ -34,7 +34,9 @@ export default function PagoCancelado() {
       showToast(t('payment.retryUnavailable'), 'error')
       navigate('/checkout')
     } catch {
+      // ONVO no reintenta sobre el pedido cancelado: se vuelve al checkout y se abre una sesión nueva.
       showToast(t('payment.retryUnavailable'), 'error')
+      navigate('/checkout')
     } finally {
       setReintentando(false)
     }
