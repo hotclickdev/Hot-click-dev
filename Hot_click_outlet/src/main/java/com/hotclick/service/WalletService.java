@@ -79,6 +79,18 @@ public class WalletService {
         return creditService.ventaYaAcreditada(pedidoId);
     }
 
+    /**
+     * Reintento desde la DLQ (WalletReconciliacionScheduler): misma lógica que acreditarVenta pero en
+     * su propia transacción con timeout de 15 s, para que un lock colgado no retenga el lote.
+     * El flujo de confirmación de pago sigue usando acreditarVenta sin cambios.
+     */
+    @Transactional(timeout = 15)
+    public WalletTransaccion acreditarVentaReintentoDlq(Long empresaId, long monto,
+                                                        long totalBruto, long comisionSaas, long comisionGw,
+                                                        Long pedidoId) {
+        return creditService.acreditarVenta(empresaId, monto, totalBruto, comisionSaas, comisionGw, pedidoId);
+    }
+
     @Transactional
     public WalletTransaccion acreditarVenta(Long empresaId, long monto,
                                             long totalBruto, long comisionSaas, long comisionGw,
