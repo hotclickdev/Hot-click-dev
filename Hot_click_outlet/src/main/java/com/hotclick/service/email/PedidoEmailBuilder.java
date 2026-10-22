@@ -17,6 +17,10 @@ public class PedidoEmailBuilder {
         return clienteEmails.buildConfirmacionPedido(pedido, cliente);
     }
 
+    public String buildPedidoRecibido(Pedido pedido, Usuario cliente) {
+        return clienteEmails.buildPedidoRecibido(pedido, cliente);
+    }
+
     public String buildNotificacionGuia(Pedido pedido, Usuario cliente) {
         return clienteEmails.buildNotificacionGuia(pedido, cliente);
     }

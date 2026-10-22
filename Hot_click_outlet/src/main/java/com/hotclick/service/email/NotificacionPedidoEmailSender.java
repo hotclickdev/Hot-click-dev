@@ -34,6 +34,36 @@ public class NotificacionPedidoEmailSender {
         whatsAppService.enviarNuevoPedidoAAdminIT(pedido, adminItTelefono);
     }
 
+    /**
+     * Pedido registrado sin cobro todavía (tienda propia, pago al recibir). Al comprador va el correo
+     * «pedido recibido» sin «Total pagado» ni el WhatsApp de confirmación; vendedor y admin, igual que siempre.
+     */
+    public void enviarPedidoRecibido(Pedido pedido, String adminItEmail, String adminItTelefono) {
+        enviarPedidoRecibidoAlCliente(pedido);
+        enviarNuevoPedidoAEmprendedor(pedido);
+        whatsAppService.enviarNuevoPedidoAEmprendedor(pedido);
+        enviarNuevoPedidoAAdminIT(pedido, adminItEmail);
+        whatsAppService.enviarNuevoPedidoAAdminIT(pedido, adminItTelefono);
+    }
+
+    private void enviarPedidoRecibidoAlCliente(Pedido pedido) {
+        Usuario cliente = pedido.getUsuarioFinal();
+        if (cliente == null || cliente.getCorreo() == null || cliente.getCorreo().isBlank()
+                || cliente.getCorreo().endsWith(".internal")) {
+            return;
+        }
+        try {
+            resendEmailService.send(
+                cliente.getCorreo(),
+                pedidoEmailBuilder.asuntoConfirmacion(pedido),
+                pedidoEmailBuilder.buildPedidoRecibido(pedido, cliente)
+            );
+            log.info("Email pedido recibido enviado para pedido {}", pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de pedido recibido para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+        }
+    }
+
     private void enviarConfirmacionAlCliente(Pedido pedido) {
         Usuario cliente = pedido.getUsuarioFinal();
         if (cliente == null) return;

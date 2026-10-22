@@ -165,9 +165,10 @@ public class StorefrontGuestOrderService {
             log.warn("Webhook admin falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
         }
         try {
-            notificacionEmailService.enviarConfirmacionPedido(guardado);
+            // Nace PENDIENTE y se paga al recibir: nunca el correo de pago confirmado («Total pagado»).
+            notificacionEmailService.enviarPedidoRecibido(guardado);
         } catch (Exception ex) {
-            log.warn("Email confirmación falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+            log.warn("Email pedido recibido falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
         }
     }
 

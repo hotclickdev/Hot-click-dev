@@ -127,4 +127,20 @@ class ConfirmacionPedidoEmailBuilderTest {
             .contains("Retiro en tienda")
             .doesNotContain("Enviamos a");
     }
+
+    @Test
+    @DisplayName("Pedido que se paga al recibir: sin «Total pagado» ni «Gracias por tu compra»")
+    void pedidoRecibidoNoDicePagado() {
+        Pedido pedido = pedidoConItem("Auriculares over-ear", "Andrea");
+        String html = builder.buildPedidoRecibido(pedido, pedido.getUsuarioFinal());
+
+        assertThat(html)
+            .contains("ORD-10482")
+            .contains("Total a pagar al recibir")
+            .contains("₡15.900")
+            .contains("Lo pagás al recibirlo")
+            .doesNotContain("Total pagado")
+            .doesNotContain("Gracias por tu compra");
+        assertThat(builder.buildConfirmacionPedido(pedido, pedido.getUsuarioFinal())).contains("Total pagado");
+    }
 }

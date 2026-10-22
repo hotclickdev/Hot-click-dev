@@ -3,27 +3,28 @@ package com.hotclick.payment;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
-import com.hotclick.model.WebhookEvent;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.OnvoService;
-import com.hotclick.service.PaymentService;
+import com.hotclick.service.payment.OnvoCobroVerificador;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
 public class OnvoPaymentProvider implements PaymentProvider {
 
     private static final Logger log = LoggerFactory.getLogger(OnvoPaymentProvider.class);
+    static final String EVENTO_SESION = "checkout-session.succeeded";
+    static final String EVENTO_INTENT_FALLIDO = "payment-intent.failed";
+
+    /** Resultado de reconsultar a ONVO antes de confirmar un pedido. */
+    public enum Verificacion { OK, DUPLICADO, NO_PAGADO, NO_ENCONTRADO, DATOS_DISTINTOS }
 
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
@@ -31,9 +32,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
     @Autowired private OnvoService            onvoService;
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
-
-    @Lazy
-    @Autowired private PaymentService paymentService;
+    @Autowired private OnvoCapturaService     onvoCapturaService;
 
     @Override
     public String getNombre() {
@@ -45,7 +44,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
      */
     @Override
     public PaymentSession crearSesion(Pedido pedido, Usuario usuario) throws Exception {
-        if (onvoService.isMockMode()) {
+        if (onvoService.isMockMode() || !onvoService.isPagosDisponibles()) {
             throw new IllegalStateException(
                 "ONVO no está configurado. " +
                 "Añade ONVO_SECRET_KEY (onvo_test_secret_key_...) al entorno para procesar pagos con tarjeta.",
@@ -77,54 +76,66 @@ public class OnvoPaymentProvider implements PaymentProvider {
     }
 
     /**
-     * Procesa el evento checkout-session.succeeded del webhook de ONVO.
-     * Es idempotente: si el sessionId ya fue procesado, no hace nada.
+     * Confirma un pago ONVO solo si ONVO lo confirma por GET: la sesión está pagada, su payment intent
+     * está en succeeded y el monto (en céntimos) y la moneda coinciden con el pago guardado.
+     * Lo usan el webhook y la limpieza por expiración; el navegador nunca llega acá.
+     * Sin transacción propia: las consultas a ONVO no retienen una conexión de base ni dejan en
+     * rollback-only a quien llama; la escritura va en {@link OnvoCapturaService}. Idempotente por sessionId.
      */
-    @Transactional
-    public void procesarPagoExitoso(String checkoutSessionId, String rawBody, String ipOrigen) {
-        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(
-                checkoutSessionId, "checkout-session.succeeded")) {
-            log.info("[onvo] Webhook duplicado ignorado: sessionId={}", checkoutSessionId);
-            return;
+    public Verificacion procesarPagoVerificado(String checkoutSessionId, String origen) {
+        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(checkoutSessionId, EVENTO_SESION)) {
+            log.info("[onvo] Sesión ya procesada: sessionId={}", checkoutSessionId);
+            return Verificacion.DUPLICADO;
         }
-
-        WebhookEvent evento = new WebhookEvent();
-        evento.setMerchantToken(checkoutSessionId);
-        evento.setEventoTipo("checkout-session.succeeded");
-        evento.setPayloadRaw(rawBody);
-        evento.setIpOrigen(ipOrigen);
-        evento.setFechaRecepcion(LocalDateTime.now(Constants.ZONA_CR));
-        evento.setEstado(Constants.ESTADO_ACTIVO);
-        webhookEventRepository.save(evento);
-
         Pago pago = pagoRepository.findByMerchantToken(checkoutSessionId).orElse(null);
-        if (pago == null) {
-            String msg = "Pago no encontrado para ONVO sessionId=" + checkoutSessionId;
-            log.error("[onvo] {}", msg);
-            evento.setErrorProcesamiento(msg);
-            webhookEventRepository.save(evento);
-            return;
+        if (pago == null || pago.getPedido() == null
+                || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) {
+            log.warn("[onvo] Sesión sin pago ONVO local: sessionId={}", checkoutSessionId);
+            return Verificacion.NO_ENCONTRADO;
         }
-
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
-            log.info("[onvo] Checkout ya confirmado: sessionId={}", checkoutSessionId);
-            evento.setProcesado(true);
-            evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
-            webhookEventRepository.save(evento);
-            return;
+            return Verificacion.DUPLICADO;
         }
+        Map<?, ?> sesion = onvoService.obtenerCheckoutSession(checkoutSessionId);
+        if (sesion.isEmpty()) {
+            return Verificacion.NO_ENCONTRADO;
+        }
+        String intentId = OnvoCobroVerificador.paymentIntentId(sesion);
+        Map<?, ?> intent = onvoService.obtenerPaymentIntent(intentId);
+        switch (OnvoCobroVerificador.decidir(pago, sesion, intent)) {
+            case ACEPTAR -> {
+                boolean capturado = onvoCapturaService.capturarVerificado(checkoutSessionId,
+                    "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + intentId + "\"}", origen);
+                return capturado ? Verificacion.OK : Verificacion.DUPLICADO;
+            }
+            case RECHAZAR_MONTO -> {
+                log.error("[ALERTA-PAGO] {}", OnvoCobroVerificador.mensajeAlerta(pago, intent));
+                return Verificacion.DATOS_DISTINTOS;
+            }
+            default -> {
+                // Sin transacción el pedido es un proxy lazy: se loguea la sesión, no el número de pedido.
+                log.info("[onvo] Sesión todavía sin cobro confirmado: sessionId={}", checkoutSessionId);
+                return Verificacion.NO_PAGADO;
+            }
+        }
+    }
 
-        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-        pago.setMetodoPagoTipo(Constants.PROVEEDOR_ONVO);
-        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        pagoRepository.save(pago);
-
-        paymentService.confirmarPedido(pago);
-
-        evento.setProcesado(true);
-        evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
-        webhookEventRepository.save(evento);
-
-        log.info("[onvo] Checkout confirmado: sessionId={}", checkoutSessionId);
+    /**
+     * payment-intent.failed: solo se registra (una vez por intent) si ONVO confirma el fallo por GET.
+     * No cancela ni marca fallido: en el checkout hospedado el comprador puede reintentar en la
+     * misma sesión. El cierre lo hace la expiración, que antes reconsulta a ONVO.
+     */
+    public boolean registrarIntentFallido(String intentId, String origen) {
+        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(intentId, EVENTO_INTENT_FALLIDO)) {
+            return false;
+        }
+        Map<?, ?> intent = onvoService.obtenerPaymentIntent(intentId);
+        if (!"failed".equalsIgnoreCase(String.valueOf(intent.get("status")))) {
+            log.warn("[onvo] payment-intent.failed no confirmado por ONVO: intent={}", intentId);
+            return false;
+        }
+        onvoCapturaService.registrar(intentId, EVENTO_INTENT_FALLIDO, "{\"verificado\":\"GET ONVO\"}", origen);
+        log.warn("[onvo] Intento de cobro rechazado por ONVO: intent={}", intentId);
+        return true;
     }
 }
