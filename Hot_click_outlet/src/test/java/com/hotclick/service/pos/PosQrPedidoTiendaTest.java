@@ -40,6 +40,9 @@ class PosQrPedidoTiendaTest {
     @Mock PosQrSessionService sessionService;
     @Mock PosQrVentaCompletionService completionService;
     @Mock TurnoCajaService turnoCajaService;
+    @Mock ConfirmadorDistintoGuard confirmadorDistintoGuard;
+    @Mock com.hotclick.repository.PosSinpeConfirmacionRepository confirmacionRepo;
+    @Mock com.hotclick.service.AuditoriaAdminRegistroService auditoria;
     @InjectMocks PosQrVentaService service;
 
     @Test
@@ -141,10 +144,11 @@ class PosQrPedidoTiendaTest {
     @DisplayName("Doble confirmación SINPE: la segunda se rechaza sin crear venta")
     void confirmarSinpeSinReclamoSeRechaza() {
         PosQrSesion sesion = sesionPendiente();
+        sesion.setMetodoPago("SINPE");
         when(posQrRepo.findByToken("tokencarrito01")).thenReturn(Optional.of(sesion));
         when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(0);
 
-        assertThatThrownBy(() -> service.confirmarSinpe("tokencarrito01", 1L, EMPRESA_QR, null))
+        assertThatThrownBy(() -> service.confirmarSinpe("tokencarrito01", 1L, EMPRESA_QR, "ABC12345", null))
             .isInstanceOf(IllegalStateException.class);
         verify(completionService, never()).completarVentaSinpe(any(), any(), any());
     }

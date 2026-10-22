@@ -29,6 +29,8 @@ class AdminRutasRolTest extends BaseIntegrationTest {
     /** Rutas /api/admin que un EMPRENDEDOR puede usar (acotadas a su empresa). Método + patrón. */
     static final Set<String> LISTA_BLANCA_VENDEDOR = Set.of(
         "GET /api/admin/dashboard",
+        // (d) revisión de confirmaciones manuales SINPE del POS, acotada a la empresa del token
+        "GET /api/admin/pos/sinpe-confirmaciones",
         "GET /api/admin/ads/metricas", "GET /api/admin/ads/gastos", "POST /api/admin/ads/gastos",
         "DELETE /api/admin/ads/gastos/{id}",
         "GET /api/admin/configuracion/comision", "GET /api/admin/configuracion/comision/sugerido",

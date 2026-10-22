@@ -627,7 +627,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postSinLimite(mensajeConId(CHAT_ID, "2", update));
         postSinLimite(mensajeConId(CHAT_ID, "2", update + 1));
         postSinLimite(callback(CHAT_ID, "vta:cont"));
-        postSinLimite(callback(CHAT_ID, "vta:pay:SINPE"));
+        postSinLimite(callback(CHAT_ID, "vta:pay:EFECTIVO"));
         postSinLimite(callback(CHAT_ID, "vta:nocli"));
 
         String confirmar = callbackConId(CHAT_ID, "vta:ok", update + 2);
