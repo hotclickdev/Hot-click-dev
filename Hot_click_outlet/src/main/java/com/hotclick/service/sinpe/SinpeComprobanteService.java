@@ -41,6 +41,22 @@ public class SinpeComprobanteService {
     @Autowired private CompanyScope                  companyScope;
     @Autowired private com.hotclick.service.payment.PedidoGrupoService pedidoGrupoService;
     @Autowired private SinpeComprobantePersistenceService persistenceService;
+    @Autowired private com.hotclick.security.RateLimiter rateLimiter;
+    @Autowired private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
+    /** H-07 r3 (O-5): 403 por pedido. Solo métrica/alerta, no bloquea. Tags sin el número de pedido. */
+    public static final String METRICA_403 = "sinpe.comprobante.forbidden";
+    public static final String METRICA_403_UMBRAL = "sinpe.comprobante.forbidden.umbral";
+    @org.springframework.beans.factory.annotation.Value("${rate-limit.sinpe.comprobante.forbidden-alerta.max:10}")
+    private int alerta403Max = 10;
+    @org.springframework.beans.factory.annotation.Value("${rate-limit.sinpe.comprobante.forbidden-alerta.window-seconds:3600}")
+    private int alerta403Ventana = 3600;
+
+    /** H-07 r2 (a): tope global por pedido, contado solo para intentos que pasan la validación de dueño. */
+    @org.springframework.beans.factory.annotation.Value("${rate-limit.sinpe.comprobante.pedido.max:5}")
+    private int topePedidoMax = 5;
+    @org.springframework.beans.factory.annotation.Value("${rate-limit.sinpe.comprobante.pedido.window-seconds:3600}")
+    private int topePedidoVentana = 3600;
 
     /**
      * Sin @Transactional a proposito: el upload a S3 es I/O externo lento (con reintentos de
@@ -48,14 +64,34 @@ public class SinpeComprobanteService {
      * bajo carga (muchos comprobantes SINPE simultaneos). La persistencia corre aparte, en
      * {@link SinpeComprobantePersistenceService#guardar}, en su propia transaccion corta.
      */
+    private void registrar403(String numero) {
+        try {
+            meterRegistry.counter(METRICA_403).increment();
+            // Cuenta por pedido en la tabla del limitador; al pasar el umbral solo alerta.
+            if (!rateLimiter.tryAcquire("pedido:comprobante:403:" + numero, alerta403Max, alerta403Ventana)) {
+                meterRegistry.counter(METRICA_403_UMBRAL).increment();
+                log.warn("[SINPE] umbral de 403 por pedido superado (ver metrica {})", METRICA_403_UMBRAL);
+            }
+        } catch (RuntimeException e) {
+            log.warn("[SINPE] metrica 403 no registrada: {}", e.getClass().getSimpleName());
+        }
+    }
+
     public void subirComprobante(String numeroPedido, MultipartFile archivo,
                           String nombreRemitente, String cedulaRemitente,
                           String telefonoRemitente, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
 
         if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
+            registrar403(pedido.getNumeroPedido());
             throw new SecurityException("No tienes permiso para modificar este pedido");
+        }
+
+        if (!rateLimiter.tryAcquire(
+                "pedido:comprobante:" + pedido.getNumeroPedido(), topePedidoMax, topePedidoVentana)) {
+            throw new com.hotclick.exception.RateLimitExcedidoException(
+                "Demasiados intentos. Esperá un momento antes de volver a intentar.");
         }
 
         if (!Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(pedido.getEstadoPedido())) {

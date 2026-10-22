@@ -26,9 +26,22 @@ public class RateLimiter {
 
     private final JdbcTemplate jdbc;
 
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
     public RateLimiter(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+        this(jdbc, null);
     }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public RateLimiter(JdbcTemplate jdbc,
+                       @org.springframework.beans.factory.annotation.Autowired(required = false)
+                       io.micrometer.core.instrument.MeterRegistry meterRegistry) {
+        this.jdbc = jdbc;
+        this.meterRegistry = meterRegistry;
+    }
+
+    /** Contador Micrometer de fail-open (H-07 r2 (b)): alertar si sube de 0. */
+    public static final String METRICA_FAIL_OPEN = "rate.limiter.fail_open";
 
     // No usa ON CONFLICT / RETURNING (H2 no soporta ninguno de los dos en tests) —
     // lectura + insert-o-update explícito. La ventana de carrera entre el SELECT y el
@@ -63,7 +76,10 @@ public class RateLimiter {
             int count = incrementarYContar(key, now, expires, windowSeconds);
             return count <= maxRequests;
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getMessage());
+            log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getClass().getSimpleName());
+            if (meterRegistry != null) {
+                try { meterRegistry.counter(METRICA_FAIL_OPEN).increment(); } catch (RuntimeException ignored) { }
+            }
             return true;
         }
     }
