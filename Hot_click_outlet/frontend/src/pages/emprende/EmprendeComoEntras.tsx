@@ -32,7 +32,7 @@ export default function EmprendeComoEntras() {
             <p className="text-[15px] font-semibold" style={{ color: 'var(--hc-text)' }}>{t(`emprende.${key}Titulo`)}</p>
             <p className="text-[13px] leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
               {i === 2
-                ? t(`emprende.${key}Desc`, { comision: PLAN_EMPRENDEDOR.comisionPct, minimo: PLAN_EMPRENDEDOR.minimoColones })
+                ? t(`emprende.${key}Desc`, { comision: PLAN_EMPRENDEDOR.comisionPct })
                 : t(`emprende.${key}Desc`)}
             </p>
           </motion.div>
