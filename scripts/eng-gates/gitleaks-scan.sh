@@ -22,7 +22,9 @@ scan_pr_range() {
 
 scan_branch() {
   echo "gitleaks git: historial de HEAD (sin --all)"
-  "$BIN" git "${COMMON[@]}" .
+  # Sin --log-opts gitleaks camina todas las refs; con fetch-depth:0 eso
+  # incluye ramas de PRs abiertos que no están en HEAD.
+  "$BIN" git "${COMMON[@]}" --log-opts="HEAD" .
   echo "gitleaks dir: árbol HEAD"
   "$BIN" dir "${COMMON[@]}" .
 }
