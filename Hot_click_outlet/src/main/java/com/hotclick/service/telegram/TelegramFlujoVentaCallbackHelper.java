@@ -53,15 +53,21 @@ class TelegramFlujoVentaCallbackHelper {
             bot.enviarMensaje(v.getChatId(), "¿Cómo te pagaron?", List.of(
                 List.of(TelegramClienteBotService.boton("📱 SINPE", "vta:pay:SINPE"),
                         TelegramClienteBotService.boton("💵 Efectivo", "vta:pay:EFECTIVO")),
-                List.of(TelegramClienteBotService.boton("💳 Tarjeta", "vta:pay:TARJETA"),
-                        TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
+                List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
         }
     }
 
     void manejarPagoYCliente(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e, String sub) {
         if (sub.startsWith("pay:")) {
             String metodo = sub.substring(4);
-            if (!METODOS_PAGO.contains(metodo)) return;
+            if (!METODOS_PAGO.contains(metodo)) {
+                // Botón viejo (p. ej. «Tarjeta»): ya no se acepta; se avisa y se vuelve a preguntar.
+                bot.enviarMensaje(v.getChatId(), "Ese método de pago ya no está disponible. Elegí SINPE o efectivo.",
+                    List.of(List.of(TelegramClienteBotService.boton("📱 SINPE", "vta:pay:SINPE"),
+                                    TelegramClienteBotService.boton("💵 Efectivo", "vta:pay:EFECTIVO")),
+                            List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
+                return;
+            }
             e.setPago(metodo);
             e.setP(P_VTA_CLIENTE);
             support.guardar(v, e);
