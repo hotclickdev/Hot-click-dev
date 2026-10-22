@@ -5,6 +5,7 @@ import { paymentService } from '@/services/paymentService'
 import { walletService } from '@/services/walletService'
 import { consolaService, objetoDe } from './consola'
 import { campoLista, filasDe, idSeguro, texto, type Fila } from './normalizar'
+import ComisionPorPlan from './ComisionPorPlan'
 import { Aviso, Carga, Chip, Encabezado, FilaDecision, Marco, Metrica, Segmento, TARJETA } from './piezas'
 
 const VISTAS = [
@@ -12,6 +13,7 @@ const VISTAS = [
   { id: 'cobros', label: 'SINPE', to: '/plataforma/dinero/cobros' },
   { id: 'liquidaciones', label: 'Retiros', to: '/plataforma/dinero/liquidaciones' },
   { id: 'suscripciones', label: 'Suscripciones', to: '/plataforma/dinero/suscripciones' },
+  { id: 'comision', label: 'Comisión por plan', to: '/plataforma/dinero/comision' },
 ]
 
 export default function DineroPlataforma() {
@@ -33,6 +35,7 @@ export default function DineroPlataforma() {
       {vista === 'liquidaciones' && <Liquidaciones />}
       {vista === 'suscripciones' && <Suscripciones />}
       {vista === 'cobros' && <Cobros />}
+      {vista === 'comision' && <ComisionPorPlan />}
     </div>
   )
 }
