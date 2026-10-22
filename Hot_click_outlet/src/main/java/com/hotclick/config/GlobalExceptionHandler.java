@@ -54,6 +54,14 @@ public class GlobalExceptionHandler {
             java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
     }
 
+    @ExceptionHandler(com.hotclick.exception.ContraEntregaSoloPlataformaException.class)
+    public ResponseEntity<ResponseDTO> handleContraEntregaSoloPlataforma(
+            com.hotclick.exception.ContraEntregaSoloPlataformaException ex) {
+        log.warn("Vendedor intentó confirmar a mano una contra entrega de Envío Normal");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", com.hotclick.exception.ContraEntregaSoloPlataformaException.CODIGO)));
+    }
+
     @ExceptionHandler(com.hotclick.exception.AutocompraNegocioException.class)
     public ResponseEntity<ResponseDTO> handleAutocompra(com.hotclick.exception.AutocompraNegocioException ex) {
         log.warn("Autocompra de negocio bloqueada");

@@ -2,6 +2,7 @@ package com.hotclick.controller.pedido;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.AutocompraNegocioException;
+import com.hotclick.exception.ContraEntregaSoloPlataformaException;
 import com.hotclick.exception.PedidoNoDespachableException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Pedido;
@@ -27,6 +28,9 @@ public class PedidoTenantResponder {
             Pedido existente = pedidoService.buscarPorId(id);
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             return ResponseEntity.ok(ResponseDTO.success(mensajeOk, accion.apply(existente)));
+        } catch (ContraEntregaSoloPlataformaException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage(),
+                java.util.Map.of("codigo", ContraEntregaSoloPlataformaException.CODIGO)));
         } catch (AutocompraNegocioException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage(),
                 java.util.Map.of("codigo", AutocompraNegocioException.CODIGO)));

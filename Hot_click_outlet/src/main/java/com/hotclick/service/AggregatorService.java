@@ -4,6 +4,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.service.envio.ContraEntregaPolitica;
 import com.hotclick.service.wallet.AggregatorCommissionMath;
 import com.hotclick.service.wallet.AggregatorCommissionMath.Resultado;
 import org.slf4j.Logger;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Motor del Modelo Agregador.
@@ -37,6 +40,14 @@ import java.math.BigDecimal;
 public class AggregatorService {
 
     private static final Logger log = LoggerFactory.getLogger(AggregatorService.class);
+
+    private static final String ORIGEN_POS = "POS";
+    private static final String METODO_EFECTIVO = "EFECTIVO";
+    private static final String METODO_CONTRA_ENTREGA = "CONTRA_ENTREGA";
+    private static final String METODO_CONTRAENTREGA = "CONTRAENTREGA";
+    /** Mismos nombres que ya usan la quincena y el reporte de liquidación contra entrega. */
+    private static final Set<String> METODOS_COBRO_EN_EFECTIVO =
+        Set.of(METODO_EFECTIVO, METODO_CONTRA_ENTREGA, METODO_CONTRAENTREGA);
 
     /** Reserva contable estimada de la pasarela (Tilopay). Solo de config (application.properties), sin default en código. La paga HotClick: no se descuenta al vendedor. */
     @Value("${hotclick.comision.gateway.pct}")
@@ -76,8 +87,8 @@ public class AggregatorService {
             log.warn("[aggregator] Pedido {} sin empresa — no se acredita wallet", pedido.getId());
             return;
         }
-        if (esEfectivoPos(pedido)) {
-            log.info("[aggregator] Pedido {} POS en efectivo: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
+        if (sinAcreditacionPorEfectivo(pedido)) {
+            log.info("[aggregator] Pedido {} cobrado en efectivo/contra entrega: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
             return;
         }
         if (bruto <= 0) {
@@ -117,8 +128,8 @@ public class AggregatorService {
             log.warn("[aggregator] Pedido {} sin empresa — no se acredita wallet", pedido.getId());
             return;
         }
-        if (esEfectivoPos(pedido)) {
-            log.info("[aggregator] Pedido {} POS en efectivo: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
+        if (sinAcreditacionPorEfectivo(pedido)) {
+            log.info("[aggregator] Pedido {} cobrado en efectivo/contra entrega: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
             return;
         }
         if (bruto <= 0) {
@@ -201,7 +212,38 @@ public class AggregatorService {
 
     /** Decisión HOT_CLICK 12-oct-2026: el efectivo cobrado en el POS no se acredita ni se liquida. */
     public static boolean esEfectivoPos(Pedido pedido) {
-        return pedido != null && "POS".equalsIgnoreCase(pedido.getOrigen())
-            && pedido.getMetodoPago() != null && "EFECTIVO".equalsIgnoreCase(pedido.getMetodoPago().trim());
+        return pedido != null && ORIGEN_POS.equalsIgnoreCase(pedido.getOrigen())
+            && pedido.getMetodoPago() != null && METODO_EFECTIVO.equalsIgnoreCase(pedido.getMetodoPago().trim());
+    }
+
+    /**
+     * Decisión del dueño 21-oct-2026: el efectivo y la contra entrega no acreditan billetera: el negocio
+     * ya tiene el dinero o lo cobra el mensajero. El método se normaliza igual que en
+     * PedidoPagoManualService (mayúsculas; guion y espacio a "_").
+     */
+    public static boolean esCobroEnEfectivo(Pedido pedido) {
+        if (pedido == null || pedido.getMetodoPago() == null) {
+            return false;
+        }
+        return METODOS_COBRO_EN_EFECTIVO.contains(normalizarMetodo(pedido.getMetodoPago()));
+    }
+
+    /**
+     * Contra entrega de Envío Normal fuera del POS: la cobra el mensajero de HotClick
+     * (ContraEntregaPolitica.montoAlEntregar), así que SÍ acredita la billetera del negocio.
+     */
+    public static boolean esContraEntregaEnvioNormal(Pedido pedido) {
+        return esCobroEnEfectivo(pedido)
+            && !ORIGEN_POS.equalsIgnoreCase(pedido.getOrigen())
+            && ContraEntregaPolitica.esEnvioNormal(pedido.getMetodoEnvio());
+    }
+
+    /** Efectivo/contra entrega que no entra a la billetera (todo salvo la contra entrega de Envío Normal). */
+    public static boolean sinAcreditacionPorEfectivo(Pedido pedido) {
+        return esCobroEnEfectivo(pedido) && !esContraEntregaEnvioNormal(pedido);
+    }
+
+    private static String normalizarMetodo(String metodo) {
+        return metodo.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
     }
 }
