@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@DisplayName("Checkout | sin proveedor por defecto y allowlist Tilopay/SINPE (ONVO con flag)")
+@DisplayName("Checkout | sin proveedor por defecto, allowlist Tilopay sin SINPE (ONVO con flag)")
 class ProveedorPagoSinDefaultTest {
 
     private static PaymentProvider prov(String n) {
@@ -52,9 +52,9 @@ class ProveedorPagoSinDefaultTest {
     }
 
     @Test
-    void allowlistTilopaySinpeYOnvoSoloConFlag() {
+    void allowlistTilopayYOnvoSoloConFlag_sinSinpe() {
         assertThat(validator(false).resolveProvider(req("tilopay"), factory)).isEqualTo("TILOPAY");
-        assertThat(validator(false).resolveProvider(req("SINPE"), factory)).isEqualTo("SINPE");
+        assertThatThrownBy(() -> validator(false).resolveProvider(req("SINPE"), factory)).hasMessageContaining("no soportado");
         assertThatThrownBy(() -> validator(false).resolveProvider(req("ONVO"), factory)).hasMessageContaining("ONVO no está habilitado");
         assertThat(validator(true).resolveProvider(req("ONVO"), factory)).isEqualTo("ONVO");
     }

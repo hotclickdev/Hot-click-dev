@@ -39,9 +39,12 @@ public class CheckoutValidator {
         }
     }
 
-    /** Allowlist del checkout público. STRIPE queda fuera; ONVO solo con hotclick.onvo flag. */
+    /**
+     * Allowlist del checkout público. STRIPE queda fuera; ONVO solo con hotclick.onvo flag. SINPE queda fuera
+     * (G1): solo existe dentro de la pasarela ONVO; un Pago SINPE propio sería confirmable a mano.
+     */
     static final java.util.Set<String> PROVEEDORES_CHECKOUT = java.util.Set.of(
-        Constants.PROVEEDOR_TILOPAY, Constants.PROVEEDOR_SINPE, Constants.PROVEEDOR_ONVO);
+        Constants.PROVEEDOR_TILOPAY, Constants.PROVEEDOR_ONVO);
 
     public String resolveProvider(PaymentCheckoutRequest req, PaymentProviderFactory providerFactory) {
         if (req.getProvider() == null || req.getProvider().isBlank()) {

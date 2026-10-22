@@ -1,6 +1,7 @@
 package com.hotclick.controller.pedido;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.AutocompraNegocioException;
 import com.hotclick.exception.ContraEntregaSoloPlataformaException;
 import com.hotclick.exception.PedidoNoDespachableException;
 import com.hotclick.exception.TenantAccessDeniedException;
@@ -30,6 +31,9 @@ public class PedidoTenantResponder {
         } catch (ContraEntregaSoloPlataformaException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage(),
                 java.util.Map.of("codigo", ContraEntregaSoloPlataformaException.CODIGO)));
+        } catch (AutocompraNegocioException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage(),
+                java.util.Map.of("codigo", AutocompraNegocioException.CODIGO)));
         } catch (TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (PedidoNoDespachableException e) {

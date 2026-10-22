@@ -18,6 +18,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa LEFT JOIN FETCH u.roles WHERE u.correo = :correo")
     Optional<Usuario> findByCorreo(@Param("correo") String correo);
 
+    /** G1b: busqueda del correo sin distinguir mayusculas (sin indice nuevo; solo en el checkout manual). */
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE LOWER(u.correo) = LOWER(:correo)")
+    List<Usuario> findAllByCorreoIgnoreCase(@Param("correo") String correo);
+
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE u.identificacion = :identificacion")
     Optional<Usuario> findByIdentificacion(@Param("identificacion") String identificacion);
 

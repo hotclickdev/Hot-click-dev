@@ -62,6 +62,13 @@ public class GlobalExceptionHandler {
             java.util.Map.of("codigo", com.hotclick.exception.ContraEntregaSoloPlataformaException.CODIGO)));
     }
 
+    @ExceptionHandler(com.hotclick.exception.AutocompraNegocioException.class)
+    public ResponseEntity<ResponseDTO> handleAutocompra(com.hotclick.exception.AutocompraNegocioException ex) {
+        log.warn("Autocompra de negocio bloqueada");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", com.hotclick.exception.AutocompraNegocioException.CODIGO)));
+    }
+
     @ExceptionHandler(TenantAccessDeniedException.class)
     public ResponseEntity<ResponseDTO> handleTenantDenied(TenantAccessDeniedException ex) {
         log.warn("Tenant access denied: {}", ex.getMessage());
