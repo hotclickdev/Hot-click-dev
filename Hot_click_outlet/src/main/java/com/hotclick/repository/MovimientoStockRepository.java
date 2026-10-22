@@ -15,5 +15,11 @@ public interface MovimientoStockRepository extends JpaRepository<MovimientoStock
 
     Page<MovimientoStock> findByProductoIdOrderByFechaMovimientoDesc(Long productoId, Pageable pageable);
 
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT DISTINCT m.producto.id FROM MovimientoStock m WHERE m.tipoMovimiento = :tipo AND m.referencia = :referencia")
+    java.util.Set<Long> productoIdsPorTipoYReferencia(
+        @org.springframework.data.repository.query.Param("tipo") String tipo,
+        @org.springframework.data.repository.query.Param("referencia") String referencia);
+
     List<MovimientoStock> findByTipoMovimientoOrderByFechaMovimientoDesc(String tipoMovimiento);
 }

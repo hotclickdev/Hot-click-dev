@@ -25,9 +25,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.id = :id")
     Optional<Producto> findByIdForUpdate(@Param("id") Long id);
 
-    /** F30 — Batch lock: carga todos los productos en un solo SELECT FOR UPDATE. */
+    /** F30 — Batch lock: carga todos los productos en un solo SELECT FOR UPDATE, en orden por id (evita deadlocks). */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT p FROM Producto p WHERE p.id IN :ids")
+    @Query("SELECT p FROM Producto p WHERE p.id IN :ids ORDER BY p.id")
     List<Producto> findAllByIdsForUpdate(@Param("ids") List<Long> ids);
 
     Optional<Producto> findBySku(String sku);
