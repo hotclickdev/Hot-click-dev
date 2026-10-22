@@ -1515,7 +1515,7 @@
       "gratis": "Gratis",
       "pagoTitulo": "¿Cómo querés pagar?",
       "sinpe": "SINPE Móvil",
-      "sinpeSub": "Al {{numero}} · subís el comprobante",
+      "sinpeSub": "Pago SINPE disponible pronto dentro de la pasarela segura",
       "tarjeta": "Tarjeta",
       "tarjetaSub": "Visa o Mastercard",
       "tarjetaMovil": "Tarjeta de crédito o débito",
@@ -1572,7 +1572,7 @@
       "contraEntrega": "Contra entrega",
       "contraEntregaSub": "Pagás en efectivo al recibir (Envío Normal).",
       "sinpeTarjeta": "SINPE / Tarjeta",
-      "sinpeTarjetaSub": "SINPE Móvil al {{numero}} o tarjeta. El pago con tarjeta se habilita pronto.",
+      "sinpeTarjetaSub": "Pago SINPE disponible pronto dentro de la pasarela segura",
       "sinpeTarjetaSubTilopay": "SINPE Móvil o tarjeta, en la pasarela segura.",
       "correoCuenta": "Correo de tu cuenta"
     },
@@ -1672,6 +1672,7 @@
       "textoSinpe": "Recibimos tu comprobante de SINPE Móvil. La confirmación puede tardar unos minutos más; te enviamos un correo cuando se procese."
     },
     "sinpe": {
+      "pasarelaPronto": "Pago SINPE disponible pronto dentro de la pasarela segura",
       "titulo": "Pedido registrado: hacé tu SINPE",
       "sub": "Transferí el monto exacto y subí la foto del comprobante.",
       "numero": "Número SINPE",
@@ -4120,7 +4121,7 @@
       "titulo": "¿Cómo querés pagar?",
       "tituloDesktop": "Pago",
       "sinpe": "SINPE Móvil",
-      "sinpeDetalle": "Al 8666-7888 · subís el comprobante",
+      "sinpeDetalle": "Pago SINPE disponible pronto dentro de la pasarela segura",
       "masUsado": "Más usado",
       "tarjeta": "Tarjeta de crédito o débito",
       "tarjetaDetalle": "Visa o Mastercard · pago protegido",
@@ -4129,7 +4130,7 @@
       "efectivo": "Efectivo",
       "efectivoDetalle": "Al retirar en tienda",
       "sinpePaso1": "1. Enviá {{monto}} al",
-      "sinpePasos23": "2. En la descripción poné tu número de pedido. 3. Subí el comprobante y confirmamos en minutos.",
+      "sinpePasos23": "Pago SINPE disponible pronto dentro de la pasarela segura",
       "copiarNumero": "Copiar número SINPE",
       "numeroCopiado": "Número copiado",
       "numeroNoCopiado": "No se pudo copiar el número",

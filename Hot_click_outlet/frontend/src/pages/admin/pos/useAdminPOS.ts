@@ -158,12 +158,13 @@ export function useAdminPOS() {
 
   const handleQrCliente = async () => {
     if (cartItems.length === 0) return
-    // QR para el cliente: la caja habilita SINPE Móvil y tarjeta y el cliente elige (decisión B16).
-    await crearSesionQr('TARJETA', ['TARJETA', 'SINPE'])
+    // QR para el cliente: solo tarjeta. SINPE se cobra únicamente dentro de ONVO (QA-NEG-056).
+    await crearSesionQr('TARJETA', ['TARJETA'])
   }
 
   const handleConfirmarPago = async (payload: PayloadCobroPos) => {
-    if (payload.metodoPago === 'SINPE' || payload.metodoPago === 'TARJETA') {
+    if (payload.metodoPago === 'SINPE') return
+    if (payload.metodoPago === 'TARJETA') {
       await crearSesionQr(payload.metodoPago)
       return
     }
