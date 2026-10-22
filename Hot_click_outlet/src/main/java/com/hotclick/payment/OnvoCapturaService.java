@@ -1,7 +1,6 @@
 package com.hotclick.payment;
 
 import com.hotclick.model.Pago;
-import com.hotclick.model.Pedido;
 import com.hotclick.model.WebhookEvent;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.WebhookEventRepository;
@@ -89,8 +88,7 @@ public class OnvoCapturaService {
     private boolean algunoCancelado(Pago pago) {
         if (pago.getPedido() == null) return false;
         return pedidoGrupoService.delGrupo(pago.getPedido()).stream()
-            .map(Pedido::getEstadoPedido)
-            .anyMatch(Constants.PEDIDO_CANCELADO::equals);
+            .anyMatch(pedido -> Constants.PEDIDO_CANCELADO.equals(pedido.getEstadoPedido()));
     }
 
     WebhookEvent registrar(String token, String tipo, String resumen, String origen) {
