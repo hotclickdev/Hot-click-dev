@@ -19,11 +19,10 @@ function limpiarPoll(pollRef: MutableRefObject<ReturnType<typeof setInterval> | 
   pollRef.current = null
 }
 
-export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm: _loadingConfirm }: {
+export default function StepQR({ qrData, onConfirmSinpe, onCancelar }: {
   qrData: PosQrData
   onConfirmSinpe: (token: string | null, autoConfirmed: boolean, numeroPedido?: string, metodoFinal?: string) => void
   onCancelar: () => void
-  loadingConfirm: boolean
 }) {
   const { t } = useTranslation()
   const { token, metodoPago, total, sinpeNumero } = qrData

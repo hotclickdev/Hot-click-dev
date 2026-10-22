@@ -15,7 +15,6 @@ export const posService = {
 
   // QR payment sessions
   crearQrSesion:    (dto: JsonBody)          => api.post('/pos/qr', dto).then(r => r.data),
-  confirmarSinpeQr: (token: string, dto: JsonBody)   => api.put(`/pos/qr/${token}/confirmar-sinpe`, dto).then(r => r.data),
   cancelarQrSesion: (token: string)        => api.delete(`/pos/qr/${token}`).then(r => r.data),
 
   // Public endpoints (no auth)

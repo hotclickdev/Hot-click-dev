@@ -56,7 +56,6 @@ export default function AdminPOSSteps({ pos }: { pos: AdminPOSController }) {
           qrData={pos.qrData}
           onConfirmSinpe={pos.handleQrConfirmSinpe}
           onCancelar={pos.handleQrCancelar}
-          loadingConfirm={pos.loadingConfirm}
         />
       )}
 
