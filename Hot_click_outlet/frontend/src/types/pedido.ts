@@ -60,6 +60,8 @@ export type ItemPedido = {
 export type Pedido = {
   id?: Id
   numeroPedido?: string
+  /** S4-20: número propio de la tienda; `null` en pedidos anteriores a V182. */
+  numeroTienda?: number | null
   fechaCreacion?: string
   fechaPedido?: string
   estado?: EstadoPedido

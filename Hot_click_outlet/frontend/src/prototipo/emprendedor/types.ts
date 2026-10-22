@@ -26,6 +26,9 @@ export type ProductoEmprendedor = {
 
 export type PedidoEmprendedor = {
   id: string
+  /** S4-20: número propio de la tienda (`null` en pedidos viejos). */
+  numeroTienda?: number | null
+  numeroPedido?: string
   cliente: string
   total: number
   /** 'Pendiente' = pago confirmado, por despachar (ver estadoPedidoVendedor). */

@@ -13,6 +13,7 @@ import {
   estiloEstadoPedido,
 } from './pedidosListaHelpers'
 import { etiquetaOrigenPedido } from './ventaLlegada'
+import { etiquetaPedido } from '@/utils/numeroPedidoTienda'
 
 export type PedidosListaVariante = 'emp' | 'seller'
 
@@ -134,7 +135,7 @@ function TarjetaPedido({
     >
       <div className="flex items-center justify-between">
         <p className={emp ? 'text-[13px] font-bold' : 'text-sm font-medium'}>
-          Pedido #{pedido.id}
+          {etiquetaPedido(pedido)}
         </p>
         <span
           className="rounded-full px-2.5 py-1 text-[10px] font-medium"
