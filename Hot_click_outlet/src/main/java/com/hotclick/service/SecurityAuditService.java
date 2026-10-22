@@ -67,7 +67,7 @@ public class SecurityAuditService {
 
         // Structured log — always committed even if DB save fails
         log.info("[SEC] type={} severity={} userId={} email={} ip={} endpoint={} meta={}",
-            evt, sev, userId, email, ip, endpoint, meta);
+            evt, sev, userId, com.hotclick.security.CorreoLogSeguro.enmascarar(email), ip, endpoint, meta);
 
         try {
             SecurityAuditLog record = new SecurityAuditLog();

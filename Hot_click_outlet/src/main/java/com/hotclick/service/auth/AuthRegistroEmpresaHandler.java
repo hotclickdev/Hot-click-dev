@@ -44,7 +44,7 @@ public class AuthRegistroEmpresaHandler {
                 otpService.enviarOtp(emprendedor, Constants.OTP_TIPO_REGISTRO);
                 otpEnviado = true;
             } catch (Exception e) {
-                log.error("[registro-empresa] Error al enviar OTP a {}: {}", emprendedor.getCorreo(), e.getMessage(), e);
+                log.error("[registro-empresa] Error al enviar OTP a {}: {}", com.hotclick.security.CorreoLogSeguro.enmascarar(emprendedor.getCorreo()), e.getMessage(), e);
                 otpError = e.getMessage();
             }
             AuthResponse authResponse = authSupport.buildAuthResponse(emprendedor);

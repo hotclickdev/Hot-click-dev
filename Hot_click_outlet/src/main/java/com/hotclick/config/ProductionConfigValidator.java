@@ -40,6 +40,9 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
     @Value("${cors.allowed.origins:}")
     private String corsOrigins;
 
+    @Value("${webauthn.synthetic-id-key:}")
+    private String webauthnSyntheticKey;
+
     @Value("${aws.s3.bucket:}")
     private String s3Bucket;
 
@@ -54,6 +57,13 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
         List<String> warnings  = new ArrayList<>();
         // Fatales: en prod abortan el arranque (fail-closed), no solo se loguean.
         List<String> fatales   = new ArrayList<>();
+
+        // ── WebAuthn: clave de ids sintéticos (anti-enumeración) ──────────────
+        String problemaWebauthn = com.hotclick.service.WebAuthnService.problemaClaveSintetica(webauthnSyntheticKey);
+        if (problemaWebauthn != null) {
+            criticals.add(problemaWebauthn);
+            fatales.add(problemaWebauthn);
+        }
 
         // ── JWT secret strength ───────────────────────────────────────────────
         if (jwtSecret == null || jwtSecret.isBlank()) {

@@ -18,6 +18,8 @@ class ProductionConfigValidatorCorsTest {
         ReflectionTestUtils.setField(v, "appUrl", appUrl);
         ReflectionTestUtils.setField(v, "corsOrigins", cors);
         ReflectionTestUtils.setField(v, "s3Bucket", "");
+        // Unificado con fix/auth-enumeracion: clave WebAuthn válida para aislar el chequeo de CORS.
+        ReflectionTestUtils.setField(v, "webauthnSyntheticKey", java.util.Base64.getEncoder().encodeToString(new byte[32]));
         return v;
     }
 

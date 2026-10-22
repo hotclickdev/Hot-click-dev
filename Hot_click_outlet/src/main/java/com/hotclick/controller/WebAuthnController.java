@@ -72,10 +72,14 @@ public class WebAuthnController {
     public ResponseEntity<?> loginStart(@RequestBody Map<String, String> body) {
         try {
             String email   = body.get("email");
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Ingresá tu correo."));
+            }
             String options = webAuthnService.startAuthentication(email);
             return ResponseEntity.ok(Map.of("options", options));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // Anti-enumeración: nunca el mensaje de la excepción (puede depender de si el usuario existe).
+            return ResponseEntity.badRequest().body(Map.of("error", "No pudimos iniciar el acceso con llave. Probá de nuevo."));
         }
     }
 

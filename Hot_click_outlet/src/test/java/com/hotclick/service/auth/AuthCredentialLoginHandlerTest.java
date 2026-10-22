@@ -68,6 +68,7 @@ class AuthCredentialLoginHandlerTest {
     void usuarioInexistente() {
         JwtRequest req = request();
         when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("timing-pad")).thenReturn("$dummy");
         when(passwordEncoder.matches(eq(CLAVE), anyString())).thenReturn(false);
 
         ResponseEntity<?> resp = handler.login(req, httpRequest);
@@ -141,6 +142,34 @@ class AuthCredentialLoginHandlerTest {
         verify(otpService, never()).enviarOtp(any(), anyString());
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    @DisplayName("cuenta bloqueada (clave ok o no) → 401 genérico y bcrypt ejecutado (sin canal de timing)")
+    void bloqueadaRespondeComoCredencialesInvalidas(boolean claveOk) {
+        Usuario u = usuarioActivo();
+        u.setBloqueadoHasta(java.time.LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
+        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches(CLAVE, HASH_REAL)).thenReturn(claveOk);
+
+        ResponseEntity<?> resp = handler.login(request(), httpRequest);
+
+        assertCredencialesInvalidas(resp);
+        verify(passwordEncoder).matches(CLAVE, HASH_REAL);
+    }
+
+    @Test
+    @DisplayName("usuario desconocido → bcrypt contra un dummy generado con el PasswordEncoder inyectado (mismo costo), una vez")
+    void dummyConEncoderInyectado() {
+        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("timing-pad")).thenReturn("$dummy-del-encoder");
+
+        assertCredencialesInvalidas(handler.login(request(), httpRequest));
+        assertCredencialesInvalidas(handler.login(request(), httpRequest));
+
+        verify(passwordEncoder, org.mockito.Mockito.times(1)).encode("timing-pad");
+        verify(passwordEncoder, org.mockito.Mockito.times(2)).matches(CLAVE, "$dummy-del-encoder");
+    }
+
     private static void assertCredencialesInvalidas(ResponseEntity<?> resp) {
         assertThat(resp.getStatusCode().value()).isEqualTo(401);
         assertThat(resp.getBody()).isInstanceOf(ResponseDTO.class);
@@ -182,5 +211,22 @@ class AuthCredentialLoginHandlerTest {
         u.setContrasenaHash(HASH_REAL);
         u.setEstado(estado);
         return u;
+    }
+    @Test
+    void secTiming() {
+        var enc = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(12);
+        org.springframework.test.util.ReflectionTestUtils.setField(handler, "passwordEncoder", enc);
+        String hashReal = enc.encode("otra-clave-distinta");
+        Usuario u = usuarioActivo(); u.setContrasenaHash(hashReal);
+        org.mockito.Mockito.lenient().when(usuarioService.buscarPorCorreo("x@example.com")).thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient().when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
+        JwtRequest malo = request(); JwtRequest nadie = request(); nadie.setCorreo("x@example.com");
+        handler.login(nadie, httpRequest); handler.login(malo, httpRequest); // warmup + dummy lazy
+        long tn = 0, tm = 0; int n = 20;
+        for (int i = 0; i < n; i++) {
+            long a = System.nanoTime(); handler.login(nadie, httpRequest); tn += System.nanoTime() - a;
+            a = System.nanoTime(); handler.login(malo, httpRequest); tm += System.nanoTime() - a;
+        }
+        System.out.printf("SEC_TIMING inexistente=%.1fms claveMala=%.1fms%n", tn / n / 1e6, tm / n / 1e6);
     }
 }

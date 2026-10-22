@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,11 +37,11 @@ public class AuthCredentialLoginHandler {
     private static final String KEY_TEMP_TOKEN = "tempToken";
     private static final String KEY_MESSAGE = "message";
     /**
-     * Bcrypt cost 12 generado al cargar la clase (no es una credencial).
-     * Solo iguala el timing de {@code matches} cuando el correo no existe.
+     * Hash dummy para igualar el timing de {@code matches} cuando el correo no existe. Se genera con el
+     * mismo {@link PasswordEncoder} inyectado (mismo BCRYPT_COST configurado), una sola vez y en forma perezosa.
+     * No es una credencial.
      */
-    private static final String HASH_TIMING_DESCONOCIDO =
-        new BCryptPasswordEncoder(12).encode("timing-pad");
+    private volatile String hashTimingDesconocido;
 
     @Autowired private UsuarioService              usuarioService;
     @Autowired private JwtUtil                     jwtUtil;
@@ -90,7 +89,7 @@ public class AuthCredentialLoginHandler {
     }
 
     private ResponseEntity<?> rechazarUsuarioDesconocido(JwtRequest request, HttpServletRequest httpRequest) {
-        passwordEncoder.matches(request.getContrasena(), HASH_TIMING_DESCONOCIDO);
+        passwordEncoder.matches(request.getContrasena(), hashTimingDesconocido());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "user_not_found"));
         AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
         return respuestaCredencialesInvalidas();
@@ -100,10 +99,13 @@ public class AuthCredentialLoginHandler {
         if (usuario.getBloqueadoHasta() == null || !LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
             return null;
         }
-        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
+        // Anti-enumeración: mismo costo bcrypt que una clave incorrecta y la misma respuesta 401 genérica.
+        // El resultado se descarta: una cuenta bloqueada no entra ni con la clave correcta. El aviso de
+        // bloqueo le llega al titular por correo (CuentaBloqueadaEvent), no en esta respuesta.
+        passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash());
+        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", enmascararCorreo(request.getCorreo()), usuario.getBloqueadoHasta());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest));
-        return ResponseEntity.status(403).body(ResponseDTO.error(
-            "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Revisá tu correo para recuperar el acceso."));
+        return respuestaCredencialesInvalidas();
     }
 
     private ResponseEntity<?> rechazarSiClaveIncorrecta(Usuario usuario, JwtRequest request, HttpServletRequest httpRequest) {
@@ -133,7 +135,7 @@ public class AuthCredentialLoginHandler {
             otpService.enviarOtp(usuario, Constants.OTP_TIPO_REGISTRO);
         } catch (Exception e) {
             log.error("[login] No se pudo reenviar verificación a {}: {}",
-                usuario.getCorreo(), e.getMessage(), e);
+                enmascararCorreo(usuario.getCorreo()), e.getMessage(), e);
         }
     }
 
@@ -202,5 +204,21 @@ public class AuthCredentialLoginHandler {
             KEY_TEMP_TOKEN, selToken,
             KEY_MESSAGE, "Seleccioná el negocio al que querés acceder"
         ));
+    }
+
+    String hashTimingDesconocido() {
+        String h = hashTimingDesconocido;
+        if (h == null) {
+            synchronized (this) {
+                h = hashTimingDesconocido;
+                if (h == null) hashTimingDesconocido = h = passwordEncoder.encode("timing-pad");
+            }
+        }
+        return h;
+    }
+
+    /** a***@dominio: los logs no guardan el correo completo. */
+    static String enmascararCorreo(String correo) {
+        return com.hotclick.security.CorreoLogSeguro.enmascarar(correo);
     }
 }

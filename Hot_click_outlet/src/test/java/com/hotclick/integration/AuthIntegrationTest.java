@@ -243,4 +243,79 @@ class AuthIntegrationTest extends BaseIntegrationTest {
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
     }
+    // ── Anti-enumeración ────────────────────────────────────────────────────
+
+    private String loginRaw(String correo, String clave) throws Exception {
+        return mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(Map.of("correo", correo, "contrasena", clave))))
+            .andExpect(status().isUnauthorized())
+            .andReturn().getResponse().getContentAsString();
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode sinTimestamp(String json) throws Exception {
+        var n = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(json);
+        n.remove("timestamp");
+        return n;
+    }
+
+    @Test
+    @DisplayName("Cuenta bloqueada, clave incorrecta y usuario desconocido → mismo 401 y mismo JSON (salvo timestamp)")
+    void login_bloqueada_igualQueCredencialesInvalidas() throws Exception {
+        String claveMala = loginRaw("testuser@hotclick.cr", "WRONG_PASS");
+        String desconocido = loginRaw("nobody@example.com", "anything");
+
+        testUser = usuarioRepository.findByCorreo("testuser@hotclick.cr").orElseThrow();
+        testUser.setBloqueadoHasta(java.time.LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
+        usuarioRepository.saveAndFlush(testUser);
+        // Con la clave CORRECTA: aun así no se distingue de una clave incorrecta.
+        String bloqueada = loginRaw("testuser@hotclick.cr", "Test1234!");
+
+        org.junit.jupiter.api.Assertions.assertEquals(sinTimestamp(claveMala), sinTimestamp(bloqueada));
+        org.junit.jupiter.api.Assertions.assertEquals(sinTimestamp(desconocido), sinTimestamp(bloqueada));
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode webauthnStart(String email) throws Exception {
+        String body = mockMvc.perform(post("/api/auth/webauthn/login/start")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(Map.of("email", email))))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        return mapper.readTree(mapper.readTree(body).get("options").asText());
+    }
+
+    private static java.util.List<String> forma(com.fasterxml.jackson.databind.JsonNode n, String prefijo) {
+        var out = new java.util.ArrayList<String>();
+        n.fieldNames().forEachRemaining(k -> {
+            var v = n.get(k);
+            out.add(prefijo + k + ":" + v.getNodeType());
+            if (v.isObject()) out.addAll(forma(v, prefijo + k + "."));
+            if (v.isArray()) for (int i = 0; i < v.size(); i++) {
+                out.add(prefijo + k + "[" + i + "]");
+                if (v.get(i).isObject()) out.addAll(forma(v.get(i), prefijo + k + "[]."));
+            }
+        });
+        java.util.Collections.sort(out);
+        return out;
+    }
+
+    @Test
+    @DisplayName("WebAuthn login/start → misma forma para usuario existente y desconocido; id sintético determinista")
+    void webauthnStart_mismaFormaExistaONo() throws Exception {
+        var existente = webauthnStart("testuser@hotclick.cr");
+        var desconocido = webauthnStart("nobody@example.com");
+        var desconocido2 = webauthnStart("nobody@example.com");
+
+        org.junit.jupiter.api.Assertions.assertEquals(forma(existente, ""), forma(desconocido, ""));
+        var allowDesc = desconocido.at("/publicKey/allowCredentials");
+        org.junit.jupiter.api.Assertions.assertEquals(4 /* WebAuthnService.CANTIDAD_ALLOW_CREDENTIALS */, allowDesc.size());
+        org.junit.jupiter.api.Assertions.assertEquals(allowDesc.size(), existente.at("/publicKey/allowCredentials").size());
+        org.junit.jupiter.api.Assertions.assertEquals(
+            allowDesc.get(0).get("id").asText().length(),
+            existente.at("/publicKey/allowCredentials/0/id").asText().length());
+        // Determinista por correo; el reto (challenge) sí cambia.
+        org.junit.jupiter.api.Assertions.assertEquals(allowDesc, desconocido2.at("/publicKey/allowCredentials"));
+        org.junit.jupiter.api.Assertions.assertNotEquals(
+            desconocido.at("/publicKey/challenge"), desconocido2.at("/publicKey/challenge"));
+    }
 }

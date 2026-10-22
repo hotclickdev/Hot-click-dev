@@ -42,7 +42,7 @@ public class ClerkSyncService {
         usuario = usuarioRepository.findByCorreo(usuario.getCorreo())
             .orElseThrow(() -> new IllegalStateException("Error al cargar usuario tras sync"));
         AuthResponse resp = authSupport.buildAuthResponse(usuario);
-        log.info("[clerk-sync] Login social exitoso: {} ({})", email, clerkUserId);
+        log.info("[clerk-sync] Login social exitoso: {} ({})", com.hotclick.security.CorreoLogSeguro.enmascarar(email), clerkUserId);
         return resp;
     }
 
@@ -84,7 +84,7 @@ public class ClerkSyncService {
                 "Esta cuenta ya está vinculada a otro inicio de sesión social. Ingresá con tu método habitual.");
         }
         if (hasElevatedRole && u.getClerkUserId() == null) {
-            log.warn("[clerk-sync] Blocked Clerk merge for elevated account email={} clerkId={}", email, clerkUserId);
+            log.warn("[clerk-sync] Blocked Clerk merge for elevated account email={} clerkId={}", com.hotclick.security.CorreoLogSeguro.enmascarar(email), clerkUserId);
             throw new SecurityException("Esta cuenta requiere verificación adicional para vincular login social. Usá tu contraseña.");
         }
         u.setClerkUserId(clerkUserId);
@@ -114,7 +114,7 @@ public class ClerkSyncService {
         rolRepository.findByNombreRol("USUARIO_FINAL")
             .ifPresent(rol -> u.getRoles().add(rol));
         Usuario saved = usuarioRepository.save(u);
-        log.info("[clerk-sync] Nuevo usuario OAuth creado: {} clerkId={}", email, clerkUserId);
+        log.info("[clerk-sync] Nuevo usuario OAuth creado: {} clerkId={}", com.hotclick.security.CorreoLogSeguro.enmascarar(email), clerkUserId);
         return saved;
     }
 }
