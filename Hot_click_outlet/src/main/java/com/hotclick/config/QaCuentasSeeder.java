@@ -121,6 +121,7 @@ public class QaCuentasSeeder implements ApplicationRunner {
 
     private Empresa nuevaEmpresa(String correo, String apellido, String slug, Plan plan) {
         Empresa empresa = new Empresa();
+        empresa.setFrecuenciaPayout("QUINCENAL"); // dato de prueba local/QA; en altas reales la elige el negocio
         empresa.setNombreEmpresa("QA " + apellido);
         empresa.setNombreComercial("QA " + apellido);
         empresa.setSlug(slug);

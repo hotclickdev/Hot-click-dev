@@ -67,6 +67,12 @@ public class RegistroEmpresaDTO {
     public String getTelefonoAdmin()          { return telefonoAdmin; }
     public void setTelefonoAdmin(String v)         { this.telefonoAdmin = v; }
 
+    /** QUINCENAL o MENSUAL, obligatorio (400 FRECUENCIA_INVALIDA si falta). Alias aceptado: frecuenciaPayout. */
+    @com.fasterxml.jackson.annotation.JsonAlias("frecuenciaPayout")
+    private String frecuenciaLiquidacion;
+    public String getFrecuenciaLiquidacion() { return frecuenciaLiquidacion; }
+    public void setFrecuenciaLiquidacion(String v) { this.frecuenciaLiquidacion = v; }
+
     private String turnstileToken;
     public String getTurnstileToken() { return turnstileToken; }
     public void setTurnstileToken(String v) { this.turnstileToken = v; }

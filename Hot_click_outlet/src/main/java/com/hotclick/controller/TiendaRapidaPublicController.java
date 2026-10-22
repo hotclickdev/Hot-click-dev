@@ -49,7 +49,7 @@ public class TiendaRapidaPublicController {
                                                HttpServletRequest request) {
         Map<String, Object> datos = tiendas.aceptar(
             token, Boolean.TRUE.equals(body.acepto()), body.versionLegal(), hasher.hash(ips.resolve(request)),
-            body.persona(), body.cedula(), body.correo(), body.telefono());
+            body.persona(), body.cedula(), body.correo(), body.telefono(), body.frecuenciaLiquidacion());
         // Ya confirmado: se manda el código para definir la contraseña. Si el correo falla, la tienda
         // queda guardada y el dueño puede pedirlo de nuevo en /recuperar-contrasena.
         try {

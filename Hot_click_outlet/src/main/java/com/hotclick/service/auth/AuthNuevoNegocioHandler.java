@@ -76,6 +76,8 @@ public class AuthNuevoNegocioHandler {
             return ResponseEntity.ok(ResponseDTO.success("Negocio creado exitosamente", buildAuthResponse(currentUser, alta.empresa())));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.FrecuenciaPayoutInvalidaException e) {
+            throw e; // 400 FRECUENCIA_INVALIDA en GlobalExceptionHandler
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -85,6 +87,7 @@ public class AuthNuevoNegocioHandler {
     }
 
     private ResponseEntity<?> validarDto(RegistroEmpresaDTO dto) {
+        dto.setFrecuenciaLiquidacion(com.hotclick.exception.FrecuenciaPayoutInvalidaException.requerida(dto.getFrecuenciaLiquidacion()));
         if (dto.getNombreEmpresa() == null || dto.getNombreEmpresa().isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre del negocio es requerido"));
         }
@@ -106,6 +109,7 @@ public class AuthNuevoNegocioHandler {
 
         String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase();
         Empresa empresa = new Empresa();
+        empresa.setFrecuenciaPayout(dto.getFrecuenciaLiquidacion());
         empresa.setNombreEmpresa(dto.getNombreEmpresa().trim());
         empresa.setNombreComercial(dto.getNombreComercial() != null && !dto.getNombreComercial().isBlank()
             ? dto.getNombreComercial().trim() : dto.getNombreEmpresa().trim());

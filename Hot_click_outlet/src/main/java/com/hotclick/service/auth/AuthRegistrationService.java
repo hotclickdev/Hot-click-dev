@@ -86,12 +86,15 @@ public class AuthRegistrationService {
                 dto.getInscritoHacienda(),
                 dto.getRegimenTributario(),
                 dto.getNombreHacienda(),
-                dto.ubicacionDespacho()
+                dto.ubicacionDespacho(),
+                dto.getFrecuenciaLiquidacion()
             );
             upgraded = usuarioRepository.findByCorreo(upgraded.getCorreo())
                 .orElse(upgraded);
             AuthResponse resp = authSupport.buildAuthResponse(upgraded);
             return ResponseEntity.ok(ResponseDTO.success("Negocio registrado exitosamente", resp));
+        } catch (com.hotclick.exception.FrecuenciaPayoutInvalidaException e) {
+            throw e; // 400 FRECUENCIA_INVALIDA en GlobalExceptionHandler
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
