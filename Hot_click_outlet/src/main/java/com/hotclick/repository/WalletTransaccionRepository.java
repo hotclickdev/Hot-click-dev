@@ -68,4 +68,8 @@ public interface WalletTransaccionRepository extends JpaRepository<WalletTransac
         "UPDATE WalletTransaccion t SET t.payoutLiquidacionId = :payoutId WHERE t.id IN :ids")
     int marcarLiquidados(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids,
                          @org.springframework.data.repository.query.Param("payoutId") Long payoutId);
+
+    /** S4-23: movimientos de un tipo del negocio en [desde, hasta), en orden cronológico. */
+    List<WalletTransaccion> findByEmpresaIdAndTipoAndFechaCreacionGreaterThanEqualAndFechaCreacionLessThanOrderByFechaCreacionAsc(
+        Long empresaId, String tipo, LocalDateTime desde, LocalDateTime hasta, Pageable pagina);
 }
