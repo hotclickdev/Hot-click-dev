@@ -108,9 +108,36 @@ class PaymentExpirationCleanupOnvoTest {
     }
 
     @Test
-    @DisplayName("ONVO dice que no hay cobro → se cancela y se libera el stock")
+    @DisplayName("M2: el cobro sigue en proceso en ONVO (3DS, asíncrono) → no se cancela")
+    void enProceso_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.EN_PROCESO);
+        service.ejecutar();
+        noCancela();
+    }
+
+    @Test
+    @DisplayName("M2: sin cobro pero ONVO no deja la sesión expirada → no se cancela")
+    void sinCobroSesionNoExpira_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.NO_PAGADO);
+        when(onvoPaymentProvider.expirarSesionSinCobro("cs_vencida")).thenReturn(false);
+        service.ejecutar();
+        noCancela();
+    }
+
+    @Test
+    @DisplayName("M2: sin cobro y ONVO no responde al expirar → no se cancela")
+    void sinCobroExpirarFalla_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.NO_PAGADO);
+        when(onvoPaymentProvider.expirarSesionSinCobro("cs_vencida")).thenThrow(new IllegalStateException("caído"));
+        service.ejecutar();
+        noCancela();
+    }
+
+    @Test
+    @DisplayName("ONVO dice que no hay cobro y expira la sesión → se cancela y se libera el stock")
     void sinCobro_cancela() {
         when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.NO_PAGADO);
+        when(onvoPaymentProvider.expirarSesionSinCobro("cs_vencida")).thenReturn(true);
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);

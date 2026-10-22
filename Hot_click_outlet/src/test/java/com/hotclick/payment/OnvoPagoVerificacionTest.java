@@ -57,7 +57,9 @@ class OnvoPagoVerificacionTest {
         pago.setPedido(pedido);
         when(pagoRepository.findByMerchantToken("cs_1")).thenReturn(Optional.of(pago));
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString())).thenReturn(false);
-        when(onvoCapturaService.capturarVerificado(anyString(), anyString(), anyString())).thenReturn(true);
+        when(onvoCapturaService.capturarVerificado(anyString(), anyString(), anyString()))
+            .thenReturn(OnvoCapturaService.Captura.CAPTURADO);
+        when(onvoService.modoEsperado()).thenReturn("live");
     }
 
     private void onvoResponde(String paymentStatus, String intentStatus, Object centimos) {
@@ -87,6 +89,39 @@ class OnvoPagoVerificacionTest {
         onvoResponde("paid", "succeeded", 12_500);
         assertThat(provider.procesarPagoVerificado("cs_1", "webhook")).isEqualTo(Verificacion.DATOS_DISTINTOS);
         verify(onvoCapturaService, never()).capturarVerificado(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("M2: intent en processing → EN_PROCESO, no se captura")
+    void enProcesoNoSeCaptura() {
+        onvoResponde("unpaid", "processing", 1_250_000);
+        assertThat(provider.procesarPagoVerificado("cs_1", "cleanup")).isEqualTo(Verificacion.EN_PROCESO);
+        verify(onvoCapturaService, never()).capturarVerificado(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Pedido ya cancelado: la captura lo informa y no se da por OK")
+    void cobroSobreCancelado() {
+        onvoResponde("paid", "succeeded", 1_250_000);
+        when(onvoCapturaService.capturarVerificado(anyString(), anyString(), anyString()))
+            .thenReturn(OnvoCapturaService.Captura.COBRADO_SOBRE_CANCELADO);
+        assertThat(provider.procesarPagoVerificado("cs_1", "webhook")).isEqualTo(Verificacion.COBRADO_SOBRE_CANCELADO);
+    }
+
+    @Test
+    @DisplayName("Expirar antes de cancelar: solo true si ONVO la deja expirada y sin cobro, o no la tiene")
+    void expirarSesionSinCobro() {
+        doReturn(Map.of("status", "expired", "paymentStatus", "unpaid")).when(onvoService).expirarCheckoutSession("cs_1");
+        assertThat(provider.expirarSesionSinCobro("cs_1")).isTrue();
+
+        doReturn(Map.of("status", "complete", "paymentStatus", "paid")).when(onvoService).expirarCheckoutSession("cs_1");
+        assertThat(provider.expirarSesionSinCobro("cs_1")).isFalse();
+
+        doReturn(Map.of("status", "open", "paymentStatus", "unpaid")).when(onvoService).expirarCheckoutSession("cs_1");
+        assertThat(provider.expirarSesionSinCobro("cs_1")).isFalse();
+
+        doReturn(Map.of()).when(onvoService).expirarCheckoutSession("cs_1");
+        assertThat(provider.expirarSesionSinCobro("cs_1")).isTrue();
     }
 
     @Test

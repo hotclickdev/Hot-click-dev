@@ -137,8 +137,11 @@ public class OnvoWebhookController {
         return switch (v) {
             case OK -> null;
             case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
+            // Procesado: queda para reembolso del admin; reintentar no cambia nada.
+            case COBRADO_SOBRE_CANCELADO -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
             case NO_ENCONTRADO -> ResponseEntity.status(404).body(Map.of("error", "not found"));
-            case NO_PAGADO, DATOS_DISTINTOS -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
+            case EN_PROCESO, NO_PAGADO, DATOS_DISTINTOS ->
+                ResponseEntity.status(409).body(Map.of("error", "not verified"));
         };
     }
 

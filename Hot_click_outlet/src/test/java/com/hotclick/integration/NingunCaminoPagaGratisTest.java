@@ -298,6 +298,26 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("Cobro de ONVO que llega tarde sobre un pedido ya CANCELADO → no se resucita; queda para reembolso")
+    void webhookTardioSobrePedidoCancelado() throws Exception {
+        Pedido p = pedidoOnvo("cs_tarde");
+        p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pedidoRepository.saveAndFlush(p);
+        Pago pago = pagoRepository.findByMerchantToken("cs_tarde").orElseThrow();
+        pago.setEstadoPago(Constants.PAGO_CANCELADO);
+        pagoRepository.saveAndFlush(pago);
+        onvoResponde("cs_tarde", "paid", "succeeded", 1_000_000L);
+
+        webhook("cs_tarde").andExpect(status().isOk());
+        webhook("cs_tarde").andExpect(status().isOk());
+
+        assertEstado(p, Constants.PEDIDO_CANCELADO);
+        assertThat(pagoRepository.findByMerchantToken("cs_tarde").orElseThrow().getEstadoPago())
+            .isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        sinCorreoDePagoConfirmado();
+    }
+
+    @Test
     @DisplayName("Control: ONVO confirma el cobro exacto → PAGADO con un solo correo, aunque el webhook se repita")
     void webhookCobroConfirmado() throws Exception {
         Pedido p = pedidoOnvo("cs_ok");
