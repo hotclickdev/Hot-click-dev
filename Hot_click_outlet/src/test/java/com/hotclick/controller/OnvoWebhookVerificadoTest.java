@@ -105,6 +105,9 @@ class OnvoWebhookVerificadoTest {
         when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.COBRADO_SOBRE_CANCELADO);
         assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
 
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.NO_CONSULTABLE);
+        assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(503);
+
         when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.NO_ENCONTRADO);
         assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(404);
 

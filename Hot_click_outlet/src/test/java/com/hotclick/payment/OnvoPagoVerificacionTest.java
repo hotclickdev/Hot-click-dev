@@ -60,6 +60,7 @@ class OnvoPagoVerificacionTest {
         when(onvoCapturaService.capturarVerificado(anyString(), anyString(), anyString()))
             .thenReturn(OnvoCapturaService.Captura.CAPTURADO);
         when(onvoService.modoEsperado()).thenReturn("live");
+        when(onvoService.isPagosDisponibles()).thenReturn(true);
     }
 
     private void onvoResponde(String paymentStatus, String intentStatus, Object centimos) {
@@ -88,6 +89,15 @@ class OnvoPagoVerificacionTest {
     void montoDistintoNoSeCaptura() {
         onvoResponde("paid", "succeeded", 12_500);
         assertThat(provider.procesarPagoVerificado("cs_1", "webhook")).isEqualTo(Verificacion.DATOS_DISTINTOS);
+        verify(onvoCapturaService, never()).capturarVerificado(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("N1: sin llave utilizable → NO_CONSULTABLE, sin consultar ni capturar (no es «ONVO no la tiene»)")
+    void sinLlaveNoConsultable() {
+        when(onvoService.isPagosDisponibles()).thenReturn(false);
+        assertThat(provider.procesarPagoVerificado("cs_1", "cleanup")).isEqualTo(Verificacion.NO_CONSULTABLE);
+        verify(onvoService, never()).obtenerCheckoutSession(any());
         verify(onvoCapturaService, never()).capturarVerificado(any(), any(), any());
     }
 

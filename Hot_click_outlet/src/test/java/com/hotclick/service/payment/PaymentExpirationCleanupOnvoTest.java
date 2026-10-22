@@ -108,6 +108,15 @@ class PaymentExpirationCleanupOnvoTest {
     }
 
     @Test
+    @DisplayName("N1: sin llave utilizable en producción → no se cancela un pago ONVO que pudo cobrarse")
+    void sinLlave_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.NO_CONSULTABLE);
+        service.ejecutar();
+        noCancela();
+        verify(onvoPaymentProvider, never()).expirarSesionSinCobro(any());
+    }
+
+    @Test
     @DisplayName("M2: el cobro sigue en proceso en ONVO (3DS, asíncrono) → no se cancela")
     void enProceso_noCancela() {
         when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.EN_PROCESO);

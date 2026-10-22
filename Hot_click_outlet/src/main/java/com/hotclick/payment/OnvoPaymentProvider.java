@@ -26,6 +26,8 @@ public class OnvoPaymentProvider implements PaymentProvider {
     /** Resultado de reconsultar a ONVO antes de confirmar un pedido. */
     public enum Verificacion {
         OK, DUPLICADO, EN_PROCESO, NO_PAGADO, NO_ENCONTRADO, DATOS_DISTINTOS,
+        /** Sin llave utilizable (borrada, o de prueba fuera de dev/test): no se pudo preguntar a ONVO. */
+        NO_CONSULTABLE,
         /** ONVO cobró un pedido ya cancelado: no se vende, el pago queda REEMBOLSO_PENDIENTE. */
         COBRADO_SOBRE_CANCELADO
     }
@@ -99,6 +101,11 @@ public class OnvoPaymentProvider implements PaymentProvider {
         }
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             return Verificacion.DUPLICADO;
+        }
+        if (!onvoService.isPagosDisponibles()) {
+            // Sin llave las lecturas dan vacío: eso no es «ONVO no la tiene» y no autoriza a cancelar.
+            log.error("[ALERTA-PAGO] ONVO sin llave utilizable: no se puede verificar sessionId={}", checkoutSessionId);
+            return Verificacion.NO_CONSULTABLE;
         }
         Map<?, ?> sesion = onvoService.obtenerCheckoutSession(checkoutSessionId);
         if (sesion.isEmpty()) {
