@@ -52,6 +52,7 @@ public class PaymentService {
     @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
     @Autowired private PosQrVentaService                posQrVentaService;
     @Autowired private GuestCancelTokenService          guestCancelTokenService;
+    @Autowired private com.hotclick.service.payment.EstadoPagoTokenService estadoPagoTokenService;
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
@@ -128,6 +129,7 @@ public class PaymentService {
 
     private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response, CheckoutGrupoFactory.Grupo grupo) {
         response.setCancelToken(guestCancelTokenService.emitir(response.getNumeroPedido()));
+        response.setEstadoPagoToken(estadoPagoTokenService.emitir(response.getNumeroPedido()));
         response.setPaquetes(CheckoutGrupoFactory.resumen(grupo.pedidos()));
         return response;
     }

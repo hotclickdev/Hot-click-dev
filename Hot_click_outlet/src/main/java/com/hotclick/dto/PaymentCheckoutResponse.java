@@ -15,6 +15,8 @@ public class PaymentCheckoutResponse {
     private String moneda = "CRC";
     /** HMAC para POST /payments/guest/cancel — solo en checkout de invitado/sesión. */
     private String cancelToken;
+    /** S4-22: token para GET /api/public/pedidos/{numero}/estado-pago (solo lectura, distinto del cancelToken). */
+    private String estadoPagoToken;
     /** Un paquete por vendedor. {@code numeroPedido} es el del paquete principal, al que va asociado el pago. */
     private java.util.List<Paquete> paquetes = java.util.List.of();
 
@@ -83,4 +85,6 @@ public class PaymentCheckoutResponse {
 
     public String getCancelToken() { return cancelToken; }
     public void setCancelToken(String cancelToken) { this.cancelToken = cancelToken; }
+    public String getEstadoPagoToken() { return estadoPagoToken; }
+    public void setEstadoPagoToken(String estadoPagoToken) { this.estadoPagoToken = estadoPagoToken; }
 }

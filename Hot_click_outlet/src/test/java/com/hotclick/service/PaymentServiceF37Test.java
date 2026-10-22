@@ -143,6 +143,8 @@ class PaymentServiceF37Test {
         GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
         ReflectionTestUtils.setField(guestCancelTokenService, "secret", "unit-test-jwt-secret-32chars!!!!");
         ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
+        ReflectionTestUtils.setField(service, "estadoPagoTokenService",
+            new com.hotclick.service.payment.EstadoPagoTokenService("unit-test-jwt-secret-32chars!!!!"));
         ReflectionTestUtils.setField(checkoutOrderFactory, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);

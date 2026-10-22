@@ -149,6 +149,8 @@ class PaymentServiceTest {
         GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
         ReflectionTestUtils.setField(guestCancelTokenService, "secret", "unit-test-jwt-secret-32chars!!!!");
         ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
+        ReflectionTestUtils.setField(service, "estadoPagoTokenService",
+            new com.hotclick.service.payment.EstadoPagoTokenService("unit-test-jwt-secret-32chars!!!!"));
         ReflectionTestUtils.setField(checkoutOrderFactory, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
@@ -194,6 +196,7 @@ class PaymentServiceTest {
         assertThat(resp.getRedirectUrl()).isEqualTo(REDIRECT);
         assertThat(resp.getNumeroPedido()).startsWith("ORD-");
         assertThat(resp.getTotal()).isEqualTo(25000); // RETIRO_EN_TIENDA → sin envío
+        assertThat(resp.getEstadoPagoToken()).hasSize(64).isNotEqualTo(resp.getCancelToken());
     }
 
     @Test
