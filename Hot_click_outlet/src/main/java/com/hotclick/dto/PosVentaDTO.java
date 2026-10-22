@@ -25,7 +25,11 @@ public class PosVentaDTO {
     public Integer getMontoRecibido() { return montoRecibido; }
     public void setMontoRecibido(Integer montoRecibido) { this.montoRecibido = montoRecibido; }
 
+    /** @deprecated Ningún flujo lo lee; se conserva solo por compatibilidad del JSON. */
+    @Deprecated
     public String getConfirmacionSinpe() { return confirmacionSinpe; }
+    /** @deprecated Ver {@link #getConfirmacionSinpe()}. */
+    @Deprecated
     public void setConfirmacionSinpe(String confirmacionSinpe) { this.confirmacionSinpe = confirmacionSinpe; }
 
     public Integer getDescuentoGlobal() { return descuentoGlobal; }

@@ -2,6 +2,7 @@ package com.hotclick.service.pos;
 
 import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.PosVentaDTO;
+import com.hotclick.exception.PosMetodoRequierePasarelaException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -54,14 +55,40 @@ public class PosVentaService {
     @Autowired private CompanyScope companyScope;
     @Autowired private ClienteMostradorResolver clienteMostradorResolver;
 
+    /** Revertible: con false vuelve el comportamiento anterior (la venta directa acepta cualquier método). */
+    static final boolean METODOS_DIRECTOS_RESTRINGIDOS = true;
+
+    private static final String METODO_EFECTIVO = "EFECTIVO";
+
+    public static final String MSG_METODO_REQUIERE_PASARELA =
+        "La venta directa solo admite efectivo. SINPE y tarjeta se cobran por el QR de la caja.";
+
+    /**
+     * Rechaza todo método distinto de EFECTIVO y devuelve el valor canónico a persistir ("EFECTIVO").
+     * null, vacío o blanco siguen siendo efectivo. Debe correr antes de cualquier efecto.
+     */
+    public static String exigirMetodoDirecto(String metodoPago) {
+        return exigirMetodoDirecto(metodoPago, METODOS_DIRECTOS_RESTRINGIDOS);
+    }
+
+    static String exigirMetodoDirecto(String metodoPago, boolean restringido) {
+        if (!restringido) return metodoPago != null ? metodoPago : METODO_EFECTIVO;
+        if (metodoPago == null || metodoPago.isBlank()) return METODO_EFECTIVO;
+        if (!METODO_EFECTIVO.equals(metodoPago.trim().toUpperCase(java.util.Locale.ROOT))) {
+            throw new PosMetodoRequierePasarelaException(MSG_METODO_REQUIERE_PASARELA);
+        }
+        return METODO_EFECTIVO;
+    }
+
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
+        String metodoPago = exigirMetodoDirecto(dto.getMetodoPago());
         Usuario cliente = resolverCliente(dto.getClienteId());
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
         Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
 
-        Pedido pedido = armarPedido(dto, cliente, bodega, empresa);
+        Pedido pedido = armarPedido(dto, metodoPago, cliente, bodega, empresa);
         TotalesPos totales = cargarItemsYStock(dto, pedido, correo);
         aplicarTotales(pedido, totales);
 
@@ -142,7 +169,7 @@ public class PosVentaService {
         return bodega;
     }
 
-    private Pedido armarPedido(PosVentaDTO dto, Usuario cliente, Bodega bodega, Empresa empresa) {
+    private Pedido armarPedido(PosVentaDTO dto, String metodoPago, Usuario cliente, Bodega bodega, Empresa empresa) {
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("POS-"));
         pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
@@ -152,7 +179,7 @@ public class PosVentaService {
         pedido.setOrigen(OrigenPedido.POS.codigo());
         pedido.setEstadoPedido("ENTREGADO");
         pedido.setMetodoEnvio("RETIRO");
-        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
+        pedido.setMetodoPago(metodoPago);
         pedido.setCostoEnvio(0);
         pedido.setDescuentoTotal(resolverDescuento(dto.getDescuentoGlobal()));
         pedido.setAplicaImpuesto(false);
