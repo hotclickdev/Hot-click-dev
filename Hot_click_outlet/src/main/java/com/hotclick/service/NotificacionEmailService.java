@@ -63,6 +63,12 @@ public class NotificacionEmailService {
 
     }
 
+    /** Pedido registrado que se paga al recibir: sin «Total pagado» (ver NotificacionPedidoEmailSender). */
+    @Async
+    public void enviarPedidoRecibido(Pedido pedido) {
+        pedidoEmailSender.enviarPedidoRecibido(pedido, adminItEmail, adminItTelefono);
+    }
+
 
 
     @Async
