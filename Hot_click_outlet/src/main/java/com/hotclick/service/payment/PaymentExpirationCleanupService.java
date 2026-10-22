@@ -3,6 +3,7 @@ package com.hotclick.service.payment;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
+import com.hotclick.payment.OnvoPaymentProvider;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
@@ -29,6 +30,7 @@ public class PaymentExpirationCleanupService {
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
+    @Autowired private OnvoPaymentProvider        onvoPaymentProvider;
     @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired private ReservaAntiBotService      reservaAntiBot;
     @Autowired private ReservaSospechosaLiberador reservaSospechosaLiberador;
@@ -75,6 +77,10 @@ public class PaymentExpirationCleanupService {
                 }
             }
 
+            if (Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) && !onvoPermiteCancelar(pago)) {
+                continue;
+            }
+
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagosActualizados.add(pago);
@@ -89,6 +95,29 @@ public class PaymentExpirationCleanupService {
             }
         }
 
+        guardarCancelados(empresaId, pagosActualizados, pedidosActualizados);
+    }
+
+    /**
+     * Antes de cancelar un pago ONVO vencido se le pregunta a ONVO: si cobró (webhook atrasado o perdido)
+     * se confirma; si no se pudo consultar o el monto no coincide, queda pendiente para la próxima vuelta.
+     */
+    private boolean onvoPermiteCancelar(Pago pago) {
+        try {
+            OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(
+                pago.getMerchantToken(), "cleanup");
+            if (v == OnvoPaymentProvider.Verificacion.OK || v == OnvoPaymentProvider.Verificacion.DUPLICADO) {
+                log.info("[payment-cleanup] ONVO ya cobrado — confirmado: {}", pago.getMerchantToken());
+                return false;
+            }
+            return v != OnvoPaymentProvider.Verificacion.DATOS_DISTINTOS;
+        } catch (Exception e) {
+            log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", pago.getMerchantToken(), e.getMessage());
+            return false;
+        }
+    }
+
+    private void guardarCancelados(Long empresaId, List<Pago> pagosActualizados, List<Pedido> pedidosActualizados) {
         if (!pagosActualizados.isEmpty()) {
             pagoRepository.saveAll(pagosActualizados);
             pedidoRepository.saveAll(pedidosActualizados);
