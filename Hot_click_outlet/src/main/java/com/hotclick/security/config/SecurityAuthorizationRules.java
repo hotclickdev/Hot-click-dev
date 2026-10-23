@@ -281,6 +281,8 @@ final class SecurityAuthorizationRules {
             // Íconos de los correos (EmailLayoutHelper): públicos para Gmail. Antes daban 401, y como el
             // service worker los precacheaba, su instalación fallaba en todas las páginas (QA-PROD-2).
             .requestMatchers(GET, "/email/*.png").permitAll()
+            // Apple Pay (ONVO): archivo público de asociación de dominio, Apple lo pide sin Accept text/html.
+            .requestMatchers(GET, "/.well-known/apple-developer-merchantid-domain-association").permitAll()
             // LAN-5: fotos y video de /emprende y /para-emprendedores (public/emprende, public/servicios) daban 401.
             .requestMatchers(GET, "/emprende/*.jpg", "/emprende/*.jpeg", "/emprende/*.webp", "/emprende/*.png",
                 "/emprende/*.mp4", "/servicios/*").permitAll()
