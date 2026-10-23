@@ -156,6 +156,27 @@ class SuscripcionOnvoChangeServiceTest {
     }
 
     @Test
+    @DisplayName("Prod sin llave (isMockMode=false, sinLlave=true) → no toma camino mock ni llama a ONVO")
+    void prodSinLlaveFallaCerrado() throws Exception {
+        var env = new org.springframework.mock.env.MockEnvironment();
+        env.setActiveProfiles("production");
+        var envField = SuscripcionOnvoChangeService.class.getDeclaredField("environment");
+        envField.setAccessible(true);
+        envField.set(service, env);
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+        when(onvoBilling.isMockMode()).thenReturn(false);
+        when(onvoBilling.sinLlave()).thenReturn(true);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("Pagos no configurados");
+        verify(onvoBilling, never()).crearCustomer(any(), any(), anyMap());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(empresaRepo, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Sin mock pide pago con subscriptionId")
     void requierePagoConSubscriptionId() {
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
