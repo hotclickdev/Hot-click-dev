@@ -30,11 +30,14 @@ public class SuscripcionController {
     private final PlanRepository planRepo;
     private final AuthSupport authSupport;
     private final com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService;
+    private final com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes;
 
     public SuscripcionController(SuscripcionService suscripcionService,
                                   PlanRepository planRepo,
                                   AuthSupport authSupport,
-                                  com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService) {
+                                  com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService,
+                                  com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes) {
+        this.preciosPlanes = preciosPlanes;
         this.suscripcionTilopayService = suscripcionTilopayService;
         this.suscripcionService = suscripcionService;
         this.planRepo           = planRepo;
@@ -43,8 +46,12 @@ public class SuscripcionController {
 
     /** Lista todos los planes disponibles (públicos). */
     @GetMapping("/planes")
-    public ResponseEntity<List<Map<String, Object>>> listarPlanes() {
+    public ResponseEntity<?> listarPlanes() {
         List<Plan> planes = planRepo.findByActivoTrueOrderByPrecioMensualAsc();
+        // Sin precio configurado no se publica el plan con 0 ni con valores viejos: 409 PLAN_SIN_PRECIO.
+        for (Plan p : planes) {
+            if (preciosPlanes.precioUsd(p.getNombre()).filter(v -> v.signum() > 0).isEmpty()) return planSinPrecio(new com.hotclick.exception.PlanSinPrecioException(p.getNombre()));
+        }
         List<Map<String, Object>> result = planes.stream().map(p -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", p.getId());
@@ -52,9 +59,9 @@ public class SuscripcionController {
             m.put("descripcion", p.getDescripcion());
             // precioMensual en colones (UI / cobro ONVO). precioUsd es legado.
             m.put("precioMensual", p.getPrecioMensual());
-            m.put("precioUsd", p.getPrecioUsd());
+            m.put("precioUsd", preciosPlanes.requerir(p.getNombre()));
             m.put("comisionPorcentaje", p.getComisionPorcentaje());
-            m.put("comisionMinimaCrc", p.getComisionMinimaCrc());
+            m.put("comisionMinimaCrc", 0); // V185: sin mínimo por venta
             m.put("maxUsuarios", p.getMaxUsuarios());
             m.put("maxProductos", p.getMaxProductos());
             m.put("maxBodegas", p.getMaxBodegas());
@@ -107,13 +114,18 @@ public class SuscripcionController {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         try {
+            planRepo.findById(planId).ifPresent(pl -> preciosPlanes.requerir(pl.getNombre()));
             return ResponseEntity.ok(suscripcionTilopayService.iniciarCambioPlan(empresaId, planId));
+        } catch (com.hotclick.exception.PlanSinPrecioException e) {
+            return planSinPrecio(e);
+        } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
+            return cobroNoDisponible();
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
-            return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "codigo", "PLAN_SIN_PRECIO"));
+            return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Plan no encontrado"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
         }
     }
 
@@ -130,7 +142,7 @@ public class SuscripcionController {
             log.error("[billing] Error creando portal empresa={}: {}", empresaId, e.getMessage());
             return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe"));
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
         }
     }
 
@@ -149,7 +161,7 @@ public class SuscripcionController {
             log.error("[billing] Error cancelando empresa={}: {}", empresaId, e.getMessage());
             return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe"));
         } catch (NoSuchElementException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
         }
     }
 
@@ -164,6 +176,7 @@ public class SuscripcionController {
         if (empresaId == null) return ResponseEntity.status(401).build();
         try {
             Plan plan = planRepo.findById(planId).orElse(null);
+            if (plan != null) preciosPlanes.requerir(plan.getNombre());
             boolean planPago = plan != null && plan.getPrecioMensual() != null && plan.getPrecioMensual() > 0;
             if (planPago) {
                 Usuario usuario = authSupport.usuarioFromRequest(request);
@@ -176,12 +189,16 @@ public class SuscripcionController {
             out.put("status", "ACTIVO".equals(r.get("estado")) ? "activado" : "requiere_pago");
             out.put("planNombre", r.get("plan"));
             return ResponseEntity.ok(out);
+        } catch (com.hotclick.exception.PlanSinPrecioException e) {
+            return planSinPrecio(e);
+        } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
+            return cobroNoDisponible();
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
-            return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "codigo", "PLAN_SIN_PRECIO"));
+            return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
         } catch (SecurityException e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(401).body(Map.of("error", MSG_SESION));
         } catch (Exception e) {
             log.error("[billing] Error cambiando plan empresa={}: {}", empresaId, e.getMessage());
             return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
@@ -196,10 +213,12 @@ public class SuscripcionController {
         if (empresaId == null) return ResponseEntity.status(401).build();
         try {
             return ResponseEntity.ok(suscripcionTilopayService.confirmar(empresaId, orderNumber));
+        } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
+            return cobroNoDisponible();
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Cobro no encontrado"));
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(409).body(Map.of("error", MSG_COBRO));
         }
     }
 
@@ -209,9 +228,13 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> cobroPendiente() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
-        return suscripcionTilopayService.pendiente(empresaId)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.noContent().build());
+        try {
+            return suscripcionTilopayService.pendiente(empresaId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+        } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
+            return cobroNoDisponible();
+        }
     }
 
     /** Plan nuevo elegido sin pagar: el panel muestra «Completá el pago» (204 si no hay). */
@@ -223,5 +246,23 @@ public class SuscripcionController {
         return suscripcionTilopayService.planNuevoPendiente(empresaId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** Mensajes genéricos: las respuestas 4xx nunca exponen e.getMessage(). */
+    static final String MSG_SOLICITUD = "No pudimos procesar la solicitud. Revisá los datos y probá de nuevo.";
+    static final String MSG_SESION = "Tu sesión no es válida. Volvé a iniciar sesión.";
+    static final String MSG_COBRO = "No pudimos confirmar el cobro todavía. Probá de nuevo en unos minutos.";
+
+    private static <T> ResponseEntity<T> cobroNoDisponible() {
+        @SuppressWarnings("unchecked")
+        T body = (T) Map.of("error", com.hotclick.exception.CobroPlanNoDisponibleException.MENSAJE,
+            "codigo", com.hotclick.exception.CobroPlanNoDisponibleException.CODIGO);
+        return ResponseEntity.status(409).body(body);
+    }
+
+    private static <T> ResponseEntity<T> planSinPrecio(com.hotclick.exception.PlanSinPrecioException e) {
+        @SuppressWarnings("unchecked")
+        T body = (T) Map.of("error", com.hotclick.exception.PlanSinPrecioException.MENSAJE, "codigo", com.hotclick.exception.PlanSinPrecioException.CODIGO, "plan", e.getPlan());
+        return ResponseEntity.status(409).body(body);
     }
 }

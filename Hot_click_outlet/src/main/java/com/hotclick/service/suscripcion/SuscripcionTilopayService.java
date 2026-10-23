@@ -69,21 +69,13 @@ public class SuscripcionTilopayService {
         if (plan.getPrecioMensual() == null) throw new com.hotclick.exception.PlanNoDisponibleException();
         long precio = plan.getPrecioMensual().longValue();
         Map<String, Object> r = new LinkedHashMap<>();
-        if (precio <= 0) {
-            planLocal.planPagoConfirmado(empresaId, plan.getNombre(), "SIN_COBRO", null);
-            r.put("estado", "ACTIVO");
-            r.put("plan", plan.getNombre());
-            return r;
-        }
-        CobroSuscripcion cobro = crearCobro(empresaId, plan, CobroSuscripcion.MOTIVO_ALTA);
-        r.put("estado", "PENDIENTE_PAGO");
-        r.put("proveedor", Constants.PROVEEDOR_TILOPAY);
-        r.put("orderNumber", cobro.getOrderNumber());
-        r.put("montoCrc", cobro.getMontoCrc());
-        r.put("moneda", "CRC");
-        r.put("sdkToken", tilopayService.loginSdk());
-        r.put("plan", plan.getNombre());
-        return r;
+        // Seguridad: un precio 0 o negativo NUNCA activa el plan sin cobro (antes: SIN_COBRO). Responde 409 PLAN_SIN_PRECIO.
+        if (precio <= 0) throw new com.hotclick.exception.PlanSinPrecioException(plan.getNombre());
+        // Cobro de planes por Tilopay prohibido (ni real ni mock). Fail-closed: no se crea cobro ni token SDK,
+        // el plan pedido no se activa. TODO: cobro por ONVO.
+        log.warn("[ALERTA-PAGO] cobro de plan bloqueado (Tilopay deshabilitado para planes) empresa={} plan={}",
+            empresaId, plan.getNombre());
+        throw new com.hotclick.exception.CobroPlanNoDisponibleException(plan.getNombre());
     }
 
     CobroSuscripcion crearCobro(Long empresaId, Plan plan, String motivo) {
@@ -121,6 +113,11 @@ public class SuscripcionTilopayService {
     public Map<String, Object> confirmar(Long empresaId, String orderNumber) {
         CobroSuscripcion cobro = cobroRepo.findByOrderNumberAndEmpresaId(orderNumber, empresaId)
             .orElseThrow(() -> new NoSuchElementException("Cobro no encontrado"));
+        if (cobro != null) {
+            // Ningún cobro de plan se confirma por Tilopay (ni su mock): no activa el plan.
+            log.warn("[ALERTA-PAGO] confirmación Tilopay de plan bloqueada empresa={} order={}", empresaId, orderNumber);
+            throw new com.hotclick.exception.CobroPlanNoDisponibleException(null);
+        }
         Map<String, Object> r = new LinkedHashMap<>();
         if (CobroSuscripcion.PAGADO.equals(cobro.getEstado())) {
             r.put("estado", "ACTIVO");
@@ -188,14 +185,10 @@ public class SuscripcionTilopayService {
         Optional<CobroSuscripcion> cobro = cobroRepo.findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(
             empresaId, CobroSuscripcion.PENDIENTE, CobroSuscripcion.MOTIVO_RENOVACION);
         if (cobro.isEmpty()) return Optional.empty();
-        CobroSuscripcion c = cobro.get();
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("orderNumber", c.getOrderNumber());
-        m.put("montoCrc", c.getMontoCrc());
-        m.put("moneda", "CRC");
-        m.put("proveedor", Constants.PROVEEDOR_TILOPAY);
-        m.put("sdkToken", tilopayService.loginSdk());
-        return Optional.of(m);
+        // Hay mensualidad pendiente, pero no se abre el SDK de Tilopay para pagarla: fail-closed.
+        log.warn("[ALERTA-PAGO] pago de renovación por Tilopay bloqueado empresa={} order={}",
+            empresaId, cobro.get().getOrderNumber());
+        throw new com.hotclick.exception.CobroPlanNoDisponibleException(null);
     }
 
     /** Días que el aviso «Completá el pago» sigue visible tras elegir un plan de pago sin pagarlo. */

@@ -133,7 +133,7 @@
     "title": "Publique e receba no HotClick.",
     "sub": "Sem mensalidade: só uma comissão quando você vende.",
     "heroBadge": "Sem equipe nem loja física",
-    "heroPrecioLinea": "₡0 /mês · comissão {{comision}}% (mín. ₡{{minimo}}, já inclui o gateway de pagamento)",
+    "heroPrecioLinea": "₡0 /mês · comissão {{comision}}% sem mínimo (já inclui o gateway de pagamento)",
     "titleOwner": "Continue crescendo no Sistema",
     "subOwner": "Complete a marca da sua loja, publique um produto e revise seu plano. O checklist de início está no seu painel.",
     "paso1": "Criar meu negócio",
@@ -184,7 +184,7 @@
       "1 depósito e 1 caixa POS",
       "Pagamentos com cartão e SINPE",
       "Envios na Costa Rica",
-      "Comissão: 9% por venda (mínimo ₡700)"
+      "Comissão: 9% por venda, sem mínimo"
     ],
     "planPymeBadge": "Para crescer",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 depósitos e 2 caixas",
       "Compras e estoque",
       "IA e relatórios avançados",
-      "₡12.900/mês + 7% por venda (mínimo ₡700)"
+      "Mensalidade em dólares + 7,5% por venda, sem mínimo"
     ],
     "planPlusBadge": "Para operar de verdade",
     "planPlusTitle": "Negocio Plus",
@@ -206,18 +206,18 @@
       "Multi-filial e pedidos por local",
       "CRM de clientes",
       "IA sem limite",
-      "₡28.900/mês + 7% por venda (mínimo ₡700)"
+      "Mensalidade em dólares + 6% por venda, sem mínimo"
     ],
     "pymeCta": "Criar meu negócio",
     "plusCta": "Criar meu negócio",
     "faqTitle": "Perguntas frequentes",
     "faqSub": "O que mais perguntam antes de se cadastrar.",
     "faq1q": "Cobram algo no cadastro?",
-    "faq1a": "Nada é cobrado ao se cadastrar. A comissão é de 9% por venda, com mínimo de ₡700, e você a verá aqui antes de vender.",
+    "faq1a": "Nada é cobrado ao se cadastrar. A comissão é de 9% por venda, sem mínimo, e você a verá aqui antes de vender.",
     "faq2q": "O que acontece se as vagas grátis acabarem?",
     "faq2a": "Avisamos ali em cima e o botão passa a oferecer PYME ou Negocio Plus. Seu cadastro não é fechado.",
     "faq3q": "Como eu recebo as vendas?",
-    "faq3a": "Com cartão ou SINPE dentro do HotClick. A comissão é de 9% por venda (mínimo ₡700) e você a vê antes de vender.",
+    "faq3a": "Com cartão ou SINPE dentro do HotClick. A comissão é de 9% por venda, sem mínimo, e você a vê antes de vender.",
     "faq4q": "Posso crescer depois?",
     "faq4a": "Sim, você pode migrar para PYME ou Negocio Plus quando precisar, sem perder seu catálogo nem seus pedidos.",
     "galeriaCaption": "Comércios e empreendimentos: o mesmo tipo de negócio que você pode vender no HotClick.",
@@ -309,9 +309,11 @@
     "comoEntras2Titulo": "Você publica seu primeiro produto",
     "comoEntras2Desc": "Suba fotos, preço e já está pronto para vender.",
     "comoEntras3Titulo": "Você recebe por cartão ou SINPE",
-    "comoEntras3Desc": "O HotClick retém {{comision}}% (mínimo ₡{{minimo}}) por venda, gateway incluído.",
+    "comoEntras3Desc": "O HotClick retém {{comision}}% por venda, sem mínimo, gateway incluído.",
     "precioMensualidad": "₡0 /mês",
-    "precioComision": "Comissão {{comision}}% por venda (mínimo ₡{{minimo}}, gateway de pagamento incluído)",
+    "precioMensualidadUsd": "US${{monto}}/mês",
+    "precioMensualidadDolares": "Mensalidade em dólares",
+    "precioComision": "Comissão {{comision}}% por venda, sem mínimo (gateway de pagamento incluído)",
     "ctaFinalTitle": "Pronto para vender sem mensalidade?"
   },
   "pyme": {
@@ -368,7 +370,7 @@
     "comoEntras2Desc": "Com o gateway Tilopay que o painel já usa.",
     "comoEntras3Titulo": "Você entra com o PYME ativo",
     "comoEntras3Desc": "Equipe, estoque e caixa, prontos para operar.",
-    "comparativaNota": "PYME: ₡12.900/mês + 7% por venda. Emprendedor: sem mensalidade + 9% por venda. Ambos com mínimo de ₡700 por venda.",
+    "comparativaNota": "PYME: mensalidade em dólares + 7,5% por venda. Emprendedor: grátis para os primeiros 70 negócios, depois mensalidade em dólares + 9% por venda. Nenhum cobra mínimo por venda.",
     "faqTitle": "Perguntas frequentes",
     "faq2q": "Quanto preciso vender para valer a pena?",
     "faq2a": "Se você vende com frequência, a comissão menor recupera a mensalidade rápido. Se vende pouco, o Emprendedor vale mais a pena.",

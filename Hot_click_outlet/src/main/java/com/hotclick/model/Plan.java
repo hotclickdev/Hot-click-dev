@@ -69,7 +69,7 @@ public class Plan {
     @Column(name = "comision_porcentaje", nullable = false, precision = 5, scale = 2)
     private java.math.BigDecimal comisionPorcentaje = java.math.BigDecimal.ZERO;
 
-    /** Comisión mínima por venta en colones (V168). */
+    /** Comisión mínima por venta en colones (V168). Desde V185 vale 0 y no se aplica: solo historia. */
     @Column(name = "comision_minima_crc", nullable = false)
     private Integer comisionMinimaCrc = 0;
 
