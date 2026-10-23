@@ -77,8 +77,8 @@ public class PosQrService {
     }
 
     @Transactional
-    public PosQrSesion confirmarSinpe(String token, Long usuarioId, Long empresaId, String notas) {
-        return ventaService.confirmarSinpe(token, usuarioId, empresaId, notas);
+    public PosQrSesion confirmarSinpe(String token, Long usuarioId, Long empresaId, Object referencia, String notas) {
+        return ventaService.confirmarSinpe(token, usuarioId, empresaId, referencia, notas);
     }
 
     @Transactional

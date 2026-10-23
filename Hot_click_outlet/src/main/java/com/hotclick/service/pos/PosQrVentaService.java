@@ -30,6 +30,9 @@ public class PosQrVentaService {
     @Autowired private PosQrSessionService   sessionService;
     @Autowired private PosQrVentaCompletionService completionService;
     @Autowired private TurnoCajaService       turnoCajaService;
+    @Autowired private ConfirmadorDistintoGuard confirmadorDistintoGuard;
+    @Autowired private com.hotclick.repository.PosSinpeConfirmacionRepository confirmacionRepo;
+    @Autowired private com.hotclick.service.AuditoriaAdminRegistroService auditoria;
 
 
 
@@ -257,8 +260,18 @@ public class PosQrVentaService {
         }
     }
 
+    /** Acción de auditoría (mecanismo existente {@code AuditoriaAdminRegistroService}). */
+    public static final String AUDIT_SINPE_MANUAL = "POS_SINPE_CONFIRMACION_MANUAL";
+    static final String MSG_SOLO_SINPE = "Esta sesión no es de pago SINPE";
+
+    /**
+     * Confirmación manual de SINPE en caja (decisión de Andrés, 2026-10-22). Condiciones:
+     * (a) referencia obligatoria con formato y única por empresa; (b) registro inmutable
+     * {@link com.hotclick.model.PosSinpeConfirmacion} + auditoría; (c) quien confirma no es quien generó la
+     * venta ({@link ConfirmadorDistintoGuard}); (d) el admin la revisa en /api/admin/pos/sinpe-confirmaciones.
+     */
     @Transactional
-    public PosQrSesion confirmarSinpe(String token, Long usuarioId, Long empresaId, String notas) {
+    public PosQrSesion confirmarSinpe(String token, Long usuarioId, Long empresaId, Object referenciaCruda, String notas) {
         PosQrSesion sesion = posQrRepo.findByToken(token)
             .orElseThrow(() -> new NoSuchElementException("Sesión no encontrada"));
 
@@ -268,11 +281,25 @@ public class PosQrVentaService {
         if (!empresaIdDe(sesion).equals(empresaId)) {
             throw new SecurityException("No autorizado");
         }
+        if (!Constants.PROVEEDOR_SINPE.equals(sesion.getMetodoPago())) {
+            throw new IllegalStateException(MSG_SOLO_SINPE);
+        }
+        confirmadorDistintoGuard.exigirConfirmadorDistinto(sesion, usuarioId);
+        String referencia = ReferenciaSinpe.validar(referenciaCruda);
+        if (confirmacionRepo.existsByEmpresaIdAndReferencia(empresaId, referencia)) {
+            throw new IllegalArgumentException(ReferenciaSinpe.MSG_REPETIDA);
+        }
         if (!reclamar(sesion)) {
             throw new IllegalStateException("La sesión ya se está confirmando");
         }
 
         completionService.completarVentaSinpe(sesion, usuarioId, notas);
+        Long generoId = sesion.getUsuario() != null ? sesion.getUsuario().getId() : null;
+        var registro = confirmacionRepo.saveAndFlush(new com.hotclick.model.PosSinpeConfirmacion(
+            empresaId, sesion.getId(), sesion.getPedidoId(), referencia, sesion.getTotal(), generoId, usuarioId));
+        auditoria.registrar(AUDIT_SINPE_MANUAL, "PosSinpeConfirmacion", registro.getId(), empresaId,
+            "sesion=" + sesion.getId() + " pedido=" + sesion.getPedidoId() + " ref=" + referencia
+                + " genero=" + generoId + " confirmo=" + usuarioId);
         return sesion;
     }
 
