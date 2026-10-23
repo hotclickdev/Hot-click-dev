@@ -201,8 +201,15 @@ public class OnvoBillingClient {
             log.info("[onvo-mock] cancelarAlVencer({})", subscriptionId);
             return;
         }
+        // ONVO: "Actualizar un Cargo recurrente" = POST /v1/subscriptions/{id} con cancelAtPeriodEnd
+        // (https://docs.onvopay.com/api/actualizar-un-cargo-recurrente, schema UpdateSubscription).
+        // No existe /subscriptions/{id}/cancel (404) y DELETE cancela de inmediato.
         Map<String, Object> body = Map.of("cancelAtPeriodEnd", true);
-        post("/subscriptions/" + subscriptionId + "/cancel", body);
+        Map<?, ?> resp = post("/subscriptions/" + subscriptionId, body);
+        // Fail-closed: sin confirmación explícita de ONVO no se da por programada la cancelación.
+        if (!Boolean.TRUE.equals(resp.get("cancelAtPeriodEnd")) && !"canceled".equals(resp.get("status"))) {
+            throw new IllegalStateException("ONVO no confirmó cancelAtPeriodEnd para " + subscriptionId);
+        }
         log.info("[onvo] Suscripción marcada cancelAtPeriodEnd: {}", subscriptionId);
     }
 

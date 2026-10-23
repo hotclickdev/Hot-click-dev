@@ -318,15 +318,28 @@ class OnvoBillingClientTest {
     @DisplayName("cancelarAlVencer: sub_mock no llama a ONVO; sub real hace POST cancelAtPeriodEnd")
     void cancelar() {
         conLlave();
-        server.expect(requestTo(BASE + "/subscriptions/sub_real/cancel"))
+        server.expect(requestTo(BASE + "/subscriptions/sub_real"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(jsonPath("$.cancelAtPeriodEnd").value(true))
-            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+            .andRespond(withSuccess("{\"id\":\"sub_real\",\"status\":\"active\",\"cancelAtPeriodEnd\":true}",
+                MediaType.APPLICATION_JSON));
         client.cancelarAlVencer("sub_real");
         server.verify();
         OnvoBillingClient dev = clienteConPerfiles("dev");
         ReflectionTestUtils.setField(dev, "secretKey", "onvo_test_ficticia");
         dev.cancelarAlVencer("sub_mock_1");
+    }
+
+    @Test
+    @DisplayName("cancelarAlVencer: nunca usa DELETE ni /cancel; respuesta sin cancelAtPeriodEnd=true → excepción (fail-closed)")
+    void cancelar_sinConfirmacion_falla() {
+        conLlave();
+        server.expect(requestTo(BASE + "/subscriptions/sub_real"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{\"id\":\"sub_real\",\"status\":\"active\",\"cancelAtPeriodEnd\":false}",
+                MediaType.APPLICATION_JSON));
+        assertThatThrownBy(() -> client.cancelarAlVencer("sub_real")).isInstanceOf(IllegalStateException.class);
+        server.verify();
     }
 
     @Test
