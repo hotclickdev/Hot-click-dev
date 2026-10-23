@@ -177,4 +177,24 @@ class SuscripcionOnvoChangeServiceTest {
         assertThat(out.get("publishableKey")).isEqualTo("pk_test");
         assertThat(empresa.getPlan().getNombre()).isEqualTo("EMPRENDEDOR");
     }
+
+    @Test
+    @DisplayName("PAG-6: dev+prod / dev+production no permiten mock; dev o test solos sí")
+    void mockPermitidoExigePerfilEstricto() throws Exception {
+        var envField = SuscripcionOnvoChangeService.class.getDeclaredField("environment");
+        envField.setAccessible(true);
+        for (String[] perfiles : new String[][] {{"dev", "prod"}, {"dev", "production"}, {"test", "prod"}, {},
+                {"dev", "PROD"}, {"test", "Production"}}) {
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles(perfiles);
+            envField.set(service, env);
+            assertThat(service.mockPermitido()).as(String.join("+", perfiles)).isFalse();
+        }
+        for (String perfil : new String[] {"dev", "test"}) {
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles(perfil);
+            envField.set(service, env);
+            assertThat(service.mockPermitido()).as(perfil).isTrue();
+        }
+    }
 }
