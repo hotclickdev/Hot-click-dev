@@ -405,7 +405,7 @@ class OnvoBillingClientTest {
     @DisplayName("Timeout al cancelar: excepción, no se marca como cancelada")
     void timeout_cancelar_sePropaga() {
         conLlave();
-        server.expect(requestTo(BASE + "/subscriptions/sub_real/cancel")).andRespond(request -> {
+        server.expect(requestTo(BASE + "/subscriptions/sub_real")).andRespond(request -> {
             throw new java.net.SocketTimeoutException("Read timed out");
         });
         assertThatThrownBy(() -> client.cancelarAlVencer("sub_real"))
