@@ -50,7 +50,8 @@ public class PedidoManualFactory {
         }
 
         Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
-        String estadoInicial = dto.getEstadoPedido() != null ? dto.getEstadoPedido() : Constants.PEDIDO_PENDIENTE;
+        String metodoPago = dto.getMetodoPago() != null ? dto.getMetodoPago() : "SINPE";
+        String estadoInicial = estadoInicialPermitido(dto.getEstadoPedido(), metodoPago);
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
@@ -58,7 +59,7 @@ public class PedidoManualFactory {
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
         pedido.setMetodoEnvio(dto.getMetodoEnvio() != null ? dto.getMetodoEnvio() : Constants.ENVIO_RETIRO);
-        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "SINPE");
+        pedido.setMetodoPago(metodoPago);
         pedido.setCostoEnvio(dto.getCostoEnvio() != null ? dto.getCostoEnvio() : 0);
         pedido.setEstadoPedido(estadoInicial);
         pedido.setNotas(dto.getNotas());
@@ -128,6 +129,18 @@ public class PedidoManualFactory {
             n8nWebhookService.notificarPedidoNuevo(saved);
         }
         return saved;
+    }
+
+    /**
+     * G1 (misma política que {@link PedidoPagoManualService}): solo un pedido en EFECTIVO puede nacer
+     * pagado o avanzado. SINPE, TARJETA, ONVO y cualquier otro método nacen PENDIENTE: el cobro lo
+     * confirma la pasarela o el flujo de comprobantes, nunca la creación manual.
+     */
+    static String estadoInicialPermitido(String estadoPedido, String metodoPago) {
+        String estado = estadoPedido != null ? estadoPedido : Constants.PEDIDO_PENDIENTE;
+        String metodo = PedidoPagoManualService.normalizarMetodo(metodoPago);
+        if (!PedidoPagoManualService.METODO_EFECTIVO.equals(metodo)) return Constants.PEDIDO_PENDIENTE;
+        return estado;
     }
 
     /** P7-02: la bodega debe ser del negocio; si la pedida no lo es (la UI manda 1), se usa la primera del negocio. */
