@@ -25,6 +25,12 @@
       "reason": "CVE-2026-47890: solo afecta SSE que envía fragmentos de vista (ModelAndView por SseEmitter/Flux). HotClick no usa ModelAndView; el SSE del copilot envía texto/JSON plano, que ya escapa CR/LF. El fix OSS es Framework 7.0.9 (Boot 4, salto de major); 6.2.20 es solo soporte enterprise.",
       "acceptedAt": "2026-10-10",
       "expiresOn": "2027-03-31"
+    },
+    {
+      "id": "GHSA-mrhx-c7xc-m3w5",
+      "reason": "zod 4.4.3 transitiva solo frontend, DoS solo del cliente; bump a >=4.6.6 pendiente.",
+      "acceptedAt": "2026-10-23",
+      "expiresOn": "2026-11-06"
     }
   ]
 }
