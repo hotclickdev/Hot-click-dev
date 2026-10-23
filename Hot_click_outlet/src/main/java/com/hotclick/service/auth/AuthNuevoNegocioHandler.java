@@ -48,6 +48,7 @@ public class AuthNuevoNegocioHandler {
     @Autowired private AuthSupport              authSupport;
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
     @Autowired private BodegaDespachoInicialService bodegaDespachoInicialService;
+    @Autowired(required = false) private com.hotclick.service.onvo.cuenta.CuentaOnvoService cuentaOnvoService;
 
     @Transactional
     public ResponseEntity<?> nuevoNegocio(RegistroEmpresaDTO dto, HttpServletRequest request) {
@@ -117,6 +118,7 @@ public class AuthNuevoNegocioHandler {
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         Empresa guardada = empresaRepository.save(empresa);
+        if (cuentaOnvoService != null) cuentaOnvoService.alRegistrarEmpresa(guardada);
         moderacionAdminAvisoService.avisarEmpresaPendiente(
             guardada.getId(),
             guardada.getNombreComercial() != null ? guardada.getNombreComercial() : guardada.getNombreEmpresa());

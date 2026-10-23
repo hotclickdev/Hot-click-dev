@@ -33,6 +33,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private OnvoCapturaService     onvoCapturaService;
+    @Autowired(required = false) private com.hotclick.service.onvo.cuenta.CuentaOnvoService cuentaOnvoService;
 
     @Override
     public String getNombre() {
@@ -66,9 +67,14 @@ public class OnvoPaymentProvider implements PaymentProvider {
             "numeroPedido", pedido.getNumeroPedido()
         );
 
-        OnvoService.OnvoCheckoutSession session = onvoService.crearCheckoutSession(
-            pedido.getTotalPedido(), descripcion, successUrl, cancelUrl,
-            usuario.getCorreo(), metadata);
+        // onBehalfOf solo con cuenta conectada ACTIVA (confirmada por GET a ONVO). Si no, el cobro
+        // sigue como hasta hoy a nombre de la plataforma: no se bloquea ni se inventa una cuenta.
+        String onBehalfOf = cuentaOnvoService != null ? cuentaOnvoService.onBehalfOfPara(pedido.getEmpresa()) : null;
+        OnvoService.OnvoCheckoutSession session = onBehalfOf == null
+            ? onvoService.crearCheckoutSession(pedido.getTotalPedido(), descripcion, successUrl, cancelUrl,
+                usuario.getCorreo(), metadata)
+            : onvoService.crearCheckoutSession(pedido.getTotalPedido(), descripcion, successUrl, cancelUrl,
+                usuario.getCorreo(), metadata, onBehalfOf);
 
         log.info("[onvo] Checkout session creada: {} pedido={}", session.id(), pedido.getNumeroPedido());
 
