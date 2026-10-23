@@ -56,7 +56,7 @@ class SuscripcionTilopayServiceTest {
     }
 
     @Test
-    void esc5_precioRealCobraConTilopay_sinPrecioDa409() {
+    void esc5_precioReal_noCobraPorTilopay_sinPrecioDa409() {
         CobroSuscripcionRepository cobroRepo = mock(CobroSuscripcionRepository.class);
         PlanRepository planRepo = mock(PlanRepository.class);
         TilopayService tilopay = mock(TilopayService.class);
@@ -71,9 +71,10 @@ class SuscripcionTilopayServiceTest {
         pyme.setNombre("PYME");
         pyme.setPrecioMensual(12_900);
         when(planRepo.findById(2L)).thenReturn(Optional.of(pyme));
-        Map<String, Object> r = svc.iniciarCambioPlan(5L, 2L);
-        assertThat(r).containsEntry("estado", "PENDIENTE_PAGO").containsEntry("montoCrc", 12_900L)
-            .containsEntry("proveedor", "TILOPAY");
+        assertThatThrownBy(() -> svc.iniciarCambioPlan(5L, 2L))
+            .isInstanceOf(com.hotclick.exception.CobroPlanNoDisponibleException.class);
+        verify(cobroRepo, never()).save(any());
+        verifyNoInteractions(tilopay);
 
         Plan sinPrecio = new Plan();
         sinPrecio.setId(3L);
@@ -81,6 +82,64 @@ class SuscripcionTilopayServiceTest {
         sinPrecio.setPrecioMensual(null);
         when(planRepo.findById(3L)).thenReturn(Optional.of(sinPrecio));
         assertThatThrownBy(() -> svc.iniciarCambioPlan(5L, 3L)).isInstanceOf(PlanNoDisponibleException.class);
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("Alta/cambio, confirmación y pago de renovación: nunca llaman al cliente Tilopay (ni mock)")
+    void ningunCaminoDePlanLlamaATilopay() {
+        CobroSuscripcionRepository cobroRepo = mock(CobroSuscripcionRepository.class);
+        PlanRepository planRepo = mock(PlanRepository.class);
+        TilopayService tilopay = mock(TilopayService.class);
+        when(tilopay.isMockMode()).thenReturn(true);
+        SuscripcionOnvoChangeService planLocal = mock(SuscripcionOnvoChangeService.class);
+        SuscripcionTilopayService svc = new SuscripcionTilopayService(cobroRepo, planRepo,
+            mock(EmpresaRepository.class), mock(SuscripcionRepository.class), tilopay,
+            planLocal, mock(BillingLedgerWriter.class), 28, "NINGUNO");
+        Plan plus = new Plan();
+        plus.setId(4L);
+        plus.setNombre("NEGOCIO_PLUS");
+        plus.setPrecioMensual(28_900);
+        when(planRepo.findById(4L)).thenReturn(Optional.of(plus));
+        CobroSuscripcion pendiente = cobro();
+        pendiente.setEmpresaId(5L);
+        pendiente.setPlanId(4L);
+        pendiente.setEstado(CobroSuscripcion.PENDIENTE);
+        when(cobroRepo.findByOrderNumberAndEmpresaId(any(), any())).thenReturn(Optional.of(pendiente));
+        when(cobroRepo.findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(any(), any(), any()))
+            .thenReturn(Optional.of(pendiente));
+
+        assertThatThrownBy(() -> svc.iniciarCambioPlan(5L, 4L))
+            .isInstanceOf(com.hotclick.exception.CobroPlanNoDisponibleException.class);
+        assertThatThrownBy(() -> svc.confirmar(5L, "SUB-5-ABC"))
+            .isInstanceOf(com.hotclick.exception.CobroPlanNoDisponibleException.class);
+        assertThatThrownBy(() -> svc.pendiente(5L))
+            .isInstanceOf(com.hotclick.exception.CobroPlanNoDisponibleException.class);
+
+        verifyNoInteractions(tilopay);
+        verifyNoInteractions(planLocal);
+        verify(cobroRepo, never()).save(any());
+    }
+
+    @Test
+    void precioCeroONegativo_nuncaActivaSinCobro_da409() {
+        CobroSuscripcionRepository cobroRepo = mock(CobroSuscripcionRepository.class);
+        PlanRepository planRepo = mock(PlanRepository.class);
+        TilopayService tilopay = mock(TilopayService.class);
+        SuscripcionOnvoChangeService planLocal = mock(SuscripcionOnvoChangeService.class);
+        SuscripcionTilopayService svc = new SuscripcionTilopayService(cobroRepo, planRepo,
+            mock(EmpresaRepository.class), mock(SuscripcionRepository.class), tilopay,
+            planLocal, mock(BillingLedgerWriter.class), 28, "NINGUNO");
+        for (int precio : new int[] {0, -1, -12_900}) {
+            Plan p = new Plan();
+            p.setId(9L);
+            p.setNombre("PYME");
+            p.setPrecioMensual(precio);
+            when(planRepo.findById(9L)).thenReturn(Optional.of(p));
+            assertThatThrownBy(() -> svc.iniciarCambioPlan(5L, 9L))
+                .isInstanceOf(com.hotclick.exception.PlanSinPrecioException.class);
+        }
+        verifyNoInteractions(planLocal, tilopay);
+        verify(cobroRepo, never()).save(any());
     }
 
     @Test

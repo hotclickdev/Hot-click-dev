@@ -37,14 +37,15 @@ class RenovacionesTilopayServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void renovacionesEnLote() {
+    void renovacionesEnLote_sinCobroTilopay() {
         LocalDate hoy = LocalDate.of(2026, 10, 28);
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
         CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
         EmpresaRepository empresas = mock(EmpresaRepository.class);
         BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        TilopayService tilopay = mock(TilopayService.class);
         SuscripcionTilopayService svc = spy(new SuscripcionTilopayService(cobros, mock(PlanRepository.class), empresas,
-            subs, mock(TilopayService.class), mock(SuscripcionOnvoChangeService.class), ledger, 28, "DIAS"));
+            subs, tilopay, mock(SuscripcionOnvoChangeService.class), ledger, 28, "DIAS"));
         when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(
             sub(1, 12900, hoy), sub(2, 12900, hoy.minusDays(1)), sub(3, 12900, hoy.plusDays(5)), sub(4, 0, hoy)));
         when(cobros.empresasConCobro(eq(CobroSuscripcion.PENDIENTE), eq(CobroSuscripcion.MOTIVO_RENOVACION), anyCollection()))
@@ -52,17 +53,18 @@ class RenovacionesTilopayServiceTest {
 
         int n = new RenovacionesTilopayService(subs, cobros, svc, ledger).generarRenovaciones(hoy);
 
-        assertThat(n).isEqualTo(1);
+        assertThat(n).isZero(); // [ALERTA-PAGO]: no se genera cobro de renovación por Tilopay
         verify(cobros, times(1)).empresasConCobro(any(), any(), anyCollection());
         verify(cobros, never()).findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(any(), any(), any());
         verify(empresas, never()).findById(any());
         ArgumentCaptor<List<CobroSuscripcion>> nuevos = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<List<Suscripcion>> pastDue = ArgumentCaptor.forClass(List.class);
         verify(svc).guardarRenovaciones(nuevos.capture(), pastDue.capture());
-        assertThat(nuevos.getValue()).extracting(CobroSuscripcion::getEmpresaId).containsExactly(1L);
-        assertThat(nuevos.getValue().get(0).getMontoCrc()).isEqualTo(12900L);
+        assertThat(nuevos.getValue()).isEmpty();
+        verify(svc, never()).nuevoCobro(any(), any(), any(), anyInt());
+        verifyNoInteractions(tilopay);
         assertThat(pastDue.getValue()).hasSize(2).allMatch(s -> "PAST_DUE".equals(s.getEstado()));
-        verify(cobros).saveAll(anyList());
+        verify(cobros, never()).saveAll(anyList());
         verify(subs).saveAll(anyList());
         verify(cobros, never()).save(any());
         verify(subs, never()).save(any());
