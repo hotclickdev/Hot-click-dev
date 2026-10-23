@@ -311,6 +311,8 @@
     "comoEntras3Titulo": "Get paid by card or SINPE",
     "comoEntras3Desc": "HotClick withholds {{comision}}% per sale, no minimum, gateway included.",
     "precioMensualidad": "₡0 /mo",
+    "precioMensualidadUsd": "US${{monto}}/mo",
+    "precioMensualidadDolares": "Monthly fee in US dollars",
     "precioComision": "{{comision}}% commission per sale, no minimum (payment gateway included)",
     "ctaFinalTitle": "Ready to sell with no monthly fee?"
   },
