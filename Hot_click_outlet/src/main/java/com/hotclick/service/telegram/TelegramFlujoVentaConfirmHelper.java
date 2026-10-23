@@ -64,6 +64,18 @@ class TelegramFlujoVentaConfirmHelper {
             return;
         }
 
+        if (e.getPago() != null && !TelegramFlujoSupport.METODOS_PAGO.contains(e.getPago())) {
+            // Borrador viejo con «Tarjeta»: no se registra; se vuelve a pedir el método.
+            e.setPago(null);
+            e.setP(com.hotclick.dto.TelegramFlujoEstado.P_VTA_PAGO);
+            support.guardar(v, e);
+            bot.enviarMensaje(v.getChatId(), "La tarjeta ya no está disponible en el bot. ¿Cómo te pagaron?",
+                java.util.List.of(java.util.List.of(
+                    com.hotclick.service.TelegramClienteBotService.boton("📱 SINPE", "vta:pay:SINPE"),
+                    com.hotclick.service.TelegramClienteBotService.boton("💵 Efectivo", "vta:pay:EFECTIVO"))));
+            return;
+        }
+
         VentaRequestDTO dto = new VentaRequestDTO();
         dto.setMetodoPago(e.getPago() != null ? e.getPago() : "EFECTIVO");
         dto.setClienteId(e.getCli());
