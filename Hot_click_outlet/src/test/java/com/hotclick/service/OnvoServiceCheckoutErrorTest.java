@@ -31,7 +31,8 @@ class OnvoServiceCheckoutErrorTest {
     @BeforeEach
     void armar() {
         service = new OnvoService(restTemplate);
-        ReflectionTestUtils.setField(service, "secretKey", "onvo_test_secret_key_abc");
+        // Llave con forma live: sin perfil activo, una llave de prueba apaga los pagos (M3) y este test es del error 400.
+        ReflectionTestUtils.setField(service, "secretKey", "onvo_live_secret_key_abc");
         service.init();
     }
 

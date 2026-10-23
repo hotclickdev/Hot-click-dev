@@ -24,7 +24,13 @@ public class OnvoPaymentProvider implements PaymentProvider {
     static final String EVENTO_INTENT_FALLIDO = "payment-intent.failed";
 
     /** Resultado de reconsultar a ONVO antes de confirmar un pedido. */
-    public enum Verificacion { OK, DUPLICADO, NO_PAGADO, NO_ENCONTRADO, DATOS_DISTINTOS }
+    public enum Verificacion {
+        OK, DUPLICADO, EN_PROCESO, NO_PAGADO, NO_ENCONTRADO, DATOS_DISTINTOS,
+        /** Sin llave utilizable (borrada, o de prueba fuera de dev/test): no se pudo preguntar a ONVO. */
+        NO_CONSULTABLE,
+        /** ONVO cobró un pedido ya cancelado: no se vende, el pago queda REEMBOLSO_PENDIENTE. */
+        COBRADO_SOBRE_CANCELADO
+    }
 
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
@@ -96,21 +102,39 @@ public class OnvoPaymentProvider implements PaymentProvider {
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             return Verificacion.DUPLICADO;
         }
+        if (!onvoService.isPagosDisponibles()) {
+            // Sin llave las lecturas dan vacío: eso no es «ONVO no la tiene» y no autoriza a cancelar.
+            log.error("[ALERTA-PAGO] ONVO sin llave utilizable: no se puede verificar sessionId={}", checkoutSessionId);
+            return Verificacion.NO_CONSULTABLE;
+        }
         Map<?, ?> sesion = onvoService.obtenerCheckoutSession(checkoutSessionId);
         if (sesion.isEmpty()) {
             return Verificacion.NO_ENCONTRADO;
         }
         String intentId = OnvoCobroVerificador.paymentIntentId(sesion);
         Map<?, ?> intent = onvoService.obtenerPaymentIntent(intentId);
-        switch (OnvoCobroVerificador.decidir(pago, sesion, intent)) {
+        switch (OnvoCobroVerificador.decidir(pago, sesion, intent, onvoService.modoEsperado())) {
             case ACEPTAR -> {
-                boolean capturado = onvoCapturaService.capturarVerificado(checkoutSessionId,
+                OnvoCapturaService.Captura captura = onvoCapturaService.capturarVerificado(checkoutSessionId,
                     "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + intentId + "\"}", origen);
-                return capturado ? Verificacion.OK : Verificacion.DUPLICADO;
+                return switch (captura) {
+                    case CAPTURADO -> Verificacion.OK;
+                    case DUPLICADO -> Verificacion.DUPLICADO;
+                    case COBRADO_SOBRE_CANCELADO -> Verificacion.COBRADO_SOBRE_CANCELADO;
+                };
             }
             case RECHAZAR_MONTO -> {
                 log.error("[ALERTA-PAGO] {}", OnvoCobroVerificador.mensajeAlerta(pago, intent));
                 return Verificacion.DATOS_DISTINTOS;
+            }
+            case RECHAZAR_MODO -> {
+                log.error("[ALERTA-PAGO] ONVO devolvió un cobro de otro modo (test/live) que la llave: sessionId={}",
+                    checkoutSessionId);
+                return Verificacion.DATOS_DISTINTOS;
+            }
+            case EN_PROCESO -> {
+                log.info("[onvo] Cobro todavía en proceso en ONVO: sessionId={}", checkoutSessionId);
+                return Verificacion.EN_PROCESO;
             }
             default -> {
                 // Sin transacción el pedido es un proxy lazy: se loguea la sesión, no el número de pedido.
@@ -118,6 +142,25 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 return Verificacion.NO_PAGADO;
             }
         }
+    }
+
+    /**
+     * Antes de cancelar por expiración: expira la sesión en ONVO para que ya no se pueda pagar.
+     * true solo si ONVO confirma que quedó expirada y sin cobro, o si ONVO no tiene la sesión (404).
+     * Si ONVO no responde, se relanza y la limpieza no cancela.
+     */
+    public boolean expirarSesionSinCobro(String checkoutSessionId) {
+        Map<?, ?> sesion = onvoService.expirarCheckoutSession(checkoutSessionId);
+        if (sesion.isEmpty()) {
+            return true;
+        }
+        boolean expirada = "expired".equalsIgnoreCase(String.valueOf(sesion.get("status")));
+        boolean pagada = "paid".equalsIgnoreCase(String.valueOf(sesion.get("paymentStatus")));
+        if (!expirada || pagada) {
+            log.warn("[onvo] ONVO no dejó la sesión expirada y sin cobro: sessionId={}", checkoutSessionId);
+            return false;
+        }
+        return true;
     }
 
     /**

@@ -4,6 +4,7 @@ import com.hotclick.model.Pago;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Compara lo que ONVO reporta por GET (checkout session + payment intent) contra el pago guardado.
@@ -17,15 +18,32 @@ public final class OnvoCobroVerificador {
 
     public enum Decision {
         ACEPTAR,
+        /** El intent sigue en curso (3DS, cobro asíncrono): todavía puede cobrarse, no se cancela. */
+        EN_PROCESO,
         NO_PAGADO,
-        RECHAZAR_MONTO
+        RECHAZAR_MONTO,
+        /** La sesión o el intent son de otro modo (test/live) que la llave configurada. */
+        RECHAZAR_MODO
     }
+
+    /** Estados del intent (OpenAPI de ONVO) en los que el cobro todavía puede terminar en succeeded. */
+    static final Set<String> INTENT_EN_PROCESO = Set.of("processing", "requires_action", "requires_capture");
 
     private OnvoCobroVerificador() {}
 
-    /** Sesión pagada y completa, intent en succeeded, y monto y moneda iguales al pago local. */
-    public static Decision decidir(Pago pago, Map<?, ?> sesion, Map<?, ?> intent) {
-        if (!sesionPagada(sesion) || !"succeeded".equalsIgnoreCase(texto(intent, "status"))) {
+    /**
+     * Sesión pagada y completa, intent en succeeded, mismo modo que la llave, y monto y moneda iguales
+     * al pago local. {@code modoEsperado} es «live» o «test» según la llave (ver OnvoService#modoEsperado).
+     */
+    public static Decision decidir(Pago pago, Map<?, ?> sesion, Map<?, ?> intent, String modoEsperado) {
+        if (!modoCoincide(sesion, modoEsperado) || !modoCoincide(intent, modoEsperado)) {
+            return Decision.RECHAZAR_MODO;
+        }
+        String estadoIntent = texto(intent, "status");
+        if (estadoIntent != null && INTENT_EN_PROCESO.contains(estadoIntent.toLowerCase(java.util.Locale.ROOT))) {
+            return Decision.EN_PROCESO;
+        }
+        if (!sesionPagada(sesion) || !"succeeded".equalsIgnoreCase(estadoIntent)) {
             return Decision.NO_PAGADO;
         }
         if (!mismoIntent(sesion, intent)) {
@@ -41,6 +59,12 @@ public final class OnvoCobroVerificador {
         }
         String status = texto(sesion, "status");
         return status == null || "complete".equalsIgnoreCase(status);
+    }
+
+    /** Si ONVO informa el modo, tiene que ser el de la llave; si no lo informa, no se rechaza por eso. */
+    static boolean modoCoincide(Map<?, ?> objeto, String modoEsperado) {
+        String modo = texto(objeto, "mode");
+        return modo == null || modoEsperado == null || modo.equalsIgnoreCase(modoEsperado);
     }
 
     public static String paymentIntentId(Map<?, ?> sesion) {

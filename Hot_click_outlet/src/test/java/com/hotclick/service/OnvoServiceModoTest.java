@@ -81,7 +81,7 @@ class OnvoServiceModoTest {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @DisplayName("Con llave: lee la sesión en GET /v1/checkout/sessions/{id} y el intent en /v1/payment-intents/{id}")
     void conLlaveLeeRutasDeOnvo() {
-        OnvoService s = servicio("onvo_test_secret_key_abc", "prod");
+        OnvoService s = servicio("onvo_live_secret_key_abc", "prod");
         when(restTemplate.exchange(eq("https://api.onvopay.com/v1/checkout/sessions/cs_1"), any(), any(), eq(Map.class)))
             .thenReturn((ResponseEntity) ResponseEntity.ok(Map.of("paymentStatus", "paid")));
         when(restTemplate.exchange(eq("https://api.onvopay.com/v1/payment-intents/pi_1"), any(), any(), eq(Map.class)))
@@ -92,14 +92,95 @@ class OnvoServiceModoTest {
     }
 
     @Test
+    @DisplayName("M3: llave de prueba fuera de dev/test → pagos apagados y sin consultar a ONVO")
+    void llaveDePruebaEnProduccion() {
+        OnvoService prod = servicio("onvo_test_secret_key_abc", "prod");
+        assertThat(prod.isPagosDisponibles()).isFalse();
+        assertThat(prod.isMockMode()).isFalse();
+        assertThatThrownBy(() -> prod.crearCheckoutSession(1000, "x", "ok", "ko", null, Map.of()))
+            .isInstanceOf(IllegalStateException.class);
+        assertThat(prod.obtenerCheckoutSession("cs_1")).isEmpty();
+        verifyNoInteractions(restTemplate);
+
+        OnvoService dev = servicio("onvo_test_secret_key_abc", "dev");
+        assertThat(dev.isPagosDisponibles()).isTrue();
+        assertThat(dev.modoEsperado()).isEqualTo("test");
+        assertThat(servicio("onvo_live_secret_key_abc", "prod").modoEsperado()).isEqualTo("live");
+    }
+
+    @Test
+    @DisplayName("M1: 401, 403 o 429 de ONVO no son «no existe»: se relanzan para que nadie cancele")
+    void errorDeAutorizacionOLimiteSeRelanza() {
+        OnvoService s = servicio("onvo_live_secret_key_abc", "prod");
+        for (HttpStatus estado : new HttpStatus[] {HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN, HttpStatus.TOO_MANY_REQUESTS}) {
+            when(restTemplate.exchange(anyString(), any(), any(), eq(Map.class)))
+                .thenThrow(HttpClientErrorException.create(estado, estado.getReasonPhrase(), null, null, null));
+            assertThatThrownBy(() -> s.obtenerCheckoutSession("cs_1")).isInstanceOf(HttpClientErrorException.class);
+            assertThatThrownBy(() -> s.expirarCheckoutSession("cs_1")).isInstanceOf(HttpClientErrorException.class);
+        }
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @DisplayName("M2: expirar usa POST /v1/checkout/sessions/{id}/expire y devuelve la sesión de ONVO")
+    void expirarSesion() {
+        OnvoService s = servicio("onvo_live_secret_key_abc", "prod");
+        when(restTemplate.exchange(eq("https://api.onvopay.com/v1/checkout/sessions/cs_1/expire"), any(), any(), eq(Map.class)))
+            .thenReturn((ResponseEntity) ResponseEntity.status(201).body(Map.of("status", "expired")));
+        assertThat(s.expirarCheckoutSession("cs_1").get("status")).isEqualTo("expired");
+        assertThat(s.expirarCheckoutSession("../x")).isEmpty();
+    }
+
+    @Test
     @DisplayName("Con llave: un 404 de ONVO da vacío; un id con forma rara ni se consulta")
     void conLlave404EIdInvalido() {
-        OnvoService s = servicio("onvo_test_secret_key_abc", "prod");
+        OnvoService s = servicio("onvo_live_secret_key_abc", "prod");
         when(restTemplate.exchange(anyString(), any(), any(), eq(Map.class)))
             .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", null, null, null));
 
         assertThat(s.obtenerCheckoutSession("cs_inexistente")).isEmpty();
         assertThat(s.obtenerCheckoutSession("../payment-intents/pi_1")).isEmpty();
         assertThat(s.obtenerPaymentIntent(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("dev+prod o dev+production sin llave: falla cerrado, no simula")
+    void devMasProdFallaCerrado() {
+        for (String[] perfiles : new String[][] {{"dev", "prod"}, {"dev", "production"}, {"test", "prod"}}) {
+            OnvoService s = servicio("", perfiles);
+            assertThat(s.isMockMode()).as(String.join("+", perfiles)).isFalse();
+            assertThat(s.isPagosDisponibles()).as(String.join("+", perfiles)).isFalse();
+            assertThatThrownBy(() -> s.crearCheckoutSession(1000, "x", "ok", "ko", null, Map.of()))
+                .isInstanceOf(IllegalStateException.class);
+        }
+        verifyNoInteractions(restTemplate);
+    }
+
+    @Test
+    @DisplayName("dev+prod con llave de prueba: pagos deshabilitados")
+    void devMasProdConLlavePruebaDeshabilita() {
+        OnvoService s = servicio("onvo_test_secret_key_ficticia", "dev", "prod");
+        assertThat(s.isPagosDisponibles()).isFalse();
+    }
+
+    @Test
+    @DisplayName("prod/production en mayúsculas o mixto (dev,PROD / test,Production): sin llave no simula")
+    void prodEnMayusculasSinLlaveFallaCerrado() {
+        for (String[] perfiles : new String[][] {{"dev", "PROD"}, {"test", "Production"}, {"TEST", "prod"}}) {
+            OnvoService s = servicio("", perfiles);
+            assertThat(s.isMockMode()).as(String.join("+", perfiles)).isFalse();
+            assertThat(s.isPagosDisponibles()).as(String.join("+", perfiles)).isFalse();
+        }
+        verifyNoInteractions(restTemplate);
+    }
+
+    @Test
+    @DisplayName("Llave onvo_test_ con prod en cualquier capitalización o sin perfil: pagos deshabilitados; solo dev la acepta")
+    void llavePruebaConProdMayusculasDeshabilita() {
+        for (String[] perfiles : new String[][] {{"dev", "PROD"}, {"test", "Production"}, {}}) {
+            assertThat(servicio("onvo_test_secret_key_ficticia", perfiles).isPagosDisponibles())
+                .as(String.join("+", perfiles)).isFalse();
+        }
+        assertThat(servicio("onvo_test_secret_key_ficticia", "dev").isPagosDisponibles()).isTrue();
     }
 }
