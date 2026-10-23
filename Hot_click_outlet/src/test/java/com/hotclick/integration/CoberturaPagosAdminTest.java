@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Cobertura QA (2026-10-22) de caminos admin que NingunCaminoPagaGratisTest deja fuera:
  * aviso Telegram al pasar a PAGADO, POST /api/ventas (estadoInicial, método, stock) y
  * PUT /api/pos/qr/{token}/confirmar-sinpe (HTTP). ONVO siempre simulado, sin llave.
- * Los tests @Disabled("BUG ...") documentan fallos reales: NO se corrigió código de producción.
+ * Combina fix1 (estado inicial, SINPE manual con referencia) y fix2 (vigencia QR #220).
  */
 @DisplayName("[QA] Cobertura pagos admin: Telegram, /api/ventas, confirmar-sinpe POS")
 @TestPropertySource(properties = {
@@ -470,11 +470,10 @@ class CoberturaPagosAdminTest extends BaseIntegrationTest {
     }
 
     @Test
-    @Disabled("BUG (QA 2026-10-22, reproducido): PUT /api/pos/qr/{token}/confirmar-sinpe acepta una sesión con fechaExpiracion vencida (200); PosQrVentaService.confirmarSinpe no valida expiración. Relacionado #220. No se corrige producción en esta rama.")
-    @DisplayName("ESPERADO: confirmar-sinpe con la sesión QR vencida → rechazado, no completa la venta")
+    @DisplayName("confirmar-sinpe con la sesión QR vencida → 400, no completa la venta (#220)")
     void confirmarSinpeVencido() throws Exception {
         PosQrSesion s = sesionSinpe("tokqrvencido0001", LocalDateTime.now(Constants.ZONA_CR).minusHours(2));
-        confirmar(s.getToken(), tokenConEmpresa(emprendedor, empresa)).andExpect(status().isBadRequest());
+        confirmar(s.getToken(), tokenConEmpresa(cajero(), empresa)).andExpect(status().isBadRequest());
         verify(posQrVentaCompletionService, never()).completarVentaSinpe(any(), anyLong(), any());
     }
 
