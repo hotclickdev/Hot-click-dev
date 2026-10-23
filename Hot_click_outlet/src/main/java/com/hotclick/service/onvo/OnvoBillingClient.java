@@ -145,9 +145,8 @@ public class OnvoBillingClient {
         Map<String, Object> body = new HashMap<>();
         body.put("email", email);
         body.put("name", nombre);
-        if (metadata != null && !metadata.isEmpty()) {
-            body.put("metadata", metadata);
-        }
+        // ONVO POST /customers rechaza "metadata" (400 "property metadata should not exist"; spike QA 2026-10-23).
+        // El parámetro se conserva por compatibilidad de firma, pero no se envía.
         Map<?, ?> resp = post("/customers", body);
         return new OnvoCustomer(requireId(resp, "customer"));
     }

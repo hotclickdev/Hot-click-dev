@@ -238,9 +238,23 @@ class OnvoBillingClientTest {
             .andExpect(method(HttpMethod.POST))
             .andExpect(header("Authorization", "Bearer " + LLAVE_FICTICIA))
             .andExpect(jsonPath("$.email").value("a@test.cr"))
-            .andExpect(jsonPath("$.metadata.empresaId").value("7"))
+            .andExpect(jsonPath("$.metadata").doesNotExist())
             .andRespond(withSuccess("{\"id\":\"cus_123\"}", MediaType.APPLICATION_JSON));
         assertThat(client.crearCustomer("a@test.cr", "A", Map.of("empresaId", "7")).id()).isEqualTo("cus_123");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("crearCustomer: el body de POST /customers nunca lleva metadata (ONVO la rechaza con 400)")
+    void crearCustomer_bodySinMetadata() {
+        conLlave();
+        server.expect(requestTo(BASE + "/customers"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.metadata").doesNotExist())
+            .andExpect(jsonPath("$.email").value("b@test.cr"))
+            .andRespond(withSuccess("{\"id\":\"cus_456\"}", MediaType.APPLICATION_JSON));
+        assertThat(client.crearCustomer("b@test.cr", "B", Map.of("empresaId", "9", "plan", "x")).id())
+            .isEqualTo("cus_456");
         server.verify();
     }
 
