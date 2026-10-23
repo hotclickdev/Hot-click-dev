@@ -32,4 +32,22 @@ class OnvoCuentaConectadaConfigTest {
         assertThat(c.isSimulado()).isEqualTo(simulado);
         assertThat(c instanceof OnvoCuentaConectadaMockClient).isEqualTo(simulado);
     }
+
+    @ParameterizedTest(name = "perfiles=[{0}] llave=[{1}] → llave usada=[{2}]")
+    @CsvSource(delimiter = ';', value = {
+        "dev;onvo_live_x;''",
+        "test;basura;''",
+        "default;onvo_live_x;''",
+        "dev;onvo_test_x;onvo_test_x",
+        "prod;onvo_live_x;onvo_live_x"
+    })
+    void llaveNoPruebaFueraDeProdFallaCerrado(String perfiles, String llave, String usada) {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles(perfiles.split(","));
+        OnvoCuentaConectadaClient c = new OnvoCuentaConectadaConfig()
+            .onvoCuentaConectadaClient(env, new RestTemplate(), llave);
+        assertThat(c.isSimulado()).isFalse();
+        assertThat(c).isInstanceOf(OnvoCuentaConectadaHttpClient.class);
+        assertThat(c).extracting("secretKey").isEqualTo(usada == null ? "" : usada);
+    }
 }

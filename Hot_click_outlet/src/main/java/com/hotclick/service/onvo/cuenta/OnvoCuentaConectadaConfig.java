@@ -22,6 +22,7 @@ import java.util.Locale;
 public class OnvoCuentaConectadaConfig {
 
     private static final Logger log = LoggerFactory.getLogger(OnvoCuentaConectadaConfig.class);
+    static final String PREFIJO_PRUEBA = "onvo_test_";
     static final String PERFIL_SIMULACION = "(dev | test) & !prod & !production";
 
     @Bean
@@ -32,7 +33,17 @@ public class OnvoCuentaConectadaConfig {
             log.warn("[onvo-cuentas] Perfil dev/test sin llave: cuentas conectadas simuladas.");
             return new OnvoCuentaConectadaMockClient();
         }
+        if (!sinLlave && !esProduccion(env) && !secretKey.startsWith(PREFIJO_PRUEBA)) {
+            log.error("[onvo-cuentas] Fuera de prod solo se acepta llave onvo_test_: cliente sin llave (falla cerrado).");
+            return new OnvoCuentaConectadaHttpClient(restTemplate, "");
+        }
         return new OnvoCuentaConectadaHttpClient(restTemplate, secretKey);
+    }
+
+    static boolean esProduccion(Environment env) {
+        return env != null && Arrays.stream(env.getActiveProfiles())
+            .map(p -> p == null ? "" : p.trim().toLowerCase(Locale.ROOT))
+            .anyMatch(p -> p.equals("prod") || p.equals("production"));
     }
 
     static boolean permiteSimulacion(Environment env) {
