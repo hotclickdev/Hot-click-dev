@@ -106,6 +106,7 @@ class SinpeCheckoutServiceEmpresaTest {
         ReflectionTestUtils.setField(service, "guestCancelTokenService", guestCancelTokenService);
         ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
         ReflectionTestUtils.setField(service, "sinpeManualHabilitado", true); // flujo legacy (apagado en prod)
+        ReflectionTestUtils.setField(service, "efectivoWebHabilitado", true); // efectivo web (apagado: solo POS)
     }
 
     private static com.hotclick.service.pedido.AutocompraNegocioGuard guardAutocompra() {

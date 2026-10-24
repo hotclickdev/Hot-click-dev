@@ -1,0 +1,5 @@
+<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/PerfilPage-aw1XUZWP.js
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{s as t}from"./vendor-clerk-31GEWzqg.js";import{t as n}from"./planPaths-8Vafq9_k.js";import"./constants-BA_YvNpc.js";import{PerfilPage as r}from"./PerfilPage-CLv58qhb.js";import{n as i}from"./EmprendedorPageFrame-R7Szctkq.js";var a=e(t(),1),o=`${n}/opciones`;function s(){return(0,a.jsx)(i,{titulo:`Editar Perfil`,volverA:o,children:(0,a.jsx)(r,{volverA:o,rutaExito:o,soloFormulario:!0})})}export{s as default};
+========
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{s as t}from"./vendor-clerk-Dnn-1-uN.js";import{t as n}from"./planPaths-8Vafq9_k.js";import"./constants-BA_YvNpc.js";import{PerfilPage as r}from"./PerfilPage-DWBLnUpT.js";import{n as i}from"./EmprendedorPageFrame-B_g76f23.js";var a=e(t(),1),o=`${n}/opciones`;function s(){return(0,a.jsx)(i,{titulo:`Editar Perfil`,volverA:o,children:(0,a.jsx)(r,{volverA:o,rutaExito:o,soloFormulario:!0})})}export{s as default};
+>>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/PerfilPage-DaMjfkoA.js

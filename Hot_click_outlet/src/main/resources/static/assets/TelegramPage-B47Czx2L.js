@@ -1,1 +1,5 @@
+<<<<<<<< HEAD:Hot_click_outlet/src/main/resources/static/assets/TelegramPage-B47Czx2L.js
 import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{s as t}from"./vendor-clerk-31GEWzqg.js";import{t as n}from"./planPaths-8Vafq9_k.js";import"./constants-BA_YvNpc.js";import{t as r}from"./TelegramVinculoPanel-_GHpvosj.js";import{n as i}from"./EmprendedorPageFrame-R7Szctkq.js";var a=e(t(),1);function o(){return(0,a.jsx)(i,{titulo:`Telegram`,subtitulo:`Avisos de este negocio en tu chat`,volverA:`${n}/opciones`,children:(0,a.jsx)(r,{})})}export{o as default};
+========
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{s as t}from"./vendor-clerk-Dnn-1-uN.js";import{t as n}from"./planPaths-8Vafq9_k.js";import"./constants-BA_YvNpc.js";import{t as r}from"./TelegramVinculoPanel-BNp4f-Vf.js";import{n as i}from"./EmprendedorPageFrame-B_g76f23.js";var a=e(t(),1);function o(){return(0,a.jsx)(i,{titulo:`Telegram`,subtitulo:`Avisos de este negocio en tu chat`,volverA:`${n}/opciones`,children:(0,a.jsx)(r,{})})}export{o as default};
+>>>>>>>> origin/master:Hot_click_outlet/src/main/resources/static/assets/TelegramPage-DfzCBTm_.js
