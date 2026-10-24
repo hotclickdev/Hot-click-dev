@@ -99,7 +99,7 @@ Admin sembrado: `admin@hotclick.com`, contraseña desde `HOTCLICK_ADMIN_INITIAL_
 
 - Si el puerto 5432 ya está ocupado, mapeá `5433:5432` en el compose y ajustá la URL en `application-dev.properties`.
 - Postgres 18 monta el volumen en `/var/lib/postgresql` (no `.../data`).
-- `ResetPlataformaKeepQaRunner` (`@Profile("dev")`) corre en dev y puede vaciar tiendas/productos al reiniciar (conserva admin + cuentas QA). Los seeders vuelven a cargar datos demo después. **Nunca cambiar este `@Profile` a algo más amplio** (p. ej. `!test`) — si el servidor de producción arranca sin perfil explícito (`default`), correría ahí también y vaciaría datos reales.
+- `ResetPlataformaKeepQaRunner` (`@Profile("dev & !prod & !production & !staging")` + `hotclick.reset-plataforma.enabled=true`, definida solo en `application-dev.properties`) corre en dev y puede vaciar tiendas/productos al reiniciar (conserva admin + cuentas QA). Los seeders vuelven a cargar datos demo después. **Nunca cambiar este `@Profile` a algo más amplio** (p. ej. `!test`) — si el servidor de producción arranca sin perfil explícito (`default`), correría ahí también y vaciaría datos reales.
 - **No copiar datos de producción a dev** (Ley 8968 — datos personales de clientes).
 - No exportar `SPRING_DATASOURCE_URL` apuntando a prod con el perfil `dev`: el guardrail aborta el arranque antes de migrar.
 - Base a medio migrar: `docker compose -f docker-compose.dev.yml down -v` y volvé a subir.
