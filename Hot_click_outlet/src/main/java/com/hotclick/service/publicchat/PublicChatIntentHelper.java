@@ -55,6 +55,12 @@ public class PublicChatIntentHelper {
         return mentionsStore && asksWhatWho;
     }
 
+    /** "¿Hacen envíos a Cartago?", "¿Cuánto tarda el envío?": pregunta de logística, no búsqueda de producto. */
+    public boolean isShippingQuery(String message) {
+        String n = normalize(message);
+        return n.matches(".*\\b(envio|envios|enviar|envian|shipping|ship|delivery)\\b.*");
+    }
+
     public boolean isWhatsappContactQuery(String message) {
         return normalize(message).contains("whatsapp");
     }

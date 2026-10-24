@@ -146,7 +146,7 @@ public class PublicChatDiscoveryHandler {
                 isEnglish, isGift, maxBudget, negations, afterHours, smartOpts, mostrarFichas);
             return;
         }
-        String texto = claudeClient.generarRespuestaMock(page, history, isEnglish);
+        String texto = claudeClient.generarRespuestaMock(page, history, userMessage, isEnglish);
         emitter.send(SseEmitter.event().name("delta").data(objectMapper.writeValueAsString(Map.of("text", texto))));
         emitter.send(SseEmitter.event().name("done").data(objectMapper.writeValueAsString(Map.of("opts", smartOpts))));
         emitter.complete();

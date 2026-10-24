@@ -98,11 +98,16 @@ public class PublicChatController {
         return emitter;
     }
 
-    private Long resolverEmpresa(String slug) {
-        if (slug != null && !slug.isBlank()) {
+    /**
+     * Home y /productos mandan el slug de la plataforma: el chat es marketplace y no
+     * depende de que exista una empresa con ese slug (QA2-014). Si existe, se usa.
+     */
+    Long resolverEmpresa(String slug) {
+        if (!MarketplaceCatalogo.esMarketplace(slug)) {
             return empresaRepository.findBySlug(slug).map(e -> e.getId()).orElse(null);
         }
-        return empresaRepository.findFirstByEstadoEmpresaOrderByIdAsc("ACTIVO")
+        return empresaRepository.findBySlug(MarketplaceCatalogo.SLUG)
+            .or(() -> empresaRepository.findFirstByEstadoEmpresaOrderByIdAsc("ACTIVO"))
             .map(e -> e.getId()).orElse(null);
     }
 
