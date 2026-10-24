@@ -101,4 +101,31 @@ class TilopayServiceMockTest {
         creado.init();
         return creado;
     }
+
+    @Test
+    void perfilRealDevMasProd_sinCredenciales_noSimula() {
+        for (String[] perfiles : new String[][] {{"dev", "prod"}, {"dev", "production"}, {"test", "prod"},
+                {"dev", "PROD"}, {"dev", "Production"}, {"test", "Production"}}) {
+            TilopayService s = servicioConPerfiles(perfiles);
+            assertFalse(s.isMockMode(), String.join("+", perfiles));
+            assertFalse(s.isPagosDisponibles(), String.join("+", perfiles));
+            assertThrows(IllegalStateException.class, s::loginSdk);
+        }
+        for (String perfil : new String[] {"dev", "test"}) {
+            assertTrue(servicioConPerfiles(perfil).isMockMode(), perfil);
+        }
+    }
+
+    private static TilopayService servicioConPerfiles(String... perfiles) {
+        TilopayService creado = new TilopayService();
+        org.springframework.mock.env.MockEnvironment env = new org.springframework.mock.env.MockEnvironment();
+        env.setActiveProfiles(perfiles);
+        ReflectionTestUtils.setField(creado, "environment", env);
+        ReflectionTestUtils.setField(creado, "apiUser", "");
+        ReflectionTestUtils.setField(creado, "password", "");
+        ReflectionTestUtils.setField(creado, "apiKey", "");
+        ReflectionTestUtils.setField(creado, "baseUrl", "https://app.tilopay.com");
+        creado.init();
+        return creado;
+    }
 }
