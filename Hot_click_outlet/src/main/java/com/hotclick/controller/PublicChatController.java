@@ -108,7 +108,9 @@ public class PublicChatController {
         }
         return empresaRepository.findBySlug(MarketplaceCatalogo.SLUG)
             .or(() -> empresaRepository.findFirstByEstadoEmpresaOrderByIdAsc("ACTIVO"))
-            .map(e -> e.getId()).orElse(null);
+            .map(e -> e.getId())
+            // El asistente global no depende de una tienda: sin empresa 'hotclick' busca en todo el catálogo.
+            .orElse(com.hotclick.utils.Constants.EMPRESA_PLATAFORMA_ID);
     }
 
     private void lanzarChat(SseEmitter emitter, Long empresaId, String slug,
