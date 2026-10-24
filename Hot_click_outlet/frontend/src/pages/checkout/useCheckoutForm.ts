@@ -18,7 +18,7 @@ import {
 } from './checkoutHelpers'
 import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
-import { metodoPagoPrincipal } from './pagoPrincipal'
+import { metodoPagoPrincipal, sinpeManualDesdeConfig } from './pagoPrincipal'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
@@ -48,6 +48,7 @@ export type CheckoutFormState = {
   setPaso: (paso: number, opciones?: OpcionesPaso) => void
   metodoPago: string
   contraEntregaHabilitada: boolean
+  sinpeManualHabilitado: boolean
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
   setNotas: (value: string) => void
@@ -174,11 +175,16 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   // Abre con SINPE Móvil (pasarela). Sin SINPE manual con comprobante.
   const [metodoPago, setMetodoPago] = useState<string>(metodoPagoPrincipal)
   const [contraEntregaHabilitada, setContraEntregaHabilitada] = useState(false)
+  const [sinpeManualHabilitado, setSinpeManualHabilitado] = useState(false)
   useEffect(() => {
     let vivo = true
     paymentService.getCheckoutConfig()
-      .then(({ data }) => { if (vivo) setContraEntregaHabilitada(data?.contraEntregaNormal === true) })
-      .catch(() => { /* sin config: sin contra entrega */ })
+      .then(({ data }) => {
+        if (!vivo) return
+        setContraEntregaHabilitada(data?.contraEntregaNormal === true)
+        setSinpeManualHabilitado(sinpeManualDesdeConfig(data))
+      })
+      .catch(() => { /* sin config: sin contra entrega ni SINPE manual (fail-closed) */ })
     return () => { vivo = false }
   }, [])
   // R3: el paso del checkout móvil vive en `?paso=`; el guard de CheckoutLayout impide saltar pasos.
@@ -323,6 +329,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     metodoPago,
     setMetodoPago,
     contraEntregaHabilitada,
+    sinpeManualHabilitado,
     notas,
     setNotas,
     sinpeNombre,

@@ -22,22 +22,36 @@ public class CheckoutConfigPublicoController {
      */
     private final boolean pagoPorTienda;
 
+    /**
+     * Espejo de solo lectura de {@code hotclick.checkout.sinpe-manual.habilitado} (default false, igual que
+     * SinpeCheckoutService, que es quien valida). El front solo muestra SINPE con comprobante si es true.
+     */
+    private final boolean sinpeManual;
+
     public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
                                            com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard) {
-        this(contraEntregaPolitica, guestCheckoutGuard, false);
+        this(contraEntregaPolitica, guestCheckoutGuard, false, false);
+    }
+
+    public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
+                                           com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard,
+                                           boolean pagoPorTienda) {
+        this(contraEntregaPolitica, guestCheckoutGuard, pagoPorTienda, false);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
     public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
                                            com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard,
-                                           @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.pago-por-tienda:false}") boolean pagoPorTienda) {
+                                           @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.pago-por-tienda:false}") boolean pagoPorTienda,
+                                           @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}") boolean sinpeManual) {
         this.contraEntregaPolitica = contraEntregaPolitica;
         this.guestCheckoutGuard = guestCheckoutGuard;
         this.pagoPorTienda = pagoPorTienda;
+        this.sinpeManual = sinpeManual;
     }
 
     /**
-     * {@code {"contraEntregaNormal": true, "maxUnidadesPorProducto": 3, "pagoPorTienda": false}}. El tope lo valida
+     * {@code {"contraEntregaNormal": true, "maxUnidadesPorProducto": 3, "pagoPorTienda": false, "sinpeManual": false}}. El tope lo valida
      * GuestCheckoutGuard en el backend; aquí solo se publica para que el front lo muestre.
      */
     @GetMapping("/public/checkout-config")
@@ -45,6 +59,7 @@ public class CheckoutConfigPublicoController {
         return ResponseEntity.ok(Map.of(
             "contraEntregaNormal", contraEntregaPolitica.habilitada(),
             "maxUnidadesPorProducto", guestCheckoutGuard.getMaxPorProducto(),
-            "pagoPorTienda", pagoPorTienda));
+            "pagoPorTienda", pagoPorTienda,
+            "sinpeManual", sinpeManual));
     }
 }

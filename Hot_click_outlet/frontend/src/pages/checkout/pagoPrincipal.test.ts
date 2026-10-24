@@ -1,15 +1,49 @@
 import { describe, expect, it } from 'vitest'
-import { PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, proveedorDe } from './pagoPrincipal'
+import {
+  PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, metodoProximamente, metodoSeleccionable, proveedorDe, sinpeManualDesdeConfig,
+} from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 
-describe('pago sin SINPE manual', () => {
-  it('SINPE y Tarjeta van a la pasarela; efectivo queda como efectivo', () => {
-    expect(proveedorDe(PAGO_SINPE)).toBe('TILOPAY')
-    expect(proveedorDe(PAGO_TARJETA)).toBe('TILOPAY')
-    expect(proveedorDe(PAGO_EFECTIVO)).toBe('EFECTIVO')
+describe('pago sin Tilopay', () => {
+  it('ningún método va a TILOPAY', () => {
+    for (const habilitado of [true, false]) {
+      for (const m of [PAGO_SINPE, PAGO_TARJETA, PAGO_EFECTIVO]) expect(proveedorDe(m, habilitado)).not.toBe('TILOPAY')
+    }
   })
 
-  it('muestra SINPE y Tarjeta por separado, sin comprobante', () => {
+  it('Tarjeta siempre deshabilitada («Próximamente») y sin proveedor', () => {
+    expect(metodoProximamente(PAGO_TARJETA, true)).toBe(true)
+    expect(metodoProximamente(PAGO_TARJETA, false)).toBe(true)
+    expect(proveedorDe(PAGO_TARJETA, true)).toBeNull()
+    expect(proveedorDe(PAGO_TARJETA, false)).toBeNull()
+  })
+
+  it('SINPE manual habilitado: provider SINPE', () => {
+    expect(sinpeManualDesdeConfig({ sinpeManual: true })).toBe(true)
+    expect(metodoProximamente(PAGO_SINPE, true)).toBe(false)
+    expect(proveedorDe(PAGO_SINPE, true)).toBe('SINPE')
+  })
+
+  it('SINPE manual deshabilitado: Próximamente y sin proveedor', () => {
+    expect(sinpeManualDesdeConfig({ sinpeManual: false })).toBe(false)
+    expect(sinpeManualDesdeConfig({ contraEntregaNormal: true })).toBe(false)
+    expect(sinpeManualDesdeConfig({ sinpeManual: 'true' })).toBe(false)
+    expect(metodoProximamente(PAGO_SINPE, false)).toBe(true)
+    expect(proveedorDe(PAGO_SINPE, false)).toBeNull()
+    expect(proveedorDe(PAGO_SINPE)).toBeNull()
+  })
+
+  it('error o config ausente: fail-closed', () => {
+    expect(sinpeManualDesdeConfig(undefined)).toBe(false)
+    expect(sinpeManualDesdeConfig(null)).toBe(false)
+  })
+
+  it('efectivo sigue igual', () => {
+    expect(proveedorDe(PAGO_EFECTIVO, false)).toBe('EFECTIVO')
+    expect(metodoProximamente(PAGO_EFECTIVO, false)).toBe(false)
+  })
+
+  it('muestra SINPE y Tarjeta por separado', () => {
     expect(metodosDisponibles(false).map((m) => m.id)).toEqual([PAGO_SINPE, PAGO_TARJETA])
   })
 
@@ -18,5 +52,18 @@ describe('pago sin SINPE manual', () => {
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM', 'ENVIO_RAPIDO'], true)).toBe(false)
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM'], false)).toBe(false)
     expect(metodosDisponibles(false, true).map((m) => m.titulo)).toEqual(['pagoSinpe', 'pagoTarjeta', 'contraEntrega'])
+  })
+
+  it('método deshabilitado: pasa al primero disponible (Efectivo / contra entrega)', () => {
+    const todos = [PAGO_SINPE, PAGO_TARJETA, PAGO_EFECTIVO]
+    expect(metodoSeleccionable(PAGO_SINPE, todos, false)).toBe(PAGO_EFECTIVO)
+    expect(metodoSeleccionable(PAGO_TARJETA, todos, false)).toBe(PAGO_EFECTIVO)
+    expect(metodoSeleccionable(PAGO_TARJETA, todos, true)).toBe(PAGO_SINPE)
+    expect(metodoSeleccionable(PAGO_SINPE, todos, true)).toBe(PAGO_SINPE)
+    expect(metodoSeleccionable(PAGO_EFECTIVO, todos, false)).toBe(PAGO_EFECTIVO)
+  })
+
+  it('sin ningún método disponible: se queda el actual (Pagar avisa)', () => {
+    expect(metodoSeleccionable(PAGO_SINPE, [PAGO_SINPE, PAGO_TARJETA], false)).toBe(PAGO_SINPE)
   })
 })

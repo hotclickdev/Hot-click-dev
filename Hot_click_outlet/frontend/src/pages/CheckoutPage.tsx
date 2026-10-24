@@ -51,6 +51,7 @@ export default function CheckoutPage() {
     totalFinal: form.totalFinal,
     metodoEnvio: form.metodoEnvio,
     metodoPago: form.metodoPago,
+    sinpeManualHabilitado: form.sinpeManualHabilitado,
     notas: notasConEncomienda(form.notas, form.paquetes, form.metodoEnvioPorPaquete, form.encomiendaPorPaquete),
     telefono: form.telefono,
     direccion: form.direccion,
