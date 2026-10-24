@@ -648,7 +648,7 @@
     },
     "compra": {
       "titulo": "What are you looking for today?",
-      "subtitulo": "Products from Costa Rican entrepreneurs. Pay with SINPE Móvil or card and get it anywhere in the country.",
+      "subtitulo": "Products from Costa Rican entrepreneurs. Pay with SINPE Móvil, card, or cash where the business accepts it and get it anywhere in the country.",
       "destacados": "Featured",
       "verTodo": "See all",
       "categorias": "Shop by category",
@@ -679,7 +679,7 @@
         "envioTitulo": "Shipping across Costa Rica",
         "envioTexto": "From ₡4,000 with Correos de Costa Rica or by courier",
         "pagoTitulo": "Pay your way",
-        "pagoTexto": "SINPE Móvil, card or cash",
+        "pagoTexto": "SINPE Móvil, card, or cash where the business accepts it",
         "sinCuentaTitulo": "Buy without an account",
         "sinCuentaTexto": "Just your email and phone",
         "devolucionesTitulo": "Returns",
@@ -897,7 +897,7 @@
     "envioTitulo": "Shipping across Costa Rica",
     "envioDetalle": "From {{monto}} · {{envioNormalDesde}} to {{envioNormalHasta}} business days in the GAM",
     "pagoTitulo": "Pay however you prefer",
-    "pagoDetalle": "SINPE Móvil, card or cash · checkout without creating an account",
+    "pagoDetalle": "SINPE Móvil, card, or cash where the business accepts it · checkout without creating an account",
     "preguntaTitulo": "Ask about this product",
     "preguntaAyuda": "It answers with the listing details. If it does not know something, it says so.",
     "preguntaMedidas": "What are the dimensions?",
@@ -998,7 +998,7 @@
     "notaResumen": "You pay everything together to HotClick. Each store ships its package. VAT included in each product price.",
     "notaResumenEscritorio": "You pay everything together to HotClick. Each store ships its package.",
     "ivaIncluido": "VAT included",
-    "pagoProtegido": "Protected payment · SINPE Móvil, card or cash",
+    "pagoProtegido": "Protected payment · SINPE Móvil, card, or cash where the business accepts it",
     "continuar": "Continue to checkout",
     "continuarPrecio": "Continue to checkout · {{precio}}",
     "whatsapp": "Order via WhatsApp",
@@ -1465,7 +1465,7 @@
       "lineaGift": "Gift card {{codigo}}",
       "lineaDescuento": "Discount ({{porcentaje}}%)",
       "totalRestante": "Remaining total to pay",
-      "notaRestante": "Pay the rest with SINPE Móvil or card. If the gift card covers everything, the order is paid with no other method.",
+      "notaRestante": "Pay the rest with SINPE Móvil, card, or cash where the business accepts it. If the gift card covers everything, the order is paid with no other method.",
       "unicoTitulo": "Gift card or coupon",
       "unicoPlaceholder": "Enter the code",
       "unicoAria": "Gift card or coupon code",
@@ -1575,7 +1575,7 @@
       "contraEntregaSub": "Pay in cash when it arrives (Normal shipping).",
       "sinpeTarjeta": "SINPE / Card",
       "sinpeTarjetaSub": "SINPE Móvil to {{numero}} or card. Card payments coming soon.",
-      "sinpeTarjetaSubTilopay": "SINPE Móvil or card, on the secure gateway.",
+      "sinpeTarjetaSubTilopay": "SINPE Móvil, card, or cash where the business accepts it, on the secure gateway.",
       "correoCuenta": "Your account email"
     },
     "giftPagado": {
@@ -3509,7 +3509,7 @@
       "sinpeRecibido": "SINPE received",
       "autoDetecta": "Confirms when they pay in the store",
       "pagoElegir": "QR payment",
-      "instruccionElegir": "The customer scans the code and picks SINPE Móvil or card"
+      "instruccionElegir": "The customer scans the code and picks SINPE Móvil, card, or cash where the business accepts it"
     },
     "pago": {
       "subtitulo": "In-store payment",
@@ -3715,7 +3715,7 @@
       "enviadoDesc": "{{negocio}} received it. It will be brought to {{mesa}}.",
       "enviadoEstado": "Order {{numero}} · Being prepared",
       "pagoTitulo": "How do you pay?",
-      "pagoDesc": "When you are done, ask for the bill: you pay at the register with SINPE Móvil or card.",
+      "pagoDesc": "When you are done, ask for the bill: you pay at the register with SINPE Móvil, card, or cash where the business accepts it.",
       "agregarMas": "Add something else"
     }
   },
@@ -4054,7 +4054,7 @@
       "total": "Total",
       "ivaIncluido": "VAT included",
       "notaDesktop": "You pay everything together to HotClick. Each store ships its package.",
-      "pagoProtegido": "Protected payment · SINPE Móvil, card or cash"
+      "pagoProtegido": "Protected payment · SINPE Móvil, card, or cash where the business accepts it"
     },
     "envio": {
       "ENVIO_NORMAL_GAM": {
