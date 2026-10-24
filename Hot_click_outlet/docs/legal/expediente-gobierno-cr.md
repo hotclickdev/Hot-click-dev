@@ -9,7 +9,7 @@ Los datos de razón social, cédula, domicilio y cantón siguen pendientes. Cuan
 | Nombre comercial | HotClick |
 | Sitio | https://hotclick.lat |
 | Correo | hotclick.cr@gmail.com |
-| Teléfono / WhatsApp | +506 8666-7888 |
+| Teléfono / WhatsApp | [teléfono oficial, se completa fuera del repo] |
 | Razón social o nombre del titular | Pendiente |
 | Cédula física o jurídica | Pendiente |
 | Domicilio y cantón | Pendiente |
@@ -92,7 +92,7 @@ Transmisión cifrada con HTTPS/TLS. Contraseñas con hash, nunca en texto plano.
 
 ### Protocolo de derechos (acceso, rectificación, supresión)
 
-1. La persona escribe a hotclick.cr@gmail.com, o por WhatsApp al +506 8666-7888, e indica nombre, correo de la cuenta y qué pide: acceso, corrección o supresión.
+1. La persona escribe a hotclick.cr@gmail.com, o por el chat de soporte, e indica nombre, correo de la cuenta y qué pide: acceso, corrección o supresión.
 2. HotClick responde en un plazo máximo de diez días hábiles.
 3. Acceso: se exportan los datos de la cuenta y de los pedidos asociados.
 4. Rectificación: se corrigen los datos de contacto que la persona señale.
@@ -103,7 +103,7 @@ Transmisión cifrada con HTTPS/TLS. Contraseñas con hash, nunca en texto plano.
 
 Se completa con el nombre y la cédula de quien acepta el cargo. No firmar en blanco.
 
-> Yo, [nombre], cédula [número], acepto el cargo de persona responsable de la base de datos «Clientes y pedidos HotClick» ante la Agencia de Protección de Datos de los Habitantes y ante las personas titulares. El medio de contacto es hotclick.cr@gmail.com y el teléfono +506 8666-7888. Me comprometo a atender las solicitudes de acceso, rectificación y supresión, a mantener actualizada la inscripción y a comunicar a la Agencia los cambios relevantes dentro de los cinco días hábiles.
+> Yo, [nombre], cédula [número], acepto el cargo de persona responsable de la base de datos «Clientes y pedidos HotClick» ante la Agencia de Protección de Datos de los Habitantes y ante las personas titulares. El medio de contacto es hotclick.cr@gmail.com y el teléfono [teléfono oficial, se completa fuera del repo]. Me comprometo a atender las solicitudes de acceso, rectificación y supresión, a mantener actualizada la inscripción y a comunicar a la Agencia los cambios relevantes dentro de los cinco días hábiles.
 
 ## Lo que el sitio ya cubre y lo que falta fuera del código
 

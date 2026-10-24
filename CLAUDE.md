@@ -326,7 +326,7 @@ en el backend, en el controller del copilot, antes de llamar a Claude.
 - Naming strategy: `PhysicalNamingStrategyStandardImpl` — los nombres de entidad deben coincidir exactamente con los nombres de columna/tabla en BD (minúsculas).
 - Todos los montos monetarios son enteros en colones costarricenses (₡), sin decimales. Usar `Intl.NumberFormat('es-CR')` en frontend y `NumberFormat.getInstance(Locale.forLanguageTag("es-CR"))` en backend.
 - **Nunca cambiar `ddl-auto=none`**; todo cambio de esquema se aplica manualmente con `Actualizado.sql`.
-- El número de WhatsApp/SINPE Móvil de HOTCLICK es `50686667888` (8666-7888).
+- El número de WhatsApp/SINPE Móvil de HOTCLICK no se publica en el repo: se configura por variable de entorno y en la UI se remite al chat de soporte.
 - Soft delete en Marcas: `estado = 0` (INACTIVO) en vez de borrar el registro.
 
 ## Constraints de infraestructura — PgBouncer transaction mode (CRÍTICO)

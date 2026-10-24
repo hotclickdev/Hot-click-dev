@@ -225,4 +225,4 @@ En cada pull request, además de las pruebas de backend y de interfaz, se exige 
 ## Contacto
 
 HOTCLICK · Costa Rica  
-<hotclick.cr@gmail.com> · WhatsApp +506 8666-7888
+<hotclick.cr@gmail.com> · o contactanos por el chat de soporte
