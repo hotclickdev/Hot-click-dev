@@ -106,7 +106,7 @@ public class ShoppingAssistantService {
         }
 
         // 2. Clasificar la consulta — bloquear antes de cualquier I/O si no es del dominio
-        QueryClassification classification = queryClassifier.classify(mensaje);
+        QueryClassification classification = queryClassifier.classify(mensaje, productoId);
         metricsService.record(classification);
         if (!classification.isAllowed()) {
             String respuesta = classification.isInjection()

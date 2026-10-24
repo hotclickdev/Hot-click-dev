@@ -164,6 +164,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setDistrito('')
   }
 
+  const elegidoPorUsuario = useRef(new Set<string>())
   const [metodoEnvioBase, setMetodoEnvioPorPaqueteState] = useState<Record<string, string>>({})
   const metodoEnvioPorPaquete = useMemo(() => {
     const normal = destinoGAM ? 'ENVIO_NORMAL_GAM' : 'ENVIO_NORMAL_FUERA_GAM'
@@ -207,9 +208,10 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
       for (const p of paquetes) {
         const opciones = opcionesEnvio(bodegaRetiroDePaquete(p))
         const actual = prev[p.bodegaId]
-        next[p.bodegaId] = actual && opciones.some((o) => o.value === actual)
-          ? actual
-          : (opciones[0]?.value ?? 'ENVIO_NORMAL_GAM')
+        // Por defecto, el envío estándar; el rápido (₡5.000) solo si el comprador lo eligió en esta pantalla.
+        const vigente = actual && opciones.some((o) => o.value === actual)
+          && (actual !== 'ENVIO_RAPIDO' || elegidoPorUsuario.current.has(p.bodegaId))
+        next[p.bodegaId] = vigente ? actual : 'ENVIO_NORMAL_GAM'
       }
       return next
     })
@@ -222,6 +224,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   }
 
   function setMetodoEnvioPaquete(bodegaId: string, value: string) {
+    elegidoPorUsuario.current.add(bodegaId)
     setMetodoEnvioPorPaqueteState((prev) => ({ ...prev, [bodegaId]: value }))
   }
 

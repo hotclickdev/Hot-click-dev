@@ -35,6 +35,19 @@ class PublicChatMockResponses {
             : "¡Te encontré " + productos.size() + " opciones! Por ejemplo tenemos " + nombre + ". ¿Lo agregamos al carrito?";
     }
 
+    /**
+     * Sin modelo: si preguntan garantía, medidas o color de un producto encontrado,
+     * responde con su ficha en vez de solo ofrecerlo.
+     */
+    public String generarRespuestaMock(List<Map<String, Object>> productos,
+                                       List<Map<String, Object>> history,
+                                       String mensaje, boolean isEnglish) {
+        if (!productos.isEmpty() && advisorAnswers.esPreguntaDeFicha(mensaje)) {
+            return advisorAnswers.responder(productos.get(0), mensaje, isEnglish);
+        }
+        return generarRespuestaMock(productos, history, isEnglish);
+    }
+
     public String generarRespuestaAsesor(Map<String, Object> ficha, String mensaje, boolean isEnglish) {
         return advisorAnswers.responder(ficha, mensaje, isEnglish);
     }

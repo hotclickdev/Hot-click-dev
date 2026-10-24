@@ -59,4 +59,22 @@ public class QueryClassifier {
         //    El pipeline RAG decidirá si hay respuesta relevante o no.
         return QueryClassification.PRODUCTO;
     }
+
+    /**
+     * QA8-002: con un producto en pantalla, una pregunta sobre él ("¿tiene garantía?") se responde con su ficha;
+     * si el cliente pide otros productos ("algo cómodo para la sala") se busca en el catálogo.
+     */
+    /** True si la consulta pide productos distintos al que se está viendo. */
+    public static boolean pideOtrosProductos(String query) {
+        return QueryClassifierSupport.pideOtrosProductos(query);
+    }
+
+    public QueryClassification classify(String query, Long productoActualId) {
+        QueryClassification base = classify(query);
+        if (base.isAllowed() && productoActualId != null && productoActualId > 0
+            && !QueryClassifierSupport.pideOtrosProductos(query)) {
+            return QueryClassification.PREGUNTA_PRODUCTO_ACTUAL;
+        }
+        return base;
+    }
 }

@@ -109,6 +109,12 @@ public class PublicChatClaudeClient {
         return mockResponses.generateAdvisorOpts(isEnglish);
     }
 
+    public String generarRespuestaMock(List<Map<String, Object>> productos,
+                                       List<Map<String, Object>> history,
+                                       String mensaje, boolean isEnglish) {
+        return mockResponses.generarRespuestaMock(productos, history, mensaje, isEnglish);
+    }
+
     public String generarRespuestaAsesor(Map<String, Object> ficha, String mensaje, boolean isEnglish) {
         return mockResponses.generarRespuestaAsesor(ficha, mensaje, isEnglish);
     }

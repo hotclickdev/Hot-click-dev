@@ -15,7 +15,7 @@ import { trackPageView } from '@/utils/ga4'
 import { captureAttributionFromLocation } from '@/utils/attribution'
 import { sincronizarRastreoConConsentimiento } from '@/utils/rastreoAnalitica'
 import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
-import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
+import { chatModalVisible, surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
 import { esRutaClaudeclick, esRutaPrototipo, esRutaVendedorFigma, esRutaVisitanteFigma } from '@/utils/rutaPrototipo'
 import ChatModal from '@/components/ai/ChatModal'
@@ -97,12 +97,10 @@ export function ConditionalWhatsAppFab() {
   return <WhatsAppFab />
 }
 
-/** Asistente del marketplace: no encima de tienda vendedor, prototipo, ficha ni pago POS. */
+/** Asistente del marketplace: ver `chatModalVisible` (la ficha lo necesita para sus chips). */
 export function ConditionalChatModal() {
   const { pathname } = useLocation()
-  if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
-  if (pathname.startsWith('/pos') || pathname.startsWith('/plataforma')) return null
-  if (/^\/productos\/[^/]+/.test(pathname)) return null
+  if (!chatModalVisible(pathname, esRutaTienda(pathname), esRutaClaudeclick(pathname))) return null
   return <ChatModal />
 }
 

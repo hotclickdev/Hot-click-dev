@@ -113,6 +113,21 @@ public class PublicChatService {
                 return;
             }
 
+            if (intentHelper.isShippingQuery(userMessage)) {
+                boolean en = intentHelper.isEnglish(userMessage);
+                emitter.send(SseEmitter.event().name("products")
+                    .data(objectMapper.writeValueAsString(Map.of("productos", List.of(), "hasMore", false, "query", userMessage))));
+                emitter.send(SseEmitter.event().name("delta")
+                    .data(objectMapper.writeValueAsString(Map.of("text", shippingText(en)))));
+                List<String> shipOpts = en
+                    ? List.of("Show me popular products", "How do I pay?")
+                    : List.of("Ver productos populares", "¿Cómo pago?");
+                emitter.send(SseEmitter.event().name("done")
+                    .data(objectMapper.writeValueAsString(Map.of("opts", shipOpts))));
+                emitter.complete();
+                return;
+            }
+
             if (advisorHandler.tryHandle(empresaId, marketplace, userMessage, history, productoId, emitter)) {
                 return;
             }
@@ -128,5 +143,14 @@ public class PublicChatService {
                 emitter.complete();
             } catch (Exception ae) { log.debug("SSE error: {}", ae.getMessage()); }
         }
+    }
+
+    /** Sin montos fijos: el costo real depende del destino y se muestra en el checkout. */
+    static String shippingText(boolean en) {
+        return en
+            ? "We ship to all of Costa Rica with Correos de Costa Rica or by courier. "
+                + "Cost and delivery time depend on the destination and are shown at checkout before you pay."
+            : "Enviamos a todo Costa Rica con Correos de Costa Rica o por encomienda. "
+                + "El costo y el plazo dependen del destino y te los mostramos en el checkout antes de pagar.";
     }
 }
