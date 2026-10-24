@@ -46,6 +46,28 @@ class PosQrControllerPagoTest {
         assertThat(controller.iniciarTilopay("tokendescconocido", null).getStatusCode().value()).isEqualTo(404);
     }
 
+    @Test
+    @DisplayName("Tilopay no iniciado → el log enmascara el token del QR")
+    void logNoContieneToken() {
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(PosQrController.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> app =
+            new ch.qos.logback.core.read.ListAppender<>();
+        app.start();
+        logger.addAppender(app);
+        try {
+            when(posQrService.iniciarTilopay("tokensecretoqr99", null))
+                .thenThrow(new IllegalStateException("Los pagos en línea no están disponibles."));
+            controller.iniciarTilopay("tokensecretoqr99", null);
+        } finally {
+            logger.detachAppender(app);
+        }
+        assertThat(app.list).isNotEmpty();
+        assertThat(app.list).allSatisfy(ev -> assertThat(ev.getFormattedMessage())
+            .doesNotContain("tokensecretoqr99").doesNotContain("secretoqr99"));
+        assertThat(app.list.get(0).getFormattedMessage()).contains("toke****");
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> cuerpo(ResponseEntity<?> resp) {
         return (Map<String, Object>) resp.getBody();
