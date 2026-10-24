@@ -2,12 +2,30 @@ import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateA
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import { colapsarGruposVariante } from './catalogoHelpers'
-import { PAGE_SIZE } from './catalogoFiltros'
 import type { Producto, ProductoBackend } from '@/types/producto'
 import type { CatalogCategoria, CatalogMarca } from './catalogoTipos'
 
-/** Tamaño al filtrar por gustos: el filtro client-side necesita más que una página. */
-export const PARA_VOS_FETCH_SIZE = 100
+/** Tope del backend (MAX_PAGE_SIZE_PUBLIC) por request. */
+export const CATALOGO_LOTE = 50
+/** Techo de seguridad: 40 lotes = 2000 productos. */
+export const CATALOGO_MAX_LOTES = 40
+
+/**
+ * Trae el catálogo público completo en lotes. Filtros, facetas y conteos se calculan en el
+ * cliente: con una sola página (24) /productos?cat=X mostraba 0 aunque la categoría tuviera productos.
+ */
+export async function cargarCatalogoCompleto(
+  getPage: (page: number, size: number) => Promise<{ data: unknown }>,
+): Promise<ProductoBackend[]> {
+  const { data } = await getPage(0, CATALOGO_LOTE)
+  const primera = listaDesdeRespuesta(data)
+  const total = (data as PaginaProductos).totalElements
+  const lotes = Math.min(CATALOGO_MAX_LOTES, total != null ? Math.ceil(total / CATALOGO_LOTE) : 1)
+  const resto = await Promise.all(
+    Array.from({ length: Math.max(0, lotes - 1) }, (_, i) => getPage(i + 1, CATALOGO_LOTE)),
+  )
+  return [...primera, ...resto.flatMap((r) => listaDesdeRespuesta(r.data))]
+}
 
 type ToastCatalogo = (opts: { message: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => void
 
@@ -24,7 +42,7 @@ function listaDesdeRespuesta(data: unknown): ProductoBackend[] {
 
 /**
  * Fetch de productos, categorías y marcas del catálogo.
- * Con sort=para_vos pide 100 ítems para filtrar por gustos en el cliente.
+ * Carga el catálogo público completo (en lotes) para filtrar en el cliente.
  */
 export function useCatalogoFetch(
   toast: ToastCatalogo,
@@ -37,34 +55,15 @@ export function useCatalogoFetch(
   const [marcas, setMarcas] = useState<CatalogMarca[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [, setTotalPages] = useState(1)
   const paraVos = sort === 'para_vos'
-  const pageSize = paraVos ? PARA_VOS_FETCH_SIZE : PAGE_SIZE
 
   const fetchProducts = useCallback(async (p = 0) => {
     setLoading(true)
-    const pageToFetch = paraVos ? 0 : p
     try {
-      const { data } = await productService.getAll(pageToFetch, pageSize)
-      const content = colapsarGruposVariante(listaDesdeRespuesta(data).map(normalizeProduct) as Producto[])
-      const pagina = data as PaginaProductos
-      const safeTotal = pagina.totalElements != null
-        ? Math.ceil(pagina.totalElements / pageSize)
-        : (pagina.totalPages ?? 1)
-      const clampedTotal = Math.max(1, safeTotal)
-
+      const todos = await cargarCatalogoCompleto((pg, size) => productService.getAll(pg, size))
+      setProducts(colapsarGruposVariante(todos.map(normalizeProduct) as Producto[]))
       setError(false)
-      if (content.length === 0 && pageToFetch > 0) {
-        const { data: d0 } = await productService.getAll(0, pageSize)
-        const c0 = colapsarGruposVariante(listaDesdeRespuesta(d0).map(normalizeProduct) as Producto[])
-        setProducts(c0)
-        setTotalPages(clampedTotal)
-        setPage(0)
-      } else {
-        setProducts(content)
-        setTotalPages(clampedTotal)
-        setPage(pageToFetch)
-      }
+      setPage(paraVos ? 0 : p)
     } catch {
       toast({ message: 'Error al cargar productos', type: 'error' })
       setError(true)
@@ -72,7 +71,7 @@ export function useCatalogoFetch(
     } finally {
       setLoading(false)
     }
-  }, [toast, setPage, paraVos, pageSize])
+  }, [toast, setPage, paraVos])
 
   const initialPageRef = useRef(page)
   const sortRef = useRef(sort)
