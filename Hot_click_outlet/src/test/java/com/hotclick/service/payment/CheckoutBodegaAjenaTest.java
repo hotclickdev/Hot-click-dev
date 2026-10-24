@@ -92,4 +92,14 @@ class CheckoutBodegaAjenaTest {
         assertThatCode(() -> CheckoutGrupoFactory.exigirBodegaDeLaTienda(req(1L, Constants.ENVIO_RETIRO),
             Map.of(10L, propio), hotclick, paquete(hotclick, Constants.ENVIO_RETIRO, 10L))).doesNotThrowAnyException();
     }
+
+    @Test
+    void retiroEnPaqueteMixtoConProductoAjenoLanza() {
+        // El planner agrupa por bodega de origen: un paquete puede mezclar un producto de la tienda y otro ajeno.
+        List<CheckoutPaquetesPlanner.Paquete> mixto = List.of(new CheckoutPaquetesPlanner.Paquete(bodega(52),
+            List.of(item(577L), item(578L)), 29000, 0, Constants.ENVIO_RETIRO, null));
+        assertThatThrownBy(() -> CheckoutGrupoFactory.exigirBodegaDeLaTienda(req(52L, Constants.ENVIO_RETIRO),
+            Map.of(577L, producto(52), 578L, producto(53)), bodega(52), mixto))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
 }

@@ -85,8 +85,9 @@ public class CheckoutGrupoFactory {
         }
         // Bodega sin negocio = bodega propia de HotClick: solo sirve para productos sin negocio (HotClick).
         Long empresaBodega = bodega.getEmpresa() == null ? null : bodega.getEmpresa().getId();
+        // allMatch: el planner agrupa por bodega de origen, no por empresa (productos sin bodega caen en la de HotClick).
         boolean coincide = productos.values().stream()
-            .anyMatch(p -> java.util.Objects.equals(empresaBodega, empresaDe(p)));
+            .allMatch(p -> java.util.Objects.equals(empresaBodega, empresaDe(p)));
         if (!coincide) throw new IllegalArgumentException(MSG_BODEGA_AJENA);
     }
 
