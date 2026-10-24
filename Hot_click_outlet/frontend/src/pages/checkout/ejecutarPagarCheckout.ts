@@ -6,7 +6,7 @@ import { BODEGA_DEFAULT, bodegaRetiroDePaquete, opcionesEnvio } from './checkout
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import { guardarUltimoPedido } from '@/utils/ultimoPedido'
 import type { CheckoutPayload } from '@/types/pedido'
-import { PAGO_EFECTIVO, proveedorDe } from './pagoPrincipal'
+import { proveedorDe } from './pagoPrincipal'
 
 /** Etiqueta legible del método de envío elegido para un paquete, para el resumen en notas. */
 function opcionesParaLabel(p: PaqueteCheckout, metodo: string): string {
@@ -84,6 +84,12 @@ type PagarCheckoutDeps = {
   gcCodigo: string | null
   sinpeTelefono: string
   iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
+  /** Publicado por /public/checkout-config; sin él SINPE queda «Próximamente». */
+  sinpeManualHabilitado?: boolean
+  /** Publicado por /public/checkout-config; sin él Tarjeta (ONVO) queda «Próximamente». */
+  tarjetaOnvoHabilitada?: boolean
+  /** Aviso visible cuando no hay método de pago disponible (nunca queda mudo). */
+  avisarSinMetodo?: () => void
 }
 
 /**
@@ -120,8 +126,17 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     gcCodigo,
     sinpeTelefono,
     iniciarPago,
+    sinpeManualHabilitado = false,
+    tarjetaOnvoHabilitada = false,
+    avisarSinMetodo,
   } = deps
 
+  // Fail-closed: Tarjeta (y SINPE sin habilitar) no inician ningún pago.
+  const provider = proveedorDe(metodoPago, sinpeManualHabilitado, tarjetaOnvoHabilitada)
+  if (!provider) {
+    avisarSinMetodo?.()
+    return
+  }
   if (!aceptaDatos) return
   if (!validateDomicilio()) return
 
@@ -170,7 +185,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     resumenEnvios ? `Envío: ${resumenEnvios}` : '',
   ].filter(Boolean).join(' | ')
 
-  const isManual = metodoPago === PAGO_EFECTIVO
+  // SINPE manual va por /sinpe/checkout (SinpeCheckoutService); Tarjeta va a /payments/checkout con ONVO.
+  const isManual = provider === 'SINPE'
   analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + (i.cantidad as number), 0))
   const atrib = attributionForCheckout()
   const metaCookies = readMetaCookies()
@@ -185,7 +201,7 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       notas: notasFull || null,
       // B17: la dirección también viaja aparte para que el pedido la guarde y los correos digan «Enviamos a …».
       direccionEntrega: necesitaDireccion && direccion ? (direccionPedido || direccion).slice(0, 500) : null,
-      provider: proveedorDe(metodoPago),
+      provider,
       items: items.map((i) => ({
         productoId: i.id,
         cantidad: i.cantidad,

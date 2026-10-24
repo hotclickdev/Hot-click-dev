@@ -38,4 +38,15 @@ class SinpeManualDeshabilitadoTest {
     void conBanderaLegacySePermite() {
         assertThatCode(() -> SinpeCheckoutService.exigirProveedorPermitido("SINPE", true)).doesNotThrowAnyException();
     }
+
+    @Test
+    void efectivoWebApagadoSeRechazaAunqueHayaSinpeManual() {
+        assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido("EFECTIVO", false, false))
+            .isInstanceOf(IllegalStateException.class).hasMessage(SinpeCheckoutService.MSG_EFECTIVO_SOLO_POS);
+        assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido(" efectivo ", true, false))
+            .isInstanceOf(IllegalStateException.class);
+        assertThatCode(() -> SinpeCheckoutService.exigirProveedorPermitido("EFECTIVO", false, true)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido("TILOPAY", false, false))
+            .isInstanceOf(IllegalStateException.class);
+    }
 }
